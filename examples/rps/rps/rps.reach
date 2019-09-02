@@ -1,0 +1,101 @@
+#lang reach/exe
+
+enum isHand { ROCK, PAPER, SCISSORS };
+
+function getHand() : isHand {
+    const s = interact("getHand");
+    const rockP = bytes_equal(s, "ROCK");
+    const paperP = bytes_equal(s, "PAPER");
+    const scissorsP = bytes_equal(s, "SCISSORS");
+    assume! (rockP || (paperP || scissorsP));
+    if rockP ROCK
+    else if paperP PAPER
+    else SCISSORS }
+
+enum isOutcome { B_WINS, DRAW, A_WINS };
+function showOutcome(o) {
+    require! isOutcome(o);
+    if (o == B_WINS) "Bob wins"
+    else if (o == DRAW) "Draw"
+    else "Alice wins" }
+
+function winner(handA, handB) : isOutcome {
+    const validA = isHand(handA);
+    const validB = isHand(handB);
+    if (validA && validB) {
+        ((handA + (4 - handB)) % 3) }
+    else if validA {
+        A_WINS }
+    else if validB {
+        B_WINS }
+    else {
+        DRAW } }
+
+function fair_if(handX, optionX, canWinX) {
+    possible? ((handX == optionX) && canWinX) }
+
+function fair_for_player(handX, canWinX) {
+    fair_if(handX, ROCK, canWinX);
+    fair_if(handX, PAPER, canWinX);
+    fair_if(handX, SCISSORS, canWinX) }
+
+function fair_game(handA, handB, outcome) {
+    fair_for_player(handA, (outcome == A_WINS));
+    fair_for_player(handB, (outcome == B_WINS)) }
+
+participant A {
+    uint256 wagerAmount,
+    uint256 escrowAmount }
+
+participant B { }
+
+main {
+    @A declassify! wagerAmount;
+    @A declassify! escrowAmount;
+    @A interact("params");
+    @A publish! wagerAmount, escrowAmount
+       w/ (wagerAmount + escrowAmount);
+    commit;
+
+    @B interact("accepts");
+    @B pay! wagerAmount;
+    commit;
+
+    @A const handA = getHand();
+    @A const commitA, saltA = precommit(handA);
+    @A declassify! commitA;
+    @A interact("commits");
+    @A publish! commitA w/ 0;
+    commit;
+
+    @B const handB = getHand();
+    @B declassify! handB;
+    @B interact("shows");
+    @B publish! handB w/ 0;
+    require! isHand(handB);
+    commit;
+
+    @A declassify! saltA;
+    @A declassify! handA;
+    @A interact("reveals");
+    @A publish! saltA, handA w/ 0;
+    check_commit(commitA, saltA, handA);
+    require! isHand(handA);
+    const outcome = winner(handA, handB);
+    assert! ((outcome == A_WINS) => isHand(handA));
+    assert! ((outcome == B_WINS) => isHand(handB));
+    fair_game(handA, handB, outcome);
+
+    const getsA, getsB =
+          if (outcome == A_WINS) {
+              values (2 * wagerAmount), 0 }
+          else if (outcome == B_WINS) {
+              values 0, (2 * wagerAmount) }
+          else {
+              values wagerAmount, wagerAmount };
+    transfer! A <- (escrowAmount + getsA);
+    transfer! B <- getsB;
+    commit;
+
+    interact("outcome");
+    showOutcome(outcome) }

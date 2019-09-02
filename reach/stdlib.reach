@@ -1,0 +1,18 @@
+#lang reach/lib
+
+function not (x) {
+    (x ? false : true) }
+function or (x, y) {
+    (x ? true : y) }
+function and (x, y) {
+    (x ? y : false) }
+function implies (x, y) {
+    (not(x) || y) }
+
+function precommit (x) {
+    const salt = random();
+    const commitment = digest(msgcons(uint256_bytes(salt), uint256_bytes(x)));
+    values commitment, salt }
+
+function check_commit (commitment, salt, x) {
+    require! (commitment == digest(msgcons(uint256_bytes(salt), uint256_bytes(x)))) }

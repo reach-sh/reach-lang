@@ -1,0 +1,61 @@
+# vim: set tabstop=2 shiftwidth=2 expandtab softtabstop=2 autoindent smartindent:
+# http://eslint.org/docs/rules
+
+rules:
+  linebreak-style:
+    - error
+    - unix
+  semi:
+    - error
+    - always
+  comma-dangle:
+    - off
+  no-mixed-spaces-and-tabs:
+    - off
+  no-extra-boolean-cast:
+    - off
+  no-console:
+    - off
+  no-debugger:
+    - off
+  jasmine/no-disabled-tests:
+    - off
+  block-scoped-var:
+    - error
+  keyword-spacing:
+    - warn
+  no-trailing-spaces:
+    - error
+  quotes:
+    - warn
+    - single
+    - allowTemplateLiterals: true
+  no-duplicate-imports:
+    - error
+  max-len:
+    - error
+    - code:       100
+      ignoreUrls: true
+  no-tabs:
+    - error
+
+env:
+  es6:      true
+  node:     true
+  browser:  true
+  jasmine:  true
+
+globals:
+  baseDir: true
+
+extends:
+  - 'eslint:recommended'
+
+plugins:
+  - jasmine
+
+parserOptions:
+  sourceType:  module
+  ecmaVersion: 10
+
+parser: babel-eslint

@@ -1,0 +1,13 @@
+# Haskell stack-generated files
+stack.yaml.lock
+
+# Editor-generated files
+*~
+*.swp
+*.swo
+
+# Operating-system-generated files
+.DS_Store
+
+.ethereum
+

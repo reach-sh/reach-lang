@@ -1,0 +1,21 @@
+{
+  "name": "rps",
+  "version": "1.0.0",
+  "description": "Rock Paper Scissors",
+  "type": "module",
+  "dependencies": {
+    "babel-eslint": "^10.0.2",
+    "eslint": "^5.16.0",
+    "eslint-plugin-jasmine": "^2.10.1",
+    "ethers": "4.0.33",
+    "jasmine": "^3.4.0",
+    "jasmine-console-reporter": "^3.1.0",
+    "web3": "1.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Reach-sh/reach-lang"
+  },
+  "author": "reach.sh",
+  "license": "LGPL"
+}
