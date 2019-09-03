@@ -68,11 +68,8 @@ const makeDemo = (doWhile, drawFirst) => {
       .then(resolve));
 };
 
-// TODO re-enable `WHILE` demo
-// makeDemo(true, true)
-//   .then(() => makeDemo(false, true))
-
-makeDemo(false, true)
+makeDemo(true, true)
+  .then(() => makeDemo(false, true))
   .then(() => makeDemo(false, false))
   .then(() => process.exit(0))
   .catch(e => console.error(e) || process.exit(1));
