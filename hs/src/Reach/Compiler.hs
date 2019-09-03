@@ -11,6 +11,7 @@ import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
 
 import Reach.AST
+import Reach.Pretty()
 import Reach.Parser
 import Reach.EmitJS
 import Reach.EmitSol
