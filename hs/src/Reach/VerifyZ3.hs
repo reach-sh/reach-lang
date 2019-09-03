@@ -139,28 +139,37 @@ pretty_se_top (Atom a) = pretty a
 
 {- Z3 Interaction -}
 
-z3_verify1 :: Solver -> (Bool, Role, TheoremKind) -> SExpr -> IO VerifyResult
-z3_verify1 z3 (_honest, _r, tk) a = inNewScope z3 $ do
+display_fail :: Show ann => Bool -> Role -> TheoremKind -> ann -> SExpr -> IO ()
+display_fail honest r tk ann a = do
+  putStrLn $ "Verification failed:"
+  putStrLn $ "\tin " ++ (if honest then "honest" else "dishonest") ++ " mode"
+  putStrLn $ "\tfor " ++ show r
+  putStrLn $ "\tof theorem " ++ show tk
+  putStrLn $ "\tfrom " ++ show ann
+  putStrLn $ "\tspecifically: " ++ (showsSExpr a ":")
+
+z3_verify1 :: Show ann => Solver -> (Bool, Role, TheoremKind, ann) -> SExpr -> IO VerifyResult
+z3_verify1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 (z3Apply "not" [ a ])
   r <- check z3
   case r of
     Unknown -> error "Z3 inconclusive result"
     Unsat -> return $ VR 1 0
     Sat -> do
-      putStrLn $ "Failed to verify! " ++ show tk ++ " " ++ showsSExpr a ":"
+      display_fail honest who tk ann a
       m <- command z3 $ List [ Atom "get-model" ]
       putStrLn $ show $ pretty_se_top m
       return $ VR 0 1
 
-z3_sat1 :: Solver -> (Bool, Role, TheoremKind) -> SExpr -> IO VerifyResult
-z3_sat1 z3 (_honest, _r, _tk) a = inNewScope z3 $ do
+z3_sat1 :: Show ann => Solver -> (Bool, Role, TheoremKind, ann) -> SExpr -> IO VerifyResult
+z3_sat1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 a
   r <- check z3
   case r of
     Unknown -> error "Z3 inconclusive result"
     Sat -> return $ VR 1 0
     Unsat -> do
-      putStrLn $ "Failed to verify! " ++ showsSExpr a ":"
+      display_fail honest who tk ann a
       uc <- getUnsatCore z3
       mapM_ putStrLn uc
       return $ VR 0 1
@@ -257,7 +266,7 @@ z3_expr z3 cbi out how = case how of
   IL_PrimApp _ pr al -> z3PrimEq z3 cbi pr alt out
     where alt = map emit_z3_arg al
 
-z3_stmt :: Solver -> Bool -> Role -> Int -> ILStmt a -> IO (Int, VerifyResult)
+z3_stmt :: Show a => Solver -> Bool -> Role -> Int -> ILStmt a -> IO (Int, VerifyResult)
 z3_stmt z3 honest r cbi how =
   case how of
     IL_Transfer _ _ amount -> do void $ define z3 cb' z3IntSort (z3Apply "-" [ (z3CTCBalanceRef cbi), amountt ])
@@ -265,15 +274,15 @@ z3_stmt z3 honest r cbi how =
       where cbi' = cbi + 1
             cb' = z3CTCBalance cbi'
             amountt = emit_z3_arg amount
-    IL_Claim _ CT_Possible a -> do vr <- z3_sat1 z3 (honest, r, TPossible) at
+    IL_Claim h CT_Possible a -> do vr <- z3_sat1 z3 (honest, r, TPossible, h) at
                                    return ( cbi, vr )
       where at = emit_z3_arg a
-    IL_Claim _ ct a -> do vr <- this_check
+    IL_Claim h ct a -> do vr <- this_check
                           assert z3 at
                           return ( cbi, vr )
       where at = emit_z3_arg a
             this_check = case mct of
-              Just tk -> z3_verify1 z3 (honest, r, tk) at
+              Just tk -> z3_verify1 z3 (honest, r, tk, h) at
               Nothing -> return mempty
             mct = case ct of
               CT_Assert -> Just TAssert
@@ -292,27 +301,27 @@ data VerifyCtxt a
   | VC_WhileTail_AssumeUntil (ILTail a) (VerifyCtxt a, (ILTail a))
   | VC_WhileTail_AssumeInv (VerifyCtxt a, (ILTail a))
 
-z3_it_top :: Solver -> ILTail a -> (Bool, Role) -> IO VerifyResult
+z3_it_top :: Show a => Solver -> ILTail a -> (Bool, Role) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
   void $ define z3 cb0 z3IntSort zero
   meta_iter mempty [(VC_Top, it_top)]
   where zero = emit_z3_con (Con_I 0)
         cb0 = z3CTCBalance 0
-        meta_iter :: VerifyResult -> [(VerifyCtxt a, ILTail a)] -> IO VerifyResult
+        meta_iter :: Show a => VerifyResult -> [(VerifyCtxt a, ILTail a)] -> IO VerifyResult
         meta_iter vr0 [] = return vr0
         meta_iter vr0 ( (ctxt, it) : more0 ) = do
           (more1, vr1) <- inNewScope z3 $ iter 0 ctxt it
           let vr = vr0 <> vr1
           let more = more0 ++ more1
           meta_iter vr more
-        iter :: Int -> VerifyCtxt a -> ILTail a -> IO ([(VerifyCtxt a, ILTail a)], VerifyResult)
+        iter :: Show a => Int -> VerifyCtxt a -> ILTail a -> IO ([(VerifyCtxt a, ILTail a)], VerifyResult)
         iter cbi ctxt it = case it of
-          IL_Ret _ al ->
+          IL_Ret h al ->
             case ctxt of
               VC_Top -> do
                 let cbi_balance = z3Eq (z3CTCBalanceRef cbi) zero
-                vr <- z3_verify1 z3 (honest, me, TBalanceZero) cbi_balance
+                vr <- z3_verify1 z3 (honest, me, TBalanceZero, h) cbi_balance
                 return ([], vr)
               VC_AssignCheckInv loopv invt -> do
                 let [ a ] = al
@@ -320,7 +329,7 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                 iter cbi VC_CheckRet invt
               VC_CheckRet -> do
                 let [ a ] = al
-                vr <- z3_verify1 z3 (honest, me, TInvariant) (emit_z3_arg a)
+                vr <- z3_verify1 z3 (honest, me, TInvariant, h) (emit_z3_arg a)
                 return ([], vr)
               VC_WhileBody_AssumeNotUntil loopv invt bodyt -> do
                 let [ a ] = al
@@ -388,7 +397,7 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
 z3StdLib :: String
 z3StdLib = "../../z3/z3-runtime.smt2"
 
-_verify_z3 :: Solver -> ILProgram a -> BLProgram a -> IO ExitCode
+_verify_z3 :: Show a => Solver -> ILProgram a -> BLProgram a -> IO ExitCode
 _verify_z3 z3 tp bp = do
   loadFile z3 z3StdLib
   mapM_ (z3_vardecl z3) $ M.toList tm
@@ -417,7 +426,7 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger { .. })
 
-verify_z3 :: String -> ILProgram a -> BLProgram a -> IO ()
+verify_z3 :: Show a => String -> ILProgram a -> BLProgram a -> IO ()
 verify_z3 logp tp bp = do
   (close, logpl) <- newFileLogger logp
   z3 <- newSolver "z3" ["-smt2", "-in"] (Just logpl)
