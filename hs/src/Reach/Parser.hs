@@ -226,14 +226,19 @@ parseXLExprs = sepBy parseXLExpr1 comma
 
 parseXLToConsensus :: Participant -> Parser XLExpr
 parseXLToConsensus who = do
-  vs <- ((do exact "publish!"
-             vs <- parseXLVars
-             exact "w/"
-             return vs)
-         <|>
-         (do exact "pay!"
-             return []))
-  amount <- parseXLExpr1
+  (vs, amount) <-
+    ((do exact "publish!"
+         vs <- parseXLVars
+         amount <-
+           ((do exact "w/"
+                parseXLExpr1)
+            <|>
+            return (XL_Con (Con_I 0)))
+         return (vs, amount))
+     <|>
+     (do exact "pay!"
+         amount <- parseXLExpr1
+         return ([], amount)))
   semi
   conk <- parseXLExprT Nothing
   return $ XL_ToConsensus who vs amount (XL_Let Nothing Nothing (XL_Claim CT_Require (XL_PrimApp (CP PEQ) [ (XL_PrimApp (CP TXN_VALUE) []), amount ])) conk)

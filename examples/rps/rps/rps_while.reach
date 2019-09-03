@@ -71,20 +71,20 @@ main {
         @A const commitA, saltA = precommit(handA);
         @A declassify! commitA;
         @A interact("commits");
-        @A publish! commitA w/ 0;
+        @A publish! commitA;
         commit;
 
         @B const handB = getHand();
         @B declassify! handB;
         @B interact("shows");
-        @B publish! handB w/ 0;
+        @B publish! handB;
         require! isHand(handB);
         commit;
 
         @A declassify! saltA;
         @A declassify! handA;
         @A interact("reveals");
-        @A publish! saltA, handA w/ 0;
+        @A publish! saltA, handA;
         check_commit(commitA, saltA, handA);
         require! isHand(handA);
         const this_outcome = winner(handA, handB);
