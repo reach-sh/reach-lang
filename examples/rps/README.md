@@ -9,7 +9,7 @@ listed:
 - GNU `make` v4.1 (or greater)
 - `geth` v1.9.2
 - `z3` v4.8.5
-- `solc` v0.5.2
+- solidity v0.5.11
 
 We recommend you use
 [`nvm` (node version manager)](https://github.com/nvm-sh/nvm#installation-and-update)
@@ -94,9 +94,9 @@ $ which z3
 ```
 
 Follow the build instructions
-[here](https://solidity.readthedocs.io/en/v0.5.10/installing-solidity.html#prerequisites-macos)
+[here](https://solidity.readthedocs.io/en/latest/installing-solidity.html#prerequisites-macos)
 and
-[here](https://solidity.readthedocs.io/en/v0.5.10/installing-solidity.html#clone-the-repository)
+[here](https://solidity.readthedocs.io/en/latest/installing-solidity.html#clone-the-repository)
 to build `solc` from source.
 
 *TODO*: Fix the macOS `solc` instructions and add section for Debian.
