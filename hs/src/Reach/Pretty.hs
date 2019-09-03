@@ -35,15 +35,15 @@ instance Pretty Role where
   pretty (RolePart p) = pretty p
   pretty RoleContract = pretty "CTC"
 
-instance Pretty XLProgram where
+instance Show a => Pretty (XLProgram a) where
   pretty = viaShow
 
-instance Pretty XLInlinedProgram where
+instance Show a => Pretty (XLInlinedProgram a) where
   pretty = viaShow
 
-instance Pretty ILArg where
-  pretty (IL_Var v) = prettyILVar v
-  pretty (IL_Con c) = pretty c
+instance Pretty (ILArg a) where
+  pretty (IL_Var _ v) = prettyILVar v
+  pretty (IL_Con _ c) = pretty c
 
 prettyApp :: (Pretty p, Pretty a) => p -> [a] -> Doc ann
 prettyApp p al = group $ parens $ pretty p <> alp
@@ -67,13 +67,13 @@ prettyWhile prettyVar loopv inita untilt invt bodyt kt = vsep [ group $ parens $
 prettyBegin :: Pretty a => a -> Doc ann
 prettyBegin x = group $ parens $ pretty "begin" <+> (nest 2 $ hardline <> pretty x)
 
-instance Pretty ILExpr where
-  pretty (IL_PrimApp p al) = prettyApp p al
-  pretty (IL_Declassify a) = group $ parens $ pretty "declassify" <+> pretty a
+instance Pretty (ILExpr a) where
+  pretty (IL_PrimApp _ p al) = prettyApp p al
+  pretty (IL_Declassify _ a) = group $ parens $ pretty "declassify" <+> pretty a
 
-instance Pretty ILStmt where
-  pretty (IL_Transfer to a) = prettyTransfer to a
-  pretty (IL_Claim ct a) = prettyClaim ct a
+instance Pretty (ILStmt a) where
+  pretty (IL_Transfer _ to a) = prettyTransfer to a
+  pretty (IL_Claim _ ct a) = prettyClaim ct a
 
 prettyValues :: Pretty a => [a] -> Doc ann
 prettyValues [ a ] = pretty a
@@ -92,23 +92,23 @@ prettyDo :: (Pretty xe, Pretty bt) => (Doc ann -> Doc ann) -> xe -> bt -> Doc an
 prettyDo at e bt =
   vsep [(group $ at $ pretty e), pretty bt]
 
-instance Pretty ILTail where
-  pretty (IL_Ret al) = prettyValues al
-  pretty (IL_If ca tt ft) = prettyIf ca tt ft
-  pretty (IL_Let r iv e bt) = prettyLet prettyILVar at iv e bt
+instance Pretty (ILTail a) where
+  pretty (IL_Ret _ al) = prettyValues al
+  pretty (IL_If _ ca tt ft) = prettyIf ca tt ft
+  pretty (IL_Let _ r iv e bt) = prettyLet prettyILVar at iv e bt
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
-  pretty (IL_Do r s bt) = prettyDo at s bt
+  pretty (IL_Do _ r s bt) = prettyDo at s bt
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
-  pretty (IL_ToConsensus p svs pa ct) =
+  pretty (IL_ToConsensus _ p svs pa ct) =
     vsep [(group $ parens $ pretty "@" <+> pretty p <+> (nest 2 $ hardline <> vsep [svsp, pap])),
           pretty ct]
     where svsp = parens $ pretty "publish!" <+> prettyILVars svs
           pap = parens $ pretty "pay!" <+> pretty pa
-  pretty (IL_FromConsensus lt) =
+  pretty (IL_FromConsensus _ lt) =
     vsep [(group $ parens $ pretty "commit!"),
           pretty lt]
-  pretty (IL_While loopv inita untilt invt bodyt kt) = prettyWhile prettyILVar loopv inita untilt invt bodyt kt
-  pretty (IL_Continue a) = parens $ pretty "continue!" <+> pretty a
+  pretty (IL_While _ loopv inita untilt invt bodyt kt) = prettyWhile prettyILVar loopv inita untilt invt bodyt kt
+  pretty (IL_Continue _ a) = parens $ pretty "continue!" <+> pretty a
 
 prettyILVar :: ILVar -> Doc ann
 prettyILVar (n, s) = pretty n <> pretty "/" <> pretty s
@@ -126,61 +126,61 @@ prettyILPart (p, vs) =
         body = case vs of [] -> emptyDoc
                           _ -> (nest 2 $ hardline <> vsep pvs)
 
-prettyILPartInfo :: ILPartInfo -> Doc ann
+prettyILPartInfo :: ILPartInfo b -> Doc ann
 prettyILPartInfo ps =
   vsep $ pretty "#:participants" : (map prettyILPart (M.toList ps))
 
-instance Pretty ILProgram where
-  pretty (IL_Prog ps t) = vsep [pretty "#lang reach/il", emptyDoc, prettyILPartInfo ps, emptyDoc, pretty "#:main", pretty t]
+instance Pretty (ILProgram a) where
+  pretty (IL_Prog _ ps t) = vsep [pretty "#lang reach/il", emptyDoc, prettyILPartInfo ps, emptyDoc, pretty "#:main", pretty t]
 
-instance Pretty BLArg where
-  pretty (BL_Con c) = pretty c
-  pretty (BL_Var v) = prettyBLVar v
+instance Pretty (BLArg a) where
+  pretty (BL_Con _ c) = pretty c
+  pretty (BL_Var _ v) = prettyBLVar v
 
-instance Pretty EPExpr where
-  pretty (EP_Arg a) = pretty a
-  pretty (EP_PrimApp p al) = prettyApp p al
+instance Pretty (EPExpr a) where
+  pretty (EP_Arg _ a) = pretty a
+  pretty (EP_PrimApp _ p al) = prettyApp p al
 
-instance Pretty EPStmt where
-  pretty (EP_Claim ct a) = prettyClaim ct a
-  pretty (EP_Send hi svs vs pa) =
+instance Pretty (EPStmt a) where
+  pretty (EP_Claim _ ct a) = prettyClaim ct a
+  pretty (EP_Send _ hi svs vs pa) =
     group $ parens $ pretty "send!" <+> pretty hi <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa
 
-instance Pretty CExpr where
-  pretty (C_PrimApp p al) = prettyApp p al
+instance Pretty (CExpr a) where
+  pretty (C_PrimApp _ p al) = prettyApp p al
 
-instance Pretty CStmt where
-  pretty (C_Claim ct a) = prettyClaim ct a
-  pretty (C_Transfer to a) = prettyTransfer to a
+instance Pretty (CStmt a) where
+  pretty (C_Claim _ ct a) = prettyClaim ct a
+  pretty (C_Transfer _ to a) = prettyTransfer to a
 
-instance Pretty EPTail where
-  pretty (EP_Ret al) = prettyValues al
-  pretty (EP_If ca tt ft) = prettyIf ca tt ft
-  pretty (EP_Let v e bt) = prettyLet prettyBLVar (\x -> x) v e bt
-  pretty (EP_Do s bt) = prettyDo (\x -> x) s bt
-  pretty (EP_Recv fromme hi svs vs bt) =
+instance Pretty (EPTail a) where
+  pretty (EP_Ret _ al) = prettyValues al
+  pretty (EP_If _ ca tt ft) = prettyIf ca tt ft
+  pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x -> x) v e bt
+  pretty (EP_Do _ s bt) = prettyDo (\x -> x) s bt
+  pretty (EP_Recv _ fromme hi svs vs bt) =
     vsep [group $ parens $ pretty "define-values" <+> pretty fromme <+> prettyBLVars svs <+> prettyBLVars vs <+> (parens $ pretty "recv!" <+> pretty hi),
           pretty bt]
-  pretty (EP_Loop which loopv inita bt) =
+  pretty (EP_Loop _ which loopv inita bt) =
     group $ parens $ pretty "loop" <+> pretty which <+> prettyBLVar loopv <+> pretty inita <> nest 2 (hardline <> prettyBegin bt)
-  pretty (EP_Continue which arg) = group $ parens $ pretty "continue" <+> pretty which <+> pretty arg
+  pretty (EP_Continue _ which arg) = group $ parens $ pretty "continue" <+> pretty which <+> pretty arg
 
-instance Pretty CTail where
-  pretty (C_Halt) = group $ parens $ pretty "halt!"
-  pretty (C_Wait i svs) = group $ parens $ pretty "wait!" <+> pretty i <+> prettyBLVars svs
-  pretty (C_If ca tt ft) = prettyIf ca tt ft
-  pretty (C_Let mv e bt) = prettyLet prettyBLVar (\x -> x) mv e bt
-  pretty (C_Do s bt) = prettyDo (\x -> x) s bt
-  pretty (C_Jump which svs a) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> pretty a
+instance Pretty (CTail a) where
+  pretty (C_Halt _) = group $ parens $ pretty "halt!"
+  pretty (C_Wait _ i svs) = group $ parens $ pretty "wait!" <+> pretty i <+> prettyBLVars svs
+  pretty (C_If _ ca tt ft) = prettyIf ca tt ft
+  pretty (C_Let _ mv e bt) = prettyLet prettyBLVar (\x -> x) mv e bt
+  pretty (C_Do _ s bt) = prettyDo (\x -> x) s bt
+  pretty (C_Jump _ which svs a) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> pretty a
 
-prettyCHandler :: Int -> CHandler -> Doc ann
-prettyCHandler i (C_Handler who svs args ct) =
+prettyCHandler :: Int -> CHandler a -> Doc ann
+prettyCHandler i (C_Handler _ who svs args ct) =
   group $ brackets $ pretty i <+> pretty who <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
-prettyCHandler i (C_Loop svs arg it ct) =
+prettyCHandler i (C_Loop _ svs arg it ct) =
   group $ brackets $ pretty i <+> pretty "!loop!" <+> prettyBLVars svs <+> prettyBLVar arg <+> pretty "invariant" <+> prettyBegin it <> (nest 2 $ hardline <> pretty ct)
 
-instance Pretty CProgram where
-  pretty (C_Prog ps hs) = group $ parens $ pretty "define-contract" <+> (nest 2 $ hardline <> vsep (psp : hsp))
+instance Pretty (CProgram a) where
+  pretty (C_Prog _ ps hs) = group $ parens $ pretty "define-contract" <+> (nest 2 $ hardline <> vsep (psp : hsp))
     where psp = group $ pretty "#:participants" <+> (parens $ hsep $ map pretty ps)
           hsp = zipWith prettyCHandler [0..] hs
 
@@ -190,14 +190,14 @@ prettyBLVar (n, s, et) = group $ brackets $ prettyILVar (n,s) <+> pretty ":" <+>
 prettyBLVars :: [BLVar] -> Doc ann
 prettyBLVars bs = parens $ hsep $ map prettyBLVar bs
 
-prettyBLPart :: (Participant, EProgram) -> Doc ann
-prettyBLPart (p, (EP_Prog args t)) =
+prettyBLPart :: (Participant, EProgram b) -> Doc ann
+prettyBLPart (p, (EP_Prog _ args t)) =
   group $ parens $ pretty "define-participant" <+> pretty p <+> (nest 2 $ hardline <> vsep [argp, emptyDoc, pretty t])
   where argp = group $ parens $ vsep $ map prettyBLVar args
 
-prettyBLParts :: BLParts -> Doc ann
+prettyBLParts :: BLParts b -> Doc ann
 prettyBLParts ps =
   vsep $ intersperse emptyDoc $ map prettyBLPart (M.toList ps)
 
-instance Pretty BLProgram where
-  pretty (BL_Prog ps ctc) = vsep [pretty "#lang reach/bl", emptyDoc, pretty ctc, emptyDoc, prettyBLParts ps]
+instance Pretty (BLProgram a) where
+  pretty (BL_Prog _ ps ctc) = vsep [pretty "#lang reach/bl", emptyDoc, pretty ctc, emptyDoc, prettyBLParts ps]

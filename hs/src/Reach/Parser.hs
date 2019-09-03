@@ -122,39 +122,44 @@ parseXLStdLibOp =
   <|> ("or" <$ exact "||")
   <|> ("and" <$ exact "&&")
 
-parseXLPrimApp :: Parser XLExpr
+parseXLPrimApp :: Parser (XLExpr SourcePos)
 parseXLPrimApp =
-  (do pr <- parseXLFunOp
+  (do h <- getSourcePos
+      pr <- parseXLFunOp
       args <- parens $ parseXLExprs
-      return $ XL_PrimApp pr args)
-  <|> (do pr <- parseXLStdLibFun
+      return $ XL_PrimApp h pr args)
+  <|> (do h <- getSourcePos
+          pr <- parseXLStdLibFun
           args <- parens $ parseXLExprs
-          return $ XL_FunApp pr args)
+          return $ XL_FunApp h pr args)
   <|> (parens $
-  do left <- parseXLExpr1
+  do h <- getSourcePos
+     left <- parseXLExpr1
      ((do exact "?"
           te <- parseXLExpr1
           exact ":"
           fe <- parseXLExpr1
-          return $ XL_PrimApp (CP IF_THEN_ELSE) [ left, te, fe ])
+          return $ XL_PrimApp h (CP IF_THEN_ELSE) [ left, te, fe ])
       <|> (do pr <- parseXLBinOp
               right <- parseXLExpr1
-              return $ XL_PrimApp pr [left, right])
+              return $ XL_PrimApp h pr [left, right])
       <|> (do pr <- parseXLStdLibOp
               right <- parseXLExpr1
-              return $ XL_FunApp pr [left, right])))
+              return $ XL_FunApp h pr [left, right])))
 
-parseXLIf :: Parser XLExpr
+parseXLIf :: Parser (XLExpr SourcePos)
 parseXLIf = do
+  h <- getSourcePos
   exact "if"
   ce <- parseXLExpr1
   te <- parseXLExpr1
   exact "else"
   fe <- parseXLExpr1
-  return $ XL_If False ce te fe
+  return $ XL_If h False ce te fe
 
-parseXLWhile :: Maybe Participant -> Parser XLExpr
+parseXLWhile :: Maybe Participant -> Parser (XLExpr SourcePos)
 parseXLWhile who = do
+  h <- getSourcePos
   exact "do"
   exact "const"
   loop_v <- parseXLVar
@@ -167,7 +172,7 @@ parseXLWhile who = do
   body_e <- parseXLExpr1
   semi
   k <- parseXLExprT who
-  return $ XL_While loop_v init_e stop_e invariant_e body_e k
+  return $ XL_While h loop_v init_e stop_e invariant_e body_e k
 
 parseClaimType :: Parser ClaimType
 parseClaimType =
@@ -176,41 +181,47 @@ parseClaimType =
   <|> (CT_Require <$ exact "require!")
   <|> (CT_Possible <$ exact "possible?")
 
-parseXLClaim :: Parser XLExpr
+parseXLClaim :: Parser (XLExpr SourcePos)
 parseXLClaim = do
+  h <- getSourcePos
   ct <- parseClaimType
   xe <- parseXLExpr1
-  return $ XL_Claim ct xe
+  return $ XL_Claim h ct xe
 
-parseXLValues :: Parser XLExpr
+parseXLValues :: Parser (XLExpr SourcePos)
 parseXLValues = do
+  h <- getSourcePos
   exact "values"
-  XL_Values <$> parseXLExprs
+  XL_Values h <$> parseXLExprs
 
-parseXLTransfer :: Parser XLExpr
+parseXLTransfer :: Parser (XLExpr SourcePos)
 parseXLTransfer = do
+  h <- getSourcePos
   exact "transfer!"
   p <- parseParticipant
   exact "<-"
   xe <- parseXLExpr1
-  return $ XL_Transfer p xe
+  return $ XL_Transfer h p xe
 
-parseXLDeclassify :: Parser XLExpr
+parseXLDeclassify :: Parser (XLExpr SourcePos)
 parseXLDeclassify =
-  do exact "declassify"
+  do h <- getSourcePos
+     exact "declassify"
      xe <- parens $ parseXLExpr1
-     return $ XL_Declassify xe
+     return $ XL_Declassify h xe
 
-parseXLFunApp :: Parser XLExpr
+parseXLFunApp :: Parser (XLExpr SourcePos)
 parseXLFunApp = do
+  h <- getSourcePos
   f <- parseXLVar
   args <- parens $ parseXLExprs
-  return $ XL_FunApp f args
+  return $ XL_FunApp h f args
 
-parseXLExpr1 :: Parser XLExpr
+parseXLExpr1 :: Parser (XLExpr SourcePos)
 parseXLExpr1 =
   label "XLExpr1"
-  ((XL_Con <$> parseConstant)
+  ((do h <- getSourcePos
+       XL_Con h <$> parseConstant)
    <|> parseXLPrimApp
    <|> parseXLIf
    <|> parseXLClaim
@@ -219,13 +230,15 @@ parseXLExpr1 =
    <|> parseXLDeclassify
    <|> (braces $ parseXLExprT Nothing)
    <|> try parseXLFunApp
-   <|> (XL_Var <$> parseXLVar))
+   <|> (do h <- getSourcePos
+           XL_Var h <$> parseXLVar))
 
-parseXLExprs :: Parser [XLExpr]
+parseXLExprs :: Parser [(XLExpr SourcePos)]
 parseXLExprs = sepBy parseXLExpr1 comma
 
-parseXLToConsensus :: Participant -> Parser XLExpr
+parseXLToConsensus :: Participant -> Parser (XLExpr SourcePos)
 parseXLToConsensus who = do
+  h <- getSourcePos
   (vs, amount) <-
     ((do exact "publish!"
          vs <- parseXLVars
@@ -233,7 +246,7 @@ parseXLToConsensus who = do
            ((do exact "w/"
                 parseXLExpr1)
             <|>
-            return (XL_Con (Con_I 0)))
+            return (XL_Con h (Con_I 0)))
          return (vs, amount))
      <|>
      (do exact "pay!"
@@ -241,46 +254,51 @@ parseXLToConsensus who = do
          return ([], amount)))
   semi
   conk <- parseXLExprT Nothing
-  return $ XL_ToConsensus who vs amount (XL_Let Nothing Nothing (XL_Claim CT_Require (XL_PrimApp (CP PEQ) [ (XL_PrimApp (CP TXN_VALUE) []), amount ])) conk)
+  return $ XL_ToConsensus h who vs amount (XL_Let h Nothing Nothing (XL_Claim h CT_Require (XL_PrimApp h (CP PEQ) [ (XL_PrimApp h (CP TXN_VALUE) []), amount ])) conk)
 
-parseAt :: Parser XLExpr
+parseAt :: Parser (XLExpr SourcePos)
 parseAt = do
   exact "@"
   who <- parseParticipant
   (parseXLToConsensus who <|> parseXLExprT (Just who))
 
-parseXLFromConsensus :: Parser XLExpr
+parseXLFromConsensus :: Parser (XLExpr SourcePos)
 parseXLFromConsensus = do
+  h <- getSourcePos
   exact "commit"
   semi
   k <- parseXLExprT Nothing
-  return $ XL_FromConsensus k
+  return $ XL_FromConsensus h k
 
-parseXLDeclassifyBang :: Maybe Participant -> Parser XLExpr
+parseXLDeclassifyBang :: Maybe Participant -> Parser (XLExpr SourcePos)
 parseXLDeclassifyBang who =
-  do exact "declassify!"
+  do h <- getSourcePos
+     exact "declassify!"
+     vh <- getSourcePos
      v <- parseXLVar
      semi
      k <- parseXLExprT who
-     return $ XL_Let who (Just [v]) (XL_Declassify (XL_Var v)) k
+     return $ XL_Let h who (Just [v]) (XL_Declassify h (XL_Var vh v)) k
 
-parseXLLetValues :: Maybe Participant -> Parser XLExpr
+parseXLLetValues :: Maybe Participant -> Parser (XLExpr SourcePos)
 parseXLLetValues who = do
+  h <- getSourcePos
   exact "const"
   vs <- parseXLVars
   exact "="
   ve <- parseXLExpr1
   semi
   k <- parseXLExprT who
-  return $ XL_Let who (Just vs) ve k
+  return $ XL_Let h who (Just vs) ve k
 
-parseXLContinue :: Maybe Participant -> Parser XLExpr
+parseXLContinue :: Maybe Participant -> Parser (XLExpr SourcePos)
 parseXLContinue _who = do
+  h <- getSourcePos
   exact "continue"
   next_e <- parseXLExpr1
-  return $ XL_Continue next_e
+  return $ XL_Continue h next_e
 
-parseXLExprT :: Maybe Participant -> Parser XLExpr
+parseXLExprT :: Maybe Participant -> Parser (XLExpr SourcePos)
 parseXLExprT who =
   label "XLExprT"
   (parseAt
@@ -290,12 +308,13 @@ parseXLExprT who =
    <|> parseXLContinue who
    <|> parseXLWhile who
    <|> (do before <- parseXLExpr1
-           ((do semi
+           ((do h <- getSourcePos
+                semi
                 after <- parseXLExprT who
-                return $ XL_Let who Nothing before after)
+                return $ XL_Let h who Nothing before after)
             <|> (return before))))
 
-parseImport :: Parser [XLDef]
+parseImport :: Parser [XLDef SourcePos]
 parseImport = do
   exact "import"
   ip <- stringLiteral
@@ -303,80 +322,87 @@ parseImport = do
   ds <- liftIO $ readXLLibrary ip
   return ds
 
-parseDefineFun :: Parser [XLDef]
+parseDefineFun :: Parser [XLDef SourcePos]
 parseDefineFun = do
+  h <- getSourcePos
   exact "function"
   f <- parseXLVar
   args <- parens $ parseXLVars
-  e <- ((do exact ":"
+  e <- ((do ah <- getSourcePos
+            exact ":"
             post <- parseXLVar
             body <- parseXLExpr1
-            return (XL_Let Nothing (Just ["result"]) body (XL_Let Nothing Nothing (XL_Claim CT_Assert (XL_FunApp post [XL_Var "result"])) (XL_Var "result"))))
+            return (XL_Let ah Nothing (Just ["result"]) body (XL_Let ah Nothing Nothing (XL_Claim ah CT_Assert (XL_FunApp ah post [XL_Var ah "result"])) (XL_Var ah "result"))))
          <|> parseXLExpr1)
-  return $ [XL_DefineFun f args e]
+  return $ [XL_DefineFun h f args e]
 
-parseDefine :: Parser [XLDef]
+parseDefine :: Parser [XLDef SourcePos]
 parseDefine = do
+  h <- getSourcePos
   exact "const"
   vs <- parseXLVars
   exact "="
   ve <- parseXLExpr1
   semi
-  return [XL_DefineValues vs ve]
+  return [XL_DefineValues h vs ve]
 
-parseEnum :: Parser [XLDef]
+parseEnum :: Parser [XLDef SourcePos]
 parseEnum = do
+  h <- getSourcePos
   exact "enum"
   name <- parseXLVar
   vs <- braces $ parseXLVars
   semi
-  return $ doXLEnum name vs
+  return $ doXLEnum h name vs
 
-doXLEnum :: XLVar -> [XLVar] -> [XLDef]
-doXLEnum predv vs = [ dvs, predd ]
-  where dvs = XL_DefineValues vs ve
-        ve = XL_Values $ zipWith (\_ i -> XL_Con (Con_I i)) vs [0..]
-        predd = XL_DefineFun predv [ "x" ] checke
-        checke = XL_FunApp "and" [ lee, lte ]
-        lee = XL_PrimApp (CP PLE) [ XL_Con (Con_I 0), XL_Var "x" ]
-        lte = XL_PrimApp (CP PLT) [ XL_Var "x", XL_Con (Con_I (toInteger (length vs))) ]
+doXLEnum :: a -> XLVar -> [XLVar] -> [XLDef a]
+doXLEnum ann predv vs = [ dvs, predd ]
+  where dvs = XL_DefineValues ann vs ve
+        ve = XL_Values ann $ zipWith (\_ i -> XL_Con ann (Con_I i)) vs [0..]
+        predd = XL_DefineFun ann predv [ "x" ] checke
+        checke = XL_FunApp ann "and" [ lee, lte ]
+        lee = XL_PrimApp ann (CP PLE) [ XL_Con ann (Con_I 0), XL_Var ann "x" ]
+        lte = XL_PrimApp ann (CP PLT) [ XL_Var ann "x", XL_Con ann (Con_I (toInteger (length vs))) ]
 
-parseXLDef :: Parser [XLDef]
+parseXLDef :: Parser [XLDef SourcePos]
 parseXLDef = parseImport <|> parseDefineFun <|> parseDefine <|> parseEnum
 
-parseXLDefs :: Parser [XLDef]
+parseXLDefs :: Parser [XLDef SourcePos]
 parseXLDefs = liftM concat (sepBy parseXLDef sc)
 
-parseXLVarDecl :: Parser (XLVar, BaseType)
+parseXLVarDecl :: Parser (SourcePos, XLVar, BaseType)
 parseXLVarDecl = do
+  h <- getSourcePos
   bt <- parseBaseType
   v <- parseXLVar
-  return (v, bt)
+  return (h, v, bt)
 
-parseXLPart :: Parser (Participant, [(XLVar, BaseType)])
+parseXLPart :: Parser (Participant, (SourcePos, [(SourcePos, XLVar, BaseType)]))
 parseXLPart = do
+  h <- getSourcePos
   exact "participant"
   p <- parseParticipant
   ds <- braces $ sepBy parseXLVarDecl comma
-  return (p, ds)
+  return (p, (h, ds))
 
-parseXLPartInfo :: Parser XLPartInfo
+parseXLPartInfo :: Parser (XLPartInfo SourcePos)
 parseXLPartInfo = M.fromList <$> sepBy parseXLPart sc
 
-parseXLMain :: Parser XLExpr
+parseXLMain :: Parser (XLExpr SourcePos)
 parseXLMain = do
   exact "main"
   parseXLExpr1
 
-parseXLLibrary :: Parser [XLDef]
+parseXLLibrary :: Parser [XLDef SourcePos]
 parseXLLibrary = do
   sc
   exact "#lang"
   exact "reach/lib"
   parseXLDefs
 
-parseXLProgram :: Parser XLProgram
+parseXLProgram :: Parser (XLProgram SourcePos)
 parseXLProgram = do
+  h <- getSourcePos
   sc
   exact "#lang"
   exact "reach/exe"
@@ -384,15 +410,15 @@ parseXLProgram = do
   defs <- parseXLDefs
   ps <- parseXLPartInfo
   be <- parseXLMain
-  return (XL_Prog (stdlib_defs ++ defs) ps be)
+  return (XL_Prog h (stdlib_defs ++ defs) ps be)
 
-readXLProgram :: FilePath -> IO XLProgram
+readXLProgram :: FilePath -> IO (XLProgram SourcePos)
 readXLProgram fp = readFile fp >>= runParserT parseXLProgram fp >>= maybeError
 
-readXLLibrary :: FilePath -> IO [XLDef]
+readXLLibrary :: FilePath -> IO [XLDef SourcePos]
 readXLLibrary fp = readFile fp >>= runParserT parseXLLibrary fp >>= maybeError
 
-include_stdlib :: Parser [XLDef]
+include_stdlib :: Parser [XLDef SourcePos]
 include_stdlib = liftIO $ (runParserT parseXLLibrary "stdlib.reach" (B.unpack $(embedFile "../reach/stdlib.reach")) >>= maybeError)
 
 maybeError :: Either (ParseErrorBundle String Void) a -> IO a
@@ -401,6 +427,6 @@ maybeError (Left peb) = do
   putStrLn $ errorBundlePretty peb
   die "Failed to parse"
 
-readReachFile :: FilePath -> IO XLProgram
+readReachFile :: FilePath -> IO (XLProgram SourcePos)
 readReachFile srcp =
   withCurrentDirectory (takeDirectory srcp) (readXLProgram (takeFileName srcp))

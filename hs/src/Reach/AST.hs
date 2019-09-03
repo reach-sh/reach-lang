@@ -134,51 +134,51 @@ data ClaimType
 
 type XLVar = String
 
-data XLExpr
-  = XL_Con Constant
-  | XL_Var XLVar
-  | XL_PrimApp EP_Prim [XLExpr]
-  | XL_If Bool XLExpr XLExpr XLExpr
-  | XL_Claim ClaimType XLExpr
+data XLExpr a
+  = XL_Con a Constant
+  | XL_Var a XLVar
+  | XL_PrimApp a EP_Prim [XLExpr a]
+  | XL_If a Bool (XLExpr a) (XLExpr a) (XLExpr a)
+  | XL_Claim a ClaimType (XLExpr a)
   --- A ToConsensus transfers control to the contract. The arguments
   --- are (initiator, message, pay expression, contract body). The
   --- message is a sequence of variables, because it binds these in
   --- the contract body. The contract body is expected to end in a
   --- FromConsensus that will switch back.
-  | XL_ToConsensus Participant [XLVar] XLExpr XLExpr
+  | XL_ToConsensus a Participant [XLVar] (XLExpr a) (XLExpr a)
   --- A FromConsensus expression is a terminator inside of a contract
   --- block that switches the context back away from the consensus,
   --- while still retaining all of the bindings established during the
   --- consensus execution.
-  | XL_FromConsensus XLExpr
-  | XL_Values [XLExpr]
+  | XL_FromConsensus a (XLExpr a)
+  | XL_Values a [XLExpr a]
   --- Transfer expressions are always from the contract to another
   --- role. In the future, we could make something like mutable state
   --- on a local side of a transaction that collects all the transfers
   --- and puts them in the pay position.
-  | XL_Transfer Participant XLExpr
-  | XL_Declassify XLExpr
+  | XL_Transfer a Participant (XLExpr a)
+  | XL_Declassify a (XLExpr a)
   --- Where x Vars x Expression x Body
-  | XL_Let (Maybe Participant) (Maybe [XLVar]) XLExpr XLExpr
-  | XL_While XLVar XLExpr XLExpr XLExpr XLExpr XLExpr
-  | XL_Continue XLExpr
+  | XL_Let a (Maybe Participant) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
+  | XL_While a XLVar (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a)
+  | XL_Continue a (XLExpr a)
   --- Impossible in inlined
-  | XL_FunApp XLVar [XLExpr]
+  | XL_FunApp a XLVar [XLExpr a]
   deriving (Show,Eq)
 
-data XLDef
-  = XL_DefineValues [XLVar] XLExpr
-  | XL_DefineFun XLVar [XLVar] XLExpr
+data XLDef a
+  = XL_DefineValues a [XLVar] (XLExpr a)
+  | XL_DefineFun a XLVar [XLVar] (XLExpr a)
   deriving (Show,Eq)
 
-type XLPartInfo = (M.Map Participant [(XLVar, BaseType)])
+type XLPartInfo a = (M.Map Participant (a, [(a, XLVar, BaseType)]))
 
-data XLProgram =
-  XL_Prog [XLDef] XLPartInfo XLExpr
+data XLProgram  a=
+  XL_Prog a [XLDef a] (XLPartInfo a) (XLExpr a)
   deriving (Show,Eq)
 
-data XLInlinedProgram =
-  XL_InlinedProg XLPartInfo XLExpr
+data XLInlinedProgram a =
+  XL_InlinedProg a (XLPartInfo a) (XLExpr a)
   deriving (Show,Eq)
 
 {- Intermediate Language
@@ -206,44 +206,44 @@ data XLInlinedProgram =
 --- created.
 type ILVar = (Int, String)
 
-data ILArg
-  = IL_Con Constant
-  | IL_Var ILVar
+data ILArg a
+  = IL_Con a Constant
+  | IL_Var a ILVar
   deriving (Show,Eq)
 
-data ILExpr
-  = IL_PrimApp EP_Prim [ILArg]
-  | IL_Declassify ILArg
+data ILExpr a
+  = IL_PrimApp a EP_Prim [ILArg a]
+  | IL_Declassify a (ILArg a)
   deriving (Show,Eq)
 
-data ILStmt
-  = IL_Transfer Participant ILArg
-  | IL_Claim ClaimType ILArg
+data ILStmt a
+  = IL_Transfer a Participant (ILArg a)
+  | IL_Claim a ClaimType (ILArg a)
   deriving (Show,Eq)
 
-data ILTail
-  = IL_Ret [ILArg]
-  | IL_If ILArg ILTail ILTail
+data ILTail a
+  = IL_Ret a [ILArg a]
+  | IL_If a (ILArg a) (ILTail a) (ILTail a)
   --- This role represents where the action happens. If it is
   --- RoleContract, then this means that everyone does it.
-  | IL_Let Role ILVar ILExpr ILTail
-  | IL_Do Role ILStmt ILTail
+  | IL_Let a Role ILVar (ILExpr a) (ILTail a)
+  | IL_Do a Role (ILStmt a) (ILTail a)
   --- As in XL, a ToConsensus is a transfer to the contract with
   --- (initiator, message, pay amount). The tail is inside of the
   --- contract.
-  | IL_ToConsensus Participant [ILVar] ILArg ILTail
+  | IL_ToConsensus a Participant [ILVar] (ILArg a) (ILTail a)
   --- A FromConsensus moves back from the consensus; the tail is
   --- "local" again.
-  | IL_FromConsensus ILTail
-  | IL_While ILVar ILArg ILTail ILTail ILTail ILTail
-  | IL_Continue ILArg
+  | IL_FromConsensus a (ILTail a)
+  | IL_While a ILVar (ILArg a) (ILTail a) (ILTail a) (ILTail a) (ILTail a)
+  | IL_Continue a (ILArg a)
   deriving (Show,Eq)
 
-type ILPartArgs = [(ILVar, BaseType)]
-type ILPartInfo = (M.Map Participant ILPartArgs)
+type ILPartArgs a = [(ILVar, BaseType)]
+type ILPartInfo a = (M.Map Participant (ILPartArgs a))
 
-data ILProgram =
-  IL_Prog ILPartInfo ILTail
+data ILProgram a =
+  IL_Prog a (ILPartInfo a) (ILTail a)
   deriving (Show,Eq)
 
 {- Backend Language
@@ -265,72 +265,72 @@ data ILProgram =
 
 type BLVar = (Int, String, BaseType)
 
-data BLArg
-  = BL_Con Constant
-  | BL_Var BLVar
+data BLArg a
+  = BL_Con a Constant
+  | BL_Var a BLVar
   deriving (Show,Eq)
 
 -- -- End-Points
-data EPExpr
-  = EP_Arg BLArg
-  | EP_PrimApp EP_Prim [BLArg]
+data EPExpr a
+  = EP_Arg a (BLArg a)
+  | EP_PrimApp a EP_Prim [BLArg a]
   deriving (Show,Eq)
 
-data EPStmt
-  = EP_Claim ClaimType BLArg
-  | EP_Send Int [BLVar] [BLVar] BLArg
+data EPStmt a
+  = EP_Claim a ClaimType (BLArg a)
+  | EP_Send a Int [BLVar] [BLVar] (BLArg a)
   deriving (Show,Eq)
 
-data EPTail
-  = EP_Ret [BLArg]
-  | EP_If BLArg EPTail EPTail
-  | EP_Let BLVar EPExpr EPTail
-  | EP_Do EPStmt EPTail
+data EPTail a
+  = EP_Ret a [BLArg a]
+  | EP_If a (BLArg a) (EPTail a) (EPTail a)
+  | EP_Let a BLVar (EPExpr a) (EPTail a)
+  | EP_Do a (EPStmt a) (EPTail a)
   {- This recv is what the sender sent; we will be doing the same
      computation as the contract. -}
-  | EP_Recv Bool Int [BLVar] [BLVar] EPTail
-  | EP_Loop Int BLVar BLArg EPTail
-  | EP_Continue Int BLArg
+  | EP_Recv a Bool Int [BLVar] [BLVar] (EPTail a)
+  | EP_Loop a Int BLVar (BLArg a) (EPTail a)
+  | EP_Continue a Int (BLArg a)
   deriving (Show,Eq)
 
-data EProgram
-  = EP_Prog [BLVar] EPTail
+data EProgram a
+  = EP_Prog a [BLVar] (EPTail a)
   deriving (Show,Eq)
 
 -- -- Contracts
-data CExpr
-  = C_PrimApp C_Prim [BLArg]
+data CExpr a
+  = C_PrimApp a C_Prim [BLArg a]
   deriving (Show,Eq)
 
-data CStmt
-  = C_Claim ClaimType BLArg
-  | C_Transfer Participant BLArg
+data CStmt a
+  = C_Claim a ClaimType (BLArg a)
+  | C_Transfer a Participant (BLArg a)
   deriving (Show,Eq)
 
-data CTail
-  = C_Halt
-  | C_Wait Int [BLVar]
-  | C_If BLArg CTail CTail
-  | C_Let BLVar CExpr CTail
-  | C_Do CStmt CTail
-  | C_Jump Int [BLVar] BLArg
+data CTail a
+  = C_Halt a
+  | C_Wait a Int [BLVar]
+  | C_If a (BLArg a) (CTail a) (CTail a)
+  | C_Let a BLVar (CExpr a) (CTail a)
+  | C_Do a (CStmt a) (CTail a)
+  | C_Jump a Int [BLVar] (BLArg a)
   deriving (Show,Eq)
 
-data CHandler
+data CHandler a
   --- Each handler has a message that it expects to receive
-  = C_Handler Participant [BLVar] [BLVar] CTail
-  | C_Loop [BLVar] BLVar CTail CTail
+  = C_Handler a Participant [BLVar] [BLVar] (CTail a)
+  | C_Loop a [BLVar] BLVar (CTail a) (CTail a)
   deriving (Show,Eq)
 
 --- A contract program is just a sequence of handlers.
-data CProgram
-  = C_Prog [Participant] [CHandler]
+data CProgram a
+  = C_Prog a [Participant] [CHandler a]
   deriving (Show,Eq)
 
 -- -- Backend
-type BLParts = M.Map Participant EProgram
+type BLParts a = M.Map Participant (EProgram a)
 
-data BLProgram
-  = BL_Prog BLParts CProgram
+data BLProgram a
+  = BL_Prog a (BLParts a) (CProgram a)
   deriving (Show,Eq)
 

@@ -47,32 +47,32 @@ cmerges :: [CCounts] -> CCounts
 cmerges [] = M.empty
 cmerges (m1:ms) = cmerge m1 $ cmerges ms
 
-usesBLArg :: BLArg -> CCounts
-usesBLArg (BL_Con _) = M.empty
-usesBLArg (BL_Var bv) = M.singleton bv 1
+usesBLArg :: BLArg a -> CCounts
+usesBLArg (BL_Con _ _) = M.empty
+usesBLArg (BL_Var _ bv) = M.singleton bv 1
 
-usesCExpr :: CExpr -> CCounts
-usesCExpr (C_PrimApp _ al) = cmerges $ map usesBLArg al
+usesCExpr :: CExpr a -> CCounts
+usesCExpr (C_PrimApp _ _ al) = cmerges $ map usesBLArg al
 
-usesCStmt :: CStmt -> CCounts
-usesCStmt (C_Claim _ a) = usesBLArg a
-usesCStmt (C_Transfer _ a) = usesBLArg a
+usesCStmt :: CStmt a  -> CCounts
+usesCStmt (C_Claim _ _ a) = usesBLArg a
+usesCStmt (C_Transfer _ _ a) = usesBLArg a
 
-usesCTail :: CTail -> CCounts
-usesCTail (C_Halt) = M.empty
-usesCTail (C_Wait _ vs) = M.fromList $ map (\v->(v,1)) vs
-usesCTail (C_If ca tt ft) = cmerges [ cs1, cs2, cs3 ]
+usesCTail :: CTail a -> CCounts
+usesCTail (C_Halt _) = M.empty
+usesCTail (C_Wait _ _ vs) = M.fromList $ map (\v->(v,1)) vs
+usesCTail (C_If _ ca tt ft) = cmerges [ cs1, cs2, cs3 ]
   where cs1 = usesBLArg ca
         cs2 = usesCTail tt
         cs3 = usesCTail ft
-usesCTail (C_Let _ ce kt) = cmerge cs1 cs2
+usesCTail (C_Let _ _ ce kt) = cmerge cs1 cs2
   where cs1 = usesCExpr ce
         cs2 = usesCTail kt
-usesCTail (C_Do cs kt) = cmerge cs1 cs2
+usesCTail (C_Do _ cs kt) = cmerge cs1 cs2
   where cs1 = usesCStmt cs
         cs2 = usesCTail kt
-usesCTail (C_Jump which vs a) = cmerge cs1 cs2
-  where cs1 = usesCTail (C_Wait which vs)
+usesCTail (C_Jump x which vs a) = cmerge cs1 cs2
+  where cs1 = usesCTail (C_Wait x which vs)
         cs2 = usesBLArg a
 
 {- Compilation to Solidity
@@ -129,9 +129,9 @@ solCon (Con_B True) = "true"
 solCon (Con_B False) = "false"
 solCon (Con_BS s) = pretty $ "\"" ++ show s ++ "\""
 
-solArg :: SolRenaming a -> BLArg -> Doc a
-solArg ρ (BL_Var v) = solVar ρ v
-solArg _ (BL_Con c) = solCon c
+solArg :: SolRenaming a -> BLArg b -> Doc a
+solArg ρ (BL_Var _ v) = solVar ρ v
+solArg _ (BL_Con _ c) = solCon c
 
 solPartVar :: Participant -> Doc a
 solPartVar p = pretty $ "p" ++ p
@@ -213,39 +213,39 @@ solPrimApply pr args =
           _ -> spa_error ()
         spa_error () = error "solPrimApply"
 
-solCExpr :: SolRenaming a -> CExpr -> Doc a
-solCExpr ρ (C_PrimApp pr al) = solPrimApply pr $ map (solArg ρ) al
+solCExpr :: SolRenaming a -> CExpr b -> Doc a
+solCExpr ρ (C_PrimApp _ pr al) = solPrimApply pr $ map (solArg ρ) al
 
-solCStmt :: SolRenaming a -> CStmt -> Doc a
-solCStmt _ (C_Claim CT_Possible _) = emptyDoc
-solCStmt _ (C_Claim CT_Assert _) = emptyDoc
-solCStmt ρ (C_Claim _ a) = (solRequire $ solArg ρ a) <> semi <> hardline
-solCStmt ρ (C_Transfer p a) = solPartVar p <> "." <> solApply "transfer" [ solArg ρ a ] <> semi <> hardline
+solCStmt :: SolRenaming a -> CStmt b -> Doc a
+solCStmt _ (C_Claim _ CT_Possible _) = emptyDoc
+solCStmt _ (C_Claim _ CT_Assert _) = emptyDoc
+solCStmt ρ (C_Claim _ _ a) = (solRequire $ solArg ρ a) <> semi <> hardline
+solCStmt ρ (C_Transfer _ p a) = solPartVar p <> "." <> solApply "transfer" [ solArg ρ a ] <> semi <> hardline
 
-solCTail :: [Participant] -> Doc a -> SolRenaming a -> CCounts -> CTail -> Doc a
+solCTail :: [Participant] -> Doc a -> SolRenaming a -> CCounts -> CTail b -> Doc a
 solCTail ps emitp ρ ccs ct =
   case ct of
-    C_Halt ->
+    C_Halt _ ->
       emitp <> vsep [ solSet ("current_state") ("0x0") <> semi,
                       solApply "selfdestruct" [ solApply "address" [ solPartVar (head ps) ] ] <> semi ]
-    C_Wait i svs ->
+    C_Wait _ i svs ->
       emitp <> (solSet ("current_state") (solHashState ρ i ps svs)) <> semi
-    C_If ca tt ft ->
+    C_If _ ca tt ft ->
       "if" <+> parens (solArg ρ ca) <+> bp tt <> hardline <> "else" <+> bp ft
       where bp at = solBraces $ solCTail ps emitp ρ ccs at
-    C_Let bv ce kt ->
+    C_Let _ bv ce kt ->
       case M.lookup bv ccs of
         Just 0 -> solCTail ps emitp ρ ccs kt
         Just 1 -> solCTail ps emitp ρ' ccs kt
           where ρ' = M.insert bv (parens (solCExpr ρ ce)) ρ
         _ -> vsep [ solVarDecl bv <+> "=" <+> solCExpr ρ ce <> semi,
                     solCTail ps emitp ρ ccs kt ]
-    C_Do cs kt -> solCStmt ρ cs <> (solCTail ps emitp ρ ccs kt)
-    C_Jump which vs a ->
+    C_Do _ cs kt -> solCStmt ρ cs <> (solCTail ps emitp ρ ccs kt)
+    C_Jump _ which vs a ->
       emitp <> solApply (solLoop_fun which) ((map solPartVar ps) ++ (map solRawVar vs) ++ [ solArg ρ a ]) <> semi
 
-solHandler :: [Participant] -> Int -> CHandler -> Doc a
-solHandler ps i (C_Handler from svs msg body) = vsep [ evtp, funp ]
+solHandler :: [Participant] -> Int -> CHandler b -> Doc a
+solHandler ps i (C_Handler _ from svs msg body) = vsep [ evtp, funp ]
   where msg_rs = map solRawVar msg
         msg_ds = map solArgDecl msg
         msg_eds = map solFieldDecl msg
@@ -260,27 +260,27 @@ solHandler ps i (C_Handler from svs msg body) = vsep [ evtp, funp ]
         bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState ρ i ps svs)) <> semi,
                        solRequireSender from <> semi,
                        solCTail ps emitp ρ ccs body ]
-solHandler ps i (C_Loop svs arg _inv body) = funp
+solHandler ps i (C_Loop _ svs arg _inv body) = funp
   where funp = solFunction (solLoop_fun i) arg_ds retp bodyp
         arg_ds = map solPartDecl ps ++  map solArgDecl svs ++ [ solArgDecl arg ]
         retp = "internal"
         ccs = usesCTail body
         bodyp = solCTail ps "" M.empty ccs body
 
-solHandlers :: [Participant] -> [CHandler] -> Doc a
+solHandlers :: [Participant] -> [CHandler b] -> Doc a
 solHandlers ps hs = vsep $ intersperse emptyDoc $ zipWith (solHandler ps) [0..] hs
 
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_sol :: BLProgram -> Doc a
-emit_sol (BL_Prog _ (C_Prog ps hs)) =
+emit_sol :: BLProgram b -> Doc a
+emit_sol (BL_Prog _ _ (C_Prog ca ps hs)) =
   vsep_with_blank $ [ solVersion, solStdLib, ctcp ]
   where ctcp = solContract "ReachContract is Stdlib"
                $ ctcbody
         ctcbody = vsep $ [state_defn, emptyDoc, consp, emptyDoc, solHandlers ps hs]
         consp = solApply "constructor" p_ds <+> "public payable" <+> solBraces consbody
-        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait 0 [])
+        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca 0 [])
         state_defn = "uint256 current_state;"
         p_ds = map solPartDecl ps
 
@@ -297,7 +297,7 @@ extract v = (abi, code)
         Just (String codebodyt) = HM.lookup "bin" ctc
         code = "\"0x" ++ T.unpack codebodyt ++ "\""
 
-compile_sol :: String -> BLProgram -> IO CompiledSol
+compile_sol :: String -> BLProgram a -> IO CompiledSol
 compile_sol solf blp = do
   writeFile solf (show (emit_sol blp))
   ( ec, stdout, stderr ) <- readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin", solf] []

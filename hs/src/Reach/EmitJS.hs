@@ -49,9 +49,9 @@ jsCon (Con_B True) = pretty "true"
 jsCon (Con_B False) = pretty "false"
 jsCon (Con_BS s) = jsString $ B.unpack s
 
-jsArg :: BLArg -> (Doc a, Set.Set BLVar)
-jsArg (BL_Var v) = (jsVar v, Set.singleton v)
-jsArg (BL_Con c) = (jsCon c, Set.empty)
+jsArg :: BLArg b -> (Doc a, Set.Set BLVar)
+jsArg (BL_Var _ v) = (jsVar v, Set.singleton v)
+jsArg (BL_Con _ c) = (jsCon c, Set.empty)
 
 jsPartVar :: Participant -> Doc a
 jsPartVar p = pretty $ "p" ++ p
@@ -120,25 +120,25 @@ jsPrimApply tn pr =
     INTERACT -> error "interact doesn't use jsPrimApply"
   where spa_error () = error "jsPrimApply"
 
-jsEPExpr :: Int -> EPExpr -> (Doc a, Set.Set BLVar)
-jsEPExpr _tn (EP_Arg a) = jsArg a
-jsEPExpr tn (EP_PrimApp pr al) = ((jsPrimApply tn pr $ map fst alp), (Set.unions $ map snd alp))
+jsEPExpr :: Int -> EPExpr b -> (Doc a, Set.Set BLVar)
+jsEPExpr _tn (EP_Arg _ a) = jsArg a
+jsEPExpr tn (EP_PrimApp _ pr al) = ((jsPrimApply tn pr $ map fst alp), (Set.unions $ map snd alp))
   where alp = map jsArg al
 
 jsAssert :: Doc a -> Doc a
 jsAssert a = jsApply "stdlib.assert" [ a ] <> semi
 
-jsEPStmt :: EPStmt -> Doc a -> (Doc a, Set.Set BLVar)
-jsEPStmt (EP_Claim CT_Possible _) kp = (kp, Set.empty)
-jsEPStmt (EP_Claim CT_Assert _) kp = (kp, Set.empty)
-jsEPStmt (EP_Claim _ a) kp = (vsep [ jsAssert ap, kp ], afvs)
+jsEPStmt :: EPStmt b -> Doc a -> (Doc a, Set.Set BLVar)
+jsEPStmt (EP_Claim _ CT_Possible _) kp = (kp, Set.empty)
+jsEPStmt (EP_Claim _ CT_Assert _) kp = (kp, Set.empty)
+jsEPStmt (EP_Claim _ _ a) kp = (vsep [ jsAssert ap, kp ], afvs)
   where (ap, afvs) = jsArg a
-jsEPStmt (EP_Send _ _ _ _) _ = error "Impossible"
+jsEPStmt (EP_Send _ _ _ _ _) _ = error "Impossible"
 
-jsEPTail :: Int -> String -> EPTail -> (Doc a, Set.Set BLVar)
-jsEPTail _tn _who (EP_Ret al) = ((jsReturn $ jsArray $ map fst alp), Set.unions $ map snd alp)
+jsEPTail :: Int -> String -> EPTail b -> (Doc a, Set.Set BLVar)
+jsEPTail _tn _who (EP_Ret _ al) = ((jsReturn $ jsArray $ map fst alp), Set.unions $ map snd alp)
   where alp = map jsArg al
-jsEPTail tn who (EP_If ca tt ft) = (tp, tfvs)
+jsEPTail tn who (EP_If _ ca tt ft) = (tp, tfvs)
   where (ttp', ttfvs) = jsEPTail tn who tt
         ttp = jsBraces ttp'
         (ftp', ftfvs) = jsEPTail tn who ft
@@ -146,14 +146,14 @@ jsEPTail tn who (EP_If ca tt ft) = (tp, tfvs)
         (cap, cafvs) = jsArg ca
         tp = pretty "if" <+> parens cap <+> ttp <> hardline <> pretty "else" <+> ftp
         tfvs = Set.unions [ cafvs, ttfvs, ftfvs ]
-jsEPTail tn who (EP_Let v (EP_PrimApp INTERACT al) kt) = (tp, tfvs)
+jsEPTail tn who (EP_Let _ v (EP_PrimApp _ INTERACT al) kt) = (tp, tfvs)
   where (ktp, ktfvs) = jsEPTail tn who kt
         alp = map jsArg al
         ip = pretty "await" <+> jsApply "interact" (map fst alp)
         tfvs = Set.union ktfvs $ Set.unions $ map snd alp
         dp = jsVarDecl v <+> pretty "=" <+> ip <> semi
         tp = vsep [ dp, ktp ]
-jsEPTail tn who (EP_Let bv ee kt) = (tp, tfvs)
+jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
   where used = elem bv ktfvs
         tp = if used then
                vsep [ bvdeclp, ktp ]
@@ -164,7 +164,7 @@ jsEPTail tn who (EP_Let bv ee kt) = (tp, tfvs)
         bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
         (eep, eefvs) = jsEPExpr tn ee
         (ktp, ktfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_Do (EP_Send i svs msg amt) (EP_Recv True _ _ _ kt)) = (tp, tfvs)
+jsEPTail tn who (EP_Do _ (EP_Send _ i svs msg amt) (EP_Recv _ True _ _ _ kt)) = (tp, tfvs)
   where srp = jsApply "ctc.sendrecv" [ jsString who
                                     , jsString (solMsg_fun i), vs, amtp
                                     , jsString (solMsg_evt i) ]
@@ -178,13 +178,13 @@ jsEPTail tn who (EP_Do (EP_Send i svs msg amt) (EP_Recv True _ _ _ kt)) = (tp, t
         vs = jsArray $ (map jsVar svs) ++ msg_vs
         (ktp, kfvs) = jsEPTail tn' who kt
         tn' = tn+1
-jsEPTail tn who (EP_Do es kt) = (tp, tfvs)
+jsEPTail tn who (EP_Do _ es kt) = (tp, tfvs)
   where (tp, esfvs) = jsEPStmt es ktp
         tfvs = Set.union esfvs kfvs
         (ktp, kfvs) = jsEPTail tn who kt
-jsEPTail _ _ (EP_Recv True _ _ _ _) =
+jsEPTail _ _ (EP_Recv _ True _ _ _ _) =
   error "Impossible"
-jsEPTail tn who (EP_Recv False i _ msg kt) = (tp, tfvs)
+jsEPTail tn who (EP_Recv _ False i _ msg kt) = (tp, tfvs)
   where tp = vsep [ rp, kp ]
         rp = pretty "const" <+> jsArray (msg_vs ++ [jsTxn tn']) <+> pretty "=" <+> pretty "await" <+> (jsApply "ctc.recv" [ jsString who, jsString (solMsg_evt i) ]) <> semi
         tfvs = Set.unions [Set.fromList msg, ktfvs]
@@ -193,7 +193,7 @@ jsEPTail tn who (EP_Recv False i _ msg kt) = (tp, tfvs)
         (ktp, ktfvs) = jsEPTail tn' who kt
         tn' = tn+1
         debugp = if global_debug then jsApply "console.log" [ jsString $ who ++ " received " ++ show i ] <> semi <> hardline else emptyDoc
-jsEPTail tn who (EP_Loop which loopv inita bt) = (tp, tfvs)
+jsEPTail tn who (EP_Loop _ which loopv inita bt) = (tp, tfvs)
   where tp = vsep [ defp, loopp ]
         defp = pretty "let" <+> (jsLoopVar which) <+> pretty "=" <+> initp <> semi
         loopp = jsWhile (pretty "true") bodyp'
@@ -202,13 +202,13 @@ jsEPTail tn who (EP_Loop which loopv inita bt) = (tp, tfvs)
         (bodyp, bodyvs) = jsEPTail tn who bt
         (initp, initvs) = jsArg inita
         tfvs = Set.union initvs bodyvs
-jsEPTail _tn _who (EP_Continue which arg) = (tp, argvs)
+jsEPTail _tn _who (EP_Continue _ which arg) = (tp, argvs)
   where tp = vsep [ (jsLoopVar which) <+> pretty "=" <+> argp <> semi
                   , pretty "continue;" ]
         (argp, argvs) = jsArg arg
 
-jsPart :: (Participant, EProgram) -> Doc a
-jsPart (p, (EP_Prog pargs et)) =
+jsPart :: (Participant, EProgram b) -> Doc a
+jsPart (p, (EP_Prog _ pargs et)) =
   pretty "export" <+> jsFunction p ([ pretty "stdlib", pretty "ctc", jsTxn tn', pretty "interact" ] ++ pargs_vs) bodyp
   where tn' = 0
         pargs_vs = map jsVar pargs
@@ -220,8 +220,8 @@ global_debug = False
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_js :: BLProgram -> CompiledSol -> Doc a
-emit_js (BL_Prog pm _) (abi, code) = modp
+emit_js :: BLProgram b -> CompiledSol -> Doc a
+emit_js (BL_Prog _ pm _) (abi, code) = modp
   where modp = vsep_with_blank $ partsp ++ [ abip, codep ]
         partsp = map jsPart $ M.toList pm
         abip = pretty $ "export const ABI = " ++ abi ++ ";"

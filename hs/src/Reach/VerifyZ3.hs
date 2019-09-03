@@ -35,60 +35,63 @@ instance Monoid ILTypeMap where
 class RecoverTypes a where
   rts :: a -> ILTypeMap
 
-instance (Foldable t, RecoverTypes a) => RecoverTypes (t a) where
+instance RecoverTypes a => RecoverTypes [a] where
+  rts = foldMap rts
+
+instance RecoverTypes a => RecoverTypes (M.Map b a) where
   rts = foldMap rts
 
 instance {-# OVERLAPPING #-} RecoverTypes BLVar where
   rts (n, s, bt) = ITM (M.singleton (n,s) bt)
 
-instance RecoverTypes BLArg where
-  rts (BL_Con _) = mempty
-  rts (BL_Var bv) = rts bv
+instance RecoverTypes (BLArg a) where
+  rts (BL_Con _ _) = mempty
+  rts (BL_Var _ bv) = rts bv
 
-instance RecoverTypes EPExpr where
-  rts (EP_Arg a) = rts a
-  rts (EP_PrimApp _ al) = rts al
+instance RecoverTypes (EPExpr a) where
+  rts (EP_Arg _ a) = rts a
+  rts (EP_PrimApp _ _ al) = rts al
 
-instance RecoverTypes EPStmt where
-  rts (EP_Claim _ a) = rts a
-  rts (EP_Send _ svs msg am) = rts svs <> rts msg <> rts am
+instance RecoverTypes (EPStmt a) where
+  rts (EP_Claim _ _ a) = rts a
+  rts (EP_Send _ _ svs msg am) = rts svs <> rts msg <> rts am
 
-instance RecoverTypes EPTail where
-  rts (EP_Ret al) = rts al
-  rts (EP_If ca tt ft) = rts ca <> rts tt <> rts ft
-  rts (EP_Let bv ce ct) = rts bv <> rts ce <> rts ct
-  rts (EP_Do cs ct) = rts cs <> rts ct
-  rts (EP_Recv _ _ svs msg kt) = rts svs <> rts msg <> rts kt
-  rts (EP_Loop _ loopv inita kt) = rts loopv <> rts inita <> rts kt
-  rts (EP_Continue _ a) = rts a
+instance RecoverTypes (EPTail a) where
+  rts (EP_Ret _ al) = rts al
+  rts (EP_If _ ca tt ft) = rts ca <> rts tt <> rts ft
+  rts (EP_Let _ bv ce ct) = rts bv <> rts ce <> rts ct
+  rts (EP_Do _ cs ct) = rts cs <> rts ct
+  rts (EP_Recv _ _ _ svs msg kt) = rts svs <> rts msg <> rts kt
+  rts (EP_Loop _ _ loopv inita kt) = rts loopv <> rts inita <> rts kt
+  rts (EP_Continue _ _ a) = rts a
 
-instance RecoverTypes EProgram where
-  rts (EP_Prog vs et) = rts vs <> rts et
+instance RecoverTypes (EProgram a) where
+  rts (EP_Prog _ vs et) = rts vs <> rts et
 
-instance RecoverTypes CExpr where
-  rts (C_PrimApp _ vs) = rts vs
+instance RecoverTypes (CExpr a) where
+  rts (C_PrimApp _ _ vs) = rts vs
 
-instance RecoverTypes CStmt where
-  rts (C_Claim _ a) = rts a
-  rts (C_Transfer _ a) = rts a
+instance RecoverTypes (CStmt a) where
+  rts (C_Claim _ _ a) = rts a
+  rts (C_Transfer _ _ a) = rts a
 
-instance RecoverTypes CTail where
-  rts (C_Halt) = mempty
-  rts (C_Wait _ vs) = rts vs
-  rts (C_If ca tt ft) = rts ca <> rts tt <> rts ft
-  rts (C_Let bv ce ct) = rts bv <> rts ce <> rts ct
-  rts (C_Do cs ct) = rts cs <> rts ct
-  rts (C_Jump _ vs arg) = rts vs <> rts arg
+instance RecoverTypes (CTail a) where
+  rts (C_Halt _) = mempty
+  rts (C_Wait _ _ vs) = rts vs
+  rts (C_If _ ca tt ft) = rts ca <> rts tt <> rts ft
+  rts (C_Let _ bv ce ct) = rts bv <> rts ce <> rts ct
+  rts (C_Do _ cs ct) = rts cs <> rts ct
+  rts (C_Jump _ _ vs arg) = rts vs <> rts arg
 
-instance RecoverTypes CHandler where
-  rts (C_Handler _ svs msg ct) = rts svs <> rts msg <> rts ct
-  rts (C_Loop svs arg it ct) = rts svs <> rts arg <> rts it <> rts ct
+instance RecoverTypes (CHandler a) where
+  rts (C_Handler _ _ svs msg ct) = rts svs <> rts msg <> rts ct
+  rts (C_Loop _ svs arg it ct) = rts svs <> rts arg <> rts it <> rts ct
 
-instance RecoverTypes CProgram where
-  rts (C_Prog _ chs) = rts chs
+instance RecoverTypes (CProgram a) where
+  rts (C_Prog _ _ chs) = rts chs
 
-instance RecoverTypes BLProgram where
-  rts (BL_Prog bps cp) = rts bps <> rts cp
+instance RecoverTypes (BLProgram a) where
+  rts (BL_Prog _ bps cp) = rts bps <> rts cp
 
 {- Z3 Printing -}
 
@@ -239,35 +242,35 @@ emit_z3_con (Con_B True) = Atom "true"
 emit_z3_con (Con_B False) = Atom "false"
 emit_z3_con (Con_BS bs) = z3Apply "bytes-literal" [ Atom (show $ crc32 bs) ]
 
-emit_z3_arg :: ILArg -> SExpr
-emit_z3_arg (IL_Con c) = emit_z3_con c
-emit_z3_arg (IL_Var v) = z3VarRef v
+emit_z3_arg :: ILArg a -> SExpr
+emit_z3_arg (IL_Con _ c) = emit_z3_con c
+emit_z3_arg (IL_Var _ v) = z3VarRef v
 
 z3_vardecl :: Solver -> (ILVar, BaseType) -> IO ()
 z3_vardecl z3 (iv, bt) = void $ declare z3 (z3Var iv) s
   where s = z3_sortof bt
 
-z3_expr :: Solver -> Int -> ILVar -> ILExpr -> IO ()
+z3_expr :: Solver -> Int -> ILVar -> ILExpr a -> IO ()
 z3_expr z3 cbi out how = case how of
-  IL_Declassify a ->
+  IL_Declassify _ a ->
     assert z3 (z3Eq (z3VarRef out) (emit_z3_arg a))
-  IL_PrimApp pr al -> z3PrimEq z3 cbi pr alt out
+  IL_PrimApp _ pr al -> z3PrimEq z3 cbi pr alt out
     where alt = map emit_z3_arg al
 
-z3_stmt :: Solver -> Bool -> Role -> Int -> ILStmt -> IO (Int, VerifyResult)
+z3_stmt :: Solver -> Bool -> Role -> Int -> ILStmt a -> IO (Int, VerifyResult)
 z3_stmt z3 honest r cbi how =
   case how of
-    IL_Transfer _ amount -> do void $ define z3 cb' z3IntSort (z3Apply "-" [ (z3CTCBalanceRef cbi), amountt ])
-                               return (cbi', mempty)
+    IL_Transfer _ _ amount -> do void $ define z3 cb' z3IntSort (z3Apply "-" [ (z3CTCBalanceRef cbi), amountt ])
+                                 return (cbi', mempty)
       where cbi' = cbi + 1
             cb' = z3CTCBalance cbi'
             amountt = emit_z3_arg amount
-    IL_Claim CT_Possible a -> do vr <- z3_sat1 z3 (honest, r, TPossible) at
-                                 return ( cbi, vr )
+    IL_Claim _ CT_Possible a -> do vr <- z3_sat1 z3 (honest, r, TPossible) at
+                                   return ( cbi, vr )
       where at = emit_z3_arg a
-    IL_Claim ct a -> do vr <- this_check
-                        assert z3 at
-                        return ( cbi, vr )
+    IL_Claim _ ct a -> do vr <- this_check
+                          assert z3 at
+                          return ( cbi, vr )
       where at = emit_z3_arg a
             this_check = case mct of
               Just tk -> z3_verify1 z3 (honest, r, tk) at
@@ -279,33 +282,33 @@ z3_stmt z3 honest r cbi how =
               CT_Require -> Nothing
               CT_Possible -> error "Impossible"
 
-data VerifyCtxt 
+data VerifyCtxt a
   = VC_Top
-  | VC_AssignCheckInv ILVar ILTail
+  | VC_AssignCheckInv ILVar (ILTail a)
   | VC_CheckRet
-  | VC_WhileBody_AssumeNotUntil ILVar ILTail ILTail
-  | VC_WhileBody_AssumeInv ILVar ILTail ILTail
-  | VC_WhileBody_Eval ILVar ILTail
-  | VC_WhileTail_AssumeUntil ILTail (VerifyCtxt, ILTail)
-  | VC_WhileTail_AssumeInv (VerifyCtxt, ILTail)
+  | VC_WhileBody_AssumeNotUntil ILVar (ILTail a) (ILTail a)
+  | VC_WhileBody_AssumeInv ILVar (ILTail a) (ILTail a)
+  | VC_WhileBody_Eval ILVar (ILTail a)
+  | VC_WhileTail_AssumeUntil (ILTail a) (VerifyCtxt a, (ILTail a))
+  | VC_WhileTail_AssumeInv (VerifyCtxt a, (ILTail a))
 
-z3_it_top :: Solver -> ILTail -> (Bool, Role) -> IO VerifyResult
+z3_it_top :: Solver -> ILTail a -> (Bool, Role) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
   void $ define z3 cb0 z3IntSort zero
   meta_iter mempty [(VC_Top, it_top)]
   where zero = emit_z3_con (Con_I 0)
         cb0 = z3CTCBalance 0
-        meta_iter :: VerifyResult -> [(VerifyCtxt, ILTail)] -> IO VerifyResult
+        meta_iter :: VerifyResult -> [(VerifyCtxt a, ILTail a)] -> IO VerifyResult
         meta_iter vr0 [] = return vr0
         meta_iter vr0 ( (ctxt, it) : more0 ) = do
           (more1, vr1) <- inNewScope z3 $ iter 0 ctxt it
           let vr = vr0 <> vr1
           let more = more0 ++ more1
           meta_iter vr more
-        iter :: Int -> VerifyCtxt -> ILTail -> IO ([(VerifyCtxt, ILTail)], VerifyResult)
+        iter :: Int -> VerifyCtxt a -> ILTail a -> IO ([(VerifyCtxt a, ILTail a)], VerifyResult)
         iter cbi ctxt it = case it of
-          IL_Ret al ->
+          IL_Ret _ al ->
             case ctxt of
               VC_Top -> do
                 let cbi_balance = z3Eq (z3CTCBalanceRef cbi) zero
@@ -337,23 +340,23 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                 let [ a ] = al
                 assert z3 (emit_z3_arg a)
                 iter cbi kctxt kt
-          IL_If ca tt ft -> do
+          IL_If _ ca tt ft -> do
             mconcatMapM (inNewScope z3 . f) (zip [True, False] [tt, ft])
             where ca' = emit_z3_arg ca
                   f (v, kt) = do assert z3 (z3Eq ca' cav)
                                  iter cbi ctxt kt
                     where cav = emit_z3_con (Con_B v)
-          IL_Let who what how kt ->
+          IL_Let _ who what how kt ->
             do when (honest || role_me me who) $ z3_expr z3 cbi what how
                iter cbi ctxt kt
-          IL_Do who how kt ->
+          IL_Do _ who how kt ->
             if (honest || role_me me who) then
               do (cbi', vr) <- z3_stmt z3 honest me cbi how
                  (mt, vr') <- iter cbi' ctxt kt
                  return (mt, vr <> vr')
             else
               iter cbi ctxt kt
-          IL_ToConsensus _who _msg amount kt ->
+          IL_ToConsensus _ _who _msg amount kt ->
             do void $ declare z3 pvv z3IntSort
                void $ define z3 cb'v z3IntSort (z3Apply "+" [cbr, pvr])
                assert z3 thisc
@@ -368,24 +371,24 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                             z3Eq pvr amountt
                           else
                             z3Apply "<=" [ zero, pvr ]
-          IL_FromConsensus kt -> iter cbi ctxt kt
-          IL_While loopv inita untilt invt bodyt kt -> do
-            (mt, vr) <- iter cbi (VC_AssignCheckInv loopv invt) (IL_Ret [inita])
+          IL_FromConsensus _ kt -> iter cbi ctxt kt
+          IL_While x loopv inita untilt invt bodyt kt -> do
+            (mt, vr) <- iter cbi (VC_AssignCheckInv loopv invt) (IL_Ret x [inita])
             let bodyj = (VC_WhileBody_AssumeNotUntil loopv invt bodyt, untilt)
             let tailj = (VC_WhileTail_AssumeUntil invt (ctxt, kt), untilt)
             let mt' = mt ++ [ bodyj, tailj ]
             return (mt ++ mt', vr)
-          IL_Continue newa ->
+          IL_Continue x newa ->
             case ctxt of
               VC_WhileBody_Eval loopv invt ->
-                iter cbi (VC_AssignCheckInv loopv invt) (IL_Ret [newa])
+                iter cbi (VC_AssignCheckInv loopv invt) (IL_Ret x [newa])
               _ ->
                 error $ "VerifyZ3 IL_Continue must only occur inside While"
 
 z3StdLib :: String
 z3StdLib = "../../z3/z3-runtime.smt2"
 
-_verify_z3 :: Solver -> ILProgram -> BLProgram -> IO ExitCode
+_verify_z3 :: Solver -> ILProgram a -> BLProgram a -> IO ExitCode
 _verify_z3 z3 tp bp = do
   loadFile z3 z3StdLib
   mapM_ (z3_vardecl z3) $ M.toList tm
@@ -398,7 +401,7 @@ _verify_z3 z3 tp bp = do
       do putStrLn $ " " ++ show fs ++ " failures. :'("
          return $ ExitFailure 1)
   where (ITM tm) = rts bp
-        IL_Prog ipi it = tp
+        IL_Prog _ ipi it = tp
         ps = RoleContract : (map RolePart $ M.keys ipi)
 
 newFileLogger :: String -> IO (IO (), Logger)
@@ -414,7 +417,7 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger { .. })
 
-verify_z3 :: String -> ILProgram -> BLProgram -> IO ()
+verify_z3 :: String -> ILProgram a -> BLProgram a -> IO ()
 verify_z3 logp tp bp = do
   (close, logpl) <- newFileLogger logp
   z3 <- newSolver "z3" ["-smt2", "-in"] (Just logpl)
