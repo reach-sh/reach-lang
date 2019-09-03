@@ -9,7 +9,6 @@ TOPDIR=$(pwd) # Top directory for the git repository
 # First, kill any previously existing geth
 killall geth > /dev/null 2>&1 || true
 
-
 GETH_RUNDIR=$TOPDIR/.ethereum
 mkdir -p $GETH_RUNDIR
 cd $GETH_RUNDIR

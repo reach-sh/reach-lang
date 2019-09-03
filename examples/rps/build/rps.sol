@@ -97,4 +97,4 @@ contract ReachContract is Stdlib {
     pB.transfer((v105 ? uint256(0) : (v107 ? (uint256(2) * v2) : v2)));
     emit e4(v50, v51);
     current_state = 0x0;
-    selfdestruct(address(0x9527B6b278aBf20Ff7D69b5FE0696eb937e633e6)); } }
+    selfdestruct(address(pA)); } }

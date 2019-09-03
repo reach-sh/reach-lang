@@ -33,9 +33,6 @@ solType AT_UInt256 = "uint256"
 solType AT_Bool = "bool"
 solType AT_Bytes = "bytes"
 
-reachAddress :: String
-reachAddress = "0x9527B6b278aBf20Ff7D69b5FE0696eb937e633e6"
-
 {- De-ANF information
 
    We could incorporate this into the structures directly.
@@ -230,7 +227,7 @@ solCTail ps emitp ρ ccs ct =
   case ct of
     C_Halt ->
       emitp <> vsep [ solSet ("current_state") ("0x0") <> semi,
-                      solApply "selfdestruct" [ solApply "address" [ pretty reachAddress ] ] <> semi ]
+                      solApply "selfdestruct" [ solApply "address" [ solPartVar (head ps) ] ] <> semi ]
     C_Wait i svs ->
       emitp <> (solSet ("current_state") (solHashState ρ i ps svs)) <> semi
     C_If ca tt ft ->
