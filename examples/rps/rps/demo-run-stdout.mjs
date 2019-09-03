@@ -10,7 +10,7 @@ const escrowInEth = '0.15';
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 
-const makeInteractWith = label => (name, handf) => (a, cb) => {
+const makeInteractWith = label => (name, handf) => async (a) => {
   const res = a === 'getHand' ? handf() : '';
 
   const paramsMsg =
@@ -31,7 +31,7 @@ const makeInteractWith = label => (name, handf) => (a, cb) => {
 
   !!msg && console.log(`${label} ${msg}`);
 
-  return cb(res);
+  return res;
 };
 
 const makeDemo = (doWhile, drawFirst) => {
@@ -68,8 +68,9 @@ const makeDemo = (doWhile, drawFirst) => {
       .then(resolve));
 };
 
-makeDemo(true, true)
-  .then(() => makeDemo(false, true))
+makeDemo(false, true)
   .then(() => makeDemo(false, false))
+  // XXX Loop is not robust enough
+  .then(() => true || makeDemo(true, true))
   .then(() => process.exit(0))
   .catch(e => console.error(e) || process.exit(1));

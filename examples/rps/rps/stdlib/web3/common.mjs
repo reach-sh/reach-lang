@@ -125,7 +125,9 @@ const transfer = ({ web3 }) => (to, from, value) =>
 
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
-const mkSendRecv = A => (address, from, ctors) => (label, funcName, args, value, eventName, cb) => {
+const mkSendRecv =
+      A => (address, from, ctors) => async (label, funcName, args, value, eventName) => {
+  void(eventName);
   // https://github.com/ethereum/web3.js/issues/2077
   const munged = [ ...ctors, ...args ]
     .map(m => isBN(A)(m) ? m.toString() : m);
@@ -137,7 +139,7 @@ const mkSendRecv = A => (address, from, ctors) => (label, funcName, args, value,
     // XXX We may need to actually see the event. I don't know if the
     //     transaction confirmation is enough.
     // XXX Replace 0 below with the contract's balance
-    .then(() => cb({ value: value, balance: 0 }));
+    .then(() => [{ value: value, balance: 0 }]);
 };
 
 
@@ -146,7 +148,7 @@ const consumedEventKeyOf = (name, e) =>
 
 
 // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-const mkRecv = ({ web3, ethers }) => c => (label, eventName, cb) => {
+const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
   let alreadyConsumed = false;
 
   const consume = (e, bns, resolve, reject) =>
@@ -170,11 +172,9 @@ const mkRecv = ({ web3, ethers }) => c => (label, eventName, cb) => {
         alreadyConsumed = true;
         Object.assign(c.consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
 
-        resolve();
         // XXX Replace 0 below with the contract's balance
-        cb(...bns, { value: t.value, balance: 0 });
+        resolve([...bns, { value: t.value, balance: 0 }]);
       })));
-
 
   const past = () => new Promise((resolve, reject) =>
     new web3.eth.Contract(c.abi, c.address)

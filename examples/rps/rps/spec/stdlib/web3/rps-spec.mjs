@@ -17,8 +17,8 @@ describe('A rock/paper/scissors game using the `web3` stdlib', () => {
     .then(done));
 
   describe('results in', () => {
-    const interactWith = (name, handf) => (a, cb) =>
-      cb(a === 'getHand' ? handf() : null);
+    const interactWith = (name, handf) => async (a) =>
+      (a === 'getHand' ? handf() : null);
 
     const wagerInEth  = '1.5';
     const escrowInEth = '0.15';
@@ -34,19 +34,23 @@ describe('A rock/paper/scissors game using the `web3` stdlib', () => {
         .then(g => {
           const { balanceStartAlice, balanceStartBob, balanceEndAlice, balanceEndBob } = g;
 
-          expect(g.outcomeAlice === g.outcomeBob).toBe(true);
+            expect(g.outcomeAlice)
+                .toEqual(g.outcomeBob,
+                         `outcomes disagree: (${g.outcomeAlice}) != (${g.outcomeBob})`);
 
           // "The Man" always gets his cut regardless - this is just a
           // rough guesstimate of processing fees
           const estimatedGas = stdlib.toBN(stdlib.toWei('5000000', 'wei'));
 
-          if (g.outcomeAlice === 'Draw') {
-            expect(balanceStartAlice.gte(balanceEndAlice.sub(estimatedGas))).toBe(true);
-            expect(balanceStartBob.gte(balanceEndBob.sub(estimatedGas))).toBe(true);
+          if (g.outcomeAlice == 'Draw') {
+              expect(balanceStartAlice.gte(balanceEndAlice.sub(estimatedGas)))
+                  .toBe(true, `! alice > alice' - gas`);
+              expect(balanceStartBob.gte(balanceEndBob.sub(estimatedGas)))
+                  .toBe(true, `! bob > bob' - gas`);
           } else {
 
             const [ balStartWinner, balStartLoser, balEndWinner, balEndLoser ]
-              = g.outcomeAlice === 'Alice wins'
+              = g.outcomeAlice == 'Alice wins'
                 ? [ balanceStartAlice, balanceStartBob, balanceEndAlice, balanceEndBob ]
                 : [ balanceStartBob, balanceStartAlice, balanceEndBob, balanceEndAlice ];
 
@@ -57,8 +61,10 @@ describe('A rock/paper/scissors game using the `web3` stdlib', () => {
             const loserLt = balEndLoser.lt(
               balStartLoser.sub(g.wagerInWei));
 
-            expect(winnerGte).toBe(true);
-            expect(loserLt  ).toBe(true);
+              expect(winnerGte).
+                  toBe(true, [ `winner'(${balEndWinner}) >= winner(${balStartWinner}) +`
+                             , `wager(${g.wagerInWei}) - gas(${estimatedGas})` ].join(' '));
+              expect(loserLt  ).toBe(true, `loser' < loser - wager`);
           }
 
           done();

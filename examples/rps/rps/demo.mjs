@@ -65,23 +65,19 @@ const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
   const txn0 = { balance: 0, value: 0 };
 
   const bobShoot = ctcAlice =>
-    new Promise(resolve =>
-      gameState.bob.attach(gameState.ctors, ctcAlice.address)
+    gameState.bob.attach(gameState.ctors, ctcAlice.address)
         .then(ctcBob => theRPS.B(stdlib
                                , ctcBob
                                , txn0
-                               , interactWith('Bob', makeWhichHand())
-                               , resolve)));
+                               , interactWith('Bob', makeWhichHand())));
 
   const aliceShoot = ctc =>
-    new Promise(resolve =>
-      theRPS.A(stdlib
+    theRPS.A(stdlib
              , ctc
              , txn0
              , interactWith('Alice', makeWhichHand())
              , wagerInWei
-             , escrowInWei
-             , resolve));
+             , escrowInWei);
 
   return prefundedDevnetAcct()
     .then(p   => Promise.all([ newPlayer(p), newPlayer(p) ]))

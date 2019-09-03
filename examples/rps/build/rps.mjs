@@ -1,157 +1,157 @@
-export function A(stdlib, ctc, txn, interact, v0, v1, kTop) {
+export async function A(stdlib, ctc, txn0, interact, v0, v1) {
   const v2 = v0;
   const v3 = v1;
-  interact("params", (v4) => {
-    const v5 = stdlib.add(v2, v3);
-    ctc.sendrecv("A", "m0", [v2, v3], v5, "e0", (txn) => {
-      const v6 = txn.value;
-      const v7 = stdlib.add(v2, v3);
-      const v8 = stdlib.eq(v6, v7);
-      stdlib.assert(v8);
-      ctc.recv("A", "e1", (txn) => {
-        const v10 = txn.value;
-        const v11 = stdlib.eq(v10, v2);
-        stdlib.assert(v11);
-        interact("getHand", (v12) => {
-          const v13 = stdlib.bytes_eq(v12, "ROCK");
-          const v14 = stdlib.bytes_eq(v12, "PAPER");
-          const v15 = stdlib.bytes_eq(v12, "SCISSORS");
-          const v16 = v14 ? true : v15;
-          const v17 = v13 ? true : v16;
-          stdlib.assert(v17);
-          const v18 = v14 ? 1 : 2;
-          const v19 = v13 ? 0 : v18;
-          const v23 = stdlib.random_uint256();
-          const v24 = stdlib.uint256_to_bytes(v23);
-          const v25 = stdlib.uint256_to_bytes(v19);
-          const v26 = stdlib.bytes_cat(v24, v25);
-          const v27 = stdlib.keccak256(v26);
-          const v28 = v27;
-          interact("commits", (v29) => {
-            ctc.sendrecv("A", "m2", [v2, v3, v28], 0, "e2", (txn) => {
-              const v30 = txn.value;
-              const v31 = stdlib.eq(v30, 0);
-              stdlib.assert(v31);
-              ctc.recv("A", "e3", (v43, txn) => {
-                const v45 = txn.value;
-                const v46 = stdlib.eq(v45, 0);
-                stdlib.assert(v46);
-                const v47 = stdlib.le(0, v43);
-                const v48 = stdlib.lt(v43, 3);
-                const v49 = v47 ? v48 : false;
-                stdlib.assert(v49);
-                const v50 = v23;
-                const v51 = v19;
-                interact("reveals", (v52) => {
-                  ctc.sendrecv("A", "m4", [v2, v3, v28, v43, v50, v51], 0, "e4", (txn) => {
-                    const v53 = txn.value;
-                    const v54 = stdlib.eq(v53, 0);
-                    stdlib.assert(v54);
-                    const v55 = stdlib.uint256_to_bytes(v50);
-                    const v56 = stdlib.uint256_to_bytes(v51);
-                    const v57 = stdlib.bytes_cat(v55, v56);
-                    const v58 = stdlib.keccak256(v57);
-                    const v59 = stdlib.eq(v28, v58);
-                    stdlib.assert(v59);
-                    const v60 = stdlib.le(0, v51);
-                    const v61 = stdlib.lt(v51, 3);
-                    const v62 = v60 ? v61 : false;
-                    stdlib.assert(v62);
-                    const v63 = stdlib.le(0, v51);
-                    const v64 = stdlib.lt(v51, 3);
-                    const v65 = v63 ? v64 : false;
-                    const v66 = stdlib.le(0, v43);
-                    const v67 = stdlib.lt(v43, 3);
-                    const v68 = v66 ? v67 : false;
-                    const v69 = v65 ? v68 : false;
-                    const v70 = stdlib.sub(4, v43);
-                    const v71 = stdlib.add(v51, v70);
-                    const v72 = stdlib.mod(v71, 3);
-                    const v73 = v68 ? 0 : 1;
-                    const v74 = v65 ? 2 : v73;
-                    const v75 = v69 ? v72 : v74;
-                    interact("outcome", (v114) => {
-                      const v115 = stdlib.le(0, v75);
-                      const v116 = stdlib.lt(v75, 3);
-                      const v117 = v115 ? v116 : false;
-                      stdlib.assert(v117);
-                      const v118 = stdlib.eq(v75, 0);
-                      const v119 = stdlib.eq(v75, 1);
-                      const v120 = v119 ? "Draw" : "Alice wins";
-                      const v121 = v118 ? "Bob wins" : v120;
-                      kTop(v121); }); }); }); }); }); }); }); }); }); }); }
+  const v4 = await interact("params");
+  const v5 = stdlib.add(v2, v3);
+  const [txn1] = await ctc.sendrecv("A", "m0", [v2, v3], v5, "e0");
+  const v6 = txn1.value;
+  const v7 = stdlib.add(v2, v3);
+  const v8 = stdlib.eq(v6, v7);
+  stdlib.assert(v8);
+  const [txn2] = await ctc.recv("A", "e1");
+  const v10 = txn2.value;
+  const v11 = stdlib.eq(v10, v2);
+  stdlib.assert(v11);
+  const v12 = await interact("getHand");
+  const v13 = stdlib.bytes_eq(v12, "ROCK");
+  const v14 = stdlib.bytes_eq(v12, "PAPER");
+  const v15 = stdlib.bytes_eq(v12, "SCISSORS");
+  const v16 = v14 ? true : v15;
+  const v17 = v13 ? true : v16;
+  stdlib.assert(v17);
+  const v18 = v14 ? 1 : 2;
+  const v19 = v13 ? 0 : v18;
+  const v23 = stdlib.random_uint256();
+  const v24 = stdlib.uint256_to_bytes(v23);
+  const v25 = stdlib.uint256_to_bytes(v19);
+  const v26 = stdlib.bytes_cat(v24, v25);
+  const v27 = stdlib.keccak256(v26);
+  const v28 = v27;
+  const v29 = await interact("commits");
+  const [txn3] = await ctc.sendrecv("A", "m2", [v2, v3, v28], 0, "e2");
+  const v30 = txn3.value;
+  const v31 = stdlib.eq(v30, 0);
+  stdlib.assert(v31);
+  const [v43, txn4] = await ctc.recv("A", "e3");
+  const v45 = txn4.value;
+  const v46 = stdlib.eq(v45, 0);
+  stdlib.assert(v46);
+  const v47 = stdlib.le(0, v43);
+  const v48 = stdlib.lt(v43, 3);
+  const v49 = v47 ? v48 : false;
+  stdlib.assert(v49);
+  const v50 = v23;
+  const v51 = v19;
+  const v52 = await interact("reveals");
+  const [txn5] = await ctc.sendrecv("A", "m4", [v2, v3, v28, v43, v50, v51], 0, "e4");
+  const v53 = txn5.value;
+  const v54 = stdlib.eq(v53, 0);
+  stdlib.assert(v54);
+  const v55 = stdlib.uint256_to_bytes(v50);
+  const v56 = stdlib.uint256_to_bytes(v51);
+  const v57 = stdlib.bytes_cat(v55, v56);
+  const v58 = stdlib.keccak256(v57);
+  const v59 = stdlib.eq(v28, v58);
+  stdlib.assert(v59);
+  const v60 = stdlib.le(0, v51);
+  const v61 = stdlib.lt(v51, 3);
+  const v62 = v60 ? v61 : false;
+  stdlib.assert(v62);
+  const v63 = stdlib.le(0, v51);
+  const v64 = stdlib.lt(v51, 3);
+  const v65 = v63 ? v64 : false;
+  const v66 = stdlib.le(0, v43);
+  const v67 = stdlib.lt(v43, 3);
+  const v68 = v66 ? v67 : false;
+  const v69 = v65 ? v68 : false;
+  const v70 = stdlib.sub(4, v43);
+  const v71 = stdlib.add(v51, v70);
+  const v72 = stdlib.mod(v71, 3);
+  const v73 = v68 ? 0 : 1;
+  const v74 = v65 ? 2 : v73;
+  const v75 = v69 ? v72 : v74;
+  const v114 = await interact("outcome");
+  const v115 = stdlib.le(0, v75);
+  const v116 = stdlib.lt(v75, 3);
+  const v117 = v115 ? v116 : false;
+  stdlib.assert(v117);
+  const v118 = stdlib.eq(v75, 0);
+  const v119 = stdlib.eq(v75, 1);
+  const v120 = v119 ? "Draw" : "Alice wins";
+  const v121 = v118 ? "Bob wins" : v120;
+  return [v121]; }
 
-export function B(stdlib, ctc, txn, interact, kTop) {
-  ctc.recv("B", "e0", (v2, v3, txn) => {
-    const v6 = txn.value;
-    const v7 = stdlib.add(v2, v3);
-    const v8 = stdlib.eq(v6, v7);
-    stdlib.assert(v8);
-    interact("accepts", (v9) => {
-      ctc.sendrecv("B", "m1", [v2, v3], v2, "e1", (txn) => {
-        const v10 = txn.value;
-        const v11 = stdlib.eq(v10, v2);
-        stdlib.assert(v11);
-        ctc.recv("B", "e2", (v28, txn) => {
-          const v30 = txn.value;
-          const v31 = stdlib.eq(v30, 0);
-          stdlib.assert(v31);
-          interact("getHand", (v32) => {
-            const v33 = stdlib.bytes_eq(v32, "ROCK");
-            const v34 = stdlib.bytes_eq(v32, "PAPER");
-            const v35 = stdlib.bytes_eq(v32, "SCISSORS");
-            const v36 = v34 ? true : v35;
-            const v37 = v33 ? true : v36;
-            stdlib.assert(v37);
-            const v38 = v34 ? 1 : 2;
-            const v39 = v33 ? 0 : v38;
-            const v43 = v39;
-            interact("shows", (v44) => {
-              ctc.sendrecv("B", "m3", [v2, v3, v28, v43], 0, "e3", (txn) => {
-                const v45 = txn.value;
-                const v46 = stdlib.eq(v45, 0);
-                stdlib.assert(v46);
-                const v47 = stdlib.le(0, v43);
-                const v48 = stdlib.lt(v43, 3);
-                const v49 = v47 ? v48 : false;
-                stdlib.assert(v49);
-                ctc.recv("B", "e4", (v50, v51, txn) => {
-                  const v53 = txn.value;
-                  const v54 = stdlib.eq(v53, 0);
-                  stdlib.assert(v54);
-                  const v55 = stdlib.uint256_to_bytes(v50);
-                  const v56 = stdlib.uint256_to_bytes(v51);
-                  const v57 = stdlib.bytes_cat(v55, v56);
-                  const v58 = stdlib.keccak256(v57);
-                  const v59 = stdlib.eq(v28, v58);
-                  stdlib.assert(v59);
-                  const v60 = stdlib.le(0, v51);
-                  const v61 = stdlib.lt(v51, 3);
-                  const v62 = v60 ? v61 : false;
-                  stdlib.assert(v62);
-                  const v63 = stdlib.le(0, v51);
-                  const v64 = stdlib.lt(v51, 3);
-                  const v65 = v63 ? v64 : false;
-                  const v66 = stdlib.le(0, v43);
-                  const v67 = stdlib.lt(v43, 3);
-                  const v68 = v66 ? v67 : false;
-                  const v69 = v65 ? v68 : false;
-                  const v70 = stdlib.sub(4, v43);
-                  const v71 = stdlib.add(v51, v70);
-                  const v72 = stdlib.mod(v71, 3);
-                  const v73 = v68 ? 0 : 1;
-                  const v74 = v65 ? 2 : v73;
-                  const v75 = v69 ? v72 : v74;
-                  interact("outcome", (v114) => {
-                    const v115 = stdlib.le(0, v75);
-                    const v116 = stdlib.lt(v75, 3);
-                    const v117 = v115 ? v116 : false;
-                    stdlib.assert(v117);
-                    const v118 = stdlib.eq(v75, 0);
-                    const v119 = stdlib.eq(v75, 1);
-                    const v120 = v119 ? "Draw" : "Alice wins";
-                    const v121 = v118 ? "Bob wins" : v120;
-                    kTop(v121); }); }); }); }); }); }); }); }); }); }
+export async function B(stdlib, ctc, txn0, interact) {
+  const [v2, v3, txn1] = await ctc.recv("B", "e0");
+  const v6 = txn1.value;
+  const v7 = stdlib.add(v2, v3);
+  const v8 = stdlib.eq(v6, v7);
+  stdlib.assert(v8);
+  const v9 = await interact("accepts");
+  const [txn2] = await ctc.sendrecv("B", "m1", [v2, v3], v2, "e1");
+  const v10 = txn2.value;
+  const v11 = stdlib.eq(v10, v2);
+  stdlib.assert(v11);
+  const [v28, txn3] = await ctc.recv("B", "e2");
+  const v30 = txn3.value;
+  const v31 = stdlib.eq(v30, 0);
+  stdlib.assert(v31);
+  const v32 = await interact("getHand");
+  const v33 = stdlib.bytes_eq(v32, "ROCK");
+  const v34 = stdlib.bytes_eq(v32, "PAPER");
+  const v35 = stdlib.bytes_eq(v32, "SCISSORS");
+  const v36 = v34 ? true : v35;
+  const v37 = v33 ? true : v36;
+  stdlib.assert(v37);
+  const v38 = v34 ? 1 : 2;
+  const v39 = v33 ? 0 : v38;
+  const v43 = v39;
+  const v44 = await interact("shows");
+  const [txn4] = await ctc.sendrecv("B", "m3", [v2, v3, v28, v43], 0, "e3");
+  const v45 = txn4.value;
+  const v46 = stdlib.eq(v45, 0);
+  stdlib.assert(v46);
+  const v47 = stdlib.le(0, v43);
+  const v48 = stdlib.lt(v43, 3);
+  const v49 = v47 ? v48 : false;
+  stdlib.assert(v49);
+  const [v50, v51, txn5] = await ctc.recv("B", "e4");
+  const v53 = txn5.value;
+  const v54 = stdlib.eq(v53, 0);
+  stdlib.assert(v54);
+  const v55 = stdlib.uint256_to_bytes(v50);
+  const v56 = stdlib.uint256_to_bytes(v51);
+  const v57 = stdlib.bytes_cat(v55, v56);
+  const v58 = stdlib.keccak256(v57);
+  const v59 = stdlib.eq(v28, v58);
+  stdlib.assert(v59);
+  const v60 = stdlib.le(0, v51);
+  const v61 = stdlib.lt(v51, 3);
+  const v62 = v60 ? v61 : false;
+  stdlib.assert(v62);
+  const v63 = stdlib.le(0, v51);
+  const v64 = stdlib.lt(v51, 3);
+  const v65 = v63 ? v64 : false;
+  const v66 = stdlib.le(0, v43);
+  const v67 = stdlib.lt(v43, 3);
+  const v68 = v66 ? v67 : false;
+  const v69 = v65 ? v68 : false;
+  const v70 = stdlib.sub(4, v43);
+  const v71 = stdlib.add(v51, v70);
+  const v72 = stdlib.mod(v71, 3);
+  const v73 = v68 ? 0 : 1;
+  const v74 = v65 ? 2 : v73;
+  const v75 = v69 ? v72 : v74;
+  const v114 = await interact("outcome");
+  const v115 = stdlib.le(0, v75);
+  const v116 = stdlib.lt(v75, 3);
+  const v117 = v115 ? v116 : false;
+  stdlib.assert(v117);
+  const v118 = stdlib.eq(v75, 0);
+  const v119 = stdlib.eq(v75, 1);
+  const v120 = v119 ? "Draw" : "Alice wins";
+  const v121 = v118 ? "Bob wins" : v120;
+  return [v121]; }
 
 export const ABI = [{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"}],"name":"m1","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"}],"name":"m3","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"}],"name":"m0","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"}],"name":"m2","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"},{"internalType":"uint256","name":"v50","type":"uint256"},{"internalType":"uint256","name":"v51","type":"uint256"}],"name":"m4","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v2","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v3","type":"uint256"}],"name":"e0","type":"event"},{"anonymous":false,"inputs":[],"name":"e1","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v28","type":"uint256"}],"name":"e2","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v43","type":"uint256"}],"name":"e3","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v50","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v51","type":"uint256"}],"name":"e4","type":"event"}];
 
