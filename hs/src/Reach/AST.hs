@@ -2,7 +2,6 @@ module Reach.AST where
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
-import Control.Monad.Except
 
 -- Shared types
 
@@ -21,12 +20,15 @@ data FunctionType
   deriving (Show,Eq)
 
 tBool :: ExprType
-tUInt256 :: ExprType
-tBytes :: ExprType
-(-->) :: [ExprType] -> ExprType -> FunctionType
 tBool = TY_Con AT_Bool
+
+tUInt256 :: ExprType
 tUInt256 = TY_Con AT_UInt256
+
+tBytes :: ExprType
 tBytes = TY_Con AT_Bytes
+
+(-->) :: [ExprType] -> ExprType -> FunctionType
 ins --> out = TY_Arrow ins out
 
 data Constant
@@ -95,52 +97,6 @@ primType (CP BALANCE) = ([] --> tUInt256)
 primType (CP TXN_VALUE) = ([] --> tUInt256)
 primType RANDOM = ([] --> tUInt256)
 primType INTERACT = ([tBytes] --> tBytes)
-
-type TypeVarEnv = M.Map String BaseType
-
-checkFun :: FunctionType -> [BaseType] -> BaseType
-checkFun top topdom = toprng
-  where
-    toprng = case runExcept mrng of
-      Left err -> error err
-      Right v -> v
-    mrng = hFun [] M.empty top topdom
-    hTy :: TypeVarEnv -> ExprType -> Except String BaseType
-    hTy γ et = case et of
-      TY_Con bt -> return bt
-      TY_Var v -> case M.lookup v γ of
-        Nothing -> throwError $ "checkFun: Unconstrained/bound type variable: " ++ show v
-        Just et' -> return et'
-    hExpr :: [String] -> TypeVarEnv -> ExprType -> BaseType -> Except String TypeVarEnv
-    hExpr vs γ et at = case et of
-      TY_Con bt ->
-        if at == bt then return γ
-        else throwError $ "checkFun: Expected " ++ show bt ++ ", got: " ++ show at
-      TY_Var v ->
-        if not $ elem v vs then
-          throwError $ "checkFun: Unbound type variable: " ++ show v
-        else
-          case M.lookup v γ of
-            Just bt -> hExpr vs γ (TY_Con bt) at
-            Nothing -> return $ M.insert v at γ
-    hFun :: [String] -> TypeVarEnv -> FunctionType -> [BaseType] -> Except String BaseType
-    hFun vs γ ft adom = case ft of
-      TY_Forall nvs ft' -> hFun (vs ++ nvs) γ ft' adom
-      TY_Arrow edom rng -> do
-        γ' <- hExprs vs γ edom adom
-        hTy γ' rng
-    hExprs :: [String] -> TypeVarEnv -> [ExprType] -> [BaseType] -> Except String TypeVarEnv
-    hExprs vs γ esl asl = case esl of
-      [] ->
-        case asl of
-          [] -> return γ
-          _ -> throwError $ "checkFun: Received more than expected"
-      e1 : esl' ->
-        case asl of
-          [] -> throwError $ "checkFun: Received fewer than expected"
-          a1 : asl' -> do
-            γ' <- (hExprs vs γ esl' asl')
-            hExpr vs γ' e1 a1
 
 type Participant = String
 
