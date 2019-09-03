@@ -24,7 +24,7 @@ test: build
 	@node --experimental-modules rps/spec/index.mjs
 
 logs:
-	@tail -f ../../_ethereum/geth-data/logs/testnet.log
+	@tail -f ../../.ethereum/geth-data/logs/testnet.log
 
 demo: build
 	@node --experimental-modules rps/demo-run-stdout.mjs
