@@ -160,7 +160,6 @@ data XLExpr a
   | XL_Let a (Maybe Participant) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
   | XL_While a XLVar (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Continue a (XLExpr a)
-  --- Impossible in inlined
   | XL_FunApp a XLVar [XLExpr a]
   deriving (Show,Eq)
 
@@ -175,8 +174,30 @@ data XLProgram  a=
   XL_Prog a [XLDef a] (XLPartInfo a) (XLExpr a)
   deriving (Show,Eq)
 
-data XLInlinedProgram a =
-  XL_InlinedProg a (XLPartInfo a) (XLExpr a)
+{- Inlined Language (the language after expansion)
+
+ -}
+
+data XILExpr a
+  = XIL_Con a Constant
+  | XIL_Var a XLVar
+  | XIL_PrimApp a EP_Prim [XILExpr a]
+  | XIL_If a Bool (XILExpr a) (XILExpr a) (XILExpr a)
+  | XIL_Claim a ClaimType (XILExpr a)
+  | XIL_ToConsensus a Participant [XLVar] (XILExpr a) (XILExpr a)
+  | XIL_FromConsensus a (XILExpr a)
+  | XIL_Values a [XILExpr a]
+  | XIL_Transfer a Participant (XILExpr a)
+  | XIL_Declassify a (XILExpr a)
+  | XIL_Let a (Maybe Participant) (Maybe [XLVar]) (XILExpr a) (XILExpr a)
+  | XIL_While a XLVar (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
+  | XIL_Continue a (XILExpr a)
+  deriving (Show,Eq)
+
+type XILPartInfo a = (M.Map Participant (a, [(a, XLVar, BaseType)]))
+
+data XILProgram a =
+  XIL_Prog a (XILPartInfo a) (XILExpr a)
   deriving (Show,Eq)
 
 {- Intermediate Language

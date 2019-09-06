@@ -75,10 +75,10 @@ checkFun top topdom = toprng
  -}
 
 type XLFuns ann = M.Map XLVar ([XLVar], XLExpr ann)
-type XLIFuns ann = M.Map XLVar (Bool, ([XLVar], XLExpr ann))
-type InlineMonad ann a = State (XLFuns ann, XLIFuns ann) (Bool, a)
+type XILFuns ann = M.Map XLVar (Bool, ([XLVar], XILExpr ann))
+type InlineMonad ann a = State (XLFuns ann, XILFuns ann) (Bool, a)
 
-inline_fun :: XLVar -> InlineMonad ann ([XLVar], XLExpr ann)
+inline_fun :: XLVar -> InlineMonad ann ([XLVar], XILExpr ann)
 inline_fun f = do
   (σi, σo) <- get
   case M.lookup f σo of
@@ -96,61 +96,65 @@ inline_fun f = do
           put (σi'', σo'')
           return v
 
-inline_exprs :: [XLExpr ann] -> InlineMonad ann [XLExpr ann]
+inline_exprs :: [XLExpr ann] -> InlineMonad ann [XILExpr ann]
 inline_exprs es = foldM (\(tp, es') e -> do
                             (ep, e') <- inline_expr e
                             return (tp && ep, e' : es'))
                   (True, []) (reverse es)
 
-inline_expr :: XLExpr ann -> InlineMonad ann (XLExpr ann)
+inline_expr :: XLExpr ann -> InlineMonad ann (XILExpr ann)
 inline_expr e =
   case e of
-    XL_Con _ _ -> return (True, e)
-    XL_Var _ _ -> return (True, e)
-    XL_PrimApp h p es -> inline_exprs es >>= \(ep, es') -> return (ep, XL_PrimApp h p es')
+    XL_Con h c ->
+      return (True, XIL_Con h c)
+    XL_Var h v ->
+      return (True, XIL_Var h v)
+    XL_PrimApp h p es ->
+      inline_exprs es >>= \(ep, es') -> return (ep, XIL_PrimApp h p es')
     XL_If h _ ce te fe -> do
       (cp, ce') <- inline_expr ce
       (tp, te') <- inline_expr te
       (fp, fe') <- inline_expr fe
-      return (cp && tp && fp, XL_If h (tp && fp) ce' te' fe')
+      return (cp && tp && fp, XIL_If h (tp && fp) ce' te' fe')
     XL_Claim h ct ae -> do
       (_, ae') <- inline_expr ae
       --- Assert is impure because it could fail
-      return (False, XL_Claim h ct ae')
+      return (False, XIL_Claim h ct ae')
     XL_ToConsensus h p ins pe ce -> do
       (_, pe') <- inline_expr pe
       (_, ce') <- inline_expr ce
-      return (False, XL_ToConsensus h p ins pe' ce')
+      return (False, XIL_ToConsensus h p ins pe' ce')
     XL_FromConsensus h be -> do
       (_, be') <- inline_expr be
-      return (False, XL_FromConsensus h be')
-    XL_Values h es -> inline_exprs es >>= \(ep, es') -> return (ep, XL_Values h es')
+      return (False, XIL_FromConsensus h be')
+    XL_Values h es ->
+      inline_exprs es >>= \(ep, es') -> return (ep, XIL_Values h es')
     XL_Transfer h to te -> do
       (_, tp') <- inline_expr te
-      return (False, XL_Transfer h to tp')
+      return (False, XIL_Transfer h to tp')
     XL_Declassify h de -> do
       (dp, de') <- inline_expr de
-      return (dp, XL_Declassify h de')
+      return (dp, XIL_Declassify h de')
     XL_Let h mp mvs ve be -> do
       (vp, ve') <- inline_expr ve
       (bp, be') <- inline_expr be
-      return (vp && bp, XL_Let h mp mvs ve' be')
+      return (vp && bp, XIL_Let h mp mvs ve' be')
     XL_FunApp h f args -> do
       (arp, args') <- inline_exprs args
       (fp, (formals, fun_body')) <- inline_fun f
-      return (arp && fp, XL_Let h Nothing (Just formals) (XL_Values h args') fun_body')
+      return (arp && fp, XIL_Let h Nothing (Just formals) (XIL_Values h args') fun_body')
     XL_While h lv ie ce inve be ke -> do
       (_, ie') <- inline_expr ie
       (_, ce') <- inline_expr ce
       (_, inve') <- inline_expr inve
       (_, be') <- inline_expr be
       (_, ke') <- inline_expr ke
-      return (False, XL_While h lv ie' ce' inve' be' ke')
+      return (False, XIL_While h lv ie' ce' inve' be' ke')
     XL_Continue h ne -> do
       (_, ne') <- inline_expr ne
-      return (False, XL_Continue h ne')
+      return (False, XIL_Continue h ne')
 
-inline_defs :: [XLDef ann] -> XLFuns ann -> XLExpr ann -> XLExpr ann
+inline_defs :: [XLDef ann] -> XLFuns ann -> XLExpr ann -> XILExpr ann
 inline_defs [] σ me = me'
   where ((_, me'), _) = runState (inline_expr me) (σ, M.empty)
 inline_defs (XL_DefineFun _ f args body : ds) σ me = inline_defs ds σ' me
@@ -158,8 +162,8 @@ inline_defs (XL_DefineFun _ f args body : ds) σ me = inline_defs ds σ' me
 inline_defs (XL_DefineValues h vs e : ds) σ me = inline_defs ds σ me'
   where me'= XL_Let h Nothing (Just vs) e me
 
-inline :: XLProgram ann -> XLInlinedProgram ann
-inline (XL_Prog h defs ps m) = XL_InlinedProg h ps (inline_defs defs M.empty m)
+inline :: XLProgram ann -> XILProgram ann
+inline (XL_Prog h defs ps m) = XIL_Prog h ps (inline_defs defs M.empty m)
 
 {- ANF
 
@@ -244,7 +248,7 @@ anf_part (ρ, ips) (p, (_h, args)) = do
 anf_parts :: XLPartInfo ann -> ANFMonad ann (XLRenaming ann, ILPartInfo ann)
 anf_parts ps = foldM anf_part (M.empty, M.empty) (M.toList ps)
 
-anf_exprs :: Show ann => Role -> XLRenaming ann -> [XLExpr ann] -> ([ILArg ann] -> ANFMonad ann (Int, (ILTail ann))) -> ANFMonad ann (Int, (ILTail ann))
+anf_exprs :: Show ann => Role -> XLRenaming ann -> [XILExpr ann] -> ([ILArg ann] -> ANFMonad ann (Int, (ILTail ann))) -> ANFMonad ann (Int, (ILTail ann))
 anf_exprs me ρ es mk =
   case es of
     [] -> mk []
@@ -265,15 +269,15 @@ anf_renamed_to ρ v =
     Nothing -> error ("ANF: Variable unbound: " ++ (show v))
     Just a -> a
 
-anf_expr :: Show ann => Role -> XLRenaming ann -> XLExpr ann -> ([ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
+anf_expr :: Show ann => Role -> XLRenaming ann -> XILExpr ann -> ([ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
 anf_expr me ρ e mk =
   case e of
-    XL_Con h b ->
+    XIL_Con h b ->
       mk [ IL_Con h b ]
-    XL_Var _h v -> mk [ anf_renamed_to ρ v ]
-    XL_PrimApp h p args ->
+    XIL_Var _h v -> mk [ anf_renamed_to ρ v ]
+    XIL_PrimApp h p args ->
       anf_exprs me ρ args (\args' -> ret_expr h "PrimApp" (IL_PrimApp h p args'))
-    XL_If h is_pure ce te fe ->
+    XIL_If h is_pure ce te fe ->
       anf_expr me ρ ce k
       where k [ ca ] =
               if is_pure then
@@ -292,24 +296,24 @@ anf_expr me ρ e mk =
                 unless (tn == fn) $ error "ANF: If branches don't have same continuation arity"
                 return (tn, IL_If h ca tt ft)
             k _ = error "anf_expr XL_If ce doesn't return 1"
-    XL_Claim h ct ae ->
+    XIL_Claim h ct ae ->
       anf_expr me ρ ae (\[ aa ] -> ret_stmt h (IL_Claim h ct aa))
-    XL_FromConsensus h le -> do
+    XIL_FromConsensus h le -> do
       (ln, lt) <- anf_tail RoleContract ρ le mk
       return (ln, IL_FromConsensus h lt)
-    XL_ToConsensus h from ins pe ce ->
+    XIL_ToConsensus h from ins pe ce ->
       anf_expr (RolePart from) ρ pe
       (\ [ pa ] -> do
          let ins' = vsOnly $ map (anf_renamed_to ρ) ins
          (cn, ct) <- anf_tail RoleContract ρ ce mk
          return (cn, IL_ToConsensus h from ins' pa ct))
-    XL_Values _h args ->
+    XIL_Values _h args ->
       anf_exprs me ρ args (\args' -> mk args')
-    XL_Transfer h to ae ->
+    XIL_Transfer h to ae ->
       anf_expr me ρ ae (\[ aa ] -> ret_stmt h (IL_Transfer h to aa))
-    XL_Declassify h ae ->
+    XIL_Declassify h ae ->
       anf_expr me ρ ae (\[ aa ] -> ret_expr h "Declassify" (IL_Declassify h aa))
-    XL_Let _h mwho mvs ve be ->
+    XIL_Let _h mwho mvs ve be ->
       anf_expr who ρ ve k
       where who = case mwho of
                     Nothing -> me
@@ -325,7 +329,7 @@ anf_expr me ρ e mk =
                           (M.fromList $ zip ovs nvs)
                         else
                           error $ "ANF XL_Let, context arity mismatch, " ++ show olen ++ " vs " ++ show nlen
-    XL_While h loopv inite untile inve bodye ke ->
+    XIL_While h loopv inite untile inve bodye ke ->
       anf_expr me ρ inite k
       where k [ inita ] = do
               (ρ', loopv') <- makeRename h ρ loopv
@@ -339,12 +343,11 @@ anf_expr me ρ e mk =
               return (kn, (IL_While h loopv' inita untilt invt bodyt kt))
             k _ = error $ "XL_While initial expression must return 1"
             anf_knocontinue _ = error $ "ANF XL_While not terminated by XL_Continue"
-    XL_Continue h nve -> 
+    XIL_Continue h nve -> 
       anf_expr me ρ nve k
       where k [ nva ] = do
               return (0, (IL_Continue h nva))
             k _ = error "anf_expr XL_Continue nve doesn't return 1"
-    XL_FunApp _h _ _ -> error $ "ANF XL_FunApp, impossible after inliner"
   where ret_expr h s ne = do
           nv <- allocANF h me s ne
           mk [ IL_Var h nv ]
@@ -361,17 +364,17 @@ anf_addVar :: ANFElem ann -> (Int, ILTail ann) -> (Int, ILTail ann)
 anf_addVar (ANFExpr h mp v e) (c, t) = (c, IL_Let h mp v e t)
 anf_addVar (ANFStmt h mp s) (c, t) = (c, IL_Do h mp s t)
 
-anf_tail :: Show ann => Role -> XLRenaming ann -> XLExpr ann -> ([ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
+anf_tail :: Show ann => Role -> XLRenaming ann -> XILExpr ann -> ([ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
 anf_tail me ρ e mk = do
   collectANF anf_addVar (anf_expr me ρ e mk)
 
 anf_ktop :: ann -> [ILArg ann] -> ANFMonad ann (Int, ILTail ann)
 anf_ktop h args = return (length args, IL_Ret h args)
 
-anf :: Show ann => XLInlinedProgram ann -> ILProgram ann
+anf :: Show ann => XILProgram ann -> ILProgram ann
 anf xilp = IL_Prog h ips xt
   where
-    XL_InlinedProg h ps main = xilp
+    XIL_Prog h ps main = xilp
     (ips, xt) = runANF xm
     --- xm :: ANFMonad ann (ILPartInfo ann, ILTail ann)
     xm = do

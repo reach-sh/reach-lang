@@ -38,7 +38,7 @@ instance Pretty Role where
 instance Show a => Pretty (XLProgram a) where
   pretty = viaShow
 
-instance Show a => Pretty (XLInlinedProgram a) where
+instance Show a => Pretty (XILProgram a) where
   pretty = viaShow
 
 instance Pretty (ILArg a) where
