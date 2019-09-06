@@ -376,6 +376,7 @@ anf xilp = IL_Prog h ips xt
     --- xm :: ANFMonad ann (ILPartInfo ann, ILTail ann)
     xm = do
       (ρ, nps) <- anf_parts ps
+      --- XXX This h makes it so that all of the returns look like they came from the top, which is not very useful.
       (_, mt) <- anf_tail RoleContract ρ main (anf_ktop h)
       return (nps, mt)
 
