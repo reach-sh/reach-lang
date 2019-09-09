@@ -160,7 +160,8 @@ data XLExpr a
   | XL_Let a (Maybe Participant) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
   | XL_While a XLVar (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Continue a (XLExpr a)
-  | XL_FunApp a XLVar [XLExpr a]
+  | XL_FunApp a (XLExpr a) [XLExpr a]
+  | XL_Lambda a [XLVar] (XLExpr a)
   deriving (Show,Eq)
 
 data XLDef a

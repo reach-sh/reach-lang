@@ -78,8 +78,8 @@ type XLFuns ann = M.Map XLVar ([XLVar], XLExpr ann)
 type XILFuns ann = M.Map XLVar (Bool, ([XLVar], XILExpr ann))
 type InlineMonad ann a = State (XLFuns ann, XILFuns ann) (Bool, a)
 
-inline_fun :: XLVar -> InlineMonad ann ([XLVar], XILExpr ann)
-inline_fun f = do
+inline_fun :: Show ann => XLExpr ann -> InlineMonad ann ([XLVar], XILExpr ann)
+inline_fun (XL_Var _ f) = do
   (σi, σo) <- get
   case M.lookup f σo of
     Just v -> return v
@@ -95,14 +95,18 @@ inline_fun f = do
           let σo'' = M.insert f v σo'
           put (σi'', σo'')
           return v
+inline_fun (XL_Lambda _ formals body) = do
+  (fp, body') <- inline_expr body
+  return (fp, (formals, body'))
+inline_fun x = error $ "Inline: Cannot apply " ++ show x
 
-inline_exprs :: [XLExpr ann] -> InlineMonad ann [XILExpr ann]
+inline_exprs :: Show ann => [XLExpr ann] -> InlineMonad ann [XILExpr ann]
 inline_exprs es = foldM (\(tp, es') e -> do
                             (ep, e') <- inline_expr e
                             return (tp && ep, e' : es'))
                   (True, []) (reverse es)
 
-inline_expr :: XLExpr ann -> InlineMonad ann (XILExpr ann)
+inline_expr :: Show ann => XLExpr ann -> InlineMonad ann (XILExpr ann)
 inline_expr e =
   case e of
     XL_Con h c ->
@@ -153,8 +157,10 @@ inline_expr e =
     XL_Continue h ne -> do
       (_, ne') <- inline_expr ne
       return (False, XIL_Continue h ne')
+    XL_Lambda h _formals _body -> do
+      error $ "Inline: Cannot use lambda in this position: " ++ show h
 
-inline_defs :: [XLDef ann] -> XLFuns ann -> XLExpr ann -> XILExpr ann
+inline_defs :: Show ann => [XLDef ann] -> XLFuns ann -> XLExpr ann -> XILExpr ann
 inline_defs [] σ me = me'
   where ((_, me'), _) = runState (inline_expr me) (σ, M.empty)
 inline_defs (XL_DefineFun _ f args body : ds) σ me = inline_defs ds σ' me
@@ -162,7 +168,7 @@ inline_defs (XL_DefineFun _ f args body : ds) σ me = inline_defs ds σ' me
 inline_defs (XL_DefineValues h vs e : ds) σ me = inline_defs ds σ me'
   where me'= XL_Let h Nothing (Just vs) e me
 
-inline :: XLProgram ann -> XILProgram ann
+inline :: Show ann => XLProgram ann -> XILProgram ann
 inline (XL_Prog h defs ps m) = XIL_Prog h ps (inline_defs defs M.empty m)
 
 {- ANF

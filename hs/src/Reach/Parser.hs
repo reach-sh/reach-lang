@@ -18,6 +18,9 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.FileEmbed
 
+import Language.JavaScript.Parser
+import Text.Pretty.Simple
+
 import Reach.AST
 
 type Parser = ParsecT Void String IO
@@ -131,7 +134,7 @@ parseXLPrimApp =
   <|> (do h <- getSourcePos
           pr <- parseXLStdLibFun
           args <- parens $ parseXLExprs
-          return $ XL_FunApp h pr args)
+          return $ XL_FunApp h (XL_Var h pr) args)
   <|> (parens $
   do h <- getSourcePos
      left <- parseXLExpr1
@@ -145,7 +148,7 @@ parseXLPrimApp =
               return $ XL_PrimApp h pr [left, right])
       <|> (do pr <- parseXLStdLibOp
               right <- parseXLExpr1
-              return $ XL_FunApp h pr [left, right])))
+              return $ XL_FunApp h (XL_Var h pr) [left, right])))
 
 parseXLIf :: Parser (XLExpr SourcePos)
 parseXLIf = do
@@ -215,7 +218,7 @@ parseXLFunApp = do
   h <- getSourcePos
   f <- parseXLVar
   args <- parens $ parseXLExprs
-  return $ XL_FunApp h f args
+  return $ XL_FunApp h (XL_Var h f) args
 
 parseXLExpr1 :: Parser (XLExpr SourcePos)
 parseXLExpr1 =
@@ -332,7 +335,7 @@ parseDefineFun = do
             exact ":"
             post <- parseXLVar
             body <- parseXLExpr1
-            return (XL_Let ah Nothing (Just ["result"]) body (XL_Let ah Nothing Nothing (XL_Claim ah CT_Assert (XL_FunApp ah post [XL_Var ah "result"])) (XL_Var ah "result"))))
+            return (XL_FunApp ah (XL_Lambda ah ["result"] (XL_Let ah Nothing Nothing (XL_Claim ah CT_Assert (XL_FunApp ah (XL_Var ah post) [XL_Var ah "result"])) (XL_Var ah "result"))) [ body ]))
          <|> parseXLExpr1)
   return $ [XL_DefineFun h f args e]
 
@@ -360,7 +363,7 @@ doXLEnum ann predv vs = [ dvs, predd ]
   where dvs = XL_DefineValues ann vs ve
         ve = XL_Values ann $ zipWith (\_ i -> XL_Con ann (Con_I i)) vs [0..]
         predd = XL_DefineFun ann predv [ "x" ] checke
-        checke = XL_FunApp ann "and" [ lee, lte ]
+        checke = XL_FunApp ann (XL_Var ann "and") [ lee, lte ]
         lee = XL_PrimApp ann (CP PLE) [ XL_Con ann (Con_I 0), XL_Var ann "x" ]
         lte = XL_PrimApp ann (CP PLT) [ XL_Var ann "x", XL_Con ann (Con_I (toInteger (length vs))) ]
 
@@ -429,4 +432,7 @@ maybeError (Left peb) = do
 
 readReachFile :: FilePath -> IO (XLProgram SourcePos)
 readReachFile srcp =
-  withCurrentDirectory (takeDirectory srcp) (readXLProgram (takeFileName srcp))
+  withCurrentDirectory (takeDirectory srcp)
+  (do js <- (parseFileUtf8 (takeFileName srcp))
+      pPrint js
+      (readXLProgram (takeFileName srcp)))
