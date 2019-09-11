@@ -16,8 +16,8 @@ export async function A(stdlib, ctc, txn0, interact, v0, v1) {
   const v13 = stdlib.bytes_eq(v12, "ROCK");
   const v14 = stdlib.bytes_eq(v12, "PAPER");
   const v15 = stdlib.bytes_eq(v12, "SCISSORS");
-  const v16 = v14 ? true : v15;
-  const v17 = v13 ? true : v16;
+  const v16 = v13 ? true : v14;
+  const v17 = v16 ? true : v15;
   stdlib.assert(v17);
   const v18 = v14 ? 1 : 2;
   const v19 = v13 ? 0 : v18;
@@ -100,8 +100,8 @@ export async function B(stdlib, ctc, txn0, interact) {
   const v33 = stdlib.bytes_eq(v32, "ROCK");
   const v34 = stdlib.bytes_eq(v32, "PAPER");
   const v35 = stdlib.bytes_eq(v32, "SCISSORS");
-  const v36 = v34 ? true : v35;
-  const v37 = v33 ? true : v36;
+  const v36 = v33 ? true : v34;
+  const v37 = v36 ? true : v35;
   stdlib.assert(v37);
   const v38 = v34 ? 1 : 2;
   const v39 = v33 ? 0 : v38;

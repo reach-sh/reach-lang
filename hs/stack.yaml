@@ -17,8 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-13.24
-#resolver: lts-14.4 # This works on NixOS with stack 2.1.3.1, but not on Debian with stack 1.7.1.
+resolver: lts-14.5
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -33,8 +32,7 @@ resolver: lts-13.24
 #  subdirs:
 #  - auto-update
 #  - wai
-packages:
-- .
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
@@ -42,6 +40,8 @@ packages:
 extra-deps:
   - posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c
   - simple-smt-0.9.4@sha256:93746e0c4bade39c9848549103de5b65b169f1faa5b76c7b9bcde2031f31c58f
+  - git: https://github.com/jeapostrophe/language-javascript.git
+    commit: 00775d2c5eff20ebd1baa1530f0fe4da171755c9
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

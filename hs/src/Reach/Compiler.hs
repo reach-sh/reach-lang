@@ -7,13 +7,15 @@ import Control.Monad.Except
 import qualified Data.Map.Strict as M
 import qualified Data.Set as Set
 import qualified Data.Sequence as S
+import Text.Pretty.Simple
+import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
 import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
 
 import Reach.AST
 import Reach.Pretty()
-import Reach.Parser
+import Reach.NewParser
 import Reach.EmitJS
 import Reach.EmitSol
 import Reach.VerifyZ3
@@ -23,8 +25,8 @@ import Reach.VerifyZ3
 
 type TypeVarEnv = M.Map String BaseType
 
-checkFun :: FunctionType -> [BaseType] -> BaseType
-checkFun top topdom = toprng
+checkFun :: Show a => a -> FunctionType -> [BaseType] -> BaseType
+checkFun h top topdom = toprng
   where
     toprng = case runExcept mrng of
       Left err -> error err
@@ -34,16 +36,16 @@ checkFun top topdom = toprng
     hTy γ et = case et of
       TY_Con bt -> return bt
       TY_Var v -> case M.lookup v γ of
-        Nothing -> throwError $ "checkFun: Unconstrained/bound type variable: " ++ show v
+        Nothing -> throwError $ "checkFun: Unconstrained/bound type variable: " ++ show v ++ " at " ++ show h
         Just et' -> return et'
     hExpr :: [String] -> TypeVarEnv -> ExprType -> BaseType -> Except String TypeVarEnv
     hExpr vs γ et at = case et of
       TY_Con bt ->
         if at == bt then return γ
-        else throwError $ "checkFun: Expected " ++ show bt ++ ", got: " ++ show at
+        else throwError $ "checkFun: Expected " ++ show bt ++ ", got: " ++ show at ++ " at " ++ show h
       TY_Var v ->
         if not $ elem v vs then
-          throwError $ "checkFun: Unbound type variable: " ++ show v
+          throwError $ "checkFun: Unbound type variable: " ++ show v ++ " at " ++ show h
         else
           case M.lookup v γ of
             Just bt -> hExpr vs γ (TY_Con bt) at
@@ -59,10 +61,10 @@ checkFun top topdom = toprng
       [] ->
         case asl of
           [] -> return γ
-          _ -> throwError $ "checkFun: Received more than expected"
+          _ -> throwError $ "checkFun: Received more than expected" ++ " at " ++ show h
       e1 : esl' ->
         case asl of
-          [] -> throwError $ "checkFun: Received fewer than expected"
+          [] -> throwError $ "checkFun: Received fewer than expected" ++ " at " ++ show h
           a1 : asl' -> do
             γ' <- (hExprs vs γ esl' asl')
             hExpr vs γ' e1 a1
@@ -79,13 +81,13 @@ type XILFuns ann = M.Map XLVar (Bool, ([XLVar], XILExpr ann))
 type InlineMonad ann a = State (XLFuns ann, XILFuns ann) (Bool, a)
 
 inline_fun :: Show ann => XLExpr ann -> InlineMonad ann ([XLVar], XILExpr ann)
-inline_fun (XL_Var _ f) = do
+inline_fun vt@(XL_Var _ f) = do
   (σi, σo) <- get
   case M.lookup f σo of
     Just v -> return v
     Nothing -> do
       case M.lookup f σi of
-        Nothing -> error $ "Inline: Function unbound, or in cycle: " ++ show f
+        Nothing -> error $ "Inline: Function unbound, or in cycle: " ++ show vt
         Just (formals, fun_body) -> do
           let σi' = M.delete f σi
           put (σi', σo)
@@ -475,11 +477,11 @@ epp_e_ctc γ e = case e of
           args'st = map must_be_public $ args0
           args' = map fst args'st
           args't = map snd args'st
-          ret = checkFun (primType p) args't
+          ret = checkFun h (primType p) args't
           sRet = (ret, Public)
   IL_PrimApp _h p _ -> error $ "EPP: Contract cannot execute: " ++ show p
 
-epp_e_loc :: EPPEnv -> Participant -> ILExpr ann -> (SType, Set.Set BLVar, EPExpr ann)
+epp_e_loc :: Show ann => EPPEnv -> Participant -> ILExpr ann -> (SType, Set.Set BLVar, EPExpr ann)
 epp_e_loc γ p e = case e of
   IL_Declassify h a -> ((et, Public), fvs, EP_Arg h a')
     where ((fvs, a'), (et, _)) = earg "loc Declassify" a
@@ -487,7 +489,7 @@ epp_e_loc γ p e = case e of
     where (fvs, args'st) = epp_args "loc PrimApp" γ (RolePart p) args
           args't = map (fst . snd) args'st
           args' = map fst args'st
-          ret = checkFun (primType pr) args't
+          ret = checkFun h (primType pr) args't
           slvl = case pr of
                    INTERACT -> Secret
                    _ -> mconcat $ map (snd . snd) args'st
@@ -712,9 +714,9 @@ compile copts = do
   let srcp = source copts
   let out ext = FP.encodeString $ FP.append (FP.decodeString $ output_dir copts) (FP.basename (FP.decodeString srcp) `FP.addExtension` ext)
   xlp <- readReachFile srcp
-  writeFile (out "xl") (show (pretty xlp))
+  writeFile (out "xl") (L.unpack (pShow xlp))
   let xilp = inline xlp
-  writeFile (out "xil") (show (pretty xilp))
+  writeFile (out "xil") (L.unpack (pShow xilp))
   let ilp = anf xilp
   writeFile (out "il") (show (pretty ilp))
   let blp = epp ilp

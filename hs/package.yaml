@@ -1,7 +1,7 @@
 name:                reach
 version:             0.1.0.0
 github:              "Reach-sh/reach-lang"
-license:             BSD3
+license:             LGPL-2.1
 author:              "Reach"
 maintainer:          "jay@reach.sh"
 copyright:           "2019 Reach"
@@ -33,6 +33,8 @@ dependencies:
 - optparse-applicative
 - system-filepath
 - digest
+- language-javascript >= 0.6.0.13
+- parsec-numbers
 
 ghc-options:
 - -Wall

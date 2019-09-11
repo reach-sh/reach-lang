@@ -127,7 +127,7 @@ data ClaimType
  -}
 
 {- Expanded Language (the language after expansion)
-
+X
  -}
 
 type XLVar = String

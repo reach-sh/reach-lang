@@ -1,18 +1,22 @@
-#lang reach/lib
+'reach/lib';
 
 function not (x) {
-    (x ? false : true) }
+  return (x ? false : true); };
+function neq (x, y) {
+  return not(x == y); };
+function bytes_neq (x, y) {
+  return not(x === y); };
 function or (x, y) {
-    (x ? true : y) }
+  return (x ? true : y); };
 function and (x, y) {
-    (x ? y : false) }
+  return (x ? y : false); };
 function implies (x, y) {
-    (not(x) || y) }
+  return (not(x) || y); };
 
 function precommit (x) {
-    const salt = random();
-    const commitment = digest(msgcons(uint256_bytes(salt), uint256_bytes(x)));
-    values commitment, salt }
+  const salt = random();
+  const commitment = digest(msgcons(uint256_bytes(salt), uint256_bytes(x)));
+  return [commitment, salt]; }
 
 function check_commit (commitment, salt, x) {
-    require! (commitment == digest(msgcons(uint256_bytes(salt), uint256_bytes(x)))) }
+  return require(commitment == digest(msgcons(uint256_bytes(salt), uint256_bytes(x))));}

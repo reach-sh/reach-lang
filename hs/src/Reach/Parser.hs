@@ -18,9 +18,6 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import Data.FileEmbed
 
-import Language.JavaScript.Parser
-import Text.Pretty.Simple
-
 import Reach.AST
 
 type Parser = ParsecT Void String IO
@@ -432,7 +429,4 @@ maybeError (Left peb) = do
 
 readReachFile :: FilePath -> IO (XLProgram SourcePos)
 readReachFile srcp =
-  withCurrentDirectory (takeDirectory srcp)
-  (do js <- (parseFileUtf8 (takeFileName srcp))
-      pPrint js
-      (readXLProgram (takeFileName srcp)))
+  withCurrentDirectory (takeDirectory srcp) (readXLProgram (takeFileName srcp))
