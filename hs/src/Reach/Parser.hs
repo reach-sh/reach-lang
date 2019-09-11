@@ -19,6 +19,7 @@ import GHC.IO.Encoding
 
 import Reach.AST
 
+--- XXX It stinks that this doesn't have the filename in it
 type TP = Maybe TokenPosn
 
 tp :: JSAnnot -> TP
