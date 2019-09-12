@@ -124,7 +124,7 @@ decodeExpr (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSIdentif
 decodeExpr (JSExpressionBinary lhs op rhs) = (decodeBinOp op) (decodeExpr lhs) (decodeExpr rhs)
 decodeExpr (JSExpressionParen _ j _) = decodeExpr j
 --- No postfix
-decodeExpr (JSExpressionTernary c a t _ f) = XL_If (tp a) False (decodeExpr c) (decodeExpr t) (decodeExpr f)
+decodeExpr (JSExpressionTernary c a t _ f) = XL_If (tp a) (decodeExpr c) (decodeExpr t) (decodeExpr f)
 decodeExpr (JSArrowExpression params a s) = XL_Lambda (tp a) (decodeParams params) (decodeStmts Nothing [s])
 --- No function w/ name
 --- No JSMemberDot
@@ -204,7 +204,7 @@ decodeStmts who ((JSConstant a (JSLOne (JSVarInitExpression v (JSVarInit _ e))) 
 decodeStmts _who (j@(JSIf _ _ _ _ _):_k) = expect_error "if must have else" j
 decodeStmts who ((JSIfElse a _ cond _ true _ false):k) =
   letnothing LN_Flatten (tp a) who theif k
-  where theif = (XL_If (tp a) False (decodeExpr cond) (decodeStmts who [true]) (decodeStmts who [false]))
+  where theif = (XL_If (tp a) (decodeExpr cond) (decodeStmts who [true]) (decodeStmts who [false]))
 --- No Labelled
 --- No EmptyStatement
 decodeStmts _who ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _):ek) =

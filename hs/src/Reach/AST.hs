@@ -135,8 +135,9 @@ type XLVar = String
 data XLExpr a
   = XL_Con a Constant
   | XL_Var a XLVar
+  --- XXX Remove this and make EP_Prim a constant
   | XL_PrimApp a EP_Prim [XLExpr a]
-  | XL_If a Bool (XLExpr a) (XLExpr a) (XLExpr a)
+  | XL_If a (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Claim a ClaimType (XLExpr a)
   --- A ToConsensus transfers control to the contract. The arguments
   --- are (initiator, message, pay expression, contract body). The
@@ -183,6 +184,7 @@ data XILExpr a
   = XIL_Con a Constant
   | XIL_Var a XLVar
   | XIL_PrimApp a EP_Prim [XILExpr a]
+  --- XXX Remove Bool
   | XIL_If a Bool (XILExpr a) (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
   | XIL_ToConsensus a Participant [XLVar] (XILExpr a) (XILExpr a)

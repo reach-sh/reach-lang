@@ -12,6 +12,7 @@ import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
 import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
+import Data.Monoid
 
 import Reach.AST
 import Reach.Pretty()
@@ -69,109 +70,135 @@ checkFun h top topdom = toprng
             γ' <- (hExprs vs γ esl' asl')
             hExpr vs γ' e1 a1
 
-{- Inliner
+{- Inliner -}
 
-   We remove XL_FunApp and convert XL_If into IF-THEN-ELSE where
-   possible.
+data InlineV a
+  = IV_Con a Constant
+  | IV_XIL Bool (XILExpr a)
+  | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
 
- -}
+type ILEnv a = M.Map XLVar (InlineV a)
 
-type XLFuns ann = M.Map XLVar ([XLVar], XLExpr ann)
-type XILFuns ann = M.Map XLVar (Bool, ([XLVar], XILExpr ann))
-type InlineMonad ann a = State (XLFuns ann, XILFuns ann) (Bool, a)
+purePrim :: EP_Prim -> Bool
+purePrim RANDOM = False
+purePrim INTERACT = False
+purePrim (CP BALANCE) = False
+purePrim (CP TXN_VALUE) = False
+purePrim _ = True
 
-inline_fun :: Show ann => XLExpr ann -> InlineMonad ann ([XLVar], XILExpr ann)
-inline_fun vt@(XL_Var _ f) = do
-  (σi, σo) <- get
-  case M.lookup f σo of
-    Just v -> return v
-    Nothing -> do
-      case M.lookup f σi of
-        Nothing -> error $ "Inline: Function unbound, or in cycle: " ++ show vt
-        Just (formals, fun_body) -> do
-          let σi' = M.delete f σi
-          put (σi', σo)
-          (fp, fun_body') <- inline_expr fun_body
-          let v = (fp, (formals, fun_body'))
-          (σi'', σo') <- get
-          let σo'' = M.insert f v σo'
-          put (σi'', σo'')
-          return v
-inline_fun (XL_Lambda _ formals body) = do
-  (fp, body') <- inline_expr body
-  return (fp, (formals, body'))
-inline_fun x = error $ "Inline: Cannot apply " ++ show x
+--- XXX Add an ann argument to show where it is used
+iv_expr :: Show a => InlineV a -> (Bool, XILExpr a)
+iv_expr (IV_Con a c) = (True, (XIL_Con a c))
+iv_expr (IV_XIL isPure x) = (isPure, x)
+iv_expr (IV_Clo (a, _, _) _) = error $ "inline: Cannot use lambda as expression: " ++ show a
 
-inline_exprs :: Show ann => [XLExpr ann] -> InlineMonad ann [XILExpr ann]
-inline_exprs es = foldM (\(tp, es') e -> do
-                            (ep, e') <- inline_expr e
-                            return (tp && ep, e' : es'))
-                  (True, []) (reverse es)
+do_inline_funcall :: Show a => a -> InlineV a -> [InlineV a] -> InlineV a
+do_inline_funcall ch f argivs =
+  case f of
+    IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
+    IV_XIL _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
+    IV_Clo (lh, formals, body) cloenv ->
+      --- XXX Maybe copy-propagate
+      IV_XIL (arp && bp) (XIL_Let lh Nothing (Just formals) (XIL_Values ch argies) body')
+      where argvs = map iv_expr argivs
+            argies = map snd argvs
+            arp = getAll $ mconcat (map (All . fst) argvs)
+            (bp, body') = iv_expr $ peval σ' body
+            σ' = M.union (id_map lh formals) cloenv
 
-inline_expr :: Show ann => XLExpr ann -> InlineMonad ann (XILExpr ann)
-inline_expr e =
+--- XXX Convert to CPS to include ANF transform in this
+peval :: Show a => ILEnv a -> XLExpr a -> InlineV a
+peval σ e =
   case e of
-    XL_Con h c ->
-      return (True, XIL_Con h c)
-    XL_Var h v ->
-      return (True, XIL_Var h v)
-    XL_PrimApp h p es ->
-      inline_exprs es >>= \(ep, es') -> return (ep, XIL_PrimApp h p es')
-    XL_If h _ ce te fe -> do
-      (cp, ce') <- inline_expr ce
-      (tp, te') <- inline_expr te
-      (fp, fe') <- inline_expr fe
-      return (cp && tp && fp, XIL_If h (tp && fp) ce' te' fe')
-    XL_Claim h ct ae -> do
-      (_, ae') <- inline_expr ae
-      --- Assert is impure because it could fail
-      return (False, XIL_Claim h ct ae')
-    XL_ToConsensus h p ins pe ce -> do
-      (_, pe') <- inline_expr pe
-      (_, ce') <- inline_expr ce
-      return (False, XIL_ToConsensus h p ins pe' ce')
-    XL_FromConsensus h be -> do
-      (_, be') <- inline_expr be
-      return (False, XIL_FromConsensus h be')
-    XL_Values h es ->
-      inline_exprs es >>= \(ep, es') -> return (ep, XIL_Values h es')
-    XL_Transfer h to te -> do
-      (_, tp') <- inline_expr te
-      return (False, XIL_Transfer h to tp')
-    XL_Declassify h de -> do
-      (dp, de') <- inline_expr de
-      return (dp, XIL_Declassify h de')
-    XL_Let h mp mvs ve be -> do
-      (vp, ve') <- inline_expr ve
-      (bp, be') <- inline_expr be
-      return (vp && bp, XIL_Let h mp mvs ve' be')
-    XL_FunApp h f args -> do
-      (arp, args') <- inline_exprs args
-      (fp, (formals, fun_body')) <- inline_fun f
-      return (arp && fp, XIL_Let h Nothing (Just formals) (XIL_Values h args') fun_body')
-    XL_While h lv ie ce inve be ke -> do
-      (_, ie') <- inline_expr ie
-      (_, ce') <- inline_expr ce
-      (_, inve') <- inline_expr inve
-      (_, be') <- inline_expr be
-      (_, ke') <- inline_expr ke
-      return (False, XIL_While h lv ie' ce' inve' be' ke')
-    XL_Continue h ne -> do
-      (_, ne') <- inline_expr ne
-      return (False, XIL_Continue h ne')
-    XL_Lambda h _formals _body -> do
-      error $ "Inline: Cannot use lambda in this position: " ++ show h
+    XL_Con a c -> IV_Con a c
+    XL_Var _a v ->
+      case M.lookup v σ of
+        Nothing -> error $ "inline: Unbound variable: " ++ show e
+        Just iv -> iv
+    XL_PrimApp a p es ->
+      --- XXX Do constant folding here
+      IV_XIL isPure (XIL_PrimApp a p ies)
+      where (iep, ies) = rs es
+            isPure = purePrim p && iep
+    XL_If a c t f ->
+      --- XXX Just transform to IF_THEN_ELSE here
+      IV_XIL (cp && (tp && fp)) (XIL_If a (tp && fp) c' t' f')
+      where (cp, c') = r c
+            (tp, t') = r t
+            (fp, f') = r f
+    XL_Claim a ct ae ->
+      --- Claim is impure because it could fail
+      IV_XIL False (XIL_Claim a ct (sr ae))
+    XL_ToConsensus a p vs ae be ->
+      IV_XIL False (XIL_ToConsensus a p vs (sr ae) be')
+      where be' = snd $ iv_expr $ peval σ' be
+            σ' = M.union (id_map a vs) σ
+    XL_FromConsensus a be ->
+      IV_XIL False (XIL_FromConsensus a (sr be))
+    XL_Values a es ->
+      --- XXX A future version of this could be doing value-count checking
+      IV_XIL iep (XIL_Values a ies)
+      where (iep, ies) = rs es
+    XL_Transfer a p ae ->
+      IV_XIL False (XIL_Transfer a p (sr ae))
+    XL_Declassify a de ->
+      IV_XIL dp (XIL_Declassify a de')
+      where (dp, de') = r de
+    XL_Let a mp mvs ve be ->
+      IV_XIL (vp && bp) (XIL_Let a mp mvs ve' be')
+      where (vp, ve') = r ve
+            (bp, be') = iv_expr $ peval σ' be
+            σ' = M.union σ_new σ
+            σ_new = case mvs of
+              Nothing -> M.empty
+              Just vs -> id_map a vs
+    XL_While a lv ie ce inve be ke ->
+      IV_XIL False (XIL_While a lv (sr ie) (sr' ce) (sr' inve) (sr' be) (sr' ke))
+      where sr' x = snd $ iv_expr $ peval σ' x
+            σ' = M.union (id_map a [lv]) σ
+    XL_Continue a ne ->
+      IV_XIL False (XIL_Continue a (sr ne))
+    XL_Lambda a formals body ->
+      IV_Clo (a, formals, body) σ
+    XL_FunApp a fe es ->
+      do_inline_funcall a (peval σ fe) (map (peval σ) es) 
+  where r = iv_expr . peval σ
+        sr = snd . r
+        rs es = (iep, ies)
+          where pies = map r es
+                ies = map snd pies
+                iep = getAll $ mconcat (map (All . fst) pies)
 
-inline_defs :: Show ann => [XLDef ann] -> XLFuns ann -> XLExpr ann -> XILExpr ann
-inline_defs [] σ me = me'
-  where ((_, me'), _) = runState (inline_expr me) (σ, M.empty)
-inline_defs (XL_DefineFun _ f args body : ds) σ me = inline_defs ds σ' me
-  where σ' = M.insert f (args,body) σ
-inline_defs (XL_DefineValues h vs e : ds) σ me = inline_defs ds σ me'
-  where me'= XL_Let h Nothing (Just vs) e me
+id_map :: Show a => a -> [XLVar] -> ILEnv a
+id_map a vs = (M.fromList (map (iv_id a) vs))
 
-inline :: Show ann => XLProgram ann -> XILProgram ann
-inline (XL_Prog h defs ps m) = XIL_Prog h ps (inline_defs defs M.empty m)
+iv_id :: Show a => a -> XLVar -> (XLVar, (InlineV a))
+--- XXX Make a new type for this to preserve the 'a' of the reference
+iv_id a x = (x, IV_XIL True (XIL_Var a x))
+  
+inline :: Show a => XLProgram a -> XILProgram a
+inline (XL_Prog ph defs ps m) = XIL_Prog ph ps m'
+  where (_, m') = iv_expr iv
+        iv = peval σ_top_and_ps m_defs
+        σ_top_and_ps = M.union σ_ps σ_top
+        σ_ps = foldr add_ps M.empty ps
+        add_ps (_ph, vs) σ = foldr add_pvs σ vs
+        --- XXX shadow warning
+        add_pvs (vh, v, _bt) σ = M.insert v (snd (iv_id vh v)) σ
+        m_defs = foldr add_def m defs
+        add_def d ie =
+          case d of
+            XL_DefineValues h vs vs_e ->
+              XL_Let h Nothing (Just vs) vs_e ie
+            XL_DefineFun _ _ _ _ -> ie
+        σ_top = foldr add_tops M.empty defs
+        add_tops d σ =
+          case d of
+            XL_DefineValues h vs _ ->
+              --- XXX This is a little weird
+              M.union (id_map h vs) σ
+            XL_DefineFun h f args body ->
+              M.insert f (IV_Clo (h, args, body) σ_top) σ
 
 {- ANF
 
