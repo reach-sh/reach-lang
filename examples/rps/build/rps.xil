@@ -96,7 +96,7 @@ XIL_Prog
                             [1m[36m,[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                             [1m[36m][0m 
                             [1m[36m([0m XIL_PrimApp 
-                                [1m[33m([0m Just [95m([0m TokenPn 1704 62 22 [95m)[0m [1m[33m)[0m [1m[33m([0m CP ADD [1m[33m)[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 1703 62 21 [95m)[0m [1m[33m)[0m [1m[33m([0m CP ADD [1m[33m)[0m 
                                 [1m[33m[[0m XIL_Var 
                                     [95m([0m Just [96m([0m TokenPn 1519 58 5 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                 [1m[33m,[0m XIL_Var 
@@ -112,7 +112,7 @@ XIL_Prog
                                         [96m[[0m XIL_PrimApp 
                                             [93m([0m Just [1m[95m([0m TokenPn 1646 61 3 [1m[95m)[0m [93m)[0m [93m([0m CP TXN_VALUE [93m)[0m [93m[[0m[93m][0m
                                         [96m,[0m XIL_PrimApp 
-                                            [93m([0m Just [1m[95m([0m TokenPn 1704 62 22 [1m[95m)[0m [93m)[0m [93m([0m CP ADD [93m)[0m 
+                                            [93m([0m Just [1m[95m([0m TokenPn 1703 62 21 [1m[95m)[0m [93m)[0m [93m([0m CP ADD [93m)[0m 
                                             [93m[[0m XIL_Var 
                                                 [1m[95m([0m Just [1m[96m([0m TokenPn 1646 61 3 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                             [93m,[0m XIL_Var 
@@ -122,42 +122,42 @@ XIL_Prog
                                     [95m)[0m
                                 [1m[33m)[0m 
                                 [1m[33m([0m XIL_FromConsensus 
-                                    [95m([0m Just [96m([0m TokenPn 1723 63 3 [96m)[0m [95m)[0m 
+                                    [95m([0m Just [96m([0m TokenPn 1722 63 3 [96m)[0m [95m)[0m 
                                     [95m([0m XIL_Let 
-                                        [96m([0m Just [93m([0m TokenPn 1771 66 21 [93m)[0m [96m)[0m [96m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [96m)[0m Nothing 
+                                        [96m([0m Just [93m([0m TokenPn 1770 66 21 [93m)[0m [96m)[0m [96m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [96m)[0m Nothing 
                                         [96m([0m XIL_PrimApp 
-                                            [93m([0m Just [1m[95m([0m TokenPn 1755 66 5 [1m[95m)[0m [93m)[0m INTERACT 
+                                            [93m([0m Just [1m[95m([0m TokenPn 1754 66 5 [1m[95m)[0m [93m)[0m INTERACT 
                                             [93m[[0m XIL_Con 
-                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1764 66 14 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m Con_BS [1m[97m"[0m[1m[94maccepts[0m[1m[97m"[0m [1m[95m)[0m
+                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1763 66 14 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m Con_BS [1m[97m"[0m[1m[94maccepts[0m[1m[97m"[0m [1m[95m)[0m
                                             [93m][0m
                                         [96m)[0m 
                                         [96m([0m XIL_ToConsensus 
-                                            [93m([0m Just [1m[95m([0m TokenPn 1781 67 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [93m[[0m[93m][0m 
+                                            [93m([0m Just [1m[95m([0m TokenPn 1780 67 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [93m[[0m[93m][0m 
                                             [93m([0m XIL_Var 
                                                 [1m[95m([0m Just [1m[96m([0m TokenPn 1646 61 3 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                             [93m)[0m 
                                             [93m([0m XIL_Let 
-                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1781 67 3 [1m[96m)[0m [1m[95m)[0m Nothing Nothing 
+                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1780 67 3 [1m[96m)[0m [1m[95m)[0m Nothing Nothing 
                                                 [1m[95m([0m XIL_Claim 
-                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1781 67 3 [1m[93m)[0m [1m[96m)[0m CT_Require 
+                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1780 67 3 [1m[93m)[0m [1m[96m)[0m CT_Require 
                                                     [1m[96m([0m XIL_PrimApp 
-                                                        [1m[93m([0m Just [35m([0m TokenPn 1781 67 3 [35m)[0m [1m[93m)[0m [1m[93m([0m CP PEQ [1m[93m)[0m 
+                                                        [1m[93m([0m Just [35m([0m TokenPn 1780 67 3 [35m)[0m [1m[93m)[0m [1m[93m([0m CP PEQ [1m[93m)[0m 
                                                         [1m[93m[[0m XIL_PrimApp 
-                                                            [35m([0m Just [36m([0m TokenPn 1781 67 3 [36m)[0m [35m)[0m [35m([0m CP TXN_VALUE [35m)[0m [35m[[0m[35m][0m
+                                                            [35m([0m Just [36m([0m TokenPn 1780 67 3 [36m)[0m [35m)[0m [35m([0m CP TXN_VALUE [35m)[0m [35m[[0m[35m][0m
                                                         [1m[93m,[0m XIL_Var 
                                                             [35m([0m Just [36m([0m TokenPn 1646 61 3 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                         [1m[93m][0m 
                                                     [1m[96m)[0m
                                                 [1m[95m)[0m 
                                                 [1m[95m([0m XIL_FromConsensus 
-                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1803 68 3 [1m[93m)[0m [1m[96m)[0m 
+                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1802 68 3 [1m[93m)[0m [1m[96m)[0m 
                                                     [1m[96m([0m XIL_Let 
-                                                        [1m[93m([0m Just [35m([0m TokenPn 1835 71 5 [35m)[0m [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
+                                                        [1m[93m([0m Just [35m([0m TokenPn 1834 71 5 [35m)[0m [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
                                                         [1m[93m([0m Just [35m[[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [35m][0m [1m[93m)[0m 
                                                         [1m[93m([0m XIL_Let 
                                                             [35m([0m Just [36m([0m TokenPn 352 14 1 [36m)[0m [35m)[0m Nothing [35m([0m Just [36m[[0m[36m][0m [35m)[0m 
                                                             [35m([0m XIL_Values 
-                                                                [36m([0m Just [33m([0m TokenPn 1857 71 27 [33m)[0m [36m)[0m [36m[[0m[36m][0m
+                                                                [36m([0m Just [33m([0m TokenPn 1856 71 27 [33m)[0m [36m)[0m [36m[[0m[36m][0m
                                                             [35m)[0m 
                                                             [35m([0m XIL_Let 
                                                                 [36m([0m Just [33m([0m TokenPn 320 16 1 [33m)[0m [36m)[0m Nothing 
@@ -357,7 +357,7 @@ XIL_Prog
                                                             [35m)[0m
                                                         [1m[93m)[0m 
                                                         [1m[93m([0m XIL_Let 
-                                                            [35m([0m Just [36m([0m TokenPn 1865 72 5 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m 
+                                                            [35m([0m Just [36m([0m TokenPn 1864 72 5 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m 
                                                             [35m([0m Just 
                                                                 [36m[[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m 
                                                                 [36m,[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m 
@@ -367,9 +367,9 @@ XIL_Prog
                                                                 [36m([0m Just [33m([0m TokenPn 376 20 1 [33m)[0m [36m)[0m Nothing 
                                                                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [33m][0m [36m)[0m 
                                                                 [36m([0m XIL_Values 
-                                                                    [33m([0m Just [1m[35m([0m TokenPn 1901 72 41 [1m[35m)[0m [33m)[0m 
+                                                                    [33m([0m Just [1m[35m([0m TokenPn 1900 72 41 [1m[35m)[0m [33m)[0m 
                                                                     [33m[[0m XIL_Var 
-                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1835 71 5 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
+                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1834 71 5 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
                                                                     [33m][0m
                                                                 [36m)[0m 
                                                                 [36m([0m XIL_Let 
@@ -393,7 +393,7 @@ XIL_Prog
                                                                                 [1m[33m,[0m XIL_PrimApp 
                                                                                     [95m([0m Just [96m([0m TokenPn 496 22 71 [96m)[0m [95m)[0m [95m([0m CP UINT256_TO_BYTES [95m)[0m 
                                                                                     [95m[[0m XIL_Var 
-                                                                                        [96m([0m Just [93m([0m TokenPn 1901 72 41 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                        [96m([0m Just [93m([0m TokenPn 1900 72 41 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                     [95m][0m
                                                                                 [1m[33m][0m 
                                                                             [1m[36m][0m
@@ -410,51 +410,51 @@ XIL_Prog
                                                                 [36m)[0m
                                                             [35m)[0m 
                                                             [35m([0m XIL_Let 
-                                                                [36m([0m Just [33m([0m TokenPn 1915 73 5 [33m)[0m [36m)[0m [36m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m)[0m 
+                                                                [36m([0m Just [33m([0m TokenPn 1914 73 5 [33m)[0m [36m)[0m [36m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m)[0m 
                                                                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [33m][0m [36m)[0m 
                                                                 [36m([0m XIL_Declassify 
-                                                                    [33m([0m Just [1m[35m([0m TokenPn 1941 73 31 [1m[35m)[0m [33m)[0m 
+                                                                    [33m([0m Just [1m[35m([0m TokenPn 1940 73 31 [1m[35m)[0m [33m)[0m 
                                                                     [33m([0m XIL_Var 
-                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1865 72 5 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m 
+                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1864 72 5 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m 
                                                                     [33m)[0m
                                                                 [36m)[0m 
                                                                 [36m([0m XIL_Let 
-                                                                    [33m([0m Just [1m[35m([0m TokenPn 1973 74 21 [1m[35m)[0m [33m)[0m [33m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [33m)[0m Nothing 
+                                                                    [33m([0m Just [1m[35m([0m TokenPn 1972 74 21 [1m[35m)[0m [33m)[0m [33m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [33m)[0m Nothing 
                                                                     [33m([0m XIL_PrimApp 
-                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1957 74 5 [1m[36m)[0m [1m[35m)[0m INTERACT 
+                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1956 74 5 [1m[36m)[0m [1m[35m)[0m INTERACT 
                                                                         [1m[35m[[0m XIL_Con 
-                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1966 74 14 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_BS [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m [1m[36m)[0m
+                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1965 74 14 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_BS [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m [1m[36m)[0m
                                                                         [1m[35m][0m
                                                                     [33m)[0m 
                                                                     [33m([0m XIL_ToConsensus 
-                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1983 75 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[35m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [1m[35m][0m 
+                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1982 75 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[35m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [1m[35m][0m 
                                                                         [1m[35m([0m XIL_Con 
-                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1983 75 3 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 0 [1m[36m)[0m
+                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1982 75 3 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 0 [1m[36m)[0m
                                                                         [1m[35m)[0m 
                                                                         [1m[35m([0m XIL_Let 
-                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1983 75 3 [1m[33m)[0m [1m[36m)[0m Nothing Nothing 
+                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1982 75 3 [1m[33m)[0m [1m[36m)[0m Nothing Nothing 
                                                                             [1m[36m([0m XIL_Claim 
-                                                                                [1m[33m([0m Just [95m([0m TokenPn 1983 75 3 [95m)[0m [1m[33m)[0m CT_Require 
+                                                                                [1m[33m([0m Just [95m([0m TokenPn 1982 75 3 [95m)[0m [1m[33m)[0m CT_Require 
                                                                                 [1m[33m([0m XIL_PrimApp 
-                                                                                    [95m([0m Just [96m([0m TokenPn 1983 75 3 [96m)[0m [95m)[0m [95m([0m CP PEQ [95m)[0m 
+                                                                                    [95m([0m Just [96m([0m TokenPn 1982 75 3 [96m)[0m [95m)[0m [95m([0m CP PEQ [95m)[0m 
                                                                                     [95m[[0m XIL_PrimApp 
-                                                                                        [96m([0m Just [93m([0m TokenPn 1983 75 3 [93m)[0m [96m)[0m [96m([0m CP TXN_VALUE [96m)[0m [96m[[0m[96m][0m
+                                                                                        [96m([0m Just [93m([0m TokenPn 1982 75 3 [93m)[0m [96m)[0m [96m([0m CP TXN_VALUE [96m)[0m [96m[[0m[96m][0m
                                                                                     [95m,[0m XIL_Con 
-                                                                                        [96m([0m Just [93m([0m TokenPn 1983 75 3 [93m)[0m [96m)[0m [96m([0m Con_I 0 [96m)[0m
+                                                                                        [96m([0m Just [93m([0m TokenPn 1982 75 3 [93m)[0m [96m)[0m [96m([0m Con_I 0 [96m)[0m
                                                                                     [95m][0m 
                                                                                 [1m[33m)[0m
                                                                             [1m[36m)[0m 
                                                                             [1m[36m([0m XIL_FromConsensus 
-                                                                                [1m[33m([0m Just [95m([0m TokenPn 2005 76 3 [95m)[0m [1m[33m)[0m 
+                                                                                [1m[33m([0m Just [95m([0m TokenPn 2004 76 3 [95m)[0m [1m[33m)[0m 
                                                                                 [1m[33m([0m XIL_Let 
-                                                                                    [95m([0m Just [96m([0m TokenPn 2037 79 5 [96m)[0m [95m)[0m [95m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [95m)[0m 
+                                                                                    [95m([0m Just [96m([0m TokenPn 2036 79 5 [96m)[0m [95m)[0m [95m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [95m)[0m 
                                                                                     [95m([0m Just [96m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [96m][0m [95m)[0m 
                                                                                     [95m([0m XIL_Declassify 
-                                                                                        [96m([0m Just [93m([0m TokenPn 2061 79 29 [93m)[0m [96m)[0m 
+                                                                                        [96m([0m Just [93m([0m TokenPn 2060 79 29 [93m)[0m [96m)[0m 
                                                                                         [96m([0m XIL_Let 
                                                                                             [93m([0m Just [1m[95m([0m TokenPn 352 14 1 [1m[95m)[0m [93m)[0m Nothing [93m([0m Just [1m[95m[[0m[1m[95m][0m [93m)[0m 
                                                                                             [93m([0m XIL_Values 
-                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2069 79 37 [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
+                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2068 79 37 [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
                                                                                             [93m)[0m 
                                                                                             [93m([0m XIL_Let 
                                                                                                 [1m[95m([0m Just [1m[96m([0m TokenPn 320 16 1 [1m[96m)[0m [1m[95m)[0m Nothing 
@@ -655,42 +655,42 @@ XIL_Prog
                                                                                         [96m)[0m
                                                                                     [95m)[0m 
                                                                                     [95m([0m XIL_Let 
-                                                                                        [96m([0m Just [93m([0m TokenPn 2092 80 19 [93m)[0m [96m)[0m [96m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [96m)[0m Nothing 
+                                                                                        [96m([0m Just [93m([0m TokenPn 2091 80 19 [93m)[0m [96m)[0m [96m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [96m)[0m Nothing 
                                                                                         [96m([0m XIL_PrimApp 
-                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2078 80 5 [1m[95m)[0m [93m)[0m INTERACT 
+                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2077 80 5 [1m[95m)[0m [93m)[0m INTERACT 
                                                                                             [93m[[0m XIL_Con 
-                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2087 80 14 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m Con_BS [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m [1m[95m)[0m
+                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2086 80 14 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m Con_BS [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m [1m[95m)[0m
                                                                                             [93m][0m
                                                                                         [96m)[0m 
                                                                                         [96m([0m XIL_ToConsensus 
-                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2102 81 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [93m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [93m][0m 
+                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2101 81 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [93m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [93m][0m 
                                                                                             [93m([0m XIL_Con 
-                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2102 81 3 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m Con_I 0 [1m[95m)[0m
+                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2101 81 3 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m Con_I 0 [1m[95m)[0m
                                                                                             [93m)[0m 
                                                                                             [93m([0m XIL_Let 
-                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2102 81 3 [1m[96m)[0m [1m[95m)[0m Nothing Nothing 
+                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2101 81 3 [1m[96m)[0m [1m[95m)[0m Nothing Nothing 
                                                                                                 [1m[95m([0m XIL_Claim 
-                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2102 81 3 [1m[93m)[0m [1m[96m)[0m CT_Require 
+                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2101 81 3 [1m[93m)[0m [1m[96m)[0m CT_Require 
                                                                                                     [1m[96m([0m XIL_PrimApp 
-                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2102 81 3 [35m)[0m [1m[93m)[0m [1m[93m([0m CP PEQ [1m[93m)[0m 
+                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2101 81 3 [35m)[0m [1m[93m)[0m [1m[93m([0m CP PEQ [1m[93m)[0m 
                                                                                                         [1m[93m[[0m XIL_PrimApp 
-                                                                                                            [35m([0m Just [36m([0m TokenPn 2102 81 3 [36m)[0m [35m)[0m [35m([0m CP TXN_VALUE [35m)[0m [35m[[0m[35m][0m
+                                                                                                            [35m([0m Just [36m([0m TokenPn 2101 81 3 [36m)[0m [35m)[0m [35m([0m CP TXN_VALUE [35m)[0m [35m[[0m[35m][0m
                                                                                                         [1m[93m,[0m XIL_Con 
-                                                                                                            [35m([0m Just [36m([0m TokenPn 2102 81 3 [36m)[0m [35m)[0m [35m([0m Con_I 0 [35m)[0m
+                                                                                                            [35m([0m Just [36m([0m TokenPn 2101 81 3 [36m)[0m [35m)[0m [35m([0m Con_I 0 [35m)[0m
                                                                                                         [1m[93m][0m 
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m)[0m 
                                                                                                 [1m[95m([0m XIL_Let 
-                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2129 82 10 [1m[93m)[0m [1m[96m)[0m Nothing Nothing 
+                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2128 82 10 [1m[93m)[0m [1m[96m)[0m Nothing Nothing 
                                                                                                     [1m[96m([0m XIL_Claim 
-                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2129 82 10 [35m)[0m [1m[93m)[0m CT_Require 
+                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2128 82 10 [35m)[0m [1m[93m)[0m CT_Require 
                                                                                                         [1m[93m([0m XIL_Let 
                                                                                                             [35m([0m Just [36m([0m TokenPn 14 3 1 [36m)[0m [35m)[0m Nothing 
                                                                                                             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [36m][0m [35m)[0m 
                                                                                                             [35m([0m XIL_Values 
-                                                                                                                [36m([0m Just [33m([0m TokenPn 2136 82 17 [33m)[0m [36m)[0m 
+                                                                                                                [36m([0m Just [33m([0m TokenPn 2135 82 17 [33m)[0m [36m)[0m 
                                                                                                                 [36m[[0m XIL_Var 
-                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2102 81 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2101 81 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                 [36m][0m
                                                                                                             [35m)[0m 
                                                                                                             [35m([0m XIL_Let 
@@ -707,12 +707,12 @@ XIL_Prog
                                                                                                                         [1m[35m[[0m XIL_Con 
                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 14 3 1 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 0 [1m[36m)[0m
                                                                                                                         [1m[35m,[0m XIL_Var 
-                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2136 82 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2135 82 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                         [1m[35m][0m 
                                                                                                                     [33m,[0m XIL_PrimApp 
                                                                                                                         [1m[35m([0m Just [1m[36m([0m TokenPn 14 3 1 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PLT [1m[35m)[0m 
                                                                                                                         [1m[35m[[0m XIL_Var 
-                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2136 82 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2135 82 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                         [1m[35m,[0m XIL_Con 
                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 14 3 1 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 3 [1m[36m)[0m
                                                                                                                         [1m[35m][0m 
@@ -734,56 +734,56 @@ XIL_Prog
                                                                                                         [1m[93m)[0m
                                                                                                     [1m[96m)[0m 
                                                                                                     [1m[96m([0m XIL_FromConsensus 
-                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2148 83 3 [35m)[0m [1m[93m)[0m 
+                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2147 83 3 [35m)[0m [1m[93m)[0m 
                                                                                                         [1m[93m([0m XIL_Let 
-                                                                                                            [35m([0m Just [36m([0m TokenPn 2180 86 5 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m 
+                                                                                                            [35m([0m Just [36m([0m TokenPn 2179 86 5 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m 
                                                                                                             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m [36m][0m [35m)[0m 
                                                                                                             [35m([0m XIL_Declassify 
-                                                                                                                [36m([0m Just [33m([0m TokenPn 2204 86 29 [33m)[0m [36m)[0m 
+                                                                                                                [36m([0m Just [33m([0m TokenPn 2203 86 29 [33m)[0m [36m)[0m 
                                                                                                                 [36m([0m XIL_Var 
-                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 1865 72 5 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m 
+                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 1864 72 5 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m 
                                                                                                                 [36m)[0m
                                                                                                             [35m)[0m 
                                                                                                             [35m([0m XIL_Let 
-                                                                                                                [36m([0m Just [33m([0m TokenPn 2218 87 5 [33m)[0m [36m)[0m [36m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m)[0m 
+                                                                                                                [36m([0m Just [33m([0m TokenPn 2217 87 5 [33m)[0m [36m)[0m [36m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m)[0m 
                                                                                                                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [33m][0m [36m)[0m 
                                                                                                                 [36m([0m XIL_Declassify 
-                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2242 87 29 [1m[35m)[0m [33m)[0m 
+                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2241 87 29 [1m[35m)[0m [33m)[0m 
                                                                                                                     [33m([0m XIL_Var 
-                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1835 71 5 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
+                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1834 71 5 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
                                                                                                                     [33m)[0m
                                                                                                                 [36m)[0m 
                                                                                                                 [36m([0m XIL_Let 
-                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2272 88 21 [1m[35m)[0m [33m)[0m [33m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [33m)[0m Nothing 
+                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2271 88 21 [1m[35m)[0m [33m)[0m [33m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [33m)[0m Nothing 
                                                                                                                     [33m([0m XIL_PrimApp 
-                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2256 88 5 [1m[36m)[0m [1m[35m)[0m INTERACT 
+                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2255 88 5 [1m[36m)[0m [1m[35m)[0m INTERACT 
                                                                                                                         [1m[35m[[0m XIL_Con 
-                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2265 88 14 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_BS [1m[97m"[0m[1m[94mreveals[0m[1m[97m"[0m [1m[36m)[0m
+                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2264 88 14 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_BS [1m[97m"[0m[1m[94mreveals[0m[1m[97m"[0m [1m[36m)[0m
                                                                                                                         [1m[35m][0m
                                                                                                                     [33m)[0m 
                                                                                                                     [33m([0m XIL_ToConsensus 
-                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2282 89 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2281 89 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
                                                                                                                         [1m[35m[[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
                                                                                                                         [1m[35m,[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                         [1m[35m][0m 
                                                                                                                         [1m[35m([0m XIL_Con 
-                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2282 89 3 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 0 [1m[36m)[0m
+                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2281 89 3 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 0 [1m[36m)[0m
                                                                                                                         [1m[35m)[0m 
                                                                                                                         [1m[35m([0m XIL_Let 
-                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2282 89 3 [1m[33m)[0m [1m[36m)[0m Nothing Nothing 
+                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2281 89 3 [1m[33m)[0m [1m[36m)[0m Nothing Nothing 
                                                                                                                             [1m[36m([0m XIL_Claim 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2282 89 3 [95m)[0m [1m[33m)[0m CT_Require 
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2281 89 3 [95m)[0m [1m[33m)[0m CT_Require 
                                                                                                                                 [1m[33m([0m XIL_PrimApp 
-                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2282 89 3 [96m)[0m [95m)[0m [95m([0m CP PEQ [95m)[0m 
+                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2281 89 3 [96m)[0m [95m)[0m [95m([0m CP PEQ [95m)[0m 
                                                                                                                                     [95m[[0m XIL_PrimApp 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2282 89 3 [93m)[0m [96m)[0m [96m([0m CP TXN_VALUE [96m)[0m [96m[[0m[96m][0m
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2281 89 3 [93m)[0m [96m)[0m [96m([0m CP TXN_VALUE [96m)[0m [96m[[0m[96m][0m
                                                                                                                                     [95m,[0m XIL_Con 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2282 89 3 [93m)[0m [96m)[0m [96m([0m Con_I 0 [96m)[0m
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2281 89 3 [93m)[0m [96m)[0m [96m([0m Con_I 0 [96m)[0m
                                                                                                                                     [95m][0m 
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m)[0m 
                                                                                                                             [1m[36m([0m XIL_Let 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2321 90 15 [95m)[0m [1m[33m)[0m Nothing Nothing 
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2320 90 15 [95m)[0m [1m[33m)[0m Nothing Nothing 
                                                                                                                                 [1m[33m([0m XIL_Let 
                                                                                                                                     [95m([0m Just [96m([0m TokenPn 535 25 1 [96m)[0m [95m)[0m Nothing 
                                                                                                                                     [95m([0m Just 
@@ -793,13 +793,13 @@ XIL_Prog
                                                                                                                                         [96m][0m 
                                                                                                                                     [95m)[0m 
                                                                                                                                     [95m([0m XIL_Values 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2321 90 15 [93m)[0m [96m)[0m 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2320 90 15 [93m)[0m [96m)[0m 
                                                                                                                                         [96m[[0m XIL_Var 
-                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 1983 75 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
+                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 1982 75 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
                                                                                                                                         [96m,[0m XIL_Var 
-                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2282 89 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
+                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2281 89 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
                                                                                                                                         [96m,[0m XIL_Var 
-                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2282 89 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2281 89 3 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                         [96m][0m 
                                                                                                                                     [95m)[0m 
                                                                                                                                     [95m([0m XIL_Claim 
@@ -807,7 +807,7 @@ XIL_Prog
                                                                                                                                         [96m([0m XIL_PrimApp 
                                                                                                                                             [93m([0m Just [1m[95m([0m TokenPn 609 26 29 [1m[95m)[0m [93m)[0m [93m([0m CP PEQ [93m)[0m 
                                                                                                                                             [93m[[0m XIL_Var 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2321 90 15 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2320 90 15 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
                                                                                                                                             [93m,[0m XIL_PrimApp 
                                                                                                                                                 [1m[95m([0m Just [1m[96m([0m TokenPn 618 26 38 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m CP DIGEST [1m[95m)[0m 
                                                                                                                                                 [1m[95m[[0m XIL_PrimApp 
@@ -815,12 +815,12 @@ XIL_Prog
                                                                                                                                                     [1m[96m[[0m XIL_PrimApp 
                                                                                                                                                         [1m[93m([0m Just [35m([0m TokenPn 640 26 60 [35m)[0m [1m[93m)[0m [1m[93m([0m CP UINT256_TO_BYTES [1m[93m)[0m 
                                                                                                                                                         [1m[93m[[0m XIL_Var 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2321 90 15 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2320 90 15 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
                                                                                                                                                         [1m[93m][0m
                                                                                                                                                     [1m[96m,[0m XIL_PrimApp 
                                                                                                                                                         [1m[93m([0m Just [35m([0m TokenPn 661 26 81 [35m)[0m [1m[93m)[0m [1m[93m([0m CP UINT256_TO_BYTES [1m[93m)[0m 
                                                                                                                                                         [1m[93m[[0m XIL_Var 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2321 90 15 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2320 90 15 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                         [1m[93m][0m
                                                                                                                                                     [1m[96m][0m 
                                                                                                                                                 [1m[95m][0m
@@ -829,16 +829,16 @@ XIL_Prog
                                                                                                                                     [95m)[0m
                                                                                                                                 [1m[33m)[0m 
                                                                                                                                 [1m[33m([0m XIL_Let 
-                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2355 91 10 [96m)[0m [95m)[0m Nothing Nothing 
+                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2354 91 10 [96m)[0m [95m)[0m Nothing Nothing 
                                                                                                                                     [95m([0m XIL_Claim 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2355 91 10 [93m)[0m [96m)[0m CT_Require 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2354 91 10 [93m)[0m [96m)[0m CT_Require 
                                                                                                                                         [96m([0m XIL_Let 
                                                                                                                                             [93m([0m Just [1m[95m([0m TokenPn 14 3 1 [1m[95m)[0m [93m)[0m Nothing 
                                                                                                                                             [93m([0m Just [1m[95m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[95m][0m [93m)[0m 
                                                                                                                                             [93m([0m XIL_Values 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2362 91 17 [1m[96m)[0m [1m[95m)[0m 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2361 91 17 [1m[96m)[0m [1m[95m)[0m 
                                                                                                                                                 [1m[95m[[0m XIL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2282 89 3 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2281 89 3 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m][0m
                                                                                                                                             [93m)[0m 
                                                                                                                                             [93m([0m XIL_Let 
@@ -855,12 +855,12 @@ XIL_Prog
                                                                                                                                                         [1m[93m[[0m XIL_Con 
                                                                                                                                                             [35m([0m Just [36m([0m TokenPn 14 3 1 [36m)[0m [35m)[0m [35m([0m Con_I 0 [35m)[0m
                                                                                                                                                         [1m[93m,[0m XIL_Var 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2362 91 17 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2361 91 17 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                         [1m[93m][0m 
                                                                                                                                                     [1m[96m,[0m XIL_PrimApp 
                                                                                                                                                         [1m[93m([0m Just [35m([0m TokenPn 14 3 1 [35m)[0m [1m[93m)[0m [1m[93m([0m CP PLT [1m[93m)[0m 
                                                                                                                                                         [1m[93m[[0m XIL_Var 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2362 91 17 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2361 91 17 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                         [1m[93m,[0m XIL_Con 
                                                                                                                                                             [35m([0m Just [36m([0m TokenPn 14 3 1 [36m)[0m [35m)[0m [35m([0m Con_I 3 [35m)[0m
                                                                                                                                                         [1m[93m][0m 
@@ -882,7 +882,7 @@ XIL_Prog
                                                                                                                                         [96m)[0m
                                                                                                                                     [95m)[0m 
                                                                                                                                     [95m([0m XIL_Let 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2374 92 3 [93m)[0m [96m)[0m Nothing 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2373 92 3 [93m)[0m [96m)[0m Nothing 
                                                                                                                                         [96m([0m Just [93m[[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [93m][0m [96m)[0m 
                                                                                                                                         [96m([0m XIL_Let 
                                                                                                                                             [93m([0m Just [1m[95m([0m TokenPn 907 35 1 [1m[95m)[0m [93m)[0m Nothing 
@@ -892,11 +892,11 @@ XIL_Prog
                                                                                                                                                 [1m[95m][0m 
                                                                                                                                             [93m)[0m 
                                                                                                                                             [93m([0m XIL_Values 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2396 92 25 [1m[96m)[0m [1m[95m)[0m 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2395 92 25 [1m[96m)[0m [1m[95m)[0m 
                                                                                                                                                 [1m[95m[[0m XIL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2282 89 3 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2281 89 3 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m,[0m XIL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2102 81 3 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2101 81 3 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m][0m 
                                                                                                                                             [93m)[0m 
                                                                                                                                             [93m([0m XIL_Let 
@@ -914,9 +914,9 @@ XIL_Prog
                                                                                                                                                         [1m[93m([0m XIL_Values 
                                                                                                                                                             [35m([0m Just [36m([0m TokenPn 973 36 35 [36m)[0m [35m)[0m 
                                                                                                                                                             [35m[[0m XIL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2396 92 25 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2395 92 25 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m XIL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2396 92 25 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2395 92 25 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                                             [35m][0m 
                                                                                                                                                         [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_Let 
@@ -1155,9 +1155,9 @@ XIL_Prog
                                                                                                                                             [93m)[0m
                                                                                                                                         [96m)[0m 
                                                                                                                                         [96m([0m XIL_Let 
-                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2420 93 9 [1m[95m)[0m [93m)[0m Nothing Nothing 
+                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2419 93 9 [1m[95m)[0m [93m)[0m Nothing Nothing 
                                                                                                                                             [93m([0m XIL_Claim 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2420 93 9 [1m[96m)[0m [1m[95m)[0m CT_Assert 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2419 93 9 [1m[96m)[0m [1m[95m)[0m CT_Assert 
                                                                                                                                                 [1m[95m([0m XIL_Let 
                                                                                                                                                     [1m[96m([0m Just [1m[93m([0m TokenPn 266 13 1 [1m[93m)[0m [1m[96m)[0m Nothing 
                                                                                                                                                     [1m[96m([0m Just 
@@ -1166,11 +1166,11 @@ XIL_Prog
                                                                                                                                                         [1m[93m][0m 
                                                                                                                                                     [1m[96m)[0m 
                                                                                                                                                     [1m[96m([0m XIL_Values 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2428 93 17 [35m)[0m [1m[93m)[0m 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2427 93 17 [35m)[0m [1m[93m)[0m 
                                                                                                                                                         [1m[93m[[0m XIL_PrimApp 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2437 93 26 [36m)[0m [35m)[0m [35m([0m CP PEQ [35m)[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2436 93 26 [36m)[0m [35m)[0m [35m([0m CP PEQ [35m)[0m 
                                                                                                                                                             [35m[[0m XIL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2374 92 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2373 92 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m XIL_Var 
                                                                                                                                                                 [36m([0m Just [33m([0m TokenPn 413 17 1 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                                                                                                                                                             [35m][0m 
@@ -1178,9 +1178,9 @@ XIL_Prog
                                                                                                                                                             [35m([0m Just [36m([0m TokenPn 14 3 1 [36m)[0m [35m)[0m Nothing 
                                                                                                                                                             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [36m][0m [35m)[0m 
                                                                                                                                                             [35m([0m XIL_Values 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2454 93 43 [33m)[0m [36m)[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2453 93 43 [33m)[0m [36m)[0m 
                                                                                                                                                                 [36m[[0m XIL_Var 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2282 89 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2281 89 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                                                 [36m][0m
                                                                                                                                                             [35m)[0m 
                                                                                                                                                             [35m([0m XIL_Let 
@@ -1197,12 +1197,12 @@ XIL_Prog
                                                                                                                                                                         [1m[35m[[0m XIL_Con 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 14 3 1 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 0 [1m[36m)[0m
                                                                                                                                                                         [1m[35m,[0m XIL_Var 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2454 93 43 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2453 93 43 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m][0m 
                                                                                                                                                                     [33m,[0m XIL_PrimApp 
                                                                                                                                                                         [1m[35m([0m Just [1m[36m([0m TokenPn 14 3 1 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PLT [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XIL_Var 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2454 93 43 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2453 93 43 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m XIL_Con 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 14 3 1 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 3 [1m[36m)[0m
                                                                                                                                                                         [1m[35m][0m 
@@ -1238,7 +1238,7 @@ XIL_Prog
                                                                                                                                                                 [36m([0m XIL_Values 
                                                                                                                                                                     [33m([0m Just [1m[35m([0m TokenPn 305 14 14 [1m[35m)[0m [33m)[0m 
                                                                                                                                                                     [33m[[0m XIL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2428 93 17 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2427 93 17 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_If 
@@ -1254,7 +1254,7 @@ XIL_Prog
                                                                                                                                                                     [33m)[0m
                                                                                                                                                                 [36m)[0m
                                                                                                                                                             [35m,[0m XIL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2428 93 17 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2427 93 17 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
                                                                                                                                                             [35m][0m 
                                                                                                                                                         [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_If 
@@ -1273,9 +1273,9 @@ XIL_Prog
                                                                                                                                                 [1m[95m)[0m
                                                                                                                                             [93m)[0m 
                                                                                                                                             [93m([0m XIL_Let 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2473 94 9 [1m[96m)[0m [1m[95m)[0m Nothing Nothing 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2472 94 9 [1m[96m)[0m [1m[95m)[0m Nothing Nothing 
                                                                                                                                                 [1m[95m([0m XIL_Claim 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2473 94 9 [1m[93m)[0m [1m[96m)[0m CT_Assert 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2472 94 9 [1m[93m)[0m [1m[96m)[0m CT_Assert 
                                                                                                                                                     [1m[96m([0m XIL_Let 
                                                                                                                                                         [1m[93m([0m Just [35m([0m TokenPn 266 13 1 [35m)[0m [1m[93m)[0m Nothing 
                                                                                                                                                         [1m[93m([0m Just 
@@ -1284,11 +1284,11 @@ XIL_Prog
                                                                                                                                                             [35m][0m 
                                                                                                                                                         [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_Values 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2481 94 17 [36m)[0m [35m)[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2480 94 17 [36m)[0m [35m)[0m 
                                                                                                                                                             [35m[[0m XIL_PrimApp 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2490 94 26 [33m)[0m [36m)[0m [36m([0m CP PEQ [36m)[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2489 94 26 [33m)[0m [36m)[0m [36m([0m CP PEQ [36m)[0m 
                                                                                                                                                                 [36m[[0m XIL_Var 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2374 92 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2373 92 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m XIL_Var 
                                                                                                                                                                     [33m([0m Just [1m[35m([0m TokenPn 413 17 1 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                                                                                                                                                                 [36m][0m 
@@ -1296,9 +1296,9 @@ XIL_Prog
                                                                                                                                                                 [36m([0m Just [33m([0m TokenPn 14 3 1 [33m)[0m [36m)[0m Nothing 
                                                                                                                                                                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [33m][0m [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_Values 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2507 94 43 [1m[35m)[0m [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2506 94 43 [1m[35m)[0m [33m)[0m 
                                                                                                                                                                     [33m[[0m XIL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2102 81 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2101 81 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_Let 
@@ -1315,12 +1315,12 @@ XIL_Prog
                                                                                                                                                                             [1m[36m[[0m XIL_Con 
                                                                                                                                                                                 [1m[33m([0m Just [95m([0m TokenPn 14 3 1 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 0 [1m[33m)[0m
                                                                                                                                                                             [1m[36m,[0m XIL_Var 
-                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2507 94 43 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2506 94 43 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m][0m 
                                                                                                                                                                         [1m[35m,[0m XIL_PrimApp 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 14 3 1 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP PLT [1m[36m)[0m 
                                                                                                                                                                             [1m[36m[[0m XIL_Var 
-                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2507 94 43 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2506 94 43 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m,[0m XIL_Con 
                                                                                                                                                                                 [1m[33m([0m Just [95m([0m TokenPn 14 3 1 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 3 [1m[33m)[0m
                                                                                                                                                                             [1m[36m][0m 
@@ -1356,7 +1356,7 @@ XIL_Prog
                                                                                                                                                                     [33m([0m XIL_Values 
                                                                                                                                                                         [1m[35m([0m Just [1m[36m([0m TokenPn 305 14 14 [1m[36m)[0m [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XIL_Var 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2481 94 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2480 94 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m][0m
                                                                                                                                                                     [33m)[0m 
                                                                                                                                                                     [33m([0m XIL_If 
@@ -1372,7 +1372,7 @@ XIL_Prog
                                                                                                                                                                         [1m[35m)[0m
                                                                                                                                                                     [33m)[0m
                                                                                                                                                                 [36m,[0m XIL_Var 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2481 94 17 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2480 94 17 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
                                                                                                                                                                 [36m][0m 
                                                                                                                                                             [35m)[0m 
                                                                                                                                                             [35m([0m XIL_If 
@@ -1391,7 +1391,7 @@ XIL_Prog
                                                                                                                                                     [1m[96m)[0m
                                                                                                                                                 [1m[95m)[0m 
                                                                                                                                                 [1m[95m([0m XIL_Let 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2529 95 12 [1m[93m)[0m [1m[96m)[0m Nothing Nothing 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2528 95 12 [1m[93m)[0m [1m[96m)[0m Nothing Nothing 
                                                                                                                                                     [1m[96m([0m XIL_Let 
                                                                                                                                                         [1m[93m([0m Just [35m([0m TokenPn 1233 46 1 [35m)[0m [1m[93m)[0m Nothing 
                                                                                                                                                         [1m[93m([0m Just 
@@ -1401,13 +1401,13 @@ XIL_Prog
                                                                                                                                                             [35m][0m 
                                                                                                                                                         [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_Values 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2529 95 12 [36m)[0m [35m)[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2528 95 12 [36m)[0m [35m)[0m 
                                                                                                                                                             [35m[[0m XIL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2282 89 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2281 89 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m XIL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2102 81 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2101 81 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m XIL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2374 92 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2373 92 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                             [35m][0m 
                                                                                                                                                         [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_Let 
@@ -1422,11 +1422,11 @@ XIL_Prog
                                                                                                                                                                 [36m([0m XIL_Values 
                                                                                                                                                                     [33m([0m Just [1m[35m([0m TokenPn 1294 47 18 [1m[35m)[0m [33m)[0m 
                                                                                                                                                                     [33m[[0m XIL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2529 95 12 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2528 95 12 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m XIL_PrimApp 
                                                                                                                                                                         [1m[35m([0m Just [1m[36m([0m TokenPn 1311 47 35 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XIL_Var 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2529 95 12 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2528 95 12 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m XIL_Var 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 413 17 1 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m][0m 
@@ -1640,11 +1640,11 @@ XIL_Prog
                                                                                                                                                                     [33m([0m XIL_Values 
                                                                                                                                                                         [1m[35m([0m Just [1m[36m([0m TokenPn 1341 48 18 [1m[36m)[0m [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XIL_Var 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2529 95 12 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2528 95 12 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m XIL_PrimApp 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 1358 48 35 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m 
                                                                                                                                                                             [1m[36m[[0m XIL_Var 
-                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2529 95 12 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2528 95 12 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m,[0m XIL_Var 
                                                                                                                                                                                 [1m[33m([0m Just [95m([0m TokenPn 413 17 1 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m][0m 
@@ -1853,65 +1853,65 @@ XIL_Prog
                                                                                                                                                         [1m[93m)[0m
                                                                                                                                                     [1m[96m)[0m 
                                                                                                                                                     [1m[96m([0m XIL_Let 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2557 97 3 [35m)[0m [1m[93m)[0m Nothing 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2556 97 3 [35m)[0m [1m[93m)[0m Nothing 
                                                                                                                                                         [1m[93m([0m Just 
                                                                                                                                                             [35m[[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m 
                                                                                                                                                             [35m][0m 
                                                                                                                                                         [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_Let 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2584 97 30 [36m)[0m [35m)[0m Nothing [35m([0m Just [36m[[0m[36m][0m [35m)[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2583 97 30 [36m)[0m [35m)[0m Nothing [35m([0m Just [36m[[0m[36m][0m [35m)[0m 
                                                                                                                                                             [35m([0m XIL_Values 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2782 103 46 [33m)[0m [36m)[0m [36m[[0m[36m][0m
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2781 103 46 [33m)[0m [36m)[0m [36m[[0m[36m][0m
                                                                                                                                                             [35m)[0m 
                                                                                                                                                             [35m([0m XIL_If 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2593 98 5 [33m)[0m [36m)[0m True 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2592 98 5 [33m)[0m [36m)[0m True 
                                                                                                                                                                 [36m([0m XIL_PrimApp 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2605 98 17 [1m[35m)[0m [33m)[0m [33m([0m CP PEQ [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2604 98 17 [1m[35m)[0m [33m)[0m [33m([0m CP PEQ [33m)[0m 
                                                                                                                                                                     [33m[[0m XIL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2374 92 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2373 92 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m XIL_Var 
                                                                                                                                                                         [1m[35m([0m Just [1m[36m([0m TokenPn 413 17 1 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_Values 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2631 99 14 [1m[35m)[0m [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2630 99 14 [1m[35m)[0m [33m)[0m 
                                                                                                                                                                     [33m[[0m XIL_PrimApp 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2634 99 17 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP MUL [1m[35m)[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2633 99 17 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP MUL [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XIL_Con 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2632 99 15 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 2 [1m[36m)[0m
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2631 99 15 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 2 [1m[36m)[0m
                                                                                                                                                                         [1m[35m,[0m XIL_Var 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 1646 61 3 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m][0m 
                                                                                                                                                                     [33m,[0m XIL_Con 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2649 99 32 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_I 0 [1m[35m)[0m
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2648 99 32 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_I 0 [1m[35m)[0m
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_If 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2664 100 10 [1m[35m)[0m [33m)[0m True 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2663 100 10 [1m[35m)[0m [33m)[0m True 
                                                                                                                                                                     [33m([0m XIL_PrimApp 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2676 100 22 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2675 100 22 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XIL_Var 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2374 92 3 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2373 92 3 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m XIL_Var 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 413 17 1 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m][0m 
                                                                                                                                                                     [33m)[0m 
                                                                                                                                                                     [33m([0m XIL_Values 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2702 101 14 [1m[36m)[0m [1m[35m)[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2701 101 14 [1m[36m)[0m [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XIL_Con 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2703 101 15 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 0 [1m[36m)[0m
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2702 101 15 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 0 [1m[36m)[0m
                                                                                                                                                                         [1m[35m,[0m XIL_PrimApp 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2708 101 20 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP MUL [1m[36m)[0m 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2707 101 20 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP MUL [1m[36m)[0m 
                                                                                                                                                                             [1m[36m[[0m XIL_Con 
-                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2706 101 18 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 2 [1m[33m)[0m
+                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2705 101 18 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 2 [1m[33m)[0m
                                                                                                                                                                             [1m[36m,[0m XIL_Var 
                                                                                                                                                                                 [1m[33m([0m Just [95m([0m TokenPn 1646 61 3 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m][0m 
                                                                                                                                                                         [1m[35m][0m 
                                                                                                                                                                     [33m)[0m 
                                                                                                                                                                     [33m([0m XIL_Values 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2750 103 14 [1m[36m)[0m [1m[35m)[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2749 103 14 [1m[36m)[0m [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XIL_Var 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 1646 61 3 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m XIL_Var 
@@ -1922,43 +1922,43 @@ XIL_Prog
                                                                                                                                                             [35m)[0m
                                                                                                                                                         [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_Let 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2824 104 39 [36m)[0m [35m)[0m Nothing Nothing 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2823 104 39 [36m)[0m [35m)[0m Nothing Nothing 
                                                                                                                                                             [35m([0m XIL_Transfer 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2788 104 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2787 104 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
                                                                                                                                                                 [36m([0m XIL_PrimApp 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2810 104 25 [1m[35m)[0m [33m)[0m [33m([0m CP ADD [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2809 104 25 [1m[35m)[0m [33m)[0m [33m([0m CP ADD [33m)[0m 
                                                                                                                                                                     [33m[[0m XIL_Var 
                                                                                                                                                                         [1m[35m([0m Just [1m[36m([0m TokenPn 1646 61 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m XIL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2557 97 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2556 97 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m
                                                                                                                                                             [35m)[0m 
                                                                                                                                                             [35m([0m XIL_Let 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2849 105 24 [33m)[0m [36m)[0m Nothing Nothing 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2848 105 24 [33m)[0m [36m)[0m Nothing Nothing 
                                                                                                                                                                 [36m([0m XIL_Transfer 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2828 105 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2827 105 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
                                                                                                                                                                     [33m([0m XIL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2557 97 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2556 97 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m 
                                                                                                                                                                     [33m)[0m
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_FromConsensus 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2853 106 3 [1m[35m)[0m [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2852 106 3 [1m[35m)[0m [33m)[0m 
                                                                                                                                                                     [33m([0m XIL_Let 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2882 108 19 [1m[36m)[0m [1m[35m)[0m Nothing Nothing 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2881 108 19 [1m[36m)[0m [1m[35m)[0m Nothing Nothing 
                                                                                                                                                                         [1m[35m([0m XIL_PrimApp 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2866 108 3 [1m[33m)[0m [1m[36m)[0m INTERACT 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2865 108 3 [1m[33m)[0m [1m[36m)[0m INTERACT 
                                                                                                                                                                             [1m[36m[[0m XIL_Con 
-                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2875 108 12 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [1m[33m)[0m
+                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2874 108 12 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [1m[33m)[0m
                                                                                                                                                                             [1m[36m][0m
                                                                                                                                                                         [1m[35m)[0m 
                                                                                                                                                                         [1m[35m([0m XIL_Let 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m([0m TokenPn 461 18 1 [1m[33m)[0m [1m[36m)[0m Nothing 
                                                                                                                                                                             [1m[36m([0m Just [1m[33m[[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m [1m[33m][0m [1m[36m)[0m 
                                                                                                                                                                             [1m[36m([0m XIL_Values 
-                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2906 109 21 [95m)[0m [1m[33m)[0m 
+                                                                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2905 109 21 [95m)[0m [1m[33m)[0m 
                                                                                                                                                                                 [1m[33m[[0m XIL_Var 
-                                                                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2374 92 3 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2373 92 3 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                                 [1m[33m][0m
                                                                                                                                                                             [1m[36m)[0m 
                                                                                                                                                                             [1m[36m([0m XIL_Let 
@@ -1971,7 +1971,7 @@ XIL_Prog
                                                                                                                                                                                         [96m([0m XIL_Values 
                                                                                                                                                                                             [93m([0m Just [1m[95m([0m TokenPn 506 19 20 [1m[95m)[0m [93m)[0m 
                                                                                                                                                                                             [93m[[0m XIL_Var 
-                                                                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2906 109 21 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
+                                                                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2905 109 21 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                                                                                                                                                                                             [93m][0m
                                                                                                                                                                                         [96m)[0m 
                                                                                                                                                                                         [96m([0m XIL_Let 
@@ -2019,7 +2019,7 @@ XIL_Prog
                                                                                                                                                                                     [95m([0m XIL_PrimApp 
                                                                                                                                                                                         [96m([0m Just [93m([0m TokenPn 520 20 9 [93m)[0m [96m)[0m [96m([0m CP PEQ [96m)[0m 
                                                                                                                                                                                         [96m[[0m XIL_Var 
-                                                                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2906 109 21 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
+                                                                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2905 109 21 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m,[0m XIL_Var 
                                                                                                                                                                                             [93m([0m Just [1m[95m([0m TokenPn 413 17 1 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m][0m 
@@ -2032,7 +2032,7 @@ XIL_Prog
                                                                                                                                                                                         [96m([0m XIL_PrimApp 
                                                                                                                                                                                             [93m([0m Just [1m[95m([0m TokenPn 567 21 14 [1m[95m)[0m [93m)[0m [93m([0m CP PEQ [93m)[0m 
                                                                                                                                                                                             [93m[[0m XIL_Var 
-                                                                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2906 109 21 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
+                                                                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2905 109 21 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                                                                                                                                                                                             [93m,[0m XIL_Var 
                                                                                                                                                                                                 [1m[95m([0m Just [1m[96m([0m TokenPn 413 17 1 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mDRAW[0m[1m[97m"[0m 
                                                                                                                                                                                             [93m][0m 

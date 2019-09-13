@@ -70,7 +70,7 @@ const makeDemo = (doWhile, drawFirst) => {
 
 makeDemo(false, true)
   .then(() => makeDemo(false, false))
-  // XXX Loop is not robust enough
+  // XXX Enable loop all of the time
   .then(() => true || makeDemo(true, true))
   .then(() => process.exit(0))
   .catch(e => console.error(e) || process.exit(1));

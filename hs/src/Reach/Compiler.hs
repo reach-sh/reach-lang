@@ -117,6 +117,7 @@ do_inline_funcall ch f argivs =
                     o_eff_formals = formal : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
             eff_body' = XIL_Let lh Nothing (Just eff_formals) (XIL_Values ch eff_argies) body'
+            --- XXX keep track of functions on stack and give conservative loop warning, or just eval and go into infinite loop consuming infinite memory?
             (bp, body') = iv_expr $ peval σ' orig_body
 
 --- XXX Convert to CPS to include ANF transform in this

@@ -219,7 +219,7 @@ decodeStmts _who ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier 
   where vs = map expectId $ flattenJSCL evs        
         conk = decodeStmts Nothing ek
         h = tp a
-decodeStmts _who ((JSMethodCall (JSMemberDot (JSIdentifier _a p) _ (JSIdentifier _ "call"))
+decodeStmts _who ((JSMethodCall (JSMemberDot (JSIdentifier _a p) _ (JSIdentifier _ "only"))
                    _ (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s)) _ _):k) =
   decodeStmts (Just p) (mergeStmts s k)
 decodeStmts _who ((JSMethodCall (JSIdentifier a "commit") _ JSLNil _ _):k) =

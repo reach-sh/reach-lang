@@ -54,7 +54,7 @@ const A = participant({
 const B = participant({});
 
 function main() {
-  A.call(() => {
+  A.only(() => {
     const wagerAmount = declassify(_wagerAmount);
     const escrowAmount = declassify(_escrowAmount);
     interact.params(); });
@@ -62,7 +62,7 @@ function main() {
     .pay(wagerAmount + escrowAmount);
   commit();
 
-  B.call(() => {
+  B.only(() => {
     interact.accepts(); });
   B.pay(wagerAmount);
 
@@ -72,7 +72,7 @@ function main() {
   while ( outcome == DRAW ) {
     commit();
 
-    A.call(() => {
+    A.only(() => {
       const _handA = getHand();
       const [_commitA, _saltA] = precommit(_handA);
       const commitA = declassify(_commitA);
@@ -80,14 +80,14 @@ function main() {
     A.publish(commitA);
     commit();
 
-    B.call(() => {
+    B.only(() => {
       const handB = declassify(getHand());
       interact.shows(); });
     B.publish(handB);
     require(isHand(handB));
     commit();
 
-    A.call(() => {
+    A.only(() => {
       const saltA = declassify(_saltA);
       const handA = declassify(_handA);
       interact.reveals(); });
