@@ -41,7 +41,7 @@ extra-deps:
   - posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c
   - simple-smt-0.9.4@sha256:93746e0c4bade39c9848549103de5b65b169f1faa5b76c7b9bcde2031f31c58f
   - git: https://github.com/jeapostrophe/language-javascript.git
-    commit: 00775d2c5eff20ebd1baa1530f0fe4da171755c9
+    commit: 1433b39fc089021368d1e361ae7eccce218acb39
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

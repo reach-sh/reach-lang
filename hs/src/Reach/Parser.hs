@@ -104,6 +104,9 @@ decodeUnaOp (JSUnaryOpMinus a) arg = XL_PrimApp (tp a) (CP SUB) [ (XL_Con (tp a)
 decodeUnaOp (JSUnaryOpNot a) arg = XL_FunApp (tp a) (XL_Var (tp a) "not") [ arg ]
 decodeUnaOp j _ = expect_error "unary operator" j
 
+string_trim_quotes :: [a] -> [a]
+string_trim_quotes x = reverse $ tail $ reverse $ tail x
+
 decodeExpr :: JSExpression -> XLExpr TP
 decodeExpr (JSIdentifier a x) = XL_Var (tp a) x
 decodeExpr (JSDecimal a n) = XL_Con (tp a) (Con_I (numberValue 10 n))
@@ -112,8 +115,7 @@ decodeExpr (JSLiteral a "false") = XL_Con (tp a) (Con_B False)
 --- Other kinds of literals disallowed
 decodeExpr (JSHexInteger a n) = XL_Con (tp a) (Con_I (numberValue 16 n))
 decodeExpr (JSOctal a n) = XL_Con (tp a) (Con_I (numberValue 8 n))
-decodeExpr (JSStringLiteral a s) = XL_Con (tp a) (Con_BS (B.pack (trim s)))
-  where trim x = reverse $ tail $ reverse $ tail x
+decodeExpr (JSStringLiteral a s) = XL_Con (tp a) (Con_BS (B.pack (string_trim_quotes s)))
 --- No regex
 decodeExpr (JSArrayLiteral a es _) = XL_Values (tp a) $ map decodeExpr $ flattenJSArray es
 --- No assign
@@ -281,7 +283,10 @@ decodeBody (d, p, me) (JSModuleStatementListItem (JSConstant _ (JSLOne (JSVarIni
   return $ (d, p', me)
   where p' = M.insert who ((tp a), ds) p
         ds = map decodeVarDecl $ flattenJSCTL vs
---- XXX import
+decodeBody (d, p, me) (JSModuleImportDeclaration _ (JSImportDeclarationBare _ m _)) = do
+  ma <- parseJsModule $ string_trim_quotes m
+  defs <- decodeXLLibrary ma
+  return $ (d ++ defs, p, me)
 decodeBody (_d, _p, _me) j = expect_error "body element" j
 
 decodeXLProgram :: JSAST -> IO (XLProgram TP)

@@ -34,7 +34,7 @@ const nat16_to_fixed_size_hex =
 // Parameterized ///////////////////////////////////////////////////////////////
 
 const balanceOf = A => a =>
-  a.web3.eth.getBalance(a.userAddress)
+  A.web3.eth.getBalance(a.userAddress)
     .then(toBN(A));
 
 const assert = ({ asserter }) => d => asserter(d);
