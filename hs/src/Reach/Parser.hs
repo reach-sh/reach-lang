@@ -107,6 +107,10 @@ decodeUnaOp j _ = expect_error "unary operator" j
 string_trim_quotes :: [a] -> [a]
 string_trim_quotes x = reverse $ tail $ reverse $ tail x
 
+type DecodeStmtsState = Maybe Participant
+dss_who :: DecodeStmtsState -> Maybe Participant
+dss_who x = x
+
 decodeExpr :: JSExpression -> XLExpr TP
 decodeExpr (JSIdentifier a x) = XL_Var (tp a) x
 decodeExpr (JSDecimal a n) = XL_Con (tp a) (Con_I (numberValue 10 n))
@@ -171,14 +175,14 @@ data LetNothing
   = LN_Flatten
   | LN_Null
   | LN_Error
-letnothing :: LetNothing -> TP -> Maybe Participant -> XLExpr TP -> [JSStatement] -> XLExpr TP
-letnothing flatok t who e ks =
+letnothing :: LetNothing -> TP -> DecodeStmtsState -> XLExpr TP -> [JSStatement] -> XLExpr TP
+letnothing flatok t dss e ks =
   case ks of
     [] -> case flatok of
       LN_Flatten -> e
-      LN_Null -> XL_Let t who Nothing e (XL_Values t [])
+      LN_Null -> XL_Let t (dss_who dss) Nothing e (XL_Values t [])
       LN_Error -> expect_error "non-empty statement list" (t,ks)
-    _ -> XL_Let t who Nothing e (decodeStmts who ks)
+    _ -> XL_Let t (dss_who dss) Nothing e (decodeStmts dss ks)
 
 mergeStmts :: JSStatement -> [JSStatement] -> [JSStatement]
 mergeStmts (JSStatementBlock _ ss1 _ _) ss2 = ss1 ++ ss2
@@ -188,24 +192,24 @@ doToConsensus :: TP -> Participant -> [XLVar] -> XLExpr TP -> XLExpr TP -> XLExp
 doToConsensus h p vs amt conk = XL_ToConsensus h p vs amt k'
   where k' = XL_Let h Nothing Nothing (XL_Claim h CT_Require (XL_PrimApp h (CP PEQ) [ (XL_PrimApp h (CP TXN_VALUE) []), amt ])) conk
 
-decodeStmts :: Maybe Participant -> [JSStatement] -> XLExpr TP
-decodeStmts who js =
+decodeStmts :: DecodeStmtsState -> [JSStatement] -> XLExpr TP
+decodeStmts dss js =
   let ds = decodeStmts in
   case js of
     j@[] -> expect_error "non-empty statement list" j
     ((JSStatementBlock a ss _ _):k) ->
-      letnothing LN_Flatten (tp a) who (ds who ss) k
+      letnothing LN_Flatten (tp a) dss (ds dss ss) k
     --- No Break
     --- No Let
     ((JSConstant a (JSLOne (JSVarInitExpression v (JSVarInit _ e))) _):k) ->
-      XL_Let (tp a) who (decodeLetLHS v) (decodeExpr e) (ds who k)
+      XL_Let (tp a) (dss_who dss) (decodeLetLHS v) (decodeExpr e) (ds dss k)
     --- No DoWhile
     --- No For, ForIn, ForVar, ForVarIn, ForLet, ForLetIn, ForLetOf, ForOf, ForVarOf
     --- No Function
     (j@(JSIf _ _ _ _ _):_k) -> expect_error "if must have else" j
     ((JSIfElse a _ cond _ true _ false):k) ->
-      letnothing LN_Flatten (tp a) who theif k
-      where theif = (XL_If (tp a) (decodeExpr cond) (ds who [true]) (ds who [false]))
+      letnothing LN_Flatten (tp a) dss theif k
+      where theif = (XL_If (tp a) (decodeExpr cond) (ds dss [true]) (ds dss [false]))
     --- No Labelled
     --- No EmptyStatement
     ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _):ek) ->
@@ -214,7 +218,7 @@ decodeStmts who js =
             amt = decodeExpr eamt
             conk = ds Nothing ek
     ((JSExpressionStatement e semi):k) ->
-      letnothing LN_Null (sp semi) who (decodeExpr e) k
+      letnothing LN_Null (sp semi) dss (decodeExpr e) k
     --- No AssignStatement
     ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _ _):ek) ->
       doToConsensus (tp a) p [] amt conk
@@ -231,7 +235,7 @@ decodeStmts who js =
     ((JSMethodCall (JSIdentifier a "commit") _ JSLNil _ _):k) ->
       XL_FromConsensus (tp a) (ds Nothing k)
     ((JSMethodCall f ann1 args ann2 _semi):k) ->
-      letnothing LN_Null (tp ann1) who (decodeExpr (JSMemberExpression f ann1 args ann2)) k
+      letnothing LN_Null (tp ann1) dss (decodeExpr (JSMemberExpression f ann1 args ann2)) k
     (j@(JSReturn a me _):k) ->
       case k of
         [] -> case me of
@@ -244,7 +248,7 @@ decodeStmts who js =
     --- No Variable
     --- No With
     ((JSVariable a (JSLOne (JSVarInitExpression (JSIdentifier _ loop_v) (JSVarInit _ einit_e))) _):(JSMethodCall (JSIdentifier _ "invariant") _ (JSLOne einvariant_e) _ _):(JSWhile _ _ econd_e _ ebody_e):k) ->
-      XL_While h loop_v (decodeExpr einit_e) stop_e (decodeExpr einvariant_e) (ds who [ebody_e]) (ds who k)
+      XL_While h loop_v (decodeExpr einit_e) stop_e (decodeExpr einvariant_e) (ds dss [ebody_e]) (ds dss k)
       where cond_e = (decodeExpr econd_e)
             stop_e = XL_FunApp h (XL_Var h "not") [ cond_e ]
             h = tp a
