@@ -2,8 +2,7 @@
 
 const isHand = Enum([ROCK, PAPER, SCISSORS]);
 
-function getHand() {
-  post: isHand;
+function _getHand() {
   const s = interact.getHand();
   const rockP = s === 'ROCK';
   const paperP = s === 'PAPER';
@@ -12,6 +11,8 @@ function getHand() {
   if (rockP) { return ROCK; }
   else if (paperP) { return PAPER; }
   else { return SCISSORS; } }
+function getHand() {
+  return ensure(isHand, _getHand()); }
 
 const isOutcome = Enum([B_WINS, DRAW, A_WINS]);
 function showOutcome(o) {
@@ -20,8 +21,7 @@ function showOutcome(o) {
   else if (o == DRAW) { return 'Draw'; }
   else { return 'Alice wins'; } }
 
-function winner(handA, handB) {
-  post: isOutcome;
+function _winner(handA, handB) {
   const validA = isHand(handA);
   const validB = isHand(handB);
   if (validA && validB) {
@@ -32,6 +32,8 @@ function winner(handA, handB) {
     return B_WINS; }
   else {
     return DRAW; } }
+function winner(handA, handB) {
+  return ensure(isOutcome, _winner(handA, handB)); }
 
 function fair_if(handX, optionX, canWinX) {
   possible((handX == optionX) && canWinX); }

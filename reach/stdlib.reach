@@ -13,6 +13,10 @@ function and (x, y) {
 function implies (x, y) {
   return (not(x) || y); };
 
+function ensure(f, x) {
+  assert(f(x));
+  return x; };
+
 function precommit (x) {
   const salt = random();
   const commitment = digest(msgcons(uint256_bytes(salt), uint256_bytes(x)));

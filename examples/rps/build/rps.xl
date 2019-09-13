@@ -109,68 +109,91 @@ XL_Prog
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 320 16 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
+        [1m[93m([0m Just [35m([0m TokenPn 320 16 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mensure[0m[1m[97m"[0m 
+        [1m[93m[[0m [1m[97m"[0m[1m[94mf[0m[1m[97m"[0m 
+        [1m[93m,[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+        [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m Just [36m([0m TokenPn 347 17 3 [36m)[0m [35m)[0m Nothing 
+            [35m([0m Just [36m([0m TokenPn 352 17 9 [36m)[0m [35m)[0m Nothing Nothing 
+            [35m([0m XL_Claim 
+                [36m([0m Just [33m([0m TokenPn 352 17 9 [33m)[0m [36m)[0m CT_Assert 
+                [36m([0m XL_FunApp 
+                    [33m([0m Just [1m[35m([0m TokenPn 354 17 11 [1m[35m)[0m [33m)[0m 
+                    [33m([0m XL_Var 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 353 17 10 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mf[0m[1m[97m"[0m 
+                    [33m)[0m 
+                    [33m[[0m XL_Var 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 355 17 12 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                    [33m][0m
+                [36m)[0m
+            [35m)[0m 
+            [35m([0m XL_Var 
+                [36m([0m Just [33m([0m TokenPn 369 18 10 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+            [35m)[0m
+        [1m[93m)[0m
+    [1m[96m,[0m XL_DefineFun 
+        [1m[93m([0m Just [35m([0m TokenPn 376 20 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
+        [1m[93m([0m XL_Let 
+            [35m([0m Just [36m([0m TokenPn 403 21 3 [36m)[0m [35m)[0m Nothing 
             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m [36m][0m [35m)[0m 
             [35m([0m XL_PrimApp 
-                [36m([0m Just [33m([0m TokenPn 366 17 22 [33m)[0m [36m)[0m RANDOM [36m[[0m[36m][0m
+                [36m([0m Just [33m([0m TokenPn 422 21 22 [33m)[0m [36m)[0m RANDOM [36m[[0m[36m][0m
             [35m)[0m 
             [35m([0m XL_Let 
-                [36m([0m Just [33m([0m TokenPn 372 18 3 [33m)[0m [36m)[0m Nothing 
+                [36m([0m Just [33m([0m TokenPn 428 22 3 [33m)[0m [36m)[0m Nothing 
                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m [33m][0m [36m)[0m 
                 [36m([0m XL_PrimApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 397 18 28 [1m[35m)[0m [33m)[0m [33m([0m CP DIGEST [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 453 22 28 [1m[35m)[0m [33m)[0m [33m([0m CP DIGEST [33m)[0m 
                     [33m[[0m XL_PrimApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 405 18 36 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP BCAT [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 461 22 36 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP BCAT [1m[35m)[0m 
                         [1m[35m[[0m XL_PrimApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 419 18 50 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP UINT256_TO_BYTES [1m[36m)[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 475 22 50 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP UINT256_TO_BYTES [1m[36m)[0m 
                             [1m[36m[[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 420 18 51 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 476 22 51 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
                             [1m[36m][0m
                         [1m[35m,[0m XL_PrimApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 440 18 71 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP UINT256_TO_BYTES [1m[36m)[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 496 22 71 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP UINT256_TO_BYTES [1m[36m)[0m 
                             [1m[36m[[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 441 18 72 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 497 22 72 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                             [1m[36m][0m
                         [1m[35m][0m 
                     [33m][0m
                 [36m)[0m 
                 [36m([0m XL_Values 
-                    [33m([0m Just [1m[35m([0m TokenPn 456 19 10 [1m[35m)[0m [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 512 23 10 [1m[35m)[0m [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 457 19 11 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 513 23 11 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 469 19 23 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 525 23 23 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 479 21 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m 
+        [1m[93m([0m Just [35m([0m TokenPn 535 25 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Claim 
-            [35m([0m Just [36m([0m TokenPn 541 22 17 [36m)[0m [35m)[0m CT_Require 
+            [35m([0m Just [36m([0m TokenPn 597 26 17 [36m)[0m [35m)[0m CT_Require 
             [35m([0m XL_PrimApp 
-                [36m([0m Just [33m([0m TokenPn 553 22 29 [33m)[0m [36m)[0m [36m([0m CP PEQ [36m)[0m 
+                [36m([0m Just [33m([0m TokenPn 609 26 29 [33m)[0m [36m)[0m [36m([0m CP PEQ [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 542 22 18 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 598 26 18 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
                 [36m,[0m XL_PrimApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 562 22 38 [1m[35m)[0m [33m)[0m [33m([0m CP DIGEST [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 618 26 38 [1m[35m)[0m [33m)[0m [33m([0m CP DIGEST [33m)[0m 
                     [33m[[0m XL_PrimApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 570 22 46 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP BCAT [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 626 26 46 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP BCAT [1m[35m)[0m 
                         [1m[35m[[0m XL_PrimApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 584 22 60 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP UINT256_TO_BYTES [1m[36m)[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 640 26 60 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP UINT256_TO_BYTES [1m[36m)[0m 
                             [1m[36m[[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 585 22 61 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 641 26 61 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
                             [1m[36m][0m
                         [1m[35m,[0m XL_PrimApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 605 22 81 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP UINT256_TO_BYTES [1m[36m)[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 661 26 81 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP UINT256_TO_BYTES [1m[36m)[0m 
                             [1m[36m[[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 606 22 82 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 662 26 82 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                             [1m[36m][0m
                         [1m[35m][0m 
                     [33m][0m
@@ -217,449 +240,441 @@ XL_Prog
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 61 5 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m 
-        [1m[93m([0m XL_FunApp 
-            [35m([0m Just [36m([0m TokenPn 84 6 3 [36m)[0m [35m)[0m 
-            [35m([0m XL_Lambda 
-                [36m([0m Just [33m([0m TokenPn 84 6 3 [33m)[0m [36m)[0m [36m[[0m [1m[97m"[0m[1m[94m__result[0m[1m[97m"[0m [36m][0m 
-                [36m([0m XL_Let 
-                    [33m([0m Just [1m[35m([0m TokenPn 84 6 3 [1m[35m)[0m [33m)[0m Nothing Nothing 
-                    [33m([0m XL_Claim 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 84 6 3 [1m[36m)[0m [1m[35m)[0m CT_Assert 
-                        [1m[35m([0m XL_FunApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 84 6 3 [1m[33m)[0m [1m[36m)[0m 
-                            [1m[36m([0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 90 6 9 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
-                            [1m[36m)[0m 
-                            [1m[36m[[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 84 6 3 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94m__result[0m[1m[97m"[0m 
-                            [1m[36m][0m
-                        [1m[35m)[0m
-                    [33m)[0m 
-                    [33m([0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 84 6 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94m__result[0m[1m[97m"[0m 
-                    [33m)[0m
-                [36m)[0m
+        [1m[93m([0m Just [35m([0m TokenPn 61 5 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94m_getHand[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m 
+        [1m[93m([0m XL_Let 
+            [35m([0m Just [36m([0m TokenPn 85 6 3 [36m)[0m [35m)[0m Nothing 
+            [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m [36m][0m [35m)[0m 
+            [35m([0m XL_PrimApp 
+                [36m([0m Just [33m([0m TokenPn 95 6 13 [33m)[0m [36m)[0m INTERACT 
+                [36m[[0m XL_Con 
+                    [33m([0m Just [1m[35m([0m TokenPn 104 6 22 [1m[35m)[0m [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [33m)[0m
+                [36m][0m
             [35m)[0m 
-            [35m[[0m XL_Let 
-                [36m([0m Just [33m([0m TokenPn 100 7 3 [33m)[0m [36m)[0m Nothing 
-                [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m [33m][0m [36m)[0m 
+            [35m([0m XL_Let 
+                [36m([0m Just [33m([0m TokenPn 117 7 3 [33m)[0m [36m)[0m Nothing 
+                [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m [33m][0m [36m)[0m 
                 [36m([0m XL_PrimApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 110 7 13 [1m[35m)[0m [33m)[0m INTERACT 
-                    [33m[[0m XL_Con 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 119 7 22 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [1m[35m)[0m
-                    [33m][0m
+                    [33m([0m Just [1m[35m([0m TokenPn 133 7 19 [1m[35m)[0m [33m)[0m [33m([0m CP BYTES_EQ [33m)[0m 
+                    [33m[[0m XL_Var 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 131 7 17 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
+                    [33m,[0m XL_Con 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 137 7 23 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m [1m[35m)[0m
+                    [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Let 
-                    [33m([0m Just [1m[35m([0m TokenPn 132 8 3 [1m[35m)[0m [33m)[0m Nothing 
-                    [33m([0m Just [1m[35m[[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m [1m[35m][0m [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 147 8 3 [1m[35m)[0m [33m)[0m Nothing 
+                    [33m([0m Just [1m[35m[[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m [1m[35m][0m [33m)[0m 
                     [33m([0m XL_PrimApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 148 8 19 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP BYTES_EQ [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 164 8 20 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP BYTES_EQ [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 146 8 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 162 8 18 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Con 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 152 8 23 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_BS [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m [1m[36m)[0m
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 168 8 24 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_BS [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m [1m[36m)[0m
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_Let 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 162 9 3 [1m[36m)[0m [1m[35m)[0m Nothing 
-                        [1m[35m([0m Just [1m[36m[[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m [1m[36m][0m [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 179 9 3 [1m[36m)[0m [1m[35m)[0m Nothing 
+                        [1m[35m([0m Just [1m[36m[[0m [1m[97m"[0m[1m[94mscissorsP[0m[1m[97m"[0m [1m[36m][0m [1m[35m)[0m 
                         [1m[35m([0m XL_PrimApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 179 9 20 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP BYTES_EQ [1m[36m)[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 199 9 23 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP BYTES_EQ [1m[36m)[0m 
                             [1m[36m[[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 177 9 18 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 197 9 21 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
                             [1m[36m,[0m XL_Con 
-                                [1m[33m([0m Just [95m([0m TokenPn 183 9 24 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m [1m[33m)[0m
+                                [1m[33m([0m Just [95m([0m TokenPn 203 9 27 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m [1m[33m)[0m
                             [1m[36m][0m 
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Let 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 194 10 3 [1m[33m)[0m [1m[36m)[0m Nothing 
-                            [1m[36m([0m Just [1m[33m[[0m [1m[97m"[0m[1m[94mscissorsP[0m[1m[97m"[0m [1m[33m][0m [1m[36m)[0m 
-                            [1m[36m([0m XL_PrimApp 
-                                [1m[33m([0m Just [95m([0m TokenPn 214 10 23 [95m)[0m [1m[33m)[0m [1m[33m([0m CP BYTES_EQ [1m[33m)[0m 
-                                [1m[33m[[0m XL_Var 
-                                    [95m([0m Just [96m([0m TokenPn 212 10 21 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
-                                [1m[33m,[0m XL_Con 
-                                    [95m([0m Just [96m([0m TokenPn 218 10 27 [96m)[0m [95m)[0m [95m([0m Con_BS [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m [95m)[0m
-                                [1m[33m][0m 
-                            [1m[36m)[0m 
-                            [1m[36m([0m XL_Let 
-                                [1m[33m([0m Just [95m([0m TokenPn 238 11 9 [95m)[0m [1m[33m)[0m Nothing Nothing 
-                                [1m[33m([0m XL_Claim 
-                                    [95m([0m Just [96m([0m TokenPn 238 11 9 [96m)[0m [95m)[0m CT_Assume 
-                                    [95m([0m XL_FunApp 
-                                        [96m([0m Just [93m([0m TokenPn 255 11 26 [93m)[0m [96m)[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 223 10 9 [1m[33m)[0m [1m[36m)[0m Nothing Nothing 
+                            [1m[36m([0m XL_Claim 
+                                [1m[33m([0m Just [95m([0m TokenPn 223 10 9 [95m)[0m [1m[33m)[0m CT_Assume 
+                                [1m[33m([0m XL_FunApp 
+                                    [95m([0m Just [96m([0m TokenPn 240 10 26 [96m)[0m [95m)[0m 
+                                    [95m([0m XL_Var 
+                                        [96m([0m Just [93m([0m TokenPn 240 10 26 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m 
+                                    [95m)[0m 
+                                    [95m[[0m XL_FunApp 
+                                        [96m([0m Just [93m([0m TokenPn 230 10 16 [93m)[0m [96m)[0m 
                                         [96m([0m XL_Var 
-                                            [93m([0m Just [1m[95m([0m TokenPn 255 11 26 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m 
+                                            [93m([0m Just [1m[95m([0m TokenPn 230 10 16 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m 
                                         [96m)[0m 
-                                        [96m[[0m XL_FunApp 
-                                            [93m([0m Just [1m[95m([0m TokenPn 245 11 16 [1m[95m)[0m [93m)[0m 
-                                            [93m([0m XL_Var 
-                                                [1m[95m([0m Just [1m[96m([0m TokenPn 245 11 16 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m 
-                                            [93m)[0m 
-                                            [93m[[0m XL_Var 
-                                                [1m[95m([0m Just [1m[96m([0m TokenPn 239 11 10 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m 
-                                            [93m,[0m XL_Var 
-                                                [1m[95m([0m Just [1m[96m([0m TokenPn 248 11 19 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m 
-                                            [93m][0m 
+                                        [96m[[0m XL_Var 
+                                            [93m([0m Just [1m[95m([0m TokenPn 224 10 10 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m 
                                         [96m,[0m XL_Var 
-                                            [93m([0m Just [1m[95m([0m TokenPn 258 11 29 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mscissorsP[0m[1m[97m"[0m 
+                                            [93m([0m Just [1m[95m([0m TokenPn 233 10 19 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m 
                                         [96m][0m 
-                                    [95m)[0m
+                                    [95m,[0m XL_Var 
+                                        [96m([0m Just [93m([0m TokenPn 243 10 29 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mscissorsP[0m[1m[97m"[0m 
+                                    [95m][0m 
+                                [1m[33m)[0m
+                            [1m[36m)[0m 
+                            [1m[36m([0m XL_If 
+                                [1m[33m([0m Just [95m([0m TokenPn 257 11 3 [95m)[0m [1m[33m)[0m 
+                                [1m[33m([0m XL_Var 
+                                    [95m([0m Just [96m([0m TokenPn 261 11 7 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m 
+                                [1m[33m)[0m 
+                                [1m[33m([0m XL_Var 
+                                    [95m([0m Just [96m([0m TokenPn 277 11 23 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
                                 [1m[33m)[0m 
                                 [1m[33m([0m XL_If 
-                                    [95m([0m Just [96m([0m TokenPn 272 12 3 [96m)[0m [95m)[0m 
+                                    [95m([0m Just [96m([0m TokenPn 292 12 8 [96m)[0m [95m)[0m 
                                     [95m([0m XL_Var 
-                                        [96m([0m Just [93m([0m TokenPn 276 12 7 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m 
+                                        [96m([0m Just [93m([0m TokenPn 296 12 12 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m 
                                     [95m)[0m 
                                     [95m([0m XL_Var 
-                                        [96m([0m Just [93m([0m TokenPn 292 12 23 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
+                                        [96m([0m Just [93m([0m TokenPn 313 12 29 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m 
                                     [95m)[0m 
-                                    [95m([0m XL_If 
-                                        [96m([0m Just [93m([0m TokenPn 307 13 8 [93m)[0m [96m)[0m 
-                                        [96m([0m XL_Var 
-                                            [93m([0m Just [1m[95m([0m TokenPn 311 13 12 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m 
-                                        [96m)[0m 
-                                        [96m([0m XL_Var 
-                                            [93m([0m Just [1m[95m([0m TokenPn 328 13 29 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m 
-                                        [96m)[0m 
-                                        [96m([0m XL_Var 
-                                            [93m([0m Just [1m[95m([0m TokenPn 353 14 17 [1m[95m)[0m [93m)[0m [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m 
-                                        [96m)[0m
+                                    [95m([0m XL_Var 
+                                        [96m([0m Just [93m([0m TokenPn 338 13 17 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m 
                                     [95m)[0m
                                 [1m[33m)[0m
                             [1m[36m)[0m
                         [1m[35m)[0m
                     [33m)[0m
                 [36m)[0m
-            [35m][0m
+            [35m)[0m
+        [1m[93m)[0m
+    [1m[96m,[0m XL_DefineFun 
+        [1m[93m([0m Just [35m([0m TokenPn 352 14 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m 
+        [1m[93m([0m XL_FunApp 
+            [35m([0m Just [36m([0m TokenPn 388 15 16 [36m)[0m [35m)[0m 
+            [35m([0m XL_Var 
+                [36m([0m Just [33m([0m TokenPn 382 15 10 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mensure[0m[1m[97m"[0m 
+            [35m)[0m 
+            [35m[[0m XL_Var 
+                [36m([0m Just [33m([0m TokenPn 389 15 17 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
+            [35m,[0m XL_FunApp 
+                [36m([0m Just [33m([0m TokenPn 405 15 33 [33m)[0m [36m)[0m 
+                [36m([0m XL_Var 
+                    [33m([0m Just [1m[35m([0m TokenPn 397 15 25 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94m_getHand[0m[1m[97m"[0m 
+                [36m)[0m [36m[[0m[36m][0m
+            [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineValues 
-        [1m[93m([0m Just [35m([0m TokenPn 368 16 1 [35m)[0m [1m[93m)[0m 
+        [1m[93m([0m Just [35m([0m TokenPn 413 17 1 [35m)[0m [1m[93m)[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mDRAW[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Values 
-            [35m([0m Just [36m([0m TokenPn 368 16 1 [36m)[0m [35m)[0m 
+            [35m([0m Just [36m([0m TokenPn 413 17 1 [36m)[0m [35m)[0m 
             [35m[[0m XL_Con 
-                [36m([0m Just [33m([0m TokenPn 368 16 1 [33m)[0m [36m)[0m [36m([0m Con_I 0 [36m)[0m
+                [36m([0m Just [33m([0m TokenPn 413 17 1 [33m)[0m [36m)[0m [36m([0m Con_I 0 [36m)[0m
             [35m,[0m XL_Con 
-                [36m([0m Just [33m([0m TokenPn 368 16 1 [33m)[0m [36m)[0m [36m([0m Con_I 1 [36m)[0m
+                [36m([0m Just [33m([0m TokenPn 413 17 1 [33m)[0m [36m)[0m [36m([0m Con_I 1 [36m)[0m
             [35m,[0m XL_Con 
-                [36m([0m Just [33m([0m TokenPn 368 16 1 [33m)[0m [36m)[0m [36m([0m Con_I 2 [36m)[0m
+                [36m([0m Just [33m([0m TokenPn 413 17 1 [33m)[0m [36m)[0m [36m([0m Con_I 2 [36m)[0m
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 368 16 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
+        [1m[93m([0m Just [35m([0m TokenPn 413 17 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
         [1m[93m([0m XL_FunApp 
-            [35m([0m Just [36m([0m TokenPn 368 16 1 [36m)[0m [35m)[0m 
+            [35m([0m Just [36m([0m TokenPn 413 17 1 [36m)[0m [35m)[0m 
             [35m([0m XL_Var 
-                [36m([0m Just [33m([0m TokenPn 368 16 1 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
+                [36m([0m Just [33m([0m TokenPn 413 17 1 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
             [35m)[0m 
             [35m[[0m XL_PrimApp 
-                [36m([0m Just [33m([0m TokenPn 368 16 1 [33m)[0m [36m)[0m [36m([0m CP PLE [36m)[0m 
+                [36m([0m Just [33m([0m TokenPn 413 17 1 [33m)[0m [36m)[0m [36m([0m CP PLE [36m)[0m 
                 [36m[[0m XL_Con 
-                    [33m([0m Just [1m[35m([0m TokenPn 368 16 1 [1m[35m)[0m [33m)[0m [33m([0m Con_I 0 [33m)[0m
+                    [33m([0m Just [1m[35m([0m TokenPn 413 17 1 [1m[35m)[0m [33m)[0m [33m([0m Con_I 0 [33m)[0m
                 [36m,[0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 368 16 1 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 413 17 1 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                 [36m][0m 
             [35m,[0m XL_PrimApp 
-                [36m([0m Just [33m([0m TokenPn 368 16 1 [33m)[0m [36m)[0m [36m([0m CP PLT [36m)[0m 
+                [36m([0m Just [33m([0m TokenPn 413 17 1 [33m)[0m [36m)[0m [36m([0m CP PLT [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 368 16 1 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 413 17 1 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                 [36m,[0m XL_Con 
-                    [33m([0m Just [1m[35m([0m TokenPn 368 16 1 [1m[35m)[0m [33m)[0m [33m([0m Con_I 3 [33m)[0m
+                    [33m([0m Just [1m[35m([0m TokenPn 413 17 1 [1m[35m)[0m [33m)[0m [33m([0m Con_I 3 [33m)[0m
                 [36m][0m 
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 416 17 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m [1m[93m][0m 
+        [1m[93m([0m Just [35m([0m TokenPn 461 18 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m Just [36m([0m TokenPn 451 18 10 [36m)[0m [35m)[0m Nothing Nothing 
+            [35m([0m Just [36m([0m TokenPn 496 19 10 [36m)[0m [35m)[0m Nothing Nothing 
             [35m([0m XL_Claim 
-                [36m([0m Just [33m([0m TokenPn 451 18 10 [33m)[0m [36m)[0m CT_Require 
+                [36m([0m Just [33m([0m TokenPn 496 19 10 [33m)[0m [36m)[0m CT_Require 
                 [36m([0m XL_FunApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 461 18 20 [1m[35m)[0m [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 506 19 20 [1m[35m)[0m [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 452 18 11 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 497 19 11 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 462 18 21 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 507 19 21 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                     [33m][0m
                 [36m)[0m
             [35m)[0m 
             [35m([0m XL_If 
-                [36m([0m Just [33m([0m TokenPn 469 19 3 [33m)[0m [36m)[0m 
+                [36m([0m Just [33m([0m TokenPn 514 20 3 [33m)[0m [36m)[0m 
                 [36m([0m XL_PrimApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 475 19 9 [1m[35m)[0m [33m)[0m [33m([0m CP PEQ [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 520 20 9 [1m[35m)[0m [33m)[0m [33m([0m CP PEQ [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 473 19 7 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 518 20 7 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 478 19 12 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 523 20 12 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Con 
-                    [33m([0m Just [1m[35m([0m TokenPn 495 19 29 [1m[35m)[0m [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mBob wins[0m[1m[97m"[0m [33m)[0m
+                    [33m([0m Just [1m[35m([0m TokenPn 540 20 29 [1m[35m)[0m [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mBob wins[0m[1m[97m"[0m [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_If 
-                    [33m([0m Just [1m[35m([0m TokenPn 516 20 8 [1m[35m)[0m [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 561 21 8 [1m[35m)[0m [33m)[0m 
                     [33m([0m XL_PrimApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 522 20 14 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 567 21 14 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 520 20 12 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 565 21 12 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 525 20 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mDRAW[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 570 21 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mDRAW[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_Con 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 540 20 32 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mDraw[0m[1m[97m"[0m [1m[35m)[0m
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 585 21 32 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mDraw[0m[1m[97m"[0m [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Con 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 566 21 17 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mAlice wins[0m[1m[97m"[0m [1m[35m)[0m
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 611 22 17 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mAlice wins[0m[1m[97m"[0m [1m[35m)[0m
                     [33m)[0m
                 [36m)[0m
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 585 23 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m 
+        [1m[93m([0m Just [35m([0m TokenPn 630 24 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94m_winner[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
         [1m[93m][0m 
-        [1m[93m([0m XL_FunApp 
-            [35m([0m Just [36m([0m TokenPn 619 24 3 [36m)[0m [35m)[0m 
-            [35m([0m XL_Lambda 
-                [36m([0m Just [33m([0m TokenPn 619 24 3 [33m)[0m [36m)[0m [36m[[0m [1m[97m"[0m[1m[94m__result[0m[1m[97m"[0m [36m][0m 
-                [36m([0m XL_Let 
-                    [33m([0m Just [1m[35m([0m TokenPn 619 24 3 [1m[35m)[0m [33m)[0m Nothing Nothing 
-                    [33m([0m XL_Claim 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 619 24 3 [1m[36m)[0m [1m[35m)[0m CT_Assert 
-                        [1m[35m([0m XL_FunApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 619 24 3 [1m[33m)[0m [1m[36m)[0m 
-                            [1m[36m([0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 625 24 9 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m 
-                            [1m[36m)[0m 
-                            [1m[36m[[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 619 24 3 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94m__result[0m[1m[97m"[0m 
-                            [1m[36m][0m
-                        [1m[35m)[0m
-                    [33m)[0m 
-                    [33m([0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 619 24 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94m__result[0m[1m[97m"[0m 
-                    [33m)[0m
-                [36m)[0m
+        [1m[93m([0m XL_Let 
+            [35m([0m Just [36m([0m TokenPn 665 25 3 [36m)[0m [35m)[0m Nothing 
+            [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m [36m][0m [35m)[0m 
+            [35m([0m XL_FunApp 
+                [36m([0m Just [33m([0m TokenPn 686 25 24 [33m)[0m [36m)[0m 
+                [36m([0m XL_Var 
+                    [33m([0m Just [1m[35m([0m TokenPn 680 25 18 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
+                [36m)[0m 
+                [36m[[0m XL_Var 
+                    [33m([0m Just [1m[35m([0m TokenPn 687 25 25 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                [36m][0m
             [35m)[0m 
-            [35m[[0m XL_Let 
-                [36m([0m Just [33m([0m TokenPn 638 25 3 [33m)[0m [36m)[0m Nothing 
-                [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m [33m][0m [36m)[0m 
+            [35m([0m XL_Let 
+                [36m([0m Just [33m([0m TokenPn 697 26 3 [33m)[0m [36m)[0m Nothing 
+                [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m [33m][0m [36m)[0m 
                 [36m([0m XL_FunApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 659 25 24 [1m[35m)[0m [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 718 26 24 [1m[35m)[0m [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 653 25 18 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 712 26 18 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 660 25 25 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 719 26 25 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                     [33m][0m
                 [36m)[0m 
-                [36m([0m XL_Let 
-                    [33m([0m Just [1m[35m([0m TokenPn 670 26 3 [1m[35m)[0m [33m)[0m Nothing 
-                    [33m([0m Just [1m[35m[[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m [1m[35m][0m [33m)[0m 
+                [36m([0m XL_If 
+                    [33m([0m Just [1m[35m([0m TokenPn 729 27 3 [1m[35m)[0m [33m)[0m 
                     [33m([0m XL_FunApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 691 26 24 [1m[36m)[0m [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 740 27 14 [1m[36m)[0m [1m[35m)[0m 
                         [1m[35m([0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 685 26 18 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 740 27 14 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 692 26 25 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
-                        [1m[35m][0m
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 733 27 7 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m 
+                        [1m[35m,[0m XL_Var 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 743 27 17 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m 
+                        [1m[35m][0m 
+                    [33m)[0m 
+                    [33m([0m XL_PrimApp 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 786 28 34 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP MOD [1m[35m)[0m 
+                        [1m[35m[[0m XL_PrimApp 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 771 28 19 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP ADD [1m[36m)[0m 
+                            [1m[36m[[0m XL_Var 
+                                [1m[33m([0m Just [95m([0m TokenPn 765 28 13 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                            [1m[36m,[0m XL_PrimApp 
+                                [1m[33m([0m Just [95m([0m TokenPn 776 28 24 [95m)[0m [1m[33m)[0m [1m[33m([0m CP SUB [1m[33m)[0m 
+                                [1m[33m[[0m XL_Con 
+                                    [95m([0m Just [96m([0m TokenPn 774 28 22 [96m)[0m [95m)[0m [95m([0m Con_I 4 [95m)[0m
+                                [1m[33m,[0m XL_Var 
+                                    [95m([0m Just [96m([0m TokenPn 778 28 26 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                [1m[33m][0m 
+                            [1m[36m][0m 
+                        [1m[35m,[0m XL_Con 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 788 28 36 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 3 [1m[36m)[0m
+                        [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_If 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 702 27 3 [1m[36m)[0m [1m[35m)[0m 
-                        [1m[35m([0m XL_FunApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 713 27 14 [1m[33m)[0m [1m[36m)[0m 
-                            [1m[36m([0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 713 27 14 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
-                            [1m[36m)[0m 
-                            [1m[36m[[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 706 27 7 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m 
-                            [1m[36m,[0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 716 27 17 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m 
-                            [1m[36m][0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 800 29 8 [1m[36m)[0m [1m[35m)[0m 
+                        [1m[35m([0m XL_Var 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 804 29 12 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m 
                         [1m[35m)[0m 
-                        [1m[35m([0m XL_PrimApp 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 759 28 34 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP MOD [1m[36m)[0m 
-                            [1m[36m[[0m XL_PrimApp 
-                                [1m[33m([0m Just [95m([0m TokenPn 744 28 19 [95m)[0m [1m[33m)[0m [1m[33m([0m CP ADD [1m[33m)[0m 
-                                [1m[33m[[0m XL_Var 
-                                    [95m([0m Just [96m([0m TokenPn 738 28 13 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
-                                [1m[33m,[0m XL_PrimApp 
-                                    [95m([0m Just [96m([0m TokenPn 749 28 24 [96m)[0m [95m)[0m [95m([0m CP SUB [95m)[0m 
-                                    [95m[[0m XL_Con 
-                                        [96m([0m Just [93m([0m TokenPn 747 28 22 [93m)[0m [96m)[0m [96m([0m Con_I 4 [96m)[0m
-                                    [95m,[0m XL_Var 
-                                        [96m([0m Just [93m([0m TokenPn 751 28 26 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
-                                    [95m][0m 
-                                [1m[33m][0m 
-                            [1m[36m,[0m XL_Con 
-                                [1m[33m([0m Just [95m([0m TokenPn 761 28 36 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 3 [1m[33m)[0m
-                            [1m[36m][0m 
+                        [1m[35m([0m XL_Var 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 825 30 12 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                         [1m[35m)[0m 
                         [1m[35m([0m XL_If 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 773 29 8 [1m[33m)[0m [1m[36m)[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 842 31 8 [1m[33m)[0m [1m[36m)[0m 
                             [1m[36m([0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 777 29 12 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 846 31 12 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m 
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Var 
-                                [1m[33m([0m Just [95m([0m TokenPn 798 30 12 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 867 32 12 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                             [1m[36m)[0m 
-                            [1m[36m([0m XL_If 
-                                [1m[33m([0m Just [95m([0m TokenPn 815 31 8 [95m)[0m [1m[33m)[0m 
-                                [1m[33m([0m XL_Var 
-                                    [95m([0m Just [96m([0m TokenPn 819 31 12 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m 
-                                [1m[33m)[0m 
-                                [1m[33m([0m XL_Var 
-                                    [95m([0m Just [96m([0m TokenPn 840 32 12 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
-                                [1m[33m)[0m 
-                                [1m[33m([0m XL_Var 
-                                    [95m([0m Just [96m([0m TokenPn 870 34 12 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mDRAW[0m[1m[97m"[0m 
-                                [1m[33m)[0m
+                            [1m[36m([0m XL_Var 
+                                [1m[33m([0m Just [95m([0m TokenPn 897 34 12 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mDRAW[0m[1m[97m"[0m 
                             [1m[36m)[0m
                         [1m[35m)[0m
                     [33m)[0m
                 [36m)[0m
-            [35m][0m
+            [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 881 36 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
+        [1m[93m([0m Just [35m([0m TokenPn 907 35 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m 
+        [1m[93m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+        [1m[93m,[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+        [1m[93m][0m 
+        [1m[93m([0m XL_FunApp 
+            [35m([0m Just [36m([0m TokenPn 954 36 16 [36m)[0m [35m)[0m 
+            [35m([0m XL_Var 
+                [36m([0m Just [33m([0m TokenPn 948 36 10 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mensure[0m[1m[97m"[0m 
+            [35m)[0m 
+            [35m[[0m XL_Var 
+                [36m([0m Just [33m([0m TokenPn 955 36 17 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m 
+            [35m,[0m XL_FunApp 
+                [36m([0m Just [33m([0m TokenPn 973 36 35 [33m)[0m [36m)[0m 
+                [36m([0m XL_Var 
+                    [33m([0m Just [1m[35m([0m TokenPn 966 36 28 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94m_winner[0m[1m[97m"[0m 
+                [36m)[0m 
+                [36m[[0m XL_Var 
+                    [33m([0m Just [1m[35m([0m TokenPn 974 36 36 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                [36m,[0m XL_Var 
+                    [33m([0m Just [1m[35m([0m TokenPn 981 36 43 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                [36m][0m 
+            [35m][0m 
+        [1m[93m)[0m
+    [1m[96m,[0m XL_DefineFun 
+        [1m[93m([0m Just [35m([0m TokenPn 993 38 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94moptionX[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m Just [36m([0m TokenPn 935 37 11 [36m)[0m [35m)[0m Nothing Nothing 
+            [35m([0m Just [36m([0m TokenPn 1047 39 11 [36m)[0m [35m)[0m Nothing Nothing 
             [35m([0m XL_Claim 
-                [36m([0m Just [33m([0m TokenPn 935 37 11 [33m)[0m [36m)[0m CT_Possible 
+                [36m([0m Just [33m([0m TokenPn 1047 39 11 [33m)[0m [36m)[0m CT_Possible 
                 [36m([0m XL_FunApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 955 37 31 [1m[35m)[0m [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1067 39 31 [1m[35m)[0m [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 955 37 31 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1067 39 31 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_PrimApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 943 37 19 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1055 39 19 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 937 37 13 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1049 39 13 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 946 37 22 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94moptionX[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1058 39 22 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94moptionX[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 958 37 34 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1070 39 34 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m
             [35m)[0m 
             [35m([0m XL_Values 
-                [36m([0m Just [33m([0m TokenPn 935 37 11 [33m)[0m [36m)[0m [36m[[0m[36m][0m
+                [36m([0m Just [33m([0m TokenPn 1047 39 11 [33m)[0m [36m)[0m [36m[[0m[36m][0m
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 971 39 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
+        [1m[93m([0m Just [35m([0m TokenPn 1083 41 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m Just [36m([0m TokenPn 1023 40 10 [36m)[0m [35m)[0m Nothing Nothing 
+            [35m([0m Just [36m([0m TokenPn 1135 42 10 [36m)[0m [35m)[0m Nothing Nothing 
             [35m([0m XL_FunApp 
-                [36m([0m Just [33m([0m TokenPn 1023 40 10 [33m)[0m [36m)[0m 
+                [36m([0m Just [33m([0m TokenPn 1135 42 10 [33m)[0m [36m)[0m 
                 [36m([0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 1016 40 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1128 42 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
                 [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 1024 40 11 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1136 42 11 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                 [36m,[0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 1031 40 18 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1143 42 18 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
                 [36m,[0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 1037 40 24 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1149 42 24 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
                 [36m][0m 
             [35m)[0m 
             [35m([0m XL_Let 
-                [36m([0m Just [33m([0m TokenPn 1056 41 10 [33m)[0m [36m)[0m Nothing Nothing 
+                [36m([0m Just [33m([0m TokenPn 1168 43 10 [33m)[0m [36m)[0m Nothing Nothing 
                 [36m([0m XL_FunApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 1056 41 10 [1m[35m)[0m [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1168 43 10 [1m[35m)[0m [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1049 41 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1161 43 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1057 41 11 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1169 43 11 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1064 41 18 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1176 43 18 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1071 41 25 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1183 43 25 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Let 
-                    [33m([0m Just [1m[35m([0m TokenPn 1090 42 10 [1m[35m)[0m [33m)[0m Nothing Nothing 
+                    [33m([0m Just [1m[35m([0m TokenPn 1202 44 10 [1m[35m)[0m [33m)[0m Nothing Nothing 
                     [33m([0m XL_FunApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1090 42 10 [1m[36m)[0m [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1202 44 10 [1m[36m)[0m [1m[35m)[0m 
                         [1m[35m([0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1083 42 3 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1195 44 3 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1091 42 11 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1203 44 11 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1098 42 18 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1210 44 18 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1108 42 28 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1220 44 28 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_Values 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1090 42 10 [1m[36m)[0m [1m[35m)[0m [1m[35m[[0m[1m[35m][0m
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1202 44 10 [1m[36m)[0m [1m[35m)[0m [1m[35m[[0m[1m[35m][0m
                     [33m)[0m
                 [36m)[0m
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m Just [35m([0m TokenPn 1121 44 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m 
+        [1m[93m([0m Just [35m([0m TokenPn 1233 46 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m Just [36m([0m TokenPn 1182 45 18 [36m)[0m [35m)[0m Nothing Nothing 
+            [35m([0m Just [36m([0m TokenPn 1294 47 18 [36m)[0m [35m)[0m Nothing Nothing 
             [35m([0m XL_FunApp 
-                [36m([0m Just [33m([0m TokenPn 1182 45 18 [33m)[0m [36m)[0m 
+                [36m([0m Just [33m([0m TokenPn 1294 47 18 [33m)[0m [36m)[0m 
                 [36m([0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 1167 45 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1279 47 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
                 [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 1183 45 19 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1295 47 19 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                 [36m,[0m XL_PrimApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 1199 45 35 [1m[35m)[0m [33m)[0m [33m([0m CP PEQ [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1311 47 35 [1m[35m)[0m [33m)[0m [33m([0m CP PEQ [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1191 45 27 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1303 47 27 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1202 45 38 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1314 47 38 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m][0m 
             [35m)[0m 
             [35m([0m XL_Let 
-                [36m([0m Just [33m([0m TokenPn 1229 46 18 [33m)[0m [36m)[0m Nothing Nothing 
+                [36m([0m Just [33m([0m TokenPn 1341 48 18 [33m)[0m [36m)[0m Nothing Nothing 
                 [36m([0m XL_FunApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 1229 46 18 [1m[35m)[0m [33m)[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1341 48 18 [1m[35m)[0m [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1214 46 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1326 48 3 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1230 46 19 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1342 48 19 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                     [33m,[0m XL_PrimApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1246 46 35 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1358 48 35 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1238 46 27 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1350 48 27 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1249 46 38 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1361 48 38 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Values 
-                    [33m([0m Just [1m[35m([0m TokenPn 1229 46 18 [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
+                    [33m([0m Just [1m[35m([0m TokenPn 1341 48 18 [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
                 [36m)[0m
             [35m)[0m
         [1m[93m)[0m
@@ -668,15 +683,15 @@ XL_Prog
         [1m[93m[[0m 
             [35m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
             [35m,[0m 
-                [36m([0m Just [33m([0m TokenPn 1272 48 11 [33m)[0m
+                [36m([0m Just [33m([0m TokenPn 1384 50 11 [33m)[0m
                 [36m,[0m 
                     [33m[[0m 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1300 49 15 [1m[36m)[0m
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1412 51 15 [1m[36m)[0m
                         [1m[35m,[0m [1m[97m"[0m[1m[94m_wagerAmount[0m[1m[97m"[0m 
                         [1m[35m,[0m AT_UInt256
                         [1m[35m)[0m 
                     [33m,[0m 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1326 50 16 [1m[36m)[0m
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1438 52 16 [1m[36m)[0m
                         [1m[35m,[0m [1m[97m"[0m[1m[94m_escrowAmount[0m[1m[97m"[0m 
                         [1m[35m,[0m AT_UInt256
                         [1m[35m)[0m 
@@ -686,437 +701,437 @@ XL_Prog
         [1m[93m,[0m 
             [35m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
             [35m,[0m 
-                [36m([0m Just [33m([0m TokenPn 1350 52 11 [33m)[0m
+                [36m([0m Just [33m([0m TokenPn 1462 54 11 [33m)[0m
                 [36m,[0m [33m[[0m[33m][0m
                 [36m)[0m 
             [35m)[0m 
         [1m[93m][0m 
     [1m[96m)[0m 
     [1m[96m([0m XL_Let 
-        [1m[93m([0m Just [35m([0m TokenPn 1407 56 5 [35m)[0m [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
+        [1m[93m([0m Just [35m([0m TokenPn 1519 58 5 [35m)[0m [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
         [1m[93m([0m Just [35m[[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m [35m][0m [1m[93m)[0m 
         [1m[93m([0m XL_Declassify 
-            [35m([0m Just [36m([0m TokenPn 1437 56 35 [36m)[0m [35m)[0m 
+            [35m([0m Just [36m([0m TokenPn 1549 58 35 [36m)[0m [35m)[0m 
             [35m([0m XL_Var 
-                [36m([0m Just [33m([0m TokenPn 1438 56 36 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94m_wagerAmount[0m[1m[97m"[0m 
+                [36m([0m Just [33m([0m TokenPn 1550 58 36 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94m_wagerAmount[0m[1m[97m"[0m 
             [35m)[0m
         [1m[93m)[0m 
         [1m[93m([0m XL_Let 
-            [35m([0m Just [36m([0m TokenPn 1457 57 5 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m 
+            [35m([0m Just [36m([0m TokenPn 1569 59 5 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m 
             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m [36m][0m [35m)[0m 
             [35m([0m XL_Declassify 
-                [36m([0m Just [33m([0m TokenPn 1488 57 36 [33m)[0m [36m)[0m 
+                [36m([0m Just [33m([0m TokenPn 1600 59 36 [33m)[0m [36m)[0m 
                 [36m([0m XL_Var 
-                    [33m([0m Just [1m[35m([0m TokenPn 1489 57 37 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94m_escrowAmount[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1601 59 37 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94m_escrowAmount[0m[1m[97m"[0m 
                 [36m)[0m
             [35m)[0m 
             [35m([0m XL_Let 
-                [36m([0m Just [33m([0m TokenPn 1524 58 20 [33m)[0m [36m)[0m [36m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m)[0m Nothing 
+                [36m([0m Just [33m([0m TokenPn 1636 60 20 [33m)[0m [36m)[0m [36m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m)[0m Nothing 
                 [36m([0m XL_PrimApp 
-                    [33m([0m Just [1m[35m([0m TokenPn 1509 58 5 [1m[35m)[0m [33m)[0m INTERACT 
+                    [33m([0m Just [1m[35m([0m TokenPn 1621 60 5 [1m[35m)[0m [33m)[0m INTERACT 
                     [33m[[0m XL_Con 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1518 58 14 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mparams[0m[1m[97m"[0m [1m[35m)[0m
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1630 60 14 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mparams[0m[1m[97m"[0m [1m[35m)[0m
                     [33m][0m
                 [36m)[0m 
                 [36m([0m XL_ToConsensus 
-                    [33m([0m Just [1m[35m([0m TokenPn 1534 59 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                    [33m([0m Just [1m[35m([0m TokenPn 1646 61 3 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
                     [33m[[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                     [33m,[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                     [33m][0m 
                     [33m([0m XL_PrimApp 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1592 60 22 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP ADD [1m[35m)[0m 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1704 62 22 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP ADD [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1580 60 10 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1692 62 10 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1594 60 24 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1706 62 24 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_Let 
-                        [1m[35m([0m Just [1m[36m([0m TokenPn 1534 59 3 [1m[36m)[0m [1m[35m)[0m Nothing Nothing 
+                        [1m[35m([0m Just [1m[36m([0m TokenPn 1646 61 3 [1m[36m)[0m [1m[35m)[0m Nothing Nothing 
                         [1m[35m([0m XL_Claim 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1534 59 3 [1m[33m)[0m [1m[36m)[0m CT_Require 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1646 61 3 [1m[33m)[0m [1m[36m)[0m CT_Require 
                             [1m[36m([0m XL_PrimApp 
-                                [1m[33m([0m Just [95m([0m TokenPn 1534 59 3 [95m)[0m [1m[33m)[0m [1m[33m([0m CP PEQ [1m[33m)[0m 
+                                [1m[33m([0m Just [95m([0m TokenPn 1646 61 3 [95m)[0m [1m[33m)[0m [1m[33m([0m CP PEQ [1m[33m)[0m 
                                 [1m[33m[[0m XL_PrimApp 
-                                    [95m([0m Just [96m([0m TokenPn 1534 59 3 [96m)[0m [95m)[0m [95m([0m CP TXN_VALUE [95m)[0m [95m[[0m[95m][0m
+                                    [95m([0m Just [96m([0m TokenPn 1646 61 3 [96m)[0m [95m)[0m [95m([0m CP TXN_VALUE [95m)[0m [95m[[0m[95m][0m
                                 [1m[33m,[0m XL_PrimApp 
-                                    [95m([0m Just [96m([0m TokenPn 1592 60 22 [96m)[0m [95m)[0m [95m([0m CP ADD [95m)[0m 
+                                    [95m([0m Just [96m([0m TokenPn 1704 62 22 [96m)[0m [95m)[0m [95m([0m CP ADD [95m)[0m 
                                     [95m[[0m XL_Var 
-                                        [96m([0m Just [93m([0m TokenPn 1580 60 10 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                        [96m([0m Just [93m([0m TokenPn 1692 62 10 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                     [95m,[0m XL_Var 
-                                        [96m([0m Just [93m([0m TokenPn 1594 60 24 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
+                                        [96m([0m Just [93m([0m TokenPn 1706 62 24 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                                     [95m][0m 
                                 [1m[33m][0m 
                             [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_FromConsensus 
-                            [1m[36m([0m Just [1m[33m([0m TokenPn 1611 61 3 [1m[33m)[0m [1m[36m)[0m 
+                            [1m[36m([0m Just [1m[33m([0m TokenPn 1723 63 3 [1m[33m)[0m [1m[36m)[0m 
                             [1m[36m([0m XL_Let 
-                                [1m[33m([0m Just [95m([0m TokenPn 1659 64 21 [95m)[0m [1m[33m)[0m [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
+                                [1m[33m([0m Just [95m([0m TokenPn 1771 66 21 [95m)[0m [1m[33m)[0m [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
                                 [1m[33m([0m XL_PrimApp 
-                                    [95m([0m Just [96m([0m TokenPn 1643 64 5 [96m)[0m [95m)[0m INTERACT 
+                                    [95m([0m Just [96m([0m TokenPn 1755 66 5 [96m)[0m [95m)[0m INTERACT 
                                     [95m[[0m XL_Con 
-                                        [96m([0m Just [93m([0m TokenPn 1652 64 14 [93m)[0m [96m)[0m [96m([0m Con_BS [1m[97m"[0m[1m[94maccepts[0m[1m[97m"[0m [96m)[0m
+                                        [96m([0m Just [93m([0m TokenPn 1764 66 14 [93m)[0m [96m)[0m [96m([0m Con_BS [1m[97m"[0m[1m[94maccepts[0m[1m[97m"[0m [96m)[0m
                                     [95m][0m
                                 [1m[33m)[0m 
                                 [1m[33m([0m XL_ToConsensus 
-                                    [95m([0m Just [96m([0m TokenPn 1669 65 3 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [95m[[0m[95m][0m 
+                                    [95m([0m Just [96m([0m TokenPn 1781 67 3 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [95m[[0m[95m][0m 
                                     [95m([0m XL_Var 
-                                        [96m([0m Just [93m([0m TokenPn 1675 65 9 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                        [96m([0m Just [93m([0m TokenPn 1787 67 9 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                     [95m)[0m 
                                     [95m([0m XL_Let 
-                                        [96m([0m Just [93m([0m TokenPn 1669 65 3 [93m)[0m [96m)[0m Nothing Nothing 
+                                        [96m([0m Just [93m([0m TokenPn 1781 67 3 [93m)[0m [96m)[0m Nothing Nothing 
                                         [96m([0m XL_Claim 
-                                            [93m([0m Just [1m[95m([0m TokenPn 1669 65 3 [1m[95m)[0m [93m)[0m CT_Require 
+                                            [93m([0m Just [1m[95m([0m TokenPn 1781 67 3 [1m[95m)[0m [93m)[0m CT_Require 
                                             [93m([0m XL_PrimApp 
-                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1669 65 3 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m CP PEQ [1m[95m)[0m 
+                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1781 67 3 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m CP PEQ [1m[95m)[0m 
                                                 [1m[95m[[0m XL_PrimApp 
-                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1669 65 3 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m CP TXN_VALUE [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
+                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1781 67 3 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m CP TXN_VALUE [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
                                                 [1m[95m,[0m XL_Var 
-                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1675 65 9 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1787 67 9 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                 [1m[95m][0m 
                                             [93m)[0m
                                         [96m)[0m 
                                         [96m([0m XL_FromConsensus 
-                                            [93m([0m Just [1m[95m([0m TokenPn 1691 66 3 [1m[95m)[0m [93m)[0m 
+                                            [93m([0m Just [1m[95m([0m TokenPn 1803 68 3 [1m[95m)[0m [93m)[0m 
                                             [93m([0m XL_Let 
-                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1723 69 5 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m 
+                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1835 71 5 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m 
                                                 [1m[95m([0m Just [1m[96m[[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[96m][0m [1m[95m)[0m 
                                                 [1m[95m([0m XL_FunApp 
-                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1745 69 27 [1m[93m)[0m [1m[96m)[0m 
+                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1857 71 27 [1m[93m)[0m [1m[96m)[0m 
                                                     [1m[96m([0m XL_Var 
-                                                        [1m[93m([0m Just [35m([0m TokenPn 1738 69 20 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m 
+                                                        [1m[93m([0m Just [35m([0m TokenPn 1850 71 20 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m 
                                                     [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
                                                 [1m[95m)[0m 
                                                 [1m[95m([0m XL_Let 
-                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1753 70 5 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m 
+                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1865 72 5 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m 
                                                     [1m[96m([0m Just 
                                                         [1m[93m[[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m 
                                                         [1m[93m,[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m 
                                                         [1m[93m][0m 
                                                     [1m[96m)[0m 
                                                     [1m[96m([0m XL_FunApp 
-                                                        [1m[93m([0m Just [35m([0m TokenPn 1789 70 41 [35m)[0m [1m[93m)[0m 
+                                                        [1m[93m([0m Just [35m([0m TokenPn 1901 72 41 [35m)[0m [1m[93m)[0m 
                                                         [1m[93m([0m XL_Var 
-                                                            [35m([0m Just [36m([0m TokenPn 1780 70 32 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m 
+                                                            [35m([0m Just [36m([0m TokenPn 1892 72 32 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m 
                                                         [1m[93m)[0m 
                                                         [1m[93m[[0m XL_Var 
-                                                            [35m([0m Just [36m([0m TokenPn 1790 70 42 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
+                                                            [35m([0m Just [36m([0m TokenPn 1902 72 42 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
                                                         [1m[93m][0m
                                                     [1m[96m)[0m 
                                                     [1m[96m([0m XL_Let 
-                                                        [1m[93m([0m Just [35m([0m TokenPn 1803 71 5 [35m)[0m [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
+                                                        [1m[93m([0m Just [35m([0m TokenPn 1915 73 5 [35m)[0m [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
                                                         [1m[93m([0m Just [35m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [35m][0m [1m[93m)[0m 
                                                         [1m[93m([0m XL_Declassify 
-                                                            [35m([0m Just [36m([0m TokenPn 1829 71 31 [36m)[0m [35m)[0m 
+                                                            [35m([0m Just [36m([0m TokenPn 1941 73 31 [36m)[0m [35m)[0m 
                                                             [35m([0m XL_Var 
-                                                                [36m([0m Just [33m([0m TokenPn 1830 71 32 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m 
+                                                                [36m([0m Just [33m([0m TokenPn 1942 73 32 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m 
                                                             [35m)[0m
                                                         [1m[93m)[0m 
                                                         [1m[93m([0m XL_Let 
-                                                            [35m([0m Just [36m([0m TokenPn 1861 72 21 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing 
+                                                            [35m([0m Just [36m([0m TokenPn 1973 74 21 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing 
                                                             [35m([0m XL_PrimApp 
-                                                                [36m([0m Just [33m([0m TokenPn 1845 72 5 [33m)[0m [36m)[0m INTERACT 
+                                                                [36m([0m Just [33m([0m TokenPn 1957 74 5 [33m)[0m [36m)[0m INTERACT 
                                                                 [36m[[0m XL_Con 
-                                                                    [33m([0m Just [1m[35m([0m TokenPn 1854 72 14 [1m[35m)[0m [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m [33m)[0m
+                                                                    [33m([0m Just [1m[35m([0m TokenPn 1966 74 14 [1m[35m)[0m [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m [33m)[0m
                                                                 [36m][0m
                                                             [35m)[0m 
                                                             [35m([0m XL_ToConsensus 
-                                                                [36m([0m Just [33m([0m TokenPn 1871 73 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [36m][0m 
+                                                                [36m([0m Just [33m([0m TokenPn 1983 75 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [36m][0m 
                                                                 [36m([0m XL_Con 
-                                                                    [33m([0m Just [1m[35m([0m TokenPn 1871 73 3 [1m[35m)[0m [33m)[0m [33m([0m Con_I 0 [33m)[0m
+                                                                    [33m([0m Just [1m[35m([0m TokenPn 1983 75 3 [1m[35m)[0m [33m)[0m [33m([0m Con_I 0 [33m)[0m
                                                                 [36m)[0m 
                                                                 [36m([0m XL_Let 
-                                                                    [33m([0m Just [1m[35m([0m TokenPn 1871 73 3 [1m[35m)[0m [33m)[0m Nothing Nothing 
+                                                                    [33m([0m Just [1m[35m([0m TokenPn 1983 75 3 [1m[35m)[0m [33m)[0m Nothing Nothing 
                                                                     [33m([0m XL_Claim 
-                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1871 73 3 [1m[36m)[0m [1m[35m)[0m CT_Require 
+                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1983 75 3 [1m[36m)[0m [1m[35m)[0m CT_Require 
                                                                         [1m[35m([0m XL_PrimApp 
-                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1871 73 3 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m 
+                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1983 75 3 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m 
                                                                             [1m[36m[[0m XL_PrimApp 
-                                                                                [1m[33m([0m Just [95m([0m TokenPn 1871 73 3 [95m)[0m [1m[33m)[0m [1m[33m([0m CP TXN_VALUE [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
+                                                                                [1m[33m([0m Just [95m([0m TokenPn 1983 75 3 [95m)[0m [1m[33m)[0m [1m[33m([0m CP TXN_VALUE [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
                                                                             [1m[36m,[0m XL_Con 
-                                                                                [1m[33m([0m Just [95m([0m TokenPn 1871 73 3 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 0 [1m[33m)[0m
+                                                                                [1m[33m([0m Just [95m([0m TokenPn 1983 75 3 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 0 [1m[33m)[0m
                                                                             [1m[36m][0m 
                                                                         [1m[35m)[0m
                                                                     [33m)[0m 
                                                                     [33m([0m XL_FromConsensus 
-                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 1893 74 3 [1m[36m)[0m [1m[35m)[0m 
+                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2005 76 3 [1m[36m)[0m [1m[35m)[0m 
                                                                         [1m[35m([0m XL_Let 
-                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 1925 77 5 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m 
+                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2037 79 5 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m 
                                                                             [1m[36m([0m Just [1m[33m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[33m][0m [1m[36m)[0m 
                                                                             [1m[36m([0m XL_Declassify 
-                                                                                [1m[33m([0m Just [95m([0m TokenPn 1949 77 29 [95m)[0m [1m[33m)[0m 
+                                                                                [1m[33m([0m Just [95m([0m TokenPn 2061 79 29 [95m)[0m [1m[33m)[0m 
                                                                                 [1m[33m([0m XL_FunApp 
-                                                                                    [95m([0m Just [96m([0m TokenPn 1957 77 37 [96m)[0m [95m)[0m 
+                                                                                    [95m([0m Just [96m([0m TokenPn 2069 79 37 [96m)[0m [95m)[0m 
                                                                                     [95m([0m XL_Var 
-                                                                                        [96m([0m Just [93m([0m TokenPn 1950 77 30 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m 
+                                                                                        [96m([0m Just [93m([0m TokenPn 2062 79 30 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m 
                                                                                     [95m)[0m [95m[[0m[95m][0m
                                                                                 [1m[33m)[0m
                                                                             [1m[36m)[0m 
                                                                             [1m[36m([0m XL_Let 
-                                                                                [1m[33m([0m Just [95m([0m TokenPn 1980 78 19 [95m)[0m [1m[33m)[0m [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
+                                                                                [1m[33m([0m Just [95m([0m TokenPn 2092 80 19 [95m)[0m [1m[33m)[0m [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
                                                                                 [1m[33m([0m XL_PrimApp 
-                                                                                    [95m([0m Just [96m([0m TokenPn 1966 78 5 [96m)[0m [95m)[0m INTERACT 
+                                                                                    [95m([0m Just [96m([0m TokenPn 2078 80 5 [96m)[0m [95m)[0m INTERACT 
                                                                                     [95m[[0m XL_Con 
-                                                                                        [96m([0m Just [93m([0m TokenPn 1975 78 14 [93m)[0m [96m)[0m [96m([0m Con_BS [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m [96m)[0m
+                                                                                        [96m([0m Just [93m([0m TokenPn 2087 80 14 [93m)[0m [96m)[0m [96m([0m Con_BS [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m [96m)[0m
                                                                                     [95m][0m
                                                                                 [1m[33m)[0m 
                                                                                 [1m[33m([0m XL_ToConsensus 
-                                                                                    [95m([0m Just [96m([0m TokenPn 1990 79 3 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [95m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [95m][0m 
+                                                                                    [95m([0m Just [96m([0m TokenPn 2102 81 3 [96m)[0m [95m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [95m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [95m][0m 
                                                                                     [95m([0m XL_Con 
-                                                                                        [96m([0m Just [93m([0m TokenPn 1990 79 3 [93m)[0m [96m)[0m [96m([0m Con_I 0 [96m)[0m
+                                                                                        [96m([0m Just [93m([0m TokenPn 2102 81 3 [93m)[0m [96m)[0m [96m([0m Con_I 0 [96m)[0m
                                                                                     [95m)[0m 
                                                                                     [95m([0m XL_Let 
-                                                                                        [96m([0m Just [93m([0m TokenPn 1990 79 3 [93m)[0m [96m)[0m Nothing Nothing 
+                                                                                        [96m([0m Just [93m([0m TokenPn 2102 81 3 [93m)[0m [96m)[0m Nothing Nothing 
                                                                                         [96m([0m XL_Claim 
-                                                                                            [93m([0m Just [1m[95m([0m TokenPn 1990 79 3 [1m[95m)[0m [93m)[0m CT_Require 
+                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2102 81 3 [1m[95m)[0m [93m)[0m CT_Require 
                                                                                             [93m([0m XL_PrimApp 
-                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 1990 79 3 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m CP PEQ [1m[95m)[0m 
+                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2102 81 3 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m CP PEQ [1m[95m)[0m 
                                                                                                 [1m[95m[[0m XL_PrimApp 
-                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1990 79 3 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m CP TXN_VALUE [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
+                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2102 81 3 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m CP TXN_VALUE [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
                                                                                                 [1m[95m,[0m XL_Con 
-                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 1990 79 3 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m Con_I 0 [1m[96m)[0m
+                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2102 81 3 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m Con_I 0 [1m[96m)[0m
                                                                                                 [1m[95m][0m 
                                                                                             [93m)[0m
                                                                                         [96m)[0m 
                                                                                         [96m([0m XL_Let 
-                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2017 80 10 [1m[95m)[0m [93m)[0m Nothing Nothing 
+                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2129 82 10 [1m[95m)[0m [93m)[0m Nothing Nothing 
                                                                                             [93m([0m XL_Claim 
-                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2017 80 10 [1m[96m)[0m [1m[95m)[0m CT_Require 
+                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2129 82 10 [1m[96m)[0m [1m[95m)[0m CT_Require 
                                                                                                 [1m[95m([0m XL_FunApp 
-                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2024 80 17 [1m[93m)[0m [1m[96m)[0m 
+                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2136 82 17 [1m[93m)[0m [1m[96m)[0m 
                                                                                                     [1m[96m([0m XL_Var 
-                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2018 80 11 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
+                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2130 82 11 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
                                                                                                     [1m[96m)[0m 
                                                                                                     [1m[96m[[0m XL_Var 
-                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2025 80 18 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2137 82 18 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                     [1m[96m][0m
                                                                                                 [1m[95m)[0m
                                                                                             [93m)[0m 
                                                                                             [93m([0m XL_FromConsensus 
-                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2036 81 3 [1m[96m)[0m [1m[95m)[0m 
+                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2148 83 3 [1m[96m)[0m [1m[95m)[0m 
                                                                                                 [1m[95m([0m XL_Let 
-                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2068 84 5 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m 
+                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2180 86 5 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m 
                                                                                                     [1m[96m([0m Just [1m[93m[[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m 
                                                                                                     [1m[96m([0m XL_Declassify 
-                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2092 84 29 [35m)[0m [1m[93m)[0m 
+                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2204 86 29 [35m)[0m [1m[93m)[0m 
                                                                                                         [1m[93m([0m XL_Var 
-                                                                                                            [35m([0m Just [36m([0m TokenPn 2093 84 30 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m 
+                                                                                                            [35m([0m Just [36m([0m TokenPn 2205 86 30 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m 
                                                                                                         [1m[93m)[0m
                                                                                                     [1m[96m)[0m 
                                                                                                     [1m[96m([0m XL_Let 
-                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2106 85 5 [35m)[0m [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
+                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2218 87 5 [35m)[0m [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
                                                                                                         [1m[93m([0m Just [35m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [35m][0m [1m[93m)[0m 
                                                                                                         [1m[93m([0m XL_Declassify 
-                                                                                                            [35m([0m Just [36m([0m TokenPn 2130 85 29 [36m)[0m [35m)[0m 
+                                                                                                            [35m([0m Just [36m([0m TokenPn 2242 87 29 [36m)[0m [35m)[0m 
                                                                                                             [35m([0m XL_Var 
-                                                                                                                [36m([0m Just [33m([0m TokenPn 2131 85 30 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
+                                                                                                                [36m([0m Just [33m([0m TokenPn 2243 87 30 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
                                                                                                             [35m)[0m
                                                                                                         [1m[93m)[0m 
                                                                                                         [1m[93m([0m XL_Let 
-                                                                                                            [35m([0m Just [36m([0m TokenPn 2160 86 21 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing 
+                                                                                                            [35m([0m Just [36m([0m TokenPn 2272 88 21 [36m)[0m [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing 
                                                                                                             [35m([0m XL_PrimApp 
-                                                                                                                [36m([0m Just [33m([0m TokenPn 2144 86 5 [33m)[0m [36m)[0m INTERACT 
+                                                                                                                [36m([0m Just [33m([0m TokenPn 2256 88 5 [33m)[0m [36m)[0m INTERACT 
                                                                                                                 [36m[[0m XL_Con 
-                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2153 86 14 [1m[35m)[0m [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mreveals[0m[1m[97m"[0m [33m)[0m
+                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2265 88 14 [1m[35m)[0m [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mreveals[0m[1m[97m"[0m [33m)[0m
                                                                                                                 [36m][0m
                                                                                                             [35m)[0m 
                                                                                                             [35m([0m XL_ToConsensus 
-                                                                                                                [36m([0m Just [33m([0m TokenPn 2170 87 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                [36m([0m Just [33m([0m TokenPn 2282 89 3 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
                                                                                                                 [36m[[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
                                                                                                                 [36m,[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                 [36m][0m 
                                                                                                                 [36m([0m XL_Con 
-                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2170 87 3 [1m[35m)[0m [33m)[0m [33m([0m Con_I 0 [33m)[0m
+                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2282 89 3 [1m[35m)[0m [33m)[0m [33m([0m Con_I 0 [33m)[0m
                                                                                                                 [36m)[0m 
                                                                                                                 [36m([0m XL_Let 
-                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2170 87 3 [1m[35m)[0m [33m)[0m Nothing Nothing 
+                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2282 89 3 [1m[35m)[0m [33m)[0m Nothing Nothing 
                                                                                                                     [33m([0m XL_Claim 
-                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2170 87 3 [1m[36m)[0m [1m[35m)[0m CT_Require 
+                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2282 89 3 [1m[36m)[0m [1m[35m)[0m CT_Require 
                                                                                                                         [1m[35m([0m XL_PrimApp 
-                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2170 87 3 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m 
+                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2282 89 3 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m 
                                                                                                                             [1m[36m[[0m XL_PrimApp 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2170 87 3 [95m)[0m [1m[33m)[0m [1m[33m([0m CP TXN_VALUE [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2282 89 3 [95m)[0m [1m[33m)[0m [1m[33m([0m CP TXN_VALUE [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
                                                                                                                             [1m[36m,[0m XL_Con 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2170 87 3 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 0 [1m[33m)[0m
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2282 89 3 [95m)[0m [1m[33m)[0m [1m[33m([0m Con_I 0 [1m[33m)[0m
                                                                                                                             [1m[36m][0m 
                                                                                                                         [1m[35m)[0m
                                                                                                                     [33m)[0m 
                                                                                                                     [33m([0m XL_Let 
-                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2209 88 15 [1m[36m)[0m [1m[35m)[0m Nothing Nothing 
+                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2321 90 15 [1m[36m)[0m [1m[35m)[0m Nothing Nothing 
                                                                                                                         [1m[35m([0m XL_FunApp 
-                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2209 88 15 [1m[33m)[0m [1m[36m)[0m 
+                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2321 90 15 [1m[33m)[0m [1m[36m)[0m 
                                                                                                                             [1m[36m([0m XL_Var 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2197 88 3 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m 
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2309 90 3 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m 
                                                                                                                             [1m[36m)[0m 
                                                                                                                             [1m[36m[[0m XL_Var 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2210 88 16 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2322 90 16 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
                                                                                                                             [1m[36m,[0m XL_Var 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2219 88 25 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2331 90 25 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
                                                                                                                             [1m[36m,[0m XL_Var 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2226 88 32 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2338 90 32 [95m)[0m [1m[33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                             [1m[36m][0m 
                                                                                                                         [1m[35m)[0m 
                                                                                                                         [1m[35m([0m XL_Let 
-                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2243 89 10 [1m[33m)[0m [1m[36m)[0m Nothing Nothing 
+                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2355 91 10 [1m[33m)[0m [1m[36m)[0m Nothing Nothing 
                                                                                                                             [1m[36m([0m XL_Claim 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2243 89 10 [95m)[0m [1m[33m)[0m CT_Require 
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2355 91 10 [95m)[0m [1m[33m)[0m CT_Require 
                                                                                                                                 [1m[33m([0m XL_FunApp 
-                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2250 89 17 [96m)[0m [95m)[0m 
+                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2362 91 17 [96m)[0m [95m)[0m 
                                                                                                                                     [95m([0m XL_Var 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2244 89 11 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2356 91 11 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
                                                                                                                                     [95m)[0m 
                                                                                                                                     [95m[[0m XL_Var 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2251 89 18 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2363 91 18 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                     [95m][0m
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m)[0m 
                                                                                                                             [1m[36m([0m XL_Let 
-                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2262 90 3 [95m)[0m [1m[33m)[0m Nothing 
+                                                                                                                                [1m[33m([0m Just [95m([0m TokenPn 2374 92 3 [95m)[0m [1m[33m)[0m Nothing 
                                                                                                                                 [1m[33m([0m Just [95m[[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [95m][0m [1m[33m)[0m 
                                                                                                                                 [1m[33m([0m XL_FunApp 
-                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2284 90 25 [96m)[0m [95m)[0m 
+                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2396 92 25 [96m)[0m [95m)[0m 
                                                                                                                                     [95m([0m XL_Var 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2278 90 19 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2390 92 19 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m 
                                                                                                                                     [95m)[0m 
                                                                                                                                     [95m[[0m XL_Var 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2285 90 26 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2397 92 26 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                     [95m,[0m XL_Var 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2292 90 33 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2404 92 33 [93m)[0m [96m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                     [95m][0m 
                                                                                                                                 [1m[33m)[0m 
                                                                                                                                 [1m[33m([0m XL_Let 
-                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2308 91 9 [96m)[0m [95m)[0m Nothing Nothing 
+                                                                                                                                    [95m([0m Just [96m([0m TokenPn 2420 93 9 [96m)[0m [95m)[0m Nothing Nothing 
                                                                                                                                     [95m([0m XL_Claim 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2308 91 9 [93m)[0m [96m)[0m CT_Assert 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2420 93 9 [93m)[0m [96m)[0m CT_Assert 
                                                                                                                                         [96m([0m XL_FunApp 
-                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2316 91 17 [1m[95m)[0m [93m)[0m 
+                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2428 93 17 [1m[95m)[0m [93m)[0m 
                                                                                                                                             [93m([0m XL_Var 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2309 91 10 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2421 93 10 [1m[96m)[0m [1m[95m)[0m [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m 
                                                                                                                                             [93m)[0m 
                                                                                                                                             [93m[[0m XL_PrimApp 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2325 91 26 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m CP PEQ [1m[95m)[0m 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2437 93 26 [1m[96m)[0m [1m[95m)[0m [1m[95m([0m CP PEQ [1m[95m)[0m 
                                                                                                                                                 [1m[95m[[0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2317 91 18 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2429 93 18 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m,[0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2328 91 29 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2440 93 29 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m][0m 
                                                                                                                                             [93m,[0m XL_FunApp 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2342 91 43 [1m[96m)[0m [1m[95m)[0m 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2454 93 43 [1m[96m)[0m [1m[95m)[0m 
                                                                                                                                                 [1m[95m([0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2336 91 37 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2448 93 37 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m)[0m 
                                                                                                                                                 [1m[95m[[0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2343 91 44 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2455 93 44 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m][0m
                                                                                                                                             [93m][0m 
                                                                                                                                         [96m)[0m
                                                                                                                                     [95m)[0m 
                                                                                                                                     [95m([0m XL_Let 
-                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2361 92 9 [93m)[0m [96m)[0m Nothing Nothing 
+                                                                                                                                        [96m([0m Just [93m([0m TokenPn 2473 94 9 [93m)[0m [96m)[0m Nothing Nothing 
                                                                                                                                         [96m([0m XL_Claim 
-                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2361 92 9 [1m[95m)[0m [93m)[0m CT_Assert 
+                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2473 94 9 [1m[95m)[0m [93m)[0m CT_Assert 
                                                                                                                                             [93m([0m XL_FunApp 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2369 92 17 [1m[96m)[0m [1m[95m)[0m 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2481 94 17 [1m[96m)[0m [1m[95m)[0m 
                                                                                                                                                 [1m[95m([0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2362 92 10 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2474 94 10 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m)[0m 
                                                                                                                                                 [1m[95m[[0m XL_PrimApp 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2378 92 26 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m CP PEQ [1m[96m)[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2490 94 26 [1m[93m)[0m [1m[96m)[0m [1m[96m([0m CP PEQ [1m[96m)[0m 
                                                                                                                                                     [1m[96m[[0m XL_Var 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2370 92 18 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2482 94 18 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m,[0m XL_Var 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2381 92 29 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2493 94 29 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m][0m 
                                                                                                                                                 [1m[95m,[0m XL_FunApp 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2395 92 43 [1m[93m)[0m [1m[96m)[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2507 94 43 [1m[93m)[0m [1m[96m)[0m 
                                                                                                                                                     [1m[96m([0m XL_Var 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2389 92 37 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2501 94 37 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m)[0m 
                                                                                                                                                     [1m[96m[[0m XL_Var 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2396 92 44 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2508 94 44 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m][0m
                                                                                                                                                 [1m[95m][0m 
                                                                                                                                             [93m)[0m
                                                                                                                                         [96m)[0m 
                                                                                                                                         [96m([0m XL_Let 
-                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2417 93 12 [1m[95m)[0m [93m)[0m Nothing Nothing 
+                                                                                                                                            [93m([0m Just [1m[95m([0m TokenPn 2529 95 12 [1m[95m)[0m [93m)[0m Nothing Nothing 
                                                                                                                                             [93m([0m XL_FunApp 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2417 93 12 [1m[96m)[0m [1m[95m)[0m 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2529 95 12 [1m[96m)[0m [1m[95m)[0m 
                                                                                                                                                 [1m[95m([0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2408 93 3 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2520 95 3 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m)[0m 
                                                                                                                                                 [1m[95m[[0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2418 93 13 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2530 95 13 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m,[0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2425 93 20 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2537 95 20 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m,[0m XL_Var 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2432 93 27 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2544 95 27 [1m[93m)[0m [1m[96m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m][0m 
                                                                                                                                             [93m)[0m 
                                                                                                                                             [93m([0m XL_Let 
-                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2445 95 3 [1m[96m)[0m [1m[95m)[0m Nothing 
+                                                                                                                                                [1m[95m([0m Just [1m[96m([0m TokenPn 2557 97 3 [1m[96m)[0m [1m[95m)[0m Nothing 
                                                                                                                                                 [1m[95m([0m Just 
                                                                                                                                                     [1m[96m[[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m,[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m][0m 
                                                                                                                                                 [1m[95m)[0m 
                                                                                                                                                 [1m[95m([0m XL_FunApp 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2670 101 46 [1m[93m)[0m [1m[96m)[0m 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2782 103 46 [1m[93m)[0m [1m[96m)[0m 
                                                                                                                                                     [1m[96m([0m XL_Lambda 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2472 95 30 [35m)[0m [1m[93m)[0m [1m[93m[[0m[1m[93m][0m 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2584 97 30 [35m)[0m [1m[93m)[0m [1m[93m[[0m[1m[93m][0m 
                                                                                                                                                         [1m[93m([0m XL_If 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2481 96 5 [36m)[0m [35m)[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2593 98 5 [36m)[0m [35m)[0m 
                                                                                                                                                             [35m([0m XL_PrimApp 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2493 96 17 [33m)[0m [36m)[0m [36m([0m CP PEQ [36m)[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2605 98 17 [33m)[0m [36m)[0m [36m([0m CP PEQ [36m)[0m 
                                                                                                                                                                 [36m[[0m XL_Var 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2485 96 9 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2597 98 9 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m XL_Var 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2496 96 20 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2608 98 20 [1m[35m)[0m [33m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                                                                                                                                                                 [36m][0m 
                                                                                                                                                             [35m)[0m 
                                                                                                                                                             [35m([0m XL_Values 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2519 97 14 [33m)[0m [36m)[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2631 99 14 [33m)[0m [36m)[0m 
                                                                                                                                                                 [36m[[0m XL_PrimApp 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2522 97 17 [1m[35m)[0m [33m)[0m [33m([0m CP MUL [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2634 99 17 [1m[35m)[0m [33m)[0m [33m([0m CP MUL [33m)[0m 
                                                                                                                                                                     [33m[[0m XL_Con 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2520 97 15 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_I 2 [1m[35m)[0m
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2632 99 15 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_I 2 [1m[35m)[0m
                                                                                                                                                                     [33m,[0m XL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2524 97 19 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2636 99 19 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m,[0m XL_Con 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2537 97 32 [1m[35m)[0m [33m)[0m [33m([0m Con_I 0 [33m)[0m
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2649 99 32 [1m[35m)[0m [33m)[0m [33m([0m Con_I 0 [33m)[0m
                                                                                                                                                                 [36m][0m 
                                                                                                                                                             [35m)[0m 
                                                                                                                                                             [35m([0m XL_If 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2552 98 10 [33m)[0m [36m)[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2664 100 10 [33m)[0m [36m)[0m 
                                                                                                                                                                 [36m([0m XL_PrimApp 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2564 98 22 [1m[35m)[0m [33m)[0m [33m([0m CP PEQ [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2676 100 22 [1m[35m)[0m [33m)[0m [33m([0m CP PEQ [33m)[0m 
                                                                                                                                                                     [33m[[0m XL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2556 98 14 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2668 100 14 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m XL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2567 98 25 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2679 100 25 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XL_Values 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2590 99 14 [1m[35m)[0m [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2702 101 14 [1m[35m)[0m [33m)[0m 
                                                                                                                                                                     [33m[[0m XL_Con 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2591 99 15 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_I 0 [1m[35m)[0m
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2703 101 15 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_I 0 [1m[35m)[0m
                                                                                                                                                                     [33m,[0m XL_PrimApp 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2596 99 20 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP MUL [1m[35m)[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2708 101 20 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m CP MUL [1m[35m)[0m 
                                                                                                                                                                         [1m[35m[[0m XL_Con 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2594 99 18 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 2 [1m[36m)[0m
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2706 101 18 [1m[33m)[0m [1m[36m)[0m [1m[36m([0m Con_I 2 [1m[36m)[0m
                                                                                                                                                                         [1m[35m,[0m XL_Var 
-                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2598 99 22 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                                                                                                                                            [1m[36m([0m Just [1m[33m([0m TokenPn 2710 101 22 [1m[33m)[0m [1m[36m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m][0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XL_Values 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2638 101 14 [1m[35m)[0m [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2750 103 14 [1m[35m)[0m [33m)[0m 
                                                                                                                                                                     [33m[[0m XL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2639 101 15 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2751 103 15 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m XL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2652 101 28 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2764 103 28 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m
                                                                                                                                                             [35m)[0m
@@ -1124,43 +1139,43 @@ XL_Prog
                                                                                                                                                     [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
                                                                                                                                                 [1m[95m)[0m 
                                                                                                                                                 [1m[95m([0m XL_Let 
-                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2712 102 39 [1m[93m)[0m [1m[96m)[0m Nothing Nothing 
+                                                                                                                                                    [1m[96m([0m Just [1m[93m([0m TokenPn 2824 104 39 [1m[93m)[0m [1m[96m)[0m Nothing Nothing 
                                                                                                                                                     [1m[96m([0m XL_Transfer 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2676 102 3 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2788 104 3 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
                                                                                                                                                         [1m[93m([0m XL_PrimApp 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2698 102 25 [36m)[0m [35m)[0m [35m([0m CP ADD [35m)[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2810 104 25 [36m)[0m [35m)[0m [35m([0m CP ADD [35m)[0m 
                                                                                                                                                             [35m[[0m XL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2685 102 12 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2797 104 12 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m XL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2700 102 27 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2812 104 27 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
                                                                                                                                                             [35m][0m 
                                                                                                                                                         [1m[93m)[0m
                                                                                                                                                     [1m[96m)[0m 
                                                                                                                                                     [1m[96m([0m XL_Let 
-                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2737 103 24 [35m)[0m [1m[93m)[0m Nothing Nothing 
+                                                                                                                                                        [1m[93m([0m Just [35m([0m TokenPn 2849 105 24 [35m)[0m [1m[93m)[0m Nothing Nothing 
                                                                                                                                                         [1m[93m([0m XL_Transfer 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2716 103 3 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2828 105 3 [36m)[0m [35m)[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
                                                                                                                                                             [35m([0m XL_Var 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2725 103 12 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2837 105 12 [33m)[0m [36m)[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m 
                                                                                                                                                             [35m)[0m
                                                                                                                                                         [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XL_FromConsensus 
-                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2741 104 3 [36m)[0m [35m)[0m 
+                                                                                                                                                            [35m([0m Just [36m([0m TokenPn 2853 106 3 [36m)[0m [35m)[0m 
                                                                                                                                                             [35m([0m XL_Let 
-                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2770 106 19 [33m)[0m [36m)[0m Nothing Nothing 
+                                                                                                                                                                [36m([0m Just [33m([0m TokenPn 2882 108 19 [33m)[0m [36m)[0m Nothing Nothing 
                                                                                                                                                                 [36m([0m XL_PrimApp 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2754 106 3 [1m[35m)[0m [33m)[0m INTERACT 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2866 108 3 [1m[35m)[0m [33m)[0m INTERACT 
                                                                                                                                                                     [33m[[0m XL_Con 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2763 106 12 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [1m[35m)[0m
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2875 108 12 [1m[36m)[0m [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [1m[35m)[0m
                                                                                                                                                                     [33m][0m
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XL_FunApp 
-                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2794 107 21 [1m[35m)[0m [33m)[0m 
+                                                                                                                                                                    [33m([0m Just [1m[35m([0m TokenPn 2906 109 21 [1m[35m)[0m [33m)[0m 
                                                                                                                                                                     [33m([0m XL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2783 107 10 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2895 109 10 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m 
                                                                                                                                                                     [33m)[0m 
                                                                                                                                                                     [33m[[0m XL_Var 
-                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2795 107 22 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                        [1m[35m([0m Just [1m[36m([0m TokenPn 2907 109 22 [1m[36m)[0m [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m
                                                                                                                                                                 [36m)[0m
                                                                                                                                                             [35m)[0m

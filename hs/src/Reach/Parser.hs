@@ -187,11 +187,6 @@ doToConsensus h p vs amt conk = XL_ToConsensus h p vs amt k'
 
 decodeStmts :: Maybe Participant -> [JSStatement] -> XLExpr TP
 decodeStmts _who j@[] = expect_error "non-empty statement list" j
-decodeStmts who ((JSLabelled (JSIdentName a "post") _ (JSExpressionStatement ee _)):k) =
-  (XL_FunApp ah (XL_Lambda ah ["__result"] (XL_Let ah who Nothing (XL_Claim ah CT_Assert (XL_FunApp ah e [XL_Var ah "__result"])) (XL_Var ah "__result"))) [ body ])
-  where ah = tp a
-        e = decodeExpr ee
-        body = decodeStmts who k
 decodeStmts who ((JSStatementBlock a ss _ _):k) =
   letnothing LN_Flatten (tp a) who (decodeStmts who ss) k
 --- No Break

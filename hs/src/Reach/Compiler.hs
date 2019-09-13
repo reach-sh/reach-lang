@@ -97,14 +97,23 @@ do_inline_funcall ch f argivs =
   case f of
     IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
     IV_XIL _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
-    IV_Clo (lh, formals, body) cloenv ->
-      --- XXX Maybe copy-propagate
-      IV_XIL (arp && bp) (XIL_Let lh Nothing (Just formals) (XIL_Values ch argies) body')
-      where argvs = map iv_expr argivs
-            argies = map snd argvs
-            arp = getAll $ mconcat (map (All . fst) argvs)
-            (bp, body') = iv_expr $ peval σ' body
-            σ' = M.union (id_map lh formals) cloenv
+    IV_Clo (lh, formals, orig_body) cloenv ->
+      IV_XIL (arp && bp) eff_body'
+      where (σ', arp, eff_formals, eff_argies) =
+              foldr proc_clo_arg (cloenv, True, [], []) $ zip formals argivs
+            proc_clo_arg (formal, argiv) (i_σ, i_arp, i_eff_formals, i_eff_argies) =
+              case argiv of
+                IV_XIL this_p this_x ->
+                  (o_σ, o_arp, o_eff_formals, o_eff_argies)
+                  where o_σ = M.insert formal (snd (iv_id ch formal)) i_σ
+                        o_arp = i_arp && this_p
+                        o_eff_formals = formal : i_eff_formals
+                        o_eff_argies = this_x : i_eff_argies
+                _ ->
+                  (o_σ, i_arp, i_eff_formals, i_eff_argies)
+                  where o_σ = M.insert formal argiv i_σ                  
+            eff_body' = XIL_Let lh Nothing (Just eff_formals) (XIL_Values ch eff_argies) body'
+            (bp, body') = iv_expr $ peval σ' orig_body
 
 --- XXX Convert to CPS to include ANF transform in this
 peval :: Show a => ILEnv a -> XLExpr a -> InlineV a
@@ -195,7 +204,9 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps m'
         add_tops d σ =
           case d of
             XL_DefineValues h vs _ ->
-              --- XXX This is a little weird
+              --- XXX This is a little weird, because if a RHS uses a
+              --- function and that function uses this variable, then
+              --- we'll get a weird error.
               M.union (id_map h vs) σ
             XL_DefineFun h f args body ->
               M.insert f (IV_Clo (h, args, body) σ_top) σ
