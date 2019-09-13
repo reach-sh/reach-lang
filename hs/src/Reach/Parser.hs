@@ -19,16 +19,28 @@ import GHC.IO.Encoding
 
 import Reach.AST
 
---- XXX It stinks that this doesn't have the filename in it
-type TP = Maybe TokenPosn
+type TP = (FilePath, Maybe TokenPosn)
 
-tp :: JSAnnot -> TP
-tp (JSAnnot t _) = Just t
-tp _ = Nothing
+type DecodeStmtsState = (FilePath, Maybe Participant)
+make_dss :: FilePath -> DecodeStmtsState
+make_dss fp = (fp, Nothing)
+sub_dss :: DecodeStmtsState -> DecodeStmtsState
+sub_dss (fp, _) = (fp, Nothing)
+who_dss :: DecodeStmtsState -> Maybe Participant -> DecodeStmtsState
+who_dss (fp, _) who = (fp, who)
 
-sp :: JSSemi -> TP
-sp (JSSemi a) = tp a
-sp _ = Nothing
+dss_who :: DecodeStmtsState -> Maybe Participant
+dss_who (_, w) = w
+dss_tp :: DecodeStmtsState -> Maybe TokenPosn -> TP
+dss_tp (fp, _) mt = (fp, mt)
+
+tpa :: JSAnnot -> Maybe TokenPosn
+tpa (JSAnnot t _) = Just t
+tpa _ = Nothing
+
+spa :: JSSemi -> Maybe TokenPosn
+spa (JSSemi a) = tpa a
+spa _ = Nothing
 
 shortShow :: Show a => a -> String
 shortShow j = take 1024 (L.unpack (pShow j))
@@ -76,8 +88,8 @@ decodeParams :: JSArrowParameterList -> [XLVar]
 decodeParams j@(JSUnparenthesizedArrowParameter _) = expect_error "list of params" j
 decodeParams (JSParenthesizedArrowParameterList _ j _) = map expectIdent $ flattenJSCL j
 
-decodeBinOp :: JSBinOp -> XLExpr TP -> XLExpr TP -> XLExpr TP
-decodeBinOp o arg1 arg2 =
+decodeBinOp :: (JSAnnot -> TP) -> JSBinOp -> XLExpr TP -> XLExpr TP -> XLExpr TP
+decodeBinOp tp o arg1 arg2 =
   case o of
     JSBinOpAnd a -> fun a "and"
     JSBinOpDivide a -> prim a (CP DIV)
@@ -99,17 +111,15 @@ decodeBinOp o arg1 arg2 =
         prim a p = XL_PrimApp (tp a) p args
         args = [ arg1, arg2 ]
 
-decodeUnaOp :: JSUnaryOp -> XLExpr TP -> XLExpr TP
-decodeUnaOp (JSUnaryOpMinus a) arg = XL_PrimApp (tp a) (CP SUB) [ (XL_Con (tp a) (Con_I 0)), arg ]
-decodeUnaOp (JSUnaryOpNot a) arg = XL_FunApp (tp a) (XL_Var (tp a) "not") [ arg ]
-decodeUnaOp j _ = expect_error "unary operator" j
+decodeUnaOp :: (JSAnnot -> TP) -> JSUnaryOp -> XLExpr TP -> XLExpr TP
+decodeUnaOp tp j arg =
+  case j of
+    (JSUnaryOpMinus a) -> XL_PrimApp (tp a) (CP SUB) [ (XL_Con (tp a) (Con_I 0)), arg ]
+    (JSUnaryOpNot a) -> XL_FunApp (tp a) (XL_Var (tp a) "not") [ arg ]
+    _ -> expect_error "unary operator" j
 
 string_trim_quotes :: [a] -> [a]
 string_trim_quotes x = reverse $ tail $ reverse $ tail x
-
-type DecodeStmtsState = Maybe Participant
-dss_who :: DecodeStmtsState -> Maybe Participant
-dss_who x = x
 
 decodeExpr :: DecodeStmtsState -> JSExpression -> XLExpr TP
 decodeExpr dss je =
@@ -129,7 +139,7 @@ decodeExpr dss je =
     (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSIdentifier a "transfer") _ (JSLOne amt) _) _ (JSIdentifier _ "to")) _ (JSLOne (JSIdentifier _ p)) _) ->
       XL_Transfer (tp a) p (decodeExpr dss amt)
     --- No comma
-    (JSExpressionBinary lhs op rhs) -> (decodeBinOp op) (decodeExpr dss lhs) (decodeExpr dss rhs)
+    (JSExpressionBinary lhs op rhs) -> (decodeBinOp tp op) (decodeExpr dss lhs) (decodeExpr dss rhs)
     (JSExpressionParen _ j _) -> decodeExpr dss j
     --- No postfix
     (JSExpressionTernary c a t _ f) -> XL_If (tp a) (decodeExpr dss c) (decodeExpr dss t) (decodeExpr dss f)
@@ -143,7 +153,7 @@ decodeExpr dss je =
     --- No NewExpression
     --- No ObjectLiteral
     --- No SpreadExpression
-    (JSUnaryExpression op e) -> (decodeUnaOp op) (decodeExpr dss e)
+    (JSUnaryExpression op e) -> (decodeUnaOp tp op) (decodeExpr dss e)
     --- No VarInitExpression
     (JSMemberExpression (JSMemberDot (JSIdentifier a "interact") _ (JSIdentifier ma method)) _ args _) ->
       XL_PrimApp (tp a) INTERACT ((XL_Con (tp ma) (Con_BS (B.pack method))):(map (decodeExpr dss) $ flattenJSCL args))
@@ -172,6 +182,7 @@ decodeExpr dss je =
             h = tp a
             args = (map (decodeExpr dss) $ flattenJSCL eargs)
     j -> expect_error "expression" j
+  where tp = dss_tp dss . tpa
 
 data LetNothing
   = LN_Flatten
@@ -218,24 +229,24 @@ decodeStmts dss js =
       doToConsensus (tp a) p vs amt conk
       where vs = map expectId $ flattenJSCL evs
             amt = decodeExpr dss eamt
-            conk = ds Nothing ek
+            conk = ds (sub_dss dss) ek
     ((JSExpressionStatement e semi):k) ->
       letnothing LN_Null (sp semi) dss (decodeExpr dss e) k
     --- No AssignStatement
     ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _ _):ek) ->
       doToConsensus (tp a) p [] amt conk
       where amt = decodeExpr dss eamt
-            conk = ds Nothing ek
+            conk = ds (sub_dss dss) ek
     ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _ _):ek) ->
       doToConsensus h p vs (XL_Con h (Con_I 0)) conk
       where vs = map expectId $ flattenJSCL evs        
-            conk = ds Nothing ek
+            conk = ds (sub_dss dss) ek
             h = tp a
     ((JSMethodCall (JSMemberDot (JSIdentifier _a p) _ (JSIdentifier _ "only"))
        _ (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s)) _ _):k) ->
-      ds (Just p) (mergeStmts s k)
+      ds (who_dss dss (Just p)) (mergeStmts s k)
     ((JSMethodCall (JSIdentifier a "commit") _ JSLNil _ _):k) ->
-      XL_FromConsensus (tp a) (ds Nothing k)
+      XL_FromConsensus (tp a) (ds (sub_dss dss) k)
     ((JSMethodCall f ann1 args ann2 _semi):k) ->
       letnothing LN_Null (tp ann1) dss (decodeExpr dss (JSMemberExpression f ann1 args ann2)) k
     (j@(JSReturn a me _):k) ->
@@ -258,16 +269,23 @@ decodeStmts dss js =
       --- XXX Check loopv is correct
       XL_Continue (tp a) (decodeExpr dss rhs)
     (j:_) -> expect_error "statement" j
+  where tp = dss_tp dss . tpa
+        sp = dss_tp dss . spa
 
-decodeBlock :: JSBlock -> XLExpr TP
-decodeBlock (JSBlock _ ss _) = decodeStmts Nothing ss
+decodeBlock :: FilePath -> JSBlock -> XLExpr TP
+decodeBlock fp (JSBlock _ ss _) = decodeStmts (make_dss fp) ss
              
-decodeDef :: JSStatement -> [XLDef TP]
-decodeDef (JSConstant a (JSLOne (JSVarInitExpression (JSIdentifier _ x) (JSVarInit _ (JSMemberExpression (JSIdentifier _ "Enum") _ (JSLOne (JSArrayLiteral _ vs _)) _)))) _) = doXLEnum (tp a) x (map expectId (flattenJSArray vs))
-decodeDef (JSFunction a (JSIdentName _ f) _ eargs _ ee _) = [XL_DefineFun (tp a) f args e]
-  where args = map expectIdent (flattenJSCL eargs)
-        e = decodeBlock ee
-decodeDef j = expect_error "definition" j
+decodeDef :: FilePath -> JSStatement -> [XLDef TP]
+decodeDef fp j =
+  case j of
+    (JSConstant a (JSLOne (JSVarInitExpression (JSIdentifier _ x) (JSVarInit _ (JSMemberExpression (JSIdentifier _ "Enum") _ (JSLOne (JSArrayLiteral _ vs _)) _)))) _) ->
+      doXLEnum (tp a) x (map expectId (flattenJSArray vs))
+    (JSFunction a (JSIdentName _ f) _ eargs _ ee _) ->
+      [XL_DefineFun (tp a) f args e]
+      where args = map expectIdent (flattenJSCL eargs)
+            e = decodeBlock fp ee
+    _ -> expect_error "definition" j
+  where tp a = (fp, tpa a)
 
 decodeType :: JSExpression -> BaseType
 decodeType (JSIdentifier _ "uint256") = AT_UInt256
@@ -275,26 +293,26 @@ decodeType (JSIdentifier _ "bool") = AT_Bool
 decodeType (JSIdentifier _ "bytes") = AT_Bytes
 decodeType j = expect_error "type" j
 
-decodeVarDecl :: JSObjectProperty -> (TP, XLVar, BaseType)
-decodeVarDecl (JSPropertyNameandValue (JSPropertyIdent _ v) a [ e ]) = ((tp a), v, bt)
+decodeVarDecl :: (JSAnnot -> TP) -> JSObjectProperty -> (TP, XLVar, BaseType)
+decodeVarDecl tp (JSPropertyNameandValue (JSPropertyIdent _ v) a [ e ]) = ((tp a), v, bt)
   where bt = decodeType e
-decodeVarDecl j = expect_error "variable declaration" j
+decodeVarDecl _ j = expect_error "variable declaration" j
 
 decodeBody :: FilePath -> ([XLDef TP], (XLPartInfo TP), Maybe (XLExpr TP)) -> JSModuleItem -> IO ([XLDef TP], (XLPartInfo TP), Maybe (XLExpr TP))
-decodeBody _fp (d, p, me) msis =
+decodeBody fp (d, p, me) msis =
   case msis of
     (JSModuleStatementListItem s@(JSConstant _ (JSLOne (JSVarInitExpression (JSIdentifier _ _x) (JSVarInit _ (JSMemberExpression (JSIdentifier _ "Enum") _ _ _)))) _)) ->
-      return $ (d ++ decodeDef s, p, me)
+      return $ (d ++ decodeDef fp s, p, me)
     (JSModuleStatementListItem j@(JSFunction _ (JSIdentName _ "main") _ (JSLNil) _ body _)) ->
       case me of
-        Nothing -> return $ (d, p, Just (decodeBlock body))
+        Nothing -> return $ (d, p, Just (decodeBlock fp body))
         Just _ -> expect_error "only one main function" j 
     (JSModuleStatementListItem s@(JSFunction _ _ _ _ _ _ _)) ->
-      return $ (d ++ decodeDef s, p, me)
+      return $ (d ++ decodeDef fp s, p, me)
     (JSModuleStatementListItem (JSConstant _ (JSLOne (JSVarInitExpression (JSIdentifier _ who) (JSVarInit _ (JSMemberExpression (JSIdentifier a "participant") _ (JSLOne (JSObjectLiteral _ vs _)) _)))) _)) ->
       return $ (d, p', me)
       where p' = M.insert who ((tp a), ds) p
-            ds = map decodeVarDecl $ flattenJSCTL vs
+            ds = map (decodeVarDecl tp) $ flattenJSCTL vs
     (JSModuleImportDeclaration _ (JSImportDeclarationBare _ m _)) ->
       let mp = string_trim_quotes m in
         do ma <- parseJsModule mp
@@ -302,12 +320,13 @@ decodeBody _fp (d, p, me) msis =
            defs <- decodeXLLibrary mfp ma
            return $ (d ++ defs, p, me)
     _ -> expect_error "body element" msis
+  where tp a = (fp, tpa a)
 
 decodeXLProgram :: FilePath -> JSAST -> IO (XLProgram TP)
 decodeXLProgram fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach/exe\'") _)):j) a) = do
   init_defs <- stdlib_defs
   (d, p, Just b) <- foldM (decodeBody fp) (init_defs, M.empty, Nothing) j
-  return $ XL_Prog (tp a) d p b
+  return $ XL_Prog (fp, (tpa a)) d p b
 decodeXLProgram _ j = expect_error "program" j
 
 decodeXLLibrary :: FilePath -> JSAST -> IO [XLDef TP]
