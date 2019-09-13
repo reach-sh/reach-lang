@@ -209,9 +209,11 @@ jsEPTail _tn _who (EP_Continue _ which arg) = (tp, argvs)
 
 jsPart :: (Participant, EProgram b) -> Doc a
 jsPart (p, (EP_Prog _ pargs et)) =
-  pretty "export" <+> jsFunction p ([ pretty "stdlib", pretty "ctc", jsTxn tn', pretty "interact" ] ++ pargs_vs) bodyp
+  pretty "export" <+> jsFunction p ([ pretty "stdlib", pretty "ctc", pretty "interact" ] ++ pargs_vs) bodyp'
   where tn' = 0
         pargs_vs = map jsVar pargs
+        bodyp' = vsep [ pretty "const" <+> jsTxn tn' <+> pretty "= { balance: 0, value: 0 }" <> semi
+                      , bodyp ]
         (bodyp, _) = jsEPTail tn' p et
 
 global_debug :: Bool

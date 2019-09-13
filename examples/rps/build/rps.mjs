@@ -1,4 +1,5 @@
-export async function A(stdlib, ctc, txn0, interact, v0, v1) {
+export async function A(stdlib, ctc, interact, v0, v1) {
+  const txn0 = { balance: 0, value: 0 };
   const v2 = v0;
   const v3 = v1;
   const v4 = await interact("params");
@@ -81,7 +82,8 @@ export async function A(stdlib, ctc, txn0, interact, v0, v1) {
   const v121 = v118 ? "Bob wins" : v120;
   return [v121]; }
 
-export async function B(stdlib, ctc, txn0, interact) {
+export async function B(stdlib, ctc, interact) {
+  const txn0 = { balance: 0, value: 0 };
   const [v2, v3, txn1] = await ctc.recv("B", "e0");
   const v6 = txn1.value;
   const v7 = stdlib.add(v2, v3);

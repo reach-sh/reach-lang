@@ -40,7 +40,6 @@ const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
                                  , balanceEndBob
                                  }));
 
-
   const randomArray = a  => a[ Math.floor(Math.random() * a.length) ];
   const randomHand  = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
 
@@ -62,19 +61,15 @@ const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
     ? () => makeDrawFirstHand(shared)
     : () => randomHand;
 
-  const txn0 = { balance: 0, value: 0 };
-
   const bobShoot = ctcAlice =>
     gameState.bob.attach(gameState.ctors, ctcAlice.address)
         .then(ctcBob => theRPS.B(stdlib
                                , ctcBob
-                               , txn0
                                , interactWith('Bob', makeWhichHand())));
 
   const aliceShoot = ctc =>
     theRPS.A(stdlib
              , ctc
-             , txn0
              , interactWith('Alice', makeWhichHand())
              , wagerInWei
              , escrowInWei);
