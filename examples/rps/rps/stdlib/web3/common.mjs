@@ -64,8 +64,6 @@ const bytes_eq = A => (x, y) =>
   hexOf(A)(x) === hexOf(A)(y);
 
 
-// TODO `Number.isInteger` probably isn't sufficient on its own here
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger#Description
 const bytes_len = A => b => {
   const bh = hexOf(A)(b);
   const n  = bh.length / 2;
@@ -133,13 +131,11 @@ const mkSendRecv =
     .map(m => isBN(A)(m) ? m.toString() : m);
 
   return new A.web3.eth.Contract(A.abi, address)
-    .methods[funcName](...munged)
-    .send({ from, value })
-    .then(r  => fetchAndRejectInvalidReceiptFor(A)(r.transactionHash))
-    // XXX We may need to actually see the event. I don't know if the
-    //     transaction confirmation is enough.
-    // XXX Replace 0 below with the contract's balance
-    .then(() => [{ value: value, balance: 0 }]);
+          .methods[funcName](...munged)
+          .send({ from, value })
+          .then(r => fetchAndRejectInvalidReceiptFor(A)(r.transactionHash))
+          .then(r => A.web3.eth.getBalance(address, r.blockNumber))
+          .then(nbs => [{ value: value, balance: toBN(A)(nbs) }]);
 };
 
 
@@ -172,13 +168,13 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
         alreadyConsumed = true;
         Object.assign(c.consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
 
-        // XXX Replace 0 below with the contract's balance
-        resolve([...bns, { value: t.value, balance: 0 }]);
+        return web3.eth.getBalance(c.address, t.blockNumber)
+          .then(nbs => resolve([...bns, { value: t.value, balance: toBN({ web3 })(nbs) }]));
       })));
 
   const past = () => new Promise((resolve, reject) =>
     new web3.eth.Contract(c.abi, c.address)
-      .getPastEvents(eventName, { toBlock: 999999999 }) // TODO `toBlock`
+      .getPastEvents(eventName, { toBlock: "latest" })
       .then(es => {
         const e = es
           .find(x => c.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
@@ -199,7 +195,6 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
         return consume(e, bns, resolve, reject);
       }));
 
-
   const pollPast = () => new Promise(resolve => {
     const attempt = () => past()
       .then(resolve)
@@ -207,7 +202,6 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
 
     return attempt();
   });
-
 
   const next = () => new Promise((resolve, reject) => new ethers
     .Contract(c.address, c.abi, new ethers.providers.Web3Provider(web3.currentProvider))
@@ -220,7 +214,6 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
 
       return consume(e, bns, resolve, reject);
     }));
-
 
   return past()
     .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
