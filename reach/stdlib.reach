@@ -24,3 +24,6 @@ function precommit (x) {
 
 function check_commit (commitment, salt, x) {
   return require(commitment == digest(msgcons(uint256_bytes(salt), uint256_bytes(x))));}
+
+function __decode_testing__() {
+  return txn.value; }

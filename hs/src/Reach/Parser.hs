@@ -130,6 +130,8 @@ decodeExpr (JSExpressionTernary c a t _ f) = XL_If (tp a) (decodeExpr c) (decode
 decodeExpr (JSArrowExpression params a s) = XL_Lambda (tp a) (decodeParams params) (decodeStmts Nothing [s])
 --- No function w/ name
 --- No JSMemberDot
+decodeExpr (JSMemberDot (JSIdentifier a "txn") _ (JSIdentifier _ "value")) =
+  XL_PrimApp (tp a) (CP TXN_VALUE) []
 --- No JSMemberNew
 --- No JSMemberSquare
 --- No NewExpression
@@ -163,7 +165,6 @@ decodeExpr j@(JSMemberExpression f a eargs _) =
                     _ -> expect_error "single argument to claim" j
         h = tp a
         args = (map decodeExpr $ flattenJSCL eargs)
---- XXX TXN_VALUE
 decodeExpr j = expect_error "expression" j
 
 data LetNothing

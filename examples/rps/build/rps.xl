@@ -200,6 +200,11 @@ XL_Prog
                 [36m][0m 
             [35m)[0m
         [1m[93m)[0m
+    [1m[96m,[0m XL_DefineFun 
+        [1m[93m([0m Just [35m([0m TokenPn 671 28 1 [35m)[0m [1m[93m)[0m [1m[97m"[0m[1m[94m__decode_testing__[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m 
+        [1m[93m([0m XL_PrimApp 
+            [35m([0m Just [36m([0m TokenPn 712 29 10 [36m)[0m [35m)[0m [35m([0m CP TXN_VALUE [35m)[0m [35m[[0m[35m][0m
+        [1m[93m)[0m
     [1m[96m,[0m XL_DefineValues 
         [1m[93m([0m Just [35m([0m TokenPn 14 3 1 [35m)[0m [1m[93m)[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
