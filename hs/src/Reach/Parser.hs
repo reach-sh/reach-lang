@@ -60,8 +60,8 @@ doXLEnum ann predv vs = [ dvs, predd ]
         ve = XL_Values ann $ zipWith (\_ i -> XL_Con ann (Con_I i)) vs [0..]
         predd = XL_DefineFun ann predv [ "x" ] checke
         checke = XL_FunApp ann (XL_Var ann "and") [ lee, lte ]
-        lee = XL_PrimApp ann (CP PLE) [ XL_Con ann (Con_I 0), XL_Var ann "x" ]
-        lte = XL_PrimApp ann (CP PLT) [ XL_Var ann "x", XL_Con ann (Con_I (toInteger (length vs))) ]
+        lee = XL_FunApp ann (XL_Prim ann (CP PLE)) [ XL_Con ann (Con_I 0), XL_Var ann "x" ]
+        lte = XL_FunApp ann (XL_Prim ann (CP PLT)) [ XL_Var ann "x", XL_Con ann (Con_I (toInteger (length vs))) ]
 
 flattenJSArray :: [JSArrayElement] -> [JSExpression]
 flattenJSArray a = concatMap f a
@@ -114,13 +114,13 @@ decodeBinOp tp o arg1 arg2 =
     JSBinOpTimes a -> prim a (CP MUL)
     j -> expect_error "binary operator" j
   where fun a f = XL_FunApp (tp a) (XL_Var (tp a) f) args
-        prim a p = XL_PrimApp (tp a) p args
+        prim a p = XL_FunApp (tp a) (XL_Prim (tp a) p) args
         args = [ arg1, arg2 ]
 
 decodeUnaOp :: (JSAnnot -> TP) -> JSUnaryOp -> XLExpr TP -> XLExpr TP
 decodeUnaOp tp j arg =
   case j of
-    (JSUnaryOpMinus a) -> XL_PrimApp (tp a) (CP SUB) [ (XL_Con (tp a) (Con_I 0)), arg ]
+    (JSUnaryOpMinus a) -> XL_FunApp (tp a) (XL_Prim (tp a) (CP SUB)) [ (XL_Con (tp a) (Con_I 0)), arg ]
     (JSUnaryOpNot a) -> XL_FunApp (tp a) (XL_Var (tp a) "not") [ arg ]
     _ -> expect_error "unary operator" j
 
@@ -153,7 +153,7 @@ decodeExpr dss je =
     --- No function w/ name
     --- No JSMemberDot
     (JSMemberDot (JSIdentifier a "txn") _ (JSIdentifier _ "value")) ->
-      XL_PrimApp (tp a) (CP TXN_VALUE) []
+      XL_FunApp (tp a) (XL_Prim (tp a) (CP TXN_VALUE)) []
     --- No JSMemberNew
     --- No JSMemberSquare
     --- No NewExpression
@@ -162,7 +162,7 @@ decodeExpr dss je =
     (JSUnaryExpression op e) -> (decodeUnaOp tp op) (decodeExpr dss e)
     --- No VarInitExpression
     (JSMemberExpression (JSMemberDot (JSIdentifier a "interact") _ (JSIdentifier ma method)) _ args _) ->
-      XL_PrimApp (tp a) INTERACT ((XL_Con (tp ma) (Con_BS (B.pack method))):(map (decodeExpr dss) $ flattenJSCL args))
+      XL_FunApp (tp a) (XL_Prim (tp a) INTERACT) ((XL_Con (tp ma) (Con_BS (B.pack method))):(map (decodeExpr dss) $ flattenJSCL args))
     (JSMemberExpression f a eargs _) ->
       case f of
         JSIdentifier _ "assert" -> claim CT_Assert
@@ -180,7 +180,7 @@ decodeExpr dss je =
         JSIdentifier _ "declassify" -> XL_Declassify h (arg1 ())
         o -> fun (decodeExpr dss o)
       where fun o = XL_FunApp h o args
-            prim p = XL_PrimApp h p args
+            prim p = XL_FunApp h (XL_Prim h p) args
             claim ct = XL_Claim h ct (arg1 ())
             arg1 () = case args of
                         [x] -> x
@@ -209,7 +209,7 @@ mergeStmts s ss = s:ss
 
 doToConsensus :: TP -> Participant -> [XLVar] -> XLExpr TP -> XLExpr TP -> XLExpr TP
 doToConsensus h p vs amt conk = XL_ToConsensus h p vs amt k'
-  where k' = XL_Let h Nothing Nothing (XL_Claim h CT_Require (XL_PrimApp h (CP PEQ) [ (XL_PrimApp h (CP TXN_VALUE) []), amt ])) conk
+  where k' = XL_Let h Nothing Nothing (XL_Claim h CT_Require (XL_FunApp h (XL_Prim h (CP PEQ)) [ (XL_FunApp h (XL_Prim h (CP TXN_VALUE)) []), amt ])) conk
 
 decodeStmts :: DecodeStmtsState -> [JSStatement] -> XLExpr TP
 decodeStmts dss js =

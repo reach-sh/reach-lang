@@ -135,8 +135,7 @@ type XLVar = String
 data XLExpr a
   = XL_Con a Constant
   | XL_Var a XLVar
-  --- XXX Remove this and make EP_Prim a constant
-  | XL_PrimApp a EP_Prim [XLExpr a]
+  | XL_Prim a EP_Prim
   | XL_If a (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Claim a ClaimType (XLExpr a)
   --- A ToConsensus transfers control to the contract. The arguments

@@ -74,6 +74,7 @@ checkFun h top topdom = toprng
 
 data InlineV a
   = IV_Con a Constant
+  | IV_Prim a EP_Prim
   | IV_XIL Bool (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
 
@@ -91,6 +92,13 @@ iv_expr :: Show a => InlineV a -> (Bool, XILExpr a)
 iv_expr (IV_Con a c) = (True, (XIL_Con a c))
 iv_expr (IV_XIL isPure x) = (isPure, x)
 iv_expr (IV_Clo (a, _, _) _) = error $ "inline: Cannot use lambda as expression: " ++ show a
+iv_expr (IV_Prim a _) = error $ "inline: Cannot use primitive as expression: " ++ show a
+
+iv_exprs :: Show a => [InlineV a] -> (Bool, [XILExpr a])
+iv_exprs ivs = (iep, ies)
+  where pies = map iv_expr ivs
+        ies = map snd pies
+        iep = getAll $ mconcat (map (All . fst) pies)
 
 iv_can_copy :: InlineV a -> Bool
 iv_can_copy (IV_XIL _ _) = False
@@ -101,6 +109,10 @@ do_inline_funcall ch f argivs =
   case f of
     IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
     IV_XIL _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
+    IV_Prim _ p ->
+      --- XXX Do constant folding
+      IV_XIL (arp && purePrim p) (XIL_PrimApp ch p argies)
+      where (arp, argies) = iv_exprs argivs
     IV_Clo (lh, formals, orig_body) cloenv ->
       IV_XIL (arp && bp) eff_body'
       where (σ', arp, eff_formals, eff_argies) =
@@ -129,11 +141,7 @@ peval σ e =
       case M.lookup v σ of
         Nothing -> error $ "inline: Unbound variable: " ++ show e
         Just iv -> iv
-    XL_PrimApp a p es ->
-      --- XXX Do constant folding here
-      IV_XIL isPure (XIL_PrimApp a p ies)
-      where (iep, ies) = rs es
-            isPure = purePrim p && iep
+    XL_Prim a p -> IV_Prim a p
     XL_If a c t f ->
       IV_XIL (cp && (tp && fp)) (XIL_If a (tp && fp) c' t' f')
       where (cp, c') = r c
@@ -179,10 +187,7 @@ peval σ e =
       do_inline_funcall a (peval σ fe) (map (peval σ) es) 
   where r = iv_expr . peval σ
         sr = snd . r
-        rs es = (iep, ies)
-          where pies = map r es
-                ies = map snd pies
-                iep = getAll $ mconcat (map (All . fst) pies)
+        rs es = iv_exprs $ map (peval σ) es
 
 id_map :: Show a => a -> [XLVar] -> ILEnv a
 id_map a vs = (M.fromList (map (iv_id a) vs))
