@@ -92,6 +92,10 @@ iv_expr (IV_Con a c) = (True, (XIL_Con a c))
 iv_expr (IV_XIL isPure x) = (isPure, x)
 iv_expr (IV_Clo (a, _, _) _) = error $ "inline: Cannot use lambda as expression: " ++ show a
 
+iv_can_copy :: InlineV a -> Bool
+iv_can_copy (IV_XIL _ _) = False
+iv_can_copy _ = True
+
 do_inline_funcall :: Show a => a -> InlineV a -> [InlineV a] -> InlineV a
 do_inline_funcall ch f argivs =
   case f of
@@ -102,16 +106,16 @@ do_inline_funcall ch f argivs =
       where (σ', arp, eff_formals, eff_argies) =
               foldr proc_clo_arg (cloenv, True, [], []) $ zip formals argivs
             proc_clo_arg (formal, argiv) (i_σ, i_arp, i_eff_formals, i_eff_argies) =
-              case argiv of
-                IV_XIL this_p this_x ->
-                  (o_σ, o_arp, o_eff_formals, o_eff_argies)
-                  where o_σ = M.insert formal (snd (iv_id ch formal)) i_σ
-                        o_arp = i_arp && this_p
-                        o_eff_formals = formal : i_eff_formals
-                        o_eff_argies = this_x : i_eff_argies
-                _ ->
-                  (o_σ, i_arp, i_eff_formals, i_eff_argies)
-                  where o_σ = M.insert formal argiv i_σ                  
+              if (iv_can_copy argiv) then
+                (o_σ_copy, i_arp, i_eff_formals, i_eff_argies)
+              else
+                (o_σ_let, o_arp, o_eff_formals, o_eff_argies)
+              where o_σ_copy = M.insert formal argiv i_σ
+                    (this_p, this_x) = iv_expr argiv
+                    o_σ_let = M.insert formal (snd (iv_id ch formal)) i_σ
+                    o_arp = i_arp && this_p
+                    o_eff_formals = formal : i_eff_formals
+                    o_eff_argies = this_x : i_eff_argies
             eff_body' = XIL_Let lh Nothing (Just eff_formals) (XIL_Values ch eff_argies) body'
             (bp, body') = iv_expr $ peval σ' orig_body
 
