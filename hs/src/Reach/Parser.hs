@@ -189,66 +189,68 @@ doToConsensus h p vs amt conk = XL_ToConsensus h p vs amt k'
   where k' = XL_Let h Nothing Nothing (XL_Claim h CT_Require (XL_PrimApp h (CP PEQ) [ (XL_PrimApp h (CP TXN_VALUE) []), amt ])) conk
 
 decodeStmts :: Maybe Participant -> [JSStatement] -> XLExpr TP
-decodeStmts _who j@[] = expect_error "non-empty statement list" j
-decodeStmts who ((JSStatementBlock a ss _ _):k) =
-  letnothing LN_Flatten (tp a) who (decodeStmts who ss) k
---- No Break
---- No Let
-decodeStmts who ((JSConstant a (JSLOne (JSVarInitExpression v (JSVarInit _ e))) _):k) =
-  XL_Let (tp a) who (decodeLetLHS v) (decodeExpr e) (decodeStmts who k)
---- No DoWhile
---- No For, ForIn, ForVar, ForVarIn, ForLet, ForLetIn, ForLetOf, ForOf, ForVarOf
---- No Function
-decodeStmts _who (j@(JSIf _ _ _ _ _):_k) = expect_error "if must have else" j
-decodeStmts who ((JSIfElse a _ cond _ true _ false):k) =
-  letnothing LN_Flatten (tp a) who theif k
-  where theif = (XL_If (tp a) (decodeExpr cond) (decodeStmts who [true]) (decodeStmts who [false]))
---- No Labelled
---- No EmptyStatement
-decodeStmts _who ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _):ek) =
-  doToConsensus (tp a) p vs amt conk
-  where vs = map expectId $ flattenJSCL evs
-        amt = decodeExpr eamt
-        conk = decodeStmts Nothing ek
-decodeStmts who ((JSExpressionStatement e semi):k) =
-  letnothing LN_Null (sp semi) who (decodeExpr e) k
---- No AssignStatement
-decodeStmts _who ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _ _):ek) =
-  doToConsensus (tp a) p [] amt conk
-  where amt = decodeExpr eamt
-        conk = decodeStmts Nothing ek
-decodeStmts _who ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _ _):ek) =
-  doToConsensus h p vs (XL_Con h (Con_I 0)) conk
-  where vs = map expectId $ flattenJSCL evs        
-        conk = decodeStmts Nothing ek
-        h = tp a
-decodeStmts _who ((JSMethodCall (JSMemberDot (JSIdentifier _a p) _ (JSIdentifier _ "only"))
-                   _ (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s)) _ _):k) =
-  decodeStmts (Just p) (mergeStmts s k)
-decodeStmts _who ((JSMethodCall (JSIdentifier a "commit") _ JSLNil _ _):k) =
-  XL_FromConsensus (tp a) (decodeStmts Nothing k)
-decodeStmts who ((JSMethodCall f ann1 args ann2 _semi):k) =
-  letnothing LN_Null (tp ann1) who (decodeExpr (JSMemberExpression f ann1 args ann2)) k
-decodeStmts _who (j@(JSReturn a me _):k) =
-  case k of
-    [] -> case me of
-      Just e -> decodeExpr e
-      Nothing -> XL_Values (tp a) []
-    _ -> expect_error "return with nothing after it" j
---- No Switch
---- No Throw
---- No Try (yet)
---- No Variable
---- No With
-decodeStmts who ((JSVariable a (JSLOne (JSVarInitExpression (JSIdentifier _ loop_v) (JSVarInit _ einit_e))) _):(JSMethodCall (JSIdentifier _ "invariant") _ (JSLOne einvariant_e) _ _):(JSWhile _ _ econd_e _ ebody_e):k) =
-  XL_While h loop_v (decodeExpr einit_e) stop_e (decodeExpr einvariant_e) (decodeStmts who [ebody_e]) (decodeStmts who k)
-  where cond_e = (decodeExpr econd_e)
-        stop_e = XL_FunApp h (XL_Var h "not") [ cond_e ]
-        h = tp a
-decodeStmts _who ((JSAssignStatement (JSIdentifier a _loopv) (JSAssign _) rhs _):(JSContinue _ JSIdentNone _):[]) =
-  --- XXX Check loopv is correct
-  XL_Continue (tp a) (decodeExpr rhs)
-decodeStmts _who (j:_) = expect_error "statement" j
+decodeStmts who js =
+  case js of
+    j@[] -> expect_error "non-empty statement list" j
+    ((JSStatementBlock a ss _ _):k) ->
+      letnothing LN_Flatten (tp a) who (decodeStmts who ss) k
+    --- No Break
+    --- No Let
+    ((JSConstant a (JSLOne (JSVarInitExpression v (JSVarInit _ e))) _):k) ->
+      XL_Let (tp a) who (decodeLetLHS v) (decodeExpr e) (decodeStmts who k)
+    --- No DoWhile
+    --- No For, ForIn, ForVar, ForVarIn, ForLet, ForLetIn, ForLetOf, ForOf, ForVarOf
+    --- No Function
+    (j@(JSIf _ _ _ _ _):_k) -> expect_error "if must have else" j
+    ((JSIfElse a _ cond _ true _ false):k) ->
+      letnothing LN_Flatten (tp a) who theif k
+      where theif = (XL_If (tp a) (decodeExpr cond) (decodeStmts who [true]) (decodeStmts who [false]))
+    --- No Labelled
+    --- No EmptyStatement
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _):ek) ->
+      doToConsensus (tp a) p vs amt conk
+      where vs = map expectId $ flattenJSCL evs
+            amt = decodeExpr eamt
+            conk = decodeStmts Nothing ek
+    ((JSExpressionStatement e semi):k) ->
+      letnothing LN_Null (sp semi) who (decodeExpr e) k
+    --- No AssignStatement
+    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _ _):ek) ->
+      doToConsensus (tp a) p [] amt conk
+      where amt = decodeExpr eamt
+            conk = decodeStmts Nothing ek
+    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _ _):ek) ->
+      doToConsensus h p vs (XL_Con h (Con_I 0)) conk
+      where vs = map expectId $ flattenJSCL evs        
+            conk = decodeStmts Nothing ek
+            h = tp a
+    ((JSMethodCall (JSMemberDot (JSIdentifier _a p) _ (JSIdentifier _ "only"))
+       _ (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s)) _ _):k) ->
+      decodeStmts (Just p) (mergeStmts s k)
+    ((JSMethodCall (JSIdentifier a "commit") _ JSLNil _ _):k) ->
+      XL_FromConsensus (tp a) (decodeStmts Nothing k)
+    ((JSMethodCall f ann1 args ann2 _semi):k) ->
+      letnothing LN_Null (tp ann1) who (decodeExpr (JSMemberExpression f ann1 args ann2)) k
+    (j@(JSReturn a me _):k) ->
+      case k of
+        [] -> case me of
+          Just e -> decodeExpr e
+          Nothing -> XL_Values (tp a) []
+        _ -> expect_error "return with nothing after it" j
+    --- No Switch
+    --- No Throw
+    --- No Try (yet)
+    --- No Variable
+    --- No With
+    ((JSVariable a (JSLOne (JSVarInitExpression (JSIdentifier _ loop_v) (JSVarInit _ einit_e))) _):(JSMethodCall (JSIdentifier _ "invariant") _ (JSLOne einvariant_e) _ _):(JSWhile _ _ econd_e _ ebody_e):k) ->
+      XL_While h loop_v (decodeExpr einit_e) stop_e (decodeExpr einvariant_e) (decodeStmts who [ebody_e]) (decodeStmts who k)
+      where cond_e = (decodeExpr econd_e)
+            stop_e = XL_FunApp h (XL_Var h "not") [ cond_e ]
+            h = tp a
+    ((JSAssignStatement (JSIdentifier a _loopv) (JSAssign _) rhs _):(JSContinue _ JSIdentNone _):[]) ->
+      --- XXX Check loopv is correct
+      XL_Continue (tp a) (decodeExpr rhs)
+    (j:_) -> expect_error "statement" j
 
 decodeBlock :: JSBlock -> XLExpr TP
 decodeBlock (JSBlock _ ss _) = decodeStmts Nothing ss
