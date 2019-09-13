@@ -158,6 +158,7 @@ peval σ e =
       IV_XIL dp (XIL_Declassify a de')
       where (dp, de') = r de
     XL_Let a mp mvs ve be ->
+      --- XXX This should follow the same logic as a funcall wrt copying
       IV_XIL (vp && bp) (XIL_Let a mp mvs ve' be')
       where (vp, ve') = r ve
             (bp, be') = iv_expr $ peval σ' be
