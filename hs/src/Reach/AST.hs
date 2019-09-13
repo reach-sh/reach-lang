@@ -184,7 +184,6 @@ data XILExpr a
   = XIL_Con a Constant
   | XIL_Var a XLVar
   | XIL_PrimApp a EP_Prim [XILExpr a]
-  --- XXX Remove Bool
   | XIL_If a Bool (XILExpr a) (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
   | XIL_ToConsensus a Participant [XLVar] (XILExpr a) (XILExpr a)

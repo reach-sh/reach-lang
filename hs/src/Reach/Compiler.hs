@@ -134,7 +134,6 @@ peval σ e =
       where (iep, ies) = rs es
             isPure = purePrim p && iep
     XL_If a c t f ->
-      --- XXX Just transform to IF_THEN_ELSE here
       IV_XIL (cp && (tp && fp)) (XIL_If a (tp && fp) c' t' f')
       where (cp, c') = r c
             (tp, t') = r t
