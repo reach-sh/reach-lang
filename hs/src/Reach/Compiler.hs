@@ -300,15 +300,15 @@ anf_part (ρ, ips) (p, (_h, args)) = do
 anf_parts :: XLPartInfo ann -> ANFMonad ann (XLRenaming ann, ILPartInfo ann)
 anf_parts ps = foldM anf_part (M.empty, M.empty) (M.toList ps)
 
-anf_exprs :: Show ann => Role -> XLRenaming ann -> [XILExpr ann] -> ([ILArg ann] -> ANFMonad ann (Int, (ILTail ann))) -> ANFMonad ann (Int, (ILTail ann))
-anf_exprs me ρ es mk =
+anf_exprs :: Show ann => ann -> Role -> XLRenaming ann -> [XILExpr ann] -> (ann -> [ILArg ann] -> ANFMonad ann (Int, (ILTail ann))) -> ANFMonad ann (Int, (ILTail ann))
+anf_exprs h0 me ρ es mk =
   case es of
-    [] -> mk []
+    [] -> mk h0 []
     e : more ->
       anf_expr me ρ e k1
-      where k1 [ e' ] = anf_exprs me ρ more k2
-              where k2 es' = mk $ e' : es'
-            k1 evs = error $ "anf_exprs, expect 1, got " ++ show evs
+      where k1 h1 [ e' ] = anf_exprs h1 me ρ more k2
+              where k2 h2 es' = mk h2 $ e' : es'
+            k1 _ evs = error $ "anf_exprs, expect 1, got " ++ show evs
 
 vsOnly :: [ILArg ann] -> [ILVar]
 vsOnly [] = []
@@ -321,56 +321,56 @@ anf_renamed_to ρ v =
     Nothing -> error ("ANF: Variable unbound: " ++ (show v))
     Just a -> a
 
-anf_expr :: Show ann => Role -> XLRenaming ann -> XILExpr ann -> ([ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
+anf_expr :: Show ann => Role -> XLRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
 anf_expr me ρ e mk =
   case e of
     XIL_Con h b ->
-      mk [ IL_Con h b ]
-    XIL_Var _h v -> mk [ anf_renamed_to ρ v ]
+      mk h [ IL_Con h b ]
+    XIL_Var h v -> mk h [ anf_renamed_to ρ v ]
     XIL_PrimApp h p args ->
-      anf_exprs me ρ args (\args' -> ret_expr h "PrimApp" (IL_PrimApp h p args'))
+      anf_exprs h me ρ args (\_ args' -> ret_expr h "PrimApp" (IL_PrimApp h p args'))
     XIL_If h is_pure ce te fe ->
       anf_expr me ρ ce k
-      where k [ ca ] =
+      where k _ [ ca ] =
               if is_pure then
                 anf_expr me ρ te
-                  (\ tvs ->
+                  (\ _ tvs ->
                       anf_expr me ρ fe
-                        (\ fvs ->
+                        (\ _ fvs ->
                            if (length tvs /= length fvs) then
                              error "ANF: If branches don't have same continuation arity"
                            else do
                              ks <- allocANFs h me "PureIf" $ zipWith (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
-                             mk $ map (IL_Var h) ks))
+                             mk h $ map (IL_Var h) ks))
               else do
                 (tn, tt) <- anf_tail me ρ te mk
                 (fn, ft) <- anf_tail me ρ fe mk
                 unless (tn == fn) $ error "ANF: If branches don't have same continuation arity"
                 return (tn, IL_If h ca tt ft)
-            k _ = error "anf_expr XL_If ce doesn't return 1"
+            k _ _ = error "anf_expr XL_If ce doesn't return 1"
     XIL_Claim h ct ae ->
-      anf_expr me ρ ae (\[ aa ] -> ret_stmt h (IL_Claim h ct aa))
+      anf_expr me ρ ae (\_ [ aa ] -> ret_stmt h (IL_Claim h ct aa))
     XIL_FromConsensus h le -> do
       (ln, lt) <- anf_tail RoleContract ρ le mk
       return (ln, IL_FromConsensus h lt)
     XIL_ToConsensus h from ins pe ce ->
       anf_expr (RolePart from) ρ pe
-      (\ [ pa ] -> do
+      (\ _ [ pa ] -> do
          let ins' = vsOnly $ map (anf_renamed_to ρ) ins
          (cn, ct) <- anf_tail RoleContract ρ ce mk
          return (cn, IL_ToConsensus h from ins' pa ct))
-    XIL_Values _h args ->
-      anf_exprs me ρ args (\args' -> mk args')
+    XIL_Values h args ->
+      anf_exprs h me ρ args mk
     XIL_Transfer h to ae ->
-      anf_expr me ρ ae (\[ aa ] -> ret_stmt h (IL_Transfer h to aa))
+      anf_expr me ρ ae (\_ [ aa ] -> ret_stmt h (IL_Transfer h to aa))
     XIL_Declassify h ae ->
-      anf_expr me ρ ae (\[ aa ] -> ret_expr h "Declassify" (IL_Declassify h aa))
+      anf_expr me ρ ae (\_ [ aa ] -> ret_expr h "Declassify" (IL_Declassify h aa))
     XIL_Let _h mwho mvs ve be ->
       anf_expr who ρ ve k
       where who = case mwho of
                     Nothing -> me
                     Just p -> RolePart p
-            k nvs = anf_expr me ρ' be mk
+            k _ nvs = anf_expr me ρ' be mk
               where ρ' = M.union ρvs ρ
                     ρvs = case mvs of
                       Nothing -> ρ
@@ -383,29 +383,29 @@ anf_expr me ρ e mk =
                           error $ "ANF XL_Let, context arity mismatch, " ++ show olen ++ " vs " ++ show nlen
     XIL_While h loopv inite untile inve bodye ke ->
       anf_expr me ρ inite k
-      where k [ inita ] = do
+      where k _ [ inita ] = do
               (ρ', loopv') <- makeRename h ρ loopv
-              (untilc, untilt) <- anf_tail me ρ' untile (anf_ktop h)
+              (untilc, untilt) <- anf_tail me ρ' untile anf_ktop
               error_unless untilc 1 (return ())
-              (invc, invt) <- anf_tail me ρ' inve (anf_ktop h)
+              (invc, invt) <- anf_tail me ρ' inve anf_ktop
               error_unless invc 1 (return ())
               (bodyc, bodyt) <- anf_tail me ρ' bodye anf_knocontinue
               error_unless bodyc 0 (return ())
               (kn, kt) <- anf_tail me ρ' ke mk
               return (kn, (IL_While h loopv' inita untilt invt bodyt kt))
-            k _ = error $ "XL_While initial expression must return 1"
+            k _ _ = error $ "XL_While initial expression must return 1"
             anf_knocontinue _ = error $ "ANF XL_While not terminated by XL_Continue"
     XIL_Continue h nve -> 
       anf_expr me ρ nve k
-      where k [ nva ] = do
+      where k _ [ nva ] = do
               return (0, (IL_Continue h nva))
-            k _ = error "anf_expr XL_Continue nve doesn't return 1"
+            k _ _ = error "anf_expr XL_Continue nve doesn't return 1"
   where ret_expr h s ne = do
           nv <- allocANF h me s ne
-          mk [ IL_Var h nv ]
+          mk h [ IL_Var h nv ]
         ret_stmt h s = do
           appendANF h me s
-          mk [ IL_Con h (Con_B True) ]
+          mk h [ IL_Con h (Con_B True) ]
 
 error_unless :: Eq a => Show a => a -> a -> b -> b
 error_unless x y r =
@@ -416,7 +416,7 @@ anf_addVar :: ANFElem ann -> (Int, ILTail ann) -> (Int, ILTail ann)
 anf_addVar (ANFExpr h mp v e) (c, t) = (c, IL_Let h mp v e t)
 anf_addVar (ANFStmt h mp s) (c, t) = (c, IL_Do h mp s t)
 
-anf_tail :: Show ann => Role -> XLRenaming ann -> XILExpr ann -> ([ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
+anf_tail :: Show ann => Role -> XLRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
 anf_tail me ρ e mk = do
   collectANF anf_addVar (anf_expr me ρ e mk)
 
@@ -428,11 +428,9 @@ anf xilp = IL_Prog h ips xt
   where
     XIL_Prog h ps main = xilp
     (ips, xt) = runANF xm
-    --- xm :: ANFMonad ann (ILPartInfo ann, ILTail ann)
     xm = do
       (ρ, nps) <- anf_parts ps
-      --- XXX This h makes it so that all of the returns look like they came from the top, which is not very useful.
-      (_, mt) <- anf_tail RoleContract ρ main (anf_ktop h)
+      (_, mt) <- anf_tail RoleContract ρ main anf_ktop
       return (nps, mt)
 
 --- End-Point Projection
