@@ -21,18 +21,24 @@ import Reach.AST
 
 type TP = (FilePath, Maybe TokenPosn)
 
-type DecodeStmtsState = (FilePath, Maybe Participant)
+type DecodeStmtsState = (FilePath, Maybe XLVar, Maybe Participant)
 make_dss :: FilePath -> DecodeStmtsState
-make_dss fp = (fp, Nothing)
+make_dss fp = (fp, Nothing, Nothing)
 sub_dss :: DecodeStmtsState -> DecodeStmtsState
-sub_dss (fp, _) = (fp, Nothing)
-who_dss :: DecodeStmtsState -> Maybe Participant -> DecodeStmtsState
-who_dss (fp, _) who = (fp, who)
+sub_dss (fp, lv, _) = (fp, lv, Nothing)
 
+who_dss :: DecodeStmtsState -> Maybe Participant -> DecodeStmtsState
+who_dss (fp, lv, _) who = (fp, lv, who)
 dss_who :: DecodeStmtsState -> Maybe Participant
-dss_who (_, w) = w
+dss_who (_, _, w) = w
+
+loopv_dss :: DecodeStmtsState -> XLVar -> DecodeStmtsState
+loopv_dss (fp, _, w) lv = (fp, Just lv, w)
+dss_loopv :: DecodeStmtsState -> Maybe XLVar
+dss_loopv (_, lv, _) = lv
+
 dss_tp :: DecodeStmtsState -> Maybe TokenPosn -> TP
-dss_tp (fp, _) mt = (fp, mt)
+dss_tp (fp, _, _) mt = (fp, mt)
 
 tpa :: JSAnnot -> Maybe TokenPosn
 tpa (JSAnnot t _) = Just t
@@ -261,13 +267,16 @@ decodeStmts dss js =
     --- No Variable
     --- No With
     ((JSVariable a (JSLOne (JSVarInitExpression (JSIdentifier _ loop_v) (JSVarInit _ einit_e))) _):(JSMethodCall (JSIdentifier _ "invariant") _ (JSLOne einvariant_e) _ _):(JSWhile _ _ econd_e _ ebody_e):k) ->
-      XL_While h loop_v (decodeExpr dss einit_e) stop_e (decodeExpr dss einvariant_e) (ds dss [ebody_e]) (ds dss k)
-      where cond_e = (decodeExpr dss econd_e)
+      XL_While h loop_v (decodeExpr dss einit_e) stop_e (decodeExpr dss einvariant_e) (ds dss' [ebody_e]) (ds dss k)
+      where dss' = loopv_dss dss loop_v
+            cond_e = (decodeExpr dss econd_e)
             stop_e = XL_FunApp h (XL_Var h "not") [ cond_e ]
             h = tp a
-    ((JSAssignStatement (JSIdentifier a _loopv) (JSAssign _) rhs _):(JSContinue _ JSIdentNone _):[]) ->
-      --- XXX Check loopv is correct
-      XL_Continue (tp a) (decodeExpr dss rhs)
+    ((JSAssignStatement (JSIdentifier a loopv) (JSAssign _) rhs _):(JSContinue _ JSIdentNone _):[]) ->
+      if Just loopv == (dss_loopv dss) then
+        XL_Continue (tp a) (decodeExpr dss rhs)
+      else
+        expect_error "continue matching nearest while loop" js
     (j:_) -> expect_error "statement" j
   where tp = dss_tp dss . tpa
         sp = dss_tp dss . spa
