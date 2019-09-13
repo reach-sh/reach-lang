@@ -110,7 +110,6 @@ do_inline_funcall ch f argivs =
     IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
     IV_XIL _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
     IV_Prim _ p ->
-      --- XXX Do constant folding
       IV_XIL (arp && purePrim p) (XIL_PrimApp ch p argies)
       where (arp, argies) = iv_exprs argivs
     IV_Clo (lh, formals, orig_body) cloenv ->
@@ -129,10 +128,8 @@ do_inline_funcall ch f argivs =
                     o_eff_formals = formal : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
             eff_body' = XIL_Let lh Nothing (Just eff_formals) (XIL_Values ch eff_argies) body'
-            --- XXX keep track of functions on stack and give conservative loop warning, or just eval and go into infinite loop consuming infinite memory?
             (bp, body') = iv_expr $ peval σ' orig_body
 
---- XXX Convert to CPS to include ANF transform in this
 peval :: Show a => ILEnv a -> XLExpr a -> InlineV a
 peval σ e =
   case e of
@@ -157,7 +154,6 @@ peval σ e =
     XL_FromConsensus a be ->
       IV_XIL False (XIL_FromConsensus a (sr be))
     XL_Values a es ->
-      --- XXX A future version of this could be doing value-count checking
       IV_XIL iep (XIL_Values a ies)
       where (iep, ies) = rs es
     XL_Transfer a p ae ->
@@ -203,7 +199,6 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps m'
         σ_top_and_ps = M.union σ_ps σ_top
         σ_ps = foldr add_ps M.empty ps
         add_ps (_ph, vs) σ = foldr add_pvs σ vs
-        --- XXX shadow warning
         add_pvs (vh, v, _bt) σ = M.insert v (snd (iv_id vh v)) σ
         m_defs = foldr add_def m defs
         add_def d ie =
@@ -215,9 +210,6 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps m'
         add_tops d σ =
           case d of
             XL_DefineValues h vs _ ->
-              --- XXX This is a little weird, because if a RHS uses a
-              --- function and that function uses this variable, then
-              --- we'll get a weird error.
               M.union (id_map h vs) σ
             XL_DefineFun h f args body ->
               M.insert f (IV_Clo (h, args, body) σ_top) σ
