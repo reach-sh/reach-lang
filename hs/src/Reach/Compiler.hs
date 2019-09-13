@@ -105,8 +105,8 @@ iv_can_copy :: InlineV a -> Bool
 iv_can_copy (IV_XIL _ _) = False
 iv_can_copy _ = True
 
-do_inline_funcall :: Show a => a -> InlineV a -> [InlineV a] -> InlineV a
-do_inline_funcall ch f argivs =
+do_inline_funcall :: Show a => a -> Maybe Participant -> InlineV a -> [InlineV a] -> InlineV a
+do_inline_funcall ch who f argivs =
   case f of
     IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
     IV_XIL _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
@@ -129,7 +129,7 @@ do_inline_funcall ch f argivs =
                     o_arp = i_arp && this_p
                     o_eff_formals = formal : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
-            eff_body' = XIL_Let lh Nothing (Just eff_formals) (XIL_Values ch eff_argies) body'
+            eff_body' = XIL_Let lh who (Just eff_formals) (XIL_Values ch eff_argies) body'
             (bp, body') = iv_expr lh $ peval σ' orig_body
 
 peval :: Show a => ILEnv a -> XLExpr a -> InlineV a
@@ -164,15 +164,17 @@ peval σ e =
       IV_XIL dp (XIL_Declassify a de')
       where (dp, de') = r a de
     XL_Let a mp mvs ve be ->
-      --- XXX This should follow the same logic as a funcall wrt
-      --- copying, so that we can have lambdas on let RHSes
-      IV_XIL (vp && bp) (XIL_Let a mp mvs ve' be')
-      where (vp, ve') = r a ve
-            (bp, be') = iv_expr a $ peval σ' be
-            σ' = M.union σ_new σ
-            σ_new = case mvs of
-              Nothing -> M.empty
-              Just vs -> id_map a vs
+      case mvs of
+        Just [ v1 ] ->
+          do_inline_funcall a mp (IV_Clo (a, [ v1 ], be) σ) [ peval σ ve ]
+        _ ->
+          IV_XIL (vp && bp) (XIL_Let a mp mvs ve' be')
+          where (vp, ve') = r a ve
+                (bp, be') = iv_expr a $ peval σ' be
+                σ' = M.union σ_new σ
+                σ_new = case mvs of
+                  Nothing -> M.empty
+                  Just vs -> id_map a vs
     XL_While a lv ie ce inve be ke ->
       IV_XIL False (XIL_While a lv (sr a ie) (sr' ce) (sr' inve) (sr' be) (sr' ke))
       where sr' x = snd $ iv_expr a $ peval σ' x
@@ -182,7 +184,7 @@ peval σ e =
     XL_Lambda a formals body ->
       IV_Clo (a, formals, body) σ
     XL_FunApp a fe es ->
-      do_inline_funcall a (peval σ fe) (map (peval σ) es) 
+      do_inline_funcall a Nothing (peval σ fe) (map (peval σ) es) 
   where r h ne = iv_expr h $ peval σ ne
         sr h ne = snd $ r h ne
         rs h es = iv_exprs h $ map (peval σ) es
