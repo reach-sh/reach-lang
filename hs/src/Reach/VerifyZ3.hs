@@ -2,6 +2,7 @@
 module Reach.VerifyZ3 where
 
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import Control.Monad
 import Control.Monad.Extra
 import SimpleSMT --- Maybe use Language.SMTLib2 in future
@@ -13,85 +14,34 @@ import Data.Digest.CRC32
 import Reach.AST
 import Reach.Util
 
-{- Recover types for IL variables from BL Program
+{- Collect Types of IL variables -}
 
-   The structure of IL is better for theory generation, but it isn't
-   type-checked and we don't know the types of all the variables. So,
-   we look at the BL to figure the types out and go from there. If the
-   IL program would fail in EPP, then the BL theorem will be false (or
-   meaningless.)
+type ILTypeMap = S.Set ILVar
 
- -}
+class CollectTypes a where
+  cvs :: a -> ILTypeMap
 
-type ILTypeMapm = M.Map ILVar BaseType
-newtype ILTypeMap = ITM ILTypeMapm
+instance CollectTypes a => CollectTypes [a] where
+  cvs = foldMap cvs
 
-instance Semigroup ILTypeMap where
-  (ITM m1) <> (ITM m2) = ITM (M.union m1 m2)
+instance CollectTypes a => CollectTypes (M.Map b a) where
+  cvs = foldMap cvs
 
-instance Monoid ILTypeMap where
-  mempty = ITM M.empty
+instance CollectTypes ILVar where
+  cvs v = S.singleton v
 
-class RecoverTypes a where
-  rts :: a -> ILTypeMap
+instance CollectTypes (ILTail a) where
+  cvs (IL_Ret _ _) = mempty
+  cvs (IL_If _ _ tt ft) = cvs tt <> cvs ft
+  cvs (IL_Let _ _ v _ ct) = cvs v <> cvs ct
+  cvs (IL_Do _ _ _ ct) = cvs ct
+  cvs (IL_ToConsensus _ _ _ _ kt) = cvs kt
+  cvs (IL_FromConsensus _ kt) = cvs kt
+  cvs (IL_While _ loopv _ it ct bt kt) = cvs loopv <> cvs it <> cvs ct <> cvs bt <> cvs kt
+  cvs (IL_Continue _ _) = mempty
 
-instance RecoverTypes a => RecoverTypes [a] where
-  rts = foldMap rts
-
-instance RecoverTypes a => RecoverTypes (M.Map b a) where
-  rts = foldMap rts
-
-instance {-# OVERLAPPING #-} RecoverTypes BLVar where
-  rts (n, s, bt) = ITM (M.singleton (n,(s,bt)) bt)
-
-instance RecoverTypes (BLArg a) where
-  rts (BL_Con _ _) = mempty
-  rts (BL_Var _ bv) = rts bv
-
-instance RecoverTypes (EPExpr a) where
-  rts (EP_Arg _ a) = rts a
-  rts (EP_PrimApp _ _ al) = rts al
-
-instance RecoverTypes (EPStmt a) where
-  rts (EP_Claim _ _ a) = rts a
-  rts (EP_Send _ _ svs msg am) = rts svs <> rts msg <> rts am
-
-instance RecoverTypes (EPTail a) where
-  rts (EP_Ret _ al) = rts al
-  rts (EP_If _ ca tt ft) = rts ca <> rts tt <> rts ft
-  rts (EP_Let _ bv ce ct) = rts bv <> rts ce <> rts ct
-  rts (EP_Do _ cs ct) = rts cs <> rts ct
-  rts (EP_Recv _ _ _ svs msg kt) = rts svs <> rts msg <> rts kt
-  rts (EP_Loop _ _ loopv inita kt) = rts loopv <> rts inita <> rts kt
-  rts (EP_Continue _ _ a) = rts a
-
-instance RecoverTypes (EProgram a) where
-  rts (EP_Prog _ vs et) = rts vs <> rts et
-
-instance RecoverTypes (CExpr a) where
-  rts (C_PrimApp _ _ vs) = rts vs
-
-instance RecoverTypes (CStmt a) where
-  rts (C_Claim _ _ a) = rts a
-  rts (C_Transfer _ _ a) = rts a
-
-instance RecoverTypes (CTail a) where
-  rts (C_Halt _) = mempty
-  rts (C_Wait _ _ vs) = rts vs
-  rts (C_If _ ca tt ft) = rts ca <> rts tt <> rts ft
-  rts (C_Let _ bv ce ct) = rts bv <> rts ce <> rts ct
-  rts (C_Do _ cs ct) = rts cs <> rts ct
-  rts (C_Jump _ _ vs arg) = rts vs <> rts arg
-
-instance RecoverTypes (CHandler a) where
-  rts (C_Handler _ _ svs msg ct) = rts svs <> rts msg <> rts ct
-  rts (C_Loop _ svs arg it ct) = rts svs <> rts arg <> rts it <> rts ct
-
-instance RecoverTypes (CProgram a) where
-  rts (C_Prog _ _ chs) = rts chs
-
-instance RecoverTypes (BLProgram a) where
-  rts (BL_Prog _ bps cp) = rts bps <> rts cp
+instance CollectTypes (ILProgram a) where
+  cvs (IL_Prog _ ps it) = cvs ps <> cvs it
 
 {- Z3 Printing -}
 
@@ -255,8 +205,8 @@ emit_z3_arg :: ILArg a -> SExpr
 emit_z3_arg (IL_Con _ c) = emit_z3_con c
 emit_z3_arg (IL_Var _ v) = z3VarRef v
 
-z3_vardecl :: Solver -> (ILVar, BaseType) -> IO ()
-z3_vardecl z3 (iv, bt) = void $ declare z3 (z3Var iv) s
+z3_vardecl :: Solver -> ILVar -> IO ()
+z3_vardecl z3 iv@(_, (_, bt)) = void $ declare z3 (z3Var iv) s
   where s = z3_sortof bt
 
 z3_expr :: Solver -> Int -> ILVar -> ILExpr a -> IO ()
@@ -397,10 +347,10 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
 z3StdLib :: String
 z3StdLib = "../../z3/z3-runtime.smt2"
 
-_verify_z3 :: Show a => Solver -> ILProgram a -> BLProgram a -> IO ExitCode
-_verify_z3 z3 tp bp = do
+_verify_z3 :: Show a => Solver -> ILProgram a -> IO ExitCode
+_verify_z3 z3 tp = do
   loadFile z3 z3StdLib
-  mapM_ (z3_vardecl z3) $ M.toList tm
+  mapM_ (z3_vardecl z3) $ S.toList $ cvs tp
   VR ss fs <- mconcatMapM (z3_it_top z3 it) (liftM2 (,) [True, False] ps)
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
   (if ( fs == 0 ) then
@@ -409,8 +359,7 @@ _verify_z3 z3 tp bp = do
    else
       do putStrLn $ " " ++ show fs ++ " failures. :'("
          return $ ExitFailure 1)
-  where (ITM tm) = rts bp
-        IL_Prog _ ipi it = tp
+  where IL_Prog _ ipi it = tp
         ps = RoleContract : (map RolePart $ M.keys ipi)
 
 newFileLogger :: String -> IO (IO (), Logger)
@@ -426,12 +375,12 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger { .. })
 
-verify_z3 :: Show a => String -> ILProgram a -> BLProgram a -> IO ()
-verify_z3 logp tp bp = do
+verify_z3 :: Show a => String -> ILProgram a -> IO ()
+verify_z3 logp tp = do
   (close, logpl) <- newFileLogger logp
   z3 <- newSolver "z3" ["-smt2", "-in"] (Just logpl)
   unlessM (produceUnsatCores z3) $ error "Prover doesn't support possible?"
-  vec <- _verify_z3 z3 tp bp
+  vec <- _verify_z3 z3 tp
   zec <- stop z3
   close
   maybeDie $ return zec

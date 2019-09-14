@@ -176,9 +176,7 @@ data XLProgram  a=
   XL_Prog a [XLDef a] (XLPartInfo a) (XLExpr a)
   deriving (Show,Eq)
 
-{- Inlined Language (the language after expansion)
-
- -}
+--- Inlined Language (the language after expansion)
 
 type XILVar = (String, BaseType)
 
@@ -223,8 +221,6 @@ data XILProgram a =
    job: it must ensure that IFs are consensual.
  -}
 
---- The string is just for debugging, it tracks where the variable was
---- created.
 type ILVar = (Int, XILVar)
 
 data ILArg a

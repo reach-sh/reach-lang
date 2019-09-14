@@ -817,9 +817,9 @@ compile copts = do
   writeFile (out "xil") (L.unpack (pShow xilp))
   let ilp = anf xilp
   writeFile (out "il") (show (pretty ilp))
+  verify_z3 (out "z3") ilp
   let blp = epp ilp
   writeFile (out "bl") (show (pretty blp))
-  verify_z3 (out "z3") ilp blp
   cs <- compile_sol (out "sol") blp
   writeFile (out "mjs") (show (emit_js blp cs))
   exitSuccess
