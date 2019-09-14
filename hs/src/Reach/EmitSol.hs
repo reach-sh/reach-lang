@@ -112,7 +112,7 @@ solDecl :: String -> Doc a -> Doc a
 solDecl ty n = pretty ty <+> n
 
 solRawVar :: BLVar -> Doc a
-solRawVar (n, _, _) = pretty $ "v" ++ show n
+solRawVar (n, _) = pretty $ "v" ++ show n
 
 solVar :: SolRenaming a -> BLVar -> Doc a
 solVar ρ bv = p
@@ -137,13 +137,13 @@ solPartVar :: Participant -> Doc a
 solPartVar p = pretty $ "p" ++ p
 
 solFieldDecl :: BLVar -> Doc a
-solFieldDecl bv@(_, _, bt) = solDecl (solType bt) (solRawVar bv)
+solFieldDecl bv@(_, (_, bt)) = solDecl (solType bt) (solRawVar bv)
 
 solArgDecl :: BLVar -> Doc a
-solArgDecl bv@(_, _, bt) = solDecl (solArgType bt) (solRawVar bv)
+solArgDecl bv@(_, (_, bt)) = solDecl (solArgType bt) (solRawVar bv)
 
 solVarDecl :: BLVar -> Doc a
-solVarDecl bv@(_, _, bt) = solDecl (solVarType bt) (solRawVar bv)
+solVarDecl bv@(_, (_, bt)) = solDecl (solVarType bt) (solRawVar bv)
 
 solPartDecl :: Participant -> Doc a
 solPartDecl p = solDecl "address payable" (solPartVar p)

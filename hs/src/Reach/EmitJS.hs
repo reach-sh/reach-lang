@@ -32,16 +32,16 @@ jsString :: String -> Doc a
 jsString s = dquotes $ pretty s
 
 jsVar :: BLVar -> Doc a
-jsVar (n, _, _) = pretty $ "v" ++ show n
+jsVar (n, _) = pretty $ "v" ++ show n
 
 jsVar' :: BLVar -> Doc a
-jsVar' (n, _, _) = pretty $ "p" ++ show n
+jsVar' (n, _) = pretty $ "p" ++ show n
 
 jsLoopVar :: Int -> Doc a
 jsLoopVar i = pretty $ "l" ++ show i
 
 jsVarType :: BLVar -> Doc a
-jsVarType (_, _, bt) = jsString $ solType bt
+jsVarType (_, (_, bt)) = jsString $ solType bt
 
 jsCon :: Constant -> Doc a
 jsCon (Con_I i) = pretty i

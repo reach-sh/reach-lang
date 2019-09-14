@@ -280,7 +280,7 @@ data ILProgram a =
 
    -}
 
-type BLVar = (Int, String, BaseType)
+type BLVar = ILVar
 
 data BLArg a
   = BL_Con a Constant

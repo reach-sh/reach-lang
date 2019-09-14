@@ -185,7 +185,7 @@ instance Pretty (CProgram a) where
           hsp = zipWith prettyCHandler [0..] hs
 
 prettyBLVar :: BLVar -> Doc ann
-prettyBLVar (n, s, et) = group $ brackets $ prettyILVar (n,(s,et)) <+> pretty ":" <+> pretty et
+prettyBLVar v = prettyILVar v
 
 prettyBLVars :: [BLVar] -> Doc ann
 prettyBLVars bs = parens $ hsep $ map prettyBLVar bs
