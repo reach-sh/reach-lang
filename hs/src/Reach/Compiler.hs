@@ -89,8 +89,7 @@ data InlineV a
   = IV_Con a Constant
   | IV_Values a [InlineV a]
   | IV_Prim a EP_Prim
-  --- XXX Change to XILVar
-  | IV_Var a BaseType XLVar
+  | IV_Var a XILVar
   | IV_XIL Bool [BaseType] (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
 
@@ -127,7 +126,7 @@ iv_expr :: Show a => a -> InlineV a -> (Bool, IVType, XILExpr a)
 iv_expr _ (IV_Con a c) = (True, [conType c], (XIL_Con a c))
 iv_expr _ (IV_Values a vs) = (vsp, ts, (XIL_Values a es))
   where (vsp, ts, es) = iv_exprs a vs
-iv_expr _ (IV_Var a t v) = (True, [t], (XIL_Var a (v,t)))
+iv_expr _ (IV_Var a (v,t)) = (True, [t], (XIL_Var a (v,t)))
 iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
 iv_expr ra (IV_Clo (ca, _, _) _) = error $ "inline: Cannot use lambda " ++ show ca ++ " as expression at: " ++ show ra
 iv_expr ra (IV_Prim pa _) = error $ "inline: Cannot use primitive " ++ show pa ++ " as expression at: " ++ show ra
@@ -151,7 +150,7 @@ iv_can_copy _ = True
 
 id_map :: Show a => a -> [XLVar] -> [BaseType] -> ILEnv a
 id_map a vs ts = (M.fromList (zipWithEq iv_id vs ts))
-  where iv_id x bt = (x, IV_Var a bt x)
+  where iv_id x bt = (x, IV_Var a (x,bt))
   
 do_inline_funcall :: Show a => Maybe BaseType -> a -> Maybe Participant -> InlineV a -> [InlineV a] -> InlineV a
 do_inline_funcall outer_loopt ch who f argivs =
@@ -159,7 +158,7 @@ do_inline_funcall outer_loopt ch who f argivs =
     IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
     IV_Values _ _ -> error $ "inline: Cannot call values as function at: " ++ show ch
     IV_XIL _ _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
-    IV_Var _ _ _ -> error $ "inline: Cannot call variable as function at: " ++ show ch
+    IV_Var _ _ -> error $ "inline: Cannot call variable as function at: " ++ show ch
     IV_Prim _ p ->
       IV_XIL (arp && purePrim p) [ pt ] (XIL_PrimApp ch p pt argies)
       where (arp, argts, argies) = iv_exprs ch argivs
@@ -176,7 +175,7 @@ do_inline_funcall outer_loopt ch who f argivs =
               where o_σ_copy = M.insert formal argiv i_σ
                     (this_p, this_ts, this_x) = iv_expr ch argiv
                     [ this_t ] = (type_count_expect ch 1 this_ts)
-                    o_σ_let = M.insert formal (IV_Var ch this_t formal) i_σ
+                    o_σ_let = M.insert formal (IV_Var ch (formal, this_t)) i_σ
                     o_arp = i_arp && this_p
                     o_eff_formals = (formal, this_t) : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
@@ -246,7 +245,7 @@ peval outer_loopt σ e =
             (_, ket, ke') = iv_expr a $ peval outer_loopt σ' ke
             (_, iet, ie') = r a ie
             [lvt] = type_count_expect a 1 iet
-            σ' = M.insert lv (IV_Var a lvt lv) σ
+            σ' = M.insert lv (IV_Var a (lv, lvt)) σ
     XL_Continue a ne ->
       case outer_loopt of
         Just lvt ->
@@ -269,7 +268,7 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
         σ_top_and_ps = M.union σ_ps σ_top
         σ_ps = foldr add_ps M.empty ps
         add_ps (_ph, vs) σ = foldr add_pvs σ vs
-        add_pvs (vh, v, bt) σ = M.insert v (IV_Var vh bt v) σ
+        add_pvs (vh, v, bt) σ = M.insert v (IV_Var vh (v,bt)) σ
         (add_to_m', σ_top) = foldr add_tops ((\x->x), M.empty) defs
         add_tops d (adder, σ) =
           case d of

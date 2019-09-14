@@ -218,8 +218,6 @@ data XILProgram a =
    are pure and turn them into ITE expressions to limit how much this
    occurs.
 
-   This language is NOT guaranteed to be type-correct.
-
    It is essential that all participants agree on the number of times
    consensus is reached. This means that ANF has to do another complex
    job: it must ensure that IFs are consensual.
