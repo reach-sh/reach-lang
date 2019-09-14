@@ -21,6 +21,19 @@ import Reach.EmitJS
 import Reach.EmitSol
 import Reach.VerifyZ3
 
+{- -}
+
+zipEq :: [a] -> [b] -> [(a, b)]
+zipEq x y = if length x == length y then zip x y
+            else error "zipEq: Unequal lists"
+
+zipWithEq :: (a -> b ->c) -> [a] -> [b] -> [c]
+zipWithEq f x y = map (\(a,b)->f a b) $ zipEq x y
+
+zipWithEqM :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
+zipWithEqM f x y = if length x == length y then zipWithM f x y
+                   else error "zipWithEqM: Unequal lists"
+
 {- Basic Type checking
  -}
 
@@ -76,6 +89,7 @@ data InlineV a
   = IV_Con a Constant
   | IV_Values a [InlineV a]
   | IV_Prim a EP_Prim
+  --- XXX Change to XILVar
   | IV_Var a BaseType XLVar
   | IV_XIL Bool [BaseType] (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
@@ -113,7 +127,7 @@ iv_expr :: Show a => a -> InlineV a -> (Bool, IVType, XILExpr a)
 iv_expr _ (IV_Con a c) = (True, [conType c], (XIL_Con a c))
 iv_expr _ (IV_Values a vs) = (vsp, ts, (XIL_Values a es))
   where (vsp, ts, es) = iv_exprs a vs
-iv_expr _ (IV_Var a t v) = (True, [t], (XIL_Var a v))
+iv_expr _ (IV_Var a t v) = (True, [t], (XIL_Var a (v,t)))
 iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
 iv_expr ra (IV_Clo (ca, _, _) _) = error $ "inline: Cannot use lambda " ++ show ca ++ " as expression at: " ++ show ra
 iv_expr ra (IV_Prim pa _) = error $ "inline: Cannot use primitive " ++ show pa ++ " as expression at: " ++ show ra
@@ -136,7 +150,7 @@ iv_can_copy (IV_XIL _ _ _) = False
 iv_can_copy _ = True
 
 id_map :: Show a => a -> [XLVar] -> [BaseType] -> ILEnv a
-id_map a vs ts = (M.fromList (zipWith iv_id vs ts))
+id_map a vs ts = (M.fromList (zipWithEq iv_id vs ts))
   where iv_id x bt = (x, IV_Var a bt x)
   
 do_inline_funcall :: Show a => Maybe BaseType -> a -> Maybe Participant -> InlineV a -> [InlineV a] -> InlineV a
@@ -147,12 +161,13 @@ do_inline_funcall outer_loopt ch who f argivs =
     IV_XIL _ _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
     IV_Var _ _ _ -> error $ "inline: Cannot call variable as function at: " ++ show ch
     IV_Prim _ p ->
-      IV_XIL (arp && purePrim p) [ checkFun ch (primType p) argts ] (XIL_PrimApp ch p argies)
+      IV_XIL (arp && purePrim p) [ pt ] (XIL_PrimApp ch p pt argies)
       where (arp, argts, argies) = iv_exprs ch argivs
+            pt = checkFun ch (primType p) argts
     IV_Clo (lh, formals, orig_body) cloenv ->
       IV_XIL (arp && bp) bt eff_body'
       where (σ', arp, eff_formals, eff_argies) =
-              foldr proc_clo_arg (cloenv, True, [], []) $ zip formals argivs
+              foldr proc_clo_arg (cloenv, True, [], []) $ zipEq formals argivs
             proc_clo_arg (formal, argiv) (i_σ, i_arp, i_eff_formals, i_eff_argies) =
               if (iv_can_copy argiv) then
                 (o_σ_copy, i_arp, i_eff_formals, i_eff_argies)
@@ -163,7 +178,7 @@ do_inline_funcall outer_loopt ch who f argivs =
                     [ this_t ] = (type_count_expect ch 1 this_ts)
                     o_σ_let = M.insert formal (IV_Var ch this_t formal) i_σ
                     o_arp = i_arp && this_p
-                    o_eff_formals = formal : i_eff_formals
+                    o_eff_formals = (formal, this_t) : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
             eff_body' = XIL_Let lh who (Just eff_formals) (XIL_Values ch eff_argies) body'
             (bp, bt, body') = iv_expr lh $ peval outer_loopt σ' orig_body
@@ -184,16 +199,19 @@ peval outer_loopt σ e =
         IV_Con _ (Con_B b) ->
           peval outer_loopt σ (if b then t else f)
         civ ->
-          IV_XIL (cp && (tp && fp)) (type_equal a tt ft) (XIL_If a (tp && fp) c' t' f')
+          IV_XIL (cp && (tp && fp)) it (XIL_If a (tp && fp) c' it t' f')
           where (cp, c') = iv_expr_expect a [AT_Bool] civ
                 (tp, tt, t') = r a t
                 (fp, ft, f') = r a f
+                it = (type_equal a tt ft)
     XL_Claim a ct ae ->
       --- Claim is impure because it could fail
       IV_XIL False [] (XIL_Claim a ct (sr a [AT_Bool] ae))
     XL_ToConsensus a p vs ae be ->
-      IV_XIL False bt (XIL_ToConsensus a p vs (sr a [AT_UInt256] ae) be')
+      IV_XIL False bt (XIL_ToConsensus a p vilvs (sr a [AT_UInt256] ae) be')
       where (_, bt, be') = r a be
+            vilvs = zip vs vts
+            (_,vts,_) = iv_exprs a $ map def $ map (XL_Var a) vs
     XL_FromConsensus a be ->
       IV_XIL False bt (XIL_FromConsensus a be')
       where (_, bt, be') = r a be
@@ -204,22 +222,26 @@ peval outer_loopt σ e =
     XL_Transfer a p ae ->
       IV_XIL False [] (XIL_Transfer a p (sr a [AT_UInt256] ae))
     XL_Declassify a de ->
-      IV_XIL dp (type_count_expect a 1 dt) (XIL_Declassify a de')
-      where (dp, dt, de') = r a de
+      IV_XIL dp [dt] (XIL_Declassify a dt de')
+      where (dp, dts, de') = r a de
+            [dt] = (type_count_expect a 1 dts)
     XL_Let a mp mvs ve be ->
       case mvs of
         Just [ v1 ] ->
           do_inline_funcall outer_loopt a mp (IV_Clo (a, [ v1 ], be) σ) [ peval outer_loopt σ ve ]
         _ ->
-          IV_XIL (vp && bp) bt (XIL_Let a mp mvs ve' be')
+          IV_XIL (vp && bp) bt (XIL_Let a mp mvs' ve' be')
           where (vp, ts, ve') = r a ve
                 (bp, bt, be') = iv_expr a $ peval outer_loopt σ' be
                 σ' = M.union σ_new σ
+                mvs' = case mvs of
+                  Nothing -> Nothing
+                  Just vs -> Just (zipEq vs ts)
                 σ_new = case mvs of
                   Nothing -> M.empty
                   Just vs -> id_map a vs ts
     XL_While a lv ie ce inve be ke ->
-      IV_XIL False ket (XIL_While a lv ie' (sr' [AT_Bool] ce) (sr' [AT_Bool] inve) (sr' [] be) ke')
+      IV_XIL False ket (XIL_While a (lv, lvt) ie' (sr' [AT_Bool] ce) (sr' [AT_Bool] inve) (sr' [] be) ke')
       where sr' bt x = snd $ iv_expr_expect a bt $ peval (Just lvt) σ' x
             (_, ket, ke') = iv_expr a $ peval outer_loopt σ' ke
             (_, iet, ie') = r a ie
@@ -240,8 +262,9 @@ peval outer_loopt σ e =
         sr h bt ne = snd $ iv_expr_expect h bt $ def ne
 
 inline :: Show a => XLProgram a -> XILProgram a
-inline (XL_Prog ph defs ps m) = XIL_Prog ph ps (add_to_m' m')
+inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
   where (_, _, m') = iv_expr ph iv
+        ps' = M.map (\(prh, vs) -> (prh, map (\(vh,v,vt)->(vh,(v,vt))) vs))  ps
         iv = peval Nothing σ_top_and_ps m
         σ_top_and_ps = M.union σ_ps σ_top
         σ_ps = foldr add_ps M.empty ps
@@ -252,7 +275,8 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps (add_to_m' m')
           case d of
             XL_DefineValues h vs ve ->
               (adder', M.union (id_map h vs ts) σ)
-              where adder' im = XIL_Let h Nothing (Just vs) ve' (adder im)
+              where adder' im = XIL_Let h Nothing (Just ivs) ve' (adder im)
+                    ivs = zipWithEq (,) vs ts
                     (_, ts, ve') = iv_expr h $ peval Nothing σ ve
             XL_DefineFun h f args body ->
               (adder, M.insert f (IV_Clo (h, args, body) σ_top) σ)
@@ -285,18 +309,11 @@ collectANF f ma = do
   put (v1, vs0)
   return (foldr f a vs1)
 
-consumeANF :: String -> ANFMonad ann ILVar
+consumeANF :: XILVar -> ANFMonad ann ILVar
 consumeANF s = do
   (nv, vs) <- get
   put (nv+1, vs)
   return (nv, s)
-
-consumeANF_N :: Int -> ANFMonad ann [ILVar]
-consumeANF_N 0 = return []
-consumeANF_N n = do
-  v <- consumeANF ("ANF_N" ++ show n)
-  vs <- consumeANF_N (n - 1)
-  return $ v : vs
 
 appendANF :: ann -> Role -> ILStmt ann -> ANFMonad ann ()
 appendANF h r s = do
@@ -304,43 +321,43 @@ appendANF h r s = do
   put (nvi, vs S.|> (ANFStmt h r s))
   return ()
 
-allocANF :: ann -> Role -> String -> ILExpr ann -> ANFMonad ann ILVar
-allocANF h r s e = do
+allocANF :: ann -> Role -> String -> BaseType -> ILExpr ann -> ANFMonad ann ILVar
+allocANF h r s t e = do
   (nvi, vs) <- get
-  let nv = (nvi, s)
+  let nv = (nvi, (s, t))
   put (nvi + 1, vs S.|> (ANFExpr h r nv e))
   return nv
 
-allocANFs :: ann -> Role -> String -> [ILExpr ann] -> ANFMonad ann [ILVar]
-allocANFs h mp s es = mapM (allocANF h mp s) es
+allocANFs :: ann -> Role -> String -> [BaseType] -> [ILExpr ann] -> ANFMonad ann [ILVar]
+allocANFs h mp s ts es = zipWithEqM (allocANF h mp s) ts es
 
-type XLRenaming ann = M.Map XLVar (ILArg ann)
+type XILRenaming ann = M.Map XILVar (ILArg ann)
 
-makeRename :: ann -> XLRenaming ann -> XLVar -> ANFMonad ann (XLRenaming ann, ILVar)
+makeRename :: ann -> XILRenaming ann -> XILVar -> ANFMonad ann (XILRenaming ann, ILVar)
 makeRename h ρ v = do
   nv <- consumeANF v
   return (M.insert v (IL_Var h nv) ρ, nv)
 
-anf_parg :: (XLRenaming ann, [(ILVar, BaseType)]) -> (ann, XLVar, BaseType) -> ANFMonad ann (XLRenaming ann, [(ILVar, BaseType)])
-anf_parg (ρ, args) (h, v, t) =
+anf_parg :: (XILRenaming ann, [ILVar]) -> (ann, XILVar) -> ANFMonad ann (XILRenaming ann, [ILVar])
+anf_parg (ρ, args) (h, v) =
   case M.lookup v ρ of
     Nothing -> do
       (ρ', nv) <- makeRename h ρ v
       return (ρ', args' nv)
     Just (IL_Var _ nv) -> return (ρ, args' nv)
-    Just _ -> error $ "ANF: Participant argument not bound to variable: " ++ v
-  where args' nv = args ++ [(nv,t)]
+    Just _ -> error $ "ANF: Participant argument not bound to variable: " ++ show v
+  where args' nv = args ++ [nv]
 
-anf_part :: (XLRenaming ann, ILPartInfo ann) -> (Participant, (ann, [(ann, XLVar, BaseType)])) -> ANFMonad ann (XLRenaming ann, ILPartInfo ann)
+anf_part :: (XILRenaming ann, ILPartInfo ann) -> (Participant, (ann, [(ann, XILVar)])) -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
 anf_part (ρ, ips) (p, (_h, args)) = do
   (ρ', args') <- foldM anf_parg (ρ, []) args
   let ips' = M.insert p args' ips
   return (ρ', ips')
 
-anf_parts :: XLPartInfo ann -> ANFMonad ann (XLRenaming ann, ILPartInfo ann)
+anf_parts :: XILPartInfo ann -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
 anf_parts ps = foldM anf_part (M.empty, M.empty) (M.toList ps)
 
-anf_exprs :: Show ann => ann -> Role -> XLRenaming ann -> [XILExpr ann] -> (ann -> [ILArg ann] -> ANFMonad ann (Int, (ILTail ann))) -> ANFMonad ann (Int, (ILTail ann))
+anf_exprs :: Show ann => ann -> Role -> XILRenaming ann -> [XILExpr ann] -> (ann -> [ILArg ann] -> ANFMonad ann (Int, (ILTail ann))) -> ANFMonad ann (Int, (ILTail ann))
 anf_exprs h0 me ρ es mk =
   case es of
     [] -> mk h0 []
@@ -355,21 +372,21 @@ vsOnly [] = []
 vsOnly (IL_Var _ v : m) = v : vsOnly m
 vsOnly (_ : m) = vsOnly m
 
-anf_renamed_to :: XLRenaming ann -> XLVar -> ILArg ann
+anf_renamed_to :: XILRenaming ann -> XILVar -> ILArg ann
 anf_renamed_to ρ v =
   case M.lookup v ρ of
     Nothing -> error ("ANF: Variable unbound: " ++ (show v))
     Just a -> a
 
-anf_expr :: Show ann => Role -> XLRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
+anf_expr :: Show ann => Role -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
 anf_expr me ρ e mk =
   case e of
     XIL_Con h b ->
       mk h [ IL_Con h b ]
     XIL_Var h v -> mk h [ anf_renamed_to ρ v ]
-    XIL_PrimApp h p args ->
-      anf_exprs h me ρ args (\_ args' -> ret_expr h "PrimApp" (IL_PrimApp h p args'))
-    XIL_If h is_pure ce te fe ->
+    XIL_PrimApp h p pt args ->
+      anf_exprs h me ρ args (\_ args' -> ret_expr h "PrimApp" pt (IL_PrimApp h p args'))
+    XIL_If h is_pure ce its te fe ->
       anf_expr me ρ ce k
       where k _ [ ca ] =
               if is_pure then
@@ -380,7 +397,7 @@ anf_expr me ρ e mk =
                            if (length tvs /= length fvs) then
                              error "ANF: If branches don't have same continuation arity"
                            else do
-                             ks <- allocANFs h me "PureIf" $ zipWith (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
+                             ks <- allocANFs h me "PureIf" its $ zipWithEq (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
                              mk h $ map (IL_Var h) ks))
               else do
                 (tn, tt) <- anf_tail me ρ te mk
@@ -403,8 +420,8 @@ anf_expr me ρ e mk =
       anf_exprs h me ρ args mk
     XIL_Transfer h to ae ->
       anf_expr me ρ ae (\_ [ aa ] -> ret_stmt h (IL_Transfer h to aa))
-    XIL_Declassify h ae ->
-      anf_expr me ρ ae (\_ [ aa ] -> ret_expr h "Declassify" (IL_Declassify h aa))
+    XIL_Declassify h dt ae ->
+      anf_expr me ρ ae (\_ [ aa ] -> ret_expr h "Declassify" dt (IL_Declassify h aa))
     XIL_Let _h mwho mvs ve be ->
       anf_expr who ρ ve k
       where who = case mwho of
@@ -418,7 +435,7 @@ anf_expr me ρ e mk =
                         let olen = length ovs
                             nlen = length nvs in
                         if olen == nlen then
-                          (M.fromList $ zip ovs nvs)
+                          (M.fromList $ zipEq ovs nvs)
                         else
                           error $ "ANF XL_Let, context arity mismatch, " ++ show olen ++ " vs " ++ show nlen
     XIL_While h loopv inite untile inve bodye ke ->
@@ -440,8 +457,8 @@ anf_expr me ρ e mk =
       where k _ [ nva ] = do
               return (0, (IL_Continue h nva))
             k _ _ = error "anf_expr XL_Continue nve doesn't return 1"
-  where ret_expr h s ne = do
-          nv <- allocANF h me s ne
+  where ret_expr h s t ne = do
+          nv <- allocANF h me s t ne
           mk h [ IL_Var h nv ]
         ret_stmt h s = do
           appendANF h me s
@@ -456,7 +473,7 @@ anf_addVar :: ANFElem ann -> (Int, ILTail ann) -> (Int, ILTail ann)
 anf_addVar (ANFExpr h mp v e) (c, t) = (c, IL_Let h mp v e t)
 anf_addVar (ANFStmt h mp s) (c, t) = (c, IL_Do h mp s t)
 
-anf_tail :: Show ann => Role -> XLRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
+anf_tail :: Show ann => Role -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
 anf_tail me ρ e mk = do
   collectANF anf_addVar (anf_expr me ρ e mk)
 
@@ -528,7 +545,7 @@ epp_expect est (a, ast) =
 
 epp_var :: String -> EPPEnv -> Role -> ILVar -> (BLVar, SType)
 epp_var dbg γ r iv = ((n, s, et), st)
-  where (n,s) = iv
+  where (n,(s,_)) = iv
         env = case M.lookup r γ of
           Nothing -> error $ "EPP: Unknown role: " ++ show r
           Just v -> v
@@ -603,7 +620,7 @@ epp_s_ctc2loc (C_Claim h ct a) = Just (EP_Claim h ct a)
 epp_s_ctc2loc (C_Transfer _ _ _) = Nothing
 
 il2bl_var :: ILVar -> SType -> BLVar
-il2bl_var (n, s) (et, _)  = (n, s, et)
+il2bl_var (n, (s,_)) (et, _)  = (n, s, et)
 
 data EPPCtxt ann
   = EC_Top
@@ -741,7 +758,7 @@ epp_it_loc ps γ hn0 ctxt it = case it of
                     mst' = Just st
                     (st, _, how') = epp_e_loc γ p how
                     (et, _) = st
-                    (n,s) = what
+                    (n,(s,_)) = what
                     mbv = (n, s, et)
   IL_Do h who how next -> (svs1, ct1, ts2, hn1, hs1)
     where (svs1, ct1, ts1, hn1, hs1) = epp_it_loc ps γ hn0 ctxt next
@@ -754,7 +771,7 @@ epp_it_loc ps γ hn0 ctxt it = case it of
     where fromr = RolePart from
           what' = map fst $ map must_be_public $ epp_vars "loc toconsensus" γ fromr what
           (_, howmuch') = epp_expect (AT_UInt256, Public) $ epp_arg "loc howmuch" γ fromr howmuch
-          what'env = M.fromList $ map (\(n, s, et) -> ((n,s),(et,Public))) what'
+          what'env = M.fromList $ map (\(n, s, et) -> ((n,(s,et)),(et,Public))) what'
           γ' = M.map (M.union what'env) γ
           hn1 = hn0 + 1
           (svs1, ct1, ts1, hn2, hs1) = epp_it_ctc ps γ' hn1 ctxt next
@@ -780,11 +797,11 @@ epp (IL_Prog h ips it) = BL_Prog h bps cp
         ps = M.keys ips
         bps = M.mapWithKey mkep ets
         mkep p ept = EP_Prog h args ept
-          where args = map (\((n, s), et) -> (n,s,et)) $ ips M.! p
+          where args = map (\(n, (s,et)) -> (n,s,et)) $ ips M.! p
         (_, _, ets, _, chs) = epp_it_loc ps γ 0 EC_Top it
         γi = M.fromList $ map initγ $ M.toList ips
         initγ (p, args) = (RolePart p, M.fromList $ map initarg args)
-        initarg ((n, s), et) = ((n, s), (et, Secret))
+        initarg (n, (s, et)) = ((n, (s, et)), (et, Secret))
         γ = M.insert RoleContract M.empty γi
 
 data CompilerOpts = CompilerOpts

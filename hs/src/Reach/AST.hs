@@ -180,23 +180,25 @@ data XLProgram  a=
 
  -}
 
+type XILVar = (String, BaseType)
+
 data XILExpr a
   = XIL_Con a Constant
-  | XIL_Var a XLVar
-  | XIL_PrimApp a EP_Prim [XILExpr a]
-  | XIL_If a Bool (XILExpr a) (XILExpr a) (XILExpr a)
+  | XIL_Var a XILVar
+  | XIL_PrimApp a EP_Prim BaseType [XILExpr a]
+  | XIL_If a Bool (XILExpr a) [BaseType] (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
-  | XIL_ToConsensus a Participant [XLVar] (XILExpr a) (XILExpr a)
+  | XIL_ToConsensus a Participant [XILVar] (XILExpr a) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)
   | XIL_Values a [XILExpr a]
   | XIL_Transfer a Participant (XILExpr a)
-  | XIL_Declassify a (XILExpr a)
-  | XIL_Let a (Maybe Participant) (Maybe [XLVar]) (XILExpr a) (XILExpr a)
-  | XIL_While a XLVar (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
+  | XIL_Declassify a BaseType (XILExpr a)
+  | XIL_Let a (Maybe Participant) (Maybe [XILVar]) (XILExpr a) (XILExpr a)
+  | XIL_While a XILVar (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
   | XIL_Continue a (XILExpr a)
   deriving (Show,Eq)
 
-type XILPartInfo a = (M.Map Participant (a, [(a, XLVar, BaseType)]))
+type XILPartInfo a = (M.Map Participant (a, [(a, XILVar)]))
 
 data XILProgram a =
   XIL_Prog a (XILPartInfo a) (XILExpr a)
@@ -225,7 +227,7 @@ data XILProgram a =
 
 --- The string is just for debugging, it tracks where the variable was
 --- created.
-type ILVar = (Int, String)
+type ILVar = (Int, XILVar)
 
 data ILArg a
   = IL_Con a Constant
@@ -260,7 +262,7 @@ data ILTail a
   | IL_Continue a (ILArg a)
   deriving (Show,Eq)
 
-type ILPartArgs a = [(ILVar, BaseType)]
+type ILPartArgs a = [ILVar]
 type ILPartInfo a = (M.Map Participant (ILPartArgs a))
 
 data ILProgram a =

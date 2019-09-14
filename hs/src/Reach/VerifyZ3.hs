@@ -42,7 +42,7 @@ instance RecoverTypes a => RecoverTypes (M.Map b a) where
   rts = foldMap rts
 
 instance {-# OVERLAPPING #-} RecoverTypes BLVar where
-  rts (n, s, bt) = ITM (M.singleton (n,s) bt)
+  rts (n, s, bt) = ITM (M.singleton (n,(s,bt)) bt)
 
 instance RecoverTypes (BLArg a) where
   rts (BL_Con _ _) = mempty

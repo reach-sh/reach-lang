@@ -111,15 +111,15 @@ instance Pretty (ILTail a) where
   pretty (IL_Continue _ a) = parens $ pretty "continue!" <+> pretty a
 
 prettyILVar :: ILVar -> Doc ann
-prettyILVar (n, s) = pretty n <> pretty "/" <> pretty s
+prettyILVar (n, (s, et)) = pretty n <> pretty "/" <> pretty s <> pretty ":" <> pretty et
 
 prettyILVars :: [ILVar] -> Doc ann
 prettyILVars vs = parens $ hsep $ map prettyILVar vs
 
-prettyILPartArg :: (ILVar, BaseType) -> Doc ann
-prettyILPartArg (v, et) = group $ brackets $ prettyILVar v <+> pretty ":" <+> pretty et
+prettyILPartArg :: ILVar -> Doc ann
+prettyILPartArg v = group $ brackets $ prettyILVar v
 
-prettyILPart :: (Participant, [(ILVar, BaseType)]) -> Doc ann
+prettyILPart :: (Participant, [ILVar]) -> Doc ann
 prettyILPart (p, vs) =
   group $ parens $ pretty "define-participant" <+> pretty p <> body
   where pvs = map prettyILPartArg vs
@@ -185,7 +185,7 @@ instance Pretty (CProgram a) where
           hsp = zipWith prettyCHandler [0..] hs
 
 prettyBLVar :: BLVar -> Doc ann
-prettyBLVar (n, s, et) = group $ brackets $ prettyILVar (n,s) <+> pretty ":" <+> pretty et
+prettyBLVar (n, s, et) = group $ brackets $ prettyILVar (n,(s,et)) <+> pretty ":" <+> pretty et
 
 prettyBLVars :: [BLVar] -> Doc ann
 prettyBLVars bs = parens $ hsep $ map prettyBLVar bs
