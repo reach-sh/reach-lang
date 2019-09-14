@@ -73,8 +73,8 @@ checkFun h top topdom = toprng
 {- Inliner -}
 
 data InlineV a
-  --- XXX Generalize to IV_Cons
   = IV_Con a Constant
+  | IV_Values a [InlineV a]
   | IV_Prim a EP_Prim
   | IV_Var a BaseType XLVar
   | IV_XIL Bool [BaseType] (XILExpr a)
@@ -97,7 +97,11 @@ type_equal a at et =
 
 type_all_single :: Show a => a -> [IVType] -> IVType
 type_all_single a ts = concat $ map (type_count_expect a 1) ts
-  
+
+iv_single :: Show a => a -> InlineV a -> InlineV a
+iv_single a (IV_Values _ vs) = error $ "inline: expected one value but got " ++ show (length vs) ++ " at: " ++ show a
+iv_single _ iv = iv
+
 purePrim :: EP_Prim -> Bool
 purePrim RANDOM = False
 purePrim INTERACT = False
@@ -107,6 +111,8 @@ purePrim _ = True
 
 iv_expr :: Show a => a -> InlineV a -> (Bool, IVType, XILExpr a)
 iv_expr _ (IV_Con a c) = (True, [conType c], (XIL_Con a c))
+iv_expr _ (IV_Values a vs) = (vsp, ts, (XIL_Values a es))
+  where (vsp, ts, es) = iv_exprs a vs
 iv_expr _ (IV_Var a t v) = (True, [t], (XIL_Var a v))
 iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
 iv_expr ra (IV_Clo (ca, _, _) _) = error $ "inline: Cannot use lambda " ++ show ca ++ " as expression at: " ++ show ra
@@ -118,11 +124,11 @@ iv_expr_expect ra et iv =
   else error $ "inline: expect type " ++ show et ++ " but got " ++ show at ++ " at: " ++ show ra
   where (p, at, e) = iv_expr ra iv
 
-iv_exprs :: Show a => a -> [InlineV a] -> (Bool, [IVType], [XILExpr a])
+iv_exprs :: Show a => a -> [InlineV a] -> (Bool, IVType, [XILExpr a])
 iv_exprs ra ivs = (iep, its, ies)
   where pies = map (iv_expr ra) ivs
         ies = map (\(_,_,z)->z) pies
-        its = map (\(_,y,_)->y) pies
+        its = type_all_single ra $ map (\(_,y,_)->y) pies
         iep = getAll $ mconcat (map (All . (\(x,_,_)->x)) pies)
         
 iv_can_copy :: InlineV a -> Bool
@@ -137,12 +143,12 @@ do_inline_funcall :: Show a => Maybe BaseType -> a -> Maybe Participant -> Inlin
 do_inline_funcall outer_loopt ch who f argivs =
   case f of
     IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
+    IV_Values _ _ -> error $ "inline: Cannot call values as function at: " ++ show ch
     IV_XIL _ _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
     IV_Var _ _ _ -> error $ "inline: Cannot call variable as function at: " ++ show ch
     IV_Prim _ p ->
       IV_XIL (arp && purePrim p) [ checkFun ch (primType p) argts ] (XIL_PrimApp ch p argies)
-      where (arp, argits, argies) = iv_exprs ch argivs
-            argts = type_all_single ch argits
+      where (arp, argts, argies) = iv_exprs ch argivs
     IV_Clo (lh, formals, orig_body) cloenv ->
       IV_XIL (arp && bp) bt eff_body'
       where (σ', arp, eff_formals, eff_argies) =
@@ -192,9 +198,9 @@ peval outer_loopt σ e =
       IV_XIL False bt (XIL_FromConsensus a be')
       where (_, bt, be') = r a be
     XL_Values a es ->
-      IV_XIL iep vts (XIL_Values a ies)
-      where (iep, iets, ies) = rs a es
-            vts = type_all_single a iets
+      case es of
+        [ e1 ] -> def e1
+        _ -> IV_Values a (map (iv_single a) $ map def es)
     XL_Transfer a p ae ->
       IV_XIL False [] (XIL_Transfer a p (sr a [AT_UInt256] ae))
     XL_Declassify a de ->
@@ -232,7 +238,6 @@ peval outer_loopt σ e =
   where def = peval outer_loopt σ
         r h ne = iv_expr h $ def ne
         sr h bt ne = snd $ iv_expr_expect h bt $ def ne
-        rs h es = iv_exprs h $ map def es
 
 inline :: Show a => XLProgram a -> XILProgram a
 inline (XL_Prog ph defs ps m) = XIL_Prog ph ps (add_to_m' m')
