@@ -6,6 +6,7 @@ import qualified Data.Map.Strict as M
 -- Shared types
 
 data BaseType
+  --- XXX AT -> BT
   = AT_UInt256
   | AT_Bool
   | AT_Bytes

@@ -73,14 +73,31 @@ checkFun h top topdom = toprng
 {- Inliner -}
 
 data InlineV a
+  --- XXX Generalize to IV_Cons
   = IV_Con a Constant
   | IV_Prim a EP_Prim
-  | IV_Var a XLVar
-  | IV_XIL Bool (XILExpr a)
+  | IV_Var a BaseType XLVar
+  | IV_XIL Bool [BaseType] (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
+
+type IVType = [BaseType]
 
 type ILEnv a = M.Map XLVar (InlineV a)
 
+type_count_expect :: Show a => a -> Int -> IVType -> IVType
+type_count_expect a cnt t =
+  if l == cnt then t
+  else error $ "inline: expected " ++ show cnt ++ " values but got " ++ show l ++ " at: " ++ show a
+  where l = length t
+
+type_equal :: Show a => a -> IVType -> IVType -> IVType
+type_equal a at et =
+  if at == et then et
+  else error $ "inline: expect " ++ show et ++ " but got " ++ show at ++ " at: " ++ show a
+
+type_all_single :: Show a => a -> [IVType] -> IVType
+type_all_single a ts = concat $ map (type_count_expect a 1) ts
+  
 purePrim :: EP_Prim -> Bool
 purePrim RANDOM = False
 purePrim INTERACT = False
@@ -88,34 +105,46 @@ purePrim (CP BALANCE) = False
 purePrim (CP TXN_VALUE) = False
 purePrim _ = True
 
-iv_expr :: Show a => a -> InlineV a -> (Bool, XILExpr a)
-iv_expr _ (IV_Con a c) = (True, (XIL_Con a c))
-iv_expr _ (IV_Var a v) = (True, (XIL_Var a v))
-iv_expr _ (IV_XIL isPure x) = (isPure, x)
+iv_expr :: Show a => a -> InlineV a -> (Bool, IVType, XILExpr a)
+iv_expr _ (IV_Con a c) = (True, [conType c], (XIL_Con a c))
+iv_expr _ (IV_Var a t v) = (True, [t], (XIL_Var a v))
+iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
 iv_expr ra (IV_Clo (ca, _, _) _) = error $ "inline: Cannot use lambda " ++ show ca ++ " as expression at: " ++ show ra
 iv_expr ra (IV_Prim pa _) = error $ "inline: Cannot use primitive " ++ show pa ++ " as expression at: " ++ show ra
 
-iv_exprs :: Show a => a -> [InlineV a] -> (Bool, [XILExpr a])
-iv_exprs ra ivs = (iep, ies)
-  where pies = map (iv_expr ra) ivs
-        ies = map snd pies
-        iep = getAll $ mconcat (map (All . fst) pies)
+iv_expr_expect :: Show a => a -> [BaseType] -> InlineV a -> (Bool, XILExpr a)
+iv_expr_expect ra et iv =
+  if et == at then (p, e)
+  else error $ "inline: expect type " ++ show et ++ " but got " ++ show at ++ " at: " ++ show ra
+  where (p, at, e) = iv_expr ra iv
 
+iv_exprs :: Show a => a -> [InlineV a] -> (Bool, [IVType], [XILExpr a])
+iv_exprs ra ivs = (iep, its, ies)
+  where pies = map (iv_expr ra) ivs
+        ies = map (\(_,_,z)->z) pies
+        its = map (\(_,y,_)->y) pies
+        iep = getAll $ mconcat (map (All . (\(x,_,_)->x)) pies)
+        
 iv_can_copy :: InlineV a -> Bool
-iv_can_copy (IV_XIL _ _) = False
+iv_can_copy (IV_XIL _ _ _) = False
 iv_can_copy _ = True
 
-do_inline_funcall :: Show a => a -> Maybe Participant -> InlineV a -> [InlineV a] -> InlineV a
-do_inline_funcall ch who f argivs =
+id_map :: Show a => a -> [XLVar] -> [BaseType] -> ILEnv a
+id_map a vs ts = (M.fromList (zipWith iv_id vs ts))
+  where iv_id x bt = (x, IV_Var a bt x)
+  
+do_inline_funcall :: Show a => Maybe BaseType -> a -> Maybe Participant -> InlineV a -> [InlineV a] -> InlineV a
+do_inline_funcall outer_loopt ch who f argivs =
   case f of
     IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
-    IV_XIL _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
-    IV_Var _ _ -> error $ "inline: Cannot call variable as function at: " ++ show ch
+    IV_XIL _ _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
+    IV_Var _ _ _ -> error $ "inline: Cannot call variable as function at: " ++ show ch
     IV_Prim _ p ->
-      IV_XIL (arp && purePrim p) (XIL_PrimApp ch p argies)
-      where (arp, argies) = iv_exprs ch argivs
+      IV_XIL (arp && purePrim p) [ checkFun ch (primType p) argts ] (XIL_PrimApp ch p argies)
+      where (arp, argits, argies) = iv_exprs ch argivs
+            argts = type_all_single ch argits
     IV_Clo (lh, formals, orig_body) cloenv ->
-      IV_XIL (arp && bp) eff_body'
+      IV_XIL (arp && bp) bt eff_body'
       where (σ', arp, eff_formals, eff_argies) =
               foldr proc_clo_arg (cloenv, True, [], []) $ zip formals argivs
             proc_clo_arg (formal, argiv) (i_σ, i_arp, i_eff_formals, i_eff_argies) =
@@ -124,98 +153,104 @@ do_inline_funcall ch who f argivs =
               else
                 (o_σ_let, o_arp, o_eff_formals, o_eff_argies)
               where o_σ_copy = M.insert formal argiv i_σ
-                    (this_p, this_x) = iv_expr ch argiv
-                    o_σ_let = M.insert formal (snd (iv_id ch formal)) i_σ
+                    (this_p, this_ts, this_x) = iv_expr ch argiv
+                    [ this_t ] = (type_count_expect ch 1 this_ts)
+                    o_σ_let = M.insert formal (IV_Var ch this_t formal) i_σ
                     o_arp = i_arp && this_p
                     o_eff_formals = formal : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
             eff_body' = XIL_Let lh who (Just eff_formals) (XIL_Values ch eff_argies) body'
-            (bp, body') = iv_expr lh $ peval σ' orig_body
+            (bp, bt, body') = iv_expr lh $ peval outer_loopt σ' orig_body
 
-peval :: Show a => ILEnv a -> XLExpr a -> InlineV a
-peval σ e =
+peval :: Show a => Maybe BaseType -> ILEnv a -> XLExpr a -> InlineV a
+peval outer_loopt σ e =
   case e of
-    XL_Con a c -> IV_Con a c
+    XL_Con a c ->
+      IV_Con a c
     XL_Var _a v ->
       case M.lookup v σ of
         Nothing -> error $ "inline: Unbound variable: " ++ show e
         Just iv -> iv
-    XL_Prim a p -> IV_Prim a p
+    XL_Prim a p ->
+      IV_Prim a p
     XL_If a c t f ->
-      IV_XIL (cp && (tp && fp)) (XIL_If a (tp && fp) c' t' f')
-      where (cp, c') = r a c
-            (tp, t') = r a t
-            (fp, f') = r a f
+      case peval outer_loopt σ c of
+        IV_Con _ (Con_B b) ->
+          peval outer_loopt σ (if b then t else f)
+        civ ->
+          IV_XIL (cp && (tp && fp)) (type_equal a tt ft) (XIL_If a (tp && fp) c' t' f')
+          where (cp, c') = iv_expr_expect a [AT_Bool] civ
+                (tp, tt, t') = r a t
+                (fp, ft, f') = r a f
     XL_Claim a ct ae ->
       --- Claim is impure because it could fail
-      IV_XIL False (XIL_Claim a ct (sr a ae))
+      IV_XIL False [] (XIL_Claim a ct (sr a [AT_Bool] ae))
     XL_ToConsensus a p vs ae be ->
-      IV_XIL False (XIL_ToConsensus a p vs (sr a ae) be')
-      where be' = snd $ iv_expr a $ peval σ' be
-            σ' = M.union (id_map a vs) σ
+      IV_XIL False bt (XIL_ToConsensus a p vs (sr a [AT_UInt256] ae) be')
+      where (_, bt, be') = r a be
     XL_FromConsensus a be ->
-      IV_XIL False (XIL_FromConsensus a (sr a be))
+      IV_XIL False bt (XIL_FromConsensus a be')
+      where (_, bt, be') = r a be
     XL_Values a es ->
-      IV_XIL iep (XIL_Values a ies)
-      where (iep, ies) = rs a es
+      IV_XIL iep vts (XIL_Values a ies)
+      where (iep, iets, ies) = rs a es
+            vts = type_all_single a iets
     XL_Transfer a p ae ->
-      IV_XIL False (XIL_Transfer a p (sr a ae))
+      IV_XIL False [] (XIL_Transfer a p (sr a [AT_UInt256] ae))
     XL_Declassify a de ->
-      IV_XIL dp (XIL_Declassify a de')
-      where (dp, de') = r a de
+      IV_XIL dp (type_count_expect a 1 dt) (XIL_Declassify a de')
+      where (dp, dt, de') = r a de
     XL_Let a mp mvs ve be ->
       case mvs of
         Just [ v1 ] ->
-          do_inline_funcall a mp (IV_Clo (a, [ v1 ], be) σ) [ peval σ ve ]
+          do_inline_funcall outer_loopt a mp (IV_Clo (a, [ v1 ], be) σ) [ peval outer_loopt σ ve ]
         _ ->
-          IV_XIL (vp && bp) (XIL_Let a mp mvs ve' be')
-          where (vp, ve') = r a ve
-                (bp, be') = iv_expr a $ peval σ' be
+          IV_XIL (vp && bp) bt (XIL_Let a mp mvs ve' be')
+          where (vp, ts, ve') = r a ve
+                (bp, bt, be') = iv_expr a $ peval outer_loopt σ' be
                 σ' = M.union σ_new σ
                 σ_new = case mvs of
                   Nothing -> M.empty
-                  Just vs -> id_map a vs
+                  Just vs -> id_map a vs ts
     XL_While a lv ie ce inve be ke ->
-      IV_XIL False (XIL_While a lv (sr a ie) (sr' ce) (sr' inve) (sr' be) (sr' ke))
-      where sr' x = snd $ iv_expr a $ peval σ' x
-            σ' = M.union (id_map a [lv]) σ
+      IV_XIL False ket (XIL_While a lv ie' (sr' [AT_Bool] ce) (sr' [AT_Bool] inve) (sr' [] be) ke')
+      where sr' bt x = snd $ iv_expr_expect a bt $ peval (Just lvt) σ' x
+            (_, ket, ke') = iv_expr a $ peval outer_loopt σ' ke
+            (_, iet, ie') = r a ie
+            [lvt] = type_count_expect a 1 iet
+            σ' = M.insert lv (IV_Var a lvt lv) σ
     XL_Continue a ne ->
-      IV_XIL False (XIL_Continue a (sr a ne))
+      case outer_loopt of
+        Just lvt ->
+          IV_XIL False [] (XIL_Continue a (sr a [lvt] ne))
+        Nothing ->
+          error $ "inline: cannot use continue unless inside loop at: " ++ show a
     XL_Lambda a formals body ->
       IV_Clo (a, formals, body) σ
     XL_FunApp a fe es ->
-      do_inline_funcall a Nothing (peval σ fe) (map (peval σ) es) 
-  where r h ne = iv_expr h $ peval σ ne
-        sr h ne = snd $ r h ne
-        rs h es = iv_exprs h $ map (peval σ) es
+      do_inline_funcall outer_loopt a Nothing (peval outer_loopt σ fe) (map (peval outer_loopt σ) es) 
+  where def = peval outer_loopt σ
+        r h ne = iv_expr h $ def ne
+        sr h bt ne = snd $ iv_expr_expect h bt $ def ne
+        rs h es = iv_exprs h $ map def es
 
-id_map :: Show a => a -> [XLVar] -> ILEnv a
-id_map a vs = (M.fromList (map (iv_id a) vs))
-
-iv_id :: Show a => a -> XLVar -> (XLVar, (InlineV a))
-iv_id a x = (x, IV_Var a x)
-  
 inline :: Show a => XLProgram a -> XILProgram a
-inline (XL_Prog ph defs ps m) = XIL_Prog ph ps m'
-  where (_, m') = iv_expr ph iv
-        iv = peval σ_top_and_ps m_defs
+inline (XL_Prog ph defs ps m) = XIL_Prog ph ps (add_to_m' m')
+  where (_, _, m') = iv_expr ph iv
+        iv = peval Nothing σ_top_and_ps m
         σ_top_and_ps = M.union σ_ps σ_top
         σ_ps = foldr add_ps M.empty ps
         add_ps (_ph, vs) σ = foldr add_pvs σ vs
-        add_pvs (vh, v, _bt) σ = M.insert v (snd (iv_id vh v)) σ
-        m_defs = foldr add_def m defs
-        add_def d ie =
+        add_pvs (vh, v, bt) σ = M.insert v (IV_Var vh bt v) σ
+        (add_to_m', σ_top) = foldr add_tops ((\x->x), M.empty) defs
+        add_tops d (adder, σ) =
           case d of
-            XL_DefineValues h vs vs_e ->
-              XL_Let h Nothing (Just vs) vs_e ie
-            XL_DefineFun _ _ _ _ -> ie
-        σ_top = foldr add_tops M.empty defs
-        add_tops d σ =
-          case d of
-            XL_DefineValues h vs _ ->
-              M.union (id_map h vs) σ
+            XL_DefineValues h vs ve ->
+              (adder', M.union (id_map h vs ts) σ)
+              where adder' im = XIL_Let h Nothing (Just vs) ve' (adder im)
+                    (_, ts, ve') = iv_expr h $ peval Nothing σ ve
             XL_DefineFun h f args body ->
-              M.insert f (IV_Clo (h, args, body) σ_top) σ
+              (adder, M.insert f (IV_Clo (h, args, body) σ_top) σ)
 
 {- ANF
 
