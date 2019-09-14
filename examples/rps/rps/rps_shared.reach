@@ -1,9 +1,14 @@
 'reach/lib';
 
 const isHand = Enum([ROCK, PAPER, SCISSORS]);
+function showHand(handX) {
+  require(isHand(handX));
+  if ( handX == ROCK ) { return 'ROCK'; }
+  else if ( handX == PAPER ) { return 'PAPER'; }
+  else { return 'SCISSORS'; } };
 
 function _getHand() {
-  const s = interact.getHand();
+  const s = is(bytes, interact.getHand());
   const rockP = s === 'ROCK';
   const paperP = s === 'PAPER';
   const scissorsP = s === 'SCISSORS';

@@ -17,8 +17,16 @@ describe('A rock/paper/scissors game using the `web3` stdlib', () => {
     .then(done));
 
   describe('results in', () => {
-    const interactWith = (name, handf) => async (a) =>
-      (a === 'getHand' ? handf() : null);
+    const interactWith = (name, handf) =>
+          ({ params: () => true,
+             accepts: (wagerAmount, escrowAmount) => true,
+             getHand: () => handf(),
+             commits: () => true,
+             shows: () => true,
+             reveals: (handB) => true,
+             outcome: () => true });
+    /* async (a) =>
+       (a === 'getHand' ? handf() : null); */
 
     const wagerInEth  = '1.5';
     const escrowInEth = '0.15';

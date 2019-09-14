@@ -175,7 +175,6 @@ z3PrimEq :: Solver -> Int -> EP_Prim -> [SExpr] -> ILVar -> IO ()
 z3PrimEq z3 cbi pr alt out = case pr of
   CP cp -> assert z3 (z3Eq (z3VarRef out) (z3CPrim cbi cp alt))
   RANDOM -> return ()
-  INTERACT -> return ()
 
 data TheoremKind
   = TAssert
@@ -215,6 +214,7 @@ z3_expr z3 cbi out how = case how of
     assert z3 (z3Eq (z3VarRef out) (emit_z3_arg a))
   IL_PrimApp _ pr al -> z3PrimEq z3 cbi pr alt out
     where alt = map emit_z3_arg al
+  IL_Interact _ _ _ _ -> return ()
 
 z3_stmt :: Show a => Solver -> Bool -> Role -> Int -> ILStmt a -> IO (Int, VerifyResult)
 z3_stmt z3 honest r cbi how =

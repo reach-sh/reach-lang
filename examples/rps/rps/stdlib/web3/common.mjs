@@ -99,6 +99,13 @@ const gt    = A => (a, b) => toBN(A)(a).gt( toBN(A)(b));
 const le    = A => (a, b) => toBN(A)(a).lte(toBN(A)(b));
 const lt    = A => (a, b) => toBN(A)(a).lt( toBN(A)(b));
 
+const checkType = ({ web3 }) => (t, x) => {
+  if ( t === 'bool' ) { return typeof(x) === 'boolean'; }
+  else if ( t === 'uint256' ) { return web3.utils.isBN(t); }
+  else if ( t === 'bytes' ) { return web3.utils.isHex(t) || typeof(x) === 'string'; } };
+const isType = A => (t, x) => {
+  if ( checkType(A)(t, x) ) { return x; }
+  else { panic(`Expected ${t}, got: "${x}"`); } };
 
 // `t` is a type name in string form; `v` is the value to cast
 const encode = ({ ethers }) => (t, v) =>
@@ -304,6 +311,7 @@ export const mkStdlib = A =>
   , bytes_len:        bytes_len(A)
   , bytes_eq:         bytes_eq(A)
   , keccak256:        keccak256(A)
+  , isType:           isType(A)
   , assert:           assert(A)
   , equal:            equal(A)
   , eq:               equal(A)

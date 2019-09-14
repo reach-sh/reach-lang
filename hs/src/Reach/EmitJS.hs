@@ -13,21 +13,6 @@ import Reach.EmitSol
   , solType
   , CompiledSol )
 
-{- Compilation to Javascript
-
-   I'm imagining the type of the JS export is:
-
-   Network -> Participant -> NetworkArgs x Args x (Result -> A) -> A or doesn't
-
-   We have some standard way of interacting with the network (so we
-   don't depend in the compiler on whether we're using rinkydink or
-   whatever or what the name is.) Then, you can look up the code for
-   one of the participants (by name). Then you provide extra arguments
-   for the network (such as the contract / game id) and the
-   participant's initial knowledge, then a continuation for what to do
-   with the result.
-  -}
-
 jsString :: String -> Doc a
 jsString s = dquotes $ pretty s
 
@@ -117,13 +102,15 @@ jsPrimApply tn pr =
     CP BALANCE -> \_ -> jsTxn tn <> pretty ".balance"
     CP TXN_VALUE -> \_ -> jsTxn tn <> pretty ".value"
     RANDOM -> jsApply "stdlib.random_uint256"
-    INTERACT -> error "interact doesn't use jsPrimApply"
   where spa_error () = error "jsPrimApply"
 
-jsEPExpr :: Int -> EPExpr b -> (Doc a, Set.Set BLVar)
-jsEPExpr _tn (EP_Arg _ a) = jsArg a
-jsEPExpr tn (EP_PrimApp _ pr al) = ((jsPrimApply tn pr $ map fst alp), (Set.unions $ map snd alp))
+jsEPExpr :: Int -> EPExpr b -> (Bool, (Doc a, Set.Set BLVar))
+jsEPExpr _tn (EP_Arg _ a) = (False, jsArg a)
+jsEPExpr tn (EP_PrimApp _ pr al) = (False, ((jsPrimApply tn pr $ map fst alp), (Set.unions $ map snd alp)))
   where alp = map jsArg al
+jsEPExpr _ (EP_Interact _ m bt al) = (True, (ip, (Set.unions $ map snd alp)))
+  where alp = map jsArg al
+        ip = jsApply "stdlib.isType" [(jsString (solType bt)), pretty "await" <+> jsApply ("interact." ++ m) (map fst alp)]
 
 jsAssert :: Doc a -> Doc a
 jsAssert a = jsApply "stdlib.assert" [ a ] <> semi
@@ -146,23 +133,17 @@ jsEPTail tn who (EP_If _ ca tt ft) = (tp, tfvs)
         (cap, cafvs) = jsArg ca
         tp = pretty "if" <+> parens cap <+> ttp <> hardline <> pretty "else" <+> ftp
         tfvs = Set.unions [ cafvs, ttfvs, ftfvs ]
-jsEPTail tn who (EP_Let _ v (EP_PrimApp _ INTERACT al) kt) = (tp, tfvs)
-  where (ktp, ktfvs) = jsEPTail tn who kt
-        alp = map jsArg al
-        ip = pretty "await" <+> jsApply "interact" (map fst alp)
-        tfvs = Set.union ktfvs $ Set.unions $ map snd alp
-        dp = jsVarDecl v <+> pretty "=" <+> ip <> semi
-        tp = vsep [ dp, ktp ]
 jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
   where used = elem bv ktfvs
-        tp = if used then
+        tp = if keep then
                vsep [ bvdeclp, ktp ]
              else
                ktp
+        keep = used || forcep
         tfvs' = Set.difference ktfvs (Set.singleton bv)
-        tfvs = if used then Set.union eefvs tfvs' else tfvs'
+        tfvs = if keep then Set.union eefvs tfvs' else tfvs'
         bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
-        (eep, eefvs) = jsEPExpr tn ee
+        (forcep, (eep, eefvs)) = jsEPExpr tn ee
         (ktp, ktfvs) = jsEPTail tn who kt
 jsEPTail tn who (EP_Do _ (EP_Send _ i svs msg amt) (EP_Recv _ True _ _ _ kt)) = (tp, tfvs)
   where srp = jsApply "ctc.sendrecv" [ jsString who

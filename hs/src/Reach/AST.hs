@@ -72,7 +72,6 @@ data C_Prim
 data EP_Prim
   = CP C_Prim
   | RANDOM
-  | INTERACT
   deriving (Show,Eq)
 
 primType :: EP_Prim -> FunctionType
@@ -97,7 +96,6 @@ primType (CP BCAT_RIGHT) = ([tBytes] --> tBytes)
 primType (CP BALANCE) = ([] --> tUInt256)
 primType (CP TXN_VALUE) = ([] --> tUInt256)
 primType RANDOM = ([] --> tUInt256)
-primType INTERACT = ([tBytes] --> tBytes)
 
 type Participant = String
 
@@ -161,6 +159,7 @@ data XLExpr a
   | XL_Let a (Maybe Participant) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
   | XL_While a XLVar (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Continue a (XLExpr a)
+  | XL_Interact a String BaseType [XLExpr a]
   | XL_FunApp a (XLExpr a) [XLExpr a]
   | XL_Lambda a [XLVar] (XLExpr a)
   deriving (Show,Eq)
@@ -194,6 +193,7 @@ data XILExpr a
   | XIL_Let a (Maybe Participant) (Maybe [XILVar]) (XILExpr a) (XILExpr a)
   | XIL_While a XILVar (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
   | XIL_Continue a (XILExpr a)
+  | XIL_Interact a String BaseType [XILExpr a]
   deriving (Show,Eq)
 
 type XILPartInfo a = (M.Map Participant (a, [(a, XILVar)]))
@@ -231,6 +231,7 @@ data ILArg a
 data ILExpr a
   = IL_PrimApp a EP_Prim [ILArg a]
   | IL_Declassify a (ILArg a)
+  | IL_Interact a String BaseType [ILArg a]
   deriving (Show,Eq)
 
 data ILStmt a
@@ -291,6 +292,7 @@ data BLArg a
 data EPExpr a
   = EP_Arg a (BLArg a)
   | EP_PrimApp a EP_Prim [BLArg a]
+  | EP_Interact a String BaseType [BLArg a]
   deriving (Show,Eq)
 
 data EPStmt a

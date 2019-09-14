@@ -18,7 +18,7 @@ function main() {
   commit();
 
   B.only(() => {
-    interact.accepts(); });
+    interact.accepts(wagerAmount, escrowAmount); });
   B.pay(wagerAmount);
   commit();
 
@@ -40,7 +40,7 @@ function main() {
   A.only(() => {
     const saltA = declassify(_saltA);
     const handA = declassify(_handA);
-    interact.reveals(); });
+    interact.reveals(showHand(handB)); });
   A.publish(saltA, handA);
   check_commit(commitA, saltA, handA);
   require(isHand(handA));

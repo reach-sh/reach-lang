@@ -50,6 +50,9 @@ prettyApp p al = group $ parens $ pretty p <> alp
   where alp = case al of [] -> emptyDoc
                          _ -> space <> (hsep $ map pretty al)
 
+prettyInteract :: Pretty a => String -> BaseType -> [a] -> Doc ann
+prettyInteract m bt al = group $ parens $ pretty ("interact." ++ m) <+> pretty bt <+> (hsep $ map pretty al)
+
 prettyClaim :: Pretty a => ClaimType -> a -> Doc ann
 prettyClaim ct a = group $ parens $ pretty cts <+> pretty a
   where cts = case ct of
@@ -69,6 +72,7 @@ prettyBegin x = group $ parens $ pretty "begin" <+> (nest 2 $ hardline <> pretty
 
 instance Pretty (ILExpr a) where
   pretty (IL_PrimApp _ p al) = prettyApp p al
+  pretty (IL_Interact _ m bt al) = prettyInteract m bt al
   pretty (IL_Declassify _ a) = group $ parens $ pretty "declassify" <+> pretty a
 
 instance Pretty (ILStmt a) where
@@ -139,6 +143,7 @@ instance Pretty (BLArg a) where
 
 instance Pretty (EPExpr a) where
   pretty (EP_Arg _ a) = pretty a
+  pretty (EP_Interact _ m bt al) = prettyInteract m bt al
   pretty (EP_PrimApp _ p al) = prettyApp p al
 
 instance Pretty (EPStmt a) where

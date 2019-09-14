@@ -86,15 +86,15 @@ contract ReachContract is Stdlib {
     require(((msg.value) == uint256(0)));
     require((v28 == (uint256(keccak256(abi.encodePacked((BCAT((abi.encodePacked(v50)), (abi.encodePacked(v51))))))))));
     require(((uint256(0) <= v51) ? (v51 < uint256(3)) : false));
-    bool v65 = (uint256(0) <= v51) ? (v51 < uint256(3)) : false;
-    bool v68 = (uint256(0) <= v43) ? (v43 < uint256(3)) : false;
-    uint256 v75 = (v65 ? v68 : false) ? ((v51 + (uint256(4) - v43)) % uint256(3)) : (v65 ? uint256(2) : (v68 ? uint256(0) : uint256(1)));
-    bool v91 = v75 == uint256(2);
-    bool v98 = v75 == uint256(0);
-    bool v105 = v75 == uint256(2);
-    bool v107 = v75 == uint256(0);
-    pA.transfer((v3 + (v105 ? (uint256(2) * v2) : (v107 ? uint256(0) : v2))));
-    pB.transfer((v105 ? uint256(0) : (v107 ? (uint256(2) * v2) : v2)));
+    bool v72 = (uint256(0) <= v51) ? (v51 < uint256(3)) : false;
+    bool v75 = (uint256(0) <= v43) ? (v43 < uint256(3)) : false;
+    uint256 v82 = (v72 ? v75 : false) ? ((v51 + (uint256(4) - v43)) % uint256(3)) : (v72 ? uint256(2) : (v75 ? uint256(0) : uint256(1)));
+    bool v98 = v82 == uint256(2);
+    bool v105 = v82 == uint256(0);
+    bool v112 = v82 == uint256(2);
+    bool v114 = v82 == uint256(0);
+    pA.transfer((v3 + (v112 ? (uint256(2) * v2) : (v114 ? uint256(0) : v2))));
+    pB.transfer((v112 ? uint256(0) : (v114 ? (uint256(2) * v2) : v2)));
     emit e4(v50, v51);
     current_state = 0x0;
     selfdestruct(address(pA)); } }

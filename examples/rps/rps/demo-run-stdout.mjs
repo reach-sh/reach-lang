@@ -10,29 +10,15 @@ const escrowInEth = '0.15';
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 
-const makeInteractWith = label => (name, handf) => async (a) => {
-  const res = a === 'getHand' ? handf() : '';
-
-  const paramsMsg =
-    [ `${name} publishes parameters of game:`
-    , `wager of ${wagerInEth}ETH`
-    , `and escrow of ${escrowInEth}ETH.`
-    ].join(' ');
-
-  const msg
-    = a === 'params'  ? paramsMsg
-    : a === 'accepts' ? `${name} accepts the terms.`
-    : a === 'getHand' ? `(local: ${name} plays ${res}.)`
-    : a === 'commits' ? `${name} commits to play with (hidden) hand.`
-    : a === 'shows'   ? `${name} sends hand in clear.`
-    : a === 'reveals' ? `${name} reveals salt and hand.`
-    : a === 'outcome' ? `${name} agrees that game is over.`
-    : null;
-
-  !!msg && console.log(`${label} ${msg}`);
-
-  return res;
-};
+const makeInteractWith = label => (name, handf) => {
+  const log = (msg) => () => { console.log(`${label} ${msg}`); return true; };
+  return { params: log(`${name} publishes parameters of game: wager of ${wagerInEth}ETH and escrow of ${escrowInEth}ETH.`),
+           accepts: (wagerAmount, escrowAmount) => log(`${name} accepts the terms: wager of ${wagerAmount}WEI and escrow of ${escrowAmount}WEI.`)(),
+           getHand: () => { const res = handf(); log(`(local: ${name} plays ${res}.)`)(); return res; },
+           commits: log(`${name} commits to play with (hidden) hand.`),
+           shows: log(`${name} sends hand in clear.`),
+           reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
+           outcome: log(`${name} agrees that game is over.`) }; };
 
 const makeDemo = (doWhile, drawFirst) => {
   const label = doWhile ? `[Loop]:` : `[Single]:`;

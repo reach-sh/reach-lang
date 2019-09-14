@@ -161,8 +161,10 @@ decodeExpr dss je =
     --- No SpreadExpression
     (JSUnaryExpression op e) -> (decodeUnaOp tp op) (decodeExpr dss e)
     --- No VarInitExpression
-    (JSMemberExpression (JSMemberDot (JSIdentifier a "interact") _ (JSIdentifier ma method)) _ args _) ->
-      XL_FunApp (tp a) (XL_Prim (tp a) INTERACT) ((XL_Con (tp ma) (Con_BS (B.pack method))):(map (decodeExpr dss) $ flattenJSCL args))
+    (JSMemberExpression (JSMemberDot (JSIdentifier a "interact") _ (JSIdentifier _ method)) _ args _) ->
+      XL_Interact (tp a) method AT_Bool (map (decodeExpr dss) $ flattenJSCL args)
+    (JSMemberExpression (JSIdentifier a "is") _ (JSLCons (JSLOne te) _ (JSMemberExpression (JSMemberDot (JSIdentifier _ "interact") _ (JSIdentifier _ method)) _ args _)) _) ->
+      XL_Interact (tp a) method (decodeType te) (map (decodeExpr dss) $ flattenJSCL args)
     (JSMemberExpression f a eargs _) ->
       case f of
         JSIdentifier _ "assert" -> claim CT_Assert

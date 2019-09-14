@@ -117,7 +117,6 @@ iv_single _ iv = iv
 
 purePrim :: EP_Prim -> Bool
 purePrim RANDOM = False
-purePrim INTERACT = False
 purePrim (CP BALANCE) = False
 purePrim (CP TXN_VALUE) = False
 purePrim _ = True
@@ -252,6 +251,9 @@ peval outer_loopt σ e =
           IV_XIL False [] (XIL_Continue a (sr a [lvt] ne))
         Nothing ->
           error $ "inline: cannot use continue unless inside loop at: " ++ show a
+    XL_Interact a m bt args ->
+      IV_XIL False [bt] (XIL_Interact a m bt args')
+      where (_, _, args') = iv_exprs a $ map def args
     XL_Lambda a formals body ->
       IV_Clo (a, formals, body) σ
     XL_FunApp a fe es ->
@@ -447,6 +449,8 @@ anf_expr me ρ e mk =
       where k _ [ nva ] = do
               return (0, (IL_Continue h nva))
             k _ _ = error "anf_expr XL_Continue nve doesn't return 1"
+    XIL_Interact h m bt args ->
+      anf_exprs h me ρ args (\_ args' -> ret_expr h "Interact" bt (IL_Interact h m bt args'))
   where ret_expr h s t ne = do
           nv <- allocANF h me s t ne
           mk h [ IL_Var h nv ]
@@ -555,7 +559,8 @@ epp_e_ctc γ e = case e of
   IL_PrimApp h (CP cp) args -> (Public, fvs, C_PrimApp h cp args')
     where (fvs, args0) = epp_args ("ctc PrimApp " ++ show cp ++ " " ++ show args) γ RoleContract args
           args' = map must_be_public $ args0
-  IL_PrimApp _h p _ -> error $ "EPP: Contract cannot execute: " ++ show p
+  IL_PrimApp h p _ -> error $ "EPP: Contract cannot execute: " ++ show p ++ " at: " ++ show h
+  IL_Interact h _ _ _ -> error $ "EPP: Contract cannot execute interact at: " ++ show h
 
 epp_e_loc :: Show ann => EPPEnv -> Participant -> ILExpr ann -> (SecurityLevel, Set.Set BLVar, EPExpr ann)
 epp_e_loc γ p e = case e of
@@ -564,9 +569,10 @@ epp_e_loc γ p e = case e of
   IL_PrimApp h pr args -> (slvl, fvs, EP_PrimApp h pr args')
     where (fvs, args'st) = epp_args "loc PrimApp" γ (RolePart p) args
           args' = map fst args'st
-          slvl = case pr of
-                   INTERACT -> Secret
-                   _ -> mconcat $ map snd args'st
+          slvl = mconcat $ map snd args'st
+  IL_Interact h m bt args -> (Secret, fvs, EP_Interact h m bt args')
+    where (fvs, args'st) = epp_args "loc Interact" γ (RolePart p) args
+          args' = map fst args'st
  where earg dbg = epp_arg dbg γ (RolePart p)
 
 epp_s_ctc :: EPPEnv -> ILStmt ann -> (Set.Set BLVar, CStmt ann)
