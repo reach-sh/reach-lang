@@ -392,12 +392,9 @@ anf_expr me ρ e mk =
                 anf_expr me ρ te
                   (\ _ tvs ->
                       anf_expr me ρ fe
-                        (\ _ fvs ->
-                           if (length tvs /= length fvs) then
-                             error "ANF: If branches don't have same continuation arity"
-                           else do
-                             ks <- allocANFs h me "PureIf" its $ zipWithEq (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
-                             mk h $ map (IL_Var h) ks))
+                        (\ _ fvs -> do
+                            ks <- allocANFs h me "PureIf" its $ zipWithEq (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
+                            mk h $ map (IL_Var h) ks))
               else do
                 (tn, tt) <- anf_tail me ρ te mk
                 (fn, ft) <- anf_tail me ρ fe mk
@@ -430,13 +427,7 @@ anf_expr me ρ e mk =
               where ρ' = M.union ρvs ρ
                     ρvs = case mvs of
                       Nothing -> ρ
-                      Just ovs ->
-                        let olen = length ovs
-                            nlen = length nvs in
-                        if olen == nlen then
-                          (M.fromList $ zipEq ovs nvs)
-                        else
-                          error $ "ANF XL_Let, context arity mismatch, " ++ show olen ++ " vs " ++ show nlen
+                      Just ovs -> (M.fromList $ zipEq ovs nvs)
     XIL_While h loopv inite untile inve bodye ke ->
       anf_expr me ρ inite k
       where k _ [ inita ] = do
