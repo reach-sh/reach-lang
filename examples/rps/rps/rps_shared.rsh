@@ -1,4 +1,4 @@
-'reach/lib';
+'reach 0.1 lib';
 
 const isHand = Enum([ROCK, PAPER, SCISSORS]);
 function showHand(handX) {

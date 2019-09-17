@@ -335,14 +335,14 @@ decodeBody fp (d, p, me) msis =
   where tp a = (fp, tpa a)
 
 decodeXLProgram :: FilePath -> JSAST -> IO (XLProgram TP)
-decodeXLProgram fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach/exe\'") _)):j) a) = do
+decodeXLProgram fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach 0.1 exe\'") _)):j) a) = do
   init_defs <- stdlib_defs
   (d, p, Just b) <- foldM (decodeBody fp) (init_defs, M.empty, Nothing) j
   return $ XL_Prog (fp, (tpa a)) d p b
 decodeXLProgram _ j = expect_error "program" j
 
 decodeXLLibrary :: FilePath -> JSAST -> IO [XLDef TP]
-decodeXLLibrary fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach/lib\'") _)):j) a) = do
+decodeXLLibrary fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach 0.1 lib\'") _)):j) a) = do
   (d, p, mm) <- foldM (decodeBody fp) ([], M.empty, Nothing) j
   (case mm of
      Nothing -> return ()
@@ -355,7 +355,7 @@ decodeXLLibrary fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStateme
 decodeXLLibrary _ j = expect_error "library" j
 
 stdlib_defs :: IO [XLDef TP]
-stdlib_defs = decodeXLLibrary "STDLIB" $ readJsModule $ (B.unpack $(embedFile "../reach/stdlib.reach"))
+stdlib_defs = decodeXLLibrary "STDLIB" $ readJsModule $ (B.unpack $(embedFile "../rsh/stdlib.rsh"))
 
 parseJsModule :: FilePath -> IO JSAST
 parseJsModule f = do

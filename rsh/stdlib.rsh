@@ -1,4 +1,4 @@
-'reach/lib';
+'reach 0.1 lib';
 
 function not (x) {
   return (x ? false : true); };
