@@ -6,10 +6,9 @@ import qualified Data.Map.Strict as M
 -- Shared types
 
 data BaseType
-  --- XXX AT -> BT
-  = AT_UInt256
-  | AT_Bool
-  | AT_Bytes
+  = BT_UInt256
+  | BT_Bool
+  | BT_Bytes
   deriving (Show,Eq,Ord)
 data ExprType
   = TY_Var String
@@ -21,13 +20,13 @@ data FunctionType
   deriving (Show,Eq)
 
 tBool :: ExprType
-tBool = TY_Con AT_Bool
+tBool = TY_Con BT_Bool
 
 tUInt256 :: ExprType
-tUInt256 = TY_Con AT_UInt256
+tUInt256 = TY_Con BT_UInt256
 
 tBytes :: ExprType
-tBytes = TY_Con AT_Bytes
+tBytes = TY_Con BT_Bytes
 
 (-->) :: [ExprType] -> ExprType -> FunctionType
 ins --> out = TY_Arrow ins out
@@ -39,9 +38,9 @@ data Constant
   deriving (Show,Eq)
 
 conType :: Constant -> BaseType
-conType (Con_I _) = AT_UInt256
-conType (Con_B _) = AT_Bool
-conType (Con_BS _) = AT_Bytes
+conType (Con_I _) = BT_UInt256
+conType (Con_B _) = BT_Bool
+conType (Con_BS _) = BT_Bytes
 
 -- -- Primitives are divided into ones that the contract can do and
 -- -- ones that endpoints can do.

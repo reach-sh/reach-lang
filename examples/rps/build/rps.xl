@@ -585,7 +585,7 @@ XL_Prog
             [35m([0m XL_Interact 
                 [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rps/rps_shared.reach[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 272 11 13 [33m)[0m
-                [36m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m AT_Bytes [36m[[0m[36m][0m
+                [36m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m BT_Bytes [36m[[0m[36m][0m
             [35m)[0m 
             [35m([0m XL_Let 
                 [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rps/rps_shared.reach[0m[1m[97m"[0m 
@@ -1390,7 +1390,7 @@ XL_Prog
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 80 6 15 [1m[33m)[0m
                             [1m[36m)[0m 
                         [1m[35m,[0m [1m[97m"[0m[1m[94m_wagerAmount[0m[1m[97m"[0m 
-                        [1m[35m,[0m AT_UInt256
+                        [1m[35m,[0m BT_UInt256
                         [1m[35m)[0m 
                     [33m,[0m 
                         [1m[35m([0m 
@@ -1398,7 +1398,7 @@ XL_Prog
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 106 7 16 [1m[33m)[0m
                             [1m[36m)[0m 
                         [1m[35m,[0m [1m[97m"[0m[1m[94m_escrowAmount[0m[1m[97m"[0m 
-                        [1m[35m,[0m AT_UInt256
+                        [1m[35m,[0m BT_UInt256
                         [1m[35m)[0m 
                     [33m][0m 
                 [36m)[0m 
@@ -1452,7 +1452,7 @@ XL_Prog
                 [36m([0m XL_Interact 
                     [33m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 289 15 5 [1m[35m)[0m
-                    [33m)[0m [1m[97m"[0m[1m[94mparams[0m[1m[97m"[0m AT_Bool [33m[[0m[33m][0m
+                    [33m)[0m [1m[97m"[0m[1m[94mparams[0m[1m[97m"[0m BT_Bool [33m[[0m[33m][0m
                 [36m)[0m 
                 [36m([0m XL_ToConsensus 
                     [33m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
@@ -1538,7 +1538,7 @@ XL_Prog
                                 [1m[33m([0m XL_Interact 
                                     [95m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 422 21 5 [96m)[0m
-                                    [95m)[0m [1m[97m"[0m[1m[94maccepts[0m[1m[97m"[0m AT_Bool 
+                                    [95m)[0m [1m[97m"[0m[1m[94maccepts[0m[1m[97m"[0m BT_Bool 
                                     [95m[[0m XL_Var 
                                         [96m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 439 21 22 [93m)[0m
@@ -1656,7 +1656,7 @@ XL_Prog
                                                             [35m([0m XL_Interact 
                                                                 [36m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
                                                                 [36m,[0m Just [33m([0m TokenPn 649 29 5 [33m)[0m
-                                                                [36m)[0m [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m AT_Bool [36m[[0m[36m][0m
+                                                                [36m)[0m [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m BT_Bool [36m[[0m[36m][0m
                                                             [35m)[0m 
                                                             [35m([0m XL_ToConsensus 
                                                                 [36m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
@@ -1731,7 +1731,7 @@ XL_Prog
                                                                                 [1m[33m([0m XL_Interact 
                                                                                     [95m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
                                                                                     [95m,[0m Just [96m([0m TokenPn 770 35 5 [96m)[0m
-                                                                                    [95m)[0m [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m AT_Bool [95m[[0m[95m][0m
+                                                                                    [95m)[0m [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m BT_Bool [95m[[0m[95m][0m
                                                                                 [1m[33m)[0m 
                                                                                 [1m[33m([0m XL_ToConsensus 
                                                                                     [95m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
@@ -1840,7 +1840,7 @@ XL_Prog
                                                                                                             [35m([0m XL_Interact 
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
                                                                                                                 [36m,[0m Just [33m([0m TokenPn 948 43 5 [33m)[0m
-                                                                                                                [36m)[0m [1m[97m"[0m[1m[94mreveals[0m[1m[97m"[0m AT_Bool 
+                                                                                                                [36m)[0m [1m[97m"[0m[1m[94mreveals[0m[1m[97m"[0m BT_Bool 
                                                                                                                 [36m[[0m XL_FunApp 
                                                                                                                     [33m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 973 43 30 [1m[35m)[0m
@@ -2298,7 +2298,7 @@ XL_Prog
                                                                                                                                                                 [36m([0m XL_Interact 
                                                                                                                                                                     [33m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 1573 63 3 [1m[35m)[0m
-                                                                                                                                                                    [33m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m AT_Bool [33m[[0m[33m][0m
+                                                                                                                                                                    [33m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m BT_Bool [33m[[0m[33m][0m
                                                                                                                                                                 [36m)[0m 
                                                                                                                                                                 [36m([0m XL_FunApp 
                                                                                                                                                                     [33m([0m [1m[97m"[0m[1m[94mrps/rps.reach[0m[1m[97m"[0m 

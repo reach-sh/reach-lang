@@ -29,9 +29,9 @@ solLoop_fun :: Show i => i -> String
 solLoop_fun i = "l" ++ show i
 
 solType :: BaseType -> String
-solType AT_UInt256 = "uint256"
-solType AT_Bool = "bool"
-solType AT_Bytes = "bytes"
+solType BT_UInt256 = "uint256"
+solType BT_Bool = "bool"
+solType BT_Bytes = "bytes"
 
 {- De-ANF information
 
@@ -90,11 +90,11 @@ usesCTail (C_Jump x which vs a) = cmerge cs1 cs2
 type SolRenaming a = M.Map BLVar (Doc a)
 
 solArgType :: BaseType -> String
-solArgType AT_Bytes = "bytes calldata"
+solArgType BT_Bytes = "bytes calldata"
 solArgType t = solType t
 
 solVarType :: BaseType -> String
-solVarType AT_Bytes = "bytes memory"
+solVarType BT_Bytes = "bytes memory"
 solVarType t = solType t
 
 solBraces :: Doc a -> Doc a

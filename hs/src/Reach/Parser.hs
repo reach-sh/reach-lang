@@ -54,6 +54,7 @@ shortShow j = take 1024 (L.unpack (pShow j))
 expect_error :: Show a => Data a => String -> a -> b
 expect_error label j = error $ "error: expected " ++ label ++ " but found " ++ (show $ toConstr j) ++ ":\n" ++ (shortShow j)
 
+--- XXX Generate to/from string
 doXLEnum :: a -> XLVar -> [XLVar] -> [XLDef a]
 doXLEnum ann predv vs = [ dvs, predd ]
   where dvs = XL_DefineValues ann vs ve
@@ -162,7 +163,7 @@ decodeExpr dss je =
     (JSUnaryExpression op e) -> (decodeUnaOp tp op) (decodeExpr dss e)
     --- No VarInitExpression
     (JSMemberExpression (JSMemberDot (JSIdentifier a "interact") _ (JSIdentifier _ method)) _ args _) ->
-      XL_Interact (tp a) method AT_Bool (map (decodeExpr dss) $ flattenJSCL args)
+      XL_Interact (tp a) method BT_Bool (map (decodeExpr dss) $ flattenJSCL args)
     (JSMemberExpression (JSIdentifier a "is") _ (JSLCons (JSLOne te) _ (JSMemberExpression (JSMemberDot (JSIdentifier _ "interact") _ (JSIdentifier _ method)) _ args _)) _) ->
       XL_Interact (tp a) method (decodeType te) (map (decodeExpr dss) $ flattenJSCL args)
     (JSMemberExpression f a eargs _) ->
@@ -299,9 +300,9 @@ decodeDef fp j =
   where tp a = (fp, tpa a)
 
 decodeType :: JSExpression -> BaseType
-decodeType (JSIdentifier _ "uint256") = AT_UInt256
-decodeType (JSIdentifier _ "bool") = AT_Bool
-decodeType (JSIdentifier _ "bytes") = AT_Bytes
+decodeType (JSIdentifier _ "uint256") = BT_UInt256
+decodeType (JSIdentifier _ "bool") = BT_Bool
+decodeType (JSIdentifier _ "bytes") = BT_Bytes
 decodeType j = expect_error "type" j
 
 decodeVarDecl :: (JSAnnot -> TP) -> JSObjectProperty -> (TP, XLVar, BaseType)

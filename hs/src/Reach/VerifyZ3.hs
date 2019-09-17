@@ -46,9 +46,9 @@ instance CollectTypes (ILProgram a) where
 {- Z3 Printing -}
 
 z3_sortof :: BaseType -> SExpr
-z3_sortof AT_UInt256 = Atom "Int"
-z3_sortof AT_Bool = Atom "Bool"
-z3_sortof AT_Bytes = Atom "Bytes"
+z3_sortof BT_UInt256 = Atom "Int"
+z3_sortof BT_Bool = Atom "Bool"
+z3_sortof BT_Bytes = Atom "Bytes"
 
 z3Apply :: String -> [SExpr] -> SExpr
 z3Apply f args = List (Atom f : args)
@@ -75,7 +75,7 @@ z3TxnValueRef :: Int -> SExpr
 z3TxnValueRef i = Atom $ z3TxnValue i
 
 z3IntSort :: SExpr
-z3IntSort = z3_sortof AT_UInt256
+z3IntSort = z3_sortof BT_UInt256
 
 {- Model Rendering -}
 

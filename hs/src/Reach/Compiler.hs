@@ -198,15 +198,15 @@ peval outer_loopt σ e =
           peval outer_loopt σ (if b then t else f)
         civ ->
           IV_XIL (cp && (tp && fp)) it (XIL_If a (tp && fp) c' it t' f')
-          where (cp, c') = iv_expr_expect a [AT_Bool] civ
+          where (cp, c') = iv_expr_expect a [BT_Bool] civ
                 (tp, tt, t') = r a t
                 (fp, ft, f') = r a f
                 it = (type_equal a tt ft)
     XL_Claim a ct ae ->
       --- Claim is impure because it could fail
-      IV_XIL False [] (XIL_Claim a ct (sr a [AT_Bool] ae))
+      IV_XIL False [] (XIL_Claim a ct (sr a [BT_Bool] ae))
     XL_ToConsensus a p vs ae be ->
-      IV_XIL False bt (XIL_ToConsensus a p vilvs (sr a [AT_UInt256] ae) be')
+      IV_XIL False bt (XIL_ToConsensus a p vilvs (sr a [BT_UInt256] ae) be')
       where (_, bt, be') = r a be
             vilvs = zip vs vts
             (_,vts,_) = iv_exprs a $ map def $ map (XL_Var a) vs
@@ -218,7 +218,7 @@ peval outer_loopt σ e =
         [ e1 ] -> def e1
         _ -> IV_Values a (map (iv_single a) $ map def es)
     XL_Transfer a p ae ->
-      IV_XIL False [] (XIL_Transfer a p (sr a [AT_UInt256] ae))
+      IV_XIL False [] (XIL_Transfer a p (sr a [BT_UInt256] ae))
     XL_Declassify a de ->
       IV_XIL dp [dt] (XIL_Declassify a dt de')
       where (dp, dts, de') = r a de
@@ -239,7 +239,7 @@ peval outer_loopt σ e =
                   Nothing -> M.empty
                   Just vs -> id_map a vs ts
     XL_While a lv ie ce inve be ke ->
-      IV_XIL False ket (XIL_While a (lv, lvt) ie' (sr' [AT_Bool] ce) (sr' [AT_Bool] inve) (sr' [] be) ke')
+      IV_XIL False ket (XIL_While a (lv, lvt) ie' (sr' [BT_Bool] ce) (sr' [BT_Bool] inve) (sr' [] be) ke')
       where sr' bt x = snd $ iv_expr_expect a bt $ peval (Just lvt) σ' x
             (_, ket, ke') = iv_expr a $ peval outer_loopt σ' ke
             (_, iet, ie') = r a ie
@@ -656,9 +656,7 @@ epp_it_ctc ps γ hn0 ctxt it = case it of
   IL_ToConsensus _ _ _ _ _ ->
     error "EPP: Cannot transition to consensus from consensus"
   IL_FromConsensus _ bt -> epp_it_loc ps γ hn0 ctxt bt
-  IL_While h loopv inita untilt invt bodyt kt ->
-    --- _invt is ignored because we'll verify it later and don't need to run it.
-    (svs, ct, ts, hn2, hs)
+  IL_While h loopv inita untilt invt bodyt kt -> (svs, ct, ts, hn2, hs)
     where
       which = hn0
       hn1 = hn0 + 1

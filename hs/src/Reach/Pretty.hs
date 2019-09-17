@@ -10,9 +10,9 @@ import Reach.AST
 --- Emiting Code ---
 
 instance Pretty BaseType where
-  pretty AT_UInt256 = pretty "uint256"
-  pretty AT_Bool = pretty "bool"
-  pretty AT_Bytes = pretty "bytes"
+  pretty BT_UInt256 = pretty "uint256"
+  pretty BT_Bool = pretty "bool"
+  pretty BT_Bytes = pretty "bytes"
 
 instance Pretty ExprType where
   pretty (TY_Con bt) = pretty bt
