@@ -13,6 +13,7 @@ import Data.Text.Prettyprint.Doc
 import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
 import Data.Monoid
+import Data.Foldable
 
 import Reach.AST
 import Reach.Pretty()
@@ -491,15 +492,10 @@ anf xilp = IL_Prog h ips xt
 This stage needs to generate the sub-programs and verify the following
 properties:
 
-1. The program is well-typed. (All types can be derived from the types
-   of the participant's initial knowledge, so we only require
-   annotations on those.) [This implies that the contract has no
-   free-variables.]
-
-2. The contract does not execute illegal primitives. The participants
+1. The contract does not execute illegal primitives. The participants
    do not execute transfer.
 
-3. No secret information is shared. (By default, all participants'
+2. No secret information is shared. (By default, all participants'
    initial knowledge is secret.)
 
 -}
@@ -518,7 +514,36 @@ instance Monoid SecurityLevel where
   mempty = Public
 
 type EPPEnv = M.Map Role (M.Map ILVar SecurityLevel)
-type EPPRes ann = (Set.Set BLVar, CTail ann, M.Map Participant (EPTail ann), Int, [CHandler ann])
+type EPPMonad ann a = State (Int, M.Map Int (CHandler ann)) a
+type EPPRes ann = EPPMonad ann (Set.Set BLVar, CTail ann, M.Map Participant (EPTail ann))
+
+runEPP :: EPPMonad ann a -> (a, [CHandler ann])
+runEPP am = (a, hs)
+  where (a, (_, hs_as_s)) = runState am (0, M.empty)
+        hs = toList hs_as_s
+
+localEPP :: EPPMonad ann a -> EPPMonad ann a
+localEPP am = do
+  (nh, hs) <- get
+  let (a, _) = runState am (nh, hs)
+  return a
+
+acquireEPP :: EPPMonad ann Int
+acquireEPP = do
+  (nh, hs) <- get
+  put (nh + 1, hs)
+  return nh
+
+setEPP :: Int -> CHandler ann -> EPPMonad ann ()
+setEPP which h = do
+  (nh, hs) <- get
+  let hs' = case M.lookup which hs of
+              Nothing ->
+                M.insert which h hs
+              Just _ ->
+                error "EPP: Handler already set!"
+  put (nh, hs')
+  return ()
 
 must_be_public :: (a, SecurityLevel) -> a
 must_be_public (v, Public) = v
@@ -601,95 +626,92 @@ epp_s_ctc2loc (C_Transfer _ _ _) = Nothing
 data EPPCtxt ann
   = EC_Top
   | EC_Invariant
-  | EC_WhileUntil (Int -> EPPRes ann) (Int -> EPPRes ann)
+  | EC_WhileUntil (EPPRes ann) (EPPRes ann)
   | EC_WhileTrial
   | EC_WhileBody Int (Set.Set BLVar)
 
-epp_it_ctc_do_if :: ann -> [Participant] -> Int -> (EPPEnv, ILArg ann) -> (Int -> EPPRes ann) -> (Int -> EPPRes ann) -> EPPRes ann
-epp_it_ctc_do_if h ps hn0 (γc, ca) tres fres =
-  (svs, C_If h cca' ctt' cft', ts3, hn2, hs3)
-  where (svs_ca, cca') = must_be_public $ epp_arg "ctc If cond" γc RoleContract ca
-        (svs_t, ctt', ts1, hn1, hs1) = tres hn0
-        (svs_f, cft', ts2, hn2, hs2) = fres hn1
-        svs = Set.unions [ svs_ca, svs_t, svs_f ]
-        hs3 = hs1 ++ hs2
-        ts3 = M.fromList $ map mkt ps
-        mkt p = (p, EP_If h ca' tt' ft')
-          where (_,ca') = must_be_public $ epp_arg "ctc If Cond" γc (RolePart p) ca
-                tt' = ts1 M.! p
-                ft' = ts2 M.! p
+epp_it_ctc_do_if :: ann -> [Participant] -> (EPPEnv, ILArg ann) -> EPPRes ann -> EPPRes ann -> EPPRes ann
+epp_it_ctc_do_if h ps (γc, ca) tres fres = do
+  let (svs_ca, cca') = must_be_public $ epp_arg "ctc If cond" γc RoleContract ca
+  (svs_t, ctt', ts1) <- tres
+  (svs_f, cft', ts2) <- fres
+  let svs = Set.unions [ svs_ca, svs_t, svs_f ]
+  let ts3 = M.fromList $ map mkt ps
+            where mkt p = (p, EP_If h ca' tt' ft')
+                    where (_,ca') = must_be_public $ epp_arg "ctc If Cond" γc (RolePart p) ca
+                          tt' = ts1 M.! p
+                          ft' = ts2 M.! p
+  return (svs, C_If h cca' ctt' cft', ts3) 
 
-epp_it_ctc :: Show ann => [Participant] -> EPPEnv -> Int -> EPPCtxt ann -> ILTail ann -> EPPRes ann
-epp_it_ctc ps γ hn0 ctxt it = case it of
+epp_it_ctc :: Show ann => [Participant] -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
+epp_it_ctc ps γ ctxt it = case it of
   IL_Ret h args ->
     case ctxt of
-      EC_WhileUntil kres bres ->
-        epp_it_ctc_do_if h ps hn0 (γ, arg0) kres bres
+      EC_WhileUntil kres bres -> do
+        epp_it_ctc_do_if h ps (γ, arg0) kres bres
         where [ arg0 ] = args
-      EC_Invariant ->
-        (mempty, C_Halt h, mempty, hn0, [])
+      EC_Invariant -> do
+        return (mempty, C_Halt h, mempty)
       _ ->
         error "EPP: CTC cannot return"
-  IL_If h ca tt ft ->
-    epp_it_ctc_do_if h ps hn0 (γ, ca) (dres tt) (dres ft)
-    where dres wt hn = epp_it_ctc ps γ hn ctxt wt
-  IL_Let h RoleContract what how next -> (svs, C_Let h what how_ctc next', ts2, hn1, hs1)
-    where (svs1, next', ts1, hn1, hs1) = epp_it_ctc ps γ' hn0 ctxt next
-          svs = Set.union (Set.difference svs1 (boundBLVar what)) svs_how
-          (st, svs_how, how_ctc) = epp_e_ctc γ how
-          whatenv = M.singleton what st
-          γ' = M.map (M.union whatenv) γ
-          how_ep = epp_e_ctc2loc how_ctc
-          ts2 = M.map (EP_Let h what how_ep) ts1
+  IL_If h ca tt ft -> do
+    epp_it_ctc_do_if h ps (γ, ca) (dres tt) (dres ft)
+    where dres wt = epp_it_ctc ps γ ctxt wt
+  IL_Let h RoleContract what how next -> do
+    let (st, svs_how, how_ctc) = epp_e_ctc γ how
+    let whatenv = M.singleton what st
+    let γ' = M.map (M.union whatenv) γ
+    (svs1, next', ts1) <- epp_it_ctc ps γ' ctxt next
+    let svs = Set.union (Set.difference svs1 (boundBLVar what)) svs_how
+    let how_ep = epp_e_ctc2loc how_ctc
+    let ts2 = M.map (EP_Let h what how_ep) ts1
+    return (svs, C_Let h what how_ctc next', ts2)
   IL_Let _ (RolePart _) _ _ _ ->
     error "EPP: Cannot perform local binding in consensus"
-  IL_Do h RoleContract how next -> (svs, ct2, ts2, hn1, hs1)
-    where (svs1, ct1, ts1, hn1, hs1) = epp_it_ctc ps γ hn0 ctxt next
-          (svs2, how') = epp_s_ctc γ how
-          svs = Set.union svs1 svs2
-          ct2 = C_Do h how' ct1
-          ts2 = case epp_s_ctc2loc how' of
-                  Nothing -> ts1
-                  Just how'_ep -> M.map (EP_Do h how'_ep) ts1
+  IL_Do h RoleContract how next -> do
+    let (svs2, how') = epp_s_ctc γ how
+    (svs1, ct1, ts1) <- epp_it_ctc ps γ ctxt next
+    let svs = Set.union svs1 svs2
+    let ct2 = C_Do h how' ct1
+    let ts2 = case epp_s_ctc2loc how' of
+                Nothing -> ts1
+                Just how'_ep -> M.map (EP_Do h how'_ep) ts1
+    return (svs, ct2, ts2)
   IL_Do _ (RolePart _) _ _ ->
     error "EPP: Cannot perform local action in consensus"
   IL_ToConsensus _ _ _ _ _ ->
     error "EPP: Cannot transition to consensus from consensus"
-  IL_FromConsensus _ bt -> epp_it_loc ps γ hn0 ctxt bt
-  IL_While h loopv inita untilt invt bodyt kt -> (svs, ct, ts, hn2, hs)
-    where
-      which = hn0
-      hn1 = hn0 + 1
-      nh = C_Loop h svs2l loopv ct_inv ct1
-      hs = nh : hs1      
-      svs2l = Set.toList svs2
-      svs2 = Set.difference svs1 (boundBLVar loopv)
-      svs = Set.union fvs_a svs2
-      (_, ct_inv, _, _, _) = epp_it_ctc ps γ' hn1 EC_Invariant invt
-      (svs1_trial, _, _, _, _) = epp_it_ctc ps γ' hn1 (EC_WhileUntil kres bres_trial) untilt
-      kres_a = epp_it_ctc ps γ' hn1 ctxt kt
-      kres hn = if hn == hn1 then kres_a
-                else error $ "While Until cannot escape consensus"
-      bres_trial hn = epp_it_ctc ps γ' hn EC_WhileTrial bodyt
-      (svs1, ct1, ts1, hn2, hs1) = epp_it_ctc ps γ' hn1 (EC_WhileUntil kres bres_real) untilt
-      svs1_trial' = Set.difference svs1_trial (boundBLVar loopv)
-      bres_real hn = epp_it_ctc ps γ' hn (EC_WhileBody which svs1_trial') bodyt
-      ((fvs_a, inita'), st_a) = epp_arg "ctc While init" γ RoleContract inita
-      loopvenv = M.singleton loopv st_a
-      γ' = M.map (M.union loopvenv) γ
-      ts = M.map (EP_Loop h which loopv inita') ts1
-      ct = C_Jump h which svs2l inita'
+  IL_FromConsensus _ bt -> epp_it_loc ps γ ctxt bt
+  IL_While h loopv inita untilt invt bodyt kt -> do
+    let ((fvs_a, inita'), st_a) = epp_arg "ctc While init" γ RoleContract inita
+    let loopvenv = M.singleton loopv st_a
+    let γ' = M.map (M.union loopvenv) γ
+    (_, ct_inv, _) <- epp_it_ctc ps γ' EC_Invariant invt
+    let kres = epp_it_ctc ps γ' ctxt kt
+    let bres_trial = epp_it_ctc ps γ' EC_WhileTrial bodyt
+    (svs1_trial, _, _) <- localEPP $ epp_it_ctc ps γ' (EC_WhileUntil kres bres_trial) untilt
+    let svs1_trial' = Set.difference svs1_trial (boundBLVar loopv)
+    which <- acquireEPP
+    let bres_real = epp_it_ctc ps γ' (EC_WhileBody which svs1_trial') bodyt
+    (svs1, ct1, ts1) <- epp_it_ctc ps γ' (EC_WhileUntil kres bres_real) untilt
+    let svs2 = Set.difference svs1 (boundBLVar loopv)
+    let svs2l = Set.toList svs2
+    setEPP which $ C_Loop h svs2l loopv ct_inv ct1
+    let ts = M.map (EP_Loop h which loopv inita') ts1
+    let svs = Set.union fvs_a svs2
+    let ct = C_Jump h which svs2l inita'
+    return (svs, ct, ts)
   IL_Continue h na ->
     case ctxt of
-      EC_WhileTrial ->
-        (svs, trial "ct", ts, hn, hs)
+      EC_WhileTrial -> do
+        return (svs, trial "ct", ts)
         where svs = fvs_a
               ((fvs_a, _), _) = epp_arg "ctc continue" γ RoleContract na
               trial msg = error $ "EPP: WhileTrial: Cannot inspect " ++ msg
               ts = M.fromList $ map mkt ps
               mkt p = (p, EP_Continue h 0 $ trial "continue arg")
-      EC_WhileBody which fvs_loop ->
-        (svs, ct, ts, hn, hs)
+      EC_WhileBody which fvs_loop -> do
+        return (svs, ct, ts)
         where (fvs_a, inita') = must_be_public $ epp_arg "ctc continue" γ RoleContract na
               svs = Set.union fvs_loop fvs_a
               fvs_loopl = Set.toList fvs_loop
@@ -698,64 +720,66 @@ epp_it_ctc ps γ hn0 ctxt it = case it of
               mkt p = (p, EP_Continue h which $ snd . fst $ epp_arg "ctc continue loc" γ (RolePart p) na)
       _ ->
         error $ "EPP: Continue not in while body"
-    where hn = hn0
-          hs = []
 
-epp_it_loc :: Show ann => [Participant] -> EPPEnv -> Int -> EPPCtxt ann -> ILTail ann -> EPPRes ann
-epp_it_loc ps γ hn0 ctxt it = case it of
-  IL_Ret h al -> ( Set.empty, C_Halt h, ts, hn0, [] )
+epp_it_loc :: Show ann => [Participant] -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
+epp_it_loc ps γ ctxt it = case it of
+  IL_Ret h al -> return ( Set.empty, C_Halt h, ts)
     where ts = M.fromList $ map mkt ps
           mkt p = (p, EP_Ret h $ map fst $ snd $ epp_args "loc ret" γ (RolePart p) al)
   IL_If _ _ _ _ ->
     error "EPP: Ifs must be consensual"
-  IL_Let h who what how next -> (svs1, ct1, ts2, hn1, hs1)
-    where (svs1, ct1, ts1, hn1, hs1) = epp_it_loc ps γ' hn0 ctxt next
-          iv = what
-          γ' = M.mapWithKey addwhat γ
-          addwhat r env = if role_me r who then
-                            M.insert iv lst env
-                          else
-                            env
-          lst = case fmst of
-            Nothing -> error "EPP: Let not local to any participant"
-            Just v -> v
-          (fmst, ts2) = M.foldrWithKey addhow (Nothing, M.empty) ts1
-          addhow p t (mst, ts) =
-            if not (role_me (RolePart p) who) then
-              (mst, M.insert p t ts)
-            else
-              (mst', M.insert p t' ts)
-              where t' = EP_Let h what how' t
-                    mst' = Just st
-                    (st, _, how') = epp_e_loc γ p how
-  IL_Do h who how next -> (svs1, ct1, ts2, hn1, hs1)
-    where (svs1, ct1, ts1, hn1, hs1) = epp_it_loc ps γ hn0 ctxt next
-          ts2 = M.mapWithKey addhow ts1
-          addhow p t =
-            if not (role_me (RolePart p) who) then t
-            else EP_Do h s' t
-            where (_, s') = epp_s_loc γ p how
-  IL_ToConsensus h from what howmuch next -> (svs2, ct2, ts2, hn2, hs2)
-    where fromr = RolePart from
-          what' = map must_be_public $ epp_vars "loc toconsensus" γ fromr what
-          (_, howmuch') = must_be_public $ epp_arg "loc howmuch" γ fromr howmuch
-          what'env = M.fromList $ map (\v -> (v,Public)) what'
-          γ' = M.map (M.union what'env) γ
-          hn1 = hn0 + 1
-          (svs1, ct1, ts1, hn2, hs1) = epp_it_ctc ps γ' hn1 ctxt next
-          svs2 = Set.difference svs1 (boundBLVars what')
-          svs2l = Set.toList svs2
-          nh = C_Handler h from svs2l what' ct1
-          hs2 = nh : hs1
-          ts2 = M.mapWithKey addTail ts1
-          ct2 = C_Wait h hn0 svs2l
-          es = EP_Send h hn0 svs2l what' howmuch'
-          addTail p pt1 = pt3
-            where pt2 me = EP_Recv h me hn0 svs2l what' pt1
-                  pt3 = if p /= from then pt2 False
-                        else EP_Do h es $ pt2 True
-  IL_FromConsensus _ _ ->
-    error "EPP: Cannot transition to local from local"
+  IL_Let h who what how next -> do
+    let (fmst, extend_ts) =
+          foldr addhow (Nothing, (\x->x)) ps
+          where addhow p (mst, do_extend) =
+                  if not (role_me (RolePart p) who) then
+                    (mst, do_extend)
+                  else
+                    (Just st, do_extend')
+                  where (st, _, how') = epp_e_loc γ p how
+                        do_extend' ts =
+                          M.insert p t' ts'
+                          where t' = EP_Let h what how' t
+                                t = ts' M.! p
+                                ts' = do_extend ts
+    let γ' = M.mapWithKey addwhat γ
+             where addwhat r env = if role_me r who then
+                                     M.insert what lst env
+                                   else
+                                     env
+                   lst = case fmst of
+                     Nothing -> error "EPP: Let not local to any participant"
+                     Just v -> v
+    (svs1, ct1, ts1) <- epp_it_loc ps γ' ctxt next
+    return (svs1, ct1, extend_ts ts1)
+  IL_Do h who how next -> do
+    (svs1, ct1, ts1) <- epp_it_loc ps γ ctxt next
+    let ts2 = M.mapWithKey addhow ts1
+              where addhow p t =
+                      if not (role_me (RolePart p) who) then t
+                      else EP_Do h s' t
+                      where (_, s') = epp_s_loc γ p how
+    return (svs1, ct1, ts2)
+  IL_ToConsensus h from what howmuch next -> do
+    hn0 <- acquireEPP
+    let fromr = RolePart from
+    let (_, howmuch') = must_be_public $ epp_arg "loc howmuch" γ fromr howmuch
+    let what' = map must_be_public $ epp_vars "loc toconsensus" γ fromr what
+    let what'env = M.fromList $ map (\v -> (v,Public)) what'
+    let γ' = M.map (M.union what'env) γ
+    (svs1, ct1, ts1) <- epp_it_ctc ps γ' ctxt next
+    let svs2 = Set.difference svs1 (boundBLVars what')
+    let svs2l = Set.toList svs2
+    setEPP hn0 $ C_Handler h from svs2l what' ct1
+    let es = EP_Send h hn0 svs2l what' howmuch'
+    let ct2 = C_Wait h hn0 svs2l
+    let ts2 = M.mapWithKey addTail ts1
+              where addTail p pt1 = pt3
+                      where pt2 me = EP_Recv h me hn0 svs2l what' pt1
+                            pt3 = if p /= from then pt2 False
+                              else EP_Do h es $ pt2 True
+    return (svs2, ct2, ts2)
+  IL_FromConsensus _ _ -> error "EPP: Cannot transition to local from local"
   IL_While _ _ _ _ _ _ _ -> error $ "EPP: While illegal outside consensus"
   IL_Continue _ _ -> error $ "EPP: Continue illegal outside consensus"
 
@@ -765,7 +789,7 @@ epp (IL_Prog h ips it) = BL_Prog h bps cp
         ps = M.keys ips
         bps = M.mapWithKey mkep ets
         mkep p ept = EP_Prog h (ips M.! p) ept
-        (_, _, ets, _, chs) = epp_it_loc ps γ 0 EC_Top it
+        ((_, _, ets), chs) = runEPP $ epp_it_loc ps γ EC_Top it
         γi = M.fromList $ map initγ $ M.toList ips
         initγ (p, args) = (RolePart p, M.fromList $ map (\v->(v, Secret)) args)
         γ = M.insert RoleContract M.empty γi
