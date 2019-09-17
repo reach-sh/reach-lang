@@ -7,7 +7,7 @@ all: lint start_geth test demo stop_geth
 build: build/rps.mjs build/rps_while.mjs
 
 clean:
-	rm build/rps.mjs build/rps_while.mjs
+	rm -f build/rps.mjs build/rps_while.mjs
 
 build/%.mjs: rps/%.rsh
 	stack build

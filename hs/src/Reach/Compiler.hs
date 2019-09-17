@@ -98,6 +98,13 @@ type IVType = [BaseType]
 
 type ILEnv a = M.Map XLVar (InlineV a)
 
+ienv_insert :: Show a => a -> XLVar -> InlineV a -> ILEnv a -> ILEnv a
+ienv_insert a x v σ =
+  case M.lookup x σ of
+    Nothing -> M.insert x v σ
+    Just _ ->
+      error $ "inline: shadowed binding of " ++ show x ++ " at : " ++ show a
+
 type_count_expect :: Show a => a -> Int -> IVType -> IVType
 type_count_expect a cnt t =
   if l == cnt then t
@@ -172,10 +179,10 @@ do_inline_funcall outer_loopt ch who f argivs =
                 (o_σ_copy, i_arp, i_eff_formals, i_eff_argies)
               else
                 (o_σ_let, o_arp, o_eff_formals, o_eff_argies)
-              where o_σ_copy = M.insert formal argiv i_σ
+              where o_σ_copy = ienv_insert lh formal argiv i_σ
                     (this_p, this_ts, this_x) = iv_expr ch argiv
                     [ this_t ] = (type_count_expect ch 1 this_ts)
-                    o_σ_let = M.insert formal (IV_Var ch (formal, this_t)) i_σ
+                    o_σ_let = ienv_insert lh formal (IV_Var ch (formal, this_t)) i_σ
                     o_arp = i_arp && this_p
                     o_eff_formals = (formal, this_t) : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
@@ -245,7 +252,7 @@ peval outer_loopt σ e =
             (_, ket, ke') = iv_expr a $ peval outer_loopt σ' ke
             (_, iet, ie') = r a ie
             [lvt] = type_count_expect a 1 iet
-            σ' = M.insert lv (IV_Var a (lv, lvt)) σ
+            σ' = ienv_insert a lv (IV_Var a (lv, lvt)) σ
     XL_Continue a ne ->
       case outer_loopt of
         Just lvt ->
@@ -271,7 +278,7 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
         σ_top_and_ps = M.union σ_ps σ_top
         σ_ps = foldr add_ps M.empty ps
         add_ps (_ph, vs) σ = foldr add_pvs σ vs
-        add_pvs (vh, v, bt) σ = M.insert v (IV_Var vh (v,bt)) σ
+        add_pvs (vh, v, bt) σ = ienv_insert vh v (IV_Var vh (v,bt)) σ
         (add_to_m', σ_top) = foldr add_tops ((\x->x), M.empty) defs
         add_tops d (adder, σ) =
           case d of
@@ -281,7 +288,7 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
                     ivs = zipWithEq (,) vs ts
                     (_, ts, ve') = iv_expr h $ peval Nothing σ ve
             XL_DefineFun h f args body ->
-              (adder, M.insert f (IV_Clo (h, args, body) σ_top) σ)
+              (adder, ienv_insert h f (IV_Clo (h, args, body) σ_top) σ)
 
 {- ANF
 
