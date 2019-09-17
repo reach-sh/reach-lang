@@ -15,26 +15,23 @@ dependencies:
 - base >= 4.7 && < 5
 - containers
 - prettyprinter
-- megaparsec
-- parser-combinators
 - bytestring
 - mtl
+- digest
+- language-javascript >= 0.6.0.13
+- parsec-numbers
 - filepath
-- directory
 - file-embed >= 0.0.9
+- optparse-applicative
+- directory
 - process
 - pretty-simple
 - text
-- debug
 - extra
 - simple-smt
 - aeson
 - unordered-containers
-- optparse-applicative
 - system-filepath
-- digest
-- language-javascript >= 0.6.0.13
-- parsec-numbers
 
 ghc-options:
 - -Wall
