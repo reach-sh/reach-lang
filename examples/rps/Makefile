@@ -4,9 +4,9 @@ export STACK_YAML=../../hs/stack.yaml
 
 all: lint start_geth test demo stop_geth
 
-build: build/rps.reach.mjs build/rps_while.reach.mjs
+build: build/rps.mjs build/rps_while.mjs
 
-build/%.reach.mjs: rps/%.reach
+build/%.mjs: rps/%.rsh
 	stack build
 	mkdir -p build
 	stack exec -- reachc -o build $^

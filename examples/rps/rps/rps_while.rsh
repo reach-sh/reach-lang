@@ -1,6 +1,6 @@
 'reach/exe';
 
-import "rps_shared.reach";
+import "rps_shared.rsh";
 
 const A = participant({
   _wagerAmount: uint256,
