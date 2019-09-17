@@ -5,5 +5,5 @@ import Reach.Util
 
 main :: IO ()
 main = do
-  maybeDie $ system "cd ../examples/rps && make build"
+  maybeDie $ system "cd ../examples/rps && make clean build"
   exitSuccess
