@@ -296,7 +296,6 @@ data EPExpr a
 
 data EPStmt a
   = EP_Claim a ClaimType (BLArg a)
-  | EP_Send a Int [BLVar] [BLVar] (BLArg a)
   deriving (Show,Eq)
 
 data EPTail a
@@ -306,7 +305,8 @@ data EPTail a
   | EP_Do a (EPStmt a) (EPTail a)
   {- This recv is what the sender sent; we will be doing the same
      computation as the contract. -}
-  | EP_Recv a Bool Int [BLVar] [BLVar] (EPTail a)
+  | EP_SendRecv a Int [BLVar] [BLVar] (BLArg a) (EPTail a)
+  | EP_Recv a Int [BLVar] [BLVar] (EPTail a)
   | EP_Loop a Int BLVar (BLArg a) (EPTail a)
   | EP_Continue a Int (BLArg a)
   deriving (Show,Eq)

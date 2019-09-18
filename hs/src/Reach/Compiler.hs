@@ -775,13 +775,10 @@ epp_it_loc ps γ ctxt it = case it of
     let svs2 = Set.difference svs1 (boundBLVars what')
     let svs2l = Set.toList svs2
     setEPP hn0 $ C_Handler h from svs2l what' ct1
-    let es = EP_Send h hn0 svs2l what' howmuch'
     let ct2 = C_Wait h hn0 svs2l
     let ts2 = M.mapWithKey addTail ts1
-              where addTail p pt1 = pt3
-                      where pt2 me = EP_Recv h me hn0 svs2l what' pt1
-                            pt3 = if p /= from then pt2 False
-                              else EP_Do h es $ pt2 True
+              where addTail p pt1 = if p /= from then EP_Recv h hn0 svs2l what' pt1
+                                    else EP_SendRecv h hn0 svs2l what' howmuch' pt1
     return (svs2, ct2, ts2)
   IL_FromConsensus _ _ -> error "EPP: Cannot transition to local from local"
   IL_While _ _ _ _ _ _ _ -> error $ "EPP: While illegal outside consensus"

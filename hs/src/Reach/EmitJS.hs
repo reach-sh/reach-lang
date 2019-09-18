@@ -120,7 +120,6 @@ jsEPStmt (EP_Claim _ CT_Possible _) kp = (kp, Set.empty)
 jsEPStmt (EP_Claim _ CT_Assert _) kp = (kp, Set.empty)
 jsEPStmt (EP_Claim _ _ a) kp = (vsep [ jsAssert ap, kp ], afvs)
   where (ap, afvs) = jsArg a
-jsEPStmt (EP_Send _ _ _ _ _) _ = error "Impossible"
 
 jsEPTail :: Int -> String -> EPTail b -> (Doc a, Set.Set BLVar)
 jsEPTail _tn _who (EP_Ret _ al) = ((jsReturn $ jsArray $ map fst alp), Set.unions $ map snd alp)
@@ -145,7 +144,7 @@ jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
         bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
         (forcep, (eep, eefvs)) = jsEPExpr tn ee
         (ktp, ktfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_Do _ (EP_Send _ i svs msg amt) (EP_Recv _ True _ _ _ kt)) = (tp, tfvs)
+jsEPTail tn who (EP_SendRecv _ i svs msg amt kt) = (tp, tfvs)
   where srp = jsApply "ctc.sendrecv" [ jsString who
                                     , jsString (solMsg_fun i), vs, amtp
                                     , jsString (solMsg_evt i) ]
@@ -163,9 +162,7 @@ jsEPTail tn who (EP_Do _ es kt) = (tp, tfvs)
   where (tp, esfvs) = jsEPStmt es ktp
         tfvs = Set.union esfvs kfvs
         (ktp, kfvs) = jsEPTail tn who kt
-jsEPTail _ _ (EP_Recv _ True _ _ _ _) =
-  error "Impossible"
-jsEPTail tn who (EP_Recv _ False i _ msg kt) = (tp, tfvs)
+jsEPTail tn who (EP_Recv _ i _ msg kt) = (tp, tfvs)
   where tp = vsep [ rp, kp ]
         rp = pretty "const" <+> jsArray (msg_vs ++ [jsTxn tn']) <+> pretty "=" <+> pretty "await" <+> (jsApply "ctc.recv" [ jsString who, jsString (solMsg_evt i) ]) <> semi
         tfvs = Set.unions [Set.fromList msg, ktfvs]

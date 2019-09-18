@@ -149,8 +149,6 @@ instance Pretty (EPExpr a) where
 
 instance Pretty (EPStmt a) where
   pretty (EP_Claim _ ct a) = prettyClaim ct a
-  pretty (EP_Send _ hi svs vs pa) =
-    group $ parens $ pretty "send!" <+> pretty hi <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa
 
 instance Pretty (CExpr a) where
   pretty (C_PrimApp _ p al) = prettyApp p al
@@ -164,8 +162,11 @@ instance Pretty (EPTail a) where
   pretty (EP_If _ ca tt ft) = prettyIf ca tt ft
   pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x -> x) v e bt
   pretty (EP_Do _ s bt) = prettyDo (\x -> x) s bt
-  pretty (EP_Recv _ fromme hi svs vs bt) =
-    vsep [group $ parens $ pretty "define-values" <+> pretty fromme <+> prettyBLVars svs <+> prettyBLVars vs <+> (parens $ pretty "recv!" <+> pretty hi),
+  pretty (EP_SendRecv _ hi svs vs pa bt) =
+    vsep [group $ parens $ pretty "send!" <+> pretty hi <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa,
+          pretty bt]
+  pretty (EP_Recv _ hi svs vs bt) =
+    vsep [group $ parens $ pretty "define-values" <+> prettyBLVars svs <+> prettyBLVars vs <+> (parens $ pretty "recv!" <+> pretty hi),
           pretty bt]
   pretty (EP_Loop _ which loopv inita bt) =
     group $ parens $ pretty "loop" <+> pretty which <+> prettyBLVar loopv <+> pretty inita <> nest 2 (hardline <> prettyBegin bt)
