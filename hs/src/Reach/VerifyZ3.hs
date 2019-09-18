@@ -35,7 +35,7 @@ instance CollectTypes (ILTail a) where
   cvs (IL_If _ _ tt ft) = cvs tt <> cvs ft
   cvs (IL_Let _ _ v _ ct) = cvs v <> cvs ct
   cvs (IL_Do _ _ _ ct) = cvs ct
-  cvs (IL_ToConsensus _ _ _ _ kt) = cvs kt
+  cvs (IL_ToConsensus _ (_, _, _) (_, _, tt) kt) = cvs tt <> cvs kt
   cvs (IL_FromConsensus _ kt) = cvs kt
   cvs (IL_While _ loopv _ it ct bt kt) = cvs loopv <> cvs it <> cvs ct <> cvs bt <> cvs kt
   cvs (IL_Continue _ _) = mempty
@@ -315,7 +315,8 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                  return (mt, vr <> vr')
             else
               iter cbi ctxt kt
-          IL_ToConsensus _ _who _msg amount kt ->
+          IL_ToConsensus _ (_who, _msg, amount) (_twho, _da, _tt) kt ->
+            --- XXX timeouts
             do void $ declare z3 pvv z3IntSort
                void $ define z3 cb'v z3IntSort (z3Apply "+" [cbr, pvr])
                assert z3 thisc

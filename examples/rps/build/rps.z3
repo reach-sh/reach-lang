@@ -276,6 +276,124 @@
 [<-recv] success
 [send->] (declare-fun v132 () Bytes )
 [<-recv] success
+[send->] (declare-fun v133 () Int )
+[<-recv] success
+[send->] (declare-fun v134 () Bool )
+[<-recv] success
+[send->] (declare-fun v135 () Bool )
+[<-recv] success
+[send->] (declare-fun v136 () Bool )
+[<-recv] success
+[send->] (declare-fun v137 () Bool )
+[<-recv] success
+[send->] (declare-fun v138 () Bool )
+[<-recv] success
+[send->] (declare-fun v139 () Bool )
+[<-recv] success
+[send->] (declare-fun v140 () Bool )
+[<-recv] success
+[send->] (declare-fun v141 () Bytes )
+[<-recv] success
+[send->] (declare-fun v142 () Bytes )
+[<-recv] success
+[send->] (declare-fun v143 () Bytes )
+[<-recv] success
+[send->] (declare-fun v144 () Bytes )
+[<-recv] success
+[send->] (declare-fun v145 () Int )
+[<-recv] success
+[send->] (declare-fun v146 () Bool )
+[<-recv] success
+[send->] (declare-fun v147 () Bool )
+[<-recv] success
+[send->] (declare-fun v148 () Bool )
+[<-recv] success
+[send->] (declare-fun v149 () Bool )
+[<-recv] success
+[send->] (declare-fun v150 () Bool )
+[<-recv] success
+[send->] (declare-fun v151 () Bool )
+[<-recv] success
+[send->] (declare-fun v152 () Bool )
+[<-recv] success
+[send->] (declare-fun v153 () Bytes )
+[<-recv] success
+[send->] (declare-fun v154 () Bytes )
+[<-recv] success
+[send->] (declare-fun v155 () Bytes )
+[<-recv] success
+[send->] (declare-fun v156 () Bytes )
+[<-recv] success
+[send->] (declare-fun v157 () Int )
+[<-recv] success
+[send->] (declare-fun v158 () Bool )
+[<-recv] success
+[send->] (declare-fun v159 () Bool )
+[<-recv] success
+[send->] (declare-fun v160 () Bool )
+[<-recv] success
+[send->] (declare-fun v161 () Bool )
+[<-recv] success
+[send->] (declare-fun v162 () Bool )
+[<-recv] success
+[send->] (declare-fun v163 () Bool )
+[<-recv] success
+[send->] (declare-fun v164 () Bool )
+[<-recv] success
+[send->] (declare-fun v165 () Bytes )
+[<-recv] success
+[send->] (declare-fun v166 () Bytes )
+[<-recv] success
+[send->] (declare-fun v167 () Bytes )
+[<-recv] success
+[send->] (declare-fun v168 () Bytes )
+[<-recv] success
+[send->] (declare-fun v169 () Int )
+[<-recv] success
+[send->] (declare-fun v170 () Bool )
+[<-recv] success
+[send->] (declare-fun v171 () Bool )
+[<-recv] success
+[send->] (declare-fun v172 () Bool )
+[<-recv] success
+[send->] (declare-fun v173 () Bool )
+[<-recv] success
+[send->] (declare-fun v174 () Bool )
+[<-recv] success
+[send->] (declare-fun v175 () Bool )
+[<-recv] success
+[send->] (declare-fun v176 () Bool )
+[<-recv] success
+[send->] (declare-fun v177 () Bytes )
+[<-recv] success
+[send->] (declare-fun v178 () Bytes )
+[<-recv] success
+[send->] (declare-fun v179 () Bytes )
+[<-recv] success
+[send->] (declare-fun v180 () Bytes )
+[<-recv] success
+[send->] (declare-fun v181 () Bool )
+[<-recv] success
+[send->] (declare-fun v182 () Bool )
+[<-recv] success
+[send->] (declare-fun v183 () Bool )
+[<-recv] success
+[send->] (declare-fun v184 () Bool )
+[<-recv] success
+[send->] (declare-fun v185 () Bool )
+[<-recv] success
+[send->] (declare-fun v186 () Bool )
+[<-recv] success
+[send->] (declare-fun v187 () Bool )
+[<-recv] success
+[send->] (declare-fun v188 () Bytes )
+[<-recv] success
+[send->] (declare-fun v189 () Bytes )
+[<-recv] success
+[send->] (declare-fun v190 () Bytes )
+[<-recv] success
+[send->] (declare-fun v191 () Bytes )
+[<-recv] success
 [send->] (push 1 )
 [<-recv] success
 [send->] (define-fun ctc_balance0 () Int 0 )

@@ -248,7 +248,7 @@ data ILTail a
   --- As in XL, a ToConsensus is a transfer to the contract with
   --- (initiator, message, pay amount). The tail is inside of the
   --- contract.
-  | IL_ToConsensus a Participant [ILVar] (ILArg a) (ILTail a)
+  | IL_ToConsensus a (Participant, [ILVar], (ILArg a)) (Participant, (ILArg a), (ILTail a)) (ILTail a)
   --- A FromConsensus moves back from the consensus; the tail is
   --- "local" again.
   | IL_FromConsensus a (ILTail a)

@@ -387,6 +387,7 @@ anf_renamed_to ρ v =
     Nothing -> error ("ANF: Variable unbound: " ++ (show v))
     Just a -> a
 
+--- XXX Don't need to track # of values
 anf_expr :: Show ann => Role -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (Int, ILTail ann)) -> ANFMonad ann (Int, ILTail ann)
 anf_expr me ρ e mk =
   case e of
@@ -416,13 +417,13 @@ anf_expr me ρ e mk =
     XIL_FromConsensus h le -> do
       (ln, lt) <- anf_tail RoleContract ρ le mk
       return (ln, IL_FromConsensus h lt)
-    XIL_ToConsensus h (from, ins, pe) (_twho, _de, _te) ce ->
-      --- XXX timeouts
-      anf_expr (RolePart from) ρ pe
-      (\ _ [ pa ] -> do
+    XIL_ToConsensus h (from, ins, pe) (twho, de, te) ce ->
+      anf_exprs h (RolePart from) ρ [ pe, de ]
+      (\ _ [ pa, da ] -> do
          let ins' = vsOnly $ map (anf_renamed_to ρ) ins
          (cn, ct) <- anf_tail RoleContract ρ ce mk
-         return (cn, IL_ToConsensus h from ins' pa ct))
+         (_, tt) <- anf_tail RoleContract ρ te anf_ktop
+         return (cn, IL_ToConsensus h (from, ins', pa) (twho, da, tt) ct))
     XIL_Values h args ->
       anf_exprs h me ρ args mk
     XIL_Transfer h to ae ->
@@ -691,7 +692,7 @@ epp_it_ctc ps γ ctxt it = case it of
     return (svs, ct2, ts2)
   IL_Do _ (RolePart _) _ _ ->
     error "EPP: Cannot perform local action in consensus"
-  IL_ToConsensus _ _ _ _ _ ->
+  IL_ToConsensus _ _ _ _ ->
     error "EPP: Cannot transition to consensus from consensus"
   IL_FromConsensus _ bt -> epp_it_loc ps γ ctxt bt
   IL_While h loopv inita untilt invt bodyt kt -> do
@@ -772,7 +773,8 @@ epp_it_loc ps γ ctxt it = case it of
                       else EP_Do h s' t
                       where (_, s') = epp_s_loc γ p how
     return (svs1, ct1, ts2)
-  IL_ToConsensus h from what howmuch next -> do
+  IL_ToConsensus h (from, what, howmuch) (_twho, _delay, _timeout) next -> do
+    --- XXX timeouts
     hn0 <- acquireEPP
     let fromr = RolePart from
     let (_, howmuch') = must_be_public $ epp_arg "loc howmuch" γ fromr howmuch

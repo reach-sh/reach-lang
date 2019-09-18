@@ -103,8 +103,8 @@ instance Pretty (ILTail a) where
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
   pretty (IL_Do _ r s bt) = prettyDo at s bt
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
-  pretty (IL_ToConsensus _ p svs pa ct) =
-    vsep [(group $ parens $ pretty "@" <+> pretty p <+> (nest 2 $ hardline <> vsep [svsp, pap])),
+  pretty (IL_ToConsensus _ (p, svs, pa) (twho, da, tt) ct) =
+    vsep [(group $ parens $ pretty "@" <+> pretty p <+> (nest 2 $ hardline <> vsep [svsp, pap]) <+> (group $ parens $ pretty "timeout" <+> pretty twho <+> pretty da <+> (nest 4 $ hardline <> pretty tt)) ),
           pretty ct]
     where svsp = parens $ pretty "publish!" <+> prettyILVars svs
           pap = parens $ pretty "pay!" <+> pretty pa
