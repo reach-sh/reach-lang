@@ -13,7 +13,8 @@
 (@ A (define 5/PrimApp:uint256 (ADD 2/Declassify:uint256 3/Declassify:uint256)))
 (@ A 
   (publish! (2/Declassify:uint256 3/Declassify:uint256))
-  (pay! 5/PrimApp:uint256) (timeout B 1 
+  (pay! 5/PrimApp:uint256)
+  (timeout B 1 
     (commit!)
     (@ CTC (define 181/PrimApp:bool (PLE 0 3)))
     (@ CTC (define 182/PrimApp:bool (PLT 3 5)))
@@ -36,9 +37,10 @@
 (@ B (define 9/Interact:bool (interact.accepts bool 2/Declassify:uint256 3/Declassify:uint256)))
 (@ B 
   (publish! ())
-  (pay! 2/Declassify:uint256) (timeout A 1 
-    (@ A (define 169/PrimApp:uint256 (BALANCE)))
-    (@ A (transfer! A 169/PrimApp:uint256))
+  (pay! 2/Declassify:uint256)
+  (timeout A 1 
+    (@ CTC (define 169/PrimApp:uint256 (BALANCE)))
+    (@ CTC (transfer! A 169/PrimApp:uint256))
     (commit!)
     (@ CTC (define 170/PrimApp:bool (PLE 0 4)))
     (@ CTC (define 171/PrimApp:bool (PLT 4 5)))
@@ -79,9 +81,10 @@
 (@ A (define 29/Interact:bool (interact.commits bool )))
 (@ A 
   (publish! (28/Declassify:uint256))
-  (pay! 0) (timeout B 1 
-    (@ B (define 157/PrimApp:uint256 (BALANCE)))
-    (@ B (transfer! B 157/PrimApp:uint256))
+  (pay! 0)
+  (timeout B 1 
+    (@ CTC (define 157/PrimApp:uint256 (BALANCE)))
+    (@ CTC (transfer! B 157/PrimApp:uint256))
     (commit!)
     (@ CTC (define 158/PrimApp:bool (PLE 0 3)))
     (@ CTC (define 159/PrimApp:bool (PLT 3 5)))
@@ -117,9 +120,10 @@
 (@ B (define 44/Interact:bool (interact.shows bool )))
 (@ B 
   (publish! (43/Declassify:uint256))
-  (pay! 0) (timeout A 1 
-    (@ A (define 145/PrimApp:uint256 (BALANCE)))
-    (@ A (transfer! A 145/PrimApp:uint256))
+  (pay! 0)
+  (timeout A 1 
+    (@ CTC (define 145/PrimApp:uint256 (BALANCE)))
+    (@ CTC (transfer! A 145/PrimApp:uint256))
     (commit!)
     (@ CTC (define 146/PrimApp:bool (PLE 0 4)))
     (@ CTC (define 147/PrimApp:bool (PLT 4 5)))
@@ -155,9 +159,10 @@
 (@ A (define 59/Interact:bool (interact.reveals bool 58/PureIf:bytes)))
 (@ A 
   (publish! (50/Declassify:uint256 51/Declassify:uint256))
-  (pay! 0) (timeout B 1 
-    (@ B (define 133/PrimApp:uint256 (BALANCE)))
-    (@ B (transfer! B 133/PrimApp:uint256))
+  (pay! 0)
+  (timeout B 1 
+    (@ CTC (define 133/PrimApp:uint256 (BALANCE)))
+    (@ CTC (transfer! B 133/PrimApp:uint256))
     (commit!)
     (@ CTC (define 134/PrimApp:bool (PLE 0 3)))
     (@ CTC (define 135/PrimApp:bool (PLT 3 5)))

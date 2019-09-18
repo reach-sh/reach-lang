@@ -1690,7 +1690,7 @@ XL_Prog
                                             [93m([0m XL_Let 
                                                 [1m[95m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                 [1m[95m,[0m Just [1m[96m([0m TokenPn 675 30 32 [1m[96m)[0m
-                                                [1m[95m)[0m [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m Nothing 
+                                                [1m[95m)[0m Nothing Nothing 
                                                 [1m[95m([0m XL_Transfer 
                                                     [1m[96m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                     [1m[96m,[0m Just [1m[93m([0m TokenPn 650 30 7 [1m[93m)[0m
@@ -1856,7 +1856,7 @@ XL_Prog
                                                                         [1m[35m([0m XL_Let 
                                                                             [1m[36m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 995 42 32 [1m[33m)[0m
-                                                                            [1m[36m)[0m [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m Nothing 
+                                                                            [1m[36m)[0m Nothing Nothing 
                                                                             [1m[36m([0m XL_Transfer 
                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 970 42 7 [95m)[0m
@@ -1988,7 +1988,7 @@ XL_Prog
                                                                                             [93m([0m XL_Let 
                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                                 [1m[95m,[0m Just [1m[96m([0m TokenPn 1230 52 32 [1m[96m)[0m
-                                                                                                [1m[95m)[0m [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m Nothing 
+                                                                                                [1m[95m)[0m Nothing Nothing 
                                                                                                 [1m[95m([0m XL_Transfer 
                                                                                                     [1m[96m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                                     [1m[96m,[0m Just [1m[93m([0m TokenPn 1205 52 7 [1m[93m)[0m
@@ -2172,7 +2172,7 @@ XL_Prog
                                                                                                                         [1m[35m([0m XL_Let 
                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1551 65 32 [1m[33m)[0m
-                                                                                                                            [1m[36m)[0m [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m Nothing 
+                                                                                                                            [1m[36m)[0m Nothing Nothing 
                                                                                                                             [1m[36m([0m XL_Transfer 
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 1526 65 7 [95m)[0m

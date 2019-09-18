@@ -406,6 +406,52 @@
 [<-recv] success
 [send->] (assert (= v5 (+ v2 v3 ) ) )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v181 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v182 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v183 (ite v181 v182 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v183 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v183 )
+[<-recv] success
+[send->] (assert (= v184 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v185 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v186 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v187 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v188 (ite v187 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v189 (ite v186 (bytes-literal 1195058296 ) v188 ) ) )
+[<-recv] success
+[send->] (assert (= v190 (ite v185 (bytes-literal 3502248497 ) v189 ) ) )
+[<-recv] success
+[send->] (assert (= v191 (ite v184 (bytes-literal 1946528133 ) v190 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance0 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value1 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
@@ -427,6 +473,56 @@
 [send->] (pop 1 )
 [<-recv] success
 [send->] (assert v8 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v169 ctc_balance1 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v169 ) )
+[<-recv] success
+[send->] (assert (= v170 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v171 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v172 (ite v170 v171 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v172 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v172 )
+[<-recv] success
+[send->] (assert (= v173 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v174 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v175 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v176 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v177 (ite v176 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v178 (ite v175 (bytes-literal 1195058296 ) v177 ) ) )
+[<-recv] success
+[send->] (assert (= v179 (ite v174 (bytes-literal 3502248497 ) v178 ) ) )
+[<-recv] success
+[send->] (assert (= v180 (ite v173 (bytes-literal 1946528133 ) v179 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance2 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value2 () Int )
 [<-recv] success
@@ -490,6 +586,56 @@
 [<-recv] success
 [send->] (assert (= v28 v27 ) )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v157 ctc_balance2 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v157 ) )
+[<-recv] success
+[send->] (assert (= v158 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v159 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v160 (ite v158 v159 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v160 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v160 )
+[<-recv] success
+[send->] (assert (= v161 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v162 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v163 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v164 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v165 (ite v164 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v166 (ite v163 (bytes-literal 1195058296 ) v165 ) ) )
+[<-recv] success
+[send->] (assert (= v167 (ite v162 (bytes-literal 3502248497 ) v166 ) ) )
+[<-recv] success
+[send->] (assert (= v168 (ite v161 (bytes-literal 1946528133 ) v167 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance3 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value3 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
@@ -543,6 +689,56 @@
 [send->] (assert v42 )
 [<-recv] success
 [send->] (assert (= v43 v39 ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v145 ctc_balance3 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v145 ) )
+[<-recv] success
+[send->] (assert (= v146 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v147 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v148 (ite v146 v147 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v148 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v148 )
+[<-recv] success
+[send->] (assert (= v149 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v150 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v151 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v152 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v153 (ite v152 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v154 (ite v151 (bytes-literal 1195058296 ) v153 ) ) )
+[<-recv] success
+[send->] (assert (= v155 (ite v150 (bytes-literal 3502248497 ) v154 ) ) )
+[<-recv] success
+[send->] (assert (= v156 (ite v149 (bytes-literal 1946528133 ) v155 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance4 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value4 () Int )
 [<-recv] success
@@ -607,6 +803,56 @@
 [send->] (assert (= v57 (ite v56 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
 [<-recv] success
 [send->] (assert (= v58 (ite v55 (bytes-literal 31217174 ) v57 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v133 ctc_balance4 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v133 ) )
+[<-recv] success
+[send->] (assert (= v134 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v135 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v136 (ite v134 v135 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v136 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v136 )
+[<-recv] success
+[send->] (assert (= v137 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v138 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v139 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v140 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v141 (ite v140 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v142 (ite v139 (bytes-literal 1195058296 ) v141 ) ) )
+[<-recv] success
+[send->] (assert (= v143 (ite v138 (bytes-literal 3502248497 ) v142 ) ) )
+[<-recv] success
+[send->] (assert (= v144 (ite v137 (bytes-literal 1946528133 ) v143 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance5 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value5 () Int )
 [<-recv] success
@@ -892,6 +1138,16 @@
 [<-recv] success
 [send->] (pop 1 )
 [<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
 [send->] (push 1 )
 [<-recv] success
 [send->] (define-fun ctc_balance0 () Int 0 )
@@ -903,6 +1159,52 @@
 [send->] (assert (= v3 v1 ) )
 [<-recv] success
 [send->] (assert (= v5 (+ v2 v3 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v181 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v182 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v183 (ite v181 v182 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v183 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v183 )
+[<-recv] success
+[send->] (assert (= v184 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v185 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v186 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v187 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v188 (ite v187 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v189 (ite v186 (bytes-literal 1195058296 ) v188 ) ) )
+[<-recv] success
+[send->] (assert (= v190 (ite v185 (bytes-literal 3502248497 ) v189 ) ) )
+[<-recv] success
+[send->] (assert (= v191 (ite v184 (bytes-literal 1946528133 ) v190 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance0 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value1 () Int )
 [<-recv] success
@@ -925,6 +1227,56 @@
 [send->] (pop 1 )
 [<-recv] success
 [send->] (assert v8 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v169 ctc_balance1 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v169 ) )
+[<-recv] success
+[send->] (assert (= v170 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v171 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v172 (ite v170 v171 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v172 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v172 )
+[<-recv] success
+[send->] (assert (= v173 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v174 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v175 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v176 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v177 (ite v176 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v178 (ite v175 (bytes-literal 1195058296 ) v177 ) ) )
+[<-recv] success
+[send->] (assert (= v179 (ite v174 (bytes-literal 3502248497 ) v178 ) ) )
+[<-recv] success
+[send->] (assert (= v180 (ite v173 (bytes-literal 1946528133 ) v179 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance2 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value2 () Int )
 [<-recv] success
@@ -988,6 +1340,56 @@
 [<-recv] success
 [send->] (assert (= v28 v27 ) )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v157 ctc_balance2 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v157 ) )
+[<-recv] success
+[send->] (assert (= v158 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v159 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v160 (ite v158 v159 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v160 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v160 )
+[<-recv] success
+[send->] (assert (= v161 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v162 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v163 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v164 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v165 (ite v164 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v166 (ite v163 (bytes-literal 1195058296 ) v165 ) ) )
+[<-recv] success
+[send->] (assert (= v167 (ite v162 (bytes-literal 3502248497 ) v166 ) ) )
+[<-recv] success
+[send->] (assert (= v168 (ite v161 (bytes-literal 1946528133 ) v167 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance3 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value3 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
@@ -1041,6 +1443,56 @@
 [send->] (assert v42 )
 [<-recv] success
 [send->] (assert (= v43 v39 ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v145 ctc_balance3 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v145 ) )
+[<-recv] success
+[send->] (assert (= v146 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v147 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v148 (ite v146 v147 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v148 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v148 )
+[<-recv] success
+[send->] (assert (= v149 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v150 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v151 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v152 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v153 (ite v152 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v154 (ite v151 (bytes-literal 1195058296 ) v153 ) ) )
+[<-recv] success
+[send->] (assert (= v155 (ite v150 (bytes-literal 3502248497 ) v154 ) ) )
+[<-recv] success
+[send->] (assert (= v156 (ite v149 (bytes-literal 1946528133 ) v155 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance4 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value4 () Int )
 [<-recv] success
@@ -1105,6 +1557,56 @@
 [send->] (assert (= v57 (ite v56 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
 [<-recv] success
 [send->] (assert (= v58 (ite v55 (bytes-literal 31217174 ) v57 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v133 ctc_balance4 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v133 ) )
+[<-recv] success
+[send->] (assert (= v134 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v135 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v136 (ite v134 v135 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v136 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v136 )
+[<-recv] success
+[send->] (assert (= v137 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v138 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v139 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v140 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v141 (ite v140 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v142 (ite v139 (bytes-literal 1195058296 ) v141 ) ) )
+[<-recv] success
+[send->] (assert (= v143 (ite v138 (bytes-literal 3502248497 ) v142 ) ) )
+[<-recv] success
+[send->] (assert (= v144 (ite v137 (bytes-literal 1946528133 ) v143 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance5 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value5 () Int )
 [<-recv] success
@@ -1390,6 +1892,16 @@
 [<-recv] success
 [send->] (pop 1 )
 [<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
 [send->] (push 1 )
 [<-recv] success
 [send->] (define-fun ctc_balance0 () Int 0 )
@@ -1401,6 +1913,52 @@
 [send->] (assert (= v3 v1 ) )
 [<-recv] success
 [send->] (assert (= v5 (+ v2 v3 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v181 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v182 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v183 (ite v181 v182 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v183 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v183 )
+[<-recv] success
+[send->] (assert (= v184 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v185 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v186 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v187 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v188 (ite v187 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v189 (ite v186 (bytes-literal 1195058296 ) v188 ) ) )
+[<-recv] success
+[send->] (assert (= v190 (ite v185 (bytes-literal 3502248497 ) v189 ) ) )
+[<-recv] success
+[send->] (assert (= v191 (ite v184 (bytes-literal 1946528133 ) v190 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance0 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value1 () Int )
 [<-recv] success
@@ -1423,6 +1981,56 @@
 [send->] (pop 1 )
 [<-recv] success
 [send->] (assert v8 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v169 ctc_balance1 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v169 ) )
+[<-recv] success
+[send->] (assert (= v170 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v171 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v172 (ite v170 v171 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v172 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v172 )
+[<-recv] success
+[send->] (assert (= v173 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v174 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v175 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v176 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v177 (ite v176 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v178 (ite v175 (bytes-literal 1195058296 ) v177 ) ) )
+[<-recv] success
+[send->] (assert (= v179 (ite v174 (bytes-literal 3502248497 ) v178 ) ) )
+[<-recv] success
+[send->] (assert (= v180 (ite v173 (bytes-literal 1946528133 ) v179 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance2 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value2 () Int )
 [<-recv] success
@@ -1486,6 +2094,56 @@
 [<-recv] success
 [send->] (assert (= v28 v27 ) )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v157 ctc_balance2 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v157 ) )
+[<-recv] success
+[send->] (assert (= v158 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v159 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v160 (ite v158 v159 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v160 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v160 )
+[<-recv] success
+[send->] (assert (= v161 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v162 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v163 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v164 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v165 (ite v164 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v166 (ite v163 (bytes-literal 1195058296 ) v165 ) ) )
+[<-recv] success
+[send->] (assert (= v167 (ite v162 (bytes-literal 3502248497 ) v166 ) ) )
+[<-recv] success
+[send->] (assert (= v168 (ite v161 (bytes-literal 1946528133 ) v167 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance3 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value3 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
@@ -1539,6 +2197,56 @@
 [send->] (assert v42 )
 [<-recv] success
 [send->] (assert (= v43 v39 ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v145 ctc_balance3 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v145 ) )
+[<-recv] success
+[send->] (assert (= v146 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v147 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v148 (ite v146 v147 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v148 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v148 )
+[<-recv] success
+[send->] (assert (= v149 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v150 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v151 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v152 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v153 (ite v152 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v154 (ite v151 (bytes-literal 1195058296 ) v153 ) ) )
+[<-recv] success
+[send->] (assert (= v155 (ite v150 (bytes-literal 3502248497 ) v154 ) ) )
+[<-recv] success
+[send->] (assert (= v156 (ite v149 (bytes-literal 1946528133 ) v155 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance4 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value4 () Int )
 [<-recv] success
@@ -1603,6 +2311,56 @@
 [send->] (assert (= v57 (ite v56 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
 [<-recv] success
 [send->] (assert (= v58 (ite v55 (bytes-literal 31217174 ) v57 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v133 ctc_balance4 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v133 ) )
+[<-recv] success
+[send->] (assert (= v134 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v135 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v136 (ite v134 v135 false ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not v136 ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (assert v136 )
+[<-recv] success
+[send->] (assert (= v137 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v138 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v139 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v140 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v141 (ite v140 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v142 (ite v139 (bytes-literal 1195058296 ) v141 ) ) )
+[<-recv] success
+[send->] (assert (= v143 (ite v138 (bytes-literal 3502248497 ) v142 ) ) )
+[<-recv] success
+[send->] (assert (= v144 (ite v137 (bytes-literal 1946528133 ) v143 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance5 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value5 () Int )
 [<-recv] success
@@ -1888,9 +2646,57 @@
 [<-recv] success
 [send->] (pop 1 )
 [<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
 [send->] (push 1 )
 [<-recv] success
 [send->] (define-fun ctc_balance0 () Int 0 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v181 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v182 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v183 (ite v181 v182 false ) ) )
+[<-recv] success
+[send->] (assert v183 )
+[<-recv] success
+[send->] (assert (= v184 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v185 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v186 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v187 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v188 (ite v187 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v189 (ite v186 (bytes-literal 1195058296 ) v188 ) ) )
+[<-recv] success
+[send->] (assert (= v190 (ite v185 (bytes-literal 3502248497 ) v189 ) ) )
+[<-recv] success
+[send->] (assert (= v191 (ite v184 (bytes-literal 1946528133 ) v190 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance0 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
 [<-recv] success
 [send->] (push 1 )
 [<-recv] success
@@ -1908,6 +2714,48 @@
 [<-recv] success
 [send->] (assert v8 )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v169 ctc_balance1 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v169 ) )
+[<-recv] success
+[send->] (assert (= v170 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v171 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v172 (ite v170 v171 false ) ) )
+[<-recv] success
+[send->] (assert v172 )
+[<-recv] success
+[send->] (assert (= v173 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v174 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v175 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v176 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v177 (ite v176 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v178 (ite v175 (bytes-literal 1195058296 ) v177 ) ) )
+[<-recv] success
+[send->] (assert (= v179 (ite v174 (bytes-literal 3502248497 ) v178 ) ) )
+[<-recv] success
+[send->] (assert (= v180 (ite v173 (bytes-literal 1946528133 ) v179 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance2 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value2 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
@@ -1920,6 +2768,48 @@
 [<-recv] success
 [send->] (assert v11 )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v157 ctc_balance2 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v157 ) )
+[<-recv] success
+[send->] (assert (= v158 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v159 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v160 (ite v158 v159 false ) ) )
+[<-recv] success
+[send->] (assert v160 )
+[<-recv] success
+[send->] (assert (= v161 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v162 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v163 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v164 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v165 (ite v164 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v166 (ite v163 (bytes-literal 1195058296 ) v165 ) ) )
+[<-recv] success
+[send->] (assert (= v167 (ite v162 (bytes-literal 3502248497 ) v166 ) ) )
+[<-recv] success
+[send->] (assert (= v168 (ite v161 (bytes-literal 1946528133 ) v167 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance3 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value3 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
@@ -1931,6 +2821,48 @@
 [send->] (assert (= v31 (= v30 0 ) ) )
 [<-recv] success
 [send->] (assert v31 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v145 ctc_balance3 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v145 ) )
+[<-recv] success
+[send->] (assert (= v146 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v147 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v148 (ite v146 v147 false ) ) )
+[<-recv] success
+[send->] (assert v148 )
+[<-recv] success
+[send->] (assert (= v149 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v150 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v151 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v152 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v153 (ite v152 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v154 (ite v151 (bytes-literal 1195058296 ) v153 ) ) )
+[<-recv] success
+[send->] (assert (= v155 (ite v150 (bytes-literal 3502248497 ) v154 ) ) )
+[<-recv] success
+[send->] (assert (= v156 (ite v149 (bytes-literal 1946528133 ) v155 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance4 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value4 () Int )
 [<-recv] success
@@ -1951,6 +2883,48 @@
 [send->] (assert (= v49 (ite v47 v48 false ) ) )
 [<-recv] success
 [send->] (assert v49 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v133 ctc_balance4 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v133 ) )
+[<-recv] success
+[send->] (assert (= v134 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v135 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v136 (ite v134 v135 false ) ) )
+[<-recv] success
+[send->] (assert v136 )
+[<-recv] success
+[send->] (assert (= v137 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v138 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v139 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v140 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v141 (ite v140 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v142 (ite v139 (bytes-literal 1195058296 ) v141 ) ) )
+[<-recv] success
+[send->] (assert (= v143 (ite v138 (bytes-literal 3502248497 ) v142 ) ) )
+[<-recv] success
+[send->] (assert (= v144 (ite v137 (bytes-literal 1946528133 ) v143 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance5 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value5 () Int )
 [<-recv] success
@@ -2204,6 +3178,16 @@
 [<-recv] success
 [send->] (pop 1 )
 [<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
 [send->] (push 1 )
 [<-recv] success
 [send->] (define-fun ctc_balance0 () Int 0 )
@@ -2215,6 +3199,44 @@
 [send->] (assert (= v3 v1 ) )
 [<-recv] success
 [send->] (assert (= v5 (+ v2 v3 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v181 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v182 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v183 (ite v181 v182 false ) ) )
+[<-recv] success
+[send->] (assert v183 )
+[<-recv] success
+[send->] (assert (= v184 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v185 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v186 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v187 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v188 (ite v187 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v189 (ite v186 (bytes-literal 1195058296 ) v188 ) ) )
+[<-recv] success
+[send->] (assert (= v190 (ite v185 (bytes-literal 3502248497 ) v189 ) ) )
+[<-recv] success
+[send->] (assert (= v191 (ite v184 (bytes-literal 1946528133 ) v190 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance0 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value1 () Int )
 [<-recv] success
@@ -2229,6 +3251,48 @@
 [send->] (assert (= v8 (= v6 v7 ) ) )
 [<-recv] success
 [send->] (assert v8 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v169 ctc_balance1 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v169 ) )
+[<-recv] success
+[send->] (assert (= v170 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v171 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v172 (ite v170 v171 false ) ) )
+[<-recv] success
+[send->] (assert v172 )
+[<-recv] success
+[send->] (assert (= v173 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v174 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v175 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v176 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v177 (ite v176 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v178 (ite v175 (bytes-literal 1195058296 ) v177 ) ) )
+[<-recv] success
+[send->] (assert (= v179 (ite v174 (bytes-literal 3502248497 ) v178 ) ) )
+[<-recv] success
+[send->] (assert (= v180 (ite v173 (bytes-literal 1946528133 ) v179 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance2 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value2 () Int )
 [<-recv] success
@@ -2284,6 +3348,48 @@
 [<-recv] success
 [send->] (assert (= v28 v27 ) )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v157 ctc_balance2 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v157 ) )
+[<-recv] success
+[send->] (assert (= v158 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v159 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v160 (ite v158 v159 false ) ) )
+[<-recv] success
+[send->] (assert v160 )
+[<-recv] success
+[send->] (assert (= v161 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v162 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v163 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v164 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v165 (ite v164 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v166 (ite v163 (bytes-literal 1195058296 ) v165 ) ) )
+[<-recv] success
+[send->] (assert (= v167 (ite v162 (bytes-literal 3502248497 ) v166 ) ) )
+[<-recv] success
+[send->] (assert (= v168 (ite v161 (bytes-literal 1946528133 ) v167 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance3 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value3 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
@@ -2295,6 +3401,48 @@
 [send->] (assert (= v31 (= v30 0 ) ) )
 [<-recv] success
 [send->] (assert v31 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v145 ctc_balance3 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v145 ) )
+[<-recv] success
+[send->] (assert (= v146 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v147 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v148 (ite v146 v147 false ) ) )
+[<-recv] success
+[send->] (assert v148 )
+[<-recv] success
+[send->] (assert (= v149 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v150 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v151 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v152 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v153 (ite v152 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v154 (ite v151 (bytes-literal 1195058296 ) v153 ) ) )
+[<-recv] success
+[send->] (assert (= v155 (ite v150 (bytes-literal 3502248497 ) v154 ) ) )
+[<-recv] success
+[send->] (assert (= v156 (ite v149 (bytes-literal 1946528133 ) v155 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance4 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value4 () Int )
 [<-recv] success
@@ -2335,6 +3483,48 @@
 [send->] (assert (= v57 (ite v56 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
 [<-recv] success
 [send->] (assert (= v58 (ite v55 (bytes-literal 31217174 ) v57 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v133 ctc_balance4 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v133 ) )
+[<-recv] success
+[send->] (assert (= v134 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v135 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v136 (ite v134 v135 false ) ) )
+[<-recv] success
+[send->] (assert v136 )
+[<-recv] success
+[send->] (assert (= v137 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v138 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v139 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v140 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v141 (ite v140 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v142 (ite v139 (bytes-literal 1195058296 ) v141 ) ) )
+[<-recv] success
+[send->] (assert (= v143 (ite v138 (bytes-literal 3502248497 ) v142 ) ) )
+[<-recv] success
+[send->] (assert (= v144 (ite v137 (bytes-literal 1946528133 ) v143 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance5 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value5 () Int )
 [<-recv] success
@@ -2588,9 +3778,57 @@
 [<-recv] success
 [send->] (pop 1 )
 [<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
 [send->] (push 1 )
 [<-recv] success
 [send->] (define-fun ctc_balance0 () Int 0 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v181 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v182 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v183 (ite v181 v182 false ) ) )
+[<-recv] success
+[send->] (assert v183 )
+[<-recv] success
+[send->] (assert (= v184 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v185 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v186 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v187 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v188 (ite v187 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v189 (ite v186 (bytes-literal 1195058296 ) v188 ) ) )
+[<-recv] success
+[send->] (assert (= v190 (ite v185 (bytes-literal 3502248497 ) v189 ) ) )
+[<-recv] success
+[send->] (assert (= v191 (ite v184 (bytes-literal 1946528133 ) v190 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance0 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
 [<-recv] success
 [send->] (push 1 )
 [<-recv] success
@@ -2608,6 +3846,48 @@
 [<-recv] success
 [send->] (assert v8 )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v169 ctc_balance1 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v169 ) )
+[<-recv] success
+[send->] (assert (= v170 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v171 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v172 (ite v170 v171 false ) ) )
+[<-recv] success
+[send->] (assert v172 )
+[<-recv] success
+[send->] (assert (= v173 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v174 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v175 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v176 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v177 (ite v176 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v178 (ite v175 (bytes-literal 1195058296 ) v177 ) ) )
+[<-recv] success
+[send->] (assert (= v179 (ite v174 (bytes-literal 3502248497 ) v178 ) ) )
+[<-recv] success
+[send->] (assert (= v180 (ite v173 (bytes-literal 1946528133 ) v179 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance2 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value2 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
@@ -2619,6 +3899,48 @@
 [send->] (assert (= v11 (= v10 v2 ) ) )
 [<-recv] success
 [send->] (assert v11 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v157 ctc_balance2 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v157 ) )
+[<-recv] success
+[send->] (assert (= v158 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v159 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v160 (ite v158 v159 false ) ) )
+[<-recv] success
+[send->] (assert v160 )
+[<-recv] success
+[send->] (assert (= v161 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v162 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v163 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v164 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v165 (ite v164 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v166 (ite v163 (bytes-literal 1195058296 ) v165 ) ) )
+[<-recv] success
+[send->] (assert (= v167 (ite v162 (bytes-literal 3502248497 ) v166 ) ) )
+[<-recv] success
+[send->] (assert (= v168 (ite v161 (bytes-literal 1946528133 ) v167 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance3 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value3 () Int )
 [<-recv] success
@@ -2666,6 +3988,48 @@
 [<-recv] success
 [send->] (assert (= v43 v39 ) )
 [<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v145 ctc_balance3 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v145 ) )
+[<-recv] success
+[send->] (assert (= v146 (<= 0 4 ) ) )
+[<-recv] success
+[send->] (assert (= v147 (< 4 5 ) ) )
+[<-recv] success
+[send->] (assert (= v148 (ite v146 v147 false ) ) )
+[<-recv] success
+[send->] (assert v148 )
+[<-recv] success
+[send->] (assert (= v149 (= 4 0 ) ) )
+[<-recv] success
+[send->] (assert (= v150 (= 4 1 ) ) )
+[<-recv] success
+[send->] (assert (= v151 (= 4 2 ) ) )
+[<-recv] success
+[send->] (assert (= v152 (= 4 3 ) ) )
+[<-recv] success
+[send->] (assert (= v153 (ite v152 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v154 (ite v151 (bytes-literal 1195058296 ) v153 ) ) )
+[<-recv] success
+[send->] (assert (= v155 (ite v150 (bytes-literal 3502248497 ) v154 ) ) )
+[<-recv] success
+[send->] (assert (= v156 (ite v149 (bytes-literal 1946528133 ) v155 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance4 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
 [send->] (declare-fun txn_value4 () Int )
 [<-recv] success
 [send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
@@ -2685,6 +4049,48 @@
 [send->] (assert (= v49 (ite v47 v48 false ) ) )
 [<-recv] success
 [send->] (assert v49 )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (= v133 ctc_balance4 ) )
+[<-recv] success
+[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v133 ) )
+[<-recv] success
+[send->] (assert (= v134 (<= 0 3 ) ) )
+[<-recv] success
+[send->] (assert (= v135 (< 3 5 ) ) )
+[<-recv] success
+[send->] (assert (= v136 (ite v134 v135 false ) ) )
+[<-recv] success
+[send->] (assert v136 )
+[<-recv] success
+[send->] (assert (= v137 (= 3 0 ) ) )
+[<-recv] success
+[send->] (assert (= v138 (= 3 1 ) ) )
+[<-recv] success
+[send->] (assert (= v139 (= 3 2 ) ) )
+[<-recv] success
+[send->] (assert (= v140 (= 3 3 ) ) )
+[<-recv] success
+[send->] (assert (= v141 (ite v140 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
+[<-recv] success
+[send->] (assert (= v142 (ite v139 (bytes-literal 1195058296 ) v141 ) ) )
+[<-recv] success
+[send->] (assert (= v143 (ite v138 (bytes-literal 3502248497 ) v142 ) ) )
+[<-recv] success
+[send->] (assert (= v144 (ite v137 (bytes-literal 1946528133 ) v143 ) ) )
+[<-recv] success
+[send->] (push 1 )
+[<-recv] success
+[send->] (assert (not (= ctc_balance5 0 ) ) )
+[<-recv] success
+[send->] (check-sat )
+[<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (push 1 )
 [<-recv] success
 [send->] (declare-fun txn_value5 () Int )
 [<-recv] success
@@ -2932,6 +4338,16 @@
 [<-recv] success
 [send->] (check-sat )
 [<-recv] unsat
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
+[send->] (pop 1 )
+[<-recv] success
 [send->] (pop 1 )
 [<-recv] success
 [send->] (pop 1 )

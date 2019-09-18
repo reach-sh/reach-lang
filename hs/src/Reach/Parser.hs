@@ -288,7 +288,7 @@ decodeStmts dss js =
                 conk = decodeStmts (sub_dss dss) ek
                 [ ede, (JSIdentifier _ who), ete ] = flattenJSCL etargs
                 de = decodeExpr (sub_dss dss) ede
-                te = XL_FunApp h (decodeExpr (who_dss dss (Just who)) ete) []
+                te = XL_FunApp h (decodeExpr (sub_dss dss) ete) []
 
 decodeBlock :: FilePath -> JSBlock -> XLExpr TP
 decodeBlock fp (JSBlock _ ss _) = decodeStmts (make_dss fp) ss

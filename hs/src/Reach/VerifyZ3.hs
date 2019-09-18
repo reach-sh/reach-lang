@@ -315,22 +315,26 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                  return (mt, vr <> vr')
             else
               iter cbi ctxt kt
-          IL_ToConsensus _ (_who, _msg, amount) (_twho, _da, _tt) kt ->
-            --- XXX timeouts
-            do void $ declare z3 pvv z3IntSort
-               void $ define z3 cb'v z3IntSort (z3Apply "+" [cbr, pvr])
-               assert z3 thisc
-               iter cbi' ctxt kt
-            where cbi' = cbi + 1
-                  cb'v = z3CTCBalance cbi'
-                  cbr = z3CTCBalanceRef cbi
-                  amountt = emit_z3_arg amount
-                  pvv = z3TxnValue cbi'
-                  pvr = z3TxnValueRef cbi'
-                  thisc = if honest then
-                            z3Eq pvr amountt
-                          else
-                            z3Apply "<=" [ zero, pvr ]
+          IL_ToConsensus _ (_who, _msg, amount) (_twho, _da, tt) kt ->
+            mconcatMapM (inNewScope z3) [timeout, notimeout]
+            where
+              timeout = do
+                iter cbi ctxt tt
+              notimeout = do
+                void $ declare z3 pvv z3IntSort
+                void $ define z3 cb'v z3IntSort (z3Apply "+" [cbr, pvr])
+                assert z3 thisc
+                iter cbi' ctxt kt
+              cbi' = cbi + 1
+              cb'v = z3CTCBalance cbi'
+              cbr = z3CTCBalanceRef cbi
+              amountt = emit_z3_arg amount
+              pvv = z3TxnValue cbi'
+              pvr = z3TxnValueRef cbi'
+              thisc = if honest then
+                        z3Eq pvr amountt
+                      else
+                        z3Apply "<=" [ zero, pvr ]
           IL_FromConsensus _ kt -> iter cbi ctxt kt
           IL_While x loopv inita untilt invt bodyt kt -> do
             (mt, vr) <- iter cbi (VC_AssignCheckInv loopv invt) (IL_Ret x [inita])

@@ -612,7 +612,7 @@ XIL_Prog
                                                     [1m[96m([0m XIL_Let 
                                                         [1m[93m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                         [1m[93m,[0m Just [35m([0m TokenPn 675 30 32 [35m)[0m
-                                                        [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m Nothing 
+                                                        [1m[93m)[0m Nothing Nothing 
                                                         [1m[93m([0m XIL_Transfer 
                                                             [35m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                             [35m,[0m Just [36m([0m TokenPn 650 30 7 [36m)[0m
@@ -1512,7 +1512,7 @@ XIL_Prog
                                                                                 [1m[33m([0m XIL_Let 
                                                                                     [95m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                     [95m,[0m Just [96m([0m TokenPn 995 42 32 [96m)[0m
-                                                                                    [95m)[0m [95m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [95m)[0m Nothing 
+                                                                                    [95m)[0m Nothing Nothing 
                                                                                     [95m([0m XIL_Transfer 
                                                                                         [96m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                         [96m,[0m Just [93m([0m TokenPn 970 42 7 [93m)[0m
@@ -2266,7 +2266,7 @@ XIL_Prog
                                                                                                     [1m[96m([0m XIL_Let 
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                                         [1m[93m,[0m Just [35m([0m TokenPn 1230 52 32 [35m)[0m
-                                                                                                        [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m Nothing 
+                                                                                                        [1m[93m)[0m Nothing Nothing 
                                                                                                         [1m[93m([0m XIL_Transfer 
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                                             [35m,[0m Just [36m([0m TokenPn 1205 52 7 [36m)[0m
@@ -2927,7 +2927,7 @@ XIL_Prog
                                                                                                                                 [1m[33m([0m XIL_Let 
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 1551 65 32 [96m)[0m
-                                                                                                                                    [95m)[0m [95m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [95m)[0m Nothing 
+                                                                                                                                    [95m)[0m Nothing Nothing 
                                                                                                                                     [95m([0m XIL_Transfer 
                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mrps/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 1526 65 7 [93m)[0m
