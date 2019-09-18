@@ -8,18 +8,28 @@ const A = participant({
 
 const B = participant({});
 
+const DELAY = 1; // in blocks
+
 function main() {
   A.only(() => {
     const wagerAmount = declassify(_wagerAmount);
     const escrowAmount = declassify(_escrowAmount);
     interact.params(); });
+
   A.publish(wagerAmount, escrowAmount)
-   .pay(wagerAmount + escrowAmount);
+    .pay(wagerAmount + escrowAmount)
+    .timeout(DELAY, B, () => {
+      commit;
+      return A_QUITS; }) ;
   commit();
 
   B.only(() => {
     interact.accepts(wagerAmount, escrowAmount); });
-  B.pay(wagerAmount);
+  B.pay(wagerAmount)
+    .timeout(DELAY, A, () => {
+      transfer(balance()).to(A);
+      commit;
+      return B_QUITS; });
   commit();
 
   A.only(() => {
@@ -27,13 +37,21 @@ function main() {
     const [_commitA, _saltA] = precommit(_handA);
     const commitA = declassify(_commitA);
     interact.commits(); });
-  A.publish(commitA);
+  A.publish(commitA)
+    .timeout(DELAY, B, () => {
+      transfer(balance()).to(B);
+      commit;
+      return A_QUITS; });
   commit();
 
   B.only(() => {
     const handB = declassify(getHand());
     interact.shows(); });
-  B.publish(handB);
+  B.publish(handB)
+    .timeout(DELAY, A, () => {
+      transfer(balance()).to(A);
+      commit;
+      return B_QUITS; });
   require(isHand(handB));
   commit();
 
@@ -41,7 +59,12 @@ function main() {
     const saltA = declassify(_saltA);
     const handA = declassify(_handA);
     interact.reveals(showHand(handB)); });
-  A.publish(saltA, handA);
+
+  A.publish(saltA, handA)
+    .timeout(DELAY, B, () => {
+      transfer(balance()).to(B);
+      commit;
+      return A_QUITS; });
   check_commit(commitA, saltA, handA);
   require(isHand(handA));
   const outcome = winner(handA, handB);

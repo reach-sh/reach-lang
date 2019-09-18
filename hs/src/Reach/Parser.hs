@@ -86,9 +86,9 @@ expectIdent :: JSIdent -> XLVar
 expectIdent (JSIdentName _ x) = x
 expectIdent j = expect_error "identifier" j
 
-decodeLetLHS :: JSExpression -> Maybe [XLVar]
-decodeLetLHS (JSIdentifier _ x) = Just [x]
-decodeLetLHS (JSArrayLiteral _ xs _) = Just $ map expectId $ flattenJSArray xs
+decodeLetLHS :: JSExpression -> [XLVar]
+decodeLetLHS (JSIdentifier _ x) = [x]
+decodeLetLHS (JSArrayLiteral _ xs _) = map expectId $ flattenJSArray xs
 decodeLetLHS j = expect_error "let lhs" j
 
 decodeParams :: JSArrowParameterList -> [XLVar]
@@ -224,7 +224,7 @@ decodeStmts dss js =
     --- No Break
     --- No Let
     ((JSConstant a (JSLOne (JSVarInitExpression v (JSVarInit _ e))) _):k) ->
-      XL_Let (tp a) (dss_who dss) (decodeLetLHS v) (decodeExpr dss e) (ds dss k)
+      XL_Let (tp a) (dss_who dss) (Just (decodeLetLHS v)) (decodeExpr dss e) (ds dss k)
     --- No DoWhile
     --- No For, ForIn, ForVar, ForVarIn, ForLet, ForLetIn, ForLetOf, ForOf, ForVarOf
     --- No Function
@@ -234,23 +234,16 @@ decodeStmts dss js =
       where theif = (XL_If (tp a) (decodeExpr dss cond) (ds dss [true]) (ds dss [false]))
     --- No Labelled
     --- No EmptyStatement
-    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _):ek) ->
-      doToConsensus (tp a) p vs amt conk
-      where vs = map expectId $ flattenJSCL evs
-            amt = decodeExpr dss eamt
-            conk = ds (sub_dss dss) ek
-    ((JSExpressionStatement e semi):k) ->
-      letnothing LN_Null (sp semi) dss (decodeExpr dss e) k
     --- No AssignStatement
-    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _ _):ek) ->
-      doToConsensus (tp a) p [] amt conk
-      where amt = decodeExpr dss eamt
-            conk = ds (sub_dss dss) ek
-    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _ _):ek) ->
-      doToConsensus h p vs (XL_Con h (Con_I 0)) conk
-      where vs = map expectId $ flattenJSCL evs        
-            conk = ds (sub_dss dss) ek
-            h = tp a
+    --- Publish + Pay + Timeout
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
+      decodeToConsensus a p (Just evs) (Just eamt) targs ek
+    --- Pay + Timeout
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
+      decodeToConsensus a p Nothing (Just eamt) targs ek
+    --- Publish + Timeout
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
+      decodeToConsensus a p (Just evs) Nothing targs ek
     ((JSMethodCall (JSMemberDot (JSIdentifier _a p) _ (JSIdentifier _ "only"))
        _ (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s)) _ _):k) ->
       ds (who_dss dss (Just p)) (mergeStmts s k)
@@ -280,9 +273,22 @@ decodeStmts dss js =
         XL_Continue (tp a) (decodeExpr dss rhs)
       else
         expect_error "continue matching nearest while loop" js
+    ((JSExpressionStatement e semi):k) ->
+      letnothing LN_Null (sp semi) dss (decodeExpr dss e) k
     (j:_) -> expect_error "statement" j
   where tp = dss_tp dss . tpa
         sp = dss_tp dss . spa
+        decodeToConsensus a p mevs meamt _targs ek =
+          --- XXX use targs
+          doToConsensus h p vs amt conk
+          where h = tp a
+                vs = case mevs of
+                  Nothing -> []
+                  Just evs -> map expectId $ flattenJSCL evs
+                amt = case meamt of
+                  Nothing -> XL_Con h (Con_I 0)
+                  Just eamt -> decodeExpr dss eamt
+                conk = decodeStmts (sub_dss dss) ek
 
 decodeBlock :: FilePath -> JSBlock -> XLExpr TP
 decodeBlock fp (JSBlock _ ss _) = decodeStmts (make_dss fp) ss
@@ -292,6 +298,8 @@ decodeDef fp j =
   case j of
     (JSConstant a (JSLOne (JSVarInitExpression (JSIdentifier _ x) (JSVarInit _ (JSMemberExpression (JSIdentifier _ "Enum") _ (JSLOne (JSArrayLiteral _ vs _)) _)))) _) ->
       doXLEnum (tp a) x (map expectId (flattenJSArray vs))
+    (JSConstant a (JSLOne (JSVarInitExpression lhs (JSVarInit _ e))) _) ->
+      [XL_DefineValues (tp a) (decodeLetLHS lhs) $ decodeExpr (make_dss fp) e]
     (JSFunction a (JSIdentName _ f) _ eargs _ ee _) ->
       [XL_DefineFun (tp a) f args e]
       where args = map expectIdent (flattenJSCL eargs)
@@ -313,18 +321,18 @@ decodeVarDecl _ j = expect_error "variable declaration" j
 decodeBody :: FilePath -> ([XLDef TP], (XLPartInfo TP), Maybe (XLExpr TP)) -> JSModuleItem -> IO ([XLDef TP], (XLPartInfo TP), Maybe (XLExpr TP))
 decodeBody fp (d, p, me) msis =
   case msis of
-    (JSModuleStatementListItem s@(JSConstant _ (JSLOne (JSVarInitExpression (JSIdentifier _ _x) (JSVarInit _ (JSMemberExpression (JSIdentifier _ "Enum") _ _ _)))) _)) ->
-      return $ (d ++ decodeDef fp s, p, me)
-    (JSModuleStatementListItem j@(JSFunction _ (JSIdentName _ "main") _ (JSLNil) _ body _)) ->
-      case me of
-        Nothing -> return $ (d, p, Just (decodeBlock fp body))
-        Just _ -> expect_error "only one main function" j 
-    (JSModuleStatementListItem s@(JSFunction _ _ _ _ _ _ _)) ->
-      return $ (d ++ decodeDef fp s, p, me)
     (JSModuleStatementListItem (JSConstant _ (JSLOne (JSVarInitExpression (JSIdentifier _ who) (JSVarInit _ (JSMemberExpression (JSIdentifier a "participant") _ (JSLOne (JSObjectLiteral _ vs _)) _)))) _)) ->
       return $ (d, p', me)
       where p' = M.insert who ((tp a), ds) p
             ds = map (decodeVarDecl tp) $ flattenJSCTL vs
+    (JSModuleStatementListItem j@(JSFunction _ (JSIdentName _ "main") _ (JSLNil) _ body _)) ->
+      case me of
+        Nothing -> return $ (d, p, Just (decodeBlock fp body))
+        Just _ -> expect_error "only one main function" j 
+    (JSModuleStatementListItem s@(JSConstant _ _ _)) ->
+      return $ (d ++ decodeDef fp s, p, me)
+    (JSModuleStatementListItem s@(JSFunction _ _ _ _ _ _ _)) ->
+      return $ (d ++ decodeDef fp s, p, me)
     (JSModuleImportDeclaration _ (JSImportDeclarationBare _ m _)) ->
       let mp = string_trim_quotes m in
         do ma <- parseJsModule mp
