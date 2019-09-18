@@ -19,12 +19,14 @@ function _getHand() {
 function getHand() {
   return ensure(isHand, _getHand()); }
 
-const isOutcome = Enum([B_WINS, DRAW, A_WINS]);
+const isOutcome = Enum([B_WINS, DRAW, A_WINS, A_QUITS, B_QUITS]);
 function showOutcome(o) {
   require(isOutcome(o));
   if (o == B_WINS) { return 'Bob wins'; }
   else if (o == DRAW) { return 'Draw'; }
-  else { return 'Alice wins'; } }
+  else if (o == A_WINS) { return 'Alice wins'; }
+  else if (o == A_QUITS) { return 'Alice quits'; }
+  else { return 'Bob quits'; } }
 
 function _winner(handA, handB) {
   const validA = isHand(handA);

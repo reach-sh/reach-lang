@@ -210,10 +210,6 @@ mergeStmts :: JSStatement -> [JSStatement] -> [JSStatement]
 mergeStmts (JSStatementBlock _ ss1 _ _) ss2 = ss1 ++ ss2
 mergeStmts s ss = s:ss
 
-doToConsensus :: TP -> Participant -> [XLVar] -> XLExpr TP -> XLExpr TP -> XLExpr TP
-doToConsensus h p vs amt conk = XL_ToConsensus h p vs amt k'
-  where k' = XL_Let h Nothing Nothing (XL_Claim h CT_Require (XL_FunApp h (XL_Prim h (CP PEQ)) [ (XL_FunApp h (XL_Prim h (CP TXN_VALUE)) []), amt ])) conk
-
 decodeStmts :: DecodeStmtsState -> [JSStatement] -> XLExpr TP
 decodeStmts dss js =
   let ds = decodeStmts in
@@ -278,10 +274,11 @@ decodeStmts dss js =
     (j:_) -> expect_error "statement" j
   where tp = dss_tp dss . tpa
         sp = dss_tp dss . spa
-        decodeToConsensus a p mevs meamt _targs ek =
-          --- XXX use targs
-          doToConsensus h p vs amt conk
-          where h = tp a
+        decodeToConsensus a p mevs meamt etargs ek =
+          XL_ToConsensus h (p, vs, amt) (who, de, te) k'
+          where k' = XL_Let h Nothing Nothing amt_claim conk
+                amt_claim = XL_Claim h CT_Require (XL_FunApp h (XL_Prim h (CP PEQ)) [ (XL_FunApp h (XL_Prim h (CP TXN_VALUE)) []), amt ])
+                h = tp a
                 vs = case mevs of
                   Nothing -> []
                   Just evs -> map expectId $ flattenJSCL evs
@@ -289,6 +286,9 @@ decodeStmts dss js =
                   Nothing -> XL_Con h (Con_I 0)
                   Just eamt -> decodeExpr dss eamt
                 conk = decodeStmts (sub_dss dss) ek
+                [ ede, (JSIdentifier _ who), ete ] = flattenJSCL etargs
+                de = decodeExpr (sub_dss dss) ede
+                te = XL_FunApp h (decodeExpr (who_dss dss (Just who)) ete) []
 
 decodeBlock :: FilePath -> JSBlock -> XLExpr TP
 decodeBlock fp (JSBlock _ ss _) = decodeStmts (make_dss fp) ss

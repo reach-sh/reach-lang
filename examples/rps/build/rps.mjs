@@ -81,14 +81,18 @@ export async function A(stdlib, ctc, interact, v0, v1) {
   const v82 = v76 ? v79 : v81;
   const v121 = stdlib.isType("bool", await interact.outcome());
   const v122 = stdlib.le(0, v82);
-  const v123 = stdlib.lt(v82, 3);
+  const v123 = stdlib.lt(v82, 5);
   const v124 = v122 ? v123 : false;
   stdlib.assert(v124);
   const v125 = stdlib.eq(v82, 0);
   const v126 = stdlib.eq(v82, 1);
-  const v127 = v126 ? "Draw" : "Alice wins";
-  const v128 = v125 ? "Bob wins" : v127;
-  return [v128]; }
+  const v127 = stdlib.eq(v82, 2);
+  const v128 = stdlib.eq(v82, 3);
+  const v129 = v128 ? "Alice quits" : "Bob quits";
+  const v130 = v127 ? "Alice wins" : v129;
+  const v131 = v126 ? "Draw" : v130;
+  const v132 = v125 ? "Bob wins" : v131;
+  return [v132]; }
 
 export async function B(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
@@ -154,14 +158,18 @@ export async function B(stdlib, ctc, interact) {
   const v82 = v76 ? v79 : v81;
   const v121 = stdlib.isType("bool", await interact.outcome());
   const v122 = stdlib.le(0, v82);
-  const v123 = stdlib.lt(v82, 3);
+  const v123 = stdlib.lt(v82, 5);
   const v124 = v122 ? v123 : false;
   stdlib.assert(v124);
   const v125 = stdlib.eq(v82, 0);
   const v126 = stdlib.eq(v82, 1);
-  const v127 = v126 ? "Draw" : "Alice wins";
-  const v128 = v125 ? "Bob wins" : v127;
-  return [v128]; }
+  const v127 = stdlib.eq(v82, 2);
+  const v128 = stdlib.eq(v82, 3);
+  const v129 = v128 ? "Alice quits" : "Bob quits";
+  const v130 = v127 ? "Alice wins" : v129;
+  const v131 = v126 ? "Draw" : v130;
+  const v132 = v125 ? "Bob wins" : v131;
+  return [v132]; }
 
 export const ABI = [{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"}],"name":"m1","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"}],"name":"m3","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"}],"name":"m0","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"}],"name":"m2","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"},{"internalType":"uint256","name":"v50","type":"uint256"},{"internalType":"uint256","name":"v51","type":"uint256"}],"name":"m4","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v2","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v3","type":"uint256"}],"name":"e0","type":"event"},{"anonymous":false,"inputs":[],"name":"e1","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v28","type":"uint256"}],"name":"e2","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v43","type":"uint256"}],"name":"e3","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v50","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v51","type":"uint256"}],"name":"e4","type":"event"}];
 

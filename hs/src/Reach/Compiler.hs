@@ -212,9 +212,10 @@ peval outer_loopt σ e =
     XL_Claim a ct ae ->
       --- Claim is impure because it could fail
       IV_XIL False [] (XIL_Claim a ct (sr a [BT_Bool] ae))
-    XL_ToConsensus a p vs ae be ->
-      IV_XIL False bt (XIL_ToConsensus a p vilvs (sr a [BT_UInt256] ae) be')
+    XL_ToConsensus a (p, vs, ae) (twho, de, te) be ->
+      IV_XIL False (type_equal a tt bt) (XIL_ToConsensus a (p, vilvs, (sr a [BT_UInt256] ae)) (twho, (sr a [BT_UInt256] de), te') be')
       where (_, bt, be') = r a be
+            (_, tt, te') = r a te
             vilvs = zip vs vts
             (_,vts,_) = iv_exprs a $ map def $ map (XL_Var a) vs
     XL_FromConsensus a be ->
@@ -415,7 +416,8 @@ anf_expr me ρ e mk =
     XIL_FromConsensus h le -> do
       (ln, lt) <- anf_tail RoleContract ρ le mk
       return (ln, IL_FromConsensus h lt)
-    XIL_ToConsensus h from ins pe ce ->
+    XIL_ToConsensus h (from, ins, pe) (_twho, _de, _te) ce ->
+      --- XXX timeouts
       anf_expr (RolePart from) ρ pe
       (\ _ [ pa ] -> do
          let ins' = vsOnly $ map (anf_renamed_to ρ) ins

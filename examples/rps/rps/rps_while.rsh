@@ -8,26 +8,28 @@ const A = participant({
 
 const B = participant({});
 
+const DELAY = 1; // in blocks
+
 function main() {
   A.only(() => {
     const wagerAmount = declassify(_wagerAmount);
     const escrowAmount = declassify(_escrowAmount);
     interact.params(); });
   A.publish(wagerAmount, escrowAmount)
-   .pay(wagerAmount + escrowAmount)
-   .timeout(DELAY, B, () => {
-      commit;
+    .pay(wagerAmount + escrowAmount)
+    .timeout(DELAY, B, () => {
+      commit();
       return A_QUITS; });
   commit();
 
   B.only(() => {
     interact.accepts(wagerAmount, escrowAmount); });
   B.pay(wagerAmount)
-   .timeout(DELAY, A, () => {
-     transfer(balance()).to(A);
-     commit;
-     return B_QUITS; });
-  
+    .timeout(DELAY, A, () => {
+      transfer(balance()).to(A);
+      commit();
+      return B_QUITS; });
+
   var outcome = DRAW;
   invariant((balance() == ((2 * wagerAmount) + escrowAmount))
             && isOutcome(outcome));
@@ -40,20 +42,18 @@ function main() {
       const commitA = declassify(_commitA);
       interact.commits(); });
     A.publish(commitA)
-     .timeout(DELAY, B, () => {
-       transfer(balance()).to(B);
-       commit;
-       return A_QUITS; });
+      .timeout(DELAY, B, () => {
+        outcome = A_QUITS;
+        continue; });
     commit();
 
     B.only(() => {
       const handB = declassify(getHand());
       interact.shows(); });
     B.publish(handB)
-     .timeout(DELAY, A, () => {
-       transfer(balance()).to(A);
-       commit;
-       return B_QUITS; });
+      .timeout(DELAY, A, () => {
+        outcome = B_QUITS;
+        continue; });
     require(isHand(handB));
     commit();
 
@@ -62,10 +62,9 @@ function main() {
       const handA = declassify(_handA);
       interact.reveals(showHand(handB)); });
     A.publish(saltA, handA)
-     .timeout(DELAY, B, () => {
-       transfer(balance()).to(B);
-       commit;
-       return A_QUITS; });
+      .timeout(DELAY, B, () => {
+        outcome = A_QUITS;
+        continue; });
     check_commit(commitA, saltA, handA);
     require(isHand(handA));
     const this_outcome = winner(handA, handB);
@@ -77,13 +76,18 @@ function main() {
     continue; }
 
   assert(outcome != DRAW);
-  const [getsA, getsB] = (() => {
-    if (outcome == A_WINS) {
-      return [2 * wagerAmount, 0]; }
-    else {
-      return [0, 2 * wagerAmount]; } })();
-  transfer(escrowAmount + getsA).to(A);
-  transfer(getsB).to(B);
+  if ( outcome == A_QUITS ) {
+    transfer(balance()).to(B); }
+  else if ( outcome == B_QUITS ) {
+    transfer(balance()).to(A); }
+  else {
+    const [getsA, getsB] = (() => {
+      if (outcome == A_WINS) {
+        return [2 * wagerAmount, 0]; }
+      else {
+        return [0, 2 * wagerAmount]; } })();
+    transfer(escrowAmount + getsA).to(A);
+    transfer(getsB).to(B); }
   commit();
 
   interact.outcome();

@@ -141,7 +141,7 @@ data XLExpr a
   --- message is a sequence of variables, because it binds these in
   --- the contract body. The contract body is expected to end in a
   --- FromConsensus that will switch back.
-  | XL_ToConsensus a Participant [XLVar] (XLExpr a) (XLExpr a)
+  | XL_ToConsensus a (Participant, [XLVar], (XLExpr a)) (Participant, (XLExpr a), (XLExpr a)) (XLExpr a)
   --- A FromConsensus expression is a terminator inside of a contract
   --- block that switches the context back away from the consensus,
   --- while still retaining all of the bindings established during the
@@ -184,7 +184,7 @@ data XILExpr a
   | XIL_PrimApp a EP_Prim BaseType [XILExpr a]
   | XIL_If a Bool (XILExpr a) [BaseType] (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
-  | XIL_ToConsensus a Participant [XILVar] (XILExpr a) (XILExpr a)
+  | XIL_ToConsensus a (Participant, [XILVar], (XILExpr a)) (Participant, (XILExpr a), (XILExpr a)) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)
   | XIL_Values a [XILExpr a]
   | XIL_Transfer a Participant (XILExpr a)

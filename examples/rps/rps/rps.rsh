@@ -19,8 +19,8 @@ function main() {
   A.publish(wagerAmount, escrowAmount)
     .pay(wagerAmount + escrowAmount)
     .timeout(DELAY, B, () => {
-      commit;
-      return A_QUITS; }) ;
+      commit();
+      return showOutcome(A_QUITS); }) ;
   commit();
 
   B.only(() => {
@@ -28,8 +28,8 @@ function main() {
   B.pay(wagerAmount)
     .timeout(DELAY, A, () => {
       transfer(balance()).to(A);
-      commit;
-      return B_QUITS; });
+      commit();
+      return showOutcome(B_QUITS); });
   commit();
 
   A.only(() => {
@@ -40,8 +40,8 @@ function main() {
   A.publish(commitA)
     .timeout(DELAY, B, () => {
       transfer(balance()).to(B);
-      commit;
-      return A_QUITS; });
+      commit();
+      return showOutcome(A_QUITS); });
   commit();
 
   B.only(() => {
@@ -50,8 +50,8 @@ function main() {
   B.publish(handB)
     .timeout(DELAY, A, () => {
       transfer(balance()).to(A);
-      commit;
-      return B_QUITS; });
+      commit();
+      return showOutcome(B_QUITS); });
   require(isHand(handB));
   commit();
 
@@ -63,8 +63,8 @@ function main() {
   A.publish(saltA, handA)
     .timeout(DELAY, B, () => {
       transfer(balance()).to(B);
-      commit;
-      return A_QUITS; });
+      commit();
+      return showOutcome(A_QUITS); });
   check_commit(commitA, saltA, handA);
   require(isHand(handA));
   const outcome = winner(handA, handB);
