@@ -13,7 +13,6 @@ import Data.Text.Prettyprint.Doc
 import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
 import Data.Monoid
-import Data.Foldable
 
 import Reach.AST
 import Reach.Pretty()
@@ -521,13 +520,15 @@ instance Monoid SecurityLevel where
   mempty = Public
 
 type EPPEnv = M.Map Role (M.Map ILVar SecurityLevel)
-type EPPMonad ann a = State (Int, M.Map Int (CHandler ann)) a
+type EPPMonad ann a = State (Int, M.Map Int (Maybe (CHandler ann))) a
 type EPPRes ann = EPPMonad ann (Set.Set BLVar, CTail ann, M.Map Participant (EPTail ann))
 
 runEPP :: EPPMonad ann a -> (a, [CHandler ann])
 runEPP am = (a, hs)
   where (a, (_, hs_as_s)) = runState am (0, M.empty)
-        hs = toList hs_as_s
+        hs = map force $ M.toAscList hs_as_s
+        force (_, Just h) = h
+        force _ = error "EPP: Handler never set!"
 
 localEPP :: EPPMonad ann a -> EPPMonad ann a
 localEPP am = do
@@ -538,7 +539,7 @@ localEPP am = do
 acquireEPP :: EPPMonad ann Int
 acquireEPP = do
   (nh, hs) <- get
-  put (nh + 1, hs)
+  put (nh + 1, M.insert nh Nothing hs)
   return nh
 
 setEPP :: Int -> CHandler ann -> EPPMonad ann ()
@@ -546,8 +547,10 @@ setEPP which h = do
   (nh, hs) <- get
   let hs' = case M.lookup which hs of
               Nothing ->
-                M.insert which h hs
-              Just _ ->
+                error "EPP: Handler not acquired!"
+              Just Nothing ->
+                M.insert which (Just h) hs
+              Just (Just _) ->
                 error "EPP: Handler already set!"
   put (nh, hs')
   return ()
