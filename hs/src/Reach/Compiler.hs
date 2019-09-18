@@ -416,12 +416,14 @@ anf_expr me ρ e mk =
       lt <- anf_tail RoleContract ρ le mk
       return $ IL_FromConsensus h lt
     XIL_ToConsensus h (from, ins, pe) (twho, de, te) ce ->
-      anf_exprs h (RolePart from) ρ [ pe, de ]
-      (\ _ [ pa, da ] -> do
-         let ins' = vsOnly $ map (anf_renamed_to ρ) ins
-         ct <- anf_tail RoleContract ρ ce mk
-         tt <- anf_tail RoleContract ρ te anf_ktop
-         return $ IL_ToConsensus h (from, ins', pa) (twho, da, tt) ct)
+      anf_expr (RolePart from) ρ pe
+      (\ _ [pa] ->
+          anf_expr RoleContract ρ de
+          (\ _ [da] -> do
+              let ins' = vsOnly $ map (anf_renamed_to ρ) ins
+              ct <- anf_tail RoleContract ρ ce mk
+              tt <- anf_tail RoleContract ρ te anf_ktop
+              return $ IL_ToConsensus h (from, ins', pa) (twho, da, tt) ct))
     XIL_Values h args ->
       anf_exprs h me ρ args mk
     XIL_Transfer h to ae ->
