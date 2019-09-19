@@ -247,7 +247,7 @@ const mkDeploy = A => userAddress => ctors => {
   // TODO track down solid docs RE: why the ABI would have extra constructor
   // fields and when/how/why dropping leading `0x`s is necessary
   const ctorTypes = A.abi
-    .find(a => a.constructor)
+    .find(a => a.type === 'constructor')
     .inputs
     .map(i => i.type)
     .slice(0, ctors.length);
