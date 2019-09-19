@@ -342,7 +342,7 @@ data CHandler a
 
 --- A contract program is just a sequence of handlers.
 data CProgram a
-  = C_Prog a [Participant] [CHandler a]
+  = C_Prog a (Int, Int) [Participant] [CHandler a]
   deriving (Show,Eq)
 
 -- -- Backend

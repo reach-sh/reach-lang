@@ -190,7 +190,7 @@ prettyCHandler i (C_Loop _ svs arg it ct) =
   group $ brackets $ pretty i <+> pretty "!loop!" <+> prettyBLVars svs <+> prettyBLVar arg <+> pretty "invariant" <+> prettyBegin it <> (nest 2 $ hardline <> pretty ct)
 
 instance Pretty (CProgram a) where
-  pretty (C_Prog _ ps hs) = group $ parens $ pretty "define-contract" <+> (nest 2 $ hardline <> vsep (psp : hsp))
+  pretty (C_Prog _ (i_ok, i_to) ps hs) = group $ parens $ pretty "define-contract" <+> pretty i_ok <+> pretty i_to <+> (nest 2 $ hardline <> vsep (psp : hsp))
     where psp = group $ pretty "#:participants" <+> (parens $ hsep $ map pretty ps)
           hsp = zipWith prettyCHandler [0..] hs
 

@@ -279,13 +279,13 @@ vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_sol :: BLProgram b -> Doc a
-emit_sol (BL_Prog _ _ (C_Prog ca ps hs)) =
+emit_sol (BL_Prog _ _ (C_Prog ca (i_ok, i_to) ps hs)) =
   vsep_with_blank $ [ solVersion, solStdLib, ctcp ]
   where ctcp = solContract "ReachContract is Stdlib"
                $ ctcbody
         ctcbody = vsep $ [state_defn, emptyDoc, consp, emptyDoc, solHandlers ps hs]
         consp = solApply "constructor" p_ds <+> "public payable" <+> solBraces consbody
-        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca 0 (error "XXX") [])
+        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca i_ok i_to [])
         state_defn = "uint256 current_state;"
         p_ds = map solPartDecl ps
 
