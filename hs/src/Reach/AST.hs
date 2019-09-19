@@ -327,7 +327,7 @@ data CStmt a
 
 data CTail a
   = C_Halt a
-  | C_Wait a Int Int [BLVar]
+  | C_Wait a Int [BLVar]
   | C_If a (BLArg a) (CTail a) (CTail a)
   | C_Let a BLVar (CExpr a) (CTail a)
   | C_Do a (CStmt a) (CTail a)
@@ -336,13 +336,13 @@ data CTail a
 
 data CHandler a
   --- Each handler has a message that it expects to receive
-  = C_Handler a Participant Bool [BLVar] [BLVar] (BLArg a) (CTail a)
+  = C_Handler a Participant Bool (Int, [BLVar]) [BLVar] (BLArg a) (CTail a)
   | C_Loop a [BLVar] BLVar (CTail a) (CTail a)
   deriving (Show,Eq)
 
 --- A contract program is just a sequence of handlers.
 data CProgram a
-  = C_Prog a (Int, Int) [Participant] [CHandler a]
+  = C_Prog a [Participant] [CHandler a]
   deriving (Show,Eq)
 
 -- -- Backend

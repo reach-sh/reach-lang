@@ -63,7 +63,7 @@ usesBLVars vs = M.fromList $ map (\v->(v,1)) vs
 
 usesCTail :: CTail a -> CCounts
 usesCTail (C_Halt _) = M.empty
-usesCTail (C_Wait _ _ _ vs) = usesBLVars vs
+usesCTail (C_Wait _ _ vs) = usesBLVars vs
 usesCTail (C_If _ ca tt ft) = cmerges [ cs1, cs2, cs3 ]
   where cs1 = usesBLArg ca
         cs2 = usesCTail tt
@@ -231,9 +231,8 @@ solCTail ps emitp ρ ccs ct =
     C_Halt _ ->
       emitp <> vsep [ solSet ("current_state") ("0x0") <> semi,
                       solApply "selfdestruct" [ solApply "address" [ solPartVar (head ps) ] ] <> semi ]
-    C_Wait _ i_ok _i_timeout svs ->
-      --- XXX timeout
-      emitp <> (solSet ("current_state") (solHashState ρ i_ok ps svs)) <> semi
+    C_Wait _ last_i svs ->
+      emitp <> (solSet ("current_state") (solHashState ρ last_i ps svs)) <> semi
     C_If _ ca tt ft ->
       "if" <+> parens (solArg ρ ca) <+> bp tt <> hardline <> "else" <+> bp ft
       where bp at = solBraces $ solCTail ps emitp ρ ccs at
@@ -249,7 +248,7 @@ solCTail ps emitp ρ ccs ct =
       emitp <> solApply (solLoop_fun which) ((map solPartVar ps) ++ (map solRawVar vs) ++ [ solArg ρ a ]) <> semi
 
 solHandler :: [Participant] -> Int -> CHandler b -> Doc a
-solHandler ps i (C_Handler _ from _is_timeout svs msg _delay body) = vsep [ evtp, funp ]
+solHandler ps i (C_Handler _ from _is_timeout (last_i, svs) msg _delay body) = vsep [ evtp, funp ]
   --- XXX timeout
   where msg_rs = map solRawVar msg
         msg_ds = map solArgDecl msg
@@ -262,7 +261,7 @@ solHandler ps i (C_Handler _ from _is_timeout svs msg _delay body) = vsep [ evtp
         emitp = "emit" <+> solApply evts msg_rs <> semi <> hardline
         ccs = usesCTail body
         ρ = M.empty
-        bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState ρ i ps svs)) <> semi,
+        bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState ρ last_i ps svs)) <> semi,
                        solRequireSender from <> semi,
                        solCTail ps emitp ρ ccs body ]
 solHandler ps i (C_Loop _ svs arg _inv body) = funp
@@ -273,19 +272,19 @@ solHandler ps i (C_Loop _ svs arg _inv body) = funp
         bodyp = solCTail ps "" M.empty ccs body
 
 solHandlers :: [Participant] -> [CHandler b] -> Doc a
-solHandlers ps hs = vsep $ intersperse emptyDoc $ zipWith (solHandler ps) [0..] hs
+solHandlers ps hs = vsep $ intersperse emptyDoc $ zipWith (solHandler ps) [1..] hs
 
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_sol :: BLProgram b -> Doc a
-emit_sol (BL_Prog _ _ (C_Prog ca (i_ok, i_to) ps hs)) =
+emit_sol (BL_Prog _ _ (C_Prog ca ps hs)) =
   vsep_with_blank $ [ solVersion, solStdLib, ctcp ]
   where ctcp = solContract "ReachContract is Stdlib"
                $ ctcbody
         ctcbody = vsep $ [state_defn, emptyDoc, consp, emptyDoc, solHandlers ps hs]
         consp = solApply "constructor" p_ds <+> "public payable" <+> solBraces consbody
-        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca i_ok i_to [])
+        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca 0 [])
         state_defn = "uint256 current_state;"
         p_ds = map solPartDecl ps
 

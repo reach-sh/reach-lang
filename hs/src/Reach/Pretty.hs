@@ -177,22 +177,22 @@ instance Pretty (EPTail a) where
 
 instance Pretty (CTail a) where
   pretty (C_Halt _) = group $ parens $ pretty "halt!"
-  pretty (C_Wait _ i_ok i_timeout svs) = group $ parens $ pretty "wait!" <+> pretty i_ok <+> pretty i_timeout <+> prettyBLVars svs
+  pretty (C_Wait _ last_i svs) = group $ parens $ pretty "wait!" <+> pretty last_i <+> prettyBLVars svs
   pretty (C_If _ ca tt ft) = prettyIf ca tt ft
   pretty (C_Let _ mv e bt) = prettyLet prettyBLVar (\x -> x) mv e bt
   pretty (C_Do _ s bt) = prettyDo (\x -> x) s bt
   pretty (C_Jump _ which svs a) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> pretty a
 
 prettyCHandler :: Int -> CHandler a -> Doc ann
-prettyCHandler i (C_Handler _ who timeout svs args delay ct) =
-  group $ brackets $ pretty i <+> pretty who <+> pretty timeout <+> pretty delay <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
+prettyCHandler i (C_Handler _ who timeout (last_i, svs) args delay ct) =
+  group $ brackets $ pretty i <+> pretty who <+> pretty timeout <+> pretty delay <+> pretty last_i <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
 prettyCHandler i (C_Loop _ svs arg it ct) =
   group $ brackets $ pretty i <+> pretty "!loop!" <+> prettyBLVars svs <+> prettyBLVar arg <+> pretty "invariant" <+> prettyBegin it <> (nest 2 $ hardline <> pretty ct)
 
 instance Pretty (CProgram a) where
-  pretty (C_Prog _ (i_ok, i_to) ps hs) = group $ parens $ pretty "define-contract" <+> pretty i_ok <+> pretty i_to <+> (nest 2 $ hardline <> vsep (psp : hsp))
+  pretty (C_Prog _ ps hs) = group $ parens $ pretty "define-contract" <+> (nest 2 $ hardline <> vsep (psp : hsp))
     where psp = group $ pretty "#:participants" <+> (parens $ hsep $ map pretty ps)
-          hsp = zipWith prettyCHandler [0..] hs
+          hsp = zipWith prettyCHandler [1..] hs
 
 prettyBLVar :: BLVar -> Doc ann
 prettyBLVar v = prettyILVar v
