@@ -175,11 +175,15 @@ solEq = solBinOp "=="
 solSet :: Doc a -> Doc a -> Doc a
 solSet = solBinOp "="
 
+solLastBlock :: Doc a
+solLastBlock = "_last"
+
 solHash :: [Doc a] -> Doc a
 solHash a = solApply "uint256" [ solApply "keccak256" [ solApply "abi.encodePacked" a ] ]
 
-solHashState :: SolRenaming a -> Int -> [Participant] -> [BLVar] -> Doc a
-solHashState ρ i ps svs = solHash $ (solNum i) : (map solPartVar ps) ++ (map (solVar ρ) svs)
+solHashState :: SolRenaming a -> Int -> Bool -> [Participant] -> [BLVar] -> Doc a
+solHashState ρ i check ps svs = solHash $ (solNum i) : which_last : (map solPartVar ps) ++ (map (solVar ρ) svs)
+  where which_last = if check then solLastBlock else "block.number"
 
 solRequireSender :: Participant -> Doc a
 solRequireSender from = solRequire $ solEq ("msg.sender") (solPartVar from)
@@ -232,7 +236,7 @@ solCTail ps emitp ρ ccs ct =
       emitp <> vsep [ solSet ("current_state") ("0x0") <> semi,
                       solApply "selfdestruct" [ solApply "address" [ solPartVar (head ps) ] ] <> semi ]
     C_Wait _ last_i svs ->
-      emitp <> (solSet ("current_state") (solHashState ρ last_i ps svs)) <> semi
+      emitp <> (solSet ("current_state") (solHashState ρ last_i False ps svs)) <> semi
     C_If _ ca tt ft ->
       "if" <+> parens (solArg ρ ca) <+> bp tt <> hardline <> "else" <+> bp ft
       where bp at = solBraces $ solCTail ps emitp ρ ccs at
@@ -248,12 +252,11 @@ solCTail ps emitp ρ ccs ct =
       emitp <> solApply (solLoop_fun which) ((map solPartVar ps) ++ (map solRawVar vs) ++ [ solArg ρ a ]) <> semi
 
 solHandler :: [Participant] -> Int -> CHandler b -> Doc a
-solHandler ps i (C_Handler _ from _is_timeout (last_i, svs) msg _delay body) = vsep [ evtp, funp ]
-  --- XXX timeout
+solHandler ps i (C_Handler _ from is_timeout (last_i, svs) msg delay body) = vsep [ evtp, funp ]
   where msg_rs = map solRawVar msg
         msg_ds = map solArgDecl msg
         msg_eds = map solFieldDecl msg
-        arg_ds = map solPartDecl ps ++ map solArgDecl svs ++ msg_ds
+        arg_ds = (solDecl (solType BT_UInt256) solLastBlock) : map solPartDecl ps ++ map solArgDecl svs ++ msg_ds
         evts = solMsg_evt i
         evtp = solEvent evts msg_eds
         funp = solFunction (solMsg_fun i) arg_ds retp bodyp
@@ -261,8 +264,9 @@ solHandler ps i (C_Handler _ from _is_timeout (last_i, svs) msg _delay body) = v
         emitp = "emit" <+> solApply evts msg_rs <> semi <> hardline
         ccs = usesCTail body
         ρ = M.empty
-        bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState ρ last_i ps svs)) <> semi,
+        bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState ρ last_i True ps svs)) <> semi,
                        solRequireSender from <> semi,
+                       (solRequire $ solBinOp (if is_timeout then ">=" else "<") "block.number" (solBinOp "+" solLastBlock (solArg ρ delay))) <> semi,
                        solCTail ps emitp ρ ccs body ]
 solHandler ps i (C_Loop _ svs arg _inv body) = funp
   where funp = solFunction (solLoop_fun i) arg_ds retp bodyp
