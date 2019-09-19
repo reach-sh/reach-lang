@@ -58,9 +58,12 @@ usesCStmt :: CStmt a  -> CCounts
 usesCStmt (C_Claim _ _ a) = usesBLArg a
 usesCStmt (C_Transfer _ _ a) = usesBLArg a
 
+usesBLVars :: [BLVar] -> CCounts
+usesBLVars vs = M.fromList $ map (\v->(v,1)) vs
+
 usesCTail :: CTail a -> CCounts
 usesCTail (C_Halt _) = M.empty
-usesCTail (C_Wait _ _ vs) = M.fromList $ map (\v->(v,1)) vs
+usesCTail (C_Wait _ _ _ vs) = usesBLVars vs
 usesCTail (C_If _ ca tt ft) = cmerges [ cs1, cs2, cs3 ]
   where cs1 = usesBLArg ca
         cs2 = usesCTail tt
@@ -71,8 +74,8 @@ usesCTail (C_Let _ _ ce kt) = cmerge cs1 cs2
 usesCTail (C_Do _ cs kt) = cmerge cs1 cs2
   where cs1 = usesCStmt cs
         cs2 = usesCTail kt
-usesCTail (C_Jump x which vs a) = cmerge cs1 cs2
-  where cs1 = usesCTail (C_Wait x which vs)
+usesCTail (C_Jump _ _ vs a) = cmerge cs1 cs2
+  where cs1 = usesBLVars vs
         cs2 = usesBLArg a
 
 {- Compilation to Solidity
@@ -228,8 +231,9 @@ solCTail ps emitp ρ ccs ct =
     C_Halt _ ->
       emitp <> vsep [ solSet ("current_state") ("0x0") <> semi,
                       solApply "selfdestruct" [ solApply "address" [ solPartVar (head ps) ] ] <> semi ]
-    C_Wait _ i svs ->
-      emitp <> (solSet ("current_state") (solHashState ρ i ps svs)) <> semi
+    C_Wait _ i_ok _i_timeout svs ->
+      --- XXX timeout
+      emitp <> (solSet ("current_state") (solHashState ρ i_ok ps svs)) <> semi
     C_If _ ca tt ft ->
       "if" <+> parens (solArg ρ ca) <+> bp tt <> hardline <> "else" <+> bp ft
       where bp at = solBraces $ solCTail ps emitp ρ ccs at
@@ -245,7 +249,8 @@ solCTail ps emitp ρ ccs ct =
       emitp <> solApply (solLoop_fun which) ((map solPartVar ps) ++ (map solRawVar vs) ++ [ solArg ρ a ]) <> semi
 
 solHandler :: [Participant] -> Int -> CHandler b -> Doc a
-solHandler ps i (C_Handler _ from svs msg body) = vsep [ evtp, funp ]
+solHandler ps i (C_Handler _ from _is_timeout svs msg _delay body) = vsep [ evtp, funp ]
+  --- XXX timeout
   where msg_rs = map solRawVar msg
         msg_ds = map solArgDecl msg
         msg_eds = map solFieldDecl msg
@@ -280,7 +285,7 @@ emit_sol (BL_Prog _ _ (C_Prog ca ps hs)) =
                $ ctcbody
         ctcbody = vsep $ [state_defn, emptyDoc, consp, emptyDoc, solHandlers ps hs]
         consp = solApply "constructor" p_ds <+> "public payable" <+> solBraces consbody
-        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca 0 [])
+        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca 0 (error "XXX") [])
         state_defn = "uint256 current_state;"
         p_ds = map solPartDecl ps
 

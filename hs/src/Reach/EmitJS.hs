@@ -144,7 +144,8 @@ jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
         bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
         (forcep, (eep, eefvs)) = jsEPExpr tn ee
         (ktp, ktfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_SendRecv _ i svs msg amt kt) = (tp, tfvs)
+jsEPTail tn who (EP_SendRecv _ svs (i, msg, amt, kt) _timeout) = (tp, tfvs)
+  --- XXX timeout
   where srp = jsApply "ctc.sendrecv" [ jsString who
                                     , jsString (solMsg_fun i), vs, amtp
                                     , jsString (solMsg_evt i) ]
@@ -162,7 +163,8 @@ jsEPTail tn who (EP_Do _ es kt) = (tp, tfvs)
   where (tp, esfvs) = jsEPStmt es ktp
         tfvs = Set.union esfvs kfvs
         (ktp, kfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_Recv _ i _ msg kt) = (tp, tfvs)
+jsEPTail tn who (EP_Recv _ _ (i, msg, kt) _timeout) = (tp, tfvs)
+  --- XXX timeout
   where tp = vsep [ rp, kp ]
         rp = pretty "const" <+> jsArray (msg_vs ++ [jsTxn tn']) <+> pretty "=" <+> pretty "await" <+> (jsApply "ctc.recv" [ jsString who, jsString (solMsg_evt i) ]) <> semi
         tfvs = Set.unions [Set.fromList msg, ktfvs]

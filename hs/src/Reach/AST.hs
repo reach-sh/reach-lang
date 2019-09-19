@@ -305,8 +305,8 @@ data EPTail a
   | EP_Do a (EPStmt a) (EPTail a)
   {- This recv is what the sender sent; we will be doing the same
      computation as the contract. -}
-  | EP_SendRecv a Int [BLVar] [BLVar] (BLArg a) (EPTail a)
-  | EP_Recv a Int [BLVar] [BLVar] (EPTail a)
+  | EP_SendRecv a [BLVar] (Int, [BLVar], (BLArg a), (EPTail a)) (Int, BLArg a, EPTail a)
+  | EP_Recv a [BLVar] (Int, [BLVar], (EPTail a)) (Bool, Int, BLArg a, EPTail a)
   | EP_Loop a Int BLVar (BLArg a) (EPTail a)
   | EP_Continue a Int (BLArg a)
   deriving (Show,Eq)
@@ -327,7 +327,7 @@ data CStmt a
 
 data CTail a
   = C_Halt a
-  | C_Wait a Int [BLVar]
+  | C_Wait a Int Int [BLVar]
   | C_If a (BLArg a) (CTail a) (CTail a)
   | C_Let a BLVar (CExpr a) (CTail a)
   | C_Do a (CStmt a) (CTail a)
@@ -336,7 +336,7 @@ data CTail a
 
 data CHandler a
   --- Each handler has a message that it expects to receive
-  = C_Handler a Participant [BLVar] [BLVar] (CTail a)
+  = C_Handler a Participant Bool [BLVar] [BLVar] (BLArg a) (CTail a)
   | C_Loop a [BLVar] BLVar (CTail a) (CTail a)
   deriving (Show,Eq)
 

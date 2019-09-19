@@ -635,17 +635,19 @@ data EPPCtxt ann
   | EC_WhileTrial
   | EC_WhileBody Int (Set.Set BLVar)
 
+combine_maps :: Ord k => (k -> u -> v -> w) -> [k] -> M.Map k u -> M.Map k v -> M.Map k w
+combine_maps f ks m1 m2 = M.fromList $ map cmb ks
+  where cmb k = (k, f k (m1 M.! k) (m2 M.! k))
+
 epp_it_ctc_do_if :: ann -> [Participant] -> (EPPEnv, ILArg ann) -> EPPRes ann -> EPPRes ann -> EPPRes ann
 epp_it_ctc_do_if h ps (γc, ca) tres fres = do
   let (svs_ca, cca') = must_be_public $ epp_arg "ctc If cond" γc RoleContract ca
   (svs_t, ctt', ts1) <- tres
   (svs_f, cft', ts2) <- fres
   let svs = Set.unions [ svs_ca, svs_t, svs_f ]
-  let ts3 = M.fromList $ map mkt ps
-            where mkt p = (p, EP_If h ca' tt' ft')
+  let ts3 = combine_maps mkt ps ts1 ts2
+            where mkt p tt' ft' = EP_If h ca' tt' ft'
                     where (_,ca') = must_be_public $ epp_arg "ctc If Cond" γc (RolePart p) ca
-                          tt' = ts1 M.! p
-                          ft' = ts2 M.! p
   return (svs, C_If h cca' ctt' cft', ts3) 
 
 epp_it_ctc :: Show ann => [Participant] -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
@@ -765,23 +767,27 @@ epp_it_loc ps γ ctxt it = case it of
                       else EP_Do h s' t
                       where (_, s') = epp_s_loc γ p how
     return (svs1, ct1, ts2)
-  IL_ToConsensus h (from, what, howmuch) (_twho, _delay, _timeout) next -> do
-    --- XXX timeouts
-    hn0 <- acquireEPP
+  IL_ToConsensus h (from, what, howmuch) (twho, delay, timeout) next -> do
+    hn_okay <- acquireEPP
+    hn_timeout <- acquireEPP
     let fromr = RolePart from
     let (_, howmuch') = must_be_public $ epp_arg "loc howmuch" γ fromr howmuch
     let what' = map must_be_public $ epp_vars "loc toconsensus" γ fromr what
     let what'env = M.fromList $ map (\v -> (v,Public)) what'
     let γ' = M.map (M.union what'env) γ
-    (svs1, ct1, ts1) <- epp_it_ctc ps γ' ctxt next
-    let svs2 = Set.difference svs1 (boundBLVars what')
-    let svs2l = Set.toList svs2
-    setEPP hn0 $ C_Handler h from svs2l what' ct1
-    let ct2 = C_Wait h hn0 svs2l
-    let ts2 = M.mapWithKey addTail ts1
-              where addTail p pt1 = if p /= from then EP_Recv h hn0 svs2l what' pt1
-                                    else EP_SendRecv h hn0 svs2l what' howmuch' pt1
-    return (svs2, ct2, ts2)
+    let (delay_vs, delay') = must_be_public $ epp_arg "loc delay" γ RoleContract delay
+    (svs_okay, ct_okay, ts_okay) <- epp_it_ctc ps γ' ctxt next
+    (svs_timeout, ct_timeout, ts_timeout) <- epp_it_ctc ps γ ctxt timeout
+    let svs_all = Set.union delay_vs $ Set.difference (Set.union svs_okay svs_timeout) (boundBLVars what')
+    let svs_all_l = Set.toList svs_all
+    setEPP hn_okay $ C_Handler h from False svs_all_l what' delay' ct_okay
+    setEPP hn_timeout $ C_Handler h twho True svs_all_l [] delay' ct_timeout
+    let ct2 = C_Wait h hn_okay hn_timeout svs_all_l
+    let ts2 = combine_maps mkt ps ts_okay ts_timeout
+              where mkt p pt1 pt2 =
+                      if p /= from then EP_Recv h svs_all_l (hn_okay, what', pt1) (p == twho, hn_timeout, delay', pt2)
+                      else EP_SendRecv h svs_all_l (hn_okay, what', howmuch', pt1) (hn_timeout, delay', pt2)
+    return (svs_all, ct2, ts2)
   IL_FromConsensus _ _ -> error "EPP: Cannot transition to local from local"
   IL_While _ _ _ _ _ _ _ -> error $ "EPP: While illegal outside consensus"
   IL_Continue _ _ -> error $ "EPP: Continue illegal outside consensus"

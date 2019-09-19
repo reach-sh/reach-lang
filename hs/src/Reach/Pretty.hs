@@ -162,11 +162,14 @@ instance Pretty (EPTail a) where
   pretty (EP_If _ ca tt ft) = prettyIf ca tt ft
   pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x -> x) v e bt
   pretty (EP_Do _ s bt) = prettyDo (\x -> x) s bt
-  pretty (EP_SendRecv _ hi svs vs pa bt) =
-    vsep [group $ parens $ pretty "send!" <+> pretty hi <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa,
+  pretty (EP_SendRecv _ svs (hi_ok, vs, pa, bt) (hi_to, delay, tt)) =
+    vsep [group $ parens $ pretty "send!" <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa <+>
+          (nest 2 (hardline <> pretty "#:timeout" <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt)))),
           pretty bt]
-  pretty (EP_Recv _ hi svs vs bt) =
-    vsep [group $ parens $ pretty "define-values" <+> prettyBLVars svs <+> prettyBLVars vs <+> (parens $ pretty "recv!" <+> pretty hi),
+  pretty (EP_Recv _ svs (hi_ok, vs, bt) (to_me, hi_to, delay, tt)) =
+    vsep [group $ parens $ pretty "define-values" <+> prettyBLVars svs <+> prettyBLVars vs <+>
+          (parens $ pretty "recv!" <+> pretty hi_ok <+>
+           (nest 2 (hardline <> pretty "#:timeout" <+> pretty to_me <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt))))),
           pretty bt]
   pretty (EP_Loop _ which loopv inita bt) =
     group $ parens $ pretty "loop" <+> pretty which <+> prettyBLVar loopv <+> pretty inita <> nest 2 (hardline <> prettyBegin bt)
@@ -174,15 +177,15 @@ instance Pretty (EPTail a) where
 
 instance Pretty (CTail a) where
   pretty (C_Halt _) = group $ parens $ pretty "halt!"
-  pretty (C_Wait _ i svs) = group $ parens $ pretty "wait!" <+> pretty i <+> prettyBLVars svs
+  pretty (C_Wait _ i_ok i_timeout svs) = group $ parens $ pretty "wait!" <+> pretty i_ok <+> pretty i_timeout <+> prettyBLVars svs
   pretty (C_If _ ca tt ft) = prettyIf ca tt ft
   pretty (C_Let _ mv e bt) = prettyLet prettyBLVar (\x -> x) mv e bt
   pretty (C_Do _ s bt) = prettyDo (\x -> x) s bt
   pretty (C_Jump _ which svs a) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> pretty a
 
 prettyCHandler :: Int -> CHandler a -> Doc ann
-prettyCHandler i (C_Handler _ who svs args ct) =
-  group $ brackets $ pretty i <+> pretty who <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
+prettyCHandler i (C_Handler _ who timeout svs args delay ct) =
+  group $ brackets $ pretty i <+> pretty who <+> pretty timeout <+> pretty delay <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
 prettyCHandler i (C_Loop _ svs arg it ct) =
   group $ brackets $ pretty i <+> pretty "!loop!" <+> prettyBLVars svs <+> prettyBLVar arg <+> pretty "invariant" <+> prettyBegin it <> (nest 2 $ hardline <> pretty ct)
 
