@@ -14,6 +14,9 @@ const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
 const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = b => Array.from(b, byteToHex).join('');
 
+const DEBUG = false;
+const debug = msg => { if (DEBUG) {
+  console.log(`DEBUG: ${msg}`); } };
 
 const nat_to_fixed_size_hex = size => n => {
   const err = m => panic(`nat_to_fixed_size_hex: ${m}`);
@@ -131,18 +134,29 @@ const transfer = ({ web3 }) => (to, from, value) =>
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
 const mkSendRecv =
-      A => (address, from, ctors) => async (label, funcName, args, value, eventName) => {
+      A => (ctc, address, from, ctors) => async (label, funcName, args, value, eventName) => {
         void(eventName);
         // https://github.com/ethereum/web3.js/issues/2077
-        const munged = [ ...ctors, ...args ]
+        const munged = [ ctc.last_block, ...ctors, ...args ]
               .map(m => isBN(A)(m) ? m.toString() : m);
 
+        debug(`send ${label} ${funcName}: start (${ctc.last_block})`);
+        // XXX Will this retry until it works?
         return new A.web3.eth.Contract(A.abi, address)
           .methods[funcName](...munged)
           .send({ from, value })
-          .then(r => fetchAndRejectInvalidReceiptFor(A)(r.transactionHash))
-          .then(r => A.web3.eth.getBalance(address, r.blockNumber))
-          .then(nbs => [{ value: value, balance: toBN(A)(nbs) }]);
+          .on('error', (err, r) =>
+              // XXX I think this is how a failed assertion shows up
+              panic(`Error from contract: ${label} ${funcName}: ${err} ${r}`))
+          .then(r => { debug(`send ${label} ${funcName}: check receipt`);
+                       return fetchAndRejectInvalidReceiptFor(A)(r.transactionHash); })
+          .then(r => { const this_block = r.blockNumber;
+                       ctc.last_block = this_block;
+                       debug(`send ${label} ${funcName}: getBalance`);
+                       return A.web3.eth.getBalance(address, this_block); } )
+          .then(nbs => {
+            debug(`send ${label} ${funcName}: stop`);
+            return [{ value: value, balance: toBN(A)(nbs) }]; });
       };
 
 
@@ -174,33 +188,35 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
 
           alreadyConsumed = true;
           Object.assign(c.consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
-
-          return web3.eth.getBalance(c.address, t.blockNumber)
+          const this_block = t.blockNumber;
+          c.last_block = this_block;
+          return web3.eth.getBalance(c.address, this_block)
             .then(nbs => resolve([...bns, { value: t.value, balance: toBN({ web3 })(nbs) }]));
         })));
 
-  const past = () => new Promise((resolve, reject) =>
-                                 new web3.eth.Contract(c.abi, c.address)
-                                 .getPastEvents(eventName, { toBlock: "latest" })
-                                 .then(es => {
-                                   const e = es
-                                         .find(x => c.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
+  const past = () =>
+        new Promise((resolve, reject) =>
+                    new web3.eth.Contract(c.abi, c.address)
+                    .getPastEvents(eventName, { toBlock: "latest" })
+                    .then(es => {
+                      const e = es
+                            .find(x => c.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
 
-                                   if (!e)
-                                     return reject();
+                      if (!e)
+                        return reject();
 
-                                   const argsAbi = c.abi
-                                         .find(a => a.name === eventName)
-                                         .inputs;
+                      const argsAbi = c.abi
+                            .find(a => a.name === eventName)
+                            .inputs;
 
-                                   const decoded = web3.eth.abi.decodeLog(argsAbi, e.raw.data, e.raw.topics);
+                      const decoded = web3.eth.abi.decodeLog(argsAbi, e.raw.data, e.raw.topics);
 
-                                   const bns = argsAbi
-                                         .map(a => a.name)
-                                         .map(n => decoded[n]);
+                      const bns = argsAbi
+                            .map(a => a.name)
+                            .map(n => decoded[n]);
 
-                                   return consume(e, bns, resolve, reject);
-                                 }));
+                      return consume(e, bns, resolve, reject);
+                    }));
 
   const pollPast = () => new Promise(resolve => {
     const attempt = () => past()
@@ -210,33 +226,39 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
     return attempt();
   });
 
-  const next = () => new Promise((resolve, reject) => new ethers
-                                 .Contract(c.address, c.abi, new ethers.providers.Web3Provider(web3.currentProvider))
-                                 .once(eventName, (...a) => {
-                                   const b = a.map(b => b); // Preserve `a` w/ copy
-                                   const e = b.pop();       // The final element represents an `ethers` event object
+  const next = () =>
+        new Promise((resolve, reject) => new ethers
+                    .Contract(c.address, c.abi, new ethers.providers.Web3Provider(web3.currentProvider))
+                    .once(eventName, (...a) => {
+                      const b = a.map(b => b); // Preserve `a` w/ copy
+                      const e = b.pop();       // The final element represents an `ethers` event object
 
-                                   // Swap ethers' BigNumber wrapping for web3's
-                                   const bns = b.map(x => toBN({ web3 })(x.toString()));
+                      // Swap ethers' BigNumber wrapping for web3's
+                      const bns = b.map(x => toBN({ web3 })(x.toString()));
 
-                                   return consume(e, bns, resolve, reject);
-                                 }));
+                      return consume(e, bns, resolve, reject);
+                    }));
 
   return past()
     .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
 };
 
 
-const Contract = A => userAddress => (ctors, address) => {
+const Contract = A => userAddress => (ctors, address, creation_block) => {
+  debug(`created at ${creation_block}`);
   const c =
         { abi:            A.abi
           , bytecode:       A.bytecode
-          , sendrecv:       mkSendRecv(A)(address, userAddress, ctors)
-          , recv:           (l, n, cb) => mkRecv(A)(c)(l, n, cb)
+          , sendrecv:       undefined
+          , recv:           undefined
           , consumedEvents: {}
+          , creation_block: creation_block
+          , last_block: creation_block
           , ctors
           , address
         };
+  c.sendrecv = mkSendRecv(A)(c, address, userAddress, ctors);
+  c.recv = mkRecv(A)(c);
 
   return c;
 };
@@ -259,7 +281,7 @@ const mkDeploy = A => userAddress => ctors => {
   const data = [ A.bytecode, ...encodedCtors ].join('');
 
   const contractFromReceipt = r =>
-        Contract(A)(userAddress)(ctors, r.contractAddress);
+        Contract(A)(userAddress)(ctors, r.contractAddress, r.blockNumber);
 
   return A.web3.eth.estimateGas({ data })
     .then(gas => A.web3.eth.sendTransaction({ data, gas, from: userAddress }))
@@ -270,7 +292,7 @@ const mkDeploy = A => userAddress => ctors => {
 
 const EthereumNetwork = A => userAddress =>
       ({ deploy: mkDeploy(A)(userAddress)
-         , attach: (ctors, address) => Promise.resolve(Contract(A)(userAddress)(ctors, address))
+         , attach: (ctors, address, creation_block) => Promise.resolve(Contract(A)(userAddress)(ctors, address, creation_block))
          , web3:   A.web3
          , userAddress
        });

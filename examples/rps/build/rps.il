@@ -14,7 +14,7 @@
 (@ A 
   (publish! (2/Declassify:uint256 3/Declassify:uint256))
   (pay! 5/PrimApp:uint256)
-  (timeout B 1 
+  (timeout B 10 
     (commit!)
     (@ CTC (define 181/PrimApp:bool (PLE 0 3)))
     (@ CTC (define 182/PrimApp:bool (PLT 3 5)))
@@ -38,7 +38,7 @@
 (@ B 
   (publish! ())
   (pay! 2/Declassify:uint256)
-  (timeout A 1 
+  (timeout A 10 
     (@ CTC (define 169/PrimApp:uint256 (BALANCE)))
     (@ CTC (transfer! A 169/PrimApp:uint256))
     (commit!)
@@ -82,7 +82,7 @@
 (@ A 
   (publish! (28/Declassify:uint256))
   (pay! 0)
-  (timeout B 1 
+  (timeout B 10 
     (@ CTC (define 157/PrimApp:uint256 (BALANCE)))
     (@ CTC (transfer! B 157/PrimApp:uint256))
     (commit!)
@@ -121,7 +121,7 @@
 (@ B 
   (publish! (43/Declassify:uint256))
   (pay! 0)
-  (timeout A 1 
+  (timeout A 10 
     (@ CTC (define 145/PrimApp:uint256 (BALANCE)))
     (@ CTC (transfer! A 145/PrimApp:uint256))
     (commit!)
@@ -160,7 +160,7 @@
 (@ A 
   (publish! (50/Declassify:uint256 51/Declassify:uint256))
   (pay! 0)
-  (timeout B 1 
+  (timeout B 10 
     (@ CTC (define 133/PrimApp:uint256 (BALANCE)))
     (@ CTC (transfer! B 133/PrimApp:uint256))
     (commit!)

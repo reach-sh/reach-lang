@@ -144,20 +144,20 @@ jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
         bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
         (forcep, (eep, eefvs)) = jsEPExpr tn ee
         (ktp, ktfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_SendRecv _ svs (i, msg, amt, kt) _timeout) = (tp, tfvs)
+jsEPTail tn who (EP_SendRecv _ svs (i, msg, amt, k_ok) (_i_to, _delay, _k_to)) = (tp, tfvs)
   --- XXX timeout
   where srp = jsApply "ctc.sendrecv" [ jsString who
                                     , jsString (solMsg_fun i), vs, amtp
                                     , jsString (solMsg_evt i) ]
         dp = pretty "const" <+> jsArray [jsTxn tn'] <+> pretty "=" <+> pretty "await" <+> srp <> semi
-        tp = vsep [ dp, skp ]
-        skp = debugp <> ktp
+        tp = vsep [ dp, sk_okp ]
+        sk_okp = debugp <> k_okp
         debugp = if global_debug then jsApply "console.log" [ jsString $ who ++ " sent/recv " ++ show i ] <> semi <> hardline else emptyDoc
         tfvs = Set.unions [ kfvs, amtfvs, Set.fromList svs, Set.fromList msg ]
         (amtp, amtfvs) = jsArg amt
         msg_vs = map jsVar msg
         vs = jsArray $ (map jsVar svs) ++ msg_vs
-        (ktp, kfvs) = jsEPTail tn' who kt
+        (k_okp, kfvs) = jsEPTail tn' who k_ok
         tn' = tn+1
 jsEPTail tn who (EP_Do _ es kt) = (tp, tfvs)
   where (tp, esfvs) = jsEPStmt es ktp

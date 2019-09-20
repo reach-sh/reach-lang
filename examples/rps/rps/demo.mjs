@@ -62,7 +62,7 @@ const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
     : () => randomHand;
 
   const bobShoot = ctcAlice =>
-    gameState.bob.attach(gameState.ctors, ctcAlice.address)
+        gameState.bob.attach(gameState.ctors, ctcAlice.address, ctcAlice.creation_block)
         .then(ctcBob => theRPS.B(stdlib
                                , ctcBob
                                , interactWith('Bob', makeWhichHand())));

@@ -8,7 +8,7 @@ const A = participant({
 
 const B = participant({});
 
-const DELAY = 1; // in blocks
+const DELAY = 10; // in blocks
 
 function main() {
   A.only(() => {

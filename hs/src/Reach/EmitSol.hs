@@ -178,12 +178,15 @@ solSet = solBinOp "="
 solLastBlock :: Doc a
 solLastBlock = "_last"
 
+solBlockNumber :: Doc a
+solBlockNumber = "uint256(block.number)"
+
 solHash :: [Doc a] -> Doc a
 solHash a = solApply "uint256" [ solApply "keccak256" [ solApply "abi.encodePacked" a ] ]
 
 solHashState :: SolRenaming a -> Int -> Bool -> [Participant] -> [BLVar] -> Doc a
 solHashState ρ i check ps svs = solHash $ (solNum i) : which_last : (map solPartVar ps) ++ (map (solVar ρ) svs)
-  where which_last = if check then solLastBlock else "block.number"
+  where which_last = if check then solLastBlock else solBlockNumber
 
 solRequireSender :: Participant -> Doc a
 solRequireSender from = solRequire $ solEq ("msg.sender") (solPartVar from)
@@ -266,7 +269,7 @@ solHandler ps i (C_Handler _ from is_timeout (last_i, svs) msg delay body) = vse
         ρ = M.empty
         bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState ρ last_i True ps svs)) <> semi,
                        solRequireSender from <> semi,
-                       (solRequire $ solBinOp (if is_timeout then ">=" else "<") "block.number" (solBinOp "+" solLastBlock (solArg ρ delay))) <> semi,
+                       (solRequire $ solBinOp (if is_timeout then ">=" else "<") solBlockNumber (solBinOp "+" solLastBlock (solArg ρ delay))) <> semi,
                        solCTail ps emitp ρ ccs body ]
 solHandler ps i (C_Loop _ svs arg _inv body) = funp
   where funp = solFunction (solLoop_fun i) arg_ds retp bodyp
