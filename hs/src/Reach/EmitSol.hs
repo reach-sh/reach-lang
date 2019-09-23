@@ -13,6 +13,8 @@ import System.Process
 import System.Exit
 import Data.Aeson
 import Data.FileEmbed
+import Paths_reach (version)
+import Data.Version (showVersion)
 
 import Reach.AST
 
@@ -286,13 +288,14 @@ vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_sol :: BLProgram b -> Doc a
 emit_sol (BL_Prog _ _ (C_Prog ca ps hs)) =
-  vsep_with_blank $ [ solVersion, solStdLib, ctcp ]
+  vsep_with_blank $ [ preamble, solVersion, solStdLib, ctcp ]
   where ctcp = solContract "ReachContract is Stdlib"
                $ ctcbody
         ctcbody = vsep $ [state_defn, emptyDoc, consp, emptyDoc, solHandlers ps hs]
         consp = solApply "constructor" p_ds <+> "public payable" <+> solBraces consbody
         consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca 0 [])
         state_defn = "uint256 current_state;"
+        preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         p_ds = map solPartDecl ps
 
 type CompiledSol = (String, String)

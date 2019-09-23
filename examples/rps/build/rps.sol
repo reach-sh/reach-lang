@@ -1,3 +1,5 @@
+// Automatically generated with Reach 0.1.0
+
 pragma solidity ^0.5.11;
 
 pragma solidity ^0.5.11;

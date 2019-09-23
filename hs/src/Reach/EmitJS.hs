@@ -5,6 +5,8 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as Set
 import Data.List (intersperse)
 import Data.Text.Prettyprint.Doc
+import Paths_reach (version)
+import Data.Version (showVersion)
 
 import Reach.AST
 import Reach.EmitSol
@@ -211,7 +213,8 @@ vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_js :: BLProgram b -> CompiledSol -> Doc a
 emit_js (BL_Prog _ pm _) (abi, code) = modp
-  where modp = vsep_with_blank $ partsp ++ [ abip, codep ]
+  where modp = vsep_with_blank $ preamble : partsp ++ [ abip, codep ]
+        preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         partsp = map jsPart $ M.toList pm
         abip = pretty $ "export const ABI = " ++ abi ++ ";"
         codep = pretty $ "export const Bytecode = " ++ code ++ ";"
