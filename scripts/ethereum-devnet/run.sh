@@ -29,26 +29,25 @@ mkdir $DATADIR
 LOGDIR=$DATADIR/logs
 mkdir -p $LOGDIR
 
-V1_9_X_ARGS=$(geth version 2>/dev/null |grep -q "^Version: 1.9" && echo "--allow-insecure-unlock" || echo "")
-
-geth ${V1_9_X_ARGS} \
-    --dev \
-    --mine \
-    --identity "ReachEthereumDevNet" \
-    --datadir $DATADIR \
-    --nodiscover \
-    --maxpeers 0 \
-    --rpc --rpcapi "db,eth,net,debug,web3,light,personal,admin" --rpcport $RPCPORT --rpccorsdomain "*" \
-    --port $PORT \
-    --nousb \
-    --networkid 17 \
-    --nat "any" \
-    --ipcpath .ethereum/geth.ipc \
-    > $LOGDIR/testnet.log 2>&1 &
+geth --allow-insecure-unlock \
+     --dev \
+     --dev.period=0 \
+     --mine \
+     --identity "ReachEthereumDevNet" \
+     --datadir $DATADIR \
+     --nodiscover \
+     --maxpeers 0 \
+     --rpc --rpcapi "db,eth,net,debug,web3,light,personal,admin" --rpcport $RPCPORT --rpccorsdomain "*" \
+     --port $PORT \
+     --nousb \
+     --networkid 17 \
+     --nat "any" \
+     --ipcpath .ethereum/geth.ipc \
+     > $LOGDIR/testnet.log 2>&1 &
 
 while ! curl -sSf -X POST \
-  -H "Content-Type: application/json" \
-  --data '{"jsonrpc":"2.0", "method": "web3_clientVersion", "params":[], "id":67}' http://localhost:$RPCPORT ; do
+        -H "Content-Type: application/json" \
+        --data '{"jsonrpc":"2.0", "method": "web3_clientVersion", "params":[], "id":67}' http://localhost:$RPCPORT ; do
     echo "Geth not started yet, waiting..."
     sleep 1
 done
