@@ -1,8 +1,9 @@
 {
-  "name": "@reach-sh/example-rps",
+  "name": "@reach-sh/stdlib",
   "version": "0.1.0",
-  "description": "Reach Platform Example: Rock Paper Scissors",
+  "description": "Standard library for Reach Platform",
   "type": "module",
+  "main": "index.mjs",
   "devDependencies": {
     "babel-eslint": "^10.0.3",
     "eslint": "^6.3.0",
@@ -11,18 +12,22 @@
     "jasmine-console-reporter": "^3.1.0"
   },
   "dependencies": {
-    "@reach-sh/stdlib": "0.1.0"
+    "ethers": "4.0.36",
+    "web3": "1.2.1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/reach-sh/reach-lang.git",
-    "directory": "examples/rps"
+    "url": "git+https://github.com/reach-sh/reach-lang.git",
+    "directory": "js"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/reach-sh/reach-lang/issues"
+  },
+  "homepage": "https://github.com/reach-sh/reach-lang#readme",
   "scripts": {
     "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
-    "test": "node --experimental-modules test.mjs",
-    "demo": "node --experimental-modules demo.mjs"
+    "test": "node --experimental-modules test.mjs"
   }
 }

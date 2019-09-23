@@ -1,9 +1,7 @@
-// vim: filetype=javascript
-
-import * as RPS        from '../build/rps.mjs';
-import * as RPSW       from '../build/rps_while.mjs';
-import { runGameWith } from './demo.mjs';
-import { stdlibNode  } from './stdlib/web3/node.mjs';
+import * as RPS        from './build/rps.mjs';
+import * as RPSW       from './build/rps_while.mjs';
+import { runGameWith } from './index.mjs';
+import { stdlibNode  } from '@reach-sh/stdlib';
 
 const wagerInEth  = '1.5';
 const escrowInEth = '0.15';

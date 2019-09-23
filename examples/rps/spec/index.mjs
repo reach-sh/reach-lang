@@ -1,8 +1,8 @@
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 60 * 1000 * 10;
 
-import * as RPS        from '../../../../build/rps.mjs';
-import { stdlibNode  } from '../../../stdlib/web3/node.mjs';
-import { runGameWith } from '../../../demo.mjs';
+import * as RPS        from '../build/rps.mjs';
+import { stdlibNode  } from '@reach-sh/stdlib';
+import { runGameWith } from '../index.mjs';
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 

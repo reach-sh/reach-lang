@@ -1,12 +1,9 @@
-// vim: filetype=javascript
-
 const init = (stdlib, wagerInEth, escrowInEth) => {
   const wagerInWei  = stdlib.toBN(stdlib.toWei(wagerInEth,  'ether'));
   const escrowInWei = stdlib.toBN(stdlib.toWei(escrowInEth, 'ether'));
 
   return Promise.resolve({ stdlib, gameState: { wagerInWei, escrowInWei }});
 };
-
 
 const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
   const { balanceOf, devnet, transfer } = stdlib;
@@ -83,7 +80,6 @@ const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
 };
 
 
-// eslint-disable-next-line max-len
 export const runGameWith = (theRPS, stdlib, doWhile, drawFirst, interactWith, wagerInEth, escrowInEth, uri) =>
   init(stdlib, wagerInEth, escrowInEth, uri)
     .then(play(theRPS, drawFirst, interactWith));
