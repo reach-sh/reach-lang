@@ -40,7 +40,7 @@ const balanceOf = A => a =>
       A.web3.eth.getBalance(a.userAddress)
       .then(toBN(A));
 
-const assert = ({ asserter }) => d => asserter(d);
+const assert = (A) => d => nodeAssert.strict(d);
 
 const toWei     = ({ web3 }) => web3.utils.toWei;
 const toBN      = ({ web3 }) => web3.utils.toBN;
@@ -83,7 +83,7 @@ const bytes_cat = A => (a, b) => {
 };
 
 const random_uint256 = A => () =>
-      hexToBN(A)(byteArrayToHex(A.random32Bytes()));
+      hexToBN(A)(byteArrayToHex(crypto.randomBytes(32)));
 
 const equal = A => (a, b) => toBN(A)(a).eq( toBN(A)(b));
 const add   = A => (a, b) => toBN(A)(a).add(toBN(A)(b));
@@ -104,7 +104,7 @@ const isType = A => (t, x) => {
   else { panic(`Expected ${t}, got: "${x}"`); } };
 
 // `t` is a type name in string form; `v` is the value to cast
-const encode = ({ ethers }) => (t, v) =>
+const encode = (A) => (t, v) =>
       ethers.utils.defaultAbiCoder.encode([t], [v]);
 
 const rejectInvalidReceiptFor = txHash => r => new Promise((resolve, reject) =>
@@ -155,7 +155,7 @@ const consumedEventKeyOf = (name, e) =>
 
 
 // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-const mkRecv = ({ web3, ethers }) => c => async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
+const mkRecv = ({ web3 }) => c => async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
   let alreadyConsumed = false;
   // XXX
   void(timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt);
@@ -265,7 +265,7 @@ const mkDeploy = A => userAddress => ctors => {
         .slice(0, ctors.length);
 
   const encodedCtors = ctors
-        .map(c => encode(A.ethers)(ctorTypes[ctors.indexOf(c)], c))
+        .map(c => encode(ethers)(ctorTypes[ctors.indexOf(c)], c))
         .map(un0x);
 
   const data = [ A.bytecode, ...encodedCtors ].join('');
@@ -303,7 +303,6 @@ export const mkStdlib = A =>
      , k
      , flip
      , web3:             A.web3
-     , ethers:           A.ethers
      , balanceOf:        balanceOf(A)
      , random_uint256:   random_uint256(A)
      , uint256_to_bytes: uint256_to_bytes(A)
@@ -340,9 +339,6 @@ export const mkStdlib = A =>
 export const stdlibNode = (abi, bytecode, uri) =>
   Promise.resolve(mkStdlib(
     { web3:          new Web3(new Web3.providers.HttpProvider(uri))
-    , random32Bytes: () => crypto.randomBytes(32)
-    , asserter:      nodeAssert.strict
     , abi
     , bytecode
-    , ethers
     }));
