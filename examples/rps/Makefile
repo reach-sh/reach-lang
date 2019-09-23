@@ -1,21 +1,18 @@
-.PHONY: all build test lint start_geth stop_geth logs
+.PHONY: all build test start_geth stop_geth logs
 
 export STACK_YAML=../../hs/stack.yaml
 
-all: lint start_geth test demo stop_geth
+all: start_geth test demo stop_geth
 
 build: build/rps.mjs build/rps_while.mjs
 
 clean:
 	rm -f build/rps.mjs build/rps_while.mjs
 
-build/%.mjs: rps/%.rsh
+build/%.mjs: rsh/%.rsh
 	stack build
 	mkdir -p build
 	stack exec -- reachc -o build $^
-
-lint:
-	@`npm bin`/eslint -c .eslintrc.yaml "rps/**/*.mjs"
 
 start_geth:
 	@../../scripts/ethereum-devnet/run.sh
@@ -24,10 +21,11 @@ stop_geth:
 	@killall geth
 
 test: build
-	@node --experimental-modules rps/spec/index.mjs
+	npm test
 
 logs:
 	@tail -f ../../.ethereum/geth-data/logs/testnet.log
 
 demo: build
-	@node --experimental-modules rps/demo-run-stdout.mjs
+	npm run pretest
+	npm run demo
