@@ -1,7 +1,7 @@
 name:                reach
 version:             0.1.0
 github:              "Reach-sh/reach-lang"
-license:             LGPL-2.1
+license:             Apache-2.0
 author:              "Reach"
 maintainer:          "jay@reach.sh"
 copyright:           "2019 Reach"
