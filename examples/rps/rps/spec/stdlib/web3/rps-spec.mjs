@@ -1,13 +1,10 @@
-// vim: filetype=javascript
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 60 * 1000 * 10;
 
 import * as RPS        from '../../../../build/rps.mjs';
 import { stdlibNode  } from '../../../stdlib/web3/node.mjs';
 import { runGameWith } from '../../../demo.mjs';
 
-
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
-
 
 describe('A rock/paper/scissors game using the `web3` stdlib', () => {
   let stdlib;
@@ -19,14 +16,12 @@ describe('A rock/paper/scissors game using the `web3` stdlib', () => {
   describe('results in', () => {
     const interactWith = (name, handf) =>
           ({ params: () => true,
-             accepts: (wagerAmount, escrowAmount) => true,
+             accepts: (wagerAmount, escrowAmount) => (void(wagerAmount, escrowAmount), true),
              getHand: () => handf(),
              commits: () => true,
              shows: () => true,
-             reveals: (handB) => true,
+             reveals: (handB) => (void(handB), true),
              outcome: () => true });
-    /* async (a) =>
-       (a === 'getHand' ? handf() : null); */
 
     const wagerInEth  = '1.5';
     const escrowInEth = '0.15';

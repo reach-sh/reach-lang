@@ -34,7 +34,7 @@ rules:
     - error
   max-len:
     - error
-    - code:       100
+    - code:       256
       ignoreUrls: true
   no-tabs:
     - error

@@ -201,7 +201,7 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName, timeout_delay
   const past = () =>
         new Promise((resolve, reject) =>
                     new web3.eth.Contract(c.abi, c.address)
-                    .getPastEvents(eventName, { toBlock: "latest" })
+                    .getPastEvents(eventName, { toBlock: 'latest' })
                     .then(es => {
                       const e = es
                             .find(x => c.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
