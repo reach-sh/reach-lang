@@ -11,3 +11,18 @@ and easily deploy them on a variety of different blockchain networks.
 
 This repository is for the Reach language, the domain-specific
 language for trustworthy DApps used by the Reach platform.
+
+# Installation
+
+XXX Collect build instructions here
+
+```
+$ cd hs
+$ stack build
+$ cd js
+$ npm link
+$ npm install
+$ cd ../examples/rps
+$ npm link @reach-sh/stdlib
+$ npm install
+```
