@@ -6,19 +6,8 @@ export async function A(stdlib, ctc, interact, v0, v1) {
   const v5 = stdlib.add(v2, v3);
   const txn1 = await ctc.sendrecv("A", "m1", [v2, v3], v5, "e1", 10, "e2");
   if (txn1.didTimeout) {
-    const v181 = stdlib.le(0, 3);
-    const v182 = stdlib.lt(3, 5);
-    const v183 = v181 ? v182 : false;
-    stdlib.assert(v183);
-    const v184 = stdlib.eq(3, 0);
-    const v185 = stdlib.eq(3, 1);
-    const v186 = stdlib.eq(3, 2);
-    const v187 = stdlib.eq(3, 3);
-    const v188 = v187 ? "Alice quits" : "Bob quits";
-    const v189 = v186 ? "Alice wins" : v188;
-    const v190 = v185 ? "Draw" : v189;
-    const v191 = v184 ? "Bob wins" : v190;
-    return [v191]; }
+    stdlib.assert(true);
+    return ["Alice quits"]; }
   else {
     const v6 = txn1.value;
     const v7 = stdlib.add(v2, v3);
@@ -26,19 +15,8 @@ export async function A(stdlib, ctc, interact, v0, v1) {
     stdlib.assert(v8);
     const txn2 = await ctc.recv("A", "e3", 10, true, [v2, v3], "m4", "e4");
     if (txn2.didTimeout) {
-      const v170 = stdlib.le(0, 4);
-      const v171 = stdlib.lt(4, 5);
-      const v172 = v170 ? v171 : false;
-      stdlib.assert(v172);
-      const v173 = stdlib.eq(4, 0);
-      const v174 = stdlib.eq(4, 1);
-      const v175 = stdlib.eq(4, 2);
-      const v176 = stdlib.eq(4, 3);
-      const v177 = v176 ? "Alice quits" : "Bob quits";
-      const v178 = v175 ? "Alice wins" : v177;
-      const v179 = v174 ? "Draw" : v178;
-      const v180 = v173 ? "Bob wins" : v179;
-      return [v180]; }
+      stdlib.assert(true);
+      return ["Bob quits"]; }
     else {
       const [] = txn2.data;
       const v10 = txn2.value;
@@ -62,38 +40,16 @@ export async function A(stdlib, ctc, interact, v0, v1) {
       const v29 = stdlib.isType("bool", await interact.commits());
       const txn3 = await ctc.sendrecv("A", "m5", [v2, v3, v28], 0, "e5", 10, "e6");
       if (txn3.didTimeout) {
-        const v158 = stdlib.le(0, 3);
-        const v159 = stdlib.lt(3, 5);
-        const v160 = v158 ? v159 : false;
-        stdlib.assert(v160);
-        const v161 = stdlib.eq(3, 0);
-        const v162 = stdlib.eq(3, 1);
-        const v163 = stdlib.eq(3, 2);
-        const v164 = stdlib.eq(3, 3);
-        const v165 = v164 ? "Alice quits" : "Bob quits";
-        const v166 = v163 ? "Alice wins" : v165;
-        const v167 = v162 ? "Draw" : v166;
-        const v168 = v161 ? "Bob wins" : v167;
-        return [v168]; }
+        stdlib.assert(true);
+        return ["Alice quits"]; }
       else {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
         const txn4 = await ctc.recv("A", "e7", 10, true, [v2, v3, v28], "m8", "e8");
         if (txn4.didTimeout) {
-          const v146 = stdlib.le(0, 4);
-          const v147 = stdlib.lt(4, 5);
-          const v148 = v146 ? v147 : false;
-          stdlib.assert(v148);
-          const v149 = stdlib.eq(4, 0);
-          const v150 = stdlib.eq(4, 1);
-          const v151 = stdlib.eq(4, 2);
-          const v152 = stdlib.eq(4, 3);
-          const v153 = v152 ? "Alice quits" : "Bob quits";
-          const v154 = v151 ? "Alice wins" : v153;
-          const v155 = v150 ? "Draw" : v154;
-          const v156 = v149 ? "Bob wins" : v155;
-          return [v156]; }
+          stdlib.assert(true);
+          return ["Bob quits"]; }
         else {
           const [v43] = txn4.data;
           const v45 = txn4.value;
@@ -116,19 +72,8 @@ export async function A(stdlib, ctc, interact, v0, v1) {
           const v59 = stdlib.isType("bool", await interact.reveals(v58));
           const txn5 = await ctc.sendrecv("A", "m9", [v2, v3, v28, v43, v50, v51], 0, "e9", 10, "e10");
           if (txn5.didTimeout) {
-            const v134 = stdlib.le(0, 3);
-            const v135 = stdlib.lt(3, 5);
-            const v136 = v134 ? v135 : false;
-            stdlib.assert(v136);
-            const v137 = stdlib.eq(3, 0);
-            const v138 = stdlib.eq(3, 1);
-            const v139 = stdlib.eq(3, 2);
-            const v140 = stdlib.eq(3, 3);
-            const v141 = v140 ? "Alice quits" : "Bob quits";
-            const v142 = v139 ? "Alice wins" : v141;
-            const v143 = v138 ? "Draw" : v142;
-            const v144 = v137 ? "Bob wins" : v143;
-            return [v144]; }
+            stdlib.assert(true);
+            return ["Alice quits"]; }
           else {
             const v60 = txn5.value;
             const v61 = stdlib.eq(v60, 0);
@@ -175,19 +120,8 @@ export async function B(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
   const txn1 = await ctc.recv("B", "e1", 10, true, [], "m2", "e2");
   if (txn1.didTimeout) {
-    const v181 = stdlib.le(0, 3);
-    const v182 = stdlib.lt(3, 5);
-    const v183 = v181 ? v182 : false;
-    stdlib.assert(v183);
-    const v184 = stdlib.eq(3, 0);
-    const v185 = stdlib.eq(3, 1);
-    const v186 = stdlib.eq(3, 2);
-    const v187 = stdlib.eq(3, 3);
-    const v188 = v187 ? "Alice quits" : "Bob quits";
-    const v189 = v186 ? "Alice wins" : v188;
-    const v190 = v185 ? "Draw" : v189;
-    const v191 = v184 ? "Bob wins" : v190;
-    return [v191]; }
+    stdlib.assert(true);
+    return ["Alice quits"]; }
   else {
     const [v2, v3] = txn1.data;
     const v6 = txn1.value;
@@ -197,38 +131,16 @@ export async function B(stdlib, ctc, interact) {
     const v9 = stdlib.isType("bool", await interact.accepts(v2, v3));
     const txn2 = await ctc.sendrecv("B", "m3", [v2, v3], v2, "e3", 10, "e4");
     if (txn2.didTimeout) {
-      const v170 = stdlib.le(0, 4);
-      const v171 = stdlib.lt(4, 5);
-      const v172 = v170 ? v171 : false;
-      stdlib.assert(v172);
-      const v173 = stdlib.eq(4, 0);
-      const v174 = stdlib.eq(4, 1);
-      const v175 = stdlib.eq(4, 2);
-      const v176 = stdlib.eq(4, 3);
-      const v177 = v176 ? "Alice quits" : "Bob quits";
-      const v178 = v175 ? "Alice wins" : v177;
-      const v179 = v174 ? "Draw" : v178;
-      const v180 = v173 ? "Bob wins" : v179;
-      return [v180]; }
+      stdlib.assert(true);
+      return ["Bob quits"]; }
     else {
       const v10 = txn2.value;
       const v11 = stdlib.eq(v10, v2);
       stdlib.assert(v11);
       const txn3 = await ctc.recv("B", "e5", 10, true, [v2, v3], "m6", "e6");
       if (txn3.didTimeout) {
-        const v158 = stdlib.le(0, 3);
-        const v159 = stdlib.lt(3, 5);
-        const v160 = v158 ? v159 : false;
-        stdlib.assert(v160);
-        const v161 = stdlib.eq(3, 0);
-        const v162 = stdlib.eq(3, 1);
-        const v163 = stdlib.eq(3, 2);
-        const v164 = stdlib.eq(3, 3);
-        const v165 = v164 ? "Alice quits" : "Bob quits";
-        const v166 = v163 ? "Alice wins" : v165;
-        const v167 = v162 ? "Draw" : v166;
-        const v168 = v161 ? "Bob wins" : v167;
-        return [v168]; }
+        stdlib.assert(true);
+        return ["Alice quits"]; }
       else {
         const [v28] = txn3.data;
         const v30 = txn3.value;
@@ -247,19 +159,8 @@ export async function B(stdlib, ctc, interact) {
         const v44 = stdlib.isType("bool", await interact.shows());
         const txn4 = await ctc.sendrecv("B", "m7", [v2, v3, v28, v43], 0, "e7", 10, "e8");
         if (txn4.didTimeout) {
-          const v146 = stdlib.le(0, 4);
-          const v147 = stdlib.lt(4, 5);
-          const v148 = v146 ? v147 : false;
-          stdlib.assert(v148);
-          const v149 = stdlib.eq(4, 0);
-          const v150 = stdlib.eq(4, 1);
-          const v151 = stdlib.eq(4, 2);
-          const v152 = stdlib.eq(4, 3);
-          const v153 = v152 ? "Alice quits" : "Bob quits";
-          const v154 = v151 ? "Alice wins" : v153;
-          const v155 = v150 ? "Draw" : v154;
-          const v156 = v149 ? "Bob wins" : v155;
-          return [v156]; }
+          stdlib.assert(true);
+          return ["Bob quits"]; }
         else {
           const v45 = txn4.value;
           const v46 = stdlib.eq(v45, 0);
@@ -270,19 +171,8 @@ export async function B(stdlib, ctc, interact) {
           stdlib.assert(v49);
           const txn5 = await ctc.recv("B", "e9", 10, true, [v2, v3, v28, v43], "m10", "e10");
           if (txn5.didTimeout) {
-            const v134 = stdlib.le(0, 3);
-            const v135 = stdlib.lt(3, 5);
-            const v136 = v134 ? v135 : false;
-            stdlib.assert(v136);
-            const v137 = stdlib.eq(3, 0);
-            const v138 = stdlib.eq(3, 1);
-            const v139 = stdlib.eq(3, 2);
-            const v140 = stdlib.eq(3, 3);
-            const v141 = v140 ? "Alice quits" : "Bob quits";
-            const v142 = v139 ? "Alice wins" : v141;
-            const v143 = v138 ? "Draw" : v142;
-            const v144 = v137 ? "Bob wins" : v143;
-            return [v144]; }
+            stdlib.assert(true);
+            return ["Alice quits"]; }
           else {
             const [v50, v51] = txn5.data;
             const v60 = txn5.value;

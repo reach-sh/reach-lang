@@ -157,6 +157,29 @@ iv_can_copy _ = True
 id_map :: Show a => a -> [XLVar] -> [BaseType] -> ILEnv a
 id_map a vs ts = (M.fromList (zipWithEq iv_id vs ts))
   where iv_id x bt = (x, IV_Var a (x,bt))
+
+copy_map :: Show a => a -> [XLVar] -> InlineV a -> ILEnv a
+copy_map a vs iv =
+  case iv of
+    IV_Values _ ivs -> M.fromList (zipEq vs ivs)
+    _ -> case vs of
+      [ v ] -> M.singleton v iv
+      _ -> error $ "inline: expected one variable, but got " ++ show vs ++ " at: " ++ show a
+
+do_static_prim :: a -> EP_Prim -> [InlineV a] -> Maybe (InlineV a)
+do_static_prim h p argivs =
+  case p of
+    CP PLT -> nn2b (<)
+    CP PLE -> nn2b (<=)
+    CP PEQ -> nn2b (==)
+    CP PGE -> nn2b (>=)
+    CP PGT -> nn2b (>)
+    _ -> Nothing
+  where
+    nn2b op =
+      case argivs of
+        [IV_Con _ (Con_I lhs), IV_Con _ (Con_I  rhs)] -> Just $ IV_Con h $ Con_B $ op lhs rhs
+        _ -> Nothing
   
 do_inline_funcall :: Show a => Maybe BaseType -> a -> Maybe Participant -> InlineV a -> [InlineV a] -> InlineV a
 do_inline_funcall outer_loopt ch who f argivs =
@@ -165,10 +188,13 @@ do_inline_funcall outer_loopt ch who f argivs =
     IV_Values _ _ -> error $ "inline: Cannot call values as function at: " ++ show ch
     IV_XIL _ _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
     IV_Var _ _ -> error $ "inline: Cannot call variable as function at: " ++ show ch
-    IV_Prim _ p ->
-      IV_XIL (arp && purePrim p) [ pt ] (XIL_PrimApp ch p pt argies)
-      where (arp, argts, argies) = iv_exprs ch argivs
-            pt = checkFun ch (primType p) argts
+    IV_Prim h p ->
+      case do_static_prim h p argivs of
+        Just iv -> iv
+        Nothing ->
+          IV_XIL (arp && purePrim p) [ pt ] (XIL_PrimApp ch p pt argies)
+          where (arp, argts, argies) = iv_exprs ch argivs
+                pt = checkFun ch (primType p) argts
     IV_Clo (lh, formals, orig_body) cloenv ->
       IV_XIL (arp && bp) bt eff_body'
       where (σ', arp, eff_formals, eff_argies) =
@@ -283,10 +309,15 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
         add_tops d (adder, σ) =
           case d of
             XL_DefineValues h vs ve ->
-              (adder', M.union (id_map h vs ts) σ)
-              where adder' im = XIL_Let h Nothing (Just ivs) ve' (adder im)
+              if iv_can_copy ve_iv then
+                (adder, M.union (copy_map h vs ve_iv) σ)
+              else
+                (adder', M.union (id_map h vs ts) σ)
+              where ve_iv = peval Nothing σ ve
+                    adder' im =
+                      XIL_Let h Nothing (Just ivs) ve' (adder im)
                     ivs = zipWithEq (,) vs ts
-                    (_, ts, ve') = iv_expr h $ peval Nothing σ ve
+                    (_, ts, ve') = iv_expr h ve_iv
             XL_DefineFun h f args body ->
               (adder, ienv_insert h f (IV_Clo (h, args, body) σ_top) σ)
 
