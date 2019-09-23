@@ -1,5 +1,3 @@
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 60 * 1000 * 10;
-
 import * as RPS        from '../build/rps.mjs';
 import { stdlibNode  } from '@reach-sh/stdlib';
 import { runGameWith } from '../index.mjs';

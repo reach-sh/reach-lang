@@ -36,9 +36,6 @@ const nat_to_fixed_size_hex = size => n => {
 const nat16_to_fixed_size_hex =
       nat_to_fixed_size_hex(2);
 
-
-// Parameterized ///////////////////////////////////////////////////////////////
-
 const balanceOf = A => a =>
       A.web3.eth.getBalance(a.userAddress)
       .then(toBN(A));
@@ -53,22 +50,18 @@ const keccak256 = ({ web3 }) => web3.utils.keccak256;
 const hexToBN          = A => h => toBN(A)(hexTo0x(h));
 const uint256_to_bytes = A => i => bnToHex(A)(i);
 
-
 const bnToHex = A => (u, size = 32) =>
       toBN(A)(u)
       .toTwos(8 * size)
       .toString(16, 2 * size);
-
 
 const hexOf = ({ web3 }) => x =>
       typeof x === 'string' && x.slice(0, 2) === '0x'
       ? un0x(web3.utils.toHex(x))
       : un0x(web3.utils.toHex(`0x${x}`));
 
-
 const bytes_eq = A => (x, y) =>
       hexOf(A)(x) === hexOf(A)(y);
-
 
 const bytes_len = A => b => {
   const bh = hexOf(A)(b);
@@ -78,7 +71,6 @@ const bytes_len = A => b => {
     ? panic(`Invalid byte string: ${bh}`)
     : n;
 };
-
 
 // ∀ a b, msg_left (msg_cat(a, b)) = a
 // ∀ a b, msg_right(msg_cat(a, b)) = b
@@ -90,10 +82,8 @@ const bytes_cat = A => (a, b) => {
   return '0x' +  n + ah + bh;
 };
 
-
 const random_uint256 = A => () =>
       hexToBN(A)(byteArrayToHex(A.random32Bytes()));
-
 
 const equal = A => (a, b) => toBN(A)(a).eq( toBN(A)(b));
 const add   = A => (a, b) => toBN(A)(a).add(toBN(A)(b));
@@ -117,23 +107,19 @@ const isType = A => (t, x) => {
 const encode = ({ ethers }) => (t, v) =>
       ethers.utils.defaultAbiCoder.encode([t], [v]);
 
-
 const rejectInvalidReceiptFor = txHash => r => new Promise((resolve, reject) =>
                                                            !r                           ? reject(`No receipt for txHash: ${txHash}`)
                                                            : r.transactionHash !== txHash ? reject(`Bad txHash; ${txHash} !== ${r.transactionHash}`)
                                                            : !r.status                    ? reject(`Transaction: ${txHash} was reverted by EVM\n${r}`)
                                                            : resolve(r));
 
-
 const fetchAndRejectInvalidReceiptFor = ({ web3 }) => txHash =>
       web3.eth.getTransactionReceipt(txHash)
       .then(rejectInvalidReceiptFor(txHash));
 
-
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
 const transfer = ({ web3 }) => (to, from, value) =>
       web3.eth.sendTransaction({ to, from, value });
-
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
 const mkSendRecv =
@@ -163,7 +149,6 @@ const mkSendRecv =
             debug(`send ${label} ${funcName}: stop`);
             return { didTimeout: false, value: value, balance: toBN(A)(nbs) }; });
       };
-
 
 const consumedEventKeyOf = (name, e) =>
       `${name}:${e.blockNumber}:${e.transactionHash}`;
@@ -250,7 +235,6 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName, timeout_delay
     .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
 };
 
-
 const Contract = A => userAddress => (ctors, address, creation_block) => {
   debug(`created at ${creation_block}`);
   const c =
@@ -269,7 +253,6 @@ const Contract = A => userAddress => (ctors, address, creation_block) => {
 
   return c;
 };
-
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
 const mkDeploy = A => userAddress => ctors => {
@@ -296,7 +279,6 @@ const mkDeploy = A => userAddress => ctors => {
     .then(contractFromReceipt);
 };
 
-
 const EthereumNetwork = A => userAddress =>
       ({ deploy: mkDeploy(A)(userAddress)
          , attach: (ctors, address, creation_block) => Promise.resolve(Contract(A)(userAddress)(ctors, address, creation_block))
@@ -304,27 +286,16 @@ const EthereumNetwork = A => userAddress =>
          , userAddress
        });
 
-
-// devnet-specific /////////////////////////////////////////////////////////////
-
-// This matches the logic in legicash-facts'
-// src/legilogic_ethereum/ethereum_transaction.ml:get_first_account
-// function (which is also what its prefunder script uses)
 const prefundedDevnetAcct = ({ web3 }) => () =>
       web3.eth.personal.getAccounts()
       .then(a => a[0])
       .catch(e => panic(`Cannot infer prefunded account!\n${e}`));
-
 
 const createAndUnlockAcct = ({ web3 }) => () =>
       web3.eth.personal.newAccount('')
       .then(i => web3.eth.personal.unlockAccount(i, '', 999999999)
             .then(u => u ? Promise.resolve(i)
                   : Promise.reject(`Couldn't unlock account ${i}!`)));
-
-
-////////////////////////////////////////////////////////////////////////////////
-
 
 export const mkStdlib = A =>
   ({ hexTo0x
