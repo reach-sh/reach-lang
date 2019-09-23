@@ -688,7 +688,9 @@ epp_it_ctc ps this_h γ ctxt it = case it of
     error "EPP: Cannot perform local action in consensus"
   IL_ToConsensus _ _ _ _ ->
     error "EPP: Cannot transition to consensus from consensus"
-  IL_FromConsensus _ bt -> epp_it_loc ps this_h γ ctxt bt
+  IL_FromConsensus _ bt ->
+    --- XXX include in code so we can separate out the verifier
+    epp_it_loc ps this_h γ ctxt bt
   IL_While h loopv inita untilt invt bodyt kt -> do
     let ((fvs_a, inita'), st_a) = epp_arg "ctc While init" γ RoleContract inita
     let loopvenv = M.singleton loopv st_a

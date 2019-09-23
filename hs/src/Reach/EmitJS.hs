@@ -73,8 +73,14 @@ jsObject kvs = jsBraces $ vsep $ (intersperse comma) $ map jsObjField kvs
 jsBinOp :: String -> Doc a -> Doc a -> Doc a
 jsBinOp o l r = l <+> pretty o <+> r
 
+jsIf :: Doc a -> Doc a -> Doc a -> Doc a
+jsIf cap ttp ftp = pretty "if" <+> parens cap <+> jsBraces ttp <> hardline <> pretty "else" <+> jsBraces ftp
+
 jsTxn :: Int -> Doc a
 jsTxn n = pretty $ "txn" ++ show n
+
+jsTimeoutFlag :: Int -> Doc a
+jsTimeoutFlag n = jsTxn n <> pretty ".didTimeout"
 
 jsPrimApply :: Int -> EP_Prim -> [Doc a] -> Doc a
 jsPrimApply tn pr =
@@ -126,11 +132,9 @@ jsEPTail _tn _who (EP_Ret _ al) = ((jsReturn $ jsArray $ map fst alp), Set.union
   where alp = map jsArg al
 jsEPTail tn who (EP_If _ ca tt ft) = (tp, tfvs)
   where (ttp', ttfvs) = jsEPTail tn who tt
-        ttp = jsBraces ttp'
         (ftp', ftfvs) = jsEPTail tn who ft
-        ftp = jsBraces ftp'
         (cap, cafvs) = jsArg ca
-        tp = pretty "if" <+> parens cap <+> ttp <> hardline <> pretty "else" <+> ftp
+        tp = jsIf cap ttp' ftp'
         tfvs = Set.unions [ cafvs, ttfvs, ftfvs ]
 jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
   where used = elem bv ktfvs
@@ -144,35 +148,41 @@ jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
         bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
         (forcep, (eep, eefvs)) = jsEPExpr tn ee
         (ktp, ktfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_SendRecv _ svs (i, msg, amt, k_ok) (_i_to, _delay, _k_to)) = (tp, tfvs)
-  --- XXX timeout
+jsEPTail tn who (EP_SendRecv _ svs (i_ok, msg, amt, k_ok) (i_to, delay, k_to)) = (tp, tfvs)
   where srp = jsApply "ctc.sendrecv" [ jsString who
-                                    , jsString (solMsg_fun i), vs, amtp
-                                    , jsString (solMsg_evt i) ]
-        dp = pretty "const" <+> jsArray [jsTxn tn'] <+> pretty "=" <+> pretty "await" <+> srp <> semi
-        tp = vsep [ dp, sk_okp ]
-        sk_okp = debugp <> k_okp
-        debugp = if global_debug then jsApply "console.log" [ jsString $ who ++ " sent/recv " ++ show i ] <> semi <> hardline else emptyDoc
-        tfvs = Set.unions [ kfvs, amtfvs, Set.fromList svs, Set.fromList msg ]
+                                     , jsString (solMsg_fun i_ok), vs, amtp
+                                     , jsString (solMsg_evt i_ok)
+                                     , delayp, jsString (solMsg_evt i_to) ]
+        dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+> pretty "await" <+> srp <> semi
+        tp = vsep [ dp, jsIf (jsTimeoutFlag tn') k_top k_okp ]
+        tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg ]
+        (delayp, delayfvs) = jsArg delay
         (amtp, amtfvs) = jsArg amt
         msg_vs = map jsVar msg
         vs = jsArray $ (map jsVar svs) ++ msg_vs
         (k_okp, kfvs) = jsEPTail tn' who k_ok
+        (k_top, tofvs) = jsEPTail tn' who k_to
         tn' = tn+1
 jsEPTail tn who (EP_Do _ es kt) = (tp, tfvs)
   where (tp, esfvs) = jsEPStmt es ktp
         tfvs = Set.union esfvs kfvs
         (ktp, kfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_Recv _ _ (i, msg, kt) _timeout) = (tp, tfvs)
-  --- XXX timeout
+jsEPTail tn who (EP_Recv _ svs (i, msg, k_ok) (to_me, i_to, delay, k_to)) = (tp, tfvs)
   where tp = vsep [ rp, kp ]
-        rp = pretty "const" <+> jsArray (msg_vs ++ [jsTxn tn']) <+> pretty "=" <+> pretty "await" <+> (jsApply "ctc.recv" [ jsString who, jsString (solMsg_evt i) ]) <> semi
-        tfvs = Set.unions [Set.fromList msg, ktfvs]
-        kp = (debugp <> ktp)
+        rp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+>
+             pretty "await" <+> (jsApply "ctc.recv" [ jsString who, jsString (solMsg_evt i)
+                                                    , delayp, jsCon (Con_B to_me)
+                                                    , (jsArray $ map jsVar svs)
+                                                    , jsString (solMsg_fun i_to), jsString (solMsg_evt i_to)]) <> semi
+        tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, tofvs, delayfvs]
+        kp = jsIf (jsTimeoutFlag tn') k_top k_okp'
+        k_okp' = vsep [ pretty "const" <+> jsArray msg_vs <+> pretty "=" <+> (jsTxn tn') <> pretty ".data" <> semi 
+                      , k_okp ]
+        (delayp, delayfvs) = jsArg delay
         msg_vs = map jsVar msg
-        (ktp, ktfvs) = jsEPTail tn' who kt
+        (k_okp, kfvs) = jsEPTail tn' who k_ok
+        (k_top, tofvs) = jsEPTail tn' who k_to
         tn' = tn+1
-        debugp = if global_debug then jsApply "console.log" [ jsString $ who ++ " received " ++ show i ] <> semi <> hardline else emptyDoc
 jsEPTail tn who (EP_Loop _ which loopv inita bt) = (tp, tfvs)
   where tp = vsep [ defp, loopp ]
         defp = pretty "let" <+> (jsLoopVar which) <+> pretty "=" <+> initp <> semi
@@ -195,9 +205,6 @@ jsPart (p, (EP_Prog _ pargs et)) =
         bodyp' = vsep [ pretty "const" <+> jsTxn tn' <+> pretty "= { balance: 0, value: 0 }" <> semi
                       , bodyp ]
         (bodyp, _) = jsEPTail tn' p et
-
-global_debug :: Bool
-global_debug = False
 
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l

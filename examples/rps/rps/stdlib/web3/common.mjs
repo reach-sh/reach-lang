@@ -134,8 +134,10 @@ const transfer = ({ web3 }) => (to, from, value) =>
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
 const mkSendRecv =
-      A => (ctc, address, from, ctors) => async (label, funcName, args, value, eventName) => {
+      A => (ctc, address, from, ctors) => async (label, funcName, args, value, eventName, timeout_delay, timeout_evt ) => {
         void(eventName);
+        // XXX
+        void(timeout_delay, timeout_evt);
         // https://github.com/ethereum/web3.js/issues/2077
         const munged = [ ctc.last_block, ...ctors, ...args ]
               .map(m => isBN(A)(m) ? m.toString() : m);
@@ -156,7 +158,7 @@ const mkSendRecv =
                        return A.web3.eth.getBalance(address, this_block); } )
           .then(nbs => {
             debug(`send ${label} ${funcName}: stop`);
-            return [{ value: value, balance: toBN(A)(nbs) }]; });
+            return { didTimeout: false, value: value, balance: toBN(A)(nbs) }; });
       };
 
 
@@ -165,8 +167,10 @@ const consumedEventKeyOf = (name, e) =>
 
 
 // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
+const mkRecv = ({ web3, ethers }) => c => async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
   let alreadyConsumed = false;
+  // XXX
+  void(timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt);
 
   const consume = (e, bns, resolve, reject) =>
         fetchAndRejectInvalidReceiptFor({ web3 })(e.transactionHash)
@@ -191,7 +195,7 @@ const mkRecv = ({ web3, ethers }) => c => async (label, eventName) => {
           const this_block = t.blockNumber;
           c.last_block = this_block;
           return web3.eth.getBalance(c.address, this_block)
-            .then(nbs => resolve([...bns, { value: t.value, balance: toBN({ web3 })(nbs) }]));
+            .then(nbs => resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN({ web3 })(nbs) }));
         })));
 
   const past = () =>
