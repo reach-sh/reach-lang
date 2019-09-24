@@ -177,8 +177,8 @@ export const connectAccount = address => {
 
         const key = consumedEventKeyOf(eventName, e);
 
-        if (alreadyConsumed || (consumedEvents[key] !== undefined))
-          return reject(`${label} has already consumed ${key}!`);
+        if (alreadyConsumed || (consumedEvents[key] !== undefined)) {
+          return reject(`${label} has already consumed ${key}!`); }
 
         // Sanity check: events ought to be consumed monotonically
         const latestPrevious = Object.values(consumedEvents)
@@ -187,8 +187,7 @@ export const connectAccount = address => {
               .pop();
 
         if (!!latestPrevious && latestPrevious.blockNumber >= e.blockNumber) {
-          reject(`${label} attempted to consume ${eventName} out of sequential block # order!`);
-        }
+          return reject(`${label} attempted to consume ${eventName} out of sequential block # order!`); }
 
         alreadyConsumed = true;
         Object.assign(consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
@@ -205,7 +204,7 @@ export const connectAccount = address => {
                                 .find(x => consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
 
                           if (!e)
-                            return reject();
+                            return reject(`No unconsumed event`);
 
                           const argsAbi = abi
                                 .find(a => a.name === eventName)
