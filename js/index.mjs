@@ -47,6 +47,7 @@ export const assert = d => nodeAssert.strict(d);
 
 export const toWei     = web3.utils.toWei;
 export const toBN      = web3.utils.toBN;
+export const toWeiBN = (a,b) => toBN(toWei(a, b));
 export const isBN      = web3.utils.isBN;
 export const keccak256 = web3.utils.keccak256;
 

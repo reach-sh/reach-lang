@@ -14,23 +14,18 @@ const interactWithBob =
          getHand: log(`Bob getHand`, 'PAPER'),
          shows: log(`shows`),
          outcome: log(`Bob outcome`) });
-const wagerInEth  = '1.5';
-const escrowInEth = '0.15';
 
 runTests(async () => {
   console.log(`Running game...`);
 
-  const wagerInWei = stdlib.toBN(stdlib.toWei(wagerInEth, 'ether'));
-  const escrowInWei = stdlib.toBN(stdlib.toWei(escrowInEth, 'ether'));
-
-  const { balanceOf } = stdlib;
-
-  const startingBalance = stdlib.toBN(stdlib.toWei('100', 'ether'));
+  const wagerInWei = stdlib.toWeiBN('1.5', 'ether');
+  const escrowInWei = stdlib.toWeiBN('0.15', 'ether');
+  const startingBalance = stdlib.toWeiBN('100', 'ether');
 
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
-  const balanceStartAlice = await balanceOf(alice);
-  const balanceStartBob = await balanceOf(bob);
+  const balanceStartAlice = await stdlib.balanceOf(alice);
+  const balanceStartBob = await stdlib.balanceOf(bob);
   const ctors = [ alice.userAddress, bob.userAddress ];
 
   const ctcAlice =
@@ -45,8 +40,8 @@ runTests(async () => {
           RPS.A(ctcAlice, interactWithAlice,
                 wagerInWei, escrowInWei)]);
 
-  const balanceEndAlice = await balanceOf(alice);
-  const balanceEndBob = await balanceOf(bob);
+  const balanceEndAlice = await stdlib.balanceOf(alice);
+  const balanceEndBob = await stdlib.balanceOf(bob);
 
   assert.deepEqual(outcomeAlice, outcomeBob, `outcomes disagree`);
 
