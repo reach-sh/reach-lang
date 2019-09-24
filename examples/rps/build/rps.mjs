@@ -1,7 +1,8 @@
 // Automatically generated with Reach 0.1.0
 
+import * as stdlib from '@reach-sh/stdlib';
+
 export async function A(ctc, interact, v0, v1) {
-  const stdlib = ctc.stdlib;
   const txn0 = { balance: 0, value: 0 };
   const v2 = v0;
   const v3 = v1;
@@ -120,7 +121,6 @@ export async function A(ctc, interact, v0, v1) {
             return [v132]; } } } } } }
 
 export async function B(ctc, interact) {
-  const stdlib = ctc.stdlib;
   const txn0 = { balance: 0, value: 0 };
   const txn1 = await ctc.recv('B', 'e1', 10, true, [], 'm2', 'e2');
   if (txn1.didTimeout) {

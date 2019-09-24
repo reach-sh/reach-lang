@@ -204,8 +204,7 @@ jsPart (p, (EP_Prog _ pargs et)) =
   pretty "export" <+> jsFunction p ([ pretty "ctc", pretty "interact" ] ++ pargs_vs) bodyp'
   where tn' = 0
         pargs_vs = map jsVar pargs
-        bodyp' = vsep [ pretty "const" <+> pretty "stdlib" <+> pretty "= ctc.stdlib" <> semi
-                      , pretty "const" <+> jsTxn tn' <+> pretty "= { balance: 0, value: 0 }" <> semi
+        bodyp' = vsep [ pretty "const" <+> jsTxn tn' <+> pretty "= { balance: 0, value: 0 }" <> semi
                       , bodyp ]
         (bodyp, _) = jsEPTail tn' p et
 
@@ -214,8 +213,9 @@ vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_js :: BLProgram b -> CompiledSol -> Doc a
 emit_js (BL_Prog _ pm _) (abi, code) = modp
-  where modp = vsep_with_blank $ preamble : partsp ++ [ abip, codep ]
+  where modp = vsep_with_blank $ preamble : importp : partsp ++ [ abip, codep ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
+        importp = pretty $ "import * as stdlib from '@reach-sh/stdlib';"
         partsp = map jsPart $ M.toList pm
         abip = pretty $ "export const ABI = " ++ abi ++ ";"
         codep = pretty $ "export const Bytecode = " ++ code ++ ";"

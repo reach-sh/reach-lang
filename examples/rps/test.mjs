@@ -1,7 +1,6 @@
 import * as RPS        from './build/rps.mjs';
 import { runTests, assert } from '@reach-sh/stdlib/tester.mjs';
-import { connect } from '@reach-sh/stdlib';
-const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
+import * as stdlib from '@reach-sh/stdlib';
 
 const log = (msg, ret = true) => () => { console.log(`...${msg}`); return ret; };
 const interactWithAlice =
@@ -20,8 +19,6 @@ const escrowInEth = '0.15';
 
 runTests(async () => {
   console.log(`Running game...`);
-
-  const stdlib = connect(uri);
 
   const wagerInWei = stdlib.toBN(stdlib.toWei(wagerInEth, 'ether'));
   const escrowInWei = stdlib.toBN(stdlib.toWei(escrowInEth, 'ether'));

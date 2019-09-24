@@ -1,8 +1,6 @@
-import { connect } from '@reach-sh/stdlib';
-import * as RPS        from './build/rps.mjs';
-import * as RPSW       from './build/rps_while.mjs';
-
-const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
+import * as stdlib from '@reach-sh/stdlib';
+import * as RPS from './build/rps.mjs';
+import * as RPSW from './build/rps_while.mjs';
 
 const randomArray = a => a[ Math.floor(Math.random() * a.length) ];
 export const randomHand = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
@@ -37,7 +35,6 @@ const demo = async (theRPS, getHand) => {
              reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
              outcome: log(`${name} agrees that game is over.`) }; };
 
-  const stdlib = connect(uri);
   const wagerInWei = stdlib.toBN(stdlib.toWei(wagerInEth,  'ether'));
   const escrowInWei = stdlib.toBN(stdlib.toWei(escrowInEth, 'ether'));
 

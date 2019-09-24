@@ -1,10 +1,7 @@
 import { runTests, describe, it, expect } from './tester.mjs';
-import { connect } from './index.mjs';
-
-const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
+import * as stdlib from './index.mjs';
 
 runTests(() => { describe('The `web3` stdlib', () => {
-  const stdlib = connect(uri);
   const toBN = stdlib.toBN;
 
   describe('exposes a `bnToHex` function that', () => {
