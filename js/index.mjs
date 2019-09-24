@@ -328,7 +328,6 @@ export const mkStdlib = A =>
      , bnToHex:          bnToHex(A)
      , isBN:             isBN(A)
      , transfer:         transfer(A)
-     , Contract:         Contract(A)
      , EthereumNetwork:  EthereumNetwork(A)
 
      , devnet: { prefundedDevnetAcct: prefundedDevnetAcct(A)
