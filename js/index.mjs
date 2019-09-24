@@ -296,45 +296,42 @@ const createAndUnlockAcct = ({ web3 }) => () =>
             .then(u => u ? Promise.resolve(i)
                   : Promise.reject(`Couldn't unlock account ${i}!`)));
 
-export const mkStdlib = A =>
-  ({ hexTo0x
-     , un0x
-     , k
-     , flip
-     , web3:             A.web3
-     , balanceOf:        balanceOf(A)
-     , random_uint256:   random_uint256(A)
-     , uint256_to_bytes: uint256_to_bytes(A)
-     , bytes_cat:        bytes_cat(A)
-     , bytes_len:        bytes_len(A)
-     , bytes_eq:         bytes_eq(A)
-     , keccak256:        keccak256(A)
-     , isType:           isType(A)
-     , assert:           assert(A)
-     , equal:            equal(A)
-     , eq:               equal(A)
-     , add:              add(A)
-     , sub:              sub(A)
-     , mod:              mod(A)
-     , mul:              mul(A)
-     , ge:               ge(A)
-     , gt:               gt(A)
-     , le:               le(A)
-     , lt:               lt(A)
-     , encode:           encode(A)
-     , toWei:            toWei(A)
-     , toBN:             toBN(A)
-     , bnToHex:          bnToHex(A)
-     , isBN:             isBN(A)
-     , transfer:         transfer(A)
-     , EthereumNetwork:  EthereumNetwork(A)
+export const connect = (uri) => {
+  const A = { web3: new Web3(new Web3.providers.HttpProvider(uri)) };
 
-     , devnet: { prefundedDevnetAcct: prefundedDevnetAcct(A)
-                 , createAndUnlockAcct: createAndUnlockAcct(A)
-               }
-   });
+  return { hexTo0x
+           , un0x
+           , k
+           , flip
+           , web3:             A.web3
+           , balanceOf:        balanceOf(A)
+           , random_uint256:   random_uint256(A)
+           , uint256_to_bytes: uint256_to_bytes(A)
+           , bytes_cat:        bytes_cat(A)
+           , bytes_len:        bytes_len(A)
+           , bytes_eq:         bytes_eq(A)
+           , keccak256:        keccak256(A)
+           , isType:           isType(A)
+           , assert:           assert(A)
+           , equal:            equal(A)
+           , eq:               equal(A)
+           , add:              add(A)
+           , sub:              sub(A)
+           , mod:              mod(A)
+           , mul:              mul(A)
+           , ge:               ge(A)
+           , gt:               gt(A)
+           , le:               le(A)
+           , lt:               lt(A)
+           , encode:           encode(A)
+           , toWei:            toWei(A)
+           , toBN:             toBN(A)
+           , bnToHex:          bnToHex(A)
+           , isBN:             isBN(A)
+           , transfer:         transfer(A)
+           , EthereumNetwork:  EthereumNetwork(A)
 
-export const stdlibNode = (uri) =>
-  Promise.resolve(mkStdlib(
-    { web3:          new Web3(new Web3.providers.HttpProvider(uri))
-    }));
+           , devnet: { prefundedDevnetAcct: prefundedDevnetAcct(A)
+                       , createAndUnlockAcct: createAndUnlockAcct(A)
+                     }
+         }; };

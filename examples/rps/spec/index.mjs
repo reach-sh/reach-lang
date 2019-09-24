@@ -1,5 +1,5 @@
 import * as RPS        from '../build/rps.mjs';
-import { stdlibNode  } from '@reach-sh/stdlib';
+import { connect  } from '@reach-sh/stdlib';
 import { runGameWith } from '../index.mjs';
 
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 60 * 1000 * 10;
@@ -7,11 +7,7 @@ jasmine.DEFAULT_TIMEOUT_INTERVAL = 60 * 1000 * 10;
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 
 describe('A rock/paper/scissors game using the `web3` stdlib', () => {
-  let stdlib;
-
-  beforeAll(done => stdlibNode(uri)
-    .then(l => { stdlib = l; })
-    .then(done));
+  const stdlib = connect(uri);
 
   describe('results in', () => {
     const interactWith = (name, handf) =>

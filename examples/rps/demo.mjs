@@ -1,7 +1,7 @@
 import * as RPS        from './build/rps.mjs';
 import * as RPSW       from './build/rps_while.mjs';
 import { runGameWith } from './index.mjs';
-import { stdlibNode  } from '@reach-sh/stdlib';
+import { connect  } from '@reach-sh/stdlib';
 
 const wagerInEth  = '1.5';
 const escrowInEth = '0.15';
@@ -44,7 +44,7 @@ const makeDemo = (doWhile, drawFirst) => {
 
   return new Promise(resolve =>
     Promise.resolve(console.log(introMsg))
-      .then(() => stdlibNode(uri))
+      .then(() => connect(uri))
       .then(runGameWithTheRPS)
       .then(gs => console.log(outcomeMsgs(gs)))
       .then(() => console.log(`${label} Done!`))

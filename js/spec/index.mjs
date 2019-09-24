@@ -1,13 +1,10 @@
-import { stdlibNode } from '../index.mjs';
+import { connect } from '../index.mjs';
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 
 describe('The `web3` stdlib', () => {
-  let stdlib, toBN;
-
-  beforeAll(done => stdlibNode(uri)
-    .then(l => { stdlib = l; toBN = l.toBN; })
-    .then(done));
+  const stdlib = connect(uri);
+  const toBN = stdlib.toBN;
 
   describe('exposes a `bnToHex` function that', () => {
     it('correctly translates positive `BigNumber`s to hex', () => {
