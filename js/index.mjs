@@ -215,6 +215,8 @@ const mkRecv = ctc => async (label, eventName, timeout_delay, timeout_me, timeou
 
 export const connectAccount = address => {
   const attach = (abi, ctors, ctc_address, creation_block) => {
+    const ethCtc = new web3.eth.Contract(abi, ctc_address);
+
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     const sendrecv = async (label, funcName, args, value, eventName, timeout_delay, timeout_evt ) => {
       void(eventName);
@@ -226,21 +228,21 @@ export const connectAccount = address => {
 
       debug(`send ${label} ${funcName}: start (${ctc.last_block})`);
       // XXX Will this retry until it works?
-      return new web3.eth.Contract(ctc.abi, ctc_address)
-        .methods[funcName](...munged)
-        .send({ from: address, value })
-        .on('error', (err, r) =>
-            // XXX I think this is how a failed assertion shows up
-            panic(`Error from contract: ${label} ${funcName}: ${err} ${r}`))
-        .then(r => { debug(`send ${label} ${funcName}: check receipt`);
-                     return fetchAndRejectInvalidReceiptFor(r.transactionHash); })
-        .then(r => { const this_block = r.blockNumber;
-                     ctc.last_block = this_block;
-                     debug(`send ${label} ${funcName}: getBalance`);
-                     return web3.eth.getBalance(ctc_address, this_block); } )
-        .then(nbs => {
-          debug(`send ${label} ${funcName}: stop`);
-          return { didTimeout: false, value: value, balance: toBN(nbs) }; });
+      const r_maybe =
+            await (ethCtc.methods[funcName](...munged)
+                   .send({ from: address, value })
+                   .on('error', (err, r) =>
+                       // XXX I think this is how a failed assertion shows up
+                       panic(`Error from contract: ${label} ${funcName}: ${err} ${r}`)));
+      debug(`send ${label} ${funcName}: check receipt`);
+      const r_ok = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
+      const this_block = r_ok.blockNumber;
+      ctc.last_block = this_block;
+      debug(`send ${label} ${funcName}: getBalance`);
+      const nbs = await web3.eth.getBalance(ctc_address, this_block);
+
+      debug(`send ${label} ${funcName}: stop`);
+      return { didTimeout: false, value: value, balance: toBN(nbs) };
     };
 
     debug(`created at ${creation_block}`);
