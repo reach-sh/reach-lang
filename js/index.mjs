@@ -224,6 +224,7 @@ export const connectAccount = address => {
             void(e);
             await Timeout.set(500); } } };
 
+      // XXX Need to figure out a way to force this case to happen
       const next = async () => {
         const a = await eventOnceP(eventName);
 
@@ -233,7 +234,7 @@ export const connectAccount = address => {
         // Swap ethers' BigNumber wrapping for web3's
         const bns = b.map(x => toBN(x.toString()));
 
-        return consume(e, bns); };
+        return await consume(e, bns); };
 
       return past()
         .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
