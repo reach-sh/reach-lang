@@ -1,6 +1,9 @@
 import * as RPS        from './build/rps.mjs';
 import * as RPSW       from './build/rps_while.mjs';
-import { randomHand, runGameWith } from './index.mjs';
+import { runGameWith } from './index.mjs';
+
+const randomArray = a => a[ Math.floor(Math.random() * a.length) ];
+export const randomHand = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
 
 const onceThen = (first, after) => {
   let called = 0;

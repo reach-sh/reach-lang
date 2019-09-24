@@ -286,16 +286,16 @@ const EthereumNetwork = A => userAddress =>
          , userAddress
        });
 
-const prefundedDevnetAcct = ({ web3 }) => () =>
-      web3.eth.personal.getAccounts()
-      .then(a => a[0])
-      .catch(e => panic(`Cannot infer prefunded account!\n${e}`));
+const newTestAccount = (A) => async (startingBalance) => {
+  const [ prefunder ] = await A.web3.eth.personal.getAccounts();;
 
-const createAndUnlockAcct = ({ web3 }) => () =>
-      web3.eth.personal.newAccount('')
-      .then(i => web3.eth.personal.unlockAccount(i, '', 999999999)
-            .then(u => u ? Promise.resolve(i)
-                  : Promise.reject(`Couldn't unlock account ${i}!`)));
+  const to = await A.web3.eth.personal.newAccount('');
+
+  if ( await A.web3.eth.personal.unlockAccount(to, '', 999999999) ) {
+    await A.transfer(to, prefunder, startingBalance);
+    return A.EthereumNetwork(to); }
+  else {
+    throw Error(`Couldn't unlock account ${to}!`) } };
 
 export const connect = (uri) => {
   const A = { web3: new Web3(new Web3.providers.HttpProvider(uri)) };
@@ -333,9 +333,7 @@ export const connect = (uri) => {
       , transfer:         transfer(A)
       , EthereumNetwork:  EthereumNetwork(A)
 
-      , devnet: { prefundedDevnetAcct: prefundedDevnetAcct(A)
-                  , createAndUnlockAcct: createAndUnlockAcct(A)
-                }
+      , newTestAccount: newTestAccount(A)
     });
 
   return A; };
