@@ -132,6 +132,8 @@ export const connectAccount = address => {
   const attach = (abi, ctors, ctc_address, creation_block) => {
     const ethCtc = new web3.eth.Contract(abi, ctc_address);
     const ethsCtc = new ethers.Contract(ctc_address, abi, new ethers.providers.Web3Provider(web3.currentProvider));
+    const eventOnceP = (e) =>
+          new Promise((resolve) => ethsCtc.once(e, (...a) => resolve(a)));
 
     debug(`created at ${creation_block}`);
     let last_block = creation_block;
@@ -172,7 +174,7 @@ export const connectAccount = address => {
       // XXX
       void(timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt);
 
-      const consume = async (e, bns, resolve, reject) => {
+      const consume = async (e, bns) => {
         const r_ok = await fetchAndRejectInvalidReceiptFor(e.transactionHash);
         void(r_ok);
         const t = await web3.eth.getTransaction(e.transactionHash);
@@ -180,7 +182,7 @@ export const connectAccount = address => {
         const key = consumedEventKeyOf(eventName, e);
 
         if (alreadyConsumed || (consumedEvents[key] !== undefined)) {
-          return reject(`${label} has already consumed ${key}!`); }
+          panic(`${label} has already consumed ${key}!`); }
 
         // Sanity check: events ought to be consumed monotonically
         const latestPrevious = Object.values(consumedEvents)
@@ -189,37 +191,30 @@ export const connectAccount = address => {
               .pop();
 
         if (!!latestPrevious && latestPrevious.blockNumber >= e.blockNumber) {
-          return reject(`${label} attempted to consume ${eventName} out of sequential block # order!`); }
+          panic(`${label} attempted to consume ${eventName} out of sequential block # order!`); }
 
         alreadyConsumed = true;
         Object.assign(consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
         const this_block = t.blockNumber;
         last_block = this_block;
         const nbs = await web3.eth.getBalance(ctc_address, this_block);
-        return resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }); };
+        return { didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }; };
 
-      const past = () =>
-            new Promise((resolve, reject) =>
-                        ethCtc.getPastEvents(eventName, { toBlock: 'latest' })
-                        .then(es => {
-                          const e = es
-                                .find(x => consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
+      const past = async () => {
+        const es = await ethCtc.getPastEvents(eventName, { toBlock: 'latest' });
+        const e = es.find(x => consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
+        if (!e) {
+          panic(`No unconsumed event`); }
 
-                          if (!e)
-                            return reject(`No unconsumed event`);
+        const argsAbi = abi
+              .find(a => a.name === eventName)
+              .inputs;
+        const decoded = web3.eth.abi.decodeLog(argsAbi, e.raw.data, e.raw.topics);
+        const bns = argsAbi
+              .map(a => a.name)
+              .map(n => decoded[n]);
 
-                          const argsAbi = abi
-                                .find(a => a.name === eventName)
-                                .inputs;
-
-                          const decoded = web3.eth.abi.decodeLog(argsAbi, e.raw.data, e.raw.topics);
-
-                          const bns = argsAbi
-                                .map(a => a.name)
-                                .map(n => decoded[n]);
-
-                          return consume(e, bns, resolve, reject);
-                        }));
+        return await consume(e, bns); };
 
       const pollPast = async () => {
         while ( !alreadyConsumed ) {
@@ -229,17 +224,16 @@ export const connectAccount = address => {
             void(e);
             await Timeout.set(500); } } };
 
-      const next = () =>
-            new Promise((resolve, reject) => ethsCtc
-                        .once(eventName, (...a) => {
-                          const b = a.map(b => b); // Preserve `a` w/ copy
-                          const e = b.pop();       // The final element represents an `ethers` event object
+      const next = async () => {
+        const a = await eventOnceP(eventName);
 
-                          // Swap ethers' BigNumber wrapping for web3's
-                          const bns = b.map(x => toBN(x.toString()));
+        const b = a.map(b => b); // Preserve `a` w/ copy
+        const e = b.pop();       // The final element represents an `ethers` event object
 
-                          return consume(e, bns, resolve, reject);
-                        }));
+        // Swap ethers' BigNumber wrapping for web3's
+        const bns = b.map(x => toBN(x.toString()));
+
+        return consume(e, bns); };
 
       return past()
         .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
