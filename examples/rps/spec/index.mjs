@@ -33,7 +33,7 @@ describe('A rock/paper/scissors game using the `web3` stdlib', () => {
       ].join(' ');
 
     it(msgAgreeAndSaneBalances, done =>
-      runGameWith(RPS, stdlib, false, false, interactWith, wagerInEth, escrowInEth, uri)
+      runGameWith(RPS, stdlib, false, false, interactWith, wagerInEth, escrowInEth)
         .then(g => {
           const { balanceStartAlice, balanceStartBob, balanceEndAlice, balanceEndBob } = g;
 

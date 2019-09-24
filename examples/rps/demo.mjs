@@ -40,8 +40,7 @@ const makeDemo = (doWhile, drawFirst) => {
               , drawFirst
               , makeInteractWith(label)
               , wagerInEth
-              , escrowInEth
-              , uri);
+              , escrowInEth);
 
   return new Promise(resolve =>
     Promise.resolve(console.log(introMsg))
