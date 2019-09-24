@@ -155,7 +155,7 @@ const consumedEventKeyOf = (name, e) =>
 
 
 // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-const mkRecv = ({ web3 }) => c => async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
+const mkRecv = ({ web3 }) => ctc => async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
   let alreadyConsumed = false;
   // XXX
   void(timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt);
@@ -165,11 +165,11 @@ const mkRecv = ({ web3 }) => c => async (label, eventName, timeout_delay, timeou
         .then(() => web3.eth.getTransaction(e.transactionHash, k(reject, t => {
           const key = consumedEventKeyOf(eventName, e);
 
-          if (alreadyConsumed || (c.consumedEvents[key] !== undefined))
+          if (alreadyConsumed || (ctc.consumedEvents[key] !== undefined))
             return reject(`${label} has already consumed ${key}!`);
 
           // Sanity check: events ought to be consumed monotonically
-          const latestPrevious = Object.values(c.consumedEvents)
+          const latestPrevious = Object.values(ctc.consumedEvents)
                 .filter(x => x.eventName === eventName)
                 .sort((x, y) => x.blockNumber - y.blockNumber)
                 .pop();
@@ -179,25 +179,25 @@ const mkRecv = ({ web3 }) => c => async (label, eventName, timeout_delay, timeou
           }
 
           alreadyConsumed = true;
-          Object.assign(c.consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
+          Object.assign(ctc.consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
           const this_block = t.blockNumber;
-          c.last_block = this_block;
-          return web3.eth.getBalance(c.address, this_block)
+          ctc.last_block = this_block;
+          return web3.eth.getBalance(ctc.address, this_block)
             .then(nbs => resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN({ web3 })(nbs) }));
         })));
 
   const past = () =>
         new Promise((resolve, reject) =>
-                    new web3.eth.Contract(c.abi, c.address)
+                    new web3.eth.Contract(ctc.abi, ctc.address)
                     .getPastEvents(eventName, { toBlock: 'latest' })
                     .then(es => {
                       const e = es
-                            .find(x => c.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
+                            .find(x => ctc.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
 
                       if (!e)
                         return reject();
 
-                      const argsAbi = c.abi
+                      const argsAbi = ctc.abi
                             .find(a => a.name === eventName)
                             .inputs;
 
@@ -220,7 +220,7 @@ const mkRecv = ({ web3 }) => c => async (label, eventName, timeout_delay, timeou
 
   const next = () =>
         new Promise((resolve, reject) => new ethers
-                    .Contract(c.address, c.abi, new ethers.providers.Web3Provider(web3.currentProvider))
+                    .Contract(ctc.address, ctc.abi, new ethers.providers.Web3Provider(web3.currentProvider))
                     .once(eventName, (...a) => {
                       const b = a.map(b => b); // Preserve `a` w/ copy
                       const e = b.pop();       // The final element represents an `ethers` event object
@@ -235,10 +235,11 @@ const mkRecv = ({ web3 }) => c => async (label, eventName, timeout_delay, timeou
     .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
 };
 
-const Contract = A => userAddress => (abi, ctors, address, creation_block) => {
+const attach = A => userAddress => (abi, ctors, address, creation_block) => {
   debug(`created at ${creation_block}`);
-  const c =
-        { abi:            abi
+  const ctc =
+        { stdlib: A
+          , abi:            abi
           , sendrecv:       undefined
           , recv:           undefined
           , consumedEvents: {}
@@ -247,10 +248,10 @@ const Contract = A => userAddress => (abi, ctors, address, creation_block) => {
           , ctors
           , address
         };
-  c.sendrecv = mkSendRecv(A)(c, address, userAddress, ctors);
-  c.recv = mkRecv(A)(c);
+  ctc.sendrecv = mkSendRecv(A)(ctc, address, userAddress, ctors);
+  ctc.recv = mkRecv(A)(ctc);
 
-  return c;
+  return ctc;
 };
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
@@ -270,7 +271,7 @@ const mkDeploy = A => userAddress => (abi, bytecode, ctors) => {
   const data = [ bytecode, ...encodedCtors ].join('');
 
   const contractFromReceipt = r =>
-        Contract(A)(userAddress)(abi, ctors, r.contractAddress, r.blockNumber);
+        attach(A)(userAddress)(abi, ctors, r.contractAddress, r.blockNumber);
 
   return A.web3.eth.estimateGas({ data })
     .then(gas => A.web3.eth.sendTransaction({ data, gas, from: userAddress }))
@@ -280,7 +281,7 @@ const mkDeploy = A => userAddress => (abi, bytecode, ctors) => {
 
 const EthereumNetwork = A => userAddress =>
       ({ deploy: mkDeploy(A)(userAddress)
-         , attach: (abi, ctors, address, creation_block) => Promise.resolve(Contract(A)(userAddress)(abi, ctors, address, creation_block))
+         , attach: (abi, ctors, address, creation_block) => Promise.resolve(attach(A)(userAddress)(abi, ctors, address, creation_block))
          , web3:   A.web3
          , userAddress
        });
@@ -299,39 +300,42 @@ const createAndUnlockAcct = ({ web3 }) => () =>
 export const connect = (uri) => {
   const A = { web3: new Web3(new Web3.providers.HttpProvider(uri)) };
 
-  return { hexTo0x
-           , un0x
-           , k
-           , flip
-           , web3:             A.web3
-           , balanceOf:        balanceOf(A)
-           , random_uint256:   random_uint256(A)
-           , uint256_to_bytes: uint256_to_bytes(A)
-           , bytes_cat:        bytes_cat(A)
-           , bytes_len:        bytes_len(A)
-           , bytes_eq:         bytes_eq(A)
-           , keccak256:        keccak256(A)
-           , isType:           isType(A)
-           , assert:           assert(A)
-           , equal:            equal(A)
-           , eq:               equal(A)
-           , add:              add(A)
-           , sub:              sub(A)
-           , mod:              mod(A)
-           , mul:              mul(A)
-           , ge:               ge(A)
-           , gt:               gt(A)
-           , le:               le(A)
-           , lt:               lt(A)
-           , encode:           encode(A)
-           , toWei:            toWei(A)
-           , toBN:             toBN(A)
-           , bnToHex:          bnToHex(A)
-           , isBN:             isBN(A)
-           , transfer:         transfer(A)
-           , EthereumNetwork:  EthereumNetwork(A)
+  Object.assign(
+    A,
+    { hexTo0x
+      , un0x
+      , k
+      , flip
+      , balanceOf:        balanceOf(A)
+      , random_uint256:   random_uint256(A)
+      , uint256_to_bytes: uint256_to_bytes(A)
+      , bytes_cat:        bytes_cat(A)
+      , bytes_len:        bytes_len(A)
+      , bytes_eq:         bytes_eq(A)
+      , keccak256:        keccak256(A)
+      , isType:           isType(A)
+      , assert:           assert(A)
+      , equal:            equal(A)
+      , eq:               equal(A)
+      , add:              add(A)
+      , sub:              sub(A)
+      , mod:              mod(A)
+      , mul:              mul(A)
+      , ge:               ge(A)
+      , gt:               gt(A)
+      , le:               le(A)
+      , lt:               lt(A)
+      , encode:           encode(A)
+      , toWei:            toWei(A)
+      , toBN:             toBN(A)
+      , bnToHex:          bnToHex(A)
+      , isBN:             isBN(A)
+      , transfer:         transfer(A)
+      , EthereumNetwork:  EthereumNetwork(A)
 
-           , devnet: { prefundedDevnetAcct: prefundedDevnetAcct(A)
-                       , createAndUnlockAcct: createAndUnlockAcct(A)
-                     }
-         }; };
+      , devnet: { prefundedDevnetAcct: prefundedDevnetAcct(A)
+                  , createAndUnlockAcct: createAndUnlockAcct(A)
+                }
+    });
+
+  return A; };

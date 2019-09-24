@@ -36,14 +36,9 @@ export const runGameWith = async (theRPS, interactWithAlice, interactWithBob, wa
 
   const [ outcomeBob, outcomeAlice ] =
         await Promise.all([
-          theRPS.B(stdlib
-                   , ctcBob
-                   , interactWithBob),
-          theRPS.A(stdlib
-                   , ctcAlice
-                   , interactWithAlice
-                   , wagerInWei
-                   , escrowInWei)]);
+          theRPS.B(ctcBob, interactWithBob),
+          theRPS.A(ctcAlice, interactWithAlice,
+                   wagerInWei, escrowInWei)]);
 
   const balanceEndAlice = await balanceOf(alice);
   const balanceEndBob = await balanceOf(bob);

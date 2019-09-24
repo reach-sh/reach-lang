@@ -16,7 +16,7 @@ import Reach.EmitSol
   , CompiledSol )
 
 jsString :: String -> Doc a
-jsString s = dquotes $ pretty s
+jsString s = squotes $ pretty s
 
 jsVar :: BLVar -> Doc a
 jsVar (n, _) = pretty $ "v" ++ show n
@@ -201,10 +201,11 @@ jsEPTail _tn _who (EP_Continue _ which arg) = (tp, argvs)
 
 jsPart :: (Participant, EProgram b) -> Doc a
 jsPart (p, (EP_Prog _ pargs et)) =
-  pretty "export" <+> jsFunction p ([ pretty "stdlib", pretty "ctc", pretty "interact" ] ++ pargs_vs) bodyp'
+  pretty "export" <+> jsFunction p ([ pretty "ctc", pretty "interact" ] ++ pargs_vs) bodyp'
   where tn' = 0
         pargs_vs = map jsVar pargs
-        bodyp' = vsep [ pretty "const" <+> jsTxn tn' <+> pretty "= { balance: 0, value: 0 }" <> semi
+        bodyp' = vsep [ pretty "const" <+> pretty "stdlib" <+> pretty "= ctc.stdlib" <> semi
+                      , pretty "const" <+> jsTxn tn' <+> pretty "= { balance: 0, value: 0 }" <> semi
                       , bodyp ]
         (bodyp, _) = jsEPTail tn' p et
 

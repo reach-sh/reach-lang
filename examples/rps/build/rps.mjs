@@ -1,33 +1,34 @@
 // Automatically generated with Reach 0.1.0
 
-export async function A(stdlib, ctc, interact, v0, v1) {
+export async function A(ctc, interact, v0, v1) {
+  const stdlib = ctc.stdlib;
   const txn0 = { balance: 0, value: 0 };
   const v2 = v0;
   const v3 = v1;
-  const v4 = stdlib.isType("bool", await interact.params());
+  const v4 = stdlib.isType('bool', await interact.params());
   const v5 = stdlib.add(v2, v3);
-  const txn1 = await ctc.sendrecv("A", "m1", [v2, v3], v5, "e1", 10, "e2");
+  const txn1 = await ctc.sendrecv('A', 'm1', [v2, v3], v5, 'e1', 10, 'e2');
   if (txn1.didTimeout) {
     stdlib.assert(true);
-    return ["Alice quits"]; }
+    return ['Alice quits']; }
   else {
     const v6 = txn1.value;
     const v7 = stdlib.add(v2, v3);
     const v8 = stdlib.eq(v6, v7);
     stdlib.assert(v8);
-    const txn2 = await ctc.recv("A", "e3", 10, true, [v2, v3], "m4", "e4");
+    const txn2 = await ctc.recv('A', 'e3', 10, true, [v2, v3], 'm4', 'e4');
     if (txn2.didTimeout) {
       stdlib.assert(true);
-      return ["Bob quits"]; }
+      return ['Bob quits']; }
     else {
       const [] = txn2.data;
       const v10 = txn2.value;
       const v11 = stdlib.eq(v10, v2);
       stdlib.assert(v11);
-      const v12 = stdlib.isType("bytes", await interact.getHand());
-      const v13 = stdlib.bytes_eq(v12, "ROCK");
-      const v14 = stdlib.bytes_eq(v12, "PAPER");
-      const v15 = stdlib.bytes_eq(v12, "SCISSORS");
+      const v12 = stdlib.isType('bytes', await interact.getHand());
+      const v13 = stdlib.bytes_eq(v12, 'ROCK');
+      const v14 = stdlib.bytes_eq(v12, 'PAPER');
+      const v15 = stdlib.bytes_eq(v12, 'SCISSORS');
       const v16 = v13 ? true : v14;
       const v17 = v16 ? true : v15;
       stdlib.assert(v17);
@@ -39,19 +40,19 @@ export async function A(stdlib, ctc, interact, v0, v1) {
       const v26 = stdlib.bytes_cat(v24, v25);
       const v27 = stdlib.keccak256(v26);
       const v28 = v27;
-      const v29 = stdlib.isType("bool", await interact.commits());
-      const txn3 = await ctc.sendrecv("A", "m5", [v2, v3, v28], 0, "e5", 10, "e6");
+      const v29 = stdlib.isType('bool', await interact.commits());
+      const txn3 = await ctc.sendrecv('A', 'm5', [v2, v3, v28], 0, 'e5', 10, 'e6');
       if (txn3.didTimeout) {
         stdlib.assert(true);
-        return ["Alice quits"]; }
+        return ['Alice quits']; }
       else {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
-        const txn4 = await ctc.recv("A", "e7", 10, true, [v2, v3, v28], "m8", "e8");
+        const txn4 = await ctc.recv('A', 'e7', 10, true, [v2, v3, v28], 'm8', 'e8');
         if (txn4.didTimeout) {
           stdlib.assert(true);
-          return ["Bob quits"]; }
+          return ['Bob quits']; }
         else {
           const [v43] = txn4.data;
           const v45 = txn4.value;
@@ -69,13 +70,13 @@ export async function A(stdlib, ctc, interact, v0, v1) {
           stdlib.assert(v54);
           const v55 = stdlib.eq(v43, 0);
           const v56 = stdlib.eq(v43, 1);
-          const v57 = v56 ? "PAPER" : "SCISSORS";
-          const v58 = v55 ? "ROCK" : v57;
-          const v59 = stdlib.isType("bool", await interact.reveals(v58));
-          const txn5 = await ctc.sendrecv("A", "m9", [v2, v3, v28, v43, v50, v51], 0, "e9", 10, "e10");
+          const v57 = v56 ? 'PAPER' : 'SCISSORS';
+          const v58 = v55 ? 'ROCK' : v57;
+          const v59 = stdlib.isType('bool', await interact.reveals(v58));
+          const txn5 = await ctc.sendrecv('A', 'm9', [v2, v3, v28, v43, v50, v51], 0, 'e9', 10, 'e10');
           if (txn5.didTimeout) {
             stdlib.assert(true);
-            return ["Alice quits"]; }
+            return ['Alice quits']; }
           else {
             const v60 = txn5.value;
             const v61 = stdlib.eq(v60, 0);
@@ -103,7 +104,7 @@ export async function A(stdlib, ctc, interact, v0, v1) {
             const v80 = v75 ? 0 : 1;
             const v81 = v72 ? 2 : v80;
             const v82 = v76 ? v79 : v81;
-            const v121 = stdlib.isType("bool", await interact.outcome());
+            const v121 = stdlib.isType('bool', await interact.outcome());
             const v122 = stdlib.le(0, v82);
             const v123 = stdlib.lt(v82, 5);
             const v124 = v122 ? v123 : false;
@@ -112,57 +113,58 @@ export async function A(stdlib, ctc, interact, v0, v1) {
             const v126 = stdlib.eq(v82, 1);
             const v127 = stdlib.eq(v82, 2);
             const v128 = stdlib.eq(v82, 3);
-            const v129 = v128 ? "Alice quits" : "Bob quits";
-            const v130 = v127 ? "Alice wins" : v129;
-            const v131 = v126 ? "Draw" : v130;
-            const v132 = v125 ? "Bob wins" : v131;
+            const v129 = v128 ? 'Alice quits' : 'Bob quits';
+            const v130 = v127 ? 'Alice wins' : v129;
+            const v131 = v126 ? 'Draw' : v130;
+            const v132 = v125 ? 'Bob wins' : v131;
             return [v132]; } } } } } }
 
-export async function B(stdlib, ctc, interact) {
+export async function B(ctc, interact) {
+  const stdlib = ctc.stdlib;
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv("B", "e1", 10, true, [], "m2", "e2");
+  const txn1 = await ctc.recv('B', 'e1', 10, true, [], 'm2', 'e2');
   if (txn1.didTimeout) {
     stdlib.assert(true);
-    return ["Alice quits"]; }
+    return ['Alice quits']; }
   else {
     const [v2, v3] = txn1.data;
     const v6 = txn1.value;
     const v7 = stdlib.add(v2, v3);
     const v8 = stdlib.eq(v6, v7);
     stdlib.assert(v8);
-    const v9 = stdlib.isType("bool", await interact.accepts(v2, v3));
-    const txn2 = await ctc.sendrecv("B", "m3", [v2, v3], v2, "e3", 10, "e4");
+    const v9 = stdlib.isType('bool', await interact.accepts(v2, v3));
+    const txn2 = await ctc.sendrecv('B', 'm3', [v2, v3], v2, 'e3', 10, 'e4');
     if (txn2.didTimeout) {
       stdlib.assert(true);
-      return ["Bob quits"]; }
+      return ['Bob quits']; }
     else {
       const v10 = txn2.value;
       const v11 = stdlib.eq(v10, v2);
       stdlib.assert(v11);
-      const txn3 = await ctc.recv("B", "e5", 10, true, [v2, v3], "m6", "e6");
+      const txn3 = await ctc.recv('B', 'e5', 10, true, [v2, v3], 'm6', 'e6');
       if (txn3.didTimeout) {
         stdlib.assert(true);
-        return ["Alice quits"]; }
+        return ['Alice quits']; }
       else {
         const [v28] = txn3.data;
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
-        const v32 = stdlib.isType("bytes", await interact.getHand());
-        const v33 = stdlib.bytes_eq(v32, "ROCK");
-        const v34 = stdlib.bytes_eq(v32, "PAPER");
-        const v35 = stdlib.bytes_eq(v32, "SCISSORS");
+        const v32 = stdlib.isType('bytes', await interact.getHand());
+        const v33 = stdlib.bytes_eq(v32, 'ROCK');
+        const v34 = stdlib.bytes_eq(v32, 'PAPER');
+        const v35 = stdlib.bytes_eq(v32, 'SCISSORS');
         const v36 = v33 ? true : v34;
         const v37 = v36 ? true : v35;
         stdlib.assert(v37);
         const v38 = v34 ? 1 : 2;
         const v39 = v33 ? 0 : v38;
         const v43 = v39;
-        const v44 = stdlib.isType("bool", await interact.shows());
-        const txn4 = await ctc.sendrecv("B", "m7", [v2, v3, v28, v43], 0, "e7", 10, "e8");
+        const v44 = stdlib.isType('bool', await interact.shows());
+        const txn4 = await ctc.sendrecv('B', 'm7', [v2, v3, v28, v43], 0, 'e7', 10, 'e8');
         if (txn4.didTimeout) {
           stdlib.assert(true);
-          return ["Bob quits"]; }
+          return ['Bob quits']; }
         else {
           const v45 = txn4.value;
           const v46 = stdlib.eq(v45, 0);
@@ -171,10 +173,10 @@ export async function B(stdlib, ctc, interact) {
           const v48 = stdlib.lt(v43, 3);
           const v49 = v47 ? v48 : false;
           stdlib.assert(v49);
-          const txn5 = await ctc.recv("B", "e9", 10, true, [v2, v3, v28, v43], "m10", "e10");
+          const txn5 = await ctc.recv('B', 'e9', 10, true, [v2, v3, v28, v43], 'm10', 'e10');
           if (txn5.didTimeout) {
             stdlib.assert(true);
-            return ["Alice quits"]; }
+            return ['Alice quits']; }
           else {
             const [v50, v51] = txn5.data;
             const v60 = txn5.value;
@@ -203,7 +205,7 @@ export async function B(stdlib, ctc, interact) {
             const v80 = v75 ? 0 : 1;
             const v81 = v72 ? 2 : v80;
             const v82 = v76 ? v79 : v81;
-            const v121 = stdlib.isType("bool", await interact.outcome());
+            const v121 = stdlib.isType('bool', await interact.outcome());
             const v122 = stdlib.le(0, v82);
             const v123 = stdlib.lt(v82, 5);
             const v124 = v122 ? v123 : false;
@@ -212,10 +214,10 @@ export async function B(stdlib, ctc, interact) {
             const v126 = stdlib.eq(v82, 1);
             const v127 = stdlib.eq(v82, 2);
             const v128 = stdlib.eq(v82, 3);
-            const v129 = v128 ? "Alice quits" : "Bob quits";
-            const v130 = v127 ? "Alice wins" : v129;
-            const v131 = v126 ? "Draw" : v130;
-            const v132 = v125 ? "Bob wins" : v131;
+            const v129 = v128 ? 'Alice quits' : 'Bob quits';
+            const v130 = v127 ? 'Alice wins' : v129;
+            const v131 = v126 ? 'Draw' : v130;
+            const v132 = v125 ? 'Bob wins' : v131;
             return [v132]; } } } } } }
 
 export const ABI = [{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"}],"name":"m3","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"}],"name":"m2","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"}],"name":"m4","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"},{"internalType":"uint256","name":"v50","type":"uint256"},{"internalType":"uint256","name":"v51","type":"uint256"}],"name":"m9","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"}],"name":"m1","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"}],"name":"m7","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"}],"name":"m10","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"}],"name":"m6","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"}],"name":"m8","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"},{"internalType":"uint256","name":"v2","type":"uint256"},{"internalType":"uint256","name":"v3","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"}],"name":"m5","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address payable","name":"pA","type":"address"},{"internalType":"address payable","name":"pB","type":"address"}],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v2","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v3","type":"uint256"}],"name":"e1","type":"event"},{"anonymous":false,"inputs":[],"name":"e2","type":"event"},{"anonymous":false,"inputs":[],"name":"e3","type":"event"},{"anonymous":false,"inputs":[],"name":"e4","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v28","type":"uint256"}],"name":"e5","type":"event"},{"anonymous":false,"inputs":[],"name":"e6","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v43","type":"uint256"}],"name":"e7","type":"event"},{"anonymous":false,"inputs":[],"name":"e8","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"v50","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v51","type":"uint256"}],"name":"e9","type":"event"},{"anonymous":false,"inputs":[],"name":"e10","type":"event"}];
