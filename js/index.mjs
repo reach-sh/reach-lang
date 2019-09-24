@@ -287,7 +287,7 @@ const EthereumNetwork = A => userAddress =>
        });
 
 const newTestAccount = (A) => async (startingBalance) => {
-  const [ prefunder ] = await A.web3.eth.personal.getAccounts();;
+  const [ prefunder ] = await A.web3.eth.personal.getAccounts();
 
   const to = await A.web3.eth.personal.newAccount('');
 
@@ -295,7 +295,7 @@ const newTestAccount = (A) => async (startingBalance) => {
     await A.transfer(to, prefunder, startingBalance);
     return A.EthereumNetwork(to); }
   else {
-    throw Error(`Couldn't unlock account ${to}!`) } };
+    throw Error(`Couldn't unlock account ${to}!`); } };
 
 export const connect = (uri) => {
   const A = { web3: new Web3(new Web3.providers.HttpProvider(uri)) };
