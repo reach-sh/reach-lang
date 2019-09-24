@@ -171,32 +171,31 @@ export const connectAccount = address => {
       // XXX
       void(timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt);
 
-      const consume = (e, bns, resolve, reject) =>
-            fetchAndRejectInvalidReceiptFor(e.transactionHash)
-            .then(() => web3.eth.getTransaction(e.transactionHash))
-            .then(t => {
-              const key = consumedEventKeyOf(eventName, e);
+      const consume = async (e, bns, resolve, reject) => {
+        const r_ok = await fetchAndRejectInvalidReceiptFor(e.transactionHash);
+        const t = await web3.eth.getTransaction(e.transactionHash);
 
-              if (alreadyConsumed || (consumedEvents[key] !== undefined))
-                return reject(`${label} has already consumed ${key}!`);
+        const key = consumedEventKeyOf(eventName, e);
 
-              // Sanity check: events ought to be consumed monotonically
-              const latestPrevious = Object.values(consumedEvents)
-                    .filter(x => x.eventName === eventName)
-                    .sort((x, y) => x.blockNumber - y.blockNumber)
-                    .pop();
+        if (alreadyConsumed || (consumedEvents[key] !== undefined))
+          return reject(`${label} has already consumed ${key}!`);
 
-              if (!!latestPrevious && latestPrevious.blockNumber >= e.blockNumber) {
-                reject(`${label} attempted to consume ${eventName} out of sequential block # order!`);
-              }
+        // Sanity check: events ought to be consumed monotonically
+        const latestPrevious = Object.values(consumedEvents)
+              .filter(x => x.eventName === eventName)
+              .sort((x, y) => x.blockNumber - y.blockNumber)
+              .pop();
 
-              alreadyConsumed = true;
-              Object.assign(consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
-              const this_block = t.blockNumber;
-              last_block = this_block;
-              return web3.eth.getBalance(ctc_address, this_block)
-                .then(nbs => resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }));
-            });
+        if (!!latestPrevious && latestPrevious.blockNumber >= e.blockNumber) {
+          reject(`${label} attempted to consume ${eventName} out of sequential block # order!`);
+        }
+
+        alreadyConsumed = true;
+        Object.assign(consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
+        const this_block = t.blockNumber;
+        last_block = this_block;
+        const nbs = await web3.eth.getBalance(ctc_address, this_block);
+        return resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }); };
 
       const past = () =>
             new Promise((resolve, reject) =>
