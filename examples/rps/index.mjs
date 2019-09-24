@@ -59,7 +59,7 @@ const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
     : () => randomHand;
 
   const bobShoot = ctcAlice =>
-        gameState.bob.attach(gameState.ctors, ctcAlice.address, ctcAlice.creation_block)
+        gameState.bob.attach(theRPS.ABI, gameState.ctors, ctcAlice.address, ctcAlice.creation_block)
         .then(ctcBob => theRPS.B(stdlib
                                , ctcBob
                                , interactWith('Bob', makeWhichHand())));
@@ -74,7 +74,7 @@ const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
   return prefundedDevnetAcct()
     .then(p   => Promise.all([ newPlayer(p), newPlayer(p) ]))
     .then(captureOpeningGameState)
-    .then(()  => gameState.alice.deploy(gameState.ctors))
+    .then(()  => gameState.alice.deploy(theRPS.ABI, theRPS.Bytecode, gameState.ctors))
     .then(ctc => Promise.all([ bobShoot(ctc), aliceShoot(ctc) ]))
     .then(captureClosingGameState);
 };

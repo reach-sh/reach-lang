@@ -40,7 +40,7 @@ const balanceOf = A => a =>
       A.web3.eth.getBalance(a.userAddress)
       .then(toBN(A));
 
-const assert = (A) => d => nodeAssert.strict(d);
+const assert = (A) => d => (void(A), nodeAssert.strict(d));
 
 const toWei     = ({ web3 }) => web3.utils.toWei;
 const toBN      = ({ web3 }) => web3.utils.toBN;
@@ -105,7 +105,7 @@ const isType = A => (t, x) => {
 
 // `t` is a type name in string form; `v` is the value to cast
 const encode = (A) => (t, v) =>
-      ethers.utils.defaultAbiCoder.encode([t], [v]);
+      (void(A), ethers.utils.defaultAbiCoder.encode([t], [v]));
 
 const rejectInvalidReceiptFor = txHash => r => new Promise((resolve, reject) =>
                                                            !r                           ? reject(`No receipt for txHash: ${txHash}`)
@@ -133,7 +133,7 @@ const mkSendRecv =
 
         debug(`send ${label} ${funcName}: start (${ctc.last_block})`);
         // XXX Will this retry until it works?
-        return new A.web3.eth.Contract(A.abi, address)
+        return new A.web3.eth.Contract(ctc.abi, address)
           .methods[funcName](...munged)
           .send({ from, value })
           .on('error', (err, r) =>
@@ -235,11 +235,10 @@ const mkRecv = ({ web3 }) => c => async (label, eventName, timeout_delay, timeou
     .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
 };
 
-const Contract = A => userAddress => (ctors, address, creation_block) => {
+const Contract = A => userAddress => (abi, ctors, address, creation_block) => {
   debug(`created at ${creation_block}`);
   const c =
-        { abi:            A.abi
-          , bytecode:       A.bytecode
+        { abi:            abi
           , sendrecv:       undefined
           , recv:           undefined
           , consumedEvents: {}
@@ -255,10 +254,10 @@ const Contract = A => userAddress => (ctors, address, creation_block) => {
 };
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
-const mkDeploy = A => userAddress => ctors => {
+const mkDeploy = A => userAddress => (abi, bytecode, ctors) => {
   // TODO track down solid docs RE: why the ABI would have extra constructor
   // fields and when/how/why dropping leading `0x`s is necessary
-  const ctorTypes = A.abi
+  const ctorTypes = abi
         .find(a => a.type === 'constructor')
         .inputs
         .map(i => i.type)
@@ -268,10 +267,10 @@ const mkDeploy = A => userAddress => ctors => {
         .map(c => encode(ethers)(ctorTypes[ctors.indexOf(c)], c))
         .map(un0x);
 
-  const data = [ A.bytecode, ...encodedCtors ].join('');
+  const data = [ bytecode, ...encodedCtors ].join('');
 
   const contractFromReceipt = r =>
-        Contract(A)(userAddress)(ctors, r.contractAddress, r.blockNumber);
+        Contract(A)(userAddress)(abi, ctors, r.contractAddress, r.blockNumber);
 
   return A.web3.eth.estimateGas({ data })
     .then(gas => A.web3.eth.sendTransaction({ data, gas, from: userAddress }))
@@ -281,7 +280,7 @@ const mkDeploy = A => userAddress => ctors => {
 
 const EthereumNetwork = A => userAddress =>
       ({ deploy: mkDeploy(A)(userAddress)
-         , attach: (ctors, address, creation_block) => Promise.resolve(Contract(A)(userAddress)(ctors, address, creation_block))
+         , attach: (abi, ctors, address, creation_block) => Promise.resolve(Contract(A)(userAddress)(abi, ctors, address, creation_block))
          , web3:   A.web3
          , userAddress
        });
@@ -335,9 +334,7 @@ export const mkStdlib = A =>
                }
    });
 
-export const stdlibNode = (abi, bytecode, uri) =>
+export const stdlibNode = (uri) =>
   Promise.resolve(mkStdlib(
     { web3:          new Web3(new Web3.providers.HttpProvider(uri))
-    , abi
-    , bytecode
     }));

@@ -5,7 +5,7 @@ const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 describe('The `web3` stdlib', () => {
   let stdlib, toBN;
 
-  beforeAll(done => stdlibNode(undefined, undefined, uri)
+  beforeAll(done => stdlibNode(uri)
     .then(l => { stdlib = l; toBN = l.toBN; })
     .then(done));
 

@@ -45,7 +45,7 @@ const makeDemo = (doWhile, drawFirst) => {
 
   return new Promise(resolve =>
     Promise.resolve(console.log(introMsg))
-      .then(() => stdlibNode(theRPS.ABI, theRPS.Bytecode, uri))
+      .then(() => stdlibNode(uri))
       .then(runGameWithTheRPS)
       .then(gs => console.log(outcomeMsgs(gs)))
       .then(() => console.log(`${label} Done!`))
