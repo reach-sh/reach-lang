@@ -252,7 +252,6 @@ export const connectAccount = address => {
             , consumedEvents: {}
             , creation_block: creation_block
             , last_block: creation_block
-            , ctors
             , address: ctc_address
           };
     ctc.sendrecv = mkSendRecv(ctc, ctc_address, address, ctors);
