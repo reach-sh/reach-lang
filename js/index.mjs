@@ -7,6 +7,8 @@ import Timeout         from 'await-timeout';
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 // XXX expose setProvider
 const web3 = new Web3(new Web3.providers.HttpProvider(uri));
+const ethersp = new ethers.providers.Web3Provider(web3.currentProvider);
+ethersp.pollingInterval = 500; // ms
 
 const panic = e => { throw Error(e); };
 
@@ -131,9 +133,9 @@ const consumedEventKeyOf = (name, e) =>
 export const connectAccount = address => {
   const attach = (abi, ctors, ctc_address, creation_block) => {
     const ethCtc = new web3.eth.Contract(abi, ctc_address);
-    const ethsCtc = new ethers.Contract(ctc_address, abi, new ethers.providers.Web3Provider(web3.currentProvider));
+    const ethersCtc = new ethers.Contract(ctc_address, abi, ethersp);
     const eventOnceP = (e) =>
-          new Promise((resolve) => ethsCtc.once(e, (...a) => resolve(a)));
+          new Promise((resolve) => ethersCtc.once(e, (...a) => resolve(a)));
 
     debug(`created at ${creation_block}`);
     let last_block = creation_block;
