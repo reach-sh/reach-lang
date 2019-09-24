@@ -31,7 +31,7 @@ const staticHand = (hand) => () => hand;
                reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
                outcome: log(`${name} agrees that game is over.`) }; };
 
-    const ctors = [ alice.userAddress, bob.userAddress ];
+    const ctors = [ alice.address, bob.address ];
 
     const ctcAlice =
           await alice.deploy(theRPS.ABI, theRPS.Bytecode, ctors);

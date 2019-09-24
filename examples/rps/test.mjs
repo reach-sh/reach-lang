@@ -26,8 +26,8 @@ runTests(async () => {
   const bob = await stdlib.newTestAccount(startingBalance);
   const balanceStartAlice = await stdlib.balanceOf(alice);
   const balanceStartBob = await stdlib.balanceOf(bob);
-  const ctors = [ alice.userAddress, bob.userAddress ];
 
+  const ctors = [ alice.address, bob.address ];
   const ctcAlice =
         await alice.deploy(RPS.ABI, RPS.Bytecode, ctors);
   const ctcBob =

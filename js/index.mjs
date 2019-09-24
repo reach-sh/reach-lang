@@ -4,6 +4,7 @@ import * as nodeAssert from 'assert';
 import ethers          from 'ethers';
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
+// XXX expose setProvider
 const web3 = new Web3(new Web3.providers.HttpProvider(uri));
 
 const panic = e => { throw Error(e); };
@@ -39,9 +40,8 @@ const nat_to_fixed_size_hex = size => n => {
 const nat16_to_fixed_size_hex =
       nat_to_fixed_size_hex(2);
 
-export const balanceOf = a =>
-  web3.eth.getBalance(a.userAddress)
-  .then(toBN);
+export const balanceOf = async a =>
+  toBN(await web3.eth.getBalance(a.address));
 
 export const assert = d => nodeAssert.strict(d);
 
@@ -242,7 +242,7 @@ const mkRecv = ctc => async (label, eventName, timeout_delay, timeout_me, timeou
     .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
 };
 
-const attach = userAddress => (abi, ctors, address, creation_block) => {
+const mkAttach = userAddress => (abi, ctors, address, creation_block) => {
   debug(`created at ${creation_block}`);
   const ctc =
         { abi:            abi
@@ -261,7 +261,7 @@ const attach = userAddress => (abi, ctors, address, creation_block) => {
 };
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
-const mkDeploy = userAddress => (abi, bytecode, ctors) => {
+const mkDeploy = userAddress => async (abi, bytecode, ctors) => {
   // TODO track down solid docs RE: why the ABI would have extra constructor
   // fields and when/how/why dropping leading `0x`s is necessary
   const ctorTypes = abi
@@ -276,19 +276,16 @@ const mkDeploy = userAddress => (abi, bytecode, ctors) => {
 
   const data = [ bytecode, ...encodedCtors ].join('');
 
-  const contractFromReceipt = r =>
-        attach(userAddress)(abi, ctors, r.contractAddress, r.blockNumber);
-
-  return web3.eth.estimateGas({ data })
-    .then(gas => web3.eth.sendTransaction({ data, gas, from: userAddress }))
-    .then(r => rejectInvalidReceiptFor(r.transactionHash)(r))
-    .then(contractFromReceipt);
+  const gas = await web3.eth.estimateGas({ data });
+  const r = await web3.eth.sendTransaction({ data, gas, from: userAddress });
+  const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
+  return mkAttach(userAddress)(abi, ctors, r_ok.contractAddress, r_ok.blockNumber);
 };
 
 export const EthereumNetwork = userAddress =>
   ({ deploy: mkDeploy(userAddress)
-     , attach: (abi, ctors, address, creation_block) => Promise.resolve(attach(userAddress)(abi, ctors, address, creation_block))
-     , userAddress
+     , attach: mkAttach(userAddress)
+     , address: userAddress
    });
 
 export const newTestAccount = async (startingBalance) => {
