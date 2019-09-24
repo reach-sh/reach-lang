@@ -1,7 +1,21 @@
-export const runGameWith = (theRPS, stdlib, doWhile, drawFirst, interactWith, wagerInEth, escrowInEth) => {
+const randomArray = a => a[ Math.floor(Math.random() * a.length) ];
+export const randomHand = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
+
+export const makeDrawFirstHand = first => {
+  let called = false;
+  return () => {
+    if (called) {
+      return randomHand();
+    } else {
+      called = true;
+      return first;
+    }
+  };
+};
+
+export const runGameWith = async (theRPS, stdlib, doWhile, drawFirst, interactWith, wagerInEth, escrowInEth) => {
   const wagerInWei = stdlib.toBN(stdlib.toWei(wagerInEth,  'ether'));
   const escrowInWei = stdlib.toBN(stdlib.toWei(escrowInEth, 'ether'));
-  const gameState = { wagerInWei, escrowInWei };
 
   const { balanceOf, devnet, transfer } = stdlib;
   const { prefundedDevnetAcct         } = devnet;
@@ -13,64 +27,40 @@ export const runGameWith = (theRPS, stdlib, doWhile, drawFirst, interactWith, wa
         .then(to => transfer(to, prefunder, startingBalance)
               .then(() => stdlib.EthereumNetwork(to)));
 
-  const captureOpeningGameState = ([ a, b ]) =>
-        Promise.all([ balanceOf(a), balanceOf(b) ])
-        .then(([ balanceStartAlice, balanceStartBob ]) =>
-              Object.assign(gameState
-                            , { alice: a
-                                , bob:   b
-                                , ctors: [ a.userAddress, b.userAddress ]
-                                , balanceStartAlice
-                                , balanceStartBob
-                              }));
-
-  const captureClosingGameState = ([ outcomeBob, outcomeAlice ]) =>
-        Promise.all([ balanceOf(gameState.alice), balanceOf(gameState.bob) ])
-        .then(([ balanceEndAlice, balanceEndBob ]) =>
-              Object.assign(gameState, { outcomeAlice
-                                         , outcomeBob
-                                         , balanceEndAlice
-                                         , balanceEndBob
-                                       }));
-
-  const randomArray = a  => a[ Math.floor(Math.random() * a.length) ];
-  const randomHand  = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
-
-  const makeDrawFirstHand = first => {
-    let called = false;
-    return () => {
-      if (called) {
-        return randomHand();
-      } else {
-        called = true;
-        return first;
-      }
-    };
-  };
-
   const shared = randomHand();
 
   const makeWhichHand = drawFirst
         ? () => makeDrawFirstHand(shared)
         : () => randomHand;
 
-  const bobShoot = ctcAlice =>
-        gameState.bob.attach(theRPS.ABI, gameState.ctors, ctcAlice.address, ctcAlice.creation_block)
-        .then(ctcBob => theRPS.B(stdlib
-                                 , ctcBob
-                                 , interactWith('Bob', makeWhichHand())));
+  const p = await prefundedDevnetAcct();
+  const alice = await newPlayer(p);
+  const bob = await newPlayer(p);
+  const balanceStartAlice = await balanceOf(alice);
+  const balanceStartBob = await balanceOf(bob);
+  const ctors = [ alice.userAddress, bob.userAddress ];
 
-  const aliceShoot = ctc =>
-        theRPS.A(stdlib
-                 , ctc
-                 , interactWith('Alice', makeWhichHand())
-                 , wagerInWei
-                 , escrowInWei);
+  const ctcAlice =
+        await alice.deploy(theRPS.ABI, theRPS.Bytecode, ctors);
+  const ctcBob =
+        await bob.attach(theRPS.ABI, ctors, ctcAlice.address,
+                         ctcAlice.creation_block);
 
-  return prefundedDevnetAcct()
-    .then(p   => Promise.all([ newPlayer(p), newPlayer(p) ]))
-    .then(captureOpeningGameState)
-    .then(()  => gameState.alice.deploy(theRPS.ABI, theRPS.Bytecode, gameState.ctors))
-    .then(ctc => Promise.all([ bobShoot(ctc), aliceShoot(ctc) ]))
-    .then(captureClosingGameState);
+  const [ outcomeBob, outcomeAlice ] =
+        await Promise.all([
+          theRPS.B(stdlib
+                   , ctcBob
+                   , interactWith('Bob', makeWhichHand())),
+          theRPS.A(stdlib
+                   , ctcAlice
+                   , interactWith('Alice', makeWhichHand())
+                   , wagerInWei
+                   , escrowInWei)]);
+
+  const balanceEndAlice = await balanceOf(alice);
+  const balanceEndBob = await balanceOf(bob);
+
+  return { outcomeAlice, outcomeBob,
+           balanceStartAlice, balanceStartBob,
+           balanceEndAlice, balanceEndBob };
 };

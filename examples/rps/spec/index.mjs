@@ -34,7 +34,7 @@ describe('A rock/paper/scissors game using the `web3` stdlib', () => {
 
     it(msgAgreeAndSaneBalances, done =>
       runGameWith(RPS, stdlib, false, false, interactWith, wagerInEth, escrowInEth)
-        .then(g => {
+       .then(g => {
           const { balanceStartAlice, balanceStartBob, balanceEndAlice, balanceEndBob } = g;
 
             expect(g.outcomeAlice)
