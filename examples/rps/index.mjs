@@ -1,7 +1,10 @@
-const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
+export const runGameWith = (theRPS, stdlib, doWhile, drawFirst, interactWith, wagerInEth, escrowInEth) => {
+  const wagerInWei = stdlib.toBN(stdlib.toWei(wagerInEth,  'ether'));
+  const escrowInWei = stdlib.toBN(stdlib.toWei(escrowInEth, 'ether'));
+  const gameState = { wagerInWei, escrowInWei };
+
   const { balanceOf, devnet, transfer } = stdlib;
   const { prefundedDevnetAcct         } = devnet;
-  const { wagerInWei, escrowInWei     } = gameState;
 
   const startingBalance = stdlib.toBN(stdlib.toWei('100', 'ether'));
 
@@ -70,12 +73,4 @@ const play = (theRPS, drawFirst, interactWith) => ({ stdlib, gameState }) => {
     .then(()  => gameState.alice.deploy(theRPS.ABI, theRPS.Bytecode, gameState.ctors))
     .then(ctc => Promise.all([ bobShoot(ctc), aliceShoot(ctc) ]))
     .then(captureClosingGameState);
-};
-
-
-export const runGameWith = (theRPS, stdlib, doWhile, drawFirst, interactWith, wagerInEth, escrowInEth) => {
-  const wagerInWei  = stdlib.toBN(stdlib.toWei(wagerInEth,  'ether'));
-  const escrowInWei = stdlib.toBN(stdlib.toWei(escrowInEth, 'ether'));
-
-  return Promise.resolve({ stdlib, gameState: { wagerInWei, escrowInWei }}).then(play(theRPS, drawFirst, interactWith));
 };
