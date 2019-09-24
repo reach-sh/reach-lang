@@ -112,6 +112,10 @@ export const isType = (t, x) => {
 export const encode = (t, v) =>
   ethers.utils.defaultAbiCoder.encode([t], [v]);
 
+// https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
+export const transfer = (to, from, value) =>
+  web3.eth.sendTransaction({ to, from, value });
+
 const rejectInvalidReceiptFor =
       txHash =>
       r =>
@@ -125,27 +129,28 @@ const fetchAndRejectInvalidReceiptFor = txHash =>
       web3.eth.getTransactionReceipt(txHash)
       .then(rejectInvalidReceiptFor(txHash));
 
-// https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
-export const transfer = (to, from, value) =>
-  web3.eth.sendTransaction({ to, from, value });
-
 const consumedEventKeyOf = (name, e) =>
       `${name}:${e.blockNumber}:${e.transactionHash}`;
 
 export const connectAccount = address => {
   const attach = (abi, ctors, ctc_address, creation_block) => {
     const ethCtc = new web3.eth.Contract(abi, ctc_address);
+    const ethsCtc = new ethers.Contract(ctc_address, abi, new ethers.providers.Web3Provider(web3.currentProvider));
+
+    debug(`created at ${creation_block}`);
+    let last_block = creation_block;
 
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
+    /* eslint require-atomic-updates: off */
     const sendrecv = async (label, funcName, args, value, eventName, timeout_delay, timeout_evt ) => {
       void(eventName);
       // XXX
       void(timeout_delay, timeout_evt);
       // https://github.com/ethereum/web3.js/issues/2077
-      const munged = [ ctc.last_block, ...ctors, ...args ]
+      const munged = [ last_block, ...ctors, ...args ]
             .map(m => isBN(m) ? m.toString() : m);
 
-      debug(`send ${label} ${funcName}: start (${ctc.last_block})`);
+      debug(`send ${label} ${funcName}: start (${last_block})`);
       // XXX Will this retry until it works?
       const r_maybe =
             await (ethCtc.methods[funcName](...munged)
@@ -156,7 +161,7 @@ export const connectAccount = address => {
       debug(`send ${label} ${funcName}: check receipt`);
       const r_ok = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
       const this_block = r_ok.blockNumber;
-      ctc.last_block = this_block;
+      last_block = this_block;
       debug(`send ${label} ${funcName}: getBalance`);
       const nbs = await web3.eth.getBalance(ctc_address, this_block);
 
@@ -165,6 +170,7 @@ export const connectAccount = address => {
     };
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
+    const consumedEvents = {};
     const recv = async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
       let alreadyConsumed = false;
       // XXX
@@ -175,11 +181,11 @@ export const connectAccount = address => {
             .then(() => web3.eth.getTransaction(e.transactionHash, k(reject, t => {
               const key = consumedEventKeyOf(eventName, e);
 
-              if (alreadyConsumed || (ctc.consumedEvents[key] !== undefined))
+              if (alreadyConsumed || (consumedEvents[key] !== undefined))
                 return reject(`${label} has already consumed ${key}!`);
 
               // Sanity check: events ought to be consumed monotonically
-              const latestPrevious = Object.values(ctc.consumedEvents)
+              const latestPrevious = Object.values(consumedEvents)
                     .filter(x => x.eventName === eventName)
                     .sort((x, y) => x.blockNumber - y.blockNumber)
                     .pop();
@@ -189,25 +195,24 @@ export const connectAccount = address => {
               }
 
               alreadyConsumed = true;
-              Object.assign(ctc.consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
+              Object.assign(consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
               const this_block = t.blockNumber;
-              ctc.last_block = this_block;
-              return web3.eth.getBalance(ctc.address, this_block)
+              last_block = this_block;
+              return web3.eth.getBalance(ctc_address, this_block)
                 .then(nbs => resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }));
             })));
 
       const past = () =>
             new Promise((resolve, reject) =>
-                        new web3.eth.Contract(ctc.abi, ctc.address)
-                        .getPastEvents(eventName, { toBlock: 'latest' })
+                        ethCtc.getPastEvents(eventName, { toBlock: 'latest' })
                         .then(es => {
                           const e = es
-                                .find(x => ctc.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
+                                .find(x => consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
 
                           if (!e)
                             return reject();
 
-                          const argsAbi = ctc.abi
+                          const argsAbi = abi
                                 .find(a => a.name === eventName)
                                 .inputs;
 
@@ -229,8 +234,7 @@ export const connectAccount = address => {
       });
 
       const next = () =>
-            new Promise((resolve, reject) => new ethers
-                        .Contract(ctc.address, ctc.abi, new ethers.providers.Web3Provider(web3.currentProvider))
+            new Promise((resolve, reject) => ethsCtc
                         .once(eventName, (...a) => {
                           const b = a.map(b => b); // Preserve `a` w/ copy
                           const e = b.pop();       // The final element represents an `ethers` event object
@@ -245,16 +249,7 @@ export const connectAccount = address => {
         .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
     };
 
-    debug(`created at ${creation_block}`);
-    const ctc =
-          { abi, sendrecv, recv
-            , consumedEvents: {}
-            , creation_block: creation_block
-            , last_block: creation_block
-            , address: ctc_address
-          };
-
-    return ctc;
+    return { sendrecv, recv, address: ctc_address };
   };
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
