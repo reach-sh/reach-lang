@@ -129,35 +129,6 @@ const fetchAndRejectInvalidReceiptFor = txHash =>
 export const transfer = (to, from, value) =>
   web3.eth.sendTransaction({ to, from, value });
 
-// https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
-const mkSendRecv =
-      (ctc, address, from, ctors) => async (label, funcName, args, value, eventName, timeout_delay, timeout_evt ) => {
-        void(eventName);
-        // XXX
-        void(timeout_delay, timeout_evt);
-        // https://github.com/ethereum/web3.js/issues/2077
-        const munged = [ ctc.last_block, ...ctors, ...args ]
-              .map(m => isBN(m) ? m.toString() : m);
-
-        debug(`send ${label} ${funcName}: start (${ctc.last_block})`);
-        // XXX Will this retry until it works?
-        return new web3.eth.Contract(ctc.abi, address)
-          .methods[funcName](...munged)
-          .send({ from, value })
-          .on('error', (err, r) =>
-              // XXX I think this is how a failed assertion shows up
-              panic(`Error from contract: ${label} ${funcName}: ${err} ${r}`))
-          .then(r => { debug(`send ${label} ${funcName}: check receipt`);
-                       return fetchAndRejectInvalidReceiptFor(r.transactionHash); })
-          .then(r => { const this_block = r.blockNumber;
-                       ctc.last_block = this_block;
-                       debug(`send ${label} ${funcName}: getBalance`);
-                       return web3.eth.getBalance(address, this_block); } )
-          .then(nbs => {
-            debug(`send ${label} ${funcName}: stop`);
-            return { didTimeout: false, value: value, balance: toBN(nbs) }; });
-      };
-
 const consumedEventKeyOf = (name, e) =>
       `${name}:${e.blockNumber}:${e.transactionHash}`;
 
@@ -244,17 +215,43 @@ const mkRecv = ctc => async (label, eventName, timeout_delay, timeout_me, timeou
 
 export const connectAccount = address => {
   const attach = (abi, ctors, ctc_address, creation_block) => {
+    // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
+    const sendrecv = async (label, funcName, args, value, eventName, timeout_delay, timeout_evt ) => {
+      void(eventName);
+      // XXX
+      void(timeout_delay, timeout_evt);
+      // https://github.com/ethereum/web3.js/issues/2077
+      const munged = [ ctc.last_block, ...ctors, ...args ]
+            .map(m => isBN(m) ? m.toString() : m);
+
+      debug(`send ${label} ${funcName}: start (${ctc.last_block})`);
+      // XXX Will this retry until it works?
+      return new web3.eth.Contract(ctc.abi, ctc_address)
+        .methods[funcName](...munged)
+        .send({ from: address, value })
+        .on('error', (err, r) =>
+            // XXX I think this is how a failed assertion shows up
+            panic(`Error from contract: ${label} ${funcName}: ${err} ${r}`))
+        .then(r => { debug(`send ${label} ${funcName}: check receipt`);
+                     return fetchAndRejectInvalidReceiptFor(r.transactionHash); })
+        .then(r => { const this_block = r.blockNumber;
+                     ctc.last_block = this_block;
+                     debug(`send ${label} ${funcName}: getBalance`);
+                     return web3.eth.getBalance(ctc_address, this_block); } )
+        .then(nbs => {
+          debug(`send ${label} ${funcName}: stop`);
+          return { didTimeout: false, value: value, balance: toBN(nbs) }; });
+    };
+
     debug(`created at ${creation_block}`);
     const ctc =
-          { abi
-            , sendrecv:       undefined
+          { abi, sendrecv
             , recv:           undefined
             , consumedEvents: {}
             , creation_block: creation_block
             , last_block: creation_block
             , address: ctc_address
           };
-    ctc.sendrecv = mkSendRecv(ctc, ctc_address, address, ctors);
     ctc.recv = mkRecv(ctc);
 
     return ctc;
