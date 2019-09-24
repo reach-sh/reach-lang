@@ -18,8 +18,6 @@ rules:
     - off
   no-debugger:
     - off
-  jasmine/no-disabled-tests:
-    - off
   block-scoped-var:
     - error
   keyword-spacing:
@@ -43,16 +41,12 @@ env:
   es6:      true
   node:     true
   browser:  true
-  jasmine:  true
 
 globals:
   baseDir: true
 
 extends:
   - 'eslint:recommended'
-
-plugins:
-  - jasmine
 
 parserOptions:
   sourceType:  module

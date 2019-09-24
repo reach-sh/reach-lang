@@ -6,10 +6,7 @@
   "main": "index.mjs",
   "devDependencies": {
     "babel-eslint": "^10.0.3",
-    "eslint": "^6.3.0",
-    "eslint-plugin-jasmine": "^2.10.1",
-    "jasmine": "^3.4.0",
-    "jasmine-console-reporter": "^3.1.0"
+    "eslint": "^6.3.0"
   },
   "dependencies": {
     "ethers": "4.0.36",

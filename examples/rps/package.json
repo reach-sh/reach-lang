@@ -5,10 +5,7 @@
   "type": "module",
   "devDependencies": {
     "babel-eslint": "^10.0.3",
-    "eslint": "^6.3.0",
-    "eslint-plugin-jasmine": "^2.10.1",
-    "jasmine": "^3.4.0",
-    "jasmine-console-reporter": "^3.1.0"
+    "eslint": "^6.3.0"
   },
   "dependencies": {
     "@reach-sh/stdlib": "0.1.0"
