@@ -9,13 +9,6 @@ const web3 = new Web3(new Web3.providers.HttpProvider(uri));
 
 const panic = e => { throw Error(e); };
 
-const k = (reject, f) => (err, ...d) =>
-      !!err ? reject(err)
-  : f(...d);
-
-const flip = (f, a, b) =>
-      f(b, a);
-
 const un0x           = h => h.replace(/^0x/, '');
 const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
 const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
@@ -116,6 +109,8 @@ export const encode = (t, v) =>
 export const transfer = (to, from, value) =>
   web3.eth.sendTransaction({ to, from, value });
 
+// Helpers for sendrecv and recv
+
 const rejectInvalidReceiptFor =
       txHash =>
       r =>
@@ -178,7 +173,8 @@ export const connectAccount = address => {
 
       const consume = (e, bns, resolve, reject) =>
             fetchAndRejectInvalidReceiptFor(e.transactionHash)
-            .then(() => web3.eth.getTransaction(e.transactionHash, k(reject, t => {
+            .then(() => web3.eth.getTransaction(e.transactionHash))
+            .then(t => {
               const key = consumedEventKeyOf(eventName, e);
 
               if (alreadyConsumed || (consumedEvents[key] !== undefined))
@@ -200,7 +196,7 @@ export const connectAccount = address => {
               last_block = this_block;
               return web3.eth.getBalance(ctc_address, this_block)
                 .then(nbs => resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }));
-            })));
+            });
 
       const past = () =>
             new Promise((resolve, reject) =>
@@ -228,7 +224,7 @@ export const connectAccount = address => {
       const pollPast = () => new Promise(resolve => {
         const attempt = () => past()
               .then(resolve)
-              .catch(() => flip(setTimeout, 500, () => !alreadyConsumed && attempt()));
+              .catch(() => setTimeout(() => !alreadyConsumed && attempt(), 500));
 
         return attempt();
       });
