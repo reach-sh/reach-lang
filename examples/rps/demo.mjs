@@ -2,44 +2,40 @@ import * as RPS        from './build/rps.mjs';
 import * as RPSW       from './build/rps_while.mjs';
 import { randomHand, runGameWith } from './index.mjs';
 
-export const makeDrawFirstHand = first => {
+const onceThen = (first, after) => {
   let called = false;
   return () => {
     if (called) {
-      return randomHand();
+      return after();
     } else {
       called = true;
-      return first;
+      return first();
     }
   };
 };
 
+const staticHand = (hand) => () => hand;
+
 const wagerInEth  = '1.5';
 const escrowInEth = '0.15';
 
-const makeDemo = async (theRPS, drawFirst) => {
+const makeDemo = async (theRPS, getHand) => {
   console.log(`Alice initiates a new game.`);
 
-  const interactWith = (name, handf) => {
+  const interactWith = (name) => {
     const log = (msg) => () => { console.log(`${msg}`); return true; };
     return { params: log(`${name} publishes parameters of game: wager of ${wagerInEth}ETH and escrow of ${escrowInEth}ETH.`),
              accepts: (wagerAmount, escrowAmount) => log(`${name} accepts the terms: wager of ${wagerAmount}WEI and escrow of ${escrowAmount}WEI.`)(),
-             getHand: () => { const res = handf(); log(`(local: ${name} plays ${res}.)`)(); return res; },
+             getHand: () => { const res = getHand(); log(`(local: ${name} plays ${res}.)`)(); return res; },
              commits: log(`${name} commits to play with (hidden) hand.`),
              shows: log(`${name} sends hand in clear.`),
              reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
              outcome: log(`${name} agrees that game is over.`) }; };
 
-  const shared = randomHand();
-
-  const makeWhichHand = drawFirst
-        ? () => makeDrawFirstHand(shared)
-        : () => randomHand;
-
   const gs = await
   runGameWith(theRPS
-              , interactWith('Alice', makeWhichHand())
-              , interactWith('Bob', makeWhichHand())
+              , interactWith('Alice')
+              , interactWith('Bob')
               , wagerInEth
               , escrowInEth);
   console.log(`Alice thinks outcome is ${gs.outcomeAlice}.`);
@@ -50,13 +46,13 @@ const makeDemo = async (theRPS, drawFirst) => {
 
 ( async () => {
   console.log(`\nRunning games that may Draw\n`);
-  await makeDemo(RPS, true);
-  await makeDemo(RPS, false);
+  await makeDemo(RPS, staticHand('ROCK'));
+  await makeDemo(RPS, randomHand);
 
   // XXX Enable loop all of the time
   if ( process.env.RPS_WHILE ) {
     console.log(`\nRunning games that may not Draw\n`);
-    await makeDemo(RPSW, true); }
+    await makeDemo(RPSW, onceThen(staticHand('PAPER'), randomHand)); }
 
   console.log(`\nAll games are complete!\n`);
   process.exit(0);
