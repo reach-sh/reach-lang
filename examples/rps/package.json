@@ -20,6 +20,6 @@
   "scripts": {
     "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
     "test": "node --experimental-modules test.mjs",
-    "demo": "node --experimental-modules demo.mjs"
+    "demo": "node --experimental-modules index.mjs"
   }
 }
