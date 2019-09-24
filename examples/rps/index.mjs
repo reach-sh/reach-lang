@@ -1,3 +1,6 @@
+import { connect  } from '@reach-sh/stdlib';
+const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
+
 const randomArray = a => a[ Math.floor(Math.random() * a.length) ];
 export const randomHand = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
 
@@ -13,7 +16,9 @@ export const makeDrawFirstHand = first => {
   };
 };
 
-export const runGameWith = async (theRPS, stdlib, doWhile, drawFirst, interactWith, wagerInEth, escrowInEth) => {
+export const runGameWith = async (theRPS, drawFirst, interactWith, wagerInEth, escrowInEth) => {
+  const stdlib = connect(uri);
+
   const wagerInWei = stdlib.toBN(stdlib.toWei(wagerInEth,  'ether'));
   const escrowInWei = stdlib.toBN(stdlib.toWei(escrowInEth, 'ether'));
 

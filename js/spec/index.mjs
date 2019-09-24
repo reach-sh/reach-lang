@@ -35,16 +35,16 @@ describe('The `web3` stdlib', () => {
 
   describe('exposes a `toBN` function that', () => {
     it('correctly translates integer inputs to their `BigNumber` equivalents', () =>
-      expect(toBN(500).toString()).toBe('500'));
+       expect(toBN(500).toString()).toBe('500'));
 
     it('correctly translates string inputs to their `BigNumber` equivalents', () =>
-      expect(toBN('1234567').toString()).toBe('1234567'));
+       expect(toBN('1234567').toString()).toBe('1234567'));
   });
 
 
   describe('exposes an `isBN` function that', () => {
     it('returns `true` for `BigNumber` arguments', () =>
-      expect(stdlib.isBN(toBN('987654321'))).toBe(true));
+       expect(stdlib.isBN(toBN('987654321'))).toBe(true));
 
     it('returns `false` for non-`BigNumber` arguments', () => {
       const { isBN } = stdlib;
@@ -60,22 +60,22 @@ describe('The `web3` stdlib', () => {
 
     describe('`eq` (a synonym of `equal`) that', () => {
       it('returns `true` when its arguments match', () =>
-        expect(stdlib.eq(toBN(567890), toBN(567890)))
-          .toBe(true));
+         expect(stdlib.eq(toBN(567890), toBN(567890)))
+         .toBe(true));
 
       it('returns `false` when provided mismatched arguments', () =>
-        expect(stdlib.eq(toBN(1), toBN(2)))
-          .toBe(false));
+         expect(stdlib.eq(toBN(1), toBN(2)))
+         .toBe(false));
     });
 
     describe('`equal` (a synonym of `eq`) that', () => {
       it('returns `true` when its arguments match', () =>
-        expect(stdlib.equal(toBN(567890), toBN(567890)))
-          .toBe(true));
+         expect(stdlib.equal(toBN(567890), toBN(567890)))
+         .toBe(true));
 
       it('returns `false` when provided mismatched arguments', () =>
-        expect(stdlib.equal(toBN(1), toBN(2)))
-          .toBe(false));
+         expect(stdlib.equal(toBN(1), toBN(2)))
+         .toBe(false));
     });
 
     describe('`ge` that', () => {
@@ -87,14 +87,14 @@ describe('The `web3` stdlib', () => {
       });
 
       it('returns `false` when its first argument is less than its second', () =>
-        expect(stdlib.ge(toBN(5), toBN(6)))
-          .toBe(false));
+         expect(stdlib.ge(toBN(5), toBN(6)))
+         .toBe(false));
     });
 
     describe('`gt` that', () => {
       it('returns `true` when its first argument is greater than its second', () =>
-        expect(stdlib.gt(toBN(5), toBN(4)))
-          .toBe(true));
+         expect(stdlib.gt(toBN(5), toBN(4)))
+         .toBe(true));
 
       it('returns `false` when its first argument is equal to or less than its second', () => {
         const { gt, toBN } = stdlib;
@@ -113,14 +113,14 @@ describe('The `web3` stdlib', () => {
       });
 
       it('returns `false` when its first argument is greater than its second', () =>
-        expect(stdlib.le(toBN(6), toBN(5)))
-          .toBe(false));
+         expect(stdlib.le(toBN(6), toBN(5)))
+         .toBe(false));
     });
 
     describe('`lt` that', () => {
       it('returns `true` when its first argument is lesser than its second', () =>
-        expect(stdlib.lt(toBN(4), toBN(5)))
-          .toBe(true));
+         expect(stdlib.lt(toBN(4), toBN(5)))
+         .toBe(true));
 
       it('returns `false` when its first argument is equal to or greater than its second', () => {
         const { lt, toBN } = stdlib;
@@ -134,24 +134,24 @@ describe('The `web3` stdlib', () => {
 
   describe('exposes a `BigNumber` arithmetic function called', () => {
     it('`add` that sums its arguments', () =>
-      expect(stdlib.add(toBN(12), toBN(1))
-                   .eq( toBN(13)))
-        .toBe(true));
+       expect(stdlib.add(toBN(12), toBN(1))
+              .eq( toBN(13)))
+       .toBe(true));
 
     it('`sub` that subtracts its second argument from its first', () =>
-      expect(stdlib.sub(toBN(12), toBN(1))
-                   .eq( toBN(11)))
-        .toBe(true));
+       expect(stdlib.sub(toBN(12), toBN(1))
+              .eq( toBN(11)))
+       .toBe(true));
 
     it('`mod` that returns the remainder of its first argument divided by its second', () =>
-      expect(stdlib.mod(toBN(10), toBN(4))
-                   .eq( toBN(2)))
-        .toBe(true));
+       expect(stdlib.mod(toBN(10), toBN(4))
+              .eq( toBN(2)))
+       .toBe(true));
 
     it('`mul` that returns the product of its arguments', () =>
-      expect(stdlib.mul(toBN(3), toBN(5))
-                   .eq( toBN(15)))
-        .toBe(true));
+       expect(stdlib.mul(toBN(3), toBN(5))
+              .eq( toBN(15)))
+       .toBe(true));
   });
 
 
