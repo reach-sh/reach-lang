@@ -22,20 +22,21 @@ export const runGameWith = async (theRPS, stdlib, doWhile, drawFirst, interactWi
 
   const startingBalance = stdlib.toBN(stdlib.toWei('100', 'ether'));
 
-  const newPlayer = prefunder =>
-        devnet.createAndUnlockAcct()
-        .then(to => transfer(to, prefunder, startingBalance)
-              .then(() => stdlib.EthereumNetwork(to)));
-
   const shared = randomHand();
 
   const makeWhichHand = drawFirst
         ? () => makeDrawFirstHand(shared)
         : () => randomHand;
 
-  const p = await prefundedDevnetAcct();
-  const alice = await newPlayer(p);
-  const bob = await newPlayer(p);
+  const prefunder = await prefundedDevnetAcct();
+
+  const newPlayer = async () => {
+    const to = await devnet.createAndUnlockAcct();
+    await transfer(to, prefunder, startingBalance);
+    return stdlib.EthereumNetwork(to); };
+
+  const alice = await newPlayer();
+  const bob = await newPlayer();
   const balanceStartAlice = await balanceOf(alice);
   const balanceStartBob = await balanceOf(bob);
   const ctors = [ alice.userAddress, bob.userAddress ];
