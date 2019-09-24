@@ -32,7 +32,6 @@ const staticHand = (hand) => () => hand;
                outcome: log(`${name} agrees that game is over.`) }; };
 
     const ctors = [ alice.address, bob.address ];
-
     const ctcAlice =
           await alice.deploy(theRPS.ABI, theRPS.Bytecode, ctors);
     const ctcBob =

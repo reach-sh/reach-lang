@@ -242,51 +242,49 @@ const mkRecv = ctc => async (label, eventName, timeout_delay, timeout_me, timeou
     .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
 };
 
-const mkAttach = userAddress => (abi, ctors, address, creation_block) => {
-  debug(`created at ${creation_block}`);
-  const ctc =
-        { abi:            abi
-          , sendrecv:       undefined
-          , recv:           undefined
-          , consumedEvents: {}
-          , creation_block: creation_block
-          , last_block: creation_block
-          , ctors
-          , address
-        };
-  ctc.sendrecv = mkSendRecv(ctc, address, userAddress, ctors);
-  ctc.recv = mkRecv(ctc);
+export const connectAccount = address => {
+  const attach = (abi, ctors, ctc_address, creation_block) => {
+    debug(`created at ${creation_block}`);
+    const ctc =
+          { abi
+            , sendrecv:       undefined
+            , recv:           undefined
+            , consumedEvents: {}
+            , creation_block: creation_block
+            , last_block: creation_block
+            , ctors
+            , address: ctc_address
+          };
+    ctc.sendrecv = mkSendRecv(ctc, ctc_address, address, ctors);
+    ctc.recv = mkRecv(ctc);
 
-  return ctc;
-};
+    return ctc;
+  };
 
-// https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
-const mkDeploy = userAddress => async (abi, bytecode, ctors) => {
-  // TODO track down solid docs RE: why the ABI would have extra constructor
-  // fields and when/how/why dropping leading `0x`s is necessary
-  const ctorTypes = abi
-        .find(a => a.type === 'constructor')
-        .inputs
-        .map(i => i.type)
-        .slice(0, ctors.length);
+  // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
+  const deploy = async (abi, bytecode, ctors) => {
+    // XXX track down solid docs RE: why the ABI would have extra
+    // constructor fields and when/how/why dropping leading `0x`s is
+    // necessary
+    const ctorTypes = abi
+          .find(a => a.type === 'constructor')
+          .inputs
+          .map(i => i.type)
+          .slice(0, ctors.length);
 
-  const encodedCtors = ctors
-        .map(c => encode(ctorTypes[ctors.indexOf(c)], c))
-        .map(un0x);
+    const encodedCtors = ctors
+          .map(c => encode(ctorTypes[ctors.indexOf(c)], c))
+          .map(un0x);
 
-  const data = [ bytecode, ...encodedCtors ].join('');
+    const data = [ bytecode, ...encodedCtors ].join('');
 
-  const gas = await web3.eth.estimateGas({ data });
-  const r = await web3.eth.sendTransaction({ data, gas, from: userAddress });
-  const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
-  return mkAttach(userAddress)(abi, ctors, r_ok.contractAddress, r_ok.blockNumber);
-};
+    const gas = await web3.eth.estimateGas({ data });
+    const r = await web3.eth.sendTransaction({ data, gas, from: address });
+    const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
+    return attach(abi, ctors, r_ok.contractAddress, r_ok.blockNumber);
+  };
 
-export const EthereumNetwork = userAddress =>
-  ({ deploy: mkDeploy(userAddress)
-     , attach: mkAttach(userAddress)
-     , address: userAddress
-   });
+  return { deploy, attach, address }; };
 
 export const newTestAccount = async (startingBalance) => {
   const [ prefunder ] = await web3.eth.personal.getAccounts();
@@ -295,6 +293,6 @@ export const newTestAccount = async (startingBalance) => {
 
   if ( await web3.eth.personal.unlockAccount(to, '', 999999999) ) {
     await transfer(to, prefunder, startingBalance);
-    return EthereumNetwork(to); }
+    return connectAccount(to); }
   else {
     throw Error(`Couldn't unlock account ${to}!`); } };
