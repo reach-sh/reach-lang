@@ -3,12 +3,12 @@ import * as RPSW       from './build/rps_while.mjs';
 import { randomHand, runGameWith } from './index.mjs';
 
 const onceThen = (first, after) => {
-  let called = false;
+  let called = 0;
   return () => {
-    if (called) {
+    if (called == 2) {
       return after();
     } else {
-      called = true;
+      called++;
       return first();
     }
   };
@@ -45,13 +45,14 @@ const makeDemo = async (theRPS, getHand) => {
   return; };
 
 ( async () => {
-  console.log(`\nRunning games that may Draw\n`);
+  console.log(`\nRunning game that will Draw\n`);
   await makeDemo(RPS, staticHand('ROCK'));
+
+  console.log(`\nRunning game that may Draw\n`);
   await makeDemo(RPS, randomHand);
 
-  // XXX Enable loop all of the time
   if ( process.env.RPS_WHILE ) {
-    console.log(`\nRunning games that may not Draw\n`);
+    console.log(`\nRunning game that may not Draw\n`);
     await makeDemo(RPSW, onceThen(staticHand('PAPER'), randomHand)); }
 
   console.log(`\nAll games are complete!\n`);
