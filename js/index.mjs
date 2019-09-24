@@ -2,6 +2,7 @@ import Web3            from 'web3';
 import * as crypto     from 'crypto';
 import * as nodeAssert from 'assert';
 import ethers          from 'ethers';
+import Timeout         from 'await-timeout';
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 // XXX expose setProvider
@@ -173,6 +174,7 @@ export const connectAccount = address => {
 
       const consume = async (e, bns, resolve, reject) => {
         const r_ok = await fetchAndRejectInvalidReceiptFor(e.transactionHash);
+        void(r_ok);
         const t = await web3.eth.getTransaction(e.transactionHash);
 
         const key = consumedEventKeyOf(eventName, e);
@@ -219,13 +221,13 @@ export const connectAccount = address => {
                           return consume(e, bns, resolve, reject);
                         }));
 
-      const pollPast = () => new Promise(resolve => {
-        const attempt = () => past()
-              .then(resolve)
-              .catch(() => setTimeout(() => !alreadyConsumed && attempt(), 500));
-
-        return attempt();
-      });
+      const pollPast = async () => {
+        while ( !alreadyConsumed ) {
+          try {
+            return await past(); }
+          catch (e) {
+            void(e);
+            await Timeout.set(500); } } };
 
       const next = () =>
             new Promise((resolve, reject) => ethsCtc

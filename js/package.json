@@ -9,6 +9,7 @@
     "eslint": "^6.3.0"
   },
   "dependencies": {
+    "await-timeout": "^0.6.0",
     "ethers": "4.0.36",
     "web3": "1.2.1"
   },
