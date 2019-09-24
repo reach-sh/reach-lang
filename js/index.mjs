@@ -132,87 +132,6 @@ export const transfer = (to, from, value) =>
 const consumedEventKeyOf = (name, e) =>
       `${name}:${e.blockNumber}:${e.transactionHash}`;
 
-// https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-const mkRecv = ctc => async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
-  let alreadyConsumed = false;
-  // XXX
-  void(timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt);
-
-  const consume = (e, bns, resolve, reject) =>
-        fetchAndRejectInvalidReceiptFor(e.transactionHash)
-        .then(() => web3.eth.getTransaction(e.transactionHash, k(reject, t => {
-          const key = consumedEventKeyOf(eventName, e);
-
-          if (alreadyConsumed || (ctc.consumedEvents[key] !== undefined))
-            return reject(`${label} has already consumed ${key}!`);
-
-          // Sanity check: events ought to be consumed monotonically
-          const latestPrevious = Object.values(ctc.consumedEvents)
-                .filter(x => x.eventName === eventName)
-                .sort((x, y) => x.blockNumber - y.blockNumber)
-                .pop();
-
-          if (!!latestPrevious && latestPrevious.blockNumber >= e.blockNumber) {
-            reject(`${label} attempted to consume ${eventName} out of sequential block # order!`);
-          }
-
-          alreadyConsumed = true;
-          Object.assign(ctc.consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
-          const this_block = t.blockNumber;
-          ctc.last_block = this_block;
-          return web3.eth.getBalance(ctc.address, this_block)
-            .then(nbs => resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }));
-        })));
-
-  const past = () =>
-        new Promise((resolve, reject) =>
-                    new web3.eth.Contract(ctc.abi, ctc.address)
-                    .getPastEvents(eventName, { toBlock: 'latest' })
-                    .then(es => {
-                      const e = es
-                            .find(x => ctc.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
-
-                      if (!e)
-                        return reject();
-
-                      const argsAbi = ctc.abi
-                            .find(a => a.name === eventName)
-                            .inputs;
-
-                      const decoded = web3.eth.abi.decodeLog(argsAbi, e.raw.data, e.raw.topics);
-
-                      const bns = argsAbi
-                            .map(a => a.name)
-                            .map(n => decoded[n]);
-
-                      return consume(e, bns, resolve, reject);
-                    }));
-
-  const pollPast = () => new Promise(resolve => {
-    const attempt = () => past()
-          .then(resolve)
-          .catch(() => flip(setTimeout, 500, () => !alreadyConsumed && attempt()));
-
-    return attempt();
-  });
-
-  const next = () =>
-        new Promise((resolve, reject) => new ethers
-                    .Contract(ctc.address, ctc.abi, new ethers.providers.Web3Provider(web3.currentProvider))
-                    .once(eventName, (...a) => {
-                      const b = a.map(b => b); // Preserve `a` w/ copy
-                      const e = b.pop();       // The final element represents an `ethers` event object
-
-                      // Swap ethers' BigNumber wrapping for web3's
-                      const bns = b.map(x => toBN(x.toString()));
-
-                      return consume(e, bns, resolve, reject);
-                    }));
-
-  return past()
-    .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
-};
-
 export const connectAccount = address => {
   const attach = (abi, ctors, ctc_address, creation_block) => {
     const ethCtc = new web3.eth.Contract(abi, ctc_address);
@@ -245,16 +164,95 @@ export const connectAccount = address => {
       return { didTimeout: false, value: value, balance: toBN(nbs) };
     };
 
+    // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
+    const recv = async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
+      let alreadyConsumed = false;
+      // XXX
+      void(timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt);
+
+      const consume = (e, bns, resolve, reject) =>
+            fetchAndRejectInvalidReceiptFor(e.transactionHash)
+            .then(() => web3.eth.getTransaction(e.transactionHash, k(reject, t => {
+              const key = consumedEventKeyOf(eventName, e);
+
+              if (alreadyConsumed || (ctc.consumedEvents[key] !== undefined))
+                return reject(`${label} has already consumed ${key}!`);
+
+              // Sanity check: events ought to be consumed monotonically
+              const latestPrevious = Object.values(ctc.consumedEvents)
+                    .filter(x => x.eventName === eventName)
+                    .sort((x, y) => x.blockNumber - y.blockNumber)
+                    .pop();
+
+              if (!!latestPrevious && latestPrevious.blockNumber >= e.blockNumber) {
+                reject(`${label} attempted to consume ${eventName} out of sequential block # order!`);
+              }
+
+              alreadyConsumed = true;
+              Object.assign(ctc.consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
+              const this_block = t.blockNumber;
+              ctc.last_block = this_block;
+              return web3.eth.getBalance(ctc.address, this_block)
+                .then(nbs => resolve({ didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }));
+            })));
+
+      const past = () =>
+            new Promise((resolve, reject) =>
+                        new web3.eth.Contract(ctc.abi, ctc.address)
+                        .getPastEvents(eventName, { toBlock: 'latest' })
+                        .then(es => {
+                          const e = es
+                                .find(x => ctc.consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
+
+                          if (!e)
+                            return reject();
+
+                          const argsAbi = ctc.abi
+                                .find(a => a.name === eventName)
+                                .inputs;
+
+                          const decoded = web3.eth.abi.decodeLog(argsAbi, e.raw.data, e.raw.topics);
+
+                          const bns = argsAbi
+                                .map(a => a.name)
+                                .map(n => decoded[n]);
+
+                          return consume(e, bns, resolve, reject);
+                        }));
+
+      const pollPast = () => new Promise(resolve => {
+        const attempt = () => past()
+              .then(resolve)
+              .catch(() => flip(setTimeout, 500, () => !alreadyConsumed && attempt()));
+
+        return attempt();
+      });
+
+      const next = () =>
+            new Promise((resolve, reject) => new ethers
+                        .Contract(ctc.address, ctc.abi, new ethers.providers.Web3Provider(web3.currentProvider))
+                        .once(eventName, (...a) => {
+                          const b = a.map(b => b); // Preserve `a` w/ copy
+                          const e = b.pop();       // The final element represents an `ethers` event object
+
+                          // Swap ethers' BigNumber wrapping for web3's
+                          const bns = b.map(x => toBN(x.toString()));
+
+                          return consume(e, bns, resolve, reject);
+                        }));
+
+      return past()
+        .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
+    };
+
     debug(`created at ${creation_block}`);
     const ctc =
-          { abi, sendrecv
-            , recv:           undefined
+          { abi, sendrecv, recv
             , consumedEvents: {}
             , creation_block: creation_block
             , last_block: creation_block
             , address: ctc_address
           };
-    ctc.recv = mkRecv(ctc);
 
     return ctc;
   };
