@@ -4,19 +4,7 @@ const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 const randomArray = a => a[ Math.floor(Math.random() * a.length) ];
 export const randomHand = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
 
-export const makeDrawFirstHand = first => {
-  let called = false;
-  return () => {
-    if (called) {
-      return randomHand();
-    } else {
-      called = true;
-      return first;
-    }
-  };
-};
-
-export const runGameWith = async (theRPS, drawFirst, interactWith, wagerInEth, escrowInEth) => {
+export const runGameWith = async (theRPS, interactWithAlice, interactWithBob, wagerInEth, escrowInEth) => {
   const stdlib = connect(uri);
 
   const wagerInWei = stdlib.toBN(stdlib.toWei(wagerInEth,  'ether'));
@@ -26,12 +14,6 @@ export const runGameWith = async (theRPS, drawFirst, interactWith, wagerInEth, e
   const { prefundedDevnetAcct         } = devnet;
 
   const startingBalance = stdlib.toBN(stdlib.toWei('100', 'ether'));
-
-  const shared = randomHand();
-
-  const makeWhichHand = drawFirst
-        ? () => makeDrawFirstHand(shared)
-        : () => randomHand;
 
   const prefunder = await prefundedDevnetAcct();
 
@@ -56,10 +38,10 @@ export const runGameWith = async (theRPS, drawFirst, interactWith, wagerInEth, e
         await Promise.all([
           theRPS.B(stdlib
                    , ctcBob
-                   , interactWith('Bob', makeWhichHand())),
+                   , interactWithBob),
           theRPS.A(stdlib
                    , ctcAlice
-                   , interactWith('Alice', makeWhichHand())
+                   , interactWithAlice
                    , wagerInWei
                    , escrowInWei)]);
 

@@ -1,6 +1,18 @@
 import * as RPS        from './build/rps.mjs';
 import * as RPSW       from './build/rps_while.mjs';
-import { runGameWith } from './index.mjs';
+import { randomHand, runGameWith } from './index.mjs';
+
+export const makeDrawFirstHand = first => {
+  let called = false;
+  return () => {
+    if (called) {
+      return randomHand();
+    } else {
+      called = true;
+      return first;
+    }
+  };
+};
 
 const wagerInEth  = '1.5';
 const escrowInEth = '0.15';
@@ -21,11 +33,19 @@ const makeDemo = async (doWhile, drawFirst) => {
              outcome: log(`${name} agrees that game is over.`) }; };
 
   const theRPS = doWhile ? RPSW : RPS;
-  const gs = await runGameWith(theRPS
-                               , drawFirst
-                               , interactWith
-                               , wagerInEth
-                               , escrowInEth);
+
+  const shared = randomHand();
+
+  const makeWhichHand = drawFirst
+        ? () => makeDrawFirstHand(shared)
+        : () => randomHand;
+
+  const gs = await
+  runGameWith(theRPS
+              , interactWith('Alice', makeWhichHand())
+              , interactWith('Bob', makeWhichHand())
+              , wagerInEth
+              , escrowInEth);
   console.log(`${label} Alice thinks outcome is ${gs.outcomeAlice}.`);
   console.log(`${label} Bob thinks outcome is ${gs.outcomeBob}.`);
   console.log(`${label} Done!`);
