@@ -19,7 +19,7 @@ const staticHand = (hand) => () => hand;
 const wagerInEth  = '1.5';
 const escrowInEth = '0.15';
 
-const makeDemo = async (theRPS, getHand) => {
+const demo = async (theRPS, getHand) => {
   console.log(`Alice initiates a new game.`);
 
   const interactWith = (name) => {
@@ -46,14 +46,14 @@ const makeDemo = async (theRPS, getHand) => {
 
 ( async () => {
   console.log(`\nRunning game that will Draw\n`);
-  await makeDemo(RPS, staticHand('ROCK'));
+  await demo(RPS, staticHand('ROCK'));
 
   console.log(`\nRunning game that may Draw\n`);
-  await makeDemo(RPS, randomHand);
+  await demo(RPS, randomHand);
 
   if ( process.env.RPS_WHILE ) {
     console.log(`\nRunning game that may not Draw\n`);
-    await makeDemo(RPSW, onceThen(staticHand('PAPER'), randomHand)); }
+    await demo(RPSW, onceThen(staticHand('PAPER'), randomHand)); }
 
   console.log(`\nAll games are complete!\n`);
   process.exit(0);
