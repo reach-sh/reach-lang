@@ -2,10 +2,6 @@ import * as stdlib from '@reach-sh/stdlib';
 import * as RPS from './build/rps.mjs';
 import * as RPSW from './build/rps_while.mjs';
 
-const randomArray = a => a[ Math.floor(Math.random() * a.length) ];
-export const randomHand = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
-const staticHand = (hand) => () => hand;
-
 ( async () => {
 
   const wagerInEth  = '1.5';
@@ -49,9 +45,12 @@ const staticHand = (hand) => () => hand;
     console.log(`Done!`); };
 
   console.log(`\nRunning game that will Draw\n`);
+  const staticHand = (hand) => () => hand;
   await demo(RPS, staticHand('ROCK'));
 
   console.log(`\nRunning game that may Draw\n`);
+  const randomArray = a => a[ Math.floor(Math.random() * a.length) ];
+  const randomHand = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
   await demo(RPS, randomHand);
 
   console.log(`\nRunning game that times out\n`);
