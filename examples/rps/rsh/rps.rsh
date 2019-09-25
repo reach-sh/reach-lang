@@ -15,12 +15,11 @@ function main() {
     const wagerAmount = declassify(_wagerAmount);
     const escrowAmount = declassify(_escrowAmount);
     interact.params(); });
-
   A.publish(wagerAmount, escrowAmount)
     .pay(wagerAmount + escrowAmount)
     .timeout(DELAY, B, () => {
       commit();
-      return showOutcome(A_QUITS); }) ;
+      return showOutcome(A_QUITS); });
   commit();
 
   B.only(() => {
@@ -59,7 +58,6 @@ function main() {
     const saltA = declassify(_saltA);
     const handA = declassify(_handA);
     interact.reveals(showHand(handB)); });
-
   A.publish(saltA, handA)
     .timeout(DELAY, B, () => {
       transfer(balance()).to(B);

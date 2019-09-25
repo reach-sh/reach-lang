@@ -70,7 +70,6 @@ import * as RPSW from './build/rps_while.mjs';
       else {
         called++;
         return first(); } }; };
-
   await demo(RPSW, onceThen(staticHand('PAPER'), randomHand));
 
   console.log(`\nAll games are complete!\n`);
