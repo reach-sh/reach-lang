@@ -55,25 +55,24 @@ const staticHand = (hand) => () => hand;
   await demo(RPS, randomHand);
 
   console.log(`\nRunning game that times out\n`);
-  // XXX
-  // await demo(RPS, delayHand);
+  const delayHand = async () => {
+    for ( let i = 0; i < 10; i++ ) {
+      console.log(`\tAlice takes her sweet time...`);
+      await stdlib.transfer(alice.address, alice.address, wagerInWei); }
+    return randomHand(); };
+  await demo(RPS, delayHand);
 
-  if ( process.env.RPS_WHILE ) {
-    const onceThen = (first, after) => {
-      let called = 0;
-      return () => {
-        if (called == 2) {
-          return after();
-        } else {
-          called++;
-          return first();
-        }
-      };
-    };
+  console.log(`\nRunning game that may not Draw\n`);
+  const onceThen = (first, after) => {
+    let called = 0;
+    return () => {
+      if (called == 2) {
+        return after(); }
+      else {
+        called++;
+        return first(); } }; };
 
-    console.log(`\nRunning game that may not Draw\n`);
-    await demo(RPSW, onceThen(staticHand('PAPER'), randomHand)); }
+  await demo(RPSW, onceThen(staticHand('PAPER'), randomHand));
 
   console.log(`\nAll games are complete!\n`);
-  process.exit(0);
-})();
+  process.exit(0); })();

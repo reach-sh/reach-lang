@@ -4,6 +4,10 @@ import * as nodeAssert from 'assert';
 import ethers          from 'ethers';
 import Timeout         from 'await-timeout';
 
+const DEBUG = false;
+const debug = msg => { if (DEBUG) {
+  console.log(`DEBUG: ${msg}`); } };
+
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 // XXX expose setProvider
 const web3 = new Web3(new Web3.providers.HttpProvider(uri));
@@ -19,10 +23,6 @@ const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
 const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = b => Array.from(b, byteToHex).join('');
 
-const DEBUG = true;
-const debug = msg => { if (DEBUG) {
-  console.log(`DEBUG: ${msg}`); } };
-
 const nat_to_fixed_size_hex = size => n => {
   const err = m => panic(`nat_to_fixed_size_hex: ${m}`);
 
@@ -31,8 +31,7 @@ const nat_to_fixed_size_hex = size => n => {
 
   return notNat ? err(`expected a nat`)
     : tooBig ? err(`expected a nat that fits into ${size} bytes`)
-    : n.toString(16).padStart((2 * size), '0');
-};
+    : n.toString(16).padStart((2 * size), '0'); };
 
 // Encodes a 16-bit unsigned integer as 2 hex bytes or 4 hex characters
 const nat16_to_fixed_size_hex =
@@ -71,8 +70,7 @@ export const bytes_len = b => {
 
   return !Number.isInteger(n)
     ? panic(`Invalid byte string: ${bh}`)
-    : n;
-};
+    : n; };
 
 // ∀ a b, msg_left (msg_cat(a, b)) = a
 // ∀ a b, msg_right(msg_cat(a, b)) = b
@@ -81,8 +79,7 @@ export const bytes_cat = (a, b) => {
   const bh = hexOf(b);
   const n  = nat16_to_fixed_size_hex(bytes_len(ah));
 
-  return '0x' +  n + ah + bh;
-};
+  return '0x' +  n + ah + bh; };
 
 export const random_uint256 = () =>
   hexToBN(byteArrayToHex(crypto.randomBytes(32)));
@@ -111,8 +108,8 @@ export const encode = (t, v) =>
   ethers.utils.defaultAbiCoder.encode([t], [v]);
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
-export const transfer = (to, from, value) =>
-  web3.eth.sendTransaction({ to, from, value });
+export const transfer = async (to, from, value) =>
+  await web3.eth.sendTransaction({ to, from, value });
 
 // Helpers for sendrecv and recv
 
@@ -141,64 +138,67 @@ export const connectAccount = address => {
     debug(`${shad}: created at ${creation_block}`);
     let last_block = creation_block;
 
+    const updateLastAndGetBalance = async (o) => {
+      const this_block = o.blockNumber;
+      last_block = this_block;
+      return toBN( await web3.eth.getBalance(ctc_address, this_block) ); };
+
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     /* eslint require-atomic-updates: off */
     const sendrecv = async (label, funcName, args, value, eventName, timeout_delay, timeout_evt ) => {
       void(eventName);
-      // XXX
-      void(timeout_delay, timeout_evt);
       // https://github.com/ethereum/web3.js/issues/2077
       const munged = [ last_block, ...ctors, ...args ]
             .map(m => isBN(m) ? m.toString() : m);
 
-      debug(`${shad}: send ${label} ${funcName}: start (${last_block})`);
-      // XXX Will this retry until it works?
-      const r_maybe =
-            await (ethCtc.methods[funcName](...munged)
-                   .send({ from: address, value })
-                   .on('error', (err, r) =>
-                       // XXX I think this is how a failed assertion shows up
-                       panic(`Error from contract: ${label} ${funcName}: ${err} ${r}`)));
-      debug(`${shad}: send ${label} ${funcName}: check receipt`);
-      const r_ok = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
-      const this_block = r_ok.blockNumber;
-      debug(`${shad}: send ${funcName} at ${this_block}`);
-      last_block = this_block;
-      debug(`${shad}: send ${label} ${funcName}: getBalance`);
-      const nbs = await web3.eth.getBalance(ctc_address, this_block);
+      debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START`);
+      let block_send_attempt = last_block;
+      while ( ! timeout_delay || block_send_attempt < last_block + timeout_delay ) {
+        let r_maybe = false;
 
-      debug(`${shad}: send ${label} ${funcName}: stop`);
-      return { didTimeout: false, value: value, balance: toBN(nbs) };
-    };
+        debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
+        try { r_maybe = await ethCtc.methods[funcName](...munged).send({ from: address, value }); }
+        catch (e) {
+          await Timeout.set(0);
+          block_send_attempt = await ethersp.getBlockNumber();
+          continue; }
+
+        assert(r_maybe != false);
+        const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
+
+        debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- OKAY`);
+        const ok_bal = await updateLastAndGetBalance(ok_r);
+        return { didTimeout: false, value: value, balance: ok_bal }; }
+
+      debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
+      const rec_res = await recv(label, timeout_evt, false, false, false, false, false);
+      rec_res.didTimeout = true;
+      return rec_res; };
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
-      // XXX
-      void(timeout_me, timeout_args, timeout_fun, timeout_evt);
-
+      debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
       const ok_args_abi = abi
             .find(a => a.name === ok_evt)
             .inputs;
 
       let block_poll_start = last_block;
       let block_poll_end = block_poll_start;
-      const deadline_block = last_block + timeout_delay;
-      while ( block_poll_start < deadline_block ) {
-        debug(`${shad}: ?? ${ok_evt} in [${block_poll_start},${block_poll_end}], deadline is ${deadline_block}`);
-        void(eventOnceP); // XXX This might be nice, but it may miss things too.
+      while ( ! timeout_delay || block_poll_start < last_block + timeout_delay ) {
+        void(eventOnceP); // XXX This might be nice for performance, but it may miss things too.
         const es = await ethCtc.getPastEvents(ok_evt, { fromBlock: block_poll_start, toBlock: block_poll_end });
         if ( es.length == 0 ) {
-          debug(`${shad}: NO ${ok_evt} in [${block_poll_start},${block_poll_end}], deadline is ${deadline_block}`);
+          debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);
           block_poll_start = block_poll_end;
 
-          await Timeout.set(10); // XXX This should be more reasonable in a live version
-          void(ethersBlockOnceP); // This might be a better option?
+          await Timeout.set(0);
+          void(ethersBlockOnceP); // This might be a better option too, because we won't need to delay
           block_poll_end = await ethersp.getBlockNumber();
 
-          debug(`${shad}: UP ${ok_evt} to [${block_poll_start},${block_poll_end}], deadline is ${deadline_block}`);
           continue;
         } else {
-          debug(`${shad}: YS ${ok_evt} in [${block_poll_start},${block_poll_end}], deadline is ${deadline_block}`);
+          debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY`);
+
           const ok_e = es[0];
 
           const decoded = web3.eth.abi.decodeLog(ok_args_abi, ok_e.raw.data, ok_e.raw.topics);
@@ -208,17 +208,17 @@ export const connectAccount = address => {
           void(ok_r);
           const ok_t = await web3.eth.getTransaction(ok_e.transactionHash);
 
-          const this_block = ok_t.blockNumber;
-          last_block = this_block;
-          const nbs = await web3.eth.getBalance(ctc_address, this_block);
-          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: toBN(nbs) }; } }
+          const ok_bal = await updateLastAndGetBalance(ok_t);
+          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal }; } }
 
-      panic(`Timeout! XXX`);
-      process.exit(1);
-    };
+      debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);
+      const rec_res = timeout_me
+            ? await sendrecv(label, timeout_fun, timeout_args, 0, timeout_evt, false, false )
+            : await recv(label, timeout_evt, false, false, false, false, false);
+      rec_res.didTimeout = true;
+      return rec_res; };
 
-    return { sendrecv, recv, creation_block, address: ctc_address };
-  };
+    return { sendrecv, recv, creation_block, address: ctc_address }; };
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
   const deploy = async (abi, bytecode, ctors) => {
@@ -240,8 +240,7 @@ export const connectAccount = address => {
     const gas = await web3.eth.estimateGas({ data });
     const r = await web3.eth.sendTransaction({ data, gas, from: address });
     const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
-    return attach(abi, ctors, r_ok.contractAddress, r_ok.blockNumber);
-  };
+    return attach(abi, ctors, r_ok.contractAddress, r_ok.blockNumber); };
 
   return { deploy, attach, address }; };
 
