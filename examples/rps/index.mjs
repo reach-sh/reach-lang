@@ -25,7 +25,7 @@ const staticHand = (hand) => () => hand;
       const log = (msg) => () => { console.log(`${msg}`); return true; };
       return { params: log(`${name} publishes parameters of game: wager of ${wagerInEth}ETH and escrow of ${escrowInEth}ETH.`),
                accepts: (wagerAmount, escrowAmount) => log(`${name} accepts the terms: wager of ${wagerAmount}WEI and escrow of ${escrowAmount}WEI.`)(),
-               getHand: () => { const res = getHand(); log(`(local: ${name} plays ${res}.)`)(); return res; },
+               getHand: async () => { const res = await getHand(); log(`(local: ${name} plays ${res}.)`)(); return res; },
                commits: log(`${name} commits to play with (hidden) hand.`),
                shows: log(`${name} sends hand in clear.`),
                reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
@@ -53,6 +53,10 @@ const staticHand = (hand) => () => hand;
 
   console.log(`\nRunning game that may Draw\n`);
   await demo(RPS, randomHand);
+
+  console.log(`\nRunning game that times out\n`);
+  // XXX
+  // await demo(RPS, delayHand);
 
   if ( process.env.RPS_WHILE ) {
     const onceThen = (first, after) => {

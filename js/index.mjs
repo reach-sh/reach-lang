@@ -9,6 +9,8 @@ const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 const web3 = new Web3(new Web3.providers.HttpProvider(uri));
 const ethersp = new ethers.providers.Web3Provider(web3.currentProvider);
 ethersp.pollingInterval = 500; // ms
+const ethersBlockOnceP = () =>
+      new Promise((resolve) => ethersp.once('block', (n) => resolve(n)));
 
 const panic = e => { throw Error(e); };
 
@@ -17,7 +19,7 @@ const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
 const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = b => Array.from(b, byteToHex).join('');
 
-const DEBUG = false;
+const DEBUG = true;
 const debug = msg => { if (DEBUG) {
   console.log(`DEBUG: ${msg}`); } };
 
@@ -127,17 +129,16 @@ const fetchAndRejectInvalidReceiptFor = txHash =>
       web3.eth.getTransactionReceipt(txHash)
       .then(rejectInvalidReceiptFor(txHash));
 
-const consumedEventKeyOf = (name, e) =>
-      `${name}:${e.blockNumber}:${e.transactionHash}`;
-
 export const connectAccount = address => {
+  const shad = address.substring(2,6);
+
   const attach = (abi, ctors, ctc_address, creation_block) => {
     const ethCtc = new web3.eth.Contract(abi, ctc_address);
     const ethersCtc = new ethers.Contract(ctc_address, abi, ethersp);
     const eventOnceP = (e) =>
           new Promise((resolve) => ethersCtc.once(e, (...a) => resolve(a)));
 
-    debug(`created at ${creation_block}`);
+    debug(`${shad}: created at ${creation_block}`);
     let last_block = creation_block;
 
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
@@ -150,7 +151,7 @@ export const connectAccount = address => {
       const munged = [ last_block, ...ctors, ...args ]
             .map(m => isBN(m) ? m.toString() : m);
 
-      debug(`send ${label} ${funcName}: start (${last_block})`);
+      debug(`${shad}: send ${label} ${funcName}: start (${last_block})`);
       // XXX Will this retry until it works?
       const r_maybe =
             await (ethCtc.methods[funcName](...munged)
@@ -158,91 +159,65 @@ export const connectAccount = address => {
                    .on('error', (err, r) =>
                        // XXX I think this is how a failed assertion shows up
                        panic(`Error from contract: ${label} ${funcName}: ${err} ${r}`)));
-      debug(`send ${label} ${funcName}: check receipt`);
+      debug(`${shad}: send ${label} ${funcName}: check receipt`);
       const r_ok = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
       const this_block = r_ok.blockNumber;
+      debug(`${shad}: send ${funcName} at ${this_block}`);
       last_block = this_block;
-      debug(`send ${label} ${funcName}: getBalance`);
+      debug(`${shad}: send ${label} ${funcName}: getBalance`);
       const nbs = await web3.eth.getBalance(ctc_address, this_block);
 
-      debug(`send ${label} ${funcName}: stop`);
+      debug(`${shad}: send ${label} ${funcName}: stop`);
       return { didTimeout: false, value: value, balance: toBN(nbs) };
     };
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const consumedEvents = {};
-    const recv = async (label, eventName, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
-      let alreadyConsumed = false;
+    const recv = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
       // XXX
-      void(timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt);
+      void(timeout_me, timeout_args, timeout_fun, timeout_evt);
 
-      const consume = async (e, bns) => {
-        const r_ok = await fetchAndRejectInvalidReceiptFor(e.transactionHash);
-        void(r_ok);
-        const t = await web3.eth.getTransaction(e.transactionHash);
+      const ok_args_abi = abi
+            .find(a => a.name === ok_evt)
+            .inputs;
 
-        const key = consumedEventKeyOf(eventName, e);
+      let block_poll_start = last_block;
+      let block_poll_end = block_poll_start;
+      const deadline_block = last_block + timeout_delay;
+      while ( block_poll_start < deadline_block ) {
+        debug(`${shad}: ?? ${ok_evt} in [${block_poll_start},${block_poll_end}], deadline is ${deadline_block}`);
+        void(eventOnceP); // XXX This might be nice, but it may miss things too.
+        const es = await ethCtc.getPastEvents(ok_evt, { fromBlock: block_poll_start, toBlock: block_poll_end });
+        if ( es.length == 0 ) {
+          debug(`${shad}: NO ${ok_evt} in [${block_poll_start},${block_poll_end}], deadline is ${deadline_block}`);
+          block_poll_start = block_poll_end;
 
-        if (alreadyConsumed || (consumedEvents[key] !== undefined)) {
-          panic(`${label} has already consumed ${key}!`); }
+          await Timeout.set(10); // XXX This should be more reasonable in a live version
+          void(ethersBlockOnceP); // This might be a better option?
+          block_poll_end = await ethersp.getBlockNumber();
 
-        // Sanity check: events ought to be consumed monotonically
-        const latestPrevious = Object.values(consumedEvents)
-              .filter(x => x.eventName === eventName)
-              .sort((x, y) => x.blockNumber - y.blockNumber)
-              .pop();
+          debug(`${shad}: UP ${ok_evt} to [${block_poll_start},${block_poll_end}], deadline is ${deadline_block}`);
+          continue;
+        } else {
+          debug(`${shad}: YS ${ok_evt} in [${block_poll_start},${block_poll_end}], deadline is ${deadline_block}`);
+          const ok_e = es[0];
 
-        if (!!latestPrevious && latestPrevious.blockNumber >= e.blockNumber) {
-          panic(`${label} attempted to consume ${eventName} out of sequential block # order!`); }
+          const decoded = web3.eth.abi.decodeLog(ok_args_abi, ok_e.raw.data, ok_e.raw.topics);
+          const ok_vals = ok_args_abi.map(a => a.name).map(n => decoded[n]);
 
-        alreadyConsumed = true;
-        Object.assign(consumedEvents, { [key]: Object.assign({}, e, { eventName }) });
-        const this_block = t.blockNumber;
-        last_block = this_block;
-        const nbs = await web3.eth.getBalance(ctc_address, this_block);
-        return { didTimeout: false, data: bns, value: t.value, balance: toBN(nbs) }; };
+          const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
+          void(ok_r);
+          const ok_t = await web3.eth.getTransaction(ok_e.transactionHash);
 
-      const past = async () => {
-        const es = await ethCtc.getPastEvents(eventName, { toBlock: 'latest' });
-        const e = es.find(x => consumedEvents[consumedEventKeyOf(eventName, x)] === undefined);
-        if (!e) {
-          panic(`No unconsumed event`); }
+          const this_block = ok_t.blockNumber;
+          last_block = this_block;
+          const nbs = await web3.eth.getBalance(ctc_address, this_block);
+          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: toBN(nbs) }; } }
 
-        const argsAbi = abi
-              .find(a => a.name === eventName)
-              .inputs;
-        const decoded = web3.eth.abi.decodeLog(argsAbi, e.raw.data, e.raw.topics);
-        const bns = argsAbi
-              .map(a => a.name)
-              .map(n => decoded[n]);
-
-        return await consume(e, bns); };
-
-      const pollPast = async () => {
-        while ( !alreadyConsumed ) {
-          try {
-            return await past(); }
-          catch (e) {
-            void(e);
-            await Timeout.set(500); } } };
-
-      // XXX Need to figure out a way to force this case to happen
-      const next = async () => {
-        const a = await eventOnceP(eventName);
-
-        const b = a.map(b => b); // Preserve `a` w/ copy
-        const e = b.pop();       // The final element represents an `ethers` event object
-
-        // Swap ethers' BigNumber wrapping for web3's
-        const bns = b.map(x => toBN(x.toString()));
-
-        return await consume(e, bns); };
-
-      return past()
-        .catch(() => Promise.race([ pollPast(), next() ]).catch(panic));
+      panic(`Timeout! XXX`);
+      process.exit(1);
     };
 
-    return { sendrecv, recv, address: ctc_address };
+    return { sendrecv, recv, creation_block, address: ctc_address };
   };
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
