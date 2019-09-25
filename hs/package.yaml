@@ -32,6 +32,7 @@ dependencies:
 - aeson
 - unordered-containers
 - system-filepath
+- lattices
 
 ghc-options:
 - -Wall

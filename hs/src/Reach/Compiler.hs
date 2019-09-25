@@ -12,7 +12,7 @@ import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
 import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
-import Data.Monoid
+import Algebra.Lattice
 
 import Reach.AST
 import Reach.Pretty()
@@ -40,12 +40,12 @@ zipWithEqM f x y = if length x == length y then zipWithM f x y
 type TypeVarEnv = M.Map String BaseType
 
 checkFun :: Show a => a -> FunctionType -> [BaseType] -> BaseType
-checkFun h top topdom = toprng
+checkFun h topft topdom = toprng
   where
     toprng = case runExcept mrng of
       Left err -> error err
       Right v -> v
-    mrng = hFun [] M.empty top topdom
+    mrng = hFun [] M.empty topft topdom
     hTy :: TypeVarEnv -> ExprType -> Except String BaseType
     hTy γ et = case et of
       TY_Con bt -> return bt
@@ -90,7 +90,7 @@ data InlineV a
   | IV_Values a [InlineV a]
   | IV_Prim a EP_Prim
   | IV_Var a XILVar
-  | IV_XIL Bool [BaseType] (XILExpr a)
+  | IV_XIL Effect [BaseType] (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
 
 type IVType = [BaseType]
@@ -122,33 +122,33 @@ iv_single :: Show a => a -> InlineV a -> InlineV a
 iv_single a (IV_Values _ vs) = error $ "inline: expected one value but got " ++ show (length vs) ++ " at: " ++ show a
 iv_single _ iv = iv
 
-purePrim :: EP_Prim -> Bool
-purePrim RANDOM = False
-purePrim (CP BALANCE) = False
-purePrim (CP TXN_VALUE) = False
-purePrim _ = True
+purePrim :: EP_Prim -> Effect
+purePrim RANDOM = top
+purePrim (CP BALANCE) = top
+purePrim (CP TXN_VALUE) = top
+purePrim _ = bottom
 
-iv_expr :: Show a => a -> InlineV a -> (Bool, IVType, XILExpr a)
-iv_expr _ (IV_Con a c) = (True, [conType c], (XIL_Con a c))
+iv_expr :: Show a => a -> InlineV a -> (Effect, IVType, XILExpr a)
+iv_expr _ (IV_Con a c) = (bottom, [conType c], (XIL_Con a c))
 iv_expr _ (IV_Values a vs) = (vsp, ts, (XIL_Values a es))
   where (vsp, ts, es) = iv_exprs a vs
-iv_expr _ (IV_Var a (v,t)) = (True, [t], (XIL_Var a (v,t)))
+iv_expr _ (IV_Var a (v,t)) = (bottom, [t], (XIL_Var a (v,t)))
 iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
 iv_expr ra (IV_Clo (ca, _, _) _) = error $ "inline: Cannot use lambda " ++ show ca ++ " as expression at: " ++ show ra
 iv_expr ra (IV_Prim pa _) = error $ "inline: Cannot use primitive " ++ show pa ++ " as expression at: " ++ show ra
 
-iv_expr_expect :: Show a => a -> [BaseType] -> InlineV a -> (Bool, XILExpr a)
+iv_expr_expect :: Show a => a -> [BaseType] -> InlineV a -> (Effect, XILExpr a)
 iv_expr_expect ra et iv =
   if et == at then (p, e)
   else error $ "inline: expect type " ++ show et ++ " but got " ++ show at ++ " at: " ++ show ra
   where (p, at, e) = iv_expr ra iv
 
-iv_exprs :: Show a => a -> [InlineV a] -> (Bool, IVType, [XILExpr a])
+iv_exprs :: Show a => a -> [InlineV a] -> (Effect, IVType, [XILExpr a])
 iv_exprs ra ivs = (iep, its, ies)
   where pies = map (iv_expr ra) ivs
         ies = map (\(_,_,z)->z) pies
         its = type_all_single ra $ map (\(_,y,_)->y) pies
-        iep = getAll $ mconcat (map (All . (\(x,_,_)->x)) pies)
+        iep = joins (map (\(x,_,_)->x) pies)
         
 iv_can_copy :: InlineV a -> Bool
 iv_can_copy (IV_XIL _ _ _) = False
@@ -192,13 +192,13 @@ do_inline_funcall outer_loopt ch who f argivs =
       case do_static_prim h p argivs of
         Just iv -> iv
         Nothing ->
-          IV_XIL (arp && purePrim p) [ pt ] (XIL_PrimApp ch p pt argies)
+          IV_XIL (arp \/ purePrim p) [ pt ] (XIL_PrimApp ch p pt argies)
           where (arp, argts, argies) = iv_exprs ch argivs
                 pt = checkFun ch (primType p) argts
     IV_Clo (lh, formals, orig_body) cloenv ->
-      IV_XIL (arp && bp) bt eff_body'
+      IV_XIL (arp \/ bp) bt eff_body'
       where (σ', arp, eff_formals, eff_argies) =
-              foldr proc_clo_arg (cloenv, True, [], []) $ zipEq formals argivs
+              foldr proc_clo_arg (cloenv, bottom, [], []) $ zipEq formals argivs
             proc_clo_arg (formal, argiv) (i_σ, i_arp, i_eff_formals, i_eff_argies) =
               if (iv_can_copy argiv) then
                 (o_σ_copy, i_arp, i_eff_formals, i_eff_argies)
@@ -208,7 +208,7 @@ do_inline_funcall outer_loopt ch who f argivs =
                     (this_p, this_ts, this_x) = iv_expr ch argiv
                     [ this_t ] = (type_count_expect ch 1 this_ts)
                     o_σ_let = ienv_insert lh formal (IV_Var ch (formal, this_t)) i_σ
-                    o_arp = i_arp && this_p
+                    o_arp = i_arp \/ this_p
                     o_eff_formals = (formal, this_t) : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
             eff_body' = XIL_Let lh who (Just eff_formals) (XIL_Values ch eff_argies) body'
@@ -230,29 +230,29 @@ peval outer_loopt σ e =
         IV_Con _ (Con_B b) ->
           peval outer_loopt σ (if b then t else f)
         civ ->
-          IV_XIL (cp && (tp && fp)) it (XIL_If a (tp && fp) c' it t' f')
+          IV_XIL (cp \/ tfp) it (XIL_If a tfp c' it t' f')
           where (cp, c') = iv_expr_expect a [BT_Bool] civ
+                tfp = (tp \/ fp)
                 (tp, tt, t') = r a t
                 (fp, ft, f') = r a f
                 it = (type_equal a tt ft)
     XL_Claim a ct ae ->
-      --- Claim is impure because it could fail
-      IV_XIL False [] (XIL_Claim a ct (sr a [BT_Bool] ae))
+      IV_XIL Eff_Claim [] (XIL_Claim a ct (sr a [BT_Bool] ae))
     XL_ToConsensus a (p, vs, ae) (twho, de, te) be ->
-      IV_XIL False (type_equal a tt bt) (XIL_ToConsensus a (p, vilvs, (sr a [BT_UInt256] ae)) (twho, (sr a [BT_UInt256] de), te') be')
+      IV_XIL Eff_Comm (type_equal a tt bt) (XIL_ToConsensus a (p, vilvs, (sr a [BT_UInt256] ae)) (twho, (sr a [BT_UInt256] de), te') be')
       where (_, bt, be') = r a be
             (_, tt, te') = r a te
             vilvs = zip vs vts
             (_,vts,_) = iv_exprs a $ map def $ map (XL_Var a) vs
     XL_FromConsensus a be ->
-      IV_XIL False bt (XIL_FromConsensus a be')
+      IV_XIL Eff_Comm bt (XIL_FromConsensus a be')
       where (_, bt, be') = r a be
     XL_Values a es ->
       case es of
         [ e1 ] -> def e1
         _ -> IV_Values a (map (iv_single a) $ map def es)
     XL_Transfer a p ae ->
-      IV_XIL False [] (XIL_Transfer a p (sr a [BT_UInt256] ae))
+      IV_XIL Eff_Comm [] (XIL_Transfer a p (sr a [BT_UInt256] ae))
     XL_Declassify a de ->
       IV_XIL dp [dt] (XIL_Declassify a dt de')
       where (dp, dts, de') = r a de
@@ -262,7 +262,7 @@ peval outer_loopt σ e =
         Just [ v1 ] ->
           do_inline_funcall outer_loopt a mp (IV_Clo (a, [ v1 ], be) σ) [ peval outer_loopt σ ve ]
         _ ->
-          IV_XIL (vp && bp) bt (XIL_Let a mp mvs' ve' be')
+          IV_XIL (vp \/ bp) bt (XIL_Let a mp mvs' ve' be')
           where (vp, ts, ve') = r a ve
                 (bp, bt, be') = iv_expr a $ peval outer_loopt σ' be
                 σ' = M.union σ_new σ
@@ -273,7 +273,7 @@ peval outer_loopt σ e =
                   Nothing -> M.empty
                   Just vs -> id_map a vs ts
     XL_While a lv ie ce inve be ke ->
-      IV_XIL False ket (XIL_While a (lv, lvt) ie' (sr' [BT_Bool] ce) (sr' [BT_Bool] inve) (sr' [] be) ke')
+      IV_XIL top ket (XIL_While a (lv, lvt) ie' (sr' [BT_Bool] ce) (sr' [BT_Bool] inve) (sr' [] be) ke')
       where sr' bt x = snd $ iv_expr_expect a bt $ peval (Just lvt) σ' x
             (_, ket, ke') = iv_expr a $ peval outer_loopt σ' ke
             (_, iet, ie') = r a ie
@@ -282,11 +282,11 @@ peval outer_loopt σ e =
     XL_Continue a ne ->
       case outer_loopt of
         Just lvt ->
-          IV_XIL False [] (XIL_Continue a (sr a [lvt] ne))
+          IV_XIL top [] (XIL_Continue a (sr a [lvt] ne))
         Nothing ->
           error $ "inline: cannot use continue unless inside loop at: " ++ show a
     XL_Interact a m bt args ->
-      IV_XIL False [bt] (XIL_Interact a m bt args')
+      IV_XIL Eff_Comm [bt] (XIL_Interact a m bt args')
       where (_, _, args') = iv_exprs a $ map def args
     XL_Lambda a formals body ->
       IV_Clo (a, formals, body) σ
@@ -426,20 +426,30 @@ anf_expr me ρ e mk =
     XIL_Var h v -> mk h [ anf_renamed_to ρ v ]
     XIL_PrimApp h p pt args ->
       anf_exprs h me ρ args (\_ args' -> ret_expr h "PrimApp" pt (IL_PrimApp h p args'))
-    XIL_If h is_pure ce its te fe ->
+    XIL_If h eff ce its te fe ->
       anf_expr me ρ ce k
       where k _ [ ca ] =
-              if is_pure then
-                anf_expr me ρ te
+              case eff of
+                Eff_Pure ->
+                  anf_expr me ρ te
                   (\ _ tvs ->
                       anf_expr me ρ fe
-                        (\ _ fvs -> do
-                            ks <- allocANFs h me "PureIf" its $ zipWithEq (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
-                            mk h $ map (IL_Var h) ks))
-              else do
-                tt <- anf_tail me ρ te mk
-                ft <- anf_tail me ρ fe mk
-                return $ IL_If h ca tt ft
+                      (\ _ fvs -> do
+                          ks <- allocANFs h me "PureIf" its $ zipWithEq (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
+                          mk h $ map (IL_Var h) ks))
+                Eff_Claim ->
+                  --- XXX It would be nice to be able to have a
+                  --- separate case for this, but would be a very
+                  --- complex change, because we'd need to merge the
+                  --- effects of the two branches in some way in the
+                  --- verifier.
+                  comm_case
+                Eff_Comm -> comm_case
+                Eff_All -> comm_case
+              where comm_case = do
+                      tt <- anf_tail me ρ te mk
+                      ft <- anf_tail me ρ fe mk
+                      return $ IL_If h ca tt ft
             k _ _ = error "anf_expr XL_If ce doesn't return 1"
     XIL_Claim h ct ae ->
       anf_expr me ρ ae (\_ [ aa ] -> ret_stmt h (IL_Claim h ct aa))
