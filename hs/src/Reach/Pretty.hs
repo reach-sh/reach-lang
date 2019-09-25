@@ -13,6 +13,7 @@ instance Pretty BaseType where
   pretty BT_UInt256 = pretty "uint256"
   pretty BT_Bool = pretty "bool"
   pretty BT_Bytes = pretty "bytes"
+  pretty BT_Address = pretty "address"
 
 instance Pretty ExprType where
   pretty (TY_Con bt) = pretty bt
@@ -61,8 +62,8 @@ prettyClaim ct a = group $ parens $ pretty cts <+> pretty a
           CT_Require -> "require!"
           CT_Possible -> "possible?"
 
-prettyTransfer :: Pretty a => Participant -> a -> Doc ann
-prettyTransfer to a = group $ parens $ pretty "transfer!" <+> pretty to <+> pretty a
+prettyTransfer :: Pretty a => Doc ann -> a -> Doc ann
+prettyTransfer to a = group $ parens $ pretty "transfer!" <+> to <+> pretty a
 
 prettyWhile :: Pretty b => Pretty c => (a -> Doc ann) -> a -> b -> c -> c -> c -> c -> Doc ann
 prettyWhile prettyVar loopv inita untilt invt bodyt kt = vsep [ group $ parens $ pretty "do" <+> brackets (prettyVar loopv <+> pretty inita) <> nest 2 (hardline <> pretty "until" <+> prettyBegin untilt <> hardline <> pretty "invariant" <+> prettyBegin invt <> hardline <> prettyBegin bodyt), pretty kt ]
@@ -76,7 +77,7 @@ instance Pretty (ILExpr a) where
   pretty (IL_Declassify _ a) = group $ parens $ pretty "declassify" <+> pretty a
 
 instance Pretty (ILStmt a) where
-  pretty (IL_Transfer _ to a) = prettyTransfer to a
+  pretty (IL_Transfer _ to a) = prettyTransfer (prettyILVar to) a
   pretty (IL_Claim _ ct a) = prettyClaim ct a
 
 prettyValues :: Pretty a => [a] -> Doc ann
@@ -103,12 +104,12 @@ instance Pretty (ILTail a) where
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
   pretty (IL_Do _ r s bt) = prettyDo at s bt
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
-  pretty (IL_ToConsensus _ (p, svs, pa) (twho, da, tt) ct) =
-    vsep [(group $ parens $ pretty "@" <+> pretty p <+> (nest 2 $ hardline <> vsep [svsp, pap, tp])),
+  pretty (IL_ToConsensus _ (ok_ij, p, svs, pa) (to_ij, twho, da, tt) ct) =
+    vsep [(group $ parens $ pretty "@" <+> pretty ok_ij <+> pretty p <+> (nest 2 $ hardline <> vsep [svsp, pap, tp])),
           pretty ct]
     where svsp = parens $ pretty "publish!" <+> prettyILVars svs
           pap = parens $ pretty "pay!" <+> pretty pa
-          tp = parens $ pretty "timeout" <+> pretty twho <+> pretty da <+> (nest 2 $ hardline <> pretty tt)
+          tp = parens $ pretty "timeout" <+> pretty to_ij <+> pretty twho <+> pretty da <+> (nest 2 $ hardline <> pretty tt)
   pretty (IL_FromConsensus _ lt) =
     vsep [(group $ parens $ pretty "commit!"),
           pretty lt]
@@ -155,21 +156,21 @@ instance Pretty (CExpr a) where
 
 instance Pretty (CStmt a) where
   pretty (C_Claim _ ct a) = prettyClaim ct a
-  pretty (C_Transfer _ to a) = prettyTransfer to a
+  pretty (C_Transfer _ to a) = prettyTransfer (prettyBLVar to) a
 
 instance Pretty (EPTail a) where
   pretty (EP_Ret _ al) = prettyValues al
   pretty (EP_If _ ca tt ft) = prettyIf ca tt ft
   pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x -> x) v e bt
   pretty (EP_Do _ s bt) = prettyDo (\x -> x) s bt
-  pretty (EP_SendRecv _ svs (hi_ok, vs, pa, bt) (hi_to, delay, tt)) =
-    vsep [group $ parens $ pretty "send!" <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa <+>
-          (nest 2 (hardline <> pretty "#:timeout" <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt)))),
+  pretty (EP_SendRecv _ svs (ok_ij, hi_ok, vs, pa, bt) (to_ij, hi_to, delay, tt)) =
+    vsep [group $ parens $ pretty "send!" <+> pretty ok_ij <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa <+>
+          (nest 2 (hardline <> pretty "#:timeout" <+> pretty to_ij <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt)))),
           pretty bt]
-  pretty (EP_Recv _ svs (hi_ok, vs, bt) (to_me, hi_to, delay, tt)) =
+  pretty (EP_Recv _ svs (ok_ij, hi_ok, vs, bt) (to_ij, to_me, hi_to, delay, tt)) =
     vsep [group $ parens $ pretty "define-values" <+> prettyBLVars svs <+> prettyBLVars vs <+>
-          (parens $ pretty "recv!" <+> pretty hi_ok <+>
-           (nest 2 (hardline <> pretty "#:timeout" <+> pretty to_me <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt))))),
+          (parens $ pretty "recv!" <+> pretty ok_ij <+> pretty hi_ok <+>
+           (nest 2 (hardline <> pretty "#:timeout" <+> pretty to_ij <+> pretty to_me <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt))))),
           pretty bt]
   pretty (EP_Loop _ which loopv inita bt) =
     group $ parens $ pretty "loop" <+> pretty which <+> prettyBLVar loopv <+> pretty inita <> nest 2 (hardline <> prettyBegin bt)
@@ -183,16 +184,15 @@ instance Pretty (CTail a) where
   pretty (C_Do _ s bt) = prettyDo (\x -> x) s bt
   pretty (C_Jump _ which svs a) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> pretty a
 
-prettyCHandler :: Int -> CHandler a -> Doc ann
-prettyCHandler i (C_Handler _ who timeout (last_i, svs) args delay ct) =
+prettyCHandler :: CHandler a -> Doc ann
+prettyCHandler (C_Handler _ who timeout (last_i, svs) args delay ct i) =
   group $ brackets $ pretty i <+> pretty who <+> pretty timeout <+> pretty delay <+> pretty last_i <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
-prettyCHandler i (C_Loop _ svs arg it ct) =
+prettyCHandler (C_Loop _ svs arg it ct i) =
   group $ brackets $ pretty i <+> pretty "!loop!" <+> prettyBLVars svs <+> prettyBLVar arg <+> pretty "invariant" <+> prettyBegin it <> (nest 2 $ hardline <> pretty ct)
 
 instance Pretty (CProgram a) where
-  pretty (C_Prog _ ps hs) = group $ parens $ pretty "define-contract" <+> (nest 2 $ hardline <> vsep (psp : hsp))
-    where psp = group $ pretty "#:participants" <+> (parens $ hsep $ map pretty ps)
-          hsp = zipWith prettyCHandler [1..] hs
+  pretty (C_Prog _ hs) = group $ parens $ pretty "define-contract" <+> (nest 2 $ hardline <> vsep hsp)
+    where hsp = map prettyCHandler hs
 
 prettyBLVar :: BLVar -> Doc ann
 prettyBLVar v = prettyILVar v

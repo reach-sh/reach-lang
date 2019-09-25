@@ -35,7 +35,7 @@ instance CollectTypes (ILTail a) where
   cvs (IL_If _ _ tt ft) = cvs tt <> cvs ft
   cvs (IL_Let _ _ v _ ct) = cvs v <> cvs ct
   cvs (IL_Do _ _ _ ct) = cvs ct
-  cvs (IL_ToConsensus _ (_, _, _) (_, _, tt) kt) = cvs tt <> cvs kt
+  cvs (IL_ToConsensus _ (_, _, _, _) (_, _, _, tt) kt) = cvs tt <> cvs kt
   cvs (IL_FromConsensus _ kt) = cvs kt
   cvs (IL_While _ loopv _ it ct bt kt) = cvs loopv <> cvs it <> cvs ct <> cvs bt <> cvs kt
   cvs (IL_Continue _ _) = mempty
@@ -49,6 +49,7 @@ z3_sortof :: BaseType -> SExpr
 z3_sortof BT_UInt256 = Atom "Int"
 z3_sortof BT_Bool = Atom "Bool"
 z3_sortof BT_Bytes = Atom "Bytes"
+z3_sortof BT_Address = Atom "Address"
 
 z3Apply :: String -> [SExpr] -> SExpr
 z3Apply f args = List (Atom f : args)
@@ -315,7 +316,7 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                  return (mt, vr <> vr')
             else
               iter cbi ctxt kt
-          IL_ToConsensus _ (_who, _msg, amount) (_twho, _da, tt) kt ->
+          IL_ToConsensus _ (_ok_ij, _who, _msg, amount) (_to_ij, _twho, _da, tt) kt ->
             mconcatMapM (inNewScope z3) [timeout, notimeout]
             where
               timeout = do

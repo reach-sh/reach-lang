@@ -104,6 +104,16 @@ ienv_insert a x v σ =
     Just _ ->
       error $ "inline: shadowed binding of " ++ show x ++ " at : " ++ show a
 
+ienv_ensure_part :: Show a => a -> Participant -> ILEnv a -> (Bool, ILEnv a)
+ienv_ensure_part a p σ =
+  case M.lookup p σ of
+    Nothing ->
+      (True, M.insert p (IV_Var a (p, BT_Address)) σ)
+    Just iv ->
+      case iv of
+        IV_Var _ (op, BT_Address) | op == p -> (False, σ)
+        _ -> error $ "inline: participant name " ++ show p ++ " used as variable, discovered at: " ++ show a
+
 type_count_expect :: Show a => a -> Int -> IVType -> IVType
 type_count_expect a cnt t =
   if l == cnt then t
@@ -238,10 +248,14 @@ peval outer_loopt σ e =
                 it = (type_equal a tt ft)
     XL_Claim a ct ae ->
       IV_XIL Eff_Claim [] (XIL_Claim a ct (sr a [BT_Bool] ae))
-    XL_ToConsensus a (p, vs, ae) (twho, de, te) be ->
-      IV_XIL Eff_Comm (type_equal a tt bt) (XIL_ToConsensus a (p, vilvs, (sr a [BT_UInt256] ae)) (twho, (sr a [BT_UInt256] de), te') be')
-      where (_, bt, be') = r a be
-            (_, tt, te') = r a te
+    XL_ToConsensus a (ok_who, vs, ae) (to_who, de, te) be ->
+      IV_XIL Eff_Comm (type_equal a tt bt) (XIL_ToConsensus a ok_info to_info be')
+      where ok_info = (ok_ij, ok_who, vilvs, (sr a [BT_UInt256] ae))
+            to_info = (to_ij, to_who, (sr a [BT_UInt256] de), te')
+            (ok_ij, σ_ok) = ienv_ensure_part a ok_who σ
+            (to_ij, σ_to) = ienv_ensure_part a to_who σ
+            (_, bt, be') = iv_expr a $ peval outer_loopt σ_ok be
+            (_, tt, te') = iv_expr a $ peval outer_loopt σ_to te
             vilvs = zip vs vts
             (_,vts,_) = iv_exprs a $ map def $ map (XL_Var a) vs
     XL_FromConsensus a be ->
@@ -378,6 +392,14 @@ makeRename h ρ v = do
   nv <- consumeANF v
   return (M.insert v (IL_Var h nv) ρ, nv)
 
+anf_may_rename :: ann -> Bool -> Participant -> XILRenaming ann -> ANFMonad ann (XILRenaming ann, ILVar)
+anf_may_rename h ij from ρ =
+  case ij of
+    False -> return (ρ, v)
+             where (IL_Var _ v) = ρ M.! fromv
+    True -> makeRename h ρ fromv
+  where fromv = (from, BT_Address)
+
 anf_parg :: (XILRenaming ann, [ILVar]) -> (ann, XILVar) -> ANFMonad ann (XILRenaming ann, [ILVar])
 anf_parg (ρ, args) (h, v) =
   case M.lookup v ρ of
@@ -456,19 +478,24 @@ anf_expr me ρ e mk =
     XIL_FromConsensus h le -> do
       lt <- anf_tail RoleContract ρ le mk
       return $ IL_FromConsensus h lt
-    XIL_ToConsensus h (from, ins, pe) (twho, de, te) ce ->
+    XIL_ToConsensus h (ok_ij, from, ins, pe) (to_ij, twho, de, te) ce ->
       anf_expr (RolePart from) ρ pe
       (\ _ [pa] ->
           anf_expr RoleContract ρ de
           (\ _ [da] -> do
               let ins' = vsOnly $ map (anf_renamed_to ρ) ins
-              ct <- anf_tail RoleContract ρ ce mk
-              tt <- anf_tail RoleContract ρ te anf_ktop
-              return $ IL_ToConsensus h (from, ins', pa) (twho, da, tt) ct))
+              (ρ_ok, fromv) <- anf_may_rename h ok_ij from ρ
+              (ρ_to, twhov) <- anf_may_rename h to_ij twho ρ
+              ct <- anf_tail RoleContract ρ_ok ce mk
+              tt <- anf_tail RoleContract ρ_to te anf_ktop
+              return $ IL_ToConsensus h (ok_ij, fromv, ins', pa) (to_ij, twhov, da, tt) ct))
     XIL_Values h args ->
       anf_exprs h me ρ args mk
     XIL_Transfer h to ae ->
-      anf_expr me ρ ae (\_ [ aa ] -> ret_stmt h (IL_Transfer h to aa))
+      anf_expr me ρ ae
+      (\_ [ aa ] ->
+         let IL_Var _ tov = ρ M.! (to, BT_Address) in
+         ret_stmt h (IL_Transfer h tov aa))
     XIL_Declassify h dt ae ->
       anf_expr me ρ ae (\_ [ aa ] -> ret_expr h "Declassify" dt (IL_Declassify h aa))
     XIL_Let _h mwho mvs ve be ->
@@ -578,14 +605,14 @@ acquireEPP = do
   put (nh + 1, M.insert nh Nothing hs)
   return nh
 
-setEPP :: Int -> CHandler ann -> EPPMonad ann ()
-setEPP which h = do
+setEPP :: Int -> (Int -> CHandler ann) -> EPPMonad ann ()
+setEPP which mh = do
   (nh, hs) <- get
   let hs' = case M.lookup which hs of
               Nothing ->
                 error "EPP: Handler not acquired!"
               Just Nothing ->
-                M.insert which (Just h) hs
+                M.insert which (Just $ mh which) hs
               Just (Just _) ->
                 error "EPP: Handler already set!"
   put (nh, hs')
@@ -810,9 +837,11 @@ epp_it_loc ps last_h γ ctxt it = case it of
                       else EP_Do h s' t
                       where (_, s') = epp_s_loc γ p how
     return (svs1, ct1, ts2)
-  IL_ToConsensus h (from, what, howmuch) (twho, delay, timeout) next -> do
+  IL_ToConsensus h (ok_is_join, fromv, what, howmuch) (to_is_join, twhov, delay, timeout) next -> do
     hn_okay <- acquireEPP
     hn_timeout <- acquireEPP
+    let (_, (from, BT_Address)) = fromv
+    let (_, (twho, BT_Address)) = twhov
     let fromr = RolePart from
     let (_, howmuch') = must_be_public $ epp_arg "loc howmuch" γ fromr howmuch
     let what' = map must_be_public $ epp_vars "loc toconsensus" γ fromr what
@@ -821,15 +850,23 @@ epp_it_loc ps last_h γ ctxt it = case it of
     let (delay_vs, delay') = must_be_public $ epp_arg "loc delay" γ RoleContract delay
     (svs_okay, ct_okay, ts_okay) <- epp_it_ctc ps hn_okay γ' ctxt next
     (svs_timeout, ct_timeout, ts_timeout) <- epp_it_ctc ps hn_timeout γ ctxt timeout
-    let svs_all = Set.union delay_vs $ Set.difference (Set.union svs_okay svs_timeout) (boundBLVars what')
+    let svs_all0 = Set.union delay_vs $ Set.difference (Set.union svs_okay svs_timeout) (boundBLVars what')
+    let part_may_add True p x = Set.delete p x
+        part_may_add False p x = Set.insert p x
+    let svs_all1 = part_may_add ok_is_join fromv svs_all0
+    let svs_all = part_may_add to_is_join twhov svs_all1
     let svs_all_l = Set.toList svs_all
-    setEPP hn_okay $ C_Handler h from False (last_h, svs_all_l) what' delay' ct_okay
-    setEPP hn_timeout $ C_Handler h twho True (last_h, svs_all_l) [] delay' ct_timeout
-    let ct2 = C_Wait h last_h svs_all_l
+    setEPP hn_okay $ C_Handler h (ok_is_join, fromv) False (last_h, svs_all_l) what' delay' ct_okay
+    setEPP hn_timeout $ C_Handler h (to_is_join, twhov) True (last_h, svs_all_l) [] delay' ct_timeout
+    let ijm False _ = Nothing
+        ijm True p = Just p
+    let ok_ijm = ijm ok_is_join fromv
+    let to_ijm = ijm to_is_join twhov
+    let ct2 = C_Wait h last_h svs_all_l    
     let ts2 = combine_maps mkt ps ts_okay ts_timeout
               where mkt p pt1 pt2 =
-                      if p /= from then EP_Recv h svs_all_l (hn_okay, what', pt1) (p == twho, hn_timeout, delay', pt2)
-                      else EP_SendRecv h svs_all_l (hn_okay, what', howmuch', pt1) (hn_timeout, delay', pt2)
+                      if p /= from then EP_Recv h svs_all_l (ok_ijm, hn_okay, what', pt1) (to_ijm, p == twho, hn_timeout, delay', pt2)
+                      else EP_SendRecv h svs_all_l (ok_ijm, hn_okay, what', howmuch', pt1) (to_ijm, hn_timeout, delay', pt2)
     return (svs_all, ct2, ts2)
   IL_FromConsensus _ _ -> error "EPP: Cannot transition to local from local"
   IL_While _ _ _ _ _ _ _ -> error $ "EPP: While illegal outside consensus"
@@ -837,7 +874,7 @@ epp_it_loc ps last_h γ ctxt it = case it of
 
 epp :: Show ann => ILProgram ann -> BLProgram ann
 epp (IL_Prog h ips it) = BL_Prog h bps cp
-  where cp = C_Prog h ps chs
+  where cp = C_Prog h chs
         ps = M.keys ips
         bps = M.mapWithKey mkep ets
         mkep p ept = EP_Prog h (ips M.! p) ept

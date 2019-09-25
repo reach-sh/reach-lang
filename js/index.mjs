@@ -95,6 +95,7 @@ export const gt    = (a, b) => toBN(a).gt( toBN(b));
 export const le    = (a, b) => toBN(a).lte(toBN(b));
 export const lt    = (a, b) => toBN(a).lt( toBN(b));
 
+// XXX address
 const checkType = (t, x) => {
   if ( t === 'bool' ) { return typeof(x) === 'boolean'; }
   else if ( t === 'uint256' ) { return web3.utils.isBN(t); }
@@ -129,7 +130,7 @@ const fetchAndRejectInvalidReceiptFor = txHash =>
 export const connectAccount = address => {
   const shad = address.substring(2,6);
 
-  const attach = (bin, ctors, ctc_address, creation_block) => {
+  const attach = (bin, ctc_address, creation_block) => {
     const { ABI } = bin;
     const ethCtc = new web3.eth.Contract(ABI, ctc_address);
     const ethersCtc = new ethers.Contract(ctc_address, ABI, ethersp);
@@ -149,7 +150,7 @@ export const connectAccount = address => {
     const sendrecv = async (label, funcName, args, value, eventName, timeout_delay, timeout_evt ) => {
       void(eventName);
       // https://github.com/ethereum/web3.js/issues/2077
-      const munged = [ last_block, ...ctors, ...args ]
+      const munged = [ last_block, ...args ]
             .map(m => isBN(m) ? m.toString() : m);
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START`);
@@ -169,7 +170,7 @@ export const connectAccount = address => {
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- OKAY`);
         const ok_bal = await updateLastAndGetBalance(ok_r);
-        return { didTimeout: false, value: value, balance: ok_bal }; }
+        return { didTimeout: false, value: value, balance: ok_bal, from: address }; }
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
       const rec_res = await recv(label, timeout_evt, false, false, false, false, false);
@@ -210,7 +211,7 @@ export const connectAccount = address => {
           const ok_t = await web3.eth.getTransaction(ok_e.transactionHash);
 
           const ok_bal = await updateLastAndGetBalance(ok_t);
-          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal }; } }
+          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from }; } }
 
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);
       const rec_res = timeout_me
@@ -222,27 +223,13 @@ export const connectAccount = address => {
     return { sendrecv, recv, creation_block, address: ctc_address }; };
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
-  const deploy = async (bin, ctors) => {
+  const deploy = async (bin) => {
     const { ABI, Bytecode } = bin;
-    // XXX track down solid docs RE: why the ABI would have extra
-    // constructor fields and when/how/why dropping leading `0x`s is
-    // necessary
-    const ctorTypes = ABI
-          .find(a => a.type === 'constructor')
-          .inputs
-          .map(i => i.type)
-          .slice(0, ctors.length);
-
-    const encodedCtors = ctors
-          .map(c => encode(ctorTypes[ctors.indexOf(c)], c))
-          .map(un0x);
-
-    const data = [ Bytecode, ...encodedCtors ].join('');
-
+    const data = Bytecode;
     const gas = await web3.eth.estimateGas({ data });
     const r = await web3.eth.sendTransaction({ data, gas, from: address });
     const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
-    return attach(bin, ctors, r_ok.contractAddress, r_ok.blockNumber); };
+    return attach(bin, r_ok.contractAddress, r_ok.blockNumber); };
 
   return { deploy, attach, address }; };
 

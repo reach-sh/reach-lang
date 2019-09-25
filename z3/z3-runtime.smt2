@@ -1,3 +1,5 @@
+(declare-sort Address 0)
+
 (declare-datatypes
  ()
  ((Bytes

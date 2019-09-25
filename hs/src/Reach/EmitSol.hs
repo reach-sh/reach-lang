@@ -34,6 +34,7 @@ solType :: BaseType -> String
 solType BT_UInt256 = "uint256"
 solType BT_Bool = "bool"
 solType BT_Bytes = "bytes"
+solType BT_Address = "address payable"
 
 {- De-ANF information
 
@@ -138,9 +139,6 @@ solArg :: SolRenaming a -> BLArg b -> Doc a
 solArg ρ (BL_Var _ v) = solVar ρ v
 solArg _ (BL_Con _ c) = solCon c
 
-solPartVar :: Participant -> Doc a
-solPartVar p = pretty $ "p" ++ p
-
 solFieldDecl :: BLVar -> Doc a
 solFieldDecl bv@(_, (_, bt)) = solDecl (solType bt) (solRawVar bv)
 
@@ -149,9 +147,6 @@ solArgDecl bv@(_, (_, bt)) = solDecl (solArgType bt) (solRawVar bv)
 
 solVarDecl :: BLVar -> Doc a
 solVarDecl bv@(_, (_, bt)) = solDecl (solVarType bt) (solRawVar bv)
-
-solPartDecl :: Participant -> Doc a
-solPartDecl p = solDecl "address payable" (solPartVar p)
 
 solContract :: String -> Doc a -> Doc a
 solContract s body = "contract" <+> pretty s <+> solBraces body
@@ -186,12 +181,9 @@ solBlockNumber = "uint256(block.number)"
 solHash :: [Doc a] -> Doc a
 solHash a = solApply "uint256" [ solApply "keccak256" [ solApply "abi.encodePacked" a ] ]
 
-solHashState :: SolRenaming a -> Int -> Bool -> [Participant] -> [BLVar] -> Doc a
-solHashState ρ i check ps svs = solHash $ (solNum i) : which_last : (map solPartVar ps) ++ (map (solVar ρ) svs)
+solHashState :: SolRenaming a -> Int -> Bool -> [BLVar] -> Doc a
+solHashState ρ i check svs = solHash $ (solNum i) : which_last : (map (solVar ρ) svs)
   where which_last = if check then solLastBlock else solBlockNumber
-
-solRequireSender :: Participant -> Doc a
-solRequireSender from = solRequire $ solEq ("msg.sender") (solPartVar from)
 
 solPrimApply :: C_Prim -> [Doc a] -> Doc a
 solPrimApply pr args =
@@ -232,36 +224,42 @@ solCStmt :: SolRenaming a -> CStmt b -> Doc a
 solCStmt _ (C_Claim _ CT_Possible _) = emptyDoc
 solCStmt _ (C_Claim _ CT_Assert _) = emptyDoc
 solCStmt ρ (C_Claim _ _ a) = (solRequire $ solArg ρ a) <> semi <> hardline
-solCStmt ρ (C_Transfer _ p a) = solPartVar p <> "." <> solApply "transfer" [ solArg ρ a ] <> semi <> hardline
+solCStmt ρ (C_Transfer _ p a) = solRawVar p <> "." <> solApply "transfer" [ solArg ρ a ] <> semi <> hardline
 
-solCTail :: [Participant] -> Doc a -> SolRenaming a -> CCounts -> CTail b -> Doc a
-solCTail ps emitp ρ ccs ct =
+solCTail :: Doc a -> SolRenaming a -> CCounts -> CTail b -> Doc a
+solCTail emitp ρ ccs ct =
   case ct of
     C_Halt _ ->
       emitp <> vsep [ solSet ("current_state") ("0x0") <> semi,
-                      solApply "selfdestruct" [ solApply "address" [ solPartVar (head ps) ] ] <> semi ]
+                      solApply "selfdestruct" [ "msg.sender" ] <> semi ]
     C_Wait _ last_i svs ->
-      emitp <> (solSet ("current_state") (solHashState ρ last_i False ps svs)) <> semi
+      emitp <> (solSet ("current_state") (solHashState ρ last_i False svs)) <> semi
     C_If _ ca tt ft ->
       "if" <+> parens (solArg ρ ca) <+> bp tt <> hardline <> "else" <+> bp ft
-      where bp at = solBraces $ solCTail ps emitp ρ ccs at
+      where bp at = solBraces $ solCTail emitp ρ ccs at
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
-        Just 0 -> solCTail ps emitp ρ ccs kt
-        Just 1 -> solCTail ps emitp ρ' ccs kt
+        Just 0 -> solCTail emitp ρ ccs kt
+        --- XXX Solidity cannot deal with more than 16 local
+        --- variables, so we never use variables and always duplicate
+        --- the computation. This is a stop-gap that is really bad and
+        --- needs to be fixed. A similar problem would happen if a
+        --- contract had more than 16 free-variables (i.e. in the
+        --- message)
+        _ {-Just _-} -> solCTail emitp ρ' ccs kt
           where ρ' = M.insert bv (parens (solCExpr ρ ce)) ρ
-        _ -> vsep [ solVarDecl bv <+> "=" <+> solCExpr ρ ce <> semi,
-                    solCTail ps emitp ρ ccs kt ]
-    C_Do _ cs kt -> solCStmt ρ cs <> (solCTail ps emitp ρ ccs kt)
+--        _ -> vsep [ solVarDecl bv <+> "=" <+> solCExpr ρ ce <> semi,
+--                    solCTail emitp ρ ccs kt ]
+    C_Do _ cs kt -> solCStmt ρ cs <> (solCTail emitp ρ ccs kt)
     C_Jump _ which vs a ->
-      emitp <> solApply (solLoop_fun which) ((map solPartVar ps) ++ (map solRawVar vs) ++ [ solArg ρ a ]) <> semi
+      emitp <> solApply (solLoop_fun which) ((map solRawVar vs) ++ [ solArg ρ a ]) <> semi
 
-solHandler :: [Participant] -> Int -> CHandler b -> Doc a
-solHandler ps i (C_Handler _ from is_timeout (last_i, svs) msg delay body) = vsep [ evtp, funp ]
+solHandler :: CHandler b -> Doc a
+solHandler (C_Handler _ (is_join, from) is_timeout (last_i, svs) msg delay body i) = vsep [ evtp, funp ]
   where msg_rs = map solRawVar msg
         msg_ds = map solArgDecl msg
         msg_eds = map solFieldDecl msg
-        arg_ds = (solDecl (solType BT_UInt256) solLastBlock) : map solPartDecl ps ++ map solArgDecl svs ++ msg_ds
+        arg_ds = (solDecl (solType BT_UInt256) solLastBlock) : map solArgDecl svs ++ msg_ds
         evts = solMsg_evt i
         evtp = solEvent evts msg_eds
         funp = solFunction (solMsg_fun i) arg_ds retp bodyp
@@ -269,34 +267,37 @@ solHandler ps i (C_Handler _ from is_timeout (last_i, svs) msg delay body) = vse
         emitp = "emit" <+> solApply evts msg_rs <> semi <> hardline
         ccs = usesCTail body
         ρ = M.empty
-        bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState ρ last_i True ps svs)) <> semi,
-                       solRequireSender from <> semi,
+        fromp = if is_join then
+                  (solDecl (solType BT_Address) (solRawVar from)) <+> "=" <+> "msg.sender"
+                else
+                  solRequire $ solEq ("msg.sender") (solRawVar from)
+        bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState ρ last_i True svs)) <> semi,
+                       fromp <> semi,
                        (solRequire $ solBinOp (if is_timeout then ">=" else "<") solBlockNumber (solBinOp "+" solLastBlock (solArg ρ delay))) <> semi,
-                       solCTail ps emitp ρ ccs body ]
-solHandler ps i (C_Loop _ svs arg _inv body) = funp
+                       solCTail emitp ρ ccs body ]
+solHandler (C_Loop _ svs arg _inv body i) = funp
   where funp = solFunction (solLoop_fun i) arg_ds retp bodyp
-        arg_ds = map solPartDecl ps ++  map solArgDecl svs ++ [ solArgDecl arg ]
+        arg_ds = map solArgDecl svs ++ [ solArgDecl arg ]
         retp = "internal"
         ccs = usesCTail body
-        bodyp = solCTail ps "" M.empty ccs body
+        bodyp = solCTail "" M.empty ccs body
 
-solHandlers :: [Participant] -> [CHandler b] -> Doc a
-solHandlers ps hs = vsep $ intersperse emptyDoc $ zipWith (solHandler ps) [1..] hs
+solHandlers :: [CHandler b] -> Doc a
+solHandlers hs = vsep $ intersperse emptyDoc $ map solHandler hs
 
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_sol :: BLProgram b -> Doc a
-emit_sol (BL_Prog _ _ (C_Prog ca ps hs)) =
+emit_sol (BL_Prog _ _ (C_Prog ca hs)) =
   vsep_with_blank $ [ preamble, solVersion, solStdLib, ctcp ]
   where ctcp = solContract "ReachContract is Stdlib"
                $ ctcbody
-        ctcbody = vsep $ [state_defn, emptyDoc, consp, emptyDoc, solHandlers ps hs]
-        consp = solApply "constructor" p_ds <+> "public payable" <+> solBraces consbody
-        consbody = solCTail ps emptyDoc M.empty M.empty (C_Wait ca 0 [])
+        ctcbody = vsep $ [state_defn, emptyDoc, consp, emptyDoc, solHandlers hs]
+        consp = solApply "constructor" [] <+> "public payable" <+> solBraces consbody
+        consbody = solCTail emptyDoc M.empty M.empty (C_Wait ca 0 [])
         state_defn = "uint256 current_state;"
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
-        p_ds = map solPartDecl ps
 
 type CompiledSol = (String, String)
 

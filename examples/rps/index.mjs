@@ -27,12 +27,9 @@ import * as RPSW from './build/rps_while.mjs';
                reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
                outcome: log(`${name} agrees that game is over.`) }; };
 
-    const ctors = [ alice.address, bob.address ];
-    const ctcAlice =
-          await alice.deploy(theRPS, ctors);
-    const ctcBob =
-          await bob.attach(theRPS, ctors, ctcAlice.address,
-                           ctcAlice.creation_block);
+    const ctcAlice = await alice.deploy(theRPS);
+    const ctcBob = await bob.attach(theRPS, ctcAlice.address,
+                                    ctcAlice.creation_block);
 
     const [ outcomeBob, outcomeAlice ] =
           await Promise.all([

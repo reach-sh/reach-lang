@@ -10,6 +10,7 @@ data BaseType
   = BT_UInt256
   | BT_Bool
   | BT_Bytes
+  | BT_Address
   deriving (Show,Eq,Ord)
 data ExprType
   = TY_Var String
@@ -168,6 +169,8 @@ data XLExpr a
   --- message is a sequence of variables, because it binds these in
   --- the contract body. The contract body is expected to end in a
   --- FromConsensus that will switch back.
+
+  --- XXX These participants should be XLVar
   | XL_ToConsensus a (Participant, [XLVar], (XLExpr a)) (Participant, (XLExpr a), (XLExpr a)) (XLExpr a)
   --- A FromConsensus expression is a terminator inside of a contract
   --- block that switches the context back away from the consensus,
@@ -179,6 +182,8 @@ data XLExpr a
   --- role. In the future, we could make something like mutable state
   --- on a local side of a transaction that collects all the transfers
   --- and puts them in the pay position.
+
+  --- XXX These participants should be XLVar
   | XL_Transfer a Participant (XLExpr a)
   | XL_Declassify a (XLExpr a)
   --- Where x Vars x Expression x Body
@@ -211,7 +216,7 @@ data XILExpr a
   | XIL_PrimApp a EP_Prim BaseType [XILExpr a]
   | XIL_If a Effect (XILExpr a) [BaseType] (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
-  | XIL_ToConsensus a (Participant, [XILVar], (XILExpr a)) (Participant, (XILExpr a), (XILExpr a)) (XILExpr a)
+  | XIL_ToConsensus a (Bool, Participant, [XILVar], (XILExpr a)) (Bool, Participant, (XILExpr a), (XILExpr a)) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)
   | XIL_Values a [XILExpr a]
   | XIL_Transfer a Participant (XILExpr a)
@@ -261,7 +266,7 @@ data ILExpr a
   deriving (Show,Eq)
 
 data ILStmt a
-  = IL_Transfer a Participant (ILArg a)
+  = IL_Transfer a ILVar (ILArg a)
   | IL_Claim a ClaimType (ILArg a)
   deriving (Show,Eq)
 
@@ -275,7 +280,7 @@ data ILTail a
   --- As in XL, a ToConsensus is a transfer to the contract with
   --- (initiator, message, pay amount). The tail is inside of the
   --- contract.
-  | IL_ToConsensus a (Participant, [ILVar], (ILArg a)) (Participant, (ILArg a), (ILTail a)) (ILTail a)
+  | IL_ToConsensus a (Bool, ILVar, [ILVar], (ILArg a)) (Bool, ILVar, (ILArg a), (ILTail a)) (ILTail a)
   --- A FromConsensus moves back from the consensus; the tail is
   --- "local" again.
   | IL_FromConsensus a (ILTail a)
@@ -332,8 +337,8 @@ data EPTail a
   | EP_Do a (EPStmt a) (EPTail a)
   {- This recv is what the sender sent; we will be doing the same
      computation as the contract. -}
-  | EP_SendRecv a [BLVar] (Int, [BLVar], (BLArg a), (EPTail a)) (Int, BLArg a, EPTail a)
-  | EP_Recv a [BLVar] (Int, [BLVar], (EPTail a)) (Bool, Int, BLArg a, EPTail a)
+  | EP_SendRecv a [BLVar] (Maybe BLVar, Int, [BLVar], (BLArg a), (EPTail a)) (Maybe BLVar, Int, BLArg a, EPTail a)
+  | EP_Recv a [BLVar] (Maybe BLVar, Int, [BLVar], (EPTail a)) (Maybe BLVar, Bool, Int, BLArg a, EPTail a)
   | EP_Loop a Int BLVar (BLArg a) (EPTail a)
   | EP_Continue a Int (BLArg a)
   deriving (Show,Eq)
@@ -349,7 +354,7 @@ data CExpr a
 
 data CStmt a
   = C_Claim a ClaimType (BLArg a)
-  | C_Transfer a Participant (BLArg a)
+  | C_Transfer a BLVar (BLArg a)
   deriving (Show,Eq)
 
 data CTail a
@@ -363,13 +368,13 @@ data CTail a
 
 data CHandler a
   --- Each handler has a message that it expects to receive
-  = C_Handler a Participant Bool (Int, [BLVar]) [BLVar] (BLArg a) (CTail a)
-  | C_Loop a [BLVar] BLVar (CTail a) (CTail a)
+  = C_Handler a (Bool, BLVar) Bool (Int, [BLVar]) [BLVar] (BLArg a) (CTail a) Int
+  | C_Loop a [BLVar] BLVar (CTail a) (CTail a) Int
   deriving (Show,Eq)
 
 --- A contract program is just a sequence of handlers.
 data CProgram a
-  = C_Prog a [Participant] [CHandler a]
+  = C_Prog a [CHandler a]
   deriving (Show,Eq)
 
 -- -- Backend

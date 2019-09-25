@@ -129,6 +129,11 @@ jsEPStmt (EP_Claim _ CT_Assert _) kp = (kp, Set.empty)
 jsEPStmt (EP_Claim _ _ a) kp = (vsep [ jsAssert ap, kp ], afvs)
   where (ap, afvs) = jsArg a
 
+add_from :: Int -> Maybe BLVar -> Doc a -> Doc a
+add_from _ Nothing x = x
+add_from tn (Just p) x = vsep [ pretty "const" <+> jsVar p <+> pretty "=" <+> jsTxn tn <> pretty ".from" <> semi
+                              , x ]
+
 jsEPTail :: Int -> String -> EPTail b -> (Doc a, Set.Set BLVar)
 jsEPTail _tn _who (EP_Ret _ al) = ((jsReturn $ jsArray $ map fst alp), Set.unions $ map snd alp)
   where alp = map jsArg al
@@ -150,18 +155,20 @@ jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
         bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
         (forcep, (eep, eefvs)) = jsEPExpr tn ee
         (ktp, ktfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_SendRecv _ svs (i_ok, msg, amt, k_ok) (i_to, delay, k_to)) = (tp, tfvs)
+jsEPTail tn who (EP_SendRecv _ svs (ij_ok, i_ok, msg, amt, k_ok) (ij_to, i_to, delay, k_to)) = (tp, tfvs)
   where srp = jsApply "ctc.sendrecv" [ jsString who
                                      , jsString (solMsg_fun i_ok), vs, amtp
                                      , jsString (solMsg_evt i_ok)
                                      , delayp, jsString (solMsg_evt i_to) ]
         dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+> pretty "await" <+> srp <> semi
-        tp = vsep [ dp, jsIf (jsTimeoutFlag tn') k_top k_okp ]
+        tp = vsep [ dp, jsIf (jsTimeoutFlag tn') k_top' k_okp' ]
         tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg ]
         (delayp, delayfvs) = jsArg delay
         (amtp, amtfvs) = jsArg amt
         msg_vs = map jsVar msg
         vs = jsArray $ (map jsVar svs) ++ msg_vs
+        k_okp' = add_from tn' ij_ok k_okp
+        k_top' = add_from tn' ij_to k_top
         (k_okp, kfvs) = jsEPTail tn' who k_ok
         (k_top, tofvs) = jsEPTail tn' who k_to
         tn' = tn+1
@@ -169,17 +176,18 @@ jsEPTail tn who (EP_Do _ es kt) = (tp, tfvs)
   where (tp, esfvs) = jsEPStmt es ktp
         tfvs = Set.union esfvs kfvs
         (ktp, kfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_Recv _ svs (i, msg, k_ok) (to_me, i_to, delay, k_to)) = (tp, tfvs)
+jsEPTail tn who (EP_Recv _ svs (ij_ok, i_ok, msg, k_ok) (ij_to, to_me, i_to, delay, k_to)) = (tp, tfvs)
   where tp = vsep [ rp, kp ]
         rp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+>
-             pretty "await" <+> (jsApply "ctc.recv" [ jsString who, jsString (solMsg_evt i)
+             pretty "await" <+> (jsApply "ctc.recv" [ jsString who, jsString (solMsg_evt i_ok)
                                                     , delayp, jsCon (Con_B to_me)
                                                     , (jsArray $ map jsVar svs)
                                                     , jsString (solMsg_fun i_to), jsString (solMsg_evt i_to)]) <> semi
         tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, tofvs, delayfvs]
-        kp = jsIf (jsTimeoutFlag tn') k_top k_okp'
-        k_okp' = vsep [ pretty "const" <+> jsArray msg_vs <+> pretty "=" <+> (jsTxn tn') <> pretty ".data" <> semi 
-                      , k_okp ]
+        kp = jsIf (jsTimeoutFlag tn') k_top' k_okp'
+        k_okp' = add_from tn' ij_ok $ vsep [ pretty "const" <+> jsArray msg_vs <+> pretty "=" <+> (jsTxn tn') <> pretty ".data" <> semi
+                                           , k_okp ]
+        k_top' = add_from tn' ij_to k_top
         (delayp, delayfvs) = jsArg delay
         msg_vs = map jsVar msg
         (k_okp, kfvs) = jsEPTail tn' who k_ok
