@@ -8,6 +8,8 @@ const A = participant({
 
 const B = participant({});
 
+const O = participant({});
+
 const DELAY = 10; // in blocks
 
 function main() {

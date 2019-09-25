@@ -13,6 +13,7 @@ import * as RPSW from './build/rps_while.mjs';
 
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
+  const obs = await stdlib.newTestAccount(startingBalance);
 
   const demo = async (theRPS, getHand) => {
     console.log(`Alice initiates a new game.`);
@@ -30,15 +31,19 @@ import * as RPSW from './build/rps_while.mjs';
     const ctcAlice = await alice.deploy(theRPS);
     const ctcBob = await bob.attach(theRPS, ctcAlice.address,
                                     ctcAlice.creation_block);
+    const ctcObs = await obs.attach(theRPS, ctcAlice.address,
+                                    ctcAlice.creation_block);
 
-    const [ outcomeBob, outcomeAlice ] =
+    const [ outcomeAlice, outcomeBob, outcomeObs ] =
           await Promise.all([
-            theRPS.B(ctcBob, interactWith('Bob')),
             theRPS.A(ctcAlice, interactWith('Alice'),
-                     wagerInWei, escrowInWei)]);
+                     wagerInWei, escrowInWei),
+            theRPS.B(ctcBob, interactWith('Bob')),
+            theRPS.O(ctcObs, interactWith('Observer'))]);
 
     console.log(`Alice thinks outcome is ${outcomeAlice}.`);
     console.log(`Bob thinks outcome is ${outcomeBob}.`);
+    console.log(`Observer thinks outcome is ${outcomeObs}.`);
     console.log(`Done!`); };
 
   console.log(`\nRunning game that will Draw\n`);

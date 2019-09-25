@@ -5,6 +5,7 @@
   [0/_wagerAmount:uint256]
   [1/_escrowAmount:uint256])
 (define-participant B)
+(define-participant O)
 
 #:main
 (@ A (define 2/Declassify:uint256 (declassify 0/_wagerAmount:uint256)))

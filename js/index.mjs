@@ -4,7 +4,7 @@ import * as nodeAssert from 'assert';
 import ethers          from 'ethers';
 import Timeout         from 'await-timeout';
 
-const DEBUG = false;
+const DEBUG = true;
 const debug = msg => { if (DEBUG) {
   console.log(`DEBUG: ${msg}`); } };
 
@@ -98,7 +98,7 @@ export const lt    = (a, b) => toBN(a).lt( toBN(b));
 const checkType = (t, x) => {
   if ( t === 'bool' ) { return typeof(x) === 'boolean'; }
   else if ( t === 'uint256' ) { return web3.utils.isBN(t); }
-  else if ( t === 'bytes' || t = 'address' ) { return web3.utils.isHex(t) || typeof(x) === 'string'; } };
+  else if ( t === 'bytes' || t === 'address' ) { return web3.utils.isHex(t) || typeof(x) === 'string'; } };
 export const isType = (t, x) => {
   if ( checkType(t, x) ) { return x; }
   else { panic(`Expected ${t}, got: "${x}"`); } };
@@ -212,6 +212,7 @@ export const connectAccount = address => {
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
           void(ok_r);
           const ok_t = await web3.eth.getTransaction(ok_e.transactionHash);
+          debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
           const ok_bal = await updateLastAndGetBalance(ok_t);
           return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from }; } }
