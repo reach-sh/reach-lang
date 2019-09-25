@@ -29,9 +29,9 @@ import * as RPSW from './build/rps_while.mjs';
 
     const ctors = [ alice.address, bob.address ];
     const ctcAlice =
-          await alice.deploy(theRPS.ABI, theRPS.Bytecode, ctors);
+          await alice.deploy(theRPS, ctors);
     const ctcBob =
-          await bob.attach(theRPS.ABI, ctors, ctcAlice.address,
+          await bob.attach(theRPS, ctors, ctcAlice.address,
                            ctcAlice.creation_block);
 
     const [ outcomeBob, outcomeAlice ] =

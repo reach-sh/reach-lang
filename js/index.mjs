@@ -129,9 +129,10 @@ const fetchAndRejectInvalidReceiptFor = txHash =>
 export const connectAccount = address => {
   const shad = address.substring(2,6);
 
-  const attach = (abi, ctors, ctc_address, creation_block) => {
-    const ethCtc = new web3.eth.Contract(abi, ctc_address);
-    const ethersCtc = new ethers.Contract(ctc_address, abi, ethersp);
+  const attach = (bin, ctors, ctc_address, creation_block) => {
+    const { ABI } = bin;
+    const ethCtc = new web3.eth.Contract(ABI, ctc_address);
+    const ethersCtc = new ethers.Contract(ctc_address, ABI, ethersp);
     const eventOnceP = (e) =>
           new Promise((resolve) => ethersCtc.once(e, (...a) => resolve(a)));
 
@@ -178,7 +179,7 @@ export const connectAccount = address => {
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
-      const ok_args_abi = abi
+      const ok_args_abi = ABI
             .find(a => a.name === ok_evt)
             .inputs;
 
@@ -221,11 +222,12 @@ export const connectAccount = address => {
     return { sendrecv, recv, creation_block, address: ctc_address }; };
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
-  const deploy = async (abi, bytecode, ctors) => {
+  const deploy = async (bin, ctors) => {
+    const { ABI, Bytecode } = bin;
     // XXX track down solid docs RE: why the ABI would have extra
     // constructor fields and when/how/why dropping leading `0x`s is
     // necessary
-    const ctorTypes = abi
+    const ctorTypes = ABI
           .find(a => a.type === 'constructor')
           .inputs
           .map(i => i.type)
@@ -235,12 +237,12 @@ export const connectAccount = address => {
           .map(c => encode(ctorTypes[ctors.indexOf(c)], c))
           .map(un0x);
 
-    const data = [ bytecode, ...encodedCtors ].join('');
+    const data = [ Bytecode, ...encodedCtors ].join('');
 
     const gas = await web3.eth.estimateGas({ data });
     const r = await web3.eth.sendTransaction({ data, gas, from: address });
     const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
-    return attach(abi, ctors, r_ok.contractAddress, r_ok.blockNumber); };
+    return attach(bin, ctors, r_ok.contractAddress, r_ok.blockNumber); };
 
   return { deploy, attach, address }; };
 

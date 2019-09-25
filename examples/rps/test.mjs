@@ -29,9 +29,9 @@ runTests(async () => {
 
   const ctors = [ alice.address, bob.address ];
   const ctcAlice =
-        await alice.deploy(RPS.ABI, RPS.Bytecode, ctors);
+        await alice.deploy(RPS, ctors);
   const ctcBob =
-        await bob.attach(RPS.ABI, ctors, ctcAlice.address,
+        await bob.attach(RPS, ctors, ctcAlice.address,
                          ctcAlice.creation_block);
 
   const [ outcomeBob, outcomeAlice ] =
