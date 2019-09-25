@@ -160,7 +160,7 @@ export const connectAccount = address => {
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try { r_maybe = await ethCtc.methods[funcName](...munged).send({ from: address, value }); }
         catch (e) {
-          await Timeout.set(0);
+          await Timeout.set(1);
           block_send_attempt = await ethersp.getBlockNumber();
           continue; }
 
@@ -192,7 +192,7 @@ export const connectAccount = address => {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);
           block_poll_start = block_poll_end;
 
-          await Timeout.set(0);
+          await Timeout.set(1);
           void(ethersBlockOnceP); // This might be a better option too, because we won't need to delay
           block_poll_end = await ethersp.getBlockNumber();
 
