@@ -95,11 +95,10 @@ export const gt    = (a, b) => toBN(a).gt( toBN(b));
 export const le    = (a, b) => toBN(a).lte(toBN(b));
 export const lt    = (a, b) => toBN(a).lt( toBN(b));
 
-// XXX address
 const checkType = (t, x) => {
   if ( t === 'bool' ) { return typeof(x) === 'boolean'; }
   else if ( t === 'uint256' ) { return web3.utils.isBN(t); }
-  else if ( t === 'bytes' ) { return web3.utils.isHex(t) || typeof(x) === 'string'; } };
+  else if ( t === 'bytes' || t = 'address' ) { return web3.utils.isHex(t) || typeof(x) === 'string'; } };
 export const isType = (t, x) => {
   if ( checkType(t, x) ) { return x; }
   else { panic(`Expected ${t}, got: "${x}"`); } };
@@ -172,6 +171,10 @@ export const connectAccount = address => {
         const ok_bal = await updateLastAndGetBalance(ok_r);
         return { didTimeout: false, value: value, balance: ok_bal, from: address }; }
 
+      // XXX If we were trying to join, but we got sniped, then we'll
+      // think that there is a timeout and then we'll wait forever for
+      // the timeout message.
+
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
       const rec_res = await recv(label, timeout_evt, false, false, false, false, false);
       rec_res.didTimeout = true;
@@ -187,7 +190,7 @@ export const connectAccount = address => {
       let block_poll_start = last_block;
       let block_poll_end = block_poll_start;
       while ( ! timeout_delay || block_poll_start < last_block + timeout_delay ) {
-        void(eventOnceP); // XXX This might be nice for performance, but it may miss things too.
+        void(eventOnceP); // This might be nice for performance, but it may miss things too.
         const es = await ethCtc.getPastEvents(ok_evt, { fromBlock: block_poll_start, toBlock: block_poll_end });
         if ( es.length == 0 ) {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);
