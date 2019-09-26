@@ -4,7 +4,7 @@ import * as nodeAssert from 'assert';
 import ethers          from 'ethers';
 import Timeout         from 'await-timeout';
 
-const DEBUG = true;
+const DEBUG = false;
 const debug = msg => { if (DEBUG) {
   console.log(`DEBUG: ${msg}`); } };
 

@@ -122,6 +122,7 @@ data ClaimType
                 --- this true.
   deriving (Show,Eq,Ord)
 
+--- XXX Use sets of atomic effects
 data Effect
   = Eff_Pure
   | Eff_Comm
