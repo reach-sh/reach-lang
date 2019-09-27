@@ -78,7 +78,7 @@ usesCTail (C_Let _ _ ce kt) = cmerge cs1 cs2
 usesCTail (C_Do _ cs kt) = cmerge cs1 cs2
   where cs1 = usesCStmt cs
         cs2 = usesCTail kt
-usesCTail (C_Jump _ _ vs a) = cmerge cs1 cs2
+usesCTail (C_Jump _ _ vs _ a) = cmerge cs1 cs2
   where cs1 = usesBLVars vs
         cs2 = usesBLArg a
 
@@ -119,6 +119,9 @@ solEvent name args =
 solDecl :: String -> Doc a -> Doc a
 solDecl ty n = pretty ty <+> n
 
+solStruct :: String -> [Doc a] -> Doc a
+solStruct name fs = pretty ("struct " ++ name) <+> solBraces (vsep fs)
+
 solRawVar :: BLVar -> Doc a
 solRawVar (n, _) = pretty $ "v" ++ show n
 
@@ -130,7 +133,7 @@ solVar sim ρ bv = p
         bvp = if S.member bv sim then
                 solMemVar bv
               else
-                solRawVar bv
+                solMsgVar bv
 
 solNum :: Show n => n -> Doc a
 solNum i = pretty $ "uint256(" ++ show i ++ ")"
@@ -154,6 +157,9 @@ solArgDecl bv@(_, (_, bt)) = solDecl (solArgType bt) (solRawVar bv)
 solMemVar :: BLVar -> Doc a
 solMemVar bv = "_f." <> solRawVar bv
 
+solMsgVar :: BLVar -> Doc a
+solMsgVar bv = "_m." <> solRawVar bv
+
 solVarDecl :: BLVar -> Doc a
 solVarDecl bv = solMemVar bv
 
@@ -161,7 +167,7 @@ solContract :: String -> Doc a -> Doc a
 solContract s body = "contract" <+> pretty s <+> solBraces body
 
 solVersion :: Doc a
-solVersion = "pragma solidity ^0.5.11;"
+solVersion = vsep [ "pragma solidity ^0.5.11;", "pragma experimental ABIEncoderV2;" ]
 
 solStdLib :: Doc a
 solStdLib = pretty $ BS.unpack $(embedFile "../sol/stdlib.sol")
@@ -260,14 +266,24 @@ solCTail emitp sim ρ ccs ct =
         _ -> vsep [ solVarDecl bv <+> "=" <+> solCExpr sim ρ ce <> semi,
                     solCTail emitp sim ρ ccs kt ]
     C_Do _ cs kt -> solCStmt sim ρ cs <> (solCTail emitp sim ρ ccs kt)
-    C_Jump _ which vs a ->
-      emitp <> solApply (solLoop_fun which) ((map (solVar sim ρ) vs) ++ [ solArg sim ρ a ]) <> semi
+    C_Jump _ which vs argv a -> emitp <> (vsep $ loopmsg_declp : loop_setsp ++ [ loop_callp ])
+      where loopmsg_declp = pretty ("_M" ++ show which ++ " memory _l") <> semi
+            loop_setsp = zipWith loop_set (vs ++ [ argv ]) $ (map (solVar sim ρ) vs) ++ [ solArg sim ρ a ]
+            loop_set :: BLVar -> Doc a -> Doc a
+            loop_set v p = "_l." <> solRawVar v <+> "=" <+> p <> semi
+            loop_callp = solApply (solLoop_fun which) [ "_l" ] <> semi
 
-solFrame :: Int -> SolInMemory -> (Doc a, Doc a)
-solFrame i sim = if null var_decls then (emptyDoc, emptyDoc) else (frame_defp, frame_declp)
+solFrame :: Bool -> Int -> SolInMemory -> [BLVar] -> (Doc a, [Doc a], Doc a)
+solFrame is_loop i sim msg = (struct_defsp, msg_declp, frame_declp)
   where framei = "_F" ++ show i
-        frame_declp = (pretty $ framei ++ " memory _f") <> semi
-        frame_defp = pretty ("struct " ++ framei) <+> solBraces (vsep var_decls)
+        msgi = "_M" ++ show i
+        may vs x = if null vs then emptyDoc else x
+        frame_declp = may var_decls $ (pretty $ framei ++ " memory _f") <> semi
+        msg_declp = if null msg then [] else [pretty $ msgi ++ " " ++ msg_type ++ " _m"]
+        msg_type = if is_loop then "memory" else "calldata"
+        struct_defsp = vsep [ msg_defp, frame_defp ]
+        frame_defp = may var_decls $ solStruct framei var_decls
+        msg_defp = may msg $ solStruct msgi $ map mk_var_decl msg
         var_decls = map mk_var_decl $ S.elems sim
         mk_var_decl v = solFieldDecl v <> semi
 
@@ -280,19 +296,17 @@ makeSIM ccs vs = S.unions $ map f $ M.toList ccs
             S.singleton v
 
 solHandler :: CHandler b -> Doc a
-solHandler (C_Handler _ (is_join, from) is_timeout (last_i, svs) msg delay body i) = vsep [ evtp, frame_defp, funp ]
-  where msg_rs = map solRawVar msg
-        msg_ds = map solArgDecl msg
-        msg_eds = map solFieldDecl msg
-        arg_ds = (solDecl (solType BT_UInt256) solLastBlock) : map solArgDecl svs ++ msg_ds
+solHandler (C_Handler _ (is_join, from) is_timeout (last_i, svs) msg delay body i) = vsep [ evtp, struct_defsp, funp ]
+  where arg_ds = (solDecl (solType BT_UInt256) solLastBlock) : msg_declp
         evts = solMsg_evt i
-        evtp = solEvent evts msg_eds
-        sim0 = makeSIM ccs (svs ++ msg)
+        evtp = solEvent evts $ map solFieldDecl msg
+        msg_all = svs ++ msg
+        sim0 = makeSIM ccs msg_all
         sim = if is_join then S.insert from sim0 else sim0
-        (frame_defp, frame_declp) = solFrame i sim
+        (struct_defsp, msg_declp, frame_declp) = solFrame False i sim msg_all
         funp = solFunction (solMsg_fun i) arg_ds retp bodyp
         retp = "external payable"
-        emitp = "emit" <+> solApply evts msg_rs <> semi <> hardline
+        emitp = "emit" <+> solApply evts (map (solVar sim ρ) msg) <> semi <> hardline
         ccs = usesCTail body
         ρ = M.empty
         fromp = if is_join then
@@ -304,11 +318,11 @@ solHandler (C_Handler _ (is_join, from) is_timeout (last_i, svs) msg delay body 
                        fromp <> semi,
                        (solRequire $ solBinOp (if is_timeout then ">=" else "<") solBlockNumber (solBinOp "+" solLastBlock (solArg sim ρ delay))) <> semi,
                        solCTail emitp sim ρ ccs body ]
-solHandler (C_Loop _ svs arg _inv body i) = vsep [ frame_defp, funp ]
-  where funp = solFunction (solLoop_fun i) arg_ds retp (vsep [ frame_declp, bodyp ])
-        sim = makeSIM ccs (arg : svs)
-        (frame_defp, frame_declp) = solFrame i sim
-        arg_ds = map solArgDecl svs ++ [ solArgDecl arg ]
+solHandler (C_Loop _ svs arg _inv body i) = vsep [ struct_defsp, funp ]
+  where funp = solFunction (solLoop_fun i) msg_declp retp (vsep [ frame_declp, bodyp ])
+        msg_all = svs ++ [ arg ]
+        sim = makeSIM ccs msg_all
+        (struct_defsp, msg_declp, frame_declp) = solFrame True i sim msg_all
         retp = "internal"
         ccs = usesCTail body
         bodyp = solCTail "" sim M.empty ccs body
