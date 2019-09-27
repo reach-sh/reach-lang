@@ -1,11 +1,12 @@
-.PHONY: all build test start_geth stop_geth logs
-
 export STACK_YAML=../../hs/stack.yaml
 
-all: start_geth test demo stop_geth
+.PHONY: all
+all: test demo
 
+.PHONY: build
 build: build/rps.mjs build/rps_while.mjs
 
+.PHONY: clean
 clean:
 	rm -f build/rps.mjs build/rps_while.mjs
 
@@ -14,18 +15,11 @@ build/%.mjs: rsh/%.rsh
 	mkdir -p build
 	stack exec -- reachc -o build $^
 
-start_geth:
-	@../../scripts/ethereum-devnet/run.sh
-
-stop_geth:
-	@killall geth
-
+.PHONY: test
 test: build
 	npm test
 
-logs:
-	@tail -f ../../.ethereum/geth-data/logs/testnet.log
-
+.PHONY: demo
 demo: build
 	npm run pretest
 	npm run demo

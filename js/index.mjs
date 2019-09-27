@@ -228,7 +228,7 @@ export const connectAccount = address => {
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
   const deploy = async (bin) => {
-    const { ABI, Bytecode } = bin;
+    const { Bytecode } = bin;
     const data = Bytecode;
     const gas = await web3.eth.estimateGas({ data });
     const r = await web3.eth.sendTransaction({ data, gas, from: address });

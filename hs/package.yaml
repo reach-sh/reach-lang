@@ -5,11 +5,7 @@ license:             Apache-2.0
 author:              "Reach"
 maintainer:          "jay@reach.sh"
 copyright:           "2019 Reach"
-
-extra-source-files:
-- README.md
-
-description:         Please see the README on GitHub at <https://github.com/Reach-sh/reach-lang#readme>
+description:         Please visit the GitHub repository <https://github.com/Reach-sh/reach-lang#readme>
 
 dependencies:
 - base >= 4.7 && < 5
