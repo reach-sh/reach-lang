@@ -78,7 +78,7 @@ usesCTail (C_Let _ _ ce kt) = cmerge cs1 cs2
 usesCTail (C_Do _ cs kt) = cmerge cs1 cs2
   where cs1 = usesCStmt cs
         cs2 = usesCTail kt
-usesCTail (C_Jump _ _ vs a) = cmerge cs1 cs2
+usesCTail (C_Jump _ _ vs _ a) = cmerge cs1 cs2
   where cs1 = usesBLVars vs
         cs2 = usesBLArg a
 
@@ -249,18 +249,12 @@ solCTail emitp sim ρ ccs ct =
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
         Just 0 -> solCTail emitp sim ρ ccs kt
-        --- XXX Solidity cannot deal with more than 16 local
-        --- variables, so we never use variables and always duplicate
-        --- the computation. This is a stop-gap that is really bad and
-        --- needs to be fixed. A similar problem would happen if a
-        --- contract had more than 16 free-variables (i.e. in the
-        --- message)
         Just 1 -> solCTail emitp sim ρ' ccs kt
           where ρ' = M.insert bv (parens (solCExpr sim ρ ce)) ρ
         _ -> vsep [ solVarDecl bv <+> "=" <+> solCExpr sim ρ ce <> semi,
                     solCTail emitp sim ρ ccs kt ]
     C_Do _ cs kt -> solCStmt sim ρ cs <> (solCTail emitp sim ρ ccs kt)
-    C_Jump _ which vs a ->
+    C_Jump _ which vs _ a ->
       emitp <> solApply (solLoop_fun which) ((map (solVar sim ρ) vs) ++ [ solArg sim ρ a ]) <> semi
 
 solFrame :: Int -> SolInMemory -> (Doc a, Doc a)
