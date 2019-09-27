@@ -701,7 +701,7 @@ data EPPCtxt ann
   | EC_Invariant
   | EC_WhileUntil (EPPRes ann) (EPPRes ann)
   | EC_WhileTrial
-  | EC_WhileBody Int (Set.Set BLVar)
+  | EC_WhileBody Int BLVar (Set.Set BLVar)
 
 combine_maps :: Ord k => (k -> u -> v -> w) -> [k] -> M.Map k u -> M.Map k v -> M.Map k w
 combine_maps f ks m1 m2 = M.fromList $ map cmb ks
@@ -769,14 +769,14 @@ epp_it_ctc ps this_h γ ctxt it = case it of
     (svs1_trial, _, _) <- localEPP $ epp_it_ctc ps this_h γ' (EC_WhileUntil kres bres_trial) untilt
     let svs1_trial' = Set.difference svs1_trial (boundBLVar loopv)
     which <- acquireEPP
-    let bres_real = epp_it_ctc ps this_h γ' (EC_WhileBody which svs1_trial') bodyt
+    let bres_real = epp_it_ctc ps this_h γ' (EC_WhileBody which loopv svs1_trial') bodyt
     (svs1, ct1, ts1) <- epp_it_ctc ps this_h γ' (EC_WhileUntil kres bres_real) untilt
     let svs2 = Set.difference svs1 (boundBLVar loopv)
     let svs2l = Set.toList svs2
     setEPP which $ C_Loop h svs2l loopv ct_inv ct1
     let ts = M.map (EP_Loop h which loopv inita') ts1
     let svs = Set.union fvs_a svs2
-    let ct = C_Jump h which svs2l inita'
+    let ct = C_Jump h which svs2l loopv inita'
     return (svs, ct, ts)
   IL_Continue h na ->
     case ctxt of
@@ -787,12 +787,12 @@ epp_it_ctc ps this_h γ ctxt it = case it of
               trial msg = error $ "EPP: WhileTrial: Cannot inspect " ++ msg
               ts = M.fromList $ map mkt ps
               mkt p = (p, EP_Continue h 0 $ trial "continue arg")
-      EC_WhileBody which fvs_loop -> do
+      EC_WhileBody which loopv fvs_loop -> do
         return (svs, ct, ts)
         where (fvs_a, inita') = must_be_public $ epp_arg "ctc continue" γ RoleContract na
               svs = Set.union fvs_loop fvs_a
               fvs_loopl = Set.toList fvs_loop
-              ct = C_Jump h which fvs_loopl inita'
+              ct = C_Jump h which fvs_loopl loopv inita'
               ts = M.fromList $ map mkt ps
               mkt p = (p, EP_Continue h which $ snd . fst $ epp_arg "ctc continue loc" γ (RolePart p) na)
       _ ->

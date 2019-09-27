@@ -364,7 +364,7 @@ data CTail a
   | C_If a (BLArg a) (CTail a) (CTail a)
   | C_Let a BLVar (CExpr a) (CTail a)
   | C_Do a (CStmt a) (CTail a)
-  | C_Jump a Int [BLVar] (BLArg a)
+  | C_Jump a Int [BLVar] BLVar (BLArg a)
   deriving (Show,Eq)
 
 data CHandler a

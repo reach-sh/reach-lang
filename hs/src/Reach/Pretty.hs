@@ -182,7 +182,7 @@ instance Pretty (CTail a) where
   pretty (C_If _ ca tt ft) = prettyIf ca tt ft
   pretty (C_Let _ mv e bt) = prettyLet prettyBLVar (\x -> x) mv e bt
   pretty (C_Do _ s bt) = prettyDo (\x -> x) s bt
-  pretty (C_Jump _ which svs a) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> pretty a
+  pretty (C_Jump _ which svs argv a) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> prettyBLVar argv <+> pretty a
 
 prettyCHandler :: CHandler a -> Doc ann
 prettyCHandler (C_Handler _ who timeout (last_i, svs) args delay ct i) =
