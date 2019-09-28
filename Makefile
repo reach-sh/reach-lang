@@ -6,12 +6,12 @@ check:
 	@echo Consistent Solidity Versions
 	@ag --ignore ./Makefile --ignore-dir docs --nogroup " solidity "
 	@echo Find TODO/XXX
-	@ag --ignore ./Makefile --ignore package-lock.json '(XXX|TODO)'
+	@ag --ignore ./Makefile '(XXX|TODO)'
 
 .PHONY: test
-test: devnet
-	cd js && npm test
-	cd examples/rps && make clean build test demo
+test: build-all devnet
+	cd js && $(MAKE) run
+	cd examples/rps && $(MAKE) run
 
 .PHONY: devnet
 devnet:
@@ -28,6 +28,12 @@ push-all:
 	cd scripts/ethereum-devnet && $(MAKE) push
 	cd js && $(MAKE) push
 	cd examples/rps && $(MAKE) push
+
+.PHONY: clean-all
+clean-all:
+	cd scripts/ethereum-devnet && $(MAKE) clean
+	cd js && $(MAKE) clean
+	cd examples/rps && $(MAKE) clean
 
 .PHONY: clean-images
 clean-images:

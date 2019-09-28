@@ -6,3 +6,5 @@ RUN npm install
 RUN npm link
 
 COPY . /stdlib
+
+CMD npm run test
