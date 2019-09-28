@@ -11,8 +11,4 @@ push: build
 
 .PHONY: run
 run: build
-	docker run --name $(NAME) --net=host $(TAG)
-
-.PHONY: clean
-clean:
-	docker rm $(NAME)
+	docker-compose run $(NAME)

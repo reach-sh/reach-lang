@@ -9,13 +9,9 @@ check:
 	@ag --ignore ./Makefile '(XXX|TODO)'
 
 .PHONY: test
-test: build-all devnet
+test:
 	cd js && $(MAKE) run
 	cd examples/rps && $(MAKE) run
-
-.PHONY: devnet
-devnet:
-	[ `docker inspect -f '{{.State.Running}}' devnet` = "true" ] || docker run --name devnet -d -p 8545:8545 reachsh/ethereum-devnet:v0.1.0
 
 .PHONY: build-all
 build-all:
@@ -28,12 +24,6 @@ push-all:
 	cd scripts/ethereum-devnet && $(MAKE) push
 	cd js && $(MAKE) push
 	cd examples/rps && $(MAKE) push
-
-.PHONY: clean-all
-clean-all:
-	cd scripts/ethereum-devnet && $(MAKE) clean
-	cd js && $(MAKE) clean
-	cd examples/rps && $(MAKE) clean
 
 .PHONY: clean-images
 clean-images:

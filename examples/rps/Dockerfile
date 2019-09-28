@@ -8,4 +8,4 @@ RUN npm install
 
 COPY . /app
 
-CMD npm run test && npm run demo
+CMD ./wait-for-geth.sh && npm run test && npm run demo

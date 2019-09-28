@@ -17,9 +17,8 @@ push: build
 
 .PHONY: run
 run: build
-	docker run --name $(NAME) --net=host $(TAG)
+	docker-compose up $(NAME)
 
 .PHONY: clean
 clean:
-	docker rm $(NAME)
 	rm -f build/rps.mjs build/rps_while.mjs

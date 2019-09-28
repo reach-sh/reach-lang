@@ -1,0 +1,5 @@
+version: '3'
+services:
+  stdlib:
+    image: reachsh/stdlib:v0.1.0
+    build: .

@@ -8,7 +8,3 @@ build:
 .PHONY: push
 push: build
 	docker push $(TAG)
-
-.PHONY: clean
-clean:
-	docker rm $(NAME)
