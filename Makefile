@@ -9,10 +9,14 @@ check:
 	@ag --ignore ./Makefile --ignore package-lock.json '(XXX|TODO)'
 
 .PHONY: test
-test: start_geth
+test: devnet
 	cd js && npm test
 	cd examples/rps && make clean build test demo
 
-.PHONY: start_geth
-start_geth:
-	@./scripts/ethereum-devnet/run.sh
+.PHONY: devnet
+devnet:
+	[ `docker inspect -f '{{.State.Running}}' devnet` = "true" ] || docker run --name devnet -d -p 8545:8545 reachsh/ethereum-devnet:v0.1.0
+
+.PHONY: clean-images
+clean-images:
+	docker rmi $(docker images --filter "dangling=true" -q --no-trunc)
