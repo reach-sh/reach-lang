@@ -16,11 +16,3 @@ test: start_geth
 .PHONY: start_geth
 start_geth:
 	@./scripts/ethereum-devnet/run.sh
-
-.PHONY: stop_geth
-stop_geth:
-	@killall geth
-
-.PHONY: logs
-logs:
-	@tail -f ./.ethereum/geth-data/logs/testnet.log
