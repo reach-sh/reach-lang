@@ -1,4 +1,5 @@
 TAG="reachsh/examples-rps:v0.1.0"
+NAME="rps"
 
 export STACK_YAML=../../hs/stack.yaml
 
@@ -24,4 +25,4 @@ build/%.mjs: rsh/%.rsh
 
 .PHONY: run
 run: build
-	docker run --name rps --net=host $(TAG)
+	docker run --name $(NAME) --net=host $(TAG)
