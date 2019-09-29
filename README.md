@@ -19,7 +19,7 @@ XXX Collect build instructions here
 ```
 $ cd hs
 $ stack build
-$ cd js
+$ cd ../js
 $ npm link
 $ npm install
 $ cd ../examples/rps
