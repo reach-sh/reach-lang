@@ -1,9 +1,10 @@
 #!/bin/sh
 
 HERE=$(dirname $(realpath $0))
+HS=${HERE}/hs
 
-if [ -d ${HERE}/.stack-work ] ; then
-    STACK_YAML=${HERE}/stack.yaml
+if [ -d ${HS}/.stack-work ] ; then
+    export STACK_YAML=${HS}/stack.yaml
     stack build
     exec stack exec -- reachc $*
 else

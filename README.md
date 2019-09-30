@@ -16,8 +16,9 @@ language for trustworthy DApps used by the Reach platform.
 
 The best way to use Reach is with Docker and docker-compose.
 
-See `hs/reach` for a script to run the compiler using a local build if
-one is available, or the Docker image if not.
+Run `reach` for a script to run the compiler using a local build if
+one is available, or the Docker image if not. (If using Docker, the
+only files in this repository you need are `docker-compose.yml` and `reach`.)
 
 See `examples/rps` for an example application.
 
