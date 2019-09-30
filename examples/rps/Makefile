@@ -8,9 +8,12 @@ build: build/rps.mjs build/rps_while.mjs
 	docker build --tag=$(TAG) .
 
 .PHONY: push
-push: build
-	npm publish --access public
+push:
 	docker push $(TAG)
+
+.PHONY: publish
+publish:
+	npm publish --access public
 
 .PHONY: run
 run:

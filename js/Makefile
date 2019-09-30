@@ -6,10 +6,13 @@ build:
 	docker build --tag=$(TAG) .
 
 .PHONY: push
-push: build
-	npm publish --access public
+push:
 	docker push $(TAG)
 
+.PHONY: publish
+publish:
+	npm publish --access public
+
 .PHONY: run
-run: build
+run:
 	docker-compose run $(NAME)

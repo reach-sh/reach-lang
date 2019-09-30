@@ -6,5 +6,9 @@ build:
 	docker build --tag=$(TAG) .
 
 .PHONY: push
-push: build
+push:
 	docker push $(TAG)
+
+.PHONY: publish
+publish:
+	echo XXX

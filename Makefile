@@ -26,3 +26,9 @@ push-all:
 	cd scripts/ethereum-devnet && $(MAKE) push
 	cd js && $(MAKE) push
 	cd examples/rps && $(MAKE) push
+
+.PHONY: publish-all
+publish-all:
+	cd hs && $(MAKE) publish
+	cd js && $(MAKE) publish
+	cd examples/rps && $(MAKE) publish
