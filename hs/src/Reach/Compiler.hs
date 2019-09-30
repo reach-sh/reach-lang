@@ -13,6 +13,7 @@ import Data.Text.Prettyprint.Doc
 import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
 import Algebra.Lattice
+import System.Directory
 
 import Reach.AST
 import Reach.Pretty()
@@ -890,7 +891,11 @@ data CompilerOpts = CompilerOpts
 compile :: CompilerOpts -> IO ()
 compile copts = do
   let srcp = source copts
-  let out ext = FP.encodeString $ FP.append (FP.decodeString $ output_dir copts) (FP.basename (FP.decodeString srcp) `FP.addExtension` ext)
+  let srcbp = FP.basename $ FP.decodeString srcp
+  let outd = output_dir copts
+  let outdp = FP.decodeString outd
+  let out ext = FP.encodeString $ FP.append outdp $ srcbp `FP.addExtension` ext
+  createDirectoryIfMissing True outd
   xlp <- readReachFile srcp
   writeFile (out "xl") (L.unpack (pShow xlp))
   let xilp = inline xlp
