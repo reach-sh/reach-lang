@@ -405,7 +405,7 @@ XL_Prog
             [35m)[0m [35m[[0m[35m][0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineValues 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 18 3 1 [35m)[0m
         [1m[93m)[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
@@ -413,160 +413,160 @@ XL_Prog
         [1m[93m,[0m [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Values 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 18 3 1 [36m)[0m
             [35m)[0m 
             [35m[[0m XL_Con 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 18 3 1 [33m)[0m
                 [36m)[0m [36m([0m Con_I 0 [36m)[0m
             [35m,[0m XL_Con 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 18 3 1 [33m)[0m
                 [36m)[0m [36m([0m Con_I 1 [36m)[0m
             [35m,[0m XL_Con 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 18 3 1 [33m)[0m
                 [36m)[0m [36m([0m Con_I 2 [36m)[0m
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 18 3 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
         [1m[93m([0m XL_FunApp 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 18 3 1 [36m)[0m
             [35m)[0m 
             [35m([0m XL_Var 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 18 3 1 [33m)[0m
                 [36m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
             [35m)[0m 
             [35m[[0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 18 3 1 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Prim 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 18 3 1 [1m[35m)[0m
                     [33m)[0m [33m([0m CP PLE [33m)[0m
                 [36m)[0m 
                 [36m[[0m XL_Con 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 18 3 1 [1m[35m)[0m
                     [33m)[0m [33m([0m Con_I 0 [33m)[0m
                 [36m,[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 18 3 1 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                 [36m][0m 
             [35m,[0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 18 3 1 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Prim 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 18 3 1 [1m[35m)[0m
                     [33m)[0m [33m([0m CP PLT [33m)[0m
                 [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 18 3 1 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                 [36m,[0m XL_Con 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 18 3 1 [1m[35m)[0m
                     [33m)[0m [33m([0m Con_I 3 [33m)[0m
                 [36m][0m 
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 64 4 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94mshowHand[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 100 5 10 [36m)[0m
             [35m)[0m Nothing Nothing 
             [35m([0m XL_Claim 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 100 5 10 [33m)[0m
                 [36m)[0m CT_Require 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 107 5 17 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 101 5 11 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 108 5 18 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                     [33m][0m
                 [36m)[0m
             [35m)[0m 
             [35m([0m XL_If 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 119 6 3 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 130 6 14 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Prim 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 130 6 14 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 124 6 8 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 133 6 17 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Con 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 149 6 33 [1m[35m)[0m
                     [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_If 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 166 7 8 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_FunApp 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 177 7 19 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Prim 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 177 7 19 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 171 7 13 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 180 7 22 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_Con 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 197 7 39 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Con 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 224 8 17 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m [1m[35m)[0m
                     [33m)[0m
@@ -574,163 +574,163 @@ XL_Prog
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 242 10 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94m_getHand[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 266 11 3 [36m)[0m
             [35m)[0m Nothing 
             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m [36m][0m [35m)[0m 
             [35m([0m XL_Interact 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 276 11 13 [33m)[0m
                 [36m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m BT_Bytes [36m[[0m[36m][0m
             [35m)[0m 
             [35m([0m XL_Let 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 309 12 3 [33m)[0m
                 [36m)[0m Nothing 
                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m [33m][0m [36m)[0m 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 325 12 19 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Prim 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 325 12 19 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m([0m CP BYTES_EQ [1m[35m)[0m
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 323 12 17 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
                     [33m,[0m XL_Con 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 329 12 23 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m [1m[35m)[0m
                     [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Let 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 339 13 3 [1m[35m)[0m
                     [33m)[0m Nothing 
                     [33m([0m Just [1m[35m[[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m [1m[35m][0m [33m)[0m 
                     [33m([0m XL_FunApp 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 356 13 20 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Prim 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 356 13 20 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m CP BYTES_EQ [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 354 13 18 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Con 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 360 13 24 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m Con_BS [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m [1m[36m)[0m
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_Let 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 371 14 3 [1m[36m)[0m
                         [1m[35m)[0m Nothing 
                         [1m[35m([0m Just [1m[36m[[0m [1m[97m"[0m[1m[94mscissorsP[0m[1m[97m"[0m [1m[36m][0m [1m[35m)[0m 
                         [1m[35m([0m XL_FunApp 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 391 14 23 [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Prim 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 391 14 23 [95m)[0m
                                 [1m[33m)[0m [1m[33m([0m CP BYTES_EQ [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m[[0m XL_Var 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 389 14 21 [95m)[0m
                                 [1m[33m)[0m [1m[97m"[0m[1m[94ms[0m[1m[97m"[0m 
                             [1m[36m,[0m XL_Con 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 395 14 27 [95m)[0m
                                 [1m[33m)[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m [1m[33m)[0m
                             [1m[36m][0m 
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Let 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 415 15 9 [1m[33m)[0m
                             [1m[36m)[0m Nothing Nothing 
                             [1m[36m([0m XL_Claim 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 415 15 9 [95m)[0m
                                 [1m[33m)[0m CT_Assume 
                                 [1m[33m([0m XL_FunApp 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 432 15 26 [96m)[0m
                                     [95m)[0m 
                                     [95m([0m XL_Var 
-                                        [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                        [96m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 432 15 26 [93m)[0m
                                         [96m)[0m [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m 
                                     [95m)[0m 
                                     [95m[[0m XL_FunApp 
-                                        [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                        [96m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 422 15 16 [93m)[0m
                                         [96m)[0m 
                                         [96m([0m XL_Var 
-                                            [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                            [93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                             [93m,[0m Just [1m[95m([0m TokenPn 422 15 16 [1m[95m)[0m
                                             [93m)[0m [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m 
                                         [96m)[0m 
                                         [96m[[0m XL_Var 
-                                            [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                            [93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                             [93m,[0m Just [1m[95m([0m TokenPn 416 15 10 [1m[95m)[0m
                                             [93m)[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m 
                                         [96m,[0m XL_Var 
-                                            [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                            [93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                             [93m,[0m Just [1m[95m([0m TokenPn 425 15 19 [1m[95m)[0m
                                             [93m)[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m 
                                         [96m][0m 
                                     [95m,[0m XL_Var 
-                                        [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                        [96m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 435 15 29 [93m)[0m
                                         [96m)[0m [1m[97m"[0m[1m[94mscissorsP[0m[1m[97m"[0m 
                                     [95m][0m 
                                 [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m([0m XL_If 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 449 16 3 [95m)[0m
                                 [1m[33m)[0m 
                                 [1m[33m([0m XL_Var 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 453 16 7 [96m)[0m
                                     [95m)[0m [1m[97m"[0m[1m[94mrockP[0m[1m[97m"[0m 
                                 [1m[33m)[0m 
                                 [1m[33m([0m XL_Var 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 469 16 23 [96m)[0m
                                     [95m)[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
                                 [1m[33m)[0m 
                                 [1m[33m([0m XL_If 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 484 17 8 [96m)[0m
                                     [95m)[0m 
                                     [95m([0m XL_Var 
-                                        [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                        [96m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 488 17 12 [93m)[0m
                                         [96m)[0m [1m[97m"[0m[1m[94mpaperP[0m[1m[97m"[0m 
                                     [95m)[0m 
                                     [95m([0m XL_Var 
-                                        [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                        [96m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 505 17 29 [93m)[0m
                                         [96m)[0m [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m 
                                     [95m)[0m 
                                     [95m([0m XL_Var 
-                                        [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                        [96m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 530 18 17 [93m)[0m
                                         [96m)[0m [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m 
                                     [95m)[0m
@@ -742,35 +742,35 @@ XL_Prog
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 544 19 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m 
         [1m[93m([0m XL_FunApp 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 580 20 16 [36m)[0m
             [35m)[0m 
             [35m([0m XL_Var 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 574 20 10 [33m)[0m
                 [36m)[0m [1m[97m"[0m[1m[94mensure[0m[1m[97m"[0m 
             [35m)[0m 
             [35m[[0m XL_Var 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 581 20 17 [33m)[0m
                 [36m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
             [35m,[0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 597 20 33 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 589 20 25 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94m_getHand[0m[1m[97m"[0m 
                 [36m)[0m [36m[[0m[36m][0m
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineValues 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 605 22 1 [35m)[0m
         [1m[93m)[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
@@ -780,224 +780,224 @@ XL_Prog
         [1m[93m,[0m [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Values 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 605 22 1 [36m)[0m
             [35m)[0m 
             [35m[[0m XL_Con 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 605 22 1 [33m)[0m
                 [36m)[0m [36m([0m Con_I 0 [36m)[0m
             [35m,[0m XL_Con 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 605 22 1 [33m)[0m
                 [36m)[0m [36m([0m Con_I 1 [36m)[0m
             [35m,[0m XL_Con 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 605 22 1 [33m)[0m
                 [36m)[0m [36m([0m Con_I 2 [36m)[0m
             [35m,[0m XL_Con 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 605 22 1 [33m)[0m
                 [36m)[0m [36m([0m Con_I 3 [36m)[0m
             [35m,[0m XL_Con 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 605 22 1 [33m)[0m
                 [36m)[0m [36m([0m Con_I 4 [36m)[0m
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 605 22 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
         [1m[93m([0m XL_FunApp 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 605 22 1 [36m)[0m
             [35m)[0m 
             [35m([0m XL_Var 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 605 22 1 [33m)[0m
                 [36m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
             [35m)[0m 
             [35m[[0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 605 22 1 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Prim 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 605 22 1 [1m[35m)[0m
                     [33m)[0m [33m([0m CP PLE [33m)[0m
                 [36m)[0m 
                 [36m[[0m XL_Con 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 605 22 1 [1m[35m)[0m
                     [33m)[0m [33m([0m Con_I 0 [33m)[0m
                 [36m,[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 605 22 1 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                 [36m][0m 
             [35m,[0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 605 22 1 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Prim 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 605 22 1 [1m[35m)[0m
                     [33m)[0m [33m([0m CP PLT [33m)[0m
                 [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 605 22 1 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                 [36m,[0m XL_Con 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 605 22 1 [1m[35m)[0m
                     [33m)[0m [33m([0m Con_I 5 [33m)[0m
                 [36m][0m 
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 671 23 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 706 24 10 [36m)[0m
             [35m)[0m Nothing Nothing 
             [35m([0m XL_Claim 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 706 24 10 [33m)[0m
                 [36m)[0m CT_Require 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 716 24 20 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 707 24 11 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 717 24 21 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                     [33m][0m
                 [36m)[0m
             [35m)[0m 
             [35m([0m XL_If 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 724 25 3 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 730 25 9 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Prim 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 730 25 9 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 728 25 7 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 733 25 12 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Con 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 750 25 29 [1m[35m)[0m
                     [33m)[0m [33m([0m Con_BS [1m[97m"[0m[1m[94mBob wins[0m[1m[97m"[0m [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_If 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 771 26 8 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_FunApp 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 777 26 14 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Prim 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 777 26 14 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 775 26 12 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 780 26 17 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mDRAW[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_Con 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 795 26 32 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m([0m Con_BS [1m[97m"[0m[1m[94mDraw[0m[1m[97m"[0m [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_If 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 812 27 8 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_FunApp 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 818 27 14 [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Prim 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 818 27 14 [95m)[0m
                                 [1m[33m)[0m [1m[33m([0m CP PEQ [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m[[0m XL_Var 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 816 27 12 [95m)[0m
                                 [1m[33m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                             [1m[36m,[0m XL_Var 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 821 27 17 [95m)[0m
                                 [1m[33m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                             [1m[36m][0m 
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Con 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 838 27 34 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m Con_BS [1m[97m"[0m[1m[94mAlice wins[0m[1m[97m"[0m [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_If 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 861 28 8 [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m([0m XL_FunApp 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 867 28 14 [95m)[0m
                                 [1m[33m)[0m 
                                 [1m[33m([0m XL_Prim 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 867 28 14 [96m)[0m
                                     [95m)[0m [95m([0m CP PEQ [95m)[0m
                                 [1m[33m)[0m 
                                 [1m[33m[[0m XL_Var 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 865 28 12 [96m)[0m
                                     [95m)[0m [1m[97m"[0m[1m[94mo[0m[1m[97m"[0m 
                                 [1m[33m,[0m XL_Var 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 870 28 17 [96m)[0m
                                     [95m)[0m [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m 
                                 [1m[33m][0m 
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Con 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 888 28 35 [95m)[0m
                                 [1m[33m)[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94mAlice quits[0m[1m[97m"[0m [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Con 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 921 29 17 [95m)[0m
                                 [1m[33m)[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94mBob quits[0m[1m[97m"[0m [1m[33m)[0m
                             [1m[36m)[0m
@@ -1007,152 +1007,152 @@ XL_Prog
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 939 31 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94m_winner[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 974 32 3 [36m)[0m
             [35m)[0m Nothing 
             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m [36m][0m [35m)[0m 
             [35m([0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 995 32 24 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 989 32 18 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
                 [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 996 32 25 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                 [36m][0m
             [35m)[0m 
             [35m([0m XL_Let 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1006 33 3 [33m)[0m
                 [36m)[0m Nothing 
                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m [33m][0m [36m)[0m 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1027 33 24 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1021 33 18 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1028 33 25 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                     [33m][0m
                 [36m)[0m 
                 [36m([0m XL_If 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1038 34 3 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_FunApp 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1049 34 14 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1049 34 14 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1042 34 7 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1052 34 17 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_FunApp 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1095 35 34 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Prim 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1095 35 34 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m CP MOD [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_FunApp 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1080 35 19 [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Prim 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 1080 35 19 [95m)[0m
                                 [1m[33m)[0m [1m[33m([0m CP ADD [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m[[0m XL_Var 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 1074 35 13 [95m)[0m
                                 [1m[33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                             [1m[36m,[0m XL_FunApp 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 1085 35 24 [95m)[0m
                                 [1m[33m)[0m 
                                 [1m[33m([0m XL_Prim 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 1085 35 24 [96m)[0m
                                     [95m)[0m [95m([0m CP SUB [95m)[0m
                                 [1m[33m)[0m 
                                 [1m[33m[[0m XL_Con 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 1083 35 22 [96m)[0m
                                     [95m)[0m [95m([0m Con_I 4 [95m)[0m
                                 [1m[33m,[0m XL_Var 
-                                    [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                    [95m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 1087 35 26 [96m)[0m
                                     [95m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                 [1m[33m][0m 
                             [1m[36m][0m 
                         [1m[35m,[0m XL_Con 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1097 35 36 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m Con_I 3 [1m[36m)[0m
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_If 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1109 36 8 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1113 36 12 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mvalidA[0m[1m[97m"[0m 
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1134 37 12 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                         [1m[35m)[0m 
                         [1m[35m([0m XL_If 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1151 38 8 [1m[33m)[0m
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Var 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 1155 38 12 [95m)[0m
                                 [1m[33m)[0m [1m[97m"[0m[1m[94mvalidB[0m[1m[97m"[0m 
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Var 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 1176 39 12 [95m)[0m
                                 [1m[33m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                             [1m[36m)[0m 
                             [1m[36m([0m XL_Var 
-                                [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                                [1m[33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 1206 41 12 [95m)[0m
                                 [1m[33m)[0m [1m[97m"[0m[1m[94mDRAW[0m[1m[97m"[0m 
                             [1m[36m)[0m
@@ -1162,47 +1162,47 @@ XL_Prog
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 1216 42 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_FunApp 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 1263 43 16 [36m)[0m
             [35m)[0m 
             [35m([0m XL_Var 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1257 43 10 [33m)[0m
                 [36m)[0m [1m[97m"[0m[1m[94mensure[0m[1m[97m"[0m 
             [35m)[0m 
             [35m[[0m XL_Var 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1264 43 17 [33m)[0m
                 [36m)[0m [1m[97m"[0m[1m[94misOutcome[0m[1m[97m"[0m 
             [35m,[0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1282 43 35 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1275 43 28 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94m_winner[0m[1m[97m"[0m 
                 [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1283 43 36 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                 [36m,[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1290 43 43 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                 [36m][0m 
             [35m][0m 
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 1302 45 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
@@ -1210,143 +1210,143 @@ XL_Prog
         [1m[93m,[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 1356 46 11 [36m)[0m
             [35m)[0m Nothing Nothing 
             [35m([0m XL_Claim 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1356 46 11 [33m)[0m
                 [36m)[0m CT_Possible 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1376 46 31 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1376 46 31 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_FunApp 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1364 46 19 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Prim 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1364 46 19 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1358 46 13 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1367 46 22 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94moptionX[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1379 46 34 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m
             [35m)[0m 
             [35m([0m XL_Values 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1356 46 11 [33m)[0m
                 [36m)[0m [36m[[0m[36m][0m
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 1392 48 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 1444 49 10 [36m)[0m
             [35m)[0m Nothing Nothing 
             [35m([0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1444 49 10 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1437 49 3 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
                 [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1445 49 11 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                 [36m,[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1452 49 18 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
                 [36m,[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1458 49 24 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
                 [36m][0m 
             [35m)[0m 
             [35m([0m XL_Let 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1477 50 10 [33m)[0m
                 [36m)[0m Nothing Nothing 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1477 50 10 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1470 50 3 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1478 50 11 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1485 50 18 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mPAPER[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1492 50 25 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Let 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1511 51 10 [1m[35m)[0m
                     [33m)[0m Nothing Nothing 
                     [33m([0m XL_FunApp 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1511 51 10 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1504 51 3 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mfair_if[0m[1m[97m"[0m 
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1512 51 11 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mhandX[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1519 51 18 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mSCISSORS[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1529 51 28 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mcanWinX[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m)[0m 
                     [33m([0m XL_Values 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1511 51 10 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m[[0m[1m[35m][0m
                     [33m)[0m
@@ -1354,7 +1354,7 @@ XL_Prog
             [35m)[0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineFun 
-        [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+        [1m[93m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 1542 53 1 [35m)[0m
         [1m[93m)[0m [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
@@ -1362,81 +1362,81 @@ XL_Prog
         [1m[93m,[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
         [1m[93m][0m 
         [1m[93m([0m XL_Let 
-            [35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+            [35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 1603 54 18 [36m)[0m
             [35m)[0m Nothing Nothing 
             [35m([0m XL_FunApp 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1603 54 18 [33m)[0m
                 [36m)[0m 
                 [36m([0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1588 54 3 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
                 [36m)[0m 
                 [36m[[0m XL_Var 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1604 54 19 [1m[35m)[0m
                     [33m)[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                 [36m,[0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1620 54 35 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Prim 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1620 54 35 [1m[36m)[0m
                         [1m[35m)[0m [1m[35m([0m CP PEQ [1m[35m)[0m
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1612 54 27 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                     [33m,[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1623 54 38 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m][0m 
             [35m)[0m 
             [35m([0m XL_Let 
-                [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                [36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 1650 55 18 [33m)[0m
                 [36m)[0m Nothing Nothing 
                 [36m([0m XL_FunApp 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1650 55 18 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1635 55 3 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mfair_for_player[0m[1m[97m"[0m 
                     [33m)[0m 
                     [33m[[0m XL_Var 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1651 55 19 [1m[36m)[0m
                         [1m[35m)[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                     [33m,[0m XL_FunApp 
-                        [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1667 55 35 [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m([0m XL_Prim 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1667 55 35 [1m[33m)[0m
                             [1m[36m)[0m [1m[36m([0m CP PEQ [1m[36m)[0m
                         [1m[35m)[0m 
                         [1m[35m[[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1659 55 27 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var 
-                            [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                            [1m[36m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1670 55 38 [1m[33m)[0m
                             [1m[36m)[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Values 
-                    [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
+                    [33m([0m [1m[97m"[0m[1m[94m/app/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 1650 55 18 [1m[35m)[0m
                     [33m)[0m [33m[[0m[33m][0m
                 [36m)[0m

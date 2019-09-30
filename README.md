@@ -18,7 +18,7 @@ The best way to use Reach is with Docker and docker-compose.
 
 Run `reach` for a script to run the compiler using a local build if
 one is available, or the Docker image if not. (If using Docker, the
-only files in this repository you need are `docker-compose.yml` and `reach`.)
+only file in this repository you need is `reach`.)
 
 See `examples/rps` for an example application.
 

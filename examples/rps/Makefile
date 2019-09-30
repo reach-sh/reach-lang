@@ -1,5 +1,4 @@
 TAG="reachsh/examples-rps:v0.1.0"
-NAME="rps"
 
 build/%.mjs: rsh/%.rsh
 	../../reach -o build $^
@@ -10,11 +9,12 @@ build: build/rps.mjs build/rps_while.mjs
 
 .PHONY: push
 push: build
+	npm publish --access public
 	docker push $(TAG)
 
 .PHONY: run
 run: build
-	docker-compose up $(NAME)
+	docker-compose run reach-app
 
 .PHONY: clean
 clean:

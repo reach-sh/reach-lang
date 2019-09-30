@@ -7,6 +7,7 @@ build:
 
 .PHONY: push
 push: build
+	npm publish --access public
 	docker push $(TAG)
 
 .PHONY: run
