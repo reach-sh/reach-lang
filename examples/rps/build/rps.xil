@@ -630,7 +630,7 @@ XIL_Prog
                                                                                                         [1m[93m([0m XIL_If 
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                             [35m,[0m Just [36m([0m TokenPn 203 10 13 [36m)[0m
-                                                                                                            [35m)[0m Eff_Pure 
+                                                                                                            [35m)[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m 
                                                                                                             [35m([0m XIL_Var 
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                 [36m,[0m Just [33m([0m TokenPn 309 12 3 [33m)[0m
@@ -658,7 +658,7 @@ XIL_Prog
                                                                                                 [1m[95m([0m XIL_If 
                                                                                                     [1m[96m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                     [1m[96m,[0m Just [1m[93m([0m TokenPn 203 10 13 [1m[93m)[0m
-                                                                                                    [1m[96m)[0m Eff_Pure 
+                                                                                                    [1m[96m)[0m [1m[96m([0m fromList [1m[93m[[0m[1m[93m][0m [1m[96m)[0m 
                                                                                                     [1m[96m([0m XIL_Var 
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                         [1m[93m,[0m Just [35m([0m TokenPn 432 15 26 [35m)[0m
@@ -686,7 +686,7 @@ XIL_Prog
                                                                                         [96m([0m XIL_If 
                                                                                             [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 449 16 3 [1m[95m)[0m
-                                                                                            [93m)[0m Eff_Pure 
+                                                                                            [93m)[0m [93m([0m fromList [1m[95m[[0m[1m[95m][0m [93m)[0m 
                                                                                             [93m([0m XIL_Var 
                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                 [1m[95m,[0m Just [1m[96m([0m TokenPn 309 12 3 [1m[96m)[0m
@@ -703,7 +703,7 @@ XIL_Prog
                                                                                             [93m([0m XIL_If 
                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                 [1m[95m,[0m Just [1m[96m([0m TokenPn 484 17 8 [1m[96m)[0m
-                                                                                                [1m[95m)[0m Eff_Pure 
+                                                                                                [1m[95m)[0m [1m[95m([0m fromList [1m[96m[[0m[1m[96m][0m [1m[95m)[0m 
                                                                                                 [1m[95m([0m XIL_Var 
                                                                                                     [1m[96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                     [1m[96m,[0m Just [1m[93m([0m TokenPn 339 13 3 [1m[93m)[0m
@@ -804,7 +804,7 @@ XIL_Prog
                                                                             [1m[36m([0m XIL_If 
                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 253 12 13 [95m)[0m
-                                                                                [1m[33m)[0m Eff_Pure 
+                                                                                [1m[33m)[0m [1m[33m([0m fromList [95m[[0m[95m][0m [1m[33m)[0m 
                                                                                 [1m[33m([0m XIL_Var 
                                                                                     [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                     [95m,[0m Just [96m([0m TokenPn 18 3 1 [96m)[0m
@@ -1336,7 +1336,7 @@ XIL_Prog
                                                                                                                                         [96m([0m XIL_If 
                                                                                                                                             [93m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 203 10 13 [1m[95m)[0m
-                                                                                                                                            [93m)[0m Eff_Pure 
+                                                                                                                                            [93m)[0m [93m([0m fromList [1m[95m[[0m[1m[95m][0m [93m)[0m 
                                                                                                                                             [93m([0m XIL_Var 
                                                                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m,[0m Just [1m[96m([0m TokenPn 309 12 3 [1m[96m)[0m
@@ -1364,7 +1364,7 @@ XIL_Prog
                                                                                                                                 [1m[33m([0m XIL_If 
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 203 10 13 [96m)[0m
-                                                                                                                                    [95m)[0m Eff_Pure 
+                                                                                                                                    [95m)[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m 
                                                                                                                                     [95m([0m XIL_Var 
                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 432 15 26 [93m)[0m
@@ -1392,7 +1392,7 @@ XIL_Prog
                                                                                                                         [1m[35m([0m XIL_If 
                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 449 16 3 [1m[33m)[0m
-                                                                                                                            [1m[36m)[0m Eff_Pure 
+                                                                                                                            [1m[36m)[0m [1m[36m([0m fromList [1m[33m[[0m[1m[33m][0m [1m[36m)[0m 
                                                                                                                             [1m[36m([0m XIL_Var 
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 309 12 3 [95m)[0m
@@ -1409,7 +1409,7 @@ XIL_Prog
                                                                                                                             [1m[36m([0m XIL_If 
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 484 17 8 [95m)[0m
-                                                                                                                                [1m[33m)[0m Eff_Pure 
+                                                                                                                                [1m[33m)[0m [1m[33m([0m fromList [95m[[0m[95m][0m [1m[33m)[0m 
                                                                                                                                 [1m[33m([0m XIL_Var 
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 339 13 3 [96m)[0m
@@ -1510,7 +1510,7 @@ XIL_Prog
                                                                                                             [35m([0m XIL_If 
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                 [36m,[0m Just [33m([0m TokenPn 253 12 13 [33m)[0m
-                                                                                                                [36m)[0m Eff_Pure 
+                                                                                                                [36m)[0m [36m([0m fromList [33m[[0m[33m][0m [36m)[0m 
                                                                                                                 [36m([0m XIL_Var 
                                                                                                                     [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 18 3 1 [1m[35m)[0m
@@ -1757,7 +1757,7 @@ XIL_Prog
                                                                                                         [1m[93m([0m XIL_If 
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                             [35m,[0m Just [36m([0m TokenPn 253 12 13 [36m)[0m
-                                                                                                            [35m)[0m Eff_Pure 
+                                                                                                            [35m)[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m 
                                                                                                             [35m([0m XIL_Var 
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                 [36m,[0m Just [33m([0m TokenPn 18 3 1 [33m)[0m
@@ -1935,7 +1935,7 @@ XIL_Prog
                                                                                                                                     [95m([0m XIL_If 
                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 253 12 13 [93m)[0m
-                                                                                                                                        [96m)[0m Eff_Pure 
+                                                                                                                                        [96m)[0m [96m([0m fromList [93m[[0m[93m][0m [96m)[0m 
                                                                                                                                         [96m([0m XIL_Var 
                                                                                                                                             [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 18 3 1 [1m[95m)[0m
@@ -1964,7 +1964,7 @@ XIL_Prog
                                                                                                                         [1m[35m([0m XIL_If 
                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 119 6 3 [1m[33m)[0m
-                                                                                                                            [1m[36m)[0m Eff_Pure 
+                                                                                                                            [1m[36m)[0m [1m[36m([0m fromList [1m[33m[[0m[1m[33m][0m [1m[36m)[0m 
                                                                                                                             [1m[36m([0m XIL_PrimApp 
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 130 6 14 [95m)[0m
@@ -1990,7 +1990,7 @@ XIL_Prog
                                                                                                                             [1m[36m([0m XIL_If 
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 166 7 8 [95m)[0m
-                                                                                                                                [1m[33m)[0m Eff_Pure 
+                                                                                                                                [1m[33m)[0m [1m[33m([0m fromList [95m[[0m[95m][0m [1m[33m)[0m 
                                                                                                                                 [1m[33m([0m XIL_PrimApp 
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 177 7 19 [96m)[0m
@@ -2292,7 +2292,7 @@ XIL_Prog
                                                                                                                                         [96m([0m XIL_If 
                                                                                                                                             [93m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 253 12 13 [1m[95m)[0m
-                                                                                                                                            [93m)[0m Eff_Pure 
+                                                                                                                                            [93m)[0m [93m([0m fromList [1m[95m[[0m[1m[95m][0m [93m)[0m 
                                                                                                                                             [93m([0m XIL_Var 
                                                                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m,[0m Just [1m[96m([0m TokenPn 18 3 1 [1m[96m)[0m
@@ -2446,7 +2446,7 @@ XIL_Prog
                                                                                                                                                                     [33m([0m XIL_If 
                                                                                                                                                                         [1m[35m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m Just [1m[36m([0m TokenPn 253 12 13 [1m[36m)[0m
-                                                                                                                                                                        [1m[35m)[0m Eff_Pure 
+                                                                                                                                                                        [1m[35m)[0m [1m[35m([0m fromList [1m[36m[[0m[1m[36m][0m [1m[35m)[0m 
                                                                                                                                                                         [1m[35m([0m XIL_Var 
                                                                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 18 3 1 [1m[33m)[0m
@@ -2552,7 +2552,7 @@ XIL_Prog
                                                                                                                                                                         [1m[35m([0m XIL_If 
                                                                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 253 12 13 [1m[33m)[0m
-                                                                                                                                                                            [1m[36m)[0m Eff_Pure 
+                                                                                                                                                                            [1m[36m)[0m [1m[36m([0m fromList [1m[33m[[0m[1m[33m][0m [1m[36m)[0m 
                                                                                                                                                                             [1m[36m([0m XIL_Var 
                                                                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 18 3 1 [95m)[0m
@@ -2581,7 +2581,7 @@ XIL_Prog
                                                                                                                                                             [35m([0m XIL_If 
                                                                                                                                                                 [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m Just [33m([0m TokenPn 1038 34 3 [33m)[0m
-                                                                                                                                                                [36m)[0m Eff_Pure 
+                                                                                                                                                                [36m)[0m [36m([0m fromList [33m[[0m[33m][0m [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_Let 
                                                                                                                                                                     [33m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 219 11 1 [1m[35m)[0m
@@ -2594,7 +2594,7 @@ XIL_Prog
                                                                                                                                                                     [33m([0m XIL_If 
                                                                                                                                                                         [1m[35m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m Just [1m[36m([0m TokenPn 253 12 13 [1m[36m)[0m
-                                                                                                                                                                        [1m[35m)[0m Eff_Pure 
+                                                                                                                                                                        [1m[35m)[0m [1m[35m([0m fromList [1m[36m[[0m[1m[36m][0m [1m[35m)[0m 
                                                                                                                                                                         [1m[35m([0m XIL_Var 
                                                                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 974 32 3 [1m[33m)[0m
@@ -2659,7 +2659,7 @@ XIL_Prog
                                                                                                                                                                 [36m([0m XIL_If 
                                                                                                                                                                     [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 1109 36 8 [1m[35m)[0m
-                                                                                                                                                                    [33m)[0m Eff_Pure 
+                                                                                                                                                                    [33m)[0m [33m([0m fromList [1m[35m[[0m[1m[35m][0m [33m)[0m 
                                                                                                                                                                     [33m([0m XIL_Var 
                                                                                                                                                                         [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m Just [1m[36m([0m TokenPn 974 32 3 [1m[36m)[0m
@@ -2676,7 +2676,7 @@ XIL_Prog
                                                                                                                                                                     [33m([0m XIL_If 
                                                                                                                                                                         [1m[35m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m,[0m Just [1m[36m([0m TokenPn 1151 38 8 [1m[36m)[0m
-                                                                                                                                                                        [1m[35m)[0m Eff_Pure 
+                                                                                                                                                                        [1m[35m)[0m [1m[35m([0m fromList [1m[36m[[0m[1m[36m][0m [1m[35m)[0m 
                                                                                                                                                                         [1m[35m([0m XIL_Var 
                                                                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1006 33 3 [1m[33m)[0m
@@ -2775,7 +2775,7 @@ XIL_Prog
                                                                                                                                                             [35m([0m XIL_If 
                                                                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m Just [33m([0m TokenPn 253 12 13 [33m)[0m
-                                                                                                                                                                [36m)[0m Eff_Pure 
+                                                                                                                                                                [36m)[0m [36m([0m fromList [33m[[0m[33m][0m [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_Var 
                                                                                                                                                                     [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 605 22 1 [1m[35m)[0m
@@ -2921,7 +2921,7 @@ XIL_Prog
                                                                                                                                                         [1m[93m([0m XIL_If 
                                                                                                                                                             [35m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m Just [36m([0m TokenPn 253 12 13 [36m)[0m
-                                                                                                                                                            [35m)[0m Eff_Pure 
+                                                                                                                                                            [35m)[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m 
                                                                                                                                                             [35m([0m XIL_Var 
                                                                                                                                                                 [36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m Just [33m([0m TokenPn 18 3 1 [33m)[0m
@@ -2974,7 +2974,7 @@ XIL_Prog
                                                                                                                                                         [1m[93m([0m XIL_If 
                                                                                                                                                             [35m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m Just [36m([0m TokenPn 49 4 13 [36m)[0m
-                                                                                                                                                            [35m)[0m Eff_Pure 
+                                                                                                                                                            [35m)[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m 
                                                                                                                                                             [35m([0m XIL_Var 
                                                                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m Just [33m([0m TokenPn 1755 71 17 [33m)[0m
@@ -2999,7 +2999,7 @@ XIL_Prog
                                                                                                                                                 [1m[95m([0m XIL_If 
                                                                                                                                                     [1m[96m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m,[0m Just [1m[93m([0m TokenPn 203 10 13 [1m[93m)[0m
-                                                                                                                                                    [1m[96m)[0m Eff_Pure 
+                                                                                                                                                    [1m[96m)[0m [1m[96m([0m fromList [1m[93m[[0m[1m[93m][0m [1m[96m)[0m 
                                                                                                                                                     [1m[96m([0m XIL_Var 
                                                                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                         [1m[93m,[0m Just [35m([0m TokenPn 313 14 18 [35m)[0m
@@ -3133,7 +3133,7 @@ XIL_Prog
                                                                                                                                                             [35m([0m XIL_If 
                                                                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m Just [33m([0m TokenPn 253 12 13 [33m)[0m
-                                                                                                                                                                [36m)[0m Eff_Pure 
+                                                                                                                                                                [36m)[0m [36m([0m fromList [33m[[0m[33m][0m [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_Var 
                                                                                                                                                                     [33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 18 3 1 [1m[35m)[0m
@@ -3186,7 +3186,7 @@ XIL_Prog
                                                                                                                                                             [35m([0m XIL_If 
                                                                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m Just [33m([0m TokenPn 49 4 13 [33m)[0m
-                                                                                                                                                                [36m)[0m Eff_Pure 
+                                                                                                                                                                [36m)[0m [36m([0m fromList [33m[[0m[33m][0m [36m)[0m 
                                                                                                                                                                 [36m([0m XIL_Var 
                                                                                                                                                                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 1808 72 17 [1m[35m)[0m
@@ -3211,7 +3211,7 @@ XIL_Prog
                                                                                                                                                     [1m[96m([0m XIL_If 
                                                                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                         [1m[93m,[0m Just [35m([0m TokenPn 203 10 13 [35m)[0m
-                                                                                                                                                        [1m[93m)[0m Eff_Pure 
+                                                                                                                                                        [1m[93m)[0m [1m[93m([0m fromList [35m[[0m[35m][0m [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_Var 
                                                                                                                                                             [35m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m Just [36m([0m TokenPn 313 14 18 [36m)[0m
@@ -3344,7 +3344,7 @@ XIL_Prog
                                                                                                                                                                             [1m[36m([0m XIL_If 
                                                                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 253 12 13 [95m)[0m
-                                                                                                                                                                                [1m[33m)[0m Eff_Pure 
+                                                                                                                                                                                [1m[33m)[0m [1m[33m([0m fromList [95m[[0m[95m][0m [1m[33m)[0m 
                                                                                                                                                                                 [1m[33m([0m XIL_Var 
                                                                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 1376 46 31 [96m)[0m
@@ -3433,7 +3433,7 @@ XIL_Prog
                                                                                                                                                                                 [1m[33m([0m XIL_If 
                                                                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 253 12 13 [96m)[0m
-                                                                                                                                                                                    [95m)[0m Eff_Pure 
+                                                                                                                                                                                    [95m)[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m 
                                                                                                                                                                                     [95m([0m XIL_Var 
                                                                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 1376 46 31 [93m)[0m
@@ -3522,7 +3522,7 @@ XIL_Prog
                                                                                                                                                                                     [95m([0m XIL_If 
                                                                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 253 12 13 [93m)[0m
-                                                                                                                                                                                        [96m)[0m Eff_Pure 
+                                                                                                                                                                                        [96m)[0m [96m([0m fromList [93m[[0m[93m][0m [96m)[0m 
                                                                                                                                                                                         [96m([0m XIL_Var 
                                                                                                                                                                                             [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 1376 46 31 [1m[95m)[0m
@@ -3657,7 +3657,7 @@ XIL_Prog
                                                                                                                                                                                 [1m[33m([0m XIL_If 
                                                                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 253 12 13 [96m)[0m
-                                                                                                                                                                                    [95m)[0m Eff_Pure 
+                                                                                                                                                                                    [95m)[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m 
                                                                                                                                                                                     [95m([0m XIL_Var 
                                                                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 1376 46 31 [93m)[0m
@@ -3746,7 +3746,7 @@ XIL_Prog
                                                                                                                                                                                     [95m([0m XIL_If 
                                                                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 253 12 13 [93m)[0m
-                                                                                                                                                                                        [96m)[0m Eff_Pure 
+                                                                                                                                                                                        [96m)[0m [96m([0m fromList [93m[[0m[93m][0m [96m)[0m 
                                                                                                                                                                                         [96m([0m XIL_Var 
                                                                                                                                                                                             [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 1376 46 31 [1m[95m)[0m
@@ -3835,7 +3835,7 @@ XIL_Prog
                                                                                                                                                                                         [96m([0m XIL_If 
                                                                                                                                                                                             [93m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 253 12 13 [1m[95m)[0m
-                                                                                                                                                                                            [93m)[0m Eff_Pure 
+                                                                                                                                                                                            [93m)[0m [93m([0m fromList [1m[95m[[0m[1m[95m][0m [93m)[0m 
                                                                                                                                                                                             [93m([0m XIL_Var 
                                                                                                                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                                 [1m[95m,[0m Just [1m[96m([0m TokenPn 1376 46 31 [1m[96m)[0m
@@ -3911,7 +3911,7 @@ XIL_Prog
                                                                                                                                                     [1m[96m([0m XIL_If 
                                                                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                                         [1m[93m,[0m Just [35m([0m TokenPn 1920 76 5 [35m)[0m
-                                                                                                                                                        [1m[93m)[0m Eff_Pure 
+                                                                                                                                                        [1m[93m)[0m [1m[93m([0m fromList [35m[[0m[35m][0m [1m[93m)[0m 
                                                                                                                                                         [1m[93m([0m XIL_PrimApp 
                                                                                                                                                             [35m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m Just [36m([0m TokenPn 1932 76 17 [36m)[0m
@@ -3961,7 +3961,7 @@ XIL_Prog
                                                                                                                                                         [1m[93m([0m XIL_If 
                                                                                                                                                             [35m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                                             [35m,[0m Just [36m([0m TokenPn 1991 78 10 [36m)[0m
-                                                                                                                                                            [35m)[0m Eff_Pure 
+                                                                                                                                                            [35m)[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m 
                                                                                                                                                             [35m([0m XIL_PrimApp 
                                                                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                                                                 [36m,[0m Just [33m([0m TokenPn 2003 78 22 [33m)[0m
@@ -4172,7 +4172,7 @@ XIL_Prog
                                                                                                                                                                                     [95m([0m XIL_If 
                                                                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mSTDLIB[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 253 12 13 [93m)[0m
-                                                                                                                                                                                        [96m)[0m Eff_Pure 
+                                                                                                                                                                                        [96m)[0m [96m([0m fromList [93m[[0m[93m][0m [96m)[0m 
                                                                                                                                                                                         [96m([0m XIL_Var 
                                                                                                                                                                                             [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 605 22 1 [1m[95m)[0m
@@ -4201,7 +4201,7 @@ XIL_Prog
                                                                                                                                                                         [1m[35m([0m XIL_If 
                                                                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 724 25 3 [1m[33m)[0m
-                                                                                                                                                                            [1m[36m)[0m Eff_Pure 
+                                                                                                                                                                            [1m[36m)[0m [1m[36m([0m fromList [1m[33m[[0m[1m[33m][0m [1m[36m)[0m 
                                                                                                                                                                             [1m[36m([0m XIL_PrimApp 
                                                                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 730 25 9 [95m)[0m
@@ -4227,7 +4227,7 @@ XIL_Prog
                                                                                                                                                                             [1m[36m([0m XIL_If 
                                                                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 771 26 8 [95m)[0m
-                                                                                                                                                                                [1m[33m)[0m Eff_Pure 
+                                                                                                                                                                                [1m[33m)[0m [1m[33m([0m fromList [95m[[0m[95m][0m [1m[33m)[0m 
                                                                                                                                                                                 [1m[33m([0m XIL_PrimApp 
                                                                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 777 26 14 [96m)[0m
@@ -4253,7 +4253,7 @@ XIL_Prog
                                                                                                                                                                                 [1m[33m([0m XIL_If 
                                                                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                     [95m,[0m Just [96m([0m TokenPn 812 27 8 [96m)[0m
-                                                                                                                                                                                    [95m)[0m Eff_Pure 
+                                                                                                                                                                                    [95m)[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m 
                                                                                                                                                                                     [95m([0m XIL_PrimApp 
                                                                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 818 27 14 [93m)[0m
@@ -4279,7 +4279,7 @@ XIL_Prog
                                                                                                                                                                                     [95m([0m XIL_If 
                                                                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                         [96m,[0m Just [93m([0m TokenPn 861 28 8 [93m)[0m
-                                                                                                                                                                                        [96m)[0m Eff_Pure 
+                                                                                                                                                                                        [96m)[0m [96m([0m fromList [93m[[0m[93m][0m [96m)[0m 
                                                                                                                                                                                         [96m([0m XIL_PrimApp 
                                                                                                                                                                                             [93m([0m [1m[97m"[0m[1m[94m/Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/rsh/rps_shared.rsh[0m[1m[97m"[0m 
                                                                                                                                                                                             [93m,[0m Just [1m[95m([0m TokenPn 867 28 14 [1m[95m)[0m

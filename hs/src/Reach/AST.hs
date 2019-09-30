@@ -1,8 +1,8 @@
 module Reach.AST where
 
-import Algebra.Lattice
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 
 -- Shared types
 
@@ -122,38 +122,12 @@ data ClaimType
                 --- this true.
   deriving (Show,Eq,Ord)
 
---- XXX Use sets of atomic effects
 data Effect
-  = Eff_Pure
-  | Eff_Comm
+  = Eff_Comm
   | Eff_Claim
-  | Eff_All
   deriving (Show,Eq,Ord)
 
-instance Lattice Effect where
-  Eff_Pure \/ x = x
-  x \/ Eff_Pure = x
-  Eff_All \/ _ = Eff_All
-  _ \/ Eff_All = Eff_All
-  Eff_Comm \/ Eff_Claim = Eff_All
-  Eff_Claim \/ Eff_Comm = Eff_All
-  Eff_Comm \/ Eff_Comm = Eff_Comm
-  Eff_Claim \/ Eff_Claim = Eff_Claim
-  
-  _ /\ Eff_Pure = Eff_Pure
-  Eff_Pure /\ _ = Eff_Pure
-  x /\ Eff_All = x
-  Eff_All /\ x = x
-  Eff_Comm /\ Eff_Claim = Eff_Pure
-  Eff_Claim /\ Eff_Comm = Eff_Pure
-  Eff_Comm /\ Eff_Comm = Eff_Comm
-  Eff_Claim /\ Eff_Claim = Eff_Claim
-
-instance BoundedJoinSemiLattice Effect where
-    bottom = Eff_Pure
-
-instance BoundedMeetSemiLattice Effect where
-    top = Eff_All
+type Effects = S.Set Effect
 
 {- Expanded Language (the language after expansion) -}
 
@@ -215,7 +189,7 @@ data XILExpr a
   = XIL_Con a Constant
   | XIL_Var a XILVar
   | XIL_PrimApp a EP_Prim BaseType [XILExpr a]
-  | XIL_If a Effect (XILExpr a) [BaseType] (XILExpr a) (XILExpr a)
+  | XIL_If a Effects (XILExpr a) [BaseType] (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
   | XIL_ToConsensus a (Bool, Participant, [XILVar], (XILExpr a)) (Bool, Participant, (XILExpr a), (XILExpr a)) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)

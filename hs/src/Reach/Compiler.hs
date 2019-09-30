@@ -91,7 +91,7 @@ data InlineV a
   | IV_Values a [InlineV a]
   | IV_Prim a EP_Prim
   | IV_Var a XILVar
-  | IV_XIL Effect [BaseType] (XILExpr a)
+  | IV_XIL Effects [BaseType] (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
 
 type IVType = [BaseType]
@@ -133,28 +133,28 @@ iv_single :: Show a => a -> InlineV a -> InlineV a
 iv_single a (IV_Values _ vs) = error $ "inline: expected one value but got " ++ show (length vs) ++ " at: " ++ show a
 iv_single _ iv = iv
 
-purePrim :: EP_Prim -> Effect
-purePrim RANDOM = top
-purePrim (CP BALANCE) = top
-purePrim (CP TXN_VALUE) = top
-purePrim _ = bottom
+purePrim :: EP_Prim -> Effects
+purePrim RANDOM = Set.singleton Eff_Comm
+purePrim (CP BALANCE) = Set.singleton Eff_Comm
+purePrim (CP TXN_VALUE) = Set.singleton Eff_Comm
+purePrim _ = Set.empty
 
-iv_expr :: Show a => a -> InlineV a -> (Effect, IVType, XILExpr a)
-iv_expr _ (IV_Con a c) = (bottom, [conType c], (XIL_Con a c))
+iv_expr :: Show a => a -> InlineV a -> (Effects, IVType, XILExpr a)
+iv_expr _ (IV_Con a c) = (Set.empty, [conType c], (XIL_Con a c))
 iv_expr _ (IV_Values a vs) = (vsp, ts, (XIL_Values a es))
   where (vsp, ts, es) = iv_exprs a vs
-iv_expr _ (IV_Var a (v,t)) = (bottom, [t], (XIL_Var a (v,t)))
+iv_expr _ (IV_Var a (v,t)) = (Set.empty, [t], (XIL_Var a (v,t)))
 iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
 iv_expr ra (IV_Clo (ca, _, _) _) = error $ "inline: Cannot use lambda " ++ show ca ++ " as expression at: " ++ show ra
 iv_expr ra (IV_Prim pa _) = error $ "inline: Cannot use primitive " ++ show pa ++ " as expression at: " ++ show ra
 
-iv_expr_expect :: Show a => a -> [BaseType] -> InlineV a -> (Effect, XILExpr a)
+iv_expr_expect :: Show a => a -> [BaseType] -> InlineV a -> (Effects, XILExpr a)
 iv_expr_expect ra et iv =
   if et == at then (p, e)
   else error $ "inline: expect type " ++ show et ++ " but got " ++ show at ++ " at: " ++ show ra
   where (p, at, e) = iv_expr ra iv
 
-iv_exprs :: Show a => a -> [InlineV a] -> (Effect, IVType, [XILExpr a])
+iv_exprs :: Show a => a -> [InlineV a] -> (Effects, IVType, [XILExpr a])
 iv_exprs ra ivs = (iep, its, ies)
   where pies = map (iv_expr ra) ivs
         ies = map (\(_,_,z)->z) pies
@@ -248,9 +248,9 @@ peval outer_loopt σ e =
                 (fp, ft, f') = r a f
                 it = (type_equal a tt ft)
     XL_Claim a ct ae ->
-      IV_XIL Eff_Claim [] (XIL_Claim a ct (sr a [BT_Bool] ae))
+      IV_XIL eff_claim [] (XIL_Claim a ct (sr a [BT_Bool] ae))
     XL_ToConsensus a (ok_who, vs, ae) (to_who, de, te) be ->
-      IV_XIL Eff_Comm (type_equal a tt bt) (XIL_ToConsensus a ok_info to_info be')
+      IV_XIL eff_comm (type_equal a tt bt) (XIL_ToConsensus a ok_info to_info be')
       where ok_info = (ok_ij, ok_who, vilvs, (sr a [BT_UInt256] ae))
             to_info = (to_ij, to_who, (sr a [BT_UInt256] de), te')
             (ok_ij, σ_ok) = ienv_ensure_part a ok_who σ
@@ -260,14 +260,14 @@ peval outer_loopt σ e =
             vilvs = zip vs vts
             (_,vts,_) = iv_exprs a $ map def $ map (XL_Var a) vs
     XL_FromConsensus a be ->
-      IV_XIL Eff_Comm bt (XIL_FromConsensus a be')
+      IV_XIL eff_comm bt (XIL_FromConsensus a be')
       where (_, bt, be') = r a be
     XL_Values a es ->
       case es of
         [ e1 ] -> def e1
         _ -> IV_Values a (map (iv_single a) $ map def es)
     XL_Transfer a p ae ->
-      IV_XIL Eff_Comm [] (XIL_Transfer a p (sr a [BT_UInt256] ae))
+      IV_XIL eff_comm [] (XIL_Transfer a p (sr a [BT_UInt256] ae))
     XL_Declassify a de ->
       IV_XIL dp [dt] (XIL_Declassify a dt de')
       where (dp, dts, de') = r a de
@@ -288,7 +288,7 @@ peval outer_loopt σ e =
                   Nothing -> M.empty
                   Just vs -> id_map a vs ts
     XL_While a lv ie ce inve be ke ->
-      IV_XIL top ket (XIL_While a (lv, lvt) ie' (sr' [BT_Bool] ce) (sr' [BT_Bool] inve) (sr' [] be) ke')
+      IV_XIL eff_comm ket (XIL_While a (lv, lvt) ie' (sr' [BT_Bool] ce) (sr' [BT_Bool] inve) (sr' [] be) ke')
       where sr' bt x = snd $ iv_expr_expect a bt $ peval (Just lvt) σ' x
             (_, ket, ke') = iv_expr a $ peval outer_loopt σ' ke
             (_, iet, ie') = r a ie
@@ -297,11 +297,11 @@ peval outer_loopt σ e =
     XL_Continue a ne ->
       case outer_loopt of
         Just lvt ->
-          IV_XIL top [] (XIL_Continue a (sr a [lvt] ne))
+          IV_XIL eff_comm [] (XIL_Continue a (sr a [lvt] ne))
         Nothing ->
           error $ "inline: cannot use continue unless inside loop at: " ++ show a
     XL_Interact a m bt args ->
-      IV_XIL Eff_Comm [bt] (XIL_Interact a m bt args')
+      IV_XIL eff_comm [bt] (XIL_Interact a m bt args')
       where (_, _, args') = iv_exprs a $ map def args
     XL_Lambda a formals body ->
       IV_Clo (a, formals, body) σ
@@ -310,6 +310,8 @@ peval outer_loopt σ e =
   where def = peval outer_loopt σ
         r h ne = iv_expr h $ def ne
         sr h bt ne = snd $ iv_expr_expect h bt $ def ne
+        eff_comm = Set.singleton Eff_Comm
+        eff_claim = Set.singleton Eff_Claim
 
 inline :: Show a => XLProgram a -> XILProgram a
 inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
@@ -449,26 +451,23 @@ anf_expr me ρ e mk =
     XIL_Var h v -> mk h [ anf_renamed_to ρ v ]
     XIL_PrimApp h p pt args ->
       anf_exprs h me ρ args (\_ args' -> ret_expr h "PrimApp" pt (IL_PrimApp h p args'))
-    XIL_If h eff ce its te fe ->
+    XIL_If h effs ce its te fe ->
       anf_expr me ρ ce k
       where k _ [ ca ] =
-              case eff of
-                Eff_Pure ->
+              case Set.null effs of
+                True ->
                   anf_expr me ρ te
                   (\ _ tvs ->
                       anf_expr me ρ fe
                       (\ _ fvs -> do
                           ks <- allocANFs h me "PureIf" its $ zipWithEq (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
                           mk h $ map (IL_Var h) ks))
-                Eff_Claim ->
-                  --- XXX It would be nice to be able to have a
-                  --- separate case for this, but would be a very
-                  --- complex change, because we'd need to merge the
-                  --- effects of the two branches in some way in the
-                  --- verifier.
-                  comm_case
-                Eff_Comm -> comm_case
-                Eff_All -> comm_case
+                False -> comm_case
+                         --- XXX It would be nice to be able to have a
+                         --- separate case for comm vs claim, but
+                         --- would be a very complex change, because
+                         --- we'd need to merge the effects of the two
+                         --- branches in some way in the verifier.
               where comm_case = do
                       tt <- anf_tail me ρ te mk
                       ft <- anf_tail me ρ fe mk
