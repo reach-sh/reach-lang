@@ -1,0 +1,24 @@
+{
+  "name": "@reach-sh/example-auction",
+  "version": "0.1.0",
+  "description": "Reach Platform Example: Auction",
+  "type": "module",
+  "devDependencies": {
+    "babel-eslint": "^10.0.3",
+    "eslint": "^6.3.0"
+  },
+  "dependencies": {
+    "@reach-sh/stdlib": "0.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reach-sh/reach-lang.git",
+    "directory": "examples/auction"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "scripts": {
+    "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
+    "test": "node --experimental-modules index.mjs"
+  }
+}
