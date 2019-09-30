@@ -13,7 +13,7 @@ push: build
 	docker push $(TAG)
 
 .PHONY: run
-run: build
+run:
 	docker-compose run reach-app
 
 .PHONY: clean
