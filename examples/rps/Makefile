@@ -2,7 +2,7 @@ TAG="reachsh/examples-rps:v0.1.0"
 NAME="rps"
 
 build/%.mjs: rsh/%.rsh
-	../../hs/reach -o build $^
+	../../reach -o build $^
 
 .PHONY: build
 build: build/rps.mjs build/rps_while.mjs
