@@ -1,4 +1,4 @@
-#!/bin/sh -eu
+#!/bin/sh
 
 HERE=$(dirname $(realpath $0))
 HS=${HERE}/hs
