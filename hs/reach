@@ -1,0 +1,11 @@
+#!/bin/sh
+
+HERE=$(dirname $(realpath $0))
+
+if [ -d ${HERE}/.stack-work ] ; then
+    STACK_YAML=${HERE}/stack.yaml
+    stack build
+    exec stack exec -- reachc $*
+else
+    exec docker-compose -f ${HERE}/docker-compose.yml run reach $*
+fi

@@ -1,0 +1,5 @@
+/.stack-work
+/.dockerignore
+/Dockerfile
+/docker-compose.yml
+/reach

@@ -14,13 +14,20 @@ language for trustworthy DApps used by the Reach platform.
 
 # Usage
 
-Reach depends on Docker and docker-compose for usage. See
-`examples/rps` for an example application or run `make test` from this
-directory.
+The best way to use Reach is with Docker and docker-compose.
+
+See `hs/reach` for a script to run the compiler using a local build if
+one is available, or the Docker image if not.
+
+See `examples/rps` for an example application.
+
+If you just want to see a demo, run `make test` from this directory.
 
 # Development
 
-Dependencies:
+If you want to work on the Reach compiler, you can develop using the
+docker build, but we recommend installing some packages locally,
+you'll need:
 - stack v2.1.3
 - z3 v4.8.5
 - solidity v0.5.11

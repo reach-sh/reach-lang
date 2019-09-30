@@ -1,0 +1,6 @@
+version: '3'
+services:
+  reach:
+    image: reachsh/reach:v0.1.0
+    volumes:
+      - $PWD:/app

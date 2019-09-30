@@ -15,16 +15,14 @@ test:
 
 .PHONY: build-all
 build-all:
+	cd hs && $(MAKE) build
 	cd scripts/ethereum-devnet && $(MAKE) build
 	cd js && $(MAKE) build
 	cd examples/rps && $(MAKE) build
 
 .PHONY: push-all
 push-all:
+	cd hs && $(MAKE) push
 	cd scripts/ethereum-devnet && $(MAKE) push
 	cd js && $(MAKE) push
 	cd examples/rps && $(MAKE) push
-
-.PHONY: clean-images
-clean-images:
-	docker rmi $(docker images --filter "dangling=true" -q --no-trunc)

@@ -363,7 +363,7 @@ decodeXLLibrary fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStateme
 decodeXLLibrary _ j = expect_error "library" j
 
 stdlib_defs :: IO [XLDef TP]
-stdlib_defs = decodeXLLibrary "STDLIB" $ readJsModule $ (B.unpack $(embedFile "../rsh/stdlib.rsh"))
+stdlib_defs = decodeXLLibrary "STDLIB" $ readJsModule $ (B.unpack $(embedFile "./rsh/stdlib.rsh"))
 
 parseJsModule :: FilePath -> IO JSAST
 parseJsModule f = do

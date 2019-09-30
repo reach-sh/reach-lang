@@ -1,0 +1,4 @@
+/package-lock.json
+/node-modules
+/Makefile
+/.dockerignore

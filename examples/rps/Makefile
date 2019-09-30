@@ -1,11 +1,8 @@
 TAG="reachsh/examples-rps:v0.1.0"
 NAME="rps"
 
-export STACK_YAML=../../hs/stack.yaml
 build/%.mjs: rsh/%.rsh
-	stack build
-	mkdir -p build
-	stack exec -- reachc -o build $^
+	../../hs/reach -o build $^
 
 .PHONY: build
 build: build/rps.mjs build/rps_while.mjs

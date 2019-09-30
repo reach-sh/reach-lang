@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, RecordWildCards #-}
+{-# LANGUAGE FlexibleInstances, RecordWildCards, TemplateHaskell  #-}
 module Reach.VerifyZ3 where
 
 import qualified Data.Map.Strict as M
@@ -10,6 +10,8 @@ import System.IO
 import System.Exit
 import Data.Text.Prettyprint.Doc
 import Data.Digest.CRC32
+import qualified Data.ByteString.Char8 as BS
+import Data.FileEmbed
 
 import Reach.AST
 import Reach.Util
@@ -351,11 +353,11 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                 error $ "VerifyZ3 IL_Continue must only occur inside While"
 
 z3StdLib :: String
-z3StdLib = "../../z3/z3-runtime.smt2"
+z3StdLib = BS.unpack $(embedFile "./z3/z3-runtime.smt2")
 
 _verify_z3 :: Show a => Solver -> ILProgram a -> IO ExitCode
 _verify_z3 z3 tp = do
-  loadFile z3 z3StdLib
+  loadString z3 z3StdLib
   mapM_ (z3_vardecl z3) $ S.toList $ cvs tp
   VR ss fs <- mconcatMapM (z3_it_top z3 it) (liftM2 (,) [True, False] ps)
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"

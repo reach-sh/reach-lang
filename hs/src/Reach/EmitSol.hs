@@ -164,7 +164,7 @@ solVersion :: Doc a
 solVersion = "pragma solidity ^0.5.11;"
 
 solStdLib :: Doc a
-solStdLib = pretty $ BS.unpack $(embedFile "../sol/stdlib.sol")
+solStdLib = pretty $ BS.unpack $(embedFile "./sol/stdlib.sol")
 
 solApply :: String -> [Doc a] -> Doc a
 solApply f args = pretty f <> parens (hcat $ intersperse (comma <> space) args)
