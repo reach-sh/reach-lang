@@ -11,4 +11,4 @@ push:
 
 .PHONY: publish
 publish:
-	echo XXX
+	echo Go to https://hackage.haskell.org/packages/upload

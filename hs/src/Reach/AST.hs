@@ -98,18 +98,6 @@ primType (CP BALANCE) = ([] --> tUInt256)
 primType (CP TXN_VALUE) = ([] --> tUInt256)
 primType RANDOM = ([] --> tUInt256)
 
-type Participant = String
-
-data Role
-  = RolePart Participant
-  | RoleContract
-  deriving (Show,Eq,Ord)
-
-role_me :: Role -> Role -> Bool
-role_me _ RoleContract = True
-role_me RoleContract _ = False
-role_me (RolePart x) (RolePart y) = x == y
-
 data ClaimType
   = CT_Assert   --- Verified on all paths
   | CT_Assume   --- Always assumed true
@@ -122,6 +110,16 @@ data ClaimType
                 --- this true.
   deriving (Show,Eq,Ord)
 
+data Role a
+  = RolePart a
+  | RoleContract
+  deriving (Show,Eq,Ord)
+
+role_me :: Eq a => Role a -> Role a -> Bool
+role_me _ RoleContract = True
+role_me RoleContract _ = False
+role_me (RolePart x) (RolePart y) = x == y
+
 data Effect
   = Eff_Comm
   | Eff_Claim
@@ -132,6 +130,7 @@ type Effects = S.Set Effect
 {- Expanded Language (the language after expansion) -}
 
 type XLVar = String
+type XLPart = XLVar
 
 data XLExpr a
   = XL_Con a Constant
@@ -139,31 +138,13 @@ data XLExpr a
   | XL_Prim a EP_Prim
   | XL_If a (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Claim a ClaimType (XLExpr a)
-  --- A ToConsensus transfers control to the contract. The arguments
-  --- are (initiator, message, pay expression, contract body). The
-  --- message is a sequence of variables, because it binds these in
-  --- the contract body. The contract body is expected to end in a
-  --- FromConsensus that will switch back.
-
-  --- XXX These participants should be XLVar
-  | XL_ToConsensus a (Participant, [XLVar], (XLExpr a)) (Participant, (XLExpr a), (XLExpr a)) (XLExpr a)
-  --- A FromConsensus expression is a terminator inside of a contract
-  --- block that switches the context back away from the consensus,
-  --- while still retaining all of the bindings established during the
-  --- consensus execution.
+  | XL_ToConsensus a (XLPart, [XLVar], (XLExpr a)) (Maybe XLPart, (XLExpr a), (XLExpr a)) (XLExpr a)
   | XL_FromConsensus a (XLExpr a)
   | XL_Values a [XLExpr a]
-  --- Transfer expressions are always from the contract to another
-  --- role. In the future, we could make something like mutable state
-  --- on a local side of a transaction that collects all the transfers
-  --- and puts them in the pay position.
-
-  --- XXX These participants should be XLVar
-  | XL_Transfer a Participant (XLExpr a)
+  | XL_Transfer a XLVar (XLExpr a)
   | XL_Declassify a (XLExpr a)
-  --- Where x Vars x Expression x Body
-  | XL_Let a (Maybe Participant) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
-  | XL_While a XLVar (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a)
+  | XL_Let a (Maybe XLPart) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
+  | XL_While a [XLVar] (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Continue a (XLExpr a)
   | XL_Interact a String BaseType [XLExpr a]
   | XL_FunApp a (XLExpr a) [XLExpr a]
@@ -175,7 +156,7 @@ data XLDef a
   | XL_DefineFun a XLVar [XLVar] (XLExpr a)
   deriving (Show,Eq)
 
-type XLPartInfo a = (M.Map Participant (a, [(a, XLVar, BaseType)]))
+type XLPartInfo a = (M.Map XLPart (a, [(a, XLVar, BaseType)]))
 
 data XLProgram  a=
   XL_Prog a [XLDef a] (XLPartInfo a) (XLExpr a)
@@ -184,6 +165,7 @@ data XLProgram  a=
 --- Inlined Language (the language after expansion)
 
 type XILVar = (String, BaseType)
+type XILPart = XILVar
 
 data XILExpr a
   = XIL_Con a Constant
@@ -191,18 +173,18 @@ data XILExpr a
   | XIL_PrimApp a EP_Prim BaseType [XILExpr a]
   | XIL_If a Effects (XILExpr a) [BaseType] (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
-  | XIL_ToConsensus a (Bool, Participant, [XILVar], (XILExpr a)) (Bool, Participant, (XILExpr a), (XILExpr a)) (XILExpr a)
+  | XIL_ToConsensus a (Bool, XILPart, [XILVar], (XILExpr a)) (Maybe XILPart, (XILExpr a), (XILExpr a)) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)
   | XIL_Values a [XILExpr a]
-  | XIL_Transfer a Participant (XILExpr a)
+  | XIL_Transfer a XLVar (XILExpr a)
   | XIL_Declassify a BaseType (XILExpr a)
-  | XIL_Let a (Maybe Participant) (Maybe [XILVar]) (XILExpr a) (XILExpr a)
-  | XIL_While a XILVar (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
+  | XIL_Let a (Maybe XILPart) (Maybe [XILVar]) (XILExpr a) (XILExpr a)
+  | XIL_While a [XILVar] (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
   | XIL_Continue a (XILExpr a)
   | XIL_Interact a String BaseType [XILExpr a]
   deriving (Show,Eq)
 
-type XILPartInfo a = (M.Map Participant (a, [(a, XILVar)]))
+type XILPartInfo a = (M.Map XILPart (a, [(a, XILVar)]))
 
 data XILProgram a =
   XIL_Prog a (XILPartInfo a) (XILExpr a)
@@ -228,6 +210,7 @@ data XILProgram a =
  -}
 
 type ILVar = (Int, XILVar)
+type ILPart = ILVar
 
 data ILArg a
   = IL_Con a Constant
@@ -248,23 +231,16 @@ data ILStmt a
 data ILTail a
   = IL_Ret a [ILArg a]
   | IL_If a (ILArg a) (ILTail a) (ILTail a)
-  --- This role represents where the action happens. If it is
-  --- RoleContract, then this means that everyone does it.
-  | IL_Let a Role ILVar (ILExpr a) (ILTail a)
-  | IL_Do a Role (ILStmt a) (ILTail a)
-  --- As in XL, a ToConsensus is a transfer to the contract with
-  --- (initiator, message, pay amount). The tail is inside of the
-  --- contract.
-  | IL_ToConsensus a (Bool, ILVar, [ILVar], (ILArg a)) (Bool, ILVar, (ILArg a), (ILTail a)) (ILTail a)
-  --- A FromConsensus moves back from the consensus; the tail is
-  --- "local" again.
+  | IL_Let a (Role ILPart) ILVar (ILExpr a) (ILTail a)
+  | IL_Do a (Role ILPart) (ILStmt a) (ILTail a)
+  | IL_ToConsensus a (Bool, ILPart, [ILVar], (ILArg a)) (Maybe ILPart, (ILArg a), (ILTail a)) (ILTail a)
   | IL_FromConsensus a (ILTail a)
-  | IL_While a ILVar (ILArg a) (ILTail a) (ILTail a) (ILTail a) (ILTail a)
-  | IL_Continue a (ILArg a)
+  | IL_While a [ILVar] [ILArg a] (ILTail a) (ILTail a) (ILTail a) (ILTail a)
+  | IL_Continue a [ILArg a]
   deriving (Show,Eq)
 
 type ILPartArgs a = [ILVar]
-type ILPartInfo a = (M.Map Participant (ILPartArgs a))
+type ILPartInfo a = (M.Map ILPart (ILPartArgs a))
 
 data ILProgram a =
   IL_Prog a (ILPartInfo a) (ILTail a)
@@ -288,6 +264,16 @@ data ILProgram a =
    -}
 
 type BLVar = ILVar
+type BLPart = BLVar
+
+blpart_name :: BLPart -> String
+blpart_name (_, (pn, _)) = pn
+
+data FromSpec
+  = FS_From BLPart
+  | FS_Join BLPart
+  | FS_Any
+  deriving (Show,Eq)
 
 data BLArg a
   = BL_Con a Constant
@@ -310,12 +296,10 @@ data EPTail a
   | EP_If a (BLArg a) (EPTail a) (EPTail a)
   | EP_Let a BLVar (EPExpr a) (EPTail a)
   | EP_Do a (EPStmt a) (EPTail a)
-  {- This recv is what the sender sent; we will be doing the same
-     computation as the contract. -}
-  | EP_SendRecv a [BLVar] (Maybe BLVar, Int, [BLVar], (BLArg a), (EPTail a)) (Maybe BLVar, Int, BLArg a, EPTail a)
-  | EP_Recv a [BLVar] (Maybe BLVar, Int, [BLVar], (EPTail a)) (Maybe BLVar, Bool, Int, BLArg a, EPTail a)
-  | EP_Loop a Int BLVar (BLArg a) (EPTail a)
-  | EP_Continue a Int (BLArg a)
+  | EP_SendRecv a [BLVar] (FromSpec, Int, [BLVar], (BLArg a), (EPTail a)) (FromSpec, Int, BLArg a, EPTail a)
+  | EP_Recv a [BLVar] (FromSpec, Int, [BLVar], (EPTail a)) (FromSpec, Int, BLArg a, EPTail a)
+  | EP_Loop a Int [BLVar] [BLArg a] (EPTail a)
+  | EP_Continue a Int [BLVar] [(BLArg a)]
   deriving (Show,Eq)
 
 data EProgram a
@@ -338,13 +322,13 @@ data CTail a
   | C_If a (BLArg a) (CTail a) (CTail a)
   | C_Let a BLVar (CExpr a) (CTail a)
   | C_Do a (CStmt a) (CTail a)
-  | C_Jump a Int [BLVar] BLVar (BLArg a)
+  | C_Jump a Int [BLVar] [BLVar] [BLArg a]
   deriving (Show,Eq)
 
 data CHandler a
   --- Each handler has a message that it expects to receive
-  = C_Handler a (Bool, BLVar) Bool (Int, [BLVar]) [BLVar] (BLArg a) (CTail a) Int
-  | C_Loop a [BLVar] BLVar (CTail a) (CTail a) Int
+  = C_Handler a FromSpec Bool (Int, [BLVar]) [BLVar] (BLArg a) (CTail a) Int
+  | C_Loop a [BLVar] [BLVar] (CTail a) (CTail a) Int
   deriving (Show,Eq)
 
 --- A contract program is just a sequence of handlers.
@@ -353,7 +337,7 @@ data CProgram a
   deriving (Show,Eq)
 
 -- -- Backend
-type BLParts a = M.Map Participant (EProgram a)
+type BLParts a = M.Map BLPart (EProgram a)
 
 data BLProgram a
   = BL_Prog a (BLParts a) (CProgram a)

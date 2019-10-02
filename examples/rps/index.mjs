@@ -26,6 +26,7 @@ import * as RPSW from './build/rps_while.mjs';
                commits: log(`${name} commits to play with (hidden) hand.`),
                shows: log(`${name} sends hand in clear.`),
                reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
+               whilecount: (count) => log(`${name} observed ${count} rounds of the loop`)(),
                outcome: log(`${name} agrees that game is over.`) }; };
 
     const ctcAlice = await alice.deploy(theRPS);

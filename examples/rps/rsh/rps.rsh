@@ -19,7 +19,7 @@ function main() {
     interact.params(); });
   A.publish(wagerAmount, escrowAmount)
     .pay(wagerAmount + escrowAmount)
-    .timeout(DELAY, B, () => {
+    .timeout(DELAY, _, () => {
       commit();
       return showOutcome(A_QUITS); });
   commit();

@@ -21,21 +21,21 @@ import Reach.AST
 
 type TP = (FilePath, Maybe TokenPosn)
 
-type DecodeStmtsState = (FilePath, Maybe XLVar, Maybe Participant)
+type DecodeStmtsState = (FilePath, Maybe [XLVar], Maybe XLPart)
 make_dss :: FilePath -> DecodeStmtsState
 make_dss fp = (fp, Nothing, Nothing)
 sub_dss :: DecodeStmtsState -> DecodeStmtsState
 sub_dss (fp, lv, _) = (fp, lv, Nothing)
 
-who_dss :: DecodeStmtsState -> Maybe Participant -> DecodeStmtsState
+who_dss :: DecodeStmtsState -> Maybe XLPart -> DecodeStmtsState
 who_dss (fp, lv, _) who = (fp, lv, who)
-dss_who :: DecodeStmtsState -> Maybe Participant
+dss_who :: DecodeStmtsState -> Maybe XLPart
 dss_who (_, _, w) = w
 
-loopv_dss :: DecodeStmtsState -> XLVar -> DecodeStmtsState
-loopv_dss (fp, _, w) lv = (fp, Just lv, w)
-dss_loopv :: DecodeStmtsState -> Maybe XLVar
-dss_loopv (_, lv, _) = lv
+loopvs_dss :: DecodeStmtsState -> [XLVar] -> DecodeStmtsState
+loopvs_dss (fp, _, w) lv = (fp, Just lv, w)
+dss_loopvs :: DecodeStmtsState -> Maybe [XLVar]
+dss_loopvs (_, lv, _) = lv
 
 dss_tp :: DecodeStmtsState -> Maybe TokenPosn -> TP
 dss_tp (fp, _, _) mt = (fp, mt)
@@ -54,7 +54,6 @@ shortShow j = take 1024 (L.unpack (pShow j))
 expect_error :: Show a => Data a => String -> a -> b
 expect_error label j = error $ "error: expected " ++ label ++ " but found " ++ (show $ toConstr j) ++ ":\n" ++ (shortShow j)
 
---- XXX Generate to/from string
 doXLEnum :: a -> XLVar -> [XLVar] -> [XLDef a]
 doXLEnum ann predv vs = [ dvs, predd ]
   where dvs = XL_DefineValues ann vs ve
@@ -258,14 +257,16 @@ decodeStmts dss js =
     --- No Try (yet)
     --- No Variable
     --- No With
-    ((JSVariable a (JSLOne (JSVarInitExpression (JSIdentifier _ loop_v) (JSVarInit _ einit_e))) _):(JSMethodCall (JSIdentifier _ "invariant") _ (JSLOne einvariant_e) _ _):(JSWhile _ _ econd_e _ ebody_e):k) ->
-      XL_While h loop_v (decodeExpr dss einit_e) stop_e (decodeExpr dss einvariant_e) (ds dss' [ebody_e]) (ds dss k)
-      where dss' = loopv_dss dss loop_v
+    ((JSVariable a (JSLOne (JSVarInitExpression loop_var_je (JSVarInit _ einit_e))) _):(JSMethodCall (JSIdentifier _ "invariant") _ (JSLOne einvariant_e) _ _):(JSWhile _ _ econd_e _ ebody_e):k) ->
+      XL_While h loop_vs (decodeExpr dss einit_e) stop_e (decodeExpr dss einvariant_e) (ds dss' [ebody_e]) (ds dss k)
+      where dss' = loopvs_dss dss loop_vs
+            loop_vs = decodeLetLHS loop_var_je
             cond_e = (decodeExpr dss econd_e)
             stop_e = XL_FunApp h (XL_Var h "not") [ cond_e ]
             h = tp a
-    ((JSAssignStatement (JSIdentifier a loopv) (JSAssign _) rhs _):(JSContinue _ JSIdentNone _):[]) ->
-      if Just loopv == (dss_loopv dss) then
+    ((JSAssignStatement loopvs_je (JSAssign _) rhs _):(JSContinue a JSIdentNone _):[]) ->
+      let loopvs = decodeLetLHS loopvs_je in
+      if Just loopvs == (dss_loopvs dss) then
         XL_Continue (tp a) (decodeExpr dss rhs)
       else
         expect_error "continue matching nearest while loop" js
@@ -275,7 +276,7 @@ decodeStmts dss js =
   where tp = dss_tp dss . tpa
         sp = dss_tp dss . spa
         decodeToConsensus a p mevs meamt etargs ek =
-          XL_ToConsensus h (p, vs, amt) (who, de, te) k'
+          XL_ToConsensus h (p, vs, amt) (mwho_to, de, te) k'
           where k' = XL_Let h Nothing Nothing amt_claim conk
                 amt_claim = XL_Claim h CT_Require (XL_FunApp h (XL_Prim h (CP PEQ)) [ (XL_FunApp h (XL_Prim h (CP TXN_VALUE)) []), amt ])
                 h = tp a
@@ -286,7 +287,11 @@ decodeStmts dss js =
                   Nothing -> XL_Con h (Con_I 0)
                   Just eamt -> decodeExpr dss eamt
                 conk = decodeStmts (sub_dss dss) ek
-                [ ede, (JSIdentifier _ who), ete ] = flattenJSCL etargs
+                mwho_to = case who_je of
+                            JSIdentifier _ "_" -> Nothing
+                            JSIdentifier _ who -> Just who
+                            _ -> expect_error "active participant or no-one" who_je
+                [ ede, who_je, ete ] = flattenJSCL etargs
                 de = decodeExpr (sub_dss dss) ede
                 te = XL_FunApp h (decodeExpr (sub_dss dss) ete) []
 

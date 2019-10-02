@@ -78,9 +78,9 @@ usesCTail (C_Let _ _ ce kt) = cmerge cs1 cs2
 usesCTail (C_Do _ cs kt) = cmerge cs1 cs2
   where cs1 = usesCStmt cs
         cs2 = usesCTail kt
-usesCTail (C_Jump _ _ vs _ a) = cmerge cs1 cs2
+usesCTail (C_Jump _ _ vs _ as) = cmerges $ cs1 : cs2
   where cs1 = usesBLVars vs
-        cs2 = usesBLArg a
+        cs2 = map usesBLArg as
 
 {- Compilation to Solidity
 
@@ -254,8 +254,8 @@ solCTail emitp sim ρ ccs ct =
         _ -> vsep [ solVarDecl bv <+> "=" <+> solCExpr sim ρ ce <> semi,
                     solCTail emitp sim ρ ccs kt ]
     C_Do _ cs kt -> solCStmt sim ρ cs <> (solCTail emitp sim ρ ccs kt)
-    C_Jump _ which vs _ a ->
-      emitp <> solApply (solLoop_fun which) ((map (solVar sim ρ) vs) ++ [ solArg sim ρ a ]) <> semi
+    C_Jump _ which vs _ as ->
+      emitp <> solApply (solLoop_fun which) ((map (solVar sim ρ) vs) ++ (map (solArg sim ρ) as)) <> semi
 
 solFrame :: Int -> SolInMemory -> (Doc a, Doc a)
 solFrame i sim = if null var_decls then (emptyDoc, emptyDoc) else (frame_defp, frame_declp)
@@ -274,7 +274,7 @@ makeSIM ccs vs = S.unions $ map f $ M.toList ccs
             S.singleton v
 
 solHandler :: CHandler b -> Doc a
-solHandler (C_Handler _ (is_join, from) is_timeout (last_i, svs) msg delay body i) = vsep [ evtp, frame_defp, funp ]
+solHandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = vsep [ evtp, frame_defp, funp ]
   where msg_rs = map solRawVar msg
         msg_ds = map solArgDecl msg
         msg_eds = map solFieldDecl msg
@@ -282,27 +282,28 @@ solHandler (C_Handler _ (is_join, from) is_timeout (last_i, svs) msg delay body 
         evts = solMsg_evt i
         evtp = solEvent evts msg_eds
         sim0 = makeSIM ccs (svs ++ msg)
-        sim = if is_join then S.insert from sim0 else sim0
+        sim = case from_spec of
+                FS_Join from -> S.insert from sim0
+                _ -> sim0
         (frame_defp, frame_declp) = solFrame i sim
         funp = solFunction (solMsg_fun i) arg_ds retp bodyp
         retp = "external payable"
         emitp = "emit" <+> solApply evts msg_rs <> semi <> hardline
         ccs = usesCTail body
         ρ = M.empty
-        fromp = if is_join then
-                  solVarDecl from <+> "=" <+> "msg.sender"
-                else
-                  solRequire $ solEq ("msg.sender") (solVar sim ρ from)
+        fromp = case from_spec of
+                  FS_Join from -> solVarDecl from <+> "=" <+> "msg.sender" <> semi
+                  FS_From from -> (solRequire $ solEq ("msg.sender") (solVar sim ρ from)) <> semi
+                  FS_Any -> emptyDoc
         bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState sim ρ last_i True svs)) <> semi,
-                       frame_declp,
-                       fromp <> semi,
+                       frame_declp, fromp,
                        (solRequire $ solBinOp (if is_timeout then ">=" else "<") solBlockNumber (solBinOp "+" solLastBlock (solArg sim ρ delay))) <> semi,
                        solCTail emitp sim ρ ccs body ]
-solHandler (C_Loop _ svs arg _inv body i) = vsep [ frame_defp, funp ]
+solHandler (C_Loop _ svs args _inv body i) = vsep [ frame_defp, funp ]
   where funp = solFunction (solLoop_fun i) arg_ds retp (vsep [ frame_declp, bodyp ])
-        sim = makeSIM ccs (arg : svs)
+        sim = makeSIM ccs (args ++ svs)
         (frame_defp, frame_declp) = solFrame i sim
-        arg_ds = map solArgDecl svs ++ [ solArgDecl arg ]
+        arg_ds = map solArgDecl svs ++ map solArgDecl args
         retp = "internal"
         ccs = usesCTail body
         bodyp = solCTail "" sim M.empty ccs body

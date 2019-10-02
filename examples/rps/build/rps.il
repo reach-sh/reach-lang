@@ -1,69 +1,96 @@
 #lang reach/il
 
 #:participants
-(define-participant A
-  [0/_wagerAmount:uint256]
-  [1/_escrowAmount:uint256])
-(define-participant B)
-(define-participant O)
+(define-participant (0, (A, address))
+  [1/_wagerAmount:uint256]
+  [2/_escrowAmount:uint256])
+(define-participant (3, (B, address)))
+(define-participant (4, (O, address)))
 
 #:main
-(@ A (define 2/Declassify:uint256 (declassify 0/_wagerAmount:uint256)))
-(@ A (define 3/Declassify:uint256 (declassify 1/_escrowAmount:uint256)))
-(@ A (define 4/Interact:bool (interact.params bool )))
-(@ A (define 5/PrimApp:uint256 (ADD 2/Declassify:uint256 3/Declassify:uint256)))
-(@ True (6, (A, address)) 
-  (publish! (2/Declassify:uint256 3/Declassify:uint256))
-  (pay! 5/PrimApp:uint256)
-  (timeout True (7, (B, address)) 10 
+(@ ( 0
+, ( A
+, address ) ) (define 5/Declassify:uint256 (declassify 1/_wagerAmount:uint256)))
+(@ ( 0
+, ( A
+, address ) ) (define 6/Declassify:uint256 (declassify 2/_escrowAmount:uint256)))
+(@ (0, (A, address)) (define 7/Interact:bool (interact.params bool )))
+(@ ( 0
+, ( A
+, address ) ) (define 8/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256)))
+(@ True 0/A:address 
+  (publish! (5/Declassify:uint256 6/Declassify:uint256))
+  (pay! 8/PrimApp:uint256)
+  (timeout  10 
     (commit!)
     (@ CTC (require! True))
     "Alice quits"))
-(@ CTC (define 8/PrimApp:uint256 (TXN_VALUE)))
-(@ CTC (define 9/PrimApp:uint256 (ADD 2/Declassify:uint256 3/Declassify:uint256)))
-(@ CTC (define 10/PrimApp:bool (PEQ 8/PrimApp:uint256 9/PrimApp:uint256)))
-(@ CTC (require! 10/PrimApp:bool))
+(@ CTC (define 9/PrimApp:uint256 (TXN_VALUE)))
+(@ CTC (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256)))
+(@ CTC (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256)))
+(@ CTC (require! 11/PrimApp:bool))
 (commit!)
-(@ B (define 11/Interact:bool (interact.accepts bool 2/Declassify:uint256 3/Declassify:uint256)))
-(@ True (12, (B, address)) 
+(@ ( 3
+, ( B
+, address ) ) (define 12/Interact:bool (interact.accepts bool 5/Declassify:uint256 6/Declassify:uint256)))
+(@ True 3/B:address 
   (publish! ())
-  (pay! 2/Declassify:uint256)
-  (timeout False (6, (A, address)) 10 
+  (pay! 5/Declassify:uint256)
+  (timeout (0, (A, address)) 10 
     (@ CTC (define 139/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 6/A:address 139/PrimApp:uint256))
+    (@ CTC (transfer! 0/A:address 139/PrimApp:uint256))
     (commit!)
     (@ CTC (require! True))
     "Bob quits"))
 (@ CTC (define 13/PrimApp:uint256 (TXN_VALUE)))
-(@ CTC (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 2/Declassify:uint256)))
+(@ CTC (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256)))
 (@ CTC (require! 14/PrimApp:bool))
 (commit!)
-(@ A (define 15/Interact:bytes (interact.getHand bytes )))
-(@ A (define 16/PrimApp:bool (BYTES_EQ 15/Interact:bytes "ROCK")))
-(@ A (define 17/PrimApp:bool (BYTES_EQ 15/Interact:bytes "PAPER")))
-(@ A (define 18/PrimApp:bool (BYTES_EQ 15/Interact:bytes "SCISSORS")))
-(@ A (define 19/PureIf:bool (IF_THEN_ELSE 16/PrimApp:bool True 17/PrimApp:bool)))
-(@ A (define 20/PureIf:bool (IF_THEN_ELSE 19/PureIf:bool True 18/PrimApp:bool)))
-(@ A (assume! 20/PureIf:bool))
-(@ A (define 21/PureIf:uint256 (IF_THEN_ELSE 17/PrimApp:bool 1 2)))
-(@ A (define 22/PureIf:uint256 (IF_THEN_ELSE 16/PrimApp:bool 0 21/PureIf:uint256)))
-(@ A (define 23/PrimApp:bool (PLE 0 22/PureIf:uint256)))
-(@ A (define 24/PrimApp:bool (PLT 22/PureIf:uint256 3)))
-(@ A (define 25/PureIf:bool (IF_THEN_ELSE 23/PrimApp:bool 24/PrimApp:bool False)))
-(@ A (assert! 25/PureIf:bool))
-(@ A (define 26/PrimApp:uint256 (RANDOM)))
-(@ A (define 27/PrimApp:bytes (UINT256_TO_BYTES 26/PrimApp:uint256)))
-(@ A (define 28/PrimApp:bytes (UINT256_TO_BYTES 22/PureIf:uint256)))
-(@ A (define 29/PrimApp:bytes (BCAT 27/PrimApp:bytes 28/PrimApp:bytes)))
-(@ A (define 30/PrimApp:uint256 (DIGEST 29/PrimApp:bytes)))
-(@ A (define 31/Declassify:uint256 (declassify 30/PrimApp:uint256)))
-(@ A (define 32/Interact:bool (interact.commits bool )))
-(@ False (6, (A, address)) 
+(@ (0, (A, address)) (define 15/Interact:bytes (interact.getHand bytes )))
+(@ ( 0
+, (A, address) ) (define 16/PrimApp:bool (BYTES_EQ 15/Interact:bytes "ROCK")))
+(@ ( 0
+, (A, address) ) (define 17/PrimApp:bool (BYTES_EQ 15/Interact:bytes "PAPER")))
+(@ ( 0
+, ( A
+, address ) ) (define 18/PrimApp:bool (BYTES_EQ 15/Interact:bytes "SCISSORS")))
+(@ ( 0
+, ( A
+, address ) ) (define 19/PureIf:bool (IF_THEN_ELSE 16/PrimApp:bool True 17/PrimApp:bool)))
+(@ ( 0
+, ( A
+, address ) ) (define 20/PureIf:bool (IF_THEN_ELSE 19/PureIf:bool True 18/PrimApp:bool)))
+(@ (0, (A, address)) (assume! 20/PureIf:bool))
+(@ ( 0
+, (A, address) ) (define 21/PureIf:uint256 (IF_THEN_ELSE 17/PrimApp:bool 1 2)))
+(@ ( 0
+, ( A
+, address ) ) (define 22/PureIf:uint256 (IF_THEN_ELSE 16/PrimApp:bool 0 21/PureIf:uint256)))
+(@ (0, (A, address)) (define 23/PrimApp:bool (PLE 0 22/PureIf:uint256)))
+(@ (0, (A, address)) (define 24/PrimApp:bool (PLT 22/PureIf:uint256 3)))
+(@ ( 0
+, ( A
+, address ) ) (define 25/PureIf:bool (IF_THEN_ELSE 23/PrimApp:bool 24/PrimApp:bool False)))
+(@ (0, (A, address)) (assert! 25/PureIf:bool))
+(@ (0, (A, address)) (define 26/PrimApp:uint256 (RANDOM)))
+(@ ( 0
+, ( A
+, address ) ) (define 27/PrimApp:bytes (UINT256_TO_BYTES 26/PrimApp:uint256)))
+(@ ( 0
+, (A, address) ) (define 28/PrimApp:bytes (UINT256_TO_BYTES 22/PureIf:uint256)))
+(@ ( 0
+, ( A
+, address ) ) (define 29/PrimApp:bytes (BCAT 27/PrimApp:bytes 28/PrimApp:bytes)))
+(@ (0, (A, address)) (define 30/PrimApp:uint256 (DIGEST 29/PrimApp:bytes)))
+(@ ( 0
+, (A, address) ) (define 31/Declassify:uint256 (declassify 30/PrimApp:uint256)))
+(@ (0, (A, address)) (define 32/Interact:bool (interact.commits bool )))
+(@ False 0/A:address 
   (publish! (31/Declassify:uint256))
   (pay! 0)
-  (timeout False (12, (B, address)) 10 
+  (timeout (3, (B, address)) 10 
     (@ CTC (define 138/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 12/B:address 138/PrimApp:uint256))
+    (@ CTC (transfer! 3/B:address 138/PrimApp:uint256))
     (commit!)
     (@ CTC (require! True))
     "Alice quits"))
@@ -71,27 +98,41 @@
 (@ CTC (define 34/PrimApp:bool (PEQ 33/PrimApp:uint256 0)))
 (@ CTC (require! 34/PrimApp:bool))
 (commit!)
-(@ B (define 35/Interact:bytes (interact.getHand bytes )))
-(@ B (define 36/PrimApp:bool (BYTES_EQ 35/Interact:bytes "ROCK")))
-(@ B (define 37/PrimApp:bool (BYTES_EQ 35/Interact:bytes "PAPER")))
-(@ B (define 38/PrimApp:bool (BYTES_EQ 35/Interact:bytes "SCISSORS")))
-(@ B (define 39/PureIf:bool (IF_THEN_ELSE 36/PrimApp:bool True 37/PrimApp:bool)))
-(@ B (define 40/PureIf:bool (IF_THEN_ELSE 39/PureIf:bool True 38/PrimApp:bool)))
-(@ B (assume! 40/PureIf:bool))
-(@ B (define 41/PureIf:uint256 (IF_THEN_ELSE 37/PrimApp:bool 1 2)))
-(@ B (define 42/PureIf:uint256 (IF_THEN_ELSE 36/PrimApp:bool 0 41/PureIf:uint256)))
-(@ B (define 43/PrimApp:bool (PLE 0 42/PureIf:uint256)))
-(@ B (define 44/PrimApp:bool (PLT 42/PureIf:uint256 3)))
-(@ B (define 45/PureIf:bool (IF_THEN_ELSE 43/PrimApp:bool 44/PrimApp:bool False)))
-(@ B (assert! 45/PureIf:bool))
-(@ B (define 46/Declassify:uint256 (declassify 42/PureIf:uint256)))
-(@ B (define 47/Interact:bool (interact.shows bool )))
-(@ False (12, (B, address)) 
+(@ (3, (B, address)) (define 35/Interact:bytes (interact.getHand bytes )))
+(@ ( 3
+, (B, address) ) (define 36/PrimApp:bool (BYTES_EQ 35/Interact:bytes "ROCK")))
+(@ ( 3
+, (B, address) ) (define 37/PrimApp:bool (BYTES_EQ 35/Interact:bytes "PAPER")))
+(@ ( 3
+, ( B
+, address ) ) (define 38/PrimApp:bool (BYTES_EQ 35/Interact:bytes "SCISSORS")))
+(@ ( 3
+, ( B
+, address ) ) (define 39/PureIf:bool (IF_THEN_ELSE 36/PrimApp:bool True 37/PrimApp:bool)))
+(@ ( 3
+, ( B
+, address ) ) (define 40/PureIf:bool (IF_THEN_ELSE 39/PureIf:bool True 38/PrimApp:bool)))
+(@ (3, (B, address)) (assume! 40/PureIf:bool))
+(@ ( 3
+, (B, address) ) (define 41/PureIf:uint256 (IF_THEN_ELSE 37/PrimApp:bool 1 2)))
+(@ ( 3
+, ( B
+, address ) ) (define 42/PureIf:uint256 (IF_THEN_ELSE 36/PrimApp:bool 0 41/PureIf:uint256)))
+(@ (3, (B, address)) (define 43/PrimApp:bool (PLE 0 42/PureIf:uint256)))
+(@ (3, (B, address)) (define 44/PrimApp:bool (PLT 42/PureIf:uint256 3)))
+(@ ( 3
+, ( B
+, address ) ) (define 45/PureIf:bool (IF_THEN_ELSE 43/PrimApp:bool 44/PrimApp:bool False)))
+(@ (3, (B, address)) (assert! 45/PureIf:bool))
+(@ ( 3
+, (B, address) ) (define 46/Declassify:uint256 (declassify 42/PureIf:uint256)))
+(@ (3, (B, address)) (define 47/Interact:bool (interact.shows bool )))
+(@ False 3/B:address 
   (publish! (46/Declassify:uint256))
   (pay! 0)
-  (timeout False (6, (A, address)) 10 
+  (timeout (0, (A, address)) 10 
     (@ CTC (define 137/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 6/A:address 137/PrimApp:uint256))
+    (@ CTC (transfer! 0/A:address 137/PrimApp:uint256))
     (commit!)
     (@ CTC (require! True))
     "Bob quits"))
@@ -103,23 +144,33 @@
 (@ CTC (define 52/PureIf:bool (IF_THEN_ELSE 50/PrimApp:bool 51/PrimApp:bool False)))
 (@ CTC (require! 52/PureIf:bool))
 (commit!)
-(@ A (define 53/Declassify:uint256 (declassify 26/PrimApp:uint256)))
-(@ A (define 54/Declassify:uint256 (declassify 22/PureIf:uint256)))
-(@ A (define 55/PrimApp:bool (PLE 0 46/Declassify:uint256)))
-(@ A (define 56/PrimApp:bool (PLT 46/Declassify:uint256 3)))
-(@ A (define 57/PureIf:bool (IF_THEN_ELSE 55/PrimApp:bool 56/PrimApp:bool False)))
-(@ A (require! 57/PureIf:bool))
-(@ A (define 58/PrimApp:bool (PEQ 46/Declassify:uint256 0)))
-(@ A (define 59/PrimApp:bool (PEQ 46/Declassify:uint256 1)))
-(@ A (define 60/PureIf:bytes (IF_THEN_ELSE 59/PrimApp:bool "PAPER" "SCISSORS")))
-(@ A (define 61/PureIf:bytes (IF_THEN_ELSE 58/PrimApp:bool "ROCK" 60/PureIf:bytes)))
-(@ A (define 62/Interact:bool (interact.reveals bool 61/PureIf:bytes)))
-(@ False (6, (A, address)) 
+(@ ( 0
+, (A, address) ) (define 53/Declassify:uint256 (declassify 26/PrimApp:uint256)))
+(@ ( 0
+, (A, address) ) (define 54/Declassify:uint256 (declassify 22/PureIf:uint256)))
+(@ (0, (A, address)) (define 55/PrimApp:bool (PLE 0 46/Declassify:uint256)))
+(@ (0, (A, address)) (define 56/PrimApp:bool (PLT 46/Declassify:uint256 3)))
+(@ ( 0
+, ( A
+, address ) ) (define 57/PureIf:bool (IF_THEN_ELSE 55/PrimApp:bool 56/PrimApp:bool False)))
+(@ (0, (A, address)) (require! 57/PureIf:bool))
+(@ (0, (A, address)) (define 58/PrimApp:bool (PEQ 46/Declassify:uint256 0)))
+(@ (0, (A, address)) (define 59/PrimApp:bool (PEQ 46/Declassify:uint256 1)))
+(@ ( 0
+, ( A
+, address ) ) (define 60/PureIf:bytes (IF_THEN_ELSE 59/PrimApp:bool "PAPER" "SCISSORS")))
+(@ ( 0
+, ( A
+, address ) ) (define 61/PureIf:bytes (IF_THEN_ELSE 58/PrimApp:bool "ROCK" 60/PureIf:bytes)))
+(@ ( 0
+, ( A
+, address ) ) (define 62/Interact:bool (interact.reveals bool 61/PureIf:bytes)))
+(@ False 0/A:address 
   (publish! (53/Declassify:uint256 54/Declassify:uint256))
   (pay! 0)
-  (timeout False (12, (B, address)) 10 
+  (timeout (3, (B, address)) 10 
     (@ CTC (define 136/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 12/B:address 136/PrimApp:uint256))
+    (@ CTC (transfer! 3/B:address 136/PrimApp:uint256))
     (commit!)
     (@ CTC (require! True))
     "Alice quits"))
@@ -188,16 +239,16 @@
 (@ CTC (define 114/PureIf:bool (IF_THEN_ELSE 113/PrimApp:bool 108/PrimApp:bool False)))
 (@ CTC (possible? 114/PureIf:bool))
 (@ CTC (define 115/PrimApp:bool (PEQ 85/PureIf:uint256 2)))
-(@ CTC (define 116/PrimApp:uint256 (MUL 2 2/Declassify:uint256)))
+(@ CTC (define 116/PrimApp:uint256 (MUL 2 5/Declassify:uint256)))
 (@ CTC (define 117/PrimApp:bool (PEQ 85/PureIf:uint256 0)))
-(@ CTC (define 118/PrimApp:uint256 (MUL 2 2/Declassify:uint256)))
-(@ CTC (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 2/Declassify:uint256)))
-(@ CTC (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 2/Declassify:uint256)))
+(@ CTC (define 118/PrimApp:uint256 (MUL 2 5/Declassify:uint256)))
+(@ CTC (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 5/Declassify:uint256)))
+(@ CTC (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 5/Declassify:uint256)))
 (@ CTC (define 121/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 116/PrimApp:uint256 119/PureIf:uint256)))
 (@ CTC (define 122/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 0 120/PureIf:uint256)))
-(@ CTC (define 123/PrimApp:uint256 (ADD 3/Declassify:uint256 121/PureIf:uint256)))
-(@ CTC (transfer! 6/A:address 123/PrimApp:uint256))
-(@ CTC (transfer! 12/B:address 122/PureIf:uint256))
+(@ CTC (define 123/PrimApp:uint256 (ADD 6/Declassify:uint256 121/PureIf:uint256)))
+(@ CTC (transfer! 0/A:address 123/PrimApp:uint256))
+(@ CTC (transfer! 3/B:address 122/PureIf:uint256))
 (commit!)
 (@ CTC (define 124/Interact:bool (interact.outcome bool )))
 (@ CTC (define 125/PrimApp:bool (PLE 0 85/PureIf:uint256)))

@@ -1569,7 +1569,7 @@ XL_Prog
                             [1m[36m)[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                         [1m[35m][0m 
                     [33m)[0m 
-                    [33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                    [33m([0m Nothing
                     [33m,[0m XL_Var 
                         [1m[35m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 463 22 14 [1m[36m)[0m
@@ -1684,7 +1684,7 @@ XL_Prog
                                         [96m,[0m Just [93m([0m TokenPn 627 29 9 [93m)[0m
                                         [96m)[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                     [95m)[0m 
-                                    [95m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                    [95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
                                     [95m,[0m XL_Var 
                                         [96m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 653 30 14 [93m)[0m
@@ -1850,7 +1850,7 @@ XL_Prog
                                                                     [33m,[0m Just [1m[35m([0m TokenPn 941 41 3 [1m[35m)[0m
                                                                     [33m)[0m [33m([0m Con_I 0 [33m)[0m
                                                                 [36m)[0m 
-                                                                [36m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                [36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
                                                                 [36m,[0m XL_Var 
                                                                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                     [33m,[0m Just [1m[35m([0m TokenPn 973 42 14 [1m[35m)[0m
@@ -1982,7 +1982,7 @@ XL_Prog
                                                                                         [96m,[0m Just [93m([0m TokenPn 1178 51 3 [93m)[0m
                                                                                         [96m)[0m [96m([0m Con_I 0 [96m)[0m
                                                                                     [95m)[0m 
-                                                                                    [95m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                    [95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
                                                                                     [95m,[0m XL_Var 
                                                                                         [96m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                         [96m,[0m Just [93m([0m TokenPn 1208 52 14 [93m)[0m
@@ -2166,7 +2166,7 @@ XL_Prog
                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 1491 63 3 [1m[35m)[0m
                                                                                                                     [33m)[0m [33m([0m Con_I 0 [33m)[0m
                                                                                                                 [36m)[0m 
-                                                                                                                [36m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                                                [36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
                                                                                                                 [36m,[0m XL_Var 
                                                                                                                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 1528 64 14 [1m[35m)[0m

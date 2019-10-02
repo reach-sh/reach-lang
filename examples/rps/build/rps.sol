@@ -48,25 +48,24 @@ contract ReachContract is Stdlib {
   constructor() public payable {
     current_state = uint256(keccak256(abi.encodePacked(uint256(0), uint256(block.number)))); }
   
-  event e1(uint256 v2, uint256 v3);
+  event e1(uint256 v5, uint256 v6);
   struct _F1 {
-    address payable v6; }
-  function m1(uint256 _last, uint256 v2, uint256 v3) external payable {
+    address payable v0; }
+  function m1(uint256 _last, uint256 v5, uint256 v6) external payable {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(0), _last))));
     _F1 memory _f;
-    _f.v6 = msg.sender;
+    _f.v0 = msg.sender;
     require(uint256(block.number) < _last + uint256(10));
-    require(((msg.value) == (v2 + v3)));
-    emit e1(v2, v3);
-    current_state = uint256(keccak256(abi.encodePacked(uint256(1), uint256(block.number), v2, v3, _f.v6))); }
+    require(((msg.value) == (v5 + v6)));
+    emit e1(v5, v6);
+    current_state = uint256(keccak256(abi.encodePacked(uint256(1), uint256(block.number), _f.v0, v5, v6))); }
   
   event e2();
-  struct _F2 {
-    address payable v7; }
+  
   function m2(uint256 _last) external payable {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(0), _last))));
-    _F2 memory _f;
-    _f.v7 = msg.sender;
+    
+    
     require(uint256(block.number) >= _last + uint256(10));
     emit e2();
     current_state = 0x0;
@@ -74,71 +73,71 @@ contract ReachContract is Stdlib {
   
   event e3();
   struct _F3 {
-    address payable v12; }
-  function m3(uint256 _last, uint256 v2, uint256 v3, address payable v6) external payable {
-    require(current_state == uint256(keccak256(abi.encodePacked(uint256(1), _last, v2, v3, v6))));
+    address payable v3; }
+  function m3(uint256 _last, address payable v0, uint256 v5, uint256 v6) external payable {
+    require(current_state == uint256(keccak256(abi.encodePacked(uint256(1), _last, v0, v5, v6))));
     _F3 memory _f;
-    _f.v12 = msg.sender;
+    _f.v3 = msg.sender;
     require(uint256(block.number) < _last + uint256(10));
-    require(((msg.value) == v2));
+    require(((msg.value) == v5));
     emit e3();
-    current_state = uint256(keccak256(abi.encodePacked(uint256(3), uint256(block.number), v2, v3, v6, _f.v12))); }
+    current_state = uint256(keccak256(abi.encodePacked(uint256(3), uint256(block.number), v0, _f.v3, v5, v6))); }
   
   event e4();
   
-  function m4(uint256 _last, uint256 v2, uint256 v3, address payable v6) external payable {
-    require(current_state == uint256(keccak256(abi.encodePacked(uint256(1), _last, v2, v3, v6))));
+  function m4(uint256 _last, address payable v0, uint256 v5, uint256 v6) external payable {
+    require(current_state == uint256(keccak256(abi.encodePacked(uint256(1), _last, v0, v5, v6))));
     
-    require(msg.sender == v6);
+    require(msg.sender == v0);
     require(uint256(block.number) >= _last + uint256(10));
-    v6.transfer((address(this).balance));
+    v0.transfer((address(this).balance));
     emit e4();
     current_state = 0x0;
     selfdestruct(msg.sender); }
   
   event e5(uint256 v31);
   
-  function m5(uint256 _last, uint256 v2, uint256 v3, address payable v6, address payable v12, uint256 v31) external payable {
-    require(current_state == uint256(keccak256(abi.encodePacked(uint256(3), _last, v2, v3, v6, v12))));
+  function m5(uint256 _last, address payable v0, address payable v3, uint256 v5, uint256 v6, uint256 v31) external payable {
+    require(current_state == uint256(keccak256(abi.encodePacked(uint256(3), _last, v0, v3, v5, v6))));
     
-    require(msg.sender == v6);
+    require(msg.sender == v0);
     require(uint256(block.number) < _last + uint256(10));
     require(((msg.value) == uint256(0)));
     emit e5(v31);
-    current_state = uint256(keccak256(abi.encodePacked(uint256(5), uint256(block.number), v2, v3, v6, v12, v31))); }
+    current_state = uint256(keccak256(abi.encodePacked(uint256(5), uint256(block.number), v0, v3, v5, v6, v31))); }
   
   event e6();
   
-  function m6(uint256 _last, uint256 v2, uint256 v3, address payable v6, address payable v12) external payable {
-    require(current_state == uint256(keccak256(abi.encodePacked(uint256(3), _last, v2, v3, v6, v12))));
+  function m6(uint256 _last, address payable v0, address payable v3, uint256 v5, uint256 v6) external payable {
+    require(current_state == uint256(keccak256(abi.encodePacked(uint256(3), _last, v0, v3, v5, v6))));
     
-    require(msg.sender == v12);
+    require(msg.sender == v3);
     require(uint256(block.number) >= _last + uint256(10));
-    v12.transfer((address(this).balance));
+    v3.transfer((address(this).balance));
     emit e6();
     current_state = 0x0;
     selfdestruct(msg.sender); }
   
   event e7(uint256 v46);
   
-  function m7(uint256 _last, uint256 v2, uint256 v3, address payable v6, address payable v12, uint256 v31, uint256 v46) external payable {
-    require(current_state == uint256(keccak256(abi.encodePacked(uint256(5), _last, v2, v3, v6, v12, v31))));
+  function m7(uint256 _last, address payable v0, address payable v3, uint256 v5, uint256 v6, uint256 v31, uint256 v46) external payable {
+    require(current_state == uint256(keccak256(abi.encodePacked(uint256(5), _last, v0, v3, v5, v6, v31))));
     
-    require(msg.sender == v12);
+    require(msg.sender == v3);
     require(uint256(block.number) < _last + uint256(10));
     require(((msg.value) == uint256(0)));
     require(((uint256(0) <= v46) ? (v46 < uint256(3)) : false));
     emit e7(v46);
-    current_state = uint256(keccak256(abi.encodePacked(uint256(7), uint256(block.number), v2, v3, v6, v12, v31, v46))); }
+    current_state = uint256(keccak256(abi.encodePacked(uint256(7), uint256(block.number), v0, v3, v5, v6, v31, v46))); }
   
   event e8();
   
-  function m8(uint256 _last, uint256 v2, uint256 v3, address payable v6, address payable v12, uint256 v31) external payable {
-    require(current_state == uint256(keccak256(abi.encodePacked(uint256(5), _last, v2, v3, v6, v12, v31))));
+  function m8(uint256 _last, address payable v0, address payable v3, uint256 v5, uint256 v6, uint256 v31) external payable {
+    require(current_state == uint256(keccak256(abi.encodePacked(uint256(5), _last, v0, v3, v5, v6, v31))));
     
-    require(msg.sender == v6);
+    require(msg.sender == v0);
     require(uint256(block.number) >= _last + uint256(10));
-    v6.transfer((address(this).balance));
+    v0.transfer((address(this).balance));
     emit e8();
     current_state = 0x0;
     selfdestruct(msg.sender); }
@@ -152,10 +151,10 @@ contract ReachContract is Stdlib {
     bool v108;
     bool v115;
     bool v117; }
-  function m9(uint256 _last, uint256 v2, uint256 v3, address payable v6, address payable v12, uint256 v31, uint256 v46, uint256 v53, uint256 v54) external payable {
-    require(current_state == uint256(keccak256(abi.encodePacked(uint256(7), _last, v2, v3, v6, v12, v31, v46))));
+  function m9(uint256 _last, address payable v0, address payable v3, uint256 v5, uint256 v6, uint256 v31, uint256 v46, uint256 v53, uint256 v54) external payable {
+    require(current_state == uint256(keccak256(abi.encodePacked(uint256(7), _last, v0, v3, v5, v6, v31, v46))));
     _F9 memory _f;
-    require(msg.sender == v6);
+    require(msg.sender == v0);
     require(uint256(block.number) < _last + uint256(10));
     require(((msg.value) == uint256(0)));
     require((v31 == (uint256(keccak256(abi.encodePacked((BCAT((abi.encodePacked(v53)), (abi.encodePacked(v54))))))))));
@@ -167,20 +166,20 @@ contract ReachContract is Stdlib {
     _f.v108 = _f.v85 == uint256(0);
     _f.v115 = _f.v85 == uint256(2);
     _f.v117 = _f.v85 == uint256(0);
-    v6.transfer((v3 + (_f.v115 ? (uint256(2) * v2) : (_f.v117 ? uint256(0) : v2))));
-    v12.transfer((_f.v115 ? uint256(0) : (_f.v117 ? (uint256(2) * v2) : v2)));
+    v0.transfer((v6 + (_f.v115 ? (uint256(2) * v5) : (_f.v117 ? uint256(0) : v5))));
+    v3.transfer((_f.v115 ? uint256(0) : (_f.v117 ? (uint256(2) * v5) : v5)));
     emit e9(v53, v54);
     current_state = 0x0;
     selfdestruct(msg.sender); }
   
   event e10();
   
-  function m10(uint256 _last, uint256 v2, uint256 v3, address payable v6, address payable v12, uint256 v31, uint256 v46) external payable {
-    require(current_state == uint256(keccak256(abi.encodePacked(uint256(7), _last, v2, v3, v6, v12, v31, v46))));
+  function m10(uint256 _last, address payable v0, address payable v3, uint256 v5, uint256 v6, uint256 v31, uint256 v46) external payable {
+    require(current_state == uint256(keccak256(abi.encodePacked(uint256(7), _last, v0, v3, v5, v6, v31, v46))));
     
-    require(msg.sender == v12);
+    require(msg.sender == v3);
     require(uint256(block.number) >= _last + uint256(10));
-    v12.transfer((address(this).balance));
+    v3.transfer((address(this).balance));
     emit e10();
     current_state = 0x0;
     selfdestruct(msg.sender); } }

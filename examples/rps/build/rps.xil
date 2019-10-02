@@ -4,7 +4,10 @@ XIL_Prog
     [1m[96m)[0m 
     [1m[96m([0m fromList 
         [1m[93m[[0m 
-            [35m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+            [35m([0m 
+                [36m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                [36m,[0m BT_Address
+                [36m)[0m 
             [35m,[0m 
                 [36m([0m 
                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
@@ -35,7 +38,10 @@ XIL_Prog
                 [36m)[0m 
             [35m)[0m 
         [1m[93m,[0m 
-            [35m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+            [35m([0m 
+                [36m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                [36m,[0m BT_Address
+                [36m)[0m 
             [35m,[0m 
                 [36m([0m 
                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
@@ -45,7 +51,10 @@ XIL_Prog
                 [36m)[0m 
             [35m)[0m 
         [1m[93m,[0m 
-            [35m([0m [1m[97m"[0m[1m[94mO[0m[1m[97m"[0m 
+            [35m([0m 
+                [36m([0m [1m[97m"[0m[1m[94mO[0m[1m[97m"[0m 
+                [36m,[0m BT_Address
+                [36m)[0m 
             [35m,[0m 
                 [36m([0m 
                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
@@ -59,7 +68,12 @@ XIL_Prog
     [1m[96m([0m XIL_Let 
         [1m[93m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
         [1m[93m,[0m Just [35m([0m TokenPn 249 17 5 [35m)[0m
-        [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
+        [1m[93m)[0m 
+        [1m[93m([0m Just 
+            [35m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+            [35m,[0m BT_Address
+            [35m)[0m 
+        [1m[93m)[0m 
         [1m[93m([0m Just 
             [35m[[0m 
                 [36m([0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
@@ -88,7 +102,12 @@ XIL_Prog
         [1m[93m([0m XIL_Let 
             [35m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
             [35m,[0m Just [36m([0m TokenPn 299 18 5 [36m)[0m
-            [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m 
+            [35m)[0m 
+            [35m([0m Just 
+                [36m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                [36m,[0m BT_Address
+                [36m)[0m 
+            [35m)[0m 
             [35m([0m Just 
                 [36m[[0m 
                     [33m([0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
@@ -117,7 +136,12 @@ XIL_Prog
             [35m([0m XIL_Let 
                 [36m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                 [36m,[0m Just [33m([0m TokenPn 366 19 20 [33m)[0m
-                [36m)[0m [36m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [36m)[0m Nothing 
+                [36m)[0m 
+                [36m([0m Just 
+                    [33m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                    [33m,[0m BT_Address
+                    [33m)[0m 
+                [36m)[0m Nothing 
                 [36m([0m XIL_Interact 
                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                     [33m,[0m Just [1m[35m([0m TokenPn 351 19 5 [1m[35m)[0m
@@ -128,7 +152,10 @@ XIL_Prog
                     [33m,[0m Just [1m[35m([0m TokenPn 376 20 3 [1m[35m)[0m
                     [33m)[0m 
                     [33m([0m True
-                    [33m,[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                    [33m,[0m 
+                        [1m[35m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                        [1m[35m,[0m BT_Address
+                        [1m[35m)[0m 
                     [33m,[0m 
                         [1m[35m[[0m 
                             [1m[36m([0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
@@ -159,8 +186,7 @@ XIL_Prog
                             [1m[36m)[0m 
                         [1m[35m][0m 
                     [33m)[0m 
-                    [33m([0m True
-                    [33m,[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                    [33m([0m Nothing
                     [33m,[0m XIL_Con 
                         [1m[35m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                         [1m[35m,[0m Just [1m[36m([0m TokenPn 192 13 15 [1m[36m)[0m
@@ -275,7 +301,12 @@ XIL_Prog
                             [1m[36m([0m XIL_Let 
                                 [1m[33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                 [1m[33m,[0m Just [95m([0m TokenPn 586 28 21 [95m)[0m
-                                [1m[33m)[0m [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
+                                [1m[33m)[0m 
+                                [1m[33m([0m Just 
+                                    [95m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                    [95m,[0m BT_Address
+                                    [95m)[0m 
+                                [1m[33m)[0m Nothing 
                                 [1m[33m([0m XIL_Interact 
                                     [95m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                     [95m,[0m Just [96m([0m TokenPn 570 28 5 [96m)[0m
@@ -301,7 +332,10 @@ XIL_Prog
                                     [95m,[0m Just [96m([0m TokenPn 621 29 3 [96m)[0m
                                     [95m)[0m 
                                     [95m([0m True
-                                    [95m,[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                    [95m,[0m 
+                                        [96m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                        [96m,[0m BT_Address
+                                        [96m)[0m 
                                     [95m,[0m [96m[[0m[96m][0m
                                     [95m,[0m XIL_Var 
                                         [96m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
@@ -311,8 +345,10 @@ XIL_Prog
                                         [96m,[0m BT_UInt256
                                         [96m)[0m 
                                     [95m)[0m 
-                                    [95m([0m False
-                                    [95m,[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                    [95m([0m Just 
+                                        [96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                        [96m,[0m BT_Address
+                                        [96m)[0m 
                                     [95m,[0m XIL_Con 
                                         [96m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                         [96m,[0m Just [93m([0m TokenPn 192 13 15 [93m)[0m
@@ -430,7 +466,12 @@ XIL_Prog
                                             [93m([0m XIL_Let 
                                                 [1m[95m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                 [1m[95m,[0m Just [1m[96m([0m TokenPn 793 37 5 [1m[96m)[0m
-                                                [1m[95m)[0m [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m 
+                                                [1m[95m)[0m 
+                                                [1m[95m([0m Just 
+                                                    [1m[96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                    [1m[96m,[0m BT_Address
+                                                    [1m[96m)[0m 
+                                                [1m[95m)[0m 
                                                 [1m[95m([0m Just 
                                                     [1m[96m[[0m 
                                                         [1m[93m([0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
@@ -845,7 +886,12 @@ XIL_Prog
                                                 [1m[95m([0m XIL_Let 
                                                     [1m[96m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                     [1m[96m,[0m Just [1m[93m([0m TokenPn 823 38 5 [1m[93m)[0m
-                                                    [1m[96m)[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m 
+                                                    [1m[96m)[0m 
+                                                    [1m[96m([0m Just 
+                                                        [1m[93m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                        [1m[93m,[0m BT_Address
+                                                        [1m[93m)[0m 
+                                                    [1m[96m)[0m 
                                                     [1m[96m([0m Just 
                                                         [1m[93m[[0m 
                                                             [35m([0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m 
@@ -964,7 +1010,12 @@ XIL_Prog
                                                     [1m[96m([0m XIL_Let 
                                                         [1m[93m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                         [1m[93m,[0m Just [35m([0m TokenPn 873 39 5 [35m)[0m
-                                                        [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
+                                                        [1m[93m)[0m 
+                                                        [1m[93m([0m Just 
+                                                            [35m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                            [35m,[0m BT_Address
+                                                            [35m)[0m 
+                                                        [1m[93m)[0m 
                                                         [1m[93m([0m Just 
                                                             [35m[[0m 
                                                                 [36m([0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
@@ -993,7 +1044,12 @@ XIL_Prog
                                                         [1m[93m([0m XIL_Let 
                                                             [35m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                             [35m,[0m Just [36m([0m TokenPn 931 40 21 [36m)[0m
-                                                            [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing 
+                                                            [35m)[0m 
+                                                            [35m([0m Just 
+                                                                [36m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                [36m,[0m BT_Address
+                                                                [36m)[0m 
+                                                            [35m)[0m Nothing 
                                                             [35m([0m XIL_Interact 
                                                                 [36m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                 [36m,[0m Just [33m([0m TokenPn 915 40 5 [33m)[0m
@@ -1004,7 +1060,10 @@ XIL_Prog
                                                                 [36m,[0m Just [33m([0m TokenPn 941 41 3 [33m)[0m
                                                                 [36m)[0m 
                                                                 [36m([0m False
-                                                                [36m,[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                [36m,[0m 
+                                                                    [33m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                    [33m,[0m BT_Address
+                                                                    [33m)[0m 
                                                                 [36m,[0m 
                                                                     [33m[[0m 
                                                                         [1m[35m([0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
@@ -1016,8 +1075,10 @@ XIL_Prog
                                                                     [33m,[0m Just [1m[35m([0m TokenPn 941 41 3 [1m[35m)[0m
                                                                     [33m)[0m [33m([0m Con_I 0 [33m)[0m
                                                                 [36m)[0m 
-                                                                [36m([0m False
-                                                                [36m,[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                [36m([0m Just 
+                                                                    [33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                    [33m,[0m BT_Address
+                                                                    [33m)[0m 
                                                                 [36m,[0m XIL_Con 
                                                                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                     [33m,[0m Just [1m[35m([0m TokenPn 192 13 15 [1m[35m)[0m
@@ -1132,7 +1193,12 @@ XIL_Prog
                                                                         [1m[35m([0m XIL_Let 
                                                                             [1m[36m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                             [1m[36m,[0m Just [1m[33m([0m TokenPn 1113 49 5 [1m[33m)[0m
-                                                                            [1m[36m)[0m [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m 
+                                                                            [1m[36m)[0m 
+                                                                            [1m[36m([0m Just 
+                                                                                [1m[33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                [1m[33m,[0m BT_Address
+                                                                                [1m[33m)[0m 
+                                                                            [1m[36m)[0m 
                                                                             [1m[36m([0m Just 
                                                                                 [1m[33m[[0m 
                                                                                     [95m([0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
@@ -1552,7 +1618,12 @@ XIL_Prog
                                                                             [1m[36m([0m XIL_Let 
                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                 [1m[33m,[0m Just [95m([0m TokenPn 1168 50 19 [95m)[0m
-                                                                                [1m[33m)[0m [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
+                                                                                [1m[33m)[0m 
+                                                                                [1m[33m([0m Just 
+                                                                                    [95m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                    [95m,[0m BT_Address
+                                                                                    [95m)[0m 
+                                                                                [1m[33m)[0m Nothing 
                                                                                 [1m[33m([0m XIL_Interact 
                                                                                     [95m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                     [95m,[0m Just [96m([0m TokenPn 1154 50 5 [96m)[0m
@@ -1563,7 +1634,10 @@ XIL_Prog
                                                                                     [95m,[0m Just [96m([0m TokenPn 1178 51 3 [96m)[0m
                                                                                     [95m)[0m 
                                                                                     [95m([0m False
-                                                                                    [95m,[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                    [95m,[0m 
+                                                                                        [96m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                        [96m,[0m BT_Address
+                                                                                        [96m)[0m 
                                                                                     [95m,[0m 
                                                                                         [96m[[0m 
                                                                                             [93m([0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
@@ -1575,8 +1649,10 @@ XIL_Prog
                                                                                         [96m,[0m Just [93m([0m TokenPn 1178 51 3 [93m)[0m
                                                                                         [96m)[0m [96m([0m Con_I 0 [96m)[0m
                                                                                     [95m)[0m 
-                                                                                    [95m([0m False
-                                                                                    [95m,[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                    [95m([0m Just 
+                                                                                        [96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                        [96m,[0m BT_Address
+                                                                                        [96m)[0m 
                                                                                     [95m,[0m XIL_Con 
                                                                                         [96m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                         [96m,[0m Just [93m([0m TokenPn 192 13 15 [93m)[0m
@@ -1790,7 +1866,12 @@ XIL_Prog
                                                                                                 [1m[95m([0m XIL_Let 
                                                                                                     [1m[96m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                     [1m[96m,[0m Just [1m[93m([0m TokenPn 1374 60 5 [1m[93m)[0m
-                                                                                                    [1m[96m)[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m 
+                                                                                                    [1m[96m)[0m 
+                                                                                                    [1m[96m([0m Just 
+                                                                                                        [1m[93m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                        [1m[93m,[0m BT_Address
+                                                                                                        [1m[93m)[0m 
+                                                                                                    [1m[96m)[0m 
                                                                                                     [1m[96m([0m Just 
                                                                                                         [1m[93m[[0m 
                                                                                                             [35m([0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
@@ -1819,7 +1900,12 @@ XIL_Prog
                                                                                                     [1m[96m([0m XIL_Let 
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                         [1m[93m,[0m Just [35m([0m TokenPn 1412 61 5 [35m)[0m
-                                                                                                        [1m[93m)[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
+                                                                                                        [1m[93m)[0m 
+                                                                                                        [1m[93m([0m Just 
+                                                                                                            [35m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                            [35m,[0m BT_Address
+                                                                                                            [35m)[0m 
+                                                                                                        [1m[93m)[0m 
                                                                                                         [1m[93m([0m Just 
                                                                                                             [35m[[0m 
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
@@ -1848,7 +1934,12 @@ XIL_Prog
                                                                                                         [1m[93m([0m XIL_Let 
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                             [35m,[0m Just [36m([0m TokenPn 1466 62 21 [36m)[0m
-                                                                                                            [35m)[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing 
+                                                                                                            [35m)[0m 
+                                                                                                            [35m([0m Just 
+                                                                                                                [36m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                [36m,[0m BT_Address
+                                                                                                                [36m)[0m 
+                                                                                                            [35m)[0m Nothing 
                                                                                                             [35m([0m XIL_Interact 
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                 [36m,[0m Just [33m([0m TokenPn 1450 62 5 [33m)[0m
@@ -2028,7 +2119,10 @@ XIL_Prog
                                                                                                                 [36m,[0m Just [33m([0m TokenPn 1491 63 3 [33m)[0m
                                                                                                                 [36m)[0m 
                                                                                                                 [36m([0m False
-                                                                                                                [36m,[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                [36m,[0m 
+                                                                                                                    [33m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                    [33m,[0m BT_Address
+                                                                                                                    [33m)[0m 
                                                                                                                 [36m,[0m 
                                                                                                                     [33m[[0m 
                                                                                                                         [1m[35m([0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
@@ -2044,8 +2138,10 @@ XIL_Prog
                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 1491 63 3 [1m[35m)[0m
                                                                                                                     [33m)[0m [33m([0m Con_I 0 [33m)[0m
                                                                                                                 [36m)[0m 
-                                                                                                                [36m([0m False
-                                                                                                                [36m,[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                                                [36m([0m Just 
+                                                                                                                    [33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                                                    [33m,[0m BT_Address
+                                                                                                                    [33m)[0m 
                                                                                                                 [36m,[0m XIL_Con 
                                                                                                                     [33m([0m [1m[97m"[0m[1m[94mrsh/rps.rsh[0m[1m[97m"[0m 
                                                                                                                     [33m,[0m Just [1m[35m([0m TokenPn 192 13 15 [1m[35m)[0m

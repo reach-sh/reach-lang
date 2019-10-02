@@ -32,7 +32,7 @@ instance Pretty EP_Prim where
     CP cp -> pretty cp
     _ -> viaShow p
 
-instance Pretty Role where
+instance Pretty a => Pretty (Role a) where
   pretty (RolePart p) = pretty p
   pretty RoleContract = pretty "CTC"
 
@@ -65,8 +65,8 @@ prettyClaim ct a = group $ parens $ pretty cts <+> pretty a
 prettyTransfer :: Pretty a => Doc ann -> a -> Doc ann
 prettyTransfer to a = group $ parens $ pretty "transfer!" <+> to <+> pretty a
 
-prettyWhile :: Pretty b => Pretty c => (a -> Doc ann) -> a -> b -> c -> c -> c -> c -> Doc ann
-prettyWhile prettyVar loopv inita untilt invt bodyt kt = vsep [ group $ parens $ pretty "do" <+> brackets (prettyVar loopv <+> pretty inita) <> nest 2 (hardline <> pretty "until" <+> prettyBegin untilt <> hardline <> pretty "invariant" <+> prettyBegin invt <> hardline <> prettyBegin bodyt), pretty kt ]
+prettyWhile :: Pretty b => Pretty c => (a -> Doc ann) -> [a] -> [b] -> c -> c -> c -> c -> Doc ann
+prettyWhile prettyVar loopvs initas untilt invt bodyt kt = vsep [ group $ parens $ pretty "do" <+> brackets (vsep $ zipWith (\v i -> prettyVar v <+> pretty i) loopvs initas) <> nest 2 (hardline <> pretty "until" <+> prettyBegin untilt <> hardline <> pretty "invariant" <+> prettyBegin invt <> hardline <> prettyBegin bodyt), pretty kt ]
 
 prettyBegin :: Pretty a => a -> Doc ann
 prettyBegin x = group $ parens $ pretty "begin" <+> (nest 2 $ hardline <> pretty x)
@@ -104,17 +104,17 @@ instance Pretty (ILTail a) where
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
   pretty (IL_Do _ r s bt) = prettyDo at s bt
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
-  pretty (IL_ToConsensus _ (ok_ij, p, svs, pa) (to_ij, twho, da, tt) ct) =
-    vsep [(group $ parens $ pretty "@" <+> pretty ok_ij <+> pretty p <+> (nest 2 $ hardline <> vsep [svsp, pap, tp])),
+  pretty (IL_ToConsensus _ (ok_ij, p, svs, pa) (mtwho, da, tt) ct) =
+    vsep [(group $ parens $ pretty "@" <+> pretty ok_ij <+> prettyILVar p <+> (nest 2 $ hardline <> vsep [svsp, pap, tp])),
           pretty ct]
     where svsp = parens $ pretty "publish!" <+> prettyILVars svs
           pap = parens $ pretty "pay!" <+> pretty pa
-          tp = parens $ pretty "timeout" <+> pretty to_ij <+> pretty twho <+> pretty da <+> (nest 2 $ hardline <> pretty tt)
+          tp = parens $ pretty "timeout" <+> pretty mtwho <+> pretty da <+> (nest 2 $ hardline <> pretty tt)
   pretty (IL_FromConsensus _ lt) =
     vsep [(group $ parens $ pretty "commit!"),
           pretty lt]
-  pretty (IL_While _ loopv inita untilt invt bodyt kt) = prettyWhile prettyILVar loopv inita untilt invt bodyt kt
-  pretty (IL_Continue _ a) = parens $ pretty "continue!" <+> pretty a
+  pretty (IL_While _ loopvs inita untilt invt bodyt kt) = prettyWhile prettyILVar loopvs inita untilt invt bodyt kt
+  pretty (IL_Continue _ as) = parens $ pretty "continue!" <+> (hsep $ map pretty as)
 
 prettyILVar :: ILVar -> Doc ann
 prettyILVar (n, (s, et)) = pretty n <> pretty "/" <> pretty s <> pretty ":" <> pretty et
@@ -125,7 +125,7 @@ prettyILVars vs = parens $ hsep $ map prettyILVar vs
 prettyILPartArg :: ILVar -> Doc ann
 prettyILPartArg v = group $ brackets $ prettyILVar v
 
-prettyILPart :: (Participant, [ILVar]) -> Doc ann
+prettyILPart :: (ILPart, [ILVar]) -> Doc ann
 prettyILPart (p, vs) =
   group $ parens $ pretty "define-participant" <+> pretty p <> body
   where pvs = map prettyILPartArg vs
@@ -158,23 +158,28 @@ instance Pretty (CStmt a) where
   pretty (C_Claim _ ct a) = prettyClaim ct a
   pretty (C_Transfer _ to a) = prettyTransfer (prettyBLVar to) a
 
+prettyTimeout :: (FromSpec, Int, BLArg a, EPTail a) -> Doc b
+prettyTimeout (who_to, hi_to, delay, tt) =
+  (nest 2 (hardline <> pretty "#:timeout" <+> pretty who_to <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt))))
+
 instance Pretty (EPTail a) where
   pretty (EP_Ret _ al) = prettyValues al
   pretty (EP_If _ ca tt ft) = prettyIf ca tt ft
-  pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x -> x) v e bt
-  pretty (EP_Do _ s bt) = prettyDo (\x -> x) s bt
-  pretty (EP_SendRecv _ svs (ok_ij, hi_ok, vs, pa, bt) (to_ij, hi_to, delay, tt)) =
-    vsep [group $ parens $ pretty "send!" <+> pretty ok_ij <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa <+>
-          (nest 2 (hardline <> pretty "#:timeout" <+> pretty to_ij <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt)))),
+  pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x->x) v e bt
+  pretty (EP_Do _ s bt) = prettyDo (\x->x) s bt
+  pretty (EP_SendRecv _ svs (fs_ok, hi_ok, vs, pa, bt) info_to) =
+    vsep [group $ parens $ pretty "send!" <+> pretty fs_ok <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa <+> prettyTimeout info_to,
           pretty bt]
-  pretty (EP_Recv _ svs (ok_ij, hi_ok, vs, bt) (to_ij, to_me, hi_to, delay, tt)) =
+  pretty (EP_Recv _ svs (fs_ok, hi_ok, vs, bt) info_to) =
     vsep [group $ parens $ pretty "define-values" <+> prettyBLVars svs <+> prettyBLVars vs <+>
-          (parens $ pretty "recv!" <+> pretty ok_ij <+> pretty hi_ok <+>
-           (nest 2 (hardline <> pretty "#:timeout" <+> pretty to_ij <+> pretty to_me <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt))))),
+          (parens $ pretty "recv!" <+> pretty fs_ok <+> pretty hi_ok <+> prettyTimeout info_to),
           pretty bt]
-  pretty (EP_Loop _ which loopv inita bt) =
-    group $ parens $ pretty "loop" <+> pretty which <+> prettyBLVar loopv <+> pretty inita <> nest 2 (hardline <> prettyBegin bt)
-  pretty (EP_Continue _ which arg) = group $ parens $ pretty "continue" <+> pretty which <+> pretty arg
+  pretty (EP_Loop _ which loopvs initas bt) =
+    group $ parens $ pretty "loop" <+> pretty which <+> (prettyVarArgs prettyBLVar loopvs initas) <> nest 2 (hardline <> prettyBegin bt)
+  pretty (EP_Continue _ which vs args) = group $ parens $ pretty "continue" <+> pretty which <+> (prettyVarArgs prettyBLVar vs args)
+
+prettyVarArgs :: Pretty c => (b -> Doc a) -> [b] -> [c] -> Doc a
+prettyVarArgs prettyVar vs as = parens $ vsep $ zipWith (\v a -> brackets $ prettyVar v <+> pretty a) vs as
 
 instance Pretty (CTail a) where
   pretty (C_Halt _) = group $ parens $ pretty "halt!"
@@ -182,13 +187,18 @@ instance Pretty (CTail a) where
   pretty (C_If _ ca tt ft) = prettyIf ca tt ft
   pretty (C_Let _ mv e bt) = prettyLet prettyBLVar (\x -> x) mv e bt
   pretty (C_Do _ s bt) = prettyDo (\x -> x) s bt
-  pretty (C_Jump _ which svs argv a) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> prettyBLVar argv <+> pretty a
+  pretty (C_Jump _ which svs vs args) = group $ parens $ pretty "jump" <+> pretty which <+> prettyBLVars svs <+> (prettyVarArgs prettyBLVar vs args)
+
+instance Pretty FromSpec where
+  pretty (FS_From bv) = parens $ pretty "#:from" <+> prettyBLVar bv
+  pretty (FS_Join bv) = parens $ pretty "#:join" <+> prettyBLVar bv
+  pretty (FS_Any) = parens $ pretty "#:any"
 
 prettyCHandler :: CHandler a -> Doc ann
 prettyCHandler (C_Handler _ who timeout (last_i, svs) args delay ct i) =
   group $ brackets $ pretty i <+> pretty who <+> pretty timeout <+> pretty delay <+> pretty last_i <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
-prettyCHandler (C_Loop _ svs arg it ct i) =
-  group $ brackets $ pretty i <+> pretty "!loop!" <+> prettyBLVars svs <+> prettyBLVar arg <+> pretty "invariant" <+> prettyBegin it <> (nest 2 $ hardline <> pretty ct)
+prettyCHandler (C_Loop _ svs args it ct i) =
+  group $ brackets $ pretty i <+> pretty "!loop!" <+> prettyBLVars svs <+> prettyBLVars args <+> pretty "invariant" <+> prettyBegin it <> (nest 2 $ hardline <> pretty ct)
 
 instance Pretty (CProgram a) where
   pretty (C_Prog _ hs) = group $ parens $ pretty "define-contract" <+> (nest 2 $ hardline <> vsep hsp)
@@ -200,7 +210,7 @@ prettyBLVar v = prettyILVar v
 prettyBLVars :: [BLVar] -> Doc ann
 prettyBLVars bs = parens $ hsep $ map prettyBLVar bs
 
-prettyBLPart :: (Participant, EProgram b) -> Doc ann
+prettyBLPart :: (BLPart, EProgram b) -> Doc ann
 prettyBLPart (p, (EP_Prog _ args t)) =
   group $ parens $ pretty "define-participant" <+> pretty p <+> (nest 2 $ hardline <> vsep [argp, emptyDoc, pretty t])
   where argp = group $ parens $ vsep $ map prettyBLVar args

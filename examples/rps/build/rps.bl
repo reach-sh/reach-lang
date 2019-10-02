@@ -1,50 +1,33 @@
 #lang reach/bl
 
 (define-contract 
-  [1 ( True
-  , ( 6
-  , (A, address) ) ) False 10 0 () (2/Declassify:uint256 3/Declassify:uint256) 
-    (define 8/PrimApp:uint256 (TXN_VALUE))
-    (define 9/PrimApp:uint256 (ADD 2/Declassify:uint256 3/Declassify:uint256))
-    (define 10/PrimApp:bool (PEQ 8/PrimApp:uint256 9/PrimApp:uint256))
-    (require! 10/PrimApp:bool)
-    (wait! 1 (2/Declassify:uint256 3/Declassify:uint256 6/A:address))]
-  [2 (True, (7, (B, address))) True 10 0 () () 
+  [1 (#:join 0/A:address) False 10 0 () (5/Declassify:uint256 6/Declassify:uint256) 
+    (define 9/PrimApp:uint256 (TXN_VALUE))
+    (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256))
+    (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256))
+    (require! 11/PrimApp:bool)
+    (wait! 1 (0/A:address 5/Declassify:uint256 6/Declassify:uint256))]
+  [2 (#:any) True 10 0 () () 
     (halt!)]
-  [3 ( True
-  , ( 12
-  , ( B
-  , address ) ) ) False 10 1 (2/Declassify:uint256 3/Declassify:uint256 6/A:address) () 
+  [3 (#:join 3/B:address) False 10 1 (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () 
     (define 13/PrimApp:uint256 (TXN_VALUE))
-    (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 2/Declassify:uint256))
+    (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256))
     (require! 14/PrimApp:bool)
-    (wait! 3 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address))]
-  [4 ( False
-  , ( 6
-  , ( A
-  , address ) ) ) True 10 1 (2/Declassify:uint256 3/Declassify:uint256 6/A:address) () 
+    (wait! 3 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256))]
+  [4 (#:from 0/A:address) True 10 1 (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () 
     (define 139/PrimApp:uint256 (BALANCE))
-    (transfer! 6/A:address 139/PrimApp:uint256)
+    (transfer! 0/A:address 139/PrimApp:uint256)
     (halt!)]
-  [5 ( False
-  , ( 6
-  , ( A
-  , address ) ) ) False 10 3 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address) (31/Declassify:uint256) 
+  [5 (#:from 0/A:address) False 10 3 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) (31/Declassify:uint256) 
     (define 33/PrimApp:uint256 (TXN_VALUE))
     (define 34/PrimApp:bool (PEQ 33/PrimApp:uint256 0))
     (require! 34/PrimApp:bool)
-    (wait! 5 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256))]
-  [6 ( False
-  , ( 12
-  , ( B
-  , address ) ) ) True 10 3 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address) () 
+    (wait! 5 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256))]
+  [6 (#:from 3/B:address) True 10 3 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) () 
     (define 138/PrimApp:uint256 (BALANCE))
-    (transfer! 12/B:address 138/PrimApp:uint256)
+    (transfer! 3/B:address 138/PrimApp:uint256)
     (halt!)]
-  [7 ( False
-  , ( 12
-  , ( B
-  , address ) ) ) False 10 5 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256) (46/Declassify:uint256) 
+  [7 (#:from 3/B:address) False 10 5 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256) (46/Declassify:uint256) 
     (define 48/PrimApp:uint256 (TXN_VALUE))
     (define 49/PrimApp:bool (PEQ 48/PrimApp:uint256 0))
     (require! 49/PrimApp:bool)
@@ -52,18 +35,12 @@
     (define 51/PrimApp:bool (PLT 46/Declassify:uint256 3))
     (define 52/PureIf:bool (IF_THEN_ELSE 50/PrimApp:bool 51/PrimApp:bool False))
     (require! 52/PureIf:bool)
-    (wait! 7 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256 46/Declassify:uint256))]
-  [8 ( False
-  , ( 6
-  , ( A
-  , address ) ) ) True 10 5 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256) () 
+    (wait! 7 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256 46/Declassify:uint256))]
+  [8 (#:from 0/A:address) True 10 5 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256) () 
     (define 137/PrimApp:uint256 (BALANCE))
-    (transfer! 6/A:address 137/PrimApp:uint256)
+    (transfer! 0/A:address 137/PrimApp:uint256)
     (halt!)]
-  [9 ( False
-  , ( 6
-  , ( A
-  , address ) ) ) False 10 7 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256 46/Declassify:uint256) (53/Declassify:uint256 54/Declassify:uint256) 
+  [9 (#:from 0/A:address) False 10 7 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256 46/Declassify:uint256) (53/Declassify:uint256 54/Declassify:uint256) 
     (define 63/PrimApp:uint256 (TXN_VALUE))
     (define 64/PrimApp:bool (PEQ 63/PrimApp:uint256 0))
     (require! 64/PrimApp:bool)
@@ -129,52 +106,46 @@
     (define 114/PureIf:bool (IF_THEN_ELSE 113/PrimApp:bool 108/PrimApp:bool False))
     (possible? 114/PureIf:bool)
     (define 115/PrimApp:bool (PEQ 85/PureIf:uint256 2))
-    (define 116/PrimApp:uint256 (MUL 2 2/Declassify:uint256))
+    (define 116/PrimApp:uint256 (MUL 2 5/Declassify:uint256))
     (define 117/PrimApp:bool (PEQ 85/PureIf:uint256 0))
-    (define 118/PrimApp:uint256 (MUL 2 2/Declassify:uint256))
-    (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 2/Declassify:uint256))
-    (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 2/Declassify:uint256))
+    (define 118/PrimApp:uint256 (MUL 2 5/Declassify:uint256))
+    (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 5/Declassify:uint256))
+    (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 5/Declassify:uint256))
     (define 121/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 116/PrimApp:uint256 119/PureIf:uint256))
     (define 122/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 0 120/PureIf:uint256))
-    (define 123/PrimApp:uint256 (ADD 3/Declassify:uint256 121/PureIf:uint256))
-    (transfer! 6/A:address 123/PrimApp:uint256)
-    (transfer! 12/B:address 122/PureIf:uint256)
+    (define 123/PrimApp:uint256 (ADD 6/Declassify:uint256 121/PureIf:uint256))
+    (transfer! 0/A:address 123/PrimApp:uint256)
+    (transfer! 3/B:address 122/PureIf:uint256)
     (halt!)]
-  [10 ( False
-  , ( 12
-  , ( B
-  , address ) ) ) True 10 7 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256 46/Declassify:uint256) () 
+  [10 (#:from 3/B:address) True 10 7 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256 46/Declassify:uint256) () 
     (define 136/PrimApp:uint256 (BALANCE))
-    (transfer! 12/B:address 136/PrimApp:uint256)
+    (transfer! 3/B:address 136/PrimApp:uint256)
     (halt!)])
 
-(define-participant A 
-  (0/_wagerAmount:uint256 1/_escrowAmount:uint256)
+(define-participant (0, (A, address)) 
+  (1/_wagerAmount:uint256 2/_escrowAmount:uint256)
   
-  (define 2/Declassify:uint256 0/_wagerAmount:uint256)
-  (define 3/Declassify:uint256 1/_escrowAmount:uint256)
-  (define 4/Interact:bool (interact.params bool ))
-  (define 5/PrimApp:uint256 (ADD 2/Declassify:uint256 3/Declassify:uint256))
-  (send! ( 6
-  , ( A
-  , address ) ) 1 () (2/Declassify:uint256 3/Declassify:uint256) 5/PrimApp:uint256 
-    #:timeout (7, (B, address)) 2 10 
+  (define 5/Declassify:uint256 1/_wagerAmount:uint256)
+  (define 6/Declassify:uint256 2/_escrowAmount:uint256)
+  (define 7/Interact:bool (interact.params bool ))
+  (define 8/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256))
+  (send! (#:join 0/A:address) 1 () (5/Declassify:uint256 6/Declassify:uint256) 8/PrimApp:uint256 
+    #:timeout (#:any) 2 10 
       (begin 
         (require! True)
         "Alice quits"))
-  (define 8/PrimApp:uint256 (TXN_VALUE))
-  (define 9/PrimApp:uint256 (ADD 2/Declassify:uint256 3/Declassify:uint256))
-  (define 10/PrimApp:bool (PEQ 8/PrimApp:uint256 9/PrimApp:uint256))
-  (require! 10/PrimApp:bool)
-  (define-values (2/Declassify:uint256 3/Declassify:uint256 6/A:address) () (recv! ( 12
-  , (B, address) ) 3 
-    #:timeout  True 4 10 
+  (define 9/PrimApp:uint256 (TXN_VALUE))
+  (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256))
+  (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256))
+  (require! 11/PrimApp:bool)
+  (define-values (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () (recv! (#:join 3/B:address) 3 
+    #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 139/PrimApp:uint256 (BALANCE))
         (require! True)
         "Bob quits")))
   (define 13/PrimApp:uint256 (TXN_VALUE))
-  (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 2/Declassify:uint256))
+  (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256))
   (require! 14/PrimApp:bool)
   (define 15/Interact:bytes (interact.getHand bytes ))
   (define 16/PrimApp:bool (BYTES_EQ 15/Interact:bytes "ROCK"))
@@ -196,8 +167,8 @@
   (define 30/PrimApp:uint256 (DIGEST 29/PrimApp:bytes))
   (define 31/Declassify:uint256 30/PrimApp:uint256)
   (define 32/Interact:bool (interact.commits bool ))
-  (send!  5 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address) (31/Declassify:uint256) 0 
-    #:timeout  6 10 
+  (send! (#:from 0/A:address) 5 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) (31/Declassify:uint256) 0 
+    #:timeout (#:from 3/B:address) 6 10 
       (begin 
         (define 138/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -205,8 +176,8 @@
   (define 33/PrimApp:uint256 (TXN_VALUE))
   (define 34/PrimApp:bool (PEQ 33/PrimApp:uint256 0))
   (require! 34/PrimApp:bool)
-  (define-values (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256) (46/Declassify:uint256) (recv!  7 
-    #:timeout  True 8 10 
+  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256) (46/Declassify:uint256) (recv! (#:from 3/B:address) 7 
+    #:timeout (#:from 0/A:address) 8 10 
       (begin 
         (define 137/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -229,8 +200,8 @@
   (define 60/PureIf:bytes (IF_THEN_ELSE 59/PrimApp:bool "PAPER" "SCISSORS"))
   (define 61/PureIf:bytes (IF_THEN_ELSE 58/PrimApp:bool "ROCK" 60/PureIf:bytes))
   (define 62/Interact:bool (interact.reveals bool 61/PureIf:bytes))
-  (send!  9 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256 46/Declassify:uint256) (53/Declassify:uint256 54/Declassify:uint256) 0 
-    #:timeout  10 10 
+  (send! (#:from 0/A:address) 9 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256 46/Declassify:uint256) (53/Declassify:uint256 54/Declassify:uint256) 0 
+    #:timeout (#:from 3/B:address) 10 10 
       (begin 
         (define 136/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -300,14 +271,14 @@
   (define 114/PureIf:bool (IF_THEN_ELSE 113/PrimApp:bool 108/PrimApp:bool False))
   (possible? 114/PureIf:bool)
   (define 115/PrimApp:bool (PEQ 85/PureIf:uint256 2))
-  (define 116/PrimApp:uint256 (MUL 2 2/Declassify:uint256))
+  (define 116/PrimApp:uint256 (MUL 2 5/Declassify:uint256))
   (define 117/PrimApp:bool (PEQ 85/PureIf:uint256 0))
-  (define 118/PrimApp:uint256 (MUL 2 2/Declassify:uint256))
-  (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 2/Declassify:uint256))
-  (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 2/Declassify:uint256))
+  (define 118/PrimApp:uint256 (MUL 2 5/Declassify:uint256))
+  (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 5/Declassify:uint256))
+  (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 5/Declassify:uint256))
   (define 121/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 116/PrimApp:uint256 119/PureIf:uint256))
   (define 122/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 0 120/PureIf:uint256))
-  (define 123/PrimApp:uint256 (ADD 3/Declassify:uint256 121/PureIf:uint256))
+  (define 123/PrimApp:uint256 (ADD 6/Declassify:uint256 121/PureIf:uint256))
   (define 124/Interact:bool (interact.outcome bool ))
   (define 125/PrimApp:bool (PLE 0 85/PureIf:uint256))
   (define 126/PrimApp:bool (PLT 85/PureIf:uint256 5))
@@ -323,33 +294,30 @@
   (define 135/PureIf:bytes (IF_THEN_ELSE 128/PrimApp:bool "Bob wins" 134/PureIf:bytes))
   135/PureIf:bytes)
 
-(define-participant B 
+(define-participant (3, (B, address)) 
   ()
   
-  (define-values () (2/Declassify:uint256 3/Declassify:uint256) (recv! ( 6
-  , (A, address) ) 1 
-    #:timeout (7, (B, address)) True 2 10 
+  (define-values () (5/Declassify:uint256 6/Declassify:uint256) (recv! (#:join 0/A:address) 1 
+    #:timeout (#:any) 2 10 
       (begin 
         (require! True)
         "Alice quits")))
-  (define 8/PrimApp:uint256 (TXN_VALUE))
-  (define 9/PrimApp:uint256 (ADD 2/Declassify:uint256 3/Declassify:uint256))
-  (define 10/PrimApp:bool (PEQ 8/PrimApp:uint256 9/PrimApp:uint256))
-  (require! 10/PrimApp:bool)
-  (define 11/Interact:bool (interact.accepts bool 2/Declassify:uint256 3/Declassify:uint256))
-  (send! ( 12
-  , ( B
-  , address ) ) 3 (2/Declassify:uint256 3/Declassify:uint256 6/A:address) () 2/Declassify:uint256 
-    #:timeout  4 10 
+  (define 9/PrimApp:uint256 (TXN_VALUE))
+  (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256))
+  (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256))
+  (require! 11/PrimApp:bool)
+  (define 12/Interact:bool (interact.accepts bool 5/Declassify:uint256 6/Declassify:uint256))
+  (send! (#:join 3/B:address) 3 (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () 5/Declassify:uint256 
+    #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 139/PrimApp:uint256 (BALANCE))
         (require! True)
         "Bob quits"))
   (define 13/PrimApp:uint256 (TXN_VALUE))
-  (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 2/Declassify:uint256))
+  (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256))
   (require! 14/PrimApp:bool)
-  (define-values (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address) (31/Declassify:uint256) (recv!  5 
-    #:timeout  True 6 10 
+  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) (31/Declassify:uint256) (recv! (#:from 0/A:address) 5 
+    #:timeout (#:from 3/B:address) 6 10 
       (begin 
         (define 138/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -372,8 +340,8 @@
   (assert! 45/PureIf:bool)
   (define 46/Declassify:uint256 42/PureIf:uint256)
   (define 47/Interact:bool (interact.shows bool ))
-  (send!  7 (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256) (46/Declassify:uint256) 0 
-    #:timeout  8 10 
+  (send! (#:from 3/B:address) 7 (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256) (46/Declassify:uint256) 0 
+    #:timeout (#:from 0/A:address) 8 10 
       (begin 
         (define 137/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -385,8 +353,8 @@
   (define 51/PrimApp:bool (PLT 46/Declassify:uint256 3))
   (define 52/PureIf:bool (IF_THEN_ELSE 50/PrimApp:bool 51/PrimApp:bool False))
   (require! 52/PureIf:bool)
-  (define-values (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256 46/Declassify:uint256) (53/Declassify:uint256 54/Declassify:uint256) (recv!  9 
-    #:timeout  True 10 10 
+  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256 46/Declassify:uint256) (53/Declassify:uint256 54/Declassify:uint256) (recv! (#:from 0/A:address) 9 
+    #:timeout (#:from 3/B:address) 10 10 
       (begin 
         (define 136/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -456,14 +424,14 @@
   (define 114/PureIf:bool (IF_THEN_ELSE 113/PrimApp:bool 108/PrimApp:bool False))
   (possible? 114/PureIf:bool)
   (define 115/PrimApp:bool (PEQ 85/PureIf:uint256 2))
-  (define 116/PrimApp:uint256 (MUL 2 2/Declassify:uint256))
+  (define 116/PrimApp:uint256 (MUL 2 5/Declassify:uint256))
   (define 117/PrimApp:bool (PEQ 85/PureIf:uint256 0))
-  (define 118/PrimApp:uint256 (MUL 2 2/Declassify:uint256))
-  (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 2/Declassify:uint256))
-  (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 2/Declassify:uint256))
+  (define 118/PrimApp:uint256 (MUL 2 5/Declassify:uint256))
+  (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 5/Declassify:uint256))
+  (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 5/Declassify:uint256))
   (define 121/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 116/PrimApp:uint256 119/PureIf:uint256))
   (define 122/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 0 120/PureIf:uint256))
-  (define 123/PrimApp:uint256 (ADD 3/Declassify:uint256 121/PureIf:uint256))
+  (define 123/PrimApp:uint256 (ADD 6/Declassify:uint256 121/PureIf:uint256))
   (define 124/Interact:bool (interact.outcome bool ))
   (define 125/PrimApp:bool (PLE 0 85/PureIf:uint256))
   (define 126/PrimApp:bool (PLT 85/PureIf:uint256 5))
@@ -479,31 +447,29 @@
   (define 135/PureIf:bytes (IF_THEN_ELSE 128/PrimApp:bool "Bob wins" 134/PureIf:bytes))
   135/PureIf:bytes)
 
-(define-participant O 
+(define-participant (4, (O, address)) 
   ()
   
-  (define-values () (2/Declassify:uint256 3/Declassify:uint256) (recv! ( 6
-  , (A, address) ) 1 
-    #:timeout (7, (B, address)) False 2 10 
+  (define-values () (5/Declassify:uint256 6/Declassify:uint256) (recv! (#:join 0/A:address) 1 
+    #:timeout (#:any) 2 10 
       (begin 
         (require! True)
         "Alice quits")))
-  (define 8/PrimApp:uint256 (TXN_VALUE))
-  (define 9/PrimApp:uint256 (ADD 2/Declassify:uint256 3/Declassify:uint256))
-  (define 10/PrimApp:bool (PEQ 8/PrimApp:uint256 9/PrimApp:uint256))
-  (require! 10/PrimApp:bool)
-  (define-values (2/Declassify:uint256 3/Declassify:uint256 6/A:address) () (recv! ( 12
-  , (B, address) ) 3 
-    #:timeout  False 4 10 
+  (define 9/PrimApp:uint256 (TXN_VALUE))
+  (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256))
+  (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256))
+  (require! 11/PrimApp:bool)
+  (define-values (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () (recv! (#:join 3/B:address) 3 
+    #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 139/PrimApp:uint256 (BALANCE))
         (require! True)
         "Bob quits")))
   (define 13/PrimApp:uint256 (TXN_VALUE))
-  (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 2/Declassify:uint256))
+  (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256))
   (require! 14/PrimApp:bool)
-  (define-values (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address) (31/Declassify:uint256) (recv!  5 
-    #:timeout  False 6 10 
+  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) (31/Declassify:uint256) (recv! (#:from 0/A:address) 5 
+    #:timeout (#:from 3/B:address) 6 10 
       (begin 
         (define 138/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -511,8 +477,8 @@
   (define 33/PrimApp:uint256 (TXN_VALUE))
   (define 34/PrimApp:bool (PEQ 33/PrimApp:uint256 0))
   (require! 34/PrimApp:bool)
-  (define-values (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256) (46/Declassify:uint256) (recv!  7 
-    #:timeout  False 8 10 
+  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256) (46/Declassify:uint256) (recv! (#:from 3/B:address) 7 
+    #:timeout (#:from 0/A:address) 8 10 
       (begin 
         (define 137/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -524,8 +490,8 @@
   (define 51/PrimApp:bool (PLT 46/Declassify:uint256 3))
   (define 52/PureIf:bool (IF_THEN_ELSE 50/PrimApp:bool 51/PrimApp:bool False))
   (require! 52/PureIf:bool)
-  (define-values (2/Declassify:uint256 3/Declassify:uint256 6/A:address 12/B:address 31/Declassify:uint256 46/Declassify:uint256) (53/Declassify:uint256 54/Declassify:uint256) (recv!  9 
-    #:timeout  False 10 10 
+  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 31/Declassify:uint256 46/Declassify:uint256) (53/Declassify:uint256 54/Declassify:uint256) (recv! (#:from 0/A:address) 9 
+    #:timeout (#:from 3/B:address) 10 10 
       (begin 
         (define 136/PrimApp:uint256 (BALANCE))
         (require! True)
@@ -595,14 +561,14 @@
   (define 114/PureIf:bool (IF_THEN_ELSE 113/PrimApp:bool 108/PrimApp:bool False))
   (possible? 114/PureIf:bool)
   (define 115/PrimApp:bool (PEQ 85/PureIf:uint256 2))
-  (define 116/PrimApp:uint256 (MUL 2 2/Declassify:uint256))
+  (define 116/PrimApp:uint256 (MUL 2 5/Declassify:uint256))
   (define 117/PrimApp:bool (PEQ 85/PureIf:uint256 0))
-  (define 118/PrimApp:uint256 (MUL 2 2/Declassify:uint256))
-  (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 2/Declassify:uint256))
-  (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 2/Declassify:uint256))
+  (define 118/PrimApp:uint256 (MUL 2 5/Declassify:uint256))
+  (define 119/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 0 5/Declassify:uint256))
+  (define 120/PureIf:uint256 (IF_THEN_ELSE 117/PrimApp:bool 118/PrimApp:uint256 5/Declassify:uint256))
   (define 121/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 116/PrimApp:uint256 119/PureIf:uint256))
   (define 122/PureIf:uint256 (IF_THEN_ELSE 115/PrimApp:bool 0 120/PureIf:uint256))
-  (define 123/PrimApp:uint256 (ADD 3/Declassify:uint256 121/PureIf:uint256))
+  (define 123/PrimApp:uint256 (ADD 6/Declassify:uint256 121/PureIf:uint256))
   (define 124/Interact:bool (interact.outcome bool ))
   (define 125/PrimApp:bool (PLE 0 85/PureIf:uint256))
   (define 126/PrimApp:bool (PLT 85/PureIf:uint256 5))

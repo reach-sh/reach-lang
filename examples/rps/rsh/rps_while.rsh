@@ -19,7 +19,7 @@ function main() {
     interact.params(); });
   A.publish(wagerAmount, escrowAmount)
     .pay(wagerAmount + escrowAmount)
-    .timeout(DELAY, B, () => {
+    .timeout(DELAY, _, () => {
       commit();
       return A_QUITS; });
   commit();
@@ -32,7 +32,7 @@ function main() {
       commit();
       return B_QUITS; });
 
-  var outcome = DRAW;
+  var [ count, outcome ] = [ 0, DRAW ];
   invariant((balance() == ((2 * wagerAmount) + escrowAmount))
             && isOutcome(outcome));
   while ( outcome == DRAW ) {
@@ -45,7 +45,7 @@ function main() {
       interact.commits(); });
     A.publish(commitA)
       .timeout(DELAY, B, () => {
-        outcome = A_QUITS;
+        [ count, outcome ] = [ count, A_QUITS ];
         continue; });
     commit();
 
@@ -54,7 +54,7 @@ function main() {
       interact.shows(); });
     B.publish(handB)
       .timeout(DELAY, A, () => {
-        outcome = B_QUITS;
+        [ count, outcome ] = [ count, B_QUITS ];
         continue; });
     require(isHand(handB));
     commit();
@@ -65,7 +65,7 @@ function main() {
       interact.reveals(showHand(handB)); });
     A.publish(saltA, handA)
       .timeout(DELAY, B, () => {
-        outcome = A_QUITS;
+        [ count, outcome ] = [ count, A_QUITS ];
         continue; });
     check_commit(commitA, saltA, handA);
     require(isHand(handA));
@@ -74,7 +74,7 @@ function main() {
     assert(implies(this_outcome == B_WINS, isHand(handB)));
     fair_game(handA, handB, this_outcome);
 
-    outcome = this_outcome;
+    [ count, outcome ] = [ 1 + count, this_outcome ];
     continue; }
 
   assert(outcome != DRAW);
@@ -92,5 +92,6 @@ function main() {
     transfer(getsB).to(B); }
   commit();
 
+  interact.whilecount(count);
   interact.outcome();
   return showOutcome(outcome); }
