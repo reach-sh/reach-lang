@@ -1,4 +1,4 @@
-NAME=auction
+NAME=multisig
 TAG="reachsh/examples-$(NAME):v0.1.0"
 
 build/%.mjs: %.rsh

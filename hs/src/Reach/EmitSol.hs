@@ -114,7 +114,7 @@ solFunction name args ret body =
 
 solEvent :: String -> [Doc a] -> Doc a
 solEvent name args =
-  "event" <+> solApply name args <> semi
+  "event" <+> solApply name (solDecl (solType BT_UInt256) "_bal" : args) <> semi
 
 solDecl :: String -> Doc a -> Doc a
 solDecl ty n = pretty ty <+> n
@@ -288,7 +288,8 @@ solHandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = v
         (frame_defp, frame_declp) = solFrame i sim
         funp = solFunction (solMsg_fun i) arg_ds retp bodyp
         retp = "external payable"
-        emitp = "emit" <+> solApply evts msg_rs <> semi <> hardline
+        balancep = solPrimApply BALANCE []
+        emitp = "emit" <+> solApply evts (balancep : msg_rs) <> semi <> hardline
         ccs = usesCTail body
         ρ = M.empty
         fromp = case from_spec of

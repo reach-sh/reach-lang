@@ -3,6 +3,8 @@ import * as crypto     from 'crypto';
 import * as nodeAssert from 'assert';
 import ethers          from 'ethers';
 import Timeout         from 'await-timeout';
+import * as util       from 'util';
+void(util);
 
 const DEBUG = false;
 const debug = msg => { if (DEBUG) {
@@ -43,6 +45,7 @@ export const balanceOf = async a =>
 export const assert = d => nodeAssert.strict(d);
 
 export const toWei     = web3.utils.toWei;
+export const fromWei     = web3.utils.fromWei;
 export const toBN      = web3.utils.toBN;
 export const toWeiBN = (a,b) => toBN(toWei(a, b));
 export const isBN      = web3.utils.isBN;
@@ -90,6 +93,7 @@ export const add   = (a, b) => toBN(a).add(toBN(b));
 export const sub   = (a, b) => toBN(a).sub(toBN(b));
 export const mod   = (a, b) => toBN(a).mod(toBN(b));
 export const mul   = (a, b) => toBN(a).mul(toBN(b));
+export const div   = (a, b) => toBN(a).div(toBN(b));
 export const ge    = (a, b) => toBN(a).gte(toBN(b));
 export const gt    = (a, b) => toBN(a).gt( toBN(b));
 export const le    = (a, b) => toBN(a).lte(toBN(b));
@@ -97,8 +101,9 @@ export const lt    = (a, b) => toBN(a).lt( toBN(b));
 
 const checkType = (t, x) => {
   if ( t === 'bool' ) { return typeof(x) === 'boolean'; }
-  else if ( t === 'uint256' ) { return web3.utils.isBN(t); }
-  else if ( t === 'bytes' || t === 'address' ) { return web3.utils.isHex(t) || typeof(x) === 'string'; } };
+  else if ( t === 'uint256' ) { return web3.utils.isBN(x); }
+  else if ( t === 'bytes' || t === 'address' ) { return web3.utils.isHex(x) || typeof(x) === 'string'; }
+  else { panic(`Unknown type: ${t}`); } };
 export const isType = (t, x) => {
   if ( checkType(t, x) ) { return x; }
   else { panic(`Expected ${t}, got: "${x}"`); } };
@@ -139,21 +144,29 @@ export const connectAccount = address => {
     debug(`${shad}: created at ${creation_block}`);
     let last_block = creation_block;
 
-    const updateLastAndGetBalance = async (o) => {
+    const updateLastAndGetEventData = async (o, ok_evt, ok_e) => {
       const this_block = o.blockNumber;
       last_block = this_block;
-      return toBN( await web3.eth.getBalance(ctc_address, this_block) ); };
+
+      const ok_args_abi = ABI
+            .find(a => a.name === ok_evt)
+            .inputs;
+      const decoded = web3.eth.abi.decodeLog(ok_args_abi, ok_e.raw.data, ok_e.raw.topics);
+      const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => a.name).map(n => decoded[n]);
+
+      return [ ok_bal, ok_vals ]; };
 
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     /* eslint require-atomic-updates: off */
-    const sendrecv = async (label, funcName, args, value, eventName, timeout_delay, timeout_evt ) => {
-      void(eventName);
+    const sendrecv = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt ) => {
+      void(ok_evt);
       // https://github.com/ethereum/web3.js/issues/2077
       const munged = [ last_block, ...args ]
             .map(m => isBN(m) ? m.toString() : m);
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START`);
       let block_send_attempt = last_block;
+      let block_repeat_count = 0;
       while ( ! timeout_delay || block_send_attempt < last_block + timeout_delay ) {
         let r_maybe = false;
 
@@ -161,15 +174,23 @@ export const connectAccount = address => {
         try { r_maybe = await ethCtc.methods[funcName](...munged).send({ from: address, value }); }
         catch (e) {
           await Timeout.set(1);
-          block_send_attempt = await ethersp.getBlockNumber();
+          const current_block = await ethersp.getBlockNumber();
+          if ( current_block == block_send_attempt ) {
+            block_repeat_count++; }
+          block_send_attempt = current_block;
+          if ( block_repeat_count > 32 ) {
+            panic(`${shad}: ${label} send ${funcName} ${timeout_delay} --- REPEAT @ ${block_send_attempt} x ${block_repeat_count}`); }
           continue; }
 
         assert(r_maybe != false);
         const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- OKAY`);
-        const ok_bal = await updateLastAndGetBalance(ok_r);
-        return { didTimeout: false, value: value, balance: ok_bal, from: address }; }
+
+        // XXX It is possible that not on the test net this will be wrong
+        const ok_e = { raw: ok_r.logs[0] };
+        const [ ok_bal, ok_vals ] = await updateLastAndGetEventData(ok_r, ok_evt, ok_e);
+        return { didTimeout: false, data: ok_vals, value: value, balance: ok_bal, from: address }; }
 
       // XXX If we were trying to join, but we got sniped, then we'll
       // think that there is a timeout and then we'll wait forever for
@@ -183,9 +204,6 @@ export const connectAccount = address => {
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
-      const ok_args_abi = ABI
-            .find(a => a.name === ok_evt)
-            .inputs;
 
       let block_poll_start = last_block;
       let block_poll_end = block_poll_start;
@@ -206,15 +224,12 @@ export const connectAccount = address => {
 
           const ok_e = es[0];
 
-          const decoded = web3.eth.abi.decodeLog(ok_args_abi, ok_e.raw.data, ok_e.raw.topics);
-          const ok_vals = ok_args_abi.map(a => a.name).map(n => decoded[n]);
-
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
           void(ok_r);
           const ok_t = await web3.eth.getTransaction(ok_e.transactionHash);
           debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
-          const ok_bal = await updateLastAndGetBalance(ok_t);
+          const [ ok_bal, ok_vals ] = await updateLastAndGetEventData(ok_t, ok_evt, ok_e);
           return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from }; } }
 
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);
