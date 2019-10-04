@@ -1,4 +1,4 @@
-TAG="reachsh/stdlib:v0.1.0"
+TAG="reachsh/stdlib:v0.1.1"
 NAME="stdlib"
 
 .PHONY: build

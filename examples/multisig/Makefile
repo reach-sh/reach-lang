@@ -1,5 +1,5 @@
 NAME=multisig
-TAG="reachsh/examples-$(NAME):v0.1.0"
+TAG="reachsh/examples-$(NAME):v0.1.1"
 
 build/%.mjs: %.rsh
 	../../reach -o build $^

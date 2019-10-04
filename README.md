@@ -22,7 +22,7 @@ only file in this repository you need is `reach`.)
 
 See `examples/rps` for an example application.
 
-If you just want to see a demo, run `make test` from this directory.
+If you just want to see some demos, run `make run-all` from this directory.
 
 # Development
 

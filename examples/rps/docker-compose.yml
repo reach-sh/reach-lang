@@ -1,7 +1,7 @@
 version: '3'
 services:
   reach-app:
-    image: reachsh/examples-rps:v0.1.0
+    image: reachsh/examples-rps:v0.1.1
     depends_on:
       - devnet
     environment:

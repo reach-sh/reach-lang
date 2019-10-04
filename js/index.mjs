@@ -187,10 +187,13 @@ export const connectAccount = address => {
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- OKAY`);
 
-        // XXX It is possible that not on the test net this will be wrong
-        const ok_e = { raw: ok_r.logs[0] };
-        const [ ok_bal, ok_vals ] = await updateLastAndGetEventData(ok_r, ok_evt, ok_e);
-        return { didTimeout: false, data: ok_vals, value: value, balance: ok_bal, from: address }; }
+        // XXX It might be a little dangerous to rely on the polling to just work
+
+        // It may be the case that the next line could speed things up?
+        // last_block = ok_r.blockNumber;
+        void(ok_r);
+
+        return await recv( label, ok_evt, false, false, false, false, false ); }
 
       // XXX If we were trying to join, but we got sniped, then we'll
       // think that there is a timeout and then we'll wait forever for

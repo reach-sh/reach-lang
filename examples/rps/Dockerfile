@@ -1,4 +1,4 @@
-FROM reachsh/stdlib:v0.1.0
+FROM reachsh/stdlib:v0.1.1
 
 WORKDIR /app
 

@@ -1,6 +1,6 @@
 {
   "name": "@reach-sh/example-auction",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Reach Platform Example: Auction",
   "type": "module",
   "devDependencies": {
@@ -8,7 +8,7 @@
     "eslint": "^6.3.0"
   },
   "dependencies": {
-    "@reach-sh/stdlib": "0.1.0"
+    "@reach-sh/stdlib": "0.1.1"
   },
   "repository": {
     "type": "git",

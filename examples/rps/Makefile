@@ -1,4 +1,4 @@
-TAG="reachsh/examples-rps:v0.1.0"
+TAG="reachsh/examples-rps:v0.1.1"
 
 build/%.mjs: rsh/%.rsh
 	../../reach -o build $^
