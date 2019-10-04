@@ -12,6 +12,7 @@ check:
 test:
 	cd js && $(MAKE) run
 	cd examples/rps && $(MAKE) run
+	cd examples/multisig && $(MAKE) run
 
 .PHONY: build-all
 build-all:
