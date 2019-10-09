@@ -37,7 +37,7 @@ function main() {
             && isOutcome(outcome));
   while ( outcome == DRAW ) {
     commit();
-
+    
     A.only(() => {
       const _handA = getHand();
       const [_commitA, _saltA] = precommit(_handA);

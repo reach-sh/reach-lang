@@ -59,6 +59,8 @@ function main() {
         [ bal, oks, nos ] = [ bal, oks, nos + 1 ];
         continue; });
 
+    assert(false);
+    
     if ( approval ) {
       transfer(howMuch).to(Child);
       [ bal, oks, nos ] = [ bal - howMuch, oks + 1, nos ];
@@ -68,5 +70,5 @@ function main() {
       continue; } }
 
   commit();
-  
+
   return [ oks, nos ]; }

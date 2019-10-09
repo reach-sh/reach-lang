@@ -12,6 +12,7 @@ import Data.Text.Prettyprint.Doc
 import Data.Digest.CRC32
 import qualified Data.ByteString.Char8 as BS
 import Data.FileEmbed
+import Data.IORef
 
 import Reach.AST
 import Reach.Util
@@ -253,6 +254,7 @@ data VerifyCtxt a
   | VC_WhileBody_Eval [ILVar] (ILTail a)
   | VC_WhileTail_AssumeUntil (ILTail a) (VerifyCtxt a, (ILTail a))
   | VC_WhileTail_AssumeInv (VerifyCtxt a, (ILTail a))
+  deriving (Show)
 
 z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILPart)) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
@@ -264,13 +266,15 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
         meta_iter :: Show a => VerifyResult -> [(VerifyCtxt a, ILTail a)] -> IO VerifyResult
         meta_iter vr0 [] = return vr0
         meta_iter vr0 ( (ctxt, it) : more0 ) = do
+          putStrLn $ "Verifying " ++ take 32 (show ctxt)
           (more1, vr1) <- inNewScope z3 $ iter 0 ctxt it
           let vr = vr0 <> vr1
           let more = more0 ++ more1
           meta_iter vr more
         iter :: Show a => Int -> VerifyCtxt a -> ILTail a -> IO ([(VerifyCtxt a, ILTail a)], VerifyResult)
         iter cbi ctxt it = case it of
-          IL_Ret h al ->
+          IL_Ret h al -> do
+            putStrLn $ "\treached ret with " ++ take 32 (show ctxt)
             case ctxt of
               VC_Top -> do
                 let cbi_balance = z3Eq (z3CTCBalanceRef cbi) zero
@@ -374,13 +378,35 @@ _verify_z3 z3 tp = do
 newFileLogger :: String -> IO (IO (), Logger)
 newFileLogger p = do
   logh <- openFile p WriteMode
+  tabr <- newIORef 0
   let logLevel = return 0
       logSetLevel _ = return ()
-      logTab = return ()
-      logUntab = return ()
-      logMessage m = do
-        hPutStrLn logh m
-        hFlush logh
+      logTab = modifyIORef tabr $ \x -> x + 1
+      logUntab = modifyIORef tabr $ \x -> x - 1
+      printTab = do
+        tab <- readIORef tabr
+        mapM_ (\_ -> hPutStr logh " ") $ take tab $ repeat ()
+      send_tag = "[send->]"
+      recv_tag = "[<-recv]"
+      logMessage m' = do
+        let (which, m) = splitAt (length send_tag) m'
+        let short_which = if which == send_tag then "+" else "-"
+        if (which == recv_tag && m == " success") then
+          return ()
+        else if (m == " (push 1 )") then do
+          printTab
+          hPutStrLn logh $ "(push"
+          hFlush logh
+          logTab
+        else if (m == " (pop 1 )") then do
+          logUntab
+          printTab
+          hPutStrLn logh $ ")"
+          hFlush logh
+        else do
+          printTab
+          hPutStrLn logh $ "(" ++ short_which ++ m ++ ")"
+          hFlush logh
       close = hClose logh
   return (close, Logger { .. })
 
