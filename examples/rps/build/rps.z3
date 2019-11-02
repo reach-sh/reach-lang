@@ -1,4655 +1,2837 @@
-[send->] (set-option :print-success true )
-[<-recv] success
-[send->] (set-option :produce-models true )
-[<-recv] success
-[send->] (set-option :produce-unsat-cores true )
-[<-recv] success
-[send->] (declare-sort Address 0 )
-[<-recv] success
-[send->] (declare-datatypes () ((Bytes (bytes-literal (digest Int ) ) (uint256->bytes (bytes-integer Int ) ) (msg-cat (msg-left Bytes ) (msg-right Bytes ) ) ) ) )
-[<-recv] success
-[send->] (declare-fun digest (Bytes ) Int )
-[<-recv] success
-[send->] (define-fun-rec bytes-length ((bs Bytes ) ) Int (match bs (((uint256->bytes _ ) 32 ) ((bytes-literal _ ) 32 ) ((msg-cat l r ) (+ 32 (bytes-length l ) (bytes-length r ) ) ) ) ) )
-[<-recv] success
-[send->] (declare-fun v1 () Int )
-[<-recv] success
-[send->] (declare-fun v2 () Int )
-[<-recv] success
-[send->] (declare-fun v5 () Int )
-[<-recv] success
-[send->] (declare-fun v6 () Int )
-[<-recv] success
-[send->] (declare-fun v7 () Bool )
-[<-recv] success
-[send->] (declare-fun v8 () Int )
-[<-recv] success
-[send->] (declare-fun v9 () Int )
-[<-recv] success
-[send->] (declare-fun v10 () Int )
-[<-recv] success
-[send->] (declare-fun v11 () Bool )
-[<-recv] success
-[send->] (declare-fun v12 () Bool )
-[<-recv] success
-[send->] (declare-fun v13 () Int )
-[<-recv] success
-[send->] (declare-fun v14 () Bool )
-[<-recv] success
-[send->] (declare-fun v15 () Bytes )
-[<-recv] success
-[send->] (declare-fun v16 () Bool )
-[<-recv] success
-[send->] (declare-fun v17 () Bool )
-[<-recv] success
-[send->] (declare-fun v18 () Bool )
-[<-recv] success
-[send->] (declare-fun v19 () Bool )
-[<-recv] success
-[send->] (declare-fun v20 () Bool )
-[<-recv] success
-[send->] (declare-fun v21 () Int )
-[<-recv] success
-[send->] (declare-fun v22 () Int )
-[<-recv] success
-[send->] (declare-fun v23 () Bool )
-[<-recv] success
-[send->] (declare-fun v24 () Bool )
-[<-recv] success
-[send->] (declare-fun v25 () Bool )
-[<-recv] success
-[send->] (declare-fun v26 () Int )
-[<-recv] success
-[send->] (declare-fun v27 () Bytes )
-[<-recv] success
-[send->] (declare-fun v28 () Bytes )
-[<-recv] success
-[send->] (declare-fun v29 () Bytes )
-[<-recv] success
-[send->] (declare-fun v30 () Int )
-[<-recv] success
-[send->] (declare-fun v31 () Int )
-[<-recv] success
-[send->] (declare-fun v32 () Bool )
-[<-recv] success
-[send->] (declare-fun v33 () Int )
-[<-recv] success
-[send->] (declare-fun v34 () Bool )
-[<-recv] success
-[send->] (declare-fun v35 () Bytes )
-[<-recv] success
-[send->] (declare-fun v36 () Bool )
-[<-recv] success
-[send->] (declare-fun v37 () Bool )
-[<-recv] success
-[send->] (declare-fun v38 () Bool )
-[<-recv] success
-[send->] (declare-fun v39 () Bool )
-[<-recv] success
-[send->] (declare-fun v40 () Bool )
-[<-recv] success
-[send->] (declare-fun v41 () Int )
-[<-recv] success
-[send->] (declare-fun v42 () Int )
-[<-recv] success
-[send->] (declare-fun v43 () Bool )
-[<-recv] success
-[send->] (declare-fun v44 () Bool )
-[<-recv] success
-[send->] (declare-fun v45 () Bool )
-[<-recv] success
-[send->] (declare-fun v46 () Int )
-[<-recv] success
-[send->] (declare-fun v47 () Bool )
-[<-recv] success
-[send->] (declare-fun v48 () Int )
-[<-recv] success
-[send->] (declare-fun v49 () Bool )
-[<-recv] success
-[send->] (declare-fun v50 () Bool )
-[<-recv] success
-[send->] (declare-fun v51 () Bool )
-[<-recv] success
-[send->] (declare-fun v52 () Bool )
-[<-recv] success
-[send->] (declare-fun v53 () Int )
-[<-recv] success
-[send->] (declare-fun v54 () Int )
-[<-recv] success
-[send->] (declare-fun v55 () Bool )
-[<-recv] success
-[send->] (declare-fun v56 () Bool )
-[<-recv] success
-[send->] (declare-fun v57 () Bool )
-[<-recv] success
-[send->] (declare-fun v58 () Bool )
-[<-recv] success
-[send->] (declare-fun v59 () Bool )
-[<-recv] success
-[send->] (declare-fun v60 () Bytes )
-[<-recv] success
-[send->] (declare-fun v61 () Bytes )
-[<-recv] success
-[send->] (declare-fun v62 () Bool )
-[<-recv] success
-[send->] (declare-fun v63 () Int )
-[<-recv] success
-[send->] (declare-fun v64 () Bool )
-[<-recv] success
-[send->] (declare-fun v65 () Bytes )
-[<-recv] success
-[send->] (declare-fun v66 () Bytes )
-[<-recv] success
-[send->] (declare-fun v67 () Bytes )
-[<-recv] success
-[send->] (declare-fun v68 () Int )
-[<-recv] success
-[send->] (declare-fun v69 () Bool )
-[<-recv] success
-[send->] (declare-fun v70 () Bool )
-[<-recv] success
-[send->] (declare-fun v71 () Bool )
-[<-recv] success
-[send->] (declare-fun v72 () Bool )
-[<-recv] success
-[send->] (declare-fun v73 () Bool )
-[<-recv] success
-[send->] (declare-fun v74 () Bool )
-[<-recv] success
-[send->] (declare-fun v75 () Bool )
-[<-recv] success
-[send->] (declare-fun v76 () Bool )
-[<-recv] success
-[send->] (declare-fun v77 () Bool )
-[<-recv] success
-[send->] (declare-fun v78 () Bool )
-[<-recv] success
-[send->] (declare-fun v79 () Bool )
-[<-recv] success
-[send->] (declare-fun v80 () Int )
-[<-recv] success
-[send->] (declare-fun v81 () Int )
-[<-recv] success
-[send->] (declare-fun v82 () Int )
-[<-recv] success
-[send->] (declare-fun v83 () Int )
-[<-recv] success
-[send->] (declare-fun v84 () Int )
-[<-recv] success
-[send->] (declare-fun v85 () Int )
-[<-recv] success
-[send->] (declare-fun v86 () Bool )
-[<-recv] success
-[send->] (declare-fun v87 () Bool )
-[<-recv] success
-[send->] (declare-fun v88 () Bool )
-[<-recv] success
-[send->] (declare-fun v89 () Bool )
-[<-recv] success
-[send->] (declare-fun v90 () Bool )
-[<-recv] success
-[send->] (declare-fun v91 () Bool )
-[<-recv] success
-[send->] (declare-fun v92 () Bool )
-[<-recv] success
-[send->] (declare-fun v93 () Bool )
-[<-recv] success
-[send->] (declare-fun v94 () Bool )
-[<-recv] success
-[send->] (declare-fun v95 () Bool )
-[<-recv] success
-[send->] (declare-fun v96 () Bool )
-[<-recv] success
-[send->] (declare-fun v97 () Bool )
-[<-recv] success
-[send->] (declare-fun v98 () Bool )
-[<-recv] success
-[send->] (declare-fun v99 () Bool )
-[<-recv] success
-[send->] (declare-fun v100 () Bool )
-[<-recv] success
-[send->] (declare-fun v101 () Bool )
-[<-recv] success
-[send->] (declare-fun v102 () Bool )
-[<-recv] success
-[send->] (declare-fun v103 () Bool )
-[<-recv] success
-[send->] (declare-fun v104 () Bool )
-[<-recv] success
-[send->] (declare-fun v105 () Bool )
-[<-recv] success
-[send->] (declare-fun v106 () Bool )
-[<-recv] success
-[send->] (declare-fun v107 () Bool )
-[<-recv] success
-[send->] (declare-fun v108 () Bool )
-[<-recv] success
-[send->] (declare-fun v109 () Bool )
-[<-recv] success
-[send->] (declare-fun v110 () Bool )
-[<-recv] success
-[send->] (declare-fun v111 () Bool )
-[<-recv] success
-[send->] (declare-fun v112 () Bool )
-[<-recv] success
-[send->] (declare-fun v113 () Bool )
-[<-recv] success
-[send->] (declare-fun v114 () Bool )
-[<-recv] success
-[send->] (declare-fun v115 () Bool )
-[<-recv] success
-[send->] (declare-fun v116 () Int )
-[<-recv] success
-[send->] (declare-fun v117 () Bool )
-[<-recv] success
-[send->] (declare-fun v118 () Int )
-[<-recv] success
-[send->] (declare-fun v119 () Int )
-[<-recv] success
-[send->] (declare-fun v120 () Int )
-[<-recv] success
-[send->] (declare-fun v121 () Int )
-[<-recv] success
-[send->] (declare-fun v122 () Int )
-[<-recv] success
-[send->] (declare-fun v123 () Int )
-[<-recv] success
-[send->] (declare-fun v124 () Bool )
-[<-recv] success
-[send->] (declare-fun v125 () Bool )
-[<-recv] success
-[send->] (declare-fun v126 () Bool )
-[<-recv] success
-[send->] (declare-fun v127 () Bool )
-[<-recv] success
-[send->] (declare-fun v128 () Bool )
-[<-recv] success
-[send->] (declare-fun v129 () Bool )
-[<-recv] success
-[send->] (declare-fun v130 () Bool )
-[<-recv] success
-[send->] (declare-fun v131 () Bool )
-[<-recv] success
-[send->] (declare-fun v132 () Bytes )
-[<-recv] success
-[send->] (declare-fun v133 () Bytes )
-[<-recv] success
-[send->] (declare-fun v134 () Bytes )
-[<-recv] success
-[send->] (declare-fun v135 () Bytes )
-[<-recv] success
-[send->] (declare-fun v136 () Int )
-[<-recv] success
-[send->] (declare-fun v137 () Int )
-[<-recv] success
-[send->] (declare-fun v138 () Int )
-[<-recv] success
-[send->] (declare-fun v139 () Int )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (define-fun ctc_balance0 () Int 0 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v5 v1 ) )
-[<-recv] success
-[send->] (assert (= v6 v2 ) )
-[<-recv] success
-[send->] (assert (= v8 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance0 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value1 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= txn_value1 v8 ) )
-[<-recv] success
-[send->] (assert (= v9 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v10 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (assert (= v11 (= v9 v10 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v11 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v11 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v139 ctc_balance1 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance2 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value2 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= txn_value2 v5 ) )
-[<-recv] success
-[send->] (assert (= v13 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v14 (= v13 v5 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v14 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v14 )
-[<-recv] success
-[send->] (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v19 (ite v16 true v17 ) ) )
-[<-recv] success
-[send->] (assert (= v20 (ite v19 true v18 ) ) )
-[<-recv] success
-[send->] (assert v20 )
-[<-recv] success
-[send->] (assert (= v21 (ite v17 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v22 (ite v16 0 v21 ) ) )
-[<-recv] success
-[send->] (assert (= v23 (<= 0 v22 ) ) )
-[<-recv] success
-[send->] (assert (= v24 (< v22 3 ) ) )
-[<-recv] success
-[send->] (assert (= v25 (ite v23 v24 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v25 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v25 )
-[<-recv] success
-[send->] (assert (= v27 (uint256->bytes v26 ) ) )
-[<-recv] success
-[send->] (assert (= v28 (uint256->bytes v22 ) ) )
-[<-recv] success
-[send->] (assert (= v29 (msg-cat v27 v28 ) ) )
-[<-recv] success
-[send->] (assert (= v30 (digest v29 ) ) )
-[<-recv] success
-[send->] (assert (= v31 v30 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v138 ctc_balance2 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance3 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value3 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= txn_value3 0 ) )
-[<-recv] success
-[send->] (assert (= v33 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v34 (= v33 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v34 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v34 )
-[<-recv] success
-[send->] (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v39 (ite v36 true v37 ) ) )
-[<-recv] success
-[send->] (assert (= v40 (ite v39 true v38 ) ) )
-[<-recv] success
-[send->] (assert v40 )
-[<-recv] success
-[send->] (assert (= v41 (ite v37 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v42 (ite v36 0 v41 ) ) )
-[<-recv] success
-[send->] (assert (= v43 (<= 0 v42 ) ) )
-[<-recv] success
-[send->] (assert (= v44 (< v42 3 ) ) )
-[<-recv] success
-[send->] (assert (= v45 (ite v43 v44 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v45 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v45 )
-[<-recv] success
-[send->] (assert (= v46 v42 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v137 ctc_balance3 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance4 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value4 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= txn_value4 0 ) )
-[<-recv] success
-[send->] (assert (= v48 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v49 (= v48 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v49 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v49 )
-[<-recv] success
-[send->] (assert (= v50 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v51 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v52 (ite v50 v51 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v52 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v52 )
-[<-recv] success
-[send->] (assert (= v53 v26 ) )
-[<-recv] success
-[send->] (assert (= v54 v22 ) )
-[<-recv] success
-[send->] (assert (= v55 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v56 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v57 (ite v55 v56 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v57 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v57 )
-[<-recv] success
-[send->] (assert (= v58 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v59 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v136 ctc_balance4 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance5 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value5 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= txn_value5 0 ) )
-[<-recv] success
-[send->] (assert (= v63 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v64 (= v63 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v64 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v64 )
-[<-recv] success
-[send->] (assert (= v65 (uint256->bytes v53 ) ) )
-[<-recv] success
-[send->] (assert (= v66 (uint256->bytes v54 ) ) )
-[<-recv] success
-[send->] (assert (= v67 (msg-cat v65 v66 ) ) )
-[<-recv] success
-[send->] (assert (= v68 (digest v67 ) ) )
-[<-recv] success
-[send->] (assert (= v69 (= v31 v68 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v69 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v69 )
-[<-recv] success
-[send->] (assert (= v70 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v71 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v72 (ite v70 v71 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v72 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v72 )
-[<-recv] success
-[send->] (assert (= v73 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v74 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v75 (ite v73 v74 false ) ) )
-[<-recv] success
-[send->] (assert (= v76 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v77 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v78 (ite v76 v77 false ) ) )
-[<-recv] success
-[send->] (assert (= v79 (ite v75 v78 false ) ) )
-[<-recv] success
-[send->] (assert (= v80 (- 4 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v81 (+ v54 v80 ) ) )
-[<-recv] success
-[send->] (assert (= v82 (mod v81 3 ) ) )
-[<-recv] success
-[send->] (assert (= v83 (ite v78 0 1 ) ) )
-[<-recv] success
-[send->] (assert (= v84 (ite v75 2 v83 ) ) )
-[<-recv] success
-[send->] (assert (= v85 (ite v79 v82 v84 ) ) )
-[<-recv] success
-[send->] (assert (= v86 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v87 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v88 (ite v86 v87 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v88 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v88 )
-[<-recv] success
-[send->] (assert (= v89 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v90 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v91 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v92 (ite v90 v91 false ) ) )
-[<-recv] success
-[send->] (assert (= v93 (ite v89 false true ) ) )
-[<-recv] success
-[send->] (assert (= v94 (ite v93 true v92 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v94 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v94 )
-[<-recv] success
-[send->] (assert (= v95 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v96 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v97 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v98 (ite v96 v97 false ) ) )
-[<-recv] success
-[send->] (assert (= v99 (ite v95 false true ) ) )
-[<-recv] success
-[send->] (assert (= v100 (ite v99 true v98 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v100 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v100 )
-[<-recv] success
-[send->] (assert (= v101 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v102 (= v54 0 ) ) )
-[<-recv] success
-[send->] (assert (= v103 (ite v102 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v103 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v104 (= v54 1 ) ) )
-[<-recv] success
-[send->] (assert (= v105 (ite v104 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v105 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v106 (= v54 2 ) ) )
-[<-recv] success
-[send->] (assert (= v107 (ite v106 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v107 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v108 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v109 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v110 (ite v109 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v110 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v111 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v112 (ite v111 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v112 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v113 (= v46 2 ) ) )
-[<-recv] success
-[send->] (assert (= v114 (ite v113 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v114 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v115 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v116 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v117 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v118 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v119 (ite v117 0 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v120 (ite v117 v118 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v121 (ite v115 v116 v119 ) ) )
-[<-recv] success
-[send->] (assert (= v122 (ite v115 0 v120 ) ) )
-[<-recv] success
-[send->] (assert (= v123 (+ v6 v121 ) ) )
-[<-recv] success
-[send->] (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) )
-[<-recv] success
-[send->] (assert (= v125 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v126 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v127 (ite v125 v126 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v127 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v127 )
-[<-recv] success
-[send->] (assert (= v128 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v129 (= v85 1 ) ) )
-[<-recv] success
-[send->] (assert (= v130 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v131 (= v85 3 ) ) )
-[<-recv] success
-[send->] (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
-[<-recv] success
-[send->] (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) )
-[<-recv] success
-[send->] (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) )
-[<-recv] success
-[send->] (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance7 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (define-fun ctc_balance0 () Int 0 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v5 v1 ) )
-[<-recv] success
-[send->] (assert (= v6 v2 ) )
-[<-recv] success
-[send->] (assert (= v8 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance0 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value1 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= txn_value1 v8 ) )
-[<-recv] success
-[send->] (assert (= v9 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v10 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (assert (= v11 (= v9 v10 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v11 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v11 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v139 ctc_balance1 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance2 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value2 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= txn_value2 v5 ) )
-[<-recv] success
-[send->] (assert (= v13 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v14 (= v13 v5 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v14 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v14 )
-[<-recv] success
-[send->] (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v19 (ite v16 true v17 ) ) )
-[<-recv] success
-[send->] (assert (= v20 (ite v19 true v18 ) ) )
-[<-recv] success
-[send->] (assert v20 )
-[<-recv] success
-[send->] (assert (= v21 (ite v17 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v22 (ite v16 0 v21 ) ) )
-[<-recv] success
-[send->] (assert (= v23 (<= 0 v22 ) ) )
-[<-recv] success
-[send->] (assert (= v24 (< v22 3 ) ) )
-[<-recv] success
-[send->] (assert (= v25 (ite v23 v24 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v25 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v25 )
-[<-recv] success
-[send->] (assert (= v27 (uint256->bytes v26 ) ) )
-[<-recv] success
-[send->] (assert (= v28 (uint256->bytes v22 ) ) )
-[<-recv] success
-[send->] (assert (= v29 (msg-cat v27 v28 ) ) )
-[<-recv] success
-[send->] (assert (= v30 (digest v29 ) ) )
-[<-recv] success
-[send->] (assert (= v31 v30 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v138 ctc_balance2 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance3 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value3 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= txn_value3 0 ) )
-[<-recv] success
-[send->] (assert (= v33 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v34 (= v33 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v34 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v34 )
-[<-recv] success
-[send->] (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v39 (ite v36 true v37 ) ) )
-[<-recv] success
-[send->] (assert (= v40 (ite v39 true v38 ) ) )
-[<-recv] success
-[send->] (assert v40 )
-[<-recv] success
-[send->] (assert (= v41 (ite v37 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v42 (ite v36 0 v41 ) ) )
-[<-recv] success
-[send->] (assert (= v43 (<= 0 v42 ) ) )
-[<-recv] success
-[send->] (assert (= v44 (< v42 3 ) ) )
-[<-recv] success
-[send->] (assert (= v45 (ite v43 v44 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v45 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v45 )
-[<-recv] success
-[send->] (assert (= v46 v42 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v137 ctc_balance3 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance4 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value4 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= txn_value4 0 ) )
-[<-recv] success
-[send->] (assert (= v48 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v49 (= v48 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v49 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v49 )
-[<-recv] success
-[send->] (assert (= v50 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v51 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v52 (ite v50 v51 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v52 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v52 )
-[<-recv] success
-[send->] (assert (= v53 v26 ) )
-[<-recv] success
-[send->] (assert (= v54 v22 ) )
-[<-recv] success
-[send->] (assert (= v55 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v56 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v57 (ite v55 v56 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v57 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v57 )
-[<-recv] success
-[send->] (assert (= v58 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v59 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v136 ctc_balance4 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance5 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value5 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= txn_value5 0 ) )
-[<-recv] success
-[send->] (assert (= v63 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v64 (= v63 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v64 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v64 )
-[<-recv] success
-[send->] (assert (= v65 (uint256->bytes v53 ) ) )
-[<-recv] success
-[send->] (assert (= v66 (uint256->bytes v54 ) ) )
-[<-recv] success
-[send->] (assert (= v67 (msg-cat v65 v66 ) ) )
-[<-recv] success
-[send->] (assert (= v68 (digest v67 ) ) )
-[<-recv] success
-[send->] (assert (= v69 (= v31 v68 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v69 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v69 )
-[<-recv] success
-[send->] (assert (= v70 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v71 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v72 (ite v70 v71 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v72 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v72 )
-[<-recv] success
-[send->] (assert (= v73 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v74 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v75 (ite v73 v74 false ) ) )
-[<-recv] success
-[send->] (assert (= v76 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v77 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v78 (ite v76 v77 false ) ) )
-[<-recv] success
-[send->] (assert (= v79 (ite v75 v78 false ) ) )
-[<-recv] success
-[send->] (assert (= v80 (- 4 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v81 (+ v54 v80 ) ) )
-[<-recv] success
-[send->] (assert (= v82 (mod v81 3 ) ) )
-[<-recv] success
-[send->] (assert (= v83 (ite v78 0 1 ) ) )
-[<-recv] success
-[send->] (assert (= v84 (ite v75 2 v83 ) ) )
-[<-recv] success
-[send->] (assert (= v85 (ite v79 v82 v84 ) ) )
-[<-recv] success
-[send->] (assert (= v86 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v87 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v88 (ite v86 v87 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v88 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v88 )
-[<-recv] success
-[send->] (assert (= v89 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v90 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v91 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v92 (ite v90 v91 false ) ) )
-[<-recv] success
-[send->] (assert (= v93 (ite v89 false true ) ) )
-[<-recv] success
-[send->] (assert (= v94 (ite v93 true v92 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v94 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v94 )
-[<-recv] success
-[send->] (assert (= v95 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v96 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v97 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v98 (ite v96 v97 false ) ) )
-[<-recv] success
-[send->] (assert (= v99 (ite v95 false true ) ) )
-[<-recv] success
-[send->] (assert (= v100 (ite v99 true v98 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v100 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v100 )
-[<-recv] success
-[send->] (assert (= v101 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v102 (= v54 0 ) ) )
-[<-recv] success
-[send->] (assert (= v103 (ite v102 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v103 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v104 (= v54 1 ) ) )
-[<-recv] success
-[send->] (assert (= v105 (ite v104 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v105 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v106 (= v54 2 ) ) )
-[<-recv] success
-[send->] (assert (= v107 (ite v106 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v107 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v108 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v109 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v110 (ite v109 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v110 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v111 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v112 (ite v111 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v112 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v113 (= v46 2 ) ) )
-[<-recv] success
-[send->] (assert (= v114 (ite v113 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v114 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v115 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v116 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v117 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v118 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v119 (ite v117 0 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v120 (ite v117 v118 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v121 (ite v115 v116 v119 ) ) )
-[<-recv] success
-[send->] (assert (= v122 (ite v115 0 v120 ) ) )
-[<-recv] success
-[send->] (assert (= v123 (+ v6 v121 ) ) )
-[<-recv] success
-[send->] (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) )
-[<-recv] success
-[send->] (assert (= v125 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v126 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v127 (ite v125 v126 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v127 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v127 )
-[<-recv] success
-[send->] (assert (= v128 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v129 (= v85 1 ) ) )
-[<-recv] success
-[send->] (assert (= v130 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v131 (= v85 3 ) ) )
-[<-recv] success
-[send->] (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
-[<-recv] success
-[send->] (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) )
-[<-recv] success
-[send->] (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) )
-[<-recv] success
-[send->] (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance7 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (define-fun ctc_balance0 () Int 0 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v5 v1 ) )
-[<-recv] success
-[send->] (assert (= v6 v2 ) )
-[<-recv] success
-[send->] (assert (= v8 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance0 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value1 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= txn_value1 v8 ) )
-[<-recv] success
-[send->] (assert (= v9 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v10 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (assert (= v11 (= v9 v10 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v11 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v11 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v139 ctc_balance1 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance2 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value2 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= txn_value2 v5 ) )
-[<-recv] success
-[send->] (assert (= v13 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v14 (= v13 v5 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v14 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v14 )
-[<-recv] success
-[send->] (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v19 (ite v16 true v17 ) ) )
-[<-recv] success
-[send->] (assert (= v20 (ite v19 true v18 ) ) )
-[<-recv] success
-[send->] (assert v20 )
-[<-recv] success
-[send->] (assert (= v21 (ite v17 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v22 (ite v16 0 v21 ) ) )
-[<-recv] success
-[send->] (assert (= v23 (<= 0 v22 ) ) )
-[<-recv] success
-[send->] (assert (= v24 (< v22 3 ) ) )
-[<-recv] success
-[send->] (assert (= v25 (ite v23 v24 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v25 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v25 )
-[<-recv] success
-[send->] (assert (= v27 (uint256->bytes v26 ) ) )
-[<-recv] success
-[send->] (assert (= v28 (uint256->bytes v22 ) ) )
-[<-recv] success
-[send->] (assert (= v29 (msg-cat v27 v28 ) ) )
-[<-recv] success
-[send->] (assert (= v30 (digest v29 ) ) )
-[<-recv] success
-[send->] (assert (= v31 v30 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v138 ctc_balance2 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance3 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value3 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= txn_value3 0 ) )
-[<-recv] success
-[send->] (assert (= v33 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v34 (= v33 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v34 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v34 )
-[<-recv] success
-[send->] (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v39 (ite v36 true v37 ) ) )
-[<-recv] success
-[send->] (assert (= v40 (ite v39 true v38 ) ) )
-[<-recv] success
-[send->] (assert v40 )
-[<-recv] success
-[send->] (assert (= v41 (ite v37 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v42 (ite v36 0 v41 ) ) )
-[<-recv] success
-[send->] (assert (= v43 (<= 0 v42 ) ) )
-[<-recv] success
-[send->] (assert (= v44 (< v42 3 ) ) )
-[<-recv] success
-[send->] (assert (= v45 (ite v43 v44 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v45 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v45 )
-[<-recv] success
-[send->] (assert (= v46 v42 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v137 ctc_balance3 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance4 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value4 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= txn_value4 0 ) )
-[<-recv] success
-[send->] (assert (= v48 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v49 (= v48 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v49 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v49 )
-[<-recv] success
-[send->] (assert (= v50 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v51 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v52 (ite v50 v51 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v52 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v52 )
-[<-recv] success
-[send->] (assert (= v53 v26 ) )
-[<-recv] success
-[send->] (assert (= v54 v22 ) )
-[<-recv] success
-[send->] (assert (= v55 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v56 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v57 (ite v55 v56 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v57 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v57 )
-[<-recv] success
-[send->] (assert (= v58 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v59 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v136 ctc_balance4 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance5 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value5 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= txn_value5 0 ) )
-[<-recv] success
-[send->] (assert (= v63 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v64 (= v63 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v64 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v64 )
-[<-recv] success
-[send->] (assert (= v65 (uint256->bytes v53 ) ) )
-[<-recv] success
-[send->] (assert (= v66 (uint256->bytes v54 ) ) )
-[<-recv] success
-[send->] (assert (= v67 (msg-cat v65 v66 ) ) )
-[<-recv] success
-[send->] (assert (= v68 (digest v67 ) ) )
-[<-recv] success
-[send->] (assert (= v69 (= v31 v68 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v69 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v69 )
-[<-recv] success
-[send->] (assert (= v70 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v71 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v72 (ite v70 v71 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v72 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v72 )
-[<-recv] success
-[send->] (assert (= v73 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v74 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v75 (ite v73 v74 false ) ) )
-[<-recv] success
-[send->] (assert (= v76 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v77 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v78 (ite v76 v77 false ) ) )
-[<-recv] success
-[send->] (assert (= v79 (ite v75 v78 false ) ) )
-[<-recv] success
-[send->] (assert (= v80 (- 4 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v81 (+ v54 v80 ) ) )
-[<-recv] success
-[send->] (assert (= v82 (mod v81 3 ) ) )
-[<-recv] success
-[send->] (assert (= v83 (ite v78 0 1 ) ) )
-[<-recv] success
-[send->] (assert (= v84 (ite v75 2 v83 ) ) )
-[<-recv] success
-[send->] (assert (= v85 (ite v79 v82 v84 ) ) )
-[<-recv] success
-[send->] (assert (= v86 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v87 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v88 (ite v86 v87 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v88 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v88 )
-[<-recv] success
-[send->] (assert (= v89 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v90 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v91 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v92 (ite v90 v91 false ) ) )
-[<-recv] success
-[send->] (assert (= v93 (ite v89 false true ) ) )
-[<-recv] success
-[send->] (assert (= v94 (ite v93 true v92 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v94 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v94 )
-[<-recv] success
-[send->] (assert (= v95 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v96 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v97 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v98 (ite v96 v97 false ) ) )
-[<-recv] success
-[send->] (assert (= v99 (ite v95 false true ) ) )
-[<-recv] success
-[send->] (assert (= v100 (ite v99 true v98 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v100 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v100 )
-[<-recv] success
-[send->] (assert (= v101 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v102 (= v54 0 ) ) )
-[<-recv] success
-[send->] (assert (= v103 (ite v102 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v103 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v104 (= v54 1 ) ) )
-[<-recv] success
-[send->] (assert (= v105 (ite v104 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v105 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v106 (= v54 2 ) ) )
-[<-recv] success
-[send->] (assert (= v107 (ite v106 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v107 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v108 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v109 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v110 (ite v109 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v110 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v111 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v112 (ite v111 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v112 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v113 (= v46 2 ) ) )
-[<-recv] success
-[send->] (assert (= v114 (ite v113 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v114 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v115 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v116 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v117 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v118 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v119 (ite v117 0 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v120 (ite v117 v118 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v121 (ite v115 v116 v119 ) ) )
-[<-recv] success
-[send->] (assert (= v122 (ite v115 0 v120 ) ) )
-[<-recv] success
-[send->] (assert (= v123 (+ v6 v121 ) ) )
-[<-recv] success
-[send->] (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) )
-[<-recv] success
-[send->] (assert (= v125 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v126 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v127 (ite v125 v126 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v127 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v127 )
-[<-recv] success
-[send->] (assert (= v128 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v129 (= v85 1 ) ) )
-[<-recv] success
-[send->] (assert (= v130 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v131 (= v85 3 ) ) )
-[<-recv] success
-[send->] (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
-[<-recv] success
-[send->] (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) )
-[<-recv] success
-[send->] (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) )
-[<-recv] success
-[send->] (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance7 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (define-fun ctc_balance0 () Int 0 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v5 v1 ) )
-[<-recv] success
-[send->] (assert (= v6 v2 ) )
-[<-recv] success
-[send->] (assert (= v8 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance0 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value1 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= txn_value1 v8 ) )
-[<-recv] success
-[send->] (assert (= v9 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v10 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (assert (= v11 (= v9 v10 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v11 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v11 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v139 ctc_balance1 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance2 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value2 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= txn_value2 v5 ) )
-[<-recv] success
-[send->] (assert (= v13 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v14 (= v13 v5 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v14 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v14 )
-[<-recv] success
-[send->] (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v19 (ite v16 true v17 ) ) )
-[<-recv] success
-[send->] (assert (= v20 (ite v19 true v18 ) ) )
-[<-recv] success
-[send->] (assert v20 )
-[<-recv] success
-[send->] (assert (= v21 (ite v17 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v22 (ite v16 0 v21 ) ) )
-[<-recv] success
-[send->] (assert (= v23 (<= 0 v22 ) ) )
-[<-recv] success
-[send->] (assert (= v24 (< v22 3 ) ) )
-[<-recv] success
-[send->] (assert (= v25 (ite v23 v24 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v25 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v25 )
-[<-recv] success
-[send->] (assert (= v27 (uint256->bytes v26 ) ) )
-[<-recv] success
-[send->] (assert (= v28 (uint256->bytes v22 ) ) )
-[<-recv] success
-[send->] (assert (= v29 (msg-cat v27 v28 ) ) )
-[<-recv] success
-[send->] (assert (= v30 (digest v29 ) ) )
-[<-recv] success
-[send->] (assert (= v31 v30 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v138 ctc_balance2 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance3 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value3 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= txn_value3 0 ) )
-[<-recv] success
-[send->] (assert (= v33 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v34 (= v33 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v34 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v34 )
-[<-recv] success
-[send->] (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v39 (ite v36 true v37 ) ) )
-[<-recv] success
-[send->] (assert (= v40 (ite v39 true v38 ) ) )
-[<-recv] success
-[send->] (assert v40 )
-[<-recv] success
-[send->] (assert (= v41 (ite v37 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v42 (ite v36 0 v41 ) ) )
-[<-recv] success
-[send->] (assert (= v43 (<= 0 v42 ) ) )
-[<-recv] success
-[send->] (assert (= v44 (< v42 3 ) ) )
-[<-recv] success
-[send->] (assert (= v45 (ite v43 v44 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v45 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v45 )
-[<-recv] success
-[send->] (assert (= v46 v42 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v137 ctc_balance3 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance4 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value4 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= txn_value4 0 ) )
-[<-recv] success
-[send->] (assert (= v48 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v49 (= v48 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v49 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v49 )
-[<-recv] success
-[send->] (assert (= v50 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v51 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v52 (ite v50 v51 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v52 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v52 )
-[<-recv] success
-[send->] (assert (= v53 v26 ) )
-[<-recv] success
-[send->] (assert (= v54 v22 ) )
-[<-recv] success
-[send->] (assert (= v55 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v56 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v57 (ite v55 v56 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v57 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v57 )
-[<-recv] success
-[send->] (assert (= v58 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v59 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v136 ctc_balance4 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not true ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance5 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value5 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= txn_value5 0 ) )
-[<-recv] success
-[send->] (assert (= v63 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v64 (= v63 0 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v64 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v64 )
-[<-recv] success
-[send->] (assert (= v65 (uint256->bytes v53 ) ) )
-[<-recv] success
-[send->] (assert (= v66 (uint256->bytes v54 ) ) )
-[<-recv] success
-[send->] (assert (= v67 (msg-cat v65 v66 ) ) )
-[<-recv] success
-[send->] (assert (= v68 (digest v67 ) ) )
-[<-recv] success
-[send->] (assert (= v69 (= v31 v68 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v69 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v69 )
-[<-recv] success
-[send->] (assert (= v70 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v71 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v72 (ite v70 v71 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v72 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v72 )
-[<-recv] success
-[send->] (assert (= v73 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v74 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v75 (ite v73 v74 false ) ) )
-[<-recv] success
-[send->] (assert (= v76 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v77 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v78 (ite v76 v77 false ) ) )
-[<-recv] success
-[send->] (assert (= v79 (ite v75 v78 false ) ) )
-[<-recv] success
-[send->] (assert (= v80 (- 4 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v81 (+ v54 v80 ) ) )
-[<-recv] success
-[send->] (assert (= v82 (mod v81 3 ) ) )
-[<-recv] success
-[send->] (assert (= v83 (ite v78 0 1 ) ) )
-[<-recv] success
-[send->] (assert (= v84 (ite v75 2 v83 ) ) )
-[<-recv] success
-[send->] (assert (= v85 (ite v79 v82 v84 ) ) )
-[<-recv] success
-[send->] (assert (= v86 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v87 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v88 (ite v86 v87 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v88 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v88 )
-[<-recv] success
-[send->] (assert (= v89 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v90 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v91 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v92 (ite v90 v91 false ) ) )
-[<-recv] success
-[send->] (assert (= v93 (ite v89 false true ) ) )
-[<-recv] success
-[send->] (assert (= v94 (ite v93 true v92 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v94 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v94 )
-[<-recv] success
-[send->] (assert (= v95 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v96 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v97 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v98 (ite v96 v97 false ) ) )
-[<-recv] success
-[send->] (assert (= v99 (ite v95 false true ) ) )
-[<-recv] success
-[send->] (assert (= v100 (ite v99 true v98 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v100 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v100 )
-[<-recv] success
-[send->] (assert (= v101 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v102 (= v54 0 ) ) )
-[<-recv] success
-[send->] (assert (= v103 (ite v102 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v103 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v104 (= v54 1 ) ) )
-[<-recv] success
-[send->] (assert (= v105 (ite v104 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v105 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v106 (= v54 2 ) ) )
-[<-recv] success
-[send->] (assert (= v107 (ite v106 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v107 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v108 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v109 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v110 (ite v109 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v110 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v111 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v112 (ite v111 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v112 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v113 (= v46 2 ) ) )
-[<-recv] success
-[send->] (assert (= v114 (ite v113 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v114 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v115 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v116 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v117 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v118 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v119 (ite v117 0 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v120 (ite v117 v118 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v121 (ite v115 v116 v119 ) ) )
-[<-recv] success
-[send->] (assert (= v122 (ite v115 0 v120 ) ) )
-[<-recv] success
-[send->] (assert (= v123 (+ v6 v121 ) ) )
-[<-recv] success
-[send->] (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) )
-[<-recv] success
-[send->] (assert (= v125 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v126 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v127 (ite v125 v126 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v127 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v127 )
-[<-recv] success
-[send->] (assert (= v128 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v129 (= v85 1 ) ) )
-[<-recv] success
-[send->] (assert (= v130 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v131 (= v85 3 ) ) )
-[<-recv] success
-[send->] (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
-[<-recv] success
-[send->] (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) )
-[<-recv] success
-[send->] (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) )
-[<-recv] success
-[send->] (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance7 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (define-fun ctc_balance0 () Int 0 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance0 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value1 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v9 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v10 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (assert (= v11 (= v9 v10 ) ) )
-[<-recv] success
-[send->] (assert v11 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v139 ctc_balance1 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance2 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value2 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v13 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v14 (= v13 v5 ) ) )
-[<-recv] success
-[send->] (assert v14 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v138 ctc_balance2 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance3 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value3 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v33 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v34 (= v33 0 ) ) )
-[<-recv] success
-[send->] (assert v34 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v137 ctc_balance3 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance4 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value4 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v48 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v49 (= v48 0 ) ) )
-[<-recv] success
-[send->] (assert v49 )
-[<-recv] success
-[send->] (assert (= v50 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v51 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v52 (ite v50 v51 false ) ) )
-[<-recv] success
-[send->] (assert v52 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v136 ctc_balance4 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance5 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value5 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v63 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v64 (= v63 0 ) ) )
-[<-recv] success
-[send->] (assert v64 )
-[<-recv] success
-[send->] (assert (= v65 (uint256->bytes v53 ) ) )
-[<-recv] success
-[send->] (assert (= v66 (uint256->bytes v54 ) ) )
-[<-recv] success
-[send->] (assert (= v67 (msg-cat v65 v66 ) ) )
-[<-recv] success
-[send->] (assert (= v68 (digest v67 ) ) )
-[<-recv] success
-[send->] (assert (= v69 (= v31 v68 ) ) )
-[<-recv] success
-[send->] (assert v69 )
-[<-recv] success
-[send->] (assert (= v70 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v71 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v72 (ite v70 v71 false ) ) )
-[<-recv] success
-[send->] (assert v72 )
-[<-recv] success
-[send->] (assert (= v73 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v74 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v75 (ite v73 v74 false ) ) )
-[<-recv] success
-[send->] (assert (= v76 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v77 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v78 (ite v76 v77 false ) ) )
-[<-recv] success
-[send->] (assert (= v79 (ite v75 v78 false ) ) )
-[<-recv] success
-[send->] (assert (= v80 (- 4 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v81 (+ v54 v80 ) ) )
-[<-recv] success
-[send->] (assert (= v82 (mod v81 3 ) ) )
-[<-recv] success
-[send->] (assert (= v83 (ite v78 0 1 ) ) )
-[<-recv] success
-[send->] (assert (= v84 (ite v75 2 v83 ) ) )
-[<-recv] success
-[send->] (assert (= v85 (ite v79 v82 v84 ) ) )
-[<-recv] success
-[send->] (assert (= v86 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v87 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v88 (ite v86 v87 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v88 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v88 )
-[<-recv] success
-[send->] (assert (= v89 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v90 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v91 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v92 (ite v90 v91 false ) ) )
-[<-recv] success
-[send->] (assert (= v93 (ite v89 false true ) ) )
-[<-recv] success
-[send->] (assert (= v94 (ite v93 true v92 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v94 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v94 )
-[<-recv] success
-[send->] (assert (= v95 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v96 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v97 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v98 (ite v96 v97 false ) ) )
-[<-recv] success
-[send->] (assert (= v99 (ite v95 false true ) ) )
-[<-recv] success
-[send->] (assert (= v100 (ite v99 true v98 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v100 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v100 )
-[<-recv] success
-[send->] (assert (= v101 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v102 (= v54 0 ) ) )
-[<-recv] success
-[send->] (assert (= v103 (ite v102 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v103 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v104 (= v54 1 ) ) )
-[<-recv] success
-[send->] (assert (= v105 (ite v104 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v105 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v106 (= v54 2 ) ) )
-[<-recv] success
-[send->] (assert (= v107 (ite v106 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v107 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v108 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v109 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v110 (ite v109 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v110 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v111 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v112 (ite v111 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v112 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v113 (= v46 2 ) ) )
-[<-recv] success
-[send->] (assert (= v114 (ite v113 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v114 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v115 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v116 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v117 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v118 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v119 (ite v117 0 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v120 (ite v117 v118 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v121 (ite v115 v116 v119 ) ) )
-[<-recv] success
-[send->] (assert (= v122 (ite v115 0 v120 ) ) )
-[<-recv] success
-[send->] (assert (= v123 (+ v6 v121 ) ) )
-[<-recv] success
-[send->] (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) )
-[<-recv] success
-[send->] (assert (= v125 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v126 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v127 (ite v125 v126 false ) ) )
-[<-recv] success
-[send->] (assert v127 )
-[<-recv] success
-[send->] (assert (= v128 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v129 (= v85 1 ) ) )
-[<-recv] success
-[send->] (assert (= v130 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v131 (= v85 3 ) ) )
-[<-recv] success
-[send->] (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
-[<-recv] success
-[send->] (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) )
-[<-recv] success
-[send->] (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) )
-[<-recv] success
-[send->] (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance7 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (define-fun ctc_balance0 () Int 0 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v5 v1 ) )
-[<-recv] success
-[send->] (assert (= v6 v2 ) )
-[<-recv] success
-[send->] (assert (= v8 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance0 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value1 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v9 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v10 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (assert (= v11 (= v9 v10 ) ) )
-[<-recv] success
-[send->] (assert v11 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v139 ctc_balance1 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance2 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value2 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v13 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v14 (= v13 v5 ) ) )
-[<-recv] success
-[send->] (assert v14 )
-[<-recv] success
-[send->] (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v19 (ite v16 true v17 ) ) )
-[<-recv] success
-[send->] (assert (= v20 (ite v19 true v18 ) ) )
-[<-recv] success
-[send->] (assert v20 )
-[<-recv] success
-[send->] (assert (= v21 (ite v17 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v22 (ite v16 0 v21 ) ) )
-[<-recv] success
-[send->] (assert (= v23 (<= 0 v22 ) ) )
-[<-recv] success
-[send->] (assert (= v24 (< v22 3 ) ) )
-[<-recv] success
-[send->] (assert (= v25 (ite v23 v24 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v25 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v25 )
-[<-recv] success
-[send->] (assert (= v27 (uint256->bytes v26 ) ) )
-[<-recv] success
-[send->] (assert (= v28 (uint256->bytes v22 ) ) )
-[<-recv] success
-[send->] (assert (= v29 (msg-cat v27 v28 ) ) )
-[<-recv] success
-[send->] (assert (= v30 (digest v29 ) ) )
-[<-recv] success
-[send->] (assert (= v31 v30 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v138 ctc_balance2 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance3 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value3 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v33 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v34 (= v33 0 ) ) )
-[<-recv] success
-[send->] (assert v34 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v137 ctc_balance3 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance4 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value4 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v48 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v49 (= v48 0 ) ) )
-[<-recv] success
-[send->] (assert v49 )
-[<-recv] success
-[send->] (assert (= v50 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v51 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v52 (ite v50 v51 false ) ) )
-[<-recv] success
-[send->] (assert v52 )
-[<-recv] success
-[send->] (assert (= v53 v26 ) )
-[<-recv] success
-[send->] (assert (= v54 v22 ) )
-[<-recv] success
-[send->] (assert (= v55 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v56 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v57 (ite v55 v56 false ) ) )
-[<-recv] success
-[send->] (assert v57 )
-[<-recv] success
-[send->] (assert (= v58 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v59 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v136 ctc_balance4 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance5 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value5 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v63 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v64 (= v63 0 ) ) )
-[<-recv] success
-[send->] (assert v64 )
-[<-recv] success
-[send->] (assert (= v65 (uint256->bytes v53 ) ) )
-[<-recv] success
-[send->] (assert (= v66 (uint256->bytes v54 ) ) )
-[<-recv] success
-[send->] (assert (= v67 (msg-cat v65 v66 ) ) )
-[<-recv] success
-[send->] (assert (= v68 (digest v67 ) ) )
-[<-recv] success
-[send->] (assert (= v69 (= v31 v68 ) ) )
-[<-recv] success
-[send->] (assert v69 )
-[<-recv] success
-[send->] (assert (= v70 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v71 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v72 (ite v70 v71 false ) ) )
-[<-recv] success
-[send->] (assert v72 )
-[<-recv] success
-[send->] (assert (= v73 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v74 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v75 (ite v73 v74 false ) ) )
-[<-recv] success
-[send->] (assert (= v76 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v77 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v78 (ite v76 v77 false ) ) )
-[<-recv] success
-[send->] (assert (= v79 (ite v75 v78 false ) ) )
-[<-recv] success
-[send->] (assert (= v80 (- 4 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v81 (+ v54 v80 ) ) )
-[<-recv] success
-[send->] (assert (= v82 (mod v81 3 ) ) )
-[<-recv] success
-[send->] (assert (= v83 (ite v78 0 1 ) ) )
-[<-recv] success
-[send->] (assert (= v84 (ite v75 2 v83 ) ) )
-[<-recv] success
-[send->] (assert (= v85 (ite v79 v82 v84 ) ) )
-[<-recv] success
-[send->] (assert (= v86 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v87 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v88 (ite v86 v87 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v88 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v88 )
-[<-recv] success
-[send->] (assert (= v89 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v90 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v91 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v92 (ite v90 v91 false ) ) )
-[<-recv] success
-[send->] (assert (= v93 (ite v89 false true ) ) )
-[<-recv] success
-[send->] (assert (= v94 (ite v93 true v92 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v94 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v94 )
-[<-recv] success
-[send->] (assert (= v95 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v96 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v97 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v98 (ite v96 v97 false ) ) )
-[<-recv] success
-[send->] (assert (= v99 (ite v95 false true ) ) )
-[<-recv] success
-[send->] (assert (= v100 (ite v99 true v98 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v100 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v100 )
-[<-recv] success
-[send->] (assert (= v101 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v102 (= v54 0 ) ) )
-[<-recv] success
-[send->] (assert (= v103 (ite v102 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v103 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v104 (= v54 1 ) ) )
-[<-recv] success
-[send->] (assert (= v105 (ite v104 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v105 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v106 (= v54 2 ) ) )
-[<-recv] success
-[send->] (assert (= v107 (ite v106 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v107 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v108 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v109 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v110 (ite v109 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v110 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v111 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v112 (ite v111 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v112 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v113 (= v46 2 ) ) )
-[<-recv] success
-[send->] (assert (= v114 (ite v113 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v114 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v115 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v116 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v117 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v118 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v119 (ite v117 0 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v120 (ite v117 v118 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v121 (ite v115 v116 v119 ) ) )
-[<-recv] success
-[send->] (assert (= v122 (ite v115 0 v120 ) ) )
-[<-recv] success
-[send->] (assert (= v123 (+ v6 v121 ) ) )
-[<-recv] success
-[send->] (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) )
-[<-recv] success
-[send->] (assert (= v125 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v126 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v127 (ite v125 v126 false ) ) )
-[<-recv] success
-[send->] (assert v127 )
-[<-recv] success
-[send->] (assert (= v128 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v129 (= v85 1 ) ) )
-[<-recv] success
-[send->] (assert (= v130 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v131 (= v85 3 ) ) )
-[<-recv] success
-[send->] (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
-[<-recv] success
-[send->] (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) )
-[<-recv] success
-[send->] (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) )
-[<-recv] success
-[send->] (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance7 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (define-fun ctc_balance0 () Int 0 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance0 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value1 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v9 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v10 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (assert (= v11 (= v9 v10 ) ) )
-[<-recv] success
-[send->] (assert v11 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v139 ctc_balance1 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance2 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value2 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v13 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v14 (= v13 v5 ) ) )
-[<-recv] success
-[send->] (assert v14 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v138 ctc_balance2 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance3 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value3 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v33 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v34 (= v33 0 ) ) )
-[<-recv] success
-[send->] (assert v34 )
-[<-recv] success
-[send->] (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) )
-[<-recv] success
-[send->] (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) )
-[<-recv] success
-[send->] (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) )
-[<-recv] success
-[send->] (assert (= v39 (ite v36 true v37 ) ) )
-[<-recv] success
-[send->] (assert (= v40 (ite v39 true v38 ) ) )
-[<-recv] success
-[send->] (assert v40 )
-[<-recv] success
-[send->] (assert (= v41 (ite v37 1 2 ) ) )
-[<-recv] success
-[send->] (assert (= v42 (ite v36 0 v41 ) ) )
-[<-recv] success
-[send->] (assert (= v43 (<= 0 v42 ) ) )
-[<-recv] success
-[send->] (assert (= v44 (< v42 3 ) ) )
-[<-recv] success
-[send->] (assert (= v45 (ite v43 v44 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v45 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v45 )
-[<-recv] success
-[send->] (assert (= v46 v42 ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v137 ctc_balance3 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance4 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value4 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v48 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v49 (= v48 0 ) ) )
-[<-recv] success
-[send->] (assert v49 )
-[<-recv] success
-[send->] (assert (= v50 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v51 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v52 (ite v50 v51 false ) ) )
-[<-recv] success
-[send->] (assert v52 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v136 ctc_balance4 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance5 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value5 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v63 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v64 (= v63 0 ) ) )
-[<-recv] success
-[send->] (assert v64 )
-[<-recv] success
-[send->] (assert (= v65 (uint256->bytes v53 ) ) )
-[<-recv] success
-[send->] (assert (= v66 (uint256->bytes v54 ) ) )
-[<-recv] success
-[send->] (assert (= v67 (msg-cat v65 v66 ) ) )
-[<-recv] success
-[send->] (assert (= v68 (digest v67 ) ) )
-[<-recv] success
-[send->] (assert (= v69 (= v31 v68 ) ) )
-[<-recv] success
-[send->] (assert v69 )
-[<-recv] success
-[send->] (assert (= v70 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v71 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v72 (ite v70 v71 false ) ) )
-[<-recv] success
-[send->] (assert v72 )
-[<-recv] success
-[send->] (assert (= v73 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v74 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v75 (ite v73 v74 false ) ) )
-[<-recv] success
-[send->] (assert (= v76 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v77 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v78 (ite v76 v77 false ) ) )
-[<-recv] success
-[send->] (assert (= v79 (ite v75 v78 false ) ) )
-[<-recv] success
-[send->] (assert (= v80 (- 4 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v81 (+ v54 v80 ) ) )
-[<-recv] success
-[send->] (assert (= v82 (mod v81 3 ) ) )
-[<-recv] success
-[send->] (assert (= v83 (ite v78 0 1 ) ) )
-[<-recv] success
-[send->] (assert (= v84 (ite v75 2 v83 ) ) )
-[<-recv] success
-[send->] (assert (= v85 (ite v79 v82 v84 ) ) )
-[<-recv] success
-[send->] (assert (= v86 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v87 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v88 (ite v86 v87 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v88 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v88 )
-[<-recv] success
-[send->] (assert (= v89 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v90 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v91 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v92 (ite v90 v91 false ) ) )
-[<-recv] success
-[send->] (assert (= v93 (ite v89 false true ) ) )
-[<-recv] success
-[send->] (assert (= v94 (ite v93 true v92 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v94 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v94 )
-[<-recv] success
-[send->] (assert (= v95 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v96 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v97 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v98 (ite v96 v97 false ) ) )
-[<-recv] success
-[send->] (assert (= v99 (ite v95 false true ) ) )
-[<-recv] success
-[send->] (assert (= v100 (ite v99 true v98 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v100 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v100 )
-[<-recv] success
-[send->] (assert (= v101 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v102 (= v54 0 ) ) )
-[<-recv] success
-[send->] (assert (= v103 (ite v102 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v103 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v104 (= v54 1 ) ) )
-[<-recv] success
-[send->] (assert (= v105 (ite v104 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v105 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v106 (= v54 2 ) ) )
-[<-recv] success
-[send->] (assert (= v107 (ite v106 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v107 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v108 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v109 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v110 (ite v109 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v110 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v111 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v112 (ite v111 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v112 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v113 (= v46 2 ) ) )
-[<-recv] success
-[send->] (assert (= v114 (ite v113 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v114 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v115 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v116 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v117 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v118 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v119 (ite v117 0 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v120 (ite v117 v118 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v121 (ite v115 v116 v119 ) ) )
-[<-recv] success
-[send->] (assert (= v122 (ite v115 0 v120 ) ) )
-[<-recv] success
-[send->] (assert (= v123 (+ v6 v121 ) ) )
-[<-recv] success
-[send->] (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) )
-[<-recv] success
-[send->] (assert (= v125 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v126 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v127 (ite v125 v126 false ) ) )
-[<-recv] success
-[send->] (assert v127 )
-[<-recv] success
-[send->] (assert (= v128 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v129 (= v85 1 ) ) )
-[<-recv] success
-[send->] (assert (= v130 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v131 (= v85 3 ) ) )
-[<-recv] success
-[send->] (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
-[<-recv] success
-[send->] (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) )
-[<-recv] success
-[send->] (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) )
-[<-recv] success
-[send->] (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance7 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (define-fun ctc_balance0 () Int 0 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance0 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value1 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v9 txn_value1 ) )
-[<-recv] success
-[send->] (assert (= v10 (+ v5 v6 ) ) )
-[<-recv] success
-[send->] (assert (= v11 (= v9 v10 ) ) )
-[<-recv] success
-[send->] (assert v11 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v139 ctc_balance1 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance2 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value2 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v13 txn_value2 ) )
-[<-recv] success
-[send->] (assert (= v14 (= v13 v5 ) ) )
-[<-recv] success
-[send->] (assert v14 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v138 ctc_balance2 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance3 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value3 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v33 txn_value3 ) )
-[<-recv] success
-[send->] (assert (= v34 (= v33 0 ) ) )
-[<-recv] success
-[send->] (assert v34 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v137 ctc_balance3 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance4 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value4 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v48 txn_value4 ) )
-[<-recv] success
-[send->] (assert (= v49 (= v48 0 ) ) )
-[<-recv] success
-[send->] (assert v49 )
-[<-recv] success
-[send->] (assert (= v50 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v51 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v52 (ite v50 v51 false ) ) )
-[<-recv] success
-[send->] (assert v52 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (= v136 ctc_balance4 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) )
-[<-recv] success
-[send->] (assert true )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance5 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (declare-fun txn_value5 () Int )
-[<-recv] success
-[send->] (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) )
-[<-recv] success
-[send->] (assert (<= 0 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v63 txn_value5 ) )
-[<-recv] success
-[send->] (assert (= v64 (= v63 0 ) ) )
-[<-recv] success
-[send->] (assert v64 )
-[<-recv] success
-[send->] (assert (= v65 (uint256->bytes v53 ) ) )
-[<-recv] success
-[send->] (assert (= v66 (uint256->bytes v54 ) ) )
-[<-recv] success
-[send->] (assert (= v67 (msg-cat v65 v66 ) ) )
-[<-recv] success
-[send->] (assert (= v68 (digest v67 ) ) )
-[<-recv] success
-[send->] (assert (= v69 (= v31 v68 ) ) )
-[<-recv] success
-[send->] (assert v69 )
-[<-recv] success
-[send->] (assert (= v70 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v71 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v72 (ite v70 v71 false ) ) )
-[<-recv] success
-[send->] (assert v72 )
-[<-recv] success
-[send->] (assert (= v73 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v74 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v75 (ite v73 v74 false ) ) )
-[<-recv] success
-[send->] (assert (= v76 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v77 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v78 (ite v76 v77 false ) ) )
-[<-recv] success
-[send->] (assert (= v79 (ite v75 v78 false ) ) )
-[<-recv] success
-[send->] (assert (= v80 (- 4 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v81 (+ v54 v80 ) ) )
-[<-recv] success
-[send->] (assert (= v82 (mod v81 3 ) ) )
-[<-recv] success
-[send->] (assert (= v83 (ite v78 0 1 ) ) )
-[<-recv] success
-[send->] (assert (= v84 (ite v75 2 v83 ) ) )
-[<-recv] success
-[send->] (assert (= v85 (ite v79 v82 v84 ) ) )
-[<-recv] success
-[send->] (assert (= v86 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v87 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v88 (ite v86 v87 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v88 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v88 )
-[<-recv] success
-[send->] (assert (= v89 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v90 (<= 0 v54 ) ) )
-[<-recv] success
-[send->] (assert (= v91 (< v54 3 ) ) )
-[<-recv] success
-[send->] (assert (= v92 (ite v90 v91 false ) ) )
-[<-recv] success
-[send->] (assert (= v93 (ite v89 false true ) ) )
-[<-recv] success
-[send->] (assert (= v94 (ite v93 true v92 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v94 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v94 )
-[<-recv] success
-[send->] (assert (= v95 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v96 (<= 0 v46 ) ) )
-[<-recv] success
-[send->] (assert (= v97 (< v46 3 ) ) )
-[<-recv] success
-[send->] (assert (= v98 (ite v96 v97 false ) ) )
-[<-recv] success
-[send->] (assert (= v99 (ite v95 false true ) ) )
-[<-recv] success
-[send->] (assert (= v100 (ite v99 true v98 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not v100 ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert v100 )
-[<-recv] success
-[send->] (assert (= v101 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v102 (= v54 0 ) ) )
-[<-recv] success
-[send->] (assert (= v103 (ite v102 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v103 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v104 (= v54 1 ) ) )
-[<-recv] success
-[send->] (assert (= v105 (ite v104 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v105 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v106 (= v54 2 ) ) )
-[<-recv] success
-[send->] (assert (= v107 (ite v106 v101 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v107 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v108 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v109 (= v46 0 ) ) )
-[<-recv] success
-[send->] (assert (= v110 (ite v109 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v110 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v111 (= v46 1 ) ) )
-[<-recv] success
-[send->] (assert (= v112 (ite v111 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v112 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v113 (= v46 2 ) ) )
-[<-recv] success
-[send->] (assert (= v114 (ite v113 v108 false ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert v114 )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] sat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (assert (= v115 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v116 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v117 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v118 (* 2 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v119 (ite v117 0 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v120 (ite v117 v118 v5 ) ) )
-[<-recv] success
-[send->] (assert (= v121 (ite v115 v116 v119 ) ) )
-[<-recv] success
-[send->] (assert (= v122 (ite v115 0 v120 ) ) )
-[<-recv] success
-[send->] (assert (= v123 (+ v6 v121 ) ) )
-[<-recv] success
-[send->] (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) )
-[<-recv] success
-[send->] (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) )
-[<-recv] success
-[send->] (assert (= v125 (<= 0 v85 ) ) )
-[<-recv] success
-[send->] (assert (= v126 (< v85 5 ) ) )
-[<-recv] success
-[send->] (assert (= v127 (ite v125 v126 false ) ) )
-[<-recv] success
-[send->] (assert v127 )
-[<-recv] success
-[send->] (assert (= v128 (= v85 0 ) ) )
-[<-recv] success
-[send->] (assert (= v129 (= v85 1 ) ) )
-[<-recv] success
-[send->] (assert (= v130 (= v85 2 ) ) )
-[<-recv] success
-[send->] (assert (= v131 (= v85 3 ) ) )
-[<-recv] success
-[send->] (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) )
-[<-recv] success
-[send->] (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) )
-[<-recv] success
-[send->] (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) )
-[<-recv] success
-[send->] (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) )
-[<-recv] success
-[send->] (push 1 )
-[<-recv] success
-[send->] (assert (not (= ctc_balance7 0 ) ) )
-[<-recv] success
-[send->] (check-sat )
-[<-recv] unsat
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (pop 1 )
-[<-recv] success
-[send->] (exit )
+(+ (set-option :print-success true ))
+(+ (set-option :produce-models true ))
+(+ (set-option :produce-unsat-cores true ))
+(+ (declare-sort Address 0 ))
+(+ (declare-datatypes () ((Bytes (bytes-literal (digest Int ) ) (uint256->bytes (bytes-integer Int ) ) (msg-cat (msg-left Bytes ) (msg-right Bytes ) ) ) ) ))
+(+ (declare-fun digest (Bytes ) Int ))
+(+ (define-fun-rec bytes-length ((bs Bytes ) ) Int (match bs (((uint256->bytes _ ) 32 ) ((bytes-literal _ ) 32 ) ((msg-cat l r ) (+ 32 (bytes-length l ) (bytes-length r ) ) ) ) ) ))
+(+ (declare-fun v1 () Int ))
+(+ (assert (<= 0 v1 ) ))
+(+ (declare-fun v2 () Int ))
+(+ (assert (<= 0 v2 ) ))
+(+ (declare-fun v5 () Int ))
+(+ (assert (<= 0 v5 ) ))
+(+ (declare-fun v6 () Int ))
+(+ (assert (<= 0 v6 ) ))
+(+ (declare-fun v7 () Bool ))
+(+ (declare-fun v8 () Int ))
+(+ (assert (<= 0 v8 ) ))
+(+ (declare-fun v9 () Int ))
+(+ (assert (<= 0 v9 ) ))
+(+ (declare-fun v10 () Int ))
+(+ (assert (<= 0 v10 ) ))
+(+ (declare-fun v11 () Bool ))
+(+ (declare-fun v12 () Bool ))
+(+ (declare-fun v13 () Int ))
+(+ (assert (<= 0 v13 ) ))
+(+ (declare-fun v14 () Bool ))
+(+ (declare-fun v15 () Bytes ))
+(+ (declare-fun v16 () Bool ))
+(+ (declare-fun v17 () Bool ))
+(+ (declare-fun v18 () Bool ))
+(+ (declare-fun v19 () Bool ))
+(+ (declare-fun v20 () Bool ))
+(+ (declare-fun v21 () Int ))
+(+ (assert (<= 0 v21 ) ))
+(+ (declare-fun v22 () Int ))
+(+ (assert (<= 0 v22 ) ))
+(+ (declare-fun v23 () Bool ))
+(+ (declare-fun v24 () Bool ))
+(+ (declare-fun v25 () Bool ))
+(+ (declare-fun v26 () Int ))
+(+ (assert (<= 0 v26 ) ))
+(+ (declare-fun v27 () Bytes ))
+(+ (declare-fun v28 () Bytes ))
+(+ (declare-fun v29 () Bytes ))
+(+ (declare-fun v30 () Int ))
+(+ (assert (<= 0 v30 ) ))
+(+ (declare-fun v31 () Int ))
+(+ (assert (<= 0 v31 ) ))
+(+ (declare-fun v32 () Bool ))
+(+ (declare-fun v33 () Int ))
+(+ (assert (<= 0 v33 ) ))
+(+ (declare-fun v34 () Bool ))
+(+ (declare-fun v35 () Bytes ))
+(+ (declare-fun v36 () Bool ))
+(+ (declare-fun v37 () Bool ))
+(+ (declare-fun v38 () Bool ))
+(+ (declare-fun v39 () Bool ))
+(+ (declare-fun v40 () Bool ))
+(+ (declare-fun v41 () Int ))
+(+ (assert (<= 0 v41 ) ))
+(+ (declare-fun v42 () Int ))
+(+ (assert (<= 0 v42 ) ))
+(+ (declare-fun v43 () Bool ))
+(+ (declare-fun v44 () Bool ))
+(+ (declare-fun v45 () Bool ))
+(+ (declare-fun v46 () Int ))
+(+ (assert (<= 0 v46 ) ))
+(+ (declare-fun v47 () Bool ))
+(+ (declare-fun v48 () Int ))
+(+ (assert (<= 0 v48 ) ))
+(+ (declare-fun v49 () Bool ))
+(+ (declare-fun v50 () Bool ))
+(+ (declare-fun v51 () Bool ))
+(+ (declare-fun v52 () Bool ))
+(+ (declare-fun v53 () Int ))
+(+ (assert (<= 0 v53 ) ))
+(+ (declare-fun v54 () Int ))
+(+ (assert (<= 0 v54 ) ))
+(+ (declare-fun v55 () Bool ))
+(+ (declare-fun v56 () Bool ))
+(+ (declare-fun v57 () Bool ))
+(+ (declare-fun v58 () Bool ))
+(+ (declare-fun v59 () Bool ))
+(+ (declare-fun v60 () Bytes ))
+(+ (declare-fun v61 () Bytes ))
+(+ (declare-fun v62 () Bool ))
+(+ (declare-fun v63 () Int ))
+(+ (assert (<= 0 v63 ) ))
+(+ (declare-fun v64 () Bool ))
+(+ (declare-fun v65 () Bytes ))
+(+ (declare-fun v66 () Bytes ))
+(+ (declare-fun v67 () Bytes ))
+(+ (declare-fun v68 () Int ))
+(+ (assert (<= 0 v68 ) ))
+(+ (declare-fun v69 () Bool ))
+(+ (declare-fun v70 () Bool ))
+(+ (declare-fun v71 () Bool ))
+(+ (declare-fun v72 () Bool ))
+(+ (declare-fun v73 () Bool ))
+(+ (declare-fun v74 () Bool ))
+(+ (declare-fun v75 () Bool ))
+(+ (declare-fun v76 () Bool ))
+(+ (declare-fun v77 () Bool ))
+(+ (declare-fun v78 () Bool ))
+(+ (declare-fun v79 () Bool ))
+(+ (declare-fun v80 () Int ))
+(+ (assert (<= 0 v80 ) ))
+(+ (declare-fun v81 () Int ))
+(+ (assert (<= 0 v81 ) ))
+(+ (declare-fun v82 () Int ))
+(+ (assert (<= 0 v82 ) ))
+(+ (declare-fun v83 () Int ))
+(+ (assert (<= 0 v83 ) ))
+(+ (declare-fun v84 () Int ))
+(+ (assert (<= 0 v84 ) ))
+(+ (declare-fun v85 () Int ))
+(+ (assert (<= 0 v85 ) ))
+(+ (declare-fun v86 () Bool ))
+(+ (declare-fun v87 () Bool ))
+(+ (declare-fun v88 () Bool ))
+(+ (declare-fun v89 () Bool ))
+(+ (declare-fun v90 () Bool ))
+(+ (declare-fun v91 () Bool ))
+(+ (declare-fun v92 () Bool ))
+(+ (declare-fun v93 () Bool ))
+(+ (declare-fun v94 () Bool ))
+(+ (declare-fun v95 () Bool ))
+(+ (declare-fun v96 () Bool ))
+(+ (declare-fun v97 () Bool ))
+(+ (declare-fun v98 () Bool ))
+(+ (declare-fun v99 () Bool ))
+(+ (declare-fun v100 () Bool ))
+(+ (declare-fun v101 () Bool ))
+(+ (declare-fun v102 () Bool ))
+(+ (declare-fun v103 () Bool ))
+(+ (declare-fun v104 () Bool ))
+(+ (declare-fun v105 () Bool ))
+(+ (declare-fun v106 () Bool ))
+(+ (declare-fun v107 () Bool ))
+(+ (declare-fun v108 () Bool ))
+(+ (declare-fun v109 () Bool ))
+(+ (declare-fun v110 () Bool ))
+(+ (declare-fun v111 () Bool ))
+(+ (declare-fun v112 () Bool ))
+(+ (declare-fun v113 () Bool ))
+(+ (declare-fun v114 () Bool ))
+(+ (declare-fun v115 () Bool ))
+(+ (declare-fun v116 () Int ))
+(+ (assert (<= 0 v116 ) ))
+(+ (declare-fun v117 () Bool ))
+(+ (declare-fun v118 () Int ))
+(+ (assert (<= 0 v118 ) ))
+(+ (declare-fun v119 () Int ))
+(+ (assert (<= 0 v119 ) ))
+(+ (declare-fun v120 () Int ))
+(+ (assert (<= 0 v120 ) ))
+(+ (declare-fun v121 () Int ))
+(+ (assert (<= 0 v121 ) ))
+(+ (declare-fun v122 () Int ))
+(+ (assert (<= 0 v122 ) ))
+(+ (declare-fun v123 () Int ))
+(+ (assert (<= 0 v123 ) ))
+(+ (declare-fun v124 () Bool ))
+(+ (declare-fun v125 () Bool ))
+(+ (declare-fun v126 () Bool ))
+(+ (declare-fun v127 () Bool ))
+(+ (declare-fun v128 () Bool ))
+(+ (declare-fun v129 () Bool ))
+(+ (declare-fun v130 () Bool ))
+(+ (declare-fun v131 () Bool ))
+(+ (declare-fun v132 () Bytes ))
+(+ (declare-fun v133 () Bytes ))
+(+ (declare-fun v134 () Bytes ))
+(+ (declare-fun v135 () Bytes ))
+(+ (declare-fun v136 () Int ))
+(+ (assert (<= 0 v136 ) ))
+(+ (declare-fun v137 () Int ))
+(+ (assert (<= 0 v137 ) ))
+(+ (declare-fun v138 () Int ))
+(+ (assert (<= 0 v138 ) ))
+(+ (declare-fun v139 () Int ))
+(+ (assert (<= 0 v139 ) ))
+(push
+ (+ (define-fun ctc_balance0 () Int 0 ))
+ (push
+  (+ (assert (= v5 v1 ) ))
+  (+ (assert (= v6 v2 ) ))
+  (+ (assert (= v8 (+ v5 v6 ) ) ))
+  (push
+   (push
+    (+ (assert (not true ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+   (+ (assert true ))
+   (push
+    (+ (assert (not (= ctc_balance0 0 ) ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+  )
+  (push
+   (+ (declare-fun txn_value1 () Int ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) ))
+   (+ (assert (= txn_value1 v8 ) ))
+   (+ (assert (= v9 txn_value1 ) ))
+   (+ (assert (= v10 (+ v5 v6 ) ) ))
+   (+ (assert (= v11 (= v9 v10 ) ) ))
+   (push
+    (+ (assert (not v11 ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+   (+ (assert v11 ))
+   (push
+    (+ (assert (= v139 ctc_balance1 ) ))
+    (push
+     (+ (assert (not (<= v139 ctc_balance1 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) ))
+    (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert true ))
+    (push
+     (+ (assert (not (= ctc_balance2 0 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+   )
+   (push
+    (+ (declare-fun txn_value2 () Int ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) ))
+    (+ (assert (= txn_value2 v5 ) ))
+    (+ (assert (= v13 txn_value2 ) ))
+    (+ (assert (= v14 (= v13 v5 ) ) ))
+    (push
+     (+ (assert (not v14 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v14 ))
+    (+ (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) ))
+    (+ (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) ))
+    (+ (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) ))
+    (+ (assert (= v19 (ite v16 true v17 ) ) ))
+    (+ (assert (= v20 (ite v19 true v18 ) ) ))
+    (+ (assert v20 ))
+    (+ (assert (= v21 (ite v17 1 2 ) ) ))
+    (+ (assert (= v22 (ite v16 0 v21 ) ) ))
+    (+ (assert (= v23 (<= 0 v22 ) ) ))
+    (+ (assert (= v24 (< v22 3 ) ) ))
+    (+ (assert (= v25 (ite v23 v24 false ) ) ))
+    (push
+     (+ (assert (not v25 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v25 ))
+    (+ (assert (= v27 (uint256->bytes v26 ) ) ))
+    (+ (assert (= v28 (uint256->bytes v22 ) ) ))
+    (+ (assert (= v29 (msg-cat v27 v28 ) ) ))
+    (+ (assert (= v30 (digest v29 ) ) ))
+    (+ (assert (= v31 v30 ) ))
+    (push
+     (+ (assert (= v138 ctc_balance2 ) ))
+     (push
+      (+ (assert (not (<= v138 ctc_balance2 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) ))
+     (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert true ))
+     (push
+      (+ (assert (not (= ctc_balance3 0 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+    )
+    (push
+     (+ (declare-fun txn_value3 () Int ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) ))
+     (+ (assert (= txn_value3 0 ) ))
+     (+ (assert (= v33 txn_value3 ) ))
+     (+ (assert (= v34 (= v33 0 ) ) ))
+     (push
+      (+ (assert (not v34 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v34 ))
+     (+ (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) ))
+     (+ (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) ))
+     (+ (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) ))
+     (+ (assert (= v39 (ite v36 true v37 ) ) ))
+     (+ (assert (= v40 (ite v39 true v38 ) ) ))
+     (+ (assert v40 ))
+     (+ (assert (= v41 (ite v37 1 2 ) ) ))
+     (+ (assert (= v42 (ite v36 0 v41 ) ) ))
+     (+ (assert (= v43 (<= 0 v42 ) ) ))
+     (+ (assert (= v44 (< v42 3 ) ) ))
+     (+ (assert (= v45 (ite v43 v44 false ) ) ))
+     (push
+      (+ (assert (not v45 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v45 ))
+     (+ (assert (= v46 v42 ) ))
+     (push
+      (+ (assert (= v137 ctc_balance3 ) ))
+      (push
+       (+ (assert (not (<= v137 ctc_balance3 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) ))
+      (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert true ))
+      (push
+       (+ (assert (not (= ctc_balance4 0 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+     )
+     (push
+      (+ (declare-fun txn_value4 () Int ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) ))
+      (+ (assert (= txn_value4 0 ) ))
+      (+ (assert (= v48 txn_value4 ) ))
+      (+ (assert (= v49 (= v48 0 ) ) ))
+      (push
+       (+ (assert (not v49 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v49 ))
+      (+ (assert (= v50 (<= 0 v46 ) ) ))
+      (+ (assert (= v51 (< v46 3 ) ) ))
+      (+ (assert (= v52 (ite v50 v51 false ) ) ))
+      (push
+       (+ (assert (not v52 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v52 ))
+      (+ (assert (= v53 v26 ) ))
+      (+ (assert (= v54 v22 ) ))
+      (+ (assert (= v55 (<= 0 v46 ) ) ))
+      (+ (assert (= v56 (< v46 3 ) ) ))
+      (+ (assert (= v57 (ite v55 v56 false ) ) ))
+      (push
+       (+ (assert (not v57 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v57 ))
+      (+ (assert (= v58 (= v46 0 ) ) ))
+      (+ (assert (= v59 (= v46 1 ) ) ))
+      (+ (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) ))
+      (+ (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) ))
+      (push
+       (+ (assert (= v136 ctc_balance4 ) ))
+       (push
+        (+ (assert (not (<= v136 ctc_balance4 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) ))
+       (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert true ))
+       (push
+        (+ (assert (not (= ctc_balance5 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+      (push
+       (+ (declare-fun txn_value5 () Int ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) ))
+       (+ (assert (= txn_value5 0 ) ))
+       (+ (assert (= v63 txn_value5 ) ))
+       (+ (assert (= v64 (= v63 0 ) ) ))
+       (push
+        (+ (assert (not v64 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v64 ))
+       (+ (assert (= v65 (uint256->bytes v53 ) ) ))
+       (+ (assert (= v66 (uint256->bytes v54 ) ) ))
+       (+ (assert (= v67 (msg-cat v65 v66 ) ) ))
+       (+ (assert (= v68 (digest v67 ) ) ))
+       (+ (assert (= v69 (= v31 v68 ) ) ))
+       (push
+        (+ (assert (not v69 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v69 ))
+       (+ (assert (= v70 (<= 0 v54 ) ) ))
+       (+ (assert (= v71 (< v54 3 ) ) ))
+       (+ (assert (= v72 (ite v70 v71 false ) ) ))
+       (push
+        (+ (assert (not v72 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v72 ))
+       (+ (assert (= v73 (<= 0 v54 ) ) ))
+       (+ (assert (= v74 (< v54 3 ) ) ))
+       (+ (assert (= v75 (ite v73 v74 false ) ) ))
+       (+ (assert (= v76 (<= 0 v46 ) ) ))
+       (+ (assert (= v77 (< v46 3 ) ) ))
+       (+ (assert (= v78 (ite v76 v77 false ) ) ))
+       (+ (assert (= v79 (ite v75 v78 false ) ) ))
+       (+ (assert (= v80 (- 4 v46 ) ) ))
+       (+ (assert (= v81 (+ v54 v80 ) ) ))
+       (+ (assert (= v82 (mod v81 3 ) ) ))
+       (+ (assert (= v83 (ite v78 0 1 ) ) ))
+       (+ (assert (= v84 (ite v75 2 v83 ) ) ))
+       (+ (assert (= v85 (ite v79 v82 v84 ) ) ))
+       (+ (assert (= v86 (<= 0 v85 ) ) ))
+       (+ (assert (= v87 (< v85 5 ) ) ))
+       (+ (assert (= v88 (ite v86 v87 false ) ) ))
+       (push
+        (+ (assert (not v88 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v88 ))
+       (+ (assert (= v89 (= v85 2 ) ) ))
+       (+ (assert (= v90 (<= 0 v54 ) ) ))
+       (+ (assert (= v91 (< v54 3 ) ) ))
+       (+ (assert (= v92 (ite v90 v91 false ) ) ))
+       (+ (assert (= v93 (ite v89 false true ) ) ))
+       (+ (assert (= v94 (ite v93 true v92 ) ) ))
+       (push
+        (+ (assert (not v94 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v94 ))
+       (+ (assert (= v95 (= v85 0 ) ) ))
+       (+ (assert (= v96 (<= 0 v46 ) ) ))
+       (+ (assert (= v97 (< v46 3 ) ) ))
+       (+ (assert (= v98 (ite v96 v97 false ) ) ))
+       (+ (assert (= v99 (ite v95 false true ) ) ))
+       (+ (assert (= v100 (ite v99 true v98 ) ) ))
+       (push
+        (+ (assert (not v100 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v100 ))
+       (+ (assert (= v101 (= v85 2 ) ) ))
+       (+ (assert (= v102 (= v54 0 ) ) ))
+       (+ (assert (= v103 (ite v102 v101 false ) ) ))
+       (push
+        (+ (assert v103 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v104 (= v54 1 ) ) ))
+       (+ (assert (= v105 (ite v104 v101 false ) ) ))
+       (push
+        (+ (assert v105 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v106 (= v54 2 ) ) ))
+       (+ (assert (= v107 (ite v106 v101 false ) ) ))
+       (push
+        (+ (assert v107 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v108 (= v85 0 ) ) ))
+       (+ (assert (= v109 (= v46 0 ) ) ))
+       (+ (assert (= v110 (ite v109 v108 false ) ) ))
+       (push
+        (+ (assert v110 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v111 (= v46 1 ) ) ))
+       (+ (assert (= v112 (ite v111 v108 false ) ) ))
+       (push
+        (+ (assert v112 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v113 (= v46 2 ) ) ))
+       (+ (assert (= v114 (ite v113 v108 false ) ) ))
+       (push
+        (+ (assert v114 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v115 (= v85 2 ) ) ))
+       (+ (assert (= v116 (* 2 v5 ) ) ))
+       (+ (assert (= v117 (= v85 0 ) ) ))
+       (+ (assert (= v118 (* 2 v5 ) ) ))
+       (+ (assert (= v119 (ite v117 0 v5 ) ) ))
+       (+ (assert (= v120 (ite v117 v118 v5 ) ) ))
+       (+ (assert (= v121 (ite v115 v116 v119 ) ) ))
+       (+ (assert (= v122 (ite v115 0 v120 ) ) ))
+       (+ (assert (= v123 (+ v6 v121 ) ) ))
+       (push
+        (+ (assert (not (<= v123 ctc_balance5 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) ))
+       (push
+        (+ (assert (not (<= v122 ctc_balance6 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) ))
+       (+ (assert (= v125 (<= 0 v85 ) ) ))
+       (+ (assert (= v126 (< v85 5 ) ) ))
+       (+ (assert (= v127 (ite v125 v126 false ) ) ))
+       (push
+        (+ (assert (not v127 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v127 ))
+       (+ (assert (= v128 (= v85 0 ) ) ))
+       (+ (assert (= v129 (= v85 1 ) ) ))
+       (+ (assert (= v130 (= v85 2 ) ) ))
+       (+ (assert (= v131 (= v85 3 ) ) ))
+       (+ (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) ))
+       (+ (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) ))
+       (+ (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) ))
+       (+ (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) ))
+       (push
+        (+ (assert (not (= ctc_balance7 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+)
+(push
+ (+ (define-fun ctc_balance0 () Int 0 ))
+ (push
+  (+ (assert (= v5 v1 ) ))
+  (+ (assert (= v6 v2 ) ))
+  (+ (assert (= v8 (+ v5 v6 ) ) ))
+  (push
+   (push
+    (+ (assert (not true ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+   (+ (assert true ))
+   (push
+    (+ (assert (not (= ctc_balance0 0 ) ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+  )
+  (push
+   (+ (declare-fun txn_value1 () Int ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) ))
+   (+ (assert (= txn_value1 v8 ) ))
+   (+ (assert (= v9 txn_value1 ) ))
+   (+ (assert (= v10 (+ v5 v6 ) ) ))
+   (+ (assert (= v11 (= v9 v10 ) ) ))
+   (push
+    (+ (assert (not v11 ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+   (+ (assert v11 ))
+   (push
+    (+ (assert (= v139 ctc_balance1 ) ))
+    (push
+     (+ (assert (not (<= v139 ctc_balance1 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) ))
+    (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert true ))
+    (push
+     (+ (assert (not (= ctc_balance2 0 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+   )
+   (push
+    (+ (declare-fun txn_value2 () Int ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) ))
+    (+ (assert (= txn_value2 v5 ) ))
+    (+ (assert (= v13 txn_value2 ) ))
+    (+ (assert (= v14 (= v13 v5 ) ) ))
+    (push
+     (+ (assert (not v14 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v14 ))
+    (+ (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) ))
+    (+ (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) ))
+    (+ (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) ))
+    (+ (assert (= v19 (ite v16 true v17 ) ) ))
+    (+ (assert (= v20 (ite v19 true v18 ) ) ))
+    (+ (assert v20 ))
+    (+ (assert (= v21 (ite v17 1 2 ) ) ))
+    (+ (assert (= v22 (ite v16 0 v21 ) ) ))
+    (+ (assert (= v23 (<= 0 v22 ) ) ))
+    (+ (assert (= v24 (< v22 3 ) ) ))
+    (+ (assert (= v25 (ite v23 v24 false ) ) ))
+    (push
+     (+ (assert (not v25 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v25 ))
+    (+ (assert (= v27 (uint256->bytes v26 ) ) ))
+    (+ (assert (= v28 (uint256->bytes v22 ) ) ))
+    (+ (assert (= v29 (msg-cat v27 v28 ) ) ))
+    (+ (assert (= v30 (digest v29 ) ) ))
+    (+ (assert (= v31 v30 ) ))
+    (push
+     (+ (assert (= v138 ctc_balance2 ) ))
+     (push
+      (+ (assert (not (<= v138 ctc_balance2 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) ))
+     (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert true ))
+     (push
+      (+ (assert (not (= ctc_balance3 0 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+    )
+    (push
+     (+ (declare-fun txn_value3 () Int ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) ))
+     (+ (assert (= txn_value3 0 ) ))
+     (+ (assert (= v33 txn_value3 ) ))
+     (+ (assert (= v34 (= v33 0 ) ) ))
+     (push
+      (+ (assert (not v34 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v34 ))
+     (+ (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) ))
+     (+ (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) ))
+     (+ (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) ))
+     (+ (assert (= v39 (ite v36 true v37 ) ) ))
+     (+ (assert (= v40 (ite v39 true v38 ) ) ))
+     (+ (assert v40 ))
+     (+ (assert (= v41 (ite v37 1 2 ) ) ))
+     (+ (assert (= v42 (ite v36 0 v41 ) ) ))
+     (+ (assert (= v43 (<= 0 v42 ) ) ))
+     (+ (assert (= v44 (< v42 3 ) ) ))
+     (+ (assert (= v45 (ite v43 v44 false ) ) ))
+     (push
+      (+ (assert (not v45 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v45 ))
+     (+ (assert (= v46 v42 ) ))
+     (push
+      (+ (assert (= v137 ctc_balance3 ) ))
+      (push
+       (+ (assert (not (<= v137 ctc_balance3 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) ))
+      (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert true ))
+      (push
+       (+ (assert (not (= ctc_balance4 0 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+     )
+     (push
+      (+ (declare-fun txn_value4 () Int ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) ))
+      (+ (assert (= txn_value4 0 ) ))
+      (+ (assert (= v48 txn_value4 ) ))
+      (+ (assert (= v49 (= v48 0 ) ) ))
+      (push
+       (+ (assert (not v49 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v49 ))
+      (+ (assert (= v50 (<= 0 v46 ) ) ))
+      (+ (assert (= v51 (< v46 3 ) ) ))
+      (+ (assert (= v52 (ite v50 v51 false ) ) ))
+      (push
+       (+ (assert (not v52 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v52 ))
+      (+ (assert (= v53 v26 ) ))
+      (+ (assert (= v54 v22 ) ))
+      (+ (assert (= v55 (<= 0 v46 ) ) ))
+      (+ (assert (= v56 (< v46 3 ) ) ))
+      (+ (assert (= v57 (ite v55 v56 false ) ) ))
+      (push
+       (+ (assert (not v57 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v57 ))
+      (+ (assert (= v58 (= v46 0 ) ) ))
+      (+ (assert (= v59 (= v46 1 ) ) ))
+      (+ (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) ))
+      (+ (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) ))
+      (push
+       (+ (assert (= v136 ctc_balance4 ) ))
+       (push
+        (+ (assert (not (<= v136 ctc_balance4 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) ))
+       (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert true ))
+       (push
+        (+ (assert (not (= ctc_balance5 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+      (push
+       (+ (declare-fun txn_value5 () Int ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) ))
+       (+ (assert (= txn_value5 0 ) ))
+       (+ (assert (= v63 txn_value5 ) ))
+       (+ (assert (= v64 (= v63 0 ) ) ))
+       (push
+        (+ (assert (not v64 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v64 ))
+       (+ (assert (= v65 (uint256->bytes v53 ) ) ))
+       (+ (assert (= v66 (uint256->bytes v54 ) ) ))
+       (+ (assert (= v67 (msg-cat v65 v66 ) ) ))
+       (+ (assert (= v68 (digest v67 ) ) ))
+       (+ (assert (= v69 (= v31 v68 ) ) ))
+       (push
+        (+ (assert (not v69 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v69 ))
+       (+ (assert (= v70 (<= 0 v54 ) ) ))
+       (+ (assert (= v71 (< v54 3 ) ) ))
+       (+ (assert (= v72 (ite v70 v71 false ) ) ))
+       (push
+        (+ (assert (not v72 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v72 ))
+       (+ (assert (= v73 (<= 0 v54 ) ) ))
+       (+ (assert (= v74 (< v54 3 ) ) ))
+       (+ (assert (= v75 (ite v73 v74 false ) ) ))
+       (+ (assert (= v76 (<= 0 v46 ) ) ))
+       (+ (assert (= v77 (< v46 3 ) ) ))
+       (+ (assert (= v78 (ite v76 v77 false ) ) ))
+       (+ (assert (= v79 (ite v75 v78 false ) ) ))
+       (+ (assert (= v80 (- 4 v46 ) ) ))
+       (+ (assert (= v81 (+ v54 v80 ) ) ))
+       (+ (assert (= v82 (mod v81 3 ) ) ))
+       (+ (assert (= v83 (ite v78 0 1 ) ) ))
+       (+ (assert (= v84 (ite v75 2 v83 ) ) ))
+       (+ (assert (= v85 (ite v79 v82 v84 ) ) ))
+       (+ (assert (= v86 (<= 0 v85 ) ) ))
+       (+ (assert (= v87 (< v85 5 ) ) ))
+       (+ (assert (= v88 (ite v86 v87 false ) ) ))
+       (push
+        (+ (assert (not v88 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v88 ))
+       (+ (assert (= v89 (= v85 2 ) ) ))
+       (+ (assert (= v90 (<= 0 v54 ) ) ))
+       (+ (assert (= v91 (< v54 3 ) ) ))
+       (+ (assert (= v92 (ite v90 v91 false ) ) ))
+       (+ (assert (= v93 (ite v89 false true ) ) ))
+       (+ (assert (= v94 (ite v93 true v92 ) ) ))
+       (push
+        (+ (assert (not v94 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v94 ))
+       (+ (assert (= v95 (= v85 0 ) ) ))
+       (+ (assert (= v96 (<= 0 v46 ) ) ))
+       (+ (assert (= v97 (< v46 3 ) ) ))
+       (+ (assert (= v98 (ite v96 v97 false ) ) ))
+       (+ (assert (= v99 (ite v95 false true ) ) ))
+       (+ (assert (= v100 (ite v99 true v98 ) ) ))
+       (push
+        (+ (assert (not v100 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v100 ))
+       (+ (assert (= v101 (= v85 2 ) ) ))
+       (+ (assert (= v102 (= v54 0 ) ) ))
+       (+ (assert (= v103 (ite v102 v101 false ) ) ))
+       (push
+        (+ (assert v103 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v104 (= v54 1 ) ) ))
+       (+ (assert (= v105 (ite v104 v101 false ) ) ))
+       (push
+        (+ (assert v105 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v106 (= v54 2 ) ) ))
+       (+ (assert (= v107 (ite v106 v101 false ) ) ))
+       (push
+        (+ (assert v107 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v108 (= v85 0 ) ) ))
+       (+ (assert (= v109 (= v46 0 ) ) ))
+       (+ (assert (= v110 (ite v109 v108 false ) ) ))
+       (push
+        (+ (assert v110 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v111 (= v46 1 ) ) ))
+       (+ (assert (= v112 (ite v111 v108 false ) ) ))
+       (push
+        (+ (assert v112 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v113 (= v46 2 ) ) ))
+       (+ (assert (= v114 (ite v113 v108 false ) ) ))
+       (push
+        (+ (assert v114 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v115 (= v85 2 ) ) ))
+       (+ (assert (= v116 (* 2 v5 ) ) ))
+       (+ (assert (= v117 (= v85 0 ) ) ))
+       (+ (assert (= v118 (* 2 v5 ) ) ))
+       (+ (assert (= v119 (ite v117 0 v5 ) ) ))
+       (+ (assert (= v120 (ite v117 v118 v5 ) ) ))
+       (+ (assert (= v121 (ite v115 v116 v119 ) ) ))
+       (+ (assert (= v122 (ite v115 0 v120 ) ) ))
+       (+ (assert (= v123 (+ v6 v121 ) ) ))
+       (push
+        (+ (assert (not (<= v123 ctc_balance5 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) ))
+       (push
+        (+ (assert (not (<= v122 ctc_balance6 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) ))
+       (+ (assert (= v125 (<= 0 v85 ) ) ))
+       (+ (assert (= v126 (< v85 5 ) ) ))
+       (+ (assert (= v127 (ite v125 v126 false ) ) ))
+       (push
+        (+ (assert (not v127 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v127 ))
+       (+ (assert (= v128 (= v85 0 ) ) ))
+       (+ (assert (= v129 (= v85 1 ) ) ))
+       (+ (assert (= v130 (= v85 2 ) ) ))
+       (+ (assert (= v131 (= v85 3 ) ) ))
+       (+ (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) ))
+       (+ (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) ))
+       (+ (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) ))
+       (+ (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) ))
+       (push
+        (+ (assert (not (= ctc_balance7 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+)
+(push
+ (+ (define-fun ctc_balance0 () Int 0 ))
+ (push
+  (+ (assert (= v5 v1 ) ))
+  (+ (assert (= v6 v2 ) ))
+  (+ (assert (= v8 (+ v5 v6 ) ) ))
+  (push
+   (push
+    (+ (assert (not true ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+   (+ (assert true ))
+   (push
+    (+ (assert (not (= ctc_balance0 0 ) ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+  )
+  (push
+   (+ (declare-fun txn_value1 () Int ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) ))
+   (+ (assert (= txn_value1 v8 ) ))
+   (+ (assert (= v9 txn_value1 ) ))
+   (+ (assert (= v10 (+ v5 v6 ) ) ))
+   (+ (assert (= v11 (= v9 v10 ) ) ))
+   (push
+    (+ (assert (not v11 ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+   (+ (assert v11 ))
+   (push
+    (+ (assert (= v139 ctc_balance1 ) ))
+    (push
+     (+ (assert (not (<= v139 ctc_balance1 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) ))
+    (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert true ))
+    (push
+     (+ (assert (not (= ctc_balance2 0 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+   )
+   (push
+    (+ (declare-fun txn_value2 () Int ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) ))
+    (+ (assert (= txn_value2 v5 ) ))
+    (+ (assert (= v13 txn_value2 ) ))
+    (+ (assert (= v14 (= v13 v5 ) ) ))
+    (push
+     (+ (assert (not v14 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v14 ))
+    (+ (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) ))
+    (+ (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) ))
+    (+ (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) ))
+    (+ (assert (= v19 (ite v16 true v17 ) ) ))
+    (+ (assert (= v20 (ite v19 true v18 ) ) ))
+    (+ (assert v20 ))
+    (+ (assert (= v21 (ite v17 1 2 ) ) ))
+    (+ (assert (= v22 (ite v16 0 v21 ) ) ))
+    (+ (assert (= v23 (<= 0 v22 ) ) ))
+    (+ (assert (= v24 (< v22 3 ) ) ))
+    (+ (assert (= v25 (ite v23 v24 false ) ) ))
+    (push
+     (+ (assert (not v25 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v25 ))
+    (+ (assert (= v27 (uint256->bytes v26 ) ) ))
+    (+ (assert (= v28 (uint256->bytes v22 ) ) ))
+    (+ (assert (= v29 (msg-cat v27 v28 ) ) ))
+    (+ (assert (= v30 (digest v29 ) ) ))
+    (+ (assert (= v31 v30 ) ))
+    (push
+     (+ (assert (= v138 ctc_balance2 ) ))
+     (push
+      (+ (assert (not (<= v138 ctc_balance2 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) ))
+     (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert true ))
+     (push
+      (+ (assert (not (= ctc_balance3 0 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+    )
+    (push
+     (+ (declare-fun txn_value3 () Int ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) ))
+     (+ (assert (= txn_value3 0 ) ))
+     (+ (assert (= v33 txn_value3 ) ))
+     (+ (assert (= v34 (= v33 0 ) ) ))
+     (push
+      (+ (assert (not v34 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v34 ))
+     (+ (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) ))
+     (+ (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) ))
+     (+ (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) ))
+     (+ (assert (= v39 (ite v36 true v37 ) ) ))
+     (+ (assert (= v40 (ite v39 true v38 ) ) ))
+     (+ (assert v40 ))
+     (+ (assert (= v41 (ite v37 1 2 ) ) ))
+     (+ (assert (= v42 (ite v36 0 v41 ) ) ))
+     (+ (assert (= v43 (<= 0 v42 ) ) ))
+     (+ (assert (= v44 (< v42 3 ) ) ))
+     (+ (assert (= v45 (ite v43 v44 false ) ) ))
+     (push
+      (+ (assert (not v45 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v45 ))
+     (+ (assert (= v46 v42 ) ))
+     (push
+      (+ (assert (= v137 ctc_balance3 ) ))
+      (push
+       (+ (assert (not (<= v137 ctc_balance3 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) ))
+      (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert true ))
+      (push
+       (+ (assert (not (= ctc_balance4 0 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+     )
+     (push
+      (+ (declare-fun txn_value4 () Int ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) ))
+      (+ (assert (= txn_value4 0 ) ))
+      (+ (assert (= v48 txn_value4 ) ))
+      (+ (assert (= v49 (= v48 0 ) ) ))
+      (push
+       (+ (assert (not v49 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v49 ))
+      (+ (assert (= v50 (<= 0 v46 ) ) ))
+      (+ (assert (= v51 (< v46 3 ) ) ))
+      (+ (assert (= v52 (ite v50 v51 false ) ) ))
+      (push
+       (+ (assert (not v52 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v52 ))
+      (+ (assert (= v53 v26 ) ))
+      (+ (assert (= v54 v22 ) ))
+      (+ (assert (= v55 (<= 0 v46 ) ) ))
+      (+ (assert (= v56 (< v46 3 ) ) ))
+      (+ (assert (= v57 (ite v55 v56 false ) ) ))
+      (push
+       (+ (assert (not v57 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v57 ))
+      (+ (assert (= v58 (= v46 0 ) ) ))
+      (+ (assert (= v59 (= v46 1 ) ) ))
+      (+ (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) ))
+      (+ (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) ))
+      (push
+       (+ (assert (= v136 ctc_balance4 ) ))
+       (push
+        (+ (assert (not (<= v136 ctc_balance4 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) ))
+       (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert true ))
+       (push
+        (+ (assert (not (= ctc_balance5 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+      (push
+       (+ (declare-fun txn_value5 () Int ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) ))
+       (+ (assert (= txn_value5 0 ) ))
+       (+ (assert (= v63 txn_value5 ) ))
+       (+ (assert (= v64 (= v63 0 ) ) ))
+       (push
+        (+ (assert (not v64 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v64 ))
+       (+ (assert (= v65 (uint256->bytes v53 ) ) ))
+       (+ (assert (= v66 (uint256->bytes v54 ) ) ))
+       (+ (assert (= v67 (msg-cat v65 v66 ) ) ))
+       (+ (assert (= v68 (digest v67 ) ) ))
+       (+ (assert (= v69 (= v31 v68 ) ) ))
+       (push
+        (+ (assert (not v69 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v69 ))
+       (+ (assert (= v70 (<= 0 v54 ) ) ))
+       (+ (assert (= v71 (< v54 3 ) ) ))
+       (+ (assert (= v72 (ite v70 v71 false ) ) ))
+       (push
+        (+ (assert (not v72 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v72 ))
+       (+ (assert (= v73 (<= 0 v54 ) ) ))
+       (+ (assert (= v74 (< v54 3 ) ) ))
+       (+ (assert (= v75 (ite v73 v74 false ) ) ))
+       (+ (assert (= v76 (<= 0 v46 ) ) ))
+       (+ (assert (= v77 (< v46 3 ) ) ))
+       (+ (assert (= v78 (ite v76 v77 false ) ) ))
+       (+ (assert (= v79 (ite v75 v78 false ) ) ))
+       (+ (assert (= v80 (- 4 v46 ) ) ))
+       (+ (assert (= v81 (+ v54 v80 ) ) ))
+       (+ (assert (= v82 (mod v81 3 ) ) ))
+       (+ (assert (= v83 (ite v78 0 1 ) ) ))
+       (+ (assert (= v84 (ite v75 2 v83 ) ) ))
+       (+ (assert (= v85 (ite v79 v82 v84 ) ) ))
+       (+ (assert (= v86 (<= 0 v85 ) ) ))
+       (+ (assert (= v87 (< v85 5 ) ) ))
+       (+ (assert (= v88 (ite v86 v87 false ) ) ))
+       (push
+        (+ (assert (not v88 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v88 ))
+       (+ (assert (= v89 (= v85 2 ) ) ))
+       (+ (assert (= v90 (<= 0 v54 ) ) ))
+       (+ (assert (= v91 (< v54 3 ) ) ))
+       (+ (assert (= v92 (ite v90 v91 false ) ) ))
+       (+ (assert (= v93 (ite v89 false true ) ) ))
+       (+ (assert (= v94 (ite v93 true v92 ) ) ))
+       (push
+        (+ (assert (not v94 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v94 ))
+       (+ (assert (= v95 (= v85 0 ) ) ))
+       (+ (assert (= v96 (<= 0 v46 ) ) ))
+       (+ (assert (= v97 (< v46 3 ) ) ))
+       (+ (assert (= v98 (ite v96 v97 false ) ) ))
+       (+ (assert (= v99 (ite v95 false true ) ) ))
+       (+ (assert (= v100 (ite v99 true v98 ) ) ))
+       (push
+        (+ (assert (not v100 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v100 ))
+       (+ (assert (= v101 (= v85 2 ) ) ))
+       (+ (assert (= v102 (= v54 0 ) ) ))
+       (+ (assert (= v103 (ite v102 v101 false ) ) ))
+       (push
+        (+ (assert v103 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v104 (= v54 1 ) ) ))
+       (+ (assert (= v105 (ite v104 v101 false ) ) ))
+       (push
+        (+ (assert v105 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v106 (= v54 2 ) ) ))
+       (+ (assert (= v107 (ite v106 v101 false ) ) ))
+       (push
+        (+ (assert v107 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v108 (= v85 0 ) ) ))
+       (+ (assert (= v109 (= v46 0 ) ) ))
+       (+ (assert (= v110 (ite v109 v108 false ) ) ))
+       (push
+        (+ (assert v110 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v111 (= v46 1 ) ) ))
+       (+ (assert (= v112 (ite v111 v108 false ) ) ))
+       (push
+        (+ (assert v112 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v113 (= v46 2 ) ) ))
+       (+ (assert (= v114 (ite v113 v108 false ) ) ))
+       (push
+        (+ (assert v114 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v115 (= v85 2 ) ) ))
+       (+ (assert (= v116 (* 2 v5 ) ) ))
+       (+ (assert (= v117 (= v85 0 ) ) ))
+       (+ (assert (= v118 (* 2 v5 ) ) ))
+       (+ (assert (= v119 (ite v117 0 v5 ) ) ))
+       (+ (assert (= v120 (ite v117 v118 v5 ) ) ))
+       (+ (assert (= v121 (ite v115 v116 v119 ) ) ))
+       (+ (assert (= v122 (ite v115 0 v120 ) ) ))
+       (+ (assert (= v123 (+ v6 v121 ) ) ))
+       (push
+        (+ (assert (not (<= v123 ctc_balance5 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) ))
+       (push
+        (+ (assert (not (<= v122 ctc_balance6 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) ))
+       (+ (assert (= v125 (<= 0 v85 ) ) ))
+       (+ (assert (= v126 (< v85 5 ) ) ))
+       (+ (assert (= v127 (ite v125 v126 false ) ) ))
+       (push
+        (+ (assert (not v127 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v127 ))
+       (+ (assert (= v128 (= v85 0 ) ) ))
+       (+ (assert (= v129 (= v85 1 ) ) ))
+       (+ (assert (= v130 (= v85 2 ) ) ))
+       (+ (assert (= v131 (= v85 3 ) ) ))
+       (+ (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) ))
+       (+ (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) ))
+       (+ (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) ))
+       (+ (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) ))
+       (push
+        (+ (assert (not (= ctc_balance7 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+)
+(push
+ (+ (define-fun ctc_balance0 () Int 0 ))
+ (push
+  (+ (assert (= v5 v1 ) ))
+  (+ (assert (= v6 v2 ) ))
+  (+ (assert (= v8 (+ v5 v6 ) ) ))
+  (push
+   (push
+    (+ (assert (not true ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+   (+ (assert true ))
+   (push
+    (+ (assert (not (= ctc_balance0 0 ) ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+  )
+  (push
+   (+ (declare-fun txn_value1 () Int ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) ))
+   (+ (assert (= txn_value1 v8 ) ))
+   (+ (assert (= v9 txn_value1 ) ))
+   (+ (assert (= v10 (+ v5 v6 ) ) ))
+   (+ (assert (= v11 (= v9 v10 ) ) ))
+   (push
+    (+ (assert (not v11 ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+   (+ (assert v11 ))
+   (push
+    (+ (assert (= v139 ctc_balance1 ) ))
+    (push
+     (+ (assert (not (<= v139 ctc_balance1 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) ))
+    (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert true ))
+    (push
+     (+ (assert (not (= ctc_balance2 0 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+   )
+   (push
+    (+ (declare-fun txn_value2 () Int ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) ))
+    (+ (assert (= txn_value2 v5 ) ))
+    (+ (assert (= v13 txn_value2 ) ))
+    (+ (assert (= v14 (= v13 v5 ) ) ))
+    (push
+     (+ (assert (not v14 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v14 ))
+    (+ (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) ))
+    (+ (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) ))
+    (+ (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) ))
+    (+ (assert (= v19 (ite v16 true v17 ) ) ))
+    (+ (assert (= v20 (ite v19 true v18 ) ) ))
+    (+ (assert v20 ))
+    (+ (assert (= v21 (ite v17 1 2 ) ) ))
+    (+ (assert (= v22 (ite v16 0 v21 ) ) ))
+    (+ (assert (= v23 (<= 0 v22 ) ) ))
+    (+ (assert (= v24 (< v22 3 ) ) ))
+    (+ (assert (= v25 (ite v23 v24 false ) ) ))
+    (push
+     (+ (assert (not v25 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v25 ))
+    (+ (assert (= v27 (uint256->bytes v26 ) ) ))
+    (+ (assert (= v28 (uint256->bytes v22 ) ) ))
+    (+ (assert (= v29 (msg-cat v27 v28 ) ) ))
+    (+ (assert (= v30 (digest v29 ) ) ))
+    (+ (assert (= v31 v30 ) ))
+    (push
+     (+ (assert (= v138 ctc_balance2 ) ))
+     (push
+      (+ (assert (not (<= v138 ctc_balance2 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) ))
+     (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert true ))
+     (push
+      (+ (assert (not (= ctc_balance3 0 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+    )
+    (push
+     (+ (declare-fun txn_value3 () Int ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) ))
+     (+ (assert (= txn_value3 0 ) ))
+     (+ (assert (= v33 txn_value3 ) ))
+     (+ (assert (= v34 (= v33 0 ) ) ))
+     (push
+      (+ (assert (not v34 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v34 ))
+     (+ (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) ))
+     (+ (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) ))
+     (+ (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) ))
+     (+ (assert (= v39 (ite v36 true v37 ) ) ))
+     (+ (assert (= v40 (ite v39 true v38 ) ) ))
+     (+ (assert v40 ))
+     (+ (assert (= v41 (ite v37 1 2 ) ) ))
+     (+ (assert (= v42 (ite v36 0 v41 ) ) ))
+     (+ (assert (= v43 (<= 0 v42 ) ) ))
+     (+ (assert (= v44 (< v42 3 ) ) ))
+     (+ (assert (= v45 (ite v43 v44 false ) ) ))
+     (push
+      (+ (assert (not v45 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v45 ))
+     (+ (assert (= v46 v42 ) ))
+     (push
+      (+ (assert (= v137 ctc_balance3 ) ))
+      (push
+       (+ (assert (not (<= v137 ctc_balance3 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) ))
+      (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert true ))
+      (push
+       (+ (assert (not (= ctc_balance4 0 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+     )
+     (push
+      (+ (declare-fun txn_value4 () Int ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) ))
+      (+ (assert (= txn_value4 0 ) ))
+      (+ (assert (= v48 txn_value4 ) ))
+      (+ (assert (= v49 (= v48 0 ) ) ))
+      (push
+       (+ (assert (not v49 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v49 ))
+      (+ (assert (= v50 (<= 0 v46 ) ) ))
+      (+ (assert (= v51 (< v46 3 ) ) ))
+      (+ (assert (= v52 (ite v50 v51 false ) ) ))
+      (push
+       (+ (assert (not v52 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v52 ))
+      (+ (assert (= v53 v26 ) ))
+      (+ (assert (= v54 v22 ) ))
+      (+ (assert (= v55 (<= 0 v46 ) ) ))
+      (+ (assert (= v56 (< v46 3 ) ) ))
+      (+ (assert (= v57 (ite v55 v56 false ) ) ))
+      (push
+       (+ (assert (not v57 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert v57 ))
+      (+ (assert (= v58 (= v46 0 ) ) ))
+      (+ (assert (= v59 (= v46 1 ) ) ))
+      (+ (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) ))
+      (+ (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) ))
+      (push
+       (+ (assert (= v136 ctc_balance4 ) ))
+       (push
+        (+ (assert (not (<= v136 ctc_balance4 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) ))
+       (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert true ))
+       (push
+        (+ (assert (not (= ctc_balance5 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+      (push
+       (+ (declare-fun txn_value5 () Int ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) ))
+       (+ (assert (= txn_value5 0 ) ))
+       (+ (assert (= v63 txn_value5 ) ))
+       (+ (assert (= v64 (= v63 0 ) ) ))
+       (push
+        (+ (assert (not v64 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v64 ))
+       (+ (assert (= v65 (uint256->bytes v53 ) ) ))
+       (+ (assert (= v66 (uint256->bytes v54 ) ) ))
+       (+ (assert (= v67 (msg-cat v65 v66 ) ) ))
+       (+ (assert (= v68 (digest v67 ) ) ))
+       (+ (assert (= v69 (= v31 v68 ) ) ))
+       (push
+        (+ (assert (not v69 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v69 ))
+       (+ (assert (= v70 (<= 0 v54 ) ) ))
+       (+ (assert (= v71 (< v54 3 ) ) ))
+       (+ (assert (= v72 (ite v70 v71 false ) ) ))
+       (push
+        (+ (assert (not v72 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v72 ))
+       (+ (assert (= v73 (<= 0 v54 ) ) ))
+       (+ (assert (= v74 (< v54 3 ) ) ))
+       (+ (assert (= v75 (ite v73 v74 false ) ) ))
+       (+ (assert (= v76 (<= 0 v46 ) ) ))
+       (+ (assert (= v77 (< v46 3 ) ) ))
+       (+ (assert (= v78 (ite v76 v77 false ) ) ))
+       (+ (assert (= v79 (ite v75 v78 false ) ) ))
+       (+ (assert (= v80 (- 4 v46 ) ) ))
+       (+ (assert (= v81 (+ v54 v80 ) ) ))
+       (+ (assert (= v82 (mod v81 3 ) ) ))
+       (+ (assert (= v83 (ite v78 0 1 ) ) ))
+       (+ (assert (= v84 (ite v75 2 v83 ) ) ))
+       (+ (assert (= v85 (ite v79 v82 v84 ) ) ))
+       (+ (assert (= v86 (<= 0 v85 ) ) ))
+       (+ (assert (= v87 (< v85 5 ) ) ))
+       (+ (assert (= v88 (ite v86 v87 false ) ) ))
+       (push
+        (+ (assert (not v88 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v88 ))
+       (+ (assert (= v89 (= v85 2 ) ) ))
+       (+ (assert (= v90 (<= 0 v54 ) ) ))
+       (+ (assert (= v91 (< v54 3 ) ) ))
+       (+ (assert (= v92 (ite v90 v91 false ) ) ))
+       (+ (assert (= v93 (ite v89 false true ) ) ))
+       (+ (assert (= v94 (ite v93 true v92 ) ) ))
+       (push
+        (+ (assert (not v94 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v94 ))
+       (+ (assert (= v95 (= v85 0 ) ) ))
+       (+ (assert (= v96 (<= 0 v46 ) ) ))
+       (+ (assert (= v97 (< v46 3 ) ) ))
+       (+ (assert (= v98 (ite v96 v97 false ) ) ))
+       (+ (assert (= v99 (ite v95 false true ) ) ))
+       (+ (assert (= v100 (ite v99 true v98 ) ) ))
+       (push
+        (+ (assert (not v100 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v100 ))
+       (+ (assert (= v101 (= v85 2 ) ) ))
+       (+ (assert (= v102 (= v54 0 ) ) ))
+       (+ (assert (= v103 (ite v102 v101 false ) ) ))
+       (push
+        (+ (assert v103 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v104 (= v54 1 ) ) ))
+       (+ (assert (= v105 (ite v104 v101 false ) ) ))
+       (push
+        (+ (assert v105 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v106 (= v54 2 ) ) ))
+       (+ (assert (= v107 (ite v106 v101 false ) ) ))
+       (push
+        (+ (assert v107 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v108 (= v85 0 ) ) ))
+       (+ (assert (= v109 (= v46 0 ) ) ))
+       (+ (assert (= v110 (ite v109 v108 false ) ) ))
+       (push
+        (+ (assert v110 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v111 (= v46 1 ) ) ))
+       (+ (assert (= v112 (ite v111 v108 false ) ) ))
+       (push
+        (+ (assert v112 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v113 (= v46 2 ) ) ))
+       (+ (assert (= v114 (ite v113 v108 false ) ) ))
+       (push
+        (+ (assert v114 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v115 (= v85 2 ) ) ))
+       (+ (assert (= v116 (* 2 v5 ) ) ))
+       (+ (assert (= v117 (= v85 0 ) ) ))
+       (+ (assert (= v118 (* 2 v5 ) ) ))
+       (+ (assert (= v119 (ite v117 0 v5 ) ) ))
+       (+ (assert (= v120 (ite v117 v118 v5 ) ) ))
+       (+ (assert (= v121 (ite v115 v116 v119 ) ) ))
+       (+ (assert (= v122 (ite v115 0 v120 ) ) ))
+       (+ (assert (= v123 (+ v6 v121 ) ) ))
+       (push
+        (+ (assert (not (<= v123 ctc_balance5 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) ))
+       (push
+        (+ (assert (not (<= v122 ctc_balance6 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) ))
+       (+ (assert (= v125 (<= 0 v85 ) ) ))
+       (+ (assert (= v126 (< v85 5 ) ) ))
+       (+ (assert (= v127 (ite v125 v126 false ) ) ))
+       (push
+        (+ (assert (not v127 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v127 ))
+       (+ (assert (= v128 (= v85 0 ) ) ))
+       (+ (assert (= v129 (= v85 1 ) ) ))
+       (+ (assert (= v130 (= v85 2 ) ) ))
+       (+ (assert (= v131 (= v85 3 ) ) ))
+       (+ (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) ))
+       (+ (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) ))
+       (+ (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) ))
+       (+ (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) ))
+       (push
+        (+ (assert (not (= ctc_balance7 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+)
+(push
+ (+ (define-fun ctc_balance0 () Int 0 ))
+ (push
+  (push
+   (+ (assert true ))
+   (push
+    (+ (assert (not (= ctc_balance0 0 ) ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+  )
+  (push
+   (+ (declare-fun txn_value1 () Int ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (assert (= v9 txn_value1 ) ))
+   (+ (assert (= v10 (+ v5 v6 ) ) ))
+   (+ (assert (= v11 (= v9 v10 ) ) ))
+   (+ (assert v11 ))
+   (push
+    (+ (assert (= v139 ctc_balance1 ) ))
+    (push
+     (+ (assert (not (<= v139 ctc_balance1 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) ))
+    (+ (assert true ))
+    (push
+     (+ (assert (not (= ctc_balance2 0 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+   )
+   (push
+    (+ (declare-fun txn_value2 () Int ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (assert (= v13 txn_value2 ) ))
+    (+ (assert (= v14 (= v13 v5 ) ) ))
+    (+ (assert v14 ))
+    (push
+     (+ (assert (= v138 ctc_balance2 ) ))
+     (push
+      (+ (assert (not (<= v138 ctc_balance2 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) ))
+     (+ (assert true ))
+     (push
+      (+ (assert (not (= ctc_balance3 0 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+    )
+    (push
+     (+ (declare-fun txn_value3 () Int ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (assert (= v33 txn_value3 ) ))
+     (+ (assert (= v34 (= v33 0 ) ) ))
+     (+ (assert v34 ))
+     (push
+      (+ (assert (= v137 ctc_balance3 ) ))
+      (push
+       (+ (assert (not (<= v137 ctc_balance3 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) ))
+      (+ (assert true ))
+      (push
+       (+ (assert (not (= ctc_balance4 0 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+     )
+     (push
+      (+ (declare-fun txn_value4 () Int ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (assert (= v48 txn_value4 ) ))
+      (+ (assert (= v49 (= v48 0 ) ) ))
+      (+ (assert v49 ))
+      (+ (assert (= v50 (<= 0 v46 ) ) ))
+      (+ (assert (= v51 (< v46 3 ) ) ))
+      (+ (assert (= v52 (ite v50 v51 false ) ) ))
+      (+ (assert v52 ))
+      (push
+       (+ (assert (= v136 ctc_balance4 ) ))
+       (push
+        (+ (assert (not (<= v136 ctc_balance4 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) ))
+       (+ (assert true ))
+       (push
+        (+ (assert (not (= ctc_balance5 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+      (push
+       (+ (declare-fun txn_value5 () Int ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (assert (= v63 txn_value5 ) ))
+       (+ (assert (= v64 (= v63 0 ) ) ))
+       (+ (assert v64 ))
+       (+ (assert (= v65 (uint256->bytes v53 ) ) ))
+       (+ (assert (= v66 (uint256->bytes v54 ) ) ))
+       (+ (assert (= v67 (msg-cat v65 v66 ) ) ))
+       (+ (assert (= v68 (digest v67 ) ) ))
+       (+ (assert (= v69 (= v31 v68 ) ) ))
+       (+ (assert v69 ))
+       (+ (assert (= v70 (<= 0 v54 ) ) ))
+       (+ (assert (= v71 (< v54 3 ) ) ))
+       (+ (assert (= v72 (ite v70 v71 false ) ) ))
+       (+ (assert v72 ))
+       (+ (assert (= v73 (<= 0 v54 ) ) ))
+       (+ (assert (= v74 (< v54 3 ) ) ))
+       (+ (assert (= v75 (ite v73 v74 false ) ) ))
+       (+ (assert (= v76 (<= 0 v46 ) ) ))
+       (+ (assert (= v77 (< v46 3 ) ) ))
+       (+ (assert (= v78 (ite v76 v77 false ) ) ))
+       (+ (assert (= v79 (ite v75 v78 false ) ) ))
+       (+ (assert (= v80 (- 4 v46 ) ) ))
+       (+ (assert (= v81 (+ v54 v80 ) ) ))
+       (+ (assert (= v82 (mod v81 3 ) ) ))
+       (+ (assert (= v83 (ite v78 0 1 ) ) ))
+       (+ (assert (= v84 (ite v75 2 v83 ) ) ))
+       (+ (assert (= v85 (ite v79 v82 v84 ) ) ))
+       (+ (assert (= v86 (<= 0 v85 ) ) ))
+       (+ (assert (= v87 (< v85 5 ) ) ))
+       (+ (assert (= v88 (ite v86 v87 false ) ) ))
+       (push
+        (+ (assert (not v88 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v88 ))
+       (+ (assert (= v89 (= v85 2 ) ) ))
+       (+ (assert (= v90 (<= 0 v54 ) ) ))
+       (+ (assert (= v91 (< v54 3 ) ) ))
+       (+ (assert (= v92 (ite v90 v91 false ) ) ))
+       (+ (assert (= v93 (ite v89 false true ) ) ))
+       (+ (assert (= v94 (ite v93 true v92 ) ) ))
+       (push
+        (+ (assert (not v94 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v94 ))
+       (+ (assert (= v95 (= v85 0 ) ) ))
+       (+ (assert (= v96 (<= 0 v46 ) ) ))
+       (+ (assert (= v97 (< v46 3 ) ) ))
+       (+ (assert (= v98 (ite v96 v97 false ) ) ))
+       (+ (assert (= v99 (ite v95 false true ) ) ))
+       (+ (assert (= v100 (ite v99 true v98 ) ) ))
+       (push
+        (+ (assert (not v100 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v100 ))
+       (+ (assert (= v101 (= v85 2 ) ) ))
+       (+ (assert (= v102 (= v54 0 ) ) ))
+       (+ (assert (= v103 (ite v102 v101 false ) ) ))
+       (push
+        (+ (assert v103 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v104 (= v54 1 ) ) ))
+       (+ (assert (= v105 (ite v104 v101 false ) ) ))
+       (push
+        (+ (assert v105 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v106 (= v54 2 ) ) ))
+       (+ (assert (= v107 (ite v106 v101 false ) ) ))
+       (push
+        (+ (assert v107 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v108 (= v85 0 ) ) ))
+       (+ (assert (= v109 (= v46 0 ) ) ))
+       (+ (assert (= v110 (ite v109 v108 false ) ) ))
+       (push
+        (+ (assert v110 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v111 (= v46 1 ) ) ))
+       (+ (assert (= v112 (ite v111 v108 false ) ) ))
+       (push
+        (+ (assert v112 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v113 (= v46 2 ) ) ))
+       (+ (assert (= v114 (ite v113 v108 false ) ) ))
+       (push
+        (+ (assert v114 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v115 (= v85 2 ) ) ))
+       (+ (assert (= v116 (* 2 v5 ) ) ))
+       (+ (assert (= v117 (= v85 0 ) ) ))
+       (+ (assert (= v118 (* 2 v5 ) ) ))
+       (+ (assert (= v119 (ite v117 0 v5 ) ) ))
+       (+ (assert (= v120 (ite v117 v118 v5 ) ) ))
+       (+ (assert (= v121 (ite v115 v116 v119 ) ) ))
+       (+ (assert (= v122 (ite v115 0 v120 ) ) ))
+       (+ (assert (= v123 (+ v6 v121 ) ) ))
+       (push
+        (+ (assert (not (<= v123 ctc_balance5 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) ))
+       (push
+        (+ (assert (not (<= v122 ctc_balance6 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) ))
+       (+ (assert (= v125 (<= 0 v85 ) ) ))
+       (+ (assert (= v126 (< v85 5 ) ) ))
+       (+ (assert (= v127 (ite v125 v126 false ) ) ))
+       (+ (assert v127 ))
+       (+ (assert (= v128 (= v85 0 ) ) ))
+       (+ (assert (= v129 (= v85 1 ) ) ))
+       (+ (assert (= v130 (= v85 2 ) ) ))
+       (+ (assert (= v131 (= v85 3 ) ) ))
+       (+ (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) ))
+       (+ (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) ))
+       (+ (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) ))
+       (+ (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) ))
+       (push
+        (+ (assert (not (= ctc_balance7 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+)
+(push
+ (+ (define-fun ctc_balance0 () Int 0 ))
+ (push
+  (+ (assert (= v5 v1 ) ))
+  (+ (assert (= v6 v2 ) ))
+  (+ (assert (= v8 (+ v5 v6 ) ) ))
+  (push
+   (+ (assert true ))
+   (push
+    (+ (assert (not (= ctc_balance0 0 ) ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+  )
+  (push
+   (+ (declare-fun txn_value1 () Int ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (assert (= v9 txn_value1 ) ))
+   (+ (assert (= v10 (+ v5 v6 ) ) ))
+   (+ (assert (= v11 (= v9 v10 ) ) ))
+   (+ (assert v11 ))
+   (push
+    (+ (assert (= v139 ctc_balance1 ) ))
+    (push
+     (+ (assert (not (<= v139 ctc_balance1 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) ))
+    (+ (assert true ))
+    (push
+     (+ (assert (not (= ctc_balance2 0 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+   )
+   (push
+    (+ (declare-fun txn_value2 () Int ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (assert (= v13 txn_value2 ) ))
+    (+ (assert (= v14 (= v13 v5 ) ) ))
+    (+ (assert v14 ))
+    (+ (assert (= v16 (= v15 (bytes-literal 31217174 ) ) ) ))
+    (+ (assert (= v17 (= v15 (bytes-literal 3108938406 ) ) ) ))
+    (+ (assert (= v18 (= v15 (bytes-literal 1142816574 ) ) ) ))
+    (+ (assert (= v19 (ite v16 true v17 ) ) ))
+    (+ (assert (= v20 (ite v19 true v18 ) ) ))
+    (+ (assert v20 ))
+    (+ (assert (= v21 (ite v17 1 2 ) ) ))
+    (+ (assert (= v22 (ite v16 0 v21 ) ) ))
+    (+ (assert (= v23 (<= 0 v22 ) ) ))
+    (+ (assert (= v24 (< v22 3 ) ) ))
+    (+ (assert (= v25 (ite v23 v24 false ) ) ))
+    (push
+     (+ (assert (not v25 ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert v25 ))
+    (+ (assert (= v27 (uint256->bytes v26 ) ) ))
+    (+ (assert (= v28 (uint256->bytes v22 ) ) ))
+    (+ (assert (= v29 (msg-cat v27 v28 ) ) ))
+    (+ (assert (= v30 (digest v29 ) ) ))
+    (+ (assert (= v31 v30 ) ))
+    (push
+     (+ (assert (= v138 ctc_balance2 ) ))
+     (push
+      (+ (assert (not (<= v138 ctc_balance2 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) ))
+     (+ (assert true ))
+     (push
+      (+ (assert (not (= ctc_balance3 0 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+    )
+    (push
+     (+ (declare-fun txn_value3 () Int ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (assert (= v33 txn_value3 ) ))
+     (+ (assert (= v34 (= v33 0 ) ) ))
+     (+ (assert v34 ))
+     (push
+      (+ (assert (= v137 ctc_balance3 ) ))
+      (push
+       (+ (assert (not (<= v137 ctc_balance3 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) ))
+      (+ (assert true ))
+      (push
+       (+ (assert (not (= ctc_balance4 0 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+     )
+     (push
+      (+ (declare-fun txn_value4 () Int ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (assert (= v48 txn_value4 ) ))
+      (+ (assert (= v49 (= v48 0 ) ) ))
+      (+ (assert v49 ))
+      (+ (assert (= v50 (<= 0 v46 ) ) ))
+      (+ (assert (= v51 (< v46 3 ) ) ))
+      (+ (assert (= v52 (ite v50 v51 false ) ) ))
+      (+ (assert v52 ))
+      (+ (assert (= v53 v26 ) ))
+      (+ (assert (= v54 v22 ) ))
+      (+ (assert (= v55 (<= 0 v46 ) ) ))
+      (+ (assert (= v56 (< v46 3 ) ) ))
+      (+ (assert (= v57 (ite v55 v56 false ) ) ))
+      (+ (assert v57 ))
+      (+ (assert (= v58 (= v46 0 ) ) ))
+      (+ (assert (= v59 (= v46 1 ) ) ))
+      (+ (assert (= v60 (ite v59 (bytes-literal 3108938406 ) (bytes-literal 1142816574 ) ) ) ))
+      (+ (assert (= v61 (ite v58 (bytes-literal 31217174 ) v60 ) ) ))
+      (push
+       (+ (assert (= v136 ctc_balance4 ) ))
+       (push
+        (+ (assert (not (<= v136 ctc_balance4 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) ))
+       (+ (assert true ))
+       (push
+        (+ (assert (not (= ctc_balance5 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+      (push
+       (+ (declare-fun txn_value5 () Int ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (assert (= v63 txn_value5 ) ))
+       (+ (assert (= v64 (= v63 0 ) ) ))
+       (+ (assert v64 ))
+       (+ (assert (= v65 (uint256->bytes v53 ) ) ))
+       (+ (assert (= v66 (uint256->bytes v54 ) ) ))
+       (+ (assert (= v67 (msg-cat v65 v66 ) ) ))
+       (+ (assert (= v68 (digest v67 ) ) ))
+       (+ (assert (= v69 (= v31 v68 ) ) ))
+       (+ (assert v69 ))
+       (+ (assert (= v70 (<= 0 v54 ) ) ))
+       (+ (assert (= v71 (< v54 3 ) ) ))
+       (+ (assert (= v72 (ite v70 v71 false ) ) ))
+       (+ (assert v72 ))
+       (+ (assert (= v73 (<= 0 v54 ) ) ))
+       (+ (assert (= v74 (< v54 3 ) ) ))
+       (+ (assert (= v75 (ite v73 v74 false ) ) ))
+       (+ (assert (= v76 (<= 0 v46 ) ) ))
+       (+ (assert (= v77 (< v46 3 ) ) ))
+       (+ (assert (= v78 (ite v76 v77 false ) ) ))
+       (+ (assert (= v79 (ite v75 v78 false ) ) ))
+       (+ (assert (= v80 (- 4 v46 ) ) ))
+       (+ (assert (= v81 (+ v54 v80 ) ) ))
+       (+ (assert (= v82 (mod v81 3 ) ) ))
+       (+ (assert (= v83 (ite v78 0 1 ) ) ))
+       (+ (assert (= v84 (ite v75 2 v83 ) ) ))
+       (+ (assert (= v85 (ite v79 v82 v84 ) ) ))
+       (+ (assert (= v86 (<= 0 v85 ) ) ))
+       (+ (assert (= v87 (< v85 5 ) ) ))
+       (+ (assert (= v88 (ite v86 v87 false ) ) ))
+       (push
+        (+ (assert (not v88 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v88 ))
+       (+ (assert (= v89 (= v85 2 ) ) ))
+       (+ (assert (= v90 (<= 0 v54 ) ) ))
+       (+ (assert (= v91 (< v54 3 ) ) ))
+       (+ (assert (= v92 (ite v90 v91 false ) ) ))
+       (+ (assert (= v93 (ite v89 false true ) ) ))
+       (+ (assert (= v94 (ite v93 true v92 ) ) ))
+       (push
+        (+ (assert (not v94 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v94 ))
+       (+ (assert (= v95 (= v85 0 ) ) ))
+       (+ (assert (= v96 (<= 0 v46 ) ) ))
+       (+ (assert (= v97 (< v46 3 ) ) ))
+       (+ (assert (= v98 (ite v96 v97 false ) ) ))
+       (+ (assert (= v99 (ite v95 false true ) ) ))
+       (+ (assert (= v100 (ite v99 true v98 ) ) ))
+       (push
+        (+ (assert (not v100 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v100 ))
+       (+ (assert (= v101 (= v85 2 ) ) ))
+       (+ (assert (= v102 (= v54 0 ) ) ))
+       (+ (assert (= v103 (ite v102 v101 false ) ) ))
+       (push
+        (+ (assert v103 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v104 (= v54 1 ) ) ))
+       (+ (assert (= v105 (ite v104 v101 false ) ) ))
+       (push
+        (+ (assert v105 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v106 (= v54 2 ) ) ))
+       (+ (assert (= v107 (ite v106 v101 false ) ) ))
+       (push
+        (+ (assert v107 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v108 (= v85 0 ) ) ))
+       (+ (assert (= v109 (= v46 0 ) ) ))
+       (+ (assert (= v110 (ite v109 v108 false ) ) ))
+       (push
+        (+ (assert v110 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v111 (= v46 1 ) ) ))
+       (+ (assert (= v112 (ite v111 v108 false ) ) ))
+       (push
+        (+ (assert v112 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v113 (= v46 2 ) ) ))
+       (+ (assert (= v114 (ite v113 v108 false ) ) ))
+       (push
+        (+ (assert v114 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v115 (= v85 2 ) ) ))
+       (+ (assert (= v116 (* 2 v5 ) ) ))
+       (+ (assert (= v117 (= v85 0 ) ) ))
+       (+ (assert (= v118 (* 2 v5 ) ) ))
+       (+ (assert (= v119 (ite v117 0 v5 ) ) ))
+       (+ (assert (= v120 (ite v117 v118 v5 ) ) ))
+       (+ (assert (= v121 (ite v115 v116 v119 ) ) ))
+       (+ (assert (= v122 (ite v115 0 v120 ) ) ))
+       (+ (assert (= v123 (+ v6 v121 ) ) ))
+       (push
+        (+ (assert (not (<= v123 ctc_balance5 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) ))
+       (push
+        (+ (assert (not (<= v122 ctc_balance6 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) ))
+       (+ (assert (= v125 (<= 0 v85 ) ) ))
+       (+ (assert (= v126 (< v85 5 ) ) ))
+       (+ (assert (= v127 (ite v125 v126 false ) ) ))
+       (+ (assert v127 ))
+       (+ (assert (= v128 (= v85 0 ) ) ))
+       (+ (assert (= v129 (= v85 1 ) ) ))
+       (+ (assert (= v130 (= v85 2 ) ) ))
+       (+ (assert (= v131 (= v85 3 ) ) ))
+       (+ (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) ))
+       (+ (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) ))
+       (+ (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) ))
+       (+ (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) ))
+       (push
+        (+ (assert (not (= ctc_balance7 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+)
+(push
+ (+ (define-fun ctc_balance0 () Int 0 ))
+ (push
+  (push
+   (+ (assert true ))
+   (push
+    (+ (assert (not (= ctc_balance0 0 ) ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+  )
+  (push
+   (+ (declare-fun txn_value1 () Int ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (assert (= v9 txn_value1 ) ))
+   (+ (assert (= v10 (+ v5 v6 ) ) ))
+   (+ (assert (= v11 (= v9 v10 ) ) ))
+   (+ (assert v11 ))
+   (push
+    (+ (assert (= v139 ctc_balance1 ) ))
+    (push
+     (+ (assert (not (<= v139 ctc_balance1 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) ))
+    (+ (assert true ))
+    (push
+     (+ (assert (not (= ctc_balance2 0 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+   )
+   (push
+    (+ (declare-fun txn_value2 () Int ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (assert (= v13 txn_value2 ) ))
+    (+ (assert (= v14 (= v13 v5 ) ) ))
+    (+ (assert v14 ))
+    (push
+     (+ (assert (= v138 ctc_balance2 ) ))
+     (push
+      (+ (assert (not (<= v138 ctc_balance2 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) ))
+     (+ (assert true ))
+     (push
+      (+ (assert (not (= ctc_balance3 0 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+    )
+    (push
+     (+ (declare-fun txn_value3 () Int ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (assert (= v33 txn_value3 ) ))
+     (+ (assert (= v34 (= v33 0 ) ) ))
+     (+ (assert v34 ))
+     (+ (assert (= v36 (= v35 (bytes-literal 31217174 ) ) ) ))
+     (+ (assert (= v37 (= v35 (bytes-literal 3108938406 ) ) ) ))
+     (+ (assert (= v38 (= v35 (bytes-literal 1142816574 ) ) ) ))
+     (+ (assert (= v39 (ite v36 true v37 ) ) ))
+     (+ (assert (= v40 (ite v39 true v38 ) ) ))
+     (+ (assert v40 ))
+     (+ (assert (= v41 (ite v37 1 2 ) ) ))
+     (+ (assert (= v42 (ite v36 0 v41 ) ) ))
+     (+ (assert (= v43 (<= 0 v42 ) ) ))
+     (+ (assert (= v44 (< v42 3 ) ) ))
+     (+ (assert (= v45 (ite v43 v44 false ) ) ))
+     (push
+      (+ (assert (not v45 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert v45 ))
+     (+ (assert (= v46 v42 ) ))
+     (push
+      (+ (assert (= v137 ctc_balance3 ) ))
+      (push
+       (+ (assert (not (<= v137 ctc_balance3 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) ))
+      (+ (assert true ))
+      (push
+       (+ (assert (not (= ctc_balance4 0 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+     )
+     (push
+      (+ (declare-fun txn_value4 () Int ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (assert (= v48 txn_value4 ) ))
+      (+ (assert (= v49 (= v48 0 ) ) ))
+      (+ (assert v49 ))
+      (+ (assert (= v50 (<= 0 v46 ) ) ))
+      (+ (assert (= v51 (< v46 3 ) ) ))
+      (+ (assert (= v52 (ite v50 v51 false ) ) ))
+      (+ (assert v52 ))
+      (push
+       (+ (assert (= v136 ctc_balance4 ) ))
+       (push
+        (+ (assert (not (<= v136 ctc_balance4 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) ))
+       (+ (assert true ))
+       (push
+        (+ (assert (not (= ctc_balance5 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+      (push
+       (+ (declare-fun txn_value5 () Int ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (assert (= v63 txn_value5 ) ))
+       (+ (assert (= v64 (= v63 0 ) ) ))
+       (+ (assert v64 ))
+       (+ (assert (= v65 (uint256->bytes v53 ) ) ))
+       (+ (assert (= v66 (uint256->bytes v54 ) ) ))
+       (+ (assert (= v67 (msg-cat v65 v66 ) ) ))
+       (+ (assert (= v68 (digest v67 ) ) ))
+       (+ (assert (= v69 (= v31 v68 ) ) ))
+       (+ (assert v69 ))
+       (+ (assert (= v70 (<= 0 v54 ) ) ))
+       (+ (assert (= v71 (< v54 3 ) ) ))
+       (+ (assert (= v72 (ite v70 v71 false ) ) ))
+       (+ (assert v72 ))
+       (+ (assert (= v73 (<= 0 v54 ) ) ))
+       (+ (assert (= v74 (< v54 3 ) ) ))
+       (+ (assert (= v75 (ite v73 v74 false ) ) ))
+       (+ (assert (= v76 (<= 0 v46 ) ) ))
+       (+ (assert (= v77 (< v46 3 ) ) ))
+       (+ (assert (= v78 (ite v76 v77 false ) ) ))
+       (+ (assert (= v79 (ite v75 v78 false ) ) ))
+       (+ (assert (= v80 (- 4 v46 ) ) ))
+       (+ (assert (= v81 (+ v54 v80 ) ) ))
+       (+ (assert (= v82 (mod v81 3 ) ) ))
+       (+ (assert (= v83 (ite v78 0 1 ) ) ))
+       (+ (assert (= v84 (ite v75 2 v83 ) ) ))
+       (+ (assert (= v85 (ite v79 v82 v84 ) ) ))
+       (+ (assert (= v86 (<= 0 v85 ) ) ))
+       (+ (assert (= v87 (< v85 5 ) ) ))
+       (+ (assert (= v88 (ite v86 v87 false ) ) ))
+       (push
+        (+ (assert (not v88 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v88 ))
+       (+ (assert (= v89 (= v85 2 ) ) ))
+       (+ (assert (= v90 (<= 0 v54 ) ) ))
+       (+ (assert (= v91 (< v54 3 ) ) ))
+       (+ (assert (= v92 (ite v90 v91 false ) ) ))
+       (+ (assert (= v93 (ite v89 false true ) ) ))
+       (+ (assert (= v94 (ite v93 true v92 ) ) ))
+       (push
+        (+ (assert (not v94 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v94 ))
+       (+ (assert (= v95 (= v85 0 ) ) ))
+       (+ (assert (= v96 (<= 0 v46 ) ) ))
+       (+ (assert (= v97 (< v46 3 ) ) ))
+       (+ (assert (= v98 (ite v96 v97 false ) ) ))
+       (+ (assert (= v99 (ite v95 false true ) ) ))
+       (+ (assert (= v100 (ite v99 true v98 ) ) ))
+       (push
+        (+ (assert (not v100 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v100 ))
+       (+ (assert (= v101 (= v85 2 ) ) ))
+       (+ (assert (= v102 (= v54 0 ) ) ))
+       (+ (assert (= v103 (ite v102 v101 false ) ) ))
+       (push
+        (+ (assert v103 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v104 (= v54 1 ) ) ))
+       (+ (assert (= v105 (ite v104 v101 false ) ) ))
+       (push
+        (+ (assert v105 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v106 (= v54 2 ) ) ))
+       (+ (assert (= v107 (ite v106 v101 false ) ) ))
+       (push
+        (+ (assert v107 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v108 (= v85 0 ) ) ))
+       (+ (assert (= v109 (= v46 0 ) ) ))
+       (+ (assert (= v110 (ite v109 v108 false ) ) ))
+       (push
+        (+ (assert v110 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v111 (= v46 1 ) ) ))
+       (+ (assert (= v112 (ite v111 v108 false ) ) ))
+       (push
+        (+ (assert v112 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v113 (= v46 2 ) ) ))
+       (+ (assert (= v114 (ite v113 v108 false ) ) ))
+       (push
+        (+ (assert v114 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v115 (= v85 2 ) ) ))
+       (+ (assert (= v116 (* 2 v5 ) ) ))
+       (+ (assert (= v117 (= v85 0 ) ) ))
+       (+ (assert (= v118 (* 2 v5 ) ) ))
+       (+ (assert (= v119 (ite v117 0 v5 ) ) ))
+       (+ (assert (= v120 (ite v117 v118 v5 ) ) ))
+       (+ (assert (= v121 (ite v115 v116 v119 ) ) ))
+       (+ (assert (= v122 (ite v115 0 v120 ) ) ))
+       (+ (assert (= v123 (+ v6 v121 ) ) ))
+       (push
+        (+ (assert (not (<= v123 ctc_balance5 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) ))
+       (push
+        (+ (assert (not (<= v122 ctc_balance6 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) ))
+       (+ (assert (= v125 (<= 0 v85 ) ) ))
+       (+ (assert (= v126 (< v85 5 ) ) ))
+       (+ (assert (= v127 (ite v125 v126 false ) ) ))
+       (+ (assert v127 ))
+       (+ (assert (= v128 (= v85 0 ) ) ))
+       (+ (assert (= v129 (= v85 1 ) ) ))
+       (+ (assert (= v130 (= v85 2 ) ) ))
+       (+ (assert (= v131 (= v85 3 ) ) ))
+       (+ (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) ))
+       (+ (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) ))
+       (+ (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) ))
+       (+ (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) ))
+       (push
+        (+ (assert (not (= ctc_balance7 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+)
+(push
+ (+ (define-fun ctc_balance0 () Int 0 ))
+ (push
+  (push
+   (+ (assert true ))
+   (push
+    (+ (assert (not (= ctc_balance0 0 ) ) ))
+    (+ (check-sat ))
+    (- unsat)
+   )
+  )
+  (push
+   (+ (declare-fun txn_value1 () Int ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (define-fun ctc_balance1 () Int (+ ctc_balance0 txn_value1 ) ))
+   (+ (assert (<= 0 txn_value1 ) ))
+   (+ (assert (= v9 txn_value1 ) ))
+   (+ (assert (= v10 (+ v5 v6 ) ) ))
+   (+ (assert (= v11 (= v9 v10 ) ) ))
+   (+ (assert v11 ))
+   (push
+    (+ (assert (= v139 ctc_balance1 ) ))
+    (push
+     (+ (assert (not (<= v139 ctc_balance1 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (define-fun ctc_balance2 () Int (- ctc_balance1 v139 ) ))
+    (+ (assert true ))
+    (push
+     (+ (assert (not (= ctc_balance2 0 ) ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+   )
+   (push
+    (+ (declare-fun txn_value2 () Int ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (define-fun ctc_balance2 () Int (+ ctc_balance1 txn_value2 ) ))
+    (+ (assert (<= 0 txn_value2 ) ))
+    (+ (assert (= v13 txn_value2 ) ))
+    (+ (assert (= v14 (= v13 v5 ) ) ))
+    (+ (assert v14 ))
+    (push
+     (+ (assert (= v138 ctc_balance2 ) ))
+     (push
+      (+ (assert (not (<= v138 ctc_balance2 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v138 ) ))
+     (+ (assert true ))
+     (push
+      (+ (assert (not (= ctc_balance3 0 ) ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+    )
+    (push
+     (+ (declare-fun txn_value3 () Int ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (define-fun ctc_balance3 () Int (+ ctc_balance2 txn_value3 ) ))
+     (+ (assert (<= 0 txn_value3 ) ))
+     (+ (assert (= v33 txn_value3 ) ))
+     (+ (assert (= v34 (= v33 0 ) ) ))
+     (+ (assert v34 ))
+     (push
+      (+ (assert (= v137 ctc_balance3 ) ))
+      (push
+       (+ (assert (not (<= v137 ctc_balance3 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v137 ) ))
+      (+ (assert true ))
+      (push
+       (+ (assert (not (= ctc_balance4 0 ) ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+     )
+     (push
+      (+ (declare-fun txn_value4 () Int ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (define-fun ctc_balance4 () Int (+ ctc_balance3 txn_value4 ) ))
+      (+ (assert (<= 0 txn_value4 ) ))
+      (+ (assert (= v48 txn_value4 ) ))
+      (+ (assert (= v49 (= v48 0 ) ) ))
+      (+ (assert v49 ))
+      (+ (assert (= v50 (<= 0 v46 ) ) ))
+      (+ (assert (= v51 (< v46 3 ) ) ))
+      (+ (assert (= v52 (ite v50 v51 false ) ) ))
+      (+ (assert v52 ))
+      (push
+       (+ (assert (= v136 ctc_balance4 ) ))
+       (push
+        (+ (assert (not (<= v136 ctc_balance4 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v136 ) ))
+       (+ (assert true ))
+       (push
+        (+ (assert (not (= ctc_balance5 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+      (push
+       (+ (declare-fun txn_value5 () Int ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (define-fun ctc_balance5 () Int (+ ctc_balance4 txn_value5 ) ))
+       (+ (assert (<= 0 txn_value5 ) ))
+       (+ (assert (= v63 txn_value5 ) ))
+       (+ (assert (= v64 (= v63 0 ) ) ))
+       (+ (assert v64 ))
+       (+ (assert (= v65 (uint256->bytes v53 ) ) ))
+       (+ (assert (= v66 (uint256->bytes v54 ) ) ))
+       (+ (assert (= v67 (msg-cat v65 v66 ) ) ))
+       (+ (assert (= v68 (digest v67 ) ) ))
+       (+ (assert (= v69 (= v31 v68 ) ) ))
+       (+ (assert v69 ))
+       (+ (assert (= v70 (<= 0 v54 ) ) ))
+       (+ (assert (= v71 (< v54 3 ) ) ))
+       (+ (assert (= v72 (ite v70 v71 false ) ) ))
+       (+ (assert v72 ))
+       (+ (assert (= v73 (<= 0 v54 ) ) ))
+       (+ (assert (= v74 (< v54 3 ) ) ))
+       (+ (assert (= v75 (ite v73 v74 false ) ) ))
+       (+ (assert (= v76 (<= 0 v46 ) ) ))
+       (+ (assert (= v77 (< v46 3 ) ) ))
+       (+ (assert (= v78 (ite v76 v77 false ) ) ))
+       (+ (assert (= v79 (ite v75 v78 false ) ) ))
+       (+ (assert (= v80 (- 4 v46 ) ) ))
+       (+ (assert (= v81 (+ v54 v80 ) ) ))
+       (+ (assert (= v82 (mod v81 3 ) ) ))
+       (+ (assert (= v83 (ite v78 0 1 ) ) ))
+       (+ (assert (= v84 (ite v75 2 v83 ) ) ))
+       (+ (assert (= v85 (ite v79 v82 v84 ) ) ))
+       (+ (assert (= v86 (<= 0 v85 ) ) ))
+       (+ (assert (= v87 (< v85 5 ) ) ))
+       (+ (assert (= v88 (ite v86 v87 false ) ) ))
+       (push
+        (+ (assert (not v88 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v88 ))
+       (+ (assert (= v89 (= v85 2 ) ) ))
+       (+ (assert (= v90 (<= 0 v54 ) ) ))
+       (+ (assert (= v91 (< v54 3 ) ) ))
+       (+ (assert (= v92 (ite v90 v91 false ) ) ))
+       (+ (assert (= v93 (ite v89 false true ) ) ))
+       (+ (assert (= v94 (ite v93 true v92 ) ) ))
+       (push
+        (+ (assert (not v94 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v94 ))
+       (+ (assert (= v95 (= v85 0 ) ) ))
+       (+ (assert (= v96 (<= 0 v46 ) ) ))
+       (+ (assert (= v97 (< v46 3 ) ) ))
+       (+ (assert (= v98 (ite v96 v97 false ) ) ))
+       (+ (assert (= v99 (ite v95 false true ) ) ))
+       (+ (assert (= v100 (ite v99 true v98 ) ) ))
+       (push
+        (+ (assert (not v100 ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert v100 ))
+       (+ (assert (= v101 (= v85 2 ) ) ))
+       (+ (assert (= v102 (= v54 0 ) ) ))
+       (+ (assert (= v103 (ite v102 v101 false ) ) ))
+       (push
+        (+ (assert v103 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v104 (= v54 1 ) ) ))
+       (+ (assert (= v105 (ite v104 v101 false ) ) ))
+       (push
+        (+ (assert v105 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v106 (= v54 2 ) ) ))
+       (+ (assert (= v107 (ite v106 v101 false ) ) ))
+       (push
+        (+ (assert v107 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v108 (= v85 0 ) ) ))
+       (+ (assert (= v109 (= v46 0 ) ) ))
+       (+ (assert (= v110 (ite v109 v108 false ) ) ))
+       (push
+        (+ (assert v110 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v111 (= v46 1 ) ) ))
+       (+ (assert (= v112 (ite v111 v108 false ) ) ))
+       (push
+        (+ (assert v112 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v113 (= v46 2 ) ) ))
+       (+ (assert (= v114 (ite v113 v108 false ) ) ))
+       (push
+        (+ (assert v114 ))
+        (+ (check-sat ))
+        (- sat)
+       )
+       (+ (assert (= v115 (= v85 2 ) ) ))
+       (+ (assert (= v116 (* 2 v5 ) ) ))
+       (+ (assert (= v117 (= v85 0 ) ) ))
+       (+ (assert (= v118 (* 2 v5 ) ) ))
+       (+ (assert (= v119 (ite v117 0 v5 ) ) ))
+       (+ (assert (= v120 (ite v117 v118 v5 ) ) ))
+       (+ (assert (= v121 (ite v115 v116 v119 ) ) ))
+       (+ (assert (= v122 (ite v115 0 v120 ) ) ))
+       (+ (assert (= v123 (+ v6 v121 ) ) ))
+       (push
+        (+ (assert (not (<= v123 ctc_balance5 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v123 ) ))
+       (push
+        (+ (assert (not (<= v122 ctc_balance6 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (define-fun ctc_balance7 () Int (- ctc_balance6 v122 ) ))
+       (+ (assert (= v125 (<= 0 v85 ) ) ))
+       (+ (assert (= v126 (< v85 5 ) ) ))
+       (+ (assert (= v127 (ite v125 v126 false ) ) ))
+       (+ (assert v127 ))
+       (+ (assert (= v128 (= v85 0 ) ) ))
+       (+ (assert (= v129 (= v85 1 ) ) ))
+       (+ (assert (= v130 (= v85 2 ) ) ))
+       (+ (assert (= v131 (= v85 3 ) ) ))
+       (+ (assert (= v132 (ite v131 (bytes-literal 2585170148 ) (bytes-literal 1495867592 ) ) ) ))
+       (+ (assert (= v133 (ite v130 (bytes-literal 1195058296 ) v132 ) ) ))
+       (+ (assert (= v134 (ite v129 (bytes-literal 3502248497 ) v133 ) ) ))
+       (+ (assert (= v135 (ite v128 (bytes-literal 1946528133 ) v134 ) ) ))
+       (push
+        (+ (assert (not (= ctc_balance7 0 ) ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+      )
+     )
+    )
+   )
+  )
+ )
+)
+(+ (exit ))

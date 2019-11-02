@@ -78,9 +78,6 @@ z3TxnValue i = "txn_value" ++ show i
 z3TxnValueRef :: Int -> SExpr
 z3TxnValueRef i = Atom $ z3TxnValue i
 
-z3IntSort :: SExpr
-z3IntSort = z3_sortof BT_UInt256
-
 {- Model Rendering -}
 
 pretty_se :: SExpr -> Doc a
@@ -127,6 +124,22 @@ z3_sat1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
       uc <- getUnsatCore z3
       mapM_ putStrLn uc
       return $ VR 0 1
+
+z3_define :: Solver -> String -> BaseType -> SExpr -> IO ()
+z3_define z3 v bt d = do
+  let s = z3_sortof bt
+  void $ define z3 v s d
+
+z3_declare :: Solver -> String -> BaseType -> IO ()
+z3_declare z3 v bt = do
+  let s = z3_sortof bt
+  void $ declare z3 v s
+  z3_assert_type z3 v bt
+
+z3_assert_type :: Solver -> String -> BaseType -> IO ()
+z3_assert_type z3 v BT_UInt256 = do
+  assert z3 (z3Apply "<=" [ Atom "0", Atom v ])
+z3_assert_type _ _ _ = mempty
 
 {- Z3 Theory Generation
 
@@ -185,6 +198,7 @@ data TheoremKind
   | TRequire
   | TPossible
   | TBalanceZero
+  | TBalanceSufficient
   | TInvariant
   deriving (Show)
 
@@ -209,8 +223,7 @@ emit_z3_arg (IL_Con _ c) = emit_z3_con c
 emit_z3_arg (IL_Var _ v) = z3VarRef v
 
 z3_vardecl :: Solver -> ILVar -> IO ()
-z3_vardecl z3 iv@(_, (_, bt)) = void $ declare z3 (z3Var iv) s
-  where s = z3_sortof bt
+z3_vardecl z3 iv@(_, (_, bt)) = z3_declare z3 (z3Var iv) bt
 
 z3_expr :: Solver -> Int -> ILVar -> ILExpr a -> IO ()
 z3_expr z3 cbi out how = case how of
@@ -223,9 +236,11 @@ z3_expr z3 cbi out how = case how of
 z3_stmt :: Show rolet => Show a => Solver -> Bool -> rolet -> Int -> ILStmt a -> IO (Int, VerifyResult)
 z3_stmt z3 honest r cbi how =
   case how of
-    IL_Transfer _ _ amount -> do void $ define z3 cb' z3IntSort (z3Apply "-" [ (z3CTCBalanceRef cbi), amountt ])
-                                 return (cbi', mempty)
+    IL_Transfer h _who amount -> do vr <- z3_verify1 z3 (honest, r, TBalanceSufficient, h) (z3Apply "<=" [ amountt, cbit ])
+                                    z3_define z3 cb' BT_UInt256 (z3Apply "-" [ cbit, amountt ])
+                                    return (cbi', vr)
       where cbi' = cbi + 1
+            cbit = z3CTCBalanceRef cbi
             cb' = z3CTCBalance cbi'
             amountt = emit_z3_arg amount
     IL_Claim h CT_Possible a -> do vr <- z3_sat1 z3 (honest, r, TPossible, h) at
@@ -259,7 +274,7 @@ data VerifyCtxt a
 z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILPart)) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
-  void $ define z3 cb0 z3IntSort zero
+  z3_define z3 cb0 BT_UInt256 zero
   meta_iter mempty [(VC_Top, it_top)]
   where zero = emit_z3_con (Con_I 0)
         cb0 = z3CTCBalance 0
@@ -329,8 +344,8 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
               timeout = do
                 iter cbi ctxt tt
               notimeout = do
-                void $ declare z3 pvv z3IntSort
-                void $ define z3 cb'v z3IntSort (z3Apply "+" [cbr, pvr])
+                z3_declare z3 pvv BT_UInt256
+                z3_define z3 cb'v BT_UInt256 (z3Apply "+" [cbr, pvr])
                 assert z3 thisc
                 iter cbi' ctxt kt
               cbi' = cbi + 1
