@@ -60,11 +60,11 @@ z3Apply f args = List (Atom f : args)
 z3Eq :: SExpr -> SExpr -> SExpr
 z3Eq x y = z3Apply "=" [ x, y ]
 
-z3Var :: ILVar -> String
-z3Var (n, _) = "v" ++ show n
+z3Var :: (S.Set ILVar) -> ILVar -> String
+z3Var primed v@(n, _) = "v" ++ show n ++ (if (S.member v primed) then "p" else "")
 
-z3VarRef :: ILVar -> SExpr
-z3VarRef v = Atom $ z3Var v
+z3VarRef :: (S.Set ILVar) -> ILVar -> SExpr
+z3VarRef primed v = Atom $ z3Var primed v
 
 z3CTCBalance :: Int -> String
 z3CTCBalance i = "ctc_balance" ++ show i
@@ -104,7 +104,7 @@ z3_verify1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 (z3Apply "not" [ a ])
   r <- check z3
   case r of
-    Unknown -> error "Z3 inconclusive result"
+    Unknown -> error "Z3 inconclusive result in verify1"
     Unsat -> return $ VR 1 0
     Sat -> do
       display_fail honest who tk ann a
@@ -117,7 +117,7 @@ z3_sat1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 a
   r <- check z3
   case r of
-    Unknown -> error "Z3 inconclusive result"
+    Unknown -> error "Z3 inconclusive result in sat1"
     Sat -> return $ VR 1 0
     Unsat -> do
       display_fail honest who tk ann a
@@ -140,6 +140,15 @@ z3_assert_type :: Solver -> String -> BaseType -> IO ()
 z3_assert_type z3 v BT_UInt256 = do
   assert z3 (z3Apply "<=" [ Atom "0", Atom v ])
 z3_assert_type _ _ _ = mempty
+
+z3_assert_chk :: Show ann => Solver -> ann -> SExpr -> IO ()
+z3_assert_chk z3 h e = do
+  assert z3 e
+  r <- check z3
+  case r of
+    Unknown -> error "Z3 inconclusive result in assert_chk"
+    Sat -> mempty
+    Unsat -> error $ "Unreachable code with addition of assumption: " ++ show e ++ " at " ++ show h
 
 {- Z3 Theory Generation
 
@@ -188,9 +197,9 @@ z3CPrim cbi cp =
     TXN_VALUE -> \[] -> z3TxnValueRef cbi
   where app n = z3Apply n
 
-z3PrimEq :: Solver -> Int -> EP_Prim -> [SExpr] -> ILVar -> IO ()
-z3PrimEq z3 cbi pr alt out = case pr of
-  CP cp -> assert z3 (z3Eq (z3VarRef out) (z3CPrim cbi cp alt))
+z3PrimEq :: Solver -> (S.Set ILVar) -> Int -> EP_Prim -> [SExpr] -> ILVar -> IO ()
+z3PrimEq z3 primed cbi pr alt out = case pr of
+  CP cp -> assert z3 (z3Eq (z3VarRef primed out) (z3CPrim cbi cp alt))
   RANDOM -> return ()
 
 data TheoremKind
@@ -218,23 +227,25 @@ emit_z3_con (Con_B True) = Atom "true"
 emit_z3_con (Con_B False) = Atom "false"
 emit_z3_con (Con_BS bs) = z3Apply "bytes-literal" [ Atom (show $ crc32 bs) ]
 
-emit_z3_arg :: ILArg a -> SExpr
-emit_z3_arg (IL_Con _ c) = emit_z3_con c
-emit_z3_arg (IL_Var _ v) = z3VarRef v
+emit_z3_arg :: (S.Set ILVar) -> ILArg a -> SExpr
+emit_z3_arg _ (IL_Con _ c) = emit_z3_con c
+emit_z3_arg primed (IL_Var _ v) = z3VarRef primed v
 
 z3_vardecl :: Solver -> ILVar -> IO ()
-z3_vardecl z3 iv@(_, (_, bt)) = z3_declare z3 (z3Var iv) bt
+z3_vardecl z3 iv@(_, (_, bt)) = do
+  z3_declare z3 (z3Var S.empty iv) bt
+  z3_declare z3 (z3Var (S.singleton iv) iv) bt
 
-z3_expr :: Solver -> Int -> ILVar -> ILExpr a -> IO ()
-z3_expr z3 cbi out how = case how of
-  IL_Declassify _ a ->
-    assert z3 (z3Eq (z3VarRef out) (emit_z3_arg a))
-  IL_PrimApp _ pr al -> z3PrimEq z3 cbi pr alt out
-    where alt = map emit_z3_arg al
+z3_expr :: Show a => Solver -> (S.Set ILVar) -> Int -> ILVar -> ILExpr a -> IO ()
+z3_expr z3 primed cbi out how = case how of
+  IL_Declassify h a ->
+    z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (emit_z3_arg primed a))
+  IL_PrimApp _ pr al -> z3PrimEq z3 primed cbi pr alt out
+    where alt = map (emit_z3_arg primed) al
   IL_Interact _ _ _ _ -> return ()
 
-z3_stmt :: Show rolet => Show a => Solver -> Bool -> rolet -> Int -> ILStmt a -> IO (Int, VerifyResult)
-z3_stmt z3 honest r cbi how =
+z3_stmt :: Show rolet => Show a => Solver -> Bool -> rolet -> (S.Set ILVar) -> Int -> ILStmt a -> IO (Int, VerifyResult)
+z3_stmt z3 honest r primed cbi how =
   case how of
     IL_Transfer h _who amount -> do vr <- z3_verify1 z3 (honest, r, TBalanceSufficient, h) (z3Apply "<=" [ amountt, cbit ])
                                     z3_define z3 cb' BT_UInt256 (z3Apply "-" [ cbit, amountt ])
@@ -242,14 +253,14 @@ z3_stmt z3 honest r cbi how =
       where cbi' = cbi + 1
             cbit = z3CTCBalanceRef cbi
             cb' = z3CTCBalance cbi'
-            amountt = emit_z3_arg amount
+            amountt = emit_z3_arg primed amount
     IL_Claim h CT_Possible a -> do vr <- z3_sat1 z3 (honest, r, TPossible, h) at
                                    return ( cbi, vr )
-      where at = emit_z3_arg a
+      where at = emit_z3_arg primed a
     IL_Claim h ct a -> do vr <- this_check
                           assert z3 at
                           return ( cbi, vr )
-      where at = emit_z3_arg a
+      where at = emit_z3_arg primed a
             this_check = case mct of
               Just tk -> z3_verify1 z3 (honest, r, tk, h) at
               Nothing -> return mempty
@@ -262,7 +273,7 @@ z3_stmt z3 honest r cbi how =
 
 data VerifyCtxt a
   = VC_Top
-  | VC_AssignCheckInv [ILVar] (ILTail a)
+  | VC_AssignCheckInv Bool [ILVar] (ILTail a)
   | VC_CheckRet
   | VC_WhileBody_AssumeNotUntil [ILVar] (ILTail a) (ILTail a)
   | VC_WhileBody_AssumeInv [ILVar] (ILTail a) (ILTail a)
@@ -281,86 +292,86 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
         meta_iter :: Show a => VerifyResult -> [(VerifyCtxt a, ILTail a)] -> IO VerifyResult
         meta_iter vr0 [] = return vr0
         meta_iter vr0 ( (ctxt, it) : more0 ) = do
-          putStrLn $ "Verifying " ++ take 32 (show ctxt)
-          (more1, vr1) <- inNewScope z3 $ iter 0 ctxt it
+          putStrLn $ "...checking " ++ take 32 (show ctxt)
+          (more1, vr1) <- inNewScope z3 $ iter (S.empty) 0 ctxt it
           let vr = vr0 <> vr1
           let more = more0 ++ more1
           meta_iter vr more
-        iter :: Show a => Int -> VerifyCtxt a -> ILTail a -> IO ([(VerifyCtxt a, ILTail a)], VerifyResult)
-        iter cbi ctxt it = case it of
+        iter :: Show a => (S.Set ILVar) -> Int -> VerifyCtxt a -> ILTail a -> IO ([(VerifyCtxt a, ILTail a)], VerifyResult)
+        iter primed cbi ctxt it = case it of
           IL_Ret h al -> do
-            putStrLn $ "\treached ret with " ++ take 32 (show ctxt)
             case ctxt of
               VC_Top -> do
                 let cbi_balance = z3Eq (z3CTCBalanceRef cbi) zero
                 vr <- z3_verify1 z3 (honest, me, TBalanceZero, h) cbi_balance
                 return ([], vr)
-              VC_AssignCheckInv loopvs invt -> do
+              VC_AssignCheckInv should_prime loopvs invt -> do
+                let primed' = if should_prime then S.union primed $ S.fromList loopvs else primed
                 mapM_ (\(loopv, a) ->
-                         assert z3 (z3Eq (z3VarRef loopv) (emit_z3_arg a)))
+                         z3_assert_chk z3 h (z3Eq (z3VarRef primed' loopv) (emit_z3_arg primed a)))
                       (zip loopvs al)
-                iter cbi VC_CheckRet invt
+                iter primed' cbi VC_CheckRet invt
               VC_CheckRet -> do
                 let [ a ] = al
-                vr <- z3_verify1 z3 (honest, me, TInvariant, h) (emit_z3_arg a)
+                vr <- z3_verify1 z3 (honest, me, TInvariant, h) (emit_z3_arg primed a)
                 return ([], vr)
               VC_WhileBody_AssumeNotUntil loopvs invt bodyt -> do
                 let [ a ] = al
-                assert z3 (z3Apply "not" [ emit_z3_arg a ])
-                iter cbi (VC_WhileBody_AssumeInv loopvs invt bodyt) invt
+                z3_assert_chk z3 h (z3Apply "not" [ emit_z3_arg primed a ])
+                iter primed cbi (VC_WhileBody_AssumeInv loopvs invt bodyt) invt
               VC_WhileBody_AssumeInv loopvs invt bodyt -> do
                 let [ a ] = al
-                assert z3 (emit_z3_arg a)
-                iter cbi (VC_WhileBody_Eval loopvs invt) bodyt
+                z3_assert_chk z3 h (emit_z3_arg primed a)
+                iter primed cbi (VC_WhileBody_Eval loopvs invt) bodyt
               VC_WhileBody_Eval _ _ ->
                 error $ "VerifyZ3 While must terminate in continue"
               VC_WhileTail_AssumeUntil invt ki -> do
                 let [ a ] = al
-                assert z3 (emit_z3_arg a)
-                iter cbi (VC_WhileTail_AssumeInv ki) invt
+                z3_assert_chk z3 h (emit_z3_arg primed a)
+                iter primed cbi (VC_WhileTail_AssumeInv ki) invt
               VC_WhileTail_AssumeInv (kctxt, kt) -> do
                 let [ a ] = al
-                assert z3 (emit_z3_arg a)
-                iter cbi kctxt kt
-          IL_If _ ca tt ft -> do
+                z3_assert_chk z3 h (emit_z3_arg primed a)
+                iter primed cbi kctxt kt
+          IL_If h ca tt ft -> do
             mconcatMapM (inNewScope z3 . f) (zip [True, False] [tt, ft])
-            where ca' = emit_z3_arg ca
-                  f (v, kt) = do assert z3 (z3Eq ca' cav)
-                                 iter cbi ctxt kt
+            where ca' = emit_z3_arg primed ca
+                  f (v, kt) = do z3_assert_chk z3 h (z3Eq ca' cav)
+                                 iter primed cbi ctxt kt
                     where cav = emit_z3_con (Con_B v)
           IL_Let _ who what how kt ->
-            do when (honest || role_me me who) $ z3_expr z3 cbi what how
-               iter cbi ctxt kt
+            do when (honest || role_me me who) $ z3_expr z3 primed cbi what how
+               iter primed cbi ctxt kt
           IL_Do _ who how kt ->
             if (honest || role_me me who) then
-              do (cbi', vr) <- z3_stmt z3 honest me cbi how
-                 (mt, vr') <- iter cbi' ctxt kt
+              do (cbi', vr) <- z3_stmt z3 honest me primed cbi how
+                 (mt, vr') <- iter primed cbi' ctxt kt
                  return (mt, vr <> vr')
             else
-              iter cbi ctxt kt
-          IL_ToConsensus _ (_ok_ij, _who, _msg, amount) (_twho, _da, tt) kt ->
+              iter primed cbi ctxt kt
+          IL_ToConsensus h (_ok_ij, _who, _msg, amount) (_twho, _da, tt) kt ->
             mconcatMapM (inNewScope z3) [timeout, notimeout]
             where
               timeout = do
-                iter cbi ctxt tt
+                iter primed cbi ctxt tt
               notimeout = do
                 z3_declare z3 pvv BT_UInt256
                 z3_define z3 cb'v BT_UInt256 (z3Apply "+" [cbr, pvr])
-                assert z3 thisc
-                iter cbi' ctxt kt
+                z3_assert_chk z3 h thisc
+                iter primed cbi' ctxt kt
               cbi' = cbi + 1
               cb'v = z3CTCBalance cbi'
               cbr = z3CTCBalanceRef cbi
-              amountt = emit_z3_arg amount
+              amountt = emit_z3_arg primed amount
               pvv = z3TxnValue cbi'
               pvr = z3TxnValueRef cbi'
               thisc = if honest then
                         z3Eq pvr amountt
                       else
                         z3Apply "<=" [ zero, pvr ]
-          IL_FromConsensus _ kt -> iter cbi ctxt kt
+          IL_FromConsensus _ kt -> iter primed cbi ctxt kt
           IL_While x loopvs initas untilt invt bodyt kt -> do
-            (mt, vr) <- iter cbi (VC_AssignCheckInv loopvs invt) (IL_Ret x initas)
+            (mt, vr) <- iter primed cbi (VC_AssignCheckInv False loopvs invt) (IL_Ret x initas)
             let bodyj = (VC_WhileBody_AssumeNotUntil loopvs invt bodyt, untilt)
             let tailj = (VC_WhileTail_AssumeUntil invt (ctxt, kt), untilt)
             let mt' = mt ++ [ bodyj, tailj ]
@@ -368,7 +379,7 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
           IL_Continue x newas ->
             case ctxt of
               VC_WhileBody_Eval loopvs invt ->
-                iter cbi (VC_AssignCheckInv loopvs invt) (IL_Ret x newas)
+                iter primed cbi (VC_AssignCheckInv True loopvs invt) (IL_Ret x newas)
               _ ->
                 error $ "VerifyZ3 IL_Continue must only occur inside While"
 
