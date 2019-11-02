@@ -58,8 +58,6 @@ function main() {
       .timeout(DELAY, Child, () => {
         [ bal, oks, nos ] = [ bal, oks, nos + 1 ];
         continue; });
-
-    assert(false);
     
     if ( approval ) {
       transfer(howMuch).to(Child);

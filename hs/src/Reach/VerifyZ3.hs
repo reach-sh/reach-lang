@@ -285,19 +285,20 @@ data VerifyCtxt a
 z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILPart)) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
-  z3_define z3 cb0 BT_UInt256 zero
-  meta_iter mempty [(VC_Top, it_top)]
+  z3_declare z3 cb0 BT_UInt256
+  meta_iter mempty [(True, VC_Top, it_top)]
   where zero = emit_z3_con (Con_I 0)
         cb0 = z3CTCBalance 0
-        meta_iter :: Show a => VerifyResult -> [(VerifyCtxt a, ILTail a)] -> IO VerifyResult
+        meta_iter :: Show a => VerifyResult -> [(Bool, VerifyCtxt a, ILTail a)] -> IO VerifyResult
         meta_iter vr0 [] = return vr0
-        meta_iter vr0 ( (ctxt, it) : more0 ) = do
+        meta_iter vr0 ( (assume_cb_zero, ctxt, it) : more0 ) = do
           putStrLn $ "...checking " ++ take 32 (show ctxt)
-          (more1, vr1) <- inNewScope z3 $ iter (S.empty) 0 ctxt it
+          (more1, vr1) <- inNewScope z3 $ (do (if assume_cb_zero then assert z3 (z3Eq (z3CTCBalanceRef 0) zero) else mempty)
+                                              iter (S.empty) 0 ctxt it)
           let vr = vr0 <> vr1
           let more = more0 ++ more1
           meta_iter vr more
-        iter :: Show a => (S.Set ILVar) -> Int -> VerifyCtxt a -> ILTail a -> IO ([(VerifyCtxt a, ILTail a)], VerifyResult)
+        iter :: Show a => (S.Set ILVar) -> Int -> VerifyCtxt a -> ILTail a -> IO ([(Bool, VerifyCtxt a, ILTail a)], VerifyResult)
         iter primed cbi ctxt it = case it of
           IL_Ret h al -> do
             case ctxt of
@@ -372,8 +373,8 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
           IL_FromConsensus _ kt -> iter primed cbi ctxt kt
           IL_While x loopvs initas untilt invt bodyt kt -> do
             (mt, vr) <- iter primed cbi (VC_AssignCheckInv False loopvs invt) (IL_Ret x initas)
-            let bodyj = (VC_WhileBody_AssumeNotUntil loopvs invt bodyt, untilt)
-            let tailj = (VC_WhileTail_AssumeUntil invt (ctxt, kt), untilt)
+            let bodyj = (False, VC_WhileBody_AssumeNotUntil loopvs invt bodyt, untilt)
+            let tailj = (False, VC_WhileTail_AssumeUntil invt (ctxt, kt), untilt)
             let mt' = mt ++ [ bodyj, tailj ]
             return (mt ++ mt', vr)
           IL_Continue x newas ->

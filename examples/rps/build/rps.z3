@@ -358,8 +358,10 @@
 (+ (declare-fun v139p () Int ))
 (+ (assert (<= 0 v139p ) ))
 (push
- (+ (define-fun ctc_balance0 () Int 0 ))
+ (+ (declare-fun ctc_balance0 () Int ))
+ (+ (assert (<= 0 ctc_balance0 ) ))
  (push
+  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -769,8 +771,10 @@
  )
 )
 (push
- (+ (define-fun ctc_balance0 () Int 0 ))
+ (+ (declare-fun ctc_balance0 () Int ))
+ (+ (assert (<= 0 ctc_balance0 ) ))
  (push
+  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -1180,8 +1184,10 @@
  )
 )
 (push
- (+ (define-fun ctc_balance0 () Int 0 ))
+ (+ (declare-fun ctc_balance0 () Int ))
+ (+ (assert (<= 0 ctc_balance0 ) ))
  (push
+  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -1591,8 +1597,10 @@
  )
 )
 (push
- (+ (define-fun ctc_balance0 () Int 0 ))
+ (+ (declare-fun ctc_balance0 () Int ))
+ (+ (assert (<= 0 ctc_balance0 ) ))
  (push
+  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -2002,8 +2010,10 @@
  )
 )
 (push
- (+ (define-fun ctc_balance0 () Int 0 ))
+ (+ (declare-fun ctc_balance0 () Int ))
+ (+ (assert (<= 0 ctc_balance0 ) ))
  (push
+  (+ (assert (= ctc_balance0 0 ) ))
   (push
    (+ (assert true ))
    (push
@@ -2273,8 +2283,10 @@
  )
 )
 (push
- (+ (define-fun ctc_balance0 () Int 0 ))
+ (+ (declare-fun ctc_balance0 () Int ))
+ (+ (assert (<= 0 ctc_balance0 ) ))
  (push
+  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -2589,8 +2601,10 @@
  )
 )
 (push
- (+ (define-fun ctc_balance0 () Int 0 ))
+ (+ (declare-fun ctc_balance0 () Int ))
+ (+ (assert (<= 0 ctc_balance0 ) ))
  (push
+  (+ (assert (= ctc_balance0 0 ) ))
   (push
    (+ (assert true ))
    (push
@@ -2880,8 +2894,10 @@
  )
 )
 (push
- (+ (define-fun ctc_balance0 () Int 0 ))
+ (+ (declare-fun ctc_balance0 () Int ))
+ (+ (assert (<= 0 ctc_balance0 ) ))
  (push
+  (+ (assert (= ctc_balance0 0 ) ))
   (push
    (+ (assert true ))
    (push
