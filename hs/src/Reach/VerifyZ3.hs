@@ -61,7 +61,7 @@ z3Eq :: SExpr -> SExpr -> SExpr
 z3Eq x y = z3Apply "=" [ x, y ]
 
 z3Var :: (S.Set ILVar) -> ILVar -> String
-z3Var primed v@(n, _) = "v" ++ show n ++ (if (S.member v primed) then "p" else "")
+z3Var primed v@(n, (s, _)) = "v" ++ show n ++ (if False then "_" ++ s else "") ++ (if (S.member v primed) then "p" else "")
 
 z3VarRef :: (S.Set ILVar) -> ILVar -> SExpr
 z3VarRef primed v = Atom $ z3Var primed v
@@ -134,12 +134,9 @@ z3_declare :: Solver -> String -> BaseType -> IO ()
 z3_declare z3 v bt = do
   let s = z3_sortof bt
   void $ declare z3 v s
-  z3_assert_type z3 v bt
-
-z3_assert_type :: Solver -> String -> BaseType -> IO ()
-z3_assert_type z3 v BT_UInt256 = do
-  assert z3 (z3Apply "<=" [ Atom "0", Atom v ])
-z3_assert_type _ _ _ = mempty
+  case bt of
+    BT_UInt256 -> assert z3 (z3Apply "<=" [ Atom "0", Atom v ])
+    _ -> mempty
 
 z3_assert_chk :: Show ann => Solver -> ann -> SExpr -> IO ()
 z3_assert_chk z3 h e = do
@@ -197,9 +194,9 @@ z3CPrim cbi cp =
     TXN_VALUE -> \[] -> z3TxnValueRef cbi
   where app n = z3Apply n
 
-z3PrimEq :: Solver -> (S.Set ILVar) -> Int -> EP_Prim -> [SExpr] -> ILVar -> IO ()
-z3PrimEq z3 primed cbi pr alt out = case pr of
-  CP cp -> assert z3 (z3Eq (z3VarRef primed out) (z3CPrim cbi cp alt))
+z3PrimEq :: Show a => Solver -> a -> (S.Set ILVar) -> Int -> EP_Prim -> [SExpr] -> ILVar -> IO ()
+z3PrimEq z3 h primed cbi pr alt out = case pr of
+  CP cp -> z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (z3CPrim cbi cp alt))
   RANDOM -> return ()
 
 data TheoremKind
@@ -240,7 +237,7 @@ z3_expr :: Show a => Solver -> (S.Set ILVar) -> Int -> ILVar -> ILExpr a -> IO (
 z3_expr z3 primed cbi out how = case how of
   IL_Declassify h a ->
     z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (emit_z3_arg primed a))
-  IL_PrimApp _ pr al -> z3PrimEq z3 primed cbi pr alt out
+  IL_PrimApp h pr al -> z3PrimEq z3 h primed cbi pr alt out
     where alt = map (emit_z3_arg primed) al
   IL_Interact _ _ _ _ -> return ()
 
@@ -282,6 +279,13 @@ data VerifyCtxt a
   | VC_WhileTail_AssumeInv (VerifyCtxt a, (ILTail a))
   deriving (Show)
 
+extract_invariant_variables :: ILTail a -> [ILVar]
+extract_invariant_variables invt =
+  case invt of
+    IL_Ret _ _ -> []
+    IL_Let _ _ v _ t -> v : extract_invariant_variables t
+    _ -> error "Illegal invariant structure"
+
 z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILPart)) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
@@ -307,7 +311,8 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                 vr <- z3_verify1 z3 (honest, me, TBalanceZero, h) cbi_balance
                 return ([], vr)
               VC_AssignCheckInv should_prime loopvs invt -> do
-                let primed' = if should_prime then S.union primed $ S.fromList loopvs else primed
+                let invt_vs = extract_invariant_variables invt
+                let primed' = if should_prime then S.unions [primed, S.fromList loopvs, S.fromList invt_vs] else primed
                 mapM_ (\(loopv, a) ->
                          z3_assert_chk z3 h (z3Eq (z3VarRef primed' loopv) (emit_z3_arg primed a)))
                       (zip loopvs al)
