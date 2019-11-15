@@ -1,5 +1,5 @@
 .PHONY: all
-all: check test
+all: check run-all
 
 .PHONY: check
 check:
