@@ -29,6 +29,10 @@ dependencies:
 - unordered-containers
 - system-filepath
 - lattices
+- hspec
+- smallcheck
+- hspec-smallcheck
+- generic-deriving
 
 ghc-options:
 - -Wall

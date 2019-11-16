@@ -1,9 +1,33 @@
+import Test.Hspec
+import Test.Hspec.SmallCheck
+
+import Control.Exception
 import System.Process
 import System.Exit
 
-import Reach.Util
+import Reach.ParserInternal
+import Generics.Deriving
+
+parse_error_example :: ParseError -> Expectation
+parse_error_example pe = do
+  let which = conNameOf pe
+  let expth ext = "test.rsh/" ++ which ++ "." ++ ext
+  expected <- readFile (expth "txt")
+  actual_r <- try $ readReachFile (expth "rsh")
+  case actual_r of
+    Right _ ->
+      expectationFailure $ "expected a failure for " ++ which
+    Left (ErrorCall actual_x) ->
+      (actual_x ++ "\n") `shouldBe` expected
 
 main :: IO ()
-main = do
-  maybeDie $ system "cd ../examples/rps && make clean build"
-  exitSuccess
+main = hspec $ do
+  describe "RPS" $ do
+    it "RPS end-to-end" $ do
+      --- XXX remove echo
+      (system "echo 'cd ../examples/rps && make clean build'") `shouldReturn` ExitSuccess
+  describe "Parser" $ do
+    it "stdlib_defs is valid" $ do
+      stdlib_defs >>= (`shouldSatisfy` (not . null))
+    it "all parse errors have examples" $ property $
+      parse_error_example
