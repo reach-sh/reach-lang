@@ -40,7 +40,9 @@ instance (ExtractTP JSAST) where
   extract_tp (JSAstExpression _ a) = tpa a
   extract_tp (JSAstLiteral _ a) = tpa a
 
-data ParseError = PE_HeaderProgram
+data ParseError
+  = PE_HeaderProgram
+  | PE_HeaderLibrary
   deriving (Generic, Show)
 
 instance Monad m => Serial m ParseError
@@ -49,6 +51,7 @@ expect_throw :: ExtractTP a => ParseError -> FilePath -> a -> b
 expect_throw pe fp j = error $ show_tp (fp, (extract_tp j)) ++ ": " ++ msg
   where msg = case pe of
           PE_HeaderProgram -> "expected: 'reach 0.1 exe';"
+          PE_HeaderLibrary -> "expected: 'reach 0.1 lib';"
 
 shortShow :: Show a => a -> String
 shortShow j = take 1024 (L.unpack (pShow j))
@@ -367,12 +370,9 @@ decodeBody fp (d, p, me) msis =
       return $ (d ++ decodeDef fp s, p, me)
     (JSModuleStatementListItem s@(JSFunction _ _ _ _ _ _ _)) ->
       return $ (d ++ decodeDef fp s, p, me)
-    (JSModuleImportDeclaration _ (JSImportDeclarationBare _ m _)) ->
-      let mp = string_trim_quotes m in
-        do ma <- parseJsModule mp
-           mfp <- makeAbsolute mp
-           defs <- decodeXLLibrary mfp ma
-           return $ (d ++ defs, p, me)
+    (JSModuleImportDeclaration _ (JSImportDeclarationBare _ m _)) -> do
+      defs <- readReachLibrary (string_trim_quotes m)
+      return $ (d ++ defs, p, me)
     _ -> expect_error "body element" msis
   where tp a = (fp, tpa a)
 
@@ -394,19 +394,22 @@ decodeXLLibrary fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStateme
     else
      expect_error "library has no participants" a)
   return $ d
-decodeXLLibrary _ j = expect_error "library" j
+decodeXLLibrary fp j = expect_throw PE_HeaderLibrary fp j
 
 stdlib_defs :: IO [XLDef TP]
 stdlib_defs = decodeXLLibrary "STDLIB" $ readJsModule $ (B.unpack $(embedFile "./rsh/stdlib.rsh"))
 
-parseJsModule :: FilePath -> IO JSAST
-parseJsModule f = do
+readReachX :: FilePath -> (FilePath -> JSAST -> IO a) -> IO a
+readReachX srcp decodeIt = do
+  srcp_abs <- makeAbsolute srcp
   setLocaleEncoding utf8
-  s <- readFile f
-  return $ readJsModule s
+  s <- readFile srcp_abs
+  let js = readJsModule s
+  withCurrentDirectory (takeDirectory srcp_abs)
+    (decodeIt srcp js)
+
+readReachLibrary :: FilePath -> IO [XLDef TP]
+readReachLibrary srcp = readReachX srcp decodeXLLibrary
 
 readReachFile :: FilePath -> IO (XLProgram TP)
-readReachFile srcp =
-  withCurrentDirectory (takeDirectory srcp)
-  (do js <- parseJsModule (takeFileName srcp)
-      decodeXLProgram srcp js)
+readReachFile srcp = readReachX srcp decodeXLProgram
