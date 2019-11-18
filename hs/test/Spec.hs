@@ -1,6 +1,7 @@
 import Test.Hspec
 import Test.Hspec.SmallCheck
 
+import System.Directory
 import Control.Exception
 import System.Process
 import System.Exit
@@ -12,8 +13,12 @@ parse_error_example :: ParseError -> Expectation
 parse_error_example pe = do
   let which = conNameOf pe
   let expth ext = "test.rsh/" ++ which ++ "." ++ ext
-  expected <- readFile (expth "txt")
-  actual_r <- try $ readReachFile (expth "rsh")
+  let expected_p = expth "txt"
+  let actual_p = expth "rsh"
+  doesPathExist expected_p `shouldReturn` True
+  doesPathExist actual_p `shouldReturn` True
+  expected <- readFile expected_p
+  actual_r <- try $ readReachFile actual_p
   case actual_r of
     Right _ ->
       expectationFailure $ "expected a failure for " ++ which
