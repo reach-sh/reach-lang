@@ -40,9 +40,37 @@ instance (ExtractTP JSAST) where
   extract_tp (JSAstExpression _ a) = tpa a
   extract_tp (JSAstLiteral _ a) = tpa a
 
+xtp :: TP -> Maybe TokenPosn
+xtp (_, t) = t
+
+instance (ExtractTP (XLExpr TP)) where
+  extract_tp (XL_Con a _) = xtp a
+  extract_tp (XL_Var a _) = xtp a
+  extract_tp (XL_Prim a _) = xtp a
+  extract_tp (XL_If a _ _ _) = xtp a
+  extract_tp (XL_Claim a _ _) = xtp a
+  extract_tp (XL_ToConsensus a _ _ _) = xtp a
+  extract_tp (XL_FromConsensus a _) = xtp a
+  extract_tp (XL_Values a _) = xtp a
+  extract_tp (XL_Transfer a _ _) = xtp a
+  extract_tp (XL_Declassify a _) = xtp a
+  extract_tp (XL_Let a _ _ _ _) = xtp a
+  extract_tp (XL_While a _ _ _ _ _ _) = xtp a
+  extract_tp (XL_Continue a _) = xtp a
+  extract_tp (XL_Interact a _ _ _) = xtp a
+  extract_tp (XL_FunApp a _ _) = xtp a
+  extract_tp (XL_Lambda a _ _) = xtp a
+
+instance (ExtractTP (XLPartInfo TP)) where
+  extract_tp x = f $ M.toList x
+    where f [] = Nothing
+          f ((_,(a,_)):_) = xtp a
+
 data ParseError
   = PE_HeaderProgram
   | PE_HeaderLibrary
+  | PE_LibraryMain
+  | PE_LibraryParticipants
   deriving (Generic, Show)
 
 instance Monad m => Serial m ParseError
@@ -52,6 +80,8 @@ expect_throw pe fp j = error $ show_tp (fp, (extract_tp j)) ++ ": " ++ msg
   where msg = case pe of
           PE_HeaderProgram -> "expected: 'reach 0.1 exe';"
           PE_HeaderLibrary -> "expected: 'reach 0.1 lib';"
+          PE_LibraryMain -> "libraries should not have main function"
+          PE_LibraryParticipants -> "libraries should not have participants"
 
 shortShow :: Show a => a -> String
 shortShow j = take 1024 (L.unpack (pShow j))
@@ -384,15 +414,15 @@ decodeXLProgram fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStateme
 decodeXLProgram fp j = expect_throw PE_HeaderProgram fp j
 
 decodeXLLibrary :: FilePath -> JSAST -> IO [XLDef TP]
-decodeXLLibrary fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach 0.1 lib\'") _)):j) a) = do
+decodeXLLibrary fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach 0.1 lib\'") _)):j) _) = do
   (d, p, mm) <- foldM (decodeBody fp) ([], M.empty, Nothing) j
   (case mm of
      Nothing -> return ()
-     _ -> expect_error "library has no main" a)
+     Just m -> expect_throw PE_LibraryMain fp m)
   (if M.null p then
      return ()
     else
-     expect_error "library has no participants" a)
+     expect_throw PE_LibraryParticipants fp p)
   return $ d
 decodeXLLibrary fp j = expect_throw PE_HeaderLibrary fp j
 

@@ -23,8 +23,8 @@ parse_error_example pe = do
   let expth ext = "test.rsh/" ++ which ++ "." ++ ext
   let expected_p = expth "txt"
   let actual_p = expth "rsh"
-  mustExist expected_p
   mustExist actual_p
+  mustExist expected_p
   expected <- readFile expected_p
   actual_r <- try $ readReachFile actual_p
   case actual_r of
