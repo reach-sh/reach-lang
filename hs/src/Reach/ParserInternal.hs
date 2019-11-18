@@ -33,6 +33,9 @@ show_tp (fp, mtp) = fp ++
 class ExtractTP a where
   extract_tp :: a -> Maybe TokenPosn
 
+instance ExtractTP JSAnnot where
+  extract_tp a = tpa a
+
 instance (ExtractTP JSAST) where
   extract_tp (JSAstProgram _ a) = tpa a
   extract_tp (JSAstModule _ a) = tpa a
@@ -71,6 +74,7 @@ data ParseError
   | PE_HeaderLibrary
   | PE_LibraryMain
   | PE_LibraryParticipants
+  | PE_DoubleMain
   deriving (Generic, Show)
 
 instance Monad m => Serial m ParseError
@@ -82,6 +86,7 @@ expect_throw pe fp j = error $ show_tp (fp, (extract_tp j)) ++ ": " ++ msg
           PE_HeaderLibrary -> "expected: 'reach 0.1 lib';"
           PE_LibraryMain -> "libraries should not have main function"
           PE_LibraryParticipants -> "libraries should not have participants"
+          PE_DoubleMain -> "main must occur only once"
 
 shortShow :: Show a => a -> String
 shortShow j = take 1024 (L.unpack (pShow j))
@@ -392,10 +397,10 @@ decodeBody fp (d, p, me) msis =
       return $ (d, p', me)
       where p' = M.insert who ((tp a), ds) p
             ds = map (decodeVarDecl tp) $ flattenJSCTL vs
-    (JSModuleStatementListItem j@(JSFunction _ (JSIdentName _ "main") _ (JSLNil) _ body _)) ->
+    (JSModuleStatementListItem (JSFunction ja (JSIdentName _ "main") _ (JSLNil) _ body _)) ->
       case me of
         Nothing -> return $ (d, p, Just (decodeBlock fp body))
-        Just _ -> expect_error "only one main function" j 
+        Just _ -> expect_throw PE_DoubleMain fp ja
     (JSModuleStatementListItem s@(JSConstant _ _ _)) ->
       return $ (d ++ decodeDef fp s, p, me)
     (JSModuleStatementListItem s@(JSFunction _ _ _ _ _ _ _)) ->
