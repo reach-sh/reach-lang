@@ -31,41 +31,135 @@ show_tp (fp, mtp) = fp ++
     Just (TokenPn _ l c) -> ":" ++ show l ++ ":" ++ show c
 
 class ExtractTP a where
-  extract_tp :: a -> Maybe TokenPosn
+  etp :: a -> Maybe TokenPosn
 
 instance ExtractTP JSAnnot where
-  extract_tp a = tpa a
+  etp a = tpa a
 
-instance (ExtractTP JSAST) where
-  extract_tp (JSAstProgram _ a) = tpa a
-  extract_tp (JSAstModule _ a) = tpa a
-  extract_tp (JSAstStatement _ a) = tpa a
-  extract_tp (JSAstExpression _ a) = tpa a
-  extract_tp (JSAstLiteral _ a) = tpa a
+instance ExtractTP a => ExtractTP (Maybe a) where
+  etp Nothing = Nothing
+  etp (Just a) = etp a
+
+instance ExtractTP JSUnaryOp where
+  etp (JSUnaryOpDecr a) = etp a
+  etp (JSUnaryOpDelete a) = etp a
+  etp (JSUnaryOpIncr a) = etp a
+  etp (JSUnaryOpMinus a) = etp a
+  etp (JSUnaryOpNot a) = etp a
+  etp (JSUnaryOpPlus a) = etp a
+  etp (JSUnaryOpTilde a) = etp a
+  etp (JSUnaryOpTypeof a) = etp a
+  etp (JSUnaryOpVoid a) = etp a
+
+instance ExtractTP JSIdent where
+  etp (JSIdentName a _) = etp a
+  etp JSIdentNone = Nothing
+
+instance ExtractTP JSArrowParameterList where
+  etp (JSUnparenthesizedArrowParameter a) = etp a
+  etp (JSParenthesizedArrowParameterList a _ _) = etp a
+
+instance ExtractTP JSExpression where
+  etp (JSIdentifier a _) = etp a
+  etp (JSDecimal a _) = etp a
+  etp (JSLiteral a _) = etp a
+  etp (JSHexInteger a _) = etp a
+  etp (JSOctal a _) = etp a
+  etp (JSStringLiteral a _) = etp a
+  etp (JSRegEx a _) = etp a
+  etp (JSArrayLiteral a _ _) = etp a
+  etp (JSAssignExpression a _ _) = etp a
+  etp (JSCallExpression a _ _ _) = etp a
+  etp (JSCallExpressionDot a _ _) = etp a
+  etp (JSCallExpressionSquare a _ _ _) = etp a
+  etp (JSCommaExpression a _ _) = etp a
+  etp (JSExpressionBinary a _ _) = etp a
+  etp (JSExpressionParen a _ _) = etp a
+  etp (JSExpressionPostfix a _) = etp a
+  etp (JSExpressionTernary a _ _ _ _) = etp a
+  etp (JSArrowExpression a _ _) = etp a
+  etp (JSFunctionExpression a _ _ _ _ _) = etp a
+  etp (JSMemberDot a _ _) = etp a
+  etp (JSMemberExpression a _ _ _) = etp a
+  etp (JSMemberNew a _ _ _ _) = etp a
+  etp (JSMemberSquare a _ _ _) = etp a
+  etp (JSNewExpression a _) = etp a
+  etp (JSObjectLiteral a _ _) = etp a
+  etp (JSSpreadExpression a _) = etp a
+  etp (JSTemplateLiteral a _ _ _) = etp a
+  etp (JSUnaryExpression a _) = etp a
+  etp (JSVarInitExpression a _) = etp a
+
+instance ExtractTP JSStatement where
+  etp (JSStatementBlock a _ _ _) = etp a
+  etp (JSBreak a _ _) = etp a
+  etp (JSLet a _ _) = etp a
+  etp (JSConstant a _ _) = etp a
+  etp (JSContinue a _ _) = etp a
+  etp (JSDoWhile a _ _ _ _ _ _) = etp a
+  etp (JSFor a _ _ _ _ _ _ _ _) = etp a
+  etp (JSForIn a _ _ _ _ _ _) = etp a
+  etp (JSForVar a _ _ _ _ _ _ _ _ _) = etp a
+  etp (JSForVarIn a _ _ _ _ _ _ _) = etp a
+  etp (JSForLet a _ _ _ _ _ _ _ _ _) = etp a
+  etp (JSForLetIn a _ _ _ _ _ _ _) = etp a
+  etp (JSForLetOf a _ _ _ _ _ _ _) = etp a
+  etp (JSForConst a _ _ _ _ _ _ _ _ _) = etp a
+  etp (JSForConstIn a _ _ _ _ _ _ _) = etp a
+  etp (JSForConstOf a _ _ _ _ _ _ _) = etp a
+  etp (JSForOf a _ _ _ _ _ _) = etp a
+  etp (JSForVarOf a _ _ _ _ _ _ _) = etp a
+  etp (JSFunction a _ _ _ _ _ _) = etp a
+  etp (JSIf a _ _ _ _) = etp a
+  etp (JSIfElse a _ _ _ _ _ _) = etp a
+  etp (JSLabelled a _ _) = etp a
+  etp (JSEmptyStatement a) = etp a
+  etp (JSExpressionStatement a _) = etp a
+  etp (JSAssignStatement a _ _ _) = etp a
+  etp (JSMethodCall a _ _ _ _) = etp a
+  etp (JSReturn a _ _) = etp a
+  etp (JSSwitch a _ _ _ _ _ _ _) = etp a
+  etp (JSThrow a _ _) = etp a
+  etp (JSTry a _ _ _) = etp a
+  etp (JSVariable a _ _) = etp a
+  etp (JSWhile a _ _ _ _) = etp a
+  etp (JSWith a _ _ _ _ _) = etp a
+
+instance ExtractTP JSModuleItem where
+  etp (JSModuleImportDeclaration a _) = etp a
+  etp (JSModuleExportDeclaration a _) = etp a
+  etp (JSModuleStatementListItem a) = etp a
+
+instance ExtractTP JSAST where
+  etp (JSAstProgram _ a) = etp a
+  etp (JSAstModule _ a) = etp a
+  etp (JSAstStatement _ a) = etp a
+  etp (JSAstExpression _ a) = etp a
+  etp (JSAstLiteral _ a) = etp a
 
 xtp :: TP -> Maybe TokenPosn
 xtp (_, t) = t
 
-instance (ExtractTP (XLExpr TP)) where
-  extract_tp (XL_Con a _) = xtp a
-  extract_tp (XL_Var a _) = xtp a
-  extract_tp (XL_Prim a _) = xtp a
-  extract_tp (XL_If a _ _ _) = xtp a
-  extract_tp (XL_Claim a _ _) = xtp a
-  extract_tp (XL_ToConsensus a _ _ _) = xtp a
-  extract_tp (XL_FromConsensus a _) = xtp a
-  extract_tp (XL_Values a _) = xtp a
-  extract_tp (XL_Transfer a _ _) = xtp a
-  extract_tp (XL_Declassify a _) = xtp a
-  extract_tp (XL_Let a _ _ _ _) = xtp a
-  extract_tp (XL_While a _ _ _ _ _ _) = xtp a
-  extract_tp (XL_Continue a _) = xtp a
-  extract_tp (XL_Interact a _ _ _) = xtp a
-  extract_tp (XL_FunApp a _ _) = xtp a
-  extract_tp (XL_Lambda a _ _) = xtp a
+instance ExtractTP (XLExpr TP) where
+  etp (XL_Con a _) = xtp a
+  etp (XL_Var a _) = xtp a
+  etp (XL_Prim a _) = xtp a
+  etp (XL_If a _ _ _) = xtp a
+  etp (XL_Claim a _ _) = xtp a
+  etp (XL_ToConsensus a _ _ _) = xtp a
+  etp (XL_FromConsensus a _) = xtp a
+  etp (XL_Values a _) = xtp a
+  etp (XL_Transfer a _ _) = xtp a
+  etp (XL_Declassify a _) = xtp a
+  etp (XL_Let a _ _ _ _) = xtp a
+  etp (XL_While a _ _ _ _ _ _) = xtp a
+  etp (XL_Continue a _) = xtp a
+  etp (XL_Interact a _ _ _) = xtp a
+  etp (XL_FunApp a _ _) = xtp a
+  etp (XL_Lambda a _ _) = xtp a
 
-instance (ExtractTP (XLPartInfo TP)) where
-  extract_tp x = f $ M.toList x
+instance ExtractTP (XLPartInfo TP) where
+  etp x = f $ M.toList x
     where f [] = Nothing
           f ((_,(a,_)):_) = xtp a
 
@@ -75,18 +169,20 @@ data ParseError
   | PE_LibraryMain
   | PE_LibraryParticipants
   | PE_DoubleMain
+  | PE_BodyElement
   deriving (Generic, Show)
 
 instance Monad m => Serial m ParseError
 
 expect_throw :: ExtractTP a => ParseError -> FilePath -> a -> b
-expect_throw pe fp j = error $ show_tp (fp, (extract_tp j)) ++ ": " ++ msg
+expect_throw pe fp j = error $ show_tp (fp, (etp j)) ++ ": " ++ msg
   where msg = case pe of
           PE_HeaderProgram -> "expected: 'reach 0.1 exe';"
           PE_HeaderLibrary -> "expected: 'reach 0.1 lib';"
           PE_LibraryMain -> "libraries should not have main function"
           PE_LibraryParticipants -> "libraries should not have participants"
           PE_DoubleMain -> "main must occur only once"
+          PE_BodyElement -> "expected: participant, main function, definition (constant or library function), or import"
 
 shortShow :: Show a => a -> String
 shortShow j = take 1024 (L.unpack (pShow j))
@@ -408,7 +504,7 @@ decodeBody fp (d, p, me) msis =
     (JSModuleImportDeclaration _ (JSImportDeclarationBare _ m _)) -> do
       defs <- readReachLibrary (string_trim_quotes m)
       return $ (d ++ defs, p, me)
-    _ -> expect_error "body element" msis
+    _ -> expect_throw PE_BodyElement fp msis
   where tp a = (fp, tpa a)
 
 decodeXLProgram :: FilePath -> JSAST -> IO (XLProgram TP)
