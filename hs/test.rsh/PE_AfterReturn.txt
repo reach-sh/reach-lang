@@ -1,0 +1,1 @@
+test.rsh/PE_AfterReturn.rsh:4:3: nothing is allowed after a return

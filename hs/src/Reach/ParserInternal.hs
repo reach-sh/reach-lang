@@ -8,12 +8,9 @@ import System.FilePath
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Text.ParserCombinators.Parsec.Number (numberValue)
---import Data.Data
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Control.Monad
---import Text.Pretty.Simple
---import qualified Data.Text.Lazy as L
 import Data.FileEmbed
 import GHC.IO.Encoding
 
@@ -230,7 +227,6 @@ data ParseError
   | PE_ContinueArgs
   | PE_Statement
   | PE_IllegalAt
-  | PE_Definition
   | PE_Type
   | PE_VarDecl
   | PE_NoMain
@@ -260,8 +256,7 @@ expect_throw pe fp j = error $ show_tp (fp, (etp j)) ++ ": " ++ msg
           PE_AfterReturn -> "nothing is allowed after a return"
           PE_ContinueArgs -> "expected all loop variables at continue"
           PE_Statement -> "expected a valid statement form"
-          PE_IllegalAt -> "expected the active participant or no-one"
-          PE_Definition -> "expected a valid definition"
+          PE_IllegalAt -> "expected a participant or anyone"
           PE_Type -> "expected a valid type"
           PE_VarDecl -> "expected a valid variable declaration"
 
@@ -551,7 +546,7 @@ decodeDef fp j =
       [XL_DefineFun (tp a) f args e]
       where args = map (expectIdent fp) (flattenJSCL eargs)
             e = decodeBlock fp ee
-    _ -> expect_throw PE_Definition fp j
+    _ -> expect_throw PE_BodyElement fp j
   where tp a = (fp, tpa a)
 
 decodeType :: FilePath -> JSExpression -> BaseType

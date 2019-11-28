@@ -7,11 +7,11 @@ import Control.Exception
 import Control.DeepSeq
 import System.Process
 import System.Exit
+import Generics.Deriving
 
 import Reach.ParserInternal
-import Generics.Deriving
-import Language.JavaScript.Parser.SrcLocation
 
+import Language.JavaScript.Parser.SrcLocation
 instance NFData TokenPosn where
   rnf (TokenPn _ _ _) = ()
 
