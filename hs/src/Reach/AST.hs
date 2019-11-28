@@ -1,5 +1,8 @@
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 module Reach.AST where
 
+import GHC.Generics
+import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -11,7 +14,8 @@ data BaseType
   | BT_Bool
   | BT_Bytes
   | BT_Address
-  deriving (Show,Eq,Ord)
+  deriving (Show,Eq,Ord,Generic,NFData)
+
 data ExprType
   = TY_Var String
   | TY_Con BaseType
@@ -37,7 +41,7 @@ data Constant
   = Con_I Integer
   | Con_B Bool
   | Con_BS B.ByteString
-  deriving (Show,Eq)
+  deriving (Show,Eq,Ord,Generic,NFData)
 
 conType :: Constant -> BaseType
 conType (Con_I _) = BT_UInt256
@@ -68,12 +72,12 @@ data C_Prim
   | BCAT_RIGHT
   | BALANCE
   | TXN_VALUE
-  deriving (Show,Eq)
+  deriving (Show,Eq,Ord,Generic,NFData)
 
 data EP_Prim
   = CP C_Prim
   | RANDOM
-  deriving (Show,Eq)
+  deriving (Show,Eq,Ord,Generic,NFData)
 
 primType :: EP_Prim -> FunctionType
 primType (CP ADD) = [tUInt256, tUInt256] --> tUInt256
@@ -108,12 +112,12 @@ data ClaimType
                 --- honestly.)
   | CT_Possible --- Check if an assignment of variables exists to make
                 --- this true.
-  deriving (Show,Eq,Ord)
+  deriving (Show,Eq,Ord,Generic,NFData)
 
 data Role a
   = RolePart a
   | RoleContract
-  deriving (Show,Eq,Ord)
+  deriving (Show,Eq,Ord,Generic,NFData)
 
 role_me :: Eq a => Role a -> Role a -> Bool
 role_me _ RoleContract = True
@@ -123,7 +127,7 @@ role_me (RolePart x) (RolePart y) = x == y
 data Effect
   = Eff_Comm
   | Eff_Claim
-  deriving (Show,Eq,Ord)
+  deriving (Show,Eq,Ord,Generic,NFData)
 
 type Effects = S.Set Effect
 
@@ -149,18 +153,18 @@ data XLExpr a
   | XL_Interact a String BaseType [XLExpr a]
   | XL_FunApp a (XLExpr a) [XLExpr a]
   | XL_Lambda a [XLVar] (XLExpr a)
-  deriving (Show,Eq)
+  deriving (Show,Eq,Generic,NFData)
 
 data XLDef a
   = XL_DefineValues a [XLVar] (XLExpr a)
   | XL_DefineFun a XLVar [XLVar] (XLExpr a)
-  deriving (Show,Eq)
+  deriving (Show,Eq,Generic,NFData)
 
 type XLPartInfo a = (M.Map XLPart (a, [(a, XLVar, BaseType)]))
 
 data XLProgram  a=
   XL_Prog a [XLDef a] (XLPartInfo a) (XLExpr a)
-  deriving (Show,Eq)
+  deriving (Show,Eq,Generic,NFData)
 
 --- Inlined Language (the language after expansion)
 

@@ -33,6 +33,7 @@ dependencies:
 - smallcheck
 - hspec-smallcheck
 - generic-deriving
+- deepseq
 
 ghc-options:
 - -Wall

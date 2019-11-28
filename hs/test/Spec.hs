@@ -1,13 +1,19 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 import Test.Hspec
 import Test.Hspec.SmallCheck
 
 import System.Directory
 import Control.Exception
+import Control.DeepSeq
 import System.Process
 import System.Exit
 
 import Reach.ParserInternal
 import Generics.Deriving
+import Language.JavaScript.Parser.SrcLocation
+
+instance NFData TokenPosn where
+  rnf (TokenPn _ _ _) = ()
 
 mustExist :: FilePath -> Expectation
 mustExist fp = do
@@ -16,6 +22,13 @@ mustExist fp = do
     True `shouldBe` True
   else
     expectationFailure $ "file does not exist: " ++ fp
+
+try_hard :: NFData a => Exception e => IO a -> IO (Either e a)
+try_hard m = do
+  one <- try m
+  case one of
+    Left _ -> return one
+    Right p -> try $ evaluate $ force p
 
 parse_error_example :: ParseError -> Expectation
 parse_error_example pe = do
@@ -26,10 +39,10 @@ parse_error_example pe = do
   mustExist actual_p
   mustExist expected_p
   expected <- readFile expected_p
-  actual_r <- try $ readReachFile actual_p
+  actual_r <- try_hard $ readReachFile actual_p
   case actual_r of
-    Right _ ->
-      expectationFailure $ "expected a failure for " ++ which
+    Right r ->
+      expectationFailure $ "expected a failure for " ++ which ++ " but, got: " ++ show r
     Left (ErrorCall actual_x) ->
       (actual_x ++ "\n") `shouldBe` expected
 
