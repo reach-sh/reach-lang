@@ -32,6 +32,7 @@ import Reach.VerifyZ3
 
 data CompileErr
   = CE_Shadowed
+  | CE_VariableNotParticipant
   deriving (Generic, Show)
 
 instance Monad m => Serial m CompileErr
@@ -40,6 +41,7 @@ expect_throw :: Show a => Show b => CompileErr -> a -> b -> c
 expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
   where msg = case ce of
           CE_Shadowed -> "shadowed (duplicated) binding of variables are disallowed"
+          CE_VariableNotParticipant -> "variable used as participant, but not bound to participant"
 
 {- -}
 
@@ -47,7 +49,7 @@ zipEq :: [a] -> [b] -> [(a, b)]
 zipEq x y = if length x == length y then zip x y
             else error "zipEq: Unequal lists"
 
-zipWithEq :: (a -> b ->c) -> [a] -> [b] -> [c]
+zipWithEq :: (a -> b -> c) -> [a] -> [b] -> [c]
 zipWithEq f x y = map (\(a,b)->f a b) $ zipEq x y
 
 zipWithEqM :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
@@ -131,7 +133,7 @@ ienv_check_part_absent a p σ =
     Just v ->
       case v of
         IV_Var _ (_, BT_Address) -> False
-        _ -> error $ "inline: expected known participant, at: " ++ show a
+        _ -> expect_throw CE_VariableNotParticipant a p
 
 type_count_expect :: Show a => a -> Int -> IVType -> IVType
 type_count_expect a cnt t =
