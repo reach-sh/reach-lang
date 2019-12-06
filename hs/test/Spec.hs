@@ -12,6 +12,8 @@ import Generics.Deriving
 import Reach.ParserInternal
 
 import Language.JavaScript.Parser.SrcLocation
+instance NFData TP where
+  rnf (TP _) = ()
 instance NFData TokenPosn where
   rnf (TokenPn _ _ _) = ()
 

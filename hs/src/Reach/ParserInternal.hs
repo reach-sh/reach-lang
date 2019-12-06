@@ -19,13 +19,13 @@ import GHC.Generics
 
 import Reach.AST
 
-type TP = (FilePath, Maybe TokenPosn)
+newtype TP = TP (FilePath, (Maybe TokenPosn))
 
-show_tp :: TP -> String
-show_tp (fp, mtp) = fp ++
-  case mtp of
-    Nothing -> ""
-    Just (TokenPn _ l c) -> ":" ++ show l ++ ":" ++ show c
+instance Show TP where
+  show (TP (fp, mtp)) = fp ++
+    case mtp of
+      Nothing -> ""
+      Just (TokenPn _ l c) -> ":" ++ show l ++ ":" ++ show c
 
 class ExtractTP a where
   etp :: a -> Maybe TokenPosn
@@ -182,7 +182,7 @@ instance ExtractTP JSAST where
   etp (JSAstLiteral _ a) = etp a
 
 xtp :: TP -> Maybe TokenPosn
-xtp (_, t) = t
+xtp (TP (_, t)) = t
 
 instance ExtractTP (XLExpr TP) where
   etp (XL_Con a _) = xtp a
@@ -235,8 +235,9 @@ data ParseError
 instance Monad m => Serial m ParseError
 
 expect_throw :: ExtractTP a => ParseError -> FilePath -> a -> b
-expect_throw pe fp j = error $ show_tp (fp, (etp j)) ++ ": " ++ msg
-  where msg = case pe of
+expect_throw pe fp j = error $ show tp ++ ": " ++ msg
+  where tp = TP (fp, (etp j))
+        msg = case pe of
           PE_HeaderProgram -> "expected: 'reach 0.1 exe';"
           PE_HeaderLibrary -> "expected: 'reach 0.1 lib';"
           PE_LibraryMain -> "libraries should not have main function"
@@ -281,7 +282,7 @@ dss_loopvs :: DecodeStmtsState -> Maybe [XLVar]
 dss_loopvs (_, lv, _) = lv
 
 dss_tp :: DecodeStmtsState -> Maybe TokenPosn -> TP
-dss_tp (fp, _, _) mt = (fp, mt)
+dss_tp (fp, _, _) mt = TP (fp, mt)
 
 tpa :: JSAnnot -> Maybe TokenPosn
 tpa (JSAnnot t _) = Just t
@@ -547,7 +548,7 @@ decodeDef fp j =
       where args = map (expectIdent fp) (flattenJSCL eargs)
             e = decodeBlock fp ee
     _ -> expect_throw PE_BodyElement fp j
-  where tp a = (fp, tpa a)
+  where tp a = TP (fp, tpa a)
 
 decodeType :: FilePath -> JSExpression -> BaseType
 decodeType _ (JSIdentifier _ "uint256") = BT_UInt256
@@ -579,7 +580,7 @@ decodeBody fp (d, p, me) msis =
       defs <- readReachLibrary (string_trim_quotes m)
       return $ (d ++ defs, p, me)
     _ -> expect_throw PE_BodyElement fp msis
-  where tp a = (fp, tpa a)
+  where tp a = TP (fp, tpa a)
 
 decodeXLProgram :: FilePath -> JSAST -> IO (XLProgram TP)
 decodeXLProgram fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach 0.1 exe\'") _)):j) a) = do
@@ -587,7 +588,7 @@ decodeXLProgram fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStateme
   (d, p, mb) <- foldM (decodeBody fp) (init_defs, M.empty, Nothing) j
   case mb of
     Just b ->
-      return $ XL_Prog (fp, (tpa a)) d p b
+      return $ XL_Prog (TP (fp, (tpa a))) d p b
     Nothing ->
       expect_throw PE_NoMain fp j
 decodeXLProgram fp j = expect_throw PE_HeaderProgram fp j
