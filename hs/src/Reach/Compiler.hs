@@ -33,6 +33,7 @@ import Reach.VerifyZ3
 data CompileErr
   = CE_Shadowed
   | CE_VariableNotParticipant
+  | CE_LambdaArgCount
   deriving (Generic, Show)
 
 instance Monad m => Serial m CompileErr
@@ -42,19 +43,26 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
   where msg = case ce of
           CE_Shadowed -> "shadowed (duplicated) binding of variables are disallowed"
           CE_VariableNotParticipant -> "variable used as participant, but not bound to participant"
+          CE_LambdaArgCount -> "wrong number of arguments to lambda"
 
 {- -}
 
-zipEq :: [a] -> [b] -> [(a, b)]
-zipEq x y = if length x == length y then zip x y
-            else error "zipEq: Unequal lists"
+zipEq :: Show c => CompileErr -> c -> [a] -> [b] -> [(a, b)]
+zipEq ce w x y =
+  if lx == ly then zip x y
+  else expect_throw ce w (show lx ++ " vs " ++ show ly)
+  where lx = length x
+        ly = length y
 
-zipWithEq :: (a -> b -> c) -> [a] -> [b] -> [c]
-zipWithEq f x y = map (\(a,b)->f a b) $ zipEq x y
+zipWithEq :: Show d => CompileErr -> d -> (a -> b -> c) -> [a] -> [b] -> [c]
+zipWithEq ce w f x y = map (\(a,b) -> f a b) $ zipEq ce w x y
 
-zipWithEqM :: Monad m => (a -> b -> m c) -> [a] -> [b] -> m [c]
-zipWithEqM f x y = if length x == length y then zipWithM f x y
-                   else error "zipWithEqM: Unequal lists"
+zipWithEqM :: Monad m => Show d => CompileErr -> d -> (a -> b -> m c) -> [a] -> [b] -> m [c]
+zipWithEqM ce w f x y =
+  if lx == ly then zipWithM f x y
+  else expect_throw ce w (show lx ++ " vs " ++ show ly)
+  where lx = length x
+        ly = length y
 
 {- Basic Type checking
  -}
@@ -186,13 +194,13 @@ iv_can_copy (IV_XIL _ _ _) = False
 iv_can_copy _ = True
 
 id_map :: Show a => a -> [XLVar] -> [BaseType] -> ILEnv a
-id_map a vs ts = (M.fromList (zipWithEq iv_id vs ts))
+id_map a vs ts = (M.fromList (zipWithEq (error "XXX") a iv_id vs ts))
   where iv_id x bt = (x, IV_Var a (x,bt))
 
 copy_map :: Show a => a -> [XLVar] -> InlineV a -> ILEnv a
 copy_map a vs iv =
   case iv of
-    IV_Values _ ivs -> M.fromList (zipEq vs ivs)
+    IV_Values _ ivs -> M.fromList (zipEq (error "XXX") a vs ivs)
     _ -> case vs of
       [ v ] -> M.singleton v iv
       _ -> error $ "inline: expected one variable, but got " ++ show vs ++ " at: " ++ show a
@@ -229,7 +237,7 @@ do_inline_funcall outer_loopt ch who f argivs =
     IV_Clo (lh, formals, orig_body) cloenv ->
       IV_XIL (arp \/ bp) bt eff_body'
       where (σ', arp, eff_formals, eff_argies) =
-              foldr proc_clo_arg (cloenv, bottom, [], []) $ zipEq formals argivs
+              foldr proc_clo_arg (cloenv, bottom, [], []) $ zipEq CE_LambdaArgCount ch formals argivs
             proc_clo_arg (formal, argiv) (i_σ, i_arp, i_eff_formals, i_eff_argies) =
               if (iv_can_copy argiv) then
                 (o_σ_copy, i_arp, i_eff_formals, i_eff_argies)
@@ -313,7 +321,7 @@ peval outer_loopt σ e =
                 σ' = M.union σ_new σ
                 mvs' = case mvs of
                   Nothing -> Nothing
-                  Just vs -> Just (zipEq vs ts)
+                  Just vs -> Just (zipEq (error "XXX") a vs ts)
                 σ_new = case mvs of
                   Nothing -> M.empty
                   Just vs -> id_map a vs ts
@@ -364,7 +372,7 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
               where ve_iv = peval Nothing σ ve
                     adder' im =
                       XIL_Let h Nothing (Just ivs) ve' (adder im)
-                    ivs = zipWithEq (,) vs ts
+                    ivs = zipWithEq (error "XXX") h (,) vs ts
                     (_, ts, ve') = iv_expr h ve_iv
             XL_DefineFun h f args body ->
               (adder, ienv_insert h f (IV_Clo (h, args, body) σ_top) σ)
@@ -416,8 +424,8 @@ allocANF h r s t e = do
   put (nvi + 1, vs S.|> (ANFExpr h r nv e))
   return nv
 
-allocANFs :: ann -> Role ILPart -> String -> [BaseType] -> [ILExpr ann] -> ANFMonad ann [ILVar]
-allocANFs h mp s ts es = zipWithEqM (allocANF h mp s) ts es
+allocANFs :: Show ann => ann -> Role ILPart -> String -> [BaseType] -> [ILExpr ann] -> ANFMonad ann [ILVar]
+allocANFs h mp s ts es = zipWithEqM (error "XXX") h (allocANF h mp s) ts es
 
 type XILRenaming ann = M.Map XILVar (ILArg ann)
 
@@ -504,7 +512,7 @@ anf_expr me ρ e mk =
                   (\ _ tvs ->
                       anf_expr me ρ fe
                       (\ _ fvs -> do
-                          ks <- allocANFs h me "PureIf" its $ zipWithEq (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
+                          ks <- allocANFs h me "PureIf" its $ zipWithEq (error "XXX") h (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
                           mk h $ map (IL_Var h) ks))
                 False -> comm_case
               where comm_case = do
@@ -546,7 +554,7 @@ anf_expr me ρ e mk =
               where ρ' = M.union ρvs ρ
                     ρvs = case mvs of
                       Nothing -> ρ
-                      Just ovs -> (M.fromList $ zipEq ovs nvs)
+                      Just ovs -> (M.fromList $ zipEq (error "XXX") h ovs nvs)
     XIL_While h loopvs inite untile inve bodye ke ->
       anf_expr me ρ inite k
       where k _ initas = do
