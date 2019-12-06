@@ -7,12 +7,13 @@ import Reach.Compiler
 
 compiler :: FilePath -> Parser CompilerOpts
 compiler cwd = CompilerOpts
-  <$> strOption ( long "output"
-                <> short 'o'
-                <> metavar "DIR"
-                <> help "Directory for output files"
-                <> showDefault
-                <> value cwd )
+  <$> strOption
+  ( long "output"
+    <> short 'o'
+    <> metavar "DIR"
+    <> help "Directory for output files"
+    <> showDefault
+    <> value cwd )
   <*> strArgument (metavar "SOURCE")
 
 main :: IO ()

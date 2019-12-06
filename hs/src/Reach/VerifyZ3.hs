@@ -407,7 +407,7 @@ _verify_z3 z3 tp = do
   where IL_Prog _ ipi it = tp
         ps = RoleContract : (map RolePart $ M.keys ipi)
 
-newFileLogger :: String -> IO (IO (), Logger)
+newFileLogger :: FilePath -> IO (IO (), Logger)
 newFileLogger p = do
   logh <- openFile p WriteMode
   tabr <- newIORef 0
@@ -442,7 +442,7 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger { .. })
 
-verify_z3 :: Show a => String -> ILProgram a -> IO ()
+verify_z3 :: Show a => FilePath -> ILProgram a -> IO ()
 verify_z3 logp tp = do
   (close, logpl) <- newFileLogger logp
   z3 <- newSolver "z3" ["-smt2", "-in"] (Just logpl)

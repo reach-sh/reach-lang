@@ -207,7 +207,7 @@ instance ExtractTP (XLPartInfo TP) where
     where f [] = Nothing
           f ((_,(a,_)):_) = xtp a
 
-data ParseError
+data ParseErr
   = PE_HeaderProgram
   | PE_HeaderLibrary
   | PE_LibraryMain
@@ -232,9 +232,9 @@ data ParseError
   | PE_NoMain
   deriving (Generic, Show)
 
-instance Monad m => Serial m ParseError
+instance Monad m => Serial m ParseErr
 
-expect_throw :: ExtractTP a => ParseError -> FilePath -> a -> b
+expect_throw :: ExtractTP a => ParseErr -> FilePath -> a -> b
 expect_throw pe fp j = error $ show tp ++ ": " ++ msg
   where tp = TP (fp, (etp j))
         msg = case pe of
@@ -433,14 +433,12 @@ decodeExpr dss je =
 data LetNothing
   = LN_Flatten
   | LN_Null
-  | LN_Error
 letnothing :: LetNothing -> TP -> DecodeStmtsState -> XLExpr TP -> [JSStatement] -> XLExpr TP
 letnothing flatok t dss e ks =
   case ks of
     [] -> case flatok of
       LN_Flatten -> e
       LN_Null -> XL_Let t (dss_who dss) Nothing e (XL_Values t [])
-      LN_Error -> expect_throw PE_EmptyBody (dss_fp dss) ks
     _ -> XL_Let t (dss_who dss) Nothing e (decodeStmts dss ks)
 
 mergeStmts :: JSStatement -> [JSStatement] -> [JSStatement]

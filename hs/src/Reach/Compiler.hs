@@ -1,4 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Reach.Compiler where
 
@@ -15,12 +18,28 @@ import qualified Filesystem.Path.CurrentOS as FP
 import Algebra.Lattice
 import System.Directory
 
+import Test.SmallCheck.Series(Serial)
+import GHC.Generics(Generic)
+
 import Reach.AST
 import Reach.Pretty()
 import Reach.Parser
 import Reach.EmitJS
 import Reach.EmitSol
 import Reach.VerifyZ3
+
+{- Err -}
+
+data CompileErr
+  = CE_Shadowed
+  deriving (Generic, Show)
+
+instance Monad m => Serial m CompileErr
+
+expect_throw :: Show a => Show b => CompileErr -> a -> b -> c
+expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
+  where msg = case ce of
+          CE_Shadowed -> "shadowed (duplicated) binding of variables are disallowed"
 
 {- -}
 
@@ -103,7 +122,7 @@ ienv_insert a x v σ =
   case M.lookup x σ of
     Nothing -> M.insert x v σ
     Just _ ->
-      error $ "inline: shadowed binding of " ++ show x ++ " at : " ++ show a
+      expect_throw CE_Shadowed a x
 
 ienv_check_part_absent :: Show a => a -> XLPart -> ILEnv a -> Bool
 ienv_check_part_absent a p σ =
@@ -909,17 +928,18 @@ compile copts = do
   let srcbp = FP.basename $ FP.decodeString srcp
   let outd = output_dir copts
   let outdp = FP.decodeString outd
-  let out ext = FP.encodeString $ FP.append outdp $ srcbp `FP.addExtension` ext
+  let outn ext = FP.encodeString $ FP.append outdp $ srcbp `FP.addExtension` ext
+  let out ext con = writeFile (outn ext) con
   createDirectoryIfMissing True outd
   xlp <- readReachFile srcp
-  writeFile (out "xl") (L.unpack (pShow xlp))
+  out "xl" (L.unpack (pShow xlp))
   let xilp = inline xlp
-  writeFile (out "xil") (L.unpack (pShow xilp))
+  out "xil" (L.unpack (pShow xilp))
   let ilp = anf xilp
-  writeFile (out "il") (show (pretty ilp))
-  verify_z3 (out "z3") ilp
+  out "il" (show (pretty ilp))
+  verify_z3 (outn "z3") ilp
   let blp = epp ilp
-  writeFile (out "bl") (show (pretty blp))
-  cs <- compile_sol (out "sol") blp
-  writeFile (out "mjs") (show (emit_js blp cs))
+  out "bl" (show (pretty blp))
+  cs <- compile_sol (outn "sol") blp
+  out "mjs" (show (emit_js blp cs))
   exitSuccess

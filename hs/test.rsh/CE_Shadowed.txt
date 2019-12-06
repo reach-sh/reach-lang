@@ -1,0 +1,1 @@
+test.rsh/CE_Shadowed.rsh:6:3: shadowed (duplicated) binding of variables are disallowed: "x"

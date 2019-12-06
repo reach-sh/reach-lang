@@ -10,6 +10,7 @@ import System.Exit
 import Generics.Deriving
 
 import Reach.ParserInternal
+import Reach.Compiler
 
 import Language.JavaScript.Parser.SrcLocation
 instance NFData TP where
@@ -32,21 +33,29 @@ try_hard m = do
     Left _ -> return one
     Right p -> try $ evaluate $ force p
 
-parse_error_example :: ParseError -> Expectation
-parse_error_example pe = do
-  let which = conNameOf pe
+err_example :: Show a => NFData a => String -> (FilePath -> IO a) -> Expectation
+err_example which f = do
   let expth ext = "test.rsh/" ++ which ++ "." ++ ext
   let expected_p = expth "txt"
   let actual_p = expth "rsh"
   mustExist actual_p
   mustExist expected_p
   expected <- readFile expected_p
-  actual_r <- try_hard $ readReachFile actual_p
+  actual_r <- try_hard $ f actual_p
   case actual_r of
     Right r ->
       expectationFailure $ "expected a failure for " ++ which ++ " but, got: " ++ show r
     Left (ErrorCall actual_x) ->
       (actual_x ++ "\n") `shouldBe` expected
+
+parse_err_example :: ParseErr -> Expectation
+parse_err_example pe =
+  err_example (conNameOf pe) readReachFile
+
+compile_err_example :: CompileErr -> Expectation
+compile_err_example ce =
+  err_example (conNameOf ce) f
+  where f n = compile $ CompilerOpts "test.out" n
 
 main :: IO ()
 main = hspec $ do
@@ -57,5 +66,8 @@ main = hspec $ do
   describe "Parser" $ do
     it "stdlib_defs is valid" $ do
       stdlib_defs >>= (`shouldSatisfy` (not . null))
-    it "all parse errors have examples" $ property $
-      parse_error_example
+    it "all parse errs have examples" $ property $
+      parse_err_example
+  describe "Compiler" $ do
+    it "all compile errs have examples" $ property $
+      compile_err_example

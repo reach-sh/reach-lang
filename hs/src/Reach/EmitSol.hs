@@ -339,7 +339,7 @@ extract v = (abi, code)
         Just (String codebodyt) = HM.lookup "bin" ctc
         code = "\"0x" ++ T.unpack codebodyt ++ "\""
 
-compile_sol :: String -> BLProgram a -> IO CompiledSol
+compile_sol :: FilePath -> BLProgram a -> IO CompiledSol
 compile_sol solf blp = do
   writeFile solf (show (emit_sol blp))
   ( ec, stdout, stderr ) <- readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin", solf] []

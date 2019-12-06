@@ -1,3 +1,4 @@
 .stack-work/
 reach.cabal
 *~
+/test.out/
