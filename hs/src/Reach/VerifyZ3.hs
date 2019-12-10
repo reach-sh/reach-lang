@@ -104,7 +104,7 @@ z3_verify1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 (z3Apply "not" [ a ])
   r <- check z3
   case r of
-    Unknown -> error "Z3 inconclusive result in verify1"
+    Unknown -> impossible "Z3 verify1: Unknown"
     Unsat -> return $ VR 1 0
     Sat -> do
       display_fail honest who tk ann a
@@ -117,7 +117,7 @@ z3_sat1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 a
   r <- check z3
   case r of
-    Unknown -> error "Z3 inconclusive result in sat1"
+    Unknown -> impossible "Z3 sat1: Unknown"
     Sat -> return $ VR 1 0
     Unsat -> do
       display_fail honest who tk ann a
@@ -143,9 +143,9 @@ z3_assert_chk z3 h e = do
   assert z3 e
   r <- check z3
   case r of
-    Unknown -> error "Z3 inconclusive result in assert_chk"
+    Unknown -> impossible "Z3 assert_chk: Unknown"
     Sat -> mempty
-    Unsat -> error $ "Unreachable code with addition of assumption: " ++ show e ++ " at " ++ show h
+    Unsat -> error $ show h ++ ": Unreachable code with addition of assumption: " ++ show e
 
 {- Z3 Theory Generation
 
@@ -163,11 +163,6 @@ z3_assert_chk z3 h e = do
    http://smtlib.cs.uiowa.edu/standard.shtml
 
  -}
-
-lookie :: (Show k, Ord k) => String -> k -> M.Map k a -> a
-lookie err k m = case M.lookup k m of
-  Nothing -> error $ err ++ ": " ++ show k ++ " not in map"
-  Just v -> v
 
 z3CPrim :: Int -> C_Prim -> [SExpr] -> SExpr
 z3CPrim cbi cp =
@@ -266,7 +261,7 @@ z3_stmt z3 honest r primed cbi how =
               CT_Assume -> Nothing
               CT_Require | honest -> Just TRequire
               CT_Require -> Nothing
-              CT_Possible -> error "Impossible"
+              CT_Possible -> impossible $ "CT_Possible in previous case"
 
 data VerifyCtxt a
   = VC_Top
@@ -284,7 +279,7 @@ extract_invariant_variables invt =
   case invt of
     IL_Ret _ _ -> []
     IL_Let _ _ v _ t -> v : extract_invariant_variables t
-    _ -> error "Illegal invariant structure"
+    _ -> impossible $ "Z3: invalid invariant structure"
 
 z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILPart)) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
@@ -330,7 +325,7 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                 z3_assert_chk z3 h (emit_z3_arg primed a)
                 iter primed cbi (VC_WhileBody_Eval loopvs invt) bodyt
               VC_WhileBody_Eval _ _ ->
-                error $ "VerifyZ3 While must terminate in continue"
+                impossible $ "VerifyZ3 While must terminate in continue"
               VC_WhileTail_AssumeUntil invt ki -> do
                 let [ a ] = al
                 z3_assert_chk z3 h (emit_z3_arg primed a)
@@ -387,7 +382,7 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
               VC_WhileBody_Eval loopvs invt ->
                 iter primed cbi (VC_AssignCheckInv True loopvs invt) (IL_Ret x newas)
               _ ->
-                error $ "VerifyZ3 IL_Continue must only occur inside While"
+                impossible $ "VerifyZ3 IL_Continue must only occur inside While"
 
 z3StdLib :: String
 z3StdLib = BS.unpack $(embedFile "./z3/z3-runtime.smt2")
@@ -446,7 +441,7 @@ verify_z3 :: Show a => FilePath -> ILProgram a -> IO ()
 verify_z3 logp tp = do
   (close, logpl) <- newFileLogger logp
   z3 <- newSolver "z3" ["-smt2", "-in"] (Just logpl)
-  unlessM (produceUnsatCores z3) $ error "Prover doesn't support possible?"
+  unlessM (produceUnsatCores z3) $ impossible "Prover doesn't support possible?"
   vec <- _verify_z3 z3 tp
   zec <- stop z3
   close
