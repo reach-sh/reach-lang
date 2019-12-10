@@ -33,7 +33,21 @@ import Reach.VerifyZ3
 data CompileErr
   = CE_Shadowed
   | CE_VariableNotParticipant
-  | CE_LambdaArgCount
+  | CE_UnboundTypeVariable
+  | CE_TypeMismatch
+  | CE_TypeCount
+  | CE_ArgCount
+  | CE_HigherOrder
+  | CE_CannotApply
+  | CE_UnboundVariable
+  | CE_ContinueNotInLoop
+  | CE_ContractLimitation
+  | CE_LocalLimitation
+  | CE_VarNotVar
+  | CE_WhileNoContinue
+  | CE_UnknownRole
+  | CE_ExpectedPublic
+  | CE_UnknownVar
   deriving (Generic, Show)
 
 instance Monad m => Serial m CompileErr
@@ -43,7 +57,24 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
   where msg = case ce of
           CE_Shadowed -> "shadowed (duplicated) binding of variables are disallowed"
           CE_VariableNotParticipant -> "variable used as participant, but not bound to participant"
-          CE_LambdaArgCount -> "wrong number of arguments to lambda"
+          CE_UnboundTypeVariable -> "unbound type variable in primitive type"
+          CE_TypeMismatch -> "wrong type"
+          CE_TypeCount -> "wrong number of types"
+          CE_ArgCount -> "wrong number of arguments"
+          CE_HigherOrder -> "cannot reference higher-order value"
+          CE_CannotApply -> "cannot apply non-higher-order value"
+          CE_UnboundVariable -> "unbound variable"
+          CE_ContinueNotInLoop -> "continue not inside loop"
+          CE_WhileNoContinue -> "while does not terminate in continue"
+          CE_ContractLimitation -> "contract cannot"
+          CE_LocalLimitation -> "local cannot"
+          CE_UnknownRole -> "unknown role"
+          CE_VarNotVar -> "variable not bound to variable"
+          CE_ExpectedPublic -> "expected a public value"
+          CE_UnknownVar -> "variable not know by role"
+
+impossible :: String -> b
+impossible msg = error $ "impossible situation (i.e. compiler error): " ++ msg
 
 {- -}
 
@@ -73,42 +104,42 @@ checkFun :: Show a => a -> FunctionType -> [BaseType] -> BaseType
 checkFun h topft topdom = toprng
   where
     toprng = case runExcept mrng of
-      Left err -> error err
+      Left (ce,x) -> expect_throw ce h x
       Right v -> v
     mrng = hFun [] M.empty topft topdom
-    hTy :: TypeVarEnv -> ExprType -> Except String BaseType
+    hTy :: TypeVarEnv -> ExprType -> Except (CompileErr, String) BaseType
     hTy γ et = case et of
       TY_Con bt -> return bt
       TY_Var v -> case M.lookup v γ of
-        Nothing -> throwError $ "checkFun: Unconstrained/bound type variable: " ++ show v ++ " at " ++ show h
+        Nothing -> throwError (CE_UnboundTypeVariable, v)
         Just et' -> return et'
-    hExpr :: [String] -> TypeVarEnv -> ExprType -> BaseType -> Except String TypeVarEnv
+    hExpr :: [String] -> TypeVarEnv -> ExprType -> BaseType -> Except (CompileErr, String) TypeVarEnv
     hExpr vs γ et at = case et of
       TY_Con bt ->
         if at == bt then return γ
-        else throwError $ "checkFun: Expected " ++ show bt ++ ", got: " ++ show at ++ " at " ++ show h
+        else throwError (CE_TypeMismatch, ("expected" ++ show bt ++ ", but got: " ++ show at))
       TY_Var v ->
         if not $ elem v vs then
-          throwError $ "checkFun: Unbound type variable: " ++ show v ++ " at " ++ show h
+          throwError (CE_UnboundTypeVariable, v)
         else
           case M.lookup v γ of
             Just bt -> hExpr vs γ (TY_Con bt) at
             Nothing -> return $ M.insert v at γ
-    hFun :: [String] -> TypeVarEnv -> FunctionType -> [BaseType] -> Except String BaseType
+    hFun :: [String] -> TypeVarEnv -> FunctionType -> [BaseType] -> Except (CompileErr, String) BaseType
     hFun vs γ ft adom = case ft of
       TY_Forall nvs ft' -> hFun (vs ++ nvs) γ ft' adom
       TY_Arrow edom rng -> do
         γ' <- hExprs vs γ edom adom
         hTy γ' rng
-    hExprs :: [String] -> TypeVarEnv -> [ExprType] -> [BaseType] -> Except String TypeVarEnv
+    hExprs :: [String] -> TypeVarEnv -> [ExprType] -> [BaseType] -> Except (CompileErr, String) TypeVarEnv
     hExprs vs γ esl asl = case esl of
       [] ->
         case asl of
           [] -> return γ
-          _ -> throwError $ "checkFun: Received more than expected" ++ " at " ++ show h
+          _ -> throwError (CE_TypeCount, "too many")
       e1 : esl' ->
         case asl of
-          [] -> throwError $ "checkFun: Received fewer than expected" ++ " at " ++ show h
+          [] -> throwError (CE_TypeCount, "too few")
           a1 : asl' -> do
             γ' <- (hExprs vs γ esl' asl')
             hExpr vs γ' e1 a1
@@ -146,19 +177,19 @@ ienv_check_part_absent a p σ =
 type_count_expect :: Show a => a -> Int -> IVType -> IVType
 type_count_expect a cnt t =
   if l == cnt then t
-  else error $ "inline: expected " ++ show cnt ++ " values but got " ++ show l ++ " at: " ++ show a
+  else expect_throw CE_TypeCount a (cnt, l)
   where l = length t
 
 type_equal :: Show a => a -> IVType -> IVType -> IVType
 type_equal a at et =
   if at == et then et
-  else error $ "inline: expect " ++ show et ++ " but got " ++ show at ++ " at: " ++ show a
+  else expect_throw CE_TypeMismatch a (et, at)
 
 type_all_single :: Show a => a -> [IVType] -> IVType
 type_all_single a ts = concat $ map (type_count_expect a 1) ts
 
 iv_single :: Show a => a -> InlineV a -> InlineV a
-iv_single a (IV_Values _ vs) = error $ "inline: expected one value but got " ++ show (length vs) ++ " at: " ++ show a
+iv_single a (IV_Values _ vs) = expect_throw CE_TypeCount a (1 :: Integer, (length vs))
 iv_single _ iv = iv
 
 purePrim :: EP_Prim -> Effects
@@ -173,13 +204,13 @@ iv_expr _ (IV_Values a vs) = (vsp, ts, (XIL_Values a es))
   where (vsp, ts, es) = iv_exprs a vs
 iv_expr _ (IV_Var a (v,t)) = (Set.empty, [t], (XIL_Var a (v,t)))
 iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
-iv_expr ra (IV_Clo (ca, _, _) _) = error $ "inline: Cannot use lambda " ++ show ca ++ " as expression at: " ++ show ra
-iv_expr ra (IV_Prim pa _) = error $ "inline: Cannot use primitive " ++ show pa ++ " as expression at: " ++ show ra
+iv_expr ra (IV_Clo (ca, _, _) _) = expect_throw CE_HigherOrder ra ca
+iv_expr ra (IV_Prim pa _) = expect_throw CE_HigherOrder ra pa
 
 iv_expr_expect :: Show a => a -> [BaseType] -> InlineV a -> (Effects, XILExpr a)
 iv_expr_expect ra et iv =
   if et == at then (p, e)
-  else error $ "inline: expect type " ++ show et ++ " but got " ++ show at ++ " at: " ++ show ra
+  else expect_throw CE_TypeCount ra (et, at)
   where (p, at, e) = iv_expr ra iv
 
 iv_exprs :: Show a => a -> [InlineV a] -> (Effects, IVType, [XILExpr a])
@@ -194,16 +225,16 @@ iv_can_copy (IV_XIL _ _ _) = False
 iv_can_copy _ = True
 
 id_map :: Show a => a -> [XLVar] -> [BaseType] -> ILEnv a
-id_map a vs ts = (M.fromList (zipWithEq (error "XXX") a iv_id vs ts))
+id_map a vs ts = (M.fromList (zipWithEq CE_TypeCount a iv_id vs ts))
   where iv_id x bt = (x, IV_Var a (x,bt))
 
 copy_map :: Show a => a -> [XLVar] -> InlineV a -> ILEnv a
 copy_map a vs iv =
   case iv of
-    IV_Values _ ivs -> M.fromList (zipEq (error "XXX") a vs ivs)
+    IV_Values _ ivs -> M.fromList (zipEq CE_ArgCount a vs ivs)
     _ -> case vs of
       [ v ] -> M.singleton v iv
-      _ -> error $ "inline: expected one variable, but got " ++ show vs ++ " at: " ++ show a
+      _ -> expect_throw CE_ArgCount a (1 :: Integer, length vs)
 
 do_static_prim :: a -> EP_Prim -> [InlineV a] -> Maybe (InlineV a)
 do_static_prim h p argivs =
@@ -223,10 +254,10 @@ do_static_prim h p argivs =
 do_inline_funcall :: Show a => Maybe IVType -> a -> (Maybe XILPart) -> InlineV a -> [InlineV a] -> InlineV a
 do_inline_funcall outer_loopt ch who f argivs =
   case f of
-    IV_Con _ _ -> error $ "inline: Cannot call constant as function at: " ++ show ch
-    IV_Values _ _ -> error $ "inline: Cannot call values as function at: " ++ show ch
-    IV_XIL _ _ _ -> error $ "inline: Cannot call expression as function at: " ++ show ch
-    IV_Var _ _ -> error $ "inline: Cannot call variable as function at: " ++ show ch
+    IV_Con vh _ -> expect_throw CE_CannotApply ch vh
+    IV_Values vh _ -> expect_throw CE_CannotApply ch vh
+    IV_XIL vh _ _ -> expect_throw CE_CannotApply ch vh
+    IV_Var vh _ -> expect_throw CE_CannotApply ch vh
     IV_Prim h p ->
       case do_static_prim h p argivs of
         Just iv -> iv
@@ -237,7 +268,7 @@ do_inline_funcall outer_loopt ch who f argivs =
     IV_Clo (lh, formals, orig_body) cloenv ->
       IV_XIL (arp \/ bp) bt eff_body'
       where (σ', arp, eff_formals, eff_argies) =
-              foldr proc_clo_arg (cloenv, bottom, [], []) $ zipEq CE_LambdaArgCount ch formals argivs
+              foldr proc_clo_arg (cloenv, bottom, [], []) $ zipEq CE_TypeCount ch formals argivs
             proc_clo_arg (formal, argiv) (i_σ, i_arp, i_eff_formals, i_eff_argies) =
               if (iv_can_copy argiv) then
                 (o_σ_copy, i_arp, i_eff_formals, i_eff_argies)
@@ -262,9 +293,9 @@ peval outer_loopt σ e =
   case e of
     XL_Con a c ->
       IV_Con a c
-    XL_Var _a v ->
+    XL_Var va v ->
       case M.lookup v σ of
-        Nothing -> error $ "inline: Unbound variable: " ++ show e
+        Nothing -> expect_throw CE_UnboundVariable va v
         Just iv -> iv
     XL_Prim a p ->
       IV_Prim a p
@@ -321,7 +352,7 @@ peval outer_loopt σ e =
                 σ' = M.union σ_new σ
                 mvs' = case mvs of
                   Nothing -> Nothing
-                  Just vs -> Just (zipEq (error "XXX") a vs ts)
+                  Just vs -> Just (zipEq CE_TypeCount a vs ts)
                 σ_new = case mvs of
                   Nothing -> M.empty
                   Just vs -> id_map a vs ts
@@ -338,7 +369,7 @@ peval outer_loopt σ e =
         Just lvts ->
           IV_XIL eff_comm [] (XIL_Continue a (sr a lvts ne))
         Nothing ->
-          error $ "inline: cannot use continue unless inside loop at: " ++ show a
+          expect_throw CE_ContinueNotInLoop a ("XIL" :: String)
     XL_Interact a m bt args ->
       IV_XIL eff_comm [bt] (XIL_Interact a m bt args')
       where (_, _, args') = iv_exprs a $ map def args
@@ -372,7 +403,7 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
               where ve_iv = peval Nothing σ ve
                     adder' im =
                       XIL_Let h Nothing (Just ivs) ve' (adder im)
-                    ivs = zipWithEq (error "XXX") h (,) vs ts
+                    ivs = zipWithEq CE_TypeCount h (,) vs ts
                     (_, ts, ve') = iv_expr h ve_iv
             XL_DefineFun h f args body ->
               (adder, ienv_insert h f (IV_Clo (h, args, body) σ_top) σ)
@@ -392,7 +423,7 @@ data ANFElem a
 type ANFMonad ann a = State (Int, S.Seq (ANFElem ann)) a
 
 runANF :: ANFMonad ann a -> a
-runANF am = if null vs then a else error "ANF: Left variables in state!"
+runANF am = if null vs then a else impossible "runANF: Variables left in store"
   where
     (a, (_, vs)) = runState am (0, S.Empty)
 
@@ -425,7 +456,7 @@ allocANF h r s t e = do
   return nv
 
 allocANFs :: Show ann => ann -> Role ILPart -> String -> [BaseType] -> [ILExpr ann] -> ANFMonad ann [ILVar]
-allocANFs h mp s ts es = zipWithEqM (error "XXX") h (allocANF h mp s) ts es
+allocANFs h mp s ts es = zipWithEqM (impossible "allocANFs") h (allocANF h mp s) ts es
 
 type XILRenaming ann = M.Map XILVar (ILArg ann)
 
@@ -448,24 +479,24 @@ anf_may_rename h ij fromv ρ =
     False -> return (ρ, anf_renamed_to_var h ρ fromv)
     True -> makeRename h ρ fromv
 
-anf_parg :: (XILRenaming ann, [ILVar]) -> (ann, XILVar) -> ANFMonad ann (XILRenaming ann, [ILVar])
+anf_parg :: Show ann => (XILRenaming ann, [ILVar]) -> (ann, XILVar) -> ANFMonad ann (XILRenaming ann, [ILVar])
 anf_parg (ρ, args) (h, v) =
   case M.lookup v ρ of
     Nothing -> do
       (ρ', nv) <- makeRename h ρ v
       return (ρ', args' nv)
     Just (IL_Var _ nv) -> return (ρ, args' nv)
-    Just _ -> error $ "ANF: Participant argument not bound to variable: " ++ show v
+    Just _ -> expect_throw CE_UnknownRole h v
   where args' nv = args ++ [nv]
 
-anf_part :: (XILRenaming ann, ILPartInfo ann) -> (XILPart, (ann, [(ann, XILVar)])) -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
+anf_part :: Show ann => (XILRenaming ann, ILPartInfo ann) -> (XILPart, (ann, [(ann, XILVar)])) -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
 anf_part (ρ, ips) (p, (h, args)) = do
   (ρ', p') <- makeRename h ρ p
   (ρ'', args') <- foldM anf_parg (ρ', []) args
   let ips' = M.insert p' args' ips
   return (ρ'', ips')
 
-anf_parts :: XILPartInfo ann -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
+anf_parts :: Show ann => XILPartInfo ann -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
 anf_parts ps = foldM anf_part (M.empty, M.empty) (M.toList ps)
 
 anf_exprs :: Show ann => ann -> Role ILPart -> XILRenaming ann -> [XILExpr ann] -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
@@ -476,31 +507,31 @@ anf_exprs h0 me ρ es mk =
       anf_expr me ρ e k1
       where k1 h1 [ e' ] = anf_exprs h1 me ρ more k2
               where k2 h2 es' = mk h2 $ e' : es'
-            k1 _ evs = error $ "anf_exprs, expect 1, got " ++ show evs
+            k1 h1 evs = expect_throw CE_ArgCount h1 (h0, length evs)
 
 vsOnly :: [ILArg ann] -> [ILVar]
 vsOnly [] = []
 vsOnly (IL_Var _ v : m) = v : vsOnly m
 vsOnly (_ : m) = vsOnly m
 
-anf_renamed_to :: XILRenaming ann -> XILVar -> ILArg ann
-anf_renamed_to ρ v =
+anf_renamed_to :: Show ann => ann -> XILRenaming ann -> XILVar -> ILArg ann
+anf_renamed_to h ρ v =
   case M.lookup v ρ of
-    Nothing -> error ("ANF: Variable unbound: " ++ (show v))
+    Nothing -> expect_throw CE_UnboundVariable h v
     Just a -> a
 
 anf_renamed_to_var :: Show ann => ann -> XILRenaming ann -> XILVar -> ILVar
 anf_renamed_to_var h ρ v =
-  case anf_renamed_to ρ v of
+  case anf_renamed_to h ρ v of
     IL_Var _ nv -> nv
-    _ -> error $ "ANF: variable not bound to variable: " ++ show v ++ " at: " ++ show h
+    _ -> expect_throw CE_VarNotVar h v
 
 anf_expr :: Show ann => Role ILPart -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
 anf_expr me ρ e mk =
   case e of
     XIL_Con h b ->
       mk h [ IL_Con h b ]
-    XIL_Var h v -> mk h [ anf_renamed_to ρ v ]
+    XIL_Var h v -> mk h [ anf_renamed_to h ρ v ]
     XIL_PrimApp h p pt args ->
       anf_exprs h me ρ args (\_ args' -> ret_expr h "PrimApp" pt (IL_PrimApp h p args'))
     XIL_If h effs ce its te fe ->
@@ -512,14 +543,14 @@ anf_expr me ρ e mk =
                   (\ _ tvs ->
                       anf_expr me ρ fe
                       (\ _ fvs -> do
-                          ks <- allocANFs h me "PureIf" its $ zipWithEq (error "XXX") h (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
+                          ks <- allocANFs h me "PureIf" its $ zipWithEq CE_ArgCount h (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
                           mk h $ map (IL_Var h) ks))
                 False -> comm_case
               where comm_case = do
                       tt <- anf_tail me ρ te mk
                       ft <- anf_tail me ρ fe mk
                       return $ IL_If h ca tt ft
-            k _ _ = error "anf_expr XL_If ce doesn't return 1"
+            k _ es = expect_throw CE_ArgCount h (1 :: Integer, (length es))
     XIL_Claim h ct ae ->
       anf_expr me ρ ae (\_ [ aa ] -> ret_stmt h (IL_Claim h ct aa))
     XIL_FromConsensus h le -> do
@@ -531,7 +562,7 @@ anf_expr me ρ e mk =
         (\ _ [pa] ->
           anf_expr RoleContract ρ de
           (\ _ [da] -> do
-              let ins' = vsOnly $ map (anf_renamed_to ρ) ins
+              let ins' = vsOnly $ map (anf_renamed_to h ρ) ins
               let to_mwho' = to_mwho >>= (\to_who -> Just $ anf_renamed_to_var h ρ to_who)
               ct <- anf_tail RoleContract ρ ce mk
               tt <- anf_tail RoleContract ρ te anf_ktop
@@ -554,7 +585,7 @@ anf_expr me ρ e mk =
               where ρ' = M.union ρvs ρ
                     ρvs = case mvs of
                       Nothing -> ρ
-                      Just ovs -> (M.fromList $ zipEq (error "XXX") h ovs nvs)
+                      Just ovs -> (M.fromList $ zipEq CE_ArgCount h ovs nvs)
     XIL_While h loopvs inite untile inve bodye ke ->
       anf_expr me ρ inite k
       where k _ initas = do
@@ -564,7 +595,7 @@ anf_expr me ρ e mk =
               bodyt <- anf_tail me ρ' bodye anf_knocontinue
               kt <- anf_tail me ρ' ke mk
               return $ IL_While h loopvs' initas untilt invt bodyt kt
-            anf_knocontinue _ = error $ "ANF XL_While not terminated by XL_Continue"
+            anf_knocontinue kh _ = expect_throw CE_WhileNoContinue kh h
     XIL_Continue h nve -> 
       anf_expr me ρ nve (\_ nvas -> return $ IL_Continue h nvas)
     XIL_Interact h m bt args ->
@@ -634,7 +665,7 @@ runEPP am = (a, hs)
   where (a, (_, hs_as_s)) = runState am (1, M.empty)
         hs = map force $ M.toAscList hs_as_s
         force (_, Just h) = h
-        force _ = error "EPP: Handler never set!"
+        force _ = impossible "EPP: Handler never set!"
 
 localEPP :: EPPMonad ann a -> EPPMonad ann a
 localEPP am = do
@@ -653,17 +684,17 @@ setEPP which mh = do
   (nh, hs) <- get
   let hs' = case M.lookup which hs of
               Nothing ->
-                error "EPP: Handler not acquired!"
+                impossible "EPP: Handler not acquired!"
               Just Nothing ->
                 M.insert which (Just $ mh which) hs
               Just (Just _) ->
-                error "EPP: Handler already set!"
+                impossible "EPP: Handler already set!"
   put (nh, hs')
   return ()
 
-must_be_public :: (a, SecurityLevel) -> a
-must_be_public (v, Public) = v
-must_be_public (_, Secret) = error "EPP: Must be public"
+must_be_public :: Show h => Show v => h -> (v, SecurityLevel) -> v
+must_be_public _ (v, Public) = v
+must_be_public h (v, Secret) = expect_throw CE_ExpectedPublic h v
 
 boundBLVar :: BLVar -> Set.Set BLVar
 boundBLVar bv = Set.singleton bv
@@ -671,66 +702,65 @@ boundBLVar bv = Set.singleton bv
 boundBLVars :: [BLVar] -> Set.Set BLVar
 boundBLVars vs = Set.fromList vs
 
-epp_var :: String -> EPPEnv -> Role BLPart -> ILVar -> (BLVar, SecurityLevel)
-epp_var dbg γ r iv = (iv, st)
+epp_var :: Show ann => ann -> EPPEnv -> Role BLPart -> ILVar -> (BLVar, SecurityLevel)
+epp_var h γ r iv = (iv, st)
   where env = case M.lookup r γ of
-          Nothing -> error $ "EPP: Unknown role: " ++ show r
+          Nothing -> expect_throw CE_UnknownRole h r
           Just v -> v
         st = case M.lookup iv env of
-          Nothing -> error $ "EPP: Role " ++ show r ++ " does not know " ++ show iv ++ " at " ++ dbg ++ " but does know " ++ show env
+          Nothing -> expect_throw CE_UnknownVar h (r, iv)
           Just v -> v
 
-epp_vars :: String -> EPPEnv -> Role BLPart -> [ILVar] -> [(BLVar, SecurityLevel)]
-epp_vars dbg γ r ivs = map (epp_var dbg γ r) ivs
+epp_vars :: Show ann => ann -> EPPEnv -> Role BLPart -> [ILVar] -> [(BLVar, SecurityLevel)]
+epp_vars h γ r ivs = map (epp_var h γ r) ivs
 
-epp_arg :: String -> EPPEnv -> Role BLPart -> ILArg ann -> ((Set.Set BLVar, BLArg ann), SecurityLevel)
+epp_arg :: Show ann => ann -> EPPEnv -> Role BLPart -> ILArg ann -> ((Set.Set BLVar, BLArg ann), SecurityLevel)
 epp_arg _ _ _ (IL_Con h c) = ((Set.empty, BL_Con h c), Public)
-epp_arg dbg γ r (IL_Var h iv) = ((Set.singleton bv, BL_Var h bv), st)
-  where (bv, st) = epp_var dbg γ r iv
+epp_arg _ γ r (IL_Var h iv) = ((Set.singleton bv, BL_Var h bv), st)
+  where (bv, st) = epp_var h γ r iv
 
-epp_args :: String -> EPPEnv -> Role BLPart -> [ILArg ann] -> (Set.Set BLVar, [(BLArg ann, SecurityLevel)])
-epp_args dbg γ r ivs = (svs, args)
-  where cmb = map (epp_arg dbg γ r) ivs
+epp_args :: Show ann => ann -> EPPEnv -> Role BLPart -> [ILArg ann] -> (Set.Set BLVar, [(BLArg ann, SecurityLevel)])
+epp_args h γ r ivs = (svs, args)
+  where cmb = map (epp_arg h γ r) ivs
         svs = Set.unions $ map (\((a,_),_) -> a) cmb
         args = map (\((_,b),c) -> (b,c)) cmb
 
 epp_e_ctc :: Show ann => EPPEnv -> ILExpr ann -> (SecurityLevel, Set.Set BLVar, CExpr ann)
 epp_e_ctc γ e = case e of
-  IL_Declassify _ _ -> error "EPP: Contract cannot declassify"
+  IL_Declassify h _ -> expect_throw CE_ContractLimitation h ("declassify" :: String)
   IL_PrimApp h (CP cp) args -> (Public, fvs, C_PrimApp h cp args')
-    where (fvs, args0) = epp_args ("ctc PrimApp " ++ show cp ++ " " ++ show args) γ RoleContract args
-          args' = map must_be_public $ args0
-  IL_PrimApp h p _ -> error $ "EPP: Contract cannot execute: " ++ show p ++ " at: " ++ show h
-  IL_Interact h _ _ _ -> error $ "EPP: Contract cannot execute interact at: " ++ show h
+    where (fvs, args0) = epp_args h γ RoleContract args
+          args' = map (must_be_public h) $ args0
+  IL_PrimApp h p _ -> expect_throw CE_ContractLimitation h p
+  IL_Interact h _ _ _ -> expect_throw CE_ContractLimitation h ("interact" :: String)
 
 epp_e_loc :: Show ann => EPPEnv -> ILPart -> ILExpr ann -> (SecurityLevel, Set.Set BLVar, EPExpr ann)
 epp_e_loc γ p e = case e of
   IL_Declassify h a -> (Public, fvs, EP_Arg h a')
-    where ((fvs, a'), _) = earg "loc Declassify" a
+    where ((fvs, a'), _) = earg h a
   IL_PrimApp h pr args -> (slvl, fvs, EP_PrimApp h pr args')
-    where (fvs, args'st) = epp_args "loc PrimApp" γ (RolePart p) args
+    where (fvs, args'st) = epp_args h γ (RolePart p) args
           args' = map fst args'st
           slvl = mconcat $ map snd args'st
   IL_Interact h m bt args -> (Secret, fvs, EP_Interact h m bt args')
-    where (fvs, args'st) = epp_args "loc Interact" γ (RolePart p) args
+    where (fvs, args'st) = epp_args h γ (RolePart p) args
           args' = map fst args'st
- where earg dbg = epp_arg dbg γ (RolePart p)
+ where earg h = epp_arg h γ (RolePart p)
 
-epp_s_ctc :: EPPEnv -> ILStmt ann -> (Set.Set BLVar, CStmt ann)
+epp_s_ctc :: Show ann => EPPEnv -> ILStmt ann -> (Set.Set BLVar, CStmt ann)
 epp_s_ctc γ e = case e of
   IL_Transfer h r am -> (fvs, C_Transfer h r am')
-    where (fvs, am') = eargt "ctc Transfer" am
+    where (fvs, am') = eargt h am
   IL_Claim h ct a -> (fvs, C_Claim h ct a')
-    where (fvs, a') = eargt "ctc Claim" a
- where earg dbg = epp_arg dbg γ RoleContract
-       eargt dbg a = must_be_public $ earg dbg a
+    where (fvs, a') = eargt h a
+ where earg h = epp_arg h γ RoleContract
+       eargt h a = must_be_public h $ earg h a
 
-epp_s_loc :: EPPEnv -> ILPart -> ILStmt ann -> (Set.Set BLVar, EPStmt ann)
+epp_s_loc :: Show ann => EPPEnv -> ILPart -> ILStmt ann -> (Set.Set BLVar, EPStmt ann)
 epp_s_loc γ p e = case e of
-  IL_Transfer _ _ _ -> error "EPP: Local cannot transfer"
+  IL_Transfer h _ _ -> expect_throw CE_LocalLimitation h ("transfer" :: String)
   IL_Claim h ct a -> (fvs, EP_Claim h ct a')
-    where ((fvs, a'), _) = earg "loc Claim" a
-          earg dbg = epp_arg dbg γ (RolePart p)
+    where ((fvs, a'), _) = epp_arg h γ (RolePart p) a
 
 epp_e_ctc2loc :: CExpr ann -> EPExpr ann
 epp_e_ctc2loc (C_PrimApp h cp al) = (EP_PrimApp h (CP cp) al)
@@ -750,15 +780,15 @@ combine_maps :: Ord k => (k -> u -> v -> w) -> [k] -> M.Map k u -> M.Map k v -> 
 combine_maps f ks m1 m2 = M.fromList $ map cmb ks
   where cmb k = (k, f k (m1 M.! k) (m2 M.! k))
 
-epp_it_ctc_do_if :: ann -> [BLPart] -> (EPPEnv, ILArg ann) -> EPPRes ann -> EPPRes ann -> EPPRes ann
+epp_it_ctc_do_if :: Show ann => ann -> [BLPart] -> (EPPEnv, ILArg ann) -> EPPRes ann -> EPPRes ann -> EPPRes ann
 epp_it_ctc_do_if h ps (γc, ca) tres fres = do
-  let (svs_ca, cca') = must_be_public $ epp_arg "ctc If cond" γc RoleContract ca
+  let (svs_ca, cca') = must_be_public h $ epp_arg h γc RoleContract ca
   (svs_t, ctt', ts1) <- tres
   (svs_f, cft', ts2) <- fres
   let svs = Set.unions [ svs_ca, svs_t, svs_f ]
   let ts3 = combine_maps mkt ps ts1 ts2
             where mkt p tt' ft' = EP_If h ca' tt' ft'
-                    where (_,ca') = must_be_public $ epp_arg "ctc If Cond" γc (RolePart p) ca
+                    where (_,ca') = must_be_public h $ epp_arg h γc (RolePart p) ca
   return (svs, C_If h cca' ctt' cft', ts3) 
 
 epp_it_ctc :: Show ann => [BLPart] -> Int -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
@@ -771,7 +801,7 @@ epp_it_ctc ps this_h γ ctxt it = case it of
       EC_Invariant -> do
         return (mempty, C_Halt h, mempty)
       _ ->
-        error "EPP: CTC cannot return"
+        expect_throw CE_ContractLimitation h ("return" :: String)
   IL_If h ca tt ft -> do
     epp_it_ctc_do_if h ps (γ, ca) (dres tt) (dres ft)
     where dres wt = epp_it_ctc ps this_h γ ctxt wt
@@ -784,8 +814,8 @@ epp_it_ctc ps this_h γ ctxt it = case it of
     let how_ep = epp_e_ctc2loc how_ctc
     let ts2 = M.map (EP_Let h what how_ep) ts1
     return (svs, C_Let h what how_ctc next', ts2)
-  IL_Let _ (RolePart _) _ _ _ ->
-    error "EPP: Cannot perform local binding in consensus"
+  IL_Let h (RolePart _) _ _ _ ->
+    expect_throw CE_ContractLimitation h ("local binding" :: String)
   IL_Do h RoleContract how next -> do
     let (svs2, how') = epp_s_ctc γ how
     (svs1, ct1, ts1) <- epp_it_ctc ps this_h γ ctxt next
@@ -795,14 +825,14 @@ epp_it_ctc ps this_h γ ctxt it = case it of
                 Nothing -> ts1
                 Just how'_ep -> M.map (EP_Do h how'_ep) ts1
     return (svs, ct2, ts2)
-  IL_Do _ (RolePart _) _ _ ->
-    error "EPP: Cannot perform local action in consensus"
-  IL_ToConsensus _ _ _ _ ->
-    error "EPP: Cannot transition to consensus from consensus"
+  IL_Do h (RolePart _) _ _ ->
+    expect_throw CE_ContractLimitation h ("local action" :: String)
+  IL_ToConsensus h _ _ _ ->
+    expect_throw CE_ContractLimitation h ("transition to consensus" :: String)
   IL_FromConsensus _ bt ->
     epp_it_loc ps this_h γ ctxt bt
   IL_While h loopvs initas untilt invt bodyt kt -> do
-    let (fvs_as, inita'_infos) = epp_args "ctc While init" γ RoleContract initas
+    let (fvs_as, inita'_infos) = epp_args h γ RoleContract initas
     let initas' = map fst inita'_infos
     let loopvenv = M.fromList $ zip loopvs $ map snd inita'_infos
     let γ' = M.map (M.union loopvenv) γ
@@ -826,29 +856,29 @@ epp_it_ctc ps this_h γ ctxt it = case it of
       EC_WhileTrial loopvs -> do
         return (svs, trial "ct", ts)
         where svs = fvs_as
-              (fvs_as, _) = epp_args "ctc continue" γ RoleContract nas
-              trial msg = error $ "EPP: WhileTrial: Cannot inspect " ++ msg
+              (fvs_as, _) = epp_args h γ RoleContract nas
+              trial msg = impossible $ "EPP: WhileTrial: Cannot inspect " ++ msg
               ts = M.fromList $ map mkt ps
               mkt p = (p, EP_Continue h 0 loopvs $ trial "continue arg")
       EC_WhileBody which loopvs fvs_loop -> do
         return (svs, ct, ts)
-        where (fvs_as, inita'_infos) = epp_args "ctc continue" γ RoleContract nas
-              initas' = map must_be_public inita'_infos
+        where (fvs_as, inita'_infos) = epp_args h γ RoleContract nas
+              initas' = map (must_be_public h) inita'_infos
               svs = Set.union fvs_loop fvs_as
               fvs_loopl = Set.toList fvs_loop
               ct = C_Jump h which fvs_loopl loopvs initas'
               ts = M.fromList $ map mkt ps
-              mkt p = (p, EP_Continue h which loopvs $ (map fst) . snd $ epp_args "ctc continue loc" γ (RolePart p) nas)
+              mkt p = (p, EP_Continue h which loopvs $ (map fst) . snd $ epp_args h γ (RolePart p) nas)
       _ ->
-        error $ "EPP: Continue not in while body"
+        expect_throw CE_ContinueNotInLoop h ("EPP" :: String)
 
 epp_it_loc :: Show ann => [BLPart] -> Int -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
 epp_it_loc ps last_h γ ctxt it = case it of
   IL_Ret h al -> return ( Set.empty, C_Halt h, ts)
     where ts = M.fromList $ map mkt ps
-          mkt p = (p, EP_Ret h $ map fst $ snd $ epp_args "loc ret" γ (RolePart p) al)
-  IL_If _ _ _ _ ->
-    error "EPP: Ifs must be consensual"
+          mkt p = (p, EP_Ret h $ map fst $ snd $ epp_args h γ (RolePart p) al)
+  IL_If h _ _ _ ->
+    expect_throw CE_LocalLimitation h ("impure if" :: String)
   IL_Let h who what how next -> do
     let (fmst, extend_ts) =
           foldr addhow (Nothing, (\x->x)) ps
@@ -869,7 +899,7 @@ epp_it_loc ps last_h γ ctxt it = case it of
                                    else
                                      env
                    lst = case fmst of
-                     Nothing -> error "EPP: Let not local to any participant"
+                     Nothing -> expect_throw CE_UnknownRole h who
                      Just v -> v
     (svs1, ct1, ts1) <- epp_it_loc ps last_h γ' ctxt next
     return (svs1, ct1, extend_ts ts1)
@@ -885,11 +915,11 @@ epp_it_loc ps last_h γ ctxt it = case it of
     hn_okay <- acquireEPP
     hn_timeout <- acquireEPP
     let fromr = RolePart fromp
-    let (_, howmuch') = must_be_public $ epp_arg "loc howmuch" γ fromr howmuch
-    let what' = map must_be_public $ epp_vars "loc toconsensus" γ fromr what
+    let (_, howmuch') = must_be_public h $ epp_arg h γ fromr howmuch
+    let what' = map (must_be_public h) $ epp_vars h γ fromr what
     let what'env = M.fromList $ map (\v -> (v,Public)) what'
     let γ' = M.map (M.union what'env) γ
-    let (delay_vs, delay') = must_be_public $ epp_arg "loc delay" γ RoleContract delay
+    let (delay_vs, delay') = must_be_public h $ epp_arg h γ RoleContract delay
     (svs_okay, ct_okay, ts_okay) <- epp_it_ctc ps hn_okay γ' ctxt next
     (svs_timeout, ct_timeout, ts_timeout) <- epp_it_ctc ps hn_timeout γ ctxt timeout
     let svs_all0 = Set.union delay_vs $ Set.difference (Set.union svs_okay svs_timeout) (boundBLVars what')
@@ -913,9 +943,9 @@ epp_it_loc ps last_h γ ctxt it = case it of
                       if p /= fromp then EP_Recv h svs_all_l (ok_fs, hn_okay, what', pt1) to_info
                       else EP_SendRecv h svs_all_l (ok_fs, hn_okay, what', howmuch', pt1) to_info
     return (svs_all, ct2, ts2)
-  IL_FromConsensus _ _ -> error "EPP: Cannot transition to local from local"
-  IL_While _ _ _ _ _ _ _ -> error $ "EPP: While illegal outside consensus"
-  IL_Continue _ _ -> error $ "EPP: Continue illegal outside consensus"
+  IL_FromConsensus h _ -> expect_throw CE_LocalLimitation h ("transition from consensus" :: String)
+  IL_While h _ _ _ _ _ _ -> expect_throw CE_LocalLimitation h ("while" :: String)
+  IL_Continue h _ -> expect_throw CE_LocalLimitation h ("continue" :: String)
 
 epp :: Show ann => ILProgram ann -> BLProgram ann
 epp (IL_Prog h ips it) = BL_Prog h bps cp
