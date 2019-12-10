@@ -27,6 +27,7 @@ import Reach.Parser
 import Reach.EmitJS
 import Reach.EmitSol
 import Reach.VerifyZ3
+import Reach.Util
 
 {- Err -}
 
@@ -72,9 +73,6 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
           CE_VarNotVar -> "variable not bound to variable"
           CE_ExpectedPublic -> "expected a public value"
           CE_UnknownVar -> "variable not know by role"
-
-impossible :: String -> b
-impossible msg = error $ "impossible situation (i.e. compiler error): " ++ msg
 
 {- -}
 

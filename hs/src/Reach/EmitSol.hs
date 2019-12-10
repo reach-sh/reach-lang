@@ -18,6 +18,7 @@ import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
+import Reach.Util
 
 {- AST add-ons
  -}
@@ -209,11 +210,11 @@ solPrimApply pr args =
     PGT -> binOp ">"
     IF_THEN_ELSE -> case args of
                       [ c, t, f ] -> c <+> "?" <+> t <+> ":" <+> f
-                      _ -> spa_error ()
+                      _ -> impossible $ "emitSol: ITE wrong args"
     UINT256_TO_BYTES -> solApply "abi.encodePacked" args
     DIGEST -> case args of
                 [ a ] -> solHash [a]
-                _ -> spa_error ()
+                _ -> impossible $ "emitSol: digest wrong args"
     BYTES_EQ -> binOp "=="
     BYTES_LEN -> solApply "BYTES_LEN" args
     BCAT -> solApply "BCAT" args
@@ -223,8 +224,7 @@ solPrimApply pr args =
     TXN_VALUE -> "msg.value"
   where binOp op = case args of
           [ l, r ] -> solBinOp op l r
-          _ -> spa_error ()
-        spa_error () = error "solPrimApply"
+          _ -> impossible $ "emitSol: bin op args"
 
 solCExpr :: SolInMemory -> SolRenaming a -> CExpr b -> Doc a
 solCExpr sim ρ (C_PrimApp _ pr al) = solPrimApply pr $ map (solArg sim ρ) al
@@ -345,7 +345,7 @@ compile_sol solf blp = do
   ( ec, stdout, stderr ) <- readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin", solf] []
   case ec of
     ExitFailure _ ->
-      die $ "solc errored:\n"
+      die $ "solc failed:\n"
       ++ "STDOUT:\n" ++ stdout ++ "\n"
       ++ "STDERR:\n" ++ stderr ++ "\n"
     ExitSuccess ->
@@ -355,4 +355,4 @@ compile_sol solf blp = do
           die $ "solc failed to produce valid output:\n"
           ++ "STDOUT:\n" ++ stdout ++ "\n"
           ++ "STDERR:\n" ++ stderr ++ "\n"
-          ++ "Decode Error:\n" ++ err ++ "\n"
+          ++ "Decode:\n" ++ err ++ "\n"

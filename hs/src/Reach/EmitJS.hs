@@ -14,6 +14,7 @@ import Reach.EmitSol
   , solMsg_fun
   , solType
   , CompiledSol )
+import Reach.Util
 
 jsString :: String -> Doc a
 jsString s = squotes $ pretty s
@@ -96,7 +97,7 @@ jsPrimApply tn pr =
     CP PGT -> jsApply "stdlib.gt"
     CP IF_THEN_ELSE -> \args -> case args of
                       [ c, t, f ] -> c <+> pretty "?" <+> t <+> pretty ":" <+> f
-                      _ -> spa_error ()
+                      _ -> impossible $ "emitJS: ITE called with wrong number of arguments"
     CP UINT256_TO_BYTES -> jsApply "stdlib.uint256_to_bytes"
     CP DIGEST -> jsApply "stdlib.keccak256"
     CP BYTES_EQ -> jsApply "stdlib.bytes_eq"
@@ -107,7 +108,6 @@ jsPrimApply tn pr =
     CP BALANCE -> \_ -> jsTxn tn <> pretty ".balance"
     CP TXN_VALUE -> \_ -> jsTxn tn <> pretty ".value"
     RANDOM -> jsApply "stdlib.random_uint256"
-  where spa_error () = error "jsPrimApply"
 
 jsEPExpr :: Int -> EPExpr b -> (Bool, (Doc a, Set.Set BLVar))
 jsEPExpr _tn (EP_Arg _ a) = (False, jsArg a)
