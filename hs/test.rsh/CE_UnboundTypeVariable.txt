@@ -1,0 +1,1 @@
+test.rsh/CE_UnboundTypeVariable.rsh:4:10: unbound variable: "x"

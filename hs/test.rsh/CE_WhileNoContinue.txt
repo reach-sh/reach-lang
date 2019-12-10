@@ -1,0 +1,1 @@
+test.rsh/CE_WhileNoContinue.rsh:4:3: wrong number of types: ([],[BT_UInt256])

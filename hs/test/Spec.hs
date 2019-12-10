@@ -69,5 +69,7 @@ main = hspec $ do
     it "all parse errs have examples" $ property $
       parse_err_example
   describe "Compiler" $ do
+    it "while no continue" $ do
+      compile_err_example CE_WhileNoContinue
     it "all compile errs have examples" $ property $
       compile_err_example

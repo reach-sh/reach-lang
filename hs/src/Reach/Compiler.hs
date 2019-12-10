@@ -49,6 +49,7 @@ data CompileErr
   | CE_UnknownRole
   | CE_ExpectedPublic
   | CE_UnknownVar
+  | CE_Unreachable
   deriving (Generic, Show)
 
 instance Monad m => Serial m CompileErr
@@ -58,23 +59,38 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
   where msg = case ce of
           CE_Shadowed -> "shadowed (duplicated) binding of variables are disallowed"
           CE_VariableNotParticipant -> "variable used as participant, but not bound to participant"
-          CE_UnboundTypeVariable -> "unbound type variable in primitive type"
+          --- This is impossible because all of the type definitions
+          --- are correct and don't mention unbound variables.
+          CE_UnboundTypeVariable -> impossible $ "unbound type variable in primitive type"
           CE_TypeMismatch -> "wrong type"
           CE_TypeCount -> "wrong number of types"
           CE_ArgCount -> "wrong number of arguments"
           CE_HigherOrder -> "cannot reference higher-order value"
           CE_CannotApply -> "cannot apply non-higher-order value"
           CE_UnboundVariable -> "unbound variable"
-          CE_ContinueNotInLoop -> "continue not inside loop"
-          CE_WhileNoContinue -> "while does not terminate in continue"
+          --- This is impossible, because the decoder checks to make
+          --- sure the variables match and it is actually inside a
+          --- loop.
+          CE_ContinueNotInLoop -> impossible $ "continue not inside loop"
+          --- This is impossible, because there is no terminator
+          --- except for return and continue, and the body of a loop
+          --- has to return nothing.
+          CE_WhileNoContinue -> impossible $ "while does not terminate in continue"
           CE_ContractLimitation -> "contract cannot"
           CE_LocalLimitation -> "local cannot"
           CE_UnknownRole -> "unknown role"
           CE_VarNotVar -> "variable not bound to variable"
           CE_ExpectedPublic -> "expected a public value"
           CE_UnknownVar -> "variable not know by role"
+          CE_Unreachable -> "Hack: This is used by VerifyZ3"
 
 {- -}
+
+map_throw :: Ord k => Show k => Show w => CompileErr -> w -> M.Map k v -> k -> v
+map_throw ce w m k =
+  case M.lookup k m of
+    Just v -> v
+    Nothing -> expect_throw ce w k
 
 zipEq :: Show c => CompileErr -> c -> [a] -> [b] -> [(a, b)]
 zipEq ce w x y =
@@ -570,7 +586,7 @@ anf_expr me ρ e mk =
     XIL_Transfer h to ae ->
       anf_expr me ρ ae
       (\_ [ aa ] ->
-         let IL_Var _ tov = ρ M.! (to, BT_Address) in
+         let IL_Var _ tov = map_throw CE_UnknownRole h ρ (to, BT_Address) in
          ret_stmt h (IL_Transfer h tov aa))
     XIL_Declassify h dt ae ->
       anf_expr me ρ ae (\_ [ aa ] -> ret_expr h "Declassify" dt (IL_Declassify h aa))
