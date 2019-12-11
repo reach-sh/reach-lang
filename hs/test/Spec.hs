@@ -59,10 +59,6 @@ compile_err_example ce =
 
 main :: IO ()
 main = hspec $ do
-  describe "RPS" $ do
-    it "RPS end-to-end" $ do
-      --- XXX remove echo
-      (system "echo 'cd ../examples/rps && make clean build'") `shouldReturn` ExitSuccess
   describe "Parser" $ do
     it "stdlib_defs is valid" $ do
       stdlib_defs >>= (`shouldSatisfy` (not . null))
@@ -73,3 +69,6 @@ main = hspec $ do
       compile_err_example CE_WhileNoContinue
     it "all compile errs have examples" $ property $
       compile_err_example
+  describe "RPS" $ do
+    it "RPS end-to-end" $ do
+      (system "echo 'cd ../examples/rps && make clean build'") `shouldReturn` ExitSuccess

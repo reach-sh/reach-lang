@@ -37,14 +37,12 @@ data CompileErr
   | CE_UnboundTypeVariable
   | CE_TypeMismatch
   | CE_TypeCount
-  | CE_ArgCount
   | CE_HigherOrder
   | CE_CannotApply
   | CE_UnboundVariable
   | CE_ContinueNotInLoop
   | CE_ContractLimitation
   | CE_LocalLimitation
-  | CE_VarNotVar
   | CE_WhileNoContinue
   | CE_UnknownRole
   | CE_ExpectedPublic
@@ -64,7 +62,6 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
           CE_UnboundTypeVariable -> impossible $ "unbound type variable in primitive type"
           CE_TypeMismatch -> "wrong type"
           CE_TypeCount -> "wrong number of types"
-          CE_ArgCount -> "wrong number of arguments"
           CE_HigherOrder -> "cannot reference higher-order value"
           CE_CannotApply -> "cannot apply non-higher-order value"
           CE_UnboundVariable -> "unbound variable"
@@ -79,7 +76,6 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
           CE_ContractLimitation -> "contract cannot"
           CE_LocalLimitation -> "local cannot"
           CE_UnknownRole -> "unknown role"
-          CE_VarNotVar -> "variable not bound to variable"
           CE_ExpectedPublic -> "expected a public value"
           CE_UnknownVar -> "variable not know by role"
           CE_Unreachable -> "Hack: This is used by VerifyZ3"
@@ -131,7 +127,7 @@ checkFun h topft topdom = toprng
     hExpr vs γ et at = case et of
       TY_Con bt ->
         if at == bt then return γ
-        else throwError (CE_TypeMismatch, ("expected" ++ show bt ++ ", but got: " ++ show at))
+        else throwError (CE_TypeMismatch, ("expected " ++ show bt ++ ", but got: " ++ show at))
       TY_Var v ->
         if not $ elem v vs then
           throwError (CE_UnboundTypeVariable, v)
@@ -245,10 +241,10 @@ id_map a vs ts = (M.fromList (zipWithEq CE_TypeCount a iv_id vs ts))
 copy_map :: Show a => a -> [XLVar] -> InlineV a -> ILEnv a
 copy_map a vs iv =
   case iv of
-    IV_Values _ ivs -> M.fromList (zipEq CE_ArgCount a vs ivs)
+    IV_Values _ ivs -> M.fromList (zipEq CE_TypeCount a vs ivs)
     _ -> case vs of
       [ v ] -> M.singleton v iv
-      _ -> expect_throw CE_ArgCount a (1 :: Integer, length vs)
+      _ -> expect_throw CE_TypeCount a (1 :: Integer, length vs)
 
 do_static_prim :: a -> EP_Prim -> [InlineV a] -> Maybe (InlineV a)
 do_static_prim h p argivs =
@@ -521,7 +517,7 @@ anf_exprs h0 me ρ es mk =
       anf_expr me ρ e k1
       where k1 h1 [ e' ] = anf_exprs h1 me ρ more k2
               where k2 h2 es' = mk h2 $ e' : es'
-            k1 h1 evs = expect_throw CE_ArgCount h1 (h0, length evs)
+            k1 h1 evs = expect_throw CE_TypeCount h1 (h0, length evs)
 
 vsOnly :: [ILArg ann] -> [ILVar]
 vsOnly [] = []
@@ -538,7 +534,7 @@ anf_renamed_to_var :: Show ann => ann -> XILRenaming ann -> XILVar -> ILVar
 anf_renamed_to_var h ρ v =
   case anf_renamed_to h ρ v of
     IL_Var _ nv -> nv
-    _ -> expect_throw CE_VarNotVar h v
+    _ -> expect_throw CE_VariableNotParticipant h v
 
 anf_expr :: Show ann => Role ILPart -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
 anf_expr me ρ e mk =
@@ -557,14 +553,14 @@ anf_expr me ρ e mk =
                   (\ _ tvs ->
                       anf_expr me ρ fe
                       (\ _ fvs -> do
-                          ks <- allocANFs h me "PureIf" its $ zipWithEq CE_ArgCount h (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
+                          ks <- allocANFs h me "PureIf" its $ zipWithEq CE_TypeCount h (\ t f -> IL_PrimApp h (CP IF_THEN_ELSE) [ ca, t, f ]) tvs fvs
                           mk h $ map (IL_Var h) ks))
                 False -> comm_case
               where comm_case = do
                       tt <- anf_tail me ρ te mk
                       ft <- anf_tail me ρ fe mk
                       return $ IL_If h ca tt ft
-            k _ es = expect_throw CE_ArgCount h (1 :: Integer, (length es))
+            k _ es = expect_throw CE_TypeCount h (1 :: Integer, (length es))
     XIL_Claim h ct ae ->
       anf_expr me ρ ae (\_ [ aa ] -> ret_stmt h (IL_Claim h ct aa))
     XIL_FromConsensus h le -> do
@@ -599,7 +595,7 @@ anf_expr me ρ e mk =
               where ρ' = M.union ρvs ρ
                     ρvs = case mvs of
                       Nothing -> ρ
-                      Just ovs -> (M.fromList $ zipEq CE_ArgCount h ovs nvs)
+                      Just ovs -> (M.fromList $ zipEq CE_TypeCount h ovs nvs)
     XIL_While h loopvs inite untile inve bodye ke ->
       anf_expr me ρ inite k
       where k _ initas = do
