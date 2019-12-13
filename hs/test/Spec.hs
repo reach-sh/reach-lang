@@ -1,13 +1,18 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 import Test.Hspec
 import Test.Hspec.SmallCheck
 
 import System.Directory
+import System.FilePath
 import Control.Exception
 import Control.DeepSeq
 import System.Process
 import System.Exit
 import Generics.Deriving
+import qualified Data.ByteString.Lazy.Char8 as C
+import Data.Text(pack, unpack, replace)
+import System.IO.Capture
 
 import Reach.ParserInternal
 import Reach.Compiler
@@ -33,29 +38,63 @@ try_hard m = do
     Left _ -> return one
     Right p -> try $ evaluate $ force p
 
+err_m :: Show a => NFData a => String -> FilePath -> IO a -> Expectation
+err_m msg expected_p comp = do
+  mustExist expected_p
+  expected <- readFile expected_p
+  actual_r <- try_hard $ comp
+  case actual_r of
+    Right r ->
+      expectationFailure $ "expected a failure for " ++ msg ++ " but, got: " ++ show r
+    Left (ErrorCall actual_x) ->
+      (actual_x ++ "\n") `shouldBe` expected
+
 err_example :: Show a => NFData a => String -> (FilePath -> IO a) -> Expectation
 err_example which f = do
   let expth ext = "test.rsh/" ++ which ++ "." ++ ext
   let expected_p = expth "txt"
   let actual_p = expth "rsh"
   mustExist actual_p
-  mustExist expected_p
-  expected <- readFile expected_p
-  actual_r <- try_hard $ f actual_p
-  case actual_r of
-    Right r ->
-      expectationFailure $ "expected a failure for " ++ which ++ " but, got: " ++ show r
-    Left (ErrorCall actual_x) ->
-      (actual_x ++ "\n") `shouldBe` expected
-
+  err_m which expected_p (f actual_p)
+  
 parse_err_example :: ParseErr -> Expectation
 parse_err_example pe =
   err_example (conNameOf pe) readReachFile
 
+test_compile :: FilePath -> IO ()
+test_compile n = compile $ CompilerOpts "test.out" n
+
 compile_err_example :: CompileErr -> Expectation
 compile_err_example ce =
-  err_example (conNameOf ce) f
-  where f n = compile $ CompilerOpts "test.out" n
+  err_example (conNameOf ce) test_compile
+
+patch_and_compile :: FilePath -> FilePath -> IO ()
+patch_and_compile dir pf = do
+  let examples_dir = "../examples"
+  let dest = unpack . replace "__" "/" . pack $ pf
+  let orig = dropExtension dest
+  ExitSuccess <- system $ "patch -d " ++ examples_dir ++ " -i " ++ (".." </> "hs" </> dir </> pf) ++ " -o " ++ dest ++ " " ++ orig
+  let rdest = examples_dir </> dest
+  (out, err, exn, _) <- capture $ test_compile rdest
+  removeFile rdest
+  let tag t x = "<" ++ t ++ ">\n" ++ (C.unpack x) ++ "\n</" ++ t ++ ">\n"
+  let res = (tag "out" out) ++ (tag "err" err) ++ (tag "exn" exn)
+  putStrLn res
+  error res
+
+verify_regress1 :: FilePath -> FilePath -> Spec
+verify_regress1 dir pf = do
+  it ("verify_regress " ++ pf) $ do
+    err_m pf (dir </> pf <.> "out") (patch_and_compile dir pf)
+
+notDotOut :: FilePath -> Bool
+notDotOut fp = (takeExtension fp) /= ".out"
+
+verify_regress :: FilePath -> Spec
+verify_regress dir = do
+  fs <- runIO $ listDirectory dir
+  let ps = filter notDotOut fs
+  mapM_ (verify_regress1 dir) ps
 
 main :: IO ()
 main = hspec $ do
@@ -65,10 +104,11 @@ main = hspec $ do
     it "all parse errs have examples" $ property $
       parse_err_example
   describe "Compiler" $ do
-    it "while no continue" $ do
-      compile_err_example CE_WhileNoContinue
     it "all compile errs have examples" $ property $
       compile_err_example
+  describe "Verification Regression" $ do
+    verify_regress "test.patch"
   describe "RPS" $ do
     it "RPS end-to-end" $ do
+      --- XXX remove echo
       (system "echo 'cd ../examples/rps && make clean build'") `shouldReturn` ExitSuccess

@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
+    pantry-tree:
+      size: 273
+      sha256: 65849cbd4749744033f0e23c317a4cb12b7a24eb0ca9d2610c95b6dc72b3f470
+  original:
+    hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
+- completed:
     hackage: posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c,1160
     pantry-tree:
       size: 386

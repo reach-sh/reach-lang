@@ -1,6 +1,7 @@
 resolver: lts-14.7
 
 extra-deps:
+  - io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
   - posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c
   - git: https://github.com/jeapostrophe/simple-smt.git
     commit: 1189da0abaf9a0a48c4a99e0e195af5b893ee69c
