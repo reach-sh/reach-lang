@@ -1,0 +1,13 @@
+diff --git a/examples/rps/rsh/rps.rsh b/examples/rps/rsh/rps.rsh
+index 56f3167..b27812e 100644
+--- a/examples/rps/rsh/rps.rsh
++++ b/examples/rps/rsh/rps.rsh
+@@ -53,7 +53,7 @@ function main() {
+       transfer(balance()).to(A);
+       commit();
+       return showOutcome(B_QUITS); });
+-  require(isHand(handB));
++  //require(isHand(handB));
+   commit();
+ 
+   A.only(() => {

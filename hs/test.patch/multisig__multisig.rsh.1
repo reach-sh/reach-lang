@@ -1,0 +1,13 @@
+diff --git a/examples/multisig/multisig.rsh b/examples/multisig/multisig.rsh
+index 9bdf6f8..cb7b06b 100644
+--- a/examples/multisig/multisig.rsh
++++ b/examples/multisig/multisig.rsh
+@@ -32,7 +32,7 @@ function main() {
+   Parent.only(() => {
+     const allowance = declassify(is(uint256, interact.allowance())); });
+   Parent.publish(allowance)
+-    .pay(allowance)
++    .pay(/*allowance*/ 0)
+     .timeout(DELAY, _, () => {
+       commit();
+       return [0, 0]; });

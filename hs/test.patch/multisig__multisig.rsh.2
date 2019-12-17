@@ -1,0 +1,13 @@
+diff --git a/examples/multisig/multisig.rsh b/examples/multisig/multisig.rsh
+index 9bdf6f8..5bf6757 100644
+--- a/examples/multisig/multisig.rsh
++++ b/examples/multisig/multisig.rsh
+@@ -49,7 +49,7 @@ function main() {
+       .timeout(DELAY, Parent, () => {
+         [ bal, oks, nos ] = [ bal, oks, nos ];
+         continue; });
+-    require(howMuch <= bal);
++    // require(howMuch <= bal);
+     commit();
+ 
+     Parent.only(() => {

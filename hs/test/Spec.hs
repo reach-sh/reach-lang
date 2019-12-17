@@ -47,7 +47,8 @@ err_m msg expected_p comp = do
     Right r ->
       expectationFailure $ "expected a failure for " ++ msg ++ " but, got: " ++ show r
     Left (ErrorCall actual_x) ->
-      (actual_x ++ "\n") `shouldBe` expected
+      let actual = (actual_x ++ "\n") in
+        actual `shouldBe` expected
 
 err_example :: Show a => NFData a => String -> (FilePath -> IO a) -> Expectation
 err_example which f = do
@@ -74,12 +75,15 @@ patch_and_compile dir pf = do
   let dest = unpack . replace "__" "/" . pack $ pf
   let orig = dropExtension dest
   ExitSuccess <- system $ "patch -d " ++ examples_dir ++ " -i " ++ (".." </> "hs" </> dir </> pf) ++ " -o " ++ dest ++ " " ++ orig
+  putStrLn "...patch applied"
   let rdest = examples_dir </> dest
+  putStrLn "compiling..."
   (out, err, exn, _) <- capture $ test_compile rdest
+  putStrLn "...finished"
   removeFile rdest
   let tag t x = "<" ++ t ++ ">\n" ++ (C.unpack x) ++ "\n</" ++ t ++ ">\n"
   let res = (tag "out" out) ++ (tag "err" err) ++ (tag "exn" exn)
-  putStrLn res
+  writeFile (dir </> pf <.> "actual") (res ++ "\n")
   error res
 
 verify_regress1 :: FilePath -> FilePath -> Spec
@@ -88,7 +92,8 @@ verify_regress1 dir pf = do
     err_m pf (dir </> pf <.> "out") (patch_and_compile dir pf)
 
 notDotOut :: FilePath -> Bool
-notDotOut fp = (takeExtension fp) /= ".out"
+notDotOut fp = ext /= ".out" && ext /= ".actual"
+  where ext = (takeExtension fp)
 
 verify_regress :: FilePath -> Spec
 verify_regress dir = do

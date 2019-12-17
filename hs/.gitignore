@@ -2,3 +2,4 @@
 reach.cabal
 *~
 /test.out/
+/test.patch/*.actual
