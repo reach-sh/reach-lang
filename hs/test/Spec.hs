@@ -10,9 +10,8 @@ import Control.DeepSeq
 import System.Process
 import System.Exit
 import Generics.Deriving
-import qualified Data.ByteString.Lazy.Char8 as C
 import Data.Text(pack, unpack, replace)
-import System.IO.Capture
+import GHC.IO.Handle
 
 import Reach.ParserInternal
 import Reach.Compiler
@@ -78,11 +77,16 @@ patch_and_compile dir pf = do
   putStrLn "...patch applied"
   let rdest = examples_dir </> dest
   putStrLn "compiling..."
-  (out, err, exn, _) <- capture $ test_compile rdest
-  putStrLn "...finished"
+  (_, Just hout, Just herr, hP) <-
+    createProcess (proc "stack" ["exec", "--", "reachc", "-o", "test.out", rdest]){ std_out = CreatePipe,
+                                                                                    std_err = CreatePipe }
+  out <- hGetContents hout
+  err <- hGetContents herr
+  putStrLn $ "...finished: " ++ show (length out)
+  _ <- waitForProcess hP
   removeFile rdest
-  let tag t x = "<" ++ t ++ ">\n" ++ (C.unpack x) ++ "\n</" ++ t ++ ">\n"
-  let res = (tag "out" out) ++ (tag "err" err) ++ (tag "exn" exn)
+  let tag t x = "<" ++ t ++ ">\n" ++ x ++ "\n</" ++ t ++ ">\n"
+  let res = (tag "out" out) ++ (tag "err" err)
   writeFile (dir </> pf <.> "actual") (res ++ "\n")
   error res
 
