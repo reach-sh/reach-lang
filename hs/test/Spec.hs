@@ -10,8 +10,10 @@ import Control.DeepSeq
 import System.Process
 import System.Exit
 import Generics.Deriving
+import qualified Data.ByteString.Char8 as B
 import Data.Text(pack, unpack, replace)
 import GHC.IO.Handle
+import Crypto.Hash
 
 import Reach.ParserInternal
 import Reach.Compiler
@@ -37,6 +39,14 @@ try_hard m = do
     Left _ -> return one
     Right p -> try $ evaluate $ force p
 
+hashit :: String -> String
+hashit xs = hs
+  where xb = B.pack xs
+        h :: Digest MD5
+        h = hash xb
+        hb = digestToHexByteString h
+        hs = B.unpack hb
+
 err_m :: Show a => NFData a => String -> FilePath -> IO a -> Expectation
 err_m msg expected_p comp = do
   mustExist expected_p
@@ -46,8 +56,10 @@ err_m msg expected_p comp = do
     Right r ->
       expectationFailure $ "expected a failure for " ++ msg ++ " but, got: " ++ show r
     Left (ErrorCall actual_x) ->
-      let actual = (actual_x ++ "\n") in
-        actual `shouldBe` expected
+      actual_h `shouldBe` expected_h
+      where actual = (actual_x ++ "\n")
+            actual_h = hashit actual
+            expected_h = hashit expected
 
 err_example :: Show a => NFData a => String -> (FilePath -> IO a) -> Expectation
 err_example which f = do

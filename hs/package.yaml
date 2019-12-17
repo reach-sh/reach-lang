@@ -34,7 +34,7 @@ dependencies:
 - hspec-smallcheck
 - generic-deriving
 - deepseq
-- io-capture
+- cryptohash
 
 ghc-options:
 - -Wall
