@@ -1,0 +1,184 @@
+<out>
+Verifying with honest = True; role = RoleContract
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(15
+Verification failed:
+	in honest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v100:
+Verification failed:
+	in honest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v102:
+Verification failed:
+	in honest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v104:
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = True; role = RolePart (0,("A",BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(15
+Verification failed:
+	in honest mode
+	for RolePart (0,("A",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v100:
+Verification failed:
+	in honest mode
+	for RolePart (0,("A",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v102:
+Verification failed:
+	in honest mode
+	for RolePart (0,("A",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v104:
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = True; role = RolePart (3,("B",BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(15
+Verification failed:
+	in honest mode
+	for RolePart (3,("B",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v100:
+Verification failed:
+	in honest mode
+	for RolePart (3,("B",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v102:
+Verification failed:
+	in honest mode
+	for RolePart (3,("B",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v104:
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = True; role = RolePart (4,("O",BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(15
+Verification failed:
+	in honest mode
+	for RolePart (4,("O",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v100:
+Verification failed:
+	in honest mode
+	for RolePart (4,("O",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v102:
+Verification failed:
+	in honest mode
+	for RolePart (4,("O",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v104:
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = False; role = RoleContract
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(15
+Verification failed:
+	in dishonest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v100:
+Verification failed:
+	in dishonest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v102:
+Verification failed:
+	in dishonest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v104:
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = False; role = RolePart (0,("A",BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(15
+Verification failed:
+	in dishonest mode
+	for RolePart (0,("A",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v100:
+Verification failed:
+	in dishonest mode
+	for RolePart (0,("A",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v102:
+Verification failed:
+	in dishonest mode
+	for RolePart (0,("A",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v104:
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = False; role = RolePart (3,("B",BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(15
+Verification failed:
+	in dishonest mode
+	for RolePart (3,("B",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v100:
+Verification failed:
+	in dishonest mode
+	for RolePart (3,("B",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v102:
+Verification failed:
+	in dishonest mode
+	for RolePart (3,("B",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v104:
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = False; role = RolePart (4,("O",BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(15
+Verification failed:
+	in dishonest mode
+	for RolePart (4,("O",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v100:
+Verification failed:
+	in dishonest mode
+	for RolePart (4,("O",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v102:
+Verification failed:
+	in dishonest mode
+	for RolePart (4,("O",BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:11
+	specifically: v104:
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Checked 250 theorems; 24 failures. :'(
+
+</out>
+<err>
+
+</err>
+
