@@ -308,7 +308,11 @@ decode_evm bs =
           where (ks, rks) = B.splitAt k r
 
 emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
-emit_evm _ _ (_, code) = do
-  let bs = H.toBytes $ H.hexString $ BC.pack code
-  mapM_ (\o -> putStrLn $ show o) $ decode_evm bs
-  return ()
+emit_evm _ _ (_, code) =
+  if False then
+    do
+      let bs = H.toBytes $ H.hexString $ BC.pack code
+      mapM_ (\o -> putStrLn $ show o) $ decode_evm bs
+      return ()
+  else
+    return ()
