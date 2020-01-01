@@ -337,7 +337,7 @@ extract v = (abi, code)
         Just (String abit) = HM.lookup "abi" ctc
         abi = T.unpack abit
         Just (String codebodyt) = HM.lookup "bin" ctc
-        code = "\"0x" ++ T.unpack codebodyt ++ "\""
+        code = T.unpack codebodyt
 
 compile_sol :: FilePath -> BLProgram a -> IO CompiledSol
 compile_sol solf blp = do

@@ -230,4 +230,4 @@ emit_js (BL_Prog _ pm _) (abi, code) = modp
         importp = pretty $ "import * as stdlib from '@reach-sh/stdlib';"
         partsp = map jsPart $ M.toList pm
         abip = pretty $ "export const ABI = " ++ abi ++ ";"
-        codep = pretty $ "export const Bytecode = " ++ code ++ ";"
+        codep = pretty $ "export const Bytecode = \"0x" ++ code ++ "\";"

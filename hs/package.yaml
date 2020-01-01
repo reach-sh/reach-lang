@@ -35,6 +35,7 @@ dependencies:
 - generic-deriving
 - deepseq
 - cryptohash
+- hexstring
 
 ghc-options:
 - -Wall

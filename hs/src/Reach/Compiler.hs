@@ -26,6 +26,7 @@ import Reach.Pretty()
 import Reach.Parser
 import Reach.EmitJS
 import Reach.EmitSol
+import Reach.EmitEVM
 import Reach.VerifyZ3
 import Reach.Util
 
@@ -991,5 +992,6 @@ compile copts = do
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
+  emit_evm (outn "evm") blp cs
   out "mjs" (show (emit_js blp cs))
   exitSuccess
