@@ -46,6 +46,20 @@ packages:
   original:
     git: https://github.com/jeapostrophe/language-javascript.git
     commit: 1433b39fc089021368d1e361ae7eccce218acb39
+- completed:
+    cabal-file:
+      size: 1313
+      sha256: 7234d82b95a56ccfebe161fa1a599b9f7c518ee99ef9e1c4d9f7e230bbac1359
+    name: haskell-evm
+    version: 0.1.0
+    git: https://github.com/reach-sh/haskell-evm.git
+    pantry-tree:
+      size: 509
+      sha256: b6a624be87180cbde3de06c6f5e448241afc36799a68e83d756009c1d2788a3f
+    commit: 3662d5c104e7ab3a745cd99488b6995bd368dbf4
+  original:
+    git: https://github.com/reach-sh/haskell-evm.git
+    commit: 3662d5c104e7ab3a745cd99488b6995bd368dbf4
 snapshots:
 - completed:
     size: 523700

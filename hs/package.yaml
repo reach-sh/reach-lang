@@ -36,6 +36,7 @@ dependencies:
 - deepseq
 - cryptohash
 - hexstring
+- haskell-evm
 
 ghc-options:
 - -Wall
