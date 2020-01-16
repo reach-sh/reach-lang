@@ -31,6 +31,8 @@ function main() {
   transfer(pre).to(Borrower);
   commit();
 
+  Borrower.only(() => {
+    interact.waitForPayback(); });
   Borrower.pay(post)
     .timeout(maturation, Borrower, () => {
       transfer(collateral).to(Lender);
