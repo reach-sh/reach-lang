@@ -760,7 +760,7 @@ epp_e_loc γ p e = case e of
 
 epp_s_ctc :: Show ann => EPPEnv -> ILStmt ann -> (Set.Set BLVar, CStmt ann)
 epp_s_ctc γ e = case e of
-  IL_Transfer h r am -> (fvs, C_Transfer h r am')
+  IL_Transfer h r am -> (Set.insert r fvs, C_Transfer h r am')
     where (fvs, am') = eargt h am
   IL_Claim h ct a -> (fvs, C_Claim h ct a')
     where (fvs, a') = eargt h a
