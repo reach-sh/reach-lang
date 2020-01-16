@@ -1,11 +1,11 @@
 name:                reach
 version:             0.1.0
-github:              "Reach-sh/reach-lang"
+github:              "reach-sh/reach-lang"
 license:             Apache-2.0
 author:              "Reach"
 maintainer:          "jay@reach.sh"
 copyright:           "2019 Reach"
-description:         Please visit the GitHub repository <https://github.com/Reach-sh/reach-lang#readme>
+description:         Please visit the GitHub repository <https://github.com/reach-sh/reach-lang#readme>
 
 dependencies:
 - base >= 4.7 && < 5
