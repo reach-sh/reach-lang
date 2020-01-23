@@ -63,7 +63,7 @@ https://github.com/Reach-sh/reach-lang/blob/master/docs/paper.md
 
 In this article, we will repeatedly refer to a simple example program:
 
-https://github.com/Reach-sh/reach-lang/blob/master/examples/rps/rps/rps.reach
+https://github.com/Reach-sh/reach-lang/blob/master/examples/rps/rsh/rps.rsh
 
 And the results of Reach's compilation of the program:
 
