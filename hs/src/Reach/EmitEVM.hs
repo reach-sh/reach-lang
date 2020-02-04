@@ -22,6 +22,7 @@ data ASMOp a b
 type ASMSeq a b = [ASMOp a b]
 data ASMProg a b = ASMProg (M.Map a (ASMSeq a b)) (ASMSeq a b)
 
+--- XXX Make an "encodedLength" type-class to do this more efficiently
 evm_op_len :: EVM.Opcode -> Int
 evm_op_len o = length $ EVM.encode [o]
 
