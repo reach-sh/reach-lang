@@ -20,14 +20,21 @@ data ASMOp a b
   = Op b
   | LabelRef a Int (LabelInfo -> b)
 type ASMSeq a b = [ASMOp a b]
-data ASMProg a b = ASMProg (M.Map a (ASMSeq a b)) (ASMSeq a b)
+type ASMLabels a b = (M.Map a (ASMSeq a b))
+data ASMProg a b = ASMProg (ASMLabels a b) a (ASMSeq a b)
+
+asm_union :: Ord a => ASMProg a b -> ASMProg a b -> ASMProg a b
+asm_union main extra = ASMProg combined main_lab main_as
+  where ASMProg main_defs main_lab main_as = main
+        ASMProg extra_defs extra_lab extra_as = extra
+        combined = M.union main_defs $ M.insert extra_lab extra_as extra_defs
 
 --- XXX Make an "encodedLength" type-class to do this more efficiently
 evm_op_len :: EVM.Opcode -> Int
 evm_op_len o = length $ EVM.encode [o]
 
 assemble :: Show l => Ord l => (o -> Int) -> ASMProg l o -> [o]
-assemble op_len (ASMProg defs main) = map asmfix $ toList image
+assemble op_len (ASMProg defs _ main) = map asmfix $ toList image
   where asmfix ao =
           case ao of
             Op o -> o
@@ -47,35 +54,57 @@ assemble op_len (ASMProg defs main) = map asmfix $ toList image
                 locs1 = M.insert label (LabelInfo start sz) locs0
                 after = before Q.>< body_seq
 
+data EVMLabel
+  = EL_Handler Int
+  | EL_New
+  | EL_Dispatch
+  deriving (Show, Eq, Ord)
+
 push_label_offset :: a -> ASMOp a EVM.Opcode
 push_label_offset l = LabelRef l 2 (\ (LabelInfo off _) -> (EVM.PUSH1 [fromIntegral off]))
 push_label_size :: a -> ASMOp a EVM.Opcode
 push_label_size l = LabelRef l 2 (\ (LabelInfo _ sz) -> (EVM.PUSH1 [fromIntegral sz]))
 
+type CompileState = ()
+--- XXX This needs to help use figure out how to read a variable from
+--- the stack/memory and ensure the stack doesn't get too deep
+compile_state :: [BLVar] -> CompileState
+compile_state _xxx = ()
+
+comp_ctail :: CompileState -> EVMLabel -> CTail a -> ASMProg EVMLabel EVM.Opcode
+comp_ctail _cs lab _t =
+  --- XXX do something real
+  ASMProg M.empty lab [ Op (EVM.INVALID 254) ] 
+
+comp_ctail_top :: Maybe (FromSpec, Bool, Int, (BLArg a)) -> CompileState -> Int -> CTail a -> ASMProg EVMLabel EVM.Opcode
+comp_ctail_top _handler_info cs i t =
+  --- XXX Use handler_info to check states
+  comp_ctail cs (EL_Handler i) t
+  
+comp_chandler :: CHandler a -> ASMProg EVMLabel EVM.Opcode
+comp_chandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) =
+  comp_ctail_top (Just (from_spec, is_timeout, last_i, delay)) (compile_state $ svs ++ msg) i body
+comp_chandler (C_Loop _ svs args _inv body i) =
+  comp_ctail_top Nothing (compile_state $ svs ++ args) i body
+
 cp_to_evm :: CProgram a -> [EVM.Opcode]
 cp_to_evm (C_Prog _ hs) = con_bc
-  where con_bc = assemble evm_op_len $ ASMProg (M.singleton ins_l ins_as) con_as
-        ins_l :: Int
-        ins_l = 0
+  where con_bc = assemble evm_op_len $ ASMProg (M.singleton EL_Dispatch ins_as) EL_New con_as
         con_as = [ --- XXX initialize state
-                   push_label_size ins_l
-                 , push_label_offset ins_l
+                   push_label_size EL_Dispatch
+                 , push_label_offset EL_Dispatch
                  , Op (EVM.PUSH1 [0])
                  , Op (EVM.CODECOPY)
                  , Op (EVM.PUSH1 [0])
                  , Op (EVM.RETURN)
                  , Op (EVM.INVALID 254) ]
-        ins_as = map Op $ assemble evm_op_len $ ASMProg hdefs dis_as
+        ins_as = map Op $ assemble evm_op_len dis_p
         dis_as = [ --- XXX Do something real 
                    Op (EVM.PUSH1 [0])
                  , Op (EVM.RETURN)
                  , Op (EVM.INVALID 254) ]
-        hdefs = foldl hcomp1 M.empty hs
-        hcomp1 hdefs0 h = M.insert hi h_as hdefs0
-          --- XXX do something real
-          where hi = case h of (C_Handler _ _ _ _ _ _ _ i) -> i
-                               (C_Loop _ _ _ _ _ i) -> i
-                h_as = dis_as
+        dis_p = foldl hcomp1 (ASMProg M.empty EL_Dispatch dis_as) hs
+        hcomp1 hdefs0 h = asm_union hdefs0 (comp_chandler h)
 
 emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
 emit_evm _ (BL_Prog _ _ cp) (_, code) =
