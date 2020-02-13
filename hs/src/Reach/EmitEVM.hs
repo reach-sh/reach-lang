@@ -29,6 +29,13 @@ asm_union main extra = ASMProg combined main_lab main_as
         ASMProg extra_defs extra_lab extra_as = extra
         combined = M.union main_defs $ M.insert extra_lab extra_as extra_defs
 
+asm_cat :: Ord a => ASMProg a b -> ASMProg a b -> ASMProg a b
+asm_cat main extra = ASMProg combined main_lab combined_as
+  where ASMProg main_defs main_lab main_as = main
+        ASMProg extra_defs _ extra_as = extra
+        combined_as = main_as ++ extra_as
+        combined = M.union main_defs extra_defs
+
 --- XXX Make an "encodedLength" type-class to do this more efficiently
 evm_op_len :: EVM.Opcode -> Int
 evm_op_len o = length $ EVM.encode [o]
@@ -58,6 +65,8 @@ data EVMLabel
   = EL_Handler Int
   | EL_New
   | EL_Dispatch
+  | EL_Cond EVMLabel
+  | EL_Arg
   deriving (Show, Eq, Ord)
 
 push_label_offset :: a -> ASMOp a EVM.Opcode
@@ -71,10 +80,34 @@ type CompileState = ()
 compile_state :: [BLVar] -> CompileState
 compile_state _xxx = ()
 
+comp_blarg :: CompileState -> BLArg a -> ASMProg EVMLabel EVM.Opcode
+comp_blarg _cs _a =
+  --- XXX real
+  ASMProg M.empty EL_Arg [ Op (EVM.INVALID 254) ]
+
 comp_ctail :: CompileState -> EVMLabel -> CTail a -> ASMProg EVMLabel EVM.Opcode
-comp_ctail _cs lab _t =
-  --- XXX do something real
-  ASMProg M.empty lab [ Op (EVM.INVALID 254) ] 
+comp_ctail cs lab t =
+  case t of
+    C_Halt _ ->
+      blk [ Op (EVM.INVALID 254)
+            --- XXX ^- current_state = 0x0
+            --- XXX v-- selfdestruct to sender
+          , Op (EVM.INVALID 254)]
+    C_Wait _ _last_i _svs ->
+      blk [ Op (EVM.INVALID 254)
+            --- XXX ^-- current_state = hash
+          ]
+    C_If _ ca tt ft ->
+      asm_cat cap $ asm_cat (blk [ push_label_offset tlab
+                                 , Op EVM.JUMPI ]) (asm_union ttp ftp)
+      where tlab = EL_Cond lab
+            cap = comp_blarg cs ca
+            ttp = comp_ctail cs tlab tt
+            ftp = comp_ctail cs lab ft
+    _ ->
+      --- XXX other cases
+      blk [ Op (EVM.INVALID 254) ]
+  where blk os = ASMProg M.empty lab os
 
 comp_ctail_top :: Maybe (FromSpec, Bool, Int, (BLArg a)) -> CompileState -> Int -> CTail a -> ASMProg EVMLabel EVM.Opcode
 comp_ctail_top _handler_info cs i t =
