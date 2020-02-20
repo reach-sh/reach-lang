@@ -100,7 +100,7 @@ comp_con _cs lab c =
     Con_B t ->
       blk [ Op (EVM.PUSH1 [ if t then 1 else 0 ]) ]
     Con_BS _bs ->
-      blk [ Op (EVM.INVALID 0xFE "XXX comp_con BS") ]
+      blk [ end_block_op "XXX comp_con BS" ]
   where blk os = ASMProg M.empty lab os
 
 comp_blarg :: CompileState -> EVMLabel -> BLArg a -> ASMProg EVMLabel EVM.Opcode
@@ -108,7 +108,7 @@ comp_blarg cs lab a =
   case a of
     BL_Con _ c -> comp_con cs lab c
     BL_Var _ v ->
-      ASMProg M.empty lab [ Op (EVM.INVALID 0xFE ("XXX comp_blag var: " ++ show v)) ]
+      ASMProg M.empty lab [ end_block_op $ "XXX comp_blag var: " ++ show v ]
 
 comp_cexpr :: CompileState -> EVMLabel -> CExpr a -> ASMProg EVMLabel EVM.Opcode
 comp_cexpr cs lab e =
@@ -129,7 +129,7 @@ comp_cexpr cs lab e =
         BALANCE -> op1 EVM.BALANCE
         TXN_VALUE -> op1 EVM.CALLVALUE
         _ ->
-          asm_cat asp $ blk [ Op (EVM.INVALID 0xFE ("XXX comp_cexpr C_PrimApp " ++ show cp)) ]
+          asm_cat asp $ blk [ end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp ]
       where asp = foldl (\p a -> asm_cat p $ comp_blarg cs lab a) (blk []) as
   where blk os = ASMProg M.empty lab os
         op1 o = blk [ Op o ]
@@ -144,7 +144,7 @@ comp_cstmt cs lab s =
                                           , push_label_offset EL_Revert
                                           , Op (EVM.JUMPI) ]
     C_Transfer _ _p a -> 
-      asm_cat (comp_blarg cs lab a) $ blk [ Op (EVM.INVALID 0xFE "XXX C_Transfer") ]
+      asm_cat (comp_blarg cs lab a) $ blk [ end_block_op $ "XXX C_Transfer" ]
   where blk os = ASMProg M.empty lab os
 
 --- current_state is key 0
@@ -155,7 +155,7 @@ comp_ctail cs lab t =
       blk [ push_label_offset EL_Halt
           , Op EVM.JUMP ]
     C_Wait _ _last_i _svs ->
-      blk [ Op (EVM.INVALID 0xFE "XXX C_Wait") -- current_state = hash
+      blk [ end_block_op $ "XXX C_Wait" -- current_state = hash
           ]
     C_If _ ca tt ft ->
       asm_cat cap $ asm_cat (blk [ push_label_offset tlab
@@ -177,15 +177,16 @@ comp_ctail cs lab t =
       where dsp = comp_cstmt cs lab ds
             ktp = comp_ctail cs lab kt
     C_Jump _ which _vs _ _as ->
-      --- XXX prepare argument (vs & as)
-      (blk [ push_label_offset (EL_Handler which)
+      (blk [ end_block_op "XXX prepare C_Jump args"
+           , push_label_offset (EL_Handler which)
            , Op EVM.JUMP ])
   where blk os = ASMProg M.empty lab os
 
 comp_ctail_top :: Maybe (FromSpec, Bool, Int, (BLArg a)) -> CompileState -> Int -> CTail a -> ASMProg EVMLabel EVM.Opcode
 comp_ctail_top _handler_info cs i t =
-  --- XXX Use handler_info to check states
-  add_end_block ("end Handler " ++ show i) $ comp_ctail cs (EL_Handler i) t
+  asm_cat (ASMProg M.empty lab [ end_block_op "XXX Check state" ]) $
+  add_end_block ("end Handler " ++ show i) $ comp_ctail cs lab t
+  where lab = EL_Handler i
   
 comp_chandler :: CHandler a -> ASMProg EVMLabel EVM.Opcode
 comp_chandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) =
@@ -205,8 +206,8 @@ add_end_block dbg p = asm_cat p $ end_block_p dbg
 cp_to_evm :: CProgram a -> [EVM.Opcode]
 cp_to_evm (C_Prog _ hs) = con_bc
   where con_bc = assemble evm_op_len $ add_end_block "end Constructor" $ ASMProg (M.singleton EL_Dispatch ins_as) EL_New con_as
-        con_as = [ --- XXX initialize state
-                   push_label_size EL_Dispatch
+        con_as = [ end_block_op "XXX Initialize state"
+                 , push_label_size EL_Dispatch
                  , push_label_offset EL_Dispatch
                  , Op (EVM.PUSH1 [0])
                  , Op (EVM.CODECOPY)
@@ -214,8 +215,8 @@ cp_to_evm (C_Prog _ hs) = con_bc
                  , Op (EVM.DUP1)
                  , Op (EVM.RETURN) ]
         ins_as = map Op $ assemble evm_op_len dis_p
-        dis_as = [ --- XXX Do something real 
-                   Op (EVM.PUSH1 [0])
+        dis_as = [ end_block_op "XXX Actually do dispatch"
+                 , Op (EVM.PUSH1 [0])
                  , Op (EVM.DUP1)
                  , Op (EVM.RETURN) ]
         halt_as = [ Op (EVM.PUSH1 [0])
@@ -224,7 +225,7 @@ cp_to_evm (C_Prog _ hs) = con_bc
                   , Op (EVM.CALLER)
                   , Op (EVM.SELFDESTRUCT)
                   , end_block_op "end HALT" ] --- selfdestruct(msg.sender)
-        rev_as = [ Op (EVM.PUSH1 [0])
+        rev_as = [  Op (EVM.PUSH1 [0])
                   , Op (EVM.DUP1)
                   , Op (EVM.REVERT)
                   , end_block_op "end REVERT" ] --- revert
