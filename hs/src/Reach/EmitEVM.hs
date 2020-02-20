@@ -114,6 +114,7 @@ comp_cexpr :: CompileState -> EVMLabel -> CExpr a -> ASMProg EVMLabel EVM.Opcode
 comp_cexpr cs lab e =
   case e of
     C_PrimApp _ cp as ->
+      asm_cat asp $ 
       case cp of
         ADD -> op1 EVM.ADD
         SUB -> op1 EVM.SUB
@@ -128,8 +129,7 @@ comp_cexpr cs lab e =
         IF_THEN_ELSE -> blk [ Op EVM.SWAP1, Op EVM.NOT, Op EVM.OR ]
         BALANCE -> op1 EVM.BALANCE
         TXN_VALUE -> op1 EVM.CALLVALUE
-        _ ->
-          asm_cat asp $ blk [ end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp ]
+        _ -> blk [ end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp ]
       where asp = foldl (\p a -> asm_cat p $ comp_blarg cs lab a) (blk []) as
   where blk os = ASMProg M.empty lab os
         op1 o = blk [ Op o ]
