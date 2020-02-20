@@ -55,11 +55,11 @@ packages:
     git: https://github.com/reach-sh/haskell-evm.git
     pantry-tree:
       size: 509
-      sha256: b6a624be87180cbde3de06c6f5e448241afc36799a68e83d756009c1d2788a3f
-    commit: 3662d5c104e7ab3a745cd99488b6995bd368dbf4
+      sha256: 10740336bb40f8fcae3aa57955598ae76c0aebe2e69f2f6e63385a405d72da9f
+    commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
   original:
     git: https://github.com/reach-sh/haskell-evm.git
-    commit: 3662d5c104e7ab3a745cd99488b6995bd368dbf4
+    commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
 snapshots:
 - completed:
     size: 523700

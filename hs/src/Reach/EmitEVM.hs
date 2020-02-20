@@ -100,26 +100,39 @@ comp_con _cs lab c =
     Con_B t ->
       blk [ Op (EVM.PUSH1 [ if t then 1 else 0 ]) ]
     Con_BS _bs ->
-      --- XXX
-      blk [ Op (EVM.INVALID 231) ]
+      blk [ Op (EVM.INVALID 0xFE "XXX comp_con BS") ]
   where blk os = ASMProg M.empty lab os
 
 comp_blarg :: CompileState -> EVMLabel -> BLArg a -> ASMProg EVMLabel EVM.Opcode
 comp_blarg cs lab a =
   case a of
     BL_Con _ c -> comp_con cs lab c
-    BL_Var _ _v ->
-      --- XXX real
-      ASMProg M.empty lab [ Op (EVM.INVALID 238) ]
+    BL_Var _ v ->
+      ASMProg M.empty lab [ Op (EVM.INVALID 0xFE ("XXX comp_blag var: " ++ show v)) ]
 
 comp_cexpr :: CompileState -> EVMLabel -> CExpr a -> ASMProg EVMLabel EVM.Opcode
 comp_cexpr cs lab e =
   case e of
-    C_PrimApp _ _cp as ->
-      --- XXX real
-      asm_cat asp $ blk [ Op (EVM.INVALID 72) ]
+    C_PrimApp _ cp as ->
+      case cp of
+        ADD -> op1 EVM.ADD
+        SUB -> op1 EVM.SUB
+        MUL -> op1 EVM.MUL
+        DIV -> op1 EVM.DIV
+        MOD -> op1 EVM.MOD
+        PLT -> op1 EVM.LT
+        PLE -> blk [ Op EVM.GT, Op EVM.NOT ]
+        PEQ -> op1 EVM.EQ
+        PGT -> op1 EVM.GT
+        PGE -> blk [ Op EVM.LT, Op EVM.NOT ]
+        IF_THEN_ELSE -> blk [ Op EVM.SWAP1, Op EVM.NOT, Op EVM.OR ]
+        BALANCE -> op1 EVM.BALANCE
+        TXN_VALUE -> op1 EVM.CALLVALUE
+        _ ->
+          asm_cat asp $ blk [ Op (EVM.INVALID 0xFE ("XXX comp_cexpr C_PrimApp " ++ show cp)) ]
       where asp = foldl (\p a -> asm_cat p $ comp_blarg cs lab a) (blk []) as
   where blk os = ASMProg M.empty lab os
+        op1 o = blk [ Op o ]
 
 comp_cstmt :: CompileState -> EVMLabel -> CStmt a -> ASMProg EVMLabel EVM.Opcode
 comp_cstmt cs lab s =
@@ -131,8 +144,7 @@ comp_cstmt cs lab s =
                                           , push_label_offset EL_Revert
                                           , Op (EVM.JUMPI) ]
     C_Transfer _ _p a -> 
-      --- XXX real
-      asm_cat (comp_blarg cs lab a) $ blk [ Op (EVM.INVALID 71) ]
+      asm_cat (comp_blarg cs lab a) $ blk [ Op (EVM.INVALID 0xFE "XXX C_Transfer") ]
   where blk os = ASMProg M.empty lab os
 
 --- current_state is key 0
@@ -143,8 +155,7 @@ comp_ctail cs lab t =
       blk [ push_label_offset EL_Halt
           , Op EVM.JUMP ]
     C_Wait _ _last_i _svs ->
-      blk [ Op (EVM.INVALID 247)
-            --- XXX ^-- current_state = hash
+      blk [ Op (EVM.INVALID 0xFE "XXX C_Wait") -- current_state = hash
           ]
     C_If _ ca tt ft ->
       asm_cat cap $ asm_cat (blk [ push_label_offset tlab
@@ -174,7 +185,7 @@ comp_ctail cs lab t =
 comp_ctail_top :: Maybe (FromSpec, Bool, Int, (BLArg a)) -> CompileState -> Int -> CTail a -> ASMProg EVMLabel EVM.Opcode
 comp_ctail_top _handler_info cs i t =
   --- XXX Use handler_info to check states
-  comp_ctail cs (EL_Handler i) t
+  add_end_block ("end Handler " ++ show i) $ comp_ctail cs (EL_Handler i) t
   
 comp_chandler :: CHandler a -> ASMProg EVMLabel EVM.Opcode
 comp_chandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) =
@@ -182,14 +193,18 @@ comp_chandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) 
 comp_chandler (C_Loop _ svs args _inv body i) =
   comp_ctail_top Nothing (compile_state $ svs ++ args) i body
 
-end_block_op :: ASMOp EVMLabel EVM.Opcode
-end_block_op = Op $ EVM.INVALID 0xFE
-end_block_p :: ASMProg EVMLabel EVM.Opcode
-end_block_p = ASMProg M.empty EL_End [ end_block_op ]
+end_block_op :: String -> ASMOp EVMLabel EVM.Opcode
+end_block_op dbg = Op $ EVM.INVALID 0xFE dbg
+
+end_block_p :: String -> ASMProg EVMLabel EVM.Opcode
+end_block_p dbg = ASMProg M.empty EL_End [ end_block_op dbg ]
+
+add_end_block :: String -> ASMProg EVMLabel EVM.Opcode -> ASMProg EVMLabel EVM.Opcode
+add_end_block dbg p = asm_cat p $ end_block_p dbg
 
 cp_to_evm :: CProgram a -> [EVM.Opcode]
 cp_to_evm (C_Prog _ hs) = con_bc
-  where con_bc = assemble evm_op_len $ add_end_block $ ASMProg (M.singleton EL_Dispatch ins_as) EL_New con_as
+  where con_bc = assemble evm_op_len $ add_end_block "end Constructor" $ ASMProg (M.singleton EL_Dispatch ins_as) EL_New con_as
         con_as = [ --- XXX initialize state
                    push_label_size EL_Dispatch
                  , push_label_offset EL_Dispatch
@@ -208,15 +223,14 @@ cp_to_evm (C_Prog _ hs) = con_bc
                   , Op (EVM.SSTORE) --- current_state = 0x0
                   , Op (EVM.CALLER)
                   , Op (EVM.SELFDESTRUCT)
-                  , end_block_op ] --- selfdestruct(msg.sender)
+                  , end_block_op "end HALT" ] --- selfdestruct(msg.sender)
         rev_as = [ Op (EVM.PUSH1 [0])
                   , Op (EVM.DUP1)
                   , Op (EVM.REVERT)
-                  , end_block_op ] --- revert
+                  , end_block_op "end REVERT" ] --- revert
         base_defs = M.insert EL_Revert rev_as $ M.insert EL_Halt halt_as $ M.empty
-        dis_p = foldl' hcomp1 (add_end_block (ASMProg base_defs EL_Dispatch dis_as)) hs
-        hcomp1 hdefs0 h = asm_union hdefs0 (add_end_block (comp_chandler h))
-        add_end_block p = asm_cat p end_block_p
+        dis_p = foldl' hcomp1 (add_end_block "end Dispatch" (ASMProg base_defs EL_Dispatch dis_as)) hs
+        hcomp1 hdefs0 h = asm_union hdefs0 (comp_chandler h)
 
 emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
 emit_evm _ (BL_Prog _ _ cp) (_, code) =

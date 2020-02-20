@@ -8,4 +8,4 @@ extra-deps:
   - git: https://github.com/jeapostrophe/language-javascript.git
     commit: 1433b39fc089021368d1e361ae7eccce218acb39
   - git: https://github.com/reach-sh/haskell-evm.git
-    commit: 3662d5c104e7ab3a745cd99488b6995bd368dbf4
+    commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
