@@ -2,6 +2,7 @@
 
 module Reach.EmitEVM where
 
+import Control.Monad.State.Lazy
 --import qualified Data.Word as W
 import qualified Data.HexString as H
 import qualified Data.ByteString.Char8 as BC
@@ -10,228 +11,244 @@ import qualified EVM.Bytecode as EVM
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Q
 import Data.Foldable
+import Data.Monoid
 
 import Reach.AST
 import Reach.EmitSol
   ( CompiledSol )
 
+type ASMMonad ann op a = State (ASMSt op) a
+type Label = Int
 data LabelInfo = LabelInfo Int Int
-data ASMOp a b
-  = Op b
-  | LabelRef a Int (LabelInfo -> b)
-type ASMSeq a b = [ASMOp a b]
-type ASMLabels a b = (M.Map a (ASMSeq a b))
-data ASMProg a b = ASMProg (ASMLabels a b) a (ASMSeq a b)
+data ASMOp op
+  = Op op
+  | LabelRef Label Int (LabelInfo -> op)
+type ASMSt op =
+  ( LinkerSt op
+  , CompileSt )
+type LinkerSt op =
+  ( Label, Q.Seq (Q.Seq (ASMOp op))
+  , (Label, Label, M.Map Int Label)
+  , Q.Seq (ASMOp op) )
+type CompileSt =
+  ( Int )
+--- XXX This needs to help us figure out how to read a variable
 
-m_insertSafe :: Show k => Ord k => k -> a -> M.Map k a -> M.Map k a
-m_insertSafe k v m =
-  if M.notMember k m then
-    M.insert k v m
-  else
-    error $ "m_insertSafe: key already exists: " ++ show k
+-- XXX Have asm_push/pop be inside of asm_op
+asm_stack :: Int -> Int -> ASMMonad ann o ()
+asm_stack outs ins = do
+  ( ls, cs ) <- get
+  let ( cur_stack ) = cs
+  let cs' = ( cur_stack - outs + ins )
+  --- XXX error if stack limit exceeded
+  put ( ls, cs' )
 
-asm_union :: Show a => Ord a => ASMProg a b -> ASMProg a b -> ASMProg a b
-asm_union main extra = ASMProg combined main_lab main_as
-  where ASMProg main_defs main_lab main_as = main
-        ASMProg extra_defs extra_lab extra_as = extra
-        combined = M.unionWithKey safe_combine main_defs $ m_insertSafe extra_lab extra_as extra_defs
-        safe_combine k _ _ = error $ "m_unionWithKey: key already exists: " ++ show k
+asm_rawop :: ASMOp o -> ASMMonad ann o ()
+asm_rawop aop = do
+  ( ls, cs ) <- get
+  let ( next_label, label_seq, label_refs, code ) = ls
+  let ls' = ( next_label, label_seq, label_refs, code Q.|> aop )
+  put ( ls', cs )
 
-asm_cat :: Ord a => ASMProg a b -> ASMProg a b -> ASMProg a b
-asm_cat main extra = ASMProg combined main_lab combined_as
-  where ASMProg main_defs main_lab main_as = main
-        ASMProg extra_defs _ extra_as = extra
-        combined_as = main_as ++ extra_as
-        combined = M.union main_defs extra_defs
+asm_op :: o -> ASMMonad ann o ()
+asm_op op = asm_rawop $ Op op
+
+asm_pop :: Int -> ASMMonad ann o ()
+asm_pop k = asm_stack k 0
+asm_push :: Int -> ASMMonad ann o ()
+asm_push k = asm_stack 0 k
 
 --- FIXME Make an "encodedLength" type-class to do this more efficiently
 evm_op_len :: EVM.Opcode -> Int
 evm_op_len o = length $ EVM.encode [o]
 
-assemble :: Show l => Ord l => (o -> Int) -> ASMProg l o -> [o]
-assemble op_len (ASMProg defs _ main) = map asmfix $ toList image
-  where asmfix ao =
+empty_asm_st :: ASMSt op
+empty_asm_st = error "XXX"
+
+assemble :: (o -> Int) -> ASMMonad ann o () -> [o]
+assemble op_len am = map asmfix $ toList image
+  where ((), ((_, defs, _, main), _)) = runState am empty_asm_st
+        asmfix ao =
           case ao of
             Op o -> o
             LabelRef l _ f ->
               case M.lookup l locs of
                 Nothing -> error $ "Undefined label in assembly: " ++ show l
                 Just li -> f li
-        seq_length = sum . (map op_length)
         op_length (Op o) = op_len o
         op_length (LabelRef _ l _) = l
-        (_, locs, image) = M.foldrWithKey loc1 (main_sz, M.empty, Q.fromList main) defs
+        (_, locs, image) = Q.foldlWithIndex loc1 (main_sz, M.empty, main) defs
+        seq_length = getSum . foldMap (Sum . op_length)
         main_sz = seq_length main
-        loc1 label body (start, locs0, before) = (end, locs1, after)
-          where sz = seq_length body
-                body_seq = Q.fromList body
+        loc1 (start, locs0, before) label body_seq = (end, locs1, after)
+          where sz = seq_length body_seq
                 end = start + sz
-                locs1 = m_insertSafe label (LabelInfo start sz) locs0
+                locs1 = M.insert label (LabelInfo start sz) locs0
                 after = before Q.>< body_seq
 
-data EVMLabel
-  = EL_Handler Int
-  | EL_New
-  | EL_Dispatch
-  | EL_Cond EVMLabel
-  | EL_End
-  | EL_Revert
-  | EL_Halt
-  deriving (Show, Eq, Ord)
+asm_push_label_offset :: Label -> ASMMonad ann EVM.Opcode ()
+asm_push_label_offset l = asm_rawop $ LabelRef l 2 (\ (LabelInfo off _) -> (EVM.PUSH1 [fromIntegral off]))
+asm_push_label_size :: Label -> ASMMonad ann EVM.Opcode ()
+asm_push_label_size l = asm_rawop $ LabelRef l 2 (\ (LabelInfo _ sz) -> (EVM.PUSH1 [fromIntegral sz]))
 
-push_label_offset :: a -> ASMOp a EVM.Opcode
-push_label_offset l = LabelRef l 2 (\ (LabelInfo off _) -> (EVM.PUSH1 [fromIntegral off]))
-push_label_size :: a -> ASMOp a EVM.Opcode
-push_label_size l = LabelRef l 2 (\ (LabelInfo _ sz) -> (EVM.PUSH1 [fromIntegral sz]))
-
---- XXX Maybe make an assembler monad to track stuff in here, such as the stack depth
-type CompileState = ()
---- XXX This needs to help use figure out how to read a variable from
---- the stack/memory and ensure the stack doesn't get too deep
-compile_state :: [BLVar] -> CompileState
-compile_state _xxx = ()
-
-comp_con :: CompileState -> EVMLabel -> Constant -> ASMProg EVMLabel EVM.Opcode
-comp_con _cs lab c =
+comp_con :: Constant -> ASMMonad ann EVM.Opcode ()
+comp_con c =
   case c of
-    Con_I i ->
+    Con_I i -> do
       --- XXX Be sensitive to size of int
-      blk [ Op (EVM.PUSH1 [ fromIntegral $ i ]) ]
-    Con_B t ->
-      blk [ Op (EVM.PUSH1 [ if t then 1 else 0 ]) ]
+      asm_op (EVM.PUSH1 [ fromIntegral $ i ])
+      asm_push 1
+    Con_B t -> do
+      asm_op (EVM.PUSH1 [ if t then 1 else 0 ])
+      asm_push 1
     Con_BS _bs ->
-      blk [ end_block_op "XXX comp_con BS" ]
-  where blk os = ASMProg M.empty lab os
+      end_block_op "XXX comp_con BS"
 
-comp_blarg :: CompileState -> EVMLabel -> BLArg a -> ASMProg EVMLabel EVM.Opcode
-comp_blarg cs lab a =
+comp_blarg :: BLArg a -> ASMMonad ann EVM.Opcode ()
+comp_blarg a =
   case a of
-    BL_Con _ c -> comp_con cs lab c
-    BL_Var _ v ->
-      ASMProg M.empty lab [ end_block_op $ "XXX comp_blag var: " ++ show v ]
+    BL_Con _ c -> comp_con c
+    BL_Var _ v -> end_block_op $ "XXX comp_blag var: " ++ show v
 
-comp_cexpr :: CompileState -> EVMLabel -> CExpr a -> ASMProg EVMLabel EVM.Opcode
-comp_cexpr cs lab e =
+comp_cexpr :: CExpr a -> ASMMonad ann EVM.Opcode ()
+comp_cexpr e =
   case e of
-    C_PrimApp _ cp as ->
-      asm_cat asp $ 
+    C_PrimApp _ cp as -> do
+      forM_ as comp_blarg
       case cp of
-        ADD -> op1 EVM.ADD
-        SUB -> op1 EVM.SUB
-        MUL -> op1 EVM.MUL
-        DIV -> op1 EVM.DIV
-        MOD -> op1 EVM.MOD
-        PLT -> op1 EVM.LT
-        PLE -> blk [ Op EVM.GT, Op EVM.NOT ]
-        PEQ -> op1 EVM.EQ
-        PGT -> op1 EVM.GT
-        PGE -> blk [ Op EVM.LT, Op EVM.NOT ]
-        IF_THEN_ELSE -> blk [ Op EVM.SWAP1, Op EVM.NOT, Op EVM.OR ]
-        BALANCE -> op1 EVM.BALANCE
-        TXN_VALUE -> op1 EVM.CALLVALUE
-        _ -> blk [ end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp ]
-      where asp = foldl (\p a -> asm_cat p $ comp_blarg cs lab a) (blk []) as
-  where blk os = ASMProg M.empty lab os
-        op1 o = blk [ Op o ]
+        ADD -> p_op EVM.ADD 2
+        SUB -> p_op EVM.SUB 2
+        MUL -> p_op EVM.MUL 2
+        DIV -> p_op EVM.DIV 2
+        MOD -> p_op EVM.MOD 2
+        PLT -> p_op EVM.LT 2
+        PLE -> p_op_not EVM.GT 2
+        PEQ -> p_op EVM.EQ 2
+        PGT -> p_op EVM.GT 2
+        PGE -> p_op_not EVM.LT 2
+        BALANCE -> p_op EVM.BALANCE 0
+        TXN_VALUE -> p_op EVM.CALLVALUE 0
+        _ -> end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp
+  where p_op o amt = do asm_op o
+                        asm_stack amt 1
+        p_op_not o amt = do asm_op o
+                            asm_stack amt 1
+                            asm_op EVM.NOT
 
-comp_cstmt :: CompileState -> EVMLabel -> CStmt a -> ASMProg EVMLabel EVM.Opcode
-comp_cstmt cs lab s =
+comp_cstmt :: CStmt a -> ASMMonad ann EVM.Opcode ()
+comp_cstmt s =
   case s of
-    C_Claim _ CT_Possible _ -> blk []
-    C_Claim _ CT_Assert _ -> blk []
-    C_Claim _ _ a -> 
-      asm_cat (comp_blarg cs lab a) $ blk [ Op (EVM.NOT)
-                                          , push_label_offset EL_Revert
-                                          , Op (EVM.JUMPI) ]
-    C_Transfer _ _p a -> 
-      asm_cat (comp_blarg cs lab a) $ blk [ end_block_op $ "XXX C_Transfer" ]
-  where blk os = ASMProg M.empty lab os
+    C_Claim _ CT_Possible _ -> return ()
+    C_Claim _ CT_Assert _ -> return ()
+    C_Claim _ _ a -> do
+      comp_blarg a
+      asm_op EVM.NOT
+      revert_lab <- read_label_revert
+      asm_push_label_offset revert_lab
+      asm_op EVM.JUMPI
+      asm_pop 2
+    C_Transfer _ _p a -> do
+      end_block_op $ "XXX C_Transfer p"
+      comp_blarg a
+      end_block_op $ "XXX C_Transfer effect"
 
 --- current_state is key 0
-comp_ctail :: CompileState -> EVMLabel -> CTail a -> ASMProg EVMLabel EVM.Opcode
-comp_ctail cs lab t =
+comp_ctail :: CTail a -> ASMMonad ann EVM.Opcode ()
+comp_ctail t =
   case t of
-    C_Halt _ ->
-      blk [ push_label_offset EL_Halt
-          , Op EVM.JUMP ]
-    C_Wait _ _last_i _svs ->
-      blk [ end_block_op $ "XXX C_Wait" -- current_state = hash
-          ]
-    C_If _ ca tt ft ->
-      asm_cat cap $ asm_cat (blk [ push_label_offset tlab
-                                 , Op EVM.JUMPI ]) (asm_union ttp ftp)
-      where tlab = EL_Cond lab --- XXX New to label these with which branch
-            cap = comp_blarg cs lab ca
-            ttp = comp_ctail cs tlab tt
-            ftp = comp_ctail cs lab ft
-    C_Let _ _bv ce kt ->
+    C_Halt _ -> do
+      halt_lab <- read_label_halt
+      asm_push_label_offset halt_lab
+      asm_op EVM.JUMP
+      asm_pop 1
+    C_Wait _ _last_i _svs -> do
+      end_block_op $ "XXX C_Wait" -- current_state = hash
+    C_If _ ca tt ft -> do
+      comp_blarg ca
+      tlab <- asm_fresh_label $ comp_ctail tt
+      asm_push_label_offset tlab
+      asm_op EVM.JUMPI
+      asm_pop 2
+      comp_ctail ft
+    C_Let _ _bv ce kt -> do
       --- FIXME use ccs from EmitSol and store in cs if count is low
-      asm_cat cep ktp
-      where cep = comp_cexpr cs lab ce
-            --- XXX ^-- need to communicate where to store
-            ktp = comp_ctail cs' lab kt
-            --- XXX need to record where the value gets stored
-            cs' = cs
-    C_Do _ ds kt ->
-      asm_cat dsp ktp
-      where dsp = comp_cstmt cs lab ds
-            ktp = comp_ctail cs lab kt
-    C_Jump _ which _vs _ _as ->
-      (blk [ end_block_op "XXX prepare C_Jump args"
-           , push_label_offset (EL_Handler which)
-           , Op EVM.JUMP ])
-  where blk os = ASMProg M.empty lab os
+      comp_cexpr ce
+      --- XXX ^-- need to store someone and save in monad state
+      comp_ctail kt
+    C_Do _ ds kt -> do
+      comp_cstmt ds
+      comp_ctail kt
+    C_Jump _ which _vs _ _as -> do
+      end_block_op "XXX prepare C_Jump args"
+      hand_lab <- read_label_handler which
+      asm_push_label_offset hand_lab
+      asm_op EVM.JUMP
+      asm_pop 1
 
-comp_ctail_top :: Maybe (FromSpec, Bool, Int, (BLArg a)) -> CompileState -> Int -> CTail a -> ASMProg EVMLabel EVM.Opcode
-comp_ctail_top _handler_info cs i t =
-  asm_cat (ASMProg M.empty lab [ end_block_op "XXX Check state" ]) $
-  add_end_block ("end Handler " ++ show i) $ comp_ctail cs lab t
-  where lab = EL_Handler i
+comp_ctail_top :: Maybe (FromSpec, Bool, Int, (BLArg a)) -> [BLVar] -> Int -> CTail a -> ASMMonad ann EVM.Opcode ()
+comp_ctail_top _handler_info _args i t = asm_with_label_handler i $ do
+  end_block_op "XXX Check state and initialize arguments"
+  comp_ctail t
+  end_block_op ("end Handler " ++ show i)
   
-comp_chandler :: CHandler a -> ASMProg EVMLabel EVM.Opcode
+comp_chandler :: CHandler a -> ASMMonad ann EVM.Opcode ()
 comp_chandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) =
-  comp_ctail_top (Just (from_spec, is_timeout, last_i, delay)) (compile_state $ svs ++ msg) i body
+  comp_ctail_top (Just (from_spec, is_timeout, last_i, delay)) (svs ++ msg) i body
 comp_chandler (C_Loop _ svs args _inv body i) =
-  comp_ctail_top Nothing (compile_state $ svs ++ args) i body
+  comp_ctail_top Nothing (svs ++ args) i body
 
-end_block_op :: String -> ASMOp EVMLabel EVM.Opcode
-end_block_op dbg = Op $ EVM.INVALID 0xFE dbg
-
-end_block_p :: String -> ASMProg EVMLabel EVM.Opcode
-end_block_p dbg = ASMProg M.empty EL_End [ end_block_op dbg ]
-
-add_end_block :: String -> ASMProg EVMLabel EVM.Opcode -> ASMProg EVMLabel EVM.Opcode
-add_end_block dbg p = asm_cat p $ end_block_p dbg
+end_block_op :: String -> ASMMonad ann EVM.Opcode ()
+end_block_op dbg = asm_op $ EVM.INVALID 0xFE dbg
 
 cp_to_evm :: CProgram a -> [EVM.Opcode]
-cp_to_evm (C_Prog _ hs) = con_bc
-  where con_bc = assemble evm_op_len $ add_end_block "end Constructor" $ ASMProg (M.singleton EL_Dispatch ins_as) EL_New con_as
-        con_as = [ end_block_op "XXX Initialize state"
-                 , push_label_size EL_Dispatch
-                 , push_label_offset EL_Dispatch
-                 , Op (EVM.PUSH1 [0])
-                 , Op (EVM.CODECOPY)
-                 , Op (EVM.PUSH1 [0])
-                 , Op (EVM.DUP1)
-                 , Op (EVM.RETURN) ]
-        ins_as = map Op $ assemble evm_op_len dis_p
-        dis_as = [ end_block_op "XXX Actually do dispatch"
-                 , Op (EVM.PUSH1 [0])
-                 , Op (EVM.DUP1)
-                 , Op (EVM.RETURN) ]
-        halt_as = [ Op (EVM.PUSH1 [0])
-                  , Op (EVM.DUP1)
-                  , Op (EVM.SSTORE) --- current_state = 0x0
-                  , Op (EVM.CALLER)
-                  , Op (EVM.SELFDESTRUCT)
-                  , end_block_op "end HALT" ] --- selfdestruct(msg.sender)
-        rev_as = [  Op (EVM.PUSH1 [0])
-                  , Op (EVM.DUP1)
-                  , Op (EVM.REVERT)
-                  , end_block_op "end REVERT" ] --- revert
-        base_defs = M.insert EL_Revert rev_as $ M.insert EL_Halt halt_as $ M.empty
-        dis_p = foldl' hcomp1 (add_end_block "end Dispatch" (ASMProg base_defs EL_Dispatch dis_as)) hs
-        hcomp1 hdefs0 h = asm_union hdefs0 (comp_chandler h)
+cp_to_evm (C_Prog _ hs) = assemble evm_op_len $ do
+  end_block_op "XXX Initialize state"
+  dis_lab <- asm_fresh_label $ mapM_ asm_op $ assemble evm_op_len dis
+  asm_push_label_size dis_lab
+  asm_push_label_offset dis_lab
+  asm_op $ EVM.PUSH1 [0]
+  asm_push 1
+  asm_op $ EVM.CODECOPY
+  asm_pop 3
+  asm_op $ EVM.PUSH1 [0]
+  asm_push 1
+  asm_op $ EVM.DUP1
+  asm_push 1
+  asm_op $ EVM.RETURN
+  asm_pop 2
+  end_block_op "end Constructor"
+  where dis = do
+          halt_lab <- asm_fresh_label $ halt
+          rev_lab <- asm_fresh_label $ revert
+          asm_set_std_labels halt_lab rev_lab
+          mapM_ comp_chandler hs
+          first_lab <- read_label_handler 0
+          asm_push_label_offset first_lab
+          asm_op EVM.JUMP
+          asm_pop 1
+          end_block_op "end Dispatch"
+        halt = do
+          --- current_state = 0x0
+          asm_op $ EVM.PUSH1 [0]
+          asm_push 1
+          asm_op $ EVM.DUP1
+          asm_push 1
+          asm_op $ EVM.SSTORE
+          asm_pop 2
+          --- selfdestruct(msg.sender)
+          asm_op $ EVM.CALLER
+          asm_push 1
+          asm_op $ EVM.SELFDESTRUCT
+          asm_pop 1
+          end_block_op "end HALT"
+        revert = do
+          asm_op $ EVM.PUSH1 [0]
+          asm_push 1
+          asm_op $ EVM.DUP1
+          asm_push 1
+          asm_op $ EVM.REVERT
+          asm_pop 2
+          end_block_op "end REVERT"
 
 emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
 emit_evm _ (BL_Prog _ _ cp) (_, code) =
