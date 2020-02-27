@@ -19,6 +19,13 @@ import Reach.EmitSol
   , CCounts
   , usesCTail )
 
+m_insertSafe :: Show k => Ord k => k -> v -> M.Map k v -> M.Map k v
+m_insertSafe k v m =
+  case M.lookup k m of
+    Nothing -> M.insert k v m
+    Just _ ->
+      error $ "m_insertSafe: Key already set: " ++ show k
+
 type ASMMonad ann op a = State (ASMSt op) a
 type Label = Int
 data LabelInfo = LabelInfo Int Int
@@ -67,7 +74,7 @@ asm_fresh_label_obs obs_and_code = do
   res <- obs_and_code this_label
   ( after_ls, after_cs ) <- get
   let ( after_next, after_defs, after_lst, after_code ) = after_ls
-  let after_defs' = M.insert this_label after_code after_defs
+  let after_defs' = m_insertSafe this_label after_code after_defs
   let after_ls' = ( after_next, after_defs', after_lst, orig_code )
   put ( after_ls', after_cs )
   return res
@@ -119,7 +126,7 @@ asm_labels_set_handler which lab = do
   ( ls, cs ) <- get
   let ( next, defs, l, code ) = ls
   let ( h, r, hs ) = l
-  let hs' = M.insert which lab hs
+  let hs' = m_insertSafe which lab hs
   let l' = ( h, r, hs' )
   let ls' = ( next, defs, l', code )
   put ( ls', cs )
@@ -170,13 +177,42 @@ assemble op_len am = map asmfix $ toList image
         loc1 (start, locs0, before) label body_seq = (end, locs1, after)
           where sz = seq_length body_seq
                 end = start + sz
-                locs1 = M.insert label (LabelInfo start sz) locs0
+                locs1 = m_insertSafe label (LabelInfo start sz) locs0
                 after = before Q.>< body_seq
 
 asm_push_label_offset :: Label -> ASMMonad ann EVM.Opcode ()
 asm_push_label_offset l = asm_rawop $ LabelRef l 2 (\ (LabelInfo off _) -> (EVM.PUSH1 [fromIntegral off]))
 asm_push_label_size :: Label -> ASMMonad ann EVM.Opcode ()
 asm_push_label_size l = asm_rawop $ LabelRef l 2 (\ (LabelInfo _ sz) -> (EVM.PUSH1 [fromIntegral sz]))
+
+asm_malloc :: BLVar -> ASMMonad ann EVM.Opcode ()
+asm_malloc v = do
+  let sz = 32 --- XXX Be sensitive to the actual size of things in memory
+  ( ls, cs ) <- get
+  let ( sd, fp, vmap ) = cs
+  let fp' = fp + sz
+  let vmap' = m_insertSafe v fp vmap
+  let cs' = ( sd, fp', vmap' )
+  put ( ls, cs' )
+
+asm_free_all :: ASMMonad ann EVM.Opcode ()
+asm_free_all = do
+  ( ls, cs ) <- get
+  let ( sd, _fp, _vmap ) = cs
+  let cs' = ( sd, 0, M.empty )
+  put ( ls, cs' )
+
+asm_malloc_args :: [BLVar] -> ASMMonad ann EVM.Opcode ()
+asm_malloc_args args = mapM_ asm_malloc args
+
+asm_vmap_ref :: BLVar -> ASMMonad ann EVM.Opcode Int
+asm_vmap_ref v = do
+  ( _, cs ) <- get
+  let ( _, _, vmap ) = cs
+  case M.lookup v vmap of
+    Nothing -> error $ "asm_vmap_ref: Variable not in memory: " ++ show v
+    Just addr -> do
+      return addr
 
 comp_jump_to_label :: Label -> Bool -> ASMMonad ann EVM.Opcode ()
 comp_jump_to_label lab cond = do
@@ -208,15 +244,11 @@ comp_con c =
 
 comp_blvar :: BLVar -> ASMMonad ann EVM.Opcode ()
 comp_blvar v = do
-  ( _, cs ) <- get
-  let ( _, _, vmap ) = cs
-  case M.lookup v vmap of
-    Nothing -> error $ "comp_blvar: Variable not in memory: " ++ show v
-    Just addr -> do
-      --- XXX If v is a byte-string, then just hold the pointer
-      asm_op $ EVM.PUSH1 [ fromIntegral $ addr ]
-      asm_op $ EVM.MLOAD
-      asm_push 1
+  addr <- asm_vmap_ref v
+  --- XXX If v is a byte-string, then just hold the pointer
+  asm_op $ EVM.PUSH1 [ fromIntegral $ addr ]
+  asm_op $ EVM.MLOAD
+  asm_push 1
 
 comp_blarg :: BLArg a -> ASMMonad ann EVM.Opcode ()
 comp_blarg a =
@@ -228,7 +260,10 @@ comp_cexpr :: CExpr a -> ASMMonad ann EVM.Opcode ()
 comp_cexpr e =
   case e of
     C_PrimApp _ cp as -> do
-      forM_ as comp_blarg
+      --- Arguments are reversed, because we store (a / b) as (C_Prim
+      --- _ DIV [a, b]) but the EVM expects [ a b ... ] on the stack
+      --- when you run DIV, so we need to push on B first and then A.
+      forM_ (reverse as) comp_blarg
       case cp of
         ADD -> p_op EVM.ADD 2
         SUB -> p_op EVM.SUB 2
@@ -242,6 +277,18 @@ comp_cexpr e =
         PGE -> p_op_not EVM.LT 2
         BALANCE -> p_op EVM.BALANCE 0
         TXN_VALUE -> p_op EVM.CALLVALUE 0
+        --- XXX If_then_else is hard because I need to generate:
+
+        ---         PUSHI [ first ]
+        ---         JUMPI
+        --- second: POP
+        ---         PUSH [ after ]
+        --- first:  SWAP
+        ---         POP
+        --- after:  ...
+
+        --- But, my assembler doesn't allow me to generate the code
+        --- for after as a continuation like this, so I can give it the correct label.
         _ -> end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp
   where p_op o amt = do asm_op o
                         asm_stack amt 1
@@ -276,13 +323,14 @@ comp_set_args :: [BLArg a] -> ASMMonad ann EVM.Opcode ()
 comp_set_args _args =
   end_block_op $ "XXX comp_set_args"
 
-comp_malloc :: BLVar -> ASMMonad ann EVM.Opcode ()
-comp_malloc _v =
-  end_block_op $ "XXX comp_malloc"
-
-comp_malloc_args :: [BLVar] -> ASMMonad ann EVM.Opcode ()
-comp_malloc_args _args =
-  end_block_op $ "XXX comp_malloc_args"
+comp_malloc_and_store :: BLVar -> ASMMonad ann EVM.Opcode ()
+comp_malloc_and_store v = do
+  asm_malloc v
+  v_addr <- asm_vmap_ref v
+  asm_op $ EVM.PUSH1 [ fromIntegral v_addr ]
+  asm_push 1
+  asm_op $ EVM.MSTORE
+  asm_pop 2
 
 --- current_state is key 0
 comp_ctail :: CCounts -> CTail a -> ASMMonad ann EVM.Opcode ()
@@ -303,7 +351,7 @@ comp_ctail ccs t =
         Just 0 -> comp_ctail ccs kt
         _ -> do
           comp_cexpr ce
-          comp_malloc bv
+          comp_malloc_and_store bv
           comp_ctail ccs kt
     C_Do _ ds kt -> do
       comp_cstmt ds
@@ -315,10 +363,13 @@ comp_ctail ccs t =
 comp_ctail_top :: Int -> Maybe FromSpec -> [BLVar] -> ASMMonad ann EVM.Opcode () -> CTail a -> ASMMonad ann EVM.Opcode ()
 comp_ctail_top i _from_spec args check t = asm_with_label_handler i $ do
   end_block_op $ "XXX from_spec"
-  comp_malloc_args args
+  --- XXX We actually get this from CALLDATALOAD not MLOAD :'(
+  --- XXX Maybe simplify with a CALLDATACOPY?
+  asm_malloc_args args
   check
   comp_ctail (usesCTail t) t
   end_block_op ("</Handler " ++ show i ++ ">")
+  asm_free_all
   
 comp_chandler :: CHandler a -> ASMMonad ann EVM.Opcode ()
 comp_chandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) =
