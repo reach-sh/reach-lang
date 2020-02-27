@@ -15,7 +15,9 @@ import Data.Monoid
 
 import Reach.AST
 import Reach.EmitSol
-  ( CompiledSol )
+  ( CompiledSol
+  , CCounts
+  , usesCTail )
 
 type ASMMonad ann op a = State (ASMSt op) a
 type Label = Int
@@ -41,8 +43,9 @@ type LabelSt =
   )
 type CompileSt =
   ( Int --- stack depth
+  , Int --- mem free pointer
+  , M.Map BLVar Int --- variable to mem addr
   )
---- XXX This needs to help us figure out how to read a variable
 
 empty_asm_st :: ASMSt op
 empty_asm_st = ( empty_linker_st, empty_compile_st )
@@ -51,7 +54,7 @@ empty_linker_st = ( 0, M.empty, empty_label_st, Q.empty )
 empty_label_st :: LabelSt
 empty_label_st = ( 0, 0, M.empty )
 empty_compile_st :: CompileSt
-empty_compile_st = ( 0 )
+empty_compile_st = ( 0, 0, M.empty )
 
 asm_fresh_label_obs :: (Label -> ASMMonad ann o a) -> ASMMonad ann o a
 asm_fresh_label_obs obs_and_code = do
@@ -77,14 +80,17 @@ asm_with_label_handler which hand_code = asm_fresh_label_obs $ \label -> do
   asm_labels_set_handler which label
   hand_code
 
--- XXX Have asm_push/pop/stack be inside of asm_op
+-- FIXME Have asm_push/pop/stack be inside of asm_op, or maybe as some sort of pass during assembly
 asm_stack :: Int -> Int -> ASMMonad ann o ()
 asm_stack outs ins = do
   ( ls, cs ) <- get
-  let ( cur_stack ) = cs
-  let cs' = ( cur_stack - outs + ins )
-  --- XXX error if stack limit exceeded
-  put ( ls, cs' )
+  let ( stack, free_ptr, vmap ) = cs
+  let stack' = stack - outs + ins
+  if stack' > 1023 then
+    error "asm_stack: Depth is too deep"
+  else do
+    let cs' = ( stack', free_ptr, vmap )
+    put ( ls, cs' )
 
 asm_rawop :: ASMOp o -> ASMMonad ann o ()
 asm_rawop aop = do
@@ -200,11 +206,23 @@ comp_con c =
     Con_BS _bs ->
       end_block_op "XXX comp_con BS"
 
+comp_blvar :: BLVar -> ASMMonad ann EVM.Opcode ()
+comp_blvar v = do
+  ( _, cs ) <- get
+  let ( _, _, vmap ) = cs
+  case M.lookup v vmap of
+    Nothing -> error $ "comp_blvar: Variable not in memory: " ++ show v
+    Just addr -> do
+      --- XXX If v is a byte-string, then just hold the pointer
+      asm_op $ EVM.PUSH1 [ fromIntegral $ addr ]
+      asm_op $ EVM.MLOAD
+      asm_push 1
+
 comp_blarg :: BLArg a -> ASMMonad ann EVM.Opcode ()
 comp_blarg a =
   case a of
     BL_Con _ c -> comp_con c
-    BL_Var _ v -> end_block_op $ "XXX comp_blag var: " ++ show v
+    BL_Var _ v -> comp_blvar v
 
 comp_cexpr :: CExpr a -> ASMMonad ann EVM.Opcode ()
 comp_cexpr e =
@@ -241,55 +259,80 @@ comp_cstmt s =
       asm_op EVM.NOT
       revert_lab <- asm_label_revert
       comp_jump_to_label revert_lab True
-    C_Transfer _ _p a -> do
-      end_block_op $ "XXX C_Transfer p"
+    C_Transfer _ p a -> do
+      comp_blvar p
       comp_blarg a
       end_block_op $ "XXX C_Transfer effect"
 
+comp_state_check :: FromSpec -> Bool -> Int -> BLArg a -> [BLVar] -> ASMMonad ann EVM.Opcode ()
+comp_state_check _from_spec _is_timeout _last_i _delay _svs =
+  end_block_op $ "XXX comp_state_check"
+
+comp_state_set :: Int -> [BLVar] -> ASMMonad ann EVM.Opcode ()
+comp_state_set _i _svs =
+  end_block_op $ "XXX comp_state_set"
+
+comp_set_args :: [BLArg a] -> ASMMonad ann EVM.Opcode ()
+comp_set_args _args =
+  end_block_op $ "XXX comp_set_args"
+
+comp_malloc :: BLVar -> ASMMonad ann EVM.Opcode ()
+comp_malloc _v =
+  end_block_op $ "XXX comp_malloc"
+
+comp_malloc_args :: [BLVar] -> ASMMonad ann EVM.Opcode ()
+comp_malloc_args _args =
+  end_block_op $ "XXX comp_malloc_args"
+
 --- current_state is key 0
-comp_ctail :: CTail a -> ASMMonad ann EVM.Opcode ()
-comp_ctail t =
+comp_ctail :: CCounts -> CTail a -> ASMMonad ann EVM.Opcode ()
+comp_ctail ccs t =
   case t of
     C_Halt _ -> do
       halt_lab <- asm_label_halt
       comp_jump_to_label halt_lab False
-    C_Wait _ _last_i _svs -> do
-      end_block_op $ "XXX C_Wait" -- current_state = hash
+    C_Wait _ i svs -> do
+      comp_state_set i svs
     C_If _ ca tt ft -> do
       comp_blarg ca
-      tlab <- asm_fresh_label $ comp_ctail tt
+      tlab <- asm_fresh_label $ comp_ctail ccs tt
       comp_jump_to_label tlab True
-      comp_ctail ft
-    C_Let _ _bv ce kt -> do
-      --- FIXME use ccs from EmitSol and store in cs if count is low
-      comp_cexpr ce
-      --- XXX ^-- need to store someone and save in monad state
-      comp_ctail kt
+      comp_ctail ccs ft
+    C_Let _ bv ce kt ->
+      case M.lookup bv ccs of
+        Just 0 -> comp_ctail ccs kt
+        _ -> do
+          comp_cexpr ce
+          comp_malloc bv
+          comp_ctail ccs kt
     C_Do _ ds kt -> do
       comp_cstmt ds
-      comp_ctail kt
-    C_Jump _ which _vs _ _as -> do
-      end_block_op "XXX prepare C_Jump args"
+      comp_ctail ccs kt
+    C_Jump loc which vs _ as -> do
+      comp_set_args $ (map (BL_Var loc) vs) ++ as
       comp_jump_to_handler which
 
-comp_ctail_top :: Maybe (FromSpec, Bool, Int, (BLArg a)) -> [BLVar] -> Int -> CTail a -> ASMMonad ann EVM.Opcode ()
-comp_ctail_top _handler_info _args i t = asm_with_label_handler i $ do
-  end_block_op "XXX Check state and initialize arguments"
-  comp_ctail t
-  end_block_op ("end Handler " ++ show i)
+comp_ctail_top :: Int -> Maybe FromSpec -> [BLVar] -> ASMMonad ann EVM.Opcode () -> CTail a -> ASMMonad ann EVM.Opcode ()
+comp_ctail_top i _from_spec args check t = asm_with_label_handler i $ do
+  end_block_op $ "XXX from_spec"
+  comp_malloc_args args
+  check
+  comp_ctail (usesCTail t) t
+  end_block_op ("</Handler " ++ show i ++ ">")
   
 comp_chandler :: CHandler a -> ASMMonad ann EVM.Opcode ()
 comp_chandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) =
-  comp_ctail_top (Just (from_spec, is_timeout, last_i, delay)) (svs ++ msg) i body
+  comp_ctail_top i (Just from_spec) (svs ++ msg)
+                 (comp_state_check from_spec is_timeout last_i delay svs) body
 comp_chandler (C_Loop _ svs args _inv body i) =
-  comp_ctail_top Nothing (svs ++ args) i body
+  comp_ctail_top i Nothing (svs ++ args) (return ()) body
 
 end_block_op :: String -> ASMMonad ann EVM.Opcode ()
 end_block_op dbg = asm_op $ EVM.INVALID 0xFE dbg
 
 cp_to_evm :: CProgram a -> [EVM.Opcode]
 cp_to_evm (C_Prog _ hs) = assemble evm_op_len $ do
-  end_block_op "XXX Initialize state"
+  comp_state_set 0 []
   dis_lab <- asm_fresh_label $ mapM_ asm_op $ assemble evm_op_len dis
   asm_push_label_size dis_lab
   asm_push_label_offset dis_lab
@@ -303,14 +346,14 @@ cp_to_evm (C_Prog _ hs) = assemble evm_op_len $ do
   asm_push 1
   asm_op $ EVM.RETURN
   asm_pop 2
-  end_block_op "end Constructor"
+  end_block_op "</Constructor>"
   where dis = do
           halt_lab <- asm_fresh_label $ halt
           rev_lab <- asm_fresh_label $ revert
           asm_labels_set halt_lab rev_lab
           mapM_ comp_chandler hs
           comp_jump_to_handler 1
-          end_block_op "end Dispatch"
+          end_block_op "</Dispatch>"
         halt = do
           --- current_state = 0x0
           asm_op $ EVM.PUSH1 [0]
@@ -324,7 +367,7 @@ cp_to_evm (C_Prog _ hs) = assemble evm_op_len $ do
           asm_push 1
           asm_op $ EVM.SELFDESTRUCT
           asm_pop 1
-          end_block_op "end HALT"
+          end_block_op "</HALT>"
         revert = do
           asm_op $ EVM.PUSH1 [0]
           asm_push 1
@@ -332,7 +375,7 @@ cp_to_evm (C_Prog _ hs) = assemble evm_op_len $ do
           asm_push 1
           asm_op $ EVM.REVERT
           asm_pop 2
-          end_block_op "end REVERT"
+          end_block_op "</REVERT>"
 
 emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
 emit_evm _ (BL_Prog _ _ cp) (_, code) =
