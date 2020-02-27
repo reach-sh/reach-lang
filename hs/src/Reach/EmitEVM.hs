@@ -26,15 +26,58 @@ data ASMOp op
 type ASMSt op =
   ( LinkerSt op
   , CompileSt )
+type ASMSeq op =
+  Q.Seq (ASMOp op)
 type LinkerSt op =
-  ( Label, Q.Seq (Q.Seq (ASMOp op))
-  , (Label, Label, M.Map Int Label)
-  , Q.Seq (ASMOp op) )
+  ( Label --- next
+  , M.Map Label (ASMSeq op) --- label to code map
+  , LabelSt -- standard labels
+  , ASMSeq op --- code
+  )
+type LabelSt =
+  ( Label --- halt
+  , Label --- revert
+  , M.Map Int Label --- handlers
+  )
 type CompileSt =
-  ( Int )
+  ( Int --- stack depth
+  )
 --- XXX This needs to help us figure out how to read a variable
 
--- XXX Have asm_push/pop be inside of asm_op
+empty_asm_st :: ASMSt op
+empty_asm_st = ( empty_linker_st, empty_compile_st )
+empty_linker_st :: LinkerSt op
+empty_linker_st = ( 0, M.empty, empty_label_st, Q.empty )
+empty_label_st :: LabelSt
+empty_label_st = ( 0, 0, M.empty )
+empty_compile_st :: CompileSt
+empty_compile_st = ( 0 )
+
+asm_fresh_label_obs :: (Label -> ASMMonad ann o a) -> ASMMonad ann o a
+asm_fresh_label_obs obs_and_code = do
+  ( ls, cs ) <- get
+  let ( this_label, defs, lst, orig_code ) = ls
+  let next' = this_label + 1
+  let fresh_code = Q.empty
+  let ls' = ( next', defs, lst, fresh_code )
+  put ( ls', cs )
+  res <- obs_and_code this_label
+  ( after_ls, after_cs ) <- get
+  let ( after_next, after_defs, after_lst, after_code ) = after_ls
+  let after_defs' = M.insert this_label after_code after_defs
+  let after_ls' = ( after_next, after_defs', after_lst, orig_code )
+  put ( after_ls', after_cs )
+  return res
+
+asm_fresh_label :: ASMMonad ann o () -> ASMMonad ann o Label
+asm_fresh_label new_code = asm_fresh_label_obs (\lab -> do new_code ; return lab)
+
+asm_with_label_handler :: Int -> ASMMonad ann o () -> ASMMonad ann o ()
+asm_with_label_handler which hand_code = asm_fresh_label_obs $ \label -> do
+  asm_labels_set_handler which label
+  hand_code
+
+-- XXX Have asm_push/pop/stack be inside of asm_op
 asm_stack :: Int -> Int -> ASMMonad ann o ()
 asm_stack outs ins = do
   ( ls, cs ) <- get
@@ -50,6 +93,47 @@ asm_rawop aop = do
   let ls' = ( next_label, label_seq, label_refs, code Q.|> aop )
   put ( ls', cs )
 
+asm_labels :: ASMMonad ann o LabelSt
+asm_labels = do
+  ( ls, _ ) <- get
+  let ( _, _, l, _ ) = ls
+  return l
+
+asm_labels_set :: Label -> Label -> ASMMonad ann o ()
+asm_labels_set halt_lab rev_lab = do
+  ( ls, cs ) <- get
+  let ( next, defs, l, code ) = ls
+  let ( _, _, hs ) = l
+  let l' = ( halt_lab, rev_lab, hs )
+  let ls' = ( next, defs, l', code )
+  put ( ls', cs )
+
+asm_labels_set_handler :: Int -> Label -> ASMMonad ann o ()
+asm_labels_set_handler which lab = do
+  ( ls, cs ) <- get
+  let ( next, defs, l, code ) = ls
+  let ( h, r, hs ) = l
+  let hs' = M.insert which lab hs
+  let l' = ( h, r, hs' )
+  let ls' = ( next, defs, l', code )
+  put ( ls', cs )
+
+asm_label_halt :: ASMMonad ann o Label
+asm_label_halt = do
+  ( l, _, _ ) <- asm_labels
+  return l
+asm_label_revert :: ASMMonad ann o Label
+asm_label_revert = do
+  ( _, l, _ ) <- asm_labels
+  return l
+asm_label_handler :: Int -> ASMMonad ann o Label
+asm_label_handler i = do
+  ( _, _, hs ) <- asm_labels
+  case M.lookup i hs of
+    Just l -> return l
+    Nothing ->
+      error $ "Handler not defined --- " ++ show i ++ " --- in " ++ show hs
+
 asm_op :: o -> ASMMonad ann o ()
 asm_op op = asm_rawop $ Op op
 
@@ -61,9 +145,6 @@ asm_push k = asm_stack 0 k
 --- FIXME Make an "encodedLength" type-class to do this more efficiently
 evm_op_len :: EVM.Opcode -> Int
 evm_op_len o = length $ EVM.encode [o]
-
-empty_asm_st :: ASMSt op
-empty_asm_st = error "XXX"
 
 assemble :: (o -> Int) -> ASMMonad ann o () -> [o]
 assemble op_len am = map asmfix $ toList image
@@ -77,7 +158,7 @@ assemble op_len am = map asmfix $ toList image
                 Just li -> f li
         op_length (Op o) = op_len o
         op_length (LabelRef _ l _) = l
-        (_, locs, image) = Q.foldlWithIndex loc1 (main_sz, M.empty, main) defs
+        (_, locs, image) = M.foldlWithKey loc1 (main_sz, M.empty, main) defs
         seq_length = getSum . foldMap (Sum . op_length)
         main_sz = seq_length main
         loc1 (start, locs0, before) label body_seq = (end, locs1, after)
@@ -90,6 +171,21 @@ asm_push_label_offset :: Label -> ASMMonad ann EVM.Opcode ()
 asm_push_label_offset l = asm_rawop $ LabelRef l 2 (\ (LabelInfo off _) -> (EVM.PUSH1 [fromIntegral off]))
 asm_push_label_size :: Label -> ASMMonad ann EVM.Opcode ()
 asm_push_label_size l = asm_rawop $ LabelRef l 2 (\ (LabelInfo _ sz) -> (EVM.PUSH1 [fromIntegral sz]))
+
+comp_jump_to_label :: Label -> Bool -> ASMMonad ann EVM.Opcode ()
+comp_jump_to_label lab cond = do
+  asm_push_label_offset lab
+  if cond then
+    do asm_op EVM.JUMPI
+       asm_pop 2
+  else
+    do asm_op EVM.JUMP
+       asm_pop 1
+
+comp_jump_to_handler :: Int -> ASMMonad ann EVM.Opcode ()
+comp_jump_to_handler which = do
+  lab <- asm_label_handler which
+  comp_jump_to_label lab False
 
 comp_con :: Constant -> ASMMonad ann EVM.Opcode ()
 comp_con c =
@@ -143,10 +239,8 @@ comp_cstmt s =
     C_Claim _ _ a -> do
       comp_blarg a
       asm_op EVM.NOT
-      revert_lab <- read_label_revert
-      asm_push_label_offset revert_lab
-      asm_op EVM.JUMPI
-      asm_pop 2
+      revert_lab <- asm_label_revert
+      comp_jump_to_label revert_lab True
     C_Transfer _ _p a -> do
       end_block_op $ "XXX C_Transfer p"
       comp_blarg a
@@ -157,18 +251,14 @@ comp_ctail :: CTail a -> ASMMonad ann EVM.Opcode ()
 comp_ctail t =
   case t of
     C_Halt _ -> do
-      halt_lab <- read_label_halt
-      asm_push_label_offset halt_lab
-      asm_op EVM.JUMP
-      asm_pop 1
+      halt_lab <- asm_label_halt
+      comp_jump_to_label halt_lab False
     C_Wait _ _last_i _svs -> do
       end_block_op $ "XXX C_Wait" -- current_state = hash
     C_If _ ca tt ft -> do
       comp_blarg ca
       tlab <- asm_fresh_label $ comp_ctail tt
-      asm_push_label_offset tlab
-      asm_op EVM.JUMPI
-      asm_pop 2
+      comp_jump_to_label tlab True
       comp_ctail ft
     C_Let _ _bv ce kt -> do
       --- FIXME use ccs from EmitSol and store in cs if count is low
@@ -180,10 +270,7 @@ comp_ctail t =
       comp_ctail kt
     C_Jump _ which _vs _ _as -> do
       end_block_op "XXX prepare C_Jump args"
-      hand_lab <- read_label_handler which
-      asm_push_label_offset hand_lab
-      asm_op EVM.JUMP
-      asm_pop 1
+      comp_jump_to_handler which
 
 comp_ctail_top :: Maybe (FromSpec, Bool, Int, (BLArg a)) -> [BLVar] -> Int -> CTail a -> ASMMonad ann EVM.Opcode ()
 comp_ctail_top _handler_info _args i t = asm_with_label_handler i $ do
@@ -220,12 +307,9 @@ cp_to_evm (C_Prog _ hs) = assemble evm_op_len $ do
   where dis = do
           halt_lab <- asm_fresh_label $ halt
           rev_lab <- asm_fresh_label $ revert
-          asm_set_std_labels halt_lab rev_lab
+          asm_labels_set halt_lab rev_lab
           mapM_ comp_chandler hs
-          first_lab <- read_label_handler 0
-          asm_push_label_offset first_lab
-          asm_op EVM.JUMP
-          asm_pop 1
+          comp_jump_to_handler 1
           end_block_op "end Dispatch"
         halt = do
           --- current_state = 0x0
