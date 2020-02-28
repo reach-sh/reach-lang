@@ -4,9 +4,9 @@ module Reach.EmitEVM where
 
 import Control.Monad.State.Lazy
 --import qualified Data.Word as W
-import qualified Data.HexString as H
-import qualified Data.ByteString.Char8 as BC
-import qualified Data.ByteString as B
+--import qualified Data.HexString as H
+--import qualified Data.ByteString.Char8 as BC
+--import qualified Data.ByteString as B
 import qualified EVM.Bytecode as EVM
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Q
@@ -24,11 +24,14 @@ m_insertSafe k v m =
   case M.lookup k m of
     Nothing -> M.insert k v m
     Just _ ->
-      error $ "m_insertSafe: Key already set: " ++ show k
+      --- XXX
+      m
+      --- error $ "m_insertSafe: Key already set: " ++ show k ++ " inside: " ++ (show $ map (\(x,_)->x) $ M.toAscList m)
 
 type ASMMonad ann a = State ASMSt a
 type Label = Int
 data LabelInfo = LabelInfo Int Int
+  deriving (Show, Eq, Ord)
 data ASMOp
   = Op EVM.Opcode
   | LabelRef Label Int (LabelInfo -> EVM.Opcode)
@@ -68,7 +71,14 @@ empty_linker_st = ( 0, M.empty, empty_label_st, Q.empty )
 empty_label_st :: LabelSt
 empty_label_st = ( 0, 0, M.empty )
 empty_compile_st :: CompileSt
-empty_compile_st = ( 0, 0, 0, M.empty )
+--- 4 is for tag
+--- 32 is for last
+empty_compile_st = ( 0, 4 + 32, 0, M.empty )
+
+tag_offset :: Int
+tag_offset = 0
+last_time_offset :: Int
+last_time_offset = 4
 
 asm_fresh_label_obs :: (Label -> ASMMonad ann a) -> ASMMonad ann a
 asm_fresh_label_obs obs_and_code = do
@@ -89,10 +99,11 @@ asm_fresh_label_obs obs_and_code = do
 asm_fresh_label :: ASMMonad ann () -> ASMMonad ann Label
 asm_fresh_label new_code = asm_fresh_label_obs (\lab -> do new_code ; return lab)
 
-asm_with_label_handler :: Int -> ASMMonad ann () -> ASMMonad ann ()
+asm_with_label_handler :: Int -> ASMMonad ann () -> ASMMonad ann Label
 asm_with_label_handler which hand_code = asm_fresh_label_obs $ \label -> do
   asm_labels_set_handler which label
   hand_code
+  return label
 
 -- FIXME Have asm_push/pop/stack be inside of asm_op, or maybe as some sort of pass during assembly
 asm_stack :: Int -> Int -> ASMMonad ann ()
@@ -209,8 +220,11 @@ asm_free_all :: ASMMonad ann ()
 asm_free_all = do
   ( ls, cs ) <- get
   let ( sd, _cdp, _mp, _vmap ) = cs
-  let cs' = ( sd, 0, 0, M.empty )
-  put ( ls, cs' )
+  if sd == 0 then
+    put ( ls, empty_compile_st )
+  else
+    return ()
+    --- error $ "asm_free_all: stack is not empty at end of handler: " ++ show sd
 
 asm_malloc_args :: EVMRegion -> [BLVar] -> ASMMonad ann ()
 asm_malloc_args which args = mapM_ (asm_malloc which) args
@@ -252,16 +266,21 @@ comp_con c =
     Con_BS _bs ->
       end_block_op "XXX comp_con BS"
 
+comp_memread :: EVMRegion -> Int -> ASMMonad ann ()
+comp_memread reg addr = do
+  asm_op $ EVM.PUSH1 [ fromIntegral $ addr ]
+  asm_push 1
+  case reg of
+    ER_Mem -> asm_op $ EVM.MLOAD
+    ER_CallData -> asm_op $ EVM.CALLDATALOAD
+  asm_stack 1 1
+
 comp_blvar :: BLVar -> ASMMonad ann ()
 comp_blvar v = do
   (reg, addr) <- asm_vmap_ref v
   --- XXX If v is a byte-string, then just hold the pointer
-  asm_op $ EVM.PUSH1 [ fromIntegral $ addr ]
-  case reg of
-    ER_Mem -> asm_op $ EVM.MLOAD
-    ER_CallData -> asm_op $ EVM.CALLDATALOAD
-  asm_push 1
-
+  comp_memread reg addr
+  
 comp_blarg :: BLArg a -> ASMMonad ann ()
 comp_blarg a =
   case a of
@@ -308,6 +327,7 @@ comp_cexpr e km =
         p_op_not o amt = do asm_op o
                             asm_stack amt 1
                             asm_op EVM.NOT
+                            asm_stack 1 1
                             km
 
 comp_cstmt :: CStmt a -> ASMMonad ann  ()
@@ -317,7 +337,8 @@ comp_cstmt s =
     C_Claim _ CT_Assert _ -> return ()
     C_Claim _ _ a -> do
       comp_blarg a
-      asm_op EVM.NOT
+      asm_op $ EVM.NOT
+      asm_stack 1 1
       revert_lab <- asm_label_revert
       comp_jump_to_label revert_lab True
     C_Transfer _ p a -> do
@@ -325,13 +346,37 @@ comp_cstmt s =
       comp_blarg a
       end_block_op $ "XXX C_Transfer effect"
 
-comp_state_check :: FromSpec -> Bool -> Int -> BLArg a -> [BLVar] -> ASMMonad ann ()
-comp_state_check _from_spec _is_timeout _last_i _delay _svs =
-  end_block_op $ "XXX comp_state_check"
+comp_state_compute :: Int -> Bool -> [BLVar] -> ASMMonad ann ()
+comp_state_compute _i _use_this_block _svs = do
+  end_block_op $ "XXX put i into hash args offset"
+  end_block_op $ "XXX put block into hash args offset"
+  end_block_op $ "XXX put variables into hash args offset"
+  end_block_op $ "XXX hash args offset"
+  end_block_op $ "XXX hash args length"
+  asm_op $ EVM.SHA3
+  asm_stack 2 1
+
+comp_state_check :: Int -> [BLVar] -> ASMMonad ann ()
+comp_state_check last_i svs = do
+  comp_state_compute last_i False svs
+  asm_op $ EVM.PUSH1 [0]
+  asm_push 1
+  asm_op $ EVM.SLOAD
+  asm_stack 1 1
+  asm_op $ EVM.EQ
+  asm_pop 2
+  asm_op $ EVM.NOT
+  asm_stack 1 1
+  revert_lab <- asm_label_revert
+  comp_jump_to_label revert_lab True
 
 comp_state_set :: Int -> [BLVar] -> ASMMonad ann ()
-comp_state_set _i _svs =
-  end_block_op $ "XXX comp_state_set"
+comp_state_set i svs = do
+  comp_state_compute i True svs
+  asm_op $ EVM.PUSH1 [0]
+  asm_push 1
+  asm_op $ EVM.SSTORE
+  asm_pop 2
 
 comp_set_args :: [BLArg a] -> ASMMonad ann ()
 comp_set_args _args =
@@ -347,46 +392,93 @@ comp_malloc_and_store v = do
   asm_pop 2
 
 --- current_state is key 0
-comp_ctail :: CCounts -> CTail a -> ASMMonad ann ()
-comp_ctail ccs t =
+comp_ctail :: CCounts -> CTail a -> ASMMonad ann () -> ASMMonad ann ()
+comp_ctail ccs t km =
   case t of
     C_Halt _ -> do
       halt_lab <- asm_label_halt
       comp_jump_to_label halt_lab False
+      km
     C_Wait _ i svs -> do
       comp_state_set i svs
+      km
     C_If _ ca tt ft -> do
       comp_blarg ca
-      tlab <- asm_fresh_label $ comp_ctail ccs tt
+      --- XXX jump to common km
+      tlab <- asm_fresh_label $ comp_ctail ccs tt km
       comp_jump_to_label tlab True
-      comp_ctail ccs ft
+      comp_ctail ccs ft km
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
-        Just 0 -> comp_ctail ccs kt
+        Just 0 -> comp_ctail ccs kt km
         _ -> comp_cexpr ce $ do
           comp_malloc_and_store bv
-          comp_ctail ccs kt
+          comp_ctail ccs kt km
     C_Do _ ds kt -> do
       comp_cstmt ds
-      comp_ctail ccs kt
+      comp_ctail ccs kt km
     C_Jump loc which vs _ as -> do
       comp_set_args $ (map (BL_Var loc) vs) ++ as
       comp_jump_to_handler which
+      km
 
-comp_chandler :: CHandler a -> ASMMonad ann  ()
-comp_chandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = asm_with_label_handler i $ do
-  end_block_op $ "XXX from_spec"
+comp_chandler :: Label -> CHandler a -> ASMMonad ann Label
+comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = asm_with_label_handler i $ do
+  asm_free_all
+    --- check tag and parse args
   asm_malloc_args ER_CallData $ svs ++ msg
-  comp_state_check from_spec is_timeout last_i delay svs
-  comp_ctail (usesCTail body) body
-  end_block_op ("</Handler " ++ show i ++ ">")
-  asm_free_all
-comp_chandler (C_Loop _ svs args _inv body i) = asm_with_label_handler i $ do
-  asm_malloc_args ER_Mem $ svs ++ args
-  comp_ctail (usesCTail body) body
-  end_block_op ("</Loop " ++ show i ++ ">")
-  asm_free_all
+  comp_memread ER_CallData tag_offset
+  comp_con $ Con_I $ 1337 --- XXX figure out what the tag should really be
+  asm_op $ EVM.EQ
+  asm_stack 2 1
+  asm_op $ EVM.CALLDATASIZE
+  asm_push 1
+  comp_con $ Con_I $ 1337 --- XXX expected length
+  asm_op $ EVM.EQ
+  asm_stack 2 1
+  asm_op $ EVM.AND
+  asm_stack 2 1
+  asm_op $ EVM.NOT
+  asm_stack 1 1
+  comp_jump_to_label next_lab True
+  --- parse args
+  --- check state
+  comp_state_check last_i svs
+  --- check sender
+  case from_spec of
+    FS_Join _from ->
+      end_block_op $ "XXX join from"
+    FS_From _from ->
+      end_block_op $ "XXX from from"
+    FS_Any -> return ()
+  --- check timeout
+  comp_memread ER_CallData last_time_offset
+  comp_blarg delay
+  asm_op $ EVM.ADD
+  asm_stack 2 1
+  asm_op $ EVM.NUMBER
+  asm_push 1
+  asm_op $ EVM.LT
+  asm_stack 2 1
+  if is_timeout then
+    return ()
+  else
+    asm_op $ EVM.NOT
+  revert_lab <- asm_label_revert
+  comp_jump_to_label revert_lab True
+  --- do the thing
+  comp_ctail (usesCTail body) body $ do
+    end_block_op ("</Handler " ++ show i ++ ">")
+comp_chandler next_lab (C_Loop _ _svs _args _inv _body _i) = return next_lab
 
+comp_cloop :: CHandler a -> ASMMonad ann ()
+comp_cloop (C_Handler _ _from_spec _is_timeout _ _msg _delay _body _i) = return ()
+comp_cloop (C_Loop _ svs args _inv body i) = void $ asm_with_label_handler i $ do
+  asm_free_all
+  asm_malloc_args ER_Mem $ svs ++ args
+  comp_ctail (usesCTail body) body $ do
+    end_block_op ("</Loop " ++ show i ++ ">")
+  
 end_block_op :: String -> ASMMonad ann ()
 end_block_op dbg = asm_op $ EVM.INVALID 0xFE dbg
 
@@ -411,7 +503,10 @@ cp_to_evm (C_Prog _ hs) = assemble $ do
           halt_lab <- asm_fresh_label $ halt
           rev_lab <- asm_fresh_label $ revert
           asm_labels_set halt_lab rev_lab
-          mapM_ comp_chandler hs
+          mapM_ comp_cloop hs
+          foldM_ (\next_lab h -> do this_lab <- comp_chandler next_lab h
+                                    return this_lab)
+                 rev_lab (reverse hs)
           comp_jump_to_handler 1
           end_block_op "</Dispatch>"
         halt = do
@@ -438,16 +533,6 @@ cp_to_evm (C_Prog _ hs) = assemble $ do
           end_block_op "</REVERT>"
 
 emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
-emit_evm _ (BL_Prog _ _ cp) (_, code) =
-  if False then
-    do
-      let bs = H.toBytes $ H.hexString $ BC.pack code
-      mapM_ (\o -> putStrLn $ show o) $ EVM.decode $ B.unpack bs
-      return ()
-  else
-    if True then
-      do
-        mapM_ (\o -> putStrLn $ show o) $ cp_to_evm cp
-        return ()
-    else
-      return ()
+emit_evm _ (BL_Prog _ _ cp) (_, _code) = do
+  mapM_ (\o -> putStrLn $ show o) $ cp_to_evm cp
+  return ()
