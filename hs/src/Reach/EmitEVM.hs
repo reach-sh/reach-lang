@@ -59,6 +59,8 @@ type CompileSt =
   , M.Map BLVar (EVMRegion, Int) --- variable to mem addr
   )
 
+--- FIXME Add JUMPDEST
+
 empty_asm_st :: ASMSt
 empty_asm_st = ( empty_linker_st, empty_compile_st )
 empty_linker_st :: LinkerSt
@@ -266,8 +268,8 @@ comp_blarg a =
     BL_Con _ c -> comp_con c
     BL_Var _ v -> comp_blvar v
 
-comp_cexpr :: CExpr a -> ASMMonad ann ()
-comp_cexpr e =
+comp_cexpr :: CExpr a -> ASMMonad ann () -> ASMMonad ann ()
+comp_cexpr e km =
   case e of
     C_PrimApp _ cp as -> do
       --- Arguments are reversed, because we store (a / b) as (C_Prim
@@ -287,24 +289,26 @@ comp_cexpr e =
         PGE -> p_op_not EVM.LT 2
         BALANCE -> p_op EVM.BALANCE 0
         TXN_VALUE -> p_op EVM.CALLVALUE 0
-        --- XXX If_then_else is hard because I need to generate:
-
-        ---         PUSHI [ first ]
-        ---         JUMPI
-        --- second: POP
-        ---         PUSH [ after ]
-        --- first:  SWAP
-        ---         POP
-        --- after:  ...
-
-        --- But, my assembler doesn't allow me to generate the code
-        --- for after as a continuation like this, so I can give it the correct label.
-        _ -> end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp
+        IF_THEN_ELSE -> do
+          after <- asm_fresh_label km
+          true <- asm_fresh_label $ do
+            asm_op $ EVM.SWAP1
+            asm_op $ EVM.POP
+            asm_pop 1
+            comp_jump_to_label after False
+          comp_jump_to_label true True
+          asm_op $ EVM.POP
+          asm_pop 1
+          comp_jump_to_label after False
+        _ -> do end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp
+                km
   where p_op o amt = do asm_op o
                         asm_stack amt 1
+                        km
         p_op_not o amt = do asm_op o
                             asm_stack amt 1
                             asm_op EVM.NOT
+                            km
 
 comp_cstmt :: CStmt a -> ASMMonad ann  ()
 comp_cstmt s =
@@ -359,8 +363,7 @@ comp_ctail ccs t =
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
         Just 0 -> comp_ctail ccs kt
-        _ -> do
-          comp_cexpr ce
+        _ -> comp_cexpr ce $ do
           comp_malloc_and_store bv
           comp_ctail ccs kt
     C_Do _ ds kt -> do
