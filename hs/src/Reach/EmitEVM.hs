@@ -203,18 +203,57 @@ asm_push_label_offset l = asm_rawop $ LabelRef l 2 (\ (LabelInfo off _) -> (EVM.
 asm_push_label_size :: Label -> ASMMonad ann ()
 asm_push_label_size l = asm_rawop $ LabelRef l 2 (\ (LabelInfo _ sz) -> (EVM.PUSH1 [fromIntegral sz]))
 
+asm_calldata_ptr :: ASMMonad ann Int
+asm_calldata_ptr = do
+  ( _, cs ) <- get
+  let ( _, cdp, _, _ ) = cs
+  return cdp
+asm_mem_ptr :: ASMMonad ann Int
+asm_mem_ptr = do
+  ( _, cs ) <- get
+  let ( _, _, mp, _ ) = cs
+  return mp
+asm_mem_reset :: Int -> ASMMonad ann ()
+asm_mem_reset mp' = do
+  ( ls, cs ) <- get
+  let ( stack, cdp, _, vmap ) = cs
+  let cs' = ( stack, cdp, mp', vmap )
+  put ( ls, cs' )
+
+size_of_var :: BLVar -> Int
+size_of_var _v = 32 --- XXX
+
 asm_malloc :: EVMRegion -> BLVar -> ASMMonad ann ()
 asm_malloc reg v = do
-  let sz = 32 --- XXX Be sensitive to the actual size of things in memory
+  tp <- mem_bump_and_store reg $ size_of_var v
+  ( ls, cs ) <- get
+  let ( sd, cdp, mp, vmap ) = cs
+  let vmap' = m_insertSafe v (reg, tp) vmap
+  let cs' = ( sd, cdp, mp, vmap' )
+  put ( ls, cs' )
+
+mem_bump_and_store :: EVMRegion -> Int -> ASMMonad ann Int
+mem_bump_and_store reg sz = do
   ( ls, cs ) <- get
   let ( sd, cdp, mp, vmap ) = cs
   let ( cdp', mp', tp ) =
         case reg of
           ER_Mem -> ( cdp, mp + sz, mp )
           ER_CallData -> ( cdp + sz, mp, cdp )
-  let vmap' = m_insertSafe v (reg, tp) vmap
-  let cs' = ( sd, cdp', mp', vmap' )
+  let cs' = ( sd, cdp', mp', vmap )
   put ( ls, cs' )
+  return tp
+
+comp_bump_and_store :: EVMRegion -> Int -> ASMMonad ann ()
+comp_bump_and_store reg sz = do
+  tp <- mem_bump_and_store reg sz
+  case reg of
+    ER_Mem -> comp_store tp
+    ER_CallData -> error "Can't store into CallData"
+
+comp_bump_and_store_var :: EVMRegion -> BLVar -> ASMMonad ann ()
+comp_bump_and_store_var reg v =
+  comp_bump_and_store reg (size_of_var v)
 
 asm_free_all :: ASMMonad ann ()
 asm_free_all = do
@@ -347,14 +386,26 @@ comp_cstmt s =
       end_block_op $ "XXX C_Transfer effect"
 
 comp_state_compute :: Int -> Bool -> [BLVar] -> ASMMonad ann ()
-comp_state_compute _i _use_this_block _svs = do
-  end_block_op $ "XXX put i into hash args offset"
-  end_block_op $ "XXX put block into hash args offset"
-  end_block_op $ "XXX put variables into hash args offset"
-  end_block_op $ "XXX hash args offset"
-  end_block_op $ "XXX hash args length"
+comp_state_compute i use_this_block svs = do
+  before_free_ptr <- asm_mem_ptr
+  --- push i into hash args
+  comp_con $ Con_I $ fromIntegral i
+  comp_bump_and_store ER_Mem 32
+  --- push block number in hash args
+  if use_this_block then
+    asm_op $ EVM.NUMBER
+  else
+    comp_memread ER_CallData last_time_offset
+  comp_bump_and_store ER_Mem 32
+  --- push variables
+  mapM_ (comp_bump_and_store_var ER_Mem) svs
+  after_free_ptr <- asm_mem_ptr
+  --- compute hash its
+  comp_con $ Con_I $ fromIntegral before_free_ptr --- hash args offset
+  comp_con $ Con_I $ fromIntegral $ after_free_ptr - before_free_ptr --- hash args length
   asm_op $ EVM.SHA3
   asm_stack 2 1
+  asm_mem_reset before_free_ptr
 
 comp_state_check :: Int -> [BLVar] -> ASMMonad ann ()
 comp_state_check last_i svs = do
@@ -382,14 +433,18 @@ comp_set_args :: [BLArg a] -> ASMMonad ann ()
 comp_set_args _args =
   end_block_op $ "XXX comp_set_args"
 
+comp_store :: Int -> ASMMonad ann ()
+comp_store addr = do
+  asm_op $ EVM.PUSH1 [ fromIntegral addr ]
+  asm_push 1
+  asm_op $ EVM.MSTORE
+  asm_pop 2
+
 comp_malloc_and_store :: BLVar -> ASMMonad ann ()
 comp_malloc_and_store v = do
   asm_malloc ER_Mem v
   (_, v_addr) <- asm_vmap_ref v
-  asm_op $ EVM.PUSH1 [ fromIntegral v_addr ]
-  asm_push 1
-  asm_op $ EVM.MSTORE
-  asm_pop 2
+  comp_store v_addr
 
 --- current_state is key 0
 comp_ctail :: CCounts -> CTail a -> ASMMonad ann () -> ASMMonad ann ()
@@ -404,10 +459,11 @@ comp_ctail ccs t km =
       km
     C_If _ ca tt ft -> do
       comp_blarg ca
-      --- XXX jump to common km
-      tlab <- asm_fresh_label $ comp_ctail ccs tt km
+      after <- asm_fresh_label km
+      let goto_after = comp_jump_to_label after False
+      tlab <- asm_fresh_label $ comp_ctail ccs tt goto_after
       comp_jump_to_label tlab True
-      comp_ctail ccs ft km
+      comp_ctail ccs ft goto_after
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
         Just 0 -> comp_ctail ccs kt km
@@ -425,7 +481,7 @@ comp_ctail ccs t km =
 comp_chandler :: Label -> CHandler a -> ASMMonad ann Label
 comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = asm_with_label_handler i $ do
   asm_free_all
-    --- check tag and parse args
+  --- check tag and parse args
   asm_malloc_args ER_CallData $ svs ++ msg
   comp_memread ER_CallData tag_offset
   comp_con $ Con_I $ 1337 --- XXX figure out what the tag should really be
@@ -433,7 +489,8 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
   asm_stack 2 1
   asm_op $ EVM.CALLDATASIZE
   asm_push 1
-  comp_con $ Con_I $ 1337 --- XXX expected length
+  cd_ptr <- asm_calldata_ptr
+  comp_con $ Con_I $ fromIntegral cd_ptr
   asm_op $ EVM.EQ
   asm_stack 2 1
   asm_op $ EVM.AND
