@@ -7,6 +7,7 @@ import qualified Data.Word as W
 --import qualified Data.HexString as H
 --import qualified Data.ByteString.Char8 as BC
 --import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as B
 import qualified EVM.Bytecode as EVM
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Q
@@ -14,6 +15,7 @@ import Data.Foldable
 import Data.Monoid
 
 import Reach.AST
+import Reach.Util
 import Reach.EmitSol
   ( CompiledSol
   , CCounts
@@ -330,6 +332,9 @@ evm_pushN args = op args
 integerToWords :: Integer -> [ W.Word8 ]
 integerToWords i = if i == 0 then [] else (fromIntegral $ i `mod` 256) : (integerToWords $ i `div` 256 )
 
+asm_constant_bytes_lookup :: B.ByteString -> ASMMonad ann Int
+asm_constant_bytes_lookup _bs = return 0 --- XXX
+
 comp_con :: Constant -> ASMMonad ann ()
 comp_con c =
   case c of
@@ -339,14 +344,22 @@ comp_con c =
     Con_B t -> do
       asm_op (EVM.PUSH1 [ if t then 1 else 0 ])
       asm_push 1
-    Con_BS _bs ->
-      end_block_op "XXX comp_con BS"
+    Con_BS bs -> do
+      bs_addr <- asm_constant_bytes_lookup bs
+      comp_con $ Con_I $ fromIntegral bs_addr
 
 comp_memread :: Int -> ASMMonad ann ()
 comp_memread addr = do
   asm_op $ EVM.PUSH1 [ fromIntegral $ addr ]
   asm_push 1
   asm_op $ EVM.MLOAD
+  asm_stack 1 1
+
+comp_cdread :: Int -> ASMMonad ann ()
+comp_cdread addr = do
+  asm_op $ EVM.PUSH1 [ fromIntegral $ addr ]
+  asm_push 1
+  asm_op $ EVM.CALLDATALOAD
   asm_stack 1 1
 
 comp_blvar :: BLVar -> ASMMonad ann ()
@@ -516,7 +529,7 @@ comp_malloc_and_store v = do
   case vmap of
     VR_Mem v_addr ->
       comp_store v_addr
-    VR_Op _ -> error "impossible"
+    VR_Op _ -> impossible "malloc always puts variable in memory"
 
 --- current_state is key 0
 comp_ctail :: CCounts -> CTail a -> ASMMonad ann () -> ASMMonad ann ()
@@ -557,23 +570,26 @@ abiTag _vs = 0 --- XXX
 tag_offset :: Int
 tag_offset = 0
 last_time_offset :: Int
-last_time_offset = 4
+last_time_offset = tag_offset + 4
+arg_start_offset :: Int
+arg_start_offset = last_time_offset + 32
 
 comp_chandler :: Label -> CHandler a -> ASMMonad ann Label
 comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = asm_with_label_handler i $ do
   revert_lab <- asm_label_revert
   asm_free_all
   --- check tag and parse args
-  --- XXX copy calldata to memory
-  asm_malloc_args $ svs ++ msg
-  comp_memread tag_offset
+  asm_malloc_args $ svs
+  mem_after_svs <- asm_mem_ptr
+  asm_malloc_args $ msg
+  comp_cdread tag_offset
   comp_con $ Con_I $ abiTag $ svs ++ msg
   asm_op $ EVM.EQ
   asm_stack 2 1
   asm_op $ EVM.CALLDATASIZE
   asm_push 1
   mem_after_args <- asm_mem_ptr
-  comp_con $ Con_I $ fromIntegral mem_after_args
+  comp_con $ Con_I $ fromIntegral $ arg_start_offset + mem_after_args
   asm_op $ EVM.EQ
   asm_stack 2 1
   asm_op $ EVM.AND
@@ -581,6 +597,11 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
   asm_op $ EVM.NOT
   asm_stack 1 1
   comp_jump_to_label next_lab True
+  --- copy calldata args to memory
+  comp_con $ Con_I $ fromIntegral $ mem_after_args
+  comp_con $ Con_I $ fromIntegral $ arg_start_offset
+  comp_con $ Con_I $ 0
+  asm_op $ EVM.CALLDATACOPY
   --- parse args
   --- check state
   comp_state_check last_i svs
@@ -599,7 +620,7 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
       comp_jump_to_label revert_lab True
     FS_Any -> return ()
   --- check timeout
-  comp_memread last_time_offset
+  comp_cdread last_time_offset
   comp_blarg delay
   asm_op $ EVM.ADD
   asm_stack 2 1
@@ -613,13 +634,14 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
     asm_op $ EVM.NOT
   comp_jump_to_label revert_lab True
   --- emit the event
-  let msg_length = 0 --- XXX
-  let msg_offset = 0 --- XXX
+  let msg_length = mem_after_args - mem_after_svs
+  let msg_offset = mem_after_svs
   comp_con $ Con_I $ abiTag $ msg --- topic
-  comp_con $ Con_I $ msg_length
-  comp_con $ Con_I $ msg_offset
+  comp_con $ Con_I $ fromIntegral msg_length
+  comp_con $ Con_I $ fromIntegral msg_offset
   asm_op $ EVM.LOG1
   --- do the thing
+  --- XXX load constant strings into memory
   comp_ctail (usesCTail body) body $ do
     end_block_op ("</Handler " ++ show i ++ ">")
 comp_chandler next_lab (C_Loop _ _svs _args _inv _body _i) = return next_lab
@@ -689,5 +711,3 @@ emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
 emit_evm _ (BL_Prog _ _ cp) (_, _code) = do
   mapM_ (\o -> putStrLn $ show o) $ cp_to_evm cp
   return ()
-
---- xxx calculate gas usage
