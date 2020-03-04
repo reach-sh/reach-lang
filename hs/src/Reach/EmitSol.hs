@@ -289,6 +289,7 @@ solHandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = v
         funp = solFunction (solMsg_fun i) arg_ds retp bodyp
         retp = "external payable"
         balancep = solPrimApply BALANCE []
+        --- FIXME can stick this anywhere
         emitp = "emit" <+> solApply evts (balancep : msg_rs) <> semi <> hardline
         ccs = usesCTail body
         ρ = M.empty
