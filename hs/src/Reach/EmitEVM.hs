@@ -220,6 +220,13 @@ asm_mem_reset mp' = do
   let cs' = ( stack, cdp, mp', vmap )
   put ( ls, cs' )
 
+is_pointer :: BaseType -> Bool
+is_pointer t = case t of
+  BT_UInt256 -> False
+  BT_Bool -> False
+  BT_Bytes -> True
+  BT_Address -> False
+
 size_of_var :: BLVar -> Int
 size_of_var (_, (_, t)) = case t of
   BT_UInt256 -> 32
@@ -300,6 +307,7 @@ evm_pushN :: [ W.Word8 ] -> EVM.Opcode
 evm_pushN args = op args
   where
     op = case length args of
+           0 -> \ _ -> EVM.PUSH1 [ 0 ]
            1 -> EVM.PUSH1
            2 -> EVM.PUSH2
            3 -> EVM.PUSH3
@@ -361,9 +369,15 @@ comp_memread reg addr = do
 comp_blvar :: BLVar -> ASMMonad ann ()
 comp_blvar v = do
   (reg, addr) <- asm_vmap_ref v
-  --- XXX If v is a byte-string, then just hold the pointer
-  comp_memread reg addr
-  
+  let (_, (_, bt)) = v
+  if is_pointer bt then
+    if reg == ER_Mem then
+      comp_con $ Con_I $ fromIntegral addr
+    else
+      error $ "XXX comp_blvar - Copy bytes from calldata to memory and drop pointer"
+  else
+    comp_memread reg addr
+
 comp_blarg :: BLArg a -> ASMMonad ann ()
 comp_blarg a =
   case a of
@@ -525,7 +539,6 @@ comp_ctail ccs t km =
       comp_jump_to_label halt_lab False
       km
     C_Wait _ i svs -> do
-      --- xxx log event
       comp_state_set i svs
       km
     C_If _ ca tt ft -> do
@@ -550,13 +563,16 @@ comp_ctail ccs t km =
       comp_jump_to_handler which
       km
 
+abiTag :: [ BLVar ] -> Integer
+abiTag _vs = 0 --- XXX
+
 comp_chandler :: Label -> CHandler a -> ASMMonad ann Label
 comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = asm_with_label_handler i $ do
   asm_free_all
   --- check tag and parse args
   asm_malloc_args ER_CallData $ svs ++ msg
   comp_memread ER_CallData tag_offset
-  comp_con $ Con_I $ 1337 --- XXX figure out what the tag should really be
+  comp_con $ Con_I $ abiTag $ svs ++ msg
   asm_op $ EVM.EQ
   asm_stack 2 1
   asm_op $ EVM.CALLDATASIZE
@@ -595,6 +611,13 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
     asm_op $ EVM.NOT
   revert_lab <- asm_label_revert
   comp_jump_to_label revert_lab True
+  --- emit the event
+  let msg_length = 0 --- XXX
+  let msg_offset = 0 --- XXX
+  comp_con $ Con_I $ abiTag $ msg --- topic
+  comp_con $ Con_I $ msg_length
+  comp_con $ Con_I $ msg_offset
+  asm_op $ EVM.LOG1
   --- do the thing
   comp_ctail (usesCTail body) body $ do
     end_block_op ("</Handler " ++ show i ++ ">")
