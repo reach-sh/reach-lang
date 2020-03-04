@@ -3,7 +3,7 @@
 module Reach.EmitEVM where
 
 import Control.Monad.State.Lazy
---import qualified Data.Word as W
+import qualified Data.Word as W
 --import qualified Data.HexString as H
 --import qualified Data.ByteString.Char8 as BC
 --import qualified Data.ByteString as B
@@ -296,12 +296,52 @@ comp_jump_to_handler which = do
   lab <- asm_label_handler which
   comp_jump_to_label lab False
 
+evm_pushN :: [ W.Word8 ] -> EVM.Opcode
+evm_pushN args = op args
+  where
+    op = case length args of
+           1 -> EVM.PUSH1
+           2 -> EVM.PUSH2
+           3 -> EVM.PUSH3
+           4 -> EVM.PUSH4
+           5 -> EVM.PUSH5
+           6 -> EVM.PUSH6
+           7 -> EVM.PUSH7
+           8 -> EVM.PUSH8
+           9 -> EVM.PUSH9
+           10 -> EVM.PUSH10
+           11 -> EVM.PUSH11
+           12 -> EVM.PUSH12
+           13 -> EVM.PUSH13
+           14 -> EVM.PUSH14
+           15 -> EVM.PUSH15
+           16 -> EVM.PUSH16
+           17 -> EVM.PUSH17
+           18 -> EVM.PUSH18
+           19 -> EVM.PUSH19
+           20 -> EVM.PUSH20
+           21 -> EVM.PUSH21
+           22 -> EVM.PUSH22
+           23 -> EVM.PUSH23
+           24 -> EVM.PUSH24
+           25 -> EVM.PUSH25
+           26 -> EVM.PUSH26
+           27 -> EVM.PUSH27
+           28 -> EVM.PUSH28
+           29 -> EVM.PUSH29
+           30 -> EVM.PUSH30
+           31 -> EVM.PUSH31
+           32 -> EVM.PUSH32
+           _ -> error $ "Constant is too large: " ++ show args
+
+integerToWords :: Integer -> [ W.Word8 ]
+integerToWords i = if i == 0 then [] else (fromIntegral $ i `mod` 256) : (integerToWords $ i `div` 256 )
+
 comp_con :: Constant -> ASMMonad ann ()
 comp_con c =
   case c of
     Con_I i -> do
-      --- XXX Be sensitive to size of int
-      asm_op (EVM.PUSH1 [ fromIntegral $ i ])
+      asm_op $ evm_pushN $ integerToWords i
       asm_push 1
     Con_B t -> do
       asm_op (EVM.PUSH1 [ if t then 1 else 0 ])
