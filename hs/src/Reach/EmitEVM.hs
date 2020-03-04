@@ -221,7 +221,11 @@ asm_mem_reset mp' = do
   put ( ls, cs' )
 
 size_of_var :: BLVar -> Int
-size_of_var _v = 32 --- XXX
+size_of_var (_, (_, t)) = case t of
+  BT_UInt256 -> 32
+  BT_Bool -> 32 --- FIXME In the future, make this smaller by coallescing
+  BT_Bytes -> 32
+  BT_Address -> 32
 
 asm_malloc :: EVMRegion -> BLVar -> ASMMonad ann ()
 asm_malloc reg v = do
@@ -345,8 +349,6 @@ comp_cexpr e km =
         PEQ -> p_op EVM.EQ 2
         PGT -> p_op EVM.GT 2
         PGE -> p_op_not EVM.LT 2
-        BALANCE -> p_op EVM.BALANCE 0
-        TXN_VALUE -> p_op EVM.CALLVALUE 0
         IF_THEN_ELSE -> do
           after <- asm_fresh_label km
           true <- asm_fresh_label $ do
@@ -358,8 +360,17 @@ comp_cexpr e km =
           asm_op $ EVM.POP
           asm_pop 1
           comp_jump_to_label after False
-        _ -> do end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp
-                km
+        UINT256_TO_BYTES -> unimplemented_xxx
+        DIGEST -> unimplemented_xxx
+        BYTES_EQ -> unimplemented_xxx
+        BYTES_LEN -> unimplemented_xxx
+        BCAT -> unimplemented_xxx
+        BCAT_LEFT -> unimplemented_xxx
+        BCAT_RIGHT -> unimplemented_xxx
+        BALANCE -> p_op EVM.BALANCE 0
+        TXN_VALUE -> p_op EVM.CALLVALUE 0
+      where unimplemented_xxx = do end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp
+                                   km
   where p_op o amt = do asm_op o
                         asm_stack amt 1
                         km
@@ -368,6 +379,9 @@ comp_cexpr e km =
                             asm_op EVM.NOT
                             asm_stack 1 1
                             km
+
+callStipend :: Integer
+callStipend = 2300
 
 comp_cstmt :: CStmt a -> ASMMonad ann  ()
 comp_cstmt s =
@@ -381,9 +395,25 @@ comp_cstmt s =
       revert_lab <- asm_label_revert
       comp_jump_to_label revert_lab True
     C_Transfer _ p a -> do
-      comp_blvar p
-      comp_blarg a
-      end_block_op $ "XXX C_Transfer effect"
+      asm_op $ EVM.PUSH1 [0] --- retlength
+      asm_push 1
+      asm_op $ EVM.DUP1 --- retoffset
+      asm_stack 1 2
+      asm_op $ EVM.DUP1 --- argslength
+      asm_stack 1 2
+      asm_op $ EVM.DUP1 --- argsoffset
+      asm_stack 1 2
+      comp_blarg a --- value
+      comp_blvar p --- addr
+      comp_con $ Con_I $ callStipend --- gas
+      --- Why does Solidity do... gas <- gas * !value
+      asm_op $ EVM.CALL
+      asm_stack 7 1
+      --- check if zero for failure
+      asm_op $ EVM.NOT
+      asm_stack 1 1
+      revert_lab <- asm_label_revert
+      comp_jump_to_label revert_lab True
 
 comp_state_compute :: Int -> Bool -> [BLVar] -> ASMMonad ann ()
 comp_state_compute i use_this_block svs = do
@@ -455,6 +485,7 @@ comp_ctail ccs t km =
       comp_jump_to_label halt_lab False
       km
     C_Wait _ i svs -> do
+      --- xxx log event
       comp_state_set i svs
       km
     C_If _ ca tt ft -> do
@@ -467,6 +498,7 @@ comp_ctail ccs t km =
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
         Just 0 -> comp_ctail ccs kt km
+        --- XXX if is 1, then use stack
         _ -> comp_cexpr ce $ do
           comp_malloc_and_store bv
           comp_ctail ccs kt km
@@ -593,3 +625,5 @@ emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
 emit_evm _ (BL_Prog _ _ cp) (_, _code) = do
   mapM_ (\o -> putStrLn $ show o) $ cp_to_evm cp
   return ()
+
+--- xxx calculate gas usage
