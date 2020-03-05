@@ -584,8 +584,35 @@ comp_state_set i svs = do
   asm_pop 2
 
 comp_set_args :: [BLArg a] -> ASMMonad ann ()
-comp_set_args _args =
-  end_block_op $ "XXX comp_set_args"
+comp_set_args args = do
+  --- FIXME How to deal with constant strings in args? Maybe, ensure
+  --- all of the handlers store them in the same place?
+  mem_before <- asm_mem_ptr
+  --- copy args to contiguous block at end of memory
+  (_, _, copy_m_end) <-
+    foldM (\ (arg_dest, arg_copy, copy_m) arg -> do
+              comp_blarg arg
+              asm_op $ EVM.PUSH1 [ fromIntegral arg_copy ]
+              asm_push 1
+              asm_op $ EVM.MSTORE
+              asm_pop 2
+              let size = (size_of_type BT_UInt256)
+              let next_copy = arg_copy + size
+              let next_dest = arg_dest + size
+              let copy_m' = do
+                    copy_m
+                    asm_op $ EVM.PUSH1 [ fromIntegral arg_copy ]
+                    asm_push 1
+                    asm_op $ EVM.MLOAD
+                    asm_stack 1 1
+                    asm_op $ EVM.PUSH1 [ fromIntegral arg_dest ]
+                    asm_push 1
+                    asm_op $ EVM.MSTORE
+                    asm_pop 2
+              return (next_dest, next_copy, copy_m'))
+          (0, mem_before, return ()) args
+  --- copy that block to the beginning of memory
+  copy_m_end
 
 comp_store :: Int -> ASMMonad ann ()
 comp_store addr = do
