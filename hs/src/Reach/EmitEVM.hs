@@ -11,6 +11,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified EVM.Bytecode as EVM
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Q
+import qualified Data.Set as S
 import Data.Foldable
 import Data.Monoid
 
@@ -58,6 +59,7 @@ type CompileSt =
   ( Int --- stack depth
   , Int --- mem free pointer
   , M.Map BLVar VarRHS --- variable to mem addr
+  , M.Map B.ByteString Int --- bytestring to addr
   )
 
 --- FIXME Add JUMPDEST
@@ -69,7 +71,7 @@ empty_linker_st = ( 0, M.empty, empty_label_st, Q.empty )
 empty_label_st :: LabelSt
 empty_label_st = ( 0, 0, M.empty )
 empty_compile_st :: CompileSt
-empty_compile_st = ( 0, 0, M.empty )
+empty_compile_st = ( 0, 0, M.empty, M.empty )
 
 asm_fresh_label_obs :: (Label -> ASMMonad ann a) -> ASMMonad ann a
 asm_fresh_label_obs obs_and_code = do
@@ -100,12 +102,12 @@ asm_with_label_handler which hand_code = asm_fresh_label_obs $ \label -> do
 asm_stack :: Int -> Int -> ASMMonad ann ()
 asm_stack outs ins = do
   ( ls, cs ) <- get
-  let ( stack, mp, vmap ) = cs
+  let ( stack, mp, vmap, smap ) = cs
   let stack' = stack - outs + ins
   if stack' > 1023 then
     error "asm_stack: Depth is too deep"
   else do
-    let cs' = ( stack', mp, vmap )
+    let cs' = ( stack', mp, vmap, smap )
     put ( ls, cs' )
 
 asm_rawop :: ASMOp -> ASMMonad ann ()
@@ -197,13 +199,13 @@ asm_push_label_size l = asm_rawop $ LabelRef l 2 (\ (LabelInfo _ sz) -> (EVM.PUS
 asm_mem_ptr :: ASMMonad ann Int
 asm_mem_ptr = do
   ( _, cs ) <- get
-  let ( _,mp, _ ) = cs
+  let ( _, mp, _, _ ) = cs
   return mp
 asm_mem_reset :: Int -> ASMMonad ann ()
 asm_mem_reset mp' = do
   ( ls, cs ) <- get
-  let ( stack, _, vmap ) = cs
-  let cs' = ( stack, mp', vmap )
+  let ( stack, _, vmap, smap ) = cs
+  let cs' = ( stack, mp', vmap, smap )
   put ( ls, cs' )
 
 is_pointer :: BaseType -> Bool
@@ -213,19 +215,22 @@ is_pointer t = case t of
   BT_Bytes -> True
   BT_Address -> False
 
-size_of_var :: BLVar -> Int
-size_of_var (_, (_, t)) = case t of
+size_of_type :: BaseType -> Int
+size_of_type t = case t of
   BT_UInt256 -> 32
   BT_Bool -> 32 --- FIXME In the future, make this smaller by coallescing
   BT_Bytes -> 32
   BT_Address -> 32
 
+size_of_var :: BLVar -> Int
+size_of_var (_, (_, t)) = size_of_type t
+
 asm_vmap_set :: BLVar -> VarRHS -> ASMMonad ann ()
 asm_vmap_set v vr = do
   ( ls, cs ) <- get
-  let ( sd,  mp, vmap ) = cs
+  let ( sd,  mp, vmap, smap ) = cs
   let vmap' = m_insertSafe v vr vmap
-  let cs' = ( sd, mp, vmap' )
+  let cs' = ( sd, mp, vmap', smap )
   put ( ls, cs' )
 
 asm_malloc :: BLVar -> ASMMonad ann ()
@@ -236,9 +241,9 @@ asm_malloc v = do
 mem_bump_and_store :: Int -> ASMMonad ann Int
 mem_bump_and_store sz = do
   ( ls, cs ) <- get
-  let ( sd, mp, vmap ) = cs
+  let ( sd, mp, vmap, smap ) = cs
   let mp' = mp + sz
-  let cs' = ( sd, mp', vmap )
+  let cs' = ( sd, mp', vmap, smap )
   put ( ls, cs' )
   return mp
 
@@ -254,7 +259,7 @@ comp_bump_and_store_var v =
 asm_free_all :: ASMMonad ann ()
 asm_free_all = do
   ( ls, cs ) <- get
-  let ( sd, _mp, _vmap ) = cs
+  let ( sd, _mp, _vmap, _smap ) = cs
   if sd == 0 then
     put ( ls, empty_compile_st )
   else
@@ -267,7 +272,7 @@ asm_malloc_args args = mapM_ asm_malloc args
 asm_vmap_ref :: BLVar -> ASMMonad ann VarRHS
 asm_vmap_ref v = do
   ( _, cs ) <- get
-  let ( _, _, vmap ) = cs
+  let ( _, _, vmap, _ ) = cs
   case M.lookup v vmap of
     Nothing -> error $ "asm_vmap_ref: Variable not in memory: " ++ show v
     Just addr -> do
@@ -330,8 +335,77 @@ evm_pushN args = op args
 integerToWords :: Integer -> [ W.Word8 ]
 integerToWords i = if i == 0 then [] else (fromIntegral $ i `mod` 256) : (integerToWords $ i `div` 256 )
 
+type CStrings = S.Set B.ByteString
+
+smerge :: CStrings -> CStrings -> CStrings
+smerge m1 m2 = S.union m1 m2
+
+smerges :: [CStrings] -> CStrings
+smerges [] = S.empty
+smerges (m1:ms) = smerge m1 $ smerges ms
+
+stringsConstant :: Constant -> CStrings
+stringsConstant (Con_I _) = S.empty
+stringsConstant (Con_B _) = S.empty
+stringsConstant (Con_BS bs) = S.singleton bs
+
+stringsBLArg :: BLArg a -> CStrings
+stringsBLArg (BL_Con _ c) = stringsConstant c
+stringsBLArg (BL_Var _ _) = S.empty
+
+stringsCExpr :: CExpr a -> CStrings
+stringsCExpr (C_PrimApp _ _ al) = smerges $ map stringsBLArg al
+
+stringsCStmt :: CStmt a  -> CStrings
+stringsCStmt (C_Claim _ _ a) = stringsBLArg a
+stringsCStmt (C_Transfer _ _ a) = stringsBLArg a
+
+stringsCTail :: CTail a -> CStrings
+stringsCTail (C_Halt _) = S.empty
+stringsCTail (C_Wait _ _ _) = S.empty
+stringsCTail (C_If _ ca tt ft) = smerges [ cs1, cs2, cs3 ]
+  where cs1 = stringsBLArg ca
+        cs2 = stringsCTail tt
+        cs3 = stringsCTail ft
+stringsCTail (C_Let _ _ ce kt) = smerge cs1 cs2
+  where cs1 = stringsCExpr ce
+        cs2 = stringsCTail kt
+stringsCTail (C_Do _ cs kt) = smerge cs1 cs2
+  where cs1 = stringsCStmt cs
+        cs2 = stringsCTail kt
+stringsCTail (C_Jump _ _ _ _ as) = smerges $ map stringsBLArg as
+
 asm_constant_bytes_lookup :: B.ByteString -> ASMMonad ann Int
-asm_constant_bytes_lookup _bs = return 0 --- XXX
+asm_constant_bytes_lookup bs = do
+  ( _, cs ) <- get
+  let ( _, _, _, smap ) = cs
+  case M.lookup bs smap of
+    Nothing -> error $ "asm_constant_bytes_lookup: Constant not in memory: " ++ show bs
+    Just addr -> do
+      return addr
+
+comp_load_string :: B.ByteString -> ASMMonad ann ()
+comp_load_string s = do
+  ( ls, cs ) <- get
+  let ( sd, mp, vmap, smap ) = cs
+  let len = B.length s
+  let bs_ptr = mp
+  let bs_data_ptr = bs_ptr + (size_of_type BT_UInt256)
+  let mp' = bs_data_ptr + len
+  let smap' = m_insertSafe s mp smap
+  let cs' = ( sd, mp', vmap, smap' )
+  put ( ls, cs' )
+  foldM_ (\ptr c -> do comp_con $ Con_I $ fromIntegral $ fromEnum c
+                       comp_con $ Con_I $ fromIntegral ptr
+                       asm_op $ EVM.MSTORE8
+                       return $ ptr + 8)
+         bs_data_ptr (B.unpack s)
+  comp_con $ Con_I $ fromIntegral len
+  comp_con $ Con_I $ fromIntegral bs_ptr
+  asm_op $ EVM.MSTORE
+
+comp_load_strings :: CStrings -> ASMMonad ann ()
+comp_load_strings ss = mapM_ comp_load_string $ toList ss
 
 comp_con :: Constant -> ASMMonad ann ()
 comp_con c =
@@ -470,13 +544,13 @@ comp_state_compute i use_this_block svs = do
   before_free_ptr <- asm_mem_ptr
   --- push i into hash args
   comp_con $ Con_I $ fromIntegral i
-  comp_bump_and_store 32
+  comp_bump_and_store (size_of_type BT_UInt256)
   --- push block number in hash args
   if use_this_block then
     asm_op $ EVM.NUMBER
   else
     comp_memread last_time_offset
-  comp_bump_and_store 32
+  comp_bump_and_store (size_of_type BT_UInt256)
   --- push variables
   mapM_ comp_bump_and_store_var svs
   after_free_ptr <- asm_mem_ptr
@@ -550,7 +624,7 @@ comp_ctail ccs t km =
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
         Just 0 -> comp_ctail ccs kt km
-        --- XXX if is 1, then use stack
+        --- FIXME if is 1, then save ce for later
         _ -> comp_cexpr ce $ do
           comp_malloc_and_store bv
           comp_ctail ccs kt km
@@ -570,7 +644,7 @@ tag_offset = 0
 last_time_offset :: Int
 last_time_offset = tag_offset + 4
 arg_start_offset :: Int
-arg_start_offset = last_time_offset + 32
+arg_start_offset = last_time_offset + (size_of_type BT_UInt256)
 
 comp_chandler :: Label -> CHandler a -> ASMMonad ann Label
 comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = asm_with_label_handler i $ do
@@ -639,7 +713,7 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
   comp_con $ Con_I $ fromIntegral msg_offset
   asm_op $ EVM.LOG1
   --- do the thing
-  --- XXX load constant strings into memory
+  comp_load_strings (stringsCTail body)
   comp_ctail (usesCTail body) body $ do
     end_block_op ("</Handler " ++ show i ++ ">")
 comp_chandler next_lab (C_Loop _ _svs _args _inv _body _i) = return next_lab
