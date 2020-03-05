@@ -5,15 +5,17 @@ module Reach.EmitEVM where
 import Control.Monad.State.Lazy
 import qualified Data.Word as W
 --import qualified Data.HexString as H
---import qualified Data.ByteString.Char8 as BC
---import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as BC
 import qualified EVM.Bytecode as EVM
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Q
 import qualified Data.Set as S
 import Data.Foldable
 import Data.Monoid
+import Crypto.Hash
+import Data.List
+import Data.ByteArray (convert)
 
 import Reach.AST
 import Reach.Util
@@ -59,7 +61,7 @@ type CompileSt =
   ( Int --- stack depth
   , Int --- mem free pointer
   , M.Map BLVar VarRHS --- variable to mem addr
-  , M.Map B.ByteString Int --- bytestring to addr
+  , M.Map BC.ByteString Int --- bytestring to addr
   )
 
 --- FIXME Add JUMPDEST
@@ -335,7 +337,7 @@ evm_pushN args = op args
 integerToWords :: Integer -> [ W.Word8 ]
 integerToWords i = if i == 0 then [] else (fromIntegral $ i `mod` 256) : (integerToWords $ i `div` 256 )
 
-type CStrings = S.Set B.ByteString
+type CStrings = S.Set BC.ByteString
 
 smerge :: CStrings -> CStrings -> CStrings
 smerge m1 m2 = S.union m1 m2
@@ -375,7 +377,7 @@ stringsCTail (C_Do _ cs kt) = smerge cs1 cs2
         cs2 = stringsCTail kt
 stringsCTail (C_Jump _ _ _ _ as) = smerges $ map stringsBLArg as
 
-asm_constant_bytes_lookup :: B.ByteString -> ASMMonad ann Int
+asm_constant_bytes_lookup :: BC.ByteString -> ASMMonad ann Int
 asm_constant_bytes_lookup bs = do
   ( _, cs ) <- get
   let ( _, _, _, smap ) = cs
@@ -384,11 +386,11 @@ asm_constant_bytes_lookup bs = do
     Just addr -> do
       return addr
 
-comp_load_string :: B.ByteString -> ASMMonad ann ()
+comp_load_string :: BC.ByteString -> ASMMonad ann ()
 comp_load_string s = do
   ( ls, cs ) <- get
   let ( sd, mp, vmap, smap ) = cs
-  let len = B.length s
+  let len = BC.length s
   let bs_ptr = mp
   let bs_data_ptr = bs_ptr + (size_of_type BT_UInt256)
   let mp' = bs_data_ptr + len
@@ -399,7 +401,7 @@ comp_load_string s = do
                        comp_con $ Con_I $ fromIntegral ptr
                        asm_op $ EVM.MSTORE8
                        return $ ptr + 8)
-         bs_data_ptr (B.unpack s)
+         bs_data_ptr (BC.unpack s)
   comp_con $ Con_I $ fromIntegral len
   comp_con $ Con_I $ fromIntegral bs_ptr
   asm_op $ EVM.MSTORE
@@ -663,8 +665,31 @@ comp_ctail ccs t km =
       comp_jump_to_handler which
       km
 
-abiTag :: [ BLVar ] -> Integer
-abiTag _vs = 0 --- XXX
+data AbiTag_Kind
+  = AT_Method
+  | AT_Evt
+  deriving (Show, Eq, Ord)
+
+abiTag_type :: BaseType -> String
+abiTag_type BT_UInt256 = "uint256"
+abiTag_type BT_Bool = "bool"
+abiTag_type BT_Bytes = "bytes"
+abiTag_type BT_Address = "address"
+
+abiTag :: AbiTag_Kind -> Int -> [ BLVar ] -> Integer
+abiTag k i vs = h
+  where label = case k of
+                  AT_Method -> "m"
+                  AT_Evt -> "e"
+        args = map (\(_, (_, t)) -> abiTag_type t) vs
+        args_s = intersperse ',' $ concat args
+        s = label ++ (show i) ++ "(" ++ args_s ++ ")"
+        bs :: BC.ByteString
+        bs = BC.pack s
+        h_bs :: B.ByteString
+        h_bs = convert (hash bs :: Digest Keccak_256)
+        h :: Integer
+        h = B.foldl (\ prev v -> prev * 256 + fromIntegral v) 0 h_bs
 
 tag_offset :: Int
 tag_offset = 0
@@ -682,7 +707,7 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
   mem_after_svs <- asm_mem_ptr
   asm_malloc_args $ msg
   comp_cdread tag_offset
-  comp_con $ Con_I $ abiTag $ svs ++ msg
+  comp_con $ Con_I $ abiTag AT_Method i $ svs ++ msg
   asm_op $ EVM.EQ
   asm_stack 2 1
   asm_op $ EVM.CALLDATASIZE
@@ -735,7 +760,7 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
   --- emit the event
   let msg_length = mem_after_args - mem_after_svs
   let msg_offset = mem_after_svs
-  comp_con $ Con_I $ abiTag $ msg --- topic
+  comp_con $ Con_I $ abiTag AT_Evt i $ msg --- topic
   comp_con $ Con_I $ fromIntegral msg_length
   comp_con $ Con_I $ fromIntegral msg_offset
   asm_op $ EVM.LOG1

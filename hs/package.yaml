@@ -34,9 +34,10 @@ dependencies:
 - hspec-smallcheck
 - generic-deriving
 - deepseq
-- cryptohash
 - hexstring
 - haskell-evm
+- cryptonite
+- memory
 
 ghc-options:
 - -Wall
