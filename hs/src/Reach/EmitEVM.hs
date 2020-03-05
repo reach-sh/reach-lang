@@ -261,12 +261,9 @@ comp_bump_and_store_var v =
 asm_free_all :: ASMMonad ann ()
 asm_free_all = do
   ( ls, cs ) <- get
-  let ( sd, _mp, _vmap, _smap ) = cs
-  if sd == 0 then
-    put ( ls, empty_compile_st )
-  else
-    put ( ls, empty_compile_st )
-    --- XXX error $ "asm_free_all: stack is not empty at end of handler: " ++ show sd
+  let ( _sd, _mp, _vmap, _smap ) = cs
+  --- FIXME check sd for 0
+  put ( ls, empty_compile_st )
 
 asm_malloc_args :: [BLVar] -> ASMMonad ann ()
 asm_malloc_args args = mapM_ asm_malloc args
