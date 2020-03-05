@@ -26,9 +26,7 @@ m_insertSafe k v m =
   case M.lookup k m of
     Nothing -> M.insert k v m
     Just _ ->
-      --- XXX
-      m
-      --- error $ "m_insertSafe: Key already set: " ++ show k ++ " inside: " ++ (show $ map (\(x,_)->x) $ M.toAscList m)
+      error $ "m_insertSafe: Key already set: " ++ show k ++ " inside: " ++ (show $ map (\(x,_)->x) $ M.toAscList m)
 
 type ASMMonad ann a = State ASMSt a
 type Label = Int
@@ -260,7 +258,7 @@ asm_free_all = do
   if sd == 0 then
     put ( ls, empty_compile_st )
   else
-    return ()
+    put ( ls, empty_compile_st )
     --- XXX error $ "asm_free_all: stack is not empty at end of handler: " ++ show sd
 
 asm_malloc_args :: [BLVar] -> ASMMonad ann ()
