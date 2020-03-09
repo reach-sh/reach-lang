@@ -98,13 +98,7 @@ jsPrimApply tn pr =
     CP IF_THEN_ELSE -> \args -> case args of
                       [ c, t, f ] -> c <+> pretty "?" <+> t <+> pretty ":" <+> f
                       _ -> impossible $ "emitJS: ITE called with wrong number of arguments"
-    CP UINT256_TO_BYTES -> jsApply "stdlib.uint256_to_bytes"
-    CP DIGEST -> jsApply "stdlib.keccak256"
     CP BYTES_EQ -> jsApply "stdlib.bytes_eq"
-    CP BYTES_LEN -> jsApply "stdlib.bytes_len"
-    CP BCAT -> jsApply "stdlib.bytes_cat"
-    CP BCAT_LEFT -> jsApply "stdlib.bytes_left"
-    CP BCAT_RIGHT -> jsApply "stdlib.bytes_right"
     CP BALANCE -> \_ -> jsTxn tn <> pretty ".balance"
     CP TXN_VALUE -> \_ -> jsTxn tn <> pretty ".value"
     RANDOM -> jsApply "stdlib.random_uint256"
@@ -116,6 +110,8 @@ jsEPExpr tn (EP_PrimApp _ pr al) = (False, ((jsPrimApply tn pr $ map fst alp), (
 jsEPExpr _ (EP_Interact _ m bt al) = (True, (ip, (Set.unions $ map snd alp)))
   where alp = map jsArg al
         ip = jsApply "stdlib.isType" [(jsString (solType bt)), pretty "await" <+> jsApply ("interact." ++ m) (map fst alp)]
+jsEPExpr _ (EP_Digest _ al) = (False, ((jsApply "stdlib.keccak256" $ map fst alp), (Set.unions $ map snd alp)))
+  where alp = map jsArg al
 
 jsAssert :: Doc a -> Doc a
 jsAssert a = jsApply "stdlib.assert" [ a ] <> semi

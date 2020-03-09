@@ -178,13 +178,7 @@ z3CPrim cbi cp =
     PGE -> app ">="
     PGT -> app ">"
     IF_THEN_ELSE -> app "ite"
-    UINT256_TO_BYTES -> app "uint256->bytes"
-    DIGEST -> app "digest"
     BYTES_EQ -> app "="
-    BYTES_LEN -> app "bytes-length"
-    BCAT -> app "msg-cat"
-    BCAT_LEFT -> app "msg-left"
-    BCAT_RIGHT -> app "msg-right"
     BALANCE -> \[] -> z3CTCBalanceRef cbi
     TXN_VALUE -> \[] -> z3TxnValueRef cbi
   where app n = z3Apply n
@@ -235,6 +229,22 @@ z3_expr z3 primed cbi out how = case how of
   IL_PrimApp h pr al -> z3PrimEq z3 h primed cbi pr alt out
     where alt = map (emit_z3_arg primed) al
   IL_Interact _ _ _ _ -> return ()
+  IL_Digest h al -> z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (z3Apply "digest" [ z3DigestCombine primed al ]))
+
+z3DigestCombine :: Show a => (S.Set ILVar) -> [ILArg a] -> SExpr
+z3DigestCombine primed ys =
+  case ys of
+    [] -> z3Apply "bytes0" []
+    [ x ] -> convert1 x
+    (x : xs) -> z3Apply "msg-cat" [ convert1 x , z3DigestCombine primed xs ]
+  where convert1 a = z3Apply (toBytes a) [ emit_z3_arg primed a ]
+        toBytes (IL_Var _ (_, (_, bt))) = "toBytes_" ++ s
+          where Atom s = z3_sortof bt
+        toBytes (IL_Con _ c) = "toBytes_" ++ s
+          where s= case c of
+                     Con_I _ -> "Int"
+                     Con_B _ -> "Bool"
+                     Con_BS _ -> "Bytes"
 
 z3_stmt :: Show rolet => Show a => Solver -> Bool -> rolet -> (S.Set ILVar) -> Int -> ILStmt a -> IO (Int, VerifyResult)
 z3_stmt z3 honest r primed cbi how =

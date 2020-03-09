@@ -474,22 +474,16 @@ XIL_Prog rsh/rps.rsh:0:0
                                                                     [33m][0m
                                                                 [36m)[0m 
                                                                 [36m([0m XIL_Values STDLIB:22:3 
-                                                                    [33m[[0m XIL_PrimApp STDLIB:22:28 [1m[35m([0m CP DIGEST [1m[35m)[0m BT_UInt256 
-                                                                        [1m[35m[[0m XIL_PrimApp STDLIB:22:36 [1m[36m([0m CP BCAT [1m[36m)[0m BT_Bytes 
-                                                                            [1m[36m[[0m XIL_PrimApp STDLIB:22:50 [1m[33m([0m CP UINT256_TO_BYTES [1m[33m)[0m BT_Bytes 
-                                                                                [1m[33m[[0m XIL_Var STDLIB:21:3 
-                                                                                    [95m([0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
-                                                                                    [95m,[0m BT_UInt256
-                                                                                    [95m)[0m 
-                                                                                [1m[33m][0m
-                                                                            [1m[36m,[0m XIL_PrimApp STDLIB:22:71 [1m[33m([0m CP UINT256_TO_BYTES [1m[33m)[0m BT_Bytes 
-                                                                                [1m[33m[[0m XIL_Var rsh/rps.rsh:37:5 
-                                                                                    [95m([0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
-                                                                                    [95m,[0m BT_UInt256
-                                                                                    [95m)[0m 
-                                                                                [1m[33m][0m
-                                                                            [1m[36m][0m 
-                                                                        [1m[35m][0m
+                                                                    [33m[[0m XIL_Digest STDLIB:22:28 
+                                                                        [1m[35m[[0m XIL_Var STDLIB:21:3 
+                                                                            [1m[36m([0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                                                                            [1m[36m,[0m BT_UInt256
+                                                                            [1m[36m)[0m 
+                                                                        [1m[35m,[0m XIL_Var rsh/rps.rsh:37:5 
+                                                                            [1m[36m([0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m 
+                                                                            [1m[36m,[0m BT_UInt256
+                                                                            [1m[36m)[0m 
+                                                                        [1m[35m][0m 
                                                                     [33m][0m
                                                                 [36m)[0m 
                                                                 [36m([0m XIL_Values STDLIB:23:10 
@@ -1085,22 +1079,16 @@ XIL_Prog rsh/rps.rsh:0:0
                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
                                                                                                                                         [96m,[0m BT_UInt256
                                                                                                                                         [96m)[0m 
-                                                                                                                                    [95m,[0m XIL_PrimApp STDLIB:26:38 [96m([0m CP DIGEST [96m)[0m BT_UInt256 
-                                                                                                                                        [96m[[0m XIL_PrimApp STDLIB:26:46 [93m([0m CP BCAT [93m)[0m BT_Bytes 
-                                                                                                                                            [93m[[0m XIL_PrimApp STDLIB:26:60 [1m[95m([0m CP UINT256_TO_BYTES [1m[95m)[0m BT_Bytes 
-                                                                                                                                                [1m[95m[[0m XIL_Var rsh/rps.rsh:60:5 
-                                                                                                                                                    [1m[96m([0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
-                                                                                                                                                    [1m[96m,[0m BT_UInt256
-                                                                                                                                                    [1m[96m)[0m 
-                                                                                                                                                [1m[95m][0m
-                                                                                                                                            [93m,[0m XIL_PrimApp STDLIB:26:81 [1m[95m([0m CP UINT256_TO_BYTES [1m[95m)[0m BT_Bytes 
-                                                                                                                                                [1m[95m[[0m XIL_Var rsh/rps.rsh:61:5 
-                                                                                                                                                    [1m[96m([0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
-                                                                                                                                                    [1m[96m,[0m BT_UInt256
-                                                                                                                                                    [1m[96m)[0m 
-                                                                                                                                                [1m[95m][0m
-                                                                                                                                            [93m][0m 
-                                                                                                                                        [96m][0m
+                                                                                                                                    [95m,[0m XIL_Digest STDLIB:26:38 
+                                                                                                                                        [96m[[0m XIL_Var rsh/rps.rsh:60:5 
+                                                                                                                                            [93m([0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
+                                                                                                                                            [93m,[0m BT_UInt256
+                                                                                                                                            [93m)[0m 
+                                                                                                                                        [96m,[0m XIL_Var rsh/rps.rsh:61:5 
+                                                                                                                                            [93m([0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                            [93m,[0m BT_UInt256
+                                                                                                                                            [93m)[0m 
+                                                                                                                                        [96m][0m 
                                                                                                                                     [95m][0m 
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m)[0m

@@ -254,9 +254,10 @@ comp_bump_and_store sz = do
   tp <- mem_bump_and_store sz
   comp_store tp
 
-comp_bump_and_store_var :: BLVar -> ASMMonad ann ()
-comp_bump_and_store_var v =
-  comp_bump_and_store $ size_of_var v
+comp_bump_and_store_arg :: BLArg a -> ASMMonad ann ()
+comp_bump_and_store_arg a = do
+  comp_blarg a
+  comp_bump_and_store $ size_of_type BT_UInt256
 
 asm_free_all :: ASMMonad ann ()
 asm_free_all = do
@@ -354,6 +355,7 @@ stringsBLArg (BL_Var _ _) = S.empty
 
 stringsCExpr :: CExpr a -> CStrings
 stringsCExpr (C_PrimApp _ _ al) = smerges $ map stringsBLArg al
+stringsCExpr (C_Digest _ al) = smerges $ map stringsBLArg al
 
 stringsCStmt :: CStmt a  -> CStrings
 stringsCStmt (C_Claim _ _ a) = stringsBLArg a
@@ -456,6 +458,7 @@ comp_blarg a =
 comp_cexpr :: CExpr a -> ASMMonad ann () -> ASMMonad ann ()
 comp_cexpr e km =
   case e of
+    C_Digest _ as -> do comp_hash HM_Digest as ; km
     C_PrimApp _ cp as -> do
       --- Arguments are reversed, because we store (a / b) as (C_Prim
       --- _ DIV [a, b]) but the EVM expects [ a b ... ] on the stack
@@ -483,17 +486,9 @@ comp_cexpr e km =
           asm_op $ EVM.POP
           asm_pop 1
           comp_jump_to_label after False
-        UINT256_TO_BYTES -> unimplemented_xxx
-        DIGEST -> unimplemented_xxx
-        BYTES_EQ -> unimplemented_xxx
-        BYTES_LEN -> unimplemented_xxx
-        BCAT -> unimplemented_xxx
-        BCAT_LEFT -> unimplemented_xxx
-        BCAT_RIGHT -> unimplemented_xxx
         BALANCE -> p_op EVM.BALANCE 0
         TXN_VALUE -> p_op EVM.CALLVALUE 0
-      where unimplemented_xxx = do end_block_op $ "XXX comp_cexpr C_PrimApp " ++ show cp
-                                   km
+        BYTES_EQ -> end_block_op "XXX bytes_eq"
   where p_op o amt = do asm_op o
                         asm_stack amt 1
                         km
@@ -538,20 +533,28 @@ comp_cstmt s =
       revert_lab <- asm_label_revert
       comp_jump_to_label revert_lab True
 
-comp_state_compute :: Int -> Bool -> [BLVar] -> ASMMonad ann ()
-comp_state_compute i use_this_block svs = do
+data HashMode
+  = HM_Digest
+  | HM_State (Int, Bool)
+  deriving (Show, Eq, Ord)
+
+comp_hash :: HashMode -> [BLArg a] -> ASMMonad ann ()
+comp_hash m as = do
   before_free_ptr <- asm_mem_ptr
-  --- push i into hash args
-  comp_con $ Con_I $ fromIntegral i
-  comp_bump_and_store (size_of_type BT_UInt256)
-  --- push block number in hash args
-  if use_this_block then
-    asm_op $ EVM.NUMBER
-  else
-    comp_memread last_time_offset
-  comp_bump_and_store (size_of_type BT_UInt256)
+  case m of
+    HM_Digest -> return ()
+    HM_State (i, use_this_block) -> do
+      --- push i into hash args
+      comp_con $ Con_I $ fromIntegral i
+      comp_bump_and_store (size_of_type BT_UInt256)
+      --- push block number in hash args
+      if use_this_block then
+        asm_op $ EVM.NUMBER
+      else
+        comp_memread last_time_offset
+      comp_bump_and_store (size_of_type BT_UInt256)
   --- push variables
-  mapM_ comp_bump_and_store_var svs
+  mapM_ comp_bump_and_store_arg as
   after_free_ptr <- asm_mem_ptr
   --- compute hash its
   comp_con $ Con_I $ fromIntegral before_free_ptr --- hash args offset
@@ -559,6 +562,9 @@ comp_state_compute i use_this_block svs = do
   asm_op $ EVM.SHA3
   asm_stack 2 1
   asm_mem_reset before_free_ptr
+
+comp_state_compute :: Int -> Bool -> [BLVar] -> ASMMonad ann ()
+comp_state_compute i use_this_block svs = comp_hash (HM_State (i, use_this_block)) (map (BL_Var Nothing) svs)
 
 comp_state_check :: Int -> [BLVar] -> ASMMonad ann ()
 comp_state_check last_i svs = do
@@ -673,6 +679,7 @@ abiTag_type BT_Bool = "bool"
 abiTag_type BT_Bytes = "bytes"
 abiTag_type BT_Address = "address"
 
+--- FIXME just get first four bytes
 abiTag :: AbiTag_Kind -> Int -> [ BLVar ] -> Integer
 abiTag k i vs = h
   where label = case k of
@@ -704,6 +711,7 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
   mem_after_svs <- asm_mem_ptr
   asm_malloc_args $ msg
   comp_cdread tag_offset
+  --- FIXME truncate down to first 4 bytes?
   comp_con $ Con_I $ abiTag AT_Method i $ svs ++ msg
   asm_op $ EVM.EQ
   asm_stack 2 1

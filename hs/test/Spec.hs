@@ -44,7 +44,7 @@ hashit xs = hs
   where xb = B.pack xs
         h :: Digest MD5
         h = hash xb
-        hb = digestToHexByteString h
+        hb = show h
         hs = B.unpack hb
 
 err_m :: Show a => NFData a => String -> FilePath -> IO a -> Expectation

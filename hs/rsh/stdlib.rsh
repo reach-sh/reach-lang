@@ -19,11 +19,11 @@ function ensure(f, x) {
 
 function precommit (x) {
   const salt = random();
-  const commitment = digest(msgcons(uint256_bytes(salt), uint256_bytes(x)));
+  const commitment = digest(salt, x);
   return [commitment, salt]; }
 
 function check_commit (commitment, salt, x) {
-  return require(commitment == digest(msgcons(uint256_bytes(salt), uint256_bytes(x))));}
+  return require(commitment == digest(salt, x)); }
 
 function __decode_testing__() {
   return txn.value; }

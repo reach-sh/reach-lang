@@ -63,13 +63,7 @@ data C_Prim
   | PGE
   | PGT
   | IF_THEN_ELSE
-  | UINT256_TO_BYTES
-  | DIGEST
   | BYTES_EQ
-  | BYTES_LEN
-  | BCAT
-  | BCAT_LEFT
-  | BCAT_RIGHT
   | BALANCE
   | TXN_VALUE
   deriving (Show,Eq,Ord,Generic,NFData)
@@ -91,13 +85,7 @@ primType (CP PEQ) = [tUInt256, tUInt256] --> tBool
 primType (CP PGE) = [tUInt256, tUInt256] --> tBool
 primType (CP PGT) = [tUInt256, tUInt256] --> tBool
 primType (CP IF_THEN_ELSE) = TY_Forall ["a"] ([tBool, TY_Var "a", TY_Var "a"] --> TY_Var "a")
-primType (CP UINT256_TO_BYTES) = [tUInt256] --> tBytes
-primType (CP DIGEST) = ([tBytes] --> tUInt256)
-primType (CP BYTES_EQ) = [tBytes, tBytes] --> tBool
-primType (CP BYTES_LEN) = [tBytes] --> tUInt256
-primType (CP BCAT)       = ([tBytes, tBytes] --> tBytes)
-primType (CP BCAT_LEFT)  = ([tBytes] --> tBytes)
-primType (CP BCAT_RIGHT) = ([tBytes] --> tBytes)
+primType (CP BYTES_EQ) = ([tBytes, tBytes] --> tBool)
 primType (CP BALANCE) = ([] --> tUInt256)
 primType (CP TXN_VALUE) = ([] --> tUInt256)
 primType RANDOM = ([] --> tUInt256)
@@ -153,6 +141,7 @@ data XLExpr a
   | XL_Interact a String BaseType [XLExpr a]
   | XL_FunApp a (XLExpr a) [XLExpr a]
   | XL_Lambda a [XLVar] (XLExpr a)
+  | XL_Digest a [XLExpr a]
   deriving (Show,Eq,Generic,NFData)
 
 data XLDef a
@@ -186,6 +175,7 @@ data XILExpr a
   | XIL_While a [XILVar] (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
   | XIL_Continue a (XILExpr a)
   | XIL_Interact a String BaseType [XILExpr a]
+  | XIL_Digest a [XILExpr a]
   deriving (Show,Eq)
 
 type XILPartInfo a = (M.Map XILPart (a, [(a, XILVar)]))
@@ -225,6 +215,7 @@ data ILExpr a
   = IL_PrimApp a EP_Prim [ILArg a]
   | IL_Declassify a (ILArg a)
   | IL_Interact a String BaseType [ILArg a]
+  | IL_Digest a [ILArg a]
   deriving (Show,Eq)
 
 data ILStmt a
@@ -289,6 +280,7 @@ data EPExpr a
   = EP_Arg a (BLArg a)
   | EP_PrimApp a EP_Prim [BLArg a]
   | EP_Interact a String BaseType [BLArg a]
+  | EP_Digest a [BLArg a]
   deriving (Show,Eq)
 
 data EPStmt a
@@ -313,6 +305,7 @@ data EProgram a
 -- -- Contracts
 data CExpr a
   = C_PrimApp a C_Prim [BLArg a]
+  | C_Digest a [BLArg a]
   deriving (Show,Eq)
 
 data CStmt a

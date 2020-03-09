@@ -75,6 +75,7 @@ instance Pretty (ILExpr a) where
   pretty (IL_PrimApp _ p al) = prettyApp p al
   pretty (IL_Interact _ m bt al) = prettyInteract m bt al
   pretty (IL_Declassify _ a) = group $ parens $ pretty "declassify" <+> pretty a
+  pretty (IL_Digest _ al) = prettyApp "digest" al
 
 instance Pretty (ILStmt a) where
   pretty (IL_Transfer _ to a) = prettyTransfer (prettyILVar to) a
@@ -147,12 +148,14 @@ instance Pretty (EPExpr a) where
   pretty (EP_Arg _ a) = pretty a
   pretty (EP_Interact _ m bt al) = prettyInteract m bt al
   pretty (EP_PrimApp _ p al) = prettyApp p al
+  pretty (EP_Digest _ al) = prettyApp "digest" al
 
 instance Pretty (EPStmt a) where
   pretty (EP_Claim _ ct a) = prettyClaim ct a
 
 instance Pretty (CExpr a) where
   pretty (C_PrimApp _ p al) = prettyApp p al
+  pretty (C_Digest _ al) = prettyApp "digest" al
 
 instance Pretty (CStmt a) where
   pretty (C_Claim _ ct a) = prettyClaim ct a

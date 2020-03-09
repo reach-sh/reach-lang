@@ -201,6 +201,7 @@ instance ExtractTP (XLExpr TP) where
   etp (XL_Interact a _ _ _) = xtp a
   etp (XL_FunApp a _ _) = xtp a
   etp (XL_Lambda a _ _) = xtp a
+  etp (XL_Digest a _) = xtp a
 
 instance ExtractTP (XLPartInfo TP) where
   etp x = f $ M.toList x
@@ -409,12 +410,7 @@ decodeExpr dss je =
         JSIdentifier _ "assume" -> claim CT_Assume
         JSIdentifier _ "require" -> claim CT_Require
         JSIdentifier _ "possible" -> claim CT_Possible
-        JSIdentifier _ "uint256_bytes" -> prim (CP UINT256_TO_BYTES)
-        JSIdentifier _ "digest" -> prim (CP DIGEST)
-        JSIdentifier _ "length" -> prim (CP BYTES_LEN)
-        JSIdentifier _ "msgcons" -> prim (CP BCAT)
-        JSIdentifier _ "msgleft" -> prim (CP BCAT_LEFT)
-        JSIdentifier _ "msgright" -> prim (CP BCAT_RIGHT)
+        JSIdentifier _ "digest" -> XL_Digest h args
         JSIdentifier _ "balance" -> prim (CP BALANCE)
         JSIdentifier _ "random" -> prim RANDOM
         JSIdentifier _ "declassify" -> XL_Declassify h (arg1 ())

@@ -66,16 +66,10 @@ XL_Prog rsh/rps.rsh:0:0
             [35m([0m XL_FunApp STDLIB:21:22 [36m([0m XL_Prim STDLIB:21:22 RANDOM [36m)[0m [36m[[0m[36m][0m [35m)[0m 
             [35m([0m XL_Let STDLIB:22:3 Nothing 
                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m [33m][0m [36m)[0m 
-                [36m([0m XL_FunApp STDLIB:22:28 
-                    [33m([0m XL_Prim STDLIB:22:28 [1m[35m([0m CP DIGEST [1m[35m)[0m [33m)[0m 
-                    [33m[[0m XL_FunApp STDLIB:22:36 
-                        [1m[35m([0m XL_Prim STDLIB:22:36 [1m[36m([0m CP BCAT [1m[36m)[0m [1m[35m)[0m 
-                        [1m[35m[[0m XL_FunApp STDLIB:22:50 
-                            [1m[36m([0m XL_Prim STDLIB:22:50 [1m[33m([0m CP UINT256_TO_BYTES [1m[33m)[0m [1m[36m)[0m [1m[36m[[0m XL_Var STDLIB:22:51 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m [1m[36m][0m
-                        [1m[35m,[0m XL_FunApp STDLIB:22:71 
-                            [1m[36m([0m XL_Prim STDLIB:22:71 [1m[33m([0m CP UINT256_TO_BYTES [1m[33m)[0m [1m[36m)[0m [1m[36m[[0m XL_Var STDLIB:22:72 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[36m][0m
-                        [1m[35m][0m 
-                    [33m][0m
+                [36m([0m XL_Digest STDLIB:22:28 
+                    [33m[[0m XL_Var STDLIB:22:29 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                    [33m,[0m XL_Var STDLIB:22:35 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                    [33m][0m 
                 [36m)[0m 
                 [36m([0m XL_Values STDLIB:23:10 
                     [33m[[0m XL_Var STDLIB:23:11 [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
@@ -93,16 +87,10 @@ XL_Prog rsh/rps.rsh:0:0
             [35m([0m XL_FunApp STDLIB:26:29 
                 [36m([0m XL_Prim STDLIB:26:29 [33m([0m CP PEQ [33m)[0m [36m)[0m 
                 [36m[[0m XL_Var STDLIB:26:18 [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
-                [36m,[0m XL_FunApp STDLIB:26:38 
-                    [33m([0m XL_Prim STDLIB:26:38 [1m[35m([0m CP DIGEST [1m[35m)[0m [33m)[0m 
-                    [33m[[0m XL_FunApp STDLIB:26:46 
-                        [1m[35m([0m XL_Prim STDLIB:26:46 [1m[36m([0m CP BCAT [1m[36m)[0m [1m[35m)[0m 
-                        [1m[35m[[0m XL_FunApp STDLIB:26:60 
-                            [1m[36m([0m XL_Prim STDLIB:26:60 [1m[33m([0m CP UINT256_TO_BYTES [1m[33m)[0m [1m[36m)[0m [1m[36m[[0m XL_Var STDLIB:26:61 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m [1m[36m][0m
-                        [1m[35m,[0m XL_FunApp STDLIB:26:81 
-                            [1m[36m([0m XL_Prim STDLIB:26:81 [1m[33m([0m CP UINT256_TO_BYTES [1m[33m)[0m [1m[36m)[0m [1m[36m[[0m XL_Var STDLIB:26:82 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[36m][0m
-                        [1m[35m][0m 
-                    [33m][0m
+                [36m,[0m XL_Digest STDLIB:26:38 
+                    [33m[[0m XL_Var STDLIB:26:39 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                    [33m,[0m XL_Var STDLIB:26:45 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                    [33m][0m 
                 [36m][0m 
             [35m)[0m
         [1m[93m)[0m

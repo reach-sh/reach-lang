@@ -58,6 +58,7 @@ usesBLArg (BL_Var _ bv) = M.singleton bv 1
 
 usesCExpr :: CExpr a -> CCounts
 usesCExpr (C_PrimApp _ _ al) = cmerges $ map usesBLArg al
+usesCExpr (C_Digest _ al) = cmerges $ map usesBLArg al
 
 usesCStmt :: CStmt a  -> CCounts
 usesCStmt (C_Claim _ _ a) = usesBLArg a
@@ -211,15 +212,7 @@ solPrimApply pr args =
     IF_THEN_ELSE -> case args of
                       [ c, t, f ] -> c <+> "?" <+> t <+> ":" <+> f
                       _ -> impossible $ "emitSol: ITE wrong args"
-    UINT256_TO_BYTES -> solApply "abi.encodePacked" args
-    DIGEST -> case args of
-                [ a ] -> solHash [a]
-                _ -> impossible $ "emitSol: digest wrong args"
     BYTES_EQ -> binOp "=="
-    BYTES_LEN -> solApply "BYTES_LEN" args
-    BCAT -> solApply "BCAT" args
-    BCAT_LEFT -> solApply "BCAT_LEFT" args
-    BCAT_RIGHT -> solApply "BCAT_RIGHT" args
     BALANCE -> "address(this).balance"
     TXN_VALUE -> "msg.value"
   where binOp op = case args of
@@ -228,6 +221,7 @@ solPrimApply pr args =
 
 solCExpr :: SolInMemory -> SolRenaming a -> CExpr b -> Doc a
 solCExpr sim ρ (C_PrimApp _ pr al) = solPrimApply pr $ map (solArg sim ρ) al
+solCExpr sim ρ (C_Digest _ al) = solHash $ map (solArg sim ρ) al
 
 solCStmt :: SolInMemory -> SolRenaming a -> CStmt b -> Doc a
 solCStmt _ _ (C_Claim _ CT_Possible _) = emptyDoc
