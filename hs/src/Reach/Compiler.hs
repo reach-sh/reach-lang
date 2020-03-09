@@ -1005,6 +1005,6 @@ compile copts = do
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
-  emit_evm (outn "evm") blp cs
-  out "mjs" (show (emit_js blp cs))
+  ebc <- emit_evm (outn "evm") blp
+  out "mjs" (show (emit_js blp cs ebc))
   exitSuccess

@@ -5,6 +5,7 @@ module Reach.EmitEVM where
 import Control.Monad.State.Lazy
 import qualified Data.Word as W
 --import qualified Data.HexString as H
+import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BC
 import qualified EVM.Bytecode as EVM
@@ -20,8 +21,7 @@ import Data.ByteArray (convert)
 import Reach.AST
 import Reach.Util
 import Reach.EmitSol
-  ( CompiledSol
-  , CCounts
+  ( CCounts
   , usesCTail )
 
 m_insertSafe :: Show k => Ord k => k -> v -> M.Map k v -> M.Map k v
@@ -836,7 +836,13 @@ cp_to_evm (C_Prog _ hs) = assemble $ do
           asm_pop 2
           end_block_op "</REVERT>"
 
-emit_evm :: FilePath -> BLProgram a -> CompiledSol -> IO ()
-emit_evm _ (BL_Prog _ _ cp) (_, _code) = do
-  mapM_ (\o -> putStrLn $ show o) $ cp_to_evm cp
-  return ()
+emit_evm :: FilePath -> BLProgram a -> IO String
+emit_evm _ (BL_Prog _ _ cp) = do
+  let bc = cp_to_evm cp
+  mapM_ (\o -> putStrLn $ show o) bc
+  let hex_bc = trim $ show $ BB.toLazyByteString $ BB.byteStringHex $ B.pack $ EVM.encode bc
+  return hex_bc
+  --- FIXME figure out the correct way to get a string
+  where trim [] = []
+        trim [_] = []
+        trim xs = tail (init xs)

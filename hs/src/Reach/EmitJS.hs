@@ -219,11 +219,12 @@ jsPart (p, (EP_Prog _ pargs et)) =
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_js :: BLProgram b -> CompiledSol -> Doc a
-emit_js (BL_Prog _ pm _) (abi, code) = modp
-  where modp = vsep_with_blank $ preamble : importp : partsp ++ [ abip, codep ]
+emit_js :: BLProgram b -> CompiledSol -> String -> Doc a
+emit_js (BL_Prog _ pm _) (abi, code) code2 = modp
+  where modp = vsep_with_blank $ preamble : importp : partsp ++ [ abip, codep, code2p ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         importp = pretty $ "import * as stdlib from '@reach-sh/stdlib';"
         partsp = map jsPart $ M.toList pm
         abip = pretty $ "export const ABI = " ++ abi ++ ";"
         codep = pretty $ "export const Bytecode = \"0x" ++ code ++ "\";"
+        code2p = pretty $ "export const Bytecode2 = \"0x" ++ code2 ++ "\";"
