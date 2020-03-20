@@ -837,9 +837,9 @@ cp_to_evm (C_Prog _ hs) = assemble $ do
           end_block_op "</REVERT>"
 
 emit_evm :: FilePath -> BLProgram a -> IO String
-emit_evm _ (BL_Prog _ _ cp) = do
+emit_evm evmf (BL_Prog _ _ cp) = do
   let bc = cp_to_evm cp
-  mapM_ (\o -> putStrLn $ show o) bc
+  writeFile evmf (concat $ intersperse "\n" $ map show bc)
   let hex_bc = trim $ show $ BB.toLazyByteString $ BB.byteStringHex $ B.pack $ EVM.encode bc
   return hex_bc
   --- FIXME figure out the correct way to get a string
