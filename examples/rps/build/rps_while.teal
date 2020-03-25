@@ -1,0 +1,255 @@
+// <Dispatcher>
+// XXX dispatcher
+// </Dispatcher>
+// <Handlers>
+// <Handler 1>
+h1:
+// XXX handler
+// XXX txn value
+arg 0
+arg 1
++
+==
+!
+bnz revert
+// XXX wait
+// </Handler 1>
+// <Handler 2>
+h2:
+// XXX handler
+jump halt
+// </Handler 2>
+// <Handler 3>
+h3:
+// XXX handler
+// XXX txn value
+arg 1
+==
+!
+bnz revert
+// XXX jump
+// </Handler 3>
+// <Handler 4>
+h4:
+// XXX handler
+// XXX balance
+arg 0
+// XXX transfer
+jump halt
+// </Handler 4>
+// <Handler 6>
+h6:
+// XXX handler
+// XXX txn value
+int 0
+==
+!
+bnz revert
+// XXX wait
+// </Handler 6>
+// <Handler 7>
+h7:
+// XXX handler
+// XXX jump
+// </Handler 7>
+// <Handler 8>
+h8:
+// XXX handler
+// XXX txn value
+int 0
+==
+!
+bnz revert
+int 0
+arg 6
+<=
+bnz h8_ITET
+int 0
+jump h8_ITEK
+h8_ITET:
+arg 6
+int 3
+<
+h8_ITEK:
+!
+bnz revert
+// XXX wait
+// </Handler 8>
+// <Handler 9>
+h9:
+// XXX handler
+// XXX jump
+// </Handler 9>
+// <Handler 10>
+h10:
+// XXX handler
+// XXX txn value
+int 0
+==
+!
+bnz revert
+arg 5
+arg 7
+arg 8
+// XXX digest
+==
+!
+bnz revert
+int 0
+arg 8
+<=
+bnz h10_ITET
+int 0
+jump h10_ITEK
+h10_ITET:
+arg 8
+int 3
+<
+h10_ITEK:
+!
+bnz revert
+int 0
+arg 8
+<=
+bnz h10_ITET
+int 0
+jump h10_ITEK
+h10_ITET:
+arg 8
+int 3
+<
+h10_ITEK:
+store 0
+int 0
+arg 6
+<=
+bnz h10_ITET
+int 0
+jump h10_ITEK
+h10_ITET:
+arg 6
+int 3
+<
+h10_ITEK:
+store 1
+load 0
+bnz h10_ITET
+int 0
+jump h10_ITEK
+h10_ITET:
+load 1
+h10_ITEK:
+bnz h10_ITET
+load 0
+bnz h10_ITET
+load 1
+bnz h10_ITET
+int 1
+jump h10_ITEK
+h10_ITET:
+int 0
+h10_ITEK:
+jump h10_ITEK
+h10_ITET:
+int 2
+h10_ITEK:
+jump h10_ITEK
+h10_ITET:
+arg 8
+int 4
+arg 6
+-
++
+int 3
+%
+h10_ITEK:
+store 2
+load 2
+int 2
+==
+store 3
+load 2
+int 0
+==
+store 4
+// XXX jump
+// </Handler 10>
+// <Handler 11>
+h11:
+// XXX handler
+// XXX jump
+// </Handler 11>
+// </Handlers>
+// <Loops>
+// <Loop 5>
+l5:
+// XXX loop pre
+arg 5
+int 1
+==
+bnz l5_ITET
+int 1
+jump l5_ITEK
+l5_ITET:
+int 0
+l5_ITEK:
+bnz l5_IT
+// XXX wait
+l5_IT:
+arg 5
+int 3
+==
+bnz l5_IT_IT
+arg 5
+int 4
+==
+bnz l5_IT_IF_IT
+arg 5
+int 2
+==
+store 0
+arg 3
+load 0
+bnz l5_IT_IF_IF_ITET
+int 0
+jump l5_IT_IF_IF_ITEK
+l5_IT_IF_IF_ITET:
+int 2
+arg 2
+*
+l5_IT_IF_IF_ITEK:
++
+arg 0
+// XXX transfer
+load 0
+bnz l5_IT_IF_IF_ITET
+int 2
+arg 2
+*
+jump l5_IT_IF_IF_ITEK
+l5_IT_IF_IF_ITET:
+int 0
+l5_IT_IF_IF_ITEK:
+arg 1
+// XXX transfer
+jump halt
+l5_IT_IF_IT:
+// XXX balance
+arg 0
+// XXX transfer
+jump halt
+l5_IT_IT:
+// XXX balance
+arg 1
+// XXX transfer
+jump halt
+// </Loop 5>
+// </Loops>
+// <Standard>
+revert:
+int 0
+halt
+halt:
+int 1
+halt
+// </Standard>
