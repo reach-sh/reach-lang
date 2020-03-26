@@ -195,9 +195,23 @@ comp_cstmt cs s =
       a_ls <- comp_blarg cs a
       p_ls <- comp_blvar cs p
       txn_i <- alloc_txn
-      return $ a_ls
+      let txn_is = show txn_i
+      return $ comp_con (Con_I $ fromIntegral $ txn_i) 
+        ++ code "global" [ "GroupSize" ]
+        ++ code ">" [ ]
+        ++ code "bnz" [ "revert" ]
+        ++ code "gtxn" [ txn_is, "Amount" ]
+        ++ a_ls
+        ++ code "!=" [ ]
+        ++ code "bnz" [ "revert" ]
+        ++ code "gtxn" [ txn_is, "Receiver" ]
         ++ p_ls
-        ++ (xxx $ "transfer " ++ (show txn_i)) 
+        ++ code "!=" [ ]
+        ++ code "bnz" [ "revert" ]
+        ++ code "gtxn" [ txn_is, "Sender" ]
+        ++ comp_con (Con_BS $ "${CONTRACT_ACCOUNT}")
+        ++ code "!=" [ ]
+        ++ code "bnz" [ "revert" ] 
 
 comp_ctail :: CCounts -> CompileSt a -> CTail a -> TACM ann TEALs
 comp_ctail ccs cs t =

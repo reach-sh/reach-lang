@@ -106,9 +106,22 @@ arg 3
 pload 0
 !=
 bnz revert
+int 1
+global GroupSize
+>
+bnz revert
+gtxn 1 Amount
 int 0
+!=
+bnz revert
+gtxn 1 Receiver
 arg 1
-// XXX transfer 1
+!=
+bnz revert
+gtxn 1 Sender
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 jump halt
 // </Handler 4>
 // <Handler 6>
@@ -484,6 +497,11 @@ load 5
 int 2
 ==
 store 6
+int 1
+global GroupSize
+>
+bnz revert
+gtxn 1 Amount
 load 3
 load 6
 bnz l5_5
@@ -495,8 +513,21 @@ load 2
 *
 l5_6:
 +
+!=
+bnz revert
+gtxn 1 Receiver
 load 0
-// XXX transfer 1
+!=
+bnz revert
+gtxn 1 Sender
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
+int 2
+global GroupSize
+>
+bnz revert
+gtxn 2 Amount
 load 6
 bnz l5_7
 int 2
@@ -506,18 +537,52 @@ jump l5_8
 l5_7:
 int 0
 l5_8:
+!=
+bnz revert
+gtxn 2 Receiver
 load 1
-// XXX transfer 2
+!=
+bnz revert
+gtxn 2 Sender
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 jump halt
 l5_4:
+int 3
+global GroupSize
+>
+bnz revert
+gtxn 3 Amount
 int 0
+!=
+bnz revert
+gtxn 3 Receiver
 load 0
-// XXX transfer 3
+!=
+bnz revert
+gtxn 3 Sender
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 jump halt
 l5_3:
+int 4
+global GroupSize
+>
+bnz revert
+gtxn 4 Amount
 int 0
+!=
+bnz revert
+gtxn 4 Receiver
 load 1
-// XXX transfer 4
+!=
+bnz revert
+gtxn 4 Sender
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 jump halt
 // </Loop 5>
 // </Loops>
