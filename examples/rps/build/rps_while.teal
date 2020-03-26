@@ -2,66 +2,25 @@
 jump h1
 // </Dispatcher>
 // <Handlers>
-// <Handler 1>
-h1:
-// XXX handler
-txn Amount
-arg 1
-arg 2
-+
-==
-!
+// <Handler 11>
+h11:
+arg 0
+int 11
+!=
 bnz revert
-// XXX wait
-// </Handler 1>
-// <Handler 2>
-h2:
-// XXX handler
-jump halt
-// </Handler 2>
-// <Handler 3>
-h3:
-// XXX handler
-txn Amount
-arg 2
-==
-!
-bnz revert
+// XXX handler check sender
+// XXX handler check timeout
 arg 1
-// XXX unbound variable: (3,("B",BT_Address))
 arg 2
 arg 3
-int 0
-int 1
-store 5
-store 4
-store 3
-store 2
-store 1
-store 0
-jump l5
-// </Handler 3>
-// <Handler 4>
-h4:
-// XXX handler
-int 1
-arg 1
-// XXX transfer
-jump halt
-// </Handler 4>
-// <Handler 6>
-h6:
-// XXX handler
-txn Amount
-int 0
-==
-!
+arg 4
+arg 5
+arg 6
+arg 7
+// XXX digest
+pload 0
+!=
 bnz revert
-// XXX wait
-// </Handler 6>
-// <Handler 7>
-h7:
-// XXX handler
 arg 1
 arg 2
 arg 3
@@ -75,50 +34,26 @@ store 2
 store 1
 store 0
 jump l5
-// </Handler 7>
-// <Handler 8>
-h8:
-// XXX handler
-txn Amount
-int 0
-==
-!
-bnz revert
-int 0
-arg 7
-<=
-bnz h8_0
-int 0
-jump h8_1
-h8_0:
-arg 7
-int 3
-<
-h8_1:
-!
-bnz revert
-// XXX wait
-// </Handler 8>
-// <Handler 9>
-h9:
-// XXX handler
-arg 1
-arg 2
-arg 3
-arg 4
-arg 5
-int 4
-store 5
-store 4
-store 3
-store 2
-store 1
-store 0
-jump l5
-// </Handler 9>
+// </Handler 11>
 // <Handler 10>
 h10:
-// XXX handler
+arg 0
+int 10
+!=
+bnz h11
+// XXX handler check sender
+// XXX handler check timeout
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+arg 6
+arg 7
+// XXX digest
+pload 0
+!=
+bnz revert
 txn Amount
 int 0
 ==
@@ -224,9 +159,101 @@ store 1
 store 0
 jump l5
 // </Handler 10>
-// <Handler 11>
-h11:
-// XXX handler
+// <Handler 9>
+h9:
+arg 0
+int 9
+!=
+bnz h10
+// XXX handler check sender
+// XXX handler check timeout
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+arg 6
+// XXX digest
+pload 0
+!=
+bnz revert
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+int 4
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+jump l5
+// </Handler 9>
+// <Handler 8>
+h8:
+arg 0
+int 8
+!=
+bnz h9
+// XXX handler check sender
+// XXX handler check timeout
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+arg 6
+// XXX digest
+pload 0
+!=
+bnz revert
+txn Amount
+int 0
+==
+!
+bnz revert
+int 0
+arg 7
+<=
+bnz h8_0
+int 0
+jump h8_1
+h8_0:
+arg 7
+int 3
+<
+h8_1:
+!
+bnz revert
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+arg 6
+arg 7
+// XXX digest
+pstore 0
+// </Handler 8>
+// <Handler 7>
+h7:
+arg 0
+int 7
+!=
+bnz h8
+// XXX handler check sender
+// XXX handler check timeout
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+// XXX digest
+pload 0
+!=
+bnz revert
 arg 1
 arg 2
 arg 3
@@ -240,7 +267,131 @@ store 2
 store 1
 store 0
 jump l5
-// </Handler 11>
+// </Handler 7>
+// <Handler 6>
+h6:
+arg 0
+int 6
+!=
+bnz h7
+// XXX handler check sender
+// XXX handler check timeout
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+// XXX digest
+pload 0
+!=
+bnz revert
+txn Amount
+int 0
+==
+!
+bnz revert
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+arg 6
+// XXX digest
+pstore 0
+// </Handler 6>
+// <Handler 4>
+h4:
+arg 0
+int 4
+!=
+bnz h6
+// XXX handler check sender
+// XXX handler check timeout
+arg 1
+arg 2
+arg 3
+// XXX digest
+pload 0
+!=
+bnz revert
+int 1
+arg 1
+// XXX transfer
+jump halt
+// </Handler 4>
+// <Handler 3>
+h3:
+arg 0
+int 3
+!=
+bnz h4
+// XXX handler check sender
+// XXX handler check timeout
+arg 1
+arg 2
+arg 3
+// XXX digest
+pload 0
+!=
+bnz revert
+txn Amount
+arg 2
+==
+!
+bnz revert
+arg 1
+// XXX unbound variable: (3,("B",BT_Address))
+arg 2
+arg 3
+int 0
+int 1
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+jump l5
+// </Handler 3>
+// <Handler 2>
+h2:
+arg 0
+int 2
+!=
+bnz h3
+// XXX handler check sender
+// XXX handler check timeout
+// XXX digest
+pload 0
+!=
+bnz revert
+jump halt
+// </Handler 2>
+// <Handler 1>
+h1:
+arg 0
+int 1
+!=
+bnz h2
+// XXX handler check sender
+// XXX handler check timeout
+// XXX digest
+pload 0
+!=
+bnz revert
+txn Amount
+arg 1
+arg 2
++
+==
+!
+bnz revert
+// XXX unbound variable: (0,("A",BT_Address))
+arg 1
+arg 2
+// XXX digest
+pstore 0
+// </Handler 1>
 // </Handlers>
 // <Loops>
 // <Loop 5>
@@ -255,7 +406,13 @@ l5_0:
 int 0
 l5_1:
 bnz l5_2
-// XXX wait
+load 0
+load 1
+load 2
+load 3
+load 4
+// XXX digest
+pstore 0
 l5_2:
 load 5
 int 3

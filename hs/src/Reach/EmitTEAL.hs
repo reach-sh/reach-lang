@@ -125,12 +125,21 @@ comp_blarg cs a =
     BL_Con _ c -> return $ comp_con c
     BL_Var _ v -> comp_blvar cs v
 
+data HashMode
+  = HM_Digest
+  | HM_State Int Bool
+  deriving (Show, Eq, Ord)
+
+comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> LabelM ann TEALs
+comp_hash _m cs as = do
+  asl <- concatMapM (comp_blarg cs) as
+  return $ asl ++ xxx "digest"
+
 comp_cexpr :: CompileSt a -> CExpr a -> LabelM ann TEALs
 comp_cexpr cs e =
   case e of
-    C_Digest _ as -> do
-      asl <- concatMapM (comp_blarg cs) as
-      return $ asl ++ xxx "digest"
+    C_Digest _ as ->
+      comp_hash HM_Digest cs as
     C_PrimApp _ cp as ->
       case cp of
         ADD -> p_op "+"
@@ -190,8 +199,10 @@ comp_ctail ccs cs t =
   case t of
     C_Halt _ ->
       return $ code "jump" ["halt"]
-    C_Wait _ _i _svs ->
-      return $ xxx "wait"
+    C_Wait loc i svs -> do
+      hash_ls <- comp_hash (HM_State i True) cs (map (BL_Var loc) svs)
+      return $ hash_ls
+        ++ code "pstore" [ "0" ]
     C_If _ ca tt ft -> do
       ca_ls <- comp_blarg cs ca
       true_lab <- alloc_lab cs
@@ -230,12 +241,26 @@ comp_ctail ccs cs t =
                 code "store" [ show $ n - 1 ]
                 ++ stack_to_slot (n - 1)
 
-comp_chandler :: CHandler a -> TEALs
-comp_chandler (C_Handler _ _from_spec _is_timeout (_last_i, svs) msg _delay body i) = bracket ("Handler " ++ show i) $ label lab ++ (xxx "handler") ++ labelRun (comp_ctail (usesCTail body) cs body)
+comp_chandler :: String -> CHandler a -> (String, TEALs)
+comp_chandler next_lab (C_Handler loc _from_spec _is_timeout (last_i, svs) msg _delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ labelRun bodym)
   where lab = "h" ++ show i
         cs0 = cs_init lab
         cs = cs_var_args cs0 $ svs ++ msg
-comp_chandler (C_Loop _ _svs _args _inv _body _i) = []
+        pre_ls = code "arg" [ "0" ]
+          ++ (comp_con $ Con_I $ fromIntegral i)
+          ++ code "!=" []
+          ++ code "bnz" [ next_lab ]
+          ++ xxx "handler check sender"
+          ++ xxx "handler check timeout"
+        bodym = do
+          hash_ls <- comp_hash (HM_State last_i False) cs (map (BL_Var loc) svs)
+          body_ls <- comp_ctail (usesCTail body) cs body
+          return $ hash_ls
+            ++ code "pload" [ "0" ]
+            ++ code "!=" []
+            ++ code "bnz" [ "revert" ]
+            ++ body_ls
+comp_chandler next_lab (C_Loop _ _svs _args _inv _body _i) = (next_lab, [])
 
 comp_cloop :: CHandler a -> TEALs
 comp_cloop (C_Handler _ _from_spec _is_timeout _ _msg _delay _body _i) = []
@@ -248,7 +273,10 @@ cp_to_teal :: CProgram a -> TEAL
 cp_to_teal (C_Prog _ hs) = TEAL ls
   where ls = dispatch_ls ++ handlers_ls ++ loop_ls ++ standard_ls
         dispatch_ls = bracket "Dispatcher" $ code "jump" [ "h1" ]
-        handlers_ls = bracket "Handlers" $ concatMap comp_chandler hs
+        handlers_ls = bracket "Handlers" $ snd $ foldl fh ("revert", []) (reverse hs)
+          where fh (next_lab, prev_ls) h = (this_lab, both_ls)
+                  where (this_lab, this_ls) = comp_chandler next_lab h
+                        both_ls = prev_ls ++ this_ls
         loop_ls = bracket "Loops" $ concatMap comp_cloop hs
         standard_ls = bracket "Standard" $ revert_ls ++ halt_ls
         revert_ls = label "revert"
