@@ -63,14 +63,14 @@ bnz revert
 int 0
 arg 6
 <=
-bnz h8_ITET
+bnz h8_0
 int 0
-jump h8_ITEK
-h8_ITET:
+jump h8_1
+h8_0:
 arg 6
 int 3
 <
-h8_ITEK:
+h8_1:
 !
 bnz revert
 // XXX wait
@@ -98,63 +98,63 @@ bnz revert
 int 0
 arg 8
 <=
-bnz h10_ITET
+bnz h10_0
 int 0
-jump h10_ITEK
-h10_ITET:
+jump h10_1
+h10_0:
 arg 8
 int 3
 <
-h10_ITEK:
+h10_1:
 !
 bnz revert
 int 0
 arg 8
 <=
-bnz h10_ITET
+bnz h10_2
 int 0
-jump h10_ITEK
-h10_ITET:
+jump h10_3
+h10_2:
 arg 8
 int 3
 <
-h10_ITEK:
+h10_3:
 store 0
 int 0
 arg 6
 <=
-bnz h10_ITET
+bnz h10_4
 int 0
-jump h10_ITEK
-h10_ITET:
+jump h10_5
+h10_4:
 arg 6
 int 3
 <
-h10_ITEK:
+h10_5:
 store 1
 load 0
-bnz h10_ITET
+bnz h10_6
 int 0
-jump h10_ITEK
-h10_ITET:
+jump h10_7
+h10_6:
 load 1
-h10_ITEK:
-bnz h10_ITET
+h10_7:
+bnz h10_8
 load 0
-bnz h10_ITET
+bnz h10_9
 load 1
-bnz h10_ITET
+bnz h10_10
 int 1
-jump h10_ITEK
-h10_ITET:
+jump h10_11
+h10_10:
 int 0
-h10_ITEK:
-jump h10_ITEK
-h10_ITET:
+h10_11:
+jump h10_12
+h10_9:
 int 2
-h10_ITEK:
-jump h10_ITEK
-h10_ITET:
+h10_12:
+jump h10_13
+h10_8:
 arg 8
 int 4
 arg 6
@@ -162,7 +162,7 @@ arg 6
 +
 int 3
 %
-h10_ITEK:
+h10_13:
 store 2
 load 2
 int 2
@@ -187,58 +187,58 @@ l5:
 arg 5
 int 1
 ==
-bnz l5_ITET
+bnz l5_0
 int 1
-jump l5_ITEK
-l5_ITET:
+jump l5_1
+l5_0:
 int 0
-l5_ITEK:
-bnz l5_IT
+l5_1:
+bnz l5_2
 // XXX wait
-l5_IT:
+l5_2:
 arg 5
 int 3
 ==
-bnz l5_IT_IT
+bnz l5_3
 arg 5
 int 4
 ==
-bnz l5_IT_IF_IT
+bnz l5_4
 arg 5
 int 2
 ==
 store 0
 arg 3
 load 0
-bnz l5_IT_IF_IF_ITET
+bnz l5_5
 int 0
-jump l5_IT_IF_IF_ITEK
-l5_IT_IF_IF_ITET:
+jump l5_6
+l5_5:
 int 2
 arg 2
 *
-l5_IT_IF_IF_ITEK:
+l5_6:
 +
 arg 0
 // XXX transfer
 load 0
-bnz l5_IT_IF_IF_ITET
+bnz l5_7
 int 2
 arg 2
 *
-jump l5_IT_IF_IF_ITEK
-l5_IT_IF_IF_ITET:
+jump l5_8
+l5_7:
 int 0
-l5_IT_IF_IF_ITEK:
+l5_8:
 arg 1
 // XXX transfer
 jump halt
-l5_IT_IF_IT:
+l5_4:
 // XXX balance
 arg 0
 // XXX transfer
 jump halt
-l5_IT_IT:
+l5_3:
 // XXX balance
 arg 1
 // XXX transfer

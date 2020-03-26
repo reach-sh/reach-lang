@@ -1,5 +1,7 @@
 module Reach.EmitTEAL where
 
+import Control.Monad.Extra
+import Control.Monad.State.Lazy
 import qualified Data.Map.Strict as M
 import Data.List
 
@@ -8,6 +10,13 @@ import Reach.Util
 import Reach.EmitSol
   ( CCounts
   , usesCTail )
+
+type LabelM ann a = State LabelSt a
+type LabelSt = Int
+
+labelRun :: LabelM ann a -> a
+labelRun lm = ans
+  where (ans, _) = runState lm 0
 
 data TEAL
   = TEAL TEALs
@@ -61,15 +70,15 @@ cs_var_args cs as = cs'
 cs_label :: CompileSt a -> String
 cs_label ( lab, _, _ ) = lab
 
-label_ext :: String -> String -> String
-label_ext lab ext = lab ++ "_" ++ ext
+label_ext :: String -> Int -> String
+label_ext lab ext = lab ++ "_" ++ (show ext)
 
---- XXX have these be a kind of global monadic state
-cs_label_ext :: CompileSt a -> String -> CompileSt a
-cs_label_ext cs ext = cs'
-  where ( lab, loc, vmap ) = cs
-        lab' = label_ext lab ext
-        cs' = ( lab', loc, vmap )
+alloc_lab :: CompileSt a -> LabelM ann String
+alloc_lab cs = do
+  let ( lab, _, _ ) = cs
+  i <- get
+  put (i+1)
+  return $ label_ext lab i
 
 bracket :: String -> TEALs -> TEALs
 bracket lab ls = TL_Comment ("<" ++ lab ++ ">") : ls ++ [ TL_Comment ("</" ++ lab ++ ">") ]
@@ -93,31 +102,31 @@ comp_con c =
     Con_BS bs ->
       code "byte" [ show bs ]
 
-comp_blvar :: CompileSt a -> BLVar -> TEALs
+comp_blvar :: CompileSt a -> BLVar -> LabelM ann TEALs
 comp_blvar cs bv = 
   case M.lookup bv vmap of
     Nothing ->
       impossible $ "unbound variable: " ++ show bv
     Just (VR_Arg a) ->
-      code "arg" [ show a ]
+      return $ code "arg" [ show a ]
     Just (VR_Slot s) ->
-      code "load" [ show s ]
+      return $ code "load" [ show s ]
     Just (VR_Expr ce) ->
       comp_cexpr cs ce
   where ( _, _, vmap ) = cs
 
-comp_blarg :: CompileSt a -> BLArg a -> TEALs
+comp_blarg :: CompileSt a -> BLArg a -> LabelM ann TEALs
 comp_blarg cs a =
   case a of
-    BL_Con _ c -> comp_con c
+    BL_Con _ c -> return $ comp_con c
     BL_Var _ v -> comp_blvar cs v
 
-comp_cexpr :: CompileSt a -> CExpr a -> TEALs
+comp_cexpr :: CompileSt a -> CExpr a -> LabelM ann TEALs
 comp_cexpr cs e =
   case e of
-    C_Digest _ as ->
-      concatMap (comp_blarg cs) as
-      ++ xxx "digest"
+    C_Digest _ as -> do
+      asl <- concatMapM (comp_blarg cs) as
+      return $ asl ++ xxx "digest"
     C_PrimApp _ cp as ->
       case cp of
         ADD -> p_op "+"
@@ -130,74 +139,82 @@ comp_cexpr cs e =
         PEQ -> p_op "=="
         PGT -> p_op ">"
         PGE -> p_op ">="
-        IF_THEN_ELSE ->
-          comp_blarg cs a_cond
-          ++ code "bnz" [true_lab]
-          ++ comp_blarg cs a_false
-          ++ code "jump" [cont_lab]
-          --- XXX alloc lab
-          ++ label true_lab
-          ++ comp_blarg cs a_true
-          --- XXX alloc lab
-          ++ label cont_lab
+        IF_THEN_ELSE -> do
+          cond_ls <- comp_blarg cs a_cond
+          true_lab <- alloc_lab cs
+          false_ls <- comp_blarg cs a_false
+          true_ls <- comp_blarg cs a_true
+          cont_lab <- alloc_lab cs
+          return $ cond_ls
+            ++ code "bnz" [true_lab]
+            ++ false_ls
+            ++ code "jump" [cont_lab]
+            ++ label true_lab
+            ++ true_ls
+            ++ label cont_lab
           where [ a_cond, a_true, a_false ] = as
-                lab = cs_label cs
-                true_lab = label_ext lab "ITET"
-                cont_lab = label_ext lab "ITEK"
-        BALANCE -> xxx "balance"
-        TXN_VALUE -> xxx "txn value"
-        BYTES_EQ -> xxx "bytes_eq"
-     where p_op o = concatMap (comp_blarg cs) as ++ code o []
+        BALANCE -> return $ xxx "balance"
+        TXN_VALUE -> return $ xxx "txn value"
+        BYTES_EQ -> p_op "=="
+     where p_op o = do
+             asl <- concatMapM (comp_blarg cs) as
+             return $ asl ++ code o []
 
-comp_cstmt :: CompileSt a -> CStmt a -> TEALs
+comp_cstmt :: CompileSt a -> CStmt a -> LabelM ann TEALs
 comp_cstmt cs s =
   case s of
-    C_Claim _ CT_Possible _ -> []
-    C_Claim _ CT_Assert _ -> []
+    C_Claim _ CT_Possible _ -> return $ []
+    C_Claim _ CT_Assert _ -> return $ []
     C_Claim _ _ a -> do
-      comp_blarg cs a
-      ++ code "!" []
-      ++ code "bnz" [ "revert" ]
-    C_Transfer _ p a ->
-      comp_blarg cs a
-      ++ comp_blvar cs p
-      ++ xxx "transfer"
+      a_ls <- comp_blarg cs a
+      return $ a_ls
+        ++ code "!" []
+        ++ code "bnz" [ "revert" ]
+    C_Transfer _ p a -> do
+      a_ls <- comp_blarg cs a
+      p_ls <- comp_blvar cs p
+      return $ a_ls
+        ++ p_ls
+        ++ xxx "transfer"
 
-comp_ctail :: CCounts -> CompileSt a -> CTail a -> TEALs
+comp_ctail :: CCounts -> CompileSt a -> CTail a -> LabelM ann TEALs
 comp_ctail ccs cs t =
   case t of
     C_Halt _ ->
-      code "jump" ["halt"]
+      return $ code "jump" ["halt"]
     C_Wait _ _i _svs ->
-      xxx "wait"
-    C_If _ ca tt ft ->
-      comp_blarg cs ca
-      ++ code "bnz" [true_lab]
-      ++ comp_ctail ccs false_cs ft
-      --- XXX alloc lab
-      ++ label true_lab
-      ++ comp_ctail ccs true_cs tt
-      where false_cs = cs_label_ext cs "IF"
-            true_cs = cs_label_ext cs "IT"
-            true_lab = cs_label true_cs
+      return $ xxx "wait"
+    C_If _ ca tt ft -> do
+      ca_ls <- comp_blarg cs ca
+      true_lab <- alloc_lab cs
+      ft_ls <- comp_ctail ccs cs ft
+      tt_ls <- comp_ctail ccs cs tt
+      return $ ca_ls
+        ++ code "bnz" [true_lab]
+        ++ ft_ls
+        ++ label true_lab
+        ++ tt_ls
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
         Just 0 -> comp_ctail ccs cs kt
         Just 1 -> comp_ctail ccs cs_later kt
-        _ ->
-          comp_cexpr cs ce
-          ++ code "store" [show bv_loc]
-          ++ comp_ctail ccs cs_scratch kt
+        _ -> do
+          ce_ls <- comp_cexpr cs ce
+          kt_ls <- comp_ctail ccs cs_scratch kt
+          return $ ce_ls
+            ++ code "store" [show bv_loc]
+            ++ kt_ls
       where cs_later = cs_var_expr cs bv ce
             (bv_loc, cs_scratch) = cs_var_loc cs bv
-    C_Do _ ds kt ->
-      comp_cstmt cs ds
-      ++ comp_ctail ccs cs kt
+    C_Do _ ds kt -> do
+      ds_ls <- comp_cstmt cs ds
+      kt_ls <- comp_ctail ccs cs kt
+      return $ ds_ls ++ kt_ls
     C_Jump _ _which _vs _ _as ->
-      xxx "jump"
+      return $ xxx "jump"
 
 comp_chandler :: CHandler a -> TEALs
-comp_chandler (C_Handler _ _from_spec _is_timeout (_last_i, svs) msg _delay body i) = bracket ("Handler " ++ show i) $ label lab ++ (xxx "handler") ++ comp_ctail (usesCTail body) cs body
+comp_chandler (C_Handler _ _from_spec _is_timeout (_last_i, svs) msg _delay body i) = bracket ("Handler " ++ show i) $ label lab ++ (xxx "handler") ++ labelRun (comp_ctail (usesCTail body) cs body)
   where lab = "h" ++ show i
         cs0 = cs_init lab
         cs = cs_var_args cs0 $ svs ++ msg
@@ -205,7 +222,7 @@ comp_chandler (C_Loop _ _svs _args _inv _body _i) = []
 
 comp_cloop :: CHandler a -> TEALs
 comp_cloop (C_Handler _ _from_spec _is_timeout _ _msg _delay _body _i) = []
-comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label lab ++ (xxx "loop pre") ++ comp_ctail (usesCTail body) cs body
+comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label lab ++ (xxx "loop pre") ++ labelRun (comp_ctail (usesCTail body) cs body)
   where lab = "l" ++ show i
         cs0 = cs_init lab
         cs = cs_var_args cs0 $ svs ++ args
