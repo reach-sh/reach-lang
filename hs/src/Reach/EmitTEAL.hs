@@ -126,21 +126,61 @@ comp_blvar cs bv =
       comp_cexpr cs ce
   where ( _, _, vmap ) = cs
 
-comp_blarg :: CompileSt a -> BLArg a -> TACM ann TEALs
-comp_blarg cs a =
+comp_blarg_ty :: CompileSt a -> BLArg a -> TACM ann (BaseType, TEALs)
+comp_blarg_ty cs a =
   case a of
-    BL_Con _ c -> return $ comp_con c
-    BL_Var _ v -> comp_blvar cs v
+    BL_Con _ c -> return (conType c, comp_con c)
+    BL_Var _ v -> do
+      ls <- comp_blvar cs v
+      let (_, (_, ty)) = v
+      return (ty, ls)
+
+comp_blarg :: CompileSt a -> BLArg a -> TACM ann TEALs
+comp_blarg cs a = do
+  (_, ls) <- comp_blarg_ty cs a
+  return ls
 
 data HashMode
   = HM_Digest
   | HM_State Int Bool
   deriving (Show, Eq, Ord)
 
+comp_blarg_for_hash :: CompileSt a -> BLArg a -> TACM ann TEALs
+comp_blarg_for_hash cs a = do
+  (ty, ls) <- comp_blarg_ty cs a
+  let convert_ls =
+        case ty of
+          BT_UInt256 -> code "itob" []
+          BT_Bool -> code "itob" []
+          BT_Bytes -> []
+          BT_Address -> []
+  return $ ls ++ convert_ls
+
 comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> TACM ann TEALs
-comp_hash _m_xxx cs as = do
-  asl <- concatMapM (comp_blarg cs) as
-  return $ asl ++ xxx "digest"
+comp_hash hm cs as = do
+  let (pre_len, pre_ls) =
+        case hm of
+          HM_Digest -> (0, [])
+          HM_State i use_this_block -> (hm_len, hm_ls)
+            where hm_len = 2
+                  hm_ls = comp_con (Con_I $ fromIntegral i)
+                    ++ code "itob" []
+                    ++ (if use_this_block then
+                          code "gtxn" [ "0", "LastValid" ]
+                        else
+                          code "arg" [ "1" ])
+                    ++ code "itob" []
+  as_ls <- concatMapM (comp_blarg_for_hash cs) as
+  let how_many = pre_len + length as
+  return $ pre_ls
+    ++ as_ls
+    ++ digest_of how_many
+    ++ code "keccak256" []
+  where digest_of n =
+          if n == 0 then
+            comp_con (Con_BS "")
+          else
+            (digest_of (n-1) ++ code "concat" [])
 
 comp_cexpr :: CompileSt a -> CExpr a -> TACM ann TEALs
 comp_cexpr cs e =

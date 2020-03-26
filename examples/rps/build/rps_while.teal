@@ -19,7 +19,14 @@ gtxn 0 LastValid
 >=
 !
 bnz revert
-// XXX digest
+int 0
+itob
+arg 1
+itob
+byte ""
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -30,10 +37,22 @@ arg 3
 ==
 !
 bnz revert
+int 1
+itob
+gtxn 0 LastValid
+itob
 gtxn 0 Sender
 arg 2
+itob
 arg 3
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+keccak256
 pstore 0
 // </Handler 1>
 // <Handler 2>
@@ -53,7 +72,14 @@ gtxn 0 FirstValid
 <
 !
 bnz revert
-// XXX digest
+int 0
+itob
+arg 1
+itob
+byte ""
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -76,10 +102,22 @@ gtxn 0 LastValid
 >=
 !
 bnz revert
+int 1
+itob
+arg 1
+itob
 arg 2
 arg 3
+itob
 arg 4
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -123,10 +161,22 @@ gtxn 0 FirstValid
 <
 !
 bnz revert
+int 1
+itob
+arg 1
+itob
 arg 2
 arg 3
+itob
 arg 4
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -169,12 +219,27 @@ gtxn 0 LastValid
 >=
 !
 bnz revert
+int 3
+itob
+arg 1
+itob
 arg 2
 arg 3
 arg 4
+itob
 arg 5
+itob
 arg 6
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -183,13 +248,30 @@ int 0
 ==
 !
 bnz revert
+int 6
+itob
+gtxn 0 LastValid
+itob
 arg 2
 arg 3
 arg 4
+itob
 arg 5
+itob
 arg 6
+itob
 arg 7
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pstore 0
 // </Handler 6>
 // <Handler 7>
@@ -213,12 +295,27 @@ gtxn 0 FirstValid
 <
 !
 bnz revert
+int 3
+itob
+arg 1
+itob
 arg 2
 arg 3
 arg 4
+itob
 arg 5
+itob
 arg 6
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -257,13 +354,30 @@ gtxn 0 LastValid
 >=
 !
 bnz revert
+int 6
+itob
+arg 1
+itob
 arg 2
 arg 3
 arg 4
+itob
 arg 5
+itob
 arg 6
+itob
 arg 7
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -285,14 +399,33 @@ int 3
 h8_1:
 !
 bnz revert
+int 8
+itob
+gtxn 0 LastValid
+itob
 arg 2
 arg 3
 arg 4
+itob
 arg 5
+itob
 arg 6
+itob
 arg 7
+itob
 arg 8
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pstore 0
 // </Handler 8>
 // <Handler 9>
@@ -316,13 +449,30 @@ gtxn 0 FirstValid
 <
 !
 bnz revert
+int 6
+itob
+arg 1
+itob
 arg 2
 arg 3
 arg 4
+itob
 arg 5
+itob
 arg 6
+itob
 arg 7
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -361,14 +511,33 @@ gtxn 0 LastValid
 >=
 !
 bnz revert
+int 8
+itob
+arg 1
+itob
 arg 2
 arg 3
 arg 4
+itob
 arg 5
+itob
 arg 6
+itob
 arg 7
+itob
 arg 8
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -379,8 +548,13 @@ int 0
 bnz revert
 arg 7
 arg 9
+itob
 arg 10
-// XXX digest
+itob
+byte ""
+concat
+concat
+keccak256
 ==
 !
 bnz revert
@@ -498,14 +672,33 @@ gtxn 0 FirstValid
 <
 !
 bnz revert
+int 8
+itob
+arg 1
+itob
 arg 2
 arg 3
 arg 4
+itob
 arg 5
+itob
 arg 6
+itob
 arg 7
+itob
 arg 8
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pload 0
 !=
 bnz revert
@@ -537,12 +730,27 @@ l5_0:
 int 0
 l5_1:
 bnz l5_2
+int 3
+itob
+gtxn 0 LastValid
+itob
 load 0
 load 1
 load 2
+itob
 load 3
+itob
 load 4
-// XXX digest
+itob
+byte ""
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
 pstore 0
 l5_2:
 load 5
