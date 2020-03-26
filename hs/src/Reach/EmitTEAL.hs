@@ -72,7 +72,9 @@ cs_var_set cs bv vr = cs'
 cs_var_args :: CompileSt a -> [ BLVar ] -> CompileSt a
 cs_var_args cs as = cs'
   where h (cs0, i) a = ((cs_var_set cs0 a (VR_Arg i)), i+1)
-        (cs', _) = foldl h (cs, 1) as
+        --- The first argument is 2 because 0 is the handler and 1 is
+        --- the last time.
+        (cs', _) = foldl h (cs, 2) as
 
 cs_label :: CompileSt a -> String
 cs_label ( lab, _, _ ) = lab
@@ -136,7 +138,7 @@ data HashMode
   deriving (Show, Eq, Ord)
 
 comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> TACM ann TEALs
-comp_hash _m cs as = do
+comp_hash _m_xxx cs as = do
   asl <- concatMapM (comp_blarg cs) as
   return $ asl ++ xxx "digest"
 
@@ -261,7 +263,7 @@ comp_ctail ccs cs t =
                 ++ stack_to_slot (n - 1)
 
 comp_chandler :: String -> CHandler a -> (String, TEALs)
-comp_chandler next_lab (C_Handler loc from_spec _is_timeout (last_i, svs) msg _delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ tacRun bodym)
+comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ tacRun bodym)
   where lab = "h" ++ show i
         cs0 = cs_init lab
         cs1 = cs_var_args cs0 $ svs ++ msg
@@ -278,7 +280,6 @@ comp_chandler next_lab (C_Handler loc from_spec _is_timeout (last_i, svs) msg _d
           ++ comp_con (Con_BS $ "${CONTRACT_ACCOUNT}")
           ++ code "!=" []
           ++ code "bnz" [ "revert" ]
-          ++ xxx "handler check timeout"
         bodym = do
           sender_ls <-
             case from_spec of
@@ -290,9 +291,31 @@ comp_chandler next_lab (C_Handler loc from_spec _is_timeout (last_i, svs) msg _d
                   ++ from_ls
                   ++ code "!=" []
                   ++ code "bnz" [ "revert" ]
+          delay_ls <- comp_blarg cs delay
           hash_ls <- comp_hash (HM_State last_i False) cs (map (BL_Var loc) svs)
           body_ls <- comp_ctail (usesCTail body) cs body
           return $ sender_ls
+            -- begin timeout checking
+            ++ code "arg" [ "1" ]
+            ++ delay_ls
+            ++ code "+" []
+            -- the stack contains the deadline
+            ++ (if is_timeout then
+                  -- if this is a timeout, then the first time it can
+                  -- run must be after the deadline.
+                  (code "gtxn" [ "0", "FirstValid" ]
+                  -- deadline < running-time
+                   ++ code "<" [])
+                else
+                  -- if this is not a timeout, then the last time it
+                  -- can run must be before or equal to the deadline
+                  (code "gtxn" [ "0", "LastValid" ]
+                  -- running-time <= deadline
+                  -- == deadline >= running-time
+                   ++ code ">=" []))
+            ++ code "!" [] --- FIXME we could push this backward into the comparison
+            ++ code "bnz" [ "revert" ]
+            -- end of timeout checking
             ++ hash_ls
             ++ code "pload" [ "0" ]
             ++ code "!=" []
@@ -321,7 +344,7 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                     ++ comp_con (Con_I 0)
                     ++ code "halt" []
         halt_ls = label "halt"
-                  ++ code "byte" [ "" ]
+                  ++ comp_con (Con_BS "")
                   ++ code "pstore" [ "0" ]
                   ++ comp_con (Con_I 1)
                   ++ code "halt" []

@@ -12,21 +12,27 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
+arg 1
+int 10
++
+gtxn 0 LastValid
+>=
+!
+bnz revert
 // XXX digest
 pload 0
 !=
 bnz revert
 gtxn 0 Amount
-arg 1
 arg 2
+arg 3
 +
 ==
 !
 bnz revert
 gtxn 0 Sender
-arg 1
 arg 2
+arg 3
 // XXX digest
 pstore 0
 // </Handler 1>
@@ -40,7 +46,13 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
+arg 1
+int 10
++
+gtxn 0 FirstValid
+<
+!
+bnz revert
 // XXX digest
 pload 0
 !=
@@ -57,23 +69,29 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
 arg 1
+int 10
++
+gtxn 0 LastValid
+>=
+!
+bnz revert
 arg 2
 arg 3
+arg 4
 // XXX digest
 pload 0
 !=
 bnz revert
 gtxn 0 Amount
-arg 2
+arg 3
 ==
 !
 bnz revert
-arg 1
-gtxn 0 Sender
 arg 2
+gtxn 0 Sender
 arg 3
+arg 4
 int 0
 int 1
 store 5
@@ -94,14 +112,20 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
 gtxn 0 Sender
-arg 1
+arg 2
 !=
 bnz revert
 arg 1
+int 10
++
+gtxn 0 FirstValid
+<
+!
+bnz revert
 arg 2
 arg 3
+arg 4
 // XXX digest
 pload 0
 !=
@@ -115,7 +139,7 @@ int 0
 !=
 bnz revert
 gtxn 1 Receiver
-arg 1
+arg 2
 !=
 bnz revert
 gtxn 1 Sender
@@ -134,16 +158,22 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
 gtxn 0 Sender
-arg 1
+arg 2
 !=
 bnz revert
 arg 1
+int 10
++
+gtxn 0 LastValid
+>=
+!
+bnz revert
 arg 2
 arg 3
 arg 4
 arg 5
+arg 6
 // XXX digest
 pload 0
 !=
@@ -153,12 +183,12 @@ int 0
 ==
 !
 bnz revert
-arg 1
 arg 2
 arg 3
 arg 4
 arg 5
 arg 6
+arg 7
 // XXX digest
 pstore 0
 // </Handler 6>
@@ -172,25 +202,31 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
 gtxn 0 Sender
-arg 2
+arg 3
 !=
 bnz revert
 arg 1
+int 10
++
+gtxn 0 FirstValid
+<
+!
+bnz revert
 arg 2
 arg 3
 arg 4
 arg 5
+arg 6
 // XXX digest
 pload 0
 !=
 bnz revert
-arg 1
 arg 2
 arg 3
 arg 4
 arg 5
+arg 6
 int 3
 store 5
 store 4
@@ -210,17 +246,23 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
 gtxn 0 Sender
-arg 2
+arg 3
 !=
 bnz revert
 arg 1
+int 10
++
+gtxn 0 LastValid
+>=
+!
+bnz revert
 arg 2
 arg 3
 arg 4
 arg 5
 arg 6
+arg 7
 // XXX digest
 pload 0
 !=
@@ -231,25 +273,25 @@ int 0
 !
 bnz revert
 int 0
-arg 7
+arg 8
 <=
 bnz h8_0
 int 0
 jump h8_1
 h8_0:
-arg 7
+arg 8
 int 3
 <
 h8_1:
 !
 bnz revert
-arg 1
 arg 2
 arg 3
 arg 4
 arg 5
 arg 6
 arg 7
+arg 8
 // XXX digest
 pstore 0
 // </Handler 8>
@@ -263,26 +305,32 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
 gtxn 0 Sender
-arg 1
+arg 2
 !=
 bnz revert
 arg 1
+int 10
++
+gtxn 0 FirstValid
+<
+!
+bnz revert
 arg 2
 arg 3
 arg 4
 arg 5
 arg 6
+arg 7
 // XXX digest
 pload 0
 !=
 bnz revert
-arg 1
 arg 2
 arg 3
 arg 4
 arg 5
+arg 6
 int 4
 store 5
 store 4
@@ -302,18 +350,24 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
 gtxn 0 Sender
-arg 1
+arg 2
 !=
 bnz revert
 arg 1
+int 10
++
+gtxn 0 LastValid
+>=
+!
+bnz revert
 arg 2
 arg 3
 arg 4
 arg 5
 arg 6
 arg 7
+arg 8
 // XXX digest
 pload 0
 !=
@@ -323,46 +377,46 @@ int 0
 ==
 !
 bnz revert
-arg 6
-arg 8
+arg 7
 arg 9
+arg 10
 // XXX digest
 ==
 !
 bnz revert
 int 0
-arg 9
+arg 10
 <=
 bnz h10_0
 int 0
 jump h10_1
 h10_0:
-arg 9
+arg 10
 int 3
 <
 h10_1:
 !
 bnz revert
 int 0
-arg 9
+arg 10
 <=
 bnz h10_2
 int 0
 jump h10_3
 h10_2:
-arg 9
+arg 10
 int 3
 <
 h10_3:
 store 0
 int 0
-arg 7
+arg 8
 <=
 bnz h10_4
 int 0
 jump h10_5
 h10_4:
-arg 7
+arg 8
 int 3
 <
 h10_5:
@@ -390,9 +444,9 @@ int 2
 h10_12:
 jump h10_13
 h10_8:
-arg 9
+arg 10
 int 4
-arg 7
+arg 8
 -
 +
 int 3
@@ -407,12 +461,12 @@ load 2
 int 0
 ==
 store 4
-arg 1
 arg 2
 arg 3
 arg 4
-int 1
 arg 5
+int 1
+arg 6
 +
 load 2
 store 5
@@ -433,27 +487,33 @@ gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
-// XXX handler check timeout
 gtxn 0 Sender
-arg 2
+arg 3
 !=
 bnz revert
 arg 1
+int 10
++
+gtxn 0 FirstValid
+<
+!
+bnz revert
 arg 2
 arg 3
 arg 4
 arg 5
 arg 6
 arg 7
+arg 8
 // XXX digest
 pload 0
 !=
 bnz revert
-arg 1
 arg 2
 arg 3
 arg 4
 arg 5
+arg 6
 int 3
 store 5
 store 4
@@ -591,7 +651,7 @@ revert:
 int 0
 halt
 halt:
-byte 
+byte ""
 pstore 0
 int 1
 halt
