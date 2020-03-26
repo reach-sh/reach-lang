@@ -180,6 +180,7 @@ comp_hash hm cs as = do
           if n == 0 then
             comp_con (Con_BS "")
           else
+            --- FIXME relies on concat: https://github.com/algorand/go-algorand/issues/781
             (digest_of (n-1) ++ code "concat" [])
 
 comp_cexpr :: CompileSt a -> CExpr a -> TACM ann TEALs
