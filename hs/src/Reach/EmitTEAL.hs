@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Reach.EmitTEAL where
 
 import Control.Monad.Extra
@@ -6,17 +8,23 @@ import qualified Data.Map.Strict as M
 import Data.List
 
 import Reach.AST
---import Reach.Util
+import Reach.Util
 import Reach.EmitSol
   ( CCounts
   , usesCTail )
 
-type LabelM ann a = State LabelSt a
-type LabelSt = Int
+type TACM ann a = State TACSt a
+type TACSt = (Int, Int)
 
-labelRun :: LabelM ann a -> a
-labelRun lm = ans
-  where (ans, _) = runState lm 0
+tacRun :: TACM ann a -> a
+tacRun lm = ans
+  where (ans, _) = runState lm (0, 1)
+
+alloc_txn :: TACM ann Int
+alloc_txn = do
+  (lab_i, txn_i) <- get
+  put (lab_i, txn_i + 1)
+  return $ txn_i
 
 data TEAL
   = TEAL TEALs
@@ -42,6 +50,7 @@ data VarRHS a
   = VR_Expr (CExpr a)
   | VR_Slot Int
   | VR_Arg Int
+  | VR_Code TEALs
 
 cs_init :: String -> CompileSt a
 cs_init lab = ( lab, 0, M.empty )
@@ -60,15 +69,9 @@ cs_var_set cs bv vr = cs'
   where cs' = ( lab, loc, M.insert bv vr vmap )
         ( lab, loc, vmap ) = cs
 
-cs_var_expr :: CompileSt a -> BLVar -> CExpr a -> CompileSt a
-cs_var_expr cs bv ce = cs_var_set cs bv (VR_Expr ce)
-
-cs_var_arg :: CompileSt a -> BLVar -> Int -> CompileSt a
-cs_var_arg cs bv i = cs_var_set cs bv (VR_Arg i)
-
 cs_var_args :: CompileSt a -> [ BLVar ] -> CompileSt a
 cs_var_args cs as = cs'
-  where h (cs0, i) a = ((cs_var_arg cs0 a i), i+1)
+  where h (cs0, i) a = ((cs_var_set cs0 a (VR_Arg i)), i+1)
         (cs', _) = foldl h (cs, 1) as
 
 cs_label :: CompileSt a -> String
@@ -77,12 +80,12 @@ cs_label ( lab, _, _ ) = lab
 label_ext :: String -> Int -> String
 label_ext lab ext = lab ++ "_" ++ (show ext)
 
-alloc_lab :: CompileSt a -> LabelM ann String
+alloc_lab :: CompileSt a -> TACM ann String
 alloc_lab cs = do
   let ( lab, _, _ ) = cs
-  i <- get
-  put (i+1)
-  return $ label_ext lab i
+  (lab_i, txn_i) <- get
+  put (lab_i + 1, txn_i )
+  return $ label_ext lab lab_i
 
 bracket :: String -> TEALs -> TEALs
 bracket lab ls = TL_Comment ("<" ++ lab ++ ">") : ls ++ [ TL_Comment ("</" ++ lab ++ ">") ]
@@ -106,20 +109,22 @@ comp_con c =
     Con_BS bs ->
       code "byte" [ show bs ]
 
-comp_blvar :: CompileSt a -> BLVar -> LabelM ann TEALs
+comp_blvar :: CompileSt a -> BLVar -> TACM ann TEALs
 comp_blvar cs bv = 
   case M.lookup bv vmap of
     Nothing ->
-      return $ xxx $ "unbound variable: " ++ show bv
+      impossible $ "unbound variable: " ++ show bv
     Just (VR_Arg a) ->
       return $ code "arg" [ show a ]
     Just (VR_Slot s) ->
       return $ code "load" [ show s ]
+    Just (VR_Code ls) ->
+      return ls
     Just (VR_Expr ce) ->
       comp_cexpr cs ce
   where ( _, _, vmap ) = cs
 
-comp_blarg :: CompileSt a -> BLArg a -> LabelM ann TEALs
+comp_blarg :: CompileSt a -> BLArg a -> TACM ann TEALs
 comp_blarg cs a =
   case a of
     BL_Con _ c -> return $ comp_con c
@@ -130,12 +135,12 @@ data HashMode
   | HM_State Int Bool
   deriving (Show, Eq, Ord)
 
-comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> LabelM ann TEALs
+comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> TACM ann TEALs
 comp_hash _m cs as = do
   asl <- concatMapM (comp_blarg cs) as
   return $ asl ++ xxx "digest"
 
-comp_cexpr :: CompileSt a -> CExpr a -> LabelM ann TEALs
+comp_cexpr :: CompileSt a -> CExpr a -> TACM ann TEALs
 comp_cexpr cs e =
   case e of
     C_Digest _ as ->
@@ -168,16 +173,15 @@ comp_cexpr cs e =
           where [ a_cond, a_true, a_false ] = as
         BALANCE ->
           --- FIXME Algorand ASC1 cannot inspect the balance
-          return $ comp_con $ Con_I 1
+          return $ comp_con $ Con_I 0
         TXN_VALUE ->
-          --- FIXME What does this mean in Algorand?
-          return $ code "txn" [ "Amount" ]
+          return $ code "gtxn" [ "0", "Amount" ]
         BYTES_EQ -> p_op "=="
      where p_op o = do
              asl <- concatMapM (comp_blarg cs) as
              return $ asl ++ code o []
 
-comp_cstmt :: CompileSt a -> CStmt a -> LabelM ann TEALs
+comp_cstmt :: CompileSt a -> CStmt a -> TACM ann TEALs
 comp_cstmt cs s =
   case s of
     C_Claim _ CT_Possible _ -> return $ []
@@ -190,11 +194,12 @@ comp_cstmt cs s =
     C_Transfer _ p a -> do
       a_ls <- comp_blarg cs a
       p_ls <- comp_blvar cs p
+      txn_i <- alloc_txn
       return $ a_ls
         ++ p_ls
-        ++ xxx "transfer"
+        ++ (xxx $ "transfer " ++ (show txn_i)) 
 
-comp_ctail :: CCounts -> CompileSt a -> CTail a -> LabelM ann TEALs
+comp_ctail :: CCounts -> CompileSt a -> CTail a -> TACM ann TEALs
 comp_ctail ccs cs t =
   case t of
     C_Halt _ ->
@@ -223,7 +228,7 @@ comp_ctail ccs cs t =
           return $ ce_ls
             ++ code "store" [show bv_loc]
             ++ kt_ls
-      where cs_later = cs_var_expr cs bv ce
+      where cs_later = cs_var_set cs bv (VR_Expr ce)
             (bv_loc, cs_scratch) = cs_var_loc cs bv
     C_Do _ ds kt -> do
       ds_ls <- comp_cstmt cs ds
@@ -242,20 +247,39 @@ comp_ctail ccs cs t =
                 ++ stack_to_slot (n - 1)
 
 comp_chandler :: String -> CHandler a -> (String, TEALs)
-comp_chandler next_lab (C_Handler loc _from_spec _is_timeout (last_i, svs) msg _delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ labelRun bodym)
+comp_chandler next_lab (C_Handler loc from_spec _is_timeout (last_i, svs) msg _delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ tacRun bodym)
   where lab = "h" ++ show i
         cs0 = cs_init lab
-        cs = cs_var_args cs0 $ svs ++ msg
+        cs1 = cs_var_args cs0 $ svs ++ msg
+        cs = case from_spec of
+               FS_Join from ->
+                 cs_var_set cs1 from (VR_Code (code "gtxn" [ "0", "Sender" ]))
+               FS_From _ -> cs1
+               FS_Any -> cs1
         pre_ls = code "arg" [ "0" ]
           ++ (comp_con $ Con_I $ fromIntegral i)
           ++ code "!=" []
           ++ code "bnz" [ next_lab ]
-          ++ xxx "handler check sender"
+          ++ code "gtxn" [ "0", "Receiver" ]
+          ++ comp_con (Con_BS $ "${CONTRACT_ACCOUNT}")
+          ++ code "!=" []
+          ++ code "bnz" [ "revert" ]
           ++ xxx "handler check timeout"
         bodym = do
+          sender_ls <-
+            case from_spec of
+              FS_Join _ -> return []
+              FS_Any -> return []
+              FS_From from -> do
+                from_ls <- comp_blvar cs from
+                return $ code "gtxn" [ "0", "Sender" ]
+                  ++ from_ls
+                  ++ code "!=" []
+                  ++ code "bnz" [ "revert" ]
           hash_ls <- comp_hash (HM_State last_i False) cs (map (BL_Var loc) svs)
           body_ls <- comp_ctail (usesCTail body) cs body
-          return $ hash_ls
+          return $ sender_ls
+            ++ hash_ls
             ++ code "pload" [ "0" ]
             ++ code "!=" []
             ++ code "bnz" [ "revert" ]
@@ -264,7 +288,7 @@ comp_chandler next_lab (C_Loop _ _svs _args _inv _body _i) = (next_lab, [])
 
 comp_cloop :: CHandler a -> TEALs
 comp_cloop (C_Handler _ _from_spec _is_timeout _ _msg _delay _body _i) = []
-comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label lab ++ labelRun (comp_ctail (usesCTail body) cs body)
+comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label lab ++ tacRun (comp_ctail (usesCTail body) cs body)
   where lab = "l" ++ show i
         cs0 = cs_init lab
         cs = cs_var_locs cs0 $ svs ++ args
@@ -283,10 +307,14 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                     ++ comp_con (Con_I 0)
                     ++ code "halt" []
         halt_ls = label "halt"
+                  ++ code "byte" [ "" ]
+                  ++ code "pstore" [ "0" ]
                   ++ comp_con (Con_I 1)
                   ++ code "halt" []
 
--- FIXME We use "halt" and "jump", which don't really exist
+-- FIXME relies on halt: https://github.com/algorand/go-algorand/issues/932
+
+-- FIXME relies on jump: https://github.com/algorand/go-algorand/issues/930
 
 emit_teal :: FilePath -> BLProgram a -> IO String
 emit_teal tf (BL_Prog _ _ cp) = do

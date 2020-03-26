@@ -8,20 +8,23 @@ arg 0
 int 1
 !=
 bnz h2
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
 // XXX digest
 pload 0
 !=
 bnz revert
-txn Amount
+gtxn 0 Amount
 arg 1
 arg 2
 +
 ==
 !
 bnz revert
-// XXX unbound variable: (0,("A",BT_Address))
+gtxn 0 Sender
 arg 1
 arg 2
 // XXX digest
@@ -33,7 +36,10 @@ arg 0
 int 2
 !=
 bnz h3
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
 // XXX digest
 pload 0
@@ -47,7 +53,10 @@ arg 0
 int 3
 !=
 bnz h4
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
 arg 1
 arg 2
@@ -56,13 +65,13 @@ arg 3
 pload 0
 !=
 bnz revert
-txn Amount
+gtxn 0 Amount
 arg 2
 ==
 !
 bnz revert
 arg 1
-// XXX unbound variable: (3,("B",BT_Address))
+gtxn 0 Sender
 arg 2
 arg 3
 int 0
@@ -81,8 +90,15 @@ arg 0
 int 4
 !=
 bnz h6
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
+gtxn 0 Sender
+arg 1
+!=
+bnz revert
 arg 1
 arg 2
 arg 3
@@ -90,9 +106,9 @@ arg 3
 pload 0
 !=
 bnz revert
-int 1
+int 0
 arg 1
-// XXX transfer
+// XXX transfer 1
 jump halt
 // </Handler 4>
 // <Handler 6>
@@ -101,8 +117,15 @@ arg 0
 int 6
 !=
 bnz h7
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
+gtxn 0 Sender
+arg 1
+!=
+bnz revert
 arg 1
 arg 2
 arg 3
@@ -112,7 +135,7 @@ arg 5
 pload 0
 !=
 bnz revert
-txn Amount
+gtxn 0 Amount
 int 0
 ==
 !
@@ -132,8 +155,15 @@ arg 0
 int 7
 !=
 bnz h8
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
+gtxn 0 Sender
+arg 2
+!=
+bnz revert
 arg 1
 arg 2
 arg 3
@@ -163,8 +193,15 @@ arg 0
 int 8
 !=
 bnz h9
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
+gtxn 0 Sender
+arg 2
+!=
+bnz revert
 arg 1
 arg 2
 arg 3
@@ -175,7 +212,7 @@ arg 6
 pload 0
 !=
 bnz revert
-txn Amount
+gtxn 0 Amount
 int 0
 ==
 !
@@ -209,8 +246,15 @@ arg 0
 int 9
 !=
 bnz h10
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
+gtxn 0 Sender
+arg 1
+!=
+bnz revert
 arg 1
 arg 2
 arg 3
@@ -241,8 +285,15 @@ arg 0
 int 10
 !=
 bnz h11
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
+gtxn 0 Sender
+arg 1
+!=
+bnz revert
 arg 1
 arg 2
 arg 3
@@ -254,7 +305,7 @@ arg 7
 pload 0
 !=
 bnz revert
-txn Amount
+gtxn 0 Amount
 int 0
 ==
 !
@@ -365,8 +416,15 @@ arg 0
 int 11
 !=
 bnz revert
-// XXX handler check sender
+gtxn 0 Receiver
+byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
 // XXX handler check timeout
+gtxn 0 Sender
+arg 2
+!=
+bnz revert
 arg 1
 arg 2
 arg 3
@@ -438,7 +496,7 @@ load 2
 l5_6:
 +
 load 0
-// XXX transfer
+// XXX transfer 1
 load 6
 bnz l5_7
 int 2
@@ -449,17 +507,17 @@ l5_7:
 int 0
 l5_8:
 load 1
-// XXX transfer
+// XXX transfer 2
 jump halt
 l5_4:
-int 1
+int 0
 load 0
-// XXX transfer
+// XXX transfer 3
 jump halt
 l5_3:
-int 1
+int 0
 load 1
-// XXX transfer
+// XXX transfer 4
 jump halt
 // </Loop 5>
 // </Loops>
@@ -468,6 +526,8 @@ revert:
 int 0
 halt
 halt:
+byte 
+pstore 0
 int 1
 halt
 // </Standard>
