@@ -1,13 +1,13 @@
 // <Dispatcher>
-// XXX dispatcher
+jump h1
 // </Dispatcher>
 // <Handlers>
 // <Handler 1>
 h1:
 // XXX handler
-// XXX txn value
-arg 0
+txn Amount
 arg 1
+arg 2
 +
 ==
 !
@@ -22,25 +22,37 @@ jump halt
 // <Handler 3>
 h3:
 // XXX handler
-// XXX txn value
-arg 1
+txn Amount
+arg 2
 ==
 !
 bnz revert
-// XXX jump
+arg 1
+// XXX unbound variable: (3,("B",BT_Address))
+arg 2
+arg 3
+int 0
+int 1
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+jump l5
 // </Handler 3>
 // <Handler 4>
 h4:
 // XXX handler
-// XXX balance
-arg 0
+int 1
+arg 1
 // XXX transfer
 jump halt
 // </Handler 4>
 // <Handler 6>
 h6:
 // XXX handler
-// XXX txn value
+txn Amount
 int 0
 ==
 !
@@ -50,24 +62,36 @@ bnz revert
 // <Handler 7>
 h7:
 // XXX handler
-// XXX jump
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+int 3
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+jump l5
 // </Handler 7>
 // <Handler 8>
 h8:
 // XXX handler
-// XXX txn value
+txn Amount
 int 0
 ==
 !
 bnz revert
 int 0
-arg 6
+arg 7
 <=
 bnz h8_0
 int 0
 jump h8_1
 h8_0:
-arg 6
+arg 7
 int 3
 <
 h8_1:
@@ -78,56 +102,68 @@ bnz revert
 // <Handler 9>
 h9:
 // XXX handler
-// XXX jump
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+int 4
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+jump l5
 // </Handler 9>
 // <Handler 10>
 h10:
 // XXX handler
-// XXX txn value
+txn Amount
 int 0
 ==
 !
 bnz revert
-arg 5
-arg 7
+arg 6
 arg 8
+arg 9
 // XXX digest
 ==
 !
 bnz revert
 int 0
-arg 8
+arg 9
 <=
 bnz h10_0
 int 0
 jump h10_1
 h10_0:
-arg 8
+arg 9
 int 3
 <
 h10_1:
 !
 bnz revert
 int 0
-arg 8
+arg 9
 <=
 bnz h10_2
 int 0
 jump h10_3
 h10_2:
-arg 8
+arg 9
 int 3
 <
 h10_3:
 store 0
 int 0
-arg 6
+arg 7
 <=
 bnz h10_4
 int 0
 jump h10_5
 h10_4:
-arg 6
+arg 7
 int 3
 <
 h10_5:
@@ -155,9 +191,9 @@ int 2
 h10_12:
 jump h10_13
 h10_8:
-arg 8
+arg 9
 int 4
-arg 6
+arg 7
 -
 +
 int 3
@@ -172,19 +208,44 @@ load 2
 int 0
 ==
 store 4
-// XXX jump
+arg 1
+arg 2
+arg 3
+arg 4
+int 1
+arg 5
++
+load 2
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+jump l5
 // </Handler 10>
 // <Handler 11>
 h11:
 // XXX handler
-// XXX jump
+arg 1
+arg 2
+arg 3
+arg 4
+arg 5
+int 3
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+jump l5
 // </Handler 11>
 // </Handlers>
 // <Loops>
 // <Loop 5>
 l5:
-// XXX loop pre
-arg 5
+load 5
 int 1
 ==
 bnz l5_0
@@ -196,51 +257,51 @@ l5_1:
 bnz l5_2
 // XXX wait
 l5_2:
-arg 5
+load 5
 int 3
 ==
 bnz l5_3
-arg 5
+load 5
 int 4
 ==
 bnz l5_4
-arg 5
+load 5
 int 2
 ==
-store 0
-arg 3
-load 0
+store 6
+load 3
+load 6
 bnz l5_5
 int 0
 jump l5_6
 l5_5:
 int 2
-arg 2
+load 2
 *
 l5_6:
 +
-arg 0
-// XXX transfer
 load 0
+// XXX transfer
+load 6
 bnz l5_7
 int 2
-arg 2
+load 2
 *
 jump l5_8
 l5_7:
 int 0
 l5_8:
-arg 1
+load 1
 // XXX transfer
 jump halt
 l5_4:
-// XXX balance
-arg 0
+int 1
+load 0
 // XXX transfer
 jump halt
 l5_3:
-// XXX balance
-arg 1
+int 1
+load 1
 // XXX transfer
 jump halt
 // </Loop 5>
