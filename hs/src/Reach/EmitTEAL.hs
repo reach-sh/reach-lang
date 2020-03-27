@@ -279,8 +279,9 @@ comp_ctail ccs cs ts t =
     C_Wait loc i svs -> do
       hash_ls <- comp_hash (HM_State i True) cs (map (BL_Var loc) svs)
       return $ txn_ensure_size ts
+        ++ comp_con (Con_BS "state")
         ++ hash_ls
-        ++ code "pstore" [ "0" ]
+        ++ code "app_global_put" []
     C_If _ ca tt ft -> do
       ca_ls <- comp_blarg cs ca
       true_lab <- alloc_lab cs
@@ -382,7 +383,8 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
             ++ code "bnz" [ "revert" ]
             -- end of timeout checking
             ++ hash_ls
-            ++ code "pload" [ "0" ]
+            ++ comp_con (Con_BS "state")
+            ++ code "app_global_get" [ ]
             ++ code "!=" []
             ++ code "bnz" [ "revert" ]
             ++ body_ls
@@ -409,8 +411,9 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                     ++ comp_con (Con_I 0)
                     ++ code "halt" []
         halt_ls = label "halt"
+                  ++ comp_con (Con_BS "state")
                   ++ comp_con (Con_BS "")
-                  ++ code "pstore" [ "0" ]
+                  ++ code "app_global_put" []
                   ++ comp_con (Con_I 1)
                   ++ code "halt" []
 
@@ -418,7 +421,7 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
 
 -- FIXME relies on jump: https://github.com/algorand/go-algorand/issues/930
 
--- FIXME relies on pstore/pload: https://github.com/algorand/go-algorand/issues/935
+-- FIXME relies on application state: https://github.com/algorand/go-algorand/issues/935 / https://github.com/algorandfoundation/specs/pull/23/files
 
 emit_teal :: FilePath -> BLProgram a -> IO String
 emit_teal tf (BL_Prog _ _ cp) = do

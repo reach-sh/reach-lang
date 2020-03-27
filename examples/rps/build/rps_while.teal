@@ -31,7 +31,8 @@ byte ""
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 gtxn 0 Amount
@@ -45,6 +46,7 @@ int 1
 global GroupSize
 !=
 bnz revert
+byte "state"
 int 1
 itob
 gtxn 0 LastValid
@@ -61,7 +63,7 @@ concat
 concat
 concat
 keccak256
-pstore 0
+app_global_put
 // </Handler 1>
 // <Handler 2>
 h2:
@@ -92,7 +94,8 @@ byte ""
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 int 1
@@ -138,7 +141,8 @@ concat
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 gtxn 0 Amount
@@ -201,7 +205,8 @@ concat
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 int 1
@@ -277,7 +282,8 @@ concat
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 gtxn 0 Amount
@@ -289,6 +295,7 @@ int 1
 global GroupSize
 !=
 bnz revert
+byte "state"
 int 6
 itob
 gtxn 0 LastValid
@@ -313,7 +320,7 @@ concat
 concat
 concat
 keccak256
-pstore 0
+app_global_put
 // </Handler 6>
 // <Handler 7>
 h7:
@@ -361,7 +368,8 @@ concat
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 arg 2
@@ -427,7 +435,8 @@ concat
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 gtxn 0 Amount
@@ -452,6 +461,7 @@ int 1
 global GroupSize
 !=
 bnz revert
+byte "state"
 int 8
 itob
 gtxn 0 LastValid
@@ -479,7 +489,7 @@ concat
 concat
 concat
 keccak256
-pstore 0
+app_global_put
 // </Handler 8>
 // <Handler 9>
 h9:
@@ -530,7 +540,8 @@ concat
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 arg 2
@@ -599,7 +610,8 @@ concat
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 gtxn 0 Amount
@@ -764,7 +776,8 @@ concat
 concat
 concat
 keccak256
-pload 0
+byte "state"
+app_global_get
 !=
 bnz revert
 arg 2
@@ -799,6 +812,7 @@ int 1
 global GroupSize
 !=
 bnz revert
+byte "state"
 int 3
 itob
 gtxn 0 LastValid
@@ -820,7 +834,7 @@ concat
 concat
 concat
 keccak256
-pstore 0
+app_global_put
 l5_2:
 load 5
 int 3
@@ -958,8 +972,9 @@ revert:
 int 0
 halt
 halt:
+byte "state"
 byte ""
-pstore 0
+app_global_put
 int 1
 halt
 // </Standard>
