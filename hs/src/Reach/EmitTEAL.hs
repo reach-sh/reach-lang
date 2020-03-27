@@ -13,18 +13,12 @@ import Reach.EmitSol
   ( CCounts
   , usesCTail )
 
-type TACM ann a = State TACSt a
-type TACSt = (Int, Int)
+type LabelM ann a = State LabelSt a
+type LabelSt = Int
 
-tacRun :: TACM ann a -> a
-tacRun lm = ans
-  where (ans, _) = runState lm (0, 1)
-
-alloc_txn :: TACM ann Int
-alloc_txn = do
-  (lab_i, txn_i) <- get
-  put (lab_i, txn_i + 1)
-  return $ txn_i
+labelRun :: LabelM ann a -> a
+labelRun lm = ans
+  where (ans, _) = runState lm 0
 
 data TEAL
   = TEAL TEALs
@@ -51,6 +45,15 @@ data VarRHS a
   | VR_Slot Int
   | VR_Arg Int
   | VR_Code TEALs
+
+type TxnSt
+  = Int
+
+txn_init :: TxnSt
+txn_init = 1
+
+txn_alloc :: TxnSt -> ( Int, TxnSt )
+txn_alloc i = ( i, i + 1)
 
 cs_init :: String -> CompileSt a
 cs_init lab = ( lab, 0, M.empty )
@@ -82,11 +85,11 @@ cs_label ( lab, _, _ ) = lab
 label_ext :: String -> Int -> String
 label_ext lab ext = lab ++ "_" ++ (show ext)
 
-alloc_lab :: CompileSt a -> TACM ann String
+alloc_lab :: CompileSt a -> LabelM ann String
 alloc_lab cs = do
   let ( lab, _, _ ) = cs
-  (lab_i, txn_i) <- get
-  put (lab_i + 1, txn_i )
+  lab_i <- get
+  put $ lab_i + 1
   return $ label_ext lab lab_i
 
 bracket :: String -> TEALs -> TEALs
@@ -111,7 +114,7 @@ comp_con c =
     Con_BS bs ->
       code "byte" [ show bs ]
 
-comp_blvar :: CompileSt a -> BLVar -> TACM ann TEALs
+comp_blvar :: CompileSt a -> BLVar -> LabelM ann TEALs
 comp_blvar cs bv = 
   case M.lookup bv vmap of
     Nothing ->
@@ -126,7 +129,7 @@ comp_blvar cs bv =
       comp_cexpr cs ce
   where ( _, _, vmap ) = cs
 
-comp_blarg_ty :: CompileSt a -> BLArg a -> TACM ann (BaseType, TEALs)
+comp_blarg_ty :: CompileSt a -> BLArg a -> LabelM ann (BaseType, TEALs)
 comp_blarg_ty cs a =
   case a of
     BL_Con _ c -> return (conType c, comp_con c)
@@ -135,7 +138,7 @@ comp_blarg_ty cs a =
       let (_, (_, ty)) = v
       return (ty, ls)
 
-comp_blarg :: CompileSt a -> BLArg a -> TACM ann TEALs
+comp_blarg :: CompileSt a -> BLArg a -> LabelM ann TEALs
 comp_blarg cs a = do
   (_, ls) <- comp_blarg_ty cs a
   return ls
@@ -145,7 +148,7 @@ data HashMode
   | HM_State Int Bool
   deriving (Show, Eq, Ord)
 
-comp_blarg_for_hash :: CompileSt a -> BLArg a -> TACM ann TEALs
+comp_blarg_for_hash :: CompileSt a -> BLArg a -> LabelM ann TEALs
 comp_blarg_for_hash cs a = do
   (ty, ls) <- comp_blarg_ty cs a
   let convert_ls =
@@ -156,7 +159,7 @@ comp_blarg_for_hash cs a = do
           BT_Address -> []
   return $ ls ++ convert_ls
 
-comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> TACM ann TEALs
+comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> LabelM ann TEALs
 comp_hash hm cs as = do
   let (pre_len, pre_ls) =
         case hm of
@@ -183,7 +186,7 @@ comp_hash hm cs as = do
             --- FIXME relies on concat: https://github.com/algorand/go-algorand/issues/781
             (digest_of (n-1) ++ code "concat" [])
 
-comp_cexpr :: CompileSt a -> CExpr a -> TACM ann TEALs
+comp_cexpr :: CompileSt a -> CExpr a -> LabelM ann TEALs
 comp_cexpr cs e =
   case e of
     C_Digest _ as ->
@@ -215,8 +218,8 @@ comp_cexpr cs e =
             ++ label cont_lab
           where [ a_cond, a_true, a_false ] = as
         BALANCE ->
-          --- FIXME Algorand ASC1 cannot inspect the balance
-          return $ comp_con $ Con_I 0
+          return $ comp_con (Con_I 0)
+            ++ code "balance" []
         TXN_VALUE ->
           return $ code "gtxn" [ "0", "Amount" ]
         BYTES_EQ -> p_op "=="
@@ -224,24 +227,28 @@ comp_cexpr cs e =
              asl <- concatMapM (comp_blarg cs) as
              return $ asl ++ code o []
 
-comp_cstmt :: CompileSt a -> CStmt a -> TACM ann TEALs
-comp_cstmt cs s =
+comp_cstmt :: CompileSt a -> TxnSt -> CStmt a -> LabelM ann (TxnSt, TEALs)
+comp_cstmt cs ts s =
   case s of
-    C_Claim _ CT_Possible _ -> return $ []
-    C_Claim _ CT_Assert _ -> return $ []
+    C_Claim _ CT_Possible _ -> return $ (ts, [])
+    C_Claim _ CT_Assert _ -> return $ (ts, [])
     C_Claim _ _ a -> do
       a_ls <- comp_blarg cs a
-      return $ a_ls
+      return $ (ts, a_ls
         ++ code "!" []
-        ++ code "bnz" [ "revert" ]
+        ++ code "bnz" [ "revert" ])
     C_Transfer _ p a -> do
       a_ls <- comp_blarg cs a
       p_ls <- comp_blvar cs p
-      txn_i <- alloc_txn
+      let (txn_i, ts') = txn_alloc ts
       let txn_is = show txn_i
-      return $ comp_con (Con_I $ fromIntegral $ txn_i) 
+      return $ (ts', comp_con (Con_I $ fromIntegral $ txn_i) 
         ++ code "global" [ "GroupSize" ]
         ++ code ">" [ ]
+        ++ code "bnz" [ "revert" ]
+        ++ code "gtxn" [ txn_is, "TypeEnum" ]
+        ++ comp_con (Con_I $ 1)
+        ++ code "!=" [ ]
         ++ code "bnz" [ "revert" ]
         ++ code "gtxn" [ txn_is, "Amount" ]
         ++ a_ls
@@ -254,22 +261,31 @@ comp_cstmt cs s =
         ++ code "gtxn" [ txn_is, "Sender" ]
         ++ comp_con (Con_BS $ "${CONTRACT_ACCOUNT}")
         ++ code "!=" [ ]
-        ++ code "bnz" [ "revert" ] 
+        ++ code "bnz" [ "revert" ])
 
-comp_ctail :: CCounts -> CompileSt a -> CTail a -> TACM ann TEALs
-comp_ctail ccs cs t =
+txn_ensure_size :: TxnSt -> TEALs
+txn_ensure_size sz =
+  comp_con (Con_I $ fromIntegral sz)
+  ++ code "global" [ "GroupSize" ]
+  ++ code "!=" [ ]
+  ++ code "bnz" [ "revert" ]
+
+comp_ctail :: CCounts -> CompileSt a -> TxnSt -> CTail a -> LabelM ann TEALs
+comp_ctail ccs cs ts t =
   case t of
     C_Halt _ ->
-      return $ code "jump" ["halt"]
+      return $ txn_ensure_size ts
+        ++ code "jump" ["halt"]
     C_Wait loc i svs -> do
       hash_ls <- comp_hash (HM_State i True) cs (map (BL_Var loc) svs)
-      return $ hash_ls
+      return $ txn_ensure_size ts
+        ++ hash_ls
         ++ code "pstore" [ "0" ]
     C_If _ ca tt ft -> do
       ca_ls <- comp_blarg cs ca
       true_lab <- alloc_lab cs
-      ft_ls <- comp_ctail ccs cs ft
-      tt_ls <- comp_ctail ccs cs tt
+      ft_ls <- comp_ctail ccs cs ts ft
+      tt_ls <- comp_ctail ccs cs ts tt
       return $ ca_ls
         ++ code "bnz" [true_lab]
         ++ ft_ls
@@ -277,34 +293,38 @@ comp_ctail ccs cs t =
         ++ tt_ls
     C_Let _ bv ce kt ->
       case M.lookup bv ccs of
-        Just 0 -> comp_ctail ccs cs kt
-        Just 1 -> comp_ctail ccs cs_later kt
+        Just 0 -> comp_ctail ccs cs ts kt
+        Just 1 -> comp_ctail ccs cs_later ts kt
         _ -> do
           ce_ls <- comp_cexpr cs ce
-          kt_ls <- comp_ctail ccs cs_scratch kt
+          kt_ls <- comp_ctail ccs cs_scratch ts kt
           return $ ce_ls
             ++ code "store" [show bv_loc]
             ++ kt_ls
       where cs_later = cs_var_set cs bv (VR_Expr ce)
             (bv_loc, cs_scratch) = cs_var_loc cs bv
     C_Do _ ds kt -> do
-      ds_ls <- comp_cstmt cs ds
-      kt_ls <- comp_ctail ccs cs kt
+      (ts', ds_ls) <- comp_cstmt cs ts ds
+      kt_ls <- comp_ctail ccs cs ts' kt
       return $ ds_ls ++ kt_ls
-    C_Jump loc which vs _ as -> do
-      args <- concatMapM (comp_blarg cs) $ (map (BL_Var loc) vs) ++ as
-      return $ args
-        ++ stack_to_slot ((length vs) + (length as)) 
-        ++ code "jump" [ "l" ++ show which ]
-      where stack_to_slot n =
-              if n == 0 then
-                []
-              else
-                code "store" [ show $ n - 1 ]
-                ++ stack_to_slot (n - 1)
+    C_Jump loc which vs _ as ->
+      if ts /= txn_init then
+        impossible $ "jump preceded by transfers"
+      else
+        do
+          args <- concatMapM (comp_blarg cs) $ (map (BL_Var loc) vs) ++ as
+          return $ args
+            ++ stack_to_slot ((length vs) + (length as)) 
+            ++ code "jump" [ "l" ++ show which ]
+        where stack_to_slot n =
+                if n == 0 then
+                  []
+                else
+                  code "store" [ show $ n - 1 ]
+                  ++ stack_to_slot (n - 1)
 
 comp_chandler :: String -> CHandler a -> (String, TEALs)
-comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ tacRun bodym)
+comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ labelRun bodym)
   where lab = "h" ++ show i
         cs0 = cs_init lab
         cs1 = cs_var_args cs0 $ svs ++ msg
@@ -317,6 +337,10 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           ++ (comp_con $ Con_I $ fromIntegral i)
           ++ code "!=" []
           ++ code "bnz" [ next_lab ]
+          ++ code "gtxn" [ "0", "TypeEnum" ]
+          ++ comp_con (Con_I $ 1)
+          ++ code "!=" [ ]
+          ++ code "bnz" [ "revert" ]
           ++ code "gtxn" [ "0", "Receiver" ]
           ++ comp_con (Con_BS $ "${CONTRACT_ACCOUNT}")
           ++ code "!=" []
@@ -334,7 +358,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
                   ++ code "bnz" [ "revert" ]
           delay_ls <- comp_blarg cs delay
           hash_ls <- comp_hash (HM_State last_i False) cs (map (BL_Var loc) svs)
-          body_ls <- comp_ctail (usesCTail body) cs body
+          body_ls <- comp_ctail (usesCTail body) cs txn_init body
           return $ sender_ls
             -- begin timeout checking
             ++ code "arg" [ "1" ]
@@ -366,7 +390,7 @@ comp_chandler next_lab (C_Loop _ _svs _args _inv _body _i) = (next_lab, [])
 
 comp_cloop :: CHandler a -> TEALs
 comp_cloop (C_Handler _ _from_spec _is_timeout _ _msg _delay _body _i) = []
-comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label lab ++ tacRun (comp_ctail (usesCTail body) cs body)
+comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label lab ++ labelRun (comp_ctail (usesCTail body) cs txn_init body)
   where lab = "l" ++ show i
         cs0 = cs_init lab
         cs = cs_var_locs cs0 $ svs ++ args
@@ -393,6 +417,8 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
 -- FIXME relies on halt: https://github.com/algorand/go-algorand/issues/932
 
 -- FIXME relies on jump: https://github.com/algorand/go-algorand/issues/930
+
+-- FIXME relies on pstore/pload: https://github.com/algorand/go-algorand/issues/935
 
 emit_teal :: FilePath -> BLProgram a -> IO String
 emit_teal tf (BL_Prog _ _ cp) = do

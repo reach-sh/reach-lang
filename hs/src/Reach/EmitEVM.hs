@@ -8,7 +8,6 @@ import qualified Data.Word as W
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BC
-import qualified EVM.Bytecode as EVM
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Q
 import qualified Data.Set as S
@@ -17,6 +16,9 @@ import Data.Monoid
 import Crypto.Hash
 import Data.List
 import Data.ByteArray (convert)
+
+import qualified EVM.Bytecode as EVM
+--- https://ethervm.io/
 
 import Reach.AST
 import Reach.Util
@@ -524,7 +526,8 @@ comp_cstmt s =
       comp_blarg a --- value
       comp_blvar p --- addr
       comp_con $ Con_I $ callStipend --- gas
-      --- Why does Solidity do... gas <- gas * !value
+      --- FIXME Why does Solidity do... gas <- gas * !value
+      --- https://github.com/ethereum/solidity/blob/a1cc2504bac07d18363c2e4ee595bc5477ebb1f7/libsolidity/codegen/ExpressionCompiler.cpp#L2322
       asm_op $ EVM.CALL
       asm_stack 7 1
       --- check if zero for failure
@@ -680,6 +683,7 @@ abiTag_type BT_Bytes = "bytes"
 abiTag_type BT_Address = "address"
 
 --- FIXME just get first four bytes
+--- https://solidity.readthedocs.io/en/latest/abi-spec.html#function-selector
 abiTag :: AbiTag_Kind -> Int -> [ BLVar ] -> Integer
 abiTag k i vs = h
   where label = case k of

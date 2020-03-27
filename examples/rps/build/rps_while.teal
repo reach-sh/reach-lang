@@ -8,6 +8,10 @@ arg 0
 int 1
 !=
 bnz h2
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -38,6 +42,10 @@ arg 3
 !
 bnz revert
 int 1
+global GroupSize
+!=
+bnz revert
+int 1
 itob
 gtxn 0 LastValid
 itob
@@ -61,6 +69,10 @@ arg 0
 int 2
 !=
 bnz h3
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -83,6 +95,10 @@ keccak256
 pload 0
 !=
 bnz revert
+int 1
+global GroupSize
+!=
+bnz revert
 jump halt
 // </Handler 2>
 // <Handler 3>
@@ -91,6 +107,10 @@ arg 0
 int 3
 !=
 bnz h4
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -146,6 +166,10 @@ arg 0
 int 4
 !=
 bnz h6
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -184,8 +208,13 @@ int 1
 global GroupSize
 >
 bnz revert
+gtxn 1 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 1 Amount
 int 0
+balance
 !=
 bnz revert
 gtxn 1 Receiver
@@ -196,6 +225,10 @@ gtxn 1 Sender
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
+int 2
+global GroupSize
+!=
+bnz revert
 jump halt
 // </Handler 4>
 // <Handler 6>
@@ -204,6 +237,10 @@ arg 0
 int 6
 !=
 bnz h7
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -248,6 +285,10 @@ int 0
 ==
 !
 bnz revert
+int 1
+global GroupSize
+!=
+bnz revert
 int 6
 itob
 gtxn 0 LastValid
@@ -280,6 +321,10 @@ arg 0
 int 7
 !=
 bnz h8
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -339,6 +384,10 @@ arg 0
 int 8
 !=
 bnz h9
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -399,6 +448,10 @@ int 3
 h8_1:
 !
 bnz revert
+int 1
+global GroupSize
+!=
+bnz revert
 int 8
 itob
 gtxn 0 LastValid
@@ -434,6 +487,10 @@ arg 0
 int 9
 !=
 bnz h10
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -496,6 +553,10 @@ arg 0
 int 10
 !=
 bnz h11
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -657,6 +718,10 @@ arg 0
 int 11
 !=
 bnz revert
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 0 Receiver
 byte "${CONTRACT_ACCOUNT}"
 !=
@@ -730,6 +795,10 @@ l5_0:
 int 0
 l5_1:
 bnz l5_2
+int 1
+global GroupSize
+!=
+bnz revert
 int 3
 itob
 gtxn 0 LastValid
@@ -769,6 +838,10 @@ int 1
 global GroupSize
 >
 bnz revert
+gtxn 1 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 1 Amount
 load 3
 load 6
@@ -795,6 +868,10 @@ int 2
 global GroupSize
 >
 bnz revert
+gtxn 2 TypeEnum
+int 1
+!=
+bnz revert
 gtxn 2 Amount
 load 6
 bnz l5_7
@@ -815,40 +892,62 @@ gtxn 2 Sender
 byte "${CONTRACT_ACCOUNT}"
 !=
 bnz revert
+int 3
+global GroupSize
+!=
+bnz revert
 jump halt
 l5_4:
-int 3
+int 1
 global GroupSize
 >
 bnz revert
-gtxn 3 Amount
-int 0
+gtxn 1 TypeEnum
+int 1
 !=
 bnz revert
-gtxn 3 Receiver
+gtxn 1 Amount
+int 0
+balance
+!=
+bnz revert
+gtxn 1 Receiver
 load 0
 !=
 bnz revert
-gtxn 3 Sender
+gtxn 1 Sender
 byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
+int 2
+global GroupSize
 !=
 bnz revert
 jump halt
 l5_3:
-int 4
+int 1
 global GroupSize
 >
 bnz revert
-gtxn 4 Amount
-int 0
+gtxn 1 TypeEnum
+int 1
 !=
 bnz revert
-gtxn 4 Receiver
+gtxn 1 Amount
+int 0
+balance
+!=
+bnz revert
+gtxn 1 Receiver
 load 1
 !=
 bnz revert
-gtxn 4 Sender
+gtxn 1 Sender
 byte "${CONTRACT_ACCOUNT}"
+!=
+bnz revert
+int 2
+global GroupSize
 !=
 bnz revert
 jump halt
