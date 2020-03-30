@@ -116,11 +116,17 @@ jsEPExpr _ (EP_Digest _ al) = (False, ((jsApply "stdlib.keccak256" $ map fst alp
 jsAssert :: Doc a -> Doc a
 jsAssert a = jsApply "stdlib.assert" [ a ] <> semi
 
+jsTransfer :: BLVar -> Doc a -> Doc a
+jsTransfer to a = pretty "// " <> jsApply "txn.transfer" [ jsVar to, a ] <> semi
+
 jsEPStmt :: EPStmt b -> Doc a -> (Doc a, Set.Set BLVar)
 jsEPStmt (EP_Claim _ CT_Possible _) kp = (kp, Set.empty)
 jsEPStmt (EP_Claim _ CT_Assert _) kp = (kp, Set.empty)
 jsEPStmt (EP_Claim _ _ a) kp = (vsep [ jsAssert ap, kp ], afvs)
   where (ap, afvs) = jsArg a
+jsEPStmt (EP_Transfer _ to a) kp = (vsep [ jsTransfer to ap, kp ], fvs)
+  where (ap, afvs) = jsArg a
+        fvs = Set.insert to afvs 
 
 add_from :: Int -> FromSpec -> (Doc a, Set.Set BLVar) -> (Doc a, Set.Set BLVar)
 add_from tn (FS_Join p) (x, s) =

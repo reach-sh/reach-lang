@@ -790,9 +790,9 @@ epp_e_ctc2loc :: CExpr ann -> EPExpr ann
 epp_e_ctc2loc (C_PrimApp h cp al) = (EP_PrimApp h (CP cp) al)
 epp_e_ctc2loc (C_Digest h al) = (EP_Digest h al)
 
-epp_s_ctc2loc :: CStmt ann -> Maybe (EPStmt ann)
-epp_s_ctc2loc (C_Claim h ct a) = Just (EP_Claim h ct a)
-epp_s_ctc2loc (C_Transfer _ _ _) = Nothing
+epp_s_ctc2loc :: CStmt ann -> EPStmt ann
+epp_s_ctc2loc (C_Claim h ct a) = EP_Claim h ct a
+epp_s_ctc2loc (C_Transfer h p a) = EP_Transfer h p a
 
 data EPPCtxt ann
   = EC_Top
@@ -846,9 +846,8 @@ epp_it_ctc ps this_h γ ctxt it = case it of
     (svs1, ct1, ts1) <- epp_it_ctc ps this_h γ ctxt next
     let svs = Set.union svs1 svs2
     let ct2 = C_Do h how' ct1
-    let ts2 = case epp_s_ctc2loc how' of
-                Nothing -> ts1
-                Just how'_ep -> M.map (EP_Do h how'_ep) ts1
+    let ts2 = M.map (EP_Do h how'_ep) ts1
+              where how'_ep = epp_s_ctc2loc how'
     return (svs, ct2, ts2)
   IL_Do h (RolePart _) _ _ ->
     expect_throw CE_ContractLimitation h ("local action" :: String)

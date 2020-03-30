@@ -285,6 +285,7 @@ data EPExpr a
 
 data EPStmt a
   = EP_Claim a ClaimType (BLArg a)
+  | EP_Transfer a BLVar (BLArg a)
   deriving (Show,Eq)
 
 data EPTail a

@@ -152,6 +152,7 @@ instance Pretty (EPExpr a) where
 
 instance Pretty (EPStmt a) where
   pretty (EP_Claim _ ct a) = prettyClaim ct a
+  pretty (EP_Transfer _ to a) = prettyTransfer (prettyBLVar to) a
 
 instance Pretty (CExpr a) where
   pretty (C_PrimApp _ p al) = prettyApp p al
