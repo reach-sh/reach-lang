@@ -277,9 +277,9 @@ data VerifyCtxt a
   = VC_Top
   | VC_AssignCheckInv Bool [ILVar] (ILTail a)
   | VC_CheckRet
-  | VC_WhileBody_AssumeNotUntil [ILVar] (ILTail a) (ILTail a)
-  | VC_WhileBody_AssumeInv [ILVar] (ILTail a) (ILTail a)
-  | VC_WhileBody_Eval [ILVar] (ILTail a)
+  | VC_WhileBody_AssumeNotUntil [ILVar] (ILTail a) (ILTail a) (VerifyCtxt a)
+  | VC_WhileBody_AssumeInv [ILVar] (ILTail a) (ILTail a) (VerifyCtxt a)
+  | VC_WhileBody_Eval [ILVar] (ILTail a) (VerifyCtxt a)
   | VC_WhileTail_AssumeUntil (ILTail a) (VerifyCtxt a, (ILTail a))
   | VC_WhileTail_AssumeInv (VerifyCtxt a, (ILTail a))
   deriving (Show)
@@ -326,16 +326,16 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                 let [ a ] = al
                 vr <- z3_verify1 z3 (honest, me, TInvariant, h) (emit_z3_arg primed a)
                 return ([], vr)
-              VC_WhileBody_AssumeNotUntil loopvs invt bodyt -> do
+              VC_WhileBody_AssumeNotUntil loopvs invt bodyt kctxt -> do
                 let [ a ] = al
                 z3_assert_chk z3 h (z3Apply "not" [ emit_z3_arg primed a ])
-                iter primed cbi (VC_WhileBody_AssumeInv loopvs invt bodyt) invt
-              VC_WhileBody_AssumeInv loopvs invt bodyt -> do
+                iter primed cbi (VC_WhileBody_AssumeInv loopvs invt bodyt kctxt) invt
+              VC_WhileBody_AssumeInv loopvs invt bodyt kctxt -> do
                 let [ a ] = al
                 z3_assert_chk z3 h (emit_z3_arg primed a)
-                iter primed cbi (VC_WhileBody_Eval loopvs invt) bodyt
-              VC_WhileBody_Eval _ _ ->
-                impossible $ "VerifyZ3 While must terminate in continue"
+                iter primed cbi (VC_WhileBody_Eval loopvs invt kctxt) bodyt
+              VC_WhileBody_Eval _ _ kctxt ->
+                iter primed cbi kctxt it
               VC_WhileTail_AssumeUntil invt ki -> do
                 let [ a ] = al
                 z3_assert_chk z3 h (emit_z3_arg primed a)
@@ -383,13 +383,13 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
           IL_FromConsensus _ kt -> iter primed cbi ctxt kt
           IL_While x loopvs initas untilt invt bodyt kt -> do
             (mt, vr) <- iter primed cbi (VC_AssignCheckInv False loopvs invt) (IL_Ret x initas)
-            let bodyj = (False, VC_WhileBody_AssumeNotUntil loopvs invt bodyt, untilt)
+            let bodyj = (False, VC_WhileBody_AssumeNotUntil loopvs invt bodyt ctxt, untilt)
             let tailj = (False, VC_WhileTail_AssumeUntil invt (ctxt, kt), untilt)
             let mt' = mt ++ [ bodyj, tailj ]
             return (mt ++ mt', vr)
           IL_Continue x newas ->
             case ctxt of
-              VC_WhileBody_Eval loopvs invt ->
+              VC_WhileBody_Eval loopvs invt _kctxt ->
                 iter primed cbi (VC_AssignCheckInv True loopvs invt) (IL_Ret x newas)
               _ ->
                 impossible $ "VerifyZ3 IL_Continue must only occur inside While"

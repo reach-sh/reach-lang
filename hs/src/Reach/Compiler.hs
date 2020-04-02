@@ -262,8 +262,10 @@ do_static_prim h p argivs =
       case argivs of
         [IV_Con _ (Con_I lhs), IV_Con _ (Con_I  rhs)] -> Just $ IV_Con h $ Con_B $ op lhs rhs
         _ -> Nothing
-  
-do_inline_funcall :: Show a => Maybe IVType -> a -> (Maybe XILPart) -> InlineV a -> [InlineV a] -> InlineV a
+
+type LoopTy = (IVType, IVType)
+
+do_inline_funcall :: Show a => Maybe LoopTy -> a -> (Maybe XILPart) -> InlineV a -> [InlineV a] -> InlineV a
 do_inline_funcall outer_loopt ch who f argivs =
   case f of
     IV_Con vh _ -> expect_throw CE_CannotApply ch vh
@@ -300,7 +302,7 @@ peval_ensure_var :: Show a => a -> BaseType -> XLVar -> ILEnv a -> XILVar
 peval_ensure_var a bt v σ = iv
   where (_, XIL_Var _ iv) = iv_expr_expect a [bt] (peval Nothing σ (XL_Var a v))
 
-peval :: Show a => Maybe IVType -> ILEnv a -> XLExpr a -> InlineV a
+peval :: Show a => Maybe LoopTy -> ILEnv a -> XLExpr a -> InlineV a
 peval outer_loopt σ e =
   case e of
     XL_Con a c ->
@@ -369,8 +371,10 @@ peval outer_loopt σ e =
                   Nothing -> M.empty
                   Just vs -> id_map a vs ts
     XL_While a lvs ie ce inve be ke ->
-      IV_XIL eff_comm ket (XIL_While a lvvs ie' (sr' [BT_Bool] ce) (sr' [BT_Bool] inve) (sr' [] be) ke')
-      where sr' bt x = snd $ iv_expr_expect a bt $ peval (Just lvts) σ' x
+      IV_XIL eff_comm (type_equal a bet ket) (XIL_While a lvvs ie' (sr' [BT_Bool] ce) (sr' [BT_Bool] inve) be' ke')
+      where sr' bt x = snd $ iv_expr_expect a bt $ peval this_loopt σ' x
+            this_loopt = Just (ket, lvts)
+            (_, bet, be') = iv_expr a $ peval this_loopt σ' be
             (_, ket, ke') = iv_expr a $ peval outer_loopt σ' ke
             (_, iet, ie') = r a ie
             lvts = type_count_expect a (length lvs) iet
@@ -378,8 +382,8 @@ peval outer_loopt σ e =
             σ' = foldl (\σ0 (lv, lvv) -> ienv_insert a lv (IV_Var a lvv) σ0) σ $ zip lvs lvvs
     XL_Continue a ne ->
       case outer_loopt of
-        Just lvts ->
-          IV_XIL eff_comm [] (XIL_Continue a (sr a lvts ne))
+        Just (ket, lvts) ->
+          IV_XIL eff_comm ket (XIL_Continue a (sr a lvts ne))
         Nothing ->
           expect_throw CE_ContinueNotInLoop a ("XIL" :: String)
     XL_Interact a m bt args ->
