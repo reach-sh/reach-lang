@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, DeriveDataTypeable #-}
 module Reach.ParserInternal where
 
 import System.Directory
@@ -13,13 +13,14 @@ import qualified Data.Map.Strict as M
 import Control.Monad
 import Data.FileEmbed
 import GHC.IO.Encoding
-
+import Data.Data
 import Test.SmallCheck.Series
 import GHC.Generics
 
 import Reach.AST
 
 newtype TP = TP (FilePath, (Maybe TokenPosn))
+  deriving (Data)
 
 instance Show TP where
   show (TP (fp, mtp)) = fp ++
@@ -202,6 +203,7 @@ instance ExtractTP (XLExpr TP) where
   etp (XL_FunApp a _ _) = xtp a
   etp (XL_Lambda a _ _) = xtp a
   etp (XL_Digest a _) = xtp a
+  etp (XL_ArrayRef a _ _) = xtp a
 
 instance ExtractTP (XLPartInfo TP) where
   etp x = f $ M.toList x
@@ -235,8 +237,8 @@ data ParseErr
 
 instance Monad m => Serial m ParseErr
 
-expect_throw :: ExtractTP a => ParseErr -> FilePath -> a -> b
-expect_throw pe fp j = error $ show tp ++ ": " ++ msg
+expect_throw :: Data a => ExtractTP a => ParseErr -> FilePath -> a -> b
+expect_throw pe fp j = error $ show tp ++ ": " ++ msg ++ " (given: " ++ (show $ toConstr j) ++ ")"
   where tp = TP (fp, (etp j))
         msg = case pe of
           PE_HeaderProgram -> "expected: 'reach 0.1 exe';"
@@ -394,14 +396,15 @@ decodeExpr dss je =
     (JSMemberDot (JSIdentifier a "txn") _ (JSIdentifier _ "value")) ->
       XL_FunApp (tp a) (XL_Prim (tp a) (CP TXN_VALUE)) []
     --- No JSMemberNew
-    --- No JSMemberSquare
+    (JSMemberSquare ae lb ee _rb) ->
+      XL_ArrayRef (tp lb) (decodeExpr dss ae) (decodeExpr dss ee)
     --- No NewExpression
     --- No ObjectLiteral
     --- No SpreadExpression
     (JSUnaryExpression op e) -> (decodeUnaOp (dss_fp dss) tp op) (decodeExpr dss e)
     --- No VarInitExpression
     (JSMemberExpression (JSMemberDot (JSIdentifier a "interact") _ (JSIdentifier _ method)) _ args _) ->
-      XL_Interact (tp a) method BT_Bool (map (decodeExpr dss) $ flattenJSCL args)
+      XL_Interact (tp a) method (XLT_BT (tp a) BT_Bool) (map (decodeExpr dss) $ flattenJSCL args)
     (JSMemberExpression (JSIdentifier a "is") _ (JSLCons (JSLOne te) _ (JSMemberExpression (JSMemberDot (JSIdentifier _ "interact") _ (JSIdentifier _ method)) _ args _)) _) ->
       XL_Interact (tp a) method (decodeType (dss_fp dss) te) (map (decodeExpr dss) $ flattenJSCL args)
     (JSMemberExpression f a eargs _) ->
@@ -544,13 +547,20 @@ decodeDef fp j =
     _ -> expect_throw PE_BodyElement fp j
   where tp a = TP (fp, tpa a)
 
-decodeType :: FilePath -> JSExpression -> BaseType
-decodeType _ (JSIdentifier _ "uint256") = BT_UInt256
-decodeType _ (JSIdentifier _ "bool") = BT_Bool
-decodeType _ (JSIdentifier _ "bytes") = BT_Bytes
-decodeType fp j = expect_throw PE_Type fp j
+decodeType :: FilePath -> JSExpression -> XLType TP
+decodeType fp j =
+  case j of
+    JSIdentifier a "uint256" -> XLT_BT (tp a) BT_UInt256
+    JSIdentifier a "bool" -> XLT_BT (tp a) BT_Bool
+    JSIdentifier a "bytes" -> XLT_BT (tp a) BT_Bytes
+    JSMemberSquare left lb unit _rb ->
+      XLT_Array (tp lb) left' unit'
+      where left' = decodeType fp left
+            unit' = decodeExpr (make_dss fp) unit
+    _ -> expect_throw PE_Type fp j
+  where tp a = TP (fp, tpa a)
 
-decodeVarDecl :: FilePath -> (JSAnnot -> TP) -> JSObjectProperty -> (TP, XLVar, BaseType)
+decodeVarDecl :: FilePath -> (JSAnnot -> TP) -> JSObjectProperty -> (TP, XLVar, XLType TP)
 decodeVarDecl fp tp (JSPropertyNameandValue (JSPropertyIdent _ v) a [ e ]) = ((tp a), v, bt)
   where bt = decodeType fp e
 decodeVarDecl fp _ j = expect_throw PE_VarDecl fp j

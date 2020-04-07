@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass, DeriveDataTypeable #-}
 module Reach.AST where
 
+import Data.Data
 import GHC.Generics
 import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B
@@ -14,7 +15,7 @@ data BaseType
   | BT_Bool
   | BT_Bytes
   | BT_Address
-  deriving (Show,Eq,Ord,Generic,NFData)
+  deriving (Show,Eq,Ord,Generic,NFData,Data)
 
 data ExprType
   = TY_Var String
@@ -41,7 +42,7 @@ data Constant
   = Con_I Integer
   | Con_B Bool
   | Con_BS B.ByteString
-  deriving (Show,Eq,Ord,Generic,NFData)
+  deriving (Show,Eq,Ord,Generic,NFData,Data)
 
 conType :: Constant -> BaseType
 conType (Con_I _) = BT_UInt256
@@ -66,12 +67,12 @@ data C_Prim
   | BYTES_EQ
   | BALANCE
   | TXN_VALUE
-  deriving (Show,Eq,Ord,Generic,NFData)
+  deriving (Show,Eq,Ord,Generic,NFData,Data)
 
 data EP_Prim
   = CP C_Prim
   | RANDOM
-  deriving (Show,Eq,Ord,Generic,NFData)
+  deriving (Show,Eq,Ord,Generic,NFData,Data)
 
 primType :: EP_Prim -> FunctionType
 primType (CP ADD) = [tUInt256, tUInt256] --> tUInt256
@@ -100,12 +101,12 @@ data ClaimType
                 --- honestly.)
   | CT_Possible --- Check if an assignment of variables exists to make
                 --- this true.
-  deriving (Show,Eq,Ord,Generic,NFData)
+  deriving (Show,Eq,Ord,Generic,NFData,Data)
 
 data Role a
   = RolePart a
   | RoleContract
-  deriving (Show,Eq,Ord,Generic,NFData)
+  deriving (Show,Eq,Ord,Generic,NFData,Data)
 
 role_me :: Eq a => Role a -> Role a -> Bool
 role_me _ RoleContract = True
@@ -115,7 +116,7 @@ role_me (RolePart x) (RolePart y) = x == y
 data Effect
   = Eff_Comm
   | Eff_Claim
-  deriving (Show,Eq,Ord,Generic,NFData)
+  deriving (Show,Eq,Ord,Generic,NFData,Data)
 
 type Effects = S.Set Effect
 
@@ -123,6 +124,11 @@ type Effects = S.Set Effect
 
 type XLVar = String
 type XLPart = XLVar
+
+data XLType a
+  = XLT_BT a BaseType
+  | XLT_Array a (XLType a) (XLExpr a)
+  deriving (Show,Eq,Generic,NFData,Data)
 
 data XLExpr a
   = XL_Con a Constant
@@ -138,18 +144,19 @@ data XLExpr a
   | XL_Let a (Maybe XLPart) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
   | XL_While a [XLVar] (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Continue a (XLExpr a)
-  | XL_Interact a String BaseType [XLExpr a]
+  | XL_Interact a String (XLType a) [XLExpr a]
   | XL_FunApp a (XLExpr a) [XLExpr a]
   | XL_Lambda a [XLVar] (XLExpr a)
   | XL_Digest a [XLExpr a]
-  deriving (Show,Eq,Generic,NFData)
+  | XL_ArrayRef a (XLExpr a) (XLExpr a)
+  deriving (Show,Eq,Generic,NFData,Data)
 
 data XLDef a
   = XL_DefineValues a [XLVar] (XLExpr a)
   | XL_DefineFun a XLVar [XLVar] (XLExpr a)
   deriving (Show,Eq,Generic,NFData)
 
-type XLPartInfo a = (M.Map XLPart (a, [(a, XLVar, BaseType)]))
+type XLPartInfo a = (M.Map XLPart (a, [(a, XLVar, (XLType a))]))
 
 data XLProgram  a=
   XL_Prog a [XLDef a] (XLPartInfo a) (XLExpr a)

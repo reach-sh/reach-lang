@@ -302,6 +302,13 @@ peval_ensure_var :: Show a => a -> BaseType -> XLVar -> ILEnv a -> XILVar
 peval_ensure_var a bt v σ = iv
   where (_, XIL_Var _ iv) = iv_expr_expect a [bt] (peval Nothing σ (XL_Var a v))
 
+teval :: Show a => ILEnv a -> XLType a -> BaseType
+teval _σ xt =
+  case xt of
+    XLT_BT _a bt -> bt
+    XLT_Array _a _bt _unit ->
+      impossible $ "XXX XLT_Array"
+
 peval :: Show a => Maybe LoopTy -> ILEnv a -> XLExpr a -> InlineV a
 peval outer_loopt σ e =
   case e of
@@ -386,9 +393,10 @@ peval outer_loopt σ e =
           IV_XIL eff_comm ket (XIL_Continue a (sr a lvts ne))
         Nothing ->
           expect_throw CE_ContinueNotInLoop a ("XIL" :: String)
-    XL_Interact a m bt args ->
+    XL_Interact a m xt args ->
       IV_XIL eff_comm [bt] (XIL_Interact a m bt args')
       where (_, _, args') = iv_exprs a $ map def args
+            bt = teval σ xt
     XL_Lambda a formals body ->
       IV_Clo (a, formals, body) σ
     XL_FunApp a fe es ->
@@ -396,6 +404,8 @@ peval outer_loopt σ e =
     XL_Digest a args ->
       IV_XIL argsp [BT_UInt256] (XIL_Digest a args')
       where (argsp, _, args') = iv_exprs a $ map def args
+    XL_ArrayRef _a _ae _ee ->
+      impossible $ "XXX XL_ArrayRef"
   where def = peval outer_loopt σ
         r h ne = iv_expr h $ def ne
         sr h bt ne = snd $ iv_expr_expect h bt $ def ne
@@ -405,12 +415,13 @@ peval outer_loopt σ e =
 inline :: Show a => XLProgram a -> XILProgram a
 inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
   where (_, _, m') = iv_expr ph iv
-        ps' = M.map (\(prh, vs) -> (prh, map (\(vh,v,vt)->(vh,(v,vt))) vs)) $ M.mapKeys (\p -> (p,BT_Address)) ps
+        ps' = M.map (\(prh, vs) -> (prh, map (\(vh,v,xt)->(vh,(v,teval σ_top xt))) vs)) $ M.mapKeys (\p -> (p,BT_Address)) ps
         iv = peval Nothing σ_top_and_ps m
-        σ_top_and_ps = M.union σ_ps σ_top
+        σ_top_and_ps = M.union σ_top σ_ps
         σ_ps = foldr add_ps M.empty ps
         add_ps (_ph, vs) σ = foldr add_pvs σ vs
-        add_pvs (vh, v, bt) σ = ienv_insert vh v (IV_Var vh (v,bt)) σ
+        add_pvs (vh, v, xt) σ = ienv_insert vh v (IV_Var vh (v,bt)) σ
+          where bt = teval σ_top xt
         (add_to_m', σ_top) = foldr add_tops ((\x->x), M.empty) defs
         add_tops d (adder, σ) =
           case d of
