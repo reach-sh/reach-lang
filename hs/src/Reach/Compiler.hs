@@ -50,6 +50,7 @@ data CompileErr
   | CE_ExpectedPublic
   | CE_UnknownVar
   | CE_Unreachable
+  | CE_ArrayLenNotConstant
   deriving (Generic, Show)
 
 instance Monad m => Serial m CompileErr
@@ -81,6 +82,7 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
           CE_ExpectedPublic -> "expected a public value"
           CE_UnknownVar -> "variable not know by role"
           CE_Unreachable -> "Hack: This is used by VerifyZ3"
+          CE_ArrayLenNotConstant -> "Array length is not constant"
 
 {- -}
 
@@ -165,6 +167,7 @@ data InlineV a
   | IV_Var a XILVar
   | IV_XIL Effects [BaseType] (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
+  deriving (Eq,Show)
 
 type IVType = [BaseType]
 
@@ -303,11 +306,16 @@ peval_ensure_var a bt v σ = iv
   where (_, XIL_Var _ iv) = iv_expr_expect a [bt] (peval Nothing σ (XL_Var a v))
 
 teval :: Show a => ILEnv a -> XLType a -> BaseType
-teval _σ xt =
+teval σ xt =
   case xt of
     XLT_BT _a bt -> bt
-    XLT_Array _a _bt _unit ->
-      impossible $ "XXX XLT_Array"
+    XLT_Array a _bt unit ->
+      impossible $ "XXX XLT_Array: " ++ show how_many
+      where how_many =
+              case peval Nothing σ unit of
+                IV_Con _ (Con_I x) -> x
+                iv ->
+                  expect_throw CE_ArrayLenNotConstant a iv
 
 peval :: Show a => Maybe LoopTy -> ILEnv a -> XLExpr a -> InlineV a
 peval outer_loopt σ e =
