@@ -15,6 +15,10 @@ instance Pretty BaseType where
   pretty BT_Bytes = pretty "bytes"
   pretty BT_Address = pretty "address"
 
+instance Pretty LType where
+  pretty (LT_BT bt) = pretty bt
+  pretty (LT_FixedArray bt hm) = pretty bt <> pretty "[" <> viaShow hm <> pretty "]"
+
 instance Pretty ExprType where
   pretty (TY_Con bt) = pretty bt
   pretty (TY_Var s) = viaShow s
@@ -51,7 +55,7 @@ prettyApp p al = group $ parens $ pretty p <> alp
   where alp = case al of [] -> emptyDoc
                          _ -> space <> (hsep $ map pretty al)
 
-prettyInteract :: Pretty a => String -> BaseType -> [a] -> Doc ann
+prettyInteract :: Pretty a => String -> LType -> [a] -> Doc ann
 prettyInteract m bt al = group $ parens $ pretty ("interact." ++ m) <+> pretty bt <+> (hsep $ map pretty al)
 
 prettyClaim :: Pretty a => ClaimType -> a -> Doc ann

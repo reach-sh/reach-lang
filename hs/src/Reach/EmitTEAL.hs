@@ -129,10 +129,10 @@ comp_blvar cs bv =
       comp_cexpr cs ce
   where ( _, _, vmap ) = cs
 
-comp_blarg_ty :: CompileSt a -> BLArg a -> LabelM ann (BaseType, TEALs)
+comp_blarg_ty :: CompileSt a -> BLArg a -> LabelM ann (LType, TEALs)
 comp_blarg_ty cs a =
   case a of
-    BL_Con _ c -> return (conType c, comp_con c)
+    BL_Con _ c -> return ((LT_BT $ conType c), comp_con c)
     BL_Var _ v -> do
       ls <- comp_blvar cs v
       let (_, (_, ty)) = v
@@ -153,10 +153,12 @@ comp_blarg_for_hash cs a = do
   (ty, ls) <- comp_blarg_ty cs a
   let convert_ls =
         case ty of
-          BT_UInt256 -> code "itob" []
-          BT_Bool -> code "itob" []
-          BT_Bytes -> []
-          BT_Address -> []
+          LT_BT BT_UInt256 -> code "itob" []
+          LT_BT BT_Bool -> code "itob" []
+          LT_BT BT_Bytes -> []
+          LT_BT BT_Address -> []
+          LT_FixedArray _bt _hm ->
+            error "XXX FixedArray comp_blarg_for_hash"
   return $ ls ++ convert_ls
 
 comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> LabelM ann TEALs

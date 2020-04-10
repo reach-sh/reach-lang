@@ -48,11 +48,15 @@ instance CollectTypes (ILProgram a) where
 
 {- Z3 Printing -}
 
-z3_sortof :: BaseType -> SExpr
-z3_sortof BT_UInt256 = Atom "Int"
-z3_sortof BT_Bool = Atom "Bool"
-z3_sortof BT_Bytes = Atom "Bytes"
-z3_sortof BT_Address = Atom "Address"
+z3_sortof_bt :: BaseType -> SExpr
+z3_sortof_bt BT_UInt256 = Atom "Int"
+z3_sortof_bt BT_Bool = Atom "Bool"
+z3_sortof_bt BT_Bytes = Atom "Bytes"
+z3_sortof_bt BT_Address = Atom "Address"
+
+z3_sortof :: LType -> SExpr
+z3_sortof (LT_BT bt) = z3_sortof_bt bt
+z3_sortof (LT_FixedArray bt _hm) = List [ Atom "Array", z3_sortof_bt bt, Atom "Int" ]
 
 z3Apply :: String -> [SExpr] -> SExpr
 z3Apply f args = List (Atom f : args)
@@ -125,18 +129,31 @@ z3_sat1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
       mapM_ putStrLn uc
       return $ VR 0 1
 
-z3_define :: Solver -> String -> BaseType -> SExpr -> IO ()
+z3_define :: Solver -> String -> LType -> SExpr -> IO ()
 z3_define z3 v bt d = do
   let s = z3_sortof bt
   void $ define z3 v s d
 
-z3_declare :: Solver -> String -> BaseType -> IO ()
+z3_declare :: Solver -> String -> LType -> IO ()
 z3_declare z3 v bt = do
   let s = z3_sortof bt
   void $ declare z3 v s
+  z3_assert_declare z3 (Atom v) bt
+
+z3_assert_declare_bt :: Solver -> SExpr -> BaseType -> IO ()
+z3_assert_declare_bt z3 vs bt =
   case bt of
-    BT_UInt256 -> assert z3 (z3Apply "<=" [ Atom "0", Atom v ])
+    BT_UInt256 -> assert z3 (z3Apply "<=" [ Atom "0", vs ])
     _ -> mempty
+
+z3_assert_declare :: Solver -> SExpr -> LType -> IO ()
+z3_assert_declare z3 vs lty =
+  case lty of
+    LT_BT bt -> z3_assert_declare_bt z3 vs bt
+    LT_FixedArray bt hm ->
+      forM_ [0..hm] h
+      where h i = z3_assert_declare_bt z3
+                  (List [ Atom "select", vs, Atom (show i)]) bt
 
 z3_assert_chk :: Show ann => Solver -> ann -> SExpr -> IO ()
 z3_assert_chk z3 h e = do
@@ -250,7 +267,7 @@ z3_stmt :: Show rolet => Show a => Solver -> Bool -> rolet -> (S.Set ILVar) -> I
 z3_stmt z3 honest r primed cbi how =
   case how of
     IL_Transfer h _who amount -> do vr <- z3_verify1 z3 (honest, r, TBalanceSufficient, h) (z3Apply "<=" [ amountt, cbit ])
-                                    z3_define z3 cb' BT_UInt256 (z3Apply "-" [ cbit, amountt ])
+                                    z3_define z3 cb' (LT_BT BT_UInt256) (z3Apply "-" [ cbit, amountt ])
                                     return (cbi', vr)
       where cbi' = cbi + 1
             cbit = z3CTCBalanceRef cbi
@@ -294,7 +311,7 @@ extract_invariant_variables invt =
 z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILPart)) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
-  z3_declare z3 cb0 BT_UInt256
+  z3_declare z3 cb0 (LT_BT BT_UInt256)
   meta_iter mempty [(True, VC_Top, it_top)]
   where zero = emit_z3_con (Con_I 0)
         cb0 = z3CTCBalance 0
@@ -366,8 +383,8 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
               timeout = do
                 iter primed cbi ctxt tt
               notimeout = do
-                z3_declare z3 pvv BT_UInt256
-                z3_define z3 cb'v BT_UInt256 (z3Apply "+" [cbr, pvr])
+                z3_declare z3 pvv (LT_BT BT_UInt256)
+                z3_define z3 cb'v (LT_BT BT_UInt256) (z3Apply "+" [cbr, pvr])
                 z3_assert_chk z3 h thisc
                 iter primed cbi' ctxt kt
               cbi' = cbi + 1

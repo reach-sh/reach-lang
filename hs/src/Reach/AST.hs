@@ -17,9 +17,14 @@ data BaseType
   | BT_Address
   deriving (Show,Eq,Ord,Generic,NFData,Data)
 
+data LType
+  = LT_BT BaseType
+  | LT_FixedArray BaseType Integer
+  deriving (Show,Eq,Ord,Generic,NFData,Data)
+
 data ExprType
   = TY_Var String
-  | TY_Con BaseType
+  | TY_Con LType
   deriving (Show,Eq)
 data FunctionType
   = TY_Arrow [ExprType] ExprType
@@ -27,13 +32,13 @@ data FunctionType
   deriving (Show,Eq)
 
 tBool :: ExprType
-tBool = TY_Con BT_Bool
+tBool = TY_Con $ LT_BT BT_Bool
 
 tUInt256 :: ExprType
-tUInt256 = TY_Con BT_UInt256
+tUInt256 = TY_Con $ LT_BT BT_UInt256
 
 tBytes :: ExprType
-tBytes = TY_Con BT_Bytes
+tBytes = TY_Con $ LT_BT BT_Bytes
 
 (-->) :: [ExprType] -> ExprType -> FunctionType
 ins --> out = TY_Arrow ins out
@@ -164,24 +169,24 @@ data XLProgram  a=
 
 --- Inlined Language (the language after expansion)
 
-type XILVar = (String, BaseType)
+type XILVar = (String, LType)
 type XILPart = XILVar
 
 data XILExpr a
   = XIL_Con a Constant
   | XIL_Var a XILVar
-  | XIL_PrimApp a EP_Prim BaseType [XILExpr a]
-  | XIL_If a Effects (XILExpr a) [BaseType] (XILExpr a) (XILExpr a)
+  | XIL_PrimApp a EP_Prim LType [XILExpr a]
+  | XIL_If a Effects (XILExpr a) [LType] (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
   | XIL_ToConsensus a (Bool, XILPart, [XILVar], (XILExpr a)) (Maybe XILPart, (XILExpr a), (XILExpr a)) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)
   | XIL_Values a [XILExpr a]
   | XIL_Transfer a XLVar (XILExpr a)
-  | XIL_Declassify a BaseType (XILExpr a)
+  | XIL_Declassify a LType (XILExpr a)
   | XIL_Let a (Maybe XILPart) (Maybe [XILVar]) (XILExpr a) (XILExpr a)
   | XIL_While a [XILVar] (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
   | XIL_Continue a (XILExpr a)
-  | XIL_Interact a String BaseType [XILExpr a]
+  | XIL_Interact a String LType [XILExpr a]
   | XIL_Digest a [XILExpr a]
   deriving (Show,Eq)
 
@@ -221,7 +226,7 @@ data ILArg a
 data ILExpr a
   = IL_PrimApp a EP_Prim [ILArg a]
   | IL_Declassify a (ILArg a)
-  | IL_Interact a String BaseType [ILArg a]
+  | IL_Interact a String LType [ILArg a]
   | IL_Digest a [ILArg a]
   deriving (Show,Eq)
 
@@ -286,7 +291,7 @@ data BLArg a
 data EPExpr a
   = EP_Arg a (BLArg a)
   | EP_PrimApp a EP_Prim [BLArg a]
-  | EP_Interact a String BaseType [BLArg a]
+  | EP_Interact a String LType [BLArg a]
   | EP_Digest a [BLArg a]
   deriving (Show,Eq)
 

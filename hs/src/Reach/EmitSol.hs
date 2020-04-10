@@ -32,11 +32,15 @@ solMsg_fun i = "m" ++ show i
 solLoop_fun :: Show i => i -> String
 solLoop_fun i = "l" ++ show i
 
-solType :: BaseType -> String
-solType BT_UInt256 = "uint256"
-solType BT_Bool = "bool"
-solType BT_Bytes = "bytes"
-solType BT_Address = "address payable"
+solBType :: BaseType -> String
+solBType BT_UInt256 = "uint256"
+solBType BT_Bool = "bool"
+solBType BT_Bytes = "bytes"
+solBType BT_Address = "address payable"
+
+solType :: LType -> String
+solType (LT_BT bt) = solBType bt
+solType (LT_FixedArray bt hm) = solBType bt ++ "[" ++ (show hm) ++ "]"
 
 {- De-ANF information
 
@@ -99,13 +103,16 @@ usesCTail (C_Jump _ _ vs _ as) = cmerges $ cs1 : cs2
 type SolRenaming a = M.Map BLVar (Doc a)
 type SolInMemory = S.Set BLVar
 
-solArgType :: BaseType -> String
-solArgType BT_Bytes = "bytes calldata"
-solArgType t = solType t
+containsBytes :: LType -> Bool
+containsBytes (LT_BT BT_Bytes) = True
+containsBytes (LT_FixedArray bt _) = containsBytes (LT_BT bt)
+containsBytes _ = False
 
-solVarType :: BaseType -> String
-solVarType BT_Bytes = "bytes memory"
-solVarType t = solType t
+solArgType :: LType -> String
+solArgType t = solType t ++ (if containsBytes t then "calldata" else "")
+
+solVarType :: LType -> String
+solVarType t = solType t ++ (if containsBytes t then "memory" else "")
 
 solBraces :: Doc a -> Doc a
 solBraces body = braces (nest 2 $ hardline <> body <> space)
@@ -116,7 +123,7 @@ solFunction name args ret body =
 
 solEvent :: String -> [Doc a] -> Doc a
 solEvent name args =
-  "event" <+> solApply name (solDecl (solType BT_UInt256) "_bal" : args) <> semi
+  "event" <+> solApply name (solDecl (solType (LT_BT BT_UInt256)) "_bal" : args) <> semi
 
 solDecl :: String -> Doc a -> Doc a
 solDecl ty n = pretty ty <+> n
@@ -272,7 +279,7 @@ solHandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = v
   where msg_rs = map solRawVar msg
         msg_ds = map solArgDecl msg
         msg_eds = map solFieldDecl msg
-        arg_ds = (solDecl (solType BT_UInt256) solLastBlock) : map solArgDecl svs ++ msg_ds
+        arg_ds = (solDecl (solType (LT_BT BT_UInt256)) solLastBlock) : map solArgDecl svs ++ msg_ds
         evts = solMsg_evt i
         evtp = solEvent evts msg_eds
         sim0 = makeSIM ccs (svs ++ msg)

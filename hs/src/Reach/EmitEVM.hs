@@ -212,19 +212,23 @@ asm_mem_reset mp' = do
   let cs' = ( stack, mp', vmap, smap )
   put ( ls, cs' )
 
-is_pointer :: BaseType -> Bool
-is_pointer t = case t of
-  BT_UInt256 -> False
-  BT_Bool -> False
-  BT_Bytes -> True
-  BT_Address -> False
+is_pointer :: LType -> Bool
+is_pointer (LT_BT bt) =
+  case bt of
+    BT_UInt256 -> False
+    BT_Bool -> False
+    BT_Bytes -> True
+    BT_Address -> False
+is_pointer (LT_FixedArray _bt _hm) = False
 
-size_of_type :: BaseType -> Int
-size_of_type t = case t of
-  BT_UInt256 -> 32
-  BT_Bool -> 32 --- FIXME In the future, make this smaller by coallescing
-  BT_Bytes -> 32
-  BT_Address -> 32
+size_of_type :: LType -> Int
+size_of_type (LT_BT bt) =
+  case bt of
+    BT_UInt256 -> 32
+    BT_Bool -> 32 --- FIXME In the future, make this smaller by coallescing
+    BT_Bytes -> 32
+    BT_Address -> 32
+size_of_type (LT_FixedArray bt hm) = (fromIntegral hm) * size_of_type (LT_BT bt)
 
 size_of_var :: BLVar -> Int
 size_of_var (_, (_, t)) = size_of_type t
@@ -259,7 +263,7 @@ comp_bump_and_store sz = do
 comp_bump_and_store_arg :: BLArg a -> ASMMonad ann ()
 comp_bump_and_store_arg a = do
   comp_blarg a
-  comp_bump_and_store $ size_of_type BT_UInt256
+  comp_bump_and_store $ size_of_type $ LT_BT BT_UInt256
 
 asm_free_all :: ASMMonad ann ()
 asm_free_all = do
@@ -393,7 +397,7 @@ comp_load_string s = do
   let ( sd, mp, vmap, smap ) = cs
   let len = BC.length s
   let bs_ptr = mp
-  let bs_data_ptr = bs_ptr + (size_of_type BT_UInt256)
+  let bs_data_ptr = bs_ptr + (size_of_type $ LT_BT BT_UInt256)
   let mp' = bs_data_ptr + len
   let smap' = m_insertSafe s mp smap
   let cs' = ( sd, mp', vmap, smap' )
@@ -549,13 +553,13 @@ comp_hash m as = do
     HM_State (i, use_this_block) -> do
       --- push i into hash args
       comp_con $ Con_I $ fromIntegral i
-      comp_bump_and_store (size_of_type BT_UInt256)
+      comp_bump_and_store (size_of_type $ LT_BT BT_UInt256)
       --- push block number in hash args
       if use_this_block then
         asm_op $ EVM.NUMBER
       else
         comp_memread last_time_offset
-      comp_bump_and_store (size_of_type BT_UInt256)
+      comp_bump_and_store (size_of_type $ LT_BT BT_UInt256)
   --- push variables
   mapM_ comp_bump_and_store_arg as
   after_free_ptr <- asm_mem_ptr
@@ -604,7 +608,7 @@ comp_set_args args = do
               asm_push 1
               asm_op $ EVM.MSTORE
               asm_pop 2
-              let size = (size_of_type BT_UInt256)
+              let size = (size_of_type $ LT_BT BT_UInt256)
               let next_copy = arg_copy + size
               let next_dest = arg_dest + size
               let copy_m' = do
@@ -676,11 +680,15 @@ data AbiTag_Kind
   | AT_Evt
   deriving (Show, Eq, Ord)
 
-abiTag_type :: BaseType -> String
-abiTag_type BT_UInt256 = "uint256"
-abiTag_type BT_Bool = "bool"
-abiTag_type BT_Bytes = "bytes"
-abiTag_type BT_Address = "address"
+abiTag_btype :: BaseType -> String
+abiTag_btype BT_UInt256 = "uint256"
+abiTag_btype BT_Bool = "bool"
+abiTag_btype BT_Bytes = "bytes"
+abiTag_btype BT_Address = "address"
+
+abiTag_type :: LType -> String
+abiTag_type (LT_BT bt) = abiTag_btype bt
+abiTag_type (LT_FixedArray bt hm) = abiTag_btype bt ++ "[" ++ show hm ++ "]"
 
 --- FIXME just get first four bytes
 --- https://solidity.readthedocs.io/en/latest/abi-spec.html#function-selector
@@ -704,7 +712,7 @@ tag_offset = 0
 last_time_offset :: Int
 last_time_offset = tag_offset + 4
 arg_start_offset :: Int
-arg_start_offset = last_time_offset + (size_of_type BT_UInt256)
+arg_start_offset = last_time_offset + (size_of_type $ LT_BT BT_UInt256)
 
 comp_chandler :: Label -> CHandler a -> ASMMonad ann Label
 comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = asm_with_label_handler i $ do

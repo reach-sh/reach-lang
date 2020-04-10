@@ -50,6 +50,7 @@ data CompileErr
   | CE_ExpectedPublic
   | CE_UnknownVar
   | CE_Unreachable
+  | CE_ArrayUnitNotBT
   | CE_ArrayLenNotConstant
   deriving (Generic, Show)
 
@@ -83,6 +84,7 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
           CE_UnknownVar -> "variable not know by role"
           CE_Unreachable -> "Hack: This is used by VerifyZ3"
           CE_ArrayLenNotConstant -> "Array length is not constant"
+          CE_ArrayUnitNotBT -> "Array element is not base type"
 
 {- -}
 
@@ -112,22 +114,22 @@ zipWithEqM ce w f x y =
 {- Basic Type checking
  -}
 
-type TypeVarEnv = M.Map String BaseType
+type TypeVarEnv = M.Map String LType
 
-checkFun :: Show a => a -> FunctionType -> [BaseType] -> BaseType
+checkFun :: Show a => a -> FunctionType -> [LType] -> LType
 checkFun h topft topdom = toprng
   where
     toprng = case runExcept mrng of
       Left (ce,x) -> expect_throw ce h x
       Right v -> v
     mrng = hFun [] M.empty topft topdom
-    hTy :: TypeVarEnv -> ExprType -> Except (CompileErr, String) BaseType
+    hTy :: TypeVarEnv -> ExprType -> Except (CompileErr, String) LType
     hTy γ et = case et of
       TY_Con bt -> return bt
       TY_Var v -> case M.lookup v γ of
         Nothing -> throwError (CE_UnboundTypeVariable, v)
         Just et' -> return et'
-    hExpr :: [String] -> TypeVarEnv -> ExprType -> BaseType -> Except (CompileErr, String) TypeVarEnv
+    hExpr :: [String] -> TypeVarEnv -> ExprType -> LType -> Except (CompileErr, String) TypeVarEnv
     hExpr vs γ et at = case et of
       TY_Con bt ->
         if at == bt then return γ
@@ -139,13 +141,13 @@ checkFun h topft topdom = toprng
           case M.lookup v γ of
             Just bt -> hExpr vs γ (TY_Con bt) at
             Nothing -> return $ M.insert v at γ
-    hFun :: [String] -> TypeVarEnv -> FunctionType -> [BaseType] -> Except (CompileErr, String) BaseType
+    hFun :: [String] -> TypeVarEnv -> FunctionType -> [LType] -> Except (CompileErr, String) LType
     hFun vs γ ft adom = case ft of
       TY_Forall nvs ft' -> hFun (vs ++ nvs) γ ft' adom
       TY_Arrow edom rng -> do
         γ' <- hExprs vs γ edom adom
         hTy γ' rng
-    hExprs :: [String] -> TypeVarEnv -> [ExprType] -> [BaseType] -> Except (CompileErr, String) TypeVarEnv
+    hExprs :: [String] -> TypeVarEnv -> [ExprType] -> [LType] -> Except (CompileErr, String) TypeVarEnv
     hExprs vs γ esl asl = case esl of
       [] ->
         case asl of
@@ -165,11 +167,11 @@ data InlineV a
   | IV_Values a [InlineV a]
   | IV_Prim a EP_Prim
   | IV_Var a XILVar
-  | IV_XIL Effects [BaseType] (XILExpr a)
+  | IV_XIL Effects [LType] (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
   deriving (Eq,Show)
 
-type IVType = [BaseType]
+type IVType = [LType]
 
 type ILEnv a = M.Map XLVar (InlineV a)
 
@@ -186,7 +188,7 @@ ienv_check_part_absent a p σ =
     Nothing -> True
     Just v ->
       case v of
-        IV_Var _ (_, BT_Address) -> False
+        IV_Var _ (_, LT_BT BT_Address) -> False
         _ -> expect_throw CE_VariableNotParticipant a p
 
 type_count_expect :: Show a => a -> Int -> IVType -> IVType
@@ -214,7 +216,7 @@ purePrim (CP TXN_VALUE) = Set.singleton Eff_Comm
 purePrim _ = Set.empty
 
 iv_expr :: Show a => a -> InlineV a -> (Effects, IVType, XILExpr a)
-iv_expr _ (IV_Con a c) = (Set.empty, [conType c], (XIL_Con a c))
+iv_expr _ (IV_Con a c) = (Set.empty, [LT_BT $ conType c], (XIL_Con a c))
 iv_expr _ (IV_Values a vs) = (vsp, ts, (XIL_Values a es))
   where (vsp, ts, es) = iv_exprs a vs
 iv_expr _ (IV_Var a (v,t)) = (Set.empty, [t], (XIL_Var a (v,t)))
@@ -222,7 +224,7 @@ iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
 iv_expr ra (IV_Clo (ca, _, _) _) = expect_throw CE_HigherOrder ra ca
 iv_expr ra (IV_Prim pa _) = expect_throw CE_HigherOrder ra pa
 
-iv_expr_expect :: Show a => a -> [BaseType] -> InlineV a -> (Effects, XILExpr a)
+iv_expr_expect :: Show a => a -> [LType] -> InlineV a -> (Effects, XILExpr a)
 iv_expr_expect ra et iv =
   if et == at then (p, e)
   else expect_throw CE_TypeCount ra (et, at)
@@ -239,7 +241,7 @@ iv_can_copy :: InlineV a -> Bool
 iv_can_copy (IV_XIL _ _ _) = False
 iv_can_copy _ = True
 
-id_map :: Show a => a -> [XLVar] -> [BaseType] -> ILEnv a
+id_map :: Show a => a -> [XLVar] -> [LType] -> ILEnv a
 id_map a vs ts = (M.fromList (zipWithEq CE_TypeCount a iv_id vs ts))
   where iv_id x bt = (x, IV_Var a (x,bt))
 
@@ -301,17 +303,20 @@ do_inline_funcall outer_loopt ch who f argivs =
             eff_body' = XIL_Let lh who (Just eff_formals) (XIL_Values ch eff_argies) body'
             (bp, bt, body') = iv_expr lh $ peval outer_loopt σ' orig_body
 
-peval_ensure_var :: Show a => a -> BaseType -> XLVar -> ILEnv a -> XILVar
+peval_ensure_var :: Show a => a -> LType -> XLVar -> ILEnv a -> XILVar
 peval_ensure_var a bt v σ = iv
   where (_, XIL_Var _ iv) = iv_expr_expect a [bt] (peval Nothing σ (XL_Var a v))
 
-teval :: Show a => ILEnv a -> XLType a -> BaseType
+teval :: Show a => ILEnv a -> XLType a -> LType
 teval σ xt =
   case xt of
-    XLT_BT _a bt -> bt
-    XLT_Array a _bt unit ->
-      impossible $ "XXX XLT_Array: " ++ show how_many
-      where how_many =
+    XLT_BT _a bt -> LT_BT bt
+    XLT_Array a xte unit -> LT_FixedArray bt how_many
+      where bt = case lte of
+                   LT_BT x -> x
+                   _ -> expect_throw CE_ArrayUnitNotBT a lte
+            lte = teval σ xte
+            how_many =
               case peval Nothing σ unit of
                 IV_Con _ (Con_I x) -> x
                 iv ->
@@ -334,21 +339,21 @@ peval outer_loopt σ e =
           peval outer_loopt σ (if b then t else f)
         civ ->
           IV_XIL (cp \/ tfp) it (XIL_If a tfp c' it t' f')
-          where (cp, c') = iv_expr_expect a [BT_Bool] civ
+          where (cp, c') = iv_expr_expect a [LT_BT BT_Bool] civ
                 tfp = (tp \/ fp)
                 (tp, tt, t') = r a t
                 (fp, ft, f') = r a f
                 it = (type_equal a tt ft)
     XL_Claim a ct ae ->
-      IV_XIL eff_claim [] (XIL_Claim a ct (sr a [BT_Bool] ae))
+      IV_XIL eff_claim [] (XIL_Claim a ct (sr a [LT_BT BT_Bool] ae))
     XL_ToConsensus a (ok_p, vs, ae) (to_mp, de, te) be ->
       IV_XIL eff_comm (type_equal a tt bt) (XIL_ToConsensus a ok_info to_info be')
-      where ok_info = (ok_ij, ok_piv, vilvs, (sr a [BT_UInt256] ae))
-            to_info = (to_mwho', (sr a [BT_UInt256] de), te')
-            ok_piv = peval_ensure_var a BT_Address ok_p σ_ok
-            to_mwho' = to_mp >>= (\tp -> Just $ peval_ensure_var a BT_Address tp σ)
+      where ok_info = (ok_ij, ok_piv, vilvs, (sr a [LT_BT BT_UInt256] ae))
+            to_info = (to_mwho', (sr a [LT_BT BT_UInt256] de), te')
+            ok_piv = peval_ensure_var a (LT_BT BT_Address) ok_p σ_ok
+            to_mwho' = to_mp >>= (\tp -> Just $ peval_ensure_var a (LT_BT BT_Address) tp σ)
             ok_ij = ienv_check_part_absent a ok_p σ
-            σ_ok = if ok_ij then ienv_insert a ok_p (IV_Var a (ok_p, BT_Address)) σ else σ
+            σ_ok = if ok_ij then ienv_insert a ok_p (IV_Var a (ok_p, (LT_BT BT_Address))) σ else σ
             (_, bt, be') = iv_expr a $ peval outer_loopt σ_ok be
             (_, tt, te') = iv_expr a $ peval outer_loopt σ te
             vilvs = zip vs vts
@@ -361,16 +366,16 @@ peval outer_loopt σ e =
         [ e1 ] -> def e1
         _ -> IV_Values a (map (iv_single a) $ map def es)
     XL_Transfer a p ae ->
-      IV_XIL eff_comm [] (XIL_Transfer a p (sr a [BT_UInt256] ae))
+      IV_XIL eff_comm [] (XIL_Transfer a p (sr a [LT_BT BT_UInt256] ae))
     XL_Declassify a de ->
       IV_XIL dp [dt] (XIL_Declassify a dt de')
       where (dp, dts, de') = r a de
             [dt] = (type_count_expect a 1 dts)
     XL_Let a mp mvs ve be ->
       let mip = mp >>= (\p -> Just $ if ienv_check_part_absent a p σ then
-                                       (p, BT_Address)
+                                       (p, (LT_BT BT_Address))
                                      else
-                                       peval_ensure_var a BT_Address p σ) in
+                                       peval_ensure_var a (LT_BT BT_Address) p σ) in
       case mvs of
         Just [ v1 ] ->
           do_inline_funcall outer_loopt a mip (IV_Clo (a, [ v1 ], be) σ) [ peval outer_loopt σ ve ]
@@ -386,7 +391,7 @@ peval outer_loopt σ e =
                   Nothing -> M.empty
                   Just vs -> id_map a vs ts
     XL_While a lvs ie ce inve be ke ->
-      IV_XIL eff_comm (type_equal a bet ket) (XIL_While a lvvs ie' (sr' [BT_Bool] ce) (sr' [BT_Bool] inve) be' ke')
+      IV_XIL eff_comm (type_equal a bet ket) (XIL_While a lvvs ie' (sr' [LT_BT BT_Bool] ce) (sr' [LT_BT BT_Bool] inve) be' ke')
       where sr' bt x = snd $ iv_expr_expect a bt $ peval this_loopt σ' x
             this_loopt = Just (ket, lvts)
             (_, bet, be') = iv_expr a $ peval this_loopt σ' be
@@ -410,7 +415,7 @@ peval outer_loopt σ e =
     XL_FunApp a fe es ->
       do_inline_funcall outer_loopt a Nothing (peval outer_loopt σ fe) (map (peval outer_loopt σ) es) 
     XL_Digest a args ->
-      IV_XIL argsp [BT_UInt256] (XIL_Digest a args')
+      IV_XIL argsp [LT_BT BT_UInt256] (XIL_Digest a args')
       where (argsp, _, args') = iv_exprs a $ map def args
     XL_ArrayRef _a _ae _ee ->
       impossible $ "XXX XL_ArrayRef"
@@ -423,7 +428,7 @@ peval outer_loopt σ e =
 inline :: Show a => XLProgram a -> XILProgram a
 inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
   where (_, _, m') = iv_expr ph iv
-        ps' = M.map (\(prh, vs) -> (prh, map (\(vh,v,xt)->(vh,(v,teval σ_top xt))) vs)) $ M.mapKeys (\p -> (p,BT_Address)) ps
+        ps' = M.map (\(prh, vs) -> (prh, map (\(vh,v,xt)->(vh,(v,teval σ_top xt))) vs)) $ M.mapKeys (\p -> (p,(LT_BT BT_Address))) ps
         iv = peval Nothing σ_top_and_ps m
         σ_top_and_ps = M.union σ_top σ_ps
         σ_ps = foldr add_ps M.empty ps
@@ -486,14 +491,14 @@ appendANF h r s = do
   put (nvi, vs S.|> (ANFStmt h r s))
   return ()
 
-allocANF :: ann -> Role ILPart -> String -> BaseType -> ILExpr ann -> ANFMonad ann ILVar
+allocANF :: ann -> Role ILPart -> String -> LType -> ILExpr ann -> ANFMonad ann ILVar
 allocANF h r s t e = do
   (nvi, vs) <- get
   let nv = (nvi, (s, t))
   put (nvi + 1, vs S.|> (ANFExpr h r nv e))
   return nv
 
-allocANFs :: Show ann => ann -> Role ILPart -> String -> [BaseType] -> [ILExpr ann] -> ANFMonad ann [ILVar]
+allocANFs :: Show ann => ann -> Role ILPart -> String -> [LType] -> [ILExpr ann] -> ANFMonad ann [ILVar]
 allocANFs h mp s ts es = zipWithEqM (impossible "allocANFs") h (allocANF h mp s) ts es
 
 type XILRenaming ann = M.Map XILVar (ILArg ann)
@@ -573,7 +578,7 @@ anf_expr me ρ e mk =
     XIL_PrimApp h p pt args ->
       anf_exprs h me ρ args (\_ args' -> ret_expr h "PrimApp" pt (IL_PrimApp h p args'))
     XIL_Digest h args ->
-      anf_exprs h me ρ args (\_ args' -> ret_expr h "Digest" BT_UInt256 (IL_Digest h args'))
+      anf_exprs h me ρ args (\_ args' -> ret_expr h "Digest" (LT_BT BT_UInt256) (IL_Digest h args'))
     XIL_If h effs ce its te fe ->
       anf_expr me ρ ce k
       where k _ [ ca ] =
@@ -612,7 +617,7 @@ anf_expr me ρ e mk =
     XIL_Transfer h to ae ->
       anf_expr me ρ ae
       (\_ [ aa ] ->
-         let IL_Var _ tov = map_throw CE_UnknownRole h ρ (to, BT_Address) in
+         let IL_Var _ tov = map_throw CE_UnknownRole h ρ (to, (LT_BT BT_Address)) in
          ret_stmt h (IL_Transfer h tov aa))
     XIL_Declassify h dt ae ->
       anf_expr me ρ ae (\_ [ aa ] -> ret_expr h "Declassify" dt (IL_Declassify h aa))
