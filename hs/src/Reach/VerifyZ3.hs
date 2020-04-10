@@ -212,6 +212,7 @@ data TheoremKind
   | TBalanceZero
   | TBalanceSufficient
   | TInvariant
+  | TBounds
   deriving (Show)
 
 type Theorem = (Bool, (Role ILPart), TheoremKind)
@@ -239,14 +240,25 @@ z3_vardecl z3 iv@(_, (_, bt)) = do
   z3_declare z3 (z3Var S.empty iv) bt
   z3_declare z3 (z3Var (S.singleton iv) iv) bt
 
-z3_expr :: Show a => Solver -> (S.Set ILVar) -> Int -> ILVar -> ILExpr a -> IO ()
-z3_expr z3 primed cbi out how = case how of
-  IL_Declassify h a ->
+z3_expr :: Show rolet => Show a => Solver -> (Bool, rolet) -> (S.Set ILVar) -> Int -> ILVar -> ILExpr a -> IO VerifyResult
+z3_expr z3 (honest, who) primed cbi out how = case how of
+  IL_Declassify h a -> do
     z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (emit_z3_arg primed a))
-  IL_PrimApp h pr al -> z3PrimEq z3 h primed cbi pr alt out
+    return mempty
+  IL_PrimApp h pr al -> do
+    z3PrimEq z3 h primed cbi pr alt out
+    return mempty
     where alt = map (emit_z3_arg primed) al
-  IL_Interact _ _ _ _ -> return ()
-  IL_Digest h al -> z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (z3Apply "digest" [ z3DigestCombine primed al ]))
+  IL_Interact _ _ _ _ -> return mempty
+  IL_Digest h al -> do
+    z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (z3Apply "digest" [ z3DigestCombine primed al ]))
+    return mempty
+  IL_ArrayRef h ae ee -> do
+    let hm = case ilarg_type ae of
+               LT_FixedArray _ x -> x
+               _ -> impossible $ "IL_ArrayRef called with no Array"
+    z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (z3Apply "select" [ (emit_z3_arg primed ae), (emit_z3_arg primed ee) ]))
+    z3_verify1 z3 (honest, who, TBounds, h) (z3CPrim cbi PLT [ (emit_z3_arg primed ee), (emit_z3_con $ Con_I hm) ])
 
 z3DigestCombine :: Show a => (S.Set ILVar) -> [ILArg a] -> SExpr
 z3DigestCombine primed ys =
@@ -368,8 +380,9 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                                  iter primed cbi ctxt kt
                     where cav = emit_z3_con (Con_B v)
           IL_Let _ who what how kt ->
-            do when (honest || role_me me who) $ z3_expr z3 primed cbi what how
-               iter primed cbi ctxt kt
+            do vr <- if (honest || role_me me who) then z3_expr z3 (honest, who) primed cbi what how else return mempty
+               (mt, vr') <- iter primed cbi ctxt kt
+               return (mt, vr <> vr')
           IL_Do _ who how kt ->
             if (honest || role_me me who) then
               do (cbi', vr) <- z3_stmt z3 honest me primed cbi how

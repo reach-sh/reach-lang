@@ -158,7 +158,7 @@ comp_blarg_for_hash cs a = do
           LT_BT BT_Bytes -> []
           LT_BT BT_Address -> []
           LT_FixedArray _bt _hm ->
-            error "XXX FixedArray comp_blarg_for_hash"
+            xxx "FixedArray comp_blarg_for_hash"
   return $ ls ++ convert_ls
 
 comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> LabelM ann TEALs
@@ -193,6 +193,8 @@ comp_cexpr cs e =
   case e of
     C_Digest _ as ->
       comp_hash HM_Digest cs as
+    C_ArrayRef _ _ae _ee ->
+      return $ xxx "comp_cexpr C_ArrayRef"
     C_PrimApp _ cp as ->
       case cp of
         ADD -> p_op "+"

@@ -63,6 +63,7 @@ usesBLArg (BL_Var _ bv) = M.singleton bv 1
 usesCExpr :: CExpr a -> CCounts
 usesCExpr (C_PrimApp _ _ al) = cmerges $ map usesBLArg al
 usesCExpr (C_Digest _ al) = cmerges $ map usesBLArg al
+usesCExpr (C_ArrayRef _ ae ee) = cmerges $ map usesBLArg [ae, ee]
 
 usesCStmt :: CStmt a  -> CCounts
 usesCStmt (C_Claim _ _ a) = usesBLArg a
@@ -103,16 +104,16 @@ usesCTail (C_Jump _ _ vs _ as) = cmerges $ cs1 : cs2
 type SolRenaming a = M.Map BLVar (Doc a)
 type SolInMemory = S.Set BLVar
 
-containsBytes :: LType -> Bool
-containsBytes (LT_BT BT_Bytes) = True
-containsBytes (LT_FixedArray bt _) = containsBytes (LT_BT bt)
-containsBytes _ = False
+mustBeMem :: LType -> Bool
+mustBeMem (LT_BT BT_Bytes) = True
+mustBeMem (LT_FixedArray _ _) = True
+mustBeMem _ = False
 
 solArgType :: LType -> String
-solArgType t = solType t ++ (if containsBytes t then "calldata" else "")
+solArgType t = solType t ++ (if mustBeMem t then " calldata" else "")
 
 solVarType :: LType -> String
-solVarType t = solType t ++ (if containsBytes t then "memory" else "")
+solVarType t = solType t ++ (if mustBeMem t then " memory" else "")
 
 solBraces :: Doc a -> Doc a
 solBraces body = braces (nest 2 $ hardline <> body <> space)
@@ -229,6 +230,8 @@ solPrimApply pr args =
 solCExpr :: SolInMemory -> SolRenaming a -> CExpr b -> Doc a
 solCExpr sim ρ (C_PrimApp _ pr al) = solPrimApply pr $ map (solArg sim ρ) al
 solCExpr sim ρ (C_Digest _ al) = solHash $ map (solArg sim ρ) al
+solCExpr sim ρ (C_ArrayRef _ ae ee) = ae' <> "[" <> ee' <> "]"
+  where [ ae', ee' ] = map (solArg sim ρ) [ae, ee]
 
 solCStmt :: SolInMemory -> SolRenaming a -> CStmt b -> Doc a
 solCStmt _ _ (C_Claim _ CT_Possible _) = emptyDoc

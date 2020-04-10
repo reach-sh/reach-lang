@@ -188,6 +188,7 @@ data XILExpr a
   | XIL_Continue a (XILExpr a)
   | XIL_Interact a String LType [XILExpr a]
   | XIL_Digest a [XILExpr a]
+  | XIL_ArrayRef a LType (XILExpr a) (XILExpr a)
   deriving (Show,Eq)
 
 type XILPartInfo a = (M.Map XILPart (a, [(a, XILVar)]))
@@ -223,11 +224,16 @@ data ILArg a
   | IL_Var a ILVar
   deriving (Show,Eq)
 
+ilarg_type :: ILArg a -> LType
+ilarg_type (IL_Con _ c) = LT_BT $ conType c
+ilarg_type (IL_Var _ (_, (_, lt))) = lt
+
 data ILExpr a
   = IL_PrimApp a EP_Prim [ILArg a]
   | IL_Declassify a (ILArg a)
   | IL_Interact a String LType [ILArg a]
   | IL_Digest a [ILArg a]
+  | IL_ArrayRef a (ILArg a) (ILArg a)
   deriving (Show,Eq)
 
 data ILStmt a
@@ -293,6 +299,7 @@ data EPExpr a
   | EP_PrimApp a EP_Prim [BLArg a]
   | EP_Interact a String LType [BLArg a]
   | EP_Digest a [BLArg a]
+  | EP_ArrayRef a (BLArg a) (BLArg a)
   deriving (Show,Eq)
 
 data EPStmt a
@@ -319,6 +326,7 @@ data EProgram a
 data CExpr a
   = C_PrimApp a C_Prim [BLArg a]
   | C_Digest a [BLArg a]
+  | C_ArrayRef a (BLArg a) (BLArg a)
   deriving (Show,Eq)
 
 data CStmt a

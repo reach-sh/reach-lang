@@ -52,6 +52,7 @@ data CompileErr
   | CE_Unreachable
   | CE_ArrayUnitNotBT
   | CE_ArrayLenNotConstant
+  | CE_ExpectArray
   deriving (Generic, Show)
 
 instance Monad m => Serial m CompileErr
@@ -83,8 +84,9 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
           CE_ExpectedPublic -> "expected a public value"
           CE_UnknownVar -> "variable not know by role"
           CE_Unreachable -> "Hack: This is used by VerifyZ3"
-          CE_ArrayLenNotConstant -> "Array length is not constant"
-          CE_ArrayUnitNotBT -> "Array element is not base type"
+          CE_ArrayLenNotConstant -> "array length is not constant"
+          CE_ArrayUnitNotBT -> "array element is not base type"
+          CE_ExpectArray -> "expected an array"
 
 {- -}
 
@@ -204,6 +206,12 @@ type_equal a at et =
 
 type_all_single :: Show a => a -> [IVType] -> IVType
 type_all_single a ts = concat $ map (type_count_expect a 1) ts
+
+type_array_elem :: Show a => a -> IVType -> LType
+type_array_elem a lt =
+  case (type_count_expect a 1 lt) of
+    [ LT_FixedArray bt _ ] -> LT_BT bt
+    _ -> expect_throw CE_ExpectArray a lt
 
 iv_single :: Show a => a -> InlineV a -> InlineV a
 iv_single a (IV_Values _ vs) = expect_throw CE_TypeCount a (1 :: Integer, (length vs))
@@ -417,11 +425,16 @@ peval outer_loopt σ e =
     XL_Digest a args ->
       IV_XIL argsp [LT_BT BT_UInt256] (XIL_Digest a args')
       where (argsp, _, args') = iv_exprs a $ map def args
-    XL_ArrayRef _a _ae _ee ->
-      impossible $ "XXX XL_ArrayRef"
+    XL_ArrayRef a ae ee ->
+      IV_XIL cp [et] (XIL_ArrayRef a et ae' ee')
+      where (aep, at, ae') = r a ae
+            et = type_array_elem a at
+            (eep, ee') = tr a [(LT_BT BT_UInt256)] ee
+            cp = aep \/ eep
   where def = peval outer_loopt σ
         r h ne = iv_expr h $ def ne
-        sr h bt ne = snd $ iv_expr_expect h bt $ def ne
+        tr h bt ne = iv_expr_expect h bt $ def ne
+        sr h bt ne = snd $ tr h bt ne
         eff_comm = Set.singleton Eff_Comm
         eff_claim = Set.singleton Eff_Claim
 
@@ -577,8 +590,6 @@ anf_expr me ρ e mk =
     XIL_Var h v -> mk h [ anf_renamed_to h ρ v ]
     XIL_PrimApp h p pt args ->
       anf_exprs h me ρ args (\_ args' -> ret_expr h "PrimApp" pt (IL_PrimApp h p args'))
-    XIL_Digest h args ->
-      anf_exprs h me ρ args (\_ args' -> ret_expr h "Digest" (LT_BT BT_UInt256) (IL_Digest h args'))
     XIL_If h effs ce its te fe ->
       anf_expr me ρ ce k
       where k _ [ ca ] =
@@ -645,6 +656,10 @@ anf_expr me ρ e mk =
       anf_expr me ρ nve (\_ nvas -> return $ IL_Continue h nvas)
     XIL_Interact h m bt args ->
       anf_exprs h me ρ args (\_ args' -> ret_expr h "Interact" bt (IL_Interact h m bt args'))
+    XIL_Digest h args ->
+      anf_exprs h me ρ args (\_ args' -> ret_expr h "Digest" (LT_BT BT_UInt256) (IL_Digest h args'))
+    XIL_ArrayRef h bt ae ee ->
+      anf_exprs h me ρ [ae, ee] (\_ [ae', ee'] -> ret_expr h "ArrayRef" bt (IL_ArrayRef h ae' ee'))
   where ret_expr h s t ne = do
           nv <- allocANF h me s t ne
           mk h [ IL_Var h nv ]
@@ -774,30 +789,34 @@ epp_e_ctc :: Show ann => EPPEnv -> ILExpr ann -> (SecurityLevel, Set.Set BLVar, 
 epp_e_ctc γ e = case e of
   IL_Declassify h _ -> expect_throw CE_ContractLimitation h ("declassify" :: String)
   IL_PrimApp h (CP cp) args -> (Public, fvs, C_PrimApp h cp args')
-    where (fvs, args0) = epp_args h γ RoleContract args
-          args' = map (must_be_public h) $ args0
-  IL_Digest h args -> (Public, fvs, C_Digest h args')
-    where (fvs, args0) = epp_args h γ RoleContract args
-          args' = map (must_be_public h) $ args0
+    where (fvs, args') = args_help h args
   IL_PrimApp h p _ -> expect_throw CE_ContractLimitation h p
   IL_Interact h _ _ _ -> expect_throw CE_ContractLimitation h ("interact" :: String)
+  IL_Digest h args -> (Public, fvs, C_Digest h args')
+    where (fvs, args') = args_help h args
+  IL_ArrayRef h ae ee -> (Public, fvs, C_ArrayRef h ae' ee')
+    where (fvs, [ae', ee']) = args_help h [ae, ee]
+  where args_help h args = (fvs, args')
+          where (fvs, args0) = epp_args h γ RoleContract args
+                args' = map (must_be_public h) $ args0
 
 epp_e_loc :: Show ann => EPPEnv -> ILPart -> ILExpr ann -> (SecurityLevel, Set.Set BLVar, EPExpr ann)
 epp_e_loc γ p e = case e of
   IL_Declassify h a -> (Public, fvs, EP_Arg h a')
     where ((fvs, a'), _) = earg h a
   IL_PrimApp h pr args -> (slvl, fvs, EP_PrimApp h pr args')
-    where (fvs, args'st) = epp_args h γ (RolePart p) args
-          args' = map fst args'st
-          slvl = mconcat $ map snd args'st
-  IL_Digest h args -> (slvl, fvs, EP_Digest h args')
-    where (fvs, args'st) = epp_args h γ (RolePart p) args
-          args' = map fst args'st
-          slvl = mconcat $ map snd args'st
+    where (slvl, fvs, args') = args_help h args
   IL_Interact h m bt args -> (Secret, fvs, EP_Interact h m bt args')
-    where (fvs, args'st) = epp_args h γ (RolePart p) args
-          args' = map fst args'st
+    where (_, fvs, args') = args_help h args
+  IL_Digest h args -> (slvl, fvs, EP_Digest h args')
+    where (slvl, fvs, args') = args_help h args
+  IL_ArrayRef h ae ee -> (slvl, fvs, EP_ArrayRef h ae' ee')
+    where (slvl, fvs, [ae', ee']) = args_help h [ae, ee]
  where earg h = epp_arg h γ (RolePart p)
+       args_help h args = (slvl, fvs, args')
+         where (fvs, args'st) = epp_args h γ (RolePart p) args
+               args' = map fst args'st
+               slvl = mconcat $ map snd args'st
 
 epp_s_ctc :: Show ann => EPPEnv -> ILStmt ann -> (Set.Set BLVar, CStmt ann)
 epp_s_ctc γ e = case e of
@@ -817,6 +836,7 @@ epp_s_loc γ p e = case e of
 epp_e_ctc2loc :: CExpr ann -> EPExpr ann
 epp_e_ctc2loc (C_PrimApp h cp al) = (EP_PrimApp h (CP cp) al)
 epp_e_ctc2loc (C_Digest h al) = (EP_Digest h al)
+epp_e_ctc2loc (C_ArrayRef h ae ee) = (EP_ArrayRef h ae ee)
 
 epp_s_ctc2loc :: CStmt ann -> EPStmt ann
 epp_s_ctc2loc (C_Claim h ct a) = EP_Claim h ct a

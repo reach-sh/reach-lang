@@ -112,6 +112,9 @@ jsEPExpr _ (EP_Interact _ m bt al) = (True, (ip, (Set.unions $ map snd alp)))
         ip = jsApply "stdlib.isType" [(jsString (solType bt)), pretty "await" <+> jsApply ("interact." ++ m) (map fst alp)]
 jsEPExpr _ (EP_Digest _ al) = (False, ((jsApply "stdlib.keccak256" $ map fst alp), (Set.unions $ map snd alp)))
   where alp = map jsArg al
+jsEPExpr _ (EP_ArrayRef _ ae ee) = (False, ((ae' <> pretty "[" <> ee' <> pretty "]"), (Set.unions $ map snd alp)))
+  where alp = map jsArg [ae, ee]
+        [ae', ee'] = map fst alp
 
 jsAssert :: Doc a -> Doc a
 jsAssert a = jsApply "stdlib.assert" [ a ] <> semi

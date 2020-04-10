@@ -362,6 +362,7 @@ stringsBLArg (BL_Var _ _) = S.empty
 stringsCExpr :: CExpr a -> CStrings
 stringsCExpr (C_PrimApp _ _ al) = smerges $ map stringsBLArg al
 stringsCExpr (C_Digest _ al) = smerges $ map stringsBLArg al
+stringsCExpr (C_ArrayRef _ ae ee) = smerges $ map stringsBLArg [ae, ee]
 
 stringsCStmt :: CStmt a  -> CStrings
 stringsCStmt (C_Claim _ _ a) = stringsBLArg a
@@ -465,6 +466,8 @@ comp_cexpr :: CExpr a -> ASMMonad ann () -> ASMMonad ann ()
 comp_cexpr e km =
   case e of
     C_Digest _ as -> do comp_hash HM_Digest as ; km
+    C_ArrayRef _ _ae _ee ->
+      end_block_op "XXX comp_cexpr C_ArrayRef"
     C_PrimApp _ cp as -> do
       --- Arguments are reversed, because we store (a / b) as (C_Prim
       --- _ DIV [a, b]) but the EVM expects [ a b ... ] on the stack
