@@ -24,6 +24,7 @@ import GHC.Generics(Generic)
 import Reach.AST
 import Reach.Pretty()
 import Reach.Parser
+import Reach.EmitGo
 import Reach.EmitJS
 import Reach.EmitSol
 import Reach.EmitEVM
@@ -1056,4 +1057,5 @@ compile copts = do
   ebc <- emit_evm (outn "evm") blp
   _tbc <- emit_teal (outn "teal") blp
   out "mjs" (show (emit_js blp cs ebc))
+  out "go" (show (emit_go blp cs ebc))
   exitSuccess
