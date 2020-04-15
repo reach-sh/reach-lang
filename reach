@@ -5,8 +5,8 @@ HS=${HERE}/hs
 
 if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
     export STACK_YAML=${HS}/stack.yaml
-    stack build
-    exec stack exec -- reachc $*
+    stack build && \
+        exec stack exec -- reachc $*
 else
     cat<<EOF | docker-compose -f - run reach $*
 version: '3'
