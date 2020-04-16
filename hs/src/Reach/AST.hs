@@ -277,6 +277,10 @@ data ILProgram a =
    -}
 
 type BLVar = ILVar
+
+blvar_type :: BLVar -> LType
+blvar_type (_, (_, lt)) = lt
+
 type BLPart = BLVar
 
 blpart_name :: BLPart -> String
@@ -292,6 +296,10 @@ data BLArg a
   = BL_Con a Constant
   | BL_Var a BLVar
   deriving (Show,Eq)
+
+blarg_type :: BLArg a -> LType
+blarg_type (BL_Con _ c) = LT_BT $ conType c
+blarg_type (BL_Var _ v) = blvar_type v
 
 -- -- End-Points
 data EPExpr a
