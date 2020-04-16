@@ -13,19 +13,19 @@ type Txn struct {
 
 var Txn0 = Txn{ Balance: 0, Value: 0 }
 
-func Ite_uint256(c bool, x Type_uint256, y Type_uint256) Type_uint256 {
+func Ite_uint256(c Type_bool, x Type_uint256, y Type_uint256) Type_uint256 {
   if c {
     return x
   } else {
     return y } }
 
-func Ite_bool(c bool, x Type_bool, y Type_bool) Type_bool {
+func Ite_bool(c Type_bool, x Type_bool, y Type_bool) Type_bool {
   if c {
     return x
   } else {
     return y } }
 
-func Eq(x Type_uint256, y Type_uint256) bool {
+func Eq(x Type_uint256, y Type_uint256) Type_bool {
   return x == y }
 
 func Add(x Type_uint256, y Type_uint256) Type_uint256 {
@@ -40,16 +40,16 @@ func Div(x Type_uint256, y Type_uint256) Type_uint256 {
 func Mod(x Type_uint256, y Type_uint256) Type_uint256 {
   return x % y }
 
-func Gt(x Type_uint256, y Type_uint256) bool {
+func Gt(x Type_uint256, y Type_uint256) Type_bool {
   return x > y }
 
-func Lt(x Type_uint256, y Type_uint256) bool {
+func Lt(x Type_uint256, y Type_uint256) Type_bool {
   return x < y }
 
 func Keccak256(x Type_uint256, y Type_uint256) Type_uint256 {
   panic("XXX") }
 
-func Assert( b bool ) {
+func Assert( b Type_bool ) {
   if b {
     return
   } else {
@@ -62,13 +62,22 @@ var Msg0 Msg = 0
 func MsgEncode_uint256( m Msg, v Type_uint256 ) Msg {
   panic("XXX") }
 
+func MsgEncode_bool( m Msg, v Type_bool ) Msg {
+  panic("XXX") }
+
 func MsgEncode_uint256arr( m Msg, v []Type_uint256 ) Msg {
   panic("XXX") }
 
 func MsgEncode_address( m Msg, v Type_address ) Msg {
   panic("XXX") }
 
-func MsgDecode_bool( m Msg, path []string ) bool {
+func MsgDecode_bool( m Msg, path []string ) Type_bool {
+  panic("XXX") }
+
+func MsgDecode_uint256( m Msg, path []string ) Type_uint256 {
+  panic("XXX") }
+
+func MsgDecode_uint256arr( m Msg, path []string ) []Type_uint256 {
   panic("XXX") }
 
 type Contract int

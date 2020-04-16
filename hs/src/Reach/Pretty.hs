@@ -143,7 +143,7 @@ prettyILPartInfo ps =
   vsep $ pretty "#:participants" : (map prettyILPart (M.toList ps))
 
 instance Pretty (ILProgram a) where
-  pretty (IL_Prog _ ps t) = vsep [pretty "#lang reach/il", emptyDoc, prettyILPartInfo ps, emptyDoc, pretty "#:main", pretty t]
+  pretty (IL_Prog _ _ ps t) = vsep [pretty "#lang reach/il", emptyDoc, prettyILPartInfo ps, emptyDoc, pretty "#:main", pretty t]
 
 instance Pretty (BLArg a) where
   pretty (BL_Con _ c) = pretty c
@@ -231,4 +231,4 @@ prettyBLParts ps =
   vsep $ intersperse emptyDoc $ map prettyBLPart (M.toList ps)
 
 instance Pretty (BLProgram a) where
-  pretty (BL_Prog _ ps ctc) = vsep [pretty "#lang reach/bl", emptyDoc, pretty ctc, emptyDoc, prettyBLParts ps]
+  pretty (BL_Prog _ _ ps ctc) = vsep [pretty "#lang reach/bl", emptyDoc, pretty ctc, emptyDoc, prettyBLParts ps]

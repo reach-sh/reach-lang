@@ -428,7 +428,7 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
 -- FIXME relies on application state: https://github.com/algorand/go-algorand/issues/935 / https://github.com/algorandfoundation/specs/pull/23/files
 
 emit_teal :: FilePath -> BLProgram a -> IO String
-emit_teal tf (BL_Prog _ _ cp) = do
+emit_teal tf (BL_Prog _ _ _ cp) = do
   let bc = cp_to_teal cp
   writeFile tf (show bc)
   return ""

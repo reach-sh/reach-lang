@@ -440,8 +440,8 @@ peval outer_loopt σ e =
         eff_claim = Set.singleton Eff_Claim
 
 inline :: Show a => XLProgram a -> XILProgram a
-inline (XL_Prog ph defs ps m) = XIL_Prog ph ps' (add_to_m' m')
-  where (_, _, m') = iv_expr ph iv
+inline (XL_Prog ph defs ps m) = XIL_Prog ph rts ps' (add_to_m' m')
+  where (_, rts, m') = iv_expr ph iv
         ps' = M.map (\(prh, vs) -> (prh, map (\(vh,v,xt)->(vh,(v,teval σ_top xt))) vs)) $ M.mapKeys (\p -> (p,(LT_BT BT_Address))) ps
         iv = peval Nothing σ_top_and_ps m
         σ_top_and_ps = M.union σ_top σ_ps
@@ -680,9 +680,9 @@ anf_ktop :: ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)
 anf_ktop h args = return $ IL_Ret h args
 
 anf :: Show ann => XILProgram ann -> ILProgram ann
-anf xilp = IL_Prog h ips xt
+anf xilp = IL_Prog h rt ips xt
   where
-    XIL_Prog h ps main = xilp
+    XIL_Prog h rt ps main = xilp
     (ips, xt) = runANF xm
     xm = do
       (ρ, nps) <- anf_parts ps
@@ -1021,7 +1021,7 @@ epp_it_loc ps last_h γ ctxt it = case it of
   IL_Continue h _ -> expect_throw CE_LocalLimitation h ("continue" :: String)
 
 epp :: Show ann => ILProgram ann -> BLProgram ann
-epp (IL_Prog h ips it) = BL_Prog h bps cp
+epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
   where cp = C_Prog h chs
         ps = M.keys ips
         bps = M.mapWithKey mkep ets

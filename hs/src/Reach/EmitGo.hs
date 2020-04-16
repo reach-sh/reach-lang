@@ -228,7 +228,7 @@ goEPTail tn who (EP_Recv _ svs (fs_ok, i_ok, msg, k_ok) (fs_to, i_to, delay, k_t
         (k_top, tofvs) = add_from tn' fs_to $ goEPTail tn' who k_to
         tn' = tn+1
 goEPTail tn who (EP_Loop _ _which loopvs initas bt) = (tp, tfvs)
-  where tp = vsep $ defsp ++ [ loopp ]
+  where tp = vsep $ defsp ++ [ loopp, pretty "panic(\"returned past for\")" ]
         defp loopv initp = pretty "var" <+> (goVar loopv) <+> pretty "=" <+> initp <> semi
         defsp = zipWith defp loopvs $ map fst initargs
         loopp = goWhile (pretty "true") bodyp
@@ -236,7 +236,7 @@ goEPTail tn who (EP_Loop _ _which loopvs initas bt) = (tp, tfvs)
         initargs = map goArg initas
         tfvs = Set.unions $ bodyvs : (map snd initargs)
 goEPTail _tn _who (EP_Continue _ _which loopvs args) = (tp, argvs)
-  where tp = vsep $ setsp ++ [ pretty "continue" <> semi ]
+  where tp = vsep $ setsp ++ [ pretty "continue" ]
         setsp = zipWith setp loopvs $ map fst argargs
         setp loopv argp = goVar loopv <+> pretty "=" <+> argp <> semi
         argvs = Set.unions $ map snd argargs
@@ -256,11 +256,12 @@ vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_go :: BLProgram b -> CompiledSol -> String -> Doc a
-emit_go (BL_Prog _ pm _) (abi, code) code2 = modp
-  where modp = vsep_with_blank $ preamble : pkgp : importp : partsp ++ [ abip, codep, code2p ]
+emit_go (BL_Prog _ rts pm _) (abi, code) code2 = modp
+  where modp = vsep_with_blank $ preamble : pkgp : importp : retp : partsp ++ [ abip, codep, code2p ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         pkgp = pretty $ "package main"
         importp = pretty $ "import ( \"reach-sh/stdlib\" )"
+        retp = pretty "type Ret struct" <> (braces $ hcat $ intersperse (semi <> space) $ map pretty $ map goType rts)
         partsp = map goPart $ M.toList pm
         abip = pretty "const ABI = `" <> pretty abi <> pretty "`" <> semi
         codep = pretty $ "const Bytecode = \"0x" ++ code ++ "\";"

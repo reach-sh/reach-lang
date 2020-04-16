@@ -194,7 +194,7 @@ data XILExpr a
 type XILPartInfo a = (M.Map XILPart (a, [(a, XILVar)]))
 
 data XILProgram a =
-  XIL_Prog a (XILPartInfo a) (XILExpr a)
+  XIL_Prog a [LType] (XILPartInfo a) (XILExpr a)
   deriving (Show,Eq)
 
 {- Intermediate Language
@@ -256,7 +256,7 @@ type ILPartArgs a = [ILVar]
 type ILPartInfo a = (M.Map ILPart (ILPartArgs a))
 
 data ILProgram a =
-  IL_Prog a (ILPartInfo a) (ILTail a)
+  IL_Prog a [LType] (ILPartInfo a) (ILTail a)
   deriving (Show,Eq)
 
 {- Backend Language
@@ -366,6 +366,6 @@ data CProgram a
 type BLParts a = M.Map BLPart (EProgram a)
 
 data BLProgram a
-  = BL_Prog a (BLParts a) (CProgram a)
+  = BL_Prog a [LType] (BLParts a) (CProgram a)
   deriving (Show,Eq)
 

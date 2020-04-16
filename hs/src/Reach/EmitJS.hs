@@ -229,7 +229,7 @@ vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_js :: BLProgram b -> CompiledSol -> String -> Doc a
-emit_js (BL_Prog _ pm _) (abi, code) code2 = modp
+emit_js (BL_Prog _ _ pm _) (abi, code) code2 = modp
   where modp = vsep_with_blank $ preamble : importp : partsp ++ [ abip, codep, code2p ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         importp = pretty $ "import * as stdlib from '@reach-sh/stdlib';"

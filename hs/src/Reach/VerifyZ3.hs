@@ -44,7 +44,7 @@ instance CollectTypes (ILTail a) where
   cvs (IL_Continue _ _) = mempty
 
 instance CollectTypes (ILProgram a) where
-  cvs (IL_Prog _ ps it) = cvs ps <> cvs it
+  cvs (IL_Prog _ _ ps it) = cvs ps <> cvs it
 
 {- Z3 Printing -}
 
@@ -439,7 +439,7 @@ _verify_z3 z3 tp = do
    else
       do putStrLn $ " " ++ show fs ++ " failures. :'("
          return $ ExitFailure 1)
-  where IL_Prog _ ipi it = tp
+  where IL_Prog _ _ ipi it = tp
         ps = RoleContract : (map RolePart $ M.keys ipi)
 
 newFileLogger :: FilePath -> IO (IO (), Logger)
