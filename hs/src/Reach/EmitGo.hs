@@ -276,6 +276,3 @@ emit_go (BL_Prog _ rts pm _) (abi, code) code2 = modp
         codep = pretty $ "const Bytecode = \"0x" ++ code ++ "\";"
         code2p = pretty $ "const Bytecode2 = \"0x" ++ code2 ++ "\";"
         mainp = pretty "func main() { }"
-
---- XXX Since go is statically typed, I need to add definitions for
---- the various structures for the message data and return values.
