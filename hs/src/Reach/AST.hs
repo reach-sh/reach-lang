@@ -330,6 +330,35 @@ data EProgram a
   = EP_Prog a [BLVar] (EPTail a)
   deriving (Show,Eq)
 
+--- --- Gather interactions
+
+epe_interacts :: EPExpr a -> M.Map String ([LType], LType)
+epe_interacts e =
+  case e of
+    EP_Arg _ _ -> mempty
+    EP_PrimApp _ _ _ -> mempty
+    EP_Interact _ n rt args -> M.singleton n (arg_tys, rt)
+      where arg_tys = map blarg_type args
+    EP_Digest _ _ -> mempty
+    EP_ArrayRef _ _ _ -> mempty
+  
+ept_interacts :: EPTail a -> M.Map String ([LType], LType)
+ept_interacts t =
+  case t of
+    EP_Ret _ _ -> mempty
+    EP_If _ _ tt ft -> ept_interacts tt <> ept_interacts ft
+    EP_Let _ _ le bt -> epe_interacts le <> ept_interacts bt
+    EP_Do _ _ bt -> ept_interacts bt
+    EP_SendRecv _ _ (_, _, _, _, ot) (_, _, _, tt) ->
+      ept_interacts ot <> ept_interacts tt
+    EP_Recv _ _ (_, _, _, ot) (_, _, _, tt) ->
+      ept_interacts ot <> ept_interacts tt
+    EP_Loop _ _ _ _ bt -> ept_interacts bt
+    EP_Continue _ _ _ _ -> mempty
+
+ep_interacts :: EProgram a -> M.Map String ([LType], LType)
+ep_interacts (EP_Prog _ _ et) = ept_interacts et
+
 -- -- Contracts
 data CExpr a
   = C_PrimApp a C_Prim [BLArg a]

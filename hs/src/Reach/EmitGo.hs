@@ -21,9 +21,12 @@ goBType BT_Bool = "bool"
 goBType BT_Bytes = "bytes"
 goBType BT_Address = "address"
 
-goType :: LType -> String
-goType (LT_BT bt) = goBType bt
-goType (LT_FixedArray bt _hm) = goBType bt ++ "arr"
+goType' :: LType -> String
+goType' (LT_BT bt) = goBType bt
+goType' (LT_FixedArray bt _hm) = goBType bt ++ "arr"
+
+goType :: LType -> Doc a
+goType lt = pretty ("stdlib.Type_" ++ goType' lt)
 
 gopart_name :: BLPart -> String
 gopart_name b = "Part_" ++ (blpart_name b)
@@ -34,20 +37,20 @@ goString s = dquotes $ pretty s
 goVar :: BLVar -> Doc a
 goVar (n, _) = pretty $ "v" ++ show n
 
-goVar' :: BLVar -> Doc a
-goVar' (n, _) = pretty $ "p" ++ show n
-
 goLoopVar :: Int -> Doc a
 goLoopVar i = pretty $ "l" ++ show i
 
-goVarType' :: BLVar -> String
-goVarType' (_, (_, bt)) = goType bt
+goVarType_short_str :: BLVar -> String
+goVarType_short_str (_, (_, bt)) = goType' bt
 
-goVarType :: BLVar -> Doc a
-goVarType v = goString $ goVarType' v
+goVarType_short_strp :: BLVar -> Doc a
+goVarType_short_strp v = goString $ goVarType_short_str v
 
+goVarType_longp :: BLVar -> Doc a
+goVarType_longp (_, (_, bt)) = goType bt
+  
 goVarAndType :: BLVar -> Doc a
-goVarAndType v = goVar v <+> pretty ("stdlib.Type_" ++ goVarType' v)
+goVarAndType v = goVar v <+> goVarType_longp v
 
 goCon :: Constant -> Doc a
 goCon (Con_I i) = pretty i
@@ -65,8 +68,8 @@ goVarDecl bv = pretty "var" <+> goVar bv
 goBraces :: Doc a -> Doc a
 goBraces body = braces (nest 2 $ hardline <> body <> space)
 
-goStruct :: String -> [Doc a] -> Doc a
-goStruct ty elems = (pretty ty) <> (braces $ hcat $ intersperse (comma <> space) elems)
+goStructMake :: String -> [Doc a] -> Doc a
+goStructMake ty elems = (pretty ty) <> (braces $ hcat $ intersperse (comma <> space) elems)
 
 goApply :: String -> [Doc a] -> Doc a
 goApply f args = pretty f <> parens (hcat $ intersperse (comma <> space) args)
@@ -102,13 +105,13 @@ goTimeoutFlag n = goTxn n <> pretty ".DidTimeout"
 
 goMsgEncode :: [BLVar] -> Doc a
 goMsgEncode [] = pretty "stdlib.Msg0"
-goMsgEncode (v:vs) = goApply ("stdlib.MsgEncode_" ++ goVarType' v)
+goMsgEncode (v:vs) = goApply ("stdlib.MsgEncode_" ++ goVarType_short_str v)
                      [ goMsgEncode vs
                      , goVar v ]
 
 goMsgDecodePaths :: [BLVar] -> [Doc a]
 goMsgDecodePaths vs = map h $ inits vs
-  where h prevs = pretty "[]string{" <> hcat (intersperse (comma <> space) (map goVarType prevs)) <> pretty "}"
+  where h prevs = pretty "[]string{" <> hcat (intersperse (comma <> space) (map goVarType_short_strp prevs)) <> pretty "}"
 
 goPrimApply :: Int -> EP_Prim -> [BLArg b] -> [Doc a] -> Doc a
 goPrimApply tn pr al =
@@ -125,7 +128,7 @@ goPrimApply tn pr al =
     CP PGT -> goApply "stdlib.Gt"
     CP IF_THEN_ELSE -> case al of
                          [ _, t, _ ] ->
-                           goApply ("stdlib.Ite_" ++ goType (blarg_type t))
+                           goApply ("stdlib.Ite_" ++ goType' (blarg_type t))
                          _ -> impossible "ite not called with three args"
     CP BYTES_EQ -> goApply "stdlib.Bytes_eq"
     CP BALANCE -> \_ -> goTxn tn <> pretty ".Balance"
@@ -169,7 +172,7 @@ add_from _ (FS_From p) (x, s) = (x, Set.insert p s)
 add_from _ FS_Any x = x
 
 goEPTail :: Int -> BLPart -> EPTail b -> (Doc a, Set.Set BLVar)
-goEPTail _tn _who (EP_Ret _ al) = ((goReturn $ goStruct "Ret" $ map fst alp), Set.unions $ map snd alp)
+goEPTail _tn _who (EP_Ret _ al) = ((goReturn $ goStructMake "Ret" $ map fst alp), Set.unions $ map snd alp)
   where alp = map goArg al
 goEPTail tn who (EP_If _ ca tt ft) = (tp, tfvs)
   where (ttp', ttfvs) = goEPTail tn who tt
@@ -223,7 +226,7 @@ goEPTail tn who (EP_Recv _ svs (fs_ok, i_ok, msg, k_ok) (fs_to, i_to, delay, k_t
         kp = goIf (goTimeoutFlag tn') k_top k_okp'
         k_okp' = vsep $ msg_vsps ++ [ k_okp ]
         (delayp, delayfvs) = goArg delay
-        msg_vsps = zipWith (\v vpre -> pretty "var" <+> (goVar v) <+> pretty "=" <+> goApply ("stdlib.MsgDecode_" ++ goVarType' v) [ (goTxn tn') <> pretty ".Data", vpre ] <> semi) msg (goMsgDecodePaths msg)
+        msg_vsps = zipWith (\v vpre -> pretty "var" <+> (goVar v) <+> pretty "=" <+> goApply ("stdlib.MsgDecode_" ++ goVarType_short_str v) [ (goTxn tn') <> pretty ".Data", vpre ] <> semi) msg (goMsgDecodePaths msg)
         (k_okp, kfvs) = add_from tn' fs_ok $ goEPTail tn' who k_ok
         (k_top, tofvs) = add_from tn' fs_to $ goEPTail tn' who k_to
         tn' = tn+1
@@ -243,29 +246,36 @@ goEPTail _tn _who (EP_Continue _ _which loopvs args) = (tp, argvs)
         argargs = map goArg args
 
 goPart :: (BLPart, EProgram b) -> Doc a
-goPart (p, (EP_Prog _ pargs et)) =
-  goFunction pn ([ pretty "ctc stdlib.Contract", pretty "interact Interact" ] ++ pargs_vs) bodyp'
+goPart (p, ep@(EP_Prog _ pargs et)) =
+  vsep_with_blank [ ity_p, funp ]
   where tn' = 0
         pn = gopart_name p
+        ity_n = "Interact_" ++ pn
         pargs_vs = map goVarAndType pargs
-        bodyp' = vsep [ pretty "var" <+> goTxn tn' <+> pretty "= stdlib.Txn0" <> semi
-                      , bodyp ]
+        bodyp' = vsep [ pretty "var" <+> goTxn tn' <+> pretty "= stdlib.Txn0" <> semi, pretty "_ = txn0;", bodyp ]
         (bodyp, _) = goEPTail tn' p et
+        funp = goFunction pn ([ pretty "ctc stdlib.Contract", pretty ("interact " ++ ity_n) ] ++ pargs_vs) bodyp'
+        ity_p = pretty ("type " ++ ity_n ++ " interface") <+> (braces $ nest 2 $ hardline <> (hcat $ intersperse (semi <> hardline) ity_eps ))
+        ity_eps = map ity_mk $ M.toList ity
+        ity = ep_interacts ep
+        ity_mk (n, (arg_tys, rt)) =
+          pretty n <> parens (hcat $ intersperse (comma <> space) $ map goType arg_tys) <+> (pretty "<-chan" <+> (goType rt))
 
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 emit_go :: BLProgram b -> CompiledSol -> String -> Doc a
 emit_go (BL_Prog _ rts pm _) (abi, code) code2 = modp
-  where modp = vsep_with_blank $ preamble : pkgp : importp : retp : partsp ++ [ abip, codep, code2p ]
+  where modp = vsep_with_blank $ preamble : pkgp : importp : retp : partsp ++ [ abip, codep, code2p, mainp ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         pkgp = pretty $ "package main"
         importp = pretty $ "import ( \"reach-sh/stdlib\" )"
-        retp = pretty "type Ret struct" <> (braces $ hcat $ intersperse (semi <> space) $ map pretty $ map goType rts)
+        retp = pretty "type Ret struct" <> (braces $ hcat $ intersperse (semi <> space) $ map goType rts)
         partsp = map goPart $ M.toList pm
         abip = pretty "const ABI = `" <> pretty abi <> pretty "`" <> semi
         codep = pretty $ "const Bytecode = \"0x" ++ code ++ "\";"
         code2p = pretty $ "const Bytecode2 = \"0x" ++ code2 ++ "\";"
+        mainp = pretty "func main() { }"
 
 --- XXX Since go is statically typed, I need to add definitions for
 --- the various structures for the message data and return values.

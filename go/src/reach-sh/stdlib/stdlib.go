@@ -3,6 +3,7 @@ package stdlib
 type Type_bool bool
 type Type_uint256 int
 type Type_address int
+type Type_uint256arr []Type_uint256
 
 type Txn struct { 
      Balance Type_uint256
