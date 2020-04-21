@@ -216,7 +216,7 @@ comp_cexpr cs e =
           return $ cond_ls
             ++ code "bnz" [true_lab]
             ++ false_ls
-            ++ code "jump" [cont_lab]
+            ++ code "b" [cont_lab]
             ++ label true_lab
             ++ true_ls
             ++ label cont_lab
@@ -279,7 +279,7 @@ comp_ctail ccs cs ts t =
   case t of
     C_Halt _ ->
       return $ txn_ensure_size ts
-        ++ code "jump" ["halt"]
+        ++ code "b" ["halt"]
     C_Wait loc i svs -> do
       hash_ls <- comp_hash (HM_State i True) cs (map (BL_Var loc) svs)
       return $ txn_ensure_size ts
@@ -320,7 +320,7 @@ comp_ctail ccs cs ts t =
           args <- concatMapM (comp_blarg cs) $ (map (BL_Var loc) vs) ++ as
           return $ args
             ++ stack_to_slot ((length vs) + (length as)) 
-            ++ code "jump" [ "l" ++ show which ]
+            ++ code "b" [ "l" ++ show which ]
         where stack_to_slot n =
                 if n == 0 then
                   []
@@ -404,7 +404,7 @@ comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label
 cp_to_teal :: CProgram a -> TEAL
 cp_to_teal (C_Prog _ hs) = TEAL ls
   where ls = dispatch_ls ++ handlers_ls ++ loop_ls ++ standard_ls
-        dispatch_ls = bracket "Dispatcher" $ code "jump" [ "h1" ]
+        dispatch_ls = bracket "Dispatcher" $ code "b" [ "h1" ]
         handlers_ls = bracket "Handlers" $ snd $ foldl fh ("revert", []) (reverse hs)
           where fh (next_lab, prev_ls) h = (this_lab, both_ls)
                   where (this_lab, this_ls) = comp_chandler next_lab h
@@ -413,17 +413,13 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
         standard_ls = bracket "Standard" $ revert_ls ++ halt_ls
         revert_ls = label "revert"
                     ++ comp_con (Con_I 0)
-                    ++ code "halt" []
+                    ++ code "return" []
         halt_ls = label "halt"
                   ++ comp_con (Con_BS "state")
                   ++ comp_con (Con_BS "")
                   ++ code "app_global_put" []
                   ++ comp_con (Con_I 1)
-                  ++ code "halt" []
-
--- FIXME relies on halt: https://github.com/algorand/go-algorand/issues/932
-
--- FIXME relies on jump: https://github.com/algorand/go-algorand/issues/930
+                  ++ code "return" []
 
 -- FIXME relies on application state: https://github.com/algorand/go-algorand/issues/935 / https://github.com/algorandfoundation/specs/pull/23/files
 
