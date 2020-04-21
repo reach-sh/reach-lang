@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: base64-0.4.1@sha256:aedc26f581f81a112af588eec8cf9c2e8db219a60fafc1cb77fd73672f1f7dcb,2832
+    pantry-tree:
+      size: 1184
+      sha256: 51a4bbf7742a9ce771b56c2ec5c22e2d6aac4394a712949c111b86c4b3040c80
+  original:
+    hackage: base64-0.4.1
+- completed:
     hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
     pantry-tree:
       size: 273

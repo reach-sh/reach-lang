@@ -38,6 +38,7 @@ dependencies:
 - haskell-evm
 - cryptonite
 - memory
+- base64
 
 ghc-options:
 - -Wall

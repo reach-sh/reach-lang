@@ -6,6 +6,9 @@ import Control.Monad.Extra
 import Control.Monad.State.Lazy
 import qualified Data.Map.Strict as M
 import Data.List
+import Data.ByteString.Base64 (encodeBase64')
+import Data.ByteString.Internal (unpackChars)
+--import qualified Data.ByteString as BS
 
 import Reach.AST
 import Reach.Util
@@ -43,7 +46,7 @@ type CompileSt a
 data VarRHS a
   = VR_Expr (CExpr a)
   | VR_Slot Int
-  | VR_Arg Int
+  | VR_Arg Int LType
   | VR_Code TEALs
 
 type TxnSt
@@ -74,7 +77,7 @@ cs_var_set cs bv vr = cs'
 
 cs_var_args :: CompileSt a -> [ BLVar ] -> CompileSt a
 cs_var_args cs as = cs'
-  where h (cs0, i) a = ((cs_var_set cs0 a (VR_Arg i)), i+1)
+  where h (cs0, i) a = ((cs_var_set cs0 a (VR_Arg i (blvar_type a))), i+1)
         --- The first argument is 2 because 0 is the handler and 1 is
         --- the last time.
         (cs', _) = foldl h (cs, 2) as
@@ -112,15 +115,19 @@ comp_con c =
     Con_B t ->
       comp_con $ Con_I $ if t then 1 else 0
     Con_BS bs ->
-      code "byte" [ show bs ]
+      code "byte" [ "base64(" ++ (unpackChars (encodeBase64' bs)) ++ ")" ]
 
 comp_blvar :: CompileSt a -> BLVar -> LabelM ann TEALs
 comp_blvar cs bv = 
   case M.lookup bv vmap of
     Nothing ->
       impossible $ "unbound variable: " ++ show bv
-    Just (VR_Arg a) ->
+    Just (VR_Arg a lt) ->
       return $ code "arg" [ show a ]
+               ++ case lt of
+                    LT_BT BT_UInt256 -> code "btoi" []
+                    LT_BT BT_Bool -> code "btoi" []
+                    _ -> []
     Just (VR_Slot s) ->
       return $ code "load" [ show s ]
     Just (VR_Code ls) ->
@@ -171,22 +178,20 @@ comp_hash hm cs as = do
                   hm_ls = comp_con (Con_I $ fromIntegral i)
                     ++ code "itob" []
                     ++ (if use_this_block then
-                          code "gtxn" [ "0", "LastValid" ]
+                          (code "gtxn" [ "0", "LastValid" ]
+                           ++ code "itob" [])
                         else
                           code "arg" [ "1" ])
-                    ++ code "itob" []
   as_ls <- concatMapM (comp_blarg_for_hash cs) as
   let how_many = pre_len + length as
   return $ pre_ls
     ++ as_ls
-    ++ digest_of how_many
+    ++ combine how_many
     ++ code "keccak256" []
-  where digest_of n =
-          if n == 0 then
-            comp_con (Con_BS "")
-          else
-            --- FIXME relies on concat: https://github.com/algorand/go-algorand/issues/781
-            (digest_of (n-1) ++ code "concat" [])
+    ++ code "btoi" []
+  where combine 0 = comp_con (Con_BS "")
+        combine 1 = []
+        combine n = (combine (n-1) ++ code "concat" [])
 
 comp_cexpr :: CompileSt a -> CExpr a -> LabelM ann TEALs
 comp_cexpr cs e =
@@ -339,6 +344,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
                FS_From _ -> cs1
                FS_Any -> cs1
         pre_ls = code "arg" [ "0" ]
+          ++ code "btoi" []
           ++ (comp_con $ Con_I $ fromIntegral i)
           ++ code "!=" []
           ++ code "bnz" [ next_lab ]
@@ -367,6 +373,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           return $ sender_ls
             -- begin timeout checking
             ++ code "arg" [ "1" ]
+            ++ code "btoi" []
             ++ delay_ls
             ++ code "+" []
             -- the stack contains the deadline
