@@ -186,6 +186,7 @@ comp_hash hm cs as = do
   let how_many = pre_len + length as
   return $ pre_ls
     ++ as_ls
+    --- FIXME: Interleave these concats into the arguments themselves so that maybe the assembler can track the types better.
     ++ combine how_many
     ++ code "keccak256" []
     ++ code "btoi" []
@@ -244,8 +245,7 @@ comp_cstmt cs ts s =
     C_Claim _ _ a -> do
       a_ls <- comp_blarg cs a
       return $ (ts, a_ls
-        ++ code "!" []
-        ++ code "bnz" [ "revert" ])
+        ++ code "bz" [ "revert" ])
     C_Transfer _ p a -> do
       a_ls <- comp_blarg cs a
       p_ls <- comp_blvar cs p
@@ -390,8 +390,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
                   -- running-time <= deadline
                   -- == deadline >= running-time
                    ++ code ">=" []))
-            ++ code "!" [] --- FIXME we could push this backward into the comparison
-            ++ code "bnz" [ "revert" ]
+            ++ code "bz" [ "revert" ]
             -- end of timeout checking
             ++ hash_ls
             ++ comp_con (Con_BS "state")
@@ -429,6 +428,8 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                   ++ code "return" []
 
 -- FIXME relies on application state: https://github.com/algorand/go-algorand/issues/935 / https://github.com/algorandfoundation/specs/pull/23/files
+
+-- FIXME Do something like a "peep-hole optimizer" so we can detect "btoi -> itob" sequences
 
 emit_teal :: FilePath -> BLProgram a -> IO String
 emit_teal tf (BL_Prog _ _ _ cp) = do
