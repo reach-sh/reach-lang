@@ -21,7 +21,7 @@ function main() {
     .pay(wagerAmount + escrowAmount)
     .timeout(DELAY, _, () => {
       commit();
-      return A_QUITS; });
+      return showOutcome(A_QUITS); });
   commit();
 
   B.only(() => {
@@ -30,7 +30,7 @@ function main() {
     .timeout(DELAY, A, () => {
       transfer(balance()).to(A);
       commit();
-      return B_QUITS; });
+      return showOutcome(B_QUITS); });
 
   var [ count, outcome ] = [ 0, DRAW ];
   invariant((balance() == ((2 * wagerAmount) + escrowAmount))

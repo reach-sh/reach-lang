@@ -1,10 +1,11 @@
 // <Dispatcher>
-jump h1
+b h1
 // </Dispatcher>
 // <Handlers>
 // <Handler 1>
 h1:
 arg 0
+btoi
 int 1
 !=
 bnz h2
@@ -13,61 +14,62 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 LastValid
 >=
-!
-bnz revert
+bz revert
 int 0
 itob
 arg 1
-itob
-byte ""
-concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
 gtxn 0 Amount
 arg 2
+btoi
 arg 3
+btoi
 +
 ==
-!
-bnz revert
+bz revert
 int 1
 global GroupSize
 !=
 bnz revert
-byte "state"
+byte base64(c3RhdGU=)
 int 1
 itob
 gtxn 0 LastValid
 itob
 gtxn 0 Sender
 arg 2
+btoi
 itob
 arg 3
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
 concat
 keccak256
+btoi
 app_global_put
 // </Handler 1>
 // <Handler 2>
 h2:
 arg 0
+btoi
 int 2
 !=
 bnz h3
@@ -76,25 +78,23 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 FirstValid
 <
-!
-bnz revert
+bz revert
 int 0
 itob
 arg 1
-itob
-byte ""
-concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
@@ -102,11 +102,12 @@ int 1
 global GroupSize
 !=
 bnz revert
-jump halt
+b halt
 // </Handler 2>
 // <Handler 3>
 h3:
 arg 0
+btoi
 int 3
 !=
 bnz h4
@@ -115,45 +116,47 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 LastValid
 >=
-!
-bnz revert
+bz revert
 int 1
 itob
 arg 1
-itob
 arg 2
 arg 3
+btoi
 itob
 arg 4
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
 gtxn 0 Amount
 arg 3
+btoi
 ==
-!
-bnz revert
+bz revert
 arg 2
 gtxn 0 Sender
 arg 3
+btoi
 arg 4
+btoi
 int 0
 int 1
 store 5
@@ -162,11 +165,12 @@ store 3
 store 2
 store 1
 store 0
-jump l5
+b l5
 // </Handler 3>
 // <Handler 4>
 h4:
 arg 0
+btoi
 int 4
 !=
 bnz h6
@@ -175,7 +179,7 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 gtxn 0 Sender
@@ -183,29 +187,29 @@ arg 2
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 FirstValid
 <
-!
-bnz revert
+bz revert
 int 1
 itob
 arg 1
-itob
 arg 2
 arg 3
+btoi
 itob
 arg 4
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
@@ -227,18 +231,19 @@ arg 2
 !=
 bnz revert
 gtxn 1 Sender
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 int 2
 global GroupSize
 !=
 bnz revert
-jump halt
+b halt
 // </Handler 4>
 // <Handler 6>
 h6:
 arg 0
+btoi
 int 6
 !=
 bnz h7
@@ -247,7 +252,7 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 gtxn 0 Sender
@@ -255,26 +260,26 @@ arg 2
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 LastValid
 >=
-!
-bnz revert
+bz revert
 int 3
 itob
 arg 1
-itob
 arg 2
 arg 3
 arg 4
+btoi
 itob
 arg 5
+btoi
 itob
 arg 6
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -282,20 +287,20 @@ concat
 concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
 gtxn 0 Amount
 int 0
 ==
-!
-bnz revert
+bz revert
 int 1
 global GroupSize
 !=
 bnz revert
-byte "state"
+byte base64(c3RhdGU=)
 int 6
 itob
 gtxn 0 LastValid
@@ -303,15 +308,17 @@ itob
 arg 2
 arg 3
 arg 4
+btoi
 itob
 arg 5
+btoi
 itob
 arg 6
+btoi
 itob
 arg 7
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -320,11 +327,13 @@ concat
 concat
 concat
 keccak256
+btoi
 app_global_put
 // </Handler 6>
 // <Handler 7>
 h7:
 arg 0
+btoi
 int 7
 !=
 bnz h8
@@ -333,7 +342,7 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 gtxn 0 Sender
@@ -341,26 +350,26 @@ arg 3
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 FirstValid
 <
-!
-bnz revert
+bz revert
 int 3
 itob
 arg 1
-itob
 arg 2
 arg 3
 arg 4
+btoi
 itob
 arg 5
+btoi
 itob
 arg 6
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -368,15 +377,19 @@ concat
 concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
 arg 2
 arg 3
 arg 4
+btoi
 arg 5
+btoi
 arg 6
+btoi
 int 3
 store 5
 store 4
@@ -384,11 +397,12 @@ store 3
 store 2
 store 1
 store 0
-jump l5
+b l5
 // </Handler 7>
 // <Handler 8>
 h8:
 arg 0
+btoi
 int 8
 !=
 bnz h9
@@ -397,7 +411,7 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 gtxn 0 Sender
@@ -405,28 +419,29 @@ arg 3
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 LastValid
 >=
-!
-bnz revert
+bz revert
 int 6
 itob
 arg 1
-itob
 arg 2
 arg 3
 arg 4
+btoi
 itob
 arg 5
+btoi
 itob
 arg 6
+btoi
 itob
 arg 7
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -435,33 +450,34 @@ concat
 concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
 gtxn 0 Amount
 int 0
 ==
-!
-bnz revert
+bz revert
 int 0
 arg 8
+btoi
 <=
 bnz h8_0
 int 0
-jump h8_1
+b h8_1
 h8_0:
 arg 8
+btoi
 int 3
 <
 h8_1:
-!
-bnz revert
+bz revert
 int 1
 global GroupSize
 !=
 bnz revert
-byte "state"
+byte base64(c3RhdGU=)
 int 8
 itob
 gtxn 0 LastValid
@@ -469,17 +485,20 @@ itob
 arg 2
 arg 3
 arg 4
+btoi
 itob
 arg 5
+btoi
 itob
 arg 6
+btoi
 itob
 arg 7
+btoi
 itob
 arg 8
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -489,11 +508,13 @@ concat
 concat
 concat
 keccak256
+btoi
 app_global_put
 // </Handler 8>
 // <Handler 9>
 h9:
 arg 0
+btoi
 int 9
 !=
 bnz h10
@@ -502,7 +523,7 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 gtxn 0 Sender
@@ -510,28 +531,29 @@ arg 2
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 FirstValid
 <
-!
-bnz revert
+bz revert
 int 6
 itob
 arg 1
-itob
 arg 2
 arg 3
 arg 4
+btoi
 itob
 arg 5
+btoi
 itob
 arg 6
+btoi
 itob
 arg 7
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -540,15 +562,19 @@ concat
 concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
 arg 2
 arg 3
 arg 4
+btoi
 arg 5
+btoi
 arg 6
+btoi
 int 4
 store 5
 store 4
@@ -556,11 +582,12 @@ store 3
 store 2
 store 1
 store 0
-jump l5
+b l5
 // </Handler 9>
 // <Handler 10>
 h10:
 arg 0
+btoi
 int 10
 !=
 bnz h11
@@ -569,7 +596,7 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 gtxn 0 Sender
@@ -577,30 +604,32 @@ arg 2
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 LastValid
 >=
-!
-bnz revert
+bz revert
 int 8
 itob
 arg 1
-itob
 arg 2
 arg 3
 arg 4
+btoi
 itob
 arg 5
+btoi
 itob
 arg 6
+btoi
 itob
 arg 7
+btoi
 itob
 arg 8
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -610,60 +639,66 @@ concat
 concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
 gtxn 0 Amount
 int 0
 ==
-!
-bnz revert
+bz revert
 arg 7
+btoi
 arg 9
+btoi
 itob
 arg 10
+btoi
 itob
-byte ""
-concat
 concat
 keccak256
+btoi
 ==
-!
-bnz revert
+bz revert
 int 0
 arg 10
+btoi
 <=
 bnz h10_0
 int 0
-jump h10_1
+b h10_1
 h10_0:
 arg 10
+btoi
 int 3
 <
 h10_1:
-!
-bnz revert
+bz revert
 int 0
 arg 10
+btoi
 <=
 bnz h10_2
 int 0
-jump h10_3
+b h10_3
 h10_2:
 arg 10
+btoi
 int 3
 <
 h10_3:
 store 0
 int 0
 arg 8
+btoi
 <=
 bnz h10_4
 int 0
-jump h10_5
+b h10_5
 h10_4:
 arg 8
+btoi
 int 3
 <
 h10_5:
@@ -671,7 +706,7 @@ store 1
 load 0
 bnz h10_6
 int 0
-jump h10_7
+b h10_7
 h10_6:
 load 1
 h10_7:
@@ -681,19 +716,21 @@ bnz h10_9
 load 1
 bnz h10_10
 int 1
-jump h10_11
+b h10_11
 h10_10:
 int 0
 h10_11:
-jump h10_12
+b h10_12
 h10_9:
 int 2
 h10_12:
-jump h10_13
+b h10_13
 h10_8:
 arg 10
+btoi
 int 4
 arg 8
+btoi
 -
 +
 int 3
@@ -711,9 +748,12 @@ store 4
 arg 2
 arg 3
 arg 4
+btoi
 arg 5
+btoi
 int 1
 arg 6
+btoi
 +
 load 2
 store 5
@@ -722,11 +762,12 @@ store 3
 store 2
 store 1
 store 0
-jump l5
+b l5
 // </Handler 10>
 // <Handler 11>
 h11:
 arg 0
+btoi
 int 11
 !=
 bnz revert
@@ -735,7 +776,7 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 gtxn 0 Sender
@@ -743,30 +784,32 @@ arg 3
 !=
 bnz revert
 arg 1
+btoi
 int 10
 +
 gtxn 0 FirstValid
 <
-!
-bnz revert
+bz revert
 int 8
 itob
 arg 1
-itob
 arg 2
 arg 3
 arg 4
+btoi
 itob
 arg 5
+btoi
 itob
 arg 6
+btoi
 itob
 arg 7
+btoi
 itob
 arg 8
+btoi
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -776,15 +819,19 @@ concat
 concat
 concat
 keccak256
-byte "state"
+btoi
+byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
 arg 2
 arg 3
 arg 4
+btoi
 arg 5
+btoi
 arg 6
+btoi
 int 3
 store 5
 store 4
@@ -792,7 +839,7 @@ store 3
 store 2
 store 1
 store 0
-jump l5
+b l5
 // </Handler 11>
 // </Handlers>
 // <Loops>
@@ -803,7 +850,7 @@ int 1
 ==
 bnz l5_0
 int 1
-jump l5_1
+b l5_1
 l5_0:
 int 0
 l5_1:
@@ -812,7 +859,7 @@ int 1
 global GroupSize
 !=
 bnz revert
-byte "state"
+byte base64(c3RhdGU=)
 int 3
 itob
 gtxn 0 LastValid
@@ -825,8 +872,6 @@ load 3
 itob
 load 4
 itob
-byte ""
-concat
 concat
 concat
 concat
@@ -834,6 +879,7 @@ concat
 concat
 concat
 keccak256
+btoi
 app_global_put
 l5_2:
 load 5
@@ -861,7 +907,7 @@ load 3
 load 6
 bnz l5_5
 int 0
-jump l5_6
+b l5_6
 l5_5:
 int 2
 load 2
@@ -875,7 +921,7 @@ load 0
 !=
 bnz revert
 gtxn 1 Sender
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 int 2
@@ -892,7 +938,7 @@ bnz l5_7
 int 2
 load 2
 *
-jump l5_8
+b l5_8
 l5_7:
 int 0
 l5_8:
@@ -903,14 +949,14 @@ load 1
 !=
 bnz revert
 gtxn 2 Sender
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 int 3
 global GroupSize
 !=
 bnz revert
-jump halt
+b halt
 l5_4:
 int 1
 global GroupSize
@@ -930,14 +976,14 @@ load 0
 !=
 bnz revert
 gtxn 1 Sender
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 int 2
 global GroupSize
 !=
 bnz revert
-jump halt
+b halt
 l5_3:
 int 1
 global GroupSize
@@ -957,24 +1003,24 @@ load 1
 !=
 bnz revert
 gtxn 1 Sender
-byte "${CONTRACT_ACCOUNT}"
+byte base64(JHtDT05UUkFDVF9BQ0NPVU5UfQ==)
 !=
 bnz revert
 int 2
 global GroupSize
 !=
 bnz revert
-jump halt
+b halt
 // </Loop 5>
 // </Loops>
 // <Standard>
 revert:
 int 0
-halt
+return
 halt:
-byte "state"
-byte ""
+byte base64(c3RhdGU=)
+byte base64()
 app_global_put
 int 1
-halt
+return
 // </Standard>

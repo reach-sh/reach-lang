@@ -139,6 +139,7 @@
     #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 133/PrimApp:uint256 (BALANCE))
+        (transfer! 0/A:address 133/PrimApp:uint256)
         (require! True)
         "Bob quits")))
   (define 13/PrimApp:uint256 (TXN_VALUE))
@@ -165,6 +166,7 @@
     #:timeout (#:from 3/B:address) 6 10 
       (begin 
         (define 132/PrimApp:uint256 (BALANCE))
+        (transfer! 3/B:address 132/PrimApp:uint256)
         (require! True)
         "Alice quits"))
   (define 30/PrimApp:uint256 (TXN_VALUE))
@@ -174,6 +176,7 @@
     #:timeout (#:from 0/A:address) 8 10 
       (begin 
         (define 131/PrimApp:uint256 (BALANCE))
+        (transfer! 0/A:address 131/PrimApp:uint256)
         (require! True)
         "Bob quits")))
   (define 45/PrimApp:uint256 (TXN_VALUE))
@@ -198,6 +201,7 @@
     #:timeout (#:from 3/B:address) 10 10 
       (begin 
         (define 130/PrimApp:uint256 (BALANCE))
+        (transfer! 3/B:address 130/PrimApp:uint256)
         (require! True)
         "Alice quits"))
   (define 60/PrimApp:uint256 (TXN_VALUE))
@@ -270,6 +274,8 @@
   (define 115/PureIf:uint256 (IF_THEN_ELSE 109/PrimApp:bool 110/PrimApp:uint256 113/PureIf:uint256))
   (define 116/PureIf:uint256 (IF_THEN_ELSE 109/PrimApp:bool 0 114/PureIf:uint256))
   (define 117/PrimApp:uint256 (ADD 6/Declassify:uint256 115/PureIf:uint256))
+  (transfer! 0/A:address 117/PrimApp:uint256)
+  (transfer! 3/B:address 116/PureIf:uint256)
   (define 118/Interact:bool (interact.outcome bool ))
   (define 119/PrimApp:bool (PLE 0 79/PureIf:uint256))
   (define 120/PrimApp:bool (PLT 79/PureIf:uint256 5))
@@ -302,6 +308,7 @@
     #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 133/PrimApp:uint256 (BALANCE))
+        (transfer! 0/A:address 133/PrimApp:uint256)
         (require! True)
         "Bob quits"))
   (define 13/PrimApp:uint256 (TXN_VALUE))
@@ -311,6 +318,7 @@
     #:timeout (#:from 3/B:address) 6 10 
       (begin 
         (define 132/PrimApp:uint256 (BALANCE))
+        (transfer! 3/B:address 132/PrimApp:uint256)
         (require! True)
         "Alice quits")))
   (define 30/PrimApp:uint256 (TXN_VALUE))
@@ -335,6 +343,7 @@
     #:timeout (#:from 0/A:address) 8 10 
       (begin 
         (define 131/PrimApp:uint256 (BALANCE))
+        (transfer! 0/A:address 131/PrimApp:uint256)
         (require! True)
         "Bob quits"))
   (define 45/PrimApp:uint256 (TXN_VALUE))
@@ -348,6 +357,7 @@
     #:timeout (#:from 3/B:address) 10 10 
       (begin 
         (define 130/PrimApp:uint256 (BALANCE))
+        (transfer! 3/B:address 130/PrimApp:uint256)
         (require! True)
         "Alice quits")))
   (define 60/PrimApp:uint256 (TXN_VALUE))
@@ -420,6 +430,8 @@
   (define 115/PureIf:uint256 (IF_THEN_ELSE 109/PrimApp:bool 110/PrimApp:uint256 113/PureIf:uint256))
   (define 116/PureIf:uint256 (IF_THEN_ELSE 109/PrimApp:bool 0 114/PureIf:uint256))
   (define 117/PrimApp:uint256 (ADD 6/Declassify:uint256 115/PureIf:uint256))
+  (transfer! 0/A:address 117/PrimApp:uint256)
+  (transfer! 3/B:address 116/PureIf:uint256)
   (define 118/Interact:bool (interact.outcome bool ))
   (define 119/PrimApp:bool (PLE 0 79/PureIf:uint256))
   (define 120/PrimApp:bool (PLT 79/PureIf:uint256 5))
@@ -451,6 +463,7 @@
     #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 133/PrimApp:uint256 (BALANCE))
+        (transfer! 0/A:address 133/PrimApp:uint256)
         (require! True)
         "Bob quits")))
   (define 13/PrimApp:uint256 (TXN_VALUE))
@@ -460,6 +473,7 @@
     #:timeout (#:from 3/B:address) 6 10 
       (begin 
         (define 132/PrimApp:uint256 (BALANCE))
+        (transfer! 3/B:address 132/PrimApp:uint256)
         (require! True)
         "Alice quits")))
   (define 30/PrimApp:uint256 (TXN_VALUE))
@@ -469,6 +483,7 @@
     #:timeout (#:from 0/A:address) 8 10 
       (begin 
         (define 131/PrimApp:uint256 (BALANCE))
+        (transfer! 0/A:address 131/PrimApp:uint256)
         (require! True)
         "Bob quits")))
   (define 45/PrimApp:uint256 (TXN_VALUE))
@@ -482,6 +497,7 @@
     #:timeout (#:from 3/B:address) 10 10 
       (begin 
         (define 130/PrimApp:uint256 (BALANCE))
+        (transfer! 3/B:address 130/PrimApp:uint256)
         (require! True)
         "Alice quits")))
   (define 60/PrimApp:uint256 (TXN_VALUE))
@@ -554,6 +570,8 @@
   (define 115/PureIf:uint256 (IF_THEN_ELSE 109/PrimApp:bool 110/PrimApp:uint256 113/PureIf:uint256))
   (define 116/PureIf:uint256 (IF_THEN_ELSE 109/PrimApp:bool 0 114/PureIf:uint256))
   (define 117/PrimApp:uint256 (ADD 6/Declassify:uint256 115/PureIf:uint256))
+  (transfer! 0/A:address 117/PrimApp:uint256)
+  (transfer! 3/B:address 116/PureIf:uint256)
   (define 118/Interact:bool (interact.outcome bool ))
   (define 119/PrimApp:bool (PLE 0 79/PureIf:uint256))
   (define 120/PrimApp:bool (PLT 79/PureIf:uint256 5))
