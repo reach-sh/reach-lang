@@ -322,6 +322,7 @@ data EPTail a
   | EP_Do a (EPStmt a) (EPTail a)
   | EP_SendRecv a [BLVar] (FromSpec, Int, [BLVar], (BLArg a), (EPTail a)) (FromSpec, Int, BLArg a, EPTail a)
   | EP_Recv a [BLVar] (FromSpec, Int, [BLVar], (EPTail a)) (FromSpec, Int, BLArg a, EPTail a)
+  | EP_FromConsensus a (EPTail a)
   | EP_Loop a Int [BLVar] [BLArg a] (EPTail a)
   | EP_Continue a Int [BLVar] [(BLArg a)]
   deriving (Show,Eq)
@@ -355,6 +356,7 @@ ept_interacts t =
       ept_interacts ot <> ept_interacts tt
     EP_Loop _ _ _ _ bt -> ept_interacts bt
     EP_Continue _ _ _ _ -> mempty
+    EP_FromConsensus _ bt -> ept_interacts bt
 
 ep_interacts :: EProgram a -> M.Map String ([LType], LType)
 ep_interacts (EP_Prog _ _ et) = ept_interacts et

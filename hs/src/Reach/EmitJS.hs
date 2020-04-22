@@ -214,6 +214,9 @@ jsEPTail _tn _who (EP_Continue _ _which loopvs args) = (tp, argvs)
         setp loopv argp = jsVar loopv <+> pretty "=" <+> argp <> semi
         argvs = Set.unions $ map snd argargs
         argargs = map jsArg args
+jsEPTail tn who (EP_FromConsensus _ kt) = (tp, kfvs)
+  where tp = vsep [ pretty "// FromConsensus", ktp ]
+        (ktp, kfvs) = jsEPTail tn who kt
 
 jsPart :: (BLPart, EProgram b) -> Doc a
 jsPart (p, (EP_Prog _ pargs et)) =

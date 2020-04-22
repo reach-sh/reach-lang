@@ -129,23 +129,21 @@
   (send! (#:join 0/A:address) 1 () (5/Declassify:uint256 6/Declassify:uint256) 8/PrimApp:uint256 
     #:timeout (#:any) 2 10 
       (begin 
-        (require! True)
-        "Alice quits"))
+        (from-consensus (require! True) "Alice quits")))
   (define 9/PrimApp:uint256 (TXN_VALUE))
   (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256))
   (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256))
   (require! 11/PrimApp:bool)
-  (define-values (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () (recv! (#:join 3/B:address) 3 
+  (from-consensus (define-values (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () (recv! (#:join 3/B:address) 3 
     #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 133/PrimApp:uint256 (BALANCE))
         (transfer! 0/A:address 133/PrimApp:uint256)
-        (require! True)
-        "Bob quits")))
+        (from-consensus (require! True) "Bob quits"))))
   (define 13/PrimApp:uint256 (TXN_VALUE))
   (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256))
   (require! 14/PrimApp:bool)
-  (define 15/Interact:bytes (interact.getHand bytes ))
+  (from-consensus (define 15/Interact:bytes (interact.getHand bytes ))
   (define 16/PrimApp:bool (BYTES_EQ 15/Interact:bytes "ROCK"))
   (define 17/PrimApp:bool (BYTES_EQ 15/Interact:bytes "PAPER"))
   (define 18/PrimApp:bool (BYTES_EQ 15/Interact:bytes "SCISSORS"))
@@ -167,18 +165,16 @@
       (begin 
         (define 132/PrimApp:uint256 (BALANCE))
         (transfer! 3/B:address 132/PrimApp:uint256)
-        (require! True)
-        "Alice quits"))
+        (from-consensus (require! True) "Alice quits")))
   (define 30/PrimApp:uint256 (TXN_VALUE))
   (define 31/PrimApp:bool (PEQ 30/PrimApp:uint256 0))
   (require! 31/PrimApp:bool)
-  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 28/Declassify:uint256) (43/Declassify:uint256) (recv! (#:from 3/B:address) 7 
+  (from-consensus (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 28/Declassify:uint256) (43/Declassify:uint256) (recv! (#:from 3/B:address) 7 
     #:timeout (#:from 0/A:address) 8 10 
       (begin 
         (define 131/PrimApp:uint256 (BALANCE))
         (transfer! 0/A:address 131/PrimApp:uint256)
-        (require! True)
-        "Bob quits")))
+        (from-consensus (require! True) "Bob quits"))))
   (define 45/PrimApp:uint256 (TXN_VALUE))
   (define 46/PrimApp:bool (PEQ 45/PrimApp:uint256 0))
   (require! 46/PrimApp:bool)
@@ -186,7 +182,7 @@
   (define 48/PrimApp:bool (PLT 43/Declassify:uint256 3))
   (define 49/PureIf:bool (IF_THEN_ELSE 47/PrimApp:bool 48/PrimApp:bool False))
   (require! 49/PureIf:bool)
-  (define 50/Declassify:uint256 26/PrimApp:uint256)
+  (from-consensus (define 50/Declassify:uint256 26/PrimApp:uint256)
   (define 51/Declassify:uint256 22/PureIf:uint256)
   (define 52/PrimApp:bool (PLE 0 43/Declassify:uint256))
   (define 53/PrimApp:bool (PLT 43/Declassify:uint256 3))
@@ -202,8 +198,7 @@
       (begin 
         (define 130/PrimApp:uint256 (BALANCE))
         (transfer! 3/B:address 130/PrimApp:uint256)
-        (require! True)
-        "Alice quits"))
+        (from-consensus (require! True) "Alice quits")))
   (define 60/PrimApp:uint256 (TXN_VALUE))
   (define 61/PrimApp:bool (PEQ 60/PrimApp:uint256 0))
   (require! 61/PrimApp:bool)
@@ -276,7 +271,7 @@
   (define 117/PrimApp:uint256 (ADD 6/Declassify:uint256 115/PureIf:uint256))
   (transfer! 0/A:address 117/PrimApp:uint256)
   (transfer! 3/B:address 116/PureIf:uint256)
-  (define 118/Interact:bool (interact.outcome bool ))
+  (from-consensus (define 118/Interact:bool (interact.outcome bool ))
   (define 119/PrimApp:bool (PLE 0 79/PureIf:uint256))
   (define 120/PrimApp:bool (PLT 79/PureIf:uint256 5))
   (define 121/PureIf:bool (IF_THEN_ELSE 119/PrimApp:bool 120/PrimApp:bool False))
@@ -289,7 +284,7 @@
   (define 127/PureIf:bytes (IF_THEN_ELSE 124/PrimApp:bool "Alice wins" 126/PureIf:bytes))
   (define 128/PureIf:bytes (IF_THEN_ELSE 123/PrimApp:bool "Draw" 127/PureIf:bytes))
   (define 129/PureIf:bytes (IF_THEN_ELSE 122/PrimApp:bool "Bob wins" 128/PureIf:bytes))
-  129/PureIf:bytes)
+  129/PureIf:bytes))))))
 
 (define-participant (3, (B, address)) 
   ()
@@ -297,34 +292,31 @@
   (define-values () (5/Declassify:uint256 6/Declassify:uint256) (recv! (#:join 0/A:address) 1 
     #:timeout (#:any) 2 10 
       (begin 
-        (require! True)
-        "Alice quits")))
+        (from-consensus (require! True) "Alice quits"))))
   (define 9/PrimApp:uint256 (TXN_VALUE))
   (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256))
   (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256))
   (require! 11/PrimApp:bool)
-  (define 12/Interact:bool (interact.accepts bool 5/Declassify:uint256 6/Declassify:uint256))
+  (from-consensus (define 12/Interact:bool (interact.accepts bool 5/Declassify:uint256 6/Declassify:uint256))
   (send! (#:join 3/B:address) 3 (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () 5/Declassify:uint256 
     #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 133/PrimApp:uint256 (BALANCE))
         (transfer! 0/A:address 133/PrimApp:uint256)
-        (require! True)
-        "Bob quits"))
+        (from-consensus (require! True) "Bob quits")))
   (define 13/PrimApp:uint256 (TXN_VALUE))
   (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256))
   (require! 14/PrimApp:bool)
-  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) (28/Declassify:uint256) (recv! (#:from 0/A:address) 5 
+  (from-consensus (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) (28/Declassify:uint256) (recv! (#:from 0/A:address) 5 
     #:timeout (#:from 3/B:address) 6 10 
       (begin 
         (define 132/PrimApp:uint256 (BALANCE))
         (transfer! 3/B:address 132/PrimApp:uint256)
-        (require! True)
-        "Alice quits")))
+        (from-consensus (require! True) "Alice quits"))))
   (define 30/PrimApp:uint256 (TXN_VALUE))
   (define 31/PrimApp:bool (PEQ 30/PrimApp:uint256 0))
   (require! 31/PrimApp:bool)
-  (define 32/Interact:bytes (interact.getHand bytes ))
+  (from-consensus (define 32/Interact:bytes (interact.getHand bytes ))
   (define 33/PrimApp:bool (BYTES_EQ 32/Interact:bytes "ROCK"))
   (define 34/PrimApp:bool (BYTES_EQ 32/Interact:bytes "PAPER"))
   (define 35/PrimApp:bool (BYTES_EQ 32/Interact:bytes "SCISSORS"))
@@ -344,8 +336,7 @@
       (begin 
         (define 131/PrimApp:uint256 (BALANCE))
         (transfer! 0/A:address 131/PrimApp:uint256)
-        (require! True)
-        "Bob quits"))
+        (from-consensus (require! True) "Bob quits")))
   (define 45/PrimApp:uint256 (TXN_VALUE))
   (define 46/PrimApp:bool (PEQ 45/PrimApp:uint256 0))
   (require! 46/PrimApp:bool)
@@ -353,13 +344,12 @@
   (define 48/PrimApp:bool (PLT 43/Declassify:uint256 3))
   (define 49/PureIf:bool (IF_THEN_ELSE 47/PrimApp:bool 48/PrimApp:bool False))
   (require! 49/PureIf:bool)
-  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 28/Declassify:uint256 43/Declassify:uint256) (50/Declassify:uint256 51/Declassify:uint256) (recv! (#:from 0/A:address) 9 
+  (from-consensus (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 28/Declassify:uint256 43/Declassify:uint256) (50/Declassify:uint256 51/Declassify:uint256) (recv! (#:from 0/A:address) 9 
     #:timeout (#:from 3/B:address) 10 10 
       (begin 
         (define 130/PrimApp:uint256 (BALANCE))
         (transfer! 3/B:address 130/PrimApp:uint256)
-        (require! True)
-        "Alice quits")))
+        (from-consensus (require! True) "Alice quits"))))
   (define 60/PrimApp:uint256 (TXN_VALUE))
   (define 61/PrimApp:bool (PEQ 60/PrimApp:uint256 0))
   (require! 61/PrimApp:bool)
@@ -432,7 +422,7 @@
   (define 117/PrimApp:uint256 (ADD 6/Declassify:uint256 115/PureIf:uint256))
   (transfer! 0/A:address 117/PrimApp:uint256)
   (transfer! 3/B:address 116/PureIf:uint256)
-  (define 118/Interact:bool (interact.outcome bool ))
+  (from-consensus (define 118/Interact:bool (interact.outcome bool ))
   (define 119/PrimApp:bool (PLE 0 79/PureIf:uint256))
   (define 120/PrimApp:bool (PLT 79/PureIf:uint256 5))
   (define 121/PureIf:bool (IF_THEN_ELSE 119/PrimApp:bool 120/PrimApp:bool False))
@@ -445,7 +435,7 @@
   (define 127/PureIf:bytes (IF_THEN_ELSE 124/PrimApp:bool "Alice wins" 126/PureIf:bytes))
   (define 128/PureIf:bytes (IF_THEN_ELSE 123/PrimApp:bool "Draw" 127/PureIf:bytes))
   (define 129/PureIf:bytes (IF_THEN_ELSE 122/PrimApp:bool "Bob wins" 128/PureIf:bytes))
-  129/PureIf:bytes)
+  129/PureIf:bytes))))))
 
 (define-participant (4, (O, address)) 
   ()
@@ -453,39 +443,35 @@
   (define-values () (5/Declassify:uint256 6/Declassify:uint256) (recv! (#:join 0/A:address) 1 
     #:timeout (#:any) 2 10 
       (begin 
-        (require! True)
-        "Alice quits")))
+        (from-consensus (require! True) "Alice quits"))))
   (define 9/PrimApp:uint256 (TXN_VALUE))
   (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256))
   (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256))
   (require! 11/PrimApp:bool)
-  (define-values (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () (recv! (#:join 3/B:address) 3 
+  (from-consensus (define-values (0/A:address 5/Declassify:uint256 6/Declassify:uint256) () (recv! (#:join 3/B:address) 3 
     #:timeout (#:from 0/A:address) 4 10 
       (begin 
         (define 133/PrimApp:uint256 (BALANCE))
         (transfer! 0/A:address 133/PrimApp:uint256)
-        (require! True)
-        "Bob quits")))
+        (from-consensus (require! True) "Bob quits"))))
   (define 13/PrimApp:uint256 (TXN_VALUE))
   (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256))
   (require! 14/PrimApp:bool)
-  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) (28/Declassify:uint256) (recv! (#:from 0/A:address) 5 
+  (from-consensus (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256) (28/Declassify:uint256) (recv! (#:from 0/A:address) 5 
     #:timeout (#:from 3/B:address) 6 10 
       (begin 
         (define 132/PrimApp:uint256 (BALANCE))
         (transfer! 3/B:address 132/PrimApp:uint256)
-        (require! True)
-        "Alice quits")))
+        (from-consensus (require! True) "Alice quits"))))
   (define 30/PrimApp:uint256 (TXN_VALUE))
   (define 31/PrimApp:bool (PEQ 30/PrimApp:uint256 0))
   (require! 31/PrimApp:bool)
-  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 28/Declassify:uint256) (43/Declassify:uint256) (recv! (#:from 3/B:address) 7 
+  (from-consensus (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 28/Declassify:uint256) (43/Declassify:uint256) (recv! (#:from 3/B:address) 7 
     #:timeout (#:from 0/A:address) 8 10 
       (begin 
         (define 131/PrimApp:uint256 (BALANCE))
         (transfer! 0/A:address 131/PrimApp:uint256)
-        (require! True)
-        "Bob quits")))
+        (from-consensus (require! True) "Bob quits"))))
   (define 45/PrimApp:uint256 (TXN_VALUE))
   (define 46/PrimApp:bool (PEQ 45/PrimApp:uint256 0))
   (require! 46/PrimApp:bool)
@@ -493,13 +479,12 @@
   (define 48/PrimApp:bool (PLT 43/Declassify:uint256 3))
   (define 49/PureIf:bool (IF_THEN_ELSE 47/PrimApp:bool 48/PrimApp:bool False))
   (require! 49/PureIf:bool)
-  (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 28/Declassify:uint256 43/Declassify:uint256) (50/Declassify:uint256 51/Declassify:uint256) (recv! (#:from 0/A:address) 9 
+  (from-consensus (define-values (0/A:address 3/B:address 5/Declassify:uint256 6/Declassify:uint256 28/Declassify:uint256 43/Declassify:uint256) (50/Declassify:uint256 51/Declassify:uint256) (recv! (#:from 0/A:address) 9 
     #:timeout (#:from 3/B:address) 10 10 
       (begin 
         (define 130/PrimApp:uint256 (BALANCE))
         (transfer! 3/B:address 130/PrimApp:uint256)
-        (require! True)
-        "Alice quits")))
+        (from-consensus (require! True) "Alice quits"))))
   (define 60/PrimApp:uint256 (TXN_VALUE))
   (define 61/PrimApp:bool (PEQ 60/PrimApp:uint256 0))
   (require! 61/PrimApp:bool)
@@ -572,7 +557,7 @@
   (define 117/PrimApp:uint256 (ADD 6/Declassify:uint256 115/PureIf:uint256))
   (transfer! 0/A:address 117/PrimApp:uint256)
   (transfer! 3/B:address 116/PureIf:uint256)
-  (define 118/Interact:bool (interact.outcome bool ))
+  (from-consensus (define 118/Interact:bool (interact.outcome bool ))
   (define 119/PrimApp:bool (PLE 0 79/PureIf:uint256))
   (define 120/PrimApp:bool (PLT 79/PureIf:uint256 5))
   (define 121/PureIf:bool (IF_THEN_ELSE 119/PrimApp:bool 120/PrimApp:bool False))
@@ -585,4 +570,4 @@
   (define 127/PureIf:bytes (IF_THEN_ELSE 124/PrimApp:bool "Alice wins" 126/PureIf:bytes))
   (define 128/PureIf:bytes (IF_THEN_ELSE 123/PrimApp:bool "Draw" 127/PureIf:bytes))
   (define 129/PureIf:bytes (IF_THEN_ELSE 122/PrimApp:bool "Bob wins" 128/PureIf:bytes))
-  129/PureIf:bytes)
+  129/PureIf:bytes))))))

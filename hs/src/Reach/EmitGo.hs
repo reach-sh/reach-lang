@@ -244,6 +244,9 @@ goEPTail _tn _who (EP_Continue _ _which loopvs args) = (tp, argvs)
         setp loopv argp = goVar loopv <+> pretty "=" <+> argp <> semi
         argvs = Set.unions $ map snd argargs
         argargs = map goArg args
+goEPTail tn who (EP_FromConsensus _ kt) = (tp, kfvs)
+  where tp = vsep [ pretty "// FromConsensus", ktp ]
+        (ktp, kfvs) = goEPTail tn who kt
 
 goPart :: (BLPart, EProgram b) -> Doc a
 goPart (p, ep@(EP_Prog _ pargs et)) =

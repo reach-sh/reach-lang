@@ -188,6 +188,7 @@ instance Pretty (EPTail a) where
   pretty (EP_Loop _ which loopvs initas bt) =
     group $ parens $ pretty "loop" <+> pretty which <+> (prettyVarArgs prettyBLVar loopvs initas) <> nest 2 (hardline <> prettyBegin bt)
   pretty (EP_Continue _ which vs args) = group $ parens $ pretty "continue" <+> pretty which <+> (prettyVarArgs prettyBLVar vs args)
+  pretty (EP_FromConsensus _ bt) = group $ parens $ pretty "from-consensus" <+> pretty bt
 
 prettyVarArgs :: Pretty c => (b -> Doc a) -> [b] -> [c] -> Doc a
 prettyVarArgs prettyVar vs as = parens $ vsep $ zipWith (\v a -> brackets $ prettyVar v <+> pretty a) vs as

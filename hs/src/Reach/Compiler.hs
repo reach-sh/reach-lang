@@ -902,8 +902,10 @@ epp_it_ctc ps this_h γ ctxt it = case it of
     expect_throw CE_ContractLimitation h ("local action" :: String)
   IL_ToConsensus h _ _ _ ->
     expect_throw CE_ContractLimitation h ("transition to consensus" :: String)
-  IL_FromConsensus _ bt ->
-    epp_it_loc ps this_h γ ctxt bt
+  IL_FromConsensus h bt -> do
+    (svs0, next0, ts0) <- epp_it_loc ps this_h γ ctxt bt
+    let ts1 = M.map (EP_FromConsensus h) ts0
+    return (svs0, next0, ts1)
   IL_While h loopvs initas untilt invt bodyt kt -> do
     let (fvs_as, inita'_infos) = epp_args h γ RoleContract initas
     let initas' = map fst inita'_infos
