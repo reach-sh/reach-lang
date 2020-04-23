@@ -152,7 +152,7 @@ goAssert :: Doc a -> Doc a
 goAssert a = goApply "stdlib.Assert" [ a ] <> semi
 
 goTransfer :: BLVar -> Doc a -> Doc a
-goTransfer to a = pretty "// " <> goApply "txn.transfer" [ goVar to, a ] <> semi
+goTransfer to a = pretty "// XXX " <> goApply "txn.transfer" [ goVar to, a ] <> semi
 
 goEPStmt :: EPStmt b -> Doc a -> (Doc a, Set.Set BLVar)
 goEPStmt (EP_Claim _ CT_Possible _) kp = (kp, Set.empty)
@@ -245,7 +245,7 @@ goEPTail _tn _who (EP_Continue _ _which loopvs args) = (tp, argvs)
         argvs = Set.unions $ map snd argargs
         argargs = map goArg args
 goEPTail tn who (EP_FromConsensus _ kt) = (tp, kfvs)
-  where tp = vsep [ pretty "// FromConsensus", ktp ]
+  where tp = vsep [ pretty "// XXX FromConsensus", ktp ]
         (ktp, kfvs) = goEPTail tn who kt
 
 goPart :: (BLPart, EProgram b) -> Doc a

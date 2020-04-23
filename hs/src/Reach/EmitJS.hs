@@ -120,7 +120,7 @@ jsAssert :: Doc a -> Doc a
 jsAssert a = jsApply "stdlib.assert" [ a ] <> semi
 
 jsTransfer :: BLVar -> Doc a -> Doc a
-jsTransfer to a = pretty "// " <> jsApply "txn.transfer" [ jsVar to, a ] <> semi
+jsTransfer to a = pretty "// XXX " <> jsApply "txn.transfer" [ jsVar to, a ] <> semi
 
 jsEPStmt :: EPStmt b -> Doc a -> (Doc a, Set.Set BLVar)
 jsEPStmt (EP_Claim _ CT_Possible _) kp = (kp, Set.empty)
@@ -215,7 +215,7 @@ jsEPTail _tn _who (EP_Continue _ _which loopvs args) = (tp, argvs)
         argvs = Set.unions $ map snd argargs
         argargs = map jsArg args
 jsEPTail tn who (EP_FromConsensus _ kt) = (tp, kfvs)
-  where tp = vsep [ pretty "// FromConsensus", ktp ]
+  where tp = vsep [ pretty "// XXX FromConsensus", ktp ]
         (ktp, kfvs) = jsEPTail tn who kt
 
 jsPart :: (BLPart, EProgram b) -> Doc a

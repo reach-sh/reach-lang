@@ -268,7 +268,7 @@ comp_cstmt cs ts s =
         ++ code "!=" [ ]
         ++ code "bnz" [ "revert" ]
         ++ code "gtxn" [ txn_is, "Sender" ]
-        ++ comp_con (Con_BS $ "${CONTRACT_ACCOUNT}")
+        ++ comp_con (Con_BS $ "${XXX CONTRACT_ACCOUNT}")
         ++ code "!=" [ ]
         ++ code "bnz" [ "revert" ])
 
@@ -291,6 +291,7 @@ comp_ctail ccs cs ts t =
         ++ comp_con (Con_BS "state")
         ++ hash_ls
         ++ code "app_global_put" []
+        ++ code "b" ["halt"]
     C_If _ ca tt ft -> do
       ca_ls <- comp_blarg cs ca
       true_lab <- alloc_lab cs
@@ -353,7 +354,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           ++ code "!=" [ ]
           ++ code "bnz" [ "revert" ]
           ++ code "gtxn" [ "0", "Receiver" ]
-          ++ comp_con (Con_BS $ "${CONTRACT_ACCOUNT}")
+          ++ comp_con (Con_BS $ "${XXX CONTRACT_ACCOUNT}")
           ++ code "!=" []
           ++ code "bnz" [ "revert" ]
         bodym = do
