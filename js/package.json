@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "await-timeout": "^0.6.0",
-    "ethers": "4.0.36",
-    "web3": "1.2.1"
+    "ethers": "4.0.47",
+    "web3": "1.2.7"
   },
   "repository": {
     "type": "git",

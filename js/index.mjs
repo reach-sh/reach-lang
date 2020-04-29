@@ -6,7 +6,7 @@ import Timeout         from 'await-timeout';
 import * as util       from 'util';
 void(util);
 
-const DEBUG = false;
+const DEBUG = true;
 const debug = msg => { if (DEBUG) {
   console.log(`DEBUG: ${msg}`); } };
 
@@ -49,7 +49,7 @@ export const fromWei     = web3.utils.fromWei;
 export const toBN      = web3.utils.toBN;
 export const toWeiBN = (a,b) => toBN(toWei(a, b));
 export const isBN      = web3.utils.isBN;
-export const keccak256 = web3.utils.keccak256;
+export const keccak256 = web3.utils.soliditySha3;
 
 export const hexToBN          = h => toBN(hexTo0x(h));
 export const uint256_to_bytes = i => bnToHex(i);
@@ -164,7 +164,7 @@ export const connectAccount = address => {
       const munged = [ last_block, ...args ]
             .map(m => isBN(m) ? m.toString() : m);
 
-      debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START`);
+      debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${munged}`);
       let block_send_attempt = last_block;
       let block_repeat_count = 0;
       while ( ! timeout_delay || block_send_attempt < last_block + timeout_delay ) {
