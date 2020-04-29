@@ -1,0 +1,939 @@
+// <Dispatcher>
+b h1
+// </Dispatcher>
+// <Handlers>
+// <Handler 1>
+h1:
+arg 0
+btoi
+int 1
+!=
+bnz h2
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 LastValid
+>=
+bz revert
+int 0
+itob
+arg 1
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+gtxn 0 Amount
+arg 2
+btoi
+arg 3
+btoi
++
+==
+bz revert
+int 1
+global GroupSize
+!=
+bnz revert
+byte base64(c3RhdGU=)
+int 1
+itob
+gtxn 0 LastValid
+itob
+gtxn 0 Sender
+arg 2
+btoi
+itob
+arg 3
+btoi
+itob
+concat
+concat
+concat
+concat
+keccak256
+btoi
+app_global_put
+b halt
+// </Handler 1>
+// <Handler 2>
+h2:
+arg 0
+btoi
+int 2
+!=
+bnz h3
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 FirstValid
+<
+bz revert
+int 0
+itob
+arg 1
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+int 1
+global GroupSize
+!=
+bnz revert
+b halt
+// </Handler 2>
+// <Handler 3>
+h3:
+arg 0
+btoi
+int 3
+!=
+bnz h4
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 LastValid
+>=
+bz revert
+int 1
+itob
+arg 1
+arg 2
+arg 3
+btoi
+itob
+arg 4
+btoi
+itob
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+gtxn 0 Amount
+arg 3
+btoi
+==
+bz revert
+int 1
+global GroupSize
+!=
+bnz revert
+byte base64(c3RhdGU=)
+int 3
+itob
+gtxn 0 LastValid
+itob
+arg 2
+gtxn 0 Sender
+arg 3
+btoi
+itob
+arg 4
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+app_global_put
+b halt
+// </Handler 3>
+// <Handler 4>
+h4:
+arg 0
+btoi
+int 4
+!=
+bnz h5
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+gtxn 0 Sender
+arg 2
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 FirstValid
+<
+bz revert
+int 1
+itob
+arg 1
+arg 2
+arg 3
+btoi
+itob
+arg 4
+btoi
+itob
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+int 1
+global GroupSize
+>
+bnz revert
+gtxn 1 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 1 Amount
+int 0
+balance
+!=
+bnz revert
+gtxn 1 Receiver
+arg 2
+!=
+bnz revert
+gtxn 1 Sender
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+int 2
+global GroupSize
+!=
+bnz revert
+b halt
+// </Handler 4>
+// <Handler 5>
+h5:
+arg 0
+btoi
+int 5
+!=
+bnz h6
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+gtxn 0 Sender
+arg 2
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 LastValid
+>=
+bz revert
+int 3
+itob
+arg 1
+arg 2
+arg 3
+arg 4
+btoi
+itob
+arg 5
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+gtxn 0 Amount
+int 0
+==
+bz revert
+int 1
+global GroupSize
+!=
+bnz revert
+byte base64(c3RhdGU=)
+int 5
+itob
+gtxn 0 LastValid
+itob
+arg 2
+arg 3
+arg 4
+btoi
+itob
+arg 5
+btoi
+itob
+arg 6
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+app_global_put
+b halt
+// </Handler 5>
+// <Handler 6>
+h6:
+arg 0
+btoi
+int 6
+!=
+bnz h7
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+gtxn 0 Sender
+arg 3
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 FirstValid
+<
+bz revert
+int 3
+itob
+arg 1
+arg 2
+arg 3
+arg 4
+btoi
+itob
+arg 5
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+int 1
+global GroupSize
+>
+bnz revert
+gtxn 1 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 1 Amount
+int 0
+balance
+!=
+bnz revert
+gtxn 1 Receiver
+arg 3
+!=
+bnz revert
+gtxn 1 Sender
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+int 2
+global GroupSize
+!=
+bnz revert
+b halt
+// </Handler 6>
+// <Handler 7>
+h7:
+arg 0
+btoi
+int 7
+!=
+bnz h8
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+gtxn 0 Sender
+arg 3
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 LastValid
+>=
+bz revert
+int 5
+itob
+arg 1
+arg 2
+arg 3
+arg 4
+btoi
+itob
+arg 5
+btoi
+itob
+arg 6
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+gtxn 0 Amount
+int 0
+==
+bz revert
+int 0
+arg 7
+btoi
+<=
+bnz h7_0
+int 0
+b h7_1
+h7_0:
+arg 7
+btoi
+int 3
+<
+h7_1:
+bz revert
+int 1
+global GroupSize
+!=
+bnz revert
+byte base64(c3RhdGU=)
+int 7
+itob
+gtxn 0 LastValid
+itob
+arg 2
+arg 3
+arg 4
+btoi
+itob
+arg 5
+btoi
+itob
+arg 6
+btoi
+itob
+arg 7
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+app_global_put
+b halt
+// </Handler 7>
+// <Handler 8>
+h8:
+arg 0
+btoi
+int 8
+!=
+bnz h9
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+gtxn 0 Sender
+arg 2
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 FirstValid
+<
+bz revert
+int 5
+itob
+arg 1
+arg 2
+arg 3
+arg 4
+btoi
+itob
+arg 5
+btoi
+itob
+arg 6
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+int 1
+global GroupSize
+>
+bnz revert
+gtxn 1 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 1 Amount
+int 0
+balance
+!=
+bnz revert
+gtxn 1 Receiver
+arg 2
+!=
+bnz revert
+gtxn 1 Sender
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+int 2
+global GroupSize
+!=
+bnz revert
+b halt
+// </Handler 8>
+// <Handler 9>
+h9:
+arg 0
+btoi
+int 9
+!=
+bnz h10
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+gtxn 0 Sender
+arg 2
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 LastValid
+>=
+bz revert
+int 7
+itob
+arg 1
+arg 2
+arg 3
+arg 4
+btoi
+itob
+arg 5
+btoi
+itob
+arg 6
+btoi
+itob
+arg 7
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+gtxn 0 Amount
+int 0
+==
+bz revert
+arg 6
+btoi
+arg 8
+btoi
+itob
+arg 9
+btoi
+itob
+concat
+keccak256
+btoi
+==
+bz revert
+int 0
+arg 9
+btoi
+<=
+bnz h9_0
+int 0
+b h9_1
+h9_0:
+arg 9
+btoi
+int 3
+<
+h9_1:
+bz revert
+int 0
+arg 9
+btoi
+<=
+bnz h9_2
+int 0
+b h9_3
+h9_2:
+arg 9
+btoi
+int 3
+<
+h9_3:
+store 0
+int 0
+arg 7
+btoi
+<=
+bnz h9_4
+int 0
+b h9_5
+h9_4:
+arg 7
+btoi
+int 3
+<
+h9_5:
+store 1
+load 0
+bnz h9_6
+int 0
+b h9_7
+h9_6:
+load 1
+h9_7:
+bnz h9_8
+load 0
+bnz h9_9
+load 1
+bnz h9_10
+int 1
+b h9_11
+h9_10:
+int 0
+h9_11:
+b h9_12
+h9_9:
+int 2
+h9_12:
+b h9_13
+h9_8:
+arg 9
+btoi
+int 4
+arg 7
+btoi
+-
++
+int 3
+%
+h9_13:
+store 2
+load 2
+int 2
+==
+store 3
+load 2
+int 0
+==
+store 4
+load 2
+int 2
+==
+store 5
+load 2
+int 0
+==
+store 6
+int 1
+global GroupSize
+>
+bnz revert
+gtxn 1 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 1 Amount
+arg 5
+btoi
+load 5
+bnz h9_14
+load 6
+bnz h9_15
+arg 4
+btoi
+b h9_16
+h9_15:
+int 0
+h9_16:
+b h9_17
+h9_14:
+int 2
+arg 4
+btoi
+*
+h9_17:
++
+!=
+bnz revert
+gtxn 1 Receiver
+arg 2
+!=
+bnz revert
+gtxn 1 Sender
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+int 2
+global GroupSize
+>
+bnz revert
+gtxn 2 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 2 Amount
+load 5
+bnz h9_18
+load 6
+bnz h9_19
+arg 4
+btoi
+b h9_20
+h9_19:
+int 2
+arg 4
+btoi
+*
+h9_20:
+b h9_21
+h9_18:
+int 0
+h9_21:
+!=
+bnz revert
+gtxn 2 Receiver
+arg 3
+!=
+bnz revert
+gtxn 2 Sender
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+int 3
+global GroupSize
+!=
+bnz revert
+b halt
+// </Handler 9>
+// <Handler 10>
+h10:
+arg 0
+btoi
+int 10
+!=
+bnz revert
+gtxn 0 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 0 Receiver
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+gtxn 0 Sender
+arg 3
+!=
+bnz revert
+arg 1
+btoi
+int 10
++
+gtxn 0 FirstValid
+<
+bz revert
+int 7
+itob
+arg 1
+arg 2
+arg 3
+arg 4
+btoi
+itob
+arg 5
+btoi
+itob
+arg 6
+btoi
+itob
+arg 7
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_get
+!=
+bnz revert
+int 1
+global GroupSize
+>
+bnz revert
+gtxn 1 TypeEnum
+int 1
+!=
+bnz revert
+gtxn 1 Amount
+int 0
+balance
+!=
+bnz revert
+gtxn 1 Receiver
+arg 3
+!=
+bnz revert
+gtxn 1 Sender
+byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+!=
+bnz revert
+int 2
+global GroupSize
+!=
+bnz revert
+b halt
+// </Handler 10>
+// </Handlers>
+// <Loops>
+// </Loops>
+// <Standard>
+revert:
+int 0
+return
+halt:
+byte base64(c3RhdGU=)
+byte base64()
+app_global_put
+int 1
+return
+// </Standard>
