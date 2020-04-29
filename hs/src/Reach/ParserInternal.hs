@@ -550,6 +550,7 @@ decodeDef fp j =
 decodeType :: FilePath -> JSExpression -> XLType TP
 decodeType fp j =
   case j of
+    JSIdentifier a "address" -> XLT_BT (tp a) BT_Address
     JSIdentifier a "uint256" -> XLT_BT (tp a) BT_UInt256
     JSIdentifier a "bool" -> XLT_BT (tp a) BT_Bool
     JSIdentifier a "bytes" -> XLT_BT (tp a) BT_Bytes
