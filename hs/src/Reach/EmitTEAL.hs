@@ -123,7 +123,7 @@ comp_blvar cs bv =
     Nothing ->
       impossible $ "unbound variable: " ++ show bv
     Just (VR_Arg a lt) ->
-      return $ code "arg" [ show a ]
+      return $ code "txna ApplicationArgs" [ show a ]
                ++ case lt of
                     LT_BT BT_UInt256 -> code "btoi" []
                     LT_BT BT_Bool -> code "btoi" []
@@ -181,7 +181,7 @@ comp_hash hm cs as = do
                           (code "gtxn" [ "0", "LastValid" ]
                            ++ code "itob" [])
                         else
-                          code "arg" [ "1" ])
+                          code "txna ApplicationArgs" [ "1" ])
   as_ls <- concatMapM (comp_blarg_for_hash cs) as
   let how_many = pre_len + length as
   return $ pre_ls
@@ -338,13 +338,14 @@ comp_chandler :: String -> CHandler a -> (String, TEALs)
 comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ labelRun bodym)
   where lab = "h" ++ show i
         cs0 = cs_init lab
+        --- XXX Should I check the number of arguments with txn NumAppArgs?
         cs1 = cs_var_args cs0 $ svs ++ msg
         cs = case from_spec of
                FS_Join from ->
                  cs_var_set cs1 from (VR_Code (code "gtxn" [ "0", "Sender" ]))
                FS_From _ -> cs1
                FS_Any -> cs1
-        pre_ls = code "arg" [ "0" ]
+        pre_ls = code "txna ApplicationArgs" [ "0" ]
           ++ code "btoi" []
           ++ (comp_con $ Con_I $ fromIntegral i)
           ++ code "!=" []
@@ -373,7 +374,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           body_ls <- comp_ctail (usesCTail body) cs txn_init body
           return $ sender_ls
             -- begin timeout checking
-            ++ code "arg" [ "1" ]
+            ++ code "txna ApplicationArgs" [ "1" ]
             ++ code "btoi" []
             ++ delay_ls
             ++ code "+" []

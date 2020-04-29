@@ -4,7 +4,7 @@ b h1
 // <Handlers>
 // <Handler 1>
 h1:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 1
 !=
@@ -17,7 +17,7 @@ gtxn 0 Receiver
 byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -26,7 +26,7 @@ gtxn 0 LastValid
 bz revert
 int 0
 itob
-arg 1
+txna ApplicationArgs 1
 concat
 keccak256
 btoi
@@ -35,9 +35,9 @@ app_global_get
 !=
 bnz revert
 gtxn 0 Amount
-arg 2
+txna ApplicationArgs 2
 btoi
-arg 3
+txna ApplicationArgs 3
 btoi
 +
 ==
@@ -52,10 +52,10 @@ itob
 gtxn 0 LastValid
 itob
 gtxn 0 Sender
-arg 2
+txna ApplicationArgs 2
 btoi
 itob
-arg 3
+txna ApplicationArgs 3
 btoi
 itob
 concat
@@ -69,7 +69,7 @@ b halt
 // </Handler 1>
 // <Handler 2>
 h2:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 2
 !=
@@ -82,7 +82,7 @@ gtxn 0 Receiver
 byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -91,7 +91,7 @@ gtxn 0 FirstValid
 bz revert
 int 0
 itob
-arg 1
+txna ApplicationArgs 1
 concat
 keccak256
 btoi
@@ -107,7 +107,7 @@ b halt
 // </Handler 2>
 // <Handler 3>
 h3:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 3
 !=
@@ -120,7 +120,7 @@ gtxn 0 Receiver
 byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -129,12 +129,12 @@ gtxn 0 LastValid
 bz revert
 int 1
 itob
-arg 1
-arg 2
-arg 3
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+txna ApplicationArgs 3
 btoi
 itob
-arg 4
+txna ApplicationArgs 4
 btoi
 itob
 concat
@@ -148,15 +148,15 @@ app_global_get
 !=
 bnz revert
 gtxn 0 Amount
-arg 3
+txna ApplicationArgs 3
 btoi
 ==
 bz revert
-arg 2
+txna ApplicationArgs 2
 gtxn 0 Sender
-arg 3
+txna ApplicationArgs 3
 btoi
-arg 4
+txna ApplicationArgs 4
 btoi
 int 0
 int 1
@@ -170,7 +170,7 @@ b l5
 // </Handler 3>
 // <Handler 4>
 h4:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 4
 !=
@@ -184,10 +184,10 @@ byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
 gtxn 0 Sender
-arg 2
+txna ApplicationArgs 2
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -196,12 +196,12 @@ gtxn 0 FirstValid
 bz revert
 int 1
 itob
-arg 1
-arg 2
-arg 3
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+txna ApplicationArgs 3
 btoi
 itob
-arg 4
+txna ApplicationArgs 4
 btoi
 itob
 concat
@@ -228,7 +228,7 @@ balance
 !=
 bnz revert
 gtxn 1 Receiver
-arg 2
+txna ApplicationArgs 2
 !=
 bnz revert
 gtxn 1 Sender
@@ -243,7 +243,7 @@ b halt
 // </Handler 4>
 // <Handler 6>
 h6:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 6
 !=
@@ -257,10 +257,10 @@ byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
 gtxn 0 Sender
-arg 2
+txna ApplicationArgs 2
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -269,16 +269,16 @@ gtxn 0 LastValid
 bz revert
 int 3
 itob
-arg 1
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-arg 5
+txna ApplicationArgs 5
 btoi
 itob
-arg 6
+txna ApplicationArgs 6
 btoi
 itob
 concat
@@ -306,18 +306,18 @@ int 6
 itob
 gtxn 0 LastValid
 itob
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-arg 5
+txna ApplicationArgs 5
 btoi
 itob
-arg 6
+txna ApplicationArgs 6
 btoi
 itob
-arg 7
+txna ApplicationArgs 7
 btoi
 itob
 concat
@@ -334,7 +334,7 @@ b halt
 // </Handler 6>
 // <Handler 7>
 h7:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 7
 !=
@@ -348,10 +348,10 @@ byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
 gtxn 0 Sender
-arg 3
+txna ApplicationArgs 3
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -360,16 +360,16 @@ gtxn 0 FirstValid
 bz revert
 int 3
 itob
-arg 1
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-arg 5
+txna ApplicationArgs 5
 btoi
 itob
-arg 6
+txna ApplicationArgs 6
 btoi
 itob
 concat
@@ -384,13 +384,13 @@ byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
-arg 5
+txna ApplicationArgs 5
 btoi
-arg 6
+txna ApplicationArgs 6
 btoi
 int 3
 store 5
@@ -403,7 +403,7 @@ b l5
 // </Handler 7>
 // <Handler 8>
 h8:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 8
 !=
@@ -417,10 +417,10 @@ byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
 gtxn 0 Sender
-arg 3
+txna ApplicationArgs 3
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -429,19 +429,19 @@ gtxn 0 LastValid
 bz revert
 int 6
 itob
-arg 1
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-arg 5
+txna ApplicationArgs 5
 btoi
 itob
-arg 6
+txna ApplicationArgs 6
 btoi
 itob
-arg 7
+txna ApplicationArgs 7
 btoi
 itob
 concat
@@ -462,14 +462,14 @@ int 0
 ==
 bz revert
 int 0
-arg 8
+txna ApplicationArgs 8
 btoi
 <=
 bnz h8_0
 int 0
 b h8_1
 h8_0:
-arg 8
+txna ApplicationArgs 8
 btoi
 int 3
 <
@@ -484,21 +484,21 @@ int 8
 itob
 gtxn 0 LastValid
 itob
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-arg 5
+txna ApplicationArgs 5
 btoi
 itob
-arg 6
+txna ApplicationArgs 6
 btoi
 itob
-arg 7
+txna ApplicationArgs 7
 btoi
 itob
-arg 8
+txna ApplicationArgs 8
 btoi
 itob
 concat
@@ -516,7 +516,7 @@ b halt
 // </Handler 8>
 // <Handler 9>
 h9:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 9
 !=
@@ -530,10 +530,10 @@ byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
 gtxn 0 Sender
-arg 2
+txna ApplicationArgs 2
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -542,19 +542,19 @@ gtxn 0 FirstValid
 bz revert
 int 6
 itob
-arg 1
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-arg 5
+txna ApplicationArgs 5
 btoi
 itob
-arg 6
+txna ApplicationArgs 6
 btoi
 itob
-arg 7
+txna ApplicationArgs 7
 btoi
 itob
 concat
@@ -570,13 +570,13 @@ byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
-arg 5
+txna ApplicationArgs 5
 btoi
-arg 6
+txna ApplicationArgs 6
 btoi
 int 4
 store 5
@@ -589,7 +589,7 @@ b l5
 // </Handler 9>
 // <Handler 10>
 h10:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 10
 !=
@@ -603,10 +603,10 @@ byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
 gtxn 0 Sender
-arg 2
+txna ApplicationArgs 2
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -615,22 +615,22 @@ gtxn 0 LastValid
 bz revert
 int 8
 itob
-arg 1
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-arg 5
+txna ApplicationArgs 5
 btoi
 itob
-arg 6
+txna ApplicationArgs 6
 btoi
 itob
-arg 7
+txna ApplicationArgs 7
 btoi
 itob
-arg 8
+txna ApplicationArgs 8
 btoi
 itob
 concat
@@ -651,12 +651,12 @@ gtxn 0 Amount
 int 0
 ==
 bz revert
-arg 7
+txna ApplicationArgs 7
 btoi
-arg 9
+txna ApplicationArgs 9
 btoi
 itob
-arg 10
+txna ApplicationArgs 10
 btoi
 itob
 concat
@@ -665,42 +665,42 @@ btoi
 ==
 bz revert
 int 0
-arg 10
+txna ApplicationArgs 10
 btoi
 <=
 bnz h10_0
 int 0
 b h10_1
 h10_0:
-arg 10
+txna ApplicationArgs 10
 btoi
 int 3
 <
 h10_1:
 bz revert
 int 0
-arg 10
+txna ApplicationArgs 10
 btoi
 <=
 bnz h10_2
 int 0
 b h10_3
 h10_2:
-arg 10
+txna ApplicationArgs 10
 btoi
 int 3
 <
 h10_3:
 store 0
 int 0
-arg 8
+txna ApplicationArgs 8
 btoi
 <=
 bnz h10_4
 int 0
 b h10_5
 h10_4:
-arg 8
+txna ApplicationArgs 8
 btoi
 int 3
 <
@@ -729,10 +729,10 @@ int 2
 h10_12:
 b h10_13
 h10_8:
-arg 10
+txna ApplicationArgs 10
 btoi
 int 4
-arg 8
+txna ApplicationArgs 8
 btoi
 -
 +
@@ -748,14 +748,14 @@ load 2
 int 0
 ==
 store 4
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
-arg 5
+txna ApplicationArgs 5
 btoi
 int 1
-arg 6
+txna ApplicationArgs 6
 btoi
 +
 load 2
@@ -769,7 +769,7 @@ b l5
 // </Handler 10>
 // <Handler 11>
 h11:
-arg 0
+txna ApplicationArgs 0
 btoi
 int 11
 !=
@@ -783,10 +783,10 @@ byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
 !=
 bnz revert
 gtxn 0 Sender
-arg 3
+txna ApplicationArgs 3
 !=
 bnz revert
-arg 1
+txna ApplicationArgs 1
 btoi
 int 10
 +
@@ -795,22 +795,22 @@ gtxn 0 FirstValid
 bz revert
 int 8
 itob
-arg 1
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 1
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-arg 5
+txna ApplicationArgs 5
 btoi
 itob
-arg 6
+txna ApplicationArgs 6
 btoi
 itob
-arg 7
+txna ApplicationArgs 7
 btoi
 itob
-arg 8
+txna ApplicationArgs 8
 btoi
 itob
 concat
@@ -827,13 +827,13 @@ byte base64(c3RhdGU=)
 app_global_get
 !=
 bnz revert
-arg 2
-arg 3
-arg 4
+txna ApplicationArgs 2
+txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
-arg 5
+txna ApplicationArgs 5
 btoi
-arg 6
+txna ApplicationArgs 6
 btoi
 int 3
 store 5
