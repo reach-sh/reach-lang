@@ -4,6 +4,10 @@ b h1
 // <Handlers>
 // <Handler 1>
 h1:
+txn NumAppArgs
+int 2
+==
+bz h2
 txna ApplicationArgs 0
 btoi
 int 1
@@ -69,6 +73,10 @@ b halt
 // </Handler 1>
 // <Handler 2>
 h2:
+txn NumAppArgs
+int 0
+==
+bz h3
 txna ApplicationArgs 0
 btoi
 int 2
@@ -107,6 +115,10 @@ b halt
 // </Handler 2>
 // <Handler 3>
 h3:
+txn NumAppArgs
+int 3
+==
+bz h4
 txna ApplicationArgs 0
 btoi
 int 3
@@ -181,6 +193,10 @@ b halt
 // </Handler 3>
 // <Handler 4>
 h4:
+txn NumAppArgs
+int 3
+==
+bz h5
 txna ApplicationArgs 0
 btoi
 int 4
@@ -254,6 +270,10 @@ b halt
 // </Handler 4>
 // <Handler 5>
 h5:
+txn NumAppArgs
+int 5
+==
+bz h6
 txna ApplicationArgs 0
 btoi
 int 5
@@ -337,6 +357,10 @@ b halt
 // </Handler 5>
 // <Handler 6>
 h6:
+txn NumAppArgs
+int 4
+==
+bz h7
 txna ApplicationArgs 0
 btoi
 int 6
@@ -412,6 +436,10 @@ b halt
 // </Handler 6>
 // <Handler 7>
 h7:
+txn NumAppArgs
+int 6
+==
+bz h8
 txna ApplicationArgs 0
 btoi
 int 7
@@ -517,6 +545,10 @@ b halt
 // </Handler 7>
 // <Handler 8>
 h8:
+txn NumAppArgs
+int 5
+==
+bz h9
 txna ApplicationArgs 0
 btoi
 int 8
@@ -596,6 +628,10 @@ b halt
 // </Handler 8>
 // <Handler 9>
 h9:
+txn NumAppArgs
+int 8
+==
+bz h10
 txna ApplicationArgs 0
 btoi
 int 9
@@ -842,6 +878,10 @@ b halt
 // </Handler 9>
 // <Handler 10>
 h10:
+txn NumAppArgs
+int 6
+==
+bz revert
 txna ApplicationArgs 0
 btoi
 int 10
