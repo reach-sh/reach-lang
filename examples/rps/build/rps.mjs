@@ -8,9 +8,13 @@ export async function A(ctc, interact, v1, v2) {
   const v6 = v2;
   const v7 = stdlib.isType('bool', await interact.params());
   const v8 = stdlib.add(v5, v6);
-  const txn1 = await ctc.sendrecv('A', 'm1', [v5, v6], v8, 'e1', 10, 'e2');
+  const txn1 = await ctc.sendrecv('A', 'm1', [v5, v6], v8, 'e1', 10, 'e2', (txn) => {
+    const v9 = txn1.value;
+    const v10 = stdlib.add(v5, v6);
+    const v11 = stdlib.eq(v9, v10);
+    stdlib.assert(v11);
+    return true; });
   if (txn1.didTimeout) {
-    // XXX FromConsensus
     stdlib.assert(true);
     return ['Alice quits']; }
   else {
@@ -19,12 +23,11 @@ export async function A(ctc, interact, v1, v2) {
     const v10 = stdlib.add(v5, v6);
     const v11 = stdlib.eq(v9, v10);
     stdlib.assert(v11);
-    // XXX FromConsensus
-    const txn2 = await ctc.recv('A', 'e3', 10, true, [v0, v5, v6], 'm4', 'e4');
-    if (txn2.didTimeout) {
+    const txn2 = await ctc.recv('A', 'e3', 10, true, [v0, v5, v6], 'm4', 'e4', (txn) => {
       const v133 = txn2.balance;
-      // XXX txn.transfer(v0, v133);
-      // XXX FromConsensus
+      txn.transfer(v0, v133);
+      return true; });
+    if (txn2.didTimeout) {
       stdlib.assert(true);
       return ['Bob quits']; }
     else {
@@ -33,7 +36,6 @@ export async function A(ctc, interact, v1, v2) {
       const v13 = txn2.value;
       const v14 = stdlib.eq(v13, v5);
       stdlib.assert(v14);
-      // XXX FromConsensus
       const v15 = stdlib.isType('bytes', await interact.getHand());
       const v16 = stdlib.bytes_eq(v15, 'ROCK');
       const v17 = stdlib.bytes_eq(v15, 'PAPER');
@@ -47,23 +49,23 @@ export async function A(ctc, interact, v1, v2) {
       const v27 = stdlib.keccak256(v26, v22);
       const v28 = v27;
       const v29 = stdlib.isType('bool', await interact.commits());
-      const txn3 = await ctc.sendrecv('A', 'm5', [v0, v3, v5, v6, v28], 0, 'e5', 10, 'e6');
+      const txn3 = await ctc.sendrecv('A', 'm5', [v0, v3, v5, v6, v28], 0, 'e5', 10, 'e6', (txn) => {
+        const v30 = txn3.value;
+        const v31 = stdlib.eq(v30, 0);
+        stdlib.assert(v31);
+        return true; });
       if (txn3.didTimeout) {
-        const v132 = txn3.balance;
-        // XXX txn.transfer(v3, v132);
-        // XXX FromConsensus
         stdlib.assert(true);
         return ['Alice quits']; }
       else {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
-        // XXX FromConsensus
-        const txn4 = await ctc.recv('A', 'e7', 10, true, [v0, v3, v5, v6, v28], 'm8', 'e8');
-        if (txn4.didTimeout) {
+        const txn4 = await ctc.recv('A', 'e7', 10, true, [v0, v3, v5, v6, v28], 'm8', 'e8', (txn) => {
           const v131 = txn4.balance;
-          // XXX txn.transfer(v0, v131);
-          // XXX FromConsensus
+          txn.transfer(v0, v131);
+          return true; });
+        if (txn4.didTimeout) {
           stdlib.assert(true);
           return ['Bob quits']; }
         else {
@@ -75,7 +77,6 @@ export async function A(ctc, interact, v1, v2) {
           const v48 = stdlib.lt(v43, 3);
           const v49 = v47 ? v48 : false;
           stdlib.assert(v49);
-          // XXX FromConsensus
           const v50 = v26;
           const v51 = v22;
           const v52 = stdlib.le(0, v43);
@@ -87,14 +88,7 @@ export async function A(ctc, interact, v1, v2) {
           const v57 = v56 ? 'PAPER' : 'SCISSORS';
           const v58 = v55 ? 'ROCK' : v57;
           const v59 = stdlib.isType('bool', await interact.reveals(v58));
-          const txn5 = await ctc.sendrecv('A', 'm9', [v0, v3, v5, v6, v28, v43, v50, v51], 0, 'e9', 10, 'e10');
-          if (txn5.didTimeout) {
-            const v130 = txn5.balance;
-            // XXX txn.transfer(v3, v130);
-            // XXX FromConsensus
-            stdlib.assert(true);
-            return ['Alice quits']; }
-          else {
+          const txn5 = await ctc.sendrecv('A', 'm9', [v0, v3, v5, v6, v28, v43, v50, v51], 0, 'e9', 10, 'e10', (txn) => {
             const v60 = txn5.value;
             const v61 = stdlib.eq(v60, 0);
             stdlib.assert(v61);
@@ -127,9 +121,36 @@ export async function A(ctc, interact, v1, v2) {
             const v115 = v109 ? v110 : v113;
             const v116 = v109 ? 0 : v114;
             const v117 = stdlib.add(v6, v115);
-            // XXX txn.transfer(v0, v117);
-            // XXX txn.transfer(v3, v116);
-            // XXX FromConsensus
+            txn.transfer(v0, v117);
+            txn.transfer(v3, v116);
+            return true; });
+          if (txn5.didTimeout) {
+            stdlib.assert(true);
+            return ['Alice quits']; }
+          else {
+            const v60 = txn5.value;
+            const v61 = stdlib.eq(v60, 0);
+            stdlib.assert(v61);
+            const v62 = stdlib.keccak256(v50, v51);
+            const v63 = stdlib.eq(v28, v62);
+            stdlib.assert(v63);
+            const v64 = stdlib.le(0, v51);
+            const v65 = stdlib.lt(v51, 3);
+            const v66 = v64 ? v65 : false;
+            stdlib.assert(v66);
+            const v67 = stdlib.le(0, v51);
+            const v68 = stdlib.lt(v51, 3);
+            const v69 = v67 ? v68 : false;
+            const v70 = stdlib.le(0, v43);
+            const v71 = stdlib.lt(v43, 3);
+            const v72 = v70 ? v71 : false;
+            const v73 = v69 ? v72 : false;
+            const v74 = stdlib.sub(4, v43);
+            const v75 = stdlib.add(v51, v74);
+            const v76 = stdlib.mod(v75, 3);
+            const v77 = v72 ? 0 : 1;
+            const v78 = v69 ? 2 : v77;
+            const v79 = v73 ? v76 : v78;
             const v118 = stdlib.isType('bool', await interact.outcome());
             const v119 = stdlib.le(0, v79);
             const v120 = stdlib.lt(v79, 5);
@@ -147,9 +168,9 @@ export async function A(ctc, interact, v1, v2) {
 
 export async function B(ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('B', 'e1', 10, true, [], 'm2', 'e2');
+  const txn1 = await ctc.recv('B', 'e1', 10, true, [], 'm2', 'e2', (txn) => {
+    return true; });
   if (txn1.didTimeout) {
-    // XXX FromConsensus
     stdlib.assert(true);
     return ['Alice quits']; }
   else {
@@ -159,13 +180,13 @@ export async function B(ctc, interact) {
     const v10 = stdlib.add(v5, v6);
     const v11 = stdlib.eq(v9, v10);
     stdlib.assert(v11);
-    // XXX FromConsensus
     const v12 = stdlib.isType('bool', await interact.accepts(v5, v6));
-    const txn2 = await ctc.sendrecv('B', 'm3', [v0, v5, v6], v5, 'e3', 10, 'e4');
+    const txn2 = await ctc.sendrecv('B', 'm3', [v0, v5, v6], v5, 'e3', 10, 'e4', (txn) => {
+      const v13 = txn2.value;
+      const v14 = stdlib.eq(v13, v5);
+      stdlib.assert(v14);
+      return true; });
     if (txn2.didTimeout) {
-      const v133 = txn2.balance;
-      // XXX txn.transfer(v0, v133);
-      // XXX FromConsensus
       stdlib.assert(true);
       return ['Bob quits']; }
     else {
@@ -173,12 +194,11 @@ export async function B(ctc, interact) {
       const v13 = txn2.value;
       const v14 = stdlib.eq(v13, v5);
       stdlib.assert(v14);
-      // XXX FromConsensus
-      const txn3 = await ctc.recv('B', 'e5', 10, true, [v0, v3, v5, v6], 'm6', 'e6');
-      if (txn3.didTimeout) {
+      const txn3 = await ctc.recv('B', 'e5', 10, true, [v0, v3, v5, v6], 'm6', 'e6', (txn) => {
         const v132 = txn3.balance;
-        // XXX txn.transfer(v3, v132);
-        // XXX FromConsensus
+        txn.transfer(v3, v132);
+        return true; });
+      if (txn3.didTimeout) {
         stdlib.assert(true);
         return ['Alice quits']; }
       else {
@@ -186,7 +206,6 @@ export async function B(ctc, interact) {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
-        // XXX FromConsensus
         const v32 = stdlib.isType('bytes', await interact.getHand());
         const v33 = stdlib.bytes_eq(v32, 'ROCK');
         const v34 = stdlib.bytes_eq(v32, 'PAPER');
@@ -198,11 +217,16 @@ export async function B(ctc, interact) {
         const v39 = v33 ? 0 : v38;
         const v43 = v39;
         const v44 = stdlib.isType('bool', await interact.shows());
-        const txn4 = await ctc.sendrecv('B', 'm7', [v0, v3, v5, v6, v28, v43], 0, 'e7', 10, 'e8');
+        const txn4 = await ctc.sendrecv('B', 'm7', [v0, v3, v5, v6, v28, v43], 0, 'e7', 10, 'e8', (txn) => {
+          const v45 = txn4.value;
+          const v46 = stdlib.eq(v45, 0);
+          stdlib.assert(v46);
+          const v47 = stdlib.le(0, v43);
+          const v48 = stdlib.lt(v43, 3);
+          const v49 = v47 ? v48 : false;
+          stdlib.assert(v49);
+          return true; });
         if (txn4.didTimeout) {
-          const v131 = txn4.balance;
-          // XXX txn.transfer(v0, v131);
-          // XXX FromConsensus
           stdlib.assert(true);
           return ['Bob quits']; }
         else {
@@ -213,12 +237,11 @@ export async function B(ctc, interact) {
           const v48 = stdlib.lt(v43, 3);
           const v49 = v47 ? v48 : false;
           stdlib.assert(v49);
-          // XXX FromConsensus
-          const txn5 = await ctc.recv('B', 'e9', 10, true, [v0, v3, v5, v6, v28, v43], 'm10', 'e10');
-          if (txn5.didTimeout) {
+          const txn5 = await ctc.recv('B', 'e9', 10, true, [v0, v3, v5, v6, v28, v43], 'm10', 'e10', (txn) => {
             const v130 = txn5.balance;
-            // XXX txn.transfer(v3, v130);
-            // XXX FromConsensus
+            txn.transfer(v3, v130);
+            return true; });
+          if (txn5.didTimeout) {
             stdlib.assert(true);
             return ['Alice quits']; }
           else {
@@ -246,18 +269,6 @@ export async function B(ctc, interact) {
             const v77 = v72 ? 0 : 1;
             const v78 = v69 ? 2 : v77;
             const v79 = v73 ? v76 : v78;
-            const v109 = stdlib.eq(v79, 2);
-            const v110 = stdlib.mul(2, v5);
-            const v111 = stdlib.eq(v79, 0);
-            const v112 = stdlib.mul(2, v5);
-            const v113 = v111 ? 0 : v5;
-            const v114 = v111 ? v112 : v5;
-            const v115 = v109 ? v110 : v113;
-            const v116 = v109 ? 0 : v114;
-            const v117 = stdlib.add(v6, v115);
-            // XXX txn.transfer(v0, v117);
-            // XXX txn.transfer(v3, v116);
-            // XXX FromConsensus
             const v118 = stdlib.isType('bool', await interact.outcome());
             const v119 = stdlib.le(0, v79);
             const v120 = stdlib.lt(v79, 5);
@@ -275,9 +286,9 @@ export async function B(ctc, interact) {
 
 export async function O(ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('O', 'e1', 10, true, [], 'm2', 'e2');
+  const txn1 = await ctc.recv('O', 'e1', 10, true, [], 'm2', 'e2', (txn) => {
+    return true; });
   if (txn1.didTimeout) {
-    // XXX FromConsensus
     stdlib.assert(true);
     return ['Alice quits']; }
   else {
@@ -287,12 +298,8 @@ export async function O(ctc, interact) {
     const v10 = stdlib.add(v5, v6);
     const v11 = stdlib.eq(v9, v10);
     stdlib.assert(v11);
-    // XXX FromConsensus
-    const txn2 = await ctc.recv('O', 'e3', 10, false, [v0, v5, v6], 'm4', 'e4');
+    const txn2 = await ctc.recv('O', 'e3', 10, false, [v0, v5, v6], 'm4', 'e4', null);
     if (txn2.didTimeout) {
-      const v133 = txn2.balance;
-      // XXX txn.transfer(v0, v133);
-      // XXX FromConsensus
       stdlib.assert(true);
       return ['Bob quits']; }
     else {
@@ -301,12 +308,8 @@ export async function O(ctc, interact) {
       const v13 = txn2.value;
       const v14 = stdlib.eq(v13, v5);
       stdlib.assert(v14);
-      // XXX FromConsensus
-      const txn3 = await ctc.recv('O', 'e5', 10, false, [v0, v3, v5, v6], 'm6', 'e6');
+      const txn3 = await ctc.recv('O', 'e5', 10, false, [v0, v3, v5, v6], 'm6', 'e6', null);
       if (txn3.didTimeout) {
-        const v132 = txn3.balance;
-        // XXX txn.transfer(v3, v132);
-        // XXX FromConsensus
         stdlib.assert(true);
         return ['Alice quits']; }
       else {
@@ -314,12 +317,8 @@ export async function O(ctc, interact) {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
-        // XXX FromConsensus
-        const txn4 = await ctc.recv('O', 'e7', 10, false, [v0, v3, v5, v6, v28], 'm8', 'e8');
+        const txn4 = await ctc.recv('O', 'e7', 10, false, [v0, v3, v5, v6, v28], 'm8', 'e8', null);
         if (txn4.didTimeout) {
-          const v131 = txn4.balance;
-          // XXX txn.transfer(v0, v131);
-          // XXX FromConsensus
           stdlib.assert(true);
           return ['Bob quits']; }
         else {
@@ -331,12 +330,8 @@ export async function O(ctc, interact) {
           const v48 = stdlib.lt(v43, 3);
           const v49 = v47 ? v48 : false;
           stdlib.assert(v49);
-          // XXX FromConsensus
-          const txn5 = await ctc.recv('O', 'e9', 10, false, [v0, v3, v5, v6, v28, v43], 'm10', 'e10');
+          const txn5 = await ctc.recv('O', 'e9', 10, false, [v0, v3, v5, v6, v28, v43], 'm10', 'e10', null);
           if (txn5.didTimeout) {
-            const v130 = txn5.balance;
-            // XXX txn.transfer(v3, v130);
-            // XXX FromConsensus
             stdlib.assert(true);
             return ['Alice quits']; }
           else {
@@ -364,18 +359,6 @@ export async function O(ctc, interact) {
             const v77 = v72 ? 0 : 1;
             const v78 = v69 ? 2 : v77;
             const v79 = v73 ? v76 : v78;
-            const v109 = stdlib.eq(v79, 2);
-            const v110 = stdlib.mul(2, v5);
-            const v111 = stdlib.eq(v79, 0);
-            const v112 = stdlib.mul(2, v5);
-            const v113 = v111 ? 0 : v5;
-            const v114 = v111 ? v112 : v5;
-            const v115 = v109 ? v110 : v113;
-            const v116 = v109 ? 0 : v114;
-            const v117 = stdlib.add(v6, v115);
-            // XXX txn.transfer(v0, v117);
-            // XXX txn.transfer(v3, v116);
-            // XXX FromConsensus
             const v118 = stdlib.isType('bool', await interact.outcome());
             const v119 = stdlib.le(0, v79);
             const v120 = stdlib.lt(v79, 5);

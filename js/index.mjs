@@ -156,6 +156,9 @@ export const connectAccount = address => {
 
       return [ ok_bal, ok_vals ]; };
 
+    const sendrecv_top = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt, try_p ) => {
+      return sendrecv(label, funcName, args, value, ok_evt, timeout_delay, timeout_evt ); }
+
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     /* eslint require-atomic-updates: off */
     const sendrecv = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt ) => {
@@ -204,6 +207,10 @@ export const connectAccount = address => {
       rec_res.didTimeout = true;
       return rec_res; };
 
+    const recv_top = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt, try_p ) => {
+      return recv(label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt );
+    };
+
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
@@ -242,7 +249,7 @@ export const connectAccount = address => {
       rec_res.didTimeout = true;
       return rec_res; };
 
-    return { sendrecv, recv, creation_block, address: ctc_address }; };
+    return { sendrecv: sendrecv_top, recv: recv_top, creation_block, address: ctc_address }; };
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
   const deploy = async (bin) => {
