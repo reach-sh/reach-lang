@@ -140,83 +140,89 @@ add_from _ (FS_From p) (x, s) = (x, Set.insert p s)
 add_from _ FS_Any x = x
 
 jsEPTail :: Int -> BLPart -> EPTail b -> (Doc a, Set.Set BLVar)
-jsEPTail _tn _who (EP_Ret _ al) = ((jsReturn $ jsArray $ map fst alp), Set.unions $ map snd alp)
-  where alp = map jsArg al
-jsEPTail tn who (EP_If _ ca tt ft) = (tp, tfvs)
-  where (ttp', ttfvs) = jsEPTail tn who tt
-        (ftp', ftfvs) = jsEPTail tn who ft
-        (cap, cafvs) = jsArg ca
-        tp = jsIf cap ttp' ftp'
-        tfvs = Set.unions [ cafvs, ttfvs, ftfvs ]
-jsEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
-  where used = elem bv ktfvs
-        tp = if keep then
-               vsep [ bvdeclp, ktp ]
-             else
-               ktp
-        keep = used || forcep
-        tfvs' = Set.difference ktfvs (Set.singleton bv)
-        tfvs = if keep then Set.union eefvs tfvs' else tfvs'
-        bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
-        (forcep, (eep, eefvs)) = jsEPExpr tn ee
-        (ktp, ktfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_SendRecv _ svs (fs_ok, i_ok, msg, amt, k_ok) (fs_to, i_to, delay, k_to)) = (tp, tfvs)
-  where srp = jsApply "ctc.sendrecv" [ jsString $ blpart_name who
-                                     , jsString (solMsg_fun i_ok), vs, amtp
-                                     , jsString (solMsg_evt i_ok)
-                                     , delayp, jsString (solMsg_evt i_to) ]
-        dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+> pretty "await" <+> srp <> semi
-        tp = vsep [ dp, jsIf (jsTimeoutFlag tn') k_top k_okp ]
-        tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg ]
-        (delayp, delayfvs) = jsArg delay
-        (amtp, amtfvs) = jsArg amt
-        msg_vs = map jsVar msg
-        vs = jsArray $ (map jsVar svs) ++ msg_vs
-        (k_okp, kfvs) = add_from tn' fs_ok $ jsEPTail tn' who k_ok
-        (k_top, tofvs) = add_from tn' fs_to $ jsEPTail tn' who k_to
-        tn' = tn+1
-jsEPTail tn who (EP_Do _ es kt) = (tp, tfvs)
-  where (tp, esfvs) = jsEPStmt es ktp
-        tfvs = Set.union esfvs kfvs
-        (ktp, kfvs) = jsEPTail tn who kt
-jsEPTail tn who (EP_Recv _ svs (fs_ok, i_ok, msg, k_ok) (fs_to, i_to, delay, k_to)) = (tp, tfvs)
-  where tp = vsep [ rp, kp ]
-        rp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+>
-             pretty "await" <+> (jsApply "ctc.recv" [ jsString $ blpart_name who
-                                                    , jsString (solMsg_evt i_ok)
-                                                    , delayp, jsCon (Con_B to_me)
-                                                    , (jsArray $ map jsVar svs)
-                                                    , jsString (solMsg_fun i_to), jsString (solMsg_evt i_to)]) <> semi
-        to_me = case fs_to of
-                  FS_From x -> x == who
-                  FS_Join x -> x == who
-                  FS_Any -> True
-        tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, tofvs, delayfvs]
-        kp = jsIf (jsTimeoutFlag tn') k_top k_okp'
-        k_okp' = vsep [ pretty "const" <+> jsArray msg_vs <+> pretty "=" <+> (jsTxn tn') <> pretty ".data" <> semi
-                      , k_okp ]
-        (delayp, delayfvs) = jsArg delay
-        msg_vs = map jsVar msg
-        (k_okp, kfvs) = add_from tn' fs_ok $ jsEPTail tn' who k_ok
-        (k_top, tofvs) = add_from tn' fs_to $ jsEPTail tn' who k_to
-        tn' = tn+1
-jsEPTail tn who (EP_Loop _ _which loopvs initas bt) = (tp, tfvs)
-  where tp = vsep $ defsp ++ [ loopp ]
-        defp loopv initp = pretty "let" <+> (jsVar loopv) <+> pretty "=" <+> initp <> semi
-        defsp = zipWith defp loopvs $ map fst initargs
-        loopp = jsWhile (pretty "true") bodyp
-        (bodyp, bodyvs) = jsEPTail tn who bt
-        initargs = map jsArg initas
-        tfvs = Set.unions $ bodyvs : (map snd initargs)
-jsEPTail _tn _who (EP_Continue _ _which loopvs args) = (tp, argvs)
-  where tp = vsep $ setsp ++ [ pretty "continue;" ]
-        setsp = zipWith setp loopvs $ map fst argargs
-        setp loopv argp = jsVar loopv <+> pretty "=" <+> argp <> semi
-        argvs = Set.unions $ map snd argargs
-        argargs = map jsArg args
-jsEPTail tn who (EP_FromConsensus _ kt) = (tp, kfvs)
-  where tp = vsep [ pretty "// XXX FromConsensus", ktp ]
-        (ktp, kfvs) = jsEPTail tn who kt
+jsEPTail tn who t =
+  case t of
+    (EP_Ret _ al) -> ((jsReturn $ jsArray $ map fst alp), Set.unions $ map snd alp)
+      where alp = map jsArg al
+    (EP_If _ ca tt ft) -> (tp, tfvs)
+      where (ttp', ttfvs) = jsEPTail tn who tt
+            (ftp', ftfvs) = jsEPTail tn who ft
+            (cap, cafvs) = jsArg ca
+            tp = jsIf cap ttp' ftp'
+            tfvs = Set.unions [ cafvs, ttfvs, ftfvs ]
+    (EP_Let _ bv ee kt) -> (tp, tfvs)
+      where used = elem bv ktfvs
+            tp = if keep then
+                   vsep [ bvdeclp, ktp ]
+              else
+                   ktp
+            keep = used || forcep
+            tfvs' = Set.difference ktfvs (Set.singleton bv)
+            tfvs = if keep then Set.union eefvs tfvs' else tfvs'
+            bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
+            (forcep, (eep, eefvs)) = jsEPExpr tn ee
+            (ktp, ktfvs) = jsEPTail tn who kt
+    (EP_SendRecv _ svs (fs_ok, i_ok, msg, amt, k_ok) (fs_to, i_to, delay, k_to)) -> (tp, tfvs)
+      where srp = jsApply "ctc.sendrecv"
+              [ jsString $ blpart_name who
+              , jsString (solMsg_fun i_ok)
+              , vs
+              , amtp
+              , jsString (solMsg_evt i_ok)
+              , delayp
+              , jsString (solMsg_evt i_to) ]
+            dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+> pretty "await" <+> srp <> semi
+            tp = vsep [ dp, jsIf (jsTimeoutFlag tn') k_top k_okp ]
+            tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg ]
+            (delayp, delayfvs) = jsArg delay
+            (amtp, amtfvs) = jsArg amt
+            msg_vs = map jsVar msg
+            vs = jsArray $ (map jsVar svs) ++ msg_vs
+            (k_okp, kfvs) = add_from tn' fs_ok $ jsEPTail tn' who k_ok
+            (k_top, tofvs) = add_from tn' fs_to $ jsEPTail tn' who k_to
+            tn' = tn+1
+    (EP_Do _ es kt) -> (tp, tfvs)
+      where (tp, esfvs) = jsEPStmt es ktp
+            tfvs = Set.union esfvs kfvs
+            (ktp, kfvs) = jsEPTail tn who kt
+    (EP_Recv _ svs (fs_ok, i_ok, msg, k_ok) (fs_to, i_to, delay, k_to)) -> (tp, tfvs)
+      where tp = vsep [ rp, kp ]
+            rp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+>
+                 pretty "await" <+> (jsApply "ctc.recv" [ jsString $ blpart_name who
+                                                        , jsString (solMsg_evt i_ok)
+                                                        , delayp, jsCon (Con_B to_me)
+                                                        , (jsArray $ map jsVar svs)
+                                                        , jsString (solMsg_fun i_to), jsString (solMsg_evt i_to)]) <> semi
+            to_me = case fs_to of
+                      FS_From x -> x == who
+                      FS_Join x -> x == who
+                      FS_Any -> True
+            tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, tofvs, delayfvs]
+            kp = jsIf (jsTimeoutFlag tn') k_top k_okp'
+            k_okp' = vsep [ pretty "const" <+> jsArray msg_vs <+> pretty "=" <+> (jsTxn tn') <> pretty ".data" <> semi
+                          , k_okp ]
+            (delayp, delayfvs) = jsArg delay
+            msg_vs = map jsVar msg
+            (k_okp, kfvs) = add_from tn' fs_ok $ jsEPTail tn' who k_ok
+            (k_top, tofvs) = add_from tn' fs_to $ jsEPTail tn' who k_to
+            tn' = tn+1
+    (EP_Loop _ _which loopvs initas bt) -> (tp, tfvs)
+      where tp = vsep $ defsp ++ [ loopp ]
+            defp loopv initp = pretty "let" <+> (jsVar loopv) <+> pretty "=" <+> initp <> semi
+            defsp = zipWith defp loopvs $ map fst initargs
+            loopp = jsWhile (pretty "true") bodyp
+            (bodyp, bodyvs) = jsEPTail tn who bt
+            initargs = map jsArg initas
+            tfvs = Set.unions $ bodyvs : (map snd initargs)
+    (EP_Continue _ _which loopvs args) -> (tp, argvs)
+      where tp = vsep $ setsp ++ [ pretty "continue;" ]
+            setsp = zipWith setp loopvs $ map fst argargs
+            setp loopv argp = jsVar loopv <+> pretty "=" <+> argp <> semi
+            argvs = Set.unions $ map snd argargs
+            argargs = map jsArg args
+    (EP_FromConsensus _ kt) -> (tp, kfvs)
+      where tp = vsep [ pretty "// XXX FromConsensus", ktp ]
+            (ktp, kfvs) = jsEPTail tn who kt
 
 jsPart :: (BLPart, EProgram b) -> Doc a
 jsPart (p, (EP_Prog _ pargs et)) =
