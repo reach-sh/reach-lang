@@ -271,7 +271,8 @@ comp_cstmt cs ts s =
         ++ code "!=" [ ]
         ++ code "bnz" [ "revert" ]
         ++ code "gtxn" [ txn_is, "Sender" ]
-        ++ comp_con (Con_BS $ "${XXX CONTRACT_ACCOUNT}")
+        ++ comp_con (Con_BS "me")
+        ++ code "app_global_gets" [ ]
         ++ code "!=" [ ]
         ++ code "bnz" [ "revert" ])
 
@@ -287,14 +288,14 @@ comp_ctail ccs cs ts t =
   case t of
     C_Halt _ ->
       return $ txn_ensure_size ts
-        ++ code "b" ["halt"]
+      ++ code "b" ["halt"]      
     C_Wait loc i svs -> do
       hash_ls <- comp_hash (HM_State i True) cs (map (BL_Var loc) svs)
       return $ txn_ensure_size ts
         ++ comp_con (Con_BS "state")
         ++ hash_ls
         ++ code "app_global_put" []
-        ++ code "b" ["halt"]
+        ++ code "b" ["done"]
     C_If _ ca tt ft -> do
       ca_ls <- comp_blarg cs ca
       true_lab <- alloc_lab cs
@@ -362,7 +363,8 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           ++ code "!=" [ ]
           ++ code "bnz" [ "revert" ]
           ++ code "gtxn" [ "0", "Receiver" ]
-          ++ comp_con (Con_BS $ "${XXX CONTRACT_ACCOUNT}")
+          ++ comp_con (Con_BS "me")
+          ++ code "app_global_gets" [ ]
           ++ code "!=" []
           ++ code "bnz" [ "revert" ]
         bodym = do
@@ -403,7 +405,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
             -- end of timeout checking
             ++ hash_ls
             ++ comp_con (Con_BS "state")
-            ++ code "app_global_get" [ ]
+            ++ code "app_global_gets" [ ]
             ++ code "!=" []
             ++ code "bnz" [ "revert" ]
             ++ body_ls
@@ -419,24 +421,52 @@ comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label
 cp_to_teal :: CProgram a -> TEAL
 cp_to_teal (C_Prog _ hs) = TEAL ls
   where ls = dispatch_ls ++ handlers_ls ++ loop_ls ++ standard_ls
-        dispatch_ls = bracket "Dispatcher" $ code "b" [ "h1" ]
+        dispatch_ls = bracket "Constructor / Dispatcher" $
+                      code "txn" [ "NumAppArgs" ]
+                      ++ (comp_con $ Con_I $ 1)
+                      ++ code "==" []
+                      ++ code "bz" [ next_lab ]
+                      ++ comp_arg 0
+                      ++ code "btoi" []
+                      ++ (comp_con $ Con_I $ 0)
+                      ++ code "==" []
+                      ++ code "bz" [ next_lab ]
+                      --- Check that global(me) is null
+                      ++ comp_con (Con_BS "me")
+                      ++ code "app_global_gets" [ ]
+                      ++ comp_con (Con_BS "")
+                      ++ code "==" []
+                      ++ code "bnz" [ "revert" ]
+                      --- Set global(me)
+                      ++ comp_con (Con_BS "me")
+                      --- FIXME Is this right address
+                      ++ code "txn" [ "Sender" ]
+                      ++ code "app_global_put" []
+                      --- Set global(state)
+                      ++ comp_con (Con_BS "state")
+                      ++ labelRun (comp_hash (HM_State 0 True) (impossible "TEAL constructor does not use vars") [])
+                      ++ code "app_global_put" []
+                      ++ comp_con (Con_I 1)
+                      ++ code "return" []
+          where next_lab = "h1"
         handlers_ls = bracket "Handlers" $ snd $ foldl fh ("revert", []) (reverse hs)
           where fh (next_lab, prev_ls) h = (this_lab, both_ls)
                   where (this_lab, this_ls) = comp_chandler next_lab h
                         both_ls = this_ls ++ prev_ls
         loop_ls = bracket "Loops" $ concatMap comp_cloop hs
-        standard_ls = bracket "Standard" $ revert_ls ++ halt_ls
+        standard_ls = bracket "Standard" $ revert_ls ++ halt_ls ++ done_ls
         revert_ls = label "revert"
                     ++ comp_con (Con_I 0)
                     ++ code "return" []
         halt_ls = label "halt"
                   ++ comp_con (Con_BS "state")
-                  ++ comp_con (Con_BS "")
-                  ++ code "app_global_put" []
+                  ++ code "app_global_del" []
+                  ++ comp_con (Con_BS "me")
+                  ++ code "app_global_del" []
+                  ++ code "b" ["done"]
+        done_ls = label "done"
                   ++ comp_con (Con_I 1)
                   ++ code "return" []
-
--- FIXME relies on application state: https://github.com/algorand/go-algorand/issues/935 / https://github.com/algorandfoundation/specs/pull/23/files
 
 -- FIXME Do something like a "peep-hole optimizer" so we can detect "btoi -> itob" sequences
 

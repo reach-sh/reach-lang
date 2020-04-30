@@ -1,6 +1,33 @@
-// <Dispatcher>
-b h1
-// </Dispatcher>
+// <Constructor / Dispatcher>
+txn NumAppArgs
+int 1
+==
+bz h1
+txna ApplicationArgs 0
+btoi
+int 0
+==
+bz h1
+byte base64(bWU=)
+app_global_gets
+byte base64()
+==
+bnz revert
+byte base64(bWU=)
+txn Sender
+app_global_put
+byte base64(c3RhdGU=)
+int 0
+itob
+gtxn 0 LastValid
+itob
+concat
+keccak256
+btoi
+app_global_put
+int 1
+return
+// </Constructor / Dispatcher>
 // <Handlers>
 // <Handler 1>
 h1:
@@ -18,7 +45,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -35,7 +63,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 gtxn 0 Amount
@@ -69,7 +97,7 @@ concat
 keccak256
 btoi
 app_global_put
-b halt
+b done
 // </Handler 1>
 // <Handler 2>
 h2:
@@ -87,7 +115,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -104,7 +133,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 int 1
@@ -129,7 +158,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -156,7 +186,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 gtxn 0 Amount
@@ -189,7 +219,7 @@ concat
 keccak256
 btoi
 app_global_put
-b halt
+b done
 // </Handler 3>
 // <Handler 4>
 h4:
@@ -207,7 +237,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
@@ -238,7 +269,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 int 1
@@ -259,7 +290,8 @@ txna ApplicationArgs 2
 !=
 bnz revert
 gtxn 1 Sender
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 int 2
@@ -284,7 +316,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
@@ -317,7 +350,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 gtxn 0 Amount
@@ -353,7 +386,7 @@ concat
 keccak256
 btoi
 app_global_put
-b halt
+b done
 // </Handler 5>
 // <Handler 6>
 h6:
@@ -371,7 +404,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
@@ -404,7 +438,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 int 1
@@ -425,7 +459,8 @@ txna ApplicationArgs 3
 !=
 bnz revert
 gtxn 1 Sender
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 int 2
@@ -450,7 +485,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
@@ -487,7 +523,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 gtxn 0 Amount
@@ -541,7 +577,7 @@ concat
 keccak256
 btoi
 app_global_put
-b halt
+b done
 // </Handler 7>
 // <Handler 8>
 h8:
@@ -559,7 +595,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
@@ -596,7 +633,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 int 1
@@ -617,7 +654,8 @@ txna ApplicationArgs 2
 !=
 bnz revert
 gtxn 1 Sender
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 int 2
@@ -642,7 +680,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
@@ -683,7 +722,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 gtxn 0 Amount
@@ -831,7 +870,8 @@ txna ApplicationArgs 2
 !=
 bnz revert
 gtxn 1 Sender
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 int 2
@@ -867,7 +907,8 @@ txna ApplicationArgs 3
 !=
 bnz revert
 gtxn 2 Sender
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 int 3
@@ -892,7 +933,8 @@ int 1
 !=
 bnz revert
 gtxn 0 Receiver
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
@@ -933,7 +975,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_get
+app_global_gets
 !=
 bnz revert
 int 1
@@ -954,7 +996,8 @@ txna ApplicationArgs 3
 !=
 bnz revert
 gtxn 1 Sender
-byte base64(JHtYWFggQ09OVFJBQ1RfQUNDT1VOVH0=)
+byte base64(bWU=)
+app_global_gets
 !=
 bnz revert
 int 2
@@ -972,8 +1015,11 @@ int 0
 return
 halt:
 byte base64(c3RhdGU=)
-byte base64()
-app_global_put
+app_global_del
+byte base64(bWU=)
+app_global_del
+b done
+done:
 int 1
 return
 // </Standard>
