@@ -32,7 +32,7 @@ return
 // <Handler 1>
 h1:
 txn NumAppArgs
-int 2
+int 4
 ==
 bz h2
 txna ApplicationArgs 0
@@ -102,7 +102,7 @@ b done
 // <Handler 2>
 h2:
 txn NumAppArgs
-int 0
+int 2
 ==
 bz h3
 txna ApplicationArgs 0
@@ -145,7 +145,7 @@ b halt
 // <Handler 3>
 h3:
 txn NumAppArgs
-int 3
+int 5
 ==
 bz h4
 txna ApplicationArgs 0
@@ -213,7 +213,7 @@ b l5
 // <Handler 4>
 h4:
 txn NumAppArgs
-int 3
+int 5
 ==
 bz h6
 txna ApplicationArgs 0
@@ -292,7 +292,7 @@ b halt
 // <Handler 6>
 h6:
 txn NumAppArgs
-int 6
+int 8
 ==
 bz h7
 txna ApplicationArgs 0
@@ -388,7 +388,7 @@ b done
 // <Handler 7>
 h7:
 txn NumAppArgs
-int 5
+int 7
 ==
 bz h8
 txna ApplicationArgs 0
@@ -462,7 +462,7 @@ b l5
 // <Handler 8>
 h8:
 txn NumAppArgs
-int 7
+int 9
 ==
 bz h9
 txna ApplicationArgs 0
@@ -580,7 +580,7 @@ b done
 // <Handler 9>
 h9:
 txn NumAppArgs
-int 6
+int 8
 ==
 bz h10
 txna ApplicationArgs 0
@@ -658,7 +658,7 @@ b l5
 // <Handler 10>
 h10:
 txn NumAppArgs
-int 9
+int 11
 ==
 bz h11
 txna ApplicationArgs 0
@@ -843,7 +843,7 @@ b l5
 // <Handler 11>
 h11:
 txn NumAppArgs
-int 7
+int 9
 ==
 bz revert
 txna ApplicationArgs 0

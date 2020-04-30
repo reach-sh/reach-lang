@@ -350,7 +350,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
                FS_From _ -> cs1
                FS_Any -> cs1
         pre_ls = code "txn" [ "NumAppArgs" ]
-          ++ (comp_con $ Con_I $ fromIntegral $ length all_args)
+          ++ (comp_con $ Con_I $ fromIntegral $ 2 + length all_args)
           ++ code "==" []
           ++ code "bz" [ next_lab ]
           ++ comp_arg 0
