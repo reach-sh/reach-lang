@@ -117,13 +117,16 @@ comp_con c =
     Con_BS bs ->
       code "byte" [ "base64(" ++ (unpackChars (encodeBase64' bs)) ++ ")" ]
 
+comp_arg :: Int -> TEALs
+comp_arg a = code "txna" [ "ApplicationArgs", show a ]
+
 comp_blvar :: CompileSt a -> BLVar -> LabelM ann TEALs
 comp_blvar cs bv = 
   case M.lookup bv vmap of
     Nothing ->
       impossible $ "unbound variable: " ++ show bv
     Just (VR_Arg a lt) ->
-      return $ code "txna ApplicationArgs" [ show a ]
+      return $ comp_arg a
                ++ case lt of
                     LT_BT BT_UInt256 -> code "btoi" []
                     LT_BT BT_Bool -> code "btoi" []
@@ -181,7 +184,7 @@ comp_hash hm cs as = do
                           (code "gtxn" [ "0", "LastValid" ]
                            ++ code "itob" [])
                         else
-                          code "txna ApplicationArgs" [ "1" ])
+                          comp_arg 1)
   as_ls <- concatMapM (comp_blarg_for_hash cs) as
   let how_many = pre_len + length as
   return $ pre_ls
@@ -349,7 +352,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           ++ (comp_con $ Con_I $ fromIntegral $ length all_args)
           ++ code "==" []
           ++ code "bz" [ next_lab ]
-          ++ code "txna ApplicationArgs" [ "0" ]
+          ++ comp_arg 0
           ++ code "btoi" []
           ++ (comp_con $ Con_I $ fromIntegral i)
           ++ code "!=" []
@@ -378,7 +381,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           body_ls <- comp_ctail (usesCTail body) cs txn_init body
           return $ sender_ls
             -- begin timeout checking
-            ++ code "txna ApplicationArgs" [ "1" ]
+            ++ comp_arg 1
             ++ code "btoi" []
             ++ delay_ls
             ++ code "+" []
