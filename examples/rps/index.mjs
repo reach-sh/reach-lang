@@ -37,10 +37,10 @@ import * as RPSW from './build/rps_while.mjs';
 
     const [ outcomeAlice, outcomeBob, outcomeObs ] =
           await Promise.all([
-            theRPS.A(ctcAlice, interactWith('Alice'),
+            theRPS.A(stdlib, ctcAlice, interactWith('Alice'),
                      wagerInWei, escrowInWei),
-            theRPS.B(ctcBob, interactWith('Bob')),
-            theRPS.O(ctcObs, interactWith('Observer'))]);
+            theRPS.B(stdlib, ctcBob, interactWith('Bob')),
+            theRPS.O(stdlib, ctcObs, interactWith('Observer'))]);
 
     console.log(`Alice thinks outcome is ${outcomeAlice}.`);
     console.log(`Bob thinks outcome is ${outcomeBob}.`);

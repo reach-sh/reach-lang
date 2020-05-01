@@ -135,7 +135,7 @@ export const connectAccount = address => {
   const shad = address.substring(2,6);
 
   const attach = (bin, ctc_address, creation_block) => {
-    const { ABI } = bin;
+    const { ABI } = bin.ETH;
     const ethCtc = new web3.eth.Contract(ABI, ctc_address);
     const ethersCtc = new ethers.Contract(ctc_address, ABI, ethersp);
     const eventOnceP = (e) =>
@@ -253,7 +253,7 @@ export const connectAccount = address => {
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
   const deploy = async (bin) => {
-    const { Bytecode } = bin;
+    const { Bytecode } = bin.ETH;
     const data = Bytecode;
     const gas = await web3.eth.estimateGas({ data });
     const r = await web3.eth.sendTransaction({ data, gas, from: address });

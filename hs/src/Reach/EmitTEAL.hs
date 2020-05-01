@@ -473,5 +473,6 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
 emit_teal :: FilePath -> BLProgram a -> IO String
 emit_teal tf (BL_Prog _ _ _ cp) = do
   let bc = cp_to_teal cp
-  writeFile tf (show bc)
-  return ""
+  let bcs = show bc
+  writeFile tf bcs
+  return bcs

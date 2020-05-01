@@ -67,8 +67,8 @@ jsReturn :: Doc a -> Doc a
 jsReturn a = pretty "return" <+> a <> semi
 
 jsObject :: [(String, Doc a)] -> Doc a
-jsObject kvs = jsBraces $ vsep $ (intersperse comma) $ map jsObjField kvs
-  where jsObjField (k, v) = pretty (k ++ ":") <> hardline <> v
+jsObject kvs = jsBraces $ vsep $ (intersperse (comma <> hardline)) $ map jsObjField kvs
+  where jsObjField (k, v) = pretty (k ++ ":") <+> v
 
 jsBinOp :: String -> Doc a -> Doc a -> Doc a
 jsBinOp o l r = l <+> pretty o <+> r
@@ -244,7 +244,7 @@ jsEPTail stop_at_consensus tn who t =
 
 jsPart :: (BLPart, EProgram b) -> Doc a
 jsPart (p, (EP_Prog _ pargs et)) =
-  pretty "export" <+> jsFunction pn ([ pretty "ctc", pretty "interact" ] ++ pargs_vs) bodyp'
+  pretty "export" <+> jsFunction pn ([ pretty "stdlib", pretty "ctc", pretty "interact" ] ++ pargs_vs) bodyp'
   where tn' = 0
         pn = blpart_name p
         pargs_vs = map jsVar pargs
@@ -255,12 +255,12 @@ jsPart (p, (EP_Prog _ pargs et)) =
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_js :: BLProgram b -> CompiledSol -> String -> Doc a
-emit_js (BL_Prog _ _ pm _) (abi, code) code2 = modp
-  where modp = vsep_with_blank $ preamble : importp : partsp ++ [ abip, codep, code2p ]
+emit_js :: BLProgram b -> (CompiledSol, String) -> String -> Doc a
+emit_js (BL_Prog _ _ pm _) ((abi, evm_code), evm_code2) teal_code = modp
+  where modp = vsep_with_blank $ preamble : importp : partsp ++ [ ethp, algop ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
-        importp = pretty $ "import * as stdlib from '@reach-sh/stdlib';"
+        importp = pretty $ "// import * as stdlib from '@reach-sh/stdlib';"
         partsp = map jsPart $ M.toList pm
-        abip = pretty $ "export const ABI = " ++ abi ++ ";"
-        codep = pretty $ "export const Bytecode = \"0x" ++ code ++ "\";"
-        code2p = pretty $ "export const Bytecode2 = \"0x" ++ code2 ++ "\";"
+        algop = pretty "export const ALGO = " <> jsObject [("AppCode", pretty $ "`" ++ teal_code ++ "`")] <> semi
+        ethp = pretty "export const ETH = " <> jsObject [("ABI", pretty abi), ("Bytecode", str_as_hex evm_code), ("Bytecode2", str_as_hex evm_code2)] <> semi
+        str_as_hex x = pretty $ "\"0x" ++ x ++ "\""

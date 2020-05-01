@@ -33,8 +33,8 @@ runTests(async () => {
 
   const [ outcomeBob, outcomeAlice ] =
         await Promise.all([
-          RPS.B(ctcBob, interactWithBob),
-          RPS.A(ctcAlice, interactWithAlice,
+          RPS.B(stdlib, ctcBob, interactWithBob),
+          RPS.A(stdlib, ctcAlice, interactWithAlice,
                 wagerInWei, escrowInWei)]);
 
   const balanceEndAlice = await stdlib.balanceOf(alice);

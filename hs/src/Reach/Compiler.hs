@@ -1057,7 +1057,7 @@ compile copts = do
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
   ebc <- emit_evm (outn "evm") blp
-  _tbc <- emit_teal (outn "teal") blp
-  out "mjs" (show (emit_js blp cs ebc))
-  out "go" (show (emit_go blp cs ebc))
+  tbc <- emit_teal (outn "teal") blp
+  out "mjs" (show (emit_js blp (cs, ebc) tbc))
+  out "go" (show (emit_go blp (cs, ebc) tbc))
   exitSuccess
