@@ -6,7 +6,7 @@ import Timeout         from 'await-timeout';
 import * as util       from 'util';
 void(util);
 
-const DEBUG = true;
+const DEBUG = false;
 const debug = msg => { if (DEBUG) {
   console.log(`DEBUG: ${msg}`); } };
 
@@ -66,23 +66,6 @@ const hexOf = x =>
 
 export const bytes_eq = (x, y) =>
   hexOf(x) === hexOf(y);
-
-export const bytes_len = b => {
-  const bh = hexOf(b);
-  const n  = bh.length / 2;
-
-  return !Number.isInteger(n)
-    ? panic(`Invalid byte string: ${bh}`)
-    : n; };
-
-// ∀ a b, msg_left (msg_cat(a, b)) = a
-// ∀ a b, msg_right(msg_cat(a, b)) = b
-export const bytes_cat = (a, b) => {
-  const ah = hexOf(a);
-  const bh = hexOf(b);
-  const n  = nat16_to_fixed_size_hex(bytes_len(ah));
-
-  return '0x' +  n + ah + bh; };
 
 export const random_uint256 = () =>
   hexToBN(byteArrayToHex(crypto.randomBytes(32)));
@@ -156,12 +139,12 @@ export const connectAccount = address => {
 
       return [ ok_bal, ok_vals ]; };
 
-    const sendrecv_top = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt, try_p ) => {
+    const sendrecv_top = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt, try_p) => {
       return sendrecv(label, funcName, args, value, ok_evt, timeout_delay, timeout_evt ); }
 
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     /* eslint require-atomic-updates: off */
-    const sendrecv = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt ) => {
+    const sendrecv = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt) => {
       void(ok_evt);
       // https://github.com/ethereum/web3.js/issues/2077
       const munged = [ last_block, ...args ]
@@ -207,12 +190,12 @@ export const connectAccount = address => {
       rec_res.didTimeout = true;
       return rec_res; };
 
-    const recv_top = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt, try_p ) => {
+    const recv_top = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt, try_p) => {
       return recv(label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt );
     };
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const recv = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt ) => {
+    const recv = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt) => {
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
 
       let block_poll_start = last_block;
@@ -271,4 +254,4 @@ export const newTestAccount = async (startingBalance) => {
     await transfer(to, prefunder, startingBalance);
     return connectAccount(to); }
   else {
-    throw Error(`Couldn't unlock account ${to}!`); } };
+    panic(`Couldn't unlock account ${to}!`); } };

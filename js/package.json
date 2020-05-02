@@ -9,6 +9,7 @@
     "eslint": "^6.3.0"
   },
   "dependencies": {
+    "algosdk": "^1.5.0",
     "await-timeout": "^0.6.0",
     "ethers": "4.0.47",
     "web3": "1.2.7"
