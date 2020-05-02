@@ -1,4 +1,4 @@
-import * as stdlib from '@reach-sh/stdlib';
+import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as AUCTION from './build/auction.mjs';
 
 const log = (msg) => () => { console.log(`${msg}`); return true; };

@@ -1,6 +1,6 @@
 import * as RPS        from './build/rps.mjs';
 import { runTests, assert } from '@reach-sh/stdlib/tester.mjs';
-import * as stdlib from '@reach-sh/stdlib';
+import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 
 const log = (msg, ret = true) => () => { console.log(`...${msg}`); return ret; };
 const interactWithAlice =

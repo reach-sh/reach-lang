@@ -1,4 +1,4 @@
-import * as stdlib from '@reach-sh/stdlib';
+import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as RPS from './build/rps.mjs';
 import * as RPSW from './build/rps_while.mjs';
 

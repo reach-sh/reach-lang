@@ -1,4 +1,4 @@
-import * as stdlib from '@reach-sh/stdlib';
+import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as MULTISIG from './build/multisig.mjs';
 
 ( async () => {

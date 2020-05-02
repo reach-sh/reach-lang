@@ -26,6 +26,6 @@
   "homepage": "https://github.com/reach-sh/reach-lang#readme",
   "scripts": {
     "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
-    "test": "node --experimental-modules test.mjs"
+    "test": "node --experimental-modules ETH-test.mjs"
   }
 }

@@ -1,5 +1,5 @@
 import { runTests, describe, it, expect } from './tester.mjs';
-import * as stdlib from './index.mjs';
+import * as stdlib from './ETH.mjs';
 
 runTests(() => { describe('The `web3` stdlib', () => {
   const toBN = stdlib.toBN;
