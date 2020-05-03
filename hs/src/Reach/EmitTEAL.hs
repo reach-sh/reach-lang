@@ -423,7 +423,7 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
   where ls = dispatch_ls ++ handlers_ls ++ loop_ls ++ standard_ls
         dispatch_ls = bracket "Constructor / Dispatcher" $
                       code "txn" [ "NumAppArgs" ]
-                      ++ (comp_con $ Con_I $ 1)
+                      ++ (comp_con $ Con_I $ 2)
                       ++ code "==" []
                       ++ code "bz" [ next_lab ]
                       ++ comp_arg 0
@@ -439,8 +439,7 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                       ++ code "bnz" [ "revert" ]
                       --- Set global(me)
                       ++ comp_con (Con_BS "me")
-                      --- FIXME Is this right address
-                      ++ code "txn" [ "Sender" ]
+                      ++ comp_arg 1
                       ++ code "app_global_put" []
                       --- Set global(state)
                       ++ comp_con (Con_BS "state")
