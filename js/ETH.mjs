@@ -139,13 +139,13 @@ export const connectAccount = address => {
 
       return [ ok_bal, ok_vals ]; };
 
-    const sendrecv_top = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt, try_p) => {
-      return sendrecv(label, funcName, args, value, ok_evt, timeout_delay, timeout_evt ); }
+    const sendrecv_top = async (label, funcNum, args, value, timeout_delay, timeout_evt, try_p) => {
+      return sendrecv(label, funcNum, args, value, timeout_delay, timeout_evt ); }
 
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     /* eslint require-atomic-updates: off */
-    const sendrecv = async (label, funcName, args, value, ok_evt, timeout_delay, timeout_evt) => {
-      void(ok_evt);
+    const sendrecv = async (label, funcNum, args, value, timeout_delay, timeout_evt) => {
+      const funcName = `m${funcNum}`;
       // https://github.com/ethereum/web3.js/issues/2077
       const munged = [ last_block, ...args ]
             .map(m => isBN(m) ? m.toString() : m);
@@ -195,7 +195,10 @@ export const connectAccount = address => {
     };
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const recv = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt) => {
+    const recv = async (label, ok_num, timeout_delay, timeout_me, timeout_args, timeout_num) => {
+      const ok_evt = `e${ok_num}`;
+      const timeout_fun = `m${timeout_num}`;
+      const timeout_evt = `e${timeout_num}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
 
       let block_poll_start = last_block;

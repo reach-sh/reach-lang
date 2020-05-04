@@ -1,6 +1,6 @@
 // <Constructor / Dispatcher>
 txn NumAppArgs
-int 1
+int 2
 ==
 bz h1
 txna ApplicationArgs 0
@@ -14,7 +14,7 @@ byte base64()
 ==
 bnz revert
 byte base64(bWU=)
-txn Sender
+txna ApplicationArgs 1
 app_global_put
 byte base64(c3RhdGU=)
 int 0

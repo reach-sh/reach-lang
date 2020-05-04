@@ -181,7 +181,7 @@ comp_hash hm cs as = do
                   hm_ls = comp_con (Con_I $ fromIntegral i)
                     ++ code "itob" []
                     ++ (if use_this_block then
-                          (code "gtxn" [ "0", "LastValid" ]
+                          (code "global" [ "Round" ]
                            ++ code "itob" [])
                         else
                           comp_arg 1)

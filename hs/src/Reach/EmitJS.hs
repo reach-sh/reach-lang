@@ -172,12 +172,11 @@ jsEPTail stop_at_consensus tn who t =
             dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+> pretty "await" <+> srp <> semi
             srp = jsApply "ctc.sendrecv"
               [ jsString $ blpart_name who
-              , jsString (solMsg_fun i_ok)
+              , jsCon (Con_I i_ok)
               , vs
               , amtp
-              , jsString (solMsg_evt i_ok)
               , delayp
-              , jsString (solMsg_evt i_to)
+              , jsCon (Con_I i_to)
               , jsLambda [ pretty "txn" ] ok_con_p ]
             (ok_con_p, ok_con_vs) = jsEPTail True tn' who k_ok
             tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg, ok_con_vs ]
@@ -198,11 +197,10 @@ jsEPTail stop_at_consensus tn who t =
                  pretty "await" <+>
                  (jsApply "ctc.recv"
                    [ jsString $ blpart_name who
-                   , jsString (solMsg_evt i_ok)
+                   , jsCon (Con_I i_ok)
                    , delayp, jsCon (Con_B to_me)
                    , (jsArray $ map jsVar svs)
-                   , jsString (solMsg_fun i_to)
-                   , jsString (solMsg_evt i_to)
+                   , jsCon (Con_I i_to)
                    , to_con_p ])
                  <> semi
             to_me = case fs_to of
