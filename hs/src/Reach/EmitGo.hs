@@ -13,6 +13,8 @@ import Reach.EmitSol
   ( solMsg_evt
   , solMsg_fun
   , CompiledSol )
+import Reach.EmitTEAL
+  ( CompiledTeal )
 import Reach.Util
 
 goBType :: BaseType -> String
@@ -267,7 +269,7 @@ goPart (p, ep@(EP_Prog _ pargs et)) =
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_go :: BLProgram b -> (CompiledSol, String) -> String -> Doc a
+emit_go :: BLProgram b -> (CompiledSol, String) -> CompiledTeal -> Doc a
 emit_go (BL_Prog _ rts pm _) ((abi, code), code2) _tc = modp
   where modp = vsep_with_blank $ preamble : pkgp : importp : retp : partsp ++ [ abip, codep, code2p, mainp ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version

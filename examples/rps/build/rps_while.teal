@@ -19,7 +19,7 @@ app_global_put
 byte base64(c3RhdGU=)
 int 0
 itob
-gtxn 0 LastValid
+global Round
 itob
 concat
 keccak256
@@ -53,7 +53,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 LastValid
+global Round
 >=
 bz revert
 int 0
@@ -81,7 +81,7 @@ bnz revert
 byte base64(c3RhdGU=)
 int 1
 itob
-gtxn 0 LastValid
+global Round
 itob
 gtxn 0 Sender
 txna ApplicationArgs 2
@@ -123,7 +123,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 FirstValid
+global Round
 <
 bz revert
 int 0
@@ -166,7 +166,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 LastValid
+global Round
 >=
 bz revert
 int 1
@@ -238,7 +238,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 FirstValid
+global Round
 <
 bz revert
 int 1
@@ -317,7 +317,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 LastValid
+global Round
 >=
 bz revert
 int 3
@@ -357,7 +357,7 @@ bnz revert
 byte base64(c3RhdGU=)
 int 6
 itob
-gtxn 0 LastValid
+global Round
 itob
 txna ApplicationArgs 2
 txna ApplicationArgs 3
@@ -413,7 +413,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 FirstValid
+global Round
 <
 bz revert
 int 3
@@ -487,7 +487,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 LastValid
+global Round
 >=
 bz revert
 int 6
@@ -545,7 +545,7 @@ bnz revert
 byte base64(c3RhdGU=)
 int 8
 itob
-gtxn 0 LastValid
+global Round
 itob
 txna ApplicationArgs 2
 txna ApplicationArgs 3
@@ -605,7 +605,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 FirstValid
+global Round
 <
 bz revert
 int 6
@@ -683,7 +683,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 LastValid
+global Round
 >=
 bz revert
 int 8
@@ -868,7 +868,7 @@ txna ApplicationArgs 1
 btoi
 int 10
 +
-gtxn 0 FirstValid
+global Round
 <
 bz revert
 int 8
@@ -943,7 +943,7 @@ bnz revert
 byte base64(c3RhdGU=)
 int 3
 itob
-gtxn 0 LastValid
+global Round
 itob
 load 0
 load 1

@@ -36,13 +36,15 @@ export const assert = d => nodeAssert.strict(d);
 
 // Backend
 const fillTxn = async ( round_width, txn ) => {
-  const params = await algodClient.getTransactionParams();;
-  return Object.assign(txn,
-                       { "fee": params.minFee,
-                         "firstRound": params.lastRound,
-                         "lastRound": params.lastRound + round_width,
-                         "genesisID": params.genesisID,
-                         "genesisHash": params.genesishashb64 }); };
+  debug(`fillTxn: getting params`);
+  const params = await algodClient.getTransactionParams();
+  debug(`fillTxn: got params`);
+  txn.fee = params.minFee;
+  txn.firstRound = params.lastRound;
+  txn.lastRound = params.lastRound + round_width;
+  txn.genesisID = params.genesisID;
+  txn.genesisHash = params.genesishashb64;
+  return txn; };
 
 export const transfer = async (to, from, value) => {
   const txn = await fillTxn( default_range_width, {
@@ -51,16 +53,21 @@ export const transfer = async (to, from, value) => {
     "to": to.addr,
     "amount": value } );
   const signedTxn = algosdk.signTransaction(txn, from.sk);
-  return await sendAndConfirm( signedTxn, txn.lastRound ); };
+  const res = await sendAndConfirm( signedTxn, txn.lastRound );
+  if ( ! res ) {
+    panic(`Transfer failed: ${to} ${from} ${value}`); }
+  return res; };
 
 export const connectAccount = async thisAcc => {
   const shad = thisAcc.addr.substring(2,6);
+  debug(`${shad}: connectAccount`);
   
   const attach = async (bin, ctc) => {
-    const { LogicSigProgram } = bin.ALGO;
+    const { LogicSigProgramB64 } = bin.ALGO;
+    debug(`${shad}: attach ${ctc.address}`);
 
     let prevRound = ctc.creationRound;
-    debug(`${shad}: created at ${prevRound}`);
+    debug(`${shad}: attach created at ${prevRound}`);
     
     const sendrecv = async (label, funcNum, args, value, timeout_delay, timeout_evt, try_p) => {
       debug(`${shad}: ${label} sendrecv ${funcNum} ${timeout_delay} --- START`);
@@ -73,8 +80,8 @@ export const connectAccount = async thisAcc => {
         "OnCompletion": "noOp",
         "ApplicationArgs": algosdk.encodeObj([funcNum, prevRound, ...args]),
         // FIXME: SDK should allow me to not include these
-        "Accounts": algosdk.encodeObj([]),
-        "ForeignApps": algosdk.encodeObj([]),
+        "Accounts": 0,
+        "ForeignApps": 0,
         "ApprovalProgram": 0,
         "ClearStateProgram": 0,
         "LocalStateSchema": 0,
@@ -84,10 +91,11 @@ export const connectAccount = async thisAcc => {
 
       const send_res = await sendAndConfirm( signedTxn, appTxn.lastRound );
       if ( send_res ) {
+        const confirmedRound = confirmTxn.round;
         debug(`${shad}: ${label} send ${funcNum} ${timeout_delay} --- OKAY`);
+        // FIXME: Should be confirmedRound balance
         const ok_bal = (await algodClient.accountInformation(ctc.address)).amount;
-        // XXX have to figure out the actual round it was in
-        prevRound = prevRound + timeout_delay;
+        prevRound = confirmedRound;
         return { didTimeout: false, data: args, value: value, balance: ok_bal, from: thisAcc.addr }; }
 
       debug(`${shad}: ${label} send ${funcNum} ${timeout_delay} --- FAIL/TIMEOUT`);
@@ -96,7 +104,7 @@ export const connectAccount = async thisAcc => {
       return rec_res; };
 
     const recv = async (label, ok_num, timeout_delay, timeout_me, timeout_args, timeout_num, try_p) => {
-
+      debug(`${shad}: ${label} recv ${ok_num} ${timeout_delay} --- START`);
 
       // XXX unclear if the first argument is the 
       algodClient.transactionByAddress(ctc.address, prevRound, prevRound + timeout_delay);
@@ -106,38 +114,45 @@ export const connectAccount = async thisAcc => {
       
       debug(`XXX recv`); };
 
-    return { sendrecv, recv, address }; };
+    return { sendrecv, recv, address: thisAcc.addr }; };
 
   const deploy = async (bin) => {
-    const { LogicSigProgram, ApprovalProgram, ClearStateProgram } = bin.ALGO;
+    debug(`${shad}: deploy`);
+    
+    const { LogicSigProgramB64, ApprovalProgramB64, ClearStateProgramB64 } = bin.ALGO;
 
+    debug(`${shad}: deploy: making account`);
     const ctc_acc = algosdk.generateAccount();
     // XXX create the logic sig account
     
+    debug(`${shad}: deploy: filling transaction`);
     const preTxn = await fillTxn( default_range_width, {
-      "from": address,
+      "from": thisAcc.addr,
       "type": "appl",
       "ApplicationId": 0,
       "OnCompletion": "noOp",
       "ApplicationArgs": algosdk.encodeObj([ 0, ctc_acc.addr ]),
       "ApprovalProgram": ApprovalProgram,
       "ClearStateProgram": ClearStateProgram,
-      "LocalStateSchema": algosdk.encodeObj({ NumUInt: 0, NumByteSlice: 0 }),
-      "GlobalStateSchema": algosdk.encodeObj({ NumUInt: 0, NumByteSlice: 2 }),
+      "LocalStateSchema": 0,
+      "GlobalStateSchema": algosdk.encodeObj({ "NumByteSlice": 2 }),
       // FIXME: SDK should allow me to not include these
-      "Accounts": algosdk.encodeObj([]),
-      "ForeignApps": algosdk.encodeObj([])
+      "Accounts": 0,
+      "ForeignApps": 0
     } );
+    debug(`${shad}: deploy: signing transction`);
     const signedTxn = algosdk.signTransaction(preTxn, from.sk);
+    debug(`${shad}: deploy: txn signed, sending`);
     const confirmedTxn = await sendAndConfirm(signedTxn);
+    debug(`${shad}: deploy: application confirmed`);
     const appId = confirmedTxn.TransactionResults.CreatedAppIndex;
-    const creationRound = confirmTxn.TransactionResults.ConfirmedRound;
+    const creationRound = confirmTxn.round;
 
     const ctc = { address: ctc_acc.addr, appId, creationRound };
 
     return attach(bin, ctc); };
 
-  return { deploy, attach, address }; };
+  return { deploy, attach, address: thisAcc.addr }; };
 
 const showBalance = async (note, acc) => {
   let theInfo = await algodClient.accountInformation(acc.addr);

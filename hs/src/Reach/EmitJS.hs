@@ -10,10 +10,10 @@ import Data.Version (showVersion)
 
 import Reach.AST
 import Reach.EmitSol
-  ( solMsg_evt
-  , solMsg_fun
-  , solType
+  ( solType
   , CompiledSol )
+import Reach.EmitTEAL
+  ( CompiledTeal )
 import Reach.Util
 
 jsString :: String -> Doc a
@@ -172,11 +172,11 @@ jsEPTail stop_at_consensus tn who t =
             dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+> pretty "await" <+> srp <> semi
             srp = jsApply "ctc.sendrecv"
               [ jsString $ blpart_name who
-              , jsCon (Con_I i_ok)
+              , jsCon (Con_I $ fromIntegral i_ok)
               , vs
               , amtp
               , delayp
-              , jsCon (Con_I i_to)
+              , jsCon (Con_I $ fromIntegral i_to)
               , jsLambda [ pretty "txn" ] ok_con_p ]
             (ok_con_p, ok_con_vs) = jsEPTail True tn' who k_ok
             tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg, ok_con_vs ]
@@ -197,10 +197,10 @@ jsEPTail stop_at_consensus tn who t =
                  pretty "await" <+>
                  (jsApply "ctc.recv"
                    [ jsString $ blpart_name who
-                   , jsCon (Con_I i_ok)
+                   , jsCon (Con_I $ fromIntegral i_ok)
                    , delayp, jsCon (Con_B to_me)
                    , (jsArray $ map jsVar svs)
-                   , jsCon (Con_I i_to)
+                   , jsCon (Con_I $ fromIntegral i_to)
                    , to_con_p ])
                  <> semi
             to_me = case fs_to of
@@ -253,12 +253,14 @@ jsPart (p, (EP_Prog _ pargs et)) =
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_js :: BLProgram b -> (CompiledSol, String) -> String -> Doc a
+emit_js :: BLProgram b -> (CompiledSol, String) -> CompiledTeal -> Doc a
 emit_js (BL_Prog _ _ pm _) ((abi, evm_code), evm_code2) teal_code = modp
   where modp = vsep_with_blank $ preamble : importp : partsp ++ [ ethp, algop ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         importp = pretty $ "// import * as stdlib from '@reach-sh/stdlib';"
         partsp = map jsPart $ M.toList pm
-        algop = pretty "export const ALGO = " <> jsObject [("AppCode", pretty $ "`" ++ teal_code ++ "`")] <> semi
+        algop = pretty "export const ALGO = " <> jsObject [("LogicSigProgram", teal_code_fmt tc_lsp), ("ApprovalProgram", teal_code_fmt tc_ap), ("ClearStateProgram", teal_code_fmt tc_csp)] <> semi
+          where ( tc_lsp, tc_ap, tc_csp ) = teal_code
+                teal_code_fmt x = pretty $ "`" ++ x ++ "`"
         ethp = pretty "export const ETH = " <> jsObject [("ABI", pretty abi), ("Bytecode", str_as_hex evm_code), ("Bytecode2", str_as_hex evm_code2)] <> semi
         str_as_hex x = pretty $ "\"0x" ++ x ++ "\""

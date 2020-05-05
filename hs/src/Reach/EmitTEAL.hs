@@ -2,19 +2,25 @@
 
 module Reach.EmitTEAL where
 
+import System.IO
+import System.Process
+import System.Exit
 import Control.Monad.Extra
 import Control.Monad.State.Lazy
 import qualified Data.Map.Strict as M
 import Data.List
 import Data.ByteString.Base64 (encodeBase64')
-import Data.ByteString.Internal (unpackChars)
---import qualified Data.ByteString as BS
+---import Data.ByteString.Internal (unpackChars)
+import qualified Data.ByteString.Char8 as C
+---import qualified Data.ByteString as BS
 
 import Reach.AST
 import Reach.Util
 import Reach.EmitSol
   ( CCounts
   , usesCTail )
+
+type CompiledTeal = (String, String, String)
 
 type LabelM ann a = State LabelSt a
 type LabelSt = Int
@@ -115,7 +121,7 @@ comp_con c =
     Con_B t ->
       comp_con $ Con_I $ if t then 1 else 0
     Con_BS bs ->
-      code "byte" [ "base64(" ++ (unpackChars (encodeBase64' bs)) ++ ")" ]
+      code "byte" [ "base64(" ++ (C.unpack (encodeBase64' bs)) ++ ")" ]
 
 comp_arg :: Int -> TEALs
 comp_arg a = code "txna" [ "ApplicationArgs", show a ]
@@ -388,19 +394,16 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
             ++ delay_ls
             ++ code "+" []
             -- the stack contains the deadline
+            ++ code "global" [ "Round" ]
             ++ (if is_timeout then
-                  -- if this is a timeout, then the first time it can
-                  -- run must be after the deadline.
-                  (code "gtxn" [ "0", "FirstValid" ]
-                  -- deadline < running-time
-                   ++ code "<" [])
+                  -- if this is a timeout, then the round must be
+                  -- after the deadline: deadline < running-time
+                  code "<" []
                 else
-                  -- if this is not a timeout, then the last time it
-                  -- can run must be before or equal to the deadline
-                  (code "gtxn" [ "0", "LastValid" ]
-                  -- running-time <= deadline
-                  -- == deadline >= running-time
-                   ++ code ">=" []))
+                  -- if this is not a timeout, then the round must be
+                  -- before the deadline: running-time <= deadline ==
+                  -- deadline >= running-time
+                  code ">=" [])
             ++ code "bz" [ "revert" ]
             -- end of timeout checking
             ++ hash_ls
@@ -469,9 +472,30 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
 
 -- FIXME Do something like a "peep-hole optimizer" so we can detect "btoi -> itob" sequences
 
-emit_teal :: FilePath -> BLProgram a -> IO String
+compile_teal :: String -> TEAL -> IO String
+compile_teal _which t = do
+  let ts = show t
+  (Just hin, Just hout, Just herr, hP) <-
+    createProcess (proc "goal" ["clerk", "compile", "-"]){ std_in = CreatePipe, std_out = CreatePipe, std_err = CreatePipe }
+  hPutStr hin ts
+  hClose hin
+  hSetBinaryMode hout True
+  stdout_bs <- C.hGetContents hout
+  stderr_s <- hGetContents herr
+  ec <- waitForProcess hP
+  case ec of
+    ExitFailure _ ->
+      die $ "goal clerk compile failed:\n"
+      ++ "STDOUT:\n" ++ (C.unpack stdout_bs) ++ "\n"
+      ++ "STDERR:\n" ++ stderr_s ++ "\n"
+    ExitSuccess -> do
+      return $ C.unpack $ encodeBase64' stdout_bs
+
+emit_teal :: FilePath -> BLProgram a -> IO CompiledTeal
 emit_teal tf (BL_Prog _ _ _ cp) = do
   let bc = cp_to_teal cp
-  let bcs = show bc
-  writeFile tf bcs
-  return bcs
+  writeFile tf (show bc)
+  tc_lsp <- compile_teal "LSP" (TEAL $ comp_con (Con_I 1)) --- XXX
+  tc_ap <- compile_teal "AP" bc
+  tc_csp <- compile_teal "CSP" (TEAL $ comp_con (Con_I 1))
+  return ( tc_lsp, tc_ap, tc_csp )
