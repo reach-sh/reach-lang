@@ -58,7 +58,7 @@ jsFunction name args body =
   pretty "async function" <+> jsApply name args <+> jsBraces body
 
 jsLambda :: [Doc a] -> Doc a -> Doc a
-jsLambda args body = jsApply "" args <+> pretty "=>" <+> jsBraces body
+jsLambda args body = pretty "async" <+> jsApply "" args <+> pretty "=>" <+> jsBraces body
 
 jsWhile :: Doc a -> Doc a -> Doc a
 jsWhile cond body = pretty "while" <+> parens cond <+> jsBraces body
@@ -120,7 +120,7 @@ jsAssert :: Doc a -> Doc a
 jsAssert a = jsApply "stdlib.assert" [ a ] <> semi
 
 jsTransfer :: BLVar -> Doc a -> Doc a
-jsTransfer to a = jsApply "txn.transfer" [ jsVar to, a ] <> semi
+jsTransfer to a = jsApply "txn_out.transfer" [ jsVar to, a ] <> semi
 
 jsEPStmt :: Bool -> EPStmt b -> Doc a -> (Doc a, Set.Set BLVar)
 jsEPStmt stop_at_consensus s kp =
@@ -177,7 +177,7 @@ jsEPTail stop_at_consensus tn who t =
               , amtp
               , delayp
               , jsCon (Con_I $ fromIntegral i_to)
-              , jsLambda [ pretty "txn" ] ok_con_p ]
+              , jsLambda [ pretty "txn_out", jsTxn tn' ] ok_con_p ]
             (ok_con_p, ok_con_vs) = jsEPTail True tn' who k_ok
             tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg, ok_con_vs ]
             (delayp, delayfvs) = jsArg delay
@@ -210,7 +210,7 @@ jsEPTail stop_at_consensus tn who t =
             (to_con_p, to_con_vs) =
               if to_me then
                 let (p, vs) = jsEPTail True tn' who k_to in
-                  (jsLambda [ pretty "txn" ] p, vs)
+                  (jsLambda [ pretty "txn_out", jsTxn tn' ] p, vs)
               else
                 (pretty "null", mempty)
             tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, tofvs, delayfvs, to_con_vs]

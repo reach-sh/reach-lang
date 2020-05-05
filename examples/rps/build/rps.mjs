@@ -8,7 +8,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
   const v6 = v2;
   const v7 = stdlib.isType('bool', await interact.params());
   const v8 = stdlib.add(v5, v6);
-  const txn1 = await ctc.sendrecv('A', 1, [v5, v6], v8, 10, 2, (txn) => {
+  const txn1 = await ctc.sendrecv('A', 1, [v5, v6], v8, 10, 2, async (txn_out, txn1) => {
     const v9 = txn1.value;
     const v10 = stdlib.add(v5, v6);
     const v11 = stdlib.eq(v9, v10);
@@ -23,9 +23,9 @@ export async function A(stdlib, ctc, interact, v1, v2) {
     const v10 = stdlib.add(v5, v6);
     const v11 = stdlib.eq(v9, v10);
     stdlib.assert(v11);
-    const txn2 = await ctc.recv('A', 3, 10, true, [v0, v5, v6], 4, (txn) => {
+    const txn2 = await ctc.recv('A', 3, 10, true, [v0, v5, v6], 4, async (txn_out, txn2) => {
       const v133 = txn2.balance;
-      txn.transfer(v0, v133);
+      txn_out.transfer(v0, v133);
       return true; });
     if (txn2.didTimeout) {
       stdlib.assert(true);
@@ -49,7 +49,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
       const v27 = stdlib.keccak256(v26, v22);
       const v28 = v27;
       const v29 = stdlib.isType('bool', await interact.commits());
-      const txn3 = await ctc.sendrecv('A', 5, [v0, v3, v5, v6, v28], 0, 10, 6, (txn) => {
+      const txn3 = await ctc.sendrecv('A', 5, [v0, v3, v5, v6, v28], 0, 10, 6, async (txn_out, txn3) => {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
@@ -61,9 +61,9 @@ export async function A(stdlib, ctc, interact, v1, v2) {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
-        const txn4 = await ctc.recv('A', 7, 10, true, [v0, v3, v5, v6, v28], 8, (txn) => {
+        const txn4 = await ctc.recv('A', 7, 10, true, [v0, v3, v5, v6, v28], 8, async (txn_out, txn4) => {
           const v131 = txn4.balance;
-          txn.transfer(v0, v131);
+          txn_out.transfer(v0, v131);
           return true; });
         if (txn4.didTimeout) {
           stdlib.assert(true);
@@ -88,7 +88,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
           const v57 = v56 ? 'PAPER' : 'SCISSORS';
           const v58 = v55 ? 'ROCK' : v57;
           const v59 = stdlib.isType('bool', await interact.reveals(v58));
-          const txn5 = await ctc.sendrecv('A', 9, [v0, v3, v5, v6, v28, v43, v50, v51], 0, 10, 10, (txn) => {
+          const txn5 = await ctc.sendrecv('A', 9, [v0, v3, v5, v6, v28, v43, v50, v51], 0, 10, 10, async (txn_out, txn5) => {
             const v60 = txn5.value;
             const v61 = stdlib.eq(v60, 0);
             stdlib.assert(v61);
@@ -121,8 +121,8 @@ export async function A(stdlib, ctc, interact, v1, v2) {
             const v115 = v109 ? v110 : v113;
             const v116 = v109 ? 0 : v114;
             const v117 = stdlib.add(v6, v115);
-            txn.transfer(v0, v117);
-            txn.transfer(v3, v116);
+            txn_out.transfer(v0, v117);
+            txn_out.transfer(v3, v116);
             return true; });
           if (txn5.didTimeout) {
             stdlib.assert(true);
@@ -168,7 +168,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
 
 export async function B(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('B', 1, 10, true, [], 2, (txn) => {
+  const txn1 = await ctc.recv('B', 1, 10, true, [], 2, async (txn_out, txn1) => {
     return true; });
   if (txn1.didTimeout) {
     stdlib.assert(true);
@@ -181,7 +181,7 @@ export async function B(stdlib, ctc, interact) {
     const v11 = stdlib.eq(v9, v10);
     stdlib.assert(v11);
     const v12 = stdlib.isType('bool', await interact.accepts(v5, v6));
-    const txn2 = await ctc.sendrecv('B', 3, [v0, v5, v6], v5, 10, 4, (txn) => {
+    const txn2 = await ctc.sendrecv('B', 3, [v0, v5, v6], v5, 10, 4, async (txn_out, txn2) => {
       const v13 = txn2.value;
       const v14 = stdlib.eq(v13, v5);
       stdlib.assert(v14);
@@ -194,9 +194,9 @@ export async function B(stdlib, ctc, interact) {
       const v13 = txn2.value;
       const v14 = stdlib.eq(v13, v5);
       stdlib.assert(v14);
-      const txn3 = await ctc.recv('B', 5, 10, true, [v0, v3, v5, v6], 6, (txn) => {
+      const txn3 = await ctc.recv('B', 5, 10, true, [v0, v3, v5, v6], 6, async (txn_out, txn3) => {
         const v132 = txn3.balance;
-        txn.transfer(v3, v132);
+        txn_out.transfer(v3, v132);
         return true; });
       if (txn3.didTimeout) {
         stdlib.assert(true);
@@ -217,7 +217,7 @@ export async function B(stdlib, ctc, interact) {
         const v39 = v33 ? 0 : v38;
         const v43 = v39;
         const v44 = stdlib.isType('bool', await interact.shows());
-        const txn4 = await ctc.sendrecv('B', 7, [v0, v3, v5, v6, v28, v43], 0, 10, 8, (txn) => {
+        const txn4 = await ctc.sendrecv('B', 7, [v0, v3, v5, v6, v28, v43], 0, 10, 8, async (txn_out, txn4) => {
           const v45 = txn4.value;
           const v46 = stdlib.eq(v45, 0);
           stdlib.assert(v46);
@@ -237,9 +237,9 @@ export async function B(stdlib, ctc, interact) {
           const v48 = stdlib.lt(v43, 3);
           const v49 = v47 ? v48 : false;
           stdlib.assert(v49);
-          const txn5 = await ctc.recv('B', 9, 10, true, [v0, v3, v5, v6, v28, v43], 10, (txn) => {
+          const txn5 = await ctc.recv('B', 9, 10, true, [v0, v3, v5, v6, v28, v43], 10, async (txn_out, txn5) => {
             const v130 = txn5.balance;
-            txn.transfer(v3, v130);
+            txn_out.transfer(v3, v130);
             return true; });
           if (txn5.didTimeout) {
             stdlib.assert(true);
@@ -286,7 +286,7 @@ export async function B(stdlib, ctc, interact) {
 
 export async function O(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('O', 1, 10, true, [], 2, (txn) => {
+  const txn1 = await ctc.recv('O', 1, 10, true, [], 2, async (txn_out, txn1) => {
     return true; });
   if (txn1.didTimeout) {
     stdlib.assert(true);
