@@ -32,7 +32,7 @@ return
 // <Handler 1>
 h1:
 txn NumAppArgs
-int 4
+int 5
 ==
 bz h2
 txna ApplicationArgs 0
@@ -67,9 +67,9 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Amount
-txna ApplicationArgs 2
-btoi
 txna ApplicationArgs 3
+btoi
+txna ApplicationArgs 4
 btoi
 +
 ==
@@ -84,10 +84,10 @@ itob
 global Round
 itob
 gtxn 0 Sender
-txna ApplicationArgs 2
+txna ApplicationArgs 3
 btoi
 itob
-txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
 concat
@@ -102,7 +102,7 @@ b done
 // <Handler 2>
 h2:
 txn NumAppArgs
-int 2
+int 3
 ==
 bz h3
 txna ApplicationArgs 0
@@ -145,7 +145,7 @@ b halt
 // <Handler 3>
 h3:
 txn NumAppArgs
-int 5
+int 6
 ==
 bz h4
 txna ApplicationArgs 0
@@ -172,11 +172,11 @@ bz revert
 int 1
 itob
 txna ApplicationArgs 1
-txna ApplicationArgs 2
 txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-txna ApplicationArgs 4
+txna ApplicationArgs 5
 btoi
 itob
 concat
@@ -190,15 +190,15 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Amount
-txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 ==
 bz revert
-txna ApplicationArgs 2
-gtxn 0 Sender
 txna ApplicationArgs 3
-btoi
+gtxn 0 Sender
 txna ApplicationArgs 4
+btoi
+txna ApplicationArgs 5
 btoi
 int 0
 int 1
@@ -213,7 +213,7 @@ b l5
 // <Handler 4>
 h4:
 txn NumAppArgs
-int 5
+int 6
 ==
 bz h6
 txna ApplicationArgs 0
@@ -231,7 +231,7 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
-txna ApplicationArgs 2
+txna ApplicationArgs 3
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -244,11 +244,11 @@ bz revert
 int 1
 itob
 txna ApplicationArgs 1
-txna ApplicationArgs 2
 txna ApplicationArgs 3
+txna ApplicationArgs 4
 btoi
 itob
-txna ApplicationArgs 4
+txna ApplicationArgs 5
 btoi
 itob
 concat
@@ -275,7 +275,7 @@ balance
 !=
 bnz revert
 gtxn 1 Receiver
-txna ApplicationArgs 2
+txna ApplicationArgs 3
 !=
 bnz revert
 gtxn 1 Sender
@@ -292,7 +292,7 @@ b halt
 // <Handler 6>
 h6:
 txn NumAppArgs
-int 8
+int 9
 ==
 bz h7
 txna ApplicationArgs 0
@@ -310,7 +310,7 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
-txna ApplicationArgs 2
+txna ApplicationArgs 3
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -323,15 +323,15 @@ bz revert
 int 3
 itob
 txna ApplicationArgs 1
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
-itob
 txna ApplicationArgs 5
 btoi
 itob
 txna ApplicationArgs 6
+btoi
+itob
+txna ApplicationArgs 7
 btoi
 itob
 concat
@@ -359,11 +359,8 @@ int 6
 itob
 global Round
 itob
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
-itob
 txna ApplicationArgs 5
 btoi
 itob
@@ -371,6 +368,9 @@ txna ApplicationArgs 6
 btoi
 itob
 txna ApplicationArgs 7
+btoi
+itob
+txna ApplicationArgs 8
 btoi
 itob
 concat
@@ -388,7 +388,7 @@ b done
 // <Handler 7>
 h7:
 txn NumAppArgs
-int 7
+int 8
 ==
 bz h8
 txna ApplicationArgs 0
@@ -406,7 +406,7 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
-txna ApplicationArgs 3
+txna ApplicationArgs 4
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -419,15 +419,15 @@ bz revert
 int 3
 itob
 txna ApplicationArgs 1
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
-itob
 txna ApplicationArgs 5
 btoi
 itob
 txna ApplicationArgs 6
+btoi
+itob
+txna ApplicationArgs 7
 btoi
 itob
 concat
@@ -442,13 +442,13 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
 txna ApplicationArgs 5
 btoi
 txna ApplicationArgs 6
+btoi
+txna ApplicationArgs 7
 btoi
 int 3
 store 5
@@ -462,7 +462,7 @@ b l5
 // <Handler 8>
 h8:
 txn NumAppArgs
-int 9
+int 10
 ==
 bz h9
 txna ApplicationArgs 0
@@ -480,7 +480,7 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
-txna ApplicationArgs 3
+txna ApplicationArgs 4
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -493,11 +493,8 @@ bz revert
 int 6
 itob
 txna ApplicationArgs 1
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
-itob
 txna ApplicationArgs 5
 btoi
 itob
@@ -505,6 +502,9 @@ txna ApplicationArgs 6
 btoi
 itob
 txna ApplicationArgs 7
+btoi
+itob
+txna ApplicationArgs 8
 btoi
 itob
 concat
@@ -525,14 +525,14 @@ int 0
 ==
 bz revert
 int 0
-txna ApplicationArgs 8
+txna ApplicationArgs 9
 btoi
 <=
 bnz h8_0
 int 0
 b h8_1
 h8_0:
-txna ApplicationArgs 8
+txna ApplicationArgs 9
 btoi
 int 3
 <
@@ -547,11 +547,8 @@ int 8
 itob
 global Round
 itob
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
-itob
 txna ApplicationArgs 5
 btoi
 itob
@@ -562,6 +559,9 @@ txna ApplicationArgs 7
 btoi
 itob
 txna ApplicationArgs 8
+btoi
+itob
+txna ApplicationArgs 9
 btoi
 itob
 concat
@@ -580,7 +580,7 @@ b done
 // <Handler 9>
 h9:
 txn NumAppArgs
-int 8
+int 9
 ==
 bz h10
 txna ApplicationArgs 0
@@ -598,7 +598,7 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
-txna ApplicationArgs 2
+txna ApplicationArgs 3
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -611,11 +611,8 @@ bz revert
 int 6
 itob
 txna ApplicationArgs 1
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
-itob
 txna ApplicationArgs 5
 btoi
 itob
@@ -623,6 +620,9 @@ txna ApplicationArgs 6
 btoi
 itob
 txna ApplicationArgs 7
+btoi
+itob
+txna ApplicationArgs 8
 btoi
 itob
 concat
@@ -638,13 +638,13 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
 txna ApplicationArgs 5
 btoi
 txna ApplicationArgs 6
+btoi
+txna ApplicationArgs 7
 btoi
 int 4
 store 5
@@ -658,7 +658,7 @@ b l5
 // <Handler 10>
 h10:
 txn NumAppArgs
-int 11
+int 12
 ==
 bz h11
 txna ApplicationArgs 0
@@ -676,7 +676,7 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
-txna ApplicationArgs 2
+txna ApplicationArgs 3
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -689,11 +689,8 @@ bz revert
 int 8
 itob
 txna ApplicationArgs 1
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
-itob
 txna ApplicationArgs 5
 btoi
 itob
@@ -704,6 +701,9 @@ txna ApplicationArgs 7
 btoi
 itob
 txna ApplicationArgs 8
+btoi
+itob
+txna ApplicationArgs 9
 btoi
 itob
 concat
@@ -724,12 +724,12 @@ gtxn 0 Amount
 int 0
 ==
 bz revert
-txna ApplicationArgs 7
+txna ApplicationArgs 8
 btoi
-txna ApplicationArgs 9
+txna ApplicationArgs 10
 btoi
 itob
-txna ApplicationArgs 10
+txna ApplicationArgs 11
 btoi
 itob
 concat
@@ -738,42 +738,42 @@ btoi
 ==
 bz revert
 int 0
-txna ApplicationArgs 10
+txna ApplicationArgs 11
 btoi
 <=
 bnz h10_0
 int 0
 b h10_1
 h10_0:
-txna ApplicationArgs 10
+txna ApplicationArgs 11
 btoi
 int 3
 <
 h10_1:
 bz revert
 int 0
-txna ApplicationArgs 10
+txna ApplicationArgs 11
 btoi
 <=
 bnz h10_2
 int 0
 b h10_3
 h10_2:
-txna ApplicationArgs 10
+txna ApplicationArgs 11
 btoi
 int 3
 <
 h10_3:
 store 0
 int 0
-txna ApplicationArgs 8
+txna ApplicationArgs 9
 btoi
 <=
 bnz h10_4
 int 0
 b h10_5
 h10_4:
-txna ApplicationArgs 8
+txna ApplicationArgs 9
 btoi
 int 3
 <
@@ -802,10 +802,10 @@ int 2
 h10_12:
 b h10_13
 h10_8:
-txna ApplicationArgs 10
+txna ApplicationArgs 11
 btoi
 int 4
-txna ApplicationArgs 8
+txna ApplicationArgs 9
 btoi
 -
 +
@@ -821,14 +821,14 @@ load 2
 int 0
 ==
 store 4
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
 txna ApplicationArgs 5
 btoi
-int 1
 txna ApplicationArgs 6
+btoi
+int 1
+txna ApplicationArgs 7
 btoi
 +
 load 2
@@ -843,7 +843,7 @@ b l5
 // <Handler 11>
 h11:
 txn NumAppArgs
-int 9
+int 10
 ==
 bz revert
 txna ApplicationArgs 0
@@ -861,7 +861,7 @@ app_global_gets
 !=
 bnz revert
 gtxn 0 Sender
-txna ApplicationArgs 3
+txna ApplicationArgs 4
 !=
 bnz revert
 txna ApplicationArgs 1
@@ -874,11 +874,8 @@ bz revert
 int 8
 itob
 txna ApplicationArgs 1
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
-itob
 txna ApplicationArgs 5
 btoi
 itob
@@ -889,6 +886,9 @@ txna ApplicationArgs 7
 btoi
 itob
 txna ApplicationArgs 8
+btoi
+itob
+txna ApplicationArgs 9
 btoi
 itob
 concat
@@ -905,13 +905,13 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-txna ApplicationArgs 2
 txna ApplicationArgs 3
 txna ApplicationArgs 4
-btoi
 txna ApplicationArgs 5
 btoi
 txna ApplicationArgs 6
+btoi
+txna ApplicationArgs 7
 btoi
 int 3
 store 5

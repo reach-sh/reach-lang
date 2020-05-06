@@ -31,11 +31,11 @@ const sendsAndConfirm = async (txns, untilRound) => {
   const btxns = txns.map(o => o.blob);
   const tx = await algodClient.sendRawTransactions(btxns);
   // FIXME https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
-  return await waitForConfirmation(tx.txID, untilRound); }
+  return (await waitForConfirmation(tx.txID, untilRound)); }
 
 const sendAndConfirm = async (txn, untilRound) => {
   await algodClient.sendRawTransaction(txn.blob);
-  return await waitForConfirmation(txn.txID, untilRound); }
+  return (await waitForConfirmation(txn.txID, untilRound)); }
 
 // Client API
 export const assert = d => nodeAssert.strict(d);
@@ -143,7 +143,7 @@ export const connectAccount = async thisAcc => {
       const confirmedTxn = await sendsAndConfirm( signedTxns, appTxn.lastRound );
       if ( confirmedTxn ) {
         debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- OKAY`);
-        return await returnFromTxn( confirmedTxn, evt_cnt ); }
+        return (await returnFromTxn( confirmedTxn, evt_cnt )); }
 
       debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- FAIL/TIMEOUT`);
       const rec_res = await recv(label, timeNum, 0, false, false, false, false, false);
@@ -158,17 +158,17 @@ export const connectAccount = async thisAcc => {
       const untilRound = prevRound + timeout_delay;
       while ( (await algodClient.status()).lastRound < untilRound ) {
         const resp = await algodClient.transactionByAddress(ctc.address, prevRound, untilRound);
-        resp.transactions.forEach(txn => {
+        resp.transactions.forEach(async txn => {
           if ( txn.type == "appl"
                && txn.ApplicationId == ctc.appId
                && txn.ApplicationArgs[0] == okNum
                && txn.ApplicationArgs[1] == prevRound ) {
             debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- OKAY`);
-            return await returnFromTxn( txn, evt_cnt ); } }); }
+            return (await returnFromTxn( txn, evt_cnt )); } }); }
 
       debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- TIMEOUT`);
       const rec_res = timeout_me
-            ? await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, ((a b) => { return; }) )
+            ? await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, ((a, b) => { return; }) )
             : await recv(label, timeNum, 0, false, false, false, false, false);
       rec_res.didTimeout = true;
       return rec_res; };

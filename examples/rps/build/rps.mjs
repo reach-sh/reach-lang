@@ -8,7 +8,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
   const v6 = v2;
   const v7 = stdlib.isType('bool', await interact.params());
   const v8 = stdlib.add(v5, v6);
-  const txn1 = await ctc.sendrecv('A', 1, [v5, v6], v8, 10, 2, async (txn_out, txn1) => {
+  const txn1 = await ctc.sendrecv('A', 1, 2, [v5, v6], v8, 10, 2, async (txn_out, txn1) => {
     const v9 = txn1.value;
     const v10 = stdlib.add(v5, v6);
     const v11 = stdlib.eq(v9, v10);
@@ -23,7 +23,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
     const v10 = stdlib.add(v5, v6);
     const v11 = stdlib.eq(v9, v10);
     stdlib.assert(v11);
-    const txn2 = await ctc.recv('A', 3, 10, true, [v0, v5, v6], 4, async (txn_out, txn2) => {
+    const txn2 = await ctc.recv('A', 3, 0, 10, true, [v0, v5, v6], 4, async (txn_out, txn2) => {
       const v133 = txn2.balance;
       txn_out.transfer(v0, v133);
       return true; });
@@ -49,7 +49,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
       const v27 = stdlib.keccak256(v26, v22);
       const v28 = v27;
       const v29 = stdlib.isType('bool', await interact.commits());
-      const txn3 = await ctc.sendrecv('A', 5, [v0, v3, v5, v6, v28], 0, 10, 6, async (txn_out, txn3) => {
+      const txn3 = await ctc.sendrecv('A', 5, 1, [v0, v3, v5, v6, v28], 0, 10, 6, async (txn_out, txn3) => {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
@@ -61,7 +61,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
-        const txn4 = await ctc.recv('A', 7, 10, true, [v0, v3, v5, v6, v28], 8, async (txn_out, txn4) => {
+        const txn4 = await ctc.recv('A', 7, 1, 10, true, [v0, v3, v5, v6, v28], 8, async (txn_out, txn4) => {
           const v131 = txn4.balance;
           txn_out.transfer(v0, v131);
           return true; });
@@ -88,7 +88,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
           const v57 = v56 ? 'PAPER' : 'SCISSORS';
           const v58 = v55 ? 'ROCK' : v57;
           const v59 = stdlib.isType('bool', await interact.reveals(v58));
-          const txn5 = await ctc.sendrecv('A', 9, [v0, v3, v5, v6, v28, v43, v50, v51], 0, 10, 10, async (txn_out, txn5) => {
+          const txn5 = await ctc.sendrecv('A', 9, 2, [v0, v3, v5, v6, v28, v43, v50, v51], 0, 10, 10, async (txn_out, txn5) => {
             const v60 = txn5.value;
             const v61 = stdlib.eq(v60, 0);
             stdlib.assert(v61);
@@ -168,7 +168,7 @@ export async function A(stdlib, ctc, interact, v1, v2) {
 
 export async function B(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('B', 1, 10, true, [], 2, async (txn_out, txn1) => {
+  const txn1 = await ctc.recv('B', 1, 2, 10, true, [], 2, async (txn_out, txn1) => {
     return true; });
   if (txn1.didTimeout) {
     stdlib.assert(true);
@@ -181,7 +181,7 @@ export async function B(stdlib, ctc, interact) {
     const v11 = stdlib.eq(v9, v10);
     stdlib.assert(v11);
     const v12 = stdlib.isType('bool', await interact.accepts(v5, v6));
-    const txn2 = await ctc.sendrecv('B', 3, [v0, v5, v6], v5, 10, 4, async (txn_out, txn2) => {
+    const txn2 = await ctc.sendrecv('B', 3, 0, [v0, v5, v6], v5, 10, 4, async (txn_out, txn2) => {
       const v13 = txn2.value;
       const v14 = stdlib.eq(v13, v5);
       stdlib.assert(v14);
@@ -194,7 +194,7 @@ export async function B(stdlib, ctc, interact) {
       const v13 = txn2.value;
       const v14 = stdlib.eq(v13, v5);
       stdlib.assert(v14);
-      const txn3 = await ctc.recv('B', 5, 10, true, [v0, v3, v5, v6], 6, async (txn_out, txn3) => {
+      const txn3 = await ctc.recv('B', 5, 1, 10, true, [v0, v3, v5, v6], 6, async (txn_out, txn3) => {
         const v132 = txn3.balance;
         txn_out.transfer(v3, v132);
         return true; });
@@ -217,7 +217,7 @@ export async function B(stdlib, ctc, interact) {
         const v39 = v33 ? 0 : v38;
         const v43 = v39;
         const v44 = stdlib.isType('bool', await interact.shows());
-        const txn4 = await ctc.sendrecv('B', 7, [v0, v3, v5, v6, v28, v43], 0, 10, 8, async (txn_out, txn4) => {
+        const txn4 = await ctc.sendrecv('B', 7, 1, [v0, v3, v5, v6, v28, v43], 0, 10, 8, async (txn_out, txn4) => {
           const v45 = txn4.value;
           const v46 = stdlib.eq(v45, 0);
           stdlib.assert(v46);
@@ -237,7 +237,7 @@ export async function B(stdlib, ctc, interact) {
           const v48 = stdlib.lt(v43, 3);
           const v49 = v47 ? v48 : false;
           stdlib.assert(v49);
-          const txn5 = await ctc.recv('B', 9, 10, true, [v0, v3, v5, v6, v28, v43], 10, async (txn_out, txn5) => {
+          const txn5 = await ctc.recv('B', 9, 2, 10, true, [v0, v3, v5, v6, v28, v43], 10, async (txn_out, txn5) => {
             const v130 = txn5.balance;
             txn_out.transfer(v3, v130);
             return true; });
@@ -286,7 +286,7 @@ export async function B(stdlib, ctc, interact) {
 
 export async function O(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('O', 1, 10, true, [], 2, async (txn_out, txn1) => {
+  const txn1 = await ctc.recv('O', 1, 2, 10, true, [], 2, async (txn_out, txn1) => {
     return true; });
   if (txn1.didTimeout) {
     stdlib.assert(true);
@@ -298,7 +298,7 @@ export async function O(stdlib, ctc, interact) {
     const v10 = stdlib.add(v5, v6);
     const v11 = stdlib.eq(v9, v10);
     stdlib.assert(v11);
-    const txn2 = await ctc.recv('O', 3, 10, false, [v0, v5, v6], 4, null);
+    const txn2 = await ctc.recv('O', 3, 0, 10, false, [v0, v5, v6], 4, null);
     if (txn2.didTimeout) {
       stdlib.assert(true);
       return ['Bob quits']; }
@@ -308,7 +308,7 @@ export async function O(stdlib, ctc, interact) {
       const v13 = txn2.value;
       const v14 = stdlib.eq(v13, v5);
       stdlib.assert(v14);
-      const txn3 = await ctc.recv('O', 5, 10, false, [v0, v3, v5, v6], 6, null);
+      const txn3 = await ctc.recv('O', 5, 1, 10, false, [v0, v3, v5, v6], 6, null);
       if (txn3.didTimeout) {
         stdlib.assert(true);
         return ['Alice quits']; }
@@ -317,7 +317,7 @@ export async function O(stdlib, ctc, interact) {
         const v30 = txn3.value;
         const v31 = stdlib.eq(v30, 0);
         stdlib.assert(v31);
-        const txn4 = await ctc.recv('O', 7, 10, false, [v0, v3, v5, v6, v28], 8, null);
+        const txn4 = await ctc.recv('O', 7, 1, 10, false, [v0, v3, v5, v6, v28], 8, null);
         if (txn4.didTimeout) {
           stdlib.assert(true);
           return ['Bob quits']; }
@@ -330,7 +330,7 @@ export async function O(stdlib, ctc, interact) {
           const v48 = stdlib.lt(v43, 3);
           const v49 = v47 ? v48 : false;
           stdlib.assert(v49);
-          const txn5 = await ctc.recv('O', 9, 10, false, [v0, v3, v5, v6, v28, v43], 10, null);
+          const txn5 = await ctc.recv('O', 9, 2, 10, false, [v0, v3, v5, v6, v28, v43], 10, null);
           if (txn5.didTimeout) {
             stdlib.assert(true);
             return ['Alice quits']; }
@@ -387,7 +387,7 @@ export const ALGO = {
   LogicSigProgram: `AiABASI=`
   ,
   
-  ApprovalProgram: `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`
+  ApprovalProgram: `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`
   ,
   
   ClearStateProgram: `AiABASI=` };
