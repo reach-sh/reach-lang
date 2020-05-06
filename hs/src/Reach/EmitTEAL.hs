@@ -84,9 +84,9 @@ cs_var_set cs bv vr = cs'
 cs_var_args :: CompileSt a -> [ BLVar ] -> CompileSt a
 cs_var_args cs as = cs'
   where h (cs0, i) a = ((cs_var_set cs0 a (VR_Arg i (blvar_type a))), i+1)
-        --- The first argument is 2 because 0 is the handler and 1 is
-        --- the last time.
-        (cs', _) = foldl h (cs, 2) as
+        --- The first argument is 3 because 0 is the handler and 1 is
+        --- the last time and 2 is the value
+        (cs', _) = foldl h (cs, 3) as
 
 cs_label :: CompileSt a -> String
 cs_label ( lab, _, _ ) = lab
@@ -356,7 +356,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
                FS_From _ -> cs1
                FS_Any -> cs1
         pre_ls = code "txn" [ "NumAppArgs" ]
-          ++ (comp_con $ Con_I $ fromIntegral $ 2 + length all_args)
+          ++ (comp_con $ Con_I $ fromIntegral $ 3 + length all_args)
           ++ code "==" []
           ++ code "bz" [ next_lab ]
           ++ comp_arg 0
@@ -364,6 +364,8 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           ++ (comp_con $ Con_I $ fromIntegral i)
           ++ code "!=" []
           ++ code "bnz" [ next_lab ]
+          --- XXX verify that arg 2 (the value) matches the first
+          --- txn's value
           ++ code "gtxn" [ "0", "TypeEnum" ]
           ++ comp_con (Con_I $ 1)
           ++ code "!=" [ ]

@@ -81,9 +81,21 @@ export const connectAccount = async thisAcc => {
     let prevRound = ctc.creationRound;
     debug(`${shad}: attach created at ${prevRound}`);
 
-    const sendrecv = async (label, funcNum, args, value, timeout_delay, timeout_evt, try_p) => {
-      debug(`${shad}: ${label} sendrecv ${funcNum} ${timeout_delay} --- START`);
+    const returnFromTxn = async (txn, evt_cnt) => {
+      const ok_val = txn.ApplicationArgs[1];
+      const ok_args = [];
+      const len = txn.ApplicationArgs.length;
+      for ( const i = 0; i < evt_cnt; i++ ) {
+        ok_args[evt_cnt - 1 - i] = txn.ApplicationArgs[len - i]; }
+      const ok_bal = await getBalanceAt(ctc.address, confirmedRound);
+      prevRound = txn.round;
+      return { didTimeout: false, data: ok_vals, value: ok_val, balance: ok_bal, from: txn.from }; };
+    
+    const sendrecv = async (label, okNum, evt_cnt, args, value, timeout_delay, timeNum, try_p) => {
+      debug(`${shad}: ${label} sendrecv ${okNum} ${timeout_delay} --- START`);
 
+      // XXX What if timeout_delay is false
+      
       const params = await getTxnParams();
       const valTxn = await fillTxnWithParams(
         prevRound, timeout_delay, params, {
@@ -98,7 +110,8 @@ export const connectAccount = async thisAcc => {
           , "type": "appl"
           , "ApplicationId": ctc.appId
           , "OnCompletion": "noOp"
-          , "ApplicationArgs": [funcNum, prevRound, ...args]
+          , "ApplicationArgs": [okNum, prevRound, value, ...args]
+          // FIXME Have a note with a link to the reach code
           // , "Accounts": 0
           // , "ForeignApps": 0
           // , "ApprovalProgram": 0
@@ -117,8 +130,7 @@ export const connectAccount = async thisAcc => {
           , "amount": amount
         } ) );
       };
-      // FIXME This 42 is weird.
-      const fake_txn_res = { didTimeout: false, data: args, value: value, balance: 42, from: thisAcc.addr };
+      const fake_txn_res = { didTimeout: false, data: args, value: value, balance: (await getBalanceAt(ctc.address, prevRound)), from: thisAcc.addr };
       try_p( txn_out, fake_txn_res );
       
       const txns = [ appTxn, valTxn, ...otherTxns ];
@@ -130,28 +142,36 @@ export const connectAccount = async thisAcc => {
 
       const confirmedTxn = await sendsAndConfirm( signedTxns, appTxn.lastRound );
       if ( confirmedTxn ) {
-        const confirmedRound = confirmedTxn.round;
-        debug(`${shad}: ${label} send ${funcNum} ${timeout_delay} --- OKAY`);
-        // FIXME: Should be confirmedRound balance, but this requires "the next indexer version" (Max on 2020/05/05)
-        const ok_bal = (await algodClient.accountInformation(ctc.address)).amount;
-        prevRound = confirmedRound;
-        return { didTimeout: false, data: args, value: value, balance: ok_bal, from: thisAcc.addr }; }
+        debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- OKAY`);
+        return await returnFromTxn( confirmedTxn, evt_cnt ); }
 
-      debug(`${shad}: ${label} send ${funcNum} ${timeout_delay} --- FAIL/TIMEOUT`);
-      const rec_res = await recv(label, timeout_evt, false, false, false, false, false);
+      debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- FAIL/TIMEOUT`);
+      const rec_res = await recv(label, timeNum, 0, false, false, false, false, false);
       rec_res.didTimeout = true;
       return rec_res; };
 
-    const recv = async (label, ok_num, timeout_delay, timeout_me, timeout_args, timeout_num, try_p) => {
-      debug(`${shad}: ${label} recv ${ok_num} ${timeout_delay} --- START`);
+    const recv = async (label, okNum, ok_cnt, timeout_delay, timeout_me, timeout_args, timeNum, try_p) => {
+      debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- START`);
 
-      // XXX look through these for a transaction to us
-      algodClient.transactionByAddress(ctc.address, prevRound, prevRound + timeout_delay);
+      // XXX What if timeout_delay is false
 
-      // XXX have to figure out the actual round it was in
-      prevRound = confirmedRound;
+      const untilRound = prevRound + timeout_delay;
+      while ( (await algodClient.status()).lastRound < untilRound ) {
+        const resp = await algodClient.transactionByAddress(ctc.address, prevRound, untilRound);
+        resp.transactions.forEach(txn => {
+          if ( txn.type == "appl"
+               && txn.ApplicationId == ctc.appId
+               && txn.ApplicationArgs[0] == okNum
+               && txn.ApplicationArgs[1] == prevRound ) {
+            debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- OKAY`);
+            return await returnFromTxn( txn, evt_cnt ); } }); }
 
-      debug(`XXX recv`); };
+      debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- TIMEOUT`);
+      const rec_res = timeout_me
+            ? await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, ((a b) => { return; }) )
+            : await recv(label, timeNum, 0, false, false, false, false, false);
+      rec_res.didTimeout = true;
+      return rec_res; };
 
     return { sendrecv, recv, address: thisAcc.addr }; };
 
@@ -194,6 +214,10 @@ export const connectAccount = async thisAcc => {
     return attach(bin, ctc); };
 
   return { deploy, attach, address: thisAcc.addr }; };
+
+const getBalanceAt = async (addr, round) => {
+  // FIXME: Don't ignore round, but this requires "the next indexer version" (Max on 2020/05/05)
+  return (await algodClient.accountInformation(addr)).amount; }
 
 const showBalance = async (note, acc) => {
   let theInfo = await algodClient.accountInformation(acc.addr);

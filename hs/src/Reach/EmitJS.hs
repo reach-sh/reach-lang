@@ -173,6 +173,7 @@ jsEPTail stop_at_consensus tn who t =
             srp = jsApply "ctc.sendrecv"
               [ jsString $ blpart_name who
               , jsCon (Con_I $ fromIntegral i_ok)
+              , jsCon (Con_I $ fromIntegral $ length msg)
               , vs
               , amtp
               , delayp
@@ -198,6 +199,7 @@ jsEPTail stop_at_consensus tn who t =
                  (jsApply "ctc.recv"
                    [ jsString $ blpart_name who
                    , jsCon (Con_I $ fromIntegral i_ok)
+                   , jsCon (Con_I $ fromIntegral $ length msg)
                    , delayp, jsCon (Con_B to_me)
                    , (jsArray $ map jsVar svs)
                    , jsCon (Con_I $ fromIntegral i_to)

@@ -139,12 +139,12 @@ export const connectAccount = address => {
 
       return [ ok_bal, ok_vals ]; };
 
-    const sendrecv_top = async (label, funcNum, args, value, timeout_delay, timeout_evt, try_p) => {
-      return sendrecv(label, funcNum, args, value, timeout_delay, timeout_evt ); }
+    const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, timeNum, try_p) => {
+      return sendrecv(label, funcNum, args, value, timeout_delay, timeNum); }
 
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     /* eslint require-atomic-updates: off */
-    const sendrecv = async (label, funcNum, args, value, timeout_delay, timeout_evt) => {
+    const sendrecv = async (label, funcNum, args, value, timeout_delay, timeNum) => {
       const funcName = `m${funcNum}`;
       // https://github.com/ethereum/web3.js/issues/2077
       const munged = [ last_block, ...args ]
@@ -179,26 +179,26 @@ export const connectAccount = address => {
         // last_block = ok_r.blockNumber;
         void(ok_r);
 
-        return await recv( label, ok_evt, false, false, false, false, false ); }
+        return await recv( label, funcNum, false, false, false, false ); }
 
       // XXX If we were trying to join, but we got sniped, then we'll
       // think that there is a timeout and then we'll wait forever for
       // the timeout message.
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
-      const rec_res = await recv(label, timeout_evt, false, false, false, false, false);
+      const rec_res = await recv(label, timeNum, false, false, false, false );
       rec_res.didTimeout = true;
       return rec_res; };
 
-    const recv_top = async (label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt, try_p) => {
-      return recv(label, ok_evt, timeout_delay, timeout_me, timeout_args, timeout_fun, timeout_evt );
+    const recv_top = async (label, okNum, ok_cnt, timeout_delay, timeout_me, timeout_args, timeNum, try_p) => {
+      return recv(label, okNum, timeout_delay, timeout_me, timeout_args, timeNum);
     };
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const recv = async (label, ok_num, timeout_delay, timeout_me, timeout_args, timeout_num) => {
-      const ok_evt = `e${ok_num}`;
-      const timeout_fun = `m${timeout_num}`;
-      const timeout_evt = `e${timeout_num}`;
+    const recv = async (label, okNum, timeout_delay, timeout_me, timeout_args, timeNum) => {
+      const ok_evt = `e${okNum}`;
+      const timeout_fun = `m${timeNum}`;
+      const timeout_evt = `e${timeNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
 
       let block_poll_start = last_block;
@@ -230,8 +230,8 @@ export const connectAccount = address => {
 
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);
       const rec_res = timeout_me
-            ? await sendrecv(label, timeout_fun, timeout_args, 0, timeout_evt, false, false )
-            : await recv(label, timeout_evt, false, false, false, false, false);
+            ? await sendrecv(label, timeNum, timeout_args, 0, timeout_evt, false )
+            : await recv(label, timeNum, false, false, false, false, false);
       rec_res.didTimeout = true;
       return rec_res; };
 
@@ -242,6 +242,7 @@ export const connectAccount = address => {
     const { Bytecode } = bin.ETH;
     const data = Bytecode;
     const gas = await web3.eth.estimateGas({ data });
+    // FIXME have some way to have a link to the reach code
     const r = await web3.eth.sendTransaction({ data, gas, from: address });
     const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
     return attach(bin, r_ok.contractAddress, r_ok.blockNumber); };
