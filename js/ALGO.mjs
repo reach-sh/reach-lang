@@ -16,9 +16,11 @@ const debug = msg => { if (DEBUG) {
 
 const panic = e => { throw Error(e); };
 
+const currentRound = async () => (await algodClient.status()).lastRound;
+
 const waitForConfirmation = async (txId, untilRound) => {
   while (true) {
-    const lastRound = (await algodClient.status()).lastRound;
+    const lastRound = await currentRound();
     if ( lastRound > untilRound ) {
       return false; }
     const pendingInfo =
@@ -94,78 +96,88 @@ export const connectAccount = async thisAcc => {
     const sendrecv = async (label, okNum, evt_cnt, args, value, timeout_delay, timeNum, try_p) => {
       debug(`${shad}: ${label} sendrecv ${okNum} ${timeout_delay} --- START`);
 
-      // XXX What if timeout_delay is false
-      
-      const params = await getTxnParams();
-      const appTxn = await fillTxnWithParams(
-        prevRound, timeout_delay, params, {
-          "from": thisAcc.addr
-          , "type": "appl"
-          , "ApplicationId": ctc.appId
-          , "OnCompletion": "noOp"
-          , "ApplicationArgs": [okNum, prevRound, value, ...args]
-          , "Accounts" : [ ctc_acc.addr ]
-        } );
-      const valTxn = await fillTxnWithParams(
-        prevRound, timeout_delay, params, {
-          "type": "pay"
-          , "from": thisAcc.addr
-          , "to": ctc.address
-          , "amount": value
-        } );
+      const this_is_a_timeout = timeout_delay ? false : true;
+      if ( this_is_a_timeout ) {
+        timeout_delay = default_range_width; }
 
-      const otherTxns = [];
-      const txn_out = async ( to, amount ) => {
-        otherTxns.push( await fillTxnWithParams(
-        prevRound, timeout_delay, params, {
-          "type": "pay"
-          , "from": ctc.address
-          , "to": to
-          , "amount": amount
-        } ) );
-      };
-      const fake_txn_res = { didTimeout: false, data: args, value: value, balance: (await getBalanceAt(ctc.address, prevRound)), from: thisAcc.addr };
-      try_p( txn_out, fake_txn_res );
-      
-      const txns = [ appTxn, valTxn, ...otherTxns ];
-      const txnGroup = algosdk.assignGroupID(txns);
-      const signedTxns = [
-        algosdk.signTransaction(appTxn, thisAcc.sk)
-        , algosdk.signTransaction(valTxn, thisAcc.sk)
-        , ...otherTxns.map(txn => algosdk.signLogicSigTransaction( txn, ctc.logic_sig, [] )) ];
+      do {
+        const params = await getTxnParams();
+        const appTxn = await fillTxnWithParams(
+          prevRound, timeout_delay, params, {
+            "from": thisAcc.addr
+            , "type": "appl"
+            , "ApplicationId": ctc.appId
+            , "OnCompletion": "noOp"
+            , "ApplicationArgs": [okNum, prevRound, value, ...args]
+            , "Accounts" : [ ctc_acc.addr ]
+          } );
+        const valTxn = await fillTxnWithParams(
+          prevRound, timeout_delay, params, {
+            "type": "pay"
+            , "from": thisAcc.addr
+            , "to": ctc.address
+            , "amount": value
+          } );
 
-      const confirmedTxn = await sendsAndConfirm( signedTxns, appTxn.lastRound );
-      if ( confirmedTxn ) {
-        debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- OKAY`);
-        return (await returnFromTxn( confirmedTxn, evt_cnt )); }
+        const otherTxns = [];
+        const txn_out = async ( to, amount ) => {
+          otherTxns.push( await fillTxnWithParams(
+            prevRound, timeout_delay, params, {
+              "type": "pay"
+              , "from": ctc.address
+              , "to": to
+              , "amount": amount
+            } ) );
+        };
+        const fake_txn_res = { didTimeout: false, data: args, value: value, balance: (await getBalanceAt(ctc.address, prevRound)), from: thisAcc.addr };
+        try_p( txn_out, fake_txn_res );
+        
+        const txns = [ appTxn, valTxn, ...otherTxns ];
+        const txnGroup = algosdk.assignGroupID(txns);
+        const signedTxns = [
+          algosdk.signTransaction(appTxn, thisAcc.sk)
+          , algosdk.signTransaction(valTxn, thisAcc.sk)
+          , ...otherTxns.map(txn => algosdk.signLogicSigTransaction( txn, ctc.logic_sig, [] )) ];
 
-      debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- FAIL/TIMEOUT`);
-      const rec_res = await recv(label, timeNum, 0, false, false, false, false, false);
-      rec_res.didTimeout = true;
-      return rec_res; };
+        const confirmedTxn = await sendsAndConfirm( signedTxns, appTxn.lastRound );
+        if ( confirmedTxn ) {
+          debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- OKAY`);
+          return (await returnFromTxn( confirmedTxn, evt_cnt )); }
+
+        if ( ! this_is_a_timeout ) {
+          debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- FAIL/TIMEOUT`);
+          const rec_res = await recv(label, timeNum, 0, false, false, false, false, false);
+          rec_res.didTimeout = true;
+          return rec_res; } }
+      while ( this_is_a_timeout ); };
 
     const recv = async (label, okNum, ok_cnt, timeout_delay, timeout_me, timeout_args, timeNum, try_p) => {
       debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- START`);
 
-      // XXX What if timeout_delay is false
+      const this_is_a_timeout = timeout_delay ? false : true;
+      if ( this_is_a_timeout ) {
+        timeout_delay = default_range_width; }
 
-      const untilRound = prevRound + timeout_delay;
-      while ( (await algodClient.status()).lastRound < untilRound ) {
-        const resp = await algodClient.transactionByAddress(ctc.address, prevRound, untilRound);
-        resp.transactions.forEach(async txn => {
-          if ( txn.type == "appl"
-               && txn.ApplicationId == ctc.appId
-               && txn.ApplicationArgs[0] == okNum
-               && txn.ApplicationArgs[1] == prevRound ) {
-            debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- OKAY`);
-            return (await returnFromTxn( txn, evt_cnt )); } }); }
+      while ( 1 ) {
+        const startRound = this_is_a_timeout ? prevRound : await currentRound();
+        const untilRound = prevRound + timeout_delay;
+        while ( (await currentRound()) < untilRound ) {
+          const resp = await algodClient.transactionByAddress(ctc.address, startRound, untilRound);
+          resp.transactions.forEach(async txn => {
+            if ( txn.type == "appl"
+                 && txn.ApplicationId == ctc.appId
+                 && txn.ApplicationArgs[0] == okNum
+                 && txn.ApplicationArgs[1] == prevRound ) {
+              debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- OKAY`);
+              return (await returnFromTxn( txn, evt_cnt )); } }); }
 
-      debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- TIMEOUT`);
-      const rec_res = timeout_me
-            ? await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, ((a, b) => { return; }) )
-            : await recv(label, timeNum, 0, false, false, false, false, false);
-      rec_res.didTimeout = true;
-      return rec_res; };
+        if ( ! this_is_a_timeout ) {
+          debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- TIMEOUT`);
+          const rec_res = timeout_me
+                ? await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, ((a, b) => { return; }) )
+                : await recv(label, timeNum, 0, false, false, false, false, false);
+          rec_res.didTimeout = true;
+          return rec_res; } } };
 
     return { sendrecv, recv, address: thisAcc.addr }; };
 
