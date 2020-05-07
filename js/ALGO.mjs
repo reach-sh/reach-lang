@@ -184,7 +184,7 @@ export const connectAccount = async thisAcc => {
         if ( ! this_is_a_timeout ) {
           debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- TIMEOUT`);
           const rec_res = timeout_me
-                ? await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, ((a, b) => { return; }) )
+                ? await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, try_p )
                 : await recv(label, timeNum, 0, false, false, false, false, false);
           rec_res.didTimeout = true;
           return rec_res; } } };
