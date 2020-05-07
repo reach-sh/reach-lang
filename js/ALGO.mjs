@@ -45,6 +45,7 @@ export const assert = d => nodeAssert.strict(d);
 // Backend
 const fillTxnWithParams = ( firstRound, round_width, params, txn ) => {
   const theFirstRound = firstRound ? firstRound : params.lastRound;
+  // FIXME these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
   txn.fee = params.minFee;
   txn.firstRound = theFirstRound;
   txn.lastRound = theFirstRound + round_width;
@@ -62,6 +63,7 @@ const fillTxn = async ( round_width, txn ) => {
   return fillTxnWithParams( false, round_width, await getTxnParams(), txn ); };
 
 export const transfer = async (to, from, value) => {
+  // FIXME these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
   const txn = await fillTxn( default_range_width, {
     "type": "pay",
     "from": from.addr,
@@ -89,8 +91,9 @@ export const connectAccount = async thisAcc => {
       const len = txn.ApplicationArgs.length;
       for ( const i = 0; i < evt_cnt; i++ ) {
         ok_args[evt_cnt - 1 - i] = txn.ApplicationArgs[len - i]; }
+      const confirmedRound = txn.round;
       const ok_bal = await getBalanceAt(ctc.address, confirmedRound);
-      prevRound = txn.round;
+      prevRound = confirmedRound;
       return { didTimeout: false, data: ok_vals, value: ok_val, balance: ok_bal, from: txn.from }; };
     
     const sendrecv = async (label, okNum, evt_cnt, args, value, timeout_delay, timeNum, try_p) => {
@@ -105,6 +108,7 @@ export const connectAccount = async thisAcc => {
         const appTxn = await fillTxnWithParams(
           prevRound, timeout_delay, params, {
             "from": thisAcc.addr
+            // FIXME JS SDK doesn't handle encoding this kind of txn
             , "type": "appl"
             , "ApplicationId": ctc.appId
             , "OnCompletion": "noOp"
@@ -137,11 +141,16 @@ export const connectAccount = async thisAcc => {
         const signedTxns = [
           algosdk.signTransaction(appTxn, thisAcc.sk)
           , algosdk.signTransaction(valTxn, thisAcc.sk)
-          , ...otherTxns.map(txn => algosdk.signLogicSigTransaction( txn, ctc.logic_sig, [] )) ];
+          , ...otherTxns.map(
+            txn =>
+              // FIXME relies on https://github.com/algorand/go-algorand/issues/1051 fix
+              algosdk.signLogicSigTransaction(
+                txn, ctc.logic_sig, [] )) ];
 
         const confirmedTxn = await sendsAndConfirm( signedTxns, appTxn.lastRound );
         if ( confirmedTxn ) {
           debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- OKAY`);
+          // FIXME no documentation on whether confirmedTxn has something for each txn in a group or only one thing. We made need to call returnFromTxn with appTxn for the data and confirmedTxn for the round/etc
           return (await returnFromTxn( confirmedTxn, evt_cnt )); }
 
         if ( ! this_is_a_timeout ) {
@@ -162,6 +171,7 @@ export const connectAccount = async thisAcc => {
         const startRound = this_is_a_timeout ? prevRound : await currentRound();
         const untilRound = prevRound + timeout_delay;
         while ( (await currentRound()) < untilRound ) {
+          // FIXME maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
           const resp = await algodClient.transactionByAddress(ctc.address, startRound, untilRound);
           resp.transactions.forEach(async txn => {
             if ( txn.type == "appl"
@@ -191,6 +201,7 @@ export const connectAccount = async thisAcc => {
 
     debug(`${shad}: deploy: filling transaction`);
     const appTxn = await fillTxn( default_range_width, {
+      // FIXME JS SDK doesn't handle this kind of txn
       "from": thisAcc.addr
       , "type": "appl"
       , "ApplicationId": 0
@@ -210,6 +221,7 @@ export const connectAccount = async thisAcc => {
     const appId = confirmedTxn.TransactionResults.CreatedAppIndex;
     const creationRound = confirmTxn.round;
 
+    // FIXME relies on https://github.com/algorand/go-algorand/issues/1051 fix
     const logic_sig = algosdk.makeLogicSig(Buffer.from(LogicSigProgram, "base64"), [ appId ]);
     logic_sig.sign( ctc_acc.sk );
     
@@ -224,8 +236,10 @@ const getBalanceAt = async (addr, round) => {
   return (await algodClient.accountInformation(addr)).amount; }
 
 const showBalance = async (note, acc) => {
-  let theInfo = await algodClient.accountInformation(acc.addr);
-  console.log("%s: balance: %d microAlgos", note, theInfo.amount) };
+  console.log(
+    "%s: balance: %d microAlgos"
+    , note
+    , (await getBalanceAt(acc.addr, await currentRound()))); };
 
 export const newTestAccount = async (startingBalance) => {
   const acc = algosdk.generateAccount();
