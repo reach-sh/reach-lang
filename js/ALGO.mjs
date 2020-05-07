@@ -184,8 +184,8 @@ export const connectAccount = async thisAcc => {
       , "ApplicationId": 0
       , "OnCompletion": "noOp"
       , "ApplicationArgs": []
-      , "ApprovalProgram": ApprovalProgramB64
-      , "ClearStateProgram": ClearStateProgramB64
+      , "ApprovalProgram": ApprovalProgram
+      , "ClearStateProgram": ClearStateProgram
       , "GlobalStateSchema": { "NumByteSlice": 2 }
       , "Accounts" : [ ctc_acc.addr ]
       // FIXME: Use note field for link to Reach code

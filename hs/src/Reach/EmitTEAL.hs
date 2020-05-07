@@ -467,18 +467,21 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                         both_ls = this_ls ++ prev_ls
         loop_ls = bracket "Loops" $ concatMap comp_cloop hs
         standard_ls = bracket "Standard" $ revert_ls ++ halt_ls ++ done_ls
-        revert_ls = label "revert"
-                    ++ comp_con (Con_I 0)
-                    ++ code "return" []
         halt_ls = label "halt"
                   ++ comp_con (Con_BS "state")
                   ++ code "app_global_del" []
                   ++ comp_con (Con_BS "me")
                   ++ code "app_global_del" []
                   ++ code "b" ["done"]
-        done_ls = label "done"
-                  ++ comp_con (Con_I 1)
-                  ++ code "return" []
+
+revert_ls :: TEALs
+revert_ls = label "revert"
+  ++ comp_con (Con_I 0)
+  ++ code "return" []
+done_ls :: TEALs
+done_ls = label "done"
+  ++ comp_con (Con_I 1)
+  ++ code "return" []
 
 -- FIXME Do something like a "peep-hole optimizer" so we can detect "btoi -> itob" sequences
 
@@ -501,11 +504,34 @@ compile_teal _which t = do
     ExitSuccess -> do
       return $ C.unpack $ encodeBase64' stdout_bs
 
+lsp_bc :: TEAL
+lsp_bc = TEAL $
+  --- check that group size is at least 2
+  (comp_con $ Con_I 2)
+  ++ code "global" [ "GroupSize" ]
+  ++ code "<=" []
+  ++ code "bz" [ "revert" ]
+  --- check that 1st txn is appl
+  ++ code "gtxn" [ "0", "TypeEnum" ]
+  ++ code "int" [ "appl" ]
+  ++ code "==" []
+  ++ code "bz" [ "revert" ]
+  --- check that the app id is our first argument
+  ++ code "gtxn" [ "0", "ApplicationID" ]
+  --- FIXME this should be "compile argument", see https://github.com/algorand/go-algorand/issues/1051
+  ++ code "arg" [ "0" ]
+  ++ code "==" []
+  ++ code "bz" [ "revert" ]
+  ++ code "b" [ "done" ]
+  ++ revert_ls
+  ++ done_ls
+
 emit_teal :: FilePath -> BLProgram a -> IO CompiledTeal
 emit_teal tf (BL_Prog _ _ _ cp) = do
-  let bc = cp_to_teal cp
-  writeFile tf (show bc)
-  tc_lsp <- compile_teal "LSP" (TEAL $ comp_con (Con_I 1)) --- XXX
-  tc_ap <- compile_teal "AP" bc
+  let ap_bc = cp_to_teal cp
+  writeFile tf (show ap_bc)
+  writeFile (tf ++ ".lsp") (show lsp_bc)
+  tc_lsp <- compile_teal "LSP" lsp_bc
+  tc_ap <- compile_teal "AP" ap_bc
   tc_csp <- compile_teal "CSP" (TEAL $ comp_con (Con_I 1))
   return ( tc_lsp, tc_ap, tc_csp )
