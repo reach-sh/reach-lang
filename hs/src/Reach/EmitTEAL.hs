@@ -59,7 +59,7 @@ type TxnSt
   = Int
 
 txn_init :: TxnSt
-txn_init = 1
+txn_init = 2
 
 txn_alloc :: TxnSt -> ( Int, TxnSt )
 txn_alloc i = ( i, i + 1)
@@ -240,7 +240,7 @@ comp_cexpr cs e =
           return $ comp_con (Con_I 0)
             ++ code "balance" []
         TXN_VALUE ->
-          return $ code "gtxn" [ "0", "Amount" ]
+          return $ code "gtxn" [ "1", "Amount" ]
         BYTES_EQ -> p_op "=="
      where p_op o = do
              asl <- concatMapM (comp_blarg cs) as
@@ -265,7 +265,7 @@ comp_cstmt cs ts s =
         ++ code ">" [ ]
         ++ code "bnz" [ "revert" ]
         ++ code "gtxn" [ txn_is, "TypeEnum" ]
-        ++ comp_con (Con_I $ 1)
+        ++ code "int" [ "pay" ]
         ++ code "!=" [ ]
         ++ code "bnz" [ "revert" ]
         ++ code "gtxn" [ txn_is, "Amount" ]
@@ -355,26 +355,39 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
                  cs_var_set cs1 from (VR_Code (code "gtxn" [ "0", "Sender" ]))
                FS_From _ -> cs1
                FS_Any -> cs1
-        pre_ls = code "txn" [ "NumAppArgs" ]
+        pre_ls =
+          --- check number of arguments
+          code "txn" [ "NumAppArgs" ]
           ++ (comp_con $ Con_I $ fromIntegral $ 3 + length all_args)
           ++ code "==" []
           ++ code "bz" [ next_lab ]
+          --- check message number
           ++ comp_arg 0
           ++ code "btoi" []
           ++ (comp_con $ Con_I $ fromIntegral i)
           ++ code "!=" []
           ++ code "bnz" [ next_lab ]
-          --- XXX verify that arg 2 (the value) matches the first
-          --- txn's value
+          --- check that this is an app txn
           ++ code "gtxn" [ "0", "TypeEnum" ]
-          ++ comp_con (Con_I $ 1)
-          ++ code "!=" [ ]
-          ++ code "bnz" [ "revert" ]
-          ++ code "gtxn" [ "0", "Receiver" ]
+          ++ code "int" [ "appl" ]
+          ++ code "==" []
+          ++ code "bz" [ "revert" ]
+          --- check that txn 1 is a pay to me
+          ++ code "gtxn" [ "1", "TypeEnum" ]
+          ++ code "int" [ "pay" ]
+          ++ code "==" [ ]
+          ++ code "bz" [ "revert" ]
+          ++ code "gtxn" [ "1", "Receiver" ]
           ++ comp_con (Con_BS "me")
           ++ code "app_global_gets" [ ]
-          ++ code "!=" []
-          ++ code "bnz" [ "revert" ]
+          ++ code "==" []
+          ++ code "bz" [ "revert" ]
+          --- check that the amount agrees with argument 2
+          ++ code "gtxn" [ "1", "Amount" ]
+          ++ comp_arg 2
+          ++ code "btoi" []
+          ++ code "==" []
+          ++ code "bz" [ "revert" ]
         bodym = do
           sender_ls <-
             case from_spec of
@@ -428,11 +441,6 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
   where ls = dispatch_ls ++ handlers_ls ++ loop_ls ++ standard_ls
         dispatch_ls = bracket "Constructor / Dispatcher" $
                       code "txn" [ "NumAppArgs" ]
-                      ++ (comp_con $ Con_I $ 2)
-                      ++ code "==" []
-                      ++ code "bz" [ next_lab ]
-                      ++ comp_arg 0
-                      ++ code "btoi" []
                       ++ (comp_con $ Con_I $ 0)
                       ++ code "==" []
                       ++ code "bz" [ next_lab ]
@@ -444,7 +452,7 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                       ++ code "bnz" [ "revert" ]
                       --- Set global(me)
                       ++ comp_con (Con_BS "me")
-                      ++ comp_arg 1
+                      ++ code "txna" [ "Accounts", "0" ]
                       ++ code "app_global_put" []
                       --- Set global(state)
                       ++ comp_con (Con_BS "state")

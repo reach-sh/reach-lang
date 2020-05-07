@@ -97,13 +97,6 @@ export const connectAccount = async thisAcc => {
       // XXX What if timeout_delay is false
       
       const params = await getTxnParams();
-      const valTxn = await fillTxnWithParams(
-        prevRound, timeout_delay, params, {
-          "type": "pay"
-          , "from": thisAcc.addr
-          , "to": ctc.address
-          , "amount": value
-        } );
       const appTxn = await fillTxnWithParams(
         prevRound, timeout_delay, params, {
           "from": thisAcc.addr
@@ -111,13 +104,14 @@ export const connectAccount = async thisAcc => {
           , "ApplicationId": ctc.appId
           , "OnCompletion": "noOp"
           , "ApplicationArgs": [okNum, prevRound, value, ...args]
-          // FIXME Have a note with a link to the reach code
-          // , "Accounts": 0
-          // , "ForeignApps": 0
-          // , "ApprovalProgram": 0
-          // , "ClearStateProgram": 0
-          // , "LocalStateSchema": 0
-          // , "GlobalStateSchema": 0
+          , "Accounts" : [ ctc_acc.addr ]
+        } );
+      const valTxn = await fillTxnWithParams(
+        prevRound, timeout_delay, params, {
+          "type": "pay"
+          , "from": thisAcc.addr
+          , "to": ctc.address
+          , "amount": value
         } );
 
       const otherTxns = [];
@@ -138,7 +132,7 @@ export const connectAccount = async thisAcc => {
       const signedTxns = [
         algosdk.signTransaction(appTxn, thisAcc.sk)
         , algosdk.signTransaction(valTxn, thisAcc.sk)
-        , ...otherTxns.map(txn => algosdk.signLogicSigTransaction( txn, ctc.logic_sig )) ];
+        , ...otherTxns.map(txn => algosdk.signLogicSigTransaction( txn, ctc.logic_sig, [] )) ];
 
       const confirmedTxn = await sendsAndConfirm( signedTxns, appTxn.lastRound );
       if ( confirmedTxn ) {
@@ -182,9 +176,6 @@ export const connectAccount = async thisAcc => {
 
     debug(`${shad}: deploy: making account`);
     const ctc_acc = algosdk.generateAccount();
-    // FIXME current JS SDK rejects our version
-    const logic_sig = algosdk.makeLogicSig(Buffer.from(LogicSigProgram, "base64"));
-    logic_sig.sign( ctc_acc.sk );
 
     debug(`${shad}: deploy: filling transaction`);
     const appTxn = await fillTxn( default_range_width, {
@@ -192,14 +183,12 @@ export const connectAccount = async thisAcc => {
       , "type": "appl"
       , "ApplicationId": 0
       , "OnCompletion": "noOp"
-      , "ApplicationArgs": [ 0, ctc_acc.addr ]
+      , "ApplicationArgs": []
       , "ApprovalProgram": ApprovalProgramB64
       , "ClearStateProgram": ClearStateProgramB64
       , "GlobalStateSchema": { "NumByteSlice": 2 }
-      // FIXME: SDK should allow me to not include these
-      // , "LocalStateSchema": 0
-      // , "Accounts": 0
-      // , "ForeignApps": 0
+      , "Accounts" : [ ctc_acc.addr ]
+      // FIXME: Use note field for link to Reach code
     } );
     debug(`${shad}: deploy: signing transction`);
     const signedTxn = algosdk.signTransaction(appTxn, thisAcc.sk);
@@ -209,6 +198,9 @@ export const connectAccount = async thisAcc => {
     const appId = confirmedTxn.TransactionResults.CreatedAppIndex;
     const creationRound = confirmTxn.round;
 
+    const logic_sig = algosdk.makeLogicSig(Buffer.from(LogicSigProgram, "base64"), [ appId ]);
+    logic_sig.sign( ctc_acc.sk );
+    
     const ctc = { address: ctc_acc.addr, appId, creationRound, logic_sig };
 
     return attach(bin, ctc); };

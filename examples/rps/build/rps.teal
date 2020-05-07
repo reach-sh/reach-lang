@@ -1,10 +1,5 @@
 // <Constructor / Dispatcher>
 txn NumAppArgs
-int 2
-==
-bz h1
-txna ApplicationArgs 0
-btoi
 int 0
 ==
 bz h1
@@ -14,7 +9,7 @@ byte base64()
 ==
 bnz revert
 byte base64(bWU=)
-txna ApplicationArgs 1
+txna Accounts 0
 app_global_put
 byte base64(c3RhdGU=)
 int 0
@@ -41,14 +36,23 @@ int 1
 !=
 bnz h2
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 txna ApplicationArgs 1
 btoi
 int 10
@@ -66,7 +70,7 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-gtxn 0 Amount
+gtxn 1 Amount
 txna ApplicationArgs 3
 btoi
 txna ApplicationArgs 4
@@ -74,7 +78,7 @@ btoi
 +
 ==
 bz revert
-int 1
+int 2
 global GroupSize
 !=
 bnz revert
@@ -111,14 +115,23 @@ int 2
 !=
 bnz h3
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 txna ApplicationArgs 1
 btoi
 int 10
@@ -136,7 +149,7 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-int 1
+int 2
 global GroupSize
 !=
 bnz revert
@@ -154,14 +167,23 @@ int 3
 !=
 bnz h4
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 txna ApplicationArgs 1
 btoi
 int 10
@@ -189,12 +211,12 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-gtxn 0 Amount
+gtxn 1 Amount
 txna ApplicationArgs 4
 btoi
 ==
 bz revert
-int 1
+int 2
 global GroupSize
 !=
 bnz revert
@@ -233,14 +255,23 @@ int 4
 !=
 bnz h5
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 gtxn 0 Sender
 txna ApplicationArgs 3
 !=
@@ -272,29 +303,29 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-int 1
+int 2
 global GroupSize
 >
 bnz revert
-gtxn 1 TypeEnum
-int 1
+gtxn 2 TypeEnum
+int pay
 !=
 bnz revert
-gtxn 1 Amount
+gtxn 2 Amount
 int 0
 balance
 !=
 bnz revert
-gtxn 1 Receiver
+gtxn 2 Receiver
 txna ApplicationArgs 3
 !=
 bnz revert
-gtxn 1 Sender
+gtxn 2 Sender
 byte base64(bWU=)
 app_global_gets
 !=
 bnz revert
-int 2
+int 3
 global GroupSize
 !=
 bnz revert
@@ -312,14 +343,23 @@ int 5
 !=
 bnz h6
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 gtxn 0 Sender
 txna ApplicationArgs 3
 !=
@@ -353,11 +393,11 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-gtxn 0 Amount
+gtxn 1 Amount
 int 0
 ==
 bz revert
-int 1
+int 2
 global GroupSize
 !=
 bnz revert
@@ -400,14 +440,23 @@ int 6
 !=
 bnz h7
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 gtxn 0 Sender
 txna ApplicationArgs 4
 !=
@@ -441,29 +490,29 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-int 1
+int 2
 global GroupSize
 >
 bnz revert
-gtxn 1 TypeEnum
-int 1
+gtxn 2 TypeEnum
+int pay
 !=
 bnz revert
-gtxn 1 Amount
+gtxn 2 Amount
 int 0
 balance
 !=
 bnz revert
-gtxn 1 Receiver
+gtxn 2 Receiver
 txna ApplicationArgs 4
 !=
 bnz revert
-gtxn 1 Sender
+gtxn 2 Sender
 byte base64(bWU=)
 app_global_gets
 !=
 bnz revert
-int 2
+int 3
 global GroupSize
 !=
 bnz revert
@@ -481,14 +530,23 @@ int 7
 !=
 bnz h8
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 gtxn 0 Sender
 txna ApplicationArgs 4
 !=
@@ -526,7 +584,7 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-gtxn 0 Amount
+gtxn 1 Amount
 int 0
 ==
 bz revert
@@ -544,7 +602,7 @@ int 3
 <
 h7_1:
 bz revert
-int 1
+int 2
 global GroupSize
 !=
 bnz revert
@@ -591,14 +649,23 @@ int 8
 !=
 bnz h9
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 gtxn 0 Sender
 txna ApplicationArgs 3
 !=
@@ -636,29 +703,29 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-int 1
+int 2
 global GroupSize
 >
 bnz revert
-gtxn 1 TypeEnum
-int 1
+gtxn 2 TypeEnum
+int pay
 !=
 bnz revert
-gtxn 1 Amount
+gtxn 2 Amount
 int 0
 balance
 !=
 bnz revert
-gtxn 1 Receiver
+gtxn 2 Receiver
 txna ApplicationArgs 3
 !=
 bnz revert
-gtxn 1 Sender
+gtxn 2 Sender
 byte base64(bWU=)
 app_global_gets
 !=
 bnz revert
-int 2
+int 3
 global GroupSize
 !=
 bnz revert
@@ -676,14 +743,23 @@ int 9
 !=
 bnz h10
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 gtxn 0 Sender
 txna ApplicationArgs 3
 !=
@@ -725,7 +801,7 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-gtxn 0 Amount
+gtxn 1 Amount
 int 0
 ==
 bz revert
@@ -834,15 +910,15 @@ load 2
 int 0
 ==
 store 6
-int 1
+int 2
 global GroupSize
 >
 bnz revert
-gtxn 1 TypeEnum
-int 1
+gtxn 2 TypeEnum
+int pay
 !=
 bnz revert
-gtxn 1 Amount
+gtxn 2 Amount
 txna ApplicationArgs 6
 btoi
 load 5
@@ -865,24 +941,24 @@ h9_17:
 +
 !=
 bnz revert
-gtxn 1 Receiver
+gtxn 2 Receiver
 txna ApplicationArgs 3
 !=
 bnz revert
-gtxn 1 Sender
+gtxn 2 Sender
 byte base64(bWU=)
 app_global_gets
 !=
 bnz revert
-int 2
+int 3
 global GroupSize
 >
 bnz revert
-gtxn 2 TypeEnum
-int 1
+gtxn 3 TypeEnum
+int pay
 !=
 bnz revert
-gtxn 2 Amount
+gtxn 3 Amount
 load 5
 bnz h9_18
 load 6
@@ -902,16 +978,16 @@ int 0
 h9_21:
 !=
 bnz revert
-gtxn 2 Receiver
+gtxn 3 Receiver
 txna ApplicationArgs 4
 !=
 bnz revert
-gtxn 2 Sender
+gtxn 3 Sender
 byte base64(bWU=)
 app_global_gets
 !=
 bnz revert
-int 3
+int 4
 global GroupSize
 !=
 bnz revert
@@ -929,14 +1005,23 @@ int 10
 !=
 bnz revert
 gtxn 0 TypeEnum
-int 1
-!=
-bnz revert
-gtxn 0 Receiver
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
 byte base64(bWU=)
 app_global_gets
-!=
-bnz revert
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
 gtxn 0 Sender
 txna ApplicationArgs 4
 !=
@@ -978,29 +1063,29 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
-int 1
+int 2
 global GroupSize
 >
 bnz revert
-gtxn 1 TypeEnum
-int 1
+gtxn 2 TypeEnum
+int pay
 !=
 bnz revert
-gtxn 1 Amount
+gtxn 2 Amount
 int 0
 balance
 !=
 bnz revert
-gtxn 1 Receiver
+gtxn 2 Receiver
 txna ApplicationArgs 4
 !=
 bnz revert
-gtxn 1 Sender
+gtxn 2 Sender
 byte base64(bWU=)
 app_global_gets
 !=
 bnz revert
-int 2
+int 3
 global GroupSize
 !=
 bnz revert
