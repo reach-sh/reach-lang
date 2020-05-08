@@ -89,7 +89,7 @@ export const connectAccount = async thisAcc => {
       const ok_val = txn.ApplicationArgs[1];
       const ok_args = [];
       const len = txn.ApplicationArgs.length;
-      for ( const i = 0; i < evt_cnt; i++ ) {
+      for ( let i = 0; i < evt_cnt; i++ ) {
         ok_args[evt_cnt - 1 - i] = txn.ApplicationArgs[len - i]; }
       const confirmedRound = txn.round;
       const ok_bal = await getBalanceAt(ctc.address, confirmedRound);
