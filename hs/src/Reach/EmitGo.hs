@@ -128,6 +128,11 @@ goPrimApply tn pr al =
     CP PEQ -> goApply "stdlib.Eq"
     CP PGE -> goApply "stdlib.Ge"
     CP PGT -> goApply "stdlib.Gt"
+    CP LSH -> goApply "stdlib.Lsh"
+    CP RSH -> goApply "stdlib.Rsh"
+    CP BAND -> goApply "stdlib.Band"
+    CP BIOR -> goApply "stdlib.Bior"
+    CP BXOR -> goApply "stdlib.Bxor"
     CP IF_THEN_ELSE -> case al of
                          [ _, t, _ ] ->
                            goApply ("stdlib.Ite_" ++ goType' (blarg_type t))

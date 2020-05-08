@@ -222,6 +222,11 @@ comp_cexpr cs e =
         PEQ -> p_op "=="
         PGT -> p_op ">"
         PGE -> p_op ">="
+        LSH -> impossible "XXX TEAL doesn't support LSH"
+        RSH -> impossible "XXX TEAL doesn't support RSH"
+        BAND -> p_op "&"
+        BIOR -> p_op "|"
+        BXOR -> p_op "^"
         IF_THEN_ELSE -> do
           cond_ls <- comp_blarg cs a_cond
           true_lab <- alloc_lab cs

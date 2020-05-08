@@ -353,6 +353,11 @@ decodeBinOp fp tp o arg1 arg2 =
     JSBinOpStrictEq a -> prim a (CP BYTES_EQ)
     JSBinOpStrictNeq a -> fun a "bytes_neq"
     JSBinOpTimes a -> prim a (CP MUL)
+    JSBinOpLsh a -> prim a (CP LSH)
+    JSBinOpRsh a -> prim a (CP RSH)
+    JSBinOpBitAnd a -> prim a (CP BAND)
+    JSBinOpBitOr a -> prim a (CP BIOR)
+    JSBinOpBitXor a -> prim a (CP BXOR)
     j -> expect_throw PE_BinaryOp fp j
   where fun a f = XL_FunApp (tp a) (XL_Var (tp a) f) args
         prim a p = XL_FunApp (tp a) (XL_Prim (tp a) p) args
@@ -382,7 +387,9 @@ decodeExpr dss je =
     --- No regex
     (JSArrayLiteral a es _) -> XL_Values (tp a) $ map (decodeExpr dss) $ flattenJSArray es
     --- No assign
-    --- No call dot or call square ?
+    --- No call dot
+    (JSCallExpressionSquare ae lb ee _rb) ->
+      XL_ArrayRef (tp lb) (decodeExpr dss ae) (decodeExpr dss ee)
     (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSIdentifier a "transfer") _ (JSLOne amt) _) _ (JSIdentifier _ "to")) _ (JSLOne (JSIdentifier _ p)) _) ->
       XL_Transfer (tp a) p (decodeExpr dss amt)
     --- No comma

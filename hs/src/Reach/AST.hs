@@ -72,6 +72,11 @@ data C_Prim
   | BYTES_EQ
   | BALANCE
   | TXN_VALUE
+  | LSH
+  | RSH
+  | BAND
+  | BIOR
+  | BXOR
   deriving (Show,Eq,Ord,Generic,NFData,Data)
 
 data EP_Prim
@@ -94,6 +99,11 @@ primType (CP IF_THEN_ELSE) = TY_Forall ["a"] ([tBool, TY_Var "a", TY_Var "a"] --
 primType (CP BYTES_EQ) = ([tBytes, tBytes] --> tBool)
 primType (CP BALANCE) = ([] --> tUInt256)
 primType (CP TXN_VALUE) = ([] --> tUInt256)
+primType (CP LSH) = [tUInt256, tUInt256] --> tUInt256
+primType (CP RSH) = [tUInt256, tUInt256] --> tUInt256
+primType (CP BAND) = [tUInt256, tUInt256] --> tUInt256
+primType (CP BIOR) = [tUInt256, tUInt256] --> tUInt256
+primType (CP BXOR) = [tUInt256, tUInt256] --> tUInt256
 primType RANDOM = ([] --> tUInt256)
 
 data ClaimType

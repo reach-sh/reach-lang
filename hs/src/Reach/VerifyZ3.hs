@@ -49,6 +49,7 @@ instance CollectTypes (ILProgram a) where
 {- Z3 Printing -}
 
 z3_sortof_bt :: BaseType -> SExpr
+--- FIXME switch to fixed bitvectors
 z3_sortof_bt BT_UInt256 = Atom "Int"
 z3_sortof_bt BT_Bool = Atom "Bool"
 z3_sortof_bt BT_Bytes = Atom "Bytes"
@@ -194,6 +195,11 @@ z3CPrim cbi cp =
     PEQ -> app "="
     PGE -> app ">="
     PGT -> app ">"
+    LSH -> impossible "XXX Z3 doesn't support LSH"
+    RSH -> impossible "XXX Z3 doesn't support RSH"
+    BAND -> impossible "XXX Z3 doesn't support BAND"
+    BIOR -> impossible "XXX Z3 doesn't support BIOR"
+    BXOR -> impossible "XXX Z3 doesn't support BXOR"
     IF_THEN_ELSE -> app "ite"
     BYTES_EQ -> app "="
     BALANCE -> \[] -> z3CTCBalanceRef cbi

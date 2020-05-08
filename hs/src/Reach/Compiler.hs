@@ -13,10 +13,12 @@ import qualified Data.Sequence as S
 import Text.Pretty.Simple
 import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
+
 import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
 import Algebra.Lattice
 import System.Directory
+import Data.Bits
 
 import Test.SmallCheck.Series(Serial)
 import GHC.Generics(Generic)
@@ -265,6 +267,15 @@ copy_map a vs iv =
 do_static_prim :: a -> EP_Prim -> [InlineV a] -> Maybe (InlineV a)
 do_static_prim h p argivs =
   case p of
+    --- XXX Perhaps these should be sensitive to bit widths
+    CP ADD -> nn2n (+)
+    CP SUB -> nn2n (-)
+    CP MUL -> nn2n (*)
+    CP LSH -> nn2n (\a b -> shift a (fromIntegral b))
+    CP RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
+    CP BAND -> nn2n (.&.)
+    CP BIOR -> nn2n (.|.)
+    CP BXOR -> nn2n (xor)
     CP PLT -> nn2b (<)
     CP PLE -> nn2b (<=)
     CP PEQ -> nn2b (==)
@@ -275,6 +286,10 @@ do_static_prim h p argivs =
     nn2b op =
       case argivs of
         [IV_Con _ (Con_I lhs), IV_Con _ (Con_I  rhs)] -> Just $ IV_Con h $ Con_B $ op lhs rhs
+        _ -> Nothing
+    nn2n op =
+      case argivs of
+        [IV_Con _ (Con_I lhs), IV_Con _ (Con_I  rhs)] -> Just $ IV_Con h $ Con_I $ op lhs rhs
         _ -> Nothing
 
 type LoopTy = (IVType, IVType)
@@ -338,7 +353,7 @@ peval outer_loopt σ e =
       IV_Con a c
     XL_Var va v ->
       case M.lookup v σ of
-        Nothing -> expect_throw CE_UnboundVariable va v
+        Nothing -> expect_throw CE_UnboundVariable va ("peval" :: String, v)
         Just iv -> iv
     XL_Prim a p ->
       IV_Prim a p
@@ -449,8 +464,8 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph rts ps' (add_to_m' m')
         add_ps (_ph, vs) σ = foldr add_pvs σ vs
         add_pvs (vh, v, xt) σ = ienv_insert vh v (IV_Var vh (v,bt)) σ
           where bt = teval σ_top xt
-        (add_to_m', σ_top) = foldr add_tops ((\x->x), M.empty) defs
-        add_tops d (adder, σ) =
+        (add_to_m', σ_top) = foldl add_tops ((\x->x), M.empty) defs
+        add_tops (adder, σ) d =
           case d of
             XL_DefineValues h vs ve ->
               if iv_can_copy ve_iv then
@@ -574,7 +589,7 @@ vsOnly (_ : m) = vsOnly m
 anf_renamed_to :: Show ann => ann -> XILRenaming ann -> XILVar -> ILArg ann
 anf_renamed_to h ρ v =
   case M.lookup v ρ of
-    Nothing -> expect_throw CE_UnboundVariable h v
+    Nothing -> expect_throw CE_UnboundVariable h ("anf" :: String, v)
     Just a -> a
 
 anf_renamed_to_var :: Show ann => ann -> XILRenaming ann -> XILVar -> ILVar

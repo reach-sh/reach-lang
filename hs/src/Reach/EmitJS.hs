@@ -95,6 +95,11 @@ jsPrimApply tn pr =
     CP PEQ -> jsApply "stdlib.eq"
     CP PGE -> jsApply "stdlib.ge"
     CP PGT -> jsApply "stdlib.gt"
+    CP LSH -> jsApply "stdlib.lsh"
+    CP RSH -> jsApply "stdlib.rsh"
+    CP BAND -> jsApply "stdlib.band"
+    CP BIOR -> jsApply "stdlib.bior"
+    CP BXOR -> jsApply "stdlib.bxor"
     CP IF_THEN_ELSE -> \args -> case args of
                       [ c, t, f ] -> c <+> pretty "?" <+> t <+> pretty ":" <+> f
                       _ -> impossible $ "emitJS: ITE called with wrong number of arguments"

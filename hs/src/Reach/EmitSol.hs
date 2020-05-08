@@ -217,6 +217,11 @@ solPrimApply pr args =
     PEQ -> binOp "=="
     PGE -> binOp ">="
     PGT -> binOp ">"
+    LSH -> binOp "<<"
+    RSH -> binOp ">>"
+    BAND -> binOp "&"
+    BIOR -> binOp "|"
+    BXOR -> binOp "^"
     IF_THEN_ELSE -> case args of
                       [ c, t, f ] -> c <+> "?" <+> t <+> ":" <+> f
                       _ -> impossible $ "emitSol: ITE wrong args"

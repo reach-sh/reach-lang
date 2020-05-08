@@ -484,6 +484,11 @@ comp_cexpr e km =
         PEQ -> p_op EVM.EQ 2
         PGT -> p_op EVM.GT 2
         PGE -> p_op_not EVM.LT 2
+        LSH -> p_op EVM.SHL 2
+        RSH -> p_op EVM.SHR 2
+        BAND -> p_op EVM.AND 2
+        BIOR -> p_op EVM.OR 2
+        BXOR -> p_op EVM.XOR 2
         IF_THEN_ELSE -> do
           after <- asm_fresh_label km
           true <- asm_fresh_label $ do
