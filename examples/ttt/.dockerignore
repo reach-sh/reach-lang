@@ -1,0 +1,5 @@
+/package-lock.json
+/node-modules
+/Makefile
+/.dockerignore
+/docker-compose.yml
