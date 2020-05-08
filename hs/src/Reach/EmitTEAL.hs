@@ -356,8 +356,14 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
                FS_From _ -> cs1
                FS_Any -> cs1
         pre_ls =
+          --- FIXME some of these checks could be combined across all handlers
+          --- check account 0 is me
+          comp_con (Con_BS "me")
+          ++ code "txna" [ "Accounts", "0" ]
+          ++ code "==" []
+          ++ code "bz" [ "revert" ]
           --- check number of arguments
-          code "txn" [ "NumAppArgs" ]
+          ++ code "txn" [ "NumAppArgs" ]
           ++ (comp_con $ Con_I $ fromIntegral $ 3 + length all_args)
           ++ code "==" []
           ++ code "bz" [ next_lab ]

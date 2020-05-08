@@ -26,6 +26,10 @@ return
 // <Handlers>
 // <Handler 1>
 h1:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 5
 ==
@@ -105,6 +109,10 @@ b done
 // </Handler 1>
 // <Handler 2>
 h2:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 3
 ==
@@ -157,6 +165,10 @@ b halt
 // </Handler 2>
 // <Handler 3>
 h3:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 6
 ==
@@ -245,6 +257,10 @@ b done
 // </Handler 3>
 // <Handler 4>
 h4:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 6
 ==
@@ -333,6 +349,10 @@ b halt
 // </Handler 4>
 // <Handler 5>
 h5:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 8
 ==
@@ -430,6 +450,10 @@ b done
 // </Handler 5>
 // <Handler 6>
 h6:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 7
 ==
@@ -520,6 +544,10 @@ b halt
 // </Handler 6>
 // <Handler 7>
 h7:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 9
 ==
@@ -639,6 +667,10 @@ b done
 // </Handler 7>
 // <Handler 8>
 h8:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 8
 ==
@@ -733,6 +765,10 @@ b halt
 // </Handler 8>
 // <Handler 9>
 h9:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 11
 ==
@@ -995,6 +1031,10 @@ b halt
 // </Handler 9>
 // <Handler 10>
 h10:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
 txn NumAppArgs
 int 9
 ==
