@@ -2,6 +2,7 @@
 
 // Game
 function applyMove(AsTurn, heap1, heap2, choose1, amount) {
+  require(amount <= (choose1 ? heap1 : heap2))
   if ( choose1 ) {
     return [ !AsTurn, heap1 - amount, heap2 ];
   } else {

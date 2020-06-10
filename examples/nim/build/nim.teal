@@ -656,23 +656,27 @@ gtxn 1 Amount
 int 0
 ==
 bz revert
+txna ApplicationArgs 10
+btoi
+txna ApplicationArgs 9
+btoi
+bnz h8_0
+txna ApplicationArgs 8
+btoi
+b h8_1
+h8_0:
+txna ApplicationArgs 7
+btoi
+h8_1:
+<=
+bz revert
 txna ApplicationArgs 3
 txna ApplicationArgs 4
 txna ApplicationArgs 5
 btoi
 txna ApplicationArgs 9
 btoi
-bnz h8_0
-txna ApplicationArgs 6
-btoi
-bnz h8_1
-int 1
-b h8_2
-h8_1:
-int 0
-h8_2:
-b h8_5
-h8_0:
+bnz h8_2
 txna ApplicationArgs 6
 btoi
 bnz h8_3
@@ -681,33 +685,43 @@ b h8_4
 h8_3:
 int 0
 h8_4:
-h8_5:
-txna ApplicationArgs 9
-btoi
-bnz h8_6
-txna ApplicationArgs 7
-btoi
 b h8_7
+h8_2:
+txna ApplicationArgs 6
+btoi
+bnz h8_5
+int 1
+b h8_6
+h8_5:
+int 0
 h8_6:
-txna ApplicationArgs 7
-btoi
-txna ApplicationArgs 10
-btoi
--
 h8_7:
 txna ApplicationArgs 9
 btoi
 bnz h8_8
+txna ApplicationArgs 7
+btoi
+b h8_9
+h8_8:
+txna ApplicationArgs 7
+btoi
+txna ApplicationArgs 10
+btoi
+-
+h8_9:
+txna ApplicationArgs 9
+btoi
+bnz h8_10
 txna ApplicationArgs 8
 btoi
 txna ApplicationArgs 10
 btoi
 -
-b h8_9
-h8_8:
+b h8_11
+h8_10:
 txna ApplicationArgs 8
 btoi
-h8_9:
+h8_11:
 store 5
 store 4
 store 3
@@ -896,23 +910,27 @@ gtxn 1 Amount
 int 0
 ==
 bz revert
+txna ApplicationArgs 10
+btoi
+txna ApplicationArgs 9
+btoi
+bnz h10_0
+txna ApplicationArgs 8
+btoi
+b h10_1
+h10_0:
+txna ApplicationArgs 7
+btoi
+h10_1:
+<=
+bz revert
 txna ApplicationArgs 3
 txna ApplicationArgs 4
 txna ApplicationArgs 5
 btoi
 txna ApplicationArgs 9
 btoi
-bnz h10_0
-txna ApplicationArgs 6
-btoi
-bnz h10_1
-int 1
-b h10_2
-h10_1:
-int 0
-h10_2:
-b h10_5
-h10_0:
+bnz h10_2
 txna ApplicationArgs 6
 btoi
 bnz h10_3
@@ -921,33 +939,43 @@ b h10_4
 h10_3:
 int 0
 h10_4:
-h10_5:
-txna ApplicationArgs 9
-btoi
-bnz h10_6
-txna ApplicationArgs 7
-btoi
 b h10_7
+h10_2:
+txna ApplicationArgs 6
+btoi
+bnz h10_5
+int 1
+b h10_6
+h10_5:
+int 0
 h10_6:
-txna ApplicationArgs 7
-btoi
-txna ApplicationArgs 10
-btoi
--
 h10_7:
 txna ApplicationArgs 9
 btoi
 bnz h10_8
+txna ApplicationArgs 7
+btoi
+b h10_9
+h10_8:
+txna ApplicationArgs 7
+btoi
+txna ApplicationArgs 10
+btoi
+-
+h10_9:
+txna ApplicationArgs 9
+btoi
+bnz h10_10
 txna ApplicationArgs 8
 btoi
 txna ApplicationArgs 10
 btoi
 -
-b h10_9
-h10_8:
+b h10_11
+h10_10:
 txna ApplicationArgs 8
 btoi
-h10_9:
+h10_11:
 store 5
 store 4
 store 3

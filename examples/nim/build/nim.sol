@@ -141,6 +141,7 @@ contract ReachContract is Stdlib {
     require(msg.sender == v0);
     require(uint256(block.number) < _last + uint256(10));
     require(((msg.value) == uint256(0)));
+    require((v36 <= (v34 ? v25 : v26)));
     emit e8(address(this).balance, v34, v36);
     l7(v0, v1, v3, (v34 ? (v24 ? false : true) : (v24 ? false : true)), (v34 ? (v25 - v36) : v25), (v34 ? v26 : (v26 - v36))); }
   
@@ -156,16 +157,17 @@ contract ReachContract is Stdlib {
     current_state = 0x0;
     selfdestruct(msg.sender); }
   
-  event e10(uint256 _bal, bool v50, uint256 v52);
+  event e10(uint256 _bal, bool v52, uint256 v54);
   
-  function m10(uint256 _last, address payable v0, address payable v1, uint256 v3, bool v24, uint256 v25, uint256 v26, bool v50, uint256 v52) external payable {
+  function m10(uint256 _last, address payable v0, address payable v1, uint256 v3, bool v24, uint256 v25, uint256 v26, bool v52, uint256 v54) external payable {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(5), _last, v0, v1, v3, v24, v25, v26))));
     
     require(msg.sender == v1);
     require(uint256(block.number) < _last + uint256(10));
     require(((msg.value) == uint256(0)));
-    emit e10(address(this).balance, v50, v52);
-    l7(v0, v1, v3, (v50 ? (v24 ? false : true) : (v24 ? false : true)), (v50 ? (v25 - v52) : v25), (v50 ? v26 : (v26 - v52))); }
+    require((v54 <= (v52 ? v25 : v26)));
+    emit e10(address(this).balance, v52, v54);
+    l7(v0, v1, v3, (v52 ? (v24 ? false : true) : (v24 ? false : true)), (v52 ? (v25 - v54) : v25), (v52 ? v26 : (v26 - v54))); }
   
   event e11(uint256 _bal);
   
