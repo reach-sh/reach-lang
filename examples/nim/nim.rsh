@@ -87,5 +87,5 @@ function main() {
   transfer(toB * wagerAmount).to(B);
   commit();
 
-  interact.showOutcome(AsTurn);
+  interact.showOutcome(AsTurn ? "A won" : "B won");
   return "Game is over"; }

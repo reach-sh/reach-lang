@@ -41,13 +41,13 @@ import * as NIM from './build/nim.mjs';
         return true; }
       , getHeap: (heap1, heap2) => {
         console.log(`${name} chooses a heap from: ${heap1} and ${heap2}`);
-        return ( heap1 > heap2 ); }
+        return stdlib.gt(heap1, heap2); }
       , getAmount: (heap1, heap2) => {
         void(heap1, heap2);
         console.log(`${name} chooses an amount of 1`);
         return stdlib.toBN(1); }
-      , showOutcome: (AsTurn) => {
-        console.log(`${name} sees the final outcome: ${AsTurn}`);
+      , showOutcome: (outcome) => {
+        console.log(`${name} sees the final outcome: ${outcome}`);
         return true; } }; };
 
   const [ outcomeAlice, outcomeBob ] =

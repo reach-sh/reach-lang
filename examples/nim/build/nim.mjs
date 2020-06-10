@@ -24,8 +24,8 @@ export async function A(stdlib, ctc, interact) {
     const v10 = stdlib.eq(v9, v3);
     stdlib.assert(v10);
     const txn2 = await ctc.recv('A', 3, 1, 10, true, [v0, v3, v5, v8], 4, async (txn_out, txn2) => {
-      const v75 = txn2.balance;
-      txn_out.transfer(v0, v75);
+      const v76 = txn2.balance;
+      txn_out.transfer(v0, v76);
       return true; });
     if (txn2.didTimeout) {
       return ['B never accepted']; }
@@ -86,7 +86,8 @@ export async function A(stdlib, ctc, interact) {
           const v28 = stdlib.gt(v27, 0);
           const v29 = v28 ? false : true;
           if (v29) {
-            const v73 = stdlib.isType('bool', await interact.showOutcome(v24));
+            const v73 = v24 ? 'A won' : 'B won';
+            const v74 = stdlib.isType('bool', await interact.showOutcome(v73));
             return ['Game is over']; }
           else {
             if (v24) {
@@ -180,8 +181,8 @@ export async function B(stdlib, ctc, interact) {
       const v15 = stdlib.eq(v14, v3);
       stdlib.assert(v15);
       const txn3 = await ctc.recv('B', 5, 1, 10, true, [v0, v1, v3, v5, v8, v13], 6, async (txn_out, txn3) => {
-        const v74 = txn3.balance;
-        txn_out.transfer(v1, v74);
+        const v75 = txn3.balance;
+        txn_out.transfer(v1, v75);
         return true; });
       if (txn3.didTimeout) {
         return ['A never revealed coinflip']; }
@@ -204,7 +205,8 @@ export async function B(stdlib, ctc, interact) {
           const v28 = stdlib.gt(v27, 0);
           const v29 = v28 ? false : true;
           if (v29) {
-            const v73 = stdlib.isType('bool', await interact.showOutcome(v24));
+            const v73 = v24 ? 'A won' : 'B won';
+            const v74 = stdlib.isType('bool', await interact.showOutcome(v73));
             return ['Game is over']; }
           else {
             if (v24) {
