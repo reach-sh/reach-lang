@@ -21,7 +21,7 @@ const showOutcomeBob = (o) => o ? 'won' : 'lost';
   for ( let i = 0; i < BOBS; i++ ) {
     const amt = stdlib.toWeiBN((i + 1), 'ether');
     const bob = await stdlib.newTestAccount(startingBalance);
-    const bobCtc = await bob.attach(AUCTION, sallyCtc.address, sallyCtc.creation_block);
+    const bobCtc = await bob.attach(AUCTION, sallyCtc);
     const bobP = AUCTION.Buyer( stdlib, bobCtc, { bid: (previous_bid) => log(`Bob(${i}): Bidding ${amt} against ${previous_bid}`), amt });
     bobPs[i] = bobP; }
 

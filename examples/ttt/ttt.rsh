@@ -139,7 +139,7 @@ function main() {
         .timeout(DELAY, B, () => {
           transfer(balance()).to(B);
           commit();
-          return "A timedout move"; });
+          return "A timed out move"; });
 
       [ state ] = applyMove(state, moveA);
       continue; }
@@ -152,7 +152,7 @@ function main() {
         .timeout(DELAY, A, () => {
           transfer(balance()).to(A);
           commit();
-          return "B timedout move"; });
+          return "B timed out move"; });
 
       [ state ] = applyMove(state, moveB);
       continue; } }

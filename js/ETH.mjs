@@ -117,7 +117,9 @@ const fetchAndRejectInvalidReceiptFor = txHash =>
 export const connectAccount = address => {
   const shad = address.substring(2,6);
 
-  const attach = (bin, ctc_address, creation_block) => {
+  const attach = (bin, ctc) => {
+    const ctc_address = ctc.address;
+    const creation_block = ctc.creation_block;
     const { ABI } = bin.ETH;
     const ethCtc = new web3.eth.Contract(ABI, ctc_address);
     const ethersCtc = new ethers.Contract(ctc_address, ABI, ethersp);
@@ -245,7 +247,7 @@ export const connectAccount = address => {
     // FIXME have some way to have a link to the reach code
     const r = await web3.eth.sendTransaction({ data, gas, from: address });
     const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
-    return attach(bin, r_ok.contractAddress, r_ok.blockNumber); };
+    return attach(bin, { address: r_ok.contractAddress, creation_block: r_ok.blockNumber }); };
 
   return { deploy, attach, address }; };
 

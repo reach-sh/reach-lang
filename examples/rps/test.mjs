@@ -28,8 +28,7 @@ runTests(async () => {
   const balanceStartBob = await stdlib.balanceOf(bob);
 
   const ctcAlice = await alice.deploy(RPS);
-  const ctcBob = await bob.attach(RPS, ctcAlice.address,
-                                  ctcAlice.creation_block);
+  const ctcBob = await bob.attach(RPS, ctcAlice);
 
   const [ outcomeBob, outcomeAlice ] =
         await Promise.all([

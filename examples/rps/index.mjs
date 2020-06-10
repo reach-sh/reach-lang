@@ -30,10 +30,8 @@ import * as RPSW from './build/rps_while.mjs';
                outcome: log(`${name} agrees that game is over.`) }; };
 
     const ctcAlice = await alice.deploy(theRPS);
-    const ctcBob = await bob.attach(theRPS, ctcAlice.address,
-                                    ctcAlice.creation_block);
-    const ctcObs = await obs.attach(theRPS, ctcAlice.address,
-                                    ctcAlice.creation_block);
+    const ctcBob = await bob.attach(theRPS, ctcAlice);
+    const ctcObs = await obs.attach(theRPS, ctcAlice);
 
     const [ outcomeAlice, outcomeBob, outcomeObs ] =
           await Promise.all([

@@ -20,7 +20,7 @@ import * as MULTISIG from './build/multisig.mjs';
   const parentP = MULTISIG.Parent(stdlib, parentCtc, parentInteract);
 
   const child = await stdlib.newTestAccount(startingBalance);
-  const childCtc = await child.attach(MULTISIG, parentCtc.address, parentCtc.creation_block);
+  const childCtc = await child.attach(MULTISIG, parentCtc);
   const UNITS = 8;
   const childInteract = {
     request: (balance) => {
