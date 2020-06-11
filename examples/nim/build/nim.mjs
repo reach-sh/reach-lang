@@ -165,7 +165,7 @@ export async function B(stdlib, ctc, interact) {
     const v9 = txn1.value;
     const v10 = stdlib.eq(v9, v3);
     stdlib.assert(v10);
-    const v11 = stdlib.isType('bool', await interact.acceptWager(v3));
+    const v11 = stdlib.isType('bool', await interact.acceptWager(v3, v5));
     const v12 = stdlib.random_uint256();
     const v13 = v12;
     const txn2 = await ctc.sendrecv('B', 3, 1, [v0, v3, v5, v8, v13], v3, 10, 4, async (txn_out, txn2) => {

@@ -36,8 +36,8 @@ import * as NIM from './build/nim.mjs';
       , getInitialHeap: () => {
         console.log(`${name} publishes parameters of game: heap is 21`);
         return stdlib.toBN(21); }
-      , acceptWager: (givenWagerAmount) => {
-        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto}`);
+      , acceptWager: (givenWagerAmount, givenInitialHeap) => {
+        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto} and heap of ${givenInitialHeap}`);
         return true; }
       , getHeap: (heap1, heap2) => {
         console.log(`${name} chooses a heap from: ${heap1} and ${heap2}`);

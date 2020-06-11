@@ -27,7 +27,7 @@ function main() {
   commit();
 
   B.only(() => {
-    interact.acceptWager(wagerAmount);
+    interact.acceptWager(wagerAmount, initialHeap);
     const coinFlipB = declassify(random()); });
   B.publish(coinFlipB)
     .pay(wagerAmount)
