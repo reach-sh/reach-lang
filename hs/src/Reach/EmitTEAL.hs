@@ -209,7 +209,7 @@ comp_cexpr cs e =
     C_Digest _ as ->
       comp_hash HM_Digest cs as
     C_ArrayRef _ _ae _ee ->
-      return $ xxx "comp_cexpr C_ArrayRef"
+      return $ xxx "comp_cexpr C_ArrayRef - use substring?"
     C_PrimApp _ cp as ->
       case cp of
         ADD -> p_op "+"
