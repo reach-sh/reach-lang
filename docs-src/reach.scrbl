@@ -10,7 +10,7 @@ documents contains a reference manual for Reach, as well as a series
 of guiding tutorials to help introduce the key concepts of the
 language and @DApp design.
 
-@local-table-of-contents[]
+@local-table-of-contents[#:style 'immediate-only]
 
 @include-section["ref.scrbl"]
 @include-section["tut.scrbl"]
