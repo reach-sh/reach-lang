@@ -12,6 +12,11 @@ and easily deploy them on a variety of different blockchain networks.
 This repository is for the Reach language, the domain-specific
 language for trustworthy DApps used by the Reach platform.
 
+# Documentation
+
+Read the
+(documentation)[https://reach-sh.github.io/reach-lang/index.html] on GitHub. 
+
 # Usage
 
 The best way to use Reach is with Docker and docker-compose.
