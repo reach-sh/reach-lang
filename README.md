@@ -15,7 +15,7 @@ language for trustworthy DApps used by the Reach platform.
 # Documentation
 
 Read the
-(documentation)[https://reach-sh.github.io/reach-lang/index.html] on GitHub. 
+[documentation](https://reach-sh.github.io/reach-lang/index.html) on GitHub. 
 
 # Usage
 
