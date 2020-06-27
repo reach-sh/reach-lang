@@ -12,9 +12,7 @@ This document contains an exhaustive discussion of each of the parts of the Reac
 
 Reach is a Dockerized program, so it has no dependencies and has a trivial installation process. You can install it by running:
 
-@commandline{curl
-https://raw.githubusercontent.com/reach-sh/reach-lang/master/reachc >
-reachc ; chmod +x reachc}
+@commandline{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reachc -o reachc ; chmod +x reachc}
 
 in your project repository.
 
