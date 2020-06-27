@@ -1,7 +1,7 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version "" #:tag "ref-backends"]{Backends}
+@title[#:version "" #:tag "ref-backends"]{Participant Backends}
 
 XXX
 

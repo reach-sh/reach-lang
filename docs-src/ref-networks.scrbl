@@ -1,7 +1,7 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version "" #:tag "ref-networks"]{Networks}
+@title[#:version "" #:tag "ref-networks"]{Consensus Networks}
 
 XXX
 

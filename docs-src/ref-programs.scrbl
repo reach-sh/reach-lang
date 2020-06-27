@@ -1,7 +1,7 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version "" #:tag "ref-programs"]{Reach Programs}
+@title[#:version "" #:tag "ref-programs"]{Programs}
 
 XXX
 
