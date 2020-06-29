@@ -2,7 +2,7 @@
 @(require "lib.rkt")
 
 @title[#:version "" #:tag "reach-top"]{Reach: The Safest and Easiest DApp Programming Language}
-@author{Jay McCarthy}
+@author[(author+email "Jay McCarthy" "jay@reach.sh")]
 
 Reach is a domain-specific language for building decentralized applications (@|DApps|). This set of documents contains a reference manual for Reach, as well as a series of guiding tutorials to help introduce the key concepts of the language and @DApp design.
 
