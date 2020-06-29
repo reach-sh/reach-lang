@@ -14,5 +14,6 @@ XXX
 
 @section[#:tag "ref-backend-go"]{Go} @(experimental)
 
-XXX
-
+An experimental, and undocumented, Go @tech{backend} is in progress in the
+repository. When we complete it, this section will describe the use of
+the @tech{backend}.
