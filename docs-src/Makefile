@@ -5,7 +5,7 @@ render:
 	@rm -f ../minted-default-style.css
 
 check:
-	ag xxx
+	ag --ignore Makefile xxx
 
 install:
 	raco pkg install
