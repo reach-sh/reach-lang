@@ -3,6 +3,7 @@
          scribble/minted)
 (provide (all-defined-out))
 
+(define reach-short-vers "0.1")
 (define reach-vers "0.1.0")
 
 (define (reach . contents)

@@ -35,7 +35,5 @@ During compilation, the Reach compiler automatically verifies that the @tech{tok
 
 @section[#:tag "ref-model-syntax"]{Syntax Model}
 
-Reach programs specify via a subset of valid JavaScript syntax.
-
-XXX
+Reach programs are specified via a subset of valid JavaScript syntax inside @tech{source files}. The section @secref["ref-programs"] describes the syntax of Reach programs in detail.
 
