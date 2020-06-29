@@ -2,7 +2,7 @@
 @(require "lib.rkt"
           scribble/bnf)
 
-@title[#:version "" #:tag "ref" #:style 'toc]{Reach Reference}
+@title[#:version reach-vers #:tag "ref" #:style 'toc]{Reach Reference}
 
 This document contains an exhaustive discussion of each of the parts of the Reach @DApp language and its standard library. In contrast, @secref{tut} contains a series of guiding tutorials to introduce the key concepts of the language and @DApp design.
 

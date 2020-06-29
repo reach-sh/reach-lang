@@ -1,15 +1,18 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version "" #:tag "ref-backends"]{Participant Backends}
+@title[#:version reach-vers #:tag "ref-backends" #:style 'toc]{Participant Backends}
+
+This section describes the @tech{participant} @tech{backends}
+supported by Reach version @|reach-vers|.
+
+@local-table-of-contents[#:style 'immediate-only]
+
+@section[#:tag "ref-backend-js"]{JavaScript}
 
 XXX
 
-@section{JavaScript}
-
-XXX
-
-@section{Go (experimental)}
+@section[#:tag "ref-backend-go"]{Go} @(experimental)
 
 XXX
 
