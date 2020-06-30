@@ -1,11 +1,15 @@
 all: render check
 
+STYLE=solarizedlight
+
 render:
 	raco scribble --dest .. --dest-name docs --htmls reach.scrbl
-	@rm -f ../minted-default-style.css
+	@rm -f ../minted-$(STYLE)-style.css
+	@cp -f minted.css ../docs/
 
 check:
 	ag --ignore Makefile xxx
 
 install:
 	raco pkg install
+	pip install pygments-style-solarized

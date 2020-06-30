@@ -8,23 +8,66 @@ including their syntactic forms and the Reach standard library.
 
 @section{Source Files}
 
-Reach @deftech{source files} are either @tech{executables} or @tech{libraries}.
+Reach @deftech{source files} are either @tech{executables} or @tech{libraries}. They are traditionally given the file extension @litchar{rsh}, e.g. @filepath{dao.rsh}.
 
-Reach @deftech{executables} start with @litchar{'reach @|reach-short-vers| exe';} and are followed by a sequence of @tech{imports}, @tech{participant definitions}, @tech{identifier definitions}, and a @tech{main function}.
+Reach @deftech{executables} start with @reachin{'reach @|reach-short-vers| exe';} and are followed by a sequence of @tech{imports}, @tech{participant definitions}, @tech{identifier definitions}, and a @tech{main function}.
 
-Reach @deftech{libraries} start with @litchar{'reach @|reach-short-vers| lib';} and are followed by a sequence of @tech{imports} and @tech{identifier definitions}.
+Reach @deftech{libraries} start with @reachin{'reach @|reach-short-vers| lib';} and are followed by a sequence of @tech{imports} and @tech{identifier definitions}.
 
 @section{Imports}
 
-XXX
+@reach{import "games-of-chance.rsh";}
+
+When a Reach @tech{source file}, @litchar{X}, contains an @deftech{import}, written @reachin{import "LIB.rsh";}, then the path @filepath{LIB.rsh} must resolve to a file which is a valid @tech{library}. The definitions located in @filepath{LIB.rsh} are included in the set of definitions associated with @litchar{X}.
+
+@margin-note{The path given to an @tech{import} may include @litchar{..} to navigate outside of the current directory.}
 
 @section{Participant Definitions}
+
+@reach{const Alice = participant({_hand: uint256});}
+
+Reach @tech{executables} may contain @deftech{participant definitions}, which are written:
+
+@reach{
+ const PARTICIPANT =
+   participant( { ID_0: TYPE_0
+                , ...
+                , ID_n: TYPE_n} ); }
+
+Such a definition defines a @tech{participant} named @reachin{PARTICIPANT} with the initial @tech{local state} @reachin{ID_0} through @reachin{ID_n} (which are conventionally preceded by an underscore character, i.e. @litchar{_}) each having an associated @tech{type} @reachin{TYPE_0} through @reachin{TYPE_n}.
+
+When an @tech{executable} is compiled by a @tech{backend}, each @tech{participant} will be provided as a function parameterized over the initial @tech{local state} values. For example,
+
+@reach{const Bob = participant({_wagerLimit: uint256});}
+
+will produce a function, @reachin{Bob}, which accepts an argument for the maximum wager any game it participates in may charge.
+
+@section{Types}
 
 XXX
 
 @section{Identifier Definitions}
 
-XXX
+@reach{
+  const DELAY = 10;
+  const [ Good, Bad ] = [ 42, 43 ];
+  const isHand = Enum([ROCK, PAPER, SCISSORS]);
+  function randomBool() {
+    return (random() % 2) == 0; }; }
+
+An @deftech{identifier definition} is either a @tech{value definition}, @tech{enumeration}, or @tech{function definition}.
+
+A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachin{LHS} is either a single identifier, e.g. @reachin{isDelicious}, or an array of identifiers, e.g. @reachin{[ bestSushi, mediumestSushi, worstSushi ]}, and @reachin{RHS} is an @tech{expression}. @reachin{RHS} must evaluate to as many @tech{values} as there are identifiers in @reachin{LHS}.
+
+XXX enumeration
+
+XXX function definition
+
+A @deftech{main function} is a @tech{function definition} with the name @reachin{main} and no arguments. For example, the following is a @tech{main function}:
+
+@reach{
+  function main() {
+    return 42; } }
 
 @section{Syntactic Forms}
 
