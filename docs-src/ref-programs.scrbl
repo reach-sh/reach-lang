@@ -44,7 +44,21 @@ will produce a function, @reachin{Bob}, which accepts an argument for the maximu
 
 @section{Types}
 
-XXX
+A @deftech{base type} is either:
+@itemlist[
+  @item{@reachin{address}, which denotes an @tech{account} @tech{address}; or,}
+  @item{@reachin{uint256}, which denotes an unsigned integer of 256 bits; or,}
+  @item{@reachin{bool}, which denotes a boolean; or,}
+  @item{@reachin{bytes}, which denotes a string of bytes.} ]
+
+A @deftech{type} is either a @tech{base type} or a statically-sized array of @tech{base type} values, written @reachin{BASE[EXPR]} where @reachin{BASE} is a @tech{base type} and @reachin{EXPR} is an @tech{expression} that statically evaluates to a natural number. For example, the following are all @tech{types}:
+
+@reach{
+  address
+  bool
+  bool[4]
+  uint256[4 + 5]
+  uint256[3 * 7 + 99] }
 
 @section{Identifier Definitions}
 
@@ -63,7 +77,7 @@ An @deftech{enumeration}, written @reachin{const ENUM = Enum([OPTION_0, ..., OPT
 
 @reach{
   function randomBool() {
-    return (random() % 2) == 0; }; }
+    return (random() % 2) == 0; } }
 
 A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which parameterizes the @tech{block} @reachin{BLOCK} over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
 
@@ -75,11 +89,59 @@ A @deftech{main function} is a @tech{function definition} with the name @reachin
 
 @section{Blocks}
 
-XXX
+@reach{
+  { return 42; }
+  { const x = 31;
+    return x + 11; }
+  { if ( x < y ) {
+      return "Why";
+    } else {
+      return "Ecks"; } } }
+
+A @deftech{block} is a sequence of @tech{statements} surrounded by braces, i.e. @litchar["{"] and @litchar["}"].
 
 @section{Statements}
 
-XXX
+There are a large variety of different @deftech{statements} in Reach programs. Each affects the meaning of the subsequent @tech{statements}, which is called its @deftech{tail}. For example, if @reachin{{X; Y; Z;}} is a @tech{block}, then @reachin{X}'s @tech{tail} is @reachin{{Y; Z;}} and @reachin{Y}'s @tech{tail} is @reachin{{Z;}}.
+
+The remainder of this section enumerates each kind of @tech{statement}.
+
+XXX return
+
+XXX bindings
+
+XXX ifs
+
+@subsection{Block statements}
+
+If a @tech{block} occurs in a @tech{statement} position, then it establishes a local, separate scope for the definitions of identifiers within that @tech{block}. In other words, the @tech{block} is evaluated for effect, but the @tech{tail} of the @tech{statements} within the @tech{block} are isolated from the surrounding @tech{tail}. For example,
+
+@reach{
+ const x = 4;
+ return x; }
+
+evaluates to @reachin{4}, but
+
+@reach{
+ { const x = 4;
+   return; }
+ return x; }
+
+is erroneous, because the identifier @reachin{x} is not bound outside the @tech{block} @tech{statement}.
+
+XXX expression
+
+XXX function call
+
+XXX only
+
+XXX publish + pay + timeout
+
+XXX commit
+
+XXX while
+
+XXX continue
 
 @section{Expressions}
 
