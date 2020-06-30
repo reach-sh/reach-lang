@@ -81,8 +81,7 @@ function main() {
       [ AsTurn, heap1, heap2 ] = applyMove(AsTurn, heap1, heap2, choose1, amount);
       continue; } }
 
-  const [ toA, toB ] =
-        AsTurn ? [ 2, 0 ] : [ 0, 2 ];
+  const [ toA, toB ] = AsTurn ? [ 2, 0 ] : [ 0, 2 ];
   transfer(toA * wagerAmount).to(A);
   transfer(toB * wagerAmount).to(B);
   commit();
