@@ -57,11 +57,11 @@ XXX
 
 An @deftech{identifier definition} is either a @tech{value definition}, @tech{enumeration}, or @tech{function definition}.
 
-A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachin{LHS} is either a single identifier, e.g. @reachin{isDelicious}, or an array of identifiers, e.g. @reachin{[ bestSushi, mediumestSushi, worstSushi ]}, and @reachin{RHS} is an @tech{expression}. @reachin{RHS} must evaluate to as many @tech{values} as there are identifiers in @reachin{LHS}.
+A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachin{LHS} is either a single identifier, e.g. @reachin{isDelicious}, or an array of identifiers, e.g. @reachin{[ bestSushi, mediumestSushi, worstSushi ]}, and @reachin{RHS} is an @tech{expression}. @reachin{RHS} must evaluate to as many @tech{values} as there are identifiers in @reachin{LHS}. Those @tech{values} are available as the corresponding identifiers in the rest of the program.
 
-XXX enumeration
+An @deftech{enumeration}, written @reachin{const ENUM = Enum([OPTION_0, ..., OPTION_n]);}, defines the identifiers @reachin{OPTION_0} through @reachin{OPTION_n} as unique natural numbers and @reachin{ENUM} as a function which accepts one numeric argument and returns @reachin{true} if and only if it is one of these natural numbers.
 
-XXX function definition
+A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which parameterizes the @tech{block} @reachin{BLOCK} over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
 
 A @deftech{main function} is a @tech{function definition} with the name @reachin{main} and no arguments. For example, the following is a @tech{main function}:
 
@@ -69,7 +69,15 @@ A @deftech{main function} is a @tech{function definition} with the name @reachin
   function main() {
     return 42; } }
 
-@section{Syntactic Forms}
+@section{Blocks}
+
+XXX
+
+@section{Statements}
+
+XXX
+
+@section{Expressions}
 
 XXX
 
