@@ -20,7 +20,7 @@ Reach @deftech{libraries} start with @reachin{'reach @|reach-short-vers| lib';} 
 
 When a Reach @tech{source file}, @litchar{X}, contains an @deftech{import}, written @reachin{import "LIB.rsh";}, then the path @filepath{LIB.rsh} must resolve to a file which is a valid @tech{library}. The definitions located in @filepath{LIB.rsh} are included in the set of definitions associated with @litchar{X}.
 
-@margin-note{The path given to an @tech{import} may include @litchar{..} to navigate outside of the current directory.}
+@margin-note{The path given to an @tech{import} may include @litchar{..} to specify files outside the current directory.}
 
 @section{Participant Definitions}
 
@@ -48,26 +48,30 @@ XXX
 
 @section{Identifier Definitions}
 
+An @deftech{identifier definition} is either a @tech{value definition}, @tech{enumeration}, or @tech{function definition}.
+
 @reach{
   const DELAY = 10;
-  const [ Good, Bad ] = [ 42, 43 ];
-  const isHand = Enum([ROCK, PAPER, SCISSORS]);
-  function randomBool() {
-    return (random() % 2) == 0; }; }
-
-An @deftech{identifier definition} is either a @tech{value definition}, @tech{enumeration}, or @tech{function definition}.
+  const [ Good, Bad ] = [ 42, 43 ]; }
 
 A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachin{LHS} is either a single identifier, e.g. @reachin{isDelicious}, or an array of identifiers, e.g. @reachin{[ bestSushi, mediumestSushi, worstSushi ]}, and @reachin{RHS} is an @tech{expression}. @reachin{RHS} must evaluate to as many @tech{values} as there are identifiers in @reachin{LHS}. Those @tech{values} are available as the corresponding identifiers in the rest of the program.
 
+@reach{
+  const isHand = Enum([ROCK, PAPER, SCISSORS]); }
+
 An @deftech{enumeration}, written @reachin{const ENUM = Enum([OPTION_0, ..., OPTION_n]);}, defines the identifiers @reachin{OPTION_0} through @reachin{OPTION_n} as unique natural numbers and @reachin{ENUM} as a function which accepts one numeric argument and returns @reachin{true} if and only if it is one of these natural numbers.
 
-A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which parameterizes the @tech{block} @reachin{BLOCK} over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
+@reach{
+  function randomBool() {
+    return (random() % 2) == 0; }; }
 
-A @deftech{main function} is a @tech{function definition} with the name @reachin{main} and no arguments. For example, the following is a @tech{main function}:
+A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which parameterizes the @tech{block} @reachin{BLOCK} over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
 
 @reach{
   function main() {
     return 42; } }
+
+A @deftech{main function} is a @tech{function definition} with the name @reachin{main} and no arguments.
 
 @section{Blocks}
 
