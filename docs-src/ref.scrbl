@@ -16,7 +16,7 @@ Reach is a Dockerized program, so it has no dependencies and has a trivial insta
 
 in your project repository.
 
-After you install it, you can compile your Reach code by executing @exec{reachc SOURCE} where @exec{SOURCE} is your source file. @exec{reachc} supports the following options:
+After you install it, you can compile your Reach code by executing @exec{reachc SOURCE} where @exec{SOURCE} is your @tech{executable} @tech{source file}. @exec{reachc} supports the following options:
 
 @itemlist[
 

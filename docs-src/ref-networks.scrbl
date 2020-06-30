@@ -11,7 +11,7 @@ supported by Reach version @|reach-vers|.
 
 @section[#:tag "ref-network-eth"]{Ethereum}
 
-The Ethereum Reach @tech{connector} generates a @tech{contract} that
+The @link["https://ethereum.org/"]{Ethereum} Reach @tech{connector} generates a @tech{contract} that
 manages one instance of the @|DApp|'s execution. It is guaranteed to
 use exactly one word of on-chain state.
 
@@ -26,7 +26,7 @@ assembly, which is not used or supported.
 
 @section[#:tag "ref-network-algo"]{Algorand} @(experimental)
 
-The Algorand Reach @tech{connector} generates a set of
+The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a set of
 @tech{contracts} that manage one instance of the @|DApp|'s
 execution. It relies on the "Application" feature of the Algorand
 network. It uses two words of on-chain state in two application
