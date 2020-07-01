@@ -462,6 +462,7 @@ decodeStmts dss js =
     --- No Let
     ((JSConstant a (JSLOne (JSVarInitExpression v (JSVarInit _ e))) _):k) ->
       XL_Let (tp a) (dss_who dss) (Just (decodeLetLHS (dss_fp dss) v)) (decodeExpr dss e) (ds dss k)
+    --- FIXME Support functions and enums like at top-level?
     --- No DoWhile
     --- No For, ForIn, ForVar, ForVarIn, ForLet, ForLetIn, ForLetOf, ForOf, ForVarOf
     --- No Function

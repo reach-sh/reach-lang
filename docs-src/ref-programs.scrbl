@@ -10,7 +10,7 @@ including their syntactic forms and the Reach standard library.
 
 Reach @deftech{source files} are either @tech{executables} or @tech{libraries}. They are traditionally given the file extension @litchar{rsh}, e.g. @filepath{dao.rsh}.
 
-Reach @deftech{executables} start with @reachin{'reach @|reach-short-vers| exe';} and are followed by a sequence of @tech{imports}, @tech{participant definitions}, @tech{identifier definitions}, and a @tech{main function}.
+Reach @deftech{executables} start with @reachin{'reach @|reach-short-vers| exe';} and are followed by a sequence of @tech{imports}, @tech{participant definitions}, @tech{identifier definitions}, and a @tech{main function}. The evaluation of the execution is that of the @tech{main function}.
 
 Reach @deftech{libraries} start with @reachin{'reach @|reach-short-vers| lib';} and are followed by a sequence of @tech{imports} and @tech{identifier definitions}.
 
@@ -79,13 +79,13 @@ An @deftech{enumeration}, written @reachin{const ENUM = Enum([OPTION_0, ..., OPT
   function randomBool() {
     return (random() % 2) == 0; } }
 
-A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which parameterizes the @tech{block} @reachin{BLOCK} over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
+A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which parameterizes its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
 
 @reach{
   function main() {
     return 42; } }
 
-A @deftech{main function} is a @tech{function definition} with the name @reachin{main} and no arguments.
+A @deftech{main function} is a @tech{function definition} with the name @reachin{main} and no arguments. The evaluation of the @tech{main function} is the same as its @tech{function body}.
 
 @section{Blocks}
 
@@ -106,15 +106,58 @@ There are a large variety of different @deftech{statements} in Reach programs. E
 
 The remainder of this section enumerates each kind of @tech{statement}.
 
-XXX return
+@subsection{Return statements}
 
-XXX bindings
+@reach{
+ return 17;
+ return 3 + 4;
+ return f(2, false); }
 
-XXX ifs
+A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression} evaluates to the same @tech{value} as @reachin{EXPR}. It must have an empty @tech{tail}. For example,
+
+@reach{
+ { return 1;
+   return 2; } }
+
+is invalid, because the first @reachin{return}'s @tech{tail} is not empty.
+
+@subsection{Value definition statements}
+
+If a @tech{value definition} occurs in a @tech{statement} position, then the identifiers are bound in the @tech{statement}'s @tech{tail}. For example,
+
+@reach{
+ const [ x, y ] = [ 3, 4 ];
+ const z = x + y;
+ return z; }
+
+evaluates to @reachin{7}.
+
+@subsection{Conditional statements}
+
+@reach{
+ if ( 1 + 2 < 3 ) {
+   return "Yes!";
+ } else {
+   return "No, waaah!"; } }
+
+A @deftech{conditional statement}, written @reachin{if COND TRUE else FALSE}, where @reachin{COND} is an @tech{expression} which evaluates to a boolean and @reachin{TRUE} and @reachin{FALSE} as @tech{statements} (potentially @tech{block statements}), selects between the @reachin{TRUE} @tech{statement} and @reachin{FALSE} @tech{statement} based on whether @reachin{COND} evaluates to @reachin{true}.
+
+Both @reachin{TRUE} and @reachin{FALSE} have empty @tech{tails}, i.e. the @tech{tail} of the @tech{conditional statement} is not propagated. For example,
+
+@reach{
+ if ( x < y ) {
+   const z = 3;
+   return; }
+ else {
+   const z = 4;
+   return; }
+ return z; }
+
+is erroneous, because the identifier @reachin{z} is not bound outside the @tech{conditional statement}.
 
 @subsection{Block statements}
 
-If a @tech{block} occurs in a @tech{statement} position, then it establishes a local, separate scope for the definitions of identifiers within that @tech{block}. In other words, the @tech{block} is evaluated for effect, but the @tech{tail} of the @tech{statements} within the @tech{block} are isolated from the surrounding @tech{tail}. For example,
+A @deftech{block statement} is when a @tech{block} occurs in a @tech{statement} position, then it establishes a local, separate scope for the definitions of identifiers within that @tech{block}. In other words, the @tech{block} is evaluated for effect, but the @tech{tail} of the @tech{statements} within the @tech{block} are isolated from the surrounding @tech{tail}. For example,
 
 @reach{
  const x = 4;
@@ -127,11 +170,15 @@ evaluates to @reachin{4}, but
    return; }
  return x; }
 
-is erroneous, because the identifier @reachin{x} is not bound outside the @tech{block} @tech{statement}.
+is erroneous, because the identifier @reachin{x} is not bound outside the @tech{block statement}.
 
-XXX expression
+@subsection{Expression statements}
 
-XXX function call
+@reach{
+ 4;
+ f(2, true); }
+
+An @tech{expression}, @reachin{E}, in a @tech{statement} position is equivalent to the @tech{block statement} @reachin{{ return E; }}.
 
 XXX only
 
