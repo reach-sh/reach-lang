@@ -36,7 +36,7 @@ Reach @tech{executables} may contain @deftech{participant definitions}, which ar
 
 Such a definition defines a @tech{participant} named @reachin{PARTICIPANT} with the initial @tech{local state} @reachin{ID_0} through @reachin{ID_n} (which are conventionally preceded by an underscore character, i.e. @litchar{_}) each having an associated @tech{type} @reachin{TYPE_0} through @reachin{TYPE_n}.
 
-When an @tech{executable} is compiled by a @tech{backend}, each @tech{participant} will be provided as a function parameterized over the initial @tech{local state} values. For example,
+When an @tech{executable} is compiled by a @tech{backend}, each @tech{participant} will be provided as a function abstracted over the initial @tech{local state} values. For example,
 
 @reach{const Bob = participant({_wagerLimit: uint256});}
 
@@ -73,13 +73,13 @@ A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachi
 @reach{
   const isHand = Enum([ROCK, PAPER, SCISSORS]); }
 
-An @deftech{enumeration}, written @reachin{const ENUM = Enum([OPTION_0, ..., OPTION_n]);}, defines the identifiers @reachin{OPTION_0} through @reachin{OPTION_n} as unique natural numbers and @reachin{ENUM} as a function which accepts one numeric argument and returns @reachin{true} if and only if it is one of these natural numbers.
+An @deftech{enumeration}, written @reachin{const ENUM = Enum([OPTION_0, ..., OPTION_n]);}, defines the identifiers @reachin{OPTION_0} through @reachin{OPTION_n} as unique natural numbers and @reachin{ENUM} as a function which abstracts over one numeric argument and returns @reachin{true} if and only if it is one of these natural numbers.
 
 @reach{
   function randomBool() {
     return (random() % 2) == 0; } }
 
-A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which parameterizes its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
+A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which abstracts its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
 
 @reach{
   function main() {
@@ -270,7 +270,106 @@ where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are the variables 
 
 @section{Expressions}
 
-XXX
+There are a large variety of different @deftech{expressions} in Reach programs.
+
+The remainder of this section enumerates each kind of @tech{expression}.
+
+@reach{
+ X
+ Y
+ Z }
+
+An identifier, written @reachin{ID}, is an @tech{expression} that evaluates to the value of the identifier is bound to.
+
+@reach{
+ 10
+ 0xdeadbeef
+ 007
+ true
+ false
+ "reality bytes"
+ 'it just does' }
+
+A @deftech{literal value}, written @reachin{VALUE}, is an @tech{expression} that evaluates to the given value. Numbers may be written in decimal, hexadecimal, or octal. Booleans may be written as @reachin{true} or @reachin{false}. Byte strings may be written between double or single quotes.
+
+@reach{
+ ! a
+ - a}
+
+A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operators}: @litchar{! -}.
+
+@reach{
+ a && b
+ a || b
+ a + b
+ a - b
+ a * b
+ a / b
+ a % b
+ a | b
+ a & b
+ a ^ b
+ a << b
+ a >> b
+ a == b
+ a != b
+ a === b
+ a !== b
+ a > b
+ a >= b
+ a <= b
+ a < b }
+
+A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operators}: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}. The operators @reachin{==} and @reachin{!=} operate on numbers, while the operators @reachin{===} and @reachin{!==} operate on byte strings.
+
+@reach{
+ (a + b) - c }
+
+An @tech{expression} may be parenthesized, as in @reachin{(EXPR)}.
+
+@reach{
+ [ ]
+ [ 1, 2 + 3, 4 * 5 ] }
+
+A @deftech{multiple value expression}, written @reachin{[ EXPR_0, ..., EXPR_n ]}, is an @tech{expression} which evaluates to @reachin{n} values, where @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions} that evaluate to one value.
+
+@reach{
+ map[3] }
+
+An @deftech{array reference}, written @reachin{ARRAY_EXPR[IDX_EXPR]}, where @reachin{ARRAY_EXPR} is an @tech{expression} that evaluates to statically sized array and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural number which is less than the size of the array, selects the given element of the array.
+
+@reach{
+ choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ] }
+
+A @deftech{conditional expression}, written @reachin{COND_E ? TRUE_E : FALSE_E}, where @reachin{COND_E}, @reachin{TRUE_E}, and @reachin{FALSE_E} are @tech{expressions}, selects between the @tech{values} which @reachin{TRUE_E} and @reachin{FALSE_E} evaluate to based on whether @reachin{COND_E} evaluates to @reachin{true}.
+
+@reach{
+ (() => 4)
+ ((x) => x + 1)
+ ((x) => { const y = x + 1;
+           return y + 1; }) }
+
+A @deftech{lambda expression}, written @reachin{(ID_0, ..., ID_n) => EXPR}, where @reachin{ID_0} through @reachin{ID_n} are identifiers and @reachin{EXPR} is an @tech{expression}, evaluates to an function which is an abstraction of @reachin{EXPR} over @reachin{n} values.
+
+@reach{
+ transfer(10).to(Alice) }
+
+A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)}, where @reachin{AMOUNT_EXPR} is an @tech{expression} that evaluates to a natural number and @reachin{PART} is a @tech{participant} identifier, performs a @tech{transfer} of @tech{network tokens} from the @tech{contract} to the named @tech{participant}. @reachin{AMOUNT_EXPR} must evaluate to less than or equal to the balance of @tech{network tokens} in the @tech{contract} @tech{account}. A @tech{transfer expression} may only occur within a @tech{consensus step}.
+
+@reach{
+ interact.notify(handA, handB);
+ is(uint256, interact.chooseAmount(heap1, heap2)) }
+
+An @deftech{interaction expression}, written @reachin{is(TYPE, interact.METHOD(EXPR_0, ..., EXPR_n))}, where @reachin{TYPE} is a @tech{type}, @reachin{METHOD} is an identifier, and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions} that evaluate to one value, evaluates to the result of an @tech{interact}ion with a @tech{frontend} that receives the evaluation of the @reachin{n} @tech{expressions} and sends a @tech{value} of @tech{type} @reachin{TYPE} if it is @tech{honest}. The @reachin{is} component may be omitted, in which case it is treated as though it were @reachin{is(boolean, ....)}.
+
+@reach{
+ assert( amount <= heap1 )
+ step( moveA )
+ digest( coinFlip )
+ random()
+ declassify( _coinFlip ) }
+
+A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)}, where @reachin{EXPR_rator} and @reachin{EXPR_rand_0} through @reachin{EXPR_rand_n} are @tech{expressions} that evaluate to one value. @reachin{EXPR_rator} must evaluate to an abstraction over @reachin{n} values or a primitive of arity @reachin{n}.
 
 @section{Standard Library}
 

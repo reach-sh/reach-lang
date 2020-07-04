@@ -400,6 +400,7 @@ decodeExpr dss je =
     (JSArrowExpression params a s) -> XL_Lambda (tp a) (decodeParams (dss_fp dss) params) (decodeStmts dss [s])
     --- No function w/ name
     --- No JSMemberDot
+    --- XXX/FIXME - Remove this
     (JSMemberDot (JSIdentifier a "txn") _ (JSIdentifier _ "value")) ->
       XL_FunApp (tp a) (XL_Prim (tp a) (CP TXN_VALUE)) []
     --- No JSMemberNew

@@ -1,5 +1,6 @@
 'reach 0.1 lib';
 
+// Operator abbreviation expansions
 function not (x) {
   return (x ? false : true); };
 function neq (x, y) {
@@ -10,6 +11,8 @@ function or (x, y) {
   return (x ? true : y); };
 function and (x, y) {
   return (x ? y : false); };
+
+// Library functions
 function implies (x, y) {
   return (not(x) || y); };
 
