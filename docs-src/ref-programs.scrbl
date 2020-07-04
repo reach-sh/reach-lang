@@ -102,7 +102,13 @@ A @deftech{block} is a sequence of @tech{statements} surrounded by braces, i.e. 
 
 @section{Statements}
 
-There are a large variety of different @deftech{statements} in Reach programs. Each affects the meaning of the subsequent @tech{statements}, which is called its @deftech{tail}. For example, if @reachin{{X; Y; Z;}} is a @tech{block}, then @reachin{X}'s @tech{tail} is @reachin{{Y; Z;}} and @reachin{Y}'s @tech{tail} is @reachin{{Z;}}.
+There are a large variety of different @deftech{statements} in Reach programs.
+
+Each @tech{statement} affects the meaning of the subsequent @tech{statements}, which is called its @deftech{tail}. For example, if @reachin{{X; Y; Z;}} is a @tech{block}, then @reachin{X}'s @tech{tail} is @reachin{{Y; Z;}} and @reachin{Y}'s @tech{tail} is @reachin{{Z;}}.
+
+Distinct from @tech{tails} are @deftech{continuations} which include everything after the @tech{statement}. For example, in @reachin{{{X; Y;} Z;}}, @reachin{X}'s @tech{tail} is just @reachin{Y}, but its @tech{continuation} is @reachin{Y; Z;}.
+
+@tech{Tails} are statically apparent from the structure of the program source code, while @tech{continuations} are influenced by function calls.
 
 The remainder of this section enumerates each kind of @tech{statement}.
 
@@ -155,6 +161,8 @@ Both @reachin{TRUE} and @reachin{FALSE} have empty @tech{tails}, i.e. the @tech{
 
 is erroneous, because the identifier @reachin{z} is not bound outside the @tech{conditional statement}.
 
+A @tech{conditional statement} may only include a @tech{consensus transfer} in @reachin{TRUE} or @reachin{FALSE} if it is within a @tech{consensus step}.
+
 @subsection{Block statements}
 
 A @deftech{block statement} is when a @tech{block} occurs in a @tech{statement} position, then it establishes a local, separate scope for the definitions of identifiers within that @tech{block}. In other words, the @tech{block} is evaluated for effect, but the @tech{tail} of the @tech{statements} within the @tech{block} are isolated from the surrounding @tech{tail}. For example,
@@ -199,32 +207,66 @@ is a valid program where @reachin{Alice}'s @tech{local state} includes the @tech
 @subsection{Consensus transfers}
 
 @reach{
-  Alice.publish(wagerAmount)
-       .pay(wagerAmount)
-       .timeout(DELAY, _, () => {
-         commit();
-         return false; }); }
+ Alice.publish(wagerAmount)
+      .pay(wagerAmount)
+      .timeout(DELAY, _, () => {
+        commit();
+        return false; }); }
 
 A @tech{consensus transfer}, written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, TIMEOUT_PART, TIMEOUT_EXPR)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{expression} that depends on only @tech{consensus state} that evaluates to a natural number, @reachin{TIMEOUT_PART} is either a @tech{participant} identifier or @reachin{_} and names the @tech{participant} responsible for executing the alternate @tech{consensus transfer}, where @reachin{_} indicates anyone, and @reachin{TIMEOUT_EXPR} is an @tech{expression} that evaluates to a zero-arity function, which will be executed by @reachin{TIMEOUT_PART} after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}. The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
 
 The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}. For example, the following are both valid:
 
 @reach{
-  Alice.publish(coinFlip)
-       .timeout(DELAY, _, () => {
-         commit();
-         return false; }); }
+ Alice.publish(coinFlip)
+      .timeout(DELAY, _, () => {
+        commit();
+        return false; }); }
 @reach{
-  Alice.pay(penaltyAmount)
-       .timeout(DELAY, _, () => {
-         commit();
-         return false; }); }
+ Alice.pay(penaltyAmount)
+      .timeout(DELAY, _, () => {
+        commit();
+        return false; }); }
 
-XXX commit
+@subsection{Commit statements}
 
-XXX while
+@reach{
+ commit(); }
 
-XXX continue
+A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @tech{statement}'s @tech{continuation} as the next @tech{step} of the @DApp computation.
+
+@subsection{While statements}
+
+@reach{
+ var [ heap1, heap2 ] = [ 21, 21 ];
+ invariant(balance() = 2 * wagerAmount);
+ while ( heap1 + heap2 > 0 ) {
+   ....
+   [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
+   continue; } }
+
+A @deftech{while statement} may occur within a @tech{consensus step} and is written:
+
+@reach{
+ var [ VAR_0, ..., VAR_n ] = INIT_EXPR;
+ invariant(INVARIANT_EXPR);
+ while( COND_EXPR ) BLOCK }
+
+where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are bound to the result of the @tech{expression} @reachin{INIT_EXPR}, which must evaluate to @reachin{n} values, and @reachin{INVARIANT_EXPR} is an @tech{expression}, called the @deftech{loop invariant}, that must be true before and after every execution of the @tech{block} @reachin{BLOCK}, and if @reachin{COND_EXPR} is true, then the @tech{block} executes, and if not, then the loop terminates and control transfers to the @tech{continuation} of the @tech{while statement}. The identifiers @reachin{VAR_0} through @reachin{VAR_n} are bound within @reachin{INVARIANT_EXPR}, @reachin{COND_EXPR}, @reachin{BLOCK}, and the @tech{tail} of the @tech{while statement}.
+
+@subsection{Continue statements}
+
+@reach{
+ [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
+ continue; }
+
+A @deftech{continue statement} may occur within a @tech{while statement}'s @tech{block} and is written:
+
+@reach{
+ [ VAR_0, ..., VAR_n ] = UPDATE_EXPR;
+ continue; }
+
+where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are the variables bound by the nearest enclosing @tech{while statement} and @reachin{UPDATE_EXPR} is an @tech{expression} which evaluates to @reachin{n} values. The @tech{tail} of a @tech{continue statement} must be empty.
 
 @section{Expressions}
 
