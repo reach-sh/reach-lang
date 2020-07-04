@@ -62,7 +62,7 @@ A @deftech{type} is either a @tech{base type} or a statically-sized array of @te
 
 @section{Identifier Definitions}
 
-An @deftech{identifier definition} is either a @tech{value definition}, @tech{enumeration}, or @tech{function definition}.
+An @deftech{identifier definition} is either a @tech{value definition}, @tech{enumeration}, or @tech{function definition}. All identifiers in Reach programs must be unbound at the position of the program where they are bound, i.e., it is illegal to shadow identifiers with new definitions.
 
 @reach{
   const DELAY = 10;
@@ -180,7 +180,21 @@ is erroneous, because the identifier @reachin{x} is not bound outside the @tech{
 
 An @tech{expression}, @reachin{E}, in a @tech{statement} position is equivalent to the @tech{block statement} @reachin{{ return E; }}.
 
-XXX only
+@subsection{Local step}
+
+@reach{
+ Alice.only(() => {
+   const pretzel = random(); }); }
+
+A @tech{local step} statement is written @reachin{PART.only(() => BLOCK)}, where @reachin{PART} is a @tech{participant} identifier and @reachin{BLOCK} is a @tech{block}. Any bindings defined within the @tech{block} of a @tech{local step} are available in the @tech{statement}'s @tech{tail}. For example,
+
+@reach{
+ Alice.only(() => {
+   const x = 3; });
+ Alice.only(() => {
+   const y = x + 1; }); }
+
+is a valid program where @reachin{Alice}'s @tech{local state} includes the @tech{private} values @reachin{x} (bound to @reachin{3}) and @reachin{y} (bound to @reachin{4}).
 
 XXX publish + pay + timeout
 
