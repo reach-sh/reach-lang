@@ -12,6 +12,11 @@
 (define (reachin . contents)
   (apply mintinline "javascript" contents))
 
+(define (js . contents)
+  (apply minted "javascript" contents))
+(define (jsin . contents)
+  (apply mintinline "javascript" contents))
+
 (define DApp @tech{DApp})
 (define DApps @tech{DApps})
 

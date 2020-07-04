@@ -235,11 +235,14 @@ const getBalanceAt = async (addr, round) => {
   // FIXME: Don't ignore round, but this requires "the next indexer version" (Max on 2020/05/05)
   return (await algodClient.accountInformation(addr)).amount; }
 
+export const balanceOf = async acc => {
+  return (await getBalanceAt(acc.addr, await currentRound())); }
+
 const showBalance = async (note, acc) => {
   console.log(
     "%s: balance: %d microAlgos"
     , note
-    , (await getBalanceAt(acc.addr, await currentRound()))); };
+    , (await balanceOf(acc))); };
 
 export const newTestAccount = async (startingBalance) => {
   const acc = algosdk.generateAccount();
