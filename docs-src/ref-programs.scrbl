@@ -373,5 +373,65 @@ A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., 
 
 @section{Standard Library}
 
-XXX
+Reach's standard library includes a few built-in primitives documented in this section.
+
+@reach{
+ assert( claim ) }
+
+@index{assert} A @tech{static assertion} where @reachin{claim} always evaluates to @reachin{true}.
+
+@reach{
+ assume( claim ) }
+
+@index{assume} An @tech{assumption} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{frontends}.
+
+@reach{
+ require( claim ) }
+
+@index{require} An @tech{requirement} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{participants}.
+
+@reach{
+ possible( claim ) }
+
+@index{possible} A @tech{possibility assertion} where it must be possible for @reachin{claim} to evaluate to @reachin{true} with @tech{honest} @tech{frontends} and @tech{participants}.
+
+@reach{
+ digest( arg_0, ..., arg_n ) }
+
+The @deftech{digest} primitive performs a @link["https://en.wikipedia.org/wiki/Cryptographic_hash_function"]{cryptographic hash} of the binary encoding of the given arguments, using the Keccak256 algorithm.
+
+@reach{
+ balance() }
+
+The @deftech{balance} primitive returns the balance of the @tech{contract} @tech{account} for the @|DApp|.
+
+@reach{
+ random() }
+
+The @deftech{random} primitive returns a random unsigned integer of 256 bits. This primitive may not be called in @tech{consensus steps}.
+
+@reach{
+ declassify( arg ) }
+
+The @deftech{declassify} primitive performs a @tech{declassification} of the given argument.
+
+@reach{
+ implies( x, y ) }
+
+@index{implies} Returns @reachin{true} if @reachin{x} is @reachin{false} or @reachin{y} is @reachin{true}.
+
+@reach{
+ ensure( pred, x ) }
+
+@index{ensure} Makes a @tech{static assertion} that @reachin{pred(x)} is @reachin{true} and returns @reachin{x}.
+
+@reach{
+ precommit( x ) }
+
+@index{precommit} Returns two values: the @tech{digest} of @reachin{x} and the second value, a @tech{random} value, called the @deftech{salt}.
+
+@reach{
+ check_commit( commitment, salt, x ) }
+
+@index{check_commit} Makes a @tech{requirement} that @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
 
