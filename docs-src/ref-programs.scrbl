@@ -196,7 +196,29 @@ A @tech{local step} statement is written @reachin{PART.only(() => BLOCK)}, where
 
 is a valid program where @reachin{Alice}'s @tech{local state} includes the @tech{private} values @reachin{x} (bound to @reachin{3}) and @reachin{y} (bound to @reachin{4}).
 
-XXX publish + pay + timeout
+@subsection{Consensus transfers}
+
+@reach{
+  Alice.publish(wagerAmount)
+       .pay(wagerAmount)
+       .timeout(DELAY, _, () => {
+         commit();
+         return false; }); }
+
+A @tech{consensus transfer}, written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, TIMEOUT_PART, TIMEOUT_EXPR)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{expression} that depends on only @tech{consensus state} that evaluates to a natural number, @reachin{TIMEOUT_PART} is either a @tech{participant} identifier or @reachin{_} and names the @tech{participant} responsible for executing the alternate @tech{consensus transfer}, where @reachin{_} indicates anyone, and @reachin{TIMEOUT_EXPR} is an @tech{expression} that evaluates to a zero-arity function, which will be executed by @reachin{TIMEOUT_PART} after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}. The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
+
+The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}. For example, the following are both valid:
+
+@reach{
+  Alice.publish(coinFlip)
+       .timeout(DELAY, _, () => {
+         commit();
+         return false; }); }
+@reach{
+  Alice.pay(penaltyAmount)
+       .timeout(DELAY, _, () => {
+         commit();
+         return false; }); }
 
 XXX commit
 
