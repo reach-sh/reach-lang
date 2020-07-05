@@ -370,16 +370,19 @@ peval outer_loopt σ e =
                 it = (type_equal a tt ft)
     XL_Claim a ct ae ->
       IV_XIL eff_claim [] (XIL_Claim a ct (sr a [LT_BT BT_Bool] ae))
-    XL_ToConsensus a (ok_p, vs, ae) (to_mp, de, te) be ->
-      IV_XIL eff_comm (type_equal a tt bt) (XIL_ToConsensus a ok_info to_info be')
+    XL_ToConsensus a (ok_p, vs, ae) mto be ->
+      IV_XIL eff_comm rt (XIL_ToConsensus a ok_info mto_info be')
       where ok_info = (ok_ij, ok_piv, vilvs, (sr a [LT_BT BT_UInt256] ae))
-            to_info = (to_mwho', (sr a [LT_BT BT_UInt256] de), te')
+            (rt, mto_info) =
+              case mto of
+                Nothing -> (bt, Nothing)
+                Just (de, te) -> ((type_equal a tt bt), Just (de', te'))
+                  where de' = sr a [LT_BT BT_UInt256] de
+                        (_, tt, te') = iv_expr a $ peval outer_loopt σ te
             ok_piv = peval_ensure_var a (LT_BT BT_Address) ok_p σ_ok
-            to_mwho' = to_mp >>= (\tp -> Just $ peval_ensure_var a (LT_BT BT_Address) tp σ)
             ok_ij = ienv_check_part_absent a ok_p σ
             σ_ok = if ok_ij then ienv_insert a ok_p (IV_Var a (ok_p, (LT_BT BT_Address))) σ else σ
             (_, bt, be') = iv_expr a $ peval outer_loopt σ_ok be
-            (_, tt, te') = iv_expr a $ peval outer_loopt σ te
             vilvs = zip vs vts
             (_,vts,_) = iv_exprs a $ map def $ map (XL_Var a) vs
     XL_FromConsensus a be ->
@@ -628,17 +631,20 @@ anf_expr me ρ e mk =
     XIL_FromConsensus h le -> do
       lt <- anf_tail RoleContract ρ le mk
       return $ IL_FromConsensus h lt
-    XIL_ToConsensus h (ok_ij, from, ins, pe) (to_mwho, de, te) ce -> do
+    XIL_ToConsensus h (ok_ij, from, ins, pe) mto ce -> do
       let from' = anf_renamed_to_var h ρ from
       anf_expr (RolePart from') ρ pe
-        (\ _ [pa] ->
-          anf_expr RoleContract ρ de
-          (\ _ [da] -> do
-              let ins' = vsOnly $ map (anf_renamed_to h ρ) ins
-              let to_mwho' = to_mwho >>= (\to_who -> Just $ anf_renamed_to_var h ρ to_who)
-              ct <- anf_tail RoleContract ρ ce mk
-              tt <- anf_tail RoleContract ρ te anf_ktop
-              return $ IL_ToConsensus h (ok_ij, from', ins', pa) (to_mwho', da, tt) ct))
+        (\ _ [pa] -> do
+            let ins' = vsOnly $ map (anf_renamed_to h ρ) ins
+            ct <- anf_tail RoleContract ρ ce mk
+            let done mto' = return $ IL_ToConsensus h (ok_ij, from', ins', pa) mto' ct
+            case mto of
+              Nothing -> done Nothing
+              Just (de, te) ->
+                anf_expr RoleContract ρ de
+                (\ _ [da] -> do
+                    tt <- anf_tail RoleContract ρ te anf_ktop
+                    done $ Just (da, tt)))
     XIL_Values h args ->
       anf_exprs h me ρ args mk
     XIL_Transfer h to ae ->
@@ -918,7 +924,7 @@ epp_it_ctc ps this_h γ ctxt it = case it of
   IL_ToConsensus h _ _ _ ->
     expect_throw CE_ContractLimitation h ("transition to consensus" :: String)
   IL_FromConsensus h bt -> do
-    (svs0, next0, ts0) <- epp_it_loc ps this_h γ ctxt bt
+    (svs0, next0, ts0) <- epp_it_loc ps (this_h, mempty) γ ctxt default_interval bt
     let ts1 = M.map (EP_FromConsensus h) ts0
     return (svs0, next0, ts1)
   IL_While h loopvs initas untilt invt bodyt kt -> do
@@ -962,8 +968,8 @@ epp_it_ctc ps this_h γ ctxt it = case it of
       _ ->
         expect_throw CE_ContinueNotInLoop h ("EPP" :: String)
 
-epp_it_loc :: Show ann => [BLPart] -> Int -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
-epp_it_loc ps last_h γ ctxt it = case it of
+epp_it_loc :: Show ann => [BLPart] -> (Int, Set.Set BLVar) -> EPPEnv -> EPPCtxt ann -> CInterval ann -> ILTail ann -> EPPRes ann
+epp_it_loc ps last_hNvs γ ctxt toint it = case it of
   IL_Ret h al -> return ( Set.empty, C_Halt h, ts)
     where ts = M.fromList $ map mkt ps
           mkt p = (p, EP_Ret h $ map fst $ snd $ epp_args h γ (RolePart p) al)
@@ -991,47 +997,52 @@ epp_it_loc ps last_h γ ctxt it = case it of
                    lst = case fmst of
                      Nothing -> expect_throw CE_UnknownRole h who
                      Just v -> v
-    (svs1, ct1, ts1) <- epp_it_loc ps last_h γ' ctxt next
+    (svs1, ct1, ts1) <- epp_it_loc ps last_hNvs γ' ctxt toint next
     return (svs1, ct1, extend_ts ts1)
   IL_Do h who how next -> do
-    (svs1, ct1, ts1) <- epp_it_loc ps last_h γ ctxt next
+    (svs1, ct1, ts1) <- epp_it_loc ps last_hNvs γ ctxt toint next
     let ts2 = M.mapWithKey addhow ts1
               where addhow p t =
                       if not (role_me (RolePart p) who) then t
                       else EP_Do h s' t
                       where (_, s') = epp_s_loc γ p how
     return (svs1, ct1, ts2)
-  IL_ToConsensus h (ok_ij, fromp, what, howmuch) (to_mwho, delay, timeout) next -> do
+  IL_ToConsensus h (ok_ij, fromp, what, howmuch) mto next -> do
     hn_okay <- acquireEPP
-    hn_timeout <- acquireEPP
     let fromr = RolePart fromp
     let (_, howmuch') = must_be_public h $ epp_arg h γ fromr howmuch
     let what' = map (must_be_public h) $ epp_vars h γ fromr what
     let what'env = M.fromList $ map (\v -> (v,Public)) what'
     let γ' = M.map (M.union what'env) γ
-    let (delay_vs, delay') = must_be_public h $ epp_arg h γ RoleContract delay
     (svs_okay, ct_okay, ts_okay) <- epp_it_ctc ps hn_okay γ' ctxt next
-    (svs_timeout, ct_timeout, ts_timeout) <- epp_it_ctc ps hn_timeout γ ctxt timeout
-    let svs_all0 = Set.union delay_vs $ Set.difference (Set.union svs_okay svs_timeout) (boundBLVars what')
     let part_may_add True p x = Set.delete p x
         part_may_add False p x = Set.insert p x
-    let svs_all1 = part_may_add ok_ij fromp svs_all0
-    let svs_all = (case to_mwho of
-                    Nothing -> \x -> x
-                    Just v -> \x -> Set.insert v x) svs_all1
+    let svs_ok_needs = part_may_add ok_ij fromp (Set.difference svs_okay (boundBLVars what'))
+    let (last_h, last_h_fvs) = last_hNvs
+    (toint_ok, mdelay, svs_timeout, ts_timeout) <-
+      case mto of
+        Nothing ->
+          return (toint, Nothing, mempty, mempty)
+        Just (delay, timeout) -> do
+          let (delay_vs, delay') = must_be_public h $ epp_arg h γ RoleContract delay
+          let mdelay = Just delay'
+          let toint_to = interval_add_from toint delay'
+          let toint_ok = interval_add_to toint delay'
+          let last_h_fvs' = Set.union svs_ok_needs last_h_fvs
+          (svs_timeout, _, ts_timeout) <- epp_it_loc ps (last_h, last_h_fvs') γ ctxt toint_to timeout
+          return (toint_ok, mdelay, (Set.union delay_vs svs_timeout), ts_timeout)
+    let svs_all = Set.unions [ last_h_fvs, svs_timeout, svs_ok_needs ]
     let svs_all_l = Set.toList svs_all
     let ok_fs = (if ok_ij then FS_Join else FS_From) fromp
-    let to_fs = case to_mwho of
-                  Nothing -> FS_Any
-                  Just v -> FS_From v
-    setEPP hn_okay $ C_Handler h ok_fs False (last_h, svs_all_l) what' delay' ct_okay
-    setEPP hn_timeout $ C_Handler h to_fs True (last_h, svs_all_l) [] delay' ct_timeout
-    let ct2 = C_Wait h last_h svs_all_l    
+    setEPP hn_okay $ C_Handler h ok_fs toint_ok (last_h, svs_all_l) what' ct_okay
+    let ct2 = C_Wait h last_h svs_all_l
     let ts2 = combine_maps mkt ps ts_okay ts_timeout
               where mkt p pt1 pt2 =
-                      let to_info = (to_fs, hn_timeout, delay', pt2) in
-                      if p /= fromp then EP_Recv h svs_all_l (ok_fs, hn_okay, what', pt1) to_info
-                      else EP_SendRecv h svs_all_l (ok_fs, hn_okay, what', howmuch', pt1) to_info
+                      let to_info = case mdelay of
+                                          Nothing -> Nothing
+                                          Just delay' -> Just (delay', pt2) in
+                        if p /= fromp then EP_Recv h svs_all_l (ok_fs, hn_okay, what', pt1) to_info
+                        else EP_SendRecv h svs_all_l (ok_fs, hn_okay, what', howmuch', pt1) to_info
     return (svs_all, ct2, ts2)
   IL_FromConsensus h _ -> expect_throw CE_LocalLimitation h ("transition from consensus" :: String)
   IL_While h _ _ _ _ _ _ -> expect_throw CE_LocalLimitation h ("while" :: String)
@@ -1043,7 +1054,7 @@ epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
         ps = M.keys ips
         bps = M.mapWithKey mkep ets
         mkep p ept = EP_Prog h (ips M.! p) ept
-        ((_, _, ets), chs) = runEPP $ epp_it_loc ps 0 γ EC_Top it
+        ((_, _, ets), chs) = runEPP $ epp_it_loc ps (0, mempty) γ EC_Top default_interval it
         γi = M.fromList $ map initγ $ M.toList ips
         initγ (p, args) = (RolePart p, M.fromList $ map (\v->(v, Secret)) args)
         γ = M.insert RoleContract M.empty γi

@@ -25,33 +25,19 @@ const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
 const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = b => Array.from(b, byteToHex).join('');
 
-const nat_to_fixed_size_hex = size => n => {
-  const err = m => panic(`nat_to_fixed_size_hex: ${m}`);
-
-  const notNat = !(Number.isInteger(n) && 0 <= n);
-  const tooBig = !(Math.ceil(Math.log2(n + 1) / 8) <= size);
-
-  return notNat ? err(`expected a nat`)
-    : tooBig ? err(`expected a nat that fits into ${size} bytes`)
-    : n.toString(16).padStart((2 * size), '0'); };
-
-// Encodes a 16-bit unsigned integer as 2 hex bytes or 4 hex characters
-const nat16_to_fixed_size_hex =
-      nat_to_fixed_size_hex(2);
-
 export const balanceOf = async a =>
   toBN(await web3.eth.getBalance(a.address));
 
 export const assert = d => nodeAssert.strict(d);
 
-export const toWei     = web3.utils.toWei;
-export const fromWei     = web3.utils.fromWei;
-export const toBN      = web3.utils.toBN;
+export const toWei = web3.utils.toWei;
+export const fromWei = web3.utils.fromWei;
+export const toBN = web3.utils.toBN;
 export const toWeiBN = (a,b) => toBN(toWei(a, b));
-export const isBN      = web3.utils.isBN;
+export const isBN = web3.utils.isBN;
 export const keccak256 = web3.utils.soliditySha3;
 
-export const hexToBN          = h => toBN(hexTo0x(h));
+export const hexToBN = h => toBN(hexTo0x(h));
 export const uint256_to_bytes = i => bnToHex(i);
 
 export const bnToHex = (u, size = 32) =>
@@ -141,12 +127,13 @@ export const connectAccount = address => {
 
       return [ ok_bal, ok_vals ]; };
 
-    const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, timeNum, try_p) => {
-      return sendrecv(label, funcNum, args, value, timeout_delay, timeNum); }
+    const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
+      void(try_p, evt_cnt);
+      return sendrecv(label, funcNum, args, value, timeout_delay); };
 
     // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     /* eslint require-atomic-updates: off */
-    const sendrecv = async (label, funcNum, args, value, timeout_delay, timeNum) => {
+    const sendrecv = async (label, funcNum, args, value, timeout_delay) => {
       const funcName = `m${funcNum}`;
       // https://github.com/ethereum/web3.js/issues/2077
       const munged = [ last_block, ...args ]
@@ -166,8 +153,9 @@ export const connectAccount = address => {
           if ( current_block == block_send_attempt ) {
             block_repeat_count++; }
           block_send_attempt = current_block;
-          if ( block_repeat_count > 32 ) {
+          if ( timeout_delay && block_repeat_count > 32 ) {
             panic(`${shad}: ${label} send ${funcName} ${timeout_delay} --- REPEAT @ ${block_send_attempt} x ${block_repeat_count}`); }
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY FAIL --- ${last_block} ${current_block} ${block_repeat_count} ${block_send_attempt}`);
           continue; }
 
         assert(r_maybe != false);
@@ -181,26 +169,24 @@ export const connectAccount = address => {
         // last_block = ok_r.blockNumber;
         void(ok_r);
 
-        return await recv( label, funcNum, false, false, false, false ); }
+        return await recv( label, funcNum, timeout_delay ); }
 
       // XXX If we were trying to join, but we got sniped, then we'll
       // think that there is a timeout and then we'll wait forever for
       // the timeout message.
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
-      const rec_res = await recv(label, timeNum, false, false, false, false );
+      const rec_res = {};
       rec_res.didTimeout = true;
       return rec_res; };
 
-    const recv_top = async (label, okNum, ok_cnt, timeout_delay, timeout_me, timeout_args, timeNum, try_p) => {
-      return recv(label, okNum, timeout_delay, timeout_me, timeout_args, timeNum);
+    const recv_top = async (label, okNum, ok_cnt, timeout_delay) => {
+      return recv(label, okNum, timeout_delay);
     };
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const recv = async (label, okNum, timeout_delay, timeout_me, timeout_args, timeNum) => {
+    const recv = async (label, okNum, timeout_delay) => {
       const ok_evt = `e${okNum}`;
-      const timeout_fun = `m${timeNum}`;
-      const timeout_evt = `e${timeNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
 
       let block_poll_start = last_block;
@@ -231,9 +217,7 @@ export const connectAccount = address => {
           return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from }; } }
 
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);
-      const rec_res = timeout_me
-            ? await sendrecv(label, timeNum, timeout_args, 0, timeout_evt, false )
-            : await recv(label, timeNum, false, false, false, false, false);
+      const rec_res = {};
       rec_res.didTimeout = true;
       return rec_res; };
 

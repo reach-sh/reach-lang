@@ -1,7 +1,5 @@
 'reach 0.1 exe';
 
 function main() {
-  A.pay(0)
-    .timeout(DELAY, 7, () => {
-      return false; });
+  7.pay(0);
   return true; }

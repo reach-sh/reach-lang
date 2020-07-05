@@ -9,5 +9,3 @@ index 9bdf6f8..b97901c 100644
 -      assume(howMuch <= bal); });
 +      /*assume(howMuch <= bal);*/ });
      Child.publish(howMuch)
-       .timeout(DELAY, Parent, () => {
-         [ bal, oks, nos ] = [ bal, oks, nos ];

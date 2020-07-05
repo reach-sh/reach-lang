@@ -57,13 +57,6 @@ txna ApplicationArgs 2
 btoi
 ==
 bz revert
-txna ApplicationArgs 1
-btoi
-int 10
-+
-global Round
->=
-bz revert
 int 0
 itob
 txna ApplicationArgs 1
@@ -114,68 +107,12 @@ txna Accounts 0
 ==
 bz revert
 txn NumAppArgs
-int 3
-==
-bz h3
-txna ApplicationArgs 0
-btoi
-int 2
-!=
-bnz h3
-gtxn 0 TypeEnum
-int appl
-==
-bz revert
-gtxn 1 TypeEnum
-int pay
-==
-bz revert
-gtxn 1 Receiver
-byte base64(bWU=)
-app_global_gets
-==
-bz revert
-gtxn 1 Amount
-txna ApplicationArgs 2
-btoi
-==
-bz revert
-txna ApplicationArgs 1
-btoi
-int 10
-+
-global Round
-<
-bz revert
-int 0
-itob
-txna ApplicationArgs 1
-concat
-keccak256
-btoi
-byte base64(c3RhdGU=)
-app_global_gets
-!=
-bnz revert
-int 2
-global GroupSize
-!=
-bnz revert
-b halt
-// </Handler 2>
-// <Handler 3>
-h3:
-byte base64(bWU=)
-txna Accounts 0
-==
-bz revert
-txn NumAppArgs
 int 6
 ==
 bz h4
 txna ApplicationArgs 0
 btoi
-int 3
+int 2
 !=
 bnz h4
 gtxn 0 TypeEnum
@@ -242,8 +179,8 @@ store 3
 store 2
 store 1
 store 0
-b l5
-// </Handler 3>
+b l3
+// </Handler 2>
 // <Handler 4>
 h4:
 byte base64(bWU=)
@@ -251,106 +188,14 @@ txna Accounts 0
 ==
 bz revert
 txn NumAppArgs
-int 6
+int 9
 ==
-bz h6
+bz h5
 txna ApplicationArgs 0
 btoi
 int 4
 !=
-bnz h6
-gtxn 0 TypeEnum
-int appl
-==
-bz revert
-gtxn 1 TypeEnum
-int pay
-==
-bz revert
-gtxn 1 Receiver
-byte base64(bWU=)
-app_global_gets
-==
-bz revert
-gtxn 1 Amount
-txna ApplicationArgs 2
-btoi
-==
-bz revert
-gtxn 0 Sender
-txna ApplicationArgs 3
-!=
-bnz revert
-txna ApplicationArgs 1
-btoi
-int 10
-+
-global Round
-<
-bz revert
-int 1
-itob
-txna ApplicationArgs 1
-txna ApplicationArgs 3
-txna ApplicationArgs 4
-btoi
-itob
-txna ApplicationArgs 5
-btoi
-itob
-concat
-concat
-concat
-concat
-keccak256
-btoi
-byte base64(c3RhdGU=)
-app_global_gets
-!=
-bnz revert
-int 2
-global GroupSize
->
-bnz revert
-gtxn 2 TypeEnum
-int pay
-!=
-bnz revert
-gtxn 2 Amount
-int 0
-balance
-!=
-bnz revert
-gtxn 2 Receiver
-txna ApplicationArgs 3
-!=
-bnz revert
-gtxn 2 Sender
-byte base64(bWU=)
-app_global_gets
-!=
-bnz revert
-int 3
-global GroupSize
-!=
-bnz revert
-b halt
-// </Handler 4>
-// <Handler 6>
-h6:
-byte base64(bWU=)
-txna Accounts 0
-==
-bz revert
-txn NumAppArgs
-int 9
-==
-bz h7
-txna ApplicationArgs 0
-btoi
-int 6
-!=
-bnz h7
+bnz h5
 gtxn 0 TypeEnum
 int appl
 ==
@@ -380,7 +225,7 @@ int 10
 global Round
 >=
 bz revert
-int 3
+int 2
 itob
 txna ApplicationArgs 1
 txna ApplicationArgs 3
@@ -415,7 +260,7 @@ global GroupSize
 !=
 bnz revert
 byte base64(c3RhdGU=)
-int 6
+int 4
 itob
 global Round
 itob
@@ -444,96 +289,9 @@ keccak256
 btoi
 app_global_put
 b done
-// </Handler 6>
-// <Handler 7>
-h7:
-byte base64(bWU=)
-txna Accounts 0
-==
-bz revert
-txn NumAppArgs
-int 8
-==
-bz h8
-txna ApplicationArgs 0
-btoi
-int 7
-!=
-bnz h8
-gtxn 0 TypeEnum
-int appl
-==
-bz revert
-gtxn 1 TypeEnum
-int pay
-==
-bz revert
-gtxn 1 Receiver
-byte base64(bWU=)
-app_global_gets
-==
-bz revert
-gtxn 1 Amount
-txna ApplicationArgs 2
-btoi
-==
-bz revert
-gtxn 0 Sender
-txna ApplicationArgs 4
-!=
-bnz revert
-txna ApplicationArgs 1
-btoi
-int 10
-+
-global Round
-<
-bz revert
-int 3
-itob
-txna ApplicationArgs 1
-txna ApplicationArgs 3
-txna ApplicationArgs 4
-txna ApplicationArgs 5
-btoi
-itob
-txna ApplicationArgs 6
-btoi
-itob
-txna ApplicationArgs 7
-btoi
-itob
-concat
-concat
-concat
-concat
-concat
-concat
-keccak256
-btoi
-byte base64(c3RhdGU=)
-app_global_gets
-!=
-bnz revert
-txna ApplicationArgs 3
-txna ApplicationArgs 4
-txna ApplicationArgs 5
-btoi
-txna ApplicationArgs 6
-btoi
-txna ApplicationArgs 7
-btoi
-int 3
-store 5
-store 4
-store 3
-store 2
-store 1
-store 0
-b l5
-// </Handler 7>
-// <Handler 8>
-h8:
+// </Handler 4>
+// <Handler 5>
+h5:
 byte base64(bWU=)
 txna Accounts 0
 ==
@@ -541,12 +299,12 @@ bz revert
 txn NumAppArgs
 int 10
 ==
-bz h9
+bz h6
 txna ApplicationArgs 0
 btoi
-int 8
+int 5
 !=
-bnz h9
+bnz h6
 gtxn 0 TypeEnum
 int appl
 ==
@@ -576,7 +334,7 @@ int 10
 global Round
 >=
 bz revert
-int 6
+int 4
 itob
 txna ApplicationArgs 1
 txna ApplicationArgs 3
@@ -614,22 +372,22 @@ int 0
 txna ApplicationArgs 9
 btoi
 <=
-bnz h8_0
+bnz h5_0
 int 0
-b h8_1
-h8_0:
+b h5_1
+h5_0:
 txna ApplicationArgs 9
 btoi
 int 3
 <
-h8_1:
+h5_1:
 bz revert
 int 2
 global GroupSize
 !=
 bnz revert
 byte base64(c3RhdGU=)
-int 8
+int 5
 itob
 global Round
 itob
@@ -662,100 +420,9 @@ keccak256
 btoi
 app_global_put
 b done
-// </Handler 8>
-// <Handler 9>
-h9:
-byte base64(bWU=)
-txna Accounts 0
-==
-bz revert
-txn NumAppArgs
-int 9
-==
-bz h10
-txna ApplicationArgs 0
-btoi
-int 9
-!=
-bnz h10
-gtxn 0 TypeEnum
-int appl
-==
-bz revert
-gtxn 1 TypeEnum
-int pay
-==
-bz revert
-gtxn 1 Receiver
-byte base64(bWU=)
-app_global_gets
-==
-bz revert
-gtxn 1 Amount
-txna ApplicationArgs 2
-btoi
-==
-bz revert
-gtxn 0 Sender
-txna ApplicationArgs 3
-!=
-bnz revert
-txna ApplicationArgs 1
-btoi
-int 10
-+
-global Round
-<
-bz revert
-int 6
-itob
-txna ApplicationArgs 1
-txna ApplicationArgs 3
-txna ApplicationArgs 4
-txna ApplicationArgs 5
-btoi
-itob
-txna ApplicationArgs 6
-btoi
-itob
-txna ApplicationArgs 7
-btoi
-itob
-txna ApplicationArgs 8
-btoi
-itob
-concat
-concat
-concat
-concat
-concat
-concat
-concat
-keccak256
-btoi
-byte base64(c3RhdGU=)
-app_global_gets
-!=
-bnz revert
-txna ApplicationArgs 3
-txna ApplicationArgs 4
-txna ApplicationArgs 5
-btoi
-txna ApplicationArgs 6
-btoi
-txna ApplicationArgs 7
-btoi
-int 4
-store 5
-store 4
-store 3
-store 2
-store 1
-store 0
-b l5
-// </Handler 9>
-// <Handler 10>
-h10:
+// </Handler 5>
+// <Handler 6>
+h6:
 byte base64(bWU=)
 txna Accounts 0
 ==
@@ -763,12 +430,12 @@ bz revert
 txn NumAppArgs
 int 12
 ==
-bz h11
+bz h7
 txna ApplicationArgs 0
 btoi
-int 10
+int 6
 !=
-bnz h11
+bnz h7
 gtxn 0 TypeEnum
 int appl
 ==
@@ -798,7 +465,7 @@ int 10
 global Round
 >=
 bz revert
-int 8
+int 5
 itob
 txna ApplicationArgs 1
 txna ApplicationArgs 3
@@ -853,67 +520,67 @@ int 0
 txna ApplicationArgs 11
 btoi
 <=
-bnz h10_0
+bnz h6_0
 int 0
-b h10_1
-h10_0:
+b h6_1
+h6_0:
 txna ApplicationArgs 11
 btoi
 int 3
 <
-h10_1:
+h6_1:
 bz revert
 int 0
 txna ApplicationArgs 11
 btoi
 <=
-bnz h10_2
+bnz h6_2
 int 0
-b h10_3
-h10_2:
+b h6_3
+h6_2:
 txna ApplicationArgs 11
 btoi
 int 3
 <
-h10_3:
+h6_3:
 store 0
 int 0
 txna ApplicationArgs 9
 btoi
 <=
-bnz h10_4
+bnz h6_4
 int 0
-b h10_5
-h10_4:
+b h6_5
+h6_4:
 txna ApplicationArgs 9
 btoi
 int 3
 <
-h10_5:
+h6_5:
 store 1
 load 0
-bnz h10_6
+bnz h6_6
 int 0
-b h10_7
-h10_6:
+b h6_7
+h6_6:
 load 1
-h10_7:
-bnz h10_8
+h6_7:
+bnz h6_8
 load 0
-bnz h10_9
+bnz h6_9
 load 1
-bnz h10_10
+bnz h6_10
 int 1
-b h10_11
-h10_10:
+b h6_11
+h6_10:
 int 0
-h10_11:
-b h10_12
-h10_9:
+h6_11:
+b h6_12
+h6_9:
 int 2
-h10_12:
-b h10_13
-h10_8:
+h6_12:
+b h6_13
+h6_8:
 txna ApplicationArgs 11
 btoi
 int 4
@@ -923,7 +590,7 @@ btoi
 +
 int 3
 %
-h10_13:
+h6_13:
 store 2
 load 2
 int 2
@@ -950,10 +617,10 @@ store 3
 store 2
 store 1
 store 0
-b l5
-// </Handler 10>
-// <Handler 11>
-h11:
+b l3
+// </Handler 6>
+// <Handler 7>
+h7:
 byte base64(bWU=)
 txna Accounts 0
 ==
@@ -961,12 +628,12 @@ bz revert
 txn NumAppArgs
 int 10
 ==
-bz revert
+bz h8
 txna ApplicationArgs 0
 btoi
-int 11
+int 7
 !=
-bnz revert
+bnz h8
 gtxn 0 TypeEnum
 int appl
 ==
@@ -996,7 +663,7 @@ int 10
 global Round
 <
 bz revert
-int 8
+int 5
 itob
 txna ApplicationArgs 1
 txna ApplicationArgs 3
@@ -1030,6 +697,10 @@ byte base64(c3RhdGU=)
 app_global_gets
 !=
 bnz revert
+gtxn 1 Amount
+int 0
+==
+bz revert
 txna ApplicationArgs 3
 txna ApplicationArgs 4
 txna ApplicationArgs 5
@@ -1045,28 +716,310 @@ store 3
 store 2
 store 1
 store 0
-b l5
-// </Handler 11>
+b l3
+// </Handler 7>
+// <Handler 8>
+h8:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
+txn NumAppArgs
+int 9
+==
+bz h9
+txna ApplicationArgs 0
+btoi
+int 8
+!=
+bnz h9
+gtxn 0 TypeEnum
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
+byte base64(bWU=)
+app_global_gets
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
+gtxn 0 Sender
+txna ApplicationArgs 3
+!=
+bnz revert
+txna ApplicationArgs 1
+btoi
+int 10
++
+global Round
+<
+bz revert
+int 4
+itob
+txna ApplicationArgs 1
+txna ApplicationArgs 3
+txna ApplicationArgs 4
+txna ApplicationArgs 5
+btoi
+itob
+txna ApplicationArgs 6
+btoi
+itob
+txna ApplicationArgs 7
+btoi
+itob
+txna ApplicationArgs 8
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_gets
+!=
+bnz revert
+gtxn 1 Amount
+int 0
+==
+bz revert
+txna ApplicationArgs 3
+txna ApplicationArgs 4
+txna ApplicationArgs 5
+btoi
+txna ApplicationArgs 6
+btoi
+txna ApplicationArgs 7
+btoi
+int 4
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+b l3
+// </Handler 8>
+// <Handler 9>
+h9:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
+txn NumAppArgs
+int 8
+==
+bz h10
+txna ApplicationArgs 0
+btoi
+int 9
+!=
+bnz h10
+gtxn 0 TypeEnum
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
+byte base64(bWU=)
+app_global_gets
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
+gtxn 0 Sender
+txna ApplicationArgs 4
+!=
+bnz revert
+txna ApplicationArgs 1
+btoi
+int 10
++
+global Round
+<
+bz revert
+int 2
+itob
+txna ApplicationArgs 1
+txna ApplicationArgs 3
+txna ApplicationArgs 4
+txna ApplicationArgs 5
+btoi
+itob
+txna ApplicationArgs 6
+btoi
+itob
+txna ApplicationArgs 7
+btoi
+itob
+concat
+concat
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_gets
+!=
+bnz revert
+gtxn 1 Amount
+int 0
+==
+bz revert
+txna ApplicationArgs 3
+txna ApplicationArgs 4
+txna ApplicationArgs 5
+btoi
+txna ApplicationArgs 6
+btoi
+txna ApplicationArgs 7
+btoi
+int 3
+store 5
+store 4
+store 3
+store 2
+store 1
+store 0
+b l3
+// </Handler 9>
+// <Handler 10>
+h10:
+byte base64(bWU=)
+txna Accounts 0
+==
+bz revert
+txn NumAppArgs
+int 6
+==
+bz revert
+txna ApplicationArgs 0
+btoi
+int 10
+!=
+bnz revert
+gtxn 0 TypeEnum
+int appl
+==
+bz revert
+gtxn 1 TypeEnum
+int pay
+==
+bz revert
+gtxn 1 Receiver
+byte base64(bWU=)
+app_global_gets
+==
+bz revert
+gtxn 1 Amount
+txna ApplicationArgs 2
+btoi
+==
+bz revert
+gtxn 0 Sender
+txna ApplicationArgs 3
+!=
+bnz revert
+txna ApplicationArgs 1
+btoi
+int 10
++
+global Round
+<
+bz revert
+int 1
+itob
+txna ApplicationArgs 1
+txna ApplicationArgs 3
+txna ApplicationArgs 4
+btoi
+itob
+txna ApplicationArgs 5
+btoi
+itob
+concat
+concat
+concat
+concat
+keccak256
+btoi
+byte base64(c3RhdGU=)
+app_global_gets
+!=
+bnz revert
+gtxn 1 Amount
+int 0
+==
+bz revert
+int 2
+global GroupSize
+>
+bnz revert
+gtxn 2 TypeEnum
+int pay
+!=
+bnz revert
+gtxn 2 Amount
+int 0
+balance
+!=
+bnz revert
+gtxn 2 Receiver
+txna ApplicationArgs 3
+!=
+bnz revert
+gtxn 2 Sender
+byte base64(bWU=)
+app_global_gets
+!=
+bnz revert
+int 3
+global GroupSize
+!=
+bnz revert
+b halt
+// </Handler 10>
 // </Handlers>
 // <Loops>
-// <Loop 5>
-l5:
+// <Loop 3>
+l3:
 load 5
 int 1
 ==
-bnz l5_0
+bnz l3_0
 int 1
-b l5_1
-l5_0:
+b l3_1
+l3_0:
 int 0
-l5_1:
-bnz l5_2
+l3_1:
+bnz l3_2
 int 2
 global GroupSize
 !=
 bnz revert
 byte base64(c3RhdGU=)
-int 3
+int 2
 itob
 global Round
 itob
@@ -1088,15 +1041,15 @@ keccak256
 btoi
 app_global_put
 b done
-l5_2:
+l3_2:
 load 5
 int 3
 ==
-bnz l5_3
+bnz l3_3
 load 5
 int 4
 ==
-bnz l5_4
+bnz l3_4
 load 5
 int 2
 ==
@@ -1112,14 +1065,14 @@ bnz revert
 gtxn 2 Amount
 load 3
 load 6
-bnz l5_5
+bnz l3_5
 int 0
-b l5_6
-l5_5:
+b l3_6
+l3_5:
 int 2
 load 2
 *
-l5_6:
+l3_6:
 +
 !=
 bnz revert
@@ -1142,14 +1095,14 @@ int pay
 bnz revert
 gtxn 3 Amount
 load 6
-bnz l5_7
+bnz l3_7
 int 2
 load 2
 *
-b l5_8
-l5_7:
+b l3_8
+l3_7:
 int 0
-l5_8:
+l3_8:
 !=
 bnz revert
 gtxn 3 Receiver
@@ -1166,7 +1119,7 @@ global GroupSize
 !=
 bnz revert
 b halt
-l5_4:
+l3_4:
 int 2
 global GroupSize
 >
@@ -1194,7 +1147,7 @@ global GroupSize
 !=
 bnz revert
 b halt
-l5_3:
+l3_3:
 int 2
 global GroupSize
 >
@@ -1222,7 +1175,7 @@ global GroupSize
 !=
 bnz revert
 b halt
-// </Loop 5>
+// </Loop 3>
 // </Loops>
 // <Standard>
 revert:

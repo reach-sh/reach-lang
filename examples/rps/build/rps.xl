@@ -1,102 +1,102 @@
 XL_Prog rsh/rps.rsh:0:0 
-    [1m[96m[[0m XL_DefineFun STDLIB:3:1 [1m[97m"[0m[1m[94mnot[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
-        [1m[93m([0m XL_If STDLIB:4:13 [35m([0m XL_Var STDLIB:4:11 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m 
-            [35m([0m XL_Con STDLIB:4:15 [36m([0m Con_B False [36m)[0m [35m)[0m 
-            [35m([0m XL_Con STDLIB:4:23 [36m([0m Con_B True [36m)[0m [35m)[0m
+    [1m[96m[[0m XL_DefineFun STDLIB:4:1 [1m[97m"[0m[1m[94mnot[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
+        [1m[93m([0m XL_If STDLIB:5:13 [35m([0m XL_Var STDLIB:5:11 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m 
+            [35m([0m XL_Con STDLIB:5:15 [36m([0m Con_B False [36m)[0m [35m)[0m 
+            [35m([0m XL_Con STDLIB:5:23 [36m([0m Con_B True [36m)[0m [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:5:1 [1m[97m"[0m[1m[94mneq[0m[1m[97m"[0m 
+    [1m[96m,[0m XL_DefineFun STDLIB:6:1 [1m[97m"[0m[1m[94mneq[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
         [1m[93m][0m 
-        [1m[93m([0m XL_FunApp STDLIB:6:13 [35m([0m XL_Var STDLIB:6:10 [1m[97m"[0m[1m[94mnot[0m[1m[97m"[0m [35m)[0m 
-            [35m[[0m XL_FunApp STDLIB:6:16 
-                [36m([0m XL_Prim STDLIB:6:16 [33m([0m CP PEQ [33m)[0m [36m)[0m 
-                [36m[[0m XL_Var STDLIB:6:14 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
-                [36m,[0m XL_Var STDLIB:6:19 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
+        [1m[93m([0m XL_FunApp STDLIB:7:13 [35m([0m XL_Var STDLIB:7:10 [1m[97m"[0m[1m[94mnot[0m[1m[97m"[0m [35m)[0m 
+            [35m[[0m XL_FunApp STDLIB:7:16 
+                [36m([0m XL_Prim STDLIB:7:16 [33m([0m CP PEQ [33m)[0m [36m)[0m 
+                [36m[[0m XL_Var STDLIB:7:14 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                [36m,[0m XL_Var STDLIB:7:19 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
                 [36m][0m 
             [35m][0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:7:1 [1m[97m"[0m[1m[94mbytes_neq[0m[1m[97m"[0m 
+    [1m[96m,[0m XL_DefineFun STDLIB:8:1 [1m[97m"[0m[1m[94mbytes_neq[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
         [1m[93m][0m 
-        [1m[93m([0m XL_FunApp STDLIB:8:13 [35m([0m XL_Var STDLIB:8:10 [1m[97m"[0m[1m[94mnot[0m[1m[97m"[0m [35m)[0m 
-            [35m[[0m XL_FunApp STDLIB:8:16 
-                [36m([0m XL_Prim STDLIB:8:16 [33m([0m CP BYTES_EQ [33m)[0m [36m)[0m 
-                [36m[[0m XL_Var STDLIB:8:14 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
-                [36m,[0m XL_Var STDLIB:8:20 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
+        [1m[93m([0m XL_FunApp STDLIB:9:13 [35m([0m XL_Var STDLIB:9:10 [1m[97m"[0m[1m[94mnot[0m[1m[97m"[0m [35m)[0m 
+            [35m[[0m XL_FunApp STDLIB:9:16 
+                [36m([0m XL_Prim STDLIB:9:16 [33m([0m CP BYTES_EQ [33m)[0m [36m)[0m 
+                [36m[[0m XL_Var STDLIB:9:14 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                [36m,[0m XL_Var STDLIB:9:20 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
                 [36m][0m 
             [35m][0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:9:1 [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m 
+    [1m[96m,[0m XL_DefineFun STDLIB:10:1 [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
         [1m[93m][0m 
-        [1m[93m([0m XL_If STDLIB:10:13 [35m([0m XL_Var STDLIB:10:11 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m 
-            [35m([0m XL_Con STDLIB:10:15 [36m([0m Con_B True [36m)[0m [35m)[0m [35m([0m XL_Var STDLIB:10:22 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m [35m)[0m
+        [1m[93m([0m XL_If STDLIB:11:13 [35m([0m XL_Var STDLIB:11:11 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m 
+            [35m([0m XL_Con STDLIB:11:15 [36m([0m Con_B True [36m)[0m [35m)[0m [35m([0m XL_Var STDLIB:11:22 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:11:1 [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
+    [1m[96m,[0m XL_DefineFun STDLIB:12:1 [1m[97m"[0m[1m[94mand[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
         [1m[93m][0m 
-        [1m[93m([0m XL_If STDLIB:12:13 [35m([0m XL_Var STDLIB:12:11 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m [35m([0m XL_Var STDLIB:12:15 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m [35m)[0m 
-            [35m([0m XL_Con STDLIB:12:19 [36m([0m Con_B False [36m)[0m [35m)[0m
+        [1m[93m([0m XL_If STDLIB:13:13 [35m([0m XL_Var STDLIB:13:11 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m [35m([0m XL_Var STDLIB:13:15 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m [35m)[0m 
+            [35m([0m XL_Con STDLIB:13:19 [36m([0m Con_B False [36m)[0m [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:13:1 [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m 
+    [1m[96m,[0m XL_DefineFun STDLIB:16:1 [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
         [1m[93m][0m 
-        [1m[93m([0m XL_FunApp STDLIB:14:18 [35m([0m XL_Var STDLIB:14:18 [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m [35m)[0m 
-            [35m[[0m XL_FunApp STDLIB:14:14 [36m([0m XL_Var STDLIB:14:11 [1m[97m"[0m[1m[94mnot[0m[1m[97m"[0m [36m)[0m [36m[[0m XL_Var STDLIB:14:15 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [36m][0m
-            [35m,[0m XL_Var STDLIB:14:21 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
+        [1m[93m([0m XL_FunApp STDLIB:17:18 [35m([0m XL_Var STDLIB:17:18 [1m[97m"[0m[1m[94mor[0m[1m[97m"[0m [35m)[0m 
+            [35m[[0m XL_FunApp STDLIB:17:14 [36m([0m XL_Var STDLIB:17:11 [1m[97m"[0m[1m[94mnot[0m[1m[97m"[0m [36m)[0m [36m[[0m XL_Var STDLIB:17:15 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [36m][0m
+            [35m,[0m XL_Var STDLIB:17:21 [1m[97m"[0m[1m[94my[0m[1m[97m"[0m 
             [35m][0m 
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:16:1 [1m[97m"[0m[1m[94mensure[0m[1m[97m"[0m 
+    [1m[96m,[0m XL_DefineFun STDLIB:19:1 [1m[97m"[0m[1m[94mensure[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mf[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
         [1m[93m][0m 
-        [1m[93m([0m XL_Let STDLIB:17:9 Nothing Nothing 
-            [35m([0m XL_Claim STDLIB:17:9 CT_Assert 
-                [36m([0m XL_FunApp STDLIB:17:11 [33m([0m XL_Var STDLIB:17:10 [1m[97m"[0m[1m[94mf[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var STDLIB:17:12 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [33m][0m [36m)[0m
-            [35m)[0m [35m([0m XL_Var STDLIB:18:10 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m
+        [1m[93m([0m XL_Let STDLIB:20:9 Nothing Nothing 
+            [35m([0m XL_Claim STDLIB:20:9 CT_Assert 
+                [36m([0m XL_FunApp STDLIB:20:11 [33m([0m XL_Var STDLIB:20:10 [1m[97m"[0m[1m[94mf[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var STDLIB:20:12 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [33m][0m [36m)[0m
+            [35m)[0m [35m([0m XL_Var STDLIB:21:10 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:20:1 [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
-        [1m[93m([0m XL_Let STDLIB:21:3 Nothing 
+    [1m[96m,[0m XL_DefineFun STDLIB:23:1 [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m 
+        [1m[93m([0m XL_Let STDLIB:24:3 Nothing 
             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m [36m][0m [35m)[0m 
-            [35m([0m XL_FunApp STDLIB:21:22 [36m([0m XL_Prim STDLIB:21:22 RANDOM [36m)[0m [36m[[0m[36m][0m [35m)[0m 
-            [35m([0m XL_Let STDLIB:22:3 Nothing 
+            [35m([0m XL_FunApp STDLIB:24:22 [36m([0m XL_Prim STDLIB:24:22 RANDOM [36m)[0m [36m[[0m[36m][0m [35m)[0m 
+            [35m([0m XL_Let STDLIB:25:3 Nothing 
                 [36m([0m Just [33m[[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m [33m][0m [36m)[0m 
-                [36m([0m XL_Digest STDLIB:22:28 
-                    [33m[[0m XL_Var STDLIB:22:29 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
-                    [33m,[0m XL_Var STDLIB:22:35 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+                [36m([0m XL_Digest STDLIB:25:28 
+                    [33m[[0m XL_Var STDLIB:25:29 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                    [33m,[0m XL_Var STDLIB:25:35 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m 
-                [36m([0m XL_Values STDLIB:23:10 
-                    [33m[[0m XL_Var STDLIB:23:11 [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
-                    [33m,[0m XL_Var STDLIB:23:23 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                [36m([0m XL_Values STDLIB:26:10 
+                    [33m[[0m XL_Var STDLIB:26:11 [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
+                    [33m,[0m XL_Var STDLIB:26:23 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m)[0m
             [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:25:1 [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m 
+    [1m[96m,[0m XL_DefineFun STDLIB:28:1 [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m 
         [1m[93m[[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
         [1m[93m,[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
         [1m[93m][0m 
-        [1m[93m([0m XL_Claim STDLIB:26:17 CT_Require 
-            [35m([0m XL_FunApp STDLIB:26:29 
-                [36m([0m XL_Prim STDLIB:26:29 [33m([0m CP PEQ [33m)[0m [36m)[0m 
-                [36m[[0m XL_Var STDLIB:26:18 [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
-                [36m,[0m XL_Digest STDLIB:26:38 
-                    [33m[[0m XL_Var STDLIB:26:39 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
-                    [33m,[0m XL_Var STDLIB:26:45 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
+        [1m[93m([0m XL_Claim STDLIB:29:17 CT_Require 
+            [35m([0m XL_FunApp STDLIB:29:29 
+                [36m([0m XL_Prim STDLIB:29:29 [33m([0m CP PEQ [33m)[0m [36m)[0m 
+                [36m[[0m XL_Var STDLIB:29:18 [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m 
+                [36m,[0m XL_Digest STDLIB:29:38 
+                    [33m[[0m XL_Var STDLIB:29:39 [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m 
+                    [33m,[0m XL_Var STDLIB:29:45 [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m 
                     [33m][0m 
                 [36m][0m 
             [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:28:1 [1m[97m"[0m[1m[94m__decode_testing__[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m 
-        [1m[93m([0m XL_FunApp STDLIB:29:10 
-            [35m([0m XL_Prim STDLIB:29:10 [36m([0m CP TXN_VALUE [36m)[0m [35m)[0m [35m[[0m[35m][0m
+    [1m[96m,[0m XL_DefineFun STDLIB:31:1 [1m[97m"[0m[1m[94m__decode_testing__[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m 
+        [1m[93m([0m XL_FunApp STDLIB:32:10 
+            [35m([0m XL_Prim STDLIB:32:10 [36m([0m CP TXN_VALUE [36m)[0m [35m)[0m [35m[[0m[35m][0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineValues rps_shared.rsh:3:1 
         [1m[93m[[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m 
@@ -451,16 +451,7 @@ XL_Prog rsh/rps.rsh:0:0
                         [1m[35m[[0m XL_Var rsh/rps.rsh:21:10 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                         [1m[35m,[0m XL_Var rsh/rps.rsh:21:24 [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                         [1m[35m][0m 
-                    [33m)[0m 
-                    [33m([0m Nothing
-                    [33m,[0m XL_Var rsh/rps.rsh:22:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
-                    [33m,[0m XL_FunApp rsh/rps.rsh:20:3 
-                        [1m[35m([0m XL_Lambda rsh/rps.rsh:22:27 [1m[36m[[0m[1m[36m][0m 
-                            [1m[36m([0m XL_FromConsensus rsh/rps.rsh:23:7 
-                                [1m[33m([0m XL_FunApp rsh/rps.rsh:24:25 [95m([0m XL_Var rsh/rps.rsh:24:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [95m)[0m [95m[[0m XL_Var rsh/rps.rsh:24:26 [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [95m][0m [1m[33m)[0m
-                            [1m[36m)[0m
-                        [1m[35m)[0m [1m[35m[[0m[1m[35m][0m
-                    [33m)[0m 
+                    [33m)[0m Nothing 
                     [33m([0m XL_Let rsh/rps.rsh:20:3 Nothing Nothing 
                         [1m[35m([0m XL_Claim rsh/rps.rsh:20:3 CT_Require 
                             [1m[36m([0m XL_FunApp rsh/rps.rsh:20:3 
@@ -475,127 +466,181 @@ XL_Prog rsh/rps.rsh:0:0
                                 [1m[33m][0m 
                             [1m[36m)[0m
                         [1m[35m)[0m 
-                        [1m[35m([0m XL_FromConsensus rsh/rps.rsh:25:3 
-                            [1m[36m([0m XL_Let rsh/rps.rsh:28:21 [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
-                                [1m[33m([0m XL_Interact rsh/rps.rsh:28:5 [1m[97m"[0m[1m[94maccepts[0m[1m[97m"[0m [95m([0m XLT_BT rsh/rps.rsh:28:5 BT_Bool [95m)[0m 
-                                    [95m[[0m XL_Var rsh/rps.rsh:28:22 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
-                                    [95m,[0m XL_Var rsh/rps.rsh:28:35 [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
+                        [1m[35m([0m XL_FromConsensus rsh/rps.rsh:22:3 
+                            [1m[36m([0m XL_Let rsh/rps.rsh:25:21 [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
+                                [1m[33m([0m XL_Interact rsh/rps.rsh:25:5 [1m[97m"[0m[1m[94maccepts[0m[1m[97m"[0m [95m([0m XLT_BT rsh/rps.rsh:25:5 BT_Bool [95m)[0m 
+                                    [95m[[0m XL_Var rsh/rps.rsh:25:22 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                    [95m,[0m XL_Var rsh/rps.rsh:25:35 [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
                                     [95m][0m 
                                 [1m[33m)[0m 
-                                [1m[33m([0m XL_ToConsensus rsh/rps.rsh:29:3 
+                                [1m[33m([0m XL_ToConsensus rsh/rps.rsh:26:3 
                                     [95m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
                                     [95m,[0m [96m[[0m[96m][0m
-                                    [95m,[0m XL_Var rsh/rps.rsh:29:9 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                    [95m,[0m XL_Var rsh/rps.rsh:26:9 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                     [95m)[0m 
-                                    [95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
-                                    [95m,[0m XL_Var rsh/rps.rsh:30:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
-                                    [95m,[0m XL_FunApp rsh/rps.rsh:29:3 
-                                        [96m([0m XL_Lambda rsh/rps.rsh:30:27 [93m[[0m[93m][0m 
-                                            [93m([0m XL_Let rsh/rps.rsh:31:32 Nothing Nothing 
-                                                [1m[95m([0m XL_Transfer rsh/rps.rsh:31:7 [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
-                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:31:23 
-                                                        [1m[93m([0m XL_Prim rsh/rps.rsh:31:23 [35m([0m CP BALANCE [35m)[0m [1m[93m)[0m [1m[93m[[0m[1m[93m][0m
+                                    [95m([0m Just 
+                                        [96m([0m XL_Var rsh/rps.rsh:27:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
+                                        [96m,[0m XL_FunApp rsh/rps.rsh:26:3 
+                                            [93m([0m XL_Lambda rsh/rps.rsh:27:24 [1m[95m[[0m[1m[95m][0m 
+                                                [1m[95m([0m XL_ToConsensus rsh/rps.rsh:28:7 
+                                                    [1m[96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                    [1m[96m,[0m [1m[93m[[0m[1m[93m][0m
+                                                    [1m[96m,[0m XL_Con rsh/rps.rsh:28:7 [1m[93m([0m Con_I 0 [1m[93m)[0m
+                                                    [1m[96m)[0m Nothing 
+                                                    [1m[96m([0m XL_Let rsh/rps.rsh:28:7 Nothing Nothing 
+                                                        [1m[93m([0m XL_Claim rsh/rps.rsh:28:7 CT_Require 
+                                                            [35m([0m XL_FunApp rsh/rps.rsh:28:7 
+                                                                [36m([0m XL_Prim rsh/rps.rsh:28:7 [33m([0m CP PEQ [33m)[0m [36m)[0m 
+                                                                [36m[[0m XL_FunApp rsh/rps.rsh:28:7 
+                                                                    [33m([0m XL_Prim rsh/rps.rsh:28:7 [1m[35m([0m CP TXN_VALUE [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
+                                                                [36m,[0m XL_Con rsh/rps.rsh:28:7 [33m([0m Con_I 0 [33m)[0m
+                                                                [36m][0m 
+                                                            [35m)[0m
+                                                        [1m[93m)[0m 
+                                                        [1m[93m([0m XL_Let rsh/rps.rsh:29:32 Nothing Nothing 
+                                                            [35m([0m XL_Transfer rsh/rps.rsh:29:7 [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                [36m([0m XL_FunApp rsh/rps.rsh:29:23 
+                                                                    [33m([0m XL_Prim rsh/rps.rsh:29:23 [1m[35m([0m CP BALANCE [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
+                                                                [36m)[0m
+                                                            [35m)[0m 
+                                                            [35m([0m XL_FromConsensus rsh/rps.rsh:30:7 
+                                                                [36m([0m XL_FunApp rsh/rps.rsh:31:25 [33m([0m XL_Var rsh/rps.rsh:31:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:31:26 [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m [33m][0m [36m)[0m
+                                                            [35m)[0m
+                                                        [1m[93m)[0m
                                                     [1m[96m)[0m
-                                                [1m[95m)[0m 
-                                                [1m[95m([0m XL_FromConsensus rsh/rps.rsh:32:7 
-                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:33:25 [1m[93m([0m XL_Var rsh/rps.rsh:33:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[93m)[0m [1m[93m[[0m XL_Var rsh/rps.rsh:33:26 [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m
                                                 [1m[95m)[0m
-                                            [93m)[0m
-                                        [96m)[0m [96m[[0m[96m][0m
+                                            [93m)[0m [93m[[0m[93m][0m
+                                        [96m)[0m 
                                     [95m)[0m 
-                                    [95m([0m XL_Let rsh/rps.rsh:29:3 Nothing Nothing 
-                                        [96m([0m XL_Claim rsh/rps.rsh:29:3 CT_Require 
-                                            [93m([0m XL_FunApp rsh/rps.rsh:29:3 
-                                                [1m[95m([0m XL_Prim rsh/rps.rsh:29:3 [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m 
-                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:29:3 
-                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:29:3 [1m[93m([0m CP TXN_VALUE [1m[93m)[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
-                                                [1m[95m,[0m XL_Var rsh/rps.rsh:29:9 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                    [95m([0m XL_Let rsh/rps.rsh:26:3 Nothing Nothing 
+                                        [96m([0m XL_Claim rsh/rps.rsh:26:3 CT_Require 
+                                            [93m([0m XL_FunApp rsh/rps.rsh:26:3 
+                                                [1m[95m([0m XL_Prim rsh/rps.rsh:26:3 [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m 
+                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:26:3 
+                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:26:3 [1m[93m([0m CP TXN_VALUE [1m[93m)[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
+                                                [1m[95m,[0m XL_Var rsh/rps.rsh:26:9 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                 [1m[95m][0m 
                                             [93m)[0m
                                         [96m)[0m 
-                                        [96m([0m XL_FromConsensus rsh/rps.rsh:34:3 
-                                            [93m([0m XL_Let rsh/rps.rsh:37:5 [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m 
+                                        [96m([0m XL_FromConsensus rsh/rps.rsh:32:3 
+                                            [93m([0m XL_Let rsh/rps.rsh:35:5 [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m 
                                                 [1m[95m([0m Just [1m[96m[[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[96m][0m [1m[95m)[0m 
-                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:37:27 [1m[96m([0m XL_Var rsh/rps.rsh:37:20 [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m [1m[95m)[0m 
-                                                [1m[95m([0m XL_Let rsh/rps.rsh:38:5 [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m 
+                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:35:27 [1m[96m([0m XL_Var rsh/rps.rsh:35:20 [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m [1m[95m)[0m 
+                                                [1m[95m([0m XL_Let rsh/rps.rsh:36:5 [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m 
                                                     [1m[96m([0m Just 
                                                         [1m[93m[[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m 
                                                         [1m[93m,[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m 
                                                         [1m[93m][0m 
                                                     [1m[96m)[0m 
-                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:38:41 [1m[93m([0m XL_Var rsh/rps.rsh:38:32 [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m)[0m [1m[93m[[0m XL_Var rsh/rps.rsh:38:42 [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m 
-                                                    [1m[96m([0m XL_Let rsh/rps.rsh:39:5 [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
+                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:36:41 [1m[93m([0m XL_Var rsh/rps.rsh:36:32 [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m)[0m [1m[93m[[0m XL_Var rsh/rps.rsh:36:42 [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m 
+                                                    [1m[96m([0m XL_Let rsh/rps.rsh:37:5 [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m 
                                                         [1m[93m([0m Just [35m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [35m][0m [1m[93m)[0m 
-                                                        [1m[93m([0m XL_Declassify rsh/rps.rsh:39:31 [35m([0m XL_Var rsh/rps.rsh:39:32 [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m 
-                                                        [1m[93m([0m XL_Let rsh/rps.rsh:40:21 [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing 
-                                                            [35m([0m XL_Interact rsh/rps.rsh:40:5 [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m [36m([0m XLT_BT rsh/rps.rsh:40:5 BT_Bool [36m)[0m [36m[[0m[36m][0m [35m)[0m 
-                                                            [35m([0m XL_ToConsensus rsh/rps.rsh:41:3 
+                                                        [1m[93m([0m XL_Declassify rsh/rps.rsh:37:31 [35m([0m XL_Var rsh/rps.rsh:37:32 [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m 
+                                                        [1m[93m([0m XL_Let rsh/rps.rsh:38:21 [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing 
+                                                            [35m([0m XL_Interact rsh/rps.rsh:38:5 [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m [36m([0m XLT_BT rsh/rps.rsh:38:5 BT_Bool [36m)[0m [36m[[0m[36m][0m [35m)[0m 
+                                                            [35m([0m XL_ToConsensus rsh/rps.rsh:39:3 
                                                                 [36m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
                                                                 [36m,[0m [33m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [33m][0m
-                                                                [36m,[0m XL_Con rsh/rps.rsh:41:3 [33m([0m Con_I 0 [33m)[0m
+                                                                [36m,[0m XL_Con rsh/rps.rsh:39:3 [33m([0m Con_I 0 [33m)[0m
                                                                 [36m)[0m 
-                                                                [36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
-                                                                [36m,[0m XL_Var rsh/rps.rsh:42:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
-                                                                [36m,[0m XL_FunApp rsh/rps.rsh:41:3 
-                                                                    [33m([0m XL_Lambda rsh/rps.rsh:42:27 [1m[35m[[0m[1m[35m][0m 
-                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:43:32 Nothing Nothing 
-                                                                            [1m[36m([0m XL_Transfer rsh/rps.rsh:43:7 [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
-                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:43:23 
-                                                                                    [95m([0m XL_Prim rsh/rps.rsh:43:23 [96m([0m CP BALANCE [96m)[0m [95m)[0m [95m[[0m[95m][0m
+                                                                [36m([0m Just 
+                                                                    [33m([0m XL_Var rsh/rps.rsh:40:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
+                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:39:3 
+                                                                        [1m[35m([0m XL_Lambda rsh/rps.rsh:40:24 [1m[36m[[0m[1m[36m][0m 
+                                                                            [1m[36m([0m XL_ToConsensus rsh/rps.rsh:41:7 
+                                                                                [1m[33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                [1m[33m,[0m [95m[[0m[95m][0m
+                                                                                [1m[33m,[0m XL_Con rsh/rps.rsh:41:7 [95m([0m Con_I 0 [95m)[0m
+                                                                                [1m[33m)[0m Nothing 
+                                                                                [1m[33m([0m XL_Let rsh/rps.rsh:41:7 Nothing Nothing 
+                                                                                    [95m([0m XL_Claim rsh/rps.rsh:41:7 CT_Require 
+                                                                                        [96m([0m XL_FunApp rsh/rps.rsh:41:7 
+                                                                                            [93m([0m XL_Prim rsh/rps.rsh:41:7 [1m[95m([0m CP PEQ [1m[95m)[0m [93m)[0m 
+                                                                                            [93m[[0m XL_FunApp rsh/rps.rsh:41:7 
+                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:41:7 [1m[96m([0m CP TXN_VALUE [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
+                                                                                            [93m,[0m XL_Con rsh/rps.rsh:41:7 [1m[95m([0m Con_I 0 [1m[95m)[0m
+                                                                                            [93m][0m 
+                                                                                        [96m)[0m
+                                                                                    [95m)[0m 
+                                                                                    [95m([0m XL_Let rsh/rps.rsh:42:32 Nothing Nothing 
+                                                                                        [96m([0m XL_Transfer rsh/rps.rsh:42:7 [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:42:23 
+                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:42:23 [1m[96m([0m CP BALANCE [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
+                                                                                            [93m)[0m
+                                                                                        [96m)[0m 
+                                                                                        [96m([0m XL_FromConsensus rsh/rps.rsh:43:7 
+                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:44:25 [1m[95m([0m XL_Var rsh/rps.rsh:44:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[95m)[0m [1m[95m[[0m XL_Var rsh/rps.rsh:44:26 [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [1m[95m][0m [93m)[0m
+                                                                                        [96m)[0m
+                                                                                    [95m)[0m
                                                                                 [1m[33m)[0m
-                                                                            [1m[36m)[0m 
-                                                                            [1m[36m([0m XL_FromConsensus rsh/rps.rsh:44:7 
-                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:45:25 [95m([0m XL_Var rsh/rps.rsh:45:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [95m)[0m [95m[[0m XL_Var rsh/rps.rsh:45:26 [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [95m][0m [1m[33m)[0m
                                                                             [1m[36m)[0m
-                                                                        [1m[35m)[0m
-                                                                    [33m)[0m [33m[[0m[33m][0m
+                                                                        [1m[35m)[0m [1m[35m[[0m[1m[35m][0m
+                                                                    [33m)[0m 
                                                                 [36m)[0m 
-                                                                [36m([0m XL_Let rsh/rps.rsh:41:3 Nothing Nothing 
-                                                                    [33m([0m XL_Claim rsh/rps.rsh:41:3 CT_Require 
-                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:41:3 
-                                                                            [1m[36m([0m XL_Prim rsh/rps.rsh:41:3 [1m[33m([0m CP PEQ [1m[33m)[0m [1m[36m)[0m 
-                                                                            [1m[36m[[0m XL_FunApp rsh/rps.rsh:41:3 
-                                                                                [1m[33m([0m XL_Prim rsh/rps.rsh:41:3 [95m([0m CP TXN_VALUE [95m)[0m [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
-                                                                            [1m[36m,[0m XL_Con rsh/rps.rsh:41:3 [1m[33m([0m Con_I 0 [1m[33m)[0m
+                                                                [36m([0m XL_Let rsh/rps.rsh:39:3 Nothing Nothing 
+                                                                    [33m([0m XL_Claim rsh/rps.rsh:39:3 CT_Require 
+                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:39:3 
+                                                                            [1m[36m([0m XL_Prim rsh/rps.rsh:39:3 [1m[33m([0m CP PEQ [1m[33m)[0m [1m[36m)[0m 
+                                                                            [1m[36m[[0m XL_FunApp rsh/rps.rsh:39:3 
+                                                                                [1m[33m([0m XL_Prim rsh/rps.rsh:39:3 [95m([0m CP TXN_VALUE [95m)[0m [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
+                                                                            [1m[36m,[0m XL_Con rsh/rps.rsh:39:3 [1m[33m([0m Con_I 0 [1m[33m)[0m
                                                                             [1m[36m][0m 
                                                                         [1m[35m)[0m
                                                                     [33m)[0m 
-                                                                    [33m([0m XL_FromConsensus rsh/rps.rsh:46:3 
-                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:49:5 [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m 
+                                                                    [33m([0m XL_FromConsensus rsh/rps.rsh:45:3 
+                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:48:5 [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m 
                                                                             [1m[36m([0m Just [1m[33m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[33m][0m [1m[36m)[0m 
-                                                                            [1m[36m([0m XL_Declassify rsh/rps.rsh:49:29 
-                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:49:37 [95m([0m XL_Var rsh/rps.rsh:49:30 [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m
+                                                                            [1m[36m([0m XL_Declassify rsh/rps.rsh:48:29 
+                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:48:37 [95m([0m XL_Var rsh/rps.rsh:48:30 [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m
                                                                             [1m[36m)[0m 
-                                                                            [1m[36m([0m XL_Let rsh/rps.rsh:50:19 [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
-                                                                                [1m[33m([0m XL_Interact rsh/rps.rsh:50:5 [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m [95m([0m XLT_BT rsh/rps.rsh:50:5 BT_Bool [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m 
-                                                                                [1m[33m([0m XL_ToConsensus rsh/rps.rsh:51:3 
+                                                                            [1m[36m([0m XL_Let rsh/rps.rsh:49:19 [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing 
+                                                                                [1m[33m([0m XL_Interact rsh/rps.rsh:49:5 [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m [95m([0m XLT_BT rsh/rps.rsh:49:5 BT_Bool [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m 
+                                                                                [1m[33m([0m XL_ToConsensus rsh/rps.rsh:50:3 
                                                                                     [95m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
                                                                                     [95m,[0m [96m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [96m][0m
-                                                                                    [95m,[0m XL_Con rsh/rps.rsh:51:3 [96m([0m Con_I 0 [96m)[0m
+                                                                                    [95m,[0m XL_Con rsh/rps.rsh:50:3 [96m([0m Con_I 0 [96m)[0m
                                                                                     [95m)[0m 
-                                                                                    [95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
-                                                                                    [95m,[0m XL_Var rsh/rps.rsh:52:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
-                                                                                    [95m,[0m XL_FunApp rsh/rps.rsh:51:3 
-                                                                                        [96m([0m XL_Lambda rsh/rps.rsh:52:27 [93m[[0m[93m][0m 
-                                                                                            [93m([0m XL_Let rsh/rps.rsh:53:32 Nothing Nothing 
-                                                                                                [1m[95m([0m XL_Transfer rsh/rps.rsh:53:7 [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
-                                                                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:53:23 
-                                                                                                        [1m[93m([0m XL_Prim rsh/rps.rsh:53:23 [35m([0m CP BALANCE [35m)[0m [1m[93m)[0m [1m[93m[[0m[1m[93m][0m
+                                                                                    [95m([0m Just 
+                                                                                        [96m([0m XL_Var rsh/rps.rsh:51:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
+                                                                                        [96m,[0m XL_FunApp rsh/rps.rsh:50:3 
+                                                                                            [93m([0m XL_Lambda rsh/rps.rsh:51:24 [1m[95m[[0m[1m[95m][0m 
+                                                                                                [1m[95m([0m XL_ToConsensus rsh/rps.rsh:52:7 
+                                                                                                    [1m[96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                    [1m[96m,[0m [1m[93m[[0m[1m[93m][0m
+                                                                                                    [1m[96m,[0m XL_Con rsh/rps.rsh:52:7 [1m[93m([0m Con_I 0 [1m[93m)[0m
+                                                                                                    [1m[96m)[0m Nothing 
+                                                                                                    [1m[96m([0m XL_Let rsh/rps.rsh:52:7 Nothing Nothing 
+                                                                                                        [1m[93m([0m XL_Claim rsh/rps.rsh:52:7 CT_Require 
+                                                                                                            [35m([0m XL_FunApp rsh/rps.rsh:52:7 
+                                                                                                                [36m([0m XL_Prim rsh/rps.rsh:52:7 [33m([0m CP PEQ [33m)[0m [36m)[0m 
+                                                                                                                [36m[[0m XL_FunApp rsh/rps.rsh:52:7 
+                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:52:7 [1m[35m([0m CP TXN_VALUE [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
+                                                                                                                [36m,[0m XL_Con rsh/rps.rsh:52:7 [33m([0m Con_I 0 [33m)[0m
+                                                                                                                [36m][0m 
+                                                                                                            [35m)[0m
+                                                                                                        [1m[93m)[0m 
+                                                                                                        [1m[93m([0m XL_Let rsh/rps.rsh:53:32 Nothing Nothing 
+                                                                                                            [35m([0m XL_Transfer rsh/rps.rsh:53:7 [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:53:23 
+                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:53:23 [1m[35m([0m CP BALANCE [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
+                                                                                                                [36m)[0m
+                                                                                                            [35m)[0m 
+                                                                                                            [35m([0m XL_FromConsensus rsh/rps.rsh:54:7 
+                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:55:25 [33m([0m XL_Var rsh/rps.rsh:55:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:55:26 [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m [33m][0m [36m)[0m
+                                                                                                            [35m)[0m
+                                                                                                        [1m[93m)[0m
                                                                                                     [1m[96m)[0m
-                                                                                                [1m[95m)[0m 
-                                                                                                [1m[95m([0m XL_FromConsensus rsh/rps.rsh:54:7 
-                                                                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:55:25 [1m[93m([0m XL_Var rsh/rps.rsh:55:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[93m)[0m [1m[93m[[0m XL_Var rsh/rps.rsh:55:26 [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m
                                                                                                 [1m[95m)[0m
-                                                                                            [93m)[0m
-                                                                                        [96m)[0m [96m[[0m[96m][0m
+                                                                                            [93m)[0m [93m[[0m[93m][0m
+                                                                                        [96m)[0m 
                                                                                     [95m)[0m 
-                                                                                    [95m([0m XL_Let rsh/rps.rsh:51:3 Nothing Nothing 
-                                                                                        [96m([0m XL_Claim rsh/rps.rsh:51:3 CT_Require 
-                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:51:3 
-                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:51:3 [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m 
-                                                                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:51:3 
-                                                                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:51:3 [1m[93m([0m CP TXN_VALUE [1m[93m)[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
-                                                                                                [1m[95m,[0m XL_Con rsh/rps.rsh:51:3 [1m[96m([0m Con_I 0 [1m[96m)[0m
+                                                                                    [95m([0m XL_Let rsh/rps.rsh:50:3 Nothing Nothing 
+                                                                                        [96m([0m XL_Claim rsh/rps.rsh:50:3 CT_Require 
+                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:50:3 
+                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:50:3 [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m 
+                                                                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:50:3 
+                                                                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:50:3 [1m[93m([0m CP TXN_VALUE [1m[93m)[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
+                                                                                                [1m[95m,[0m XL_Con rsh/rps.rsh:50:3 [1m[96m([0m Con_I 0 [1m[96m)[0m
                                                                                                 [1m[95m][0m 
                                                                                             [93m)[0m
                                                                                         [96m)[0m 
@@ -622,21 +667,39 @@ XL_Prog rsh/rps.rsh:0:0
                                                                                                                     [33m][0m 
                                                                                                                 [36m,[0m XL_Con rsh/rps.rsh:63:3 [33m([0m Con_I 0 [33m)[0m
                                                                                                                 [36m)[0m 
-                                                                                                                [36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
-                                                                                                                [36m,[0m XL_Var rsh/rps.rsh:64:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
-                                                                                                                [36m,[0m XL_FunApp rsh/rps.rsh:63:3 
-                                                                                                                    [33m([0m XL_Lambda rsh/rps.rsh:64:27 [1m[35m[[0m[1m[35m][0m 
-                                                                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:65:32 Nothing Nothing 
-                                                                                                                            [1m[36m([0m XL_Transfer rsh/rps.rsh:65:7 [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
-                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:65:23 
-                                                                                                                                    [95m([0m XL_Prim rsh/rps.rsh:65:23 [96m([0m CP BALANCE [96m)[0m [95m)[0m [95m[[0m[95m][0m
+                                                                                                                [36m([0m Just 
+                                                                                                                    [33m([0m XL_Var rsh/rps.rsh:64:14 [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m 
+                                                                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:63:3 
+                                                                                                                        [1m[35m([0m XL_Lambda rsh/rps.rsh:64:24 [1m[36m[[0m[1m[36m][0m 
+                                                                                                                            [1m[36m([0m XL_ToConsensus rsh/rps.rsh:65:7 
+                                                                                                                                [1m[33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                                                                [1m[33m,[0m [95m[[0m[95m][0m
+                                                                                                                                [1m[33m,[0m XL_Con rsh/rps.rsh:65:7 [95m([0m Con_I 0 [95m)[0m
+                                                                                                                                [1m[33m)[0m Nothing 
+                                                                                                                                [1m[33m([0m XL_Let rsh/rps.rsh:65:7 Nothing Nothing 
+                                                                                                                                    [95m([0m XL_Claim rsh/rps.rsh:65:7 CT_Require 
+                                                                                                                                        [96m([0m XL_FunApp rsh/rps.rsh:65:7 
+                                                                                                                                            [93m([0m XL_Prim rsh/rps.rsh:65:7 [1m[95m([0m CP PEQ [1m[95m)[0m [93m)[0m 
+                                                                                                                                            [93m[[0m XL_FunApp rsh/rps.rsh:65:7 
+                                                                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:65:7 [1m[96m([0m CP TXN_VALUE [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
+                                                                                                                                            [93m,[0m XL_Con rsh/rps.rsh:65:7 [1m[95m([0m Con_I 0 [1m[95m)[0m
+                                                                                                                                            [93m][0m 
+                                                                                                                                        [96m)[0m
+                                                                                                                                    [95m)[0m 
+                                                                                                                                    [95m([0m XL_Let rsh/rps.rsh:66:32 Nothing Nothing 
+                                                                                                                                        [96m([0m XL_Transfer rsh/rps.rsh:66:7 [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m 
+                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:66:23 
+                                                                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:66:23 [1m[96m([0m CP BALANCE [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
+                                                                                                                                            [93m)[0m
+                                                                                                                                        [96m)[0m 
+                                                                                                                                        [96m([0m XL_FromConsensus rsh/rps.rsh:67:7 
+                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:68:25 [1m[95m([0m XL_Var rsh/rps.rsh:68:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[95m)[0m [1m[95m[[0m XL_Var rsh/rps.rsh:68:26 [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [1m[95m][0m [93m)[0m
+                                                                                                                                        [96m)[0m
+                                                                                                                                    [95m)[0m
                                                                                                                                 [1m[33m)[0m
-                                                                                                                            [1m[36m)[0m 
-                                                                                                                            [1m[36m([0m XL_FromConsensus rsh/rps.rsh:66:7 
-                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:67:25 [95m([0m XL_Var rsh/rps.rsh:67:14 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [95m)[0m [95m[[0m XL_Var rsh/rps.rsh:67:26 [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [95m][0m [1m[33m)[0m
                                                                                                                             [1m[36m)[0m
-                                                                                                                        [1m[35m)[0m
-                                                                                                                    [33m)[0m [33m[[0m[33m][0m
+                                                                                                                        [1m[35m)[0m [1m[35m[[0m[1m[35m][0m
+                                                                                                                    [33m)[0m 
                                                                                                                 [36m)[0m 
                                                                                                                 [36m([0m XL_Let rsh/rps.rsh:63:3 Nothing Nothing 
                                                                                                                     [33m([0m XL_Claim rsh/rps.rsh:63:3 CT_Require 
@@ -648,119 +711,119 @@ XL_Prog rsh/rps.rsh:0:0
                                                                                                                             [1m[36m][0m 
                                                                                                                         [1m[35m)[0m
                                                                                                                     [33m)[0m 
-                                                                                                                    [33m([0m XL_Let rsh/rps.rsh:68:15 Nothing Nothing 
-                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:68:15 [1m[36m([0m XL_Var rsh/rps.rsh:68:3 [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m [1m[36m)[0m 
-                                                                                                                            [1m[36m[[0m XL_Var rsh/rps.rsh:68:16 [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
-                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:68:25 [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
-                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:68:32 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                    [33m([0m XL_Let rsh/rps.rsh:69:15 Nothing Nothing 
+                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:69:15 [1m[36m([0m XL_Var rsh/rps.rsh:69:3 [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m [1m[36m)[0m 
+                                                                                                                            [1m[36m[[0m XL_Var rsh/rps.rsh:69:16 [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m 
+                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:69:25 [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m 
+                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:69:32 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
                                                                                                                             [1m[36m][0m 
                                                                                                                         [1m[35m)[0m 
-                                                                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:69:10 Nothing Nothing 
-                                                                                                                            [1m[36m([0m XL_Claim rsh/rps.rsh:69:10 CT_Require 
-                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:69:17 [95m([0m XL_Var rsh/rps.rsh:69:11 [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [95m)[0m [95m[[0m XL_Var rsh/rps.rsh:69:18 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [95m][0m [1m[33m)[0m
+                                                                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:70:10 Nothing Nothing 
+                                                                                                                            [1m[36m([0m XL_Claim rsh/rps.rsh:70:10 CT_Require 
+                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:70:17 [95m([0m XL_Var rsh/rps.rsh:70:11 [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [95m)[0m [95m[[0m XL_Var rsh/rps.rsh:70:18 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [95m][0m [1m[33m)[0m
                                                                                                                             [1m[36m)[0m 
-                                                                                                                            [1m[36m([0m XL_Let rsh/rps.rsh:70:3 Nothing 
+                                                                                                                            [1m[36m([0m XL_Let rsh/rps.rsh:71:3 Nothing 
                                                                                                                                 [1m[33m([0m Just [95m[[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [95m][0m [1m[33m)[0m 
-                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:70:25 [95m([0m XL_Var rsh/rps.rsh:70:19 [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m [95m)[0m 
-                                                                                                                                    [95m[[0m XL_Var rsh/rps.rsh:70:26 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
-                                                                                                                                    [95m,[0m XL_Var rsh/rps.rsh:70:33 [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:71:25 [95m([0m XL_Var rsh/rps.rsh:71:19 [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m [95m)[0m 
+                                                                                                                                    [95m[[0m XL_Var rsh/rps.rsh:71:26 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                    [95m,[0m XL_Var rsh/rps.rsh:71:33 [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
                                                                                                                                     [95m][0m 
                                                                                                                                 [1m[33m)[0m 
-                                                                                                                                [1m[33m([0m XL_Let rsh/rps.rsh:71:9 Nothing Nothing 
-                                                                                                                                    [95m([0m XL_Claim rsh/rps.rsh:71:9 CT_Assert 
-                                                                                                                                        [96m([0m XL_FunApp rsh/rps.rsh:71:17 [93m([0m XL_Var rsh/rps.rsh:71:10 [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m [93m)[0m 
-                                                                                                                                            [93m[[0m XL_FunApp rsh/rps.rsh:71:26 
-                                                                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:71:26 [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m 
-                                                                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:71:18 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
-                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:71:29 [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
+                                                                                                                                [1m[33m([0m XL_Let rsh/rps.rsh:72:9 Nothing Nothing 
+                                                                                                                                    [95m([0m XL_Claim rsh/rps.rsh:72:9 CT_Assert 
+                                                                                                                                        [96m([0m XL_FunApp rsh/rps.rsh:72:17 [93m([0m XL_Var rsh/rps.rsh:72:10 [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m [93m)[0m 
+                                                                                                                                            [93m[[0m XL_FunApp rsh/rps.rsh:72:26 
+                                                                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:72:26 [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m 
+                                                                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:72:18 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:72:29 [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m][0m 
-                                                                                                                                            [93m,[0m XL_FunApp rsh/rps.rsh:71:43 [1m[95m([0m XL_Var rsh/rps.rsh:71:37 [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[95m)[0m [1m[95m[[0m XL_Var rsh/rps.rsh:71:44 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [1m[95m][0m
+                                                                                                                                            [93m,[0m XL_FunApp rsh/rps.rsh:72:43 [1m[95m([0m XL_Var rsh/rps.rsh:72:37 [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[95m)[0m [1m[95m[[0m XL_Var rsh/rps.rsh:72:44 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [1m[95m][0m
                                                                                                                                             [93m][0m 
                                                                                                                                         [96m)[0m
                                                                                                                                     [95m)[0m 
-                                                                                                                                    [95m([0m XL_Let rsh/rps.rsh:72:9 Nothing Nothing 
-                                                                                                                                        [96m([0m XL_Claim rsh/rps.rsh:72:9 CT_Assert 
-                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:72:17 [1m[95m([0m XL_Var rsh/rps.rsh:72:10 [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m [1m[95m)[0m 
-                                                                                                                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:72:26 
-                                                                                                                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:72:26 [1m[93m([0m CP PEQ [1m[93m)[0m [1m[96m)[0m 
-                                                                                                                                                    [1m[96m[[0m XL_Var rsh/rps.rsh:72:18 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
-                                                                                                                                                    [1m[96m,[0m XL_Var rsh/rps.rsh:72:29 [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
+                                                                                                                                    [95m([0m XL_Let rsh/rps.rsh:73:9 Nothing Nothing 
+                                                                                                                                        [96m([0m XL_Claim rsh/rps.rsh:73:9 CT_Assert 
+                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:73:17 [1m[95m([0m XL_Var rsh/rps.rsh:73:10 [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m [1m[95m)[0m 
+                                                                                                                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:73:26 
+                                                                                                                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:73:26 [1m[93m([0m CP PEQ [1m[93m)[0m [1m[96m)[0m 
+                                                                                                                                                    [1m[96m[[0m XL_Var rsh/rps.rsh:73:18 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                    [1m[96m,[0m XL_Var rsh/rps.rsh:73:29 [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m][0m 
-                                                                                                                                                [1m[95m,[0m XL_FunApp rsh/rps.rsh:72:43 [1m[96m([0m XL_Var rsh/rps.rsh:72:37 [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m XL_Var rsh/rps.rsh:72:44 [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[96m][0m
+                                                                                                                                                [1m[95m,[0m XL_FunApp rsh/rps.rsh:73:43 [1m[96m([0m XL_Var rsh/rps.rsh:73:37 [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m XL_Var rsh/rps.rsh:73:44 [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[96m][0m
                                                                                                                                                 [1m[95m][0m 
                                                                                                                                             [93m)[0m
                                                                                                                                         [96m)[0m 
-                                                                                                                                        [96m([0m XL_Let rsh/rps.rsh:73:12 Nothing Nothing 
-                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:73:12 [1m[95m([0m XL_Var rsh/rps.rsh:73:3 [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m [1m[95m)[0m 
-                                                                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:73:13 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
-                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:73:20 [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
-                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:73:27 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                        [96m([0m XL_Let rsh/rps.rsh:74:12 Nothing Nothing 
+                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:74:12 [1m[95m([0m XL_Var rsh/rps.rsh:74:3 [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m [1m[95m)[0m 
+                                                                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:74:13 [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m 
+                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:74:20 [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m 
+                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:74:27 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
                                                                                                                                                 [1m[95m][0m 
                                                                                                                                             [93m)[0m 
-                                                                                                                                            [93m([0m XL_Let rsh/rps.rsh:75:3 Nothing 
+                                                                                                                                            [93m([0m XL_Let rsh/rps.rsh:76:3 Nothing 
                                                                                                                                                 [1m[95m([0m Just 
                                                                                                                                                     [1m[96m[[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m,[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m 
                                                                                                                                                     [1m[96m][0m 
                                                                                                                                                 [1m[95m)[0m 
-                                                                                                                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:81:46 
-                                                                                                                                                    [1m[96m([0m XL_Lambda rsh/rps.rsh:75:30 [1m[93m[[0m[1m[93m][0m 
-                                                                                                                                                        [1m[93m([0m XL_If rsh/rps.rsh:76:5 
-                                                                                                                                                            [35m([0m XL_FunApp rsh/rps.rsh:76:17 
-                                                                                                                                                                [36m([0m XL_Prim rsh/rps.rsh:76:17 [33m([0m CP PEQ [33m)[0m [36m)[0m 
-                                                                                                                                                                [36m[[0m XL_Var rsh/rps.rsh:76:9 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
-                                                                                                                                                                [36m,[0m XL_Var rsh/rps.rsh:76:20 [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
+                                                                                                                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:82:46 
+                                                                                                                                                    [1m[96m([0m XL_Lambda rsh/rps.rsh:76:30 [1m[93m[[0m[1m[93m][0m 
+                                                                                                                                                        [1m[93m([0m XL_If rsh/rps.rsh:77:5 
+                                                                                                                                                            [35m([0m XL_FunApp rsh/rps.rsh:77:17 
+                                                                                                                                                                [36m([0m XL_Prim rsh/rps.rsh:77:17 [33m([0m CP PEQ [33m)[0m [36m)[0m 
+                                                                                                                                                                [36m[[0m XL_Var rsh/rps.rsh:77:9 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                [36m,[0m XL_Var rsh/rps.rsh:77:20 [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m 
                                                                                                                                                                 [36m][0m 
                                                                                                                                                             [35m)[0m 
-                                                                                                                                                            [35m([0m XL_Values rsh/rps.rsh:77:14 
-                                                                                                                                                                [36m[[0m XL_FunApp rsh/rps.rsh:77:17 
-                                                                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:77:17 [1m[35m([0m CP MUL [1m[35m)[0m [33m)[0m 
-                                                                                                                                                                    [33m[[0m XL_Con rsh/rps.rsh:77:15 [1m[35m([0m Con_I 2 [1m[35m)[0m
-                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:77:19 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                                                                                                                            [35m([0m XL_Values rsh/rps.rsh:78:14 
+                                                                                                                                                                [36m[[0m XL_FunApp rsh/rps.rsh:78:17 
+                                                                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:78:17 [1m[35m([0m CP MUL [1m[35m)[0m [33m)[0m 
+                                                                                                                                                                    [33m[[0m XL_Con rsh/rps.rsh:78:15 [1m[35m([0m Con_I 2 [1m[35m)[0m
+                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:78:19 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m 
-                                                                                                                                                                [36m,[0m XL_Con rsh/rps.rsh:77:32 [33m([0m Con_I 0 [33m)[0m
+                                                                                                                                                                [36m,[0m XL_Con rsh/rps.rsh:78:32 [33m([0m Con_I 0 [33m)[0m
                                                                                                                                                                 [36m][0m 
                                                                                                                                                             [35m)[0m 
-                                                                                                                                                            [35m([0m XL_If rsh/rps.rsh:78:10 
-                                                                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:78:22 
-                                                                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:78:22 [1m[35m([0m CP PEQ [1m[35m)[0m [33m)[0m 
-                                                                                                                                                                    [33m[[0m XL_Var rsh/rps.rsh:78:14 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
-                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:78:25 [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
+                                                                                                                                                            [35m([0m XL_If rsh/rps.rsh:79:10 
+                                                                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:79:22 
+                                                                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:79:22 [1m[35m([0m CP PEQ [1m[35m)[0m [33m)[0m 
+                                                                                                                                                                    [33m[[0m XL_Var rsh/rps.rsh:79:14 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m 
+                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:79:25 [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m 
-                                                                                                                                                                [36m([0m XL_Values rsh/rps.rsh:79:14 
-                                                                                                                                                                    [33m[[0m XL_Con rsh/rps.rsh:79:15 [1m[35m([0m Con_I 0 [1m[35m)[0m
-                                                                                                                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:79:20 
-                                                                                                                                                                        [1m[35m([0m XL_Prim rsh/rps.rsh:79:20 [1m[36m([0m CP MUL [1m[36m)[0m [1m[35m)[0m 
-                                                                                                                                                                        [1m[35m[[0m XL_Con rsh/rps.rsh:79:18 [1m[36m([0m Con_I 2 [1m[36m)[0m
-                                                                                                                                                                        [1m[35m,[0m XL_Var rsh/rps.rsh:79:22 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m XL_Values rsh/rps.rsh:80:14 
+                                                                                                                                                                    [33m[[0m XL_Con rsh/rps.rsh:80:15 [1m[35m([0m Con_I 0 [1m[35m)[0m
+                                                                                                                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:80:20 
+                                                                                                                                                                        [1m[35m([0m XL_Prim rsh/rps.rsh:80:20 [1m[36m([0m CP MUL [1m[36m)[0m [1m[35m)[0m 
+                                                                                                                                                                        [1m[35m[[0m XL_Con rsh/rps.rsh:80:18 [1m[36m([0m Con_I 2 [1m[36m)[0m
+                                                                                                                                                                        [1m[35m,[0m XL_Var rsh/rps.rsh:80:22 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                         [1m[35m][0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m 
-                                                                                                                                                                [36m([0m XL_Values rsh/rps.rsh:81:14 
-                                                                                                                                                                    [33m[[0m XL_Var rsh/rps.rsh:81:15 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
-                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:81:28 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                                                                                                                                [36m([0m XL_Values rsh/rps.rsh:82:14 
+                                                                                                                                                                    [33m[[0m XL_Var rsh/rps.rsh:82:15 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
+                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:82:28 [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m 
                                                                                                                                                                     [33m][0m 
                                                                                                                                                                 [36m)[0m
                                                                                                                                                             [35m)[0m
                                                                                                                                                         [1m[93m)[0m
                                                                                                                                                     [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
                                                                                                                                                 [1m[95m)[0m 
-                                                                                                                                                [1m[95m([0m XL_Let rsh/rps.rsh:82:39 Nothing Nothing 
-                                                                                                                                                    [1m[96m([0m XL_Transfer rsh/rps.rsh:82:3 [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
-                                                                                                                                                        [1m[93m([0m XL_FunApp rsh/rps.rsh:82:25 
-                                                                                                                                                            [35m([0m XL_Prim rsh/rps.rsh:82:25 [36m([0m CP ADD [36m)[0m [35m)[0m 
-                                                                                                                                                            [35m[[0m XL_Var rsh/rps.rsh:82:12 [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
-                                                                                                                                                            [35m,[0m XL_Var rsh/rps.rsh:82:27 [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
+                                                                                                                                                [1m[95m([0m XL_Let rsh/rps.rsh:83:39 Nothing Nothing 
+                                                                                                                                                    [1m[96m([0m XL_Transfer rsh/rps.rsh:83:3 [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m 
+                                                                                                                                                        [1m[93m([0m XL_FunApp rsh/rps.rsh:83:25 
+                                                                                                                                                            [35m([0m XL_Prim rsh/rps.rsh:83:25 [36m([0m CP ADD [36m)[0m [35m)[0m 
+                                                                                                                                                            [35m[[0m XL_Var rsh/rps.rsh:83:12 [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m 
+                                                                                                                                                            [35m,[0m XL_Var rsh/rps.rsh:83:27 [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m 
                                                                                                                                                             [35m][0m 
                                                                                                                                                         [1m[93m)[0m
                                                                                                                                                     [1m[96m)[0m 
-                                                                                                                                                    [1m[96m([0m XL_Let rsh/rps.rsh:83:24 Nothing Nothing 
-                                                                                                                                                        [1m[93m([0m XL_Transfer rsh/rps.rsh:83:3 [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [35m([0m XL_Var rsh/rps.rsh:83:12 [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m 
-                                                                                                                                                        [1m[93m([0m XL_FromConsensus rsh/rps.rsh:84:3 
-                                                                                                                                                            [35m([0m XL_Let rsh/rps.rsh:86:19 Nothing Nothing 
-                                                                                                                                                                [36m([0m XL_Interact rsh/rps.rsh:86:3 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [33m([0m XLT_BT rsh/rps.rsh:86:3 BT_Bool [33m)[0m [33m[[0m[33m][0m [36m)[0m 
-                                                                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:87:21 [33m([0m XL_Var rsh/rps.rsh:87:10 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:87:22 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [33m][0m [36m)[0m
+                                                                                                                                                    [1m[96m([0m XL_Let rsh/rps.rsh:84:24 Nothing Nothing 
+                                                                                                                                                        [1m[93m([0m XL_Transfer rsh/rps.rsh:84:3 [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [35m([0m XL_Var rsh/rps.rsh:84:12 [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m 
+                                                                                                                                                        [1m[93m([0m XL_FromConsensus rsh/rps.rsh:85:3 
+                                                                                                                                                            [35m([0m XL_Let rsh/rps.rsh:87:19 Nothing Nothing 
+                                                                                                                                                                [36m([0m XL_Interact rsh/rps.rsh:87:3 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [33m([0m XLT_BT rsh/rps.rsh:87:3 BT_Bool [33m)[0m [33m[[0m[33m][0m [36m)[0m 
+                                                                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:88:21 [33m([0m XL_Var rsh/rps.rsh:88:10 [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:88:22 [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [33m][0m [36m)[0m
                                                                                                                                                             [35m)[0m
                                                                                                                                                         [1m[93m)[0m
                                                                                                                                                     [1m[96m)[0m

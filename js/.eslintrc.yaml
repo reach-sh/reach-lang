@@ -16,6 +16,8 @@ rules:
     - off
   no-console:
     - off
+  no-constant-condition:
+    - off
   no-debugger:
     - off
   block-scoped-var:

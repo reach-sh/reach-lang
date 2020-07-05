@@ -476,13 +476,23 @@ decodeStmts dss js =
     --- No AssignStatement
     --- Publish + Pay + Timeout
     ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
-      decodeToConsensus a p (Just evs) (Just eamt) targs ek
+      decodeToConsensus a p (Just evs) (Just eamt) (Just targs) ek
     --- Pay + Timeout
     ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
-      decodeToConsensus a p Nothing (Just eamt) targs ek
+      decodeToConsensus a p Nothing (Just eamt) (Just targs) ek
     --- Publish + Timeout
     ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
-      decodeToConsensus a p (Just evs) Nothing targs ek
+      decodeToConsensus a p (Just evs) Nothing (Just targs) ek
+    --- Publish + Pay
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _):ek) ->
+      decodeToConsensus a p (Just evs) (Just eamt) Nothing ek
+    --- Pay
+    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _ _):ek) ->
+      decodeToConsensus a p Nothing (Just eamt) Nothing ek
+    --- Publish
+    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _ _):ek) ->
+      decodeToConsensus a p (Just evs) Nothing Nothing ek
+    --- Only
     ((JSMethodCall (JSMemberDot (JSIdentifier _a p) _ (JSIdentifier _ "only"))
        _ (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s)) _ _):k) ->
       ds (who_dss dss (Just p)) (mergeStmts s k)
@@ -519,8 +529,8 @@ decodeStmts dss js =
     (j:_) -> expect_throw PE_Statement (dss_fp dss) j
   where tp = dss_tp dss . tpa
         sp = dss_tp dss . spa
-        decodeToConsensus a p mevs meamt etargs ek =
-          XL_ToConsensus h (p, vs, amt) (mwho_to, de, te) k'
+        decodeToConsensus a p mevs meamt metargs ek =
+          XL_ToConsensus h (p, vs, amt) mto k'
           where k' = XL_Let h Nothing Nothing amt_claim conk
                 amt_claim = XL_Claim h CT_Require (XL_FunApp h (XL_Prim h (CP PEQ)) [ (XL_FunApp h (XL_Prim h (CP TXN_VALUE)) []), amt ])
                 h = tp a
@@ -531,13 +541,12 @@ decodeStmts dss js =
                   Nothing -> XL_Con h (Con_I 0)
                   Just eamt -> decodeExpr dss eamt
                 conk = decodeStmts (sub_dss dss) ek
-                mwho_to = case who_je of
-                            JSIdentifier _ "_" -> Nothing
-                            JSIdentifier _ who -> Just who
-                            _ -> expect_throw PE_IllegalAt (dss_fp dss) who_je
-                [ ede, who_je, ete ] = flattenJSCL etargs
-                de = decodeExpr (sub_dss dss) ede
-                te = XL_FunApp h (decodeExpr (sub_dss dss) ete) []
+                mto = case metargs of
+                        Nothing -> Nothing
+                        Just etargs -> Just (de, te)
+                          where [ ede, ete ] = flattenJSCL etargs
+                                de = decodeExpr (sub_dss dss) ede
+                                te = XL_FunApp h (decodeExpr (sub_dss dss) ete) []
 
 decodeBlock :: FilePath -> JSBlock -> XLExpr TP
 decodeBlock fp (JSBlock _ ss _) = decodeStmts (make_dss fp) ss

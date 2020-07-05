@@ -16,15 +16,13 @@ function main() {
     assume(pre < post);
     const maturation = declassify(_maturation); });
   Borrower.publish(collateral, pre, post, maturation)
-    .pay(collateral)
-    .timeout(DELAY, _, () => {
-      commit();
-      return false; });
+    .pay(collateral);
   require(pre < post);
   commit();
 
   Lender.pay(pre)
-    .timeout(DELAY, Borrower, () => {
+    .timeout(DELAY, () => {
+      Borrower.publish();
       transfer(collateral).to(Borrower);
       commit();
       return false; });
@@ -34,7 +32,8 @@ function main() {
   Borrower.only(() => {
     interact.waitForPayback(); });
   Borrower.pay(post)
-    .timeout(maturation, Borrower, () => {
+    .timeout(maturation, () => {
+      Lender.publish();
       transfer(collateral).to(Lender);
       commit();
       return false; });

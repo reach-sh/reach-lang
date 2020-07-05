@@ -13,11 +13,8 @@ function main() {
     const product = declassify(product);
     const reserve = declassify(reserve); });
   Seller.publish(product, reserve)
-    .pay(reserve)
-    .timeout(DELAY, _, () => {
-      commit();
-      return false; } );
-
+    .pay(reserve);
+  
   Bidders.only(() => {
     const bid = declassify(is(uint256, interact.bid())); });
   const Buyer =
@@ -33,7 +30,8 @@ function main() {
                 transfer(next.bid).to(next);
                 return prev; } })
     .until(DELAY)
-    .timeout(Seller, () => {
+    .timeout(DELAY, () => {
+      Seller.publish();
       transfer(reserve).to(Seller);
       commit();
       return false; });
@@ -51,8 +49,10 @@ function main() {
       interact.winner(bid, Buyer);
       const endorsement = sign(Seller, Buyer); });
     Seller.publish(endorsement)
-      .timeout(DELAY, Buyer, () => {
+      .timeout(DELAY, () => {
+        Buyer.publish();
         transfer(bid).to(Buyer);
+        commit();
         return false; });
     require(check_sign(endorsement, Seller, Buyer));
     transfer(bid).to(Seller);

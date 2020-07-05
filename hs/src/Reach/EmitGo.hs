@@ -176,7 +176,6 @@ add_from tn (FS_Join p) (x, s) =
         , x ]
   , s)
 add_from _ (FS_From p) (x, s) = (x, Set.insert p s)
-add_from _ FS_Any x = x
 
 goEPTail :: Int -> BLPart -> EPTail b -> (Doc a, Set.Set BLVar)
 goEPTail _tn _who (EP_Ret _ al) = ((goReturn $ goStructMake "Ret" $ map fst alp), Set.unions $ map snd alp)
@@ -199,43 +198,34 @@ goEPTail tn who (EP_Let _ bv ee kt) = (tp, tfvs)
         bvdeclp = goVarDecl bv <+> pretty "=" <+> eep <> semi
         (forcep, (eep, eefvs)) = goEPExpr tn ee
         (ktp, ktfvs) = goEPTail tn who kt
-goEPTail tn who (EP_SendRecv _ svs (fs_ok, i_ok, msg, amt, k_ok) (fs_to, i_to, delay, k_to)) = (tp, tfvs)
+goEPTail tn who (EP_SendRecv _ svs (fs_ok, i_ok, msg, amt, k_ok) mto) = (tp, tfvs)
   where srp = goApply "ctc.SendRecv" [ goString $ gopart_name who
                                      , goString (solMsg_fun i_ok), vs, amtp
                                      , goString (solMsg_evt i_ok)
-                                     , delayp, goString (solMsg_evt i_to) ]
+                                     , delayp ]
         dp = pretty "var" <+> goTxn tn' <+> pretty "=" <+> pretty "<-" <+> srp <> semi
-        tp = vsep [ dp, goIf (goTimeoutFlag tn') k_top k_okp ]
-        tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg ]
-        (delayp, delayfvs) = goArg delay
+        tp = vsep [ dp, k_p ]
+        (delayp, to_fvss, k_p) = do_to who mto tn' k_okp
+        tfvs = Set.unions [ kfvs, to_fvss, amtfvs, Set.fromList svs, Set.fromList msg ]
         (amtp, amtfvs) = goArg amt
         vs = goMsgEncode $ svs ++ msg
         (k_okp, kfvs) = add_from tn' fs_ok $ goEPTail tn' who k_ok
-        (k_top, tofvs) = add_from tn' fs_to $ goEPTail tn' who k_to
         tn' = tn+1
 goEPTail tn who (EP_Do _ es kt) = (tp, tfvs)
   where (tp, esfvs) = goEPStmt es ktp
         tfvs = Set.union esfvs kfvs
         (ktp, kfvs) = goEPTail tn who kt
-goEPTail tn who (EP_Recv _ svs (fs_ok, i_ok, msg, k_ok) (fs_to, i_to, delay, k_to)) = (tp, tfvs)
-  where tp = vsep [ rp, kp ]
+goEPTail tn who (EP_Recv _ svs (fs_ok, i_ok, msg, k_ok) mto) = (tp, tfvs)
+  where tp = vsep [ rp, k_p ]
         rp = pretty "var" <+> goTxn tn' <+> pretty "=" <+>
              pretty "<-" <+> (goApply "ctc.Recv" [ goString $ gopart_name who
-                                                    , goString (solMsg_evt i_ok)
-                                                    , delayp, goCon (Con_B to_me)
-                                                    , (goMsgEncode svs)
-                                                    , goString (solMsg_fun i_to), goString (solMsg_evt i_to)]) <> semi
-        to_me = case fs_to of
-                  FS_From x -> x == who
-                  FS_Join x -> x == who
-                  FS_Any -> True
-        tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, tofvs, delayfvs]
-        kp = goIf (goTimeoutFlag tn') k_top k_okp'
+                                                 , goString (solMsg_evt i_ok)
+                                                 , delayp ]) <> semi
+        tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, to_fvss]
+        (delayp, to_fvss, k_p) = do_to who mto tn' k_okp'
         k_okp' = vsep $ msg_vsps ++ [ k_okp ]
-        (delayp, delayfvs) = goArg delay
         msg_vsps = zipWith (\v vpre -> pretty "var" <+> (goVar v) <+> pretty "=" <+> goApply ("stdlib.MsgDecode_" ++ goVarType_short_str v) [ (goTxn tn') <> pretty ".Data", vpre ] <> semi) msg (goMsgDecodePaths msg)
         (k_okp, kfvs) = add_from tn' fs_ok $ goEPTail tn' who k_ok
-        (k_top, tofvs) = add_from tn' fs_to $ goEPTail tn' who k_to
         tn' = tn+1
 goEPTail tn who (EP_Loop _ _which loopvs initas bt) = (tp, tfvs)
   where tp = vsep $ defsp ++ [ loopp, pretty "panic(\"returned past for\")" ]
@@ -254,6 +244,15 @@ goEPTail _tn _who (EP_Continue _ _which loopvs args) = (tp, argvs)
 goEPTail tn who (EP_FromConsensus _ kt) = (tp, kfvs)
   where tp = vsep [ pretty "// XXX FromConsensus", ktp ]
         (ktp, kfvs) = goEPTail tn who kt
+
+do_to :: BLPart -> (Maybe (BLArg b, EPTail b)) -> Int -> Doc a -> (Doc a, Set.Set BLVar, Doc a)
+do_to who mto tn' k_okp =
+  case mto of
+    Nothing -> (pretty "false", mempty, k_okp)
+    Just (delay, k_to) -> (delayp, Set.unions [ tofvs, delayfvs ], kp)
+      where (k_top, tofvs) = goEPTail tn' who k_to
+            (delayp, delayfvs) = goArg delay
+            kp = goIf (goTimeoutFlag tn') k_top k_okp
 
 goPart :: (BLPart, EProgram b) -> Doc a
 goPart (p, ep@(EP_Prog _ pargs et)) =

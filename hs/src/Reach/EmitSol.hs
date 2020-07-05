@@ -283,7 +283,7 @@ makeSIM ccs vs = S.unions $ map f $ M.toList ccs
             S.singleton v
 
 solHandler :: CHandler b -> Doc a
-solHandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = vsep [ evtp, frame_defp, funp ]
+solHandler (C_Handler _ from_spec interval (last_i, svs) msg body i) = vsep [ evtp, frame_defp, funp ]
   where msg_rs = map solRawVar msg
         msg_ds = map solArgDecl msg
         msg_eds = map solFieldDecl msg
@@ -305,11 +305,18 @@ solHandler (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = v
         fromp = case from_spec of
                   FS_Join from -> solVarDecl from <+> "=" <+> "msg.sender" <> semi
                   FS_From from -> (solRequire $ solEq ("msg.sender") (solVar sim ρ from)) <> semi
-                  FS_Any -> emptyDoc
         bodyp = vsep [ (solRequire $ solEq ("current_state") (solHashState sim ρ last_i True svs)) <> semi,
                        frame_declp, fromp,
-                       (solRequire $ solBinOp (if is_timeout then ">=" else "<") solBlockNumber (solBinOp "+" solLastBlock (solArg sim ρ delay))) <> semi,
+                       timeoutp,
                        solCTail emitp sim ρ ccs body ]
+        timeoutp = solRequire (solBinOp "&&" int_fromp int_top) <> semi
+          where C_Between from to = interval
+                int_fromp = check True from
+                int_top = check False to
+                check sign mv =
+                  case mv of
+                    [] -> "true"
+                    vs -> solBinOp (if sign then ">=" else "<") solBlockNumber (foldl (solBinOp "+") solLastBlock (map (solArg sim ρ) vs))
 solHandler (C_Loop _ svs args _inv body i) = vsep [ frame_defp, funp ]
   where funp = solFunction (solLoop_fun i) arg_ds retp (vsep [ frame_declp, bodyp ])
         sim = makeSIM ccs (args ++ svs)

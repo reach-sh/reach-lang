@@ -33,7 +33,8 @@ function main() {
     const commitA = declassify(digest(_coinFlipA));});
   A.publish(wagerAmount, initialHeap, commitA)
     .pay(wagerAmount)
-    .timeout(DELAY, _, () => {
+    .timeout(DELAY, () => {
+      B.publish();
       commit();
       return "A never started"; });
   commit(); }

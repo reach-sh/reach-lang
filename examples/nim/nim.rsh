@@ -21,9 +21,6 @@ function main() {
     const commitA = declassify(digest(_coinFlipA));});
   A.publish(wagerAmount, initialHeap, commitA)
     .pay(wagerAmount)
-    .timeout(DELAY, _, () => {
-      commit();
-      return "A never started"; });
   commit();
 
   B.only(() => {
@@ -31,7 +28,8 @@ function main() {
     const coinFlipB = declassify(random()); });
   B.publish(coinFlipB)
     .pay(wagerAmount)
-    .timeout(DELAY, A, () => {
+    .timeout(DELAY, () => {
+      A.publish();
       transfer(balance()).to(A);
       commit();
       return "B never accepted"; });
@@ -40,7 +38,8 @@ function main() {
   A.only(() => {
     const coinFlipA = declassify(_coinFlipA); });
   A.publish(coinFlipA)
-    .timeout(DELAY, B, () => {
+    .timeout(DELAY, () => {
+      B.publish();
       transfer(balance()).to(B);
       commit();
       return "A never revealed coinflip"; });
@@ -58,7 +57,8 @@ function main() {
         const amount = declassify(is(uint256,interact.getAmount(heap1, heap2)));
         assume(amount <= (choose1 ? heap1 : heap2)); });
       A.publish(choose1, amount)
-        .timeout(DELAY, B, () => {
+        .timeout(DELAY, () => {
+          B.publish();
           transfer(balance()).to(B);
           commit();
           return "A timed out move"; });
@@ -73,7 +73,8 @@ function main() {
         const amount = declassify(is(uint256,interact.getAmount(heap1, heap2)));
         assume(amount <= (choose1 ? heap1 : heap2)); });
       B.publish(choose1, amount)
-        .timeout(DELAY, A, () => {
+        .timeout(DELAY, () => {
+          A.publish();
           transfer(balance()).to(A);
           commit();
           return "B timed out move"; });

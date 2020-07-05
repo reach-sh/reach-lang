@@ -6,7 +6,5 @@ const B = participant({});
 function main() {
   A.only(() => {
     const y = 2; });
-  B.publish(y).timeout(DELAY, _, () => {
-    commit();
-    return 1; });
+  B.publish(y);
   return 0; }

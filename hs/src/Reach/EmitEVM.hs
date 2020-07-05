@@ -723,7 +723,7 @@ arg_start_offset :: Int
 arg_start_offset = last_time_offset + (size_of_type $ LT_BT BT_UInt256)
 
 comp_chandler :: Label -> CHandler a -> ASMMonad ann Label
-comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay body i) = asm_with_label_handler i $ do
+comp_chandler next_lab (C_Handler _ from_spec _interval (last_i, svs) msg body i) = asm_with_label_handler i $ do
   revert_lab <- asm_label_revert
   asm_free_all
   --- check tag and parse args
@@ -767,17 +767,16 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
       asm_op $ EVM.NOT
       asm_stack 1 1      
       comp_jump_to_label revert_lab True
-    FS_Any -> return ()
   --- check timeout
   comp_cdread last_time_offset
-  comp_blarg delay
+  --- XXX comp_blarg delay
   asm_op $ EVM.ADD
   asm_stack 2 1
   asm_op $ EVM.NUMBER
   asm_push 1
   asm_op $ EVM.LT
   asm_stack 2 1
-  if is_timeout then
+  if False then --- XXX
     return ()
   else
     asm_op $ EVM.NOT
@@ -796,7 +795,7 @@ comp_chandler next_lab (C_Handler _ from_spec is_timeout (last_i, svs) msg delay
 comp_chandler next_lab (C_Loop _ _svs _args _inv _body _i) = return next_lab
 
 comp_cloop :: CHandler a -> ASMMonad ann ()
-comp_cloop (C_Handler _ _from_spec _is_timeout _ _msg _delay _body _i) = return ()
+comp_cloop (C_Handler _ _from_spec _interval _ _msg _body _i) = return ()
 comp_cloop (C_Loop _ svs args _inv body i) = void $ asm_with_label_handler i $ do
   asm_free_all
   asm_malloc_args $ svs ++ args

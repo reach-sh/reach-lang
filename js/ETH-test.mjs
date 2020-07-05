@@ -151,14 +151,4 @@ runTests(() => { describe('The `web3` stdlib', () => {
               .eq( toBN(15)))
        .toBe(true));
   });
-
-
-  describe('exposes a `bytes_cat` function that', () => {
-    it('concatenates its arguments in hex form and prefixes with length of the first', () => {
-      const a = 'cddcbafdec2cfaf2c9b716fe3f4f09ef59874fc4201fffe3bf1382a5bbe8c010';
-      const b = '0000000000000000000000000000000000000000000000000000000000000000';
-
-      expect(stdlib.bytes_cat(a, b)).toBe(`0x0020${a}${b}`);
-    });
-  });
 }); } );

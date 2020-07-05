@@ -3,6 +3,6 @@
 const A = participant({x: uint256});
 
 function main() {
-  A.publish(x).timeout(0, _, () => { commit(); return 0; });
+  A.publish(x);
   commit();
   return 1; }

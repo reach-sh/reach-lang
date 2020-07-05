@@ -8,6 +8,3 @@ index 9bdf6f8..cb7b06b 100644
    Parent.publish(allowance)
 -    .pay(allowance)
 +    .pay(/*allowance*/ 0)
-     .timeout(DELAY, _, () => {
-       commit();
-       return [0, 0]; });

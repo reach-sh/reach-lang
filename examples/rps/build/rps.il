@@ -21,10 +21,7 @@
 (@ True 0/A:address 
   (publish! (5/Declassify:uint256 6/Declassify:uint256))
   (pay! 8/PrimApp:uint256)
-  (timeout  10 
-    (commit!)
-    (@ CTC (require! True))
-    "Alice quits"))
+  )
 (@ CTC (define 9/PrimApp:uint256 (TXN_VALUE)))
 (@ CTC (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256)))
 (@ CTC (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256)))
@@ -36,9 +33,16 @@
 (@ True 3/B:address 
   (publish! ())
   (pay! 5/Declassify:uint256)
-  (timeout (0, (A, address)) 10 
-    (@ CTC (define 133/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 0/A:address 133/PrimApp:uint256))
+  (timeout 10 
+    (@ False 0/A:address 
+      (publish! ())
+      (pay! 0)
+      )
+    (@ CTC (define 139/PrimApp:uint256 (TXN_VALUE)))
+    (@ CTC (define 140/PrimApp:bool (PEQ 139/PrimApp:uint256 0)))
+    (@ CTC (require! 140/PrimApp:bool))
+    (@ CTC (define 141/PrimApp:uint256 (BALANCE)))
+    (@ CTC (transfer! 0/A:address 141/PrimApp:uint256))
     (commit!)
     (@ CTC (require! True))
     "Bob quits"))
@@ -82,9 +86,16 @@
 (@ False 0/A:address 
   (publish! (28/Declassify:uint256))
   (pay! 0)
-  (timeout (3, (B, address)) 10 
-    (@ CTC (define 132/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 3/B:address 132/PrimApp:uint256))
+  (timeout 10 
+    (@ False 3/B:address 
+      (publish! ())
+      (pay! 0)
+      )
+    (@ CTC (define 136/PrimApp:uint256 (TXN_VALUE)))
+    (@ CTC (define 137/PrimApp:bool (PEQ 136/PrimApp:uint256 0)))
+    (@ CTC (require! 137/PrimApp:bool))
+    (@ CTC (define 138/PrimApp:uint256 (BALANCE)))
+    (@ CTC (transfer! 3/B:address 138/PrimApp:uint256))
     (commit!)
     (@ CTC (require! True))
     "Alice quits"))
@@ -124,9 +135,16 @@
 (@ False 3/B:address 
   (publish! (43/Declassify:uint256))
   (pay! 0)
-  (timeout (0, (A, address)) 10 
-    (@ CTC (define 131/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 0/A:address 131/PrimApp:uint256))
+  (timeout 10 
+    (@ False 0/A:address 
+      (publish! ())
+      (pay! 0)
+      )
+    (@ CTC (define 133/PrimApp:uint256 (TXN_VALUE)))
+    (@ CTC (define 134/PrimApp:bool (PEQ 133/PrimApp:uint256 0)))
+    (@ CTC (require! 134/PrimApp:bool))
+    (@ CTC (define 135/PrimApp:uint256 (BALANCE)))
+    (@ CTC (transfer! 0/A:address 135/PrimApp:uint256))
     (commit!)
     (@ CTC (require! True))
     "Bob quits"))
@@ -162,9 +180,16 @@
 (@ False 0/A:address 
   (publish! (50/Declassify:uint256 51/Declassify:uint256))
   (pay! 0)
-  (timeout (3, (B, address)) 10 
-    (@ CTC (define 130/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 3/B:address 130/PrimApp:uint256))
+  (timeout 10 
+    (@ False 3/B:address 
+      (publish! ())
+      (pay! 0)
+      )
+    (@ CTC (define 130/PrimApp:uint256 (TXN_VALUE)))
+    (@ CTC (define 131/PrimApp:bool (PEQ 130/PrimApp:uint256 0)))
+    (@ CTC (require! 131/PrimApp:bool))
+    (@ CTC (define 132/PrimApp:uint256 (BALANCE)))
+    (@ CTC (transfer! 3/B:address 132/PrimApp:uint256))
     (commit!)
     (@ CTC (require! True))
     "Alice quits"))

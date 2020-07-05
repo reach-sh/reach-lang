@@ -99,10 +99,7 @@ function main() {
     const _coinFlipA = random();
     const commitA = declassify(digest(_coinFlipA)); });
   A.publish(wagerAmount, commitA)
-    .pay(wagerAmount)
-    .timeout(DELAY, _, () => {
-      commit();
-      return "A never started"; });
+    .pay(wagerAmount);
   commit();
 
   B.only(() => {
@@ -110,7 +107,8 @@ function main() {
     const coinFlipB = declassify(random()); });
   B.publish(coinFlipB)
     .pay(wagerAmount)
-    .timeout(DELAY, A, () => {
+    .timeout(DELAY, () => {
+      A.publish();
       transfer(balance()).to(A);
       commit();
       return "B never accepted"; });
@@ -119,7 +117,8 @@ function main() {
   A.only(() => {
     const coinFlipA = declassify(_coinFlipA); });
   A.publish(coinFlipA)
-    .timeout(DELAY, B, () => {
+    .timeout(DELAY, () => {
+      B.publish();
       transfer(balance()).to(B);
       commit();
       return "A never revealed coinflip"; });
@@ -136,7 +135,8 @@ function main() {
       A.only(() => {
         const moveA = getValidMove(state); });
       A.publish(moveA)
-        .timeout(DELAY, B, () => {
+        .timeout(DELAY, () => {
+          B.publish();
           transfer(balance()).to(B);
           commit();
           return "A timed out move"; });
@@ -149,7 +149,8 @@ function main() {
       B.only(() => {
         const moveB = getValidMove(state); });
       B.publish(moveB)
-        .timeout(DELAY, A, () => {
+        .timeout(DELAY, () => {
+          A.publish();
           transfer(balance()).to(A);
           commit();
           return "B timed out move"; });

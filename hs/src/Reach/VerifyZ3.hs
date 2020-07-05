@@ -38,7 +38,9 @@ instance CollectTypes (ILTail a) where
   cvs (IL_If _ _ tt ft) = cvs tt <> cvs ft
   cvs (IL_Let _ _ v _ ct) = cvs v <> cvs ct
   cvs (IL_Do _ _ _ ct) = cvs ct
-  cvs (IL_ToConsensus _ (_, _, _, _) (_, _, tt) kt) = cvs tt <> cvs kt
+  cvs (IL_ToConsensus _ (_, _, _, _) mto kt) = cvs kt <> mto_vs
+    where mto_vs = case mto of Nothing -> mempty
+                               Just (_, tt) -> cvs tt
   cvs (IL_FromConsensus _ kt) = cvs kt
   cvs (IL_While _ loopvs _ it ct bt kt) = cvs loopvs <> cvs it <> cvs ct <> cvs bt <> cvs kt
   cvs (IL_Continue _ _) = mempty
@@ -396,11 +398,13 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                  return (mt, vr <> vr')
             else
               iter primed cbi ctxt kt
-          IL_ToConsensus h (_ok_ij, _who, _msg, amount) (_twho, _da, tt) kt ->
+          IL_ToConsensus h (_ok_ij, _who, _msg, amount) mto kt ->
             mconcatMapM (inNewScope z3) [timeout, notimeout]
             where
-              timeout = do
-                iter primed cbi ctxt tt
+              timeout = case mto of
+                          Nothing -> mempty
+                          Just (_da, tt) -> do
+                            iter primed cbi ctxt tt
               notimeout = do
                 z3_declare z3 pvv (LT_BT BT_UInt256)
                 z3_define z3 cb'v (LT_BT BT_UInt256) (z3Apply "+" [cbr, pvr])

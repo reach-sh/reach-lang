@@ -151,7 +151,7 @@ data XLExpr a
   | XL_Prim a EP_Prim
   | XL_If a (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Claim a ClaimType (XLExpr a)
-  | XL_ToConsensus a (XLPart, [XLVar], (XLExpr a)) (Maybe XLPart, (XLExpr a), (XLExpr a)) (XLExpr a)
+  | XL_ToConsensus a (XLPart, [XLVar], (XLExpr a)) (Maybe ((XLExpr a), (XLExpr a))) (XLExpr a)
   | XL_FromConsensus a (XLExpr a)
   | XL_Values a [XLExpr a]
   | XL_Transfer a XLVar (XLExpr a)
@@ -188,7 +188,7 @@ data XILExpr a
   | XIL_PrimApp a EP_Prim LType [XILExpr a]
   | XIL_If a Effects (XILExpr a) [LType] (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
-  | XIL_ToConsensus a (Bool, XILPart, [XILVar], (XILExpr a)) (Maybe XILPart, (XILExpr a), (XILExpr a)) (XILExpr a)
+  | XIL_ToConsensus a (Bool, XILPart, [XILVar], (XILExpr a)) (Maybe ((XILExpr a), (XILExpr a))) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)
   | XIL_Values a [XILExpr a]
   | XIL_Transfer a XLVar (XILExpr a)
@@ -256,7 +256,7 @@ data ILTail a
   | IL_If a (ILArg a) (ILTail a) (ILTail a)
   | IL_Let a (Role ILPart) ILVar (ILExpr a) (ILTail a)
   | IL_Do a (Role ILPart) (ILStmt a) (ILTail a)
-  | IL_ToConsensus a (Bool, ILPart, [ILVar], (ILArg a)) (Maybe ILPart, (ILArg a), (ILTail a)) (ILTail a)
+  | IL_ToConsensus a (Bool, ILPart, [ILVar], (ILArg a)) (Maybe ((ILArg a), (ILTail a))) (ILTail a)
   | IL_FromConsensus a (ILTail a)
   | IL_While a [ILVar] [ILArg a] (ILTail a) (ILTail a) (ILTail a) (ILTail a)
   | IL_Continue a [ILArg a]
@@ -299,7 +299,6 @@ blpart_name (_, (pn, _)) = pn
 data FromSpec
   = FS_From BLPart
   | FS_Join BLPart
-  | FS_Any
   deriving (Show,Eq)
 
 data BLArg a
@@ -330,8 +329,8 @@ data EPTail a
   | EP_If a (BLArg a) (EPTail a) (EPTail a)
   | EP_Let a BLVar (EPExpr a) (EPTail a)
   | EP_Do a (EPStmt a) (EPTail a)
-  | EP_SendRecv a [BLVar] (FromSpec, Int, [BLVar], (BLArg a), (EPTail a)) (FromSpec, Int, BLArg a, EPTail a)
-  | EP_Recv a [BLVar] (FromSpec, Int, [BLVar], (EPTail a)) (FromSpec, Int, BLArg a, EPTail a)
+  | EP_SendRecv a [BLVar] (FromSpec, Int, [BLVar], (BLArg a), (EPTail a)) (Maybe (BLArg a, EPTail a))
+  | EP_Recv a [BLVar] (FromSpec, Int, [BLVar], (EPTail a)) (Maybe (BLArg a, EPTail a))
   | EP_FromConsensus a (EPTail a)
   | EP_Loop a Int [BLVar] [BLArg a] (EPTail a)
   | EP_Continue a Int [BLVar] [(BLArg a)]
@@ -352,6 +351,10 @@ epe_interacts e =
       where arg_tys = map blarg_type args
     EP_Digest _ _ -> mempty
     EP_ArrayRef _ _ _ -> mempty
+
+emto_interacts :: (Maybe (BLArg a, EPTail a)) -> M.Map String ([LType], LType)
+emto_interacts Nothing = mempty
+emto_interacts (Just (_, tt)) = ept_interacts tt
   
 ept_interacts :: EPTail a -> M.Map String ([LType], LType)
 ept_interacts t =
@@ -360,10 +363,10 @@ ept_interacts t =
     EP_If _ _ tt ft -> ept_interacts tt <> ept_interacts ft
     EP_Let _ _ le bt -> epe_interacts le <> ept_interacts bt
     EP_Do _ _ bt -> ept_interacts bt
-    EP_SendRecv _ _ (_, _, _, _, ot) (_, _, _, tt) ->
-      ept_interacts ot <> ept_interacts tt
-    EP_Recv _ _ (_, _, _, ot) (_, _, _, tt) ->
-      ept_interacts ot <> ept_interacts tt
+    EP_SendRecv _ _ (_, _, _, _, ot) mto ->
+      ept_interacts ot <> emto_interacts mto
+    EP_Recv _ _ (_, _, _, ot) mto ->
+      ept_interacts ot <> emto_interacts mto
     EP_Loop _ _ _ _ bt -> ept_interacts bt
     EP_Continue _ _ _ _ -> mempty
     EP_FromConsensus _ bt -> ept_interacts bt
@@ -392,9 +395,24 @@ data CTail a
   | C_Jump a Int [BLVar] [BLVar] [BLArg a]
   deriving (Show,Eq)
 
+data CInterval a
+  = C_Between [BLArg a] [BLArg a]
+  deriving (Show,Eq)
+
+default_interval :: CInterval a
+default_interval = C_Between [] []
+
+interval_add_from :: (CInterval a) -> (BLArg a) -> (CInterval a)
+interval_add_from (C_Between froml tol) x =
+  C_Between (x:froml) tol
+
+interval_add_to :: (CInterval a) -> (BLArg a) -> (CInterval a)
+interval_add_to (C_Between froml tol) x =
+  C_Between froml (x:tol)
+
 data CHandler a
   --- Each handler has a message that it expects to receive
-  = C_Handler a FromSpec Bool (Int, [BLVar]) [BLVar] (BLArg a) (CTail a) Int
+  = C_Handler a FromSpec (CInterval a) (Int, [BLVar]) [BLVar] (CTail a) Int
   | C_Loop a [BLVar] [BLVar] (CTail a) (CTail a) Int
   deriving (Show,Eq)
 

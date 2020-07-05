@@ -79,6 +79,7 @@ jsIf cap ttp ftp = pretty "if" <+> parens cap <+> jsBraces ttp <> hardline <> pr
 jsTxn :: Int -> Doc a
 jsTxn n = pretty $ "txn" ++ show n
 
+--- XXX/FIXME change to null?
 jsTimeoutFlag :: Int -> Doc a
 jsTimeoutFlag n = jsTxn n <> pretty ".didTimeout"
 
@@ -147,7 +148,6 @@ add_from tn (FS_Join p) (x, s) =
         , x ]
   , s)
 add_from _ (FS_From p) (x, s) = (x, Set.insert p s)
-add_from _ FS_Any x = x
 
 jsEPTail :: Bool -> Int -> BLPart -> EPTail b -> (Doc a, Set.Set BLVar)
 jsEPTail stop_at_consensus tn who t =
@@ -172,8 +172,8 @@ jsEPTail stop_at_consensus tn who t =
             bvdeclp = jsVarDecl bv <+> pretty "=" <+> eep <> semi
             (forcep, (eep, eefvs)) = jsEPExpr tn ee
             (ktp, ktfvs) = jsEPTail stop_at_consensus tn who kt
-    (EP_SendRecv _ svs (fs_ok, i_ok, msg, amt, k_ok) (fs_to, i_to, delay, k_to)) -> (tp, tfvs)
-      where tp = vsep [ dp, jsIf (jsTimeoutFlag tn') k_top k_okp ]
+    (EP_SendRecv _ svs (fs_ok, i_ok, msg, amt, k_ok) mto) -> (tp, tfvs)
+      where tp = vsep [ dp, k_p ]
             dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+> pretty "await" <+> srp <> semi
             srp = jsApply "ctc.sendrecv"
               [ jsString $ blpart_name who
@@ -182,52 +182,35 @@ jsEPTail stop_at_consensus tn who t =
               , vs
               , amtp
               , delayp
-              , jsCon (Con_I $ fromIntegral i_to)
               , jsLambda [ pretty "txn_out", jsTxn tn' ] ok_con_p ]
             (ok_con_p, ok_con_vs) = jsEPTail True tn' who k_ok
-            tfvs = Set.unions [ kfvs, tofvs, amtfvs, delayfvs, Set.fromList svs, Set.fromList msg, ok_con_vs ]
-            (delayp, delayfvs) = jsArg delay
+            tfvs = Set.unions [ kfvs, to_fvss, amtfvs, Set.fromList svs, Set.fromList msg, ok_con_vs ]
+            (delayp, to_fvss, k_p) = do_to mto tn' k_okp
             (amtp, amtfvs) = jsArg amt
             msg_vs = map jsVar msg
             vs = jsArray $ (map jsVar svs) ++ msg_vs
             (k_okp, kfvs) = add_from tn' fs_ok $ jsEPTail False tn' who k_ok
-            (k_top, tofvs) = add_from tn' fs_to $ jsEPTail False tn' who k_to
             tn' = tn+1
     (EP_Do _ es kt) -> (tp, tfvs)
       where (tp, esfvs) = jsEPStmt stop_at_consensus es ktp
             tfvs = Set.union esfvs kfvs
             (ktp, kfvs) = jsEPTail stop_at_consensus tn who kt
-    (EP_Recv _ svs (fs_ok, i_ok, msg, k_ok) (fs_to, i_to, delay, k_to)) -> (tp, tfvs)
-      where tp = vsep [ rp, kp ]
+    (EP_Recv _ svs (fs_ok, i_ok, msg, k_ok) mto) -> (tp, tfvs)
+      where tp = vsep [ rp, k_p ]
             rp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+>
                  pretty "await" <+>
                  (jsApply "ctc.recv"
                    [ jsString $ blpart_name who
                    , jsCon (Con_I $ fromIntegral i_ok)
                    , jsCon (Con_I $ fromIntegral $ length msg)
-                   , delayp, jsCon (Con_B to_me)
-                   , (jsArray $ map jsVar svs)
-                   , jsCon (Con_I $ fromIntegral i_to)
-                   , to_con_p ])
+                   , delayp ])
                  <> semi
-            to_me = case fs_to of
-                      FS_From x -> x == who
-                      FS_Join x -> x == who
-                      FS_Any -> True
-            (to_con_p, to_con_vs) =
-              if to_me then
-                let (p, vs) = jsEPTail True tn' who k_to in
-                  (jsLambda [ pretty "txn_out", jsTxn tn' ] p, vs)
-              else
-                (pretty "null", mempty)
-            tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, tofvs, delayfvs, to_con_vs]
-            kp = jsIf (jsTimeoutFlag tn') k_top k_okp'
+            tfvs = Set.unions [Set.fromList svs, Set.fromList msg, kfvs, to_fvss ]
             k_okp' = vsep [ pretty "const" <+> jsArray msg_vs <+> pretty "=" <+> (jsTxn tn') <> pretty ".data" <> semi
                           , k_okp ]
-            (delayp, delayfvs) = jsArg delay
             msg_vs = map jsVar msg
             (k_okp, kfvs) = add_from tn' fs_ok $ jsEPTail False tn' who k_ok
-            (k_top, tofvs) = add_from tn' fs_to $ jsEPTail False tn' who k_to
+            (delayp, to_fvss, k_p) = do_to mto tn' k_okp'
             tn' = tn+1
     (EP_Loop _ _which loopvs initas bt) -> (tp, tfvs)
       where tp = vsep $ defsp ++ [ loopp ]
@@ -246,6 +229,11 @@ jsEPTail stop_at_consensus tn who t =
     (EP_FromConsensus _ kt) -> do_stop $ (ktp, kfvs)
       where (ktp, kfvs) = jsEPTail False tn who kt
   where do_stop x = if stop_at_consensus then (jsReturn (jsCon (Con_B True)), mempty) else x
+        do_to mto tn' k_okp = case mto of
+                  Nothing -> (pretty "false", mempty, k_okp)
+                  Just (delay, k_to) -> (delayp, Set.unions [ tofvs, delayfvs ], jsIf (jsTimeoutFlag tn') k_top k_okp)
+                    where (delayp, delayfvs) = jsArg delay
+                          (k_top, tofvs) = jsEPTail False tn' who k_to
 
 jsPart :: (BLPart, EProgram b) -> Doc a
 jsPart (p, (EP_Prog _ pargs et)) =

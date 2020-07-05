@@ -110,12 +110,14 @@ instance Pretty (ILTail a) where
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
   pretty (IL_Do _ r s bt) = prettyDo at s bt
     where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
-  pretty (IL_ToConsensus _ (ok_ij, p, svs, pa) (mtwho, da, tt) ct) =
+  pretty (IL_ToConsensus _ (ok_ij, p, svs, pa) mto ct) =
     vsep [(group $ parens $ pretty "@" <+> pretty ok_ij <+> prettyILVar p <+> (nest 2 $ hardline <> vsep [svsp, pap, tp])),
           pretty ct]
     where svsp = parens $ pretty "publish!" <+> prettyILVars svs
           pap = parens $ pretty "pay!" <+> pretty pa
-          tp = parens $ pretty "timeout" <+> pretty mtwho <+> pretty da <+> (nest 2 $ hardline <> pretty tt)
+          tp = case mto of
+                 Nothing -> pretty ""
+                 Just (da, tt) -> parens $ pretty "timeout" <+> pretty da <+> (nest 2 $ hardline <> pretty tt)
   pretty (IL_FromConsensus _ lt) =
     vsep [(group $ parens $ pretty "commit!"),
           pretty lt]
@@ -169,9 +171,10 @@ instance Pretty (CStmt a) where
   pretty (C_Claim _ ct a) = prettyClaim ct a
   pretty (C_Transfer _ to a) = prettyTransfer (prettyBLVar to) a
 
-prettyTimeout :: (FromSpec, Int, BLArg a, EPTail a) -> Doc b
-prettyTimeout (who_to, hi_to, delay, tt) =
-  (nest 2 (hardline <> pretty "#:timeout" <+> pretty who_to <+> pretty hi_to <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt))))
+prettyTimeout :: Maybe (BLArg a, EPTail a) -> Doc b
+prettyTimeout Nothing = mempty
+prettyTimeout (Just (delay, tt)) =
+  (nest 2 (hardline <> pretty "#:timeout" <+> pretty delay <+> (nest 2 (hardline <> prettyBegin tt))))
 
 instance Pretty (EPTail a) where
   pretty (EP_Ret _ al) = prettyValues al
@@ -204,11 +207,13 @@ instance Pretty (CTail a) where
 instance Pretty FromSpec where
   pretty (FS_From bv) = parens $ pretty "#:from" <+> prettyBLVar bv
   pretty (FS_Join bv) = parens $ pretty "#:join" <+> prettyBLVar bv
-  pretty (FS_Any) = parens $ pretty "#:any"
+
+instance Pretty (CInterval a) where
+  pretty (C_Between from to) = parens $ pretty "between" <+> pretty from <+> pretty to
 
 prettyCHandler :: CHandler a -> Doc ann
-prettyCHandler (C_Handler _ who timeout (last_i, svs) args delay ct i) =
-  group $ brackets $ pretty i <+> pretty who <+> pretty timeout <+> pretty delay <+> pretty last_i <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
+prettyCHandler (C_Handler _ who int (last_i, svs) args ct i) =
+  group $ brackets $ pretty i <+> pretty who <+> pretty int <+> pretty last_i <+> prettyBLVars svs <+> prettyBLVars args <+> (nest 2 $ hardline <> pretty ct)
 prettyCHandler (C_Loop _ svs args it ct i) =
   group $ brackets $ pretty i <+> pretty "!loop!" <+> prettyBLVars svs <+> prettyBLVars args <+> pretty "invariant" <+> prettyBegin it <> (nest 2 $ hardline <> pretty ct)
 

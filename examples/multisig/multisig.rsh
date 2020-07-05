@@ -23,19 +23,13 @@ const Parent = participant({});
 const DELAY = 10; // in blocks
 
 function main() {
-  Child.publish()
-    .timeout(DELAY, _, () => {
-      commit();
-      return [0, 0]; });
+  Child.publish();
   commit();
   
   Parent.only(() => {
     const allowance = declassify(is(uint256, interact.allowance())); });
   Parent.publish(allowance)
-    .pay(allowance)
-    .timeout(DELAY, _, () => {
-      commit();
-      return [0, 0]; });
+    .pay(allowance);
 
   var [ bal, oks, nos ] = [ allowance, 0, 0 ];
   invariant(balance() == bal);
@@ -45,19 +39,13 @@ function main() {
     Child.only(() => {
       const howMuch = declassify(is(uint256, interact.request(bal)));
       assume(howMuch <= bal); });
-    Child.publish(howMuch)
-      .timeout(DELAY, Parent, () => {
-        [ bal, oks, nos ] = [ bal, oks, nos ];
-        continue; });
+    Child.publish(howMuch);
     require(howMuch <= bal);
     commit();
 
     Parent.only(() => {
       const approval = declassify(is(bool, interact.approve(howMuch, bal))); });
-    Parent.publish(approval)
-      .timeout(DELAY, Child, () => {
-        [ bal, oks, nos ] = [ bal, oks, nos + 1 ];
-        continue; });
+    Parent.publish(approval);
     
     if ( approval ) {
       transfer(howMuch).to(Child);

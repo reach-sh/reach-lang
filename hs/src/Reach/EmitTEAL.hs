@@ -350,7 +350,7 @@ comp_ctail ccs cs ts t =
                   ++ stack_to_slot (n - 1)
 
 comp_chandler :: String -> CHandler a -> (String, TEALs)
-comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg delay body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ labelRun bodym)
+comp_chandler next_lab (C_Handler loc from_spec interval (last_i, svs) msg body i) = (lab, bracket ("Handler " ++ show i) $ label lab ++ pre_ls ++ labelRun bodym)
   where lab = "h" ++ show i
         cs0 = cs_init lab
         all_args = svs ++ msg
@@ -359,7 +359,6 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
                FS_Join from ->
                  cs_var_set cs1 from (VR_Code (code "gtxn" [ "0", "Sender" ]))
                FS_From _ -> cs1
-               FS_Any -> cs1
         pre_ls =
           --- FIXME some of these checks could be combined across all handlers
           --- check account 0 is me
@@ -403,35 +402,41 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
           sender_ls <-
             case from_spec of
               FS_Join _ -> return []
-              FS_Any -> return []
               FS_From from -> do
                 from_ls <- comp_blvar cs from
                 return $ code "gtxn" [ "0", "Sender" ]
                   ++ from_ls
                   ++ code "!=" []
                   ++ code "bnz" [ "revert" ]
-          delay_ls <- comp_blarg cs delay
+          let C_Between int_from int_to = interval
+          let comp_int_side _sign [] = return $ []
+              comp_int_side sign delays = do
+                delays_ls <- mapM (comp_blarg cs) delays
+                return $ []
+                  -- begin timeout checking
+                  ++ (foldl (\x y -> x ++ y ++ code "+" [])
+                      (comp_arg 1 ++ code "btoi" [])
+                      delays_ls)
+                  -- the stack contains the deadline
+                  ++ code "global" [ "Round" ]
+                  ++ (if sign then
+                        -- if this is a timeout, then the round must be
+                        -- after the deadline: deadline < running-time
+                        code "<" []
+                      else
+                        -- if this is not a timeout, then the round must be
+                        -- before the deadline: running-time <= deadline ==
+                        -- deadline >= running-time
+                        code ">=" [])
+                  ++ code "bz" [ "revert" ]
+                  -- end of timeout checking
+          int_from_ls <- comp_int_side True int_from
+          int_to_ls <- comp_int_side False int_to
           hash_ls <- comp_hash (HM_State last_i False) cs (map (BL_Var loc) svs)
           body_ls <- comp_ctail (usesCTail body) cs txn_init body
           return $ sender_ls
-            -- begin timeout checking
-            ++ comp_arg 1
-            ++ code "btoi" []
-            ++ delay_ls
-            ++ code "+" []
-            -- the stack contains the deadline
-            ++ code "global" [ "Round" ]
-            ++ (if is_timeout then
-                  -- if this is a timeout, then the round must be
-                  -- after the deadline: deadline < running-time
-                  code "<" []
-                else
-                  -- if this is not a timeout, then the round must be
-                  -- before the deadline: running-time <= deadline ==
-                  -- deadline >= running-time
-                  code ">=" [])
-            ++ code "bz" [ "revert" ]
-            -- end of timeout checking
+            ++ int_from_ls
+            ++ int_to_ls
             ++ hash_ls
             ++ comp_con (Con_BS "state")
             ++ code "app_global_gets" [ ]
@@ -441,7 +446,7 @@ comp_chandler next_lab (C_Handler loc from_spec is_timeout (last_i, svs) msg del
 comp_chandler next_lab (C_Loop _ _svs _args _inv _body _i) = (next_lab, [])
 
 comp_cloop :: CHandler a -> TEALs
-comp_cloop (C_Handler _ _from_spec _is_timeout _ _msg _delay _body _i) = []
+comp_cloop (C_Handler _ _from_spec _interval _ _msg _body _i) = []
 comp_cloop (C_Loop _ svs args _inv body i) = bracket ("Loop " ++ show i) $ label lab ++ labelRun (comp_ctail (usesCTail body) cs txn_init body)
   where lab = "l" ++ show i
         cs0 = cs_init lab

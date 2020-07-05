@@ -19,15 +19,13 @@ function main() {
     interact.params(); });
   A.publish(wagerAmount, escrowAmount)
     .pay(wagerAmount + escrowAmount)
-    .timeout(DELAY, _, () => {
-      commit();
-      return showOutcome(A_QUITS); });
   commit();
 
   B.only(() => {
     interact.accepts(wagerAmount, escrowAmount); });
   B.pay(wagerAmount)
-    .timeout(DELAY, A, () => {
+    .timeout(DELAY, () => {
+      A.publish();
       transfer(balance()).to(A);
       commit();
       return showOutcome(B_QUITS); });
@@ -39,7 +37,8 @@ function main() {
     const commitA = declassify(_commitA);
     interact.commits(); });
   A.publish(commitA)
-    .timeout(DELAY, B, () => {
+    .timeout(DELAY, () => {
+      B.publish();
       transfer(balance()).to(B);
       commit();
       return showOutcome(A_QUITS); });
@@ -49,7 +48,8 @@ function main() {
     const handB = declassify(getHand());
     interact.shows(); });
   B.publish(handB)
-    .timeout(DELAY, A, () => {
+    .timeout(DELAY, () => {
+      A.publish();
       transfer(balance()).to(A);
       commit();
       return showOutcome(B_QUITS); });
@@ -61,7 +61,8 @@ function main() {
     const handA = declassify(_handA);
     interact.reveals(showHand(handB)); });
   A.publish(saltA, handA)
-    .timeout(DELAY, B, () => {
+    .timeout(DELAY, () => {
+      B.publish();
       transfer(balance()).to(B);
       commit();
       return showOutcome(A_QUITS); });
