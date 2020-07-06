@@ -13,7 +13,7 @@ supported by Reach version @|reach-vers|.
 
 The @link["https://ethereum.org/"]{Ethereum} Reach @tech{connector} generates a @tech{contract} that
 manages one instance of the @|DApp|'s execution. It is guaranteed to
-use exactly one word of on-chain state.
+use exactly one word of on-chain state, while each piece of @tech{consensus state} appears as a transaction argument.
 
 The connector provides a binding named @reachin{ETH} to
 @tech{backends}.
