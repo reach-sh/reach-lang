@@ -4,7 +4,7 @@ int 0
 ==
 bz h1
 byte base64(bWU=)
-app_global_gets
+app_global_get
 byte base64()
 ==
 bnz revert
@@ -49,7 +49,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -64,7 +64,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -125,7 +125,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -157,7 +157,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -206,7 +206,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -248,7 +248,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -315,7 +315,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -361,7 +361,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -446,7 +446,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -496,7 +496,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -644,7 +644,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -694,7 +694,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -743,7 +743,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -789,7 +789,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -838,7 +838,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -880,7 +880,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -929,7 +929,7 @@ int pay
 bz revert
 gtxn 1 Receiver
 byte base64(bWU=)
-app_global_gets
+app_global_get
 ==
 bz revert
 gtxn 1 Amount
@@ -965,7 +965,7 @@ concat
 keccak256
 btoi
 byte base64(c3RhdGU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 gtxn 1 Amount
@@ -991,7 +991,7 @@ txna ApplicationArgs 3
 bnz revert
 gtxn 2 Sender
 byte base64(bWU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 int 3
@@ -1082,7 +1082,7 @@ load 0
 bnz revert
 gtxn 2 Sender
 byte base64(bWU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 int 3
@@ -1111,7 +1111,7 @@ load 1
 bnz revert
 gtxn 3 Sender
 byte base64(bWU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 int 4
@@ -1139,7 +1139,7 @@ load 0
 bnz revert
 gtxn 2 Sender
 byte base64(bWU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 int 3
@@ -1167,7 +1167,7 @@ load 1
 bnz revert
 gtxn 2 Sender
 byte base64(bWU=)
-app_global_gets
+app_global_get
 !=
 bnz revert
 int 3
