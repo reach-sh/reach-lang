@@ -8,6 +8,13 @@ function applyMove(AsTurn, heap1, heap2, choose1, amount) {
   } else {
     return [ !AsTurn, heap1, heap2 - amount ]; } }
 
+function closeTo(Who, result) {
+  return (() => {
+    Who.publish();
+    transfer(balance()).to(Who);
+    commit();
+    return result; }); }
+
 // Protocol
 const A = participant({});
 const B = participant({});
@@ -28,11 +35,7 @@ function main() {
     const coinFlipB = declassify(random()); });
   B.publish(coinFlipB)
     .pay(wagerAmount)
-    .timeout(DELAY, () => {
-      A.publish();
-      transfer(balance()).to(A);
-      commit();
-      return "B never accepted"; });
+    .timeout(DELAY, closeTo(A, "B never accepted"));
   commit();
 
   A.only(() => {
