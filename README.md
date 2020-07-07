@@ -20,7 +20,8 @@ If you want to work on the Reach compiler, you'll need:
 Installation on macOS:
 ```
 $ brew tap ethereum/ethereum
-$ brew install haskell-stack z3 solidity
+$ brew install haskell-stack z3
+$ brew install https://raw.githubusercontent.com/ethereum/homebrew-ethereum/7fa7027f20cca27f76c679d0c5b35ee3c565f284/solidity.rb
 ```
 
 Installation on Ubuntu:
