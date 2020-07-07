@@ -4,13 +4,55 @@ import * as nodeAssert from 'assert';
 import ethers          from 'ethers';
 import Timeout         from 'await-timeout';
 import * as util       from 'util';
+import * as waitPort   from 'wait-port';
 void(util);
+
+/* BEGIN Hack */
+// import * as extractTarget from 'wait-port/lib/extract-target';
+function extractTarget(target) {
+  if (!target) throw new Error('\'target\' is required');
+
+  //  First, check to see if we have a protocol specified.
+  const protocol = target.toLowerCase().startsWith('http://') ? 'http' : undefined;
+
+  //  If we have a protocol, we can rip it out of the string.
+  target = protocol ? target.substring('http://'.length) : target;
+
+  //  If we have a protocol, we can also rip out the path (if there is one).
+  const pathStart = target.indexOf('/');
+  const path = pathStart !== -1 ? target.substring(pathStart) : undefined;
+  target = pathStart !== -1 ? target.substring(0, pathStart) : target;
+
+  //  Split the target by the separator (which might not be present.
+  const split = target.split(':');
+  if (split.length > 2) throw new Error(`'${target}' is an invalid target, it has more than two ':' symbols`);
+
+  //  Grab the host and port (which will still be a string).
+  const host = split.length === 2 ? (split[0] || undefined) : undefined;
+  const portString = split.length === 1 ? split[0] : split[1];
+
+  //  Make sure the port is numeric.
+  if (!/^[0-9]+$/.test(portString)) throw new Error(`'${target}' is an invalid target, '${portString}' is not a valid port number - try something like 'host:port'`);
+  const port = parseInt(portString, 10);
+
+  //  That's it, return the extracted target.
+  return { protocol, host, port, path };
+}
+/* END Hack */
 
 const DEBUG = false;
 const debug = msg => { if (DEBUG) {
   console.log(`DEBUG: ${msg}`); } };
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
+(async () => {
+  const { protocol, host, port, path } = extractTarget(uri);
+  const params = {
+    protocol, host, port, path
+    , 'output': 'silent'
+    , 'timeout': 1000*60*1 };
+  await waitPort.default(params); })();
+
 // XXX expose setProvider
 const web3 = new Web3(new Web3.providers.HttpProvider(uri));
 const ethersp = new ethers.providers.Web3Provider(web3.currentProvider);
