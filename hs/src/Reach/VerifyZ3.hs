@@ -166,7 +166,7 @@ z3_assert_chk z3 h e = do
   assert z3 e
   r <- check z3
   case r of
-    Unknown -> impossible "Z3 assert_chk: Unknown"
+    Unknown -> impossible $ show h ++ ": Z3 assert_chk: Unknown"
     Sat -> mempty
     Unsat -> error $ show h ++ ": Unreachable code with addition of assumption: " ++ show e
 

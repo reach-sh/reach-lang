@@ -21,22 +21,14 @@ function main() {
   commit();
 
   Lender.pay(pre)
-    .timeout(DELAY, () => {
-      Borrower.publish();
-      transfer(collateral).to(Borrower);
-      commit();
-      return false; });
+    .timeout(DELAY, closeTo(Borrower, false));
   transfer(pre).to(Borrower);
   commit();
 
   Borrower.only(() => {
     interact.waitForPayback(); });
   Borrower.pay(post)
-    .timeout(maturation, () => {
-      Lender.publish();
-      transfer(collateral).to(Lender);
-      commit();
-      return false; });
+    .timeout(maturation, closeTo(Lender, false));
   transfer(post).to(Lender);
   transfer(collateral).to(Borrower);
   commit();

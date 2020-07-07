@@ -30,11 +30,7 @@ function main() {
                 transfer(next.bid).to(next);
                 return prev; } })
     .until(DELAY)
-    .timeout(DELAY, () => {
-      Seller.publish();
-      transfer(reserve).to(Seller);
-      commit();
-      return false; });
+    .timeout(DELAY, closeTo(Seller, false));
 
   if ( bid < reserve ) {
     transfer(bid).to(Buyer);
@@ -49,11 +45,7 @@ function main() {
       interact.winner(bid, Buyer);
       const endorsement = sign(Seller, Buyer); });
     Seller.publish(endorsement)
-      .timeout(DELAY, () => {
-        Buyer.publish();
-        transfer(bid).to(Buyer);
-        commit();
-        return false; });
+      .timeout(DELAY, closeTo(Buyer, false));
     require(check_sign(endorsement, Seller, Buyer));
     transfer(bid).to(Seller);
     call(product).go(endorsement, Buyer);

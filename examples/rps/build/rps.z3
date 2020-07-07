@@ -408,6 +408,12 @@
    (+ (assert v11 ))
    (push
     (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert true ))
+    (push
     )
     (push
      (+ (declare-fun txn_value2 () Int ))
@@ -437,12 +443,6 @@
       (- unsat)
      )
      (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v141 ) ))
-     (push
-      (+ (assert (not true ) ))
-      (+ (check-sat ))
-      (- unsat)
-     )
-     (+ (assert true ))
      (push
       (+ (assert (not (= ctc_balance3 0 ) ) ))
       (+ (check-sat ))
@@ -514,6 +514,12 @@
     (- sat)
     (push
      (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert true ))
+     (push
      )
      (push
       (+ (declare-fun txn_value3 () Int ))
@@ -543,12 +549,6 @@
        (- unsat)
       )
       (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v138 ) ))
-      (push
-       (+ (assert (not true ) ))
-       (+ (check-sat ))
-       (- unsat)
-      )
-      (+ (assert true ))
       (push
        (+ (assert (not (= ctc_balance4 0 ) ) ))
        (+ (check-sat ))
@@ -617,6 +617,12 @@
      (- sat)
      (push
       (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert true ))
+      (push
       )
       (push
        (+ (declare-fun txn_value4 () Int ))
@@ -646,12 +652,6 @@
         (- unsat)
        )
        (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v135 ) ))
-       (push
-        (+ (assert (not true ) ))
-        (+ (check-sat ))
-        (- unsat)
-       )
-       (+ (assert true ))
        (push
         (+ (assert (not (= ctc_balance5 0 ) ) ))
         (+ (check-sat ))
@@ -728,6 +728,12 @@
       (- sat)
       (push
        (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert true ))
+       (push
        )
        (push
         (+ (declare-fun txn_value5 () Int ))
@@ -757,12 +763,6 @@
          (- unsat)
         )
         (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v132 ) ))
-        (push
-         (+ (assert (not true ) ))
-         (+ (check-sat ))
-         (- unsat)
-        )
-        (+ (assert true ))
         (push
          (+ (assert (not (= ctc_balance6 0 ) ) ))
          (+ (check-sat ))
@@ -1120,6 +1120,12 @@
    (+ (assert v11 ))
    (push
     (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert true ))
+    (push
     )
     (push
      (+ (declare-fun txn_value2 () Int ))
@@ -1149,12 +1155,6 @@
       (- unsat)
      )
      (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v141 ) ))
-     (push
-      (+ (assert (not true ) ))
-      (+ (check-sat ))
-      (- unsat)
-     )
-     (+ (assert true ))
      (push
       (+ (assert (not (= ctc_balance3 0 ) ) ))
       (+ (check-sat ))
@@ -1226,6 +1226,12 @@
     (- sat)
     (push
      (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert true ))
+     (push
      )
      (push
       (+ (declare-fun txn_value3 () Int ))
@@ -1255,12 +1261,6 @@
        (- unsat)
       )
       (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v138 ) ))
-      (push
-       (+ (assert (not true ) ))
-       (+ (check-sat ))
-       (- unsat)
-      )
-      (+ (assert true ))
       (push
        (+ (assert (not (= ctc_balance4 0 ) ) ))
        (+ (check-sat ))
@@ -1329,6 +1329,12 @@
      (- sat)
      (push
       (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert true ))
+      (push
       )
       (push
        (+ (declare-fun txn_value4 () Int ))
@@ -1358,12 +1364,6 @@
         (- unsat)
        )
        (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v135 ) ))
-       (push
-        (+ (assert (not true ) ))
-        (+ (check-sat ))
-        (- unsat)
-       )
-       (+ (assert true ))
        (push
         (+ (assert (not (= ctc_balance5 0 ) ) ))
         (+ (check-sat ))
@@ -1440,6 +1440,12 @@
       (- sat)
       (push
        (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert true ))
+       (push
        )
        (push
         (+ (declare-fun txn_value5 () Int ))
@@ -1469,12 +1475,6 @@
          (- unsat)
         )
         (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v132 ) ))
-        (push
-         (+ (assert (not true ) ))
-         (+ (check-sat ))
-         (- unsat)
-        )
-        (+ (assert true ))
         (push
          (+ (assert (not (= ctc_balance6 0 ) ) ))
          (+ (check-sat ))
@@ -1832,6 +1832,12 @@
    (+ (assert v11 ))
    (push
     (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert true ))
+    (push
     )
     (push
      (+ (declare-fun txn_value2 () Int ))
@@ -1861,12 +1867,6 @@
       (- unsat)
      )
      (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v141 ) ))
-     (push
-      (+ (assert (not true ) ))
-      (+ (check-sat ))
-      (- unsat)
-     )
-     (+ (assert true ))
      (push
       (+ (assert (not (= ctc_balance3 0 ) ) ))
       (+ (check-sat ))
@@ -1938,6 +1938,12 @@
     (- sat)
     (push
      (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert true ))
+     (push
      )
      (push
       (+ (declare-fun txn_value3 () Int ))
@@ -1967,12 +1973,6 @@
        (- unsat)
       )
       (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v138 ) ))
-      (push
-       (+ (assert (not true ) ))
-       (+ (check-sat ))
-       (- unsat)
-      )
-      (+ (assert true ))
       (push
        (+ (assert (not (= ctc_balance4 0 ) ) ))
        (+ (check-sat ))
@@ -2041,6 +2041,12 @@
      (- sat)
      (push
       (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert true ))
+      (push
       )
       (push
        (+ (declare-fun txn_value4 () Int ))
@@ -2070,12 +2076,6 @@
         (- unsat)
        )
        (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v135 ) ))
-       (push
-        (+ (assert (not true ) ))
-        (+ (check-sat ))
-        (- unsat)
-       )
-       (+ (assert true ))
        (push
         (+ (assert (not (= ctc_balance5 0 ) ) ))
         (+ (check-sat ))
@@ -2152,6 +2152,12 @@
       (- sat)
       (push
        (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert true ))
+       (push
        )
        (push
         (+ (declare-fun txn_value5 () Int ))
@@ -2181,12 +2187,6 @@
          (- unsat)
         )
         (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v132 ) ))
-        (push
-         (+ (assert (not true ) ))
-         (+ (check-sat ))
-         (- unsat)
-        )
-        (+ (assert true ))
         (push
          (+ (assert (not (= ctc_balance6 0 ) ) ))
          (+ (check-sat ))
@@ -2544,6 +2544,12 @@
    (+ (assert v11 ))
    (push
     (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
+    (+ (assert true ))
+    (push
     )
     (push
      (+ (declare-fun txn_value2 () Int ))
@@ -2573,12 +2579,6 @@
       (- unsat)
      )
      (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v141 ) ))
-     (push
-      (+ (assert (not true ) ))
-      (+ (check-sat ))
-      (- unsat)
-     )
-     (+ (assert true ))
      (push
       (+ (assert (not (= ctc_balance3 0 ) ) ))
       (+ (check-sat ))
@@ -2650,6 +2650,12 @@
     (- sat)
     (push
      (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
+     (+ (assert true ))
+     (push
      )
      (push
       (+ (declare-fun txn_value3 () Int ))
@@ -2679,12 +2685,6 @@
        (- unsat)
       )
       (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v138 ) ))
-      (push
-       (+ (assert (not true ) ))
-       (+ (check-sat ))
-       (- unsat)
-      )
-      (+ (assert true ))
       (push
        (+ (assert (not (= ctc_balance4 0 ) ) ))
        (+ (check-sat ))
@@ -2753,6 +2753,12 @@
      (- sat)
      (push
       (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
+      (+ (assert true ))
+      (push
       )
       (push
        (+ (declare-fun txn_value4 () Int ))
@@ -2782,12 +2788,6 @@
         (- unsat)
        )
        (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v135 ) ))
-       (push
-        (+ (assert (not true ) ))
-        (+ (check-sat ))
-        (- unsat)
-       )
-       (+ (assert true ))
        (push
         (+ (assert (not (= ctc_balance5 0 ) ) ))
         (+ (check-sat ))
@@ -2864,6 +2864,12 @@
       (- sat)
       (push
        (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
+       (+ (assert true ))
+       (push
        )
        (push
         (+ (declare-fun txn_value5 () Int ))
@@ -2893,12 +2899,6 @@
          (- unsat)
         )
         (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v132 ) ))
-        (push
-         (+ (assert (not true ) ))
-         (+ (check-sat ))
-         (- unsat)
-        )
-        (+ (assert true ))
         (push
          (+ (assert (not (= ctc_balance6 0 ) ) ))
          (+ (check-sat ))
@@ -3241,6 +3241,7 @@
    (- sat)
    (+ (assert v11 ))
    (push
+    (+ (assert true ))
     (push
     )
     (push
@@ -3266,7 +3267,6 @@
       (- unsat)
      )
      (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v141 ) ))
-     (+ (assert true ))
      (push
       (+ (assert (not (= ctc_balance3 0 ) ) ))
       (+ (check-sat ))
@@ -3289,6 +3289,7 @@
     (- sat)
     (+ (assert v14 ))
     (push
+     (+ (assert true ))
      (push
      )
      (push
@@ -3314,7 +3315,6 @@
        (- unsat)
       )
       (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v138 ) ))
-      (+ (assert true ))
       (push
        (+ (assert (not (= ctc_balance4 0 ) ) ))
        (+ (check-sat ))
@@ -3337,6 +3337,7 @@
      (- sat)
      (+ (assert v31 ))
      (push
+      (+ (assert true ))
       (push
       )
       (push
@@ -3362,7 +3363,6 @@
         (- unsat)
        )
        (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v135 ) ))
-       (+ (assert true ))
        (push
         (+ (assert (not (= ctc_balance5 0 ) ) ))
         (+ (check-sat ))
@@ -3395,6 +3395,7 @@
       (- sat)
       (+ (assert v49 ))
       (push
+       (+ (assert true ))
        (push
        )
        (push
@@ -3420,7 +3421,6 @@
          (- unsat)
         )
         (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v132 ) ))
-        (+ (assert true ))
         (push
          (+ (assert (not (= ctc_balance6 0 ) ) ))
          (+ (check-sat ))
@@ -3752,6 +3752,7 @@
    (- sat)
    (+ (assert v11 ))
    (push
+    (+ (assert true ))
     (push
     )
     (push
@@ -3777,7 +3778,6 @@
       (- unsat)
      )
      (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v141 ) ))
-     (+ (assert true ))
      (push
       (+ (assert (not (= ctc_balance3 0 ) ) ))
       (+ (check-sat ))
@@ -3843,6 +3843,7 @@
     (+ (check-sat ))
     (- sat)
     (push
+     (+ (assert true ))
      (push
      )
      (push
@@ -3868,7 +3869,6 @@
        (- unsat)
       )
       (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v138 ) ))
-      (+ (assert true ))
       (push
        (+ (assert (not (= ctc_balance4 0 ) ) ))
        (+ (check-sat ))
@@ -3891,6 +3891,7 @@
      (- sat)
      (+ (assert v31 ))
      (push
+      (+ (assert true ))
       (push
       )
       (push
@@ -3916,7 +3917,6 @@
         (- unsat)
        )
        (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v135 ) ))
-       (+ (assert true ))
        (push
         (+ (assert (not (= ctc_balance5 0 ) ) ))
         (+ (check-sat ))
@@ -3977,6 +3977,7 @@
       (+ (check-sat ))
       (- sat)
       (push
+       (+ (assert true ))
        (push
        )
        (push
@@ -4002,7 +4003,6 @@
          (- unsat)
         )
         (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v132 ) ))
-        (+ (assert true ))
         (push
          (+ (assert (not (= ctc_balance6 0 ) ) ))
          (+ (check-sat ))
@@ -4325,6 +4325,7 @@
    (- sat)
    (+ (assert v11 ))
    (push
+    (+ (assert true ))
     (push
     )
     (push
@@ -4350,7 +4351,6 @@
       (- unsat)
      )
      (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v141 ) ))
-     (+ (assert true ))
      (push
       (+ (assert (not (= ctc_balance3 0 ) ) ))
       (+ (check-sat ))
@@ -4373,6 +4373,7 @@
     (- sat)
     (+ (assert v14 ))
     (push
+     (+ (assert true ))
      (push
      )
      (push
@@ -4398,7 +4399,6 @@
        (- unsat)
       )
       (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v138 ) ))
-      (+ (assert true ))
       (push
        (+ (assert (not (= ctc_balance4 0 ) ) ))
        (+ (check-sat ))
@@ -4461,6 +4461,7 @@
      (+ (check-sat ))
      (- sat)
      (push
+      (+ (assert true ))
       (push
       )
       (push
@@ -4486,7 +4487,6 @@
         (- unsat)
        )
        (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v135 ) ))
-       (+ (assert true ))
        (push
         (+ (assert (not (= ctc_balance5 0 ) ) ))
         (+ (check-sat ))
@@ -4519,6 +4519,7 @@
       (- sat)
       (+ (assert v49 ))
       (push
+       (+ (assert true ))
        (push
        )
        (push
@@ -4544,7 +4545,6 @@
          (- unsat)
         )
         (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v132 ) ))
-        (+ (assert true ))
         (push
          (+ (assert (not (= ctc_balance6 0 ) ) ))
          (+ (check-sat ))
@@ -4867,6 +4867,7 @@
    (- sat)
    (+ (assert v11 ))
    (push
+    (+ (assert true ))
     (push
     )
     (push
@@ -4892,7 +4893,6 @@
       (- unsat)
      )
      (+ (define-fun ctc_balance3 () Int (- ctc_balance2 v141 ) ))
-     (+ (assert true ))
      (push
       (+ (assert (not (= ctc_balance3 0 ) ) ))
       (+ (check-sat ))
@@ -4915,6 +4915,7 @@
     (- sat)
     (+ (assert v14 ))
     (push
+     (+ (assert true ))
      (push
      )
      (push
@@ -4940,7 +4941,6 @@
        (- unsat)
       )
       (+ (define-fun ctc_balance4 () Int (- ctc_balance3 v138 ) ))
-      (+ (assert true ))
       (push
        (+ (assert (not (= ctc_balance4 0 ) ) ))
        (+ (check-sat ))
@@ -4963,6 +4963,7 @@
      (- sat)
      (+ (assert v31 ))
      (push
+      (+ (assert true ))
       (push
       )
       (push
@@ -4988,7 +4989,6 @@
         (- unsat)
        )
        (+ (define-fun ctc_balance5 () Int (- ctc_balance4 v135 ) ))
-       (+ (assert true ))
        (push
         (+ (assert (not (= ctc_balance5 0 ) ) ))
         (+ (check-sat ))
@@ -5021,6 +5021,7 @@
       (- sat)
       (+ (assert v49 ))
       (push
+       (+ (assert true ))
        (push
        )
        (push
@@ -5046,7 +5047,6 @@
          (- unsat)
         )
         (+ (define-fun ctc_balance6 () Int (- ctc_balance5 v132 ) ))
-        (+ (assert true ))
         (push
          (+ (assert (not (= ctc_balance6 0 ) ) ))
          (+ (check-sat ))

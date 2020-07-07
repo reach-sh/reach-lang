@@ -94,9 +94,40 @@ XL_Prog rsh/rps.rsh:[1m[92m0[0m:[1m[92m0[0m
                 [36m][0m
             [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:[1m[92m31[0m:[1m[92m1[0m [1m[97m"[0m[1m[94m__decode_testing__[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m
-        [1m[93m([0m XL_FunApp STDLIB:[1m[92m32[0m:[1m[92m10[0m
-            [35m([0m XL_Prim STDLIB:[1m[92m32[0m:[1m[92m10[0m [36m([0m CP TXN_VALUE [36m)[0m [35m)[0m [35m[[0m[35m][0m
+    [1m[96m,[0m XL_DefineFun STDLIB:[1m[92m31[0m:[1m[92m1[0m [1m[97m"[0m[1m[94mcloseTo[0m[1m[97m"[0m
+        [1m[93m[[0m [1m[97m"[0m[1m[94mWho[0m[1m[97m"[0m
+        [1m[93m,[0m [1m[97m"[0m[1m[94mresult[0m[1m[97m"[0m
+        [1m[93m][0m
+        [1m[93m([0m XL_Lambda STDLIB:[1m[92m32[0m:[1m[92m13[0m [35m[[0m[35m][0m
+            [35m([0m XL_ToConsensus STDLIB:[1m[92m33[0m:[1m[92m5[0m
+                [36m([0m [1m[97m"[0m[1m[94mWho[0m[1m[97m"[0m
+                [36m,[0m [33m[[0m[33m][0m
+                [36m,[0m XL_Con STDLIB:[1m[92m33[0m:[1m[92m5[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
+                [36m)[0m Nothing
+                [36m([0m XL_Let STDLIB:[1m[92m33[0m:[1m[92m5[0m Nothing Nothing
+                    [33m([0m XL_Claim STDLIB:[1m[92m33[0m:[1m[92m5[0m CT_Require
+                        [1m[35m([0m XL_FunApp STDLIB:[1m[92m33[0m:[1m[92m5[0m
+                            [1m[36m([0m XL_Prim STDLIB:[1m[92m33[0m:[1m[92m5[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[36m)[0m
+                            [1m[36m[[0m XL_FunApp STDLIB:[1m[92m33[0m:[1m[92m5[0m
+                                [1m[33m([0m XL_Prim STDLIB:[1m[92m33[0m:[1m[92m5[0m [95m([0m CP TXN_VALUE [95m)[0m [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
+                            [1m[36m,[0m XL_Con STDLIB:[1m[92m33[0m:[1m[92m5[0m [1m[33m([0m Con_I [1m[92m0[0m [1m[33m)[0m
+                            [1m[36m][0m
+                        [1m[35m)[0m
+                    [33m)[0m
+                    [33m([0m XL_Let STDLIB:[1m[92m34[0m:[1m[92m32[0m Nothing Nothing
+                        [1m[35m([0m XL_Transfer STDLIB:[1m[92m34[0m:[1m[92m5[0m [1m[97m"[0m[1m[94mWho[0m[1m[97m"[0m
+                            [1m[36m([0m XL_FunApp STDLIB:[1m[92m34[0m:[1m[92m21[0m
+                                [1m[33m([0m XL_Prim STDLIB:[1m[92m34[0m:[1m[92m21[0m [95m([0m CP BALANCE [95m)[0m [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
+                            [1m[36m)[0m
+                        [1m[35m)[0m
+                        [1m[35m([0m XL_FromConsensus STDLIB:[1m[92m35[0m:[1m[92m5[0m [1m[36m([0m XL_Var STDLIB:[1m[92m36[0m:[1m[92m12[0m [1m[97m"[0m[1m[94mresult[0m[1m[97m"[0m [1m[36m)[0m [1m[35m)[0m
+                    [33m)[0m
+                [36m)[0m
+            [35m)[0m
+        [1m[93m)[0m
+    [1m[96m,[0m XL_DefineFun STDLIB:[1m[92m38[0m:[1m[92m1[0m [1m[97m"[0m[1m[94m__decode_testing__[0m[1m[97m"[0m [1m[93m[[0m[1m[93m][0m
+        [1m[93m([0m XL_FunApp STDLIB:[1m[92m39[0m:[1m[92m10[0m
+            [35m([0m XL_Prim STDLIB:[1m[92m39[0m:[1m[92m10[0m [36m([0m CP TXN_VALUE [36m)[0m [35m)[0m [35m[[0m[35m][0m
         [1m[93m)[0m
     [1m[96m,[0m XL_DefineValues rps_shared.rsh:[1m[92m3[0m:[1m[92m1[0m
         [1m[93m[[0m [1m[97m"[0m[1m[94mROCK[0m[1m[97m"[0m
@@ -481,34 +512,10 @@ XL_Prog rsh/rps.rsh:[1m[92m0[0m:[1m[92m0[0m
                                     [95m([0m Just
                                         [96m([0m XL_Var rsh/rps.rsh:[1m[92m27[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m
                                         [96m,[0m XL_FunApp rsh/rps.rsh:[1m[92m26[0m:[1m[92m3[0m
-                                            [93m([0m XL_Lambda rsh/rps.rsh:[1m[92m27[0m:[1m[92m24[0m [1m[95m[[0m[1m[95m][0m
-                                                [1m[95m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m
-                                                    [1m[96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
-                                                    [1m[96m,[0m [1m[93m[[0m[1m[93m][0m
-                                                    [1m[96m,[0m XL_Con rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m [1m[93m([0m Con_I [1m[92m0[0m [1m[93m)[0m
-                                                    [1m[96m)[0m Nothing
-                                                    [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m Nothing Nothing
-                                                        [1m[93m([0m XL_Claim rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m CT_Require
-                                                            [35m([0m XL_FunApp rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m
-                                                                [36m([0m XL_Prim rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m [33m([0m CP PEQ [33m)[0m [36m)[0m
-                                                                [36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m
-                                                                    [33m([0m XL_Prim rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m [1m[35m([0m CP TXN_VALUE [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
-                                                                [36m,[0m XL_Con rsh/rps.rsh:[1m[92m28[0m:[1m[92m7[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
-                                                                [36m][0m
-                                                            [35m)[0m
-                                                        [1m[93m)[0m
-                                                        [1m[93m([0m XL_Let rsh/rps.rsh:[1m[92m29[0m:[1m[92m32[0m Nothing Nothing
-                                                            [35m([0m XL_Transfer rsh/rps.rsh:[1m[92m29[0m:[1m[92m7[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
-                                                                [36m([0m XL_FunApp rsh/rps.rsh:[1m[92m29[0m:[1m[92m23[0m
-                                                                    [33m([0m XL_Prim rsh/rps.rsh:[1m[92m29[0m:[1m[92m23[0m [1m[35m([0m CP BALANCE [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
-                                                                [36m)[0m
-                                                            [35m)[0m
-                                                            [35m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m30[0m:[1m[92m7[0m
-                                                                [36m([0m XL_FunApp rsh/rps.rsh:[1m[92m31[0m:[1m[92m25[0m [33m([0m XL_Var rsh/rps.rsh:[1m[92m31[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:[1m[92m31[0m:[1m[92m26[0m [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m [33m][0m [36m)[0m
-                                                            [35m)[0m
-                                                        [1m[93m)[0m
-                                                    [1m[96m)[0m
-                                                [1m[95m)[0m
+                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m27[0m:[1m[92m28[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m27[0m:[1m[92m21[0m [1m[97m"[0m[1m[94mcloseTo[0m[1m[97m"[0m [1m[95m)[0m
+                                                [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m27[0m:[1m[92m29[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
+                                                [1m[95m,[0m XL_FunApp rsh/rps.rsh:[1m[92m27[0m:[1m[92m43[0m [1m[96m([0m XL_Var rsh/rps.rsh:[1m[92m27[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m XL_Var rsh/rps.rsh:[1m[92m27[0m:[1m[92m44[0m [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m [1m[96m][0m
+                                                [1m[95m][0m
                                             [93m)[0m [93m[[0m[93m][0m
                                         [96m)[0m
                                     [95m)[0m
@@ -522,308 +529,236 @@ XL_Prog rsh/rps.rsh:[1m[92m0[0m:[1m[92m0[0m
                                                 [1m[95m][0m
                                             [93m)[0m
                                         [96m)[0m
-                                        [96m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m32[0m:[1m[92m3[0m
-                                            [93m([0m XL_Let rsh/rps.rsh:[1m[92m35[0m:[1m[92m5[0m [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m
+                                        [96m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m28[0m:[1m[92m3[0m
+                                            [93m([0m XL_Let rsh/rps.rsh:[1m[92m31[0m:[1m[92m5[0m [1m[95m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[95m)[0m
                                                 [1m[95m([0m Just [1m[96m[[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[96m][0m [1m[95m)[0m
-                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:[1m[92m35[0m:[1m[92m27[0m [1m[96m([0m XL_Var rsh/rps.rsh:[1m[92m35[0m:[1m[92m20[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m [1m[95m)[0m
-                                                [1m[95m([0m XL_Let rsh/rps.rsh:[1m[92m36[0m:[1m[92m5[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m
+                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:[1m[92m31[0m:[1m[92m27[0m [1m[96m([0m XL_Var rsh/rps.rsh:[1m[92m31[0m:[1m[92m20[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m [1m[95m)[0m
+                                                [1m[95m([0m XL_Let rsh/rps.rsh:[1m[92m32[0m:[1m[92m5[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m
                                                     [1m[96m([0m Just
                                                         [1m[93m[[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m
                                                         [1m[93m,[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m
                                                         [1m[93m][0m
                                                     [1m[96m)[0m
-                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:[1m[92m36[0m:[1m[92m41[0m [1m[93m([0m XL_Var rsh/rps.rsh:[1m[92m36[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m)[0m [1m[93m[[0m XL_Var rsh/rps.rsh:[1m[92m36[0m:[1m[92m42[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m
-                                                    [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m37[0m:[1m[92m5[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m
+                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:[1m[92m32[0m:[1m[92m41[0m [1m[93m([0m XL_Var rsh/rps.rsh:[1m[92m32[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m)[0m [1m[93m[[0m XL_Var rsh/rps.rsh:[1m[92m32[0m:[1m[92m42[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m
+                                                    [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m33[0m:[1m[92m5[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m
                                                         [1m[93m([0m Just [35m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [35m][0m [1m[93m)[0m
-                                                        [1m[93m([0m XL_Declassify rsh/rps.rsh:[1m[92m37[0m:[1m[92m31[0m [35m([0m XL_Var rsh/rps.rsh:[1m[92m37[0m:[1m[92m32[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
-                                                        [1m[93m([0m XL_Let rsh/rps.rsh:[1m[92m38[0m:[1m[92m21[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing
-                                                            [35m([0m XL_Interact rsh/rps.rsh:[1m[92m38[0m:[1m[92m5[0m [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m [36m([0m XLT_BT rsh/rps.rsh:[1m[92m38[0m:[1m[92m5[0m BT_Bool [36m)[0m [36m[[0m[36m][0m [35m)[0m
-                                                            [35m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m
+                                                        [1m[93m([0m XL_Declassify rsh/rps.rsh:[1m[92m33[0m:[1m[92m31[0m [35m([0m XL_Var rsh/rps.rsh:[1m[92m33[0m:[1m[92m32[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
+                                                        [1m[93m([0m XL_Let rsh/rps.rsh:[1m[92m34[0m:[1m[92m21[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing
+                                                            [35m([0m XL_Interact rsh/rps.rsh:[1m[92m34[0m:[1m[92m5[0m [1m[97m"[0m[1m[94mcommits[0m[1m[97m"[0m [36m([0m XLT_BT rsh/rps.rsh:[1m[92m34[0m:[1m[92m5[0m BT_Bool [36m)[0m [36m[[0m[36m][0m [35m)[0m
+                                                            [35m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m
                                                                 [36m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
                                                                 [36m,[0m [33m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [33m][0m
-                                                                [36m,[0m XL_Con rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
+                                                                [36m,[0m XL_Con rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
                                                                 [36m)[0m
                                                                 [36m([0m Just
-                                                                    [33m([0m XL_Var rsh/rps.rsh:[1m[92m40[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m
-                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m
-                                                                        [1m[35m([0m XL_Lambda rsh/rps.rsh:[1m[92m40[0m:[1m[92m24[0m [1m[36m[[0m[1m[36m][0m
-                                                                            [1m[36m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m
-                                                                                [1m[33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                                [1m[33m,[0m [95m[[0m[95m][0m
-                                                                                [1m[33m,[0m XL_Con rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m [95m([0m Con_I [1m[92m0[0m [95m)[0m
-                                                                                [1m[33m)[0m Nothing
-                                                                                [1m[33m([0m XL_Let rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m Nothing Nothing
-                                                                                    [95m([0m XL_Claim rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m CT_Require
-                                                                                        [96m([0m XL_FunApp rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m
-                                                                                            [93m([0m XL_Prim rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m [1m[95m([0m CP PEQ [1m[95m)[0m [93m)[0m
-                                                                                            [93m[[0m XL_FunApp rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m
-                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m [1m[96m([0m CP TXN_VALUE [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
-                                                                                            [93m,[0m XL_Con rsh/rps.rsh:[1m[92m41[0m:[1m[92m7[0m [1m[95m([0m Con_I [1m[92m0[0m [1m[95m)[0m
-                                                                                            [93m][0m
-                                                                                        [96m)[0m
-                                                                                    [95m)[0m
-                                                                                    [95m([0m XL_Let rsh/rps.rsh:[1m[92m42[0m:[1m[92m32[0m Nothing Nothing
-                                                                                        [96m([0m XL_Transfer rsh/rps.rsh:[1m[92m42[0m:[1m[92m7[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m42[0m:[1m[92m23[0m
-                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:[1m[92m42[0m:[1m[92m23[0m [1m[96m([0m CP BALANCE [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
-                                                                                            [93m)[0m
-                                                                                        [96m)[0m
-                                                                                        [96m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m43[0m:[1m[92m7[0m
-                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m44[0m:[1m[92m25[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m44[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[95m)[0m [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m44[0m:[1m[92m26[0m [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [1m[95m][0m [93m)[0m
-                                                                                        [96m)[0m
-                                                                                    [95m)[0m
-                                                                                [1m[33m)[0m
-                                                                            [1m[36m)[0m
+                                                                    [33m([0m XL_Var rsh/rps.rsh:[1m[92m36[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m
+                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m
+                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m36[0m:[1m[92m28[0m [1m[36m([0m XL_Var rsh/rps.rsh:[1m[92m36[0m:[1m[92m21[0m [1m[97m"[0m[1m[94mcloseTo[0m[1m[97m"[0m [1m[36m)[0m
+                                                                            [1m[36m[[0m XL_Var rsh/rps.rsh:[1m[92m36[0m:[1m[92m29[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
+                                                                            [1m[36m,[0m XL_FunApp rsh/rps.rsh:[1m[92m36[0m:[1m[92m43[0m [1m[33m([0m XL_Var rsh/rps.rsh:[1m[92m36[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[33m)[0m [1m[33m[[0m XL_Var rsh/rps.rsh:[1m[92m36[0m:[1m[92m44[0m [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [1m[33m][0m
+                                                                            [1m[36m][0m
                                                                         [1m[35m)[0m [1m[35m[[0m[1m[35m][0m
                                                                     [33m)[0m
                                                                 [36m)[0m
-                                                                [36m([0m XL_Let rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m Nothing Nothing
-                                                                    [33m([0m XL_Claim rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m CT_Require
-                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m
-                                                                            [1m[36m([0m XL_Prim rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[36m)[0m
-                                                                            [1m[36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m
-                                                                                [1m[33m([0m XL_Prim rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m [95m([0m CP TXN_VALUE [95m)[0m [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
-                                                                            [1m[36m,[0m XL_Con rsh/rps.rsh:[1m[92m39[0m:[1m[92m3[0m [1m[33m([0m Con_I [1m[92m0[0m [1m[33m)[0m
+                                                                [36m([0m XL_Let rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m Nothing Nothing
+                                                                    [33m([0m XL_Claim rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m CT_Require
+                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m
+                                                                            [1m[36m([0m XL_Prim rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[36m)[0m
+                                                                            [1m[36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m
+                                                                                [1m[33m([0m XL_Prim rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m [95m([0m CP TXN_VALUE [95m)[0m [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
+                                                                            [1m[36m,[0m XL_Con rsh/rps.rsh:[1m[92m35[0m:[1m[92m3[0m [1m[33m([0m Con_I [1m[92m0[0m [1m[33m)[0m
                                                                             [1m[36m][0m
                                                                         [1m[35m)[0m
                                                                     [33m)[0m
-                                                                    [33m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m45[0m:[1m[92m3[0m
-                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:[1m[92m48[0m:[1m[92m5[0m [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m
+                                                                    [33m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m37[0m:[1m[92m3[0m
+                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:[1m[92m40[0m:[1m[92m5[0m [1m[36m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[36m)[0m
                                                                             [1m[36m([0m Just [1m[33m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[33m][0m [1m[36m)[0m
-                                                                            [1m[36m([0m XL_Declassify rsh/rps.rsh:[1m[92m48[0m:[1m[92m29[0m
-                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:[1m[92m48[0m:[1m[92m37[0m [95m([0m XL_Var rsh/rps.rsh:[1m[92m48[0m:[1m[92m30[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m
+                                                                            [1m[36m([0m XL_Declassify rsh/rps.rsh:[1m[92m40[0m:[1m[92m29[0m
+                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:[1m[92m40[0m:[1m[92m37[0m [95m([0m XL_Var rsh/rps.rsh:[1m[92m40[0m:[1m[92m30[0m [1m[97m"[0m[1m[94mgetHand[0m[1m[97m"[0m [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m
                                                                             [1m[36m)[0m
-                                                                            [1m[36m([0m XL_Let rsh/rps.rsh:[1m[92m49[0m:[1m[92m19[0m [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing
-                                                                                [1m[33m([0m XL_Interact rsh/rps.rsh:[1m[92m49[0m:[1m[92m5[0m [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m [95m([0m XLT_BT rsh/rps.rsh:[1m[92m49[0m:[1m[92m5[0m BT_Bool [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m
-                                                                                [1m[33m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m
+                                                                            [1m[36m([0m XL_Let rsh/rps.rsh:[1m[92m41[0m:[1m[92m19[0m [1m[33m([0m Just [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [1m[33m)[0m Nothing
+                                                                                [1m[33m([0m XL_Interact rsh/rps.rsh:[1m[92m41[0m:[1m[92m5[0m [1m[97m"[0m[1m[94mshows[0m[1m[97m"[0m [95m([0m XLT_BT rsh/rps.rsh:[1m[92m41[0m:[1m[92m5[0m BT_Bool [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m
+                                                                                [1m[33m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m
                                                                                     [95m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
                                                                                     [95m,[0m [96m[[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [96m][0m
-                                                                                    [95m,[0m XL_Con rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m [96m([0m Con_I [1m[92m0[0m [96m)[0m
+                                                                                    [95m,[0m XL_Con rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m [96m([0m Con_I [1m[92m0[0m [96m)[0m
                                                                                     [95m)[0m
                                                                                     [95m([0m Just
-                                                                                        [96m([0m XL_Var rsh/rps.rsh:[1m[92m51[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m
-                                                                                        [96m,[0m XL_FunApp rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m
-                                                                                            [93m([0m XL_Lambda rsh/rps.rsh:[1m[92m51[0m:[1m[92m24[0m [1m[95m[[0m[1m[95m][0m
-                                                                                                [1m[95m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m
-                                                                                                    [1m[96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
-                                                                                                    [1m[96m,[0m [1m[93m[[0m[1m[93m][0m
-                                                                                                    [1m[96m,[0m XL_Con rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m [1m[93m([0m Con_I [1m[92m0[0m [1m[93m)[0m
-                                                                                                    [1m[96m)[0m Nothing
-                                                                                                    [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m Nothing Nothing
-                                                                                                        [1m[93m([0m XL_Claim rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m CT_Require
-                                                                                                            [35m([0m XL_FunApp rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m
-                                                                                                                [36m([0m XL_Prim rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m [33m([0m CP PEQ [33m)[0m [36m)[0m
-                                                                                                                [36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m
-                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m [1m[35m([0m CP TXN_VALUE [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
-                                                                                                                [36m,[0m XL_Con rsh/rps.rsh:[1m[92m52[0m:[1m[92m7[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
-                                                                                                                [36m][0m
-                                                                                                            [35m)[0m
-                                                                                                        [1m[93m)[0m
-                                                                                                        [1m[93m([0m XL_Let rsh/rps.rsh:[1m[92m53[0m:[1m[92m32[0m Nothing Nothing
-                                                                                                            [35m([0m XL_Transfer rsh/rps.rsh:[1m[92m53[0m:[1m[92m7[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
-                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:[1m[92m53[0m:[1m[92m23[0m
-                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:[1m[92m53[0m:[1m[92m23[0m [1m[35m([0m CP BALANCE [1m[35m)[0m [33m)[0m [33m[[0m[33m][0m
-                                                                                                                [36m)[0m
-                                                                                                            [35m)[0m
-                                                                                                            [35m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m54[0m:[1m[92m7[0m
-                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:[1m[92m55[0m:[1m[92m25[0m [33m([0m XL_Var rsh/rps.rsh:[1m[92m55[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:[1m[92m55[0m:[1m[92m26[0m [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m [33m][0m [36m)[0m
-                                                                                                            [35m)[0m
-                                                                                                        [1m[93m)[0m
-                                                                                                    [1m[96m)[0m
-                                                                                                [1m[95m)[0m
+                                                                                        [96m([0m XL_Var rsh/rps.rsh:[1m[92m43[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m
+                                                                                        [96m,[0m XL_FunApp rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m
+                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m43[0m:[1m[92m28[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m43[0m:[1m[92m21[0m [1m[97m"[0m[1m[94mcloseTo[0m[1m[97m"[0m [1m[95m)[0m
+                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m43[0m:[1m[92m29[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
+                                                                                                [1m[95m,[0m XL_FunApp rsh/rps.rsh:[1m[92m43[0m:[1m[92m43[0m [1m[96m([0m XL_Var rsh/rps.rsh:[1m[92m43[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m XL_Var rsh/rps.rsh:[1m[92m43[0m:[1m[92m44[0m [1m[97m"[0m[1m[94mB_QUITS[0m[1m[97m"[0m [1m[96m][0m
+                                                                                                [1m[95m][0m
                                                                                             [93m)[0m [93m[[0m[93m][0m
                                                                                         [96m)[0m
                                                                                     [95m)[0m
-                                                                                    [95m([0m XL_Let rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m Nothing Nothing
-                                                                                        [96m([0m XL_Claim rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m CT_Require
-                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m
-                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m
-                                                                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m
-                                                                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m [1m[93m([0m CP TXN_VALUE [1m[93m)[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
-                                                                                                [1m[95m,[0m XL_Con rsh/rps.rsh:[1m[92m50[0m:[1m[92m3[0m [1m[96m([0m Con_I [1m[92m0[0m [1m[96m)[0m
+                                                                                    [95m([0m XL_Let rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m Nothing Nothing
+                                                                                        [96m([0m XL_Claim rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m CT_Require
+                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m
+                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m
+                                                                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m
+                                                                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m [1m[93m([0m CP TXN_VALUE [1m[93m)[0m [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
+                                                                                                [1m[95m,[0m XL_Con rsh/rps.rsh:[1m[92m42[0m:[1m[92m3[0m [1m[96m([0m Con_I [1m[92m0[0m [1m[96m)[0m
                                                                                                 [1m[95m][0m
                                                                                             [93m)[0m
                                                                                         [96m)[0m
-                                                                                        [96m([0m XL_Let rsh/rps.rsh:[1m[92m56[0m:[1m[92m10[0m Nothing Nothing
-                                                                                            [93m([0m XL_Claim rsh/rps.rsh:[1m[92m56[0m:[1m[92m10[0m CT_Require
-                                                                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:[1m[92m56[0m:[1m[92m17[0m [1m[96m([0m XL_Var rsh/rps.rsh:[1m[92m56[0m:[1m[92m11[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m XL_Var rsh/rps.rsh:[1m[92m56[0m:[1m[92m18[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[96m][0m [1m[95m)[0m
+                                                                                        [96m([0m XL_Let rsh/rps.rsh:[1m[92m44[0m:[1m[92m10[0m Nothing Nothing
+                                                                                            [93m([0m XL_Claim rsh/rps.rsh:[1m[92m44[0m:[1m[92m10[0m CT_Require
+                                                                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:[1m[92m44[0m:[1m[92m17[0m [1m[96m([0m XL_Var rsh/rps.rsh:[1m[92m44[0m:[1m[92m11[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m XL_Var rsh/rps.rsh:[1m[92m44[0m:[1m[92m18[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[96m][0m [1m[95m)[0m
                                                                                             [93m)[0m
-                                                                                            [93m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m57[0m:[1m[92m3[0m
-                                                                                                [1m[95m([0m XL_Let rsh/rps.rsh:[1m[92m60[0m:[1m[92m5[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m
+                                                                                            [93m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m45[0m:[1m[92m3[0m
+                                                                                                [1m[95m([0m XL_Let rsh/rps.rsh:[1m[92m48[0m:[1m[92m5[0m [1m[96m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[96m)[0m
                                                                                                     [1m[96m([0m Just [1m[93m[[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m
-                                                                                                    [1m[96m([0m XL_Declassify rsh/rps.rsh:[1m[92m60[0m:[1m[92m29[0m [1m[93m([0m XL_Var rsh/rps.rsh:[1m[92m60[0m:[1m[92m30[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m [1m[93m)[0m [1m[96m)[0m
-                                                                                                    [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m61[0m:[1m[92m5[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m
+                                                                                                    [1m[96m([0m XL_Declassify rsh/rps.rsh:[1m[92m48[0m:[1m[92m29[0m [1m[93m([0m XL_Var rsh/rps.rsh:[1m[92m48[0m:[1m[92m30[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m [1m[93m)[0m [1m[96m)[0m
+                                                                                                    [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m49[0m:[1m[92m5[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m
                                                                                                         [1m[93m([0m Just [35m[[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [35m][0m [1m[93m)[0m
-                                                                                                        [1m[93m([0m XL_Declassify rsh/rps.rsh:[1m[92m61[0m:[1m[92m29[0m [35m([0m XL_Var rsh/rps.rsh:[1m[92m61[0m:[1m[92m30[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
-                                                                                                        [1m[93m([0m XL_Let rsh/rps.rsh:[1m[92m62[0m:[1m[92m21[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing
-                                                                                                            [35m([0m XL_Interact rsh/rps.rsh:[1m[92m62[0m:[1m[92m5[0m [1m[97m"[0m[1m[94mreveals[0m[1m[97m"[0m [36m([0m XLT_BT rsh/rps.rsh:[1m[92m62[0m:[1m[92m5[0m BT_Bool [36m)[0m
-                                                                                                                [36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m62[0m:[1m[92m30[0m [33m([0m XL_Var rsh/rps.rsh:[1m[92m62[0m:[1m[92m22[0m [1m[97m"[0m[1m[94mshowHand[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:[1m[92m62[0m:[1m[92m31[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [33m][0m [36m][0m
+                                                                                                        [1m[93m([0m XL_Declassify rsh/rps.rsh:[1m[92m49[0m:[1m[92m29[0m [35m([0m XL_Var rsh/rps.rsh:[1m[92m49[0m:[1m[92m30[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
+                                                                                                        [1m[93m([0m XL_Let rsh/rps.rsh:[1m[92m50[0m:[1m[92m21[0m [35m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [35m)[0m Nothing
+                                                                                                            [35m([0m XL_Interact rsh/rps.rsh:[1m[92m50[0m:[1m[92m5[0m [1m[97m"[0m[1m[94mreveals[0m[1m[97m"[0m [36m([0m XLT_BT rsh/rps.rsh:[1m[92m50[0m:[1m[92m5[0m BT_Bool [36m)[0m
+                                                                                                                [36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m50[0m:[1m[92m30[0m [33m([0m XL_Var rsh/rps.rsh:[1m[92m50[0m:[1m[92m22[0m [1m[97m"[0m[1m[94mshowHand[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:[1m[92m50[0m:[1m[92m31[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [33m][0m [36m][0m
                                                                                                             [35m)[0m
-                                                                                                            [35m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m
+                                                                                                            [35m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
                                                                                                                 [36m,[0m
                                                                                                                     [33m[[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m
                                                                                                                     [33m,[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
                                                                                                                     [33m][0m
-                                                                                                                [36m,[0m XL_Con rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
+                                                                                                                [36m,[0m XL_Con rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
                                                                                                                 [36m)[0m
                                                                                                                 [36m([0m Just
-                                                                                                                    [33m([0m XL_Var rsh/rps.rsh:[1m[92m64[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m
-                                                                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m
-                                                                                                                        [1m[35m([0m XL_Lambda rsh/rps.rsh:[1m[92m64[0m:[1m[92m24[0m [1m[36m[[0m[1m[36m][0m
-                                                                                                                            [1m[36m([0m XL_ToConsensus rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m
-                                                                                                                                [1m[33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                                                                                [1m[33m,[0m [95m[[0m[95m][0m
-                                                                                                                                [1m[33m,[0m XL_Con rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m [95m([0m Con_I [1m[92m0[0m [95m)[0m
-                                                                                                                                [1m[33m)[0m Nothing
-                                                                                                                                [1m[33m([0m XL_Let rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m Nothing Nothing
-                                                                                                                                    [95m([0m XL_Claim rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m CT_Require
-                                                                                                                                        [96m([0m XL_FunApp rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m
-                                                                                                                                            [93m([0m XL_Prim rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m [1m[95m([0m CP PEQ [1m[95m)[0m [93m)[0m
-                                                                                                                                            [93m[[0m XL_FunApp rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m
-                                                                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m [1m[96m([0m CP TXN_VALUE [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
-                                                                                                                                            [93m,[0m XL_Con rsh/rps.rsh:[1m[92m65[0m:[1m[92m7[0m [1m[95m([0m Con_I [1m[92m0[0m [1m[95m)[0m
-                                                                                                                                            [93m][0m
-                                                                                                                                        [96m)[0m
-                                                                                                                                    [95m)[0m
-                                                                                                                                    [95m([0m XL_Let rsh/rps.rsh:[1m[92m66[0m:[1m[92m32[0m Nothing Nothing
-                                                                                                                                        [96m([0m XL_Transfer rsh/rps.rsh:[1m[92m66[0m:[1m[92m7[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m66[0m:[1m[92m23[0m
-                                                                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:[1m[92m66[0m:[1m[92m23[0m [1m[96m([0m CP BALANCE [1m[96m)[0m [1m[95m)[0m [1m[95m[[0m[1m[95m][0m
-                                                                                                                                            [93m)[0m
-                                                                                                                                        [96m)[0m
-                                                                                                                                        [96m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m67[0m:[1m[92m7[0m
-                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m68[0m:[1m[92m25[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m68[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[95m)[0m [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m68[0m:[1m[92m26[0m [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [1m[95m][0m [93m)[0m
-                                                                                                                                        [96m)[0m
-                                                                                                                                    [95m)[0m
-                                                                                                                                [1m[33m)[0m
-                                                                                                                            [1m[36m)[0m
+                                                                                                                    [33m([0m XL_Var rsh/rps.rsh:[1m[92m52[0m:[1m[92m14[0m [1m[97m"[0m[1m[94mDELAY[0m[1m[97m"[0m
+                                                                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m
+                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m52[0m:[1m[92m28[0m [1m[36m([0m XL_Var rsh/rps.rsh:[1m[92m52[0m:[1m[92m21[0m [1m[97m"[0m[1m[94mcloseTo[0m[1m[97m"[0m [1m[36m)[0m
+                                                                                                                            [1m[36m[[0m XL_Var rsh/rps.rsh:[1m[92m52[0m:[1m[92m29[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
+                                                                                                                            [1m[36m,[0m XL_FunApp rsh/rps.rsh:[1m[92m52[0m:[1m[92m43[0m [1m[33m([0m XL_Var rsh/rps.rsh:[1m[92m52[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[33m)[0m [1m[33m[[0m XL_Var rsh/rps.rsh:[1m[92m52[0m:[1m[92m44[0m [1m[97m"[0m[1m[94mA_QUITS[0m[1m[97m"[0m [1m[33m][0m
+                                                                                                                            [1m[36m][0m
                                                                                                                         [1m[35m)[0m [1m[35m[[0m[1m[35m][0m
                                                                                                                     [33m)[0m
                                                                                                                 [36m)[0m
-                                                                                                                [36m([0m XL_Let rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m Nothing Nothing
-                                                                                                                    [33m([0m XL_Claim rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m CT_Require
-                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m
-                                                                                                                            [1m[36m([0m XL_Prim rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[36m)[0m
-                                                                                                                            [1m[36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m
-                                                                                                                                [1m[33m([0m XL_Prim rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m [95m([0m CP TXN_VALUE [95m)[0m [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
-                                                                                                                            [1m[36m,[0m XL_Con rsh/rps.rsh:[1m[92m63[0m:[1m[92m3[0m [1m[33m([0m Con_I [1m[92m0[0m [1m[33m)[0m
+                                                                                                                [36m([0m XL_Let rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m Nothing Nothing
+                                                                                                                    [33m([0m XL_Claim rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m CT_Require
+                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m
+                                                                                                                            [1m[36m([0m XL_Prim rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[36m)[0m
+                                                                                                                            [1m[36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m XL_Prim rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m [95m([0m CP TXN_VALUE [95m)[0m [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
+                                                                                                                            [1m[36m,[0m XL_Con rsh/rps.rsh:[1m[92m51[0m:[1m[92m3[0m [1m[33m([0m Con_I [1m[92m0[0m [1m[33m)[0m
                                                                                                                             [1m[36m][0m
                                                                                                                         [1m[35m)[0m
                                                                                                                     [33m)[0m
-                                                                                                                    [33m([0m XL_Let rsh/rps.rsh:[1m[92m69[0m:[1m[92m15[0m Nothing Nothing
-                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m69[0m:[1m[92m15[0m [1m[36m([0m XL_Var rsh/rps.rsh:[1m[92m69[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m [1m[36m)[0m
-                                                                                                                            [1m[36m[[0m XL_Var rsh/rps.rsh:[1m[92m69[0m:[1m[92m16[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m
-                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:[1m[92m69[0m:[1m[92m25[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m
-                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:[1m[92m69[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
+                                                                                                                    [33m([0m XL_Let rsh/rps.rsh:[1m[92m53[0m:[1m[92m15[0m Nothing Nothing
+                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m53[0m:[1m[92m15[0m [1m[36m([0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m [1m[36m)[0m
+                                                                                                                            [1m[36m[[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m16[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m
+                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m25[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m
+                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
                                                                                                                             [1m[36m][0m
                                                                                                                         [1m[35m)[0m
-                                                                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:[1m[92m70[0m:[1m[92m10[0m Nothing Nothing
-                                                                                                                            [1m[36m([0m XL_Claim rsh/rps.rsh:[1m[92m70[0m:[1m[92m10[0m CT_Require
-                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:[1m[92m70[0m:[1m[92m17[0m [95m([0m XL_Var rsh/rps.rsh:[1m[92m70[0m:[1m[92m11[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [95m)[0m [95m[[0m XL_Var rsh/rps.rsh:[1m[92m70[0m:[1m[92m18[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [95m][0m [1m[33m)[0m
+                                                                                                                        [1m[35m([0m XL_Let rsh/rps.rsh:[1m[92m54[0m:[1m[92m10[0m Nothing Nothing
+                                                                                                                            [1m[36m([0m XL_Claim rsh/rps.rsh:[1m[92m54[0m:[1m[92m10[0m CT_Require
+                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:[1m[92m54[0m:[1m[92m17[0m [95m([0m XL_Var rsh/rps.rsh:[1m[92m54[0m:[1m[92m11[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [95m)[0m [95m[[0m XL_Var rsh/rps.rsh:[1m[92m54[0m:[1m[92m18[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [95m][0m [1m[33m)[0m
                                                                                                                             [1m[36m)[0m
-                                                                                                                            [1m[36m([0m XL_Let rsh/rps.rsh:[1m[92m71[0m:[1m[92m3[0m Nothing
+                                                                                                                            [1m[36m([0m XL_Let rsh/rps.rsh:[1m[92m55[0m:[1m[92m3[0m Nothing
                                                                                                                                 [1m[33m([0m Just [95m[[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [95m][0m [1m[33m)[0m
-                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:[1m[92m71[0m:[1m[92m25[0m [95m([0m XL_Var rsh/rps.rsh:[1m[92m71[0m:[1m[92m19[0m [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m [95m)[0m
-                                                                                                                                    [95m[[0m XL_Var rsh/rps.rsh:[1m[92m71[0m:[1m[92m26[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
-                                                                                                                                    [95m,[0m XL_Var rsh/rps.rsh:[1m[92m71[0m:[1m[92m33[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m
+                                                                                                                                [1m[33m([0m XL_FunApp rsh/rps.rsh:[1m[92m55[0m:[1m[92m25[0m [95m([0m XL_Var rsh/rps.rsh:[1m[92m55[0m:[1m[92m19[0m [1m[97m"[0m[1m[94mwinner[0m[1m[97m"[0m [95m)[0m
+                                                                                                                                    [95m[[0m XL_Var rsh/rps.rsh:[1m[92m55[0m:[1m[92m26[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
+                                                                                                                                    [95m,[0m XL_Var rsh/rps.rsh:[1m[92m55[0m:[1m[92m33[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m
                                                                                                                                     [95m][0m
                                                                                                                                 [1m[33m)[0m
-                                                                                                                                [1m[33m([0m XL_Let rsh/rps.rsh:[1m[92m72[0m:[1m[92m9[0m Nothing Nothing
-                                                                                                                                    [95m([0m XL_Claim rsh/rps.rsh:[1m[92m72[0m:[1m[92m9[0m CT_Assert
-                                                                                                                                        [96m([0m XL_FunApp rsh/rps.rsh:[1m[92m72[0m:[1m[92m17[0m [93m([0m XL_Var rsh/rps.rsh:[1m[92m72[0m:[1m[92m10[0m [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m [93m)[0m
-                                                                                                                                            [93m[[0m XL_FunApp rsh/rps.rsh:[1m[92m72[0m:[1m[92m26[0m
-                                                                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:[1m[92m72[0m:[1m[92m26[0m [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m
-                                                                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m72[0m:[1m[92m18[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
-                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:[1m[92m72[0m:[1m[92m29[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m
+                                                                                                                                [1m[33m([0m XL_Let rsh/rps.rsh:[1m[92m56[0m:[1m[92m9[0m Nothing Nothing
+                                                                                                                                    [95m([0m XL_Claim rsh/rps.rsh:[1m[92m56[0m:[1m[92m9[0m CT_Assert
+                                                                                                                                        [96m([0m XL_FunApp rsh/rps.rsh:[1m[92m56[0m:[1m[92m17[0m [93m([0m XL_Var rsh/rps.rsh:[1m[92m56[0m:[1m[92m10[0m [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m [93m)[0m
+                                                                                                                                            [93m[[0m XL_FunApp rsh/rps.rsh:[1m[92m56[0m:[1m[92m26[0m
+                                                                                                                                                [1m[95m([0m XL_Prim rsh/rps.rsh:[1m[92m56[0m:[1m[92m26[0m [1m[96m([0m CP PEQ [1m[96m)[0m [1m[95m)[0m
+                                                                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m56[0m:[1m[92m18[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
+                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:[1m[92m56[0m:[1m[92m29[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m
                                                                                                                                                 [1m[95m][0m
-                                                                                                                                            [93m,[0m XL_FunApp rsh/rps.rsh:[1m[92m72[0m:[1m[92m43[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m72[0m:[1m[92m37[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[95m)[0m [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m72[0m:[1m[92m44[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [1m[95m][0m
+                                                                                                                                            [93m,[0m XL_FunApp rsh/rps.rsh:[1m[92m56[0m:[1m[92m43[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m56[0m:[1m[92m37[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[95m)[0m [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m56[0m:[1m[92m44[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m [1m[95m][0m
                                                                                                                                             [93m][0m
                                                                                                                                         [96m)[0m
                                                                                                                                     [95m)[0m
-                                                                                                                                    [95m([0m XL_Let rsh/rps.rsh:[1m[92m73[0m:[1m[92m9[0m Nothing Nothing
-                                                                                                                                        [96m([0m XL_Claim rsh/rps.rsh:[1m[92m73[0m:[1m[92m9[0m CT_Assert
-                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m73[0m:[1m[92m17[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m73[0m:[1m[92m10[0m [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m [1m[95m)[0m
-                                                                                                                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:[1m[92m73[0m:[1m[92m26[0m
-                                                                                                                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:[1m[92m73[0m:[1m[92m26[0m [1m[93m([0m CP PEQ [1m[93m)[0m [1m[96m)[0m
-                                                                                                                                                    [1m[96m[[0m XL_Var rsh/rps.rsh:[1m[92m73[0m:[1m[92m18[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
-                                                                                                                                                    [1m[96m,[0m XL_Var rsh/rps.rsh:[1m[92m73[0m:[1m[92m29[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m
+                                                                                                                                    [95m([0m XL_Let rsh/rps.rsh:[1m[92m57[0m:[1m[92m9[0m Nothing Nothing
+                                                                                                                                        [96m([0m XL_Claim rsh/rps.rsh:[1m[92m57[0m:[1m[92m9[0m CT_Assert
+                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m57[0m:[1m[92m17[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m57[0m:[1m[92m10[0m [1m[97m"[0m[1m[94mimplies[0m[1m[97m"[0m [1m[95m)[0m
+                                                                                                                                                [1m[95m[[0m XL_FunApp rsh/rps.rsh:[1m[92m57[0m:[1m[92m26[0m
+                                                                                                                                                    [1m[96m([0m XL_Prim rsh/rps.rsh:[1m[92m57[0m:[1m[92m26[0m [1m[93m([0m CP PEQ [1m[93m)[0m [1m[96m)[0m
+                                                                                                                                                    [1m[96m[[0m XL_Var rsh/rps.rsh:[1m[92m57[0m:[1m[92m18[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
+                                                                                                                                                    [1m[96m,[0m XL_Var rsh/rps.rsh:[1m[92m57[0m:[1m[92m29[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m
                                                                                                                                                     [1m[96m][0m
-                                                                                                                                                [1m[95m,[0m XL_FunApp rsh/rps.rsh:[1m[92m73[0m:[1m[92m43[0m [1m[96m([0m XL_Var rsh/rps.rsh:[1m[92m73[0m:[1m[92m37[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m XL_Var rsh/rps.rsh:[1m[92m73[0m:[1m[92m44[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[96m][0m
+                                                                                                                                                [1m[95m,[0m XL_FunApp rsh/rps.rsh:[1m[92m57[0m:[1m[92m43[0m [1m[96m([0m XL_Var rsh/rps.rsh:[1m[92m57[0m:[1m[92m37[0m [1m[97m"[0m[1m[94misHand[0m[1m[97m"[0m [1m[96m)[0m [1m[96m[[0m XL_Var rsh/rps.rsh:[1m[92m57[0m:[1m[92m44[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m [1m[96m][0m
                                                                                                                                                 [1m[95m][0m
                                                                                                                                             [93m)[0m
                                                                                                                                         [96m)[0m
-                                                                                                                                        [96m([0m XL_Let rsh/rps.rsh:[1m[92m74[0m:[1m[92m12[0m Nothing Nothing
-                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m74[0m:[1m[92m12[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m74[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m [1m[95m)[0m
-                                                                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m74[0m:[1m[92m13[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
-                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:[1m[92m74[0m:[1m[92m20[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m
-                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:[1m[92m74[0m:[1m[92m27[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
+                                                                                                                                        [96m([0m XL_Let rsh/rps.rsh:[1m[92m58[0m:[1m[92m12[0m Nothing Nothing
+                                                                                                                                            [93m([0m XL_FunApp rsh/rps.rsh:[1m[92m58[0m:[1m[92m12[0m [1m[95m([0m XL_Var rsh/rps.rsh:[1m[92m58[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mfair_game[0m[1m[97m"[0m [1m[95m)[0m
+                                                                                                                                                [1m[95m[[0m XL_Var rsh/rps.rsh:[1m[92m58[0m:[1m[92m13[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
+                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:[1m[92m58[0m:[1m[92m20[0m [1m[97m"[0m[1m[94mhandB[0m[1m[97m"[0m
+                                                                                                                                                [1m[95m,[0m XL_Var rsh/rps.rsh:[1m[92m58[0m:[1m[92m27[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
                                                                                                                                                 [1m[95m][0m
                                                                                                                                             [93m)[0m
-                                                                                                                                            [93m([0m XL_Let rsh/rps.rsh:[1m[92m76[0m:[1m[92m3[0m Nothing
+                                                                                                                                            [93m([0m XL_Let rsh/rps.rsh:[1m[92m60[0m:[1m[92m3[0m Nothing
                                                                                                                                                 [1m[95m([0m Just
                                                                                                                                                     [1m[96m[[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m
                                                                                                                                                     [1m[96m,[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m
                                                                                                                                                     [1m[96m][0m
                                                                                                                                                 [1m[95m)[0m
-                                                                                                                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:[1m[92m82[0m:[1m[92m46[0m
-                                                                                                                                                    [1m[96m([0m XL_Lambda rsh/rps.rsh:[1m[92m76[0m:[1m[92m30[0m [1m[93m[[0m[1m[93m][0m
-                                                                                                                                                        [1m[93m([0m XL_If rsh/rps.rsh:[1m[92m77[0m:[1m[92m5[0m
-                                                                                                                                                            [35m([0m XL_FunApp rsh/rps.rsh:[1m[92m77[0m:[1m[92m17[0m
-                                                                                                                                                                [36m([0m XL_Prim rsh/rps.rsh:[1m[92m77[0m:[1m[92m17[0m [33m([0m CP PEQ [33m)[0m [36m)[0m
-                                                                                                                                                                [36m[[0m XL_Var rsh/rps.rsh:[1m[92m77[0m:[1m[92m9[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
-                                                                                                                                                                [36m,[0m XL_Var rsh/rps.rsh:[1m[92m77[0m:[1m[92m20[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m
+                                                                                                                                                [1m[95m([0m XL_FunApp rsh/rps.rsh:[1m[92m66[0m:[1m[92m46[0m
+                                                                                                                                                    [1m[96m([0m XL_Lambda rsh/rps.rsh:[1m[92m60[0m:[1m[92m30[0m [1m[93m[[0m[1m[93m][0m
+                                                                                                                                                        [1m[93m([0m XL_If rsh/rps.rsh:[1m[92m61[0m:[1m[92m5[0m
+                                                                                                                                                            [35m([0m XL_FunApp rsh/rps.rsh:[1m[92m61[0m:[1m[92m17[0m
+                                                                                                                                                                [36m([0m XL_Prim rsh/rps.rsh:[1m[92m61[0m:[1m[92m17[0m [33m([0m CP PEQ [33m)[0m [36m)[0m
+                                                                                                                                                                [36m[[0m XL_Var rsh/rps.rsh:[1m[92m61[0m:[1m[92m9[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
+                                                                                                                                                                [36m,[0m XL_Var rsh/rps.rsh:[1m[92m61[0m:[1m[92m20[0m [1m[97m"[0m[1m[94mA_WINS[0m[1m[97m"[0m
                                                                                                                                                                 [36m][0m
                                                                                                                                                             [35m)[0m
-                                                                                                                                                            [35m([0m XL_Values rsh/rps.rsh:[1m[92m78[0m:[1m[92m14[0m
-                                                                                                                                                                [36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m78[0m:[1m[92m17[0m
-                                                                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:[1m[92m78[0m:[1m[92m17[0m [1m[35m([0m CP MUL [1m[35m)[0m [33m)[0m
-                                                                                                                                                                    [33m[[0m XL_Con rsh/rps.rsh:[1m[92m78[0m:[1m[92m15[0m [1m[35m([0m Con_I [1m[92m2[0m [1m[35m)[0m
-                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:[1m[92m78[0m:[1m[92m19[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
+                                                                                                                                                            [35m([0m XL_Values rsh/rps.rsh:[1m[92m62[0m:[1m[92m14[0m
+                                                                                                                                                                [36m[[0m XL_FunApp rsh/rps.rsh:[1m[92m62[0m:[1m[92m17[0m
+                                                                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:[1m[92m62[0m:[1m[92m17[0m [1m[35m([0m CP MUL [1m[35m)[0m [33m)[0m
+                                                                                                                                                                    [33m[[0m XL_Con rsh/rps.rsh:[1m[92m62[0m:[1m[92m15[0m [1m[35m([0m Con_I [1m[92m2[0m [1m[35m)[0m
+                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:[1m[92m62[0m:[1m[92m19[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
                                                                                                                                                                     [33m][0m
-                                                                                                                                                                [36m,[0m XL_Con rsh/rps.rsh:[1m[92m78[0m:[1m[92m32[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
+                                                                                                                                                                [36m,[0m XL_Con rsh/rps.rsh:[1m[92m62[0m:[1m[92m32[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
                                                                                                                                                                 [36m][0m
                                                                                                                                                             [35m)[0m
-                                                                                                                                                            [35m([0m XL_If rsh/rps.rsh:[1m[92m79[0m:[1m[92m10[0m
-                                                                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:[1m[92m79[0m:[1m[92m22[0m
-                                                                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:[1m[92m79[0m:[1m[92m22[0m [1m[35m([0m CP PEQ [1m[35m)[0m [33m)[0m
-                                                                                                                                                                    [33m[[0m XL_Var rsh/rps.rsh:[1m[92m79[0m:[1m[92m14[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
-                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:[1m[92m79[0m:[1m[92m25[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m
+                                                                                                                                                            [35m([0m XL_If rsh/rps.rsh:[1m[92m63[0m:[1m[92m10[0m
+                                                                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:[1m[92m63[0m:[1m[92m22[0m
+                                                                                                                                                                    [33m([0m XL_Prim rsh/rps.rsh:[1m[92m63[0m:[1m[92m22[0m [1m[35m([0m CP PEQ [1m[35m)[0m [33m)[0m
+                                                                                                                                                                    [33m[[0m XL_Var rsh/rps.rsh:[1m[92m63[0m:[1m[92m14[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m
+                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:[1m[92m63[0m:[1m[92m25[0m [1m[97m"[0m[1m[94mB_WINS[0m[1m[97m"[0m
                                                                                                                                                                     [33m][0m
                                                                                                                                                                 [36m)[0m
-                                                                                                                                                                [36m([0m XL_Values rsh/rps.rsh:[1m[92m80[0m:[1m[92m14[0m
-                                                                                                                                                                    [33m[[0m XL_Con rsh/rps.rsh:[1m[92m80[0m:[1m[92m15[0m [1m[35m([0m Con_I [1m[92m0[0m [1m[35m)[0m
-                                                                                                                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:[1m[92m80[0m:[1m[92m20[0m
-                                                                                                                                                                        [1m[35m([0m XL_Prim rsh/rps.rsh:[1m[92m80[0m:[1m[92m20[0m [1m[36m([0m CP MUL [1m[36m)[0m [1m[35m)[0m
-                                                                                                                                                                        [1m[35m[[0m XL_Con rsh/rps.rsh:[1m[92m80[0m:[1m[92m18[0m [1m[36m([0m Con_I [1m[92m2[0m [1m[36m)[0m
-                                                                                                                                                                        [1m[35m,[0m XL_Var rsh/rps.rsh:[1m[92m80[0m:[1m[92m22[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
+                                                                                                                                                                [36m([0m XL_Values rsh/rps.rsh:[1m[92m64[0m:[1m[92m14[0m
+                                                                                                                                                                    [33m[[0m XL_Con rsh/rps.rsh:[1m[92m64[0m:[1m[92m15[0m [1m[35m([0m Con_I [1m[92m0[0m [1m[35m)[0m
+                                                                                                                                                                    [33m,[0m XL_FunApp rsh/rps.rsh:[1m[92m64[0m:[1m[92m20[0m
+                                                                                                                                                                        [1m[35m([0m XL_Prim rsh/rps.rsh:[1m[92m64[0m:[1m[92m20[0m [1m[36m([0m CP MUL [1m[36m)[0m [1m[35m)[0m
+                                                                                                                                                                        [1m[35m[[0m XL_Con rsh/rps.rsh:[1m[92m64[0m:[1m[92m18[0m [1m[36m([0m Con_I [1m[92m2[0m [1m[36m)[0m
+                                                                                                                                                                        [1m[35m,[0m XL_Var rsh/rps.rsh:[1m[92m64[0m:[1m[92m22[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
                                                                                                                                                                         [1m[35m][0m
                                                                                                                                                                     [33m][0m
                                                                                                                                                                 [36m)[0m
-                                                                                                                                                                [36m([0m XL_Values rsh/rps.rsh:[1m[92m82[0m:[1m[92m14[0m
-                                                                                                                                                                    [33m[[0m XL_Var rsh/rps.rsh:[1m[92m82[0m:[1m[92m15[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
-                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:[1m[92m82[0m:[1m[92m28[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
+                                                                                                                                                                [36m([0m XL_Values rsh/rps.rsh:[1m[92m66[0m:[1m[92m14[0m
+                                                                                                                                                                    [33m[[0m XL_Var rsh/rps.rsh:[1m[92m66[0m:[1m[92m15[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
+                                                                                                                                                                    [33m,[0m XL_Var rsh/rps.rsh:[1m[92m66[0m:[1m[92m28[0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
                                                                                                                                                                     [33m][0m
                                                                                                                                                                 [36m)[0m
                                                                                                                                                             [35m)[0m
                                                                                                                                                         [1m[93m)[0m
                                                                                                                                                     [1m[96m)[0m [1m[96m[[0m[1m[96m][0m
                                                                                                                                                 [1m[95m)[0m
-                                                                                                                                                [1m[95m([0m XL_Let rsh/rps.rsh:[1m[92m83[0m:[1m[92m39[0m Nothing Nothing
-                                                                                                                                                    [1m[96m([0m XL_Transfer rsh/rps.rsh:[1m[92m83[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
-                                                                                                                                                        [1m[93m([0m XL_FunApp rsh/rps.rsh:[1m[92m83[0m:[1m[92m25[0m
-                                                                                                                                                            [35m([0m XL_Prim rsh/rps.rsh:[1m[92m83[0m:[1m[92m25[0m [36m([0m CP ADD [36m)[0m [35m)[0m
-                                                                                                                                                            [35m[[0m XL_Var rsh/rps.rsh:[1m[92m83[0m:[1m[92m12[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m
-                                                                                                                                                            [35m,[0m XL_Var rsh/rps.rsh:[1m[92m83[0m:[1m[92m27[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m
+                                                                                                                                                [1m[95m([0m XL_Let rsh/rps.rsh:[1m[92m67[0m:[1m[92m39[0m Nothing Nothing
+                                                                                                                                                    [1m[96m([0m XL_Transfer rsh/rps.rsh:[1m[92m67[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
+                                                                                                                                                        [1m[93m([0m XL_FunApp rsh/rps.rsh:[1m[92m67[0m:[1m[92m25[0m
+                                                                                                                                                            [35m([0m XL_Prim rsh/rps.rsh:[1m[92m67[0m:[1m[92m25[0m [36m([0m CP ADD [36m)[0m [35m)[0m
+                                                                                                                                                            [35m[[0m XL_Var rsh/rps.rsh:[1m[92m67[0m:[1m[92m12[0m [1m[97m"[0m[1m[94mescrowAmount[0m[1m[97m"[0m
+                                                                                                                                                            [35m,[0m XL_Var rsh/rps.rsh:[1m[92m67[0m:[1m[92m27[0m [1m[97m"[0m[1m[94mgetsA[0m[1m[97m"[0m
                                                                                                                                                             [35m][0m
                                                                                                                                                         [1m[93m)[0m
                                                                                                                                                     [1m[96m)[0m
-                                                                                                                                                    [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m84[0m:[1m[92m24[0m Nothing Nothing
-                                                                                                                                                        [1m[93m([0m XL_Transfer rsh/rps.rsh:[1m[92m84[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [35m([0m XL_Var rsh/rps.rsh:[1m[92m84[0m:[1m[92m12[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
-                                                                                                                                                        [1m[93m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m85[0m:[1m[92m3[0m
-                                                                                                                                                            [35m([0m XL_Let rsh/rps.rsh:[1m[92m87[0m:[1m[92m19[0m Nothing Nothing
-                                                                                                                                                                [36m([0m XL_Interact rsh/rps.rsh:[1m[92m87[0m:[1m[92m3[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [33m([0m XLT_BT rsh/rps.rsh:[1m[92m87[0m:[1m[92m3[0m BT_Bool [33m)[0m [33m[[0m[33m][0m [36m)[0m
-                                                                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:[1m[92m88[0m:[1m[92m21[0m [33m([0m XL_Var rsh/rps.rsh:[1m[92m88[0m:[1m[92m10[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:[1m[92m88[0m:[1m[92m22[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [33m][0m [36m)[0m
+                                                                                                                                                    [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m68[0m:[1m[92m24[0m Nothing Nothing
+                                                                                                                                                        [1m[93m([0m XL_Transfer rsh/rps.rsh:[1m[92m68[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m [35m([0m XL_Var rsh/rps.rsh:[1m[92m68[0m:[1m[92m12[0m [1m[97m"[0m[1m[94mgetsB[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
+                                                                                                                                                        [1m[93m([0m XL_FromConsensus rsh/rps.rsh:[1m[92m69[0m:[1m[92m3[0m
+                                                                                                                                                            [35m([0m XL_Let rsh/rps.rsh:[1m[92m71[0m:[1m[92m19[0m Nothing Nothing
+                                                                                                                                                                [36m([0m XL_Interact rsh/rps.rsh:[1m[92m71[0m:[1m[92m3[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [33m([0m XLT_BT rsh/rps.rsh:[1m[92m71[0m:[1m[92m3[0m BT_Bool [33m)[0m [33m[[0m[33m][0m [36m)[0m
+                                                                                                                                                                [36m([0m XL_FunApp rsh/rps.rsh:[1m[92m72[0m:[1m[92m21[0m [33m([0m XL_Var rsh/rps.rsh:[1m[92m72[0m:[1m[92m10[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var rsh/rps.rsh:[1m[92m72[0m:[1m[92m22[0m [1m[97m"[0m[1m[94moutcome[0m[1m[97m"[0m [33m][0m [36m)[0m
                                                                                                                                                             [35m)[0m
                                                                                                                                                         [1m[93m)[0m
                                                                                                                                                     [1m[96m)[0m

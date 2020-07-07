@@ -28,5 +28,12 @@ function precommit (x) {
 function check_commit (commitment, salt, x) {
   return require(commitment == digest(salt, x)); }
 
+function closeTo(Who, result) {
+  return () => {
+    Who.publish();
+    transfer(balance()).to(Who);
+    commit();
+    return result; }; }
+
 function __decode_testing__() {
   return txn.value; }

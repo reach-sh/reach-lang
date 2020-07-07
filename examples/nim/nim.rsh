@@ -8,12 +8,6 @@ function applyMove(AsTurn, heap1, heap2, choose1, amount) {
   } else {
     return [ !AsTurn, heap1, heap2 - amount ]; } }
 
-function closeTo(Who, result) {
-  Who.publish();
-  transfer(balance()).to(Who);
-  commit();
-  return result; }
-
 // Protocol
 const A = participant({});
 const B = participant({});
@@ -34,15 +28,13 @@ function main() {
     const coinFlipB = declassify(random()); });
   B.publish(coinFlipB)
     .pay(wagerAmount)
-    .timeout(DELAY, () => {
-      return closeTo(A, "B never accepted"); });
+    .timeout(DELAY, closeTo(A, "B never accepted"));
   commit();
 
   A.only(() => {
     const coinFlipA = declassify(_coinFlipA); });
   A.publish(coinFlipA)
-    .timeout(DELAY, () => {
-          return closeTo(B, "A never revealed coinflip"); });
+    .timeout(DELAY, closeTo(B, "A never revealed coinflip"));
   require(commitA == digest(coinFlipA));
   const AisFirst = (( coinFlipA + coinFlipB ) % 2) == 0;
   
@@ -57,8 +49,7 @@ function main() {
         const amount = declassify(is(uint256,interact.getAmount(heap1, heap2)));
         assume(amount <= (choose1 ? heap1 : heap2)); });
       A.publish(choose1, amount)
-        .timeout(DELAY, () => {
-          return closeTo(B, "A timed out move"); });
+        .timeout(DELAY, closeTo(B, "A timed out move"));
       
       [ AsTurn, heap1, heap2 ] = applyMove(AsTurn, heap1, heap2, choose1, amount);
       continue;
@@ -70,8 +61,7 @@ function main() {
         const amount = declassify(is(uint256,interact.getAmount(heap1, heap2)));
         assume(amount <= (choose1 ? heap1 : heap2)); });
       B.publish(choose1, amount)
-        .timeout(DELAY, () => {
-          return closeTo(A, "B timed out move"); });
+        .timeout(DELAY, closeTo(A, "B timed out move"));
       
       [ AsTurn, heap1, heap2 ] = applyMove(AsTurn, heap1, heap2, choose1, amount);
       continue; } }

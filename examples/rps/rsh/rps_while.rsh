@@ -24,11 +24,7 @@ function main() {
   B.only(() => {
     interact.accepts(wagerAmount, escrowAmount); });
   B.pay(wagerAmount)
-    .timeout(DELAY, () => {
-      A.publish();
-      transfer(balance()).to(A);
-      commit();
-      return showOutcome(B_QUITS); });
+    .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
 
   var [ count, outcome ] = [ 0, DRAW ];
   invariant((balance() == ((2 * wagerAmount) + escrowAmount))

@@ -107,21 +107,13 @@ function main() {
     const coinFlipB = declassify(random()); });
   B.publish(coinFlipB)
     .pay(wagerAmount)
-    .timeout(DELAY, () => {
-      A.publish();
-      transfer(balance()).to(A);
-      commit();
-      return "B never accepted"; });
+    .timeout(DELAY, closeTo(A, "B never accepted"));
   commit();
 
   A.only(() => {
     const coinFlipA = declassify(_coinFlipA); });
   A.publish(coinFlipA)
-    .timeout(DELAY, () => {
-      B.publish();
-      transfer(balance()).to(B);
-      commit();
-      return "A never revealed coinflip"; });
+    .timeout(DELAY, closeTo(B, "A never revealed coinflip"));
 
   require(commitA == digest(coinFlipA));
   const XisFirst = (( coinFlipA + coinFlipB ) % 2) == 0;
@@ -135,11 +127,7 @@ function main() {
       A.only(() => {
         const moveA = getValidMove(state); });
       A.publish(moveA)
-        .timeout(DELAY, () => {
-          B.publish();
-          transfer(balance()).to(B);
-          commit();
-          return "A timed out move"; });
+        .timeout(DELAY, closeTo(B, "A timed out move"));
 
       [ state ] = applyMove(state, moveA);
       continue; }
@@ -149,11 +137,7 @@ function main() {
       B.only(() => {
         const moveB = getValidMove(state); });
       B.publish(moveB)
-        .timeout(DELAY, () => {
-          A.publish();
-          transfer(balance()).to(A);
-          commit();
-          return "B timed out move"; });
+        .timeout(DELAY, closeTo(A, "B timed out move"));
 
       [ state ] = applyMove(state, moveB);
       continue; } }

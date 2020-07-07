@@ -176,7 +176,8 @@ data InlineV a
   | IV_Var a XILVar
   | IV_XIL Effects [LType] (XILExpr a)
   | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
-  deriving (Eq,Show)
+  | IV_CloBody a Effects ((XILExpr a) -> (XILExpr a)) (InlineV a)
+  deriving ()
 
 type IVType = [LType]
 
@@ -242,6 +243,8 @@ iv_expr _ (IV_Var a (v,t)) = (Set.empty, [t], (XIL_Var a (v,t)))
 iv_expr _ (IV_XIL isPure ts x) = (isPure, ts, x)
 iv_expr ra (IV_Clo (ca, _, _) _) = expect_throw CE_HigherOrder ra ca
 iv_expr ra (IV_Prim pa _) = expect_throw CE_HigherOrder ra pa
+iv_expr _ (IV_CloBody h arg_ef make_body body_iv) = (arg_ef \/ body_ef, body_t, make_body body_e)
+  where (body_ef, body_t, body_e) = iv_expr h body_iv
 
 iv_expr_expect :: Show a => a -> [LType] -> InlineV a -> (Effects, XILExpr a)
 iv_expr_expect ra et iv =
@@ -258,6 +261,7 @@ iv_exprs ra ivs = (iep, its, ies)
 
 iv_can_copy :: InlineV a -> Bool
 iv_can_copy (IV_XIL _ _ _) = False
+iv_can_copy (IV_CloBody _ _ _ _) = False
 iv_can_copy _ = True
 
 id_map :: Show a => a -> [XLVar] -> [LType] -> ILEnv a
@@ -317,24 +321,30 @@ do_inline_funcall outer_loopt ch who f argivs =
           where (arp, argts, argies) = iv_exprs ch argivs
                 pt = checkFun ch (primType p) argts
     IV_Clo (lh, formals, orig_body) cloenv ->
-      IV_XIL (arp \/ bp) bt eff_body'
+      case eff_formals of
+        [] -> body_iv
+        _ ->
+          IV_CloBody lh arp make_eff_body' body_iv
       where (σ', arp, eff_formals, eff_argies) =
               foldr proc_clo_arg (cloenv, bottom, [], []) $ zipEq CE_TypeCount ch formals argivs
             proc_clo_arg (formal, argiv) (i_σ, i_arp, i_eff_formals, i_eff_argies) =
               if (iv_can_copy argiv) then
-                (o_σ_copy, i_arp, i_eff_formals, i_eff_argies)
+                let o_σ_copy = ienv_insert lh formal argiv i_σ
+                in
+                  (o_σ_copy, i_arp, i_eff_formals, i_eff_argies)
               else
-                (o_σ_let, o_arp, o_eff_formals, o_eff_argies)
-              where o_σ_copy = ienv_insert lh formal argiv i_σ
-                    (this_p, this_ts, this_x) = iv_expr ch argiv
+                let (this_p, this_ts, this_x) = iv_expr ch argiv
                     this_t = (type_count_expect_one ch this_ts)
-
                     o_σ_let = ienv_insert lh formal (IV_Var ch (formal, this_t)) i_σ
                     o_arp = i_arp \/ this_p
                     o_eff_formals = (formal, this_t) : i_eff_formals
                     o_eff_argies = this_x : i_eff_argies
-            eff_body' = XIL_Let lh who (Just eff_formals) (XIL_Values ch eff_argies) body'
-            (bp, bt, body') = iv_expr lh $ peval outer_loopt σ' orig_body
+                in
+                  (o_σ_let, o_arp, o_eff_formals, o_eff_argies)
+            make_eff_body' = XIL_Let lh who (Just eff_formals) (XIL_Values ch eff_argies)
+            body_iv = peval outer_loopt σ' orig_body
+    IV_CloBody h arg_ef make_body body_iv ->
+      IV_CloBody h arg_ef make_body (do_inline_funcall outer_loopt ch who body_iv argivs)
 
 peval_ensure_var :: Show a => a -> LType -> XLVar -> ILEnv a -> XILVar
 peval_ensure_var a bt v σ = iv
@@ -354,8 +364,8 @@ teval σ xt =
             how_many =
               case peval Nothing σ unit of
                 IV_Con _ (Con_I x) -> x
-                iv ->
-                  expect_throw CE_ArrayLenNotConstant a iv
+                _ ->
+                  expect_throw CE_ArrayLenNotConstant a ("XXX Implement show for part of InlineV"::String)
 
 peval :: Show a => Maybe LoopTy -> ILEnv a -> XLExpr a -> InlineV a
 peval outer_loopt σ e =
@@ -369,18 +379,19 @@ peval outer_loopt σ e =
     XL_Prim a p ->
       IV_Prim a p
     XL_If a c t f ->
-      case peval outer_loopt σ c of
-        IV_Con _ (Con_B b) ->
-          peval outer_loopt σ (if b then t else f)
-        civ ->
-          IV_XIL (cp \/ tfp) it (XIL_If a tfp c' it t' f')
-          where (cp, c') = iv_expr_expect a [LT_BT BT_Bool] civ
-                tfp = (tp \/ fp)
-                (tp, tt, t') = r a t
-                (fp, ft, f') = r a f
-                it = (type_equal a tt ft)
+      let (cp, c') = tr a [LT_BT BT_Bool] c in
+        case c' of
+          (XIL_Con _ (Con_B b)) ->
+            peval outer_loopt σ (if b then t else f)
+          _ ->
+            IV_XIL (cp \/ tfp) it (XIL_If a tfp c' it t' f')
+            where tfp = (tp \/ fp)
+                  (tp, tt, t') = r a t
+                  (fp, ft, f') = r a f
+                  it = (type_equal a tt ft)
     XL_Claim a ct ae ->
-      IV_XIL eff_claim [] (XIL_Claim a ct (sr a [LT_BT BT_Bool] ae))
+      let ae' = (sr a [LT_BT BT_Bool] ae) in
+        IV_XIL eff_claim [] (XIL_Claim a ct ae')
     XL_ToConsensus a (ok_p, vs, ae) mto be ->
       IV_XIL eff_comm rt (XIL_ToConsensus a ok_info mto_info be')
       where ok_info = (ok_ij, ok_piv, vilvs, (sr a [LT_BT BT_UInt256] ae))
@@ -1107,7 +1118,8 @@ compile copts = do
   out "xil" (L.unpack (pShow xilp))
   let ilp = anf xilp
   out "il" (show (pretty ilp))
-  verify_z3 (outn "z3") ilp
+  when True
+    (verify_z3 (outn "z3") ilp)
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp

@@ -249,6 +249,10 @@ is an @tech{invalid} program, because @reachin{Bob} does not know @reachin{x}.
         Bob.publish();
         commit();
         return false; }); }
+@reach{
+ Alice.publish(wagerAmount)
+      .pay(wagerAmount)
+      .timeout(DELAY, closeTo(Bob, false)); }
 
 A @tech{consensus transfer}, written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, TIMEOUT_EXPR)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{expression} that depends on only @tech{consensus state} that evaluates to a natural number and @reachin{TIMEOUT_EXPR} is an @tech{expression} that evaluates to a @tech{timeout} represent by a zero-arity function, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}. The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
 
@@ -260,10 +264,7 @@ The @reachin{publish} component exclusive-or the @reachin{pay} component may be 
  Alice.pay(penaltyAmount);
 
  Alice.publish(coinFlip)
-      .timeout(DELAY, () => {
-        Bob.publish();
-        commit();
-        return false; });
+      .timeout(DELAY, closeTo(Bob, false));
 
  Alice.pay(penaltyAmount)
       .timeout(DELAY, () => {
@@ -495,10 +496,16 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
  precommit( x ) }
 
 @index{precommit} Returns two values, @reachin{[ commitment, salt ]}, where @reachin{salt} is a random @reachin{uint256}, and
-@reachin{commitment} is the @tech{digest} of @reachin{x} and @reachin{salt}.
+@reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
 
 @(hrule)
 @reach{
  check_commit( commitment, salt, x ) }
 
 @index{check_commit} Makes a @tech{requirement} that @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
+
+@(hrule)
+@reach{
+ closeTo( Who, value ) }
+
+@index{closeTo} Returns a function which accepts no arguments, has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| with the result @reachin{value}.

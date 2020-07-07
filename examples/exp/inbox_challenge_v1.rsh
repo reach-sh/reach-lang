@@ -109,10 +109,7 @@ function main() {
     const upperHash = declassify(_upperHash);
     const chainLength = declassify(_chainLength); });
   Rollup.publish(CallbackDest, Asserter, Challenger,
-                 lowerHash, upperHash, chainLength)
-    .timeout(DELAY, _, () => {
-      commit();
-      return false; });
+                 lowerHash, upperHash, chainLength);
   commit();
 
   inside(Asserter, Challenger,
