@@ -2,7 +2,7 @@
 
 module Reach.EmitSol where
 
-import Data.List (intersperse)
+import Data.List (intersperse, foldl')
 import Data.Text.Prettyprint.Doc
 import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
@@ -316,7 +316,7 @@ solHandler (C_Handler _ from_spec interval (last_i, svs) msg body i) = vsep [ ev
                 check sign mv =
                   case mv of
                     [] -> "true"
-                    vs -> solBinOp (if sign then ">=" else "<") solBlockNumber (foldl (solBinOp "+") solLastBlock (map (solArg sim ρ) vs))
+                    vs -> solBinOp (if sign then ">=" else "<") solBlockNumber (foldl' (solBinOp "+") solLastBlock (map (solArg sim ρ) vs))
 solHandler (C_Loop _ svs args _inv body i) = vsep [ frame_defp, funp ]
   where funp = solFunction (solLoop_fun i) arg_ds retp (vsep [ frame_declp, bodyp ])
         sim = makeSIM ccs (args ++ svs)

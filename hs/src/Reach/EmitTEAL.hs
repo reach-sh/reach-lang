@@ -73,7 +73,7 @@ cs_var_loc cs bv = (loc, cs')
         ( lab, loc, vmap ) = cs
 
 cs_var_locs :: CompileSt a -> [BLVar] -> CompileSt a
-cs_var_locs cs bvs = foldl h cs bvs
+cs_var_locs cs bvs = foldl' h cs bvs
   where h cs0 bv = snd $ cs_var_loc cs0 bv 
 
 cs_var_set :: CompileSt a -> BLVar -> VarRHS a -> CompileSt a
@@ -86,7 +86,7 @@ cs_var_args cs as = cs'
   where h (cs0, i) a = ((cs_var_set cs0 a (VR_Arg i (blvar_type a))), i+1)
         --- The first argument is 3 because 0 is the handler and 1 is
         --- the last time and 2 is the value
-        (cs', _) = foldl h (cs, 3) as
+        (cs', _) = foldl' h (cs, 3) as
 
 cs_label :: CompileSt a -> String
 cs_label ( lab, _, _ ) = lab
@@ -414,7 +414,7 @@ comp_chandler next_lab (C_Handler loc from_spec interval (last_i, svs) msg body 
                 delays_ls <- mapM (comp_blarg cs) delays
                 return $ []
                   -- begin timeout checking
-                  ++ (foldl (\x y -> x ++ y ++ code "+" [])
+                  ++ (foldl' (\x y -> x ++ y ++ code "+" [])
                       (comp_arg 1 ++ code "btoi" [])
                       delays_ls)
                   -- the stack contains the deadline
@@ -477,7 +477,7 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                       ++ comp_con (Con_I 1)
                       ++ code "return" []
           where next_lab = "h1"
-        handlers_ls = bracket "Handlers" $ snd $ foldl fh ("revert", []) (reverse hs)
+        handlers_ls = bracket "Handlers" $ snd $ foldl' fh ("revert", []) (reverse hs)
           where fh (next_lab, prev_ls) h = (this_lab, both_ls)
                   where (this_lab, this_ls) = comp_chandler next_lab h
                         both_ls = this_ls ++ prev_ls

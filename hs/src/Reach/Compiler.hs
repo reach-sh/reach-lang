@@ -13,6 +13,7 @@ import qualified Data.Sequence as S
 import Text.Pretty.Simple
 import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
+import Data.List (foldl')
 
 import System.Exit
 import qualified Filesystem.Path.CurrentOS as FP
@@ -426,7 +427,7 @@ peval outer_loopt σ e =
             (_, iet, ie') = r a ie
             lvts = type_count_expect a (length lvs) iet
             lvvs = zip lvs lvts
-            σ' = foldl (\σ0 (lv, lvv) -> ienv_insert a lv (IV_Var a lvv) σ0) σ $ zip lvs lvvs
+            σ' = foldl' (\σ0 (lv, lvv) -> ienv_insert a lv (IV_Var a lvv) σ0) σ $ zip lvs lvvs
     XL_Continue a ne ->
       case outer_loopt of
         Just (ket, lvts) ->
@@ -467,7 +468,7 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph rts ps' (add_to_m' m')
         add_ps (_ph, vs) σ = foldr add_pvs σ vs
         add_pvs (vh, v, xt) σ = ienv_insert vh v (IV_Var vh (v,bt)) σ
           where bt = teval σ_top xt
-        (add_to_m', σ_top) = foldl add_tops ((\x->x), M.empty) defs
+        (add_to_m', σ_top) = foldl' add_tops ((\x->x), M.empty) defs
         add_tops (adder, σ) d =
           case d of
             XL_DefineValues h vs ve ->

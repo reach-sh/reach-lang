@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-
+{-# LANGUAGE StrictData #-}
 module Reach.EmitEVM where
 
 import Control.Monad.State.Lazy

@@ -14,6 +14,7 @@ import Data.Digest.CRC32
 import qualified Data.ByteString.Char8 as BS
 import Data.FileEmbed
 import Data.IORef
+import Control.Loop
 
 import Reach.AST
 import Reach.Util
@@ -155,7 +156,7 @@ z3_assert_declare z3 vs lty =
   case lty of
     LT_BT bt -> z3_assert_declare_bt z3 vs bt
     LT_FixedArray bt hm ->
-      forM_ [0..hm] h
+      forLoop 0 (<= hm) (+1) h
       where h i = z3_assert_declare_bt z3
                   (List [ Atom "select", vs, Atom (show i)]) bt
 

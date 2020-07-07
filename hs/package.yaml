@@ -39,6 +39,7 @@ dependencies:
 - cryptonite
 - memory
 - base64
+- loop
 
 ghc-options:
 - -Wall
