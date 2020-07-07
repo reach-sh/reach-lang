@@ -44,6 +44,8 @@ ghc-options:
 - -Wall
 - -Werror
 - -O2
+- -fwrite-ide-info
+- -hiedir=.hie
 
 library:
   source-dirs: src

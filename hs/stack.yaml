@@ -1,4 +1,4 @@
-resolver: lts-14.7
+resolver: lts-16.3
 
 extra-deps:
   - base64-0.4.1
