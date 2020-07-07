@@ -2,11 +2,19 @@ resolver: lts-16.3
 
 extra-deps:
   - base64-0.4.1
+  - dir-traverse-0.2.2.3@sha256:cbb1e3d0d1f9a3cfcbdc58071fba8a2063bae36bab68279647a331f9a408c18a,2137
+  - extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993
   - io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
+  - microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
   - posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c
+  - trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
+  - trial-optparse-applicative-0.0.0.0@sha256:ba05edfc327a281766df5e0f44d91229e6a98afaf59abe1894b293453f076192,2449
+  - trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441
   - git: https://github.com/jeapostrophe/simple-smt.git
     commit: 1189da0abaf9a0a48c4a99e0e195af5b893ee69c
   - git: https://github.com/jeapostrophe/language-javascript.git
     commit: 1433b39fc089021368d1e361ae7eccce218acb39
   - git: https://github.com/reach-sh/haskell-evm.git
     commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
+  - git: https://github.com/kowainik/stan.git
+    commit: fa1da0ba23796c6d57f5a2e77bbb8ef6b43388c5
