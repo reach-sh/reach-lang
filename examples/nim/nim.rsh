@@ -35,7 +35,11 @@ function main() {
     const coinFlipB = declassify(random()); });
   B.publish(coinFlipB)
     .pay(wagerAmount)
-    .timeout(DELAY, closeTo(A, "B never accepted"));
+    .timeout(DELAY, () => {
+      A.publish();
+      transfer(balance()).to(A);
+      commit();
+      return "B never accepted"; });
   commit();
 
   A.only(() => {
