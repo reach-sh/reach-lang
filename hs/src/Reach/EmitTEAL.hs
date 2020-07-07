@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-
+{-# LANGUAGE StrictData #-}
 module Reach.EmitTEAL where
 
 import System.IO

@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass, DeriveDataTypeable #-}
+{-# LANGUAGE StrictData #-}
 module Reach.AST where
 
 import Data.Data

@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances, RecordWildCards, TemplateHaskell  #-}
+{-# LANGUAGE StrictData #-}
 module Reach.VerifyZ3 where
 
 import qualified Data.Map.Strict as M
