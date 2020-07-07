@@ -18,7 +18,16 @@ If you want to work on the Reach compiler, you'll need:
 
 Installation on macOS:
 ```
+$ brew tap ethereum/ethereum
 $ brew install haskell-stack z3 solidity
+```
+
+Installation on Ubuntu:
+```
+$ sudo apt update
+$ sudo apt install z3
+$ sudo snap install solc
+$ curl -sSL https://get.haskellstack.org/ | sh
 ```
 
 The source code is in the `hs` directory.
