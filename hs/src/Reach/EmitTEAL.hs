@@ -74,7 +74,7 @@ cs_var_loc cs bv = (loc, cs')
 
 cs_var_locs :: CompileSt a -> [BLVar] -> CompileSt a
 cs_var_locs cs bvs = foldl' h cs bvs
-  where h cs0 bv = snd $ cs_var_loc cs0 bv 
+  where h cs0 bv = snd $ cs_var_loc cs0 bv
 
 cs_var_set :: CompileSt a -> BLVar -> VarRHS a -> CompileSt a
 cs_var_set cs bv vr = cs'
@@ -127,7 +127,7 @@ comp_arg :: Int -> TEALs
 comp_arg a = code "txna" [ "ApplicationArgs", show a ]
 
 comp_blvar :: CompileSt a -> BLVar -> LabelM ann TEALs
-comp_blvar cs bv = 
+comp_blvar cs bv =
   case M.lookup bv vmap of
     Nothing ->
       impossible $ "unbound variable: " ++ show bv
@@ -240,7 +240,9 @@ comp_cexpr cs e =
             ++ label true_lab
             ++ true_ls
             ++ label cont_lab
-          where [ a_cond, a_true, a_false ] = as
+          where  (a_cond, a_true, a_false) = case as of
+                   [c,t,f] -> (c,t,f)
+                   _ -> error "Expected exactly three elements"  -- XXX
         BALANCE ->
           return $ comp_con (Con_I 0)
             ++ code "balance" []
@@ -265,7 +267,7 @@ comp_cstmt cs ts s =
       p_ls <- comp_blvar cs p
       let (txn_i, ts') = txn_alloc ts
       let txn_is = show txn_i
-      return $ (ts', comp_con (Con_I $ fromIntegral $ txn_i) 
+      return $ (ts', comp_con (Con_I $ fromIntegral $ txn_i)
         ++ code "global" [ "GroupSize" ]
         ++ code ">" [ ]
         ++ code "bnz" [ "revert" ]
@@ -299,7 +301,7 @@ comp_ctail ccs cs ts t =
   case t of
     C_Halt _ ->
       return $ txn_ensure_size ts
-      ++ code "b" ["halt"]      
+      ++ code "b" ["halt"]
     C_Wait loc i svs -> do
       hash_ls <- comp_hash (HM_State i True) cs (map (BL_Var loc) svs)
       return $ txn_ensure_size ts
@@ -340,7 +342,7 @@ comp_ctail ccs cs ts t =
         do
           args <- concatMapM (comp_blarg cs) $ (map (BL_Var loc) vs) ++ as
           return $ args
-            ++ stack_to_slot ((length vs) + (length as)) 
+            ++ stack_to_slot ((length vs) + (length as))
             ++ code "b" [ "l" ++ show which ]
         where stack_to_slot n =
                 if n == 0 then

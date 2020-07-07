@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleInstances, RecordWildCards, TemplateHaskell  #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE StrictData #-}
 module Reach.VerifyZ3 where
 
@@ -206,8 +207,12 @@ z3CPrim cbi cp =
     BXOR -> impossible "XXX Z3 doesn't support BXOR"
     IF_THEN_ELSE -> app "ite"
     BYTES_EQ -> app "="
-    BALANCE -> \[] -> z3CTCBalanceRef cbi
-    TXN_VALUE -> \[] -> z3TxnValueRef cbi
+    BALANCE -> \case
+      [] -> z3CTCBalanceRef cbi
+      _ -> impossible "XXX BALANCE with nonempty [SExpr]"
+    TXN_VALUE -> \case
+      [] -> z3TxnValueRef cbi
+      _ -> impossible "XXX TXN_VALUE with nonempty [SExpr]"
   where app n = z3Apply n
 
 z3PrimEq :: Show a => Solver -> a -> (S.Set ILVar) -> Int -> EP_Prim -> [SExpr] -> ILVar -> IO ()
@@ -278,7 +283,9 @@ z3DigestCombine primed ys =
     (x : xs) -> z3Apply "msg-cat" [ convert1 x , z3DigestCombine primed xs ]
   where convert1 a = z3Apply (toBytes a) [ emit_z3_arg primed a ]
         toBytes (IL_Var _ (_, (_, bt))) = "toBytes_" ++ s
-          where Atom s = z3_sortof bt
+          where s = case z3_sortof bt of
+                  Atom a -> a
+                  _ -> error "Expected an Atom" -- XXX
         toBytes (IL_Con _ c) = "toBytes_" ++ s
           where s= case c of
                      Con_I _ -> "Int"
@@ -362,25 +369,35 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                       (zip loopvs al)
                 iter primed' cbi VC_CheckRet invt
               VC_CheckRet -> do
-                let [ a ] = al
+                a <- case al of
+                  [ x ] -> return x
+                  _ -> fail "Expected [ILArg] to have exactly one element"  -- XXX
                 vr <- z3_verify1 z3 (honest, me, TInvariant, h) (emit_z3_arg primed a)
                 return ([], vr)
               VC_WhileBody_AssumeNotUntil loopvs invt bodyt kctxt -> do
-                let [ a ] = al
+                a <- case al of
+                  [ x ] -> return x
+                  _ -> fail "Expected [ILArg] to have exactly one element"  -- XXX
                 z3_assert_chk z3 h (z3Apply "not" [ emit_z3_arg primed a ])
                 iter primed cbi (VC_WhileBody_AssumeInv loopvs invt bodyt kctxt) invt
               VC_WhileBody_AssumeInv loopvs invt bodyt kctxt -> do
-                let [ a ] = al
+                a <- case al of
+                  [ x ] -> return x
+                  _ -> fail "Expected [ILArg] to have exactly one element"  -- XXX
                 z3_assert_chk z3 h (emit_z3_arg primed a)
                 iter primed cbi (VC_WhileBody_Eval loopvs invt kctxt) bodyt
               VC_WhileBody_Eval _ _ kctxt ->
                 iter primed cbi kctxt it
               VC_WhileTail_AssumeUntil invt ki -> do
-                let [ a ] = al
+                a <- case al of
+                  [ x ] -> return x
+                  _ -> fail "Expected [ILArg] to have exactly one element"  -- XXX
                 z3_assert_chk z3 h (emit_z3_arg primed a)
                 iter primed cbi (VC_WhileTail_AssumeInv ki) invt
               VC_WhileTail_AssumeInv (kctxt, kt) -> do
-                let [ a ] = al
+                a <- case al of
+                  [ x ] -> return x
+                  _ -> fail "Expected [ILArg] to have exactly one element"  -- XXX
                 z3_assert_chk z3 h (emit_z3_arg primed a)
                 iter primed cbi kctxt kt
           IL_If h ca tt ft -> do

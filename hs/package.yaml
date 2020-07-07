@@ -44,6 +44,10 @@ dependencies:
 ghc-options:
 - -Wall
 - -Werror
+- -Wcompat
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wredundant-constraints
 - -O2
 - -fwrite-ide-info
 - -hiedir=.hie

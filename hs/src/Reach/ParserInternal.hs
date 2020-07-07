@@ -80,7 +80,7 @@ instance ExtractTP JSBinOp where
     etp (JSBinOpStrictNeq a) = etp a
     etp (JSBinOpTimes a) = etp a
     etp (JSBinOpUrsh a) = etp a
-  
+
 instance ExtractTP JSIdent where
   etp (JSIdentName a _) = etp a
   etp JSIdentNone = Nothing
@@ -98,12 +98,12 @@ instance ExtractTP JSPropertyName where
 instance ExtractTP JSAccessor where
   etp (JSAccessorGet a) = etp a
   etp (JSAccessorSet a) = etp a
-  
+
 instance ExtractTP JSObjectProperty where
   etp (JSPropertyNameandValue a _ _) = etp a
   etp (JSPropertyIdentRef a _) = etp a
   etp (JSPropertyAccessor a _ _ _ _ _) = etp a
-  
+
 instance ExtractTP JSExpression where
   etp (JSIdentifier a _) = etp a
   etp (JSDecimal a _) = etp a
@@ -543,14 +543,15 @@ decodeStmts dss js =
                 conk = decodeStmts (sub_dss dss) ek
                 mto = case metargs of
                         Nothing -> Nothing
-                        Just etargs -> Just (de, te)
-                          where [ ede, ete ] = flattenJSCL etargs
-                                de = decodeExpr (sub_dss dss) ede
-                                te = XL_FunApp h (decodeExpr (sub_dss dss) ete) []
+                        Just etargs -> case flattenJSCL etargs of
+                          [ ede, ete ] -> Just (de, te) where
+                            de = decodeExpr (sub_dss dss) ede
+                            te = XL_FunApp h (decodeExpr (sub_dss dss) ete) []
+                          _ -> error "Pattern match fail" -- XXX Nothing?
 
 decodeBlock :: FilePath -> JSBlock -> XLExpr TP
 decodeBlock fp (JSBlock _ ss _) = decodeStmts (make_dss fp) ss
-             
+
 decodeDef :: FilePath -> JSStatement -> [XLDef TP]
 decodeDef fp j =
   case j of
