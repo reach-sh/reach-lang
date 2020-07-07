@@ -190,7 +190,7 @@ data XILExpr a
   | XIL_ToConsensus a (Bool, XILVar, [XILVar], (XILExpr a)) (Maybe ((XILExpr a), (XILExpr a))) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)
   | XIL_Values a [XILExpr a]
-  | XIL_Transfer a XLVar (XILExpr a)
+  | XIL_Transfer a XILVar (XILExpr a)
   | XIL_Declassify a LType (XILExpr a)
   | XIL_Let a (Maybe XILVar) (Maybe [XILVar]) (XILExpr a) (XILExpr a)
   | XIL_While a [XILVar] (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)

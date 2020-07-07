@@ -394,7 +394,7 @@ peval outer_loopt σ e =
         [ e1 ] -> def e1
         _ -> IV_Values a (map (iv_single a) $ map def es)
     XL_Transfer a p ae ->
-      IV_XIL eff_comm [] (XIL_Transfer a p (sr a [LT_BT BT_UInt256] ae))
+      IV_XIL eff_comm [] (XIL_Transfer a (peval_ensure_var a (LT_BT BT_Address) p σ) (sr a [LT_BT BT_UInt256] ae))
     XL_Declassify a de ->
       IV_XIL dp [dt] (XIL_Declassify a dt de')
       where (dp, dts, de') = r a de
@@ -651,7 +651,7 @@ anf_expr me ρ e mk =
     XIL_Transfer h to ae ->
       anf_expr me ρ ae
       (\_ [ aa ] ->
-         let IL_Var _ tov = map_throw CE_UnknownRole h ρ (to, (LT_BT BT_Address)) in
+         let IL_Var _ tov = map_throw CE_UnknownRole h ρ to in
          ret_stmt h (IL_Transfer h tov aa))
     XIL_Declassify h dt ae ->
       anf_expr me ρ ae (\_ [ aa ] -> ret_expr h "Declassify" dt (IL_Declassify h aa))

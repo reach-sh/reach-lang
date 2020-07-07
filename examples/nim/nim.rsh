@@ -42,10 +42,7 @@ function main() {
     const coinFlipA = declassify(_coinFlipA); });
   A.publish(coinFlipA)
     .timeout(DELAY, () => {
-      B.publish();
-      transfer(balance()).to(B);
-      commit();
-      return "A never revealed coinflip"; });
+          return closeTo(B, "A never revealed coinflip"); });
   require(commitA == digest(coinFlipA));
   const AisFirst = (( coinFlipA + coinFlipB ) % 2) == 0;
   
@@ -61,10 +58,7 @@ function main() {
         assume(amount <= (choose1 ? heap1 : heap2)); });
       A.publish(choose1, amount)
         .timeout(DELAY, () => {
-          B.publish();
-          transfer(balance()).to(B);
-          commit();
-          return "A timed out move"; });
+          return closeTo(B, "A timed out move"); });
       
       [ AsTurn, heap1, heap2 ] = applyMove(AsTurn, heap1, heap2, choose1, amount);
       continue;
@@ -77,10 +71,7 @@ function main() {
         assume(amount <= (choose1 ? heap1 : heap2)); });
       B.publish(choose1, amount)
         .timeout(DELAY, () => {
-          A.publish();
-          transfer(balance()).to(A);
-          commit();
-          return "B timed out move"; });
+          return closeTo(A, "B timed out move"); });
       
       [ AsTurn, heap1, heap2 ] = applyMove(AsTurn, heap1, heap2, choose1, amount);
       continue; } }

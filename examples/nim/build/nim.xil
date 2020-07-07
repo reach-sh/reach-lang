@@ -209,7 +209,10 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                     [33m)[0m
                                                                 [36m)[0m
                                                                 [36m([0m XIL_Let nim.rsh:[1m[92m13[0m:[1m[92m30[0m Nothing Nothing
-                                                                    [33m([0m XIL_Transfer nim.rsh:[1m[92m13[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mWho[0m[1m[97m"[0m
+                                                                    [33m([0m XIL_Transfer nim.rsh:[1m[92m13[0m:[1m[92m3[0m
+                                                                        [1m[35m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
+                                                                        [1m[35m,[0m LT_BT BT_Address
+                                                                        [1m[35m)[0m
                                                                         [1m[35m([0m XIL_PrimApp nim.rsh:[1m[92m13[0m:[1m[92m19[0m [1m[36m([0m CP BALANCE [1m[36m)[0m [1m[36m([0m LT_BT BT_UInt256 [1m[36m)[0m [1m[36m[[0m[1m[36m][0m [1m[35m)[0m
                                                                     [33m)[0m
                                                                     [33m([0m XIL_FromConsensus nim.rsh:[1m[92m14[0m:[1m[92m3[0m
@@ -272,29 +275,34 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                             [35m([0m Just
                                                                 [36m([0m XIL_Con nim.rsh:[1m[92m20[0m:[1m[92m15[0m [33m([0m Con_I [1m[92m10[0m [33m)[0m
                                                                 [36m,[0m XIL_Let nim.rsh:[1m[92m44[0m:[1m[92m24[0m Nothing [33m([0m Just [1m[35m[[0m[1m[35m][0m [33m)[0m [33m([0m XIL_Values nim.rsh:[1m[92m43[0m:[1m[92m3[0m [1m[35m[[0m[1m[35m][0m [33m)[0m
-                                                                    [33m([0m XIL_ToConsensus nim.rsh:[1m[92m45[0m:[1m[92m7[0m
-                                                                        [1m[35m([0m False
-                                                                        [1m[35m,[0m
-                                                                            [1m[36m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                            [1m[36m,[0m LT_BT BT_Address
-                                                                            [1m[36m)[0m
-                                                                        [1m[35m,[0m [1m[36m[[0m[1m[36m][0m
-                                                                        [1m[35m,[0m XIL_Con nim.rsh:[1m[92m45[0m:[1m[92m7[0m [1m[36m([0m Con_I [1m[92m0[0m [1m[36m)[0m
-                                                                        [1m[35m)[0m Nothing
-                                                                        [1m[35m([0m XIL_Let nim.rsh:[1m[92m45[0m:[1m[92m7[0m Nothing Nothing
-                                                                            [1m[36m([0m XIL_Claim nim.rsh:[1m[92m45[0m:[1m[92m7[0m CT_Require
-                                                                                [1m[33m([0m XIL_PrimApp nim.rsh:[1m[92m45[0m:[1m[92m7[0m [95m([0m CP PEQ [95m)[0m [95m([0m LT_BT BT_Bool [95m)[0m
-                                                                                    [95m[[0m XIL_PrimApp nim.rsh:[1m[92m45[0m:[1m[92m7[0m [96m([0m CP TXN_VALUE [96m)[0m [96m([0m LT_BT BT_UInt256 [96m)[0m [96m[[0m[96m][0m
-                                                                                    [95m,[0m XIL_Con nim.rsh:[1m[92m45[0m:[1m[92m7[0m [96m([0m Con_I [1m[92m0[0m [96m)[0m
-                                                                                    [95m][0m
+                                                                    [33m([0m XIL_Let nim.rsh:[1m[92m11[0m:[1m[92m1[0m Nothing [1m[35m([0m Just [1m[36m[[0m[1m[36m][0m [1m[35m)[0m [1m[35m([0m XIL_Values nim.rsh:[1m[92m45[0m:[1m[92m25[0m [1m[36m[[0m[1m[36m][0m [1m[35m)[0m
+                                                                        [1m[35m([0m XIL_ToConsensus nim.rsh:[1m[92m12[0m:[1m[92m3[0m
+                                                                            [1m[36m([0m False
+                                                                            [1m[36m,[0m
+                                                                                [1m[33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
+                                                                                [1m[33m,[0m LT_BT BT_Address
                                                                                 [1m[33m)[0m
-                                                                            [1m[36m)[0m
-                                                                            [1m[36m([0m XIL_Let nim.rsh:[1m[92m46[0m:[1m[92m32[0m Nothing Nothing
-                                                                                [1m[33m([0m XIL_Transfer nim.rsh:[1m[92m46[0m:[1m[92m7[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                                    [95m([0m XIL_PrimApp nim.rsh:[1m[92m46[0m:[1m[92m23[0m [96m([0m CP BALANCE [96m)[0m [96m([0m LT_BT BT_UInt256 [96m)[0m [96m[[0m[96m][0m [95m)[0m
+                                                                            [1m[36m,[0m [1m[33m[[0m[1m[33m][0m
+                                                                            [1m[36m,[0m XIL_Con nim.rsh:[1m[92m12[0m:[1m[92m3[0m [1m[33m([0m Con_I [1m[92m0[0m [1m[33m)[0m
+                                                                            [1m[36m)[0m Nothing
+                                                                            [1m[36m([0m XIL_Let nim.rsh:[1m[92m12[0m:[1m[92m3[0m Nothing Nothing
+                                                                                [1m[33m([0m XIL_Claim nim.rsh:[1m[92m12[0m:[1m[92m3[0m CT_Require
+                                                                                    [95m([0m XIL_PrimApp nim.rsh:[1m[92m12[0m:[1m[92m3[0m [96m([0m CP PEQ [96m)[0m [96m([0m LT_BT BT_Bool [96m)[0m
+                                                                                        [96m[[0m XIL_PrimApp nim.rsh:[1m[92m12[0m:[1m[92m3[0m [93m([0m CP TXN_VALUE [93m)[0m [93m([0m LT_BT BT_UInt256 [93m)[0m [93m[[0m[93m][0m
+                                                                                        [96m,[0m XIL_Con nim.rsh:[1m[92m12[0m:[1m[92m3[0m [93m([0m Con_I [1m[92m0[0m [93m)[0m
+                                                                                        [96m][0m
+                                                                                    [95m)[0m
                                                                                 [1m[33m)[0m
-                                                                                [1m[33m([0m XIL_FromConsensus nim.rsh:[1m[92m47[0m:[1m[92m7[0m
-                                                                                    [95m([0m XIL_Con nim.rsh:[1m[92m48[0m:[1m[92m14[0m [96m([0m Con_BS [1m[97m"[0m[1m[94mA never revealed coinflip[0m[1m[97m"[0m [96m)[0m [95m)[0m
+                                                                                [1m[33m([0m XIL_Let nim.rsh:[1m[92m13[0m:[1m[92m30[0m Nothing Nothing
+                                                                                    [95m([0m XIL_Transfer nim.rsh:[1m[92m13[0m:[1m[92m3[0m
+                                                                                        [96m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
+                                                                                        [96m,[0m LT_BT BT_Address
+                                                                                        [96m)[0m
+                                                                                        [96m([0m XIL_PrimApp nim.rsh:[1m[92m13[0m:[1m[92m19[0m [93m([0m CP BALANCE [93m)[0m [93m([0m LT_BT BT_UInt256 [93m)[0m [93m[[0m[93m][0m [96m)[0m
+                                                                                    [95m)[0m
+                                                                                    [95m([0m XIL_FromConsensus nim.rsh:[1m[92m14[0m:[1m[92m3[0m
+                                                                                        [96m([0m XIL_Con nim.rsh:[1m[92m45[0m:[1m[92m29[0m [93m([0m Con_BS [1m[97m"[0m[1m[94mA never revealed coinflip[0m[1m[97m"[0m [93m)[0m [96m)[0m
+                                                                                    [95m)[0m
                                                                                 [1m[33m)[0m
                                                                             [1m[36m)[0m
                                                                         [1m[35m)[0m
@@ -309,14 +317,14 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                         [1m[35m][0m
                                                                     [33m)[0m
                                                                 [36m)[0m
-                                                                [36m([0m XIL_Let nim.rsh:[1m[92m49[0m:[1m[92m10[0m Nothing Nothing
-                                                                    [33m([0m XIL_Claim nim.rsh:[1m[92m49[0m:[1m[92m10[0m CT_Require
-                                                                        [1m[35m([0m XIL_PrimApp nim.rsh:[1m[92m49[0m:[1m[92m19[0m [1m[36m([0m CP PEQ [1m[36m)[0m [1m[36m([0m LT_BT BT_Bool [1m[36m)[0m
+                                                                [36m([0m XIL_Let nim.rsh:[1m[92m46[0m:[1m[92m10[0m Nothing Nothing
+                                                                    [33m([0m XIL_Claim nim.rsh:[1m[92m46[0m:[1m[92m10[0m CT_Require
+                                                                        [1m[35m([0m XIL_PrimApp nim.rsh:[1m[92m46[0m:[1m[92m19[0m [1m[36m([0m CP PEQ [1m[36m)[0m [1m[36m([0m LT_BT BT_Bool [1m[36m)[0m
                                                                             [1m[36m[[0m XIL_Var nim.rsh:[1m[92m27[0m:[1m[92m5[0m
                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m
                                                                                 [1m[33m,[0m LT_BT BT_UInt256
                                                                                 [1m[33m)[0m
-                                                                            [1m[36m,[0m XIL_Digest nim.rsh:[1m[92m49[0m:[1m[92m28[0m
+                                                                            [1m[36m,[0m XIL_Digest nim.rsh:[1m[92m46[0m:[1m[92m28[0m
                                                                                 [1m[33m[[0m XIL_Var nim.rsh:[1m[92m42[0m:[1m[92m5[0m
                                                                                     [95m([0m [1m[97m"[0m[1m[94mcoinFlipA[0m[1m[97m"[0m
                                                                                     [95m,[0m LT_BT BT_UInt256
@@ -325,7 +333,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                             [1m[36m][0m
                                                                         [1m[35m)[0m
                                                                     [33m)[0m
-                                                                    [33m([0m XIL_Let nim.rsh:[1m[92m50[0m:[1m[92m3[0m Nothing
+                                                                    [33m([0m XIL_Let nim.rsh:[1m[92m47[0m:[1m[92m3[0m Nothing
                                                                         [1m[35m([0m Just
                                                                             [1m[36m[[0m
                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mAisFirst[0m[1m[97m"[0m
@@ -333,10 +341,10 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                 [1m[33m)[0m
                                                                             [1m[36m][0m
                                                                         [1m[35m)[0m
-                                                                        [1m[35m([0m XIL_Values nim.rsh:[1m[92m50[0m:[1m[92m3[0m
-                                                                            [1m[36m[[0m XIL_PrimApp nim.rsh:[1m[92m50[0m:[1m[92m52[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[33m([0m LT_BT BT_Bool [1m[33m)[0m
-                                                                                [1m[33m[[0m XIL_PrimApp nim.rsh:[1m[92m50[0m:[1m[92m47[0m [95m([0m CP MOD [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m
-                                                                                    [95m[[0m XIL_PrimApp nim.rsh:[1m[92m50[0m:[1m[92m33[0m [96m([0m CP ADD [96m)[0m [96m([0m LT_BT BT_UInt256 [96m)[0m
+                                                                        [1m[35m([0m XIL_Values nim.rsh:[1m[92m47[0m:[1m[92m3[0m
+                                                                            [1m[36m[[0m XIL_PrimApp nim.rsh:[1m[92m47[0m:[1m[92m52[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[33m([0m LT_BT BT_Bool [1m[33m)[0m
+                                                                                [1m[33m[[0m XIL_PrimApp nim.rsh:[1m[92m47[0m:[1m[92m47[0m [95m([0m CP MOD [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m
+                                                                                    [95m[[0m XIL_PrimApp nim.rsh:[1m[92m47[0m:[1m[92m33[0m [96m([0m CP ADD [96m)[0m [96m([0m LT_BT BT_UInt256 [96m)[0m
                                                                                         [96m[[0m XIL_Var nim.rsh:[1m[92m42[0m:[1m[92m5[0m
                                                                                             [93m([0m [1m[97m"[0m[1m[94mcoinFlipA[0m[1m[97m"[0m
                                                                                             [93m,[0m LT_BT BT_UInt256
@@ -346,13 +354,13 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                             [93m,[0m LT_BT BT_UInt256
                                                                                             [93m)[0m
                                                                                         [96m][0m
-                                                                                    [95m,[0m XIL_Con nim.rsh:[1m[92m50[0m:[1m[92m49[0m [96m([0m Con_I [1m[92m2[0m [96m)[0m
+                                                                                    [95m,[0m XIL_Con nim.rsh:[1m[92m47[0m:[1m[92m49[0m [96m([0m Con_I [1m[92m2[0m [96m)[0m
                                                                                     [95m][0m
-                                                                                [1m[33m,[0m XIL_Con nim.rsh:[1m[92m50[0m:[1m[92m55[0m [95m([0m Con_I [1m[92m0[0m [95m)[0m
+                                                                                [1m[33m,[0m XIL_Con nim.rsh:[1m[92m47[0m:[1m[92m55[0m [95m([0m Con_I [1m[92m0[0m [95m)[0m
                                                                                 [1m[33m][0m
                                                                             [1m[36m][0m
                                                                         [1m[35m)[0m
-                                                                        [1m[35m([0m XIL_While nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                        [1m[35m([0m XIL_While nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                             [1m[36m[[0m
                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mAsTurn[0m[1m[97m"[0m
                                                                                 [1m[33m,[0m LT_BT BT_Bool
@@ -366,8 +374,8 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                 [1m[33m,[0m LT_BT BT_UInt256
                                                                                 [1m[33m)[0m
                                                                             [1m[36m][0m
-                                                                            [1m[36m([0m XIL_Values nim.rsh:[1m[92m52[0m:[1m[92m34[0m
-                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m50[0m:[1m[92m3[0m
+                                                                            [1m[36m([0m XIL_Values nim.rsh:[1m[92m49[0m:[1m[92m34[0m
+                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m47[0m:[1m[92m3[0m
                                                                                     [95m([0m [1m[97m"[0m[1m[94mAisFirst[0m[1m[97m"[0m
                                                                                     [95m,[0m LT_BT BT_Bool
                                                                                     [95m)[0m
@@ -389,24 +397,24 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                         [96m)[0m
                                                                                     [95m][0m
                                                                                 [1m[33m)[0m
-                                                                                [1m[33m([0m XIL_Values nim.rsh:[1m[92m52[0m:[1m[92m3[0m
-                                                                                    [95m[[0m XIL_PrimApp nim.rsh:[1m[92m54[0m:[1m[92m25[0m [96m([0m CP PGT [96m)[0m [96m([0m LT_BT BT_Bool [96m)[0m
-                                                                                        [96m[[0m XIL_PrimApp nim.rsh:[1m[92m54[0m:[1m[92m17[0m [93m([0m CP ADD [93m)[0m [93m([0m LT_BT BT_UInt256 [93m)[0m
-                                                                                            [93m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                [1m[33m([0m XIL_Values nim.rsh:[1m[92m49[0m:[1m[92m3[0m
+                                                                                    [95m[[0m XIL_PrimApp nim.rsh:[1m[92m51[0m:[1m[92m25[0m [96m([0m CP PGT [96m)[0m [96m([0m LT_BT BT_Bool [96m)[0m
+                                                                                        [96m[[0m XIL_PrimApp nim.rsh:[1m[92m51[0m:[1m[92m17[0m [93m([0m CP ADD [93m)[0m [93m([0m LT_BT BT_UInt256 [93m)[0m
+                                                                                            [93m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                 [1m[95m,[0m LT_BT BT_UInt256
                                                                                                 [1m[95m)[0m
-                                                                                            [93m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                            [93m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                 [1m[95m,[0m LT_BT BT_UInt256
                                                                                                 [1m[95m)[0m
                                                                                             [93m][0m
-                                                                                        [96m,[0m XIL_Con nim.rsh:[1m[92m54[0m:[1m[92m27[0m [93m([0m Con_I [1m[92m0[0m [93m)[0m
+                                                                                        [96m,[0m XIL_Con nim.rsh:[1m[92m51[0m:[1m[92m27[0m [93m([0m Con_I [1m[92m0[0m [93m)[0m
                                                                                         [96m][0m
                                                                                     [95m][0m
                                                                                 [1m[33m)[0m
                                                                                 [1m[33m([0m XIL_If STDLIB:[1m[92m5[0m:[1m[92m13[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m
-                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                         [96m([0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m
                                                                                         [96m,[0m LT_BT BT_Bool
                                                                                         [96m)[0m
@@ -415,10 +423,10 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                     [95m([0m XIL_Con STDLIB:[1m[92m5[0m:[1m[92m23[0m [96m([0m Con_B True [96m)[0m [95m)[0m
                                                                                 [1m[33m)[0m
                                                                             [1m[36m)[0m
-                                                                            [1m[36m([0m XIL_PrimApp nim.rsh:[1m[92m53[0m:[1m[92m23[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[33m([0m LT_BT BT_Bool [1m[33m)[0m
-                                                                                [1m[33m[[0m XIL_PrimApp nim.rsh:[1m[92m53[0m:[1m[92m20[0m [95m([0m CP BALANCE [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m [95m[[0m[95m][0m
-                                                                                [1m[33m,[0m XIL_PrimApp nim.rsh:[1m[92m53[0m:[1m[92m29[0m [95m([0m CP MUL [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m
-                                                                                    [95m[[0m XIL_Con nim.rsh:[1m[92m53[0m:[1m[92m27[0m [96m([0m Con_I [1m[92m2[0m [96m)[0m
+                                                                            [1m[36m([0m XIL_PrimApp nim.rsh:[1m[92m50[0m:[1m[92m23[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[33m([0m LT_BT BT_Bool [1m[33m)[0m
+                                                                                [1m[33m[[0m XIL_PrimApp nim.rsh:[1m[92m50[0m:[1m[92m20[0m [95m([0m CP BALANCE [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m [95m[[0m[95m][0m
+                                                                                [1m[33m,[0m XIL_PrimApp nim.rsh:[1m[92m50[0m:[1m[92m29[0m [95m([0m CP MUL [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m
+                                                                                    [95m[[0m XIL_Con nim.rsh:[1m[92m50[0m:[1m[92m27[0m [96m([0m Con_I [1m[92m2[0m [96m)[0m
                                                                                     [95m,[0m XIL_Var nim.rsh:[1m[92m24[0m:[1m[92m5[0m
                                                                                         [96m([0m [1m[97m"[0m[1m[94mwagerAmount[0m[1m[97m"[0m
                                                                                         [96m,[0m LT_BT BT_UInt256
@@ -426,15 +434,15 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                     [95m][0m
                                                                                 [1m[33m][0m
                                                                             [1m[36m)[0m
-                                                                            [1m[36m([0m XIL_If nim.rsh:[1m[92m55[0m:[1m[92m5[0m
+                                                                            [1m[36m([0m XIL_If nim.rsh:[1m[92m52[0m:[1m[92m5[0m
                                                                                 [1m[33m([0m fromList [95m[[0m Eff_Comm [95m][0m [1m[33m)[0m
-                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                     [95m([0m [1m[97m"[0m[1m[94mAsTurn[0m[1m[97m"[0m
                                                                                     [95m,[0m LT_BT BT_Bool
                                                                                     [95m)[0m
                                                                                 [1m[33m)[0m [1m[33m[[0m LT_BT BT_Bytes [1m[33m][0m
-                                                                                [1m[33m([0m XIL_FromConsensus nim.rsh:[1m[92m56[0m:[1m[92m7[0m
-                                                                                    [95m([0m XIL_Let nim.rsh:[1m[92m59[0m:[1m[92m9[0m
+                                                                                [1m[33m([0m XIL_FromConsensus nim.rsh:[1m[92m53[0m:[1m[92m7[0m
+                                                                                    [95m([0m XIL_Let nim.rsh:[1m[92m56[0m:[1m[92m9[0m
                                                                                         [96m([0m Just
                                                                                             [93m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
                                                                                             [93m,[0m LT_BT BT_Address
@@ -447,14 +455,14 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                 [1m[95m)[0m
                                                                                             [93m][0m
                                                                                         [96m)[0m
-                                                                                        [96m([0m XIL_Values nim.rsh:[1m[92m59[0m:[1m[92m9[0m
-                                                                                            [93m[[0m XIL_Declassify nim.rsh:[1m[92m59[0m:[1m[92m35[0m [1m[95m([0m LT_BT BT_Bool [1m[95m)[0m
-                                                                                                [1m[95m([0m XIL_Interact nim.rsh:[1m[92m59[0m:[1m[92m36[0m [1m[97m"[0m[1m[94mgetHeap[0m[1m[97m"[0m [1m[96m([0m LT_BT BT_Bool [1m[96m)[0m
-                                                                                                    [1m[96m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                        [96m([0m XIL_Values nim.rsh:[1m[92m56[0m:[1m[92m9[0m
+                                                                                            [93m[[0m XIL_Declassify nim.rsh:[1m[92m56[0m:[1m[92m35[0m [1m[95m([0m LT_BT BT_Bool [1m[95m)[0m
+                                                                                                [1m[95m([0m XIL_Interact nim.rsh:[1m[92m56[0m:[1m[92m36[0m [1m[97m"[0m[1m[94mgetHeap[0m[1m[97m"[0m [1m[96m([0m LT_BT BT_Bool [1m[96m)[0m
+                                                                                                    [1m[96m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                         [1m[93m,[0m LT_BT BT_UInt256
                                                                                                         [1m[93m)[0m
-                                                                                                    [1m[96m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                    [1m[96m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                         [1m[93m,[0m LT_BT BT_UInt256
                                                                                                         [1m[93m)[0m
@@ -462,7 +470,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                 [1m[95m)[0m
                                                                                             [93m][0m
                                                                                         [96m)[0m
-                                                                                        [96m([0m XIL_Let nim.rsh:[1m[92m60[0m:[1m[92m9[0m
+                                                                                        [96m([0m XIL_Let nim.rsh:[1m[92m57[0m:[1m[92m9[0m
                                                                                             [93m([0m Just
                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
                                                                                                 [1m[95m,[0m LT_BT BT_Address
@@ -475,14 +483,14 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m][0m
                                                                                             [93m)[0m
-                                                                                            [93m([0m XIL_Values nim.rsh:[1m[92m60[0m:[1m[92m9[0m
-                                                                                                [1m[95m[[0m XIL_Declassify nim.rsh:[1m[92m60[0m:[1m[92m34[0m [1m[96m([0m LT_BT BT_UInt256 [1m[96m)[0m
-                                                                                                    [1m[96m([0m XIL_Interact nim.rsh:[1m[92m60[0m:[1m[92m35[0m [1m[97m"[0m[1m[94mgetAmount[0m[1m[97m"[0m [1m[93m([0m LT_BT BT_UInt256 [1m[93m)[0m
-                                                                                                        [1m[93m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                            [93m([0m XIL_Values nim.rsh:[1m[92m57[0m:[1m[92m9[0m
+                                                                                                [1m[95m[[0m XIL_Declassify nim.rsh:[1m[92m57[0m:[1m[92m34[0m [1m[96m([0m LT_BT BT_UInt256 [1m[96m)[0m
+                                                                                                    [1m[96m([0m XIL_Interact nim.rsh:[1m[92m57[0m:[1m[92m35[0m [1m[97m"[0m[1m[94mgetAmount[0m[1m[97m"[0m [1m[93m([0m LT_BT BT_UInt256 [1m[93m)[0m
+                                                                                                        [1m[93m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                             [35m,[0m LT_BT BT_UInt256
                                                                                                             [35m)[0m
-                                                                                                        [1m[93m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                        [1m[93m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                             [35m,[0m LT_BT BT_UInt256
                                                                                                             [35m)[0m
@@ -490,30 +498,30 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m][0m
                                                                                             [93m)[0m
-                                                                                            [93m([0m XIL_Let nim.rsh:[1m[92m61[0m:[1m[92m15[0m
+                                                                                            [93m([0m XIL_Let nim.rsh:[1m[92m58[0m:[1m[92m15[0m
                                                                                                 [1m[95m([0m Just
                                                                                                     [1m[96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
                                                                                                     [1m[96m,[0m LT_BT BT_Address
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m)[0m Nothing
-                                                                                                [1m[95m([0m XIL_Claim nim.rsh:[1m[92m61[0m:[1m[92m15[0m CT_Assume
-                                                                                                    [1m[96m([0m XIL_PrimApp nim.rsh:[1m[92m61[0m:[1m[92m23[0m [1m[93m([0m CP PLE [1m[93m)[0m [1m[93m([0m LT_BT BT_Bool [1m[93m)[0m
-                                                                                                        [1m[93m[[0m XIL_Var nim.rsh:[1m[92m60[0m:[1m[92m9[0m
+                                                                                                [1m[95m([0m XIL_Claim nim.rsh:[1m[92m58[0m:[1m[92m15[0m CT_Assume
+                                                                                                    [1m[96m([0m XIL_PrimApp nim.rsh:[1m[92m58[0m:[1m[92m23[0m [1m[93m([0m CP PLE [1m[93m)[0m [1m[93m([0m LT_BT BT_Bool [1m[93m)[0m
+                                                                                                        [1m[93m[[0m XIL_Var nim.rsh:[1m[92m57[0m:[1m[92m9[0m
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mamount[0m[1m[97m"[0m
                                                                                                             [35m,[0m LT_BT BT_UInt256
                                                                                                             [35m)[0m
-                                                                                                        [1m[93m,[0m XIL_If nim.rsh:[1m[92m61[0m:[1m[92m35[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m
-                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m59[0m:[1m[92m9[0m
+                                                                                                        [1m[93m,[0m XIL_If nim.rsh:[1m[92m58[0m:[1m[92m35[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m
+                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m56[0m:[1m[92m9[0m
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mchoose1[0m[1m[97m"[0m
                                                                                                                 [36m,[0m LT_BT BT_Bool
                                                                                                                 [36m)[0m
                                                                                                             [35m)[0m [35m[[0m LT_BT BT_UInt256 [35m][0m
-                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                                 [36m,[0m LT_BT BT_UInt256
                                                                                                                 [36m)[0m
                                                                                                             [35m)[0m
-                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                                 [36m,[0m LT_BT BT_UInt256
                                                                                                                 [36m)[0m
@@ -521,7 +529,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                         [1m[93m][0m
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m)[0m
-                                                                                                [1m[95m([0m XIL_ToConsensus nim.rsh:[1m[92m62[0m:[1m[92m7[0m
+                                                                                                [1m[95m([0m XIL_ToConsensus nim.rsh:[1m[92m59[0m:[1m[92m7[0m
                                                                                                     [1m[96m([0m False
                                                                                                     [1m[96m,[0m
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
@@ -537,69 +545,74 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                             [35m,[0m LT_BT BT_UInt256
                                                                                                             [35m)[0m
                                                                                                         [1m[93m][0m
-                                                                                                    [1m[96m,[0m XIL_Con nim.rsh:[1m[92m62[0m:[1m[92m7[0m [1m[93m([0m Con_I [1m[92m0[0m [1m[93m)[0m
+                                                                                                    [1m[96m,[0m XIL_Con nim.rsh:[1m[92m59[0m:[1m[92m7[0m [1m[93m([0m Con_I [1m[92m0[0m [1m[93m)[0m
                                                                                                     [1m[96m)[0m
                                                                                                     [1m[96m([0m Just
                                                                                                         [1m[93m([0m XIL_Con nim.rsh:[1m[92m20[0m:[1m[92m15[0m [35m([0m Con_I [1m[92m10[0m [35m)[0m
-                                                                                                        [1m[93m,[0m XIL_Let nim.rsh:[1m[92m63[0m:[1m[92m28[0m Nothing [35m([0m Just [36m[[0m[36m][0m [35m)[0m [35m([0m XIL_Values nim.rsh:[1m[92m62[0m:[1m[92m7[0m [36m[[0m[36m][0m [35m)[0m
-                                                                                                            [35m([0m XIL_ToConsensus nim.rsh:[1m[92m64[0m:[1m[92m11[0m
-                                                                                                                [36m([0m False
-                                                                                                                [36m,[0m
-                                                                                                                    [33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                                                                    [33m,[0m LT_BT BT_Address
-                                                                                                                    [33m)[0m
-                                                                                                                [36m,[0m [33m[[0m[33m][0m
-                                                                                                                [36m,[0m XIL_Con nim.rsh:[1m[92m64[0m:[1m[92m11[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
-                                                                                                                [36m)[0m Nothing
-                                                                                                                [36m([0m XIL_Let nim.rsh:[1m[92m64[0m:[1m[92m11[0m Nothing Nothing
-                                                                                                                    [33m([0m XIL_Claim nim.rsh:[1m[92m64[0m:[1m[92m11[0m CT_Require
-                                                                                                                        [1m[35m([0m XIL_PrimApp nim.rsh:[1m[92m64[0m:[1m[92m11[0m [1m[36m([0m CP PEQ [1m[36m)[0m [1m[36m([0m LT_BT BT_Bool [1m[36m)[0m
-                                                                                                                            [1m[36m[[0m XIL_PrimApp nim.rsh:[1m[92m64[0m:[1m[92m11[0m [1m[33m([0m CP TXN_VALUE [1m[33m)[0m [1m[33m([0m LT_BT BT_UInt256 [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
-                                                                                                                            [1m[36m,[0m XIL_Con nim.rsh:[1m[92m64[0m:[1m[92m11[0m [1m[33m([0m Con_I [1m[92m0[0m [1m[33m)[0m
-                                                                                                                            [1m[36m][0m
+                                                                                                        [1m[93m,[0m XIL_Let nim.rsh:[1m[92m60[0m:[1m[92m28[0m Nothing [35m([0m Just [36m[[0m[36m][0m [35m)[0m [35m([0m XIL_Values nim.rsh:[1m[92m59[0m:[1m[92m7[0m [36m[[0m[36m][0m [35m)[0m
+                                                                                                            [35m([0m XIL_Let nim.rsh:[1m[92m11[0m:[1m[92m1[0m Nothing [36m([0m Just [33m[[0m[33m][0m [36m)[0m [36m([0m XIL_Values nim.rsh:[1m[92m61[0m:[1m[92m25[0m [33m[[0m[33m][0m [36m)[0m
+                                                                                                                [36m([0m XIL_ToConsensus nim.rsh:[1m[92m12[0m:[1m[92m3[0m
+                                                                                                                    [33m([0m False
+                                                                                                                    [33m,[0m
+                                                                                                                        [1m[35m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
+                                                                                                                        [1m[35m,[0m LT_BT BT_Address
                                                                                                                         [1m[35m)[0m
-                                                                                                                    [33m)[0m
-                                                                                                                    [33m([0m XIL_Let nim.rsh:[1m[92m65[0m:[1m[92m36[0m Nothing Nothing
-                                                                                                                        [1m[35m([0m XIL_Transfer nim.rsh:[1m[92m65[0m:[1m[92m11[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                                                                            [1m[36m([0m XIL_PrimApp nim.rsh:[1m[92m65[0m:[1m[92m27[0m [1m[33m([0m CP BALANCE [1m[33m)[0m [1m[33m([0m LT_BT BT_UInt256 [1m[33m)[0m [1m[33m[[0m[1m[33m][0m [1m[36m)[0m
+                                                                                                                    [33m,[0m [1m[35m[[0m[1m[35m][0m
+                                                                                                                    [33m,[0m XIL_Con nim.rsh:[1m[92m12[0m:[1m[92m3[0m [1m[35m([0m Con_I [1m[92m0[0m [1m[35m)[0m
+                                                                                                                    [33m)[0m Nothing
+                                                                                                                    [33m([0m XIL_Let nim.rsh:[1m[92m12[0m:[1m[92m3[0m Nothing Nothing
+                                                                                                                        [1m[35m([0m XIL_Claim nim.rsh:[1m[92m12[0m:[1m[92m3[0m CT_Require
+                                                                                                                            [1m[36m([0m XIL_PrimApp nim.rsh:[1m[92m12[0m:[1m[92m3[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[33m([0m LT_BT BT_Bool [1m[33m)[0m
+                                                                                                                                [1m[33m[[0m XIL_PrimApp nim.rsh:[1m[92m12[0m:[1m[92m3[0m [95m([0m CP TXN_VALUE [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m [95m[[0m[95m][0m
+                                                                                                                                [1m[33m,[0m XIL_Con nim.rsh:[1m[92m12[0m:[1m[92m3[0m [95m([0m Con_I [1m[92m0[0m [95m)[0m
+                                                                                                                                [1m[33m][0m
+                                                                                                                            [1m[36m)[0m
                                                                                                                         [1m[35m)[0m
-                                                                                                                        [1m[35m([0m XIL_FromConsensus nim.rsh:[1m[92m66[0m:[1m[92m11[0m
-                                                                                                                            [1m[36m([0m XIL_Con nim.rsh:[1m[92m67[0m:[1m[92m18[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94mA timed out move[0m[1m[97m"[0m [1m[33m)[0m [1m[36m)[0m
+                                                                                                                        [1m[35m([0m XIL_Let nim.rsh:[1m[92m13[0m:[1m[92m30[0m Nothing Nothing
+                                                                                                                            [1m[36m([0m XIL_Transfer nim.rsh:[1m[92m13[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
+                                                                                                                                [1m[33m,[0m LT_BT BT_Address
+                                                                                                                                [1m[33m)[0m
+                                                                                                                                [1m[33m([0m XIL_PrimApp nim.rsh:[1m[92m13[0m:[1m[92m19[0m [95m([0m CP BALANCE [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m
+                                                                                                                            [1m[36m)[0m
+                                                                                                                            [1m[36m([0m XIL_FromConsensus nim.rsh:[1m[92m14[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m XIL_Con nim.rsh:[1m[92m61[0m:[1m[92m29[0m [95m([0m Con_BS [1m[97m"[0m[1m[94mA timed out move[0m[1m[97m"[0m [95m)[0m [1m[33m)[0m
+                                                                                                                            [1m[36m)[0m
                                                                                                                         [1m[35m)[0m
                                                                                                                     [33m)[0m
                                                                                                                 [36m)[0m
                                                                                                             [35m)[0m
                                                                                                         [1m[93m)[0m
                                                                                                     [1m[96m)[0m
-                                                                                                    [1m[96m([0m XIL_Let nim.rsh:[1m[92m62[0m:[1m[92m7[0m Nothing Nothing
-                                                                                                        [1m[93m([0m XIL_Claim nim.rsh:[1m[92m62[0m:[1m[92m7[0m CT_Require
-                                                                                                            [35m([0m XIL_PrimApp nim.rsh:[1m[92m62[0m:[1m[92m7[0m [36m([0m CP PEQ [36m)[0m [36m([0m LT_BT BT_Bool [36m)[0m
-                                                                                                                [36m[[0m XIL_PrimApp nim.rsh:[1m[92m62[0m:[1m[92m7[0m [33m([0m CP TXN_VALUE [33m)[0m [33m([0m LT_BT BT_UInt256 [33m)[0m [33m[[0m[33m][0m
-                                                                                                                [36m,[0m XIL_Con nim.rsh:[1m[92m62[0m:[1m[92m7[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
+                                                                                                    [1m[96m([0m XIL_Let nim.rsh:[1m[92m59[0m:[1m[92m7[0m Nothing Nothing
+                                                                                                        [1m[93m([0m XIL_Claim nim.rsh:[1m[92m59[0m:[1m[92m7[0m CT_Require
+                                                                                                            [35m([0m XIL_PrimApp nim.rsh:[1m[92m59[0m:[1m[92m7[0m [36m([0m CP PEQ [36m)[0m [36m([0m LT_BT BT_Bool [36m)[0m
+                                                                                                                [36m[[0m XIL_PrimApp nim.rsh:[1m[92m59[0m:[1m[92m7[0m [33m([0m CP TXN_VALUE [33m)[0m [33m([0m LT_BT BT_UInt256 [33m)[0m [33m[[0m[33m][0m
+                                                                                                                [36m,[0m XIL_Con nim.rsh:[1m[92m59[0m:[1m[92m7[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
                                                                                                                 [36m][0m
                                                                                                             [35m)[0m
                                                                                                         [1m[93m)[0m
-                                                                                                        [1m[93m([0m XIL_Continue nim.rsh:[1m[92m70[0m:[1m[92m7[0m
-                                                                                                            [35m([0m XIL_Let nim.rsh:[1m[92m4[0m:[1m[92m1[0m Nothing [36m([0m Just [33m[[0m[33m][0m [36m)[0m [36m([0m XIL_Values nim.rsh:[1m[92m69[0m:[1m[92m43[0m [33m[[0m[33m][0m [36m)[0m
+                                                                                                        [1m[93m([0m XIL_Continue nim.rsh:[1m[92m64[0m:[1m[92m7[0m
+                                                                                                            [35m([0m XIL_Let nim.rsh:[1m[92m4[0m:[1m[92m1[0m Nothing [36m([0m Just [33m[[0m[33m][0m [36m)[0m [36m([0m XIL_Values nim.rsh:[1m[92m63[0m:[1m[92m43[0m [33m[[0m[33m][0m [36m)[0m
                                                                                                                 [36m([0m XIL_Let nim.rsh:[1m[92m5[0m:[1m[92m10[0m Nothing Nothing
                                                                                                                     [33m([0m XIL_Claim nim.rsh:[1m[92m5[0m:[1m[92m10[0m CT_Require
                                                                                                                         [1m[35m([0m XIL_PrimApp nim.rsh:[1m[92m5[0m:[1m[92m18[0m [1m[36m([0m CP PLE [1m[36m)[0m [1m[36m([0m LT_BT BT_Bool [1m[36m)[0m
-                                                                                                                            [1m[36m[[0m XIL_Var nim.rsh:[1m[92m60[0m:[1m[92m9[0m
+                                                                                                                            [1m[36m[[0m XIL_Var nim.rsh:[1m[92m57[0m:[1m[92m9[0m
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mamount[0m[1m[97m"[0m
                                                                                                                                 [1m[33m,[0m LT_BT BT_UInt256
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m,[0m XIL_If nim.rsh:[1m[92m5[0m:[1m[92m30[0m [1m[33m([0m fromList [95m[[0m[95m][0m [1m[33m)[0m
-                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m59[0m:[1m[92m9[0m
+                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m56[0m:[1m[92m9[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mchoose1[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_Bool
                                                                                                                                     [95m)[0m
                                                                                                                                 [1m[33m)[0m [1m[33m[[0m LT_BT BT_UInt256 [1m[33m][0m
-                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
                                                                                                                                 [1m[33m)[0m
-                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
@@ -608,7 +621,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                         [1m[35m)[0m
                                                                                                                     [33m)[0m
                                                                                                                     [33m([0m XIL_If nim.rsh:[1m[92m6[0m:[1m[92m3[0m [1m[35m([0m fromList [1m[36m[[0m[1m[36m][0m [1m[35m)[0m
-                                                                                                                        [1m[35m([0m XIL_Var nim.rsh:[1m[92m59[0m:[1m[92m9[0m
+                                                                                                                        [1m[35m([0m XIL_Var nim.rsh:[1m[92m56[0m:[1m[92m9[0m
                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94mchoose1[0m[1m[97m"[0m
                                                                                                                             [1m[36m,[0m LT_BT BT_Bool
                                                                                                                             [1m[36m)[0m
@@ -620,7 +633,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                         [1m[35m([0m XIL_Values nim.rsh:[1m[92m7[0m:[1m[92m12[0m
                                                                                                                             [1m[36m[[0m XIL_Let STDLIB:[1m[92m4[0m:[1m[92m1[0m Nothing [1m[33m([0m Just [95m[[0m[95m][0m [1m[33m)[0m [1m[33m([0m XIL_Values nim.rsh:[1m[92m7[0m:[1m[92m14[0m [95m[[0m[95m][0m [1m[33m)[0m
                                                                                                                                 [1m[33m([0m XIL_If STDLIB:[1m[92m5[0m:[1m[92m13[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m
-                                                                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mAsTurn[0m[1m[97m"[0m
                                                                                                                                         [96m,[0m LT_BT BT_Bool
                                                                                                                                         [96m)[0m
@@ -629,16 +642,16 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                                     [95m([0m XIL_Con STDLIB:[1m[92m5[0m:[1m[92m23[0m [96m([0m Con_B True [96m)[0m [95m)[0m
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m,[0m XIL_PrimApp nim.rsh:[1m[92m7[0m:[1m[92m29[0m [1m[33m([0m CP SUB [1m[33m)[0m [1m[33m([0m LT_BT BT_UInt256 [1m[33m)[0m
-                                                                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
-                                                                                                                                [1m[33m,[0m XIL_Var nim.rsh:[1m[92m60[0m:[1m[92m9[0m
+                                                                                                                                [1m[33m,[0m XIL_Var nim.rsh:[1m[92m57[0m:[1m[92m9[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mamount[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
                                                                                                                                 [1m[33m][0m
-                                                                                                                            [1m[36m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                            [1m[36m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                                                 [1m[33m,[0m LT_BT BT_UInt256
                                                                                                                                 [1m[33m)[0m
@@ -647,7 +660,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                         [1m[35m([0m XIL_Values nim.rsh:[1m[92m9[0m:[1m[92m12[0m
                                                                                                                             [1m[36m[[0m XIL_Let STDLIB:[1m[92m4[0m:[1m[92m1[0m Nothing [1m[33m([0m Just [95m[[0m[95m][0m [1m[33m)[0m [1m[33m([0m XIL_Values nim.rsh:[1m[92m9[0m:[1m[92m14[0m [95m[[0m[95m][0m [1m[33m)[0m
                                                                                                                                 [1m[33m([0m XIL_If STDLIB:[1m[92m5[0m:[1m[92m13[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m
-                                                                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mAsTurn[0m[1m[97m"[0m
                                                                                                                                         [96m,[0m LT_BT BT_Bool
                                                                                                                                         [96m)[0m
@@ -655,16 +668,16 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                                     [95m([0m XIL_Con STDLIB:[1m[92m5[0m:[1m[92m15[0m [96m([0m Con_B False [96m)[0m [95m)[0m
                                                                                                                                     [95m([0m XIL_Con STDLIB:[1m[92m5[0m:[1m[92m23[0m [96m([0m Con_B True [96m)[0m [95m)[0m
                                                                                                                                 [1m[33m)[0m
-                                                                                                                            [1m[36m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                            [1m[36m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                                                 [1m[33m,[0m LT_BT BT_UInt256
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m,[0m XIL_PrimApp nim.rsh:[1m[92m9[0m:[1m[92m36[0m [1m[33m([0m CP SUB [1m[33m)[0m [1m[33m([0m LT_BT BT_UInt256 [1m[33m)[0m
-                                                                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
-                                                                                                                                [1m[33m,[0m XIL_Var nim.rsh:[1m[92m60[0m:[1m[92m9[0m
+                                                                                                                                [1m[33m,[0m XIL_Var nim.rsh:[1m[92m57[0m:[1m[92m9[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mamount[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
@@ -681,8 +694,8 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                         [96m)[0m
                                                                                     [95m)[0m
                                                                                 [1m[33m)[0m
-                                                                                [1m[33m([0m XIL_FromConsensus nim.rsh:[1m[92m72[0m:[1m[92m7[0m
-                                                                                    [95m([0m XIL_Let nim.rsh:[1m[92m75[0m:[1m[92m9[0m
+                                                                                [1m[33m([0m XIL_FromConsensus nim.rsh:[1m[92m66[0m:[1m[92m7[0m
+                                                                                    [95m([0m XIL_Let nim.rsh:[1m[92m69[0m:[1m[92m9[0m
                                                                                         [96m([0m Just
                                                                                             [93m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
                                                                                             [93m,[0m LT_BT BT_Address
@@ -695,14 +708,14 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                 [1m[95m)[0m
                                                                                             [93m][0m
                                                                                         [96m)[0m
-                                                                                        [96m([0m XIL_Values nim.rsh:[1m[92m75[0m:[1m[92m9[0m
-                                                                                            [93m[[0m XIL_Declassify nim.rsh:[1m[92m75[0m:[1m[92m35[0m [1m[95m([0m LT_BT BT_Bool [1m[95m)[0m
-                                                                                                [1m[95m([0m XIL_Interact nim.rsh:[1m[92m75[0m:[1m[92m36[0m [1m[97m"[0m[1m[94mgetHeap[0m[1m[97m"[0m [1m[96m([0m LT_BT BT_Bool [1m[96m)[0m
-                                                                                                    [1m[96m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                        [96m([0m XIL_Values nim.rsh:[1m[92m69[0m:[1m[92m9[0m
+                                                                                            [93m[[0m XIL_Declassify nim.rsh:[1m[92m69[0m:[1m[92m35[0m [1m[95m([0m LT_BT BT_Bool [1m[95m)[0m
+                                                                                                [1m[95m([0m XIL_Interact nim.rsh:[1m[92m69[0m:[1m[92m36[0m [1m[97m"[0m[1m[94mgetHeap[0m[1m[97m"[0m [1m[96m([0m LT_BT BT_Bool [1m[96m)[0m
+                                                                                                    [1m[96m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                         [1m[93m,[0m LT_BT BT_UInt256
                                                                                                         [1m[93m)[0m
-                                                                                                    [1m[96m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                    [1m[96m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                         [1m[93m,[0m LT_BT BT_UInt256
                                                                                                         [1m[93m)[0m
@@ -710,7 +723,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                 [1m[95m)[0m
                                                                                             [93m][0m
                                                                                         [96m)[0m
-                                                                                        [96m([0m XIL_Let nim.rsh:[1m[92m76[0m:[1m[92m9[0m
+                                                                                        [96m([0m XIL_Let nim.rsh:[1m[92m70[0m:[1m[92m9[0m
                                                                                             [93m([0m Just
                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
                                                                                                 [1m[95m,[0m LT_BT BT_Address
@@ -723,14 +736,14 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m][0m
                                                                                             [93m)[0m
-                                                                                            [93m([0m XIL_Values nim.rsh:[1m[92m76[0m:[1m[92m9[0m
-                                                                                                [1m[95m[[0m XIL_Declassify nim.rsh:[1m[92m76[0m:[1m[92m34[0m [1m[96m([0m LT_BT BT_UInt256 [1m[96m)[0m
-                                                                                                    [1m[96m([0m XIL_Interact nim.rsh:[1m[92m76[0m:[1m[92m35[0m [1m[97m"[0m[1m[94mgetAmount[0m[1m[97m"[0m [1m[93m([0m LT_BT BT_UInt256 [1m[93m)[0m
-                                                                                                        [1m[93m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                            [93m([0m XIL_Values nim.rsh:[1m[92m70[0m:[1m[92m9[0m
+                                                                                                [1m[95m[[0m XIL_Declassify nim.rsh:[1m[92m70[0m:[1m[92m34[0m [1m[96m([0m LT_BT BT_UInt256 [1m[96m)[0m
+                                                                                                    [1m[96m([0m XIL_Interact nim.rsh:[1m[92m70[0m:[1m[92m35[0m [1m[97m"[0m[1m[94mgetAmount[0m[1m[97m"[0m [1m[93m([0m LT_BT BT_UInt256 [1m[93m)[0m
+                                                                                                        [1m[93m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                             [35m,[0m LT_BT BT_UInt256
                                                                                                             [35m)[0m
-                                                                                                        [1m[93m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                        [1m[93m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                             [35m,[0m LT_BT BT_UInt256
                                                                                                             [35m)[0m
@@ -738,30 +751,30 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m][0m
                                                                                             [93m)[0m
-                                                                                            [93m([0m XIL_Let nim.rsh:[1m[92m77[0m:[1m[92m15[0m
+                                                                                            [93m([0m XIL_Let nim.rsh:[1m[92m71[0m:[1m[92m15[0m
                                                                                                 [1m[95m([0m Just
                                                                                                     [1m[96m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
                                                                                                     [1m[96m,[0m LT_BT BT_Address
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m)[0m Nothing
-                                                                                                [1m[95m([0m XIL_Claim nim.rsh:[1m[92m77[0m:[1m[92m15[0m CT_Assume
-                                                                                                    [1m[96m([0m XIL_PrimApp nim.rsh:[1m[92m77[0m:[1m[92m23[0m [1m[93m([0m CP PLE [1m[93m)[0m [1m[93m([0m LT_BT BT_Bool [1m[93m)[0m
-                                                                                                        [1m[93m[[0m XIL_Var nim.rsh:[1m[92m76[0m:[1m[92m9[0m
+                                                                                                [1m[95m([0m XIL_Claim nim.rsh:[1m[92m71[0m:[1m[92m15[0m CT_Assume
+                                                                                                    [1m[96m([0m XIL_PrimApp nim.rsh:[1m[92m71[0m:[1m[92m23[0m [1m[93m([0m CP PLE [1m[93m)[0m [1m[93m([0m LT_BT BT_Bool [1m[93m)[0m
+                                                                                                        [1m[93m[[0m XIL_Var nim.rsh:[1m[92m70[0m:[1m[92m9[0m
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mamount[0m[1m[97m"[0m
                                                                                                             [35m,[0m LT_BT BT_UInt256
                                                                                                             [35m)[0m
-                                                                                                        [1m[93m,[0m XIL_If nim.rsh:[1m[92m77[0m:[1m[92m35[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m
-                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m75[0m:[1m[92m9[0m
+                                                                                                        [1m[93m,[0m XIL_If nim.rsh:[1m[92m71[0m:[1m[92m35[0m [35m([0m fromList [36m[[0m[36m][0m [35m)[0m
+                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m69[0m:[1m[92m9[0m
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mchoose1[0m[1m[97m"[0m
                                                                                                                 [36m,[0m LT_BT BT_Bool
                                                                                                                 [36m)[0m
                                                                                                             [35m)[0m [35m[[0m LT_BT BT_UInt256 [35m][0m
-                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                                 [36m,[0m LT_BT BT_UInt256
                                                                                                                 [36m)[0m
                                                                                                             [35m)[0m
-                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                            [35m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                 [36m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                                 [36m,[0m LT_BT BT_UInt256
                                                                                                                 [36m)[0m
@@ -769,7 +782,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                         [1m[93m][0m
                                                                                                     [1m[96m)[0m
                                                                                                 [1m[95m)[0m
-                                                                                                [1m[95m([0m XIL_ToConsensus nim.rsh:[1m[92m78[0m:[1m[92m7[0m
+                                                                                                [1m[95m([0m XIL_ToConsensus nim.rsh:[1m[92m72[0m:[1m[92m7[0m
                                                                                                     [1m[96m([0m False
                                                                                                     [1m[96m,[0m
                                                                                                         [1m[93m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
@@ -785,69 +798,74 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                             [35m,[0m LT_BT BT_UInt256
                                                                                                             [35m)[0m
                                                                                                         [1m[93m][0m
-                                                                                                    [1m[96m,[0m XIL_Con nim.rsh:[1m[92m78[0m:[1m[92m7[0m [1m[93m([0m Con_I [1m[92m0[0m [1m[93m)[0m
+                                                                                                    [1m[96m,[0m XIL_Con nim.rsh:[1m[92m72[0m:[1m[92m7[0m [1m[93m([0m Con_I [1m[92m0[0m [1m[93m)[0m
                                                                                                     [1m[96m)[0m
                                                                                                     [1m[96m([0m Just
                                                                                                         [1m[93m([0m XIL_Con nim.rsh:[1m[92m20[0m:[1m[92m15[0m [35m([0m Con_I [1m[92m10[0m [35m)[0m
-                                                                                                        [1m[93m,[0m XIL_Let nim.rsh:[1m[92m79[0m:[1m[92m28[0m Nothing [35m([0m Just [36m[[0m[36m][0m [35m)[0m [35m([0m XIL_Values nim.rsh:[1m[92m78[0m:[1m[92m7[0m [36m[[0m[36m][0m [35m)[0m
-                                                                                                            [35m([0m XIL_ToConsensus nim.rsh:[1m[92m80[0m:[1m[92m11[0m
-                                                                                                                [36m([0m False
-                                                                                                                [36m,[0m
-                                                                                                                    [33m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
-                                                                                                                    [33m,[0m LT_BT BT_Address
-                                                                                                                    [33m)[0m
-                                                                                                                [36m,[0m [33m[[0m[33m][0m
-                                                                                                                [36m,[0m XIL_Con nim.rsh:[1m[92m80[0m:[1m[92m11[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
-                                                                                                                [36m)[0m Nothing
-                                                                                                                [36m([0m XIL_Let nim.rsh:[1m[92m80[0m:[1m[92m11[0m Nothing Nothing
-                                                                                                                    [33m([0m XIL_Claim nim.rsh:[1m[92m80[0m:[1m[92m11[0m CT_Require
-                                                                                                                        [1m[35m([0m XIL_PrimApp nim.rsh:[1m[92m80[0m:[1m[92m11[0m [1m[36m([0m CP PEQ [1m[36m)[0m [1m[36m([0m LT_BT BT_Bool [1m[36m)[0m
-                                                                                                                            [1m[36m[[0m XIL_PrimApp nim.rsh:[1m[92m80[0m:[1m[92m11[0m [1m[33m([0m CP TXN_VALUE [1m[33m)[0m [1m[33m([0m LT_BT BT_UInt256 [1m[33m)[0m [1m[33m[[0m[1m[33m][0m
-                                                                                                                            [1m[36m,[0m XIL_Con nim.rsh:[1m[92m80[0m:[1m[92m11[0m [1m[33m([0m Con_I [1m[92m0[0m [1m[33m)[0m
-                                                                                                                            [1m[36m][0m
+                                                                                                        [1m[93m,[0m XIL_Let nim.rsh:[1m[92m73[0m:[1m[92m28[0m Nothing [35m([0m Just [36m[[0m[36m][0m [35m)[0m [35m([0m XIL_Values nim.rsh:[1m[92m72[0m:[1m[92m7[0m [36m[[0m[36m][0m [35m)[0m
+                                                                                                            [35m([0m XIL_Let nim.rsh:[1m[92m11[0m:[1m[92m1[0m Nothing [36m([0m Just [33m[[0m[33m][0m [36m)[0m [36m([0m XIL_Values nim.rsh:[1m[92m74[0m:[1m[92m25[0m [33m[[0m[33m][0m [36m)[0m
+                                                                                                                [36m([0m XIL_ToConsensus nim.rsh:[1m[92m12[0m:[1m[92m3[0m
+                                                                                                                    [33m([0m False
+                                                                                                                    [33m,[0m
+                                                                                                                        [1m[35m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
+                                                                                                                        [1m[35m,[0m LT_BT BT_Address
                                                                                                                         [1m[35m)[0m
-                                                                                                                    [33m)[0m
-                                                                                                                    [33m([0m XIL_Let nim.rsh:[1m[92m81[0m:[1m[92m36[0m Nothing Nothing
-                                                                                                                        [1m[35m([0m XIL_Transfer nim.rsh:[1m[92m81[0m:[1m[92m11[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
-                                                                                                                            [1m[36m([0m XIL_PrimApp nim.rsh:[1m[92m81[0m:[1m[92m27[0m [1m[33m([0m CP BALANCE [1m[33m)[0m [1m[33m([0m LT_BT BT_UInt256 [1m[33m)[0m [1m[33m[[0m[1m[33m][0m [1m[36m)[0m
+                                                                                                                    [33m,[0m [1m[35m[[0m[1m[35m][0m
+                                                                                                                    [33m,[0m XIL_Con nim.rsh:[1m[92m12[0m:[1m[92m3[0m [1m[35m([0m Con_I [1m[92m0[0m [1m[35m)[0m
+                                                                                                                    [33m)[0m Nothing
+                                                                                                                    [33m([0m XIL_Let nim.rsh:[1m[92m12[0m:[1m[92m3[0m Nothing Nothing
+                                                                                                                        [1m[35m([0m XIL_Claim nim.rsh:[1m[92m12[0m:[1m[92m3[0m CT_Require
+                                                                                                                            [1m[36m([0m XIL_PrimApp nim.rsh:[1m[92m12[0m:[1m[92m3[0m [1m[33m([0m CP PEQ [1m[33m)[0m [1m[33m([0m LT_BT BT_Bool [1m[33m)[0m
+                                                                                                                                [1m[33m[[0m XIL_PrimApp nim.rsh:[1m[92m12[0m:[1m[92m3[0m [95m([0m CP TXN_VALUE [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m [95m[[0m[95m][0m
+                                                                                                                                [1m[33m,[0m XIL_Con nim.rsh:[1m[92m12[0m:[1m[92m3[0m [95m([0m Con_I [1m[92m0[0m [95m)[0m
+                                                                                                                                [1m[33m][0m
+                                                                                                                            [1m[36m)[0m
                                                                                                                         [1m[35m)[0m
-                                                                                                                        [1m[35m([0m XIL_FromConsensus nim.rsh:[1m[92m82[0m:[1m[92m11[0m
-                                                                                                                            [1m[36m([0m XIL_Con nim.rsh:[1m[92m83[0m:[1m[92m18[0m [1m[33m([0m Con_BS [1m[97m"[0m[1m[94mB timed out move[0m[1m[97m"[0m [1m[33m)[0m [1m[36m)[0m
+                                                                                                                        [1m[35m([0m XIL_Let nim.rsh:[1m[92m13[0m:[1m[92m30[0m Nothing Nothing
+                                                                                                                            [1m[36m([0m XIL_Transfer nim.rsh:[1m[92m13[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
+                                                                                                                                [1m[33m,[0m LT_BT BT_Address
+                                                                                                                                [1m[33m)[0m
+                                                                                                                                [1m[33m([0m XIL_PrimApp nim.rsh:[1m[92m13[0m:[1m[92m19[0m [95m([0m CP BALANCE [95m)[0m [95m([0m LT_BT BT_UInt256 [95m)[0m [95m[[0m[95m][0m [1m[33m)[0m
+                                                                                                                            [1m[36m)[0m
+                                                                                                                            [1m[36m([0m XIL_FromConsensus nim.rsh:[1m[92m14[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m XIL_Con nim.rsh:[1m[92m74[0m:[1m[92m29[0m [95m([0m Con_BS [1m[97m"[0m[1m[94mB timed out move[0m[1m[97m"[0m [95m)[0m [1m[33m)[0m
+                                                                                                                            [1m[36m)[0m
                                                                                                                         [1m[35m)[0m
                                                                                                                     [33m)[0m
                                                                                                                 [36m)[0m
                                                                                                             [35m)[0m
                                                                                                         [1m[93m)[0m
                                                                                                     [1m[96m)[0m
-                                                                                                    [1m[96m([0m XIL_Let nim.rsh:[1m[92m78[0m:[1m[92m7[0m Nothing Nothing
-                                                                                                        [1m[93m([0m XIL_Claim nim.rsh:[1m[92m78[0m:[1m[92m7[0m CT_Require
-                                                                                                            [35m([0m XIL_PrimApp nim.rsh:[1m[92m78[0m:[1m[92m7[0m [36m([0m CP PEQ [36m)[0m [36m([0m LT_BT BT_Bool [36m)[0m
-                                                                                                                [36m[[0m XIL_PrimApp nim.rsh:[1m[92m78[0m:[1m[92m7[0m [33m([0m CP TXN_VALUE [33m)[0m [33m([0m LT_BT BT_UInt256 [33m)[0m [33m[[0m[33m][0m
-                                                                                                                [36m,[0m XIL_Con nim.rsh:[1m[92m78[0m:[1m[92m7[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
+                                                                                                    [1m[96m([0m XIL_Let nim.rsh:[1m[92m72[0m:[1m[92m7[0m Nothing Nothing
+                                                                                                        [1m[93m([0m XIL_Claim nim.rsh:[1m[92m72[0m:[1m[92m7[0m CT_Require
+                                                                                                            [35m([0m XIL_PrimApp nim.rsh:[1m[92m72[0m:[1m[92m7[0m [36m([0m CP PEQ [36m)[0m [36m([0m LT_BT BT_Bool [36m)[0m
+                                                                                                                [36m[[0m XIL_PrimApp nim.rsh:[1m[92m72[0m:[1m[92m7[0m [33m([0m CP TXN_VALUE [33m)[0m [33m([0m LT_BT BT_UInt256 [33m)[0m [33m[[0m[33m][0m
+                                                                                                                [36m,[0m XIL_Con nim.rsh:[1m[92m72[0m:[1m[92m7[0m [33m([0m Con_I [1m[92m0[0m [33m)[0m
                                                                                                                 [36m][0m
                                                                                                             [35m)[0m
                                                                                                         [1m[93m)[0m
-                                                                                                        [1m[93m([0m XIL_Continue nim.rsh:[1m[92m86[0m:[1m[92m7[0m
-                                                                                                            [35m([0m XIL_Let nim.rsh:[1m[92m4[0m:[1m[92m1[0m Nothing [36m([0m Just [33m[[0m[33m][0m [36m)[0m [36m([0m XIL_Values nim.rsh:[1m[92m85[0m:[1m[92m43[0m [33m[[0m[33m][0m [36m)[0m
+                                                                                                        [1m[93m([0m XIL_Continue nim.rsh:[1m[92m77[0m:[1m[92m7[0m
+                                                                                                            [35m([0m XIL_Let nim.rsh:[1m[92m4[0m:[1m[92m1[0m Nothing [36m([0m Just [33m[[0m[33m][0m [36m)[0m [36m([0m XIL_Values nim.rsh:[1m[92m76[0m:[1m[92m43[0m [33m[[0m[33m][0m [36m)[0m
                                                                                                                 [36m([0m XIL_Let nim.rsh:[1m[92m5[0m:[1m[92m10[0m Nothing Nothing
                                                                                                                     [33m([0m XIL_Claim nim.rsh:[1m[92m5[0m:[1m[92m10[0m CT_Require
                                                                                                                         [1m[35m([0m XIL_PrimApp nim.rsh:[1m[92m5[0m:[1m[92m18[0m [1m[36m([0m CP PLE [1m[36m)[0m [1m[36m([0m LT_BT BT_Bool [1m[36m)[0m
-                                                                                                                            [1m[36m[[0m XIL_Var nim.rsh:[1m[92m76[0m:[1m[92m9[0m
+                                                                                                                            [1m[36m[[0m XIL_Var nim.rsh:[1m[92m70[0m:[1m[92m9[0m
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mamount[0m[1m[97m"[0m
                                                                                                                                 [1m[33m,[0m LT_BT BT_UInt256
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m,[0m XIL_If nim.rsh:[1m[92m5[0m:[1m[92m30[0m [1m[33m([0m fromList [95m[[0m[95m][0m [1m[33m)[0m
-                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m75[0m:[1m[92m9[0m
+                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m69[0m:[1m[92m9[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mchoose1[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_Bool
                                                                                                                                     [95m)[0m
                                                                                                                                 [1m[33m)[0m [1m[33m[[0m LT_BT BT_UInt256 [1m[33m][0m
-                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
                                                                                                                                 [1m[33m)[0m
-                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
@@ -856,7 +874,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                         [1m[35m)[0m
                                                                                                                     [33m)[0m
                                                                                                                     [33m([0m XIL_If nim.rsh:[1m[92m6[0m:[1m[92m3[0m [1m[35m([0m fromList [1m[36m[[0m[1m[36m][0m [1m[35m)[0m
-                                                                                                                        [1m[35m([0m XIL_Var nim.rsh:[1m[92m75[0m:[1m[92m9[0m
+                                                                                                                        [1m[35m([0m XIL_Var nim.rsh:[1m[92m69[0m:[1m[92m9[0m
                                                                                                                             [1m[36m([0m [1m[97m"[0m[1m[94mchoose1[0m[1m[97m"[0m
                                                                                                                             [1m[36m,[0m LT_BT BT_Bool
                                                                                                                             [1m[36m)[0m
@@ -868,7 +886,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                         [1m[35m([0m XIL_Values nim.rsh:[1m[92m7[0m:[1m[92m12[0m
                                                                                                                             [1m[36m[[0m XIL_Let STDLIB:[1m[92m4[0m:[1m[92m1[0m Nothing [1m[33m([0m Just [95m[[0m[95m][0m [1m[33m)[0m [1m[33m([0m XIL_Values nim.rsh:[1m[92m7[0m:[1m[92m14[0m [95m[[0m[95m][0m [1m[33m)[0m
                                                                                                                                 [1m[33m([0m XIL_If STDLIB:[1m[92m5[0m:[1m[92m13[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m
-                                                                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mAsTurn[0m[1m[97m"[0m
                                                                                                                                         [96m,[0m LT_BT BT_Bool
                                                                                                                                         [96m)[0m
@@ -877,16 +895,16 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                                     [95m([0m XIL_Con STDLIB:[1m[92m5[0m:[1m[92m23[0m [96m([0m Con_B True [96m)[0m [95m)[0m
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m,[0m XIL_PrimApp nim.rsh:[1m[92m7[0m:[1m[92m29[0m [1m[33m([0m CP SUB [1m[33m)[0m [1m[33m([0m LT_BT BT_UInt256 [1m[33m)[0m
-                                                                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
-                                                                                                                                [1m[33m,[0m XIL_Var nim.rsh:[1m[92m76[0m:[1m[92m9[0m
+                                                                                                                                [1m[33m,[0m XIL_Var nim.rsh:[1m[92m70[0m:[1m[92m9[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mamount[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
                                                                                                                                 [1m[33m][0m
-                                                                                                                            [1m[36m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                            [1m[36m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                                                 [1m[33m,[0m LT_BT BT_UInt256
                                                                                                                                 [1m[33m)[0m
@@ -895,7 +913,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                         [1m[35m([0m XIL_Values nim.rsh:[1m[92m9[0m:[1m[92m12[0m
                                                                                                                             [1m[36m[[0m XIL_Let STDLIB:[1m[92m4[0m:[1m[92m1[0m Nothing [1m[33m([0m Just [95m[[0m[95m][0m [1m[33m)[0m [1m[33m([0m XIL_Values nim.rsh:[1m[92m9[0m:[1m[92m14[0m [95m[[0m[95m][0m [1m[33m)[0m
                                                                                                                                 [1m[33m([0m XIL_If STDLIB:[1m[92m5[0m:[1m[92m13[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m
-                                                                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                         [96m([0m [1m[97m"[0m[1m[94mAsTurn[0m[1m[97m"[0m
                                                                                                                                         [96m,[0m LT_BT BT_Bool
                                                                                                                                         [96m)[0m
@@ -903,16 +921,16 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                                                     [95m([0m XIL_Con STDLIB:[1m[92m5[0m:[1m[92m15[0m [96m([0m Con_B False [96m)[0m [95m)[0m
                                                                                                                                     [95m([0m XIL_Con STDLIB:[1m[92m5[0m:[1m[92m23[0m [96m([0m Con_B True [96m)[0m [95m)[0m
                                                                                                                                 [1m[33m)[0m
-                                                                                                                            [1m[36m,[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                            [1m[36m,[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                 [1m[33m([0m [1m[97m"[0m[1m[94mheap1[0m[1m[97m"[0m
                                                                                                                                 [1m[33m,[0m LT_BT BT_UInt256
                                                                                                                                 [1m[33m)[0m
                                                                                                                             [1m[36m,[0m XIL_PrimApp nim.rsh:[1m[92m9[0m:[1m[92m36[0m [1m[33m([0m CP SUB [1m[33m)[0m [1m[33m([0m LT_BT BT_UInt256 [1m[33m)[0m
-                                                                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                                                                [1m[33m[[0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mheap2[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
-                                                                                                                                [1m[33m,[0m XIL_Var nim.rsh:[1m[92m76[0m:[1m[92m9[0m
+                                                                                                                                [1m[33m,[0m XIL_Var nim.rsh:[1m[92m70[0m:[1m[92m9[0m
                                                                                                                                     [95m([0m [1m[97m"[0m[1m[94mamount[0m[1m[97m"[0m
                                                                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                                                                     [95m)[0m
@@ -930,7 +948,7 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                     [95m)[0m
                                                                                 [1m[33m)[0m
                                                                             [1m[36m)[0m
-                                                                            [1m[36m([0m XIL_Let nim.rsh:[1m[92m88[0m:[1m[92m3[0m Nothing
+                                                                            [1m[36m([0m XIL_Let nim.rsh:[1m[92m79[0m:[1m[92m3[0m Nothing
                                                                                 [1m[33m([0m Just
                                                                                     [95m[[0m
                                                                                         [96m([0m [1m[97m"[0m[1m[94mtoA[0m[1m[97m"[0m
@@ -942,8 +960,8 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                         [96m)[0m
                                                                                     [95m][0m
                                                                                 [1m[33m)[0m
-                                                                                [1m[33m([0m XIL_If nim.rsh:[1m[92m88[0m:[1m[92m31[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m
-                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                [1m[33m([0m XIL_If nim.rsh:[1m[92m79[0m:[1m[92m31[0m [95m([0m fromList [96m[[0m[96m][0m [95m)[0m
+                                                                                    [95m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                         [96m([0m [1m[97m"[0m[1m[94mAsTurn[0m[1m[97m"[0m
                                                                                         [96m,[0m LT_BT BT_Bool
                                                                                         [96m)[0m
@@ -951,21 +969,24 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                     [95m[[0m LT_BT BT_UInt256
                                                                                     [95m,[0m LT_BT BT_UInt256
                                                                                     [95m][0m
-                                                                                    [95m([0m XIL_Values nim.rsh:[1m[92m88[0m:[1m[92m33[0m
-                                                                                        [96m[[0m XIL_Con nim.rsh:[1m[92m88[0m:[1m[92m35[0m [93m([0m Con_I [1m[92m2[0m [93m)[0m
-                                                                                        [96m,[0m XIL_Con nim.rsh:[1m[92m88[0m:[1m[92m38[0m [93m([0m Con_I [1m[92m0[0m [93m)[0m
+                                                                                    [95m([0m XIL_Values nim.rsh:[1m[92m79[0m:[1m[92m33[0m
+                                                                                        [96m[[0m XIL_Con nim.rsh:[1m[92m79[0m:[1m[92m35[0m [93m([0m Con_I [1m[92m2[0m [93m)[0m
+                                                                                        [96m,[0m XIL_Con nim.rsh:[1m[92m79[0m:[1m[92m38[0m [93m([0m Con_I [1m[92m0[0m [93m)[0m
                                                                                         [96m][0m
                                                                                     [95m)[0m
-                                                                                    [95m([0m XIL_Values nim.rsh:[1m[92m88[0m:[1m[92m44[0m
-                                                                                        [96m[[0m XIL_Con nim.rsh:[1m[92m88[0m:[1m[92m46[0m [93m([0m Con_I [1m[92m0[0m [93m)[0m
-                                                                                        [96m,[0m XIL_Con nim.rsh:[1m[92m88[0m:[1m[92m49[0m [93m([0m Con_I [1m[92m2[0m [93m)[0m
+                                                                                    [95m([0m XIL_Values nim.rsh:[1m[92m79[0m:[1m[92m44[0m
+                                                                                        [96m[[0m XIL_Con nim.rsh:[1m[92m79[0m:[1m[92m46[0m [93m([0m Con_I [1m[92m0[0m [93m)[0m
+                                                                                        [96m,[0m XIL_Con nim.rsh:[1m[92m79[0m:[1m[92m49[0m [93m([0m Con_I [1m[92m2[0m [93m)[0m
                                                                                         [96m][0m
                                                                                     [95m)[0m
                                                                                 [1m[33m)[0m
-                                                                                [1m[33m([0m XIL_Let nim.rsh:[1m[92m89[0m:[1m[92m36[0m Nothing Nothing
-                                                                                    [95m([0m XIL_Transfer nim.rsh:[1m[92m89[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
-                                                                                        [96m([0m XIL_PrimApp nim.rsh:[1m[92m89[0m:[1m[92m16[0m [93m([0m CP MUL [93m)[0m [93m([0m LT_BT BT_UInt256 [93m)[0m
-                                                                                            [93m[[0m XIL_Var nim.rsh:[1m[92m88[0m:[1m[92m3[0m
+                                                                                [1m[33m([0m XIL_Let nim.rsh:[1m[92m80[0m:[1m[92m36[0m Nothing Nothing
+                                                                                    [95m([0m XIL_Transfer nim.rsh:[1m[92m80[0m:[1m[92m3[0m
+                                                                                        [96m([0m [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m
+                                                                                        [96m,[0m LT_BT BT_Address
+                                                                                        [96m)[0m
+                                                                                        [96m([0m XIL_PrimApp nim.rsh:[1m[92m80[0m:[1m[92m16[0m [93m([0m CP MUL [93m)[0m [93m([0m LT_BT BT_UInt256 [93m)[0m
+                                                                                            [93m[[0m XIL_Var nim.rsh:[1m[92m79[0m:[1m[92m3[0m
                                                                                                 [1m[95m([0m [1m[97m"[0m[1m[94mtoA[0m[1m[97m"[0m
                                                                                                 [1m[95m,[0m LT_BT BT_UInt256
                                                                                                 [1m[95m)[0m
@@ -976,10 +997,13 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                             [93m][0m
                                                                                         [96m)[0m
                                                                                     [95m)[0m
-                                                                                    [95m([0m XIL_Let nim.rsh:[1m[92m90[0m:[1m[92m36[0m Nothing Nothing
-                                                                                        [96m([0m XIL_Transfer nim.rsh:[1m[92m90[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
-                                                                                            [93m([0m XIL_PrimApp nim.rsh:[1m[92m90[0m:[1m[92m16[0m [1m[95m([0m CP MUL [1m[95m)[0m [1m[95m([0m LT_BT BT_UInt256 [1m[95m)[0m
-                                                                                                [1m[95m[[0m XIL_Var nim.rsh:[1m[92m88[0m:[1m[92m3[0m
+                                                                                    [95m([0m XIL_Let nim.rsh:[1m[92m81[0m:[1m[92m36[0m Nothing Nothing
+                                                                                        [96m([0m XIL_Transfer nim.rsh:[1m[92m81[0m:[1m[92m3[0m
+                                                                                            [93m([0m [1m[97m"[0m[1m[94mB[0m[1m[97m"[0m
+                                                                                            [93m,[0m LT_BT BT_Address
+                                                                                            [93m)[0m
+                                                                                            [93m([0m XIL_PrimApp nim.rsh:[1m[92m81[0m:[1m[92m16[0m [1m[95m([0m CP MUL [1m[95m)[0m [1m[95m([0m LT_BT BT_UInt256 [1m[95m)[0m
+                                                                                                [1m[95m[[0m XIL_Var nim.rsh:[1m[92m79[0m:[1m[92m3[0m
                                                                                                     [1m[96m([0m [1m[97m"[0m[1m[94mtoB[0m[1m[97m"[0m
                                                                                                     [1m[96m,[0m LT_BT BT_UInt256
                                                                                                     [1m[96m)[0m
@@ -990,20 +1014,20 @@ XIL_Prog nim.rsh:[1m[92m0[0m:[1m[92m0[0m [1m[96m[[0m LT_BT BT_Bytes [1
                                                                                                 [1m[95m][0m
                                                                                             [93m)[0m
                                                                                         [96m)[0m
-                                                                                        [96m([0m XIL_FromConsensus nim.rsh:[1m[92m91[0m:[1m[92m3[0m
-                                                                                            [93m([0m XIL_Let nim.rsh:[1m[92m93[0m:[1m[92m23[0m Nothing Nothing
-                                                                                                [1m[95m([0m XIL_Interact nim.rsh:[1m[92m93[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[96m([0m LT_BT BT_Bool [1m[96m)[0m
-                                                                                                    [1m[96m[[0m XIL_If nim.rsh:[1m[92m93[0m:[1m[92m31[0m [1m[93m([0m fromList [35m[[0m[35m][0m [1m[93m)[0m
-                                                                                                        [1m[93m([0m XIL_Var nim.rsh:[1m[92m52[0m:[1m[92m3[0m
+                                                                                        [96m([0m XIL_FromConsensus nim.rsh:[1m[92m82[0m:[1m[92m3[0m
+                                                                                            [93m([0m XIL_Let nim.rsh:[1m[92m84[0m:[1m[92m23[0m Nothing Nothing
+                                                                                                [1m[95m([0m XIL_Interact nim.rsh:[1m[92m84[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mshowOutcome[0m[1m[97m"[0m [1m[96m([0m LT_BT BT_Bool [1m[96m)[0m
+                                                                                                    [1m[96m[[0m XIL_If nim.rsh:[1m[92m84[0m:[1m[92m31[0m [1m[93m([0m fromList [35m[[0m[35m][0m [1m[93m)[0m
+                                                                                                        [1m[93m([0m XIL_Var nim.rsh:[1m[92m49[0m:[1m[92m3[0m
                                                                                                             [35m([0m [1m[97m"[0m[1m[94mAsTurn[0m[1m[97m"[0m
                                                                                                             [35m,[0m LT_BT BT_Bool
                                                                                                             [35m)[0m
                                                                                                         [1m[93m)[0m [1m[93m[[0m LT_BT BT_Bytes [1m[93m][0m
-                                                                                                        [1m[93m([0m XIL_Con nim.rsh:[1m[92m93[0m:[1m[92m33[0m [35m([0m Con_BS [1m[97m"[0m[1m[94mA won[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
-                                                                                                        [1m[93m([0m XIL_Con nim.rsh:[1m[92m93[0m:[1m[92m43[0m [35m([0m Con_BS [1m[97m"[0m[1m[94mB won[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
+                                                                                                        [1m[93m([0m XIL_Con nim.rsh:[1m[92m84[0m:[1m[92m33[0m [35m([0m Con_BS [1m[97m"[0m[1m[94mA won[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
+                                                                                                        [1m[93m([0m XIL_Con nim.rsh:[1m[92m84[0m:[1m[92m43[0m [35m([0m Con_BS [1m[97m"[0m[1m[94mB won[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
                                                                                                     [1m[96m][0m
                                                                                                 [1m[95m)[0m
-                                                                                                [1m[95m([0m XIL_Con nim.rsh:[1m[92m94[0m:[1m[92m10[0m [1m[96m([0m Con_BS [1m[97m"[0m[1m[94mGame is over[0m[1m[97m"[0m [1m[96m)[0m [1m[95m)[0m
+                                                                                                [1m[95m([0m XIL_Con nim.rsh:[1m[92m85[0m:[1m[92m10[0m [1m[96m([0m Con_BS [1m[97m"[0m[1m[94mGame is over[0m[1m[97m"[0m [1m[96m)[0m [1m[95m)[0m
                                                                                             [93m)[0m
                                                                                         [96m)[0m
                                                                                     [95m)[0m
