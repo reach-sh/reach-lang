@@ -10,7 +10,7 @@ This document contains an exhaustive discussion of each of the parts of the Reac
 
 @section[#:tag "ref-install"]{Installation & Usage}
 
-Reach is a Dockerized program, so it has no dependencies and has a trivial installation process. You can install it by running:
+Reach is a Dockerized program, so its only dependencies are @link["https://www.docker.com/get-started"]{Docker} and @link["https://docs.docker.com/compose/install/"]{Docker Compose}. You can install it by running:
 
 @commandline{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reachc -o reachc ; chmod +x reachc}
 

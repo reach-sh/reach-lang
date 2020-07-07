@@ -10,7 +10,7 @@ supported by Reach version @|reach-vers|.
 
 @section[#:tag "ref-backend-js"]{JavaScript}
 
-The Reach JavaScript @tech{backend} produces a compilation output named @filepath{input.mjs} which exports a function for each @tech{participant}. Each function accepts @jsin{3+n} arguments where the first three arguments are @jsin{stdlib}, @jsin{ctc}, and @jsin{interact}, while the remaining arguments are the initial @tech{local state} of the @tech{participant}. These functions should be called by the @tech{frontend}.
+The Reach JavaScript @tech{backend} produces a compilation output named @filepath{input.mjs} which exports an asynchronous function for each @tech{participant}. Each function accepts @jsin{3+n} arguments where the first three arguments are @jsin{stdlib}, @jsin{ctc}, and @jsin{interact}, while the remaining arguments are the initial @tech{local state} of the @tech{participant}. These functions should be called by the @tech{frontend}.
 
 The @jsin{stdlib} argument is provided by either
 @itemlist[
