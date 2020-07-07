@@ -15,4 +15,6 @@ publish:
 
 .PHONY: check
 check:
-	stack build stan && stack exec stan
+	stack build
+	stack build stan
+	stack exec stan
