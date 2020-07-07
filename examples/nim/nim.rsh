@@ -9,11 +9,10 @@ function applyMove(AsTurn, heap1, heap2, choose1, amount) {
     return [ !AsTurn, heap1, heap2 - amount ]; } }
 
 function closeTo(Who, result) {
-  return (() => {
-    Who.publish();
-    transfer(balance()).to(Who);
-    commit();
-    return result; }); }
+  Who.publish();
+  transfer(balance()).to(Who);
+  commit();
+  return result; }
 
 // Protocol
 const A = participant({});
@@ -36,10 +35,7 @@ function main() {
   B.publish(coinFlipB)
     .pay(wagerAmount)
     .timeout(DELAY, () => {
-      A.publish();
-      transfer(balance()).to(A);
-      commit();
-      return "B never accepted"; });
+      return closeTo(A, "B never accepted"); });
   commit();
 
   A.only(() => {

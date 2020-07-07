@@ -264,7 +264,7 @@ expect_throw pe fp j = error $ show tp ++ ": " ++ msg ++ " (given: " ++ (show $ 
           PE_Type -> "expected a valid type"
           PE_VarDecl -> "expected a valid variable declaration"
 
-type DecodeStmtsState = (FilePath, Maybe [XLVar], Maybe XLPart)
+type DecodeStmtsState = (FilePath, Maybe [XLVar], Maybe XLVar)
 
 dss_fp :: DecodeStmtsState -> FilePath
 dss_fp (fp, _, _) = fp
@@ -274,9 +274,9 @@ make_dss fp = (fp, Nothing, Nothing)
 sub_dss :: DecodeStmtsState -> DecodeStmtsState
 sub_dss (fp, lv, _) = (fp, lv, Nothing)
 
-who_dss :: DecodeStmtsState -> Maybe XLPart -> DecodeStmtsState
+who_dss :: DecodeStmtsState -> Maybe XLVar -> DecodeStmtsState
 who_dss (fp, lv, _) who = (fp, lv, who)
-dss_who :: DecodeStmtsState -> Maybe XLPart
+dss_who :: DecodeStmtsState -> Maybe XLVar
 dss_who (_, _, w) = w
 
 loopvs_dss :: DecodeStmtsState -> [XLVar] -> DecodeStmtsState

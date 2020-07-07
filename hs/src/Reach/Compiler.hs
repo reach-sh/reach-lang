@@ -188,7 +188,7 @@ ienv_insert a x v σ =
     Just _ ->
       expect_throw CE_Shadowed a x
 
-ienv_check_part_absent :: Show a => a -> XLPart -> ILEnv a -> Bool
+ienv_check_part_absent :: Show a => a -> XLVar -> ILEnv a -> Bool
 ienv_check_part_absent a p σ =
   case M.lookup p σ of
     Nothing -> True
@@ -295,7 +295,7 @@ do_static_prim h p argivs =
 
 type LoopTy = (IVType, IVType)
 
-do_inline_funcall :: Show a => Maybe LoopTy -> a -> (Maybe XILPart) -> InlineV a -> [InlineV a] -> InlineV a
+do_inline_funcall :: Show a => Maybe LoopTy -> a -> (Maybe XILVar) -> InlineV a -> [InlineV a] -> InlineV a
 do_inline_funcall outer_loopt ch who f argivs =
   case f of
     IV_Con vh _ -> expect_throw CE_CannotApply ch vh
@@ -385,7 +385,7 @@ peval outer_loopt σ e =
             σ_ok = if ok_ij then ienv_insert a ok_p (IV_Var a (ok_p, (LT_BT BT_Address))) σ else σ
             (_, bt, be') = iv_expr a $ peval outer_loopt σ_ok be
             vilvs = zip vs vts
-            (_,vts,_) = iv_exprs a $ map def $ map (XL_Var a) vs
+            (_, vts, _) = iv_exprs a $ map def $ map (XL_Var a) vs
     XL_FromConsensus a be ->
       IV_XIL eff_comm bt (XIL_FromConsensus a be')
       where (_, bt, be') = r a be
@@ -494,8 +494,8 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph rts ps' (add_to_m' m')
  -}
 
 data ANFElem a
-  = ANFExpr a (Role ILPart) ILVar (ILExpr a) 
-  | ANFStmt a (Role ILPart) (ILStmt a)
+  = ANFExpr a (Role ILVar) ILVar (ILExpr a) 
+  | ANFStmt a (Role ILVar) (ILStmt a)
 type ANFMonad ann a = State (Int, S.Seq (ANFElem ann)) a
 
 runANF :: ANFMonad ann a -> a
@@ -518,20 +518,20 @@ consumeANF s = do
   put (nv+1, vs)
   return (nv, s)
 
-appendANF :: ann -> Role ILPart -> ILStmt ann -> ANFMonad ann ()
+appendANF :: ann -> Role ILVar -> ILStmt ann -> ANFMonad ann ()
 appendANF h r s = do
   (nvi, vs) <- get
   put (nvi, vs S.|> (ANFStmt h r s))
   return ()
 
-allocANF :: ann -> Role ILPart -> String -> LType -> ILExpr ann -> ANFMonad ann ILVar
+allocANF :: ann -> Role ILVar -> String -> LType -> ILExpr ann -> ANFMonad ann ILVar
 allocANF h r s t e = do
   (nvi, vs) <- get
   let nv = (nvi, (s, t))
   put (nvi + 1, vs S.|> (ANFExpr h r nv e))
   return nv
 
-allocANFs :: Show ann => ann -> Role ILPart -> String -> [LType] -> [ILExpr ann] -> ANFMonad ann [ILVar]
+allocANFs :: Show ann => ann -> Role ILVar -> String -> [LType] -> [ILExpr ann] -> ANFMonad ann [ILVar]
 allocANFs h mp s ts es = zipWithEqM (impossible "allocANFs") h (allocANF h mp s) ts es
 
 type XILRenaming ann = M.Map XILVar (ILArg ann)
@@ -565,7 +565,7 @@ anf_parg (ρ, args) (h, v) =
     Just _ -> expect_throw CE_UnknownRole h v
   where args' nv = args ++ [nv]
 
-anf_part :: Show ann => (XILRenaming ann, ILPartInfo ann) -> (XILPart, (ann, [(ann, XILVar)])) -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
+anf_part :: Show ann => (XILRenaming ann, ILPartInfo ann) -> (XILVar, (ann, [(ann, XILVar)])) -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
 anf_part (ρ, ips) (p, (h, args)) = do
   (ρ', p') <- makeRename h ρ p
   (ρ'', args') <- foldM anf_parg (ρ', []) args
@@ -575,7 +575,7 @@ anf_part (ρ, ips) (p, (h, args)) = do
 anf_parts :: Show ann => XILPartInfo ann -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
 anf_parts ps = foldM anf_part (M.empty, M.empty) (M.toList ps)
 
-anf_exprs :: Show ann => ann -> Role ILPart -> XILRenaming ann -> [XILExpr ann] -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
+anf_exprs :: Show ann => ann -> Role ILVar -> XILRenaming ann -> [XILExpr ann] -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
 anf_exprs h0 me ρ es mk =
   case es of
     [] -> mk h0 []
@@ -602,7 +602,7 @@ anf_renamed_to_var h ρ v =
     IL_Var _ nv -> nv
     _ -> expect_throw CE_VariableNotParticipant h v
 
-anf_expr :: Show ann => Role ILPart -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
+anf_expr :: Show ann => Role ILVar -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
 anf_expr me ρ e mk =
   case e of
     XIL_Con h b ->
@@ -694,7 +694,7 @@ anf_addVar :: ANFElem ann -> ILTail ann -> ILTail ann
 anf_addVar (ANFExpr h mp v e) t = IL_Let h mp v e t
 anf_addVar (ANFStmt h mp s) t = IL_Do h mp s t
 
-anf_tail :: Show ann => Role ILPart -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
+anf_tail :: Show ann => Role ILVar -> XILRenaming ann -> XILExpr ann -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
 anf_tail me ρ e mk = do
   collectANF anf_addVar (anf_expr me ρ e mk)
 
@@ -739,9 +739,9 @@ instance Semigroup SecurityLevel where
 instance Monoid SecurityLevel where
   mempty = Public
 
-type EPPEnv = M.Map (Role BLPart) (M.Map ILVar SecurityLevel)
+type EPPEnv = M.Map (Role BLVar) (M.Map ILVar SecurityLevel)
 type EPPMonad ann a = State (Int, M.Map Int (Maybe (CHandler ann))) a
-type EPPRes ann = EPPMonad ann (Set.Set BLVar, CTail ann, M.Map BLPart (EPTail ann))
+type EPPRes ann = EPPMonad ann (Set.Set BLVar, CTail ann, M.Map BLVar (EPTail ann))
 
 runEPP :: EPPMonad ann a -> (a, [CHandler ann])
 runEPP am = (a, hs)
@@ -785,7 +785,7 @@ boundBLVar bv = Set.singleton bv
 boundBLVars :: [BLVar] -> Set.Set BLVar
 boundBLVars vs = Set.fromList vs
 
-epp_var :: Show ann => ann -> EPPEnv -> Role BLPart -> ILVar -> (BLVar, SecurityLevel)
+epp_var :: Show ann => ann -> EPPEnv -> Role BLVar -> ILVar -> (BLVar, SecurityLevel)
 epp_var h γ r iv = (iv, st)
   where env = case M.lookup r γ of
           Nothing -> expect_throw CE_UnknownRole h r
@@ -794,15 +794,15 @@ epp_var h γ r iv = (iv, st)
           Nothing -> expect_throw CE_UnknownVar h (r, iv)
           Just v -> v
 
-epp_vars :: Show ann => ann -> EPPEnv -> Role BLPart -> [ILVar] -> [(BLVar, SecurityLevel)]
+epp_vars :: Show ann => ann -> EPPEnv -> Role BLVar -> [ILVar] -> [(BLVar, SecurityLevel)]
 epp_vars h γ r ivs = map (epp_var h γ r) ivs
 
-epp_arg :: Show ann => ann -> EPPEnv -> Role BLPart -> ILArg ann -> ((Set.Set BLVar, BLArg ann), SecurityLevel)
+epp_arg :: Show ann => ann -> EPPEnv -> Role BLVar -> ILArg ann -> ((Set.Set BLVar, BLArg ann), SecurityLevel)
 epp_arg _ _ _ (IL_Con h c) = ((Set.empty, BL_Con h c), Public)
 epp_arg _ γ r (IL_Var h iv) = ((Set.singleton bv, BL_Var h bv), st)
   where (bv, st) = epp_var h γ r iv
 
-epp_args :: Show ann => ann -> EPPEnv -> Role BLPart -> [ILArg ann] -> (Set.Set BLVar, [(BLArg ann, SecurityLevel)])
+epp_args :: Show ann => ann -> EPPEnv -> Role BLVar -> [ILArg ann] -> (Set.Set BLVar, [(BLArg ann, SecurityLevel)])
 epp_args h γ r ivs = (svs, args)
   where cmb = map (epp_arg h γ r) ivs
         svs = Set.unions $ map (\((a,_),_) -> a) cmb
@@ -823,7 +823,7 @@ epp_e_ctc γ e = case e of
           where (fvs, args0) = epp_args h γ RoleContract args
                 args' = map (must_be_public h) $ args0
 
-epp_e_loc :: Show ann => EPPEnv -> ILPart -> ILExpr ann -> (SecurityLevel, Set.Set BLVar, EPExpr ann)
+epp_e_loc :: Show ann => EPPEnv -> ILVar -> ILExpr ann -> (SecurityLevel, Set.Set BLVar, EPExpr ann)
 epp_e_loc γ p e = case e of
   IL_Declassify h a -> (Public, fvs, EP_Arg h a')
     where ((fvs, a'), _) = earg h a
@@ -850,7 +850,7 @@ epp_s_ctc γ e = case e of
  where earg h = epp_arg h γ RoleContract
        eargt h a = must_be_public h $ earg h a
 
-epp_s_loc :: Show ann => EPPEnv -> ILPart -> ILStmt ann -> (Set.Set BLVar, EPStmt ann)
+epp_s_loc :: Show ann => EPPEnv -> ILVar -> ILStmt ann -> (Set.Set BLVar, EPStmt ann)
 epp_s_loc γ p e = case e of
   IL_Transfer h _ _ -> expect_throw CE_LocalLimitation h ("transfer" :: String)
   IL_Claim h ct a -> (fvs, EP_Claim h ct a')
@@ -876,7 +876,7 @@ combine_maps :: Ord k => (k -> u -> v -> w) -> [k] -> M.Map k u -> M.Map k v -> 
 combine_maps f ks m1 m2 = M.fromList $ map cmb ks
   where cmb k = (k, f k (m1 M.! k) (m2 M.! k))
 
-epp_it_ctc_do_if :: Show ann => ann -> [BLPart] -> (EPPEnv, ILArg ann) -> EPPRes ann -> EPPRes ann -> EPPRes ann
+epp_it_ctc_do_if :: Show ann => ann -> [BLVar] -> (EPPEnv, ILArg ann) -> EPPRes ann -> EPPRes ann -> EPPRes ann
 epp_it_ctc_do_if h ps (γc, ca) tres fres = do
   let (svs_ca, cca') = must_be_public h $ epp_arg h γc RoleContract ca
   (svs_t, ctt', ts1) <- tres
@@ -887,7 +887,7 @@ epp_it_ctc_do_if h ps (γc, ca) tres fres = do
                     where (_,ca') = must_be_public h $ epp_arg h γc (RolePart p) ca
   return (svs, C_If h cca' ctt' cft', ts3) 
 
-epp_it_ctc :: Show ann => [BLPart] -> Int -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
+epp_it_ctc :: Show ann => [BLVar] -> Int -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
 epp_it_ctc ps this_h γ ctxt it = case it of
   IL_Ret h args ->
     case ctxt of
@@ -969,7 +969,7 @@ epp_it_ctc ps this_h γ ctxt it = case it of
       _ ->
         expect_throw CE_ContinueNotInLoop h ("EPP" :: String)
 
-epp_it_loc :: Show ann => [BLPart] -> (Int, Set.Set BLVar) -> EPPEnv -> EPPCtxt ann -> CInterval ann -> ILTail ann -> EPPRes ann
+epp_it_loc :: Show ann => [BLVar] -> (Int, Set.Set BLVar) -> EPPEnv -> EPPCtxt ann -> CInterval ann -> ILTail ann -> EPPRes ann
 epp_it_loc ps last_hNvs γ ctxt toint it = case it of
   IL_Ret h al -> return ( Set.empty, C_Halt h, ts)
     where ts = M.fromList $ map mkt ps

@@ -225,7 +225,7 @@ data TheoremKind
   | TBounds
   deriving (Show)
 
-type Theorem = (Bool, (Role ILPart), TheoremKind)
+type Theorem = (Bool, (Role ILVar), TheoremKind)
 
 data VerifyResult = VR Int Int
 
@@ -330,7 +330,7 @@ extract_invariant_variables invt =
     IL_Let _ _ v _ t -> v : extract_invariant_variables t
     _ -> impossible $ "Z3: invalid invariant structure"
 
-z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILPart)) -> IO VerifyResult
+z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILVar)) -> IO VerifyResult
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
   z3_declare z3 cb0 (LT_BT BT_UInt256)

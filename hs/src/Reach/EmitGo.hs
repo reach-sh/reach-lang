@@ -30,8 +30,8 @@ goType' (LT_FixedArray bt _hm) = goBType bt ++ "arr"
 goType :: LType -> Doc a
 goType lt = pretty ("stdlib.Type_" ++ goType' lt)
 
-gopart_name :: BLPart -> String
-gopart_name b = "Part_" ++ (blpart_name b)
+gopart_name :: BLVar -> String
+gopart_name b = "Part_" ++ (blvar_name b)
 
 goString :: String -> Doc a
 goString s = dquotes $ pretty s
@@ -177,7 +177,7 @@ add_from tn (FS_Join p) (x, s) =
   , s)
 add_from _ (FS_From p) (x, s) = (x, Set.insert p s)
 
-goEPTail :: Int -> BLPart -> EPTail b -> (Doc a, Set.Set BLVar)
+goEPTail :: Int -> BLVar -> EPTail b -> (Doc a, Set.Set BLVar)
 goEPTail _tn _who (EP_Ret _ al) = ((goReturn $ goStructMake "Ret" $ map fst alp), Set.unions $ map snd alp)
   where alp = map goArg al
 goEPTail tn who (EP_If _ ca tt ft) = (tp, tfvs)
@@ -245,7 +245,7 @@ goEPTail tn who (EP_FromConsensus _ kt) = (tp, kfvs)
   where tp = vsep [ pretty "// XXX FromConsensus", ktp ]
         (ktp, kfvs) = goEPTail tn who kt
 
-do_to :: BLPart -> (Maybe (BLArg b, EPTail b)) -> Int -> Doc a -> (Doc a, Set.Set BLVar, Doc a)
+do_to :: BLVar -> (Maybe (BLArg b, EPTail b)) -> Int -> Doc a -> (Doc a, Set.Set BLVar, Doc a)
 do_to who mto tn' k_okp =
   case mto of
     Nothing -> (pretty "false", mempty, k_okp)
@@ -254,7 +254,7 @@ do_to who mto tn' k_okp =
             (delayp, delayfvs) = goArg delay
             kp = goIf (goTimeoutFlag tn') k_top k_okp
 
-goPart :: (BLPart, EProgram b) -> Doc a
+goPart :: (BLVar, EProgram b) -> Doc a
 goPart (p, ep@(EP_Prog _ pargs et)) =
   vsep_with_blank [ ity_p, funp ]
   where tn' = 0

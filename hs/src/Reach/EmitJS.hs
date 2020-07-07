@@ -149,7 +149,7 @@ add_from tn (FS_Join p) (x, s) =
   , s)
 add_from _ (FS_From p) (x, s) = (x, Set.insert p s)
 
-jsEPTail :: Bool -> Int -> BLPart -> EPTail b -> (Doc a, Set.Set BLVar)
+jsEPTail :: Bool -> Int -> BLVar -> EPTail b -> (Doc a, Set.Set BLVar)
 jsEPTail stop_at_consensus tn who t =
   case t of
     (EP_Ret _ al) -> ((jsReturn $ jsArray $ map fst alp), Set.unions $ map snd alp)
@@ -176,7 +176,7 @@ jsEPTail stop_at_consensus tn who t =
       where tp = vsep [ dp, k_p ]
             dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+> pretty "await" <+> srp <> semi
             srp = jsApply "ctc.sendrecv"
-              [ jsString $ blpart_name who
+              [ jsString $ blvar_name who
               , jsCon (Con_I $ fromIntegral i_ok)
               , jsCon (Con_I $ fromIntegral $ length msg)
               , vs
@@ -200,7 +200,7 @@ jsEPTail stop_at_consensus tn who t =
             rp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+>
                  pretty "await" <+>
                  (jsApply "ctc.recv"
-                   [ jsString $ blpart_name who
+                   [ jsString $ blvar_name who
                    , jsCon (Con_I $ fromIntegral i_ok)
                    , jsCon (Con_I $ fromIntegral $ length msg)
                    , delayp ])
@@ -235,11 +235,11 @@ jsEPTail stop_at_consensus tn who t =
                     where (delayp, delayfvs) = jsArg delay
                           (k_top, tofvs) = jsEPTail False tn' who k_to
 
-jsPart :: (BLPart, EProgram b) -> Doc a
+jsPart :: (BLVar, EProgram b) -> Doc a
 jsPart (p, (EP_Prog _ pargs et)) =
   pretty "export" <+> jsFunction pn ([ pretty "stdlib", pretty "ctc", pretty "interact" ] ++ pargs_vs) bodyp'
   where tn' = 0
-        pn = blpart_name p
+        pn = blvar_name p
         pargs_vs = map jsVar pargs
         bodyp' = vsep [ pretty "const" <+> jsTxn tn' <+> pretty "= { balance: 0, value: 0 }" <> semi
                       , bodyp ]

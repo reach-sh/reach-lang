@@ -139,7 +139,6 @@ type Effects = S.Set Effect
 {- Expanded Language (the language after expansion) -}
 
 type XLVar = String
-type XLPart = XLVar
 
 data XLType a
   = XLT_BT a BaseType
@@ -152,12 +151,12 @@ data XLExpr a
   | XL_Prim a EP_Prim
   | XL_If a (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Claim a ClaimType (XLExpr a)
-  | XL_ToConsensus a (XLPart, [XLVar], (XLExpr a)) (Maybe ((XLExpr a), (XLExpr a))) (XLExpr a)
+  | XL_ToConsensus a (XLVar, [XLVar], (XLExpr a)) (Maybe ((XLExpr a), (XLExpr a))) (XLExpr a)
   | XL_FromConsensus a (XLExpr a)
   | XL_Values a [XLExpr a]
   | XL_Transfer a XLVar (XLExpr a)
   | XL_Declassify a (XLExpr a)
-  | XL_Let a (Maybe XLPart) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
+  | XL_Let a (Maybe XLVar) (Maybe [XLVar]) (XLExpr a) (XLExpr a)
   | XL_While a [XLVar] (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a) (XLExpr a)
   | XL_Continue a (XLExpr a)
   | XL_Interact a String (XLType a) [XLExpr a]
@@ -172,7 +171,7 @@ data XLDef a
   | XL_DefineFun a XLVar [XLVar] (XLExpr a)
   deriving (Show,Eq,Generic,NFData)
 
-type XLPartInfo a = (M.Map XLPart (a, [(a, XLVar, (XLType a))]))
+type XLPartInfo a = (M.Map XLVar (a, [(a, XLVar, (XLType a))]))
 
 data XLProgram  a=
   XL_Prog a [XLDef a] (XLPartInfo a) (XLExpr a)
@@ -181,7 +180,6 @@ data XLProgram  a=
 --- Inlined Language (the language after expansion)
 
 type XILVar = (String, LType)
-type XILPart = XILVar
 
 data XILExpr a
   = XIL_Con a Constant
@@ -189,12 +187,12 @@ data XILExpr a
   | XIL_PrimApp a EP_Prim LType [XILExpr a]
   | XIL_If a Effects (XILExpr a) [LType] (XILExpr a) (XILExpr a)
   | XIL_Claim a ClaimType (XILExpr a)
-  | XIL_ToConsensus a (Bool, XILPart, [XILVar], (XILExpr a)) (Maybe ((XILExpr a), (XILExpr a))) (XILExpr a)
+  | XIL_ToConsensus a (Bool, XILVar, [XILVar], (XILExpr a)) (Maybe ((XILExpr a), (XILExpr a))) (XILExpr a)
   | XIL_FromConsensus a (XILExpr a)
   | XIL_Values a [XILExpr a]
   | XIL_Transfer a XLVar (XILExpr a)
   | XIL_Declassify a LType (XILExpr a)
-  | XIL_Let a (Maybe XILPart) (Maybe [XILVar]) (XILExpr a) (XILExpr a)
+  | XIL_Let a (Maybe XILVar) (Maybe [XILVar]) (XILExpr a) (XILExpr a)
   | XIL_While a [XILVar] (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a) (XILExpr a)
   | XIL_Continue a (XILExpr a)
   | XIL_Interact a String LType [XILExpr a]
@@ -202,7 +200,7 @@ data XILExpr a
   | XIL_ArrayRef a LType (XILExpr a) (XILExpr a)
   deriving (Show,Eq)
 
-type XILPartInfo a = (M.Map XILPart (a, [(a, XILVar)]))
+type XILPartInfo a = (M.Map XILVar (a, [(a, XILVar)]))
 
 data XILProgram a =
   XIL_Prog a [LType] (XILPartInfo a) (XILExpr a)
@@ -228,7 +226,6 @@ data XILProgram a =
  -}
 
 type ILVar = (Int, XILVar)
-type ILPart = ILVar
 
 data ILArg a
   = IL_Con a Constant
@@ -255,16 +252,16 @@ data ILStmt a
 data ILTail a
   = IL_Ret a [ILArg a]
   | IL_If a (ILArg a) (ILTail a) (ILTail a)
-  | IL_Let a (Role ILPart) ILVar (ILExpr a) (ILTail a)
-  | IL_Do a (Role ILPart) (ILStmt a) (ILTail a)
-  | IL_ToConsensus a (Bool, ILPart, [ILVar], (ILArg a)) (Maybe ((ILArg a), (ILTail a))) (ILTail a)
+  | IL_Let a (Role ILVar) ILVar (ILExpr a) (ILTail a)
+  | IL_Do a (Role ILVar) (ILStmt a) (ILTail a)
+  | IL_ToConsensus a (Bool, ILVar, [ILVar], (ILArg a)) (Maybe ((ILArg a), (ILTail a))) (ILTail a)
   | IL_FromConsensus a (ILTail a)
   | IL_While a [ILVar] [ILArg a] (ILTail a) (ILTail a) (ILTail a) (ILTail a)
   | IL_Continue a [ILArg a]
   deriving (Show,Eq)
 
 type ILPartArgs a = [ILVar]
-type ILPartInfo a = (M.Map ILPart (ILPartArgs a))
+type ILPartInfo a = (M.Map ILVar (ILPartArgs a))
 
 data ILProgram a =
   IL_Prog a [LType] (ILPartInfo a) (ILTail a)
@@ -292,14 +289,12 @@ type BLVar = ILVar
 blvar_type :: BLVar -> LType
 blvar_type (_, (_, lt)) = lt
 
-type BLPart = BLVar
-
-blpart_name :: BLPart -> String
-blpart_name (_, (pn, _)) = pn
+blvar_name :: BLVar -> String
+blvar_name (_, (n, _)) = n
 
 data FromSpec
-  = FS_From BLPart
-  | FS_Join BLPart
+  = FS_From BLVar
+  | FS_Join BLVar
   deriving (Show,Eq)
 
 data BLArg a
@@ -423,7 +418,7 @@ data CProgram a
   deriving (Show,Eq)
 
 -- -- Backend
-type BLParts a = M.Map BLPart (EProgram a)
+type BLParts a = M.Map BLVar (EProgram a)
 
 data BLProgram a
   = BL_Prog a [LType] (BLParts a) (CProgram a)

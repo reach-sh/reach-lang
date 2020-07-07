@@ -133,7 +133,7 @@ prettyILVars vs = parens $ hsep $ map prettyILVar vs
 prettyILPartArg :: ILVar -> Doc ann
 prettyILPartArg v = group $ brackets $ prettyILVar v
 
-prettyILPart :: (ILPart, [ILVar]) -> Doc ann
+prettyILPart :: (ILVar, [ILVar]) -> Doc ann
 prettyILPart (p, vs) =
   group $ parens $ pretty "define-participant" <+> pretty p <> body
   where pvs = map prettyILPartArg vs
@@ -227,7 +227,7 @@ prettyBLVar v = prettyILVar v
 prettyBLVars :: [BLVar] -> Doc ann
 prettyBLVars bs = parens $ hsep $ map prettyBLVar bs
 
-prettyBLPart :: (BLPart, EProgram b) -> Doc ann
+prettyBLPart :: (BLVar, EProgram b) -> Doc ann
 prettyBLPart (p, (EP_Prog _ args t)) =
   group $ parens $ pretty "define-participant" <+> pretty p <+> (nest 2 $ hardline <> vsep [argp, emptyDoc, pretty t])
   where argp = group $ parens $ vsep $ map prettyBLVar args
