@@ -285,7 +285,7 @@ comp_cstmt cs ts s =
         ++ code "bnz" [ "revert" ]
         ++ code "gtxn" [ txn_is, "Sender" ]
         ++ comp_con (Con_BS "me")
-        ++ code "app_global_gets" [ ]
+        ++ code "app_global_get" [ ]
         ++ code "!=" [ ]
         ++ code "bnz" [ "revert" ])
 
@@ -391,7 +391,7 @@ comp_chandler next_lab (C_Handler loc from_spec interval (last_i, svs) msg body 
           ++ code "bz" [ "revert" ]
           ++ code "gtxn" [ "1", "Receiver" ]
           ++ comp_con (Con_BS "me")
-          ++ code "app_global_gets" [ ]
+          ++ code "app_global_get" [ ]
           ++ code "==" []
           ++ code "bz" [ "revert" ]
           --- check that the amount agrees with argument 2
@@ -441,7 +441,7 @@ comp_chandler next_lab (C_Handler loc from_spec interval (last_i, svs) msg body 
             ++ int_to_ls
             ++ hash_ls
             ++ comp_con (Con_BS "state")
-            ++ code "app_global_gets" [ ]
+            ++ code "app_global_get" [ ]
             ++ code "!=" []
             ++ code "bnz" [ "revert" ]
             ++ body_ls
@@ -464,7 +464,7 @@ cp_to_teal (C_Prog _ hs) = TEAL ls
                       ++ code "bz" [ next_lab ]
                       --- Check that global(me) is null
                       ++ comp_con (Con_BS "me")
-                      ++ code "app_global_gets" [ ]
+                      ++ code "app_global_get" [ ]
                       ++ comp_con (Con_BS "")
                       ++ code "==" []
                       ++ code "bnz" [ "revert" ]
