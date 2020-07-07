@@ -12,6 +12,20 @@ packages:
   original:
     hackage: base64-0.4.1
 - completed:
+    hackage: dir-traverse-0.2.2.3@sha256:cbb1e3d0d1f9a3cfcbdc58071fba8a2063bae36bab68279647a331f9a408c18a,2137
+    pantry-tree:
+      size: 389
+      sha256: ba5b192c9bbd353ca46b3d308d4519ecf7a298e1d559c4350ddcee9591112246
+  original:
+    hackage: dir-traverse-0.2.2.3@sha256:cbb1e3d0d1f9a3cfcbdc58071fba8a2063bae36bab68279647a331f9a408c18a,2137
+- completed:
+    hackage: extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993
+    pantry-tree:
+      size: 959
+      sha256: 51d9fd7481a6459247322c57df3f0c799294760a5a9db2f6cf851b3b9bb18cee
+  original:
+    hackage: extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993
+- completed:
     hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
     pantry-tree:
       size: 273
@@ -19,12 +33,40 @@ packages:
   original:
     hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
 - completed:
+    hackage: microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
+    pantry-tree:
+      size: 421
+      sha256: ad9e1d73267680bd860c83f5910c671d641410d571b7f7ce2dae97e494ae7fcd
+  original:
+    hackage: microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
+- completed:
     hackage: posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c,1160
     pantry-tree:
       size: 386
       sha256: e9824c495e3e2a3a1f737b5d2fcdd0ea1ce6b2919cec252c1ef7ca3b19dedf57
   original:
     hackage: posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c
+- completed:
+    hackage: trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
+    pantry-tree:
+      size: 561
+      sha256: ac206379a8cc718331a68f50b1c62ffe3ce959f125602a5af53e4c20a9f29943
+  original:
+    hackage: trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
+- completed:
+    hackage: trial-optparse-applicative-0.0.0.0@sha256:ba05edfc327a281766df5e0f44d91229e6a98afaf59abe1894b293453f076192,2449
+    pantry-tree:
+      size: 298
+      sha256: 7abd3e2f92d6d5c4397a548a48b2fca4fcfc5e14e87e5e1682d8e82258eeac90
+  original:
+    hackage: trial-optparse-applicative-0.0.0.0@sha256:ba05edfc327a281766df5e0f44d91229e6a98afaf59abe1894b293453f076192,2449
+- completed:
+    hackage: trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441
+    pantry-tree:
+      size: 273
+      sha256: 3152e712f79027cb673c5b87378895ac41506697fe567a0ac84f2cfb38210354
+  original:
+    hackage: trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441
 - completed:
     name: simple-smt
     version: 0.9.4
@@ -58,6 +100,17 @@ packages:
   original:
     git: https://github.com/reach-sh/haskell-evm.git
     commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
+- completed:
+    name: stan
+    version: 0.0.0.0
+    git: https://github.com/kowainik/stan.git
+    pantry-tree:
+      size: 4937
+      sha256: 3427d1ff914424b4a0b8e9f7b96836ab96e60bd5b1ca718baff516400bce4748
+    commit: fa1da0ba23796c6d57f5a2e77bbb8ef6b43388c5
+  original:
+    git: https://github.com/kowainik/stan.git
+    commit: fa1da0ba23796c6d57f5a2e77bbb8ef6b43388c5
 snapshots:
 - completed:
     size: 531696
