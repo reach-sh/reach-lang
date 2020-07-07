@@ -12,3 +12,9 @@ push:
 .PHONY: publish
 publish:
 	echo Go to https://hackage.haskell.org/packages/upload
+
+# Requires stan; install from source
+# https://github.com/kowainik/stan
+.PHONY: check
+check:
+	stan
