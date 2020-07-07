@@ -26,9 +26,6 @@ packages:
   original:
     hackage: posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c
 - completed:
-    cabal-file:
-      size: 736
-      sha256: c94edcb0ffc8aca632c8971bd800403e121b9cd456c166d4087eb96dcc267c3a
     name: simple-smt
     version: 0.9.4
     git: https://github.com/jeapostrophe/simple-smt.git
@@ -40,9 +37,6 @@ packages:
     git: https://github.com/jeapostrophe/simple-smt.git
     commit: 1189da0abaf9a0a48c4a99e0e195af5b893ee69c
 - completed:
-    cabal-file:
-      size: 3899
-      sha256: 06238479380c78a7e0fa19da6576fb1750f44c25235c942fd33af6f3969fef85
     name: language-javascript
     version: 0.6.0.13
     git: https://github.com/jeapostrophe/language-javascript.git
@@ -54,9 +48,6 @@ packages:
     git: https://github.com/jeapostrophe/language-javascript.git
     commit: 1433b39fc089021368d1e361ae7eccce218acb39
 - completed:
-    cabal-file:
-      size: 1313
-      sha256: 7234d82b95a56ccfebe161fa1a599b9f7c518ee99ef9e1c4d9f7e230bbac1359
     name: haskell-evm
     version: 0.1.0
     git: https://github.com/reach-sh/haskell-evm.git
@@ -69,7 +60,7 @@ packages:
     commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
 snapshots:
 - completed:
-    size: 523700
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/14/7.yaml
-    sha256: 8e3f3c894be74d71fa4bf085e0a8baae7e4d7622d07ea31a52736b80f8b9bb1a
-  original: lts-14.7
+    size: 531237
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/1.yaml
+    sha256: 954b6b14b0c8130732cf4773f7ebb4efc9a44600d1a5265d142868bf93462bc6
+  original: lts-16.1
