@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Reach.Compiler where
 
@@ -203,6 +204,12 @@ type_count_expect a cnt t =
   else expect_throw CE_TypeCount a (cnt, l)
   where l = length t
 
+type_count_expect_one :: Show a => a -> IVType -> LType
+type_count_expect_one a t = case t of
+  [lt] -> lt
+  _ -> expect_throw CE_TypeCount a (1::Int, length t)
+
+
 type_equal :: Show a => a -> IVType -> IVType -> IVType
 type_equal a at et =
   if at == et then et
@@ -248,7 +255,7 @@ iv_exprs ra ivs = (iep, its, ies)
         ies = map (\(_,_,z)->z) pies
         its = type_all_single ra $ map (\(_,y,_)->y) pies
         iep = joins (map (\(x,_,_)->x) pies)
-        
+
 iv_can_copy :: InlineV a -> Bool
 iv_can_copy (IV_XIL _ _ _) = False
 iv_can_copy _ = True
@@ -320,7 +327,8 @@ do_inline_funcall outer_loopt ch who f argivs =
                 (o_σ_let, o_arp, o_eff_formals, o_eff_argies)
               where o_σ_copy = ienv_insert lh formal argiv i_σ
                     (this_p, this_ts, this_x) = iv_expr ch argiv
-                    [ this_t ] = (type_count_expect ch 1 this_ts)
+                    this_t = (type_count_expect_one ch this_ts)
+
                     o_σ_let = ienv_insert lh formal (IV_Var ch (formal, this_t)) i_σ
                     o_arp = i_arp \/ this_p
                     o_eff_formals = (formal, this_t) : i_eff_formals
@@ -330,7 +338,9 @@ do_inline_funcall outer_loopt ch who f argivs =
 
 peval_ensure_var :: Show a => a -> LType -> XLVar -> ILEnv a -> XILVar
 peval_ensure_var a bt v σ = iv
-  where (_, XIL_Var _ iv) = iv_expr_expect a [bt] (peval Nothing σ (XL_Var a v))
+  where iv = case iv_expr_expect a [bt] (peval Nothing σ (XL_Var a v)) of
+          (_, XIL_Var _ iv') -> iv'
+          _ -> error "Expected XIL_VAR" -- XXX
 
 teval :: Show a => ILEnv a -> XLType a -> LType
 teval σ xt =
@@ -398,7 +408,7 @@ peval outer_loopt σ e =
     XL_Declassify a de ->
       IV_XIL dp [dt] (XIL_Declassify a dt de')
       where (dp, dts, de') = r a de
-            [dt] = (type_count_expect a 1 dts)
+            dt = (type_count_expect_one a dts)
     XL_Let a mp mvs ve be ->
       let mip = mp >>= (\p -> Just $ if ienv_check_part_absent a p σ then
                                        (p, (LT_BT BT_Address))
@@ -441,7 +451,7 @@ peval outer_loopt σ e =
     XL_Lambda a formals body ->
       IV_Clo (a, formals, body) σ
     XL_FunApp a fe es ->
-      do_inline_funcall outer_loopt a Nothing (peval outer_loopt σ fe) (map (peval outer_loopt σ) es) 
+      do_inline_funcall outer_loopt a Nothing (peval outer_loopt σ fe) (map (peval outer_loopt σ) es)
     XL_Digest a args ->
       IV_XIL argsp [LT_BT BT_UInt256] (XIL_Digest a args')
       where (argsp, _, args') = iv_exprs a $ map def args
@@ -628,14 +638,17 @@ anf_expr me ρ e mk =
                       return $ IL_If h ca tt ft
             k _ es = expect_throw CE_TypeCount h (1 :: Integer, (length es))
     XIL_Claim h ct ae ->
-      anf_expr me ρ ae (\_ [ aa ] -> ret_stmt h (IL_Claim h ct aa))
+      anf_expr me ρ ae $ \_ aas -> case aas of
+        [ aa ] -> ret_stmt h (IL_Claim h ct aa)
+        _ -> error "Expected exactly one ILArg"  -- XXX
     XIL_FromConsensus h le -> do
       lt <- anf_tail RoleContract ρ le mk
       return $ IL_FromConsensus h lt
     XIL_ToConsensus h (ok_ij, from, ins, pe) mto ce -> do
       let from' = anf_renamed_to_var h ρ from
       anf_expr (RolePart from') ρ pe
-        (\ _ [pa] -> do
+        (\ _ pas -> case pas of
+          [pa] -> do
             let ins' = vsOnly $ map (anf_renamed_to h ρ) ins
             ct <- anf_tail RoleContract ρ ce mk
             let done mto' = return $ IL_ToConsensus h (ok_ij, from', ins', pa) mto' ct
@@ -643,18 +656,25 @@ anf_expr me ρ e mk =
               Nothing -> done Nothing
               Just (de, te) ->
                 anf_expr RoleContract ρ de
-                (\ _ [da] -> do
-                    tt <- anf_tail RoleContract ρ te anf_ktop
-                    done $ Just (da, tt)))
+                (\ _ das -> case das of
+                    [da] -> do
+                      tt <- anf_tail RoleContract ρ te anf_ktop
+                      done $ Just (da, tt)
+                    _ -> error "Expected [ILArg] to have exactly one element")  -- XXX
+          _ -> error "Expected [ILArg] to have exactly one element") -- XXX
     XIL_Values h args ->
       anf_exprs h me ρ args mk
     XIL_Transfer h to ae ->
       anf_expr me ρ ae
-      (\_ [ aa ] ->
-         let IL_Var _ tov = map_throw CE_UnknownRole h ρ to in
-         ret_stmt h (IL_Transfer h tov aa))
+      (\_ aas -> case aas of
+          [ aa ] -> case map_throw CE_UnknownRole h ρ to of
+            (IL_Var _ tov) -> ret_stmt h (IL_Transfer h tov aa)
+            _ -> error "Expected an IL_Var"  -- XXX
+          _ -> error "Expected [ILArg] to have exactly one element")  -- XXX
     XIL_Declassify h dt ae ->
-      anf_expr me ρ ae (\_ [ aa ] -> ret_expr h "Declassify" dt (IL_Declassify h aa))
+      anf_expr me ρ ae (\_ aas -> case aas of
+                          [aa] -> ret_expr h "Declassify" dt (IL_Declassify h aa)
+                          _ -> error "Expected [ILArg] to have exactly one element")  -- XXX
     XIL_Let h mwho mvs ve be ->
       anf_expr who ρ ve k
       where who = case mwho of
@@ -675,14 +695,16 @@ anf_expr me ρ e mk =
               kt <- anf_tail me ρ' ke mk
               return $ IL_While h loopvs' initas untilt invt bodyt kt
             anf_knocontinue kh _ = expect_throw CE_WhileNoContinue kh h
-    XIL_Continue h nve -> 
+    XIL_Continue h nve ->
       anf_expr me ρ nve (\_ nvas -> return $ IL_Continue h nvas)
     XIL_Interact h m bt args ->
       anf_exprs h me ρ args (\_ args' -> ret_expr h "Interact" bt (IL_Interact h m bt args'))
     XIL_Digest h args ->
       anf_exprs h me ρ args (\_ args' -> ret_expr h "Digest" (LT_BT BT_UInt256) (IL_Digest h args'))
     XIL_ArrayRef h bt ae ee ->
-      anf_exprs h me ρ [ae, ee] (\_ [ae', ee'] -> ret_expr h "ArrayRef" bt (IL_ArrayRef h ae' ee'))
+      anf_exprs h me ρ [ae, ee] (\_ ae'_ee' -> case ae'_ee' of
+                                    [ae', ee'] -> ret_expr h "ArrayRef" bt (IL_ArrayRef h ae' ee')
+                                    _ -> error "Expected [ILArg] to have exactly 2 elements") -- XXX
   where ret_expr h s t ne = do
           nv <- allocANF h me s t ne
           mk h [ IL_Var h nv ]
@@ -818,7 +840,9 @@ epp_e_ctc γ e = case e of
   IL_Digest h args -> (Public, fvs, C_Digest h args')
     where (fvs, args') = args_help h args
   IL_ArrayRef h ae ee -> (Public, fvs, C_ArrayRef h ae' ee')
-    where (fvs, [ae', ee']) = args_help h [ae, ee]
+    where (fvs, ae', ee') = case args_help h [ae, ee] of
+            (fvs_, [ae'_, ee'_]) -> (fvs_, ae'_, ee'_)
+            _ -> error "Expected list to have exactly 2 elements" -- XXX
   where args_help h args = (fvs, args')
           where (fvs, args0) = epp_args h γ RoleContract args
                 args' = map (must_be_public h) $ args0
@@ -834,7 +858,9 @@ epp_e_loc γ p e = case e of
   IL_Digest h args -> (slvl, fvs, EP_Digest h args')
     where (slvl, fvs, args') = args_help h args
   IL_ArrayRef h ae ee -> (slvl, fvs, EP_ArrayRef h ae' ee')
-    where (slvl, fvs, [ae', ee']) = args_help h [ae, ee]
+    where (slvl, fvs, ae', ee') = case args_help h [ae, ee] of
+            (slvl_, fvs_, [ae'_, ee'_]) -> (slvl_, fvs_, ae'_, ee'_)
+            _ -> error "Expected list to have exactly 2 elements" -- XXX
  where earg h = epp_arg h γ (RolePart p)
        args_help h args = (slvl, fvs, args')
          where (fvs, args'st) = epp_args h γ (RolePart p) args
@@ -885,7 +911,7 @@ epp_it_ctc_do_if h ps (γc, ca) tres fres = do
   let ts3 = combine_maps mkt ps ts1 ts2
             where mkt p tt' ft' = EP_If h ca' tt' ft'
                     where (_,ca') = must_be_public h $ epp_arg h γc (RolePart p) ca
-  return (svs, C_If h cca' ctt' cft', ts3) 
+  return (svs, C_If h cca' ctt' cft', ts3)
 
 epp_it_ctc :: Show ann => [BLVar] -> Int -> EPPEnv -> EPPCtxt ann -> ILTail ann -> EPPRes ann
 epp_it_ctc ps this_h γ ctxt it = case it of
@@ -893,7 +919,9 @@ epp_it_ctc ps this_h γ ctxt it = case it of
     case ctxt of
       EC_WhileUntil kres bres -> do
         epp_it_ctc_do_if h ps (γ, arg0) kres bres
-        where [ arg0 ] = args
+        where arg0 = case args of
+                [arg] -> arg
+                _ -> error "Expected exactly one arg" -- XXX
       EC_Invariant -> do
         return (mempty, C_Halt h, mempty)
       _ ->

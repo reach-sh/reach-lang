@@ -50,7 +50,7 @@ goVarType_short_strp v = goString $ goVarType_short_str v
 
 goVarType_longp :: BLVar -> Doc a
 goVarType_longp (_, (_, bt)) = goType bt
-  
+
 goVarAndType :: BLVar -> Doc a
 goVarAndType v = goVar v <+> goVarType_longp v
 
@@ -151,9 +151,9 @@ goEPExpr _ (EP_Interact _ m _ al) = (True, (ip, (Set.unions $ map snd alp)))
         ip = pretty "<-" <+> goApply ("interact." ++ m) (map fst alp)
 goEPExpr _ (EP_Digest _ al) = (False, ((goApply "stdlib.Keccak256" $ map fst alp), (Set.unions $ map snd alp)))
   where alp = map goArg al
-goEPExpr _ (EP_ArrayRef _ ae ee) = (False, ((ae' <> pretty "[" <> ee' <> pretty "]"), (Set.unions $ map snd alp)))
-  where alp = map goArg [ae, ee]
-        [ae', ee'] = map fst alp
+goEPExpr _ (EP_ArrayRef _ ae ee) = (False, ((ae_doc <> pretty "[" <> ee_doc <> pretty "]"), (Set.unions [ae_set, ee_set])))
+  where (ae_doc, ae_set) = goArg ae
+        (ee_doc, ee_set) = goArg ee
 
 goAssert :: Doc a -> Doc a
 goAssert a = goApply "stdlib.Assert" [ a ] <> semi
@@ -168,7 +168,7 @@ goEPStmt (EP_Claim _ _ a) kp = (vsep [ goAssert ap, kp ], afvs)
   where (ap, afvs) = goArg a
 goEPStmt (EP_Transfer _ to a) kp = (vsep [ goTransfer to ap, kp ], fvs)
   where (ap, afvs) = goArg a
-        fvs = Set.insert to afvs 
+        fvs = Set.insert to afvs
 
 add_from :: Int -> FromSpec -> (Doc a, Set.Set BLVar) -> (Doc a, Set.Set BLVar)
 add_from tn (FS_Join p) (x, s) =

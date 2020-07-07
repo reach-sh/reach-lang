@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE NamedFieldPuns, OverloadedStrings, TemplateHaskell #-}
 
 module Reach.EmitSol where
 
@@ -236,7 +236,9 @@ solCExpr :: SolInMemory -> SolRenaming a -> CExpr b -> Doc a
 solCExpr sim ρ (C_PrimApp _ pr al) = solPrimApply pr $ map (solArg sim ρ) al
 solCExpr sim ρ (C_Digest _ al) = solHash $ map (solArg sim ρ) al
 solCExpr sim ρ (C_ArrayRef _ ae ee) = ae' <> "[" <> ee' <> "]"
-  where [ ae', ee' ] = map (solArg sim ρ) [ae, ee]
+  where ae' = solArg sim ρ ae
+        ee' = solArg sim ρ ee
+
 
 solCStmt :: SolInMemory -> SolRenaming a -> CStmt b -> Doc a
 solCStmt _ _ (C_Claim _ CT_Possible _) = emptyDoc
@@ -344,17 +346,28 @@ emit_sol (BL_Prog _ _ _ (C_Prog ca hs)) =
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
 
 type CompiledSol = (String, String)
+data CompiledSolRec = CompiledSolRec
+  { csrAbi :: T.Text
+  , csrCode :: T.Text }
+
+instance FromJSON CompiledSolRec where
+  parseJSON = withObject "CompiledSolRec" $ \ o -> do
+    ctcs <- o .: "contracts"
+    case HM.keys ctcs of
+      (_:thectc:_) -> do
+        ctc <- ctcs .: thectc
+        abit <- ctc .: "abi"
+        codebodyt <- ctc .: "bin"
+        return CompiledSolRec {csrAbi = abit, csrCode = codebodyt}
+      _ -> fail "Expected contracts object to have at least 2 keys"
+
 
 extract :: Value -> CompiledSol
-extract v = (abi, code)
-  where Object hm = v
-        Just (Object ctcs) = HM.lookup "contracts" hm
-        [ _, thectc ] = HM.keys ctcs
-        Just (Object ctc) = HM.lookup thectc ctcs
-        Just (String abit) = HM.lookup "abi" ctc
-        abi = T.unpack abit
-        Just (String codebodyt) = HM.lookup "bin" ctc
-        code = T.unpack codebodyt
+extract v = case fromJSON v of
+    Error e -> error e  -- XXX
+    Success CompiledSolRec{csrAbi, csrCode} ->
+      ( T.unpack csrAbi, T.unpack csrCode )
+
 
 compile_sol :: FilePath -> BLProgram a -> IO CompiledSol
 compile_sol solf blp = do
