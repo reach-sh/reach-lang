@@ -1101,7 +1101,9 @@ epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
 
 data CompilerOpts = CompilerOpts
   { output_dir :: FilePath
-  , source :: FilePath }
+  , source :: FilePath
+  , skipGoal :: Bool
+  }
 
 compile :: CompilerOpts -> IO ()
 compile copts = do
@@ -1124,7 +1126,11 @@ compile copts = do
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
   ebc <- emit_evm (outn "evm") blp
-  tbc <- emit_teal (outn "teal") blp
+  tbc <- case skipGoal copts of
+    True -> do
+      putStrLn "WARNING: Skipping goal, using fake teal output"
+      return ("XXX", "XXX", "XXX")
+    False -> emit_teal (outn "teal") blp
   out "mjs" (show (emit_js blp (cs, ebc) tbc))
   out "go" (show (emit_go blp (cs, ebc) tbc))
   exitSuccess
