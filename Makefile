@@ -36,3 +36,7 @@ publish-all:
 	cd js && $(MAKE) publish
 	cd examples/rps && $(MAKE) publish
 	cd examples/multisig && $(MAKE) publish
+
+.PHONY: rebuild-and-run-all-examples
+rebuild-and-run-all-examples:
+	cd examples && time $(MAKE) clean-all build-all run-all
