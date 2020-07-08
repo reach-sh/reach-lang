@@ -509,3 +509,16 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
  closeTo( Who, value ) }
 
 @index{closeTo} Returns a function which accepts no arguments, has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| with the result @reachin{value}.
+
+@section{Comments}
+
+@reach{
+  // single-line comment
+  /* multi-line
+   * comment
+   */ }
+
+Comments are program text which is ignored by the compiler.
+Text starting with @reachin{//} up until the end of the line forms a @deftech{single-line comment}.
+Text enclosed with @reachin{/*} and @reachin{*/} forms a @deftech{multi-line comment}.
+It is @tech{invalid} to nest a multi-line comment within a multi-line comment.
