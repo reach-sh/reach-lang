@@ -47,6 +47,13 @@ packages:
   original:
     hackage: posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c
 - completed:
+    hackage: simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
+    pantry-tree:
+      size: 253
+      sha256: 2c3dc6abc101832026902feb1f4d0cfd227dc0cddf9db857c30da38c80ac387c
+  original:
+    hackage: simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
+- completed:
     hackage: trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
     pantry-tree:
       size: 561
@@ -67,17 +74,6 @@ packages:
       sha256: 3152e712f79027cb673c5b87378895ac41506697fe567a0ac84f2cfb38210354
   original:
     hackage: trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441
-- completed:
-    name: simple-smt
-    version: 0.9.4
-    git: https://github.com/jeapostrophe/simple-smt.git
-    pantry-tree:
-      size: 357
-      sha256: 19c0565ed35d9aeb40fce20fbe8d2b64767596edf182931f967c8307b859a539
-    commit: 1189da0abaf9a0a48c4a99e0e195af5b893ee69c
-  original:
-    git: https://github.com/jeapostrophe/simple-smt.git
-    commit: 1189da0abaf9a0a48c4a99e0e195af5b893ee69c
 - completed:
     name: haskell-evm
     version: 0.1.0
