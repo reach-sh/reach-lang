@@ -12,8 +12,6 @@ extra-deps:
   - trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441
   - git: https://github.com/jeapostrophe/simple-smt.git
     commit: 1189da0abaf9a0a48c4a99e0e195af5b893ee69c
-  - git: https://github.com/jeapostrophe/language-javascript.git
-    commit: 1433b39fc089021368d1e361ae7eccce218acb39
   - git: https://github.com/reach-sh/haskell-evm.git
     commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
   - git: https://github.com/kowainik/stan.git

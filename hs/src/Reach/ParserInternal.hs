@@ -102,7 +102,13 @@ instance ExtractTP JSAccessor where
 instance ExtractTP JSObjectProperty where
   etp (JSPropertyNameandValue a _ _) = etp a
   etp (JSPropertyIdentRef a _) = etp a
+  etp (JSObjectMethod a) = etp a
+
+instance ExtractTP JSMethodDefinition where
+  etp (JSMethodDefinition a _ _ _ _) = etp a
+  etp (JSGeneratorMethodDefinition a _ _ _ _ _) = etp a
   etp (JSPropertyAccessor a _ _ _ _ _) = etp a
+
 
 instance ExtractTP JSExpression where
   etp (JSIdentifier a _) = etp a
@@ -114,9 +120,11 @@ instance ExtractTP JSExpression where
   etp (JSRegEx a _) = etp a
   etp (JSArrayLiteral a _ _) = etp a
   etp (JSAssignExpression a _ _) = etp a
+  etp (JSAwaitExpression a _) = etp a
   etp (JSCallExpression a _ _ _) = etp a
   etp (JSCallExpressionDot a _ _) = etp a
   etp (JSCallExpressionSquare a _ _ _) = etp a
+  etp (JSClassExpression a _ _ _ _ _) = etp a
   etp (JSCommaExpression a _ _) = etp a
   etp (JSExpressionBinary a _ _) = etp a
   etp (JSExpressionParen a _ _) = etp a
@@ -124,6 +132,7 @@ instance ExtractTP JSExpression where
   etp (JSExpressionTernary a _ _ _ _) = etp a
   etp (JSArrowExpression a _ _) = etp a
   etp (JSFunctionExpression a _ _ _ _ _) = etp a
+  etp (JSGeneratorExpression a _ _ _ _ _ _) = etp a
   etp (JSMemberDot a _ _) = etp a
   etp (JSMemberExpression a _ _ _) = etp a
   etp (JSMemberNew a _ _ _ _) = etp a
@@ -134,11 +143,14 @@ instance ExtractTP JSExpression where
   etp (JSTemplateLiteral a _ _ _) = etp a
   etp (JSUnaryExpression a _) = etp a
   etp (JSVarInitExpression a _) = etp a
+  etp (JSYieldExpression a _) = etp a
+  etp (JSYieldFromExpression a _ _) = etp a
 
 instance ExtractTP JSStatement where
   etp (JSStatementBlock a _ _ _) = etp a
   etp (JSBreak a _ _) = etp a
   etp (JSLet a _ _) = etp a
+  etp (JSClass a _ _ _ _ _ _) = etp a
   etp (JSConstant a _ _) = etp a
   etp (JSContinue a _ _) = etp a
   etp (JSDoWhile a _ _ _ _ _ _) = etp a
@@ -154,7 +166,9 @@ instance ExtractTP JSStatement where
   etp (JSForConstOf a _ _ _ _ _ _ _) = etp a
   etp (JSForOf a _ _ _ _ _ _) = etp a
   etp (JSForVarOf a _ _ _ _ _ _ _) = etp a
+  etp (JSAsyncFunction a _ _ _ _ _ _ _) = etp a
   etp (JSFunction a _ _ _ _ _ _) = etp a
+  etp (JSGenerator a _ _ _ _ _ _ _) = etp a
   etp (JSIf a _ _ _ _) = etp a
   etp (JSIfElse a _ _ _ _ _ _) = etp a
   etp (JSLabelled a _ _) = etp a
@@ -322,8 +336,8 @@ expectId :: FilePath -> JSExpression -> XLVar
 expectId _ (JSIdentifier _ x) = x
 expectId fp j = expect_throw PE_Identifier fp j
 
-expectIdent :: FilePath -> JSIdent -> XLVar
-expectIdent _ (JSIdentName _ x) = x
+expectIdent :: FilePath -> JSExpression -> XLVar
+expectIdent _ (JSIdentifier _ x) = x
 expectIdent fp j = expect_throw PE_Identifier fp j
 
 decodeLetLHS :: FilePath -> JSExpression -> [XLVar]
