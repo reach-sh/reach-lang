@@ -157,7 +157,7 @@ z3_assert_declare z3 vs lty =
   case lty of
     LT_BT bt -> z3_assert_declare_bt z3 vs bt
     LT_FixedArray bt hm ->
-      forLoop 0 (<= hm) (+1) h
+      forLoop 0 (< hm) (+1) h
       where h i = z3_assert_declare_bt z3
                   (List [ Atom "select", vs, Atom (show i)]) bt
 
