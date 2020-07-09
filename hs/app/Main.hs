@@ -8,7 +8,7 @@ import Options.Applicative
 import Reach.Compiler
 
 compiler :: FilePath -> Bool -> Parser CompilerOpts
-compiler cwd skipGoalEnvOpt = CompilerOpts
+compiler cwd expCon = CompilerOpts
   <$> strOption
   ( long "output"
     <> short 'o'
@@ -17,14 +17,14 @@ compiler cwd skipGoalEnvOpt = CompilerOpts
     <> showDefault
     <> value cwd )
   <*> strArgument (metavar "SOURCE")
-  <*> pure skipGoalEnvOpt
+  <*> pure expCon
 
 main :: IO ()
 main = do
   cwd <- getCurrentDirectory
-  skipGoalEnvOpt <- checkTruthyEnv "REACHC_SKIP_GOAL"
+  expCon <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_CONNECTORS"
 
-  let opts = info ( compiler cwd skipGoalEnvOpt <**> helper )
+  let opts = info ( compiler cwd expCon <**> helper )
                ( fullDesc
                <> progDesc "verify and compile an Reach program"
                <> header "reachc - Reach compiler" )

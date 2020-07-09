@@ -515,7 +515,7 @@ inline (XL_Prog ph defs ps m) = XIL_Prog ph rts ps' (add_to_m' m')
  -}
 
 data ANFElem a
-  = ANFExpr a (Role ILVar) ILVar (ILExpr a) 
+  = ANFExpr a (Role ILVar) ILVar (ILExpr a)
   | ANFStmt a (Role ILVar) (ILStmt a)
 type ANFMonad ann a = State (Int, S.Seq (ANFElem ann)) a
 
@@ -1102,7 +1102,7 @@ epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
 data CompilerOpts = CompilerOpts
   { output_dir :: FilePath
   , source :: FilePath
-  , skipGoal :: Bool
+  , enableExperimentalConnectors :: Bool
   }
 
 compile :: CompilerOpts -> IO ()
@@ -1125,12 +1125,15 @@ compile copts = do
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
-  ebc <- emit_evm (outn "evm") blp
-  tbc <- case skipGoal copts of
+  (ebc, tbc) <- case enableExperimentalConnectors copts of
+    False-> do
+      let fake_ebc = "XXX"
+          fake_tbc = ("XXX", "XXX", "XXX")
+      return (fake_ebc, fake_tbc)
     True -> do
-      putStrLn "WARNING: Skipping goal, using fake teal output"
-      return ("XXX", "XXX", "XXX")
-    False -> emit_teal (outn "teal") blp
+      ebc <- emit_evm (outn "evm") blp
+      tbc <- emit_teal (outn "teal") blp
+      return (ebc, tbc)
   out "mjs" (show (emit_js blp (cs, ebc) tbc))
   out "go" (show (emit_go blp (cs, ebc) tbc))
   exitSuccess
