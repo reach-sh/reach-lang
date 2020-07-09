@@ -1,5 +1,6 @@
-Reach files in this folder fail to compile.
+Reach files in this folder fail to compile, or demonstrate some other issue.
 
 An accompanying blah.md file for each blah.rsh file explains the compilation failure.
 
-These compilation failures are either unexpected, or too hard to understand. (Or both.)
+These issues are either unexpected behavior,
+or the error message is too hard to understand. (Or both.)

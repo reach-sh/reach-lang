@@ -1,4 +1,5 @@
 ```
+$ export REACHC_ENABLE_EXPERIMENTAL_CONNECTORS=true
 $ reachc rps_double.rsh
 
 ...
