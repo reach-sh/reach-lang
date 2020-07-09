@@ -1,4 +1,6 @@
 version: 2.1
+orbs:
+  slack: circleci/slack@3.4.2
 jobs:
   build-and-test:
     docker:
@@ -27,6 +29,7 @@ jobs:
       - run:
           name: test hs
           command: (cd hs && stack test || echo allowed to fail)
+      - slack/status
 
 workflows:
   build-and-test:
