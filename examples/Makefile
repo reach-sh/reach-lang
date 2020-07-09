@@ -1,4 +1,4 @@
-examples = rps nim
+examples = rps nim multisig
 
 .PHONY: build-all
 build-all:
