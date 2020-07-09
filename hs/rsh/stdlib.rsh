@@ -20,12 +20,12 @@ function ensure(f, x) {
   assert(f(x));
   return x; };
 
-function precommit (x) {
+function makeCommitment (x) {
   const salt = random();
   const commitment = digest(salt, x);
   return [commitment, salt]; }
 
-function check_commit (commitment, salt, x) {
+function checkCommitment (commitment, salt, x) {
   return require(commitment == digest(salt, x)); }
 
 function closeTo(Who, result) {

@@ -4,7 +4,7 @@ index 56f3167..d796513 100644
 +++ b/examples/rps/rsh/rps.rsh
 @@ -67,7 +67,7 @@ function main() {
        return showOutcome(A_QUITS); });
-   check_commit(commitA, saltA, handA);
+   checkCommitment(commitA, saltA, handA);
    require(isHand(handA));
 -  const outcome = winner(handA, handB);
 +  const outcome = A_WINS //winner(handA, handB);

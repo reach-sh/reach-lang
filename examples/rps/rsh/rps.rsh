@@ -29,7 +29,7 @@ function main() {
 
   A.only(() => {
     const _handA = getHand();
-    const [_commitA, _saltA] = precommit(_handA);
+    const [_commitA, _saltA] = makeCommitment(_handA);
     const commitA = declassify(_commitA);
     interact.commits(); });
   A.publish(commitA)
@@ -50,7 +50,7 @@ function main() {
     interact.reveals(showHand(handB)); });
   A.publish(saltA, handA)
     .timeout(DELAY, closeTo(B, showOutcome(A_QUITS)));
-  check_commit(commitA, saltA, handA);
+  checkCommitment(commitA, saltA, handA);
   require(isHand(handA));
   const outcome = winner(handA, handB);
   assert(implies(outcome == A_WINS, isHand(handA)));

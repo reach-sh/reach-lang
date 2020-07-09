@@ -20,6 +20,16 @@ Reach @deftech{executables} start with @reachin{'reach @|reach-short-vers| exe';
 
 Reach @deftech{libraries} start with @reachin{'reach @|reach-short-vers| lib';} and are followed by a sequence of @tech{imports} and @tech{identifier definitions}.
 
+@section{Comments}
+
+@reach{
+  // single-line comment
+  /* multi-line
+   * comment
+   */ }
+
+Comments are text that is ignored by the compiler.  Text starting with @litchar{//} up until the end of the line forms a @deftech{single-line comment}.  Text enclosed with @litchar{/*} and @litchar{*/} forms a @deftech{multi-line comment}.  It is @tech{invalid} to nest a @tech{multi-line comment} within a @tech{multi-line comment}.
+
 @section{Imports}
 
 @reach{import "games-of-chance.rsh";}
@@ -493,32 +503,19 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
 
 @(hrule)
 @reach{
- precommit( x ) }
+ makeCommitment( x ) }
 
-@index{precommit} Returns two values, @reachin{[ commitment, salt ]}, where @reachin{salt} is a random @reachin{uint256}, and
+@index{makeCommitment} Returns two values, @reachin{[ commitment, salt ]}, where @reachin{salt} is a random @reachin{uint256}, and
 @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
 
 @(hrule)
 @reach{
- check_commit( commitment, salt, x ) }
+ checkCommitment( commitment, salt, x ) }
 
-@index{check_commit} Makes a @tech{requirement} that @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
+@index{checkCommitment} Makes a @tech{requirement} that @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
 
 @(hrule)
 @reach{
  closeTo( Who, value ) }
 
 @index{closeTo} Returns a function which accepts no arguments, has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| with the result @reachin{value}.
-
-@section{Comments}
-
-@reach{
-  // single-line comment
-  /* multi-line
-   * comment
-   */ }
-
-Comments are program text which is ignored by the compiler.
-Text starting with @reachin{//} up until the end of the line forms a @deftech{single-line comment}.
-Text enclosed with @reachin{/*} and @reachin{*/} forms a @deftech{multi-line comment}.
-It is @tech{invalid} to nest a multi-line comment within a multi-line comment.

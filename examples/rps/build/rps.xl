@@ -60,7 +60,7 @@ XL_Prog rsh/rps.rsh:[1m[92m0[0m:[1m[92m0[0m
                 [36m([0m XL_FunApp STDLIB:[1m[92m20[0m:[1m[92m11[0m [33m([0m XL_Var STDLIB:[1m[92m20[0m:[1m[92m10[0m [1m[97m"[0m[1m[94mf[0m[1m[97m"[0m [33m)[0m [33m[[0m XL_Var STDLIB:[1m[92m20[0m:[1m[92m12[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [33m][0m [36m)[0m
             [35m)[0m [35m([0m XL_Var STDLIB:[1m[92m21[0m:[1m[92m10[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:[1m[92m23[0m:[1m[92m1[0m [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m
+    [1m[96m,[0m XL_DefineFun STDLIB:[1m[92m23[0m:[1m[92m1[0m [1m[97m"[0m[1m[94mmakeCommitment[0m[1m[97m"[0m [1m[93m[[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m [1m[93m][0m
         [1m[93m([0m XL_Let STDLIB:[1m[92m24[0m:[1m[92m3[0m Nothing
             [35m([0m Just [36m[[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m [36m][0m [35m)[0m
             [35m([0m XL_FunApp STDLIB:[1m[92m24[0m:[1m[92m22[0m [36m([0m XL_Prim STDLIB:[1m[92m24[0m:[1m[92m22[0m RANDOM [36m)[0m [36m[[0m[36m][0m [35m)[0m
@@ -78,7 +78,7 @@ XL_Prog rsh/rps.rsh:[1m[92m0[0m:[1m[92m0[0m
                 [36m)[0m
             [35m)[0m
         [1m[93m)[0m
-    [1m[96m,[0m XL_DefineFun STDLIB:[1m[92m28[0m:[1m[92m1[0m [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m
+    [1m[96m,[0m XL_DefineFun STDLIB:[1m[92m28[0m:[1m[92m1[0m [1m[97m"[0m[1m[94mcheckCommitment[0m[1m[97m"[0m
         [1m[93m[[0m [1m[97m"[0m[1m[94mcommitment[0m[1m[97m"[0m
         [1m[93m,[0m [1m[97m"[0m[1m[94msalt[0m[1m[97m"[0m
         [1m[93m,[0m [1m[97m"[0m[1m[94mx[0m[1m[97m"[0m
@@ -539,7 +539,7 @@ XL_Prog rsh/rps.rsh:[1m[92m0[0m:[1m[92m0[0m
                                                         [1m[93m,[0m [1m[97m"[0m[1m[94m_saltA[0m[1m[97m"[0m
                                                         [1m[93m][0m
                                                     [1m[96m)[0m
-                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:[1m[92m32[0m:[1m[92m41[0m [1m[93m([0m XL_Var rsh/rps.rsh:[1m[92m32[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mprecommit[0m[1m[97m"[0m [1m[93m)[0m [1m[93m[[0m XL_Var rsh/rps.rsh:[1m[92m32[0m:[1m[92m42[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m
+                                                    [1m[96m([0m XL_FunApp rsh/rps.rsh:[1m[92m32[0m:[1m[92m46[0m [1m[93m([0m XL_Var rsh/rps.rsh:[1m[92m32[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mmakeCommitment[0m[1m[97m"[0m [1m[93m)[0m [1m[93m[[0m XL_Var rsh/rps.rsh:[1m[92m32[0m:[1m[92m47[0m [1m[97m"[0m[1m[94m_handA[0m[1m[97m"[0m [1m[93m][0m [1m[96m)[0m
                                                     [1m[96m([0m XL_Let rsh/rps.rsh:[1m[92m33[0m:[1m[92m5[0m [1m[93m([0m Just [1m[97m"[0m[1m[94mA[0m[1m[97m"[0m [1m[93m)[0m
                                                         [1m[93m([0m Just [35m[[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m [35m][0m [1m[93m)[0m
                                                         [1m[93m([0m XL_Declassify rsh/rps.rsh:[1m[92m33[0m:[1m[92m31[0m [35m([0m XL_Var rsh/rps.rsh:[1m[92m33[0m:[1m[92m32[0m [1m[97m"[0m[1m[94m_commitA[0m[1m[97m"[0m [35m)[0m [1m[93m)[0m
@@ -646,11 +646,11 @@ XL_Prog rsh/rps.rsh:[1m[92m0[0m:[1m[92m0[0m
                                                                                                                             [1m[36m][0m
                                                                                                                         [1m[35m)[0m
                                                                                                                     [33m)[0m
-                                                                                                                    [33m([0m XL_Let rsh/rps.rsh:[1m[92m53[0m:[1m[92m15[0m Nothing Nothing
-                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m53[0m:[1m[92m15[0m [1m[36m([0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mcheck_commit[0m[1m[97m"[0m [1m[36m)[0m
-                                                                                                                            [1m[36m[[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m16[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m
-                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m25[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m
-                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m32[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
+                                                                                                                    [33m([0m XL_Let rsh/rps.rsh:[1m[92m53[0m:[1m[92m18[0m Nothing Nothing
+                                                                                                                        [1m[35m([0m XL_FunApp rsh/rps.rsh:[1m[92m53[0m:[1m[92m18[0m [1m[36m([0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m3[0m [1m[97m"[0m[1m[94mcheckCommitment[0m[1m[97m"[0m [1m[36m)[0m
+                                                                                                                            [1m[36m[[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m19[0m [1m[97m"[0m[1m[94mcommitA[0m[1m[97m"[0m
+                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m28[0m [1m[97m"[0m[1m[94msaltA[0m[1m[97m"[0m
+                                                                                                                            [1m[36m,[0m XL_Var rsh/rps.rsh:[1m[92m53[0m:[1m[92m35[0m [1m[97m"[0m[1m[94mhandA[0m[1m[97m"[0m
                                                                                                                             [1m[36m][0m
                                                                                                                         [1m[35m)[0m
                                                                                                                         [1m[35m([0m XL_Let rsh/rps.rsh:[1m[92m54[0m:[1m[92m10[0m Nothing Nothing
