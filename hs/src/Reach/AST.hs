@@ -325,8 +325,7 @@ data EPTail a
   | EP_If a (BLArg a) (EPTail a) (EPTail a)
   | EP_Let a BLVar (EPExpr a) (EPTail a)
   | EP_Do a (EPStmt a) (EPTail a)
-  | EP_SendRecv a [BLVar] (FromSpec, Int, [BLVar], (BLArg a), (EPTail a)) (Maybe (BLArg a, EPTail a))
-  | EP_Recv a [BLVar] (FromSpec, Int, [BLVar], (EPTail a)) (Maybe (BLArg a, EPTail a))
+  | EP_SendRecv a [BLVar] (Maybe (BLArg a)) (FromSpec, Int, [BLVar], (EPTail a)) (Maybe (BLArg a, EPTail a))
   | EP_FromConsensus a (EPTail a)
   | EP_Loop a Int [BLVar] [BLArg a] (EPTail a)
   | EP_Continue a Int [BLVar] [(BLArg a)]
@@ -359,9 +358,7 @@ ept_interacts t =
     EP_If _ _ tt ft -> ept_interacts tt <> ept_interacts ft
     EP_Let _ _ le bt -> epe_interacts le <> ept_interacts bt
     EP_Do _ _ bt -> ept_interacts bt
-    EP_SendRecv _ _ (_, _, _, _, ot) mto ->
-      ept_interacts ot <> emto_interacts mto
-    EP_Recv _ _ (_, _, _, ot) mto ->
+    EP_SendRecv _ _ _ (_, _, _, ot) mto ->
       ept_interacts ot <> emto_interacts mto
     EP_Loop _ _ _ _ bt -> ept_interacts bt
     EP_Continue _ _ _ _ -> mempty

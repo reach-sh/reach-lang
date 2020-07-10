@@ -181,12 +181,8 @@ instance Pretty (EPTail a) where
   pretty (EP_If _ ca tt ft) = prettyIf ca tt ft
   pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x->x) v e bt
   pretty (EP_Do _ s bt) = prettyDo (\x->x) s bt
-  pretty (EP_SendRecv _ svs (fs_ok, hi_ok, vs, pa, bt) info_to) =
-    vsep [group $ parens $ pretty "send!" <+> pretty fs_ok <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty pa <+> prettyTimeout info_to,
-          pretty bt]
-  pretty (EP_Recv _ svs (fs_ok, hi_ok, vs, bt) info_to) =
-    vsep [group $ parens $ pretty "define-values" <+> prettyBLVars svs <+> prettyBLVars vs <+>
-          (parens $ pretty "recv!" <+> pretty fs_ok <+> pretty hi_ok <+> prettyTimeout info_to),
+  pretty (EP_SendRecv _ svs m_send_pa (fs_ok, hi_ok, vs, bt) info_to) =
+    vsep [group $ parens $ pretty "sendrecv" <+> pretty fs_ok <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty m_send_pa <+> prettyTimeout info_to,
           pretty bt]
   pretty (EP_Loop _ which loopvs initas bt) =
     group $ parens $ pretty "loop" <+> pretty which <+> (prettyVarArgs prettyBLVar loopvs initas) <> nest 2 (hardline <> prettyBegin bt)

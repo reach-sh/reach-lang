@@ -1082,9 +1082,12 @@ epp_it_loc ps last_hNvs γ ctxt toint it = case it of
               where mkt p pt1 pt2 =
                       let to_info = case mdelay of
                                           Nothing -> Nothing
-                                          Just delay' -> Just (delay', pt2) in
-                        if p /= fromp then EP_Recv h svs_all_l (ok_fs, hn_okay, what', pt1) to_info
-                        else EP_SendRecv h svs_all_l (ok_fs, hn_okay, what', howmuch', pt1) to_info
+                                          Just delay' -> Just (delay', pt2)
+                          m_send_amt = if (p == fromp)
+                            then Just howmuch'
+                            else Nothing
+                      in
+                        EP_SendRecv h svs_all_l m_send_amt (ok_fs, hn_okay, what', pt1) to_info
     return (svs_all, ct2, ts2)
   IL_FromConsensus h _ -> expect_throw CE_LocalLimitation h ("transition from consensus" :: String)
   IL_While h _ _ _ _ _ _ -> expect_throw CE_LocalLimitation h ("while" :: String)
