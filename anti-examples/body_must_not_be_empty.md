@@ -1,3 +1,9 @@
+Now, we get the error:
+
+```
+reachc: body_must_not_be_empty.rsh:8:11: expected a valid terminator statement, such as return or continue (given: TP)
+```
+
 ```
 reachc: body_must_not_be_empty.rsh: body must not be empty (given: [])
 ```

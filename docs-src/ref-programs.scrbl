@@ -148,6 +148,8 @@ Distinct from @tech{tails} are @deftech{continuations} which include everything 
 
 @tech{Tails} are statically apparent from the structure of the program source code, while @tech{continuations} are influenced by function calls.
 
+A sequence of @tech{statements} must end in a @deftech{terminator statement} (a @tech{statement} with no @tech{tail}), such as a @tech{return statement} or @tech{continue statement}.
+
 The remainder of this section enumerates each kind of @tech{statement}.
 
 @subsection{Return statements}
@@ -157,7 +159,7 @@ The remainder of this section enumerates each kind of @tech{statement}.
  return 3 + 4;
  return f(2, false); }
 
-A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression} evaluates to the same @tech{value} as @reachin{EXPR}. It must have an empty @tech{tail}. For example,
+A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression} evaluates to the same @tech{value} as @reachin{EXPR}. A @tech{return statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}. For example,
 
 @reach{
  { return 1;
@@ -320,7 +322,9 @@ A @deftech{continue statement} may occur within a @tech{while statement}'s @tech
  [ VAR_0, ..., VAR_n ] = UPDATE_EXPR;
  continue; }
 
-where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are the variables bound by the nearest enclosing @tech{while statement} and @reachin{UPDATE_EXPR} is an @tech{expression} which evaluates to @reachin{n} values. The @tech{tail} of a @tech{continue statement} must be empty.
+where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are the variables bound by the nearest enclosing @tech{while statement} and @reachin{UPDATE_EXPR} is an @tech{expression} which evaluates to @reachin{n} values.
+
+A @tech{continue statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}.
 
 @section{Expressions}
 

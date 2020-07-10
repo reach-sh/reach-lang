@@ -31,6 +31,9 @@ instance Show TP where
 class ExtractTP a where
   etp :: a -> Maybe TokenPosn
 
+instance ExtractTP TP where
+  etp (TP (_, x)) = x
+
 instance ExtractTP JSAnnot where
   etp a = tpa a
 
@@ -269,7 +272,7 @@ expect_throw pe fp j = error $ show tp ++ ": " ++ msg ++ " (given: " ++ (show $ 
           PE_UnaryOp -> "expected a valid unary operator"
           PE_Arg1 -> "expected a single argument to declassify and claims"
           PE_Expression -> "expected a valid expression form"
-          PE_EmptyBody -> "body must not be empty"
+          PE_EmptyBody -> "expected a valid terminator statement, such as return or continue"
           PE_IfElse -> "expected an else for if"
           PE_AfterReturn -> "nothing is allowed after a return"
           PE_ContinueArgs -> "expected all loop variables at continue"
@@ -411,7 +414,7 @@ decodeExpr dss je =
     (JSExpressionParen _ j _) -> decodeExpr dss j
     --- No postfix
     (JSExpressionTernary c a t _ f) -> XL_If (tp a) (decodeExpr dss c) (decodeExpr dss t) (decodeExpr dss f)
-    (JSArrowExpression params a s) -> XL_Lambda (tp a) (decodeParams (dss_fp dss) params) (decodeStmts dss [s])
+    (JSArrowExpression params a s) -> XL_Lambda (tp a) (decodeParams (dss_fp dss) params) (decodeStmts (tp a) dss [s])
     --- No function w/ name
     --- No JSMemberDot
     --- XXX/FIXME - Remove this
@@ -454,66 +457,67 @@ decodeExpr dss je =
 data LetNothing
   = LN_Flatten
   | LN_Null
-letnothing :: LetNothing -> TP -> DecodeStmtsState -> XLExpr TP -> [JSStatement] -> XLExpr TP
-letnothing flatok t dss e ks =
+letnothing :: LetNothing -> TP -> DecodeStmtsState -> XLExpr TP -> TP -> [JSStatement] -> XLExpr TP
+letnothing flatok t dss e prev ks =
   case ks of
     [] -> case flatok of
       LN_Flatten -> e
       LN_Null -> XL_Let t (dss_who dss) Nothing e (XL_Values t [])
-    _ -> XL_Let t (dss_who dss) Nothing e (decodeStmts dss ks)
+    _ -> XL_Let t (dss_who dss) Nothing e (decodeStmts prev dss ks)
 
 mergeStmts :: JSStatement -> [JSStatement] -> [JSStatement]
 mergeStmts (JSStatementBlock _ ss1 _ _) ss2 = ss1 ++ ss2
 mergeStmts s ss = s:ss
 
-decodeStmts :: DecodeStmtsState -> [JSStatement] -> XLExpr TP
-decodeStmts dss js =
+decodeStmts :: TP -> DecodeStmtsState -> [JSStatement] -> XLExpr TP
+decodeStmts prev dss js =
   let ds = decodeStmts in
   case js of
-    j@[] -> expect_throw PE_EmptyBody (dss_fp dss) j
-    ((JSStatementBlock a ss _ _):k) ->
-      letnothing LN_Flatten (tp a) dss (ds dss ss) k
+    [] -> expect_throw PE_EmptyBody (dss_fp dss) prev
+    ((JSStatementBlock a ss _ preva):k) ->
+      letnothing LN_Flatten (tp a) dss (ds (tp a) dss ss) (sp preva) k
     --- No Break
     --- No Let
-    ((JSConstant a (JSLOne (JSVarInitExpression v (JSVarInit _ e))) _):k) ->
-      XL_Let (tp a) (dss_who dss) (Just (decodeLetLHS (dss_fp dss) v)) (decodeExpr dss e) (ds dss k)
+    ((JSConstant a (JSLOne (JSVarInitExpression v (JSVarInit _ e))) preva):k) ->
+      XL_Let (tp a) (dss_who dss) (Just (decodeLetLHS (dss_fp dss) v)) (decodeExpr dss e) (ds (sp preva) dss k)
     --- FIXME Support functions and enums like at top-level?
     --- No DoWhile
     --- No For, ForIn, ForVar, ForVarIn, ForLet, ForLetIn, ForLetOf, ForOf, ForVarOf
     --- No Function
     (j@(JSIf _ _ _ _ _):_k) -> expect_throw PE_IfElse (dss_fp dss) j
-    ((JSIfElse a _ cond _ true _ false):k) ->
-      letnothing LN_Flatten (tp a) dss theif k
-      where theif = (XL_If (tp a) (decodeExpr dss cond) (ds dss [true]) (ds dss [false]))
+    ((JSIfElse a _ cond prev_t true prev_f false):k) ->
+      letnothing LN_Flatten (tp a) dss theif tp_pre_k k
+      where theif = (XL_If (tp a) (decodeExpr dss cond) (ds (tp prev_t) dss [true]) (ds (tp prev_f) dss [false]))
+            tp_pre_k = tp prev_f
     --- No Labelled
     --- No EmptyStatement
     --- No AssignStatement
     --- Publish + Pay + Timeout
-    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
-      decodeToConsensus a p (Just evs) (Just eamt) (Just targs) ek
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _ (JSIdentifier _ "timeout")) _ targs _) preva):ek) ->
+      decodeToConsensus a p (Just evs) (Just eamt) (Just targs) (sp preva) ek
     --- Pay + Timeout
-    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
-      decodeToConsensus a p Nothing (Just eamt) (Just targs) ek
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _ (JSIdentifier _ "timeout")) _ targs _) preva):ek) ->
+      decodeToConsensus a p Nothing (Just eamt) (Just targs) (sp preva) ek
     --- Publish + Timeout
-    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "timeout")) _ targs _) _):ek) ->
-      decodeToConsensus a p (Just evs) Nothing (Just targs) ek
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "timeout")) _ targs _) preva):ek) ->
+      decodeToConsensus a p (Just evs) Nothing (Just targs) (sp preva) ek
     --- Publish + Pay
-    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) _):ek) ->
-      decodeToConsensus a p (Just evs) (Just eamt) Nothing ek
+    ((JSExpressionStatement (JSCallExpression (JSCallExpressionDot (JSMemberExpression (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _) preva):ek) ->
+      decodeToConsensus a p (Just evs) (Just eamt) Nothing (sp preva) ek
     --- Pay
-    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _ _):ek) ->
-      decodeToConsensus a p Nothing (Just eamt) Nothing ek
+    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "pay")) _ (JSLOne eamt) _ preva):ek) ->
+      decodeToConsensus a p Nothing (Just eamt) Nothing (sp preva) ek
     --- Publish
-    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _ _):ek) ->
-      decodeToConsensus a p (Just evs) Nothing Nothing ek
+    ((JSMethodCall (JSMemberDot (JSIdentifier a p) _ (JSIdentifier _ "publish")) _ evs _ preva):ek) ->
+      decodeToConsensus a p (Just evs) Nothing Nothing (sp preva) ek
     --- Only
     ((JSMethodCall (JSMemberDot (JSIdentifier _a p) _ (JSIdentifier _ "only"))
-       _ (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s)) _ _):k) ->
-      ds (who_dss dss (Just p)) (mergeStmts s k)
-    ((JSMethodCall (JSIdentifier a "commit") _ JSLNil _ _):k) ->
-      XL_FromConsensus (tp a) (ds (sub_dss dss) k)
-    ((JSMethodCall f ann1 args ann2 _semi):k) ->
-      letnothing LN_Null (tp ann1) dss (decodeExpr dss (JSMemberExpression f ann1 args ann2)) k
+       _ (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s)) _ preva):k) ->
+      ds (sp preva) (who_dss dss (Just p)) (mergeStmts s k)
+    ((JSMethodCall (JSIdentifier a "commit") _ JSLNil _ preva):k) ->
+      XL_FromConsensus (tp a) (ds (sp preva) (sub_dss dss) k)
+    ((JSMethodCall f ann1 args ann2 semi):k) ->
+      letnothing LN_Null (tp ann1) dss (decodeExpr dss (JSMemberExpression f ann1 args ann2)) (sp semi) k
     (j@(JSReturn a me _):k) ->
       case k of
         [] -> case me of
@@ -525,9 +529,10 @@ decodeStmts dss js =
     --- No Try (yet)
     --- No Variable
     --- No With
-    ((JSVariable a (JSLOne (JSVarInitExpression loop_var_je (JSVarInit _ einit_e))) _):(JSMethodCall (JSIdentifier _ "invariant") _ (JSLOne einvariant_e) _ _):(JSWhile _ _ econd_e _ ebody_e):k) ->
-      XL_While h loop_vs (decodeExpr dss einit_e) stop_e (decodeExpr dss einvariant_e) (ds dss' [ebody_e]) (ds dss k)
+    ((JSVariable a (JSLOne (JSVarInitExpression loop_var_je (JSVarInit _ einit_e))) _):(JSMethodCall (JSIdentifier _ "invariant") _ (JSLOne einvariant_e) _ _):(JSWhile _ _ econd_e prev_ebody ebody_e):k) ->
+      XL_While h loop_vs (decodeExpr dss einit_e) stop_e (decodeExpr dss einvariant_e) (ds (tp prev_ebody) dss' [ebody_e]) (ds tp_pre_k dss k)
       where dss' = loopvs_dss dss loop_vs
+            tp_pre_k = tp prev_ebody --- XXX not the best
             loop_vs = decodeLetLHS (dss_fp dss) loop_var_je
             cond_e = (decodeExpr dss econd_e)
             stop_e = XL_FunApp h (XL_Var h "not") [ cond_e ]
@@ -539,11 +544,11 @@ decodeStmts dss js =
       else
         expect_throw PE_ContinueArgs (dss_fp dss) j
     ((JSExpressionStatement e semi):k) ->
-      letnothing LN_Null (sp semi) dss (decodeExpr dss e) k
+      letnothing LN_Null (sp semi) dss (decodeExpr dss e) (sp semi) k
     (j:_) -> expect_throw PE_Statement (dss_fp dss) j
   where tp = dss_tp dss . tpa
         sp = dss_tp dss . spa
-        decodeToConsensus a p mevs meamt metargs ek =
+        decodeToConsensus a p mevs meamt metargs prev_ek ek =
           XL_ToConsensus h (p, vs, amt) mto k'
           where k' = XL_Let h Nothing Nothing amt_claim conk
                 amt_claim = XL_Claim h CT_Require (XL_FunApp h (XL_Prim h (CP PEQ)) [ (XL_FunApp h (XL_Prim h (CP TXN_VALUE)) []), amt ])
@@ -554,7 +559,7 @@ decodeStmts dss js =
                 amt = case meamt of
                   Nothing -> XL_Con h (Con_I 0)
                   Just eamt -> decodeExpr dss eamt
-                conk = decodeStmts (sub_dss dss) ek
+                conk = decodeStmts prev_ek (sub_dss dss) ek
                 mto = case metargs of
                         Nothing -> Nothing
                         Just etargs -> case flattenJSCL etargs of
@@ -564,7 +569,8 @@ decodeStmts dss js =
                           _ -> error "Pattern match fail" -- XXX Nothing?
 
 decodeBlock :: FilePath -> JSBlock -> XLExpr TP
-decodeBlock fp (JSBlock _ ss _) = decodeStmts (make_dss fp) ss
+decodeBlock fp (JSBlock prev ss _) = decodeStmts (dss_tp dss (tpa prev)) dss ss
+  where dss = (make_dss fp)
 
 decodeDef :: FilePath -> JSStatement -> [XLDef TP]
 decodeDef fp j =
