@@ -1,4 +1,4 @@
-# Reach
+# Reach [![CircleCI Build Status](https://circleci.com/gh/reach-sh/reach-lang.svg?style=shield)](https://circleci.com/gh/reach-sh/reach-lang) [![GitHub License](https://img.shields.io/github/license/reach-sh/reach-lang)](https://raw.githubusercontent.com/reach-sh/reach-lang/master/LICENSE)
 
 We are building the next generation blockchain development platform that will completely transform the paradigm of decentralized application (DApp) development. DApps have enormous potential, but are impractical today because of barriers that have kept blockchain development risky and limited to specialists, like cryptographers. The Reach platform is a comprehensive environment that enables junior developers to build useful and safe DApps without years of experience and easily deploy them on a variety of different blockchain networks.
 

@@ -29,7 +29,8 @@ jobs:
       - run:
           name: test hs
           command: (cd hs && stack test || echo allowed to fail)
-      - slack/status
+      - slack/status:
+          fail_only: true
 
 workflows:
   build-and-test:
