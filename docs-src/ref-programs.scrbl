@@ -157,9 +157,12 @@ The remainder of this section enumerates each kind of @tech{statement}.
 @reach{
  return 17;
  return 3 + 4;
- return f(2, false); }
+ return f(2, false);
+ return; }
 
-A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression} evaluates to the same @tech{value} as @reachin{EXPR}. A @tech{return statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}. For example,
+A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression} evaluates to the same @tech{value} as @reachin{EXPR}. As a special case, @reachin{return;} is interpreted the same as @reachin{return [];}, that is, it evaluates to zero values.
+
+A @tech{return statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}. For example,
 
 @reach{
  { return 1;
