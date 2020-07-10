@@ -31,7 +31,7 @@ function main() {
             && isOutcome(outcome));
   while ( outcome == DRAW ) {
     commit();
-    
+
     A.only(() => {
       const _handA = getHand();
       const [_commitA, _saltA] = makeCommitment(_handA);
@@ -76,9 +76,9 @@ function main() {
 
   assert(outcome != DRAW);
   if ( outcome == A_QUITS ) {
-    transfer(balance()).to(B); }
+    return transfer(balance()).to(B); }
   else if ( outcome == B_QUITS ) {
-    transfer(balance()).to(A); }
+    return transfer(balance()).to(A); }
   else {
     const [getsA, getsB] = (() => {
       if (outcome == A_WINS) {
@@ -86,7 +86,8 @@ function main() {
       else {
         return [0, 2 * wagerAmount]; } })();
     transfer(escrowAmount + getsA).to(A);
-    transfer(getsB).to(B); }
+    transfer(getsB).to(B);
+    return; }
   commit();
 
   interact.whilecount(count);

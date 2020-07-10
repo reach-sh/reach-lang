@@ -43,13 +43,15 @@ function winner(handA, handB) {
   return ensure(isOutcome, _winner(handA, handB)); }
 
 function fair_if(handX, optionX, canWinX) {
-  possible((handX == optionX) && canWinX); }
+  return possible((handX == optionX) && canWinX); }
 
 function fair_for_player(handX, canWinX) {
   fair_if(handX, ROCK, canWinX);
   fair_if(handX, PAPER, canWinX);
-  fair_if(handX, SCISSORS, canWinX); }
+  fair_if(handX, SCISSORS, canWinX);
+  return; }
 
 function fair_game(handA, handB, outcome) {
   fair_for_player(handA, (outcome == A_WINS));
-  fair_for_player(handB, (outcome == B_WINS)); }
+  fair_for_player(handB, (outcome == B_WINS));
+  return; }
