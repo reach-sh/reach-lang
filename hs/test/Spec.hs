@@ -40,12 +40,10 @@ try_hard m = do
     Right p -> try $ evaluate $ force p
 
 hashit :: String -> String
-hashit xs = hs
+hashit xs = show h
   where xb = B.pack xs
         h :: Digest MD5
         h = hash xb
-        hb = show h
-        hs = B.unpack hb
 
 err_m :: Show a => NFData a => String -> FilePath -> IO a -> Expectation
 err_m msg expected_p comp = do
@@ -68,13 +66,17 @@ err_example which f = do
   let actual_p = expth "rsh"
   mustExist actual_p
   err_m which expected_p (f actual_p)
-  
+
 parse_err_example :: ParseErr -> Expectation
 parse_err_example pe =
   err_example (conNameOf pe) readReachFile
 
 test_compile :: FilePath -> IO ()
-test_compile n = compile $ CompilerOpts "test.out" n
+test_compile n = compile $ CompilerOpts
+  { output_dir = "test.out"
+  , source = n
+  , enableExperimentalConnectors = False
+  }
 
 compile_err_example :: CompileErr -> Expectation
 compile_err_example ce =
