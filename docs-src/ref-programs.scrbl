@@ -148,7 +148,7 @@ Distinct from @tech{tails} are @deftech{continuations} which include everything 
 
 @tech{Tails} are statically apparent from the structure of the program source code, while @tech{continuations} are influenced by function calls.
 
-A sequence of @tech{statements} must end in a @deftech{terminator statement} (a @tech{statement} with no @tech{tail}), such as a @tech{return statement} or @tech{continue statement}.
+A sequence of @tech{statements} that does not end in a @deftech{terminator statement} (a @tech{statement} with no @tech{tail}), such as a @tech{return statement} or @tech{continue statement} is treated as if it ended with a @tech{return statement} that returned no values, i.e. @reachin{return;}.
 
 The remainder of this section enumerates each kind of @tech{statement}.
 
@@ -195,11 +195,9 @@ Both @reachin{TRUE} and @reachin{FALSE} have empty @tech{tails}, i.e. the @tech{
 
 @reach{
  if ( x < y ) {
-   const z = 3;
-   return; }
+   const z = 3; }
  else {
-   const z = 4;
-   return; }
+   const z = 4; }
  return z; }
 
 is erroneous, because the identifier @reachin{z} is not bound outside the @tech{conditional statement}.
@@ -217,8 +215,7 @@ A @deftech{block statement} is when a @tech{block} occurs in a @tech{statement} 
 evaluates to @reachin{4}, but
 
 @reach{
- { const x = 4;
-   return; }
+ { const x = 4; }
  return x; }
 
 is erroneous, because the identifier @reachin{x} is not bound outside the @tech{block statement}.

@@ -48,10 +48,8 @@ function fair_if(handX, optionX, canWinX) {
 function fair_for_player(handX, canWinX) {
   fair_if(handX, ROCK, canWinX);
   fair_if(handX, PAPER, canWinX);
-  fair_if(handX, SCISSORS, canWinX);
-  return; }
+  fair_if(handX, SCISSORS, canWinX); }
 
 function fair_game(handA, handB, outcome) {
   fair_for_player(handA, (outcome == A_WINS));
-  fair_for_player(handB, (outcome == B_WINS));
-  return; }
+  fair_for_player(handB, (outcome == B_WINS)); }
