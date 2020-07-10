@@ -4,7 +4,7 @@ orbs:
 jobs:
   build-and-test:
     docker:
-      - image: fpco/stack-build:lts-16.3
+      - image: danburton/reach-circle:v0.1.0
     steps:
       - checkout
       - restore_cache:
@@ -29,6 +29,19 @@ jobs:
       - run:
           name: test hs
           command: (cd hs && stack test || echo allowed to fail)
+      - run:
+          name: build js
+          command: (cd js && make build)
+      - run:
+          name: build ethereum-devnet
+          command: (cd scripts/ethereum-devnet && make build)
+      - run:
+          name: rebuild examples
+          command: (cd examples && make clean-all build-all)
+      - run:
+          name: run examples
+          command: (cd examples && make run-all)
+          no_output_timeout: 1m
       - slack/status:
           fail_only: true
 

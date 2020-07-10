@@ -1,5 +1,6 @@
 TAG="reachsh/reach:v0.1.0"
 NAME="reach"
+CIRCLE_TAG="danburton/reach-circle:v0.1.0"
 
 .PHONY: build
 build:
@@ -18,3 +19,11 @@ check:
 	stack build
 	stack build stan
 	stack exec stan
+
+.PHONY: build-circle-docker
+build-circle-docker:
+	docker build -f Dockerfile_circleci --tag $(CIRCLE_TAG) .
+
+.PHONY: push-circle-docker
+push-circle-docker:
+	docker push $(CIRCLE_TAG)
