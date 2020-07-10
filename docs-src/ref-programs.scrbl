@@ -295,7 +295,7 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 
 @reach{
  var [ heap1, heap2 ] = [ 21, 21 ];
- invariant(balance() = 2 * wagerAmount);
+ invariant(balance() == 2 * wagerAmount);
  while ( heap1 + heap2 > 0 ) {
    ....
    [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
