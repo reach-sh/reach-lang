@@ -456,14 +456,15 @@ decodeExpr dss je =
 
 data LetNothing
   = LN_Flatten
-  | LN_Null
+  | LN_Fail
 letnothing :: LetNothing -> TP -> DecodeStmtsState -> XLExpr TP -> TP -> [JSStatement] -> XLExpr TP
 letnothing flatok t dss e prev ks =
   case ks of
     [] -> case flatok of
       LN_Flatten -> e
-      LN_Null -> XL_Let t (dss_who dss) Nothing e (XL_Values t [])
-    _ -> XL_Let t (dss_who dss) Nothing e (decodeStmts prev dss ks)
+      LN_Fail -> def
+    _ -> def
+  where def = XL_Let t (dss_who dss) Nothing e (decodeStmts prev dss ks)
 
 mergeStmts :: JSStatement -> [JSStatement] -> [JSStatement]
 mergeStmts (JSStatementBlock _ ss1 _ _) ss2 = ss1 ++ ss2
@@ -517,7 +518,7 @@ decodeStmts prev dss js =
     ((JSMethodCall (JSIdentifier a "commit") _ JSLNil _ preva):k) ->
       XL_FromConsensus (tp a) (ds (sp preva) (sub_dss dss) k)
     ((JSMethodCall f ann1 args ann2 semi):k) ->
-      letnothing LN_Null (tp ann1) dss (decodeExpr dss (JSMemberExpression f ann1 args ann2)) (sp semi) k
+      letnothing LN_Fail (tp ann1) dss (decodeExpr dss (JSMemberExpression f ann1 args ann2)) (sp semi) k
     (j@(JSReturn a me _):k) ->
       case k of
         [] -> case me of
@@ -544,7 +545,7 @@ decodeStmts prev dss js =
       else
         expect_throw PE_ContinueArgs (dss_fp dss) j
     ((JSExpressionStatement e semi):k) ->
-      letnothing LN_Null (sp semi) dss (decodeExpr dss e) (sp semi) k
+      letnothing LN_Fail (sp semi) dss (decodeExpr dss e) (sp semi) k
     (j:_) -> expect_throw PE_Statement (dss_fp dss) j
   where tp = dss_tp dss . tpa
         sp = dss_tp dss . spa

@@ -49,6 +49,7 @@ data CompileErr
   | CE_UnboundVariable
   | CE_ContinueNotInLoop
   | CE_ContractLimitation
+  | CE_ContractReturns
   | CE_LocalLimitation
   | CE_WhileNoContinue
   | CE_UnknownRole
@@ -84,6 +85,7 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
           --- has to return nothing.
           CE_WhileNoContinue -> impossible $ "while does not terminate in continue"
           CE_ContractLimitation -> "contract cannot"
+          CE_ContractReturns -> "consensus step not committed"
           CE_LocalLimitation -> "local cannot"
           CE_UnknownRole -> "unknown role"
           CE_ExpectedPublic -> "expected a public value"
@@ -936,7 +938,7 @@ epp_it_ctc ps this_h γ ctxt it = case it of
       EC_Invariant -> do
         return (mempty, C_Halt h, mempty)
       _ ->
-        expect_throw CE_ContractLimitation h ("return" :: String)
+        expect_throw CE_ContractReturns h ()
   IL_If h ca tt ft -> do
     epp_it_ctc_do_if h ps (γ, ca) (dres tt) (dres ft)
     where dres wt = epp_it_ctc ps this_h γ ctxt wt
