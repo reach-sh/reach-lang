@@ -1,5 +1,5 @@
 {-# LANGUAGE NamedFieldPuns, OverloadedStrings, TemplateHaskell #-}
-module Reach.Connector.Sol where
+module Reach.Connector.ETH_Solidity where
 
 import Data.List (intersperse, foldl')
 import Data.Text.Prettyprint.Doc

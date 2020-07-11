@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
-module Reach.Connector.TEAL where
+module Reach.Connector.ALGO where
 
 import System.IO
 import System.Process
@@ -16,7 +16,7 @@ import qualified Data.ByteString.Char8 as C
 
 import Reach.AST
 import Reach.Util
-import Reach.Connector.Sol
+import Reach.Connector.ETH_Solidity
   ( CCounts
   , usesCTail )
 

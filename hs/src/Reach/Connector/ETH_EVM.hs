@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
-module Reach.Connector.EVM where
+module Reach.Connector.ETH_EVM where
 
 import Control.Monad.State.Lazy
 import qualified Data.Word as W
@@ -22,7 +22,7 @@ import qualified EVM.Bytecode as EVM
 
 import Reach.AST
 import Reach.Util
-import Reach.Connector.Sol
+import Reach.Connector.ETH_Solidity
   ( CCounts
   , usesCTail )
 

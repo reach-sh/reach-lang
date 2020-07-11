@@ -30,9 +30,9 @@ import Reach.Pretty()
 import Reach.Parser
 import Reach.Backend.Go
 import Reach.Backend.JS
-import Reach.Connector.Sol
-import Reach.Connector.EVM
-import Reach.Connector.TEAL
+import Reach.Connector.ETH_Solidity
+import Reach.Connector.ETH_EVM
+import Reach.Connector.ALGO
 import Reach.VerifyZ3
 import Reach.Util
 

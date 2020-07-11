@@ -9,12 +9,13 @@ import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
-import Reach.Connector.Sol
+import Reach.Connector.ETH_Solidity
   ( solMsg_evt
   , solMsg_fun
   , CompiledSol )
-import Reach.Connector.TEAL
+import Reach.Connector.ALGO
   ( CompiledTeal )
+
 import Reach.Util
 
 goBType :: BaseType -> String
