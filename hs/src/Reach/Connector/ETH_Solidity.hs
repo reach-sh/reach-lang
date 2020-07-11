@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns, OverloadedStrings, TemplateHaskell #-}
 module Reach.Connector.ETH_Solidity where
 
-import Data.List (intersperse, foldl')
+import Data.List (intersperse, foldl', find)
 import Data.Text.Prettyprint.Doc
 import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
@@ -352,13 +352,13 @@ data CompiledSolRec = CompiledSolRec
 instance FromJSON CompiledSolRec where
   parseJSON = withObject "CompiledSolRec" $ \ o -> do
     ctcs <- o .: "contracts"
-    case HM.keys ctcs of
-      (_:thectc:_) -> do
-        ctc <- ctcs .: thectc
+    case find (":ReachContract" `T.isSuffixOf`) (HM.keys ctcs) of
+      Just ctcKey-> do
+        ctc <- ctcs .: ctcKey
         abit <- ctc .: "abi"
         codebodyt <- ctc .: "bin"
         return CompiledSolRec {csrAbi = abit, csrCode = codebodyt}
-      _ -> fail "Expected contracts object to have at least 2 keys"
+      Nothing -> fail "Expected contracts object to have a key with suffix ':ReachContract'"
 
 
 extract :: Value -> CompiledSol
