@@ -343,26 +343,29 @@ z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILVar)) -> IO VerifyRe
 z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
   z3_declare z3 cb0 (LT_BT BT_UInt256)
-  meta_iter mempty [(True, VC_Top, it_top)]
+  assert z3 (z3Eq (z3CTCBalanceRef 0) zero)
+  meta_iter Nothing VC_Top it_top
   where zero = emit_z3_con (Con_I 0)
         cb0 = z3CTCBalance 0
-        meta_iter :: Show a => VerifyResult -> [(Bool, VerifyCtxt a, ILTail a)] -> IO VerifyResult
-        meta_iter vr0 [] = return vr0
-        meta_iter vr0 ( (assume_cb_zero, ctxt, it) : more0 ) = do
+        meta_iter :: Show a => Maybe Int -> VerifyCtxt a -> ILTail a -> IO VerifyResult
+        meta_iter m_prev_cbi ctxt it = do
           putStrLn $ "...checking " ++ take 32 (show ctxt)
-          (more1, vr1) <- inNewScope z3 $ (do (if assume_cb_zero then assert z3 (z3Eq (z3CTCBalanceRef 0) zero) else mempty)
-                                              iter (S.empty) 0 ctxt it)
-          let vr = vr0 <> vr1
-          let more = more0 ++ more1
-          meta_iter vr more
-        iter :: Show a => (S.Set ILVar) -> Int -> VerifyCtxt a -> ILTail a -> IO ([(Bool, VerifyCtxt a, ILTail a)], VerifyResult)
+          let (init_cbi, init_cbim) =
+                case m_prev_cbi of
+                  Nothing -> (0, mempty)
+                  Just prev_cbi ->
+                    (cbi', z3_declare z3 cb'v (LT_BT BT_UInt256))
+                    where cbi' = prev_cbi + 1
+                          cb'v = z3CTCBalance cbi'
+          inNewScope z3 $ do init_cbim
+                             iter (S.empty) init_cbi ctxt it
+        iter :: Show a => (S.Set ILVar) -> Int -> VerifyCtxt a -> ILTail a -> IO VerifyResult
         iter primed cbi ctxt it = case it of
           IL_Ret h al -> do
             case ctxt of
               VC_Top -> do
                 let cbi_balance = z3Eq (z3CTCBalanceRef cbi) zero
-                vr <- z3_verify1 z3 (honest, me, TBalanceZero, h) cbi_balance
-                return ([], vr)
+                z3_verify1 z3 (honest, me, TBalanceZero, h) cbi_balance
               VC_AssignCheckInv should_prime loopvs invt -> do
                 let invt_vs = extract_invariant_variables invt
                 let primed' = if should_prime then S.unions [primed, S.fromList loopvs, S.fromList invt_vs] else primed
@@ -374,8 +377,7 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                 a <- case al of
                   [ x ] -> return x
                   _ -> fail "Expected [ILArg] to have exactly one element"  -- XXX
-                vr <- z3_verify1 z3 (honest, me, TInvariant, h) (emit_z3_arg primed a)
-                return ([], vr)
+                z3_verify1 z3 (honest, me, TInvariant, h) (emit_z3_arg primed a)
               VC_WhileBody_AssumeNotUntil loopvs invt bodyt kctxt -> do
                 a <- case al of
                   [ x ] -> return x
@@ -410,13 +412,13 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                     where cav = emit_z3_con (Con_B v)
           IL_Let _ who what how kt ->
             do vr <- if (honest || role_me me who) then z3_expr z3 (honest, who) primed cbi what how else return mempty
-               (mt, vr') <- iter primed cbi ctxt kt
-               return (mt, vr <> vr')
+               vr' <- iter primed cbi ctxt kt
+               return $ vr <> vr'
           IL_Do _ who how kt ->
             if (honest || role_me me who) then
               do (cbi', vr) <- z3_stmt z3 honest me primed cbi how
-                 (mt, vr') <- iter primed cbi' ctxt kt
-                 return (mt, vr <> vr')
+                 vr' <- iter primed cbi' ctxt kt
+                 return $ vr <> vr'
             else
               iter primed cbi ctxt kt
           IL_ToConsensus h (_ok_ij, _who, _msg, amount) mto kt ->
@@ -443,11 +445,10 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                         z3Apply "<=" [ zero, pvr ]
           IL_FromConsensus _ kt -> iter primed cbi ctxt kt
           IL_While x loopvs initas untilt invt bodyt kt -> do
-            (mt, vr) <- iter primed cbi (VC_AssignCheckInv False loopvs invt) (IL_Ret x initas)
-            let bodyj = (False, VC_WhileBody_AssumeNotUntil loopvs invt bodyt ctxt, untilt)
-            let tailj = (False, VC_WhileTail_AssumeUntil invt (ctxt, kt), untilt)
-            let mt' = mt ++ [ bodyj, tailj ]
-            return (mt ++ mt', vr)
+            vr_body <- meta_iter (Just cbi) (VC_WhileBody_AssumeNotUntil loopvs invt bodyt ctxt) untilt
+            vr_tail <- meta_iter (Just cbi) (VC_WhileTail_AssumeUntil invt (ctxt, kt)) untilt
+            vr_pre <- iter primed cbi (VC_AssignCheckInv False loopvs invt) (IL_Ret x initas)
+            return $ vr_pre <> vr_body <> vr_tail
           IL_Continue x newas ->
             case ctxt of
               VC_WhileBody_Eval loopvs invt _kctxt ->

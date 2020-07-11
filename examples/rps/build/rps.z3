@@ -371,8 +371,8 @@
 (push
  (+ (declare-fun ctc_balance0 () Int ))
  (+ (assert (<= 0 ctc_balance0 ) ))
+ (+ (assert (= ctc_balance0 0 ) ))
  (push
-  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -1083,8 +1083,8 @@
 (push
  (+ (declare-fun ctc_balance0 () Int ))
  (+ (assert (<= 0 ctc_balance0 ) ))
+ (+ (assert (= ctc_balance0 0 ) ))
  (push
-  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -1795,8 +1795,8 @@
 (push
  (+ (declare-fun ctc_balance0 () Int ))
  (+ (assert (<= 0 ctc_balance0 ) ))
+ (+ (assert (= ctc_balance0 0 ) ))
  (push
-  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -2507,8 +2507,8 @@
 (push
  (+ (declare-fun ctc_balance0 () Int ))
  (+ (assert (<= 0 ctc_balance0 ) ))
+ (+ (assert (= ctc_balance0 0 ) ))
  (push
-  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -3219,8 +3219,8 @@
 (push
  (+ (declare-fun ctc_balance0 () Int ))
  (+ (assert (<= 0 ctc_balance0 ) ))
+ (+ (assert (= ctc_balance0 0 ) ))
  (push
-  (+ (assert (= ctc_balance0 0 ) ))
   (push
   )
   (push
@@ -3721,8 +3721,8 @@
 (push
  (+ (declare-fun ctc_balance0 () Int ))
  (+ (assert (<= 0 ctc_balance0 ) ))
+ (+ (assert (= ctc_balance0 0 ) ))
  (push
-  (+ (assert (= ctc_balance0 0 ) ))
   (+ (assert (= v5 v1 ) ))
   (+ (check-sat ))
   (- sat)
@@ -4303,8 +4303,8 @@
 (push
  (+ (declare-fun ctc_balance0 () Int ))
  (+ (assert (<= 0 ctc_balance0 ) ))
+ (+ (assert (= ctc_balance0 0 ) ))
  (push
-  (+ (assert (= ctc_balance0 0 ) ))
   (push
   )
   (push
@@ -4845,8 +4845,8 @@
 (push
  (+ (declare-fun ctc_balance0 () Int ))
  (+ (assert (<= 0 ctc_balance0 ) ))
+ (+ (assert (= ctc_balance0 0 ) ))
  (push
-  (+ (assert (= ctc_balance0 0 ) ))
   (push
   )
   (push
