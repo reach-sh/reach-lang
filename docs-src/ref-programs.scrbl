@@ -170,16 +170,22 @@ A @tech{return statement} is a @tech{terminator statement}, so it must have an e
 
 is @tech{invalid}, because the first @reachin{return}'s @tech{tail} is not empty.
 
-@subsection{Value definition statements}
+@subsection{Identifier definition statements}
 
-If a @tech{value definition} occurs in a @tech{statement} position, then the identifiers are bound in the @tech{statement}'s @tech{tail}. For example,
+If a @tech{value definition} or @tech{function definition} occurs in a @tech{statement} position, then the identifiers are bound in the @tech{statement}'s @tech{tail}. For example,
 
 @reach{
  const [ x, y ] = [ 3, 4 ];
  const z = x + y;
  return z; }
 
-evaluates to @reachin{7}.
+evaluates to @reachin{7}. And,
+
+@reach{
+ function f(x) { return x+1; }
+ return f(1); }
+
+evaluates to @reachin{2}.
 
 @subsection{Conditional statements}
 

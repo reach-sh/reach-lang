@@ -339,10 +339,6 @@ expectId :: FilePath -> JSExpression -> XLVar
 expectId _ (JSIdentifier _ x) = x
 expectId fp j = expect_throw PE_Identifier fp j
 
-expectIdent :: FilePath -> JSExpression -> XLVar
-expectIdent _ (JSIdentifier _ x) = x
-expectIdent fp j = expect_throw PE_Identifier fp j
-
 decodeLetLHS :: FilePath -> JSExpression -> [XLVar]
 decodeLetLHS _ (JSIdentifier _ x) = [x]
 decodeLetLHS fp (JSArrayLiteral _ xs _) = map (expectId fp) $ flattenJSArray xs
@@ -350,7 +346,7 @@ decodeLetLHS fp j = expect_throw PE_LetLHS fp j
 
 decodeParams :: FilePath -> JSArrowParameterList -> [XLVar]
 decodeParams fp j@(JSUnparenthesizedArrowParameter _) = expect_throw PE_ArrowParams fp j
-decodeParams fp (JSParenthesizedArrowParameterList _ j _) = map (expectIdent fp) $ flattenJSCL j
+decodeParams fp (JSParenthesizedArrowParameterList _ j _) = map (expectId fp) $ flattenJSCL j
 
 decodeBinOp :: FilePath -> (JSAnnot -> TP) -> JSBinOp -> XLExpr TP -> XLExpr TP -> XLExpr TP
 decodeBinOp fp tp o arg1 arg2 =
@@ -484,6 +480,10 @@ decodeStmts prev dss js =
     --- No DoWhile
     --- No For, ForIn, ForVar, ForVarIn, ForLet, ForLetIn, ForLetOf, ForOf, ForVarOf
     --- No Function
+    ((JSFunction a (JSIdentName _ f) _ eargs _ ee preva):k) ->
+      XL_Let (tp a) (dss_who dss) (Just [ f ]) (XL_Lambda (tp a) args e) (ds (sp preva) dss k)
+      where args = map (expectId (dss_fp dss)) (flattenJSCL eargs)
+            e = decodeBlock dss ee
     (j@(JSIf _ _ _ _ _):_k) -> expect_throw PE_IfElse (dss_fp dss) j
     ((JSIfElse a _ cond prev_t true prev_f false):k) ->
       letnothing LN_Flatten (tp a) dss theif tp_pre_k k
@@ -568,9 +568,8 @@ decodeStmts prev dss js =
                             te = XL_FunApp h (decodeExpr (sub_dss dss) ete) []
                           _ -> error "Pattern match fail" -- XXX Nothing?
 
-decodeBlock :: FilePath -> JSBlock -> XLExpr TP
-decodeBlock fp (JSBlock prev ss _) = decodeStmts (dss_tp dss (tpa prev)) dss ss
-  where dss = (make_dss fp)
+decodeBlock :: DecodeStmtsState -> JSBlock -> XLExpr TP
+decodeBlock dss (JSBlock prev ss _) = decodeStmts (dss_tp dss (tpa prev)) dss ss
 
 decodeDef :: FilePath -> JSStatement -> [XLDef TP]
 decodeDef fp j =
@@ -581,8 +580,8 @@ decodeDef fp j =
       [XL_DefineValues (tp a) (decodeLetLHS fp lhs) $ decodeExpr (make_dss fp) e]
     (JSFunction a (JSIdentName _ f) _ eargs _ ee _) ->
       [XL_DefineFun (tp a) f args e]
-      where args = map (expectIdent fp) (flattenJSCL eargs)
-            e = decodeBlock fp ee
+      where args = map (expectId fp) (flattenJSCL eargs)
+            e = decodeBlock (make_dss fp) ee
     _ -> expect_throw PE_BodyElement fp j
   where tp a = TP (fp, tpa a)
 
@@ -614,7 +613,7 @@ decodeBody fp (d, p, me) msis =
             ds = map (decodeVarDecl fp tp) $ flattenJSCTL vs
     (JSModuleStatementListItem (JSFunction ja (JSIdentName _ "main") _ (JSLNil) _ body _)) ->
       case me of
-        Nothing -> return $ (d, p, Just (decodeBlock fp body))
+        Nothing -> return $ (d, p, Just (decodeBlock (make_dss fp) body))
         Just _ -> expect_throw PE_DoubleMain fp ja
     (JSModuleStatementListItem s@(JSConstant _ _ _)) ->
       return $ (d ++ decodeDef fp s, p, me)

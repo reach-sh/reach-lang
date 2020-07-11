@@ -1,13 +1,5 @@
 'reach 0.1 exe';
 
-// Game
-function applyMove(AsTurn, heap1, heap2, choose1, amount) {
-  require(amount <= (choose1 ? heap1 : heap2))
-  if ( choose1 ) {
-    return [ !AsTurn, heap1 - amount, heap2 ];
-  } else {
-    return [ !AsTurn, heap1, heap2 - amount ]; } }
-
 // Protocol
 const A = participant({});
 const B = participant({});
@@ -41,6 +33,14 @@ function main() {
   var [ AsTurn, heap1, heap2 ] = [ AisFirst, initialHeap, initialHeap ];
   invariant(balance() == (2 * wagerAmount));
   while ( heap1 + heap2 > 0 ) {
+
+    function applyMove(choose1, amount) {
+      require(amount <= (choose1 ? heap1 : heap2))
+      if ( choose1 ) {
+        return [ !AsTurn, heap1 - amount, heap2 ];
+      } else {
+        return [ !AsTurn, heap1, heap2 - amount ]; } }
+
     if ( AsTurn ) {
       commit();
       
@@ -51,7 +51,7 @@ function main() {
       A.publish(choose1, amount)
         .timeout(DELAY, closeTo(B, "A timed out move"));
       
-      [ AsTurn, heap1, heap2 ] = applyMove(AsTurn, heap1, heap2, choose1, amount);
+      [ AsTurn, heap1, heap2 ] = applyMove(choose1, amount);
       continue;
     } else {
       commit();
@@ -63,7 +63,7 @@ function main() {
       B.publish(choose1, amount)
         .timeout(DELAY, closeTo(A, "B timed out move"));
       
-      [ AsTurn, heap1, heap2 ] = applyMove(AsTurn, heap1, heap2, choose1, amount);
+      [ AsTurn, heap1, heap2 ] = applyMove(choose1, amount);
       continue; } }
 
   const [ toA, toB ] = AsTurn ? [ 2, 0 ] : [ 0, 2 ];
