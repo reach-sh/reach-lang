@@ -1,4 +1,4 @@
-module Reach.EmitJS where
+module Reach.Backend.JS where
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
@@ -9,10 +9,10 @@ import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
-import Reach.EmitSol
+import Reach.Connector.Sol
   ( solType
   , CompiledSol )
-import Reach.EmitTEAL
+import Reach.Connector.TEAL
   ( CompiledTeal )
 import Reach.Util
 

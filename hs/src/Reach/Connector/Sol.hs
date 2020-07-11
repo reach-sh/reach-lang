@@ -1,6 +1,5 @@
 {-# LANGUAGE NamedFieldPuns, OverloadedStrings, TemplateHaskell #-}
-
-module Reach.EmitSol where
+module Reach.Connector.Sol where
 
 import Data.List (intersperse, foldl')
 import Data.Text.Prettyprint.Doc

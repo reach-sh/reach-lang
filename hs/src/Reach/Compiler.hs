@@ -28,11 +28,11 @@ import GHC.Generics(Generic)
 import Reach.AST
 import Reach.Pretty()
 import Reach.Parser
-import Reach.EmitGo
-import Reach.EmitJS
-import Reach.EmitSol
-import Reach.EmitEVM
-import Reach.EmitTEAL
+import Reach.Backend.Go
+import Reach.Backend.JS
+import Reach.Connector.Sol
+import Reach.Connector.EVM
+import Reach.Connector.TEAL
 import Reach.VerifyZ3
 import Reach.Util
 

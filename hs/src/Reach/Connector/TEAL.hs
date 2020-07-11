@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
-module Reach.EmitTEAL where
+module Reach.Connector.TEAL where
 
 import System.IO
 import System.Process
@@ -16,7 +16,7 @@ import qualified Data.ByteString.Char8 as C
 
 import Reach.AST
 import Reach.Util
-import Reach.EmitSol
+import Reach.Connector.Sol
   ( CCounts
   , usesCTail )
 

@@ -1,4 +1,4 @@
-module Reach.EmitGo where
+module Reach.Backend.Go where
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
@@ -9,11 +9,11 @@ import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
-import Reach.EmitSol
+import Reach.Connector.Sol
   ( solMsg_evt
   , solMsg_fun
   , CompiledSol )
-import Reach.EmitTEAL
+import Reach.Connector.TEAL
   ( CompiledTeal )
 import Reach.Util
 
