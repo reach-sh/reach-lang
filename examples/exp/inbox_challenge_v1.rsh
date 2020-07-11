@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 
-const Asserter = participant({});
-const Challenger = participant({});
+const Asserter = newParticipant();
+const Challenger = newParticipant();
 
 const DELAY = 10; // in blocks
 
@@ -91,23 +91,18 @@ function inside(Asserter, Challenger,
     commit();
     return; } }
 
-const Rollup = participant({
-  _CallbackDest: address,
-  _Asserter: address,
-  _Challenger: address,
-  _lowerHash: uint256,
-  _upperHash: uint256,
-  _chainLength: uint256
-});
+const Rollup = newParticipant();
 
 function main() {
   Rollup.only(() => {
-    const CallbackDest = declassify(_CallbackDest);
-    const Asserter = declassify(_Asserter);
-    const Challenger = declassify(_Challenger);
-    const lowerHash = declassify(_lowerHash);
-    const upperHash = declassify(_upperHash);
-    const chainLength = declassify(_chainLength); });
+    const [
+      CallbackDest,
+      Asserter,
+      Challenger,
+      lowerHash,
+      upperHash,
+      chainLength,
+    ] = declassify( [address, address, address, uint256, uint256, uint256 ], interact.getParams()); });
   Rollup.publish(CallbackDest, Asserter, Challenger,
                  lowerHash, upperHash, chainLength);
   commit();

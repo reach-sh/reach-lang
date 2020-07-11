@@ -40,23 +40,14 @@ When a Reach @tech{source file}, @litchar{X}, contains an @deftech{import}, writ
 
 @section{Participant Definitions}
 
-@reach{const Alice = participant({_hand: uint256});}
+@reach{const Alice = newParticipant();}
 
 Reach @tech{executables} may contain @deftech{participant definitions}, which are written:
 
 @reach{
- const PARTICIPANT =
-   participant( { ID_0: TYPE_0
-                , ...
-                , ID_n: TYPE_n } ); }
+ const PARTICIPANT = newParticipant(); }
 
-Such a definition defines a @tech{participant} named @reachin{PARTICIPANT} with the initial @tech{local state} @reachin{ID_0} through @reachin{ID_n} (which are conventionally preceded by an underscore character, i.e. @litchar{_}) each having an associated @tech{type} @reachin{TYPE_0} through @reachin{TYPE_n}.
-
-When an @tech{executable} is compiled by a @tech{backend}, each @tech{participant} will be provided as a function abstracted over the initial @tech{local state} values. For example,
-
-@reach{const Bob = participant({_wagerLimit: uint256});}
-
-will produce a function, @reachin{Bob}, which accepts an argument for the maximum wager any game it participates in may charge.
+Such a definition defines a @tech{participant} named @reachin{PARTICIPANT}.
 
 @section{Types}
 

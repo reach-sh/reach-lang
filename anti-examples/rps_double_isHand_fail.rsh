@@ -3,13 +3,9 @@
 
 import '../examples/rps/rsh/rps_shared.rsh';
 
-const A = participant({
-  _wagerAmount: uint256,
-  _escrowAmount: uint256});
-
-const B = participant({});
-
-const O = participant({});
+const A = newParticipant();
+const B = newParticipant();
+const O = newParticipant();
 
 const DELAY = 10; // in blocks
 
@@ -142,8 +138,8 @@ function payOutDoubleOrNothing(a, b, aLostFirstRound, wagerAmount, escrowAmount,
 
 function main() {
   A.only(() => {
-    const wagerAmount = declassify(_wagerAmount);
-    const escrowAmount = declassify(_escrowAmount);
+    const wagerAmount = declassify(is(uint256, interact.getWagerAmount()));
+    const escrowAmount = declassify(is(uint256, interact.getEscrowAmount()));
     interact.params(); });
   A.publish(wagerAmount, escrowAmount)
     .pay(wagerAmount + escrowAmount);

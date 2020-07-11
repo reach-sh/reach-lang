@@ -1,38 +1,39 @@
 #lang reach/il
 
 #:participants
-(define-participant (0, (A, address))
-  [1/_wagerAmount:uint256]
-  [2/_escrowAmount:uint256])
-(define-participant (3, (B, address)))
-(define-participant (4, (O, address)))
+(define-participant (0, (A, address)))
+(define-participant (1, (B, address)))
+(define-participant (2, (O, address)))
 
 #:main
 (@ ( 0
-, ( A
-, address ) ) (define 5/Declassify:uint256 (declassify 1/_wagerAmount:uint256)))
+, (A, address) ) (define 3/Interact:uint256 (interact.getWagerAmount uint256 )))
+(@ ( 0
+, (A, address) ) (define 4/Declassify:uint256 (declassify 3/Interact:uint256)))
 (@ ( 0
 , ( A
-, address ) ) (define 6/Declassify:uint256 (declassify 2/_escrowAmount:uint256)))
+, address ) ) (define 5/Interact:uint256 (interact.getEscrowAmount uint256 )))
+(@ ( 0
+, (A, address) ) (define 6/Declassify:uint256 (declassify 5/Interact:uint256)))
 (@ (0, (A, address)) (define 7/Interact:bool (interact.params bool )))
 (@ ( 0
 , ( A
-, address ) ) (define 8/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256)))
+, address ) ) (define 8/PrimApp:uint256 (ADD 4/Declassify:uint256 6/Declassify:uint256)))
 (@ True 0/A:address 
-  (publish! (5/Declassify:uint256 6/Declassify:uint256))
+  (publish! (4/Declassify:uint256 6/Declassify:uint256))
   (pay! 8/PrimApp:uint256)
   )
 (@ CTC (define 9/PrimApp:uint256 (TXN_VALUE)))
-(@ CTC (define 10/PrimApp:uint256 (ADD 5/Declassify:uint256 6/Declassify:uint256)))
+(@ CTC (define 10/PrimApp:uint256 (ADD 4/Declassify:uint256 6/Declassify:uint256)))
 (@ CTC (define 11/PrimApp:bool (PEQ 9/PrimApp:uint256 10/PrimApp:uint256)))
 (@ CTC (require! 11/PrimApp:bool))
 (commit!)
-(@ ( 3
+(@ ( 1
 , ( B
-, address ) ) (define 12/Interact:bool (interact.accepts bool 5/Declassify:uint256 6/Declassify:uint256)))
-(@ True 3/B:address 
+, address ) ) (define 12/Interact:bool (interact.accepts bool 4/Declassify:uint256 6/Declassify:uint256)))
+(@ True 1/B:address 
   (publish! ())
-  (pay! 5/Declassify:uint256)
+  (pay! 4/Declassify:uint256)
   (timeout 10 
     (@ CTC (require! True))
     (@ False 0/A:address 
@@ -47,7 +48,7 @@
     (commit!)
     "Bob quits"))
 (@ CTC (define 13/PrimApp:uint256 (TXN_VALUE)))
-(@ CTC (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 5/Declassify:uint256)))
+(@ CTC (define 14/PrimApp:bool (PEQ 13/PrimApp:uint256 4/Declassify:uint256)))
 (@ CTC (require! 14/PrimApp:bool))
 (commit!)
 (@ (0, (A, address)) (define 15/Interact:bytes (interact.getHand bytes )))
@@ -88,7 +89,7 @@
   (pay! 0)
   (timeout 10 
     (@ CTC (require! True))
-    (@ False 3/B:address 
+    (@ False 1/B:address 
       (publish! ())
       (pay! 0)
       )
@@ -96,43 +97,43 @@
     (@ CTC (define 137/PrimApp:bool (PEQ 136/PrimApp:uint256 0)))
     (@ CTC (require! 137/PrimApp:bool))
     (@ CTC (define 138/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 3/B:address 138/PrimApp:uint256))
+    (@ CTC (transfer! 1/B:address 138/PrimApp:uint256))
     (commit!)
     "Alice quits"))
 (@ CTC (define 30/PrimApp:uint256 (TXN_VALUE)))
 (@ CTC (define 31/PrimApp:bool (PEQ 30/PrimApp:uint256 0)))
 (@ CTC (require! 31/PrimApp:bool))
 (commit!)
-(@ (3, (B, address)) (define 32/Interact:bytes (interact.getHand bytes )))
-(@ ( 3
+(@ (1, (B, address)) (define 32/Interact:bytes (interact.getHand bytes )))
+(@ ( 1
 , (B, address) ) (define 33/PrimApp:bool (BYTES_EQ 32/Interact:bytes "ROCK")))
-(@ ( 3
+(@ ( 1
 , (B, address) ) (define 34/PrimApp:bool (BYTES_EQ 32/Interact:bytes "PAPER")))
-(@ ( 3
+(@ ( 1
 , ( B
 , address ) ) (define 35/PrimApp:bool (BYTES_EQ 32/Interact:bytes "SCISSORS")))
-(@ ( 3
+(@ ( 1
 , ( B
 , address ) ) (define 36/PureIf:bool (IF_THEN_ELSE 33/PrimApp:bool True 34/PrimApp:bool)))
-(@ ( 3
+(@ ( 1
 , ( B
 , address ) ) (define 37/PureIf:bool (IF_THEN_ELSE 36/PureIf:bool True 35/PrimApp:bool)))
-(@ (3, (B, address)) (assume! 37/PureIf:bool))
-(@ ( 3
+(@ (1, (B, address)) (assume! 37/PureIf:bool))
+(@ ( 1
 , (B, address) ) (define 38/PureIf:uint256 (IF_THEN_ELSE 34/PrimApp:bool 1 2)))
-(@ ( 3
+(@ ( 1
 , ( B
 , address ) ) (define 39/PureIf:uint256 (IF_THEN_ELSE 33/PrimApp:bool 0 38/PureIf:uint256)))
-(@ (3, (B, address)) (define 40/PrimApp:bool (PLE 0 39/PureIf:uint256)))
-(@ (3, (B, address)) (define 41/PrimApp:bool (PLT 39/PureIf:uint256 3)))
-(@ ( 3
+(@ (1, (B, address)) (define 40/PrimApp:bool (PLE 0 39/PureIf:uint256)))
+(@ (1, (B, address)) (define 41/PrimApp:bool (PLT 39/PureIf:uint256 3)))
+(@ ( 1
 , ( B
 , address ) ) (define 42/PureIf:bool (IF_THEN_ELSE 40/PrimApp:bool 41/PrimApp:bool False)))
-(@ (3, (B, address)) (assert! 42/PureIf:bool))
-(@ ( 3
+(@ (1, (B, address)) (assert! 42/PureIf:bool))
+(@ ( 1
 , (B, address) ) (define 43/Declassify:uint256 (declassify 39/PureIf:uint256)))
-(@ (3, (B, address)) (define 44/Interact:bool (interact.shows bool )))
-(@ False 3/B:address 
+(@ (1, (B, address)) (define 44/Interact:bool (interact.shows bool )))
+(@ False 1/B:address 
   (publish! (43/Declassify:uint256))
   (pay! 0)
   (timeout 10 
@@ -182,7 +183,7 @@
   (pay! 0)
   (timeout 10 
     (@ CTC (require! True))
-    (@ False 3/B:address 
+    (@ False 1/B:address 
       (publish! ())
       (pay! 0)
       )
@@ -190,7 +191,7 @@
     (@ CTC (define 131/PrimApp:bool (PEQ 130/PrimApp:uint256 0)))
     (@ CTC (require! 131/PrimApp:bool))
     (@ CTC (define 132/PrimApp:uint256 (BALANCE)))
-    (@ CTC (transfer! 3/B:address 132/PrimApp:uint256))
+    (@ CTC (transfer! 1/B:address 132/PrimApp:uint256))
     (commit!)
     "Alice quits"))
 (@ CTC (define 60/PrimApp:uint256 (TXN_VALUE)))
@@ -255,16 +256,16 @@
 (@ CTC (define 108/PureIf:bool (IF_THEN_ELSE 107/PrimApp:bool 102/PrimApp:bool False)))
 (@ CTC (possible? 108/PureIf:bool))
 (@ CTC (define 109/PrimApp:bool (PEQ 79/PureIf:uint256 2)))
-(@ CTC (define 110/PrimApp:uint256 (MUL 2 5/Declassify:uint256)))
+(@ CTC (define 110/PrimApp:uint256 (MUL 2 4/Declassify:uint256)))
 (@ CTC (define 111/PrimApp:bool (PEQ 79/PureIf:uint256 0)))
-(@ CTC (define 112/PrimApp:uint256 (MUL 2 5/Declassify:uint256)))
-(@ CTC (define 113/PureIf:uint256 (IF_THEN_ELSE 111/PrimApp:bool 0 5/Declassify:uint256)))
-(@ CTC (define 114/PureIf:uint256 (IF_THEN_ELSE 111/PrimApp:bool 112/PrimApp:uint256 5/Declassify:uint256)))
+(@ CTC (define 112/PrimApp:uint256 (MUL 2 4/Declassify:uint256)))
+(@ CTC (define 113/PureIf:uint256 (IF_THEN_ELSE 111/PrimApp:bool 0 4/Declassify:uint256)))
+(@ CTC (define 114/PureIf:uint256 (IF_THEN_ELSE 111/PrimApp:bool 112/PrimApp:uint256 4/Declassify:uint256)))
 (@ CTC (define 115/PureIf:uint256 (IF_THEN_ELSE 109/PrimApp:bool 110/PrimApp:uint256 113/PureIf:uint256)))
 (@ CTC (define 116/PureIf:uint256 (IF_THEN_ELSE 109/PrimApp:bool 0 114/PureIf:uint256)))
 (@ CTC (define 117/PrimApp:uint256 (ADD 6/Declassify:uint256 115/PureIf:uint256)))
 (@ CTC (transfer! 0/A:address 117/PrimApp:uint256))
-(@ CTC (transfer! 3/B:address 116/PureIf:uint256))
+(@ CTC (transfer! 1/B:address 116/PureIf:uint256))
 (commit!)
 (@ CTC (define 118/Interact:bool (interact.outcome bool )))
 (@ CTC (define 119/PrimApp:bool (PLE 0 79/PureIf:uint256)))

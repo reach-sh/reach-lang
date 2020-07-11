@@ -89,8 +89,8 @@ function ttt_winner_is_o( st ) {
   return winning_p(marks_o(st)); }
 
 // Protocol
-const A = participant({});
-const B = participant({});
+const A = newParticipant();
+const B = newParticipant();
 const DELAY = 10; // in blocks
 
 function main() {

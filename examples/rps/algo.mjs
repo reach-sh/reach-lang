@@ -15,8 +15,10 @@ import * as RPS from './build/rps.mjs';
     console.log(`Alice initiates a new game.`);
 
     const interactWith = (name) => {
-      const log = (msg) => () => { console.log(`${msg}`); return true; };
-      return { params: log(`${name} publishes parameters of game: wager of ${wager}ALGO and escrow of ${escrow}ALGO.`),
+      const log = (msg, ret = true) => () => { console.log(`${msg}`); return ret; };
+      return { getWagerAmount: log(`(local: ${name} returns wagerAmount ${wager}.)`, wager),
+               getEscrowAmount: log(`(local: ${name} returns escrowAmount ${escrow}.)`, escrow),
+               params: log(`${name} publishes parameters of game: wager of ${wager}ALGO and escrow of ${escrow}ALGO.`),
                accepts: (wagerAmount, escrowAmount) => log(`${name} accepts the terms: wager of ${wagerAmount}ALGO and escrow of ${escrowAmount}ALGO.`)(),
                getHand: async () => { const res = await getHand(); log(`(local: ${name} plays ${res}.)`)(); return res; },
                commits: log(`${name} commits to play with (hidden) hand.`),
@@ -31,8 +33,7 @@ import * as RPS from './build/rps.mjs';
 
     const [ outcomeAlice, outcomeBob, outcomeObs ] =
           await Promise.all([
-            theRPS.A(stdlib, ctcAlice, interactWith('Alice'),
-                     wager, escrow),
+            theRPS.A(stdlib, ctcAlice, interactWith('Alice')),
             theRPS.B(stdlib, ctcBob, interactWith('Bob')),
             theRPS.O(stdlib, ctcObs, interactWith('Observer'))]);
 

@@ -17,8 +17,8 @@
 
 */
 
-const Child = participant({});
-const Parent = participant({});
+const Child = newParticipant();
+const Parent = newParticipant();
 
 const DELAY = 10; // in blocks
 

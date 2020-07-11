@@ -1,3 +1,3 @@
 'reach 0.1 lib';
 
-const X = participant({});
+const X = newParticipant();

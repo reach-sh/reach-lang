@@ -248,7 +248,6 @@ data ParseErr
   | PE_Statement
   | PE_IllegalAt
   | PE_Type
-  | PE_VarDecl
   | PE_NoMain
   deriving (Generic, Show)
 
@@ -279,7 +278,6 @@ expect_throw pe fp j = error $ show tp ++ ": " ++ msg ++ " (given: " ++ (show $ 
           PE_Statement -> "expected a valid statement form"
           PE_IllegalAt -> "expected a participant or anyone"
           PE_Type -> "expected a valid type"
-          PE_VarDecl -> "expected a valid variable declaration"
 
 type DecodeStmtsState = (FilePath, Maybe [XLVar], Maybe XLVar)
 
@@ -599,18 +597,12 @@ decodeType fp j =
     _ -> expect_throw PE_Type fp j
   where tp a = TP (fp, tpa a)
 
-decodeVarDecl :: FilePath -> (JSAnnot -> TP) -> JSObjectProperty -> (TP, XLVar, XLType TP)
-decodeVarDecl fp tp (JSPropertyNameandValue (JSPropertyIdent _ v) a [ e ]) = ((tp a), v, bt)
-  where bt = decodeType fp e
-decodeVarDecl fp _ j = expect_throw PE_VarDecl fp j
-
 decodeBody :: FilePath -> ([XLDef TP], (XLPartInfo TP), Maybe (XLExpr TP)) -> JSModuleItem -> IO ([XLDef TP], (XLPartInfo TP), Maybe (XLExpr TP))
 decodeBody fp (d, p, me) msis =
   case msis of
-    (JSModuleStatementListItem (JSConstant _ (JSLOne (JSVarInitExpression (JSIdentifier _ who) (JSVarInit _ (JSMemberExpression (JSIdentifier a "participant") _ (JSLOne (JSObjectLiteral _ vs _)) _)))) _)) ->
+    (JSModuleStatementListItem (JSConstant _ (JSLOne (JSVarInitExpression (JSIdentifier _ who) (JSVarInit _ (JSMemberExpression (JSIdentifier a "newParticipant") _ JSLNil _)))) _)) ->
       return $ (d, p', me)
-      where p' = M.insert who ((tp a), ds) p
-            ds = map (decodeVarDecl fp tp) $ flattenJSCTL vs
+      where p' = M.insert who ((tp a), []) p
     (JSModuleStatementListItem (JSFunction ja (JSIdentName _ "main") _ (JSLNil) _ body _)) ->
       case me of
         Nothing -> return $ (d, p, Just (decodeBlock (make_dss fp) body))

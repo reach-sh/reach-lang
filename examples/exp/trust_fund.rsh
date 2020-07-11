@@ -1,24 +1,24 @@
 'reach 0.1 exe';
 
-const Payer = participant({ _payment: uint256,
-                            _Recipient: address,
-                            _maturity: uint256,
-                            _refund: uint256,
-                            _dormant: uint256
-                          });
-const Recipient = participant({});
-const Bystander = participant({});
+const Payer = newParticipant();
+const Recipient = newParticipant();
+const Bystander = newParticipant();
 
 const DELAY = 10;
 
 function main() {
   Payer.only(() => {
-    const payment = declassify(_payment);
-    const Recipient = declassify(_Recipient);
-    const maturity = declassify(_maturity);
-    const refund = declassify(_refund);
-    const dormant = declassify(_dormant);
-  });
+    const [ _payment,
+            _Recipient,
+            _maturity,
+            _refund,
+            _dormant
+          ] = declassify(is([ uint256,
+                              address,
+                              uint256,
+                              uint256,
+                              uint256
+                            ], interact.getParams())); });
   Payer.publish(payment, Recipient, maturity, refund, dormant)
     .pay(payment);
   commit();

@@ -1,17 +1,14 @@
 'reach 0.1 exe';
 
-const Seller = participant({
-  _product: address,
-  _reserve: uint256});
-
-const [Bidders] = participant({});
+const Seller = newParticipant();
+const [Bidders] = newParticipantClass();
 
 const DELAY = 10; // in blocks
 
 function main() {
   Seller.only(() => {
-    const product = declassify(product);
-    const reserve = declassify(reserve); });
+    const product = declassify(is(uint256, interact.product()));
+    const reserve = declassify(is(uint256, interact.reserve())); });
   Seller.publish(product, reserve)
     .pay(reserve);
   

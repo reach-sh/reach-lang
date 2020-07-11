@@ -1,20 +1,21 @@
 'reach 0.1 exe';
 
-const Borrower = participant({_collateral: uint256,
-                              _pre: uint256,
-                              _post: uint256,
-                              _maturation: uint256 });
-const Lender = participant({});
+const Borrower = newParticipant();
+const Lender = newParticipant();
 
 const DELAY = 10; // in blocks
 
 function main() {
   Borrower.only(() => {
-    const collateral = declassify(_collateral);
-    const pre = declassify(_pre);
-    const post = declassify(_post);
-    assume(pre < post);
-    const maturation = declassify(_maturation); });
+    const [ _collateral,
+            _pre,
+            _post,
+            _maturation ] = declassify(is([ uint256,
+                                            uint256,
+                                            uint256,
+                                            uint256 ],
+                                          interact.getParams()));
+    assume(pre < post); });
   Borrower.publish(collateral, pre, post, maturation)
     .pay(collateral);
   require(pre < post);

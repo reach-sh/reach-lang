@@ -43,3 +43,7 @@ rebuild-and-run-all-examples:
 
 .PHONY: rbe
 rbe: rebuild-and-run-all-examples
+
+.PHONY: docs
+docs:
+	cd docs-src && $(MAKE)

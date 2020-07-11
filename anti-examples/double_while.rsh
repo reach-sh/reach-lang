@@ -1,6 +1,6 @@
 'reach 0.1 exe';
 
-const A = participant({});
+const A = newParticipant();
 const DELAY = 10;
 const AMOUNT = 10;
 

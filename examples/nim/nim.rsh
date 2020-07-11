@@ -1,8 +1,8 @@
 'reach 0.1 exe';
 
 // Protocol
-const A = participant({});
-const B = participant({});
+const A = newParticipant();
+const B = newParticipant();
 const DELAY = 10; // in blocks
 
 function main() {

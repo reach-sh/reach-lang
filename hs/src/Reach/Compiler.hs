@@ -1131,7 +1131,7 @@ compile copts = do
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
   (ebc, tbc) <- case enableExperimentalConnectors copts of
-    False-> do
+    False -> do
       let fake_ebc = "XXX"
           fake_tbc = ("XXX", "XXX", "XXX")
       return (fake_ebc, fake_tbc)

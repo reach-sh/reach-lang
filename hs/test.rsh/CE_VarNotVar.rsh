@@ -1,7 +1,7 @@
 'reach 0.1 exe';
 
-const A = participant({});
-const B = participant({});
+const A = newParticipant();
+const B = newParticipant();
 
 function main() {
   A.only(() => {
