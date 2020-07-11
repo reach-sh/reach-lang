@@ -1,6 +1,6 @@
 'reach 0.1 lib';
 
-const isHand = Enum([ROCK, PAPER, SCISSORS]);
+const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum();
 function showHand(handX) {
   require(isHand(handX));
   if ( handX == ROCK ) { return 'ROCK'; }
@@ -19,7 +19,7 @@ function _getHand() {
 function getHand() {
   return ensure(isHand, _getHand()); }
 
-const isOutcome = Enum([B_WINS, DRAW, A_WINS, A_QUITS, B_QUITS]);
+const [ isOutcome, B_WINS, DRAW, A_WINS, A_QUITS, B_QUITS ] = makeEnum();
 function showOutcome(o) {
   require(isOutcome(o));
   if (o == B_WINS) { return 'Bob wins'; }

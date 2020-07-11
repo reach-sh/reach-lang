@@ -575,7 +575,7 @@ decodeBlock fp (JSBlock prev ss _) = decodeStmts (dss_tp dss (tpa prev)) dss ss
 decodeDef :: FilePath -> JSStatement -> [XLDef TP]
 decodeDef fp j =
   case j of
-    (JSConstant a (JSLOne (JSVarInitExpression (JSIdentifier _ x) (JSVarInit _ (JSMemberExpression (JSIdentifier _ "Enum") _ (JSLOne (JSArrayLiteral _ vs _)) _)))) _) ->
+    (JSConstant a (JSLOne (JSVarInitExpression (JSArrayLiteral _ ((JSArrayElement (JSIdentifier _ x)) : vs) _) (JSVarInit _ (JSMemberExpression (JSIdentifier _ "makeEnum") _ JSLNil _)))) _) ->
       doXLEnum (tp a) x (map (expectId fp) (flattenJSArray vs))
     (JSConstant a (JSLOne (JSVarInitExpression lhs (JSVarInit _ e))) _) ->
       [XL_DefineValues (tp a) (decodeLetLHS fp lhs) $ decodeExpr (make_dss fp) e]

@@ -89,9 +89,9 @@ A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachi
 
 @(hrule)
 @reach{
-  const isHand = Enum([ROCK, PAPER, SCISSORS]); }
+  const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(); }
 
-An @deftech{enumeration}, written @reachin{const ENUM = Enum([OPTION_0, ..., OPTION_n]);}, defines the identifiers @reachin{OPTION_0} through @reachin{OPTION_n} as unique natural numbers and @reachin{ENUM} as a function which abstracts over one numeric argument and returns @reachin{true} if and only if it is one of these natural numbers.
+An @deftech{enumeration}, written @reachin{const [ ENUM, OPTION_0, ..., OPTION_n ] = makeEnum();}, defines the identifiers @reachin{OPTION_0} through @reachin{OPTION_n} as unique natural numbers and @reachin{ENUM} as a function which abstracts over one numeric argument and returns @reachin{true} if and only if it is one of these natural numbers.
 
 @(hrule)
 @reach{
