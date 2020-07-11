@@ -3,7 +3,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
-
 module Reach.Compiler where
 
 import Control.Monad.State.Lazy
@@ -12,16 +11,13 @@ import qualified Data.Map.Strict as M
 import qualified Data.Set as Set
 import qualified Data.Sequence as S
 import Text.Pretty.Simple
+import qualified Data.Text as T
 import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
 import Data.List (foldl')
-
 import System.Exit
-import qualified Filesystem.Path.CurrentOS as FP
 import Algebra.Lattice
-import System.Directory
 import Data.Bits
-
 import Test.SmallCheck.Series(Serial)
 import GHC.Generics(Generic)
 
@@ -1098,7 +1094,8 @@ epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
         γ = M.insert RoleContract M.empty γi
 
 data CompilerOpts = CompilerOpts
-  { output_dir :: FilePath
+  { output :: T.Text -> String -> IO ()
+  , output_name :: T.Text -> String
   , source :: FilePath
   , enableExperimentalConnectors :: Bool
   }
@@ -1106,12 +1103,8 @@ data CompilerOpts = CompilerOpts
 compile :: CompilerOpts -> IO ()
 compile copts = do
   let srcp = source copts
-  let srcbp = FP.basename $ FP.decodeString srcp
-  let outd = output_dir copts
-  let outdp = FP.decodeString outd
-  let outn ext = FP.encodeString $ FP.append outdp $ srcbp `FP.addExtension` ext
-  let out ext con = writeFile (outn ext) con
-  createDirectoryIfMissing True outd
+  let out = output copts
+  let outn = output_name copts
   xlp <- readReachFile srcp
   out "xl" (L.unpack (pShow xlp))
   let xilp = inline xlp

@@ -14,7 +14,7 @@ dependencies:
 - bytestring
 - mtl
 - digest
-- language-javascript >= 0.6.0.13
+- language-javascript >= 0.7.1.0
 - parsec-numbers
 - filepath
 - file-embed >= 0.0.9
