@@ -114,6 +114,7 @@ z3_verify1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 (z3Apply "not" [ a ])
   r <- check z3
   case r of
+    -- XXX unknown should be treated like sat, but with no model
     Unknown -> impossible "Z3 verify1: Unknown"
     Unsat -> return $ VR 1 0
     Sat -> do
@@ -166,6 +167,7 @@ z3_assert_chk z3 h e = do
   assert z3 e
   r <- check z3
   case r of
+    -- XXX unknown should be treated like unsat
     Unknown -> impossible $ show h ++ ": Z3 assert_chk: Unknown"
     Sat -> mempty
     Unsat -> error $ show h ++ ": Unreachable code with addition of assumption: " ++ show e
