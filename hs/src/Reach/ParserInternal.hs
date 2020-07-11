@@ -225,7 +225,7 @@ instance ExtractTP (XLExpr TP) where
 instance ExtractTP (XLPartInfo TP) where
   etp x = f $ M.toList x
     where f [] = Nothing
-          f ((_,(a,_)):_) = xtp a
+          f ((_,a):_) = xtp a
 
 data ParseErr
   = PE_HeaderProgram
@@ -602,7 +602,7 @@ decodeBody fp (d, p, me) msis =
   case msis of
     (JSModuleStatementListItem (JSConstant _ (JSLOne (JSVarInitExpression (JSIdentifier _ who) (JSVarInit _ (JSMemberExpression (JSIdentifier a "newParticipant") _ JSLNil _)))) _)) ->
       return $ (d, p', me)
-      where p' = M.insert who ((tp a), []) p
+      where p' = M.insert who (tp a) p
     (JSModuleStatementListItem (JSFunction ja (JSIdentName _ "main") _ (JSLNil) _ body _)) ->
       case me of
         Nothing -> return $ (d, p, Just (decodeBlock (make_dss fp) body))

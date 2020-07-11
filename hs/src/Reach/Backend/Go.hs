@@ -257,15 +257,14 @@ goEPTail tn who (EP_FromConsensus _ kt) = (tp, kfvs)
         (ktp, kfvs) = goEPTail tn who kt
 
 goPart :: (BLVar, EProgram b) -> Doc a
-goPart (p, ep@(EP_Prog _ pargs et)) =
+goPart (p, ep@(EP_Prog _ et)) =
   vsep_with_blank [ ity_p, funp ]
   where tn' = 0
         pn = gopart_name p
         ity_n = "Interact_" ++ pn
-        pargs_vs = map goVarAndType pargs
         bodyp' = vsep [ pretty "var" <+> goTxn tn' <+> pretty "= stdlib.Txn0" <> semi, pretty "_ = txn0;", bodyp ]
         (bodyp, _) = goEPTail tn' p et
-        funp = goFunction pn ([ pretty "ctc stdlib.Contract", pretty ("interact " ++ ity_n) ] ++ pargs_vs) bodyp'
+        funp = goFunction pn ([ pretty "ctc stdlib.Contract", pretty ("interact " ++ ity_n) ]) bodyp'
         ity_p = pretty ("type " ++ ity_n ++ " interface") <+> (braces $ nest 2 $ hardline <> (hcat $ intersperse (semi <> hardline) ity_eps ))
         ity_eps = map ity_mk $ M.toList ity
         ity = ep_interacts ep

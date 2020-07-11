@@ -2,6 +2,7 @@
 module Reach.Pretty where
 
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc
 import Data.List (intersperse)
 
@@ -133,16 +134,13 @@ prettyILVars vs = parens $ hsep $ map prettyILVar vs
 prettyILPartArg :: ILVar -> Doc ann
 prettyILPartArg v = group $ brackets $ prettyILVar v
 
-prettyILPart :: (ILVar, [ILVar]) -> Doc ann
-prettyILPart (p, vs) =
-  group $ parens $ pretty "define-participant" <+> pretty p <> body
-  where pvs = map prettyILPartArg vs
-        body = case vs of [] -> emptyDoc
-                          _ -> (nest 2 $ hardline <> vsep pvs)
+prettyILPart :: ILVar -> Doc ann
+prettyILPart p =
+  group $ parens $ pretty "define-participant" <+> pretty p
 
 prettyILPartInfo :: ILPartInfo b -> Doc ann
 prettyILPartInfo ps =
-  vsep $ pretty "#:participants" : (map prettyILPart (M.toList ps))
+  vsep $ pretty "#:participants" : (map prettyILPart (S.toList ps))
 
 instance Pretty (ILProgram a) where
   pretty (IL_Prog _ _ ps t) = vsep [pretty "#lang reach/il", emptyDoc, prettyILPartInfo ps, emptyDoc, pretty "#:main", pretty t]
@@ -224,9 +222,8 @@ prettyBLVars :: [BLVar] -> Doc ann
 prettyBLVars bs = parens $ hsep $ map prettyBLVar bs
 
 prettyBLPart :: (BLVar, EProgram b) -> Doc ann
-prettyBLPart (p, (EP_Prog _ args t)) =
-  group $ parens $ pretty "define-participant" <+> pretty p <+> (nest 2 $ hardline <> vsep [argp, emptyDoc, pretty t])
-  where argp = group $ parens $ vsep $ map prettyBLVar args
+prettyBLPart (p, (EP_Prog _ t)) =
+  group $ parens $ pretty "define-participant" <+> pretty p <+> (nest 2 $ hardline <> pretty t)
 
 prettyBLParts :: BLParts b -> Doc ann
 prettyBLParts ps =

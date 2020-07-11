@@ -102,7 +102,7 @@ function main() {
       lowerHash,
       upperHash,
       chainLength,
-    ] = declassify( [address, address, address, uint256, uint256, uint256 ], interact.getParams()); });
+    ] = declassify( is([address, address, address, uint256, uint256, uint256 ], interact.getParams())); });
   Rollup.publish(CallbackDest, Asserter, Challenger,
                  lowerHash, upperHash, chainLength);
   commit();

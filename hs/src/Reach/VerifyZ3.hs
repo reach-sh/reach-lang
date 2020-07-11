@@ -3,7 +3,6 @@
 {-# LANGUAGE StrictData #-}
 module Reach.VerifyZ3 where
 
-import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Control.Monad
 import Control.Monad.Extra
@@ -30,9 +29,6 @@ class CollectTypes a where
 instance CollectTypes a => CollectTypes [a] where
   cvs = foldMap cvs
 
-instance CollectTypes a => CollectTypes (M.Map b a) where
-  cvs = foldMap cvs
-
 instance CollectTypes ILVar where
   cvs v = S.singleton v
 
@@ -49,7 +45,7 @@ instance CollectTypes (ILTail a) where
   cvs (IL_Continue _ _) = mempty
 
 instance CollectTypes (ILProgram a) where
-  cvs (IL_Prog _ _ ps it) = cvs ps <> cvs it
+  cvs (IL_Prog _ _ _ it) = cvs it
 
 {- Z3 Printing -}
 
@@ -472,7 +468,7 @@ _verify_z3 z3 tp = do
       do putStrLn $ " " ++ show fs ++ " failures. :'("
          return $ ExitFailure 1)
   where IL_Prog _ _ ipi it = tp
-        ps = RoleContract : (map RolePart $ M.keys ipi)
+        ps = RoleContract : (map RolePart $ S.toList ipi)
 
 newFileLogger :: FilePath -> IO (IO (), Logger)
 newFileLogger p = do

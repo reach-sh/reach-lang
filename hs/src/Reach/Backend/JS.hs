@@ -239,11 +239,10 @@ jsEPTail stop_at_consensus tn who t =
   where do_stop x = if stop_at_consensus then (jsReturn (jsCon (Con_B True)), mempty) else x
 
 jsPart :: (BLVar, EProgram b) -> Doc a
-jsPart (p, (EP_Prog _ pargs et)) =
-  pretty "export" <+> jsFunction pn ([ pretty "stdlib", pretty "ctc", pretty "interact" ] ++ pargs_vs) bodyp'
+jsPart (p, (EP_Prog _ et)) =
+  pretty "export" <+> jsFunction pn ([ pretty "stdlib", pretty "ctc", pretty "interact" ]) bodyp'
   where tn' = 0
         pn = blvar_name p
-        pargs_vs = map jsVar pargs
         bodyp' = vsep [ pretty "const" <+> jsTxn tn' <+> pretty "= { balance: 0, value: 0 }" <> semi
                       , bodyp ]
         (bodyp, _) = jsEPTail False tn' p et

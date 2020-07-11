@@ -171,7 +171,7 @@ data XLDef a
   | XL_DefineFun a XLVar [XLVar] (XLExpr a)
   deriving (Show,Eq,Generic,NFData)
 
-type XLPartInfo a = (M.Map XLVar (a, [(a, XLVar, (XLType a))]))
+type XLPartInfo a = (M.Map XLVar a)
 
 data XLProgram  a=
   XL_Prog a [XLDef a] (XLPartInfo a) (XLExpr a)
@@ -200,7 +200,7 @@ data XILExpr a
   | XIL_ArrayRef a LType (XILExpr a) (XILExpr a)
   deriving (Show,Eq)
 
-type XILPartInfo a = (M.Map XILVar (a, [(a, XILVar)]))
+type XILPartInfo a = (M.Map XILVar a)
 
 data XILProgram a =
   XIL_Prog a [LType] (XILPartInfo a) (XILExpr a)
@@ -261,7 +261,7 @@ data ILTail a
   deriving (Show,Eq)
 
 type ILPartArgs a = [ILVar]
-type ILPartInfo a = (M.Map ILVar (ILPartArgs a))
+type ILPartInfo a = (S.Set ILVar)
 
 data ILProgram a =
   IL_Prog a [LType] (ILPartInfo a) (ILTail a)
@@ -332,7 +332,7 @@ data EPTail a
   deriving (Show,Eq)
 
 data EProgram a
-  = EP_Prog a [BLVar] (EPTail a)
+  = EP_Prog a (EPTail a)
   deriving (Show,Eq)
 
 --- --- Gather interactions
@@ -365,7 +365,7 @@ ept_interacts t =
     EP_FromConsensus _ bt -> ept_interacts bt
 
 ep_interacts :: EProgram a -> M.Map String ([LType], LType)
-ep_interacts (EP_Prog _ _ et) = ept_interacts et
+ep_interacts (EP_Prog _ et) = ept_interacts et
 
 -- -- Contracts
 data CExpr a

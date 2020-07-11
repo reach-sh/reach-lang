@@ -484,13 +484,8 @@ peval outer_loopt σ e =
 inline :: Show a => XLProgram a -> XILProgram a
 inline (XL_Prog ph defs ps m) = XIL_Prog ph rts ps' (add_to_m' m')
   where (_, rts, m') = iv_expr ph iv
-        ps' = M.map (\(prh, vs) -> (prh, map (\(vh,v,xt)->(vh,(v,teval σ_top xt))) vs)) $ M.mapKeys (\p -> (p,(LT_BT BT_Address))) ps
-        iv = peval Nothing σ_top_and_ps m
-        σ_top_and_ps = M.union σ_top σ_ps
-        σ_ps = foldr add_ps M.empty ps
-        add_ps (_ph, vs) σ = foldr add_pvs σ vs
-        add_pvs (vh, v, xt) σ = ienv_insert vh v (IV_Var vh (v,bt)) σ
-          where bt = teval σ_top xt
+        ps' = M.mapKeys (\p -> (p,(LT_BT BT_Address))) ps
+        iv = peval Nothing σ_top m
         (add_to_m', σ_top) = foldl' add_tops ((\x->x), M.empty) defs
         add_tops (adder, σ) d =
           case d of
@@ -588,15 +583,13 @@ anf_parg (ρ, args) (h, v) =
     Just _ -> expect_throw CE_UnknownRole h v
   where args' nv = args ++ [nv]
 
-anf_part :: Show ann => (XILRenaming ann, ILPartInfo ann) -> (XILVar, (ann, [(ann, XILVar)])) -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
-anf_part (ρ, ips) (p, (h, args)) = do
+anf_part :: (XILRenaming ann, ILPartInfo ann) -> (XILVar, ann) -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
+anf_part (ρ, ips) (p, h) = do
   (ρ', p') <- makeRename h ρ p
-  (ρ'', args') <- foldM anf_parg (ρ', []) args
-  let ips' = M.insert p' args' ips
-  return (ρ'', ips')
+  return (ρ', Set.insert p' ips)
 
-anf_parts :: Show ann => XILPartInfo ann -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
-anf_parts ps = foldM anf_part (M.empty, M.empty) (M.toList ps)
+anf_parts :: XILPartInfo ann -> ANFMonad ann (XILRenaming ann, ILPartInfo ann)
+anf_parts ps = foldM anf_part (M.empty, Set.empty) (M.toList ps)
 
 anf_exprs :: Show ann => ann -> Role ILVar -> XILRenaming ann -> [XILExpr ann] -> (ann -> [ILArg ann] -> ANFMonad ann (ILTail ann)) -> ANFMonad ann (ILTail ann)
 anf_exprs h0 me ρ es mk =
@@ -1096,12 +1089,12 @@ epp_it_loc ps last_hNvs γ ctxt toint it = case it of
 epp :: Show ann => ILProgram ann -> BLProgram ann
 epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
   where cp = C_Prog h chs
-        ps = M.keys ips
+        ps = Set.toList ips
         bps = M.mapWithKey mkep ets
-        mkep p ept = EP_Prog h (ips M.! p) ept
+        mkep _ ept = EP_Prog h ept
         ((_, _, ets), chs) = runEPP $ epp_it_loc ps (0, mempty) γ EC_Top default_interval it
-        γi = M.fromList $ map initγ $ M.toList ips
-        initγ (p, args) = (RolePart p, M.fromList $ map (\v->(v, Secret)) args)
+        γi = M.fromList $ map initγ $ Set.toList ips
+        initγ p = (RolePart p, mempty)
         γ = M.insert RoleContract M.empty γi
 
 data CompilerOpts = CompilerOpts

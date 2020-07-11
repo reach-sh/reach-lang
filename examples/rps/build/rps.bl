@@ -130,8 +130,6 @@
     (halt!)])
 
 (define-participant (0, (A, address)) 
-  ()
-  
   (define 3/Interact:uint256 (interact.getWagerAmount uint256 ))
   (define 4/Declassify:uint256 3/Interact:uint256)
   (define 5/Interact:uint256 (interact.getEscrowAmount uint256 ))
@@ -316,8 +314,6 @@
   129/PureIf:bytes))))))
 
 (define-participant (1, (B, address)) 
-  ()
-  
   (sendrecv (#:join 0/A:address) 1 () (4/Declassify:uint256 6/Declassify:uint256)  )
   (define 9/PrimApp:uint256 (TXN_VALUE))
   (define 10/PrimApp:uint256 (ADD 4/Declassify:uint256 6/Declassify:uint256))
@@ -484,8 +480,6 @@
   129/PureIf:bytes))))))
 
 (define-participant (2, (O, address)) 
-  ()
-  
   (sendrecv (#:join 0/A:address) 1 () (4/Declassify:uint256 6/Declassify:uint256)  )
   (define 9/PrimApp:uint256 (TXN_VALUE))
   (define 10/PrimApp:uint256 (ADD 4/Declassify:uint256 6/Declassify:uint256))
