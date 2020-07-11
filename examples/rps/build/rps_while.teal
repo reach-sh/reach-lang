@@ -84,16 +84,16 @@ int 1
 itob
 global Round
 itob
+concat
 gtxn 0 Sender
+concat
 txna ApplicationArgs 3
 btoi
 itob
+concat
 txna ApplicationArgs 4
 btoi
 itob
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -143,16 +143,16 @@ bz revert
 int 1
 itob
 txna ApplicationArgs 1
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
 btoi
 itob
+concat
 txna ApplicationArgs 5
 btoi
 itob
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -228,22 +228,22 @@ bz revert
 int 2
 itob
 txna ApplicationArgs 1
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
+concat
 txna ApplicationArgs 5
 btoi
 itob
+concat
 txna ApplicationArgs 6
 btoi
 itob
+concat
 txna ApplicationArgs 7
 btoi
 itob
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -264,26 +264,26 @@ int 4
 itob
 global Round
 itob
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
+concat
 txna ApplicationArgs 5
 btoi
 itob
+concat
 txna ApplicationArgs 6
 btoi
 itob
+concat
 txna ApplicationArgs 7
 btoi
 itob
+concat
 txna ApplicationArgs 8
 btoi
 itob
-concat
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -337,26 +337,26 @@ bz revert
 int 4
 itob
 txna ApplicationArgs 1
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
+concat
 txna ApplicationArgs 5
 btoi
 itob
+concat
 txna ApplicationArgs 6
 btoi
 itob
+concat
 txna ApplicationArgs 7
 btoi
 itob
+concat
 txna ApplicationArgs 8
 btoi
 itob
-concat
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -391,30 +391,30 @@ int 5
 itob
 global Round
 itob
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
+concat
 txna ApplicationArgs 5
 btoi
 itob
+concat
 txna ApplicationArgs 6
 btoi
 itob
+concat
 txna ApplicationArgs 7
 btoi
 itob
+concat
 txna ApplicationArgs 8
 btoi
 itob
+concat
 txna ApplicationArgs 9
 btoi
 itob
-concat
-concat
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -468,30 +468,30 @@ bz revert
 int 5
 itob
 txna ApplicationArgs 1
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
+concat
 txna ApplicationArgs 5
 btoi
 itob
+concat
 txna ApplicationArgs 6
 btoi
 itob
+concat
 txna ApplicationArgs 7
 btoi
 itob
+concat
 txna ApplicationArgs 8
 btoi
 itob
+concat
 txna ApplicationArgs 9
 btoi
 itob
-concat
-concat
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -666,30 +666,30 @@ bz revert
 int 5
 itob
 txna ApplicationArgs 1
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
+concat
 txna ApplicationArgs 5
 btoi
 itob
+concat
 txna ApplicationArgs 6
 btoi
 itob
+concat
 txna ApplicationArgs 7
 btoi
 itob
+concat
 txna ApplicationArgs 8
 btoi
 itob
+concat
 txna ApplicationArgs 9
 btoi
 itob
-concat
-concat
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -765,26 +765,26 @@ bz revert
 int 4
 itob
 txna ApplicationArgs 1
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
+concat
 txna ApplicationArgs 5
 btoi
 itob
+concat
 txna ApplicationArgs 6
 btoi
 itob
+concat
 txna ApplicationArgs 7
 btoi
 itob
+concat
 txna ApplicationArgs 8
 btoi
 itob
-concat
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -860,22 +860,22 @@ bz revert
 int 2
 itob
 txna ApplicationArgs 1
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
+concat
 txna ApplicationArgs 5
 btoi
 itob
+concat
 txna ApplicationArgs 6
 btoi
 itob
+concat
 txna ApplicationArgs 7
 btoi
 itob
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -951,16 +951,16 @@ bz revert
 int 1
 itob
 txna ApplicationArgs 1
+concat
 txna ApplicationArgs 3
+concat
 txna ApplicationArgs 4
 btoi
 itob
+concat
 txna ApplicationArgs 5
 btoi
 itob
-concat
-concat
-concat
 concat
 keccak256
 btoi
@@ -1023,19 +1023,19 @@ int 2
 itob
 global Round
 itob
+concat
 load 0
+concat
 load 1
+concat
 load 2
 itob
+concat
 load 3
 itob
+concat
 load 4
 itob
-concat
-concat
-concat
-concat
-concat
 concat
 keccak256
 btoi

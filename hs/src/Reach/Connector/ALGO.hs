@@ -164,8 +164,8 @@ data HashMode
   | HM_State Int Bool
   deriving (Show, Eq, Ord)
 
-comp_blarg_for_hash :: CompileSt a -> BLArg a -> LabelM ann TEALs
-comp_blarg_for_hash cs a = do
+comp_blarg_for_hash :: CompileSt a -> Int -> BLArg a -> LabelM ann TEALs
+comp_blarg_for_hash cs n a = do
   (ty, ls) <- comp_blarg_ty cs a
   let convert_ls =
         case ty of
@@ -175,7 +175,8 @@ comp_blarg_for_hash cs a = do
           LT_BT BT_Address -> []
           LT_FixedArray _bt _hm ->
             xxx "FixedArray comp_blarg_for_hash"
-  return $ ls ++ convert_ls
+      combine = if n == 0 then [] else code "concat" []
+  return $ ls ++ convert_ls ++ combine
 
 comp_hash :: HashMode -> CompileSt a -> [BLArg a] -> LabelM ann TEALs
 comp_hash hm cs as = do
@@ -191,17 +192,12 @@ comp_hash hm cs as = do
                            ++ code "itob" [])
                         else
                           comp_arg 1)
-  as_ls <- concatMapM (comp_blarg_for_hash cs) as
-  let how_many = pre_len + length as
+                    ++ code "concat" []
+  as_ls <- concatMapM (uncurry $ comp_blarg_for_hash cs) (zip [pre_len ..] as)
   return $ pre_ls
     ++ as_ls
-    --- FIXME: Interleave these concats into the arguments themselves so that maybe the assembler can track the types better.
-    ++ combine how_many
     ++ code "keccak256" []
     ++ code "btoi" []
-  where combine 0 = comp_con (Con_BS "")
-        combine 1 = []
-        combine n = (combine (n-1) ++ code "concat" [])
 
 comp_cexpr :: CompileSt a -> CExpr a -> LabelM ann TEALs
 comp_cexpr cs e =
