@@ -29,6 +29,9 @@ jobs:
       - run:
           name: test hs
           command: (cd hs && stack test || echo allowed to fail)
+      - run:
+          name: check hs
+          command: (cd hs && make check || echo allowed to fail)
 
       - setup_remote_docker
       - run:
