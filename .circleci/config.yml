@@ -23,7 +23,7 @@ jobs:
           name: install hs check dependencies
           # XXX move this apt install to the docker container
           command: |
-              apt-get upate && apt-get install -y libtinfo-dev
+              apt-get update && apt-get install -y libtinfo-dev
               (cd hs && stack build stan)
       - save_cache:
           key: hs-1-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
