@@ -16,6 +16,7 @@ import Language.JavaScript.Parser.AST
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
+import qualified Data.Graph as G
 --import Control.Monad
 import Data.FileEmbed
 import GHC.IO.Encoding
@@ -135,9 +136,10 @@ expect_throw :: SrcLoc -> CompilerError -> b
 expect_throw src ce = error $ "XXX " ++ show src ++ " " ++ show ce
 
 -- Parser
-type JSBundleMapPartial = M.Map ReachSource (Maybe [JSModuleItem])
+type ReachSourceDeps = M.Map ReachSource [ReachSource]
+type JSBundleMapPartial = (ReachSourceDeps, M.Map ReachSource (Maybe [JSModuleItem]))
 type JSBundleMap = M.Map ReachSource [JSModuleItem]
-data JSBundle = JSBundle ReachSource JSBundleMap
+data JSBundle = JSBundle [ReachSource] JSBundleMap
   deriving (Eq,Show)
 
 gatherDeps_imd :: SrcLoc -> IORef JSBundleMapPartial -> JSImportDeclaration -> IO JSImportDeclaration
@@ -166,26 +168,36 @@ gatherDeps_ast at fmr j =
     _ ->
       expect_throw at (Err_Parse_NotModule j)
 
-updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef (M.Map a (Maybe b)) -> (() -> IO a) -> (a -> c) -> (a -> CompilerError) -> (a -> IO b) -> IO c
-updatePartialAvoidCycles at fmr get_key ret_key err_key proc_key = do
+updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef ((M.Map a [a]), (M.Map a (Maybe b))) -> Maybe a -> [a] -> (() -> IO a) -> (a -> c) -> (a -> CompilerError) -> (a -> IO b) -> IO c
+updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = do
   key <- get_key ()
   let res = ret_key key
-  fm <- readIORef fmr
+  (dm, fm) <- readIORef fmr
   case (M.lookup key fm) of
     Nothing -> do
-      writeIORef fmr (M.insert key Nothing fm)
+      writeIORef fmr ((M.insert key def_a dm), (M.insert key Nothing fm))
       content <- proc_key key
-      fm' <- readIORef fmr
-      writeIORef fmr (M.insert key (Just content) fm')
+      (dm', fm') <- readIORef fmr
+      let fm'' = (M.insert key (Just content) fm')
+          add_key ml = Just $ key : (maybe [] (\x->x) ml)
+          dm'' = case mfrom of
+                   Just from -> (M.alter add_key from dm')
+                   Nothing -> dm'
+      writeIORef fmr (dm'', fm'')
       return res
     Just Nothing ->
       expect_throw at $ err_key key
     Just (Just _) ->
       return res
 
+gatherDeps_from :: SrcLoc -> Maybe ReachSource
+gatherDeps_from SrcLoc_Top = Nothing
+gatherDeps_from (SrcLoc_Src _ rs _) = Just rs
+gatherDeps_from (SrcLoc_At _ _ sl) = gatherDeps_from sl
+
 gatherDeps_file :: SrcLoc -> IORef JSBundleMapPartial -> FilePath -> IO FilePath
 gatherDeps_file at fmr src_rel =
-  updatePartialAvoidCycles at fmr get_key ret_key err_key proc_key
+  updatePartialAvoidCycles at fmr (gatherDeps_from at) [ReachStdLib] get_key ret_key err_key proc_key
   where get_key () = do
           src_abs <- makeAbsolute src_rel
           return $ ReachSourceFile src_abs
@@ -206,7 +218,7 @@ stdlib_str = $(embedStringFile "./rsh/stdlib.rsh")
 
 gatherDeps_stdlib :: SrcLoc -> IORef JSBundleMapPartial -> IO ()
 gatherDeps_stdlib at fmr =
-  updatePartialAvoidCycles at fmr get_key ret_key err_key proc_key
+  updatePartialAvoidCycles at fmr (gatherDeps_from at) [] get_key ret_key err_key proc_key
   where get_key () = return $ ReachStdLib
         ret_key _ = ()
         err_key x = Err_Parse_CyclicImport x
@@ -214,15 +226,23 @@ gatherDeps_stdlib at fmr =
           let at' = SrcLoc_Src "(standard library)" ReachStdLib at
           (gatherDeps_ast at' fmr $ readJsModule stdlib_str)
 
+gatherDeps_order :: Ord a => M.Map a [a] -> [a]
+gatherDeps_order dm = order
+  where order = map (getNodePart . nodeFromVertex) order_v
+        order_v = G.topSort graph
+        (graph, nodeFromVertex, _vertexFromKey) = G.graphFromEdges edgeList
+        edgeList = map (\(from,to) -> (from,from,to)) $ M.toList dm
+        getNodePart (n, _, _) = n
+
 gatherDeps_top :: FilePath -> IO JSBundle
 gatherDeps_top src_p = do
-  fmr <- newIORef mempty
+  fmr <- newIORef (mempty, mempty)
   let at = SrcLoc_Top
-  src_abs_p <- gatherDeps_file at fmr src_p
-  let src = (ReachSourceFile src_abs_p)
-  gatherDeps_stdlib (SrcLoc_Src src_p src at) fmr
-  fm' <- readIORef fmr
-  return $ JSBundle src $ M.map ensureJust fm'
+  _src_abs_p <- gatherDeps_file at fmr src_p
+  gatherDeps_stdlib at fmr
+  (dm, fm) <- readIORef fmr
+  let order = gatherDeps_order dm
+  return $ JSBundle order $ M.map ensureJust fm
   where ensureJust (Just x) = x
         ensureJust Nothing = impossible $ "gatherDeps_top : did not close all Reach source files"
 
@@ -279,7 +299,9 @@ compileExe gst lst exe = compileExeTop gst' lst' exe_mis'
             _ -> expect_throw outer_at' (Err_Exe_NoHeader exe_mis)
 
 compileBundle :: JSBundle -> NLProgram
-compileBundle (JSBundle exe t_mods_js) =
+compileBundle (JSBundle [] _) =
+  impossible $ "compileBundle: no files"
+compileBundle (JSBundle (exe:deps) t_mods_js) =
   compileExe gst lst exe
   where gst = (SLGlobalSt
                { mods_js = t_mods_js
