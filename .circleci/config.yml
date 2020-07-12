@@ -40,7 +40,7 @@ jobs:
           name: check hs
           command: (cd hs && make check)
       - store_artifacts:
-          - hs/stan.html
+          path: hs/stan.html
 
       - setup_remote_docker
       - run:
