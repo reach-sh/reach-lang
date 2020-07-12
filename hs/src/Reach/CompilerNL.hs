@@ -139,7 +139,7 @@ expect_throw src ce = error $ "XXX " ++ show src ++ " " ++ show ce
 type ReachSourceDeps = M.Map ReachSource [ReachSource]
 type JSBundleMapPartial = (ReachSourceDeps, M.Map ReachSource (Maybe [JSModuleItem]))
 type JSBundleMap = M.Map ReachSource [JSModuleItem]
-data JSBundle = JSBundle [ReachSource] JSBundleMap
+data JSBundle = JSBundle [(ReachSource,[JSModuleItem])]
   deriving (Eq,Show)
 
 gatherDeps_imd :: SrcLoc -> IORef JSBundleMapPartial -> JSImportDeclaration -> IO JSImportDeclaration
@@ -226,8 +226,8 @@ gatherDeps_stdlib at fmr =
           let at' = SrcLoc_Src "(standard library)" ReachStdLib at
           (gatherDeps_ast at' fmr $ readJsModule stdlib_str)
 
-gatherDeps_order :: Ord a => M.Map a [a] -> [a]
-gatherDeps_order dm = order
+map_order :: Ord a => M.Map a [a] -> [a]
+map_order dm = order
   where order = map (getNodePart . nodeFromVertex) order_v
         order_v = G.topSort graph
         (graph, nodeFromVertex, _vertexFromKey) = G.graphFromEdges edgeList
@@ -241,10 +241,9 @@ gatherDeps_top src_p = do
   _src_abs_p <- gatherDeps_file at fmr src_p
   gatherDeps_stdlib at fmr
   (dm, fm) <- readIORef fmr
-  let order = gatherDeps_order dm
-  return $ JSBundle order $ M.map ensureJust fm
-  where ensureJust (Just x) = x
-        ensureJust Nothing = impossible $ "gatherDeps_top : did not close all Reach source files"
+  return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) $ map_order dm
+  where ensureJust Nothing = impossible "gatherDeps: Did not close all Reach files"
+        ensureJust (Just x) = x
 
 -- Compiler
 data SLCtxt
@@ -253,8 +252,7 @@ data SLCtxt
   deriving (Eq,Show)
 
 data SLGlobalSt = SLGlobalSt
-  { mods_js :: JSBundleMap
-  , mods :: M.Map ReachSource SLLib
+  { mods :: M.Map ReachSource SLLib
   , next_var :: Int
   , context :: SLCtxt
   }
@@ -284,13 +282,10 @@ compileExeTop gst lst mis =
         (JSModuleStatementListItem s) ->
           compileExeTopStmt gst lst s tail_mis
           
-compileExe :: SLGlobalSt -> SLLocalSt -> ReachSource -> NLProgram
-compileExe gst lst exe = compileExeTop gst' lst' exe_mis'
-  where t_mod_js = mods_js gst
-        exe_mis = (t_mod_js M.! exe)
-        outer_at' = SrcLoc_Src "main executable" exe (outer_at lst)
-        t_mods_js' = M.delete exe t_mod_js
-        gst' = gst { mods_js = t_mods_js' }
+compileExe :: SLGlobalSt -> SLLocalSt -> (ReachSource, [JSModuleItem]) -> NLProgram
+compileExe gst lst (exe, exe_mis) = compileExeTop gst' lst' exe_mis'
+  where outer_at' = SrcLoc_Src "main executable" exe (outer_at lst)
+        gst' = gst
         lst' = lst { outer_at = outer_at'
                    , prev_at = prev_at' }
         (prev_at', exe_mis') =
@@ -299,13 +294,12 @@ compileExe gst lst exe = compileExeTop gst' lst' exe_mis'
             _ -> expect_throw outer_at' (Err_Exe_NoHeader exe_mis)
 
 compileBundle :: JSBundle -> NLProgram
-compileBundle (JSBundle [] _) =
+compileBundle (JSBundle []) =
   impossible $ "compileBundle: no files"
-compileBundle (JSBundle (exe:deps) t_mods_js) =
+compileBundle (JSBundle (exe:_deps)) =
   compileExe gst lst exe
   where gst = (SLGlobalSt
-               { mods_js = t_mods_js
-               , mods = mempty
+               { mods = mempty
                , next_var = 0
                , context = SLC_Exe })
         lst = (SLLocalSt
