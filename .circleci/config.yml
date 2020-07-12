@@ -21,10 +21,7 @@ jobs:
           command: (cd hs && stack test --dependencies-only)
       - run:
           name: install hs check dependencies
-          # XXX move this apt install to the docker container
-          command: |
-              apt-get update && apt-get install -y libtinfo-dev
-              (cd hs && stack build stan)
+          command: (cd hs && stack build stan)
       - save_cache:
           key: hs-2-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
           paths:
