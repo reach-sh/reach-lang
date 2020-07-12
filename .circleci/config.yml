@@ -4,14 +4,14 @@ orbs:
 jobs:
   build-and-test:
     docker:
-      - image: danburton/reach-circle:v0.1.0
+      - image: reachsh/reach-circle:v0.1.0
     steps:
       - checkout
       - restore_cache:
           keys:
-            - hs-1-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
-            - hs-1-{{ checksum "hs/stack.yaml" }}
-            - hs-1-
+            - hs-2-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
+            - hs-2-{{ checksum "hs/stack.yaml" }}
+            - hs-2-
             - hs-
       - run:
           name: install hs dependencies
@@ -26,7 +26,7 @@ jobs:
               apt-get update && apt-get install -y libtinfo-dev
               (cd hs && stack build stan)
       - save_cache:
-          key: hs-1-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
+          key: hs-2-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
           paths:
             - /root/.stack
             - hs/.stack_work

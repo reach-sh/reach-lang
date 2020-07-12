@@ -1,6 +1,6 @@
 TAG="reachsh/reach:v0.1.0"
 NAME="reach"
-CIRCLE_TAG="danburton/reach-circle:v0.1.0"
+CIRCLE_TAG="reachsh/reach-circle:v0.1.0"
 
 .PHONY: build
 build:
