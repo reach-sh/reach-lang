@@ -43,7 +43,7 @@ instance Ord TokenPosn where
 
 data SrcLoc
   = SrcLoc_Top
-  | SrcLoc_Src FilePath ReachSource SrcLoc
+  | SrcLoc_Src ReachSource SrcLoc
   | SrcLoc_At String (Maybe TokenPosn) SrcLoc
   deriving (Eq,Show,Ord)
 
@@ -192,7 +192,7 @@ updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = d
 
 gatherDeps_from :: SrcLoc -> Maybe ReachSource
 gatherDeps_from SrcLoc_Top = Nothing
-gatherDeps_from (SrcLoc_Src _ rs _) = Just rs
+gatherDeps_from (SrcLoc_Src rs _) = Just rs
 gatherDeps_from (SrcLoc_At _ _ sl) = gatherDeps_from sl
 
 gatherDeps_file :: SrcLoc -> IORef JSBundleMapPartial -> FilePath -> IO FilePath
@@ -207,7 +207,7 @@ gatherDeps_file at fmr src_rel =
         err_key x = Err_Parse_CyclicImport x
         proc_key (ReachStdLib) = no_stdlib
         proc_key src@(ReachSourceFile src_abs) = do
-          let at' = SrcLoc_Src src_rel src at
+          let at' = SrcLoc_Src src at
           setLocaleEncoding utf8
           content <- readFile src_abs
           withCurrentDirectory (takeDirectory src_abs)
@@ -223,7 +223,7 @@ gatherDeps_stdlib at fmr =
         ret_key _ = ()
         err_key x = Err_Parse_CyclicImport x
         proc_key _ = do
-          let at' = SrcLoc_Src "(standard library)" ReachStdLib at
+          let at' = SrcLoc_Src ReachStdLib at
           (gatherDeps_ast at' fmr $ readJsModule stdlib_str)
 
 map_order :: Ord a => M.Map a [a] -> [a]
@@ -284,7 +284,7 @@ compileExeTop gst lst mis =
           
 compileExe :: SLGlobalSt -> SLLocalSt -> (ReachSource, [JSModuleItem]) -> NLProgram
 compileExe gst lst (exe, exe_mis) = compileExeTop gst' lst' exe_mis'
-  where outer_at' = SrcLoc_Src "main executable" exe (outer_at lst)
+  where outer_at' = SrcLoc_Src exe (outer_at lst)
         gst' = gst
         lst' = lst { outer_at = outer_at'
                    , prev_at = prev_at' }
@@ -293,20 +293,43 @@ compileExe gst lst (exe, exe_mis) = compileExeTop gst' lst' exe_mis'
             ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach 0.1 exe\'") (JSSemi a))):j) -> ((srcloc_jsa "exe header" a outer_at'), j)
             _ -> expect_throw outer_at' (Err_Exe_NoHeader exe_mis)
 
+data SLLibs = SLLibs
+  { libm :: M.Map ReachSource SLEnv }
+  deriving (Eq,Show)
+
+init_libs :: SLLibs
+init_libs = (SLLibs { libm = mempty })
+
+compileLibTop :: SLLibs -> SrcLoc -> [JSModuleItem] -> SLEnv
+compileLibTop _libs _at _body = error $ "XXX: compileLibTop"
+
+compileLib :: (ReachSource, [JSModuleItem]) -> SLLibs -> SLLibs
+compileLib (src, body) libs = libs'
+  where libs' = libs { libm = libm' }
+        libm' = M.insert src res (libm libs)
+        res = compileLibTop libs at body
+        at = (SrcLoc_Src src SrcLoc_Top)
+
+compileLibs :: [(ReachSource, [JSModuleItem])] -> SLLibs
+compileLibs = foldr compileLib init_libs
+
 compileBundle :: JSBundle -> NLProgram
 compileBundle (JSBundle []) =
   impossible $ "compileBundle: no files"
-compileBundle (JSBundle (exe:_deps)) =
-  compileExe gst lst exe
-  where gst = (SLGlobalSt
-               { mods = mempty
-               , next_var = 0
-               , context = SLC_Exe })
-        lst = (SLLocalSt
-                { outer_at = SrcLoc_Top
-                , prev_at = SrcLoc_Top
-                , con_env = mempty
-                , part_envs = mempty })
+compileBundle (JSBundle (_exe:deps)) =
+  impossible $ "compileBundle: " ++ (take 256 $ show libst)
+  where libst = compileLibs deps
+  
+--  compileExe gst lst exe
+--  where gst = (SLGlobalSt
+--               { mods = mempty
+--                , next_var = 0
+--                , context = SLC_Exe })
+--         lst = (SLLocalSt
+--                 { outer_at = SrcLoc_Top
+--                 , prev_at = SrcLoc_Top
+--                 , con_env = mempty
+--                 , part_envs = mempty })
 
 -- Main entry point
 compileNL :: CompilerOpts -> IO ()
