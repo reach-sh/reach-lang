@@ -1,11 +1,5 @@
 # Checks ignored from most severe (top of file) to least severe (bottom of file)
 
-# Missing fixity declaration for operator
-[[check]]
-type = "Exclude"
-id = "STAN-0301"
-scope = "all"
-
 # Anti-pattern: Data.ByteString.Char8.pack
 [[check]]
 type = "Exclude"

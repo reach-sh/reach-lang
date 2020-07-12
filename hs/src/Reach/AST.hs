@@ -41,6 +41,7 @@ tUInt256 = TY_Con $ LT_BT BT_UInt256
 tBytes :: ExprType
 tBytes = TY_Con $ LT_BT BT_Bytes
 
+infix 9 -->
 (-->) :: [ExprType] -> ExprType -> FunctionType
 ins --> out = TY_Arrow ins out
 
