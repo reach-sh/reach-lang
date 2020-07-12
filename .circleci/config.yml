@@ -9,8 +9,9 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - hs-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
-            - hs-{{ checksum "hs/stack.yaml" }}
+            - hs-1-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
+            - hs-1-{{ checksum "hs/stack.yaml" }}
+            - hs-1-
             - hs-
       - run:
           name: install hs dependencies
@@ -18,8 +19,11 @@ jobs:
       - run:
           name: install hs test dependencies
           command: (cd hs && stack test --dependencies-only)
+      - run:
+          name: install hs check dependencies
+          command: (cd hs && stack build stan)
       - save_cache:
-          key: hs-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
+          key: hs-1-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
           paths:
             - /root/.stack
             - hs/.stack_work
