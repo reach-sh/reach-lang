@@ -20,6 +20,11 @@ check:
 	stack build stan
 	stack exec stan report
 
+.PHONY: clean
+clean:
+	stack clean
+	rm -rf .hie
+
 .PHONY: build-circle-docker
 build-circle-docker:
 	docker build -f Dockerfile_circleci --tag $(CIRCLE_TAG) .

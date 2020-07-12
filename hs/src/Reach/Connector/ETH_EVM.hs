@@ -708,8 +708,8 @@ abiTag k i vs = h
         args = map (\(_, (_, t)) -> abiTag_type t) vs
         args_s = intersperse ',' $ concat args
         s = label ++ (show i) ++ "(" ++ args_s ++ ")"
-        bs :: BC.ByteString
-        bs = BC.pack s
+        bs :: B.ByteString
+        bs = bpack s
         h_bs :: B.ByteString
         h_bs = convert (hash bs :: Digest Keccak_256)
         h :: Integer

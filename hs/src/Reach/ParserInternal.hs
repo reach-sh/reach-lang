@@ -18,6 +18,7 @@ import Test.SmallCheck.Series
 import GHC.Generics
 
 import Reach.AST
+import Reach.Util
 
 newtype TP = TP (FilePath, (Maybe TokenPosn))
   deriving (Data)
@@ -394,7 +395,7 @@ decodeExpr dss je =
     --- Other kinds of literals disallowed
     (JSHexInteger a n) -> XL_Con (tp a) (Con_I (numberValue 16 n))
     (JSOctal a n) -> XL_Con (tp a) (Con_I (numberValue 8 n))
-    (JSStringLiteral a s) -> XL_Con (tp a) (Con_BS (B.pack (string_trim_quotes s)))
+    (JSStringLiteral a s) -> XL_Con (tp a) (Con_BS (bpack (string_trim_quotes s)))
     --- No regex
     (JSArrayLiteral a es _) -> XL_Values (tp a) $ map (decodeExpr dss) $ flattenJSArray es
     --- No assign

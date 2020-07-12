@@ -1,11 +1,5 @@
 # Checks ignored from most severe (top of file) to least severe (bottom of file)
 
-# Anti-pattern: Data.ByteString.Char8.pack
-[[check]]
-type = "Exclude"
-id = "STAN-0203"
-scope = "all"
-
 # Big tuples
 [[check]]
 type = "Exclude"
