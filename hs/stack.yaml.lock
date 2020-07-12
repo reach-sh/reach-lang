@@ -87,15 +87,15 @@ packages:
     commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
 - completed:
     name: stan
-    version: 0.0.0.0
-    git: https://github.com/kowainik/stan.git
+    version: 0.0.1.0
+    git: https://github.com/reach-sh/stan.git
     pantry-tree:
-      size: 4937
-      sha256: 3427d1ff914424b4a0b8e9f7b96836ab96e60bd5b1ca718baff516400bce4748
-    commit: fa1da0ba23796c6d57f5a2e77bbb8ef6b43388c5
+      size: 5007
+      sha256: 95104fae7efea0270bc86dc36c68acf3424d3aa60f40672cc9fa07b99e37aa69
+    commit: f6b85556b90cb8b639449d205be6367bafc984f2
   original:
-    git: https://github.com/kowainik/stan.git
-    commit: fa1da0ba23796c6d57f5a2e77bbb8ef6b43388c5
+    git: https://github.com/reach-sh/stan.git
+    commit: f6b85556b90cb8b639449d205be6367bafc984f2
 snapshots:
 - completed:
     size: 531696
