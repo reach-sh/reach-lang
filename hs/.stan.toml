@@ -1,0 +1,61 @@
+# Checks ignored from most severe (top of file) to least severe (bottom of file)
+
+# Missing fixity declaration for operator
+[[check]]
+type = "Exclude"
+id = "STAN-0301"
+scope = "all"
+
+# Anti-pattern: Data.ByteString.Char8.pack
+[[check]]
+type = "Exclude"
+id = "STAN-0203"
+scope = "all"
+
+# Big tuples
+[[check]]
+type = "Exclude"
+id = "STAN-0302"
+scope = "all"
+
+# Data types with non-strict fields
+[[check]]
+type = "Exclude"
+id = "STAN-0206"
+scope = "all"
+
+# Partial: base/init
+[[check]]
+type = "Exclude"
+id = "STAN-0003"
+scope = "all"
+
+# Partial: base/tail
+[[check]]
+type = "Exclude"
+id = "STAN-0002"
+scope = "all"
+
+# Anti-pattern: unsafe functions
+[[check]]
+type = "Exclude"
+id = "STAN-0212"
+scope = "all"
+
+# Anti-pattern: Pattern matching on '_'
+[[check]]
+type = "Exclude"
+id = "STAN-0213"
+scope = "all"
+
+# Infinite: base/length
+[[check]]
+type = "Exclude"
+id = "STAN-0103"
+scope = "all"
+
+# Infinite: base/reverse
+[[check]]
+type = "Exclude"
+id = "STAN-0101"
+scope = "all"

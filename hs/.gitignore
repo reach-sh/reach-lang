@@ -4,3 +4,4 @@ reach.cabal
 /test.out/
 /test.patch/*.actual
 .hie/
+stan.html

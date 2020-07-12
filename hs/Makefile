@@ -18,7 +18,7 @@ publish:
 check:
 	stack build
 	stack build stan
-	stack exec stan
+	stack exec stan report
 
 .PHONY: build-circle-docker
 build-circle-docker:
