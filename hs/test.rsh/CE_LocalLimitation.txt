@@ -1,1 +1,1 @@
-test.rsh/CE_LocalLimitation.rsh:7:5: local cannot: "transfer"
+test.rsh/CE_LocalLimitation.rsh:7:5: local cannot: "while"

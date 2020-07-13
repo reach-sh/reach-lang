@@ -89,7 +89,7 @@ test_compile n = do
   opts <- makeCompilerOpts $ CompilerToolOpts
     { cto_outputDir = "test.out"
     , cto_source = n
-    , cto_expCon = True
+    , cto_expCon = False
     , cto_expComp = False
     }
   compile opts
