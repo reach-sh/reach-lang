@@ -373,23 +373,50 @@ evalExpr at env e =
     JSLiteral a "false" -> SLV_Bool (srcloc_jsa "false" a at) False
     JSHexInteger a ns -> SLV_Int (srcloc_jsa "hex" a at) $ numberValue 16 ns
     JSOctal a ns -> SLV_Int (srcloc_jsa "octal" a at) $ numberValue 8 ns
-    --- ....
-    JSMemberDot obj a field ->
-      evalDot at' (evalExpr at' env obj) fields
-      where at' = srcloc_jsa "dot" a at
-            fields = (jse_expect_id at') field
-    JSMemberExpression rator a rands _ ->
-      case evalExpr at' env rator of
-        SLV_Prim p ->
-          evalPrim at' p randvs
-        v ->
-          expect_throw at (Err_Eval_NotApplicable v)
-      where at' = srcloc_jsa "application" a at
-            randvs = map (evalExpr at' env) $ jscl_flatten rands
-    --- ....
-    _ ->
-      expect_throw at (Err_Eval_IllegalJS e)
-
+    JSRegEx _ _ -> illegal
+    JSArrayLiteral a as _ -> SLV_Array at' $ map (evalExpr at' env) $ jsa_flatten as
+      where at' = (srcloc_jsa "array" a at)
+    JSAssignExpression _ _ _ -> illegal
+    JSAwaitExpression _ _ -> illegal
+    JSCallExpression rator a rands _ -> doCall rator a rands
+    JSCallExpressionDot obj a field -> doDot obj a field
+    JSCallExpressionSquare arr a idx _ -> doRef arr a idx
+    JSClassExpression _ _ _ _ _ _ -> illegal
+    JSCommaExpression _ _ _ -> illegal
+    --- JSExpressionBinary lhs op rhs -> XXX
+    JSExpressionParen a ie _ -> evalExpr (srcloc_jsa "paren" a at) env ie
+    JSExpressionPostfix _ _ -> illegal
+    --- JSExpressionTernary c a t _ f -> XXX
+    --- JSArrowExpression formals a bodys -> XXX
+    JSFunctionExpression _ _ _ _ _ _ -> illegal
+    JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
+    JSMemberDot obj a field -> doDot obj a field
+    JSMemberExpression rator a rands _ -> doCall rator a rands
+    JSMemberNew _ _ _ _ _ -> illegal
+    JSMemberSquare arr a idx _ -> doRef arr a idx
+    JSNewExpression _ _ -> illegal
+    --- JSObjectLiteral a plist _ -> XXX
+    JSSpreadExpression _ _ -> illegal
+    JSTemplateLiteral _ _ _ _ -> illegal
+    --- JSUnaryExpression op e -> XXX
+    JSVarInitExpression _ _ -> illegal
+    JSYieldExpression _ _ -> illegal
+    JSYieldFromExpression _ _ _ -> illegal
+    _ -> illegal
+  where illegal = expect_throw at (Err_Eval_IllegalJS e)
+        doCall rator a rands =
+          case evalExpr at' env rator of
+            SLV_Prim p ->
+              evalPrim at' p randvs
+            v ->
+              expect_throw at (Err_Eval_NotApplicable v)
+          where at' = srcloc_jsa "application" a at
+                randvs = map (evalExpr at' env) $ jscl_flatten rands
+        doDot obj a field = evalDot at' (evalExpr at' env obj) fields
+          where at' = srcloc_jsa "dot" a at
+                fields = (jse_expect_id at') field
+        doRef _arr _a _idx = error "XXX doRef"
+                
 bindDeclLHS :: SrcLoc -> SLEnv -> JSExpression -> SLVal -> SLEnv
 bindDeclLHS at env lhs v =
   case lhs of
