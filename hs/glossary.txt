@@ -1,0 +1,25 @@
+ce: CompileErr
+comp: comparison
+comp: compiler
+con: connector
+con: constructor
+cto: CompilerToolOpts
+def: definition
+dest: destination
+dir: directory
+err: error
+exp: experimental
+ext: extension
+fp: FilePath
+h: handle
+hP: ProcessHandle
+herr: Handle ~stderr 
+hout: Handle ~stdout
+opts: options
+orig: original
+pf: FilePath
+res: result
+rps: rock paper scissors
+src: source
+stdlib: standard library
+ttt: tick tack toe
