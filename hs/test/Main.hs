@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Spec where
+module Main where
 import Test.Hspec
 import Test.Hspec.SmallCheck
 
