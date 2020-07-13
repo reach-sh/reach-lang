@@ -103,7 +103,9 @@ patch_and_compile dir pf = do
   let examples_dir = "../examples"
   let dest = unpack . replace "__" "/" . pack $ pf
   let orig = dropExtension dest
-  ExitSuccess <- system $ "patch -d " ++ examples_dir ++ " -i " ++ (".." </> "hs" </> dir </> pf) ++ " -o " ++ dest ++ " " ++ orig
+  let patchCmd = "patch -d " ++ examples_dir ++ " -i " ++ (".." </> "hs" </> dir </> pf) ++ " -o " ++ dest ++ " " ++ orig
+  putStrLn patchCmd
+  ExitSuccess <- system patchCmd
   putStrLn "...patch applied"
   let rdest = examples_dir </> dest
   putStrLn "compiling..."

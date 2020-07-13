@@ -45,17 +45,6 @@ hs-deps:
 	stack test --dependencies-only
 	stack build stan
 
-.PHONY: hs-clean-test-goop
-hs-clean-test-goop:
-	rm -f ../examples/multisig/multisig.rsh.0
-	rm -f ../examples/multisig/multisig.rsh.0.rej
-	rm -f ../examples/multisig/multisig.rsh.1
-	rm -f ../examples/multisig/multisig.rsh.1.rej
-	rm -f ../examples/multisig/multisig.rsh.2
-	rm -f ../examples/multisig/multisig.rsh.2.rej
-	rm -f ../examples/rps/rsh/rps.rsh.0
-	rm -f ../examples/rps/rsh/rps.rsh.0.rej
-
 .PHONY: build-circle-docker
 build-circle-docker:
 	docker build -f Dockerfile_circleci --tag $(CIRCLE_TAG) .

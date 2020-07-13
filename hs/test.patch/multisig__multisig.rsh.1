@@ -1,10 +1,10 @@
 diff --git a/examples/multisig/multisig.rsh b/examples/multisig/multisig.rsh
-index 9bdf6f8..cb7b06b 100644
+index 2c6ad1e..787f9ae 100644
 --- a/examples/multisig/multisig.rsh
 +++ b/examples/multisig/multisig.rsh
-@@ -32,7 +32,7 @@ function main() {
+@@ -29,7 +29,7 @@ function main() {
    Parent.only(() => {
      const allowance = declassify(is(uint256, interact.allowance())); });
    Parent.publish(allowance)
--    .pay(allowance)
-+    .pay(/*allowance*/ 0)
+-    .pay(allowance);
++    .pay(/*allowance*/ 0);
