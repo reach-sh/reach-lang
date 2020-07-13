@@ -1,21 +1,21 @@
 <out>
 Verifying with honest = True; role = RoleContract
 ...checking VC_Top
-Verifying with honest = True; role = RolePart (0,("A",BT_Address))
+Verifying with honest = True; role = RolePart (0,("A",LT_BT BT_Address))
 ...checking VC_Top
-Verifying with honest = True; role = RolePart (3,("B",BT_Address))
+Verifying with honest = True; role = RolePart (1,("B",LT_BT BT_Address))
 ...checking VC_Top
-Verifying with honest = True; role = RolePart (4,("O",BT_Address))
+Verifying with honest = True; role = RolePart (2,("O",LT_BT BT_Address))
 ...checking VC_Top
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top
-Verifying with honest = False; role = RolePart (0,("A",BT_Address))
+Verifying with honest = False; role = RolePart (0,("A",LT_BT BT_Address))
 ...checking VC_Top
-Verifying with honest = False; role = RolePart (3,("B",BT_Address))
+Verifying with honest = False; role = RolePart (1,("B",LT_BT BT_Address))
 ...checking VC_Top
-Verifying with honest = False; role = RolePart (4,("O",BT_Address))
+Verifying with honest = False; role = RolePart (2,("O",LT_BT BT_Address))
 ...checking VC_Top
-Checked 234 theorems; No failures!
+Checked 238 theorems; No failures!
 
 </out>
 <err>
