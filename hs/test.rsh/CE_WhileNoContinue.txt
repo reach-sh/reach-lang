@@ -1,1 +1,1 @@
-test.rsh/CE_WhileNoContinue.rsh:4:3: wrong number of types: ([],[BT_UInt256])
+test.rsh/CE_WhileNoContinue.rsh:7:12: while does not terminate in continue: test.rsh/CE_WhileNoContinue.rsh:4:3

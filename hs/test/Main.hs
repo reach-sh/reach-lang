@@ -4,6 +4,7 @@ module Main where
 import Test.Hspec
 import Test.Hspec.SmallCheck
 
+import Data.List (isInfixOf)
 import System.Directory
 import System.FilePath
 import Control.Exception
@@ -47,6 +48,12 @@ hashit xs = show h
         h :: Digest MD5
         h = hash xb
 
+-- This is really hacky
+stripParenthetical :: String -> String
+stripParenthetical s = case "(given" `isInfixOf` s of
+    True -> (<> "\n") $ reverse $ drop 1 $ reverse $ takeWhile (/= '(') s
+    False -> s
+
 err_m :: Show a => NFData a => String -> FilePath -> IO a -> Expectation
 err_m msg expected_p comp = do
   mustExist expected_p
@@ -56,8 +63,12 @@ err_m msg expected_p comp = do
     Right r ->
       expectationFailure $ "expected a failure for " ++ msg ++ " but, got: " ++ show r
     Left (ErrorCall actual_x) ->
-      actual_h `shouldBe` expected_h
+      if length actual < 1000
+      then actual_noParen `shouldBe` expected_noParen
+      else actual_h `shouldBe` expected_h
       where actual = (actual_x ++ "\n")
+            actual_noParen = stripParenthetical actual
+            expected_noParen = stripParenthetical expected
             actual_h = hashit actual
             expected_h = hashit expected
 
@@ -136,7 +147,3 @@ main = hspec $ do
       compile_err_example
   describe "Verification Regression" $ do
     verify_regress "test.patch"
-  describe "RPS" $ do
-    it "RPS end-to-end" $ do
-      --- XXX remove echo
-      (system "echo 'cd ../examples/rps && make clean build'") `shouldReturn` ExitSuccess

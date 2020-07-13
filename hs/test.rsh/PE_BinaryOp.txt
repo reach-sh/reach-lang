@@ -1,1 +1,1 @@
-test.rsh/PE_BinaryOp.rsh:4:12: expected a valid binary operator
+test.rsh/PE_BinaryOp.rsh:4:10: expected a valid expression form

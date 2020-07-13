@@ -1,1 +1,1 @@
-test.rsh/PE_EmptyBody.rsh: body must not be empty
+test.rsh/PE_EmptyBody.rsh:3:17: expected a valid terminator statement, such as return or continue

@@ -76,10 +76,11 @@ expect_throw ce w x = error $ show w ++ ": " ++ msg ++ ": " ++ show x
           --- sure the variables match and it is actually inside a
           --- loop.
           CE_ContinueNotInLoop -> impossible $ "continue not inside loop"
-          --- This is impossible, because there is no terminator
+          --- This should be impossible, because there is no terminator
           --- except for return and continue, and the body of a loop
           --- has to return nothing.
-          CE_WhileNoContinue -> impossible $ "while does not terminate in continue"
+          --- XXX Implement a way for while loops to be exited
+          CE_WhileNoContinue -> "while does not terminate in continue"
           CE_ContractLimitation -> "contract cannot"
           CE_ContractReturns -> "consensus step not committed"
           CE_LocalLimitation -> "local cannot"

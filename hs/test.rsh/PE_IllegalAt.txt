@@ -1,1 +1,0 @@
-test.rsh/PE_IllegalAt.rsh:5:21: expected a participant or anyone

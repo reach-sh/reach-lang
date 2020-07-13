@@ -247,7 +247,6 @@ data ParseErr
   | PE_AfterReturn
   | PE_ContinueArgs
   | PE_Statement
-  | PE_IllegalAt
   | PE_Type
   | PE_NoMain
   deriving (Generic, Show)
@@ -277,7 +276,6 @@ expect_throw pe fp j = error $ show tp ++ ": " ++ msg ++ " (given: " ++ (show $ 
           PE_AfterReturn -> "nothing is allowed after a return"
           PE_ContinueArgs -> "expected all loop variables at continue"
           PE_Statement -> "expected a valid statement form"
-          PE_IllegalAt -> "expected a participant or anyone"
           PE_Type -> "expected a valid type"
 
 type DecodeStmtsState = (FilePath, Maybe [XLVar], Maybe XLVar)
