@@ -190,6 +190,7 @@ export const connectAccount = address => {
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try { r_maybe = await ethCtc.methods[funcName](...munged).send({ from: address, value }); }
         catch (e) {
+          // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
           await Timeout.set(1);
           const current_block = await ethersp.getBlockNumber();
           if ( current_block == block_send_attempt ) {

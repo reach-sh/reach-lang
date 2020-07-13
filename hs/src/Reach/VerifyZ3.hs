@@ -102,7 +102,9 @@ display_fail honest r tk ann a = do
   putStrLn $ "\tin " ++ (if honest then "honest" else "dishonest") ++ " mode"
   putStrLn $ "\tfor " ++ show r
   putStrLn $ "\tof theorem " ++ show tk
+  --- XXX ann doesn't include the stack trace
   putStrLn $ "\tfrom " ++ show ann
+  --- XXX a is dumb, because it has been renamed from what they wrote
   putStrLn $ "\tspecifically: " ++ (showsSExpr a ":")
 
 z3_verify1 :: Show rolet => Show ann => Solver -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
@@ -115,6 +117,9 @@ z3_verify1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
     Unsat -> return $ VR 1 0
     Sat -> do
       display_fail honest who tk ann a
+      --- xxx minimize model to assigned (i.e. inputs)
+      --- xxx relate inputs back to program text
+      --- xxx relate inputs forward to this assertion
       m <- command z3 $ List [ Atom "get-model" ]
       putStrLn $ show $ pretty_se_top m
       return $ VR 0 1

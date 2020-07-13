@@ -212,6 +212,7 @@ jsEPTail stop_at_consensus tn who t =
                   where
                     t_extra_fvs = mempty
                     t_k_okp' = vsep [ pretty "const" <+> jsArray msg_vs <+> pretty "=" <+> (jsTxn tn') <> pretty ".data" <> semi, k_okp ]
+                    --- XXX if msg contains who, add if to t_k_okp' where if I'm (ctc.addr) not it then abort (maybe just use assert)
                     t_dp = pretty "const" <+> jsTxn tn' <+> pretty "=" <+>
                       pretty "await" <+>
                       (jsApply "ctc.recv"
