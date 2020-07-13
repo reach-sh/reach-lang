@@ -54,6 +54,9 @@ stripParenthetical s = case "(given" `isInfixOf` s of
     True -> (<> "\n") $ reverse $ drop 1 $ reverse $ takeWhile (/= '(') s
     False -> s
 
+dropDefines :: [String] -> [String]
+dropDefines = filter (\line -> not $ "(define" `isInfixOf` line)
+
 err_m :: Show a => NFData a => String -> FilePath -> IO a -> Expectation
 err_m msg expected_p comp = do
   mustExist expected_p
@@ -65,12 +68,16 @@ err_m msg expected_p comp = do
     Left (ErrorCall actual_x) ->
       if length actual < 1000
       then actual_noParen `shouldBe` expected_noParen
-      else actual_h `shouldBe` expected_h
+      else do
+        actual' `shouldBe` expected'
+        length actualLines `shouldBe` length expectedLines
       where actual = (actual_x ++ "\n")
             actual_noParen = stripParenthetical actual
             expected_noParen = stripParenthetical expected
-            actual_h = hashit actual
-            expected_h = hashit expected
+            actualLines = lines actual
+            expectedLines = lines expected
+            actual' = dropDefines actualLines
+            expected' = dropDefines expectedLines
 
 err_example :: Show a => NFData a => String -> (FilePath -> IO a) -> Expectation
 err_example which f = do
