@@ -1,1 +1,1 @@
-test.rsh/CE_ExpectedPublic.rsh:6:3: expected a public value: (1,("x",BT_UInt256))
+test.rsh/CE_ExpectedPublic.rsh:8:3: expected a public value: (1,("Interact",LT_BT BT_UInt256))
