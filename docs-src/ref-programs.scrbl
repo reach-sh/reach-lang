@@ -87,14 +87,14 @@ An @deftech{enumeration}, written @reachin{const [ ENUM, OPTION_0, ..., OPTION_n
 @(hrule)
 @reach{
   function randomBool() {
-    return (random() % 2) == 0; } }
+    return (random() % 2) == 0; }; }
 
 A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which abstracts its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
 
 @(hrule)
 @reach{
   function main() {
-    return 42; } }
+    return 42; }; }
 
 A @deftech{main function} is a @tech{function definition} with the name @reachin{main} and no arguments. The evaluation of the @tech{main function} is the same as its @tech{function body}.
 
@@ -173,7 +173,7 @@ If a @tech{value definition} or @tech{function definition} occurs in a @tech{sta
 evaluates to @reachin{7}. And,
 
 @reach{
- function f(x) { return x+1; }
+ function f(x) { return x+1; };
  return f(1); }
 
 evaluates to @reachin{2}.
