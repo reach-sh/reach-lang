@@ -15,27 +15,24 @@ jobs:
             - hs-
       - run:
           name: install hs dependencies
-          command: (cd hs && stack build --dependencies-only)
-      - run:
-          name: install hs test dependencies
-          command: (cd hs && stack test --dependencies-only)
-      - run:
-          name: install hs check dependencies
-          command: (cd hs && stack build stan)
+          command: (cd hs && make hs-deps)
       - save_cache:
           key: hs-2-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
           paths:
             - /root/.stack
             - hs/.stack_work
       - run:
+          name: clean hs
+          command: (cd hs && make hs-clean)
+      - run:
           name: build hs
-          command: (cd hs && stack build)
+          command: (cd hs && make hs-build)
       - run:
           name: test hs
-          command: (cd hs && stack test || echo allowed to fail)
+          command: (cd hs && make hs-test || echo allowed to fail)
       - run:
           name: check hs
-          command: (cd hs && make check)
+          command: (cd hs && make hs-check)
       - store_artifacts:
           path: hs/stan.html
 

@@ -1097,7 +1097,7 @@ data CompilerOpts = CompilerOpts
   { output :: T.Text -> String -> IO ()
   , output_name :: T.Text -> String
   , source :: FilePath
-  , enableExperimentalConnectors :: Bool
+  , expCon :: Bool  -- ^ Enable experimental connectors
   }
 
 compile :: CompilerOpts -> IO ()
@@ -1116,7 +1116,7 @@ compile copts = do
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
-  (ebc, tbc) <- case enableExperimentalConnectors copts of
+  (ebc, tbc) <- case expCon copts of
     False -> do
       let fake_ebc = "XXX"
           fake_tbc = ("XXX", "XXX", "XXX")

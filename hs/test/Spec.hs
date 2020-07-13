@@ -10,13 +10,14 @@ import Control.DeepSeq
 import System.Process
 import System.Exit
 import Generics.Deriving
-import qualified Data.ByteString.Char8 as B
 import Data.Text(pack, unpack, replace)
 import GHC.IO.Handle
 import Crypto.Hash
 
 import Reach.ParserInternal
-import Reach.Compiler
+import Reach.Compiler (CompileErr, compile)
+import Reach.CompilerTool
+import Reach.Util
 
 import Language.JavaScript.Parser.SrcLocation
 instance NFData TP where
@@ -41,7 +42,7 @@ try_hard m = do
 
 hashit :: String -> String
 hashit xs = show h
-  where xb = B.pack xs
+  where xb = bpack xs
         h :: Digest MD5
         h = hash xb
 
@@ -72,11 +73,14 @@ parse_err_example pe =
   err_example (conNameOf pe) readReachFile
 
 test_compile :: FilePath -> IO ()
-test_compile n = compile $ CompilerOpts
-  { output_dir = "test.out"
-  , source = n
-  , enableExperimentalConnectors = False
-  }
+test_compile n = do
+  opts <- makeCompilerOpts $ CompilerToolOpts
+    { cto_outputDir = "test.out"
+    , cto_source = n
+    , cto_expCon = True
+    , cto_expComp = False
+    }
+  compile opts
 
 compile_err_example :: CompileErr -> Expectation
 compile_err_example ce =

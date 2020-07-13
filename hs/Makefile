@@ -14,16 +14,47 @@ push:
 publish:
 	echo Go to https://hackage.haskell.org/packages/upload
 
+# TODO: dockerized stan so that make check does not require local hs install?
 .PHONY: check
-check:
+check: hs-check
+
+.PHONY: hs-check
+hs-check:
 	stack build
+	stack test --no-run-tests
 	stack build stan
 	stack exec stan report
 
-.PHONY: clean
-clean:
+.PHONY: hs-clean
+hs-clean:
 	stack clean
 	rm -rf .hie
+
+.PHONY: hs-build
+hs-build:
+	stack build
+
+.PHONY: hs-test
+hs-test:
+	stack test
+
+.PHONY: hs-deps
+hs-deps:
+	stack setup
+	stack build --dependencies-only
+	stack test --dependencies-only
+	stack build stan
+
+.PHONY: hs-clean-test-goop
+hs-clean-test-goop:
+	rm -f ../examples/multisig/multisig.rsh.0
+	rm -f ../examples/multisig/multisig.rsh.0.rej
+	rm -f ../examples/multisig/multisig.rsh.1
+	rm -f ../examples/multisig/multisig.rsh.1.rej
+	rm -f ../examples/multisig/multisig.rsh.2
+	rm -f ../examples/multisig/multisig.rsh.2.rej
+	rm -f ../examples/rps/rsh/rps.rsh.0
+	rm -f ../examples/rps/rsh/rps.rsh.0.rej
 
 .PHONY: build-circle-docker
 build-circle-docker:

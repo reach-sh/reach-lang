@@ -1,23 +1,33 @@
+{-# LANGUAGE RecordWildCards #-}
 module Main where
 
-import Control.Monad.Except
 import Data.Char
 import System.Directory
 import System.Environment
 import Options.Applicative
-import qualified Filesystem.Path.CurrentOS as FP
 
-import Reach.Compiler(CompilerOpts(CompilerOpts), compile)
-import Reach.CompilerNL(compileNL)
+import Reach.CompilerTool
 
-data CompilerToolOpts = CompilerToolOpts
-  { output_dir :: FilePath
-  , source :: FilePath
-  , enableExperimentalConnectors :: Bool
+data CompilerToolArgs = CompilerToolArgs
+  { cta_outputDir :: FilePath
+  , cta_source :: FilePath
   }
 
-compiler :: FilePath -> Bool -> Parser CompilerToolOpts
-compiler cwd expCon = CompilerToolOpts
+data CompilerToolEnv = CompilerToolEnv
+  { cte_expCon :: Bool
+  , cte_expComp :: Bool
+  }
+
+makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
+makeCompilerToolOpts CompilerToolArgs{..} CompilerToolEnv{..} = CompilerToolOpts
+  { cto_outputDir = cta_outputDir
+  , cto_source = cta_source
+  , cto_expCon = cte_expCon
+  , cto_expComp = cte_expComp
+  }
+
+compiler :: FilePath -> Parser CompilerToolArgs
+compiler cwd = CompilerToolArgs
   <$> strOption
   ( long "output"
     <> short 'o'
@@ -26,32 +36,7 @@ compiler cwd expCon = CompilerToolOpts
     <> showDefault
     <> value cwd )
   <*> strArgument (metavar "SOURCE")
-  <*> pure expCon
 
-main :: IO ()
-main = do
-  cwd <- getCurrentDirectory
-  expCon <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_CONNECTORS"
-  expComp <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_COMPILER"
-  let opts = info ( compiler cwd expCon <**> helper )
-               ( fullDesc
-               <> progDesc "verify and compile an Reach program"
-               <> header "reachc - Reach compiler" )
-  ctool_opts <- execParser opts
-  copts <- makeCompilerOpts ctool_opts
-  when expComp (compileNL copts)
-  compile copts
-
-makeCompilerOpts :: CompilerToolOpts -> IO CompilerOpts
-makeCompilerOpts ctool_opts = do
-  let srcp = source ctool_opts
-  let srcbp = FP.basename $ FP.decodeString srcp
-  let outd = output_dir ctool_opts
-  let outdp = FP.decodeString outd
-  let outn ext = FP.encodeString $ FP.append outdp $ srcbp `FP.addExtension` ext
-  let out ext con = writeFile (outn ext) con
-  createDirectoryIfMissing True outd
-  return $ CompilerOpts out outn srcp (enableExperimentalConnectors ctool_opts)
 
 checkTruthyEnv :: String -> IO Bool
 checkTruthyEnv varName = do
@@ -65,3 +50,28 @@ checkTruthyEnv varName = do
       isEmpty = varValLower == ""
       isZero = varValLower == "0"
     Nothing -> return False
+
+getCompilerArgs :: IO CompilerToolArgs
+getCompilerArgs = do
+  cwd <- getCurrentDirectory
+  let opts = info ( compiler cwd <**> helper )
+               ( fullDesc
+               <> progDesc "verify and compile an Reach program"
+               <> header "reachc - Reach compiler" )
+  execParser opts
+
+getCompilerEnv :: IO CompilerToolEnv
+getCompilerEnv = do
+  expCon <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_CONNECTORS"
+  expComp <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_COMPILER"
+  return CompilerToolEnv
+    { cte_expCon = expCon
+    , cte_expComp = expComp
+    }
+
+main :: IO ()
+main = do
+  args <- getCompilerArgs
+  env <- getCompilerEnv
+  let ctool_opts = makeCompilerToolOpts args env
+  compilerToolMain ctool_opts
