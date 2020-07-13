@@ -23,17 +23,17 @@ function ensure(f, x) {
 function makeCommitment (x) {
   const salt = random();
   const commitment = digest(salt, x);
-  return [commitment, salt]; }
+  return [commitment, salt]; };
 
 function checkCommitment (commitment, salt, x) {
-  return require(commitment == digest(salt, x)); }
+  return require(commitment == digest(salt, x)); };
 
 function closeTo(Who, result) {
   return () => {
     Who.publish();
     transfer(balance()).to(Who);
     commit();
-    return result; }; }
+    return result; }; };
 
 function __decode_testing__() {
-  return txn.value; }
+  return txn.value; };
