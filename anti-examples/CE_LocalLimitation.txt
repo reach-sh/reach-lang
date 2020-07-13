@@ -1,0 +1,15 @@
+
+Verification says it can't prove TBalanceZero,
+but no pay statements ever occur,
+so how could the balance be anything but zero?
+
+(Answer: while loop needs stronger invariant.
+ How can we communicate this to the Reach programmer?)
+
+
+Verification failed:
+	in dishonest mode
+	for RolePart (0,("A",LT_BT BT_Address))
+	of theorem TBalanceZero
+	from ../anti-examples/CE_LocalLimitation.rsh:13:10
+	specifically: (= ctc_balance1 0 ):
