@@ -12,7 +12,7 @@ import System.FilePath
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Text.ParserCombinators.Parsec.Number (numberValue)
---import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
@@ -46,11 +46,14 @@ jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]
 jscl_flatten (JSLOne a) = [a]
 jscl_flatten (JSLNil) = []
 
+jsctl_flatten :: JSCommaTrailingList a -> [a]
+jsctl_flatten (JSCTLComma a _) = jscl_flatten  a
+jsctl_flatten (JSCTLNone a) = jscl_flatten  a
+
 jsa_flatten :: [JSArrayElement] -> [JSExpression]
 jsa_flatten a = concatMap f a
   where f (JSArrayComma _) = []
         f (JSArrayElement e) = [e]
-
 
 jse_expect_id :: SrcLoc -> JSExpression -> String
 jse_expect_id at j =
@@ -108,20 +111,24 @@ data SLVal
   | SLV_Prim SLPrimitive
   | SLV_Int SrcLoc Int
   | SLV_Bool SrcLoc Bool
+  | SLV_Bytes SrcLoc B.ByteString
   deriving (Eq, Show)
 
 data SLPrimitive
   = SLPrim_makeEnum
+  | SLPrim_DApp
+  | SLPrim_DApp_Delay SrcLoc [SLVal]
   deriving (Eq,Show)
 
 type SLEnv = M.Map SLVar SLVal
 
 base_env :: SLEnv
-base_env = M.singleton "Reach" reach_obj
-  where reach_obj =
-          (SLV_Object SrcLoc_Top $
-            M.fromList [
-              ("makeEnum", SLV_Prim SLPrim_makeEnum)])
+base_env = M.fromList [
+  ("makeEnum", SLV_Prim SLPrim_makeEnum),
+  ("Reach", (SLV_Object SrcLoc_Top $
+             M.fromList [
+                ("DApp", SLV_Prim SLPrim_DApp)
+                ]))]
 
 env_insert :: SrcLoc -> SLVar -> SLVal -> SLEnv -> SLEnv
 env_insert at k v env =
@@ -198,8 +205,12 @@ data CompilerError
   | Err_Parse_CyclicImport ReachSource
   | Err_Parse_ExpectSemi
   | Err_Parse_ExpectIdentifier JSExpression
-  | Err_NoHeader_Lib [JSModuleItem]
+  | Err_Parse_IllegalLiteral String
+  | Err_NoHeader [JSModuleItem]
   | Err_Top_IllegalJS JSStatement
+  | Err_Import_ShadowedImport SLVar
+  | Err_Import_IllegalJS JSImportDeclaration
+  | Err_Export_IllegalJS JSExportDeclaration
   | Err_Decl_IllegalJS JSExpression
   | Err_DeclLHS_IllegalJS JSExpression
   | Err_Decl_WrongArrayLength Int Int
@@ -208,6 +219,10 @@ data CompilerError
   | Err_Eval_UnboundId SLVar
   | Err_Eval_NotObject SLVal
   | Err_Eval_NotApplicable SLVal
+  | Err_Eval_IfCondNotBool SLVal
+  | Err_Obj_IllegalJS JSObjectProperty
+  | Err_Fun_NamesIllegal
+  | Err_Arrow_NoFormals
   | Err_Dot_InvalidField SLVal String
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar
@@ -326,13 +341,6 @@ gatherDeps_top src_p = do
         ensureJust (Just x) = x
 
 -- Compiler
-data SLTopSt = SLTopSt
-  { top_prev_at :: SrcLoc
-  , top_at :: SrcLoc
-  , top_env :: SLEnv
-  , top_exports :: SLEnv }
-  deriving (Eq,Show)
-
 evalDot :: SrcLoc -> SLVal -> String -> SLVal
 evalDot at obj field =
   case obj of
@@ -347,6 +355,12 @@ evalDot at obj field =
 evalPrim :: SrcLoc -> SLPrimitive -> [SLVal] -> SLVal
 evalPrim at p args =
   case p of
+    SLPrim_DApp ->
+      case args of
+        [ (SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _) ] ->
+          SLV_Prim $ SLPrim_DApp_Delay at args
+        _ ->
+          expect_throw at (Err_Prim_InvalidArgs p args)
     SLPrim_makeEnum ->
       case args of
         [ SLV_Int _ i ] ->
@@ -359,6 +373,26 @@ evalPrim at p args =
                 rhs = (JSExpressionBinary (JSIdentifier JSNoAnnot "x") (JSBinOpLt JSNoAnnot) (JSDecimal JSNoAnnot (show i)))
         _ ->
           expect_throw at (Err_Prim_InvalidArgs p args)
+    SLPrim_DApp_Delay _ _ ->
+      expect_throw at (Err_Eval_NotApplicable $ SLV_Prim p)
+
+binaryToPrim :: JSBinOp -> SLPrimitive
+binaryToPrim o = error $ "XXX binaryToPrim " ++ show o
+
+unaryToPrim :: JSUnaryOp -> SLPrimitive
+unaryToPrim o = error $ "XXX unaryToPrim " ++ show o
+
+parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]
+parseJSFormals at jsformals = map (jse_expect_id at) $ jscl_flatten jsformals
+
+parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [SLVar]
+parseJSArrowFormals at aformals =
+  case aformals of
+    JSUnparenthesizedArrowParameter (JSIdentName _ x) -> [x]
+    JSUnparenthesizedArrowParameter JSIdentNone ->
+      expect_throw at Err_Arrow_NoFormals
+    JSParenthesizedArrowParameterList _ l _ ->
+      parseJSFormals at l
 
 evalExpr :: SrcLoc -> SLEnv -> JSExpression -> SLVal
 evalExpr at env e =
@@ -369,61 +403,89 @@ evalExpr at env e =
         Nothing ->
           expect_throw (srcloc_jsa "id ref" a at) (Err_Eval_UnboundId x)
     JSDecimal a ns -> SLV_Int (srcloc_jsa "decimal" a at) $ numberValue 10 ns
-    JSLiteral a "true" -> SLV_Bool (srcloc_jsa "true" a at) True
-    JSLiteral a "false" -> SLV_Bool (srcloc_jsa "false" a at) False
+    JSLiteral a l ->
+      case l of
+        "true" -> SLV_Bool (srcloc_jsa "true" a at) True
+        "false" -> SLV_Bool (srcloc_jsa "false" a at) False
+        _ -> expect_throw (srcloc_jsa "literal" a at) (Err_Parse_IllegalLiteral l)
     JSHexInteger a ns -> SLV_Int (srcloc_jsa "hex" a at) $ numberValue 16 ns
     JSOctal a ns -> SLV_Int (srcloc_jsa "octal" a at) $ numberValue 8 ns
+    JSStringLiteral a s -> SLV_Bytes (srcloc_jsa "string" a at) (bpack (string_trim_quotes s))
     JSRegEx _ _ -> illegal
     JSArrayLiteral a as _ -> SLV_Array at' $ map (evalExpr at' env) $ jsa_flatten as
       where at' = (srcloc_jsa "array" a at)
     JSAssignExpression _ _ _ -> illegal
     JSAwaitExpression _ _ -> illegal
-    JSCallExpression rator a rands _ -> doCall rator a rands
+    JSCallExpression rator a rands _ -> doCall rator a $ jscl_flatten rands
     JSCallExpressionDot obj a field -> doDot obj a field
     JSCallExpressionSquare arr a idx _ -> doRef arr a idx
     JSClassExpression _ _ _ _ _ _ -> illegal
     JSCommaExpression _ _ _ -> illegal
-    --- JSExpressionBinary lhs op rhs -> XXX
+    JSExpressionBinary lhs op rhs -> doCallV (SLV_Prim (binaryToPrim op)) JSNoAnnot [ lhs, rhs ]
     JSExpressionParen a ie _ -> evalExpr (srcloc_jsa "paren" a at) env ie
     JSExpressionPostfix _ _ -> illegal
-    --- JSExpressionTernary c a t _ f -> XXX
-    --- JSArrowExpression formals a bodys -> XXX
-    JSFunctionExpression _ _ _ _ _ _ -> illegal
+    JSExpressionTernary c a t _ f ->
+      case evalExpr at' env c of
+        SLV_Bool _ cb -> evalExpr at' env ke
+          where ke = if cb then t else f
+        cv ->
+          expect_throw at' (Err_Eval_IfCondNotBool cv)
+      where at' = srcloc_jsa "ternary" a at
+    JSArrowExpression aformals a bodys -> SLV_Clo at' formals body env
+      where at' = srcloc_jsa "arrow" a at
+            body = JSBlock JSNoAnnot [bodys] JSNoAnnot
+            formals = parseJSArrowFormals at' aformals
+    JSFunctionExpression a name _ jsformals _ body ->
+      case name of
+        JSIdentNone -> SLV_Clo at' formals body env
+        JSIdentName na _ -> expect_throw (srcloc_jsa "function name" na at') Err_Fun_NamesIllegal
+      where at' = srcloc_jsa "function exp" a at
+            formals = parseJSFormals at' jsformals
     JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
     JSMemberDot obj a field -> doDot obj a field
-    JSMemberExpression rator a rands _ -> doCall rator a rands
+    JSMemberExpression rator a rands _ -> doCall rator a $ jscl_flatten rands
     JSMemberNew _ _ _ _ _ -> illegal
     JSMemberSquare arr a idx _ -> doRef arr a idx
     JSNewExpression _ _ -> illegal
-    --- JSObjectLiteral a plist _ -> XXX
+    JSObjectLiteral a plist _ -> SLV_Object at' fields
+      where at' = srcloc_jsa "obj" a at
+            fields = foldl' add_field mempty $ jsctl_flatten plist
+            add_field _fenv op =
+              case op of
+                JSPropertyNameandValue _pn _ _vs ->
+                  error "XXX JSPropertyNameandValue"
+                _ ->
+                  expect_throw at' (Err_Obj_IllegalJS op)
     JSSpreadExpression _ _ -> illegal
     JSTemplateLiteral _ _ _ _ -> illegal
-    --- JSUnaryExpression op e -> XXX
+    JSUnaryExpression op ue -> doCallV (SLV_Prim (unaryToPrim op)) JSNoAnnot [ ue ]
     JSVarInitExpression _ _ -> illegal
     JSYieldExpression _ _ -> illegal
     JSYieldFromExpression _ _ _ -> illegal
-    _ -> illegal
   where illegal = expect_throw at (Err_Eval_IllegalJS e)
-        doCall rator a rands =
-          case evalExpr at' env rator of
+        doCallV ratorv a rands =
+          --- XXX Update call stack
+          case ratorv of
             SLV_Prim p ->
               evalPrim at' p randvs
             v ->
               expect_throw at (Err_Eval_NotApplicable v)
           where at' = srcloc_jsa "application" a at
-                randvs = map (evalExpr at' env) $ jscl_flatten rands
+                randvs = map (evalExpr at' env) rands
+        doCall rator a rands = doCallV (evalExpr at' env rator) a rands          
+          where at' = srcloc_jsa "application, rator" a at
         doDot obj a field = evalDot at' (evalExpr at' env obj) fields
           where at' = srcloc_jsa "dot" a at
                 fields = (jse_expect_id at') field
         doRef _arr _a _idx = error "XXX doRef"
                 
-bindDeclLHS :: SrcLoc -> SLEnv -> JSExpression -> SLVal -> SLEnv
-bindDeclLHS at env lhs v =
+bindDeclLHS :: SrcLoc -> SLExEnv -> JSExpression -> SLVal -> SLExEnv
+bindDeclLHS at exenv lhs v =
   case lhs of
     (JSIdentifier a x) ->
-      env_insert (srcloc_jsa "id" a at) x v env
+      exenv_insert (srcloc_jsa "id" a at) x v exenv
     (JSArrayLiteral a xs _) ->
-      foldl' (flip (uncurry (env_insert at'))) env kvs
+      foldl' (flip (uncurry (exenv_insert at'))) exenv kvs
       where kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
             ks = map (jse_expect_id at') $ jsa_flatten xs
             vs = case v of
@@ -434,46 +496,97 @@ bindDeclLHS at env lhs v =
     _ ->
       expect_throw at (Err_DeclLHS_IllegalJS lhs)
 
-evalDecl :: SrcLoc -> SLEnv -> JSExpression -> SLEnv
-evalDecl at env decl =
+evalDecl :: SrcLoc -> SLExEnv -> JSExpression -> SLExEnv
+evalDecl at exenv decl =
   case decl of
     JSVarInitExpression lhs (JSVarInit a rhs) ->
-      bindDeclLHS at env lhs v
+      bindDeclLHS at exenv lhs v
       where at' = srcloc_jsa "var initializer" a at
-            v = evalExpr at' env rhs
+            v = evalExpr at' (exenv_env exenv) rhs
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
 
+data SLTopSt = SLTopSt
+  { top_prev_at :: SrcLoc
+  , top_at :: SrcLoc
+  , top_exenv :: SLExEnv}
+  deriving (Eq,Show)
+
+data SLExEnv = SLExEnv Bool (S.Set SLVar) SLEnv
+  deriving (Eq,Show)
+
+exenv_init :: SLEnv -> SLExEnv
+exenv_init env = SLExEnv False mempty env
+
+exenv_set :: Bool -> SLExEnv -> SLExEnv
+exenv_set b (SLExEnv _ ex env) = (SLExEnv b ex env)
+
+exenv_reset :: SLExEnv -> SLExEnv
+exenv_reset exenv = exenv_set False exenv
+
+exenv_exports :: SLExEnv -> SLEnv
+exenv_exports (SLExEnv _ ex env) = M.restrictKeys env ex
+
+exenv_env :: SLExEnv -> SLEnv
+exenv_env (SLExEnv _ _ env) = env
+
+exenv_insert :: SrcLoc -> String -> SLVal -> SLExEnv -> SLExEnv
+exenv_insert at k v (SLExEnv isExport ex env) = (SLExEnv isExport ex' env')
+  where env' = env_insert at k v env
+        ex' = if isExport then S.insert k ex else ex
+
+exenv_merge :: SrcLoc -> SLExEnv -> SLEnv -> SLExEnv
+exenv_merge at (SLExEnv isExport ex env) libex = (SLExEnv isExport ex env')
+  where env' = M.unionWithKey cm env libex
+        cm k _ _ = expect_throw at (Err_Import_ShadowedImport k)
+
 evalTop :: SLLibs -> SLTopSt -> JSModuleItem -> SLTopSt
-evalTop _libs st mi =
+evalTop libs st mi =
   case mi of
-    (JSModuleImportDeclaration _a _) ->
-      error $ "XXX evalTop im"
-    (JSModuleExportDeclaration _a _) ->
-      error $ "XXX evalTop ex"
-    (JSModuleStatementListItem s) ->
-      case s of
-        (JSConstant a decls sp) ->
-          (st { top_prev_at = srcloc_after_semi lab a sp at
-              , top_env = env' })
-          where at' = srcloc_jsa lab a at
-                lab = "const def"
-                --- Note: This makes it so that declarations on the
-                --- left are visible on the right, which might be
-                --- different than JavaScript?
-                env' = foldl' (evalDecl at') env $ jscl_flatten decls
-        (JSFunction a (JSIdentName _ f) _ jsformals _ body sp) ->
-          (st { top_prev_at = srcloc_after_semi lab a sp at
-              , top_env = env_insert at f clo env })
-          where clo = SLV_Clo at' formals body env
-                formals = map (jse_expect_id at') $ jscl_flatten jsformals
-                at' = srcloc_jsa lab a at
-                lab = "function def"
-        _ ->
-          expect_throw prev_at (Err_Top_IllegalJS s)
+    (JSModuleImportDeclaration _ im) ->
+      case im of
+        JSImportDeclarationBare a libn sp ->
+          (st { top_prev_at = srcloc_after_semi "import" a sp at
+              , top_exenv = exenv_merge at' exenv libex })
+          where at' = srcloc_jsa "import" a at
+                libm = libs_map libs
+                libex = case M.lookup (ReachSourceFile libn) libm of
+                          Just x -> x
+                          Nothing ->
+                            impossible $ "dependency not found"
+        --- XXX support more kinds
+        _ -> expect_throw prev_at (Err_Import_IllegalJS im)
+    (JSModuleExportDeclaration _ ed) ->
+      case ed of
+        JSExport s _ -> doStmt True s
+        --- XXX support more kinds
+        _ -> expect_throw prev_at (Err_Export_IllegalJS ed)
+    (JSModuleStatementListItem s) -> doStmt False s
   where prev_at = top_prev_at st
         at = top_at st
-        env = top_env st
+        exenv = top_exenv st
+        doStmt isExport s =
+          case s of
+            (JSConstant a decls sp) ->
+              (st { top_prev_at = srcloc_after_semi lab a sp at
+                  , top_exenv = exenv' })
+              where at' = srcloc_jsa lab a at
+                    lab = "const def"
+                    --- Note: This makes it so that declarations on the
+                    --- left are visible on the right, which might be
+                    --- different than JavaScript?
+                    exenv' = exenv_reset $ foldl' (evalDecl at') exenv_ $ jscl_flatten decls
+            (JSFunction a (JSIdentName _ f) _ jsformals _ body sp) ->
+              (st { top_prev_at = srcloc_after_semi lab a sp at
+                  , top_exenv = exenv' })
+              where clo = SLV_Clo at' formals body (exenv_env exenv_)
+                    formals = parseJSFormals at' jsformals
+                    at' = srcloc_jsa lab a at
+                    lab = "function def"
+                    exenv' = exenv_reset $ exenv_insert at f clo exenv_
+            _ ->
+              expect_throw prev_at (Err_Top_IllegalJS s)
+          where exenv_ = exenv_set isExport exenv
 
 data SLLibs = SLLibs
   { libs_map :: M.Map ReachSource SLEnv }
@@ -485,14 +598,13 @@ init_libs = (SLLibs { libs_map = mempty })
 evalLib :: (ReachSource, [JSModuleItem]) -> SLLibs -> SLLibs
 evalLib (src, body) libs = libs'
   where libs' = libs { libs_map = libm' }
-        libm' = M.insert src (top_exports st') libm
+        libm' = M.insert src (exenv_exports $ top_exenv st') libm
         libm = (libs_map libs)
         st' = foldl' (evalTop libs) st body'
         st = (SLTopSt
                { top_prev_at = prev_at
                , top_at = at
-               , top_env = stdlib_env
-               , top_exports = mempty })
+               , top_exenv = exenv_init stdlib_env })
         stdlib_env =
           case src of
             ReachStdLib -> base_env
@@ -500,25 +612,30 @@ evalLib (src, body) libs = libs'
         at = (SrcLoc_Src src SrcLoc_Top)
         (prev_at, body') =
           case body of
-            ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a "\'reach 0.1 lib\'") sp)):j) ->
-              ((srcloc_after_semi "lib header" a sp at), j)
-            _ -> expect_throw at (Err_NoHeader_Lib body)
+            ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a "\'reach 0.1\'") sp)):j) ->
+              ((srcloc_after_semi "header" a sp at), j)
+            _ -> expect_throw at (Err_NoHeader body)
 
 evalLibs :: [(ReachSource, [JSModuleItem])] -> SLLibs
 evalLibs = foldr evalLib init_libs
 
-compileBundle :: JSBundle -> NLProgram
-compileBundle (JSBundle []) =
-  impossible $ "compileBundle: no files"
-compileBundle (JSBundle (_exe:deps)) =
-  impossible $ "compileBundle: " ++ (take 256 $ show libst)
-  where libst = evalLibs deps
+compileBundle :: JSBundle -> SLVar -> NLProgram
+compileBundle (JSBundle mods) top =
+  error $ "XXX compileBundle: " ++ (take 256 $ show topv)
+  where libm = libs_map $ evalLibs mods
+        exe = case mods of
+                [] -> impossible $ "compileBundle: no files"
+                ((x,_):_) -> x
+        exe_ex = libm M.! exe
+        topv = case M.lookup top exe_ex of
+                 Just x -> x
+                 Nothing -> expect_throw SrcLoc_Top (Err_Eval_UnboundId top)
 
 -- Main entry point
 compileNL :: CompilerOpts -> IO ()
 compileNL copts = do
   let out = output copts
   djp <- gatherDeps_top $ source copts
-  let nlp = compileBundle djp
+  let nlp = compileBundle djp "main"
   out "nl" $ show nlp
   return ()
