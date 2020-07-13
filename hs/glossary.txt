@@ -1,25 +1,61 @@
+app: application
+bl: backend language
+bt: BaseType
+c: contract
 ce: CompileErr
 comp: comparison
 comp: compiler
 con: connector
+con: constant
 con: constructor
+ct: ClaimType
+ctc: contract
 cto: CompilerToolOpts
 def: definition
 dest: destination
 dir: directory
+e: expression
+eff: Effect
+env: environment
+epp: end-point projection
+eq: equal
 err: error
 exp: experimental
+expr: expression
 ext: extension
 fp: FilePath
+gt: greater than
+gte: greater than or equal
 h: handle
 hP: ProcessHandle
 herr: Handle ~stderr 
 hout: Handle ~stdout
+il: intermediate language
+info: information
+iv: inline variable
+l: Language
+loc: location
+lt: LType
+lt: less than
+lte: less than or equal
 opts: options
 orig: original
+p: variable ?
 pf: FilePath
+prim: primitive
+prog: program
+r: role
 res: result
 rps: rock paper scissors
+s: statement
 src: source
 stdlib: standard library
 ttt: tick tack toe
+txn: transaction
+v: variable
+var: variable
+xil: eXpanded Inlined Language (the lang after xl)
+xl: eXpanded Language
+xlt: XLType
+γ: type environment
+σ: binding environment
