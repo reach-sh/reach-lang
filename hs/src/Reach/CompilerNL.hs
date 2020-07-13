@@ -3,6 +3,8 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE EmptyDataDeriving #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reach.CompilerNL where
 
@@ -122,6 +124,14 @@ data SLPrimitive
   deriving (Eq,Show)
 
 type SLEnv = M.Map SLVar SLVal
+
+class SLEnvLike a where
+  envl_insert :: SrcLoc -> SLVar -> SLVal -> a -> a
+  envl_env :: a -> SLEnv
+
+instance SLEnvLike SLEnv where
+  envl_insert = env_insert
+  envl_env x = x
 
 base_env :: SLEnv
 base_env = M.fromList [
@@ -490,13 +500,13 @@ evalExpr at env e =
                 fields = (jse_expect_id at') field
         doRef _arr _a _idx = error "XXX doRef"
                 
-bindDeclLHS :: SrcLoc -> SLExEnv -> JSExpression -> SLVal -> SLExEnv
-bindDeclLHS at exenv lhs v =
+bindDeclLHS :: SLEnvLike a => SrcLoc -> a -> JSExpression -> SLVal -> a
+bindDeclLHS at envl lhs v =
   case lhs of
     (JSIdentifier a x) ->
-      exenv_insert (srcloc_jsa "id" a at) x v exenv
+      envl_insert (srcloc_jsa "id" a at) x v envl
     (JSArrayLiteral a xs _) ->
-      foldl' (flip (uncurry (exenv_insert at'))) exenv kvs
+      foldl' (flip (uncurry (envl_insert at'))) envl kvs
       where kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
             ks = map (jse_expect_id at') $ jsa_flatten xs
             vs = case v of
@@ -507,16 +517,17 @@ bindDeclLHS at exenv lhs v =
     _ ->
       expect_throw at (Err_DeclLHS_IllegalJS lhs)
 
-evalDecl :: SrcLoc -> SLExEnv -> JSExpression -> SLExEnv
-evalDecl at exenv decl =
+evalDecl :: SLEnvLike a => SrcLoc -> a -> JSExpression -> a
+evalDecl at envl decl =
   case decl of
     JSVarInitExpression lhs (JSVarInit a rhs) ->
-      bindDeclLHS at exenv lhs v
+      bindDeclLHS at envl lhs v
       where at' = srcloc_jsa "var initializer" a at
-            v = evalExpr at' (exenv_env exenv) rhs
+            v = evalExpr at' (envl_env envl) rhs
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
 
+--- XXX Add SLKont
 evalBlock :: SrcLoc -> SLEnv -> JSBlock -> SLVal
 evalBlock _at _env _body =
   error $ "XXX evalBlock"
@@ -554,6 +565,10 @@ exenv_merge :: SrcLoc -> SLExEnv -> SLEnv -> SLExEnv
 exenv_merge at (SLExEnv isExport ex env) libex = (SLExEnv isExport ex env')
   where env' = M.unionWithKey cm env libex
         cm k _ _ = expect_throw at (Err_Import_ShadowedImport k)
+
+instance SLEnvLike SLExEnv where
+  envl_insert = exenv_insert
+  envl_env = exenv_env
 
 evalTop :: SLLibs -> SLTopSt -> JSModuleItem -> SLTopSt
 evalTop libs st mi =
