@@ -11,7 +11,7 @@ import System.Directory
 import System.FilePath
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
---import Text.ParserCombinators.Parsec.Number (numberValue)
+import Text.ParserCombinators.Parsec.Number (numberValue)
 --import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
@@ -24,28 +24,67 @@ import GHC.IO.Encoding
 --import Test.SmallCheck.Series
 --import GHC.Generics
 --import qualified Data.ByteString as BS
+import Data.List
 
 import Reach.Util
 import Reach.Compiler(CompilerOpts, output, source)
+
+-- Helpers
+zipEq :: SrcLoc -> (Int -> Int -> CompilerError) -> [a] -> [b] -> [(a, b)]
+zipEq at ce x y =
+  if lx == ly then zip x y
+  else expect_throw at (ce lx ly)
+  where lx = length x
+        ly = length y
 
 -- JavaScript Helpers
 string_trim_quotes :: [a] -> [a]
 string_trim_quotes x = reverse $ tail $ reverse $ tail x
 
+jscl_flatten :: JSCommaList a -> [a]
+jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]
+jscl_flatten (JSLOne a) = [a]
+jscl_flatten (JSLNil) = []
+
+jsa_flatten :: [JSArrayElement] -> [JSExpression]
+jsa_flatten a = concatMap f a
+  where f (JSArrayComma _) = []
+        f (JSArrayElement e) = [e]
+
+
+jse_expect_id :: SrcLoc -> JSExpression -> String
+jse_expect_id at j =
+  case j of
+    (JSIdentifier _ x) -> x
+    _ -> expect_throw at (Err_Parse_ExpectIdentifier j)
+
 -- Static Language
 data ReachSource
   = ReachStdLib
   | ReachSourceFile FilePath
-  deriving (Eq,Show,Ord)
+  deriving (Eq,Ord)
+
+instance Show ReachSource where
+  show ReachStdLib = "reach standard library"
+  show (ReachSourceFile fp) = fp
 
 instance Ord TokenPosn where
-  compare (TokenPn x_a x_l x_c) (TokenPn y_a y_l y_c) = compare [x_a, x_l, x_c] [y_a, y_l, y_c] 
+  compare (TokenPn x_a x_l x_c) (TokenPn y_a y_l y_c) =
+    compare [x_a, x_l, x_c] [y_a, y_l, y_c] 
 
 data SrcLoc
   = SrcLoc_Top
   | SrcLoc_Src ReachSource SrcLoc
   | SrcLoc_At String (Maybe TokenPosn) SrcLoc
-  deriving (Eq,Show,Ord)
+  deriving (Eq,Ord)
+
+instance Show SrcLoc where
+  show SrcLoc_Top = "\tcommand invocation"
+  show (SrcLoc_Src src more) = "\tin " ++ show src ++ "\n" ++ show more
+  show (SrcLoc_At lab mtp more) = "\tat " ++ stp ++ "(" ++ lab ++ ")" ++ "\n" ++ show more
+    where stp = case mtp of
+                  Nothing -> ""
+                  Just (TokenPn _ l c) -> show l ++ ":" ++ show c ++ " "
 
 type SLVar = String
 
@@ -63,11 +102,33 @@ instance Monoid SecurityLevel where
   mempty = Public
 
 data SLVal
-  = SLV_NLVarRef SrcLoc SecurityLevel NLVar
-  | SLV_Declassify SrcLoc SLVal
+  = SLV_Clo SrcLoc [SLVar] JSBlock SLEnv
+  | SLV_Array SrcLoc [SLVal]
+  | SLV_Object SrcLoc SLEnv
+  | SLV_Prim SLPrimitive
+  | SLV_Int SrcLoc Int
+  | SLV_Bool SrcLoc Bool
+  deriving (Eq, Show)
+
+data SLPrimitive
+  = SLPrim_makeEnum
   deriving (Eq,Show)
 
 type SLEnv = M.Map SLVar SLVal
+
+base_env :: SLEnv
+base_env = M.singleton "Reach" reach_obj
+  where reach_obj =
+          (SLV_Object SrcLoc_Top $
+            M.fromList [
+              ("makeEnum", SLV_Prim SLPrim_makeEnum)])
+
+env_insert :: SrcLoc -> SLVar -> SLVal -> SLEnv -> SLEnv
+env_insert at k v env =
+  case M.lookup k env of
+    Nothing -> M.insert k v env
+    Just _ ->
+      expect_throw at (Err_Shadowed k)
 
 type SLLib = SLEnv
 
@@ -122,27 +183,46 @@ tp JSAnnotSpace = Nothing
 tp JSNoAnnot = Nothing
 
 srcloc_jsa :: String -> JSAnnot -> SrcLoc -> SrcLoc
-srcloc_jsa s a at = SrcLoc_At s (tp a) at
+srcloc_jsa lab a at = SrcLoc_At lab (tp a) at
 
+srcloc_after_semi :: String -> JSAnnot -> JSSemi -> SrcLoc -> SrcLoc 
+srcloc_after_semi lab a sp at = at'
+  where at' = srcloc_jsa ("after " ++ lab) spa at
+        spa = case sp of
+                JSSemi x -> x
+                _ -> expect_throw (srcloc_jsa lab a at) Err_Parse_ExpectSemi
+
+--- XXX Maybe this is dumb
 data CompilerError
   = Err_Parse_NotModule JSAST
   | Err_Parse_CyclicImport ReachSource
-  | Err_Exe_NoHeader [JSModuleItem]
-  | Err_Exe_EarlyEnd
-  | Err_UnsupportedJS String
+  | Err_Parse_ExpectSemi
+  | Err_Parse_ExpectIdentifier JSExpression
+  | Err_NoHeader_Lib [JSModuleItem]
+  | Err_Top_IllegalJS JSStatement
+  | Err_Decl_IllegalJS JSExpression
+  | Err_DeclLHS_IllegalJS JSExpression
+  | Err_Decl_WrongArrayLength Int Int
+  | Err_Decl_NotArray SLVal
+  | Err_Eval_IllegalJS JSExpression
+  | Err_Eval_UnboundId SLVar
+  | Err_Eval_NotObject SLVal
+  | Err_Eval_NotApplicable SLVal
+  | Err_Dot_InvalidField SLVal String
+  | Err_Prim_InvalidArgs SLPrimitive [SLVal]
+  | Err_Shadowed SLVar
   deriving (Eq,Show)
 
 expect_throw :: SrcLoc -> CompilerError -> b
-expect_throw src ce = error $ "XXX " ++ show src ++ " " ++ show ce
+expect_throw src ce = error $ "error:\n\t" ++ (take 128 $ show ce) ++ "\nat:\n" ++ show src
 
 -- Parser
-type ReachSourceDeps = M.Map ReachSource [ReachSource]
-type JSBundleMapPartial = (ReachSourceDeps, M.Map ReachSource (Maybe [JSModuleItem]))
-type JSBundleMap = M.Map ReachSource [JSModuleItem]
+type BundleMap a b = ((M.Map a [a]), (M.Map a (Maybe b)))
+type JSBundleMap = BundleMap ReachSource [JSModuleItem]
 data JSBundle = JSBundle [(ReachSource,[JSModuleItem])]
   deriving (Eq,Show)
 
-gatherDeps_imd :: SrcLoc -> IORef JSBundleMapPartial -> JSImportDeclaration -> IO JSImportDeclaration
+gatherDeps_imd :: SrcLoc -> IORef JSBundleMap -> JSImportDeclaration -> IO JSImportDeclaration
 gatherDeps_imd at fmr j =
   case j of
     JSImportDeclaration ic (JSFromClause ab aa s) sm -> do
@@ -152,7 +232,7 @@ gatherDeps_imd at fmr j =
       s_abs <- gatherDeps_file (SrcLoc_At "import bare" (tp a) at) fmr $ string_trim_quotes s
       return $ JSImportDeclarationBare a s_abs sm
 
-gatherDeps_mi :: SrcLoc -> IORef JSBundleMapPartial -> JSModuleItem -> IO JSModuleItem
+gatherDeps_mi :: SrcLoc -> IORef JSBundleMap -> JSModuleItem -> IO JSModuleItem
 gatherDeps_mi at fmr j =
   case j of
     JSModuleImportDeclaration a imd -> do
@@ -160,7 +240,7 @@ gatherDeps_mi at fmr j =
       return $ JSModuleImportDeclaration a imd'
     mi -> return mi
 
-gatherDeps_ast :: SrcLoc -> IORef JSBundleMapPartial -> JSAST -> IO [JSModuleItem]
+gatherDeps_ast :: SrcLoc -> IORef JSBundleMap -> JSAST -> IO [JSModuleItem]
 gatherDeps_ast at fmr j =
   case j of
     JSAstModule mis _ ->
@@ -168,7 +248,7 @@ gatherDeps_ast at fmr j =
     _ ->
       expect_throw at (Err_Parse_NotModule j)
 
-updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef ((M.Map a [a]), (M.Map a (Maybe b))) -> Maybe a -> [a] -> (() -> IO a) -> (a -> c) -> (a -> CompilerError) -> (a -> IO b) -> IO c
+updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef (BundleMap a b) -> Maybe a -> [a] -> (() -> IO a) -> (a -> c) -> (a -> CompilerError) -> (a -> IO b) -> IO c
 updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = do
   key <- get_key ()
   let res = ret_key key
@@ -195,7 +275,7 @@ gatherDeps_from SrcLoc_Top = Nothing
 gatherDeps_from (SrcLoc_Src rs _) = Just rs
 gatherDeps_from (SrcLoc_At _ _ sl) = gatherDeps_from sl
 
-gatherDeps_file :: SrcLoc -> IORef JSBundleMapPartial -> FilePath -> IO FilePath
+gatherDeps_file :: SrcLoc -> IORef JSBundleMap -> FilePath -> IO FilePath
 gatherDeps_file at fmr src_rel =
   updatePartialAvoidCycles at fmr (gatherDeps_from at) [ReachStdLib] get_key ret_key err_key proc_key
   where get_key () = do
@@ -216,7 +296,7 @@ gatherDeps_file at fmr src_rel =
 stdlib_str :: String
 stdlib_str = $(embedStringFile "./rsh/stdlib.rsh")
 
-gatherDeps_stdlib :: SrcLoc -> IORef JSBundleMapPartial -> IO ()
+gatherDeps_stdlib :: SrcLoc -> IORef JSBundleMap -> IO ()
 gatherDeps_stdlib at fmr =
   updatePartialAvoidCycles at fmr (gatherDeps_from at) [] get_key ret_key err_key proc_key
   where get_key () = return $ ReachStdLib
@@ -246,90 +326,166 @@ gatherDeps_top src_p = do
         ensureJust (Just x) = x
 
 -- Compiler
-data SLCtxt
-  = SLC_Exe
-  | SLC_ExeBody [JSModuleItem] SLLocalSt SLCtxt
+data SLTopSt = SLTopSt
+  { top_prev_at :: SrcLoc
+  , top_at :: SrcLoc
+  , top_env :: SLEnv
+  , top_exports :: SLEnv }
   deriving (Eq,Show)
 
-data SLGlobalSt = SLGlobalSt
-  { mods :: M.Map ReachSource SLLib
-  , next_var :: Int
-  , context :: SLCtxt
-  }
-  deriving (Eq,Show)
+evalDot :: SrcLoc -> SLVal -> String -> SLVal
+evalDot at obj field =
+  case obj of
+    SLV_Object _ env ->
+      case M.lookup field env of
+        Just v -> v
+        Nothing ->
+          expect_throw at (Err_Dot_InvalidField obj field)
+    v ->
+      expect_throw at (Err_Eval_NotObject v)
 
-data SLLocalSt = SLLocalSt
-  { outer_at :: SrcLoc
-  , prev_at :: SrcLoc
-  , con_env :: SLEnv
-  , part_envs :: M.Map NLPart SLEnv
-  }
-  deriving (Eq,Show)
+evalPrim :: SrcLoc -> SLPrimitive -> [SLVal] -> SLVal
+evalPrim at p args =
+  case p of
+    SLPrim_makeEnum ->
+      case args of
+        [ SLV_Int _ i ] ->
+          SLV_Array at' (enum_pred : map (SLV_Int at') [ 0 .. (i-1) ])
+          where at' = (SrcLoc_At "makeEnum" Nothing at)
+                --- XXX This sucks... maybe parse an embed string? Would that suck less?
+                enum_pred = SLV_Clo at' ["x"] pbody mempty
+                pbody = JSBlock JSNoAnnot [(JSReturn JSNoAnnot (Just (JSExpressionBinary lhs (JSBinOpAnd JSNoAnnot) rhs)) JSSemiAuto)] JSNoAnnot
+                lhs = (JSExpressionBinary (JSDecimal JSNoAnnot "0") (JSBinOpLe JSNoAnnot) (JSIdentifier JSNoAnnot "x"))
+                rhs = (JSExpressionBinary (JSIdentifier JSNoAnnot "x") (JSBinOpLt JSNoAnnot) (JSDecimal JSNoAnnot (show i)))
+        _ ->
+          expect_throw at (Err_Prim_InvalidArgs p args)
 
-compileExeTopStmt :: SLGlobalSt -> SLLocalSt -> JSStatement -> [JSModuleItem] -> NLProgram
-compileExeTopStmt _gst _lst s _tail = error $ "XXX " ++ (take 256 $ show s)
-  
-compileExeTop :: SLGlobalSt -> SLLocalSt -> [JSModuleItem] -> NLProgram
-compileExeTop gst lst mis =
-  case mis of
-    [] -> expect_throw (prev_at lst) Err_Exe_EarlyEnd
-    (mi:tail_mis) ->
-      case mi of
-        (JSModuleImportDeclaration _a imd) ->
-          error $ "XXX " ++ (take 256 $ show imd)
-        (JSModuleExportDeclaration a _) ->
-          expect_throw (srcloc_jsa "module export declaration" a (outer_at lst)) (Err_UnsupportedJS "module exports are not supported")
-        (JSModuleStatementListItem s) ->
-          compileExeTopStmt gst lst s tail_mis
-          
-compileExe :: SLGlobalSt -> SLLocalSt -> (ReachSource, [JSModuleItem]) -> NLProgram
-compileExe gst lst (exe, exe_mis) = compileExeTop gst' lst' exe_mis'
-  where outer_at' = SrcLoc_Src exe (outer_at lst)
-        gst' = gst
-        lst' = lst { outer_at = outer_at'
-                   , prev_at = prev_at' }
-        (prev_at', exe_mis') =
-          case exe_mis of
-            ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral _ "\'reach 0.1 exe\'") (JSSemi a))):j) -> ((srcloc_jsa "exe header" a outer_at'), j)
-            _ -> expect_throw outer_at' (Err_Exe_NoHeader exe_mis)
+evalExpr :: SrcLoc -> SLEnv -> JSExpression -> SLVal
+evalExpr at env e =
+  case e of
+    JSIdentifier a x ->
+      case M.lookup x env of
+        Just v -> v
+        Nothing ->
+          expect_throw (srcloc_jsa "id ref" a at) (Err_Eval_UnboundId x)
+    JSDecimal a ns -> SLV_Int (srcloc_jsa "decimal" a at) $ numberValue 10 ns
+    JSLiteral a "true" -> SLV_Bool (srcloc_jsa "true" a at) True
+    JSLiteral a "false" -> SLV_Bool (srcloc_jsa "false" a at) False
+    JSHexInteger a ns -> SLV_Int (srcloc_jsa "hex" a at) $ numberValue 16 ns
+    JSOctal a ns -> SLV_Int (srcloc_jsa "octal" a at) $ numberValue 8 ns
+    --- ....
+    JSMemberDot obj a field ->
+      evalDot at' (evalExpr at' env obj) fields
+      where at' = srcloc_jsa "dot" a at
+            fields = (jse_expect_id at') field
+    JSMemberExpression rator a rands _ ->
+      case evalExpr at' env rator of
+        SLV_Prim p ->
+          evalPrim at' p randvs
+        v ->
+          expect_throw at (Err_Eval_NotApplicable v)
+      where at' = srcloc_jsa "application" a at
+            randvs = map (evalExpr at' env) $ jscl_flatten rands
+    --- ....
+    _ ->
+      expect_throw at (Err_Eval_IllegalJS e)
+
+bindDeclLHS :: SrcLoc -> SLEnv -> JSExpression -> SLVal -> SLEnv
+bindDeclLHS at env lhs v =
+  case lhs of
+    (JSIdentifier a x) ->
+      env_insert (srcloc_jsa "id" a at) x v env
+    (JSArrayLiteral a xs _) ->
+      foldl' (flip (uncurry (env_insert at'))) env kvs
+      where kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
+            ks = map (jse_expect_id at') $ jsa_flatten xs
+            vs = case v of
+              SLV_Array _ x -> x
+              _ ->
+                expect_throw at' (Err_Decl_NotArray v)
+            at' = srcloc_jsa "array" a at
+    _ ->
+      expect_throw at (Err_DeclLHS_IllegalJS lhs)
+
+evalDecl :: SrcLoc -> SLEnv -> JSExpression -> SLEnv
+evalDecl at env decl =
+  case decl of
+    JSVarInitExpression lhs (JSVarInit a rhs) ->
+      bindDeclLHS at env lhs v
+      where at' = srcloc_jsa "var initializer" a at
+            v = evalExpr at' env rhs
+    _ ->
+      expect_throw at (Err_Decl_IllegalJS decl)
+
+evalTop :: SLLibs -> SLTopSt -> JSModuleItem -> SLTopSt
+evalTop _libs st mi =
+  case mi of
+    (JSModuleImportDeclaration _a _) ->
+      error $ "XXX evalTop im"
+    (JSModuleExportDeclaration _a _) ->
+      error $ "XXX evalTop ex"
+    (JSModuleStatementListItem s) ->
+      case s of
+        (JSConstant a decls sp) ->
+          (st { top_prev_at = srcloc_after_semi lab a sp at
+              , top_env = env' })
+          where at' = srcloc_jsa lab a at
+                lab = "const def"
+                --- Note: This makes it so that declarations on the
+                --- left are visible on the right, which might be
+                --- different than JavaScript?
+                env' = foldl' (evalDecl at') env $ jscl_flatten decls
+        (JSFunction a (JSIdentName _ f) _ jsformals _ body sp) ->
+          (st { top_prev_at = srcloc_after_semi lab a sp at
+              , top_env = env_insert at f clo env })
+          where clo = SLV_Clo at' formals body env
+                formals = map (jse_expect_id at') $ jscl_flatten jsformals
+                at' = srcloc_jsa lab a at
+                lab = "function def"
+        _ ->
+          expect_throw prev_at (Err_Top_IllegalJS s)
+  where prev_at = top_prev_at st
+        at = top_at st
+        env = top_env st
 
 data SLLibs = SLLibs
-  { libm :: M.Map ReachSource SLEnv }
+  { libs_map :: M.Map ReachSource SLEnv }
   deriving (Eq,Show)
 
 init_libs :: SLLibs
-init_libs = (SLLibs { libm = mempty })
+init_libs = (SLLibs { libs_map = mempty })
 
-compileLibTop :: SLLibs -> SrcLoc -> [JSModuleItem] -> SLEnv
-compileLibTop _libs _at _body = error $ "XXX: compileLibTop"
-
-compileLib :: (ReachSource, [JSModuleItem]) -> SLLibs -> SLLibs
-compileLib (src, body) libs = libs'
-  where libs' = libs { libm = libm' }
-        libm' = M.insert src res (libm libs)
-        res = compileLibTop libs at body
+evalLib :: (ReachSource, [JSModuleItem]) -> SLLibs -> SLLibs
+evalLib (src, body) libs = libs'
+  where libs' = libs { libs_map = libm' }
+        libm' = M.insert src (top_exports st') libm
+        libm = (libs_map libs)
+        st' = foldl' (evalTop libs) st body'
+        st = (SLTopSt
+               { top_prev_at = prev_at
+               , top_at = at
+               , top_env = stdlib_env
+               , top_exports = mempty })
+        stdlib_env =
+          case src of
+            ReachStdLib -> base_env
+            ReachSourceFile _ -> M.union (libm M.! ReachStdLib) base_env
         at = (SrcLoc_Src src SrcLoc_Top)
+        (prev_at, body') =
+          case body of
+            ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a "\'reach 0.1 lib\'") sp)):j) ->
+              ((srcloc_after_semi "lib header" a sp at), j)
+            _ -> expect_throw at (Err_NoHeader_Lib body)
 
-compileLibs :: [(ReachSource, [JSModuleItem])] -> SLLibs
-compileLibs = foldr compileLib init_libs
+evalLibs :: [(ReachSource, [JSModuleItem])] -> SLLibs
+evalLibs = foldr evalLib init_libs
 
 compileBundle :: JSBundle -> NLProgram
 compileBundle (JSBundle []) =
   impossible $ "compileBundle: no files"
 compileBundle (JSBundle (_exe:deps)) =
   impossible $ "compileBundle: " ++ (take 256 $ show libst)
-  where libst = compileLibs deps
-  
---  compileExe gst lst exe
---  where gst = (SLGlobalSt
---               { mods = mempty
---                , next_var = 0
---                , context = SLC_Exe })
---         lst = (SLLocalSt
---                 { outer_at = SrcLoc_Top
---                 , prev_at = SrcLoc_Top
---                 , con_env = mempty
---                 , part_envs = mempty })
+  where libst = evalLibs deps
 
 -- Main entry point
 compileNL :: CompilerOpts -> IO ()
