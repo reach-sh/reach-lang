@@ -112,6 +112,7 @@ data SLVal
   | SLV_Int SrcLoc Int
   | SLV_Bool SrcLoc Bool
   | SLV_Bytes SrcLoc B.ByteString
+  | SLV_Participant SrcLoc B.ByteString
   deriving (Eq, Show)
 
 data SLPrimitive
@@ -217,6 +218,7 @@ data CompilerError
   | Err_Decl_NotArray SLVal
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_UnboundId SLVar
+  | Err_Apply_ArgCount Int Int
   | Err_Eval_NotObject SLVal
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_IfCondNotBool SLVal
@@ -226,6 +228,8 @@ data CompilerError
   | Err_Dot_InvalidField SLVal String
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar
+  | Err_Top_NotDApp SLVal
+  | Err_DApp_PartNotString SLVal
   deriving (Eq,Show)
 
 expect_throw :: SrcLoc -> CompilerError -> b
@@ -394,6 +398,19 @@ parseJSArrowFormals at aformals =
     JSParenthesizedArrowParameterList _ l _ ->
       parseJSFormals at l
 
+evalApply :: SrcLoc -> SLVal -> [SLVal] -> SLVal
+evalApply at rator rands =
+  --- XXX Update call stack
+  case rator of
+    SLV_Prim p ->
+      evalPrim at p rands
+    SLV_Clo clo_at formals body env ->
+      evalBlock clo_at env' body
+      where env' = foldl' (flip (uncurry (env_insert clo_at))) env kvs
+            kvs = zipEq clo_at Err_Apply_ArgCount formals rands
+    v ->
+      expect_throw at (Err_Eval_NotApplicable v)
+
 evalExpr :: SrcLoc -> SLEnv -> JSExpression -> SLVal
 evalExpr at env e =
   case e of
@@ -463,13 +480,7 @@ evalExpr at env e =
     JSYieldExpression _ _ -> illegal
     JSYieldFromExpression _ _ _ -> illegal
   where illegal = expect_throw at (Err_Eval_IllegalJS e)
-        doCallV ratorv a rands =
-          --- XXX Update call stack
-          case ratorv of
-            SLV_Prim p ->
-              evalPrim at' p randvs
-            v ->
-              expect_throw at (Err_Eval_NotApplicable v)
+        doCallV ratorv a rands = evalApply at' ratorv randvs
           where at' = srcloc_jsa "application" a at
                 randvs = map (evalExpr at' env) rands
         doCall rator a rands = doCallV (evalExpr at' env rator) a rands          
@@ -505,6 +516,10 @@ evalDecl at exenv decl =
             v = evalExpr at' (exenv_env exenv) rhs
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
+
+evalBlock :: SrcLoc -> SLEnv -> JSBlock -> SLVal
+evalBlock _at _env _body =
+  error $ "XXX evalBlock"
 
 data SLTopSt = SLTopSt
   { top_prev_at :: SrcLoc
@@ -619,9 +634,24 @@ evalLib (src, body) libs = libs'
 evalLibs :: [(ReachSource, [JSModuleItem])] -> SLLibs
 evalLibs = foldr evalLib init_libs
 
+compileDApp :: SLVal -> NLProgram
+compileDApp topv =
+  case topv of
+    SLV_Prim (SLPrim_DApp_Delay at [ (SLV_Object _ _opts), (SLV_Array _ parts), clo ]) ->
+      --- xxx look at opts
+      case evalApply at' clo partvs of
+        v ->
+          error $ "XXX: compileDApp after " ++ show v
+      where at' = SrcLoc_At "compileDApp" Nothing at
+            partvs = map make_part parts
+            make_part v = case v of
+                            SLV_Bytes bs_at bs -> SLV_Participant bs_at bs
+                            _ -> expect_throw at' (Err_DApp_PartNotString v)
+    _ ->
+      expect_throw SrcLoc_Top (Err_Top_NotDApp topv)
+
 compileBundle :: JSBundle -> SLVar -> NLProgram
-compileBundle (JSBundle mods) top =
-  error $ "XXX compileBundle: " ++ (take 256 $ show topv)
+compileBundle (JSBundle mods) top = compileDApp topv
   where libm = libs_map $ evalLibs mods
         exe = case mods of
                 [] -> impossible $ "compileBundle: no files"
