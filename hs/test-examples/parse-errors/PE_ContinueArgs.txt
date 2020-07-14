@@ -1,1 +1,1 @@
-test.rsh/PE_ContinueArgs.rsh:8:5: expected all loop variables at continue
+PE_ContinueArgs.rsh:8:5: expected all loop variables at continue (given: JSContinue)

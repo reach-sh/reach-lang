@@ -1,1 +1,1 @@
-test.rsh/PE_Arg1.rsh:4:10: expected a single argument to declassify and claims
+PE_Arg1.rsh:4:10: expected a single argument to declassify and claims (given: JSMemberExpression)

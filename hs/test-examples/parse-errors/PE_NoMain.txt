@@ -1,1 +1,1 @@
-test.rsh/PE_NoMain.rsh: expected a main function
+PE_NoMain.rsh: expected a main function (given: [])

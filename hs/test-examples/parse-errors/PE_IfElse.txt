@@ -1,1 +1,1 @@
-test.rsh/PE_IfElse.rsh:4:3: expected an else for if
+PE_IfElse.rsh:4:3: expected an else for if (given: JSIf)

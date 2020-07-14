@@ -1,1 +1,1 @@
-test.rsh/PE_UnaryOp.rsh:4:11: expected a valid unary operator
+PE_UnaryOp.rsh:4:11: expected a valid unary operator (given: JSUnaryOpDelete)

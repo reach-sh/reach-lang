@@ -1,1 +1,1 @@
-test.rsh/PE_BinaryOp.rsh:4:10: expected a valid expression form
+PE_BinaryOp.rsh:4:10: expected a valid expression form (given: JSAssignExpression)
