@@ -128,6 +128,8 @@ instance Semigroup SecurityLevel where
 instance Monoid SecurityLevel where
   mempty = Public
 
+type SLPart = B.ByteString
+
 data SLVal
   = SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLEnv
   | SLV_Array SrcLoc [SLVal]
@@ -136,14 +138,16 @@ data SLVal
   | SLV_Int SrcLoc Int
   | SLV_Bool SrcLoc Bool
   | SLV_Bytes SrcLoc B.ByteString
-  | SLV_Participant SrcLoc B.ByteString
+  | SLV_Participant SrcLoc SLPart
   | SLV_Null SrcLoc
   deriving (Eq, Show)
 
 data SLPrimitive
   = SLPrim_makeEnum
+  | SLPrim_declassify
   | SLPrim_DApp
   | SLPrim_DApp_Delay SrcLoc [SLVal]
+  | SLPrim_Part_Only SLPart
   deriving (Eq,Show)
 
 type SLEnv = M.Map SLVar SLVal
@@ -157,12 +161,12 @@ instance SLEnvLike SLEnv where
   envl_env x = x
 
 base_env :: SLEnv
-base_env = M.fromList [
-  ("makeEnum", SLV_Prim SLPrim_makeEnum),
-  ("Reach", (SLV_Object srcloc_top $
-             M.fromList [
-                ("DApp", SLV_Prim SLPrim_DApp)
-                ]))]
+base_env = M.fromList
+  [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
+  , ("declassify", SLV_Prim SLPrim_declassify)
+  , ("Reach", (SLV_Object srcloc_top $
+               M.fromList
+                [ ("DApp", SLV_Prim SLPrim_DApp) ]))]
 
 env_insert :: SrcLoc -> SLVar -> SLVal -> SLEnv -> SLEnv
 env_insert at k v env =
@@ -391,22 +395,21 @@ evalDot at obj field =
         Just v -> v
         Nothing ->
           expect_throw at (Err_Dot_InvalidField obj field)
+    SLV_Participant _part_at part_id ->
+      case field of
+        "only" -> SLV_Prim (SLPrim_Part_Only part_id)
+        _ ->
+          expect_throw at (Err_Dot_InvalidField obj field)
     v ->
       expect_throw at (Err_Eval_NotObject v)
 
-evalPrim :: SLCtxt -> SrcLoc -> SLPrimitive -> [SLVal] -> SLVal
-evalPrim _ctxt at p args =
+evalPrim :: SLCtxt -> SrcLoc -> SLPrimitive -> [SLVal] -> (SLVal -> ans) -> ans
+evalPrim ctxt at p args k =
   case p of
-    SLPrim_DApp ->
-      case args of
-        [ (SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _) ] ->
-          SLV_Prim $ SLPrim_DApp_Delay at args
-        _ ->
-          expect_throw at (Err_Prim_InvalidArgs p args)
     SLPrim_makeEnum ->
       case args of
         [ SLV_Int _ i ] ->
-          SLV_Array at' (enum_pred : map (SLV_Int at') [ 0 .. (i-1) ])
+          k $ SLV_Array at' (enum_pred : map (SLV_Int at') [ 0 .. (i-1) ])
           where at' = (srcloc_at "makeEnum" Nothing at)
                 --- FIXME This sucks... maybe parse an embed string? Would that suck less?
                 enum_pred = SLV_Clo at' fname ["x"] pbody mempty
@@ -416,8 +419,27 @@ evalPrim _ctxt at p args =
                 rhs = (JSExpressionBinary (JSIdentifier JSNoAnnot "x") (JSBinOpLt JSNoAnnot) (JSDecimal JSNoAnnot (show i)))
         _ ->
           expect_throw at (Err_Prim_InvalidArgs p args)
+    SLPrim_DApp ->
+      case args of
+        [ (SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _) ] ->
+          k $ SLV_Prim $ SLPrim_DApp_Delay at args
+        _ ->
+          expect_throw at (Err_Prim_InvalidArgs p args)
     SLPrim_DApp_Delay _ _ ->
       expect_throw at (Err_Eval_NotApplicable $ SLV_Prim p)
+    SLPrim_Part_Only who ->
+      case args of
+        [ thunk@(SLV_Clo _ _ _ _ _) ] ->
+          evalApply ctxt' at thunk [] k
+          where ctxt' = expect_throw at (Err_XXX $ "make part ctxt and check at step from " ++ show who ++ " " ++ show ctxt)
+        _ ->
+          expect_throw at (Err_Prim_InvalidArgs p args)
+    SLPrim_declassify ->
+      case args of
+        [ _val ] ->
+          expect_throw at (Err_XXX "declassify")
+        _ ->
+          expect_throw at (Err_Prim_InvalidArgs p args)
 
 binaryToPrim :: SrcLoc -> JSBinOp -> SLPrimitive
 binaryToPrim at o = expect_throw at (Err_XXX $ "binaryToPrim " ++ show o)
@@ -441,7 +463,7 @@ evalApply :: SLCtxt -> SrcLoc -> SLVal -> [SLVal] -> (SLVal -> ans) -> ans
 evalApply ctxt at rator rands k =
   case rator of
     SLV_Prim p ->
-      k $ evalPrim ctxt at p rands
+      evalPrim ctxt at p rands k
     SLV_Clo clo_at mname formals body env ->
       evalBlock ctxt' clo_at env' body k
       where env' = foldl' (flip (uncurry (env_insert clo_at))) env kvs
