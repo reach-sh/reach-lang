@@ -32,6 +32,9 @@ dependencies:
 - hspec
 - smallcheck
 - hspec-smallcheck
+- tasty
+- tasty-golden
+- tasty-hspec
 - generic-deriving
 - deepseq
 - hexstring

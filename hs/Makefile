@@ -38,6 +38,10 @@ hs-build:
 hs-test:
 	stack test
 
+.PHONY: hs-test-accept
+hs-test-accept:
+	stack test --test-arguments '--accept'
+
 .PHONY: hs-deps
 hs-deps:
 	stack setup

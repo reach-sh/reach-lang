@@ -1,10 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main where
 import Test.Hspec
 import Test.Hspec.SmallCheck
+import Test.Tasty
+import Test.Tasty.Golden
+import Test.Tasty.Hspec
+import Test.SmallCheck.Series
 
-import Data.List (isInfixOf)
+import qualified Data.ByteString.Lazy as LB
+import Data.Functor.Identity
+import Data.List (isInfixOf, (\\))
+import Data.Proxy
+import Data.Typeable
 import System.Directory
 import System.FilePath
 import Control.Exception
@@ -26,6 +39,10 @@ instance NFData TP where
   rnf (TP _) = ()
 instance NFData TokenPosn where
   rnf (TokenPn _ _ _) = ()
+
+class (Generic a, Typeable a, ConNames (Rep a), Serial Identity a) => ReachErr a
+instance ReachErr ParseErr
+instance ReachErr CompileErr
 
 mustExist :: FilePath -> Expectation
 mustExist fp = do
@@ -70,10 +87,11 @@ err_m msg expected_p comp = do
       then actual_noParen `shouldBe` expected_noParen
       else do
         -- Instead of comparing expected/actual directly, we squint a little.
-        -- z3 defines are allowed to differ as long as the total # of them is the same.
+        -- z3 defines are allowed to differ, as long as the errs are the same.
         -- This allows the tests to pass across different versions of z3
         actual' `shouldBe` expected'
-        length actualLines `shouldBe` length expectedLines
+        -- z3 4.4.1 has a different # of defines =[
+        -- length actualLines `shouldBe` length expectedLines
       where actual = (actual_x ++ "\n")
             actual_noParen = stripParenthetical actual
             expected_noParen = stripParenthetical expected
@@ -107,6 +125,7 @@ test_compile n = do
 compile_err_example :: CompileErr -> Expectation
 compile_err_example ce =
   err_example (conNameOf ce) test_compile
+
 
 patch_and_compile :: FilePath -> FilePath -> IO ()
 patch_and_compile dir pf = do
@@ -147,8 +166,81 @@ verify_regress dir = do
   let ps = filter notDotOut fs
   mapM_ (verify_regress1 dir) ps
 
+
+
+-- err_example :: Show a => NFData a => String -> (FilePath -> IO a) -> Expectation
+-- err_example which f = do
+--   let expth ext = "test.rsh/" ++ which ++ "." ++ ext
+--   let expected_p = expth "txt"
+--   let actual_p = expth "rsh"
+--   mustExist actual_p
+--   err_m which expected_p (f actual_p)
+
+errExampleBs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
+errExampleBs k fp = withCurrentDirectory dir (try_hard (k fpRel)) >>= \case
+  Right r ->
+    fail $ "expected a failure, but got: " ++ show r
+  Left (ErrorCall e) ->
+    return $ LB.fromStrict $ bpack e
+  where
+    dir = takeDirectory fp
+    fpRel = takeFileName fp
+
+errExample :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> TestTree
+errExample k fp = do
+  let goldenFile = replaceExtension fp ".txt"
+      fpBase = takeBaseName fp
+  goldenVsString fpBase goldenFile (errExampleBs k fp)
+
+parseErrExample :: FilePath -> TestTree
+parseErrExample = errExample readReachFile
+
+compileErrExample :: FilePath -> TestTree
+compileErrExample = errExample test_compile
+
+-- It is dumb that both testSpec and it require descriptive strings
+testNotEmpty :: String -> [a] -> IO TestTree
+testNotEmpty label xs = testSpec label $ it "is not empty" $ case xs of
+  [] -> expectationFailure "... it is empty =["
+  (_:_) -> pure ()
+
+testExamplesCover ::
+  forall err proxy. (ReachErr err) =>
+  proxy err -> [FilePath] -> IO TestTree
+testExamplesCover p sources = testSpec label t where
+    label = "Examples covering " <> ty
+    ty = show $ typeRep p
+    constrs = listSeries 1 :: [err]
+    cNames = map conNameOf constrs
+    t = it "list of constructors with missing examples is empty" $ do
+      let missing = cNames \\ map takeBaseName sources
+      missing `shouldBe` []
+
+testsFor :: ReachErr err =>
+  proxy err -> (FilePath -> TestTree) -> [String] -> FilePath -> IO TestTree
+testsFor p mkTest exts subdir = do
+  curDir <-getCurrentDirectory
+  let dir = curDir </> "test-examples" </> subdir
+  sources <- findByExtension exts dir
+  testNe <- testNotEmpty "this subdir" sources
+  testCov <- testExamplesCover p sources
+  let groupLabel = subdir
+  let testSources = testGroup "testing each .rsh file" $ map mkTest sources
+  let tests = [testNe, testCov, testSources]
+  return $ testGroup groupLabel tests
+
 main :: IO ()
-main = hspec $ do
+main = do
+  parseTests <- testsFor (Proxy @ParseErr) parseErrExample [".rsh"] "parse-errors"
+  compileTests <- testsFor (Proxy @CompileErr) compileErrExample [".rsh"] "compile-errors"
+  defaultMain $ testGroup "tests"
+    [ parseTests
+    , compileTests
+    ]
+
+-- XXX copy verification tests over and delete dead code
+main' :: IO ()
+main' = hspec $ do
   describe "Parser" $ do
     it "stdlib_defs is valid" $ do
       stdlib_defs >>= (`shouldSatisfy` (not . null))

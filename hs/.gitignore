@@ -1,7 +1,7 @@
 .stack-work/
 reach.cabal
 *~
-/test.out/
+test.out/
 /test.patch/*.actual
 .hie/
 stan.html
