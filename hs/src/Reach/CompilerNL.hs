@@ -264,6 +264,9 @@ data CompilerError
   | Err_Block_NotNull SLVal
   | Err_Block_IllegalJS JSStatement
   | Err_Block_Continue
+  | Err_Block_While
+  | Err_Block_Variable
+  | Err_Block_Assign
   | Err_TopFun_NoName
   | Err_TailNotEmpty [JSStatement]
   | Err_XXX String
@@ -405,9 +408,9 @@ evalPrim _ctxt at p args =
         [ SLV_Int _ i ] ->
           SLV_Array at' (enum_pred : map (SLV_Int at') [ 0 .. (i-1) ])
           where at' = (srcloc_at "makeEnum" Nothing at)
-                --- XXX This sucks... maybe parse an embed string? Would that suck less?
+                --- FIXME This sucks... maybe parse an embed string? Would that suck less?
                 enum_pred = SLV_Clo at' fname ["x"] pbody mempty
-                fname = Nothing --- XXX
+                fname = Nothing --- FIXME syntax-local-infer-name
                 pbody = JSBlock JSNoAnnot [(JSReturn JSNoAnnot (Just (JSExpressionBinary lhs (JSBinOpAnd JSNoAnnot) rhs)) JSSemiAuto)] JSNoAnnot
                 lhs = (JSExpressionBinary (JSDecimal JSNoAnnot "0") (JSBinOpLe JSNoAnnot) (JSIdentifier JSNoAnnot "x"))
                 rhs = (JSExpressionBinary (JSIdentifier JSNoAnnot "x") (JSBinOpLt JSNoAnnot) (JSDecimal JSNoAnnot (show i)))
@@ -490,12 +493,12 @@ evalExpr ctxt at env e k =
     JSExpressionPostfix _ _ -> illegal
     JSExpressionTernary c a t _ f ->
       evalExpr ctxt at' env c k'
-      where k' = kontIf ctxt at (evalExpr ctxt at' env) t f k
+      where k' = kontIf ctxt at' (evalExpr ctxt at' env) t f k
             at' = srcloc_jsa "ternary" a at
     JSArrowExpression aformals a bodys ->
       k $ SLV_Clo at' fname formals body env
       where at' = srcloc_jsa "arrow" a at
-            fname = Nothing --- XXX
+            fname = Nothing --- FIXME syntax-local-infer-name
             body = JSBlock JSNoAnnot [bodys] JSNoAnnot
             formals = parseJSArrowFormals at' aformals
     JSFunctionExpression a name _ jsformals _ body ->
@@ -503,7 +506,7 @@ evalExpr ctxt at env e k =
       where at' = srcloc_jsa "function exp" a at
             fname =
               case name of
-                JSIdentNone -> Nothing --- XXX
+                JSIdentNone -> Nothing --- FIXME syntax-local-infer-name
                 JSIdentName na _ -> expect_throw (srcloc_jsa "function name" na at') Err_Fun_NamesIllegal
             formals = parseJSFormals at' jsformals
     JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
@@ -591,14 +594,8 @@ evalStmt ctxt at env ss k =
   case ss of
     [] -> k $ SLV_Null at
     ((JSStatementBlock a ss' _ sp):ks) ->
-      evalStmt ctxt at_in env ss' k'
-      where k' cv =
-              case cv of
-                SLV_Null _ ->
-                  evalStmt ctxt at_after env ks k
-                bv ->
-                  expect_throw at_in (Err_Block_NotNull bv)
-            at_in = srcloc_jsa "block" a at
+      evalStmt ctxt at_in env ss' $ kontNull at_in at_after ks
+      where at_in = srcloc_jsa "block" a at
             at_after = srcloc_after_semi "block" a sp at
     (s@(JSBreak a _ _):_) -> illegal a s "break"
     (s@(JSLet a _ _):_) -> illegal a s "let"
@@ -610,7 +607,6 @@ evalStmt ctxt at env ss k =
             lab = "const"
             k' env' = evalStmt ctxt at_after env' ks k
     ((JSContinue a _ _):_) ->
-      --- FUTURE allow locally
       expect_throw (srcloc_jsa "continue" a at) (Err_Block_Continue)
     (s@(JSDoWhile a _ _ _ _ _ _):_) -> illegal a s "do while"
     (s@(JSFor a _ _ _ _ _ _ _ _):_) -> illegal a s "for"
@@ -634,15 +630,61 @@ evalStmt ctxt at env ss k =
       evalStmt ctxt at env ((JSIfElse a la ce ra ts ea fs):ks) k
       where ea = ra
             fs = (JSEmptyStatement ea)
----    ((JSIfElse a _ ce _ ts _ fs):ks) ->
+    ((JSIfElse a _ ce _ ts _ fs):ks) ->
+      evalExpr ctxt at' env ce k'
+      where k' = kontIf ctxt at' (\s -> evalStmt ctxt at' env ((JSStatementBlock a [s] a (JSSemi a)):ks)) ts fs k
+            at' = srcloc_jsa "if" a at
     (s@(JSLabelled _ a _):_) -> illegal a s "labelled"
----    ((JSEmptyExpression a):ks) ->   
----    ((JSExpressionStatement e):ks) ->
----    ((JSAssignStatement lhs op rhs):ks) ->
-    _ ->
-      expect_throw at (Err_XXX "evalStmt")
+    ((JSEmptyStatement a):ks) ->
+      evalStmt ctxt at' env ks k
+      where at' = srcloc_jsa "empty" a at
+    ((JSExpressionStatement e sp):ks) ->
+      evalExpr ctxt at env e $ kontNull at at_after ks
+      where at_after = srcloc_after_semi "expr stmt" JSNoAnnot sp at
+    ((JSAssignStatement _lhs op _rhs _asp):ks) ->
+      case (op, ks) of
+        ((JSAssign _), ((JSContinue a _bl sp):cont_ks)) ->
+          expect_empty_tail lab a sp at cont_ks res
+          where lab = "continue"
+                at' = srcloc_jsa lab a at
+                res = expect_throw at' (Err_XXX lab)
+        _ ->
+          expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign)
+    ((JSMethodCall e a args ra sp):ks) ->
+      evalExpr ctxt at env (JSCallExpression e a args ra) k'
+      where k' = kontNull at_in at_after ks
+            at_in = srcloc_jsa lab a at
+            at_after = srcloc_after_semi lab a sp at
+            lab = "application"
+    ((JSReturn a me sp):ks) ->
+      expect_empty_tail lab a sp at ks res
+      where lab = "return"
+            at' = srcloc_jsa lab a at
+            retk = expect_throw at' (Err_XXX "retk")
+            res = case me of Nothing -> retk $ SLV_Null at'
+                             Just e -> evalExpr ctxt at' env e retk
+    (s@(JSSwitch a _ _ _ _ _ _ _):_) -> illegal a s "switch"
+    (s@(JSThrow a _ _):_) -> illegal a s "throw"
+    (s@(JSTry a _ _ _):_) -> illegal a s "try"
+    ((JSVariable a _while_decls _vsp):ks) ->
+      case ks of
+        ((JSMethodCall (JSIdentifier _ "invariant") _ _invariant_args _ _isp):
+          (JSWhile _ _ _while_cond _ _while_body):_while_ks) ->
+          expect_throw at' (Err_XXX "while")
+        _ ->
+          expect_throw at' (Err_Block_Variable)
+      where at' = (srcloc_jsa "var" a at)
+    ((JSWhile a _ _ _ _):_) ->
+      expect_throw (srcloc_jsa "while" a at) (Err_Block_While)
+    (s@(JSWith a _ _ _ _ _):_) -> illegal a s "with"
   where illegal a s lab = expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
-      
+        kontNull at_in at_after ks cv =
+          case cv of
+            SLV_Null _ ->
+              evalStmt ctxt at_after env ks k
+            bv ->
+              expect_throw at_in (Err_Block_NotNull bv)
+
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =
   case ks of
