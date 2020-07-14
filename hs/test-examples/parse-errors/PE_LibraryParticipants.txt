@@ -1,0 +1,1 @@
+PE_LibraryParticipants_lib.rsh:3:11: libraries should not have participants
