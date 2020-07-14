@@ -81,7 +81,7 @@ data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
   deriving (Eq,Ord)
 
 instance Show SrcLoc where
-  show (SrcLoc mlab mtp mrs) = concat $ intersperse ":" $ concat [ lab, sr, loc ]
+  show (SrcLoc mlab mtp mrs) = concat $ intersperse ":" $ concat [ sr, loc, lab ]
     where lab = case mlab of Nothing -> []
                              Just s -> [s]
           sr = case mrs of Nothing -> []
@@ -122,6 +122,7 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Bytes SrcLoc B.ByteString
   | SLV_Participant SrcLoc B.ByteString
+  | SLV_Null SrcLoc
   deriving (Eq, Show)
 
 data SLPrimitive
@@ -245,6 +246,11 @@ data CompilerError
   | Err_Shadowed SLVar
   | Err_Top_NotDApp SLVal
   | Err_DApp_PartNotString SLVal
+  | Err_Block_NotNull SLVal
+  | Err_Block_IllegalJS JSStatement
+  | Err_Block_Continue
+  | Err_TopFun_NoName
+  | Err_TailNotEmpty [JSStatement]
   | Err_XXX String
   deriving (Eq,Show)
 
@@ -437,9 +443,11 @@ evalExpr ctxt at env e =
     JSDecimal a ns -> SLV_Int (srcloc_jsa "decimal" a at) $ numberValue 10 ns
     JSLiteral a l ->
       case l of
-        "true" -> SLV_Bool (srcloc_jsa "true" a at) True
-        "false" -> SLV_Bool (srcloc_jsa "false" a at) False
-        _ -> expect_throw (srcloc_jsa "literal" a at) (Err_Parse_IllegalLiteral l)
+        "null" -> SLV_Null at'
+        "true" -> SLV_Bool at' True
+        "false" -> SLV_Bool at' False
+        _ -> expect_throw at' (Err_Parse_IllegalLiteral l)
+      where at' = (srcloc_jsa "literal" a at)
     JSHexInteger a ns -> SLV_Int (srcloc_jsa "hex" a at) $ numberValue 16 ns
     JSOctal a ns -> SLV_Int (srcloc_jsa "octal" a at) $ numberValue 8 ns
     JSStringLiteral a s -> SLV_Bytes (srcloc_jsa "string" a at) (bpack (string_trim_quotes s))
@@ -536,9 +544,85 @@ evalDecl ctxt at envl decl =
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
 
+evalDecls :: SLEnvLike a => SLCtxt -> SrcLoc -> a -> (JSCommaList JSExpression) -> a
+evalDecls ctxt at env decls =
+  --- Note: This makes it so that declarations on the left are visible
+  --- on the right, which might be different than JavaScript?
+  foldl' (evalDecl ctxt at) env $ jscl_flatten decls
+
+evalFunctionStmt :: SLEnvLike a => SrcLoc -> a -> JSAnnot -> JSIdent -> JSCommaList JSExpression -> JSBlock -> JSSemi -> (SrcLoc, a)
+evalFunctionStmt at envl a name jsformals body sp = (at_after, envl')
+  where clo = SLV_Clo at' (Just f) formals body (envl_env envl)
+        formals = parseJSFormals at' jsformals
+        at' = srcloc_jsa lab a at
+        at_after = srcloc_after_semi lab a sp at
+        lab = "function def"
+        envl' = envl_insert at f clo envl
+        f = case name of
+              JSIdentNone -> expect_throw at' (Err_TopFun_NoName)
+              JSIdentName _ x -> x
+
 evalStmt :: SLCtxt -> SrcLoc -> SLEnv -> [JSStatement] -> SLVal
-evalStmt _ctxt at _env _ss =
-  expect_throw at (Err_XXX "evalStmt")
+evalStmt ctxt at env ss =
+  case ss of
+    [] -> SLV_Null at
+    ((JSStatementBlock a ss' _ sp):ks) ->
+      case evalStmt ctxt at_in env ss' of
+        SLV_Null _ ->
+          evalStmt ctxt at_after env ks
+        bv ->
+          expect_throw at_in (Err_Block_NotNull bv)
+      where at_in = srcloc_jsa "block" a at
+            at_after = srcloc_after_semi "block" a sp at
+    (s@(JSBreak a _ _):_) -> illegal a s "break"
+    (s@(JSLet a _ _):_) -> illegal a s "let"
+    (s@(JSClass a _ _ _ _ _ _):_) -> illegal a s "class"
+    ((JSConstant a decls sp):ks) ->
+      evalStmt ctxt at_after env' ks
+      where at_after = srcloc_after_semi lab a sp at
+            at_in = srcloc_jsa lab a at
+            lab = "const"
+            env' = evalDecls ctxt at_in env decls
+    ((JSContinue a _ _):_) ->
+      --- FUTURE allow locally
+      expect_throw (srcloc_jsa "continue" a at) (Err_Block_Continue)
+    (s@(JSDoWhile a _ _ _ _ _ _):_) -> illegal a s "do while"
+    (s@(JSFor a _ _ _ _ _ _ _ _):_) -> illegal a s "for"
+    (s@(JSForIn a _ _ _ _ _ _):_) -> illegal a s "for in"
+    (s@(JSForVar a _ _ _ _ _ _ _ _ _):_) -> illegal a s "for var"
+    (s@(JSForVarIn a _ _ _ _ _ _ _):_) -> illegal a s "for var in"
+    (s@(JSForLet a _ _ _ _ _ _ _ _ _):_) -> illegal a s "for let"
+    (s@(JSForLetIn a _ _ _ _ _ _ _):_) -> illegal a s "for let in"
+    (s@(JSForLetOf a _ _ _ _ _ _ _):_) -> illegal a s "for let of"
+    (s@(JSForConst a _ _ _ _ _ _ _ _ _):_) -> illegal a s "for const"
+    (s@(JSForConstIn a _ _ _ _ _ _ _):_) -> illegal a s "for const in"
+    (s@(JSForConstOf a _ _ _ _ _ _ _):_) -> illegal a s "for const of"
+    (s@(JSForOf a _ _ _ _ _ _):_) -> illegal a s "for of"
+    (s@(JSForVarOf a _ _ _ _ _ _ _):_) -> illegal a s "for var of"
+    (s@(JSAsyncFunction a _ _ _ _ _ _ _):_) -> illegal a s "async function"
+    ((JSFunction a name _ jsformals _ body sp):ks) ->
+      evalStmt ctxt at_after env' ks
+      where (at_after, env') = evalFunctionStmt at env a name jsformals body sp
+    (s@(JSGenerator a _ _ _ _ _ _ _):_) -> illegal a s "generator"
+    ((JSIf a la ce ra ts):ks) ->
+      evalStmt ctxt at env ((JSIfElse a la ce ra ts ea fs):ks)
+      where ea = ra
+            fs = (JSEmptyStatement ea)
+---    ((JSIfElse a _ ce _ ts _ fs):ks) ->
+    (s@(JSLabelled _ a _):_) -> illegal a s "labelled"
+---    ((JSEmptyExpression a):ks) ->   
+---    ((JSExpressionStatement e):ks) ->
+    _ ->
+      expect_throw at (Err_XXX "evalStmt")
+  where illegal a s lab = expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
+      
+expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
+expect_empty_tail lab a sp at ks res =
+  case ks of
+    [] -> res
+    _ ->
+      expect_throw at' (Err_TailNotEmpty ks)
+      where at' = srcloc_after_semi lab a sp at
   
 evalBlock :: SLCtxt -> SrcLoc -> SLEnv -> JSBlock -> SLVal
 evalBlock ctxt at env (JSBlock a ss _) =
@@ -638,18 +722,11 @@ evalTopBody ctxt libs st mi =
                   , top_exenv = exenv' })
               where at' = srcloc_jsa lab a at
                     lab = "const def"
-                    --- Note: This makes it so that declarations on the
-                    --- left are visible on the right, which might be
-                    --- different than JavaScript?
-                    exenv' = exenv_reset $ foldl' (evalDecl ctxt at') exenv_ $ jscl_flatten decls
-            (JSFunction a (JSIdentName _ f) _ jsformals _ body sp) ->
-              (st { top_prev_at = srcloc_after_semi lab a sp at
-                  , top_exenv = exenv' })
-              where clo = SLV_Clo at' (Just f) formals body (exenv_env exenv_)
-                    formals = parseJSFormals at' jsformals
-                    at' = srcloc_jsa lab a at
-                    lab = "function def"
-                    exenv' = exenv_reset $ exenv_insert at f clo exenv_
+                    exenv' = exenv_reset $ evalDecls ctxt at' exenv_ decls
+            (JSFunction a name _ jsformals _ body sp) ->
+              (st { top_prev_at = at_after
+                  , top_exenv = exenv_reset exenv' })
+              where (at_after, exenv') = evalFunctionStmt at exenv_ a name jsformals body sp
             _ ->
               expect_throw prev_at (Err_Top_IllegalJS s)
           where exenv_ = exenv_set isExport exenv
