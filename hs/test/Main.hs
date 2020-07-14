@@ -69,6 +69,9 @@ err_m msg expected_p comp = do
       if length actual < 1000
       then actual_noParen `shouldBe` expected_noParen
       else do
+        -- Instead of comparing expected/actual directly, we squint a little.
+        -- z3 defines are allowed to differ as long as the total # of them is the same.
+        -- This allows the tests to pass across different versions of z3
         actual' `shouldBe` expected'
         length actualLines `shouldBe` length expectedLines
       where actual = (actual_x ++ "\n")
