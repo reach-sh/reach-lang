@@ -1,0 +1,164 @@
+<out>
+Verifying with honest = True; role = RoleContract
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(8,
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = True; role = RolePart (0,("Child",LT_BT BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(8,
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = True; role = RolePart (1,("Parent",LT_BT BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(8,
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = False; role = RoleContract
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(8,
+Verification failed:
+	in dishonest mode
+	for RoleContract
+	of theorem TBalanceSufficient
+	from ../examples/multisig/multisig.rsh.2:51:7
+	specifically: (<= v17 ctc_balance5 ):
+(model
+  (define-fun v13 () Bool false)
+  (define-fun v6p () Int 0)
+  (define-fun ctc_balance3 () Int 1)
+  (define-fun v12 () Bool true)
+  (define-fun v5p () Int 0)
+  (define-fun v14 () Int 1)
+  (define-fun v2 () Int 0)
+  (define-fun v10 () Int 0)
+  (define-fun v20 () Bool true)
+  (define-fun v10p () Int 1)
+  (define-fun v3 () Bool true)
+  (define-fun v19p () Int 0)
+  (define-fun v15 () Bool true)
+  (define-fun txn_value2 () Int 0)
+  (define-fun v4p () Int 0)
+  (define-fun v23 () Int 0)
+  (define-fun v19 () Int 0)
+  (define-fun v27p () Int 0)
+  (define-fun txn_value5 () Int 0)
+  (define-fun v7 () Bool true)
+  (define-fun v4 () Int 0)
+  (define-fun v26p () Int 0)
+  (define-fun ctc_balance0 () Int 0)
+  (define-fun v11 () Bool false)
+  (define-fun v5 () Int 0)
+  (define-fun v9 () Int 0)
+  (define-fun v24 () Bool true)
+  (define-fun v16 () Int 1)
+  (define-fun v9p () Int 1)
+  (define-fun v26 () Int 1)
+  (define-fun v17p () Int 0)
+  (define-fun txn_value1 () Int 0)
+  (define-fun v8p () Int 1)
+  (define-fun v6 () Int 0)
+  (define-fun v2p () Int 0)
+  (define-fun v25 () Int 0)
+  (define-fun v23p () Int 0)
+  (define-fun v25p () Int 0)
+  (define-fun txn_value4 () Int 0)
+  (define-fun v22 () Bool true)
+  (define-fun v16p () Int 0)
+  (define-fun v8 () Int 1)
+  (define-fun v17 () Int 2)
+  (define-fun v27 () Int 1)
+  (define-fun v14p () Int 1)
+  (define-fun v11p () Bool false)
+  (define-fun v21 () Bool false)
+  (define-fun v12p () Bool false)
+  (define-fun v22p () Bool false)
+  (define-fun v24p () Bool false)
+  (define-fun v18 () Bool false)
+  (define-fun v3p () Bool false)
+  (define-fun v7p () Bool false)
+  (define-fun v18p () Bool false)
+  (define-fun v15p () Bool false)
+  (define-fun v20p () Bool false)
+  (define-fun v21p () Bool false)
+  (define-fun v13p () Bool false)
+  (define-fun digest ((x!0 Bytes)) Int 0))
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = False; role = RolePart (0,("Child",LT_BT BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(8,
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Verifying with honest = False; role = RolePart (1,("Parent",LT_BT BT_Address))
+...checking VC_Top
+...checking VC_WhileBody_AssumeNotUntil [(8,
+Verification failed:
+	in dishonest mode
+	for RolePart (1,("Parent",LT_BT BT_Address))
+	of theorem TBalanceSufficient
+	from ../examples/multisig/multisig.rsh.2:51:7
+	specifically: (<= v17 ctc_balance5 ):
+(model
+  (define-fun v14p () Int 1)
+  (define-fun v6p () Int 0)
+  (define-fun ctc_balance3 () Int 1)
+  (define-fun v12 () Bool true)
+  (define-fun v21 () Bool true)
+  (define-fun v5p () Int 0)
+  (define-fun v14 () Int 1)
+  (define-fun v2 () Int 0)
+  (define-fun v10 () Int 0)
+  (define-fun v20 () Bool true)
+  (define-fun v10p () Int 1)
+  (define-fun v3 () Bool true)
+  (define-fun v19p () Int 0)
+  (define-fun v15 () Bool true)
+  (define-fun txn_value2 () Int 0)
+  (define-fun v4p () Int 0)
+  (define-fun v23 () Int 0)
+  (define-fun v19 () Int 0)
+  (define-fun v27p () Int 0)
+  (define-fun txn_value5 () Int 0)
+  (define-fun v7 () Bool true)
+  (define-fun v4 () Int 0)
+  (define-fun v26p () Int 0)
+  (define-fun ctc_balance0 () Int 0)
+  (define-fun v11 () Bool false)
+  (define-fun v5 () Int 0)
+  (define-fun v9 () Int 0)
+  (define-fun v24 () Bool true)
+  (define-fun v16 () Int 1)
+  (define-fun v9p () Int 1)
+  (define-fun v26 () Int 1)
+  (define-fun v17p () Int 0)
+  (define-fun txn_value1 () Int 0)
+  (define-fun v8p () Int 1)
+  (define-fun v6 () Int 0)
+  (define-fun v2p () Int 0)
+  (define-fun v25 () Int 0)
+  (define-fun v23p () Int 0)
+  (define-fun v25p () Int 0)
+  (define-fun txn_value4 () Int 0)
+  (define-fun v22 () Bool true)
+  (define-fun v16p () Int 0)
+  (define-fun v8 () Int 1)
+  (define-fun v17 () Int 2)
+  (define-fun v27 () Int 1)
+  (define-fun v13 () Bool false)
+  (define-fun v11p () Bool false)
+  (define-fun v12p () Bool false)
+  (define-fun v22p () Bool false)
+  (define-fun v24p () Bool false)
+  (define-fun v18 () Bool false)
+  (define-fun v3p () Bool false)
+  (define-fun v7p () Bool false)
+  (define-fun v18p () Bool false)
+  (define-fun v15p () Bool false)
+  (define-fun v20p () Bool false)
+  (define-fun v21p () Bool false)
+  (define-fun v13p () Bool false)
+  (define-fun digest ((x!0 Bytes)) Int 0))
+...checking VC_WhileTail_AssumeUntil (IL_Let
+Checked 42 theorems; 2 failures. :'(
+
+</out>
+<err>
+
+</err>
+

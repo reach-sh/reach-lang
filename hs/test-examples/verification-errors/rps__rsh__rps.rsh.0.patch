@@ -1,0 +1,13 @@
+diff --git a/examples/rps/rsh/rps.rsh b/examples/rps/rsh/rps.rsh
+index 904904f..0a7ef3a 100644
+--- a/examples/rps/rsh/rps.rsh
++++ b/examples/rps/rsh/rps.rsh
+@@ -37,7 +37,7 @@ function main() {
+     interact.shows(); });
+   B.publish(handB)
+     .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
+-  require(isHand(handB));
++  // require(isHand(handB));
+   commit();
+
+   A.only(() => {

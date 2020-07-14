@@ -1,0 +1,13 @@
+diff --git a/examples/rps/rsh/rps.rsh b/examples/rps/rsh/rps.rsh
+index 56f3167..d796513 100644
+--- a/examples/rps/rsh/rps.rsh
++++ b/examples/rps/rsh/rps.rsh
+@@ -67,7 +67,7 @@ function main() {
+       return showOutcome(A_QUITS); });
+   checkCommitment(commitA, saltA, handA);
+   require(isHand(handA));
+-  const outcome = winner(handA, handB);
++  const outcome = A_WINS //winner(handA, handB);
+   assert(implies(outcome == A_WINS, isHand(handA)));
+   assert(implies(outcome == B_WINS, isHand(handB)));
+   fair_game(handA, handB, outcome);

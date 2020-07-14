@@ -1,0 +1,168 @@
+<out>
+Verifying with honest = True; role = RoleContract
+...checking VC_Top
+Verification failed:
+	in honest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v80:
+Verification failed:
+	in honest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v82:
+Verification failed:
+	in honest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v84:
+Verifying with honest = True; role = RolePart (0,("A",LT_BT BT_Address))
+...checking VC_Top
+Verification failed:
+	in honest mode
+	for RolePart (0,("A",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v80:
+Verification failed:
+	in honest mode
+	for RolePart (0,("A",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v82:
+Verification failed:
+	in honest mode
+	for RolePart (0,("A",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v84:
+Verifying with honest = True; role = RolePart (1,("B",LT_BT BT_Address))
+...checking VC_Top
+Verification failed:
+	in honest mode
+	for RolePart (1,("B",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v80:
+Verification failed:
+	in honest mode
+	for RolePart (1,("B",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v82:
+Verification failed:
+	in honest mode
+	for RolePart (1,("B",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v84:
+Verifying with honest = True; role = RolePart (2,("O",LT_BT BT_Address))
+...checking VC_Top
+Verification failed:
+	in honest mode
+	for RolePart (2,("O",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v80:
+Verification failed:
+	in honest mode
+	for RolePart (2,("O",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v82:
+Verification failed:
+	in honest mode
+	for RolePart (2,("O",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v84:
+Verifying with honest = False; role = RoleContract
+...checking VC_Top
+Verification failed:
+	in dishonest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v80:
+Verification failed:
+	in dishonest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v82:
+Verification failed:
+	in dishonest mode
+	for RoleContract
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v84:
+Verifying with honest = False; role = RolePart (0,("A",LT_BT BT_Address))
+...checking VC_Top
+Verification failed:
+	in dishonest mode
+	for RolePart (0,("A",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v80:
+Verification failed:
+	in dishonest mode
+	for RolePart (0,("A",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v82:
+Verification failed:
+	in dishonest mode
+	for RolePart (0,("A",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v84:
+Verifying with honest = False; role = RolePart (1,("B",LT_BT BT_Address))
+...checking VC_Top
+Verification failed:
+	in dishonest mode
+	for RolePart (1,("B",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v80:
+Verification failed:
+	in dishonest mode
+	for RolePart (1,("B",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v82:
+Verification failed:
+	in dishonest mode
+	for RolePart (1,("B",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v84:
+Verifying with honest = False; role = RolePart (2,("O",LT_BT BT_Address))
+...checking VC_Top
+Verification failed:
+	in dishonest mode
+	for RolePart (2,("O",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v80:
+Verification failed:
+	in dishonest mode
+	for RolePart (2,("O",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v82:
+Verification failed:
+	in dishonest mode
+	for RolePart (2,("O",LT_BT BT_Address))
+	of theorem TPossible
+	from rps_shared.rsh:46:18
+	specifically: v84:
+Checked 234 theorems; 24 failures. :'(
+
+</out>
+<err>
+
+</err>
+

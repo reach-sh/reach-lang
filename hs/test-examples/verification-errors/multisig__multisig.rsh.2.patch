@@ -1,0 +1,13 @@
+diff --git a/examples/multisig/multisig.rsh b/examples/multisig/multisig.rsh
+index 2c6ad1e..3d68c32 100644
+--- a/examples/multisig/multisig.rsh
++++ b/examples/multisig/multisig.rsh
+@@ -40,7 +40,7 @@ function main() {
+       const howMuch = declassify(is(uint256, interact.request(bal)));
+       assume(howMuch <= bal); });
+     Child.publish(howMuch);
+-    require(howMuch <= bal);
++    // require(howMuch <= bal);
+     commit();
+
+     Parent.only(() => {

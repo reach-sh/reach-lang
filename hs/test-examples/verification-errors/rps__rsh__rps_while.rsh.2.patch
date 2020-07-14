@@ -1,0 +1,12 @@
+diff --git a/examples/rps/rsh/rps_while.rsh b/examples/rps/rsh/rps_while.rsh
+index f58760f..d1b9a10 100644
+--- a/examples/rps/rsh/rps_while.rsh
++++ b/examples/rps/rsh/rps_while.rsh
+@@ -61,7 +61,7 @@ function main() {
+ 
+     A.only(() => {
+       const saltA = declassify(_saltA);
+-      const handA = declassify(_handA);
++      const handA = declassify(getHand()/*_handA*/);
+       interact.reveals(showHand(handB)); });
+     A.publish(saltA, handA)
