@@ -217,30 +217,43 @@ testExamplesCover p sources = testSpec label t where
       missing `shouldBe` []
 
 testsFor :: ReachErr err =>
-  proxy err -> (FilePath -> TestTree) -> [String] -> FilePath -> IO TestTree
-testsFor p mkTest exts subdir = do
+  proxy err -> (FilePath -> TestTree) -> String -> FilePath -> IO TestTree
+testsFor p mkTest ext subdir = do
   curDir <-getCurrentDirectory
   let dir = curDir </> "test-examples" </> subdir
-  sources <- findByExtension exts dir
+  sources <- findByExtension [ext] dir
   testNe <- testNotEmpty "this subdir" sources
   testCov <- testExamplesCover p sources
   let groupLabel = subdir
-  let testSources = testGroup "testing each .rsh file" $ map mkTest sources
+  let testSources = testGroup ("testing each " <> ext <> "file") $ map mkTest sources
   let tests = [testNe, testCov, testSources]
   return $ testGroup groupLabel tests
 
-main :: IO ()
-main = do
-  parseTests <- testsFor (Proxy @ParseErr) parseErrExample [".rsh"] "parse-errors"
-  compileTests <- testsFor (Proxy @CompileErr) compileErrExample [".rsh"] "compile-errors"
+goldenTests :: (FilePath -> TestTree) -> String -> FilePath -> IO TestTree
+goldenTests _mkTest ext subdir = do
+  curDir <- getCurrentDirectory
+  let dir = curDir </> "test-examples" </> subdir
+  sources <- findByExtension [ext] dir
+  testNe <- testNotEmpty "this subdir" sources
+  return testNe  -- XXX
+
+verifyErrExample :: FilePath -> TestTree
+verifyErrExample _fp = testGroup "blah" []  -- XXX
+
+main' :: IO ()
+main' = do
+  parseTests <- testsFor (Proxy @ParseErr) parseErrExample ".rsh" "parse-errors"
+  compileTests <- testsFor (Proxy @CompileErr) compileErrExample ".rsh" "compile-errors"
+  verifyTests <- goldenTests verifyErrExample ".patch" "verification-errors"
   defaultMain $ testGroup "tests"
     [ parseTests
     , compileTests
+    , verifyTests
     ]
 
 -- XXX copy verification tests over and delete dead code
-main' :: IO ()
-main' = hspec $ do
+main :: IO ()
+main = hspec $ do
   describe "Parser" $ do
     it "stdlib_defs is valid" $ do
       stdlib_defs >>= (`shouldSatisfy` (not . null))
