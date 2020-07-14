@@ -1,0 +1,1 @@
+test.rsh/CE_TypeCount.rsh:4:3: wrong number of types: ([LT_BT BT_Bool],[LT_BT BT_UInt256])
