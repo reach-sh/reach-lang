@@ -1,1 +1,1 @@
-test.rsh/CE_CannotApply.rsh:6:11: cannot apply non-higher-order value: test.rsh/CE_CannotApply.rsh:6:10
+CE_CannotApply.rsh:6:11: cannot apply non-higher-order value: CE_CannotApply.rsh:6:10

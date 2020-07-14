@@ -1,1 +1,1 @@
-test.rsh/CE_HigherOrder.rsh:0:0: cannot reference higher-order value: test.rsh/CE_HigherOrder.rsh:6:14
+CE_HigherOrder.rsh:0:0: cannot reference higher-order value: CE_HigherOrder.rsh:6:14

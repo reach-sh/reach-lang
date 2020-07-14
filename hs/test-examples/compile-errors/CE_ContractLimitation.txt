@@ -1,1 +1,1 @@
-test.rsh/CE_ContractLimitation.rsh:7:19: contract cannot: RANDOM
+CE_ContractLimitation.rsh:7:19: contract cannot: RANDOM

@@ -1,1 +1,1 @@
-test.rsh/CE_TypeMismatch.rsh:6:15: wrong type: "expected LT_BT BT_UInt256, but got: LT_BT BT_Bool"
+CE_TypeMismatch.rsh:6:15: wrong type: "expected LT_BT BT_UInt256, but got: LT_BT BT_Bool"

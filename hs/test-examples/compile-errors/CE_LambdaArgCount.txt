@@ -1,1 +1,1 @@
-test.rsh/CE_LambdaArgCount.rsh:4:35: wrong number of arguments to lambda: "0 vs 1"
+CE_LambdaArgCount.rsh:4:35: wrong number of types: "0 vs 1"
