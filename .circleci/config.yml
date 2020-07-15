@@ -31,7 +31,7 @@ jobs:
           name: test hs
           command: (cd hs && make hs-test-xml)
       - store_test_results
-          - path: junit.xml
+          path: junit.xml
       - run:
           name: check hs
           command: (cd hs && make hs-check)
