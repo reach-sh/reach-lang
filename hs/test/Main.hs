@@ -13,6 +13,9 @@ import Test.Tasty.Golden
 import Test.Tasty.Hspec
 import Test.SmallCheck.Series
 
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import qualified Data.Text.IO as TIO
 import qualified Data.ByteString.Lazy as LB
 import Data.Functor.Identity
 import Data.List (isInfixOf, (\\))
@@ -166,16 +169,6 @@ verify_regress dir = do
   let ps = filter notDotOut fs
   mapM_ (verify_regress1 dir) ps
 
-
-
--- err_example :: Show a => NFData a => String -> (FilePath -> IO a) -> Expectation
--- err_example which f = do
---   let expth ext = "test.rsh/" ++ which ++ "." ++ ext
---   let expected_p = expth "txt"
---   let actual_p = expth "rsh"
---   mustExist actual_p
---   err_m which expected_p (f actual_p)
-
 errExampleBs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
 errExampleBs k fp = withCurrentDirectory dir (try_hard (k fpRel)) >>= \case
   Right r ->
@@ -186,17 +179,60 @@ errExampleBs k fp = withCurrentDirectory dir (try_hard (k fpRel)) >>= \case
     dir = takeDirectory fp
     fpRel = takeFileName fp
 
-errExample :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> TestTree
-errExample k fp = do
-  let goldenFile = replaceExtension fp ".txt"
+errExample :: (Show a, NFData a) => String -> (FilePath -> IO a) -> FilePath -> TestTree
+errExample ext k fp = do
+  let goldenFile = replaceExtension fp ext
       fpBase = takeBaseName fp
   goldenVsString fpBase goldenFile (errExampleBs k fp)
 
+test_compile_vererr :: FilePath -> IO (LB.ByteString, LB.ByteString)
+test_compile_vererr pf = do
+  let examples_dir = "../examples"
+  let dest = unpack . replace "__" "/" . pack $ takeFileName pf
+  let orig = dropExtension $ dropExtension dest
+  let patchCmd = "patch --quiet -d " ++ examples_dir ++ " -i " ++ pf ++ " -o " ++ dest ++ " " ++ orig
+  -- putStrLn patchCmd
+  ExitSuccess <- system patchCmd
+  -- putStrLn "...patch applied"
+  let rdest = examples_dir </> dest
+  -- putStrLn "compiling..."
+  (_, Just hout, Just herr, hP) <-
+    createProcess (proc "stack" ["exec", "--", "reachc", "-o", "test.out", rdest]){ std_out = CreatePipe,
+                                                                                    std_err = CreatePipe }
+  outT <- TIO.hGetContents hout
+  err <- LB.hGetContents herr
+  -- strip out the defines
+  let outT' = T.unlines $ filter (\line -> not $ "(define" `T.isInfixOf` line) $ T.lines outT
+  let out = LB.fromStrict $ TE.encodeUtf8 outT'
+  -- putStrLn $ "...finished: " ++ show (LB.length out)
+  _ <- waitForProcess hP
+  removeFile rdest
+  return (out, err)
+
+
+stderroutExampleBs :: (FilePath -> IO (LB.ByteString, LB.ByteString)) -> FilePath -> IO LB.ByteString
+stderroutExampleBs k fp = do
+  (out, err) <- k fp
+  let tag t x = "<" <> t <> ">\n" <> x <> "\n</" <> t <> ">\n"
+  let res = (tag "out" out) <> (tag "err" err)
+  return res
+
+
+stderroutExample :: String -> (FilePath -> IO (LB.ByteString, LB.ByteString)) -> FilePath -> TestTree
+stderroutExample ext k fp = do
+  let goldenFile = replaceExtension fp ext
+      fpBase = takeBaseName fp
+  goldenVsString fpBase goldenFile (stderroutExampleBs k fp)
+
 parseErrExample :: FilePath -> TestTree
-parseErrExample = errExample readReachFile
+parseErrExample = errExample ".txt" readReachFile
 
 compileErrExample :: FilePath -> TestTree
-compileErrExample = errExample test_compile
+compileErrExample = errExample ".txt" test_compile
+
+verifyErrExample :: FilePath -> TestTree
+verifyErrExample = stderroutExample ".out" test_compile_vererr
+
 
 -- It is dumb that both testSpec and it require descriptive strings
 testNotEmpty :: String -> [a] -> IO TestTree
@@ -219,29 +255,30 @@ testExamplesCover p sources = testSpec label t where
 testsFor :: ReachErr err =>
   proxy err -> (FilePath -> TestTree) -> String -> FilePath -> IO TestTree
 testsFor p mkTest ext subdir = do
-  curDir <-getCurrentDirectory
-  let dir = curDir </> "test-examples" </> subdir
-  sources <- findByExtension [ext] dir
-  testNe <- testNotEmpty "this subdir" sources
+  (sources, gTests) <- goldenTests' mkTest ext subdir
   testCov <- testExamplesCover p sources
   let groupLabel = subdir
-  let testSources = testGroup ("testing each " <> ext <> "file") $ map mkTest sources
-  let tests = [testNe, testCov, testSources]
+  let tests = testCov : gTests
   return $ testGroup groupLabel tests
 
-goldenTests :: (FilePath -> TestTree) -> String -> FilePath -> IO TestTree
-goldenTests _mkTest ext subdir = do
+goldenTests' :: (FilePath -> TestTree) -> String -> FilePath -> IO ([FilePath], [TestTree])
+goldenTests' mkTest ext subdir = do
   curDir <- getCurrentDirectory
   let dir = curDir </> "test-examples" </> subdir
   sources <- findByExtension [ext] dir
   testNe <- testNotEmpty "this subdir" sources
-  return testNe  -- XXX
+  let testSources = testGroup ("testing each " <> ext <> "file") $ map mkTest sources
+  let tests = [testNe, testSources]
+  return (sources, tests)
 
-verifyErrExample :: FilePath -> TestTree
-verifyErrExample _fp = testGroup "blah" []  -- XXX
+goldenTests :: (FilePath -> TestTree) -> String -> FilePath -> IO TestTree
+goldenTests mkTest ext subdir = do
+  (_, gTests) <- goldenTests' mkTest ext subdir
+  let groupLabel = subdir
+  return $ testGroup groupLabel gTests
 
-main' :: IO ()
-main' = do
+main :: IO ()
+main = do
   parseTests <- testsFor (Proxy @ParseErr) parseErrExample ".rsh" "parse-errors"
   compileTests <- testsFor (Proxy @CompileErr) compileErrExample ".rsh" "compile-errors"
   verifyTests <- goldenTests verifyErrExample ".patch" "verification-errors"
@@ -252,8 +289,8 @@ main' = do
     ]
 
 -- XXX copy verification tests over and delete dead code
-main :: IO ()
-main = hspec $ do
+main' :: IO ()
+main' = hspec $ do
   describe "Parser" $ do
     it "stdlib_defs is valid" $ do
       stdlib_defs >>= (`shouldSatisfy` (not . null))

@@ -36,11 +36,11 @@ hs-build:
 
 .PHONY: hs-test
 hs-test:
-	stack test
+	stack test --test-arguments '--num-threads 1'
 
 .PHONY: hs-test-accept
 hs-test-accept:
-	stack test --test-arguments '--accept'
+	stack test --test-arguments '--num-threads 1 --accept'
 
 .PHONY: hs-deps
 hs-deps:
