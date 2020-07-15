@@ -15,3 +15,5 @@ extra-deps:
     commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
   - git: https://github.com/reach-sh/stan.git
     commit: f6b85556b90cb8b639449d205be6367bafc984f2
+  - git: https://github.com/danburton/language-javascript.git
+    commit: 9a3b52abc8d4850a2229cc94d0d973f7906c6378

@@ -107,6 +107,7 @@ instance ExtractTP JSObjectProperty where
   etp (JSPropertyNameandValue a _ _) = etp a
   etp (JSPropertyIdentRef a _) = etp a
   etp (JSObjectMethod a) = etp a
+  etp (JSObjectSpread a _) = etp a
 
 instance ExtractTP JSMethodDefinition where
   etp (JSMethodDefinition a _ _ _ _) = etp a

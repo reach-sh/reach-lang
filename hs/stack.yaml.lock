@@ -96,6 +96,17 @@ packages:
   original:
     git: https://github.com/reach-sh/stan.git
     commit: f6b85556b90cb8b639449d205be6367bafc984f2
+- completed:
+    name: language-javascript
+    version: 0.7.1.0
+    git: https://github.com/danburton/language-javascript.git
+    pantry-tree:
+      size: 3180
+      sha256: d8bed9f91ce6f6ff86b0ca6d11599afc3c7bec6c9b729e8843c0088f7b42ad53
+    commit: 9a3b52abc8d4850a2229cc94d0d973f7906c6378
+  original:
+    git: https://github.com/danburton/language-javascript.git
+    commit: 9a3b52abc8d4850a2229cc94d0d973f7906c6378
 snapshots:
 - completed:
     size: 531696
