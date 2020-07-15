@@ -38,6 +38,10 @@ hs-build:
 hs-test:
 	stack test --test-arguments '--num-threads 1'
 
+.PHONY: hs-test-xml
+hs-test-xml:
+	stack test --test-arguments '--num-threads 1 --xml=junit.xml'
+
 .PHONY: hs-test-accept
 hs-test-accept:
 	stack test --test-arguments '--num-threads 1 --accept'

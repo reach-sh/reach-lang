@@ -33,6 +33,7 @@ dependencies:
 - smallcheck
 - hspec-smallcheck
 - tasty
+- tasty-ant-xml
 - tasty-golden
 - tasty-hspec
 - generic-deriving

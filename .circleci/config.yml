@@ -29,7 +29,9 @@ jobs:
           command: (cd hs && make hs-build)
       - run:
           name: test hs
-          command: (cd hs && make hs-test)
+          command: (cd hs && make hs-test-xml)
+      - store_test_results
+          - path: junit.xml
       - run:
           name: check hs
           command: (cd hs && make hs-check)

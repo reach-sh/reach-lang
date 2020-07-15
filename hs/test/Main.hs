@@ -6,34 +6,38 @@
 {-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main where
+
+import Control.DeepSeq
+import Control.Exception
+import Data.Functor.Identity
+import Data.List (isPrefixOf, (\\))
+import Data.Proxy
+import Data.Typeable
+import Generics.Deriving
+import Language.JavaScript.Parser.SrcLocation
+import System.Directory
+import System.Environment
+import System.Exit
+import System.FilePath
+import System.Process
 import Test.Hspec
+import Test.SmallCheck.Series
 import Test.Tasty
 import Test.Tasty.Golden
 import Test.Tasty.Hspec
-import Test.SmallCheck.Series
-
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import qualified Data.Text.IO as TIO
-import qualified Data.ByteString.Lazy as LB
-import Data.Functor.Identity
-import Data.List ((\\))
-import Data.Proxy
-import Data.Typeable
-import System.Directory
-import System.FilePath
-import Control.Exception
-import Control.DeepSeq
-import System.Process
-import System.Exit
-import Generics.Deriving
+import Test.Tasty.Runners.AntXML
 
 import Reach.ParserInternal
 import Reach.Compiler (CompileErr, compile)
 import Reach.CompilerTool
 import Reach.Util
 
-import Language.JavaScript.Parser.SrcLocation
+import qualified Data.ByteString.Lazy as LB
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import qualified Data.Text.IO as TIO
+
+
 instance NFData TP where
   rnf (TP _) = ()
 instance NFData TokenPosn where
@@ -176,7 +180,12 @@ main = do
   parseTests <- testsFor (Proxy @ParseErr) parseErrExample ".rsh" "parse-errors"
   compileTests <- testsFor (Proxy @CompileErr) compileErrExample ".rsh" "compile-errors"
   verifyTests <- goldenTests verifyErrExample ".patch" "verification-errors"
-  defaultMain $ testGroup "tests"
+  args <- getArgs
+  -- antXMLRunner isn't very polite when you leave off --xml
+  let theMain = case any ("--xml" `isPrefixOf`) args of
+        True -> defaultMainWithIngredients (antXMLRunner:defaultIngredients)
+        False -> defaultMain
+  theMain $ testGroup "tests"
     [ parseTests
     , compileTests
     , verifyTests
