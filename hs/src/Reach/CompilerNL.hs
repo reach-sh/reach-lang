@@ -128,26 +128,42 @@ instance Semigroup SecurityLevel where
 instance Monoid SecurityLevel where
   mempty = Public
 
+data SLType
+  = T_Null
+  | T_Bool
+  | T_UInt256
+  | T_Bytes
+  | T_Fun [SLType] SLType
+  | T_Array [SLType]
+  deriving (Eq, Show)
+
 type SLPart = B.ByteString
 
 data SLVal
-  = SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLEnv
+  = SLV_Null SrcLoc
+  | SLV_Bool SrcLoc Bool
+  | SLV_Int SrcLoc Int
+  | SLV_Bytes SrcLoc B.ByteString
   | SLV_Array SrcLoc [SLVal]
   | SLV_Object SrcLoc SLEnv
-  | SLV_Prim SLPrimitive
-  | SLV_Int SrcLoc Int
-  | SLV_Bool SrcLoc Bool
-  | SLV_Bytes SrcLoc B.ByteString
+  | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLEnv
+  | SLV_Type SLType
   | SLV_Participant SrcLoc SLPart
-  | SLV_Null SrcLoc
+  | SLV_Prim SLPrimitive
+  | SLV_Form SLForm
   deriving (Eq, Show)
+
+data SLForm
+  = SLForm_Part_Only SLPart
+  deriving (Eq,Show)
 
 data SLPrimitive
   = SLPrim_makeEnum
   | SLPrim_declassify
+  | SLPrim_Fun
+  | SLPrim_Array
   | SLPrim_DApp
   | SLPrim_DApp_Delay SrcLoc [SLVal]
-  | SLPrim_Part_Only SLPart
   deriving (Eq,Show)
 
 type SLEnv = M.Map SLVar SLVal
@@ -164,6 +180,12 @@ base_env :: SLEnv
 base_env = M.fromList
   [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
   , ("declassify", SLV_Prim SLPrim_declassify)
+  , ("Null", SLV_Type T_Null)
+  , ("Bool", SLV_Type T_Bool)
+  , ("UInt256", SLV_Type T_UInt256)
+  , ("Bytes", SLV_Type T_Bytes)
+  , ("Array", SLV_Prim SLPrim_Array)
+  , ("Fun", SLV_Prim SLPrim_Fun)
   , ("Reach", (SLV_Object srcloc_top $
                M.fromList
                 [ ("DApp", SLV_Prim SLPrim_DApp) ]))]
@@ -258,13 +280,17 @@ data CompilerError
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_IfCondNotBool SLVal
   | Err_Obj_IllegalJS JSObjectProperty
+  | Err_Obj_IllegalField JSPropertyName
+  | Err_Obj_IllegalComputedField SLVal
   | Err_Fun_NamesIllegal
   | Err_Arrow_NoFormals
   | Err_Dot_InvalidField SLVal String
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
+  | Err_Form_InvalidArgs SLForm [SLVal]
+  | Err_Obj_IllegalFieldValues [JSExpression]
   | Err_Shadowed SLVar
   | Err_Top_NotDApp SLVal
-  | Err_DApp_PartNotString SLVal
+  | Err_DApp_InvalidPartSpec SLVal
   | Err_Block_NotNull SLVal
   | Err_Block_IllegalJS JSStatement
   | Err_Block_Continue
@@ -397,15 +423,35 @@ evalDot at obj field =
           expect_throw at (Err_Dot_InvalidField obj field)
     SLV_Participant _part_at part_id ->
       case field of
-        "only" -> SLV_Prim (SLPrim_Part_Only part_id)
+        "only" -> SLV_Form (SLForm_Part_Only part_id)
         _ ->
           expect_throw at (Err_Dot_InvalidField obj field)
     v ->
       expect_throw at (Err_Eval_NotObject v)
 
+evalForm :: SLCtxt -> SrcLoc -> SLForm -> [SLVal] -> (SLVal -> ans) -> ans
+evalForm ctxt at f args k =
+  case f of
+    SLForm_Part_Only who ->
+      --- XXX make only like a macro that doesn't eval its args
+      case args of
+        [ thunk@(SLV_Clo _ _ _ _ _) ] ->
+          evalApply ctxt' at thunk [] k
+          where ctxt' = expect_throw at (Err_XXX $ "make part ctxt and check at step from " ++ show who ++ " " ++ show ctxt)
+        _ ->
+          expect_throw at (Err_Form_InvalidArgs f args)
+
 evalPrim :: SLCtxt -> SrcLoc -> SLPrimitive -> [SLVal] -> (SLVal -> ans) -> ans
-evalPrim ctxt at p args k =
+evalPrim _ctxt at p args k =
   case p of
+    SLPrim_Fun ->
+      case args of
+        [ (SLV_Array _ dom_arr), (SLV_Type rng) ] ->
+          k $ SLV_Type $ T_Fun dom rng
+          where dom = map expect_ty dom_arr
+        _ -> illegal_args
+    SLPrim_Array ->
+      k $ SLV_Type $ T_Array $ map expect_ty args
     SLPrim_makeEnum ->
       case args of
         [ SLV_Int _ i ] ->
@@ -417,29 +463,24 @@ evalPrim ctxt at p args k =
                 pbody = JSBlock JSNoAnnot [(JSReturn JSNoAnnot (Just (JSExpressionBinary lhs (JSBinOpAnd JSNoAnnot) rhs)) JSSemiAuto)] JSNoAnnot
                 lhs = (JSExpressionBinary (JSDecimal JSNoAnnot "0") (JSBinOpLe JSNoAnnot) (JSIdentifier JSNoAnnot "x"))
                 rhs = (JSExpressionBinary (JSIdentifier JSNoAnnot "x") (JSBinOpLt JSNoAnnot) (JSDecimal JSNoAnnot (show i)))
-        _ ->
-          expect_throw at (Err_Prim_InvalidArgs p args)
+        _ -> illegal_args
     SLPrim_DApp ->
       case args of
         [ (SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _) ] ->
           k $ SLV_Prim $ SLPrim_DApp_Delay at args
-        _ ->
-          expect_throw at (Err_Prim_InvalidArgs p args)
+        _ -> illegal_args
     SLPrim_DApp_Delay _ _ ->
       expect_throw at (Err_Eval_NotApplicable $ SLV_Prim p)
-    SLPrim_Part_Only who ->
-      case args of
-        [ thunk@(SLV_Clo _ _ _ _ _) ] ->
-          evalApply ctxt' at thunk [] k
-          where ctxt' = expect_throw at (Err_XXX $ "make part ctxt and check at step from " ++ show who ++ " " ++ show ctxt)
-        _ ->
-          expect_throw at (Err_Prim_InvalidArgs p args)
     SLPrim_declassify ->
       case args of
         [ _val ] ->
           expect_throw at (Err_XXX "declassify")
-        _ ->
-          expect_throw at (Err_Prim_InvalidArgs p args)
+        _ -> illegal_args
+  where illegal_args = expect_throw at (Err_Prim_InvalidArgs p args)
+        expect_ty v =
+          case v of
+            SLV_Type t -> t
+            _ -> illegal_args
 
 binaryToPrim :: SrcLoc -> JSBinOp -> SLPrimitive
 binaryToPrim at o = expect_throw at (Err_XXX $ "binaryToPrim " ++ show o)
@@ -479,6 +520,38 @@ kontIf _ctxt at f ta fa k cv =
       where e = if cb then ta else fa
     _ ->
       expect_throw at (Err_Eval_IfCondNotBool cv)
+
+evalPropertyName :: SLCtxt -> SrcLoc -> SLEnv -> JSPropertyName -> (String -> ans) -> ans
+evalPropertyName ctxt at env pn k =
+  case pn of
+    JSPropertyIdent _ s -> k $ s
+    JSPropertyString _ s -> k $ string_trim_quotes s
+    JSPropertyNumber an _ ->
+      expect_throw at_n (Err_Obj_IllegalField pn)
+      where at_n = srcloc_jsa "number" an at
+    JSPropertyComputed an e _ ->
+      evalExpr ctxt at_n env e k'
+      where at_n = srcloc_jsa "computed field name" an at
+            k' v =
+              case v of
+                SLV_Bytes _ b -> k $ B.unpack b
+                _ -> expect_throw at_n (Err_Obj_IllegalComputedField v)
+
+evalPropertyPair :: SLCtxt -> SrcLoc -> SLEnv -> JSObjectProperty -> (SrcLoc -> String -> SLVal -> ans) -> ans
+evalPropertyPair ctxt at env p k =
+  case p of
+    JSPropertyNameandValue pn a vs ->
+      evalPropertyName ctxt at' env pn k_value
+      where at' = srcloc_jsa "property binding" a at
+            k_value f =
+              case vs of
+                [ e ] ->
+                  evalExpr ctxt at' env e (k_insert f)
+                _ ->
+                  expect_throw at' (Err_Obj_IllegalFieldValues vs)
+            k_insert f v = k at' f v
+    _ ->
+      expect_throw at (Err_Obj_IllegalJS p)
   
 evalExpr :: SLCtxt -> SrcLoc -> SLEnv -> JSExpression -> (SLVal -> ans) -> ans
 evalExpr ctxt at env e k =
@@ -537,15 +610,13 @@ evalExpr ctxt at env e k =
     JSMemberNew _ _ _ _ _ -> illegal
     JSMemberSquare arr a idx _ -> doRef arr a idx
     JSNewExpression _ _ -> illegal
-    JSObjectLiteral a plist _ -> k $ SLV_Object at' fields
+    JSObjectLiteral a plist _ ->
+      foldlk k_ret add_field mempty $ jsctl_flatten plist
       where at' = srcloc_jsa "obj" a at
-            fields = foldl' add_field mempty $ jsctl_flatten plist
-            add_field _fenv op =
-              case op of
-                JSPropertyNameandValue _pn _ _vs ->
-                  expect_throw at' (Err_XXX "JSPropertyNameandValue")
-                _ ->
-                  expect_throw at' (Err_Obj_IllegalJS op)
+            k_ret fenv = k $ SLV_Object at' fenv
+            add_field fenv p k_next =
+              evalPropertyPair ctxt at' env p k_ext
+              where k_ext at_p f v = k_next $ env_insert at_p f v fenv
     JSSpreadExpression _ _ -> illegal
     JSTemplateLiteral _ _ _ _ -> illegal
     JSUnaryExpression op ue -> doCallV (SLV_Prim (unaryToPrim at op)) JSNoAnnot [ ue ]
@@ -730,6 +801,8 @@ data SLCtxt = SLCtxt
 data SLCtxtMode
   = SLC_Top
   | SLC_Step
+  | SLC_LocalStep SLPart
+  | SLC_ConsensusStep
   deriving (Eq,Show)
 
 data SLCtxtFrame
@@ -865,8 +938,9 @@ compileDApp topv =
             at' = srcloc_at "compileDApp" Nothing at
             partvs = map make_part parts
             make_part v = case v of
+                            --- XXX ["A", {}]
                             SLV_Bytes bs_at bs -> SLV_Participant bs_at bs
-                            _ -> expect_throw at' (Err_DApp_PartNotString v)
+                            _ -> expect_throw at' (Err_DApp_InvalidPartSpec v)
     _ ->
       expect_throw srcloc_top (Err_Top_NotDApp topv)
 
