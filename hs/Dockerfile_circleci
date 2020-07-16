@@ -12,8 +12,7 @@ RUN ln -s /z3/z3-${Z3_VER}-x64-ubuntu-16.04/bin/z3 /z3/z3
 
 FROM ubuntu:18.04
 
-RUN apt-get update
-RUN apt-get install -y curl libgmp10 docker-compose libtinfo-dev
+RUN apt-get update && apt-get install -y curl libgmp10 docker-compose libtinfo-dev locales
 
 # solc
 COPY --from=solc /usr/bin/solc /usr/bin/solc
@@ -26,3 +25,11 @@ RUN ln -s /z3/z3 /usr/bin/z3
 RUN curl -sSL https://get.haskellstack.org/ | sh
 
 RUN stack --resolver lts-16.3 setup
+
+# Thanks for the hint. Not sure why language-javascript built fine before this.
+# https://github.com/tianon/docker-brew-debian/issues/45#issuecomment-325235517
+RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+RUN echo "LANG=en_US.UTF-8" > /etc/locale.conf
+RUN locale-gen en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
