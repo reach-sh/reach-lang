@@ -3,13 +3,13 @@ module Reach.Backend.JS where
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as Set
+import qualified Data.Text as T
 import Data.List (intersperse)
 import Data.Text.Prettyprint.Doc
 import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
-import Reach.BackendConnector.JS
 import Reach.Util
 
 
@@ -250,10 +250,22 @@ jsPart (p, (EP_Prog _ et)) =
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_js :: BLProgram b -> CNP_Map -> Doc a
+jsBraces :: Doc a -> Doc a
+jsBraces body = braces (nest 2 $ hardline <> body <> space)
+
+jsObject :: (Pretty k, Pretty v) => M.Map k v -> Doc a
+jsObject m = jsBraces $ vsep $ (intersperse (comma <> hardline)) $ map jsObjField kvs
+  where jsObjField (k, v) = pretty k <> pretty ":" <> pretty v
+        kvs = M.toList m
+
+-- ^ Render an exported variable for the given ConsensusNetworkProgram
+jsCnp :: (T.Text, M.Map T.Text T.Text) -> Doc a
+jsCnp (name, cnp) = pretty "export const " <> pretty name <> pretty " = " <> jsObject cnp <> semi
+
+emit_js :: BLProgram b -> CNP_TMap -> Doc a
 emit_js (BL_Prog _ _ pm _) cnps  = modp
   where modp = vsep_with_blank $ preamble : importp : partsp ++ cnpsp
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         importp = pretty $ "// import * as stdlib from '@reach-sh/stdlib';"
         partsp = map jsPart $ M.toList pm
-        cnpsp = map (uncurry jsCnp) $ M.toList cnps
+        cnpsp = map jsCnp $ M.toList cnps

@@ -8,6 +8,7 @@ import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
+import qualified Data.Text as T
 
 -- Shared types
 
@@ -429,3 +430,6 @@ data ConsensusNetwork = ETH | ETH_EVM | ALGO
 -- ^ Compilation targets for backend
 data Backend = JS | GO
   deriving (Show, Eq, Ord)
+
+-- ^ Consensus Network Program Text map. ConsensusNetwork => FieldName => FieldValue
+type CNP_TMap = M.Map T.Text (M.Map T.Text T.Text)

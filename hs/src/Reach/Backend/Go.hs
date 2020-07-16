@@ -9,7 +9,7 @@ import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
-import Reach.BackendConnector.ConsensusNetworkProgram
+import Reach.ConsensusNetworkProgram
 import Reach.Connector.ETH_Solidity
   ( solMsg_evt
   , solMsg_fun

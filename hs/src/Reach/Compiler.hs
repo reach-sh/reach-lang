@@ -26,7 +26,7 @@ import Reach.Pretty()
 import Reach.Parser
 import Reach.Backend.Go
 import Reach.Backend.JS
-import Reach.BackendConnector.ConsensusNetworkProgram
+import Reach.ConsensusNetworkProgram
 import Reach.Connector.ETH_Solidity
 import Reach.Connector.ETH_EVM
 import Reach.Connector.ALGO
@@ -1131,6 +1131,7 @@ compile copts = do
         [ (ETH, CNP_ETH cs)
         , (ETH_EVM, CNP_ETH (fst cs, ebc))
         , (ALGO, CNP_ALGO tbc) ]
-  out "mjs" (show (emit_js blp cnps))
-  out "go" (show (emit_go blp cnps))
+      cnp_tm = cnpToFieldMap cnps
+  out "mjs" (show (emit_js blp cnp_tm))
+  out "go" (show (emit_go blp cnps))  -- XXX update to accept cnp_tmp
   exitSuccess

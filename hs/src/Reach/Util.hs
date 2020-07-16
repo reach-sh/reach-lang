@@ -20,3 +20,6 @@ maybeDie ma = do
 
 impossible :: String -> b
 impossible msg = error $ "impossible situation (i.e. compiler error): " ++ msg
+
+tshow :: Show a => a -> T.Text
+tshow = T.pack . show
