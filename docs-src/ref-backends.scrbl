@@ -65,6 +65,77 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 
 @index{transfer} Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to}, which are provided by @tech{connector}-specific @tech{account} specifications.
 
+@(hrule)
+@js{
+ checkType(t, x) => x }
+
+@index{checkType} Asserts that value @jsin{x} has reach type @jsin{t}. An exception is thrown if this is not the case. See the table below for Reach types and their corresponding JavaScript representation:
+
+@js{
+ // Reach => JavaScript
+ 'bool'    => 'boolean'
+ 'uint256' => 'BN'
+ 'bytes'   => 'string'
+ 'address' => 'string' }
+
+@(hrule)
+@js{
+ toBN(x) => uint256
+ isBN(x) => bool}
+
+@deftech{toBN} converts a JavaScript number to a BN, the JavaScript representation of Reach's uint256. @deftech{isBN} checks if its input is a BN.
+
+@(hrule)
+@js{
+ toHex(x) => bytes
+ isHex(x) => bool
+ hexToBN(bytes) => uint256
+ bnToHex(uint256) => bytes
+ uint256_to_bytes(uint256) => bytes
+ bytes_eq(bytes, bytes) => bool }
+
+These are additional conversion and comparison utilities.
+
+@(hrule)
+@js{
+ keccak256(x) => uint256}
+
+@index{keccak256} Hashes the value.
+
+@(hrule)
+@js{
+ random_uint256() => uint256}
+
+@index{random_uint256} Creates 256 random bits as a uint256.
+
+@(hrule)
+@js{
+ add(uint256, uint256) => uint256
+ sub(uint256, uint256) => uint256
+ mod(uint256, uint256) => uint256
+ mul(uint256, uint256) => uint256
+ div(uint256, uint256) => uint256 }
+
+Integer arithmetic on uint256.
+
+@(hrule)
+@js{
+ eq(uint256, uint256) => bool
+ ge(uint256, uint256) => bool
+ gt(uint256, uint256) => bool
+ le(uint256, uint256) => bool
+ lt(uint256, uint256) => bool}
+
+Integer comparisons on uint256.
+
+@(hrule)
+@js{
+ toWei(ether) => wei
+ fromWei(wei) => ether
+ toWeiBN(ether) => uint256}
+
+Wei conversion functions only exported by the stdlib for ETH.
+
 @section[#:tag "ref-backend-go"]{Go} @(experimental)
 
 An experimental, and undocumented, Go @tech{backend} is in progress in the
