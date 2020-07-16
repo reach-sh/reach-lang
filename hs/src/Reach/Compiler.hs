@@ -1133,5 +1133,5 @@ compile copts = do
         , (ALGO, CNP_ALGO tbc) ]
       cnp_tm = cnpToFieldMap cnps
   out "mjs" (show (emit_js blp cnp_tm))
-  out "go" (show (emit_go blp cnps))  -- XXX update to accept cnp_tmp
+  out "go" (show (emit_go blp cnp_tm))
   exitSuccess

@@ -3,19 +3,17 @@ module Reach.Backend.Go where
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as Set
+import qualified Data.Text as T
 import Data.List (intersperse, inits)
 import Data.Text.Prettyprint.Doc
 import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
-import Reach.ConsensusNetworkProgram
 import Reach.Connector.ETH_Solidity
   ( solMsg_evt
   , solMsg_fun
-  , CompiledSol )
-import Reach.Connector.ALGO
-  ( CompiledTeal )
+  )
 
 import Reach.Util
 
@@ -37,6 +35,9 @@ gopart_name b = "Part_" ++ (blvar_name b)
 
 goString :: String -> Doc a
 goString s = dquotes $ pretty s
+
+goText :: T.Text -> Doc a
+goText = goString . T.unpack
 
 goVar :: BLVar -> Doc a
 goVar (n, _) = pretty $ "v" ++ show n
@@ -275,28 +276,23 @@ goPart (p, ep@(EP_Prog _ et)) =
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_go' :: BLProgram b -> (CompiledSol, String) -> CompiledTeal -> Doc a
-emit_go' (BL_Prog _ rts pm _) ((abi, code), code2) _tc = modp
-  where modp = vsep_with_blank $ preamble : pkgp : importp : retp : partsp ++ [ abip, codep, code2p, mainp ]
+goStringMap :: M.Map T.Text T.Text -> Doc a
+goStringMap m = pretty "map[string]string" <> (goBraces $ vsep $ map (<> comma) $ map goMapField kvs)
+  where goMapField (k, v) = goText k <> pretty ": " <> case k == T.pack "ABI" of
+          True -> pretty "`" <> pretty v <> pretty "`" -- XXX hack: In go ABI needs backtick quotes around it
+          False -> pretty v
+        kvs = M.toList m
+
+goCnp :: (T.Text, M.Map T.Text T.Text) -> Doc a
+goCnp (name, cnp) = pretty "const " <> pretty name <> pretty " = " <> goStringMap cnp <> semi
+
+emit_go :: BLProgram b -> CNP_TMap -> Doc a
+emit_go (BL_Prog _ rts pm _) cnps = modp
+  where modp = vsep_with_blank $ preamble : pkgp : importp : retp : partsp ++ cnpsp ++ [ mainp ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         pkgp = pretty $ "package main"
         importp = pretty $ "import ( \"reach-sh/stdlib\" )"
         retp = pretty "type Ret struct" <> (braces $ hcat $ intersperse (semi <> space) $ map goType rts)
         partsp = map goPart $ M.toList pm
-        abip = pretty "const ABI = `" <> pretty abi <> pretty "`" <> semi
-        codep = pretty $ "const Bytecode = \"0x" ++ code ++ "\";"
-        code2p = pretty $ "const Bytecode2 = \"0x" ++ code2 ++ "\";"
+        cnpsp = map goCnp $ M.toList cnps
         mainp = pretty "func main() { }"
-
--- XXX write the go emitter to be more flexible
-emit_go :: BLProgram b -> CNP_Map -> Doc a
-emit_go blp cnps = emit_go' blp ((abi, code), code2) tc where
-  (abi, code) = case M.lookup ETH cnps of
-    Just (CNP_ETH cs) -> cs
-    _ -> error "XXX ETH must be included for emit_go"
-  code2 = case M.lookup ETH_EVM cnps of
-    Just (CNP_ETH (_, c2)) -> c2
-    _-> error "XXX ETH_EVM must be included for emit_go"
-  tc = case M.lookup ALGO cnps of
-    Just (CNP_ALGO t) -> t
-    _ -> error "XXX ALGO must be included for emit_go"
