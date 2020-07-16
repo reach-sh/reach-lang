@@ -160,7 +160,7 @@ data SLForm
 data SLPrimitive
   = SLPrim_makeEnum
   | SLPrim_declassify
-  | SLPrim_interact SrcLoc SLType
+  | SLPrim_interact SrcLoc String SLType
   | SLPrim_Fun
   | SLPrim_Array
   | SLPrim_DApp
@@ -445,7 +445,9 @@ evalForm ctxt at _env f args k =
                 penv = penvs M.! who
                 k' eargs =
                   case eargs of
-                    [ thunk ] -> evalApplyVals ctxt_step at mempty thunk [] k
+                    [ thunk ] ->
+                      --- XXX Expect to get an update part env
+                      evalApplyVals ctxt_step at mempty thunk [] k
                     _ -> illegal_args
         _ -> expect_throw at $ Err_Eval_IllegalContext rator
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
@@ -477,7 +479,7 @@ evalPrim ctxt at env p args k =
         _ -> illegal_args
     SLPrim_DApp ->
       case ctxt_mode ctxt of
-        SLC_Top ->        
+        SLC_Top ->
           case args of
             [ (SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _) ] ->
               k $ SLV_Prim $ SLPrim_DApp_Delay at args env
@@ -486,7 +488,7 @@ evalPrim ctxt at env p args k =
           expect_throw at (Err_Eval_IllegalContext rator)
     SLPrim_DApp_Delay _ _ _ ->
       expect_throw at (Err_Eval_NotApplicable rator)
-    SLPrim_interact _iat _t ->
+    SLPrim_interact _iat _m _t ->
       expect_throw at (Err_XXX "interact")
     SLPrim_declassify ->
       case args of
@@ -972,9 +974,9 @@ evalLibs = foldr evalLib init_libs
 
 makeInteract :: SrcLoc -> SLEnv -> SLVal
 makeInteract at spec = SLV_Object at spec'
-  where spec' = M.map wrap_ty spec
-        wrap_ty (SLV_Type t) = SLV_Prim $ SLPrim_interact at t
-        wrap_ty v = expect_throw at $ Err_DApp_InvalidInteract v
+  where spec' = M.mapWithKey wrap_ty spec
+        wrap_ty k (SLV_Type t) = SLV_Prim $ SLPrim_interact at k t
+        wrap_ty _ v = expect_throw at $ Err_DApp_InvalidInteract v
 
 compileDApp :: SLVal -> NLProgram
 compileDApp topv =
