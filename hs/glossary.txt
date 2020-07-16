@@ -1,8 +1,10 @@
 app: application
+bc: byte code
 bl: backend language
 bt: BaseType
 c: contract
 ce: CompileErr
+cnp: ConsensusNetworkProgram
 comp: comparison
 comp: compiler
 con: connector
@@ -15,6 +17,7 @@ def: definition
 dest: destination
 dir: directory
 e: expression
+ebc: ethereum byte code
 eff: Effect
 env: environment
 epp: end-point projection
@@ -50,6 +53,7 @@ rps: rock paper scissors
 s: statement
 src: source
 stdlib: standard library
+tbc: teal byte code
 ttt: tick tack toe
 txn: transaction
 v: variable
