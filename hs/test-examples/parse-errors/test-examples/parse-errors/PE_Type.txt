@@ -1,1 +1,0 @@
-test-examples/parse-errors/PE_Type.rsh:7:18: expected a valid type (given: JSIdentifier)
