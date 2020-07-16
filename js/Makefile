@@ -16,3 +16,6 @@ publish:
 .PHONY: run
 run:
 	docker-compose run $(NAME)
+
+.PHONY: test
+test: run
