@@ -9,6 +9,7 @@ import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
+import Reach.BackendConnector.ConsensusNetworkProgram
 import Reach.Connector.ETH_Solidity
   ( solMsg_evt
   , solMsg_fun
@@ -274,8 +275,8 @@ goPart (p, ep@(EP_Prog _ et)) =
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_go :: BLProgram b -> (CompiledSol, String) -> CompiledTeal -> Doc a
-emit_go (BL_Prog _ rts pm _) ((abi, code), code2) _tc = modp
+emit_go' :: BLProgram b -> (CompiledSol, String) -> CompiledTeal -> Doc a
+emit_go' (BL_Prog _ rts pm _) ((abi, code), code2) _tc = modp
   where modp = vsep_with_blank $ preamble : pkgp : importp : retp : partsp ++ [ abip, codep, code2p, mainp ]
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         pkgp = pretty $ "package main"
@@ -286,3 +287,16 @@ emit_go (BL_Prog _ rts pm _) ((abi, code), code2) _tc = modp
         codep = pretty $ "const Bytecode = \"0x" ++ code ++ "\";"
         code2p = pretty $ "const Bytecode2 = \"0x" ++ code2 ++ "\";"
         mainp = pretty "func main() { }"
+
+-- XXX write the go emitter to be more flexible
+emit_go :: BLProgram b -> CNP_Map -> Doc a
+emit_go blp cnps = emit_go' blp ((abi, code), code2) tc where
+  (abi, code) = case M.lookup ETH cnps of
+    Just (CNP_ETH cs) -> cs
+    _ -> error "XXX ETH must be included for emit_go"
+  code2 = case M.lookup ETH_EVM cnps of
+    Just (CNP_ETH (_, c2)) -> c2
+    _-> error "XXX ETH_EVM must be included for emit_go"
+  tc = case M.lookup ALGO cnps of
+    Just (CNP_ALGO t) -> t
+    _ -> error "XXX ALGO must be included for emit_go"

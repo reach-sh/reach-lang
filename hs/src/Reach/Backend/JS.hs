@@ -9,12 +9,21 @@ import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
-import Reach.Connector.ETH_Solidity
-  ( solType
-  , CompiledSol )
-import Reach.Connector.ALGO
-  ( CompiledTeal )
+import Reach.BackendConnector.JS
 import Reach.Util
+
+
+-- XXX More code can probably share this
+reachBTypeStr :: BaseType -> String
+reachBTypeStr BT_UInt256 = "uint256"
+reachBTypeStr BT_Bool = "bool"
+reachBTypeStr BT_Bytes = "bytes"
+reachBTypeStr BT_Address = "address"
+
+-- XXX More code can probably share this
+reachTypeStr :: LType -> String
+reachTypeStr (LT_BT bt) = reachBTypeStr bt
+reachTypeStr (LT_FixedArray bt hm) = reachBTypeStr bt ++ "[" ++ (show hm) ++ "]"
 
 jsString :: String -> Doc a
 jsString s = squotes $ pretty s
@@ -28,9 +37,6 @@ jsVar' (n, _) = pretty $ "p" ++ show n
 jsLoopVar :: Int -> Doc a
 jsLoopVar i = pretty $ "l" ++ show i
 
-jsVarType :: BLVar -> Doc a
-jsVarType (_, (_, bt)) = jsString $ solType bt
-
 jsCon :: Constant -> Doc a
 jsCon (Con_I i) = pretty i
 jsCon (Con_B True) = pretty "true"
@@ -43,9 +49,6 @@ jsArg (BL_Con _ c) = (jsCon c, Set.empty)
 
 jsVarDecl :: BLVar -> Doc a
 jsVarDecl bv = pretty "const" <+> jsVar bv
-
-jsBraces :: Doc a -> Doc a
-jsBraces body = braces (nest 2 $ hardline <> body <> space)
 
 jsArray :: [Doc a] -> Doc a
 jsArray elems = brackets $ hcat $ intersperse (comma <> space) elems
@@ -65,10 +68,6 @@ jsWhile cond body = pretty "while" <+> parens cond <+> jsBraces body
 
 jsReturn :: Doc a -> Doc a
 jsReturn a = pretty "return" <+> a <> semi
-
-jsObject :: [(String, Doc a)] -> Doc a
-jsObject kvs = jsBraces $ vsep $ (intersperse (comma <> hardline)) $ map jsObjField kvs
-  where jsObjField (k, v) = pretty (k ++ ":") <+> v
 
 jsBinOp :: String -> Doc a -> Doc a -> Doc a
 jsBinOp o l r = l <+> pretty o <+> r
@@ -115,7 +114,7 @@ jsEPExpr tn (EP_PrimApp _ pr al) = (False, ((jsPrimApply tn pr $ map fst alp), (
   where alp = map jsArg al
 jsEPExpr _ (EP_Interact _ m bt al) = (True, (ip, (Set.unions $ map snd alp)))
   where alp = map jsArg al
-        ip = jsApply "stdlib.isType" [(jsString (solType bt)), pretty "await" <+> jsApply ("interact." ++ m) (map fst alp)]
+        ip = jsApply "stdlib.isType" [(jsString (reachTypeStr bt)), pretty "await" <+> jsApply ("interact." ++ m) (map fst alp)]
 jsEPExpr _ (EP_Digest _ al) = (False, ((jsApply "stdlib.keccak256" $ map fst alp), (Set.unions $ map snd alp)))
   where alp = map jsArg al
 jsEPExpr _ (EP_ArrayRef _ ae ee) = (False, ((ae_doc <> pretty "[" <> ee_doc <> pretty "]"), (Set.unions [ae_set, ee_set])))
@@ -251,14 +250,10 @@ jsPart (p, (EP_Prog _ et)) =
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
-emit_js :: BLProgram b -> (CompiledSol, String) -> CompiledTeal -> Doc a
-emit_js (BL_Prog _ _ pm _) ((abi, evm_code), evm_code2) teal_code = modp
-  where modp = vsep_with_blank $ preamble : importp : partsp ++ [ ethp, algop ]
+emit_js :: BLProgram b -> CNP_Map -> Doc a
+emit_js (BL_Prog _ _ pm _) cnps  = modp
+  where modp = vsep_with_blank $ preamble : importp : partsp ++ cnpsp
         preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
         importp = pretty $ "// import * as stdlib from '@reach-sh/stdlib';"
         partsp = map jsPart $ M.toList pm
-        algop = pretty "export const ALGO = " <> jsObject [("LogicSigProgram", teal_code_fmt tc_lsp), ("ApprovalProgram", teal_code_fmt tc_ap), ("ClearStateProgram", teal_code_fmt tc_csp)] <> semi
-          where ( tc_lsp, tc_ap, tc_csp ) = teal_code
-                teal_code_fmt x = pretty $ "`" ++ x ++ "`"
-        ethp = pretty "export const ETH = " <> jsObject [("ABI", pretty abi), ("Bytecode", str_as_hex evm_code), ("Bytecode2", str_as_hex evm_code2)] <> semi
-        str_as_hex x = pretty $ "\"0x" ++ x ++ "\""
+        cnpsp = map (uncurry jsCnp) $ M.toList cnps

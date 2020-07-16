@@ -26,6 +26,7 @@ import Reach.Pretty()
 import Reach.Parser
 import Reach.Backend.Go
 import Reach.Backend.JS
+import Reach.BackendConnector.ConsensusNetworkProgram
 import Reach.Connector.ETH_Solidity
 import Reach.Connector.ETH_EVM
 import Reach.Connector.ALGO
@@ -1126,6 +1127,10 @@ compile copts = do
       ebc <- emit_evm (outn "evm") blp
       tbc <- emit_teal (outn "teal") blp
       return (ebc, tbc)
-  out "mjs" (show (emit_js blp (cs, ebc) tbc))
-  out "go" (show (emit_go blp (cs, ebc) tbc))
+  let cnps = M.fromList
+        [ (ETH, CNP_ETH cs)
+        , (ETH_EVM, CNP_ETH (fst cs, ebc))
+        , (ALGO, CNP_ALGO tbc) ]
+  out "mjs" (show (emit_js blp cnps))
+  out "go" (show (emit_go blp cnps))
   exitSuccess

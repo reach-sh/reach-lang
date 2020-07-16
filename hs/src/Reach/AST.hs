@@ -422,3 +422,10 @@ data BLProgram a
   = BL_Prog a [LType] (BLParts a) (CProgram a)
   deriving (Show,Eq)
 
+-- ^ Compilation targets for consensus network
+data ConsensusNetwork = ETH | ETH_EVM | ALGO
+  deriving (Show, Eq, Ord)
+
+-- ^ Compilation targets for backend
+data Backend = JS | GO
+  deriving (Show, Eq, Ord)
