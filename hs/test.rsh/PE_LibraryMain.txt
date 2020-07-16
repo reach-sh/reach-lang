@@ -1,1 +1,0 @@
-PE_LibraryMain_lib.rsh:4:3: libraries should not have main function

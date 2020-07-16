@@ -1,1 +1,0 @@
-test.rsh/CE_UnknownVar.rsh:9:3: unbound variable: ("anf",("y",LT_BT BT_UInt256))

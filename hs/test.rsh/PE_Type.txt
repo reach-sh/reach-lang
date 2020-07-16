@@ -1,1 +1,0 @@
-test.rsh/PE_Type.rsh:7:18: expected a valid type
