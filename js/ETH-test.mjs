@@ -1,5 +1,6 @@
 import { runTests, describe, it, expect } from './tester.mjs';
 import * as stdlib from './ETH.mjs';
+import * as ALGO_stdlib from './ALGO.mjs';
 
 runTests(() => { describe('The `web3` stdlib', () => {
   const toBN = stdlib.toBN;
@@ -141,4 +142,17 @@ runTests(() => { describe('The `web3` stdlib', () => {
               .eq( toBN(15)))
        .toBe(true));
   });
-}); } );
+
+  describe('exports', () => {
+    const stdlibExports = Object.keys(stdlib).sort();
+    const algoStdlibExports = Object.keys(ALGO_stdlib).sort();
+
+    it('should only export a few extra things compared to ALGO', () =>
+       expect(stdlibExports.filter(x => !algoStdlibExports.includes(x)))
+       .toBe(['fromWei', 'toWei', 'toWeiBN']));
+
+    it('should export everything that ALGO does', () =>
+       expect(algoStdlibExports.filter(x => !stdlibExports.includes(x)))
+       .toBe([]));
+  });
+}); });
