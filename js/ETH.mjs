@@ -7,6 +7,82 @@ import * as util       from 'util';
 import * as waitPort   from 'wait-port';
 void(util);
 
+
+// Shared/copied code begins
+
+const DEBUG = false;
+const debug = msg => { if (DEBUG) {
+  console.log(`DEBUG: ${msg}`); } };
+
+const panic = e => { throw Error(e); };
+
+const un0x           = h => h.replace(/^0x/, '');
+const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
+const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
+const byteArrayToHex = b => Array.from(b, byteToHex).join('');
+
+const hexOf = x =>
+      typeof x === 'string' && x.slice(0, 2) === '0x'
+      ? un0x(toHex(x))
+      : un0x(toHex(`0x${x}`));
+
+const checkType = (t, x) => {
+  if ( t === 'bool' ) { return typeof(x) === 'boolean'; }
+  else if ( t === 'uint256' ) { return isBN(x); }
+  else if ( t === 'bytes' || t === 'address' ) { return isHex(x) || typeof(x) === 'string'; }
+  else { panic(`Unknown type: ${t}`); } };
+
+export const isType = (t, x) => {
+  if ( checkType(t, x) ) { return x; }
+  else { panic(`Expected ${t}, got: "${x}"`); } };
+
+export const assert = d => nodeAssert.strict(d);
+
+export const toBN = Web3.utils.toBN;
+export const isBN = Web3.utils.isBN;
+export const toHex = Web3.utils.toHex;
+export const isHex = Web3.utils.isHex;
+export const keccak256 = Web3.utils.soliditySha3;
+
+export const hexToBN = h => toBN(hexTo0x(h));
+export const uint256_to_bytes = i => bnToHex(i);
+
+export const bnToHex = (u, size = 32) =>
+  toBN(u)
+  .toTwos(8 * size)
+  .toString(16, 2 * size);
+
+export const bytes_eq = (x, y) =>
+  hexOf(x) === hexOf(y);
+
+export const random_uint256 = () =>
+  hexToBN(byteArrayToHex(crypto.randomBytes(32)));
+
+export const eq = (a, b) => toBN(a).eq( toBN(b));
+export const add   = (a, b) => toBN(a).add(toBN(b));
+export const sub   = (a, b) => toBN(a).sub(toBN(b));
+export const mod   = (a, b) => toBN(a).mod(toBN(b));
+export const mul   = (a, b) => toBN(a).mul(toBN(b));
+export const div   = (a, b) => toBN(a).div(toBN(b));
+export const ge    = (a, b) => toBN(a).gte(toBN(b));
+export const gt    = (a, b) => toBN(a).gt( toBN(b));
+export const le    = (a, b) => toBN(a).lte(toBN(b));
+export const lt    = (a, b) => toBN(a).lt( toBN(b));
+
+// end Shared/copied code
+
+
+// Unique helpers
+
+export const toWei = Web3.utils.toWei;
+export const fromWei = Web3.utils.fromWei;
+export const toWeiBN = (a,b) => toBN(toWei(a, b));
+
+// end Unique helpers
+
+
+// Common interface exports
+
 /* BEGIN Hack */
 // import * as extractTarget from 'wait-port/lib/extract-target';
 function extractTarget(target) {
@@ -40,10 +116,6 @@ function extractTarget(target) {
 }
 /* END Hack */
 
-const DEBUG = false;
-const debug = msg => { if (DEBUG) {
-  console.log(`DEBUG: ${msg}`); } };
-
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 (async () => {
   const { protocol, host, port, path } = extractTarget(uri);
@@ -60,68 +132,13 @@ ethersp.pollingInterval = 500; // ms
 const ethersBlockOnceP = () =>
       new Promise((resolve) => ethersp.once('block', (n) => resolve(n)));
 
-const panic = e => { throw Error(e); };
-
-const un0x           = h => h.replace(/^0x/, '');
-const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
-const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
-const byteArrayToHex = b => Array.from(b, byteToHex).join('');
-
 export const balanceOf = async a =>
   toBN(await web3.eth.getBalance(a.address));
 
-export const assert = d => nodeAssert.strict(d);
-
-export const toWei = web3.utils.toWei;
-export const fromWei = web3.utils.fromWei;
-export const toBN = web3.utils.toBN;
-export const toWeiBN = (a,b) => toBN(toWei(a, b));
-export const isBN = web3.utils.isBN;
-export const keccak256 = web3.utils.soliditySha3;
-
-export const hexToBN = h => toBN(hexTo0x(h));
-export const uint256_to_bytes = i => bnToHex(i);
-
-export const bnToHex = (u, size = 32) =>
-  toBN(u)
-  .toTwos(8 * size)
-  .toString(16, 2 * size);
-
-const hexOf = x =>
-      typeof x === 'string' && x.slice(0, 2) === '0x'
-      ? un0x(web3.utils.toHex(x))
-      : un0x(web3.utils.toHex(`0x${x}`));
-
-export const bytes_eq = (x, y) =>
-  hexOf(x) === hexOf(y);
-
-export const random_uint256 = () =>
-  hexToBN(byteArrayToHex(crypto.randomBytes(32)));
-
-export const eq = (a, b) => toBN(a).eq( toBN(b));
-export const equal = eq;
-export const add   = (a, b) => toBN(a).add(toBN(b));
-export const sub   = (a, b) => toBN(a).sub(toBN(b));
-export const mod   = (a, b) => toBN(a).mod(toBN(b));
-export const mul   = (a, b) => toBN(a).mul(toBN(b));
-export const div   = (a, b) => toBN(a).div(toBN(b));
-export const ge    = (a, b) => toBN(a).gte(toBN(b));
-export const gt    = (a, b) => toBN(a).gt( toBN(b));
-export const le    = (a, b) => toBN(a).lte(toBN(b));
-export const lt    = (a, b) => toBN(a).lt( toBN(b));
-
-const checkType = (t, x) => {
-  if ( t === 'bool' ) { return typeof(x) === 'boolean'; }
-  else if ( t === 'uint256' ) { return web3.utils.isBN(x); }
-  else if ( t === 'bytes' || t === 'address' ) { return web3.utils.isHex(x) || typeof(x) === 'string'; }
-  else { panic(`Unknown type: ${t}`); } };
-export const isType = (t, x) => {
-  if ( checkType(t, x) ) { return x; }
-  else { panic(`Expected ${t}, got: "${x}"`); } };
-
+// XXX dead code?
 // `t` is a type name in string form; `v` is the value to cast
-export const encode = (t, v) =>
-  ethers.utils.defaultAbiCoder.encode([t], [v]);
+// const encode = (t, v) =>
+//   ethers.utils.defaultAbiCoder.encode([t], [v]);
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
 export const transfer = async (to, from, value) =>

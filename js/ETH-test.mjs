@@ -56,23 +56,13 @@ runTests(() => { describe('The `web3` stdlib', () => {
 
   describe('exposes a `BigNumber` comparison function called', () => {
 
-    describe('`eq` (a synonym of `equal`) that', () => {
+    describe('`eq` that', () => {
       it('returns `true` when its arguments match', () =>
          expect(stdlib.eq(toBN(567890), toBN(567890)))
          .toBe(true));
 
       it('returns `false` when provided mismatched arguments', () =>
          expect(stdlib.eq(toBN(1), toBN(2)))
-         .toBe(false));
-    });
-
-    describe('`equal` (a synonym of `eq`) that', () => {
-      it('returns `true` when its arguments match', () =>
-         expect(stdlib.equal(toBN(567890), toBN(567890)))
-         .toBe(true));
-
-      it('returns `false` when provided mismatched arguments', () =>
-         expect(stdlib.equal(toBN(1), toBN(2)))
          .toBe(false));
     });
 
