@@ -19,6 +19,10 @@ publish:
 run:
 	docker-compose run reach-app
 
+.PHONY: check
+check:
+	go tool compile build/rps.go
+
 .PHONY: clean
 clean:
 	rm -f build/rps.mjs build/rps_while.mjs
