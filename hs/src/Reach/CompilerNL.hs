@@ -280,6 +280,7 @@ data CompilerError
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_IfCondNotBool SLVal
   | Err_Obj_IllegalJS JSObjectProperty
+  | Err_Obj_SpreadNotObj SLVal
   | Err_Obj_IllegalField JSPropertyName
   | Err_Obj_IllegalComputedField SLVal
   | Err_Fun_NamesIllegal
@@ -537,8 +538,8 @@ evalPropertyName ctxt at env pn k =
                 SLV_Bytes _ b -> k $ B.unpack b
                 _ -> expect_throw at_n (Err_Obj_IllegalComputedField v)
 
-evalPropertyPair :: SLCtxt -> SrcLoc -> SLEnv -> JSObjectProperty -> (SrcLoc -> String -> SLVal -> ans) -> ans
-evalPropertyPair ctxt at env p k =
+evalPropertyPair :: SLCtxt -> SrcLoc -> SLEnv -> SLEnv -> JSObjectProperty -> (SLEnv -> ans) -> ans
+evalPropertyPair ctxt at env fenv p k =
   case p of
     JSPropertyNameandValue pn a vs ->
       evalPropertyName ctxt at' env pn k_value
@@ -549,7 +550,19 @@ evalPropertyPair ctxt at env p k =
                   evalExpr ctxt at' env e (k_insert f)
                 _ ->
                   expect_throw at' (Err_Obj_IllegalFieldValues vs)
-            k_insert f v = k at' f v
+            k_insert f v = k $ env_insert at' f v fenv
+    JSPropertyIdentRef a v ->
+      evalPropertyPair ctxt at env fenv p' k
+      where p' = JSPropertyNameandValue pn a vs
+            pn = JSPropertyIdent a v
+            vs = [ JSIdentifier a v ]
+    JSObjectSpread a se ->
+      evalExpr ctxt at' env se k'
+      where k' envv =
+              case envv of
+                SLV_Object _ senv -> k $ envl_merge at' fenv senv
+                _ -> expect_throw at (Err_Obj_SpreadNotObj envv)
+            at' = srcloc_jsa "...obj" a at
     _ ->
       expect_throw at (Err_Obj_IllegalJS p)
   
@@ -611,12 +624,9 @@ evalExpr ctxt at env e k =
     JSMemberSquare arr a idx _ -> doRef arr a idx
     JSNewExpression _ _ -> illegal
     JSObjectLiteral a plist _ ->
-      foldlk k_ret add_field mempty $ jsctl_flatten plist
+      foldlk k_ret (evalPropertyPair ctxt at' env) mempty $ jsctl_flatten plist
       where at' = srcloc_jsa "obj" a at
             k_ret fenv = k $ SLV_Object at' fenv
-            add_field fenv p k_next =
-              evalPropertyPair ctxt at' env p k_ext
-              where k_ext at_p f v = k_next $ env_insert at_p f v fenv
     JSSpreadExpression _ _ -> illegal
     JSTemplateLiteral _ _ _ _ -> illegal
     JSUnaryExpression op ue -> doCallV (SLV_Prim (unaryToPrim at op)) JSNoAnnot [ ue ]
@@ -851,10 +861,10 @@ exenv_insert at k v (SLExEnv isExport ex env) = (SLExEnv isExport ex' env')
   where env' = env_insert at k v env
         ex' = if isExport then S.insert k ex else ex
 
-exenv_merge :: SrcLoc -> SLExEnv -> SLEnv -> SLExEnv
-exenv_merge at (SLExEnv isExport ex env) libex = (SLExEnv isExport ex env')
-  where env' = M.unionWithKey cm env libex
-        cm k _ _ = expect_throw at (Err_Import_ShadowedImport k)
+envl_merge :: SLEnvLike a => SLEnvLike b => SrcLoc -> a -> b -> a
+envl_merge at left right = new
+  where righte = envl_env right
+        new = foldl' (flip (uncurry (envl_insert at))) left $ M.toList righte
 
 evalTopBody :: SLCtxt -> SLLibs -> SLTopSt -> JSModuleItem -> SLTopSt
 evalTopBody ctxt libs st mi =
@@ -863,7 +873,7 @@ evalTopBody ctxt libs st mi =
       case im of
         JSImportDeclarationBare a libn sp ->
           (st { top_prev_at = srcloc_after_semi "import" a sp at
-              , top_exenv = exenv_merge at' exenv libex })
+              , top_exenv = envl_merge at' exenv libex })
           where at' = srcloc_jsa "import" a at
                 libm = libs_map libs
                 libex = case M.lookup (ReachSourceFile libn) libm of
