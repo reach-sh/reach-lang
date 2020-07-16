@@ -1,4 +1,5 @@
 abi: application binary interface
+amt: amount
 app: application
 bc: byte code
 bl: backend language
@@ -28,6 +29,7 @@ exp: experimental
 expr: expression
 ext: extension
 fp: FilePath
+fv: free variable
 gt: greater than
 gte: greater than or equal
 h: handle
@@ -37,6 +39,7 @@ hout: Handle ~stdout
 il: intermediate language
 info: information
 iv: inline variable
+k: continuation (the thing to call after this is done)
 l: Language
 loc: location
 lt: LType
@@ -44,6 +47,7 @@ lt: less than
 lte: less than or equal
 opts: options
 orig: original
+p: pretty (when used as suffix) (type = Doc a)
 p: variable ?
 pf: FilePath
 prim: primitive
@@ -55,6 +59,7 @@ s: statement
 src: source
 stdlib: standard library
 tbc: teal byte code
+tn: transaction number
 ttt: tick tack toe
 txn: transaction
 v: variable
