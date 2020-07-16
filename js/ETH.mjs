@@ -58,7 +58,7 @@ export const bytes_eq = (x, y) =>
 export const random_uint256 = () =>
   hexToBN(byteArrayToHex(crypto.randomBytes(32)));
 
-export const eq = (a, b) => toBN(a).eq( toBN(b));
+export const eq    = (a, b) => toBN(a).eq( toBN(b));
 export const add   = (a, b) => toBN(a).add(toBN(b));
 export const sub   = (a, b) => toBN(a).sub(toBN(b));
 export const mod   = (a, b) => toBN(a).mod(toBN(b));
