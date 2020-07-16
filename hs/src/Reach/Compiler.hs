@@ -1118,20 +1118,14 @@ compile copts = do
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
-  (ebc, tbc) <- case expCon copts of
-    False -> do
-      let fake_ebc = "XXX"
-          fake_tbc = ("XXX", "XXX", "XXX")
-      return (fake_ebc, fake_tbc)
+  let cnps_reg = M.fromList [ (ETH, CNP_ETH cs) ]
+  cnps_exp <- case expCon copts of
+    False -> return M.empty
     True -> do
       ebc <- emit_evm (outn "evm") blp
       tbc <- emit_teal (outn "teal") blp
-      return (ebc, tbc)
-  let cnps = M.fromList
-        [ (ETH, CNP_ETH cs)
-        , (ETH_EVM, CNP_ETH (fst cs, ebc))
-        , (ALGO, CNP_ALGO tbc) ]
-      cnp_tm = cnpToFieldMap cnps
+      return $ M.fromList [ (ETH_EVM, CNP_ETH (fst cs, ebc)), (ALGO, CNP_ALGO tbc) ]
+  let cnp_tm = cnpToFieldMap $ cnps_reg <> cnps_exp
   out "mjs" (show (emit_js blp cnp_tm))
   out "go" (show (emit_go blp cnp_tm))
   exitSuccess
