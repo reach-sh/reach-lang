@@ -213,7 +213,6 @@ env_lookup at x env =
       expect_throw at (Err_Eval_UnboundId x)
 
 -- Dynamic Language
-
 data DLConstant
   deriving (Eq,Show,Ord)
 
@@ -344,6 +343,10 @@ data CompilerError
   | Err_Block_Assign
   | Err_TopFun_NoName
   | Err_TailNotEmpty [JSStatement]
+  | Err_Type_TooFewArguments [SLType]
+  | Err_Type_TooManyArguments [SLVal]
+  | Err_Type_Mismatch SLType SLType SLVal
+  | Err_Type_None SLVal
   | Err_XXX String
   deriving (Eq,Show)
 
@@ -458,6 +461,31 @@ gatherDeps_top src_p = do
         ensureJust (Just x) = x
 
 -- Compiler
+
+typeOf :: SrcLoc -> SLVal -> SLType
+typeOf at v =
+  case v of
+    _ -> expect_throw at $ Err_Type_None v
+      
+typeCheck :: SrcLoc -> SLType -> SLVal -> ans -> ans
+typeCheck at t v res =
+  if vt == t then
+    res
+  else
+    expect_throw at $ Err_Type_Mismatch t vt v
+  where vt = typeOf at v
+  
+typeChecks :: SrcLoc -> [SLType] -> [SLVal] -> ans -> ans
+typeChecks at ts vs res =
+  case (ts, vs) of
+    ([], []) -> res
+    ((t:ts'), (v:vs')) ->
+      typeCheck at t v $ typeChecks at ts' vs' res
+    ((_:_), _) ->
+      expect_throw at $ Err_Type_TooFewArguments ts
+    (_, (_:_)) ->
+      expect_throw at $ Err_Type_TooManyArguments vs
+
 evalDot :: SrcLoc -> SLVal -> String -> SLVal
 evalDot at obj field =
   case obj of
@@ -479,7 +507,7 @@ evalForm ctxt at _env f args k =
   case f of
     SLForm_Part_Only (SLV_Participant _ who _) ->
       case ctxt_mode ctxt of
-        SLC_Step penvs -> evalExprs ctxt_local at penv args k'
+        SLC_Step sst penvs -> evalExprs ctxt_local at penv args k'
           where ctxt_local = ctxt { ctxt_mode = SLC_Local }
                 penv = penvs M.! who
                 k' eargs =
@@ -487,7 +515,8 @@ evalForm ctxt at _env f args k =
                     [ thunk ] -> do
                       stmts_ref <- newSTRef mempty
                       let lsts = (SLLocalStepState
-                                  { lsts_stmts = stmts_ref })
+                                  { lsst_sst = sst
+                                  , lsst_stmts = stmts_ref })
                       let ctxt_step = ctxt { ctxt_mode = SLC_LocalStep lsts }
                       --- XXX Expect to get an update part env
                       evalApplyVals ctxt_step at mt_env thunk [] k
@@ -536,8 +565,8 @@ evalPrim ctxt at env p args k =
         SLC_LocalStep lsts ->
           case t of
             T_Fun dom rng -> do
-              let dlargs = error $ "XXX check types of (" ++ show args ++ ") vs (" ++ show dom ++ ")"
-              dv <- error $ "XXX " ++ show ( ("localStep_bind"::String), lsts, at, ("interact"::String), rng, (DLLE_Interact at m dlargs) )
+              let dlargs = error "XXX dlargs"
+              dv <- localStep_bind lsts at "interact" rng (DLLE_Interact at m $ typeChecks at dom args dlargs)
               k $ SLV_DLVar dv
             _ ->
               expect_throw at (Err_Eval_NotApplicable rator)
@@ -731,7 +760,7 @@ evalExprs ctxt at env rands k =
 
 bindDeclLHS :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> SLVal -> (SLEnv -> ST s a) -> ST s a
 bindDeclLHS ctxt at o_env lhs v k = do
-  ctxt_maybe_exportf ctxt update
+  ctxt_declf ctxt update
   k $ update o_env
   where update env =
           case lhs of
@@ -767,7 +796,7 @@ evalDecls ctxt at env decls k =
 
 evalFunctionStmt :: SLCtxt s -> SrcLoc -> SLEnv -> JSAnnot -> JSIdent -> JSCommaList JSExpression -> JSBlock -> JSSemi -> ((SrcLoc, SLEnv) -> ST s ans) -> ST s ans
 evalFunctionStmt ctxt at env a name jsformals body sp k = do
-  ctxt_maybe_export ctxt at f clo
+  ctxt_decl ctxt at f clo
   k $ (at_after, env')
   where clo = SLV_Clo at' (Just f) formals body env
         formals = parseJSFormals at' jsformals
@@ -898,17 +927,25 @@ data SLCtxt s = SLCtxt
   , ctxt_stack :: [ SLCtxtFrame ] }
   deriving (Eq,Show)
 
+data SLStepState s = SLStepState
+  { sst_idx :: STRef s Int }
+  deriving (Eq)
+
+instance Show (SLStepState s) where
+  show _ = "<ctxt step>"
+
 data SLLocalStepState s = SLLocalStepState
-  { lsts_stmts :: STRef s DLLocalStep }
+  { lsst_sst :: SLStepState s
+  , lsst_stmts :: STRef s DLLocalStep }
   deriving (Eq)
 
 instance Show (SLLocalStepState s) where
-  show _lsts = "<local steps>" --- XXX
+  show _ = "<local steps>"
 
 data SLCtxtMode s
   = SLC_ModuleTop (STRef s SLEnv)
   | SLC_ModuleExpr
-  | SLC_Step (M.Map SLPart SLEnv)
+  | SLC_Step (SLStepState s) (M.Map SLPart SLEnv)
   | SLC_Local
   | SLC_LocalStep (SLLocalStepState s)
   | SLC_ConsensusStep
@@ -917,22 +954,38 @@ data SLCtxtMode s
 instance Show (SLCtxtMode s) where
   show (SLC_ModuleTop _) = "<module top-level>"
   show (SLC_ModuleExpr) = "<module expression>"
-  show (SLC_Step _) = "<DApp step>"
+  show (SLC_Step _ _) = "<DApp step>"
   show (SLC_Local) = "<DApp local>"
   show (SLC_LocalStep _) = "<DApp local step>"
   show (SLC_ConsensusStep) = "<DApp consensus step>"
 
-ctxt_maybe_exportf :: SLCtxt s -> (SLEnv -> SLEnv) -> ST s ()
-ctxt_maybe_exportf ctxt f =
+allocVarId :: SLStepState s -> ST s Int
+allocVarId sst = do
+  let idr = sst_idx sst
+  idx <- readSTRef idr
+  writeSTRef idr $ idx + 1
+  return idx
+
+localStep_bind :: SLLocalStepState s -> SrcLoc -> String -> SLType -> DLLocalExpr -> ST s DLVar
+localStep_bind lsst at v t e = do
+  idx <- allocVarId $ lsst_sst lsst
+  let dv = DLVar at v idx t
+  let s = DLLS_Let at dv e
+  let ssr = lsst_stmts lsst
+  modifySTRef ssr (\ss -> ss Seq.|> s)
+  return dv
+  
+ctxt_declf :: SLCtxt s -> (SLEnv -> SLEnv) -> ST s ()
+ctxt_declf ctxt f =
   case ctxt_mode ctxt of
     SLC_ModuleTop exenvr -> do
       exenv <- readSTRef exenvr
       writeSTRef exenvr $ f exenv
     _ -> return ()
 
-ctxt_maybe_export :: SLCtxt s -> SrcLoc -> SLVar -> SLVal -> ST s ()
-ctxt_maybe_export ctxt at x v =
-  ctxt_maybe_exportf ctxt (env_insert at x v)
+ctxt_decl :: SLCtxt s -> SrcLoc -> SLVar -> SLVal -> ST s ()
+ctxt_decl ctxt at x v =
+  ctxt_declf ctxt (env_insert at x v)
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
@@ -1029,9 +1082,12 @@ makeInteract at spec = SLV_Object at spec'
 compileDApp :: SLVal -> ST s NLProgram
 compileDApp topv =
   case topv of
-    SLV_Prim (SLPrim_DApp_Delay at [ (SLV_Object _ _opts), (SLV_Array _ parts), clo ] top_env) ->
+    SLV_Prim (SLPrim_DApp_Delay at [ (SLV_Object _ _opts), (SLV_Array _ parts), clo ] top_env) -> do
       --- xxx look at opts
-      evalApplyVals (ctxt_init $ SLC_Step penvs) at' mt_env clo partvs k
+      idxr <- newSTRef $ 0
+      let sst = SLStepState { sst_idx = idxr }
+      let ctxt = ctxt_init $ SLC_Step sst penvs
+      evalApplyVals ctxt at' mt_env clo partvs k
       where k v = expect_throw at' (Err_XXX $ "compileDApp after: " ++ show v)
             at' = srcloc_at "compileDApp" Nothing at
             penvs = M.fromList $ map make_penv partvs
