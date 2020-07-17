@@ -37,7 +37,10 @@ goString :: String -> Doc a
 goString s = dquotes $ pretty s
 
 goText :: T.Text -> Doc a
-goText = goString . T.unpack
+goText t = dquotes $ pretty t
+
+goBacktickText :: T.Text -> Doc a
+goBacktickText t = pretty "`" <> pretty t <> pretty "`"
 
 goVar :: BLVar -> Doc a
 goVar (n, _) = pretty $ "v" ++ show n
@@ -278,9 +281,7 @@ vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 goStringMap :: M.Map T.Text T.Text -> Doc a
 goStringMap m = pretty "map[string]string" <> (goBraces $ vsep $ map (<> comma) $ map goMapField kvs)
-  where goMapField (k, v) = goText k <> pretty ": " <> case k == T.pack "ABI" of
-          True -> pretty "`" <> pretty v <> pretty "`" -- XXX hack: In go ABI needs backtick quotes around it
-          False -> pretty v
+  where goMapField (k, v) = goText k <> pretty ": " <> goBacktickText v
         kvs = M.toList m
 
 goCnp :: (T.Text, M.Map T.Text T.Text) -> Doc a

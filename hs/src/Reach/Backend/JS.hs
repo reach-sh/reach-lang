@@ -28,6 +28,9 @@ reachTypeStr (LT_FixedArray bt hm) = reachBTypeStr bt ++ "[" ++ (show hm) ++ "]"
 jsString :: String -> Doc a
 jsString s = squotes $ pretty s
 
+jsBacktickText :: T.Text -> Doc a
+jsBacktickText x = pretty "`" <> pretty x <> pretty "`"
+
 jsVar :: BLVar -> Doc a
 jsVar (n, _) = pretty $ "v" ++ show n
 
@@ -259,9 +262,9 @@ vsep_with_blank l = vsep $ intersperse emptyDoc l
 jsBraces :: Doc a -> Doc a
 jsBraces body = braces (nest 2 $ hardline <> body <> space)
 
-jsObject :: (Pretty k, Pretty v) => M.Map k v -> Doc a
+jsObject :: (Pretty k) => M.Map k T.Text -> Doc a
 jsObject m = jsBraces $ vsep $ (intersperse (comma <> hardline)) $ map jsObjField kvs
-  where jsObjField (k, v) = pretty k <> pretty ":" <> pretty v
+  where jsObjField (k, v) = pretty k <> pretty ": " <> jsBacktickText v
         kvs = M.toList m
 
 -- ^ Render an exported variable for the given ConsensusNetworkProgram

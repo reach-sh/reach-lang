@@ -165,7 +165,7 @@ export const connectAccount = address => {
   const attach = (bin, ctc) => {
     const ctc_address = ctc.address;
     const creation_block = ctc.creation_block;
-    const { ABI } = bin.ETH;
+    const ABI = JSON.parse(bin.ETH.ABI);
     const ethCtc = new web3.eth.Contract(ABI, ctc_address);
     const ethersCtc = new ethers.Contract(ctc_address, ABI, ethersp);
     const eventOnceP = (e) =>
@@ -285,8 +285,7 @@ export const connectAccount = address => {
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
   const deploy = async (bin) => {
-    const { Bytecode } = bin.ETH;
-    const data = Bytecode;
+    const data = bin.ETH.Bytecode;
     const gas = await web3.eth.estimateGas({ data });
     // FIXME have some way to have a link to the reach code
     const r = await web3.eth.sendTransaction({ data, gas, from: address });
