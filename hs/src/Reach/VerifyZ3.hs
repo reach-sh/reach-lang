@@ -1,12 +1,16 @@
 {-# LANGUAGE FlexibleInstances, RecordWildCards, TemplateHaskell  #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Reach.VerifyZ3 where
 
 import qualified Data.Set as S
+import qualified Data.Map as M
+import Data.Char (isDigit)
+import Text.Read (readMaybe)
 import Control.Monad
 import Control.Monad.Extra
-import SimpleSMT --- Maybe use Language.SMTLib2 in future
+import SimpleSMT hiding (not) --- Maybe use Language.SMTLib2 in future
 import System.IO
 import System.Exit
 import Data.Text.Prettyprint.Doc
@@ -46,6 +50,23 @@ instance CollectTypes (ILTail a) where
 
 instance CollectTypes (ILProgram a) where
   cvs (IL_Prog _ _ _ it) = cvs it
+
+
+type AnnMap a = M.Map Int (a, ILVar, ILExpr a)
+
+-- ^ Collect Let annotations.
+-- Returns a map of var # to ann
+clanns :: ILTail a -> AnnMap a
+clanns (IL_Ret _ _) = mempty
+clanns (IL_If _ _ tt ft) = clanns tt <> clanns ft
+clanns (IL_Let a _ v@(i, _) e ct) = M.singleton i (a, v, e) <> clanns ct
+clanns (IL_Do _ _ _ ct) = clanns ct
+clanns (IL_ToConsensus _ (_, _, _, _) mto kt) = clanns kt <> mto_vs
+    where mto_vs = case mto of Nothing -> mempty
+                               Just (_, tt) -> clanns tt
+clanns (IL_FromConsensus _ kt) = clanns kt
+clanns (IL_While _ _loopvs _ it ct bt kt) = clanns it <> clanns ct <> clanns bt <> clanns kt
+clanns (IL_Continue _ _) = mempty
 
 {- Z3 Printing -}
 
@@ -107,8 +128,110 @@ display_fail honest r tk ann a = do
   --- XXX a is dumb, because it has been renamed from what they wrote
   putStrLn $ "\tspecifically: " ++ (showsSExpr a ":")
 
-z3_verify1 :: Show rolet => Show ann => Solver -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
-z3_verify1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
+type ModelMap = M.Map String (String, String)  -- ^ name -> (type, value)
+data ModelDefineInfo a = ModelDefineInfo
+  { mdi_name :: String
+  , mdi_type :: String
+  , mdi_value :: String
+  , mdi_ann :: Maybe a
+  , mdi_ilvar :: Maybe ILVar
+  , mdi_expr :: Maybe (ILExpr a)
+  , mdi_anns :: AnnMap a
+  , mdi_model :: ModelMap
+  }
+instance Show a => Show (ModelDefineInfo a) where
+  show (ModelDefineInfo _name _ty val ann _ilvar _expr _anns _mmap) =
+    -- name <> "\t= " <> val <> showMay "\t-- " ann "" <> "\n" <>
+    -- XXX: show more info? more than just interact?
+    "... interact returns " <> val <> showMay " (at " ann ")"
+    where
+      showMay pre (Just x) post = pre <> show x <> post
+      showMay _pre Nothing _post = ""
+    -- XXX: also show expr with values substituted in from mmap
+
+
+data Z3Model = Z3Model [Z3Define]
+data Z3Define = Z3Define String Bool String String -- ^ name, hasArgs, type, val
+
+instance Show Z3Model where
+  show (Z3Model ds) = unlines $ map show ds
+
+instance Show Z3Define where
+  show (Z3Define name _hasArgs _ty val) = unwords [name, "=", val]
+
+parse_list_val :: [SExpr] -> IO String
+parse_list_val [Atom "bytes-literal", Atom s2] = return s2
+parse_list_val sexprs = fail $ "Don't know how to parse as value: " <> show sexprs
+
+parse_define :: SExpr -> IO Z3Define
+parse_define (List (Atom "define-fun":Atom name:List args:Atom ty:Atom val:[])) =
+  return $ Z3Define name (not $ null args) ty val
+parse_define (List (Atom "define-fun":Atom name:List args:Atom ty:List val:[])) =
+  Z3Define name (not $ null args) ty <$> parse_list_val val
+parse_define e = fail $ "invalid define-fun " <> show e
+
+parse_model :: SExpr -> IO Z3Model
+parse_model (List (Atom "model":sexprs)) =
+  Z3Model <$> mapM parse_define sexprs
+parse_model e = fail $ "invalid model " <> show e
+
+parse_model_map :: SExpr -> IO ModelMap
+parse_model_map e = do
+  Z3Model m <- parse_model e
+  let m' = filter (\(Z3Define _ hasArgs _ _) -> not hasArgs) m
+      m'' = map (\(Z3Define name _ ty val) -> (name, (ty, val))) m'
+  return $ M.fromList m''
+
+parse_var_int :: String -> IO Int
+parse_var_int s = case readMaybe $ numericPart s of
+  Just i -> return i
+  Nothing -> fail $ "Expected var to be v${i}, got: " <> s
+  where numericPart = reverse . dropNonDigits . reverse . dropNonDigits
+        dropNonDigits = dropWhile (not . isDigit)
+
+display_model :: Show ann =>
+  AnnMap ann -> Bool -> rolet -> TheoremKind -> ann -> SExpr -> SExpr -> IO ()
+display_model anns _honest _who TBalanceZero _ann _a m = do
+  putStrLn "===================================================="
+  putStrLn "Failed the token linearity property:"
+  putStrLn " This program would allow the contract account's"
+  putStrLn " final balance to be nonzero. This program is invalid."
+  mp <- parse_model_map m
+  mp_enriched <- mapM (enrich mp) $ M.toList mp
+  case mp_enriched of
+    [] -> putStrLn "This could happen regardless of user interactions"
+    (_:_) -> do
+      putStrLn "This could happen if..."
+      mapM_ print $ filterInteracts mp_enriched
+  -- print (pretty_se_top m)
+  putStrLn "===================================================="
+  where
+    filterInteracts = filter (\x -> isInteract x && isV x && notP x) where
+      isInteract mdi = (fst . snd <$> mdi_ilvar mdi) == Just "Interact"
+      isV mdi = take 1 (mdi_name mdi) == "v"
+      notP mdi = take 1 (reverse $ mdi_name mdi) /= "p"
+    enrich mp (name, (ty, val)) = do
+      -- XXX don't look up txn_value1, balance0, etc
+      v <- parse_var_int name
+      return $ case M.lookup v anns of
+        Just (ann, ilvar, expr) -> ModelDefineInfo
+          { mdi_name = name , mdi_type = ty , mdi_value = val
+          , mdi_ann = Just ann , mdi_ilvar = Just ilvar , mdi_expr = Just expr
+          , mdi_anns = anns, mdi_model = mp}
+        Nothing -> ModelDefineInfo
+          { mdi_name = name , mdi_type = ty , mdi_value = val
+          , mdi_ann = Nothing , mdi_ilvar = Nothing , mdi_expr = Nothing
+          , mdi_anns = anns, mdi_model = mp}
+
+display_model _anns _honest _who TBalanceSufficient _ann _a m = do
+  putStrLn "Failed the sufficient balance property:"
+  putStrLn " This program would allow the contract account's"
+  putStrLn " balance to go negative. This program is invalid."
+  print (pretty_se_top m)
+display_model _anns _honest _who _tk _ann _a m = putStrLn $ show $ pretty_se_top m
+
+z3_verify1 :: Show rolet => Show ann => Solver -> AnnMap ann -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
+z3_verify1 z3 anns (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 (z3Apply "not" [ a ])
   r <- check z3
   case r of
@@ -121,7 +244,7 @@ z3_verify1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
       --- xxx relate inputs back to program text
       --- xxx relate inputs forward to this assertion
       m <- command z3 $ List [ Atom "get-model" ]
-      putStrLn $ show $ pretty_se_top m
+      display_model anns honest who tk ann a m
       return $ VR 0 1
 
 z3_sat1 :: Show rolet => Show ann => Solver -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
@@ -258,8 +381,8 @@ z3_vardecl z3 iv@(_, (_, bt)) = do
   z3_declare z3 (z3Var S.empty iv) bt
   z3_declare z3 (z3Var (S.singleton iv) iv) bt
 
-z3_expr :: Show rolet => Show a => Solver -> (Bool, rolet) -> (S.Set ILVar) -> Int -> ILVar -> ILExpr a -> IO VerifyResult
-z3_expr z3 (honest, who) primed cbi out how = case how of
+z3_expr :: Show rolet => Show a => Solver -> AnnMap a -> (Bool, rolet) -> (S.Set ILVar) -> Int -> ILVar -> ILExpr a -> IO VerifyResult
+z3_expr z3 anns (honest, who) primed cbi out how = case how of
   IL_Declassify h a -> do
     z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (emit_z3_arg primed a))
     return mempty
@@ -276,7 +399,7 @@ z3_expr z3 (honest, who) primed cbi out how = case how of
                LT_FixedArray _ x -> x
                _ -> impossible $ "IL_ArrayRef called with no Array"
     z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (z3Apply "select" [ (emit_z3_arg primed ae), (emit_z3_arg primed ee) ]))
-    z3_verify1 z3 (honest, who, TBounds, h) (z3CPrim cbi PLT [ (emit_z3_arg primed ee), (emit_z3_con $ Con_I hm) ])
+    z3_verify1 z3 anns (honest, who, TBounds, h) (z3CPrim cbi PLT [ (emit_z3_arg primed ee), (emit_z3_con $ Con_I hm) ])
 
 z3DigestCombine :: Show a => (S.Set ILVar) -> [ILArg a] -> SExpr
 z3DigestCombine primed ys =
@@ -296,10 +419,10 @@ z3DigestCombine primed ys =
                      Con_BS _ -> "Bytes"
 
 -- ^ Returns (next cbi, result)
-z3_stmt :: Show rolet => Show a => Solver -> Bool -> rolet -> (S.Set ILVar) -> Int -> ILStmt a -> IO (Int, VerifyResult)
-z3_stmt z3 honest r primed cbi how =
+z3_stmt :: Show rolet => Show a => Solver -> AnnMap a -> Bool -> rolet -> (S.Set ILVar) -> Int -> ILStmt a -> IO (Int, VerifyResult)
+z3_stmt z3 anns honest r primed cbi how =
   case how of
-    IL_Transfer h _who amount -> do vr <- z3_verify1 z3 (honest, r, TBalanceSufficient, h) (z3Apply "<=" [ amountt, cbit ])
+    IL_Transfer h _who amount -> do vr <- z3_verify1 z3 anns (honest, r, TBalanceSufficient, h) (z3Apply "<=" [ amountt, cbit ])
                                     z3_define z3 cb' (LT_BT BT_UInt256) (z3Apply "-" [ cbit, amountt ])
                                     return (cbi', vr)
       where cbi' = cbi + 1
@@ -314,7 +437,7 @@ z3_stmt z3 honest r primed cbi how =
                           return ( cbi, vr )
       where at = emit_z3_arg primed a
             this_check = case mct of
-              Just tk -> z3_verify1 z3 (honest, r, tk, h) at
+              Just tk -> z3_verify1 z3 anns (honest, r, tk, h) at
               Nothing -> return mempty
             mct = case ct of
               CT_Assert -> Just TAssert
@@ -341,15 +464,15 @@ extract_invariant_variables invt =
     IL_Let _ _ v _ t -> v : extract_invariant_variables t
     _ -> impossible $ "Z3: invalid invariant structure"
 
-z3_it_top :: Show a => Solver -> ILTail a -> (Bool, (Role ILVar)) -> IO VerifyResult
-z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
+z3_it_top :: forall a. Show a => Solver -> AnnMap a -> ILTail a -> (Bool, (Role ILVar)) -> IO VerifyResult
+z3_it_top z3 anns it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
   z3_declare z3 cb0 (LT_BT BT_UInt256)
   assert z3 (z3Eq (z3CTCBalanceRef 0) zero)
   meta_iter Nothing VC_Top it_top
   where zero = emit_z3_con (Con_I 0)
         cb0 = z3CTCBalance 0
-        meta_iter :: Show a => Maybe Int -> VerifyCtxt a -> ILTail a -> IO VerifyResult
+        meta_iter :: Maybe Int -> VerifyCtxt a -> ILTail a -> IO VerifyResult
         meta_iter m_prev_cbi ctxt it = do
           putStrLn $ "...checking " ++ take 32 (show ctxt)
           let (init_cbi, init_cbim) =
@@ -361,13 +484,13 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                           cb'v = z3CTCBalance cbi'
           inNewScope z3 $ do init_cbim
                              iter (S.empty) init_cbi ctxt it
-        iter :: Show a => (S.Set ILVar) -> Int -> VerifyCtxt a -> ILTail a -> IO VerifyResult
+        iter :: (S.Set ILVar) -> Int -> VerifyCtxt a -> ILTail a -> IO VerifyResult
         iter primed cbi ctxt it = case it of
           IL_Ret h al -> do
             case ctxt of
               VC_Top -> do
                 let cbi_balance = z3Eq (z3CTCBalanceRef cbi) zero
-                z3_verify1 z3 (honest, me, TBalanceZero, h) cbi_balance
+                z3_verify1 z3 anns (honest, me, TBalanceZero, h) cbi_balance
               VC_AssignCheckInv should_prime loopvs invt -> do
                 let invt_vs = extract_invariant_variables invt
                 let primed' = if should_prime then S.unions [primed, S.fromList loopvs, S.fromList invt_vs] else primed
@@ -379,7 +502,7 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                 a <- case al of
                   [ x ] -> return x
                   _ -> fail "Expected [ILArg] to have exactly one element"  -- XXX
-                z3_verify1 z3 (honest, me, TInvariant, h) (emit_z3_arg primed a)
+                z3_verify1 z3 anns (honest, me, TInvariant, h) (emit_z3_arg primed a)
               VC_WhileBody_AssumeNotUntil loopvs invt bodyt kctxt -> do
                 a <- case al of
                   [ x ] -> return x
@@ -413,12 +536,12 @@ z3_it_top z3 it_top (honest, me) = inNewScope z3 $ do
                                  iter primed cbi ctxt kt
                     where cav = emit_z3_con (Con_B v)
           IL_Let _ who what how kt ->
-            do vr <- if (honest || role_me me who) then z3_expr z3 (honest, who) primed cbi what how else return mempty
+            do vr <- if (honest || role_me me who) then z3_expr z3 anns (honest, who) primed cbi what how else return mempty
                vr' <- iter primed cbi ctxt kt
                return $ vr <> vr'
           IL_Do _ who how kt ->
             if (honest || role_me me who) then
-              do (cbi', vr) <- z3_stmt z3 honest me primed cbi how
+              do (cbi', vr) <- z3_stmt z3 anns honest me primed cbi how
                  vr' <- iter primed cbi' ctxt kt
                  return $ vr <> vr'
             else
@@ -465,7 +588,7 @@ _verify_z3 :: Show a => Solver -> ILProgram a -> IO ExitCode
 _verify_z3 z3 tp = do
   loadString z3 z3StdLib
   mapM_ (z3_vardecl z3) $ S.toList $ cvs tp
-  VR ss fs <- mconcatMapM (z3_it_top z3 it) (liftM2 (,) [True, False] ps)
+  VR ss fs <- mconcatMapM (z3_it_top z3 anns it) (liftM2 (,) [True, False] ps)
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
   (if ( fs == 0 ) then
       do putStrLn $ " No failures!"
@@ -475,6 +598,7 @@ _verify_z3 z3 tp = do
          return $ ExitFailure 1)
   where IL_Prog _ _ ipi it = tp
         ps = RoleContract : (map RolePart $ S.toList ipi)
+        anns = clanns it
 
 newFileLogger :: FilePath -> IO (IO (), Logger)
 newFileLogger p = do

@@ -20,6 +20,9 @@ Verification failed:
 	of theorem TBalanceSufficient
 	from ../examples/multisig/multisig.rsh.2.patch:51:7
 	specifically: (<= v17 ctc_balance5 ):
+Failed the sufficient balance property:
+ This program would allow the contract account's
+ balance to go negative. This program is invalid.
 (model
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (0,("Child",LT_BT BT_Address))
@@ -35,6 +38,9 @@ Verification failed:
 	of theorem TBalanceSufficient
 	from ../examples/multisig/multisig.rsh.2.patch:51:7
 	specifically: (<= v17 ctc_balance5 ):
+Failed the sufficient balance property:
+ This program would allow the contract account's
+ balance to go negative. This program is invalid.
 (model
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Checked 42 theorems; 2 failures. :'(
