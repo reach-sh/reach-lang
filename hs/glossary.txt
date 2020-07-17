@@ -1,10 +1,14 @@
 abi: application binary interface
+al: argument list
+alt: argument list transformed
 amt: amount
 app: application
 bc: byte code
 bl: backend language
 bt: BaseType
 c: contract
+cb: contract balance
+cbi: contract balance index
 ce: CompileErr
 cnp: ConsensusNetworkProgram
 comp: comparison
@@ -12,9 +16,11 @@ comp: compiler
 con: connector
 con: constant
 con: constructor
+cp: contract primitive
 ct: ClaimType
 ctc: contract
 cto: CompilerToolOpts
+ctxt: context
 def: definition
 dest: destination
 dir: directory
@@ -22,6 +28,7 @@ e: expression
 ebc: ethereum byte code
 eff: Effect
 env: environment
+ep: end-point
 epp: end-point projection
 eq: equal
 err: error
@@ -38,16 +45,19 @@ herr: Handle ~stderr
 hout: Handle ~stdout
 il: intermediate language
 info: information
+ior: inclusive or
 iv: inline variable
 k: continuation (the thing to call after this is done)
 l: Language
 loc: location
+lsh: left shift (<<)
 lt: LType
 lt: less than
 lte: less than or equal
 opts: options
 orig: original
 p: pretty (when used as suffix) (type = Doc a)
+p: prim op (as in PLE, PEQ, etc)
 p: variable ?
 pf: FilePath
 prim: primitive
@@ -55,9 +65,12 @@ prog: program
 r: role
 res: result
 rps: rock paper scissors
+rsh: right shift (>>)
 s: statement
 src: source
 stdlib: standard library
+t: tail (when used as suffix)
+t: transformed (when used as suffix) (type ~= z3 SExp)
 tbc: teal byte code
 tn: transaction number
 ttt: tick tack toe
@@ -67,5 +80,6 @@ var: variable
 xil: eXpanded Inlined Language (the lang after xl)
 xl: eXpanded Language
 xlt: XLType
+xor: eXclusive or
 γ: type environment
 σ: binding environment

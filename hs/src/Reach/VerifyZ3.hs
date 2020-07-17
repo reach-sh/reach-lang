@@ -233,9 +233,9 @@ data TheoremKind
   | TBounds
   deriving (Show)
 
-type Theorem = (Bool, (Role ILVar), TheoremKind)
+type Theorem = (Bool, (Role ILVar), TheoremKind) -- ^ honest, who, what
 
-data VerifyResult = VR Int Int
+data VerifyResult = VR Int Int  -- ^ # succeeded, # failed
 
 instance Semigroup VerifyResult where
   (VR s1 f1) <> (VR s2 f2) = VR (s1 + s2) (f1 + f2)
@@ -295,6 +295,7 @@ z3DigestCombine primed ys =
                      Con_B _ -> "Bool"
                      Con_BS _ -> "Bytes"
 
+-- ^ Returns (next cbi, result)
 z3_stmt :: Show rolet => Show a => Solver -> Bool -> rolet -> (S.Set ILVar) -> Int -> ILStmt a -> IO (Int, VerifyResult)
 z3_stmt z3 honest r primed cbi how =
   case how of
@@ -324,7 +325,7 @@ z3_stmt z3 honest r primed cbi how =
 
 data VerifyCtxt a
   = VC_Top
-  | VC_AssignCheckInv Bool [ILVar] (ILTail a)
+  | VC_AssignCheckInv Bool [ILVar] (ILTail a)  -- ^ shouldPrime, loop vars, inv tail
   | VC_CheckRet
   | VC_WhileBody_AssumeNotUntil [ILVar] (ILTail a) (ILTail a) (VerifyCtxt a)
   | VC_WhileBody_AssumeInv [ILVar] (ILTail a) (ILTail a) (VerifyCtxt a)
