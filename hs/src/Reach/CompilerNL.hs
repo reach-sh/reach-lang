@@ -162,8 +162,16 @@ data SLVal
   | SLV_Form SLForm
   deriving (Eq,Show)
 
+data ToConsensusMode
+  = TCM_Publish
+  | TCM_Pay
+  | TCM_Timeout
+  deriving (Eq,Show)
+
 data SLForm
   = SLForm_Part_Only SLVal
+  --- XXX Maybe should be DLVar
+  | SLForm_Part_ToConsensus SLVal (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe SLVar) (Maybe SLVar)
   deriving (Eq,Show)
 
 data SLPrimitive
@@ -291,11 +299,11 @@ srcloc_jsa :: String -> JSAnnot -> SrcLoc -> SrcLoc
 srcloc_jsa lab a at = srcloc_at lab (tp a) at
 
 srcloc_after_semi :: String -> JSAnnot -> JSSemi -> SrcLoc -> SrcLoc 
-srcloc_after_semi lab a sp at = at'
-  where at' = srcloc_jsa ("after " ++ lab) spa at
-        spa = case sp of
-                JSSemi x -> x
-                _ -> expect_throw (srcloc_jsa lab a at) Err_Parse_ExpectSemi
+srcloc_after_semi lab a sp at =
+  case sp of
+    JSSemi x -> srcloc_jsa (alab ++ " semicolon") x at
+    _ -> srcloc_jsa alab a at
+  where alab = "after " ++ lab
 
 --- XXX Maybe this is dumb
 data CompilerError
@@ -347,6 +355,7 @@ data CompilerError
   | Err_Type_TooManyArguments [SLVal]
   | Err_Type_Mismatch SLType SLType SLVal
   | Err_Type_None SLVal
+  | Err_ToConsensus_Double ToConsensusMode
   | Err_XXX String
   deriving (Eq,Show)
 
@@ -492,22 +501,31 @@ evalDot at obj field =
     SLV_Object _ env ->
       case M.lookup field env of
         Just v -> v
-        Nothing ->
-          expect_throw at (Err_Dot_InvalidField obj field)
+        Nothing -> illegal_field
     SLV_Participant _ _ _ ->
       case field of
         "only" -> SLV_Form (SLForm_Part_Only obj)
-        _ ->
-          expect_throw at (Err_Dot_InvalidField obj field)
+        "publish" -> SLV_Form (SLForm_Part_ToConsensus obj (Just TCM_Publish) Nothing Nothing Nothing)
+        "pay" -> SLV_Form (SLForm_Part_ToConsensus obj (Just TCM_Pay) Nothing Nothing Nothing)
+        _ -> illegal_field
+    SLV_Form (SLForm_Part_ToConsensus pv Nothing mpub mpay mtime) ->
+      case field of
+        "publish" -> SLV_Form (SLForm_Part_ToConsensus pv (Just TCM_Publish) mpub mpay mtime)
+        "pay" -> SLV_Form (SLForm_Part_ToConsensus pv (Just TCM_Pay) mpub mpay mtime)
+        "timeout" -> SLV_Form (SLForm_Part_ToConsensus pv (Just TCM_Timeout) mpub mpay mtime)
+        _ -> illegal_field
     v ->
       expect_throw at (Err_Eval_NotObject v)
+  where illegal_field =
+          expect_throw at (Err_Dot_InvalidField obj field)
 
 evalForm :: SLCtxt s -> SrcLoc -> e -> SLForm -> [JSExpression] -> (SLVal -> ST s ans) -> ST s ans
 evalForm ctxt at _env f args k =
   case f of
     SLForm_Part_Only (SLV_Participant _ who _) ->
       case ctxt_mode ctxt of
-        SLC_Step sst penvs -> evalExprs ctxt_local at penv args k'
+        SLC_Step sst penvs ->
+          evalExprs ctxt_local at penv args k'
           where ctxt_local = ctxt { ctxt_mode = SLC_Local }
                 penv = penvs M.! who
                 k' eargs =
@@ -523,6 +541,32 @@ evalForm ctxt at _env f args k =
                     _ -> illegal_args
         _ -> expect_throw at $ Err_Eval_IllegalContext rator
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
+    SLForm_Part_ToConsensus pv mmode mpub mpay mtime ->
+      case ctxt_mode ctxt of
+        SLC_Step _sst penvs ->
+          case mmode of
+            Just TCM_Publish ->
+              case mpub of
+                Nothing ->
+                  foldlk k' ensure_bound () msg 
+                  where msg = map (jse_expect_id at) args
+                        penv = penvs M.! who
+                        k' () = k $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing (Just msg) mpay mtime
+                        ensure_bound () x k'' =
+                          case env_lookup at x penv of
+                            _ -> k'' ()
+                Just _ ->
+                  expect_throw at $ Err_ToConsensus_Double TCM_Publish
+            Just TCM_Pay ->
+              k $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing mpub (Just $ error "XXX TCM_Pay " ++ show args) mtime
+            Just TCM_Timeout ->
+              k $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
+            Nothing ->
+              expect_throw at $ Err_Eval_NotApplicable rator
+        _ -> expect_throw at $ Err_Eval_IllegalContext rator
+        where who = case pv of
+                      (SLV_Participant _ x _) -> x
+                      _ -> impossible $ "ToConsensus args"
   where illegal_args = expect_throw at (Err_Form_InvalidArgs f args)
         rator = SLV_Form f
 
@@ -574,8 +618,9 @@ evalPrim ctxt at env p args k =
           expect_throw at (Err_Eval_IllegalContext rator)
     SLPrim_declassify ->
       case args of
-        [ _val ] ->
-          expect_throw at (Err_XXX "declassify")
+        [ val ] ->
+          --- XXX do declassify
+          k $ val
         _ -> illegal_args
   where illegal_args = expect_throw at (Err_Prim_InvalidArgs p args)
         rator = SLV_Prim p
@@ -981,6 +1026,7 @@ ctxt_declf ctxt f =
     SLC_ModuleTop exenvr -> do
       exenv <- readSTRef exenvr
       writeSTRef exenvr $ f exenv
+    --- XXX Do this for local steps
     _ -> return ()
 
 ctxt_decl :: SLCtxt s -> SrcLoc -> SLVar -> SLVal -> ST s ()
