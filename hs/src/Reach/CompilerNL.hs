@@ -236,6 +236,7 @@ data SLPrimitive
   | SLPrim_declassify
   | SLPrim_commit
   | SLPrim_committed
+  | SLPrim_assume
   | SLPrim_interact SrcLoc String SLType
   | SLPrim_Fun
   | SLPrim_Array
@@ -254,7 +255,7 @@ base_env = M.fromList
   [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
   , ("declassify", SLV_Prim SLPrim_declassify)
   , ("commit", SLV_Prim SLPrim_commit)
---  , ("assume", SLV_Prim SLPrim_assume)
+  , ("assume", SLV_Prim SLPrim_assume)
   , ("Null", SLV_Type T_Null)
   , ("Bool", SLV_Type T_Bool)
   , ("UInt256", SLV_Type T_UInt256)
@@ -310,6 +311,7 @@ data DLLocalExpr
 
 data DLLocalStmt
   = DLLS_Let SrcLoc DLVar DLLocalExpr
+  | DLLS_Assume SrcLoc DLArg
   deriving (Eq,Show)
 
 type DLLocalStep = Seq.Seq DLLocalStmt
@@ -763,6 +765,16 @@ evalPrim ctxt at env p args k =
         [ ] -> k $ SLV_Prim SLPrim_committed
         _ -> illegal_args
     SLPrim_committed -> illegal_args
+    SLPrim_assume ->
+      case ctxt_mode_noNest ctxt of
+        SLC_LocalStep lsst -> do
+          let darg =
+                case checkAndConvert at (T_Fun [T_Bool] T_Null) args of
+                  (_, [x]) -> x
+                  _ -> illegal_args
+          local_do lsst (DLLS_Assume at darg)
+          k $ SLV_Null at
+        _ -> illegal_args
   where illegal_args = expect_throw at (Err_Prim_InvalidArgs p args)
         rator = SLV_Prim p
         expect_ty v =
@@ -846,6 +858,8 @@ kontIf _ctxt at f ta fa k cv =
   case cv of
     SLV_Bool _ cb -> f e k
       where e = if cb then ta else fa
+    SLV_DLVar (DLVar _ _ _ T_Bool) ->
+      expect_throw at $ Err_XXX "if on var"
     _ ->
       expect_throw at (Err_Eval_IfCondNotBool cv)
 
@@ -1218,12 +1232,14 @@ allocVarId sst = do
   writeSTRef idr $ idx + 1
   return idx
 
+ctxt_do :: STRef s (Seq.Seq a) -> a -> ST s ()
+ctxt_do ssr s = modifySTRef ssr (\ss -> ss Seq.|> s)
+  
 ctxt_bind :: SLStepState s -> STRef s (Seq.Seq a) -> SrcLoc -> String -> DLType -> (DLVar -> a) -> ST s DLVar
 ctxt_bind sst ssr at v t dv_to_s = do
   idx <- allocVarId sst
   let dv = DLVar at v idx t
-  let s = dv_to_s dv
-  modifySTRef ssr (\ss -> ss Seq.|> s)
+  ctxt_do ssr $ dv_to_s dv
   return dv
 
 ctxt_bind_prim :: SLCtxt s -> SrcLoc -> String -> DLType -> PrimOp -> [DLArg] -> ST s DLVar
@@ -1242,6 +1258,10 @@ ctxt_bind_prim ctxt at v t op dargs = do
 local_bind :: SLLocalStepState s -> SrcLoc -> String -> DLType -> DLLocalExpr -> ST s DLVar
 local_bind lsst at v t e =
   ctxt_bind (lsst_sst lsst) (lsst_stmts lsst) at v t (\dv -> DLLS_Let at dv e)
+
+local_do :: SLLocalStepState s -> DLLocalStmt -> ST s ()
+local_do lsst s =
+  ctxt_do (lsst_stmts lsst) s
 
 state_Step2Local :: (SLStepState s) -> ST s (SLLocalState s)
 state_Step2Local sst = return $ SLLocalState { lst_sst = sst }
