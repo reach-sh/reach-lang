@@ -177,6 +177,8 @@ data SLForm
 data SLPrimitive
   = SLPrim_makeEnum
   | SLPrim_declassify
+  | SLPrim_commit
+  | SLPrim_committed
   | SLPrim_interact SrcLoc String SLType
   | SLPrim_Fun
   | SLPrim_Array
@@ -193,6 +195,7 @@ base_env :: SLEnv
 base_env = M.fromList
   [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
   , ("declassify", SLV_Prim SLPrim_declassify)
+  , ("commit", SLV_Prim SLPrim_commit)
   , ("Null", SLV_Type T_Null)
   , ("Bool", SLV_Type T_Bool)
   , ("UInt256", SLV_Type T_UInt256)
@@ -622,6 +625,11 @@ evalPrim ctxt at env p args k =
           --- XXX do declassify
           k $ val
         _ -> illegal_args
+    SLPrim_commit ->
+      case args of
+        [ ] -> k $ SLV_Prim SLPrim_committed
+        _ -> illegal_args
+    SLPrim_committed -> illegal_args
   where illegal_args = expect_throw at (Err_Prim_InvalidArgs p args)
         rator = SLV_Prim p
         expect_ty v =
@@ -904,10 +912,23 @@ evalStmt octxt at env ss k =
       evalStmt octxt at' env ks k
       where at' = srcloc_jsa "empty" a at
     ((JSExpressionStatement e sp):ks) ->
-      evalExpr nctxt at env e $
-      kontNull at (\() -> evalStmt octxt at_after env ks k) ()
+      evalExpr nctxt at env e k'
       where at_after =
               srcloc_after_semi "expr stmt" JSNoAnnot sp at
+            k' ev =
+              case ctxt_mode octxt of
+                SLC_Step _ _ ->
+                  case ev of
+                    SLV_Form (SLForm_Part_ToConsensus _who Nothing _mmsg _mamt _mtime) ->
+                      evalStmt cctxt at_after env ks k
+                      where cctxt =
+                              octxt { ctxt_mode = SLC_ConsensusStep }
+                    _ -> should_be_null
+                _ -> should_be_null
+              where should_be_null =
+                      kontNull at
+                      (\() -> evalStmt octxt at_after env ks k)
+                      () ev
     ((JSAssignStatement _lhs op _rhs _asp):ks) ->
       case (op, ks) of
         ((JSAssign _), ((JSContinue a _bl sp):cont_ks)) ->
