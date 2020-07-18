@@ -858,7 +858,8 @@ evalStmt octxt at env ss k =
   case ss of
     [] -> k env $ SLV_Null at
     ((JSStatementBlock a ss' _ sp):ks) ->
-      evalStmt nctxt at_in env ss' $ kontNull at_in at_after ks
+      evalStmt nctxt at_in env ss' $
+      kontNull at_in (\_ -> evalStmt octxt at_after env ks k)
       where at_in = srcloc_jsa "block" a at
             at_after = srcloc_after_semi "block" a sp at
     (s@(JSBreak a _ _):_) -> illegal a s "break"
@@ -903,9 +904,10 @@ evalStmt octxt at env ss k =
       evalStmt octxt at' env ks k
       where at' = srcloc_jsa "empty" a at
     ((JSExpressionStatement e sp):ks) ->
-      evalExpr nctxt at env e k'
-      where k' cv = kontNull at at_after ks env cv
-            at_after = srcloc_after_semi "expr stmt" JSNoAnnot sp at
+      evalExpr nctxt at env e $
+      kontNull at (\() -> evalStmt octxt at_after env ks k) ()
+      where at_after =
+              srcloc_after_semi "expr stmt" JSNoAnnot sp at
     ((JSAssignStatement _lhs op _rhs _asp):ks) ->
       case (op, ks) of
         ((JSAssign _), ((JSContinue a _bl sp):cont_ks)) ->
@@ -916,18 +918,17 @@ evalStmt octxt at env ss k =
         _ ->
           expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign)
     ((JSMethodCall e a args ra sp):ks) ->
-      evalExpr nctxt at env (JSCallExpression e a args ra) k'
-      where k' cv = kontNull at_in at_after ks env cv
-            at_in = srcloc_jsa lab a at
-            at_after = srcloc_after_semi lab a sp at
-            lab = "application"
+      evalStmt octxt at env ss' k
+      where ss' = (JSExpressionStatement e' sp):ks
+            e' = (JSCallExpression e a args ra)
     ((JSReturn a me sp):ks) ->
       expect_empty_tail lab a sp at ks res
       where lab = "return"
             at' = srcloc_jsa lab a at
             retk = expect_throw at' (Err_XXX "retk")
-            res = case me of Nothing -> retk $ SLV_Null at'
-                             Just e -> evalExpr nctxt at' env e retk
+            res = case me of
+                    Nothing -> retk $ SLV_Null at'
+                    Just e -> evalExpr nctxt at' env e retk
     (s@(JSSwitch a _ _ _ _ _ _ _):_) -> illegal a s "switch"
     (s@(JSThrow a _ _):_) -> illegal a s "throw"
     (s@(JSTry a _ _ _):_) -> illegal a s "try"
@@ -945,12 +946,12 @@ evalStmt octxt at env ss k =
   where nctxt = ctxt_nest octxt
         illegal a s lab =
           expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
-        kontNull at_in at_after ks _env' cv =
-          case cv of
-            SLV_Null _ ->
-              evalStmt octxt at_after env ks k
-            bv ->
-              expect_throw at_in (Err_Block_NotNull bv)
+
+kontNull :: SrcLoc -> (a -> ans) -> a -> SLVal -> ans
+kontNull at res arg cv =
+  case cv of
+    SLV_Null _ -> res arg
+    bv -> expect_throw at (Err_Block_NotNull bv)
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =
@@ -1086,14 +1087,9 @@ evalTopBody ctxt at libm env body k =
           where at' = srcloc_jsa "export" a at
         (JSModuleStatementListItem s) -> doStmt at False s
       where doStmt at' isExport sm =
-              evalStmt ctxt' at' env [sm]
-              --- XXX Merge w/ kontNull?
-              (\env' cv -> 
-                 case cv of
-                   SLV_Null _ ->
-                     evalTopBody ctxt at' libm env' body' k
-                   _ ->
-                     expect_throw at' (Err_Block_NotNull cv))
+              evalStmt ctxt' at' env [sm] $
+              kontNull at'
+              (\env' -> evalTopBody ctxt at' libm env' body' k)
               where ctxt' = ctxt_export isExport ctxt
 
 type SLMod = (ReachSource, [JSModuleItem])
