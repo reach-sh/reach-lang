@@ -33,7 +33,7 @@ import Reach.Util
 import Reach.Compiler(CompilerOpts, output, source)
 
 -- Helpers
-zipEq :: SrcLoc -> (Int -> Int -> CompilerError) -> [a] -> [b] -> [(a, b)]
+zipEq :: SrcLoc -> (Int -> Int -> CompilerError s) -> [a] -> [b] -> [(a, b)]
 zipEq at ce x y =
   if lx == ly then zip x y
   else expect_throw at (ce lx ly)
@@ -309,7 +309,7 @@ srcloc_after_semi lab a sp at =
   where alab = "after " ++ lab
 
 --- XXX Maybe this is dumb
-data CompilerError
+data CompilerError s
   = Err_Parse_NotModule JSAST
   | Err_Parse_CyclicImport ReachSource
   | Err_Parse_ExpectSemi
@@ -325,7 +325,7 @@ data CompilerError
   | Err_Decl_WrongArrayLength Int Int
   | Err_Decl_NotArray SLVal
   | Err_Eval_IllegalJS JSExpression
-  | Err_Eval_IllegalContext SLVal
+  | Err_Eval_IllegalContext (SLCtxt s) SLVal
   | Err_Eval_UnboundId SLVar
   | Err_Apply_ArgCount Int Int
   | Err_Eval_NotObject SLVal
@@ -362,8 +362,8 @@ data CompilerError
   | Err_XXX String
   deriving (Eq,Show)
 
-expect_throw :: SrcLoc -> CompilerError -> b
-expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 128 $ show ce)
+expect_throw :: SrcLoc -> CompilerError s -> b
+expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 256 $ show ce)
 
 -- Parser
 type BundleMap a b = ((M.Map a [a]), (M.Map a (Maybe b)))
@@ -397,7 +397,7 @@ gatherDeps_ast at fmr j =
     _ ->
       expect_throw at (Err_Parse_NotModule j)
 
-updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef (BundleMap a b) -> Maybe a -> [a] -> (() -> IO a) -> (a -> c) -> (a -> CompilerError) -> (a -> IO b) -> IO c
+updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef (BundleMap a b) -> Maybe a -> [a] -> (() -> IO a) -> (a -> c) -> (a -> CompilerError s) -> (a -> IO b) -> IO c
 updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = do
   key <- get_key ()
   let res = ret_key key
@@ -527,7 +527,7 @@ evalForm ctxt at _env f args k =
   case f of
     SLForm_Part_Only (SLV_Participant _ who _) ->
       case ctxt_mode ctxt of
-        SLC_Step sst penvs ->
+        SLC_Nested (SLC_Step sst penvs) ->
           evalExprs ctxt_local at penv args k'
           where ctxt_local = ctxt { ctxt_mode = SLC_Local }
                 penv = penvs M.! who
@@ -542,10 +542,10 @@ evalForm ctxt at _env f args k =
                       --- XXX Expect to get an update part env
                       evalApplyVals ctxt_step at mt_env thunk [] k
                     _ -> illegal_args
-        _ -> expect_throw at $ Err_Eval_IllegalContext rator
+        _ -> expect_throw at $ Err_Eval_IllegalContext ctxt rator
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
     SLForm_Part_ToConsensus pv mmode mpub mpay mtime ->
-      case ctxt_mode ctxt of
+      case ctxt_mode_noNest ctxt of
         SLC_Step _sst penvs ->
           case mmode of
             Just TCM_Publish ->
@@ -566,7 +566,7 @@ evalForm ctxt at _env f args k =
               k $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
             Nothing ->
               expect_throw at $ Err_Eval_NotApplicable rator
-        _ -> expect_throw at $ Err_Eval_IllegalContext rator
+        _ -> expect_throw at $ Err_Eval_IllegalContext ctxt rator
         where who = case pv of
                       (SLV_Participant _ x _) -> x
                       _ -> impossible $ "ToConsensus args"
@@ -598,17 +598,17 @@ evalPrim ctxt at env p args k =
         _ -> illegal_args
     SLPrim_DApp ->
       case ctxt_mode ctxt of
-        SLC_ModuleExpr ->
+        SLC_Nested (SLC_ModuleTop _) ->
           case args of
             [ (SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _) ] ->
               k $ SLV_Prim $ SLPrim_DApp_Delay at args env
             _ -> illegal_args
         _ ->
-          expect_throw at (Err_Eval_IllegalContext rator)
+          expect_throw at (Err_Eval_IllegalContext ctxt rator)
     SLPrim_DApp_Delay _ _ _ ->
       expect_throw at (Err_Eval_NotApplicable rator)
     SLPrim_interact _iat m t ->
-      case ctxt_mode ctxt of
+      case ctxt_mode_noNest ctxt of
         SLC_LocalStep lsts ->
           case t of
             T_Fun dom rng -> do
@@ -618,7 +618,7 @@ evalPrim ctxt at env p args k =
             _ ->
               expect_throw at (Err_Eval_NotApplicable rator)
         _ ->
-          expect_throw at (Err_Eval_IllegalContext rator)
+          expect_throw at (Err_Eval_IllegalContext ctxt rator)
     SLPrim_declassify ->
       case args of
         [ val ] ->
@@ -992,7 +992,10 @@ type SLKont = SLVal -> SLVal
 data SLCtxt s = SLCtxt
   { ctxt_mode :: (SLCtxtMode s)
   , ctxt_stack :: [ SLCtxtFrame ] }
-  deriving (Eq,Show)
+  deriving (Eq)
+
+instance Show (SLCtxt s) where
+  show ctxt = show $ ctxt_mode ctxt
 
 data SLStepState s = SLStepState
   { sst_idx :: STRef s Int }
@@ -1011,20 +1014,20 @@ instance Show (SLLocalStepState s) where
 
 data SLCtxtMode s
   = SLC_ModuleTop (STRef s SLEnv)
-  | SLC_ModuleExpr
   | SLC_Step (SLStepState s) (M.Map SLPart SLEnv)
   | SLC_Local
   | SLC_LocalStep (SLLocalStepState s)
   | SLC_ConsensusStep
+  | SLC_Nested (SLCtxtMode s)
   deriving (Eq)
 
 instance Show (SLCtxtMode s) where
   show (SLC_ModuleTop _) = "<module top-level>"
-  show (SLC_ModuleExpr) = "<module expression>"
   show (SLC_Step _ _) = "<DApp step>"
   show (SLC_Local) = "<DApp local>"
   show (SLC_LocalStep _) = "<DApp local step>"
   show (SLC_ConsensusStep) = "<DApp consensus step>"
+  show (SLC_Nested m) = "<nested ctxt " ++ show m ++ ">"
 
 allocVarId :: SLStepState s -> ST s Int
 allocVarId sst = do
@@ -1066,9 +1069,16 @@ ctxt_stack_push ctxt f =
 ctxt_nest :: SLCtxt s -> SLCtxt s
 ctxt_nest ctxt =
   (ctxt { ctxt_mode = m' })
-  where m' = case ctxt_mode ctxt of
-               SLC_ModuleTop _ -> SLC_ModuleExpr
-               x -> x
+  where m = ctxt_mode ctxt
+        m' = case m of
+               SLC_Nested _ -> m
+               _ -> SLC_Nested m
+
+ctxt_mode_noNest :: SLCtxt s -> SLCtxtMode s
+ctxt_mode_noNest ctxt =
+  case ctxt_mode ctxt of
+    SLC_Nested m -> m
+    m -> m
 
 ctxt_export :: Bool -> SLCtxt s -> SLCtxt s
 ctxt_export isExport ctxt =
