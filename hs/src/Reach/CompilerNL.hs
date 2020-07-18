@@ -23,6 +23,7 @@ import qualified Data.Graph as G
 import Control.Monad.ST
 import Data.FileEmbed
 import GHC.IO.Encoding
+import Data.Bits
 --import Data.Data
 --import Test.SmallCheck.Series
 --import GHC.Generics
@@ -143,7 +144,14 @@ data SLType
   | T_Bytes
   | T_Fun [SLType] SLType
   | T_Array [SLType]
+  | T_Obj (M.Map SLVar SLType)
+  | T_Forall SLVar SLType
+  | T_Var SLVar
   deriving (Eq,Show,Ord)
+
+infix 9 -->
+(-->) :: [SLType] -> SLType -> SLType
+dom --> rng = T_Fun dom rng
 
 type SLPart = B.ByteString
 
@@ -174,6 +182,55 @@ data SLForm
   | SLForm_Part_ToConsensus SLVal (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe SLVar) (Maybe SLVar)
   deriving (Eq,Show)
 
+data ConsensusPrimOp
+  = ADD
+  | SUB
+  | MUL
+  | DIV
+  | MOD
+  | PLT
+  | PLE
+  | PEQ
+  | PGE
+  | PGT
+  | IF_THEN_ELSE
+  | BYTES_EQ
+  | BALANCE
+  | TXN_VALUE
+  | LSH
+  | RSH
+  | BAND
+  | BIOR
+  | BXOR
+  deriving (Show,Eq,Ord)
+
+data PrimOp
+  = CP ConsensusPrimOp
+  | RANDOM
+  deriving (Show,Eq,Ord)
+
+primOpType :: PrimOp -> SLType
+primOpType (CP ADD) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP SUB) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP MUL) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP DIV) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP MOD) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP PLT) = [T_UInt256, T_UInt256] --> T_Bool
+primOpType (CP PLE) = [T_UInt256, T_UInt256] --> T_Bool
+primOpType (CP PEQ) = [T_UInt256, T_UInt256] --> T_Bool
+primOpType (CP PGE) = [T_UInt256, T_UInt256] --> T_Bool
+primOpType (CP PGT) = [T_UInt256, T_UInt256] --> T_Bool
+primOpType (CP IF_THEN_ELSE) = T_Forall "a" ([T_Bool, T_Var "a", T_Var "a"] --> T_Var "a")
+primOpType (CP BYTES_EQ) = ([T_Bytes, T_Bytes] --> T_Bool)
+primOpType (CP BALANCE) = ([] --> T_UInt256)
+primOpType (CP TXN_VALUE) = ([] --> T_UInt256)
+primOpType (CP LSH) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP RSH) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP BAND) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP BIOR) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType (CP BXOR) = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType RANDOM = ([] --> T_UInt256)
+
 data SLPrimitive
   = SLPrim_makeEnum
   | SLPrim_declassify
@@ -184,6 +241,7 @@ data SLPrimitive
   | SLPrim_Array
   | SLPrim_DApp
   | SLPrim_DApp_Delay SrcLoc [SLVal] SLEnv
+  | SLPrim_op PrimOp
   deriving (Eq,Show)
 
 type SLEnv = M.Map SLVar SLVal
@@ -196,6 +254,7 @@ base_env = M.fromList
   [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
   , ("declassify", SLV_Prim SLPrim_declassify)
   , ("commit", SLV_Prim SLPrim_commit)
+--  , ("assume", SLV_Prim SLPrim_assume)
   , ("Null", SLV_Type T_Null)
   , ("Bool", SLV_Type T_Bool)
   , ("UInt256", SLV_Type T_UInt256)
@@ -225,6 +284,10 @@ env_lookup at x env =
 
 -- Dynamic Language
 data DLConstant
+  = DLC_Null
+  | DLC_Bool Bool
+  | DLC_Int Int
+  | DLC_Bytes B.ByteString
   deriving (Eq,Show,Ord)
 
 --- XXX Maybe be different?
@@ -235,11 +298,14 @@ data DLVar = DLVar SrcLoc String Int DLType
 
 data DLArg
   = DLA_Var DLVar
-  | DLA_Constant DLConstant
+  | DLA_Con DLConstant
+  | DLA_Array [DLArg]
+  | DLA_Obj (M.Map String DLArg)
   deriving (Eq,Show)
 
 data DLLocalExpr
-  = DLLE_Interact SrcLoc String [DLArg]
+  = DLLE_PrimOp SrcLoc PrimOp [DLArg]
+  | DLLE_Interact SrcLoc String [DLArg]
   deriving (Eq,Show)
 
 data DLLocalStmt
@@ -247,6 +313,16 @@ data DLLocalStmt
   deriving (Eq,Show)
 
 type DLLocalStep = Seq.Seq DLLocalStmt
+
+data DLConsensusExpr
+  = DLCE_PrimOp SrcLoc ConsensusPrimOp [DLArg]
+  deriving (Eq,Show)
+
+data DLConsensusStmt
+  = DLCS_Let SrcLoc DLVar DLConsensusExpr
+  deriving (Eq,Show)
+
+type DLConsensusStep = Seq.Seq DLConsensusStmt
 
 -- Old notes
 data NLPart
@@ -313,6 +389,8 @@ data CompilerError s
   = Err_Parse_NotModule JSAST
   | Err_Parse_CyclicImport ReachSource
   | Err_Parse_ExpectSemi
+  | Err_Parse_IllegalBinOp JSBinOp
+  | Err_Parse_IllegalUnaOp JSUnaryOp
   | Err_Parse_ExpectIdentifier JSExpression
   | Err_Parse_IllegalLiteral String
   | Err_NoHeader [JSModuleItem]
@@ -325,7 +403,7 @@ data CompilerError s
   | Err_Decl_WrongArrayLength Int Int
   | Err_Decl_NotArray SLVal
   | Err_Eval_IllegalJS JSExpression
-  | Err_Eval_IllegalContext (SLCtxt s) SLVal
+  | Err_Eval_IllegalContext (SLCtxt s) String
   | Err_Eval_UnboundId SLVar
   | Err_Apply_ArgCount Int Int
   | Err_Eval_NotObject SLVal
@@ -355,6 +433,7 @@ data CompilerError s
   | Err_TopFun_NoName
   | Err_TailNotEmpty [JSStatement]
   | Err_Type_TooFewArguments [SLType]
+  | Err_Type_NotApplicable SLType
   | Err_Type_TooManyArguments [SLVal]
   | Err_Type_Mismatch SLType SLType SLVal
   | Err_Type_None SLVal
@@ -474,29 +553,53 @@ gatherDeps_top src_p = do
 
 -- Compiler
 
-typeOf :: SrcLoc -> SLVal -> SLType
+typeOf :: SrcLoc -> SLVal -> (DLType, DLArg)
 typeOf at v =
   case v of
-    _ -> expect_throw at $ Err_Type_None v
+    SLV_Null _ -> (T_Null, DLA_Con $ DLC_Null)
+    SLV_Bool _ b -> (T_Bool, DLA_Con $ DLC_Bool b)
+    SLV_Int _ i -> (T_UInt256, DLA_Con $ DLC_Int i)
+    SLV_Bytes _ bs -> (T_Bytes, DLA_Con $ DLC_Bytes bs)
+    SLV_Array at' vs -> (T_Array ts, DLA_Array das)
+      where tdas = map (typeOf at') vs
+            ts = map fst tdas
+            das = map snd tdas
+    SLV_Object at' fenv -> (T_Obj tenv, DLA_Obj aenv)
+      where cenv = M.map (typeOf at') fenv
+            tenv = M.map fst cenv
+            aenv = M.map snd cenv
+    SLV_Clo _ _ _ _ _ -> none
+    SLV_DLVar dv@(DLVar _ _ _ t) -> (t, DLA_Var dv)
+    SLV_Type _ -> none
+    SLV_Participant _ _ _ -> none
+    SLV_Prim _ -> none
+    SLV_Form _ -> none
+  where none = expect_throw at $ Err_Type_None v
       
-typeCheck :: SrcLoc -> SLType -> SLVal -> ans -> ans
-typeCheck at t v res =
+typeCheck :: SrcLoc -> SLType -> SLVal -> DLArg
+typeCheck at t v =
   if vt == t then
     res
   else
     expect_throw at $ Err_Type_Mismatch t vt v
-  where vt = typeOf at v
+  where (vt, res) = typeOf at v
   
-typeChecks :: SrcLoc -> [SLType] -> [SLVal] -> ans -> ans
-typeChecks at ts vs res =
+typeChecks :: SrcLoc -> [SLType] -> [SLVal] -> [DLArg]
+typeChecks at ts vs =
   case (ts, vs) of
-    ([], []) -> res
+    ([], []) -> []
     ((t:ts'), (v:vs')) ->
-      typeCheck at t v $ typeChecks at ts' vs' res
+      (typeCheck at t v) : typeChecks at ts' vs'
     ((_:_), _) ->
       expect_throw at $ Err_Type_TooFewArguments ts
     (_, (_:_)) ->
       expect_throw at $ Err_Type_TooManyArguments vs
+
+checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArg])
+checkAndConvert at t args =
+  case t of
+    T_Fun dom rng -> (rng, typeChecks at dom args)
+    _ -> expect_throw at $ Err_Type_NotApplicable t
 
 evalDot :: SrcLoc -> SLVal -> String -> SLVal
 evalDot at obj field =
@@ -527,33 +630,31 @@ evalForm ctxt at _env f args k =
   case f of
     SLForm_Part_Only (SLV_Participant _ who _) ->
       case ctxt_mode ctxt of
-        SLC_Nested (SLC_Step sst penvs) ->
+        SLC_Nested (SLC_Step sst) -> do
+          lst <- state_Step2Local sst
+          let ctxt_local = ctxt { ctxt_mode = SLC_Local lst }
+          let k' eargs =
+                case eargs of
+                  [ thunk ] -> do
+                    lsts <- state_Local2LocalStep lst
+                    let ctxt_step = ctxt { ctxt_mode = SLC_LocalStep lsts }
+                    --- XXX Expect to get an update part env
+                    evalApplyVals ctxt_step at mt_env thunk [] k
+                  _ -> illegal_args
           evalExprs ctxt_local at penv args k'
-          where ctxt_local = ctxt { ctxt_mode = SLC_Local }
-                penv = penvs M.! who
-                k' eargs =
-                  case eargs of
-                    [ thunk ] -> do
-                      stmts_ref <- newSTRef mempty
-                      let lsts = (SLLocalStepState
-                                  { lsst_sst = sst
-                                  , lsst_stmts = stmts_ref })
-                      let ctxt_step = ctxt { ctxt_mode = SLC_LocalStep lsts }
-                      --- XXX Expect to get an update part env
-                      evalApplyVals ctxt_step at mt_env thunk [] k
-                    _ -> illegal_args
-        _ -> expect_throw at $ Err_Eval_IllegalContext ctxt rator
+          where penv = (sst_penvs sst) M.! who
+        _ -> expect_throw at $ Err_Eval_IllegalContext ctxt "part.only"
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
     SLForm_Part_ToConsensus pv mmode mpub mpay mtime ->
       case ctxt_mode_noNest ctxt of
-        SLC_Step _sst penvs ->
+        SLC_Step sst ->
           case mmode of
             Just TCM_Publish ->
               case mpub of
                 Nothing ->
                   foldlk k' ensure_bound () msg 
                   where msg = map (jse_expect_id at) args
-                        penv = penvs M.! who
+                        penv = sst_penvs sst M.! who
                         k' () = k $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing (Just msg) mpay mtime
                         ensure_bound () x k'' =
                           case env_lookup at x penv of
@@ -566,16 +667,52 @@ evalForm ctxt at _env f args k =
               k $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
             Nothing ->
               expect_throw at $ Err_Eval_NotApplicable rator
-        _ -> expect_throw at $ Err_Eval_IllegalContext ctxt rator
+        _ -> expect_throw at $ Err_Eval_IllegalContext ctxt "toConsensus"
         where who = case pv of
                       (SLV_Participant _ x _) -> x
                       _ -> impossible $ "ToConsensus args"
   where illegal_args = expect_throw at (Err_Form_InvalidArgs f args)
         rator = SLV_Form f
 
+evalPrimOp :: SLCtxt s -> SrcLoc -> PrimOp -> [SLVal] -> (SLVal -> ST s ans) -> ST s ans
+evalPrimOp ctxt at p args k =
+  case p of
+    --- XXX Perhaps these should be sensitive to bit widths
+    CP ADD -> nn2n (+)
+    CP SUB -> nn2n (-)
+    CP MUL -> nn2n (*)
+    CP LSH -> nn2n (\a b -> shift a (fromIntegral b))
+    CP RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
+    CP BAND -> nn2n (.&.)
+    CP BIOR -> nn2n (.|.)
+    CP BXOR -> nn2n (xor)
+    CP PLT -> nn2b (<)
+    CP PLE -> nn2b (<=)
+    CP PEQ -> nn2b (==)
+    CP PGE -> nn2b (>=)
+    CP PGT -> nn2b (>)
+    _ -> make_var
+  where
+    nn2b op =
+      case args of
+        [SLV_Int _ lhs, SLV_Int _ rhs] ->
+          static $ SLV_Bool at $ op lhs rhs
+        _ -> make_var
+    nn2n op =
+      case args of
+        [SLV_Int _ lhs, SLV_Int _ rhs] ->
+          static $ SLV_Int at $ op lhs rhs
+        _ -> make_var
+    static v = k v
+    make_var = do
+      let (rng, dargs) = checkAndConvert at (primOpType p) args
+      dv <- ctxt_bind_prim ctxt at "prim" rng p dargs
+      k $ SLV_DLVar dv
+
 evalPrim :: SLCtxt s -> SrcLoc -> SLEnv -> SLPrimitive -> [SLVal] -> (SLVal -> ST s ans) -> ST s ans
 evalPrim ctxt at env p args k =
   case p of
+    SLPrim_op op -> evalPrimOp ctxt at op args k
     SLPrim_Fun ->
       case args of
         [ (SLV_Array _ dom_arr), (SLV_Type rng) ] ->
@@ -604,21 +741,17 @@ evalPrim ctxt at env p args k =
               k $ SLV_Prim $ SLPrim_DApp_Delay at args env
             _ -> illegal_args
         _ ->
-          expect_throw at (Err_Eval_IllegalContext ctxt rator)
+          expect_throw at (Err_Eval_IllegalContext ctxt "DApp")
     SLPrim_DApp_Delay _ _ _ ->
       expect_throw at (Err_Eval_NotApplicable rator)
     SLPrim_interact _iat m t ->
       case ctxt_mode_noNest ctxt of
-        SLC_LocalStep lsts ->
-          case t of
-            T_Fun dom rng -> do
-              let dlargs = error "XXX dlargs"
-              dv <- localStep_bind lsts at "interact" rng (DLLE_Interact at m $ typeChecks at dom args dlargs)
-              k $ SLV_DLVar dv
-            _ ->
-              expect_throw at (Err_Eval_NotApplicable rator)
+        SLC_LocalStep lsst -> do
+          let (rng, dargs) = checkAndConvert at t args
+          dv <- local_bind lsst at "interact" rng (DLLE_Interact at m dargs)
+          k $ SLV_DLVar dv
         _ ->
-          expect_throw at (Err_Eval_IllegalContext ctxt rator)
+          expect_throw at (Err_Eval_IllegalContext ctxt "interact")
     SLPrim_declassify ->
       case args of
         [ val ] ->
@@ -637,11 +770,40 @@ evalPrim ctxt at env p args k =
             SLV_Type t -> t
             _ -> illegal_args
 
-binaryToPrim :: SrcLoc -> JSBinOp -> SLPrimitive
-binaryToPrim at o = expect_throw at (Err_XXX $ "binaryToPrim " ++ show o)
+binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
+binaryToPrim at env o =
+  case o of
+    JSBinOpAnd a -> fun a "and"
+    JSBinOpDivide a -> prim a (CP DIV)
+    JSBinOpEq a -> prim a (CP PEQ)
+    JSBinOpGe a -> prim a (CP PGE)
+    JSBinOpGt a -> prim a (CP PGT)
+    JSBinOpLe a -> prim a (CP PLE)
+    JSBinOpLt a -> prim a (CP PLT)
+    JSBinOpMinus a -> prim a (CP SUB)
+    JSBinOpMod a -> prim a (CP MOD)
+    JSBinOpNeq a -> fun a "neq"
+    JSBinOpOr a -> fun a "or"
+    JSBinOpPlus a -> prim a (CP ADD)
+    JSBinOpStrictEq a -> prim a (CP BYTES_EQ)
+    JSBinOpStrictNeq a -> fun a "bytes_neq"
+    JSBinOpTimes a -> prim a (CP MUL)
+    JSBinOpLsh a -> prim a (CP LSH)
+    JSBinOpRsh a -> prim a (CP RSH)
+    JSBinOpBitAnd a -> prim a (CP BAND)
+    JSBinOpBitOr a -> prim a (CP BIOR)
+    JSBinOpBitXor a -> prim a (CP BXOR)
+    j -> expect_throw at $ Err_Parse_IllegalBinOp j
+  where fun a s = env_lookup (srcloc_jsa "binop" a at) s env
+        prim _a p = SLV_Prim $ SLPrim_op p
 
-unaryToPrim :: SrcLoc -> JSUnaryOp -> SLPrimitive
-unaryToPrim at o = expect_throw at (Err_XXX $ "unaryToPrim " ++ show o)
+unaryToPrim :: SrcLoc -> SLEnv -> JSUnaryOp -> SLVal
+unaryToPrim at env o =
+  case o of
+    JSUnaryOpMinus a -> fun a "minus"
+    JSUnaryOpNot a -> fun a "not"
+    j -> expect_throw at $ Err_Parse_IllegalUnaOp j
+  where fun a s = env_lookup (srcloc_jsa "unop" a at) s env
 
 parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]
 parseJSFormals at jsformals = map (jse_expect_id at) $ jscl_flatten jsformals
@@ -757,7 +919,7 @@ evalExpr ctxt at env e k =
     JSCallExpressionSquare arr a idx _ -> doRef arr a idx
     JSClassExpression _ _ _ _ _ _ -> illegal
     JSCommaExpression _ _ _ -> illegal
-    JSExpressionBinary lhs op rhs -> doCallV (SLV_Prim (binaryToPrim at op)) JSNoAnnot [ lhs, rhs ]
+    JSExpressionBinary lhs op rhs -> doCallV (binaryToPrim at env op) JSNoAnnot [ lhs, rhs ]
     JSExpressionParen a ie _ -> evalExpr ctxt (srcloc_jsa "paren" a at) env ie k
     JSExpressionPostfix _ _ -> illegal
     JSExpressionTernary c a t _ f ->
@@ -790,7 +952,7 @@ evalExpr ctxt at env e k =
             k_ret fenv = k $ SLV_Object at' fenv
     JSSpreadExpression _ _ -> illegal
     JSTemplateLiteral _ _ _ _ -> illegal
-    JSUnaryExpression op ue -> doCallV (SLV_Prim (unaryToPrim at op)) JSNoAnnot [ ue ]
+    JSUnaryExpression op ue -> doCallV (unaryToPrim at env op) JSNoAnnot [ ue ]
     JSVarInitExpression _ _ -> illegal
     JSYieldExpression _ _ -> illegal
     JSYieldFromExpression _ _ _ -> illegal
@@ -917,13 +1079,20 @@ evalStmt octxt at env ss k =
               srcloc_after_semi "expr stmt" JSNoAnnot sp at
             k' ev =
               case ctxt_mode octxt of
-                SLC_Step _ _ ->
+                SLC_Step sst ->
                   case ev of
-                    SLV_Form (SLForm_Part_ToConsensus _who Nothing _mmsg _mamt _mtime) ->
+                    SLV_Form (SLForm_Part_ToConsensus _who Nothing _mmsg _mamt _mtime) -> do
+                      cst <- state_Step2ConsensusStep sst
+                      let cctxt = octxt { ctxt_mode = SLC_ConsensusStep cst }
                       evalStmt cctxt at_after env ks k
-                      where cctxt =
-                              octxt { ctxt_mode = SLC_ConsensusStep }
-                    _ -> should_be_null
+                    _ -> should_be_null --- XXX or above
+                SLC_ConsensusStep csst ->
+                  case ev of
+                    SLV_Prim SLPrim_committed -> do
+                      sst <- state_ConsensusStep2Step csst
+                      let sctxt = octxt { ctxt_mode = SLC_Step sst }
+                      evalStmt sctxt at_after env ks k
+                    _ -> should_be_null --- XXX or above
                 _ -> should_be_null
               where should_be_null =
                       kontNull at
@@ -970,9 +1139,9 @@ evalStmt octxt at env ss k =
 
 kontNull :: SrcLoc -> (a -> ans) -> a -> SLVal -> ans
 kontNull at res arg cv =
-  case cv of
-    SLV_Null _ -> res arg
-    bv -> expect_throw at (Err_Block_NotNull bv)
+  case typeOf at cv of
+    (T_Null, _) -> res arg
+    _ -> expect_throw at (Err_Block_NotNull cv)
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =
@@ -998,15 +1167,28 @@ instance Show (SLCtxt s) where
   show ctxt = show $ ctxt_mode ctxt
 
 data SLStepState s = SLStepState
-  { sst_idx :: STRef s Int }
+  { sst_idx :: STRef s Int
+  , sst_penvs :: (M.Map SLPart SLEnv) }
   deriving (Eq)
 
 instance Show (SLStepState s) where
   show _ = "<ctxt step>"
 
+data SLLocalState s = SLLocalState
+  { lst_sst :: SLStepState s }
+  deriving (Eq)
+
 data SLLocalStepState s = SLLocalStepState
-  { lsst_sst :: SLStepState s
+  { lsst_lst :: SLLocalState s
   , lsst_stmts :: STRef s DLLocalStep }
+  deriving (Eq)
+
+lsst_sst :: SLLocalStepState s -> SLStepState s
+lsst_sst lsst = lst_sst $ lsst_lst lsst
+
+data SLConsensusStepState s = SLConsensusStepState
+  { csst_sst :: SLStepState s
+  , csst_stmts :: STRef s DLConsensusStep }
   deriving (Eq)
 
 instance Show (SLLocalStepState s) where
@@ -1014,19 +1196,19 @@ instance Show (SLLocalStepState s) where
 
 data SLCtxtMode s
   = SLC_ModuleTop (STRef s SLEnv)
-  | SLC_Step (SLStepState s) (M.Map SLPart SLEnv)
-  | SLC_Local
+  | SLC_Step (SLStepState s)
+  | SLC_Local (SLLocalState s)
   | SLC_LocalStep (SLLocalStepState s)
-  | SLC_ConsensusStep
+  | SLC_ConsensusStep (SLConsensusStepState s)
   | SLC_Nested (SLCtxtMode s)
   deriving (Eq)
 
 instance Show (SLCtxtMode s) where
   show (SLC_ModuleTop _) = "<module top-level>"
-  show (SLC_Step _ _) = "<DApp step>"
-  show (SLC_Local) = "<DApp local>"
+  show (SLC_Step _) = "<DApp step>"
+  show (SLC_Local _) = "<DApp local>"
   show (SLC_LocalStep _) = "<DApp local step>"
-  show (SLC_ConsensusStep) = "<DApp consensus step>"
+  show (SLC_ConsensusStep _) = "<DApp consensus step>"
   show (SLC_Nested m) = "<nested ctxt " ++ show m ++ ">"
 
 allocVarId :: SLStepState s -> ST s Int
@@ -1036,14 +1218,51 @@ allocVarId sst = do
   writeSTRef idr $ idx + 1
   return idx
 
-localStep_bind :: SLLocalStepState s -> SrcLoc -> String -> SLType -> DLLocalExpr -> ST s DLVar
-localStep_bind lsst at v t e = do
-  idx <- allocVarId $ lsst_sst lsst
+ctxt_bind :: SLStepState s -> STRef s (Seq.Seq a) -> SrcLoc -> String -> DLType -> (DLVar -> a) -> ST s DLVar
+ctxt_bind sst ssr at v t dv_to_s = do
+  idx <- allocVarId sst
   let dv = DLVar at v idx t
-  let s = DLLS_Let at dv e
-  let ssr = lsst_stmts lsst
+  let s = dv_to_s dv
   modifySTRef ssr (\ss -> ss Seq.|> s)
   return dv
+
+ctxt_bind_prim :: SLCtxt s -> SrcLoc -> String -> DLType -> PrimOp -> [DLArg] -> ST s DLVar
+ctxt_bind_prim ctxt at v t op dargs = do
+  case ctxt_mode_noNest ctxt of
+    SLC_LocalStep lsst ->
+      ctxt_bind (lsst_sst lsst) (lsst_stmts lsst) at v t (\dv -> DLLS_Let at dv $ DLLE_PrimOp at op dargs)
+    SLC_ConsensusStep csst ->
+      case op of
+        CP cop ->
+          ctxt_bind (csst_sst csst) (csst_stmts csst) at v t (\dv -> DLCS_Let at dv $ DLCE_PrimOp at cop dargs)
+        _ -> illegal
+    _ -> illegal
+  where illegal = expect_throw at $ Err_Eval_IllegalContext ctxt "bind primitive"
+
+local_bind :: SLLocalStepState s -> SrcLoc -> String -> DLType -> DLLocalExpr -> ST s DLVar
+local_bind lsst at v t e =
+  ctxt_bind (lsst_sst lsst) (lsst_stmts lsst) at v t (\dv -> DLLS_Let at dv e)
+
+state_Step2Local :: (SLStepState s) -> ST s (SLLocalState s)
+state_Step2Local sst = return $ SLLocalState { lst_sst = sst }
+
+state_Local2LocalStep :: (SLLocalState s) -> ST s (SLLocalStepState s)
+state_Local2LocalStep lst = do
+  stmts_ref <- newSTRef mempty
+  return $ SLLocalStepState
+    { lsst_lst = lst
+    , lsst_stmts = stmts_ref }
+
+state_Step2ConsensusStep :: (SLStepState s) -> ST s (SLConsensusStepState s)
+state_Step2ConsensusStep sst = do
+  stmts_ref <- newSTRef mempty
+  return $ SLConsensusStepState
+    { csst_sst = sst
+    , csst_stmts = stmts_ref }
+
+state_ConsensusStep2Step :: (SLConsensusStepState s) -> ST s (SLStepState s)
+state_ConsensusStep2Step csst = do
+  return $ csst_sst csst
   
 ctxt_declf :: SLCtxt s -> (SLEnv -> SLEnv) -> ST s ()
 ctxt_declf ctxt f =
@@ -1158,8 +1377,9 @@ compileDApp topv =
     SLV_Prim (SLPrim_DApp_Delay at [ (SLV_Object _ _opts), (SLV_Array _ parts), clo ] top_env) -> do
       --- xxx look at opts
       idxr <- newSTRef $ 0
-      let sst = SLStepState { sst_idx = idxr }
-      let ctxt = ctxt_init $ SLC_Step sst penvs
+      let sst = SLStepState { sst_idx = idxr
+                            , sst_penvs = penvs }
+      let ctxt = ctxt_init $ SLC_Step sst
       evalApplyVals ctxt at' mt_env clo partvs k
       where k v = expect_throw at' (Err_XXX $ "compileDApp after: " ++ show v)
             at' = srcloc_at "compileDApp" Nothing at
