@@ -23,3 +23,7 @@ impossible msg = error $ "impossible situation (i.e. compiler error): " ++ msg
 
 tshow :: Show a => a -> T.Text
 tshow = T.pack . show
+
+-- Note: drop 1 is safer than init/tail on empty strings
+trimQuotes :: String -> String
+trimQuotes = reverse . drop 1 . reverse . drop 1

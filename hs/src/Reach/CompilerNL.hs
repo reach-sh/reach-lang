@@ -57,9 +57,6 @@ foldrk k f z l =
       where k' z' = f x z' k
 
 -- JavaScript Helpers
-string_trim_quotes :: [a] -> [a]
-string_trim_quotes x = reverse $ tail $ reverse $ tail x
-
 jscl_flatten :: JSCommaList a -> [a]
 jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]
 jscl_flatten (JSLOne a) = [a]
@@ -449,10 +446,10 @@ gatherDeps_imd :: SrcLoc -> IORef JSBundleMap -> JSImportDeclaration -> IO JSImp
 gatherDeps_imd at fmr j =
   case j of
     JSImportDeclaration ic (JSFromClause ab aa s) sm -> do
-      s_abs <- gatherDeps_file (srcloc_at "import from" (tp ab) at) fmr $ string_trim_quotes s
+      s_abs <- gatherDeps_file (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
       return $ JSImportDeclaration ic (JSFromClause ab aa s_abs) sm
     JSImportDeclarationBare a s sm -> do
-      s_abs <- gatherDeps_file (srcloc_at "import bare" (tp a) at) fmr $ string_trim_quotes s
+      s_abs <- gatherDeps_file (srcloc_at "import bare" (tp a) at) fmr $ trimQuotes s
       return $ JSImportDeclarationBare a s_abs sm
 
 gatherDeps_mi :: SrcLoc -> IORef JSBundleMap -> JSModuleItem -> IO JSModuleItem
@@ -860,7 +857,7 @@ evalPropertyName :: SLCtxt s -> SrcLoc -> SLEnv -> JSPropertyName -> (String -> 
 evalPropertyName ctxt at env pn k =
   case pn of
     JSPropertyIdent _ s -> k $ s
-    JSPropertyString _ s -> k $ string_trim_quotes s
+    JSPropertyString _ s -> k $ trimQuotes s
     JSPropertyNumber an _ ->
       expect_throw at_n (Err_Obj_IllegalField pn)
       where at_n = srcloc_jsa "number" an at
@@ -914,7 +911,7 @@ evalExpr ctxt at env e k =
       where at' = (srcloc_jsa "literal" a at)
     JSHexInteger a ns -> k $ SLV_Int (srcloc_jsa "hex" a at) $ numberValue 16 ns
     JSOctal a ns -> k $ SLV_Int (srcloc_jsa "octal" a at) $ numberValue 8 ns
-    JSStringLiteral a s -> k $ SLV_Bytes (srcloc_jsa "string" a at) (bpack (string_trim_quotes s))
+    JSStringLiteral a s -> k $ SLV_Bytes (srcloc_jsa "string" a at) (bpack (trimQuotes s))
     JSRegEx _ _ -> illegal
     JSArrayLiteral a as _ -> evalExprs ctxt at' env (jsa_flatten as) k'
       where k' avl = k $ SLV_Array at' avl

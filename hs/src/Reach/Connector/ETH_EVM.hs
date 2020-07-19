@@ -860,6 +860,4 @@ emit_evm evmf (BL_Prog _ _ _ cp) = do
   let hex_bc = trim $ show $ BB.toLazyByteString $ BB.byteStringHex $ B.pack $ EVM.encode bc
   return hex_bc
   --- FIXME figure out the correct way to get a string
-  where trim [] = []
-        trim [_] = []
-        trim xs = tail (init xs)
+  where trim = trimQuotes

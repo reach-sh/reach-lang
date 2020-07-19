@@ -378,9 +378,6 @@ decodeUnaOp fp tp j arg =
     (JSUnaryOpNot a) -> XL_FunApp (tp a) (XL_Var (tp a) "not") [ arg ]
     _ -> expect_throw PE_UnaryOp fp j
 
-string_trim_quotes :: [a] -> [a]
-string_trim_quotes x = reverse $ tail $ reverse $ tail x
-
 decodeExpr :: DecodeStmtsState -> JSExpression -> XLExpr TP
 decodeExpr dss je =
   case je of
@@ -391,7 +388,7 @@ decodeExpr dss je =
     --- Other kinds of literals disallowed
     (JSHexInteger a n) -> XL_Con (tp a) (Con_I (numberValue 16 n))
     (JSOctal a n) -> XL_Con (tp a) (Con_I (numberValue 8 n))
-    (JSStringLiteral a s) -> XL_Con (tp a) (Con_BS (bpack (string_trim_quotes s)))
+    (JSStringLiteral a s) -> XL_Con (tp a) (Con_BS (bpack (trimQuotes s)))
     --- No regex
     (JSArrayLiteral a es _) -> XL_Values (tp a) $ map (decodeExpr dss) $ flattenJSArray es
     --- No assign
@@ -609,7 +606,7 @@ decodeBody fp (d, p, me) msis =
     (JSModuleStatementListItem s@(JSFunction _ _ _ _ _ _ _)) ->
       return $ (d ++ decodeDef fp s, p, me)
     (JSModuleImportDeclaration _ (JSImportDeclarationBare _ m _)) -> do
-      defs <- readReachLibrary (string_trim_quotes m)
+      defs <- readReachLibrary (trimQuotes m)
       return $ (d ++ defs, p, me)
     _ -> expect_throw PE_BodyElement fp msis
   where tp a = TP (fp, tpa a)

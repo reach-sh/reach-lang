@@ -6,18 +6,6 @@ type = "Exclude"
 id = "STAN-0302"
 scope = "all"
 
-# Partial: base/init
-[[check]]
-type = "Exclude"
-id = "STAN-0003"
-scope = "all"
-
-# Partial: base/tail
-[[check]]
-type = "Exclude"
-id = "STAN-0002"
-scope = "all"
-
 # Anti-pattern: unsafe functions
 [[check]]
 type = "Exclude"
