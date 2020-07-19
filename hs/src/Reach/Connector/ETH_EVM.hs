@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE StrictData #-}
 module Reach.Connector.ETH_EVM where
 
 import Control.Monad.State.Lazy

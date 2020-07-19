@@ -1,9 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE NoStrictData #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main where
 

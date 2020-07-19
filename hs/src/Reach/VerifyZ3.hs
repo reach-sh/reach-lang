@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleInstances, RecordWildCards, TemplateHaskell  #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE StrictData #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 module Reach.VerifyZ3 where
 
 import qualified Data.Set as S

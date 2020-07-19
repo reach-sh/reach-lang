@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NoStrictData #-}
 module Reach.CompilerTool where
 
 import Control.Monad.Except

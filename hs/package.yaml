@@ -45,6 +45,27 @@ dependencies:
 - base64
 - loop
 
+default-extensions:
+- BangPatterns
+- DeriveAnyClass
+- DeriveDataTypeable
+- DeriveGeneric
+- EmptyDataDeriving
+- FlexibleContexts
+- FlexibleInstances
+- LambdaCase
+- MultiParamTypeClasses
+- MultiWayIf
+- NamedFieldPuns
+- OverloadedStrings
+- RankNTypes
+- RecordWildCards
+- ScopedTypeVariables
+- StrictData
+- TemplateHaskell
+- TypeApplications
+- TypeSynonymInstances
+
 ghc-options:
 - -Wall
 - -Werror

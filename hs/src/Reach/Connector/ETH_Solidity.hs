@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns, OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE NoStrictData #-}
 module Reach.Connector.ETH_Solidity where
 
 import Data.List (intersperse, foldl', find)

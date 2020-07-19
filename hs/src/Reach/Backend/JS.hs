@@ -1,3 +1,4 @@
+{-# LANGUAGE NoOverloadedStrings #-}
 module Reach.Backend.JS where
 
 import qualified Data.ByteString.Char8 as B

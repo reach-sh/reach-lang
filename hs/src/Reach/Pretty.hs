@@ -1,3 +1,4 @@
+{-# LANGUAGE NoOverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reach.Pretty where
 

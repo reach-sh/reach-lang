@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoStrictData #-}
 module Reach.ConsensusNetworkProgram where
 
 import qualified Data.Map.Strict as M

@@ -1,6 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses #-}
-{-# LANGUAGE DeriveGeneric, DeriveDataTypeable #-}
+{-# LANGUAGE NoStrictData #-}
 module Reach.ParserInternal where
 
 import System.Directory
