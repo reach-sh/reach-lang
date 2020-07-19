@@ -11,7 +11,7 @@ import Text.ParserCombinators.Parsec.Number (numberValue)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
-import qualified Data.Set as S
+--import qualified Data.Set as S
 import qualified Data.Graph as G
 import Control.Monad.ST
 import Data.FileEmbed
@@ -281,10 +281,7 @@ data DLConstant
   | DLC_Bytes B.ByteString
   deriving (Eq,Show,Ord)
 
---- XXX Maybe be different?
-type DLType = SLType
-
-data DLVar = DLVar SrcLoc String Int DLType
+data DLVar = DLVar SrcLoc String SLType Int
   deriving (Eq,Show,Ord)
 
 data DLArg
@@ -294,70 +291,29 @@ data DLArg
   | DLA_Obj (M.Map String DLArg)
   deriving (Eq,Show)
 
-data DLLocalExpr
-  = DLLE_PrimOp SrcLoc PrimOp [DLArg]
-  | DLLE_Interact SrcLoc String [DLArg]
+data DLExpr
+  = DLE_PrimOp SrcLoc PrimOp [DLArg]
+  | DLE_Interact SrcLoc String [DLArg]
   deriving (Eq,Show)
 
-data DLLocalStmt
-  = DLLS_Let SrcLoc DLVar DLLocalExpr
-  | DLLS_Assume SrcLoc DLArg
-  deriving (Eq,Show)
-
-type DLLocalStep = Seq.Seq DLLocalStmt
-
-data DLConsensusExpr
-  = DLCE_PrimOp SrcLoc ConsensusPrimOp [DLArg]
-  deriving (Eq,Show)
-
-data DLConsensusStmt
-  = DLCS_Let SrcLoc DLVar DLConsensusExpr
-  deriving (Eq,Show)
-
-type DLConsensusStep = Seq.Seq DLConsensusStmt
-
--- Old notes
-data NLPart
-  = NLPart SrcLoc String
-  deriving (Eq,Show,Ord)
-
-data NLType --- XXX
-  deriving (Eq,Show)
-
-data NLVar
-  = NLVar SrcLoc String Int NLType
-  deriving (Eq,Show)
-
-data NLLocalExpr --- XXX
-  deriving (Eq,Show)
-
-data NLLocalStep --- XXX
-  deriving (Eq,Show)
-
-data NLConsensusExpr --- XXX
-  deriving (Eq,Show)
-
-data NLConsensusStep --- XXX
-  deriving (Eq,Show)
-
-data NL_PubOkay
-  = NL_PubOkay Bool (Seq.Seq NLVar) NLConsensusExpr NLConsensusStep
-  deriving (Eq,Show)
-
-data NL_PubTimeout
-  = NL_PubTimeout NLConsensusExpr NLStep
-  deriving (Eq,Show)
-
-data NLTransfer
-  = NL_Pub SrcLoc NLPart NL_PubOkay (Maybe NL_PubTimeout)
-  deriving (Eq,Show)
-
-data NLStep
-  = NL_Step SrcLoc (M.Map NLPart NLLocalStep) NLTransfer
-  deriving (Eq,Show)
-
-data NLProgram
-  = NL_Prog SrcLoc (S.Set NLPart) NLStep
+data ClaimType
+  = CT_Assert   --- Verified on all paths
+  | CT_Assume   --- Always assumed true
+  | CT_Require  --- Verified in honest, assumed in dishonest. (This may
+                --- sound backwards, but by verifying it in honest
+                --- mode, then we are checking that the other
+                --- participants fulfill the promise when acting
+                --- honestly.)
+  | CT_Possible --- Check if an assignment of variables exists to make
+                --- this true.
+  deriving (Show,Eq,Ord)
+           
+data DLStmt
+  = DLS_Let SrcLoc DLVar DLExpr
+  | DLS_Claim SrcLoc [ SLCtxtFrame ] ClaimType DLArg
+  --- XXX These are only allowed in Steps... maybe make Lifters more generic?
+  | DLS_Only SrcLoc SLPart (Seq.Seq DLStmt)
+  | DLS_All SrcLoc DLStmt
   deriving (Eq,Show)
 
 -- General compiler utilities
@@ -395,6 +351,7 @@ data CompilerError s
   | Err_Decl_WrongArrayLength Int Int
   | Err_Decl_NotArray SLVal
   | Err_Eval_IllegalJS JSExpression
+  | Err_Eval_IllegalLift (SLCtxt s)
   | Err_Eval_IllegalContext (SLCtxt s) String
   | Err_Eval_UnboundId SLVar
   | Err_Apply_ArgCount Int Int
@@ -433,6 +390,7 @@ data CompilerError s
   | Err_XXX String
   deriving (Eq,Show)
 
+--- XXX Add ctxt frame stack and display
 expect_throw :: SrcLoc -> CompilerError s -> b
 expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 256 $ show ce)
 
@@ -545,7 +503,7 @@ gatherDeps_top src_p = do
 
 -- Compiler
 
-typeOf :: SrcLoc -> SLVal -> (DLType, DLArg)
+typeOf :: SrcLoc -> SLVal -> (SLType, DLArg)
 typeOf at v =
   case v of
     SLV_Null _ -> (T_Null, DLA_Con $ DLC_Null)
@@ -561,7 +519,7 @@ typeOf at v =
             tenv = M.map fst cenv
             aenv = M.map snd cenv
     SLV_Clo _ _ _ _ _ -> none
-    SLV_DLVar dv@(DLVar _ _ _ t) -> (t, DLA_Var dv)
+    SLV_DLVar dv@(DLVar _ _ t _) -> (t, DLA_Var dv)
     SLV_Type _ -> none
     SLV_Participant _ _ _ -> none
     SLV_Prim _ -> none
@@ -587,7 +545,7 @@ typeChecks at ts vs =
     (_, (_:_)) ->
       expect_throw at $ Err_Type_TooManyArguments vs
 
-checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (DLType, [DLArg])
+checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArg])
 checkAndConvert at t args =
   case t of
     T_Fun dom rng -> (rng, typeChecks at dom args)
@@ -622,35 +580,52 @@ evalForm ctxt at _env f args k =
   case f of
     SLForm_Part_Only (SLV_Participant _ who _) ->
       case ctxt_mode ctxt of
-        SLC_Nested (SLC_Step sst) -> do
-          lst <- state_Step2Local sst
-          let ctxt_local = ctxt { ctxt_mode = SLC_Local lst }
+        SLC_Step penvs_ref _cenv_ref -> do
+          let get_penv = do
+                penvs <- readSTRef penvs_ref
+                return $ penvs M.! who
           let k' eargs =
                 case eargs of
                   [ thunk ] -> do
-                    lsts <- state_Local2LocalStep lst
-                    let ctxt_step = ctxt { ctxt_mode = SLC_LocalStep lsts }
-                    --- XXX Expect to get an update part env
-                    evalApplyVals ctxt_step at mt_env thunk [] k
+                    penv <- get_penv
+                    penv_ref <- newSTRef penv
+                    (lifter', _stmts_ref) <- ctxt_newLifter ctxt at
+                    let ctxt_localstep =
+                          (SLCtxt { ctxt_mode = SLC_LocalStep
+                                  , ctxt_decle = Just penv_ref
+                                  , ctxt_lifter = Just lifter'
+                                  , ctxt_stack = ctxt_stack ctxt })
+                    let k'' ans = do
+                          penv' <- readSTRef penv_ref
+                          modifySTRef penvs_ref (M.insert who penv')
+                          --- XXX look at stmts_ref and save em
+                          k ans
+                    evalApplyVals ctxt_localstep at mt_env thunk [] k''
                   _ -> illegal_args
+          penv <- get_penv
+          let ctxt_local =
+                (SLCtxt { ctxt_mode = SLC_Local
+                        , ctxt_decle = Nothing
+                        , ctxt_lifter = Nothing
+                        , ctxt_stack = ctxt_stack ctxt })
           evalExprs ctxt_local at penv args k'
-          where penv = (sst_penvs sst) M.! who
         _ -> expect_throw at $ Err_Eval_IllegalContext ctxt "part.only"
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
     SLForm_Part_ToConsensus pv mmode mpub mpay mtime ->
-      case ctxt_mode_noNest ctxt of
-        SLC_Step sst ->
+      case ctxt_mode ctxt of
+        SLC_Step penvs_ref _cenv_ref ->
           case mmode of
             Just TCM_Publish ->
               case mpub of
-                Nothing ->
-                  foldlk k' ensure_bound () msg 
-                  where msg = map (jse_expect_id at) args
-                        penv = sst_penvs sst M.! who
-                        k' () = k $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing (Just msg) mpay mtime
-                        ensure_bound () x k'' =
+                Nothing -> do
+                  penvs <- readSTRef penvs_ref
+                  let penv = penvs M.! who
+                  let ensure_bound () x k'' =
                           case env_lookup at x penv of
                             _ -> k'' ()
+                  foldlk k' ensure_bound () msg 
+                  where msg = map (jse_expect_id at) args
+                        k' () = k $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing (Just msg) mpay mtime
                 Just _ ->
                   expect_throw at $ Err_ToConsensus_Double TCM_Publish
             Just TCM_Pay ->
@@ -698,7 +673,7 @@ evalPrimOp ctxt at p args k =
     static v = k v
     make_var = do
       let (rng, dargs) = checkAndConvert at (primOpType p) args
-      dv <- ctxt_bind_prim ctxt at "prim" rng p dargs
+      dv <- ctxt_lift_expr ctxt at (DLVar at "prim" rng) (DLE_PrimOp at p dargs)
       k $ SLV_DLVar dv
 
 evalPrim :: SLCtxt s -> SrcLoc -> SLEnv -> SLPrimitive -> [SLVal] -> (SLVal -> ST s ans) -> ST s ans
@@ -727,7 +702,7 @@ evalPrim ctxt at env p args k =
         _ -> illegal_args
     SLPrim_DApp ->
       case ctxt_mode ctxt of
-        SLC_Nested (SLC_ModuleTop _) ->
+        SLC_Module ->
           case args of
             [ (SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _) ] ->
               k $ SLV_Prim $ SLPrim_DApp_Delay at args env
@@ -737,10 +712,10 @@ evalPrim ctxt at env p args k =
     SLPrim_DApp_Delay _ _ _ ->
       expect_throw at (Err_Eval_NotApplicable rator)
     SLPrim_interact _iat m t ->
-      case ctxt_mode_noNest ctxt of
-        SLC_LocalStep lsst -> do
+      case ctxt_mode ctxt of
+        SLC_LocalStep -> do
           let (rng, dargs) = checkAndConvert at t args
-          dv <- local_bind lsst at "interact" rng (DLLE_Interact at m dargs)
+          dv <- ctxt_lift_expr ctxt at (DLVar at "interact" rng) (DLE_Interact at m dargs)
           k $ SLV_DLVar dv
         _ ->
           expect_throw at (Err_Eval_IllegalContext ctxt "interact")
@@ -756,13 +731,13 @@ evalPrim ctxt at env p args k =
         _ -> illegal_args
     SLPrim_committed -> illegal_args
     SLPrim_assume ->
-      case ctxt_mode_noNest ctxt of
-        SLC_LocalStep lsst -> do
+      case ctxt_mode ctxt of
+        SLC_LocalStep -> do
           let darg =
                 case checkAndConvert at (T_Fun [T_Bool] T_Null) args of
                   (_, [x]) -> x
                   _ -> illegal_args
-          local_do lsst (DLLS_Assume at darg)
+          ctxt_lift_stmt ctxt at (DLS_Claim at (ctxt_stack ctxt) CT_Assume darg)
           k $ SLV_Null at
         _ -> illegal_args
   where illegal_args = expect_throw at (Err_Prim_InvalidArgs p args)
@@ -825,8 +800,11 @@ evalApplyVals ctxt at env rator randvs k =
     SLV_Prim p ->
       evalPrim ctxt at env p randvs k
     SLV_Clo clo_at mname formals body clo_env ->
-      evalBlock ctxt' clo_at env' body k
-      where env' = foldl' (flip (uncurry (env_insert clo_at))) clo_env kvs
+      foldlk k' (flip (uncurry f)) clo_env kvs
+      where f x v env_ k'' = do
+              ctxt_decl ctxt at x v
+              k'' $ env_insert clo_at x v env_
+            k' env' = evalBlock ctxt' clo_at env' body k
             kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
             ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
     v ->
@@ -848,7 +826,7 @@ kontIf _ctxt at f ta fa k cv =
   case cv of
     SLV_Bool _ cb -> f e k
       where e = if cb then ta else fa
-    SLV_DLVar (DLVar _ _ _ T_Bool) ->
+    SLV_DLVar (DLVar _ _ T_Bool _) ->
       expect_throw at $ Err_XXX "if on var"
     _ ->
       expect_throw at (Err_Eval_IfCondNotBool cv)
@@ -1001,7 +979,7 @@ evalDecl :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> (SLEnv -> ST s ans) -
 evalDecl ctxt at env decl k =
   case decl of
     JSVarInitExpression lhs (JSVarInit a rhs) ->
-      evalExpr (ctxt_nest ctxt) at' env rhs k'
+      evalExpr (ctxt_nodecle ctxt) at' env rhs k'
       where at' = srcloc_jsa "var initializer" a at
             k' v = bindDeclLHS ctxt at env lhs v k
     _ ->
@@ -1028,23 +1006,23 @@ evalFunctionStmt ctxt at env a name jsformals body sp k = do
               JSIdentName _ x -> x
 
 evalStmt :: SLCtxt s -> SrcLoc -> SLEnv -> [JSStatement] -> (SLEnv -> SLVal -> ST s ans) -> ST s ans
-evalStmt octxt at env ss k =
+evalStmt ctxt at env ss k =
   case ss of
     [] -> k env $ SLV_Null at
     ((JSStatementBlock a ss' _ sp):ks) ->
-      evalStmt nctxt at_in env ss' $
-      kontNull at_in (\_ -> evalStmt octxt at_after env ks k)
+      evalStmt ndctxt at_in env ss' $
+      kontNull at_in (\_ -> evalStmt ctxt at_after env ks k)
       where at_in = srcloc_jsa "block" a at
             at_after = srcloc_after_semi "block" a sp at
     (s@(JSBreak a _ _):_) -> illegal a s "break"
     (s@(JSLet a _ _):_) -> illegal a s "let"
     (s@(JSClass a _ _ _ _ _ _):_) -> illegal a s "class"
     ((JSConstant a decls sp):ks) ->
-      evalDecls octxt at_in env decls k'
+      evalDecls ctxt at_in env decls k'
       where at_after = srcloc_after_semi lab a sp at
             at_in = srcloc_jsa lab a at
             lab = "const"
-            k' env' = evalStmt octxt at_after env' ks k
+            k' env' = evalStmt ctxt at_after env' ks k
     ((JSContinue a _ _):_) ->
       expect_throw (srcloc_jsa "continue" a at) (Err_Block_Continue)
     (s@(JSDoWhile a _ _ _ _ _ _):_) -> illegal a s "do while"
@@ -1062,45 +1040,59 @@ evalStmt octxt at env ss k =
     (s@(JSForVarOf a _ _ _ _ _ _ _):_) -> illegal a s "for var of"
     (s@(JSAsyncFunction a _ _ _ _ _ _ _):_) -> illegal a s "async function"
     ((JSFunction a name _ jsformals _ body sp):ks) ->
-      evalFunctionStmt octxt at env a name jsformals body sp k'
-      where k' (at_after, env') = evalStmt octxt at_after env' ks k
+      evalFunctionStmt ctxt at env a name jsformals body sp k'
+      where k' (at_after, env') = evalStmt ctxt at_after env' ks k
     (s@(JSGenerator a _ _ _ _ _ _ _):_) -> illegal a s "generator"
     ((JSIf a la ce ra ts):ks) ->
-      evalStmt octxt at env ((JSIfElse a la ce ra ts ea fs):ks) k
+      evalStmt ctxt at env ((JSIfElse a la ce ra ts ea fs):ks) k
       where ea = ra
             fs = (JSEmptyStatement ea)
     ((JSIfElse a _ ce _ ts _ fs):ks) ->
-      evalExpr nctxt at' env ce k'
-      where k' = kontIf nctxt at' (\s k'' -> evalStmt octxt at' env ((JSStatementBlock a [s] a (JSSemi a)):ks) (curry k'')) ts fs (uncurry k)
+      evalExpr ndctxt at' env ce k'
+      --- XXX Fix
+      where k' = kontIf ndctxt at' (\s k'' -> evalStmt ndctxt at' env ((JSStatementBlock a [s] a (JSSemi a)):ks) (curry k'')) ts fs (uncurry k)
             at' = srcloc_jsa "if" a at
     (s@(JSLabelled _ a _):_) -> illegal a s "labelled"
     ((JSEmptyStatement a):ks) ->
-      evalStmt octxt at' env ks k
+      evalStmt ctxt at' env ks k
       where at' = srcloc_jsa "empty" a at
     ((JSExpressionStatement e sp):ks) ->
-      evalExpr nctxt at env e k'
+      evalExpr ndctxt at env e k'
       where at_after =
               srcloc_after_semi "expr stmt" JSNoAnnot sp at
             k' ev =
-              case ctxt_mode octxt of
-                SLC_Step sst ->
+              case ctxt_mode ctxt of
+                SLC_Step penvs_ref cenv_ref ->
                   case ev of
                     SLV_Form (SLForm_Part_ToConsensus _who Nothing _mmsg _mamt _mtime) -> do
-                      cst <- state_Step2ConsensusStep sst
-                      let cctxt = octxt { ctxt_mode = SLC_ConsensusStep cst }
-                      evalStmt cctxt at_after env ks k
+                      cenv <- readSTRef cenv_ref
+                      --- XXX update cenv w/ msg
+                      (lifter', _stmts_ref) <- ctxt_newLifter ctxt at
+                      let ctxt_cstep =
+                            (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, cenv_ref, ctxt_lifter ctxt)
+                                    , ctxt_decle = Just cenv_ref
+                                    , ctxt_lifter = Just lifter'
+                                    , ctxt_stack = ctxt_stack ctxt })
+                      let k_cstep ans = do
+                            --- XXX look at stmts_ref
+                            k ans
+                      evalStmt ctxt_cstep at_after cenv ks k_cstep
                     _ -> should_be_null --- XXX or above
-                SLC_ConsensusStep csst ->
+                SLC_ConsensusStep (penvs_ref, cenv_ref, orig_lifter) ->
                   case ev of
                     SLV_Prim SLPrim_committed -> do
-                      sst <- state_ConsensusStep2Step csst
-                      let sctxt = octxt { ctxt_mode = SLC_Step sst }
-                      evalStmt sctxt at_after env ks k
+                      --- XXX do something with old lifter?
+                      cenv <- readSTRef cenv_ref
+                      let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs_ref cenv_ref
+                                              , ctxt_decle = Just cenv_ref
+                                              , ctxt_lifter = orig_lifter
+                                              , ctxt_stack = ctxt_stack ctxt })
+                      evalStmt ctxt_step at_after cenv ks k
                     _ -> should_be_null --- XXX or above
                 _ -> should_be_null
               where should_be_null =
                       kontNull at
-                      (\() -> evalStmt octxt at_after env ks k)
+                      (\() -> evalStmt ctxt at_after env ks k)
                       () ev
     ((JSAssignStatement _lhs op _rhs _asp):ks) ->
       case (op, ks) of
@@ -1112,7 +1104,7 @@ evalStmt octxt at env ss k =
         _ ->
           expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign)
     ((JSMethodCall e a args ra sp):ks) ->
-      evalStmt octxt at env ss' k
+      evalStmt ctxt at env ss' k
       where ss' = (JSExpressionStatement e' sp):ks
             e' = (JSCallExpression e a args ra)
     ((JSReturn a me sp):ks) ->
@@ -1122,7 +1114,7 @@ evalStmt octxt at env ss k =
             retk = expect_throw at' (Err_XXX "retk")
             res = case me of
                     Nothing -> retk $ SLV_Null at'
-                    Just e -> evalExpr nctxt at' env e retk
+                    Just e -> evalExpr ndctxt at' env e retk
     (s@(JSSwitch a _ _ _ _ _ _ _):_) -> illegal a s "switch"
     (s@(JSThrow a _ _):_) -> illegal a s "throw"
     (s@(JSTry a _ _ _):_) -> illegal a s "try"
@@ -1137,7 +1129,7 @@ evalStmt octxt at env ss k =
     ((JSWhile a _ _ _ _):_) ->
       expect_throw (srcloc_jsa "while" a at) (Err_Block_While)
     (s@(JSWith a _ _ _ _ _):_) -> illegal a s "with"
-  where nctxt = ctxt_nest octxt
+  where ndctxt = ctxt_nodecle ctxt
         illegal a s lab =
           expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
 
@@ -1160,128 +1152,74 @@ evalBlock ctxt at env (JSBlock a ss _) k =
   evalStmt ctxt at' env ss (\_ v -> k v)
   where at' = srcloc_jsa "block" a at
 
-type SLKont = SLVal -> SLVal
+data SLLifter s = SLLifter
+  { lift_id :: STRef s Int
+  , lift_stmts :: STRef s (Seq.Seq DLStmt) }
+  deriving (Eq)
+
+ctxt_newLifter :: SLCtxt s -> SrcLoc -> ST s ((SLLifter s), STRef s (Seq.Seq DLStmt))
+ctxt_newLifter ctxt at = do
+  let l = ctxt_lift ctxt at
+  newr <- newSTRef mempty
+  let l' = (SLLifter { lift_id = lift_id l
+                     , lift_stmts = newr })
+  return (l', newr)
 
 data SLCtxt s = SLCtxt
-  { ctxt_mode :: (SLCtxtMode s)
+  { ctxt_mode :: SLCtxtMode s
+  , ctxt_decle :: Maybe (STRef s SLEnv)
+  , ctxt_lifter :: Maybe (SLLifter s)
   , ctxt_stack :: [ SLCtxtFrame ] }
   deriving (Eq)
 
 instance Show (SLCtxt s) where
   show ctxt = show $ ctxt_mode ctxt
 
-data SLStepState s = SLStepState
-  { sst_idx :: STRef s Int
-  , sst_penvs :: (M.Map SLPart SLEnv) }
-  deriving (Eq)
-
-instance Show (SLStepState s) where
-  show _ = "<ctxt step>"
-
-data SLLocalState s = SLLocalState
-  { lst_sst :: SLStepState s }
-  deriving (Eq)
-
-data SLLocalStepState s = SLLocalStepState
-  { lsst_lst :: SLLocalState s
-  , lsst_stmts :: STRef s DLLocalStep }
-  deriving (Eq)
-
-lsst_sst :: SLLocalStepState s -> SLStepState s
-lsst_sst lsst = lst_sst $ lsst_lst lsst
-
-data SLConsensusStepState s = SLConsensusStepState
-  { csst_sst :: SLStepState s
-  , csst_stmts :: STRef s DLConsensusStep }
-  deriving (Eq)
-
-instance Show (SLLocalStepState s) where
-  show _ = "<local steps>"
+ctxt_nodecle :: SLCtxt s -> SLCtxt s
+ctxt_nodecle ctxt = ctxt { ctxt_decle = Nothing }
 
 data SLCtxtMode s
-  = SLC_ModuleTop (STRef s SLEnv)
-  | SLC_Step (SLStepState s)
-  | SLC_Local (SLLocalState s)
-  | SLC_LocalStep (SLLocalStepState s)
-  | SLC_ConsensusStep (SLConsensusStepState s)
-  | SLC_Nested (SLCtxtMode s)
+  = SLC_Module
+  | SLC_Step (STRef s (M.Map SLPart SLEnv)) (STRef s SLEnv)
+  | SLC_Local
+  | SLC_LocalStep
+  | SLC_ConsensusStep ((STRef s (M.Map SLPart SLEnv)), (STRef s SLEnv), Maybe (SLLifter s))
   deriving (Eq)
 
 instance Show (SLCtxtMode s) where
-  show (SLC_ModuleTop _) = "<module top-level>"
-  show (SLC_Step _) = "<DApp step>"
-  show (SLC_Local _) = "<DApp local>"
-  show (SLC_LocalStep _) = "<DApp local step>"
-  show (SLC_ConsensusStep _) = "<DApp consensus step>"
-  show (SLC_Nested m) = "<nested ctxt " ++ show m ++ ">"
+  show (SLC_Module) = "SLC_Module"
+  show (SLC_Step _ _) = "SLC_Step"
+  show (SLC_Local) = "SLC_Local"
+  show (SLC_LocalStep) = "SLC_LocalStep"
+  show (SLC_ConsensusStep _) = "SLC_ConsensusStep"
 
-allocVarId :: SLStepState s -> ST s Int
-allocVarId sst = do
-  let idr = sst_idx sst
-  idx <- readSTRef idr
-  writeSTRef idr $ idx + 1
-  return idx
+ctxt_lift :: SLCtxt s -> SrcLoc -> SLLifter s
+ctxt_lift ctxt at =
+  case ctxt_lifter ctxt of
+    Nothing -> expect_throw at $ Err_Eval_IllegalLift ctxt
+    Just l -> l
 
-ctxt_do :: STRef s (Seq.Seq a) -> a -> ST s ()
-ctxt_do ssr s = modifySTRef ssr (\ss -> ss Seq.|> s)
-  
-ctxt_bind :: SLStepState s -> STRef s (Seq.Seq a) -> SrcLoc -> String -> DLType -> (DLVar -> a) -> ST s DLVar
-ctxt_bind sst ssr at v t dv_to_s = do
-  idx <- allocVarId sst
-  let dv = DLVar at v idx t
-  ctxt_do ssr $ dv_to_s dv
+ctxt_lift_stmt :: SLCtxt s -> SrcLoc -> DLStmt -> ST s ()
+ctxt_lift_stmt ctxt at s =
+  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.|> s)
+
+ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s DLVar
+ctxt_lift_expr ctxt at mk_var e = do
+  let idr = lift_id $ ctxt_lift ctxt at
+  x <- readSTRef idr
+  writeSTRef idr $ x + 1
+  let dv = mk_var x
+  let s = DLS_Let at dv e
+  ctxt_lift_stmt ctxt at s
   return dv
 
-ctxt_bind_prim :: SLCtxt s -> SrcLoc -> String -> DLType -> PrimOp -> [DLArg] -> ST s DLVar
-ctxt_bind_prim ctxt at v t op dargs = do
-  case ctxt_mode_noNest ctxt of
-    SLC_LocalStep lsst ->
-      ctxt_bind (lsst_sst lsst) (lsst_stmts lsst) at v t (\dv -> DLLS_Let at dv $ DLLE_PrimOp at op dargs)
-    SLC_ConsensusStep csst ->
-      case op of
-        CP cop ->
-          ctxt_bind (csst_sst csst) (csst_stmts csst) at v t (\dv -> DLCS_Let at dv $ DLCE_PrimOp at cop dargs)
-        _ -> illegal
-    _ -> illegal
-  where illegal = expect_throw at $ Err_Eval_IllegalContext ctxt "bind primitive"
-
-local_bind :: SLLocalStepState s -> SrcLoc -> String -> DLType -> DLLocalExpr -> ST s DLVar
-local_bind lsst at v t e =
-  ctxt_bind (lsst_sst lsst) (lsst_stmts lsst) at v t (\dv -> DLLS_Let at dv e)
-
-local_do :: SLLocalStepState s -> DLLocalStmt -> ST s ()
-local_do lsst s =
-  ctxt_do (lsst_stmts lsst) s
-
-state_Step2Local :: (SLStepState s) -> ST s (SLLocalState s)
-state_Step2Local sst = return $ SLLocalState { lst_sst = sst }
-
-state_Local2LocalStep :: (SLLocalState s) -> ST s (SLLocalStepState s)
-state_Local2LocalStep lst = do
-  stmts_ref <- newSTRef mempty
-  return $ SLLocalStepState
-    { lsst_lst = lst
-    , lsst_stmts = stmts_ref }
-
-state_Step2ConsensusStep :: (SLStepState s) -> ST s (SLConsensusStepState s)
-state_Step2ConsensusStep sst = do
-  stmts_ref <- newSTRef mempty
-  return $ SLConsensusStepState
-    { csst_sst = sst
-    , csst_stmts = stmts_ref }
-
-state_ConsensusStep2Step :: (SLConsensusStepState s) -> ST s (SLStepState s)
-state_ConsensusStep2Step csst = do
-  return $ csst_sst csst
-  
 ctxt_declf :: SLCtxt s -> (SLEnv -> SLEnv) -> ST s ()
 ctxt_declf ctxt f =
-  case ctxt_mode ctxt of
-    SLC_ModuleTop exenvr -> do
+  case ctxt_decle ctxt of
+    Nothing -> return ()
+    Just exenvr -> do
       exenv <- readSTRef exenvr
       writeSTRef exenvr $ f exenv
-    --- XXX Do this for local steps
-    _ -> return ()
 
 ctxt_decl :: SLCtxt s -> SrcLoc -> SLVar -> SLVal -> ST s ()
 ctxt_decl ctxt at x v =
@@ -1295,28 +1233,10 @@ ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
 ctxt_stack_push ctxt f =
   (ctxt { ctxt_stack = f : (ctxt_stack ctxt) })
 
-ctxt_nest :: SLCtxt s -> SLCtxt s
-ctxt_nest ctxt =
-  (ctxt { ctxt_mode = m' })
-  where m = ctxt_mode ctxt
-        m' = case m of
-               SLC_Nested _ -> m
-               _ -> SLC_Nested m
-
-ctxt_mode_noNest :: SLCtxt s -> SLCtxtMode s
-ctxt_mode_noNest ctxt =
-  case ctxt_mode ctxt of
-    SLC_Nested m -> m
-    m -> m
-
 ctxt_export :: Bool -> SLCtxt s -> SLCtxt s
 ctxt_export isExport ctxt =
   if isExport then ctxt
-  else ctxt_nest ctxt
-
-ctxt_init :: SLCtxtMode s -> SLCtxt s
-ctxt_init m = (SLCtxt { ctxt_mode = m
-                      , ctxt_stack = [] })
+  else (ctxt { ctxt_decle = Nothing })
 
 evalTopBody :: SLCtxt s -> SrcLoc -> SLLibs -> SLEnv -> [JSModuleItem] -> (() -> ST s ans) -> ST s ans
 evalTopBody ctxt at libm env body k =
@@ -1358,7 +1278,12 @@ type SLLibs = (M.Map ReachSource SLEnv)
 evalLib :: SLMod -> SLLibs -> (SLLibs -> ST s ans) -> ST s ans
 evalLib (src, body) libm k = do
   exenvr <- newSTRef $ mt_env
-  evalTopBody (ctxt_init $ SLC_ModuleTop exenvr) prev_at libm stdlib_env body'
+  let ctxt_top =
+        (SLCtxt { ctxt_mode = SLC_Module
+                , ctxt_decle = Just exenvr
+                , ctxt_lifter = Nothing
+                , ctxt_stack = [] })
+  evalTopBody ctxt_top prev_at libm stdlib_env body'
     (\() -> (do exenv <- readSTRef exenvr
                 k $ M.insert src exenv libm))
   where stdlib_env =
@@ -1381,16 +1306,25 @@ makeInteract at spec = SLV_Object at spec'
         wrap_ty k (SLV_Type t) = SLV_Prim $ SLPrim_interact at k t
         wrap_ty _ v = expect_throw at $ Err_DApp_InvalidInteract v
 
-compileDApp :: SLVal -> ST s NLProgram
+type XXX = Int
+
+compileDApp :: SLVal -> ST s XXX
 compileDApp topv =
   case topv of
     SLV_Prim (SLPrim_DApp_Delay at [ (SLV_Object _ _opts), (SLV_Array _ parts), clo ] top_env) -> do
       --- xxx look at opts
       idxr <- newSTRef $ 0
-      let sst = SLStepState { sst_idx = idxr
-                            , sst_penvs = penvs }
-      let ctxt = ctxt_init $ SLC_Step sst
-      evalApplyVals ctxt at' mt_env clo partvs k
+      top_stmts <- newSTRef $ mempty
+      penvs_ref <- newSTRef $ penvs
+      cenv_ref <- newSTRef $ top_env
+      let ctxt_step =
+            (SLCtxt { ctxt_mode = SLC_Step penvs_ref cenv_ref
+                    , ctxt_decle = Just cenv_ref
+                    , ctxt_lifter =
+                      Just (SLLifter { lift_id = idxr
+                                     , lift_stmts = top_stmts })
+                    , ctxt_stack = [] })
+      evalApplyVals ctxt_step at' mt_env clo partvs k
       where k v = expect_throw at' (Err_XXX $ "compileDApp after: " ++ show v)
             at' = srcloc_at "compileDApp" Nothing at
             penvs = M.fromList $ map make_penv partvs
@@ -1405,7 +1339,7 @@ compileDApp topv =
     _ ->
       expect_throw srcloc_top (Err_Top_NotDApp topv)
 
-compileBundle :: JSBundle -> SLVar -> NLProgram
+compileBundle :: JSBundle -> SLVar -> XXX
 compileBundle (JSBundle mods) top =
   runST $ evalLibs mods k
   where exe = case mods of
