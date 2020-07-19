@@ -1,4 +1,3 @@
-{-# LANGUAGE NoStrictData #-}
 module Reach.Compiler where
 
 import Control.Monad.State.Lazy
@@ -171,7 +170,7 @@ data InlineV a
   | IV_Prim a EP_Prim
   | IV_Var a XILVar
   | IV_XIL Effects [LType] (XILExpr a)
-  | IV_Clo (a, [XLVar], (XLExpr a)) (ILEnv a)
+  | IV_Clo (a, [XLVar], (XLExpr a)) ~(ILEnv a)
   | IV_CloBody a Effects ((XILExpr a) -> (XILExpr a)) (InlineV a)
   deriving ()
 
