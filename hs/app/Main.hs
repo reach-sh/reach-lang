@@ -1,4 +1,3 @@
-{-# LANGUAGE NoStrictData #-}
 module Main where
 
 import Data.Char

@@ -1,4 +1,3 @@
-{-# LANGUAGE NoStrictData #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Main where
 

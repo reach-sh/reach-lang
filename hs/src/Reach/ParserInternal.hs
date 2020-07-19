@@ -1,4 +1,3 @@
-{-# LANGUAGE NoStrictData #-}
 module Reach.ParserInternal where
 
 import System.Directory
