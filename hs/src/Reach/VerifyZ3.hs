@@ -160,7 +160,7 @@ instance Show Z3Define where
 
 parse_list_val :: [SExpr] -> IO String
 parse_list_val [Atom "bytes-literal", Atom s2] = return s2
-parse_list_val sexprs@[Atom "ite", s2, s3, s4] = return $ show sexprs -- XXX prettier display?
+parse_list_val sexprs@[Atom "ite", _, _, _] = return $ show sexprs -- XXX prettier display?
 parse_list_val sexprs = fail $ "Don't know how to parse as value: " <> show sexprs
 
 parse_define :: SExpr -> IO Z3Define
