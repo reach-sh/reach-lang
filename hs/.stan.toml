@@ -6,12 +6,6 @@ type = "Exclude"
 id = "STAN-0302"
 scope = "all"
 
-# Anti-pattern: unsafe functions
-[[check]]
-type = "Exclude"
-id = "STAN-0212"
-scope = "all"
-
 # Anti-pattern: Pattern matching on '_'
 [[check]]
 type = "Exclude"
@@ -28,4 +22,11 @@ scope = "all"
 [[check]]
 type = "Exclude"
 id = "STAN-0101"
+scope = "all"
+
+# Stan thinks $(embedFile) is bad because it splices in unsafePerformIO
+# Anti-pattern: unsafe functions
+[[check]]
+type = "Exclude"
+id = "STAN-0212"
 scope = "all"
