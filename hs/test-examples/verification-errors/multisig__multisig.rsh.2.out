@@ -26,6 +26,8 @@ Failed the sufficient balance property:
  balance to go negative. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (0,("Child",LT_BT BT_Address))
 ...checking VC_Top
@@ -46,6 +48,8 @@ Failed the sufficient balance property:
  balance to go negative. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Checked 42 theorems; 2 failures. :'(
 

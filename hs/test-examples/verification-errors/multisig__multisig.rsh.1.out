@@ -15,6 +15,8 @@ Failed a while loop invariant check:
  to be false. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (0,("Child",LT_BT BT_Address))
 ...checking VC_Top
 ...checking VC_WhileBody_AssumeNotUntil [(8,
@@ -31,6 +33,8 @@ Failed a while loop invariant check:
  to be false. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (1,("Parent",LT_BT BT_Address))
 ...checking VC_Top
 ...checking VC_WhileBody_AssumeNotUntil [(8,
@@ -47,6 +51,8 @@ Failed a while loop invariant check:
  to be false. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top
 ...checking VC_WhileBody_AssumeNotUntil [(8,
@@ -63,6 +69,8 @@ Failed a while loop invariant check:
  to be false. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RolePart (0,("Child",LT_BT BT_Address))
 ...checking VC_Top
 ...checking VC_WhileBody_AssumeNotUntil [(8,
@@ -79,6 +87,8 @@ Failed a while loop invariant check:
  to be false. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RolePart (1,("Parent",LT_BT BT_Address))
 ...checking VC_Top
 ...checking VC_WhileBody_AssumeNotUntil [(8,
@@ -95,6 +105,8 @@ Failed a while loop invariant check:
  to be false. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Checked 45 theorems; 6 failures. :'(
 
 </out>

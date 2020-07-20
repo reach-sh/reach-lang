@@ -54,6 +54,12 @@ dropDefines = filter (\line -> not $ "(define" `T.isInfixOf` line)
 dropHypotheticalInteracts :: [T.Text] -> [T.Text]
 dropHypotheticalInteracts = filter (\line -> not $ "... interact" `T.isPrefixOf` line)
 
+dropMoreInfo :: [T.Text] -> [T.Text]
+dropMoreInfo = filter (\line -> not $ "... v" `T.isPrefixOf` line)
+
+dropExcess :: [T.Text] -> [T.Text]
+dropExcess = dropDefines . dropHypotheticalInteracts . dropMoreInfo
+
 test_compile :: FilePath -> IO ()
 test_compile n = do
   opts <- makeCompilerOpts $ CompilerToolOpts
@@ -97,7 +103,7 @@ test_compile_vererr pf = do
   outT <- TIO.hGetContents hout
   err <- LB.hGetContents herr
   -- strip out the defines
-  let outT' = T.unlines $ dropHypotheticalInteracts $ dropDefines $ T.lines outT
+  let outT' = T.unlines $ dropExcess $ T.lines outT
   let out = LB.fromStrict $ TE.encodeUtf8 outT'
   -- putStrLn $ "...finished: " ++ show (LB.length out)
   _ <- waitForProcess hP

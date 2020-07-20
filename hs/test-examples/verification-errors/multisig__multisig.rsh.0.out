@@ -14,6 +14,8 @@ Failed a requirement:
  This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (0,("Child",LT_BT BT_Address))
 ...checking VC_Top
@@ -30,6 +32,8 @@ Failed a requirement:
  This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (1,("Parent",LT_BT BT_Address))
 ...checking VC_Top
@@ -46,6 +50,8 @@ Failed a requirement:
  This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top

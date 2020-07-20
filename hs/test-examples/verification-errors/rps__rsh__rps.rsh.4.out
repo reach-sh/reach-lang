@@ -13,6 +13,8 @@ Failed the token linearity property:
  final balance to be nonzero. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (0,("A",LT_BT BT_Address))
 ...checking VC_Top
 Verification failed:
@@ -27,6 +29,8 @@ Failed the token linearity property:
  final balance to be nonzero. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (1,("B",LT_BT BT_Address))
 ...checking VC_Top
 Verification failed:
@@ -41,6 +45,8 @@ Failed the token linearity property:
  final balance to be nonzero. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (2,("O",LT_BT BT_Address))
 ...checking VC_Top
 Verification failed:
@@ -55,6 +61,8 @@ Failed the token linearity property:
  final balance to be nonzero. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top
 Verification failed:
@@ -69,6 +77,8 @@ Failed the token linearity property:
  final balance to be nonzero. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RolePart (0,("A",LT_BT BT_Address))
 ...checking VC_Top
 Verification failed:
@@ -83,6 +93,8 @@ Failed the token linearity property:
  final balance to be nonzero. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RolePart (1,("B",LT_BT BT_Address))
 ...checking VC_Top
 Verification failed:
@@ -97,6 +109,8 @@ Failed the token linearity property:
  final balance to be nonzero. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RolePart (2,("O",LT_BT BT_Address))
 ...checking VC_Top
 Verification failed:
@@ -111,6 +125,8 @@ Failed the token linearity property:
  final balance to be nonzero. This program is invalid.
 This could happen if...
 ====================================================
+More info...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Checked 242 theorems; 8 failures. :'(
 
 </out>
