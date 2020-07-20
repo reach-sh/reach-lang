@@ -1,27 +1,23 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reach.CompilerNL where
 
+import Control.Monad.ST
+import Data.Bits
+import Data.FileEmbed
 import Data.IORef
+import Data.List
+import Data.Monoid
 import Data.STRef
-import System.Directory
-import System.FilePath
+import GHC.IO.Encoding
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import System.Directory
+import System.FilePath
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import qualified Data.ByteString.Char8 as B
+import qualified Data.Graph as G
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
---import qualified Data.Set as S
-import qualified Data.Graph as G
-import Control.Monad.ST
-import Data.FileEmbed
-import GHC.IO.Encoding
-import Data.Bits
---import Data.Data
---import Test.SmallCheck.Series
---import GHC.Generics
---import qualified Data.ByteString as BS
-import Data.List
 
 import Reach.Util
 import Reach.Compiler(CompilerOpts, output, source)
@@ -296,6 +292,12 @@ data DLExpr
   | DLE_Interact SrcLoc String [DLArg]
   deriving (Eq,Show)
 
+expr_pure :: DLExpr -> Bool
+expr_pure e =
+  case e of
+    DLE_PrimOp _ _ _ -> True
+    DLE_Interact _ _ _ -> False
+
 data ClaimType
   = CT_Assert   --- Verified on all paths
   | CT_Assume   --- Always assumed true
@@ -315,6 +317,17 @@ data DLStmt
   | DLS_Only SrcLoc SLPart (Seq.Seq DLStmt)
   | DLS_All SrcLoc DLStmt
   deriving (Eq,Show)
+
+stmt_pure :: DLStmt -> Bool
+stmt_pure s =
+  case s of
+    DLS_Let _ _ e -> expr_pure e
+    DLS_Claim _ _ _ _ -> False
+    DLS_Only _ _ ss -> stmts_pure ss
+    DLS_All _ as -> stmt_pure as
+
+stmts_pure :: Foldable f => f DLStmt -> Bool
+stmts_pure fs = getAll $ foldMap (All . stmt_pure) fs
 
 -- General compiler utilities
 tp :: JSAnnot -> Maybe TokenPosn
@@ -820,16 +833,41 @@ evalApply ctxt at env rator rands k =
       expect_throw at (Err_Eval_NotApplicable v)
   where vals = evalExprs ctxt at env rands k'
         k' randvs = evalApplyVals ctxt at env rator randvs k
-  
-kontIf :: SLCtxt s -> SrcLoc -> (a -> (b -> ST s ans) -> ST s ans) -> a -> a -> (b -> ST s ans) -> SLVal -> ST s ans
-kontIf _ctxt at f ta fa k cv =
+
+kontIf :: SLCtxt s -> SrcLoc -> (SLVal -> ST s ans) -> SLVal -> ((Seq.Seq DLStmt), SLVal) -> ((Seq.Seq DLStmt), SLVal) -> ST s ans
+kontIf ctxt at k cv (t_lifts, tv) (f_lifts, fv) =
   case cv of
-    SLV_Bool _ cb -> f e k
-      where e = if cb then ta else fa
+    SLV_Bool _ cb -> do
+      ctxt_lift_stmts ctxt at e_lifts
+      k $ ev
+      where (e_lifts, ev) = if cb then (t_lifts, tv) else (f_lifts, fv)
     SLV_DLVar (DLVar _ _ T_Bool _) ->
-      expect_throw at $ Err_XXX "if on var"
+      if stmts_pure t_lifts && stmts_pure f_lifts then
+        do ctxt_lift_stmts ctxt at t_lifts
+           ctxt_lift_stmts ctxt at f_lifts
+           evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [ tv, fv ] k
+      else
+        expect_throw at $ Err_XXX "impure lift on var"
     _ ->
       expect_throw at (Err_Eval_IfCondNotBool cv)
+
+evalIf :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> a -> a -> (SLCtxt s -> SrcLoc -> SLEnv -> a -> (SLVal -> ST s ans) -> ST s ans) -> (SLVal -> ST s ans) -> ST s ans
+evalIf ctxt at env ce tX fX evalX k =
+  evalExpr ctxt at env ce k_c
+  where k_c cv = evalInside tX (k_t cv)
+        k_t cv ta = evalInside fX (kontIf ctxt at k cv ta)
+        evalInside x k_s = do
+          (l', stmts_ref) <- ctxt_newLifter ctxt at
+          let fresh_ctxt =
+                (SLCtxt
+                 { ctxt_mode = ctxt_mode ctxt
+                 , ctxt_decle = Nothing
+                 , ctxt_lifter = Just l'
+                 , ctxt_stack = ctxt_stack ctxt })
+          let k' xv = do
+                x_lifts <- readSTRef stmts_ref
+                k_s (x_lifts, xv)
+          evalX fresh_ctxt at env x k'
 
 evalPropertyName :: SLCtxt s -> SrcLoc -> SLEnv -> JSPropertyName -> (String -> ST s ans) -> ST s ans
 evalPropertyName ctxt at env pn k =
@@ -905,9 +943,8 @@ evalExpr ctxt at env e k =
     JSExpressionParen a ie _ -> evalExpr ctxt (srcloc_jsa "paren" a at) env ie k
     JSExpressionPostfix _ _ -> illegal
     JSExpressionTernary c a t _ f ->
-      evalExpr ctxt at' env c k'
-      where k' = kontIf ctxt at' (evalExpr ctxt at' env) t f k
-            at' = srcloc_jsa "ternary" a at
+      evalIf ctxt at' env c t f evalExpr k
+      where at' = srcloc_jsa "ternary" a at
     JSArrowExpression aformals a bodys ->
       k $ SLV_Clo at' fname formals body env
       where at' = srcloc_jsa "arrow" a at
@@ -1048,10 +1085,9 @@ evalStmt ctxt at env ss k =
       where ea = ra
             fs = (JSEmptyStatement ea)
     ((JSIfElse a _ ce _ ts _ fs):ks) ->
-      evalExpr ndctxt at' env ce k'
-      --- XXX Fix
-      where k' = kontIf ndctxt at' (\s k'' -> evalStmt ndctxt at' env ((JSStatementBlock a [s] a (JSSemi a)):ks) (curry k'')) ts fs (uncurry k)
-            at' = srcloc_jsa "if" a at
+      evalIf ndctxt at' env ce [ts] [fs] (\ctxt_ at_ env_ ss_ k_ -> evalStmt ctxt_ at_ env_ ss_ (\_ v_ -> k_ v_))
+      (kontNull at' (\() -> evalStmt ctxt at env ks k) ())
+      where at' = srcloc_jsa "if" a at
     (s@(JSLabelled _ a _):_) -> illegal a s "labelled"
     ((JSEmptyStatement a):ks) ->
       evalStmt ctxt at' env ks k
@@ -1073,10 +1109,7 @@ evalStmt ctxt at env ss k =
                                     , ctxt_decle = Just cenv_ref
                                     , ctxt_lifter = Just lifter'
                                     , ctxt_stack = ctxt_stack ctxt })
-                      let k_cstep ans = do
-                            --- XXX look at stmts_ref
-                            k ans
-                      evalStmt ctxt_cstep at_after cenv ks k_cstep
+                      evalStmt ctxt_cstep at_after cenv ks k
                     _ -> should_be_null --- XXX or above
                 SLC_ConsensusStep (penvs_ref, cenv_ref, orig_lifter) ->
                   case ev of
@@ -1200,8 +1233,12 @@ ctxt_lift ctxt at =
     Just l -> l
 
 ctxt_lift_stmt :: SLCtxt s -> SrcLoc -> DLStmt -> ST s ()
-ctxt_lift_stmt ctxt at s =
-  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.|> s)
+ctxt_lift_stmt ctxt at s' =
+  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.|> s')
+
+ctxt_lift_stmts :: SLCtxt s -> SrcLoc -> Seq.Seq DLStmt -> ST s ()
+ctxt_lift_stmts ctxt at ss' =
+  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.>< ss')
 
 ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s DLVar
 ctxt_lift_expr ctxt at mk_var e = do
