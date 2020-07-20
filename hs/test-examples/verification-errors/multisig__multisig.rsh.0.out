@@ -8,7 +8,12 @@ Verification failed:
 	of theorem TRequire
 	from ../examples/multisig/multisig.rsh.0.patch:43:12
 	specifically: v20:
-(model
+====================================================
+Failed a requirement:
+ This program would allow a call to require() to fail.
+ This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (0,("Child",LT_BT BT_Address))
 ...checking VC_Top
@@ -19,7 +24,12 @@ Verification failed:
 	of theorem TRequire
 	from ../examples/multisig/multisig.rsh.0.patch:43:12
 	specifically: v20:
-(model
+====================================================
+Failed a requirement:
+ This program would allow a call to require() to fail.
+ This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (1,("Parent",LT_BT BT_Address))
 ...checking VC_Top
@@ -30,7 +40,12 @@ Verification failed:
 	of theorem TRequire
 	from ../examples/multisig/multisig.rsh.0.patch:43:12
 	specifically: v20:
-(model
+====================================================
+Failed a requirement:
+ This program would allow a call to require() to fail.
+ This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top

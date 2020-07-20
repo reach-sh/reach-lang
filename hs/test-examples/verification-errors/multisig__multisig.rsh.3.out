@@ -8,7 +8,12 @@ Verification failed:
 	of theorem TInvariant
 	from ../examples/multisig/multisig.rsh.3.patch:35:23
 	specifically: v15p:
-(model
+====================================================
+Failed a while loop invariant check:
+ This program would allow an invariant()
+ to be false. This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (0,("Child",LT_BT BT_Address))
 ...checking VC_Top
@@ -19,7 +24,12 @@ Verification failed:
 	of theorem TInvariant
 	from ../examples/multisig/multisig.rsh.3.patch:35:23
 	specifically: v15p:
-(model
+====================================================
+Failed a while loop invariant check:
+ This program would allow an invariant()
+ to be false. This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (1,("Parent",LT_BT BT_Address))
 ...checking VC_Top
@@ -30,7 +40,12 @@ Verification failed:
 	of theorem TInvariant
 	from ../examples/multisig/multisig.rsh.3.patch:35:23
 	specifically: v15p:
-(model
+====================================================
+Failed a while loop invariant check:
+ This program would allow an invariant()
+ to be false. This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top
@@ -41,7 +56,12 @@ Verification failed:
 	of theorem TInvariant
 	from ../examples/multisig/multisig.rsh.3.patch:35:23
 	specifically: v15p:
-(model
+====================================================
+Failed a while loop invariant check:
+ This program would allow an invariant()
+ to be false. This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (0,("Child",LT_BT BT_Address))
 ...checking VC_Top
@@ -52,7 +72,12 @@ Verification failed:
 	of theorem TInvariant
 	from ../examples/multisig/multisig.rsh.3.patch:35:23
 	specifically: v15p:
-(model
+====================================================
+Failed a while loop invariant check:
+ This program would allow an invariant()
+ to be false. This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (1,("Parent",LT_BT BT_Address))
 ...checking VC_Top
@@ -63,7 +88,12 @@ Verification failed:
 	of theorem TInvariant
 	from ../examples/multisig/multisig.rsh.3.patch:35:23
 	specifically: v15p:
-(model
+====================================================
+Failed a while loop invariant check:
+ This program would allow an invariant()
+ to be false. This program is invalid.
+This could happen if...
+====================================================
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Checked 45 theorems; 6 failures. :'(
 

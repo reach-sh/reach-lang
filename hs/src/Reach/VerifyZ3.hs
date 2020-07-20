@@ -15,6 +15,9 @@ import qualified Data.ByteString.Char8 as BS
 import Data.FileEmbed
 import Data.IORef
 import Control.Loop
+import Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 
 import Reach.AST
 import Reach.Util
@@ -185,21 +188,53 @@ parse_var_int s = case readMaybe $ numericPart s of
   where numericPart = reverse . dropNonDigits . reverse . dropNonDigits
         dropNonDigits = dropWhile (not . isDigit)
 
+displayTheoremFail :: TheoremKind -> Text
+displayTheoremFail = T.unlines . \case
+  TAssert ->
+    [ "Failed an assertion:"
+    , " This program would allow a call to assert() to fail."
+    , " This program is invalid." ]
+  TRequire ->
+    [ "Failed a requirement:"
+    , " This program would allow a call to require() to fail."
+    , " This program is invalid." ]
+  TPossible ->
+    [ "Failed a possibility check:"
+    , " It is impossible for a possible() expression"
+    , " to be true. This program is invalid." ]
+  TBalanceZero ->
+    [ "Failed the token linearity property:"
+    , " This program would allow the contract account's"
+    , " final balance to be nonzero. This program is invalid." ]
+  TBalanceSufficient ->
+    [ "Failed the sufficient balance property:"
+    , " This program would allow the contract account's"
+    , " balance to go negative. This program is invalid." ]
+  TInvariant ->
+    [ "Failed a while loop invariant check:"
+    , " This program would allow an invariant()"
+    , " to be false. This program is invalid." ]
+  TBounds ->
+    [ "Failed bounds check:"
+    , " This program would allow out-of-bounds array indexing."
+    , " This program is invalid." ]
+
+displayInteracts :: Show a => [a] -> Text
+displayInteracts = T.unlines . \case
+  [] ->
+    [ "This could happen regardless of user interactions" ]
+  mp_interacts@(_:_) -> do
+    "This could happen if..." : map tshow mp_interacts
+
 display_model :: Show ann =>
   AnnMap ann -> Bool -> rolet -> TheoremKind -> ann -> SExpr -> SExpr -> IO ()
-display_model anns _honest _who TBalanceZero _ann _a m = do
-  putStrLn "===================================================="
-  putStrLn "Failed the token linearity property:"
-  putStrLn " This program would allow the contract account's"
-  putStrLn " final balance to be nonzero. This program is invalid."
+display_model anns _honest _who tk _ann _a m = do
   mp <- parse_model_map m
   mp_enriched <- mapM (enrich mp) $ M.toList mp
-  case mp_enriched of
-    [] -> putStrLn "This could happen regardless of user interactions"
-    (_:_) -> do
-      putStrLn "This could happen if..."
-      mapM_ print $ filterInteracts mp_enriched
-  -- print (pretty_se_top m)
+  let mp_interacts = filterInteracts mp_enriched
+  putStrLn "===================================================="
+  TIO.putStr $ displayTheoremFail tk
+  TIO.putStr $ displayInteracts mp_interacts
   putStrLn "===================================================="
   where
     filterInteracts = filter (\x -> isInteract x && isV x && notP x) where
@@ -218,13 +253,6 @@ display_model anns _honest _who TBalanceZero _ann _a m = do
           { mdi_name = name , mdi_type = ty , mdi_value = val
           , mdi_ann = Nothing , mdi_ilvar = Nothing , mdi_expr = Nothing
           , mdi_anns = anns, mdi_model = mp}
-
-display_model _anns _honest _who TBalanceSufficient _ann _a m = do
-  putStrLn "Failed the sufficient balance property:"
-  putStrLn " This program would allow the contract account's"
-  putStrLn " balance to go negative. This program is invalid."
-  print (pretty_se_top m)
-display_model _anns _honest _who _tk _ann _a m = putStrLn $ show $ pretty_se_top m
 
 z3_verify1 :: Show rolet => Show ann => Solver -> AnnMap ann -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
 z3_verify1 z3 anns (honest, who, tk, ann) a = inNewScope z3 $ do
