@@ -51,8 +51,8 @@ try_hard m = do
 dropDefines :: [T.Text] -> [T.Text]
 dropDefines = filter (\line -> not $ "(define" `T.isInfixOf` line)
 
-dropHypotheticalIntearcts :: [T.Text] -> [T.Text]
-dropHypotheticalIntearcts = filter (\line -> not $ "... interact returns " `T.isPrefixOf` line)
+dropHypotheticalInteracts :: [T.Text] -> [T.Text]
+dropHypotheticalInteracts = filter (\line -> not $ "... interact returns " `T.isPrefixOf` line)
 
 test_compile :: FilePath -> IO ()
 test_compile n = do
@@ -97,7 +97,7 @@ test_compile_vererr pf = do
   outT <- TIO.hGetContents hout
   err <- LB.hGetContents herr
   -- strip out the defines
-  let outT' = T.unlines $ dropHypotheticalIntearcts $ dropDefines $ T.lines outT
+  let outT' = T.unlines $ dropHypotheticalInteracts $ dropDefines $ T.lines outT
   let out = LB.fromStrict $ TE.encodeUtf8 outT'
   -- putStrLn $ "...finished: " ++ show (LB.length out)
   _ <- waitForProcess hP
