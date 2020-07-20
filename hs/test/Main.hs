@@ -52,7 +52,7 @@ dropDefines :: [T.Text] -> [T.Text]
 dropDefines = filter (\line -> not $ "(define" `T.isInfixOf` line)
 
 dropHypotheticalInteracts :: [T.Text] -> [T.Text]
-dropHypotheticalInteracts = filter (\line -> not $ "... interact returns " `T.isPrefixOf` line)
+dropHypotheticalInteracts = filter (\line -> not $ "... interact" `T.isPrefixOf` line)
 
 test_compile :: FilePath -> IO ()
 test_compile n = do

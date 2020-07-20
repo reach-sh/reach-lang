@@ -50,15 +50,21 @@ instance CollectTypes (ILTail a) where
 instance CollectTypes (ILProgram a) where
   cvs (IL_Prog _ _ _ it) = cvs it
 
+data LetAnn a = LetAnn
+  { la_ann :: a
+  , la_role :: Role ILVar
+  , la_var :: ILVar
+  , la_expr :: ILExpr a
+  }
 
-type AnnMap a = M.Map Int (a, ILVar, ILExpr a)
+type AnnMap a = M.Map Int (LetAnn a)
 
 -- ^ Collect Let annotations.
 -- Returns a map of var # to ann
 clanns :: ILTail a -> AnnMap a
 clanns (IL_Ret _ _) = mempty
 clanns (IL_If _ _ tt ft) = clanns tt <> clanns ft
-clanns (IL_Let a _ v@(i, _) e ct) = M.singleton i (a, v, e) <> clanns ct
+clanns (IL_Let a r v@(i, _) e ct) = M.singleton i (LetAnn a r v e) <> clanns ct
 clanns (IL_Do _ _ _ ct) = clanns ct
 clanns (IL_ToConsensus _ (_, _, _, _) mto kt) = clanns kt <> mto_vs
     where mto_vs = case mto of Nothing -> mempty
@@ -132,20 +138,33 @@ data ModelDefineInfo a = ModelDefineInfo
   { mdi_name :: String
   , mdi_type :: String
   , mdi_value :: String
-  , mdi_ann :: Maybe a
-  , mdi_ilvar :: Maybe ILVar
-  , mdi_expr :: Maybe (ILExpr a)
+  , mdi_la :: Maybe (LetAnn a)
   , mdi_anns :: AnnMap a
   , mdi_model :: ModelMap
   }
-instance Show a => Show (ModelDefineInfo a) where
-  show (ModelDefineInfo _name _ty val ann _ilvar _expr _anns _mmap) =
-    -- name <> "\t= " <> val <> showMay "\t-- " ann "" <> "\n" <>
-    -- XXX: show more info? more than just interact?
-    "... interact returns " <> val <> showMay " (at " ann ")"
-    where
-      showMay pre (Just x) post = pre <> show x <> post
-      showMay _pre Nothing _post = ""
+
+show_value :: String -> String -> Text
+show_value val = \case
+  "Int" -> T.pack val
+  "Bool" -> T.pack val
+  "Bytes" -> tshow val  -- XXX: prettier show of bytes
+  "Address" -> tshow val -- XXX: prettier show of address?
+  _anything -> tshow val
+
+show_interact :: Show a => ModelDefineInfo a -> Text
+show_interact (ModelDefineInfo{mdi_value, mdi_type, mdi_la}) =
+  -- name <> "\t= " <> val <> showMay "\t-- " ann "" <> "\n" <>
+  -- XXX: show more info? more than just interact?
+  T.unwords
+    ["... interact" <> showMay " (w/ " who ")"
+    , "returns", show_value mdi_value mdi_type <> showMay " (at " ann ")" ]
+  where
+    who = dispRole =<< (la_role <$> mdi_la)
+    dispRole (RolePart (_, (s, _))) = Just $ T.pack s
+    dispRole RoleContract = Nothing -- XXX: nonsense
+    ann = tshow . la_ann <$> mdi_la
+    showMay pre (Just x) post = pre <> x <> post
+    showMay _pre Nothing _post = ""
     -- XXX: also show expr with values substituted in from mmap
 
 
@@ -220,12 +239,12 @@ displayTheoremFail = T.unlines . \case
     , " This program would allow out-of-bounds array indexing."
     , " This program is invalid." ]
 
-displayInteracts :: Show a => [a] -> Text
+displayInteracts :: Show a => [ModelDefineInfo a] -> Text
 displayInteracts = T.unlines . \case
   [] ->
     [ "This could happen regardless of user interactions" ]
   mp_interacts@(_:_) -> do
-    "This could happen if..." : map tshow mp_interacts
+    "This could happen if..." : map show_interact mp_interacts
 
 display_model :: Show ann =>
   AnnMap ann -> Bool -> rolet -> TheoremKind -> ann -> SExpr -> SExpr -> IO ()
@@ -239,21 +258,15 @@ display_model anns _honest _who tk _ann _a m = do
   putStrLn "===================================================="
   where
     filterInteracts = filter (\x -> isInteract x && isV x && notP x) where
-      isInteract mdi = (fst . snd <$> mdi_ilvar mdi) == Just "Interact"
+      isInteract mdi = (fst . snd . la_var <$> mdi_la mdi) == Just "Interact"
       isV mdi = take 1 (mdi_name mdi) == "v"
       notP mdi = take 1 (reverse $ mdi_name mdi) /= "p"
     enrich mp (name, (ty, val)) = do
       -- XXX don't look up txn_value1, balance0, etc
       v <- parse_var_int name
-      return $ case M.lookup v anns of
-        Just (ann, ilvar, expr) -> ModelDefineInfo
-          { mdi_name = name , mdi_type = ty , mdi_value = val
-          , mdi_ann = Just ann , mdi_ilvar = Just ilvar , mdi_expr = Just expr
-          , mdi_anns = anns, mdi_model = mp}
-        Nothing -> ModelDefineInfo
-          { mdi_name = name , mdi_type = ty , mdi_value = val
-          , mdi_ann = Nothing , mdi_ilvar = Nothing , mdi_expr = Nothing
-          , mdi_anns = anns, mdi_model = mp}
+      return $ ModelDefineInfo
+        { mdi_name = name , mdi_type = ty , mdi_value = val
+        , mdi_la = M.lookup v anns , mdi_anns = anns, mdi_model = mp}
 
 z3_verify1 :: Show rolet => Show ann => Solver -> AnnMap ann -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
 z3_verify1 z3 anns (honest, who, tk, ann) a = inNewScope z3 $ do
