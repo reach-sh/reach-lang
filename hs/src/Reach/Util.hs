@@ -3,6 +3,7 @@ module Reach.Util where
 import Data.ByteString (ByteString)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import GHC.Stack
 import System.Exit
 import Control.Monad
 
@@ -18,7 +19,7 @@ maybeDie ma = do
     (do (exitWith ec))
   return ()
 
-impossible :: String -> b
+impossible :: HasCallStack => String -> b
 impossible msg = error $ "impossible situation (i.e. compiler error): " ++ msg
 
 tshow :: Show a => a -> T.Text
