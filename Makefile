@@ -6,12 +6,12 @@ check:
 	@echo Consistent Solidity Versions
 	@ag --ignore ./Makefile --ignore-dir docs --nogroup " solidity "
 	@echo Find TODO/XXX
-	@ag --ignore ./Makefile --ignore-dir docs '(XXX|TODO)'
+	@ag --ignore ./Makefile --ignore-dir docs '(xxx|todo|fixme)'
 
 .PHONY: todo
 todo:
 	@ag --color --no-break --ignore todo.html --ignore ./Makefile --ignore-dir docs \
-		'(XXX|TODO)' | aha --black > todo.html
+		'(xxx|todo|fixme)' | aha --black > todo.html
 
 .PHONY: run-all
 run-all:
