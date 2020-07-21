@@ -607,9 +607,10 @@ evalForm ctxt at _env f args k =
                   [ thunk ] -> do
                     penv <- get_penv
                     penv_ref <- newSTRef penv
-                    (lifter', _stmts_ref) <- ctxt_newLifter ctxt at
+                    (lifter', _stmts_ref) <- ctxt_newLifter
                     let ctxt_localstep =
                           (SLCtxt { ctxt_mode = SLC_LocalStep
+                                  , ctxt_id = ctxt_id ctxt
                                   , ctxt_decle = Just penv_ref
                                   , ctxt_lifter = Just lifter'
                                   , ctxt_stack = ctxt_stack ctxt })
@@ -623,6 +624,7 @@ evalForm ctxt at _env f args k =
           penv <- get_penv
           let ctxt_local =
                 (SLCtxt { ctxt_mode = SLC_Local
+                        , ctxt_id = ctxt_id ctxt
                         , ctxt_decle = Nothing
                         , ctxt_lifter = Nothing
                         , ctxt_stack = ctxt_stack ctxt })
@@ -869,10 +871,11 @@ evalIf ctxt at env ce tX fX evalX k =
   where k_c cv = evalInside tX (k_t cv)
         k_t cv ta = evalInside fX (kontIf ctxt at k cv ta)
         evalInside x k_s = do
-          (l', stmts_ref) <- ctxt_newLifter ctxt at
+          (l', stmts_ref) <- ctxt_newLifter
           let fresh_ctxt =
                 (SLCtxt
                  { ctxt_mode = ctxt_mode ctxt
+                 , ctxt_id = ctxt_id ctxt
                  , ctxt_decle = Nothing
                  , ctxt_lifter = Just l'
                  , ctxt_stack = ctxt_stack ctxt })
@@ -1115,9 +1118,10 @@ evalStmt ctxt at env ss k =
                     SLV_Form (SLForm_Part_ToConsensus _who Nothing _mmsg _mamt _mtime) -> do
                       cenv <- readSTRef cenv_ref
                       --- XXX update cenv w/ msg
-                      (lifter', _stmts_ref) <- ctxt_newLifter ctxt at
+                      (lifter', _stmts_ref) <- ctxt_newLifter
                       let ctxt_cstep =
                             (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, cenv_ref, ctxt_lifter ctxt)
+                                    , ctxt_id = ctxt_id ctxt
                                     , ctxt_decle = Just cenv_ref
                                     , ctxt_lifter = Just lifter'
                                     , ctxt_stack = ctxt_stack ctxt })
@@ -1129,6 +1133,7 @@ evalStmt ctxt at env ss k =
                       --- XXX do something with old lifter?
                       cenv <- readSTRef cenv_ref
                       let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs_ref cenv_ref
+                                              , ctxt_id = ctxt_id ctxt
                                               , ctxt_decle = Just cenv_ref
                                               , ctxt_lifter = orig_lifter
                                               , ctxt_stack = ctxt_stack ctxt })
@@ -1198,20 +1203,18 @@ evalBlock ctxt at env (JSBlock a ss _) k =
   where at' = srcloc_jsa "block" a at
 
 data SLLifter s = SLLifter
-  { lift_id :: STRef s Int
-  , lift_stmts :: STRef s (Seq.Seq DLStmt) }
+  { lift_stmts :: STRef s (Seq.Seq DLStmt) }
   deriving (Eq)
 
-ctxt_newLifter :: SLCtxt s -> SrcLoc -> ST s ((SLLifter s), STRef s (Seq.Seq DLStmt))
-ctxt_newLifter ctxt at = do
-  let l = ctxt_lift ctxt at
+ctxt_newLifter :: ST s ((SLLifter s), STRef s (Seq.Seq DLStmt))
+ctxt_newLifter = do
   newr <- newSTRef mempty
-  let l' = (SLLifter { lift_id = lift_id l
-                     , lift_stmts = newr })
+  let l' = (SLLifter { lift_stmts = newr })
   return (l', newr)
 
 data SLCtxt s = SLCtxt
   { ctxt_mode :: SLCtxtMode s
+  , ctxt_id :: Maybe (STRef s Int)
   , ctxt_decle :: Maybe (STRef s SLEnv)
   , ctxt_lifter :: Maybe (SLLifter s)
   , ctxt_stack :: [ SLCtxtFrame ] }
@@ -1254,7 +1257,9 @@ ctxt_lift_stmts ctxt at ss' =
 
 ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s DLVar
 ctxt_lift_expr ctxt at mk_var e = do
-  let idr = lift_id $ ctxt_lift ctxt at
+  let idr = case ctxt_id ctxt of
+              Just x -> x
+              Nothing -> expect_throw at $ Err_Eval_IllegalLift ctxt
   x <- readSTRef idr
   writeSTRef idr $ x + 1
   let dv = mk_var x
@@ -1329,6 +1334,7 @@ evalLib (src, body) libm k = do
   exenvr <- newSTRef $ mt_env
   let ctxt_top =
         (SLCtxt { ctxt_mode = SLC_Module
+                , ctxt_id = Nothing
                 , ctxt_decle = Just exenvr
                 , ctxt_lifter = Nothing
                 , ctxt_stack = [] })
@@ -1368,10 +1374,10 @@ compileDApp topv =
       cenv_ref <- newSTRef $ top_env
       let ctxt_step =
             (SLCtxt { ctxt_mode = SLC_Step penvs_ref cenv_ref
+                    , ctxt_id = Just idxr
                     , ctxt_decle = Just cenv_ref
                     , ctxt_lifter =
-                      Just (SLLifter { lift_id = idxr
-                                     , lift_stmts = top_stmts })
+                      Just (SLLifter { lift_stmts = top_stmts })
                     , ctxt_stack = [] })
       evalApplyVals ctxt_step at' mt_env clo partvs k
       where k v = expect_throw at' (Err_XXX $ "compileDApp after: " ++ show v)
