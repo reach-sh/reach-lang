@@ -72,6 +72,37 @@ jobs:
           name: run examples
           command: (cd examples && make run-all || echo allowed to fail)
           no_output_timeout: 1m
+      - run:
+          name: copy docs to workspace
+          command: |
+            mkdir -p /tmp/workspace
+            cp -r docs /tmp/workspace/
+            cp -r hs/test-reports /tmp/workspace/docs/
+            mkdir -p /tmp/workspace/docs/linter-reports/
+            cp stan.html /tmp/workspace/docs/linter-reports/
+      - persist_workspace:
+          root: /tmp/workspace
+          paths:
+            - docs
+      - slack/status:
+          fail_only: true
+
+  docs-deploy:
+    docker:
+      - image: circleci/node:9.9.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Install and configure dependencies
+          command: |
+            sudo npm install -g --silent gh-pages@3.1.0
+            git config user.email "ci-build@reach.sh"
+            git config user.name "ci-build"
+      - run:
+          name: Deploy docs to gh-pages branch
+          command: gh-pages --dist /tmp/workspace/docs
       - slack/status:
           fail_only: true
 
@@ -79,3 +110,9 @@ workflows:
   build-and-test:
     jobs:
       - build-and-test
+      - docs-deploy:
+          requires:
+            - build-and-test
+          filters:
+            branches:
+              only: master
