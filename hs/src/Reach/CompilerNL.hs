@@ -313,8 +313,9 @@ data ClaimType
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
   | DLS_Claim SrcLoc [ SLCtxtFrame ] ClaimType DLArg
+  | DLS_If SrcLoc DLArg DLStmts DLStmts
   --- XXX These are only allowed in Steps... maybe make Lifters more generic?
-  | DLS_Only SrcLoc SLPart (Seq.Seq DLStmt)
+  | DLS_Only SrcLoc SLPart DLStmts
   | DLS_All SrcLoc DLStmt
   deriving (Eq,Show)
 
@@ -323,8 +324,11 @@ stmt_pure s =
   case s of
     DLS_Let _ _ e -> expr_pure e
     DLS_Claim _ _ _ _ -> False
+    DLS_If _ _ x y -> stmts_pure x && stmts_pure y
     DLS_Only _ _ ss -> stmts_pure ss
     DLS_All _ as -> stmt_pure as
+
+type DLStmts = Seq.Seq DLStmt
 
 stmts_pure :: Foldable f => f DLStmt -> Bool
 stmts_pure fs = getAll $ foldMap (All . stmt_pure) fs
@@ -347,59 +351,60 @@ srcloc_after_semi lab a sp at =
 
 --- XXX Maybe this is dumb
 data CompilerError s
-  = Err_Parse_NotModule JSAST
-  | Err_Parse_CyclicImport ReachSource
-  | Err_Parse_ExpectSemi
-  | Err_Parse_IllegalBinOp JSBinOp
-  | Err_Parse_IllegalUnaOp JSUnaryOp
-  | Err_Parse_ExpectIdentifier JSExpression
-  | Err_Parse_IllegalLiteral String
-  | Err_NoHeader [JSModuleItem]
-  | Err_Top_IllegalJS JSStatement
-  | Err_Import_ShadowedImport SLVar
-  | Err_Import_IllegalJS JSImportDeclaration
-  | Err_Export_IllegalJS JSExportDeclaration
-  | Err_Decl_IllegalJS JSExpression
+  = Err_Apply_ArgCount Int Int
+  | Err_Arrow_NoFormals
+  | Err_Block_Assign
+  | Err_Block_Continue
+  | Err_Block_IllegalJS JSStatement
+  | Err_Block_NotNull SLVal
+  | Err_Block_Variable
+  | Err_Block_While
+  | Err_DApp_InvalidInteract SLVal
+  | Err_DApp_InvalidPartSpec SLVal
   | Err_DeclLHS_IllegalJS JSExpression
-  | Err_Decl_WrongArrayLength Int Int
+  | Err_Decl_IllegalJS JSExpression
   | Err_Decl_NotArray SLVal
+  | Err_Decl_WrongArrayLength Int Int
+  | Err_Dot_InvalidField SLVal String
+  | Err_Eval_IfCondNotBool SLVal
+  | Err_Eval_IfNotNull SLVal SLVal
+  | Err_Eval_IllegalContext (SLCtxt s) String
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_IllegalLift (SLCtxt s)
-  | Err_Eval_IllegalContext (SLCtxt s) String
-  | Err_Eval_UnboundId SLVar
-  | Err_Apply_ArgCount Int Int
-  | Err_Eval_NotObject SLVal
-  | Err_Eval_NotApplicableVals SLVal
   | Err_Eval_NotApplicable SLVal
-  | Err_Eval_IfCondNotBool SLVal
+  | Err_Eval_NotApplicableVals SLVal
+  | Err_Eval_NotObject SLVal
+  | Err_Eval_UnboundId SLVar
+  | Err_Export_IllegalJS JSExportDeclaration
+  | Err_Form_InvalidArgs SLForm [JSExpression]
+  | Err_Fun_NamesIllegal
+  | Err_Import_IllegalJS JSImportDeclaration
+  | Err_Import_ShadowedImport SLVar
+  | Err_NoHeader [JSModuleItem]
+  | Err_Obj_IllegalComputedField SLVal
+  | Err_Obj_IllegalField JSPropertyName
+  | Err_Obj_IllegalFieldValues [JSExpression]
   | Err_Obj_IllegalJS JSObjectProperty
   | Err_Obj_SpreadNotObj SLVal
-  | Err_Obj_IllegalField JSPropertyName
-  | Err_Obj_IllegalComputedField SLVal
-  | Err_Fun_NamesIllegal
-  | Err_Arrow_NoFormals
-  | Err_Dot_InvalidField SLVal String
+  | Err_Parse_CyclicImport ReachSource
+  | Err_Parse_ExpectIdentifier JSExpression
+  | Err_Parse_ExpectSemi
+  | Err_Parse_IllegalBinOp JSBinOp
+  | Err_Parse_IllegalLiteral String
+  | Err_Parse_IllegalUnaOp JSUnaryOp
+  | Err_Parse_NotModule JSAST
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
-  | Err_Form_InvalidArgs SLForm [JSExpression]
-  | Err_Obj_IllegalFieldValues [JSExpression]
   | Err_Shadowed SLVar
-  | Err_Top_NotDApp SLVal
-  | Err_DApp_InvalidPartSpec SLVal
-  | Err_DApp_InvalidInteract SLVal
-  | Err_Block_NotNull SLVal
-  | Err_Block_IllegalJS JSStatement
-  | Err_Block_Continue
-  | Err_Block_While
-  | Err_Block_Variable
-  | Err_Block_Assign
-  | Err_TopFun_NoName
   | Err_TailNotEmpty [JSStatement]
-  | Err_Type_TooFewArguments [SLType]
-  | Err_Type_NotApplicable SLType
-  | Err_Type_TooManyArguments [SLVal]
+  | Err_ToConsensus_Double ToConsensusMode
+  | Err_TopFun_NoName
+  | Err_Top_IllegalJS JSStatement
+  | Err_Top_NotDApp SLVal
   | Err_Type_Mismatch SLType SLType SLVal
   | Err_Type_None SLVal
-  | Err_ToConsensus_Double ToConsensusMode
+  | Err_Type_NotApplicable SLType
+  | Err_Type_TooFewArguments [SLType]
+  | Err_Type_TooManyArguments [SLVal]
   | Err_XXX String
   deriving (Eq,Show)
 
@@ -841,13 +846,20 @@ kontIf ctxt at k cv (t_lifts, tv) (f_lifts, fv) =
       ctxt_lift_stmts ctxt at e_lifts
       k $ ev
       where (e_lifts, ev) = if cb then (t_lifts, tv) else (f_lifts, fv)
-    SLV_DLVar (DLVar _ _ T_Bool _) ->
+    SLV_DLVar dv@(DLVar _ _ T_Bool _) ->
       if stmts_pure t_lifts && stmts_pure f_lifts then
         do ctxt_lift_stmts ctxt at t_lifts
            ctxt_lift_stmts ctxt at f_lifts
-           evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [ tv, fv ] k
+           evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [ cv, tv, fv ] k
       else
-        expect_throw at $ Err_XXX "impure lift on var"
+        --- XXX A consensus must duplicate continuation but a local doesn't need to
+        do ctxt_lift_stmt ctxt at (DLS_If at (DLA_Var dv) t_lifts f_lifts)
+           let (tt, _) = typeOf at tv
+           let (ft, _) = typeOf at fv
+           if tt == ft && tt == T_Null then
+             k $ SLV_Null at
+           else
+             expect_throw at (Err_Eval_IfNotNull tv fv)
     _ ->
       expect_throw at (Err_Eval_IfCondNotBool cv)
 
