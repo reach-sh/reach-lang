@@ -12,7 +12,21 @@ RUN ln -s /z3/z3-${Z3_VER}-x64-ubuntu-16.04/bin/z3 /z3/z3
 
 FROM ubuntu:18.04
 
-RUN apt-get update && apt-get install -y curl libgmp10 docker-compose libtinfo-dev locales
+RUN apt-get update && apt-get install -y \
+  curl \
+  docker-compose \
+  libgmp10 \
+  libtinfo-dev \
+  locales \
+  python3-pip \
+  software-properties-common
+
+# doc deps
+RUN add-apt-repository -y ppa:plt/racket && \
+    apt-get update && \
+    apt-get install -y racket && \
+    raco pkg install scribble-minted && \
+    pip3 install pygments-style-solarized
 
 # solc
 COPY --from=solc /usr/bin/solc /usr/bin/solc

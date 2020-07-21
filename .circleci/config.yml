@@ -7,6 +7,9 @@ jobs:
       - image: reachsh/reach-circle:v0.1.0
     steps:
       - checkout
+      - run:
+          name: render docs
+          command: (cd docs-src && make render)
       - restore_cache:
           keys:
             - hs-2-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
