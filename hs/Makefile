@@ -44,6 +44,7 @@ hs-test-xml:
 	stack test --test-arguments '--num-threads 1 --xml=test-reports/junit.xml'
 
 .PHONY: hs-test-html
+hs-test-html:
 	mkdir -p test-reports
 	stack test --test-arguments '--num-threads 1 --html=test-reports/results.html'
 
@@ -57,6 +58,10 @@ hs-deps:
 	stack build --dependencies-only
 	stack test --dependencies-only
 	stack build stan
+
+.PHONY: hs-doc
+hs-doc:
+	stack haddock
 
 .PHONY: build-circle-docker
 build-circle-docker:
