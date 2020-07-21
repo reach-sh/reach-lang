@@ -79,7 +79,7 @@ jobs:
             cp -r docs /tmp/workspace/
             cp -r hs/test-reports /tmp/workspace/docs/
             mkdir -p /tmp/workspace/docs/linter-reports/
-            cp stan.html /tmp/workspace/docs/linter-reports/
+            cp hs/stan.html /tmp/workspace/docs/linter-reports/
       - persist_to_workspace:
           root: /tmp/workspace
           paths:
