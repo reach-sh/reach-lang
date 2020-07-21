@@ -1292,16 +1292,16 @@ ctxt_export isExport ctxt =
   if isExport then ctxt
   else (ctxt { ctxt_decle = Nothing })
 
-evalTopBody :: SLCtxt s -> SrcLoc -> SLLibs -> SLEnv -> [JSModuleItem] -> (() -> ST s ans) -> ST s ans
-evalTopBody ctxt at libm env body k =
+evalTopBody :: SLCtxt s -> SrcLoc -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> (SLEnv -> ST s ans) -> ST s ans
+evalTopBody ctxt at libm env exenv body k =
   case body of
-    [] -> k ()
+    [] -> k exenv
     mi:body' ->
       case mi of
         (JSModuleImportDeclaration _ im) ->
           case im of
             JSImportDeclarationBare a libn sp ->
-              evalTopBody ctxt at_after libm env' body' k
+              evalTopBody ctxt at_after libm env' exenv body' k
               where at_after = srcloc_after_semi lab a sp at
                     at' = srcloc_jsa lab a at
                     lab = "import"
@@ -1323,7 +1323,16 @@ evalTopBody ctxt at libm env body k =
       where doStmt at' isExport sm =
               evalStmt ctxt' at' env [sm] $
               kontNull at'
-              (\env' -> evalTopBody ctxt at' libm env' body' k)
+              (\env' ->
+                 let exenv' = if isExport then
+                                --- If this is an exporting statement,
+                                --- then add to the export environment
+                                --- everything that is new.
+                                env_merge at' exenv (M.difference env' env)
+                              else
+                                exenv
+                 in
+                   evalTopBody ctxt at' libm env' exenv' body' k)
               where ctxt' = ctxt_export isExport ctxt
 
 type SLMod = (ReachSource, [JSModuleItem])
@@ -1331,16 +1340,14 @@ type SLLibs = (M.Map ReachSource SLEnv)
 
 evalLib :: SLMod -> SLLibs -> (SLLibs -> ST s ans) -> ST s ans
 evalLib (src, body) libm k = do
-  exenvr <- newSTRef $ mt_env
   let ctxt_top =
         (SLCtxt { ctxt_mode = SLC_Module
+                , ctxt_decle = Nothing
                 , ctxt_id = Nothing
-                , ctxt_decle = Just exenvr
                 , ctxt_lifter = Nothing
                 , ctxt_stack = [] })
-  evalTopBody ctxt_top prev_at libm stdlib_env body'
-    (\() -> (do exenv <- readSTRef exenvr
-                k $ M.insert src exenv libm))
+  evalTopBody ctxt_top prev_at libm stdlib_env mt_env body'
+    (\exenv -> (k $ M.insert src exenv libm))
   where stdlib_env =
           case src of
             ReachStdLib -> base_env
