@@ -96,8 +96,10 @@ jobs:
           at: /tmp/workspace
       - run:
           name: Install and configure dependencies
+          # gh-pages@3.0.0, not 3.1.0, because:
+          # https://github.com/tschaub/gh-pages/issues/354#issuecomment-647801438
           command: |
-            sudo npm install -g --silent gh-pages@3.1.0
+            sudo npm install -g --silent gh-pages@3.0.0
             git config user.email "ci-build@reach.sh"
             git config user.name "ci-build"
       - run:
