@@ -102,9 +102,12 @@ jobs:
             sudo npm install -g --silent gh-pages@3.0.0
             git config user.email "ci-build@reach.sh"
             git config user.name "ci-build"
+      - add_ssh_keys:
+          fingerprints:
+            - "b5:65:6d:49:4f:fb:c1:77:2c:13:45:b1:d9:f9:71:c6"
       - run:
           name: Deploy docs to gh-pages branch
-          command: gh-pages --dist /tmp/workspace/docs
+          command: sudo gh-pages --dist /tmp/workspace/docs
       - slack/status:
           fail_only: true
 
