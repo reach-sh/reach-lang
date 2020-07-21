@@ -54,6 +54,13 @@ packages:
   original:
     hackage: simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
 - completed:
+    hackage: tasty-html-0.4.1.2@sha256:7c8be5359940fcbd0228b9a1f5dc9a1113a9a5e03dc9b9ae018eb17f870aef13,1241
+    pantry-tree:
+      size: 608
+      sha256: b0bccc20c9438f1353dedf7efc70716e58e6fc7e741a47617e9a6c1be59f0a1d
+  original:
+    hackage: tasty-html-0.4.1.2@sha256:7c8be5359940fcbd0228b9a1f5dc9a1113a9a5e03dc9b9ae018eb17f870aef13,1241
+- completed:
     hackage: trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
     pantry-tree:
       size: 561

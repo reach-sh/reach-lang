@@ -40,7 +40,12 @@ hs-test:
 
 .PHONY: hs-test-xml
 hs-test-xml:
-	stack test --test-arguments '--num-threads 1 --xml=test-report-xml/junit.xml'
+	mkdir -p test-reports
+	stack test --test-arguments '--num-threads 1 --xml=test-reports/junit.xml'
+
+.PHONY: hs-test-html
+	mkdir -p test-reports
+	stack test --test-arguments '--num-threads 1 --html=test-reports/results.html'
 
 .PHONY: hs-test-accept
 hs-test-accept:

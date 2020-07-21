@@ -12,6 +12,7 @@ import Language.JavaScript.Parser.SrcLocation
 import System.Directory
 import System.Environment
 import System.Exit
+import System.IO.Silently
 import System.FilePath
 import System.Process
 import Test.Hspec
@@ -20,6 +21,7 @@ import Test.Tasty
 import Test.Tasty.Golden
 import Test.Tasty.Hspec
 import Test.Tasty.Runners.AntXML
+import Test.Tasty.Runners.Html
 
 import Reach.ParserInternal
 import Reach.Compiler (CompileErr, compile)
@@ -68,7 +70,7 @@ test_compile n = do
     , cto_expCon = False
     , cto_expComp = False
     }
-  compile opts
+  silence $ compile opts
 
 errExampleBs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
 errExampleBs k fp = withCurrentDirectory dir (try_hard (k fpRel)) >>= \case
@@ -186,8 +188,8 @@ main = do
   args <- getArgs
   -- antXMLRunner isn't very polite when you leave off --xml
   let theMain = case any ("--xml" `isPrefixOf`) args of
-        True -> defaultMainWithIngredients (antXMLRunner:defaultIngredients)
-        False -> defaultMain
+        True -> defaultMainWithIngredients (htmlRunner:antXMLRunner:defaultIngredients)
+        False -> defaultMainWithIngredients (htmlRunner:defaultIngredients)
   theMain $ testGroup "tests"
     [ parseTests
     , compileTests

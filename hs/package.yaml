@@ -8,42 +8,44 @@ copyright:           "2019 Reach"
 description:         Please visit the GitHub repository <https://github.com/reach-sh/reach-lang#readme>
 
 dependencies:
-- base >= 4.7 && < 5
-- containers
-- prettyprinter
-- bytestring
-- mtl
-- digest
-- language-javascript >= 0.7.1.0
-- parsec-numbers
-- filepath
-- file-embed >= 0.0.9
-- optparse-applicative
-- directory
-- process
-- pretty-simple
-- text
-- extra
-- simple-smt
 - aeson
-- unordered-containers
-- system-filepath
-- lattices
+- base >= 4.7 && < 5
+- base64
+- bytestring
+- containers
+- cryptonite
+- deepseq
+- digest
+- directory
+- extra
+- file-embed >= 0.0.9
+- filepath
+- generic-deriving
+- haskell-evm
+- hexstring
 - hspec
-- smallcheck
 - hspec-smallcheck
+- language-javascript >= 0.7.1.0
+- lattices
+- loop
+- memory
+- mtl
+- optparse-applicative
+- parsec-numbers
+- pretty-simple
+- prettyprinter
+- process
+- silently
+- simple-smt
+- smallcheck
+- system-filepath
 - tasty
 - tasty-ant-xml
 - tasty-golden
 - tasty-hspec
-- generic-deriving
-- deepseq
-- hexstring
-- haskell-evm
-- cryptonite
-- memory
-- base64
-- loop
+- tasty-html
+- text
+- unordered-containers
 
 default-extensions:
 - BangPatterns

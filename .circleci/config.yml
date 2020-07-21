@@ -41,10 +41,17 @@ jobs:
           name: build hs
           command: (cd hs && make hs-build)
       - run:
-          name: test hs
+          name: test hs (xml)
           command: (cd hs && make hs-test-xml)
       - store_test_results:
-          path: hs/test-report-xml
+          path: hs/test-reports
+      # Annoyingly, can't run html and xml reports simultaneously.
+      # https://stackoverflow.com/questions/63022817/tasty-xml-and-html-generation
+      - run:
+          name: test hs (html)
+          command: (cd hs && make hs-test-html)
+      - store_artifacts:
+          path: hs/test-reports/results.html
       - run:
           name: check hs
           command: (cd hs && make hs-check)
