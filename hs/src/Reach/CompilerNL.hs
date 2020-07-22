@@ -9,6 +9,7 @@ import Data.List
 import Data.Monoid
 import Data.STRef
 import GHC.IO.Encoding
+import GHC.Stack(HasCallStack)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import System.Directory
@@ -430,7 +431,7 @@ data CompilerError s
   deriving (Eq,Show)
 
 --- XXX Add ctxt frame stack and display
-expect_throw :: SrcLoc -> CompilerError s -> b
+expect_throw :: HasCallStack => SrcLoc -> CompilerError s -> b
 expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 256 $ show ce)
 
 -- Parser
