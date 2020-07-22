@@ -73,6 +73,18 @@ jse_expect_id at j =
     (JSIdentifier _ x) -> x
     _ -> expect_throw at (Err_Parse_ExpectIdentifier j)
 
+parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]
+parseJSFormals at jsformals = map (jse_expect_id at) $ jscl_flatten jsformals
+
+parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [SLVar]
+parseJSArrowFormals at aformals =
+  case aformals of
+    JSUnparenthesizedArrowParameter (JSIdentName _ x) -> [x]
+    JSUnparenthesizedArrowParameter JSIdentNone ->
+      expect_throw at Err_Arrow_NoFormals
+    JSParenthesizedArrowParameterList _ l _ ->
+      parseJSFormals at l
+
 -- Static Language
 data ReachSource
   = ReachStdLib
@@ -587,9 +599,49 @@ data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
   deriving (Eq, Show)
 
+data SLExprRes = SLExprRes DLStmts SLVar
+type SLExprKont s ans = SLExprRes -> ST s ans
+data SLStmtRes = SLStmtRes DLStmts SLEnv
+type SLStmtKont s ans = SLStmtRes -> ST s ans
+
 ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
 ctxt_stack_push ctxt f =
   (ctxt { ctxt_stack = f : (ctxt_stack ctxt) })
+
+binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
+binaryToPrim at env o =
+  case o of
+    JSBinOpAnd a -> fun a "and"
+    JSBinOpDivide a -> prim a (CP DIV)
+    JSBinOpEq a -> prim a (CP PEQ)
+    JSBinOpGe a -> prim a (CP PGE)
+    JSBinOpGt a -> prim a (CP PGT)
+    JSBinOpLe a -> prim a (CP PLE)
+    JSBinOpLt a -> prim a (CP PLT)
+    JSBinOpMinus a -> prim a (CP SUB)
+    JSBinOpMod a -> prim a (CP MOD)
+    JSBinOpNeq a -> fun a "neq"
+    JSBinOpOr a -> fun a "or"
+    JSBinOpPlus a -> prim a (CP ADD)
+    JSBinOpStrictEq a -> prim a (CP BYTES_EQ)
+    JSBinOpStrictNeq a -> fun a "bytes_neq"
+    JSBinOpTimes a -> prim a (CP MUL)
+    JSBinOpLsh a -> prim a (CP LSH)
+    JSBinOpRsh a -> prim a (CP RSH)
+    JSBinOpBitAnd a -> prim a (CP BAND)
+    JSBinOpBitOr a -> prim a (CP BIOR)
+    JSBinOpBitXor a -> prim a (CP BXOR)
+    j -> expect_throw at $ Err_Parse_IllegalBinOp j
+  where fun a s = env_lookup (srcloc_jsa "binop" a at) s env
+        prim _a p = SLV_Prim $ SLPrim_op p
+
+unaryToPrim :: SrcLoc -> SLEnv -> JSUnaryOp -> SLVal
+unaryToPrim at env o =
+  case o of
+    JSUnaryOpMinus a -> fun a "minus"
+    JSUnaryOpNot a -> fun a "not"
+    j -> expect_throw at $ Err_Parse_IllegalUnaOp j
+  where fun a s = env_lookup (srcloc_jsa "unop" a at) s env
 
 typeOf :: SrcLoc -> SLVal -> (SLType, DLArg)
 typeOf at v =
@@ -835,53 +887,6 @@ evalPrim ctxt at env p args k =
             SLV_Type t -> t
             _ -> illegal_args
 
-binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
-binaryToPrim at env o =
-  case o of
-    JSBinOpAnd a -> fun a "and"
-    JSBinOpDivide a -> prim a (CP DIV)
-    JSBinOpEq a -> prim a (CP PEQ)
-    JSBinOpGe a -> prim a (CP PGE)
-    JSBinOpGt a -> prim a (CP PGT)
-    JSBinOpLe a -> prim a (CP PLE)
-    JSBinOpLt a -> prim a (CP PLT)
-    JSBinOpMinus a -> prim a (CP SUB)
-    JSBinOpMod a -> prim a (CP MOD)
-    JSBinOpNeq a -> fun a "neq"
-    JSBinOpOr a -> fun a "or"
-    JSBinOpPlus a -> prim a (CP ADD)
-    JSBinOpStrictEq a -> prim a (CP BYTES_EQ)
-    JSBinOpStrictNeq a -> fun a "bytes_neq"
-    JSBinOpTimes a -> prim a (CP MUL)
-    JSBinOpLsh a -> prim a (CP LSH)
-    JSBinOpRsh a -> prim a (CP RSH)
-    JSBinOpBitAnd a -> prim a (CP BAND)
-    JSBinOpBitOr a -> prim a (CP BIOR)
-    JSBinOpBitXor a -> prim a (CP BXOR)
-    j -> expect_throw at $ Err_Parse_IllegalBinOp j
-  where fun a s = env_lookup (srcloc_jsa "binop" a at) s env
-        prim _a p = SLV_Prim $ SLPrim_op p
-
-unaryToPrim :: SrcLoc -> SLEnv -> JSUnaryOp -> SLVal
-unaryToPrim at env o =
-  case o of
-    JSUnaryOpMinus a -> fun a "minus"
-    JSUnaryOpNot a -> fun a "not"
-    j -> expect_throw at $ Err_Parse_IllegalUnaOp j
-  where fun a s = env_lookup (srcloc_jsa "unop" a at) s env
-
-parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]
-parseJSFormals at jsformals = map (jse_expect_id at) $ jscl_flatten jsformals
-
-parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [SLVar]
-parseJSArrowFormals at aformals =
-  case aformals of
-    JSUnparenthesizedArrowParameter (JSIdentName _ x) -> [x]
-    JSUnparenthesizedArrowParameter JSIdentNone ->
-      expect_throw at Err_Arrow_NoFormals
-    JSParenthesizedArrowParameterList _ l _ ->
-      parseJSFormals at l
-
 evalApplyVals :: SLCtxt s -> SrcLoc -> SLEnv -> SLVal -> [SLVal] -> (SLVal -> ST s ans) -> ST s ans
 evalApplyVals ctxt at env rator randvs k =
   case rator of
@@ -1071,32 +1076,27 @@ evalExprs :: SLCtxt s -> SrcLoc -> SLEnv -> [JSExpression] -> ([SLVal] -> ST s a
 evalExprs ctxt at env rands k =
   mapk k (evalExpr ctxt at env) rands
 
-bindDeclLHS :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> SLVal -> (SLEnv -> ST s a) -> ST s a
-bindDeclLHS _ctxt at o_env lhs v k = do
-  k $ update o_env
-  where update env =
-          case lhs of
-            (JSIdentifier a x) ->
-              env_insert (srcloc_jsa "id" a at) x v env
-            (JSArrayLiteral a xs _) ->
-              foldl' (flip (uncurry (env_insert at'))) env kvs
-              where kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
-                    ks = map (jse_expect_id at') $ jsa_flatten xs
-                    vs = case v of
-                      SLV_Array _ x -> x
-                      _ ->
-                        expect_throw at' (Err_Decl_NotArray v)
-                    at' = srcloc_jsa "array" a at
-            _ ->
-              expect_throw at (Err_DeclLHS_IllegalJS lhs)
-
 evalDecl :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> (SLEnv -> ST s ans) -> ST s ans
 evalDecl ctxt at env decl k =
   case decl of
-    JSVarInitExpression lhs (JSVarInit a rhs) ->
-      evalExpr ctxt at' env rhs k'
-      where at' = srcloc_jsa "var initializer" a at
-            k' v = bindDeclLHS ctxt at env lhs v k
+    JSVarInitExpression lhs (JSVarInit va rhs) ->
+      evalExpr ctxt vat' env rhs k'
+      where vat' = srcloc_jsa "var initializer" va at
+            k' v = k $
+                   case lhs of
+                     (JSIdentifier a x) ->
+                       env_insert (srcloc_jsa "id" a at) x v env
+                     (JSArrayLiteral a xs _) ->
+                       foldl' (flip (uncurry (env_insert at'))) env kvs
+                       where kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
+                             ks = map (jse_expect_id at') $ jsa_flatten xs
+                             vs = case v of
+                                    SLV_Array _ x -> x
+                                    _ ->
+                                      expect_throw at' (Err_Decl_NotArray v)
+                             at' = srcloc_jsa "array" a at
+                     _ ->
+                       expect_throw at (Err_DeclLHS_IllegalJS lhs)
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
 
@@ -1105,19 +1105,6 @@ evalDecls ctxt at env decls k =
   --- Note: This makes it so that declarations on the left are visible
   --- on the right, which might be different than JavaScript?
   foldlk k (evalDecl ctxt at) env $ jscl_flatten decls
-
-evalFunctionStmt :: SLCtxt s -> SrcLoc -> SLEnv -> JSAnnot -> JSIdent -> JSCommaList JSExpression -> JSBlock -> JSSemi -> ((SrcLoc, SLEnv) -> ST s ans) -> ST s ans
-evalFunctionStmt _ctxt at env a name jsformals body sp k = do
-  k $ (at_after, env')
-  where clo = SLV_Clo at' (Just f) formals body env
-        formals = parseJSFormals at' jsformals
-        at' = srcloc_jsa lab a at
-        at_after = srcloc_after_semi lab a sp at
-        lab = "function def"
-        env' = env_insert at f clo env
-        f = case name of
-              JSIdentNone -> expect_throw at' (Err_TopFun_NoName)
-              JSIdentName _ x -> x
 
 evalStmt :: SLCtxt s -> SrcLoc -> SLEnv -> [JSStatement] -> (SLEnv -> SLVal -> ST s ans) -> ST s ans
 evalStmt ctxt at env ss k =
@@ -1154,8 +1141,16 @@ evalStmt ctxt at env ss k =
     (s@(JSForVarOf a _ _ _ _ _ _ _):_) -> illegal a s "for var of"
     (s@(JSAsyncFunction a _ _ _ _ _ _ _):_) -> illegal a s "async function"
     ((JSFunction a name _ jsformals _ body sp):ks) ->
-      evalFunctionStmt ctxt at env a name jsformals body sp k'
-      where k' (at_after, env') = evalStmt ctxt at_after env' ks k
+      evalStmt ctxt at_after env' ks k
+      where clo = SLV_Clo at' (Just f) formals body env
+            formals = parseJSFormals at' jsformals
+            at' = srcloc_jsa lab a at
+            at_after = srcloc_after_semi lab a sp at
+            lab = "function def"
+            env' = env_insert at f clo env
+            f = case name of
+                  JSIdentNone -> expect_throw at' (Err_TopFun_NoName)
+                  JSIdentName _ x -> x
     (s@(JSGenerator a _ _ _ _ _ _ _):_) -> illegal a s "generator"
     ((JSIf a la ce ra ts):ks) ->
       evalStmt ctxt at env ((JSIfElse a la ce ra ts ea fs):ks) k
