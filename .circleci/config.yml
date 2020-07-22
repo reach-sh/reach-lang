@@ -99,7 +99,7 @@ jobs:
           # gh-pages@3.0.0, not 3.1.0, because:
           # https://github.com/tschaub/gh-pages/issues/354#issuecomment-647801438
           command: |
-            sudo npm install -g --silent gh-pages@3.0.0
+            # sudo npm install -g --silent gh-pages@3.0.0
             git config user.email "ci-build@reach.sh"
             git config user.name "ci-build"
       - add_ssh_keys:
@@ -107,7 +107,13 @@ jobs:
             - "b5:65:6d:49:4f:fb:c1:77:2c:13:45:b1:d9:f9:71:c6"
       - run:
           name: Deploy docs to gh-pages branch
-          command: sudo gh-pages --dist /tmp/workspace/docs
+          command: |
+            git pull origin/gh-pages
+            git checkout gh-pages
+            cp -r /tmp/workspace/docs/* .
+            git add .
+            git commit -m "[ci skip] docs for $CIRCLE_SHA1"
+            git push origin gh-pages
       - slack/status:
           fail_only: true
 
