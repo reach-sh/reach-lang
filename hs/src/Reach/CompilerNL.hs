@@ -181,7 +181,7 @@ data ToConsensusMode
 data SLForm
   = SLForm_Part_Only SLVal
   --- XXX Maybe should be DLVar
-  | SLForm_Part_ToConsensus SLVal (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe SLVar) (Maybe SLVar)
+  | SLForm_Part_ToConsensus SLPart (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe SLVar) (Maybe SLVar)
   deriving (Eq,Show)
 
 data ConsensusPrimOp
@@ -268,17 +268,20 @@ base_env = M.fromList
                M.fromList
                 [ ("DApp", SLV_Prim SLPrim_DApp) ]))]
 
-env_insert :: SrcLoc -> SLVar -> SLVal -> SLEnv -> SLEnv
+env_insert :: HasCallStack => SrcLoc -> SLVar -> SLVal -> SLEnv -> SLEnv
 env_insert at k v env =
   case M.lookup k env of
     Nothing -> M.insert k v env
     Just _ ->
       expect_throw at (Err_Shadowed k)
 
-env_merge :: SrcLoc -> SLEnv -> SLEnv -> SLEnv
-env_merge at left righte = foldl' (flip (uncurry (env_insert at))) left $ M.toList righte
+env_insertp :: HasCallStack => SrcLoc -> SLEnv -> (SLVar, SLVal) -> SLEnv
+env_insertp at = flip (uncurry (env_insert at))
 
-env_lookup :: SrcLoc -> SLVar -> SLEnv -> SLVal
+env_merge :: HasCallStack => SrcLoc -> SLEnv -> SLEnv -> SLEnv
+env_merge at left righte = foldl' (env_insertp at) left $ M.toList righte
+
+env_lookup :: HasCallStack => SrcLoc -> SLVar -> SLEnv -> SLVal
 env_lookup at x env =
   case M.lookup x env of
     Just v -> v
@@ -589,13 +592,18 @@ ctxt_lift_stmts :: SLCtxt s -> SrcLoc -> Seq.Seq DLStmt -> ST s ()
 ctxt_lift_stmts ctxt at ss' =
   modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.>< ss')
 
-ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s DLVar
-ctxt_lift_expr ctxt at mk_var e = do
+ctxt_alloc :: SLCtxt s -> SrcLoc -> ST s Int
+ctxt_alloc ctxt at = do
   let idr = case ctxt_id ctxt of
               Just x -> x
               Nothing -> expect_throw at $ Err_Eval_IllegalLift ctxt
   x <- readSTRef idr
   writeSTRef idr $ x + 1
+  return x
+
+ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s DLVar
+ctxt_lift_expr ctxt at mk_var e = do
+  x <- ctxt_alloc ctxt at
   let dv = mk_var x
   let s = DLS_Let at dv e
   ctxt_lift_stmt ctxt at s
@@ -671,8 +679,8 @@ typeOf at v =
     SLV_Clo _ _ _ _ _ -> none
     SLV_DLVar dv@(DLVar _ _ t _) -> (t, DLA_Var dv)
     SLV_Type _ -> none
-    SLV_Participant _ _ _ -> none
-    SLV_Prim _ -> none
+    SLV_Participant _ _ _ -> none --- XXX get the address
+    SLV_Prim _ -> none --- XXX interacts may work
     SLV_Form _ -> none
   where none = expect_throw at $ Err_Type_None v
       
@@ -708,17 +716,17 @@ evalDot at obj field =
       case M.lookup field env of
         Just v -> v
         Nothing -> illegal_field
-    SLV_Participant _ _ _ ->
+    SLV_Participant _ who _ ->
       case field of
         "only" -> SLV_Form (SLForm_Part_Only obj)
-        "publish" -> SLV_Form (SLForm_Part_ToConsensus obj (Just TCM_Publish) Nothing Nothing Nothing)
-        "pay" -> SLV_Form (SLForm_Part_ToConsensus obj (Just TCM_Pay) Nothing Nothing Nothing)
+        "publish" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Publish) Nothing Nothing Nothing)
+        "pay" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Pay) Nothing Nothing Nothing)
         _ -> illegal_field
-    SLV_Form (SLForm_Part_ToConsensus pv Nothing mpub mpay mtime) ->
+    SLV_Form (SLForm_Part_ToConsensus who Nothing mpub mpay mtime) ->
       case field of
-        "publish" -> SLV_Form (SLForm_Part_ToConsensus pv (Just TCM_Publish) mpub mpay mtime)
-        "pay" -> SLV_Form (SLForm_Part_ToConsensus pv (Just TCM_Pay) mpub mpay mtime)
-        "timeout" -> SLV_Form (SLForm_Part_ToConsensus pv (Just TCM_Timeout) mpub mpay mtime)
+        "publish" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Publish) mpub mpay mtime)
+        "pay" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Pay) mpub mpay mtime)
+        "timeout" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Timeout) mpub mpay mtime)
         _ -> illegal_field
     v ->
       expect_throw at (Err_Eval_NotObject v)
@@ -737,16 +745,16 @@ evalForm ctxt at env f args k =
           let k' eargs =                
                 case eargs of
                   [ thunk ] -> do
-                    penv <- get_penv
-                    penv_ref <- newSTRef penv
+                    --- XXX penv <- get_penv
+                    --- XXX penv_ref <- newSTRef penv
                     (lifter', _stmts_ref) <- ctxt_newLifter
                     let ctxt_localstep =
                           (SLCtxt { ctxt_mode = SLC_LocalStep
                                   , ctxt_id = ctxt_id ctxt
                                   , ctxt_lifter = Just lifter'
                                   , ctxt_stack = ctxt_stack ctxt })
-                    let k'' (SLRes _ ans) = do
-                          penv' <- readSTRef penv_ref
+                    let k'' (SLRes penv' ans) = do
+                          --- XXX penv' <- readSTRef penv_ref
                           modifySTRef penvs_ref (M.insert who penv')
                           --- XXX look at stmts_ref and save em
                           k $ SLRes env ans
@@ -765,7 +773,7 @@ evalForm ctxt at env f args k =
           evalExprs ctxt_local at penv args k'_res
         _ -> expect_throw at $ Err_Eval_IllegalContext ctxt "part.only"
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
-    SLForm_Part_ToConsensus pv mmode mpub mpay mtime ->
+    SLForm_Part_ToConsensus who mmode mpub mpay mtime ->
       case ctxt_mode ctxt of
         SLC_Step penvs_ref ->
           case mmode of
@@ -779,19 +787,16 @@ evalForm ctxt at env f args k =
                             _ -> k'' ()
                   foldlk k' ensure_bound () msg 
                   where msg = map (jse_expect_id at) args
-                        k' () = k_res $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing (Just msg) mpay mtime
+                        k' () = k_res $ SLV_Form $ SLForm_Part_ToConsensus who Nothing (Just msg) mpay mtime
                 Just _ ->
                   expect_throw at $ Err_ToConsensus_Double TCM_Publish
             Just TCM_Pay ->
-              k_res $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing mpub (Just $ error "XXX TCM_Pay " ++ show args) mtime
+              k_res $ SLV_Form $ SLForm_Part_ToConsensus who Nothing mpub (Just $ error "XXX TCM_Pay " ++ show args) mtime
             Just TCM_Timeout ->
-              k_res $ SLV_Form $ SLForm_Part_ToConsensus pv Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
+              k_res $ SLV_Form $ SLForm_Part_ToConsensus who Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
             Nothing ->
               expect_throw at $ Err_Eval_NotApplicable rator
         _ -> expect_throw at $ Err_Eval_IllegalContext ctxt "toConsensus"
-        where who = case pv of
-                      (SLV_Participant _ x _) -> x
-                      _ -> impossible $ "ToConsensus args"
   where illegal_args = expect_throw at (Err_Form_InvalidArgs f args)
         rator = SLV_Form f
         k_res v = k $ SLRes env v
@@ -911,7 +916,7 @@ evalApplyVals ctxt at env rator randvs k =
     SLV_Clo clo_at mname formals (JSBlock body_a body _) clo_env ->
       evalStmt ctxt' body_at env' body k
       where body_at = srcloc_jsa "block" body_a clo_at
-            env' = foldl' (flip (uncurry (env_insert clo_at))) clo_env kvs
+            env' = foldl' (env_insertp clo_at) clo_env kvs
             kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
             ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
     v ->
@@ -1122,7 +1127,7 @@ evalDecl ctxt at (SLRes env _) decl k =
                             _ ->
                               expect_throw at' (Err_Decl_NotArray v)
                     let kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
-                    return $ foldl' (flip (uncurry (env_insert at'))) env kvs
+                    return $ foldl' (env_insertp at') env kvs
                     where ks = map (jse_expect_id at') $ jsa_flatten xs
                           at' = srcloc_jsa "array" a at
                   _ ->
@@ -1211,16 +1216,33 @@ evalStmt ctxt at env ss k =
               case ctxt_mode ctxt of
                 SLC_Step penvs_ref ->
                   case ev of
-                    SLV_Form (SLForm_Part_ToConsensus _who Nothing _mmsg _mamt _mtime) -> do
-                      --- XXX update cenv w/ msg
+                    SLV_Form (SLForm_Part_ToConsensus who Nothing mmsg _XXX_mamt _XXX_mtime) -> do
                       (lifter', _stmts_ref) <- ctxt_newLifter
+                      penvs <- readSTRef penvs_ref
+                      let penv = penvs M.! who
+                      --- XXX at and at_after here might be bad... add to ToConsensus?
+                      (msg_env, _XXX_tmsg) <-
+                        case mmsg of
+                          Nothing -> return (mempty, [])
+                          Just msg -> do
+                            let mk var = do
+                                  let val = env_lookup at_after var penv
+                                  let (t, _) = typeOf at_after val
+                                  x <- ctxt_alloc ctxt at
+                                  return $ DLVar at_after "msg" t x
+                            tvs <- mapM mk msg
+                            return $ (foldl' (env_insertp at_after) mempty $ zip msg $ map SLV_DLVar tvs, tvs)
+                      --- We go back to the original env from before the to-consensus step
+                      let env' = env_merge at_after env msg_env
+                      let penvs' = M.map (flip (env_merge at_after) $ msg_env) penvs
+                      writeSTRef penvs_ref penvs'
                       let ctxt_cstep =
                             (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, ctxt_lifter ctxt)
                                     , ctxt_id = ctxt_id ctxt
                                     , ctxt_lifter = Just lifter'
                                     , ctxt_stack = ctxt_stack ctxt })
-                      --- We go back to the original env from before the to-consensus step
-                      evalStmt ctxt_cstep at_after env ks k
+                      --- XXX lift toconsensus
+                      evalStmt ctxt_cstep at_after env' ks k
                     _ -> should_be_null --- XXX or above
                 SLC_ConsensusStep (penvs_ref, orig_lifter) ->
                   case ev of
