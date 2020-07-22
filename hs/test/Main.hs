@@ -186,11 +186,14 @@ main = do
   compileTests <- testsFor (Proxy @CompileErr) compileErrExample ".rsh" "compile-errors"
   verifyTests <- goldenTests verifyErrExample ".patch" "verification-errors"
   args <- getArgs
-  -- antXMLRunner isn't very polite when you leave off --xml
-  let theMain = case any ("--xml" `isPrefixOf`) args of
-        True -> defaultMainWithIngredients (htmlRunner:antXMLRunner:defaultIngredients)
-        False -> defaultMainWithIngredients (htmlRunner:defaultIngredients)
-  theMain $ testGroup "tests"
+  let
+    -- Note: antXMLRunner isn't very polite when you leave off --xml
+    theMain = case any ("--xml" `isPrefixOf`) args of
+      True -> defaultMainWithIngredients (htmlRunner:antXMLRunner:defaultIngredients)
+      False -> defaultMainWithIngredients (htmlRunner:defaultIngredients)
+    -- Note: The tests get current dir mixed up if run in parallel
+    theArgs = "--num-threads=1":args
+  withArgs theArgs $ theMain $ testGroup "tests"
     [ parseTests
     , compileTests
     , verifyTests
