@@ -13,7 +13,7 @@ Read the
 
 If you want to work on the Reach compiler, you'll need:
 - stack v2.1.3
-- z3 v4.8.5
+- z3 v4.8.8
 - solidity v0.5.11
 - algorand with application TEAL support
 
@@ -27,7 +27,7 @@ $ brew install https://raw.githubusercontent.com/ethereum/homebrew-ethereum/7fa7
 Installation on Ubuntu:
 ```
 $ sudo apt update
-$ sudo apt install z3
+$ sudo apt install z3  # see hs/Dockerfile for getting z3 v4.8.8 specifically
 $ sudo snap install solc
 $ curl -sSL https://get.haskellstack.org/ | sh
 ```

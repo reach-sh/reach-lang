@@ -3,7 +3,7 @@ FROM ethereum/solc:0.5.11 as solc
 FROM alpine:latest as dl-deps
 RUN apk add wget unzip
 WORKDIR /z3
-ENV Z3_VER 4.8.6
+ENV Z3_VER 4.8.8
 RUN wget https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-x64-ubuntu-16.04.zip
 RUN unzip z3-${Z3_VER}-x64-ubuntu-16.04.zip
 RUN rm z3-${Z3_VER}-x64-ubuntu-16.04.zip
