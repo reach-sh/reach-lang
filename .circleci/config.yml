@@ -80,6 +80,7 @@ jobs:
             cp -r hs/test-reports /tmp/workspace/docs/
             mkdir -p /tmp/workspace/docs/linter-reports/
             cp hs/stan.html /tmp/workspace/docs/linter-reports/
+            cp todo.html /tmp/workspace/docs/linter-reports/
       - persist_to_workspace:
           root: /tmp/workspace
           paths:
@@ -111,6 +112,7 @@ jobs:
             git fetch origin gh-pages
             git checkout gh-pages
             git pull origin gh-pages
+            git rm -r .
             cp -r /tmp/workspace/docs/* .
             git add .
             git commit -m "[ci skip] docs for $CIRCLE_SHA1"
