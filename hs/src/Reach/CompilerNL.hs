@@ -1217,56 +1217,49 @@ evalStmt ctxt at env ss k =
       where at_after =
               srcloc_after_semi "expr stmt" JSNoAnnot sp at
             k' (SLRes _ ev) =
-              case ctxt_mode ctxt of
-                SLC_Step penvs_ref ->
-                  case ev of
-                    SLV_Form (SLForm_Part_ToConsensus who Nothing mmsg _XXX_mamt _XXX_mtime) -> do
-                      (lifter', _stmts_ref) <- ctxt_newLifter
-                      penvs <- readSTRef penvs_ref
-                      let penv = penvs M.! who
-                      traceM $ "to_consensus from " ++ show who
-                      --- XXX at and at_after here might be bad... add to ToConsensus?
-                      (msg_env, _XXX_tmsg) <-
-                        case mmsg of
-                          Nothing -> return (mempty, [])
-                          Just msg -> do
-                            let mk var = do
-                                  let val = env_lookup at_after var penv
-                                  let (t, _) = typeOf at_after val
-                                  x <- ctxt_alloc ctxt at
-                                  return $ DLVar at_after "msg" t x
-                            tvs <- mapM mk msg
-                            return $ (foldl' (env_insertp at_after) mempty $ zip msg $ map SLV_DLVar tvs, tvs)
-                      --- We go back to the original env from before the to-consensus step
-                      let env' = env_merge at_after env msg_env
-                      let penvs' = M.mapWithKey (\p old ->
-                                                   case p == who of
-                                                     True -> old
-                                                     False -> env_merge at_after old msg_env) penvs
-                      writeSTRef penvs_ref penvs'
-                      let ctxt_cstep =
-                            (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, ctxt_lifter ctxt)
-                                    , ctxt_id = ctxt_id ctxt
-                                    , ctxt_lifter = Just lifter'
-                                    , ctxt_stack = ctxt_stack ctxt })
-                      --- XXX lift toconsensus
-                      evalStmt ctxt_cstep at_after env' ks k
-                    _ -> should_be_null --- XXX or above
-                SLC_ConsensusStep (penvs_ref, orig_lifter) ->
-                  case ev of
-                    SLV_Prim SLPrim_committed -> do
-                      --- XXX do something with old lifter?
-                      let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs_ref
-                                              , ctxt_id = ctxt_id ctxt
-                                              , ctxt_lifter = orig_lifter
-                                              , ctxt_stack = ctxt_stack ctxt })
-                      evalStmt ctxt_step at_after env ks k
-                    _ -> should_be_null --- XXX or above
-                _ -> should_be_null
-              where should_be_null =
-                      kontNull at
-                      (\() -> evalStmt ctxt at_after env ks k)
-                      () ev
+              case (ctxt_mode ctxt, ev) of
+                (SLC_Step penvs_ref, SLV_Form (SLForm_Part_ToConsensus who Nothing mmsg _XXX_mamt _XXX_mtime)) -> do
+                  (lifter', _stmts_ref) <- ctxt_newLifter
+                  penvs <- readSTRef penvs_ref
+                  let penv = penvs M.! who
+                  traceM $ "to_consensus from " ++ show who
+                  --- XXX at and at_after here might be bad... add to ToConsensus?
+                  (msg_env, _XXX_tmsg) <-
+                    case mmsg of
+                      Nothing -> return (mempty, [])
+                      Just msg -> do
+                        let mk var = do
+                              let val = env_lookup at_after var penv
+                              let (t, _) = typeOf at_after val
+                              x <- ctxt_alloc ctxt at
+                              return $ DLVar at_after "msg" t x
+                        tvs <- mapM mk msg
+                        return $ (foldl' (env_insertp at_after) mempty $ zip msg $ map SLV_DLVar tvs, tvs)
+                  --- We go back to the original env from before the to-consensus step
+                  let env' = env_merge at_after env msg_env
+                  let penvs' = M.mapWithKey (\p old ->
+                                                case p == who of
+                                                  True -> old
+                                                  False -> env_merge at_after old msg_env) penvs
+                  writeSTRef penvs_ref penvs'
+                  let ctxt_cstep =
+                        (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, ctxt_lifter ctxt)
+                                , ctxt_id = ctxt_id ctxt
+                                , ctxt_lifter = Just lifter'
+                                , ctxt_stack = ctxt_stack ctxt })
+                  --- XXX lift toconsensus
+                  evalStmt ctxt_cstep at_after env' ks k
+                (SLC_ConsensusStep (penvs_ref, orig_lifter), SLV_Prim SLPrim_committed) -> do
+                  --- XXX do something with old lifter?
+                  let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs_ref
+                                          , ctxt_id = ctxt_id ctxt
+                                          , ctxt_lifter = orig_lifter
+                                          , ctxt_stack = ctxt_stack ctxt })
+                  evalStmt ctxt_step at_after env ks k
+                _ ->
+                  case typeOf at_after ev of
+                    (T_Null, _) -> evalStmt ctxt at_after env ks k
+                    _ -> expect_throw at (Err_Block_NotNull ev) --- XXX rename to expression not null? or ignore?
     ((JSAssignStatement _lhs op _rhs _asp):ks) ->
       case (op, ks) of
         ((JSAssign _), ((JSContinue a _bl sp):cont_ks)) ->
@@ -1304,12 +1297,6 @@ evalStmt ctxt at env ss k =
     (s@(JSWith a _ _ _ _ _):_) -> illegal a s "with"
   where illegal a s lab =
           expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
-
-kontNull :: SrcLoc -> (a -> ans) -> a -> SLVal -> ans
-kontNull at res arg cv =
-  case typeOf at cv of
-    (T_Null, _) -> res arg
-    _ -> expect_throw at (Err_Block_NotNull cv)
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =
