@@ -900,9 +900,10 @@ evalApplyVals ctxt at env rator randvs k =
   case rator of
     SLV_Prim p ->
       evalPrim ctxt at env p randvs k
-    SLV_Clo clo_at mname formals body clo_env ->
-      evalBlock ctxt' clo_at env' body k
-      where env' = foldl' (flip (uncurry (env_insert clo_at))) clo_env kvs
+    SLV_Clo clo_at mname formals (JSBlock body_a body _) clo_env ->
+      evalStmt ctxt' body_at env' body (\_ v -> k v)
+      where body_at = srcloc_jsa "block" body_a clo_at
+            env' = foldl' (flip (uncurry (env_insert clo_at))) clo_env kvs
             kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
             ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
     v ->
@@ -943,11 +944,11 @@ kontIf ctxt at k cv (t_lifts, tv) (f_lifts, fv) =
     _ ->
       expect_throw at (Err_Eval_IfCondNotBool cv)
 
-evalIf :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> a -> a -> (SLCtxt s -> SrcLoc -> SLEnv -> a -> (SLVal -> ST s ans) -> ST s ans) -> (SLVal -> ST s ans) -> ST s ans
-evalIf ctxt at env ce tX fX evalX k =
+evalIf :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> JSExpression -> JSExpression -> (SLVal -> ST s ans) -> ST s ans
+evalIf ctxt at env ce te fe k =
   evalExpr ctxt at env ce k_c
-  where k_c cv = evalInside tX (k_t cv)
-        k_t cv ta = evalInside fX (kontIf ctxt at k cv ta)
+  where k_c cv = evalInside te (k_t cv)
+        k_t cv ta = evalInside fe (kontIf ctxt at k cv ta)
         evalInside x k_s = do
           (l', stmts_ref) <- ctxt_newLifter
           let fresh_ctxt =
@@ -959,7 +960,7 @@ evalIf ctxt at env ce tX fX evalX k =
           let k' xv = do
                 x_lifts <- readSTRef stmts_ref
                 k_s (x_lifts, xv)
-          evalX fresh_ctxt at env x k'
+          evalExpr fresh_ctxt at env x k'
 
 evalPropertyName :: SLCtxt s -> SrcLoc -> SLEnv -> JSPropertyName -> (String -> ST s ans) -> ST s ans
 evalPropertyName ctxt at env pn k =
@@ -1035,7 +1036,7 @@ evalExpr ctxt at env e k =
     JSExpressionParen a ie _ -> evalExpr ctxt (srcloc_jsa "paren" a at) env ie k
     JSExpressionPostfix _ _ -> illegal
     JSExpressionTernary c a t _ f ->
-      evalIf ctxt at' env c t f evalExpr k
+      evalIf ctxt at' env c t f k
       where at' = srcloc_jsa "ternary" a at
     JSArrowExpression aformals a bodys ->
       k $ SLV_Clo at' fname formals body env
@@ -1261,11 +1262,6 @@ expect_empty_tail lab a sp at ks res =
     _ ->
       expect_throw at' (Err_TailNotEmpty ks)
       where at' = srcloc_after_semi lab a sp at
-  
-evalBlock :: SLCtxt s -> SrcLoc -> SLEnv -> JSBlock -> (SLVal -> ST s ans) -> ST s ans
-evalBlock ctxt at env (JSBlock a ss _) k =
-  evalStmt ctxt at' env ss (\_ v -> k v)
-  where at' = srcloc_jsa "block" a at
 
 evalTopBody :: SLCtxt s -> SrcLoc -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> (SLEnv -> ST s ans) -> ST s ans
 evalTopBody ctxt at libm env exenv body k =
