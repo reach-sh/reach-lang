@@ -1,0 +1,7 @@
+.highlight-inline {
+    /* https://github.com/wilbowma/scribble-minted/issues/2
+
+    display: inline-table; */
+    margin: 0em;
+    white-space: pre-wrap;
+}
