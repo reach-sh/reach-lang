@@ -108,8 +108,9 @@ jobs:
       - run:
           name: Deploy docs to gh-pages branch
           command: |
-            git pull origin/gh-pages
+            git fetch origin gh-pages
             git checkout gh-pages
+            git pull origin gh-pages
             cp -r /tmp/workspace/docs/* .
             git add .
             git commit -m "[ci skip] docs for $CIRCLE_SHA1"
