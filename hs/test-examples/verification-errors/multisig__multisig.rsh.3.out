@@ -21,6 +21,73 @@ More info...
 ... v14p = 0 = ctc_balance6
 ... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+... = = UNKNOWN -- XXX reachc error, no info on var
+... ctc_balance6 = UNKNOWN -- XXX reachc error, no info on var
+... goal = false = v15p -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v14p = 0 = ctc_balance6 -- ../examples/multisig/multisig.rsh.3.patch:35:20
+... v15p = false = (= v14p v8p ) -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v8p = 1 -- XXX reachc error, bad info on var
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DELETEME Info known for keys:
+ctc_balance0 : Int = 0  
+ctc_balance3 : Int = 1  
+txn_value1 : Int = 0  
+txn_value2 : Int = 0  
+txn_value4 : Int = 0  
+txn_value5 : Int = 0  
+v10 : Int = 0  
+v10p : Int = 0  
+v11 : Bool = false = (= v8 0 ) [  : PrimApp @ STDLIB:7:16 ] 
+v11p : Bool = false  [  : PrimApp @ STDLIB:7:16 ] 
+v12 : Bool = true = (ite v11 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v12p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v13 : Bool = false = (ite v12 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v13p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v14 : Int = 1 = ctc_balance3 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v14p : Int = 0 = ctc_balance6 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v15 : Bool = true = (= v14 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v15p : Bool = false = (= v14p v8p ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v16 : Int = 1  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v16p : Int = 0  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v17 : Int = 1  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v17p : Int = 0  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v18 : Bool = true = (<= v17 v8 ) [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v18p : Bool = false  [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v19 : Int = 0 = txn_value4 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v19p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v2 : Int = 0 = txn_value1 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v20 : Bool = true = (= v19 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v20p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v21 : Bool = true = (<= v17 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v21p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v22 : Bool = true  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v22p : Bool = false  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v23 : Bool = true  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v23p : Bool = false  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v24 : Int = 0 = txn_value5 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v24p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25 : Bool = true = (= v24 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v26 : Int = 1 = (+ v9 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v26p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v27 : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v27p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v2p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3 : Bool = true = (= v2 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v4 : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v4p : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v5 : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v5p : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v6 : Int = 0 = txn_value2 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v6p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7 : Bool = true = (= v6 v5 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v8 : Int = 1  
+v8p : Int = 1  
+v9 : Int = 0  
+v9p : Int = 1  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (0,("Child",LT_BT BT_Address))
 ...checking VC_Top
@@ -43,6 +110,73 @@ This could happen if...
 More info...
 ... v14p = 0 = ctc_balance6
 ... v15p = false = (= v14p v8p )
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+... = = UNKNOWN -- XXX reachc error, no info on var
+... ctc_balance6 = UNKNOWN -- XXX reachc error, no info on var
+... goal = false = v15p -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v14p = 0 = ctc_balance6 -- ../examples/multisig/multisig.rsh.3.patch:35:20
+... v15p = false = (= v14p v8p ) -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v8p = 1 -- XXX reachc error, bad info on var
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DELETEME Info known for keys:
+ctc_balance0 : Int = 0  
+ctc_balance3 : Int = 1  
+txn_value1 : Int = 0  
+txn_value2 : Int = 0  
+txn_value4 : Int = 0  
+txn_value5 : Int = 0  
+v10 : Int = 0  
+v10p : Int = 0  
+v11 : Bool = false = (= v8 0 ) [  : PrimApp @ STDLIB:7:16 ] 
+v11p : Bool = false  [  : PrimApp @ STDLIB:7:16 ] 
+v12 : Bool = true = (ite v11 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v12p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v13 : Bool = false = (ite v12 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v13p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v14 : Int = 1 = ctc_balance3 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v14p : Int = 0 = ctc_balance6 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v15 : Bool = true = (= v14 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v15p : Bool = false = (= v14p v8p ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v16 : Int = 1  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v16p : Int = 0  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v17 : Int = 1  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v17p : Int = 0  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v18 : Bool = true = (<= v17 v8 ) [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v18p : Bool = false  [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v19 : Int = 0 = txn_value4 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v19p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v2 : Int = 0 = txn_value1 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v20 : Bool = true = (= v19 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v20p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v21 : Bool = true = (<= v17 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v21p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v22 : Bool = true  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v22p : Bool = false  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v23 : Bool = true  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v23p : Bool = false  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v24 : Int = 0 = txn_value5 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v24p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25 : Bool = true = (= v24 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v26 : Int = 1 = (+ v9 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v26p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v27 : Int = 1 = (+ v10 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v27p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v2p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3 : Bool = true = (= v2 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v4 : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v4p : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v5 : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v5p : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v6 : Int = 0 = txn_value2 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v6p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7 : Bool = true = (= v6 v5 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v8 : Int = 1  
+v8p : Int = 1  
+v9 : Int = 0  
+v9p : Int = 1  
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (1,("Parent",LT_BT BT_Address))
@@ -67,6 +201,73 @@ More info...
 ... v14p = 0 = ctc_balance6
 ... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+... = = UNKNOWN -- XXX reachc error, no info on var
+... ctc_balance6 = UNKNOWN -- XXX reachc error, no info on var
+... goal = false = v15p -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v14p = 0 = ctc_balance6 -- ../examples/multisig/multisig.rsh.3.patch:35:20
+... v15p = false = (= v14p v8p ) -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v8p = 1 -- XXX reachc error, bad info on var
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DELETEME Info known for keys:
+ctc_balance0 : Int = 0  
+ctc_balance3 : Int = 1  
+txn_value1 : Int = 0  
+txn_value2 : Int = 0  
+txn_value4 : Int = 0  
+txn_value5 : Int = 0  
+v10 : Int = 1  
+v10p : Int = 1  
+v11 : Bool = false = (= v8 0 ) [  : PrimApp @ STDLIB:7:16 ] 
+v11p : Bool = false  [  : PrimApp @ STDLIB:7:16 ] 
+v12 : Bool = true = (ite v11 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v12p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v13 : Bool = false = (ite v12 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v13p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v14 : Int = 1 = ctc_balance3 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v14p : Int = 0 = ctc_balance6 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v15 : Bool = true = (= v14 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v15p : Bool = false = (= v14p v8p ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v16 : Int = 1  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v16p : Int = 0  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v17 : Int = 1  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v17p : Int = 0  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v18 : Bool = true = (<= v17 v8 ) [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v18p : Bool = false  [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v19 : Int = 0 = txn_value4 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v19p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v2 : Int = 0 = txn_value1 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v20 : Bool = true = (= v19 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v20p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v21 : Bool = true = (<= v17 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v21p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v22 : Bool = true  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v22p : Bool = false  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v23 : Bool = true  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v23p : Bool = false  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v24 : Int = 0 = txn_value5 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v24p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25 : Bool = true = (= v24 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v26 : Int = 1 = (+ v9 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v26p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v27 : Int = 1 = (+ v10 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v27p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v2p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3 : Bool = true = (= v2 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v4 : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v4p : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v5 : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v5p : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v6 : Int = 0 = txn_value2 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v6p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7 : Bool = true = (= v6 v5 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v8 : Int = 1  
+v8p : Int = 1  
+v9 : Int = 0  
+v9p : Int = 1  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top
@@ -89,6 +290,73 @@ This could happen if...
 More info...
 ... v14p = 0 = ctc_balance6
 ... v15p = false = (= v14p v8p )
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+... = = UNKNOWN -- XXX reachc error, no info on var
+... ctc_balance6 = UNKNOWN -- XXX reachc error, no info on var
+... goal = false = v15p -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v14p = 0 = ctc_balance6 -- ../examples/multisig/multisig.rsh.3.patch:35:20
+... v15p = false = (= v14p v8p ) -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v8p = 1 -- XXX reachc error, bad info on var
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DELETEME Info known for keys:
+ctc_balance0 : Int = 0  
+ctc_balance3 : Int = 1  
+txn_value1 : Int = 0  
+txn_value2 : Int = 0  
+txn_value4 : Int = 0  
+txn_value5 : Int = 0  
+v10 : Int = 0  
+v10p : Int = 0  
+v11 : Bool = false = (= v8 0 ) [  : PrimApp @ STDLIB:7:16 ] 
+v11p : Bool = false  [  : PrimApp @ STDLIB:7:16 ] 
+v12 : Bool = true = (ite v11 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v12p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v13 : Bool = false = (ite v12 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v13p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v14 : Int = 1 = ctc_balance3 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v14p : Int = 0 = ctc_balance6 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v15 : Bool = true = (= v14 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v15p : Bool = false = (= v14p v8p ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v16 : Int = 1  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v16p : Int = 0  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v17 : Int = 1  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v17p : Int = 0  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v18 : Bool = false = (<= v17 v8 ) [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v18p : Bool = false  [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v19 : Int = 0 = txn_value4 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v19p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v2 : Int = 0 = txn_value1 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v20 : Bool = true = (= v19 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v20p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v21 : Bool = true = (<= v17 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v21p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v22 : Bool = false  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v22p : Bool = false  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v23 : Bool = true  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v23p : Bool = false  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v24 : Int = 0 = txn_value5 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v24p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25 : Bool = true = (= v24 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v26 : Int = 1 = (+ v9 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v26p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v27 : Int = 1 = (+ v10 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v27p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v2p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3 : Bool = true = (= v2 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v4 : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v4p : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v5 : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v5p : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v6 : Int = 0 = txn_value2 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v6p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7 : Bool = true = (= v6 v5 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v8 : Int = 1  
+v8p : Int = 1  
+v9 : Int = 0  
+v9p : Int = 1  
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (0,("Child",LT_BT BT_Address))
@@ -113,6 +381,73 @@ More info...
 ... v14p = 0 = ctc_balance6
 ... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+... = = UNKNOWN -- XXX reachc error, no info on var
+... ctc_balance6 = UNKNOWN -- XXX reachc error, no info on var
+... goal = false = v15p -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v14p = 0 = ctc_balance6 -- ../examples/multisig/multisig.rsh.3.patch:35:20
+... v15p = false = (= v14p v8p ) -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v8p = 1 -- XXX reachc error, bad info on var
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DELETEME Info known for keys:
+ctc_balance0 : Int = 0  
+ctc_balance3 : Int = 1  
+txn_value1 : Int = 0  
+txn_value2 : Int = 0  
+txn_value4 : Int = 0  
+txn_value5 : Int = 0  
+v10 : Int = 0  
+v10p : Int = 0  
+v11 : Bool = false = (= v8 0 ) [  : PrimApp @ STDLIB:7:16 ] 
+v11p : Bool = false  [  : PrimApp @ STDLIB:7:16 ] 
+v12 : Bool = true = (ite v11 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v12p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v13 : Bool = false = (ite v12 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v13p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v14 : Int = 1 = ctc_balance3 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v14p : Int = 0 = ctc_balance6 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v15 : Bool = true = (= v14 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v15p : Bool = false = (= v14p v8p ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v16 : Int = 1  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v16p : Int = 0  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v17 : Int = 1  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v17p : Int = 0  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v18 : Bool = true = (<= v17 v8 ) [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v18p : Bool = false  [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v19 : Int = 0 = txn_value4 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v19p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v2 : Int = 0 = txn_value1 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v20 : Bool = true = (= v19 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v20p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v21 : Bool = true = (<= v17 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v21p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v22 : Bool = false  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v22p : Bool = false  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v23 : Bool = true  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v23p : Bool = false  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v24 : Int = 0 = txn_value5 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v24p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25 : Bool = true = (= v24 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v26 : Int = 1 = (+ v9 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v26p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v27 : Int = 1 = (+ v10 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v27p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v2p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3 : Bool = true = (= v2 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v4 : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v4p : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v5 : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v5p : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v6 : Int = 0 = txn_value2 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v6p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7 : Bool = true = (= v6 v5 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v8 : Int = 1  
+v8p : Int = 1  
+v9 : Int = 0  
+v9p : Int = 1  
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (1,("Parent",LT_BT BT_Address))
 ...checking VC_Top
@@ -135,6 +470,73 @@ This could happen if...
 More info...
 ... v14p = 0 = ctc_balance6
 ... v15p = false = (= v14p v8p )
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+... = = UNKNOWN -- XXX reachc error, no info on var
+... ctc_balance6 = UNKNOWN -- XXX reachc error, no info on var
+... goal = false = v15p -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v14p = 0 = ctc_balance6 -- ../examples/multisig/multisig.rsh.3.patch:35:20
+... v15p = false = (= v14p v8p ) -- ../examples/multisig/multisig.rsh.3.patch:35:23
+... v8p = 1 -- XXX reachc error, bad info on var
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DELETEME Info known for keys:
+ctc_balance0 : Int = 0  
+ctc_balance3 : Int = 1  
+txn_value1 : Int = 0  
+txn_value2 : Int = 0  
+txn_value4 : Int = 0  
+txn_value5 : Int = 0  
+v10 : Int = 1  
+v10p : Int = 1  
+v11 : Bool = false = (= v8 0 ) [  : PrimApp @ STDLIB:7:16 ] 
+v11p : Bool = false  [  : PrimApp @ STDLIB:7:16 ] 
+v12 : Bool = true = (ite v11 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v12p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v13 : Bool = false = (ite v12 false true ) [  : PureIf @ STDLIB:5:13 ] 
+v13p : Bool = false  [  : PureIf @ STDLIB:5:13 ] 
+v14 : Int = 1 = ctc_balance3 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v14p : Int = 0 = ctc_balance6 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:20 ] 
+v15 : Bool = true = (= v14 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v15p : Bool = false = (= v14p v8p ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:35:23 ] 
+v16 : Int = 1  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v16p : Int = 0  [ Child : Interact @ ../examples/multisig/multisig.rsh.3.patch:40:34 ] 
+v17 : Int = 1  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v17p : Int = 0  [ Child : Declassify @ ../examples/multisig/multisig.rsh.3.patch:40:33 ] 
+v18 : Bool = false = (<= v17 v8 ) [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v18p : Bool = false  [ Child : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:41:22 ] 
+v19 : Int = 0 = txn_value4 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v19p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v2 : Int = 0 = txn_value1 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v20 : Bool = true = (= v19 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v20p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:42:5 ] 
+v21 : Bool = true = (<= v17 v8 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v21p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:43:21 ] 
+v22 : Bool = true  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v22p : Bool = false  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:47:35 ] 
+v23 : Bool = true  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v23p : Bool = false  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:47:34 ] 
+v24 : Int = 0 = txn_value5 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v24p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25 : Bool = true = (= v24 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v25p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:48:5 ] 
+v26 : Int = 1 = (+ v9 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v26p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:52:52 ] 
+v27 : Int = 1 = (+ v10 1 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v27p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:55:43 ] 
+v2p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3 : Bool = true = (= v2 0 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v3p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:26:3 ] 
+v4 : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v4p : Int = 0  [ Parent : Interact @ ../examples/multisig/multisig.rsh.3.patch:30:34 ] 
+v5 : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v5p : Int = 0  [ Parent : Declassify @ ../examples/multisig/multisig.rsh.3.patch:30:33 ] 
+v6 : Int = 0 = txn_value2 [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v6p : Int = 0  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7 : Bool = true = (= v6 v5 ) [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v7p : Bool = false  [  : PrimApp @ ../examples/multisig/multisig.rsh.3.patch:31:3 ] 
+v8 : Int = 1  
+v8p : Int = 1  
+v9 : Int = 0  
+v9p : Int = 1  
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Checked 45 theorems; 6 failures. :'(

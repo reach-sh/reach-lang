@@ -22,6 +22,7 @@ import qualified Data.Text.IO as TIO
 import Reach.AST
 import Reach.EmbeddedFiles
 import Reach.Util
+import Reach.Pretty ()
 
 {- Collect Types of IL variables -}
 
@@ -139,6 +140,7 @@ data ModelDefineInfo a = ModelDefineInfo
   { mdi_name :: String
   , mdi_type :: String
   , mdi_value :: String
+  , mdi_sexpr :: Maybe SExpr
   , mdi_la :: Maybe (LetAnn a)
   , mdi_anns :: AnnMap a
   , mdi_model :: ModelMap
@@ -167,6 +169,24 @@ show_interact (ModelDefineInfo{mdi_name, mdi_value, mdi_type, mdi_la}) =
     showMay pre (Just x) post = pre <> x <> post
     showMay _pre Nothing _post = ""
     -- XXX: also show expr with values substituted in from mmap
+
+show_la :: Show a => LetAnn a -> String
+show_la LetAnn{la_ann, la_role, la_var, la_expr} = s where
+  s = unwords ["[", r, ":", v, "@", show la_ann, "]", e]
+  r = case la_role of
+    RolePart (_, (rr, _)) -> rr
+    RoleContract{} -> ""
+  (_, (v, _)) = la_var
+  e = showILExpr la_expr
+
+show_sexpr :: SExpr -> String
+show_sexpr sexpr = "= " <> showsSExpr sexpr ""
+
+show_mdi :: Show a => ModelDefineInfo a -> String
+show_mdi (ModelDefineInfo {mdi_name, mdi_value, mdi_type, mdi_sexpr, mdi_la}) =
+  unwords
+    [ mdi_name, ":", mdi_type, "=", mdi_value, maybe "" show_sexpr mdi_sexpr,
+      maybe "" show_la mdi_la]
 
 data Z3Model = Z3Model [Z3Define]
 data Z3Define = Z3Define String Bool String String -- ^ name, hasArgs, type, val
@@ -247,8 +267,13 @@ displayInteracts = T.unlines . \case
     "This could happen if..." : map show_interact mp_interacts
 
 harvestIdents :: SExpr -> [String]
+-- harvestIdents (Atom s@(c:_))
+  --- | isDigit c = []
+  --- | otherwise = [s]
 harvestIdents (Atom s) = [s]
-harvestIdents (List xs) = concatMap harvestIdents xs
+-- harvestIdents (Atom "") = [] -- wat
+-- harvestIdents (List (_f:xs)) = concatMap harvestIdents xs
+harvestIdents (List xs) = concatMap harvestIdents xs -- shoudln't happen?
 
 -- ^ all, collected-so-far, current-sexp-to-explore
 collectIds :: M.Map String SExpr -> M.Map String SExpr -> [SExpr] -> M.Map String SExpr
@@ -262,11 +287,76 @@ collectIds mAll mColl (sx:sxs) = collectIds mAll mColl' sxs' where
     sxs' = sxs ++ sxsNew
     sxsNew = map snd mCollNewList
 
+filterVarInfo :: forall a.
+  M.Map String (ModelDefineInfo a)
+  -> String -> String -> SExpr -> a -> M.Map String (SmtVar a)
+filterVarInfo mdis n0 v0 e0 a0 = go mColl0 [e0] where
+  mColl0 = M.singleton n0 (SmtComputedVar n0 v0 e0 (Just a0))
+  go :: M.Map String (SmtVar a) -> [SExpr] -> M.Map String (SmtVar a)
+  go mColl [] = mColl
+  go mColl (sx:sxs) = go mColl' sxs' where
+    mColl' = mColl <> mCollNew
+    mCollNew = M.fromList mCollNewList
+    mCollNewList = map (\i -> (,) i (discoverVar i)) newIds
+    newIds = filter (\i -> not $ M.member i mColl) ids
+    ids = harvestIdents sx
+    discoverVar :: String -> SmtVar a
+    discoverVar v = case M.lookup v mdis of
+      Just mdi@ModelDefineInfo{mdi_name, mdi_value, mdi_sexpr, mdi_la} ->
+        case mdi_sexpr of
+          Just sexpr ->
+            SmtComputedVar mdi_name mdi_value sexpr mann where
+              mann = la_ann <$> mdi_la
+          Nothing -> case mdi_la of
+            Just LetAnn{la_ann, la_expr} ->
+              SmtInputVar mdi_name mdi_value la_expr la_ann
+            Nothing ->
+              SmtOtherVar mdi_name mdi_value (Just mdi)
+      -- XXX value should be optional for this constructor?
+      Nothing -> SmtOtherVar v "UNKNOWN" Nothing
+    sxsNew = catMaybes $ map (harvestSExpr . snd) mCollNewList
+    sxs' = sxs ++ sxsNew
+
+harvestSExpr :: SmtVar ann -> Maybe SExpr
+harvestSExpr = \case
+  SmtComputedVar _ _ sexpr _ -> Just sexpr
+  SmtInputVar{} -> Nothing
+  SmtOtherVar{} -> Nothing
+
+data SmtVar ann
+  = SmtComputedVar String String SExpr (Maybe ann)
+  | SmtInputVar String String (ILExpr ann) ann
+  | SmtOtherVar String String (Maybe (ModelDefineInfo ann))
+  -- name, value, etc
+
+showILExpr :: ILExpr ann -> String
+showILExpr _ = "" -- show . pretty
+
+showSmtVar :: Show a => SmtVar a -> String
+showSmtVar = \case
+  SmtComputedVar n v sexpr mann ->
+    "... " <> n <> " = " <> v <> " = " <> showsSExpr sexpr (mshow " -- " mann "")
+  SmtInputVar n v expr ann ->
+    "... " <> n <> " = " <> v <> " = " <> showILExpr expr <> " -- "  <> show ann
+  SmtOtherVar n v Nothing ->
+    "... " <> n <> " = " <> v <> " -- XXX reachc error, no info on var"
+  SmtOtherVar n v (Just _mdi) ->
+    "... " <> n <> " = " <> v <> " -- XXX reachc error, bad info on var"
+
+
+varNameToInt :: String -> Maybe Int
+varNameToInt ('v':s) = case reverse s of
+  ('p':s') -> readMaybe (reverse s')
+  _ -> readMaybe s
+varNameToInt _ = Nothing
+
+
 display_model :: Show ann =>
   AssnMem -> AnnMap ann -> Bool -> rolet -> TheoremKind -> ann -> SExpr -> SExpr -> IO ()
-display_model mem anns _honest _who tk _ann a m = do
+display_model mem anns _honest _who tk ann a m = do
   mp <- parse_model_map m
-  mp_enriched <- mapM (enrich mp) $ M.toList mp
+  memm <- readIORef mem
+  let mp_enriched = map (enrich mp memm) $ M.toList mp
   -- XXX probably want more than just interacts -- all "unbound"
   let mp_interacts = filterInteracts mp_enriched
   putStrLn "===================================================="
@@ -274,9 +364,15 @@ display_model mem anns _honest _who tk _ann a m = do
   TIO.putStr $ displayInteracts mp_interacts
   putStrLn "===================================================="
   putStrLn "More info..."
-  memm <- readIORef mem
   let mmm = collectIds memm mempty [a] -- XXX better var names
   mapM_ putStrLn $ map (showModelVal mp) $ M.toList mmm
+  putStrLn "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  let mp_enriched_map = M.fromList $ map (\mdi -> (mdi_name mdi, mdi)) mp_enriched
+  let mp_filtered = filterVarInfo mp_enriched_map "goal" "false" a ann
+  mapM_ putStrLn $ map (showSmtVar . snd) $ M.toList mp_filtered
+  putStrLn "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  putStrLn $ "DELETEME Info known for keys:"
+  mapM_ (putStrLn . show_mdi) (M.elems mp_enriched_map)
   putStrLn "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   where
     -- XXX print srcloc for var exprs
@@ -287,12 +383,14 @@ display_model mem anns _honest _who tk _ann a m = do
       isInteract mdi = (fst . snd . la_var <$> mdi_la mdi) == Just "Interact"
       isV mdi = take 1 (mdi_name mdi) == "v"
       notP mdi = take 1 (reverse $ mdi_name mdi) /= "p"
-    enrich mp (name, (ty, val)) = do
-      -- XXX don't look up txn_value1, balance0, etc
-      v <- parse_var_int name
-      return $ ModelDefineInfo
-        { mdi_name = name , mdi_type = ty , mdi_value = val
-        , mdi_la = M.lookup v anns , mdi_anns = anns, mdi_model = mp}
+    enrich mp memm (name, (ty, val)) = ModelDefineInfo {..} where
+      mdi_name = name
+      mdi_type = ty
+      mdi_value = val
+      mdi_sexpr = M.lookup name memm
+      mdi_la = varNameToInt name >>= flip M.lookup anns
+      mdi_anns = anns
+      mdi_model = mp
 
 z3_verify1 :: Show rolet => Show ann => Solver -> AssnMem -> AnnMap ann -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
 z3_verify1 z3 mem anns (honest, who, tk, ann) a = inNewScope z3 $ do
