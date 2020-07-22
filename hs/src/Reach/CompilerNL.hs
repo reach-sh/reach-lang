@@ -522,6 +522,75 @@ gatherDeps_top src_p = do
 
 -- Compiler
 
+data SLLifter s = SLLifter
+  { lift_stmts :: STRef s (Seq.Seq DLStmt) }
+  deriving (Eq)
+
+ctxt_newLifter :: ST s ((SLLifter s), STRef s (Seq.Seq DLStmt))
+ctxt_newLifter = do
+  newr <- newSTRef mempty
+  let l' = (SLLifter { lift_stmts = newr })
+  return (l', newr)
+
+data SLCtxt s = SLCtxt
+  { ctxt_mode :: SLCtxtMode s
+  , ctxt_id :: Maybe (STRef s Int)
+  , ctxt_lifter :: Maybe (SLLifter s)
+  , ctxt_stack :: [ SLCtxtFrame ] }
+  deriving (Eq)
+
+instance Show (SLCtxt s) where
+  show ctxt = show $ ctxt_mode ctxt
+
+data SLCtxtMode s
+  = SLC_Module
+  | SLC_Step (STRef s (M.Map SLPart SLEnv))
+  | SLC_Local
+  | SLC_LocalStep
+  | SLC_ConsensusStep ((STRef s (M.Map SLPart SLEnv)), Maybe (SLLifter s))
+  deriving (Eq)
+
+instance Show (SLCtxtMode s) where
+  show (SLC_Module) = "SLC_Module"
+  show (SLC_Step _) = "SLC_Step"
+  show (SLC_Local) = "SLC_Local"
+  show (SLC_LocalStep) = "SLC_LocalStep"
+  show (SLC_ConsensusStep _) = "SLC_ConsensusStep"
+
+ctxt_lift :: SLCtxt s -> SrcLoc -> SLLifter s
+ctxt_lift ctxt at =
+  case ctxt_lifter ctxt of
+    Nothing -> expect_throw at $ Err_Eval_IllegalLift ctxt
+    Just l -> l
+
+ctxt_lift_stmt :: SLCtxt s -> SrcLoc -> DLStmt -> ST s ()
+ctxt_lift_stmt ctxt at s' =
+  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.|> s')
+
+ctxt_lift_stmts :: SLCtxt s -> SrcLoc -> Seq.Seq DLStmt -> ST s ()
+ctxt_lift_stmts ctxt at ss' =
+  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.>< ss')
+
+ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s DLVar
+ctxt_lift_expr ctxt at mk_var e = do
+  let idr = case ctxt_id ctxt of
+              Just x -> x
+              Nothing -> expect_throw at $ Err_Eval_IllegalLift ctxt
+  x <- readSTRef idr
+  writeSTRef idr $ x + 1
+  let dv = mk_var x
+  let s = DLS_Let at dv e
+  ctxt_lift_stmt ctxt at s
+  return dv
+
+data SLCtxtFrame
+  = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
+  deriving (Eq, Show)
+
+ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
+ctxt_stack_push ctxt f =
+  (ctxt { ctxt_stack = f : (ctxt_stack ctxt) })
+
 typeOf :: SrcLoc -> SLVal -> (SLType, DLArg)
 typeOf at v =
   case v of
@@ -1191,75 +1260,6 @@ evalBlock :: SLCtxt s -> SrcLoc -> SLEnv -> JSBlock -> (SLVal -> ST s ans) -> ST
 evalBlock ctxt at env (JSBlock a ss _) k =
   evalStmt ctxt at' env ss (\_ v -> k v)
   where at' = srcloc_jsa "block" a at
-
-data SLLifter s = SLLifter
-  { lift_stmts :: STRef s (Seq.Seq DLStmt) }
-  deriving (Eq)
-
-ctxt_newLifter :: ST s ((SLLifter s), STRef s (Seq.Seq DLStmt))
-ctxt_newLifter = do
-  newr <- newSTRef mempty
-  let l' = (SLLifter { lift_stmts = newr })
-  return (l', newr)
-
-data SLCtxt s = SLCtxt
-  { ctxt_mode :: SLCtxtMode s
-  , ctxt_id :: Maybe (STRef s Int)
-  , ctxt_lifter :: Maybe (SLLifter s)
-  , ctxt_stack :: [ SLCtxtFrame ] }
-  deriving (Eq)
-
-instance Show (SLCtxt s) where
-  show ctxt = show $ ctxt_mode ctxt
-
-data SLCtxtMode s
-  = SLC_Module
-  | SLC_Step (STRef s (M.Map SLPart SLEnv))
-  | SLC_Local
-  | SLC_LocalStep
-  | SLC_ConsensusStep ((STRef s (M.Map SLPart SLEnv)), Maybe (SLLifter s))
-  deriving (Eq)
-
-instance Show (SLCtxtMode s) where
-  show (SLC_Module) = "SLC_Module"
-  show (SLC_Step _) = "SLC_Step"
-  show (SLC_Local) = "SLC_Local"
-  show (SLC_LocalStep) = "SLC_LocalStep"
-  show (SLC_ConsensusStep _) = "SLC_ConsensusStep"
-
-ctxt_lift :: SLCtxt s -> SrcLoc -> SLLifter s
-ctxt_lift ctxt at =
-  case ctxt_lifter ctxt of
-    Nothing -> expect_throw at $ Err_Eval_IllegalLift ctxt
-    Just l -> l
-
-ctxt_lift_stmt :: SLCtxt s -> SrcLoc -> DLStmt -> ST s ()
-ctxt_lift_stmt ctxt at s' =
-  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.|> s')
-
-ctxt_lift_stmts :: SLCtxt s -> SrcLoc -> Seq.Seq DLStmt -> ST s ()
-ctxt_lift_stmts ctxt at ss' =
-  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.>< ss')
-
-ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s DLVar
-ctxt_lift_expr ctxt at mk_var e = do
-  let idr = case ctxt_id ctxt of
-              Just x -> x
-              Nothing -> expect_throw at $ Err_Eval_IllegalLift ctxt
-  x <- readSTRef idr
-  writeSTRef idr $ x + 1
-  let dv = mk_var x
-  let s = DLS_Let at dv e
-  ctxt_lift_stmt ctxt at s
-  return dv
-
-data SLCtxtFrame
-  = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
-  deriving (Eq, Show)
-
-ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
-ctxt_stack_push ctxt f =
-  (ctxt { ctxt_stack = f : (ctxt_stack ctxt) })
 
 evalTopBody :: SLCtxt s -> SrcLoc -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> (SLEnv -> ST s ans) -> ST s ans
 evalTopBody ctxt at libm env exenv body k =
