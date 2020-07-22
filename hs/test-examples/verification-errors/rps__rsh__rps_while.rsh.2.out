@@ -13,8 +13,25 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:21:5)
+... interact [v143] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v144] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v158] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v159] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v177] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v178] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v27] (w/ A) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.2.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.2.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:45:7)
+... interact [v63] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:15:5)
+... interact [v82] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:57:7)
 ====================================================
 More info...
+... v86 = false = (= v40 v85 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (0,("A",LT_BT BT_Address))
@@ -31,8 +48,25 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:21:5)
+... interact [v143] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v144] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v158] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v159] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v177] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v178] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v27] (w/ A) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.2.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.2.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:45:7)
+... interact [v63] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:15:5)
+... interact [v82] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:57:7)
 ====================================================
 More info...
+... v86 = false = (= v40 v85 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (1,("B",LT_BT BT_Address))
@@ -49,8 +83,25 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:21:5)
+... interact [v143] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v144] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v158] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v159] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v177] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v178] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v27] (w/ A) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.2.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.2.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:45:7)
+... interact [v63] (w/ A) returns "31217174" (at rps_shared.rsh:11:13)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:15:5)
+... interact [v82] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:57:7)
 ====================================================
 More info...
+... v86 = false = (= v40 v85 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (2,("O",LT_BT BT_Address))
@@ -67,8 +118,25 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:21:5)
+... interact [v143] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v144] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v158] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v159] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v177] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:88:3)
+... interact [v178] returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:89:3)
+... interact [v27] (w/ A) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.2.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.2.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:45:7)
+... interact [v63] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:15:5)
+... interact [v82] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.2.patch:57:7)
 ====================================================
 More info...
+... v86 = false = (= v40 v85 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RoleContract

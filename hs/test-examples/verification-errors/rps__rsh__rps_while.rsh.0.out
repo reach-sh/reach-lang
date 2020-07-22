@@ -14,6 +14,21 @@ Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v165] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.0.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.0.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:57:7)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,6 +47,21 @@ Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v165] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.0.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.0.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:57:7)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -50,6 +80,21 @@ Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v165] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.0.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.0.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:57:7)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,6 +113,21 @@ Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v165] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.0.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.0.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:57:7)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,6 +146,21 @@ Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v165] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.0.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.0.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:57:7)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,6 +179,21 @@ Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v165] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.0.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.0.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:57:7)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -122,6 +212,21 @@ Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v165] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.0.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.0.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:57:7)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -140,6 +245,21 @@ Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v165] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:88:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:89:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.0.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.0.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.0.patch:57:7)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -13,8 +13,13 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 1 (at ../examples/multisig/multisig.rsh.3.patch:40:34)
+... interact [v22] (w/ Parent) returns true (at ../examples/multisig/multisig.rsh.3.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.3.patch:30:34)
 ====================================================
 More info...
+... v14p = 0 = ctc_balance6
+... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (0,("Child",LT_BT BT_Address))
@@ -31,8 +36,13 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 1 (at ../examples/multisig/multisig.rsh.3.patch:40:34)
+... interact [v22] (w/ Parent) returns true (at ../examples/multisig/multisig.rsh.3.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.3.patch:30:34)
 ====================================================
 More info...
+... v14p = 0 = ctc_balance6
+... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (1,("Parent",LT_BT BT_Address))
@@ -49,8 +59,13 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 1 (at ../examples/multisig/multisig.rsh.3.patch:40:34)
+... interact [v22] (w/ Parent) returns true (at ../examples/multisig/multisig.rsh.3.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.3.patch:30:34)
 ====================================================
 More info...
+... v14p = 0 = ctc_balance6
+... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RoleContract
@@ -67,8 +82,13 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 1 (at ../examples/multisig/multisig.rsh.3.patch:40:34)
+... interact [v22] (w/ Parent) returns false (at ../examples/multisig/multisig.rsh.3.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.3.patch:30:34)
 ====================================================
 More info...
+... v14p = 0 = ctc_balance6
+... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (0,("Child",LT_BT BT_Address))
@@ -85,8 +105,13 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 1 (at ../examples/multisig/multisig.rsh.3.patch:40:34)
+... interact [v22] (w/ Parent) returns false (at ../examples/multisig/multisig.rsh.3.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.3.patch:30:34)
 ====================================================
 More info...
+... v14p = 0 = ctc_balance6
+... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (1,("Parent",LT_BT BT_Address))
@@ -103,8 +128,13 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 1 (at ../examples/multisig/multisig.rsh.3.patch:40:34)
+... interact [v22] (w/ Parent) returns true (at ../examples/multisig/multisig.rsh.3.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.3.patch:30:34)
 ====================================================
 More info...
+... v14p = 0 = ctc_balance6
+... v15p = false = (= v14p v8p )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Checked 45 theorems; 6 failures. :'(

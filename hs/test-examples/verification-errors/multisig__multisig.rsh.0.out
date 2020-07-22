@@ -13,8 +13,12 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 2 (at ../examples/multisig/multisig.rsh.0.patch:40:34)
+... interact [v21] (w/ Parent) returns false (at ../examples/multisig/multisig.rsh.0.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.0.patch:30:34)
 ====================================================
 More info...
+... v20 = false = (<= v17 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (0,("Child",LT_BT BT_Address))
@@ -31,8 +35,12 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 2 (at ../examples/multisig/multisig.rsh.0.patch:40:34)
+... interact [v21] (w/ Parent) returns false (at ../examples/multisig/multisig.rsh.0.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.0.patch:30:34)
 ====================================================
 More info...
+... v20 = false = (<= v17 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (1,("Parent",LT_BT BT_Address))
@@ -49,8 +57,12 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 2 (at ../examples/multisig/multisig.rsh.0.patch:40:34)
+... interact [v21] (w/ Parent) returns false (at ../examples/multisig/multisig.rsh.0.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.0.patch:30:34)
 ====================================================
 More info...
+... v20 = false = (<= v17 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RoleContract

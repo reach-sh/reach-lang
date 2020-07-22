@@ -25,6 +25,9 @@ Failed the sufficient balance property:
  This program would allow the contract account's
  balance to go negative. This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 1 (at ../examples/multisig/multisig.rsh.2.patch:40:34)
+... interact [v21] (w/ Parent) returns false (at ../examples/multisig/multisig.rsh.2.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.2.patch:30:34)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,6 +50,9 @@ Failed the sufficient balance property:
  This program would allow the contract account's
  balance to go negative. This program is invalid.
 This could happen if...
+... interact [v16] (w/ Child) returns 1 (at ../examples/multisig/multisig.rsh.2.patch:40:34)
+... interact [v21] (w/ Parent) returns true (at ../examples/multisig/multisig.rsh.2.patch:47:35)
+... interact [v4] (w/ Parent) returns 0 (at ../examples/multisig/multisig.rsh.2.patch:30:34)
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

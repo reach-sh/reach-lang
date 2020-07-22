@@ -60,7 +60,7 @@ dropMoreInfo :: [T.Text] -> [T.Text]
 dropMoreInfo = filter (\line -> not $ "... v" `T.isPrefixOf` line)
 
 dropExcess :: [T.Text] -> [T.Text]
-dropExcess = dropDefines . dropHypotheticalInteracts . dropMoreInfo
+dropExcess = id -- dropDefines . dropHypotheticalInteracts . dropMoreInfo
 
 test_compile :: FilePath -> IO ()
 test_compile n = do

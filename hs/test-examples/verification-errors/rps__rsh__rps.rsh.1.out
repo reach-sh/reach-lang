@@ -12,8 +12,20 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:21:5)
+... interact [v129] returns false (at ../examples/rps/rsh/rps.rsh.1.patch:67:3)
+... interact [v15] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v29] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:30:5)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps.rsh.1.patch:13:36)
+... interact [v32] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v44] (w/ B) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:37:5)
+... interact [v5] (w/ A) returns 0 (at ../examples/rps/rsh/rps.rsh.1.patch:14:37)
+... interact [v51] (w/ A) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:15:5)
+... interact [v70] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:46:5)
 ====================================================
 More info...
+... v74 = false = (= v28 v73 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (0,("A",LT_BT BT_Address))
 ...checking VC_Top
@@ -28,8 +40,20 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:21:5)
+... interact [v129] returns false (at ../examples/rps/rsh/rps.rsh.1.patch:67:3)
+... interact [v15] (w/ A) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v29] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:30:5)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps.rsh.1.patch:13:36)
+... interact [v32] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v44] (w/ B) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:37:5)
+... interact [v5] (w/ A) returns 0 (at ../examples/rps/rsh/rps.rsh.1.patch:14:37)
+... interact [v51] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:15:5)
+... interact [v70] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:46:5)
 ====================================================
 More info...
+... v74 = false = (= v28 v73 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (1,("B",LT_BT BT_Address))
 ...checking VC_Top
@@ -44,8 +68,20 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:21:5)
+... interact [v129] returns false (at ../examples/rps/rsh/rps.rsh.1.patch:67:3)
+... interact [v15] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v29] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:30:5)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps.rsh.1.patch:13:36)
+... interact [v32] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v44] (w/ B) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:37:5)
+... interact [v5] (w/ A) returns 0 (at ../examples/rps/rsh/rps.rsh.1.patch:14:37)
+... interact [v51] (w/ A) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:15:5)
+... interact [v70] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:46:5)
 ====================================================
 More info...
+... v74 = false = (= v28 v73 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (2,("O",LT_BT BT_Address))
 ...checking VC_Top
@@ -60,8 +96,20 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:21:5)
+... interact [v129] returns false (at ../examples/rps/rsh/rps.rsh.1.patch:67:3)
+... interact [v15] (w/ A) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v29] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:30:5)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps.rsh.1.patch:13:36)
+... interact [v32] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v44] (w/ B) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:37:5)
+... interact [v5] (w/ A) returns 0 (at ../examples/rps/rsh/rps.rsh.1.patch:14:37)
+... interact [v51] (w/ A) returns "31217174" (at rps_shared.rsh:11:13)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:15:5)
+... interact [v70] (w/ A) returns false (at ../examples/rps/rsh/rps.rsh.1.patch:46:5)
 ====================================================
 More info...
+... v74 = false = (= v28 v73 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top

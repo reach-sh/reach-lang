@@ -13,8 +13,31 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v167] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v27] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.3.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:57:7)
 ====================================================
 More info...
+... v19p = 0 = ctc_balance7
+... v20p = 0 = (* 2 v4 )
+... v21p = 1 = (+ v20p v6 )
+... v22p = false = (= v19p v21p )
+... v23p = true = (<= 0 v16p )
+... v24p = true = (< v16p 5 )
+... v25p = true = (ite v23p v24p false )
+... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (0,("A",LT_BT BT_Address))
@@ -31,8 +54,31 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v167] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v27] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.3.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:57:7)
 ====================================================
 More info...
+... v19p = 0 = ctc_balance7
+... v20p = 0 = (* 2 v4 )
+... v21p = 1 = (+ v20p v6 )
+... v22p = false = (= v19p v21p )
+... v23p = true = (<= 0 v16p )
+... v24p = true = (< v16p 5 )
+... v25p = true = (ite v23p v24p false )
+... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (1,("B",LT_BT BT_Address))
@@ -49,8 +95,31 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v167] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v27] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.3.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:57:7)
 ====================================================
 More info...
+... v19p = 0 = ctc_balance7
+... v20p = 0 = (* 2 v4 )
+... v21p = 1 = (+ v20p v6 )
+... v22p = false = (= v19p v21p )
+... v23p = true = (<= 0 v16p )
+... v24p = true = (< v16p 5 )
+... v25p = true = (ite v23p v24p false )
+... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = True; role = RolePart (2,("O",LT_BT BT_Address))
@@ -67,8 +136,31 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v167] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v27] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.3.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:57:7)
 ====================================================
 More info...
+... v19p = 0 = ctc_balance7
+... v20p = 0 = (* 2 v4 )
+... v21p = 1 = (+ v20p v6 )
+... v22p = false = (= v19p v21p )
+... v23p = true = (<= 0 v16p )
+... v24p = true = (< v16p 5 )
+... v25p = true = (ite v23p v24p false )
+... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RoleContract
@@ -85,8 +177,31 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v167] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.3.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:57:7)
 ====================================================
 More info...
+... v19p = 0 = ctc_balance7
+... v20p = 0 = (* 2 v4 )
+... v21p = 1 = (+ v20p v6 )
+... v22p = false = (= v19p v21p )
+... v23p = true = (<= 0 v16p )
+... v24p = true = (< v16p 5 )
+... v25p = true = (ite v23p v24p false )
+... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (0,("A",LT_BT BT_Address))
@@ -103,8 +218,31 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v167] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v27] (w/ A) returns "3108938406" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.3.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:57:7)
 ====================================================
 More info...
+... v19p = 0 = ctc_balance7
+... v20p = 0 = (* 2 v4 )
+... v21p = 1 = (+ v20p v6 )
+... v22p = false = (= v19p v21p )
+... v23p = true = (<= 0 v16p )
+... v24p = true = (< v16p 5 )
+... v25p = true = (ite v23p v24p false )
+... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (1,("B",LT_BT BT_Address))
@@ -121,8 +259,31 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v167] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:35:7)
+... interact [v44] (w/ B) returns "1142816574" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.3.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:57:7)
 ====================================================
 More info...
+... v19p = 0 = ctc_balance7
+... v20p = 0 = (* 2 v4 )
+... v21p = 1 = (+ v20p v6 )
+... v22p = false = (= v19p v21p )
+... v23p = true = (<= 0 v16p )
+... v24p = true = (< v16p 5 )
+... v25p = true = (ite v23p v24p false )
+... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Verifying with honest = False; role = RolePart (2,("O",LT_BT BT_Address))
@@ -139,8 +300,31 @@ Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
 This could happen if...
+... interact [v12] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:21:5)
+... interact [v132] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v133] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v147] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v148] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v166] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:89:3)
+... interact [v167] returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:90:3)
+... interact [v27] (w/ A) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v3] (w/ A) returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
+... interact [v41] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:35:7)
+... interact [v44] (w/ B) returns "bytes0" (at rps_shared.rsh:11:13)
+... interact [v5] (w/ A) returns 1 (at ../examples/rps/rsh/rps_while.rsh.3.patch:14:37)
+... interact [v56] (w/ B) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:45:7)
+... interact [v7] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:15:5)
+... interact [v71] (w/ A) returns false (at ../examples/rps/rsh/rps_while.rsh.3.patch:57:7)
 ====================================================
 More info...
+... v19p = 0 = ctc_balance7
+... v20p = 0 = (* 2 v4 )
+... v21p = 1 = (+ v20p v6 )
+... v22p = false = (= v19p v21p )
+... v23p = true = (<= 0 v16p )
+... v24p = true = (< v16p 5 )
+... v25p = true = (ite v23p v24p false )
+... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ...checking VC_WhileTail_AssumeUntil (IL_Let
 Checked 278 theorems; 8 failures. :'(
