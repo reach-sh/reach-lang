@@ -151,6 +151,7 @@ data SLVal
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLEnv
   | SLV_DLVar DLVar
   | SLV_Type SLType
+  --- XXX Add something about whether it's bound?
   | SLV_Participant SrcLoc SLPart SLVal
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
@@ -598,7 +599,7 @@ evalForm ctxt at _env f args k =
   case f of
     SLForm_Part_Only (SLV_Participant _ who _) ->
       case ctxt_mode ctxt of
-        SLC_Step penvs_ref _cenv_ref -> do
+        SLC_Step penvs_ref -> do
           let get_penv = do
                 penvs <- readSTRef penvs_ref
                 return $ penvs M.! who
@@ -611,7 +612,6 @@ evalForm ctxt at _env f args k =
                     let ctxt_localstep =
                           (SLCtxt { ctxt_mode = SLC_LocalStep
                                   , ctxt_id = ctxt_id ctxt
-                                  , ctxt_decle = Just penv_ref
                                   , ctxt_lifter = Just lifter'
                                   , ctxt_stack = ctxt_stack ctxt })
                     let k'' ans = do
@@ -625,7 +625,6 @@ evalForm ctxt at _env f args k =
           let ctxt_local =
                 (SLCtxt { ctxt_mode = SLC_Local
                         , ctxt_id = ctxt_id ctxt
-                        , ctxt_decle = Nothing
                         , ctxt_lifter = Nothing
                         , ctxt_stack = ctxt_stack ctxt })
           evalExprs ctxt_local at penv args k'
@@ -633,7 +632,7 @@ evalForm ctxt at _env f args k =
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
     SLForm_Part_ToConsensus pv mmode mpub mpay mtime ->
       case ctxt_mode ctxt of
-        SLC_Step penvs_ref _cenv_ref ->
+        SLC_Step penvs_ref ->
           case mmode of
             Just TCM_Publish ->
               case mpub of
@@ -820,11 +819,8 @@ evalApplyVals ctxt at env rator randvs k =
     SLV_Prim p ->
       evalPrim ctxt at env p randvs k
     SLV_Clo clo_at mname formals body clo_env ->
-      foldlk k' (flip (uncurry f)) clo_env kvs
-      where f x v env_ k'' = do
-              ctxt_decl ctxt at x v
-              k'' $ env_insert clo_at x v env_
-            k' env' = evalBlock ctxt' clo_at env' body k
+      evalBlock ctxt' clo_at env' body k
+      where env' = foldl' (flip (uncurry (env_insert clo_at))) clo_env kvs
             kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
             ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
     v ->
@@ -876,7 +872,6 @@ evalIf ctxt at env ce tX fX evalX k =
                 (SLCtxt
                  { ctxt_mode = ctxt_mode ctxt
                  , ctxt_id = ctxt_id ctxt
-                 , ctxt_decle = Nothing
                  , ctxt_lifter = Just l'
                  , ctxt_stack = ctxt_stack ctxt })
           let k' xv = do
@@ -1008,8 +1003,7 @@ evalExprs ctxt at env rands k =
   mapk k (evalExpr ctxt at env) rands
 
 bindDeclLHS :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> SLVal -> (SLEnv -> ST s a) -> ST s a
-bindDeclLHS ctxt at o_env lhs v k = do
-  ctxt_declf ctxt update
+bindDeclLHS _ctxt at o_env lhs v k = do
   k $ update o_env
   where update env =
           case lhs of
@@ -1031,7 +1025,7 @@ evalDecl :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> (SLEnv -> ST s ans) -
 evalDecl ctxt at env decl k =
   case decl of
     JSVarInitExpression lhs (JSVarInit a rhs) ->
-      evalExpr (ctxt_nodecle ctxt) at' env rhs k'
+      evalExpr ctxt at' env rhs k'
       where at' = srcloc_jsa "var initializer" a at
             k' v = bindDeclLHS ctxt at env lhs v k
     _ ->
@@ -1044,8 +1038,7 @@ evalDecls ctxt at env decls k =
   foldlk k (evalDecl ctxt at) env $ jscl_flatten decls
 
 evalFunctionStmt :: SLCtxt s -> SrcLoc -> SLEnv -> JSAnnot -> JSIdent -> JSCommaList JSExpression -> JSBlock -> JSSemi -> ((SrcLoc, SLEnv) -> ST s ans) -> ST s ans
-evalFunctionStmt ctxt at env a name jsformals body sp k = do
-  ctxt_decl ctxt at f clo
+evalFunctionStmt _ctxt at env a name jsformals body sp k = do
   k $ (at_after, env')
   where clo = SLV_Clo at' (Just f) formals body env
         formals = parseJSFormals at' jsformals
@@ -1113,31 +1106,28 @@ evalStmt ctxt at env ss k =
               srcloc_after_semi "expr stmt" JSNoAnnot sp at
             k' ev =
               case ctxt_mode ctxt of
-                SLC_Step penvs_ref cenv_ref ->
+                SLC_Step penvs_ref ->
                   case ev of
                     SLV_Form (SLForm_Part_ToConsensus _who Nothing _mmsg _mamt _mtime) -> do
-                      cenv <- readSTRef cenv_ref
                       --- XXX update cenv w/ msg
                       (lifter', _stmts_ref) <- ctxt_newLifter
                       let ctxt_cstep =
-                            (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, cenv_ref, ctxt_lifter ctxt)
+                            (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, ctxt_lifter ctxt)
                                     , ctxt_id = ctxt_id ctxt
-                                    , ctxt_decle = Just cenv_ref
                                     , ctxt_lifter = Just lifter'
                                     , ctxt_stack = ctxt_stack ctxt })
-                      evalStmt ctxt_cstep at_after cenv ks k
+                      --- We go back to the original env from before the to-consensus step
+                      evalStmt ctxt_cstep at_after env ks k
                     _ -> should_be_null --- XXX or above
-                SLC_ConsensusStep (penvs_ref, cenv_ref, orig_lifter) ->
+                SLC_ConsensusStep (penvs_ref, orig_lifter) ->
                   case ev of
                     SLV_Prim SLPrim_committed -> do
                       --- XXX do something with old lifter?
-                      cenv <- readSTRef cenv_ref
-                      let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs_ref cenv_ref
+                      let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs_ref
                                               , ctxt_id = ctxt_id ctxt
-                                              , ctxt_decle = Just cenv_ref
                                               , ctxt_lifter = orig_lifter
                                               , ctxt_stack = ctxt_stack ctxt })
-                      evalStmt ctxt_step at_after cenv ks k
+                      evalStmt ctxt_step at_after env ks k
                     _ -> should_be_null --- XXX or above
                 _ -> should_be_null
               where should_be_null =
@@ -1179,7 +1169,7 @@ evalStmt ctxt at env ss k =
     ((JSWhile a _ _ _ _):_) ->
       expect_throw (srcloc_jsa "while" a at) (Err_Block_While)
     (s@(JSWith a _ _ _ _ _):_) -> illegal a s "with"
-  where ndctxt = ctxt_nodecle ctxt
+  where ndctxt = ctxt --- XXX drop
         illegal a s lab =
           expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
 
@@ -1215,7 +1205,6 @@ ctxt_newLifter = do
 data SLCtxt s = SLCtxt
   { ctxt_mode :: SLCtxtMode s
   , ctxt_id :: Maybe (STRef s Int)
-  , ctxt_decle :: Maybe (STRef s SLEnv)
   , ctxt_lifter :: Maybe (SLLifter s)
   , ctxt_stack :: [ SLCtxtFrame ] }
   deriving (Eq)
@@ -1223,20 +1212,17 @@ data SLCtxt s = SLCtxt
 instance Show (SLCtxt s) where
   show ctxt = show $ ctxt_mode ctxt
 
-ctxt_nodecle :: SLCtxt s -> SLCtxt s
-ctxt_nodecle ctxt = ctxt { ctxt_decle = Nothing }
-
 data SLCtxtMode s
   = SLC_Module
-  | SLC_Step (STRef s (M.Map SLPart SLEnv)) (STRef s SLEnv)
+  | SLC_Step (STRef s (M.Map SLPart SLEnv))
   | SLC_Local
   | SLC_LocalStep
-  | SLC_ConsensusStep ((STRef s (M.Map SLPart SLEnv)), (STRef s SLEnv), Maybe (SLLifter s))
+  | SLC_ConsensusStep ((STRef s (M.Map SLPart SLEnv)), Maybe (SLLifter s))
   deriving (Eq)
 
 instance Show (SLCtxtMode s) where
   show (SLC_Module) = "SLC_Module"
-  show (SLC_Step _ _) = "SLC_Step"
+  show (SLC_Step _) = "SLC_Step"
   show (SLC_Local) = "SLC_Local"
   show (SLC_LocalStep) = "SLC_LocalStep"
   show (SLC_ConsensusStep _) = "SLC_ConsensusStep"
@@ -1267,18 +1253,6 @@ ctxt_lift_expr ctxt at mk_var e = do
   ctxt_lift_stmt ctxt at s
   return dv
 
-ctxt_declf :: SLCtxt s -> (SLEnv -> SLEnv) -> ST s ()
-ctxt_declf ctxt f =
-  case ctxt_decle ctxt of
-    Nothing -> return ()
-    Just exenvr -> do
-      exenv <- readSTRef exenvr
-      writeSTRef exenvr $ f exenv
-
-ctxt_decl :: SLCtxt s -> SrcLoc -> SLVar -> SLVal -> ST s ()
-ctxt_decl ctxt at x v =
-  ctxt_declf ctxt (env_insert at x v)
-
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
   deriving (Eq, Show)
@@ -1286,11 +1260,6 @@ data SLCtxtFrame
 ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
 ctxt_stack_push ctxt f =
   (ctxt { ctxt_stack = f : (ctxt_stack ctxt) })
-
-ctxt_export :: Bool -> SLCtxt s -> SLCtxt s
-ctxt_export isExport ctxt =
-  if isExport then ctxt
-  else (ctxt { ctxt_decle = Nothing })
 
 evalTopBody :: SLCtxt s -> SrcLoc -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> (SLEnv -> ST s ans) -> ST s ans
 evalTopBody ctxt at libm env exenv body k =
@@ -1321,7 +1290,7 @@ evalTopBody ctxt at libm env exenv body k =
           where at' = srcloc_jsa "export" a at
         (JSModuleStatementListItem s) -> doStmt at False s
       where doStmt at' isExport sm =
-              evalStmt ctxt' at' env [sm] $
+              evalStmt ctxt at' env [sm] $
               kontNull at'
               (\env' ->
                  let exenv' = if isExport then
@@ -1333,7 +1302,6 @@ evalTopBody ctxt at libm env exenv body k =
                                 exenv
                  in
                    evalTopBody ctxt at' libm env' exenv' body' k)
-              where ctxt' = ctxt_export isExport ctxt
 
 type SLMod = (ReachSource, [JSModuleItem])
 type SLLibs = (M.Map ReachSource SLEnv)
@@ -1342,7 +1310,6 @@ evalLib :: SLMod -> SLLibs -> (SLLibs -> ST s ans) -> ST s ans
 evalLib (src, body) libm k = do
   let ctxt_top =
         (SLCtxt { ctxt_mode = SLC_Module
-                , ctxt_decle = Nothing
                 , ctxt_id = Nothing
                 , ctxt_lifter = Nothing
                 , ctxt_stack = [] })
@@ -1378,11 +1345,9 @@ compileDApp topv =
       idxr <- newSTRef $ 0
       top_stmts <- newSTRef $ mempty
       penvs_ref <- newSTRef $ penvs
-      cenv_ref <- newSTRef $ top_env
       let ctxt_step =
-            (SLCtxt { ctxt_mode = SLC_Step penvs_ref cenv_ref
+            (SLCtxt { ctxt_mode = SLC_Step penvs_ref
                     , ctxt_id = Just idxr
-                    , ctxt_decle = Just cenv_ref
                     , ctxt_lifter =
                       Just (SLLifter { lift_stmts = top_stmts })
                     , ctxt_stack = [] })
