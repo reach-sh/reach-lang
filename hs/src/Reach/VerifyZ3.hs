@@ -13,7 +13,6 @@ import System.Exit
 import Data.Text.Prettyprint.Doc
 import Data.Digest.CRC32
 import qualified Data.ByteString.Char8 as BS
-import Data.FileEmbed
 import Data.IORef
 import Control.Loop
 import Data.Text (Text)
@@ -21,6 +20,7 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
 import Reach.AST
+import Reach.EmbeddedFiles
 import Reach.Util
 
 {- Collect Types of IL variables -}
@@ -666,7 +666,7 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
                 impossible $ "VerifyZ3 IL_Continue must only occur inside While"
 
 z3StdLib :: String
-z3StdLib = BS.unpack $(embedFile "./z3/z3-runtime.smt2")
+z3StdLib = BS.unpack z3_runtime_smt2
 
 _verify_z3 :: Show a => Solver -> ILProgram a -> IO ExitCode
 _verify_z3 z3 tp = do

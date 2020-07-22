@@ -8,13 +8,13 @@ import Text.ParserCombinators.Parsec.Number (numberValue)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Control.Monad
-import Data.FileEmbed
 import GHC.IO.Encoding
 import Data.Data
 import Test.SmallCheck.Series
 import GHC.Generics
 
 import Reach.AST
+import Reach.EmbeddedFiles
 import Reach.Util
 
 newtype TP = TP (FilePath, (Maybe TokenPosn))
@@ -636,7 +636,7 @@ decodeXLLibrary fp (JSAstModule ((JSModuleStatementListItem (JSExpressionStateme
 decodeXLLibrary fp j = expect_throw PE_HeaderLibrary fp j
 
 stdlib_defs :: IO [XLDef TP]
-stdlib_defs = decodeXLLibrary "STDLIB" $ readJsModule $ (B.unpack $(embedFile "./rsh/stdlib.rsh"))
+stdlib_defs = decodeXLLibrary "STDLIB" $ readJsModule $ B.unpack stdlib_rsh
 
 readReachX :: FilePath -> (FilePath -> JSAST -> IO a) -> IO a
 readReachX srcp decodeIt = do

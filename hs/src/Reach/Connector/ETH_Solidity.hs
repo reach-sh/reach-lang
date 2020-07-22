@@ -11,11 +11,11 @@ import qualified Data.ByteString.Char8 as BS
 import System.Process
 import System.Exit
 import Data.Aeson
-import Data.FileEmbed
 import Paths_reach (version)
 import Data.Version (showVersion)
 
 import Reach.AST
+import Reach.EmbeddedFiles
 import Reach.Util
 
 {- AST add-ons
@@ -172,7 +172,7 @@ solVersion :: Doc a
 solVersion = "pragma solidity ^0.5.11;"
 
 solStdLib :: Doc a
-solStdLib = pretty $ BS.unpack $(embedFile "./sol/stdlib.sol")
+solStdLib = pretty $ BS.unpack stdlib_sol
 
 solApply :: String -> [Doc a] -> Doc a
 solApply f args = pretty f <> parens (hcat $ intersperse (comma <> space) args)

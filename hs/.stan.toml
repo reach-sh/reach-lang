@@ -25,8 +25,9 @@ id = "STAN-0101"
 scope = "all"
 
 # Stan thinks $(embedFile) is bad because it splices in unsafePerformIO
+# https://github.com/kowainik/stan/issues/356
 # Anti-pattern: unsafe functions
 [[check]]
 type = "Exclude"
 id = "STAN-0212"
-scope = "all"
+file = "src/Reach/EmbeddedFiles.hs"
