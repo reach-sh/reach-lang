@@ -39,18 +39,9 @@ More info...
 ... v25p = true = (ite v23p v24p false )
 ... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... * = UNKNOWN -- XXX reachc error, no info on var
-... + = UNKNOWN -- XXX reachc error, no info on var
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... 2 = UNKNOWN -- XXX reachc error, no info on var
-... 5 = UNKNOWN -- XXX reachc error, no info on var
-... < = UNKNOWN -- XXX reachc error, no info on var
-... <= = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance7 = UNKNOWN -- XXX reachc error, no info on var
 ... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p -- STDLIB:13:13
-... ite = UNKNOWN -- XXX reachc error, no info on var
 ... v16p = 0 -- XXX reachc error, bad info on var
 ... v19p = 0 = ctc_balance7 -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:21
 ... v20p = 0 = (* 2 v4 ) -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:31
@@ -471,18 +462,9 @@ More info...
 ... v25p = true = (ite v23p v24p false )
 ... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... * = UNKNOWN -- XXX reachc error, no info on var
-... + = UNKNOWN -- XXX reachc error, no info on var
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... 2 = UNKNOWN -- XXX reachc error, no info on var
-... 5 = UNKNOWN -- XXX reachc error, no info on var
-... < = UNKNOWN -- XXX reachc error, no info on var
-... <= = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance7 = UNKNOWN -- XXX reachc error, no info on var
 ... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p -- STDLIB:13:13
-... ite = UNKNOWN -- XXX reachc error, no info on var
 ... v16p = 0 -- XXX reachc error, bad info on var
 ... v19p = 0 = ctc_balance7 -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:21
 ... v20p = 0 = (* 2 v4 ) -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:31
@@ -903,18 +885,9 @@ More info...
 ... v25p = true = (ite v23p v24p false )
 ... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... * = UNKNOWN -- XXX reachc error, no info on var
-... + = UNKNOWN -- XXX reachc error, no info on var
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... 2 = UNKNOWN -- XXX reachc error, no info on var
-... 5 = UNKNOWN -- XXX reachc error, no info on var
-... < = UNKNOWN -- XXX reachc error, no info on var
-... <= = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance7 = UNKNOWN -- XXX reachc error, no info on var
 ... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p -- STDLIB:13:13
-... ite = UNKNOWN -- XXX reachc error, no info on var
 ... v16p = 0 -- XXX reachc error, bad info on var
 ... v19p = 0 = ctc_balance7 -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:21
 ... v20p = 0 = (* 2 v4 ) -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:31
@@ -1335,18 +1308,9 @@ More info...
 ... v25p = true = (ite v23p v24p false )
 ... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... * = UNKNOWN -- XXX reachc error, no info on var
-... + = UNKNOWN -- XXX reachc error, no info on var
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... 2 = UNKNOWN -- XXX reachc error, no info on var
-... 5 = UNKNOWN -- XXX reachc error, no info on var
-... < = UNKNOWN -- XXX reachc error, no info on var
-... <= = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance7 = UNKNOWN -- XXX reachc error, no info on var
 ... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p -- STDLIB:13:13
-... ite = UNKNOWN -- XXX reachc error, no info on var
 ... v16p = 0 -- XXX reachc error, bad info on var
 ... v19p = 0 = ctc_balance7 -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:21
 ... v20p = 0 = (* 2 v4 ) -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:31
@@ -1767,18 +1731,9 @@ More info...
 ... v25p = true = (ite v23p v24p false )
 ... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... * = UNKNOWN -- XXX reachc error, no info on var
-... + = UNKNOWN -- XXX reachc error, no info on var
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... 2 = UNKNOWN -- XXX reachc error, no info on var
-... 5 = UNKNOWN -- XXX reachc error, no info on var
-... < = UNKNOWN -- XXX reachc error, no info on var
-... <= = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance7 = UNKNOWN -- XXX reachc error, no info on var
 ... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p -- STDLIB:13:13
-... ite = UNKNOWN -- XXX reachc error, no info on var
 ... v16p = 0 -- XXX reachc error, bad info on var
 ... v19p = 0 = ctc_balance7 -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:21
 ... v20p = 0 = (* 2 v4 ) -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:31
@@ -2199,18 +2154,9 @@ More info...
 ... v25p = true = (ite v23p v24p false )
 ... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... * = UNKNOWN -- XXX reachc error, no info on var
-... + = UNKNOWN -- XXX reachc error, no info on var
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... 2 = UNKNOWN -- XXX reachc error, no info on var
-... 5 = UNKNOWN -- XXX reachc error, no info on var
-... < = UNKNOWN -- XXX reachc error, no info on var
-... <= = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance7 = UNKNOWN -- XXX reachc error, no info on var
 ... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p -- STDLIB:13:13
-... ite = UNKNOWN -- XXX reachc error, no info on var
 ... v16p = 0 -- XXX reachc error, bad info on var
 ... v19p = 0 = ctc_balance7 -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:21
 ... v20p = 0 = (* 2 v4 ) -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:31
@@ -2631,18 +2577,9 @@ More info...
 ... v25p = true = (ite v23p v24p false )
 ... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... * = UNKNOWN -- XXX reachc error, no info on var
-... + = UNKNOWN -- XXX reachc error, no info on var
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... 2 = UNKNOWN -- XXX reachc error, no info on var
-... 5 = UNKNOWN -- XXX reachc error, no info on var
-... < = UNKNOWN -- XXX reachc error, no info on var
-... <= = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance7 = UNKNOWN -- XXX reachc error, no info on var
 ... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p -- STDLIB:13:13
-... ite = UNKNOWN -- XXX reachc error, no info on var
 ... v16p = 0 -- XXX reachc error, bad info on var
 ... v19p = 0 = ctc_balance7 -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:21
 ... v20p = 0 = (* 2 v4 ) -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:31
@@ -3063,18 +3000,9 @@ More info...
 ... v25p = true = (ite v23p v24p false )
 ... v26p = false = (ite v22p v25p false )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... * = UNKNOWN -- XXX reachc error, no info on var
-... + = UNKNOWN -- XXX reachc error, no info on var
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... 2 = UNKNOWN -- XXX reachc error, no info on var
-... 5 = UNKNOWN -- XXX reachc error, no info on var
-... < = UNKNOWN -- XXX reachc error, no info on var
-... <= = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance7 = UNKNOWN -- XXX reachc error, no info on var
 ... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p -- STDLIB:13:13
-... ite = UNKNOWN -- XXX reachc error, no info on var
 ... v16p = 0 -- XXX reachc error, bad info on var
 ... v19p = 0 = ctc_balance7 -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:21
 ... v20p = 0 = (* 2 v4 ) -- ../examples/rps/rsh/rps_while.rsh.3.patch:26:31

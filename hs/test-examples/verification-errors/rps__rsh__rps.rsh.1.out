@@ -27,7 +27,6 @@ This could happen if...
 More info...
 ... v74 = false = (= v28 v73 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v74 -- STDLIB:29:17
 ... v28 = 1 =  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
 ... v73 = 0 =  -- STDLIB:29:38
@@ -369,7 +368,6 @@ This could happen if...
 More info...
 ... v74 = false = (= v28 v73 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v74 -- STDLIB:29:17
 ... v28 = 0 =  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
 ... v73 = 1 =  -- STDLIB:29:38
@@ -711,7 +709,6 @@ This could happen if...
 More info...
 ... v74 = false = (= v28 v73 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v74 -- STDLIB:29:17
 ... v28 = 1 =  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
 ... v73 = 0 =  -- STDLIB:29:38
@@ -1053,7 +1050,6 @@ This could happen if...
 More info...
 ... v74 = false = (= v28 v73 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v74 -- STDLIB:29:17
 ... v28 = 0 =  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
 ... v73 = 1 =  -- STDLIB:29:38

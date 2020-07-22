@@ -22,7 +22,6 @@ More info...
 ... v14 = 0 = ctc_balance2
 ... v15 = false = (= v14 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance2 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v15 -- ../examples/multisig/multisig.rsh.1.patch:35:23
 ... v14 = 0 = ctc_balance2 -- ../examples/multisig/multisig.rsh.1.patch:35:20
@@ -111,7 +110,6 @@ More info...
 ... v14 = 0 = ctc_balance2
 ... v15 = false = (= v14 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance2 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v15 -- ../examples/multisig/multisig.rsh.1.patch:35:23
 ... v14 = 0 = ctc_balance2 -- ../examples/multisig/multisig.rsh.1.patch:35:20
@@ -200,7 +198,6 @@ More info...
 ... v14 = 0 = ctc_balance2
 ... v15 = false = (= v14 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance2 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v15 -- ../examples/multisig/multisig.rsh.1.patch:35:23
 ... v14 = 0 = ctc_balance2 -- ../examples/multisig/multisig.rsh.1.patch:35:20
@@ -289,7 +286,6 @@ More info...
 ... v14 = 0 = ctc_balance2
 ... v15 = false = (= v14 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance2 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v15 -- ../examples/multisig/multisig.rsh.1.patch:35:23
 ... v14 = 0 = ctc_balance2 -- ../examples/multisig/multisig.rsh.1.patch:35:20
@@ -378,7 +374,6 @@ More info...
 ... v14 = 0 = ctc_balance2
 ... v15 = false = (= v14 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance2 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v15 -- ../examples/multisig/multisig.rsh.1.patch:35:23
 ... v14 = 0 = ctc_balance2 -- ../examples/multisig/multisig.rsh.1.patch:35:20
@@ -467,7 +462,6 @@ More info...
 ... v14 = 0 = ctc_balance2
 ... v15 = false = (= v14 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance2 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v15 -- ../examples/multisig/multisig.rsh.1.patch:35:23
 ... v14 = 0 = ctc_balance2 -- ../examples/multisig/multisig.rsh.1.patch:35:20

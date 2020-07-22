@@ -267,12 +267,11 @@ displayInteracts = T.unlines . \case
     "This could happen if..." : map show_interact mp_interacts
 
 harvestIdents :: SExpr -> [String]
--- harvestIdents (Atom s@(c:_))
-  --- | isDigit c = []
-  --- | otherwise = [s]
-harvestIdents (Atom s) = [s]
--- harvestIdents (Atom "") = [] -- wat
--- harvestIdents (List (_f:xs)) = concatMap harvestIdents xs
+harvestIdents (Atom s@(c:_))
+  | isDigit c = []
+  | otherwise = [s]
+harvestIdents (Atom "") = [] -- wat
+harvestIdents (List (_f:xs)) = concatMap harvestIdents xs
 harvestIdents (List xs) = concatMap harvestIdents xs -- shoudln't happen?
 
 -- ^ all, collected-so-far, current-sexp-to-explore

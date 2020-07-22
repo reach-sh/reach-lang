@@ -20,7 +20,6 @@ This could happen if...
 More info...
 ... v20 = false = (<= v17 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... <= = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v20 -- ../examples/multisig/multisig.rsh.0.patch:43:12
 ... v17 = 2 =  -- ../examples/multisig/multisig.rsh.0.patch:40:33
 ... v20 = false = (<= v17 v8 ) -- ../examples/multisig/multisig.rsh.0.patch:43:21
@@ -107,7 +106,6 @@ This could happen if...
 More info...
 ... v20 = false = (<= v17 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... <= = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v20 -- ../examples/multisig/multisig.rsh.0.patch:43:12
 ... v17 = 2 =  -- ../examples/multisig/multisig.rsh.0.patch:40:33
 ... v20 = false = (<= v17 v8 ) -- ../examples/multisig/multisig.rsh.0.patch:43:21
@@ -194,7 +192,6 @@ This could happen if...
 More info...
 ... v20 = false = (<= v17 v8 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... <= = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v20 -- ../examples/multisig/multisig.rsh.0.patch:43:12
 ... v17 = 2 =  -- ../examples/multisig/multisig.rsh.0.patch:40:33
 ... v20 = false = (<= v17 v8 ) -- ../examples/multisig/multisig.rsh.0.patch:43:21

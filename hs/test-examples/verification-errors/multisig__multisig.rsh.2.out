@@ -31,7 +31,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... <= = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (<= v17 ctc_balance5 ) -- ../examples/multisig/multisig.rsh.2.patch:51:7
 ... v17 = 2 =  -- ../examples/multisig/multisig.rsh.2.patch:40:33
@@ -121,7 +120,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... <= = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (<= v17 ctc_balance5 ) -- ../examples/multisig/multisig.rsh.2.patch:51:7
 ... v17 = 2 =  -- ../examples/multisig/multisig.rsh.2.patch:40:33

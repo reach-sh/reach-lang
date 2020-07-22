@@ -33,7 +33,6 @@ This could happen if...
 More info...
 ... v86 = false = (= v40 v85 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v86 -- STDLIB:29:17
 ... v40 = 1 =  -- ../examples/rps/rsh/rps_while.rsh.2.patch:34:33
 ... v85 = 0 =  -- STDLIB:29:38
@@ -463,7 +462,6 @@ This could happen if...
 More info...
 ... v86 = false = (= v40 v85 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v86 -- STDLIB:29:17
 ... v40 = 1 =  -- ../examples/rps/rsh/rps_while.rsh.2.patch:34:33
 ... v85 = 0 =  -- STDLIB:29:38
@@ -893,7 +891,6 @@ This could happen if...
 More info...
 ... v86 = false = (= v40 v85 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v86 -- STDLIB:29:17
 ... v40 = 0 =  -- ../examples/rps/rsh/rps_while.rsh.2.patch:34:33
 ... v85 = 1 =  -- STDLIB:29:38
@@ -1323,7 +1320,6 @@ This could happen if...
 More info...
 ... v86 = false = (= v40 v85 )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v86 -- STDLIB:29:17
 ... v40 = 1 =  -- ../examples/rps/rsh/rps_while.rsh.2.patch:34:33
 ... v85 = 0 =  -- STDLIB:29:38

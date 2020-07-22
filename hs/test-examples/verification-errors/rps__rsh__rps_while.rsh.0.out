@@ -32,8 +32,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance5 0 ) -- rps_shared.rsh:25:3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -432,8 +430,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance5 0 ) -- rps_shared.rsh:25:3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -832,8 +828,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance5 0 ) -- rps_shared.rsh:25:3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1232,8 +1226,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance5 0 ) -- rps_shared.rsh:25:3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1632,8 +1624,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance5 0 ) -- rps_shared.rsh:25:3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2032,8 +2022,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance5 0 ) -- rps_shared.rsh:25:3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2432,8 +2420,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance5 0 ) -- rps_shared.rsh:25:3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2832,8 +2818,6 @@ This could happen if...
 ====================================================
 More info...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-... 0 = UNKNOWN -- XXX reachc error, no info on var
-... = = UNKNOWN -- XXX reachc error, no info on var
 ... ctc_balance5 = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance5 0 ) -- rps_shared.rsh:25:3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
