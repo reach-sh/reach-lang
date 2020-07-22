@@ -85,6 +85,14 @@ parseJSArrowFormals at aformals =
     JSParenthesizedArrowParameterList _ l _ ->
       parseJSFormals at l
 
+jsStmtToExpr :: JSAnnot -> JSStatement -> JSExpression
+jsStmtToExpr a bodys = ce
+  where ce = JSCallExpression rator a rands a
+        rator = JSArrowExpression aformals a bodys
+        aformals = JSParenthesizedArrowParameterList a args a
+        args = JSLNil
+        rands = JSLNil
+
 -- Static Language
 data ReachSource
   = ReachStdLib
@@ -1156,10 +1164,13 @@ evalStmt ctxt at env ss k =
       evalStmt ctxt at env ((JSIfElse a la ce ra ts ea fs):ks) k
       where ea = ra
             fs = (JSEmptyStatement ea)
-    ((JSIfElse a _ ce _ ts _ fs):ks) ->
-      evalIf ndctxt at' env ce [ts] [fs] (\ctxt_ at_ env_ ss_ k_ -> evalStmt ctxt_ at_ env_ ss_ (\_ v_ -> k_ v_))
-      (kontNull at' (\() -> evalStmt ctxt at env ks k) ())
-      where at' = srcloc_jsa "if" a at
+    ((JSIfElse a _ ce ta ts fa fs):ks) ->
+      evalExpr ctxt at env e' k'
+      where e' = JSExpressionTernary ce a te a fe
+            te = jsStmtToExpr ta ts
+            fe = jsStmtToExpr fa fs
+            k' = (kontNull at' (\() -> evalStmt ctxt at env ks k) ())
+            at' = srcloc_jsa "if" a at
     (s@(JSLabelled _ a _):_) -> illegal a s "labelled"
     ((JSEmptyStatement a):ks) ->
       evalStmt ctxt at' env ks k
