@@ -920,30 +920,6 @@ evalApply ctxt at env rator rands k =
   where vals = evalExprs ctxt at env rands k'
         k' randvs = evalApplyVals ctxt at env rator randvs k
 
-kontIf :: SLCtxt s -> SrcLoc -> (SLVal -> ST s ans) -> SLVal -> ((Seq.Seq DLStmt), SLVal) -> ((Seq.Seq DLStmt), SLVal) -> ST s ans
-kontIf ctxt at k cv (t_lifts, tv) (f_lifts, fv) =
-  case cv of
-    SLV_Bool _ cb -> do
-      ctxt_lift_stmts ctxt at e_lifts
-      k $ ev
-      where (e_lifts, ev) = if cb then (t_lifts, tv) else (f_lifts, fv)
-    SLV_DLVar dv@(DLVar _ _ T_Bool _) ->
-      if stmts_pure t_lifts && stmts_pure f_lifts then
-        do ctxt_lift_stmts ctxt at t_lifts
-           ctxt_lift_stmts ctxt at f_lifts
-           evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [ cv, tv, fv ] k
-      else
-        --- XXX A consensus must duplicate continuation but a local doesn't need to
-        do ctxt_lift_stmt ctxt at (DLS_If at (DLA_Var dv) t_lifts f_lifts)
-           let (tt, _) = typeOf at tv
-           let (ft, _) = typeOf at fv
-           if tt == ft && tt == T_Null then
-             k $ SLV_Null at
-           else
-             expect_throw at (Err_Eval_IfNotNull tv fv)
-    _ ->
-      expect_throw at (Err_Eval_IfCondNotBool cv)
-
 evalPropertyName :: SLCtxt s -> SrcLoc -> SLEnv -> JSPropertyName -> (String -> ST s ans) -> ST s ans
 evalPropertyName ctxt at env pn k =
   case pn of
@@ -1021,7 +997,7 @@ evalExpr ctxt at env e k =
       evalExpr ctxt at' env ce k_c
       where at' = srcloc_jsa "if" a at
             k_c cv = evalInside te (k_t cv)
-            k_t cv ta = evalInside fe (kontIf ctxt at' k cv ta)
+            k_t cv ta = evalInside fe (k_fin cv ta)
             evalInside x k_s = do
               (l', stmts_ref) <- ctxt_newLifter
               let fresh_ctxt =
@@ -1034,6 +1010,28 @@ evalExpr ctxt at env e k =
                     x_lifts <- readSTRef stmts_ref
                     k_s (x_lifts, xv)
               evalExpr fresh_ctxt at env x k'
+            k_fin cv (t_lifts, tv) (f_lifts, fv) =
+              case cv of
+                SLV_Bool _ cb -> do
+                  ctxt_lift_stmts ctxt at e_lifts
+                  k $ ev
+                  where (e_lifts, ev) = if cb then (t_lifts, tv) else (f_lifts, fv)
+                SLV_DLVar dv@(DLVar _ _ T_Bool _) ->
+                  if stmts_pure t_lifts && stmts_pure f_lifts then
+                    do ctxt_lift_stmts ctxt at t_lifts
+                       ctxt_lift_stmts ctxt at f_lifts
+                       evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [ cv, tv, fv ] k
+                  else
+                    --- XXX A consensus must duplicate continuation but a local doesn't need to
+                    do ctxt_lift_stmt ctxt at (DLS_If at (DLA_Var dv) t_lifts f_lifts)
+                       let (tt, _) = typeOf at tv
+                       let (ft, _) = typeOf at fv
+                       if tt == ft && tt == T_Null then
+                         k $ SLV_Null at
+                       else
+                         expect_throw at (Err_Eval_IfNotNull tv fv)
+                _ ->
+                  expect_throw at (Err_Eval_IfCondNotBool cv)
     JSArrowExpression aformals a bodys ->
       k $ SLV_Clo at' fname formals body env
       where at' = srcloc_jsa "arrow" a at
