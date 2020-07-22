@@ -12,6 +12,5 @@ Reach is a domain-specific language for building decentralized applications (@|D
 
 @include-section["ref.scrbl"]
 @include-section["tut.scrbl"]
-@include-section["proj-health.scrbl"]
 
 @index-section[]
