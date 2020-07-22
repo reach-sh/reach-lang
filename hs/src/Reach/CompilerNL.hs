@@ -944,24 +944,6 @@ kontIf ctxt at k cv (t_lifts, tv) (f_lifts, fv) =
     _ ->
       expect_throw at (Err_Eval_IfCondNotBool cv)
 
-evalIf :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> JSExpression -> JSExpression -> (SLVal -> ST s ans) -> ST s ans
-evalIf ctxt at env ce te fe k =
-  evalExpr ctxt at env ce k_c
-  where k_c cv = evalInside te (k_t cv)
-        k_t cv ta = evalInside fe (kontIf ctxt at k cv ta)
-        evalInside x k_s = do
-          (l', stmts_ref) <- ctxt_newLifter
-          let fresh_ctxt =
-                (SLCtxt
-                 { ctxt_mode = ctxt_mode ctxt
-                 , ctxt_id = ctxt_id ctxt
-                 , ctxt_lifter = Just l'
-                 , ctxt_stack = ctxt_stack ctxt })
-          let k' xv = do
-                x_lifts <- readSTRef stmts_ref
-                k_s (x_lifts, xv)
-          evalExpr fresh_ctxt at env x k'
-
 evalPropertyName :: SLCtxt s -> SrcLoc -> SLEnv -> JSPropertyName -> (String -> ST s ans) -> ST s ans
 evalPropertyName ctxt at env pn k =
   case pn of
@@ -1035,9 +1017,23 @@ evalExpr ctxt at env e k =
     JSExpressionBinary lhs op rhs -> doCallV (binaryToPrim at env op) JSNoAnnot [ lhs, rhs ]
     JSExpressionParen a ie _ -> evalExpr ctxt (srcloc_jsa "paren" a at) env ie k
     JSExpressionPostfix _ _ -> illegal
-    JSExpressionTernary c a t _ f ->
-      evalIf ctxt at' env c t f k
-      where at' = srcloc_jsa "ternary" a at
+    JSExpressionTernary ce a te _ fe ->
+      evalExpr ctxt at' env ce k_c
+      where at' = srcloc_jsa "if" a at
+            k_c cv = evalInside te (k_t cv)
+            k_t cv ta = evalInside fe (kontIf ctxt at' k cv ta)
+            evalInside x k_s = do
+              (l', stmts_ref) <- ctxt_newLifter
+              let fresh_ctxt =
+                    (SLCtxt
+                     { ctxt_mode = ctxt_mode ctxt
+                     , ctxt_id = ctxt_id ctxt
+                     , ctxt_lifter = Just l'
+                     , ctxt_stack = ctxt_stack ctxt })
+              let k' xv = do
+                    x_lifts <- readSTRef stmts_ref
+                    k_s (x_lifts, xv)
+              evalExpr fresh_ctxt at env x k'
     JSArrowExpression aformals a bodys ->
       k $ SLV_Clo at' fname formals body env
       where at' = srcloc_jsa "arrow" a at
