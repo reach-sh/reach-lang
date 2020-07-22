@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reach.CompilerNL where
 
+import Debug.Trace
+
 import Control.Monad
 import Control.Monad.ST
 import Data.Bits
@@ -286,7 +288,7 @@ env_lookup at x env =
   case M.lookup x env of
     Just v -> v
     Nothing ->
-      expect_throw at (Err_Eval_UnboundId x)
+      expect_throw at (Err_Eval_UnboundId x $ M.keys env)
 
 -- Dynamic Language
 data DLConstant
@@ -396,7 +398,7 @@ data CompilerError s
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_NotApplicableVals SLVal
   | Err_Eval_NotObject SLVal
-  | Err_Eval_UnboundId SLVar
+  | Err_Eval_UnboundId SLVar [SLVar]
   | Err_Export_IllegalJS JSExportDeclaration
   | Err_Form_InvalidArgs SLForm [JSExpression]
   | Err_Fun_NamesIllegal
@@ -432,7 +434,7 @@ data CompilerError s
 
 --- XXX Add ctxt frame stack and display
 expect_throw :: HasCallStack => SrcLoc -> CompilerError s -> b
-expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 256 $ show ce)
+expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
 
 -- Parser
 type BundleMap a b = ((M.Map a [a]), (M.Map a (Maybe b)))
@@ -745,8 +747,7 @@ evalForm ctxt at env f args k =
           let k' eargs =                
                 case eargs of
                   [ thunk ] -> do
-                    --- XXX penv <- get_penv
-                    --- XXX penv_ref <- newSTRef penv
+                    penv <- get_penv
                     (lifter', _stmts_ref) <- ctxt_newLifter
                     let ctxt_localstep =
                           (SLCtxt { ctxt_mode = SLC_LocalStep
@@ -754,7 +755,7 @@ evalForm ctxt at env f args k =
                                   , ctxt_lifter = Just lifter'
                                   , ctxt_stack = ctxt_stack ctxt })
                     let k'' (SLRes penv' ans) = do
-                          --- XXX penv' <- readSTRef penv_ref
+                          traceM $ "penv' update = " ++ (show $ M.keys $ M.difference penv' penv)
                           modifySTRef penvs_ref (M.insert who penv')
                           --- XXX look at stmts_ref and save em
                           k $ SLRes env ans
@@ -1052,7 +1053,9 @@ evalExpr ctxt at env e k =
       k $ SLRes env $ SLV_Clo at' fname formals body env
       where at' = srcloc_jsa "arrow" a at
             fname = Nothing --- FIXME syntax-local-infer-name
-            body = JSBlock JSNoAnnot [bodys] JSNoAnnot
+            body = case bodys of
+                     JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
+                     _ -> JSBlock JSNoAnnot [bodys] JSNoAnnot
             formals = parseJSArrowFormals at' aformals
     JSFunctionExpression a name _ jsformals _ body ->
       k $ SLRes env $ SLV_Clo at' fname formals body env
@@ -1132,6 +1135,7 @@ evalDecl ctxt at (SLRes env _) decl k =
                           at' = srcloc_jsa "array" a at
                   _ ->
                     expect_throw at (Err_DeclLHS_IllegalJS lhs)
+              traceM $ "evalDecl: defining " ++ (show $ M.keys $ M.difference env' env) ++ " at " ++ show vat'
               k $ SLRes env' $ SLV_Null at
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
@@ -1220,6 +1224,7 @@ evalStmt ctxt at env ss k =
                       (lifter', _stmts_ref) <- ctxt_newLifter
                       penvs <- readSTRef penvs_ref
                       let penv = penvs M.! who
+                      traceM $ "to_consensus from " ++ show who
                       --- XXX at and at_after here might be bad... add to ToConsensus?
                       (msg_env, _XXX_tmsg) <-
                         case mmsg of
@@ -1234,7 +1239,10 @@ evalStmt ctxt at env ss k =
                             return $ (foldl' (env_insertp at_after) mempty $ zip msg $ map SLV_DLVar tvs, tvs)
                       --- We go back to the original env from before the to-consensus step
                       let env' = env_merge at_after env msg_env
-                      let penvs' = M.map (flip (env_merge at_after) $ msg_env) penvs
+                      let penvs' = M.mapWithKey (\p old ->
+                                                   case p == who of
+                                                     True -> old
+                                                     False -> env_merge at_after old msg_env) penvs
                       writeSTRef penvs_ref penvs'
                       let ctxt_cstep =
                             (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, ctxt_lifter ctxt)
@@ -1422,10 +1430,11 @@ compileBundle :: JSBundle -> SLVar -> SLRes
 compileBundle (JSBundle mods) top = runST $ do
   libm <- evalLibs mods
   let exe_ex = libm M.! exe
+  --- XXX use env_lookup
   let topv = case M.lookup top exe_ex of
                Just x -> x
                Nothing ->
-                 expect_throw srcloc_top (Err_Eval_UnboundId top)
+                 expect_throw srcloc_top (Err_Eval_UnboundId top $ M.keys exe_ex)
   compileDApp topv
   where exe = case mods of
                 [] -> impossible $ "compileBundle: no files"
