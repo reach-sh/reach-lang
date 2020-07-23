@@ -140,7 +140,7 @@ data ModelDefineInfo a = ModelDefineInfo
   { mdi_name :: String
   , mdi_type :: String
   , mdi_value :: String
-  , mdi_sexpr :: Maybe SExpr
+  , mdi_sexpr :: Maybe (a, SExpr)
   , mdi_la :: Maybe (LetAnn a)
   , mdi_anns :: AnnMap a
   , mdi_model :: ModelMap
@@ -185,8 +185,11 @@ show_sexpr sexpr = "= " <> showsSExpr sexpr ""
 show_mdi :: Show a => ModelDefineInfo a -> String
 show_mdi (ModelDefineInfo {mdi_name, mdi_value, mdi_type, mdi_sexpr, mdi_la}) =
   unwords
-    [ mdi_name, ":", mdi_type, "=", mdi_value, maybe "" show_sexpr mdi_sexpr,
-      maybe "" show_la mdi_la]
+    [ mdi_name, ":", mdi_type, "=", mdi_value, maybe "" show_sexpr sexpr,
+      maybe "" show_la mdi_la, maybe "" (("-- " <>) . show) ann]
+  where
+    ann = fst <$> mdi_sexpr
+    sexpr = snd <$> mdi_sexpr
 
 data Z3Model = Z3Model [Z3Define]
 data Z3Define = Z3Define String Bool String String -- ^ name, hasArgs, type, val
@@ -266,6 +269,25 @@ displayInteracts = T.unlines . \case
   mp_interacts@(_:_) -> do
     "This could happen if..." : map show_interact mp_interacts
 
+filterDisplayUnbound :: Show a => [SmtVar a] -> Text
+filterDisplayUnbound = T.pack . concatMap displayOne where
+  displayOne = \case
+    SmtComputedVar{} -> ""
+    SmtOtherVar{} -> ""
+    SmtInputVar name val expr role ann -> s where
+      s = "..." <> ty <> " [" <> name <> "]" <> r
+        <> " returns " <> val <> at <> "\n"
+      ty = case expr of
+        IL_PrimApp{} -> " PrimApp [XXX reach error]"
+        IL_Declassify{} -> " declassify"
+        IL_Interact _ m _ _ -> " interact." <> m
+        IL_Digest{} -> " Digest [XXX reach error]"
+        IL_ArrayRef{} -> " ArrayRef [XXX reach error]"
+      r = case role of
+        RolePart (_, (rr, _)) -> " w/" <> rr
+        RoleContract{} -> ""
+      at = " (at " <> show ann <> ")"
+
 harvestIdents :: SExpr -> [String]
 harvestIdents (Atom s@(c:_))
   | isDigit c = []
@@ -275,13 +297,13 @@ harvestIdents (List (_f:xs)) = concatMap harvestIdents xs
 harvestIdents (List xs) = concatMap harvestIdents xs -- shoudln't happen?
 
 -- ^ all, collected-so-far, current-sexp-to-explore
-collectIds :: M.Map String SExpr -> M.Map String SExpr -> [SExpr] -> M.Map String SExpr
+collectIds :: M.Map String (a, SExpr) -> M.Map String SExpr -> [SExpr] -> M.Map String SExpr
 collectIds _mAll mColl [] = mColl
 collectIds mAll mColl (sx:sxs) = collectIds mAll mColl' sxs' where
     ids = harvestIdents sx
     newIds = filter (\i -> not $ M.member i mColl) ids
     mCollNew = M.fromList mCollNewList
-    mCollNewList = catMaybes $ map (\i -> (,) i <$> M.lookup i mAll) newIds
+    mCollNewList = catMaybes $ map (\i -> (,) i . snd <$> M.lookup i mAll) newIds
     mColl' = mColl <> mCollNew
     sxs' = sxs ++ sxsNew
     sxsNew = map snd mCollNewList
@@ -290,7 +312,7 @@ filterVarInfo :: forall a.
   M.Map String (ModelDefineInfo a)
   -> String -> String -> SExpr -> a -> M.Map String (SmtVar a)
 filterVarInfo mdis n0 v0 e0 a0 = go mColl0 [e0] where
-  mColl0 = M.singleton n0 (SmtComputedVar n0 v0 e0 (Just a0))
+  mColl0 = M.singleton n0 (SmtComputedVar n0 v0 e0 a0)
   go :: M.Map String (SmtVar a) -> [SExpr] -> M.Map String (SmtVar a)
   go mColl [] = mColl
   go mColl (sx:sxs) = go mColl' sxs' where
@@ -303,12 +325,12 @@ filterVarInfo mdis n0 v0 e0 a0 = go mColl0 [e0] where
     discoverVar v = case M.lookup v mdis of
       Just mdi@ModelDefineInfo{mdi_name, mdi_value, mdi_sexpr, mdi_la} ->
         case mdi_sexpr of
-          Just sexpr ->
+          Just (ann, sexpr) ->
             SmtComputedVar mdi_name mdi_value sexpr mann where
-              mann = la_ann <$> mdi_la
+              mann = maybe ann id (la_ann <$> mdi_la)
           Nothing -> case mdi_la of
-            Just LetAnn{la_ann, la_expr} ->
-              SmtInputVar mdi_name mdi_value la_expr la_ann
+            Just LetAnn{la_ann, la_expr, la_role} ->
+              SmtInputVar mdi_name mdi_value la_expr la_role la_ann
             Nothing ->
               SmtOtherVar mdi_name mdi_value (Just mdi)
       -- XXX value should be optional for this constructor?
@@ -323,20 +345,21 @@ harvestSExpr = \case
   SmtOtherVar{} -> Nothing
 
 data SmtVar ann
-  = SmtComputedVar String String SExpr (Maybe ann)
-  | SmtInputVar String String (ILExpr ann) ann
+  = SmtComputedVar String String SExpr ann
+  | SmtInputVar String String (ILExpr ann) (Role ILVar) ann
   | SmtOtherVar String String (Maybe (ModelDefineInfo ann))
   -- name, value, etc
 
 showILExpr :: ILExpr ann -> String
-showILExpr _ = "" -- show . pretty
+showILExpr = show . pretty
 
+-- XXX do a table display of some sort
 showSmtVar :: Show a => SmtVar a -> String
 showSmtVar = \case
-  SmtComputedVar n v sexpr mann ->
-    "... " <> n <> " = " <> v <> " = " <> showsSExpr sexpr (mshow " -- " mann "")
-  SmtInputVar n v expr ann ->
-    "... " <> n <> " = " <> v <> " = " <> showILExpr expr <> " -- "  <> show ann
+  SmtComputedVar n v sexpr ann ->
+    "... " <> n <> " = " <> v <> " = " <> showsSExpr sexpr ("  -- " <> show ann)
+  SmtInputVar n v expr _role ann ->
+    "... " <> n <> " = " <> v <> " = " <> showILExpr expr <> "  -- "  <> show ann
   SmtOtherVar n v Nothing ->
     "... " <> n <> " = " <> v <> " -- XXX reachc error, no info on var"
   SmtOtherVar n v (Just _mdi) ->
@@ -351,37 +374,39 @@ varNameToInt _ = Nothing
 
 
 display_model :: Show ann =>
-  AssnMem -> AnnMap ann -> Bool -> rolet -> TheoremKind -> ann -> SExpr -> SExpr -> IO ()
+  AssnMem ann -> AnnMap ann -> Bool -> rolet -> TheoremKind -> ann -> SExpr -> SExpr -> IO ()
 display_model mem anns _honest _who tk ann a m = do
   mp <- parse_model_map m
   memm <- readIORef mem
   let mp_enriched = map (enrich mp memm) $ M.toList mp
-  -- XXX probably want more than just interacts -- all "unbound"
-  let mp_interacts = filterInteracts mp_enriched
-  putStrLn "===================================================="
-  TIO.putStr $ displayTheoremFail tk
-  TIO.putStr $ displayInteracts mp_interacts
-  putStrLn "===================================================="
-  putStrLn "More info..."
-  let mmm = collectIds memm mempty [a] -- XXX better var names
-  mapM_ putStrLn $ map (showModelVal mp) $ M.toList mmm
-  putStrLn "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   let mp_enriched_map = M.fromList $ map (\mdi -> (mdi_name mdi, mdi)) mp_enriched
   let mp_filtered = filterVarInfo mp_enriched_map "goal" "false" a ann
+  -- let mp_unbound = filterUnbound mp_filtered
+  -- XXX probably want more than just interacts -- all "unbound"
+  -- let mp_interacts = filterInteracts mp_enriched
+  putStrLn "===================================================="
+  TIO.putStr $ displayTheoremFail tk
+  -- TIO.putStr $ displayInteracts mp_interacts
+  TIO.putStr $ filterDisplayUnbound $ M.elems mp_filtered
+  putStrLn "===================================================="
+  putStrLn "More info on this counterexample..."
+  -- let mmm = collectIds memm mempty [a] -- XXX better var names
+  -- mapM_ putStrLn $ map (showModelVal mp) $ M.toList mmm
+  -- putStrLn "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   mapM_ putStrLn $ map (showSmtVar . snd) $ M.toList mp_filtered
-  putStrLn "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-  putStrLn $ "DELETEME Info known for keys:"
-  mapM_ (putStrLn . show_mdi) (M.elems mp_enriched_map)
+  -- putStrLn "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  -- putStrLn $ "DELETEME Info known for keys:"
+  -- mapM_ (putStrLn . show_mdi) (M.elems mp_enriched_map)
   putStrLn "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
   where
     -- XXX print srcloc for var exprs
-    showModelVal mp (i, e) = "... " <> i <> " = " <> v <> showsSExpr e ""
-      where v = case M.lookup i mp of Just (_, vv) -> vv <> " = "
-                                      Nothing -> ""
-    filterInteracts = filter (\x -> isInteract x && isV x && notP x) where
-      isInteract mdi = (fst . snd . la_var <$> mdi_la mdi) == Just "Interact"
-      isV mdi = take 1 (mdi_name mdi) == "v"
-      notP mdi = take 1 (reverse $ mdi_name mdi) /= "p"
+    -- showModelVal mp (i, e) = "... " <> i <> " = " <> v <> showsSExpr e ""
+    --   where v = case M.lookup i mp of Just (_, vv) -> vv <> " = "
+    --                                   Nothing -> ""
+    -- filterInteracts = filter (\x -> isInteract x && isV x && notP x) where
+    --   isInteract mdi = (fst . snd . la_var <$> mdi_la mdi) == Just "Interact"
+    --   isV mdi = take 1 (mdi_name mdi) == "v"
+    --   notP mdi = take 1 (reverse $ mdi_name mdi) /= "p"
     enrich mp memm (name, (ty, val)) = ModelDefineInfo {..} where
       mdi_name = name
       mdi_type = ty
@@ -391,7 +416,7 @@ display_model mem anns _honest _who tk ann a m = do
       mdi_anns = anns
       mdi_model = mp
 
-z3_verify1 :: Show rolet => Show ann => Solver -> AssnMem -> AnnMap ann -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
+z3_verify1 :: Show rolet => Show ann => Solver -> AssnMem ann -> AnnMap ann -> (Bool, rolet, TheoremKind, ann) -> SExpr -> IO VerifyResult
 z3_verify1 z3 mem anns (honest, who, tk, ann) a = inNewScope z3 $ do
   assert z3 (z3Apply "not" [ a ])
   r <- check z3
@@ -421,10 +446,19 @@ z3_sat1 z3 (honest, who, tk, ann) a = inNewScope z3 $ do
       mapM_ putStrLn uc
       return $ VR 0 1
 
-z3_define :: Solver -> String -> LType -> SExpr -> IO ()
-z3_define z3 v bt d = do
-  let s = z3_sortof bt
-  void $ define z3 v s d
+-- ^ v = rhs. lhs must be a var. Returns the (= v rhs) sexpr
+z3VarAssign :: Solver -> AssnMem ann -> ann -> String ->  SExpr -> IO SExpr
+z3VarAssign z3 mem h v rhs = do
+  let lhs = Atom v
+  rememberAssignment mem h v rhs
+  let e = (z3Apply "=" [lhs, rhs])
+  assert z3 e
+  return e
+
+z3_define :: Solver -> AssnMem ann -> ann -> String -> LType -> SExpr -> IO ()
+z3_define z3 mem h v bt d = do
+  z3_declare z3 v bt
+  void $ z3VarAssign z3 mem h v d
 
 z3_declare :: Solver -> String -> LType -> IO ()
 z3_declare z3 v bt = do
@@ -447,15 +481,23 @@ z3_assert_declare z3 vs lty =
       where h i = z3_assert_declare_bt z3
                   (List [ Atom "select", vs, Atom (show i)]) bt
 
+z3_assert_eq_chk :: Show ann => Solver -> AssnMem ann -> ann -> String -> SExpr -> IO ()
+z3_assert_eq_chk z3 mem h v rhs = do
+  e <- z3VarAssign z3 mem h v rhs
+  z3_chk z3 h e
+
+z3_chk :: Show ann => Solver -> ann -> SExpr -> IO ()
+z3_chk z3 h e = check z3 >>= \case
+  -- XXX unknown should be treated like unsat
+  Unknown -> impossible $ show h ++ ": Z3 assert_chk: Unknown"
+  Sat -> mempty
+  Unsat -> error $ show h ++ ": Unreachable code with addition of assumption: " ++ show e
+  
+
 z3_assert_chk :: Show ann => Solver -> ann -> SExpr -> IO ()
 z3_assert_chk z3 h e = do
   assert z3 e
-  r <- check z3
-  case r of
-    -- XXX unknown should be treated like unsat
-    Unknown -> impossible $ show h ++ ": Z3 assert_chk: Unknown"
-    Sat -> mempty
-    Unsat -> error $ show h ++ ": Unreachable code with addition of assumption: " ++ show e
+  z3_chk z3 h e
 
 {- Z3 Theory Generation
 
@@ -503,28 +545,20 @@ z3CPrim cbi cp =
   where app n = z3Apply n
 
 -- ^ Assignment memory
-type AssnMem = IORef (M.Map String SExpr)
+type AssnMem a = IORef (M.Map String (a, SExpr))
 
--- XXX: it doesn't respect push/pop, but should work anyway
-rememberAssignment :: AssnMem -> SExpr -> SExpr -> IO ()
-rememberAssignment mem v e = do
-  m <- readIORef mem
-  m' <- tryUpdate m
-  writeIORef mem m'
-  where
-  tryUpdate :: M.Map String SExpr -> IO (M.Map String SExpr)
-  tryUpdate m = case v of
-    Atom vStr -> return (M.insert vStr e m)
-    List{} -> impossible $ "Tried to assign to non-var: " <> show v
+-- it doesn't respect push/pop, but should work anyway
+-- XXX remember the ann
+rememberAssignment :: AssnMem ann -> ann -> String -> SExpr -> IO ()
+rememberAssignment mem ann v e = do
+  modifyIORef' mem (M.insert v (ann, e))
 
-z3PrimEq :: Show a => Solver -> AssnMem -> a -> (S.Set ILVar) -> Int -> EP_Prim -> [SExpr] -> ILVar -> IO ()
+z3PrimEq :: Show a => Solver -> AssnMem a -> a -> (S.Set ILVar) -> Int -> EP_Prim -> [SExpr] -> ILVar -> IO ()
 z3PrimEq z3 mem h primed cbi pr alt out = case pr of
   CP cp -> do
-    let var = z3VarRef primed out
+    let var = z3Var primed out
         expr = z3CPrim cbi cp alt
-    let assn = (z3Eq var expr)
-    rememberAssignment mem var expr
-    z3_assert_chk z3 h assn
+    z3_assert_eq_chk z3 mem h var expr
   RANDOM -> return ()
 
 data TheoremKind
@@ -562,10 +596,10 @@ z3_vardecl z3 iv@(_, (_, bt)) = do
   z3_declare z3 (z3Var S.empty iv) bt
   z3_declare z3 (z3Var (S.singleton iv) iv) bt
 
-z3_expr :: Show rolet => Show a => Solver -> AssnMem -> AnnMap a -> (Bool, rolet) -> (S.Set ILVar) -> Int -> ILVar -> ILExpr a -> IO VerifyResult
+z3_expr :: Show rolet => Show a => Solver -> AssnMem a -> AnnMap a -> (Bool, rolet) -> (S.Set ILVar) -> Int -> ILVar -> ILExpr a -> IO VerifyResult
 z3_expr z3 mem anns (honest, who) primed cbi out how = case how of
   IL_Declassify h a -> do
-    z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (emit_z3_arg primed a))
+    z3_assert_eq_chk z3 mem h (z3Var primed out) (emit_z3_arg primed a)
     return mempty
   IL_PrimApp h pr al -> do
     z3PrimEq z3 mem h primed cbi pr alt out
@@ -573,13 +607,13 @@ z3_expr z3 mem anns (honest, who) primed cbi out how = case how of
     where alt = map (emit_z3_arg primed) al
   IL_Interact _ _ _ _ -> return mempty
   IL_Digest h al -> do
-    z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (z3Apply "digest" [ z3DigestCombine primed al ]))
+    z3_assert_eq_chk z3 mem h (z3Var primed out) (z3Apply "digest" [ z3DigestCombine primed al ])
     return mempty
   IL_ArrayRef h ae ee -> do
     let hm = case ilarg_type ae of
                LT_FixedArray _ x -> x
                _ -> impossible $ "IL_ArrayRef called with no Array"
-    z3_assert_chk z3 h (z3Eq (z3VarRef primed out) (z3Apply "select" [ (emit_z3_arg primed ae), (emit_z3_arg primed ee) ]))
+    z3_assert_eq_chk z3 mem h (z3Var primed out) (z3Apply "select" [ (emit_z3_arg primed ae), (emit_z3_arg primed ee) ])
     z3_verify1 z3 mem anns (honest, who, TBounds, h) (z3CPrim cbi PLT [ (emit_z3_arg primed ee), (emit_z3_con $ Con_I hm) ])
 
 z3DigestCombine :: Show a => (S.Set ILVar) -> [ILArg a] -> SExpr
@@ -600,11 +634,11 @@ z3DigestCombine primed ys =
                      Con_BS _ -> "Bytes"
 
 -- ^ Returns (next cbi, result)
-z3_stmt :: Show rolet => Show a => Solver -> AssnMem -> AnnMap a -> Bool -> rolet -> (S.Set ILVar) -> Int -> ILStmt a -> IO (Int, VerifyResult)
+z3_stmt :: Show rolet => Show a => Solver -> AssnMem a -> AnnMap a -> Bool -> rolet -> (S.Set ILVar) -> Int -> ILStmt a -> IO (Int, VerifyResult)
 z3_stmt z3 mem anns honest r primed cbi how =
   case how of
     IL_Transfer h _who amount -> do vr <- z3_verify1 z3 mem anns (honest, r, TBalanceSufficient, h) (z3Apply "<=" [ amountt, cbit ])
-                                    z3_define z3 cb' (LT_BT BT_UInt256) (z3Apply "-" [ cbit, amountt ])
+                                    z3_define z3 mem h cb' (LT_BT BT_UInt256) (z3Apply "-" [ cbit, amountt ])
                                     return (cbi', vr)
       where cbi' = cbi + 1
             cbit = z3CTCBalanceRef cbi
@@ -645,11 +679,11 @@ extract_invariant_variables invt =
     IL_Let _ _ v _ t -> v : extract_invariant_variables t
     _ -> impossible $ "Z3: invalid invariant structure"
 
-z3_it_top :: forall a. Show a => Solver -> AssnMem -> AnnMap a -> ILTail a -> (Bool, (Role ILVar)) -> IO VerifyResult
+z3_it_top :: forall a. Show a => Solver -> AssnMem a -> AnnMap a -> ILTail a -> (Bool, (Role ILVar)) -> IO VerifyResult
 z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
   putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
   z3_declare z3 cb0 (LT_BT BT_UInt256)
-  assert z3 (z3Eq (z3CTCBalanceRef 0) zero)
+  void $ z3VarAssign z3 mem top_ann cb0 zero
   meta_iter Nothing VC_Top it_top
   where zero = emit_z3_con (Con_I 0)
         cb0 = z3CTCBalance 0
@@ -665,6 +699,15 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
                           cb'v = z3CTCBalance cbi'
           inNewScope z3 $ do init_cbim
                              iter (S.empty) init_cbi ctxt it
+        top_ann = case it_top of
+          IL_Ret h _ -> h
+          IL_If h _ _ _ -> h
+          IL_Let h _ _ _ _ -> h
+          IL_Do h _ _ _ -> h
+          IL_ToConsensus h _ _ _ -> h
+          IL_FromConsensus h _ -> h
+          IL_While h _ _ _ _ _ _ -> h
+          IL_Continue h _ -> h
         iter :: (S.Set ILVar) -> Int -> VerifyCtxt a -> ILTail a -> IO VerifyResult
         iter primed cbi ctxt it = case it of
           IL_Ret h al -> do
@@ -676,7 +719,7 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
                 let invt_vs = extract_invariant_variables invt
                 let primed' = if should_prime then S.unions [primed, S.fromList loopvs, S.fromList invt_vs] else primed
                 mapM_ (\(loopv, a) ->
-                         z3_assert_chk z3 h (z3Eq (z3VarRef primed' loopv) (emit_z3_arg primed a)))
+                         z3_assert_eq_chk z3 mem h (z3Var primed' loopv) (emit_z3_arg primed a))
                       (zip loopvs al)
                 iter primed' cbi VC_CheckRet invt
               VC_CheckRet -> do
@@ -736,8 +779,10 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
                             iter primed cbi ctxt tt
               notimeout = do
                 z3_declare z3 pvv (LT_BT BT_UInt256)
-                z3_define z3 cb'v (LT_BT BT_UInt256) (z3Apply "+" [cbr, pvr])
-                z3_assert_chk z3 h thisc
+                z3_define z3 mem h cb'v (LT_BT BT_UInt256) (z3Apply "+" [cbr, pvr])
+                case honest of
+                  True -> z3_assert_eq_chk z3 mem h pvv amountt
+                  False -> z3_assert_chk z3 h thisc
                 iter primed cbi' ctxt kt
               cbi' = cbi + 1
               cb'v = z3CTCBalance cbi'
@@ -745,10 +790,7 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
               amountt = emit_z3_arg primed amount
               pvv = z3TxnValue cbi'
               pvr = z3TxnValueRef cbi'
-              thisc = if honest then
-                        z3Eq pvr amountt
-                      else
-                        z3Apply "<=" [ zero, pvr ]
+              thisc = z3Apply "<=" [ zero, pvr ]
           IL_FromConsensus _ kt -> iter primed cbi ctxt kt
           IL_While x loopvs initas untilt invt bodyt kt -> do
             vr_body <- meta_iter (Just cbi) (VC_WhileBody_AssumeNotUntil loopvs invt bodyt ctxt) untilt
