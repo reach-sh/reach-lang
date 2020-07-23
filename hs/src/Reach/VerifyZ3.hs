@@ -278,7 +278,9 @@ filterDisplayUnbound = T.pack . concatMap displayOne where
       s = "..." <> ty <> " [" <> name <> "]" <> r
         <> " returns " <> val <> at <> "\n"
       ty = case expr of
-        IL_PrimApp{} -> " PrimApp [XXX reach error]"
+        IL_PrimApp _ op _ -> case op of
+          RANDOM -> " random"
+          CP cp -> " " <> show cp <> " [XXX reach error]"
         IL_Declassify{} -> " declassify"
         IL_Interact _ m _ _ -> " interact." <> m
         IL_Digest{} -> " Digest [XXX reach error]"

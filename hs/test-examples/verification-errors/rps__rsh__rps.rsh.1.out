@@ -13,7 +13,7 @@ Failed a requirement:
  This program is invalid.
 This could happen if...
 ... interact.getHand [v15] w/A returns 3108938406 (at rps_shared.rsh:11:13)
-... PrimApp [XXX reach error] [v26] w/A returns 0 (at STDLIB:24:22)
+... random [v26] w/A returns 0 (at STDLIB:24:22)
 ... interact.getHand [v51] w/A returns 1142816574 (at rps_shared.rsh:11:13)
 ====================================================
 More info on this counterexample...
@@ -50,7 +50,7 @@ Failed a requirement:
  This program is invalid.
 This could happen if...
 ... interact.getHand [v15] w/A returns 3108938406 (at rps_shared.rsh:11:13)
-... PrimApp [XXX reach error] [v26] w/A returns 0 (at STDLIB:24:22)
+... random [v26] w/A returns 0 (at STDLIB:24:22)
 ... interact.getHand [v51] w/A returns 1142816574 (at rps_shared.rsh:11:13)
 ====================================================
 More info on this counterexample...
@@ -87,7 +87,7 @@ Failed a requirement:
  This program is invalid.
 This could happen if...
 ... interact.getHand [v15] w/A returns 1142816574 (at rps_shared.rsh:11:13)
-... PrimApp [XXX reach error] [v26] w/A returns 0 (at STDLIB:24:22)
+... random [v26] w/A returns 0 (at STDLIB:24:22)
 ... interact.getHand [v51] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ====================================================
 More info on this counterexample...
@@ -124,7 +124,7 @@ Failed a requirement:
  This program is invalid.
 This could happen if...
 ... interact.getHand [v15] w/A returns 1142816574 (at rps_shared.rsh:11:13)
-... PrimApp [XXX reach error] [v26] w/A returns 0 (at STDLIB:24:22)
+... random [v26] w/A returns 0 (at STDLIB:24:22)
 ... interact.getHand [v51] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ====================================================
 More info on this counterexample...
