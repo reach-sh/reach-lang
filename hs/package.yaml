@@ -35,6 +35,7 @@ dependencies:
 - pretty-simple
 - prettyprinter
 - process
+- safe
 - silently
 - simple-smt
 - smallcheck
