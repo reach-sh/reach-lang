@@ -16,6 +16,7 @@ import GHC.IO.Encoding
 import GHC.Stack(HasCallStack)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import Safe (atMay)
 import System.Directory
 import System.FilePath
 import Text.ParserCombinators.Parsec.Number (numberValue)
@@ -398,6 +399,11 @@ data CompilerError s
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_NotApplicableVals SLVal
   | Err_Eval_NotObject SLVal
+  | Err_Eval_RefEmptyArray 
+  | Err_Eval_RefOutOfBounds Int Int
+  | Err_Eval_RefNotArray SLVal
+  | Err_Eval_RefNotInt SLVal
+  | Err_EvalRefIndirectNotHomogeneous [SLType]
   | Err_Eval_UnboundId SLVar [SLVar]
   | Err_Export_IllegalJS JSExportDeclaration
   | Err_Form_InvalidArgs SLForm [JSExpression]
@@ -556,6 +562,7 @@ instance Show (SLCtxt s) where
 
 data SLCtxtMode s
   = SLC_Module
+  --- XXX Remove these STRefs
   | SLC_Step (STRef s (M.Map SLPart SLEnv))
   | SLC_Local
   | SLC_LocalStep
@@ -1083,8 +1090,48 @@ evalExpr ctxt at env e k =
           where k' (SLRes olifts _ objv) = k $ SLRes olifts env $ evalDot at' objv fields
                 at' = srcloc_jsa "dot" a at
                 fields = (jse_expect_id at') field
-        doRef _arr a _idx = expect_throw at' (Err_XXX "doRef")
+        doRef arr a idx = evalExpr ctxt at' env arr k'
           where at' = srcloc_jsa "array ref" a at
+                k' arrr =
+                  evalExpr ctxt at' env idx (k'' arrr)
+                k'' (SLRes alifts _ arrv) (SLRes ilifts _ idxv) =
+                  case idxv of
+                    SLV_Int _ idxi ->
+                      case arrv of
+                        SLV_Array _ arrvs ->
+                          case atMay arrvs idxi of
+                            Nothing ->
+                              expect_throw at' $ Err_Eval_RefOutOfBounds (length arrvs) idxi
+                            Just ansv ->
+                              k $ SLRes (alifts <> ilifts) env ansv
+                        SLV_DLVar adv@(DLVar _ _ (T_Array ts) _) ->
+                          case atMay ts idxi of
+                            Nothing ->
+                              expect_throw at' $ Err_Eval_RefOutOfBounds (length ts) idxi
+                            Just t -> retRef t arr_dla idx_dla
+                              where arr_dla = DLA_Var adv
+                                    idx_dla = DLA_Con (DLC_Int idxi)
+                        _ ->
+                          expect_throw at' $ Err_Eval_RefNotArray arrv
+                    SLV_DLVar idxdv@(DLVar _ _ T_UInt256 _) ->
+                      case arr_ty of
+                        T_Array [] ->
+                          expect_throw at' $ Err_Eval_RefEmptyArray 
+                        T_Array (t:ts) ->
+                          case getAll $ foldMap (All . (t ==)) ts of
+                            False ->
+                              expect_throw at' $ Err_EvalRefIndirectNotHomogeneous (t:ts)
+                            True -> retRef t arr_dla idx_dla
+                              where idx_dla = DLA_Var idxdv
+                        _ ->
+                          expect_throw at' $ Err_Eval_RefNotArray arrv
+                      where (arr_ty, arr_dla) = typeOf at' arrv
+                    _ ->
+                      expect_throw at' $ Err_Eval_RefNotInt idxv
+                  where retRef t arr_dla idx_dla = do
+                          (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' "ref" t) (DLE_ArrayRef at' arr_dla idx_dla)
+                          let ansv = SLV_DLVar dv
+                          k $ SLRes (alifts <> ilifts <> lifts') env ansv
 
 evalExprs :: SLCtxt s -> SrcLoc -> SLEnv -> [JSExpression] -> SLCPSd s
 evalExprs ctxt at env rands k =
