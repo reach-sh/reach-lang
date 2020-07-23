@@ -27,7 +27,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:46:5
 ... ctc_balance6 = 1 = (+ ctc_balance5 txn_value6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:58:5
 ... ctc_balance7 = 0 = (- ctc_balance6 v6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:69:5
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p  -- STDLIB:13:13
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps_while.rsh.3.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps_while.rsh.3.patch:22:3
@@ -104,7 +103,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:46:5
 ... ctc_balance6 = 1 = (+ ctc_balance5 txn_value6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:58:5
 ... ctc_balance7 = 0 = (- ctc_balance6 v6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:69:5
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p  -- STDLIB:13:13
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps_while.rsh.3.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps_while.rsh.3.patch:22:3
@@ -181,7 +179,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:46:5
 ... ctc_balance6 = 1 = (+ ctc_balance5 txn_value6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:58:5
 ... ctc_balance7 = 0 = (- ctc_balance6 v6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:69:5
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p  -- STDLIB:13:13
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps_while.rsh.3.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps_while.rsh.3.patch:22:3
@@ -258,7 +255,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:46:5
 ... ctc_balance6 = 1 = (+ ctc_balance5 txn_value6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:58:5
 ... ctc_balance7 = 0 = (- ctc_balance6 v6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:69:5
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p  -- STDLIB:13:13
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps_while.rsh.3.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps_while.rsh.3.patch:22:3
@@ -335,7 +331,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:46:5
 ... ctc_balance6 = 1 = (+ ctc_balance5 txn_value6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:58:5
 ... ctc_balance7 = 0 = (- ctc_balance6 v6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:69:5
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p  -- STDLIB:13:13
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps_while.rsh.3.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps_while.rsh.3.patch:22:3
@@ -412,7 +407,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:46:5
 ... ctc_balance6 = 1 = (+ ctc_balance5 txn_value6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:58:5
 ... ctc_balance7 = 0 = (- ctc_balance6 v6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:69:5
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p  -- STDLIB:13:13
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps_while.rsh.3.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps_while.rsh.3.patch:22:3
@@ -489,7 +483,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:46:5
 ... ctc_balance6 = 1 = (+ ctc_balance5 txn_value6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:58:5
 ... ctc_balance7 = 0 = (- ctc_balance6 v6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:69:5
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p  -- STDLIB:13:13
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps_while.rsh.3.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps_while.rsh.3.patch:22:3
@@ -566,7 +559,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:46:5
 ... ctc_balance6 = 1 = (+ ctc_balance5 txn_value6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:58:5
 ... ctc_balance7 = 0 = (- ctc_balance6 v6 )  -- ../examples/rps/rsh/rps_while.rsh.3.patch:69:5
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = v26p  -- STDLIB:13:13
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps_while.rsh.3.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps_while.rsh.3.patch:22:3

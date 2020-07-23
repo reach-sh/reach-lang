@@ -26,7 +26,6 @@ More info on this counterexample...
 ... ctc_balance5 = 15709 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps.rsh.4.patch:47:3
 ... ctc_balance6 = 1 = (- ctc_balance5 v115 )  -- ../examples/rps/rsh/rps.rsh.4.patch:63:3
 ... ctc_balance7 = 1 = (- ctc_balance6 v116 )  -- ../examples/rps/rsh/rps.rsh.4.patch:64:3
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance7 0 )  -- rps_shared.rsh:25:3
 ... txn_value1 = 7855 = v8  -- ../examples/rps/rsh/rps.rsh.4.patch:16:3
 ... txn_value2 = 7854 = v4  -- ../examples/rps/rsh/rps.rsh.4.patch:22:3
@@ -99,7 +98,6 @@ More info on this counterexample...
 ... ctc_balance5 = 8915 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps.rsh.4.patch:47:3
 ... ctc_balance6 = 8915 = (- ctc_balance5 v115 )  -- ../examples/rps/rsh/rps.rsh.4.patch:63:3
 ... ctc_balance7 = 1 = (- ctc_balance6 v116 )  -- ../examples/rps/rsh/rps.rsh.4.patch:64:3
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance7 0 )  -- rps_shared.rsh:25:3
 ... txn_value1 = 4458 = v8  -- ../examples/rps/rsh/rps.rsh.4.patch:16:3
 ... txn_value2 = 4457 = v4  -- ../examples/rps/rsh/rps.rsh.4.patch:22:3
@@ -172,7 +170,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps.rsh.4.patch:47:3
 ... ctc_balance6 = 1 = (- ctc_balance5 v115 )  -- ../examples/rps/rsh/rps.rsh.4.patch:63:3
 ... ctc_balance7 = 1 = (- ctc_balance6 v116 )  -- ../examples/rps/rsh/rps.rsh.4.patch:64:3
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance7 0 )  -- rps_shared.rsh:25:3
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps.rsh.4.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps.rsh.4.patch:22:3
@@ -245,7 +242,6 @@ More info on this counterexample...
 ... ctc_balance5 = 3385 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps.rsh.4.patch:47:3
 ... ctc_balance6 = 3385 = (- ctc_balance5 v115 )  -- ../examples/rps/rsh/rps.rsh.4.patch:63:3
 ... ctc_balance7 = 1 = (- ctc_balance6 v116 )  -- ../examples/rps/rsh/rps.rsh.4.patch:64:3
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance7 0 )  -- rps_shared.rsh:25:3
 ... txn_value1 = 1693 = v8  -- ../examples/rps/rsh/rps.rsh.4.patch:16:3
 ... txn_value2 = 1692 = v4  -- ../examples/rps/rsh/rps.rsh.4.patch:22:3
@@ -318,7 +314,6 @@ More info on this counterexample...
 ... ctc_balance5 = 4765 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps.rsh.4.patch:47:3
 ... ctc_balance6 = 4765 = (- ctc_balance5 v115 )  -- ../examples/rps/rsh/rps.rsh.4.patch:63:3
 ... ctc_balance7 = 1 = (- ctc_balance6 v116 )  -- ../examples/rps/rsh/rps.rsh.4.patch:64:3
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance7 0 )  -- rps_shared.rsh:25:3
 ... txn_value1 = 2383 = v8  -- ../examples/rps/rsh/rps.rsh.4.patch:16:3
 ... txn_value2 = 2382 = v4  -- ../examples/rps/rsh/rps.rsh.4.patch:22:3
@@ -391,7 +386,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps.rsh.4.patch:47:3
 ... ctc_balance6 = 1 = (- ctc_balance5 v115 )  -- ../examples/rps/rsh/rps.rsh.4.patch:63:3
 ... ctc_balance7 = 1 = (- ctc_balance6 v116 )  -- ../examples/rps/rsh/rps.rsh.4.patch:64:3
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance7 0 )  -- rps_shared.rsh:25:3
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps.rsh.4.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps.rsh.4.patch:22:3
@@ -464,7 +458,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps.rsh.4.patch:47:3
 ... ctc_balance6 = 1 = (- ctc_balance5 v115 )  -- ../examples/rps/rsh/rps.rsh.4.patch:63:3
 ... ctc_balance7 = 1 = (- ctc_balance6 v116 )  -- ../examples/rps/rsh/rps.rsh.4.patch:64:3
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance7 0 )  -- rps_shared.rsh:25:3
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps.rsh.4.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps.rsh.4.patch:22:3
@@ -537,7 +530,6 @@ More info on this counterexample...
 ... ctc_balance5 = 1 = (+ ctc_balance4 txn_value5 )  -- ../examples/rps/rsh/rps.rsh.4.patch:47:3
 ... ctc_balance6 = 1 = (- ctc_balance5 v115 )  -- ../examples/rps/rsh/rps.rsh.4.patch:63:3
 ... ctc_balance7 = 1 = (- ctc_balance6 v116 )  -- ../examples/rps/rsh/rps.rsh.4.patch:64:3
-... false = UNKNOWN -- XXX reachc error, no info on var
 ... goal = false = (= ctc_balance7 0 )  -- rps_shared.rsh:25:3
 ... txn_value1 = 1 = v8  -- ../examples/rps/rsh/rps.rsh.4.patch:16:3
 ... txn_value2 = 0 = v4  -- ../examples/rps/rsh/rps.rsh.4.patch:22:3

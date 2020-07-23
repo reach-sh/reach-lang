@@ -293,6 +293,7 @@ filterDisplayUnbound = T.pack . concatMap displayOne where
 harvestIdents :: SExpr -> [String]
 harvestIdents (Atom s@(c:_))
   | isDigit c = []
+  | s == "true" || s == "false" = []
   | otherwise = [s]
 harvestIdents (Atom "") = [] -- wat
 harvestIdents (List (_f:xs)) = concatMap harvestIdents xs
