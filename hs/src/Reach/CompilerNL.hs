@@ -337,7 +337,7 @@ data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
   | DLS_Claim SrcLoc [ SLCtxtFrame ] ClaimType DLArg
   | DLS_If SrcLoc DLArg DLStmts DLStmts
-  --- XXX These are only allowed in Steps... maybe make Lifters more generic?
+  --- XXX These are only allowed in Steps... some sort of dep type?
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_All SrcLoc DLStmt
   deriving (Eq,Show)
@@ -545,20 +545,9 @@ gatherDeps_top src_p = do
 
 -- Compiler
 
-data SLLifter s = SLLifter
-  { lift_stmts :: STRef s (Seq.Seq DLStmt) }
-  deriving (Eq)
-
-ctxt_newLifter :: ST s ((SLLifter s), STRef s (Seq.Seq DLStmt))
-ctxt_newLifter = do
-  newr <- newSTRef mempty
-  let l' = (SLLifter { lift_stmts = newr })
-  return (l', newr)
-
 data SLCtxt s = SLCtxt
   { ctxt_mode :: SLCtxtMode s
   , ctxt_id :: Maybe (STRef s Int)
-  , ctxt_lifter :: Maybe (SLLifter s)
   , ctxt_stack :: [ SLCtxtFrame ] }
   deriving (Eq)
 
@@ -570,7 +559,7 @@ data SLCtxtMode s
   | SLC_Step (STRef s (M.Map SLPart SLEnv))
   | SLC_Local
   | SLC_LocalStep
-  | SLC_ConsensusStep ((STRef s (M.Map SLPart SLEnv)), Maybe (SLLifter s))
+  | SLC_ConsensusStep (STRef s (M.Map SLPart SLEnv))
   deriving (Eq)
 
 instance Show (SLCtxtMode s) where
@@ -579,20 +568,6 @@ instance Show (SLCtxtMode s) where
   show (SLC_Local) = "SLC_Local"
   show (SLC_LocalStep) = "SLC_LocalStep"
   show (SLC_ConsensusStep _) = "SLC_ConsensusStep"
-
-ctxt_lift :: SLCtxt s -> SrcLoc -> SLLifter s
-ctxt_lift ctxt at =
-  case ctxt_lifter ctxt of
-    Nothing -> expect_throw at $ Err_Eval_IllegalLift ctxt
-    Just l -> l
-
-ctxt_lift_stmt :: SLCtxt s -> SrcLoc -> DLStmt -> ST s ()
-ctxt_lift_stmt ctxt at s' =
-  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.|> s')
-
-ctxt_lift_stmts :: SLCtxt s -> SrcLoc -> Seq.Seq DLStmt -> ST s ()
-ctxt_lift_stmts ctxt at ss' =
-  modifySTRef (lift_stmts $ ctxt_lift ctxt at) (\ss -> ss Seq.>< ss')
 
 ctxt_alloc :: SLCtxt s -> SrcLoc -> ST s Int
 ctxt_alloc ctxt at = do
@@ -603,25 +578,26 @@ ctxt_alloc ctxt at = do
   writeSTRef idr $ x + 1
   return x
 
-ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s DLVar
+ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s (DLVar, DLStmts)
 ctxt_lift_expr ctxt at mk_var e = do
   x <- ctxt_alloc ctxt at
   let dv = mk_var x
   let s = DLS_Let at dv e
-  ctxt_lift_stmt ctxt at s
-  return dv
+  return (dv, return s)
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
   deriving (Eq, Show)
 
-data SLRes = SLRes SLEnv SLVal
+data SLRes = SLRes DLStmts SLEnv SLVal
   deriving (Eq, Show)
 
-res_env :: SLRes -> SLEnv
-res_env (SLRes env _) = env
-
 type SLKont s = SLRes -> ST s SLRes
+
+kKeepLifts :: DLStmts -> SLKont s -> SLKont s
+kKeepLifts lifts k (SLRes lifts' env val) =
+  k $ SLRes (lifts <> lifts') env val
+
 type SLCPSd s = SLKont s -> ST s SLRes
 
 ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
@@ -744,32 +720,28 @@ evalForm ctxt at env f args k =
           let get_penv = do
                 penvs <- readSTRef penvs_ref
                 return $ penvs M.! who
-          let k' eargs =                
+          let k' elifts eargs =                
                 case eargs of
                   [ thunk ] -> do
                     penv <- get_penv
-                    (lifter', _stmts_ref) <- ctxt_newLifter
                     let ctxt_localstep =
                           (SLCtxt { ctxt_mode = SLC_LocalStep
                                   , ctxt_id = ctxt_id ctxt
-                                  , ctxt_lifter = Just lifter'
                                   , ctxt_stack = ctxt_stack ctxt })
-                    let k'' (SLRes penv' ans) = do
+                    let k'' (SLRes alifts penv' ans) = do
                           traceM $ "penv' update = " ++ (show $ M.keys $ M.difference penv' penv)
                           modifySTRef penvs_ref (M.insert who penv')
-                          --- XXX look at stmts_ref and save em
-                          k $ SLRes env ans
+                          k $ SLRes (elifts <> alifts) env ans
                     evalApplyVals ctxt_localstep at mt_env thunk [] k''
                   _ -> illegal_args
           let k'_res eargr =
                 case eargr of
-                  SLRes _ (SLV_Array _ eargs) -> k' eargs
+                  SLRes elifts _ (SLV_Array _ eargs) -> k' elifts eargs
                   _ -> impossible "evalExprs did not return array"
           penv <- get_penv
           let ctxt_local =
                 (SLCtxt { ctxt_mode = SLC_Local
                         , ctxt_id = ctxt_id ctxt
-                        , ctxt_lifter = Nothing
                         , ctxt_stack = ctxt_stack ctxt })
           evalExprs ctxt_local at penv args k'_res
         _ -> expect_throw at $ Err_Eval_IllegalContext ctxt "part.only"
@@ -783,24 +755,24 @@ evalForm ctxt at env f args k =
                 Nothing -> do
                   penvs <- readSTRef penvs_ref
                   let penv = penvs M.! who
-                  let ensure_bound () x k'' =
-                          case env_lookup at x penv of
-                            _ -> k'' ()
-                  foldlk k' ensure_bound () msg 
-                  where msg = map (jse_expect_id at) args
-                        k' () = k_res $ SLV_Form $ SLForm_Part_ToConsensus who Nothing (Just msg) mpay mtime
+                  let ensure_bound x = do
+                        case env_lookup at x penv of
+                          _ -> return ()
+                  let msg = map (jse_expect_id at) args
+                  mapM_ ensure_bound msg
+                  retV $ SLV_Form $ SLForm_Part_ToConsensus who Nothing (Just msg) mpay mtime
                 Just _ ->
                   expect_throw at $ Err_ToConsensus_Double TCM_Publish
             Just TCM_Pay ->
-              k_res $ SLV_Form $ SLForm_Part_ToConsensus who Nothing mpub (Just $ error "XXX TCM_Pay " ++ show args) mtime
+              retV $ SLV_Form $ SLForm_Part_ToConsensus who Nothing mpub (Just $ error "XXX TCM_Pay " ++ show args) mtime
             Just TCM_Timeout ->
-              k_res $ SLV_Form $ SLForm_Part_ToConsensus who Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
+              retV $ SLV_Form $ SLForm_Part_ToConsensus who Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
             Nothing ->
               expect_throw at $ Err_Eval_NotApplicable rator
         _ -> expect_throw at $ Err_Eval_IllegalContext ctxt "toConsensus"
   where illegal_args = expect_throw at (Err_Form_InvalidArgs f args)
         rator = SLV_Form f
-        k_res v = k $ SLRes env v
+        retV v = k $ SLRes mempty env v
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLEnv -> PrimOp -> [SLVal] -> SLCPSd s
 evalPrimOp ctxt at env p args k =
@@ -831,28 +803,29 @@ evalPrimOp ctxt at env p args k =
         [SLV_Int _ lhs, SLV_Int _ rhs] ->
           static $ SLV_Int at $ op lhs rhs
         _ -> make_var
-    static v = k $ SLRes env $ v
+    static v = k $ SLRes mempty env $ v
     make_var = do
       let (rng, dargs) = checkAndConvert at (primOpType p) args
-      dv <- ctxt_lift_expr ctxt at (DLVar at "prim" rng) (DLE_PrimOp at p dargs)
-      k $ SLRes env $ SLV_DLVar dv
+      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "prim" rng) (DLE_PrimOp at p dargs)
+      k $ SLRes lifts env $ SLV_DLVar dv
 
 evalPrim :: SLCtxt s -> SrcLoc -> SLEnv -> SLPrimitive -> [SLVal] -> SLCPSd s
 evalPrim ctxt at env p args k =
   case p of
-    SLPrim_op op -> evalPrimOp ctxt at env op args k
+    SLPrim_op op ->
+      evalPrimOp ctxt at env op args k
     SLPrim_Fun ->
       case args of
         [ (SLV_Array _ dom_arr), (SLV_Type rng) ] ->
-          k_res $ SLV_Type $ T_Fun dom rng
+          retV $ SLV_Type $ T_Fun dom rng
           where dom = map expect_ty dom_arr
         _ -> illegal_args
     SLPrim_Array ->
-      k_res $ SLV_Type $ T_Array $ map expect_ty args
+      retV $ SLV_Type $ T_Array $ map expect_ty args
     SLPrim_makeEnum ->
       case args of
         [ SLV_Int _ i ] ->
-          k_res $ SLV_Array at' (enum_pred : map (SLV_Int at') [ 0 .. (i-1) ])
+          retV $ SLV_Array at' (enum_pred : map (SLV_Int at') [ 0 .. (i-1) ])
           where at' = (srcloc_at "makeEnum" Nothing at)
                 --- FIXME This sucks... maybe parse an embed string? Would that suck less?
                 enum_pred = SLV_Clo at' fname ["x"] pbody mempty
@@ -866,7 +839,7 @@ evalPrim ctxt at env p args k =
         SLC_Module ->
           case args of
             [ (SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _) ] ->
-              k_res $ SLV_Prim $ SLPrim_DApp_Delay at args env
+              retV $ SLV_Prim $ SLPrim_DApp_Delay at args env
             _ -> illegal_args
         _ ->
           expect_throw at (Err_Eval_IllegalContext ctxt "DApp")
@@ -876,33 +849,33 @@ evalPrim ctxt at env p args k =
       case ctxt_mode ctxt of
         SLC_LocalStep -> do
           let (rng, dargs) = checkAndConvert at t args
-          dv <- ctxt_lift_expr ctxt at (DLVar at "interact" rng) (DLE_Interact at m dargs)
-          k_res $ SLV_DLVar dv
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "interact" rng) (DLE_Interact at m dargs)
+          k $ SLRes lifts env $ SLV_DLVar dv
         _ ->
           expect_throw at (Err_Eval_IllegalContext ctxt "interact")
     SLPrim_declassify ->
       case args of
         [ val ] ->
           --- XXX do declassify
-          k_res $ val
+          retV $ val
         _ -> illegal_args
     SLPrim_commit ->
       case args of
-        [ ] -> k_res $ SLV_Prim SLPrim_committed
+        [ ] -> retV $ SLV_Prim SLPrim_committed
         _ -> illegal_args
     SLPrim_committed -> illegal_args
     SLPrim_assume ->
       case ctxt_mode ctxt of
-        SLC_LocalStep -> do
-          let darg =
-                case checkAndConvert at (T_Fun [T_Bool] T_Null) args of
-                  (_, [x]) -> x
-                  _ -> illegal_args
-          ctxt_lift_stmt ctxt at (DLS_Claim at (ctxt_stack ctxt) CT_Assume darg)
-          k_res $ SLV_Null at
+        SLC_LocalStep ->
+          k $ SLRes lifts env $ SLV_Null at
+          where darg =
+                  case checkAndConvert at (T_Fun [T_Bool] T_Null) args of
+                    (_, [x]) -> x
+                    _ -> illegal_args
+                lifts = return (DLS_Claim at (ctxt_stack ctxt) CT_Assume darg)
         _ -> illegal_args
   where illegal_args = expect_throw at (Err_Prim_InvalidArgs p args)
-        k_res v = k $ SLRes env v
+        retV v = k $ SLRes mempty env v
         rator = SLV_Prim p
         expect_ty v =
           case v of
@@ -931,7 +904,7 @@ evalApply ctxt at env rator rands k =
     SLV_Form f -> evalForm ctxt at env f rands k
     v -> expect_throw at (Err_Eval_NotApplicable v)
   where vals = evalExprs ctxt at env rands k'
-        k' (SLRes _ (SLV_Array _ randvs)) = evalApplyVals ctxt at env rator randvs k
+        k' (SLRes rlifts _ (SLV_Array _ randvs)) = evalApplyVals ctxt at env rator randvs $ kKeepLifts rlifts k
         k' _ = impossible "evalExprs didn't return Array"
 
 evalPropertyName :: SLCtxt s -> SrcLoc -> SLEnv -> JSPropertyName -> SLCPSd s
@@ -945,26 +918,27 @@ evalPropertyName ctxt at env pn k =
     JSPropertyComputed an e _ ->
       evalExpr ctxt at_n env e k
       where at_n = srcloc_jsa "computed field name" an at
-  where k_res s = k $ SLRes env $ SLV_Bytes at $ bpack s
+  where k_res s = k $ SLRes mempty env $ SLV_Bytes at $ bpack s
 
 evalPropertyPair :: SLCtxt s -> SrcLoc -> SLEnv -> SLRes -> JSObjectProperty -> SLCPSd s
-evalPropertyPair ctxt at env ores p k =
+evalPropertyPair ctxt at env ores@(SLRes olifts _ ov) p k =
   case p of
     JSPropertyNameandValue pn a vs ->
       evalPropertyName ctxt at' env pn k_value
       where at' = srcloc_jsa "property binding" a at
-            k_value (SLRes _ fv) =
+            k_value (SLRes flifts _ fv) =
               case fv of
                 SLV_Bytes _ fb ->
                   case vs of
                     [ e ] ->
                       let f = B.unpack fb in
-                        evalExpr ctxt at' env e (k_insert f)
+                        evalExpr ctxt at' env e (kKeepLifts flifts $ k_insert flifts f)
                     _ ->
                       expect_throw at' (Err_Obj_IllegalFieldValues vs)
                 _ ->
                   expect_throw at' $ Err_Obj_IllegalComputedField fv
-            k_insert f (SLRes _ v) = k_res $ env_insert at' f v fenv
+            k_insert flifts f (SLRes vlifts _ v) =
+              k $ SLRes (olifts <> flifts <> vlifts) env $ SLV_Object at $ env_insert at' f v fenv
     JSPropertyIdentRef a v ->
       evalPropertyPair ctxt at env ores p' k
       where p' = JSPropertyNameandValue pn a vs
@@ -972,33 +946,33 @@ evalPropertyPair ctxt at env ores p k =
             vs = [ JSIdentifier a v ]
     JSObjectSpread a se ->
       evalExpr ctxt at' env se k'
-      where k' (SLRes _ envv) =
-              case envv of
-                SLV_Object _ senv -> k_res $ env_merge at' fenv senv
-                _ -> expect_throw at (Err_Obj_SpreadNotObj envv)
+      where k' (SLRes slifts _ sv) =
+              case sv of
+                SLV_Object _ senv ->
+                  k $ SLRes (olifts <> slifts) env $ SLV_Object at $ env_merge at' fenv senv
+                _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
             at' = srcloc_jsa "...obj" a at
     _ ->
       expect_throw at (Err_Obj_IllegalJS p)
-  where fenv = case ores of
-                 SLRes _ (SLV_Object _ x) -> x
+  where fenv = case ov of
+                 (SLV_Object _ x) -> x
                  _ -> impossible "evalPropertyPair not given SLV_Object"
-        k_res nenv = k $ SLRes env $ SLV_Object at nenv
 
 evalExpr :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> SLCPSd s
 evalExpr ctxt at env e k =
   case e of
-    JSIdentifier a x -> k $ SLRes env $ env_lookup (srcloc_jsa "id ref" a at) x env
-    JSDecimal a ns -> k $ SLRes env $ SLV_Int (srcloc_jsa "decimal" a at) $ numberValue 10 ns
+    JSIdentifier a x -> retV $ env_lookup (srcloc_jsa "id ref" a at) x env
+    JSDecimal a ns -> retV $ SLV_Int (srcloc_jsa "decimal" a at) $ numberValue 10 ns
     JSLiteral a l ->
       case l of
-        "null" -> k $ SLRes env $ SLV_Null at'
-        "true" -> k $ SLRes env $ SLV_Bool at' True
-        "false" -> k $ SLRes env $ SLV_Bool at' False
+        "null" -> retV $ SLV_Null at'
+        "true" -> retV $ SLV_Bool at' True
+        "false" -> retV $ SLV_Bool at' False
         _ -> expect_throw at' (Err_Parse_IllegalLiteral l)
       where at' = (srcloc_jsa "literal" a at)
-    JSHexInteger a ns -> k $ SLRes env $ SLV_Int (srcloc_jsa "hex" a at) $ numberValue 16 ns
-    JSOctal a ns -> k $ SLRes env $ SLV_Int (srcloc_jsa "octal" a at) $ numberValue 8 ns
-    JSStringLiteral a s -> k $ SLRes env $ SLV_Bytes (srcloc_jsa "string" a at) (bpack (trimQuotes s))
+    JSHexInteger a ns -> retV $ SLV_Int (srcloc_jsa "hex" a at) $ numberValue 16 ns
+    JSOctal a ns -> retV $ SLV_Int (srcloc_jsa "octal" a at) $ numberValue 8 ns
+    JSStringLiteral a s -> retV $ SLV_Bytes (srcloc_jsa "string" a at) (bpack (trimQuotes s))
     JSRegEx _ _ -> illegal
     JSArrayLiteral a as _ -> evalExprs ctxt at' env (jsa_flatten as) k
       where at' = (srcloc_jsa "array" a at)
@@ -1009,48 +983,33 @@ evalExpr ctxt at env e k =
     JSCallExpressionSquare arr a idx _ -> doRef arr a idx
     JSClassExpression _ _ _ _ _ _ -> illegal
     JSCommaExpression _ _ _ -> illegal
-    JSExpressionBinary lhs op rhs -> doCallV (binaryToPrim at env op) JSNoAnnot [ lhs, rhs ]
+    JSExpressionBinary lhs op rhs -> doCallV mempty (binaryToPrim at env op) JSNoAnnot [ lhs, rhs ]
     JSExpressionParen a ie _ -> evalExpr ctxt (srcloc_jsa "paren" a at) env ie k
     JSExpressionPostfix _ _ -> illegal
     JSExpressionTernary ce a te _ fe ->
       evalExpr ctxt at' env ce k_c
       where at' = srcloc_jsa "if" a at
-            k_c cr = evalInside te (k_t cr)
-            k_t cr ta = evalInside fe (k_fin cr ta)
-            evalInside x k_s = do
-              (l', stmts_ref) <- ctxt_newLifter
-              let fresh_ctxt =
-                    (SLCtxt
-                     { ctxt_mode = ctxt_mode ctxt
-                     , ctxt_id = ctxt_id ctxt
-                     , ctxt_lifter = Just l'
-                     , ctxt_stack = ctxt_stack ctxt })
-              let k' xv = do
-                    x_lifts <- readSTRef stmts_ref
-                    k_s (x_lifts, xv)
-              evalExpr fresh_ctxt at env x k'
-            k_fin (SLRes _ cv) (t_lifts, tr) (f_lifts, fr) =
+            k_c cr = evalExpr ctxt at' env te (k_t cr)
+            k_t cr ta = evalExpr ctxt at' env fe (k_fin cr ta)
+            k_fin (SLRes clifts _ cv) (SLRes tlifts _ tv) (SLRes flifts _ fv) =
               case cv of
                 SLV_Bool _ cb -> do
-                  ctxt_lift_stmts ctxt at e_lifts
-                  k $ er
-                  where (e_lifts, er) = if cb then (t_lifts, tr) else (f_lifts, fr)
+                  k $ SLRes (clifts <> elifts) env ev
+                  where (elifts, ev) = if cb then (tlifts, tv) else (flifts, fv)
                 SLV_DLVar dv@(DLVar _ _ T_Bool _) ->
-                  if stmts_pure t_lifts && stmts_pure f_lifts then
-                    do ctxt_lift_stmts ctxt at t_lifts
-                       ctxt_lift_stmts ctxt at f_lifts
-                       let SLRes _ tv = tr
-                       let SLRes _ fv = fr
-                       evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [ cv, tv, fv ] k
-                  else
-                    --- XXX A consensus must duplicate continuation but a local doesn't need to
-                    do ctxt_lift_stmt ctxt at (DLS_If at (DLA_Var dv) t_lifts f_lifts)
-                       --- XXX Don't ignore tv and fv
-                       expect_throw at (Err_XXX "impure if")
+                  case stmts_pure tlifts && stmts_pure flifts of
+                    True ->
+                      evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [ cv, tv, fv ] $ kKeepLifts (clifts <> tlifts <> flifts) k
+                    False -> do
+                      --- XXX A consensus must duplicate continuation but a local doesn't need to
+                      let ilifts = return $ DLS_If at (DLA_Var dv) tlifts flifts
+                      let lifts' = clifts <> ilifts
+                      --- XXX Don't ignore tv and fv
+                      expect_throw at' (Err_XXX $ "impure if " ++ show lifts')
                 _ ->
-                  expect_throw at (Err_Eval_IfCondNotBool cv)
+                  expect_throw at' (Err_Eval_IfCondNotBool cv)
     JSArrowExpression aformals a bodys ->
-      k $ SLRes env $ SLV_Clo at' fname formals body env
+      retV $ SLV_Clo at' fname formals body env
       where at' = srcloc_jsa "arrow" a at
             fname = Nothing --- FIXME syntax-local-infer-name
             body = case bodys of
@@ -1058,7 +1017,7 @@ evalExpr ctxt at env e k =
                      _ -> JSBlock JSNoAnnot [bodys] JSNoAnnot
             formals = parseJSArrowFormals at' aformals
     JSFunctionExpression a name _ jsformals _ body ->
-      k $ SLRes env $ SLV_Clo at' fname formals body env
+      retV $ SLV_Clo at' fname formals body env
       where at' = srcloc_jsa "function exp" a at
             fname =
               case name of
@@ -1072,22 +1031,23 @@ evalExpr ctxt at env e k =
     JSMemberSquare arr a idx _ -> doRef arr a idx
     JSNewExpression _ _ -> illegal
     JSObjectLiteral a plist _ ->
-      foldlk k (evalPropertyPair ctxt at' env) (SLRes env $ SLV_Object at' mempty) $ jsctl_flatten plist
+      foldlk k (evalPropertyPair ctxt at' env) (SLRes mempty env $ SLV_Object at' mempty) $ jsctl_flatten plist
       where at' = srcloc_jsa "obj" a at
     JSSpreadExpression _ _ -> illegal
     JSTemplateLiteral _ _ _ _ -> illegal
-    JSUnaryExpression op ue -> doCallV (unaryToPrim at env op) JSNoAnnot [ ue ]
+    JSUnaryExpression op ue -> doCallV mempty (unaryToPrim at env op) JSNoAnnot [ ue ]
     JSVarInitExpression _ _ -> illegal
     JSYieldExpression _ _ -> illegal
     JSYieldFromExpression _ _ _ -> illegal
   where illegal = expect_throw at (Err_Eval_IllegalJS e)
-        doCallV ratorv a rands = evalApply ctxt at' env ratorv rands k
+        retV v = k $ SLRes mempty env $ v
+        doCallV rlifts ratorv a rands = evalApply ctxt at' env ratorv rands $ kKeepLifts rlifts k
           where at' = srcloc_jsa "application" a at
         doCall rator a rands = evalExpr ctxt at' env rator k'
-          where k' (SLRes _ ratorv) = doCallV ratorv a rands
+          where k' (SLRes rlifts _ ratorv) = doCallV rlifts ratorv a rands
                 at' = srcloc_jsa "application, rator" a at
         doDot obj a field = evalExpr ctxt at' env obj k'
-          where k' (SLRes _ objv) = k $ SLRes env $ evalDot at' objv fields
+          where k' (SLRes olifts _ objv) = k $ SLRes olifts env $ evalDot at' objv fields
                 at' = srcloc_jsa "dot" a at
                 fields = (jse_expect_id at') field
         doRef _arr a _idx = expect_throw at' (Err_XXX "doRef")
@@ -1096,47 +1056,52 @@ evalExpr ctxt at env e k =
 evalExprs :: SLCtxt s -> SrcLoc -> SLEnv -> [JSExpression] -> SLCPSd s
 evalExprs ctxt at env rands k =
   case rands of
-    [] -> k $ SLRes env (SLV_Array at [])
+    [] -> k $ SLRes mempty env (SLV_Array at [])
     (rand0:rands') ->
       evalExpr ctxt at env rand0 k'
-      where k' (SLRes _ val0) =
+      where k' (SLRes lifts0 _ val0) =
               evalExprs ctxt at env rands' k''
-              where k'' (SLRes _ valsv) =
+              where k'' (SLRes liftsN _ valsv) =
                       case valsv of
                         SLV_Array _ vals ->
-                          k $ SLRes env (SLV_Array at $ val0:vals)
+                          k $ SLRes (lifts0 <> liftsN) env (SLV_Array at $ val0:vals)
                         _ ->
                           impossible "evalExprs did not return array"
 
 evalDecl :: SLCtxt s -> SrcLoc -> SLRes -> JSExpression -> SLCPSd s
-evalDecl ctxt at (SLRes env _) decl k =
+evalDecl ctxt at (SLRes lifts env _) decl k =
   case decl of
     JSVarInitExpression lhs (JSVarInit va rhs) ->
       evalExpr ctxt vat' env rhs k'
       where vat' = srcloc_jsa "var initializer" va at
-            k' (SLRes _ v) = do
-              env' <-
+            k' (SLRes rhs_lifts _ v) = do
+              (lhs_lifts, env') <-
                 case lhs of
                   (JSIdentifier a x) ->
-                    return $ env_insert (srcloc_jsa "id" a at) x v env
+                    return $ (mempty, env_insert (srcloc_jsa "id" a at) x v env)
                   (JSArrayLiteral a xs _) -> do
-                    vs <- case v of
-                            SLV_Array _ x -> return x
-                            SLV_DLVar dv@(DLVar _ _ (T_Array ts) _) ->
-                              zipWithM mk_ref ts [0..]
-                              where mk_ref t i = do
-                                      dvi <- ctxt_lift_expr ctxt at (DLVar vat' "array idx" t) (DLE_ArrayRef vat' (DLA_Var dv) (DLA_Con (DLC_Int i)))
-                                      return $ SLV_DLVar dvi
-                            _ ->
-                              expect_throw at' (Err_Decl_NotArray v)
+                    (vs_lifts, vs) <-
+                      case v of
+                        SLV_Array _ x -> return (mempty, x)
+                        SLV_DLVar dv@(DLVar _ _ (T_Array ts) _) -> do
+                          vs_liftsl_and_dvs <- zipWithM mk_ref ts [0..]
+                          let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
+                          let vs_lifts = mconcat vs_liftsl
+                          return (vs_lifts, dvs)
+                          where mk_ref t i = do
+                                  let e = (DLE_ArrayRef vat' (DLA_Var dv) (DLA_Con (DLC_Int i)))
+                                  (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' "array idx" t) e
+                                  return $ (i_lifts, SLV_DLVar dvi)
+                        _ ->
+                          expect_throw at' (Err_Decl_NotArray v)
                     let kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
-                    return $ foldl' (env_insertp at') env kvs
+                    return $ (vs_lifts, foldl' (env_insertp at') env kvs)
                     where ks = map (jse_expect_id at') $ jsa_flatten xs
                           at' = srcloc_jsa "array" a at
                   _ ->
                     expect_throw at (Err_DeclLHS_IllegalJS lhs)
               traceM $ "evalDecl: defining " ++ (show $ M.keys $ M.difference env' env) ++ " at " ++ show vat'
-              k $ SLRes env' $ SLV_Null at
+              k $ SLRes (lifts <> rhs_lifts <> lhs_lifts) env' $ SLV_Null at
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
 
@@ -1144,17 +1109,16 @@ evalDecls :: SLCtxt s -> SrcLoc -> SLEnv -> (JSCommaList JSExpression) -> SLCPSd
 evalDecls ctxt at env decls k =
   --- Note: This makes it so that declarations on the left are visible
   --- on the right, which might be different than JavaScript?
-  foldlk k (evalDecl ctxt at) (SLRes env $ SLV_Null at) $ jscl_flatten decls
+  foldlk k (evalDecl ctxt at) (SLRes mempty env $ SLV_Null at) $ jscl_flatten decls
 
 evalStmt :: SLCtxt s -> SrcLoc -> SLEnv -> [JSStatement] -> SLCPSd s
 evalStmt ctxt at env ss k =
   case ss of
-    [] -> k $ SLRes env $ SLV_Null at
+    [] -> k $ SLRes mempty env $ SLV_Null at
     ((JSStatementBlock a ss' _ sp):ks) ->
       evalStmt ctxt at_in env ss'
-      (\(SLRes _ _v) ->
-          --- XXX Don't ignore v
-          evalStmt ctxt at_after env ks k)
+      (\(SLRes lifts _ _XXX_v) ->
+          evalStmt ctxt at_after env ks $ kKeepLifts lifts k)
       where at_in = srcloc_jsa "block" a at
             at_after = srcloc_after_semi "block" a sp at
     (s@(JSBreak a _ _):_) -> illegal a s "break"
@@ -1165,7 +1129,7 @@ evalStmt ctxt at env ss k =
       where at_after = srcloc_after_semi lab a sp at
             at_in = srcloc_jsa lab a at
             lab = "const"
-            k' (SLRes env' _) = evalStmt ctxt at_after env' ks k
+            k' (SLRes lifts env' _) = evalStmt ctxt at_after env' ks $ kKeepLifts lifts k
     ((JSContinue a _ _):_) ->
       expect_throw (srcloc_jsa "continue" a at) (Err_Block_Continue)
     (s@(JSDoWhile a _ _ _ _ _ _):_) -> illegal a s "do while"
@@ -1203,10 +1167,10 @@ evalStmt ctxt at env ss k =
       where e' = JSExpressionTernary ce a te a fe
             te = jsStmtToExpr ta ts
             fe = jsStmtToExpr fa fs
-            k' (SLRes _ _v) =
+            k' (SLRes lifts _ _XXX_v) =
               --- XXX Should we ignore v? I don't think so, because we
               --- need to make its return matches ks
-              evalStmt ctxt at' env ks k
+              evalStmt ctxt at' env ks $ kKeepLifts lifts k
             at' = srcloc_jsa "if" a at
     (s@(JSLabelled _ a _):_) -> illegal a s "labelled"
     ((JSEmptyStatement a):ks) ->
@@ -1216,10 +1180,9 @@ evalStmt ctxt at env ss k =
       evalExpr ctxt at env e k'
       where at_after =
               srcloc_after_semi "expr stmt" JSNoAnnot sp at
-            k' (SLRes _ ev) =
+            k' (SLRes elifts _ ev) =
               case (ctxt_mode ctxt, ev) of
                 (SLC_Step penvs_ref, SLV_Form (SLForm_Part_ToConsensus who Nothing mmsg _XXX_mamt _XXX_mtime)) -> do
-                  (lifter', _stmts_ref) <- ctxt_newLifter
                   penvs <- readSTRef penvs_ref
                   let penv = penvs M.! who
                   traceM $ "to_consensus from " ++ show who
@@ -1243,22 +1206,19 @@ evalStmt ctxt at env ss k =
                                                   False -> env_merge at_after old msg_env) penvs
                   writeSTRef penvs_ref penvs'
                   let ctxt_cstep =
-                        (SLCtxt { ctxt_mode = SLC_ConsensusStep (penvs_ref, ctxt_lifter ctxt)
+                        (SLCtxt { ctxt_mode = SLC_ConsensusStep penvs_ref
                                 , ctxt_id = ctxt_id ctxt
-                                , ctxt_lifter = Just lifter'
                                 , ctxt_stack = ctxt_stack ctxt })
                   --- XXX lift toconsensus
-                  evalStmt ctxt_cstep at_after env' ks k
-                (SLC_ConsensusStep (penvs_ref, orig_lifter), SLV_Prim SLPrim_committed) -> do
-                  --- XXX do something with old lifter?
+                  evalStmt ctxt_cstep at_after env' ks $ kKeepLifts elifts k
+                (SLC_ConsensusStep penvs_ref, SLV_Prim SLPrim_committed) -> do
                   let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs_ref
                                           , ctxt_id = ctxt_id ctxt
-                                          , ctxt_lifter = orig_lifter
                                           , ctxt_stack = ctxt_stack ctxt })
-                  evalStmt ctxt_step at_after env ks k
+                  evalStmt ctxt_step at_after env ks $ kKeepLifts elifts k
                 _ ->
                   case typeOf at_after ev of
-                    (T_Null, _) -> evalStmt ctxt at_after env ks k
+                    (T_Null, _) -> evalStmt ctxt at_after env ks $ kKeepLifts elifts k
                     _ -> expect_throw at (Err_Block_NotNull ev) --- XXX rename to expression not null? or ignore?
     ((JSAssignStatement _lhs op _rhs _asp):ks) ->
       case (op, ks) of
@@ -1309,7 +1269,7 @@ expect_empty_tail lab a sp at ks res =
 evalTopBody :: SLCtxt s -> SrcLoc -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> SLCPSd s
 evalTopBody ctxt at libm env exenv body k =
   case body of
-    [] -> k $ SLRes exenv $ SLV_Null at
+    [] -> k $ SLRes mempty exenv $ SLV_Null at
     mi:body' ->
       case mi of
         (JSModuleImportDeclaration _ im) ->
@@ -1337,7 +1297,7 @@ evalTopBody ctxt at libm env exenv body k =
       where doStmt at' isExport sm =
               evalStmt ctxt at' env [sm] $
               (\case
-                  SLRes env' (SLV_Null _) ->
+                  SLRes Seq.Empty env' (SLV_Null _) ->
                     let exenv' = case isExport of
                                    True ->
                                      --- If this is an exporting statement,
@@ -1348,7 +1308,7 @@ evalTopBody ctxt at libm env exenv body k =
                                      exenv
                     in
                       evalTopBody ctxt at' libm env' exenv' body' k
-                  SLRes _ v ->
+                  SLRes _ _ v ->
                     expect_throw at' $ Err_Module_Return v)
 
 type SLMod = (ReachSource, [JSModuleItem])
@@ -1359,11 +1319,11 @@ evalLib (src, body) libm = do
   let ctxt_top =
         (SLCtxt { ctxt_mode = SLC_Module
                 , ctxt_id = Nothing
-                , ctxt_lifter = Nothing
                 , ctxt_stack = [] })
-  fres <- evalTopBody ctxt_top prev_at libm stdlib_env mt_env body' return
-  let exenv = res_env fres
-  return $ M.insert src exenv libm
+  (SLRes flifts exenv _) <- evalTopBody ctxt_top prev_at libm stdlib_env mt_env body' return
+  case flifts == mempty of
+    False -> impossible $ "evalLib had lifts"
+    True -> return $ M.insert src exenv libm
   where stdlib_env =
           case src of
             ReachStdLib -> base_env
@@ -1390,13 +1350,10 @@ compileDApp topv =
     SLV_Prim (SLPrim_DApp_Delay at [ (SLV_Object _ _opts), (SLV_Array _ parts), clo ] top_env) -> do
       --- xxx look at opts
       idxr <- newSTRef $ 0
-      top_stmts <- newSTRef $ mempty
       penvs_ref <- newSTRef $ penvs
       let ctxt_step =
             (SLCtxt { ctxt_mode = SLC_Step penvs_ref
                     , ctxt_id = Just idxr
-                    , ctxt_lifter =
-                      Just (SLLifter { lift_stmts = top_stmts })
                     , ctxt_stack = [] })
       evalApplyVals ctxt_step at' mt_env clo partvs k
       where k v = expect_throw at' (Err_XXX $ "compileDApp after: " ++ show v)
