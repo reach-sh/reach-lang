@@ -12,6 +12,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.getHand [v27] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
 ... interact.getHand [v44] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -88,6 +89,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.getHand [v27] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
 ... interact.getHand [v44] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -164,6 +166,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.getHand [v27] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
 ... interact.getHand [v44] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -240,6 +243,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.getHand [v27] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
 ... interact.getHand [v44] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -316,6 +320,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.getHand [v27] w/A returns bytes0 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
 ... interact.getHand [v44] w/B returns bytes0 (at rps_shared.rsh:11:13)
@@ -392,6 +397,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.getHand [v27] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
 ... interact.getHand [v44] w/B returns bytes0 (at rps_shared.rsh:11:13)
@@ -468,6 +474,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.getHand [v27] w/A returns bytes0 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
 ... interact.getHand [v44] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -544,6 +551,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.getHand [v27] w/A returns bytes0 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps_while.rsh.3.patch:13:36)
 ... interact.getHand [v44] w/B returns bytes0 (at rps_shared.rsh:11:13)

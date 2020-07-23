@@ -11,6 +11,7 @@ Verification failed:
 Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
+This could happen if...
 ... interact.getHand [v15] w/A returns 31217174 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 7854 (at ../examples/rps/rsh/rps.rsh.4.patch:13:36)
 ... interact.getHand [v32] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -83,6 +84,7 @@ Verification failed:
 Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
+This could happen if...
 ... interact.getHand [v15] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 4457 (at ../examples/rps/rsh/rps.rsh.4.patch:13:36)
 ... interact.getHand [v32] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -155,6 +157,7 @@ Verification failed:
 Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
+This could happen if...
 ... interact.getHand [v15] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps.rsh.4.patch:13:36)
 ... interact.getHand [v32] w/B returns 3108938406 (at rps_shared.rsh:11:13)
@@ -227,6 +230,7 @@ Verification failed:
 Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
+This could happen if...
 ... interact.getHand [v15] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 1692 (at ../examples/rps/rsh/rps.rsh.4.patch:13:36)
 ... interact.getHand [v32] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -299,6 +303,7 @@ Verification failed:
 Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
+This could happen if...
 ... interact.getHand [v15] w/A returns bytes0 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps.rsh.4.patch:13:36)
 ... interact.getHand [v32] w/B returns bytes0 (at rps_shared.rsh:11:13)
@@ -371,6 +376,7 @@ Verification failed:
 Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
+This could happen if...
 ... interact.getHand [v15] w/A returns 1142816574 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps.rsh.4.patch:13:36)
 ... interact.getHand [v32] w/B returns bytes0 (at rps_shared.rsh:11:13)
@@ -443,6 +449,7 @@ Verification failed:
 Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
+This could happen if...
 ... interact.getHand [v15] w/A returns bytes0 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps.rsh.4.patch:13:36)
 ... interact.getHand [v32] w/B returns 1142816574 (at rps_shared.rsh:11:13)
@@ -515,6 +522,7 @@ Verification failed:
 Failed the token linearity property:
  This program would allow the contract account's
  final balance to be nonzero. This program is invalid.
+This could happen if...
 ... interact.getHand [v15] w/A returns bytes0 (at rps_shared.rsh:11:13)
 ... interact.getWagerAmount [v3] w/A returns 0 (at ../examples/rps/rsh/rps.rsh.4.patch:13:36)
 ... interact.getHand [v32] w/B returns bytes0 (at rps_shared.rsh:11:13)

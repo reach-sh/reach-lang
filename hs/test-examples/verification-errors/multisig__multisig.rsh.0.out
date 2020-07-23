@@ -12,6 +12,7 @@ Verification failed:
 Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
+This could happen if...
 ... interact.request [v16] w/Child returns 2 (at ../examples/multisig/multisig.rsh.0.patch:40:34)
 ====================================================
 More info on this counterexample...
@@ -35,6 +36,7 @@ Verification failed:
 Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
+This could happen if...
 ... interact.request [v16] w/Child returns 2 (at ../examples/multisig/multisig.rsh.0.patch:40:34)
 ... interact.allowance [v4] w/Parent returns 0 (at ../examples/multisig/multisig.rsh.0.patch:30:34)
 ====================================================
@@ -61,6 +63,7 @@ Verification failed:
 Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
+This could happen if...
 ... interact.request [v16] w/Child returns 2 (at ../examples/multisig/multisig.rsh.0.patch:40:34)
 ... interact.allowance [v4] w/Parent returns 0 (at ../examples/multisig/multisig.rsh.0.patch:30:34)
 ====================================================

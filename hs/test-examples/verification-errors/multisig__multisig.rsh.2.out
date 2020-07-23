@@ -24,6 +24,7 @@ Verification failed:
 Failed the sufficient balance property:
  This program would allow the contract account's
  balance to go negative. This program is invalid.
+This could happen if...
 ... interact.request [v16] w/Child returns 1 (at ../examples/multisig/multisig.rsh.2.patch:40:34)
 ====================================================
 More info on this counterexample...
@@ -54,6 +55,7 @@ Verification failed:
 Failed the sufficient balance property:
  This program would allow the contract account's
  balance to go negative. This program is invalid.
+This could happen if...
 ... interact.request [v16] w/Child returns 1 (at ../examples/multisig/multisig.rsh.2.patch:40:34)
 ====================================================
 More info on this counterexample...

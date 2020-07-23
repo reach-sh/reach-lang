@@ -13,6 +13,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.allowance [v4] w/Parent returns 1 (at ../examples/multisig/multisig.rsh.1.patch:30:34)
 ====================================================
 More info on this counterexample...
@@ -42,6 +43,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.allowance [v4] w/Parent returns 1 (at ../examples/multisig/multisig.rsh.1.patch:30:34)
 ====================================================
 More info on this counterexample...
@@ -71,6 +73,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.allowance [v4] w/Parent returns 1 (at ../examples/multisig/multisig.rsh.1.patch:30:34)
 ====================================================
 More info on this counterexample...
@@ -100,6 +103,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.allowance [v4] w/Parent returns 1 (at ../examples/multisig/multisig.rsh.1.patch:30:34)
 ====================================================
 More info on this counterexample...
@@ -129,6 +133,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.allowance [v4] w/Parent returns 1 (at ../examples/multisig/multisig.rsh.1.patch:30:34)
 ====================================================
 More info on this counterexample...
@@ -158,6 +163,7 @@ Verification failed:
 Failed a while loop invariant check:
  This program would allow an invariant()
  to be false. This program is invalid.
+This could happen if...
 ... interact.allowance [v4] w/Parent returns 1 (at ../examples/multisig/multisig.rsh.1.patch:30:34)
 ====================================================
 More info on this counterexample...

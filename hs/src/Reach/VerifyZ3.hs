@@ -387,8 +387,11 @@ display_model mem anns _honest _who tk ann a m = do
   putStrLn "===================================================="
   TIO.putStr $ displayTheoremFail tk
   -- TIO.putStr $ displayInteracts mp_interacts
-  TIO.putStr $ filterDisplayUnbound $ M.elems mp_filtered
-  putStrLn "===================================================="
+  let dispUnb = filterDisplayUnbound $ M.elems mp_filtered
+  when (not $ T.null dispUnb) $ do
+    TIO.putStrLn "This could happen if..."
+    TIO.putStr dispUnb
+    putStrLn "===================================================="
   putStrLn "More info on this counterexample..."
   -- let mmm = collectIds memm mempty [a] -- XXX better var names
   -- mapM_ putStrLn $ map (showModelVal mp) $ M.toList mmm
