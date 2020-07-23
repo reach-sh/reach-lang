@@ -185,6 +185,7 @@ data SLForm
   = SLForm_Part_Only SLVal
   --- XXX Maybe should be DLVar
   | SLForm_Part_ToConsensus SLPart (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe SLVar) (Maybe SLVar)
+  | SLForm_Part_OnlyAns SLPart SLEnv SLVal
   deriving (Eq,Show)
 
 data ConsensusPrimOp
@@ -552,7 +553,7 @@ gatherDeps_top src_p = do
 -- Compiler
 
 data SLCtxt s = SLCtxt
-  { ctxt_mode :: SLCtxtMode s
+  { ctxt_mode :: SLCtxtMode
   , ctxt_id :: Maybe (STRef s Int)
   , ctxt_stack :: [ SLCtxtFrame ] }
   deriving (Eq)
@@ -560,21 +561,15 @@ data SLCtxt s = SLCtxt
 instance Show (SLCtxt s) where
   show ctxt = show $ ctxt_mode ctxt
 
-data SLCtxtMode s
+type SLPartEnvs = M.Map SLPart SLEnv
+
+data SLCtxtMode
   = SLC_Module
-  --- XXX Remove these STRefs
-  | SLC_Step (STRef s (M.Map SLPart SLEnv))
+  | SLC_Step SLPartEnvs
   | SLC_Local
   | SLC_LocalStep
-  | SLC_ConsensusStep (STRef s (M.Map SLPart SLEnv))
-  deriving (Eq)
-
-instance Show (SLCtxtMode s) where
-  show (SLC_Module) = "SLC_Module"
-  show (SLC_Step _) = "SLC_Step"
-  show (SLC_Local) = "SLC_Local"
-  show (SLC_LocalStep) = "SLC_LocalStep"
-  show (SLC_ConsensusStep _) = "SLC_ConsensusStep"
+  | SLC_ConsensusStep SLPartEnvs
+  deriving (Eq, Show)
 
 ctxt_alloc :: SLCtxt s -> SrcLoc -> ST s Int
 ctxt_alloc ctxt at = do
@@ -756,29 +751,25 @@ evalForm ctxt at env f args k =
   case f of
     SLForm_Part_Only (SLV_Participant _ who _) ->
       case ctxt_mode ctxt of
-        SLC_Step penvs_ref -> do
-          let get_penv = do
-                penvs <- readSTRef penvs_ref
-                return $ penvs M.! who
+        SLC_Step penvs -> do
+          --- XXX remove do
+          let penv = penvs M.! who
           let k' elifts eargs =                
                 case eargs of
                   [ thunk ] -> do
-                    penv <- get_penv
                     let ctxt_localstep =
                           (SLCtxt { ctxt_mode = SLC_LocalStep
                                   , ctxt_id = ctxt_id ctxt
                                   , ctxt_stack = ctxt_stack ctxt })
                     let k'' (SLRes alifts penv' ans) = do
                           traceM $ "penv' update = " ++ (show $ M.keys $ M.difference penv' penv)
-                          modifySTRef penvs_ref (M.insert who penv')
-                          k $ SLRes (elifts <> alifts) env ans
+                          k $ SLRes (elifts <> alifts) env $ SLV_Form $ SLForm_Part_OnlyAns who penv' ans
                     evalApplyVals ctxt_localstep at mt_env thunk [] k''
                   _ -> illegal_args
           let k'_res eargr =
                 case eargr of
                   SLRes elifts _ (SLV_Array _ eargs) -> k' elifts eargs
                   _ -> impossible "evalExprs did not return array"
-          penv <- get_penv
           let ctxt_local =
                 (SLCtxt { ctxt_mode = SLC_Local
                         , ctxt_id = ctxt_id ctxt
@@ -786,21 +777,15 @@ evalForm ctxt at env f args k =
           evalExprs ctxt_local at penv args k'_res
         _ -> expect_throw at $ Err_Eval_IllegalContext ctxt "part.only"
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
+    SLForm_Part_OnlyAns _ _ _ -> impossible "SLForm_Part_OnlyAns"
     SLForm_Part_ToConsensus who mmode mpub mpay mtime ->
       case ctxt_mode ctxt of
-        SLC_Step penvs_ref ->
+        SLC_Step _penvs ->
           case mmode of
             Just TCM_Publish ->
               case mpub of
-                Nothing -> do
-                  penvs <- readSTRef penvs_ref
-                  let penv = penvs M.! who
-                  let ensure_bound x = do
-                        case env_lookup at x penv of
-                          _ -> return ()
-                  let msg = map (jse_expect_id at) args
-                  mapM_ ensure_bound msg
-                  retV $ SLV_Form $ SLForm_Part_ToConsensus who Nothing (Just msg) mpay mtime
+                Nothing -> retV $ SLV_Form $ SLForm_Part_ToConsensus who Nothing (Just msg) mpay mtime
+                  where msg = map (jse_expect_id at) args
                 Just _ ->
                   expect_throw at $ Err_ToConsensus_Double TCM_Publish
             Just TCM_Pay ->
@@ -1262,8 +1247,13 @@ evalStmt ctxt at env ss k =
               srcloc_after_semi "expr stmt" JSNoAnnot sp at
             k' (SLRes elifts _ ev) =
               case (ctxt_mode ctxt, ev) of
-                (SLC_Step penvs_ref, SLV_Form (SLForm_Part_ToConsensus who Nothing mmsg _XXX_mamt _XXX_mtime)) -> do
-                  penvs <- readSTRef penvs_ref
+                (SLC_Step penvs, SLV_Form (SLForm_Part_OnlyAns who penv' only_v)) ->
+                  case typeOf at_after only_v of
+                    (T_Null, _) ->
+                      evalStmt ctxt' at_after env ks $ kKeepLifts elifts k
+                      where ctxt' = ctxt { ctxt_mode = SLC_Step $ M.insert who penv' penvs }
+                    _ -> expect_throw at (Err_Block_NotNull ev) --- XXX rename to expression not null? or ignore?
+                (SLC_Step penvs, SLV_Form (SLForm_Part_ToConsensus who Nothing mmsg _XXX_mamt _XXX_mtime)) -> do
                   let penv = penvs M.! who
                   traceM $ "to_consensus from " ++ show who
                   --- XXX at and at_after here might be bad... add to ToConsensus?
@@ -1284,15 +1274,14 @@ evalStmt ctxt at env ss k =
                                                 case p == who of
                                                   True -> old
                                                   False -> env_merge at_after old msg_env) penvs
-                  writeSTRef penvs_ref penvs'
                   let ctxt_cstep =
-                        (SLCtxt { ctxt_mode = SLC_ConsensusStep penvs_ref
+                        (SLCtxt { ctxt_mode = SLC_ConsensusStep penvs'
                                 , ctxt_id = ctxt_id ctxt
                                 , ctxt_stack = ctxt_stack ctxt })
                   --- XXX lift toconsensus
                   evalStmt ctxt_cstep at_after env' ks $ kKeepLifts elifts k
-                (SLC_ConsensusStep penvs_ref, SLV_Prim SLPrim_committed) -> do
-                  let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs_ref
+                (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
+                  let ctxt_step = (SLCtxt { ctxt_mode = SLC_Step penvs
                                           , ctxt_id = ctxt_id ctxt
                                           , ctxt_stack = ctxt_stack ctxt })
                   evalStmt ctxt_step at_after env ks $ kKeepLifts elifts k
@@ -1430,9 +1419,8 @@ compileDApp topv =
     SLV_Prim (SLPrim_DApp_Delay at [ (SLV_Object _ _opts), (SLV_Array _ parts), clo ] top_env) -> do
       --- xxx look at opts
       idxr <- newSTRef $ 0
-      penvs_ref <- newSTRef $ penvs
       let ctxt_step =
-            (SLCtxt { ctxt_mode = SLC_Step penvs_ref
+            (SLCtxt { ctxt_mode = SLC_Step penvs
                     , ctxt_id = Just idxr
                     , ctxt_stack = [] })
       evalApplyVals ctxt_step at' mt_env clo partvs k
