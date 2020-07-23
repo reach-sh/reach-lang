@@ -661,31 +661,64 @@ typeOf at v =
     SLV_Prim _ -> none --- XXX interacts may work
     SLV_Form _ -> none
   where none = expect_throw at $ Err_Type_None v
-      
-typeCheck :: SrcLoc -> SLType -> SLVal -> DLArg
-typeCheck at t v =
-  if vt == t then
-    res
-  else
-    expect_throw at $ Err_Type_Mismatch t vt v
-  where (vt, res) = typeOf at v
+
+type TypeEnv s = M.Map SLVar (STRef s (Maybe SLType))
+
+typeCheck_help :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> SLType -> DLArg -> ST s DLArg
+typeCheck_help at env ty val val_ty res =
+  case (val_ty, ty) of
+    (T_Var _, _) ->
+      impossible $ "typeCheck: value has type var: " ++ show val
+    (_, T_Var var) ->
+      case M.lookup var env of
+        Nothing ->
+          impossible $ "typeCheck: unbound type variable"
+        Just var_ref -> do
+          mvar_ty <- readSTRef var_ref
+          case mvar_ty of
+            Nothing -> do
+              writeSTRef var_ref (Just val_ty)
+              return res
+            Just var_ty ->
+              typeCheck_help at env var_ty val val_ty res
+    (_, _) ->
+      case val_ty == ty of
+        True -> return res
+        False ->
+          expect_throw at $ Err_Type_Mismatch ty val_ty val
   
-typeChecks :: SrcLoc -> [SLType] -> [SLVal] -> [DLArg]
-typeChecks at ts vs =
+typeCheck :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArg
+typeCheck at env ty val = typeCheck_help at env ty val val_ty res
+  where (val_ty, res) = typeOf at val
+  
+typeChecks :: SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArg]
+typeChecks at env ts vs =
   case (ts, vs) of
-    ([], []) -> []
-    ((t:ts'), (v:vs')) ->
-      (typeCheck at t v) : typeChecks at ts' vs'
+    ([], []) ->
+      return []
+    ((t:ts'), (v:vs')) -> do
+      d <- typeCheck at env t v
+      ds' <- typeChecks at env ts' vs'
+      return $ d : ds'
     ((_:_), _) ->
       expect_throw at $ Err_Type_TooFewArguments ts
     (_, (_:_)) ->
       expect_throw at $ Err_Type_TooManyArguments vs
 
-checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArg])
-checkAndConvert at t args =
+checkAndConvert_i :: SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArg])
+checkAndConvert_i at env t args =
   case t of
-    T_Fun dom rng -> (rng, typeChecks at dom args)
+    T_Fun dom rng -> do
+      dargs <- typeChecks at env dom args
+      return (rng, dargs)
+    T_Forall var ft -> do
+      var_ref <- newSTRef Nothing
+      let env' = M.insert var var_ref env
+      checkAndConvert_i at env' ft args
     _ -> expect_throw at $ Err_Type_NotApplicable t
+
+checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArg])
+checkAndConvert at t args = runST $ checkAndConvert_i at mempty t args
 
 evalDot :: SrcLoc -> SLVal -> String -> SLVal
 evalDot at obj field =
