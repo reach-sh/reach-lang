@@ -24,7 +24,7 @@ import Test.Tasty.Runners.AntXML
 import Test.Tasty.Runners.Html
 
 import Reach.ParserInternal
-import Reach.Compiler (CompileErr, compile, Verifier(Z3))
+import Reach.Compiler (CompileErr, compile, Verifier(CVC4))
 import Reach.CompilerTool
 import Reach.Util
 
@@ -69,7 +69,7 @@ test_compile n = do
     , cto_source = n
     , cto_expCon = False
     , cto_expComp = False
-    , cto_verifier = Z3
+    , cto_verifier = CVC4
     }
   silence $ compile opts
 
@@ -103,6 +103,7 @@ test_compile_vererr pf = do
   (_, Just hout, Just herr, hP) <- do
     -- TODO: a better way of running the compiler and capturing stdout/stderr
     unsetEnv "REACHC_VERIFIER"
+    setEnv "REACHC_VERIFIER" "CVC4"
     createProcess (proc "stack" ["exec", "--", "reachc", "-o", "test.out", rdest]){ std_out = CreatePipe,
                                                                                     std_err = CreatePipe }
   outT <- TIO.hGetContents hout

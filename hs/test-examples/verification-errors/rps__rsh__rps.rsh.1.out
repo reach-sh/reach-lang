@@ -12,28 +12,28 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
-... interact.getHand [v15] w/A returns 3108938406 (at rps_shared.rsh:11:13)
+... interact.getHand [v15] w/A returns 1142816574 (at rps_shared.rsh:11:13)
 ... random [v26] w/A returns 0 (at STDLIB:24:22)
-... interact.getHand [v51] w/A returns 1142816574 (at rps_shared.rsh:11:13)
+... interact.getHand [v51] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ====================================================
 More info on this counterexample...
 ... goal = false = v74  -- STDLIB:29:17
-... v15 = 3108938406 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
+... v15 = 1142816574 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
 ... v16 = false = (= v15 (bytes-literal 31217174 ) )  -- rps_shared.rsh:12:19
-... v17 = true = (= v15 (bytes-literal 3108938406 ) )  -- rps_shared.rsh:13:20
-... v21 = 1 = (ite v17 1 2 )  -- rps_shared.rsh:17:8
-... v22 = 1 = (ite v16 0 v21 )  -- rps_shared.rsh:16:3
+... v17 = false = (= v15 (bytes-literal 3108938406 ) )  -- rps_shared.rsh:13:20
+... v21 = 2 = (ite v17 1 2 )  -- rps_shared.rsh:17:8
+... v22 = 2 = (ite v16 0 v21 )  -- rps_shared.rsh:16:3
 ... v26 = 0 = (RANDOM)  -- STDLIB:24:22
-... v27 = 1 = (digest (msg-cat (toBytes_Int v26 ) (toBytes_Int v22 ) ) )  -- STDLIB:25:28
-... v28 = 1 = v27  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
+... v27 = 0 = (digest (msg-cat (toBytes_Int v26 ) (toBytes_Int v22 ) ) )  -- STDLIB:25:28
+... v28 = 0 = v27  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
 ... v50 = 0 = v26  -- ../examples/rps/rsh/rps.rsh.1.patch:44:29
-... v51 = 1142816574 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
+... v51 = 3108938406 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
 ... v52 = false = (= v51 (bytes-literal 31217174 ) )  -- rps_shared.rsh:12:19
-... v53 = false = (= v51 (bytes-literal 3108938406 ) )  -- rps_shared.rsh:13:20
-... v57 = 2 = (ite v53 1 2 )  -- rps_shared.rsh:17:8
-... v58 = 2 = (ite v52 0 v57 )  -- rps_shared.rsh:16:3
-... v62 = 2 = v58  -- ../examples/rps/rsh/rps.rsh.1.patch:45:29
-... v73 = 0 = (digest (msg-cat (toBytes_Int v50 ) (toBytes_Int v62 ) ) )  -- STDLIB:29:38
+... v53 = true = (= v51 (bytes-literal 3108938406 ) )  -- rps_shared.rsh:13:20
+... v57 = 1 = (ite v53 1 2 )  -- rps_shared.rsh:17:8
+... v58 = 1 = (ite v52 0 v57 )  -- rps_shared.rsh:16:3
+... v62 = 1 = v58  -- ../examples/rps/rsh/rps.rsh.1.patch:45:29
+... v73 = 1 = (digest (msg-cat (toBytes_Int v50 ) (toBytes_Int v62 ) ) )  -- STDLIB:29:38
 ... v74 = false = (= v28 v73 )  -- STDLIB:29:29
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (0,("A",LT_BT BT_Address))
@@ -49,28 +49,28 @@ Failed a requirement:
  This program would allow a call to require() to fail.
  This program is invalid.
 This could happen if...
-... interact.getHand [v15] w/A returns 3108938406 (at rps_shared.rsh:11:13)
+... interact.getHand [v15] w/A returns 1142816574 (at rps_shared.rsh:11:13)
 ... random [v26] w/A returns 0 (at STDLIB:24:22)
-... interact.getHand [v51] w/A returns 1142816574 (at rps_shared.rsh:11:13)
+... interact.getHand [v51] w/A returns 3108938406 (at rps_shared.rsh:11:13)
 ====================================================
 More info on this counterexample...
 ... goal = false = v74  -- STDLIB:29:17
-... v15 = 3108938406 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
+... v15 = 1142816574 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
 ... v16 = false = (= v15 (bytes-literal 31217174 ) )  -- rps_shared.rsh:12:19
-... v17 = true = (= v15 (bytes-literal 3108938406 ) )  -- rps_shared.rsh:13:20
-... v21 = 1 = (ite v17 1 2 )  -- rps_shared.rsh:17:8
-... v22 = 1 = (ite v16 0 v21 )  -- rps_shared.rsh:16:3
+... v17 = false = (= v15 (bytes-literal 3108938406 ) )  -- rps_shared.rsh:13:20
+... v21 = 2 = (ite v17 1 2 )  -- rps_shared.rsh:17:8
+... v22 = 2 = (ite v16 0 v21 )  -- rps_shared.rsh:16:3
 ... v26 = 0 = (RANDOM)  -- STDLIB:24:22
-... v27 = 1 = (digest (msg-cat (toBytes_Int v26 ) (toBytes_Int v22 ) ) )  -- STDLIB:25:28
-... v28 = 1 = v27  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
+... v27 = 0 = (digest (msg-cat (toBytes_Int v26 ) (toBytes_Int v22 ) ) )  -- STDLIB:25:28
+... v28 = 0 = v27  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
 ... v50 = 0 = v26  -- ../examples/rps/rsh/rps.rsh.1.patch:44:29
-... v51 = 1142816574 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
+... v51 = 3108938406 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
 ... v52 = false = (= v51 (bytes-literal 31217174 ) )  -- rps_shared.rsh:12:19
-... v53 = false = (= v51 (bytes-literal 3108938406 ) )  -- rps_shared.rsh:13:20
-... v57 = 2 = (ite v53 1 2 )  -- rps_shared.rsh:17:8
-... v58 = 2 = (ite v52 0 v57 )  -- rps_shared.rsh:16:3
-... v62 = 2 = v58  -- ../examples/rps/rsh/rps.rsh.1.patch:45:29
-... v73 = 0 = (digest (msg-cat (toBytes_Int v50 ) (toBytes_Int v62 ) ) )  -- STDLIB:29:38
+... v53 = true = (= v51 (bytes-literal 3108938406 ) )  -- rps_shared.rsh:13:20
+... v57 = 1 = (ite v53 1 2 )  -- rps_shared.rsh:17:8
+... v58 = 1 = (ite v52 0 v57 )  -- rps_shared.rsh:16:3
+... v62 = 1 = v58  -- ../examples/rps/rsh/rps.rsh.1.patch:45:29
+... v73 = 1 = (digest (msg-cat (toBytes_Int v50 ) (toBytes_Int v62 ) ) )  -- STDLIB:29:38
 ... v74 = false = (= v28 v73 )  -- STDLIB:29:29
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = True; role = RolePart (1,("B",LT_BT BT_Address))
@@ -135,8 +135,8 @@ More info on this counterexample...
 ... v21 = 2 = (ite v17 1 2 )  -- rps_shared.rsh:17:8
 ... v22 = 2 = (ite v16 0 v21 )  -- rps_shared.rsh:16:3
 ... v26 = 0 = (RANDOM)  -- STDLIB:24:22
-... v27 = 1 = (digest (msg-cat (toBytes_Int v26 ) (toBytes_Int v22 ) ) )  -- STDLIB:25:28
-... v28 = 1 = v27  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
+... v27 = 0 = (digest (msg-cat (toBytes_Int v26 ) (toBytes_Int v22 ) ) )  -- STDLIB:25:28
+... v28 = 0 = v27  -- ../examples/rps/rsh/rps.rsh.1.patch:29:31
 ... v50 = 0 = v26  -- ../examples/rps/rsh/rps.rsh.1.patch:44:29
 ... v51 = 3108938406 = (interact.getHand bytes )  -- rps_shared.rsh:11:13
 ... v52 = false = (= v51 (bytes-literal 31217174 ) )  -- rps_shared.rsh:12:19
@@ -144,20 +144,14 @@ More info on this counterexample...
 ... v57 = 1 = (ite v53 1 2 )  -- rps_shared.rsh:17:8
 ... v58 = 1 = (ite v52 0 v57 )  -- rps_shared.rsh:16:3
 ... v62 = 1 = v58  -- ../examples/rps/rsh/rps.rsh.1.patch:45:29
-... v73 = 0 = (digest (msg-cat (toBytes_Int v50 ) (toBytes_Int v62 ) ) )  -- STDLIB:29:38
+... v73 = 1 = (digest (msg-cat (toBytes_Int v50 ) (toBytes_Int v62 ) ) )  -- STDLIB:29:38
 ... v74 = false = (= v28 v73 )  -- STDLIB:29:29
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Verifying with honest = False; role = RoleContract
 ...checking VC_Top
-Verifying with honest = False; role = RolePart (0,("A",LT_BT BT_Address))
-...checking VC_Top
-Verifying with honest = False; role = RolePart (1,("B",LT_BT BT_Address))
-...checking VC_Top
-Verifying with honest = False; role = RolePart (2,("O",LT_BT BT_Address))
-...checking VC_Top
-Checked 247 theorems; 4 failures. :'(
 
 </out>
 <err>
+reachc: fd:49: hFlush: resource vanished (Broken pipe)
 
 </err>
