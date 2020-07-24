@@ -12,6 +12,7 @@ data CompilerToolOpts = CompilerToolOpts
   , cto_source :: FilePath
   , cto_expCon :: Bool
   , cto_expComp :: Bool
+  , cto_verifier :: Verifier
   }
 
 makeCompilerOpts :: CompilerToolOpts -> IO CompilerOpts
@@ -28,6 +29,7 @@ makeCompilerOpts CompilerToolOpts{..} = do
     , output_name = outn
     , source = srcp
     , expCon = cto_expCon
+    , verifier = cto_verifier
     }
 
 compilerToolMain :: CompilerToolOpts -> IO ()
