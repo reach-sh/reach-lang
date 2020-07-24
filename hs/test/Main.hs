@@ -24,7 +24,7 @@ import Test.Tasty.Runners.AntXML
 import Test.Tasty.Runners.Html
 
 import Reach.ParserInternal
-import Reach.Compiler (CompileErr, compile)
+import Reach.Compiler (CompileErr, compile, Verifier(Z3))
 import Reach.CompilerTool
 import Reach.Util
 
@@ -69,6 +69,7 @@ test_compile n = do
     , cto_source = n
     , cto_expCon = False
     , cto_expComp = False
+    , cto_verifier = Z3
     }
   silence $ compile opts
 
@@ -99,7 +100,9 @@ test_compile_vererr pf = do
   -- putStrLn "...patch applied"
   let rdest = examples_dir </> dest
   -- putStrLn "compiling..."
-  (_, Just hout, Just herr, hP) <-
+  (_, Just hout, Just herr, hP) <- do
+    -- TODO: a better way of running the compiler and capturing stdout/stderr
+    unsetEnv "REACHC_VERIFIER"
     createProcess (proc "stack" ["exec", "--", "reachc", "-o", "test.out", rdest]){ std_out = CreatePipe,
                                                                                     std_err = CreatePipe }
   outT <- TIO.hGetContents hout
