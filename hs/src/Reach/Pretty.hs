@@ -1,12 +1,12 @@
 {-# LANGUAGE NoOverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Reach.Pretty where
 
+import Data.List (intersperse)
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc
-import Data.List (intersperse)
-
 import Reach.AST
 
 --- Emiting Code ---
@@ -54,25 +54,28 @@ instance Pretty (ILArg a) where
 
 prettyApp :: (Pretty p, Pretty a) => p -> [a] -> Doc ann
 prettyApp p al = group $ parens $ pretty p <> alp
-  where alp = case al of [] -> emptyDoc
-                         _ -> space <> (hsep $ map pretty al)
+  where
+    alp = case al of
+      [] -> emptyDoc
+      _ -> space <> (hsep $ map pretty al)
 
 prettyInteract :: Pretty a => String -> LType -> [a] -> Doc ann
 prettyInteract m bt al = group $ parens $ pretty ("interact." ++ m) <+> pretty bt <+> (hsep $ map pretty al)
 
 prettyClaim :: Pretty a => ClaimType -> a -> Doc ann
 prettyClaim ct a = group $ parens $ pretty cts <+> pretty a
-  where cts = case ct of
-          CT_Assert -> "assert!"
-          CT_Assume -> "assume!"
-          CT_Require -> "require!"
-          CT_Possible -> "possible?"
+  where
+    cts = case ct of
+      CT_Assert -> "assert!"
+      CT_Assume -> "assume!"
+      CT_Require -> "require!"
+      CT_Possible -> "possible?"
 
 prettyTransfer :: Pretty a => Doc ann -> a -> Doc ann
 prettyTransfer to a = group $ parens $ pretty "transfer!" <+> to <+> pretty a
 
 prettyWhile :: Pretty b => Pretty c => (a -> Doc ann) -> [a] -> [b] -> c -> c -> c -> c -> Doc ann
-prettyWhile prettyVar loopvs initas untilt invt bodyt kt = vsep [ group $ parens $ pretty "do" <+> brackets (vsep $ zipWith (\v i -> prettyVar v <+> pretty i) loopvs initas) <> nest 2 (hardline <> pretty "until" <+> prettyBegin untilt <> hardline <> pretty "invariant" <+> prettyBegin invt <> hardline <> prettyBegin bodyt), pretty kt ]
+prettyWhile prettyVar loopvs initas untilt invt bodyt kt = vsep [group $ parens $ pretty "do" <+> brackets (vsep $ zipWith (\v i -> prettyVar v <+> pretty i) loopvs initas) <> nest 2 (hardline <> pretty "until" <+> prettyBegin untilt <> hardline <> pretty "invariant" <+> prettyBegin invt <> hardline <> prettyBegin bodyt), pretty kt]
 
 prettyBegin :: Pretty a => a -> Doc ann
 prettyBegin x = group $ parens $ pretty "begin" <+> (nest 2 $ hardline <> pretty x)
@@ -89,7 +92,7 @@ instance Pretty (ILStmt a) where
   pretty (IL_Claim _ ct a) = prettyClaim ct a
 
 prettyValues :: Pretty a => [a] -> Doc ann
-prettyValues [ a ] = pretty a
+prettyValues [a] = pretty a
 prettyValues [] = group $ parens $ pretty "values"
 prettyValues al = group $ parens $ (pretty "values") <+> (hsep $ map pretty al)
 
@@ -99,7 +102,8 @@ prettyIf ca tt ft = group $ parens $ pretty "cond" <+> (nest 2 $ hardline <> vse
 prettyLet :: (Pretty xe, Pretty bt) => (x -> Doc ann) -> (Doc ann -> Doc ann) -> x -> xe -> bt -> Doc ann
 prettyLet prettyVar at v e bt =
   vsep [(group $ at (ivp $ pretty e)), pretty bt]
-  where ivp ep = parens $ pretty "define" <+> prettyVar v <> space <> ep
+  where
+    ivp ep = parens $ pretty "define" <+> prettyVar v <> space <> ep
 
 prettyDo :: (Pretty xe, Pretty bt) => (Doc ann -> Doc ann) -> xe -> bt -> Doc ann
 prettyDo at e bt =
@@ -109,20 +113,27 @@ instance Pretty (ILTail a) where
   pretty (IL_Ret _ al) = prettyValues al
   pretty (IL_If _ ca tt ft) = prettyIf ca tt ft
   pretty (IL_Let _ r iv e bt) = prettyLet prettyILVar at iv e bt
-    where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
+    where
+      at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
   pretty (IL_Do _ r s bt) = prettyDo at s bt
-    where at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
+    where
+      at d = (group $ parens $ pretty "@" <+> pretty r <+> d)
   pretty (IL_ToConsensus _ (ok_ij, p, svs, pa) mto ct) =
-    vsep [(group $ parens $ pretty "@" <+> pretty ok_ij <+> prettyILVar p <+> (nest 2 $ hardline <> vsep [svsp, pap, tp])),
-          pretty ct]
-    where svsp = parens $ pretty "publish!" <+> prettyILVars svs
-          pap = parens $ pretty "pay!" <+> pretty pa
-          tp = case mto of
-                 Nothing -> pretty ""
-                 Just (da, tt) -> parens $ pretty "timeout" <+> pretty da <+> (nest 2 $ hardline <> pretty tt)
+    vsep
+      [ (group $ parens $ pretty "@" <+> pretty ok_ij <+> prettyILVar p <+> (nest 2 $ hardline <> vsep [svsp, pap, tp])),
+        pretty ct
+      ]
+    where
+      svsp = parens $ pretty "publish!" <+> prettyILVars svs
+      pap = parens $ pretty "pay!" <+> pretty pa
+      tp = case mto of
+        Nothing -> pretty ""
+        Just (da, tt) -> parens $ pretty "timeout" <+> pretty da <+> (nest 2 $ hardline <> pretty tt)
   pretty (IL_FromConsensus _ lt) =
-    vsep [(group $ parens $ pretty "commit!"),
-          pretty lt]
+    vsep
+      [ (group $ parens $ pretty "commit!"),
+        pretty lt
+      ]
   pretty (IL_While _ loopvs inita untilt invt bodyt kt) = prettyWhile prettyILVar loopvs inita untilt invt bodyt kt
   pretty (IL_Continue _ as) = parens $ pretty "continue!" <+> (hsep $ map pretty as)
 
@@ -178,11 +189,13 @@ prettyTimeout (Just (delay, tt)) =
 instance Pretty (EPTail a) where
   pretty (EP_Ret _ al) = prettyValues al
   pretty (EP_If _ ca tt ft) = prettyIf ca tt ft
-  pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x->x) v e bt
-  pretty (EP_Do _ s bt) = prettyDo (\x->x) s bt
+  pretty (EP_Let _ v e bt) = prettyLet prettyBLVar (\x -> x) v e bt
+  pretty (EP_Do _ s bt) = prettyDo (\x -> x) s bt
   pretty (EP_SendRecv _ svs m_send_pa (fs_ok, hi_ok, vs, bt) info_to) =
-    vsep [group $ parens $ pretty "sendrecv" <+> pretty fs_ok <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty m_send_pa <+> prettyTimeout info_to,
-          pretty bt]
+    vsep
+      [ group $ parens $ pretty "sendrecv" <+> pretty fs_ok <+> pretty hi_ok <+> prettyBLVars svs <+> prettyBLVars vs <+> pretty m_send_pa <+> prettyTimeout info_to,
+        pretty bt
+      ]
   pretty (EP_Loop _ which loopvs initas bt) =
     group $ parens $ pretty "loop" <+> pretty which <+> (prettyVarArgs prettyBLVar loopvs initas) <> nest 2 (hardline <> prettyBegin bt)
   pretty (EP_Continue _ which vs args) = group $ parens $ pretty "continue" <+> pretty which <+> (prettyVarArgs prettyBLVar vs args)
@@ -214,7 +227,8 @@ prettyCHandler (C_Loop _ svs args it ct i) =
 
 instance Pretty (CProgram a) where
   pretty (C_Prog _ hs) = group $ parens $ pretty "define-contract" <+> (nest 2 $ hardline <> vsep hsp)
-    where hsp = map prettyCHandler hs
+    where
+      hsp = map prettyCHandler hs
 
 prettyBLVar :: BLVar -> Doc ann
 prettyBLVar v = prettyILVar v
