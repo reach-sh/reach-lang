@@ -206,16 +206,18 @@ parse_list_val [Atom "bytes-literal", Atom s2] = return s2
 parse_list_val sexprs@[Atom "ite", _, _, _] = return $ show sexprs -- XXX prettier display?
 parse_list_val sexprs = fail $ "Don't know how to parse as value: " <> show sexprs
 
-parse_define :: SExpr -> IO Z3Define
+parse_define :: SExpr -> IO (Maybe Z3Define)
 parse_define (List (Atom "define-fun":Atom name:List args:Atom ty:Atom val:[])) =
-  return $ Z3Define name (not $ null args) ty val
+  return $ Just $ Z3Define name (not $ null args) ty val
 parse_define (List (Atom "define-fun":Atom name:List args:Atom ty:List val:[])) =
-  Z3Define name (not $ null args) ty <$> parse_list_val val
+  Just . Z3Define name (not $ null args) ty <$> parse_list_val val
+parse_define (List (Atom "declare-sort":_)) = return Nothing
+parse_define (List (Atom "declare-datatypes":_)) = return Nothing
 parse_define e = fail $ "invalid define-fun " <> show e
 
 parse_model :: SExpr -> IO Z3Model
 parse_model (List (Atom "model":sexprs)) =
-  Z3Model <$> mapM parse_define sexprs
+  Z3Model . catMaybes <$> mapM parse_define sexprs
 parse_model e = fail $ "invalid model " <> show e
 
 parse_model_map :: SExpr -> IO ModelMap
