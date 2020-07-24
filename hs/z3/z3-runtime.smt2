@@ -1,3 +1,4 @@
+(set-logic ALL)
 (declare-sort Address 0)
 
 (declare-datatypes
