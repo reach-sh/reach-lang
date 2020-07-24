@@ -25,6 +25,8 @@ import Reach.ConsensusNetworkProgram
 import Reach.Connector.ETH_Solidity
 import Reach.Connector.ETH_EVM
 import Reach.Connector.ALGO
+import Reach.VerifyBoolector
+import Reach.VerifyCVC4
 import Reach.VerifyYices
 import Reach.VerifyZ3
 import Reach.Util
@@ -1091,7 +1093,7 @@ epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
         initγ p = (RolePart p, mempty)
         γ = M.insert RoleContract M.empty γi
 
-data Verifier = Yices | Z3
+data Verifier = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
 data CompilerOpts = CompilerOpts
@@ -1116,6 +1118,8 @@ compile copts = do
   case verifier copts of
     Z3 -> verify_z3 (outn "z3") ilp
     Yices -> verify_yices (outn "yi") ilp
+    CVC4 -> verify_cvc4 (outn "cvc4") ilp
+    Boolector -> verify_boolector (outn "br") ilp
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
