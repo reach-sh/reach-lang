@@ -145,6 +145,22 @@ data SLType
   | T_Var SLVar
   deriving (Eq,Show,Ord)
 
+typeMeet :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet top_at x@(_, xt) y@(_, yt) =
+  --- XXX Find meet of objects
+  if xt == yt then xt
+  else
+    expect_throw top_at $ Err_TypeMeets_Mismatch top_at x y
+
+typeMeets :: SrcLoc -> [(SrcLoc, SLType)] -> SLType
+typeMeets top_at l =
+  case l of
+    [] ->
+      expect_throw top_at $ Err_TypeMeets_None
+    [(_, xt)] -> xt
+    [x, y] -> typeMeet top_at x y
+    x:more -> typeMeet top_at x $ (top_at, typeMeets top_at more)
+
 infix 9 -->
 (-->) :: [SLType] -> SLType -> SLType
 dom --> rng = T_Fun dom rng
@@ -447,6 +463,8 @@ data CompilerError s
   | Err_Type_Mismatch SLType SLType SLVal
   | Err_Type_None SLVal
   | Err_Type_NotApplicable SLType
+  | Err_TypeMeets_None
+  | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, SLType) (SrcLoc, SLType)
   | Err_Type_TooFewArguments [SLType]
   | Err_Type_TooManyArguments [SLVal]
   deriving (Eq,Show)
@@ -568,6 +586,7 @@ data SLCtxt s = SLCtxt
   { ctxt_mode :: SLCtxtMode
   , ctxt_id :: Maybe (STRef s Int)
   , ctxt_ret :: Maybe Int
+  , ctxt_must_ret :: Bool
   , ctxt_stack :: [ SLCtxtFrame ] }
   deriving ()
 
@@ -623,6 +642,7 @@ data SLAppRes = SLAppRes SLEnv SLVal
 ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> Int -> SLCtxt s
 ctxt_stack_push ctxt f ret =
   (ctxt { ctxt_stack = f : (ctxt_stack ctxt)
+        , ctxt_must_ret = True
         , ctxt_ret = Just ret })
 
 binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
@@ -994,18 +1014,12 @@ evalApplyVals ctxt at env rator randvs =
       case rs of
         [] -> no_prompt $ SLV_Null body_at "clo app"
         [ (_, x) ] -> no_prompt $ x
-        (r:rs') -> do
-          let getTy = (fst . (uncurry typeOf))
-          let r_ty = getTy r
-          let rs'_ty = map getTy rs'
-          case getAll $ foldMap (All . (r_ty ==)) $ rs'_ty of
-            False ->
-              expect_throw body_at $ Err_Eval_ReturnsDifferentTypes (r_ty:rs'_ty)
-            True -> do
-              --- XXX syntax local name
-              let dv = DLVar body_at "clo app" r_ty ret
-              let lifts' = return $ DLS_Prompt body_at (Right dv) body_lifts
-              return $ SLRes lifts' $ SLAppRes clo_env'' (SLV_DLVar dv)
+        _ -> do
+          let r_ty = typeMeets body_at $ map (\r -> (fst r, (fst (uncurry typeOf $ r)))) rs
+          --- XXX syntax local name
+          let dv = DLVar body_at "clo app" r_ty ret
+          let lifts' = return $ DLS_Prompt body_at (Right dv) body_lifts
+          return $ SLRes lifts' $ SLAppRes clo_env'' (SLV_DLVar dv)
     v ->
       expect_throw at (Err_Eval_NotApplicableVals v)
 
@@ -1108,15 +1122,22 @@ evalExpr ctxt at env e =
       keepLifts clifts $
         case cv of
           SLV_Bool _ cb -> return $ if cb then tr else fr
-          SLV_DLVar dv@(DLVar _ _ T_Bool _) ->
+          SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) ->
             case stmts_pure tlifts && stmts_pure flifts of
               True ->
                 keepLifts (tlifts <> flifts) $ evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [ cv, tv, fv ]
               False -> do
-                --- XXX A consensus must duplicate continuation but a local doesn't need to
-                let lifts' :: DLStmts  = return $ DLS_If at (DLA_Var dv) tlifts flifts
-                --- XXX Don't ignore tv and fv
-                expect_throw at (Err_XXX $ "impure if expr " ++ show lifts')
+                ret <- ctxt_alloc ctxt at'
+                let add_ret e_at' elifts ev = (e_ty, (elifts <> (return $ DLS_Return e_at' ret ev)))
+                      where (e_ty, _) = typeOf e_at' ev
+                let (t_ty, tlifts') = add_ret t_at' tlifts tv
+                let (f_ty, flifts') = add_ret f_at' flifts fv
+                let ty = typeMeet at' (t_at', t_ty) (f_at', f_ty)
+                --- XXX syntax local name
+                let ans_dv = DLVar at' "clo app" ty ret
+                let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) tlifts' flifts'
+                let lifts' = return $ DLS_Prompt at' (Right ans_dv) body_lifts
+                return $ SLRes lifts' $ SLV_DLVar ans_dv
           _ ->
             expect_throw at (Err_Eval_IfCondNotBool cv)
     JSArrowExpression aformals a bodys ->
@@ -1193,14 +1214,10 @@ evalExpr ctxt at env e =
                   expect_throw at' $ Err_Eval_RefNotArray arrv
             SLV_DLVar idxdv@(DLVar _ _ T_UInt256 _) ->
               case arr_ty of
-                T_Array [] ->
-                  expect_throw at' $ Err_Eval_RefEmptyArray 
-                T_Array (t:ts) ->
-                  case getAll $ foldMap (All . (t ==)) ts of
-                    False ->
-                      expect_throw at' $ Err_EvalRefIndirectNotHomogeneous (t:ts)
-                    True -> retRef t arr_dla idx_dla
-                      where idx_dla = DLA_Var idxdv
+                T_Array ts ->
+                  retRef elem_ty arr_dla idx_dla
+                  where idx_dla = DLA_Var idxdv
+                        elem_ty = typeMeets at' $ map (\x -> (at',x)) ts
                 _ ->
                   expect_throw at' $ Err_Eval_RefNotArray arrv
               where (arr_ty, arr_dla) = typeOf at' arrv
@@ -1262,11 +1279,13 @@ evalDecls ctxt at env decls =
 evalStmt :: SLCtxt s -> SrcLoc -> SLEnv -> [JSStatement] -> SLComp s SLStmtRes
 evalStmt ctxt at env ss =
   case ss of
-    [] -> return $ SLRes mempty $ SLStmtRes env []
+    [] ->
+      case ctxt_must_ret ctxt of
+        False -> return $ SLRes mempty $ SLStmtRes env []
+        True -> evalStmt ctxt at env $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
     ((JSStatementBlock a ss' _ sp):ks) -> do
       br <- evalStmt ctxt at_in env ss'
-      kr <- evalStmt ctxt at_after env ks
-      retSeqn br kr
+      retSeqn br $ \ctxt' -> evalStmt ctxt' at_after env ks
       where at_in = srcloc_jsa "block" a at
             at_after = srcloc_after_semi "block" a sp at
     (s@(JSBreak a _ _):_) -> illegal a s "break"
@@ -1315,18 +1334,14 @@ evalStmt ctxt at env ss =
       let t_at' = srcloc_jsa "if > true" ta at'
       let f_at' = srcloc_jsa "if > false" fa t_at'
       SLRes clifts cv <- evalExpr ctxt at' env ce
-      tr@(SLRes tlifts _XXX_tsr) <- evalStmt ctxt t_at' env [ts]
-      fr@(SLRes flifts _XXX_fsr) <- evalStmt ctxt f_at' env [fs]
+      tr <- evalStmt ctxt t_at' env [ts]
+      fr <- evalStmt ctxt f_at' env [fs]
       keepLifts clifts $
         case cv of
           SLV_Bool _ cb -> do
-            kr <- evalStmt ctxt at' env ks
-            retSeqn (if cb then tr else fr) kr
-          SLV_DLVar dv@(DLVar _ _ T_Bool _) -> do
-            --- XXX A consensus must duplicate continuation but a local doesn't need to
-            let lifts' :: DLStmts = return $ DLS_If at (DLA_Var dv) tlifts flifts
-            --- XXX Don't ignore tsr, fsr, or ks
-            expect_throw at (Err_XXX $ "impure if " ++ show lifts')
+            retSeqn (if cb then tr else fr) (\ctxt' -> evalStmt ctxt' at' env ks)
+          SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) -> do
+            expect_throw at $ Err_XXX $ "impure IfElse " ++ show cond_dv
           _ ->
             expect_throw at (Err_Eval_IfCondNotBool cv)
     (s@(JSLabelled _ a _):_) -> illegal a s "labelled"
@@ -1415,8 +1430,13 @@ evalStmt ctxt at env ss =
     (s@(JSWith a _ _ _ _ _):_) -> illegal a s "with"
   where illegal a s lab =
           expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
-        retSeqn r0 r1 =
-          expect_throw at $ Err_XXX $ "retSeq " ++ show r0 ++ " " ++ show r1
+        retSeqn (SLRes lifts0 (SLStmtRes _ rets0)) run = do
+          let ctxt' =
+                case rets0 of
+                  [] -> ctxt
+                  (_:_) -> ctxt { ctxt_must_ret = True }
+          SLRes lifts1 (SLStmtRes env1 rets1) <- run ctxt'
+          return $ SLRes (lifts0 <> lifts1) (SLStmtRes env1 (rets0 ++ rets1))
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =
@@ -1479,6 +1499,7 @@ evalLib (src, body) libm = do
   let ctxt_top =
         (SLCtxt { ctxt_mode = SLC_Module
                 , ctxt_id = Nothing
+                , ctxt_must_ret = False
                 , ctxt_ret = Nothing
                 , ctxt_stack = [] })
   (SLRes flifts exenv) <- evalTopBody ctxt_top prev_at libm stdlib_env mt_env body'
@@ -1514,6 +1535,7 @@ compileDApp topv =
       let ctxt_step =
             (SLCtxt { ctxt_mode = SLC_Step penvs
                     , ctxt_id = Just idxr
+                    , ctxt_must_ret = False
                     , ctxt_ret = Nothing
                     , ctxt_stack = [] })
       v <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
