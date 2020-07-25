@@ -204,8 +204,8 @@ data ToConsensusMode
 data SLForm
   = SLForm_Part_Only SLVal
   --- XXX Maybe should be DLVar
-  | SLForm_Part_ToConsensus SLPart (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe SLVar) (Maybe SLVar)
-  | SLForm_Part_OnlyAns SLPart SLEnv SLVal
+  | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe SLVar) (Maybe SLVar)
+  | SLForm_Part_OnlyAns SrcLoc SLPart SLEnv SLVal
   deriving (Eq,Show)
 
 data ConsensusPrimOp
@@ -374,9 +374,8 @@ data DLStmt
   | DLS_Transfer SrcLoc SLPart DLArg
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
-  --- XXX These are only allowed in Steps... some sort of dep type?
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_All SrcLoc DLStmt
+  | DLS_ToConsensus SrcLoc SLPart [DLVar]
   deriving (Eq,Show)
 
 stmt_pure :: DLStmt -> Bool
@@ -386,10 +385,10 @@ stmt_pure s =
     DLS_Claim{} -> False
     DLS_If _ _ x y -> stmts_pure x && stmts_pure y
     DLS_Transfer{} -> False
-    DLS_Return{} -> True
+    DLS_Return{} -> False
     DLS_Prompt{} -> True
     DLS_Only _ _ ss -> stmts_pure ss
-    DLS_All _ as -> stmt_pure as
+    DLS_ToConsensus{} -> False
 
 type DLStmts = Seq.Seq DLStmt
 
@@ -814,14 +813,14 @@ evalDot at obj field =
     SLV_Participant _ who _ ->
       case field of
         "only" -> SLV_Form (SLForm_Part_Only obj)
-        "publish" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Publish) Nothing Nothing Nothing)
-        "pay" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Pay) Nothing Nothing Nothing)
+        "publish" -> SLV_Form (SLForm_Part_ToConsensus at who (Just TCM_Publish) Nothing Nothing Nothing)
+        "pay" -> SLV_Form (SLForm_Part_ToConsensus at who (Just TCM_Pay) Nothing Nothing Nothing)
         _ -> illegal_field
-    SLV_Form (SLForm_Part_ToConsensus who Nothing mpub mpay mtime) ->
+    SLV_Form (SLForm_Part_ToConsensus to_at who Nothing mpub mpay mtime) ->
       case field of
-        "publish" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Publish) mpub mpay mtime)
-        "pay" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Pay) mpub mpay mtime)
-        "timeout" -> SLV_Form (SLForm_Part_ToConsensus who (Just TCM_Timeout) mpub mpay mtime)
+        "publish" -> SLV_Form (SLForm_Part_ToConsensus to_at who (Just TCM_Publish) mpub mpay mtime)
+        "pay" -> SLV_Form (SLForm_Part_ToConsensus to_at who (Just TCM_Pay) mpub mpay mtime)
+        "timeout" -> SLV_Form (SLForm_Part_ToConsensus to_at who (Just TCM_Timeout) mpub mpay mtime)
         _ -> illegal_field
     SLV_Prim (SLPrim_transfer_amt amt_dla) ->
       case field of
@@ -840,34 +839,32 @@ evalForm ctxt at _env f args =
         SLC_Step penvs -> do
           --- XXX move to evalStmts
           let penv = penvs M.! who
-          let ctxt_local = --- XXX reset retk?
-                (ctxt { ctxt_mode = SLC_Local })
+          let ctxt_local = (ctxt { ctxt_mode = SLC_Local })
           SLRes elifts eargs <- evalExprs ctxt_local at penv args
           case eargs of
             [ thunk ] -> do
-              --- XXX reset retk?
               let ctxt_localstep = (ctxt { ctxt_mode = SLC_LocalStep })
               SLRes alifts (SLAppRes penv' ans) <- evalApplyVals ctxt_localstep at (impossible "Part_only expects clo") thunk []
               traceM $ "penv' update = " ++ (show $ M.keys $ M.difference penv' penv)
-              return $ SLRes (elifts <> alifts) $ SLV_Form $ SLForm_Part_OnlyAns who penv' ans
+              return $ SLRes (elifts <> alifts) $ SLV_Form $ SLForm_Part_OnlyAns at who penv' ans
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "part.only"
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
-    SLForm_Part_OnlyAns _ _ _ -> impossible "SLForm_Part_OnlyAns"
-    SLForm_Part_ToConsensus who mmode mpub mpay mtime ->
+    SLForm_Part_OnlyAns{} -> impossible "SLForm_Part_OnlyAns"
+    SLForm_Part_ToConsensus to_at who mmode mpub mpay mtime ->
       case ctxt_mode ctxt of
         SLC_Step _penvs ->
           case mmode of
             Just TCM_Publish ->
               case mpub of
-                Nothing -> retV $ SLV_Form $ SLForm_Part_ToConsensus who Nothing (Just msg) mpay mtime
+                Nothing -> retV $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing (Just msg) mpay mtime
                   where msg = map (jse_expect_id at) args
                 Just _ ->
                   expect_throw at $ Err_ToConsensus_Double TCM_Publish
             Just TCM_Pay ->
-              retV $ SLV_Form $ SLForm_Part_ToConsensus who Nothing mpub (Just $ error "XXX TCM_Pay " ++ show args) mtime
+              retV $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing mpub (Just $ error "XXX TCM_Pay " ++ show args) mtime
             Just TCM_Timeout ->
-              retV $ SLV_Form $ SLForm_Part_ToConsensus who Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
+              retV $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
             Nothing ->
               expect_throw at $ Err_Eval_NotApplicable rator
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "toConsensus"
@@ -1373,43 +1370,43 @@ evalStmt ctxt at env ss =
     ((JSExpressionStatement e sp):ks) -> do
       SLRes elifts ev <- evalExpr ctxt at env e
       case (ctxt_mode ctxt, ev) of
-        (SLC_Step penvs, SLV_Form (SLForm_Part_OnlyAns who penv' only_v)) ->
+        (SLC_Step penvs, SLV_Form (SLForm_Part_OnlyAns only_at who penv' only_v)) ->
           case typeOf at_after only_v of
             (T_Null, _) ->
-              keepLifts elifts $ evalStmt ctxt' at_after env ks
+              keepLifts lifts' $ evalStmt ctxt' at_after env ks
               where ctxt' = ctxt { ctxt_mode = SLC_Step $ M.insert who penv' penvs }
-            _ -> expect_throw at (Err_Block_NotNull ev) --- XXX rename to expression not null? or ignore?
-        (SLC_Step penvs, SLV_Form (SLForm_Part_ToConsensus who Nothing mmsg _XXX_mamt _XXX_mtime)) -> do
+                    lifts' = return $ DLS_Only only_at who elifts
+            _ -> expect_throw at (Err_Block_NotNull ev)
+        (SLC_Step penvs, SLV_Form (SLForm_Part_ToConsensus to_at who Nothing mmsg _XXX_mamt _XXX_mtime)) -> do
           let penv = penvs M.! who
           traceM $ "to_consensus from " ++ show who
-          --- XXX at and at_after here might be bad... add to ToConsensus?
-          (msg_env, _XXX_tmsg) <-
+          (msg_env, tmsg) <-
             case mmsg of
               Nothing -> return (mempty, [])
               Just msg -> do
                 let mk var = do
-                      let val = env_lookup at_after var penv
-                      let (t, _) = typeOf at_after val
-                      x <- ctxt_alloc ctxt at
-                      return $ DLVar at_after "msg" t x
+                      let val = env_lookup to_at var penv
+                      let (t, _) = typeOf to_at val
+                      x <- ctxt_alloc ctxt to_at
+                      return $ DLVar to_at "msg" t x
                 tvs <- mapM mk msg
                 return $ (foldl' (env_insertp at_after) mempty $ zip msg $ map SLV_DLVar tvs, tvs)
           --- We go back to the original env from before the to-consensus step
-          let env' = env_merge at_after env msg_env
+          let env' = env_merge to_at env msg_env
           let penvs' = M.mapWithKey (\p old ->
                                        case p == who of
                                          True -> old
-                                         False -> env_merge at_after old msg_env) penvs
+                                         False -> env_merge to_at old msg_env) penvs
           let ctxt_cstep = (ctxt { ctxt_mode = SLC_ConsensusStep penvs' })
-          --- XXX lift toconsensus
-          keepLifts elifts $ evalStmt ctxt_cstep at_after env' ks
+          let lifts' = elifts <> (return $ DLS_ToConsensus to_at who tmsg)
+          keepLifts lifts' $ evalStmt ctxt_cstep at_after env' ks
         (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
           let ctxt_step = (ctxt { ctxt_mode = SLC_Step penvs })
           keepLifts elifts $ evalStmt ctxt_step at_after env ks
         _ ->
           case typeOf at_after ev of
             (T_Null, _) -> keepLifts elifts $ evalStmt ctxt at_after env ks
-            _ -> expect_throw at (Err_Block_NotNull ev) --- XXX rename to expression not null? or ignore?
+            _ -> expect_throw at (Err_Block_NotNull ev)
       where at_after = srcloc_after_semi "expr stmt" JSNoAnnot sp at
     ((JSAssignStatement _lhs op _rhs _asp):ks) ->
       case (op, ks) of
@@ -1492,12 +1489,12 @@ evalTopBody ctxt at libm env exenv body =
                         Just x -> x
                         Nothing ->
                           impossible $ "dependency not found"
-            --- XXX support more kinds
+            --- FIXME support more kinds
             _ -> expect_throw at (Err_Import_IllegalJS im)
         (JSModuleExportDeclaration a ed) ->
           case ed of
             JSExport s _ -> doStmt at' True s
-            --- XXX support more kinds
+            --- FIXME support more kinds
             _ -> expect_throw at' (Err_Export_IllegalJS ed)
           where at' = srcloc_jsa "export" a at
         (JSModuleStatementListItem s) -> doStmt at False s
@@ -1557,7 +1554,7 @@ compileDApp :: SLVal -> SLComp s ()
 compileDApp topv =
   case topv of
     SLV_Prim (SLPrim_DApp_Delay at [ (SLV_Object _ _opts), (SLV_Array _ parts), clo ] top_env) -> do
-      --- xxx look at opts
+      --- FIXME look at opts
       idxr <- newSTRef $ 0
       let ctxt_step =
             (SLCtxt { ctxt_mode = SLC_Step penvs
@@ -1565,8 +1562,8 @@ compileDApp topv =
                     , ctxt_must_ret = False
                     , ctxt_ret = Nothing
                     , ctxt_stack = [] })
-      v <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
-      expect_throw at' (Err_XXX $ "compileDApp after: " ++ show v)
+      SLRes _XXX_final (SLAppRes _ sv) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
+      expect_throw at' (Err_XXX $ "compileDApp after: " ++ show sv)
       where at' = srcloc_at "compileDApp" Nothing at
             penvs = M.fromList $ map make_penv partvs
             make_penv (SLV_Participant _ pn io) =
@@ -1584,7 +1581,6 @@ compileBundle :: JSBundle -> SLVar -> DLStmts
 compileBundle (JSBundle mods) top = runST $ do
   libm <- evalLibs mods
   let exe_ex = libm M.! exe
-  --- XXX use env_lookup
   let topv = case M.lookup top exe_ex of
                Just x -> x
                Nothing ->
