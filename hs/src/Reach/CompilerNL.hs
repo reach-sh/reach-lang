@@ -338,12 +338,14 @@ data ClaimType
   | CT_Possible --- Check if an assignment of variables exists to make
                 --- this true.
   deriving (Show,Eq,Ord)
-           
+
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
   | DLS_Claim SrcLoc [ SLCtxtFrame ] ClaimType DLArg
   | DLS_If SrcLoc DLArg DLStmts DLStmts
   | DLS_Transfer SrcLoc SLPart DLArg
+  | DLS_Return SrcLoc Int SLVal
+  | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   --- XXX These are only allowed in Steps... some sort of dep type?
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_All SrcLoc DLStmt
@@ -353,9 +355,11 @@ stmt_pure :: DLStmt -> Bool
 stmt_pure s =
   case s of
     DLS_Let _ _ e -> expr_pure e
-    DLS_Claim _ _ _ _ -> False
+    DLS_Claim{} -> False
     DLS_If _ _ x y -> stmts_pure x && stmts_pure y
-    DLS_Transfer _ _ _ -> False
+    DLS_Transfer{} -> False
+    DLS_Return{} -> True
+    DLS_Prompt{} -> True
     DLS_Only _ _ ss -> stmts_pure ss
     DLS_All _ as -> stmt_pure as
 
@@ -404,6 +408,7 @@ data CompilerError s
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_IllegalLift SLCtxtMode
   | Err_Eval_NoReturn
+  | Err_Eval_ReturnsDifferentTypes [SLType]
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_NotApplicableVals SLVal
   | Err_Eval_NotObject SLVal
@@ -609,17 +614,16 @@ keepLifts lifts m = do
 
 type SLComp s a = ST s (SLRes a)
 
-data SLStmtRes
-  = SLStmtDecl SLEnv
-  | SLStmtRet SLVal
+data SLStmtRes = SLStmtRes SLEnv [(SrcLoc, SLVal)]
   deriving (Eq, Show)
 
 data SLAppRes = SLAppRes SLEnv SLVal
   deriving (Eq, Show)
 
-ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
-ctxt_stack_push ctxt f =
-  (ctxt { ctxt_stack = f : (ctxt_stack ctxt) })
+ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> Int -> SLCtxt s
+ctxt_stack_push ctxt f ret =
+  (ctxt { ctxt_stack = f : (ctxt_stack ctxt)
+        , ctxt_ret = Just ret })
 
 binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
 binaryToPrim at env o =
@@ -978,12 +982,30 @@ evalApplyVals ctxt at env rator randvs =
       SLRes lifts val <- evalPrim ctxt at env p randvs
       return $ SLRes lifts $ SLAppRes env val
     SLV_Clo clo_at mname formals (JSBlock body_a body _) clo_env -> do
-      SLRes app_lifts _XXX_appr <- evalStmt ctxt' body_at env' body
-      return $ SLRes app_lifts $ expect_throw at $ Err_XXX "clo app res"
-      where body_at = srcloc_jsa "block" body_a clo_at
-            env' = foldl' (env_insertp clo_at) clo_env kvs
-            kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
-            ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
+      ret <- ctxt_alloc ctxt at
+      let body_at = srcloc_jsa "block" body_a clo_at
+      let kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
+      let clo_env' = foldl' (env_insertp clo_at) clo_env kvs
+      let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname) ret
+      SLRes body_lifts (SLStmtRes clo_env'' rs) <- evalStmt ctxt' body_at clo_env' body
+      let no_prompt v = do
+            let lifts' = return $ DLS_Prompt body_at (Left ret) body_lifts
+            return $ SLRes lifts' $ SLAppRes clo_env'' $ v
+      case rs of
+        [] -> no_prompt $ SLV_Null body_at "clo app"
+        [ (_, x) ] -> no_prompt $ x
+        (r:rs') -> do
+          let getTy = (fst . (uncurry typeOf))
+          let r_ty = getTy r
+          let rs'_ty = map getTy rs'
+          case getAll $ foldMap (All . (r_ty ==)) $ rs'_ty of
+            False ->
+              expect_throw body_at $ Err_Eval_ReturnsDifferentTypes (r_ty:rs'_ty)
+            True -> do
+              --- XXX syntax local name
+              let dv = DLVar body_at "clo app" r_ty ret
+              let lifts' = return $ DLS_Prompt body_at (Right dv) body_lifts
+              return $ SLRes lifts' $ SLAppRes clo_env'' (SLV_DLVar dv)
     v ->
       expect_throw at (Err_Eval_NotApplicableVals v)
 
@@ -1240,7 +1262,7 @@ evalDecls ctxt at env decls =
 evalStmt :: SLCtxt s -> SrcLoc -> SLEnv -> [JSStatement] -> SLComp s SLStmtRes
 evalStmt ctxt at env ss =
   case ss of
-    [] -> return $ SLRes mempty $ SLStmtDecl env
+    [] -> return $ SLRes mempty $ SLStmtRes env []
     ((JSStatementBlock a ss' _ sp):ks) -> do
       br <- evalStmt ctxt at_in env ss'
       kr <- evalStmt ctxt at_after env ks
@@ -1365,20 +1387,18 @@ evalStmt ctxt at env ss =
       where ss' = (JSExpressionStatement e' sp):ks
             e' = (JSCallExpression e a args ra)
     ((JSReturn a me sp):ks) -> do
+      let lab = "return"
+      let at' = srcloc_jsa lab a at
       SLRes elifts ev <-
         case me of
           Nothing -> return $ SLRes mempty $ SLV_Null at' "empty return"
           Just e -> evalExpr ctxt at' env e
-      keepLifts elifts $
-        expect_empty_tail lab a sp at ks $
-        return $ SLRes mempty (SLStmtRet ev)
-      where lab = "return"
-            at' = srcloc_jsa lab a at
-            _XXX_ret =
-              case ctxt_ret ctxt of
-                Just x -> x
-                Nothing ->
-                  expect_throw at' $ Err_Eval_NoReturn
+      let ret = case ctxt_ret ctxt of
+                  Just x -> x
+                  Nothing -> expect_throw at' $ Err_Eval_NoReturn
+      let lifts' = return $ DLS_Return at' ret ev
+      expect_empty_tail lab a sp at ks $
+        return $ SLRes (elifts <> lifts') (SLStmtRes env [(at', ev)])
     (s@(JSSwitch a _ _ _ _ _ _ _):_) -> illegal a s "switch"
     (s@(JSThrow a _ _):_) -> illegal a s "throw"
     (s@(JSTry a _ _ _):_) -> illegal a s "try"
@@ -1437,7 +1457,7 @@ evalTopBody ctxt at libm env exenv body =
       where doStmt at' isExport sm = do
               smr <- evalStmt ctxt at' env [sm]
               case smr of
-                SLRes Seq.Empty (SLStmtDecl env') ->
+                SLRes Seq.Empty (SLStmtRes env' []) ->
                   let exenv' = case isExport of
                                  True ->
                                    --- If this is an exporting statement,
