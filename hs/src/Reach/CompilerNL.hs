@@ -83,6 +83,18 @@ parseJSArrowFormals at aformals =
     JSParenthesizedArrowParameterList _ l _ ->
       parseJSFormals at l
 
+dropEmptyJSStmts :: [JSStatement] -> [JSStatement]
+dropEmptyJSStmts [] = []
+dropEmptyJSStmts (s:ks) =
+  case s of
+    (JSStatementBlock a ss b sp) ->
+      case dropEmptyJSStmts ss of
+        [] -> ks'
+        ss' -> (JSStatementBlock a ss' b sp):ks'
+    (JSEmptyStatement _) -> ks'
+    _ -> s:ks'
+  where ks' = dropEmptyJSStmts ks
+
 -- Static Language
 data ReachSource
   = ReachStdLib
@@ -1015,6 +1027,7 @@ evalApplyVals ctxt at env rator randvs =
         [] -> no_prompt $ SLV_Null body_at "clo app"
         [ (_, x) ] -> no_prompt $ x
         _ -> do
+          --- XXX maybe all the values are the same
           let r_ty = typeMeets body_at $ map (\r -> (fst r, (fst (uncurry typeOf $ r)))) rs
           --- XXX syntax local name
           let dv = DLVar body_at "clo app" r_ty ret
@@ -1285,7 +1298,7 @@ evalStmt ctxt at env ss =
         True -> evalStmt ctxt at env $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
     ((JSStatementBlock a ss' _ sp):ks) -> do
       br <- evalStmt ctxt at_in env ss'
-      retSeqn br $ \ctxt' -> evalStmt ctxt' at_after env ks
+      retSeqn br at_after ks
       where at_in = srcloc_jsa "block" a at
             at_after = srcloc_after_semi "block" a sp at
     (s@(JSBreak a _ _):_) -> illegal a s "break"
@@ -1339,9 +1352,19 @@ evalStmt ctxt at env ss =
       keepLifts clifts $
         case cv of
           SLV_Bool _ cb -> do
-            retSeqn (if cb then tr else fr) (\ctxt' -> evalStmt ctxt' at' env ks)
+            retSeqn (if cb then tr else fr) at' ks
           SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) -> do
-            expect_throw at $ Err_XXX $ "impure IfElse " ++ show cond_dv
+            let SLRes tlifts (SLStmtRes _ trets) = tr
+            let SLRes flifts (SLStmtRes _ frets) = fr
+            let lifts' = return $ DLS_If at' (DLA_Var cond_dv) tlifts flifts
+            let rets' =
+                  case (trets, frets) of
+                    ([], []) -> []
+                    ([], _) -> [(t_at', SLV_Null t_at' "if empty true")] ++ frets
+                    (_, []) -> trets ++ [(f_at', SLV_Null f_at' "if empty false")]
+                    (_, _) -> trets ++ frets
+            let ir = SLRes lifts' (SLStmtRes env rets')
+            retSeqn ir at' ks
           _ ->
             expect_throw at (Err_Eval_IfCondNotBool cv)
     (s@(JSLabelled _ a _):_) -> illegal a s "labelled"
@@ -1430,13 +1453,17 @@ evalStmt ctxt at env ss =
     (s@(JSWith a _ _ _ _ _):_) -> illegal a s "with"
   where illegal a s lab =
           expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
-        retSeqn (SLRes lifts0 (SLStmtRes _ rets0)) run = do
-          let ctxt' =
-                case rets0 of
-                  [] -> ctxt
-                  (_:_) -> ctxt { ctxt_must_ret = True }
-          SLRes lifts1 (SLStmtRes env1 rets1) <- run ctxt'
-          return $ SLRes (lifts0 <> lifts1) (SLStmtRes env1 (rets0 ++ rets1))
+        retSeqn sr at' ks = do
+          case dropEmptyJSStmts ks of
+            [] -> return $ sr
+            ks' -> do
+              let SLRes lifts0 (SLStmtRes _ rets0) = sr
+              let ctxt' =
+                    case rets0 of
+                      [] -> ctxt
+                      (_:_) -> ctxt { ctxt_must_ret = True }
+              SLRes lifts1 (SLStmtRes env1 rets1) <- evalStmt ctxt' at' env ks'
+              return $ SLRes (lifts0 <> lifts1) (SLStmtRes env1 (rets0 ++ rets1))
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =
