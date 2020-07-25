@@ -114,6 +114,17 @@ packages:
   original:
     git: https://github.com/danburton/language-javascript.git
     commit: 9a3b52abc8d4850a2229cc94d0d973f7906c6378
+- completed:
+    name: ormolu
+    version: 0.1.2.0
+    git: https://github.com/google/ormolu.git
+    pantry-tree:
+      size: 78156
+      sha256: a030dc542ed61d259984b086957113932d8ed7199698e4791243072d6a1c6583
+    commit: f16c62c18db1b328ee481c781171ea61f354ff70
+  original:
+    git: https://github.com/google/ormolu.git
+    commit: f16c62c18db1b328ee481c781171ea61f354ff70
 snapshots:
 - completed:
     size: 531696

@@ -1,19 +1,28 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Main where
 
 import Control.DeepSeq
 import Control.Exception
+import qualified Data.ByteString.Lazy as LB
 import Data.Functor.Identity
 import Data.List (isPrefixOf, (\\))
 import Data.Proxy
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import qualified Data.Text.IO as TIO
 import Data.Typeable
 import Generics.Deriving
 import Language.JavaScript.Parser.SrcLocation
+import Reach.Compiler (CompileErr, Verifier (Z3), compile)
+import Reach.CompilerTool
+import Reach.ParserInternal
+import Reach.Util
 import System.Directory
 import System.Environment
 import System.Exit
-import System.IO.Silently
 import System.FilePath
+import System.IO.Silently
 import System.Process
 import Test.Hspec
 import Test.SmallCheck.Series
@@ -23,24 +32,16 @@ import Test.Tasty.Hspec
 import Test.Tasty.Runners.AntXML
 import Test.Tasty.Runners.Html
 
-import Reach.ParserInternal
-import Reach.Compiler (CompileErr, compile, Verifier(Z3))
-import Reach.CompilerTool
-import Reach.Util
-
-import qualified Data.ByteString.Lazy as LB
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import qualified Data.Text.IO as TIO
-
-
 instance NFData TP where
   rnf (TP _) = ()
+
 instance NFData TokenPosn where
   rnf (TokenPn _ _ _) = ()
 
 class (Generic a, Typeable a, ConNames (Rep a), Serial Identity a) => ReachErr a
+
 instance ReachErr ParseErr
+
 instance ReachErr CompileErr
 
 try_hard :: NFData a => Exception e => IO a -> IO (Either e a)
@@ -64,21 +65,24 @@ dropExcess = id -- dropDefines . dropHypotheticalInteracts . dropMoreInfo
 
 test_compile :: FilePath -> IO ()
 test_compile n = do
-  opts <- makeCompilerOpts $ CompilerToolOpts
-    { cto_outputDir = "test.out"
-    , cto_source = n
-    , cto_expCon = False
-    , cto_expComp = False
-    , cto_verifier = Z3
-    }
+  opts <-
+    makeCompilerOpts $
+      CompilerToolOpts
+        { cto_outputDir = "test.out"
+        , cto_source = n
+        , cto_expCon = False
+        , cto_expComp = False
+        , cto_verifier = Z3
+        }
   silence $ compile opts
 
 errExampleBs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
-errExampleBs k fp = withCurrentDirectory dir (try_hard (k fpRel)) >>= \case
-  Right r ->
-    fail $ "expected a failure, but got: " ++ show r
-  Left (ErrorCall e) ->
-    return $ LB.fromStrict $ bpack e
+errExampleBs k fp =
+  withCurrentDirectory dir (try_hard (k fpRel)) >>= \case
+    Right r ->
+      fail $ "expected a failure, but got: " ++ show r
+    Left (ErrorCall e) ->
+      return $ LB.fromStrict $ bpack e
   where
     dir = takeDirectory fp
     fpRel = takeFileName fp
@@ -103,8 +107,11 @@ test_compile_vererr pf = do
   (_, Just hout, Just herr, hP) <- do
     -- TODO: a better way of running the compiler and capturing stdout/stderr
     unsetEnv "REACHC_VERIFIER"
-    createProcess (proc "stack" ["exec", "--", "reachc", "-o", "test.out", rdest]){ std_out = CreatePipe,
-                                                                                    std_err = CreatePipe }
+    createProcess
+      (proc "stack" ["exec", "--", "reachc", "-o", "test.out", rdest])
+        { std_out = CreatePipe
+        , std_err = CreatePipe
+        }
   outT <- TIO.hGetContents hout
   err <- LB.hGetContents herr
   -- strip out the defines
@@ -115,14 +122,12 @@ test_compile_vererr pf = do
   removeFile rdest
   return (out, err)
 
-
 stderroutExampleBs :: (FilePath -> IO (LB.ByteString, LB.ByteString)) -> FilePath -> IO LB.ByteString
 stderroutExampleBs k fp = do
   (out, err) <- k fp
   let tag t x = "<" <> t <> ">\n" <> x <> "\n</" <> t <> ">\n"
   let res = (tag "out" out) <> (tag "err" err)
   return res
-
 
 stderroutExample :: String -> (FilePath -> IO (LB.ByteString, LB.ByteString)) -> FilePath -> TestTree
 stderroutExample ext k fp = do
@@ -139,17 +144,21 @@ compileErrExample = errExample ".txt" test_compile
 verifyErrExample :: FilePath -> TestTree
 verifyErrExample = stderroutExample ".out" test_compile_vererr
 
-
 -- It is dumb that both testSpec and it require descriptive strings
 testNotEmpty :: String -> [a] -> IO TestTree
-testNotEmpty label xs = testSpec label $ it "is not empty" $ case xs of
-  [] -> expectationFailure "... it is empty =["
-  (_:_) -> pure ()
+testNotEmpty label xs = testSpec label $
+  it "is not empty" $ case xs of
+    [] -> expectationFailure "... it is empty =["
+    (_ : _) -> pure ()
 
-testExamplesCover ::
-  forall err proxy. (ReachErr err) =>
-  proxy err -> [FilePath] -> IO TestTree
-testExamplesCover p sources = testSpec label t where
+testExamplesCover
+  :: forall err proxy.
+  (ReachErr err)
+  => proxy err
+  -> [FilePath]
+  -> IO TestTree
+testExamplesCover p sources = testSpec label t
+  where
     label = "Examples covering " <> ty
     ty = show $ typeRep p
     constrs = listSeries 1 :: [err]
@@ -158,8 +167,13 @@ testExamplesCover p sources = testSpec label t where
       let missing = cNames \\ map takeBaseName sources
       missing `shouldBe` []
 
-testsFor :: ReachErr err =>
-  proxy err -> (FilePath -> TestTree) -> String -> FilePath -> IO TestTree
+testsFor
+  :: ReachErr err
+  => proxy err
+  -> (FilePath -> TestTree)
+  -> String
+  -> FilePath
+  -> IO TestTree
 testsFor p mkTest ext subdir = do
   (sources, gTests) <- goldenTests' mkTest ext subdir
   testCov <- testExamplesCover p sources
@@ -185,19 +199,21 @@ goldenTests mkTest ext subdir = do
 
 main :: IO ()
 main = do
-  parseTests <- testsFor (Proxy @ParseErr) parseErrExample ".rsh" "parse-errors"
-  compileTests <- testsFor (Proxy @CompileErr) compileErrExample ".rsh" "compile-errors"
+  parseTests <- testsFor (Proxy :: Proxy ParseErr) parseErrExample ".rsh" "parse-errors"
+  compileTests <- testsFor (Proxy :: Proxy CompileErr) compileErrExample ".rsh" "compile-errors"
   verifyTests <- goldenTests verifyErrExample ".patch" "verification-errors"
   args <- getArgs
-  let
-    -- Note: antXMLRunner isn't very polite when you leave off --xml
-    theMain = case any ("--xml" `isPrefixOf`) args of
-      True -> defaultMainWithIngredients (htmlRunner:antXMLRunner:defaultIngredients)
-      False -> defaultMainWithIngredients (htmlRunner:defaultIngredients)
-    -- Note: The tests get current dir mixed up if run in parallel
-    theArgs = "--num-threads=1":args
-  withArgs theArgs $ theMain $ testGroup "tests"
-    [ parseTests
-    , compileTests
-    , verifyTests
-    ]
+  let -- Note: antXMLRunner isn't very polite when you leave off --xml
+      theMain = case any ("--xml" `isPrefixOf`) args of
+        True -> defaultMainWithIngredients (htmlRunner : antXMLRunner : defaultIngredients)
+        False -> defaultMainWithIngredients (htmlRunner : defaultIngredients)
+      -- Note: The tests get current dir mixed up if run in parallel
+      theArgs = "--num-threads=1" : args
+  withArgs theArgs $
+    theMain $
+      testGroup
+        "tests"
+        [ parseTests
+        , compileTests
+        , verifyTests
+        ]

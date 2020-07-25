@@ -1,5 +1,6 @@
 module Reach.Parser
   ( readReachFile
-  ) where
+  )
+where
 
 import Reach.ParserInternal
