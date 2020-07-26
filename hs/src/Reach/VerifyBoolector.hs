@@ -8,5 +8,6 @@ import SimpleSMT
 -- - doesn't support unsat-cores
 -- - doesn't support declare-datatypes
 verify_boolector :: Show a => FilePath -> ILProgram a -> IO ()
-verify_boolector = verify_smt mkSolver where
-  mkSolver = newSolver "boolector" ["--smt2"]
+verify_boolector = verify_smt mkSolver
+  where
+    mkSolver = newSolver "boolector" ["--smt2"]

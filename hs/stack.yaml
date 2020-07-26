@@ -18,3 +18,5 @@ extra-deps:
     commit: f6b85556b90cb8b639449d205be6367bafc984f2
   - git: https://github.com/danburton/language-javascript.git
     commit: 9a3b52abc8d4850a2229cc94d0d973f7906c6378
+  - git: https://github.com/google/ormolu.git
+    commit: f16c62c18db1b328ee481c781171ea61f354ff70

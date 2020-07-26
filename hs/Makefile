@@ -63,6 +63,11 @@ hs-deps:
 hs-doc:
 	stack haddock
 
+.PHONY: hs-format
+hs-format:
+	stack build ormolu
+	stack exec -- ormolu --mode inplace $$(find . -name '*.hs')
+
 .PHONY: build-circle-docker
 build-circle-docker:
 	docker build -f Dockerfile_circleci --tag $(CIRCLE_TAG) .
