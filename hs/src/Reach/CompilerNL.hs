@@ -26,6 +26,7 @@ import Safe (atMay)
 import System.Directory
 import System.FilePath
 import Text.ParserCombinators.Parsec.Number (numberValue)
+import Data.Text.Prettyprint.Doc
 
 -- Helpers
 zipEq :: SrcLoc -> (Int -> Int -> CompilerError s) -> [a] -> [b] -> [(a, b)]
@@ -1058,7 +1059,13 @@ evalApplyVals ctxt at env rator randvs =
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname) ret
       SLRes body_lifts (SLStmtRes clo_env'' rs) <- evalStmt ctxt' body_at clo_env' body
       let no_prompt v = do
-            let lifts' = return $ DLS_Prompt body_at (Left ret) body_lifts
+            let lifts' =
+                  case body_lifts of
+                    body_lifts' Seq.:|> (DLS_Return _ x y)
+                      | x == ret && y == v ->
+                      body_lifts'
+                    _ ->
+                      return $ DLS_Prompt body_at (Left ret) body_lifts
             return $ SLRes lifts' $ SLAppRes clo_env'' $ v
       case rs of
         [] -> no_prompt $ SLV_Null body_at "clo app"
@@ -1646,8 +1653,11 @@ compileDApp topv =
                , ctxt_ret = Nothing
                , ctxt_stack = []
                })
-      SLRes _XXX_final (SLAppRes _ sv) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
-      expect_throw at' (Err_XXX $ "compileDApp after: " ++ show sv)
+      SLRes final (SLAppRes _ _sv) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
+      traceM $ ""
+      traceM $ show $ render_dls final
+      traceM $ ""
+      expect_throw at' (Err_XXX $ "compileDApp after")
       where
         at' = srcloc_at "compileDApp" Nothing at
         penvs = M.fromList $ map make_penv partvs
@@ -1676,6 +1686,58 @@ compileBundle (JSBundle mods) top = runST $ do
     exe = case mods of
       [] -> impossible $ "compileBundle: no files"
       ((x, _) : _) -> x
+
+-- Temporary helper
+render_dv :: DLVar -> Doc a
+render_dv (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
+
+render_da :: DLArg -> Doc a
+render_da a =
+  case a of
+    DLA_Var v -> render_dv v
+    DLA_Con c -> viaShow c
+    DLA_Array as -> brackets $ render_das as
+    DLA_Obj _env -> "XXX obj"
+
+render_das :: [DLArg] -> Doc a
+render_das as = hcat $ punctuate comma $ map render_da as
+
+render_de :: DLExpr -> Doc a
+render_de e =
+  case e of
+    DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
+    DLE_ArrayRef _ a o -> render_da a <> brackets (render_da o)
+    DLE_Interact _ m as -> "interact." <> viaShow m <> parens (render_das as)
+    DLE_Digest _ as -> "digest" <> parens (render_das as)
+
+render_sp :: SLPart -> Doc a
+render_sp p = viaShow p
+
+render_dl :: DLStmt -> Doc a
+render_dl d =
+  case d of
+    DLS_Let _ v e ->
+      "let" <+> render_dv v <+> "=" <+> render_de e <> semi
+    DLS_Claim _ _ ct a ->
+      "claim" <> parens (viaShow ct) <> parens (render_da a) <> semi
+    DLS_If _ ca ts fs ->
+      "if" <+> render_da ca <+> "then"
+      <+> ns ts <> hardline <> "else"
+      <+> ns fs <> semi
+    DLS_Transfer _ who da ->
+      "transfer." <> parens (render_da da) <> ".to" <> parens (render_sp who) <> semi
+    DLS_Return _ ret sv ->
+      "throw" <> parens (viaShow sv) <> ".to" <> parens (viaShow ret) <> semi
+    DLS_Prompt _ ret bodys ->
+      "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
+    DLS_Only _ who onlys ->
+      "only" <> parens (render_sp who) <+> ns onlys <> semi
+    DLS_ToConsensus _ who vs ->
+      "publish" <> parens (render_sp who) <> parens (hsep $ punctuate comma $ map render_dv vs)
+  where ns ss = nest 2 $ braces ( hardline <> render_dls ss <> " " )
+
+render_dls :: DLStmts -> Doc a
+render_dls ss = concatWith (surround hardline) $ fmap render_dl ss
 
 -- Main entry point
 compileNL :: CompilerOpts -> IO ()
