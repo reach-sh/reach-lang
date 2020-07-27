@@ -35,11 +35,16 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 
 @index{connectAccount} Returns a Reach @tech{account} abstraction for an existing @tech{account} for the @tech{consensus network} based on the @tech{connector}-specific @tech{account} specification provided by the @jsin{networkAccount} argument.
 
+@js{
+    // network => networkAccount type
+    ETH        => string  // address
+    ALGO       => {addr: string, sk: UInt8Array(64)}}
+
 @(hrule)
 @js{
- acc.address => networkAccount }
+ acc.networkAccount => networkAccount }
 
-@index{acc.address} Returns the @tech{connector}-specific @tech{account} specification of a Reach @tech{account} abstraction.
+@index{acc.networkAccount} Returns the @tech{connector}-specific @tech{account} specification of a Reach @tech{account} abstraction.
 
 @(hrule)
 @js{
@@ -72,7 +77,7 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 @index{checkType} Asserts that value @jsin{x} has reach type @jsin{t}. An exception is thrown if this is not the case. See the table below for Reach types and their corresponding JavaScript representation:
 
 @js{
- // Reach => JavaScript
+ // Reach  => JavaScript
  'bool'    => 'boolean'
  'uint256' => 'BN'
  'bytes'   => 'string'

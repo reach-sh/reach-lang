@@ -59,7 +59,7 @@ import * as RPSW from './build/rps_while.mjs';
   const delayHand = async () => {
     for ( let i = 0; i < 10; i++ ) {
       console.log(`\tAlice takes her sweet time...`);
-      await stdlib.transfer(alice.address, alice.address, wagerInWei); }
+      await stdlib.transfer(alice.networkAccount, alice.networkAccount, wagerInWei); }
     return randomHand(); };
   await demo(RPS, delayHand);
 

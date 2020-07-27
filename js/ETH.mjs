@@ -7,6 +7,19 @@ import * as util       from 'util';
 import * as waitPort   from 'wait-port';
 void(util);
 
+// networkAccount[ETH] = string  // account address str
+//
+// ctc[ETH] = {
+//   address: string
+//   creation_block: int
+//
+//   // internal fields
+//   // * not required to call acc.attach(bin, ctc)
+//   // * required by backend
+//   sendrecv: function
+//   recv: function
+// }
+
 
 // Shared/copied code begins
 
@@ -132,8 +145,8 @@ ethersp.pollingInterval = 500; // ms
 const ethersBlockOnceP = () =>
       new Promise((resolve) => ethersp.once('block', (n) => resolve(n)));
 
-export const balanceOf = async a =>
-  toBN(await web3.eth.getBalance(a.address));
+export const balanceOf = async acc =>
+  toBN(await web3.eth.getBalance(acc.networkAccount));
 
 // XXX dead code?
 // `t` is a type name in string form; `v` is the value to cast
@@ -281,7 +294,7 @@ export const connectAccount = address => {
       rec_res.didTimeout = true;
       return rec_res; };
 
-    return { sendrecv: sendrecv_top, recv: recv_top, creation_block, address: ctc_address }; };
+    return { ...ctc, sendrecv: sendrecv_top, recv: recv_top }; };
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
   const deploy = async (bin) => {
@@ -292,7 +305,7 @@ export const connectAccount = address => {
     const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
     return attach(bin, { address: r_ok.contractAddress, creation_block: r_ok.blockNumber }); };
 
-  return { deploy, attach, address }; };
+  return { deploy, attach, networkAccount: address }; };
 
 export const newTestAccount = async (startingBalance) => {
   const [ prefunder ] = await web3.eth.personal.getAccounts();

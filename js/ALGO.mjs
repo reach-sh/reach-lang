@@ -2,6 +2,24 @@ import Web3 from 'web3';
 import algosdk from 'algosdk';
 import * as nodeAssert from 'assert';
 
+// networkAccount[ALGO] = {
+//   addr: string
+//   sk: Uint8Array(64)
+// }
+
+// ctc[ALGO] = {
+//   address: string
+//   appId: confirmedTxn.TransactionResults.CreatedAppIndex; // ?
+//   creationRound: int // bigint?
+//   logic_sig: LogicSig
+//
+//   // internal fields
+//   // * not required to call acc.attach(bin, ctc)
+//   // * required by backend
+//   sendrecv: function
+//   recv: function
+// }
+
 // Shared/copied code begins
 
 const DEBUG = true;
@@ -64,7 +82,6 @@ export const le    = (a, b) => toBN(a).lte(toBN(b));
 export const lt    = (a, b) => toBN(a).lt( toBN(b));
 
 // end Shared/copied code
-
 
 // Common interface exports
 
@@ -250,7 +267,7 @@ export const connectAccount = async thisAcc => {
           rec_res.didTimeout = true;
           return rec_res; } } };
 
-    return { sendrecv, recv, address: thisAcc.addr }; };
+    return { ...ctc, sendrecv, recv }; };
 
   const deploy = async (bin) => {
     debug(`${shad}: deploy`);
@@ -290,7 +307,7 @@ export const connectAccount = async thisAcc => {
 
     return attach(bin, ctc); };
 
-  return { deploy, attach, address: thisAcc.addr }; };
+  return { deploy, attach, networkAccount: thisAcc }; };
 
 const getBalanceAt = async (addr, round) => {
   void(round);
