@@ -2,8 +2,6 @@ module Reach.VerifySMT where
 
 -- XXX clean up function names and params to not refer to z3
 
---- Maybe use Language.SMTLib2 in future
-
 import Control.Loop
 import Control.Monad
 import Control.Monad.Extra
@@ -22,10 +20,16 @@ import Reach.AST
 import Reach.EmbeddedFiles
 import Reach.Pretty ()
 import Reach.Util
-import SimpleSMT hiding (not)
+import SimpleSMT hiding (not) --- Maybe use Language.SMTLib2 in future
 import System.Exit
 import System.IO
 import Text.Read (readMaybe)
+
+--- FIXME decide on fixed bitvectors
+
+-- | bv == True means "use BitVector 256", False means "use Int"
+bv :: Bool
+bv = False
 
 {- Collect Types of IL variables -}
 
@@ -84,16 +88,35 @@ clanns (IL_Continue _ _) = mempty
 
 {- Z3 Printing -}
 
+uint256_sort :: SExpr
+uint256_sort = case bv of
+  True -> List [Atom "_", Atom "BitVec", Atom "256"]
+  False -> Atom "Int"
+
+uint256_zero :: SExpr
+uint256_zero = case bv of
+  True -> List [Atom "_", Atom "bv0", Atom "256"]
+  -- Atom "#x0000000000000000000000000000000000000000000000000000000000000000"
+  False -> Atom "0"
+
+uint256_le :: SExpr -> SExpr -> SExpr
+uint256_le lhs rhs = z3CPrim 0 PLE [lhs, rhs]
+
+uint256_sub :: SExpr -> SExpr -> SExpr
+uint256_sub lhs rhs = z3CPrim 0 SUB [lhs, rhs]
+
+uint256_add :: SExpr -> SExpr -> SExpr
+uint256_add lhs rhs = z3CPrim 0 ADD [lhs, rhs]
+
 z3_sortof_bt :: BaseType -> SExpr
---- FIXME switch to fixed bitvectors
-z3_sortof_bt BT_UInt256 = Atom "Int"
+z3_sortof_bt BT_UInt256 = uint256_sort
 z3_sortof_bt BT_Bool = Atom "Bool"
 z3_sortof_bt BT_Bytes = Atom "Bytes"
 z3_sortof_bt BT_Address = Atom "Address"
 
 z3_sortof :: LType -> SExpr
 z3_sortof (LT_BT bt) = z3_sortof_bt bt
-z3_sortof (LT_FixedArray bt _hm) = List [Atom "Array", z3_sortof_bt bt, Atom "Int"]
+z3_sortof (LT_FixedArray bt _hm) = List [Atom "Array", z3_sortof_bt bt, uint256_sort]
 
 z3Apply :: String -> [SExpr] -> SExpr
 z3Apply f args = List (Atom f : args)
@@ -228,14 +251,29 @@ parse_list_val [Atom "bytes-literal", Atom s2] = return s2
 parse_list_val sexprs@[Atom "ite", _, _, _] = return $ show sexprs -- XXX prettier display?
 parse_list_val sexprs = fail $ "Don't know how to parse as value: " <> show sexprs
 
+parse_ty :: SExpr -> IO String
+parse_ty ty = return $ showsSExpr ty "" -- eh...
+
+parse_val :: SExpr -> IO String
+parse_val (Atom v) = return v
+parse_val (List sexprs) = parse_list_val sexprs
+
 parse_define :: SExpr -> IO (Maybe Z3Define)
-parse_define (List (Atom "define-fun" : Atom name : List args : Atom ty : Atom val : [])) =
-  return $ Just $ Z3Define name (not $ null args) ty val
-parse_define (List (Atom "define-fun" : Atom name : List args : Atom ty : List val : [])) =
-  Just . Z3Define name (not $ null args) ty <$> parse_list_val val
+-- parse_define (List (Atom "define-fun" : Atom name : List args : Atom ty : Atom val : [])) =
+--   return $ Just $ Z3Define name (not $ null args) ty val
+-- parse_define (List (Atom "define-fun" : Atom name : List args : Atom ty : List val : [])) =
+--   Just . Z3Define name (not $ null args) ty <$> parse_list_val val
+parse_define (List (Atom "define-fun" : Atom name : List args : tySExpr : valSExpr : [])) = do
+  ty <- parse_ty tySExpr
+  val <- parse_val valSExpr
+  let hasArgs = not $ null args
+  return $ Just $ Z3Define name hasArgs ty val
 parse_define (List (Atom "declare-sort" : _)) = return Nothing
 parse_define (List (Atom "declare-datatypes" : _)) = return Nothing
 parse_define e = fail $ "invalid define-fun " <> show e
+
+parse_list_ty :: SExpr -> IO String
+parse_list_ty = error "not implemented"
 
 parse_model :: SExpr -> IO Z3Model
 parse_model (List (Atom "model" : sexprs)) =
@@ -535,7 +573,7 @@ z3_declare z3 v bt = do
 z3_assert_declare_bt :: Solver -> SExpr -> BaseType -> IO ()
 z3_assert_declare_bt z3 vs bt =
   case bt of
-    BT_UInt256 -> assert z3 (z3Apply "<=" [Atom "0", vs])
+    BT_UInt256 -> assert z3 (uint256_le uint256_zero vs)
     _ -> mempty
 
 z3_assert_declare :: Solver -> SExpr -> LType -> IO ()
@@ -586,8 +624,41 @@ z3_assert_chk z3 h e = do
 
  -}
 
+z3CPrimBv :: Int -> C_Prim -> [SExpr] -> SExpr
+z3CPrimBv cbi = \case
+  ADD -> app "bvadd"
+  SUB -> app "bvsub"
+  MUL -> app "bvmul"
+  DIV -> app "bvudiv"
+  MOD -> app "bvumod"
+  PLT -> app "bvult"
+  PLE -> app "bvule"
+  PEQ -> app "="
+  PGE -> app "bvuge"
+  PGT -> app "bvugt"
+  LSH -> app "bvshl"
+  RSH -> app "bvlshr" --- unsigned (logical) shift right
+  BAND -> app "bvand" -- "XXX Z3 doesn't support BAND"
+  BIOR -> app "bvor" -- impossible "XXX Z3 doesn't support BIOR"
+  BXOR -> app "bvxor" -- impossible "XXX Z3 doesn't support BXOR"
+  IF_THEN_ELSE -> app "ite"
+  BYTES_EQ -> app "="
+  BALANCE -> \case
+    [] -> z3CTCBalanceRef cbi
+    _ -> impossible "XXX BALANCE with nonempty [SExpr]"
+  TXN_VALUE -> \case
+    [] -> z3TxnValueRef cbi
+    _ -> impossible "XXX TXN_VALUE with nonempty [SExpr]"
+  where
+    app n = z3Apply n
+
 z3CPrim :: Int -> C_Prim -> [SExpr] -> SExpr
-z3CPrim cbi cp =
+z3CPrim = case bv of
+  True -> z3CPrimBv
+  False -> z3CPrimInt
+
+z3CPrimInt :: Int -> C_Prim -> [SExpr] -> SExpr
+z3CPrimInt cbi cp =
   case cp of
     ADD -> app "+"
     SUB -> app "-"
@@ -656,7 +727,13 @@ instance Monoid VerifyResult where
   mempty = VR 0 0
 
 emit_z3_con :: Constant -> SExpr
-emit_z3_con (Con_I i) = Atom $ show i
+emit_z3_con (Con_I i) = case bv of
+  True ->
+    List
+      [ List [Atom "_", Atom "int2bv", Atom "256"]
+      , Atom (show i)
+      ]
+  False -> Atom $ show i
 emit_z3_con (Con_B True) = Atom "true"
 emit_z3_con (Con_B False) = Atom "false"
 emit_z3_con (Con_BS bs) = z3Apply "bytes-literal" [Atom (show $ crc32 bs)]
@@ -703,6 +780,9 @@ z3DigestCombine primed ys =
       where
         s = case z3_sortof bt of
           Atom a -> a
+          -- This is a bit of a lie but the lie is consistent
+          -- with the naming of toBytes_Int
+          List [Atom "_", Atom "BitVec", Atom "256"] -> "Int"
           _ -> error "Expected an Atom" -- XXX
     toBytes (IL_Con _ c) = "toBytes_" ++ s
       where
@@ -716,8 +796,8 @@ z3_stmt :: Show rolet => Show a => Solver -> AssnMem a -> AnnMap a -> Bool -> ro
 z3_stmt z3 mem anns honest r primed cbi how =
   case how of
     IL_Transfer h _who amount -> do
-      vr <- z3_verify1 z3 mem anns (honest, r, TBalanceSufficient, h) (z3Apply "<=" [amountt, cbit])
-      z3_define z3 mem h cb' (LT_BT BT_UInt256) (z3Apply "-" [cbit, amountt])
+      vr <- z3_verify1 z3 mem anns (honest, r, TBalanceSufficient, h) (uint256_le amountt cbit)
+      z3_define z3 mem h cb' (LT_BT BT_UInt256) (uint256_sub cbit amountt)
       return (cbi', vr)
       where
         cbi' = cbi + 1
@@ -771,7 +851,7 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
   void $ z3VarAssign z3 mem top_ann cb0 zero
   meta_iter Nothing VC_Top it_top
   where
-    zero = emit_z3_con (Con_I 0)
+    zero = uint256_zero -- emit_z3_con (Con_I 0)
     cb0 = z3CTCBalance 0
     meta_iter :: Maybe Int -> VerifyCtxt a -> ILTail a -> IO VerifyResult
     meta_iter m_prev_cbi ctxt it = do
@@ -872,7 +952,7 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
               iter primed cbi ctxt tt
           notimeout = do
             z3_declare z3 pvv (LT_BT BT_UInt256)
-            z3_define z3 mem h cb'v (LT_BT BT_UInt256) (z3Apply "+" [cbr, pvr])
+            z3_define z3 mem h cb'v (LT_BT BT_UInt256) (uint256_add cbr pvr)
             case honest of
               True -> z3_assert_eq_chk z3 mem h pvv amountt
               False -> z3_assert_chk z3 h thisc
@@ -883,7 +963,7 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
           amountt = emit_z3_arg primed amount
           pvv = z3TxnValue cbi'
           pvr = z3TxnValueRef cbi'
-          thisc = z3Apply "<=" [zero, pvr]
+          thisc = uint256_le uint256_zero pvr
       IL_FromConsensus _ kt -> iter primed cbi ctxt kt
       IL_While x loopvs initas untilt invt bodyt kt -> do
         vr_body <- meta_iter (Just cbi) (VC_WhileBody_AssumeNotUntil loopvs invt bodyt ctxt) untilt
@@ -898,7 +978,9 @@ z3_it_top z3 mem anns it_top (honest, me) = inNewScope z3 $ do
             impossible $ "VerifyZ3 IL_Continue must only occur inside While"
 
 z3StdLib :: String
-z3StdLib = BS.unpack z3_runtime_smt2
+z3StdLib = BS.unpack $ case bv of
+  True -> z3_runtime_bt_smt2
+  False -> z3_runtime_smt2
 
 _verify_z3 :: Show a => Solver -> ILProgram a -> IO ExitCode
 _verify_z3 z3 tp = do
