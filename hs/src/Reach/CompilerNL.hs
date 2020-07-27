@@ -1662,6 +1662,7 @@ type LLRets = M.Map Int DLVar
 lin_ss :: (LLRets -> DLStmt -> a -> a) -> LLRets -> DLStmts -> a -> a
 lin_ss lin_s rets ss k = foldr (lin_s rets) k ss
 
+--- XXX Too much duplication in these
 data LLLocal
   = LLL_LocalStop
   | LLL_Let SrcLoc DLVar DLExpr LLLocal
@@ -1677,8 +1678,8 @@ lin_local_s rets s k =
     DLS_Let at dv de -> LLL_Let at dv de k
     DLS_Claim at f ct da -> LLL_Claim at f ct da k
     DLS_If at ca ts fs -> LLL_If at ca t' f'
-      where t' = lin_ss lin_local_s rets ts LLL_LocalStop
-            f' = lin_ss lin_local_s rets fs LLL_LocalStop
+      where t' = iters rets ts LLL_LocalStop
+            f' = iters rets fs LLL_LocalStop
     DLS_Transfer{} ->
       impossible $ "local cannot transfer"
     DLS_Return at ret sv ->
@@ -1686,9 +1687,9 @@ lin_local_s rets s k =
         Nothing -> k
         Just dv -> LLL_Set at dv da k
           where (_,da) = typeOf at sv
-    DLS_Prompt _ (Left _) ss -> lin_ss lin_local_s rets ss k
+    DLS_Prompt _ (Left _) ss -> iters rets ss k
     DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
-      LLL_Var at dv $ lin_ss lin_local_s rets' ss k
+      LLL_Var at dv $ iters rets' ss k
       where rets' = M.insert ret dv rets
     DLS_Only{} ->
       impossible $ "local cannot only"
@@ -1696,9 +1697,60 @@ lin_local_s rets s k =
       impossible $ "local cannot consensus"
     DLS_FromConsensus{} ->
       impossible $ "local cannot from consensus"
+  where iters = lin_ss lin_local_s
 
 lin_local :: DLStmts -> LLLocal
 lin_local ss = lin_ss lin_local_s mempty ss LLL_LocalStop
+
+data LLConsensus
+  = LLC_ConStop
+  | LLC_Let SrcLoc DLVar DLExpr LLConsensus
+  | LLC_Var SrcLoc DLVar LLConsensus
+  | LLC_Set SrcLoc DLVar DLArg LLConsensus
+  | LLC_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLConsensus
+  | LLC_LocalIf SrcLoc DLArg LLConsensus LLConsensus LLConsensus
+  | LLC_If SrcLoc DLArg LLConsensus LLConsensus
+  | LLC_Transfer SrcLoc SLPart DLArg LLConsensus
+  | LLC_FromConsensus SrcLoc LLStep
+  deriving (Eq, Show)
+
+lin_con_s :: (DLStmts -> LLStep) -> LLRets -> DLStmt -> LLConsensus -> LLConsensus
+lin_con_s back rets s k =
+  case s of
+    DLS_Let at dv de -> LLC_Let at dv de k
+    DLS_Claim at f ct da -> LLC_Claim at f ct da k
+    DLS_If at ca ts fs ->
+      case stmt_local s of
+        True ->
+          LLC_LocalIf at ca t' f' k
+          where t' = iters rets ts LLC_ConStop
+                f' = iters rets fs LLC_ConStop
+        False ->
+          LLC_If at ca t' f'
+          where t' = iters rets ts k
+                f' = iters rets fs k
+    DLS_Transfer at who aa -> LLC_Transfer at who aa k
+    DLS_Return at ret sv ->
+      case M.lookup ret rets of
+        Nothing -> k
+        Just dv -> LLC_Set at dv da k
+          where (_,da) = typeOf at sv
+    DLS_Prompt _ (Left _) ss -> iters rets ss k
+    DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
+      LLC_Var at dv $ iters rets' ss k
+      where rets' = M.insert ret dv rets
+    DLS_Only{} -> impossible $ "consensus cannot only"
+    DLS_ToConsensus{} -> impossible $ "consensus cannot toconsensus"
+    DLS_FromConsensus at cons ->
+      case k of
+        LLC_ConStop ->
+          LLC_FromConsensus at $ back cons
+        _ ->
+          impossible $ "consensus cannot fromconsensus w/ non-empty k"
+  where iters = lin_ss (lin_con_s back)
+
+lin_con :: (DLStmts -> LLStep) -> DLStmts -> LLConsensus
+lin_con back ss = lin_ss (lin_con_s back) mempty ss LLC_ConStop
 
 data LLStep
   = LLS_Stop DLArg
@@ -1710,10 +1762,7 @@ data LLStep
   | LLS_LocalIf SrcLoc DLArg LLStep LLStep LLStep
   | LLS_If SrcLoc DLArg LLStep LLStep
   | LLS_Only SrcLoc SLPart LLLocal LLStep
-  --- XXX New category for LLConsensus
-  | LLS_Transfer SrcLoc SLPart DLArg LLStep
-  | LLS_ToConsensus SrcLoc SLPart [DLVar] LLStep LLStep
-  | LLS_FromConsensus SrcLoc LLStep
+  | LLS_ToConsensus SrcLoc SLPart [DLVar] LLConsensus
   deriving (Eq, Show)
 
 lin_step_s :: LLRets -> DLStmt -> LLStep -> LLStep
@@ -1725,30 +1774,31 @@ lin_step_s rets s k =
       case stmt_local s of
         True ->
           LLS_LocalIf at ca t' f' k
-          where t' = lin_ss lin_step_s rets ts LLS_LocalStop
-                f' = lin_ss lin_step_s rets fs LLS_LocalStop
+          where t' = iters rets ts LLS_LocalStop
+                f' = iters rets fs LLS_LocalStop
         False ->
           LLS_If at ca t' f'
-          where t' = lin_ss lin_step_s rets ts k
-                f' = lin_ss lin_step_s rets fs k
-    DLS_Transfer at who aa -> LLS_Transfer at who aa k
+          where t' = iters rets ts k
+                f' = iters rets fs k
+    DLS_Transfer{} -> impossible $ "step cannot transfer"
     DLS_Return at ret sv ->
       case M.lookup ret rets of
         Nothing -> k
         Just dv -> LLS_Set at dv da k
           where (_,da) = typeOf at sv
-    DLS_Prompt _ (Left _) ss -> lin_ss lin_step_s rets ss k
+    DLS_Prompt _ (Left _) ss -> iters rets ss k
     DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
-      LLS_Var at dv $ lin_ss lin_step_s rets' ss k
+      LLS_Var at dv $ iters rets' ss k
       where rets' = M.insert ret dv rets
     DLS_Only at who ss ->
       LLS_Only at who ls k
       where ls = lin_local ss
     DLS_ToConsensus at who msg cons ->
-      LLS_ToConsensus at who msg cons' k
-      where cons' = lin_ss lin_step_s rets cons LLS_LocalStop
-    DLS_FromConsensus at cons ->
-      LLS_FromConsensus at $ lin_ss lin_step_s rets cons k
+      LLS_ToConsensus at who msg cons'
+      where cons' = lin_con back cons
+            back more = iters rets more k
+    DLS_FromConsensus{} -> impossible $ "step cannot fromconsensus"
+  where iters = lin_ss lin_step_s
 
 linearize :: DLStmts -> DLArg -> LLStep
 linearize ss da = lin_ss lin_step_s mempty ss (LLS_Stop da)
@@ -1887,6 +1937,26 @@ render_local l =
   where help d k = render_dl d <> hardline <> render_local k
         ns x = render_nest $ render_local x
 
+render_con :: LLConsensus -> Doc a
+render_con s =
+  case s of
+    LLC_ConStop -> mempty
+    LLC_Let at dv de k -> help (DLS_Let at dv de) k
+    LLC_Var _at dv k -> "var" <+> render_dv dv <> semi <> hardline <> render_con k
+    LLC_Set _at dv da k -> render_dv dv <+> "=" <+> render_da da <> semi <> hardline <> render_con k
+    LLC_Claim at f ct a k -> help (DLS_Claim at f ct a) k
+    LLC_LocalIf _at ca t f k -> do_if ca t f <> hardline <> render_con k
+    LLC_If _at ca t f -> do_if ca t f
+    LLC_Transfer at who da k -> help (DLS_Transfer at who da) k
+    LLC_FromConsensus _at k ->
+      "commit()" <> semi <> hardline <> render_step k
+  where help d k = render_dl d <> hardline <> render_con k
+        ns = render_nest
+        do_if ca t f =
+          "if" <+> render_da ca <+> "then"
+          <+> ns (render_con t) <> hardline <> "else"
+          <+> ns (render_con f) <> semi
+
 render_step :: LLStep -> Doc a
 render_step s =
   case s of
@@ -1896,18 +1966,13 @@ render_step s =
     LLS_Var _at dv k -> "var" <+> render_dv dv <> semi <> hardline <> render_step k
     LLS_Set _at dv da k -> render_dv dv <+> "=" <+> render_da da <> semi <> hardline <> render_step k
     LLS_Claim at f ct a k -> help (DLS_Claim at f ct a) k
+    LLS_LocalIf _at ca t f k -> do_if ca t f <> hardline <> render_step k
     LLS_If _at ca t f -> do_if ca t f
-    LLS_LocalIf _at ca t f k ->
-      do_if ca t f <> hardline <> render_step k
     LLS_Only _at who onlys k ->
       "only" <> parens (render_sp who) <+> ns (render_local onlys) <> semi <> hardline <> render_step k
-    LLS_Transfer at who da k -> help (DLS_Transfer at who da) k
-    LLS_ToConsensus _at who vs cons k ->
+    LLS_ToConsensus _at who vs cons ->
       "publish" <> parens (render_sp who) <> parens (hsep $ punctuate comma $ map render_dv vs)
-      <> ns (render_step cons)
-      <> hardline <> render_step k
-    LLS_FromConsensus _at k ->
-      "commit()" <> semi <> hardline <> render_step k
+      <> ns (render_con cons)
   where help d k = render_dl d <> hardline <> render_step k
         ns = render_nest
         do_if ca t f =
