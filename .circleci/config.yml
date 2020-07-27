@@ -60,11 +60,11 @@ jobs:
 
       - setup_remote_docker
       - run:
-          name: build and test js
-          command: (cd js && make build test)
-      - run:
           name: build ethereum-devnet
           command: (cd scripts/ethereum-devnet && make build)
+      - run:
+          name: build and test js
+          command: (cd js && make build test)
       - run:
           name: rebuild examples
           command: (cd examples && make clean-all build-all)
