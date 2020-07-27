@@ -356,8 +356,7 @@ data DLArg
   deriving (Eq, Show)
 
 data DLExpr
-  = DLE_Arg SrcLoc DLArg
-  | DLE_PrimOp SrcLoc PrimOp [DLArg]
+  = DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_Interact SrcLoc String [DLArg]
   | DLE_Digest SrcLoc [DLArg]
@@ -366,7 +365,6 @@ data DLExpr
 expr_pure :: DLExpr -> Bool
 expr_pure e =
   case e of
-    DLE_Arg{} -> True
     DLE_PrimOp{} -> True
     DLE_ArrayRef{} -> True
     DLE_Interact{} -> False
@@ -387,12 +385,15 @@ data ClaimType
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
   | DLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
+  --- XXX Record whether it is pure or local in the statement and
+  --- track in monad results.
   | DLS_If SrcLoc DLArg DLStmts DLStmts
   | DLS_Transfer SrcLoc SLPart DLArg
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_ToConsensus SrcLoc SLPart [DLVar]
+  | DLS_ToConsensus SrcLoc SLPart [DLVar] DLStmts
+  | DLS_FromConsensus SrcLoc DLStmts
   deriving (Eq, Show)
 
 stmt_pure :: DLStmt -> Bool
@@ -401,16 +402,33 @@ stmt_pure s =
     DLS_Let _ _ e -> expr_pure e
     DLS_Claim {} -> False
     DLS_If _ _ x y -> stmts_pure x && stmts_pure y
-    DLS_Transfer {} -> False
-    DLS_Return {} -> False
-    DLS_Prompt {} -> True
+    DLS_Transfer{} -> False
+    DLS_Return{} -> False
+    DLS_Prompt _ _ ss -> stmts_pure ss
     DLS_Only _ _ ss -> stmts_pure ss
-    DLS_ToConsensus {} -> False
+    DLS_ToConsensus{} -> False
+    DLS_FromConsensus _ ss -> stmts_pure ss
+
+stmt_local :: DLStmt -> Bool
+stmt_local s =
+  case s of
+    DLS_Let{} -> True
+    DLS_Claim{} -> True
+    DLS_If _ _ x y -> stmts_local x && stmts_local y
+    DLS_Transfer{} -> True
+    DLS_Return{} -> True
+    DLS_Prompt _ _ ss -> stmts_local ss
+    DLS_Only _ _ ss -> stmts_local ss
+    DLS_ToConsensus{} -> False
+    DLS_FromConsensus _ ss -> stmts_local ss
 
 type DLStmts = Seq.Seq DLStmt
 
 stmts_pure :: Foldable f => f DLStmt -> Bool
 stmts_pure fs = getAll $ foldMap (All . stmt_pure) fs
+
+stmts_local :: Foldable f => f DLStmt -> Bool
+stmts_local fs = getAll $ foldMap (All . stmt_local) fs
 
 -- General compiler utilities
 tp :: JSAnnot -> Maybe TokenPosn
@@ -1474,11 +1492,14 @@ evalStmt ctxt at env ss =
                        False -> env_merge to_at old msg_env)
                   penvs
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep penvs'})
-          let lifts' = elifts <> (return $ DLS_ToConsensus to_at who tmsg)
-          keepLifts lifts' $ evalStmt ctxt_cstep at_after env' ks
+          SLRes conlifts cr <- evalStmt ctxt_cstep at_after env' ks
+          let lifts' = elifts <> (return $ DLS_ToConsensus to_at who tmsg conlifts)
+          return $ SLRes lifts' cr
         (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
           let ctxt_step = (ctxt {ctxt_mode = SLC_Step penvs})
-          keepLifts elifts $ evalStmt ctxt_step at_after env ks
+          SLRes steplifts cr <- evalStmt ctxt_step at_after env ks
+          let lifts' = elifts <> (return $ DLS_FromConsensus at steplifts)
+          return $ SLRes lifts' cr
         _ ->
           case typeOf at_after ev of
             (T_Null, _) -> keepLifts elifts $ evalStmt ctxt at_after env ks
@@ -1636,86 +1657,101 @@ evalLibs mods = foldrM evalLib mempty mods
 
 --- Linearizer
 
-class LL a where
-  ll_Let :: SrcLoc -> DLVar -> DLExpr -> a -> a
-  ll_Claim :: SrcLoc -> [SLCtxtFrame] -> ClaimType -> DLArg -> a -> a
-  ll_Transfer :: SrcLoc -> SLPart -> DLArg -> a -> a
-  ll_If :: SrcLoc -> DLArg -> a -> a -> a
-  ll_Only :: SrcLoc -> SLPart -> LLLocal -> a -> a
-  ll_ToConsensus :: SrcLoc -> SLPart -> [DLVar] -> a -> a
+type LLRets = M.Map Int DLVar
 
-type LLRets a = M.Map Int (SrcLoc -> SLVal -> a)
-
-lin_s :: LL a => LLRets a -> DLStmt -> a -> a
-lin_s rets s k =
-  case s of
-    DLS_Let at dv de -> ll_Let at dv de k
-    DLS_Claim at f ct da -> ll_Claim at f ct da k
-    DLS_If at ca ts fs -> ll_If at ca t' f'
-      where t' = lin_ss rets ts k
-            f' = lin_ss rets fs k
-    DLS_Transfer at who aa -> ll_Transfer at who aa k
-    DLS_Return at ret sv ->
-      case M.lookup ret rets of
-        Nothing -> k
-        Just rk -> rk at sv
-    DLS_Prompt _ (Left _) ss -> lin_ss rets ss k
-    DLS_Prompt at (Right dv) ss ->
-      lin_ss rets' ss k
-      where rets' = M.insert ret rk rets
-            DLVar _ _ _ ret = dv
-            rk at' sv =
-              ll_Let at dv de k
-              where de = DLE_Arg at' da
-                    (_, da) = typeOf at' sv
-    DLS_Only at who ss ->
-      ll_Only at who ls k
-      where ls = lin_local ss
-    DLS_ToConsensus at who msg ->
-      ll_ToConsensus at who msg k
-
-lin_ss :: LL a => LLRets a -> DLStmts -> a -> a
-lin_ss rets ss k = foldr (lin_s rets) k ss
+lin_ss :: (LLRets -> DLStmt -> a -> a) -> LLRets -> DLStmts -> a -> a
+lin_ss lin_s rets ss k = foldr (lin_s rets) k ss
 
 data LLLocal
   = LLL_LocalStop
   | LLL_Let SrcLoc DLVar DLExpr LLLocal
+  | LLL_Var SrcLoc DLVar LLLocal
+  | LLL_Set SrcLoc DLVar DLArg LLLocal
   | LLL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLLocal
   | LLL_If SrcLoc DLArg LLLocal LLLocal
   deriving (Eq, Show)
 
-instance LL LLLocal where
-  ll_Let = LLL_Let
-  ll_Claim = LLL_Claim
-  ll_If = LLL_If
-  ll_Only = impossible "local cannot only"
-  ll_Transfer = impossible "local cannot transfer"
-  ll_ToConsensus = impossible "local cannot toconsensus"
+lin_local_s :: LLRets -> DLStmt -> LLLocal -> LLLocal
+lin_local_s rets s k =
+  case s of
+    DLS_Let at dv de -> LLL_Let at dv de k
+    DLS_Claim at f ct da -> LLL_Claim at f ct da k
+    DLS_If at ca ts fs -> LLL_If at ca t' f'
+      where t' = lin_ss lin_local_s rets ts LLL_LocalStop
+            f' = lin_ss lin_local_s rets fs LLL_LocalStop
+    DLS_Transfer{} ->
+      impossible $ "local cannot transfer"
+    DLS_Return at ret sv ->
+      case M.lookup ret rets of
+        Nothing -> k
+        Just dv -> LLL_Set at dv da k
+          where (_,da) = typeOf at sv
+    DLS_Prompt _ (Left _) ss -> lin_ss lin_local_s rets ss k
+    DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
+      LLL_Var at dv $ lin_ss lin_local_s rets' ss k
+      where rets' = M.insert ret dv rets
+    DLS_Only{} ->
+      impossible $ "local cannot only"
+    DLS_ToConsensus{} ->
+      impossible $ "local cannot consensus"
+    DLS_FromConsensus{} ->
+      impossible $ "local cannot from consensus"
 
 lin_local :: DLStmts -> LLLocal
-lin_local ss = lin_ss mempty ss LLL_LocalStop
+lin_local ss = lin_ss lin_local_s mempty ss LLL_LocalStop
 
 data LLStep
-  = LLS_Stop
+  = LLS_Stop DLArg
+  | LLS_LocalStop
   | LLS_Let SrcLoc DLVar DLExpr LLStep
+  | LLS_Var SrcLoc DLVar LLStep
+  | LLS_Set SrcLoc DLVar DLArg LLStep
   | LLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLStep
+  | LLS_LocalIf SrcLoc DLArg LLStep LLStep LLStep
   | LLS_If SrcLoc DLArg LLStep LLStep
   | LLS_Only SrcLoc SLPart LLLocal LLStep
-  --- XXX New category for LLStep
+  --- XXX New category for LLConsensus
   | LLS_Transfer SrcLoc SLPart DLArg LLStep
-  | LLS_ToConsensus SrcLoc SLPart [DLVar] LLStep
+  | LLS_ToConsensus SrcLoc SLPart [DLVar] LLStep LLStep
+  | LLS_FromConsensus SrcLoc LLStep
   deriving (Eq, Show)
 
-instance LL LLStep where
-  ll_Let = LLS_Let
-  ll_Claim = LLS_Claim
-  ll_If = LLS_If
-  ll_Only = LLS_Only
-  ll_Transfer = LLS_Transfer
-  ll_ToConsensus = LLS_ToConsensus
+lin_step_s :: LLRets -> DLStmt -> LLStep -> LLStep
+lin_step_s rets s k =
+  case s of
+    DLS_Let at dv de -> LLS_Let at dv de k
+    DLS_Claim at f ct da -> LLS_Claim at f ct da k
+    DLS_If at ca ts fs ->
+      case stmt_local s of
+        True ->
+          LLS_LocalIf at ca t' f' k
+          where t' = lin_ss lin_step_s rets ts LLS_LocalStop
+                f' = lin_ss lin_step_s rets fs LLS_LocalStop
+        False ->
+          LLS_If at ca t' f'
+          where t' = lin_ss lin_step_s rets ts k
+                f' = lin_ss lin_step_s rets fs k
+    DLS_Transfer at who aa -> LLS_Transfer at who aa k
+    DLS_Return at ret sv ->
+      case M.lookup ret rets of
+        Nothing -> k
+        Just dv -> LLS_Set at dv da k
+          where (_,da) = typeOf at sv
+    DLS_Prompt _ (Left _) ss -> lin_ss lin_step_s rets ss k
+    DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
+      LLS_Var at dv $ lin_ss lin_step_s rets' ss k
+      where rets' = M.insert ret dv rets
+    DLS_Only at who ss ->
+      LLS_Only at who ls k
+      where ls = lin_local ss
+    DLS_ToConsensus at who msg cons ->
+      LLS_ToConsensus at who msg cons' k
+      where cons' = lin_ss lin_step_s rets cons LLS_LocalStop
+    DLS_FromConsensus at cons ->
+      LLS_FromConsensus at $ lin_ss lin_step_s rets cons k
 
-linearize :: DLStmts -> LLStep
-linearize ss = lin_ss mempty ss LLS_Stop
+linearize :: DLStmts -> DLArg -> LLStep
+linearize ss da = lin_ss lin_step_s mempty ss (LLS_Stop da)
 
 --- Compiler integration
 makeInteract :: SrcLoc -> SLEnv -> SLVal
@@ -1739,12 +1775,12 @@ compileDApp topv =
                , ctxt_ret = Nothing
                , ctxt_stack = []
                })
-      SLRes final (SLAppRes _ _sv) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
+      SLRes final (SLAppRes _ sv) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
+      let (_, final_da) = typeOf at sv
       traceM $ ""
       traceM $ show $ render_dls final
       traceM $ ""
-      --- XXX pass in _sv?
-      let linear = linearize final
+      let linear = linearize final final_da
       traceM $ ""
       traceM $ show $ render_step linear
       traceM $ ""
@@ -1796,7 +1832,6 @@ render_das as = hcat $ punctuate comma $ map render_da as
 render_de :: DLExpr -> Doc a
 render_de e =
   case e of
-    DLE_Arg _ a -> render_da a
     DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
     DLE_ArrayRef _ a o -> render_da a <> brackets (render_da o)
     DLE_Interact _ m as -> "interact." <> viaShow m <> parens (render_das as)
@@ -1827,8 +1862,11 @@ render_dl d =
       "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
     DLS_Only _ who onlys ->
       "only" <> parens (render_sp who) <+> ns onlys <> semi
-    DLS_ToConsensus _ who vs ->
+    DLS_ToConsensus _ who vs cons ->
       "publish" <> parens (render_sp who) <> parens (hsep $ punctuate comma $ map render_dv vs)
+      <> ns cons
+    DLS_FromConsensus _ more ->
+      "commit()" <> semi <> hardline <> render_dls more
   where ns x = render_nest $ render_dls x
 
 render_dls :: DLStmts -> Doc a
@@ -1839,6 +1877,8 @@ render_local l =
   case l of
     LLL_LocalStop -> "next()" <> semi
     LLL_Let at dv de k -> help (DLS_Let at dv de) k
+    LLL_Var _at dv k -> "var" <+> render_dv dv <> semi <> hardline <> render_local k
+    LLL_Set _at dv da k -> render_dv dv <+> "=" <+> render_da da <> semi <> hardline <> render_local k
     LLL_Claim at f ct a k -> help (DLS_Claim at f ct a) k
     LLL_If _at ca t f ->
       "if" <+> render_da ca <+> "then"
@@ -1850,19 +1890,30 @@ render_local l =
 render_step :: LLStep -> Doc a
 render_step s =
   case s of
-    LLS_Stop -> "exit()" <> semi
+    LLS_Stop da -> "exit" <> parens (render_da da) <> semi
+    LLS_LocalStop -> mempty
     LLS_Let at dv de k -> help (DLS_Let at dv de) k
+    LLS_Var _at dv k -> "var" <+> render_dv dv <> semi <> hardline <> render_step k
+    LLS_Set _at dv da k -> render_dv dv <+> "=" <+> render_da da <> semi <> hardline <> render_step k
     LLS_Claim at f ct a k -> help (DLS_Claim at f ct a) k
-    LLS_If _at ca t f ->
-      "if" <+> render_da ca <+> "then"
-      <+> ns (render_step t) <> hardline <> "else"
-      <+> ns (render_step f) <> semi
+    LLS_If _at ca t f -> do_if ca t f
+    LLS_LocalIf _at ca t f k ->
+      do_if ca t f <> hardline <> render_step k
     LLS_Only _at who onlys k ->
       "only" <> parens (render_sp who) <+> ns (render_local onlys) <> semi <> hardline <> render_step k
     LLS_Transfer at who da k -> help (DLS_Transfer at who da) k
-    LLS_ToConsensus at who msg k -> help (DLS_ToConsensus at who msg) k
+    LLS_ToConsensus _at who vs cons k ->
+      "publish" <> parens (render_sp who) <> parens (hsep $ punctuate comma $ map render_dv vs)
+      <> ns (render_step cons)
+      <> hardline <> render_step k
+    LLS_FromConsensus _at k ->
+      "commit()" <> semi <> hardline <> render_step k
   where help d k = render_dl d <> hardline <> render_step k
         ns = render_nest
+        do_if ca t f =
+          "if" <+> render_da ca <+> "then"
+          <+> ns (render_step t) <> hardline <> "else"
+          <+> ns (render_step f) <> semi
 
 -- Main entry point
 compileNL :: CompilerOpts -> IO ()
