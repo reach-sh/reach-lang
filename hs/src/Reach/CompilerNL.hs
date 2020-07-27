@@ -356,7 +356,8 @@ data DLArg
   deriving (Eq, Show)
 
 data DLExpr
-  = DLE_PrimOp SrcLoc PrimOp [DLArg]
+  = DLE_Arg SrcLoc DLArg
+  | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_Interact SrcLoc String [DLArg]
   | DLE_Digest SrcLoc [DLArg]
@@ -365,10 +366,11 @@ data DLExpr
 expr_pure :: DLExpr -> Bool
 expr_pure e =
   case e of
-    DLE_PrimOp _ _ _ -> True
-    DLE_ArrayRef _ _ _ -> True
-    DLE_Interact _ _ _ -> False
-    DLE_Digest _ _ -> True
+    DLE_Arg{} -> True
+    DLE_PrimOp{} -> True
+    DLE_ArrayRef{} -> True
+    DLE_Interact{} -> False
+    DLE_Digest{} -> True
 
 data ClaimType
   = CT_Assert --- Verified on all paths
@@ -1632,6 +1634,90 @@ evalLib (src, body) libm = do
 evalLibs :: [SLMod] -> ST s SLLibs
 evalLibs mods = foldrM evalLib mempty mods
 
+--- Linearizer
+
+class LL a where
+  ll_Let :: SrcLoc -> DLVar -> DLExpr -> a -> a
+  ll_Claim :: SrcLoc -> [SLCtxtFrame] -> ClaimType -> DLArg -> a -> a
+  ll_Transfer :: SrcLoc -> SLPart -> DLArg -> a -> a
+  ll_If :: SrcLoc -> DLArg -> a -> a -> a
+  ll_Only :: SrcLoc -> SLPart -> LLLocal -> a -> a
+  ll_ToConsensus :: SrcLoc -> SLPart -> [DLVar] -> a -> a
+
+type LLRets a = M.Map Int (SrcLoc -> SLVal -> a)
+
+lin_s :: LL a => LLRets a -> DLStmt -> a -> a
+lin_s rets s k =
+  case s of
+    DLS_Let at dv de -> ll_Let at dv de k
+    DLS_Claim at f ct da -> ll_Claim at f ct da k
+    DLS_If at ca ts fs -> ll_If at ca t' f'
+      where t' = lin_ss rets ts k
+            f' = lin_ss rets fs k
+    DLS_Transfer at who aa -> ll_Transfer at who aa k
+    DLS_Return at ret sv ->
+      case M.lookup ret rets of
+        Nothing -> k
+        Just rk -> rk at sv
+    DLS_Prompt _ (Left _) ss -> lin_ss rets ss k
+    DLS_Prompt at (Right dv) ss ->
+      lin_ss rets' ss k
+      where rets' = M.insert ret rk rets
+            DLVar _ _ _ ret = dv
+            rk at' sv =
+              ll_Let at dv de k
+              where de = DLE_Arg at' da
+                    (_, da) = typeOf at' sv
+    DLS_Only at who ss ->
+      ll_Only at who ls k
+      where ls = lin_local ss
+    DLS_ToConsensus at who msg ->
+      ll_ToConsensus at who msg k
+
+lin_ss :: LL a => LLRets a -> DLStmts -> a -> a
+lin_ss rets ss k = foldr (lin_s rets) k ss
+
+data LLLocal
+  = LLL_Stop
+  | LLL_Let SrcLoc DLVar DLExpr LLLocal
+  | LLL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLLocal
+  | LLL_If SrcLoc DLArg LLLocal LLLocal
+  deriving (Eq, Show)
+
+instance LL LLLocal where
+  ll_Let = LLL_Let
+  ll_Claim = LLL_Claim
+  ll_If = LLL_If
+  ll_Only = impossible "local cannot only"
+  ll_Transfer = impossible "local cannot transfer"
+  ll_ToConsensus = impossible "local cannot toconsensus"
+
+lin_local :: DLStmts -> LLLocal
+lin_local ss = lin_ss mempty ss LLL_Stop
+
+data LLStep
+  = LLS_Stop
+  | LLS_Let SrcLoc DLVar DLExpr LLStep
+  | LLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLStep
+  | LLS_If SrcLoc DLArg LLStep LLStep
+  | LLS_Only SrcLoc SLPart LLLocal LLStep
+  --- XXX New category for LLStep
+  | LLS_Transfer SrcLoc SLPart DLArg LLStep
+  | LLS_ToConsensus SrcLoc SLPart [DLVar] LLStep
+  deriving (Eq, Show)
+
+instance LL LLStep where
+  ll_Let = LLS_Let
+  ll_Claim = LLS_Claim
+  ll_If = LLS_If
+  ll_Only = LLS_Only
+  ll_Transfer = LLS_Transfer
+  ll_ToConsensus = LLS_ToConsensus
+
+linearize :: DLStmts -> LLStep
+linearize ss = lin_ss mempty ss LLS_Stop
+
+--- Compiler integration
 makeInteract :: SrcLoc -> SLEnv -> SLVal
 makeInteract at spec = SLV_Object at spec'
   where
@@ -1654,8 +1740,10 @@ compileDApp topv =
                , ctxt_stack = []
                })
       SLRes final (SLAppRes _ _sv) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
+      --- XXX pass in _sv?
+      let linear = linearize final
       traceM $ ""
-      traceM $ show $ render_dls final
+      traceM $ show $ render_step linear
       traceM $ ""
       expect_throw at' (Err_XXX $ "compileDApp after")
       where
@@ -1705,6 +1793,7 @@ render_das as = hcat $ punctuate comma $ map render_da as
 render_de :: DLExpr -> Doc a
 render_de e =
   case e of
+    DLE_Arg _ a -> render_da a
     DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
     DLE_ArrayRef _ a o -> render_da a <> brackets (render_da o)
     DLE_Interact _ m as -> "interact." <> viaShow m <> parens (render_das as)
@@ -1712,6 +1801,9 @@ render_de e =
 
 render_sp :: SLPart -> Doc a
 render_sp p = viaShow p
+
+render_nest :: Doc a -> Doc a
+render_nest inner = nest 2 $ braces ( hardline <> inner <> " " )
 
 render_dl :: DLStmt -> Doc a
 render_dl d =
@@ -1734,10 +1826,40 @@ render_dl d =
       "only" <> parens (render_sp who) <+> ns onlys <> semi
     DLS_ToConsensus _ who vs ->
       "publish" <> parens (render_sp who) <> parens (hsep $ punctuate comma $ map render_dv vs)
-  where ns ss = nest 2 $ braces ( hardline <> render_dls ss <> " " )
+  where ns x = render_nest $ render_dls x
 
 render_dls :: DLStmts -> Doc a
 render_dls ss = concatWith (surround hardline) $ fmap render_dl ss
+
+render_local :: LLLocal -> Doc a
+render_local l =
+  case l of
+    LLL_Stop -> "stop" <> semi
+    LLL_Let at dv de k -> help (DLS_Let at dv de) k
+    LLL_Claim at f ct a k -> help (DLS_Claim at f ct a) k
+    LLL_If _at ca t f ->
+      "if" <+> render_da ca <+> "then"
+      <+> ns t <> hardline <> "else"
+      <+> ns f <> semi
+  where help d k = render_dl d <> hardline <> render_local k
+        ns x = render_nest $ render_local x
+
+render_step :: LLStep -> Doc a
+render_step s =
+  case s of
+    LLS_Stop -> "stop" <> semi
+    LLS_Let at dv de k -> help (DLS_Let at dv de) k
+    LLS_Claim at f ct a k -> help (DLS_Claim at f ct a) k
+    LLS_If _at ca t f ->
+      "if" <+> render_da ca <+> "then"
+      <+> ns (render_step t) <> hardline <> "else"
+      <+> ns (render_step f) <> semi
+    LLS_Only _at who onlys k ->
+      "only" <> parens (render_sp who) <+> ns (render_local onlys) <> semi <> hardline <> render_step k
+    LLS_Transfer at who da k -> help (DLS_Transfer at who da) k
+    LLS_ToConsensus at who msg k -> help (DLS_ToConsensus at who msg) k
+  where help d k = render_dl d <> hardline <> render_step k
+        ns = render_nest
 
 -- Main entry point
 compileNL :: CompilerOpts -> IO ()
