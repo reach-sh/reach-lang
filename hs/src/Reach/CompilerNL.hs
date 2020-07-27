@@ -1678,7 +1678,7 @@ lin_ss :: LL a => LLRets a -> DLStmts -> a -> a
 lin_ss rets ss k = foldr (lin_s rets) k ss
 
 data LLLocal
-  = LLL_Stop
+  = LLL_LocalStop
   | LLL_Let SrcLoc DLVar DLExpr LLLocal
   | LLL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLLocal
   | LLL_If SrcLoc DLArg LLLocal LLLocal
@@ -1693,7 +1693,7 @@ instance LL LLLocal where
   ll_ToConsensus = impossible "local cannot toconsensus"
 
 lin_local :: DLStmts -> LLLocal
-lin_local ss = lin_ss mempty ss LLL_Stop
+lin_local ss = lin_ss mempty ss LLL_LocalStop
 
 data LLStep
   = LLS_Stop
@@ -1740,6 +1740,9 @@ compileDApp topv =
                , ctxt_stack = []
                })
       SLRes final (SLAppRes _ _sv) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
+      traceM $ ""
+      traceM $ show $ render_dls final
+      traceM $ ""
       --- XXX pass in _sv?
       let linear = linearize final
       traceM $ ""
@@ -1834,7 +1837,7 @@ render_dls ss = concatWith (surround hardline) $ fmap render_dl ss
 render_local :: LLLocal -> Doc a
 render_local l =
   case l of
-    LLL_Stop -> "stop" <> semi
+    LLL_LocalStop -> "next()" <> semi
     LLL_Let at dv de k -> help (DLS_Let at dv de) k
     LLL_Claim at f ct a k -> help (DLS_Claim at f ct a) k
     LLL_If _at ca t f ->
@@ -1847,7 +1850,7 @@ render_local l =
 render_step :: LLStep -> Doc a
 render_step s =
   case s of
-    LLS_Stop -> "stop" <> semi
+    LLS_Stop -> "exit()" <> semi
     LLS_Let at dv de k -> help (DLS_Let at dv de) k
     LLS_Claim at f ct a k -> help (DLS_Claim at f ct a) k
     LLS_If _at ca t f ->
