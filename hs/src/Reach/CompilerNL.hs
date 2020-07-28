@@ -1946,7 +1946,8 @@ render_da a =
     DLA_Var v -> render_dv v
     DLA_Con c -> viaShow c
     DLA_Array as -> brackets $ render_das as
-    DLA_Obj _env -> "XXX obj"
+    DLA_Obj env -> braces $ concatWith (surround (comma <> hardline)) $ map render_p $ M.toList env
+        where render_p (k, oa) = pretty k <+> ":" <+> render_da oa
 
 render_das :: [DLArg] -> Doc a
 render_das as = hcat $ punctuate comma $ map render_da as
