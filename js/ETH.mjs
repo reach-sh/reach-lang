@@ -5,6 +5,7 @@ import ethers          from 'ethers';
 import Timeout         from 'await-timeout';
 import * as util       from 'util';
 import * as waitPort   from 'wait-port';
+import * as http       from 'http';
 void(util);
 
 // networkAccount[ETH] = string  // account address str
@@ -93,6 +94,39 @@ export const toWeiBN = (a,b) => toBN(toWei(a, b));
 
 // end Unique helpers
 
+// private helpers
+
+// Note: clients might not want this
+process.on('unhandledRejection', error => {
+  console.log("Unhandled Rejection detected!!!!!");
+  console.log(error);
+  process.exit(1);
+});
+
+const sleep = async (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const flaky = async (f) => {
+  const max_tries = 3;
+  const sleep_between_tries = 1000; // ms
+  let failed_attempts = 0;
+  while (true) {
+    try {
+      // await doHealthcheck();
+      return await f();
+    } catch(e) {
+      failed_attempts++;
+      if (failed_attempts >= max_tries) {
+        throw e;
+      } else {
+        debug(`FAILED ATTEMPT # ${failed_attempts}...`);
+        await sleep(sleep_between_tries);
+        debug('trying again...');
+      }
+    }
+  }
+};
+
+// end private helpers
 
 // Common interface exports
 
@@ -130,23 +164,90 @@ function extractTarget(target) {
 /* END Hack */
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
-(async () => {
+const portP = (async () => {
   const { protocol, host, port, path } = extractTarget(uri);
   const params = {
     protocol, host, port, path
     , 'output': 'silent'
     , 'timeout': 1000*60*1 };
-  await waitPort.default(params); })();
+  return await waitPort.default(params);
+})();
+
+// Note: doesn't even retry, just returns the first attempt
+const doHealthcheck = async () => {
+  return new Promise((resolve, reject) => {
+    const { protocol, host, port, path } = extractTarget(uri);
+    const data = JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'web3_clientVersion',
+      params: [],
+      id: 67
+    });
+    debug("Sending health check request...");
+    const opts = {
+      hostname: host,
+      port: port,
+      path: '/',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': data.length,
+      }
+    };
+    const req = http.request(opts, (res) => {
+      debug(`statusCode: ${res.statusCode}`);
+      res.on('data', (d) => {
+        debug("rpc health check succeeded");
+        if (DEBUG) {
+          process.stdout.write(d);
+        }
+        resolve({res, d});
+      });
+    });
+    req.on('error', (e) => {
+      console.log("rpc health check failed");
+      console.log(e);
+      reject(e);
+    });
+    req.write(data);
+    debug("attached all the handlers...");
+    req.end();
+    debug("req.end...");
+  });
+};
+
+const devnetP = (async () => {
+  await portP;
+  debug("Got portP, waiting for health");
+  return await doHealthcheck();
+})();
+
+const web3P = (async () => {
+  debug("awaiting devnetP");
+  await devnetP;
+  debug("got devnetP");
+  const web3 = new Web3(new Web3.providers.HttpProvider(uri));
+  return web3;
+})();
+
+const etherspP = (async () => {
+  const web3 = await web3P;
+  const ethersp = new ethers.providers.Web3Provider(web3.currentProvider);
+  ethersp.pollingInterval = 500; // ms
+  return ethersp;
+})();
 
 // XXX expose setProvider
-const web3 = new Web3(new Web3.providers.HttpProvider(uri));
-const ethersp = new ethers.providers.Web3Provider(web3.currentProvider);
-ethersp.pollingInterval = 500; // ms
-const ethersBlockOnceP = () =>
-      new Promise((resolve) => ethersp.once('block', (n) => resolve(n)));
 
-export const balanceOf = async acc =>
-  toBN(await web3.eth.getBalance(acc.networkAccount));
+const ethersBlockOnceP = async () => {
+  const ethersp = await etherspP;
+  return new Promise((resolve) => ethersp.once('block', (n) => resolve(n)));
+};
+
+export const balanceOf = async acc => {
+  const web3 = await web3P;
+  return toBN(await web3.eth.getBalance(acc.networkAccount));
+};
 
 // XXX dead code?
 // `t` is a type name in string form; `v` is the value to cast
@@ -154,28 +255,32 @@ export const balanceOf = async acc =>
 //   ethers.utils.defaultAbiCoder.encode([t], [v]);
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
-export const transfer = async (to, from, value) =>
+export const transfer = async (to, from, value) => {
+  const web3 = await web3P;
   await web3.eth.sendTransaction({ to, from, value });
+};
 
 // Helpers for sendrecv and recv
 
-const rejectInvalidReceiptFor =
-      txHash =>
-      r =>
+const rejectInvalidReceiptFor = async (txHash, r) =>
       new Promise((resolve, reject) =>
-                  !r                           ? reject(`No receipt for txHash: ${txHash}`)
+                  !r                             ? reject(`No receipt for txHash: ${txHash}`)
                   : r.transactionHash !== txHash ? reject(`Bad txHash; ${txHash} !== ${r.transactionHash}`)
                   : !r.status                    ? reject(`Transaction: ${txHash} was reverted by EVM\n${r}`)
                   : resolve(r));
 
-const fetchAndRejectInvalidReceiptFor = txHash =>
-      web3.eth.getTransactionReceipt(txHash)
-      .then(rejectInvalidReceiptFor(txHash));
+const fetchAndRejectInvalidReceiptFor = async txHash => {
+  const web3 = await web3P;
+  const r = await web3.eth.getTransactionReceipt(txHash);
+  return await rejectInvalidReceiptFor(txHash, r);
+};
 
-export const connectAccount = address => {
+export const connectAccount = async address => {
+  const web3 = await web3P;
+  const ethersp = await etherspP;
   const shad = address.substring(2,6);
 
-  const attach = (bin, ctc) => {
+  const attach = async (bin, ctc) => {
     const ctc_address = ctc.address;
     const creation_block = ctc.creation_block;
     const ABI = JSON.parse(bin.ETH.ABI);
@@ -298,22 +403,44 @@ export const connectAccount = address => {
 
   // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
   const deploy = async (bin) => {
+    const web3 = await web3P;
     const data = bin.ETH.Bytecode;
     const gas = await web3.eth.estimateGas({ data });
     // FIXME have some way to have a link to the reach code
     const r = await web3.eth.sendTransaction({ data, gas, from: address });
-    const r_ok = await rejectInvalidReceiptFor(r.transactionHash)(r);
-    return attach(bin, { address: r_ok.contractAddress, creation_block: r_ok.blockNumber }); };
+    const r_ok = await rejectInvalidReceiptFor(r.transactionHash, r);
+    return await attach(bin, { address: r_ok.contractAddress, creation_block: r_ok.blockNumber }); };
 
   return { deploy, attach, networkAccount: address }; };
 
 export const newTestAccount = async (startingBalance) => {
+  debug("awaiting web3P");
+  const web3 = await web3P;
+  debug("got web3P");
+  debug("awaiting getAccounts");
   const [ prefunder ] = await web3.eth.personal.getAccounts();
+  debug(`got getAccounts: ${prefunder}`);
 
-  const to = await web3.eth.personal.newAccount('');
+  debug("awaiting newAccount");
+  const to = await flaky(async () => await web3.eth.personal.newAccount(''));
+  debug(`got newAccount: ${to}`);
 
-  if ( await web3.eth.personal.unlockAccount(to, '', 999999999) ) {
+  debug(`awaiting unlockAccount: ${to}`);
+  try {
+    const didUnlock = await flaky(async () => await web3.eth.personal.unlockAccount(to, '', 999999999));
+    if (!didUnlock) {
+      panic(`Couldn't unlock account ${to}! (but rpc was ok)`);
+    }
+    debug(`got unlockAccount: ${to}`);
+    debug(`awaiting transfer: ${to}`);
     await transfer(to, prefunder, startingBalance);
-    return connectAccount(to); }
-  else {
-    panic(`Couldn't unlock account ${to}!`); } };
+    debug("got transfer");
+    debug(`awaiting connectAccount: ${to}`);
+    const acc = await connectAccount(to);
+    debug(`got connectAccount: ${to}`);
+    return acc;
+  } catch(e) {
+    console.log(`Trouble with account ${to}`);
+    throw e;
+  };
+};

@@ -8,5 +8,5 @@ RUN npm install
 
 COPY . /app
 
-CMD npm run test && npm run algo && npm run demo
-# CMD npm run algo
+CMD npm run demo
+# CMD npm run test && npm run algo && npm run demo

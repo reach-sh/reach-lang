@@ -83,6 +83,15 @@ export const lt    = (a, b) => toBN(a).lt( toBN(b));
 
 // end Shared/copied code
 
+
+// Note: clients might not want this
+process.on('unhandledRejection', error => {
+  console.log("Unhandled Rejection detected!!!!!");
+  console.log(error);
+  process.exit(1);
+});
+
+
 // Common interface exports
 
 const token = process.env.ALGO_TOKEN || '88f05de47936c12a756a28012aba3a24c3d06c45acd27fdcadb2a08ba32dc658';
