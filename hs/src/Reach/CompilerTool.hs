@@ -1,6 +1,5 @@
 module Reach.CompilerTool where
 
-import Control.Monad.Except
 import qualified Filesystem.Path.CurrentOS as FP
 import Reach.Compiler
 import Reach.CompilerNL (compileNL)
@@ -35,5 +34,6 @@ makeCompilerOpts CompilerToolOpts {..} = do
 compilerToolMain :: CompilerToolOpts -> IO ()
 compilerToolMain ctool_opts@CompilerToolOpts {..} = do
   copts <- makeCompilerOpts ctool_opts
-  when (cto_expComp) (compileNL copts)
-  compile copts
+  case cto_expComp of
+    True -> compileNL copts
+    False -> compile copts

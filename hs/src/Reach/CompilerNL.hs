@@ -386,7 +386,7 @@ data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
   | DLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
   --- XXX Record whether it is pure or local in the statement and
-  --- track in monad results.
+  --- track in monad results to avoid quadratic behavior
   | DLS_If SrcLoc DLArg DLStmts DLStmts
   | DLS_Transfer SrcLoc SLPart DLArg
   | DLS_Return SrcLoc Int SLVal
@@ -447,7 +447,7 @@ srcloc_after_semi lab a sp at =
   where
     alab = "after " ++ lab
 
---- XXX Maybe this is dumb
+--- XXX Maybe it is dumb to have this abstraction
 data CompilerError s
   = Err_XXX String
   | Err_Apply_ArgCount Int Int
@@ -642,6 +642,7 @@ data SLCtxt s = SLCtxt
   , ctxt_ret :: Maybe Int
   , ctxt_must_ret :: Bool
   , ctxt_stack :: [SLCtxtFrame]
+  , ctxt_local_mname :: Maybe [SLVar]
   }
   deriving ()
 
@@ -657,6 +658,19 @@ data SLCtxtMode
   | SLC_LocalStep
   | SLC_ConsensusStep SLPartEnvs
   deriving (Eq, Show)
+
+ctxt_local_name :: SLCtxt s -> SLVar -> SLVar
+ctxt_local_name ctxt def =
+  case ctxt_local_mname ctxt of
+    Nothing -> def
+    Just [x] -> x ++ as
+    Just xs -> "one of " ++ show xs ++ as
+  where as = " (as " ++ def ++ ")"
+
+ctxt_local_name_set :: SLCtxt s -> [SLVar] -> SLCtxt s
+ctxt_local_name_set ctxt lhs_ns =
+  --- FIXME come up with a "reset" mechanism for this and embed in expr some places
+  ctxt { ctxt_local_mname = Just lhs_ns }
 
 ctxt_alloc :: SLCtxt s -> SrcLoc -> ST s Int
 ctxt_alloc ctxt at = do
@@ -760,7 +774,7 @@ typeOf at v =
     SLV_DLVar dv@(DLVar _ _ t _) -> (t, DLA_Var dv)
     SLV_Type _ -> none
     SLV_Participant _ _ _ -> none --- XXX get the address
-    SLV_Prim _ -> none --- XXX interacts may work
+    SLV_Prim _ -> none --- XXX an interact may be non-function typed
     SLV_Form _ -> none
   where
     none = expect_throw at $ Err_Type_None v
@@ -891,7 +905,6 @@ evalForm ctxt at _env f args =
     SLForm_Part_Only (SLV_Participant _ who _) ->
       case ctxt_mode ctxt of
         SLC_Step penvs -> do
-          --- XXX move to evalStmts
           let penv = penvs M.! who
           let ctxt_local = (ctxt {ctxt_mode = SLC_Local})
           SLRes elifts eargs <- evalExprs ctxt_local at penv args
@@ -961,7 +974,7 @@ evalPrimOp ctxt at _env p args =
     make_var = do
       traceM $ "calling make_var on " ++ show p ++ "(" ++ show args ++ ")"
       let (rng, dargs) = checkAndConvert at (primOpType p) args
-      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "prim" rng) (DLE_PrimOp at p dargs)
+      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "prim") rng) (DLE_PrimOp at p dargs)
       return $ SLRes lifts $ SLV_DLVar dv
 
 evalPrim :: SLCtxt s -> SrcLoc -> SLEnv -> SLPrimitive -> [SLVal] -> SLComp s SLVal
@@ -984,10 +997,10 @@ evalPrim ctxt at env p args =
           retV $ SLV_Array at' (enum_pred : map (SLV_Int at') [0 .. (i -1)])
           where
             at' = (srcloc_at "makeEnum" Nothing at)
-            --- FIXME This sucks... maybe parse an embed string? Would that suck less?
-            --- FIXME env is a weird choice here... really want stdlib_env
+            --- FIXME This sucks... maybe parse an embed string? Would that suck less?... probably want a custom primitive
+            --- FIXME also, env is a weird choice here... really want stdlib_env
             enum_pred = SLV_Clo at' fname ["x"] pbody env
-            fname = Nothing --- FIXME syntax-local-infer-name
+            fname = Just $ ctxt_local_name ctxt "makeEnum"
             pbody = JSBlock JSNoAnnot [(JSReturn JSNoAnnot (Just (JSExpressionBinary lhs (JSBinOpAnd JSNoAnnot) rhs)) JSSemiAuto)] JSNoAnnot
             lhs = (JSExpressionBinary (JSDecimal JSNoAnnot "0") (JSBinOpLe JSNoAnnot) (JSIdentifier JSNoAnnot "x"))
             rhs = (JSExpressionBinary (JSIdentifier JSNoAnnot "x") (JSBinOpLt JSNoAnnot) (JSDecimal JSNoAnnot (show i)))
@@ -1007,7 +1020,7 @@ evalPrim ctxt at env p args =
       case ctxt_mode ctxt of
         SLC_LocalStep -> do
           let (rng, dargs) = checkAndConvert at t args
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "interact" rng) (DLE_Interact at m dargs)
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at m dargs)
           return $ SLRes lifts $ SLV_DLVar dv
         cm ->
           expect_throw at (Err_Eval_IllegalContext cm "interact")
@@ -1025,10 +1038,9 @@ evalPrim ctxt at env p args =
     SLPrim_digest -> do
       let rng = T_UInt256
       let dargs = map snd $ map (typeOf at) args
-      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "digest" rng) (DLE_Digest at dargs)
+      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "digest") rng) (DLE_Digest at dargs)
       return $ SLRes lifts $ SLV_DLVar dv
     SLPrim_claim ct ->
-      --- XXX check ct vs context?
       return $ SLRes lifts $ SLV_Null at "claim"
       where
         darg =
@@ -1091,10 +1103,9 @@ evalApplyVals ctxt at env rator randvs =
         [] -> no_prompt $ SLV_Null body_at "clo app"
         [(_, x)] -> no_prompt $ x
         _ -> do
-          --- XXX maybe all the values are the same
+          --- FIXME if all the values are actually the same, then we can treat this as a noprompt
           let r_ty = typeMeets body_at $ map (\r -> (fst r, (fst (uncurry typeOf $ r)))) rs
-          --- XXX syntax local name
-          let dv = DLVar body_at "clo app" r_ty ret
+          let dv = DLVar body_at (ctxt_local_name ctxt "clo app") r_ty ret
           let lifts' = return $ DLS_Prompt body_at (Right dv) body_lifts
           return $ SLRes lifts' $ SLAppRes clo_env'' (SLV_DLVar dv)
     v ->
@@ -1217,8 +1228,7 @@ evalExpr ctxt at env e =
                 let (t_ty, tlifts') = add_ret t_at' tlifts tv
                 let (f_ty, flifts') = add_ret f_at' flifts fv
                 let ty = typeMeet at' (t_at', t_ty) (f_at', f_ty)
-                --- XXX syntax local name
-                let ans_dv = DLVar at' "clo app" ty ret
+                let ans_dv = DLVar at' (ctxt_local_name ctxt "clo app") ty ret
                 let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) tlifts' flifts'
                 let lifts' = return $ DLS_Prompt at' (Right ans_dv) body_lifts
                 return $ SLRes lifts' $ SLV_DLVar ans_dv
@@ -1228,7 +1238,7 @@ evalExpr ctxt at env e =
       retV $ SLV_Clo at' fname formals body env
       where
         at' = srcloc_jsa "arrow" a at
-        fname = Nothing --- FIXME syntax-local-infer-name
+        fname = Just $ ctxt_local_name ctxt "arrow"
         body = case bodys of
           JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
           _ -> JSBlock JSNoAnnot [bodys] JSNoAnnot
@@ -1239,7 +1249,7 @@ evalExpr ctxt at env e =
         at' = srcloc_jsa "function exp" a at
         fname =
           case name of
-            JSIdentNone -> Nothing --- FIXME syntax-local-infer-name
+            JSIdentNone -> Just $ ctxt_local_name ctxt "function"
             JSIdentName na _ -> expect_throw (srcloc_jsa "function name" na at') Err_Fun_NamesIllegal
         formals = parseJSFormals at' jsformals
     JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
@@ -1280,7 +1290,7 @@ evalExpr ctxt at env e =
       SLRes alifts arrv <- evalExpr ctxt at' env arr
       SLRes ilifts idxv <- evalExpr ctxt at' env idx
       let retRef t arr_dla idx_dla = do
-            (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' "ref" t) (DLE_ArrayRef at' arr_dla idx_dla)
+            (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' (ctxt_local_name ctxt "ref") t) (DLE_ArrayRef at' arr_dla idx_dla)
             let ansv = SLV_DLVar dv
             return $ SLRes (alifts <> ilifts <> lifts') ansv
       case idxv of
@@ -1330,34 +1340,39 @@ evalDecl ctxt at env decl =
   case decl of
     JSVarInitExpression lhs (JSVarInit va rhs) -> do
       let vat' = srcloc_jsa "var initializer" va at
-      SLRes rhs_lifts v <- evalExpr ctxt vat' env rhs
-      (lhs_lifts, env') <-
+      --- XXX ctxt_local_name_set
+      (lhs_ns, make_env) <-
         case lhs of
-          (JSIdentifier a x) ->
-            return $ (mempty, env_insert (srcloc_jsa "id" a at) x v env)
+          (JSIdentifier a x) -> do
+            let _make_env v = return (mempty, env_insert (srcloc_jsa "id" a at) x v env)
+            return ([x], _make_env)
           (JSArrayLiteral a xs _) -> do
-            (vs_lifts, vs) <-
-              case v of
-                SLV_Array _ x -> return (mempty, x)
-                SLV_DLVar dv@(DLVar _ _ (T_Array ts) _) -> do
-                  vs_liftsl_and_dvs <- zipWithM mk_ref ts [0 ..]
-                  let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
-                  let vs_lifts = mconcat vs_liftsl
-                  return (vs_lifts, dvs)
-                  where
-                    mk_ref t i = do
-                      let e = (DLE_ArrayRef vat' (DLA_Var dv) (DLA_Con (DLC_Int i)))
-                      (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' "array idx" t) e
-                      return $ (i_lifts, SLV_DLVar dvi)
-                _ ->
-                  expect_throw at' (Err_Decl_NotArray v)
-            let kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
-            return $ (vs_lifts, foldl' (env_insertp at') env kvs)
-            where
-              ks = map (jse_expect_id at') $ jsa_flatten xs
-              at' = srcloc_jsa "array" a at
+            let at' = srcloc_jsa "array" a at
+            let ks = map (jse_expect_id at') $ jsa_flatten xs
+            let _make_env v = do
+                  (vs_lifts, vs) <-
+                    case v of
+                      SLV_Array _ x -> return (mempty, x)
+                      SLV_DLVar dv@(DLVar _ _ (T_Array ts) _) -> do
+                        vs_liftsl_and_dvs <- zipWithM mk_ref ts [0 ..]
+                        let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
+                        let vs_lifts = mconcat vs_liftsl
+                        return (vs_lifts, dvs)
+                        where
+                          mk_ref t i = do
+                            let e = (DLE_ArrayRef vat' (DLA_Var dv) (DLA_Con (DLC_Int i)))
+                            (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' (ctxt_local_name ctxt "array idx") t) e
+                            return $ (i_lifts, SLV_DLVar dvi)
+                      _ ->
+                        expect_throw at' (Err_Decl_NotArray v)
+                  let kvs = zipEq at' Err_Decl_WrongArrayLength ks vs
+                  return $ (vs_lifts, foldl' (env_insertp at') env kvs)
+            return (ks, _make_env)
           _ ->
             expect_throw at (Err_DeclLHS_IllegalJS lhs)
+      let ctxt' = ctxt_local_name_set ctxt lhs_ns
+      SLRes rhs_lifts v <- evalExpr ctxt' vat' env rhs
+      (lhs_lifts, env') <- make_env v
       traceM $ "evalDecl: defining " ++ (show $ M.keys $ M.difference env' env) ++ " at " ++ show vat'
       return $ SLRes (rhs_lifts <> lhs_lifts) env'
     _ ->
@@ -1479,7 +1494,7 @@ evalStmt ctxt at env ss =
                       let val = env_lookup to_at var penv
                       let (t, _) = typeOf to_at val
                       x <- ctxt_alloc ctxt to_at
-                      return $ DLVar to_at "msg" t x
+                      return $ DLVar to_at (ctxt_local_name ctxt "msg") t x
                 tvs <- mapM mk msg
                 return $ (foldl' (env_insertp at_after) mempty $ zip msg $ map SLV_DLVar tvs, tvs)
           --- We go back to the original env from before the to-consensus step
@@ -1635,6 +1650,7 @@ evalLib (src, body) libm = do
            , ctxt_must_ret = False
            , ctxt_ret = Nothing
            , ctxt_stack = []
+           , ctxt_local_mname = Nothing
            })
   (SLRes flifts exenv) <- evalTopBody ctxt_top prev_at libm stdlib_env mt_env body'
   case flifts == mempty of
@@ -1811,7 +1827,9 @@ makeInteract at spec = SLV_Object at spec'
     wrap_ty k (SLV_Type t) = SLV_Prim $ SLPrim_interact at k t
     wrap_ty _ v = expect_throw at $ Err_DApp_InvalidInteract v
 
-compileDApp :: SLVal -> SLComp s ()
+type FinalResultXXX = ()
+
+compileDApp :: SLVal -> ST s FinalResultXXX
 compileDApp topv =
   case topv of
     SLV_Prim (SLPrim_DApp_Delay at [(SLV_Object _ _opts), (SLV_Array _ parts), clo] top_env) -> do
@@ -1824,6 +1842,7 @@ compileDApp topv =
                , ctxt_must_ret = False
                , ctxt_ret = Nothing
                , ctxt_stack = []
+               , ctxt_local_mname = Nothing
                })
       SLRes final (SLAppRes _ sv) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
       let (_, final_da) = typeOf at sv
@@ -1834,7 +1853,7 @@ compileDApp topv =
       traceM $ ""
       traceM $ show $ render_step linear
       traceM $ ""
-      expect_throw at' (Err_XXX $ "compileDApp after")
+      traceM $ "XXX Finish"
       where
         at' = srcloc_at "compileDApp" Nothing at
         penvs = M.fromList $ map make_penv partvs
@@ -1849,7 +1868,7 @@ compileDApp topv =
     _ ->
       expect_throw srcloc_top (Err_Top_NotDApp topv)
 
-compileBundle :: JSBundle -> SLVar -> DLStmts
+compileBundle :: JSBundle -> SLVar -> FinalResultXXX
 compileBundle (JSBundle mods) top = runST $ do
   libm <- evalLibs mods
   let exe_ex = libm M.! exe
@@ -1857,8 +1876,7 @@ compileBundle (JSBundle mods) top = runST $ do
         Just x -> x
         Nothing ->
           expect_throw srcloc_top (Err_Eval_UnboundId top $ M.keys exe_ex)
-  SLRes stmts () <- compileDApp topv
-  return stmts
+  compileDApp topv
   where
     exe = case mods of
       [] -> impossible $ "compileBundle: no files"
