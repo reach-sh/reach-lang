@@ -98,7 +98,7 @@ export const toWeiBN = (a,b) => toBN(toWei(a, b));
 
 // Note: clients might not want this
 process.on('unhandledRejection', error => {
-  console.log("Unhandled Rejection detected!!!!!");
+  console.log('Unhandled Rejection detected!!!!!');
   console.log(error);
   process.exit(1);
 });
@@ -113,7 +113,7 @@ const flaky = async (f) => {
     try {
       // await doHealthcheck();
       return await f();
-    } catch(e) {
+    } catch (e) {
       failed_attempts++;
       if (failed_attempts >= max_tries) {
         throw e;
@@ -176,14 +176,14 @@ const portP = (async () => {
 // Note: doesn't even retry, just returns the first attempt
 const doHealthcheck = async () => {
   return new Promise((resolve, reject) => {
-    const { protocol, host, port, path } = extractTarget(uri);
+    const { host, port } = extractTarget(uri);
     const data = JSON.stringify({
       jsonrpc: '2.0',
       method: 'web3_clientVersion',
       params: [],
       id: 67
     });
-    debug("Sending health check request...");
+    debug('Sending health check request...');
     const opts = {
       hostname: host,
       port: port,
@@ -197,7 +197,7 @@ const doHealthcheck = async () => {
     const req = http.request(opts, (res) => {
       debug(`statusCode: ${res.statusCode}`);
       res.on('data', (d) => {
-        debug("rpc health check succeeded");
+        debug('rpc health check succeeded');
         if (DEBUG) {
           process.stdout.write(d);
         }
@@ -205,27 +205,27 @@ const doHealthcheck = async () => {
       });
     });
     req.on('error', (e) => {
-      console.log("rpc health check failed");
+      console.log('rpc health check failed');
       console.log(e);
       reject(e);
     });
     req.write(data);
-    debug("attached all the handlers...");
+    debug('attached all the handlers...');
     req.end();
-    debug("req.end...");
+    debug('req.end...');
   });
 };
 
 const devnetP = (async () => {
   await portP;
-  debug("Got portP, waiting for health");
+  debug('Got portP, waiting for health');
   return await doHealthcheck();
 })();
 
 const web3P = (async () => {
-  debug("awaiting devnetP");
+  debug('awaiting devnetP');
   await devnetP;
-  debug("got devnetP");
+  debug('got devnetP');
   const web3 = new Web3(new Web3.providers.HttpProvider(uri));
   return web3;
 })();
@@ -414,14 +414,14 @@ export const connectAccount = async address => {
   return { deploy, attach, networkAccount: address }; };
 
 export const newTestAccount = async (startingBalance) => {
-  debug("awaiting web3P");
+  debug('awaiting web3P');
   const web3 = await web3P;
-  debug("got web3P");
-  debug("awaiting getAccounts");
+  debug('got web3P');
+  debug('awaiting getAccounts');
   const [ prefunder ] = await web3.eth.personal.getAccounts();
   debug(`got getAccounts: ${prefunder}`);
 
-  debug("awaiting newAccount");
+  debug('awaiting newAccount');
   const to = await flaky(async () => await web3.eth.personal.newAccount(''));
   debug(`got newAccount: ${to}`);
 
@@ -434,13 +434,13 @@ export const newTestAccount = async (startingBalance) => {
     debug(`got unlockAccount: ${to}`);
     debug(`awaiting transfer: ${to}`);
     await transfer(to, prefunder, startingBalance);
-    debug("got transfer");
+    debug('got transfer');
     debug(`awaiting connectAccount: ${to}`);
     const acc = await connectAccount(to);
     debug(`got connectAccount: ${to}`);
     return acc;
-  } catch(e) {
+  } catch (e) {
     console.log(`Trouble with account ${to}`);
     throw e;
-  };
+  }
 };
