@@ -401,7 +401,7 @@ data DLStmt
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_ToConsensus SrcLoc SLPart [DLVar] DLStmts
+  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] DLStmts
   | DLS_FromConsensus SrcLoc DLStmts
   deriving (Eq, Show)
 
@@ -937,9 +937,7 @@ evalForm ctxt at _env f args =
             Just TCM_Publish ->
               case mpub of
                 Nothing -> retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing (Just msg) mpay mtime
-                  where
-                    --- XXX check public?
-                    msg = map (jse_expect_id at) args
+                  where msg = map (jse_expect_id at) args
                 Just _ ->
                   expect_throw at $ Err_ToConsensus_Double TCM_Publish
             Just TCM_Pay ->
@@ -1515,17 +1513,24 @@ evalStmt ctxt at env ss =
         (SLC_Step penvs, SLV_Form (SLForm_Part_ToConsensus to_at who Nothing mmsg _XXX_mamt _XXX_mtime)) -> do
           let penv = penvs M.! who
           traceM $ "to_consensus from " ++ show who
-          (msg_env, tmsg) <-
+          (msg_env, tmsg_) <-
             case mmsg of
               Nothing -> return (mempty, [])
               Just msg -> do
                 let mk var = do
-                      let (_, val) = env_lookup to_at var penv
-                      let (t, _) = typeOf to_at val
+                      let val =
+                             case env_lookup to_at var penv of
+                               (Public, x) -> x
+                               (Secret, x) ->
+                                   expect_throw at $ Err_ExpectedPublic x
+                      let (t, da) = typeOf to_at val
+                      let m = case da of
+                                DLA_Var (DLVar _ v _ _) -> v
+                                _ -> "msg"
                       x <- ctxt_alloc ctxt to_at
-                      return $ DLVar to_at (ctxt_local_name ctxt "msg") t x
+                      return $ (da, DLVar to_at m t x)
                 tvs <- mapM mk msg
-                return $ (foldl' (env_insertp at_after) mempty $ zip msg $ map (public . SLV_DLVar) tvs, tvs)
+                return $ (foldl' (env_insertp at_after) mempty $ zip msg $ map (public . SLV_DLVar) $ map snd tvs, tvs)
           --- We go back to the original env from before the to-consensus step
           let env' = env_merge to_at env msg_env
           let penvs' =
@@ -1537,7 +1542,7 @@ evalStmt ctxt at env ss =
                   penvs
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep penvs'})
           SLRes conlifts cr <- evalStmt ctxt_cstep at_after env' ks
-          let lifts' = elifts <> (return $ DLS_ToConsensus to_at who tmsg conlifts)
+          let lifts' = elifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) conlifts)
           return $ SLRes lifts' cr
         (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
           let ctxt_step = (ctxt {ctxt_mode = SLC_Step penvs})
@@ -1817,7 +1822,7 @@ data LLStep
   | LLS_LocalIf SrcLoc DLArg LLStep LLStep LLStep
   | LLS_If SrcLoc DLArg LLStep LLStep
   | LLS_Only SrcLoc SLPart LLLocal LLStep
-  | LLS_ToConsensus SrcLoc SLPart [DLVar] LLConsensus
+  | LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] LLConsensus
   deriving (Eq, Show)
 
 lin_step_s :: LLRets -> DLStmt -> LLStep -> LLStep
@@ -1853,8 +1858,8 @@ lin_step_s rets s k =
       LLS_Only at who ls k
       where
         ls = lin_local ss
-    DLS_ToConsensus at who msg cons ->
-      LLS_ToConsensus at who msg cons'
+    DLS_ToConsensus at who as ms cons ->
+      LLS_ToConsensus at who as ms cons'
       where
         cons' = lin_con back cons
         back more = iters rets more k
@@ -1979,13 +1984,14 @@ render_dl d =
       "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
     DLS_Only _ who onlys ->
       "only" <> parens (render_sp who) <+> ns onlys <> semi
-    DLS_ToConsensus _ who vs cons ->
-      "publish" <> parens (render_sp who) <> parens (hsep $ punctuate comma $ map render_dv vs)
+    DLS_ToConsensus _ who as vs cons ->
+      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs) 
         <> ns cons
     DLS_FromConsensus _ more ->
       "commit()" <> semi <> hardline <> render_dls more
   where
     ns x = render_nest $ render_dls x
+    cm l = parens (hsep $ punctuate comma $ l)
 
 render_dls :: DLStmts -> Doc a
 render_dls ss = concatWith (surround hardline) $ fmap render_dl ss
@@ -2040,11 +2046,12 @@ render_step s =
     LLS_If _at ca t f -> do_if ca t f
     LLS_Only _at who onlys k ->
       "only" <> parens (render_sp who) <+> ns (render_local onlys) <> semi <> hardline <> render_step k
-    LLS_ToConsensus _at who vs cons ->
-      "publish" <> parens (render_sp who) <> parens (hsep $ punctuate comma $ map render_dv vs)
+    LLS_ToConsensus _at who as vs cons ->
+      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs)
         <> ns (render_con cons)
   where
     help d k = render_dl d <> hardline <> render_step k
+    cm l = parens (hsep $ punctuate comma $ l)
     ns = render_nest
     do_if ca t f =
       "if" <+> render_da ca <+> "then"
