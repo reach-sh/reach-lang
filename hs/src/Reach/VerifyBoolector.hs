@@ -4,7 +4,7 @@ import Reach.AST
 import Reach.VerifySMT
 import SimpleSMT
 
--- Note: known not to work.
+-- XXX: known not to work.
 -- - doesn't support unsat-cores
 -- - doesn't support declare-datatypes
 verify_boolector :: Show a => FilePath -> ILProgram a -> IO ()
