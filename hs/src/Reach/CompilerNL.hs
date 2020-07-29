@@ -139,8 +139,9 @@ secret x = (Secret, x)
 
 ensure_public :: SrcLoc -> [SLSVal] -> [SLVal]
 ensure_public at svs = map f svs
-    where f (Public, v) = v
-          f (Secret, v) = expect_throw at $ Err_ExpectedPublic v
+  where
+    f (Public, v) = v
+    f (Secret, v) = expect_throw at $ Err_ExpectedPublic v
 
 instance Semigroup SecurityLevel where
   Secret <> _ = Secret
@@ -172,7 +173,7 @@ data SLType
 
 typeMeet :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
 typeMeet top_at x@(_, xt) y@(_, yt) =
-  --- XXX Find meet of objects
+  --- FIXME Find meet of objects
   if xt == yt
     then xt
     else expect_throw top_at $ Err_TypeMeets_Mismatch top_at x y
@@ -217,8 +218,7 @@ data ToConsensusMode
 
 data SLForm
   = SLForm_Part_Only SLVal
-  | --- XXX Maybe should be DLVar
-    SLForm_Part_ToConsensus SrcLoc SLPart (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe SLVar) (Maybe SLVar)
+  | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (JSExpression, JSExpression))
   | SLForm_Part_OnlyAns SrcLoc SLPart SLEnv SLVal
   deriving (Eq, Show)
 
@@ -394,14 +394,14 @@ data ClaimType
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
   | DLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
-  | --- XXX Record whether it is pure or local in the statement and
+  | --- FIXME Record whether it is pure or local in the statement and
     --- track in monad results to avoid quadratic behavior
     DLS_If SrcLoc DLArg DLStmts DLStmts
   | DLS_Transfer SrcLoc SLPart DLArg
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] DLStmts
+  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (DLStmts, DLArg)) (Maybe (DLArg, DLStmts)) DLStmts
   | DLS_FromConsensus SrcLoc DLStmts
   deriving (Eq, Show)
 
@@ -456,7 +456,6 @@ srcloc_after_semi lab a sp at =
   where
     alab = "after " ++ lab
 
---- XXX Maybe it is dumb to have this abstraction
 data CompilerError s
   = Err_XXX String
   | Err_Apply_ArgCount Int Int
@@ -924,7 +923,6 @@ evalForm ctxt at _env f args =
             [(_, thunk)] -> do
               let ctxt_localstep = (ctxt {ctxt_mode = SLC_LocalStep})
               SLRes alifts (SLAppRes penv' (_, ans)) <- evalApplyVals ctxt_localstep at (impossible "Part_only expects clo") thunk []
-              traceM $ "penv' update = " ++ (show $ M.keys $ M.difference penv' penv)
               return $ SLRes (elifts <> alifts) $ public $ SLV_Form $ SLForm_Part_OnlyAns at who penv' ans
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "part.only"
@@ -937,13 +935,14 @@ evalForm ctxt at _env f args =
             Just TCM_Publish ->
               case mpub of
                 Nothing -> retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing (Just msg) mpay mtime
-                  where msg = map (jse_expect_id at) args
+                  where
+                    msg = map (jse_expect_id at) args
                 Just _ ->
                   expect_throw at $ Err_ToConsensus_Double TCM_Publish
             Just TCM_Pay ->
-              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing mpub (Just $ error "XXX TCM_Pay " ++ show args) mtime
+              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing mpub (Just one_arg) mtime
             Just TCM_Timeout ->
-              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing mpub mpay (Just $ error "XXX TCM_Time " ++ show args)
+              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who Nothing mpub mpay (Just two_args)
             Nothing ->
               expect_throw at $ Err_Eval_NotApplicable rator
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "toConsensus"
@@ -951,11 +950,17 @@ evalForm ctxt at _env f args =
     illegal_args = expect_throw at (Err_Form_InvalidArgs f args)
     rator = SLV_Form f
     retV v = return $ SLRes mempty v
+    one_arg = case args of
+      [x] -> x
+      _ -> illegal_args
+    two_args = case args of
+      [x, y] -> (x, y)
+      _ -> illegal_args
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLEnv -> PrimOp -> [SLSVal] -> SLComp s SLSVal
 evalPrimOp ctxt at _env p sargs =
   case p of
-    --- XXX Perhaps these should be sensitive to bit widths
+    --- FIXME These should be sensitive to bit widths
     CP ADD -> nn2n (+)
     CP SUB -> nn2n (-)
     CP MUL -> nn2n (*)
@@ -974,8 +979,8 @@ evalPrimOp ctxt at _env p sargs =
     args = map snd sargs
     lvl_ = mconcat $ map fst sargs
     lvl = case p of
-            RANDOM -> Secret
-            _ -> lvl_
+      RANDOM -> Secret
+      _ -> lvl_
     nn2b op =
       case args of
         [SLV_Int _ lhs, SLV_Int _ rhs] ->
@@ -1001,12 +1006,14 @@ evalPrim ctxt at env p sargs =
       case map snd sargs of
         [(SLV_Array _ dom_arr), (SLV_Type rng)] ->
           retV $ (lvl, SLV_Type $ T_Fun dom rng)
-          where lvl = mconcat $ map fst sargs
-                dom = map expect_ty dom_arr
+          where
+            lvl = mconcat $ map fst sargs
+            dom = map expect_ty dom_arr
         _ -> illegal_args
     SLPrim_Array ->
       retV $ (lvl, SLV_Type $ T_Array $ map expect_ty $ map snd sargs)
-      where lvl = mconcat $ map fst sargs
+      where
+        lvl = mconcat $ map fst sargs
     SLPrim_makeEnum ->
       case sargs of
         [(ilvl, SLV_Int _ i)] ->
@@ -1028,7 +1035,8 @@ evalPrim ctxt at env p sargs =
             [(SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _)] ->
               retV $ public $ SLV_Prim $ SLPrim_DApp_Delay at args env
             _ -> illegal_args
-          where args = map snd sargs
+          where
+            args = map snd sargs
         cm ->
           expect_throw at (Err_Eval_IllegalContext cm "DApp")
     SLPrim_DApp_Delay _ _ _ ->
@@ -1044,9 +1052,9 @@ evalPrim ctxt at env p sargs =
     SLPrim_declassify ->
       case sargs of
         [(lvl, val)] ->
-            case lvl of
-              Secret -> retV $ public $ val
-              Public -> expect_throw at $ Err_ExpectedPrivate val
+          case lvl of
+            Secret -> retV $ public $ val
+            Public -> expect_throw at $ Err_ExpectedPrivate val
         _ -> illegal_args
     SLPrim_commit ->
       case sargs of
@@ -1357,7 +1365,7 @@ evalExprs ctxt at env rands =
     (rand0 : randN) -> do
       SLRes lifts0 sval0 <- evalExpr ctxt at env rand0
       SLRes liftsN svalN <- evalExprs ctxt at env randN
-      return $ SLRes (lifts0 <> liftsN) (sval0:svalN)
+      return $ SLRes (lifts0 <> liftsN) (sval0 : svalN)
 
 evalDecl :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> SLComp s SLEnv
 evalDecl ctxt at env decl =
@@ -1396,7 +1404,6 @@ evalDecl ctxt at env decl =
       let ctxt' = ctxt_local_name_set ctxt lhs_ns
       SLRes rhs_lifts v <- evalExpr ctxt' vat' env rhs
       (lhs_lifts, env') <- make_env v
-      traceM $ "evalDecl: defining " ++ (show $ M.keys $ M.difference env' env) ++ " at " ++ show vat'
       return $ SLRes (rhs_lifts <> lhs_lifts) env'
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
@@ -1510,23 +1517,22 @@ evalStmt ctxt at env ss =
                 ctxt' = ctxt {ctxt_mode = SLC_Step $ M.insert who penv' penvs}
                 lifts' = return $ DLS_Only only_at who elifts
             _ -> expect_throw at (Err_Block_NotNull ev)
-        (SLC_Step penvs, SLV_Form (SLForm_Part_ToConsensus to_at who Nothing mmsg _XXX_mamt _XXX_mtime)) -> do
+        (SLC_Step penvs, SLV_Form (SLForm_Part_ToConsensus to_at who Nothing mmsg mamt _XXX_mtime)) -> do
           let penv = penvs M.! who
-          traceM $ "to_consensus from " ++ show who
           (msg_env, tmsg_) <-
             case mmsg of
               Nothing -> return (mempty, [])
               Just msg -> do
                 let mk var = do
                       let val =
-                             case env_lookup to_at var penv of
-                               (Public, x) -> x
-                               (Secret, x) ->
-                                   expect_throw at $ Err_ExpectedPublic x
+                            case env_lookup to_at var penv of
+                              (Public, x) -> x
+                              (Secret, x) ->
+                                expect_throw at $ Err_ExpectedPublic x
                       let (t, da) = typeOf to_at val
                       let m = case da of
-                                DLA_Var (DLVar _ v _ _) -> v
-                                _ -> "msg"
+                            DLA_Var (DLVar _ v _ _) -> v
+                            _ -> "msg"
                       x <- ctxt_alloc ctxt to_at
                       return $ (da, DLVar to_at m t x)
                 tvs <- mapM mk msg
@@ -1540,9 +1546,24 @@ evalStmt ctxt at env ss =
                        True -> old
                        False -> env_merge to_at old msg_env)
                   penvs
+          mamt' <-
+            case mamt of
+              Nothing -> return Nothing
+              Just amte -> do
+                SLRes amt_lifts (alvl, amt_sv) <- evalExpr ctxt at env' amte
+                case alvl of
+                  Secret -> expect_throw at $ Err_ExpectedPublic amt_sv
+                  Public -> do
+                    let (amt_ty, amt_da) = typeOf at amt_sv
+                    case amt_ty of
+                      T_UInt256 ->
+                        return $ Just (amt_lifts, amt_da)
+                      _ ->
+                        expect_throw at $ Err_Type_Mismatch T_UInt256 amt_ty amt_sv
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep penvs'})
           SLRes conlifts cr <- evalStmt ctxt_cstep at_after env' ks
-          let lifts' = elifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) conlifts)
+          let mtime' = Nothing --- XXX
+          let lifts' = elifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) mamt' mtime' conlifts)
           return $ SLRes lifts' cr
         (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
           let ctxt_step = (ctxt {ctxt_mode = SLC_Step penvs})
@@ -1822,7 +1843,7 @@ data LLStep
   | LLS_LocalIf SrcLoc DLArg LLStep LLStep LLStep
   | LLS_If SrcLoc DLArg LLStep LLStep
   | LLS_Only SrcLoc SLPart LLLocal LLStep
-  | LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] LLConsensus
+  | LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) LLConsensus
   deriving (Eq, Show)
 
 lin_step_s :: LLRets -> DLStmt -> LLStep -> LLStep
@@ -1858,11 +1879,14 @@ lin_step_s rets s k =
       LLS_Only at who ls k
       where
         ls = lin_local ss
-    DLS_ToConsensus at who as ms cons ->
-      LLS_ToConsensus at who as ms cons'
+    DLS_ToConsensus at who as ms mamt _XXX_mtime cons ->
+      LLS_ToConsensus at who as ms mamt' cons'
       where
         cons' = lin_con back cons
         back more = iters rets more k
+        mamt' = do
+          (amt_ss, amt_da) <- mamt
+          return $ (lin_local amt_ss, amt_da)
     DLS_FromConsensus {} -> impossible $ "step cannot fromconsensus"
   where
     iters = lin_ss lin_step_s
@@ -1915,7 +1939,7 @@ compileDApp topv =
         make_part v =
           case v of
             SLV_Array p_at [SLV_Bytes _ bs, SLV_Object iat io] ->
-                secret $ SLV_Participant p_at bs (makeInteract iat io)
+              secret $ SLV_Participant p_at bs (makeInteract iat io)
             _ -> expect_throw at' (Err_DApp_InvalidPartSpec v)
     _ ->
       expect_throw srcloc_top (Err_Top_NotDApp topv)
@@ -1947,7 +1971,8 @@ render_da a =
     DLA_Con c -> viaShow c
     DLA_Array as -> brackets $ render_das as
     DLA_Obj env -> braces $ concatWith (surround (comma <> hardline)) $ map render_p $ M.toList env
-        where render_p (k, oa) = pretty k <+> ":" <+> render_da oa
+      where
+        render_p (k, oa) = pretty k <+> ":" <+> render_da oa
 
 render_das :: [DLArg] -> Doc a
 render_das as = hcat $ punctuate comma $ map render_da as
@@ -1985,9 +2010,14 @@ render_dl d =
       "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
     DLS_Only _ who onlys ->
       "only" <> parens (render_sp who) <+> ns onlys <> semi
-    DLS_ToConsensus _ who as vs cons ->
-      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs) 
+    DLS_ToConsensus _ who as vs mamt _XXX_mtime cons ->
+      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs) <> amtp
         <> ns cons
+      where amtp =
+              case mamt of
+                Nothing -> ""
+                Just (ts, ta) ->
+                  ".pay" <> parens (render_nest $ (render_dls ts) <> hardline <> "return" <+> render_da ta <> semi)
     DLS_FromConsensus _ more ->
       "commit()" <> semi <> hardline <> render_dls more
   where
@@ -2047,9 +2077,13 @@ render_step s =
     LLS_If _at ca t f -> do_if ca t f
     LLS_Only _at who onlys k ->
       "only" <> parens (render_sp who) <+> ns (render_local onlys) <> semi <> hardline <> render_step k
-    LLS_ToConsensus _at who as vs cons ->
-      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs)
-        <> ns (render_con cons)
+    LLS_ToConsensus _at who as vs mamt cons ->
+      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs) <> amtp <> ns (render_con cons)
+      where amtp =
+              case mamt of
+                Nothing -> ""
+                Just (ts, ta) ->
+                  ".pay" <> parens (render_nest $ (render_local ts) <> hardline <> "return" <+> render_da ta <> semi)
   where
     help d k = render_dl d <> hardline <> render_step k
     cm l = parens (hsep $ punctuate comma $ l)
