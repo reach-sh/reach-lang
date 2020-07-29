@@ -337,4 +337,4 @@ export const newTestAccount = async (startingBalance) => {
   showBalance('before', acc);
   await transfer(acc, FAUCET, startingBalance);
   showBalance('after', acc);
-  return connectAccount(acc); };
+  return await connectAccount(acc); };

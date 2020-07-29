@@ -7,6 +7,9 @@ render:
 	@rm -f ../minted-$(STYLE)-style.css
 	@cp -f minted.css ../docs/
 
+clean:
+	rm -rf ../docs/
+
 check:
 	ag --ignore Makefile xxx
 
