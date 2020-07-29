@@ -18,9 +18,7 @@
   "author": "reach.sh",
   "license": "Apache-2.0",
   "scripts": {
-    "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
-    "test": "node --experimental-modules test.mjs",
-    "demo": "node --experimental-modules index.mjs",
-    "algo": "node --experimental-modules algo.mjs"
+    "predemo": "eslint --ignore-path .gitignore --ext .mjs .",
+    "demo": "node --experimental-modules index.mjs"
   }
 }

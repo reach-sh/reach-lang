@@ -1,15 +1,25 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
+import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
 import * as RPS from './build/rps.mjs';
 import * as RPSW from './build/rps_while.mjs';
 
 ( async () => {
-
-  const wagerInEth  = '1.5';
-  const escrowInEth = '0.15';
-
-  const wagerInWei = stdlib.toWeiBN(wagerInEth, 'ether');
-  const escrowInWei = stdlib.toWeiBN(escrowInEth, 'ether');
-  const startingBalance = stdlib.toWeiBN('100', 'ether');
+  const proto = process.argv[2];
+  const { stdlib, startingBalance, escrowAmount, wagerAmount, unit } = (
+    proto == 'ETH' ? {
+      stdlib: stdlib_eth,
+      startingBalance: stdlib_eth.toWeiBN('100', 'ether'),
+      escrowAmount: stdlib_eth.toWeiBN('0.15', 'ether'),
+      wagerAmount: stdlib_eth.toWeiBN('1.5', 'ether'),
+      unit: 'wei',
+    } : proto == 'ALGO' ? {
+      stdlib: stdlib_algo,
+      startingBalance: 1 * 1000000,
+      escrowAmount: 25,
+      wagerAmount: 15,
+      unit: 'microAlgo',
+    } : process.exit(1)
+  );
 
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
@@ -20,10 +30,10 @@ import * as RPSW from './build/rps_while.mjs';
 
     const interactWith = (name) => {
       const log = (msg, ret = true) => () => { console.log(`${msg}`); return ret; };
-      return { getWagerAmount: log(`(local: ${name} returns wagerAmount ${wagerInWei}.)`, wagerInWei),
-               getEscrowAmount: log(`(local: ${name} returns escrowAmount ${escrowInWei}.)`, escrowInWei),
-               params: log(`${name} publishes parameters of game: wager of ${wagerInEth}ETH and escrow of ${escrowInEth}ETH.`),
-               accepts: (wagerAmount, escrowAmount) => log(`${name} accepts the terms: wager of ${wagerAmount}WEI and escrow of ${escrowAmount}WEI.`)(),
+      return { getWagerAmount: log(`(local: ${name} returns wagerAmount ${wagerAmount} ${unit}.)`, wagerAmount),
+               getEscrowAmount: log(`(local: ${name} returns escrowAmount ${escrowAmount} ${unit}.)`, escrowAmount),
+               params: log(`${name} publishes parameters of game: wager of ${wagerAmount} ${unit} and escrow of ${escrowAmount} ${unit}.`),
+               accepts: (wager, escrow) => log(`${name} accepts the terms: wager of ${wager} ${unit} and escrow of ${escrow} ${unit}.`)(),
                getHand: async () => { const res = await getHand(); log(`(local: ${name} plays ${res}.)`)(); return res; },
                commits: log(`${name} commits to play with (hidden) hand.`),
                shows: log(`${name} sends hand in clear.`),
@@ -59,7 +69,7 @@ import * as RPSW from './build/rps_while.mjs';
   const delayHand = async () => {
     for ( let i = 0; i < 10; i++ ) {
       console.log(`\tAlice takes her sweet time...`);
-      await stdlib.transfer(alice.networkAccount, alice.networkAccount, wagerInWei); }
+      await stdlib.transfer(alice.networkAccount, alice.networkAccount, wagerAmount); }
     return randomHand(); };
   await demo(RPS, delayHand);
 

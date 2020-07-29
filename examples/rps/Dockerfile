@@ -8,5 +8,4 @@ RUN npm install
 
 COPY . /app
 
-CMD npm run demo
-# CMD npm run test && npm run algo && npm run demo
+CMD npm run demo --- ETH # && npm run demo --- ALGO
