@@ -54,15 +54,17 @@ render_dl d =
       "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
     DLS_Only _ who onlys ->
       "only" <> parens (render_sp who) <+> ns onlys <> semi
-    DLS_ToConsensus _ who as vs mamt _XXX_mtime cons ->
-      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs) <> amtp
-        <> ns cons
+    DLS_ToConsensus _ who as vs mamt mtime cons ->
+      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs) <> amtp <> timep <> ns cons
       where
         amtp =
           case mamt of
             Nothing -> ""
-            Just (ts, ta) ->
-              ".pay" <> parens (render_nest $ (render_dls ts) <> hardline <> "return" <+> render_da ta <> semi)
+            Just ap -> ".pay" <> parens (render_nest $ render_dp ap)
+        timep =
+          case mtime of
+            Nothing -> ""
+            Just (td, tp) -> ".timeout" <> parens (cm [ render_da td, (render_nest $ render_dp tp) ])
     DLS_FromConsensus _ more ->
       "commit()" <> semi <> hardline <> render_dls more
   where
@@ -71,6 +73,10 @@ render_dl d =
 
 render_dls :: DLStmts -> Doc a
 render_dls ss = concatWith (surround hardline) $ fmap render_dl ss
+
+render_dp :: DLProg -> Doc a
+render_dp (DLProg ss da) =
+  render_dls ss <> hardline <> "return" <+> render_da da <> semi
 
 render_local :: LLLocal -> Doc a
 render_local l =
@@ -122,14 +128,18 @@ render_step s =
     LLS_If _at ca t f -> do_if ca t f
     LLS_Only _at who onlys k ->
       "only" <> parens (render_sp who) <+> ns (render_local onlys) <> semi <> hardline <> render_step k
-    LLS_ToConsensus _at who as vs mamt cons ->
-      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs) <> amtp <> ns (render_con cons)
+    LLS_ToConsensus _at who as vs mamt mtime cons ->
+      "publish" <> parens (render_sp who) <> (cm $ map render_da as) <> (cm $ map render_dv vs) <> amtp <> timep <> ns (render_con cons)
       where
         amtp =
           case mamt of
             Nothing -> ""
             Just (ts, ta) ->
               ".pay" <> parens (render_nest $ (render_local ts) <> hardline <> "return" <+> render_da ta <> semi)
+        timep =
+          case mtime of
+            Nothing -> ""
+            Just (td, tl) -> ".timeout" <> parens (cm [ render_da td, (render_nest $ render_step tl) ])
   where
     help d k = render_dl d <> hardline <> render_step k
     cm l = parens (hsep $ punctuate comma $ l)

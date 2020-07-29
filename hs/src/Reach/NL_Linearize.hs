@@ -120,17 +120,22 @@ lin_step_s rets s k =
       LLS_Only at who ls k
       where
         ls = lin_local ss
-    DLS_ToConsensus at who as ms mamt _XXX_mtime cons ->
-      LLS_ToConsensus at who as ms mamt' cons'
+    DLS_ToConsensus at who as ms mamt mtime cons ->
+      LLS_ToConsensus at who as ms mamt' mtime' cons'
       where
         cons' = lin_con back cons
         back more = iters rets more k
         mamt' = do
-          (amt_ss, amt_da) <- mamt
+          DLProg amt_ss amt_da <- mamt
           return $ (lin_local amt_ss, amt_da)
+        mtime' = do
+          (delay_da, DLProg time_ss time_da) <- mtime
+          --- XXX maybe k is needed here?
+          let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_da)
+          return $ (delay_da, time_ll)
     DLS_FromConsensus {} -> impossible $ "step cannot fromconsensus"
   where
     iters = lin_ss lin_step_s
 
-linearize :: DLStmts -> DLArg -> LLStep
-linearize ss da = lin_ss lin_step_s mempty ss (LLS_Stop da)
+linearize :: DLProg -> LLStep
+linearize (DLProg ss da) = lin_ss lin_step_s mempty ss (LLS_Stop da)

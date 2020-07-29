@@ -29,8 +29,7 @@ zipEq at ce x y =
     ly = length y
 
 data EvalError s
-  = Err_XXX String
-  | Err_Apply_ArgCount Int Int
+  = Err_Apply_ArgCount Int Int
   | Err_Block_Assign
   | Err_Block_Continue
   | Err_Block_IllegalJS JSStatement
@@ -83,11 +82,15 @@ data EvalError s
   | Err_Top_NotDApp SLVal
   deriving (Eq, Show)
 
-ensure_public :: SrcLoc -> [SLSVal] -> [SLVal]
-ensure_public at svs = map f svs
-  where
-    f (Public, v) = v
-    f (Secret, v) = expect_throw at $ Err_ExpectedPublic v
+ensure_public :: SrcLoc -> SLSVal -> SLVal
+ensure_public at (lvl, v) =
+  case lvl of
+    Public -> v
+    Secret ->
+      expect_throw at $ Err_ExpectedPublic v
+
+ensure_publics :: SrcLoc -> [SLSVal] -> [SLVal]
+ensure_publics at svs = map (ensure_public at) svs
 
 lvlMeetR :: SecurityLevel -> SLComp s (SecurityLevel, a) -> SLComp s (SecurityLevel, a)
 lvlMeetR lvl m = do
@@ -107,6 +110,7 @@ base_env =
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("random", SLV_Prim $ SLPrim_op $ RANDOM)
+    , ("balance", SLV_Prim $ SLPrim_op $ CP BALANCE)
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
     , ("UInt256", SLV_Type T_UInt256)
@@ -461,7 +465,7 @@ evalPrim ctxt at env p sargs =
     SLPrim_transfer ->
       case ctxt_mode ctxt of
         SLC_ConsensusStep _penvs ->
-          case map (typeOf at) $ ensure_public at sargs of
+          case map (typeOf at) $ ensure_publics at sargs of
             [(T_UInt256, amt_dla)] ->
               return $ SLRes mempty $ public $ SLV_Prim $ SLPrim_transfer_amt amt_dla
             _ -> illegal_args
@@ -900,7 +904,7 @@ evalStmt ctxt at env ss =
                 ctxt' = ctxt {ctxt_mode = SLC_Step $ M.insert who penv' penvs}
                 lifts' = return $ DLS_Only only_at who elifts
             _ -> expect_throw at (Err_Block_NotNull ev)
-        (SLC_Step penvs, SLV_Form (SLForm_Part_ToConsensus to_at who Nothing mmsg mamt _XXX_mtime)) -> do
+        (SLC_Step penvs, SLV_Form (SLForm_Part_ToConsensus to_at who Nothing mmsg mamt mtime)) -> do
           let penv = penvs M.! who
           (msg_env, tmsg_) <-
             case mmsg of
@@ -933,20 +937,38 @@ evalStmt ctxt at env ss =
             case mamt of
               Nothing -> return Nothing
               Just amte -> do
-                SLRes amt_lifts (alvl, amt_sv) <- evalExpr ctxt at env' amte
-                case alvl of
-                  Secret -> expect_throw at $ Err_ExpectedPublic amt_sv
-                  Public -> do
-                    let (amt_ty, amt_da) = typeOf at amt_sv
-                    case amt_ty of
-                      T_UInt256 ->
-                        return $ Just (amt_lifts, amt_da)
-                      _ ->
-                        expect_throw at $ Err_Type_Mismatch T_UInt256 amt_ty amt_sv
+                SLRes amt_lifts amt_sv <- evalExpr ctxt at env' amte
+                --- FIXME The pattern should be a function
+                let amt_v = ensure_public at amt_sv
+                let (amt_ty, amt_da) = typeOf at amt_v
+                case amt_ty of
+                  T_UInt256 ->
+                    return $ Just $ DLProg amt_lifts amt_da
+                  _ ->
+                    expect_throw at $ Err_Type_Mismatch T_UInt256 amt_ty amt_v
+          (tlifts, mtime') <-
+            case mtime of
+              Nothing -> return $ (mempty, Nothing)
+              Just (de, dt) -> do
+                SLRes de_lifts de_sv <- evalExpr ctxt at env de
+                let de_v = ensure_public at de_sv
+                let (de_ty, de_da) = typeOf at de_v
+                SLRes dt_lifts dt_sv <- evalExpr ctxt at env dt
+                let dt_thunk = ensure_public at dt_sv
+                SLRes dta_lifts (SLAppRes _ dt_fins) <-
+                  evalApplyVals ctxt at (impossible "timeout expects clo") dt_thunk []
+                let dt_fin = ensure_public at dt_fins
+                let (_XXX_dt_fin_ty, dt_fin_da) = typeOf at dt_fin
+                --- XXX dl_fin_da might need to go somewhere else
+                let dp = DLProg dta_lifts dt_fin_da
+                case de_ty of
+                  T_UInt256 ->
+                    return $ (de_lifts <> dt_lifts, Just (de_da, dp))
+                  _ ->
+                    expect_throw at $ Err_Type_Mismatch T_UInt256 de_ty de_v
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep penvs'})
           SLRes conlifts cr <- evalStmt ctxt_cstep at_after env' ks
-          let mtime' = Nothing --- XXX
-          let lifts' = elifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) mamt' mtime' conlifts)
+          let lifts' = elifts <> tlifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) mamt' mtime' conlifts)
           return $ SLRes lifts' cr
         (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
           let ctxt_step = (ctxt {ctxt_mode = SLC_Step penvs})
@@ -966,7 +988,7 @@ evalStmt ctxt at env ss =
           where
             lab = "continue"
             at' = srcloc_jsa lab a at
-            res = expect_throw at' (Err_XXX lab)
+            res = expect_throw at' $ ("XXX continue" :: String)
         _ ->
           expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign)
     ((JSMethodCall e a args ra sp) : ks) ->
@@ -997,7 +1019,7 @@ evalStmt ctxt at env ss =
             : (JSWhile _ _ _while_cond _ _while_body)
             : _while_ks
           ) ->
-            expect_throw at' (Err_XXX "while")
+          impossible $ "XXX while"
         _ ->
           expect_throw at' (Err_Block_Variable)
       where
@@ -1117,7 +1139,7 @@ makeInteract at spec = SLV_Object at spec'
     wrap_ty k (Public, (SLV_Type t)) = secret $ SLV_Prim $ SLPrim_interact at k t
     wrap_ty _ v = expect_throw at $ Err_DApp_InvalidInteract v
 
-compileDApp :: SLVal -> ST s (DLStmts, DLArg)
+compileDApp :: SLVal -> ST s DLProg
 compileDApp topv =
   case topv of
     SLV_Prim (SLPrim_DApp_Delay at [(SLV_Object _ _opts), (SLV_Array _ parts), clo] top_env) -> do
@@ -1134,7 +1156,7 @@ compileDApp topv =
                })
       SLRes final (SLAppRes _ (_, sv)) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
       let (_, final_da) = typeOf at sv
-      return (final, final_da)
+      return $ DLProg final final_da
       where
         at' = srcloc_at "compileDApp" Nothing at
         penvs = M.fromList $ map make_penv partvs
@@ -1150,7 +1172,7 @@ compileDApp topv =
     _ ->
       expect_throw srcloc_top (Err_Top_NotDApp topv)
 
-compileBundle :: JSBundle -> SLVar -> (DLStmts, DLArg)
+compileBundle :: JSBundle -> SLVar -> DLProg
 compileBundle (JSBundle mods) top = runST $ do
   libm <- evalLibs mods
   let exe_ex = libm M.! exe

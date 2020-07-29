@@ -262,7 +262,7 @@ data DLStmt
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (DLStmts, DLArg)) (Maybe (DLArg, DLStmts)) DLStmts
+  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe DLProg) (Maybe (DLArg, DLProg)) DLStmts
   | DLS_FromConsensus SrcLoc DLStmts
   deriving (Eq, Show)
 
@@ -300,6 +300,9 @@ stmts_pure fs = getAll $ foldMap (All . stmt_pure) fs
 stmts_local :: Foldable f => f DLStmt -> Bool
 stmts_local fs = getAll $ foldMap (All . stmt_local) fs
 
+data DLProg = DLProg DLStmts DLArg
+  deriving (Eq, Show)
+
 --- Linear Language
 --- XXX Too much duplication in these
 data LLLocal
@@ -333,5 +336,5 @@ data LLStep
   | LLS_LocalIf SrcLoc DLArg LLStep LLStep LLStep
   | LLS_If SrcLoc DLArg LLStep LLStep
   | LLS_Only SrcLoc SLPart LLLocal LLStep
-  | LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) LLConsensus
+  | LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) (Maybe (DLArg, LLStep)) LLConsensus
   deriving (Eq, Show)

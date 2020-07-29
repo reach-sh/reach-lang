@@ -12,9 +12,9 @@ compileNL :: CompilerOpts -> IO ()
 compileNL copts = do
   let out = output copts
   djp <- gatherDeps_top $ source copts
-  let (final, final_da) = compileBundle djp "main"
-  out "dl" $ show $ render_dls final
-  let linear = linearize final final_da
+  let dp = compileBundle djp "main"
+  out "dl" $ show $ render_dp dp
+  let linear = linearize dp
   out "nl" $ show $ render_step linear
   traceM $ "XXX Finish"
   return ()
