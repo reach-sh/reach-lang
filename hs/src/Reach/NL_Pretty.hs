@@ -39,7 +39,7 @@ render_dl :: DLStmt -> Doc a
 render_dl d =
   case d of
     DLS_Let _ v e ->
-      "let" <+> render_dv v <+> "=" <+> render_de e <> semi
+      "const" <+> render_dv v <+> "=" <+> render_de e <> semi
     DLS_Claim _ _ ct a ->
       "claim" <> parens (viaShow ct) <> parens (render_da a) <> semi
     DLS_If _ ca ts fs ->
@@ -81,25 +81,26 @@ render_dp (DLProg ss da) =
 render_local :: LLLocal -> Doc a
 render_local l =
   case l of
-    LLL_LocalStop -> "next()" <> semi
+    LLL_LocalStop -> mempty
     LLL_Let at dv de k -> help (DLS_Let at dv de) k
-    LLL_Var _at dv k -> "var" <+> render_dv dv <> semi <> hardline <> render_local k
+    LLL_Var _at dv k -> "let" <+> render_dv dv <> semi <> hardline <> render_local k
     LLL_Set _at dv da k -> render_dv dv <+> "=" <+> render_da da <> semi <> hardline <> render_local k
     LLL_Claim at f ct a k -> help (DLS_Claim at f ct a) k
-    LLL_If _at ca t f ->
-      "if" <+> render_da ca <+> "then"
-        <+> ns t <> hardline <> "else"
-        <+> ns f <> semi
+    LLL_LocalIf _at ca t f k -> do_if ca t f <> hardline <> render_local k
   where
     help d k = render_dl d <> hardline <> render_local k
     ns x = render_nest $ render_local x
+    do_if ca t f =
+      "if" <+> render_da ca <+> "then"
+        <+> ns t <> hardline <> "else"
+        <+> ns f <> semi
 
 render_con :: LLConsensus -> Doc a
 render_con s =
   case s of
     LLC_ConStop -> mempty
     LLC_Let at dv de k -> help (DLS_Let at dv de) k
-    LLC_Var _at dv k -> "var" <+> render_dv dv <> semi <> hardline <> render_con k
+    LLC_Var _at dv k -> "let" <+> render_dv dv <> semi <> hardline <> render_con k
     LLC_Set _at dv da k -> render_dv dv <+> "=" <+> render_da da <> semi <> hardline <> render_con k
     LLC_Claim at f ct a k -> help (DLS_Claim at f ct a) k
     LLC_LocalIf _at ca t f k -> do_if ca t f <> hardline <> render_con k
@@ -121,7 +122,7 @@ render_step s =
     LLS_Stop da -> "exit" <> parens (render_da da) <> semi
     LLS_LocalStop -> mempty
     LLS_Let at dv de k -> help (DLS_Let at dv de) k
-    LLS_Var _at dv k -> "var" <+> render_dv dv <> semi <> hardline <> render_step k
+    LLS_Var _at dv k -> "let" <+> render_dv dv <> semi <> hardline <> render_step k
     LLS_Set _at dv da k -> render_dv dv <+> "=" <+> render_da da <> semi <> hardline <> render_step k
     LLS_Claim at f ct a k -> help (DLS_Claim at f ct a) k
     LLS_LocalIf _at ca t f k -> do_if ca t f <> hardline <> render_step k

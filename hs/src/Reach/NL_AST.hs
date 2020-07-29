@@ -312,7 +312,7 @@ data LLLocal
   | LLL_Var SrcLoc DLVar LLLocal
   | LLL_Set SrcLoc DLVar DLArg LLLocal
   | LLL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLLocal
-  | LLL_If SrcLoc DLArg LLLocal LLLocal
+  | LLL_LocalIf SrcLoc DLArg LLLocal LLLocal LLLocal
   deriving (Eq, Show)
 
 data LLConsensus

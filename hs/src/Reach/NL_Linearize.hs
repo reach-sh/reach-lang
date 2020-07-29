@@ -15,7 +15,7 @@ lin_local_s rets s k =
   case s of
     DLS_Let at dv de -> LLL_Let at dv de k
     DLS_Claim at f ct da -> LLL_Claim at f ct da k
-    DLS_If at ca ts fs -> LLL_If at ca t' f'
+    DLS_If at ca ts fs -> LLL_LocalIf at ca t' f' k
       where
         t' = iters rets ts LLL_LocalStop
         f' = iters rets fs LLL_LocalStop
