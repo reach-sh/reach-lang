@@ -24,23 +24,20 @@ build-all:
 	cd hs && $(MAKE) build
 	cd scripts/ethereum-devnet && $(MAKE) build
 	cd js && $(MAKE) build
-	cd examples/rps && $(MAKE) clean build
-	cd examples/multisig && $(MAKE) clean build
+	cd examples && $(MAKE) clean-all build-all
 
 .PHONY: push-all
 push-all:
 	cd hs && $(MAKE) push
 	cd scripts/ethereum-devnet && $(MAKE) push
 	cd js && $(MAKE) push
-	cd examples/rps && $(MAKE) push
-	cd examples/multisig && $(MAKE) push
+	cd examples && $(MAKE) push-all
 
 .PHONY: publish-all
 publish-all:
 	cd hs && $(MAKE) publish
 	cd js && $(MAKE) publish
-	cd examples/rps && $(MAKE) publish
-	cd examples/multisig && $(MAKE) publish
+	cd examples && $(MAKE) publish-all
 
 .PHONY: rebuild-and-run-all-examples
 rebuild-and-run-all-examples:

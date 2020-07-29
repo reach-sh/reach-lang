@@ -11,9 +11,17 @@ build: build/nim.mjs
 push:
 	docker push $(TAG)
 
+.PHONY: publish
+publish:
+	npm publish --access public
+
 .PHONY: run
 run:
 	docker-compose run reach-app
+
+.PHONY: down
+down:
+	docker-compose down
 
 .PHONY: clean
 clean:

@@ -20,6 +20,10 @@ publish:
 run:
 	docker-compose run reach-app
 
+.PHONY: down
+down:
+	docker-compose down
+
 .PHONY: clean
 clean:
 	rm -f build/$(NAME).mjs

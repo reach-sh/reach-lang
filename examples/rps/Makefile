@@ -19,6 +19,10 @@ publish:
 run:
 	docker-compose run reach-app
 
+.PHONY: down
+down:
+	docker-compose down
+
 .PHONY: check
 check:
 	go tool compile build/rps.go
