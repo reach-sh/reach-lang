@@ -1,5 +1,5 @@
 'reach 0.1 exe';
-// Note: WIP. Commented out code at the end doesn't compile yet
+// XXX: WIP. Commented out code at the end doesn't compile yet
 
 import 'rps_shared.rsh';
 

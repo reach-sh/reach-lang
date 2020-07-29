@@ -6,6 +6,7 @@ import Timeout         from 'await-timeout';
 import * as util       from 'util';
 import * as waitPort   from 'wait-port';
 import * as http       from 'http';
+import * as url        from 'url';
 void(util);
 
 // networkAccount[ETH] = string  // account address str
@@ -96,14 +97,12 @@ export const toWeiBN = (a,b) => toBN(toWei(a, b));
 
 // private helpers
 
-// Note: clients might not want this
+// XXX: clients might not want this
 process.on('unhandledRejection', error => {
   console.log('Unhandled Rejection detected!!!!!');
   console.log(error);
   process.exit(1);
 });
-
-const sleep = async (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const flaky = async (f) => {
   const max_tries = 3;
@@ -119,7 +118,7 @@ const flaky = async (f) => {
         throw e;
       } else {
         debug(`FAILED ATTEMPT # ${failed_attempts}...`);
-        await sleep(sleep_between_tries);
+        await Timeout.set(sleep_between_tries);
         debug('trying again...');
       }
     }
@@ -130,53 +129,23 @@ const flaky = async (f) => {
 
 // Common interface exports
 
-/* BEGIN Hack */
-// import * as extractTarget from 'wait-port/lib/extract-target';
-function extractTarget(target) {
-  if (!target) throw new Error('\'target\' is required');
-
-  //  First, check to see if we have a protocol specified.
-  const protocol = target.toLowerCase().startsWith('http://') ? 'http' : undefined;
-
-  //  If we have a protocol, we can rip it out of the string.
-  target = protocol ? target.substring('http://'.length) : target;
-
-  //  If we have a protocol, we can also rip out the path (if there is one).
-  const pathStart = target.indexOf('/');
-  const path = pathStart !== -1 ? target.substring(pathStart) : undefined;
-  target = pathStart !== -1 ? target.substring(0, pathStart) : target;
-
-  //  Split the target by the separator (which might not be present.
-  const split = target.split(':');
-  if (split.length > 2) throw new Error(`'${target}' is an invalid target, it has more than two ':' symbols`);
-
-  //  Grab the host and port (which will still be a string).
-  const host = split.length === 2 ? (split[0] || undefined) : undefined;
-  const portString = split.length === 1 ? split[0] : split[1];
-
-  //  Make sure the port is numeric.
-  if (!/^[0-9]+$/.test(portString)) throw new Error(`'${target}' is an invalid target, '${portString}' is not a valid port number - try something like 'host:port'`);
-  const port = parseInt(portString, 10);
-
-  //  That's it, return the extracted target.
-  return { protocol, host, port, path };
-}
-/* END Hack */
-
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
 const portP = (async () => {
-  const { protocol, host, port, path } = extractTarget(uri);
+  const { hostname, port, path } = url.parse(uri);
   const params = {
-    protocol, host, port, path
+    protocol: 'http' // XXX no apparent need to support https
+    , host: hostname
+    , port: parseInt(port, 10)
+    , path
     , 'output': 'silent'
     , 'timeout': 1000*60*1 };
   return await waitPort.default(params);
 })();
 
-// Note: doesn't even retry, just returns the first attempt
+// XXX: doesn't even retry, just returns the first attempt
 const doHealthcheck = async () => {
   return new Promise((resolve, reject) => {
-    const { host, port } = extractTarget(uri);
+    const { hostname, port } = url.parse(uri);
     const data = JSON.stringify({
       jsonrpc: '2.0',
       method: 'web3_clientVersion',
@@ -185,8 +154,8 @@ const doHealthcheck = async () => {
     });
     debug('Sending health check request...');
     const opts = {
-      hostname: host,
-      port: port,
+      hostname,
+      port,
       path: '/',
       method: 'POST',
       headers: {
@@ -414,6 +383,7 @@ export const connectAccount = async address => {
   return { deploy, attach, networkAccount: address }; };
 
 export const newTestAccount = async (startingBalance) => {
+  // XXX the excessive debug statements could be deleted
   debug('awaiting web3P');
   const web3 = await web3P;
   debug('got web3P');
@@ -421,6 +391,7 @@ export const newTestAccount = async (startingBalance) => {
   const [ prefunder ] = await web3.eth.personal.getAccounts();
   debug(`got getAccounts: ${prefunder}`);
 
+  // XXX these calls probably don't need the flaky wrapper
   debug('awaiting newAccount');
   const to = await flaky(async () => await web3.eth.personal.newAccount(''));
   debug(`got newAccount: ${to}`);

@@ -84,7 +84,7 @@ export const lt    = (a, b) => toBN(a).lt( toBN(b));
 // end Shared/copied code
 
 
-// Note: clients might not want this
+// XXX: clients might not want this
 process.on('unhandledRejection', error => {
   console.log('Unhandled Rejection detected!!!!!');
   console.log(error);
