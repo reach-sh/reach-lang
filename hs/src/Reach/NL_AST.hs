@@ -305,37 +305,29 @@ data DLProg = DLProg DLStmts DLArg
   deriving (Eq, Show)
 
 --- Linear Language
---- XXX Too much duplication in these
+data LLCommon a
+  = LL_Return
+  | LL_Let SrcLoc DLVar DLExpr a
+  | LL_Var SrcLoc DLVar a
+  | LL_Set SrcLoc DLVar DLArg a
+  | LL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a
+  | LL_LocalIf SrcLoc DLArg a a a
+  deriving (Eq, Show)
+
 data LLLocal
-  = LLL_LocalStop
-  | LLL_Let SrcLoc DLVar DLExpr LLLocal
-  | LLL_Var SrcLoc DLVar LLLocal
-  | LLL_Set SrcLoc DLVar DLArg LLLocal
-  | LLL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLLocal
-  | LLL_LocalIf SrcLoc DLArg LLLocal LLLocal LLLocal
+  = LLL_Com (LLCommon LLLocal)
   deriving (Eq, Show)
 
 data LLConsensus
-  = LLC_ConStop
-  | LLC_Let SrcLoc DLVar DLExpr LLConsensus
-  | LLC_Var SrcLoc DLVar LLConsensus
-  | LLC_Set SrcLoc DLVar DLArg LLConsensus
-  | LLC_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLConsensus
-  | LLC_LocalIf SrcLoc DLArg LLConsensus LLConsensus LLConsensus
+  = LLC_Com (LLCommon LLConsensus)
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
   | LLC_Transfer SrcLoc SLPart DLArg LLConsensus
   | LLC_FromConsensus SrcLoc LLStep
   deriving (Eq, Show)
 
 data LLStep
-  = LLS_Stop DLArg
-  | LLS_LocalStop
-  | LLS_Let SrcLoc DLVar DLExpr LLStep
-  | LLS_Var SrcLoc DLVar LLStep
-  | LLS_Set SrcLoc DLVar DLArg LLStep
-  | LLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg LLStep
-  | LLS_LocalIf SrcLoc DLArg LLStep LLStep LLStep
-  | LLS_If SrcLoc DLArg LLStep LLStep
+  = LLS_Com (LLCommon LLStep)
+  | LLS_Stop DLArg
   | LLS_Only SrcLoc SLPart LLLocal LLStep
   | LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) (Maybe (DLArg, LLStep)) LLConsensus
   deriving (Eq, Show)

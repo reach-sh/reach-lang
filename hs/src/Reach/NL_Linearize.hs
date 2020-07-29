@@ -10,112 +10,74 @@ type LLRets = M.Map Int DLVar
 lin_ss :: (LLRets -> DLStmt -> a -> a) -> LLRets -> DLStmts -> a -> a
 lin_ss lin_s rets ss k = foldr (lin_s rets) k ss
 
-lin_local_s :: LLRets -> DLStmt -> LLLocal -> LLLocal
-lin_local_s rets s k =
+lin_com_s :: String -> (LLRets -> DLStmts -> a -> a) -> (LLCommon a -> a) -> LLRets -> DLStmt -> a -> a
+lin_com_s who iters mkk rets s k =
   case s of
-    DLS_Let at dv de -> LLL_Let at dv de k
-    DLS_Claim at f ct da -> LLL_Claim at f ct da k
-    DLS_If at ca ts fs -> LLL_LocalIf at ca t' f' k
+    DLS_Let at dv de -> mkk $ LL_Let at dv de k
+    DLS_Claim at f ct da -> mkk $ LL_Claim at f ct da k
+    DLS_If at ca ts fs -> mkk $ LL_LocalIf at ca t' f' k
       where
-        t' = iters rets ts LLL_LocalStop
-        f' = iters rets fs LLL_LocalStop
+        t' = iters rets ts nk
+        f' = iters rets fs nk
+        nk = mkk LL_Return
     DLS_Transfer {} ->
-      impossible $ "local cannot transfer"
+      impossible $ who ++ " cannot transfer"
     DLS_Return at ret sv ->
       case M.lookup ret rets of
         Nothing -> k
-        Just dv -> LLL_Set at dv da k
+        Just dv -> mkk $ LL_Set at dv da k
           where
             (_, da) = typeOf at sv
     DLS_Prompt _ (Left _) ss -> iters rets ss k
     DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
-      LLL_Var at dv $ iters rets' ss k
+      mkk $ LL_Var at dv $ iters rets' ss k
       where
         rets' = M.insert ret dv rets
     DLS_Only {} ->
-      impossible $ "local cannot only"
+      impossible $ who ++ " cannot only"
     DLS_ToConsensus {} ->
-      impossible $ "local cannot consensus"
+      impossible $ who ++ " cannot consensus"
     DLS_FromConsensus {} ->
-      impossible $ "local cannot from consensus"
-  where
-    iters = lin_ss lin_local_s
+      impossible $ who ++ " cannot from consensus"
+
+--- XXX remove duplication
+lin_local_s :: LLRets -> DLStmt -> LLLocal -> LLLocal
+lin_local_s rets s k =
+  lin_com_s "local" (lin_ss lin_local_s) LLL_Com rets s k
 
 lin_local :: DLStmts -> LLLocal
-lin_local ss = lin_ss lin_local_s mempty ss LLL_LocalStop
+lin_local ss = lin_ss lin_local_s mempty ss $ LLL_Com LL_Return
 
 lin_con_s :: (DLStmts -> LLStep) -> LLRets -> DLStmt -> LLConsensus -> LLConsensus
 lin_con_s back rets s k =
   case s of
-    DLS_Let at dv de -> LLC_Let at dv de k
-    DLS_Claim at f ct da -> LLC_Claim at f ct da k
-    DLS_If at ca ts fs ->
-      case stmt_local s of
-        True ->
-          LLC_LocalIf at ca t' f' k
-          where
-            t' = iters rets ts LLC_ConStop
-            f' = iters rets fs LLC_ConStop
-        False ->
-          LLC_If at ca t' f'
-          where
-            t' = iters rets ts k
-            f' = iters rets fs k
-    DLS_Transfer at who aa -> LLC_Transfer at who aa k
-    DLS_Return at ret sv ->
-      case M.lookup ret rets of
-        Nothing -> k
-        Just dv -> LLC_Set at dv da k
-          where
-            (_, da) = typeOf at sv
-    DLS_Prompt _ (Left _) ss -> iters rets ss k
-    DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
-      LLC_Var at dv $ iters rets' ss k
+    DLS_If at ca ts fs
+      | not (stmt_local s) ->
+        LLC_If at ca t' f'
       where
-        rets' = M.insert ret dv rets
-    DLS_Only {} -> impossible $ "consensus cannot only"
-    DLS_ToConsensus {} -> impossible $ "consensus cannot toconsensus"
+        t' = iters rets ts k
+        f' = iters rets fs k
+    DLS_Transfer at who aa -> LLC_Transfer at who aa k
     DLS_FromConsensus at cons ->
       case k of
-        LLC_ConStop ->
+        LLC_Com LL_Return ->
           LLC_FromConsensus at $ back cons
         _ ->
           impossible $ "consensus cannot fromconsensus w/ non-empty k"
+    _ ->
+      lin_com_s "consensus" iters LLC_Com rets s k
   where
     iters = lin_ss (lin_con_s back)
 
 lin_con :: (DLStmts -> LLStep) -> DLStmts -> LLConsensus
-lin_con back ss = lin_ss (lin_con_s back) mempty ss LLC_ConStop
+lin_con back ss = lin_ss (lin_con_s back) mempty ss $ LLC_Com LL_Return
 
 lin_step_s :: LLRets -> DLStmt -> LLStep -> LLStep
 lin_step_s rets s k =
   case s of
-    DLS_Let at dv de -> LLS_Let at dv de k
-    DLS_Claim at f ct da -> LLS_Claim at f ct da k
-    DLS_If at ca ts fs ->
-      case stmt_local s of
-        True ->
-          LLS_LocalIf at ca t' f' k
-          where
-            t' = iters rets ts LLS_LocalStop
-            f' = iters rets fs LLS_LocalStop
-        False ->
-          LLS_If at ca t' f'
-          where
-            t' = iters rets ts k
-            f' = iters rets fs k
-    DLS_Transfer {} -> impossible $ "step cannot transfer"
-    DLS_Return at ret sv ->
-      case M.lookup ret rets of
-        Nothing -> k
-        Just dv -> LLS_Set at dv da k
-          where
-            (_, da) = typeOf at sv
-    DLS_Prompt _ (Left _) ss -> iters rets ss k
-    DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
-      LLS_Var at dv $ iters rets' ss k
-      where
-        rets' = M.insert ret dv rets
+    DLS_If {}
+      | not (stmt_local s) ->
+        impossible $ "step cannot unlocal if, must occur in consensus"
     DLS_Only at who ss ->
       LLS_Only at who ls k
       where
@@ -133,7 +95,8 @@ lin_step_s rets s k =
           --- XXX maybe k is needed here?
           let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_da)
           return $ (delay_da, time_ll)
-    DLS_FromConsensus {} -> impossible $ "step cannot fromconsensus"
+    _ ->
+      lin_com_s "step" iters LLS_Com rets s k
   where
     iters = lin_ss lin_step_s
 
