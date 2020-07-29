@@ -3,6 +3,7 @@
 module Reach.NL_AST where
 
 import Data.Monoid
+import GHC.Stack (HasCallStack)
 import Data.List
 import Language.JavaScript.Parser
 import qualified Data.ByteString.Char8 as B
@@ -38,6 +39,10 @@ instance Show SrcLoc where
       loc = case mtp of
         Nothing -> []
         Just (TokenPn _ l c) -> [show l, show c]
+
+--- XXX Add ctxt frame stack and display
+expect_throw :: Show a => HasCallStack => SrcLoc -> a -> b
+expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
 
 srcloc_top :: SrcLoc
 srcloc_top = SrcLoc (Just "<top level>") Nothing Nothing
