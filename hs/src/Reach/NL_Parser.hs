@@ -1,18 +1,18 @@
 module Reach.NL_Parser where
 
 import qualified Data.ByteString.Char8 as B
-import Reach.JSUtil
-import Data.IORef
 import qualified Data.Graph as G
+import Data.IORef
 import qualified Data.Map.Strict as M
-import Reach.NL_AST
+import GHC.IO.Encoding
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
-import Reach.Util
 import Reach.EmbeddedFiles
+import Reach.JSUtil
+import Reach.NL_AST
+import Reach.Util
 import System.Directory
 import System.FilePath
-import GHC.IO.Encoding
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource

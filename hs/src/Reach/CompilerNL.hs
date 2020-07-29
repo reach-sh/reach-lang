@@ -1,11 +1,11 @@
 module Reach.CompilerNL where
 
-import Reach.NL_Eval
-import Reach.NL_Pretty
 import Debug.Trace
 import Reach.Compiler (CompilerOpts, output, source)
-import Reach.NL_Parser
+import Reach.NL_Eval
 import Reach.NL_Linearize
+import Reach.NL_Parser
+import Reach.NL_Pretty
 
 -- Main entry point
 compileNL :: CompilerOpts -> IO ()

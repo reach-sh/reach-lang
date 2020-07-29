@@ -64,7 +64,7 @@ render_dl d =
         timep =
           case mtime of
             Nothing -> ""
-            Just (td, tp) -> ".timeout" <> parens (cm [ render_da td, (render_nest $ render_dp tp) ])
+            Just (td, tp) -> ".timeout" <> parens (cm [render_da td, (render_nest $ render_dp tp)])
     DLS_FromConsensus _ more ->
       "commit()" <> semi <> hardline <> render_dls more
   where
@@ -139,7 +139,7 @@ render_step s =
         timep =
           case mtime of
             Nothing -> ""
-            Just (td, tl) -> ".timeout" <> parens (cm [ render_da td, (render_nest $ render_step tl) ])
+            Just (td, tl) -> ".timeout" <> parens (cm [render_da td, (render_nest $ render_step tl)])
   where
     help d k = render_dl d <> hardline <> render_step k
     cm l = parens (hsep $ punctuate comma $ l)

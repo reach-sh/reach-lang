@@ -1,8 +1,8 @@
 module Reach.JSUtil where
 
-import Reach.NL_AST
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import Reach.NL_AST
 
 jscl_flatten :: JSCommaList a -> [a]
 jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]

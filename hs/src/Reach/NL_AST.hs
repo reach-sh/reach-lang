@@ -2,13 +2,13 @@
 
 module Reach.NL_AST where
 
-import Data.Monoid
-import GHC.Stack (HasCallStack)
-import Data.List
-import Language.JavaScript.Parser
 import qualified Data.ByteString.Char8 as B
+import Data.List
 import qualified Data.Map.Strict as M
+import Data.Monoid
 import qualified Data.Sequence as Seq
+import GHC.Stack (HasCallStack)
+import Language.JavaScript.Parser
 
 --- Source Information
 data ReachSource
@@ -92,6 +92,7 @@ data SLType
   deriving (Eq, Show, Ord)
 
 infix 9 -->
+
 (-->) :: [SLType] -> SLType -> SLType
 dom --> rng = T_Fun dom rng
 

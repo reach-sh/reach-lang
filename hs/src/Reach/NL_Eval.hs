@@ -1019,7 +1019,7 @@ evalStmt ctxt at env ss =
             : (JSWhile _ _ _while_cond _ _while_body)
             : _while_ks
           ) ->
-          impossible $ "XXX while"
+            impossible $ "XXX while"
         _ ->
           expect_throw at' (Err_Block_Variable)
       where

@@ -3,9 +3,8 @@ module Reach.NL_Type where
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.STRef
-import Reach.Util
-
 import Reach.NL_AST
+import Reach.Util
 
 data TypeError
   = Err_Type_Mismatch SLType SLType SLVal
