@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module Reach.CompilerNL where
 
 import Reach.NL_Eval
