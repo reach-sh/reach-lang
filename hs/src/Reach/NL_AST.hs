@@ -327,10 +327,16 @@ data DLProg
   = DLProg SrcLoc SLParts DLBlock
 
 --- Linear Language
+data LLLetCat
+  = LC_Never
+  | LC_Once
+  | LC_Many
+  | LC_ManyStatic
+  deriving (Eq, Show)
+
 data LLCommon a
   = LL_Return SrcLoc
-  | --- XXX Add an annotation about its use count (and maybe a separate count for things not used outside assertions)
-    LL_Let SrcLoc DLVar DLExpr a
+  | LL_Let SrcLoc DLVar LLLetCat DLExpr a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a

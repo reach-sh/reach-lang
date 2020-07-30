@@ -10,7 +10,7 @@ instance Pretty SLPart where
   pretty = viaShow
 
 instance Pretty SLType where
-  pretty = viaShow --- XXX
+  pretty = viaShow
 
 instance Pretty DLVar where
   pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
@@ -132,11 +132,16 @@ instance Pretty DLProg where
       <> hardline
       <> pretty db
 
+instance Pretty LLLetCat where
+  pretty = viaShow
+
 instance Pretty a => Pretty (LLCommon a) where
   pretty l =
     case l of
       LL_Return _at -> mempty
-      LL_Let at dv de k -> help (DLS_Let at dv de) k
+      LL_Let _at dv lc de k ->
+        "const" <+> pretty dv <+> parens (pretty lc) <+> "=" <+> pretty de <> semi
+        <> hardline <> pretty k
       LL_Var _at dv k -> "let" <+> pretty dv <> semi <> hardline <> pretty k
       LL_Set _at dv da k -> pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
       LL_Claim at f ct a k -> help (DLS_Claim at f ct a) k
