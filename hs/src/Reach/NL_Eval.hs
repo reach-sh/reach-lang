@@ -31,6 +31,7 @@ zipEq at ce x y =
 --- XXX Sort
 data EvalError s
   = Err_Apply_ArgCount Int Int
+  | Err_CannotReturn
   | Err_Block_Assign
   | Err_Eval_ContinueNotInWhile
   | Err_While_IllegalInvariant [JSExpression]
@@ -79,6 +80,7 @@ data EvalError s
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar
   | Err_TailNotEmpty [JSStatement]
+  | Err_TailEmpty
   | Err_ToConsensus_Double ToConsensusMode
   | Err_TopFun_NoName
   | Err_Top_IllegalJS JSStatement
@@ -170,13 +172,19 @@ checkResType at et m = do
   return $ SLRes lifts $ checkType at et v
 
 -- Compiler
+data ReturnStyle
+  = RS_ImplicitNull
+  | RS_NeedExplicit
+  | RS_CannotReturn
+  deriving (Eq, Show)
+
 data SLScope = SLScope
   { sco_ret :: Maybe Int
-  , sco_must_ret :: Bool
+  , sco_must_ret :: ReturnStyle
   , sco_env :: SLEnv
   , sco_while_vars :: Maybe (M.Map SLVar DLVar)
   }
-  deriving (Show, Eq)
+  deriving (Eq, Show)
 
 data SLCtxt s = SLCtxt
   { ctxt_mode :: SLCtxtMode
@@ -524,7 +532,7 @@ evalApplyVals ctxt at env rator randvs =
       let clo_sco =
             (SLScope
                { sco_ret = Just ret
-               , sco_must_ret = True
+               , sco_must_ret = RS_ImplicitNull
                , sco_env = clo_env'
                , sco_while_vars = Nothing
                })
@@ -835,8 +843,12 @@ evalStmt ctxt at sco ss =
   case ss of
     [] ->
       case sco_must_ret sco of
-        False -> return $ SLRes mempty $ SLStmtRes (sco_env sco) []
-        True -> evalStmt ctxt at sco $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
+        RS_CannotReturn ->
+          return $ SLRes mempty $ SLStmtRes (sco_env sco) []
+        RS_ImplicitNull ->
+          evalStmt ctxt at sco $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
+        RS_NeedExplicit ->
+          expect_throw at $ Err_TailEmpty
     ((JSStatementBlock a ss' _ sp) : ks) -> do
       br <- evalStmt ctxt at_in sco ss'
       retSeqn br at_after ks
@@ -1072,7 +1084,11 @@ evalStmt ctxt at sco ss =
           Nothing -> return $ SLRes mempty $ public $ SLV_Null at' "empty return"
           Just e -> evalExpr ctxt at' env e
       let ret = case sco_ret sco of
-            Just x -> x
+            Just x ->
+              case sco_must_ret sco of
+                RS_CannotReturn ->
+                  expect_throw at $ Err_CannotReturn
+                _ -> x
             Nothing -> expect_throw at' $ Err_Eval_NoReturn
       let (_, ev) = sev
       let lifts' = return $ DLS_Return at' ret ev
@@ -1113,6 +1129,7 @@ evalStmt ctxt at sco ss =
                       sco
                         { sco_while_vars = Just $ M.map fst while_helpm
                         , sco_env = env'
+                        , sco_must_ret = RS_NeedExplicit
                         }
                 SLRes body_lifts (SLStmtRes _ body_rets) <-
                   evalStmt ctxt while_at while_sco [while_body]
@@ -1147,7 +1164,7 @@ evalStmt ctxt at sco ss =
           let sco' =
                 case rets0 of
                   [] -> sco
-                  (_ : _) -> sco {sco_must_ret = True}
+                  (_ : _) -> sco {sco_must_ret = RS_ImplicitNull}
           SLRes lifts1 (SLStmtRes env1 rets1) <- evalStmt ctxt at' sco' ks'
           return $ SLRes (lifts0 <> lifts1) (SLStmtRes env1 (rets0 ++ rets1))
 
@@ -1195,7 +1212,7 @@ evalTopBody ctxt at libm env exenv body =
           let sco =
                 (SLScope
                    { sco_ret = Nothing
-                   , sco_must_ret = False
+                   , sco_must_ret = RS_CannotReturn
                    , sco_while_vars = Nothing
                    , sco_env = env
                    })
