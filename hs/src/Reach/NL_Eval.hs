@@ -28,18 +28,15 @@ zipEq at ce x y =
     lx = length x
     ly = length y
 
---- XXX Sort
 data EvalError s
   = Err_Apply_ArgCount Int Int
-  | Err_CannotReturn
   | Err_Block_Assign
-  | Err_Eval_ContinueNotInWhile
-  | Err_While_IllegalInvariant [JSExpression]
   | Err_Block_Continue
   | Err_Block_IllegalJS JSStatement
   | Err_Block_NotNull SLVal
   | Err_Block_Variable
   | Err_Block_While
+  | Err_CannotReturn
   | Err_DApp_InvalidInteract SLSVal
   | Err_DApp_InvalidPartSpec SLVal
   | Err_DeclLHS_IllegalJS JSExpression
@@ -47,25 +44,26 @@ data EvalError s
   | Err_Decl_NotArray SLVal
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLVal String
+  | Err_EvalRefIndirectNotHomogeneous [SLType]
+  | Err_Eval_ContinueNotInWhile
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_IfCondNotBool SLVal
-  | Err_ExpectedPublic SLVal
-  | Err_ExpectedPrivate SLVal
   | Err_Eval_IfNotNull SLVal SLVal
   | Err_Eval_IllegalContext SLCtxtMode String
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_IllegalLift SLCtxtMode
   | Err_Eval_NoReturn
-  | Err_Eval_ReturnsDifferentTypes [SLType]
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_NotApplicableVals SLVal
   | Err_Eval_NotObject SLVal
   | Err_Eval_RefEmptyArray
-  | Err_Eval_RefOutOfBounds Int Int
   | Err_Eval_RefNotArray SLVal
   | Err_Eval_RefNotInt SLVal
-  | Err_EvalRefIndirectNotHomogeneous [SLType]
+  | Err_Eval_RefOutOfBounds Int Int
+  | Err_Eval_ReturnsDifferentTypes [SLType]
   | Err_Eval_UnboundId SLVar [SLVar]
+  | Err_ExpectedPrivate SLVal
+  | Err_ExpectedPublic SLVal
   | Err_Export_IllegalJS JSExportDeclaration
   | Err_Form_InvalidArgs SLForm [JSExpression]
   | Err_Fun_NamesIllegal
@@ -80,12 +78,13 @@ data EvalError s
   | Err_Obj_SpreadNotObj SLVal
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar
-  | Err_TailNotEmpty [JSStatement]
   | Err_TailEmpty
+  | Err_TailNotEmpty [JSStatement]
   | Err_ToConsensus_Double ToConsensusMode
   | Err_TopFun_NoName
   | Err_Top_IllegalJS JSStatement
   | Err_Top_NotDApp SLVal
+  | Err_While_IllegalInvariant [JSExpression]
   deriving (Eq, Show)
 
 ensure_public :: SrcLoc -> SLSVal -> SLVal
@@ -205,7 +204,7 @@ data SLCtxtMode
   | SLC_Step SLPartEnvs
   | SLC_Local
   | SLC_LocalStep
-  | SLC_ConsensusStep SLPartEnvs
+  | SLC_ConsensusStep SLEnv SLPartEnvs
   deriving (Eq, Show)
 
 ctxt_local_name :: SLCtxt s -> SLVar -> SLVar
@@ -491,7 +490,7 @@ evalPrim ctxt at env p sargs =
         lifts = return $ DLS_Claim at (ctxt_stack ctxt) ct darg
     SLPrim_transfer ->
       case ctxt_mode ctxt of
-        SLC_ConsensusStep _penvs ->
+        SLC_ConsensusStep {} ->
           case map (typeOf at) $ ensure_publics at sargs of
             [(T_UInt256, amt_dla)] ->
               return $ SLRes mempty $ public $ SLV_Prim $ SLPrim_transfer_amt amt_dla
@@ -500,7 +499,7 @@ evalPrim ctxt at env p sargs =
     SLPrim_transfer_amt _ -> not_app
     SLPrim_transfer_amt_to amt_dla ->
       case ctxt_mode ctxt of
-        SLC_ConsensusStep _penvs ->
+        SLC_ConsensusStep {} ->
           case sargs of
             [(_, SLV_Participant _ who _)] ->
               return $ SLRes lifts $ public $ SLV_Null at "transfer.to"
@@ -1016,21 +1015,23 @@ evalStmt ctxt at sco ss =
                   evalApplyVals ctxt at (impossible "timeout expects clo") dt_thunk []
                 let dt_fin = ensure_public at dt_fins
                 let (_XXX_dt_fin_ty, dt_fin_da) = typeOf at dt_fin
-                --- XXX dl_fin_da might need to go somewhere else
+                --- _XXX_dt_fin_ty might be different than the return for the whole program
                 let dp = DLBlock at dta_lifts dt_fin_da
                 case de_ty of
                   T_UInt256 ->
                     return $ (de_lifts <> dt_lifts, Just (de_da, dp))
                   _ ->
                     expect_throw at $ Err_Type_Mismatch T_UInt256 de_ty de_v
-          let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep penvs'})
+          let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep env' penvs'})
           let sco' = sco {sco_env = env'}
           SLRes conlifts cr <- evalStmt ctxt_cstep at_after sco' ks
           let lifts' = elifts <> tlifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) mamt' mtime' conlifts)
           return $ SLRes lifts' cr
-        (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
-          --- XXX Everything in env should go into penvs
-          let ctxt_step = (ctxt {ctxt_mode = SLC_Step penvs})
+        (SLC_ConsensusStep orig_env penvs, SLV_Prim SLPrim_committed) -> do
+          let addl_env = M.difference env orig_env
+          let add_defns penv = env_merge at_after penv addl_env
+          let penvs' = M.map add_defns penvs
+          let ctxt_step = (ctxt {ctxt_mode = SLC_Step penvs'})
           SLRes steplifts cr <- evalStmt ctxt_step at_after sco ks
           let lifts' = elifts <> (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' cr
@@ -1044,7 +1045,7 @@ evalStmt ctxt at sco ss =
       case (op, ks) of
         ((JSAssign var_a), ((JSContinue cont_a _bl cont_sp) : cont_ks)) ->
           case ctxt_mode ctxt of
-            SLC_ConsensusStep _ -> do
+            SLC_ConsensusStep {} -> do
               let cont_at = srcloc_jsa lab cont_a at
               let decl = JSVarInitExpression lhs (JSVarInit var_a rhs)
               let env = sco_env sco
@@ -1107,7 +1108,7 @@ evalStmt ctxt at sco ss =
             : ks
           ) ->
             case ctxt_mode ctxt of
-              SLC_ConsensusStep _ -> do
+              SLC_ConsensusStep {} -> do
                 let env = sco_env sco
                 SLRes init_lifts vars_env <- evalDecls ctxt var_at env while_decls
                 let while_help v sv = do
