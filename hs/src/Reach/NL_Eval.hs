@@ -161,7 +161,8 @@ checkType at et v =
   case et == t of
     True -> da
     False -> expect_throw at $ Err_Type_Mismatch et t v
-  where (t, da) = typeOf at v
+  where
+    (t, da) = typeOf at v
 
 checkResType :: SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
 checkResType at et m = do
@@ -246,7 +247,7 @@ data SLAppRes = SLAppRes SLEnv SLSVal
 
 ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
 ctxt_stack_push ctxt f =
-  (ctxt { ctxt_stack = f : (ctxt_stack ctxt) })
+  (ctxt {ctxt_stack = f : (ctxt_stack ctxt)})
 
 binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
 binaryToPrim at env o =
@@ -520,11 +521,13 @@ evalApplyVals ctxt at env rator randvs =
       let kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
       let clo_env' = foldl' (env_insertp clo_at) clo_env kvs
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
-      let clo_sco = (SLScope
-                     { sco_ret = Just ret
-                     , sco_must_ret = True
-                     , sco_env = clo_env'
-                     , sco_while_vars = Nothing })
+      let clo_sco =
+            (SLScope
+               { sco_ret = Just ret
+               , sco_must_ret = True
+               , sco_env = clo_env'
+               , sco_while_vars = Nothing
+               })
       SLRes body_lifts (SLStmtRes clo_env'' rs) <- evalStmt ctxt' body_at clo_sco body
       let no_prompt (lvl, v) = do
             let lifts' =
@@ -846,7 +849,7 @@ evalStmt ctxt at sco ss =
     ((JSConstant a decls sp) : ks) -> do
       let env = sco_env sco
       SLRes lifts env' <- evalDecls ctxt at_in env decls
-      let sco' = sco { sco_env = env' }
+      let sco' = sco {sco_env = env'}
       keepLifts lifts $ evalStmt ctxt at_after sco' ks
       where
         at_after = srcloc_after_semi lab a sp at
@@ -854,10 +857,11 @@ evalStmt ctxt at sco ss =
         lab = "const"
     (cont@(JSContinue a _ sp) : cont_ks) ->
       evalStmt ctxt at sco (assign : cont : cont_ks)
-      where assign = JSAssignStatement lhs op rhs sp
-            lhs = JSArrayLiteral a [] a
-            op = JSAssign a
-            rhs = lhs
+      where
+        assign = JSAssignStatement lhs op rhs sp
+        lhs = JSArrayLiteral a [] a
+        op = JSAssign a
+        rhs = lhs
     --- FIXME We could desugar all these to certain while patterns
     (s@(JSDoWhile a _ _ _ _ _ _) : _) -> illegal a s "do while"
     (s@(JSFor a _ _ _ _ _ _ _ _) : _) -> illegal a s "for"
@@ -877,7 +881,7 @@ evalStmt ctxt at sco ss =
       evalStmt ctxt at_after sco' ks
       where
         env = sco_env sco
-        sco' = sco { sco_env = env' }
+        sco' = sco {sco_env = env'}
         clo = SLV_Clo at' (Just f) formals body env
         formals = parseJSFormals at' jsformals
         at' = srcloc_jsa lab a at
@@ -1007,7 +1011,7 @@ evalStmt ctxt at sco ss =
                   _ ->
                     expect_throw at $ Err_Type_Mismatch T_UInt256 de_ty de_v
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep penvs'})
-          let sco' = sco { sco_env = env' }
+          let sco' = sco {sco_env = env'}
           SLRes conlifts cr <- evalStmt ctxt_cstep at_after sco' ks
           let lifts' = elifts <> tlifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) mamt' mtime' conlifts)
           return $ SLRes lifts' cr
@@ -1035,20 +1039,23 @@ evalStmt ctxt at sco ss =
               SLRes decl_lifts decl_env <- evalDecl ctxt var_at env decl
               let cont_das =
                     DLAssignment $
-                    case sco_while_vars sco of
-                      Nothing -> expect_throw cont_at $ Err_Eval_ContinueNotInWhile
-                      Just whilem -> M.fromList $ map f $ M.toList whilem
-                        where f (v, dv) = (dv, da)
-                                where sv = env_lookup var_at v decl_env
-                                      val = ensure_public var_at sv
-                                      da = checkType at et val
-                                      DLVar _ _ et _ = dv
+                      case sco_while_vars sco of
+                        Nothing -> expect_throw cont_at $ Err_Eval_ContinueNotInWhile
+                        Just whilem -> M.fromList $ map f $ M.toList whilem
+                          where
+                            f (v, dv) = (dv, da)
+                              where
+                                sv = env_lookup var_at v decl_env
+                                val = ensure_public var_at sv
+                                da = checkType at et val
+                                DLVar _ _ et _ = dv
               let lifts' = decl_lifts <> (return $ DLS_Continue cont_at cont_das)
               expect_empty_tail lab cont_a cont_sp cont_at cont_ks $
                 return $ SLRes lifts' $ SLStmtRes env []
             cm -> expect_throw var_at $ Err_Eval_IllegalContext cm "continue"
-          where lab = "continue"
-                var_at = srcloc_jsa lab var_a at
+          where
+            lab = "continue"
+            var_at = srcloc_jsa lab var_a at
         _ ->
           expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign)
     ((JSMethodCall e a args ra sp) : ks) ->
@@ -1102,14 +1109,17 @@ evalStmt ctxt at sco ss =
                 SLRes cond_lifts cond_da <-
                   checkResType cond_at T_Bool $ evalExpr ctxt cond_at env' while_cond
                 let cond_b = DLBlock cond_at cond_lifts cond_da
-                let while_sco = sco { sco_while_vars = Just $ M.map fst while_helpm
-                                    , sco_env = env' }
+                let while_sco =
+                      sco
+                        { sco_while_vars = Just $ M.map fst while_helpm
+                        , sco_env = env'
+                        }
                 SLRes body_lifts (SLStmtRes _ body_rets) <-
                   evalStmt ctxt while_at while_sco [while_body]
                 let while_dam = M.fromList $ M.elems while_helpm
                 let the_while =
                       DLS_While var_at (DLAssignment while_dam) inv_b cond_b body_lifts
-                let sco' = sco { sco_env = env' }
+                let sco' = sco {sco_env = env'}
                 SLRes k_lifts (SLStmtRes k_env' k_rets) <-
                   evalStmt ctxt while_at sco' ks
                 let lifts' = init_lifts <> (return $ the_while) <> k_lifts
@@ -1182,11 +1192,13 @@ evalTopBody ctxt at libm env exenv body =
         (JSModuleStatementListItem s) -> doStmt at False s
       where
         doStmt at' isExport sm = do
-          let sco = (SLScope
-                     { sco_ret = Nothing
-                     , sco_must_ret = False
-                     , sco_while_vars = Nothing
-                     , sco_env = env })
+          let sco =
+                (SLScope
+                   { sco_ret = Nothing
+                   , sco_must_ret = False
+                   , sco_while_vars = Nothing
+                   , sco_env = env
+                   })
           smr <- evalStmt ctxt at' sco [sm]
           case smr of
             SLRes Seq.Empty (SLStmtRes env' []) ->
