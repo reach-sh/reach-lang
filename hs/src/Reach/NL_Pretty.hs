@@ -19,7 +19,7 @@ render_obj :: Pretty k => Pretty v => M.Map k v -> Doc a
 render_obj env =
   braces $ nest 2 $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toList env)
   where
-    render_p (k, oa) = pretty k <+> ":" <+> pretty oa
+    render_p (k, oa) = pretty k <+> "=" <+> pretty oa
 
 instance Pretty DLArg where
   pretty a =
@@ -55,6 +55,9 @@ prettyIf ca t f =
 prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc a
 prettyIfp ca t f = prettyIf ca (pretty t) (pretty f)
 
+instance Pretty DLAssignment where
+  pretty (DLAssignment m) = render_obj m
+
 instance Pretty DLStmt where
   pretty d =
     case d of
@@ -85,6 +88,13 @@ instance Pretty DLStmt where
               Just (td, tp) -> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tp)])
       DLS_FromConsensus _ more ->
         "commit()" <> semi <> hardline <> render_dls more
+      DLS_While _ init_a inv_b cond_b body ->
+        "var" <+> pretty init_a <> hardline
+          <> "invariant"
+          <> parens (pretty inv_b)
+          <> "while"
+          <> parens (pretty cond_b)
+          <> (render_nest $ render_dls body)
     where
       ns x = render_nest $ render_dls x
       cm l = parens (hsep $ punctuate comma $ l)
@@ -105,8 +115,10 @@ instance Pretty SLParts where
 instance Pretty DLProg where
   pretty (DLProg _at sps db) =
     "#lang dl" <> hardline
-    <> pretty sps <> hardline <> hardline
-    <> pretty db
+      <> pretty sps
+      <> hardline
+      <> hardline
+      <> pretty db
 
 instance Pretty a => Pretty (LLCommon a) where
   pretty l =
@@ -160,5 +172,7 @@ instance Pretty LLStep where
 instance Pretty LLProg where
   pretty (LLProg _at sps db) =
     "#lang ll" <> hardline
-    <> pretty sps <> hardline <> hardline
-    <> pretty db
+      <> pretty sps
+      <> hardline
+      <> hardline
+      <> pretty db

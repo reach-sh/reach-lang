@@ -31,6 +31,7 @@ zipEq at ce x y =
 data EvalError s
   = Err_Apply_ArgCount Int Int
   | Err_Block_Assign
+  | Err_While_IllegalInvariant [JSExpression]
   | Err_Block_Continue
   | Err_Block_IllegalJS JSStatement
   | Err_Block_NotNull SLVal
@@ -152,6 +153,16 @@ srcloc_after_semi lab a sp at =
     _ -> srcloc_jsa alab a at
   where
     alab = "after " ++ lab
+
+checkResType :: SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
+checkResType at et m = do
+  SLRes lifts (_lvl, v) <- m
+  let (t, da) = typeOf at v
+  case et == t of
+    True ->
+      return $ SLRes lifts da
+    False ->
+      expect_throw at $ Err_Type_Mismatch et t v
 
 -- Compiler
 data SLCtxt s = SLCtxt
@@ -460,7 +471,7 @@ evalPrim ctxt at env p sargs =
         darg =
           case checkAndConvert at (T_Fun [T_Bool] T_Null) $ map snd sargs of
             (_, [x]) -> x
-            _ -> illegal_args
+            _ -> impossible "claim"
         lifts = return $ DLS_Claim at (ctxt_stack ctxt) ct darg
     SLPrim_transfer ->
       case ctxt_mode ctxt of
@@ -971,6 +982,7 @@ evalStmt ctxt at env ss =
           let lifts' = elifts <> tlifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) mamt' mtime' conlifts)
           return $ SLRes lifts' cr
         (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
+          --- XXX Everything in env should go into penvs
           let ctxt_step = (ctxt {ctxt_mode = SLC_Step penvs})
           SLRes steplifts cr <- evalStmt ctxt_step at_after env ks
           let lifts' = elifts <> (return $ DLS_FromConsensus at steplifts)
@@ -1013,17 +1025,52 @@ evalStmt ctxt at env ss =
     (s@(JSSwitch a _ _ _ _ _ _ _) : _) -> illegal a s "switch"
     (s@(JSThrow a _ _) : _) -> illegal a s "throw"
     (s@(JSTry a _ _ _) : _) -> illegal a s "try"
-    ((JSVariable a _while_decls _vsp) : ks) ->
-      case ks of
-        ( (JSMethodCall (JSIdentifier _ "invariant") _ _invariant_args _ _isp)
-            : (JSWhile _ _ _while_cond _ _while_body)
-            : _while_ks
+    ((JSVariable var_a while_decls _vsp) : var_ks) ->
+      case var_ks of
+        ( (JSMethodCall (JSIdentifier inv_a "invariant") _ invariant_args _ _isp)
+            : (JSWhile while_a cond_a while_cond _ while_body)
+            : ks
           ) ->
-            impossible $ "XXX while"
-        _ ->
-          expect_throw at' (Err_Block_Variable)
+            case ctxt_mode ctxt of
+              SLC_ConsensusStep _ -> do
+                SLRes init_lifts init_env <- evalDecls ctxt var_at env while_decls
+                let vars_env = M.difference init_env env
+                let while_help v sv = do
+                      let (_, val) = sv
+                      vn <- ctxt_alloc ctxt var_at
+                      let (t, da) = typeOf var_at val
+                      return $ (DLVar var_at v t vn, da)
+                while_helpm <- M.traverseWithKey while_help vars_env
+                let unknown_var_env = M.map (public . SLV_DLVar . fst) while_helpm
+                let env' = env_merge at env unknown_var_env
+                SLRes inv_lifts inv_da <-
+                  case jscl_flatten invariant_args of
+                    [invariant_e] ->
+                      checkResType inv_at T_Bool $ evalExpr ctxt inv_at env' invariant_e
+                    ial -> expect_throw inv_at $ Err_While_IllegalInvariant ial
+                let inv_b = DLBlock inv_at inv_lifts inv_da
+                SLRes cond_lifts cond_da <-
+                  checkResType cond_at T_Bool $ evalExpr ctxt cond_at env' while_cond
+                let cond_b = DLBlock cond_at cond_lifts cond_da
+                SLRes body_lifts (SLStmtRes _ body_rets) <-
+                  --- XXX communicate loop variables
+                  evalStmt ctxt while_at env' [while_body]
+                let while_dam = M.fromList $ M.elems while_helpm
+                let the_while =
+                      DLS_While var_at (DLAssignment while_dam) inv_b cond_b body_lifts
+                SLRes k_lifts (SLStmtRes k_env' k_rets) <-
+                  evalStmt ctxt while_at env' ks
+                let lifts' = init_lifts <> (return $ the_while) <> k_lifts
+                let rets' = body_rets <> k_rets
+                return $ SLRes lifts' $ SLStmtRes k_env' rets'
+              cm -> expect_throw var_at $ Err_Eval_IllegalContext cm "while"
+            where
+              inv_at = (srcloc_jsa "invariant" inv_a at)
+              cond_at = (srcloc_jsa "cond" cond_a at)
+              while_at = (srcloc_jsa "while" while_a at)
+        _ -> expect_throw var_at $ Err_Block_Variable
       where
-        at' = (srcloc_jsa "var" a at)
+        var_at = (srcloc_jsa "var" var_a at)
     ((JSWhile a _ _ _ _) : _) ->
       expect_throw (srcloc_jsa "while" a at) (Err_Block_While)
     (s@(JSWith a _ _ _ _ _) : _) -> illegal a s "with"
@@ -1162,8 +1209,9 @@ compileDApp topv =
         sps = SLParts $ M.fromList $ map make_sps_entry partvs
         make_sps_entry (Secret, (SLV_Participant _ pn (SLV_Object _ io))) =
           (pn, InteractEnv $ M.map getType io)
-          where getType (_, (SLV_Prim (SLPrim_interact _ _ t))) = t
-                getType x = impossible $ "make_sps_entry getType " ++ show x
+          where
+            getType (_, (SLV_Prim (SLPrim_interact _ _ t))) = t
+            getType x = impossible $ "make_sps_entry getType " ++ show x
         make_sps_entry x = impossible $ "make_sps_entry " ++ show x
         penvs = M.fromList $ map make_penv partvs
         make_penv (Secret, (SLV_Participant _ pn io)) =

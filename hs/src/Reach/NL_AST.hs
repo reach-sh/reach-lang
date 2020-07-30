@@ -212,6 +212,7 @@ data SLCtxtFrame
 newtype InteractEnv
   = InteractEnv (M.Map SLVar SLType)
   deriving (Eq, Show)
+
 newtype SLParts
   = SLParts (M.Map SLPart InteractEnv)
   deriving (Eq, Show)
@@ -258,7 +259,11 @@ data ClaimType
   --- honestly.)
   | CT_Possible --- Check if an assignment of variables exists to make
   --- this true.
-  deriving (Show, Eq, Ord)
+  deriving (Eq, Show, Ord)
+
+newtype DLAssignment
+  = DLAssignment (M.Map DLVar DLArg)
+  deriving (Eq, Show)
 
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
@@ -272,6 +277,7 @@ data DLStmt
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe DLBlock) (Maybe (DLArg, DLBlock)) DLStmts
   | DLS_FromConsensus SrcLoc DLStmts
+  | DLS_While SrcLoc DLAssignment DLBlock DLBlock DLStmts
   deriving (Eq, Show)
 
 stmt_pure :: DLStmt -> Bool
@@ -286,6 +292,7 @@ stmt_pure s =
     DLS_Only _ _ ss -> stmts_pure ss
     DLS_ToConsensus {} -> False
     DLS_FromConsensus _ ss -> stmts_pure ss
+    DLS_While {} -> False
 
 stmt_local :: DLStmt -> Bool
 stmt_local s =
@@ -299,6 +306,7 @@ stmt_local s =
     DLS_Only _ _ ss -> stmts_local ss
     DLS_ToConsensus {} -> False
     DLS_FromConsensus _ ss -> stmts_local ss
+    DLS_While {} -> False
 
 type DLStmts = Seq.Seq DLStmt
 
@@ -318,8 +326,8 @@ data DLProg
 --- Linear Language
 data LLCommon a
   = LL_Return SrcLoc
-  --- XXX Add an annotation about its use count (and maybe a separate count for things not used outside assertions)
-  | LL_Let SrcLoc DLVar DLExpr a
+  | --- XXX Add an annotation about its use count (and maybe a separate count for things not used outside assertions)
+    LL_Let SrcLoc DLVar DLExpr a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a
@@ -341,10 +349,10 @@ data LLStep
   = LLS_Com (LLCommon LLStep)
   | LLS_Stop SrcLoc DLArg
   | LLS_Only SrcLoc SLPart LLLocal LLStep
-  --- XXX Add an annotation for whether this is a join
-  --- XXX Add an annotation for which handler # this is
-  --- XXX Add an annotation for what the free variables are
-  | LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) (Maybe (DLArg, LLStep)) LLConsensus
+  | --- XXX Add an annotation for whether this is a join
+    --- XXX Add an annotation for which handler # this is
+    --- XXX Add an annotation for what the free variables are
+    LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) (Maybe (DLArg, LLStep)) LLConsensus
   deriving (Eq, Show)
 
 data LLProg

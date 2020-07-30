@@ -38,7 +38,9 @@ lin_com_s who iters mkk rets s k =
     DLS_ToConsensus {} ->
       impossible $ who ++ " cannot consensus"
     DLS_FromConsensus {} ->
-      impossible $ who ++ " cannot from consensus"
+      impossible $ who ++ " cannot fromconsensus"
+    DLS_While {} ->
+      impossible $ who ++ " cannot while"
 
 lin_local_s :: LLRets -> DLStmt -> LLLocal -> LLLocal
 lin_local_s rets s k =
@@ -63,6 +65,7 @@ lin_con_s back rets s k =
           LLC_FromConsensus at ret_at $ back cons
         _ ->
           impossible $ "consensus cannot fromconsensus w/ non-empty k"
+    --- XXX Allow while
     _ ->
       lin_com_s "consensus" iters LLC_Com rets s k
   where
@@ -101,4 +104,5 @@ lin_step_s rets s k =
 
 linearize :: DLProg -> LLProg
 linearize (DLProg at sps (DLBlock bat ss da)) = LLProg at sps step
-  where step = lin_ss lin_step_s mempty ss (LLS_Stop bat da)
+  where
+    step = lin_ss lin_step_s mempty ss (LLS_Stop bat da)
