@@ -165,11 +165,17 @@ checkResType at et m = do
       expect_throw at $ Err_Type_Mismatch et t v
 
 -- Compiler
+data SLScope = SLScope
+  { sco_ret :: Maybe Int
+  , sco_must_ret :: Bool
+  , sco_env :: SLEnv
+  , sco_while_vars :: Maybe (M.Map SLVar DLVar)
+  }
+  deriving (Show, Eq)
+
 data SLCtxt s = SLCtxt
   { ctxt_mode :: SLCtxtMode
   , ctxt_id :: Maybe (STRef s Int)
-  , ctxt_ret :: Maybe Int
-  , ctxt_must_ret :: Bool
   , ctxt_stack :: [SLCtxtFrame]
   , ctxt_local_mname :: Maybe [SLVar]
   }
@@ -234,13 +240,9 @@ data SLStmtRes = SLStmtRes SLEnv [(SrcLoc, SLSVal)]
 data SLAppRes = SLAppRes SLEnv SLSVal
   deriving (Eq, Show)
 
-ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> Int -> SLCtxt s
-ctxt_stack_push ctxt f ret =
-  (ctxt
-     { ctxt_stack = f : (ctxt_stack ctxt)
-     , ctxt_must_ret = True
-     , ctxt_ret = Just ret
-     })
+ctxt_stack_push :: SLCtxt s -> SLCtxtFrame -> SLCtxt s
+ctxt_stack_push ctxt f =
+  (ctxt { ctxt_stack = f : (ctxt_stack ctxt) })
 
 binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
 binaryToPrim at env o =
@@ -513,8 +515,13 @@ evalApplyVals ctxt at env rator randvs =
       let body_at = srcloc_jsa "block" body_a clo_at
       let kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
       let clo_env' = foldl' (env_insertp clo_at) clo_env kvs
-      let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname) ret
-      SLRes body_lifts (SLStmtRes clo_env'' rs) <- evalStmt ctxt' body_at clo_env' body
+      let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
+      let clo_sco = (SLScope
+                     { sco_ret = Just ret
+                     , sco_must_ret = True
+                     , sco_env = clo_env'
+                     , sco_while_vars = Nothing })
+      SLRes body_lifts (SLStmtRes clo_env'' rs) <- evalStmt ctxt' body_at clo_sco body
       let no_prompt (lvl, v) = do
             let lifts' =
                   case body_lifts of
@@ -814,15 +821,15 @@ evalDecls ctxt at env decls =
   where
     f (SLRes lifts env') decl = keepLifts lifts $ evalDecl ctxt at env' decl
 
-evalStmt :: SLCtxt s -> SrcLoc -> SLEnv -> [JSStatement] -> SLComp s SLStmtRes
-evalStmt ctxt at env ss =
+evalStmt :: SLCtxt s -> SrcLoc -> SLScope -> [JSStatement] -> SLComp s SLStmtRes
+evalStmt ctxt at sco ss =
   case ss of
     [] ->
-      case ctxt_must_ret ctxt of
-        False -> return $ SLRes mempty $ SLStmtRes env []
-        True -> evalStmt ctxt at env $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
+      case sco_must_ret sco of
+        False -> return $ SLRes mempty $ SLStmtRes (sco_env sco) []
+        True -> evalStmt ctxt at sco $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
     ((JSStatementBlock a ss' _ sp) : ks) -> do
-      br <- evalStmt ctxt at_in env ss'
+      br <- evalStmt ctxt at_in sco ss'
       retSeqn br at_after ks
       where
         at_in = srcloc_jsa "block" a at
@@ -831,8 +838,10 @@ evalStmt ctxt at env ss =
     (s@(JSLet a _ _) : _) -> illegal a s "let"
     (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
     ((JSConstant a decls sp) : ks) -> do
+      let env = sco_env sco
       SLRes lifts env' <- evalDecls ctxt at_in env decls
-      keepLifts lifts $ evalStmt ctxt at_after env' ks
+      let sco' = sco { sco_env = env' }
+      keepLifts lifts $ evalStmt ctxt at_after sco' ks
       where
         at_after = srcloc_after_semi lab a sp at
         at_in = srcloc_jsa lab a at
@@ -854,8 +863,10 @@ evalStmt ctxt at env ss =
     (s@(JSForVarOf a _ _ _ _ _ _ _) : _) -> illegal a s "for var of"
     (s@(JSAsyncFunction a _ _ _ _ _ _ _) : _) -> illegal a s "async function"
     ((JSFunction a name _ jsformals _ body sp) : ks) ->
-      evalStmt ctxt at_after env' ks
+      evalStmt ctxt at_after sco' ks
       where
+        env = sco_env sco
+        sco' = sco { sco_env = env' }
         clo = SLV_Clo at' (Just f) formals body env
         formals = parseJSFormals at' jsformals
         at' = srcloc_jsa lab a at
@@ -867,17 +878,18 @@ evalStmt ctxt at env ss =
           JSIdentName _ x -> x
     (s@(JSGenerator a _ _ _ _ _ _ _) : _) -> illegal a s "generator"
     ((JSIf a la ce ra ts) : ks) -> do
-      evalStmt ctxt at env ((JSIfElse a la ce ra ts ea fs) : ks)
+      evalStmt ctxt at sco ((JSIfElse a la ce ra ts ea fs) : ks)
       where
         ea = ra
         fs = (JSEmptyStatement ea)
     ((JSIfElse a _ ce ta ts fa fs) : ks) -> do
+      let env = sco_env sco
       let at' = srcloc_jsa "if" a at
       let t_at' = srcloc_jsa "if > true" ta at'
       let f_at' = srcloc_jsa "if > false" fa t_at'
       SLRes clifts (clvl, cv) <- evalExpr ctxt at' env ce
-      tr <- evalStmt ctxt t_at' env [ts]
-      fr <- evalStmt ctxt f_at' env [fs]
+      tr <- evalStmt ctxt t_at' sco [ts]
+      fr <- evalStmt ctxt f_at' sco [fs]
       keepLifts clifts $
         case cv of
           SLV_Bool _ cb -> do
@@ -900,17 +912,18 @@ evalStmt ctxt at env ss =
           _ ->
             expect_throw at (Err_Eval_IfCondNotBool cv)
     (s@(JSLabelled _ a _) : _) -> illegal a s "labelled"
-    ((JSEmptyStatement a) : ks) -> evalStmt ctxt at' env ks
+    ((JSEmptyStatement a) : ks) -> evalStmt ctxt at' sco ks
       where
         at' = srcloc_jsa "empty" a at
     ((JSExpressionStatement e sp) : ks) -> do
+      let env = sco_env sco
       SLRes elifts sev <- evalExpr ctxt at env e
       let (_, ev) = sev
       case (ctxt_mode ctxt, ev) of
         (SLC_Step penvs, SLV_Form (SLForm_Part_OnlyAns only_at who penv' only_v)) ->
           case typeOf at_after only_v of
             (T_Null, _) ->
-              keepLifts lifts' $ evalStmt ctxt' at_after env ks
+              keepLifts lifts' $ evalStmt ctxt' at_after sco ks
               where
                 ctxt' = ctxt {ctxt_mode = SLC_Step $ M.insert who penv' penvs}
                 lifts' = return $ DLS_Only only_at who elifts
@@ -978,18 +991,19 @@ evalStmt ctxt at env ss =
                   _ ->
                     expect_throw at $ Err_Type_Mismatch T_UInt256 de_ty de_v
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep penvs'})
-          SLRes conlifts cr <- evalStmt ctxt_cstep at_after env' ks
+          let sco' = sco { sco_env = env' }
+          SLRes conlifts cr <- evalStmt ctxt_cstep at_after sco' ks
           let lifts' = elifts <> tlifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) mamt' mtime' conlifts)
           return $ SLRes lifts' cr
         (SLC_ConsensusStep penvs, SLV_Prim SLPrim_committed) -> do
           --- XXX Everything in env should go into penvs
           let ctxt_step = (ctxt {ctxt_mode = SLC_Step penvs})
-          SLRes steplifts cr <- evalStmt ctxt_step at_after env ks
+          SLRes steplifts cr <- evalStmt ctxt_step at_after sco ks
           let lifts' = elifts <> (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' cr
         _ ->
           case typeOf at_after ev of
-            (T_Null, _) -> keepLifts elifts $ evalStmt ctxt at_after env ks
+            (T_Null, _) -> keepLifts elifts $ evalStmt ctxt at_after sco ks
             _ -> expect_throw at (Err_Block_NotNull ev)
       where
         at_after = srcloc_after_semi "expr stmt" JSNoAnnot sp at
@@ -1004,18 +1018,19 @@ evalStmt ctxt at env ss =
         _ ->
           expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign)
     ((JSMethodCall e a args ra sp) : ks) ->
-      evalStmt ctxt at env ss'
+      evalStmt ctxt at sco ss'
       where
         ss' = (JSExpressionStatement e' sp) : ks
         e' = (JSCallExpression e a args ra)
     ((JSReturn a me sp) : ks) -> do
+      let env = sco_env sco
       let lab = "return"
       let at' = srcloc_jsa lab a at
       SLRes elifts sev <-
         case me of
           Nothing -> return $ SLRes mempty $ public $ SLV_Null at' "empty return"
           Just e -> evalExpr ctxt at' env e
-      let ret = case ctxt_ret ctxt of
+      let ret = case sco_ret sco of
             Just x -> x
             Nothing -> expect_throw at' $ Err_Eval_NoReturn
       let (_, ev) = sev
@@ -1033,6 +1048,7 @@ evalStmt ctxt at env ss =
           ) ->
             case ctxt_mode ctxt of
               SLC_ConsensusStep _ -> do
+                let env = sco_env sco
                 SLRes init_lifts init_env <- evalDecls ctxt var_at env while_decls
                 let vars_env = M.difference init_env env
                 let while_help v sv = do
@@ -1052,14 +1068,15 @@ evalStmt ctxt at env ss =
                 SLRes cond_lifts cond_da <-
                   checkResType cond_at T_Bool $ evalExpr ctxt cond_at env' while_cond
                 let cond_b = DLBlock cond_at cond_lifts cond_da
+                let while_sco = sco { sco_while_vars = Just $ M.map fst while_helpm }
                 SLRes body_lifts (SLStmtRes _ body_rets) <-
-                  --- XXX communicate loop variables
-                  evalStmt ctxt while_at env' [while_body]
+                  evalStmt ctxt while_at while_sco [while_body]
                 let while_dam = M.fromList $ M.elems while_helpm
                 let the_while =
                       DLS_While var_at (DLAssignment while_dam) inv_b cond_b body_lifts
+                let sco' = sco { sco_env = env' }
                 SLRes k_lifts (SLStmtRes k_env' k_rets) <-
-                  evalStmt ctxt while_at env' ks
+                  evalStmt ctxt while_at sco' ks
                 let lifts' = init_lifts <> (return $ the_while) <> k_lifts
                 let rets' = body_rets <> k_rets
                 return $ SLRes lifts' $ SLStmtRes k_env' rets'
@@ -1082,11 +1099,11 @@ evalStmt ctxt at env ss =
         [] -> return $ sr
         ks' -> do
           let SLRes lifts0 (SLStmtRes _ rets0) = sr
-          let ctxt' =
+          let sco' =
                 case rets0 of
-                  [] -> ctxt
-                  (_ : _) -> ctxt {ctxt_must_ret = True}
-          SLRes lifts1 (SLStmtRes env1 rets1) <- evalStmt ctxt' at' env ks'
+                  [] -> sco
+                  (_ : _) -> sco {sco_must_ret = True}
+          SLRes lifts1 (SLStmtRes env1 rets1) <- evalStmt ctxt at' sco' ks'
           return $ SLRes (lifts0 <> lifts1) (SLStmtRes env1 (rets0 ++ rets1))
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
@@ -1130,7 +1147,12 @@ evalTopBody ctxt at libm env exenv body =
         (JSModuleStatementListItem s) -> doStmt at False s
       where
         doStmt at' isExport sm = do
-          smr <- evalStmt ctxt at' env [sm]
+          let sco = (SLScope
+                     { sco_ret = Nothing
+                     , sco_must_ret = False
+                     , sco_while_vars = Nothing
+                     , sco_env = env })
+          smr <- evalStmt ctxt at' sco [sm]
           case smr of
             SLRes Seq.Empty (SLStmtRes env' []) ->
               let exenv' = case isExport of
@@ -1155,8 +1177,6 @@ evalLib (src, body) libm = do
         (SLCtxt
            { ctxt_mode = SLC_Module
            , ctxt_id = Nothing
-           , ctxt_must_ret = False
-           , ctxt_ret = Nothing
            , ctxt_stack = []
            , ctxt_local_mname = Nothing
            })
@@ -1196,12 +1216,11 @@ compileDApp topv =
             (SLCtxt
                { ctxt_mode = SLC_Step penvs
                , ctxt_id = Just idxr
-               , ctxt_must_ret = False
-               , ctxt_ret = Nothing
                , ctxt_stack = []
                , ctxt_local_mname = Nothing
                })
-      SLRes final (SLAppRes _ (_, sv)) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
+      SLRes final (SLAppRes _ (_, sv)) <-
+        evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
       let (_, final_da) = typeOf at sv
       return $ DLProg at sps $ DLBlock at final final_da
       where
