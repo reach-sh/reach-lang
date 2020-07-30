@@ -278,6 +278,7 @@ data DLStmt
   | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe DLBlock) (Maybe (DLArg, DLBlock)) DLStmts
   | DLS_FromConsensus SrcLoc DLStmts
   | DLS_While SrcLoc DLAssignment DLBlock DLBlock DLStmts
+  | DLS_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 
 stmt_pure :: DLStmt -> Bool
@@ -293,6 +294,7 @@ stmt_pure s =
     DLS_ToConsensus {} -> False
     DLS_FromConsensus _ ss -> stmts_pure ss
     DLS_While {} -> False
+    DLS_Continue {} -> False
 
 stmt_local :: DLStmt -> Bool
 stmt_local s =
@@ -307,6 +309,7 @@ stmt_local s =
     DLS_ToConsensus {} -> False
     DLS_FromConsensus _ ss -> stmts_local ss
     DLS_While {} -> False
+    DLS_Continue {} -> False
 
 type DLStmts = Seq.Seq DLStmt
 

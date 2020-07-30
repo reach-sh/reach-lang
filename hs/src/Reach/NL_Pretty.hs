@@ -89,12 +89,14 @@ instance Pretty DLStmt where
       DLS_FromConsensus _ more ->
         "commit()" <> semi <> hardline <> render_dls more
       DLS_While _ init_a inv_b cond_b body ->
-        "var" <+> pretty init_a <> hardline
+        "var" <+> pretty init_a <> semi <> hardline
           <> "invariant"
           <> parens (pretty inv_b)
           <> "while"
           <> parens (pretty cond_b)
           <> (render_nest $ render_dls body)
+      DLS_Continue _ cont_da ->
+        pretty cont_da <> hardline <> "continue" <> semi
     where
       ns x = render_nest $ render_dls x
       cm l = parens (hsep $ punctuate comma $ l)

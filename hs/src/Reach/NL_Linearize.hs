@@ -41,6 +41,8 @@ lin_com_s who iters mkk rets s k =
       impossible $ who ++ " cannot fromconsensus"
     DLS_While {} ->
       impossible $ who ++ " cannot while"
+    DLS_Continue {} ->
+      impossible $ who ++ " cannot while"
 
 lin_local_s :: LLRets -> DLStmt -> LLLocal -> LLLocal
 lin_local_s rets s k =
@@ -66,6 +68,7 @@ lin_con_s back rets s k =
         _ ->
           impossible $ "consensus cannot fromconsensus w/ non-empty k"
     --- XXX Allow while
+    --- XXX Allow continue
     _ ->
       lin_com_s "consensus" iters LLC_Com rets s k
   where

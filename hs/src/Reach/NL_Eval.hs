@@ -28,9 +28,11 @@ zipEq at ce x y =
     lx = length x
     ly = length y
 
+--- XXX Sort
 data EvalError s
   = Err_Apply_ArgCount Int Int
   | Err_Block_Assign
+  | Err_Eval_ContinueNotInWhile
   | Err_While_IllegalInvariant [JSExpression]
   | Err_Block_Continue
   | Err_Block_IllegalJS JSStatement
@@ -154,15 +156,17 @@ srcloc_after_semi lab a sp at =
   where
     alab = "after " ++ lab
 
+checkType :: SrcLoc -> SLType -> SLVal -> DLArg
+checkType at et v =
+  case et == t of
+    True -> da
+    False -> expect_throw at $ Err_Type_Mismatch et t v
+  where (t, da) = typeOf at v
+
 checkResType :: SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
 checkResType at et m = do
   SLRes lifts (_lvl, v) <- m
-  let (t, da) = typeOf at v
-  case et == t of
-    True ->
-      return $ SLRes lifts da
-    False ->
-      expect_throw at $ Err_Type_Mismatch et t v
+  return $ SLRes lifts $ checkType at et v
 
 -- Compiler
 data SLScope = SLScope
@@ -782,8 +786,10 @@ evalDecl ctxt at env decl =
           (JSIdentifier a x) -> do
             let _make_env v = return (mempty, env_insert (srcloc_jsa "id" a at) x v env)
             return ([x], _make_env)
+          --- FIXME Support object literal format
           (JSArrayLiteral a xs _) -> do
             let at' = srcloc_jsa "array" a at
+            --- FIXME Support spreads in array literals
             let ks = map (jse_expect_id at') $ jsa_flatten xs
             let _make_env (lvl, v) = do
                   (vs_lifts, vs) <-
@@ -852,6 +858,7 @@ evalStmt ctxt at sco ss =
             lhs = JSArrayLiteral a [] a
             op = JSAssign a
             rhs = lhs
+    --- FIXME We could desugar all these to certain while patterns
     (s@(JSDoWhile a _ _ _ _ _ _) : _) -> illegal a s "do while"
     (s@(JSFor a _ _ _ _ _ _ _ _) : _) -> illegal a s "for"
     (s@(JSForIn a _ _ _ _ _ _) : _) -> illegal a s "for in"
@@ -915,7 +922,12 @@ evalStmt ctxt at sco ss =
             retSeqn ir at' ks
           _ ->
             expect_throw at (Err_Eval_IfCondNotBool cv)
-    (s@(JSLabelled _ a _) : _) -> illegal a s "labelled"
+    (s@(JSLabelled _ a _) : _) ->
+      --- FIXME We could allow labels on whiles and have a mapping in
+      --- sco_while_vars from a while label to the set of variables
+      --- that should be modified, plus a field in sco for the default
+      --- (i.e. closest label)
+      illegal a s "labelled"
     ((JSEmptyStatement a) : ks) -> evalStmt ctxt at' sco ks
       where
         at' = srcloc_jsa "empty" a at
@@ -1011,14 +1023,32 @@ evalStmt ctxt at sco ss =
             _ -> expect_throw at (Err_Block_NotNull ev)
       where
         at_after = srcloc_after_semi "expr stmt" JSNoAnnot sp at
-    ((JSAssignStatement _lhs op _rhs _asp) : ks) ->
+    ((JSAssignStatement lhs op rhs _asp) : ks) ->
       case (op, ks) of
-        ((JSAssign _), ((JSContinue a _bl sp) : cont_ks)) ->
-          expect_empty_tail lab a sp at cont_ks res
-          where
-            lab = "continue"
-            at' = srcloc_jsa lab a at
-            res = expect_throw at' $ ("XXX continue" :: String)
+        ((JSAssign var_a), ((JSContinue cont_a _bl cont_sp) : cont_ks)) ->
+          case ctxt_mode ctxt of
+            SLC_ConsensusStep _ -> do
+              let cont_at = srcloc_jsa lab cont_a at
+              let decl = JSVarInitExpression lhs (JSVarInit var_a rhs)
+              let env = sco_env sco
+              --- XXX let it rebind the loop variables
+              SLRes decl_lifts decl_env <- evalDecl ctxt var_at env decl
+              let cont_das =
+                    DLAssignment $
+                    case sco_while_vars sco of
+                      Nothing -> expect_throw cont_at $ Err_Eval_ContinueNotInWhile
+                      Just whilem -> M.fromList $ map f $ M.toList whilem
+                        where f (v, dv) = (dv, da)
+                                where sv = env_lookup var_at v decl_env
+                                      val = ensure_public var_at sv
+                                      da = checkType at et val
+                                      DLVar _ _ et _ = dv
+              let lifts' = decl_lifts <> (return $ DLS_Continue cont_at cont_das)
+              expect_empty_tail lab cont_a cont_sp cont_at cont_ks $
+                return $ SLRes lifts' $ SLStmtRes env []
+            cm -> expect_throw var_at $ Err_Eval_IllegalContext cm "continue"
+          where lab = "continue"
+                var_at = srcloc_jsa lab var_a at
         _ ->
           expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign)
     ((JSMethodCall e a args ra sp) : ks) ->
@@ -1072,7 +1102,8 @@ evalStmt ctxt at sco ss =
                 SLRes cond_lifts cond_da <-
                   checkResType cond_at T_Bool $ evalExpr ctxt cond_at env' while_cond
                 let cond_b = DLBlock cond_at cond_lifts cond_da
-                let while_sco = sco { sco_while_vars = Just $ M.map fst while_helpm }
+                let while_sco = sco { sco_while_vars = Just $ M.map fst while_helpm
+                                    , sco_env = env' }
                 SLRes body_lifts (SLStmtRes _ body_rets) <-
                   evalStmt ctxt while_at while_sco [while_body]
                 let while_dam = M.fromList $ M.elems while_helpm
