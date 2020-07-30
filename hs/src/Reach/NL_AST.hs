@@ -346,6 +346,12 @@ data LLConsensus
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
   | LLC_Transfer SrcLoc SLPart DLArg LLConsensus
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
+  | --- inv then cond then body then kont
+    LLC_While SrcLoc DLAssignment LLConsensus LLConsensus LLConsensus LLConsensus
+  | --- XXX Use types to ensure only within invariants and conditions
+    LLC_Stop SrcLoc DLArg
+  | --- XXX Use types to ensure only within while body
+    LLC_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 
 data LLStep

@@ -55,6 +55,21 @@ prettyIf ca t f =
 prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc a
 prettyIfp ca t f = prettyIf ca (pretty t) (pretty f)
 
+prettyWhile :: Pretty a => Pretty b => a -> b -> b -> Doc ann -> Doc ann
+prettyWhile asn inv cond bodyp =
+  "loopvar" <+> pretty asn <> semi <> hardline
+    <> "invariant"
+    <> render_nest (pretty inv)
+    <> hardline
+    <> "while"
+    <> render_nest (pretty cond)
+    <> hardline
+    <> (render_nest bodyp)
+
+prettyContinue :: Pretty b => b -> Doc a
+prettyContinue cont_da =
+  pretty cont_da <> hardline <> "continue" <> semi
+
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
@@ -88,15 +103,10 @@ instance Pretty DLStmt where
               Just (td, tp) -> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tp)])
       DLS_FromConsensus _ more ->
         "commit()" <> semi <> hardline <> render_dls more
-      DLS_While _ init_a inv_b cond_b body ->
-        "var" <+> pretty init_a <> semi <> hardline
-          <> "invariant"
-          <> parens (pretty inv_b)
-          <> "while"
-          <> parens (pretty cond_b)
-          <> (render_nest $ render_dls body)
+      DLS_While _ asn inv cond body ->
+        prettyWhile asn inv cond $ render_dls body
       DLS_Continue _ cont_da ->
-        pretty cont_da <> hardline <> "continue" <> semi
+        prettyContinue cont_da
     where
       ns x = render_nest $ render_dls x
       cm l = parens (hsep $ punctuate comma $ l)
@@ -141,10 +151,15 @@ instance Pretty LLConsensus where
   pretty s =
     case s of
       LLC_Com x -> pretty x
-      LLC_If _a ca t f -> prettyIfp ca t f
+      LLC_If _at ca t f -> prettyIfp ca t f
       LLC_Transfer at who da k -> help (DLS_Transfer at who da) k
       LLC_FromConsensus _at _ret_at k ->
         "commit()" <> semi <> hardline <> pretty k
+      LLC_Stop _at da -> "conexit" <> parens (pretty da) <> semi
+      LLC_While _at asn inv cond body k ->
+        prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
+      LLC_Continue _at asn ->
+        prettyContinue asn
     where
       help d k = pretty d <> hardline <> pretty k
 

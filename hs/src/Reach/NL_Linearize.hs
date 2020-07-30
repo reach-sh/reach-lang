@@ -60,15 +60,26 @@ lin_con_s back rets s k =
       where
         t' = iters rets ts k
         f' = iters rets fs k
-    DLS_Transfer at who aa -> LLC_Transfer at who aa k
+    DLS_Transfer at who aa ->
+      LLC_Transfer at who aa k
     DLS_FromConsensus at cons ->
       case k of
         LLC_Com (LL_Return ret_at) ->
           LLC_FromConsensus at ret_at $ back cons
         _ ->
           impossible $ "consensus cannot fromconsensus w/ non-empty k"
-    --- XXX Allow while
-    --- XXX Allow continue
+    DLS_While at asn inv_b cond_b body ->
+      LLC_While at asn (block inv_b) (block cond_b) body' k
+      where
+        body' = iters rets body $ LLC_Com $ LL_Return at
+        block (DLBlock ba ss a) =
+          iters rets ss $ LLC_Stop ba a
+    DLS_Continue at update ->
+      case k of
+        LLC_Com (LL_Return _ret_at) ->
+          LLC_Continue at update
+        _ ->
+          impossible $ "consensus cannot continue w/ non-empty k"
     _ ->
       lin_com_s "consensus" iters LLC_Com rets s k
   where

@@ -1,34 +1,34 @@
-'reach 0.1 lib';
+'reach 0.1';
 
 // Operator abbreviation expansions
-function not (x) {
+export function not (x) {
   return (x ? false : true); };
-function neq (x, y) {
+export function neq (x, y) {
   return not(x == y); };
-function bytes_neq (x, y) {
+export function bytes_neq (x, y) {
   return not(x === y); };
-function or (x, y) {
+export function or (x, y) {
   return (x ? true : y); };
-function and (x, y) {
+export function and (x, y) {
   return (x ? y : false); };
 
 // Library functions
-function implies (x, y) {
+export function implies (x, y) {
   return (not(x) || y); };
 
-function ensure(f, x) {
+export function ensure(f, x) {
   assert(f(x));
   return x; };
 
-function makeCommitment (x) {
+export function makeCommitment (x) {
   const salt = random();
   const commitment = digest(salt, x);
   return [commitment, salt]; };
 
-function checkCommitment (commitment, salt, x) {
+export function checkCommitment (commitment, salt, x) {
   return require(commitment == digest(salt, x)); };
 
-function closeTo(Who, result) {
+export function closeTo(Who, result) {
   return () => {
     Who.publish();
     transfer(balance()).to(Who);

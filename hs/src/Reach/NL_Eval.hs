@@ -1058,9 +1058,9 @@ evalStmt ctxt at sco ss =
                             f (v, sv) = (dv, da)
                               where
                                 dv = case M.lookup v whilem of
-                                       Nothing ->
-                                         expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
-                                       Just x -> x
+                                  Nothing ->
+                                    expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
+                                  Just x -> x
                                 val = ensure_public var_at sv
                                 da = checkType at et val
                                 DLVar _ _ et _ = dv
