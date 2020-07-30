@@ -47,6 +47,7 @@ data EvalError s
   | Err_Decl_NotArray SLVal
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLVal String
+  | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_IfCondNotBool SLVal
   | Err_ExpectedPublic SLVal
   | Err_ExpectedPrivate SLVal
@@ -787,15 +788,15 @@ evalExprs ctxt at env rands =
       SLRes liftsN svalN <- evalExprs ctxt at env randN
       return $ SLRes (lifts0 <> liftsN) (sval0 : svalN)
 
-evalDecl :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> SLComp s SLEnv
-evalDecl ctxt at env decl =
+evalDecl :: SLCtxt s -> SrcLoc -> SLEnv -> SLEnv -> JSExpression -> SLComp s SLEnv
+evalDecl ctxt at lhs_env rhs_env decl =
   case decl of
     JSVarInitExpression lhs (JSVarInit va rhs) -> do
       let vat' = srcloc_jsa "var initializer" va at
       (lhs_ns, make_env) <-
         case lhs of
           (JSIdentifier a x) -> do
-            let _make_env v = return (mempty, env_insert (srcloc_jsa "id" a at) x v env)
+            let _make_env v = return (mempty, env_insert (srcloc_jsa "id" a at) x v lhs_env)
             return ([x], _make_env)
           --- FIXME Support object literal format
           (JSArrayLiteral a xs _) -> do
@@ -819,24 +820,23 @@ evalDecl ctxt at env decl =
                       _ ->
                         expect_throw at' (Err_Decl_NotArray v)
                   let kvs = zipEq at' Err_Decl_WrongArrayLength ks $ map (\x -> (lvl, x)) vs
-                  return $ (vs_lifts, foldl' (env_insertp at') env kvs)
+                  return $ (vs_lifts, foldl' (env_insertp at') lhs_env kvs)
             return (ks, _make_env)
           _ ->
             expect_throw at (Err_DeclLHS_IllegalJS lhs)
       let ctxt' = ctxt_local_name_set ctxt lhs_ns
-      SLRes rhs_lifts v <- evalExpr ctxt' vat' env rhs
-      (lhs_lifts, env') <- make_env v
-      return $ SLRes (rhs_lifts <> lhs_lifts) env'
+      SLRes rhs_lifts v <- evalExpr ctxt' vat' rhs_env rhs
+      (lhs_lifts, lhs_env') <- make_env v
+      return $ SLRes (rhs_lifts <> lhs_lifts) lhs_env'
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
 
 evalDecls :: SLCtxt s -> SrcLoc -> SLEnv -> (JSCommaList JSExpression) -> SLComp s SLEnv
-evalDecls ctxt at env decls =
-  --- Note: This makes it so that declarations on the left are visible
-  --- on the right, which might be different than JavaScript?
-  foldlM f (SLRes mempty env) $ jscl_flatten decls
+evalDecls ctxt at rhs_env decls =
+  foldlM f (SLRes mempty mempty) $ jscl_flatten decls
   where
-    f (SLRes lifts env') decl = keepLifts lifts $ evalDecl ctxt at env' decl
+    f (SLRes lifts lhs_env) decl =
+      keepLifts lifts $ evalDecl ctxt at lhs_env rhs_env decl
 
 evalStmt :: SLCtxt s -> SrcLoc -> SLScope -> [JSStatement] -> SLComp s SLStmtRes
 evalStmt ctxt at sco ss =
@@ -860,7 +860,8 @@ evalStmt ctxt at sco ss =
     (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
     ((JSConstant a decls sp) : ks) -> do
       let env = sco_env sco
-      SLRes lifts env' <- evalDecls ctxt at_in env decls
+      SLRes lifts addl_env <- evalDecls ctxt at_in env decls
+      let env' = env_merge at_in env addl_env
       let sco' = sco {sco_env = env'}
       keepLifts lifts $ evalStmt ctxt at_after sco' ks
       where
@@ -1047,17 +1048,19 @@ evalStmt ctxt at sco ss =
               let cont_at = srcloc_jsa lab cont_a at
               let decl = JSVarInitExpression lhs (JSVarInit var_a rhs)
               let env = sco_env sco
-              --- XXX let it rebind the loop variables
-              SLRes decl_lifts decl_env <- evalDecl ctxt var_at env decl
+              SLRes decl_lifts decl_env <- evalDecl ctxt var_at mempty env decl
               let cont_das =
                     DLAssignment $
                       case sco_while_vars sco of
                         Nothing -> expect_throw cont_at $ Err_Eval_ContinueNotInWhile
-                        Just whilem -> M.fromList $ map f $ M.toList whilem
+                        Just whilem -> M.fromList $ map f $ M.toList decl_env
                           where
-                            f (v, dv) = (dv, da)
+                            f (v, sv) = (dv, da)
                               where
-                                sv = env_lookup var_at v decl_env
+                                dv = case M.lookup v whilem of
+                                       Nothing ->
+                                         expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
+                                       Just x -> x
                                 val = ensure_public var_at sv
                                 da = checkType at et val
                                 DLVar _ _ et _ = dv
@@ -1106,8 +1109,7 @@ evalStmt ctxt at sco ss =
             case ctxt_mode ctxt of
               SLC_ConsensusStep _ -> do
                 let env = sco_env sco
-                SLRes init_lifts init_env <- evalDecls ctxt var_at env while_decls
-                let vars_env = M.difference init_env env
+                SLRes init_lifts vars_env <- evalDecls ctxt var_at env while_decls
                 let while_help v sv = do
                       let (_, val) = sv
                       vn <- ctxt_alloc ctxt var_at
