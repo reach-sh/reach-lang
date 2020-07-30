@@ -6,8 +6,20 @@ import qualified Data.Map.Strict as M
 import Data.Text.Prettyprint.Doc
 import Reach.NL_AST
 
+instance Pretty SLPart where
+  pretty = viaShow
+
+instance Pretty SLType where
+  pretty = viaShow --- XXX
+
 instance Pretty DLVar where
   pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
+
+render_obj :: Pretty k => Pretty v => M.Map k v -> Doc a
+render_obj env =
+  braces $ nest 2 $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toList env)
+  where
+    render_p (k, oa) = pretty k <+> ":" <+> pretty oa
 
 instance Pretty DLArg where
   pretty a =
@@ -15,9 +27,7 @@ instance Pretty DLArg where
       DLA_Var v -> pretty v
       DLA_Con c -> viaShow c
       DLA_Array as -> brackets $ render_das as
-      DLA_Obj env -> braces $ concatWith (surround (comma <> hardline)) $ map render_p $ M.toList env
-        where
-          render_p (k, oa) = pretty k <+> ":" <+> pretty oa
+      DLA_Obj env -> render_obj env
 
 render_das :: [DLArg] -> Doc a
 render_das as = hcat $ punctuate comma $ map pretty as
@@ -82,14 +92,26 @@ instance Pretty DLStmt where
 render_dls :: DLStmts -> Doc a
 render_dls ss = concatWith (surround hardline) $ fmap pretty ss
 
-instance Pretty DLProg where
-  pretty (DLProg ss da) =
+instance Pretty DLBlock where
+  pretty (DLBlock _at ss da) =
     render_dls ss <> hardline <> "return" <+> pretty da <> semi
+
+instance Pretty InteractEnv where
+  pretty (InteractEnv m) = "interact" <+> render_obj m
+
+instance Pretty SLParts where
+  pretty (SLParts m) = "parts" <+> render_obj m <> semi
+
+instance Pretty DLProg where
+  pretty (DLProg _at sps db) =
+    "#lang dl" <> hardline
+    <> pretty sps <> hardline <> hardline
+    <> pretty db
 
 instance Pretty a => Pretty (LLCommon a) where
   pretty l =
     case l of
-      LL_Return -> mempty
+      LL_Return _at -> mempty
       LL_Let at dv de k -> help (DLS_Let at dv de) k
       LL_Var _at dv k -> "let" <+> pretty dv <> semi <> hardline <> pretty k
       LL_Set _at dv da k -> pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
@@ -107,7 +129,7 @@ instance Pretty LLConsensus where
       LLC_Com x -> pretty x
       LLC_If _a ca t f -> prettyIfp ca t f
       LLC_Transfer at who da k -> help (DLS_Transfer at who da) k
-      LLC_FromConsensus _at k ->
+      LLC_FromConsensus _at _ret_at k ->
         "commit()" <> semi <> hardline <> pretty k
     where
       help d k = pretty d <> hardline <> pretty k
@@ -116,7 +138,7 @@ instance Pretty LLStep where
   pretty s =
     case s of
       LLS_Com x -> pretty x
-      LLS_Stop da -> "exit" <> parens (pretty da) <> semi
+      LLS_Stop _at da -> "exit" <> parens (pretty da) <> semi
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
       LLS_ToConsensus _at who as vs mamt mtime cons ->
@@ -134,3 +156,9 @@ instance Pretty LLStep where
     where
       cm l = parens (hsep $ punctuate comma $ l)
       ns = render_nest
+
+instance Pretty LLProg where
+  pretty (LLProg _at sps db) =
+    "#lang ll" <> hardline
+    <> pretty sps <> hardline <> hardline
+    <> pretty db

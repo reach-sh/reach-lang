@@ -943,7 +943,7 @@ evalStmt ctxt at env ss =
                 let (amt_ty, amt_da) = typeOf at amt_v
                 case amt_ty of
                   T_UInt256 ->
-                    return $ Just $ DLProg amt_lifts amt_da
+                    return $ Just $ DLBlock at amt_lifts amt_da
                   _ ->
                     expect_throw at $ Err_Type_Mismatch T_UInt256 amt_ty amt_v
           (tlifts, mtime') <-
@@ -960,7 +960,7 @@ evalStmt ctxt at env ss =
                 let dt_fin = ensure_public at dt_fins
                 let (_XXX_dt_fin_ty, dt_fin_da) = typeOf at dt_fin
                 --- XXX dl_fin_da might need to go somewhere else
-                let dp = DLProg dta_lifts dt_fin_da
+                let dp = DLBlock at dta_lifts dt_fin_da
                 case de_ty of
                   T_UInt256 ->
                     return $ (de_lifts <> dt_lifts, Just (de_da, dp))
@@ -1156,9 +1156,15 @@ compileDApp topv =
                })
       SLRes final (SLAppRes _ (_, sv)) <- evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
       let (_, final_da) = typeOf at sv
-      return $ DLProg final final_da
+      return $ DLProg at sps $ DLBlock at final final_da
       where
         at' = srcloc_at "compileDApp" Nothing at
+        sps = SLParts $ M.fromList $ map make_sps_entry partvs
+        make_sps_entry (Secret, (SLV_Participant _ pn (SLV_Object _ io))) =
+          (pn, InteractEnv $ M.map getType io)
+          where getType (_, (SLV_Prim (SLPrim_interact _ _ t))) = t
+                getType x = impossible $ "make_sps_entry getType " ++ show x
+        make_sps_entry x = impossible $ "make_sps_entry " ++ show x
         penvs = M.fromList $ map make_penv partvs
         make_penv (Secret, (SLV_Participant _ pn io)) =
           (pn, env_insert at' "interact" (secret io) top_env)

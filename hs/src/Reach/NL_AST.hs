@@ -209,6 +209,13 @@ data SLCtxtFrame
   deriving (Eq, Show)
 
 --- Dynamic Language
+newtype InteractEnv
+  = InteractEnv (M.Map SLVar SLType)
+  deriving (Eq, Show)
+newtype SLParts
+  = SLParts (M.Map SLPart InteractEnv)
+  deriving (Eq, Show)
+
 data DLConstant
   = DLC_Null
   | DLC_Bool Bool
@@ -263,7 +270,7 @@ data DLStmt
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe DLProg) (Maybe (DLArg, DLProg)) DLStmts
+  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe DLBlock) (Maybe (DLArg, DLBlock)) DLStmts
   | DLS_FromConsensus SrcLoc DLStmts
   deriving (Eq, Show)
 
@@ -301,12 +308,17 @@ stmts_pure fs = getAll $ foldMap (All . stmt_pure) fs
 stmts_local :: Foldable f => f DLStmt -> Bool
 stmts_local fs = getAll $ foldMap (All . stmt_local) fs
 
-data DLProg = DLProg DLStmts DLArg
+data DLBlock
+  = DLBlock SrcLoc DLStmts DLArg
   deriving (Eq, Show)
+
+data DLProg
+  = DLProg SrcLoc SLParts DLBlock
 
 --- Linear Language
 data LLCommon a
-  = LL_Return
+  = LL_Return SrcLoc
+  --- XXX Add an annotation about its use count (and maybe a separate count for things not used outside assertions)
   | LL_Let SrcLoc DLVar DLExpr a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
@@ -322,12 +334,18 @@ data LLConsensus
   = LLC_Com (LLCommon LLConsensus)
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
   | LLC_Transfer SrcLoc SLPart DLArg LLConsensus
-  | LLC_FromConsensus SrcLoc LLStep
+  | LLC_FromConsensus SrcLoc SrcLoc LLStep
   deriving (Eq, Show)
 
 data LLStep
   = LLS_Com (LLCommon LLStep)
-  | LLS_Stop DLArg
+  | LLS_Stop SrcLoc DLArg
   | LLS_Only SrcLoc SLPart LLLocal LLStep
+  --- XXX Add an annotation for whether this is a join
+  --- XXX Add an annotation for which handler # this is
+  --- XXX Add an annotation for what the free variables are
   | LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) (Maybe (DLArg, LLStep)) LLConsensus
   deriving (Eq, Show)
+
+data LLProg
+  = LLProg SrcLoc SLParts LLStep

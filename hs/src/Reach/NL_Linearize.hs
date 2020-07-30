@@ -19,7 +19,7 @@ lin_com_s who iters mkk rets s k =
       where
         t' = iters rets ts nk
         f' = iters rets fs nk
-        nk = mkk LL_Return
+        nk = mkk $ LL_Return at
     DLS_Transfer {} ->
       impossible $ who ++ " cannot transfer"
     DLS_Return at ret sv ->
@@ -40,13 +40,12 @@ lin_com_s who iters mkk rets s k =
     DLS_FromConsensus {} ->
       impossible $ who ++ " cannot from consensus"
 
---- XXX remove duplication
 lin_local_s :: LLRets -> DLStmt -> LLLocal -> LLLocal
 lin_local_s rets s k =
   lin_com_s "local" (lin_ss lin_local_s) LLL_Com rets s k
 
-lin_local :: DLStmts -> LLLocal
-lin_local ss = lin_ss lin_local_s mempty ss $ LLL_Com LL_Return
+lin_local :: SrcLoc -> DLStmts -> LLLocal
+lin_local at ss = lin_ss lin_local_s mempty ss $ LLL_Com $ LL_Return at
 
 lin_con_s :: (DLStmts -> LLStep) -> LLRets -> DLStmt -> LLConsensus -> LLConsensus
 lin_con_s back rets s k =
@@ -60,8 +59,8 @@ lin_con_s back rets s k =
     DLS_Transfer at who aa -> LLC_Transfer at who aa k
     DLS_FromConsensus at cons ->
       case k of
-        LLC_Com LL_Return ->
-          LLC_FromConsensus at $ back cons
+        LLC_Com (LL_Return ret_at) ->
+          LLC_FromConsensus at ret_at $ back cons
         _ ->
           impossible $ "consensus cannot fromconsensus w/ non-empty k"
     _ ->
@@ -69,8 +68,8 @@ lin_con_s back rets s k =
   where
     iters = lin_ss (lin_con_s back)
 
-lin_con :: (DLStmts -> LLStep) -> DLStmts -> LLConsensus
-lin_con back ss = lin_ss (lin_con_s back) mempty ss $ LLC_Com LL_Return
+lin_con :: SrcLoc -> (DLStmts -> LLStep) -> DLStmts -> LLConsensus
+lin_con at back ss = lin_ss (lin_con_s back) mempty ss $ LLC_Com $ LL_Return at
 
 lin_step_s :: LLRets -> DLStmt -> LLStep -> LLStep
 lin_step_s rets s k =
@@ -81,24 +80,25 @@ lin_step_s rets s k =
     DLS_Only at who ss ->
       LLS_Only at who ls k
       where
-        ls = lin_local ss
+        ls = lin_local at ss
     DLS_ToConsensus at who as ms mamt mtime cons ->
       LLS_ToConsensus at who as ms mamt' mtime' cons'
       where
-        cons' = lin_con back cons
+        cons' = lin_con at back cons
         back more = iters rets more k
         mamt' = do
-          DLProg amt_ss amt_da <- mamt
-          return $ (lin_local amt_ss, amt_da)
+          DLBlock amt_at amt_ss amt_da <- mamt
+          return $ (lin_local amt_at amt_ss, amt_da)
         mtime' = do
-          (delay_da, DLProg time_ss time_da) <- mtime
+          (delay_da, DLBlock time_at time_ss time_da) <- mtime
           --- XXX maybe k is needed here?
-          let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_da)
+          let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_da)
           return $ (delay_da, time_ll)
     _ ->
       lin_com_s "step" iters LLS_Com rets s k
   where
     iters = lin_ss lin_step_s
 
-linearize :: DLProg -> LLStep
-linearize (DLProg ss da) = lin_ss lin_step_s mempty ss (LLS_Stop da)
+linearize :: DLProg -> LLProg
+linearize (DLProg at sps (DLBlock bat ss da)) = LLProg at sps step
+  where step = lin_ss lin_step_s mempty ss (LLS_Stop bat da)
