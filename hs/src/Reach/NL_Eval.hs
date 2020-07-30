@@ -846,8 +846,12 @@ evalStmt ctxt at sco ss =
         at_after = srcloc_after_semi lab a sp at
         at_in = srcloc_jsa lab a at
         lab = "const"
-    ((JSContinue a _ _) : _) ->
-      expect_throw (srcloc_jsa "continue" a at) (Err_Block_Continue)
+    (cont@(JSContinue a _ sp) : cont_ks) ->
+      evalStmt ctxt at sco (assign : cont : cont_ks)
+      where assign = JSAssignStatement lhs op rhs sp
+            lhs = JSArrayLiteral a [] a
+            op = JSAssign a
+            rhs = lhs
     (s@(JSDoWhile a _ _ _ _ _ _) : _) -> illegal a s "do while"
     (s@(JSFor a _ _ _ _ _ _ _ _) : _) -> illegal a s "for"
     (s@(JSForIn a _ _ _ _ _ _) : _) -> illegal a s "for in"
