@@ -361,18 +361,76 @@ data LLStep
   | LLS_Stop SrcLoc DLArg
   | LLS_Only SrcLoc SLPart LLLocal LLStep
   | --- XXX Add an annotation for whether this is a join
-    --- XXX Add an annotation for which handler # this is
-    --- XXX Add an annotation for what the free variables are
+    --- XXX Remove Maybe for amt and just default to 0
     LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) (Maybe (DLArg, LLStep)) LLConsensus
   deriving (Eq, Show)
 
 data LLProg
   = LLProg SrcLoc SLParts LLStep
+  deriving (Eq, Show)
 
 --- Projected Language
 data PLLetCat
-  = PL_Never
-  | PL_Once
+  = PL_Once
   | PL_Many
   deriving (Eq, Show)
 
+data PLCommon a
+  = PL_Return SrcLoc
+  | PL_Let SrcLoc PLLetCat DLVar DLExpr a
+  | PL_Eff SrcLoc DLExpr a
+  | PL_Var SrcLoc DLVar a
+  | PL_Set SrcLoc DLVar DLArg a
+  | PL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a
+  | PL_LocalIf SrcLoc DLArg a a a
+  deriving (Eq, Show)
+
+data PLTail
+  = PLTail (PLCommon PLTail)
+  deriving (Eq, Show)  
+
+data PLBlock
+  = PLBlock PLTail DLArg
+  deriving (Eq, Show)  
+
+data ETail
+  = ET_Com (PLCommon ETail)
+  | ET_If SrcLoc DLArg ETail ETail
+  | ET_ToConsensus SrcLoc Bool [DLArg] [DLVar] DLArg (Maybe (DLArg, ETail)) CSimTail ETail
+  | ET_While SrcLoc DLAssignment PLBlock ETail ETail
+  --- XXX Types to ensure only within while body
+  | ET_Continue DLAssignment
+  deriving (Eq, Show)
+
+data EPProg
+  = EPProg InteractEnv ETail
+  deriving (Eq, Show)
+
+data CSimTail
+  = CST_Com (PLCommon CSimTail)
+  | CST_Transfer SrcLoc SLPart DLArg CSimTail
+  | CST_If SrcLoc DLArg CSimTail CSimTail
+  | CST_Done
+  deriving (Eq, Show)
+
+data CTail
+  = CT_Com (PLCommon CTail)
+  | CT_If SrcLoc DLArg CTail CTail
+  | CT_Transfer SrcLoc SLPart DLArg CTail
+  | CT_Wait SrcLoc [DLVar]
+  | CT_Jump SrcLoc Int [DLVar] DLAssignment
+  | CT_Halt SrcLoc
+  deriving (Eq, Show)
+
+data CHandler
+  = C_Handler CTail
+  | C_Loop CTail
+  deriving (Eq, Show)
+
+data CPProg
+  = CPProg SrcLoc (Seq.Seq CHandler)
+  deriving (Eq, Show)
+
+data PLProg
+  = PLProg SrcLoc (M.Map SLPart EPProg) CPProg
+  deriving (Eq, Show)
