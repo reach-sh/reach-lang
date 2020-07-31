@@ -398,11 +398,13 @@ data PLBlock
 
 data ETail
   = ET_Com (PLCommon ETail)
+  | ET_Seqn SrcLoc ETail ETail
+  | ET_Stop SrcLoc DLArg
   | ET_If SrcLoc DLArg ETail ETail
-  | ET_ToConsensus SrcLoc Bool [DLArg] [DLVar] DLArg (Maybe (DLArg, ETail)) CSimTail ETail
+  | ET_ToConsensus SrcLoc (Maybe [DLArg]) [DLVar] DLArg (Maybe (DLArg, ETail)) CSimTail ETail
   | ET_While SrcLoc DLAssignment PLBlock ETail ETail
   --- XXX Types to ensure only within while body
-  | ET_Continue DLAssignment
+  | ET_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 
 data EPProg

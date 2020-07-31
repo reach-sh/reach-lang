@@ -7,6 +7,7 @@ import Reach.NL_Eval
 import Reach.NL_Linearize
 import Reach.NL_Parser
 import Reach.NL_Pretty ()
+import Reach.NL_EPP
 
 -- Main entry point
 compileNL :: CompilerOpts -> IO ()
@@ -16,6 +17,8 @@ compileNL copts = do
   let dp = compileBundle djp "main"
   out "dl" $ show $ pretty dp
   let linear = linearize dp
-  out "nl" $ show $ pretty linear
+  out "ll" $ show $ pretty linear
+  let projected = epp linear
+  out "pl" $ show $ pretty projected
   traceM $ "XXX Finish"
   return ()

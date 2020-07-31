@@ -207,3 +207,6 @@ instance Pretty LLProg where
 
 instance Pretty PLLetCat where
   pretty = viaShow
+
+instance Pretty PLProg where
+  pretty p = viaShow p --- XXX
