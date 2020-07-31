@@ -9,7 +9,10 @@ import * as http       from 'http';
 import * as url        from 'url';
 void(util);
 
-// networkAccount[ETH] = string  // account address str
+// networkAccount[ETH] = ethers.Wallet
+//   // if only sending to the account, it can instead be
+//   // { address: string }
+//   // It can also be a "signer"
 //
 // ctc[ETH] = {
 //   address: string
@@ -192,16 +195,14 @@ const devnetP = (async () => {
 })();
 
 const web3P = (async () => {
-  debug('awaiting devnetP');
   await devnetP;
-  debug('got devnetP');
   const web3 = new Web3(new Web3.providers.HttpProvider(uri));
   return web3;
 })();
 
 const etherspP = (async () => {
-  const web3 = await web3P;
-  const ethersp = new ethers.providers.Web3Provider(web3.currentProvider);
+  await devnetP;
+  const ethersp = new ethers.providers.JsonRpcProvider(uri);
   ethersp.pollingInterval = 500; // ms
   return ethersp;
 })();
@@ -226,7 +227,13 @@ export const balanceOf = async acc => {
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
 export const transfer = async (to, from, value) => {
   const web3 = await web3P;
-  await web3.eth.sendTransaction({ to, from, value });
+  // FIXME dumb hack; ethers gets mad if you send to self?
+  if (to.address == from.address) {
+    return await web3.eth.sendTransaction({ to: to.address, from: from.address, value });
+  } else {
+    // XXX why does ethers need toHex on the BN value here?
+    return await from.sendTransaction({to: to.address, value: toHex(value)});
+  }
 };
 
 // Helpers for sendrecv and recv
@@ -244,9 +251,10 @@ const fetchAndRejectInvalidReceiptFor = async txHash => {
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
-export const connectAccount = async address => {
+export const connectAccount = async wallet => {
   const web3 = await web3P;
   const ethersp = await etherspP;
+  const { address } = wallet;
   const shad = address.substring(2,6);
 
   const attach = async (bin, ctc) => {
@@ -380,34 +388,54 @@ export const connectAccount = async address => {
     const r_ok = await rejectInvalidReceiptFor(r.transactionHash, r);
     return await attach(bin, { address: r_ok.contractAddress, creation_block: r_ok.blockNumber }); };
 
-  return { deploy, attach, networkAccount: address }; };
+  return { deploy, attach, networkAccount: wallet }; };
+
+const signerP = (async () => {
+  const ethersp = await etherspP;
+  const s = ethersp.getSigner();
+
+  // Note: wait to get the signer's balance before trying to
+  // transfer from the signer. If you go too fast it will complain
+  // about the signer not having the funds to transfer (lol).
+  const bal = await s.getBalance();
+  debug(`Signer has: ${bal}`);
+
+  return s;
+})();
 
 export const newTestAccount = async (startingBalance) => {
   // XXX the excessive debug statements could be deleted
-  debug('awaiting web3P');
   const web3 = await web3P;
-  debug('got web3P');
-  debug('awaiting getAccounts');
-  const [ prefunder ] = await web3.eth.personal.getAccounts();
-  debug(`got getAccounts: ${prefunder}`);
+  debug('awaiting ethersp');
+  const ethersp = await etherspP;
+  debug('got ethersp');
 
-  // XXX these calls probably don't need the flaky wrapper
-  debug('awaiting newAccount');
-  const to = await flaky(async () => await web3.eth.personal.newAccount(''));
-  debug(`got newAccount: ${to}`);
+  debug('awaiting signer');
+  const signer = await signerP;
+  debug(`got signer`);
 
-  debug(`awaiting unlockAccount: ${to}`);
+  const toW = ethers.Wallet.createRandom().connect(ethersp);
+  const to = toW.address;
+  debug(`created new account: ${to}`);
+
   try {
-    const didUnlock = await flaky(async () => await web3.eth.personal.unlockAccount(to, '', 999999999));
+    // XXX Still have to "unlock" until we've removed all web3
+    debug(`awaiting importRawKey: ${to}`);
+    await web3.eth.personal.importRawKey(toW.privateKey.slice(2), '');
+    debug(`finished importRawKey: ${to}`);
+
+    debug(`awaiting unlockAccount: ${to}`);
+    const didUnlock = async () => await web3.eth.personal.unlockAccount(to, '', 999999999);
     if (!didUnlock) {
       panic(`Couldn't unlock account ${to}! (but rpc was ok)`);
     }
     debug(`got unlockAccount: ${to}`);
+
     debug(`awaiting transfer: ${to}`);
-    await transfer(to, prefunder, startingBalance);
+    await transfer(toW, signer, startingBalance);
     debug('got transfer');
     debug(`awaiting connectAccount: ${to}`);
-    const acc = await connectAccount(to);
+    const acc = await connectAccount(toW);
     debug(`got connectAccount: ${to}`);
     return acc;
   } catch (e) {
