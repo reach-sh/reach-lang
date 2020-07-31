@@ -40,7 +40,6 @@ instance Show SrcLoc where
         Nothing -> []
         Just (TokenPn _ l c) -> [show l, show c]
 
---- XXX Add ctxt frame stack and display
 expect_throw :: Show a => HasCallStack => SrcLoc -> a -> b
 expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
 

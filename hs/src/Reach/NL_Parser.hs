@@ -14,6 +14,7 @@ import Reach.Util
 import System.Directory
 import System.FilePath
 
+--- FIXME implement a custom show that is useful
 data ParserError
   = Err_Parse_CyclicImport ReachSource
   | Err_Parser_Arrow_NoFormals

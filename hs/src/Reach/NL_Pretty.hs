@@ -70,6 +70,13 @@ prettyContinue :: Pretty b => b -> Doc a
 prettyContinue cont_da =
   pretty cont_da <> hardline <> "continue" <> semi
 
+prettyClaim :: Show a => Pretty b => a -> b -> Doc c
+prettyClaim ct a = "claim" <> parens (viaShow ct) <> parens (pretty a) <> semi
+
+prettyTransfer :: SLPart -> DLArg -> Doc a
+prettyTransfer who da = 
+  "transfer." <> parens (pretty da) <> ".to" <> parens (render_sp who) <> semi
+
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
@@ -78,12 +85,11 @@ instance Pretty DLStmt where
     case d of
       DLS_Let _ v e ->
         "const" <+> pretty v <+> "=" <+> pretty e <> semi
-      DLS_Claim _ _ ct a ->
-        "claim" <> parens (viaShow ct) <> parens (pretty a) <> semi
+      DLS_Claim _ _ ct a -> prettyClaim ct a
       DLS_If _ ca ts fs ->
         prettyIf ca (render_dls ts) (render_dls fs)
       DLS_Transfer _ who da ->
-        "transfer." <> parens (pretty da) <> ".to" <> parens (render_sp who) <> semi
+        prettyTransfer who da
       DLS_Return _ ret sv ->
         "throw" <> parens (viaShow sv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret bodys ->
@@ -140,13 +146,14 @@ instance Pretty a => Pretty (LLCommon a) where
       LL_Let _at dv de k ->
         "const" <+> pretty dv <+> "=" <+> pretty de <> semi
         <> hardline <> pretty k
-      LL_Var _at dv k -> "let" <+> pretty dv <> semi <> hardline <> pretty k
-      LL_Set _at dv da k -> pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
-      LL_Claim at f ct a k -> help (DLS_Claim at f ct a) k
-      LL_LocalIf _at ca t f k -> prettyIfp ca t f <> hardline <> pretty k
-    where
-      --- XXX remove for prettyX
-      help d k = pretty d <> hardline <> pretty k
+      LL_Var _at dv k ->
+        "let" <+> pretty dv <> semi <> hardline <> pretty k
+      LL_Set _at dv da k ->
+        pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
+      LL_Claim _at _f ct a k ->
+        prettyClaim ct a <> hardline <> pretty k
+      LL_LocalIf _at ca t f k ->
+        prettyIfp ca t f <> hardline <> pretty k
 
 instance Pretty LLLocal where
   pretty (LLL_Com x) = pretty x
@@ -156,7 +163,8 @@ instance Pretty LLConsensus where
     case s of
       LLC_Com x -> pretty x
       LLC_If _at ca t f -> prettyIfp ca t f
-      LLC_Transfer at who da k -> help (DLS_Transfer at who da) k
+      LLC_Transfer _at who da k ->
+        prettyTransfer who da <> hardline <> pretty k
       LLC_FromConsensus _at _ret_at k ->
         "commit()" <> semi <> hardline <> pretty k
       LLC_Stop _at da -> "conexit" <> parens (pretty da) <> semi
@@ -164,8 +172,6 @@ instance Pretty LLConsensus where
         prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
       LLC_Continue _at asn ->
         prettyContinue asn
-    where
-      help d k = pretty d <> hardline <> pretty k
 
 instance Pretty LLStep where
   pretty s =

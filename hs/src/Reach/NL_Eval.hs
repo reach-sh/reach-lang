@@ -28,6 +28,7 @@ zipEq at ce x y =
     lx = length x
     ly = length y
 
+--- FIXME implement a custom show that is useful
 data EvalError s
   = Err_Apply_ArgCount Int Int
   | Err_Block_Assign

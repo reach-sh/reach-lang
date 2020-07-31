@@ -6,6 +6,7 @@ import Data.STRef
 import Reach.NL_AST
 import Reach.Util
 
+--- FIXME implement a custom show that is useful
 data TypeError
   = Err_Type_Mismatch SLType SLType SLVal
   | Err_Type_None SLVal
