@@ -98,13 +98,10 @@ instance Pretty DLStmt where
         "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
       DLS_Only _ who onlys ->
         "only" <> parens (render_sp who) <+> ns onlys <> semi
-      DLS_ToConsensus _ who as vs mamt mtime cons ->
+      DLS_ToConsensus _ who as vs amt mtime cons ->
         "publish" <> parens (render_sp who) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns cons
         where
-          amtp =
-            case mamt of
-              Nothing -> ""
-              Just ap -> ".pay" <> parens (render_nest $ pretty ap)
+          amtp = ".pay" <> parens (render_nest $ pretty amt)
           timep =
             case mtime of
               Nothing -> ""
@@ -175,6 +172,10 @@ instance Pretty LLConsensus where
       LLC_Continue _at asn ->
         prettyContinue asn
 
+instance Pretty LLBlock where
+  pretty (LLBlock _ ts ta) =
+    (pretty ts) <> hardline <> "return" <+> pretty ta <> semi
+
 instance Pretty LLStep where
   pretty s =
     case s of
@@ -182,14 +183,10 @@ instance Pretty LLStep where
       LLS_Stop _at da -> "exit" <> parens (pretty da) <> semi
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
-      LLS_ToConsensus _at who as vs mamt mtime cons ->
+      LLS_ToConsensus _at who as vs amt mtime cons ->
         "publish" <> parens (render_sp who) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns (pretty cons)
         where
-          amtp =
-            case mamt of
-              Nothing -> mempty
-              Just (ts, ta) ->
-                ".pay" <> parens (render_nest $ (pretty ts) <> hardline <> "return" <+> pretty ta <> semi)
+          amtp = ".pay" <> parens (render_nest $ pretty amt)
           timep =
             case mtime of
               Nothing -> mempty

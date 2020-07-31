@@ -278,7 +278,7 @@ data DLStmt
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe DLBlock) (Maybe (DLArg, DLBlock)) DLStmts
+  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] DLBlock (Maybe (DLArg, DLBlock)) DLStmts
   | DLS_FromConsensus SrcLoc DLStmts
   | DLS_While SrcLoc DLAssignment DLBlock DLBlock DLStmts
   | DLS_Continue SrcLoc DLAssignment
@@ -343,6 +343,10 @@ data LLLocal
   = LLL_Com (LLCommon LLLocal)
   deriving (Eq, Show)
 
+data LLBlock
+  = LLBlock SrcLoc LLLocal DLArg
+  deriving (Eq, Show)  
+
 data LLConsensus
   = LLC_Com (LLCommon LLConsensus)
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
@@ -361,8 +365,7 @@ data LLStep
   | LLS_Stop SrcLoc DLArg
   | LLS_Only SrcLoc SLPart LLLocal LLStep
   | --- XXX Add an annotation for whether this is a join
-    --- XXX Remove Maybe for amt and just default to 0
-    LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] (Maybe (LLLocal, DLArg)) (Maybe (DLArg, LLStep)) LLConsensus
+    LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] LLBlock (Maybe (DLArg, LLStep)) LLConsensus
   deriving (Eq, Show)
 
 data LLProg

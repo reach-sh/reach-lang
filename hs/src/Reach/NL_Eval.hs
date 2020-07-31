@@ -990,9 +990,10 @@ evalStmt ctxt at sco ss =
                        True -> old
                        False -> env_merge to_at old msg_env)
                   penvs
-          mamt' <-
+          amt' <-
             case mamt of
-              Nothing -> return Nothing
+              Nothing ->
+                return $ DLBlock at mempty (DLA_Con $ DLC_Int 0)
               Just amte -> do
                 SLRes amt_lifts amt_sv <- evalExpr ctxt at env' amte
                 --- FIXME The pattern should be a function
@@ -1000,7 +1001,7 @@ evalStmt ctxt at sco ss =
                 let (amt_ty, amt_da) = typeOf at amt_v
                 case amt_ty of
                   T_UInt256 ->
-                    return $ Just $ DLBlock at amt_lifts amt_da
+                    return $ DLBlock at amt_lifts amt_da
                   _ ->
                     expect_throw at $ Err_Type_Mismatch T_UInt256 amt_ty amt_v
           (tlifts, mtime') <-
@@ -1026,7 +1027,7 @@ evalStmt ctxt at sco ss =
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep env' penvs'})
           let sco' = sco {sco_env = env'}
           SLRes conlifts cr <- evalStmt ctxt_cstep at_after sco' ks
-          let lifts' = elifts <> tlifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) mamt' mtime' conlifts)
+          let lifts' = elifts <> tlifts <> (return $ DLS_ToConsensus to_at who (map fst tmsg_) (map snd tmsg_) amt' mtime' conlifts)
           return $ SLRes lifts' cr
         (SLC_ConsensusStep orig_env penvs, SLV_Prim SLPrim_committed) -> do
           let addl_env = M.difference env orig_env
