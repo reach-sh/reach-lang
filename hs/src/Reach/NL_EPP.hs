@@ -195,14 +195,19 @@ pro_s me st s =
         s' = if isMe then mk_amt_s' else tc_s'
         mk_amt_s' = ET_Seqn amt_at amt_s' tc_s'
         ProResS amt_me_cs amt_con_cs amt_s' = pro_l st amt_l
-        tc_s' = ET_ToConsensus at msend msg mtime' sim run_k'
-        sim = error $ "XXX sim "
+        tc_s' = ET_ToConsensus at msend msg mtime' run_k'
+        --- sim = error $ "XXX sim "
         LLBlock amt_at amt_l amt_da = amt
-        mtime' = error $ "XXX mtime " ++ show mtime
+        (time_me_cs, time_cons_cs, mtime') =
+          case mtime of
+            Nothing -> (mempty, mempty, Nothing)
+            Just (delay_a, delay_s) ->
+              (time_me_cs_, time_cons_cs_, Just (delay_a, delay_t))
+              where ProResS time_me_cs_ time_cons_cs_ delay_t = pro_s me st delay_s
         msend = if isMe then Just (send, amt_da) else Nothing
         isMe = who == me
-        me_cs = send_cs <> count_rms msg k_me_cs <> (if isMe then amt_me_cs else mempty)
-        con_cs = count_rms msg k_con_cs <> (if isMe then amt_me_cs else mempty) <> amt_con_cs
+        me_cs = time_me_cs <> send_cs <> count_rms msg (k_me_cs <> (if isMe then amt_me_cs else mempty))
+        con_cs = time_cons_cs <> count_rms msg (k_con_cs <> (if isMe then amt_me_cs else mempty) <> amt_con_cs)
         send_cs = counts msend
         ProResS k_me_cs k_con_cs run_k' = pro_con me st k
 
@@ -215,8 +220,8 @@ contract :: LLStep -> (Seq.Seq CHandler)
 contract _s = error "XXX"
 
 epp :: LLProg -> PLProg
-epp (LLProg at ps s) = PLProg at pps cp
+epp (LLProg at ps s) = PLProg at pps --- cp
   where SLParts p_to_ie = ps
         pps = M.mapWithKey mk_pp p_to_ie
         mk_pp p ie = EPProg ie $ project p s
-        cp = CPProg at $ contract s
+        --- cp = CPProg at $ contract s

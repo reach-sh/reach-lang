@@ -402,7 +402,7 @@ data ETail
   | ET_Seqn SrcLoc ETail ETail
   | ET_Stop SrcLoc DLArg
   | ET_If SrcLoc DLArg ETail ETail
-  | ET_ToConsensus SrcLoc (Maybe ([DLArg], DLArg)) [DLVar] (Maybe (DLArg, ETail)) CSimTail ETail
+  | ET_ToConsensus SrcLoc (Maybe ([DLArg], DLArg)) [DLVar] (Maybe (DLArg, ETail)) ETail
   | ET_While SrcLoc DLAssignment PLBlock ETail ETail
   --- FIXME Types to ensure only within while body
   | ET_Continue SrcLoc DLAssignment
@@ -410,13 +410,6 @@ data ETail
 
 data EPProg
   = EPProg InteractEnv ETail
-  deriving (Eq, Show)
-
-data CSimTail
-  = CST_Com (PLCommon CSimTail)
-  | CST_Transfer SrcLoc SLPart DLArg CSimTail
-  | CST_If SrcLoc DLArg CSimTail CSimTail
-  | CST_Done
   deriving (Eq, Show)
 
 data CTail
@@ -438,5 +431,5 @@ data CPProg
   deriving (Eq, Show)
 
 data PLProg
-  = PLProg SrcLoc (M.Map SLPart EPProg) CPProg
+  = PLProg SrcLoc (M.Map SLPart EPProg) --- XXX CPProg
   deriving (Eq, Show)
