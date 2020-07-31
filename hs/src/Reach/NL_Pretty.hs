@@ -79,6 +79,9 @@ prettyTransfer :: SLPart -> DLArg -> Doc a
 prettyTransfer who da = 
   "transfer." <> parens (pretty da) <> ".to" <> parens (render_sp who) <> semi
 
+prettyStop :: DLArg -> Doc a
+prettyStop da = "exit" <> parens (pretty da) <> semi
+
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
@@ -180,7 +183,7 @@ instance Pretty LLStep where
   pretty s =
     case s of
       LLS_Com x -> pretty x
-      LLS_Stop _at da -> "exit" <> parens (pretty da) <> semi
+      LLS_Stop _at da -> prettyStop da
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
       LLS_ToConsensus _at who as vs amt mtime cons ->
@@ -207,6 +210,39 @@ instance Pretty LLProg where
 
 instance Pretty PLLetCat where
   pretty = viaShow
+
+instance Pretty a => Pretty (PLCommon a) where
+  pretty l =
+    case l of
+      PL_Return _at -> mempty
+      PL_Let _at lc dv de k ->
+        "const" <+> pretty dv <+> pretty lc <+> "=" <+> pretty de <> semi
+        <> hardline <> pretty k
+      PL_Eff _ de k ->
+        "eff" <+> pretty de <> semi <> hardline <> pretty k
+      PL_Var _at dv k ->
+        "let" <+> pretty dv <> semi <> hardline <> pretty k
+      PL_Set _at dv da k ->
+        pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
+      PL_Claim _at _f ct a k ->
+        prettyClaim ct a <> hardline <> pretty k
+      PL_LocalIf _at ca t f k ->
+        prettyIfp ca t f <> hardline <> pretty k
+
+instance Pretty ETail where
+  pretty e =
+    case e of
+      ET_Com c -> pretty c
+      ET_Seqn _ x y -> pretty x <> hardline <> pretty y
+      ET_Stop _ da -> prettyStop da
+      ET_If _ ca t f -> prettyIfp ca t f
+      ET_ToConsensus {} -> "XXX"
+      ET_While {} -> "XXX"
+      ET_Continue {} -> "XXX"
+
+instance Pretty EPProg where
+  pretty (EPProg ie et) =
+    pretty ie <> semi <> hardline <> pretty et
 
 instance Pretty EPPs where
   pretty (EPPs m) = render_obj m

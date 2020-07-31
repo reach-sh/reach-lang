@@ -87,11 +87,11 @@ data ProResS a = ProResS Counts Counts a
 instance Functor ProResS where
   fmap f (ProResS x y a) = (ProResS x y (f a))
 
-pro_com :: ProSt -> (ProSt -> a -> ProResS ETail) -> Bool -> LLCommon a -> ProResS ETail
-pro_com st iter isConsensus l =
+pro_com :: ProSt -> (ProSt -> a -> ProResS ETail) -> Bool -> LLCommon a -> Counts -> ProResS ETail
+pro_com st iter isConsensus l topk_me_cs =
   case l of
     LL_Return at ->
-      ProResS mempty mempty $ ET_Com $ PL_Return at
+      ProResS topk_me_cs mempty $ ET_Com $ PL_Return at
     LL_Let at dv de k ->
       ProResS me_cs con_cs s
       where
@@ -149,7 +149,7 @@ pro_com st iter isConsensus l =
 pro_con :: SLPart -> ProSt -> LLConsensus -> ProResS ETail
 pro_con me st l =
   case l of
-    LLC_Com c -> pro_com st (pro_con me) True c
+    LLC_Com c -> pro_com st (pro_con me) True c mempty
     LLC_If at ca t f -> ProResS me_cs con_cs s'
       where
         me_cs = counts ca <> t_me_cs <> f_me_cs
@@ -170,13 +170,13 @@ pro_con me st l =
     LLC_Continue at da ->
       ProResS mempty (counts da) $ ET_Continue at da
 
-pro_l :: ProSt -> LLLocal -> ProResS ETail
-pro_l st (LLL_Com c) = pro_com st pro_l False c
+pro_l :: Counts -> ProSt -> LLLocal -> ProResS ETail
+pro_l me_cs st (LLL_Com c) = pro_com st (pro_l me_cs) False c me_cs
 
 pro_s :: SLPart -> ProSt -> LLStep -> ProResS ETail
 pro_s me st s =
   case s of
-    LLS_Com c -> pro_com st (pro_s me) False c
+    LLS_Com c -> pro_com st (pro_s me) False c mempty
     LLS_Stop at da ->
       ProResS (counts da) mempty $ ET_Stop at da
     LLS_Only at who loc k ->
@@ -188,13 +188,13 @@ pro_s me st s =
         ProResS loc_me_cs _ loc' =
           case who == me of
             False -> ProResS mempty mempty $ ET_Com $ PL_Return at
-            True -> pro_l st loc
+            True -> pro_l k_me_cs st loc
     LLS_ToConsensus at who send msg amt mtime k ->
       ProResS me_cs con_cs s'
       where
         s' = if isMe then mk_amt_s' else tc_s'
         mk_amt_s' = ET_Seqn amt_at amt_s' tc_s'
-        ProResS amt_me_cs amt_con_cs amt_s' = pro_l st amt_l
+        ProResS amt_me_cs amt_con_cs amt_s' = pro_l (counts amt_da) st amt_l
         tc_s' = ET_ToConsensus at msend msg mtime' run_k'
         --- sim = error $ "XXX sim "
         LLBlock amt_at amt_l amt_da = amt
@@ -222,6 +222,6 @@ contract _s = error "XXX"
 epp :: LLProg -> PLProg
 epp (LLProg at ps s) = PLProg at pps --- cp
   where SLParts p_to_ie = ps
-        pps = EPPs M.mapWithKey mk_pp p_to_ie
+        pps = EPPs $ M.mapWithKey mk_pp p_to_ie
         mk_pp p ie = EPProg ie $ project p s
         --- cp = CPProg at $ contract s
