@@ -37,7 +37,7 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 
 @js{
     // network => networkAccount type
-    ETH        => string  // address
+    ETH        => ethers.Wallet
     ALGO       => {addr: string, sk: UInt8Array(64)}}
 
 @(hrule)
