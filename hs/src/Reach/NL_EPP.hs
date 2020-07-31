@@ -63,6 +63,7 @@ instance Countable DLArg where
       DLA_Con {} -> mempty
       DLA_Array as -> counts as
       DLA_Obj as -> counts as
+      DLA_Interact {} -> mempty
 
 instance Countable DLExpr where
   counts e =

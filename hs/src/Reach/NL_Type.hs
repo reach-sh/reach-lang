@@ -109,7 +109,14 @@ typeOf at v =
     SLV_DLVar dv@(DLVar _ _ t _) -> (t, DLA_Var dv)
     SLV_Type _ -> none
     SLV_Participant _ _ _ -> none --- XXX get the address
-    SLV_Prim _ -> none --- XXX an interact may be non-function typed
+    SLV_Prim (SLPrim_interact _ m t) ->
+      case t of
+        T_Var {} -> none
+        T_Forall {} -> none
+        T_Fun {} -> none
+        _ ->
+          (t, DLA_Interact m t)
+    SLV_Prim _ -> none
     SLV_Form _ -> none
   where
     none = expect_throw at $ Err_Type_None v

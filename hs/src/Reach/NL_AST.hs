@@ -231,6 +231,7 @@ data DLArg
   | DLA_Con DLConstant
   | DLA_Array [DLArg]
   | DLA_Obj (M.Map String DLArg)
+  | DLA_Interact String SLType
   deriving (Eq, Show)
 
 data DLExpr

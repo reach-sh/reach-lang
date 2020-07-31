@@ -28,6 +28,8 @@ instance Pretty DLArg where
       DLA_Con c -> viaShow c
       DLA_Array as -> brackets $ render_das as
       DLA_Obj env -> render_obj env
+      DLA_Interact m t ->
+        "interact." <> viaShow m <> parens (pretty t)
 
 render_das :: [DLArg] -> Doc a
 render_das as = hcat $ punctuate comma $ map pretty as
