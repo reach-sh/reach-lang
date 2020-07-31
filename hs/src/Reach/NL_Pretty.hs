@@ -108,7 +108,7 @@ instance Pretty DLStmt where
           timep =
             case mtime of
               Nothing -> ""
-              Just (td, tp) -> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tp)])
+              Just (td, tp) -> ".timeout" <> (cm [pretty td, (render_nest $ pretty tp)])
       DLS_FromConsensus _ more ->
         "commit()" <> semi <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -236,10 +236,23 @@ instance Pretty ETail where
       ET_Seqn _ x y -> pretty x <> hardline <> pretty y
       ET_Stop _ da -> prettyStop da
       ET_If _ ca t f -> prettyIfp ca t f
-      ET_ToConsensus {} -> "XXX"
+      ET_ToConsensus _ msend msg mtime k ->
+        "sendrecv" <> parens msendp <> (cm $ map pretty msg) <> timep <> ns (pretty k)
+        where
+          msendp =
+            case msend of
+              Nothing -> mempty
+              Just (as, amt) -> ".publish" <> cm [ parens (render_das as), pretty amt ]
+          timep =
+            case mtime of
+              Nothing -> mempty
+              Just (td, tl) -> ".timeout" <> (cm [pretty td, (render_nest $ pretty tl)])
       ET_While {} -> "XXX"
       ET_Continue {} -> "XXX"
-
+    where
+      ns = render_nest
+      cm l = parens (hsep $ punctuate comma $ l)
+      
 instance Pretty EPProg where
   pretty (EPProg ie et) =
     pretty ie <> semi <> hardline <> pretty et
