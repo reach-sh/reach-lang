@@ -138,7 +138,8 @@ data ConsensusPrimOp
   | PGT
   | IF_THEN_ELSE
   | BYTES_EQ
-  | BALANCE
+  | --- FIXME make this illegal outside assert/invariant
+    BALANCE
   | TXN_VALUE
   | LSH
   | RSH
@@ -354,9 +355,9 @@ data LLConsensus
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
   | --- inv then cond then body then kont
     LLC_While SrcLoc DLAssignment LLConsensus LLConsensus LLConsensus LLConsensus
-  | --- XXX Use types to ensure only within invariants and conditions
+  | --- FIXME Use types to ensure only within invariants and conditions
     LLC_Stop SrcLoc DLArg
-  | --- XXX Use types to ensure only within while body
+  | --- FIXME Use types to ensure only within while body
     LLC_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 
@@ -401,9 +402,9 @@ data ETail
   | ET_Seqn SrcLoc ETail ETail
   | ET_Stop SrcLoc DLArg
   | ET_If SrcLoc DLArg ETail ETail
-  | ET_ToConsensus SrcLoc (Maybe [DLArg]) [DLVar] DLArg (Maybe (DLArg, ETail)) CSimTail ETail
+  | ET_ToConsensus SrcLoc (Maybe ([DLArg], DLArg)) [DLVar] (Maybe (DLArg, ETail)) CSimTail ETail
   | ET_While SrcLoc DLAssignment PLBlock ETail ETail
-  --- XXX Types to ensure only within while body
+  --- FIXME Types to ensure only within while body
   | ET_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 

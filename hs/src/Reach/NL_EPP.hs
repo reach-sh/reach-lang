@@ -42,6 +42,13 @@ count_rms vs (Counts cs) = Counts $ foldr M.delete cs vs
 class Countable a where
   counts :: a -> Counts
 
+instance (Countable x, Countable y) => Countable (x, y) where
+  counts (a, b) = counts a <> counts b
+
+instance Countable v => Countable (Maybe v) where
+  counts Nothing = mempty
+  counts (Just x) = counts x
+
 instance Countable v => Countable [v] where
   counts l = mconcat $ map counts l
 
@@ -88,29 +95,57 @@ pro_com st iter isConsensus l =
     LL_Let at dv de k ->
       ProResS me_cs con_cs s
       where
-        s =
+        (mde_cs, s) =
           case get_count dv (if isConsensus then k_con_cs else k_me_cs) of
             C_Never ->
               case expr_pure de of
-                True -> k'
-                False -> ET_Com $ PL_Eff at de k'
+                True -> (mempty, k')
+                False -> (de_cs, ET_Com $ PL_Eff at de k')
             C_Once -> doLet PL_Once
             C_Many -> doLet PL_Many
-        doLet lc = ET_Com $ PL_Let at lc dv de k'
+        doLet lc = (de_cs, ET_Com $ PL_Let at lc dv de k')
         de_cs = counts de
-        me_cs = de_cs <> count_rms [dv] k_me_cs
-        con_cs = mde_cs <> count_rms [dv] k_con_cs
-        mde_cs = if isConsensus then de_cs else mempty
+        me_cs = mde_cs <> count_rms [dv] k_me_cs
+        con_cs = mde_cons_cs <> count_rms [dv] k_con_cs
+        mde_cons_cs = if isConsensus then mde_cs else mempty
         ProResS k_me_cs k_con_cs k' = iter st k
-    LL_Var {} ->
-      error "XXX var"
-    LL_Set {} ->
-      error "XXX set"
-    LL_Claim {} ->
-      error "XXX claim"
-    LL_LocalIf {} ->
-      error "XXX local if"
-
+    LL_Var at dv k ->
+      ProResS me_cs cons_cs s'
+      where s' = ET_Com $ PL_Var at dv k'
+            ProResS k_me_cs k_cons_cs k' = iter st k
+            me_cs = count_rms [dv] k_me_cs
+            cons_cs = count_rms [dv] k_cons_cs
+    LL_Set at dv aa k ->
+      ProResS me_cs cons_cs s'
+      where s' = ET_Com $ PL_Set at dv aa k'
+            ProResS k_me_cs k_cons_cs k' = iter st k
+            me_cs = aa_cs <> k_me_cs
+            aa_cs = counts aa
+            cons_cs = maa_cons_cs <> k_cons_cs
+            maa_cons_cs = if isConsensus then me_cs else mempty
+    LL_Claim at f ct a k ->
+      case ct of
+        CT_Assert -> skip
+        CT_Possible -> skip
+        _ ->
+          ProResS me_cs cons_cs s'
+          where s' = ET_Com $ PL_Claim at f ct a k'
+                ProResS k_me_cs k_cons_cs k' = iter st k
+                me_cs = k_me_cs <> a_cs
+                a_cs = counts a
+                ma_cons_cs = if isConsensus then a_cs else mempty
+                cons_cs = k_cons_cs <> ma_cons_cs
+      where skip = iter st k
+    LL_LocalIf at ca t f k ->
+      ProResS me_cs con_cs s'
+      where
+        me_cs = counts ca <> t_me_cs <> f_me_cs <> k_me_cs
+        con_cs = t_con_cs <> f_con_cs <> k_cons_cs
+        s' = ET_Com $ PL_LocalIf at ca t' f' k'
+        ProResS t_me_cs t_con_cs t' = iter st t
+        ProResS f_me_cs f_con_cs f' = iter st f
+        ProResS k_me_cs k_cons_cs k' = iter st k
+        
 pro_con :: SLPart -> ProSt -> LLConsensus -> ProResS ETail
 pro_con me st l =
   case l of
@@ -157,16 +192,19 @@ pro_s me st s =
     LLS_ToConsensus at who send msg amt mtime k ->
       ProResS me_cs con_cs s'
       where
-        s' = ET_ToConsensus at msend msg amt' mtime' sim k'
+        s' = if isMe then mk_amt_s' else tc_s'
+        mk_amt_s' = ET_Seqn amt_at amt_s' tc_s'
+        ProResS amt_me_cs amt_con_cs amt_s' = pro_l st amt_l
+        tc_s' = ET_ToConsensus at msend msg mtime' sim run_k'
         sim = error $ "XXX sim "
-        amt' = error $ "XXX amt " ++ show amt
+        LLBlock amt_at amt_l amt_da = amt
         mtime' = error $ "XXX mtime " ++ show mtime
-        msend = if isMe then Just send else Nothing
+        msend = if isMe then Just (send, amt_da) else Nothing
         isMe = who == me
-        me_cs = send_cs <> count_rms msg k_me_cs
-        con_cs = count_rms msg k_con_cs
-        send_cs = if isMe then counts send else mempty
-        ProResS k_me_cs k_con_cs k' = pro_con me st k
+        me_cs = send_cs <> count_rms msg k_me_cs <> (if isMe then amt_me_cs else mempty)
+        con_cs = count_rms msg k_con_cs <> (if isMe then amt_me_cs else mempty) <> amt_con_cs
+        send_cs = counts msend
+        ProResS k_me_cs k_con_cs run_k' = pro_con me st k
 
 project :: SLPart -> LLStep -> ETail
 project me s = et
