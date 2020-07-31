@@ -9,7 +9,15 @@ import * as http       from 'http';
 import * as url        from 'url';
 void(util);
 
-// networkAccount[ETH] = string  // account address str
+// networkAccount[ETH] = {
+//   // Required for receivers
+//   address: string
+//
+//   // Required for senders
+//   sendTransaction: function
+//
+//   // Must be an ethers.Wallet to deploy or attach to a contract.
+// }
 //
 // ctc[ETH] = {
 //   address: string
@@ -124,12 +132,15 @@ const flaky = async (f) => {
     }
   }
 };
+void(flaky); // XXX
 
 // end private helpers
 
 // Common interface exports
 
 const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
+const network = process.env.ETH_NODE_NETWORK || 'unspecified';
+
 const portP = (async () => {
   const { hostname, port, path } = url.parse(uri);
   const params = {
@@ -200,8 +211,11 @@ const web3P = (async () => {
 })();
 
 const etherspP = (async () => {
-  const web3 = await web3P;
-  const ethersp = new ethers.providers.Web3Provider(web3.currentProvider);
+  await devnetP;
+  // Note: `network` must not be undefined. 'unspecified' is ok.
+  // This is specific to ethers v4. Supposedly fixed in ethers v5.
+  // https://github.com/ethers-io/ethers.js/issues/274
+  const ethersp = new ethers.providers.JsonRpcProvider(uri, network);
   ethersp.pollingInterval = 500; // ms
   return ethersp;
 })();
@@ -215,7 +229,7 @@ const ethersBlockOnceP = async () => {
 
 export const balanceOf = async acc => {
   const web3 = await web3P;
-  return toBN(await web3.eth.getBalance(acc.networkAccount));
+  return toBN(await web3.eth.getBalance(acc.networkAccount.address));
 };
 
 // XXX dead code?
@@ -225,8 +239,13 @@ export const balanceOf = async acc => {
 
 // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
 export const transfer = async (to, from, value) => {
-  const web3 = await web3P;
-  await web3.eth.sendTransaction({ to, from, value });
+  if (!to.address) panic(`Expected to.address: ${to}`);
+  if (!from.sendTransaction) panic(`Expected from.sendTransaction: ${from}`);
+  if (!isBN(value)) panic(`Expected a BN: ${value}`);
+
+  const txn = { to: to.address, value: toHex(value) };
+  debug(`from.sendTransaction(${JSON.stringify(txn)})`);
+  return await from.sendTransaction(txn);
 };
 
 // Helpers for sendrecv and recv
@@ -244,9 +263,11 @@ const fetchAndRejectInvalidReceiptFor = async txHash => {
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
-export const connectAccount = async address => {
+export const connectAccount = async networkAccount => {
+  // XXX networkAccount MUST be a wallet to send w/ ethers (?)
   const web3 = await web3P;
   const ethersp = await etherspP;
+  const { address } = networkAccount;
   const shad = address.substring(2,6);
 
   const attach = async (bin, ctc) => {
@@ -254,7 +275,7 @@ export const connectAccount = async address => {
     const creation_block = ctc.creation_block;
     const ABI = JSON.parse(bin.ETH.ABI);
     const ethCtc = new web3.eth.Contract(ABI, ctc_address);
-    const ethersCtc = new ethers.Contract(ctc_address, ABI, ethersp);
+    const ethersCtc = new ethers.Contract(ctc_address, ABI, networkAccount);
     const eventOnceP = (e) =>
           new Promise((resolve) => ethersCtc.once(e, (...a) => resolve(a)));
 
@@ -292,8 +313,11 @@ export const connectAccount = async address => {
         let r_maybe = false;
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
-        try { r_maybe = await ethCtc.methods[funcName](...munged).send({ from: address, value }); }
-        catch (e) {
+        try {
+          const r_fn = await ethersCtc[funcName](...munged, {value: toHex(value)});
+          r_maybe = await r_fn.wait();
+        } catch (e) {
+          debug(e);
           // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
           await Timeout.set(1);
           const current_block = await ethersp.getBlockNumber();
@@ -370,44 +394,34 @@ export const connectAccount = async address => {
 
     return { ...ctc, sendrecv: sendrecv_top, recv: recv_top }; };
 
-  // https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
+  // Not sure where the v4 contract docs are but this was just as good
+  // https://docs.ethers.io/ethers.js/v5-beta/api-contract.html#deployment
   const deploy = async (bin) => {
-    const web3 = await web3P;
-    const data = bin.ETH.Bytecode;
-    const gas = await web3.eth.estimateGas({ data });
-    // FIXME have some way to have a link to the reach code
-    const r = await web3.eth.sendTransaction({ data, gas, from: address });
-    const r_ok = await rejectInvalidReceiptFor(r.transactionHash, r);
-    return await attach(bin, { address: r_ok.contractAddress, creation_block: r_ok.blockNumber }); };
+    const { ABI, Bytecode } = bin.ETH;
+    const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
+    const contract = await factory.deploy();
+    await contract.deployed(); // Wait for it to actually be deployed.
+    const deployTxn = await networkAccount.provider.getTransaction(contract.deployTransaction.hash);
+    // XXX the equivalent of rejectInvalidReceiptFor?
+    // This may be handled already in contract.deployed()
+    return await attach(bin, { address: contract.address, creation_block: deployTxn.blockNumber });
+  };
 
-  return { deploy, attach, networkAccount: address }; };
+  return { deploy, attach, networkAccount }; };
 
 export const newTestAccount = async (startingBalance) => {
-  // XXX the excessive debug statements could be deleted
-  debug('awaiting web3P');
-  const web3 = await web3P;
-  debug('got web3P');
-  debug('awaiting getAccounts');
-  const [ prefunder ] = await web3.eth.personal.getAccounts();
-  debug(`got getAccounts: ${prefunder}`);
+  debug(`newTestAccount(${startingBalance})`);
+  const ethersp = await etherspP;
+  const prefunder = ethersp.getSigner();
 
-  // XXX these calls probably don't need the flaky wrapper
-  debug('awaiting newAccount');
-  const to = await flaky(async () => await web3.eth.personal.newAccount(''));
-  debug(`got newAccount: ${to}`);
+  const networkAccount = ethers.Wallet.createRandom().connect(ethersp);
+  const to = networkAccount.address;
 
-  debug(`awaiting unlockAccount: ${to}`);
   try {
-    const didUnlock = await flaky(async () => await web3.eth.personal.unlockAccount(to, '', 999999999));
-    if (!didUnlock) {
-      panic(`Couldn't unlock account ${to}! (but rpc was ok)`);
-    }
-    debug(`got unlockAccount: ${to}`);
     debug(`awaiting transfer: ${to}`);
-    await transfer(to, prefunder, startingBalance);
-    debug('got transfer');
-    debug(`awaiting connectAccount: ${to}`);
-    const acc = await connectAccount(to);
+    await transfer(networkAccount, prefunder, startingBalance);
+    debug(`got transfer. awaiting connectAccount: ${to}`);
+    const acc = await connectAccount(networkAccount);
     debug(`got connectAccount: ${to}`);
     return acc;
   } catch (e) {
