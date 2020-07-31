@@ -13,8 +13,7 @@ lin_ss lin_s rets ss k = foldr (lin_s rets) k ss
 lin_com_s :: String -> (LLRets -> DLStmts -> a -> a) -> (LLCommon a -> a) -> LLRets -> DLStmt -> a -> a
 lin_com_s who iters mkk rets s k =
   case s of
-    DLS_Let at dv de -> mkk $ LL_Let at dv lc de k
-      where lc = LC_Never --- XXX
+    DLS_Let at dv de -> mkk $ LL_Let at dv de k
     DLS_Claim at f ct da -> mkk $ LL_Claim at f ct da k
     DLS_If at ca ts fs -> mkk $ LL_LocalIf at ca t' f' k
       where

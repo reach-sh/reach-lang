@@ -91,7 +91,7 @@ instance Pretty DLStmt where
       DLS_Only _ who onlys ->
         "only" <> parens (render_sp who) <+> ns onlys <> semi
       DLS_ToConsensus _ who as vs mamt mtime cons ->
-        "publish" <> parens (render_sp who) <> (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns cons
+        "publish" <> parens (render_sp who) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns cons
         where
           amtp =
             case mamt of
@@ -132,21 +132,20 @@ instance Pretty DLProg where
       <> hardline
       <> pretty db
 
-instance Pretty LLLetCat where
-  pretty = viaShow
-
+--- Linear language
 instance Pretty a => Pretty (LLCommon a) where
   pretty l =
     case l of
       LL_Return _at -> mempty
-      LL_Let _at dv lc de k ->
-        "const" <+> pretty dv <+> parens (pretty lc) <+> "=" <+> pretty de <> semi
+      LL_Let _at dv de k ->
+        "const" <+> pretty dv <+> "=" <+> pretty de <> semi
         <> hardline <> pretty k
       LL_Var _at dv k -> "let" <+> pretty dv <> semi <> hardline <> pretty k
       LL_Set _at dv da k -> pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
       LL_Claim at f ct a k -> help (DLS_Claim at f ct a) k
       LL_LocalIf _at ca t f k -> prettyIfp ca t f <> hardline <> pretty k
     where
+      --- XXX remove for prettyX
       help d k = pretty d <> hardline <> pretty k
 
 instance Pretty LLLocal where
@@ -176,7 +175,7 @@ instance Pretty LLStep where
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
       LLS_ToConsensus _at who as vs mamt mtime cons ->
-        "publish" <> parens (render_sp who) <> (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns (pretty cons)
+        "publish" <> parens (render_sp who) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns (pretty cons)
         where
           amtp =
             case mamt of
@@ -198,3 +197,8 @@ instance Pretty LLProg where
       <> hardline
       <> hardline
       <> pretty db
+
+--- Projected Language
+
+instance Pretty PLLetCat where
+  pretty = viaShow

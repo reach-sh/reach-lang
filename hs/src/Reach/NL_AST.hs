@@ -265,6 +265,9 @@ newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)
   deriving (Eq, Show)
 
+assignment_vars :: DLAssignment -> [DLVar]
+assignment_vars (DLAssignment m) = M.keys m
+
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
   | DLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
@@ -327,16 +330,9 @@ data DLProg
   = DLProg SrcLoc SLParts DLBlock
 
 --- Linear Language
-data LLLetCat
-  = LC_Never
-  | LC_Once
-  | LC_Many
-  | LC_ManyStatic
-  deriving (Eq, Show)
-
 data LLCommon a
   = LL_Return SrcLoc
-  | LL_Let SrcLoc DLVar LLLetCat DLExpr a
+  | LL_Let SrcLoc DLVar DLExpr a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a
@@ -372,3 +368,11 @@ data LLStep
 
 data LLProg
   = LLProg SrcLoc SLParts LLStep
+
+--- Projected Language
+data PLLetCat
+  = PL_Never
+  | PL_Once
+  | PL_Many
+  deriving (Eq, Show)
+
