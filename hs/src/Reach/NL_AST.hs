@@ -430,6 +430,9 @@ data CPProg
   = CPProg SrcLoc (Seq.Seq CHandler)
   deriving (Eq, Show)
 
+newtype EPPs = EPPs (M.Map SLPart EPProg)
+  deriving (Eq, Show)
+
 data PLProg
-  = PLProg SrcLoc (M.Map SLPart EPProg) --- XXX CPProg
+  = PLProg SrcLoc EPPs --- XXX CPProg
   deriving (Eq, Show)

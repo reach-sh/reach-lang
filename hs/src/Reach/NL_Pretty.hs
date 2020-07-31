@@ -208,5 +208,13 @@ instance Pretty LLProg where
 instance Pretty PLLetCat where
   pretty = viaShow
 
+instance Pretty EPPs where
+  pretty (EPPs m) = render_obj m
+
 instance Pretty PLProg where
-  pretty p = viaShow p --- XXX
+  pretty (PLProg _ ps) =
+    "#lang pl" <> hardline
+    <> pretty ps
+    <> hardline
+    <> hardline
+    <> "XXX cp"

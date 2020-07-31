@@ -222,6 +222,6 @@ contract _s = error "XXX"
 epp :: LLProg -> PLProg
 epp (LLProg at ps s) = PLProg at pps --- cp
   where SLParts p_to_ie = ps
-        pps = M.mapWithKey mk_pp p_to_ie
+        pps = EPPs M.mapWithKey mk_pp p_to_ie
         mk_pp p ie = EPProg ie $ project p s
         --- cp = CPProg at $ contract s
