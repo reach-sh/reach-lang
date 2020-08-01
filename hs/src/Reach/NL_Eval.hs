@@ -1020,6 +1020,7 @@ evalStmt ctxt at sco ss =
                        True -> add_who_env old
                        False -> add_who_env $ env_merge to_at old msg_env)
                   penvs
+          --- XXX Add check and compute at this level
           amt' <-
             case mamt of
               Nothing ->

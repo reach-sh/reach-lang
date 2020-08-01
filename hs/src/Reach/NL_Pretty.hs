@@ -232,6 +232,9 @@ instance Pretty a => Pretty (PLCommon a) where
       PL_LocalIf _at ca t f k ->
         prettyIfp ca t f <> hardline <> pretty k
 
+instance Pretty PLTail where
+  pretty (PLTail x) = pretty x
+
 instance Pretty ETail where
   pretty e =
     case e of
@@ -239,13 +242,15 @@ instance Pretty ETail where
       ET_Seqn _ x y -> pretty x <> hardline <> pretty y
       ET_Stop _ da -> prettyStop da
       ET_If _ ca t f -> prettyIfp ca t f
-      ET_ToConsensus _ msend msg mtime k ->
-        "sendrecv" <> parens msendp <> (cm $ map pretty msg) <> timep <> ns (pretty k)
+      ET_ToConsensus _ fs which msend msg mtime k ->
+        "sendrecv" <+> fsp <+> whichp <+> parens msendp <> (cm $ map pretty msg) <> timep <> ns (pretty k)
         where
+          fsp = pretty fs
+          whichp = viaShow which
           msendp =
             case msend of
               Nothing -> mempty
-              Just (as, amt) -> ".publish" <> cm [ parens (render_das as), pretty amt ]
+              Just (as, amt, saved) -> ".publish" <> cm [ parens (render_das as), pretty amt, cm (map pretty saved) ]
           timep =
             case mtime of
               Nothing -> mempty
@@ -257,14 +262,14 @@ instance Pretty ETail where
       cm l = parens (hsep $ punctuate comma $ l)
       
 instance Pretty EPProg where
-  pretty (EPProg ie et) =
+  pretty (EPProg _ ie et) =
     pretty ie <> semi <> hardline <> pretty et
 
 instance Pretty EPPs where
   pretty (EPPs m) = render_obj m
 
 instance Pretty PLProg where
-  pretty (PLProg _ ps) =
+  pretty (PLProg _ ps _cp) =
     "#lang pl" <> hardline
     <> pretty ps
     <> hardline

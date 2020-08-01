@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE NoDeriveAnyClass, GeneralizedNewtypeDeriving #-}
 
 module Reach.NL_AST where
 
@@ -211,11 +212,11 @@ data SLCtxtFrame
 --- Dynamic Language
 newtype InteractEnv
   = InteractEnv (M.Map SLVar SLType)
-  deriving (Eq, Show)
+  deriving (Eq, Show, Monoid, Semigroup)
 
 newtype SLParts
   = SLParts (M.Map SLPart InteractEnv)
-  deriving (Eq, Show)
+  deriving (Eq, Show, Monoid, Semigroup)
 
 data DLConstant
   = DLC_Null
@@ -251,20 +252,23 @@ expr_pure e =
     DLE_Digest {} -> True
 
 data ClaimType
-  = CT_Assert --- Verified on all paths
-  | CT_Assume --- Always assumed true
-  | CT_Require --- Verified in honest, assumed in dishonest. (This may
-  --- sound backwards, but by verifying it in honest
-  --- mode, then we are checking that the other
-  --- participants fulfill the promise when acting
-  --- honestly.)
-  | CT_Possible --- Check if an assignment of variables exists to make
-  --- this true.
+  = --- Verified on all paths
+    CT_Assert
+  | --- Always assumed true
+    CT_Assume
+  | --- Verified in honest, assumed in dishonest. (This may sound
+    --- backwards, but by verifying it in honest mode, then we are
+    --- checking that the other participants fulfill the promise when
+    --- acting honestly.)
+    CT_Require
+  | --- Check if an assignment of variables exists to make
+    --- this true.
+    CT_Possible
   deriving (Eq, Show, Ord)
 
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)
-  deriving (Eq, Show)
+  deriving (Eq, Show, Monoid, Semigroup)
 
 assignment_vars :: DLAssignment -> [DLVar]
 assignment_vars (DLAssignment m) = M.keys m
@@ -284,9 +288,24 @@ data DLStmt
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_ToConsensus SrcLoc SLPart FromSpec [DLArg] [DLVar] DLBlock (Maybe (DLArg, DLBlock)) DLStmts
+  | DLS_ToConsensus
+      { dls_tc_at :: SrcLoc
+      , dls_tc_from :: SLPart
+      , dls_tc_fs :: FromSpec
+      , dls_tc_from_as :: [DLArg]
+      , dls_tc_from_msg :: [DLVar]
+      , dls_tc_amt :: DLBlock
+      , dls_tc_mtime :: (Maybe (DLArg, DLBlock))
+      , dls_tc_cons :: DLStmts
+      }
   | DLS_FromConsensus SrcLoc DLStmts
-  | DLS_While SrcLoc DLAssignment DLBlock DLBlock DLStmts
+  | DLS_While
+      { dls_w_at :: SrcLoc
+      , dls_w_asn :: DLAssignment
+      , dls_w_inv :: DLBlock
+      , dls_w_cond :: DLBlock
+      , dls_w_body :: DLStmts
+      }
   | DLS_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 
@@ -351,7 +370,7 @@ data LLLocal
 
 data LLBlock
   = LLBlock SrcLoc LLLocal DLArg
-  deriving (Eq, Show)  
+  deriving (Eq, Show)
 
 data LLConsensus
   = LLC_Com (LLCommon LLConsensus)
@@ -359,7 +378,14 @@ data LLConsensus
   | LLC_Transfer SrcLoc SLPart DLArg LLConsensus
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
   | --- inv then cond then body then kont
-    LLC_While SrcLoc DLAssignment LLConsensus LLConsensus LLConsensus LLConsensus
+    LLC_While
+      { llc_w_at :: SrcLoc
+      , llc_w_asn :: DLAssignment
+      , llc_w_inv :: LLConsensus
+      , llc_w_cond :: LLConsensus
+      , llc_w_body :: LLConsensus
+      , llc_w_k :: LLConsensus
+      }
   | --- FIXME Use types to ensure only within invariants and conditions
     LLC_Stop SrcLoc DLArg
   | --- FIXME Use types to ensure only within while body
@@ -370,7 +396,16 @@ data LLStep
   = LLS_Com (LLCommon LLStep)
   | LLS_Stop SrcLoc DLArg
   | LLS_Only SrcLoc SLPart LLLocal LLStep
-  | LLS_ToConsensus SrcLoc SLPart FromSpec [DLArg] [DLVar] LLBlock (Maybe (DLArg, LLStep)) LLConsensus
+  | LLS_ToConsensus
+      { lls_tc_at :: SrcLoc
+      , lls_tc_from :: SLPart
+      , lls_tc_fs :: FromSpec
+      , lls_tc_from_as :: [DLArg]
+      , lls_tc_from_msg :: [DLVar]
+      , lls_tc_amt :: LLBlock
+      , lls_tc_mtime :: (Maybe (DLArg, LLStep))
+      , lls_tc_cons :: LLConsensus
+      }
   deriving (Eq, Show)
 
 data LLProg
@@ -395,25 +430,42 @@ data PLCommon a
 
 data PLTail
   = PLTail (PLCommon PLTail)
-  deriving (Eq, Show)  
+  deriving (Eq, Show)
 
 data PLBlock
   = PLBlock PLTail DLArg
-  deriving (Eq, Show)  
+  deriving (Eq, Show)
 
 data ETail
   = ET_Com (PLCommon ETail)
-  | ET_Seqn SrcLoc ETail ETail
+  | ET_Seqn SrcLoc PLTail ETail
   | ET_Stop SrcLoc DLArg
   | ET_If SrcLoc DLArg ETail ETail
-  | ET_ToConsensus SrcLoc (Maybe ([DLArg], DLArg)) [DLVar] (Maybe (DLArg, ETail)) ETail
-  | ET_While SrcLoc DLAssignment PLBlock ETail ETail
-  --- FIXME Types to ensure only within while body
-  | ET_Continue SrcLoc DLAssignment
+  | ET_ToConsensus
+      { et_tc_at :: SrcLoc
+      , et_tc_fs :: FromSpec
+      , et_tc_which :: Int
+      , et_tc_from_me
+        :: ( ---     args     amt    saved_vs
+             Maybe ([DLArg], DLArg, [DLVar])
+             )
+      , et_tc_from_msg :: [DLVar]
+      , et_tc_from_mtime :: (Maybe (DLArg, ETail))
+      , et_tc_cons :: ETail
+      }
+  | ET_While
+      { et_w_at :: SrcLoc
+      , et_w_asn :: DLAssignment
+      , et_w_cond :: PLBlock
+      , et_w_body :: ETail
+      , et_w_k :: ETail
+      }
+  | --- FIXME Types to ensure only within while body
+    ET_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 
 data EPProg
-  = EPProg InteractEnv ETail
+  = EPProg SrcLoc InteractEnv ETail
   deriving (Eq, Show)
 
 data CTail
@@ -425,18 +477,49 @@ data CTail
   | CT_Halt SrcLoc
   deriving (Eq, Show)
 
+data CInterval
+  = CBetween [DLArg] [DLArg]
+  deriving (Show, Eq)
+
+default_interval :: CInterval
+default_interval = CBetween [] []
+
+interval_add_from :: CInterval -> DLArg -> CInterval
+interval_add_from (CBetween froml tol) x =
+  CBetween (x : froml) tol
+
+interval_add_to :: CInterval -> DLArg -> CInterval
+interval_add_to (CBetween froml tol) x =
+  CBetween froml (x : tol)
+
 data CHandler
-  = C_Handler CTail
-  | C_Loop CTail
+  = C_Handler
+      { ch_at :: SrcLoc
+      , ch_int :: CInterval
+      , ch_fs :: FromSpec
+      , ch_last :: Int
+      , ch_svs :: [DLVar]
+      , ch_msg :: [DLVar]
+      , ch_body :: CTail
+      }
+  | C_Loop
+    { cl_at :: SrcLoc
+    , cl_svs :: [DLVar]
+    , cl_vars :: [DLVar]
+    , cl_body :: CTail
+    }
   deriving (Eq, Show)
 
+newtype CHandlers = CHandlers (Seq.Seq CHandler)
+  deriving (Eq, Show, Monoid, Semigroup)
+
 data CPProg
-  = CPProg SrcLoc (Seq.Seq CHandler)
+  = CPProg SrcLoc CHandlers
   deriving (Eq, Show)
 
 newtype EPPs = EPPs (M.Map SLPart EPProg)
-  deriving (Eq, Show)
+  deriving (Eq, Show, Monoid, Semigroup)
 
 data PLProg
-  = PLProg SrcLoc EPPs --- XXX CPProg
+  = PLProg SrcLoc EPPs CPProg
   deriving (Eq, Show)

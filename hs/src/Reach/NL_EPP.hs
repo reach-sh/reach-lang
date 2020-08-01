@@ -1,6 +1,6 @@
 module Reach.NL_EPP where
 
-import qualified Data.Sequence as Seq
+---import qualified Data.Sequence as Seq
 import qualified Data.Map.Strict as M
 import Reach.NL_AST
 import Reach.Util
@@ -40,11 +40,18 @@ get_count v (Counts m) =
 count_rms :: [DLVar] -> Counts -> Counts
 count_rms vs (Counts cs) = Counts $ foldr M.delete cs vs
 
+counts_nzs :: Counts -> [DLVar]
+counts_nzs (Counts cs) =
+  map fst $ filter (\(_, c) -> c /= C_Never) $ M.toList cs
+
 class Countable a where
   counts :: a -> Counts
 
 instance (Countable x, Countable y) => Countable (x, y) where
   counts (a, b) = counts a <> counts b
+
+instance (Countable x, Countable y, Countable z) => Countable (x, y, z) where
+  counts (a, b, c) = counts a <> counts b <> counts c
 
 instance Countable v => Countable (Maybe v) where
   counts Nothing = mempty
@@ -80,15 +87,23 @@ instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
 
 --- Projection
-data ProSt = ProSt ()
+data ProRes_ a = ProRes_ Counts a
   deriving (Eq, Show)
 
-data ProResS a = ProResS Counts Counts a
+data ProResL = ProResL (ProRes_ PLTail)
   deriving (Eq, Show)
 
-instance Functor ProResS where
-  fmap f (ProResS x y a) = (ProResS x y (f a))
+data ProResC = ProResC (M.Map SLPart (ProRes_ ETail)) (ProRes_ (CTail, CHandlers))
+  deriving (Eq, Show)
 
+data ProSt = ProSt { pst_prev_handler :: Int
+                   , pst_interval :: CInterval
+                   , pst_parts :: [SLPart] }
+  deriving (Eq, Show)
+data ProResS = ProResS (M.Map SLPart (ProRes_ ETail)) (ProRes_ CHandlers)
+  deriving (Eq, Show)
+
+{-
 pro_com :: ProSt -> (ProSt -> a -> ProResS ETail) -> Bool -> LLCommon a -> Counts -> ProResS ETail
 pro_com st iter isConsensus l topk_me_cs =
   case l of
@@ -220,10 +235,74 @@ project me s = et
 
 contract :: LLStep -> (Seq.Seq CHandler)
 contract _s = error "XXX"
+-}
+
+epp_l :: ProSt -> LLLocal -> ProResL -> ProResL
+epp_l _st (LLL_Com _com) _kr = error "XXX"
+
+epp_n :: ProSt -> LLConsensus -> ProResC
+epp_n _st _con = error "XXX"
+
+epp_s :: ProSt -> LLStep -> ProResS
+epp_s st s =
+  case s of
+    LLS_Stop at da ->
+      ProResS (pall (ProRes_ (counts da) (ET_Stop at da))) (ProRes_ mempty mempty)
+    LLS_Only at who body_l k_s ->
+      ProResS p_prts prchs_k
+      where
+        p_prts = M.insert who who_prt_only p_prts_k
+        who_prt_only = ProRes_ who_body_cs $ ET_Seqn at who_body_lt who_k_et
+        ProResL (ProRes_ who_body_cs who_body_lt) = epp_l st body_l (ProResL (ProRes_ who_k_cs $ PLTail $ PL_Return at))
+        ProRes_ who_k_cs who_k_et = p_prts_k M.! who
+        ProResS p_prts_k prchs_k = epp_s st k_s
+    LLS_ToConsensus at from fs from_as msg amt mtime cons ->
+      ProResS p_prts prchs
+      where
+        LLBlock _XXX_amt_at _XXX_amt_l amt_da = amt
+        p_prts = M.mapWithKey mk_p_prt p_prts_cons
+        mk_p_prt p prt =
+          case p == from of
+            True -> mk_sender_et prt
+            False -> mk_receiver_et prt
+        mtime' = error $ "XXX " ++ show mtime
+        from_me = Just (from_as, amt_da, svs)
+        (fs_uses, fs_defns) =
+          case fs of
+            FS_Join dv -> (mempty, [dv])
+            FS_Again dv -> (counts dv, mempty)
+        mk_et mfrom (ProRes_ cs_ et_) =
+          ProRes_ cs_' $ ET_ToConsensus at fs which mfrom msg mtime' et_
+          where
+            --- XXX mtime' vs
+            cs_' = fs_uses <> counts mfrom <> count_rms (msg <> fs_defns) cs_ 
+        mk_sender_et = mk_et from_me
+        mk_receiver_et = mk_et Nothing
+        this_h = C_Handler at int fs prev svs msg ct_cons
+        int = pst_interval st
+        prchs = ProRes_ cons'_vs $ (CHandlers $ return $ this_h) <> ct_chs
+        prev = pst_prev_handler st
+        which = prev + 1
+        cons'_vs = count_rms msg cons_vs 
+        st_cons = st { pst_prev_handler = which }
+        svs = counts_nzs cons'_vs
+        ProResC p_prts_cons (ProRes_ cons_vs (ct_cons, ct_chs)) = epp_n st_cons cons
+  where
+    pmap f = M.fromList $ map f $ pst_parts st
+    pall x = pmap (\p -> (p, x))
 
 epp :: LLProg -> PLProg
-epp (LLProg at ps s) = PLProg at pps --- cp
+epp (LLProg at ps s) = PLProg at pps cp
   where SLParts p_to_ie = ps
+        st = ProSt
+          { pst_prev_handler = 0
+          , pst_interval = default_interval
+          , pst_parts = M.keys p_to_ie }
         pps = EPPs $ M.mapWithKey mk_pp p_to_ie
-        mk_pp p ie = EPProg ie $ project p s
-        --- cp = CPProg at $ contract s
+        mk_pp p ie =
+          case M.lookup p p_prts of
+            Just (ProRes_ _ et) -> EPProg at ie et
+            Nothing ->
+              impossible $ "part not in projection"
+        ProResS p_prts (ProRes_ _ chs) = epp_s st s
+        cp = CPProg at chs
