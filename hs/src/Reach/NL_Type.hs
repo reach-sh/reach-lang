@@ -108,7 +108,11 @@ typeOf at v =
     SLV_Clo _ _ _ _ _ -> none
     SLV_DLVar dv@(DLVar _ _ t _) -> (t, DLA_Var dv)
     SLV_Type _ -> none
-    SLV_Participant _ _ _ -> none --- XXX get the address
+    SLV_Participant _ _ _ _ mdv ->
+      case mdv of
+        Nothing -> none
+        Just dv ->
+          (T_Address, DLA_Var dv)
     SLV_Prim (SLPrim_interact _ m t) ->
       case t of
         T_Var {} -> none

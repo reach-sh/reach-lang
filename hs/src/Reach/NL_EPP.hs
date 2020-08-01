@@ -189,7 +189,7 @@ pro_s me st s =
           case who == me of
             False -> ProResS mempty mempty $ ET_Com $ PL_Return at
             True -> pro_l k_me_cs st loc
-    LLS_ToConsensus at who send msg amt mtime k ->
+    LLS_ToConsensus at who _XXX_fs send msg amt mtime k ->
       ProResS me_cs con_cs s'
       where
         s' = if isMe then mk_amt_s' else tc_s'

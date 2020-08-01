@@ -85,6 +85,9 @@ prettyStop da = "exit" <> parens (pretty da) <> semi
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
+instance Pretty FromSpec where
+  pretty x = viaShow x
+
 instance Pretty DLStmt where
   pretty d =
     case d of
@@ -101,8 +104,8 @@ instance Pretty DLStmt where
         "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
       DLS_Only _ who onlys ->
         "only" <> parens (render_sp who) <+> ns onlys <> semi
-      DLS_ToConsensus _ who as vs amt mtime cons ->
-        "publish" <> parens (render_sp who) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns cons
+      DLS_ToConsensus _ who fs as vs amt mtime cons ->
+        "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns cons
         where
           amtp = ".pay" <> parens (render_nest $ pretty amt)
           timep =
@@ -186,8 +189,8 @@ instance Pretty LLStep where
       LLS_Stop _at da -> prettyStop da
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
-      LLS_ToConsensus _at who as vs amt mtime cons ->
-        "publish" <> parens (render_sp who) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns (pretty cons)
+      LLS_ToConsensus _at who fs as vs amt mtime cons ->
+        "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns (pretty cons)
         where
           amtp = ".pay" <> parens (render_nest $ pretty amt)
           timep =

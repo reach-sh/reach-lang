@@ -83,6 +83,7 @@ data SLType
   | T_Bool
   | T_UInt256
   | T_Bytes
+  | T_Address
   | T_Fun [SLType] SLType
   | T_Array [SLType]
   | T_Obj (M.Map SLVar SLType)
@@ -107,8 +108,7 @@ data SLVal
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLEnv
   | SLV_DLVar DLVar
   | SLV_Type SLType
-  | --- XXX Add something about whether it's bound?
-    SLV_Participant SrcLoc SLPart SLVal
+  | SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   deriving (Eq, Show)
@@ -121,7 +121,7 @@ data ToConsensusMode
 
 data SLForm
   = SLForm_Part_Only SLVal
-  | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (JSExpression, JSExpression))
+  | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (JSExpression, JSExpression))
   | SLForm_Part_OnlyAns SrcLoc SLPart SLEnv SLVal
   deriving (Eq, Show)
 
@@ -269,6 +269,11 @@ newtype DLAssignment
 assignment_vars :: DLAssignment -> [DLVar]
 assignment_vars (DLAssignment m) = M.keys m
 
+data FromSpec
+  = FS_Join DLVar
+  | FS_Again DLVar
+  deriving (Eq, Show)
+
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
   | DLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
@@ -279,7 +284,7 @@ data DLStmt
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
-  | DLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] DLBlock (Maybe (DLArg, DLBlock)) DLStmts
+  | DLS_ToConsensus SrcLoc SLPart FromSpec [DLArg] [DLVar] DLBlock (Maybe (DLArg, DLBlock)) DLStmts
   | DLS_FromConsensus SrcLoc DLStmts
   | DLS_While SrcLoc DLAssignment DLBlock DLBlock DLStmts
   | DLS_Continue SrcLoc DLAssignment
@@ -365,8 +370,7 @@ data LLStep
   = LLS_Com (LLCommon LLStep)
   | LLS_Stop SrcLoc DLArg
   | LLS_Only SrcLoc SLPart LLLocal LLStep
-  | --- XXX Add an annotation for whether this is a join
-    LLS_ToConsensus SrcLoc SLPart [DLArg] [DLVar] LLBlock (Maybe (DLArg, LLStep)) LLConsensus
+  | LLS_ToConsensus SrcLoc SLPart FromSpec [DLArg] [DLVar] LLBlock (Maybe (DLArg, LLStep)) LLConsensus
   deriving (Eq, Show)
 
 data LLProg

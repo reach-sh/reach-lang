@@ -98,8 +98,8 @@ lin_step_s rets s k =
       LLS_Only at who ls k
       where
         ls = lin_local at ss
-    DLS_ToConsensus at who as ms amt mtime cons ->
-      LLS_ToConsensus at who as ms amt' mtime' cons'
+    DLS_ToConsensus at who fs as ms amt mtime cons ->
+      LLS_ToConsensus at who fs as ms amt' mtime' cons'
       where
         cons' = lin_con at back cons
         back more = iters rets more k
