@@ -6,11 +6,11 @@ import Data.Bits
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable
 import qualified Data.Map.Strict as M
-import Data.STRef
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import Reach.STCounter
 import Reach.JSUtil
 import Reach.NL_AST
 import Reach.NL_Parser
@@ -191,7 +191,7 @@ data SLScope = SLScope
 
 data SLCtxt s = SLCtxt
   { ctxt_mode :: SLCtxtMode
-  , ctxt_id :: Maybe (STRef s Int)
+  , ctxt_id :: Maybe (STCounter s)
   , ctxt_stack :: [SLCtxtFrame]
   , ctxt_local_mname :: Maybe [SLVar]
   }
@@ -230,9 +230,7 @@ ctxt_alloc ctxt at = do
   let idr = case ctxt_id ctxt of
         Just x -> x
         Nothing -> expect_throw at $ Err_Eval_IllegalLift $ ctxt_mode ctxt
-  x <- readSTRef idr
-  writeSTRef idr $ x + 1
-  return x
+  incSTCounter idr
 
 ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s (DLVar, DLStmts)
 ctxt_lift_expr ctxt at mk_var e = do
@@ -1313,7 +1311,7 @@ compileDApp topv =
   case topv of
     SLV_Prim (SLPrim_DApp_Delay at [(SLV_Object _ _opts), (SLV_Array _ parts), clo] top_env) -> do
       --- FIXME look at opts
-      idxr <- newSTRef $ 0
+      idxr <- newSTCounter
       let ctxt_step =
             (SLCtxt
                { ctxt_mode = SLC_Step mempty penvs

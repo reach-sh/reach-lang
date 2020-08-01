@@ -510,7 +510,7 @@ data CHandler
     }
   deriving (Eq, Show)
 
-newtype CHandlers = CHandlers (Seq.Seq CHandler)
+newtype CHandlers = CHandlers (M.Map Int CHandler)
   deriving (Eq, Show, Monoid, Semigroup)
 
 data CPProg
