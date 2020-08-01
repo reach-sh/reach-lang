@@ -202,14 +202,6 @@ const devnetP = (async () => {
   return await doHealthcheck();
 })();
 
-const web3P = (async () => {
-  debug('awaiting devnetP');
-  await devnetP;
-  debug('got devnetP');
-  const web3 = new Web3(new Web3.providers.HttpProvider(uri));
-  return web3;
-})();
-
 const etherspP = (async () => {
   await devnetP;
   // Note: `network` must not be undefined. 'unspecified' is ok.
@@ -228,8 +220,15 @@ const ethersBlockOnceP = async () => {
 };
 
 export const balanceOf = async acc => {
-  const web3 = await web3P;
-  return toBN(await web3.eth.getBalance(acc.networkAccount.address));
+  const { networkAccount } = acc;
+  if (!networkAccount) panic(`acc.networkAccount missing. Got: ${acc}`);
+
+  if (networkAccount.getBalance) {
+    return toBN(await acc.networkAccount.getBalance());
+  } else if (networkAccount.address) {
+    const ethersp = await etherspP;
+    return toBN(await ethersp.getBalance(networkAccount.address));
+  } else return panic(`acc.networkAccount.address missing. Got: ${networkAccount}`);
 };
 
 // XXX dead code?
@@ -237,7 +236,6 @@ export const balanceOf = async acc => {
 // const encode = (t, v) =>
 //   ethers.utils.defaultAbiCoder.encode([t], [v]);
 
-// https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#sendtransaction
 export const transfer = async (to, from, value) => {
   if (!to.address) panic(`Expected to.address: ${to}`);
   if (!from.sendTransaction) panic(`Expected from.sendTransaction: ${from}`);
@@ -258,14 +256,13 @@ const rejectInvalidReceiptFor = async (txHash, r) =>
                   : resolve(r));
 
 const fetchAndRejectInvalidReceiptFor = async txHash => {
-  const web3 = await web3P;
-  const r = await web3.eth.getTransactionReceipt(txHash);
+  const ethersp = await etherspP;
+  const r = await ethersp.getTransactionReceipt(txHash);
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
 export const connectAccount = async networkAccount => {
-  // XXX networkAccount MUST be a wallet to send w/ ethers (?)
-  const web3 = await web3P;
+  // XXX networkAccount MUST be a wallet to deploy/attach
   const ethersp = await etherspP;
   const { address } = networkAccount;
   const shad = address.substring(2,6);
@@ -274,7 +271,6 @@ export const connectAccount = async networkAccount => {
     const ctc_address = ctc.address;
     const creation_block = ctc.creation_block;
     const ABI = JSON.parse(bin.ETH.ABI);
-    const ethCtc = new web3.eth.Contract(ABI, ctc_address);
     const ethersCtc = new ethers.Contract(ctc_address, ABI, networkAccount);
     const eventOnceP = (e) =>
           new Promise((resolve) => ethersCtc.once(e, (...a) => resolve(a)));
@@ -282,23 +278,28 @@ export const connectAccount = async networkAccount => {
     debug(`${shad}: created at ${creation_block}`);
     let last_block = creation_block;
 
-    const updateLastAndGetEventData = async (o, ok_evt, ok_e) => {
-      const this_block = o.blockNumber;
-      last_block = this_block;
+    const updateLast = o => { last_block = o.blockNumber; };
 
-      const ok_args_abi = ABI
-            .find(a => a.name === ok_evt)
-            .inputs;
-      const decoded = web3.eth.abi.decodeLog(ok_args_abi, ok_e.raw.data, ok_e.raw.topics);
-      const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => a.name).map(n => decoded[n]);
+    // XXX Dumb hack because ethers sometimes uses BigNumber not BN
+    // Anything that's not a BigNumber will come back out untouched.
+    const bn2bn = (n) => {
+      if (n && n.constructor && n.constructor.name == 'BigNumber') {
+        return toBN(n);
+      } else return n;
+    };
 
-      return [ ok_bal, ok_vals ]; };
+    const getEventData = (ok_evt, ok_e) => {
+      const ok_args_abi = ethersCtc.interface.events[ok_evt].inputs;
+      const { values } = ethersCtc.interface.parseLog(ok_e);
+      const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => bn2bn(values[a.name]));
+
+      return [ ok_bal, ok_vals ];
+    };
 
     const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
       void(try_p, evt_cnt);
       return sendrecv(label, funcNum, args, value, timeout_delay); };
 
-    // https://web3js.readthedocs.io/en/v1.2.0/web3-eth-contract.html#web3-eth-contract
     /* eslint require-atomic-updates: off */
     const sendrecv = async (label, funcNum, args, value, timeout_delay) => {
       const funcName = `m${funcNum}`;
@@ -364,7 +365,12 @@ export const connectAccount = async networkAccount => {
       let block_poll_end = block_poll_start;
       while ( ! timeout_delay || block_poll_start < last_block + timeout_delay ) {
         void(eventOnceP); // This might be nice for performance, but it may miss things too.
-        const es = await ethCtc.getPastEvents(ok_evt, { fromBlock: block_poll_start, toBlock: block_poll_end });
+        const es = await ethersp.getLogs({
+          fromBlock: block_poll_start,
+          toBlock: block_poll_end,
+          address: ethersCtc.address,
+          topics: [ethersCtc.interface.events[ok_evt].topic],
+        });
         if ( es.length == 0 ) {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);
           block_poll_start = block_poll_end;
@@ -381,10 +387,11 @@ export const connectAccount = async networkAccount => {
 
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
           void(ok_r);
-          const ok_t = await web3.eth.getTransaction(ok_e.transactionHash);
+          const ok_t = await ethersp.getTransaction(ok_e.transactionHash);
           debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
-          const [ ok_bal, ok_vals ] = await updateLastAndGetEventData(ok_t, ok_evt, ok_e);
+          updateLast(ok_t);
+          const [ ok_bal, ok_vals ] = getEventData(ok_evt, ok_e);
           return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from }; } }
 
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);
