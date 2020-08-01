@@ -1046,8 +1046,10 @@ evalStmt ctxt at sco ss =
                 SLRes dta_lifts (SLAppRes _ dt_fins) <-
                   evalApplyVals ctxt at (impossible "timeout expects clo") dt_thunk []
                 let dt_fin = ensure_public at dt_fins
-                let (_XXX_dt_fin_ty, dt_fin_da) = typeOf at dt_fin
-                --- _XXX_dt_fin_ty might be different than the return for the whole program
+                let (_dt_fin_ty, dt_fin_da) = typeOf at dt_fin
+                --- FIXME: We check the type of dt_fin_ty against the
+                --- rest of the program in the linearize... There
+                --- should be a better way.
                 let dp = DLBlock at dta_lifts dt_fin_da
                 case de_ty of
                   T_UInt256 ->

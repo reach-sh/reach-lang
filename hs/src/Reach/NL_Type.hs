@@ -88,42 +88,55 @@ typeCheck_help at env ty val val_ty res =
         False ->
           expect_throw at $ Err_Type_Mismatch ty val_ty val
 
-typeOf :: SrcLoc -> SLVal -> (SLType, DLArg)
-typeOf at v =
+conTypeOf :: DLConstant -> SLType
+conTypeOf c =
+  case c of
+    DLC_Null -> T_Null
+    DLC_Bool _ -> T_Bool
+    DLC_Int _ -> T_UInt256
+    DLC_Bytes _ -> T_Bytes
+
+argTypeOf :: DLArg -> SLType
+argTypeOf d =
+  case d of
+    DLA_Var (DLVar _ _ t _) -> t
+    DLA_Con c -> conTypeOf c
+    DLA_Array as -> T_Array $ map argTypeOf as
+    DLA_Obj senv -> T_Obj $ M.map argTypeOf senv
+    DLA_Interact _ t -> t
+
+slToDL :: SrcLoc -> SLVal -> DLArg
+slToDL at v =
   case v of
-    SLV_Null _ _ -> (T_Null, DLA_Con $ DLC_Null)
-    SLV_Bool _ b -> (T_Bool, DLA_Con $ DLC_Bool b)
-    SLV_Int _ i -> (T_UInt256, DLA_Con $ DLC_Int i)
-    SLV_Bytes _ bs -> (T_Bytes, DLA_Con $ DLC_Bytes bs)
-    SLV_Array at' vs -> (T_Array ts, DLA_Array das)
-      where
-        tdas = map (typeOf at') vs
-        ts = map fst tdas
-        das = map snd tdas
-    SLV_Object at' fenv -> (T_Obj tenv, DLA_Obj aenv)
-      where
-        cenv = M.map (typeOf at' . snd) fenv
-        tenv = M.map fst cenv
-        aenv = M.map snd cenv
+    SLV_Null _ _ -> DLA_Con $ DLC_Null
+    SLV_Bool _ b -> DLA_Con $ DLC_Bool b
+    SLV_Int _ i -> DLA_Con $ DLC_Int i
+    SLV_Bytes _ bs -> DLA_Con $ DLC_Bytes bs
+    SLV_Array _ vs -> DLA_Array $ map (slToDL at) vs
+    SLV_Object _ fenv ->
+      DLA_Obj $ M.map ((slToDL at) . snd) fenv
     SLV_Clo _ _ _ _ _ -> none
-    SLV_DLVar dv@(DLVar _ _ t _) -> (t, DLA_Var dv)
+    SLV_DLVar dv -> DLA_Var dv
     SLV_Type _ -> none
     SLV_Participant _ _ _ _ mdv ->
       case mdv of
         Nothing -> none
-        Just dv ->
-          (T_Address, DLA_Var dv)
+        Just dv -> DLA_Var dv
     SLV_Prim (SLPrim_interact _ m t) ->
       case t of
         T_Var {} -> none
         T_Forall {} -> none
         T_Fun {} -> none
-        _ ->
-          (t, DLA_Interact m t)
+        _ -> DLA_Interact m t
     SLV_Prim _ -> none
     SLV_Form _ -> none
   where
     none = expect_throw at $ Err_Type_None v
+
+typeOf :: SrcLoc -> SLVal -> (SLType, DLArg)
+typeOf at v = (t, da)
+  where da = slToDL at v
+        t = argTypeOf da
 
 typeCheck :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArg
 typeCheck at env ty val = typeCheck_help at env ty val val_ty res

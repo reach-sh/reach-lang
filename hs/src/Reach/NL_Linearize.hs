@@ -107,9 +107,13 @@ lin_step_s rets s k =
         amt' = LLBlock amt_at (lin_local amt_at amt_ss) amt_da
         mtime' = do
           (delay_da, DLBlock time_at time_ss time_da) <- mtime
-          --- XXX maybe k is needed here?
-          let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_da)
-          return $ (delay_da, time_ll)
+          case k of
+            LLS_Stop fin_at fin_da -> do
+              let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_da)
+              case typeMeet at (fin_at, argTypeOf fin_da) (time_at, argTypeOf time_da) of
+                _ -> return $ (delay_da, time_ll)
+            _ ->
+              impossible $ "lin toconsensus w/ non-stop k"
     _ ->
       lin_com_s "step" iters LLS_Com rets s k
   where

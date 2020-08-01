@@ -5,6 +5,7 @@ import qualified Data.Map.Strict as M
 import Reach.NL_AST
 import Reach.Util
 
+--- Variable Usage Counting
 data Count
   = C_Never
   | C_Once
@@ -78,6 +79,7 @@ instance Countable DLExpr where
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
 
+--- Projection
 data ProSt = ProSt ()
   deriving (Eq, Show)
 
