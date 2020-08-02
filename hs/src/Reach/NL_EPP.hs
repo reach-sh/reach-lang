@@ -113,10 +113,12 @@ data ProResS = ProResS SLPartETs Counts
 
 type MBack a res = (Counts -> (forall c . c -> PLCommon c) -> a -> res)
 
+type MLookCommon = forall d lookres . ((Counts -> PLCommon d -> lookres) -> (Counts -> d -> lookres) -> Counts -> d -> lookres)
+
 epp_m ::
   MBack a res
   -> (a -> res)
-  -> (a -> ((Counts -> PLCommon d -> lookres) -> (Counts -> d -> lookres) -> Counts -> d -> lookres) -> res)
+  -> (a -> MLookCommon -> res)
   -> LLCommon a
   -> res
 epp_m back skip look c =
@@ -144,15 +146,24 @@ epp_m back skip look c =
     LL_LocalIf {} -> error "XXX"
 
 epp_l :: forall s . LLLocal -> Counts -> ST s ProResL
-epp_l (LLL_Com com) _XXX_cs = epp_m back (error "XXX skip") (error "XXX look") com
+epp_l (LLL_Com com) _XXX_cs = epp_m back skip look com
   where back :: MBack LLLocal (ST s ProResL)
         back _XXX_cs' _XXX_mkpl _XXX_k = (error "XXX back")
+        skip _XXX = (error "XXX skip")
+        look _XXX _XXXcommon = (error "XXX look")
 
 extend_locals :: Counts -> (forall c . c -> PLCommon c) -> SLPartETs -> SLPartETs
 extend_locals cs' mkpl p_prts_s = M.map add p_prts_s
   where add :: ProRes_ ETail -> ProRes_ ETail
         add (ProRes_ p_cs p_et) =
           ProRes_ (cs' <> p_cs) (ET_Com $ mkpl p_et)
+
+extend_locals_look :: MLookCommon -> SLPartETs -> SLPartETs
+extend_locals_look common p_prts_s = M.map add p_prts_s
+  where add (ProRes_ p_cs p_et) =
+          common back' skip' p_cs p_et
+          where skip' = ProRes_
+                back' p_cs' p_ct' = ProRes_ p_cs' $ ET_Com $ p_ct'
 
 epp_n :: forall s . ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
@@ -167,8 +178,14 @@ epp_n st n =
               let ct_k' = CT_Com $ mkpl ct_k
               return $ ProResC p_prts_s' (ProRes_ cs_k' ct_k')
             skip k = epp_n st k
-            look _XXX_k _XXX_common =
-              error "XXX"
+            look :: LLConsensus -> MLookCommon -> (ST s ProResC)
+            look k common = do
+              ProResC p_prts_s (ProRes_ cs_k ct_k) <- skip k
+              let cr' = common back' skip' cs_k ct_k
+                    where skip' = ProRes_
+                          back' cs_k' ct_k' = ProRes_ cs_k' $ CT_Com $ ct_k'
+              let p_prts_s' = extend_locals_look common p_prts_s
+              return $ ProResC p_prts_s' cr'
     LLC_If {} -> error "XXX"
     LLC_Transfer {} -> error "XXX"
     LLC_FromConsensus at1 _at2 s -> do
@@ -191,13 +208,10 @@ epp_s st s =
               let p_prts_s' = extend_locals cs' mkpl p_prts_s
               return $ ProResS p_prts_s' cr
             skip k = epp_s st k
+            look :: LLStep -> MLookCommon -> (ST s ProResS)
             look k common = do
               ProResS p_prts_s cr <- skip k
-              let add (ProRes_ p_cs p_et) =
-                    common back' skip' p_cs p_et
-                    where skip' = ProRes_
-                          back' p_cs' p_ct' = ProRes_ p_cs' $ ET_Com $ p_ct'
-              let p_prts_s' = M.map add p_prts_s
+              let p_prts_s' = extend_locals_look common p_prts_s
               return $ ProResS p_prts_s' cr
     LLS_Stop at da -> do
       let p_prts_s = pall (ProRes_ (counts da) (ET_Stop at da))
