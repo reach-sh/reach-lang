@@ -361,7 +361,7 @@ data LLCommon a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a
-  | LL_LocalIf SrcLoc DLArg a a a
+  | LL_LocalIf SrcLoc DLArg LLLocal LLLocal a
   deriving (Eq, Show)
 
 data LLLocal
@@ -425,7 +425,7 @@ data PLCommon a
   | PL_Var SrcLoc DLVar a
   | PL_Set SrcLoc DLVar DLArg a
   | PL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a
-  | PL_LocalIf SrcLoc DLArg a a a
+  | PL_LocalIf SrcLoc DLArg PLTail PLTail a
   deriving (Eq, Show)
 
 data PLTail

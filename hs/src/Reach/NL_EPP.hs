@@ -122,8 +122,8 @@ data ProResS = ProResS SLPartETs Counts
   deriving (Eq, Show)
 
 type MDone res = (SrcLoc -> res)
+
 type MBack a res = (Counts -> (forall c. c -> PLCommon c) -> a -> res)
-type MBackIf a res = (Counts -> (forall c. c -> c -> c -> PLCommon c) -> a -> a -> a -> res)
 
 type MLookCommon = forall d lookres. ((Counts -> PLCommon d -> lookres) -> (Counts -> d -> lookres) -> Counts -> d -> lookres)
 
@@ -131,12 +131,11 @@ type MLookCommon = forall d lookres. ((Counts -> PLCommon d -> lookres) -> (Coun
 epp_m
   :: MDone res
   -> MBack a res
-  -> MBackIf a res
   -> (a -> res)
   -> (a -> MLookCommon -> res)
   -> LLCommon a
   -> res
-epp_m done back backif skip look c =
+epp_m done back skip look c =
   case c of
     LL_Return at -> done at
     LL_Let at dv de k ->
@@ -160,7 +159,8 @@ epp_m done back backif skip look c =
             in back' cs' (PL_Var at dv k'))
     LL_Set at dv da k ->
       back cs' (PL_Set at dv da) k
-      where cs' = counts da
+      where
+        cs' = counts da
     LL_Claim at f ct ca k ->
       case ct of
         CT_Assert -> skip k
@@ -169,18 +169,21 @@ epp_m done back backif skip look c =
           where
             cs' = counts ca
     LL_LocalIf at ca t f k ->
-      backif cs' (\x y z -> PL_LocalIf at ca x y z) t f k
-      where cs' = counts ca
+      look
+        k
+        (\back' _skip' k_cs k' ->
+           let cs' = counts ca <> t'_cs <> f'_cs
+               ProResL (ProRes_ t'_cs t') = epp_l t k_cs
+               ProResL (ProRes_ f'_cs f') = epp_l f k_cs
+            in back' cs' $ PL_LocalIf at ca t' f' k')
 
-epp_l :: forall s. LLLocal -> Counts -> ST s ProResL
-epp_l (LLL_Com com) _XXX_cs = epp_m done back backif skip look com
+epp_l :: LLLocal -> Counts -> ProResL
+epp_l (LLL_Com com) _XXX_cs = epp_m done back skip look com
   where
-    done :: MDone (ST s ProResL)
+    done :: MDone ProResL
     done _XXX = error "XXX done"
-    back :: MBack LLLocal (ST s ProResL)
+    back :: MBack LLLocal ProResL
     back _XXX_cs' _XXX_mkpl _XXX_k = (error "XXX back")
-    backif :: MBackIf LLLocal (ST s ProResL)
-    backif _XXX_cs' _XXX_mkpl _XXX_t _XXX_f _XXX_k = (error "XXX back if")
     skip _XXX = (error "XXX skip")
     look _XXX _XXXcommon = (error "XXX look")
 
@@ -197,8 +200,9 @@ extend_localsif cs' mkpl p_prts_s_t p_prts_s_f p_prts_s_k = M.mapWithKey add p_p
     add :: SLPart -> ProRes_ ETail -> ProRes_ ETail
     add p (ProRes_ k_cs kt) =
       ProRes_ (cs' <> t_cs <> f_cs <> k_cs) (ET_Com $ mkpl tt ft kt)
-      where ProRes_ t_cs tt = p_prts_s_t M.! p
-            ProRes_ f_cs ft = p_prts_s_f M.! p
+      where
+        ProRes_ t_cs tt = p_prts_s_t M.! p
+        ProRes_ f_cs ft = p_prts_s_f M.! p
 
 extend_locals_look :: MLookCommon -> SLPartETs -> SLPartETs
 extend_locals_look common p_prts_s = M.map add p_prts_s
@@ -213,7 +217,7 @@ epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
     LLC_Com c ->
-      epp_m done back backif skip look c
+      epp_m done back skip look c
       where
         done :: MDone (ST s ProResC)
         done rat =
@@ -224,15 +228,6 @@ epp_n st n =
           let p_prts_s' = extend_locals cs' mkpl p_prts_s
           let cs_k' = cs' <> cs_k
           let ct_k' = CT_Com $ mkpl ct_k
-          return $ ProResC p_prts_s' (ProRes_ cs_k' ct_k')
-        backif :: MBackIf LLConsensus (ST s ProResC)
-        backif cs' mkpl t f k = do
-          ProResC p_prts_s_t (ProRes_ cs_t ct_t) <- skip t
-          ProResC p_prts_s_f (ProRes_ cs_f ct_f) <- skip f
-          ProResC p_prts_s_k (ProRes_ cs_k ct_k) <- skip k
-          let p_prts_s' = extend_localsif cs' mkpl p_prts_s_t p_prts_s_f p_prts_s_k
-          let cs_k' = cs' <> cs_t <> cs_f <> cs_k
-          let ct_k' = CT_Com $ mkpl ct_t ct_f ct_k
           return $ ProResC p_prts_s' (ProRes_ cs_k' ct_k')
         skip k = epp_n st k
         look :: LLConsensus -> MLookCommon -> (ST s ProResC)
@@ -263,7 +258,7 @@ epp_s :: forall s. ProSt s -> LLStep -> ST s ProResS
 epp_s st s =
   case s of
     LLS_Com c ->
-      epp_m done back backif skip look c
+      epp_m done back skip look c
       where
         done :: MDone (ST s ProResS)
         done _XXX = error "XXX"
@@ -272,9 +267,6 @@ epp_s st s =
           ProResS p_prts_s cr <- skip k
           let p_prts_s' = extend_locals cs' mkpl p_prts_s
           return $ ProResS p_prts_s' cr
-        backif :: MBackIf LLStep (ST s ProResS)
-        backif _XXX_cs' _XXX_mkpl _XXX_t _XXX_f _XXX_k =
-          error "epp_s backif"
         skip k = epp_s st k
         look :: LLStep -> MLookCommon -> (ST s ProResS)
         look k common = do
@@ -287,7 +279,7 @@ epp_s st s =
     LLS_Only at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s
       let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
-      ProResL (ProRes_ who_body_cs who_body_lt) <- epp_l body_l who_k_cs
+      let ProResL (ProRes_ who_body_cs who_body_lt) = epp_l body_l who_k_cs
       let who_prt_only = ProRes_ who_body_cs $ ET_Seqn at who_body_lt who_k_et
       let p_prts = M.insert who who_prt_only p_prts_k
       return $ ProResS p_prts prchs_k

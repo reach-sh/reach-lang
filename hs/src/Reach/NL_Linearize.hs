@@ -17,9 +17,8 @@ lin_com_s who iters mkk rets s k =
     DLS_Claim at f ct da -> mkk $ LL_Claim at f ct da k
     DLS_If at ca ts fs -> mkk $ LL_LocalIf at ca t' f' k
       where
-        t' = iters rets ts nk
-        f' = iters rets fs nk
-        nk = mkk $ LL_Return at
+        t' = lin_local_rets at rets ts
+        f' = lin_local_rets at rets fs
     DLS_Transfer {} ->
       impossible $ who ++ " cannot transfer"
     DLS_Return at ret sv ->
@@ -48,8 +47,11 @@ lin_local_s :: LLRets -> DLStmt -> LLLocal -> LLLocal
 lin_local_s rets s k =
   lin_com_s "local" (lin_ss lin_local_s) LLL_Com rets s k
 
+lin_local_rets :: SrcLoc -> LLRets -> DLStmts -> LLLocal
+lin_local_rets at rets ss = lin_ss lin_local_s rets ss $ LLL_Com $ LL_Return at
+
 lin_local :: SrcLoc -> DLStmts -> LLLocal
-lin_local at ss = lin_ss lin_local_s mempty ss $ LLL_Com $ LL_Return at
+lin_local at ss = lin_local_rets at mempty ss
 
 lin_con_s :: (DLStmts -> LLStep) -> LLRets -> DLStmt -> LLConsensus -> LLConsensus
 lin_con_s back rets s k =
