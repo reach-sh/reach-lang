@@ -3,6 +3,7 @@ module Reach.NL_EPP where
 ---import qualified Data.Sequence as Seq
 import qualified Data.Map.Strict as M
 import Control.Monad.ST
+import Data.STRef
 import Reach.STCounter
 import Reach.NL_AST
 import Reach.Util
@@ -95,17 +96,17 @@ data ProRes_ a = ProRes_ Counts a
 data ProResL = ProResL (ProRes_ PLTail)
   deriving (Eq, Show)
 
-data ProResC = ProResC (M.Map SLPart (ProRes_ ETail)) (ProRes_ (CTail, CHandlers))
+data ProResC = ProResC (M.Map SLPart (ProRes_ ETail)) (ProRes_ CTail)
   deriving (Eq, Show)
 
 data ProSt s =
   ProSt { pst_prev_handler :: Int
-        --- XXX at stref for handlers
+        , pst_handlers :: STRef s CHandlers
         , pst_handlerc :: STCounter s
         , pst_interval :: CInterval
         , pst_parts :: [SLPart] }
   deriving (Eq)
-data ProResS = ProResS (M.Map SLPart (ProRes_ ETail)) (ProRes_ CHandlers)
+data ProResS = ProResS (M.Map SLPart (ProRes_ ETail)) Counts
   deriving (Eq, Show)
 
 {-
@@ -242,11 +243,26 @@ contract :: LLStep -> (Seq.Seq CHandler)
 contract _s = error "XXX"
 -}
 
-epp_m :: (Counts -> (c -> PLCommon c) -> a -> ST s b) -> (a -> ST s b) -> LLCommon a -> ST s b
-epp_m back skip c =
+epp_m ::
+  (Counts -> (c -> PLCommon c) -> a -> res)
+  -> (a -> res)
+  -> (a -> ((Counts -> PLCommon d -> lookres) -> (Counts -> d -> lookres) -> Counts -> d -> lookres) -> res)
+  -> LLCommon a
+  -> res
+epp_m back skip look c =
   case c of
     LL_Return {} -> error "XXX"
-    LL_Let {} -> error "XXX"
+    LL_Let at dv de k ->
+      look k (\ back' skip' k_cs k' ->
+                let cs' = counts de <> count_rms [dv] k_cs
+                    doLet lc = back' cs' (PL_Let at lc dv de k') in
+                  case get_count dv k_cs of
+                    C_Never ->
+                      case expr_pure de of
+                        True -> skip' k_cs k'
+                        False -> back' cs' (PL_Eff at de k')
+                    C_Once -> doLet PL_Once
+                    C_Many -> doLet PL_Many)
     LL_Var {} -> error "XXX"
     LL_Set {} -> error "XXX"
     LL_Claim at f ct ca k ->
@@ -258,19 +274,19 @@ epp_m back skip c =
     LL_LocalIf {} -> error "XXX"
 
 epp_l :: LLLocal -> Counts -> ST s ProResL
-epp_l (LLL_Com com) _XXX_cs = epp_m (error "XXX") (error "XXX") com
+epp_l (LLL_Com com) _XXX_cs = epp_m (error "XXX back") (error "XXX skip") (error "XXX look") com
 
 epp_n :: ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
-    LLC_Com c -> epp_m (error "XXX") (error "XXX") c
+    LLC_Com c -> epp_m (error "XXX back") (error "XXX skip") (error "XXX look") c
     LLC_If {} -> error "XXX"
     LLC_Transfer {} -> error "XXX"
     LLC_FromConsensus at1 _at2 s -> do
-      ProResS p_prts_s (ProRes_ cons_cs cons_hs) <- epp_s st s
+      ProResS p_prts_s cons_cs <- epp_s st s
       let svs = counts_nzs cons_cs
       let ctw = CT_Wait at1 svs 
-      return $ ProResC p_prts_s (ProRes_ cons_cs (ctw, cons_hs))
+      return $ ProResC p_prts_s (ProRes_ cons_cs ctw)
     LLC_While {} -> error "XXX"
     LLC_Stop {} -> error "XXX"
     LLC_Continue {} -> error "XXX"
@@ -278,7 +294,8 @@ epp_n st n =
 epp_s :: ProSt s -> LLStep -> ST s ProResS
 epp_s st s =
   case s of
-    LLS_Com c -> epp_m back skip c
+    LLS_Com c ->
+      epp_m back skip look c
       where back cs' mkpl k = do
               ProResS p_prts_s cr <- skip k
               let add (ProRes_ p_cs p_et) =
@@ -286,9 +303,17 @@ epp_s st s =
               let p_prts_s' = M.map add p_prts_s
               return $ ProResS p_prts_s' cr
             skip k = epp_s st k
+            look k common = do
+              ProResS p_prts_s cr <- skip k
+              let add (ProRes_ p_cs p_et) =
+                    common back' skip' p_cs p_et
+                    where skip' = ProRes_
+                          back' p_cs' p_ct' = ProRes_ p_cs' $ ET_Com $ p_ct'
+              let p_prts_s' = M.map add p_prts_s
+              return $ ProResS p_prts_s' cr
     LLS_Stop at da -> do
       let p_prts_s = pall (ProRes_ (counts da) (ET_Stop at da))
-      return $ ProResS p_prts_s (ProRes_ mempty mempty)
+      return $ ProResS p_prts_s mempty
     LLS_Only at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s
       let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
@@ -306,7 +331,7 @@ epp_s st s =
       let int = pst_interval st
       which <- incSTCounter $ pst_handlerc st
       let st_cons = st { pst_prev_handler = which }
-      ProResC p_prts_cons (ProRes_ cons_vs (ct_cons, ct_chs)) <- epp_n st_cons cons
+      ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
       let cons'_vs = count_rms msg cons_vs 
       let svs = counts_nzs cons'_vs
       let from_me = Just (from_as, amt_da, svs)
@@ -324,8 +349,8 @@ epp_s st s =
               True -> mk_sender_et prt
               False -> mk_receiver_et prt
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
-      let prchs = ProRes_ cons'_vs $ (CHandlers $ M.singleton which this_h) <> ct_chs
-      return $ ProResS p_prts prchs
+      modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
+      return $ ProResS p_prts cons'_vs
   where
     pmap f = M.fromList $ map f $ pst_parts st
     pall x = pmap (\p -> (p, x))
@@ -334,12 +359,15 @@ epp :: LLProg -> PLProg
 epp (LLProg at ps s) = runST $ do
   let SLParts p_to_ie = ps
   nhr <- newSTCounter
+  hsr <- newSTRef $ mempty
   let st = ProSt
            { pst_prev_handler = 0
+           , pst_handlers = hsr
            , pst_handlerc = nhr
            , pst_interval = default_interval
            , pst_parts = M.keys p_to_ie }
-  ProResS p_prts (ProRes_ _ chs) <- epp_s st s
+  ProResS p_prts _ <- epp_s st s
+  chs <- readSTRef hsr
   let cp = CPProg at chs
   let mk_pp p ie =
         case M.lookup p p_prts of
