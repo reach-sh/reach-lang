@@ -100,6 +100,7 @@ data ProResC = ProResC (M.Map SLPart (ProRes_ ETail)) (ProRes_ (CTail, CHandlers
 
 data ProSt s =
   ProSt { pst_prev_handler :: Int
+        --- XXX at stref for handlers
         , pst_handlerc :: STCounter s
         , pst_interval :: CInterval
         , pst_parts :: [SLPart] }
@@ -241,21 +242,57 @@ contract :: LLStep -> (Seq.Seq CHandler)
 contract _s = error "XXX"
 -}
 
-epp_l :: ProSt s -> LLLocal -> ProResL -> ST s ProResL
-epp_l _st (LLL_Com _com) _kr = error "XXX"
+epp_m :: (Counts -> (c -> PLCommon c) -> a -> ST s b) -> (a -> ST s b) -> LLCommon a -> ST s b
+epp_m back skip c =
+  case c of
+    LL_Return {} -> error "XXX"
+    LL_Let {} -> error "XXX"
+    LL_Var {} -> error "XXX"
+    LL_Set {} -> error "XXX"
+    LL_Claim at f ct ca k ->
+      case ct of
+        CT_Assert -> skip k
+        CT_Possible -> skip k
+        _ -> back cs' (PL_Claim at f ct ca) k
+          where cs' = counts ca
+    LL_LocalIf {} -> error "XXX"
+
+epp_l :: LLLocal -> Counts -> ST s ProResL
+epp_l (LLL_Com com) _XXX_cs = epp_m (error "XXX") (error "XXX") com
 
 epp_n :: ProSt s -> LLConsensus -> ST s ProResC
-epp_n _st _con = error "XXX"
+epp_n st n =
+  case n of
+    LLC_Com c -> epp_m (error "XXX") (error "XXX") c
+    LLC_If {} -> error "XXX"
+    LLC_Transfer {} -> error "XXX"
+    LLC_FromConsensus at1 _at2 s -> do
+      ProResS p_prts_s (ProRes_ cons_cs cons_hs) <- epp_s st s
+      let svs = counts_nzs cons_cs
+      let ctw = CT_Wait at1 svs 
+      return $ ProResC p_prts_s (ProRes_ cons_cs (ctw, cons_hs))
+    LLC_While {} -> error "XXX"
+    LLC_Stop {} -> error "XXX"
+    LLC_Continue {} -> error "XXX"
 
 epp_s :: ProSt s -> LLStep -> ST s ProResS
 epp_s st s =
   case s of
+    LLS_Com c -> epp_m back skip c
+      where back cs' mkpl k = do
+              ProResS p_prts_s cr <- skip k
+              let add (ProRes_ p_cs p_et) =
+                    ProRes_ (cs' <> p_cs) (ET_Com $ mkpl p_et)
+              let p_prts_s' = M.map add p_prts_s
+              return $ ProResS p_prts_s' cr
+            skip k = epp_s st k
     LLS_Stop at da -> do
-      return $ ProResS (pall (ProRes_ (counts da) (ET_Stop at da))) (ProRes_ mempty mempty)
+      let p_prts_s = pall (ProRes_ (counts da) (ET_Stop at da))
+      return $ ProResS p_prts_s (ProRes_ mempty mempty)
     LLS_Only at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s
       let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
-      ProResL (ProRes_ who_body_cs who_body_lt) <- epp_l st body_l (ProResL (ProRes_ who_k_cs $ PLTail $ PL_Return at))
+      ProResL (ProRes_ who_body_cs who_body_lt) <- epp_l body_l who_k_cs
       let who_prt_only = ProRes_ who_body_cs $ ET_Seqn at who_body_lt who_k_et
       let p_prts = M.insert who who_prt_only p_prts_k
       return $ ProResS p_prts prchs_k
