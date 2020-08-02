@@ -514,6 +514,7 @@ evalPrim ctxt at env p sargs =
             [(_, SLV_Participant _ who _ _ _)] ->
               return $ SLRes lifts $ public $ SLV_Null at "transfer.to"
               where
+                --- XXX Look up participant in dv env
                 lifts = return $ DLS_Transfer at who amt_dla
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "transfer.to"
