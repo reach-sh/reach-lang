@@ -112,9 +112,16 @@ data ProSt s = ProSt
   }
   deriving (Eq)
 
+pmap :: Ord a => ProSt s -> (SLPart -> (a, b)) -> M.Map a b
+pmap st f = M.fromList $ map f $ pst_parts st
+
+pall :: ProSt s -> a -> M.Map SLPart a
+pall st x = pmap st (\p -> (p, x))
+
 data ProResS = ProResS SLPartETs Counts
   deriving (Eq, Show)
 
+type MDone res = (SrcLoc -> res)
 type MBack a res = (Counts -> (forall c. c -> PLCommon c) -> a -> res)
 type MBackIf a res = (Counts -> (forall c. c -> c -> c -> PLCommon c) -> a -> a -> a -> res)
 
@@ -122,15 +129,16 @@ type MLookCommon = forall d lookres. ((Counts -> PLCommon d -> lookres) -> (Coun
 
 --- FIXME Try to simplify these types after all the cases are covered... maybe some of the values are always the same.
 epp_m
-  :: MBack a res
+  :: MDone res
+  -> MBack a res
   -> MBackIf a res
   -> (a -> res)
   -> (a -> MLookCommon -> res)
   -> LLCommon a
   -> res
-epp_m back backif skip look c =
+epp_m done back backif skip look c =
   case c of
-    LL_Return {} -> error "XXX"
+    LL_Return at -> done at
     LL_Let at dv de k ->
       look
         k
@@ -150,7 +158,9 @@ epp_m back backif skip look c =
         (\back' _skip' k_cs k' ->
            let cs' = count_rms [dv] k_cs
             in back' cs' (PL_Var at dv k'))
-    LL_Set {} -> error "XXX"
+    LL_Set at dv da k ->
+      back cs' (PL_Set at dv da) k
+      where cs' = counts da
     LL_Claim at f ct ca k ->
       case ct of
         CT_Assert -> skip k
@@ -163,8 +173,10 @@ epp_m back backif skip look c =
       where cs' = counts ca
 
 epp_l :: forall s. LLLocal -> Counts -> ST s ProResL
-epp_l (LLL_Com com) _XXX_cs = epp_m back backif skip look com
+epp_l (LLL_Com com) _XXX_cs = epp_m done back backif skip look com
   where
+    done :: MDone (ST s ProResL)
+    done _XXX = error "XXX done"
     back :: MBack LLLocal (ST s ProResL)
     back _XXX_cs' _XXX_mkpl _XXX_k = (error "XXX back")
     backif :: MBackIf LLLocal (ST s ProResL)
@@ -201,8 +213,11 @@ epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
     LLC_Com c ->
-      epp_m back backif skip look c
+      epp_m done back backif skip look c
       where
+        done :: MDone (ST s ProResC)
+        done rat =
+          return $ ProResC (pall st (ProRes_ mempty $ ET_Com $ PL_Return rat)) (ProRes_ mempty $ CT_Com $ PL_Return rat)
         back :: MBack LLConsensus (ST s ProResC)
         back cs' mkpl k = do
           ProResC p_prts_s (ProRes_ cs_k ct_k) <- skip k
@@ -244,8 +259,10 @@ epp_s :: forall s. ProSt s -> LLStep -> ST s ProResS
 epp_s st s =
   case s of
     LLS_Com c ->
-      epp_m back backif skip look c
+      epp_m done back backif skip look c
       where
+        done :: MDone (ST s ProResS)
+        done _XXX = error "XXX"
         back :: MBack LLStep (ST s ProResS)
         back cs' mkpl k = do
           ProResS p_prts_s cr <- skip k
@@ -261,7 +278,7 @@ epp_s st s =
           let p_prts_s' = extend_locals_look common p_prts_s
           return $ ProResS p_prts_s' cr
     LLS_Stop at da -> do
-      let p_prts_s = pall (ProRes_ (counts da) (ET_Stop at da))
+      let p_prts_s = pall st (ProRes_ (counts da) (ET_Stop at da))
       return $ ProResS p_prts_s mempty
     LLS_Only at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s
@@ -300,9 +317,6 @@ epp_s st s =
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
       return $ ProResS p_prts cons'_vs
-  where
-    pmap f = M.fromList $ map f $ pst_parts st
-    pall x = pmap (\p -> (p, x))
 
 epp :: LLProg -> PLProg
 epp (LLProg at ps s) = runST $ do
