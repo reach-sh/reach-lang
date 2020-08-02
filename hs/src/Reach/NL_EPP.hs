@@ -115,6 +115,7 @@ type MBack a res = (Counts -> (forall c . c -> PLCommon c) -> a -> res)
 
 type MLookCommon = forall d lookres . ((Counts -> PLCommon d -> lookres) -> (Counts -> d -> lookres) -> Counts -> d -> lookres)
 
+--- FIXME Try to simplify these types after all the cases are covered... maybe some of the values are always the same.
 epp_m ::
   MBack a res
   -> (a -> res)
@@ -135,7 +136,10 @@ epp_m back skip look c =
                         False -> back' cs' (PL_Eff at de k')
                     C_Once -> doLet PL_Once
                     C_Many -> doLet PL_Many)
-    LL_Var {} -> error "XXX"
+    LL_Var at dv k ->
+      look k (\ back' _skip' k_cs k' ->
+                 let cs' = count_rms [dv] k_cs in
+                   back' cs' (PL_Var at dv k'))
     LL_Set {} -> error "XXX"
     LL_Claim at f ct ca k ->
       case ct of
