@@ -66,7 +66,7 @@ prettyIf ca t f =
 prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc a
 prettyIfp ca t f = prettyIf ca (pretty t) (pretty f)
 
-prettyWhile :: Pretty a => Pretty b => a -> b -> b -> Doc ann -> Doc ann
+prettyWhile :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc ann -> Doc ann
 prettyWhile asn inv cond bodyp =
   "loopvar" <+> pretty asn <> semi <> hardline
     <> "invariant"
@@ -266,11 +266,17 @@ instance Pretty ETail where
             case mtime of
               Nothing -> mempty
               Just (td, tl) -> ".timeout" <> (cm [pretty td, (render_nest $ pretty tl)])
-      ET_While {} -> "XXX"
-      ET_Continue {} -> "XXX"
+      ET_While _ asn cond body k ->
+        prettyWhile asn () cond (pretty body) <> hardline <> pretty k
+      ET_Continue _ asn -> prettyContinue asn
     where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)
+
+instance Pretty PLBlock where
+  pretty (PLBlock pltail dlarg) = pform "begin" body
+    where
+      body = pretty pltail <+> pretty dlarg
 
 instance Pretty EPProg where
   pretty (EPProg _ ie et) =
@@ -317,16 +323,9 @@ instance Pretty CInterval where
 
 instance Pretty CTail where
   pretty (CT_Com e) = pretty e
-  pretty (CT_If _ ca tt ft) = pform "cond" args
-    where
-      args = nest 2 $ hardline <> vsep conds
-      conds =
-        [ pbrackets [pretty ca, pretty tt]
-        , pbrackets ["else", pretty ft]
-        ]
-  pretty (CT_Transfer _ to amt ctail) = pform "transfer!" args
-    where
-      args = pretty to <+> pretty amt <+> pretty ctail
+  pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
+  pretty (CT_Transfer _ to amt ctail) =
+    prettyTransfer to amt <> hardline <> pretty ctail
   pretty (CT_Wait _ vars) = pform "wait!" $ pretty vars
   pretty (CT_Jump _ which vars assignment) = pform "jump!" args
     where
