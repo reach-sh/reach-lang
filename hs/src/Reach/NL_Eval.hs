@@ -1317,7 +1317,7 @@ compileDApp topv =
   case topv of
     SLV_Prim (SLPrim_App_Delay at [(SLV_Object _ _opts), (SLV_Array _ parts), clo] top_env) -> do
       --- FIXME look at opts
-      idxr <- newSTCounter
+      idxr <- newSTCounter 0
       let ctxt_step =
             (SLCtxt
                { ctxt_mode = SLC_Step mempty penvs

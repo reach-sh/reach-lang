@@ -6,9 +6,9 @@ import Data.STRef
 newtype STCounter s = STCounter (STRef s Int)
   deriving (Eq)
 
-newSTCounter :: ST s (STCounter s)
-newSTCounter = do
-  r <- newSTRef $ 0
+newSTCounter :: Int -> ST s (STCounter s)
+newSTCounter i = do
+  r <- newSTRef $ i
   return $ STCounter r
 
 incSTCounter :: STCounter s -> ST s Int

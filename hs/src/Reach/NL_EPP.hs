@@ -113,6 +113,7 @@ data ProSt s = ProSt
   --- FIXME These would be maps when we have labelled loops
   , pst_loop_vars :: Maybe [DLVar]
   , pst_loop_num :: Maybe Int
+  , pst_forced_svs :: Counts
   }
   deriving (Eq)
 
@@ -274,7 +275,8 @@ epp_n st n =
       ProResC p_prts_k (ProRes_ cs_k ct_k) <- epp_n st k
       let loop_vars = assignment_vars asn
       loop_num <- newHandler st
-      let st_body = st { pst_loop_vars = Just loop_vars
+      let st_body = st { pst_prev_handler = loop_num
+                       , pst_loop_vars = Just loop_vars
                        , pst_loop_num = Just loop_num }
       ProResC p_prts_body (ProRes_ cs_body ct_body) <- epp_n st_body body
       let LLBlock cond_at cond_l cond_da = cond
@@ -336,29 +338,35 @@ epp_s st s =
     LLS_ToConsensus at from fs from_as msg amt mtime cons -> do
       let LLBlock _XXX_amt_at _XXX_amt_l amt_da = amt
       let prev_int = pst_interval st
-      (int_ok, time_cons_cs, mtime'_ps) <-
-        case mtime of
-          Nothing -> return $ (prev_int, mempty, pall st $ ProRes_ mempty Nothing)
-          Just (delaya, delays) -> do
-            let delay_cs = counts delaya
-            let int_to = interval_add_from prev_int delaya
-            let int_ok = interval_add_to prev_int delaya
-            let st_to = st { pst_interval = int_to }
-            ProResS delay_prts (ProRes_ tcons_cs _) <- epp_s st_to delays
-            let cs' = delay_cs <> tcons_cs
-            let update (ProRes_ tk_cs tk_et) =
-                  ProRes_ (tk_cs <> delay_cs) (Just (delaya, tk_et))
-            return $ (int_ok, cs', M.map update delay_prts)
+      which <- newHandler st
+      let (int_ok, delay_cs, continue_time ) =
+            case mtime of
+              Nothing -> (prev_int, mempty, continue_time_)
+                where continue_time_ ok_cons_cs =
+                        return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
+              Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)
+                where delay_cs_ = counts delaya
+                      int_to = interval_add_from prev_int delaya
+                      int_ok_ = interval_add_to prev_int delaya
+                      continue_time_ ok_cons_cs = do
+                        let st_to = st { pst_interval = int_to
+                                       , pst_forced_svs = ok_cons_cs }
+                        ProResS delay_prts (ProRes_ tcons_cs _) <-
+                          epp_s st_to delays
+                        let cs' = delay_cs_ <> tcons_cs
+                        let update (ProRes_ tk_cs tk_et) =
+                              ProRes_ (tk_cs <> delay_cs_) (Just (delaya, tk_et))
+                        return $ (cs', M.map update delay_prts)
+      let st_cons = st { pst_prev_handler = which
+                       , pst_interval = int_ok }
+      ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
+      let ok_cons_cs = delay_cs <> count_rms msg cons_vs <> pst_forced_svs st
+      (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let (fs_uses, fs_defns) =
             case fs of
               FS_Join dv -> (mempty, [dv])
               FS_Again dv -> (counts dv, mempty)
-      which <- newHandler st
-      let st_cons = st { pst_prev_handler = which
-                       , pst_interval = int_ok }
-      ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
-      let cons'_vs = time_cons_cs <> count_rms msg cons_vs
-      let svs = counts_nzs cons'_vs
+      let svs = counts_nzs time_cons_cs
       let from_me = Just (from_as, amt_da, svs)
       let prev = pst_prev_handler st
       let this_h = C_Handler at int_ok fs prev svs msg ct_cons
@@ -376,12 +384,12 @@ epp_s st s =
                       False -> mk_receiver_et
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
-      return $ ProResS p_prts (ProRes_ cons'_vs True)
+      return $ ProResS p_prts (ProRes_ time_cons_cs True)
 
 epp :: LLProg -> PLProg
 epp (LLProg at ps s) = runST $ do
   let SLParts p_to_ie = ps
-  nhr <- newSTCounter
+  nhr <- newSTCounter 1
   hsr <- newSTRef $ mempty
   let st =
         ProSt
@@ -392,6 +400,7 @@ epp (LLProg at ps s) = runST $ do
           , pst_parts = M.keys p_to_ie
           , pst_loop_vars = Nothing
           , pst_loop_num = Nothing
+          , pst_forced_svs = mempty
           }
   ProResS p_prts _ <- epp_s st s
   chs <- readSTRef hsr
