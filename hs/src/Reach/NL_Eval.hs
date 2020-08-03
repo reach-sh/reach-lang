@@ -129,7 +129,7 @@ base_env =
     , ( "Reach"
       , (SLV_Object srcloc_top $
            m_fromList_public
-             [("DApp", SLV_Prim SLPrim_DApp)])
+             [("App", SLV_Prim SLPrim_App)])
       )
     ]
 
@@ -455,18 +455,18 @@ evalPrim ctxt at env p sargs =
             lhs = (JSExpressionBinary (JSDecimal JSNoAnnot "0") (JSBinOpLe JSNoAnnot) (JSIdentifier JSNoAnnot "x"))
             rhs = (JSExpressionBinary (JSIdentifier JSNoAnnot "x") (JSBinOpLt JSNoAnnot) (JSDecimal JSNoAnnot (show i)))
         _ -> illegal_args
-    SLPrim_DApp ->
+    SLPrim_App ->
       case ctxt_mode ctxt of
         SLC_Module ->
           case args of
             [(SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _)] ->
-              retV $ public $ SLV_Prim $ SLPrim_DApp_Delay at args env
+              retV $ public $ SLV_Prim $ SLPrim_App_Delay at args env
             _ -> illegal_args
           where
             args = map snd sargs
         cm ->
-          expect_throw at (Err_Eval_IllegalContext cm "DApp")
-    SLPrim_DApp_Delay _ _ _ ->
+          expect_throw at (Err_Eval_IllegalContext cm "Reach.App")
+    SLPrim_App_Delay _ _ _ ->
       expect_throw at (Err_Eval_NotApplicable rator)
     SLPrim_interact _iat m t ->
       case ctxt_mode ctxt of
@@ -1314,7 +1314,7 @@ makeInteract at spec = SLV_Object at spec'
 compileDApp :: SLVal -> ST s DLProg
 compileDApp topv =
   case topv of
-    SLV_Prim (SLPrim_DApp_Delay at [(SLV_Object _ _opts), (SLV_Array _ parts), clo] top_env) -> do
+    SLV_Prim (SLPrim_App_Delay at [(SLV_Object _ _opts), (SLV_Array _ parts), clo] top_env) -> do
       --- FIXME look at opts
       idxr <- newSTCounter
       let ctxt_step =
@@ -1340,7 +1340,7 @@ compileDApp topv =
         penvs = M.fromList $ map make_penv partvs
         make_penv (Secret, (SLV_Participant _ pn io _ _)) =
           (pn, env_insert at' "interact" (secret io) top_env)
-        make_penv _ = impossible "SLPrim_DApp_Delay make_penv"
+        make_penv _ = impossible "SLPrim_App_Delay make_penv"
         partvs = map make_part parts
         make_part v =
           case v of

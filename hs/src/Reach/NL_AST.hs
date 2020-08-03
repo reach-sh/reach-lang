@@ -187,8 +187,8 @@ data SLPrimitive
   | SLPrim_interact SrcLoc String SLType
   | SLPrim_Fun
   | SLPrim_Array
-  | SLPrim_DApp
-  | SLPrim_DApp_Delay SrcLoc [SLVal] SLEnv
+  | SLPrim_App
+  | SLPrim_App_Delay SrcLoc [SLVal] SLEnv
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt DLArg

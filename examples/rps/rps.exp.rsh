@@ -3,7 +3,7 @@
 import "rps.shared.rsh";
 
 export const main =
-  Reach.DApp(
+  Reach.App(
     {},
     [["A", Alice], ["B", Bob], ["O", {}]],
     function (A, B, O) {      
