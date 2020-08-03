@@ -4,6 +4,7 @@ module Reach.NL_EPP where
 
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Data.STRef
 import Reach.NL_AST
 import Reach.STCounter
@@ -109,6 +110,9 @@ data ProSt s = ProSt
   , pst_handlerc :: STCounter s
   , pst_interval :: CInterval
   , pst_parts :: [SLPart]
+  --- FIXME These would be maps when we have labelled loops
+  , pst_loop_vars :: Maybe [DLVar]
+  , pst_loop_num :: Maybe Int
   }
   deriving (Eq)
 
@@ -268,18 +272,20 @@ epp_n st n =
       return $ ProResC p_prts_s (ProRes_ cons_cs ctw)
     LLC_While at asn _inv cond body k -> do
       ProResC p_prts_k (ProRes_ cs_k ct_k) <- epp_n st k
-      ProResC p_prts_body (ProRes_ cs_body ct_body) <- epp_n st body
+      let loop_vars = assignment_vars asn
+      loop_num <- newHandler st
+      let st_body = st { pst_loop_vars = Just loop_vars
+                       , pst_loop_num = Just loop_num }
+      ProResC p_prts_body (ProRes_ cs_body ct_body) <- epp_n st_body body
       let LLBlock cond_at cond_l cond_da = cond
       let post_cond_cs = counts cond_da <> cs_body <> cs_k
       let ProResL (ProRes_ cs_cond pt_cond) = epp_l cond_l post_cond_cs
       let loop_if = CT_If cond_at cond_da ct_body ct_k
       let loop_top = CT_Seqn cond_at pt_cond loop_if
-      loopn <- newHandler st
-      let loop_vars = assignment_vars asn
       let loop_svs = counts_nzs $ count_rms loop_vars $ cs_cond
       let this_h = C_Loop at loop_svs loop_vars loop_top
-      addHandler st loopn this_h
-      let ct' = CT_Jump at loopn loop_svs asn
+      addHandler st loop_num this_h
+      let ct' = CT_Jump at loop_num loop_svs asn
       let cons_cs' = counts loop_svs <> counts asn
       let mkp p = (p, ProRes_ cs_p t_p)
             where ProRes_ p_cs_k t_k = p_prts_k M.! p
@@ -288,7 +294,14 @@ epp_n st n =
                   t_p = ET_While at asn (PLBlock cond_at pt_cond cond_da) t_body t_k
       let p_prts' = pmap st mkp
       return $ ProResC p_prts' (ProRes_ cons_cs' ct')
-    LLC_Continue {} -> error "XXX"
+    LLC_Continue at asn -> do
+      let this_loop = fromMaybe (impossible "no loop") $ pst_loop_num st
+      let these_loop_vars = fromMaybe (impossible "no loop") $ pst_loop_vars st
+      let asn_cs = counts asn
+      let cons_cs' = asn_cs <> counts these_loop_vars
+      let ct' = CT_Jump at this_loop these_loop_vars asn
+      let p_prts' = pall st (ProRes_ asn_cs (ET_Continue at asn))
+      return $ ProResC p_prts' (ProRes_ cons_cs' ct')
 
 epp_s :: forall s. ProSt s -> LLStep -> ST s ProResS
 epp_s st s =
@@ -377,6 +390,8 @@ epp (LLProg at ps s) = runST $ do
           , pst_handlerc = nhr
           , pst_interval = default_interval
           , pst_parts = M.keys p_to_ie
+          , pst_loop_vars = Nothing
+          , pst_loop_num = Nothing
           }
   ProResS p_prts _ <- epp_s st s
   chs <- readSTRef hsr
