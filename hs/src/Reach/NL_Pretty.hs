@@ -76,7 +76,7 @@ prettyClaim :: Show a => Pretty b => a -> b -> Doc c
 prettyClaim ct a = "claim" <> parens (viaShow ct) <> parens (pretty a) <> semi
 
 prettyTransfer :: SLPart -> DLArg -> Doc a
-prettyTransfer who da = 
+prettyTransfer who da =
   "transfer." <> parens (pretty da) <> ".to" <> parens (render_sp who) <> semi
 
 prettyStop :: DLArg -> Doc a
@@ -150,7 +150,8 @@ instance Pretty a => Pretty (LLCommon a) where
       LL_Return _at -> mempty
       LL_Let _at dv de k ->
         "const" <+> pretty dv <+> "=" <+> pretty de <> semi
-        <> hardline <> pretty k
+          <> hardline
+          <> pretty k
       LL_Var _at dv k ->
         "let" <+> pretty dv <> semi <> hardline <> pretty k
       LL_Set _at dv da k ->
@@ -220,7 +221,8 @@ instance Pretty a => Pretty (PLCommon a) where
       PL_Return _at -> mempty
       PL_Let _at lc dv de k ->
         "const" <+> pretty dv <+> pretty lc <+> "=" <+> pretty de <> semi
-        <> hardline <> pretty k
+          <> hardline
+          <> pretty k
       PL_Eff _ de k ->
         "eff" <+> pretty de <> semi <> hardline <> pretty k
       PL_Var _at dv k ->
@@ -250,7 +252,7 @@ instance Pretty ETail where
           msendp =
             case msend of
               Nothing -> mempty
-              Just (as, amt, saved) -> ".publish" <> cm [ parens (render_das as), pretty amt, cm (map pretty saved) ]
+              Just (as, amt, saved) -> ".publish" <> cm [parens (render_das as), pretty amt, cm (map pretty saved)]
           timep =
             case mtime of
               Nothing -> mempty
@@ -260,7 +262,7 @@ instance Pretty ETail where
     where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)
-      
+
 instance Pretty EPProg where
   pretty (EPProg _ ie et) =
     pretty ie <> semi <> hardline <> pretty et
@@ -271,7 +273,7 @@ instance Pretty EPPs where
 instance Pretty PLProg where
   pretty (PLProg _ ps _cp) =
     "#lang pl" <> hardline
-    <> pretty ps
-    <> hardline
-    <> hardline
-    <> "XXX cp"
+      <> pretty ps
+      <> hardline
+      <> hardline
+      <> "XXX cp"
