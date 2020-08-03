@@ -133,7 +133,7 @@ gatherDeps_stdlib at fmr =
     err_key x = Err_Parse_CyclicImport x
     proc_key _ = do
       let at' = srcloc_src ReachStdLib
-      (gatherDeps_ast at' fmr $ readJsModule $ B.unpack stdlib_rsh)
+      (gatherDeps_ast at' fmr $ readJsModule $ B.unpack stdlib_exp_rsh)
 
 map_order :: Ord a => M.Map a [a] -> [a]
 map_order dm = order

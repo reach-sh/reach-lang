@@ -3,6 +3,11 @@ TAG="reachsh/examples-rps:v0.1.1"
 build/%.mjs: rsh/%.rsh
 	../../reachc -o build $^
 
+.PHONY: exp-build
+exp-build:
+	REACHC_QUICK=Y REACHC_ENABLE_EXPERIMENTAL_COMPILER=Y ../../reachc -o build rps.exp.rsh
+	REACHC_QUICK=Y REACHC_ENABLE_EXPERIMENTAL_COMPILER=Y ../../reachc -o build rps.while.exp.rsh
+
 .PHONY: build
 build: build/rps.mjs build/rps_while.mjs
 	docker build --tag=$(TAG) .

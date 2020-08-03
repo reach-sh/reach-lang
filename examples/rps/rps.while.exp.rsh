@@ -1,7 +1,10 @@
 'reach 0.1';
 
-import "rps_shared.rsh";
+import "rps.shared.rsh";
 
+// XXX Move into other file when the target is a command line argument
+
+// XXX Also abstract more of this into functions
 export const main =
   Reach.DApp(
     {},

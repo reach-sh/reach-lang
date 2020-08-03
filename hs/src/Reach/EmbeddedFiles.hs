@@ -14,3 +14,6 @@ stdlib_sol = $(embedFile "./sol/stdlib.sol")
 
 stdlib_rsh :: ByteString
 stdlib_rsh = $(embedFile "./rsh/stdlib.rsh")
+
+stdlib_exp_rsh :: ByteString
+stdlib_exp_rsh = $(embedFile "./rsh/stdlib.exp.rsh")

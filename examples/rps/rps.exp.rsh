@@ -1,6 +1,6 @@
 'reach 0.1';
 
-import "rps_shared.rsh";
+import "rps.shared.rsh";
 
 export const main =
   Reach.DApp(
