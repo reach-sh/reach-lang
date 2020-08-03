@@ -6,6 +6,15 @@ import qualified Data.Map.Strict as M
 import Data.Text.Prettyprint.Doc
 import Reach.NL_AST
 
+pform :: Doc ann -> Doc ann -> Doc ann
+pform f xs = group $ parens $ f <+> xs
+
+pform_ :: Doc ann -> Doc ann
+pform_ f = pform f mempty
+
+pbrackets :: [Doc ann] -> Doc ann
+pbrackets xs = group $ brackets $ hsep xs
+
 instance Pretty SLPart where
   pretty = viaShow
 
@@ -271,9 +280,55 @@ instance Pretty EPPs where
   pretty (EPPs m) = render_obj m
 
 instance Pretty PLProg where
-  pretty (PLProg _ ps _cp) =
+  pretty (PLProg _ ps cp) =
     "#lang pl" <> hardline
       <> pretty ps
       <> hardline
       <> hardline
-      <> "XXX cp"
+      <> pretty cp
+
+instance Pretty CPProg where
+  pretty (CPProg _ chs) = pretty chs
+
+instance Pretty CHandlers where
+  pretty (CHandlers m) =
+    render_obj m
+
+instance Pretty CHandler where
+  pretty (C_Handler _ int fs last_i svs msg body) =
+    pbrackets
+      [ pretty fs
+      , pretty int
+      , pretty last_i
+      , pretty svs
+      , pretty msg
+      , nest 2 $ hardline <> pretty body
+      ]
+  pretty (C_Loop _ svs vars body) =
+    pbrackets
+      [ "loop!"
+      , pretty svs
+      , pretty vars
+      , nest 2 $ hardline <> pretty body
+      ]
+
+instance Pretty CInterval where
+  pretty (CBetween from to) = pform "between" $ pretty from <+> pretty to
+
+instance Pretty CTail where
+  pretty (CT_Com e) = pretty e
+  pretty (CT_If _ ca tt ft) = pform "cond" args
+    where
+      args = nest 2 $ hardline <> vsep conds
+      conds =
+        [ pbrackets [pretty ca, pretty tt]
+        , pbrackets ["else", pretty ft]
+        ]
+  pretty (CT_Transfer _ to amt ctail) = pform "transfer!" args
+    where
+      args = pretty to <+> pretty amt <+> pretty ctail
+  pretty (CT_Wait _ vars) = pform "wait!" $ pretty vars
+  pretty (CT_Jump _ which vars assignment) = pform "jump!" args
+    where
+      args = pretty which <+> pretty vars <+> pretty assignment
+  pretty (CT_Halt _) = pform_ "halt!"
