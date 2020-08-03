@@ -4,11 +4,13 @@
 
 module Reach.NL_AST where
 
+import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import Data.List
 import qualified Data.Map.Strict as M
 import Data.Monoid
 import qualified Data.Sequence as Seq
+import GHC.Generics
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 
@@ -16,7 +18,9 @@ import Language.JavaScript.Parser
 data ReachSource
   = ReachStdLib
   | ReachSourceFile FilePath
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Generic)
+
+instance NFData ReachSource -- DeriveAnyClass is turned off
 
 instance Show ReachSource where
   show ReachStdLib = "reach standard library"

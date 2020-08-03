@@ -1,9 +1,11 @@
 module Reach.NL_Parser where
 
+import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
 import Data.IORef
 import qualified Data.Map.Strict as M
+import GHC.Generics (Generic)
 import GHC.IO.Encoding
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
@@ -14,7 +16,6 @@ import Reach.Util
 import System.Directory
 import System.FilePath
 
---- FIXME implement a custom show that is useful
 data ParserError
   = Err_Parse_CyclicImport ReachSource
   | Err_Parser_Arrow_NoFormals
@@ -24,7 +25,26 @@ data ParserError
   | Err_Parse_IllegalLiteral String
   | Err_Parse_IllegalUnaOp JSUnaryOp
   | Err_Parse_NotModule JSAST
-  deriving (Eq, Show)
+  deriving (Generic, Eq)
+
+--- FIXME implement a custom show that is useful
+instance Show ParserError where
+  show (Err_Parse_CyclicImport rs) =
+    "Cyclic import! " <> show rs
+  show Err_Parser_Arrow_NoFormals =
+    "No formals" -- XXX wat
+  show (Err_Parse_ExpectIdentifier e) =
+    "Expected identifier, got expression: " <> show e
+  show Err_Parse_ExpectSemi =
+    "Expected semicolon" -- XXX I think
+  show (Err_Parse_IllegalBinOp op) =
+    "Illegal binary operation: " <> show op
+  show (Err_Parse_IllegalLiteral lit) =
+    "Illegal literal: " <> show lit
+  show (Err_Parse_IllegalUnaOp unop) =
+    "Illegal unary operator: " <> show unop
+  show (Err_Parse_NotModule ast) =
+    "Not a module: " <> show ast -- XXX too much?
 
 --- Helpers
 jse_expect_id :: SrcLoc -> JSExpression -> String
@@ -52,7 +72,14 @@ type BundleMap a b = ((M.Map a [a]), (M.Map a (Maybe b)))
 type JSBundleMap = BundleMap ReachSource [JSModuleItem]
 
 data JSBundle = JSBundle [(ReachSource, [JSModuleItem])]
-  deriving (Eq, Show)
+  deriving (Eq, Show, Generic)
+
+instance NFData JSBundle where
+  rnf (JSBundle xs) = go xs
+    where
+      go [] = ()
+      -- XXX This doesn't force the JSModuleItem to normal form.
+      go ((rs, jmi) : rest) = rnf rs `seq` jmi `seq` go rest
 
 gatherDeps_imd :: SrcLoc -> IORef JSBundleMap -> JSImportDeclaration -> IO JSImportDeclaration
 gatherDeps_imd at fmr j =

@@ -45,6 +45,7 @@ dependencies:
 - tasty-golden
 - tasty-hspec
 - tasty-html
+- tasty-hunit
 - text
 - unordered-containers
 
