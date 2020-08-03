@@ -118,7 +118,7 @@ pmap st f = M.fromList $ map f $ pst_parts st
 pall :: ProSt s -> a -> M.Map SLPart a
 pall st x = pmap st (\p -> (p, x))
 
-data ProResS = ProResS SLPartETs Counts
+data ProResS = ProResS SLPartETs (ProRes_ Bool)
   deriving (Eq, Show)
 
 type MDone res = (SrcLoc -> res)
@@ -252,9 +252,12 @@ epp_n st n =
       let ct_k' = CT_Transfer at to amt ct_k
       return $ ProResC p_prts_s (ProRes_ cs_k' ct_k')
     LLC_FromConsensus at1 _at2 s -> do
-      ProResS p_prts_s cons_cs <- epp_s st s
+      ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st s
       let svs = counts_nzs cons_cs
-      let ctw = CT_Wait at1 svs
+      let ctw =
+            case more_chb of
+              True -> CT_Wait at1 svs
+              False -> CT_Halt at1
       return $ ProResC p_prts_s (ProRes_ cons_cs ctw)
     LLC_While {} -> error "XXX"
     LLC_Stop {} -> error "XXX"
@@ -281,7 +284,7 @@ epp_s st s =
           return $ ProResS p_prts_s' cr
     LLS_Stop at da -> do
       let p_prts_s = pall st (ProRes_ (counts da) (ET_Stop at da))
-      return $ ProResS p_prts_s mempty
+      return $ ProResS p_prts_s $ ProRes_ mempty False
     LLS_Only at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s
       let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
@@ -300,7 +303,7 @@ epp_s st s =
             let int_to = interval_add_from prev_int delaya
             let int_ok = interval_add_to prev_int delaya
             let st_to = st { pst_interval = int_to }
-            ProResS delay_prts tcons_cs <- epp_s st_to delays
+            ProResS delay_prts (ProRes_ tcons_cs _) <- epp_s st_to delays
             let cs' = delay_cs <> tcons_cs
             let update (ProRes_ tk_cs tk_et) =
                   ProRes_ (tk_cs <> delay_cs) (Just (delaya, tk_et))
@@ -332,7 +335,7 @@ epp_s st s =
                       False -> mk_receiver_et
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
-      return $ ProResS p_prts cons'_vs
+      return $ ProResS p_prts (ProRes_ cons'_vs True)
 
 epp :: LLProg -> PLProg
 epp (LLProg at ps s) = runST $ do
