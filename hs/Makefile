@@ -20,8 +20,8 @@ check: hs-check
 
 .PHONY: hs-check
 hs-check:
-	stack build
-	stack test --no-run-tests
+	stack build --fast
+	stack test --fast --no-run-tests
 	stack build stan
 	stack exec stan report
 
@@ -32,25 +32,25 @@ hs-clean:
 
 .PHONY: hs-build
 hs-build:
-	stack build
+	stack build --fast
 
 .PHONY: hs-test
 hs-test:
-	stack test
+	stack test --fast
 
 .PHONY: hs-test-xml
 hs-test-xml:
 	mkdir -p test-reports
-	stack test --test-arguments '--xml=test-reports/junit.xml'
+	stack test --fast --test-arguments '--xml=test-reports/junit.xml'
 
 .PHONY: hs-test-html
 hs-test-html:
 	mkdir -p test-reports
-	stack test --test-arguments '--html=test-reports/results.html'
+	stack test --fast --test-arguments '--html=test-reports/results.html'
 
 .PHONY: hs-test-accept
 hs-test-accept:
-	stack test --test-arguments '--accept'
+	stack test --fast --test-arguments '--accept'
 
 .PHONY: hs-deps
 hs-deps:

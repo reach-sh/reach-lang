@@ -5,9 +5,9 @@ HS=${HERE}/hs
 
 if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
     export STACK_YAML=${HS}/stack.yaml
-    MAYBE_FAST=""
-    if [ "x${REACHC_QUICK}" == "xY" ] ; then
-       MAYBE_FAST="--fast"
+    MAYBE_FAST="--fast"
+    if [ "x${REACHC_RELEASE}" == "xY" ] ; then
+       MAYBE_FAST=""
     fi
     stack build ${MAYBE_FAST} && \
         exec stack exec -- reachc $*
