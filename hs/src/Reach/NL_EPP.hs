@@ -182,7 +182,7 @@ epp_l (LLL_Com com) ok_cs = epp_m done back skip look com
   where
     done :: MDone ProResL
     done rat =
-      ProResL (ProRes_ mempty $ PLTail $ PL_Return rat)
+      ProResL (ProRes_ ok_cs $ PLTail $ PL_Return rat)
     back :: MBack LLLocal ProResL
     back cs' mkpl k = ProResL $ ProRes_ (cs' <> k_cs) $ PLTail (mkpl k')
       where ProResL (ProRes_ k_cs k') = skip k
