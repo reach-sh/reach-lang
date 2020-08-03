@@ -178,14 +178,20 @@ epp_m done back skip look c =
             in back' cs' $ PL_LocalIf at ca t' f' k')
 
 epp_l :: LLLocal -> Counts -> ProResL
-epp_l (LLL_Com com) _XXX_cs = epp_m done back skip look com
+epp_l (LLL_Com com) ok_cs = epp_m done back skip look com
   where
     done :: MDone ProResL
-    done _XXX = error "XXX done"
+    done rat =
+      ProResL (ProRes_ mempty $ PLTail $ PL_Return rat)
     back :: MBack LLLocal ProResL
-    back _XXX_cs' _XXX_mkpl _XXX_k = (error "XXX back")
-    skip _XXX = (error "XXX skip")
-    look _XXX _XXXcommon = (error "XXX look")
+    back cs' mkpl k = ProResL $ ProRes_ (cs' <> k_cs) $ PLTail (mkpl k')
+      where ProResL (ProRes_ k_cs k') = skip k
+    skip k = epp_l k ok_cs
+    look :: LLLocal -> MLookCommon -> ProResL
+    look k common = ProResL $ common back' skip' k_cs k'
+      where ProResL (ProRes_ k_cs k') = skip k
+            skip' = ProRes_
+            back' k_cs' k'' = ProRes_ k_cs' $ PLTail k''
 
 extend_locals :: Counts -> (forall c. c -> PLCommon c) -> SLPartETs -> SLPartETs
 extend_locals cs' mkpl p_prts_s = M.map add p_prts_s
