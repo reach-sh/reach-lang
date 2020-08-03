@@ -18,7 +18,7 @@ makeCompilerOpts CompilerToolOpts {..} = do
   let srcp = cto_source
   let outd = cto_outputDir
   let outdp = FP.decodeString outd
-  let outn ext = FP.encodeString $ FP.append outdp $ (FP.decodeString srcp) `FP.replaceExtension` ext
+  let outn ext = FP.encodeString $ FP.append outdp $ (FP.filename $ FP.decodeString srcp) `FP.replaceExtension` ext
   let out ext con = do writeFile (outn ext) con
   createDirectoryIfMissing True outd
   return $
