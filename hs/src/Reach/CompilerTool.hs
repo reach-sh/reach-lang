@@ -16,11 +16,10 @@ data CompilerToolOpts = CompilerToolOpts
 makeCompilerOpts :: CompilerToolOpts -> IO CompilerOpts
 makeCompilerOpts CompilerToolOpts {..} = do
   let srcp = cto_source
-  let srcbp = FP.basename $ FP.decodeString srcp
   let outd = cto_outputDir
   let outdp = FP.decodeString outd
-  let outn ext = FP.encodeString $ FP.append outdp $ srcbp `FP.addExtension` ext
-  let out ext con = writeFile (outn ext) con
+  let outn ext = FP.encodeString $ FP.append outdp $ (FP.decodeString srcp) `FP.replaceExtension` ext
+  let out ext con = do writeFile (outn ext) con
   createDirectoryIfMissing True outd
   return $
     CompilerOpts

@@ -13,7 +13,7 @@ pform_ :: Doc ann -> Doc ann
 pform_ f = pform f mempty
 
 pbrackets :: [Doc ann] -> Doc ann
-pbrackets xs = group $ brackets $ hsep xs
+pbrackets xs = group $ render_nest $ vsep $ punctuate comma xs
 
 instance Pretty SLPart where
   pretty = viaShow
@@ -95,7 +95,8 @@ instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
 instance Pretty FromSpec where
-  pretty x = viaShow x
+  pretty (FS_Join dv) = "join(" <> pretty dv <> ")"
+  pretty (FS_Again dv) = "again(" <> pretty dv <> ")"
 
 instance Pretty DLStmt where
   pretty d =
@@ -308,14 +309,14 @@ instance Pretty CHandler where
       , pretty last_i
       , pretty svs
       , pretty msg
-      , nest 2 $ hardline <> pretty body
+      , render_nest $ pretty body
       ]
   pretty (C_Loop _ svs vars body) =
     pbrackets
       [ "loop!"
       , pretty svs
       , pretty vars
-      , nest 2 $ hardline <> pretty body
+      , render_nest $ pretty body
       ]
 
 instance Pretty CInterval where
