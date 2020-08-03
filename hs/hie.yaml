@@ -1,0 +1,8 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "reach:lib"
+    - path: "./test"
+      component: "reach:reach-test"
+    - path: "./app"
+      component: "reach:exe:reachc"
