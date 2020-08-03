@@ -33,6 +33,7 @@ jse_expect_id at j =
     (JSIdentifier _ x) -> x
     _ -> expect_throw at (Err_Parse_ExpectIdentifier j)
 
+--- FIXME Support more binding forms
 parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]
 parseJSFormals at jsformals = map (jse_expect_id at) $ jscl_flatten jsformals
 

@@ -124,6 +124,7 @@ base_env =
     , ("UInt256", SLV_Type T_UInt256)
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
+    --- XXX implement Object
     , ("Array", SLV_Prim SLPrim_Array)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ( "Reach"
