@@ -8,11 +8,11 @@ testFromIntegerMay :: TestTree
 testFromIntegerMay =
   testGroup
     "fromIntegerMay"
-    [ testCase "does not underflow" $
+    [ testCase "does not overflow" $
         let i = fromIntegral (maxBound :: Int) + 1
             mi = fromIntegerMay i :: Maybe Int
          in assertEqual "" mi Nothing
-    , testCase "does not overflow" $
+    , testCase "does not underflow" $
         let i = fromIntegral (minBound :: Int) - 1
             mi = fromIntegerMay i :: Maybe Int
          in assertEqual "" mi Nothing
