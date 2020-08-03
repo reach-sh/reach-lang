@@ -10,14 +10,15 @@ import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
-import Reach.STCounter
 import Reach.JSUtil
 import Reach.NL_AST
 import Reach.NL_Parser
 import Reach.NL_Type
+import Reach.STCounter
 import Reach.Util
 import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
+
 ---import Debug.Trace
 
 zipEq :: Show e => SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -61,7 +62,7 @@ data EvalError s
   | Err_Eval_RefEmptyArray
   | Err_Eval_RefNotArray SLVal
   | Err_Eval_RefNotInt SLVal
-  | Err_Eval_RefOutOfBounds Int Int
+  | Err_Eval_RefOutOfBounds Int Integer
   | Err_Eval_ReturnsDifferentTypes [SLType]
   | Err_Eval_UnboundId SLVar [SLVar]
   | Err_ExpectedPrivate SLVal
@@ -201,6 +202,7 @@ instance Show (SLCtxt s) where
   show ctxt = show $ ctxt_mode ctxt
 
 type SLPartEnvs = M.Map SLPart SLEnv
+
 type SLPartDVars = M.Map SLPart DLVar
 
 data SLCtxtMode
@@ -298,11 +300,12 @@ unaryToPrim at env o =
 
 infectWithId :: SLVar -> SLSVal -> SLSVal
 infectWithId v (lvl, sv) = (lvl, sv')
-  where sv' =
-          case sv of
-            SLV_Participant at who io _ mdv ->
-              SLV_Participant at who io (Just v) mdv
-            _ -> sv
+  where
+    sv' =
+      case sv of
+        SLV_Participant at who io _ mdv ->
+          SLV_Participant at who io (Just v) mdv
+        _ -> sv
 
 evalDot :: SrcLoc -> SLVal -> String -> SLSVal
 evalDot at obj field =
@@ -387,6 +390,7 @@ evalPrimOp ctxt at _env p sargs =
     CP ADD -> nn2n (+)
     CP SUB -> nn2n (-)
     CP MUL -> nn2n (*)
+    -- FIXME fromIntegral may overflow the Int
     CP LSH -> nn2n (\a b -> shift a (fromIntegral b))
     CP RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
     CP BAND -> nn2n (.&.)
@@ -761,13 +765,13 @@ evalExpr ctxt at env e =
         SLV_Int _ idxi ->
           case arrv of
             SLV_Array _ arrvs ->
-              case atMay arrvs idxi of
+              case fromIntegerMay idxi >>= atMay arrvs of
                 Nothing ->
                   expect_throw at' $ Err_Eval_RefOutOfBounds (length arrvs) idxi
                 Just ansv ->
                   return $ SLRes (alifts <> ilifts) (lvl, ansv)
             SLV_DLVar adv@(DLVar _ _ (T_Array ts) _) ->
-              case atMay ts idxi of
+              case fromIntegerMay idxi >>= atMay ts of
                 Nothing ->
                   expect_throw at' $ Err_Eval_RefOutOfBounds (length ts) idxi
                 Just t -> retRef t arr_dla idx_dla

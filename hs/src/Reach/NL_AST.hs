@@ -1,5 +1,6 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE NoDeriveAnyClass #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE NoDeriveAnyClass, GeneralizedNewtypeDeriving #-}
 
 module Reach.NL_AST where
 
@@ -102,7 +103,7 @@ type SLPart = B.ByteString
 data SLVal
   = SLV_Null SrcLoc String
   | SLV_Bool SrcLoc Bool
-  | SLV_Int SrcLoc Int
+  | SLV_Int SrcLoc Integer
   | SLV_Bytes SrcLoc B.ByteString
   | SLV_Array SrcLoc [SLVal]
   | SLV_Object SrcLoc SLEnv
@@ -221,7 +222,7 @@ newtype SLParts
 data DLConstant
   = DLC_Null
   | DLC_Bool Bool
-  | DLC_Int Int
+  | DLC_Int Integer
   | DLC_Bytes B.ByteString
   deriving (Eq, Show, Ord)
 
@@ -503,11 +504,11 @@ data CHandler
       , ch_body :: CTail
       }
   | C_Loop
-    { cl_at :: SrcLoc
-    , cl_svs :: [DLVar]
-    , cl_vars :: [DLVar]
-    , cl_body :: CTail
-    }
+      { cl_at :: SrcLoc
+      , cl_svs :: [DLVar]
+      , cl_vars :: [DLVar]
+      , cl_body :: CTail
+      }
   deriving (Eq, Show)
 
 newtype CHandlers = CHandlers (M.Map Int CHandler)

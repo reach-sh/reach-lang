@@ -33,3 +33,11 @@ mshow :: Show a => String -> Maybe a -> String -> String
 mshow pre m post = case m of
   Just a -> pre <> show a <> post
   Nothing -> ""
+
+-- | Safe fromInteger with bounds checking
+fromIntegerMay :: forall a. (Integral a, Bounded a) => Integer -> Maybe a
+fromIntegerMay i
+  | i <= fromIntegral (maxBound :: a)
+      && i >= fromIntegral (minBound :: a) =
+    Just $ fromIntegral i
+  | otherwise = Nothing
