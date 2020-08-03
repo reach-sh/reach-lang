@@ -74,8 +74,9 @@ lin_con_s back rets s k =
       LLC_While at asn (block inv_b) (block cond_b) body' k
       where
         body' = iters rets body $ LLC_Com $ LL_Return at
+        --- Note: The invariant and condition can't return
         block (DLBlock ba ss a) =
-          iters rets ss $ LLC_Stop ba a
+          LLBlock ba (lin_local ba ss) a 
     DLS_Continue at update ->
       case k of
         LLC_Com (LL_Return _ret_at) ->

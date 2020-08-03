@@ -112,6 +112,13 @@ data ProSt s = ProSt
   }
   deriving (Eq)
 
+newHandler :: ProSt s -> ST s Int
+newHandler st = incSTCounter $ pst_handlerc st
+
+addHandler :: ProSt s -> Int -> CHandler -> ST s ()
+addHandler st which this_h =
+  modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
+      
 pmap :: Ord a => ProSt s -> (SLPart -> (a, b)) -> M.Map a b
 pmap st f = M.fromList $ map f $ pst_parts st
 
@@ -259,8 +266,28 @@ epp_n st n =
               True -> CT_Wait at1 svs
               False -> CT_Halt at1
       return $ ProResC p_prts_s (ProRes_ cons_cs ctw)
-    LLC_While {} -> error "XXX"
-    LLC_Stop {} -> error "XXX"
+    LLC_While at asn _inv cond body k -> do
+      ProResC p_prts_k (ProRes_ cs_k ct_k) <- epp_n st k
+      ProResC p_prts_body (ProRes_ cs_body ct_body) <- epp_n st body
+      let LLBlock cond_at cond_l cond_da = cond
+      let post_cond_cs = counts cond_da <> cs_body <> cs_k
+      let ProResL (ProRes_ cs_cond pt_cond) = epp_l cond_l post_cond_cs
+      let loop_if = CT_If cond_at cond_da ct_body ct_k
+      let loop_top = CT_Seqn cond_at pt_cond loop_if
+      loopn <- newHandler st
+      let loop_vars = assignment_vars asn
+      let loop_svs = counts_nzs $ count_rms loop_vars $ cs_cond
+      let this_h = C_Loop at loop_svs loop_vars loop_top
+      addHandler st loopn this_h
+      let ct' = CT_Jump at loopn loop_svs asn
+      let cons_cs' = counts loop_svs <> counts asn
+      let mkp p = (p, ProRes_ cs_p t_p)
+            where ProRes_ p_cs_k t_k = p_prts_k M.! p
+                  ProRes_ p_cs_body t_body = p_prts_body M.! p
+                  cs_p = counts asn <> (count_rms loop_vars $ counts cond_da <> p_cs_body <> p_cs_k)
+                  t_p = ET_While at asn (PLBlock cond_at pt_cond cond_da) t_body t_k
+      let p_prts' = pmap st mkp
+      return $ ProResC p_prts' (ProRes_ cons_cs' ct')
     LLC_Continue {} -> error "XXX"
 
 epp_s :: forall s. ProSt s -> LLStep -> ST s ProResS
@@ -313,7 +340,7 @@ epp_s st s =
             case fs of
               FS_Join dv -> (mempty, [dv])
               FS_Again dv -> (counts dv, mempty)
-      which <- incSTCounter $ pst_handlerc st
+      which <- newHandler st
       let st_cons = st { pst_prev_handler = which
                        , pst_interval = int_ok }
       ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
@@ -335,7 +362,7 @@ epp_s st s =
                       True -> mk_sender_et 
                       False -> mk_receiver_et
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
-      modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
+      addHandler st which this_h
       return $ ProResS p_prts (ProRes_ cons'_vs True)
 
 epp :: LLProg -> PLProg

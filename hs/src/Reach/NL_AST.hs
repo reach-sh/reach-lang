@@ -369,8 +369,8 @@ data LLLocal
   = LLL_Com (LLCommon LLLocal)
   deriving (Eq, Show)
 
-data LLBlock
-  = LLBlock SrcLoc LLLocal DLArg
+data LLBlock a
+  = LLBlock SrcLoc a DLArg
   deriving (Eq, Show)
 
 data LLConsensus
@@ -382,13 +382,11 @@ data LLConsensus
     LLC_While
       { llc_w_at :: SrcLoc
       , llc_w_asn :: DLAssignment
-      , llc_w_inv :: LLConsensus
-      , llc_w_cond :: LLConsensus
+      , llc_w_inv :: LLBlock LLLocal
+      , llc_w_cond :: LLBlock LLLocal
       , llc_w_body :: LLConsensus
       , llc_w_k :: LLConsensus
       }
-  | --- FIXME Use types to ensure only within invariants and conditions
-    LLC_Stop SrcLoc DLArg
   | --- FIXME Use types to ensure only within while body
     LLC_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
@@ -403,7 +401,7 @@ data LLStep
       , lls_tc_fs :: FromSpec
       , lls_tc_from_as :: [DLArg]
       , lls_tc_from_msg :: [DLVar]
-      , lls_tc_amt :: LLBlock
+      , lls_tc_amt :: LLBlock LLLocal
       , lls_tc_mtime :: (Maybe (DLArg, LLStep))
       , lls_tc_cons :: LLConsensus
       }
@@ -434,7 +432,7 @@ data PLTail
   deriving (Eq, Show)
 
 data PLBlock
-  = PLBlock PLTail DLArg
+  = PLBlock SrcLoc PLTail DLArg
   deriving (Eq, Show)
 
 data ETail
@@ -471,6 +469,7 @@ data EPProg
 
 data CTail
   = CT_Com (PLCommon CTail)
+  | CT_Seqn SrcLoc PLTail CTail  
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Transfer SrcLoc SLPart DLArg CTail
   | CT_Wait SrcLoc [DLVar]

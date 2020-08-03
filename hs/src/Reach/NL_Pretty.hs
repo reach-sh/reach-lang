@@ -183,13 +183,12 @@ instance Pretty LLConsensus where
         prettyTransfer who da <> hardline <> pretty k
       LLC_FromConsensus _at _ret_at k ->
         "commit()" <> semi <> hardline <> pretty k
-      LLC_Stop _at da -> "conexit" <> parens (pretty da) <> semi
       LLC_While _at asn inv cond body k ->
         prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
       LLC_Continue _at asn ->
         prettyContinue asn
 
-instance Pretty LLBlock where
+instance Pretty a => Pretty (LLBlock a) where
   pretty (LLBlock _ ts ta) =
     (pretty ts) <> hardline <> "return" <+> pretty ta <> semi
 
@@ -275,7 +274,7 @@ instance Pretty ETail where
       cm l = parens (hsep $ punctuate comma $ l)
 
 instance Pretty PLBlock where
-  pretty (PLBlock pltail dlarg) = pform "begin" body
+  pretty (PLBlock _ pltail dlarg) = pform "begin" body
     where
       body = pretty pltail <+> pretty dlarg
 
@@ -324,6 +323,7 @@ instance Pretty CInterval where
 
 instance Pretty CTail where
   pretty (CT_Com e) = pretty e
+  pretty (CT_Seqn _ x y) = pretty x <> hardline <> pretty y
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Transfer _ to amt ctail) =
     prettyTransfer to amt <> hardline <> pretty ctail
