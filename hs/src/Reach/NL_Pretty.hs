@@ -306,7 +306,7 @@ instance Pretty CHandler where
     pbrackets
       [ pretty fs
       , pretty int
-      , pretty last_i
+      , "last = " <> pretty last_i
       , pretty svs
       , pretty msg
       , render_nest $ pretty body

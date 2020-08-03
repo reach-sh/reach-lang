@@ -270,7 +270,8 @@ epp_s st s =
       epp_m done back skip look c
       where
         done :: MDone (ST s ProResS)
-        done _XXX = error "XXX"
+        done rat =
+          return $ ProResS (pall st (ProRes_ mempty $ ET_Com $ PL_Return rat)) (ProRes_ mempty False)
         back :: MBack LLStep (ST s ProResS)
         back cs' mkpl k = do
           ProResS p_prts_s cr <- skip k
