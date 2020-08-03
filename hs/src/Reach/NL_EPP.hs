@@ -291,31 +291,45 @@ epp_s st s =
       return $ ProResS p_prts prchs_k
     LLS_ToConsensus at from fs from_as msg amt mtime cons -> do
       let LLBlock _XXX_amt_at _XXX_amt_l amt_da = amt
-      let mtime' = error $ "XXX " ++ show mtime
+      let prev_int = pst_interval st
+      (int_ok, time_cons_cs, mtime'_ps) <-
+        case mtime of
+          Nothing -> return $ (prev_int, mempty, pall st $ ProRes_ mempty Nothing)
+          Just (delaya, delays) -> do
+            let delay_cs = counts delaya
+            let int_to = interval_add_from prev_int delaya
+            let int_ok = interval_add_to prev_int delaya
+            let st_to = st { pst_interval = int_to }
+            ProResS delay_prts tcons_cs <- epp_s st_to delays
+            let cs' = delay_cs <> tcons_cs
+            let update (ProRes_ tk_cs tk_et) =
+                  ProRes_ (tk_cs <> delay_cs) (Just (delaya, tk_et))
+            return $ (int_ok, cs', M.map update delay_prts)
       let (fs_uses, fs_defns) =
             case fs of
               FS_Join dv -> (mempty, [dv])
               FS_Again dv -> (counts dv, mempty)
-      let int = pst_interval st
       which <- incSTCounter $ pst_handlerc st
-      let st_cons = st {pst_prev_handler = which}
+      let st_cons = st { pst_prev_handler = which
+                       , pst_interval = int_ok }
       ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
-      let cons'_vs = count_rms msg cons_vs
+      let cons'_vs = time_cons_cs <> count_rms msg cons_vs
       let svs = counts_nzs cons'_vs
       let from_me = Just (from_as, amt_da, svs)
       let prev = pst_prev_handler st
-      let this_h = C_Handler at int fs prev svs msg ct_cons
-      let mk_et mfrom (ProRes_ cs_ et_) =
+      let this_h = C_Handler at int_ok fs prev svs msg ct_cons
+      let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
             ProRes_ cs_' $ ET_ToConsensus at fs which mfrom msg mtime' et_
             where
-              --- XXX mtime' vs
-              cs_' = fs_uses <> counts mfrom <> count_rms (msg <> fs_defns) cs_
+              cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms (msg <> fs_defns) cs_
       let mk_sender_et = mk_et from_me
       let mk_receiver_et = mk_et Nothing
-      let mk_p_prt p prt =
-            case p == from of
-              True -> mk_sender_et prt
-              False -> mk_receiver_et prt
+      let mk_p_prt p prt = mker prt mtime'
+            where mtime' = mtime'_ps M.! p
+                  mker =
+                    case p == from of
+                      True -> mk_sender_et 
+                      False -> mk_receiver_et
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
       return $ ProResS p_prts cons'_vs
