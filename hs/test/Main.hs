@@ -13,6 +13,7 @@ import Language.JavaScript.Parser.SrcLocation
 import Reach.Compiler (CompileErr, Verifier (Z3), compile)
 import Reach.CompilerTool
 import Reach.ParserInternal
+import Reach.Test.Test_NL_Eval
 import Reach.Test.Test_NL_Parser
 import Reach.Test.Test_Util
 import Reach.Test.Util
@@ -114,6 +115,7 @@ main = do
   tests <-
     sequence
       [ testReachNlParser
+      , testReachNlEval
       , testReachUtil
       , parseTests
       , compileTests

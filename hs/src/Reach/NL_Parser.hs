@@ -20,7 +20,6 @@ data ParserError
   = Err_Parse_CyclicImport ReachSource
   | Err_Parser_Arrow_NoFormals
   | Err_Parse_ExpectIdentifier JSExpression
-  | Err_Parse_ExpectSemi
   | Err_Parse_IllegalBinOp JSBinOp
   | Err_Parse_IllegalLiteral String
   | Err_Parse_IllegalUnaOp JSUnaryOp
@@ -32,11 +31,9 @@ instance Show ParserError where
   show (Err_Parse_CyclicImport rs) =
     "Cyclic import! " <> show rs
   show Err_Parser_Arrow_NoFormals =
-    "No formals" -- XXX wat
-  show (Err_Parse_ExpectIdentifier e) =
-    "Expected identifier, got expression: " <> show e
-  show Err_Parse_ExpectSemi =
-    "Expected semicolon" -- XXX I think
+    "Arg list for function is missing."
+  show (Err_Parse_ExpectIdentifier _e) =
+    "Expected identifier, got expression."
   show (Err_Parse_IllegalBinOp op) =
     "Illegal binary operation: " <> show op
   show (Err_Parse_IllegalLiteral lit) =

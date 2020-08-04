@@ -1,0 +1,1 @@
+error: ./Err_Parse_IllegalUnaOp.rsh:6:19:return: Illegal unary operator: JSUnaryOpIncr (JSAnnot (TokenPn 84 6 26) [WhiteSpace (TokenPn 83 6 25) " "])

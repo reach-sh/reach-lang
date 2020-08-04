@@ -1,0 +1,1 @@
+error: ./Err_Parse_ExpectIdentifier.rsh:3:17:arrow: Expected identifier, got expression.
