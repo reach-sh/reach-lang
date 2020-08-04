@@ -41,7 +41,7 @@ instance Show ParserError where
   show (Err_Parse_IllegalUnaOp unop) =
     "Illegal unary operator: " <> show unop
   show (Err_Parse_NotModule ast) =
-    "Not a module: " <> show ast -- XXX too much?
+    "Not a module: " <> (take 256 $ show ast)
 
 --- Helpers
 jse_expect_id :: SrcLoc -> JSExpression -> String
@@ -75,7 +75,6 @@ instance NFData JSBundle where
   rnf (JSBundle xs) = go xs
     where
       go [] = ()
-      -- XXX This doesn't force the JSModuleItem to normal form.
       go ((rs, jmi) : rest) = rnf rs `seq` jmi `seq` go rest
 
 gatherDeps_imd :: SrcLoc -> IORef JSBundleMap -> JSImportDeclaration -> IO JSImportDeclaration
