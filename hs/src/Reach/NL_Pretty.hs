@@ -84,9 +84,9 @@ prettyContinue cont_da =
 prettyClaim :: Show a => Pretty b => a -> b -> Doc c
 prettyClaim ct a = "claim" <> parens (viaShow ct) <> parens (pretty a) <> semi
 
-prettyTransfer :: SLPart -> DLArg -> Doc a
+prettyTransfer :: DLArg -> DLArg -> Doc a
 prettyTransfer who da =
-  "transfer." <> parens (pretty da) <> ".to" <> parens (render_sp who) <> semi
+  "transfer." <> parens (pretty da) <> ".to" <> parens (pretty who) <> semi
 
 prettyStop :: DLArg -> Doc a
 prettyStop da = "exit" <> parens (pretty da) <> semi

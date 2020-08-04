@@ -271,7 +271,7 @@ epp_n st n =
       return $ ProResC p_prts' (ProRes_ cs' ct')
     LLC_Transfer at to amt k -> do
       ProResC p_prts_s (ProRes_ cs_k ct_k) <- epp_n st k
-      let cs_k' = cs_k <> counts amt
+      let cs_k' = counts to <> counts amt <> cs_k
       let ct_k' = CT_Transfer at to amt ct_k
       return $ ProResC p_prts_s (ProRes_ cs_k' ct_k')
     LLC_FromConsensus at1 _at2 s -> do
@@ -370,12 +370,13 @@ epp_s st s =
       let st_cons = st { pst_prev_handler = which
                        , pst_interval = int_ok }
       ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
-      let ok_cons_cs = delay_cs <> count_rms msg cons_vs <> pst_forced_svs st
-      (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let (fs_uses, fs_defns) =
             case fs of
               FS_Join dv -> (mempty, [dv])
               FS_Again dv -> (counts dv, mempty)
+      let msg_and_defns = (msg <> fs_defns)
+      let ok_cons_cs = delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
+      (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let svs = counts_nzs time_cons_cs
       let from_me = Just (from_as, amt_da, svs)
       let prev = pst_prev_handler st
@@ -383,7 +384,7 @@ epp_s st s =
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
             ProRes_ cs_' $ ET_ToConsensus at fs which mfrom msg mtime' et_
             where
-              cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms (msg <> fs_defns) cs_
+              cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms msg_and_defns cs_
       let mk_sender_et = mk_et from_me
       let mk_receiver_et = mk_et Nothing
       let mk_p_prt p prt = mker prt mtime'

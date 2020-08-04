@@ -519,13 +519,12 @@ evalPrim ctxt at env p sargs =
     SLPrim_transfer_amt_to amt_dla ->
       case ctxt_mode ctxt of
         SLC_ConsensusStep {} ->
-          case sargs of
-            [(_, SLV_Participant _ who _ _ _)] ->
-              return $ SLRes lifts $ public $ SLV_Null at "transfer.to"
-              where
-                --- XXX Look up participant in dv env
-                lifts = return $ DLS_Transfer at who amt_dla
-            _ -> illegal_args
+          return $ SLRes lifts $ public $ SLV_Null at "transfer.to"
+          where lifts = return $ DLS_Transfer at who_dla amt_dla
+                who_dla =
+                  case checkAndConvert at (T_Fun [T_Address] T_Null) $ map snd sargs of
+                    (_, [x]) -> x
+                    _ -> impossible "transfer"
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "transfer.to"
   where
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)

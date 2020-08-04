@@ -289,7 +289,7 @@ data DLStmt
   | --- FIXME Record whether it is pure or local in the statement and
     --- track in monad results to avoid quadratic behavior
     DLS_If SrcLoc DLArg DLStmts DLStmts
-  | DLS_Transfer SrcLoc SLPart DLArg
+  | DLS_Transfer SrcLoc DLArg DLArg
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
@@ -381,7 +381,7 @@ data LLBlock a
 data LLConsensus
   = LLC_Com (LLCommon LLConsensus)
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
-  | LLC_Transfer SrcLoc SLPart DLArg LLConsensus
+  | LLC_Transfer SrcLoc DLArg DLArg LLConsensus
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
   | --- inv then cond then body then kont
     LLC_While
@@ -476,7 +476,7 @@ data CTail
   = CT_Com (PLCommon CTail)
   | CT_Seqn SrcLoc PLTail CTail  
   | CT_If SrcLoc DLArg CTail CTail
-  | CT_Transfer SrcLoc SLPart DLArg CTail
+  | CT_Transfer SrcLoc DLArg DLArg CTail
   | CT_Wait SrcLoc [DLVar]
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   | CT_Halt SrcLoc
