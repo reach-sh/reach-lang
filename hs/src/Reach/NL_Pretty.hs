@@ -117,7 +117,7 @@ instance Pretty DLStmt where
       DLS_ToConsensus _ who fs as vs amt mtime cons ->
         "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns cons
         where
-          amtp = ".pay" <> parens (render_nest $ pretty amt)
+          amtp = ".pay" <> parens (pretty amt)
           timep =
             case mtime of
               Nothing -> ""
@@ -202,7 +202,7 @@ instance Pretty LLStep where
       LLS_ToConsensus _at who fs as vs amt mtime cons ->
         "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns (pretty cons)
         where
-          amtp = ".pay" <> parens (render_nest $ pretty amt)
+          amtp = ".pay" <> parens (pretty amt)
           timep =
             case mtime of
               Nothing -> mempty

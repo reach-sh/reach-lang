@@ -299,7 +299,7 @@ data DLStmt
       , dls_tc_fs :: FromSpec
       , dls_tc_from_as :: [DLArg]
       , dls_tc_from_msg :: [DLVar]
-      , dls_tc_amt :: DLBlock
+      , dls_tc_from_amt :: DLArg
       , dls_tc_mtime :: (Maybe (DLArg, DLBlock))
       , dls_tc_cons :: DLStmts
       }
@@ -406,7 +406,7 @@ data LLStep
       , lls_tc_fs :: FromSpec
       , lls_tc_from_as :: [DLArg]
       , lls_tc_from_msg :: [DLVar]
-      , lls_tc_amt :: LLBlock LLLocal
+      , lls_tc_from_amt :: DLArg
       , lls_tc_mtime :: (Maybe (DLArg, LLStep))
       , lls_tc_cons :: LLConsensus
       }

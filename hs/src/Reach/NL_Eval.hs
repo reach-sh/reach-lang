@@ -1032,21 +1032,22 @@ evalStmt ctxt at sco ss =
                        True -> add_who_env old
                        False -> add_who_env $ env_merge to_at old msg_env)
                   penvs
-          --- XXX Add check and compute at this level
-          amt' <-
+          --- XXX Add check
+          SLRes amt_lifts amt_da <-
             case mamt of
               Nothing ->
-                return $ DLBlock at mempty (DLA_Con $ DLC_Int 0)
+                return $ SLRes mempty (DLA_Con $ DLC_Int 0)
               Just amte -> do
-                SLRes amt_lifts amt_sv <- evalExpr ctxt at env' amte
+                SLRes amt_lifts_ amt_sv <- evalExpr ctxt at env' amte
                 --- FIXME The pattern should be a function
                 let amt_v = ensure_public at amt_sv
-                let (amt_ty, amt_da) = typeOf at amt_v
+                let (amt_ty, amt_da_) = typeOf at amt_v
                 case amt_ty of
                   T_UInt256 ->
-                    return $ DLBlock at amt_lifts amt_da
+                    return $ SLRes amt_lifts_ amt_da_
                   _ ->
                     expect_throw at $ Err_Type_Mismatch T_UInt256 amt_ty amt_v
+          let amt_compute_lifts = return $ DLS_Only at who amt_lifts
           (tlifts, mtime') <-
             case mtime of
               Nothing -> return $ (mempty, Nothing)
@@ -1072,7 +1073,7 @@ evalStmt ctxt at sco ss =
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep env' pdvs' penvs'})
           let sco' = sco {sco_env = env'}
           SLRes conlifts cr <- evalStmt ctxt_cstep at_after sco' ks
-          let lifts' = elifts <> tlifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt' mtime' conlifts)
+          let lifts' = elifts <> tlifts <> amt_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da mtime' conlifts)
           return $ SLRes lifts' cr
         (SLC_ConsensusStep orig_env pdvs penvs, SLV_Prim SLPrim_committed) -> do
           let addl_env = M.difference env orig_env

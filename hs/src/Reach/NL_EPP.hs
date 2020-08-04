@@ -346,8 +346,7 @@ epp_s st s =
       let who_prt_only = ProRes_ who_body_cs $ ET_Seqn at who_body_lt who_k_et
       let p_prts = M.insert who who_prt_only p_prts_k
       return $ ProResS p_prts prchs_k
-    LLS_ToConsensus at from fs from_as msg amt mtime cons -> do
-      let LLBlock _XXX_amt_at _XXX_amt_l amt_da = amt
+    LLS_ToConsensus at from fs from_as msg amt_da mtime cons -> do
       let prev_int = pst_interval st
       which <- newHandler st
       let (int_ok, delay_cs, continue_time ) =

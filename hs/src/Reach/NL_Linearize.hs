@@ -102,12 +102,10 @@ lin_step_s rets s k =
       where
         ls = lin_local at ss
     DLS_ToConsensus at who fs as ms amt mtime cons ->
-      LLS_ToConsensus at who fs as ms amt' mtime' cons'
+      LLS_ToConsensus at who fs as ms amt mtime' cons'
       where
         cons' = lin_con at back cons
         back more = iters rets more k
-        DLBlock amt_at amt_ss amt_da = amt
-        amt' = LLBlock amt_at (lin_local amt_at amt_ss) amt_da
         mtime' = do
           (delay_da, DLBlock time_at time_ss time_da) <- mtime
           case k of
