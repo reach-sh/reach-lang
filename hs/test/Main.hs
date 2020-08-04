@@ -14,7 +14,6 @@ import Reach.Compiler (CompileErr, Verifier (Z3), compile)
 import Reach.CompilerTool
 import Reach.ParserInternal
 import Reach.Test.Test_NL_Eval
-import Reach.Test.Test_NL_Parser
 import Reach.Test.Test_Util
 import Reach.Test.Util
 import System.Directory
@@ -114,8 +113,7 @@ main = do
       theArgs = "--num-threads=1" : args
   tests <-
     sequence
-      [ testReachNlParser
-      , testReachNlEval
+      [ testReachNlEval
       , testReachUtil
       , parseTests
       , compileTests
