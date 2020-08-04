@@ -181,6 +181,7 @@ data ReturnStyle
   = RS_ImplicitNull
   | RS_NeedExplicit
   | RS_CannotReturn
+  | RS_MayBeEmpty
   deriving (Eq, Show)
 
 data SLScope = SLScope
@@ -865,6 +866,8 @@ evalStmt ctxt at sco ss =
           evalStmt ctxt at sco $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
         RS_NeedExplicit ->
           expect_throw at $ Err_TailEmpty
+        RS_MayBeEmpty ->
+          return $ SLRes mempty $ SLStmtRes (sco_env sco) []
     ((JSStatementBlock a ss' _ sp) : ks) -> do
       br <- evalStmt ctxt at_in sco ss'
       retSeqn br at_after ks
@@ -932,12 +935,17 @@ evalStmt ctxt at sco ss =
       let t_at' = srcloc_jsa "if > true" ta at'
       let f_at' = srcloc_jsa "if > false" fa t_at'
       SLRes clifts (clvl, cv) <- evalExpr ctxt at' env ce
-      tr <- evalStmt ctxt t_at' sco [ts]
-      fr <- evalStmt ctxt f_at' sco [fs]
+      let ks_ne = dropEmptyJSStmts ks
+      let sco' =
+            case ks_ne of
+              [] -> sco
+              _ -> sco { sco_must_ret = RS_MayBeEmpty }
+      tr <- evalStmt ctxt t_at' sco' [ts]
+      fr <- evalStmt ctxt f_at' sco' [fs]
       keepLifts clifts $
         case cv of
           SLV_Bool _ cb -> do
-            retSeqn (if cb then tr else fr) at' ks
+            retSeqn (if cb then tr else fr) at' ks_ne
           SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) -> do
             let SLRes tlifts (SLStmtRes _ trets) = tr
             let SLRes flifts (SLStmtRes _ frets) = fr
@@ -952,7 +960,7 @@ evalStmt ctxt at sco ss =
                     (_, []) -> trets' ++ [(f_at', (clvl, SLV_Null f_at' "if empty false"))]
                     (_, _) -> trets' ++ frets'
             let ir = SLRes lifts' (SLStmtRes env rets')
-            retSeqn ir at' ks
+            retSeqn ir at' ks_ne
           _ ->
             expect_throw at (Err_Eval_IfCondNotBool cv)
     (s@(JSLabelled _ a _) : _) ->

@@ -335,7 +335,7 @@ stmt_local s =
     DLS_Let {} -> True
     DLS_Claim {} -> True
     DLS_If _ _ x y -> stmts_local x && stmts_local y
-    DLS_Transfer {} -> True
+    DLS_Transfer {} -> False
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> stmts_local ss
     DLS_Only _ _ ss -> stmts_local ss
