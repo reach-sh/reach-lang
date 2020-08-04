@@ -1,7 +1,7 @@
-module Reach.VerifyZ3 where
+module Reach.Verify.Z3 where
 
 import Reach.AST
-import Reach.VerifySMT
+import Reach.Verify.SMT
 import SimpleSMT
 
 verify_z3 :: Show a => FilePath -> ILProgram a -> IO ()

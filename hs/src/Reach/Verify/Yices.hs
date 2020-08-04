@@ -1,7 +1,7 @@
-module Reach.VerifyYices where
+module Reach.Verify.Yices where
 
 import Reach.AST
-import Reach.VerifySMT
+import Reach.Verify.SMT
 import SimpleSMT
 
 -- XXX: known not to work.

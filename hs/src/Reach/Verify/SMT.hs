@@ -1,4 +1,4 @@
-module Reach.VerifySMT where
+module Reach.Verify.SMT where
 
 -- XXX clean up function names and params to not refer to z3
 

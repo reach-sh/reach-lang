@@ -1,7 +1,7 @@
-module Reach.VerifyBoolector where
+module Reach.Verify.Boolector where
 
 import Reach.AST
-import Reach.VerifySMT
+import Reach.Verify.SMT
 import SimpleSMT
 
 -- XXX: known not to work.

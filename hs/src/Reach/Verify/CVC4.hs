@@ -1,7 +1,7 @@
-module Reach.VerifyCVC4 where
+module Reach.Verify.CVC4 where
 
 import Reach.AST
-import Reach.VerifySMT
+import Reach.Verify.SMT
 import SimpleSMT
 
 verify_cvc4 :: Show a => FilePath -> ILProgram a -> IO ()

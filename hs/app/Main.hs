@@ -2,7 +2,7 @@ module Main where
 
 import Data.Char
 import Options.Applicative
-import Reach.Compiler (Verifier (Z3))
+import Reach.Verify (Verifier (Z3))
 import Reach.CompilerTool
 import System.Directory
 import System.Environment

@@ -22,10 +22,7 @@ import Reach.ConsensusNetworkProgram
 import Reach.Parser
 import Reach.Pretty ()
 import Reach.Util
-import Reach.VerifyBoolector
-import Reach.VerifyCVC4
-import Reach.VerifyYices
-import Reach.VerifyZ3
+import Reach.Verify
 import System.Exit
 import Test.SmallCheck.Series (Serial)
 import Text.Pretty.Simple
@@ -1196,9 +1193,6 @@ epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
     initγ p = (RolePart p, mempty)
     γ = M.insert RoleContract M.empty γi
 
-data Verifier = Boolector | CVC4 | Yices | Z3
-  deriving (Read, Show, Eq)
-
 data CompilerOpts = CompilerOpts
   { output :: T.Text -> String -> IO ()
   , output_name :: T.Text -> String
@@ -1219,11 +1213,7 @@ compile copts = do
   out "xil" (L.unpack (pShow xilp))
   let ilp = anf xilp
   out "il" (show (pretty ilp))
-  case verifier copts of
-    Z3 -> verify_z3 (outn "z3") ilp
-    Yices -> verify_yices (outn "yi") ilp
-    CVC4 -> verify_cvc4 (outn "cvc4") ilp
-    Boolector -> verify_boolector (outn "br") ilp
+  verify outn (verifier copts) ilp
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp
