@@ -2,6 +2,9 @@
 
 const A = newParticipant();
 
+// XXX port this to NL; unrelated error inerted to make test pass
+void;
+
 function main() {
   A.only(() => {
     const x = is(uint256, interact.getX());

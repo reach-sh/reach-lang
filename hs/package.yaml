@@ -44,9 +44,12 @@ dependencies:
 - tasty-ant-xml
 - tasty-discover
 - tasty-golden
+- tasty-hedgehog
 - tasty-hspec
 - tasty-html
 - tasty-hunit
+- tasty-quickcheck
+- tasty-smallcheck
 - text
 - unordered-containers
 
