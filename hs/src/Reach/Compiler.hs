@@ -22,7 +22,7 @@ import Reach.ConsensusNetworkProgram
 import Reach.Parser
 import Reach.Pretty ()
 import Reach.Util
-import Reach.Verify
+import Reach.Verify (VerifierName)
 import System.Exit
 import Test.SmallCheck.Series (Serial)
 import Text.Pretty.Simple
@@ -1199,7 +1199,7 @@ data CompilerOpts = CompilerOpts
   , source :: FilePath
   , -- | Enable experimental connectors
     expCon :: Bool
-  , verifier :: Verifier
+  , verifier :: VerifierName
   }
 
 compile :: CompilerOpts -> IO ()
@@ -1213,7 +1213,6 @@ compile copts = do
   out "xil" (L.unpack (pShow xilp))
   let ilp = anf xilp
   out "il" (show (pretty ilp))
-  verify outn (verifier copts) ilp
   let blp = epp ilp
   out "bl" (show (pretty blp))
   cs <- compile_sol (outn "sol") blp

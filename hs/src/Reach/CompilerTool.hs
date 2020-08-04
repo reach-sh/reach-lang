@@ -1,7 +1,7 @@
 module Reach.CompilerTool where
 
 import qualified Filesystem.Path.CurrentOS as FP
-import Reach.Verify (Verifier)
+import Reach.Verify (VerifierName)
 import Reach.Compiler
 import Reach.CompilerNL (compileNL)
 import System.Directory
@@ -11,7 +11,7 @@ data CompilerToolOpts = CompilerToolOpts
   , cto_source :: FilePath
   , cto_expCon :: Bool
   , cto_expComp :: Bool
-  , cto_verifier :: Verifier
+  , cto_verifier :: VerifierName
   }
 
 makeCompilerOpts :: CompilerToolOpts -> IO CompilerOpts

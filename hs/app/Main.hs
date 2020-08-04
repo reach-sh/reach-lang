@@ -2,7 +2,7 @@ module Main where
 
 import Data.Char
 import Options.Applicative
-import Reach.Verify (Verifier (Z3))
+import Reach.Verify (VerifierName (Z3))
 import Reach.CompilerTool
 import System.Directory
 import System.Environment
@@ -16,7 +16,7 @@ data CompilerToolArgs = CompilerToolArgs
 data CompilerToolEnv = CompilerToolEnv
   { cte_expCon :: Bool
   , cte_expComp :: Bool
-  , cte_verifier :: Verifier
+  , cte_verifier :: VerifierName
   }
 
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts

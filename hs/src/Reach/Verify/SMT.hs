@@ -1,4 +1,4 @@
-module Reach.Verify.SMT where
+module  Reach.Verify.SMT where
 
 -- XXX clean up function names and params to not refer to z3
 
@@ -20,6 +20,7 @@ import Reach.AST
 import Reach.EmbeddedFiles
 import Reach.Pretty ()
 import Reach.Util
+import Reach.Verify.Verifier
 import SimpleSMT hiding (not) --- Maybe use Language.SMTLib2 in future
 import System.Exit
 import System.IO
@@ -1040,11 +1041,12 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger {..})
 
-verify_smt :: Show a => (Maybe Logger -> IO Solver) -> FilePath -> ILProgram a -> IO ()
-verify_smt mkSolver logp tp = do
+verify_smt :: (Maybe Logger -> IO Solver) -> FilePath -> Verifier
+verify_smt mkSolver logp _XXX_lp = do
   (close, logpl) <- newFileLogger logp
   z3 <- mkSolver (Just logpl)
   unlessM (produceUnsatCores z3) $ impossible "Prover doesn't support possible?"
+  let tp :: ILProgram () = error "XXX continue"
   vec <- _verify_z3 z3 tp
   zec <- stop z3
   close
