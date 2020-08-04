@@ -3,11 +3,11 @@ module Reach.EmbeddedFiles where
 import Data.ByteString (ByteString)
 import Data.FileEmbed
 
-z3_runtime_smt2 :: ByteString
-z3_runtime_smt2 = $(embedFile "./z3/z3-runtime.smt2")
+runtime_smt2 :: ByteString
+runtime_smt2 = $(embedFile "./smt2/runtime.smt2")
 
-z3_runtime_bt_smt2 :: ByteString
-z3_runtime_bt_smt2 = $(embedFile "./z3/z3-runtime-bt.smt2")
+runtime_bt_smt2 :: ByteString
+runtime_bt_smt2 = $(embedFile "./smt2/runtime-bt.smt2")
 
 stdlib_sol :: ByteString
 stdlib_sol = $(embedFile "./sol/stdlib.sol")

@@ -1118,7 +1118,8 @@ evalStmt ctxt at sco ss =
                   amt_check_da = DLA_Con $ DLC_Int 0
                   amt_e_ = JSDecimal JSNoAnnot "0"
               Just amte_ -> do
-                SLRes amt_lifts_ amt_sv <- evalExpr ctxt at env' amte_
+                let penv' = penvs' M.! who
+                SLRes amt_lifts_ amt_sv <- evalExpr ctxt at penv' amte_
                 --- FIXME The pattern should be a function
                 let amt_v = ensure_public at amt_sv
                 let (amt_ty, amt_da_) = typeOf at amt_v

@@ -91,7 +91,8 @@ data SLType
   | T_Bytes
   | T_Address
   | T_Fun [SLType] SLType
-  | T_Array [SLType]
+  | --- XXX Indicate if it is a Tuple or an Array?
+    T_Array [SLType]
   | T_Obj (M.Map SLVar SLType)
   | T_Forall SLVar SLType
   | T_Var SLVar
