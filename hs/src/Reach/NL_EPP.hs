@@ -124,11 +124,11 @@ addHandler :: ProSt s -> Int -> CHandler -> ST s ()
 addHandler st which this_h =
   modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
       
-pmap :: Ord a => ProSt s -> (SLPart -> (a, b)) -> M.Map a b
-pmap st f = M.fromList $ map f $ pst_parts st
+pmap :: ProSt s -> (SLPart -> b) -> M.Map SLPart b
+pmap st f = M.fromList $ map (\p -> (p, f p)) $ pst_parts st
 
 pall :: ProSt s -> a -> M.Map SLPart a
-pall st x = pmap st (\p -> (p, x))
+pall st x = pmap st (\_ -> x)
 
 data ProResS = ProResS SLPartETs (ProRes_ Bool)
   deriving (Eq, Show)
@@ -257,7 +257,18 @@ epp_n st n =
                   back' cs_k' ct_k' = ProRes_ cs_k' $ CT_Com $ ct_k'
           let p_prts_s' = extend_locals_look common p_prts_s
           return $ ProResC p_prts_s' cr'
-    LLC_If {} -> error "XXX"
+    LLC_If at ca t f -> do
+      ProResC p_prts_t (ProRes_ cs_t ct_t) <- epp_n st t
+      ProResC p_prts_f (ProRes_ cs_f ct_f) <- epp_n st f
+      let mkp p = ProRes_ cs_p et_p
+            where ProRes_ cs_p_t et_p_t = p_prts_t M.! p
+                  ProRes_ cs_p_f et_p_f = p_prts_f M.! p
+                  cs_p = counts ca <> cs_p_t <> cs_p_f
+                  et_p = ET_If at ca et_p_t et_p_f
+      let p_prts' = pmap st mkp 
+      let cs' = counts ca <> cs_t <> cs_f
+      let ct' = CT_If at ca ct_t ct_f
+      return $ ProResC p_prts' (ProRes_ cs' ct')
     LLC_Transfer at to amt k -> do
       ProResC p_prts_s (ProRes_ cs_k ct_k) <- epp_n st k
       let cs_k' = cs_k <> counts amt
@@ -289,7 +300,7 @@ epp_n st n =
       addHandler st loop_num this_h
       let ct' = CT_Jump at loop_num loop_svs asn
       let cons_cs' = counts loop_svs <> counts asn
-      let mkp p = (p, ProRes_ cs_p t_p)
+      let mkp p = ProRes_ cs_p t_p
             where ProRes_ p_cs_k t_k = p_prts_k M.! p
                   ProRes_ p_cs_body t_body = p_prts_body M.! p
                   cs_p = counts asn <> (count_rms loop_vars $ counts cond_da <> p_cs_body <> p_cs_k)

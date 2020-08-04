@@ -335,6 +335,7 @@ stmt_local s =
     DLS_Let {} -> True
     DLS_Claim {} -> True
     DLS_If _ _ x y -> stmts_local x && stmts_local y
+    --- FIXME If we could make LL_LocalIf be recursive in the type parameter, then we could allow this as a local operation and avoid copying the continuation. Perhaps a better thing is to make transfer an effectful expression and just rely on the let code. Probably wise to do the same to Claim to clean up the code.
     DLS_Transfer {} -> False
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> stmts_local ss
