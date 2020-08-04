@@ -39,8 +39,8 @@ data EvalError
   | Err_Block_Variable
   | Err_Block_While
   | Err_CannotReturn
-  | Err_DApp_InvalidInteract SLSVal
-  | Err_DApp_InvalidPartSpec SLVal
+  | Err_App_InvalidInteract SLSVal
+  | Err_App_InvalidPartSpec SLVal
   | Err_DeclLHS_IllegalJS JSExpression
   | Err_Decl_IllegalJS JSExpression
   | Err_Decl_NotArray SLVal
@@ -89,28 +89,36 @@ data EvalError
   | Err_While_IllegalInvariant [JSExpression]
   deriving (Eq, Generic)
 
---- FIXME implement a custom show that is useful
+-- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
   show = \case
-    (Err_Apply_ArgCount nFormals nArgs) ->
+    Err_Apply_ArgCount nFormals nArgs ->
       "Expected " <> show nFormals <> " args, got " <> show nArgs
-    (Err_Block_Assign _jsop _stmts) ->
+    Err_Block_Assign _jsop _stmts ->
       "Invalid assignment" -- XXX explain why
-    (Err_Block_IllegalJS _stmt) ->
-      "Invalid statement " -- XXX <> take 128 (show stmt)
-    (Err_Block_NotNull ty _slval) ->
+    Err_Block_IllegalJS _stmt ->
+      "Invalid statement"
+    Err_Block_NotNull ty _slval ->
       -- XXX explain why null is expected
       "Invalid block result type, expected Null, got " <> show ty
-    (Err_Eval_IllegalContext mode s) ->
+    Err_Block_Variable ->
+      "Invalid `var` syntax. (Double check your syntax for while?)"
+    Err_Block_While ->
+      "Invalid `while` syntax"
+    Err_CannotReturn ->
+      "Invalid `return` syntax"
+    Err_App_InvalidInteract (secLev, val) ->
+      "Invalid interact specification, expected public type, got: "
+        <> show secLev
+        <> " "
+        <> conNameOf val
+    Err_App_InvalidPartSpec _slval ->
+      "Invalid participant spec"
+    Err_Eval_IllegalContext mode s ->
       s <> " is invalid in context " <> conNameOf mode
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_Block_Variable
--- Err_Block_While
--- Err_CannotReturn
--- Err_DApp_InvalidInteract SLSVal
--- Err_DApp_InvalidPartSpec SLVal
 -- Err_DeclLHS_IllegalJS JSExpression
 -- Err_Decl_IllegalJS JSExpression
 -- Err_Decl_NotArray SLVal
@@ -1398,7 +1406,7 @@ makeInteract at spec = SLV_Object at spec'
   where
     spec' = M.mapWithKey wrap_ty spec
     wrap_ty k (Public, (SLV_Type t)) = secret $ SLV_Prim $ SLPrim_interact at k t
-    wrap_ty _ v = expect_throw at $ Err_DApp_InvalidInteract v
+    wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract v
 
 compileDApp :: SLVal -> ST s DLProg
 compileDApp topv =
@@ -1435,7 +1443,7 @@ compileDApp topv =
           case v of
             SLV_Array p_at [SLV_Bytes _ bs, SLV_Object iat io] ->
               secret $ SLV_Participant p_at bs (makeInteract iat io) Nothing Nothing
-            _ -> expect_throw at' (Err_DApp_InvalidPartSpec v)
+            _ -> expect_throw at' (Err_App_InvalidPartSpec v)
     _ ->
       expect_throw srcloc_top (Err_Top_NotDApp topv)
 

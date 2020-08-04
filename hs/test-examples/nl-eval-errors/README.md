@@ -1,3 +1,7 @@
+XXX Known missing srclocs on err
+* Err_Block_Assign
+* Err_App_InvalidPartSpec
+
 XXX Known weird srclocs on err
 * Err_Block_NotNull
 
@@ -6,12 +10,7 @@ XXX Figure out how to trigger
 * Err_Parser_Arrow_NoFormals -- (=> e) didn't work
 * Err_Parse_IllegalLiteral -- undefined didn't work
 * Err_Parse_NotModule
-  | Err_Block_NotNull SLVal
-  | Err_Block_Variable
-  | Err_Block_While
-  | Err_CannotReturn
-  | Err_DApp_InvalidInteract SLSVal
-  | Err_DApp_InvalidPartSpec SLVal
+* Err_CannotReturn -- most attempts were not valid js
   | Err_DeclLHS_IllegalJS JSExpression
   | Err_Decl_IllegalJS JSExpression
   | Err_Decl_NotArray SLVal

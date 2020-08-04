@@ -49,6 +49,7 @@ ior: inclusive or
 iv: inline variable
 k: continuation (the thing to call after this is done)
 l: Language
+lab: label
 loc: location
 lsh: left shift (<<)
 lt: LType
@@ -64,9 +65,11 @@ prim: primitive
 prog: program
 r: role
 res: result
+ret: return
 rps: rock paper scissors
 rsh: right shift (>>)
 s: statement
+sco: scope
 sl: static language
 slc: static language context
 src: source

@@ -1,1 +1,1 @@
-error: ./Err_Block_IllegalJS.rsh:5:3:with: Invalid statement 
+error: ./Err_Block_IllegalJS.rsh:5:3:with: Invalid statement

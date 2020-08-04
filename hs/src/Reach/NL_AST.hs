@@ -117,7 +117,7 @@ data SLVal
   | SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
 
 data ToConsensusMode
   = TCM_Publish
@@ -474,7 +474,7 @@ data EPProg
 
 data CTail
   = CT_Com (PLCommon CTail)
-  | CT_Seqn SrcLoc PLTail CTail  
+  | CT_Seqn SrcLoc PLTail CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Transfer SrcLoc DLArg DLArg CTail
   | CT_Wait SrcLoc [DLVar]
