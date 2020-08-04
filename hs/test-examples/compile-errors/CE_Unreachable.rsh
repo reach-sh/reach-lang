@@ -2,7 +2,7 @@
 
 const A = newParticipant();
 
-// XXX port this to NL; unrelated error inerted to make test pass
+// XXX port this to NL; unrelated error inserted to make test pass
 void;
 
 function main() {

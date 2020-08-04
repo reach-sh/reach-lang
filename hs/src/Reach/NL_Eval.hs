@@ -8,6 +8,7 @@ import Data.Foldable
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
+import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.JSUtil
@@ -30,13 +31,11 @@ zipEq at ce x y =
     lx = length x
     ly = length y
 
---- FIXME implement a custom show that is useful
-data EvalError s
+data EvalError
   = Err_Apply_ArgCount Int Int
-  | Err_Block_Assign
-  | Err_Block_Continue
+  | Err_Block_Assign JSAssignOp [JSStatement]
   | Err_Block_IllegalJS JSStatement
-  | Err_Block_NotNull SLVal
+  | Err_Block_NotNull SLType SLVal
   | Err_Block_Variable
   | Err_Block_While
   | Err_CannotReturn
@@ -88,7 +87,75 @@ data EvalError s
   | Err_Top_IllegalJS JSStatement
   | Err_Top_NotDApp SLVal
   | Err_While_IllegalInvariant [JSExpression]
-  deriving (Eq, Show)
+  deriving (Eq, Generic)
+
+--- FIXME implement a custom show that is useful
+instance Show EvalError where
+  show = \case
+    (Err_Apply_ArgCount nFormals nArgs) ->
+      "Expected " <> show nFormals <> " args, got " <> show nArgs
+    (Err_Block_Assign _jsop _stmts) ->
+      "Invalid assignment" -- XXX explain why
+    (Err_Block_IllegalJS _stmt) ->
+      "Invalid statement " -- XXX <> take 128 (show stmt)
+    (Err_Block_NotNull ty _slval) ->
+      -- XXX explain why null is expected
+      "Invalid block result type, expected Null, got " <> show ty
+    (Err_Eval_IllegalContext mode s) ->
+      s <> " is invalid in context " <> conNameOf mode
+    e -> "XXX Show EvalError: " <> conNameOf e
+
+-- TODO: add to show above
+-- Err_Block_Variable
+-- Err_Block_While
+-- Err_CannotReturn
+-- Err_DApp_InvalidInteract SLSVal
+-- Err_DApp_InvalidPartSpec SLVal
+-- Err_DeclLHS_IllegalJS JSExpression
+-- Err_Decl_IllegalJS JSExpression
+-- Err_Decl_NotArray SLVal
+-- Err_Decl_WrongArrayLength Int Int
+-- Err_Dot_InvalidField SLVal String
+-- Err_EvalRefIndirectNotHomogeneous [SLType]
+-- Err_Eval_ContinueNotInWhile
+-- Err_Eval_ContinueNotLoopVariable SLVar
+-- Err_Eval_IfCondNotBool SLVal
+-- Err_Eval_IfNotNull SLVal SLVal
+-- Err_Eval_IllegalJS JSExpression
+-- Err_Eval_IllegalLift SLCtxtMode
+-- Err_Eval_NoReturn
+-- Err_Eval_NotApplicable SLVal
+-- Err_Eval_NotApplicableVals SLVal
+-- Err_Eval_NotObject SLVal
+-- Err_Eval_RefEmptyArray
+-- Err_Eval_RefNotArray SLVal
+-- Err_Eval_RefNotInt SLVal
+-- Err_Eval_RefOutOfBounds Int Integer
+-- Err_Eval_ReturnsDifferentTypes [SLType]
+-- Err_Eval_UnboundId SLVar [SLVar]
+-- Err_ExpectedPrivate SLVal
+-- Err_ExpectedPublic SLVal
+-- Err_Export_IllegalJS JSExportDeclaration
+-- Err_Form_InvalidArgs SLForm [JSExpression]
+-- Err_Fun_NamesIllegal
+-- Err_Import_IllegalJS JSImportDeclaration
+-- Err_Import_ShadowedImport SLVar
+-- Err_Module_Return (SLRes SLStmtRes)
+-- Err_NoHeader [JSModuleItem]
+-- Err_Obj_IllegalComputedField SLVal
+-- Err_Obj_IllegalField JSPropertyName
+-- Err_Obj_IllegalFieldValues [JSExpression]
+-- Err_Obj_IllegalJS JSObjectProperty
+-- Err_Obj_SpreadNotObj SLVal
+-- Err_Prim_InvalidArgs SLPrimitive [SLVal]
+-- Err_Shadowed SLVar
+-- Err_TailEmpty
+-- Err_TailNotEmpty [JSStatement]
+-- Err_ToConsensus_Double ToConsensusMode
+-- Err_TopFun_NoName
+-- Err_Top_IllegalJS JSStatement
+-- Err_Top_NotDApp SLVal
+-- Err_While_IllegalInvariant [JSExpression]
 
 ensure_public :: SrcLoc -> SLSVal -> SLVal
 ensure_public at (lvl, v) =
@@ -118,17 +185,17 @@ base_env =
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("random", SLV_Prim $ SLPrim_op $ RANDOM)
-    --- Note: This identifier is chosen so that Reach programmers
-    --- can't actually use it directly... kind of a hack. :(
-    , ("__txn.value__", SLV_Prim $ SLPrim_op $ CP TXN_VALUE)
+    , --- Note: This identifier is chosen so that Reach programmers
+      --- can't actually use it directly... kind of a hack. :(
+      ("__txn.value__", SLV_Prim $ SLPrim_op $ CP TXN_VALUE)
     , ("balance", SLV_Prim $ SLPrim_op $ CP BALANCE)
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
     , ("UInt256", SLV_Type T_UInt256)
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
-    --- FIXME implement Object type constructor
-    , ("Array", SLV_Prim SLPrim_Array)
+    , --- FIXME implement Object type constructor
+      ("Array", SLV_Prim SLPrim_Array)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ( "Reach"
       , (SLV_Object srcloc_top $
@@ -216,7 +283,7 @@ data SLCtxtMode
   | SLC_Local
   | SLC_LocalStep
   | SLC_ConsensusStep SLEnv SLPartDVars SLPartEnvs
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
 
 ctxt_local_name :: SLCtxt s -> SLVar -> SLVar
 ctxt_local_name ctxt def =
@@ -520,11 +587,12 @@ evalPrim ctxt at env p sargs =
       case ctxt_mode ctxt of
         SLC_ConsensusStep {} ->
           return $ SLRes lifts $ public $ SLV_Null at "transfer.to"
-          where lifts = return $ DLS_Transfer at who_dla amt_dla
-                who_dla =
-                  case checkAndConvert at (T_Fun [T_Address] T_Null) $ map snd sargs of
-                    (_, [x]) -> x
-                    _ -> impossible "transfer"
+          where
+            lifts = return $ DLS_Transfer at who_dla amt_dla
+            who_dla =
+              case checkAndConvert at (T_Fun [T_Address] T_Null) $ map snd sargs of
+                (_, [x]) -> x
+                _ -> impossible "transfer"
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "transfer.to"
   where
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)
@@ -941,7 +1009,7 @@ evalStmt ctxt at sco ss =
       let sco' =
             case ks_ne of
               [] -> sco
-              _ -> sco { sco_must_ret = RS_MayBeEmpty }
+              _ -> sco {sco_must_ret = RS_MayBeEmpty}
       tr <- evalStmt ctxt t_at' sco' [ts]
       fr <- evalStmt ctxt f_at' sco' [fs]
       keepLifts clifts $
@@ -986,7 +1054,7 @@ evalStmt ctxt at sco ss =
               where
                 ctxt' = ctxt {ctxt_mode = SLC_Step pdvs $ M.insert who penv' penvs}
                 lifts' = return $ DLS_Only only_at who elifts
-            _ -> expect_throw at (Err_Block_NotNull ev)
+            (ty, _) -> expect_throw at (Err_Block_NotNull ty ev)
         (SLC_Step pdvs penvs, SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mmsg mamt mtime)) -> do
           let penv = penvs M.! who
           (msg_env, tmsg_) <-
@@ -1038,8 +1106,9 @@ evalStmt ctxt at sco ss =
             case mamt of
               Nothing ->
                 return $ (amt_e_, mempty, amt_check_da)
-                where amt_check_da = DLA_Con $ DLC_Int 0
-                      amt_e_ = JSDecimal JSNoAnnot "0"
+                where
+                  amt_check_da = DLA_Con $ DLC_Int 0
+                  amt_e_ = JSDecimal JSNoAnnot "0"
               Just amte_ -> do
                 SLRes amt_lifts_ amt_sv <- evalExpr ctxt at env' amte_
                 --- FIXME The pattern should be a function
@@ -1057,8 +1126,7 @@ evalStmt ctxt at sco ss =
                 a = JSNoAnnot
                 rands = JSLOne $ JSExpressionBinary amte (JSBinOpEq a) rhs
                 rhs = JSCallExpression (JSIdentifier a "__txn.value__") a JSLNil a
-            in
-              evalExpr ctxt at env' check_amte
+             in evalExpr ctxt at env' check_amte
           (tlifts, mtime') <-
             case mtime of
               Nothing -> return $ (mempty, Nothing)
@@ -1097,7 +1165,7 @@ evalStmt ctxt at sco ss =
         _ ->
           case typeOf at_after ev of
             (T_Null, _) -> keepLifts elifts $ evalStmt ctxt at_after sco ks
-            _ -> expect_throw at (Err_Block_NotNull ev)
+            (ty, _) -> expect_throw at (Err_Block_NotNull ty ev)
       where
         at_after = srcloc_after_semi "expr stmt" JSNoAnnot sp at
     ((JSAssignStatement lhs op rhs _asp) : ks) ->
@@ -1131,8 +1199,8 @@ evalStmt ctxt at sco ss =
           where
             lab = "continue"
             var_at = srcloc_jsa lab var_a at
-        _ ->
-          expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign)
+        (jsop, stmts) ->
+          expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign jsop stmts)
     ((JSMethodCall e a args ra sp) : ks) ->
       evalStmt ctxt at sco ss'
       where

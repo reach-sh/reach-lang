@@ -1,0 +1,1 @@
+error: ./Err_Block_NotNull.rsh:4:27:block: Invalid block result type, expected Null, got T_UInt256

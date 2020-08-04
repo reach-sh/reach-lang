@@ -1,0 +1,1 @@
+error: ./Err_Block_Assign.rsh:assign: Invalid assignment

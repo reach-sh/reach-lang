@@ -67,6 +67,8 @@ res: result
 rps: rock paper scissors
 rsh: right shift (>>)
 s: statement
+sl: static language
+slc: static language context
 src: source
 stdlib: standard library
 t: tail (when used as suffix)

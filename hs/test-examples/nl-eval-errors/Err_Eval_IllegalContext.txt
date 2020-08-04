@@ -1,0 +1,1 @@
+error: ./Err_Eval_IllegalContext.rsh:6:11:application: part.only is invalid in context SLC_ConsensusStep

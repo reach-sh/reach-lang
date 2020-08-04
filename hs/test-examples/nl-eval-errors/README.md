@@ -1,12 +1,11 @@
-* XXX Figure out how to trigger `Err_Parser_Arrow_NoFormals`
-* XXX Figure out how to trigger `Err_Parse_IllegalLiteral` -- undefined didn't work
-* XXX Figure out how to trigger `Err_Parse_NotModule`
+XXX Known weird srclocs on err
+* Err_Block_NotNull
 
-* XXX All this stuff
-  = Err_Apply_ArgCount Int Int
-  | Err_Block_Assign
-  | Err_Block_Continue
-  | Err_Block_IllegalJS JSStatement
+XXX Figure out how to trigger
+
+* Err_Parser_Arrow_NoFormals -- (=> e) didn't work
+* Err_Parse_IllegalLiteral -- undefined didn't work
+* Err_Parse_NotModule
   | Err_Block_NotNull SLVal
   | Err_Block_Variable
   | Err_Block_While
@@ -23,7 +22,6 @@
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_IfCondNotBool SLVal
   | Err_Eval_IfNotNull SLVal SLVal
-  | Err_Eval_IllegalContext SLCtxtMode String
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_IllegalLift SLCtxtMode
   | Err_Eval_NoReturn
