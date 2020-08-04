@@ -1,4 +1,4 @@
-module Reach.Test.Test_NL_Eval (testReachNlEval) where
+module Reach.Test_NL_Eval where
 
 import Reach.NL_Eval
 import Reach.NL_Parser
@@ -14,10 +14,5 @@ partialCompile fp = do
 evalGoldenTest :: FilePath -> TestTree
 evalGoldenTest = errExampleStripAbs ".txt" partialCompile
 
-evalTests :: IO TestTree
-evalTests = goldenTests evalGoldenTest ".rsh" "nl-eval-errors"
-
-testReachNlEval :: IO TestTree
-testReachNlEval = do
-  tests <- sequence [evalTests]
-  pure $ testGroup "Reach.NL_Eval" tests
+test_compileBundle_errs :: IO TestTree
+test_compileBundle_errs = goldenTests evalGoldenTest ".rsh" "nl-eval-errors"

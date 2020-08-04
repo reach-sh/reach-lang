@@ -42,6 +42,7 @@ dependencies:
 - system-filepath
 - tasty
 - tasty-ant-xml
+- tasty-discover
 - tasty-golden
 - tasty-hspec
 - tasty-html

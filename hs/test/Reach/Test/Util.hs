@@ -18,8 +18,8 @@ import Test.Tasty.Hspec
 
 class (Generic a, Typeable a, ConNames (Rep a), Serial Identity a) => ReachErr a
 
-try_hard :: NFData a => Exception e => IO a -> IO (Either e a)
-try_hard m = do
+tryHard :: NFData a => Exception e => IO a -> IO (Either e a)
+tryHard m = do
   one <- try m
   case one of
     Left _ -> return one
@@ -68,7 +68,7 @@ goldenTests' mkTest ext subdir = do
   let dir = curDir </> "test-examples" </> subdir
   sources <- findByExtension [ext] dir
   testNe <- testNotEmpty "this subdir" sources
-  let testSources = testGroup ("testing each " <> ext <> "file") $ map mkTest sources
+  let testSources = testGroup ("testing each " <> ext <> " file") $ map mkTest sources
   let tests = [testNe, testSources]
   return (sources, tests)
 
@@ -80,7 +80,7 @@ goldenTests mkTest ext subdir = do
 
 errExampleBs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
 errExampleBs k fp =
-  withCurrentDirectory dir (try_hard (k fpRel)) >>= \case
+  withCurrentDirectory dir (tryHard (k fpRel)) >>= \case
     Right r ->
       fail $ "expected a failure, but got: " ++ show r
     Left (ErrorCall e) ->

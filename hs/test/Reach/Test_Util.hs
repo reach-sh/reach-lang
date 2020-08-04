@@ -1,11 +1,11 @@
-module Reach.Test.Test_Util (testReachUtil) where
+module Reach.Test_Util where
 
 import Reach.Util
 import Test.Tasty
 import Test.Tasty.HUnit
 
-testFromIntegerMay :: TestTree
-testFromIntegerMay =
+test_fromIntegerMay :: TestTree
+test_fromIntegerMay =
   testGroup
     "fromIntegerMay"
     [ testCase "does not overflow" $
@@ -21,6 +21,3 @@ testFromIntegerMay =
             mi = fromIntegerMay i :: Maybe Int
          in assertEqual "" mi (Just 42)
     ]
-
-testReachUtil :: IO TestTree
-testReachUtil = pure $ testGroup "Reach.Util" [testFromIntegerMay]
