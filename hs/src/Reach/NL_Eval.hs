@@ -5,8 +5,9 @@ import Control.Monad.ST
 import Data.Bits
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable
-import Data.List (intercalate)
+import Data.List (intercalate, sortBy)
 import qualified Data.Map.Strict as M
+import Data.Ord
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
@@ -19,6 +20,7 @@ import Reach.NL_Type
 import Reach.STCounter
 import Reach.Util
 import Safe (atMay)
+import Text.EditDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
 ---import Debug.Trace
@@ -57,11 +59,9 @@ data EvalError
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_NotApplicableVals SLVal
   | Err_Eval_NotObject SLVal
-  | Err_Eval_RefEmptyArray
   | Err_Eval_RefNotArray SLVal
   | Err_Eval_RefNotInt SLVal
   | Err_Eval_RefOutOfBounds Int Integer
-  | Err_Eval_ReturnsDifferentTypes [SLType]
   | Err_Eval_UnboundId SLVar [SLVar]
   | Err_ExpectedPrivate SLVal
   | Err_ExpectedPublic SLVal
@@ -172,16 +172,26 @@ instance Show EvalError where
       "Invalid function application. Cannot apply: " <> displaySlValType slval
     Err_Eval_NotApplicableVals slval ->
       "Invalid function. Cannot apply: " <> displaySlValType slval
+    Err_Eval_NotObject slval ->
+      "Invalid field access. Expected object, got: " <> displaySlValType slval
+    Err_Eval_RefNotArray slval ->
+      "Invalid array reference. Expected array, got: " <> displaySlValType slval
+    Err_Eval_RefNotInt slval ->
+      "Invalid array index. Expected uint256, got: " <> displaySlValType slval
+    Err_Eval_RefOutOfBounds maxi ix ->
+      "Invalid array index. Expected (0 <= ix < " <> show maxi <> "), got " <> show ix
+    Err_Eval_UnboundId slvar slvars ->
+      -- XXX " did you mean... ?"
+      "Invalid: unbound identifier: " <> slvar <> didYouMean
+      where
+        didYouMean = case slvars of
+          [] -> ""
+          _ -> ". Did you mean: " <> show closest
+        closest = take 5 $ sortBy (comparing distance) slvars
+        distance = restrictedDamerauLevenshteinDistance defaultEditCosts slvar
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_Eval_NotObject SLVal
--- Err_Eval_RefEmptyArray
--- Err_Eval_RefNotArray SLVal
--- Err_Eval_RefNotInt SLVal
--- Err_Eval_RefOutOfBounds Int Integer
--- Err_Eval_ReturnsDifferentTypes [SLType]
--- Err_Eval_UnboundId SLVar [SLVar]
 -- Err_ExpectedPrivate SLVal
 -- Err_ExpectedPublic SLVal
 -- Err_Export_IllegalJS JSExportDeclaration

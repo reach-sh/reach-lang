@@ -15,12 +15,6 @@ XXX Figure out how to trigger
 * Err_CannotReturn -- most attempts were not valid js
 * Err_Eval_IllegalLift
 * Err_Eval_NoReturn -- not syntactically possible?
-  | Err_Eval_NotObject SLVal
-  | Err_Eval_RefEmptyArray
-  | Err_Eval_RefNotArray SLVal
-  | Err_Eval_RefNotInt SLVal
-  | Err_Eval_RefOutOfBounds Int Integer
-  | Err_Eval_ReturnsDifferentTypes [SLType]
   | Err_Eval_UnboundId SLVar [SLVar]
   | Err_ExpectedPrivate SLVal
   | Err_ExpectedPublic SLVal
