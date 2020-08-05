@@ -1,4 +1,4 @@
-import Web3 from 'web3';
+import ethers from 'ethers';
 import algosdk from 'algosdk';
 import * as nodeAssert from 'assert';
 
@@ -20,9 +20,10 @@ import * as nodeAssert from 'assert';
 //   recv: function
 // }
 
+
 // Shared/copied code begins
 
-const DEBUG = true;
+const DEBUG = false;
 const debug = msg => { if (DEBUG) {
   console.log(`DEBUG: ${msg}`); } };
 
@@ -50,19 +51,60 @@ export const isType = (t, x) => {
 
 export const assert = d => nodeAssert.strict(d);
 
-export const toBN = Web3.utils.toBN;
-export const isBN = Web3.utils.isBN;
-export const toHex = Web3.utils.toHex;
-export const isHex = Web3.utils.isHex;
-export const keccak256 = Web3.utils.soliditySha3;
+// XXX export the ethers names for these things?
+const {
+  BigNumber,
+  bigNumberify,
+  hexlify,
+  toUtf8Bytes,
+  toUtf8String,
+  isHexString,
+} = ethers.utils;
+const { isBigNumber } = BigNumber;
+
+export const toBN = bigNumberify;
+export const isBN = isBigNumber;
+
+// Massage the arg into a form keccak256 will handle correctly
+const kek = (arg) => {
+  if (typeof(arg) === 'string') {
+    if (isHex(arg)) {
+      return arg;
+    } else {
+      return toUtf8Bytes(arg);
+    }
+  } else if (typeof(arg) === 'number') {
+    return '0x' + bnToHex(arg);
+  } else if (isBN(arg)) {
+    return '0x' + bnToHex(arg);
+  } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array'){
+    return arg;
+  } else {
+    return panic(`Can't kek this: ${arg}`);
+  }
+};
+
+export const toHex = (x) => hexlify(kek(x));
+export const isHex = isHexString;
+export const hexToString = toUtf8String;
+
+export const keccak256 = (...args) => {
+  const kekArgs = args.map(kek);
+  const kekArrs = kekArgs.map(ethers.utils.arrayify);
+  const kekCat = ethers.utils.concat(kekArrs);
+  return ethers.utils.keccak256(kekCat);
+};
 
 export const hexToBN = h => toBN(hexTo0x(h));
 export const uint256_to_bytes = i => bnToHex(i);
 
-export const bnToHex = (u, size = 32) =>
-  toBN(u)
-  .toTwos(8 * size)
-  .toString(16, 2 * size);
+// size is in bytes; default size 32 = 256 bytes
+export const bnToHex = (u, size = 32) => {
+  const nPos = bigNumberify(u).toTwos(8 * size);
+  const nArr = ethers.utils.padZeros(nPos, size);
+  // XXX why do we slice off the 0x?
+  return hexlify(nArr).slice(2);
+};
 
 export const bytes_eq = (x, y) =>
   hexOf(x) === hexOf(y);

@@ -5,18 +5,20 @@ import * as RPSW from './build/rps_while.mjs';
 
 ( async () => {
   const proto = process.argv[2];
-  const { stdlib, startingBalance, escrowAmount, wagerAmount, unit } = (
+  const { stdlib, startingBalance, escrowAmount, wagerAmount, toUnit, unit } = (
     proto == 'ETH' ? {
       stdlib: stdlib_eth,
       startingBalance: stdlib_eth.toWeiBN('100', 'ether'),
       escrowAmount: stdlib_eth.toWeiBN('0.15', 'ether'),
       wagerAmount: stdlib_eth.toWeiBN('1.5', 'ether'),
-      unit: 'wei',
+      toUnit: stdlib_eth.fromWei,
+      unit: 'ether',
     } : proto == 'ALGO' ? {
       stdlib: stdlib_algo,
       startingBalance: 1 * 1000000,
       escrowAmount: 25,
       wagerAmount: 15,
+      toUnit: (x) => x,
       unit: 'microAlgo',
     } : process.exit(1)
   );
@@ -30,10 +32,10 @@ import * as RPSW from './build/rps_while.mjs';
 
     const interactWith = (name) => {
       const log = (msg, ret = true) => () => { console.log(`${msg}`); return ret; };
-      return { getWagerAmount: log(`(local: ${name} returns wagerAmount ${wagerAmount} ${unit}.)`, wagerAmount),
-               getEscrowAmount: log(`(local: ${name} returns escrowAmount ${escrowAmount} ${unit}.)`, escrowAmount),
-               params: log(`${name} publishes parameters of game: wager of ${wagerAmount} ${unit} and escrow of ${escrowAmount} ${unit}.`),
-               accepts: (wager, escrow) => log(`${name} accepts the terms: wager of ${wager} ${unit} and escrow of ${escrow} ${unit}.`)(),
+      return { getWagerAmount: log(`(local: ${name} returns wagerAmount ${toUnit(wagerAmount)} ${unit}.)`, wagerAmount),
+               getEscrowAmount: log(`(local: ${name} returns escrowAmount ${toUnit(escrowAmount)} ${unit}.)`, escrowAmount),
+               params: log(`${name} publishes parameters of game: wager of ${toUnit(wagerAmount)} ${unit} and escrow of ${toUnit(escrowAmount)} ${unit}.`),
+               accepts: (wager, escrow) => log(`${name} accepts the terms: wager of ${toUnit(wager)} ${unit} and escrow of ${toUnit(escrow)} ${unit}.`)(),
                getHand: async () => { const res = await getHand(); log(`(local: ${name} plays ${res}.)`)(); return res; },
                commits: log(`${name} commits to play with (hidden) hand.`),
                shows: log(`${name} sends hand in clear.`),
