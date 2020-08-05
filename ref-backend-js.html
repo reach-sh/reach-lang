@@ -22,7 +22,7 @@
 </pre></div>
 </div></p><p><a name="(idx._(gentag._16))"></a> Asserts that value <code class="highlight-inline"><span class="nx">x</span></code> has reach type <code class="highlight-inline"><span class="nx">t</span></code>. An exception is thrown if this is not the case. See the table below for Reach types and their corresponding JavaScript representation:</p><p><div class="highlight"><pre><span></span><span class="c1">// Reach  =&gt; JavaScript</span>
 <span class="s1">&#39;bool&#39;</span>    <span class="p">=&gt;</span> <span class="s1">&#39;boolean&#39;</span>
-<span class="s1">&#39;uint256&#39;</span> <span class="p">=&gt;</span> <span class="s1">&#39;BN&#39;</span>
+<span class="s1">&#39;uint256&#39;</span> <span class="p">=&gt;</span> <span class="s1">&#39;BigNumber&#39;</span>
 <span class="s1">&#39;bytes&#39;</span>   <span class="p">=&gt;</span> <span class="s1">&#39;string&#39;</span>
 <span class="s1">&#39;address&#39;</span> <span class="p">=&gt;</span> <span class="s1">&#39;string&#39;</span> 
 </pre></div>
@@ -31,6 +31,7 @@
 </pre></div>
 </div></p><p><a name="(tech._tobn)"></a><span style="font-style: italic">toBN</span> converts a JavaScript number to a BN, the JavaScript representation of Reach&rsquo;s uint256. <a name="(tech._isbn)"></a><span style="font-style: italic">isBN</span> checks if its input is a BN.</p><p><div class="SIntrapara"><span style="font-weight: bold">&#8212;<wbr></wbr></span></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="nx">toHex</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bytes</span>
 <span class="nx">isHex</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bool</span>
+<span class="nx">hexToString</span><span class="p">(</span><span class="nx">bytes</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">string</span>
 <span class="nx">hexToBN</span><span class="p">(</span><span class="nx">bytes</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">uint256</span>
 <span class="nx">bnToHex</span><span class="p">(</span><span class="nx">uint256</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bytes</span>
 <span class="nx">uint256_to_bytes</span><span class="p">(</span><span class="nx">uint256</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bytes</span>
