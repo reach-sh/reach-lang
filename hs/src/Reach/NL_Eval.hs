@@ -428,6 +428,7 @@ infectWithId v (lvl, sv) = (lvl, sv')
           SLV_Participant at who io (Just v) mdv
         _ -> sv
 
+--- FIXME Can any of these be replace with real objects?
 evalDot :: SrcLoc -> SLVal -> String -> SLSVal
 evalDot at obj field =
   case obj of
