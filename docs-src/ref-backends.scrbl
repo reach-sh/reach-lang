@@ -79,7 +79,7 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 @js{
  // Reach  => JavaScript
  'bool'    => 'boolean'
- 'uint256' => 'BN'
+ 'uint256' => 'BigNumber'
  'bytes'   => 'string'
  'address' => 'string' }
 
@@ -94,6 +94,7 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 @js{
  toHex(x) => bytes
  isHex(x) => bool
+ hexToString(bytes) => string
  hexToBN(bytes) => uint256
  bnToHex(uint256) => bytes
  uint256_to_bytes(uint256) => bytes
