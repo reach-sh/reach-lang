@@ -14,7 +14,6 @@ import Data.Proxy
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as TIO
-import Language.JavaScript.Parser.SrcLocation
 import Reach.Compiler (CompileErr, compile)
 import Reach.CompilerTool
 import Reach.ParserInternal
@@ -34,9 +33,6 @@ instance ReachErr CompileErr
 
 instance NFData TP where
   rnf (TP _) = ()
-
-instance NFData TokenPosn where
-  rnf (TokenPn _ _ _) = ()
 
 testCompile :: FilePath -> IO ()
 testCompile n = do

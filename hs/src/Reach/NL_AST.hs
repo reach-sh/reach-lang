@@ -13,6 +13,7 @@ import qualified Data.Sequence as Seq
 import GHC.Generics
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
+import Reach.JSOrphans ()
 
 --- Source Information
 data ReachSource
@@ -31,7 +32,9 @@ instance Ord TokenPosn where
     compare [x_a, x_l, x_c] [y_a, y_l, y_c]
 
 data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
-  deriving (Eq, Ord)
+  deriving (Eq, Generic, Ord)
+
+instance NFData SrcLoc
 
 instance Show SrcLoc where
   show (SrcLoc mlab mtp mrs) = concat $ intersperse ":" $ concat [sr, loc, lab]
@@ -62,7 +65,9 @@ srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
 data SecurityLevel
   = Secret
   | Public
-  deriving (Show, Eq)
+  deriving (Show, Generic, Eq)
+
+instance NFData SecurityLevel
 
 public :: a -> (SecurityLevel, a)
 public x = (Public, x)
@@ -96,7 +101,9 @@ data SLType
   | T_Obj (M.Map SLVar SLType)
   | T_Forall SLVar SLType
   | T_Var SLVar
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Generic, Show, Ord)
+
+instance NFData SLType
 
 infix 9 -->
 
@@ -120,17 +127,23 @@ data SLVal
   | SLV_Form SLForm
   deriving (Eq, Generic, Show)
 
+instance NFData SLVal
+
 data ToConsensusMode
   = TCM_Publish
   | TCM_Pay
   | TCM_Timeout
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData ToConsensusMode
 
 data SLForm
   = SLForm_Part_Only SLVal
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (JSExpression, JSExpression))
   | SLForm_Part_OnlyAns SrcLoc SLPart SLEnv SLVal
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData SLForm
 
 data ConsensusPrimOp
   = ADD
@@ -153,12 +166,16 @@ data ConsensusPrimOp
   | BAND
   | BIOR
   | BXOR
-  deriving (Show, Eq, Ord)
+  deriving (Show, Generic, Eq, Ord)
+
+instance NFData ConsensusPrimOp
 
 data PrimOp
   = CP ConsensusPrimOp
   | RANDOM
-  deriving (Show, Eq, Ord)
+  deriving (Show, Generic, Eq, Ord)
+
+instance NFData PrimOp
 
 primOpType :: PrimOp -> SLType
 primOpType (CP ADD) = [T_UInt256, T_UInt256] --> T_UInt256
@@ -198,7 +215,9 @@ data SLPrimitive
   | SLPrim_transfer
   | SLPrim_transfer_amt DLArg
   | SLPrim_transfer_amt_to DLArg
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData SLPrimitive
 
 type SLSVal = (SecurityLevel, SLVal)
 
@@ -213,26 +232,36 @@ m_fromList_public kvs =
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData SLCtxtFrame
 
 --- Dynamic Language
 newtype InteractEnv
   = InteractEnv (M.Map SLVar SLType)
-  deriving (Eq, Show, Monoid, Semigroup)
+  deriving (Eq, Generic, Show, Monoid, Semigroup)
+
+instance NFData InteractEnv
 
 newtype SLParts
   = SLParts (M.Map SLPart InteractEnv)
-  deriving (Eq, Show, Monoid, Semigroup)
+  deriving (Eq, Generic, Show, Monoid, Semigroup)
+
+instance NFData SLParts
 
 data DLConstant
   = DLC_Null
   | DLC_Bool Bool
   | DLC_Int Integer
   | DLC_Bytes B.ByteString
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Generic, Show, Ord)
+
+instance NFData DLConstant
 
 data DLVar = DLVar SrcLoc String SLType Int
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Generic, Show, Ord)
+
+instance NFData DLVar
 
 data DLArg
   = DLA_Var DLVar
@@ -240,14 +269,18 @@ data DLArg
   | DLA_Array [DLArg]
   | DLA_Obj (M.Map String DLArg)
   | DLA_Interact String SLType
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData DLArg
 
 data DLExpr
   = DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_Interact SrcLoc String [DLArg]
   | DLE_Digest SrcLoc [DLArg]
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData DLExpr
 
 expr_pure :: DLExpr -> Bool
 expr_pure e =
@@ -270,11 +303,15 @@ data ClaimType
   | --- Check if an assignment of variables exists to make
     --- this true.
     CT_Possible
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Generic, Show, Ord)
+
+instance NFData ClaimType
 
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)
-  deriving (Eq, Show, Monoid, Semigroup)
+  deriving (Eq, Generic, Show, Monoid, Semigroup)
+
+instance NFData DLAssignment
 
 assignment_vars :: DLAssignment -> [DLVar]
 assignment_vars (DLAssignment m) = M.keys m
@@ -282,7 +319,9 @@ assignment_vars (DLAssignment m) = M.keys m
 data FromSpec
   = FS_Join DLVar
   | FS_Again DLVar
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData FromSpec
 
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
@@ -313,7 +352,9 @@ data DLStmt
       , dls_w_body :: DLStmts
       }
   | DLS_Continue SrcLoc DLAssignment
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData DLStmt
 
 stmt_pure :: DLStmt -> Bool
 stmt_pure s =
@@ -356,10 +397,15 @@ stmts_local fs = getAll $ foldMap (All . stmt_local) fs
 
 data DLBlock
   = DLBlock SrcLoc DLStmts DLArg
-  deriving (Eq, Show)
+  deriving (Eq, Generic, Show)
+
+instance NFData DLBlock
 
 data DLProg
   = DLProg SrcLoc SLParts DLBlock
+  deriving (Generic)
+
+instance NFData DLProg
 
 --- Linear Language
 data LLCommon a

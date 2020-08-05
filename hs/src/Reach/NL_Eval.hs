@@ -155,12 +155,13 @@ instance Show EvalError where
       "Invalid field: " <> fieldName
     Err_Eval_ContinueNotInWhile ->
       "Invalid continue. Expected to be inside of a while."
+    Err_Eval_ContinueNotLoopVariable var ->
+      "Invalid loop variable update. Expected loop variable, got: " <> var
     Err_Eval_IllegalContext mode s ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> displaySLCtxtMode mode
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_Eval_ContinueNotLoopVariable SLVar
 -- Err_Eval_IfCondNotBool SLVal
 -- Err_Eval_IfNotNull SLVal SLVal
 -- Err_Eval_IllegalJS JSExpression

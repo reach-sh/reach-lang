@@ -1,0 +1,1 @@
+error: ./bad_continue.rsh:9:5:continue: Invalid continue. Expected to be inside of a while.
