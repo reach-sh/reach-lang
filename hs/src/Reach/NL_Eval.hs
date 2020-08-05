@@ -50,7 +50,6 @@ data EvalError
   | Err_Eval_ContinueNotInWhile
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_IfCondNotBool SLVal
-  | Err_Eval_IfNotNull SLVal SLVal
   | Err_Eval_IllegalContext SLCtxtMode String
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_IllegalLift SLCtxtMode
@@ -157,18 +156,25 @@ instance Show EvalError where
       "Invalid continue. Expected to be inside of a while."
     Err_Eval_ContinueNotLoopVariable var ->
       "Invalid loop variable update. Expected loop variable, got: " <> var
+    Err_Eval_IfCondNotBool slval ->
+      "Invalid if statement. Expected if condition to be bool, got: " <> displaySlValType slval
     Err_Eval_IllegalContext mode s ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> displaySLCtxtMode mode
+    Err_Eval_IllegalJS e ->
+      "Invalid Reach expression syntax: " <> conNameOf e
+    Err_Eval_IllegalLift mode ->
+      -- What does this mean to the Reach programmer?
+      "XXX Illegal lift in context: " <> displaySLCtxtMode mode
+    Err_Eval_NoReturn ->
+      -- Is this syntactically possible?
+      "XXX Nowhere to return to"
+    Err_Eval_NotApplicable slval ->
+      "Invalid function application. Cannot apply: " <> displaySlValType slval
+    Err_Eval_NotApplicableVals slval ->
+      "Invalid function. Cannot apply: " <> displaySlValType slval
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_Eval_IfCondNotBool SLVal
--- Err_Eval_IfNotNull SLVal SLVal
--- Err_Eval_IllegalJS JSExpression
--- Err_Eval_IllegalLift SLCtxtMode
--- Err_Eval_NoReturn
--- Err_Eval_NotApplicable SLVal
--- Err_Eval_NotApplicableVals SLVal
 -- Err_Eval_NotObject SLVal
 -- Err_Eval_RefEmptyArray
 -- Err_Eval_RefNotArray SLVal

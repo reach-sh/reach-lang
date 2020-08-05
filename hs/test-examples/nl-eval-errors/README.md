@@ -1,8 +1,10 @@
 XXX Known missing srclocs on err
+
 * Err_Block_Assign
 * Err_App_InvalidPartSpec
 
 XXX Known weird srclocs on err
+
 * Err_Block_NotNull
 
 XXX Figure out how to trigger
@@ -11,14 +13,8 @@ XXX Figure out how to trigger
 * Err_Parse_IllegalLiteral -- undefined didn't work
 * Err_Parse_NotModule
 * Err_CannotReturn -- most attempts were not valid js
-  | Err_Eval_ContinueNotLoopVariable SLVar
-  | Err_Eval_IfCondNotBool SLVal
-  | Err_Eval_IfNotNull SLVal SLVal
-  | Err_Eval_IllegalJS JSExpression
-  | Err_Eval_IllegalLift SLCtxtMode
-  | Err_Eval_NoReturn
-  | Err_Eval_NotApplicable SLVal
-  | Err_Eval_NotApplicableVals SLVal
+* Err_Eval_IllegalLift
+* Err_Eval_NoReturn -- not syntactically possible?
   | Err_Eval_NotObject SLVal
   | Err_Eval_RefEmptyArray
   | Err_Eval_RefNotArray SLVal
