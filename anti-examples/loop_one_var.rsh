@@ -1,5 +1,7 @@
 'reach 0.1';
 
+// https://github.com/erikd/language-javascript/issues/121
+
 export const main = Reach.App(
   {}, [["A", {}]], (A) => {
     A.publish();
