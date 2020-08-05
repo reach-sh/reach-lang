@@ -21,7 +21,8 @@ import Reach.EmbeddedFiles
 import Reach.Pretty ()
 import Reach.Util
 import Reach.Verify.Verifier
-import SimpleSMT hiding (not, const) --- Maybe use Language.SMTLib2 in future
+import qualified SimpleSMT as SMT
+import SimpleSMT (Solver, Logger (Logger), SExpr (..), Result (..))
 import System.Exit
 import System.IO
 ---import Text.Read (readMaybe)
@@ -67,30 +68,57 @@ smtEq x y = smtApply "=" [x, y]
 
 type Role = Maybe SLPart
 
-data SMTPath = SMTPath
-  { path_bound :: M.Map DLVar (SrcLoc, DLExpr, SExpr)
-  , path_unbound :: M.Map DLVar (SrcLoc, DLExpr) }
-
-default_path :: SMTPath
-default_path = SMTPath
-  { path_bound = mempty
-  , path_unbound = mempty }
+data BindingOrigin
+  = O_DishonestMsg SLPart
+  | O_HonestMsg SLPart DLArg
+  | O_Expr DLExpr
+  | O_Join
+  deriving (Eq, Show)
 
 data SMTCtxt = SMTCtxt
-  { sc_smt :: Solver
-  , sc_honest :: Bool
-  , sc_me :: Role
-  , sc_balance :: Int
-  , sc_mtxn_value :: Maybe Int
-  , sc_path :: SMTPath }
+  { ctxt_smt :: Solver
+  , ctxt_res_succ :: IORef Int
+  , ctxt_res_fail :: IORef Int
+  , ctxt_honest :: Bool
+  , ctxt_me :: Role
+  , ctxt_balance :: Int
+  , ctxt_mtxn_value :: Maybe Int
+  , ctxt_boundrr :: IORef (IORef (M.Map DLVar (SrcLoc, BindingOrigin, SExpr)))
+  , ctxt_unboundrr :: IORef (IORef (M.Map DLVar (SrcLoc, BindingOrigin))) }
 
-sc_txn_value :: SMTCtxt -> Int
-sc_txn_value ctxt = fromMaybe (impossible "no txn value") $ sc_mtxn_value ctxt
+newIORefRef :: a -> IO (IORef (IORef a))
+newIORefRef v = do
+  r <- newIORef v
+  newIORef r
+
+modifyIORefRef :: IORef (IORef a) -> (a -> a) -> IO ()
+modifyIORefRef rr f = do
+  r <- readIORef rr
+  modifyIORef r f
+
+paramIORef :: IORef (IORef a) -> IO b -> IO b
+paramIORef rr m = do
+  old_r <- readIORef rr
+  old_v <- readIORef old_r
+  new_r <- newIORef old_v
+  writeIORef rr new_r
+  ans <- m
+  writeIORef rr old_r
+  return $ ans
+
+ctxtNewScope :: SMTCtxt -> SMTComp -> SMTComp
+ctxtNewScope ctxt m = do
+  paramIORef (ctxt_boundrr ctxt) $
+    paramIORef (ctxt_unboundrr ctxt) $
+    SMT.inNewScope (ctxt_smt ctxt) $ m
+
+ctxt_txn_value :: SMTCtxt -> Int
+ctxt_txn_value ctxt = fromMaybe (impossible "no txn value") $ ctxt_mtxn_value ctxt
 
 shouldSimulate :: SMTCtxt -> SLPart -> Bool
-shouldSimulate ctxt p = (sc_honest ctxt) || p_is_me
+shouldSimulate ctxt p = (ctxt_honest ctxt) || p_is_me
   where p_is_me =
-          case sc_me ctxt of
+          case ctxt_me ctxt of
             Nothing -> True
             Just me -> me == p
   
@@ -98,26 +126,26 @@ shouldSimulate ctxt p = (sc_honest ctxt) || p_is_me
 smtBalance :: Int -> String
 smtBalance i = "ctc_balance" ++ show i
 smtBalanceRef :: SMTCtxt -> SExpr
-smtBalanceRef ctxt = Atom $ smtBalance $ sc_balance ctxt
+smtBalanceRef ctxt = Atom $ smtBalance $ ctxt_balance ctxt
 
 smtTxnValue :: Int -> String
 smtTxnValue i = "txn_value" ++ show i
 smtTxnValueRef :: SMTCtxt -> SExpr
-smtTxnValueRef ctxt = Atom $ smtTxnValue $ sc_txn_value ctxt
+smtTxnValueRef ctxt = Atom $ smtTxnValue $ ctxt_txn_value ctxt
 
 smtVar :: SMTCtxt -> DLVar -> String
 smtVar _XXX_ctxt _XXX_dv@(DLVar _ _ _ i) = "v" ++ show i
 
 smtDeclare_ :: SMTCtxt -> String -> SLType -> IO ()
 smtDeclare_ ctxt v t = do
-  let smt = sc_smt ctxt
+  let smt = ctxt_smt ctxt
   let simple s = do
-        void $ declare smt v s
+        void $ SMT.declare smt v s
   case t of
     T_Bool -> simple $ Atom "Bool"
     T_UInt256 -> do
       simple uint256_sort
-      assert smt (uint256_le uint256_zero $ Atom v)
+      SMT.assert smt (uint256_le uint256_zero $ Atom v)
     T_Bytes -> simple $ Atom "Bytes"
     T_Address -> simple $ Atom "Address"
     T_Array ts ->
@@ -163,16 +191,6 @@ smtConsensusPrimOp ctxt p =
 
 --- Verifier
 
-data VerifyResult
-  = -- | # succeeded, # failed
-    VR Int Int
-
-instance Semigroup VerifyResult where
-  (VR s1 f1) <> (VR s2 f2) = VR (s1 + s2) (f1 + f2)
-
-instance Monoid VerifyResult where
-  mempty = VR 0 0
-
 data TheoremKind
   = TAssert
   | TRequire
@@ -183,57 +201,41 @@ data TheoremKind
   | TBounds
   deriving (Show)
 
-data SMTRes = SMTRes VerifyResult SMTPath
-
-instance Semigroup SMTRes where
-  (SMTRes vr0 _) <> (SMTRes vr1 y) = SMTRes (vr0 <> vr1) y
-
-instance Monoid SMTRes where
-  mempty = SMTRes mempty (impossible "no mempty of SMTPath")
-
-type SMTComp = IO SMTRes
-
-keepVRs :: VerifyResult -> SMTComp -> SMTComp
-keepVRs vr0 m = do
-  SMTRes vr1 path' <- m
-  return $ SMTRes (vr0 <> vr1) path'
+type SMTComp = IO ()
 
 display_fail :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> Maybe SExpr -> IO ()
 display_fail _XXX_ctxt _XXX_at _XXX_tk _XXX_se _XXX_mm =
   error "XXX"
 
 verify1 :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> SMTComp
-verify1 ctxt at tk se = inNewScope smt $ do
-  assert smt (smtApply "not" [ se ])
-  r <- check smt
+verify1 ctxt at tk se = SMT.inNewScope smt $ do
+  SMT.assert smt (smtApply "not" [ se ])
+  r <- SMT.check smt
   case r of
     Unknown -> bad Nothing
     Unsat -> good
-    Sat -> bad $ Just $ command smt $ List [Atom "get-model"]
-  where smt = sc_smt ctxt
-        good = return $ SMTRes (VR 1 0) $ sc_path ctxt
+    Sat -> bad $ Just $ SMT.command smt $ List [Atom "get-model"]
+  where smt = ctxt_smt ctxt
+        good =
+          modifyIORef (ctxt_res_succ ctxt) $ (1 +)
         bad mgetm = do
           mm <- case mgetm of
                   Nothing -> return $ Nothing
                   Just getm -> liftM Just getm
           display_fail ctxt at tk se mm
-          return $ SMTRes (VR 0 1) $ sc_path ctxt
+          modifyIORef (ctxt_res_fail ctxt) $ (1 +)
 
-pathAddUnbound :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SMTComp
-pathAddUnbound ctxt at_dv dv de = do
+pathAddUnbound :: SMTCtxt -> SrcLoc -> DLVar -> BindingOrigin -> SMTComp
+pathAddUnbound ctxt at_dv dv bo = do
   smtDeclare ctxt dv
-  let path = sc_path ctxt
-  let path' = (path { path_unbound = M.insert dv (at_dv, de) $ path_unbound path })
-  return $ SMTRes mempty path'
+  modifyIORefRef (ctxt_unboundrr ctxt) $ M.insert dv (at_dv, bo)
 
-pathAddBound :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SExpr -> SMTComp
-pathAddBound ctxt at_dv dv de se = do
+pathAddBound :: SMTCtxt -> SrcLoc -> DLVar -> BindingOrigin -> SExpr -> SMTComp
+pathAddBound ctxt at_dv dv bo se = do
   smtDeclare ctxt dv
-  let smt = sc_smt ctxt
-  assert smt (smtEq (Atom $ smtVar ctxt dv) se)
-  let path = sc_path ctxt
-  let path' = (path { path_bound = M.insert dv (at_dv, de, se) $ path_bound path })
-  return $ SMTRes mempty path'
+  let smt = ctxt_smt ctxt
+  SMT.assert smt (smtEq (Atom $ smtVar ctxt dv) se)
+  modifyIORefRef (ctxt_boundrr ctxt) $ M.insert dv (at_dv, bo, se)
 
 smt_a :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
 smt_a ctxt _at_de da =
@@ -247,33 +249,30 @@ smt_e ctxt at_dv dv de =
   case de of
     DLE_PrimOp at p args ->
       case p of
-        RANDOM -> pathAddUnbound ctxt at_dv dv de
+        RANDOM -> pathAddUnbound ctxt at_dv dv bo
         CP cp -> do
           let args' = map (smt_a ctxt at) args
           let se = smtConsensusPrimOp ctxt cp args'
-          pathAddBound ctxt at_dv dv de se
+          pathAddBound ctxt at_dv dv bo se
     DLE_ArrayRef _at arr_da idx_da ->
       case (arr_da, idx_da) of
         (DLA_Var arr_dv, DLA_Con (DLC_Int i)) -> do
           let v = smtVar ctxt arr_dv
           let se = Atom $ v ++ "_elem" ++ show i
-          pathAddBound ctxt at_dv dv de se
+          pathAddBound ctxt at_dv dv bo se
         _ ->
           error "XXX"
     DLE_Interact {} ->
-      pathAddUnbound ctxt at_dv dv de
+      pathAddUnbound ctxt at_dv dv bo
     DLE_Digest {} ->
       error "XXX"
+  where bo = O_Expr de
 
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
 smt_m iter ctxt m =
   case m of
-    LL_Return {} ->
-      return $ SMTRes mempty (sc_path ctxt)
-    LL_Let at dv de k -> do
-      SMTRes vr0 path' <- smt_e ctxt at dv de
-      let ctxt' = ctxt { sc_path = path' }
-      keepVRs vr0 $ iter ctxt' k
+    LL_Return {} -> mempty
+    LL_Let at dv de k -> smt_e ctxt at dv de <> iter ctxt k
     LL_Var {} -> error "XXX"
     LL_Set {} -> error "XXX"
     LL_Claim {} -> error "XXX"
@@ -288,50 +287,67 @@ smt_n ctxt n =
     LLC_Com m -> smt_m smt_n ctxt m
     _ -> error "XXX"
 
+smt_fs :: SMTCtxt -> SrcLoc -> FromSpec -> SMTComp
+smt_fs ctxt at fs =
+  case fs of
+    FS_Again _ -> mempty
+    FS_Join dv ->
+      pathAddUnbound ctxt at dv O_Join 
+
 smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
   case s of
     LLS_Com m -> smt_m smt_s ctxt m
     LLS_Stop at _ ->
       verify1 ctxt at TBalanceZero (smtEq (smtBalanceRef ctxt) uint256_zero)
-    LLS_Only _at who loc k -> do
-      SMTRes vr path' <-
-        case shouldSimulate ctxt who of
-          True -> smt_l ctxt loc
-          False -> return $ SMTRes mempty $ sc_path ctxt
-      let ctxt' = ctxt { sc_path = path' }
-      keepVRs vr $ smt_s ctxt' k
-    LLS_ToConsensus _XXX_at _XXX_from _XXX_fs _XXX_from_as _XXX_from_msg _XXX_from_amt mtime next_n -> do
-      let timeout =
-            case mtime of
-              Nothing -> mempty
-              Just (_, time_s) ->
-                smt_s ctxt time_s
-      let notimeout = do
-            --- XXX define fs
-            --- XXX connect as to msg
+    LLS_Only _at who loc k ->
+      loc_m <> smt_s ctxt k
+      where loc_m =
+              case shouldSimulate ctxt who of
+                True -> smt_l ctxt loc
+                False -> mempty
+    LLS_ToConsensus at from fs from_as from_msg _XXX_from_amt mtime next_n ->
+      mapM_ (ctxtNewScope ctxt) [timeout, notimeout]
+      where timeout =
+              case mtime of
+                Nothing -> mempty
+                Just (_, time_s) ->
+                  smt_s ctxt time_s
+            notimeout = fs_m <> msg_m <> smt_n ctxt next_n
             --- XXX update balance
-            smt_n ctxt next_n
-      mconcatMapM (inNewScope $ sc_smt ctxt) [timeout, notimeout]
-
-smt_s_top :: Solver -> LLStep -> (Bool, Role) -> SMTComp
-smt_s_top smt s (honest, me) = do
-  putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
-  let ctxt = SMTCtxt
-        { sc_smt = smt
-        , sc_honest = honest
-        , sc_me = me
-        , sc_path = default_path
-        , sc_balance = 0
-        , sc_mtxn_value = Nothing }
-  inNewScope smt $ smt_s ctxt s
+            fs_m = smt_fs ctxt at fs
+            msg_m =
+              case shouldSimulate ctxt from of
+                False ->
+                  mapM_ (\msg_dv -> pathAddUnbound ctxt at msg_dv (O_DishonestMsg from)) from_msg
+                True ->
+                  zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at msg_dv (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
 
 _verify_smt :: Solver -> LLProg -> IO ExitCode
 _verify_smt smt lp = do
-  loadString smt smtStdLib
+  SMT.loadString smt smtStdLib
+  succ_ref <- newIORef 0
+  fail_ref <- newIORef 0
+  bound_ref_ref <- newIORefRef mempty
+  unbound_ref_ref <- newIORefRef mempty
   let LLProg _ (SLParts pies_m) s = lp
   let ps = Nothing : (map Just $ M.keys pies_m)
-  SMTRes (VR ss fs) _ <- mconcatMapM (smt_s_top smt s) (liftM2 (,) [True, False] ps)
+  let smt_s_top (honest, me) = do
+        putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
+        let ctxt = SMTCtxt
+              { ctxt_smt = smt
+              , ctxt_res_succ = succ_ref
+              , ctxt_res_fail = fail_ref
+              , ctxt_honest = honest
+              , ctxt_me = me
+              , ctxt_boundrr = bound_ref_ref
+              , ctxt_unboundrr = unbound_ref_ref
+              , ctxt_balance = 0
+              , ctxt_mtxn_value = Nothing }
+        ctxtNewScope ctxt $ smt_s ctxt s
+  mapM_ smt_s_top (liftM2 (,) [True, False] ps)
+  ss <- readIORef succ_ref
+  fs <- readIORef fail_ref
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
   (if (fs == 0)
      then do
@@ -384,9 +400,9 @@ verify_smt :: (Maybe Logger -> IO Solver) -> FilePath -> Verifier
 verify_smt mkSolver logp lp = do
   (close, logpl) <- newFileLogger logp
   smt <- mkSolver (Just logpl)
-  unlessM (produceUnsatCores smt) $ impossible "Prover doesn't support possible?"
+  unlessM (SMT.produceUnsatCores smt) $ impossible "Prover doesn't support possible?"
   vec <- _verify_smt smt lp
-  zec <- stop smt
+  zec <- SMT.stop smt
   close
   maybeDie $ return zec
   maybeDie $ return vec
