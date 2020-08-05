@@ -70,7 +70,11 @@ type Role = Maybe SLPart
 
 data BindingOrigin
   = O_DishonestMsg SLPart
+  | O_DishonestPay SLPart
   | O_HonestMsg SLPart DLArg
+  | O_HonestPay SLPart DLArg
+  | O_ToConsensus
+  | O_Initialize
   | O_Expr DLExpr
   | O_Join
   deriving (Eq, Show)
@@ -83,8 +87,8 @@ data SMTCtxt = SMTCtxt
   , ctxt_me :: Role
   , ctxt_balance :: Int
   , ctxt_mtxn_value :: Maybe Int
-  , ctxt_boundrr :: IORef (IORef (M.Map DLVar (SrcLoc, BindingOrigin, SExpr)))
-  , ctxt_unboundrr :: IORef (IORef (M.Map DLVar (SrcLoc, BindingOrigin))) }
+  , ctxt_boundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin, SExpr)))
+  , ctxt_unboundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin))) }
 
 newIORefRef :: a -> IO (IORef (IORef a))
 newIORefRef v = do
@@ -125,19 +129,19 @@ shouldSimulate ctxt p = (ctxt_honest ctxt) || p_is_me
 
 smtBalance :: Int -> String
 smtBalance i = "ctc_balance" ++ show i
-smtBalanceRef :: SMTCtxt -> SExpr
-smtBalanceRef ctxt = Atom $ smtBalance $ ctxt_balance ctxt
+smtBalanceRef :: Int -> SExpr
+smtBalanceRef = Atom . smtBalance
 
 smtTxnValue :: Int -> String
 smtTxnValue i = "txn_value" ++ show i
-smtTxnValueRef :: SMTCtxt -> SExpr
-smtTxnValueRef ctxt = Atom $ smtTxnValue $ ctxt_txn_value ctxt
+smtTxnValueRef :: Int -> SExpr
+smtTxnValueRef = Atom . smtTxnValue
 
 smtVar :: SMTCtxt -> DLVar -> String
 smtVar _XXX_ctxt _XXX_dv@(DLVar _ _ _ i) = "v" ++ show i
 
-smtDeclare_ :: SMTCtxt -> String -> SLType -> IO ()
-smtDeclare_ ctxt v t = do
+smtDeclare_v :: SMTCtxt -> String -> SLType -> IO ()
+smtDeclare_v ctxt v t = do
   let smt = ctxt_smt ctxt
   let simple s = do
         void $ SMT.declare smt v s
@@ -152,15 +156,9 @@ smtDeclare_ ctxt v t = do
       --- XXX This could be really bad with big arrays
       zipWithM_ add_elem [0..] ts
       where add_elem (i::Int) et =
-              smtDeclare_ ctxt (v ++ "_elem" ++ show i) et
+              smtDeclare_v ctxt (v ++ "_elem" ++ show i) et
     _ ->
-      error $ "XXX smtDeclare"
-
-smtDeclare :: SMTCtxt -> DLVar -> IO ()
-smtDeclare ctxt dv = do
-  let DLVar _ _ t _ = dv
-  let v = smtVar ctxt dv
-  smtDeclare_ ctxt v t
+      error $ "XXX smtDeclare_v"
 
 smtConsensusPrimOp :: SMTCtxt -> ConsensusPrimOp -> [SExpr] -> SExpr
 smtConsensusPrimOp ctxt p =
@@ -182,8 +180,10 @@ smtConsensusPrimOp ctxt p =
     BXOR -> bvapp "bvxor" cant
     IF_THEN_ELSE -> app "ite"
     BYTES_EQ -> app "="
-    BALANCE -> const (smtBalanceRef ctxt)
-    TXN_VALUE -> const (smtTxnValueRef ctxt)
+    BALANCE ->
+      const (smtBalanceRef $ ctxt_balance ctxt)
+    TXN_VALUE ->
+      const (smtTxnValueRef $ fromMaybe (impossible "txn value") $ ctxt_mtxn_value ctxt)
   where
     cant = impossible $ "Int doesn't support " ++ show p
     app n = smtApply n
@@ -225,17 +225,29 @@ verify1 ctxt at tk se = SMT.inNewScope smt $ do
           display_fail ctxt at tk se mm
           modifyIORef (ctxt_res_fail ctxt) $ (1 +)
 
+pathAddUnbound_v :: SMTCtxt -> SrcLoc -> String -> SLType -> BindingOrigin -> SMTComp
+pathAddUnbound_v ctxt at_dv v t bo = do
+  smtDeclare_v ctxt v t
+  modifyIORefRef (ctxt_unboundrr ctxt) $ M.insert v (at_dv, bo)
+
+pathAddBound_v :: SMTCtxt -> SrcLoc -> String -> SLType -> BindingOrigin -> SExpr -> SMTComp
+pathAddBound_v ctxt at_dv v t bo se = do
+  smtDeclare_v ctxt v t
+  let smt = ctxt_smt ctxt
+  SMT.assert smt (smtEq (Atom $ v) se)
+  modifyIORefRef (ctxt_boundrr ctxt) $ M.insert v (at_dv, bo, se)
+
 pathAddUnbound :: SMTCtxt -> SrcLoc -> DLVar -> BindingOrigin -> SMTComp
 pathAddUnbound ctxt at_dv dv bo = do
-  smtDeclare ctxt dv
-  modifyIORefRef (ctxt_unboundrr ctxt) $ M.insert dv (at_dv, bo)
+  let DLVar _ _ t _ = dv
+  let v = smtVar ctxt dv
+  pathAddUnbound_v ctxt at_dv v t bo
 
 pathAddBound :: SMTCtxt -> SrcLoc -> DLVar -> BindingOrigin -> SExpr -> SMTComp
 pathAddBound ctxt at_dv dv bo se = do
-  smtDeclare ctxt dv
-  let smt = ctxt_smt ctxt
-  SMT.assert smt (smtEq (Atom $ smtVar ctxt dv) se)
-  modifyIORefRef (ctxt_boundrr ctxt) $ M.insert dv (at_dv, bo, se)
+  let DLVar _ _ t _ = dv
+  let v = smtVar ctxt dv
+  pathAddBound_v ctxt at_dv v t bo se
 
 smt_a :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
 smt_a ctxt _at_de da =
@@ -299,29 +311,39 @@ smt_s ctxt s =
   case s of
     LLS_Com m -> smt_m smt_s ctxt m
     LLS_Stop at _ ->
-      verify1 ctxt at TBalanceZero (smtEq (smtBalanceRef ctxt) uint256_zero)
+      verify1 ctxt at TBalanceZero (smtEq (smtBalanceRef $ ctxt_balance ctxt) uint256_zero)
     LLS_Only _at who loc k ->
       loc_m <> smt_s ctxt k
       where loc_m =
               case shouldSimulate ctxt who of
                 True -> smt_l ctxt loc
                 False -> mempty
-    LLS_ToConsensus at from fs from_as from_msg _XXX_from_amt mtime next_n ->
+    LLS_ToConsensus at from fs from_as from_msg from_amt mtime next_n ->
       mapM_ (ctxtNewScope ctxt) [timeout, notimeout]
       where timeout =
               case mtime of
                 Nothing -> mempty
                 Just (_, time_s) ->
                   smt_s ctxt time_s
-            notimeout = fs_m <> msg_m <> smt_n ctxt next_n
-            --- XXX update balance
+            notimeout = fs_m <> from_m <> smt_n ctxt' next_n
+            cbi = ctxt_balance ctxt
+            tv' = case ctxt_mtxn_value ctxt of
+                    Just x -> x + 1
+                    Nothing -> 0
+            cbi' = cbi + 1
+            ctxt' = ctxt
+                    { ctxt_balance = cbi'
+                    , ctxt_mtxn_value = Just tv' }
             fs_m = smt_fs ctxt at fs
-            msg_m =
+            from_m = do
               case shouldSimulate ctxt from of
-                False ->
+                False -> do
+                  pathAddUnbound_v ctxt at (smtTxnValue tv') T_UInt256 (O_DishonestPay from)
                   mapM_ (\msg_dv -> pathAddUnbound ctxt at msg_dv (O_DishonestMsg from)) from_msg
-                True ->
+                True -> do
+                  pathAddBound_v ctxt at (smtTxnValue tv') T_UInt256 (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
                   zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at msg_dv (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
+              pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 O_ToConsensus (uint256_add (smtBalanceRef cbi) (smtTxnValueRef tv'))
 
 _verify_smt :: Solver -> LLProg -> IO ExitCode
 _verify_smt smt lp = do
@@ -330,7 +352,7 @@ _verify_smt smt lp = do
   fail_ref <- newIORef 0
   bound_ref_ref <- newIORefRef mempty
   unbound_ref_ref <- newIORefRef mempty
-  let LLProg _ (SLParts pies_m) s = lp
+  let LLProg at (SLParts pies_m) s = lp
   let ps = Nothing : (map Just $ M.keys pies_m)
   let smt_s_top (honest, me) = do
         putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
@@ -344,7 +366,9 @@ _verify_smt smt lp = do
               , ctxt_unboundrr = unbound_ref_ref
               , ctxt_balance = 0
               , ctxt_mtxn_value = Nothing }
-        ctxtNewScope ctxt $ smt_s ctxt s
+        ctxtNewScope ctxt $ do
+          pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
+          smt_s ctxt s
   mapM_ smt_s_top (liftM2 (,) [True, False] ps)
   ss <- readIORef succ_ref
   fs <- readIORef fail_ref
