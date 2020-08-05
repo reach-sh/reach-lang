@@ -11,9 +11,7 @@ XXX Figure out how to trigger
 * Err_Parse_IllegalLiteral -- undefined didn't work
 * Err_Parse_NotModule
 * Err_CannotReturn -- most attempts were not valid js
-  | Err_Dot_InvalidField SLVal String
-  | Err_EvalRefIndirectNotHomogeneous [SLType]
-  | Err_Eval_ContinueNotInWhile
+* Err_Eval_ContinueNotInWhile -- other errors guard this from happening?
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_IfCondNotBool SLVal
   | Err_Eval_IfNotNull SLVal SLVal

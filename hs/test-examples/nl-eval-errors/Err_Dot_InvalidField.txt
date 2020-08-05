@@ -1,0 +1,1 @@
+error: ./Err_Dot_InvalidField.rsh:6:29:dot: Invalid field: x

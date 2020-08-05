@@ -47,7 +47,6 @@ data EvalError
   | Err_Decl_NotArray SLVal
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLVal String
-  | Err_EvalRefIndirectNotHomogeneous [SLType]
   | Err_Eval_ContinueNotInWhile
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_IfCondNotBool SLVal
@@ -147,19 +146,20 @@ instance Show EvalError where
     Err_App_InvalidPartSpec _slval ->
       "Invalid participant spec"
     Err_DeclLHS_IllegalJS _e ->
-      "Invalid expression in this context"
+      "Invalid binding. Expressions cannot appear on the LHS."
     Err_Decl_NotArray slval ->
       "Invalid binding. Expected array, got: " <> displaySlValType slval
     Err_Decl_WrongArrayLength nIdents nVals ->
-      "Invalid binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
+      "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
+    Err_Dot_InvalidField _slval fieldName ->
+      "Invalid field: " <> fieldName
+    Err_Eval_ContinueNotInWhile ->
+      "Invalid continue. Expected to be inside of a while."
     Err_Eval_IllegalContext mode s ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> displaySLCtxtMode mode
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_Dot_InvalidField SLVal String
--- Err_EvalRefIndirectNotHomogeneous [SLType]
--- Err_Eval_ContinueNotInWhile
 -- Err_Eval_ContinueNotLoopVariable SLVar
 -- Err_Eval_IfCondNotBool SLVal
 -- Err_Eval_IfNotNull SLVal SLVal
