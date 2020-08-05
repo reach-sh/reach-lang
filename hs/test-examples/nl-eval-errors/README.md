@@ -11,10 +11,6 @@ XXX Figure out how to trigger
 * Err_Parse_IllegalLiteral -- undefined didn't work
 * Err_Parse_NotModule
 * Err_CannotReturn -- most attempts were not valid js
-  | Err_DeclLHS_IllegalJS JSExpression
-  | Err_Decl_IllegalJS JSExpression
-  | Err_Decl_NotArray SLVal
-  | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLVal String
   | Err_EvalRefIndirectNotHomogeneous [SLType]
   | Err_Eval_ContinueNotInWhile

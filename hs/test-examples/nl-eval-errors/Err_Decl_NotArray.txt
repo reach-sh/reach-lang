@@ -1,0 +1,1 @@
+error: ./Err_Decl_NotArray.rsh:3:7:array: Invalid binding. Expected array, got: uint256

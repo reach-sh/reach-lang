@@ -5,6 +5,7 @@ import Control.Monad.ST
 import Data.Bits
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable
+import Data.List (intercalate)
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
@@ -89,18 +90,51 @@ data EvalError
   | Err_While_IllegalInvariant [JSExpression]
   deriving (Eq, Generic)
 
+-- XXX typeOf may fail causing an error within an error...?
+displaySlValType :: SLVal -> String
+displaySlValType = displayTy . fst . typeOf (SrcLoc Nothing Nothing Nothing)
+
+displayTyList :: [SLType] -> String
+displayTyList tys =
+  "[" <> (intercalate ", " $ map displayTy tys) <> "]"
+
+displayTy :: SLType -> String
+displayTy = \case
+  T_Null -> "null"
+  T_Bool -> "bool"
+  T_UInt256 -> "uint256"
+  T_Bytes -> "bytes"
+  T_Address -> "address"
+  T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
+  T_Array _tys -> "array" -- <> displayTyList tys
+  T_Obj _m -> "object" -- XXX
+  T_Forall x ty {- SLVar SLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
+  T_Var x {- SLVar-} -> x
+
+displaySecurityLevel :: SecurityLevel -> String
+displaySecurityLevel Secret = "secret"
+displaySecurityLevel Public = "public"
+
+displaySLCtxtMode :: SLCtxtMode -> String
+displaySLCtxtMode = \case
+  SLC_Module {} -> "module"
+  SLC_Step {} -> "step"
+  SLC_Local {} -> "local" -- XXX "pure eval"?
+  SLC_LocalStep {} -> "local step"
+  SLC_ConsensusStep {} -> "consensus step"
+
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
   show = \case
     Err_Apply_ArgCount nFormals nArgs ->
-      "Expected " <> show nFormals <> " args, got " <> show nArgs
+      "Invalid function appication. Expected " <> show nFormals <> " args, got " <> show nArgs
     Err_Block_Assign _jsop _stmts ->
       "Invalid assignment" -- XXX explain why
     Err_Block_IllegalJS _stmt ->
       "Invalid statement"
     Err_Block_NotNull ty _slval ->
       -- XXX explain why null is expected
-      "Invalid block result type, expected Null, got " <> show ty
+      "Invalid block result type. Expected Null, got " <> show ty
     Err_Block_Variable ->
       "Invalid `var` syntax. (Double check your syntax for while?)"
     Err_Block_While ->
@@ -108,21 +142,21 @@ instance Show EvalError where
     Err_CannotReturn ->
       "Invalid `return` syntax"
     Err_App_InvalidInteract (secLev, val) ->
-      "Invalid interact specification, expected public type, got: "
-        <> show secLev
-        <> " "
-        <> conNameOf val
+      "Invalid interact specification. Expected public type, got: "
+        <> (displaySecurityLevel secLev <> " " <> displaySlValType val)
     Err_App_InvalidPartSpec _slval ->
       "Invalid participant spec"
+    Err_DeclLHS_IllegalJS _e ->
+      "Invalid expression in this context"
+    Err_Decl_NotArray slval ->
+      "Invalid binding. Expected array, got: " <> displaySlValType slval
+    Err_Decl_WrongArrayLength nIdents nVals ->
+      "Invalid binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
     Err_Eval_IllegalContext mode s ->
-      s <> " is invalid in context " <> conNameOf mode
+      "Invalid operation. `" <> s <> "` cannot be used in context: " <> displaySLCtxtMode mode
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_DeclLHS_IllegalJS JSExpression
--- Err_Decl_IllegalJS JSExpression
--- Err_Decl_NotArray SLVal
--- Err_Decl_WrongArrayLength Int Int
 -- Err_Dot_InvalidField SLVal String
 -- Err_EvalRefIndirectNotHomogeneous [SLType]
 -- Err_Eval_ContinueNotInWhile
