@@ -216,11 +216,18 @@ display_fail :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> Maybe SExpr -> IO (
 display_fail _XXX_ctxt _XXX_at _XXX_tk _XXX_se _XXX_mm =
   error "XXX"
 
---- XXX all asserts should respect the path constraint
+smtAssert :: SMTCtxt -> SExpr -> SMTComp
+smtAssert ctxt se = SMT.assert smt se'
+  where smt = ctxt_smt ctxt
+        se' =
+          case ctxt_path_constraint ctxt of
+            [] -> se
+            pcs ->
+              smtApply "=>" [ (smtApply "and" pcs), se ]
 
 verify1 :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> SMTComp
 verify1 ctxt at tk se = SMT.inNewScope smt $ do
-  SMT.assert smt $ smtNot se
+  smtAssert ctxt $ smtNot se
   r <- SMT.check smt
   case r of
     Unknown -> bad Nothing
@@ -245,6 +252,8 @@ pathAddBound_v :: SMTCtxt -> SrcLoc -> String -> SLType -> BindingOrigin -> SExp
 pathAddBound_v ctxt at_dv v t bo se = do
   smtDeclare_v ctxt v t
   let smt = ctxt_smt ctxt
+  --- Note: We don't use smtAssert because variables are global, so
+  --- this variable isn't affected by the path.
   SMT.assert smt (smtEq (Atom $ v) se)
   modifyIORefRef (ctxt_boundrr ctxt) $ M.insert v (at_dv, bo, se)
 
@@ -317,7 +326,9 @@ smt_m iter ctxt m =
     LL_Var at dv k -> var_m <> iter ctxt k
       where var_m =
               pathAddUnbound ctxt at dv O_Var
-    LL_Set {} -> error "XXX"
+    LL_Set at dv va k -> set_m <> iter ctxt k
+      where set_m =
+              smtAssert ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
     LL_Claim at _XXX_f ct ca k -> this_m <> iter ctxt k
       where this_m =
               case ct of
@@ -334,7 +345,7 @@ smt_m iter ctxt m =
             check_m tk =
               verify1 ctxt at tk ca'
             assert_m =
-              SMT.assert (ctxt_smt ctxt) ca'
+              smtAssert ctxt ca'
     LL_LocalIf at ca t f k ->
       smt_l ctxt_t t <> smt_l ctxt_f f <> iter ctxt k
       where ctxt_f = ctxt { ctxt_path_constraint = (smtNot ca_se) : pc }
