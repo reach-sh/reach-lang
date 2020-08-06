@@ -73,7 +73,9 @@ data BindingOrigin
   | O_DishonestPay SLPart
   | O_HonestMsg SLPart DLArg
   | O_HonestPay SLPart DLArg
+  | O_Transfer DLArg DLArg
   | O_ToConsensus
+  | O_Var
   | O_Initialize
   | O_Expr DLExpr
   | O_Join
@@ -306,7 +308,9 @@ smt_m iter ctxt m =
   case m of
     LL_Return {} -> mempty
     LL_Let at dv de k -> smt_e ctxt at dv de <> iter ctxt k
-    LL_Var {} -> error "XXX"
+    LL_Var at dv k -> var_m <> iter ctxt k
+      where var_m =
+              pathAddUnbound ctxt at dv O_Var
     LL_Set {} -> error "XXX"
     LL_Claim at _XXX_f ct ca k -> this_m <> iter ctxt k
       where this_m =
@@ -335,7 +339,18 @@ smt_n ctxt n =
   case n of
     LLC_Com m -> smt_m smt_n ctxt m
     LLC_If {} -> error "XXX"
-    LLC_Transfer {} -> error "XXX"
+    LLC_Transfer at to amt k -> transfer_m <> smt_n ctxt' k
+      where transfer_m = do
+              verify1 ctxt at TBalanceSufficient amt_le_se
+              pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 bo cbi'_se
+            bo = O_Transfer to amt
+            cbi = ctxt_balance ctxt
+            cbi' = cbi + 1
+            amt_se = smt_a ctxt at amt
+            cbi_se = smtBalanceRef cbi
+            cbi'_se = uint256_sub cbi_se amt_se
+            amt_le_se = uint256_le amt_se cbi_se
+            ctxt' = ctxt { ctxt_balance = cbi' }
     LLC_FromConsensus _ _ s -> smt_s ctxt s
     LLC_While {} -> error "XXX"
     LLC_Continue {} -> error "XXX"
