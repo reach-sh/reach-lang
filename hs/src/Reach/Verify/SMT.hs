@@ -112,7 +112,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_typem :: SMTTypeMap
   , ctxt_res_succ :: IORef Int
   , ctxt_res_fail :: IORef Int
-  , ctxt_mode :: VerifyMode
+  , ctxt_modem :: Maybe VerifyMode
   , ctxt_balance :: Int
   , ctxt_mtxn_value :: Maybe Int
   , ctxt_path_constraint :: [SExpr]
@@ -122,6 +122,12 @@ data SMTCtxt = SMTCtxt
   , ctxt_loop_var_subst :: M.Map DLVar DLArg
   , ctxt_primed_vars :: S.Set DLVar
   }
+
+ctxt_mode :: SMTCtxt -> VerifyMode
+ctxt_mode ctxt =
+  case ctxt_modem ctxt of
+    Nothing -> impossible "uninitialized"
+    Just x -> x
 
 newIORefRef :: a -> IO (IORef (IORef a))
 newIORefRef v = do
@@ -661,31 +667,27 @@ _verify_smt smt lp = do
   unbound_ref_ref <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
   let LLProg at (SLParts pies_m) s = lp
+  let ctxt = SMTCtxt
+        { ctxt_smt = smt
+        , ctxt_typem = typem
+        , ctxt_res_succ = succ_ref
+        , ctxt_res_fail = fail_ref
+        , ctxt_modem = Nothing
+        , ctxt_path_constraint = []
+        , ctxt_boundrr = bound_ref_ref
+        , ctxt_unboundrr = unbound_ref_ref
+        , ctxt_balance = 0
+        , ctxt_mtxn_value = Nothing
+        , ctxt_while_invariant = Nothing
+        , ctxt_loop_var_subst = mempty
+        , ctxt_primed_vars = mempty
+        }
+  --- XXX Add un-bindings for interact constants
+  pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
   let smt_s_top mode = do
         putStrLn $ "Verifying with mode = " ++ show mode
-        --- FIXME It would be beautiful to not have to have a fresh
-        --- struct for each run... I think the only thing that needs
-        --- to be changed is ctxt_mode.
-        let ctxt =
-              SMTCtxt
-                { ctxt_smt = smt
-                , ctxt_typem = typem
-                , ctxt_res_succ = succ_ref
-                , ctxt_res_fail = fail_ref
-                , ctxt_mode = mode
-                , ctxt_path_constraint = []
-                , ctxt_boundrr = bound_ref_ref
-                , ctxt_unboundrr = unbound_ref_ref
-                , ctxt_balance = 0
-                , ctxt_mtxn_value = Nothing
-                , ctxt_while_invariant = Nothing
-                , ctxt_loop_var_subst = mempty
-                , ctxt_primed_vars = mempty
-                }
-        ctxtNewScope ctxt $ do
-          --- XXX Add un-bindings for interact constants
-          pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
-          smt_s ctxt s
+        let ctxt' = ctxt { ctxt_modem = Just mode }
+        ctxtNewScope ctxt' $ smt_s ctxt' s
   let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
   mapM_ smt_s_top ms
   ss <- readIORef succ_ref
