@@ -398,7 +398,12 @@ smt_n :: SMTCtxt -> LLConsensus -> SMTComp
 smt_n ctxt n =
   case n of
     LLC_Com m -> smt_m smt_n ctxt m
-    LLC_If {} -> error "XXX"
+    LLC_If at ca t f ->
+      mapM_ ((ctxtNewScope ctxt) . go) [(True, t), (False, f)]
+      where ca' = smt_a ctxt at ca
+            go (v, k) =
+              smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
+              where v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
     LLC_Transfer at to amt k -> transfer_m <> smt_n ctxt' k
       where transfer_m = do
               verify1 ctxt at TBalanceSufficient amt_le_se
