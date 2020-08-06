@@ -1,0 +1,1 @@
+error: ./Err_NoHeader.rsh: Invalid Reach file. Expected header 'reach 0.1'; at top of file.

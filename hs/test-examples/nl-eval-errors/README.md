@@ -16,13 +16,6 @@ XXX Figure out how to trigger
 * Err_Eval_IllegalLift
 * Err_Eval_NoReturn -- not syntactically possible?
 * Err_ExpectedPublic -- doesn't trigger when it should?
-  | Err_Export_IllegalJS JSExportDeclaration
-  | Err_Form_InvalidArgs SLForm [JSExpression]
-  | Err_Fun_NamesIllegal
-  | Err_Import_IllegalJS JSImportDeclaration
-  | Err_Import_ShadowedImport SLVar
-  | Err_Module_Return (SLRes SLStmtRes)
-  | Err_NoHeader [JSModuleItem]
   | Err_Obj_IllegalComputedField SLVal
   | Err_Obj_IllegalField JSPropertyName
   | Err_Obj_IllegalFieldValues [JSExpression]

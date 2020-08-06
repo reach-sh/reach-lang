@@ -66,10 +66,9 @@ data EvalError
   | Err_ExpectedPrivate SLVal
   | Err_ExpectedPublic SLVal
   | Err_Export_IllegalJS JSExportDeclaration
-  | Err_Form_InvalidArgs SLForm [JSExpression]
+  | Err_Form_InvalidArgs SLForm Int [JSExpression]
   | Err_Fun_NamesIllegal
   | Err_Import_IllegalJS JSImportDeclaration
-  | Err_Import_ShadowedImport SLVar
   | Err_Module_Return (SLRes SLStmtRes)
   | Err_NoHeader [JSModuleItem]
   | Err_Obj_IllegalComputedField SLVal
@@ -192,17 +191,25 @@ instance Show EvalError where
     Err_ExpectedPrivate slval ->
       "Invalid declassify. Expected to declassify something private, "
         <> ("but this " <> displaySlValType slval <> " is public.")
+    Err_ExpectedPublic slval ->
+      "Invalid access of secret value (" <> displaySlValType slval <> ")"
+    Err_Export_IllegalJS exportDecl ->
+      "Invalid Reach export syntax: " <> conNameOf exportDecl
+    Err_Form_InvalidArgs _SLForm n es ->
+      "Invalid args. Expected " <> show n <> " but got " <> show (length es)
+    Err_Fun_NamesIllegal ->
+      "Invalid function expression. Anonymous functions must not be named."
+    Err_Import_IllegalJS decl ->
+      "Invalid Reach import syntax: " <> conNameOf decl
+    Err_Module_Return _x ->
+      "Invalid return statement. Cannot return at top level of module."
+    Err_NoHeader _mis ->
+      "Invalid Reach file. Expected header " <> expectedHeader <> " at top of file."
+      where
+        expectedHeader = "'reach 0.1';" -- XXX version # defined elsewhere?
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_ExpectedPublic SLVal
--- Err_Export_IllegalJS JSExportDeclaration
--- Err_Form_InvalidArgs SLForm [JSExpression]
--- Err_Fun_NamesIllegal
--- Err_Import_IllegalJS JSImportDeclaration
--- Err_Import_ShadowedImport SLVar
--- Err_Module_Return (SLRes SLStmtRes)
--- Err_NoHeader [JSModuleItem]
 -- Err_Obj_IllegalComputedField SLVal
 -- Err_Obj_IllegalField JSPropertyName
 -- Err_Obj_IllegalFieldValues [JSExpression]
@@ -484,7 +491,7 @@ evalForm ctxt at _env f args =
               let ctxt_localstep = (ctxt {ctxt_mode = SLC_LocalStep})
               SLRes alifts (SLAppRes penv' (_, ans)) <- evalApplyVals ctxt_localstep at (impossible "Part_only expects clo") thunk []
               return $ SLRes (elifts <> alifts) $ public $ SLV_Form $ SLForm_Part_OnlyAns at who penv' ans
-            _ -> illegal_args
+            _ -> illegal_args 1
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "part.only"
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
     SLForm_Part_OnlyAns {} -> impossible "SLForm_Part_OnlyAns"
@@ -507,15 +514,15 @@ evalForm ctxt at _env f args =
               expect_throw at $ Err_Eval_NotApplicable rator
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "toConsensus"
   where
-    illegal_args = expect_throw at (Err_Form_InvalidArgs f args)
+    illegal_args n = expect_throw at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
     retV v = return $ SLRes mempty v
     one_arg = case args of
       [x] -> x
-      _ -> illegal_args
+      _ -> illegal_args 1
     two_args = case args of
       [x, y] -> (x, y)
-      _ -> illegal_args
+      _ -> illegal_args 2
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLEnv -> PrimOp -> [SLSVal] -> SLComp s SLSVal
 evalPrimOp ctxt at _env p sargs =

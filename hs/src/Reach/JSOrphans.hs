@@ -112,5 +112,41 @@ deriving instance Generic JSAccessor
 
 instance NFData JSAccessor
 
+deriving instance Generic JSExportDeclaration
+
+instance NFData JSExportDeclaration
+
+deriving instance Generic JSExportClause
+
+instance NFData JSExportClause
+
+deriving instance Generic JSFromClause
+
+instance NFData JSFromClause
+
+deriving instance Generic JSExportSpecifier
+
+instance NFData JSExportSpecifier
+
+deriving instance Generic JSImportDeclaration
+
+instance NFData JSImportDeclaration
+
+deriving instance Generic JSImportClause
+
+instance NFData JSImportClause
+
+deriving instance Generic JSImportNameSpace
+
+instance NFData JSImportNameSpace
+
+deriving instance Generic JSImportsNamed
+
+instance NFData JSImportsNamed
+
+deriving instance Generic JSImportSpecifier
+
+instance NFData JSImportSpecifier
+
 -- deriving instance Generic JSMethodDefinition
 -- instance NFData JSMethodDefinition
