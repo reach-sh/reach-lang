@@ -7,7 +7,7 @@ import qualified Data.ByteString.Char8 as BS
 ---import Data.List
 ---import Data.Monoid
 ---import Data.Char (isDigit)
----import Data.Digest.CRC32
+import Data.Digest.CRC32
 import Data.IORef
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
@@ -157,8 +157,11 @@ smtDeclare_v ctxt v t = do
       zipWithM_ add_elem [0..] ts
       where add_elem (i::Int) et =
               smtDeclare_v ctxt (v ++ "_elem" ++ show i) et
+    T_Null ->
+      --- Note: This might cause some problems because we assume v is bound
+      mempty
     _ ->
-      error $ "XXX smtDeclare_v"
+      error $ "XXX smtDeclare_v " ++ show t
 
 smtConsensusPrimOp :: SMTCtxt -> ConsensusPrimOp -> [SExpr] -> SExpr
 smtConsensusPrimOp ctxt p =
@@ -249,12 +252,30 @@ pathAddBound ctxt at_dv dv bo se = do
   let v = smtVar ctxt dv
   pathAddBound_v ctxt at_dv v t bo se
 
+smt_c :: SMTCtxt -> SrcLoc -> DLConstant -> SExpr
+smt_c _ctxt _at_de dc =
+  case dc of
+    DLC_Null -> Atom "null"
+    DLC_Bool b ->
+      case b of
+        True -> Atom "true"
+        False -> Atom "false"
+    DLC_Int i ->
+      case use_bitvectors of
+        True -> List [ List [Atom "_", Atom "int2bv", Atom "256"]
+                     , Atom (show i) ]
+        False -> Atom $ show i
+    DLC_Bytes bs ->
+      smtApply "bytes-literal" [Atom (show $ crc32 bs)]
+
 smt_a :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
-smt_a ctxt _at_de da =
+smt_a ctxt at_de da =
   case da of
     DLA_Var dv -> Atom $ smtVar ctxt dv
-    _ ->
-      error "XXX"
+    DLA_Con c -> smt_c ctxt at_de c
+    DLA_Array {} -> error "XXX"
+    DLA_Obj {} -> error "XXX"
+    DLA_Interact {} -> error "XXX"
 
 smt_e :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv dv de =
@@ -313,7 +334,11 @@ smt_n :: SMTCtxt -> LLConsensus -> SMTComp
 smt_n ctxt n =
   case n of
     LLC_Com m -> smt_m smt_n ctxt m
-    _ -> error "XXX"
+    LLC_If {} -> error "XXX"
+    LLC_Transfer {} -> error "XXX"
+    LLC_FromConsensus _ _ s -> smt_s ctxt s
+    LLC_While {} -> error "XXX"
+    LLC_Continue {} -> error "XXX"
 
 smt_fs :: SMTCtxt -> SrcLoc -> FromSpec -> SMTComp
 smt_fs ctxt at fs =
