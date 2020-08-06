@@ -4,23 +4,24 @@
 (set-option :produce-models true)
 (set-option :produce-unsat-cores true)
 
-(set-logic QF_AUFLIA)
+(set-logic ALL)
 
 (declare-sort Bytes 0)
 (declare-fun bytes0 () Bytes)
-(declare-fun bytes-literal (Int) Bytes)
-(define-fun toBytes_Bytes ((b Bytes)) Bytes
+(declare-fun bytes (Int) Bytes)
+(define-fun Bytes_toBytes ((b Bytes)) Bytes
   b)
-(declare-fun msg-cat (Bytes Bytes) Bytes)
+(declare-fun bytesAppend (Bytes Bytes) Bytes)
 (declare-fun digest (Bytes) Int)
 
 (declare-sort Null 0)
 (declare-fun null () Null)
-(declare-fun toBytes_Null (Null) Bytes)
+(declare-fun Null_toBytes (Null) Bytes)
 
-(declare-fun toBytes_Bool (Bool) Bytes)
+(declare-fun Bool_toBytes (Bool) Bytes)
 
-(declare-fun toBytes_Int (Int) Bytes)
+(define-sort UInt256 () Int)
+(declare-fun UInt256_toBytes (UInt256) Bytes)
 
 (declare-sort Address 0)
-(declare-fun toBytes_Address (Address) Bytes)
+(declare-fun Address_toBytes (Address) Bytes)

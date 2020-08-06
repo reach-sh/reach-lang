@@ -4,6 +4,7 @@ module Reach.Verify.SMT where
 import Control.Monad
 import Control.Monad.Extra
 import qualified Data.ByteString.Char8 as BS
+import Reach.CollectTypes
 ---import Data.List
 ---import Data.Monoid
 ---import Data.Char (isDigit)
@@ -11,7 +12,7 @@ import Data.Digest.CRC32
 import Data.IORef
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
----import qualified Data.Set as S
+import qualified Data.Set as S
 ---import Data.Text (Text)
 ---import qualified Data.Text as T
 ---import qualified Data.Text.IO as TIO
@@ -53,6 +54,9 @@ uint256_zero = case use_bitvectors of
 uint256_le :: SExpr -> SExpr -> SExpr
 uint256_le lhs rhs = smtConsensusPrimOp (impossible "raw") PLE [lhs, rhs]
 
+uint256_inv :: Solver -> SExpr -> IO ()
+uint256_inv smt v = SMT.assert smt (uint256_le uint256_zero v)
+
 uint256_sub :: SExpr -> SExpr -> SExpr
 uint256_sub lhs rhs = smtConsensusPrimOp (impossible "raw") SUB [lhs, rhs]
 
@@ -85,8 +89,14 @@ data BindingOrigin
   | O_Join
   deriving (Eq, Show)
 
+type SMTTypeInv
+  = SExpr -> IO ()
+type SMTTypeMap
+  = M.Map SLType (String, SMTTypeInv)
+
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
+  , ctxt_typem :: SMTTypeMap
   , ctxt_res_succ :: IORef Int
   , ctxt_res_fail :: IORef Int
   , ctxt_honest :: Bool
@@ -151,26 +161,18 @@ smtInteract _ctxt i = "interact_" ++ show i
 smtVar :: SMTCtxt -> DLVar -> String
 smtVar _XXX_ctxt _XXX_dv@(DLVar _ _ _ i) = "v" ++ show i
 
+smtTypeSort :: SMTCtxt -> SLType -> String
+smtTypeSort ctxt t = fst $ (ctxt_typem ctxt) M.! t
+
+smtTypeInv :: SMTCtxt -> SLType -> SMTTypeInv
+smtTypeInv ctxt t = snd $ (ctxt_typem ctxt) M.! t
+
 smtDeclare_v :: SMTCtxt -> String -> SLType -> IO ()
 smtDeclare_v ctxt v t = do
   let smt = ctxt_smt ctxt
-  let simple s = do
-        void $ SMT.declare smt v s
-  case t of
-    T_Bool -> simple $ Atom "Bool"
-    T_UInt256 -> do
-      simple uint256_sort
-      SMT.assert smt (uint256_le uint256_zero $ Atom v)
-    T_Bytes -> simple $ Atom "Bytes"
-    T_Address -> simple $ Atom "Address"
-    T_Array ts ->
-      --- XXX This could be really bad with big arrays
-      zipWithM_ add_elem [0..] ts
-      where add_elem (i::Int) et =
-              smtDeclare_v ctxt (v ++ "_elem" ++ show i) et
-    T_Null -> simple $ Atom "Null"
-    _ ->
-      error $ "XXX smtDeclare_v " ++ show t
+  let s = smtTypeSort ctxt t
+  void $ SMT.declare smt v $ Atom s
+  smtTypeInv ctxt t $ Atom v
 
 smtConsensusPrimOp :: SMTCtxt -> ConsensusPrimOp -> [SExpr] -> SExpr
 smtConsensusPrimOp ctxt p =
@@ -202,14 +204,7 @@ smtConsensusPrimOp ctxt p =
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
 
 smtTypeByteConverter :: SMTCtxt -> SLType -> String
-smtTypeByteConverter _ctxt t =
-  case t of
-    T_Null -> "toBytes_Null"
-    T_Bool -> "toBytes_Bool"
-    T_UInt256 -> "toBytes_Int"
-    T_Bytes -> "toBytes_Bytes"
-    T_Address -> "toBytes_Address"
-    _ -> error "XXX"
+smtTypeByteConverter ctxt t = (smtTypeSort ctxt t) ++ "_toBytes"
 
 smtArgByteConverter :: SMTCtxt -> DLArg -> String
 smtArgByteConverter ctxt arg =
@@ -223,7 +218,7 @@ smtDigestCombine ctxt at args =
   case args of
     [] -> smtApply "bytes0" []
     [x] -> convert1 x
-    (x : xs) -> smtApply "msg-cat" [convert1 x, smtDigestCombine ctxt at xs]
+    (x : xs) -> smtApply "bytesAppend" [convert1 x, smtDigestCombine ctxt at xs]
   where convert1 = smtArgBytes ctxt at
 
 --- Verifier
@@ -324,16 +319,19 @@ smt_c _ctxt _at_de dc =
                      , Atom (show i) ]
         False -> Atom $ show i
     DLC_Bytes bs ->
-      smtApply "bytes-literal" [Atom (show $ crc32 bs)]
+      smtApply "bytes" [Atom (show $ crc32 bs)]
 
 smt_a :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
 smt_a ctxt at_de da =
   case da of
     DLA_Var dv -> Atom $ smtVar ctxt dv
     DLA_Con c -> smt_c ctxt at_de c
-    DLA_Array {} -> error $ "XXX " ++ show da
-    DLA_Obj {} -> error "XXX"
+    DLA_Array as -> cons as
+    DLA_Obj m -> cons $ M.elems m
     DLA_Interact i _ -> Atom $ smtInteract ctxt i
+  where s = smtTypeSort ctxt t
+        t = argTypeOf da
+        cons as = smtApply (s ++ "_cons") (map (smt_a ctxt at_de) as)
 
 smt_e :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv dv de =
@@ -344,15 +342,18 @@ smt_e ctxt at_dv dv de =
         CP cp -> pathAddBound ctxt at_dv dv bo se
           where args' = map (smt_a ctxt at) args
                 se = smtConsensusPrimOp ctxt cp args'
-          
-    DLE_ArrayRef _at arr_da idx_da ->
-      case (arr_da, idx_da) of
-        (DLA_Var arr_dv, DLA_Con (DLC_Int i)) ->
-          pathAddBound ctxt at_dv dv bo se
-          where v = smtVar ctxt arr_dv
-                se = Atom $ v ++ "_elem" ++ show i
-        _ ->
-          error "XXX"
+    DLE_ArrayRef at arr_da idx_da ->
+      pathAddBound ctxt at_dv dv bo se
+      where se =
+              case idx_da of
+                DLA_Con (DLC_Int i) ->
+                  smtApply (s ++ "_elem" ++ show i) [ arr_da' ]
+                _ ->
+                  smtApply (s ++ "_ref") [ arr_da', idx_da' ]
+            s = smtTypeSort ctxt t
+            t = argTypeOf arr_da
+            arr_da' = smt_a ctxt at arr_da
+            idx_da' = smt_a ctxt at idx_da
     DLE_Interact {} ->
       pathAddUnbound ctxt at_dv dv bo
     DLE_Digest at args ->
@@ -472,6 +473,61 @@ smt_s ctxt s =
                   zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at msg_dv (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
               pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 O_ToConsensus (uint256_add (smtBalanceRef cbi) (smtTxnValueRef tv'))
 
+_smtDefineTypes :: Solver -> S.Set SLType -> IO SMTTypeMap
+_smtDefineTypes smt ts = do
+  tnr <- newIORef (0 :: Int)
+  let none _ = mempty
+  tmr <- newIORef (M.fromList
+                   [ (T_Null, ("Null", none))
+                   , (T_Bool, ("Bool", none))
+                   , (T_UInt256, ("UInt256", uint256_inv smt))
+                   , (T_Bytes, ("Bytes", none))
+                   , (T_Address, ("Address", none)) ])
+  let base = impossible "default"
+  let bind_type :: SLType -> String -> IO SMTTypeInv
+      bind_type t n =
+        case t of
+          T_Null -> base
+          T_Bool -> base
+          T_UInt256 -> base
+          T_Bytes -> base
+          T_Address -> base
+          T_Fun {} -> mempty
+          T_Forall {} -> impossible "forall in ll"
+          T_Var {} -> impossible "var in ll"
+          T_Array ats -> do
+            ts_nis <- mapM type_name ats
+            --- XXX detect if homogeneous
+            let mkargn _ (i::Int) = n ++ "_elem" ++ show i
+            let argns = zipWith mkargn ts_nis [0..] 
+            let mkarg (arg_tn, _) argn = (argn, Atom arg_tn)
+            let args = zipWith mkarg ts_nis argns
+            SMT.declareDatatype smt n [] [(n ++ "_cons", args)]
+            void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
+            let inv se = do
+                  let invarg (_, arg_inv) argn = arg_inv $ smtApply argn [ se ]
+                  zipWithM_ invarg ts_nis argns
+            return inv
+          T_Obj {} ->
+            error "XXX"
+      type_name :: SLType -> IO (String, SMTTypeInv)
+      type_name t = do
+        tm <- readIORef tmr
+        case M.lookup t tm of
+          Just x -> return x
+          Nothing -> do
+            tn <- readIORef tnr
+            modifyIORef tnr $ (1 +)
+            let n = "T" ++ show tn
+            let bad _ = impossible "recursive type"
+            modifyIORef tmr $ M.insert t (n, bad)
+            inv <- bind_type t n
+            let b = (n, inv)
+            modifyIORef tmr $ M.insert t b
+            return b
+  mapM_ type_name ts
+  readIORef tmr
+
 _verify_smt :: Solver -> LLProg -> IO ExitCode
 _verify_smt smt lp = do
   SMT.loadString smt smtStdLib
@@ -479,21 +535,23 @@ _verify_smt smt lp = do
   fail_ref <- newIORef 0
   bound_ref_ref <- newIORefRef mempty
   unbound_ref_ref <- newIORefRef mempty
+  typem <- _smtDefineTypes smt (cts lp)
   let LLProg at (SLParts pies_m) s = lp
   let ps = Nothing : (map Just $ M.keys pies_m)
   let smt_s_top (honest, me) = do
         putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
         let ctxt = SMTCtxt
-              { ctxt_smt = smt
-              , ctxt_res_succ = succ_ref
-              , ctxt_res_fail = fail_ref
-              , ctxt_honest = honest
-              , ctxt_me = me
-              , ctxt_path_constraint = []
-              , ctxt_boundrr = bound_ref_ref
-              , ctxt_unboundrr = unbound_ref_ref
-              , ctxt_balance = 0
-              , ctxt_mtxn_value = Nothing }
+                   { ctxt_smt = smt
+                   , ctxt_typem = typem
+                   , ctxt_res_succ = succ_ref
+                   , ctxt_res_fail = fail_ref
+                   , ctxt_honest = honest
+                   , ctxt_me = me
+                   , ctxt_path_constraint = []
+                   , ctxt_boundrr = bound_ref_ref
+                   , ctxt_unboundrr = unbound_ref_ref
+                   , ctxt_balance = 0
+                   , ctxt_mtxn_value = Nothing }
         ctxtNewScope ctxt $ do
           --- XXX Add un-bindings for interact constants
           pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
