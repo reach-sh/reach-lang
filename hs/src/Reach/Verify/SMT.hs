@@ -64,6 +64,9 @@ smtApply f args = List (Atom f : args)
 smtEq :: SExpr -> SExpr -> SExpr
 smtEq x y = smtApply "=" [x, y]
 
+smtNot :: SExpr -> SExpr
+smtNot se = smtApply "not" [ se ]
+
 --- SMT conversion code
 
 type Role = Maybe SLPart
@@ -89,6 +92,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_me :: Role
   , ctxt_balance :: Int
   , ctxt_mtxn_value :: Maybe Int
+  , ctxt_path_constraint :: [SExpr]
   , ctxt_boundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin, SExpr)))
   , ctxt_unboundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin))) }
 
@@ -212,9 +216,11 @@ display_fail :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> Maybe SExpr -> IO (
 display_fail _XXX_ctxt _XXX_at _XXX_tk _XXX_se _XXX_mm =
   error "XXX"
 
+--- XXX all asserts should respect the path constraint
+
 verify1 :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> SMTComp
 verify1 ctxt at tk se = SMT.inNewScope smt $ do
-  SMT.assert smt (smtApply "not" [ se ])
+  SMT.assert smt $ smtNot se
   r <- SMT.check smt
   case r of
     Unknown -> bad Nothing
@@ -329,7 +335,12 @@ smt_m iter ctxt m =
               verify1 ctxt at tk ca'
             assert_m =
               SMT.assert (ctxt_smt ctxt) ca'
-    LL_LocalIf {} -> error "XXX"
+    LL_LocalIf at ca t f k ->
+      smt_l ctxt_t t <> smt_l ctxt_f f <> iter ctxt k
+      where ctxt_f = ctxt { ctxt_path_constraint = (smtNot ca_se) : pc }
+            ctxt_t = ctxt { ctxt_path_constraint = ca_se : pc }
+            pc = ctxt_path_constraint ctxt
+            ca_se = smt_a ctxt at ca
 
 smt_l :: SMTCtxt -> LLLocal -> SMTComp
 smt_l ctxt (LLL_Com m) = smt_m smt_l ctxt m
@@ -418,6 +429,7 @@ _verify_smt smt lp = do
               , ctxt_res_fail = fail_ref
               , ctxt_honest = honest
               , ctxt_me = me
+              , ctxt_path_constraint = []
               , ctxt_boundrr = bound_ref_ref
               , ctxt_unboundrr = unbound_ref_ref
               , ctxt_balance = 0
