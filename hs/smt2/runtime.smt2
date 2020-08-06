@@ -4,18 +4,23 @@
 (set-option :produce-models true)
 (set-option :produce-unsat-cores true)
 
-(set-logic ALL)
-(declare-sort Address 0)
+(set-logic QF_AUFLIA)
+
+(declare-sort Bytes 0)
+(declare-fun bytes0 () Bytes)
+(declare-fun bytes-literal (Int) Bytes)
+(define-fun toBytes_Bytes ((b Bytes)) Bytes
+  b)
+(declare-fun msg-cat (Bytes Bytes) Bytes)
+(declare-fun digest (Bytes) Int)
 
 (declare-sort Null 0)
 (declare-fun null () Null)
+(declare-fun toBytes_Null (Null) Bytes)
 
-(declare-datatypes ((Bytes 0))
- (((bytes0)
-   (bytes-literal (toBytes_Literal_x Int))
-   (toBytes_Int (toBytes_Int_x Int))
-   (toBytes_Bool (toBytes_Bool_x Bool))
-   (toBytes_Bytes (toBytes_Bytes_x Bytes))
-   (msg-cat (msg-left Bytes) (msg-right Bytes)))))
+(declare-fun toBytes_Bool (Bool) Bytes)
 
-(declare-fun digest (Bytes) Int)
+(declare-fun toBytes_Int (Int) Bytes)
+
+(declare-sort Address 0)
+(declare-fun toBytes_Address (Address) Bytes)

@@ -208,6 +208,7 @@ smtTypeByteConverter _ctxt t =
     T_Bool -> "toBytes_Bool"
     T_UInt256 -> "toBytes_Int"
     T_Bytes -> "toBytes_Bytes"
+    T_Address -> "toBytes_Address"
     _ -> error "XXX"
 
 smtArgByteConverter :: SMTCtxt -> DLArg -> String
