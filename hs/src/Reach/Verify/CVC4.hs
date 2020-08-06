@@ -1,7 +1,7 @@
 module Reach.Verify.CVC4 where
 
-import Reach.Verify.Verifier
 import Reach.Verify.SMT
+import Reach.Verify.Verifier
 import SimpleSMT
 
 verify_cvc4 :: FilePath -> Verifier

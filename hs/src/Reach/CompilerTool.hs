@@ -1,9 +1,9 @@
 module Reach.CompilerTool where
 
 import qualified Filesystem.Path.CurrentOS as FP
-import Reach.Verify (VerifierName)
 import Reach.Compiler
 import Reach.CompilerNL (compileNL)
+import Reach.Verify (VerifierName)
 import System.Directory
 
 data CompilerToolOpts = CompilerToolOpts

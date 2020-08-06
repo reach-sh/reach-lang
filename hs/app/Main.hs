@@ -2,8 +2,8 @@ module Main where
 
 import Data.Char
 import Options.Applicative
-import Reach.Verify (VerifierName (Z3))
 import Reach.CompilerTool
+import Reach.Verify (VerifierName (Z3))
 import System.Directory
 import System.Environment
 import Text.Read (readMaybe)

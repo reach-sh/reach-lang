@@ -135,8 +135,9 @@ slToDL at v =
 
 typeOf :: SrcLoc -> SLVal -> (SLType, DLArg)
 typeOf at v = (t, da)
-  where da = slToDL at v
-        t = argTypeOf da
+  where
+    da = slToDL at v
+    t = argTypeOf da
 
 typeCheck :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArg
 typeCheck at env ty val = typeCheck_help at env ty val val_ty res

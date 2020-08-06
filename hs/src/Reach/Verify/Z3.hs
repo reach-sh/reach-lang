@@ -1,7 +1,7 @@
 module Reach.Verify.Z3 where
 
-import Reach.Verify.Verifier
 import Reach.Verify.SMT
+import Reach.Verify.Verifier
 import SimpleSMT
 
 verify_z3 :: FilePath -> Verifier

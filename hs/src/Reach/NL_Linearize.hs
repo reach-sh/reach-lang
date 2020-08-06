@@ -76,7 +76,7 @@ lin_con_s back rets s k =
         body' = iters rets body $ LLC_Com $ LL_Return at
         --- Note: The invariant and condition can't return
         block (DLBlock ba ss a) =
-          LLBlock ba (lin_local ba ss) a 
+          LLBlock ba (lin_local ba ss) a
     DLS_Continue at update ->
       case k of
         LLC_Com (LL_Return _ret_at) ->

@@ -110,8 +110,8 @@ data ProSt s = ProSt
   , pst_handlerc :: STCounter s
   , pst_interval :: CInterval
   , pst_parts :: [SLPart]
-  --- FIXME These would be maps when we have labelled loops
-  , pst_loop_vars :: Maybe [DLVar]
+  , --- FIXME These would be maps when we have labelled loops
+    pst_loop_vars :: Maybe [DLVar]
   , pst_loop_num :: Maybe Int
   , pst_forced_svs :: Counts
   }
@@ -123,7 +123,7 @@ newHandler st = incSTCounter $ pst_handlerc st
 addHandler :: ProSt s -> Int -> CHandler -> ST s ()
 addHandler st which this_h =
   modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
-      
+
 pmap :: ProSt s -> (SLPart -> b) -> M.Map SLPart b
 pmap st f = M.fromList $ map (\p -> (p, f p)) $ pst_parts st
 
@@ -197,13 +197,15 @@ epp_l (LLL_Com com) ok_cs = epp_m done back skip look com
       ProResL (ProRes_ ok_cs $ PLTail $ PL_Return rat)
     back :: MBack LLLocal ProResL
     back cs' mkpl k = ProResL $ ProRes_ (cs' <> k_cs) $ PLTail (mkpl k')
-      where ProResL (ProRes_ k_cs k') = skip k
+      where
+        ProResL (ProRes_ k_cs k') = skip k
     skip k = epp_l k ok_cs
     look :: LLLocal -> MLookCommon -> ProResL
     look k common = ProResL $ common back' skip' k_cs k'
-      where ProResL (ProRes_ k_cs k') = skip k
-            skip' = ProRes_
-            back' k_cs' k'' = ProRes_ k_cs' $ PLTail k''
+      where
+        ProResL (ProRes_ k_cs k') = skip k
+        skip' = ProRes_
+        back' k_cs' k'' = ProRes_ k_cs' $ PLTail k''
 
 extend_locals :: Counts -> (forall c. c -> PLCommon c) -> SLPartETs -> SLPartETs
 extend_locals cs' mkpl p_prts_s = M.map add p_prts_s
@@ -261,11 +263,12 @@ epp_n st n =
       ProResC p_prts_t (ProRes_ cs_t ct_t) <- epp_n st t
       ProResC p_prts_f (ProRes_ cs_f ct_f) <- epp_n st f
       let mkp p = ProRes_ cs_p et_p
-            where ProRes_ cs_p_t et_p_t = p_prts_t M.! p
-                  ProRes_ cs_p_f et_p_f = p_prts_f M.! p
-                  cs_p = counts ca <> cs_p_t <> cs_p_f
-                  et_p = ET_If at ca et_p_t et_p_f
-      let p_prts' = pmap st mkp 
+            where
+              ProRes_ cs_p_t et_p_t = p_prts_t M.! p
+              ProRes_ cs_p_f et_p_f = p_prts_f M.! p
+              cs_p = counts ca <> cs_p_t <> cs_p_f
+              et_p = ET_If at ca et_p_t et_p_f
+      let p_prts' = pmap st mkp
       let cs' = counts ca <> cs_t <> cs_f
       let ct' = CT_If at ca ct_t ct_f
       return $ ProResC p_prts' (ProRes_ cs' ct')
@@ -286,9 +289,12 @@ epp_n st n =
       ProResC p_prts_k (ProRes_ cs_k ct_k) <- epp_n st k
       let loop_vars = assignment_vars asn
       loop_num <- newHandler st
-      let st_body = st { pst_prev_handler = loop_num
-                       , pst_loop_vars = Just loop_vars
-                       , pst_loop_num = Just loop_num }
+      let st_body =
+            st
+              { pst_prev_handler = loop_num
+              , pst_loop_vars = Just loop_vars
+              , pst_loop_num = Just loop_num
+              }
       ProResC p_prts_body (ProRes_ cs_body ct_body) <- epp_n st_body body
       let LLBlock cond_at cond_l cond_da = cond
       let post_cond_cs = counts cond_da <> cs_body <> cs_k
@@ -301,10 +307,11 @@ epp_n st n =
       let ct' = CT_Jump at loop_num loop_svs asn
       let cons_cs' = counts loop_svs <> counts asn
       let mkp p = ProRes_ cs_p t_p
-            where ProRes_ p_cs_k t_k = p_prts_k M.! p
-                  ProRes_ p_cs_body t_body = p_prts_body M.! p
-                  cs_p = counts asn <> (count_rms loop_vars $ counts cond_da <> p_cs_body <> p_cs_k)
-                  t_p = ET_While at asn (PLBlock cond_at pt_cond cond_da) t_body t_k
+            where
+              ProRes_ p_cs_k t_k = p_prts_k M.! p
+              ProRes_ p_cs_body t_body = p_prts_body M.! p
+              cs_p = counts asn <> (count_rms loop_vars $ counts cond_da <> p_cs_body <> p_cs_k)
+              t_p = ET_While at asn (PLBlock cond_at pt_cond cond_da) t_body t_k
       let p_prts' = pmap st mkp
       return $ ProResC p_prts' (ProRes_ cons_cs' ct')
     LLC_Continue at asn -> do
@@ -349,26 +356,34 @@ epp_s st s =
     LLS_ToConsensus at from fs from_as msg amt_da mtime cons -> do
       let prev_int = pst_interval st
       which <- newHandler st
-      let (int_ok, delay_cs, continue_time ) =
+      let (int_ok, delay_cs, continue_time) =
             case mtime of
               Nothing -> (prev_int, mempty, continue_time_)
-                where continue_time_ ok_cons_cs =
-                        return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
+                where
+                  continue_time_ ok_cons_cs =
+                    return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
               Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)
-                where delay_cs_ = counts delaya
-                      int_to = interval_add_from prev_int delaya
-                      int_ok_ = interval_add_to prev_int delaya
-                      continue_time_ ok_cons_cs = do
-                        let st_to = st { pst_interval = int_to
-                                       , pst_forced_svs = ok_cons_cs }
-                        ProResS delay_prts (ProRes_ tcons_cs _) <-
-                          epp_s st_to delays
-                        let cs' = delay_cs_ <> tcons_cs
-                        let update (ProRes_ tk_cs tk_et) =
-                              ProRes_ (tk_cs <> delay_cs_) (Just (delaya, tk_et))
-                        return $ (cs', M.map update delay_prts)
-      let st_cons = st { pst_prev_handler = which
-                       , pst_interval = int_ok }
+                where
+                  delay_cs_ = counts delaya
+                  int_to = interval_add_from prev_int delaya
+                  int_ok_ = interval_add_to prev_int delaya
+                  continue_time_ ok_cons_cs = do
+                    let st_to =
+                          st
+                            { pst_interval = int_to
+                            , pst_forced_svs = ok_cons_cs
+                            }
+                    ProResS delay_prts (ProRes_ tcons_cs _) <-
+                      epp_s st_to delays
+                    let cs' = delay_cs_ <> tcons_cs
+                    let update (ProRes_ tk_cs tk_et) =
+                          ProRes_ (tk_cs <> delay_cs_) (Just (delaya, tk_et))
+                    return $ (cs', M.map update delay_prts)
+      let st_cons =
+            st
+              { pst_prev_handler = which
+              , pst_interval = int_ok
+              }
       ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
       let (fs_uses, fs_defns) =
             case fs of
@@ -388,11 +403,12 @@ epp_s st s =
       let mk_sender_et = mk_et from_me
       let mk_receiver_et = mk_et Nothing
       let mk_p_prt p prt = mker prt mtime'
-            where mtime' = mtime'_ps M.! p
-                  mker =
-                    case p == from of
-                      True -> mk_sender_et 
-                      False -> mk_receiver_et
+            where
+              mtime' = mtime'_ps M.! p
+              mker =
+                case p == from of
+                  True -> mk_sender_et
+                  False -> mk_receiver_et
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
       return $ ProResS p_prts (ProRes_ time_cons_cs True)

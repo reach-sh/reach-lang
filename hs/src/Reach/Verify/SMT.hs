@@ -4,7 +4,6 @@ module Reach.Verify.SMT where
 import Control.Monad
 import Control.Monad.Extra
 import qualified Data.ByteString.Char8 as BS
-import Reach.CollectTypes
 ---import Data.List
 ---import Data.Monoid
 ---import Data.Char (isDigit)
@@ -13,25 +12,29 @@ import Data.IORef
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
+import Reach.CollectTypes
 ---import Data.Text (Text)
 ---import qualified Data.Text as T
 ---import qualified Data.Text.IO as TIO
 ---import Data.Text.Prettyprint.Doc
-import Reach.NL_Type
-import Reach.NL_AST
+
 import Reach.EmbeddedFiles
+import Reach.NL_AST
+import Reach.NL_Type
 import Reach.Pretty ()
 import Reach.Util
 import Reach.Verify.Verifier
+import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
-import SimpleSMT (Solver, Logger (Logger), SExpr (..), Result (..))
 import System.Exit
 import System.IO
+
 ---import Text.Read (readMaybe)
 
 --- SMT Helpers
 
 --- FIXME decide on fixed bitvectors
+
 -- | bv == True means "use BitVector 256", False means "use Int"
 use_bitvectors :: Bool
 use_bitvectors = False
@@ -70,7 +73,7 @@ smtEq :: SExpr -> SExpr -> SExpr
 smtEq x y = smtApply "=" [x, y]
 
 smtNot :: SExpr -> SExpr
-smtNot se = smtApply "not" [ se ]
+smtNot se = smtApply "not" [se]
 
 --- SMT conversion code
 
@@ -97,10 +100,11 @@ data BindingOrigin
   | O_Join
   deriving (Eq, Show)
 
-type SMTTypeInv
-  = SExpr -> IO ()
-type SMTTypeMap
-  = M.Map SLType (String, SMTTypeInv)
+type SMTTypeInv =
+  SExpr -> IO ()
+
+type SMTTypeMap =
+  M.Map SLType (String, SMTTypeInv)
 
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
@@ -112,7 +116,8 @@ data SMTCtxt = SMTCtxt
   , ctxt_mtxn_value :: Maybe Int
   , ctxt_path_constraint :: [SExpr]
   , ctxt_boundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin, SExpr)))
-  , ctxt_unboundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin))) }
+  , ctxt_unboundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin)))
+  }
 
 newIORefRef :: a -> IO (IORef (IORef a))
 newIORefRef v = do
@@ -138,7 +143,7 @@ ctxtNewScope :: SMTCtxt -> SMTComp -> SMTComp
 ctxtNewScope ctxt m = do
   paramIORef (ctxt_boundrr ctxt) $
     paramIORef (ctxt_unboundrr ctxt) $
-    SMT.inNewScope (ctxt_smt ctxt) $ m
+      SMT.inNewScope (ctxt_smt ctxt) $ m
 
 ctxt_txn_value :: SMTCtxt -> Int
 ctxt_txn_value ctxt = fromMaybe (impossible "no txn value") $ ctxt_mtxn_value ctxt
@@ -154,11 +159,13 @@ shouldSimulate ctxt p =
 
 smtBalance :: Int -> String
 smtBalance i = "ctc_balance" ++ show i
+
 smtBalanceRef :: Int -> SExpr
 smtBalanceRef = Atom . smtBalance
 
 smtTxnValue :: Int -> String
 smtTxnValue i = "txn_value" ++ show i
+
 smtTxnValueRef :: Int -> SExpr
 smtTxnValueRef = Atom . smtTxnValue
 
@@ -184,7 +191,7 @@ smtDeclare_v ctxt v t = do
 
 smtConsensusPrimOp :: SMTCtxt -> ConsensusPrimOp -> [SExpr] -> SExpr
 smtConsensusPrimOp ctxt p =
-  case p of 
+  case p of
     ADD -> bvapp "bvadd" "+"
     SUB -> bvapp "bvsub" "-"
     MUL -> bvapp "bvmul" "*"
@@ -217,9 +224,9 @@ smtTypeByteConverter ctxt t = (smtTypeSort ctxt t) ++ "_toBytes"
 smtArgByteConverter :: SMTCtxt -> DLArg -> String
 smtArgByteConverter ctxt arg =
   smtTypeByteConverter ctxt (argTypeOf arg)
-          
+
 smtArgBytes :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
-smtArgBytes ctxt at arg = smtApply (smtArgByteConverter ctxt arg) [ smt_a ctxt at arg ]
+smtArgBytes ctxt at arg = smtApply (smtArgByteConverter ctxt arg) [smt_a ctxt at arg]
 
 smtDigestCombine :: SMTCtxt -> SrcLoc -> [DLArg] -> SExpr
 smtDigestCombine ctxt at args =
@@ -227,7 +234,8 @@ smtDigestCombine ctxt at args =
     [] -> smtApply "bytes0" []
     [x] -> convert1 x
     (x : xs) -> smtApply "bytesAppend" [convert1 x, smtDigestCombine ctxt at xs]
-  where convert1 = smtArgBytes ctxt at
+  where
+    convert1 = smtArgBytes ctxt at
 
 --- Verifier
 
@@ -253,12 +261,13 @@ display_fail _XXX_ctxt _XXX_at _XXX_mf _XXX_tk _XXX_se _XXX_mm =
 
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
 smtAssert ctxt se = SMT.assert smt se'
-  where smt = ctxt_smt ctxt
-        se' =
-          case ctxt_path_constraint ctxt of
-            [] -> se
-            pcs ->
-              smtApply "=>" [ (smtApply "and" pcs), se ]
+  where
+    smt = ctxt_smt ctxt
+    se' =
+      case ctxt_path_constraint ctxt of
+        [] -> se
+        pcs ->
+          smtApply "=>" [(smtApply "and" pcs), se]
 
 verify1 :: SMTCtxt -> SrcLoc -> Maybe [SLCtxtFrame] -> TheoremKind -> SExpr -> SMTComp
 verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
@@ -275,17 +284,18 @@ verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
         Unknown -> bad $ return Nothing
         Unsat -> good
         Sat -> bad $ liftM (Just . RD_Model) $ SMT.command smt $ List [Atom "get-model"]
-  where smt = ctxt_smt ctxt
-        good =
-          modifyIORef (ctxt_res_succ ctxt) $ (1 +)
-        bad mgetm = do
-          mm <- mgetm
-          display_fail ctxt at mf tk se mm
-          modifyIORef (ctxt_res_fail ctxt) $ (1 +)
-        isPossible =
-          case tk of
-            TPossible -> True
-            _ -> False
+  where
+    smt = ctxt_smt ctxt
+    good =
+      modifyIORef (ctxt_res_succ ctxt) $ (1 +)
+    bad mgetm = do
+      mm <- mgetm
+      display_fail ctxt at mf tk se mm
+      modifyIORef (ctxt_res_fail ctxt) $ (1 +)
+    isPossible =
+      case tk of
+        TPossible -> True
+        _ -> False
 
 pathAddUnbound_v :: SMTCtxt -> SrcLoc -> String -> SLType -> BindingOrigin -> SMTComp
 pathAddUnbound_v ctxt at_dv v t bo = do
@@ -323,8 +333,11 @@ smt_c _ctxt _at_de dc =
         False -> Atom "false"
     DLC_Int i ->
       case use_bitvectors of
-        True -> List [ List [Atom "_", Atom "int2bv", Atom "256"]
-                     , Atom (show i) ]
+        True ->
+          List
+            [ List [Atom "_", Atom "int2bv", Atom "256"]
+            , Atom (show i)
+            ]
         False -> Atom $ show i
     DLC_Bytes bs ->
       smtApply "bytes" [Atom (show $ crc32 bs)]
@@ -337,9 +350,10 @@ smt_a ctxt at_de da =
     DLA_Array as -> cons as
     DLA_Obj m -> cons $ M.elems m
     DLA_Interact i _ -> Atom $ smtInteract ctxt i
-  where s = smtTypeSort ctxt t
-        t = argTypeOf da
-        cons as = smtApply (s ++ "_cons") (map (smt_a ctxt at_de) as)
+  where
+    s = smtTypeSort ctxt t
+    t = argTypeOf da
+    cons as = smtApply (s ++ "_cons") (map (smt_a ctxt at_de) as)
 
 smt_e :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv dv de =
@@ -348,26 +362,30 @@ smt_e ctxt at_dv dv de =
       case p of
         RANDOM -> pathAddUnbound ctxt at_dv dv bo
         CP cp -> pathAddBound ctxt at_dv dv bo se
-          where args' = map (smt_a ctxt at) args
-                se = smtConsensusPrimOp ctxt cp args'
+          where
+            args' = map (smt_a ctxt at) args
+            se = smtConsensusPrimOp ctxt cp args'
     DLE_ArrayRef at arr_da idx_da ->
       pathAddBound ctxt at_dv dv bo se
-      where se =
-              case idx_da of
-                DLA_Con (DLC_Int i) ->
-                  smtApply (s ++ "_elem" ++ show i) [ arr_da' ]
-                _ ->
-                  smtApply (s ++ "_ref") [ arr_da', idx_da' ]
-            s = smtTypeSort ctxt t
-            t = argTypeOf arr_da
-            arr_da' = smt_a ctxt at arr_da
-            idx_da' = smt_a ctxt at idx_da
+      where
+        se =
+          case idx_da of
+            DLA_Con (DLC_Int i) ->
+              smtApply (s ++ "_elem" ++ show i) [arr_da']
+            _ ->
+              smtApply (s ++ "_ref") [arr_da', idx_da']
+        s = smtTypeSort ctxt t
+        t = argTypeOf arr_da
+        arr_da' = smt_a ctxt at arr_da
+        idx_da' = smt_a ctxt at idx_da
     DLE_Interact {} ->
       pathAddUnbound ctxt at_dv dv bo
     DLE_Digest at args ->
       pathAddBound ctxt at dv bo se
-      where se = smtApply "digest" [smtDigestCombine ctxt at args]
-  where bo = O_Expr de
+      where
+        se = smtApply "digest" [smtDigestCombine ctxt at args]
+  where
+    bo = O_Expr de
 
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
 smt_m iter ctxt m =
@@ -375,33 +393,37 @@ smt_m iter ctxt m =
     LL_Return {} -> mempty
     LL_Let at dv de k -> smt_e ctxt at dv de <> iter ctxt k
     LL_Var at dv k -> var_m <> iter ctxt k
-      where var_m =
-              pathAddUnbound ctxt at dv O_Var
+      where
+        var_m =
+          pathAddUnbound ctxt at dv O_Var
     LL_Set at dv va k -> set_m <> iter ctxt k
-      where set_m =
-              smtAssert ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
+      where
+        set_m =
+          smtAssert ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
     LL_Claim at f ct ca k -> this_m <> iter ctxt k
-      where this_m =
-              case ct of
-                CT_Possible -> possible_m
-                CT_Assert -> check_m TAssert <> assert_m
-                CT_Assume -> assert_m
-                CT_Require ->
-                  case ctxt_mode ctxt of
-                    VM_Honest -> check_m TRequire <> assert_m
-                    VM_Dishonest {} -> assert_m
-            ca' = smt_a ctxt at ca
-            possible_m = check_m TPossible
-            check_m tk =
-              verify1 ctxt at (Just f) tk ca'
-            assert_m =
-              smtAssert ctxt ca'
+      where
+        this_m =
+          case ct of
+            CT_Possible -> possible_m
+            CT_Assert -> check_m TAssert <> assert_m
+            CT_Assume -> assert_m
+            CT_Require ->
+              case ctxt_mode ctxt of
+                VM_Honest -> check_m TRequire <> assert_m
+                VM_Dishonest {} -> assert_m
+        ca' = smt_a ctxt at ca
+        possible_m = check_m TPossible
+        check_m tk =
+          verify1 ctxt at (Just f) tk ca'
+        assert_m =
+          smtAssert ctxt ca'
     LL_LocalIf at ca t f k ->
       smt_l ctxt_t t <> smt_l ctxt_f f <> iter ctxt k
-      where ctxt_f = ctxt { ctxt_path_constraint = (smtNot ca_se) : pc }
-            ctxt_t = ctxt { ctxt_path_constraint = ca_se : pc }
-            pc = ctxt_path_constraint ctxt
-            ca_se = smt_a ctxt at ca
+      where
+        ctxt_f = ctxt {ctxt_path_constraint = (smtNot ca_se) : pc}
+        ctxt_t = ctxt {ctxt_path_constraint = ca_se : pc}
+        pc = ctxt_path_constraint ctxt
+        ca_se = smt_a ctxt at ca
 
 smt_l :: SMTCtxt -> LLLocal -> SMTComp
 smt_l ctxt (LLL_Com m) = smt_m smt_l ctxt m
@@ -412,23 +434,26 @@ smt_n ctxt n =
     LLC_Com m -> smt_m smt_n ctxt m
     LLC_If at ca t f ->
       mapM_ ((ctxtNewScope ctxt) . go) [(True, t), (False, f)]
-      where ca' = smt_a ctxt at ca
-            go (v, k) =
-              smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
-              where v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
+      where
+        ca' = smt_a ctxt at ca
+        go (v, k) =
+          smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
+          where
+            v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
     LLC_Transfer at to amt k -> transfer_m <> smt_n ctxt' k
-      where transfer_m = do
-              --- FIXME Maybe include ctxt frame in LLC_Transfer?
-              verify1 ctxt at Nothing TBalanceSufficient amt_le_se
-              pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 bo cbi'_se
-            bo = O_Transfer to amt
-            cbi = ctxt_balance ctxt
-            cbi' = cbi + 1
-            amt_se = smt_a ctxt at amt
-            cbi_se = smtBalanceRef cbi
-            cbi'_se = uint256_sub cbi_se amt_se
-            amt_le_se = uint256_le amt_se cbi_se
-            ctxt' = ctxt { ctxt_balance = cbi' }
+      where
+        transfer_m = do
+          --- FIXME Maybe include ctxt frame in LLC_Transfer?
+          verify1 ctxt at Nothing TBalanceSufficient amt_le_se
+          pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 bo cbi'_se
+        bo = O_Transfer to amt
+        cbi = ctxt_balance ctxt
+        cbi' = cbi + 1
+        amt_se = smt_a ctxt at amt
+        cbi_se = smtBalanceRef cbi
+        cbi'_se = uint256_sub cbi_se amt_se
+        amt_le_se = uint256_le amt_se cbi_se
+        ctxt' = ctxt {ctxt_balance = cbi'}
     LLC_FromConsensus _ _ s -> smt_s ctxt s
     LLC_While {} -> error "XXX"
     LLC_Continue {} -> error "XXX"
@@ -438,7 +463,7 @@ smt_fs ctxt at fs =
   case fs of
     FS_Again _ -> mempty
     FS_Join dv ->
-      pathAddUnbound ctxt at dv O_Join 
+      pathAddUnbound ctxt at dv O_Join
 
 smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
@@ -447,50 +472,58 @@ smt_s ctxt s =
     LLS_Stop at _ ->
       --- FIXME add frames
       verify1 ctxt at Nothing TBalanceZero se
-      where se = smtEq (smtBalanceRef $ ctxt_balance ctxt) uint256_zero
+      where
+        se = smtEq (smtBalanceRef $ ctxt_balance ctxt) uint256_zero
     LLS_Only _at who loc k ->
       loc_m <> smt_s ctxt k
-      where loc_m =
-              case shouldSimulate ctxt who of
-                True -> smt_l ctxt loc
-                False -> mempty
+      where
+        loc_m =
+          case shouldSimulate ctxt who of
+            True -> smt_l ctxt loc
+            False -> mempty
     LLS_ToConsensus at from fs from_as from_msg from_amt mtime next_n ->
       mapM_ (ctxtNewScope ctxt) [timeout, notimeout]
-      where timeout =
-              case mtime of
-                Nothing -> mempty
-                Just (_, time_s) ->
-                  smt_s ctxt time_s
-            notimeout = fs_m <> from_m <> smt_n ctxt' next_n
-            cbi = ctxt_balance ctxt
-            tv' = case ctxt_mtxn_value ctxt of
-                    Just x -> x + 1
-                    Nothing -> 0
-            cbi' = cbi + 1
-            ctxt' = ctxt
-                    { ctxt_balance = cbi'
-                    , ctxt_mtxn_value = Just tv' }
-            fs_m = smt_fs ctxt at fs
-            from_m = do
-              case shouldSimulate ctxt from of
-                False -> do
-                  pathAddUnbound_v ctxt at (smtTxnValue tv') T_UInt256 (O_DishonestPay from)
-                  mapM_ (\msg_dv -> pathAddUnbound ctxt at msg_dv (O_DishonestMsg from)) from_msg
-                True -> do
-                  pathAddBound_v ctxt at (smtTxnValue tv') T_UInt256 (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
-                  zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at msg_dv (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
-              pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 O_ToConsensus (uint256_add (smtBalanceRef cbi) (smtTxnValueRef tv'))
+      where
+        timeout =
+          case mtime of
+            Nothing -> mempty
+            Just (_, time_s) ->
+              smt_s ctxt time_s
+        notimeout = fs_m <> from_m <> smt_n ctxt' next_n
+        cbi = ctxt_balance ctxt
+        tv' = case ctxt_mtxn_value ctxt of
+          Just x -> x + 1
+          Nothing -> 0
+        cbi' = cbi + 1
+        ctxt' =
+          ctxt
+            { ctxt_balance = cbi'
+            , ctxt_mtxn_value = Just tv'
+            }
+        fs_m = smt_fs ctxt at fs
+        from_m = do
+          case shouldSimulate ctxt from of
+            False -> do
+              pathAddUnbound_v ctxt at (smtTxnValue tv') T_UInt256 (O_DishonestPay from)
+              mapM_ (\msg_dv -> pathAddUnbound ctxt at msg_dv (O_DishonestMsg from)) from_msg
+            True -> do
+              pathAddBound_v ctxt at (smtTxnValue tv') T_UInt256 (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
+              zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at msg_dv (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
+          pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 O_ToConsensus (uint256_add (smtBalanceRef cbi) (smtTxnValueRef tv'))
 
 _smtDefineTypes :: Solver -> S.Set SLType -> IO SMTTypeMap
 _smtDefineTypes smt ts = do
   tnr <- newIORef (0 :: Int)
   let none _ = mempty
-  tmr <- newIORef (M.fromList
-                   [ (T_Null, ("Null", none))
-                   , (T_Bool, ("Bool", none))
-                   , (T_UInt256, ("UInt256", uint256_inv smt))
-                   , (T_Bytes, ("Bytes", none))
-                   , (T_Address, ("Address", none)) ])
+  tmr <-
+    newIORef
+      (M.fromList
+         [ (T_Null, ("Null", none))
+         , (T_Bool, ("Bool", none))
+         , (T_UInt256, ("UInt256", uint256_inv smt))
+         , (T_Bytes, ("Bytes", none))
+         , (T_Address, ("Address", none))
+         ])
   let base = impossible "default"
   let bind_type :: SLType -> String -> IO SMTTypeInv
       bind_type t n =
@@ -506,14 +539,14 @@ _smtDefineTypes smt ts = do
           T_Array ats -> do
             ts_nis <- mapM type_name ats
             --- XXX detect if homogeneous
-            let mkargn _ (i::Int) = n ++ "_elem" ++ show i
-            let argns = zipWith mkargn ts_nis [0..] 
+            let mkargn _ (i :: Int) = n ++ "_elem" ++ show i
+            let argns = zipWith mkargn ts_nis [0 ..]
             let mkarg (arg_tn, _) argn = (argn, Atom arg_tn)
             let args = zipWith mkarg ts_nis argns
             SMT.declareDatatype smt n [] [(n ++ "_cons", args)]
             void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
             let inv se = do
-                  let invarg (_, arg_inv) argn = arg_inv $ smtApply argn [ se ]
+                  let invarg (_, arg_inv) argn = arg_inv $ smtApply argn [se]
                   zipWithM_ invarg ts_nis argns
             return inv
           T_Obj {} ->
@@ -547,17 +580,19 @@ _verify_smt smt lp = do
   let LLProg at (SLParts pies_m) s = lp
   let smt_s_top mode = do
         putStrLn $ "Verifying with mode = " ++ show mode
-        let ctxt = SMTCtxt
-                   { ctxt_smt = smt
-                   , ctxt_typem = typem
-                   , ctxt_res_succ = succ_ref
-                   , ctxt_res_fail = fail_ref
-                   , ctxt_mode = mode
-                   , ctxt_path_constraint = []
-                   , ctxt_boundrr = bound_ref_ref
-                   , ctxt_unboundrr = unbound_ref_ref
-                   , ctxt_balance = 0
-                   , ctxt_mtxn_value = Nothing }
+        let ctxt =
+              SMTCtxt
+                { ctxt_smt = smt
+                , ctxt_typem = typem
+                , ctxt_res_succ = succ_ref
+                , ctxt_res_fail = fail_ref
+                , ctxt_mode = mode
+                , ctxt_path_constraint = []
+                , ctxt_boundrr = bound_ref_ref
+                , ctxt_unboundrr = unbound_ref_ref
+                , ctxt_balance = 0
+                , ctxt_mtxn_value = Nothing
+                }
         ctxtNewScope ctxt $ do
           --- XXX Add un-bindings for interact constants
           pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
