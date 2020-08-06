@@ -1,0 +1,1 @@
+error: ./Err_Obj_IllegalNumberField.rsh:3:12:number: Invalid field name. Fields must be bytes, but got: uint256

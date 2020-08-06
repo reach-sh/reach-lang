@@ -48,7 +48,7 @@ data EvalError
   | Err_Decl_IllegalJS JSExpression
   | Err_Decl_NotArray SLVal
   | Err_Decl_WrongArrayLength Int Int
-  | Err_Dot_InvalidField SLVal String
+  | Err_Dot_InvalidField SLVal [String] String
   | Err_Eval_ContinueNotInWhile
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_IfCondNotBool SLVal
@@ -72,9 +72,9 @@ data EvalError
   | Err_Module_Return (SLRes SLStmtRes)
   | Err_NoHeader [JSModuleItem]
   | Err_Obj_IllegalComputedField SLVal
-  | Err_Obj_IllegalField JSPropertyName
   | Err_Obj_IllegalFieldValues [JSExpression]
-  | Err_Obj_IllegalJS JSObjectProperty
+  | Err_Obj_IllegalMethodDefinition JSObjectProperty
+  | Err_Obj_IllegalNumberField JSPropertyName
   | Err_Obj_SpreadNotObj SLVal
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar
@@ -120,6 +120,14 @@ displaySLCtxtMode = \case
   SLC_LocalStep {} -> "local step"
   SLC_ConsensusStep {} -> "consensus step"
 
+didYouMean :: String -> [String] -> Int -> String
+didYouMean invalidStr validOptions maxClosest = case validOptions of
+  [] -> ""
+  _ -> ". Did you mean: " <> show closest
+  where
+    closest = take maxClosest $ sortBy (comparing distance) validOptions
+    distance = restrictedDamerauLevenshteinDistance defaultEditCosts invalidStr
+
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
   show = \case
@@ -149,8 +157,8 @@ instance Show EvalError where
       "Invalid binding. Expected array, got: " <> displaySlValType slval
     Err_Decl_WrongArrayLength nIdents nVals ->
       "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
-    Err_Dot_InvalidField _slval fieldName ->
-      "Invalid field: " <> fieldName
+    Err_Dot_InvalidField _slval ks k ->
+      "Invalid field: " <> k <> didYouMean k ks 5
     Err_Eval_ContinueNotInWhile ->
       "Invalid continue. Expected to be inside of a while."
     Err_Eval_ContinueNotLoopVariable var ->
@@ -180,14 +188,7 @@ instance Show EvalError where
     Err_Eval_RefOutOfBounds maxi ix ->
       "Invalid array index. Expected (0 <= ix < " <> show maxi <> "), got " <> show ix
     Err_Eval_UnboundId slvar slvars ->
-      -- XXX " did you mean... ?"
-      "Invalid unbound identifier: " <> slvar <> didYouMean
-      where
-        didYouMean = case slvars of
-          [] -> ""
-          _ -> ". Did you mean: " <> show closest
-        closest = take 5 $ sortBy (comparing distance) slvars
-        distance = restrictedDamerauLevenshteinDistance defaultEditCosts slvar
+      "Invalid unbound identifier: " <> slvar <> didYouMean slvar slvars 5
     Err_ExpectedPrivate slval ->
       "Invalid declassify. Expected to declassify something private, "
         <> ("but this " <> displaySlValType slval <> " is public.")
@@ -207,14 +208,20 @@ instance Show EvalError where
       "Invalid Reach file. Expected header " <> expectedHeader <> " at top of file."
       where
         expectedHeader = "'reach 0.1';" -- XXX version # defined elsewhere?
+    Err_Obj_IllegalComputedField slval ->
+      "Invalid computed field name. Fields must be bytes, but got: " <> displaySlValType slval
+    Err_Obj_IllegalFieldValues exprs ->
+      -- Is this syntactically possible?
+      "XXX Invalid field values. Expected 1 value, got: " <> show (length exprs)
+    Err_Obj_IllegalMethodDefinition _prop ->
+      "Invalid function field. Instead of {f() {...}}, write {f: () => {...}}"
+    Err_Obj_IllegalNumberField _JSPropertyName ->
+      "Invalid field name. Fields must be bytes, but got: uint256"
+    Err_Obj_SpreadNotObj slval ->
+      "Invalid object spread. Expected object, got: " <> displaySlValType slval
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_Obj_IllegalComputedField SLVal
--- Err_Obj_IllegalField JSPropertyName
--- Err_Obj_IllegalFieldValues [JSExpression]
--- Err_Obj_IllegalJS JSObjectProperty
--- Err_Obj_SpreadNotObj SLVal
 -- Err_Prim_InvalidArgs SLPrimitive [SLVal]
 -- Err_Shadowed SLVar
 -- Err_TailEmpty
@@ -454,28 +461,28 @@ evalDot at obj field =
     SLV_Object _ env ->
       case M.lookup field env of
         Just v -> v
-        Nothing -> illegal_field
+        Nothing -> illegal_field (M.keys env)
     SLV_Participant _ who _ vas _ ->
       case field of
         "only" -> public $ SLV_Form (SLForm_Part_Only obj)
         "publish" -> public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing)
         "pay" -> public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing)
-        _ -> illegal_field
+        _ -> illegal_field ["only", "publish", "pay"]
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
       case field of
         "publish" -> public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime)
         "pay" -> public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
         "timeout" -> public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
-        _ -> illegal_field
+        _ -> illegal_field ["publish", "pay", "timeout"]
     SLV_Prim (SLPrim_transfer_amt amt_dla) ->
       case field of
         "to" -> public $ SLV_Prim (SLPrim_transfer_amt_to amt_dla)
-        _ -> illegal_field
+        _ -> illegal_field ["to"]
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
-    illegal_field =
-      expect_throw at (Err_Dot_InvalidField obj field)
+    illegal_field ks =
+      expect_throw at (Err_Dot_InvalidField obj ks field)
 
 evalForm :: SLCtxt s -> SrcLoc -> SLEnv -> SLForm -> [JSExpression] -> SLComp s SLSVal
 evalForm ctxt at _env f args =
@@ -734,7 +741,7 @@ evalPropertyName ctxt at env pn =
     JSPropertyIdent _ s -> k_res $ public $ s
     JSPropertyString _ s -> k_res $ public $ trimQuotes s
     JSPropertyNumber an _ ->
-      expect_throw at_n (Err_Obj_IllegalField pn)
+      expect_throw at_n (Err_Obj_IllegalNumberField pn)
       where
         at_n = srcloc_jsa "number" an at
     JSPropertyComputed an e _ -> do
@@ -775,8 +782,8 @@ evalPropertyPair ctxt at env fenv p =
           SLV_Object _ senv ->
             return $ SLRes mempty $ (slvl, env_merge at' fenv senv)
           _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
-    _ ->
-      expect_throw at (Err_Obj_IllegalJS p)
+    JSObjectMethod {} ->
+      expect_throw at (Err_Obj_IllegalMethodDefinition p)
 
 evalExpr :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> SLComp s SLSVal
 evalExpr ctxt at env e =

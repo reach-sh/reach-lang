@@ -1,0 +1,1 @@
+error: ./Err_Obj_IllegalMethodDefinition.rsh:3:11:obj: Invalid function field. Instead of {f() {...}}, write {f: () => {...}}

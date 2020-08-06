@@ -15,11 +15,7 @@ XXX Figure out how to trigger
 * Err_CannotReturn -- most attempts were not valid js
 * Err_Eval_IllegalLift
 * Err_Eval_NoReturn -- not syntactically possible?
-* Err_ExpectedPublic -- doesn't trigger when it should?
-  | Err_Obj_IllegalComputedField SLVal
-  | Err_Obj_IllegalField JSPropertyName
-  | Err_Obj_IllegalFieldValues [JSExpression]
-  | Err_Obj_IllegalJS JSObjectProperty
+* Err_Obj_IllegalFieldValues -- not possible with Grammar7?
   | Err_Obj_SpreadNotObj SLVal
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar

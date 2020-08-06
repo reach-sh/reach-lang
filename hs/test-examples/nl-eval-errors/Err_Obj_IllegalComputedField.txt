@@ -1,0 +1,1 @@
+error: ./Err_Obj_IllegalComputedField.rsh:3:12:computed field name: Invalid computed field name. Fields must be bytes, but got: uint256
