@@ -144,6 +144,10 @@ smtTxnValue i = "txn_value" ++ show i
 smtTxnValueRef :: Int -> SExpr
 smtTxnValueRef = Atom . smtTxnValue
 
+smtInteract :: SMTCtxt -> String -> String
+--- XXX we don't know which participant this is, so names may clash
+smtInteract _ctxt i = "interact_" ++ show i
+
 smtVar :: SMTCtxt -> DLVar -> String
 smtVar _XXX_ctxt _XXX_dv@(DLVar _ _ _ i) = "v" ++ show i
 
@@ -164,9 +168,7 @@ smtDeclare_v ctxt v t = do
       zipWithM_ add_elem [0..] ts
       where add_elem (i::Int) et =
               smtDeclare_v ctxt (v ++ "_elem" ++ show i) et
-    T_Null ->
-      --- Note: This might cause some problems because we assume v is bound
-      mempty
+    T_Null -> simple $ Atom "Null"
     _ ->
       error $ "XXX smtDeclare_v " ++ show t
 
@@ -241,8 +243,8 @@ data ResultDesc
 
 type SMTComp = IO ()
 
-display_fail :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
-display_fail _XXX_ctxt _XXX_at _XXX_tk _XXX_se _XXX_mm =
+display_fail :: SMTCtxt -> SrcLoc -> Maybe [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
+display_fail _XXX_ctxt _XXX_at _XXX_mf _XXX_tk _XXX_se _XXX_mm =
   error "XXX"
 
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
@@ -254,8 +256,8 @@ smtAssert ctxt se = SMT.assert smt se'
             pcs ->
               smtApply "=>" [ (smtApply "and" pcs), se ]
 
-verify1 :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> SMTComp
-verify1 ctxt at tk se = SMT.inNewScope smt $ do
+verify1 :: SMTCtxt -> SrcLoc -> Maybe [SLCtxtFrame] -> TheoremKind -> SExpr -> SMTComp
+verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
   smtAssert ctxt $ if isPossible then se else smtNot se
   r <- SMT.check smt
   case isPossible of
@@ -274,7 +276,7 @@ verify1 ctxt at tk se = SMT.inNewScope smt $ do
           modifyIORef (ctxt_res_succ ctxt) $ (1 +)
         bad mgetm = do
           mm <- mgetm
-          display_fail ctxt at tk se mm
+          display_fail ctxt at mf tk se mm
           modifyIORef (ctxt_res_fail ctxt) $ (1 +)
         isPossible =
           case tk of
@@ -328,9 +330,9 @@ smt_a ctxt at_de da =
   case da of
     DLA_Var dv -> Atom $ smtVar ctxt dv
     DLA_Con c -> smt_c ctxt at_de c
-    DLA_Array {} -> error "XXX"
+    DLA_Array {} -> error $ "XXX " ++ show da
     DLA_Obj {} -> error "XXX"
-    DLA_Interact {} -> error "XXX"
+    DLA_Interact i _ -> Atom $ smtInteract ctxt i
 
 smt_e :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv dv de =
@@ -368,7 +370,7 @@ smt_m iter ctxt m =
     LL_Set at dv va k -> set_m <> iter ctxt k
       where set_m =
               smtAssert ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
-    LL_Claim at _XXX_f ct ca k -> this_m <> iter ctxt k
+    LL_Claim at f ct ca k -> this_m <> iter ctxt k
       where this_m =
               case ct of
                 CT_Possible -> possible_m
@@ -381,7 +383,7 @@ smt_m iter ctxt m =
             ca' = smt_a ctxt at ca
             possible_m = check_m TPossible
             check_m tk =
-              verify1 ctxt at tk ca'
+              verify1 ctxt at (Just f) tk ca'
             assert_m =
               smtAssert ctxt ca'
     LL_LocalIf at ca t f k ->
@@ -406,7 +408,8 @@ smt_n ctxt n =
               where v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
     LLC_Transfer at to amt k -> transfer_m <> smt_n ctxt' k
       where transfer_m = do
-              verify1 ctxt at TBalanceSufficient amt_le_se
+              --- FIXME Maybe include ctxt frame in LLC_Transfer?
+              verify1 ctxt at Nothing TBalanceSufficient amt_le_se
               pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 bo cbi'_se
             bo = O_Transfer to amt
             cbi = ctxt_balance ctxt
@@ -432,7 +435,9 @@ smt_s ctxt s =
   case s of
     LLS_Com m -> smt_m smt_s ctxt m
     LLS_Stop at _ ->
-      verify1 ctxt at TBalanceZero (smtEq (smtBalanceRef $ ctxt_balance ctxt) uint256_zero)
+      --- FIXME add frames
+      verify1 ctxt at Nothing TBalanceZero se
+      where se = smtEq (smtBalanceRef $ ctxt_balance ctxt) uint256_zero
     LLS_Only _at who loc k ->
       loc_m <> smt_s ctxt k
       where loc_m =
@@ -489,6 +494,7 @@ _verify_smt smt lp = do
               , ctxt_balance = 0
               , ctxt_mtxn_value = Nothing }
         ctxtNewScope ctxt $ do
+          --- XXX Add un-bindings for interact constants
           pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
           smt_s ctxt s
   mapM_ smt_s_top (liftM2 (,) [True, False] ps)

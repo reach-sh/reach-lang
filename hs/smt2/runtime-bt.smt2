@@ -8,6 +8,9 @@
 (set-logic ALL)
 (declare-sort Address 0)
 
+(declare-sort Null 0)
+(declare-fun null () Null)
+
 (declare-datatypes ((Bytes 0))
  (((bytes0)
    (bytes-literal (toBytes_Literal_x Int))
