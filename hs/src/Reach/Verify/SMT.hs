@@ -136,6 +136,7 @@ ctxtNewScope ctxt m = do
 ctxt_txn_value :: SMTCtxt -> Int
 ctxt_txn_value ctxt = fromMaybe (impossible "no txn value") $ ctxt_mtxn_value ctxt
 
+--- XXX Do we need honest and parts?
 shouldSimulate :: SMTCtxt -> SLPart -> Bool
 shouldSimulate ctxt p = (ctxt_honest ctxt) || p_is_me
   where p_is_me =

@@ -14,7 +14,8 @@ instance CollectsTypes a => CollectsTypes (M.Map k a) where
   cts m = foldMap cts m
 
 instance CollectsTypes a => CollectsTypes (Maybe a) where
-  cts x = foldMap cts x
+  cts (Nothing) = mempty
+  cts (Just x) = cts x
 
 instance (CollectsTypes a, CollectsTypes b) => CollectsTypes (a, b) where
   cts (x, y) = cts x <> cts y
