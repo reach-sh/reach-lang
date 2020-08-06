@@ -264,7 +264,7 @@ data ResultDesc
 type SMTComp = IO ()
 
 display_fail :: SMTCtxt -> SrcLoc -> Maybe [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
-display_fail _XXX_ctxt _XXX_at _XXX_mf _XXX_tk _XXX_se _XXX_mm =
+display_fail _ctxt _at _mf _tk _se _mm =
   error "XXX"
 
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
@@ -460,7 +460,7 @@ smt_block ctxt bm b = before_m <> after_m
             B_Assume False ->
               smtAssert ctxt (smtNot da')
             B_Prove ->
-              --- XXX Add frames
+              --- FIXME Add frames
               verify1 ctxt at Nothing TInvariant da'
 
 gatherDefinedVars_m :: (LLCommon LLLocal) -> S.Set DLVar
@@ -663,6 +663,9 @@ _verify_smt smt lp = do
   let LLProg at (SLParts pies_m) s = lp
   let smt_s_top mode = do
         putStrLn $ "Verifying with mode = " ++ show mode
+        --- FIXME It would be beautiful to not have to have a fresh
+        --- struct for each run... I think the only thing that needs
+        --- to be changed is ctxt_mode.
         let ctxt =
               SMTCtxt
                 { ctxt_smt = smt
