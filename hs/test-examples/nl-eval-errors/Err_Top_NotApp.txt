@@ -1,0 +1,1 @@
+error: <top level>: Invalid compilation target. Expected App, but got uint256

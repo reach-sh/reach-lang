@@ -13,11 +13,9 @@ XXX Figure out how to trigger
 * Err_Parse_IllegalLiteral -- undefined didn't work
 * Err_Parse_NotModule
 * Err_CannotReturn -- most attempts were not valid js
+* Err_Decl_IllegalJS
 * Err_Eval_IllegalLift
 * Err_Eval_NoReturn -- not syntactically possible?
 * Err_Obj_IllegalFieldValues -- not possible with Grammar7?
 * Err_ToConsensus_Double -- prevented by earlier parsing?
-  | Err_TopFun_NoName
-  | Err_Top_IllegalJS JSStatement
-  | Err_Top_NotDApp SLVal
-  | Err_While_IllegalInvariant [JSExpression]
+* Err_TopFun_NoName -- hiding behind Err_Type_None

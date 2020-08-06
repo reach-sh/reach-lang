@@ -78,13 +78,12 @@ data EvalError
   | Err_Obj_SpreadNotObj SLVal
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar
-  | Err_WhileTailEmpty
   | Err_TailNotEmpty [JSStatement]
   | Err_ToConsensus_Double ToConsensusMode
   | Err_TopFun_NoName
-  | Err_Top_IllegalJS JSStatement
-  | Err_Top_NotDApp SLVal
+  | Err_Top_NotApp SLVal
   | Err_While_IllegalInvariant [JSExpression]
+  | Err_WhileTailEmpty
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in NL_Pretty
@@ -157,6 +156,8 @@ instance Show EvalError where
       "Invalid participant spec"
     Err_DeclLHS_IllegalJS _e ->
       "Invalid binding. Expressions cannot appear on the LHS."
+    Err_Decl_IllegalJS e ->
+      "Invalid Reach declaration: " <> conNameOf e
     Err_Decl_NotArray slval ->
       "Invalid binding. Expected array, got: " <> displaySlValType slval
     Err_Decl_WrongArrayLength nIdents nVals ->
@@ -244,15 +245,16 @@ instance Show EvalError where
       --- Answer: This means that they wrote A.publish().publish(), etc
       TCM_Publish -> "Invalid double publish. Hint: commit() before publishing again."
       _ -> "Invalid double toConsensus."
+    Err_TopFun_NoName ->
+      "Invalid function declaration. Top-level functions must be named."
+    Err_Top_NotApp slval ->
+      "Invalid compilation target. Expected App, but got " <> displaySlValType slval
+    Err_While_IllegalInvariant exprs ->
+      "Invalid while loop invariant. Expected 1 expr, but got " <> got
+      where
+        got = show $ length exprs
     Err_WhileTailEmpty ->
       "Invalid while statement block. Expected continue, but found empty tail."
-    e -> "FIXME Show EvalError: " <> conNameOf e
-
--- TODO: add to show above
--- Err_TopFun_NoName
--- Err_Top_IllegalJS JSStatement
--- Err_Top_NotDApp SLVal
--- Err_While_IllegalInvariant [JSExpression]
 
 ensure_public :: SrcLoc -> SLSVal -> SLVal
 ensure_public at (lvl, v) =
@@ -1562,7 +1564,7 @@ compileDApp topv =
               secret $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
             _ -> expect_throw at' (Err_App_InvalidPartSpec v)
     _ ->
-      expect_throw srcloc_top (Err_Top_NotDApp topv)
+      expect_throw srcloc_top (Err_Top_NotApp topv)
 
 compileBundle :: JSBundle -> SLVar -> DLProg
 compileBundle (JSBundle mods) top = runST $ do
