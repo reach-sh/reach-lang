@@ -182,17 +182,19 @@ instance Show EvalError where
       "Invalid array index. Expected (0 <= ix < " <> show maxi <> "), got " <> show ix
     Err_Eval_UnboundId slvar slvars ->
       -- XXX " did you mean... ?"
-      "Invalid: unbound identifier: " <> slvar <> didYouMean
+      "Invalid unbound identifier: " <> slvar <> didYouMean
       where
         didYouMean = case slvars of
           [] -> ""
           _ -> ". Did you mean: " <> show closest
         closest = take 5 $ sortBy (comparing distance) slvars
         distance = restrictedDamerauLevenshteinDistance defaultEditCosts slvar
+    Err_ExpectedPrivate slval ->
+      "Invalid declassify. Expected to declassify something private, "
+        <> ("but this " <> displaySlValType slval <> " is public.")
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_ExpectedPrivate SLVal
 -- Err_ExpectedPublic SLVal
 -- Err_Export_IllegalJS JSExportDeclaration
 -- Err_Form_InvalidArgs SLForm [JSExpression]

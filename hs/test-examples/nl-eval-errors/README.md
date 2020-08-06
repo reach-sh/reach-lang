@@ -15,9 +15,7 @@ XXX Figure out how to trigger
 * Err_CannotReturn -- most attempts were not valid js
 * Err_Eval_IllegalLift
 * Err_Eval_NoReturn -- not syntactically possible?
-  | Err_Eval_UnboundId SLVar [SLVar]
-  | Err_ExpectedPrivate SLVal
-  | Err_ExpectedPublic SLVal
+* Err_ExpectedPublic -- doesn't trigger when it should?
   | Err_Export_IllegalJS JSExportDeclaration
   | Err_Form_InvalidArgs SLForm [JSExpression]
   | Err_Fun_NamesIllegal
