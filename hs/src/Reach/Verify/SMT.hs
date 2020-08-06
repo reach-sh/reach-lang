@@ -16,6 +16,7 @@ import Data.Maybe (fromMaybe)
 ---import qualified Data.Text as T
 ---import qualified Data.Text.IO as TIO
 ---import Data.Text.Prettyprint.Doc
+import Reach.NL_Type
 import Reach.NL_AST
 import Reach.EmbeddedFiles
 import Reach.Pretty ()
@@ -198,6 +199,30 @@ smtConsensusPrimOp ctxt p =
     app n = smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
 
+smtTypeByteConverter :: SMTCtxt -> SLType -> String
+smtTypeByteConverter _ctxt t =
+  case t of
+    T_Null -> "toBytes_Null"
+    T_Bool -> "toBytes_Bool"
+    T_UInt256 -> "toBytes_Int"
+    T_Bytes -> "toBytes_Bytes"
+    _ -> error "XXX"
+
+smtArgByteConverter :: SMTCtxt -> DLArg -> String
+smtArgByteConverter ctxt arg =
+  smtTypeByteConverter ctxt (argTypeOf arg)
+          
+smtArgBytes :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
+smtArgBytes ctxt at arg = smtApply (smtArgByteConverter ctxt arg) [ smt_a ctxt at arg ]
+
+smtDigestCombine :: SMTCtxt -> SrcLoc -> [DLArg] -> SExpr
+smtDigestCombine ctxt at args =
+  case args of
+    [] -> smtApply "bytes0" []
+    [x] -> convert1 x
+    (x : xs) -> smtApply "msg-cat" [convert1 x, smtDigestCombine ctxt at xs]
+  where convert1 = smtArgBytes ctxt at
+
 --- Verifier
 
 data TheoremKind
@@ -300,22 +325,23 @@ smt_e ctxt at_dv dv de =
     DLE_PrimOp at p args ->
       case p of
         RANDOM -> pathAddUnbound ctxt at_dv dv bo
-        CP cp -> do
-          let args' = map (smt_a ctxt at) args
-          let se = smtConsensusPrimOp ctxt cp args'
-          pathAddBound ctxt at_dv dv bo se
+        CP cp -> pathAddBound ctxt at_dv dv bo se
+          where args' = map (smt_a ctxt at) args
+                se = smtConsensusPrimOp ctxt cp args'
+          
     DLE_ArrayRef _at arr_da idx_da ->
       case (arr_da, idx_da) of
-        (DLA_Var arr_dv, DLA_Con (DLC_Int i)) -> do
-          let v = smtVar ctxt arr_dv
-          let se = Atom $ v ++ "_elem" ++ show i
+        (DLA_Var arr_dv, DLA_Con (DLC_Int i)) ->
           pathAddBound ctxt at_dv dv bo se
+          where v = smtVar ctxt arr_dv
+                se = Atom $ v ++ "_elem" ++ show i
         _ ->
           error "XXX"
     DLE_Interact {} ->
       pathAddUnbound ctxt at_dv dv bo
-    DLE_Digest {} ->
-      error "XXX"
+    DLE_Digest at args ->
+      pathAddBound ctxt at dv bo se
+      where se = smtApply "digest" [smtDigestCombine ctxt at args]
   where bo = O_Expr de
 
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
