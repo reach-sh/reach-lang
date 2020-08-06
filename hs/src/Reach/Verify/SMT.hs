@@ -235,9 +235,13 @@ data TheoremKind
   | TBounds
   deriving (Show)
 
+data ResultDesc
+  = RD_UnsatCore [String]
+  | RD_Model SExpr
+
 type SMTComp = IO ()
 
-display_fail :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> Maybe SExpr -> IO ()
+display_fail :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
 display_fail _XXX_ctxt _XXX_at _XXX_tk _XXX_se _XXX_mm =
   error "XXX"
 
@@ -252,21 +256,30 @@ smtAssert ctxt se = SMT.assert smt se'
 
 verify1 :: SMTCtxt -> SrcLoc -> TheoremKind -> SExpr -> SMTComp
 verify1 ctxt at tk se = SMT.inNewScope smt $ do
-  smtAssert ctxt $ smtNot se
+  smtAssert ctxt $ if isPossible then se else smtNot se
   r <- SMT.check smt
-  case r of
-    Unknown -> bad Nothing
-    Unsat -> good
-    Sat -> bad $ Just $ SMT.command smt $ List [Atom "get-model"]
+  case isPossible of
+    True ->
+      case r of
+        Unknown -> bad $ return Nothing
+        Unsat -> bad $ liftM (Just . RD_UnsatCore) $ SMT.getUnsatCore smt
+        Sat -> good
+    False ->
+      case r of
+        Unknown -> bad $ return Nothing
+        Unsat -> good
+        Sat -> bad $ liftM (Just . RD_Model) $ SMT.command smt $ List [Atom "get-model"]
   where smt = ctxt_smt ctxt
         good =
           modifyIORef (ctxt_res_succ ctxt) $ (1 +)
         bad mgetm = do
-          mm <- case mgetm of
-                  Nothing -> return $ Nothing
-                  Just getm -> liftM Just getm
+          mm <- mgetm
           display_fail ctxt at tk se mm
           modifyIORef (ctxt_res_fail ctxt) $ (1 +)
+        isPossible =
+          case tk of
+            TPossible -> True
+            _ -> False
 
 pathAddUnbound_v :: SMTCtxt -> SrcLoc -> String -> SLType -> BindingOrigin -> SMTComp
 pathAddUnbound_v ctxt at_dv v t bo = do
@@ -366,8 +379,7 @@ smt_m iter ctxt m =
                     True -> check_m TRequire <> assert_m
                     False -> assert_m
             ca' = smt_a ctxt at ca
-            possible_m =
-              error "XXX"
+            possible_m = check_m TPossible
             check_m tk =
               verify1 ctxt at tk ca'
             assert_m =
