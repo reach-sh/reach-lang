@@ -98,6 +98,7 @@ data BindingOrigin
   | O_Initialize
   | O_Expr DLExpr
   | O_Join
+  | O_Assignment
   deriving (Eq, Show)
 
 type SMTTypeInv =
@@ -117,6 +118,9 @@ data SMTCtxt = SMTCtxt
   , ctxt_path_constraint :: [SExpr]
   , ctxt_boundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin, SExpr)))
   , ctxt_unboundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin)))
+  , ctxt_while_invariant :: Maybe (LLBlock LLLocal)
+  , ctxt_loop_var_subst :: M.Map DLVar DLArg
+  , ctxt_primed_vars :: S.Set DLVar
   }
 
 newIORefRef :: a -> IO (IORef (IORef a))
@@ -174,7 +178,11 @@ smtInteract :: SMTCtxt -> String -> String
 smtInteract _ctxt i = "interact_" ++ show i
 
 smtVar :: SMTCtxt -> DLVar -> String
-smtVar _XXX_ctxt _XXX_dv@(DLVar _ _ _ i) = "v" ++ show i
+smtVar ctxt dv@(DLVar _ _ _ i) = "v" ++ show i ++ mp
+  where mp =
+          case elem dv $ ctxt_primed_vars ctxt of
+            True -> "p"
+            False -> ""
 
 smtTypeSort :: SMTCtxt -> SLType -> String
 smtTypeSort ctxt t = fst $ (ctxt_typem ctxt) M.! t
@@ -345,7 +353,15 @@ smt_c _ctxt _at_de dc =
 smt_a :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
 smt_a ctxt at_de da =
   case da of
-    DLA_Var dv -> Atom $ smtVar ctxt dv
+    DLA_Var dv ->
+      case M.lookup dv lvars of
+        Nothing ->
+          Atom $ smtVar ctxt dv
+        Just da' ->
+          smt_a ctxt' at_de da'
+      where lvars = ctxt_loop_var_subst ctxt
+            ctxt' = ctxt { ctxt_loop_var_subst = mempty
+                         , ctxt_primed_vars = mempty }
     DLA_Con c -> smt_c ctxt at_de c
     DLA_Array as -> cons as
     DLA_Obj m -> cons $ M.elems m
@@ -428,6 +444,59 @@ smt_m iter ctxt m =
 smt_l :: SMTCtxt -> LLLocal -> SMTComp
 smt_l ctxt (LLL_Com m) = smt_m smt_l ctxt m
 
+data BlockMode
+  = B_Assume Bool
+  | B_Prove
+
+smt_block :: SMTCtxt -> BlockMode -> LLBlock LLLocal -> SMTComp
+smt_block ctxt bm b = before_m <> after_m
+  where LLBlock at l da = b
+        before_m = smt_l ctxt l
+        da' = smt_a ctxt at da
+        after_m =
+          case bm of
+            B_Assume True ->
+              smtAssert ctxt da'
+            B_Assume False ->
+              smtAssert ctxt (smtNot da')
+            B_Prove ->
+              --- XXX Add frames
+              verify1 ctxt at Nothing TInvariant da'
+
+gatherDefinedVars_m :: (LLCommon LLLocal) -> S.Set DLVar
+gatherDefinedVars_m m =
+  case m of
+    LL_Return {} -> mempty
+    LL_Let _ dv _ k -> S.singleton dv <> gatherDefinedVars_l k
+    LL_Var _ dv k -> S.singleton dv <> gatherDefinedVars_l k
+    LL_Set _ _ _ k -> gatherDefinedVars_l k
+    LL_Claim _ _ _ _ k -> gatherDefinedVars_l k
+    LL_LocalIf _ _ t f k -> gatherDefinedVars_l t <> gatherDefinedVars_l f <> gatherDefinedVars_l k
+
+gatherDefinedVars_l :: LLLocal -> S.Set DLVar
+gatherDefinedVars_l (LLL_Com m) = gatherDefinedVars_m m
+
+gatherDefinedVars :: LLBlock LLLocal -> S.Set DLVar
+gatherDefinedVars (LLBlock _ l _) = gatherDefinedVars_l l
+
+smt_asn :: SMTCtxt -> Bool -> DLAssignment -> SMTComp
+smt_asn ctxt vars_are_primed asn = smt_block ctxt' B_Prove inv
+  where ctxt' = ctxt { ctxt_loop_var_subst = asnm
+                     , ctxt_primed_vars = pvars }
+        DLAssignment asnm = asn
+        pvars = case vars_are_primed of
+                  True -> gatherDefinedVars inv
+                  False -> mempty
+        inv = case ctxt_while_invariant ctxt of
+                Just x -> x
+                Nothing -> impossible "asn outside loop"
+
+smt_asn_def :: SMTCtxt -> SrcLoc -> DLAssignment -> SMTComp
+smt_asn_def ctxt at asn = mapM_ def1 $ M.keys asnm
+  where DLAssignment asnm = asn
+        def1 dv =
+          pathAddUnbound ctxt at dv O_Assignment
+
 smt_n :: SMTCtxt -> LLConsensus -> SMTComp
 smt_n ctxt n =
   case n of
@@ -455,8 +524,22 @@ smt_n ctxt n =
         amt_le_se = uint256_le amt_se cbi_se
         ctxt' = ctxt {ctxt_balance = cbi'}
     LLC_FromConsensus _ _ s -> smt_s ctxt s
-    LLC_While {} -> error "XXX"
-    LLC_Continue {} -> error "XXX"
+    LLC_While at asn inv cond body k ->
+      mapM_ (ctxtNewScope ctxt) [before_m, loop_m, after_m]
+      where ctxt_inv = ctxt { ctxt_while_invariant = Just inv }
+            before_m = smt_asn ctxt_inv False asn
+            loop_m =
+              smt_asn_def ctxt at asn
+              <> smt_block ctxt (B_Assume True) inv
+              <> smt_block ctxt (B_Assume True) cond
+              <> smt_n ctxt_inv body
+            after_m =
+              smt_asn_def ctxt at asn
+              <> smt_block ctxt (B_Assume True) inv
+              <> smt_block ctxt (B_Assume False) cond
+              <> smt_n ctxt k
+    LLC_Continue _at asn ->
+      smt_asn ctxt True asn
 
 smt_fs :: SMTCtxt -> SrcLoc -> FromSpec -> SMTComp
 smt_fs ctxt at fs =
@@ -592,6 +675,9 @@ _verify_smt smt lp = do
                 , ctxt_unboundrr = unbound_ref_ref
                 , ctxt_balance = 0
                 , ctxt_mtxn_value = Nothing
+                , ctxt_while_invariant = Nothing
+                , ctxt_loop_var_subst = mempty
+                , ctxt_primed_vars = mempty
                 }
         ctxtNewScope ctxt $ do
           --- XXX Add un-bindings for interact constants
