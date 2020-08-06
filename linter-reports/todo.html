@@ -8,8 +8,36 @@
 </head>
 <body style="color:white; background-color:black">
 <pre>
+<span style="color:lime;font-weight:bold;">hs/sol/stdlib.sol</span>
+<span style="color:yellow;font-weight:bold;">16</span>:      uint16 len = uint16(uint8(c[0]))*256+uint16(uint8(c[1])); // <span style="color:dimgray;background-color:yellow;">TODO</span>: improve using some library on the net
+<span style="color:yellow;font-weight:bold;">20</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: optimize using tricks from the Internet? But not before there are tests somehow.
 <span style="color:lime;font-weight:bold;">hs/Makefile</span>
 <span style="color:yellow;font-weight:bold;">17</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: dockerized stan so that make check does not require local hs install?
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Backend/Go.hs</span>
+<span style="color:yellow;font-weight:bold;">177</span>:goTransfer to a = pretty &quot;// <span style="color:dimgray;background-color:yellow;">XXX</span> &quot; &lt;&gt; goApply &quot;txn.transfer&quot; [goVar to, a] &lt;&gt; semi
+<span style="color:yellow;font-weight:bold;">298</span>:    tp = vsep [pretty &quot;// <span style="color:dimgray;background-color:yellow;">XXX</span> FromConsensus&quot;, ktp]
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Backend/JS.hs</span>
+<span style="color:yellow;font-weight:bold;">16</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span> More code can probably share this
+<span style="color:yellow;font-weight:bold;">23</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span> More code can probably share this
+<span style="color:yellow;font-weight:bold;">84</span>:--- <span style="color:dimgray;background-color:yellow;">XXX</span>/<span style="color:dimgray;background-color:yellow;">FIXME</span> change to null?
+<span style="color:lime;font-weight:bold;">hs/src/Reach/NL_EPP.hs</span>
+<span style="color:yellow;font-weight:bold;">113</span>:  --- <span style="color:dimgray;background-color:yellow;">FIXME</span> These would be maps when we have labelled loops
+<span style="color:yellow;font-weight:bold;">142</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> Try to simplify these types after all the cases are covered... maybe some of the values are always the same.
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Compiler.hs</span>
+<span style="color:yellow;font-weight:bold;">78</span>:      --- <span style="color:dimgray;background-color:yellow;">XXX</span> Implement a way for while loops to be exited
+<span style="color:yellow;font-weight:bold;">289</span>:    --- <span style="color:dimgray;background-color:yellow;">XXX</span> Perhaps these should be sensitive to bit widths
+<span style="color:yellow;font-weight:bold;">362</span>:      _ -&gt; error &quot;Expected XIL_VAR&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">378</span>:              expect_throw CE_ArrayLenNotConstant a (&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Implement show for part of InlineV&quot; :: String)
+<span style="color:yellow;font-weight:bold;">684</span>:        _ -&gt; error &quot;Expected exactly one ILArg&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">710</span>:                      _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">711</span>:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">722</span>:             _ -&gt; error &quot;Expected an IL_Var&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">723</span>:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">731</span>:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">769</span>:           _ -&gt; error &quot;Expected [ILArg] to have exactly 2 elements&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">917</span>:        _ -&gt; error &quot;Expected list to have exactly 2 elements&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">942</span>:        _ -&gt; error &quot;Expected list to have exactly 2 elements&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:yellow;font-weight:bold;">1013</span>:            _ -&gt; error &quot;Expected exactly one arg&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Connector/ALGO.hs</span>
 <span style="color:yellow;font-weight:bold;">113</span>:<span style="color:dimgray;background-color:yellow;">xxx</span> :: String -&gt; TEALs
 <span style="color:yellow;font-weight:bold;">114</span>:<span style="color:dimgray;background-color:yellow;">xxx</span> x = [TL_Comment $ &quot;<span style="color:dimgray;background-color:yellow;">XXX</span> &quot; ++ x]
@@ -40,12 +68,45 @@
 <span style="color:yellow;font-weight:bold;">804</span>:  --- <span style="color:dimgray;background-color:yellow;">XXX</span> comp_blarg delay
 <span style="color:yellow;font-weight:bold;">811</span>:  if False --- <span style="color:dimgray;background-color:yellow;">XXX</span>
 <span style="color:yellow;font-weight:bold;">901</span>:    --- <span style="color:dimgray;background-color:yellow;">FIXME</span> figure out the correct way to get a string
+<span style="color:lime;font-weight:bold;">hs/src/Reach/NL_AST.hs</span>
+<span style="color:yellow;font-weight:bold;">99</span>:  | --- <span style="color:dimgray;background-color:yellow;">XXX</span> Indicate if it is a Tuple or an Array?
+<span style="color:yellow;font-weight:bold;">161</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> make this illegal outside assert/invariant
+<span style="color:yellow;font-weight:bold;">329</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Record whether it is pure or local in the statement and
+<span style="color:yellow;font-weight:bold;">380</span>:    --- <span style="color:dimgray;background-color:yellow;">FIXME</span> If we could make LL_LocalIf be recursive in the type parameter, then we could allow this as a local operation and avoid copying the continuation. Perhaps a better thing is to make transfer an effectful expression and just rely on the let code. Probably wise to do the same to Claim to clean up the code.
+<span style="color:yellow;font-weight:bold;">442</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Use types to ensure only within while body
+<span style="color:yellow;font-weight:bold;">514</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Types to ensure only within while body
 <span style="color:lime;font-weight:bold;">hs/src/Reach/CompilerNL.hs</span>
 <span style="color:yellow;font-weight:bold;">23</span>:  --- <span style="color:dimgray;background-color:yellow;">FIXME</span> the verifier might be dependent on the backend/connector
 <span style="color:yellow;font-weight:bold;">28</span>:  traceM $ &quot;<span style="color:dimgray;background-color:yellow;">XXX</span> backends&quot;
 <span style="color:lime;font-weight:bold;">hs/src/Reach/NL_Parser.hs</span>
 <span style="color:yellow;font-weight:bold;">29</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> implement a custom show that is useful
 <span style="color:yellow;font-weight:bold;">53</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> Support more binding forms
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/Yices.hs</span>
+<span style="color:yellow;font-weight:bold;">7</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span>: known not to work.
+<span style="color:lime;font-weight:bold;">hs/src/Reach/ParserInternal.hs</span>
+<span style="color:yellow;font-weight:bold;">415</span>:    --- <span style="color:dimgray;background-color:yellow;">XXX</span>/<span style="color:dimgray;background-color:yellow;">FIXME</span> - Remove this
+<span style="color:yellow;font-weight:bold;">481</span>:        --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Support functions and enums like at top-level?
+<span style="color:yellow;font-weight:bold;">547</span>:            tp_pre_k = tp prev_ebody --- <span style="color:dimgray;background-color:yellow;">XXX</span> not the best
+<span style="color:yellow;font-weight:bold;">583</span>:            _ -&gt; error &quot;Pattern match fail&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span> Nothing?
+<span style="color:lime;font-weight:bold;">hs/src/Reach/NL_Type.hs</span>
+<span style="color:yellow;font-weight:bold;">9</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> implement a custom show that is useful
+<span style="color:yellow;font-weight:bold;">22</span>:  --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Find meet of objects
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/Boolector.hs</span>
+<span style="color:yellow;font-weight:bold;">7</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span>: known not to work.
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/SMT.hs</span>
+<span style="color:yellow;font-weight:bold;">34</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> decide on fixed bitvectors
+<span style="color:yellow;font-weight:bold;">139</span>:--- <span style="color:dimgray;background-color:yellow;">XXX</span> Do we need honest and parts?
+<span style="color:yellow;font-weight:bold;">159</span>:--- <span style="color:dimgray;background-color:yellow;">XXX</span> we don't know which participant this is, so names may clash
+<span style="color:yellow;font-weight:bold;">163</span>:smtVar _<span style="color:dimgray;background-color:yellow;">XXX</span>_ctxt _<span style="color:dimgray;background-color:yellow;">XXX</span>_dv@(DLVar _ _ _ i) = &quot;v&quot; ++ show i
+<span style="color:yellow;font-weight:bold;">244</span>:display_fail _<span style="color:dimgray;background-color:yellow;">XXX</span>_ctxt _<span style="color:dimgray;background-color:yellow;">XXX</span>_at _<span style="color:dimgray;background-color:yellow;">XXX</span>_mf _<span style="color:dimgray;background-color:yellow;">XXX</span>_tk _<span style="color:dimgray;background-color:yellow;">XXX</span>_se _<span style="color:dimgray;background-color:yellow;">XXX</span>_mm =
+<span style="color:yellow;font-weight:bold;">245</span>:  error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
+<span style="color:yellow;font-weight:bold;">414</span>:              --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Maybe include ctxt frame in LLC_Transfer?
+<span style="color:yellow;font-weight:bold;">426</span>:    LLC_While {} -&gt; error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
+<span style="color:yellow;font-weight:bold;">427</span>:    LLC_Continue {} -&gt; error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
+<span style="color:yellow;font-weight:bold;">441</span>:      --- <span style="color:dimgray;background-color:yellow;">FIXME</span> add frames
+<span style="color:yellow;font-weight:bold;">501</span>:            --- <span style="color:dimgray;background-color:yellow;">XXX</span> detect if homogeneous
+<span style="color:yellow;font-weight:bold;">513</span>:            error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
+<span style="color:yellow;font-weight:bold;">557</span>:          --- <span style="color:dimgray;background-color:yellow;">XXX</span> Add un-bindings for interact constants
 <span style="color:lime;font-weight:bold;">hs/src/Reach/NL_Eval.hs</span>
 <span style="color:yellow;font-weight:bold;">90</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span> typeOf may fail causing an error within an error...?
 <span style="color:yellow;font-weight:bold;">107</span>:  T_Obj _m -&gt; &quot;object&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
@@ -76,80 +137,8 @@
 <span style="color:yellow;font-weight:bold;">1400</span>:            --- <span style="color:dimgray;background-color:yellow;">FIXME</span> support more kinds
 <span style="color:yellow;font-weight:bold;">1405</span>:            --- <span style="color:dimgray;background-color:yellow;">FIXME</span> support more kinds
 <span style="color:yellow;font-weight:bold;">1477</span>:      --- <span style="color:dimgray;background-color:yellow;">FIXME</span> look at opts
-<span style="color:lime;font-weight:bold;">hs/src/Reach/NL_AST.hs</span>
-<span style="color:yellow;font-weight:bold;">99</span>:  | --- <span style="color:dimgray;background-color:yellow;">XXX</span> Indicate if it is a Tuple or an Array?
-<span style="color:yellow;font-weight:bold;">161</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> make this illegal outside assert/invariant
-<span style="color:yellow;font-weight:bold;">329</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Record whether it is pure or local in the statement and
-<span style="color:yellow;font-weight:bold;">380</span>:    --- <span style="color:dimgray;background-color:yellow;">FIXME</span> If we could make LL_LocalIf be recursive in the type parameter, then we could allow this as a local operation and avoid copying the continuation. Perhaps a better thing is to make transfer an effectful expression and just rely on the let code. Probably wise to do the same to Claim to clean up the code.
-<span style="color:yellow;font-weight:bold;">442</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Use types to ensure only within while body
-<span style="color:yellow;font-weight:bold;">514</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Types to ensure only within while body
-<span style="color:lime;font-weight:bold;">hs/src/Reach/ParserInternal.hs</span>
-<span style="color:yellow;font-weight:bold;">415</span>:    --- <span style="color:dimgray;background-color:yellow;">XXX</span>/<span style="color:dimgray;background-color:yellow;">FIXME</span> - Remove this
-<span style="color:yellow;font-weight:bold;">481</span>:        --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Support functions and enums like at top-level?
-<span style="color:yellow;font-weight:bold;">547</span>:            tp_pre_k = tp prev_ebody --- <span style="color:dimgray;background-color:yellow;">XXX</span> not the best
-<span style="color:yellow;font-weight:bold;">583</span>:            _ -&gt; error &quot;Pattern match fail&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span> Nothing?
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/Boolector.hs</span>
-<span style="color:yellow;font-weight:bold;">7</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span>: known not to work.
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/SMT.hs</span>
-<span style="color:yellow;font-weight:bold;">32</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> decide on fixed bitvectors
-<span style="color:yellow;font-weight:bold;">141</span>:smtVar _<span style="color:dimgray;background-color:yellow;">XXX</span>_ctxt _<span style="color:dimgray;background-color:yellow;">XXX</span>_dv@(DLVar _ _ _ i) = &quot;v&quot; ++ show i
-<span style="color:yellow;font-weight:bold;">156</span>:      --- <span style="color:dimgray;background-color:yellow;">XXX</span> This could be really bad with big arrays
-<span style="color:yellow;font-weight:bold;">161</span>:      error $ &quot;<span style="color:dimgray;background-color:yellow;">XXX</span> smtDeclare_v&quot;
-<span style="color:yellow;font-weight:bold;">207</span>:display_fail _<span style="color:dimgray;background-color:yellow;">XXX</span>_ctxt _<span style="color:dimgray;background-color:yellow;">XXX</span>_at _<span style="color:dimgray;background-color:yellow;">XXX</span>_tk _<span style="color:dimgray;background-color:yellow;">XXX</span>_se _<span style="color:dimgray;background-color:yellow;">XXX</span>_mm =
-<span style="color:yellow;font-weight:bold;">208</span>:  error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:yellow;font-weight:bold;">257</span>:      error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:yellow;font-weight:bold;">276</span>:          error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:yellow;font-weight:bold;">280</span>:      error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:yellow;font-weight:bold;">288</span>:    LL_Var {} -&gt; error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:yellow;font-weight:bold;">289</span>:    LL_Set {} -&gt; error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:yellow;font-weight:bold;">290</span>:    LL_Claim {} -&gt; error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:yellow;font-weight:bold;">291</span>:    LL_LocalIf {} -&gt; error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:yellow;font-weight:bold;">300</span>:    _ -&gt; error &quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/Yices.hs</span>
-<span style="color:yellow;font-weight:bold;">7</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span>: known not to work.
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Backend/Go.hs</span>
-<span style="color:yellow;font-weight:bold;">177</span>:goTransfer to a = pretty &quot;// <span style="color:dimgray;background-color:yellow;">XXX</span> &quot; &lt;&gt; goApply &quot;txn.transfer&quot; [goVar to, a] &lt;&gt; semi
-<span style="color:yellow;font-weight:bold;">298</span>:    tp = vsep [pretty &quot;// <span style="color:dimgray;background-color:yellow;">XXX</span> FromConsensus&quot;, ktp]
-<span style="color:lime;font-weight:bold;">hs/src/Reach/NL_EPP.hs</span>
-<span style="color:yellow;font-weight:bold;">113</span>:  --- <span style="color:dimgray;background-color:yellow;">FIXME</span> These would be maps when we have labelled loops
-<span style="color:yellow;font-weight:bold;">142</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> Try to simplify these types after all the cases are covered... maybe some of the values are always the same.
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Backend/JS.hs</span>
-<span style="color:yellow;font-weight:bold;">16</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span> More code can probably share this
-<span style="color:yellow;font-weight:bold;">23</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span> More code can probably share this
-<span style="color:yellow;font-weight:bold;">84</span>:--- <span style="color:dimgray;background-color:yellow;">XXX</span>/<span style="color:dimgray;background-color:yellow;">FIXME</span> change to null?
-<span style="color:lime;font-weight:bold;">hs/src/Reach/NL_Type.hs</span>
-<span style="color:yellow;font-weight:bold;">9</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> implement a custom show that is useful
-<span style="color:yellow;font-weight:bold;">22</span>:  --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Find meet of objects
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Compiler.hs</span>
-<span style="color:yellow;font-weight:bold;">78</span>:      --- <span style="color:dimgray;background-color:yellow;">XXX</span> Implement a way for while loops to be exited
-<span style="color:yellow;font-weight:bold;">289</span>:    --- <span style="color:dimgray;background-color:yellow;">XXX</span> Perhaps these should be sensitive to bit widths
-<span style="color:yellow;font-weight:bold;">362</span>:      _ -&gt; error &quot;Expected XIL_VAR&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">378</span>:              expect_throw CE_ArrayLenNotConstant a (&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Implement show for part of InlineV&quot; :: String)
-<span style="color:yellow;font-weight:bold;">684</span>:        _ -&gt; error &quot;Expected exactly one ILArg&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">710</span>:                      _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">711</span>:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">722</span>:             _ -&gt; error &quot;Expected an IL_Var&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">723</span>:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">731</span>:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">769</span>:           _ -&gt; error &quot;Expected [ILArg] to have exactly 2 elements&quot;) -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">917</span>:        _ -&gt; error &quot;Expected list to have exactly 2 elements&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">942</span>:        _ -&gt; error &quot;Expected list to have exactly 2 elements&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:yellow;font-weight:bold;">1013</span>:            _ -&gt; error &quot;Expected exactly one arg&quot; -- <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">hs/sol/stdlib.sol</span>
-<span style="color:yellow;font-weight:bold;">16</span>:      uint16 len = uint16(uint8(c[0]))*256+uint16(uint8(c[1])); // <span style="color:dimgray;background-color:yellow;">TODO</span>: improve using some library on the net
-<span style="color:yellow;font-weight:bold;">20</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: optimize using tricks from the Internet? But not before there are tests somehow.
-<span style="color:lime;font-weight:bold;">hs/test-examples/nl-eval-errors/Err_Export_IllegalJS.rsh</span>
-<span style="color:yellow;font-weight:bold;">9</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> But we could probably support this
-<span style="color:lime;font-weight:bold;">hs/test-examples/nl-eval-errors/README.md</span>
-<span style="color:yellow;font-weight:bold;">1</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> Known missing srclocs on err
-<span style="color:yellow;font-weight:bold;">6</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> Known weird srclocs on err
-<span style="color:yellow;font-weight:bold;">10</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> Figure out how to trigger
-<span style="color:lime;font-weight:bold;">hs/test-examples/compile-errors/CE_ArrayLenNotConstant.txt</span>
-<span style="color:yellow;font-weight:bold;">1</span>:CE_ArrayLenNotConstant.rsh:8:26: array length is not constant: &quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Implement show for part of InlineV&quot;
-<span style="color:lime;font-weight:bold;">hs/test-examples/compile-errors/CE_Unreachable.rsh</span>
-<span style="color:yellow;font-weight:bold;">5</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> port this to NL; unrelated error inserted to make test pass
-<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.0.out</span>
-<span style="color:yellow;font-weight:bold;">23</span>:... v8 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
+<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/rps__rsh__rps_while.rsh.0.out</span>
+<span style="color:yellow;font-weight:bold;">30</span>:... v16 = 2 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.3.out</span>
 <span style="color:yellow;font-weight:bold;">19</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:yellow;font-weight:bold;">30</span>:... v8 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
@@ -158,11 +147,21 @@
 <span style="color:yellow;font-weight:bold;">122</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:yellow;font-weight:bold;">157</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:yellow;font-weight:bold;">192</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
+<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.0.out</span>
+<span style="color:yellow;font-weight:bold;">23</span>:... v8 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.2.out</span>
 <span style="color:yellow;font-weight:bold;">31</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:yellow;font-weight:bold;">62</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
-<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/rps__rsh__rps_while.rsh.0.out</span>
-<span style="color:yellow;font-weight:bold;">30</span>:... v16 = 2 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
+<span style="color:lime;font-weight:bold;">hs/test-examples/nl-eval-errors/README.md</span>
+<span style="color:yellow;font-weight:bold;">1</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> Known missing srclocs on err
+<span style="color:yellow;font-weight:bold;">6</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> Known weird srclocs on err
+<span style="color:yellow;font-weight:bold;">10</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> Figure out how to trigger
+<span style="color:lime;font-weight:bold;">hs/test-examples/nl-eval-errors/Err_Export_IllegalJS.rsh</span>
+<span style="color:yellow;font-weight:bold;">9</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> But we could probably support this
+<span style="color:lime;font-weight:bold;">hs/test-examples/compile-errors/CE_ArrayLenNotConstant.txt</span>
+<span style="color:yellow;font-weight:bold;">1</span>:CE_ArrayLenNotConstant.rsh:8:26: array length is not constant: &quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Implement show for part of InlineV&quot;
+<span style="color:lime;font-weight:bold;">hs/test-examples/compile-errors/CE_Unreachable.rsh</span>
+<span style="color:yellow;font-weight:bold;">5</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> port this to NL; unrelated error inserted to make test pass
 <span style="color:lime;font-weight:bold;">hs/test/OldTests.hs</span>
 <span style="color:yellow;font-weight:bold;">6</span>:  , -- <span style="color:dimgray;background-color:yellow;">XXX</span> broken
 <span style="color:yellow;font-weight:bold;">62</span>:    -- <span style="color:dimgray;background-color:yellow;">TODO</span>: a better way of running the compiler and capturing stdout/stderr
@@ -171,21 +170,31 @@
 <span style="color:yellow;font-weight:bold;">109</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span> This is a hack to make tests portable.
 <span style="color:lime;font-weight:bold;">README.md</span>
 <span style="color:yellow;font-weight:bold;">2</span>:[![CircleCI Build Status](https://circleci.com/gh/reach-sh/reach-lang.svg?style=shield)](https://circleci.com/gh/reach-sh/reach-lang) [![GitHub License](https://img.shields.io/github/license/reach-sh/reach-lang)](https://raw.githubusercontent.com/reach-sh/reach-lang/master/LICENSE) [![Docs](https://img.shields.io/badge/docs-delicious-blue)](https://reach-sh.github.io/reach-lang/index.html) [![testing](./svg/testing.svg)](https://reach-sh.github.io/reach-lang/test-reports/results.html) [![linting](./svg/linting.svg)](https://reach-sh.github.io/reach-lang/linter-reports/stan.html) [![<span style="color:dimgray;background-color:yellow;">todo</span>](./svg/<span style="color:dimgray;background-color:yellow;">todo</span>.svg)](https://reach-sh.github.io/reach-lang/linter-reports/<span style="color:dimgray;background-color:yellow;">todo</span>.html)  
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>
-<span style="color:yellow;font-weight:bold;">54</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> export the ethers names for these things?
-<span style="color:yellow;font-weight:bold;">105</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> why do we slice off the 0x?
-<span style="color:yellow;font-weight:bold;">129</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span>: clients might not want this
-<span style="color:yellow;font-weight:bold;">166</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
-<span style="color:yellow;font-weight:bold;">176</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
-<span style="color:yellow;font-weight:bold;">194</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
-<span style="color:yellow;font-weight:bold;">239</span>:            // <span style="color:dimgray;background-color:yellow;">FIXME</span> JS SDK doesn't handle encoding this kind of txn
-<span style="color:yellow;font-weight:bold;">275</span>:              // <span style="color:dimgray;background-color:yellow;">FIXME</span> relies on https://github.com/algorand/go-algorand/issues/1051 fix
-<span style="color:yellow;font-weight:bold;">282</span>:          // <span style="color:dimgray;background-color:yellow;">FIXME</span> no documentation on whether confirmedTxn has something for each txn in a group or only one thing. We made need to call returnFromTxn with appTxn for the data and confirmedTxn for the round/etc
-<span style="color:yellow;font-weight:bold;">303</span>:          // <span style="color:dimgray;background-color:yellow;">FIXME</span> maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
-<span style="color:yellow;font-weight:bold;">333</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span> JS SDK doesn't handle this kind of txn
-<span style="color:yellow;font-weight:bold;">343</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Use note field for link to Reach code
-<span style="color:yellow;font-weight:bold;">353</span>:    // <span style="color:dimgray;background-color:yellow;">FIXME</span> relies on https://github.com/algorand/go-algorand/issues/1051 fix
-<span style="color:yellow;font-weight:bold;">365</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>
+<span style="color:yellow;font-weight:bold;">51</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:yellow;font-weight:bold;">64</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:yellow;font-weight:bold;">67</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:yellow;font-weight:bold;">70</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:yellow;font-weight:bold;">73</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:yellow;font-weight:bold;">76</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:yellow;font-weight:bold;">79</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:yellow;font-weight:bold;">82</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:yellow;font-weight:bold;">87</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> SendRecv&quot;)
+<span style="color:yellow;font-weight:bold;">91</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Recv&quot;)
+<span style="color:lime;font-weight:bold;">docs-src/tut.scrbl</span>
+<span style="color:yellow;font-weight:bold;">10</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/Makefile</span>
+<span style="color:yellow;font-weight:bold;">14</span>:	ag --ignore Makefile <span style="color:dimgray;background-color:yellow;">xxx</span>
+<span style="color:lime;font-weight:bold;">svg/todo.svg</span>
+<span style="color:yellow;font-weight:bold;">1</span>:&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; xmlns:xlink=&quot;http://www.w3.org/1999/xlink&quot; width=&quot;62&quot; height=&quot;20&quot; role=&quot;img&quot; aria-label=&quot;<span style="color:dimgray;background-color:yellow;">todo</span>: list&quot;&gt;&lt;title&gt;<span style="color:dimgray;background-color:yellow;">todo</span>: list&lt;/title&gt;&lt;linearGradient id=&quot;s&quot; x2=&quot;0&quot; y2=&quot;100%&quot;&gt;&lt;stop offset=&quot;0&quot; stop-color=&quot;#bbb&quot; stop-opacity=&quot;.1&quot;/&gt;&lt;stop offset=&quot;1&quot; stop-opacity=&quot;.1&quot;/&gt;&lt;/linearGradient&gt;&lt;clipPath id=&quot;r&quot;&gt;&lt;rect width=&quot;62&quot; height=&quot;20&quot; rx=&quot;3&quot; fill=&quot;#fff&quot;/&gt;&lt;/clipPath&gt;&lt;g clip-path=&quot;url(#r)&quot;&gt;&lt;rect width=&quot;35&quot; height=&quot;20&quot; fill=&quot;#555&quot;/&gt;&lt;rect x=&quot;35&quot; width=&quot;27&quot; height=&quot;20&quot; fill=&quot;#fe7d37&quot;/&gt;&lt;rect width=&quot;62&quot; height=&quot;20&quot; fill=&quot;url(#s)&quot;/&gt;&lt;/g&gt;&lt;g fill=&quot;#fff&quot; text-anchor=&quot;middle&quot; font-family=&quot;Verdana,Geneva,DejaVu Sans,sans-serif&quot; text-rendering=&quot;geometricPrecision&quot; font-size=&quot;110&quot;&gt;&lt;text aria-hidden=&quot;true&quot; x=&quot;185&quot; y=&quot;150&quot; fill=&quot;#010101&quot; fill-opacity=&quot;.3&quot; transform=&quot;scale(.1)&quot; textLength=&quot;250&quot;&gt;<span style="color:dimgray;background-color:yellow;">todo</span>&lt;/text&gt;&lt;text x=&quot;185&quot; y=&quot;140&quot; transform=&quot;scale(.1)&quot; fill=&quot;#fff&quot; textLength=&quot;250&quot;&gt;<span style="color:dimgray;background-color:yellow;">todo</span>&lt;/text&gt;&lt;text aria-hidden=&quot;true&quot; x=&quot;475&quot; y=&quot;150&quot; fill=&quot;#010101&quot; fill-opacity=&quot;.3&quot; transform=&quot;scale(.1)&quot; textLength=&quot;170&quot;&gt;list&lt;/text&gt;&lt;text x=&quot;475&quot; y=&quot;140&quot; transform=&quot;scale(.1)&quot; fill=&quot;#fff&quot; textLength=&quot;170&quot;&gt;list&lt;/text&gt;&lt;/g&gt;&lt;/svg&gt;
+<span style="color:lime;font-weight:bold;">anti-examples/rps_double_isHand_fail.rsh</span>
+<span style="color:yellow;font-weight:bold;">22</span>:    return A_WINS; // <span style="color:dimgray;background-color:yellow;">XXX</span> A wins by default? shouldn't happen.
+<span style="color:yellow;font-weight:bold;">162</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> Delete this and uncomment the following
+<span style="color:yellow;font-weight:bold;">165</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: reorganize this code to reduce duplication.
+<span style="color:lime;font-weight:bold;">anti-examples/rps_double_break_invariant.rsh</span>
+<span style="color:yellow;font-weight:bold;">22</span>:    return A_WINS; // <span style="color:dimgray;background-color:yellow;">XXX</span> A wins by default? shouldn't happen.
+<span style="color:yellow;font-weight:bold;">161</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> Delete this and uncomment the following
+<span style="color:yellow;font-weight:bold;">164</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: reorganize this code to reduce duplication.
 <span style="color:lime;font-weight:bold;">js/ETH.mjs</span>
 <span style="color:yellow;font-weight:bold;">63</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> export the ethers names for these things?
 <span style="color:yellow;font-weight:bold;">114</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> why do we slice off the 0x?
@@ -201,6 +210,21 @@
 <span style="color:yellow;font-weight:bold;">380</span>:        // <span style="color:dimgray;background-color:yellow;">XXX</span> It might be a little dangerous to rely on the polling to just work
 <span style="color:yellow;font-weight:bold;">388</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span> If we were trying to join, but we got sniped, then we'll
 <span style="color:yellow;font-weight:bold;">454</span>:    // <span style="color:dimgray;background-color:yellow;">XXX</span> the equivalent of rejectInvalidReceiptFor?
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>
+<span style="color:yellow;font-weight:bold;">54</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> export the ethers names for these things?
+<span style="color:yellow;font-weight:bold;">105</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> why do we slice off the 0x?
+<span style="color:yellow;font-weight:bold;">129</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span>: clients might not want this
+<span style="color:yellow;font-weight:bold;">166</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
+<span style="color:yellow;font-weight:bold;">176</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
+<span style="color:yellow;font-weight:bold;">194</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
+<span style="color:yellow;font-weight:bold;">239</span>:            // <span style="color:dimgray;background-color:yellow;">FIXME</span> JS SDK doesn't handle encoding this kind of txn
+<span style="color:yellow;font-weight:bold;">275</span>:              // <span style="color:dimgray;background-color:yellow;">FIXME</span> relies on https://github.com/algorand/go-algorand/issues/1051 fix
+<span style="color:yellow;font-weight:bold;">282</span>:          // <span style="color:dimgray;background-color:yellow;">FIXME</span> no documentation on whether confirmedTxn has something for each txn in a group or only one thing. We made need to call returnFromTxn with appTxn for the data and confirmedTxn for the round/etc
+<span style="color:yellow;font-weight:bold;">303</span>:          // <span style="color:dimgray;background-color:yellow;">FIXME</span> maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
+<span style="color:yellow;font-weight:bold;">333</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span> JS SDK doesn't handle this kind of txn
+<span style="color:yellow;font-weight:bold;">343</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Use note field for link to Reach code
+<span style="color:yellow;font-weight:bold;">353</span>:    // <span style="color:dimgray;background-color:yellow;">FIXME</span> relies on https://github.com/algorand/go-algorand/issues/1051 fix
+<span style="color:yellow;font-weight:bold;">365</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
 <span style="color:lime;font-weight:bold;">examples/secured-loan/build/secured-loan.sol</span>
 <span style="color:yellow;font-weight:bold;">20</span>:      uint16 len = uint16(uint8(c[0]))*256+uint16(uint8(c[1])); // <span style="color:dimgray;background-color:yellow;">TODO</span>: improve using some library on the net
 <span style="color:yellow;font-weight:bold;">24</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: optimize using tricks from the Internet? But not before there are tests somehow.
@@ -212,31 +236,6 @@
 <span style="color:yellow;font-weight:bold;">22</span>:    return A_WINS; // <span style="color:dimgray;background-color:yellow;">XXX</span> A wins by default? shouldn't happen.
 <span style="color:yellow;font-weight:bold;">160</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> Delete this and uncomment the following
 <span style="color:yellow;font-weight:bold;">163</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: reorganize this code to reduce duplication.
-<span style="color:lime;font-weight:bold;">docs-src/Makefile</span>
-<span style="color:yellow;font-weight:bold;">14</span>:	ag --ignore Makefile <span style="color:dimgray;background-color:yellow;">xxx</span>
-<span style="color:lime;font-weight:bold;">docs-src/tut.scrbl</span>
-<span style="color:yellow;font-weight:bold;">10</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>
-<span style="color:yellow;font-weight:bold;">51</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:yellow;font-weight:bold;">64</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:yellow;font-weight:bold;">67</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:yellow;font-weight:bold;">70</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:yellow;font-weight:bold;">73</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:yellow;font-weight:bold;">76</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:yellow;font-weight:bold;">79</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:yellow;font-weight:bold;">82</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:yellow;font-weight:bold;">87</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> SendRecv&quot;)
-<span style="color:yellow;font-weight:bold;">91</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Recv&quot;)
-<span style="color:lime;font-weight:bold;">svg/todo.svg</span>
-<span style="color:yellow;font-weight:bold;">1</span>:&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; xmlns:xlink=&quot;http://www.w3.org/1999/xlink&quot; width=&quot;62&quot; height=&quot;20&quot; role=&quot;img&quot; aria-label=&quot;<span style="color:dimgray;background-color:yellow;">todo</span>: list&quot;&gt;&lt;title&gt;<span style="color:dimgray;background-color:yellow;">todo</span>: list&lt;/title&gt;&lt;linearGradient id=&quot;s&quot; x2=&quot;0&quot; y2=&quot;100%&quot;&gt;&lt;stop offset=&quot;0&quot; stop-color=&quot;#bbb&quot; stop-opacity=&quot;.1&quot;/&gt;&lt;stop offset=&quot;1&quot; stop-opacity=&quot;.1&quot;/&gt;&lt;/linearGradient&gt;&lt;clipPath id=&quot;r&quot;&gt;&lt;rect width=&quot;62&quot; height=&quot;20&quot; rx=&quot;3&quot; fill=&quot;#fff&quot;/&gt;&lt;/clipPath&gt;&lt;g clip-path=&quot;url(#r)&quot;&gt;&lt;rect width=&quot;35&quot; height=&quot;20&quot; fill=&quot;#555&quot;/&gt;&lt;rect x=&quot;35&quot; width=&quot;27&quot; height=&quot;20&quot; fill=&quot;#fe7d37&quot;/&gt;&lt;rect width=&quot;62&quot; height=&quot;20&quot; fill=&quot;url(#s)&quot;/&gt;&lt;/g&gt;&lt;g fill=&quot;#fff&quot; text-anchor=&quot;middle&quot; font-family=&quot;Verdana,Geneva,DejaVu Sans,sans-serif&quot; text-rendering=&quot;geometricPrecision&quot; font-size=&quot;110&quot;&gt;&lt;text aria-hidden=&quot;true&quot; x=&quot;185&quot; y=&quot;150&quot; fill=&quot;#010101&quot; fill-opacity=&quot;.3&quot; transform=&quot;scale(.1)&quot; textLength=&quot;250&quot;&gt;<span style="color:dimgray;background-color:yellow;">todo</span>&lt;/text&gt;&lt;text x=&quot;185&quot; y=&quot;140&quot; transform=&quot;scale(.1)&quot; fill=&quot;#fff&quot; textLength=&quot;250&quot;&gt;<span style="color:dimgray;background-color:yellow;">todo</span>&lt;/text&gt;&lt;text aria-hidden=&quot;true&quot; x=&quot;475&quot; y=&quot;150&quot; fill=&quot;#010101&quot; fill-opacity=&quot;.3&quot; transform=&quot;scale(.1)&quot; textLength=&quot;170&quot;&gt;list&lt;/text&gt;&lt;text x=&quot;475&quot; y=&quot;140&quot; transform=&quot;scale(.1)&quot; fill=&quot;#fff&quot; textLength=&quot;170&quot;&gt;list&lt;/text&gt;&lt;/g&gt;&lt;/svg&gt;
-<span style="color:lime;font-weight:bold;">anti-examples/rps_double_break_invariant.rsh</span>
-<span style="color:yellow;font-weight:bold;">22</span>:    return A_WINS; // <span style="color:dimgray;background-color:yellow;">XXX</span> A wins by default? shouldn't happen.
-<span style="color:yellow;font-weight:bold;">161</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> Delete this and uncomment the following
-<span style="color:yellow;font-weight:bold;">164</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: reorganize this code to reduce duplication.
-<span style="color:lime;font-weight:bold;">anti-examples/rps_double_isHand_fail.rsh</span>
-<span style="color:yellow;font-weight:bold;">22</span>:    return A_WINS; // <span style="color:dimgray;background-color:yellow;">XXX</span> A wins by default? shouldn't happen.
-<span style="color:yellow;font-weight:bold;">162</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> Delete this and uncomment the following
-<span style="color:yellow;font-weight:bold;">165</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: reorganize this code to reduce duplication.
 </pre>
 </body>
 </html>
