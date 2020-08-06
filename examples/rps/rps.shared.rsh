@@ -4,7 +4,6 @@ export const DELAY = 10; // in blocks
 
 export const Player =
   { getHand: Fun([], Bytes),
-    taste: Bytes,
     partnerIs: Fun([Address], Null) };
 export const Alice =
   { ...Player,
