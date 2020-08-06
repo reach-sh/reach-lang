@@ -206,7 +206,7 @@ data SLPrimitive
   | SLPrim_commit
   | SLPrim_committed
   | SLPrim_claim ClaimType
-  | SLPrim_interact SrcLoc String SLType
+  | SLPrim_interact SrcLoc SLPart String SLType
   | SLPrim_Fun
   | SLPrim_Array
   | SLPrim_App
@@ -268,7 +268,7 @@ data DLArg
   | DLA_Con DLConstant
   | DLA_Array [DLArg]
   | DLA_Obj (M.Map String DLArg)
-  | DLA_Interact String SLType
+  | DLA_Interact SLPart String SLType
   deriving (Eq, Generic, Show)
 
 instance NFData DLArg
@@ -276,7 +276,7 @@ instance NFData DLArg
 data DLExpr
   = DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
-  | DLE_Interact SrcLoc String [DLArg]
+  | DLE_Interact SrcLoc SLPart String [DLArg]
   | DLE_Digest SrcLoc [DLArg]
   deriving (Eq, Generic, Show)
 

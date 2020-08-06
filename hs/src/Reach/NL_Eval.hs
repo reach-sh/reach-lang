@@ -630,11 +630,11 @@ evalPrim ctxt at env p sargs =
           expect_throw at (Err_Eval_IllegalContext cm "Reach.App")
     SLPrim_App_Delay _ _ _ ->
       expect_throw at (Err_Eval_NotApplicable rator)
-    SLPrim_interact _iat m t ->
+    SLPrim_interact _iat who m t ->
       case ctxt_mode ctxt of
         SLC_LocalStep -> do
           let (rng, dargs) = checkAndConvert at t $ map snd sargs
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at m dargs)
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at who m dargs)
           return $ SLRes lifts $ secret $ SLV_DLVar dv
         cm ->
           expect_throw at (Err_Eval_IllegalContext cm "interact")
@@ -1485,11 +1485,11 @@ evalLib (src, body) libm = do
 evalLibs :: [SLMod] -> ST s SLLibs
 evalLibs mods = foldrM evalLib mempty mods
 
-makeInteract :: SrcLoc -> SLEnv -> SLVal
-makeInteract at spec = SLV_Object at spec'
+makeInteract :: SrcLoc -> SLPart -> SLEnv -> SLVal
+makeInteract at who spec = SLV_Object at spec'
   where
     spec' = M.mapWithKey wrap_ty spec
-    wrap_ty k (Public, (SLV_Type t)) = secret $ SLV_Prim $ SLPrim_interact at k t
+    wrap_ty k (Public, (SLV_Type t)) = secret $ SLV_Prim $ SLPrim_interact at who k t
     wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract v
 
 compileDApp :: SLVal -> ST s DLProg
@@ -1515,7 +1515,7 @@ compileDApp topv =
         make_sps_entry (Secret, (SLV_Participant _ pn (SLV_Object _ io) _ _)) =
           (pn, InteractEnv $ M.map getType io)
           where
-            getType (_, (SLV_Prim (SLPrim_interact _ _ t))) = t
+            getType (_, (SLV_Prim (SLPrim_interact _ _ _ t))) = t
             getType x = impossible $ "make_sps_entry getType " ++ show x
         make_sps_entry x = impossible $ "make_sps_entry " ++ show x
         penvs = M.fromList $ map make_penv partvs
@@ -1526,7 +1526,7 @@ compileDApp topv =
         make_part v =
           case v of
             SLV_Array p_at [SLV_Bytes _ bs, SLV_Object iat io] ->
-              secret $ SLV_Participant p_at bs (makeInteract iat io) Nothing Nothing
+              secret $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
             _ -> expect_throw at' (Err_App_InvalidPartSpec v)
     _ ->
       expect_throw srcloc_top (Err_Top_NotDApp topv)

@@ -37,8 +37,8 @@ instance Pretty DLArg where
       DLA_Con c -> viaShow c
       DLA_Array as -> brackets $ render_das as
       DLA_Obj env -> render_obj env
-      DLA_Interact m t ->
-        "interact." <> viaShow m <> parens (pretty t)
+      DLA_Interact who m t ->
+        "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
 
 render_das :: [DLArg] -> Doc a
 render_das as = hcat $ punctuate comma $ map pretty as
@@ -48,7 +48,7 @@ instance Pretty DLExpr where
     case e of
       DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
       DLE_ArrayRef _ a o -> pretty a <> brackets (pretty o)
-      DLE_Interact _ m as -> "interact." <> viaShow m <> parens (render_das as)
+      DLE_Interact _ who m as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
       DLE_Digest _ as -> "digest" <> parens (render_das as)
 
 render_sp :: SLPart -> Doc a

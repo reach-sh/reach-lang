@@ -3,7 +3,7 @@ module Reach.Verify.SMT where
 ---import Control.Loop
 import Control.Monad
 import Control.Monad.Extra
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Char8 as B
 ---import Data.List
 ---import Data.Monoid
 ---import Data.Char (isDigit)
@@ -40,7 +40,7 @@ use_bitvectors :: Bool
 use_bitvectors = False
 
 smtStdLib :: String
-smtStdLib = BS.unpack $ case use_bitvectors of
+smtStdLib = B.unpack $ case use_bitvectors of
   True -> runtime_bt_smt2
   False -> runtime_smt2
 
@@ -96,6 +96,7 @@ data BindingOrigin
   | O_ToConsensus
   | O_Var
   | O_Initialize
+  | O_Interact
   | O_Expr DLExpr
   | O_Join
   | O_Assignment
@@ -179,9 +180,8 @@ smtTxnValue i = "txn_value" ++ show i
 smtTxnValueRef :: Int -> SExpr
 smtTxnValueRef = Atom . smtTxnValue
 
-smtInteract :: SMTCtxt -> String -> String
---- XXX we don't know which participant this is, so names may clash
-smtInteract _ctxt i = "interact_" ++ show i
+smtInteract :: SMTCtxt -> SLPart -> String -> String
+smtInteract _ctxt who m = "interact_" ++ (B.unpack who) ++ "_" ++ m
 
 smtVar :: SMTCtxt -> DLVar -> String
 smtVar ctxt dv@(DLVar _ _ _ i) = "v" ++ show i ++ mp
@@ -371,7 +371,7 @@ smt_a ctxt at_de da =
     DLA_Con c -> smt_c ctxt at_de c
     DLA_Array as -> cons as
     DLA_Obj m -> cons $ M.elems m
-    DLA_Interact i _ -> Atom $ smtInteract ctxt i
+    DLA_Interact who i _ -> Atom $ smtInteract ctxt who i
   where
     s = smtTypeSort ctxt t
     t = argTypeOf da
@@ -682,7 +682,13 @@ _verify_smt smt lp = do
         , ctxt_loop_var_subst = mempty
         , ctxt_primed_vars = mempty
         }
-  --- XXX Add un-bindings for interact constants
+  let defineIE who (v, it) =
+        case it of
+          T_Fun {} -> mempty
+          _ ->
+            pathAddUnbound_v ctxt at (smtInteract ctxt who v) it O_Interact
+  let definePIE (who, InteractEnv iem) = mapM_ (defineIE who) $ M.toList iem
+  mapM_ definePIE $ M.toList pies_m
   pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
   let smt_s_top mode = do
         putStrLn $ "Verifying with mode = " ++ show mode

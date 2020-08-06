@@ -37,12 +37,12 @@ instance CollectsTypes DLArg where
   cts (DLA_Con {}) = mempty
   cts (DLA_Array as) = cts as
   cts (DLA_Obj m) = cts m
-  cts (DLA_Interact _ t) = cts t
+  cts (DLA_Interact _ _ t) = cts t
 
 instance CollectsTypes DLExpr where
   cts (DLE_PrimOp _ _ as) = cts as
   cts (DLE_ArrayRef _ a i) = cts a <> cts i
-  cts (DLE_Interact _ _ as) = cts as
+  cts (DLE_Interact _ _ _ as) = cts as
   cts (DLE_Digest _ as) = cts as
 
 instance CollectsTypes DLAssignment where

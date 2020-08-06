@@ -103,7 +103,7 @@ argTypeOf d =
     DLA_Con c -> conTypeOf c
     DLA_Array as -> T_Array $ map argTypeOf as
     DLA_Obj senv -> T_Obj $ M.map argTypeOf senv
-    DLA_Interact _ t -> t
+    DLA_Interact _ _ t -> t
 
 slToDL :: SrcLoc -> SLVal -> DLArg
 slToDL at v =
@@ -122,12 +122,12 @@ slToDL at v =
       case mdv of
         Nothing -> none
         Just dv -> DLA_Var dv
-    SLV_Prim (SLPrim_interact _ m t) ->
+    SLV_Prim (SLPrim_interact _ who m t) ->
       case t of
         T_Var {} -> none
         T_Forall {} -> none
         T_Fun {} -> none
-        _ -> DLA_Interact m t
+        _ -> DLA_Interact who m t
     SLV_Prim _ -> none
     SLV_Form _ -> none
   where
