@@ -62,8 +62,8 @@ lin_con_s back rets s k =
       where
         t' = iters rets ts k
         f' = iters rets fs k
-    DLS_Transfer at who aa ->
-      LLC_Transfer at who aa k
+    DLS_Transfer at fs who aa ->
+      LLC_Transfer at fs who aa k
     DLS_FromConsensus at cons ->
       case k of
         LLC_Com (LL_Return ret_at) ->
@@ -75,8 +75,8 @@ lin_con_s back rets s k =
       where
         body' = iters rets body $ LLC_Com $ LL_Return at
         --- Note: The invariant and condition can't return
-        block (DLBlock ba ss a) =
-          LLBlock ba (lin_local ba ss) a
+        block (DLBlock ba fs ss a) =
+          LLBlock ba fs (lin_local ba ss) a
     DLS_Continue at update ->
       case k of
         LLC_Com (LL_Return _ret_at) ->
@@ -107,10 +107,10 @@ lin_step_s rets s k =
         cons' = lin_con at back cons
         back more = iters rets more k
         mtime' = do
-          (delay_da, DLBlock time_at time_ss time_da) <- mtime
+          (delay_da, DLBlock time_at time_fs time_ss time_da) <- mtime
           case k of
-            LLS_Stop fin_at fin_da -> do
-              let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_da)
+            LLS_Stop fin_at _ fin_da -> do
+              let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_fs time_da)
               case typeMeet at (fin_at, argTypeOf fin_da) (time_at, argTypeOf time_da) of
                 _ -> return $ (delay_da, time_ll)
             _ ->
@@ -121,6 +121,6 @@ lin_step_s rets s k =
     iters = lin_ss lin_step_s
 
 linearize :: DLProg -> LLProg
-linearize (DLProg at sps (DLBlock bat ss da)) = LLProg at sps step
+linearize (DLProg at sps (DLBlock bat fs ss da)) = LLProg at sps step
   where
-    step = lin_ss lin_step_s mempty ss (LLS_Stop bat da)
+    step = lin_ss lin_step_s mempty ss (LLS_Stop bat fs da)

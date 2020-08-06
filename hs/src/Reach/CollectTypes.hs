@@ -64,19 +64,19 @@ instance CollectsTypes LLLocal where
   cts (LLL_Com a) = cts a
 
 instance CollectsTypes a => CollectsTypes (LLBlock a) where
-  cts (LLBlock _ k a) = cts k <> cts a
+  cts (LLBlock _ _ k a) = cts k <> cts a
 
 instance CollectsTypes LLConsensus where
   cts (LLC_Com k) = cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f
-  cts (LLC_Transfer _ to amt k) = cts to <> cts amt <> cts k
+  cts (LLC_Transfer _ _ to amt k) = cts to <> cts amt <> cts k
   cts (LLC_FromConsensus _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
 
 instance CollectsTypes LLStep where
   cts (LLS_Com k) = cts k
-  cts (LLS_Stop _ a) = cts a
+  cts (LLS_Stop _ _ a) = cts a
   cts (LLS_Only _ _ l s) = cts l <> cts s
   cts (LLS_ToConsensus _ _ fs as msg amt mtime c) =
     cts fs <> cts as <> cts msg <> cts amt <> cts mtime <> cts c

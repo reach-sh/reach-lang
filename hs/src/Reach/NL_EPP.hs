@@ -272,7 +272,7 @@ epp_n st n =
       let cs' = counts ca <> cs_t <> cs_f
       let ct' = CT_If at ca ct_t ct_f
       return $ ProResC p_prts' (ProRes_ cs' ct')
-    LLC_Transfer at to amt k -> do
+    LLC_Transfer at _ to amt k -> do
       ProResC p_prts_s (ProRes_ cs_k ct_k) <- epp_n st k
       let cs_k' = counts to <> counts amt <> cs_k
       let ct_k' = CT_Transfer at to amt ct_k
@@ -296,7 +296,7 @@ epp_n st n =
               , pst_loop_num = Just loop_num
               }
       ProResC p_prts_body (ProRes_ cs_body ct_body) <- epp_n st_body body
-      let LLBlock cond_at cond_l cond_da = cond
+      let LLBlock cond_at _ cond_l cond_da = cond
       let post_cond_cs = counts cond_da <> cs_body <> cs_k
       let ProResL (ProRes_ cs_cond pt_cond) = epp_l cond_l post_cond_cs
       let loop_if = CT_If cond_at cond_da ct_body ct_k
@@ -343,7 +343,7 @@ epp_s st s =
           ProResS p_prts_s cr <- skip k
           let p_prts_s' = extend_locals_look common p_prts_s
           return $ ProResS p_prts_s' cr
-    LLS_Stop at da -> do
+    LLS_Stop at _ da -> do
       let p_prts_s = pall st (ProRes_ (counts da) (ET_Stop at da))
       return $ ProResS p_prts_s $ ProRes_ mempty False
     LLS_Only at who body_l k_s -> do

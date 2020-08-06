@@ -106,7 +106,7 @@ instance Pretty DLStmt where
       DLS_Claim _ _ ct a -> prettyClaim ct a
       DLS_If _ ca ts fs ->
         prettyIf ca (render_dls ts) (render_dls fs)
-      DLS_Transfer _ who da ->
+      DLS_Transfer _ _ who da ->
         prettyTransfer who da
       DLS_Return _ ret sv ->
         "throw" <> parens (viaShow sv) <> ".to" <> parens (viaShow ret) <> semi
@@ -136,7 +136,7 @@ render_dls :: DLStmts -> Doc a
 render_dls ss = concatWith (surround hardline) $ fmap pretty ss
 
 instance Pretty DLBlock where
-  pretty (DLBlock _at ss da) =
+  pretty (DLBlock _at _ ss da) =
     render_dls ss <> hardline <> "return" <+> pretty da <> semi
 
 instance Pretty InteractEnv where
@@ -179,7 +179,7 @@ instance Pretty LLConsensus where
     case s of
       LLC_Com x -> pretty x
       LLC_If _at ca t f -> prettyIfp ca t f
-      LLC_Transfer _at who da k ->
+      LLC_Transfer _at _ who da k ->
         prettyTransfer who da <> hardline <> pretty k
       LLC_FromConsensus _at _ret_at k ->
         "commit()" <> semi <> hardline <> pretty k
@@ -189,14 +189,14 @@ instance Pretty LLConsensus where
         prettyContinue asn
 
 instance Pretty a => Pretty (LLBlock a) where
-  pretty (LLBlock _ ts ta) =
+  pretty (LLBlock _ _ ts ta) =
     (pretty ts) <> hardline <> "return" <+> pretty ta <> semi
 
 instance Pretty LLStep where
   pretty s =
     case s of
       LLS_Com x -> pretty x
-      LLS_Stop _at da -> prettyStop da
+      LLS_Stop _at _ da -> prettyStop da
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
       LLS_ToConsensus _at who fs as vs amt mtime cons ->

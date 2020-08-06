@@ -678,7 +678,7 @@ evalPrim ctxt at env p sargs =
         SLC_ConsensusStep {} ->
           return $ SLRes lifts $ public $ SLV_Null at "transfer.to"
           where
-            lifts = return $ DLS_Transfer at who_dla amt_dla
+            lifts = return $ DLS_Transfer at (ctxt_stack ctxt) who_dla amt_dla
             who_dla =
               case checkAndConvert at (T_Fun [T_Address] T_Null) $ map snd sargs of
                 (_, [x]) -> x
@@ -1235,7 +1235,8 @@ evalStmt ctxt at sco ss =
                 --- FIXME: We check the type of dt_fin_ty against the
                 --- rest of the program in the linearize... There
                 --- should be a better way.
-                let dp = DLBlock at dta_lifts dt_fin_da
+                let f = ctxt_stack ctxt
+                let dp = DLBlock at f dta_lifts dt_fin_da
                 case de_ty of
                   T_UInt256 ->
                     return $ (de_lifts <> dt_lifts, Just (de_da, dp))
@@ -1343,10 +1344,11 @@ evalStmt ctxt at sco ss =
                     [invariant_e] ->
                       checkResType inv_at T_Bool $ evalExpr ctxt inv_at env' invariant_e
                     ial -> expect_throw inv_at $ Err_While_IllegalInvariant ial
-                let inv_b = DLBlock inv_at inv_lifts inv_da
+                let fs = ctxt_stack ctxt
+                let inv_b = DLBlock inv_at fs inv_lifts inv_da
                 SLRes cond_lifts cond_da <-
                   checkResType cond_at T_Bool $ evalExpr ctxt cond_at env' while_cond
-                let cond_b = DLBlock cond_at cond_lifts cond_da
+                let cond_b = DLBlock cond_at fs cond_lifts cond_da
                 let while_sco =
                       sco
                         { sco_while_vars = Just $ M.map fst while_helpm
@@ -1508,7 +1510,11 @@ compileDApp topv =
       SLRes final (SLAppRes _ (_, sv)) <-
         evalApplyVals ctxt_step at' (impossible "DApp_Delay expects clo") clo partvs
       let (_, final_da) = typeOf at sv
-      return $ DLProg at sps $ DLBlock at final final_da
+      --- FIXME This [] is the frames that will be shown when the
+      --- TBalanceZero condition fails... which is not very useful,
+      --- clearly. It would be better to get the frames of the return
+      --- statement somehow.
+      return $ DLProg at sps $ DLBlock at [] final final_da
       where
         at' = srcloc_at "compileDApp" Nothing at
         sps = SLParts $ M.fromList $ map make_sps_entry partvs

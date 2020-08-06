@@ -329,7 +329,7 @@ data DLStmt
   | --- FIXME Record whether it is pure or local in the statement and
     --- track in monad results to avoid quadratic behavior
     DLS_If SrcLoc DLArg DLStmts DLStmts
-  | DLS_Transfer SrcLoc DLArg DLArg
+  | DLS_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
@@ -396,7 +396,7 @@ stmts_local :: Foldable f => f DLStmt -> Bool
 stmts_local fs = getAll $ foldMap (All . stmt_local) fs
 
 data DLBlock
-  = DLBlock SrcLoc DLStmts DLArg
+  = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
   deriving (Eq, Generic, Show)
 
 instance NFData DLBlock
@@ -422,13 +422,13 @@ data LLLocal
   deriving (Eq, Show)
 
 data LLBlock a
-  = LLBlock SrcLoc a DLArg
+  = LLBlock SrcLoc [SLCtxtFrame] a DLArg
   deriving (Eq, Show)
 
 data LLConsensus
   = LLC_Com (LLCommon LLConsensus)
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
-  | LLC_Transfer SrcLoc DLArg DLArg LLConsensus
+  | LLC_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg LLConsensus
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
   | --- inv then cond then body then kont
     LLC_While
@@ -445,7 +445,7 @@ data LLConsensus
 
 data LLStep
   = LLS_Com (LLCommon LLStep)
-  | LLS_Stop SrcLoc DLArg
+  | LLS_Stop SrcLoc [SLCtxtFrame] DLArg
   | LLS_Only SrcLoc SLPart LLLocal LLStep
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc

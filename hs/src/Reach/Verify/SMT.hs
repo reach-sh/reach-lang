@@ -269,8 +269,8 @@ data ResultDesc
 
 type SMTComp = IO ()
 
-display_fail :: SMTCtxt -> SrcLoc -> Maybe [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
-display_fail _ctxt _at _mf _tk _se _mm =
+display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
+display_fail _ctxt _at _f _tk _se _mm =
   error "XXX"
 
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
@@ -283,7 +283,7 @@ smtAssert ctxt se = SMT.assert smt se'
         pcs ->
           smtApply "=>" [(smtApply "and" pcs), se]
 
-verify1 :: SMTCtxt -> SrcLoc -> Maybe [SLCtxtFrame] -> TheoremKind -> SExpr -> SMTComp
+verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> SMTComp
 verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
   smtAssert ctxt $ if isPossible then se else smtNot se
   r <- SMT.check smt
@@ -436,7 +436,7 @@ smt_m iter ctxt m =
         ca' = smt_a ctxt at ca
         possible_m = check_m TPossible
         check_m tk =
-          verify1 ctxt at (Just f) tk ca'
+          verify1 ctxt at f tk ca'
         assert_m =
           smtAssert ctxt ca'
     LL_LocalIf at ca t f k ->
@@ -456,7 +456,7 @@ data BlockMode
 
 smt_block :: SMTCtxt -> BlockMode -> LLBlock LLLocal -> SMTComp
 smt_block ctxt bm b = before_m <> after_m
-  where LLBlock at l da = b
+  where LLBlock at f l da = b
         before_m = smt_l ctxt l
         da' = smt_a ctxt at da
         after_m =
@@ -466,8 +466,7 @@ smt_block ctxt bm b = before_m <> after_m
             B_Assume False ->
               smtAssert ctxt (smtNot da')
             B_Prove ->
-              --- FIXME Add frames
-              verify1 ctxt at Nothing TInvariant da'
+              verify1 ctxt at f TInvariant da'
 
 gatherDefinedVars_m :: (LLCommon LLLocal) -> S.Set DLVar
 gatherDefinedVars_m m =
@@ -483,7 +482,7 @@ gatherDefinedVars_l :: LLLocal -> S.Set DLVar
 gatherDefinedVars_l (LLL_Com m) = gatherDefinedVars_m m
 
 gatherDefinedVars :: LLBlock LLLocal -> S.Set DLVar
-gatherDefinedVars (LLBlock _ l _) = gatherDefinedVars_l l
+gatherDefinedVars (LLBlock _ _ l _) = gatherDefinedVars_l l
 
 smt_asn :: SMTCtxt -> Bool -> DLAssignment -> SMTComp
 smt_asn ctxt vars_are_primed asn = smt_block ctxt' B_Prove inv
@@ -515,11 +514,10 @@ smt_n ctxt n =
           smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
           where
             v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
-    LLC_Transfer at to amt k -> transfer_m <> smt_n ctxt' k
+    LLC_Transfer at f to amt k -> transfer_m <> smt_n ctxt' k
       where
         transfer_m = do
-          --- FIXME Maybe include ctxt frame in LLC_Transfer?
-          verify1 ctxt at Nothing TBalanceSufficient amt_le_se
+          verify1 ctxt at f TBalanceSufficient amt_le_se
           pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 bo cbi'_se
         bo = O_Transfer to amt
         cbi = ctxt_balance ctxt
@@ -558,9 +556,8 @@ smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
   case s of
     LLS_Com m -> smt_m smt_s ctxt m
-    LLS_Stop at _ ->
-      --- FIXME add frames
-      verify1 ctxt at Nothing TBalanceZero se
+    LLS_Stop at f _ ->
+      verify1 ctxt at f TBalanceZero se
       where
         se = smtEq (smtBalanceRef $ ctxt_balance ctxt) uint256_zero
     LLS_Only _at who loc k ->
