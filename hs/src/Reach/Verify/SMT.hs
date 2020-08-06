@@ -74,7 +74,15 @@ smtNot se = smtApply "not" [ se ]
 
 --- SMT conversion code
 
-type Role = Maybe SLPart
+data Role
+  = RoleContract
+  | RolePart SLPart
+  deriving (Eq, Show)
+
+data VerifyMode
+  = VM_Honest
+  | VM_Dishonest Role
+  deriving (Eq, Show)
 
 data BindingOrigin
   = O_DishonestMsg SLPart
@@ -99,8 +107,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_typem :: SMTTypeMap
   , ctxt_res_succ :: IORef Int
   , ctxt_res_fail :: IORef Int
-  , ctxt_honest :: Bool
-  , ctxt_me :: Role
+  , ctxt_mode :: VerifyMode
   , ctxt_balance :: Int
   , ctxt_mtxn_value :: Maybe Int
   , ctxt_path_constraint :: [SExpr]
@@ -136,14 +143,14 @@ ctxtNewScope ctxt m = do
 ctxt_txn_value :: SMTCtxt -> Int
 ctxt_txn_value ctxt = fromMaybe (impossible "no txn value") $ ctxt_mtxn_value ctxt
 
---- XXX Do we need honest and parts?
 shouldSimulate :: SMTCtxt -> SLPart -> Bool
-shouldSimulate ctxt p = (ctxt_honest ctxt) || p_is_me
-  where p_is_me =
-          case ctxt_me ctxt of
-            Nothing -> True
-            Just me -> me == p
-  
+shouldSimulate ctxt p =
+  case ctxt_mode ctxt of
+    VM_Honest -> True
+    VM_Dishonest which ->
+      case which of
+        RoleContract -> False
+        RolePart me -> me == p
 
 smtBalance :: Int -> String
 smtBalance i = "ctc_balance" ++ show i
@@ -380,9 +387,9 @@ smt_m iter ctxt m =
                 CT_Assert -> check_m TAssert <> assert_m
                 CT_Assume -> assert_m
                 CT_Require ->
-                  case ctxt_honest ctxt of
-                    True -> check_m TRequire <> assert_m
-                    False -> assert_m
+                  case ctxt_mode ctxt of
+                    VM_Honest -> check_m TRequire <> assert_m
+                    VM_Dishonest {} -> assert_m
             ca' = smt_a ctxt at ca
             possible_m = check_m TPossible
             check_m tk =
@@ -538,16 +545,14 @@ _verify_smt smt lp = do
   unbound_ref_ref <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
   let LLProg at (SLParts pies_m) s = lp
-  let ps = Nothing : (map Just $ M.keys pies_m)
-  let smt_s_top (honest, me) = do
-        putStrLn $ "Verifying with honest = " ++ show honest ++ "; role = " ++ show me
+  let smt_s_top mode = do
+        putStrLn $ "Verifying with mode = " ++ show mode
         let ctxt = SMTCtxt
                    { ctxt_smt = smt
                    , ctxt_typem = typem
                    , ctxt_res_succ = succ_ref
                    , ctxt_res_fail = fail_ref
-                   , ctxt_honest = honest
-                   , ctxt_me = me
+                   , ctxt_mode = mode
                    , ctxt_path_constraint = []
                    , ctxt_boundrr = bound_ref_ref
                    , ctxt_unboundrr = unbound_ref_ref
@@ -557,7 +562,8 @@ _verify_smt smt lp = do
           --- XXX Add un-bindings for interact constants
           pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
           smt_s ctxt s
-  mapM_ smt_s_top (liftM2 (,) [True, False] ps)
+  let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
+  mapM_ smt_s_top ms
   ss <- readIORef succ_ref
   fs <- readIORef fail_ref
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
