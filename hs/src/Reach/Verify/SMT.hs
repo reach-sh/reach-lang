@@ -287,7 +287,23 @@ smt_m iter ctxt m =
     LL_Let at dv de k -> smt_e ctxt at dv de <> iter ctxt k
     LL_Var {} -> error "XXX"
     LL_Set {} -> error "XXX"
-    LL_Claim {} -> error "XXX"
+    LL_Claim at _XXX_f ct ca k -> this_m <> iter ctxt k
+      where this_m =
+              case ct of
+                CT_Possible -> possible_m
+                CT_Assert -> check_m TAssert <> assert_m
+                CT_Assume -> assert_m
+                CT_Require ->
+                  case ctxt_honest ctxt of
+                    True -> check_m TRequire <> assert_m
+                    False -> assert_m
+            ca' = smt_a ctxt at ca
+            possible_m =
+              error "XXX"
+            check_m tk =
+              verify1 ctxt at tk ca'
+            assert_m =
+              SMT.assert (ctxt_smt ctxt) ca'
     LL_LocalIf {} -> error "XXX"
 
 smt_l :: SMTCtxt -> LLLocal -> SMTComp
