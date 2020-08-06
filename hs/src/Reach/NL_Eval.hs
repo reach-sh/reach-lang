@@ -78,7 +78,7 @@ data EvalError
   | Err_Obj_SpreadNotObj SLVal
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar
-  | Err_TailEmpty
+  | Err_WhileTailEmpty
   | Err_TailNotEmpty [JSStatement]
   | Err_ToConsensus_Double ToConsensusMode
   | Err_TopFun_NoName
@@ -219,14 +219,28 @@ instance Show EvalError where
       "Invalid field name. Fields must be bytes, but got: uint256"
     Err_Obj_SpreadNotObj slval ->
       "Invalid object spread. Expected object, got: " <> displaySlValType slval
+    Err_Prim_InvalidArgs prim slvals ->
+      "Invalid args for " <> displayPrim prim <> ". got: "
+        <> displayTyList (map (fst . typeOf noSrcLoc) slvals)
+      where
+        displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
+        noSrcLoc = SrcLoc Nothing Nothing Nothing
+    Err_Shadowed n ->
+      -- XXX tell the srcloc of the original binding
+      "Invalid name shadowing. Cannot be rebound: " <> n
+    Err_TailNotEmpty stmts ->
+      "Invalid statement block. Expected empty tail, but found " <> found
+      where
+        found = show (length stmts) <> " more statements"
+    Err_ToConsensus_Double mode -> case mode of
+      -- XXX is this syntactically possible?
+      TCM_Publish -> "Invalid double publish. Hint: commit() before publishing again."
+      _ -> "XXX Invalid double toConsensus."
+    Err_WhileTailEmpty ->
+      "Invalid while statement block. Expected continue, but found empty tail."
     e -> "XXX Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
--- Err_Prim_InvalidArgs SLPrimitive [SLVal]
--- Err_Shadowed SLVar
--- Err_TailEmpty
--- Err_TailNotEmpty [JSStatement]
--- Err_ToConsensus_Double ToConsensusMode
 -- Err_TopFun_NoName
 -- Err_Top_IllegalJS JSStatement
 -- Err_Top_NotDApp SLVal
@@ -1011,7 +1025,8 @@ evalStmt ctxt at sco ss =
         RS_ImplicitNull ->
           evalStmt ctxt at sco $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
         RS_NeedExplicit ->
-          expect_throw at $ Err_TailEmpty
+          -- XXX this only happens inside a while statement?
+          expect_throw at $ Err_WhileTailEmpty
         RS_MayBeEmpty ->
           return $ SLRes mempty $ SLStmtRes (sco_env sco) []
     ((JSStatementBlock a ss' _ sp) : ks) -> do

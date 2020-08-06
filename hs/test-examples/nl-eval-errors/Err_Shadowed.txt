@@ -1,0 +1,1 @@
+error: ./Err_Shadowed.rsh:4:1:const: Invalid name shadowing. Cannot be rebound: x
