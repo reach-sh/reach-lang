@@ -11,8 +11,8 @@ import Data.Text.Prettyprint.Doc
 import Data.Version (showVersion)
 import Paths_reach (version)
 import Reach.AST
-import Reach.Util
 import Reach.Connector
+import Reach.Util
 
 -- XXX More code can probably share this
 reachBTypeStr :: BaseType -> String

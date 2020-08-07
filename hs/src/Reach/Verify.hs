@@ -22,5 +22,6 @@ verify outn which lp =
       -- XXX: known not to work.
       -- - doesn't support unsat-cores
       -- - doesn't support declare-datatypes
-      smt "boolector" ["--smt2"] 
-  where smt = verify_smt (outn "smt") lp
+      smt "boolector" ["--smt2"]
+  where
+    smt = verify_smt (outn "smt") lp

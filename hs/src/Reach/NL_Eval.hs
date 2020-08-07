@@ -9,25 +9,26 @@ import Data.List (intercalate, sortBy)
 import qualified Data.Map.Strict as M
 import Data.Ord
 import qualified Data.Sequence as Seq
+import Data.Version (Version (..), showVersion)
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import Paths_reach (version)
 import Reach.JSUtil
 import Reach.NL_AST
 import Reach.NL_Parser
 import Reach.NL_Type
 import Reach.STCounter
 import Reach.Util
-import Data.Version (Version(..), showVersion)
-import Paths_reach (version)
 import Safe (atMay)
 import Text.EditDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
 compatibleVersion :: Version
 compatibleVersion = Version (take 2 br) []
-  where Version br _ = version
+  where
+    Version br _ = version
 
 versionHeader :: String
 versionHeader = "reach " ++ (showVersion compatibleVersion)
@@ -1514,8 +1515,9 @@ evalLib (src, body) libm = do
     at = (srcloc_src src)
     (prev_at, body') =
       case body of
-        ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a hs) sp)) : j) | (trimQuotes hs) == versionHeader ->
-          ((srcloc_after_semi "header" a sp at), j)
+        ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a hs) sp)) : j)
+          | (trimQuotes hs) == versionHeader ->
+            ((srcloc_after_semi "header" a sp at), j)
         _ -> expect_throw at (Err_NoHeader body)
 
 evalLibs :: [SLMod] -> ST s SLLibs

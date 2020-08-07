@@ -8,12 +8,12 @@ import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as S
 import qualified Data.Set as Set
-import Reach.CompilerNL
 import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
 import GHC.Generics (Generic)
 import Reach.AST
 import Reach.Backend.JS
+import Reach.CompilerNL
 import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
 import Reach.Parser
@@ -1202,12 +1202,13 @@ compile copts = do
   out "il" (show (pretty ilp))
   let blp = epp ilp
   out "bl" (show (pretty blp))
-  crs <- (compile_sol (outn "sol") blp)
-         <> (case expCon copts of
-               False -> mempty
-               True ->
-                 --- emit_evm (outn "evm") blp
-                 emit_teal (outn "teal") blp)
+  crs <-
+    (compile_sol (outn "sol") blp)
+      <> (case expCon copts of
+            False -> mempty
+            True ->
+              --- emit_evm (outn "evm") blp
+              emit_teal (outn "teal") blp)
   out "mjs" (show (emit_js blp crs))
   --- out "go" (show (emit_go blp crs))
   exitSuccess
