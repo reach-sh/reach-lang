@@ -42,6 +42,7 @@ instance CollectsTypes DLArg where
 instance CollectsTypes DLExpr where
   cts (DLE_PrimOp _ _ as) = cts as
   cts (DLE_ArrayRef _ a i) = cts a <> cts i
+  cts (DLE_ObjectRef _ a _) = cts a
   cts (DLE_Interact _ _ _ as) = cts as
   cts (DLE_Digest _ as) = cts as
 

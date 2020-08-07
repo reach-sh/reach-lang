@@ -400,6 +400,13 @@ smt_e ctxt at_dv dv de =
         t = argTypeOf arr_da
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
+    DLE_ObjectRef at obj_da f ->
+      pathAddBound ctxt at_dv dv bo se
+      where
+        se = smtApply (s ++ "_" ++ f) [obj_da']
+        s = smtTypeSort ctxt t
+        t = argTypeOf obj_da
+        obj_da' = smt_a ctxt at obj_da
     DLE_Interact {} ->
       pathAddUnbound ctxt at_dv dv bo
     DLE_Digest at args ->
@@ -635,8 +642,19 @@ _smtDefineTypes smt ts = do
                   let invarg (_, arg_inv) argn = arg_inv $ smtApply argn [se]
                   zipWithM_ invarg ts_nis argns
             return inv
-          T_Obj {} ->
-            error "XXX"
+          T_Obj tm -> do
+            let tml = M.toAscList tm
+            ts_nis <- mapM (\(f, at) -> do let argn = (n ++ "_" ++ f)
+                                           r <- type_name at
+                                           return $ (argn, r)) tml
+            let mkarg (argn, (at, inv)) = ((argn, Atom at), inv)
+            let args = map mkarg ts_nis
+            SMT.declareDatatype smt n [] [(n ++ "_cons", map fst args)]
+            void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
+            let inv se = do
+                  let invarg ((argn, _), arg_inv) = arg_inv $ smtApply argn [se]
+                  mapM_ invarg args 
+            return inv
       type_name :: SLType -> IO (String, SMTTypeInv)
       type_name t = do
         tm <- readIORef tmr

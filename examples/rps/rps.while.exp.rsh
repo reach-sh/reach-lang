@@ -11,10 +11,11 @@ export const main =
     [["A", Alice], ["B", Bob], ["O", {}]],
     function (A, B, O) {
       A.only(() => {
-        const [wagerAmount, escrowAmount] =
-              declassify(interact.getParams()); });
+        const [wagerAmount_, escrowAmount] =
+              declassify(interact.getParams());
+        const wagerAmount = wagerAmount_ + declassify(interact.test.taste - interact.test.taste)});
       A.publish(wagerAmount, escrowAmount)
-        .pay(wagerAmount + escrowAmount);
+       .pay(wagerAmount + escrowAmount);
       commit();
 
       B.only(() => {

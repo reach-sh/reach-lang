@@ -48,6 +48,7 @@ instance Pretty DLExpr where
     case e of
       DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
       DLE_ArrayRef _ a o -> pretty a <> brackets (pretty o)
+      DLE_ObjectRef _ a f -> pretty a <> "." <> pretty f
       DLE_Interact _ who m as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
       DLE_Digest _ as -> "digest" <> parens (render_das as)
 

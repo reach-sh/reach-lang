@@ -209,6 +209,7 @@ data SLPrimitive
   | SLPrim_interact SrcLoc SLPart String SLType
   | SLPrim_Fun
   | SLPrim_Array
+  | SLPrim_Object
   | SLPrim_App
   | SLPrim_App_Delay SrcLoc [SLVal] SLEnv
   | SLPrim_op PrimOp
@@ -276,6 +277,7 @@ instance NFData DLArg
 data DLExpr
   = DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
+  | DLE_ObjectRef SrcLoc DLArg String
   | DLE_Interact SrcLoc SLPart String [DLArg]
   | DLE_Digest SrcLoc [DLArg]
   deriving (Eq, Generic, Show)
@@ -287,6 +289,7 @@ expr_pure e =
   case e of
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
+    DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
     DLE_Digest {} -> True
 

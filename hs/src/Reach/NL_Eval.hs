@@ -87,7 +87,11 @@ data EvalError
   | Err_While_IllegalInvariant [JSExpression]
   deriving (Eq, Generic)
 
--- XXX typeOf may fail causing an error within an error...?
+--- FIXME I think most of these things should be in NL_Pretty
+
+--- FIXME typeOf may fail causing an error within an error...?
+--- Answer: Make a new function named typeOfM that returns a maybe and
+--- have typeOf error on Nothing
 displaySlValType :: SLVal -> String
 displaySlValType = displayTy . fst . typeOf (SrcLoc Nothing Nothing Nothing)
 
@@ -104,7 +108,7 @@ displayTy = \case
   T_Address -> "address"
   T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
   T_Array _tys -> "array" -- <> displayTyList tys
-  T_Obj _m -> "object" -- XXX
+  T_Obj _m -> "object" -- FIXME
   T_Forall x ty {- SLVar SLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
   T_Var x {- SLVar-} -> x
 
@@ -116,7 +120,7 @@ displaySLCtxtMode :: SLCtxtMode -> String
 displaySLCtxtMode = \case
   SLC_Module {} -> "module"
   SLC_Step {} -> "step"
-  SLC_Local {} -> "local" -- XXX "pure eval"?
+  SLC_Local {} -> "pure computation"
   SLC_LocalStep {} -> "local step"
   SLC_ConsensusStep {} -> "consensus step"
 
@@ -134,11 +138,11 @@ instance Show EvalError where
     Err_Apply_ArgCount nFormals nArgs ->
       "Invalid function appication. Expected " <> show nFormals <> " args, got " <> show nArgs
     Err_Block_Assign _jsop _stmts ->
-      "Invalid assignment" -- XXX explain why
+      "Invalid assignment" -- FIXME explain why
     Err_Block_IllegalJS _stmt ->
       "Invalid statement"
     Err_Block_NotNull ty _slval ->
-      -- XXX explain why null is expected
+      -- FIXME explain why null is expected
       "Invalid block result type. Expected Null, got " <> show ty
     Err_Block_Variable ->
       "Invalid `var` syntax. (Double check your syntax for while?)"
@@ -170,11 +174,14 @@ instance Show EvalError where
     Err_Eval_IllegalJS e ->
       "Invalid Reach expression syntax: " <> conNameOf e
     Err_Eval_IllegalLift mode ->
-      -- What does this mean to the Reach programmer?
-      "XXX Illegal lift in context: " <> displaySLCtxtMode mode
+      --- FIXME What does this mean to the Reach programmer?
+      --- Answer: I think this might always be a compiler error, where
+      --- I forgot to check the context before lifting.
+      "Illegal lift in context: " <> displaySLCtxtMode mode
     Err_Eval_NoReturn ->
-      -- Is this syntactically possible?
-      "XXX Nowhere to return to"
+      --- FIXME Is this syntactically possible?
+      --- Answer: I think if you put a return at the top-level it will error.
+      "Nowhere to return to"
     Err_Eval_NotApplicable slval ->
       "Invalid function application. Cannot apply: " <> displaySlValType slval
     Err_Eval_NotApplicableVals slval ->
@@ -207,12 +214,12 @@ instance Show EvalError where
     Err_NoHeader _mis ->
       "Invalid Reach file. Expected header " <> expectedHeader <> " at top of file."
       where
-        expectedHeader = "'reach 0.1';" -- XXX version # defined elsewhere?
+        expectedHeader = "'reach 0.1';" -- FIXME version # defined elsewhere?
     Err_Obj_IllegalComputedField slval ->
       "Invalid computed field name. Fields must be bytes, but got: " <> displaySlValType slval
     Err_Obj_IllegalFieldValues exprs ->
-      -- Is this syntactically possible?
-      "XXX Invalid field values. Expected 1 value, got: " <> show (length exprs)
+      -- FIXME Is this syntactically possible?
+      "Invalid field values. Expected 1 value, got: " <> show (length exprs)
     Err_Obj_IllegalMethodDefinition _prop ->
       "Invalid function field. Instead of {f() {...}}, write {f: () => {...}}"
     Err_Obj_IllegalNumberField _JSPropertyName ->
@@ -226,19 +233,20 @@ instance Show EvalError where
         displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
         noSrcLoc = SrcLoc Nothing Nothing Nothing
     Err_Shadowed n ->
-      -- XXX tell the srcloc of the original binding
+      -- FIXME tell the srcloc of the original binding
       "Invalid name shadowing. Cannot be rebound: " <> n
     Err_TailNotEmpty stmts ->
       "Invalid statement block. Expected empty tail, but found " <> found
       where
         found = show (length stmts) <> " more statements"
     Err_ToConsensus_Double mode -> case mode of
-      -- XXX is this syntactically possible?
+      --- FIXME is this syntactically possible?
+      --- Answer: This means that they wrote A.publish().publish(), etc
       TCM_Publish -> "Invalid double publish. Hint: commit() before publishing again."
-      _ -> "XXX Invalid double toConsensus."
+      _ -> "Invalid double toConsensus."
     Err_WhileTailEmpty ->
       "Invalid while statement block. Expected continue, but found empty tail."
-    e -> "XXX Show EvalError: " <> conNameOf e
+    e -> "FIXME Show EvalError: " <> conNameOf e
 
 -- TODO: add to show above
 -- Err_TopFun_NoName
@@ -283,8 +291,8 @@ base_env =
     , ("UInt256", SLV_Type T_UInt256)
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
-    , --- FIXME implement Object type constructor
-      ("Array", SLV_Prim SLPrim_Array)
+    , ("Array", SLV_Prim SLPrim_Array)
+    , ("Object", SLV_Prim SLPrim_Object)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ( "Reach"
       , (SLV_Object srcloc_top $
@@ -469,32 +477,44 @@ infectWithId v (lvl, sv) = (lvl, sv')
         _ -> sv
 
 --- FIXME Can any of these be replace with real objects?
-evalDot :: SrcLoc -> SLVal -> String -> SLSVal
-evalDot at obj field =
+evalDot :: SLCtxt s -> SrcLoc -> SLVal -> String -> SLComp s SLSVal
+evalDot ctxt at obj field =
   case obj of
     SLV_Object _ env ->
       case M.lookup field env of
-        Just v -> v
+        Just v -> retV $ v
         Nothing -> illegal_field (M.keys env)
+    SLV_DLVar obj_dv@(DLVar _ _ (T_Obj tm) _) ->
+      retDLVar tm (DLA_Var obj_dv) Public
+    SLV_Prim (SLPrim_interact _ who m it@(T_Obj tm)) ->
+      retDLVar tm (DLA_Interact who m it) Secret
     SLV_Participant _ who _ vas _ ->
       case field of
-        "only" -> public $ SLV_Form (SLForm_Part_Only obj)
-        "publish" -> public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing)
-        "pay" -> public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing)
+        "only" -> retV $ public $ SLV_Form (SLForm_Part_Only obj)
+        "publish" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing)
+        "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing)
         _ -> illegal_field ["only", "publish", "pay"]
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
       case field of
-        "publish" -> public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime)
-        "pay" -> public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
-        "timeout" -> public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
+        "publish" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime)
+        "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
+        "timeout" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
         _ -> illegal_field ["publish", "pay", "timeout"]
     SLV_Prim (SLPrim_transfer_amt amt_dla) ->
       case field of
-        "to" -> public $ SLV_Prim (SLPrim_transfer_amt_to amt_dla)
+        "to" -> retV $ public $ SLV_Prim (SLPrim_transfer_amt_to amt_dla)
         _ -> illegal_field ["to"]
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
+    retDLVar tm obj_dla slvl =
+      case M.lookup field tm of
+        Nothing -> illegal_field (M.keys tm)
+        Just t -> do
+          (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "object ref") t) (DLE_ObjectRef at obj_dla field)
+          let ansv = SLV_DLVar dv
+          return $ SLRes lifts' (slvl, ansv)      
+    retV sv = return $ SLRes mempty sv
     illegal_field ks =
       expect_throw at (Err_Dot_InvalidField obj ks field)
 
@@ -603,6 +623,11 @@ evalPrim ctxt at env p sargs =
       retV $ (lvl, SLV_Type $ T_Array $ map expect_ty $ map snd sargs)
       where
         lvl = mconcat $ map fst sargs
+    SLPrim_Object ->
+      case sargs of
+        [ (lvl, SLV_Object _ objm) ] ->
+          retV $ (lvl, SLV_Type $ T_Obj $ M.map (expect_ty . snd) objm)
+        _ -> illegal_args
     SLPrim_makeEnum ->
       case sargs of
         [(ilvl, SLV_Int _ i)] ->
@@ -913,14 +938,15 @@ evalExpr ctxt at env e =
       let at' = srcloc_jsa "dot" a at
       SLRes olifts (obj_lvl, objv) <- evalExpr ctxt at' env obj
       let fields = (jse_expect_id at') field
-      return $ SLRes olifts $ lvlMeet obj_lvl $ evalDot at' objv fields
+      SLRes reflifts refsv <- evalDot ctxt at' objv fields
+      return $ SLRes (olifts <> reflifts) $ lvlMeet obj_lvl $ refsv
     doRef arr a idx = do
       let at' = srcloc_jsa "array ref" a at
       SLRes alifts (arr_lvl, arrv) <- evalExpr ctxt at' env arr
       SLRes ilifts (idx_lvl, idxv) <- evalExpr ctxt at' env idx
       let lvl = arr_lvl <> idx_lvl
       let retRef t arr_dla idx_dla = do
-            (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' (ctxt_local_name ctxt "ref") t) (DLE_ArrayRef at' arr_dla idx_dla)
+            (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' (ctxt_local_name ctxt "array ref") t) (DLE_ArrayRef at' arr_dla idx_dla)
             let ansv = SLV_DLVar dv
             return $ SLRes (alifts <> ilifts <> lifts') (lvl, ansv)
       case idxv of
@@ -1025,7 +1051,8 @@ evalStmt ctxt at sco ss =
         RS_ImplicitNull ->
           evalStmt ctxt at sco $ [(JSReturn JSNoAnnot Nothing JSSemiAuto)]
         RS_NeedExplicit ->
-          -- XXX this only happens inside a while statement?
+          --- FIXME this only happens inside a while statement?
+          --- Answer: Yes
           expect_throw at $ Err_WhileTailEmpty
         RS_MayBeEmpty ->
           return $ SLRes mempty $ SLStmtRes (sco_env sco) []
