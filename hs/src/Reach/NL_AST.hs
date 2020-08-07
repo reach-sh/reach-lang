@@ -214,7 +214,6 @@ data SLPrimitive
   | SLPrim_App_Delay SrcLoc [SLVal] SLEnv
   | SLPrim_op PrimOp
   | SLPrim_transfer
-  | SLPrim_transfer_amt DLArg
   | SLPrim_transfer_amt_to DLArg
   deriving (Eq, Generic, Show)
 

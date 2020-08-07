@@ -484,7 +484,6 @@ infectWithId v (lvl, sv) = (lvl, sv')
           SLV_Participant at who io (Just v) mdv
         _ -> sv
 
---- FIXME Can any of these be replace with real objects?
 evalDot :: SLCtxt s -> SrcLoc -> SLVal -> String -> SLComp s SLSVal
 evalDot ctxt at obj field =
   case obj of
@@ -508,10 +507,6 @@ evalDot ctxt at obj field =
         "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
         "timeout" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
         _ -> illegal_field ["publish", "pay", "timeout"]
-    SLV_Prim (SLPrim_transfer_amt amt_dla) ->
-      case field of
-        "to" -> retV $ public $ SLV_Prim (SLPrim_transfer_amt_to amt_dla)
-        _ -> illegal_field ["to"]
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
@@ -702,10 +697,9 @@ evalPrim ctxt at env p sargs =
         SLC_ConsensusStep {} ->
           case map (typeOf at) $ ensure_publics at sargs of
             [(T_UInt256, amt_dla)] ->
-              return $ SLRes mempty $ public $ SLV_Prim $ SLPrim_transfer_amt amt_dla
+              return $ SLRes mempty $ public $ SLV_Object at $ M.fromList [("to", (Public, SLV_Prim (SLPrim_transfer_amt_to amt_dla)))]
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "transfer"
-    SLPrim_transfer_amt _ -> not_app
     SLPrim_transfer_amt_to amt_dla ->
       case ctxt_mode ctxt of
         SLC_ConsensusStep {} ->
@@ -719,7 +713,6 @@ evalPrim ctxt at env p sargs =
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "transfer.to"
   where
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)
-    not_app = expect_throw at (Err_Eval_NotApplicable $ SLV_Prim p)
     retV v = return $ SLRes mempty v
     rator = SLV_Prim p
     expect_ty v =
