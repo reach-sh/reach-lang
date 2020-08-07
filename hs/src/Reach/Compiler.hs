@@ -16,7 +16,6 @@ import Reach.AST
 import Reach.Backend.JS
 import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
-import Reach.ConsensusNetworkProgram
 import Reach.Parser
 import Reach.Pretty ()
 import Reach.Util
@@ -1213,15 +1212,12 @@ compile copts = do
   out "il" (show (pretty ilp))
   let blp = epp ilp
   out "bl" (show (pretty blp))
-  cs <- compile_sol (outn "sol") blp
-  let cnps_reg = M.fromList [(ETH, CNP_ETH cs)]
-  cnps_exp <- case expCon copts of
-    False -> return M.empty
-    True -> do
-      --- ebc <- emit_evm (outn "evm") blp
-      tbc <- emit_teal (outn "teal") blp
-      return $ M.fromList [{- (ETH_EVM, CNP_ETH (fst cs, ebc)), -} (ALGO, CNP_ALGO tbc)]
-  let cnp_tm = cnpToFieldMap $ cnps_reg <> cnps_exp
-  out "mjs" (show (emit_js blp cnp_tm))
-  --- out "go" (show (emit_go blp cnp_tm))
+  crs <- (compile_sol (outn "sol") blp)
+         <> (case expCon copts of
+               False -> mempty
+               True ->
+                 --- emit_evm (outn "evm") blp
+                 emit_teal (outn "teal") blp)
+  out "mjs" (show (emit_js blp crs))
+  --- out "go" (show (emit_go blp crs))
   exitSuccess

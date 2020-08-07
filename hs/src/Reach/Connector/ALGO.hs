@@ -3,13 +3,12 @@ module Reach.Connector.ALGO where
 import Control.Monad.Extra
 import Control.Monad.State.Lazy
 import Data.ByteString.Base64 (encodeBase64')
----import Data.ByteString.Internal (unpackChars)
 import qualified Data.ByteString.Char8 as C
 import Data.List
 import qualified Data.Map.Strict as M
----import qualified Data.ByteString as BS
-
+import qualified Data.Text as T
 import Reach.AST
+import Reach.Connector
 import Reach.Connector.ETH_Solidity
   ( CCounts
   , usesCTail
@@ -18,8 +17,6 @@ import Reach.Util
 import System.Exit
 import System.IO
 import System.Process
-
-type CompiledTeal = (String, String, String)
 
 type LabelM ann a = State LabelSt a
 
@@ -587,7 +584,7 @@ lsp_bc =
       ++ revert_ls
       ++ done_ls
 
-emit_teal :: FilePath -> BLProgram a -> IO CompiledTeal
+emit_teal :: FilePath -> BLProgram a -> IO ConnectorResult
 emit_teal tf (BL_Prog _ _ _ cp) = do
   let ap_bc = cp_to_teal cp
   writeFile tf (show ap_bc)
@@ -595,4 +592,13 @@ emit_teal tf (BL_Prog _ _ _ cp) = do
   tc_lsp <- compile_teal "LSP" lsp_bc
   tc_ap <- compile_teal "AP" ap_bc
   tc_csp <- compile_teal "CSP" (TEAL $ comp_con (Con_I 1))
-  return (tc_lsp, tc_ap, tc_csp)
+  return $
+    M.fromList
+      [ ( "ALGO"
+        , M.fromList
+            [ ("LogicSigProgram", T.pack tc_lsp)
+            , ("ApprovalProgram", T.pack tc_ap)
+            , ("ClearStateProgram", T.pack tc_csp)
+            ]
+        )
+      ]

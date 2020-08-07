@@ -12,6 +12,7 @@ import Data.Text.Prettyprint.Doc
 import Data.Version (showVersion)
 import Paths_reach (version)
 import Reach.AST
+import Reach.Connector
 import Reach.EmbeddedFiles
 import Reach.Util
 import System.Exit
@@ -368,8 +369,6 @@ emit_sol (BL_Prog _ _ _ (C_Prog ca hs)) =
     state_defn = "uint256 current_state;"
     preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
 
-type CompiledSol = (String, String)
-
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text
   , csrCode :: T.Text
@@ -386,13 +385,20 @@ instance FromJSON CompiledSolRec where
         return CompiledSolRec {csrAbi = abit, csrCode = codebodyt}
       Nothing -> fail "Expected contracts object to have a key with suffix ':ReachContract'"
 
-extract :: Value -> CompiledSol
+extract :: Value -> ConnectorResult
 extract v = case fromJSON v of
   Error e -> error e -- XXX
   Success CompiledSolRec {csrAbi, csrCode} ->
-    (T.unpack csrAbi, T.unpack csrCode)
+    M.fromList
+      [ ( "ETH"
+        , M.fromList
+            [ ("ABI", csrAbi)
+            , ("Bytecode", "0x" <> csrCode)
+            ]
+        )
+      ]
 
-compile_sol :: FilePath -> BLProgram a -> IO CompiledSol
+compile_sol :: FilePath -> BLProgram a -> IO ConnectorResult
 compile_sol solf blp = do
   writeFile solf (show (emit_sol blp))
   (ec, stdout, stderr) <- readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin", solf] []

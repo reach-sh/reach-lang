@@ -12,6 +12,7 @@ import Data.Version (showVersion)
 import Paths_reach (version)
 import Reach.AST
 import Reach.Util
+import Reach.Connector
 
 -- XXX More code can probably share this
 reachBTypeStr :: BaseType -> String
@@ -297,16 +298,15 @@ jsObject m = jsBraces $ vsep $ (intersperse (comma <> hardline)) $ map jsObjFiel
   where
     jsObjField (k, v) = pretty k <> pretty ": " <> jsBacktickText v
     kvs = M.toList m
--- ^ Render an exported variable for the given ConsensusNetworkProgram
 
-jsCnp :: (T.Text, M.Map T.Text T.Text) -> Doc a
+jsCnp :: (String, M.Map String T.Text) -> Doc a
 jsCnp (name, cnp) = pretty "export const " <> pretty name <> pretty " = " <> jsObject cnp <> semi
 
-emit_js :: BLProgram b -> CNP_TMap -> Doc a
-emit_js (BL_Prog _ _ pm _) cnps = modp
+emit_js :: BLProgram b -> ConnectorResult -> Doc a
+emit_js (BL_Prog _ _ pm _) cr = modp
   where
     modp = vsep_with_blank $ preamble : importp : partsp ++ cnpsp
     preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
     importp = pretty $ "// import * as stdlib from '@reach-sh/stdlib';"
     partsp = map jsPart $ M.toList pm
-    cnpsp = map jsCnp $ M.toList cnps
+    cnpsp = map jsCnp $ M.toList cr

@@ -5,7 +5,6 @@ import qualified Data.ByteString.Char8 as B
 import Data.Data
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
-import qualified Data.Text as T
 import GHC.Generics
 
 -- Shared types
@@ -424,14 +423,3 @@ type BLParts a = M.Map BLVar (EProgram a)
 data BLProgram a
   = BL_Prog a [LType] (BLParts a) (CProgram a)
   deriving (Show, Eq)
--- ^ Compilation targets for consensus network
-
-data ConsensusNetwork = ETH | ETH_EVM | ALGO
-  deriving (Show, Eq, Ord)
--- ^ Compilation targets for backend
-
-data Backend = JS | GO
-  deriving (Show, Eq, Ord)
--- ^ Consensus Network Program Text map. ConsensusNetwork => FieldName => FieldValue
-
-type CNP_TMap = M.Map T.Text (M.Map T.Text T.Text)
