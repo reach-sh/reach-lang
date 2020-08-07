@@ -117,8 +117,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_balance :: Int
   , ctxt_mtxn_value :: Maybe Int
   , ctxt_path_constraint :: [SExpr]
-  , ctxt_boundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin, SExpr)))
-  , ctxt_unboundrr :: IORef (IORef (M.Map String (SrcLoc, BindingOrigin)))
+  , ctxt_bindingsrr :: IORef (IORef (M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr)))
   , ctxt_while_invariant :: Maybe (LLBlock LLLocal)
   , ctxt_loop_var_subst :: M.Map DLVar DLArg
   , ctxt_primed_vars :: S.Set DLVar
@@ -152,9 +151,8 @@ paramIORef rr m = do
 
 ctxtNewScope :: SMTCtxt -> SMTComp -> SMTComp
 ctxtNewScope ctxt m = do
-  paramIORef (ctxt_boundrr ctxt) $
-    paramIORef (ctxt_unboundrr ctxt) $
-      SMT.inNewScope (ctxt_smt ctxt) $ m
+  paramIORef (ctxt_bindingsrr ctxt) $
+    SMT.inNewScope (ctxt_smt ctxt) $ m
 
 ctxt_txn_value :: SMTCtxt -> Int
 ctxt_txn_value ctxt = fromMaybe (impossible "no txn value") $ ctxt_mtxn_value ctxt
@@ -290,23 +288,19 @@ display_fail ctxt tat f tk tse mrd = do
   --- FYI, the last version that had Dan's display code was
   --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
   ---
-  --- I think it might be better to merge ctxt_boundrr and
-  --- ctxt_unboundrr into one data-structure with a Maybe in the se
-  --- position. I also think it would be good to add a field for the
-  --- dv if the _v-less version was called.
-  ---
   --- Finally, it MIGHT be simpler to call `get-value` on specific
   --- values rather than `get-model`, but I'm not sure.
-  putStrLn $ "\tThese variables are unbound as follows:"
-  unboundm <- readIORef =<< (readIORef $ ctxt_unboundrr ctxt)
-  let showUnbound (tv, (at, bo)) = do
-        putStrLn $ "\t\t" <> show tv <> " is unbound at " <> (show at) <> " because of " <> (show bo)
-  mapM_ showUnbound $ M.toList unboundm
-  putStrLn $ "\tThese variables are bound as follows:"
-  boundm <- readIORef =<< (readIORef $ ctxt_boundrr ctxt)
-  let showBound (tv, (at, bo, se)) = do
-        putStrLn $ "\t\t" <> show tv <> " is bound to " <> (SMT.showsSExpr se "") <> " at " <> (show at) <> " because of " <> (show bo)
-  mapM_ showBound $ M.toList boundm
+  putStrLn $ "\tThese variables are set as follows:"
+  bindingsm <- readIORef =<< (readIORef $ ctxt_bindingsrr ctxt)
+  let showBinding (tv, (mdv, at, bo, mse)) =
+        putStrLn $ "\t\t" <> show tv <> mdv' <> " is " <> mse' <> " at " <> (show at) <> " because of " <> (show bo)
+        where mdv' = case mdv of
+                       Nothing -> ""
+                       Just dv -> " (" <> show dv <> ")"
+              mse' = case mse of
+                       Nothing -> "unbound"
+                       Just se -> "bound to " <> (SMT.showsSExpr se "")
+  mapM_ showBinding $ M.toList bindingsm
   putStrLn $ "\tInternal theorem prover information:"
   case mrd of
     Nothing -> do
@@ -354,31 +348,31 @@ verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
         TPossible -> True
         _ -> False
 
-pathAddUnbound_v :: SMTCtxt -> SrcLoc -> String -> SLType -> BindingOrigin -> SMTComp
-pathAddUnbound_v ctxt at_dv v t bo = do
+pathAddUnbound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> SLType -> BindingOrigin -> SMTComp
+pathAddUnbound_v ctxt mdv at_dv v t bo = do
   smtDeclare_v ctxt v t
-  modifyIORefRef (ctxt_unboundrr ctxt) $ M.insert v (at_dv, bo)
+  modifyIORefRef (ctxt_bindingsrr ctxt) $ M.insert v (mdv, at_dv, bo, Nothing)
 
-pathAddBound_v :: SMTCtxt -> SrcLoc -> String -> SLType -> BindingOrigin -> SExpr -> SMTComp
-pathAddBound_v ctxt at_dv v t bo se = do
+pathAddBound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> SLType -> BindingOrigin -> SExpr -> SMTComp
+pathAddBound_v ctxt mdv at_dv v t bo se = do
   smtDeclare_v ctxt v t
   let smt = ctxt_smt ctxt
   --- Note: We don't use smtAssert because variables are global, so
   --- this variable isn't affected by the path.
   SMT.assert smt (smtEq (Atom $ v) se)
-  modifyIORefRef (ctxt_boundrr ctxt) $ M.insert v (at_dv, bo, se)
+  modifyIORefRef (ctxt_bindingsrr ctxt) $ M.insert v (mdv, at_dv, bo, Just se)
 
 pathAddUnbound :: SMTCtxt -> SrcLoc -> DLVar -> BindingOrigin -> SMTComp
 pathAddUnbound ctxt at_dv dv bo = do
   let DLVar _ _ t _ = dv
   let v = smtVar ctxt dv
-  pathAddUnbound_v ctxt at_dv v t bo
+  pathAddUnbound_v ctxt (Just dv) at_dv v t bo
 
 pathAddBound :: SMTCtxt -> SrcLoc -> DLVar -> BindingOrigin -> SExpr -> SMTComp
 pathAddBound ctxt at_dv dv bo se = do
   let DLVar _ _ t _ = dv
   let v = smtVar ctxt dv
-  pathAddBound_v ctxt at_dv v t bo se
+  pathAddBound_v ctxt (Just dv) at_dv v t bo se
 
 smt_c :: SMTCtxt -> SrcLoc -> DLConstant -> SExpr
 smt_c _ctxt _at_de dc =
@@ -568,7 +562,7 @@ smt_n ctxt n =
       where
         transfer_m = do
           verify1 ctxt at f TBalanceSufficient amt_le_se
-          pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 bo cbi'_se
+          pathAddBound_v ctxt Nothing at (smtBalance cbi') T_UInt256 bo cbi'_se
         bo = O_Transfer to amt
         cbi = ctxt_balance ctxt
         cbi' = cbi + 1
@@ -640,12 +634,12 @@ smt_s ctxt s =
         from_m = do
           case shouldSimulate ctxt from of
             False -> do
-              pathAddUnbound_v ctxt at (smtTxnValue tv') T_UInt256 (O_DishonestPay from)
+              pathAddUnbound_v ctxt Nothing at (smtTxnValue tv') T_UInt256 (O_DishonestPay from)
               mapM_ (\msg_dv -> pathAddUnbound ctxt at msg_dv (O_DishonestMsg from)) from_msg
             True -> do
-              pathAddBound_v ctxt at (smtTxnValue tv') T_UInt256 (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
+              pathAddBound_v ctxt Nothing at (smtTxnValue tv') T_UInt256 (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
               zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at msg_dv (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
-          pathAddBound_v ctxt at (smtBalance cbi') T_UInt256 O_ToConsensus (uint256_add (smtBalanceRef cbi) (smtTxnValueRef tv'))
+          pathAddBound_v ctxt Nothing at (smtBalance cbi') T_UInt256 O_ToConsensus (uint256_add (smtBalanceRef cbi) (smtTxnValueRef tv'))
 
 _smtDefineTypes :: Solver -> S.Set SLType -> IO SMTTypeMap
 _smtDefineTypes smt ts = do
@@ -721,8 +715,7 @@ _verify_smt smt lp = do
   SMT.loadString smt smtStdLib
   succ_ref <- newIORef 0
   fail_ref <- newIORef 0
-  bound_ref_ref <- newIORefRef mempty
-  unbound_ref_ref <- newIORefRef mempty
+  bindingsrr <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
   let LLProg at (SLParts pies_m) s = lp
   let ctxt = SMTCtxt
@@ -732,8 +725,7 @@ _verify_smt smt lp = do
         , ctxt_res_fail = fail_ref
         , ctxt_modem = Nothing
         , ctxt_path_constraint = []
-        , ctxt_boundrr = bound_ref_ref
-        , ctxt_unboundrr = unbound_ref_ref
+        , ctxt_bindingsrr = bindingsrr
         , ctxt_balance = 0
         , ctxt_mtxn_value = Nothing
         , ctxt_while_invariant = Nothing
@@ -744,10 +736,10 @@ _verify_smt smt lp = do
         case it of
           T_Fun {} -> mempty
           _ ->
-            pathAddUnbound_v ctxt at (smtInteract ctxt who v) it O_Interact
+            pathAddUnbound_v ctxt Nothing at (smtInteract ctxt who v) it O_Interact
   let definePIE (who, InteractEnv iem) = mapM_ (defineIE who) $ M.toList iem
   mapM_ definePIE $ M.toList pies_m
-  pathAddBound_v ctxt at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
+  pathAddBound_v ctxt Nothing at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
   let smt_s_top mode = do
         putStrLn $ "Verifying with mode = " ++ show mode
         let ctxt' = ctxt { ctxt_modem = Just mode }
