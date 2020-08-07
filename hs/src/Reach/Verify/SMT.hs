@@ -269,9 +269,52 @@ data ResultDesc
 
 type SMTComp = IO ()
 
+
 display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
-display_fail _ctxt _at _f _tk _se _mm =
-  error "XXX"
+display_fail ctxt tat f tk tse mrd = do
+  putStrLn $ "Verification failed:"
+  putStrLn $ "\tin " ++ (show $ ctxt_mode ctxt) ++ " mode"
+  putStrLn $ "\tof theorem " ++ show tk
+  putStrLn $ "\tspecifically: " ++ (SMT.showsSExpr tse ":")
+  putStrLn $ "\tat " ++ show tat
+  mapM_ (putStrLn . show) f
+  putStrLn $ ""
+  putStrLn $ "\tThis could happen if..."
+  --- FIXME This needs some of that Dan love. Here's a plan
+  ---  1. Q = vars(tse)
+  ---  2. while Q = { v0 } <> Q'
+  ---     3. vse = model(v0)
+  ---     4. Q = Q' <> vars(vse)
+  ---     5. show bindinginfo(v0) and vse
+  ---
+  --- FYI, the last version that had Dan's display code was
+  --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
+  ---
+  --- I think it might be better to merge ctxt_boundrr and
+  --- ctxt_unboundrr into one data-structure with a Maybe in the se
+  --- position. I also think it would be good to add a field for the
+  --- dv if the _v-less version was called.
+  ---
+  --- Finally, it MIGHT be simpler to call `get-value` on specific
+  --- values rather than `get-model`, but I'm not sure.
+  putStrLn $ "\tThese variables are unbound as follows:"
+  unboundm <- readIORef =<< (readIORef $ ctxt_unboundrr ctxt)
+  let showUnbound (tv, (at, bo)) = do
+        putStrLn $ "\t\t" <> show tv <> " is unbound at " <> (show at) <> " because of " <> (show bo)
+  mapM_ showUnbound $ M.toList unboundm
+  putStrLn $ "\tThese variables are bound as follows:"
+  boundm <- readIORef =<< (readIORef $ ctxt_boundrr ctxt)
+  let showBound (tv, (at, bo, se)) = do
+        putStrLn $ "\t\t" <> show tv <> " is bound to " <> (SMT.showsSExpr se "") <> " at " <> (show at) <> " because of " <> (show bo)
+  mapM_ showBound $ M.toList boundm
+  putStrLn $ "\tInternal theorem prover information:"
+  case mrd of
+    Nothing -> do
+      putStrLn $ "\t\t<The theorem prover errored.>"
+    Just (RD_UnsatCore uc) -> do
+      mapM_ (putStrLn . ("\t\t"++)) uc
+    Just (RD_Model m) -> do
+      putStrLn $ "\t\t" ++ (SMT.showsSExpr m "")
 
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
 smtAssert ctxt se = SMT.assert smt se'
@@ -631,7 +674,7 @@ _smtDefineTypes smt ts = do
           T_Var {} -> impossible "var in ll"
           T_Array ats -> do
             ts_nis <- mapM type_name ats
-            --- XXX detect if homogeneous
+            --- XXX detect if homogeneous and use ArrayEx
             let mkargn _ (i :: Int) = n ++ "_elem" ++ show i
             let argns = zipWith mkargn ts_nis [0 ..]
             let mkarg (arg_tn, _) argn = (argn, Atom arg_tn)

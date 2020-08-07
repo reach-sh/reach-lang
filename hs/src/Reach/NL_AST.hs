@@ -233,7 +233,12 @@ m_fromList_public kvs =
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
+
+instance Show SLCtxtFrame where
+  show (SLC_CloApp call_at clo_at mname) =
+    "\tat " ++ show call_at ++ " call to " ++ name ++ " (defined at: " ++ show clo_at ++ ")"
+    where name = maybe "[unknown function]" show mname
 
 instance NFData SLCtxtFrame
 
