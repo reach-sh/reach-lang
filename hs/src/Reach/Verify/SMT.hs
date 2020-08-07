@@ -4,7 +4,7 @@ module Reach.Verify.SMT where
 import Control.Monad
 import Control.Monad.Extra
 import qualified Data.ByteString.Char8 as B
----import Data.List
+import Data.List.Extra (mconcatMap)
 ---import Data.Monoid
 ---import Data.Char (isDigit)
 import Data.Digest.CRC32
@@ -13,15 +13,17 @@ import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import Reach.CollectTypes
+import qualified Data.Sequence as Seq
 ---import Data.Text (Text)
 ---import qualified Data.Text as T
 ---import qualified Data.Text.IO as TIO
----import Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc
 
+import Reach.Verify.SMTParser (parseModel)
 import Reach.EmbeddedFiles
 import Reach.NL_AST
 import Reach.NL_Type
-import Reach.Pretty ()
+import Reach.NL_Pretty ()
 import Reach.Util
 import Reach.Verify.Verifier
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
@@ -100,7 +102,25 @@ data BindingOrigin
   | O_Expr DLExpr
   | O_Join
   | O_Assignment
-  deriving (Eq, Show)
+  deriving (Eq)
+
+instance Show BindingOrigin where
+  show bo =
+    case bo of
+      O_DishonestMsg who -> "a dishonest message from " ++ sp who
+      O_DishonestPay who -> "a dishonest payment from " ++ sp who
+      O_HonestMsg who what -> "an honest message from " ++ sp who ++ " of " ++ sp what
+      O_HonestPay who amt -> "an honest payment from " ++ sp who ++ " of " ++ sp amt
+      O_Transfer to amt -> "a transfer to " ++ sp to ++ " of " ++ sp amt
+      O_ToConsensus -> "publication"
+      O_Var -> "function return"
+      O_Initialize -> "initialization"
+      O_Interact -> "interaction"
+      O_Expr e -> "evaluating " ++ sp e
+      O_Join -> "participant join"
+      O_Assignment -> "loop variable"
+    where sp :: Pretty a => a -> String
+          sp = show . pretty
 
 type SMTTypeInv =
   SExpr -> IO ()
@@ -267,49 +287,81 @@ data ResultDesc
 
 type SMTComp = IO ()
 
+seVars :: SExpr -> S.Set String
+seVars se =
+  case se of
+    Atom a ->
+      --- XXX try harder
+      S.singleton a
+    List l -> mconcatMap seVars l
+
+set_to_seq :: S.Set a -> Seq.Seq a
+set_to_seq = Seq.fromList . S.toList 
+
+--- FYI, the last version that had Dan's display code was
+--- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
 
 display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
 display_fail ctxt tat f tk tse mrd = do
   putStrLn $ "Verification failed:"
-  putStrLn $ "\tin " ++ (show $ ctxt_mode ctxt) ++ " mode"
-  putStrLn $ "\tof theorem " ++ show tk
-  putStrLn $ "\tspecifically: " ++ (SMT.showsSExpr tse ":")
-  putStrLn $ "\tat " ++ show tat
-  mapM_ (putStrLn . show) f
+  putStrLn $ "  in " ++ (show $ ctxt_mode ctxt) ++ " mode"
+  putStrLn $ "  of theorem " ++ show tk
+  putStrLn $ "  at " ++ show tat
+  mapM_ (putStrLn . ("  "++) . show) f
   putStrLn $ ""
-  putStrLn $ "\tThis could happen if..."
-  --- FIXME This needs some of that Dan love. Here's a plan
-  ---  1. Q = vars(tse)
-  ---  2. while Q = { v0 } <> Q'
-  ---     3. vse = model(v0)
-  ---     4. Q = Q' <> vars(vse)
-  ---     5. show bindinginfo(v0) and vse
-  ---
-  --- FYI, the last version that had Dan's display code was
-  --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
-  ---
-  --- Finally, it MIGHT be simpler to call `get-value` on specific
-  --- values rather than `get-model`, but I'm not sure.
-  putStrLn $ "\tThese variables are set as follows:"
+  putStrLn $ "  Theorem formalization:"
+  putStrLn $ "  " ++ (SMT.showsSExpr tse "")
+  putStrLn $ ""
+  putStrLn $ "  This could be violated if..."
+  let pm =
+        case mrd of
+          Nothing ->
+            mempty
+          Just (RD_UnsatCore _uc) -> do
+            --- FIXME Do something useful here
+            mempty
+          Just (RD_Model m) -> do
+            parseModel m
   bindingsm <- readIORef =<< (readIORef $ ctxt_bindingsrr ctxt)
-  let showBinding (tv, (mdv, at, bo, mse)) =
-        putStrLn $ "\t\t" <> show tv <> mdv' <> " is " <> mse' <> " at " <> (show at) <> " because of " <> (show bo)
-        where mdv' = case mdv of
-                       Nothing -> ""
-                       Just dv -> " (" <> show dv <> ")"
-              mse' = case mse of
-                       Nothing -> "unbound"
-                       Just se -> "bound to " <> (SMT.showsSExpr se "")
-  mapM_ showBinding $ M.toList bindingsm
-  putStrLn $ "\tInternal theorem prover information:"
-  case mrd of
-    Nothing -> do
-      putStrLn $ "\t\t<The theorem prover errored.>"
-    Just (RD_UnsatCore uc) -> do
-      mapM_ (putStrLn . ("\t\t"++)) uc
-    Just (RD_Model m) -> do
-      putStrLn $ "\t\t" ++ (SMT.showsSExpr m "")
-
+  let show_vars :: (S.Set String) -> (Seq.Seq String) -> IO [String]
+      show_vars shown q =
+        case q of
+          Seq.Empty -> return $ []
+          (v0 Seq.:<| q') -> do
+            (vc, v0vars) <-
+              case M.lookup v0 bindingsm of
+                Nothing ->
+                  return $ (mempty, mempty)
+                Just (mdv, at, bo, mvse) -> do
+                  let this se =
+                        [ ("    " ++ show v0 ++ " = " ++ (SMT.showsSExpr se "")) ]
+                        ++ (case mdv of
+                              Nothing -> mempty
+                              Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
+                        ++ [ ("      (bound at: " ++ show at ++ ")")
+                           , ("      (because: " ++ show bo ++ ")") ]
+                  case mvse of
+                    Nothing ->
+                      --- FIXME It might be useful to do `get-value` rather than parse
+                      case M.lookup v0 pm of
+                        Nothing ->
+                          return $ mempty
+                        Just (_ty, se) -> do
+                          mapM_ putStrLn (this se)
+                          return $ ([], seVars se)
+                    Just se ->
+                      return $ ((this se), seVars se)
+            let nvars = S.difference v0vars shown
+            let shown' = S.union shown nvars
+            let new_q = set_to_seq nvars
+            let q'' = q' <> new_q
+            liftM (vc ++) $ show_vars shown' q''
+  let tse_vars = seVars tse
+  vctxt <- show_vars tse_vars $ set_to_seq $ tse_vars
+  putStrLn $ ""
+  putStrLn $ "  In context..."
+  mapM_ putStrLn vctxt
+  
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
 smtAssert ctxt se = SMT.assert smt se'
   where

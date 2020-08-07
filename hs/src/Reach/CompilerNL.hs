@@ -25,5 +25,6 @@ compileNL copts = do
   verify outn (verifier copts) linear
   let projected = epp linear
   out "pl" $ show $ pretty projected
+  traceM $ "XXX connectors"
   traceM $ "XXX backends"
   return ()

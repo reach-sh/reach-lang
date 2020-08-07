@@ -237,7 +237,7 @@ data SLCtxtFrame
 
 instance Show SLCtxtFrame where
   show (SLC_CloApp call_at clo_at mname) =
-    "\tat " ++ show call_at ++ " call to " ++ name ++ " (defined at: " ++ show clo_at ++ ")"
+    "at " ++ show call_at ++ " call to " ++ name ++ " (defined at: " ++ show clo_at ++ ")"
     where name = maybe "[unknown function]" show mname
 
 instance NFData SLCtxtFrame
