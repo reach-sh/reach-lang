@@ -2,18 +2,25 @@ module Reach.Verify where
 
 import qualified Data.Text as T
 import Reach.NL_AST
-import Reach.Verify.Boolector
-import Reach.Verify.CVC4
-import Reach.Verify.Yices
-import Reach.Verify.Z3
+import Reach.Verify.SMT
 
 data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
 verify :: (T.Text -> String) -> VerifierName -> LLProg -> IO ()
-verify outn which ilp =
+verify outn which lp =
   case which of
-    Z3 -> verify_z3 (outn "z3") ilp
-    Yices -> verify_yices (outn "yi") ilp
-    CVC4 -> verify_cvc4 (outn "cvc4") ilp
-    Boolector -> verify_boolector (outn "br") ilp
+    Z3 ->
+      smt "z3" ["-smt2", "-in"]
+    Yices ->
+      -- XXX: known not to work.
+      -- - doesn't support declare-datatypes
+      smt "yices-smt2" []
+    CVC4 ->
+      smt "cvc4" ["--lang=smt2", "--incremental"]
+    Boolector ->
+      -- XXX: known not to work.
+      -- - doesn't support unsat-cores
+      -- - doesn't support declare-datatypes
+      smt "boolector" ["--smt2"] 
+  where smt = verify_smt (outn "smt") lp

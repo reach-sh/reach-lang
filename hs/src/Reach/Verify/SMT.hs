@@ -18,7 +18,6 @@ import Reach.NL_Pretty ()
 import Reach.NL_Type
 import Reach.Util
 import Reach.Verify.SMTParser (parseModel)
-import Reach.Verify.Verifier
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
 import System.Exit
@@ -860,10 +859,10 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger {..})
 
-verify_smt :: (Maybe Logger -> IO Solver) -> FilePath -> Verifier
-verify_smt mkSolver logp lp = do
+verify_smt :: FilePath -> LLProg -> String -> [String] -> IO ()
+verify_smt logp lp prog args = do
   (close, logpl) <- newFileLogger logp
-  smt <- mkSolver (Just logpl)
+  smt <- SMT.newSolver prog args (Just logpl)
   unlessM (SMT.produceUnsatCores smt) $ impossible "Prover doesn't support possible?"
   vec <- _verify_smt smt lp
   zec <- SMT.stop smt
