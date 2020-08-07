@@ -1192,8 +1192,8 @@ epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
 compile :: CompilerOpts -> IO ()
 compile copts = do
   let srcp = source copts
-  let out = output copts
-  let outn = output_name copts
+  let outn = output copts
+  let out = writeFile . outn
   xlp <- readReachFile srcp
   out "xl" (L.unpack (pShow xlp))
   let xilp = inline xlp

@@ -18,12 +18,10 @@ makeCompilerOpts CompilerToolOpts {..} = do
   let outd = cto_outputDir
   let outdp = FP.decodeString outd
   let outn ext = FP.encodeString $ FP.append outdp $ (FP.filename $ FP.decodeString srcp) `FP.replaceExtension` ext
-  let out ext con = do writeFile (outn ext) con
   createDirectoryIfMissing True outd
   return $
     CompilerOpts
-      { output = out
-      , output_name = outn
+      { output = outn
       , source = srcp
       , expCon = cto_expCon
       }

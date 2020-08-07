@@ -11,8 +11,7 @@ import Reach.NL_Pretty ()
 import Reach.Verify
 
 data CompilerOpts = CompilerOpts
-  { output :: T.Text -> String -> IO ()
-  , output_name :: T.Text -> String
+  { output :: T.Text -> String
   , source :: FilePath
   , -- | Enable experimental connectors
     expCon :: Bool
@@ -20,8 +19,8 @@ data CompilerOpts = CompilerOpts
 
 compileNL :: CompilerOpts -> IO ()
 compileNL copts = do
-  let out = output copts
-  let outn = output_name copts
+  let outn = output copts
+  let out = writeFile . outn
   djp <- gatherDeps_top $ source copts
   let dl = compileBundle djp "main"
   out "dl" $ show $ pretty dl
