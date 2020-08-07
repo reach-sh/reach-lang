@@ -1,43 +1,32 @@
 module Reach.Verify.SMT where
 
----import Control.Loop
 import Control.Monad
 import Control.Monad.Extra
 import qualified Data.ByteString.Char8 as B
-import Data.List.Extra (mconcatMap)
----import Data.Monoid
----import Data.Char (isDigit)
 import Data.Digest.CRC32
 import Data.IORef
+import Data.List.Extra (mconcatMap)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
-import qualified Data.Set as S
-import Reach.CollectTypes
 import qualified Data.Sequence as Seq
----import Data.Text (Text)
----import qualified Data.Text as T
----import qualified Data.Text.IO as TIO
+import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc
-
-import Reach.Verify.SMTParser (parseModel)
+import Reach.CollectTypes
 import Reach.EmbeddedFiles
 import Reach.NL_AST
-import Reach.NL_Type
 import Reach.NL_Pretty ()
+import Reach.NL_Type
 import Reach.Util
+import Reach.Verify.SMTParser (parseModel)
 import Reach.Verify.Verifier
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
 import System.Exit
 import System.IO
 
----import Text.Read (readMaybe)
-
 --- SMT Helpers
 
 --- FIXME decide on fixed bitvectors
-
--- | bv == True means "use BitVector 256", False means "use Int"
 use_bitvectors :: Bool
 use_bitvectors = False
 
@@ -119,8 +108,9 @@ instance Show BindingOrigin where
       O_Expr e -> "evaluating " ++ sp e
       O_Join -> "participant join"
       O_Assignment -> "loop variable"
-    where sp :: Pretty a => a -> String
-          sp = show . pretty
+    where
+      sp :: Pretty a => a -> String
+      sp = show . pretty
 
 type SMTTypeInv =
   SExpr -> IO ()
@@ -203,10 +193,11 @@ smtInteract _ctxt who m = "interact_" ++ (B.unpack who) ++ "_" ++ m
 
 smtVar :: SMTCtxt -> DLVar -> String
 smtVar ctxt dv@(DLVar _ _ _ i) = "v" ++ show i ++ mp
-  where mp =
-          case elem dv $ ctxt_primed_vars ctxt of
-            True -> "p"
-            False -> ""
+  where
+    mp =
+      case elem dv $ ctxt_primed_vars ctxt of
+        True -> "p"
+        False -> ""
 
 smtTypeSort :: SMTCtxt -> SLType -> String
 smtTypeSort ctxt t = fst $ (ctxt_typem ctxt) M.! t
@@ -296,7 +287,7 @@ seVars se =
     List l -> mconcatMap seVars l
 
 set_to_seq :: S.Set a -> Seq.Seq a
-set_to_seq = Seq.fromList . S.toList 
+set_to_seq = Seq.fromList . S.toList
 
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
@@ -307,7 +298,7 @@ display_fail ctxt tat f tk tse mrd = do
   putStrLn $ "  in " ++ (show $ ctxt_mode ctxt) ++ " mode"
   putStrLn $ "  of theorem " ++ show tk
   putStrLn $ "  at " ++ show tat
-  mapM_ (putStrLn . ("  "++) . show) f
+  mapM_ (putStrLn . ("  " ++) . show) f
   putStrLn $ ""
   --- FIXME Another way to think about this is to take `tse` and fully
   --- substitute everything that came from the program (the "context"
@@ -338,12 +329,13 @@ display_fail ctxt tat f tk tse mrd = do
                   return $ (mempty, mempty)
                 Just (mdv, at, bo, mvse) -> do
                   let this se =
-                        [ ("    " ++ show v0 ++ " = " ++ (SMT.showsSExpr se "")) ]
-                        ++ (case mdv of
-                              Nothing -> mempty
-                              Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
-                        ++ [ ("      (bound at: " ++ show at ++ ")")
-                           , ("      (because: " ++ show bo ++ ")") ]
+                        [("    " ++ show v0 ++ " = " ++ (SMT.showsSExpr se ""))]
+                          ++ (case mdv of
+                                Nothing -> mempty
+                                Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
+                          ++ [ ("      (bound at: " ++ show at ++ ")")
+                             , ("      (because: " ++ show bo ++ ")")
+                             ]
                   case mvse of
                     Nothing ->
                       --- FIXME It might be useful to do `get-value` rather than parse
@@ -365,7 +357,7 @@ display_fail ctxt tat f tk tse mrd = do
   putStrLn $ ""
   putStrLn $ "  In context..."
   mapM_ putStrLn vctxt
-  
+
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
 smtAssert ctxt se = SMT.assert smt se'
   where
@@ -458,9 +450,13 @@ smt_a ctxt at_de da =
           Atom $ smtVar ctxt dv
         Just da' ->
           smt_a ctxt' at_de da'
-      where lvars = ctxt_loop_var_subst ctxt
-            ctxt' = ctxt { ctxt_loop_var_subst = mempty
-                         , ctxt_primed_vars = mempty }
+      where
+        lvars = ctxt_loop_var_subst ctxt
+        ctxt' =
+          ctxt
+            { ctxt_loop_var_subst = mempty
+            , ctxt_primed_vars = mempty
+            }
     DLA_Con c -> smt_c ctxt at_de c
     DLA_Array as -> cons as
     DLA_Obj m -> cons $ M.elems m
@@ -556,17 +552,18 @@ data BlockMode
 
 smt_block :: SMTCtxt -> BlockMode -> LLBlock LLLocal -> SMTComp
 smt_block ctxt bm b = before_m <> after_m
-  where LLBlock at f l da = b
-        before_m = smt_l ctxt l
-        da' = smt_a ctxt at da
-        after_m =
-          case bm of
-            B_Assume True ->
-              smtAssert ctxt da'
-            B_Assume False ->
-              smtAssert ctxt (smtNot da')
-            B_Prove ->
-              verify1 ctxt at f TInvariant da'
+  where
+    LLBlock at f l da = b
+    before_m = smt_l ctxt l
+    da' = smt_a ctxt at da
+    after_m =
+      case bm of
+        B_Assume True ->
+          smtAssert ctxt da'
+        B_Assume False ->
+          smtAssert ctxt (smtNot da')
+        B_Prove ->
+          verify1 ctxt at f TInvariant da'
 
 gatherDefinedVars_m :: (LLCommon LLLocal) -> S.Set DLVar
 gatherDefinedVars_m m =
@@ -586,21 +583,26 @@ gatherDefinedVars (LLBlock _ _ l _) = gatherDefinedVars_l l
 
 smt_asn :: SMTCtxt -> Bool -> DLAssignment -> SMTComp
 smt_asn ctxt vars_are_primed asn = smt_block ctxt' B_Prove inv
-  where ctxt' = ctxt { ctxt_loop_var_subst = asnm
-                     , ctxt_primed_vars = pvars }
-        DLAssignment asnm = asn
-        pvars = case vars_are_primed of
-                  True -> gatherDefinedVars inv
-                  False -> mempty
-        inv = case ctxt_while_invariant ctxt of
-                Just x -> x
-                Nothing -> impossible "asn outside loop"
+  where
+    ctxt' =
+      ctxt
+        { ctxt_loop_var_subst = asnm
+        , ctxt_primed_vars = pvars
+        }
+    DLAssignment asnm = asn
+    pvars = case vars_are_primed of
+      True -> gatherDefinedVars inv
+      False -> mempty
+    inv = case ctxt_while_invariant ctxt of
+      Just x -> x
+      Nothing -> impossible "asn outside loop"
 
 smt_asn_def :: SMTCtxt -> SrcLoc -> DLAssignment -> SMTComp
 smt_asn_def ctxt at asn = mapM_ def1 $ M.keys asnm
-  where DLAssignment asnm = asn
-        def1 dv =
-          pathAddUnbound ctxt at dv O_Assignment
+  where
+    DLAssignment asnm = asn
+    def1 dv =
+      pathAddUnbound ctxt at dv O_Assignment
 
 smt_n :: SMTCtxt -> LLConsensus -> SMTComp
 smt_n ctxt n =
@@ -630,18 +632,19 @@ smt_n ctxt n =
     LLC_FromConsensus _ _ s -> smt_s ctxt s
     LLC_While at asn inv cond body k ->
       mapM_ (ctxtNewScope ctxt) [before_m, loop_m, after_m]
-      where ctxt_inv = ctxt { ctxt_while_invariant = Just inv }
-            before_m = smt_asn ctxt_inv False asn
-            loop_m =
-              smt_asn_def ctxt at asn
-              <> smt_block ctxt (B_Assume True) inv
-              <> smt_block ctxt (B_Assume True) cond
-              <> smt_n ctxt_inv body
-            after_m =
-              smt_asn_def ctxt at asn
-              <> smt_block ctxt (B_Assume True) inv
-              <> smt_block ctxt (B_Assume False) cond
-              <> smt_n ctxt k
+      where
+        ctxt_inv = ctxt {ctxt_while_invariant = Just inv}
+        before_m = smt_asn ctxt_inv False asn
+        loop_m =
+          smt_asn_def ctxt at asn
+            <> smt_block ctxt (B_Assume True) inv
+            <> smt_block ctxt (B_Assume True) cond
+            <> smt_n ctxt_inv body
+        after_m =
+          smt_asn_def ctxt at asn
+            <> smt_block ctxt (B_Assume True) inv
+            <> smt_block ctxt (B_Assume False) cond
+            <> smt_n ctxt k
     LLC_Continue _at asn ->
       smt_asn ctxt True asn
 
@@ -737,16 +740,20 @@ _smtDefineTypes smt ts = do
             return inv
           T_Obj tm -> do
             let tml = M.toAscList tm
-            ts_nis <- mapM (\(f, at) -> do let argn = (n ++ "_" ++ f)
-                                           r <- type_name at
-                                           return $ (argn, r)) tml
+            ts_nis <-
+              mapM
+                (\(f, at) -> do
+                   let argn = (n ++ "_" ++ f)
+                   r <- type_name at
+                   return $ (argn, r))
+                tml
             let mkarg (argn, (at, inv)) = ((argn, Atom at), inv)
             let args = map mkarg ts_nis
             SMT.declareDatatype smt n [] [(n ++ "_cons", map fst args)]
             void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
             let inv se = do
                   let invarg ((argn, _), arg_inv) = arg_inv $ smtApply argn [se]
-                  mapM_ invarg args 
+                  mapM_ invarg args
             return inv
       type_name :: SLType -> IO (String, SMTTypeInv)
       type_name t = do
@@ -774,20 +781,21 @@ _verify_smt smt lp = do
   bindingsrr <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
   let LLProg at (SLParts pies_m) s = lp
-  let ctxt = SMTCtxt
-        { ctxt_smt = smt
-        , ctxt_typem = typem
-        , ctxt_res_succ = succ_ref
-        , ctxt_res_fail = fail_ref
-        , ctxt_modem = Nothing
-        , ctxt_path_constraint = []
-        , ctxt_bindingsrr = bindingsrr
-        , ctxt_balance = 0
-        , ctxt_mtxn_value = Nothing
-        , ctxt_while_invariant = Nothing
-        , ctxt_loop_var_subst = mempty
-        , ctxt_primed_vars = mempty
-        }
+  let ctxt =
+        SMTCtxt
+          { ctxt_smt = smt
+          , ctxt_typem = typem
+          , ctxt_res_succ = succ_ref
+          , ctxt_res_fail = fail_ref
+          , ctxt_modem = Nothing
+          , ctxt_path_constraint = []
+          , ctxt_bindingsrr = bindingsrr
+          , ctxt_balance = 0
+          , ctxt_mtxn_value = Nothing
+          , ctxt_while_invariant = Nothing
+          , ctxt_loop_var_subst = mempty
+          , ctxt_primed_vars = mempty
+          }
   let defineIE who (v, it) =
         case it of
           T_Fun {} -> mempty
@@ -798,7 +806,7 @@ _verify_smt smt lp = do
   pathAddBound_v ctxt Nothing at (smtBalance 0) T_UInt256 O_Initialize uint256_zero
   let smt_s_top mode = do
         putStrLn $ "Verifying with mode = " ++ show mode
-        let ctxt' = ctxt { ctxt_modem = Just mode }
+        let ctxt' = ctxt {ctxt_modem = Just mode}
         ctxtNewScope ctxt' $ smt_s ctxt' s
   let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
   mapM_ smt_s_top ms

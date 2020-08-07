@@ -515,7 +515,7 @@ evalDot ctxt at obj field =
         Just t -> do
           (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "object ref") t) (DLE_ObjectRef at obj_dla field)
           let ansv = SLV_DLVar dv
-          return $ SLRes lifts' (slvl, ansv)      
+          return $ SLRes lifts' (slvl, ansv)
     retV sv = return $ SLRes mempty sv
     illegal_field ks =
       expect_throw at (Err_Dot_InvalidField obj ks field)
@@ -627,7 +627,7 @@ evalPrim ctxt at env p sargs =
         lvl = mconcat $ map fst sargs
     SLPrim_Object ->
       case sargs of
-        [ (lvl, SLV_Object _ objm) ] ->
+        [(lvl, SLV_Object _ objm)] ->
           retV $ (lvl, SLV_Type $ T_Obj $ M.map (expect_ty . snd) objm)
         _ -> illegal_args
     SLPrim_makeEnum ->
