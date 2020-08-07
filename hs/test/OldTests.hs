@@ -41,7 +41,6 @@ testCompile n = do
         { cto_outputDir = "test.out"
         , cto_source = n
         , cto_tops = ["main"]
-        , cto_expCon = False
         , cto_expComp = False
         }
   silence $ compile opts

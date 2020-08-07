@@ -14,8 +14,7 @@ data CompilerToolArgs = CompilerToolArgs
   }
 
 data CompilerToolEnv = CompilerToolEnv
-  { cte_expCon :: Bool
-  , cte_expComp :: Bool
+  { cte_expComp :: Bool
   }
 
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
@@ -24,7 +23,6 @@ makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {..} =
     { cto_outputDir = cta_outputDir
     , cto_source = cta_source
     , cto_tops = if null cta_tops then ["main"] else cta_tops
-    , cto_expCon = cte_expCon
     , cto_expComp = cte_expComp
     }
 
@@ -78,12 +76,10 @@ getCompilerArgs = do
 
 getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
-  expCon <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_CONNECTORS"
   expComp <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_COMPILER"
   return
     CompilerToolEnv
-      { cte_expCon = expCon
-      , cte_expComp = expComp
+      { cte_expComp = expComp
       }
 
 main :: IO ()

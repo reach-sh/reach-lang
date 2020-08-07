@@ -430,6 +430,1135 @@ export async function O(stdlib, ctc, interact) {
           const v129 = v122 ? 'Bob wins' : v128;
           return [v129]; } } } } }
 
+export const ALGO = {
+  ApprovalProgram: `// <Constructor / Dispatcher>
+  txn NumAppArgs
+  int 0
+  ==
+  bz h1
+  byte base64(bWU=)
+  app_global_get
+  byte base64()
+  ==
+  bnz revert
+  byte base64(bWU=)
+  txna Accounts 0
+  app_global_put
+  byte base64(c3RhdGU=)
+  int 0
+  itob
+  global Round
+  itob
+  concat
+  keccak256
+  btoi
+  app_global_put
+  int 1
+  return
+  // </Constructor / Dispatcher>
+  // <Handlers>
+  // <Handler 1>
+  h1:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 5
+  ==
+  bz h2
+  txna ApplicationArgs 0
+  btoi
+  int 1
+  !=
+  bnz h2
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  int 0
+  itob
+  txna ApplicationArgs 1
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 3
+  btoi
+  txna ApplicationArgs 4
+  btoi
+  +
+  ==
+  bz revert
+  int 2
+  global GroupSize
+  !=
+  bnz revert
+  byte base64(c3RhdGU=)
+  int 1
+  itob
+  global Round
+  itob
+  concat
+  gtxn 0 Sender
+  concat
+  txna ApplicationArgs 3
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 4
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  app_global_put
+  b done
+  // </Handler 1>
+  // <Handler 2>
+  h2:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 6
+  ==
+  bz h3
+  txna ApplicationArgs 0
+  btoi
+  int 2
+  !=
+  bnz h3
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  txna ApplicationArgs 1
+  btoi
+  int 10
+  +
+  global Round
+  >=
+  bz revert
+  int 1
+  itob
+  txna ApplicationArgs 1
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 4
+  btoi
+  ==
+  bz revert
+  int 2
+  global GroupSize
+  !=
+  bnz revert
+  byte base64(c3RhdGU=)
+  int 2
+  itob
+  global Round
+  itob
+  concat
+  txna ApplicationArgs 3
+  concat
+  gtxn 0 Sender
+  concat
+  txna ApplicationArgs 4
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  app_global_put
+  b done
+  // </Handler 2>
+  // <Handler 3>
+  h3:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 8
+  ==
+  bz h4
+  txna ApplicationArgs 0
+  btoi
+  int 3
+  !=
+  bnz h4
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  gtxn 0 Sender
+  txna ApplicationArgs 3
+  !=
+  bnz revert
+  txna ApplicationArgs 1
+  btoi
+  int 10
+  +
+  global Round
+  >=
+  bz revert
+  int 2
+  itob
+  txna ApplicationArgs 1
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 6
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  int 0
+  ==
+  bz revert
+  int 2
+  global GroupSize
+  !=
+  bnz revert
+  byte base64(c3RhdGU=)
+  int 3
+  itob
+  global Round
+  itob
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 6
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 7
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  app_global_put
+  b done
+  // </Handler 3>
+  // <Handler 4>
+  h4:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 9
+  ==
+  bz h5
+  txna ApplicationArgs 0
+  btoi
+  int 4
+  !=
+  bnz h5
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  gtxn 0 Sender
+  txna ApplicationArgs 4
+  !=
+  bnz revert
+  txna ApplicationArgs 1
+  btoi
+  int 10
+  +
+  global Round
+  >=
+  bz revert
+  int 3
+  itob
+  txna ApplicationArgs 1
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 6
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 7
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  int 0
+  ==
+  bz revert
+  int 0
+  txna ApplicationArgs 8
+  btoi
+  <=
+  bnz h4_0
+  int 0
+  b h4_1
+  h4_0:
+  txna ApplicationArgs 8
+  btoi
+  int 3
+  <
+  h4_1:
+  bz revert
+  int 2
+  global GroupSize
+  !=
+  bnz revert
+  byte base64(c3RhdGU=)
+  int 4
+  itob
+  global Round
+  itob
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 6
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 7
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 8
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  app_global_put
+  b done
+  // </Handler 4>
+  // <Handler 5>
+  h5:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 11
+  ==
+  bz h6
+  txna ApplicationArgs 0
+  btoi
+  int 5
+  !=
+  bnz h6
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  gtxn 0 Sender
+  txna ApplicationArgs 3
+  !=
+  bnz revert
+  txna ApplicationArgs 1
+  btoi
+  int 10
+  +
+  global Round
+  >=
+  bz revert
+  int 4
+  itob
+  txna ApplicationArgs 1
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 6
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 7
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 8
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  int 0
+  ==
+  bz revert
+  txna ApplicationArgs 7
+  btoi
+  txna ApplicationArgs 9
+  btoi
+  itob
+  txna ApplicationArgs 10
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  ==
+  bz revert
+  int 0
+  txna ApplicationArgs 10
+  btoi
+  <=
+  bnz h5_0
+  int 0
+  b h5_1
+  h5_0:
+  txna ApplicationArgs 10
+  btoi
+  int 3
+  <
+  h5_1:
+  bz revert
+  int 0
+  txna ApplicationArgs 10
+  btoi
+  <=
+  bnz h5_2
+  int 0
+  b h5_3
+  h5_2:
+  txna ApplicationArgs 10
+  btoi
+  int 3
+  <
+  h5_3:
+  store 0
+  int 0
+  txna ApplicationArgs 8
+  btoi
+  <=
+  bnz h5_4
+  int 0
+  b h5_5
+  h5_4:
+  txna ApplicationArgs 8
+  btoi
+  int 3
+  <
+  h5_5:
+  store 1
+  load 0
+  bnz h5_6
+  int 0
+  b h5_7
+  h5_6:
+  load 1
+  h5_7:
+  bnz h5_8
+  load 0
+  bnz h5_9
+  load 1
+  bnz h5_10
+  int 1
+  b h5_11
+  h5_10:
+  int 0
+  h5_11:
+  b h5_12
+  h5_9:
+  int 2
+  h5_12:
+  b h5_13
+  h5_8:
+  txna ApplicationArgs 10
+  btoi
+  int 4
+  txna ApplicationArgs 8
+  btoi
+  -
+  +
+  int 3
+  %
+  h5_13:
+  store 2
+  load 2
+  int 2
+  ==
+  store 3
+  load 2
+  int 0
+  ==
+  store 4
+  load 2
+  int 2
+  ==
+  store 5
+  load 2
+  int 0
+  ==
+  store 6
+  int 2
+  global GroupSize
+  >
+  bnz revert
+  gtxn 2 TypeEnum
+  int pay
+  !=
+  bnz revert
+  gtxn 2 Amount
+  txna ApplicationArgs 6
+  btoi
+  load 5
+  bnz h5_14
+  load 6
+  bnz h5_15
+  txna ApplicationArgs 5
+  btoi
+  b h5_16
+  h5_15:
+  int 0
+  h5_16:
+  b h5_17
+  h5_14:
+  int 2
+  txna ApplicationArgs 5
+  btoi
+  *
+  h5_17:
+  +
+  !=
+  bnz revert
+  gtxn 2 Receiver
+  txna ApplicationArgs 3
+  !=
+  bnz revert
+  gtxn 2 Sender
+  byte base64(bWU=)
+  app_global_get
+  !=
+  bnz revert
+  int 3
+  global GroupSize
+  >
+  bnz revert
+  gtxn 3 TypeEnum
+  int pay
+  !=
+  bnz revert
+  gtxn 3 Amount
+  load 5
+  bnz h5_18
+  load 6
+  bnz h5_19
+  txna ApplicationArgs 5
+  btoi
+  b h5_20
+  h5_19:
+  int 2
+  txna ApplicationArgs 5
+  btoi
+  *
+  h5_20:
+  b h5_21
+  h5_18:
+  int 0
+  h5_21:
+  !=
+  bnz revert
+  gtxn 3 Receiver
+  txna ApplicationArgs 4
+  !=
+  bnz revert
+  gtxn 3 Sender
+  byte base64(bWU=)
+  app_global_get
+  !=
+  bnz revert
+  int 4
+  global GroupSize
+  !=
+  bnz revert
+  b halt
+  // </Handler 5>
+  // <Handler 6>
+  h6:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 9
+  ==
+  bz h7
+  txna ApplicationArgs 0
+  btoi
+  int 6
+  !=
+  bnz h7
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  gtxn 0 Sender
+  txna ApplicationArgs 4
+  !=
+  bnz revert
+  txna ApplicationArgs 1
+  btoi
+  int 10
+  +
+  global Round
+  <
+  bz revert
+  int 4
+  itob
+  txna ApplicationArgs 1
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 6
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 7
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 8
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  int 0
+  ==
+  bz revert
+  int 2
+  global GroupSize
+  >
+  bnz revert
+  gtxn 2 TypeEnum
+  int pay
+  !=
+  bnz revert
+  gtxn 2 Amount
+  int 0
+  balance
+  !=
+  bnz revert
+  gtxn 2 Receiver
+  txna ApplicationArgs 4
+  !=
+  bnz revert
+  gtxn 2 Sender
+  byte base64(bWU=)
+  app_global_get
+  !=
+  bnz revert
+  int 3
+  global GroupSize
+  !=
+  bnz revert
+  b halt
+  // </Handler 6>
+  // <Handler 7>
+  h7:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 8
+  ==
+  bz h8
+  txna ApplicationArgs 0
+  btoi
+  int 7
+  !=
+  bnz h8
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  gtxn 0 Sender
+  txna ApplicationArgs 3
+  !=
+  bnz revert
+  txna ApplicationArgs 1
+  btoi
+  int 10
+  +
+  global Round
+  <
+  bz revert
+  int 3
+  itob
+  txna ApplicationArgs 1
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 6
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 7
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  int 0
+  ==
+  bz revert
+  int 2
+  global GroupSize
+  >
+  bnz revert
+  gtxn 2 TypeEnum
+  int pay
+  !=
+  bnz revert
+  gtxn 2 Amount
+  int 0
+  balance
+  !=
+  bnz revert
+  gtxn 2 Receiver
+  txna ApplicationArgs 3
+  !=
+  bnz revert
+  gtxn 2 Sender
+  byte base64(bWU=)
+  app_global_get
+  !=
+  bnz revert
+  int 3
+  global GroupSize
+  !=
+  bnz revert
+  b halt
+  // </Handler 7>
+  // <Handler 8>
+  h8:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 7
+  ==
+  bz h9
+  txna ApplicationArgs 0
+  btoi
+  int 8
+  !=
+  bnz h9
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  gtxn 0 Sender
+  txna ApplicationArgs 4
+  !=
+  bnz revert
+  txna ApplicationArgs 1
+  btoi
+  int 10
+  +
+  global Round
+  <
+  bz revert
+  int 2
+  itob
+  txna ApplicationArgs 1
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 6
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  int 0
+  ==
+  bz revert
+  int 2
+  global GroupSize
+  >
+  bnz revert
+  gtxn 2 TypeEnum
+  int pay
+  !=
+  bnz revert
+  gtxn 2 Amount
+  int 0
+  balance
+  !=
+  bnz revert
+  gtxn 2 Receiver
+  txna ApplicationArgs 4
+  !=
+  bnz revert
+  gtxn 2 Sender
+  byte base64(bWU=)
+  app_global_get
+  !=
+  bnz revert
+  int 3
+  global GroupSize
+  !=
+  bnz revert
+  b halt
+  // </Handler 8>
+  // <Handler 9>
+  h9:
+  byte base64(bWU=)
+  txna Accounts 0
+  ==
+  bz revert
+  txn NumAppArgs
+  int 6
+  ==
+  bz revert
+  txna ApplicationArgs 0
+  btoi
+  int 9
+  !=
+  bnz revert
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 1 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 1 Receiver
+  byte base64(bWU=)
+  app_global_get
+  ==
+  bz revert
+  gtxn 1 Amount
+  txna ApplicationArgs 2
+  btoi
+  ==
+  bz revert
+  gtxn 0 Sender
+  txna ApplicationArgs 3
+  !=
+  bnz revert
+  txna ApplicationArgs 1
+  btoi
+  int 10
+  +
+  global Round
+  <
+  bz revert
+  int 1
+  itob
+  txna ApplicationArgs 1
+  concat
+  txna ApplicationArgs 3
+  concat
+  txna ApplicationArgs 4
+  btoi
+  itob
+  concat
+  txna ApplicationArgs 5
+  btoi
+  itob
+  concat
+  keccak256
+  btoi
+  byte base64(c3RhdGU=)
+  app_global_get
+  !=
+  bnz revert
+  gtxn 1 Amount
+  int 0
+  ==
+  bz revert
+  int 2
+  global GroupSize
+  >
+  bnz revert
+  gtxn 2 TypeEnum
+  int pay
+  !=
+  bnz revert
+  gtxn 2 Amount
+  int 0
+  balance
+  !=
+  bnz revert
+  gtxn 2 Receiver
+  txna ApplicationArgs 3
+  !=
+  bnz revert
+  gtxn 2 Sender
+  byte base64(bWU=)
+  app_global_get
+  !=
+  bnz revert
+  int 3
+  global GroupSize
+  !=
+  bnz revert
+  b halt
+  // </Handler 9>
+  // </Handlers>
+  // <Loops>
+  // </Loops>
+  // <Standard>
+  revert:
+  int 0
+  return
+  halt:
+  byte base64(c3RhdGU=)
+  app_global_del
+  byte base64(bWU=)
+  app_global_del
+  b done
+  done:
+  int 1
+  return
+  // </Standard>`
+  ,
+  
+  ClearStateProgram: `int 0`
+  ,
+  
+  LogicSigProgram: `int 2
+  global GroupSize
+  <=
+  bz revert
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  arg 0
+  ==
+  bz revert
+  b done
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return` };
+
 export const ETH = {
   ABI: `[{"inputs":[],"payable":true,"stateMutability":"payable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v4","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v6","type":"uint256"}],"name":"e1","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"}],"name":"e2","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v28","type":"uint256"}],"name":"e3","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v43","type":"uint256"}],"name":"e4","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v50","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"v51","type":"uint256"}],"name":"e5","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"}],"name":"e6","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"}],"name":"e7","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"}],"name":"e8","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"_bal","type":"uint256"}],"name":"e9","type":"event"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"}],"name":"m1","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"v0","type":"address"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"}],"name":"m2","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"v0","type":"address"},{"internalType":"address payable","name":"v1","type":"address"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"}],"name":"m3","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"v0","type":"address"},{"internalType":"address payable","name":"v1","type":"address"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"}],"name":"m4","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"v0","type":"address"},{"internalType":"address payable","name":"v1","type":"address"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"},{"internalType":"uint256","name":"v50","type":"uint256"},{"internalType":"uint256","name":"v51","type":"uint256"}],"name":"m5","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"v0","type":"address"},{"internalType":"address payable","name":"v1","type":"address"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"},{"internalType":"uint256","name":"v43","type":"uint256"}],"name":"m6","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"v0","type":"address"},{"internalType":"address payable","name":"v1","type":"address"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"},{"internalType":"uint256","name":"v28","type":"uint256"}],"name":"m7","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"v0","type":"address"},{"internalType":"address payable","name":"v1","type":"address"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"}],"name":"m8","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"_last","type":"uint256"},{"internalType":"address payable","name":"v0","type":"address"},{"internalType":"uint256","name":"v4","type":"uint256"},{"internalType":"uint256","name":"v6","type":"uint256"}],"name":"m9","outputs":[],"payable":true,"stateMutability":"payable","type":"function"}]`
   ,

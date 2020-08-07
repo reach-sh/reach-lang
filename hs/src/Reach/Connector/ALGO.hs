@@ -587,11 +587,11 @@ lsp_bc =
 emit_teal :: FilePath -> BLProgram a -> IO ConnectorResult
 emit_teal tf (BL_Prog _ _ _ cp) = do
   let ap_bc = cp_to_teal cp
-  writeFile tf (show ap_bc)
-  writeFile (tf ++ ".lsp") (show lsp_bc)
-  tc_lsp <- compile_teal "LSP" lsp_bc
-  tc_ap <- compile_teal "AP" ap_bc
-  tc_csp <- compile_teal "CSP" (TEAL $ comp_con (Con_I 1))
+  let tc_ap = show ap_bc
+  let tc_lsp = show lsp_bc
+  writeFile tf tc_ap
+  writeFile (tf ++ ".lsp") tc_lsp
+  let tc_csp = show (TEAL $ comp_con (Con_I 0))
   return $
     M.fromList
       [ ( "ALGO"

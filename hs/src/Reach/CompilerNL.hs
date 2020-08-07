@@ -14,8 +14,6 @@ data CompilerOpts = CompilerOpts
   { output :: T.Text -> String
   , source :: FilePath
   , tops :: [ String ]
-  , -- | Enable experimental connectors
-    expCon :: Bool
   }
 
 compileNL :: CompilerOpts -> IO ()
