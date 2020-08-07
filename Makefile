@@ -3,15 +3,11 @@ all: check run-all
 
 .PHONY: check
 check:
-	@echo Consistent Solidity Versions
-	@ag --ignore ./Makefile --ignore-dir docs --nogroup " solidity "
-	@echo Find TODO/XXX
-	@ag --ignore ./Makefile --ignore-dir docs '(xxx|todo|fixme)'
+	@ag --ignore ./Makefile --ignore-dir docs --ignore '*.dead' '(xxx|todo|fixme)'
 
 .PHONY: todo
 todo:
-	@ag --color --no-break --ignore todo.html --ignore ./Makefile --ignore-dir docs \
-		'(xxx|todo|fixme)' | aha --black > todo.html
+	@$(MAKE) check | aha --black > todo.html
 
 .PHONY: run-all
 run-all:
