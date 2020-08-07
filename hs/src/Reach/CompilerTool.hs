@@ -3,7 +3,6 @@ module Reach.CompilerTool where
 import qualified Filesystem.Path.CurrentOS as FP
 import Reach.Compiler (compile)
 import Reach.CompilerNL
-import Reach.Verify (VerifierName)
 import System.Directory
 
 data CompilerToolOpts = CompilerToolOpts
@@ -11,7 +10,6 @@ data CompilerToolOpts = CompilerToolOpts
   , cto_source :: FilePath
   , cto_expCon :: Bool
   , cto_expComp :: Bool
-  , cto_verifier :: VerifierName
   }
 
 makeCompilerOpts :: CompilerToolOpts -> IO CompilerOpts
@@ -28,7 +26,6 @@ makeCompilerOpts CompilerToolOpts {..} = do
       , output_name = outn
       , source = srcp
       , expCon = cto_expCon
-      , verifier = cto_verifier
       }
 
 compilerToolMain :: CompilerToolOpts -> IO ()

@@ -3,7 +3,8 @@ all: check run-all
 
 .PHONY: check
 check:
-	@ag --ignore ./Makefile --ignore-dir docs --ignore '*.dead' '(xxx|todo|fixme)'
+	@find hs -name '*.hs' | xargs wc
+	@ag --ignore ./Makefile --ignore docs-src/Makefile --ignore svg/todo.svg --ignore README.md --ignore-dir docs --ignore '*.dead' '(xxx|todo|fixme)'
 
 .PHONY: todo
 todo:

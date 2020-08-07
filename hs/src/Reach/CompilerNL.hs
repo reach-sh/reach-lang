@@ -16,7 +16,6 @@ data CompilerOpts = CompilerOpts
   , source :: FilePath
   , -- | Enable experimental connectors
     expCon :: Bool
-  , verifier :: VerifierName
   }
 
 compileNL :: CompilerOpts -> IO ()
@@ -24,15 +23,13 @@ compileNL copts = do
   let out = output copts
   let outn = output_name copts
   djp <- gatherDeps_top $ source copts
-  let dp = compileBundle djp "main"
-  out "dl" $ show $ pretty dp
-  let linear = linearize dp
-  out "ll" $ show $ pretty linear
-  --- FIXME the verifier might be dependent on the backend/connector
-  --- chosen and should not be choosable by the tool.
-  verify outn (verifier copts) linear
-  let projected = epp linear
-  out "pl" $ show $ pretty projected
+  let dl = compileBundle djp "main"
+  out "dl" $ show $ pretty dl
+  let ll = linearize dl
+  out "ll" $ show $ pretty ll
+  verify outn ll
+  let pl = epp ll
+  out "pl" $ show $ pretty pl
   traceM $ "XXX connectors"
   traceM $ "XXX backends"
   return ()

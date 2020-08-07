@@ -3,7 +3,6 @@ module Main where
 import Data.Char
 import Options.Applicative
 import Reach.CompilerTool
-import Reach.Verify (VerifierName (Z3))
 import System.Directory
 import System.Environment
 import Text.Read (readMaybe)
@@ -16,7 +15,6 @@ data CompilerToolArgs = CompilerToolArgs
 data CompilerToolEnv = CompilerToolEnv
   { cte_expCon :: Bool
   , cte_expComp :: Bool
-  , cte_verifier :: VerifierName
   }
 
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
@@ -26,7 +24,6 @@ makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {..} =
     , cto_source = cta_source
     , cto_expCon = cte_expCon
     , cto_expComp = cte_expComp
-    , cto_verifier = cte_verifier
     }
 
 compiler :: FilePath -> Parser CompilerToolArgs
@@ -80,12 +77,10 @@ getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
   expCon <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_CONNECTORS"
   expComp <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_COMPILER"
-  vf <- readEnvOrDefault "REACHC_VERIFIER" Z3
   return
     CompilerToolEnv
       { cte_expCon = expCon
       , cte_expComp = expComp
-      , cte_verifier = vf
       }
 
 main :: IO ()

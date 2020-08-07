@@ -7,9 +7,12 @@ import Reach.Verify.SMT
 data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
-verify :: (T.Text -> String) -> VerifierName -> LLProg -> IO ()
-verify outn which lp =
-  case which of
+verify :: (T.Text -> String) -> LLProg -> IO ()
+verify outn lp =
+  --- The verifier should not be choosable by the user, but we may
+  --- automatically select different provers based on the attributes
+  --- of the program.
+  case Z3 of
     Z3 ->
       smt "z3" ["-smt2", "-in"]
     Yices ->
