@@ -13,22 +13,25 @@ import Reach.Verify
 data CompilerOpts = CompilerOpts
   { output :: T.Text -> String
   , source :: FilePath
+  , tops :: [ String ]
   , -- | Enable experimental connectors
     expCon :: Bool
   }
 
 compileNL :: CompilerOpts -> IO ()
 compileNL copts = do
-  let outn = output copts
-  let out = writeFile . outn
   djp <- gatherDeps_top $ source copts
-  let dl = compileBundle djp "main"
-  out "dl" $ show $ pretty dl
-  let ll = linearize dl
-  out "ll" $ show $ pretty ll
-  verify outn ll
-  let pl = epp ll
-  out "pl" $ show $ pretty pl
-  traceM $ "XXX connectors"
-  traceM $ "XXX backends"
+  let compile1 which = do
+        let outn = (output copts) . ((T.pack which <> ".") <>)
+        let out = writeFile . outn
+        let dl = compileBundle djp which
+        out "dl" $ show $ pretty dl
+        let ll = linearize dl
+        out "ll" $ show $ pretty ll
+        verify outn ll
+        let pl = epp ll
+        out "pl" $ show $ pretty pl
+        traceM $ "XXX connectors"
+        traceM $ "XXX backends"
+  mapM_ compile1 $ tops copts
   return ()

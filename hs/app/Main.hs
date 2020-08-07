@@ -10,6 +10,7 @@ import Text.Read (readMaybe)
 data CompilerToolArgs = CompilerToolArgs
   { cta_outputDir :: FilePath
   , cta_source :: FilePath
+  , cta_tops :: [String]
   }
 
 data CompilerToolEnv = CompilerToolEnv
@@ -22,6 +23,7 @@ makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {..} =
   CompilerToolOpts
     { cto_outputDir = cta_outputDir
     , cto_source = cta_source
+    , cto_tops = if null cta_tops then ["main"] else cta_tops
     , cto_expCon = cte_expCon
     , cto_expComp = cte_expComp
     }
@@ -37,6 +39,7 @@ compiler cwd =
          <> showDefault
          <> value cwd)
     <*> strArgument (metavar "SOURCE")
+    <*> many (strArgument (metavar "EXPORTS..."))
 
 checkTruthyEnv :: String -> IO Bool
 checkTruthyEnv varName = do

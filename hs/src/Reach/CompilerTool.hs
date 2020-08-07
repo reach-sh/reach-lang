@@ -8,6 +8,7 @@ import System.Directory
 data CompilerToolOpts = CompilerToolOpts
   { cto_outputDir :: FilePath
   , cto_source :: FilePath
+  , cto_tops :: [ String ]
   , cto_expCon :: Bool
   , cto_expComp :: Bool
   }
@@ -23,6 +24,7 @@ makeCompilerOpts CompilerToolOpts {..} = do
     CompilerOpts
       { output = outn
       , source = srcp
+      , tops = cto_tops
       , expCon = cto_expCon
       }
 

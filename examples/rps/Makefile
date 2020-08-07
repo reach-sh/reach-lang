@@ -5,8 +5,7 @@ build/%.mjs: rsh/%.rsh
 
 .PHONY: exp-build
 exp-build:
-	REACHC_ENABLE_EXPERIMENTAL_COMPILER=Y ../../reachc -o build rps.exp.rsh
-	REACHC_ENABLE_EXPERIMENTAL_COMPILER=Y ../../reachc -o build rps.while.exp.rsh
+	REACHC_ENABLE_EXPERIMENTAL_COMPILER=Y ../../reachc -o build index.rsh once nodraw
 
 .PHONY: build
 build: build/rps.mjs build/rps_while.mjs

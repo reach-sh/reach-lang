@@ -108,6 +108,12 @@ lin_step_s rets s k =
         back more = iters rets more k
         mtime' = do
           (delay_da, DLBlock time_at time_fs time_ss time_da) <- mtime
+          {-
+          --- XXX Timeouts always "exit"
+          --- XXX Not checking the result types
+          let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_fs time_da)
+          return $ (delay_da, time_ll)
+          -}
           case k of
             LLS_Stop fin_at _ fin_da -> do
               let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_fs time_da)

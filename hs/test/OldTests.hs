@@ -40,6 +40,7 @@ testCompile n = do
       CompilerToolOpts
         { cto_outputDir = "test.out"
         , cto_source = n
+        , cto_tops = []
         , cto_expCon = False
         , cto_expComp = False
         }
