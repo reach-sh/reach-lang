@@ -18,7 +18,6 @@ import Reach.Compiler (CompileErr, compile)
 import Reach.CompilerTool
 import Reach.ParserInternal
 import Reach.Test.Util
-import Reach.Verify (VerifierName (Z3))
 import System.Directory
 import System.Environment
 import System.Exit
@@ -43,7 +42,6 @@ testCompile n = do
         , cto_source = n
         , cto_expCon = False
         , cto_expComp = False
-        , cto_verifier = Z3
         }
   silence $ compile opts
 
