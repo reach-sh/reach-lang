@@ -8,7 +8,7 @@ import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as S
 import qualified Data.Set as Set
-import qualified Data.Text as T
+import Reach.CompilerNL
 import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
 import GHC.Generics (Generic)
@@ -19,7 +19,6 @@ import Reach.Connector.ETH_Solidity
 import Reach.Parser
 import Reach.Pretty ()
 import Reach.Util
-import Reach.Verify (VerifierName)
 import System.Exit
 import Test.SmallCheck.Series (Serial)
 import Text.Pretty.Simple
@@ -1189,15 +1188,6 @@ epp (IL_Prog h rt ips it) = BL_Prog h rt bps cp
     γi = M.fromList $ map initγ $ Set.toList ips
     initγ p = (RolePart p, mempty)
     γ = M.insert RoleContract M.empty γi
-
-data CompilerOpts = CompilerOpts
-  { output :: T.Text -> String -> IO ()
-  , output_name :: T.Text -> String
-  , source :: FilePath
-  , -- | Enable experimental connectors
-    expCon :: Bool
-  , verifier :: VerifierName
-  }
 
 compile :: CompilerOpts -> IO ()
 compile copts = do

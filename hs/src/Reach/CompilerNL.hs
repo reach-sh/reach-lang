@@ -2,7 +2,6 @@ module Reach.CompilerNL where
 
 import Data.Text.Prettyprint.Doc
 import Debug.Trace
-import Reach.Compiler (CompilerOpts, output, output_name, source, verifier)
 import Reach.NL_EPP
 import Reach.NL_Eval
 import Reach.NL_Linearize
@@ -10,7 +9,17 @@ import Reach.NL_Parser
 import Reach.NL_Pretty ()
 import Reach.Verify
 
--- Main entry point
+import qualified Data.Text as T
+
+data CompilerOpts = CompilerOpts
+  { output :: T.Text -> String -> IO ()
+  , output_name :: T.Text -> String
+  , source :: FilePath
+  , -- | Enable experimental connectors
+    expCon :: Bool
+  , verifier :: VerifierName
+  }
+
 compileNL :: CompilerOpts -> IO ()
 compileNL copts = do
   let out = output copts
