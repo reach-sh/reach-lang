@@ -9,56 +9,68 @@
 <body style="color:white; background-color:black">
 <pre>
 make[1]: Entering directory '/root/project'
-    92    346   2756 hs/test/OldTests.hs
-    22    101    682 hs/test/Reach/Test_Util.hs
-   134    708   4589 hs/test/Reach/Test/Util.hs
-    19     57    508 hs/test/Reach/Test_NL_Eval.hs
-     4     12    190 hs/test/Main.hs
-    86    508   2561 hs/src/Reach/CollectTypes.hs
-   335   1815  10724 hs/src/Reach/NL_Pretty.hs
-  1583   9305  66976 hs/src/Reach/NL_Eval.hs
-    18     63    367 hs/src/Reach/STCounter.hs
-    30    125    852 hs/src/Reach/Verify.hs
-   442   2351  15638 hs/src/Reach/NL_EPP.hs
-   248   1786  10126 hs/src/Reach/Pretty.hs
-   176    841   5265 hs/src/Reach/NL_Type.hs
+    94    336   2670 hs/app/Main.hs
+     3      5     47 hs/Setup.hs
     19     43    482 hs/src/Reach/EmbeddedFiles.hs
+   335   1815  10724 hs/src/Reach/NL_Pretty.hs
      6      8     77 hs/src/Reach/Parser.hs
-     7     21    161 hs/src/Reach/Connector.hs
-   425   1968  11922 hs/src/Reach/AST.hs
-   312   1828  11731 hs/src/Reach/Backend/JS.hs
-   585   2190  15073 hs/src/Reach/NL_AST.hs
-    36    134   1052 hs/src/Reach/CompilerTool.hs
-   604   2667  18270 hs/src/Reach/Connector/ALGO.hs
-   429   2255  13576 hs/src/Reach/Connector/ETH_Solidity.hs
+  1583   9305  66976 hs/src/Reach/NL_Eval.hs
    181    870   6424 hs/src/Reach/NL_Parser.hs
-    41    168   1108 hs/src/Reach/JSUtil.hs
-   126    709   4358 hs/src/Reach/NL_Linearize.hs
-    35    134    850 hs/src/Reach/CompilerNL.hs
+    18     63    367 hs/src/Reach/STCounter.hs
+    37    148    979 hs/src/Reach/CompilerNL.hs
     43    203   1180 hs/src/Reach/Util.hs
-   682   4433  27348 hs/src/Reach/ParserInternal.hs
-  1214   7202  44648 hs/src/Reach/Compiler.hs
+   176    841   5265 hs/src/Reach/NL_Type.hs
+     7     21    161 hs/src/Reach/Connector.hs
+    41    168   1108 hs/src/Reach/JSUtil.hs
+   425   1968  11922 hs/src/Reach/AST.hs
     32    167   1041 hs/src/Reach/Verify/SMTParser.hs
    871   4133  28040 hs/src/Reach/Verify/SMT.hs
+    36    130   1029 hs/src/Reach/CompilerTool.hs
+   442   2351  15638 hs/src/Reach/NL_EPP.hs
+  1214   7203  44647 hs/src/Reach/Compiler.hs
+    30    125    852 hs/src/Reach/Verify.hs
+   682   4433  27348 hs/src/Reach/ParserInternal.hs
+   312   1828  11731 hs/src/Reach/Backend/JS.hs
+   248   1786  10126 hs/src/Reach/Pretty.hs
+   585   2190  15073 hs/src/Reach/NL_AST.hs
+   132    738   4602 hs/src/Reach/NL_Linearize.hs
+   429   2255  13576 hs/src/Reach/Connector/ETH_Solidity.hs
+   604   2667  18270 hs/src/Reach/Connector/ALGO.hs
    152    283   2883 hs/src/Reach/JSOrphans.hs
-    91    317   2533 hs/app/Main.hs
-     3      5     47 hs/Setup.hs
-  9083  47756 314038 total
-anti-examples/rps_double_isHand_fail.rsh:22:    return A_WINS; // XXX A wins by default? shouldn't happen.
-anti-examples/rps_double_isHand_fail.rsh:162:  // XXX Delete this and uncomment the following
-anti-examples/rps_double_isHand_fail.rsh:165:  // TODO: reorganize this code to reduce duplication.
+    86    508   2561 hs/src/Reach/CollectTypes.hs
+   134    708   4589 hs/test/Reach/Test/Util.hs
+    19     57    508 hs/test/Reach/Test_NL_Eval.hs
+    22    101    682 hs/test/Reach/Test_Util.hs
+     4     12    190 hs/test/Main.hs
+    93    350   2780 hs/test/OldTests.hs
+  9095  47819 314548 total
 anti-examples/rps_double_break_invariant.rsh:22:    return A_WINS; // XXX A wins by default? shouldn't happen.
 anti-examples/rps_double_break_invariant.rsh:161:  // XXX Delete this and uncomment the following
 anti-examples/rps_double_break_invariant.rsh:164:  // TODO: reorganize this code to reduce duplication.
-docs-src/tut.scrbl:10:XXX
-hs/test/OldTests.hs:6:  , -- XXX broken
-hs/test/OldTests.hs:60:    -- TODO: a better way of running the compiler and capturing stdout/stderr
-hs/test/OldTests.hs:90:-- XXX broken. Port these tests to NL.
-hs/test/Reach/Test/Util.hs:109:-- XXX This is a hack to make tests portable.
-hs/test-examples/nl-eval-errors/Err_Export_IllegalJS.rsh:9:// XXX But we could probably support this
-hs/test-examples/verification-errors/multisig__multisig.rsh.0.out:23:... v8 = 1 -- XXX reachc error, bad info on var
+anti-examples/rps_double_isHand_fail.rsh:22:    return A_WINS; // XXX A wins by default? shouldn't happen.
+anti-examples/rps_double_isHand_fail.rsh:162:  // XXX Delete this and uncomment the following
+anti-examples/rps_double_isHand_fail.rsh:165:  // TODO: reorganize this code to reduce duplication.
+examples/rps/index.rsh:75:// XXX Almost every way I tried to abstract these broke because of
+examples/rps/rsh/rps_double.rsh:2:// XXX: WIP. Commented out code at the end doesn't compile yet
+examples/rps/rsh/rps_double.rsh:22:    return A_WINS; // XXX A wins by default? shouldn't happen.
+examples/rps/rsh/rps_double.rsh:160:  // XXX Delete this and uncomment the following
+examples/rps/rsh/rps_double.rsh:163:  // TODO: reorganize this code to reduce duplication.
+examples/secured-loan/build/secured-loan.sol:20:      uint16 len = uint16(uint8(c[0]))*256+uint16(uint8(c[1])); // TODO: improve using some library on the net
+examples/secured-loan/build/secured-loan.sol:24:  // TODO: optimize using tricks from the Internet? But not before there are tests somehow.
+go/src/reach-sh/stdlib/stdlib.go:51:  panic(&quot;XXX&quot;) }
+go/src/reach-sh/stdlib/stdlib.go:64:  panic(&quot;XXX&quot;) }
+go/src/reach-sh/stdlib/stdlib.go:67:  panic(&quot;XXX&quot;) }
+go/src/reach-sh/stdlib/stdlib.go:70:  panic(&quot;XXX&quot;) }
+go/src/reach-sh/stdlib/stdlib.go:73:  panic(&quot;XXX&quot;) }
+go/src/reach-sh/stdlib/stdlib.go:76:  panic(&quot;XXX&quot;) }
+go/src/reach-sh/stdlib/stdlib.go:79:  panic(&quot;XXX&quot;) }
+go/src/reach-sh/stdlib/stdlib.go:82:  panic(&quot;XXX&quot;) }
+go/src/reach-sh/stdlib/stdlib.go:87:  panic(&quot;XXX SendRecv&quot;)
+go/src/reach-sh/stdlib/stdlib.go:91:  panic(&quot;XXX Recv&quot;)
+hs/Makefile:17:# TODO: dockerized stan so that make check does not require local hs install?
 hs/test-examples/verification-errors/multisig__multisig.rsh.2.out:31:... ctc_balance3 = 1 -- XXX reachc error, bad info on var
 hs/test-examples/verification-errors/multisig__multisig.rsh.2.out:62:... ctc_balance3 = 1 -- XXX reachc error, bad info on var
+hs/test-examples/verification-errors/multisig__multisig.rsh.0.out:23:... v8 = 1 -- XXX reachc error, bad info on var
 hs/test-examples/verification-errors/multisig__multisig.rsh.3.out:19:... ctc_balance3 = 1 -- XXX reachc error, bad info on var
 hs/test-examples/verification-errors/multisig__multisig.rsh.3.out:30:... v8 = 1 -- XXX reachc error, bad info on var
 hs/test-examples/verification-errors/multisig__multisig.rsh.3.out:52:... ctc_balance3 = 1 -- XXX reachc error, bad info on var
@@ -67,14 +79,19 @@ hs/test-examples/verification-errors/multisig__multisig.rsh.3.out:122:... ctc_ba
 hs/test-examples/verification-errors/multisig__multisig.rsh.3.out:157:... ctc_balance3 = 1 -- XXX reachc error, bad info on var
 hs/test-examples/verification-errors/multisig__multisig.rsh.3.out:192:... ctc_balance3 = 1 -- XXX reachc error, bad info on var
 hs/test-examples/verification-errors/rps__rsh__rps_while.rsh.0.out:30:... v16 = 2 -- XXX reachc error, bad info on var
-hs/test-examples/compile-errors/CE_ArrayLenNotConstant.txt:1:CE_ArrayLenNotConstant.rsh:8:26: array length is not constant: &quot;XXX Implement show for part of InlineV&quot;
+hs/test-examples/nl-eval-errors/Err_Export_IllegalJS.rsh:9:// XXX But we could probably support this
 hs/test-examples/compile-errors/CE_Unreachable.rsh:5:// XXX port this to NL; unrelated error inserted to make test pass
+hs/test-examples/compile-errors/CE_ArrayLenNotConstant.txt:1:CE_ArrayLenNotConstant.rsh:8:26: array length is not constant: &quot;XXX Implement show for part of InlineV&quot;
+hs/src/Reach/NL_Parser.hs:29:--- FIXME implement a custom show that is useful
+hs/src/Reach/NL_Parser.hs:53:--- FIXME Support more binding forms
+hs/src/Reach/CompilerNL.hs:34:        traceM $ &quot;XXX connectors&quot;
+hs/src/Reach/CompilerNL.hs:35:        traceM $ &quot;XXX backends&quot;
+hs/src/Reach/NL_Type.hs:9:--- FIXME implement a custom show that is useful
+hs/src/Reach/NL_Type.hs:22:  --- FIXME Find meet of objects
 hs/src/Reach/Verify.hs:19:      -- XXX: known not to work.
 hs/src/Reach/Verify.hs:25:      -- XXX: known not to work.
 hs/src/Reach/NL_EPP.hs:114:  , --- FIXME These would be maps when we have labelled loops
 hs/src/Reach/NL_EPP.hs:143:--- FIXME Try to simplify these types after all the cases are covered... maybe some of the values are always the same.
-hs/src/Reach/NL_Type.hs:9:--- FIXME implement a custom show that is useful
-hs/src/Reach/NL_Type.hs:22:  --- FIXME Find meet of objects
 hs/src/Reach/NL_Eval.hs:97:--- FIXME I think most of these things should be in NL_Pretty
 hs/src/Reach/NL_Eval.hs:99:--- FIXME typeOf may fail causing an error within an error...?
 hs/src/Reach/NL_Eval.hs:118:  T_Obj _m -&gt; &quot;object&quot; -- FIXME
@@ -103,15 +120,14 @@ hs/src/Reach/NL_Eval.hs:1452:            --- FIXME support more kinds
 hs/src/Reach/NL_Eval.hs:1457:            --- FIXME support more kinds
 hs/src/Reach/NL_Eval.hs:1530:      --- FIXME look at opts
 hs/src/Reach/NL_Eval.hs:1542:      --- FIXME This [] is the frames that will be shown when the
-hs/src/Reach/Backend/JS.hs:17:-- XXX More code can probably share this
-hs/src/Reach/Backend/JS.hs:24:-- XXX More code can probably share this
-hs/src/Reach/Backend/JS.hs:85:--- XXX/FIXME change to null?
-hs/src/Reach/NL_AST.hs:99:  | --- XXX Indicate if it is a Tuple or an Array?
-hs/src/Reach/NL_AST.hs:161:  | --- FIXME make this illegal outside assert/invariant
-hs/src/Reach/NL_AST.hs:337:  | --- FIXME Record whether it is pure or local in the statement and
-hs/src/Reach/NL_AST.hs:388:    --- FIXME If we could make LL_LocalIf be recursive in the type parameter, then we could allow this as a local operation and avoid copying the continuation. Perhaps a better thing is to make transfer an effectful expression and just rely on the let code. Probably wise to do the same to Claim to clean up the code.
-hs/src/Reach/NL_AST.hs:450:  | --- FIXME Use types to ensure only within while body
-hs/src/Reach/NL_AST.hs:522:  | --- FIXME Types to ensure only within while body
+hs/src/Reach/Verify/SMT.hs:28:--- FIXME decide on fixed bitvectors
+hs/src/Reach/Verify/SMT.hs:284:      --- XXX try harder
+hs/src/Reach/Verify/SMT.hs:302:  --- FIXME Another way to think about this is to take `tse` and fully
+hs/src/Reach/Verify/SMT.hs:315:            --- FIXME Do something useful here
+hs/src/Reach/Verify/SMT.hs:340:                      --- FIXME It might be useful to do `get-value` rather than parse
+hs/src/Reach/Verify/SMT.hs:729:            --- XXX detect if homogeneous and use ArrayEx
+hs/src/Reach/Connector/ETH_Solidity.hs:319:    --- FIXME can stick this anywhere
+hs/src/Reach/Connector/ETH_Solidity.hs:390:  Error e -&gt; error e -- XXX
 hs/src/Reach/Connector/ALGO.hs:110:xxx :: String -&gt; TEALs
 hs/src/Reach/Connector/ALGO.hs:111:xxx x = [TL_Comment $ &quot;XXX &quot; ++ x]
 hs/src/Reach/Connector/ALGO.hs:182:            xxx &quot;FixedArray comp_blarg_for_hash&quot;
@@ -122,57 +138,13 @@ hs/src/Reach/Connector/ALGO.hs:251:              _ -&gt; error &quot;Expected ex
 hs/src/Reach/Connector/ALGO.hs:386:      --- FIXME some of these checks could be combined across all handlers
 hs/src/Reach/Connector/ALGO.hs:538:-- FIXME Do something like a &quot;peep-hole optimizer&quot; so we can detect &quot;btoi -&gt; itob&quot; sequences
 hs/src/Reach/Connector/ALGO.hs:579:      --- FIXME this should be &quot;compile argument&quot;, see https://github.com/algorand/go-algorand/issues/1051
-hs/Makefile:17:# TODO: dockerized stan so that make check does not require local hs install?
-hs/src/Reach/Compiler.hs:74:      --- XXX Implement a way for while loops to be exited
-hs/src/Reach/Compiler.hs:285:    --- XXX Perhaps these should be sensitive to bit widths
-hs/src/Reach/Compiler.hs:358:      _ -&gt; error &quot;Expected XIL_VAR&quot; -- XXX
-hs/src/Reach/Compiler.hs:374:              expect_throw CE_ArrayLenNotConstant a (&quot;XXX Implement show for part of InlineV&quot; :: String)
-hs/src/Reach/Compiler.hs:680:        _ -&gt; error &quot;Expected exactly one ILArg&quot; -- XXX
-hs/src/Reach/Compiler.hs:706:                      _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- XXX
-hs/src/Reach/Compiler.hs:707:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- XXX
-hs/src/Reach/Compiler.hs:718:             _ -&gt; error &quot;Expected an IL_Var&quot; -- XXX
-hs/src/Reach/Compiler.hs:719:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- XXX
-hs/src/Reach/Compiler.hs:727:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- XXX
-hs/src/Reach/Compiler.hs:765:           _ -&gt; error &quot;Expected [ILArg] to have exactly 2 elements&quot;) -- XXX
-hs/src/Reach/Compiler.hs:913:        _ -&gt; error &quot;Expected list to have exactly 2 elements&quot; -- XXX
-hs/src/Reach/Compiler.hs:938:        _ -&gt; error &quot;Expected list to have exactly 2 elements&quot; -- XXX
-hs/src/Reach/Compiler.hs:1009:            _ -&gt; error &quot;Expected exactly one arg&quot; -- XXX
-hs/src/Reach/Connector/ETH_Solidity.hs:319:    --- FIXME can stick this anywhere
-hs/src/Reach/Connector/ETH_Solidity.hs:390:  Error e -&gt; error e -- XXX
-hs/src/Reach/CompilerNL.hs:33:  traceM $ &quot;XXX connectors&quot;
-hs/src/Reach/CompilerNL.hs:34:  traceM $ &quot;XXX backends&quot;
-hs/src/Reach/ParserInternal.hs:415:    --- XXX/FIXME - Remove this
-hs/src/Reach/ParserInternal.hs:481:        --- FIXME Support functions and enums like at top-level?
-hs/src/Reach/ParserInternal.hs:547:            tp_pre_k = tp prev_ebody --- XXX not the best
-hs/src/Reach/ParserInternal.hs:583:            _ -&gt; error &quot;Pattern match fail&quot; -- XXX Nothing?
-hs/src/Reach/Verify/SMT.hs:28:--- FIXME decide on fixed bitvectors
-hs/src/Reach/Verify/SMT.hs:284:      --- XXX try harder
-hs/src/Reach/Verify/SMT.hs:302:  --- FIXME Another way to think about this is to take `tse` and fully
-hs/src/Reach/Verify/SMT.hs:315:            --- FIXME Do something useful here
-hs/src/Reach/Verify/SMT.hs:340:                      --- FIXME It might be useful to do `get-value` rather than parse
-hs/src/Reach/Verify/SMT.hs:729:            --- XXX detect if homogeneous and use ArrayEx
-hs/src/Reach/NL_Parser.hs:29:--- FIXME implement a custom show that is useful
-hs/src/Reach/NL_Parser.hs:53:--- FIXME Support more binding forms
 hs/sol/stdlib.sol:16:      uint16 len = uint16(uint8(c[0]))*256+uint16(uint8(c[1])); // TODO: improve using some library on the net
 hs/sol/stdlib.sol:20:  // TODO: optimize using tricks from the Internet? But not before there are tests somehow.
-examples/rps/rps.while.exp.rsh:5:// XXX Move into other file when the target is a command line argument
-examples/rps/rps.while.exp.rsh:7:// XXX Also abstract more of this into functions
-examples/rps/rsh/rps_double.rsh:2:// XXX: WIP. Commented out code at the end doesn't compile yet
-examples/rps/rsh/rps_double.rsh:22:    return A_WINS; // XXX A wins by default? shouldn't happen.
-examples/rps/rsh/rps_double.rsh:160:  // XXX Delete this and uncomment the following
-examples/rps/rsh/rps_double.rsh:163:  // TODO: reorganize this code to reduce duplication.
-examples/secured-loan/build/secured-loan.sol:20:      uint16 len = uint16(uint8(c[0]))*256+uint16(uint8(c[1])); // TODO: improve using some library on the net
-examples/secured-loan/build/secured-loan.sol:24:  // TODO: optimize using tricks from the Internet? But not before there are tests somehow.
-go/src/reach-sh/stdlib/stdlib.go:51:  panic(&quot;XXX&quot;) }
-go/src/reach-sh/stdlib/stdlib.go:64:  panic(&quot;XXX&quot;) }
-go/src/reach-sh/stdlib/stdlib.go:67:  panic(&quot;XXX&quot;) }
-go/src/reach-sh/stdlib/stdlib.go:70:  panic(&quot;XXX&quot;) }
-go/src/reach-sh/stdlib/stdlib.go:73:  panic(&quot;XXX&quot;) }
-go/src/reach-sh/stdlib/stdlib.go:76:  panic(&quot;XXX&quot;) }
-go/src/reach-sh/stdlib/stdlib.go:79:  panic(&quot;XXX&quot;) }
-go/src/reach-sh/stdlib/stdlib.go:82:  panic(&quot;XXX&quot;) }
-go/src/reach-sh/stdlib/stdlib.go:87:  panic(&quot;XXX SendRecv&quot;)
-go/src/reach-sh/stdlib/stdlib.go:91:  panic(&quot;XXX Recv&quot;)
+hs/test/Reach/Test/Util.hs:109:-- XXX This is a hack to make tests portable.
+hs/test/OldTests.hs:6:  , -- XXX broken
+hs/test/OldTests.hs:61:    -- TODO: a better way of running the compiler and capturing stdout/stderr
+hs/test/OldTests.hs:91:-- XXX broken. Port these tests to NL.
+docs-src/tut.scrbl:10:XXX
 js/ETH.mjs:63:// XXX export the ethers names for these things?
 js/ETH.mjs:114:  // XXX why do we slice off the 0x?
 js/ETH.mjs:150:// XXX: clients might not want this
@@ -201,6 +173,35 @@ js/ALGO.mjs:333:      // FIXME JS SDK doesn't handle this kind of txn
 js/ALGO.mjs:343:      // FIXME: Use note field for link to Reach code
 js/ALGO.mjs:353:    // FIXME relies on https://github.com/algorand/go-algorand/issues/1051 fix
 js/ALGO.mjs:365:  // FIXME: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
+hs/src/Reach/Backend/JS.hs:17:-- XXX More code can probably share this
+hs/src/Reach/Backend/JS.hs:24:-- XXX More code can probably share this
+hs/src/Reach/Backend/JS.hs:85:--- XXX/FIXME change to null?
+hs/src/Reach/Compiler.hs:74:      --- XXX Implement a way for while loops to be exited
+hs/src/Reach/Compiler.hs:285:    --- XXX Perhaps these should be sensitive to bit widths
+hs/src/Reach/Compiler.hs:358:      _ -&gt; error &quot;Expected XIL_VAR&quot; -- XXX
+hs/src/Reach/Compiler.hs:374:              expect_throw CE_ArrayLenNotConstant a (&quot;XXX Implement show for part of InlineV&quot; :: String)
+hs/src/Reach/Compiler.hs:680:        _ -&gt; error &quot;Expected exactly one ILArg&quot; -- XXX
+hs/src/Reach/Compiler.hs:706:                      _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- XXX
+hs/src/Reach/Compiler.hs:707:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- XXX
+hs/src/Reach/Compiler.hs:718:             _ -&gt; error &quot;Expected an IL_Var&quot; -- XXX
+hs/src/Reach/Compiler.hs:719:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- XXX
+hs/src/Reach/Compiler.hs:727:           _ -&gt; error &quot;Expected [ILArg] to have exactly one element&quot;) -- XXX
+hs/src/Reach/Compiler.hs:765:           _ -&gt; error &quot;Expected [ILArg] to have exactly 2 elements&quot;) -- XXX
+hs/src/Reach/Compiler.hs:913:        _ -&gt; error &quot;Expected list to have exactly 2 elements&quot; -- XXX
+hs/src/Reach/Compiler.hs:938:        _ -&gt; error &quot;Expected list to have exactly 2 elements&quot; -- XXX
+hs/src/Reach/Compiler.hs:1009:            _ -&gt; error &quot;Expected exactly one arg&quot; -- XXX
+hs/src/Reach/ParserInternal.hs:415:    --- XXX/FIXME - Remove this
+hs/src/Reach/ParserInternal.hs:481:        --- FIXME Support functions and enums like at top-level?
+hs/src/Reach/ParserInternal.hs:547:            tp_pre_k = tp prev_ebody --- XXX not the best
+hs/src/Reach/ParserInternal.hs:583:            _ -&gt; error &quot;Pattern match fail&quot; -- XXX Nothing?
+hs/src/Reach/NL_AST.hs:99:  | --- XXX Indicate if it is a Tuple or an Array?
+hs/src/Reach/NL_AST.hs:161:  | --- FIXME make this illegal outside assert/invariant
+hs/src/Reach/NL_AST.hs:337:  | --- FIXME Record whether it is pure or local in the statement and
+hs/src/Reach/NL_AST.hs:388:    --- FIXME If we could make LL_LocalIf be recursive in the type parameter, then we could allow this as a local operation and avoid copying the continuation. Perhaps a better thing is to make transfer an effectful expression and just rely on the let code. Probably wise to do the same to Claim to clean up the code.
+hs/src/Reach/NL_AST.hs:450:  | --- FIXME Use types to ensure only within while body
+hs/src/Reach/NL_AST.hs:522:  | --- FIXME Types to ensure only within while body
+hs/src/Reach/NL_Linearize.hs:112:          --- XXX Timeouts always &quot;exit&quot;
+hs/src/Reach/NL_Linearize.hs:113:          --- XXX Not checking the result types
 make[1]: Leaving directory '/root/project'
 </pre>
 </body>
