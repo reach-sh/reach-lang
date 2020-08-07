@@ -19,11 +19,18 @@ import Reach.NL_Parser
 import Reach.NL_Type
 import Reach.STCounter
 import Reach.Util
+import Data.Version (Version(..), showVersion)
+import Paths_reach (version)
 import Safe (atMay)
 import Text.EditDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
----import Debug.Trace
+compatibleVersion :: Version
+compatibleVersion = Version (take 2 br) []
+  where Version br _ = version
+
+versionHeader :: String
+versionHeader = "reach " ++ (showVersion compatibleVersion)
 
 zipEq :: Show e => SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
 zipEq at ce x y =
@@ -213,9 +220,7 @@ instance Show EvalError where
     Err_Module_Return _x ->
       "Invalid return statement. Cannot return at top level of module."
     Err_NoHeader _mis ->
-      "Invalid Reach file. Expected header " <> expectedHeader <> " at top of file."
-      where
-        expectedHeader = "'reach 0.1';" -- FIXME version # defined elsewhere?
+      "Invalid Reach file. Expected header '" <> versionHeader <> "'; at top of file."
     Err_Obj_IllegalComputedField slval ->
       "Invalid computed field name. Fields must be bytes, but got: " <> displaySlValType slval
     Err_Obj_IllegalFieldValues exprs ->
@@ -1509,7 +1514,7 @@ evalLib (src, body) libm = do
     at = (srcloc_src src)
     (prev_at, body') =
       case body of
-        ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a "\'reach 0.1\'") sp)) : j) ->
+        ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a hs) sp)) : j) | (trimQuotes hs) == versionHeader ->
           ((srcloc_after_semi "header" a sp at), j)
         _ -> expect_throw at (Err_NoHeader body)
 
