@@ -309,6 +309,10 @@ display_fail ctxt tat f tk tse mrd = do
   putStrLn $ "  at " ++ show tat
   mapM_ (putStrLn . ("  "++) . show) f
   putStrLn $ ""
+  --- FIXME Another way to think about this is to take `tse` and fully
+  --- substitute everything that came from the program (the "context"
+  --- below) and then just show the remaining variables found by the
+  --- model.
   putStrLn $ "  Theorem formalization:"
   putStrLn $ "  " ++ (SMT.showsSExpr tse "")
   putStrLn $ ""

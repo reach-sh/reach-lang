@@ -73,7 +73,7 @@ export const main =
         else {
           return [wagerAmount, wagerAmount]; } })();
       transfer(escrowAmount + getsA).to(A);
-      transfer(getsB + 10).to(B);
+      transfer(getsB).to(B);
       commit();
 
       return showOutcome(outcome); });
