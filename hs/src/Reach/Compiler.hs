@@ -13,10 +13,8 @@ import qualified Data.Text.Lazy as L
 import Data.Text.Prettyprint.Doc
 import GHC.Generics (Generic)
 import Reach.AST
-import Reach.Backend.Go
 import Reach.Backend.JS
 import Reach.Connector.ALGO
-import Reach.Connector.ETH_EVM
 import Reach.Connector.ETH_Solidity
 import Reach.ConsensusNetworkProgram
 import Reach.Parser
@@ -1220,10 +1218,10 @@ compile copts = do
   cnps_exp <- case expCon copts of
     False -> return M.empty
     True -> do
-      ebc <- emit_evm (outn "evm") blp
+      --- ebc <- emit_evm (outn "evm") blp
       tbc <- emit_teal (outn "teal") blp
-      return $ M.fromList [(ETH_EVM, CNP_ETH (fst cs, ebc)), (ALGO, CNP_ALGO tbc)]
+      return $ M.fromList [{- (ETH_EVM, CNP_ETH (fst cs, ebc)), -} (ALGO, CNP_ALGO tbc)]
   let cnp_tm = cnpToFieldMap $ cnps_reg <> cnps_exp
   out "mjs" (show (emit_js blp cnp_tm))
-  out "go" (show (emit_go blp cnp_tm))
+  --- out "go" (show (emit_go blp cnp_tm))
   exitSuccess

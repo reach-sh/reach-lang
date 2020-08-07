@@ -142,8 +142,3 @@ Integer comparisons on uint256.
 
 Wei conversion functions only exported by the stdlib for ETH.
 
-@section[#:tag "ref-backend-go"]{Go} @(experimental)
-
-An experimental, and undocumented, Go @tech{backend} is in progress in the
-repository. When we complete it, this section will describe the use of
-the @tech{backend}.
