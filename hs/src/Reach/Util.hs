@@ -1,4 +1,4 @@
-module Reach.Util where
+module Reach.Util (bpack, impossible, trimQuotes, fromIntegerMay, maybeDie) where
 
 import Control.Monad
 import Data.ByteString (ByteString)

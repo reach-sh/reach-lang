@@ -1,4 +1,4 @@
-module Reach.EmbeddedFiles where
+module Reach.EmbeddedFiles (runtime_smt2, runtime_bt_smt2, stdlib_sol, stdlib_rsh, stdlib_exp_rsh) where
 
 import Data.ByteString (ByteString)
 import Data.FileEmbed

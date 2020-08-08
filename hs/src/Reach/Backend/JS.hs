@@ -1,6 +1,6 @@
 {-# LANGUAGE NoOverloadedStrings #-}
 
-module Reach.Backend.JS where
+module Reach.Backend.JS (emit_js) where
 
 import qualified Data.ByteString.Char8 as B
 import Data.List (intersperse)

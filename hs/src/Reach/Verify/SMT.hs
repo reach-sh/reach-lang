@@ -1,4 +1,4 @@
-module Reach.Verify.SMT where
+module Reach.Verify.SMT (verify_smt) where
 
 import Control.Monad
 import Control.Monad.Extra

@@ -1,4 +1,4 @@
-module Reach.STCounter where
+module Reach.STCounter (STCounter, newSTCounter, incSTCounter) where
 
 import Control.Monad.ST
 import Data.STRef

@@ -1,7 +1,7 @@
 {-# LANGUAGE NoOverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Reach.Pretty where
+module Reach.Pretty () where
 
 import Data.List (intersperse)
 import qualified Data.Map.Strict as M

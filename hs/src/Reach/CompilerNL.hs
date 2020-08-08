@@ -1,4 +1,4 @@
-module Reach.CompilerNL where
+module Reach.CompilerNL (CompilerOpts(..), compileNL) where
 
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc

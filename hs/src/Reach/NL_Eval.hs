@@ -1,4 +1,4 @@
-module Reach.NL_Eval where
+module Reach.NL_Eval (compileBundle) where
 
 import Control.Monad
 import Control.Monad.ST

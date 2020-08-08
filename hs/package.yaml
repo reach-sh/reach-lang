@@ -83,6 +83,10 @@ ghc-options:
 - -Wincomplete-record-updates
 - -Wincomplete-uni-patterns
 - -Wredundant-constraints
+- -Wmissing-export-lists
+# - -Wpartial-fields
+- -Wwarn=unused-top-binds
+# - -Wmonomorphism-restriction # XXX
 - -O2
 - -fwrite-ide-info
 - -hiedir=.hie

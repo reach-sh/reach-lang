@@ -1,4 +1,4 @@
-module Reach.Verify.SMTParser where
+module Reach.Verify.SMTParser (parseModel) where
 
 import qualified Data.Map as M
 import Data.Maybe

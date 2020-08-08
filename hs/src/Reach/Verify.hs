@@ -1,4 +1,4 @@
-module Reach.Verify where
+module Reach.Verify (verify) where
 
 import qualified Data.Text as T
 import Reach.NL_AST

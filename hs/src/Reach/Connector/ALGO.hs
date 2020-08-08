@@ -1,4 +1,4 @@
-module Reach.Connector.ALGO where
+module Reach.Connector.ALGO (emit_teal) where
 
 import Control.Monad.Extra
 import Control.Monad.State.Lazy

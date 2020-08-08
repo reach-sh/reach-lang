@@ -1,4 +1,4 @@
-module Reach.NL_EPP where
+module Reach.NL_EPP (epp) where
 
 ---import qualified Data.Sequence as Seq
 

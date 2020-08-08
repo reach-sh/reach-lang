@@ -1,4 +1,4 @@
-module Reach.Test_NL_Eval where
+module Reach.Test_NL_Eval (test_compileBundle_errs) where
 
 import Control.DeepSeq
 import Reach.NL_Eval

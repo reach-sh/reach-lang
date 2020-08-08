@@ -1,4 +1,4 @@
-module Reach.Compiler where
+module Reach.Compiler (CompileErr(..), compile) where
 
 import Algebra.Lattice
 import Control.Monad.Except

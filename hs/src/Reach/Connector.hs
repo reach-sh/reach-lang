@@ -1,4 +1,4 @@
-module Reach.Connector where
+module Reach.Connector (ConnectorResult, Connector) where
 
 import Reach.NL_AST
 import qualified Data.Map.Strict as M

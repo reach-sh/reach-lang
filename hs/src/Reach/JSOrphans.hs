@@ -1,7 +1,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Reach.JSOrphans where
+module Reach.JSOrphans() where
 
 import Control.DeepSeq
 import GHC.Generics

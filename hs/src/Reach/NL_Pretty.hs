@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Reach.NL_Pretty where
+module Reach.NL_Pretty () where
 
 import qualified Data.Map.Strict as M
 import Data.Text.Prettyprint.Doc

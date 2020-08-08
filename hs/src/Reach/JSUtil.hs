@@ -1,4 +1,4 @@
-module Reach.JSUtil where
+module Reach.JSUtil (jscl_flatten, jsctl_flatten, jsa_flatten, dropEmptyJSStmts, tp, srcloc_jsa) where
 
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST

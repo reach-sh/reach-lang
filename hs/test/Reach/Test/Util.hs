@@ -1,4 +1,4 @@
-module Reach.Test.Util where
+module Reach.Test.Util (ReachErr, tryHard, errExample, errExampleStripAbs, stderroutExample, testsFor, goldenTests) where
 
 import Control.DeepSeq
 import Control.Exception

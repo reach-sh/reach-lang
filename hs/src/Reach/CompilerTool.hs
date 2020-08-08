@@ -1,4 +1,4 @@
-module Reach.CompilerTool where
+module Reach.CompilerTool (CompilerToolOpts(..), makeCompilerOpts, compilerToolMain) where
 
 import qualified Filesystem.Path.CurrentOS as FP
 import Reach.Compiler (compile)

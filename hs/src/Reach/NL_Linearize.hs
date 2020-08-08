@@ -1,4 +1,4 @@
-module Reach.NL_Linearize where
+module Reach.NL_Linearize (linearize) where
 
 import qualified Data.Map.Strict as M
 import Reach.NL_AST

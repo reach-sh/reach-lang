@@ -1,4 +1,4 @@
-module Reach.Connector.ETH_Solidity where
+module Reach.Connector.ETH_Solidity (compile_sol, CCounts, usesCTail) where
 
 import Data.Aeson
 import qualified Data.ByteString.Char8 as BS

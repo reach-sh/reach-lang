@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Data.Char
 import Options.Applicative

@@ -1,4 +1,4 @@
-module Reach.Connector.ALGO_NL where
+module Reach.Connector.ALGO_NL (connect_algo) where
 
 import Debug.Trace
 --- import Reach.NL_AST

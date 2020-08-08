@@ -1,4 +1,4 @@
-module Reach.Backend where
+module Reach.Backend (Backend) where
 
 import qualified Data.Text as T
 import Reach.Connector
