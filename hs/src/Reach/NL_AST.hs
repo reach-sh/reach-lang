@@ -90,6 +90,7 @@ instance Monoid SecurityLevel where
 --- Static Language
 type SLVar = String
 
+--- XXX Make a DLType that removes stuff that can't be in DL
 data SLType
   = T_Null
   | T_Bool
@@ -334,11 +335,13 @@ instance NFData FromSpec
 
 data DLStmt
   = DLS_Let SrcLoc DLVar DLExpr
-  | DLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
+  | --- FIXME move to DLExpr
+    DLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
   | --- FIXME Record whether it is pure or local in the statement and
     --- track in monad results to avoid quadratic behavior
     DLS_If SrcLoc DLArg DLStmts DLStmts
-  | DLS_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
+  | --- FIXME move to DLExpr
+    DLS_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Only SrcLoc SLPart DLStmts
