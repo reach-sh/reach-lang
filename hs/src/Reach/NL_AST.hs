@@ -90,7 +90,7 @@ instance Monoid SecurityLevel where
 --- Static Language
 type SLVar = String
 
---- XXX Make a DLType that removes stuff that can't be in DL
+--- XXX Make a DLType that removes stuff that can't be in DL?
 data SLType
   = T_Null
   | T_Bool
@@ -274,8 +274,10 @@ instance NFData DLVar
 data DLArg
   = DLA_Var DLVar
   | DLA_Con DLConstant
-  | DLA_Array [DLArg]
-  | DLA_Obj (M.Map String DLArg)
+  | --- XXX Should be expression
+    DLA_Array [DLArg]
+  | --- XXX Should be expression
+    DLA_Obj (M.Map String DLArg)
   | DLA_Interact SLPart String SLType
   deriving (Eq, Generic, Show)
 

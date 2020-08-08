@@ -84,3 +84,34 @@ instance CollectsTypes LLStep where
 
 instance CollectsTypes LLProg where
   cts (LLProg _ ps s) = cts ps <> cts s
+
+instance CollectsTypes a => CollectsTypes (PLCommon a) where
+  cts (PL_Return _) = mempty
+  cts (PL_Let _ _ dv de k) = cts dv <> cts de <> cts k
+  cts (PL_Eff _ de k) = cts de <> cts k
+  cts (PL_Var _ dv k) = cts dv <> cts k
+  cts (PL_Set _ dv da k) = cts dv <> cts da <> cts k
+  cts (PL_Claim _ _ _ ca k) = cts ca <> cts k
+  cts (PL_LocalIf _ ca t f k) = cts ca <> cts t <> cts f <> cts k
+
+instance CollectsTypes PLTail where
+  cts (PLTail m) = cts m
+
+instance CollectsTypes CTail where
+  cts (CT_Com m) = cts m
+  cts (CT_Seqn _ b a) = cts b <> cts a
+  cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
+  cts (CT_Transfer _ to amt k) = cts to <> cts amt <> cts k
+  cts (CT_Wait _ svs) = cts svs
+  cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
+  cts (CT_Halt _) = mempty
+  
+instance CollectsTypes CInterval where
+  cts (CBetween from to) = cts from <> cts to
+  
+instance CollectsTypes CHandler where
+  cts (C_Handler _ int fs _ svs msg body) = cts int <> cts fs <> cts svs <> cts msg <> cts body
+  cts (C_Loop _ svs vars body) = cts svs <> cts vars <> cts body
+
+instance CollectsTypes CHandlers where
+  cts (CHandlers m) = cts m
