@@ -357,9 +357,10 @@ comp_ctail ccs cs ts t =
     C_Jump loc which vs _ as -> do
       --- XXX change loops to expect current txn dynamically
       args <- concatMapM (comp_blarg cs) $ (BL_Con loc $ Con_I $ fromIntegral ts) : (map (BL_Var loc) vs) ++ as
-      return $ args
-        ++ stack_to_slot ((length vs) + (length as))
-        ++ code "b" ["l" ++ show which]
+      return $
+        args
+          ++ stack_to_slot ((length vs) + (length as))
+          ++ code "b" ["l" ++ show which]
       where
         stack_to_slot n =
           if n == 0

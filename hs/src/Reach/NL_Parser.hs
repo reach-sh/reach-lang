@@ -1,4 +1,4 @@
-module Reach.NL_Parser (ParserError(..), JSBundle(..), parseJSFormals, parseJSArrowFormals, jse_expect_id, gatherDeps_top) where
+module Reach.NL_Parser (ParserError (..), JSBundle (..), parseJSFormals, parseJSArrowFormals, jse_expect_id, gatherDeps_top) where
 
 import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B

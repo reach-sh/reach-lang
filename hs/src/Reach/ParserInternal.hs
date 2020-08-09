@@ -1,4 +1,4 @@
-module Reach.ParserInternal (ParseErr(..), TP(..), readReachFile) where
+module Reach.ParserInternal (ParseErr (..), TP (..), readReachFile) where
 
 import Control.Monad
 import qualified Data.ByteString.Char8 as B

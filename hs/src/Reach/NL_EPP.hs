@@ -4,10 +4,10 @@ import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.STRef
+import Reach.CollectCounts
 import Reach.NL_AST
 import Reach.STCounter
 import Reach.Util
-import Reach.CollectCounts
 
 data ProRes_ a = ProRes_ Counts a
   deriving (Eq, Show)
@@ -227,15 +227,16 @@ epp_n st n =
               True -> run loop_svs1 True
               False -> fixSVS loop_svs1 run
       (loop_svs, (p_prts_body, ct_body, pt_cond)) <- fixSVS mempty $ \loop_svs0 done -> do
-            let st_body =
-                  st_body0
-                  { pst_loop_svs = Just loop_svs0
-                  , pst_loop_fixed_point = not done }
-            ProResC p_prts_body_ (ProRes_ cs_body ct_body_) <- epp_n st_body body
-            let post_cond_cs = counts cond_da <> cs_body <> cs_k
-            let ProResL (ProRes_ cs_cond pt_cond_) = epp_l cond_l post_cond_cs
-            let loop_svs_ = counts_nzs $ count_rms loop_vars $ cs_cond
-            return $ (loop_svs_, (p_prts_body_, ct_body_, pt_cond_))
+        let st_body =
+              st_body0
+                { pst_loop_svs = Just loop_svs0
+                , pst_loop_fixed_point = not done
+                }
+        ProResC p_prts_body_ (ProRes_ cs_body ct_body_) <- epp_n st_body body
+        let post_cond_cs = counts cond_da <> cs_body <> cs_k
+        let ProResL (ProRes_ cs_cond pt_cond_) = epp_l cond_l post_cond_cs
+        let loop_svs_ = counts_nzs $ count_rms loop_vars $ cs_cond
+        return $ (loop_svs_, (p_prts_body_, ct_body_, pt_cond_))
 
       let loop_if = CT_If cond_at cond_da ct_body ct_k
       let loop_top = CT_Seqn cond_at pt_cond loop_if

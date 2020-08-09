@@ -1,4 +1,4 @@
-module Reach.Compiler (CompileErr(..), compile) where
+module Reach.Compiler (CompileErr (..), compile) where
 
 import Algebra.Lattice
 import Control.Monad.Except
@@ -1202,10 +1202,11 @@ compile copts = do
   out "il" (show (pretty ilp))
   let blp = epp ilp
   out "bl" (show (pretty blp))
-  crs <- mempty
-         <> compile_sol (outn "sol") blp
-         --- <> emit_evm (outn "evm") blp
-         <> emit_teal (outn "teal") blp
+  crs <-
+    mempty
+      <> compile_sol (outn "sol") blp
+      --- <> emit_evm (outn "evm") blp
+      <> emit_teal (outn "teal") blp
   out "mjs" (show (emit_js blp crs))
   --- out "go" (show (emit_go blp crs))
   exitSuccess

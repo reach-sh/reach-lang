@@ -1,4 +1,4 @@
-module Reach.CompilerTool (CompilerToolOpts(..), makeCompilerOpts, compilerToolMain) where
+module Reach.CompilerTool (CompilerToolOpts (..), makeCompilerOpts, compilerToolMain) where
 
 import qualified Filesystem.Path.CurrentOS as FP
 import Reach.Compiler (compile)
@@ -8,7 +8,7 @@ import System.Directory
 data CompilerToolOpts = CompilerToolOpts
   { cto_outputDir :: FilePath
   , cto_source :: FilePath
-  , cto_tops :: [ String ]
+  , cto_tops :: [String]
   , cto_expComp :: Bool
   }
 

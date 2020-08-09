@@ -1,4 +1,4 @@
-module Reach.CompilerNL (CompilerOpts(..), compileNL) where
+module Reach.CompilerNL (CompilerOpts (..), compileNL) where
 
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
@@ -33,9 +33,10 @@ compileNL copts = do
         out "pl" $ show $ pretty pl
         --- FIXME The particular connector/backend should be part of
         --- the `opts` argument to Reach.App
-        crs <- mempty
-               <> connect_eth outn pl
-               <> connect_algo outn pl
+        crs <-
+          mempty
+            <> connect_eth outn pl
+            <> connect_algo outn pl
         backend_js outn crs pl
         return ()
   mapM_ compile1 $ tops copts

@@ -105,10 +105,10 @@ instance CollectsTypes CTail where
   cts (CT_Wait _ svs) = cts svs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
   cts (CT_Halt _) = mempty
-  
+
 instance CollectsTypes CInterval where
   cts (CBetween from to) = cts from <> cts to
-  
+
 instance CollectsTypes CHandler where
   cts (C_Handler _ int fs _ svs msg body) = cts int <> cts fs <> cts svs <> cts msg <> cts body
   cts (C_Loop _ svs vars body) = cts svs <> cts vars <> cts body

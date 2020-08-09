@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
+
 module Reach.AST where
 
 import Control.DeepSeq

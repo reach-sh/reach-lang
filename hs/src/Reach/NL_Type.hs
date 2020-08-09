@@ -1,4 +1,4 @@
-module Reach.NL_Type (TypeError(..), typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf) where
+module Reach.NL_Type (TypeError (..), typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf) where
 
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
