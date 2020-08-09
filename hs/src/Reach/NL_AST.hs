@@ -503,7 +503,8 @@ data PLBlock
 
 data ETail
   = ET_Com (PLCommon ETail)
-  | ET_Seqn SrcLoc PLTail ETail
+  | --- XXX Seqn sucks
+    ET_Seqn SrcLoc PLTail ETail
   | ET_Stop SrcLoc DLArg
   | ET_If SrcLoc DLArg ETail ETail
   | ET_ToConsensus
@@ -535,7 +536,8 @@ data EPProg
 
 data CTail
   = CT_Com (PLCommon CTail)
-  | CT_Seqn SrcLoc PLTail CTail
+  | --- XXX Seqn sucks
+    CT_Seqn SrcLoc PLTail CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Transfer SrcLoc DLArg DLArg CTail
   | CT_Wait SrcLoc [DLVar]

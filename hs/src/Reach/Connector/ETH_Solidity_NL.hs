@@ -103,6 +103,10 @@ data SolCtxt a = SolCtxt
   , ctxt_varm :: VarMap a
   , ctxt_typem :: M.Map SLType (Doc a) }
 
+instance Semigroup (SolCtxt a) where
+  --- FIXME maybe merge the maps?
+  _ <> x = x
+
 solRawVar :: DLVar -> Doc a
 solRawVar (DLVar _ _ _ n) = pretty $ "v" ++ show n
 
@@ -202,33 +206,6 @@ solExpr ctxt = \case
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> solHash $ map (solArg ctxt) args
 
-solCom :: (SolCtxt a -> k -> Doc a) -> SolCtxt a -> PLCommon k -> Doc a
-solCom iter ctxt = \case
-  PL_Return _ -> emptyDoc
-  PL_Let _ PL_Once dv de k -> iter ctxt' k
-    where ctxt' = ctxt { ctxt_varm = M.insert dv de' $ ctxt_varm ctxt }
-          de' = parens $ solExpr ctxt de
-  PL_Let _ PL_Many dv de k -> vsep [ dv_set, iter ctxt k ]
-    where dv_set = solSet (solMemVar dv) (solExpr ctxt de)
-  PL_Eff _ de k -> vsep [ dv_run, iter ctxt k ]
-    where dv_run = solExpr ctxt de <> semi
-  PL_Var _ _ k -> iter ctxt k
-  PL_Set _ dv da k -> vsep [ dv_set, iter ctxt k ]
-    where dv_set = solSet (solMemVar dv) (solArg ctxt da)
-  PL_Claim _ _ ct a k -> vsep [ check, iter ctxt k ]
-    where check = case ct of CT_Assert -> emptyDoc
-                             CT_Assume -> require
-                             CT_Require -> require
-                             CT_Possible -> emptyDoc
-          require = solRequire (solArg ctxt a) <> semi
-  PL_LocalIf _ ca t f k -> vsep [ solIf ca' t' f', iter ctxt k ]
-    where ca' = solArg ctxt ca
-          t' = solPLTail ctxt t
-          f' = solPLTail ctxt f
-
-solPLTail :: SolCtxt a -> PLTail -> Doc a
-solPLTail ctxt (PLTail m) = solCom solPLTail ctxt m
-
 solTransfer :: SolCtxt a -> DLArg -> DLArg -> Doc a
 solTransfer ctxt who amt =
   (solArg ctxt who) <> "." <> solApply "transfer" [solArg ctxt amt] <> semi
@@ -258,22 +235,55 @@ solHashState ctxt hm svs = solHash $ (solNum which_num) : which_last : (map (sol
 solAsn :: SolCtxt a -> DLAssignment -> [Doc a]
 solAsn ctxt (DLAssignment m) = map ((solArg ctxt) . snd) $ M.toAscList m
 
-solCTail :: SolCtxt a -> CTail -> Doc a
+data SolTailRes a = SolTailRes (SolCtxt a) (Doc a)
+
+instance Semigroup (SolTailRes a) where
+  (SolTailRes ctxt_x xp) <> (SolTailRes ctxt_y yp) = SolTailRes (ctxt_x <> ctxt_y) (xp <> hardline <> yp)
+
+solCom :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> PLCommon k -> SolTailRes a
+solCom iter ctxt = \case
+  PL_Return _ -> SolTailRes ctxt emptyDoc
+  PL_Let _ PL_Once dv de k -> iter ctxt' k
+    where ctxt' = ctxt { ctxt_varm = M.insert dv de' $ ctxt_varm ctxt }
+          de' = parens $ solExpr ctxt de
+  PL_Let _ PL_Many dv de k -> SolTailRes ctxt dv_set <> iter ctxt k
+    where dv_set = solSet (solMemVar dv) (solExpr ctxt de)
+  PL_Eff _ de k -> SolTailRes ctxt dv_run <> iter ctxt k
+    where dv_run = solExpr ctxt de <> semi
+  PL_Var _ _ k -> iter ctxt k
+  PL_Set _ dv da k -> SolTailRes ctxt dv_set <> iter ctxt k
+    where dv_set = solSet (solMemVar dv) (solArg ctxt da)
+  PL_Claim _ _ ct a k -> SolTailRes ctxt check <> iter ctxt k
+    where check = case ct of CT_Assert -> emptyDoc
+                             CT_Assume -> require
+                             CT_Require -> require
+                             CT_Possible -> emptyDoc
+          require = solRequire (solArg ctxt a) <> semi
+  PL_LocalIf _ ca t f k -> SolTailRes ctxt (solIf ca' t' f') <> iter ctxt k
+    where ca' = solArg ctxt ca
+          SolTailRes _ t' = solPLTail ctxt t
+          SolTailRes _ f' = solPLTail ctxt f
+
+solPLTail :: SolCtxt a -> PLTail -> SolTailRes a
+solPLTail ctxt (PLTail m) = solCom solPLTail ctxt m
+
+solCTail :: SolCtxt a -> CTail -> SolTailRes a
 solCTail ctxt = \case
   CT_Com m -> solCom solCTail ctxt m
-  CT_Seqn _ p k ->
-    vsep [ solPLTail ctxt p
-         , solCTail ctxt k ]
-  CT_If _ ca t f ->
-    solIf (solArg ctxt ca) (solCTail ctxt t) (solCTail ctxt f)
-  CT_Transfer _ who amt k ->
-    vsep [ solTransfer ctxt who amt
-         , solCTail ctxt k ]
+  CT_Seqn _ p k -> ptr <> solCTail ctxt' k
+    where ptr@(SolTailRes ctxt' _) = solPLTail ctxt p
+  CT_If _ ca t f -> SolTailRes ctxt' $ solIf (solArg ctxt ca) t' f'
+    where SolTailRes ctxt'_t t' = solCTail ctxt t
+          SolTailRes ctxt'_f f' = solCTail ctxt f
+          ctxt' = ctxt'_t <> ctxt'_f
+  CT_Transfer _ who amt k -> SolTailRes ctxt' $ vsep [ solTransfer ctxt who amt , k' ]
+    where SolTailRes ctxt' k' = solCTail ctxt k
   CT_Wait _ svs ->
-    solSet ("current_state") (solHashState ctxt HM_Set svs)
+    SolTailRes ctxt $ solSet ("current_state") (solHashState ctxt HM_Set svs)
   CT_Jump _ which svs asn ->
-    solApply (solLoop_fun which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) <> semi
+    SolTailRes ctxt $ solApply (solLoop_fun which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) <> semi
   CT_Halt _ ->
+    SolTailRes ctxt $ 
     vsep [ solSet ("current_state") ("0x0")
          , solApply "selfdestruct" ["msg.sender"] <> semi
          ]
@@ -314,11 +324,12 @@ manyVars_c = \case
   CT_Halt {} -> mempty
 
 solCTail_top :: SolCtxt a -> Int -> [DLVar] -> CTail -> (SolCtxt a, Doc a, Doc a, Doc a)
-solCTail_top ctxt which vs ct = (ctxt', frameDefn, frameDecl, solCTail ctxt' ct)
+solCTail_top ctxt which vs ct = (ctxt'', frameDefn, frameDecl, ct')
   where argsm = M.fromList $ map (\v -> (v, solRawVar v)) vs
         mvars = manyVars_c ct
         mvarsm = M.fromList $ map (\v -> (v, solMemVar v)) $ S.toList mvars
         (frameDefn, frameDecl) = solFrame ctxt' which mvars
+        SolTailRes ctxt'' ct' = solCTail ctxt' ct
         ctxt' = ctxt { ctxt_handler_num = which
                      , ctxt_varm = mvarsm <> argsm <> (ctxt_varm ctxt) }
 
@@ -353,8 +364,8 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [ e
 
 solHandler ctxt_top which (C_Loop _at svs msg ct) = vsep [ frameDefn, funDefn ]
   where vs = svs ++ msg
-        (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs ct
-        argDefs = map (solArgDecl ctxt) vs
+        (ctxt_fin, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs ct
+        argDefs = map (solArgDecl ctxt_fin) vs
         ret = "internal"
         funDefn = solFunction (solLoop_fun which) argDefs ret body
         body = vsep [frameDecl, ctp]
@@ -422,7 +433,7 @@ solPLProg (PLProg _ _ (CPProg at hs)) =
                    , ctxt_varm = mempty }
     ctcbody = vsep_with_blank $ [state_defn, consp, typesp, solHandlers ctxt hs]
     consp = solApply "constructor" [] <+> "public payable" <+> solBraces consbody
-    consbody = solCTail ctxt (CT_Wait at [])
+    SolTailRes _ consbody = solCTail ctxt (CT_Wait at [])
     state_defn = "uint256 current_state;"
     preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
 

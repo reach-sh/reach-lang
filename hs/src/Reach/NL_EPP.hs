@@ -26,19 +26,27 @@ data ProSt s = ProSt
   , pst_handlerc :: STCounter s
   , pst_interval :: CInterval
   , pst_parts :: [SLPart]
+  , pst_loop_fixed_point :: Bool
   , --- FIXME These would be maps when we have labelled loops
-    pst_loop_vars :: Maybe [DLVar]
+    pst_loop_svs :: Maybe [DLVar]
   , pst_loop_num :: Maybe Int
   , pst_forced_svs :: Counts
   }
   deriving (Eq)
 
 newHandler :: ProSt s -> ST s Int
-newHandler st = incSTCounter $ pst_handlerc st
+newHandler st =
+  case pst_loop_fixed_point st of
+    True -> return $ 0
+    False ->
+      incSTCounter $ pst_handlerc st
 
 addHandler :: ProSt s -> Int -> CHandler -> ST s ()
 addHandler st which this_h =
-  modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
+  case pst_loop_fixed_point st of
+    True -> mempty
+    False ->
+      modifySTRef (pst_handlers st) $ ((CHandlers $ M.singleton which this_h) <>)
 
 pmap :: ProSt s -> (SLPart -> b) -> M.Map SLPart b
 pmap st f = M.fromList $ map (\p -> (p, f p)) $ pst_parts st
@@ -203,21 +211,34 @@ epp_n st n =
       return $ ProResC p_prts_s (ProRes_ cons_cs ctw)
     LLC_While at asn _inv cond body k -> do
       ProResC p_prts_k (ProRes_ cs_k ct_k) <- epp_n st k
-      let loop_vars = assignment_vars asn
       loop_num <- newHandler st
-      let st_body =
+      let loop_vars = assignment_vars asn
+      let LLBlock cond_at _ cond_l cond_da = cond
+      let st_body0 =
             st
               { pst_prev_handler = loop_num
-              , pst_loop_vars = Just loop_vars
               , pst_loop_num = Just loop_num
               }
-      ProResC p_prts_body (ProRes_ cs_body ct_body) <- epp_n st_body body
-      let LLBlock cond_at _ cond_l cond_da = cond
-      let post_cond_cs = counts cond_da <> cs_body <> cs_k
-      let ProResL (ProRes_ cs_cond pt_cond) = epp_l cond_l post_cond_cs
+
+      --- This might be insane
+      let fixSVS loop_svs0 run = do
+            (loop_svs1, _) <- run loop_svs0 False
+            case loop_svs0 == loop_svs1 of
+              True -> run loop_svs1 True
+              False -> fixSVS loop_svs1 run
+      (loop_svs, (p_prts_body, ct_body, pt_cond)) <- fixSVS mempty $ \loop_svs0 done -> do
+            let st_body =
+                  st_body0
+                  { pst_loop_svs = Just loop_svs0
+                  , pst_loop_fixed_point = not done }
+            ProResC p_prts_body_ (ProRes_ cs_body ct_body_) <- epp_n st_body body
+            let post_cond_cs = counts cond_da <> cs_body <> cs_k
+            let ProResL (ProRes_ cs_cond pt_cond_) = epp_l cond_l post_cond_cs
+            let loop_svs_ = counts_nzs $ count_rms loop_vars $ cs_cond
+            return $ (loop_svs_, (p_prts_body_, ct_body_, pt_cond_))
+
       let loop_if = CT_If cond_at cond_da ct_body ct_k
       let loop_top = CT_Seqn cond_at pt_cond loop_if
-      let loop_svs = counts_nzs $ count_rms loop_vars $ cs_cond
       let this_h = C_Loop at loop_svs loop_vars loop_top
       addHandler st loop_num this_h
       let ct' = CT_Jump at loop_num loop_svs asn
@@ -232,10 +253,10 @@ epp_n st n =
       return $ ProResC p_prts' (ProRes_ cons_cs' ct')
     LLC_Continue at asn -> do
       let this_loop = fromMaybe (impossible "no loop") $ pst_loop_num st
-      let these_loop_vars = fromMaybe (impossible "no loop") $ pst_loop_vars st
+      let loop_svs = fromMaybe (impossible "no loop") $ pst_loop_svs st
       let asn_cs = counts asn
-      let cons_cs' = asn_cs <> counts these_loop_vars
-      let ct' = CT_Jump at this_loop these_loop_vars asn
+      let cons_cs' = asn_cs <> counts loop_svs
+      let ct' = CT_Jump at this_loop loop_svs asn
       let p_prts' = pall st (ProRes_ asn_cs (ET_Continue at asn))
       return $ ProResC p_prts' (ProRes_ cons_cs' ct')
 
@@ -341,7 +362,8 @@ epp (LLProg at ps s) = runST $ do
           , pst_handlerc = nhr
           , pst_interval = default_interval
           , pst_parts = M.keys p_to_ie
-          , pst_loop_vars = Nothing
+          , pst_loop_fixed_point = False
+          , pst_loop_svs = Nothing
           , pst_loop_num = Nothing
           , pst_forced_svs = mempty
           }
