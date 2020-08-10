@@ -3,19 +3,23 @@ al: argument list
 alt: argument list transformed
 amt: amount
 app: application
+at: at (type: SrcLoc)
 bc: byte code
 bl: backend language
 bt: BaseType
+c: common
 c: contract
 cb: contract balance
 cbi: contract balance index
 ce: CompileErr
 cnp: ConsensusNetworkProgram
+com: common
 comp: comparison
 comp: compiler
 con: connector
 con: constant
 con: constructor
+cons: consensus
 cp: contract primitive
 ct: ClaimType
 ctc: contract
@@ -24,6 +28,7 @@ ctxt: context
 def: definition
 dest: destination
 dir: directory
+e: endpoint
 e: expression
 ebc: ethereum byte code
 eff: Effect
@@ -32,10 +37,12 @@ ep: end-point
 epp: end-point projection
 eq: equal
 err: error
+et: ETail (e=epp)
 exp: experimental
 expr: expression
 ext: extension
 fp: FilePath
+fs: FromSpec
 fv: free variable
 gt: greater than
 gte: greater than or equal
@@ -55,6 +62,8 @@ lsh: left shift (<<)
 lt: LType
 lt: less than
 lte: less than or equal
+msg: message
+mtime: maybe timeout
 opts: options
 orig: original
 p: pretty (when used as suffix) (type = Doc a)
@@ -62,6 +71,7 @@ p: prim op (as in PLE, PEQ, etc)
 p: variable ?
 pf: FilePath
 prim: primitive
+pro: projection
 prog: program
 r: role
 res: result
@@ -77,6 +87,7 @@ stdlib: standard library
 t: tail (when used as suffix)
 t: transformed (when used as suffix) (type ~= z3 SExp)
 tbc: teal byte code
+tc: to consensus
 tn: transaction number
 ttt: tick tack toe
 txn: transaction
