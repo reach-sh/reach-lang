@@ -59,7 +59,15 @@ p)}
 
 @section[#:tag "ref-model-compile"]{Compilation Model}
 
-Reach programs cannot execute independently of a @tech{consensus network} and a set of @tech{frontends}. Thus, the semantics of Reach treats these components abstractly and does not specify their semantics. Therefore, the semantics of Reach cannot be effectively implemented directly in a virtual machine or interpreter. Instead, Reach programs are compiled to a particular @tech{consensus network} @deftech{connector} and a set of @tech{participant} @deftech{backends} which execute the computation of the particular @tech{consensus network}. @tech{Connectors} and @tech{backends} are sound if they faithfully model the abstract semantics assumed by Reach.
+Reach programs cannot execute independently of a @tech{consensus network} and a set of @tech{frontends}.
+Thus, the semantics of Reach treats these components abstractly and does not specify their semantics.
+Therefore, the semantics of Reach cannot be effectively implemented directly in a virtual machine or interpreter.
+Instead, Reach programs are @deftech{compile}d to
+a particular @tech{consensus network} @deftech{connector}
+and a set of @tech{participant} @deftech{backends}
+which execute the computation of the particular @tech{consensus network}.
+@tech{Connectors} and @tech{backends} are sound
+if they faithfully model the abstract semantics assumed by Reach.
 
 During compilation, the Reach compiler automatically verifies that the @tech{token linearity property} and all @tech{static assertions} and @tech{possibility assertions} are true whether @tech{participants} and @tech{frontends} are @tech{honest} or not. If this cannot be statically verified, then the compilation process aborts. After this verification, such @tech{static assertions} and @tech{possibility assertions} are removed from the program and do not occur at runtime. In contrast, @tech{assumptions} are enforced at runtime by @tech{backends} and @tech{requirements} are enforced at runtime by @tech{connectors}. If @tech{assumptions} are violated at runtime, then the @tech{backend} aborts. If @tech{requirements} are violated at runtime, then the @tech{connector} ensures that all aspects of the @|DApp| (the @tech{contract} and @tech{participant}) ignore the inducing @tech{consensus transfer}, which often results in a @tech{timeout}.
 

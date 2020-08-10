@@ -3,51 +3,93 @@
 
 @title[#:version reach-vers #:tag "ref-programs"]{Reach Programs}
 
-This document describes the structure and content of Reach programs,
-including their syntactic forms, the Reach standard library, and the standards of @tech{valid} programs.
+This document describes the structure and content of Reach @tech{programs}, including
+their syntactic forms,
+the @tech{standard library},
+and the standards of @tech{valid} programs.
+
+A Reach @deftech{program} is
+a @tech{module} @tech{export} which is a @tech{Reach.App}, as defined by a @tech{source file}.
+
+@tech{Programs} may be @tech{compile}d using the command
+@litchar{reachc SOURCE_FILE EXPORT}.
+
 
 @section{Validity}
 
-Reach imposes further restrictions on syntactically well-formed programs. These restrictions are described throughout this manual using the term @deftech{valid} to refer to constructions that obey the restrictions and @deftech{invalid} to refer to constructions that do not obey them.
+Reach imposes further restrictions on syntactically well-formed programs.
+These restrictions are described throughout this manual using the term @deftech{valid} to refer to constructions that obey the restrictions,
+and the term @deftech{invalid} to refer to constructions that do not obey them.
 
-It is always @tech{invalid} to use a @tech{value} with an operation for which it is undefined. For example, @reachin{1 + true} is @tech{invalid}. In other words, Reach enforces a static type discipline.
+It is always @tech{invalid} to use a @tech{value} with an operation for which it is undefined.
+For example, @reachin{1 + true} is @tech{invalid}.
+In other words, Reach enforces a static type discipline.
 
-@section{Source Files}
 
-Reach @deftech{source files} are either @tech{executables} or @tech{libraries}. They are traditionally given the file extension @litchar{rsh}, e.g. @filepath{dao.rsh}.
+@section{Modules}
 
-Reach @deftech{executables} start with @reachin{'reach @|reach-short-vers| exe';} and are followed by a sequence of @tech{imports}, @tech{participant definitions}, @tech{identifier definitions}, and a @tech{main function}. The evaluation of the execution is that of the @tech{main function}.
+Reach @deftech{source files} are textual files containing Reach syntax.
+They are traditionally given the file extension @litchar{rsh},
+e.g. @filepath{dao.rsh}.
 
-Reach @deftech{libraries} start with @reachin{'reach @|reach-short-vers| lib';} and are followed by a sequence of @tech{imports} and @tech{identifier definitions}.
+They start with @reachin{'reach @|reach-short-vers|';}
+followed by a sequence of @tech{imports} and @tech{identifier definitions}.
 
-@section{Comments}
+Each @tech{source file} defines a @deftech{module},
+which consists of one or more @tech{exports}.
 
-@reach{
-  // single-line comment
-  /* multi-line
-   * comment
-   */ }
-
-Comments are text that is ignored by the compiler.  Text starting with @litchar{//} up until the end of the line forms a @deftech{single-line comment}.  Text enclosed with @litchar{/*} and @litchar{*/} forms a @deftech{multi-line comment}.  It is @tech{invalid} to nest a @tech{multi-line comment} within a @tech{multi-line comment}.
 
 @section{Imports}
 
 @reach{import "games-of-chance.rsh";}
 
-When a Reach @tech{source file}, @litchar{X}, contains an @deftech{import}, written @reachin{import "LIB.rsh";}, then the path @filepath{LIB.rsh} must resolve to a file which is a @tech{library}. The definitions located in @filepath{LIB.rsh} are included in the set of definitions associated with @litchar{X}.
+When a Reach @tech{source file}, @litchar{X}, contains an @deftech{import},
+written @reachin{import "LIB.rsh";},
+then the path @filepath{LIB.rsh} must resolve to another Reach @tech{source file}.
+The @tech{exports} from the @tech{module} defined by @filepath{LIB.rsh} are included in the set of @tech{bound identifier}s in @litchar{X}.
+@tech{Import} cycles are @tech{invalid}.
 
-@margin-note{The path given to an @tech{import} may include @litchar{..} to specify files outside the current directory.}
+@margin-note{The path given to an @tech{import} may include @litchar{..} to specify files outside the current directory.
+Relative paths resolve relative to the parent directory of the source file in which they appear.}
 
-@section{Participant Definitions}
 
-@reach{const Alice = newParticipant();}
-
-Reach @tech{executables} may contain @deftech{participant definitions}, which are written:
+@section{Comments}
 
 @reach{
- const PARTICIPANT = newParticipant(); }
+       // single-line comment
+       /* multi-line
+       * comment
+       */ }
 
-Such a definition defines a @tech{participant} named @reachin{PARTICIPANT}.
+Comments are text that is ignored by the compiler.  Text starting with @litchar{//} up until the end of the line forms a @deftech{single-line comment}.  Text enclosed with @litchar{/*} and @litchar{*/} forms a @deftech{multi-line comment}.  It is @tech{invalid} to nest a @tech{multi-line comment} within a @tech{multi-line comment}.
+
+
+@section{Reach.App}
+
+@reach{
+export const main =
+  Reach.App({}, [["A", {displayResult: Fun(Int, Null)}]], (A) => {
+    const result = 0;
+    A.only(() => { interact.displayResult(result); })
+    return result;
+  });
+}
+
+@deftech{Reach.App} is a function which accepts three arguments:
+@litchar{options},
+@litchar{participantDefinitions},
+and @litchar{program}.
+
+The @litchar{options} argument is currently unused.
+
+The @litchar{participantDefinitions} argument is an array of tuples.
+Each tuple is a pair of
+@litchar{participantName}
+and @litchar{participantInteractInterface}.
+@litchar{participantName} is a string which indicates the name of the participant function in the generated @tech{backend} code.
+@litchar{participantInteractInterface} is an object where each field indicates a function type which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the participant.
+
+The @litchar{program} argument is a function. The arguments this function accepts must match the number and order of @litchar{participantDefinitions}. The function body is the program to be @tech{compile}d.
 
 @section{Types}
 
@@ -69,7 +111,11 @@ A @deftech{type} is either a @tech{base type} or a statically-sized homogeneous 
 
 @section{Identifier Definitions}
 
-An @deftech{identifier definition} is either a @tech{value definition}, @tech{enumeration}, or @tech{function definition}. Each of these bind identifiers.
+An @deftech{identifier definition} is either a
+@tech{value definition},
+@tech{enumeration},
+or @tech{function definition}.
+Each of these introduces a @deftech{bound identifier}.
 
 @(hrule)
 @reach{
@@ -100,7 +146,7 @@ A @deftech{main function} is a @tech{function definition} with the name @reachin
 
 @(hrule)
 
-All identifiers in Reach programs must be unbound at the position of the program where they are bound, i.e., it is @tech{invalid} to shadow identifiers with new definitions. For example,
+All identifiers in Reach programs must be @deftech{unbound} at the position of the program where they are bound, i.e., it is @tech{invalid} to shadow identifiers with new definitions. For example,
 
 @reach{
  const x = 3;
@@ -115,6 +161,12 @@ is @tech{invalid}. This restriction is independent of whether a binding is only 
    const x = 3; }); }
 
 is @tech{invalid}.
+
+@(hrule)
+
+Top-level @tech{identifier definitions} may be @deftech{export}ed
+by writing @litchar{export const} in place of @litchar{const}.
+An @tech{export}ed identifier in a given @tech{source file} may be @tech{import}ed by other @tech{source files}.
 
 @section{Blocks}
 
@@ -335,7 +387,7 @@ The remainder of this section enumerates each kind of @tech{expression}.
  Y
  Z }
 
-An identifier, written @reachin{ID}, is an @tech{expression} that evaluates to the value of the identifier is bound to.
+An identifier, written @reachin{ID}, is an @tech{expression} that evaluates to the value of the @tech{bound identifier}.
 
 @(hrule)
 @reach{
@@ -350,11 +402,16 @@ An identifier, written @reachin{ID}, is an @tech{expression} that evaluates to t
 A @deftech{literal value}, written @reachin{VALUE}, is an @tech{expression} that evaluates to the given @tech{value}. Numbers may be written in decimal, hexadecimal, or octal. Booleans may be written as @reachin{true} or @reachin{false}. Byte strings may be written between double or single quotes (with no distinction between the different styles) and use the same escaping rules as JavaScript.
 
 @(hrule)
+
+An @deftech{operator} is a special identifier,
+which is either a @tech{unary operator}, or a @tech{binary operator}.
+
+@(hrule)
 @reach{
  ! a
  - a}
 
-A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operators}: @litchar{! -}. @margin-note{Since all numbers are non-negative in Reach, the @reachin{-} iunary operator is useless.} It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
+A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! -}. @margin-note{Since all numbers are non-negative in Reach, the @reachin{-} iunary operator is useless.} It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
 
 @(hrule)
 @reach{
@@ -379,7 +436,7 @@ A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{E
  a <= b
  a < b }
 
-A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operators}: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}. The operators @reachin{==} and @reachin{!=} operate on numbers, while the operators @reachin{===} and @reachin{!==} operate on byte strings. Numeric operations, like @reachin{+} and @reachin{>}, only operate on numbers. Since all numbers in Reach are integers, operations like @reachin{/} truncate their result. Boolean operations, like @reachin{&&}, only operate on booleans. It is @tech{invalid} to use binary operations on the wrong types of @tech{values}.
+A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operator}s: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}. The operators @reachin{==} and @reachin{!=} operate on numbers, while the operators @reachin{===} and @reachin{!==} operate on byte strings. Numeric operations, like @reachin{+} and @reachin{>}, only operate on numbers. Since all numbers in Reach are integers, operations like @reachin{/} truncate their result. Boolean operations, like @reachin{&&}, only operate on booleans. It is @tech{invalid} to use binary operations on the wrong types of @tech{values}.
 
 @(hrule)
 @reach{
@@ -440,7 +497,9 @@ A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., 
 
 @section{Standard Library}
 
-Reach's standard library includes a few built-in primitives documented in this section.
+Reach's @deftech{standard library} is a set of @tech{bound identifier}s and @tech{operators} which are implicitly bound in all @tech{source files}.
+It is sometimes treated as a @tech{module} referred to as @litchar{"STDLIB"}.
+All @tech{standard library} @tech{bound identifier}s and @tech{operators} are documented in this section.
 
 @(hrule)
 @reach{
