@@ -12,7 +12,7 @@ A Reach @deftech{program} is
 a @tech{module} @tech{export} which is a @tech{Reach.App}, as defined by a @tech{source file}.
 
 @tech{Programs} may be @tech{compile}d using the command
-@litchar{reachc SOURCE_FILE EXPORT}.
+@litchar{reachc SOURCE EXPORT}.
 
 
 @section{Validity}
@@ -28,29 +28,27 @@ In other words, Reach enforces a static type discipline.
 
 @section{Modules}
 
-Reach @deftech{source files} are textual files containing Reach syntax.
-They are traditionally given the file extension @litchar{rsh},
+A Reach @deftech{source file} is a textual file which specifies a Reach @tech{module}.
+It is traditionally given the file extension @litchar{rsh},
 e.g. @filepath{dao.rsh}.
 
-They start with @reachin{'reach @|reach-short-vers|';}
+A @deftech{module} starts with @reachin{'reach @|reach-short-vers|';}
 followed by a sequence of @tech{imports} and @tech{identifier definitions}.
-
-Each @tech{source file} defines a @deftech{module},
-which consists of one or more @tech{exports}.
+A module must contain one or more @tech{exports}.
 
 
 @section{Imports}
 
 @reach{import "games-of-chance.rsh";}
 
-When a Reach @tech{source file}, @litchar{X}, contains an @deftech{import},
+When a @tech{module}, @litchar{X}, contains an @deftech{import},
 written @reachin{import "LIB.rsh";},
 then the path @filepath{LIB.rsh} must resolve to another Reach @tech{source file}.
 The @tech{exports} from the @tech{module} defined by @filepath{LIB.rsh} are included in the set of @tech{bound identifier}s in @litchar{X}.
 @tech{Import} cycles are @tech{invalid}.
 
 @margin-note{The path given to an @tech{import} may include @litchar{..} to specify files outside the current directory.
-Relative paths resolve relative to the parent directory of the source file in which they appear.}
+Relative paths resolve relative to the parent directory of the @tech{source file} in which they appear.}
 
 
 @section{Comments}
@@ -86,8 +84,8 @@ The @litchar{participantDefinitions} argument is an array of tuples.
 Each tuple is a pair of
 @litchar{participantName}
 and @litchar{participantInteractInterface}.
-@litchar{participantName} is a string which indicates the name of the participant function in the generated @tech{backend} code.
-@litchar{participantInteractInterface} is an object where each field indicates a function type which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the participant.
+@litchar{participantName} is a string which indicates the name of the participant function in the generated @tech{backend} code. Each @litchar{participantName} must be unique.
+@litchar{participantInteractInterface} is an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the participant.
 
 The @litchar{program} argument is a function. The arguments this function accepts must match the number and order of @litchar{participantDefinitions}. The function body is the program to be @tech{compile}d.
 
@@ -111,10 +109,9 @@ A @deftech{type} is either a @tech{base type} or a statically-sized homogeneous 
 
 @section{Identifier Definitions}
 
-An @deftech{identifier definition} is either a
-@tech{value definition},
-@tech{enumeration},
-or @tech{function definition}.
+An @deftech{identifier definition} is either
+a @tech{value definition}
+or a @tech{function definition}.
 Each of these introduces a @deftech{bound identifier}.
 
 @(hrule)
@@ -166,7 +163,7 @@ is @tech{invalid}.
 
 Top-level @tech{identifier definitions} may be @deftech{export}ed
 by writing @litchar{export const} in place of @litchar{const}.
-An @tech{export}ed identifier in a given @tech{source file} may be @tech{import}ed by other @tech{source files}.
+An @tech{export}ed identifier in a given @tech{module} may be @tech{import}ed by other @tech{modules}.
 
 @section{Blocks}
 
@@ -497,7 +494,7 @@ A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., 
 
 @section{Standard Library}
 
-Reach's @deftech{standard library} is a set of @tech{bound identifier}s and @tech{operators} which are implicitly bound in all @tech{source files}.
+Reach's @deftech{standard library} is a set of @tech{bound identifier}s and @tech{operators} which are implicitly bound in all @tech{modules}.
 It is sometimes treated as a @tech{module} referred to as @litchar{"STDLIB"}.
 All @tech{standard library} @tech{bound identifier}s and @tech{operators} are documented in this section.
 

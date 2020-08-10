@@ -19,7 +19,7 @@ in your project repository.
 After you install it,
 you can compile your Reach code by executing @exec{reachc SOURCE EXPORT}
 where @exec{SOURCE} is your @tech{source file},
-and @litchar{EXPORT} is the @tech{export}ed @tech{Reach.App}.
+and @exec{EXPORT} is the @tech{export}ed @tech{Reach.App}.
 @exec{reachc} supports the following options:
 
 @itemlist[
