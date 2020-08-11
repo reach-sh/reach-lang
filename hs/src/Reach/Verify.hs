@@ -16,13 +16,13 @@ verify outn lp =
     Z3 ->
       smt "z3" ["-smt2", "-in"]
     Yices ->
-      -- XXX: known not to work.
+      -- known not to work.
       -- - doesn't support declare-datatypes
       smt "yices-smt2" []
     CVC4 ->
       smt "cvc4" ["--lang=smt2", "--incremental"]
     Boolector ->
-      -- XXX: known not to work.
+      -- known not to work.
       -- - doesn't support unsat-cores
       -- - doesn't support declare-datatypes
       smt "boolector" ["--smt2"]

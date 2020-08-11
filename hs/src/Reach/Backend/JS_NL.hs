@@ -90,7 +90,9 @@ jsArg = \case
   DLA_Con c -> jsCon c
   DLA_Array as -> jsArray $ map jsArg as
   DLA_Obj m -> jsObject $ M.map jsArg m
-  DLA_Interact _ m _ -> "interact." <> pretty m
+  DLA_Interact _ m _ ->
+    --- XXX check type
+    "interact." <> pretty m
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply ctxt = \case
@@ -126,6 +128,7 @@ jsExpr ctxt = \case
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f
   DLE_Interact _ _ m as ->
+    --- XXX check type
     "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
   DLE_Digest _ as ->
     jsApply "stdlib.keccak256" $ map jsArg as

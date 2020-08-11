@@ -274,9 +274,9 @@ instance NFData DLVar
 data DLArg
   = DLA_Var DLVar
   | DLA_Con DLConstant
-  | --- XXX Should be expression
+  | --- FIXME Should be expression?
     DLA_Array [DLArg]
-  | --- XXX Should be expression
+  | --- FIXME Should be expression?
     DLA_Obj (M.Map String DLArg)
   | DLA_Interact SLPart String SLType
   deriving (Eq, Generic, Show)
@@ -503,7 +503,7 @@ data PLBlock
 
 data ETail
   = ET_Com (PLCommon ETail)
-  | --- XXX Seqn sucks
+  | --- FIXME Seqn sucks
     ET_Seqn SrcLoc PLTail ETail
   | ET_Stop SrcLoc DLArg
   | ET_If SrcLoc DLArg ETail ETail
@@ -536,7 +536,7 @@ data EPProg
 
 data CTail
   = CT_Com (PLCommon CTail)
-  | --- XXX Seqn sucks
+  | --- FIXME Seqn sucks
     CT_Seqn SrcLoc PLTail CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Transfer SrcLoc DLArg DLArg CTail
