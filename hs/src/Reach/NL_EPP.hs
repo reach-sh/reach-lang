@@ -202,7 +202,8 @@ epp_n st n =
       let ct_k' = CT_Transfer at to amt ct_k
       return $ ProResC p_prts_s (ProRes_ cs_k' ct_k')
     LLC_FromConsensus at1 _at2 s -> do
-      ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st s
+      let st' = st { pst_interval = default_interval }
+      ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st' s
       let svs = counts_nzs cons_cs
       let ctw =
             case more_chb of

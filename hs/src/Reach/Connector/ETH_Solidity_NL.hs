@@ -100,6 +100,7 @@ type VarMap a = M.Map DLVar (Doc a)
 data SolCtxt a = SolCtxt
   { ctxt_handler_num :: Int
   , ctxt_varm :: VarMap a
+  , ctxt_emit :: Doc a
   , ctxt_typem :: M.Map SLType (Doc a)
   }
 
@@ -290,14 +291,18 @@ solCTail ctxt = \case
     where
       SolTailRes ctxt' k' = solCTail ctxt k
   CT_Wait _ svs ->
-    SolTailRes ctxt $ solSet ("current_state") (solHashState ctxt HM_Set svs)
+    SolTailRes ctxt $
+    vsep [ ctxt_emit ctxt
+         , solSet ("current_state") (solHashState ctxt HM_Set svs) ]
   CT_Jump _ which svs asn ->
-    SolTailRes ctxt $ solApply (solLoop_fun which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) <> semi
+    SolTailRes ctxt $
+    vsep [ ctxt_emit ctxt
+         , solApply (solLoop_fun which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) <> semi ]
   CT_Halt _ ->
     SolTailRes ctxt $
-    --- XXX move emit
       vsep
-        [ solSet ("current_state") ("0x0")
+        [ ctxt_emit ctxt
+        , solSet ("current_state") ("0x0")
         , solApply "selfdestruct" ["msg.sender"] <> semi
         ]
 
@@ -338,15 +343,21 @@ manyVars_c = \case
   CT_Jump {} -> mempty
   CT_Halt {} -> mempty
 
-solCTail_top :: SolCtxt a -> Int -> [DLVar] -> CTail -> (SolCtxt a, Doc a, Doc a, Doc a)
-solCTail_top ctxt which vs ct = (ctxt'', frameDefn, frameDecl, ct')
+solCTail_top :: SolCtxt a -> Int -> [DLVar] -> Maybe [DLVar] -> CTail -> (SolCtxt a, Doc a, Doc a, Doc a)
+solCTail_top ctxt which vs mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
   where
     argsm = M.fromList $ map (\v -> (v, solRawVar v)) vs
     mvars = manyVars_c ct
     mvarsm = M.fromList $ map (\v -> (v, solMemVar v)) $ S.toList mvars
     (frameDefn, frameDecl) = solFrame ctxt' which mvars
     SolTailRes ctxt'' ct' = solCTail ctxt' ct
-    ctxt' =
+    emitp = case mmsg of
+      Just msg ->
+        solEventEmit ctxt'_pre which msg
+      Nothing ->
+        emptyDoc
+    ctxt' = ctxt'_pre { ctxt_emit = emitp }
+    ctxt'_pre =
       ctxt
         { ctxt_handler_num = which
         , ctxt_varm = mvarsm <> argsm <> (ctxt_varm ctxt)
@@ -356,8 +367,8 @@ solHandler :: SolCtxt a -> Int -> CHandler -> Doc a
 solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [evtDefn, frameDefn, funDefn]
   where
     vs = svs ++ msg
-    ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
-    (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs ct
+    ctxt_from = ctxt_top { ctxt_varm = fromm <> (ctxt_varm ctxt_top) }
+    (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
     evtDefn = solEvent ctxt which msg
     argDefs = (solDecl solLastBlock (solType ctxt T_UInt256)) : map (solArgDecl ctxt) vs
     ret = "external payable"
@@ -369,7 +380,6 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [ev
         , fromCheck
         , timeoutCheck
         , ctp
-        , solEventEmit ctxt which msg
         ]
     (fromm, fromCheck) =
       case fs of
@@ -387,7 +397,7 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [ev
 solHandler ctxt_top which (C_Loop _at svs msg ct) = vsep [frameDefn, funDefn]
   where
     vs = svs ++ msg
-    (ctxt_fin, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs ct
+    (ctxt_fin, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs Nothing ct
     argDefs = map (solArgDecl ctxt_fin) vs
     ret = "internal"
     funDefn = solFunction (solLoop_fun which) argDefs ret body
@@ -460,6 +470,7 @@ solPLProg (PLProg _ _ (CPProg at hs)) =
       SolCtxt
         { ctxt_typem = typem
         , ctxt_handler_num = 0
+        , ctxt_emit = emptyDoc
         , ctxt_varm = mempty
         }
     ctcbody = vsep_with_blank $ [state_defn, consp, typesp, solHandlers ctxt hs]
@@ -516,7 +527,7 @@ compile_sol solf = do
               ++ "\n"
 
 connect_eth :: Connector
-connect_eth outn _pl = do
+connect_eth outn pl = do
   let solf = outn "sol"
-  --- writeFile solf (show (solPLProg pl))
+  writeFile solf (show (solPLProg pl))
   compile_sol solf

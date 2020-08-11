@@ -9,6 +9,7 @@ contract ReachContract is Stdlib {
   uint256 current_state;
   
   constructor() public payable {
+    
     current_state = uint256(keccak256(abi.encodePacked(uint256(0), uint256(block.number)))); }
   
   
@@ -28,8 +29,8 @@ contract ReachContract is Stdlib {
     
     require(true && true);
     require(((v5 + v6) == (msg.value)));
-    current_state = uint256(keccak256(abi.encodePacked(uint256(1), uint256(block.number), msg.sender, v5, v6)));
-    emit e1(address(this).balance, v5, v6); }
+    emit e1(address(this).balance, v5, v6);
+    current_state = uint256(keccak256(abi.encodePacked(uint256(1), uint256(block.number), msg.sender, v5, v6))); }
   
   event e2(uint256 _bal);
   
@@ -39,8 +40,8 @@ contract ReachContract is Stdlib {
     
     require(true && uint256(block.number) < _last + uint256(10));
     require((v5 == (msg.value)));
-    current_state = uint256(keccak256(abi.encodePacked(uint256(2), uint256(block.number), v7, v5, v6, msg.sender)));
-    emit e2(address(this).balance); }
+    emit e2(address(this).balance);
+    current_state = uint256(keccak256(abi.encodePacked(uint256(2), uint256(block.number), v7, v5, v6, msg.sender))); }
   
   event e3(uint256 _bal, uint256 v48);
   
@@ -50,8 +51,8 @@ contract ReachContract is Stdlib {
     require(msg.sender == v7);
     require(true && uint256(block.number) < _last + uint256(10));
     require((uint256(0) == (msg.value)));
-    current_state = uint256(keccak256(abi.encodePacked(uint256(3), uint256(block.number), v7, v5, v6, v15, v48)));
-    emit e3(address(this).balance, v48); }
+    emit e3(address(this).balance, v48);
+    current_state = uint256(keccak256(abi.encodePacked(uint256(3), uint256(block.number), v7, v5, v6, v15, v48))); }
   
   event e4(uint256 _bal, uint256 v77);
   
@@ -59,11 +60,11 @@ contract ReachContract is Stdlib {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(3), _last, v7, v5, v6, v15, v48))));
     
     require(msg.sender == v15);
-    require(true && uint256(block.number) < _last + uint256(10) + uint256(10) + uint256(10));
+    require(true && uint256(block.number) < _last + uint256(10));
     require((uint256(0) == (msg.value)));
     require(((uint256(0) <= v77) ? (v77 < uint256(3)) : false));
-    current_state = uint256(keccak256(abi.encodePacked(uint256(4), uint256(block.number), v7, v5, v6, v15, v48, v77)));
-    emit e4(address(this).balance, v77); }
+    emit e4(address(this).balance, v77);
+    current_state = uint256(keccak256(abi.encodePacked(uint256(4), uint256(block.number), v7, v5, v6, v15, v48, v77))); }
   
   event e5(uint256 _bal, uint256 v103, uint256 v104);
   struct _F5 {
@@ -75,7 +76,7 @@ contract ReachContract is Stdlib {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(4), _last, v7, v5, v6, v15, v48, v77))));
     _F5 memory _f;
     require(msg.sender == v7);
-    require(true && uint256(block.number) < _last + uint256(10) + uint256(10) + uint256(10) + uint256(10));
+    require(true && uint256(block.number) < _last + uint256(10));
     require((uint256(0) == (msg.value)));
     require((v48 == (uint256(keccak256(abi.encodePacked(v103, v104))))));
     require(((uint256(0) <= v104) ? (v104 < uint256(3)) : false));
@@ -112,8 +113,7 @@ contract ReachContract is Stdlib {
     v15.transfer((_f.v197.elem1));
     emit e5(address(this).balance, v103, v104);
     current_state = 0x0;
-    selfdestruct(msg.sender);
-     }
+    selfdestruct(msg.sender); }
   
   event e6(uint256 _bal);
   
@@ -121,12 +121,12 @@ contract ReachContract is Stdlib {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(4), _last, v7, v5, v6, v15, v48, v77))));
     
     require(msg.sender == v15);
-    require(uint256(block.number) >= _last + uint256(10) && uint256(block.number) < _last + uint256(10) + uint256(10) + uint256(10));
+    require(uint256(block.number) >= _last + uint256(10) && true);
     require((uint256(0) == (msg.value)));
     v15.transfer((address(this).balance));
+    emit e6(address(this).balance);
     current_state = 0x0;
-    selfdestruct(msg.sender);
-    emit e6(address(this).balance); }
+    selfdestruct(msg.sender); }
   
   event e7(uint256 _bal);
   
@@ -134,12 +134,12 @@ contract ReachContract is Stdlib {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(3), _last, v7, v5, v6, v15, v48))));
     
     require(msg.sender == v7);
-    require(uint256(block.number) >= _last + uint256(10) && uint256(block.number) < _last + uint256(10) + uint256(10));
+    require(uint256(block.number) >= _last + uint256(10) && true);
     require((uint256(0) == (msg.value)));
     v7.transfer((address(this).balance));
+    emit e7(address(this).balance);
     current_state = 0x0;
-    selfdestruct(msg.sender);
-    emit e7(address(this).balance); }
+    selfdestruct(msg.sender); }
   
   event e8(uint256 _bal);
   
@@ -150,7 +150,6 @@ contract ReachContract is Stdlib {
     require(uint256(block.number) >= _last + uint256(10) && true);
     require((uint256(0) == (msg.value)));
     v15.transfer((address(this).balance));
-
     emit e8(address(this).balance);
     current_state = 0x0;
     selfdestruct(msg.sender); }
@@ -164,6 +163,6 @@ contract ReachContract is Stdlib {
     require(uint256(block.number) >= _last + uint256(10) && true);
     require((uint256(0) == (msg.value)));
     v7.transfer((address(this).balance));
+    emit e9(address(this).balance);
     current_state = 0x0;
-    selfdestruct(msg.sender);
-    emit e9(address(this).balance); } }
+    selfdestruct(msg.sender); } }

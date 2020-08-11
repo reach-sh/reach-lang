@@ -517,7 +517,7 @@
              , "B":T_Address:15 ]) } },
   3 = {
     again("A":T_Address:7),
-    (between [] [DLC_Int 10, DLC_Int 10]),
+    (between [] [DLC_Int 10]),
     last = 2,
     [ "A":T_Address:7
     , "array idx":T_UInt256:5
@@ -535,7 +535,7 @@
              , "commitment (as digest)":T_UInt256:48 ]) } },
   4 = {
     again("B":T_Address:15),
-    (between [] [DLC_Int 10, DLC_Int 10, DLC_Int 10]),
+    (between [] [DLC_Int 10]),
     last = 3,
     [ "A":T_Address:7
     , "array idx":T_UInt256:5
@@ -559,7 +559,7 @@
              , "handB (as clo app)":T_UInt256:77 ]) } },
   5 = {
     again("A":T_Address:7),
-    (between [] [DLC_Int 10, DLC_Int 10, DLC_Int 10, DLC_Int 10]),
+    (between [] [DLC_Int 10]),
     last = 4,
     [ "A":T_Address:7
     , "array idx":T_UInt256:5
@@ -630,7 +630,7 @@
       (halt! ) } },
   6 = {
     again("B":T_Address:15),
-    (between [DLC_Int 10] [DLC_Int 10, DLC_Int 10, DLC_Int 10]),
+    (between [DLC_Int 10] []),
     last = 4,
     [ "A":T_Address:7
     , "array idx":T_UInt256:5
@@ -648,7 +648,7 @@
       (halt! ) } },
   7 = {
     again("A":T_Address:7),
-    (between [DLC_Int 10] [DLC_Int 10, DLC_Int 10]),
+    (between [DLC_Int 10] []),
     last = 3,
     [ "A":T_Address:7
     , "array idx":T_UInt256:5
@@ -665,7 +665,7 @@
       (halt! ) } },
   8 = {
     again("B":T_Address:15),
-    (between [DLC_Int 10] [DLC_Int 10]),
+    (between [DLC_Int 10] []),
     last = 2,
     [ "A":T_Address:7
     , "array idx":T_UInt256:5
