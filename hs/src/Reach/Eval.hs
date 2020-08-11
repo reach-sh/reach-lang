@@ -15,11 +15,11 @@ import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Paths_reach (version)
-import Reach.JSUtil
 import Reach.AST
+import Reach.JSUtil
 import Reach.Parser
-import Reach.Type
 import Reach.STCounter
+import Reach.Type
 import Reach.Util
 import Safe (atMay)
 import Text.EditDistance

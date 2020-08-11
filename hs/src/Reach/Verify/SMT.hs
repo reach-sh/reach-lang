@@ -11,9 +11,9 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc
+import Reach.AST
 import Reach.CollectTypes
 import Reach.EmbeddedFiles
-import Reach.AST
 import Reach.Pretty ()
 import Reach.Type
 import Reach.Util

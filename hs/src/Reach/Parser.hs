@@ -9,9 +9,9 @@ import GHC.Generics (Generic)
 import GHC.IO.Encoding
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import Reach.AST
 import Reach.EmbeddedFiles
 import Reach.JSUtil
-import Reach.AST
 import Reach.Util
 import System.Directory
 import System.FilePath

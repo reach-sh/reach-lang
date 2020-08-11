@@ -4,8 +4,8 @@ import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.STRef
-import Reach.CollectCounts
 import Reach.AST
+import Reach.CollectCounts
 import Reach.STCounter
 import Reach.Util
 
@@ -202,7 +202,7 @@ epp_n st n =
       let ct_k' = CT_Transfer at to amt ct_k
       return $ ProResC p_prts_s (ProRes_ cs_k' ct_k')
     LLC_FromConsensus at1 _at2 s -> do
-      let st' = st { pst_interval = default_interval }
+      let st' = st {pst_interval = default_interval}
       ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st' s
       let svs = counts_nzs cons_cs
       let ctw =

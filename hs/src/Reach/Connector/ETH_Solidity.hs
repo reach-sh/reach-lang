@@ -13,12 +13,12 @@ import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
 import Data.Version (showVersion)
 import Paths_reach (version)
+import Reach.AST
 import Reach.CollectTypes
 import Reach.Connector
 import Reach.EmbeddedFiles
-import Reach.AST
-import Reach.Type
 import Reach.STCounter
+import Reach.Type
 import Reach.Util
 import System.Exit
 import System.Process
@@ -292,12 +292,16 @@ solCTail ctxt = \case
       SolTailRes ctxt' k' = solCTail ctxt k
   CT_Wait _ svs ->
     SolTailRes ctxt $
-    vsep [ ctxt_emit ctxt
-         , solSet ("current_state") (solHashState ctxt HM_Set svs) ]
+      vsep
+        [ ctxt_emit ctxt
+        , solSet ("current_state") (solHashState ctxt HM_Set svs)
+        ]
   CT_Jump _ which svs asn ->
     SolTailRes ctxt $
-    vsep [ ctxt_emit ctxt
-         , solApply (solLoop_fun which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) <> semi ]
+      vsep
+        [ ctxt_emit ctxt
+        , solApply (solLoop_fun which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) <> semi
+        ]
   CT_Halt _ ->
     SolTailRes ctxt $
       vsep
@@ -356,7 +360,7 @@ solCTail_top ctxt which vs mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
         solEventEmit ctxt'_pre which msg
       Nothing ->
         emptyDoc
-    ctxt' = ctxt'_pre { ctxt_emit = emitp }
+    ctxt' = ctxt'_pre {ctxt_emit = emitp}
     ctxt'_pre =
       ctxt
         { ctxt_handler_num = which
@@ -367,7 +371,7 @@ solHandler :: SolCtxt a -> Int -> CHandler -> Doc a
 solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [evtDefn, frameDefn, funDefn]
   where
     vs = svs ++ msg
-    ctxt_from = ctxt_top { ctxt_varm = fromm <> (ctxt_varm ctxt_top) }
+    ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
     evtDefn = solEvent ctxt which msg
     argDefs = (solDecl solLastBlock (solType ctxt T_UInt256)) : map (solArgDecl ctxt) vs

@@ -1,14 +1,14 @@
 module Reach.Backend.JS (backend_js) where
 
-import Data.Text.Prettyprint.Doc
-import Data.Version (showVersion)
-import Paths_reach (version)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
+import Data.Text.Prettyprint.Doc
+import Data.Version (showVersion)
+import Paths_reach (version)
 import Reach.AST
-import Reach.Connector
 import Reach.Backend
+import Reach.Connector
 import Reach.Util
 
 --- Pretty helpers
@@ -59,17 +59,17 @@ jsBacktickText x = "`" <> pretty x <> "`"
 
 --- Compiler
 
-data JSCtxt =
-  JSCtxt { ctxt_who :: SLPart
-         , ctxt_txn :: Int
-         , ctxt_simulate :: Bool
-         }
+data JSCtxt = JSCtxt
+  { ctxt_who :: SLPart
+  , ctxt_txn :: Int
+  , ctxt_simulate :: Bool
+  }
 
 jsTxn :: JSCtxt -> Doc a
 jsTxn ctxt = "txn" <> pretty (ctxt_txn ctxt)
 
 jsTimeoutFlag :: JSCtxt -> Doc a
-jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout" 
+jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout"
 
 jsAssert :: Doc a -> Doc a
 --- FIXME Add srcloc and context frames
@@ -83,13 +83,13 @@ jsContract = \case
   T_Bytes -> "stdlib.T_Bytes"
   T_Address -> "stdlib.T_Address"
   T_Fun {} -> impossible "fun dl"
-  T_Array as -> jsApply ("stdlib.T_Array") $ [ jsArray $ map jsContract as ]
-  T_Obj m -> jsApply ("stdlib.T_Object") [ jsObject $ M.map jsContract m ]
+  T_Array as -> jsApply ("stdlib.T_Array") $ [jsArray $ map jsContract as]
+  T_Obj m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
   T_Forall {} -> impossible "forall dl"
   T_Var {} -> impossible "var dl"
 
 jsProtect :: SLType -> Doc a -> Doc a
-jsProtect how what = jsApply "stdlib.protect" [ jsContract how, what ]
+jsProtect how what = jsApply "stdlib.protect" [jsContract how, what]
 
 jsVar :: DLVar -> Doc a
 jsVar (DLVar _ _ _ n) = "v" <> pretty n
@@ -154,43 +154,48 @@ jsCom iter ctxt = \case
   PL_Return {} -> emptyDoc
   PL_Let _ _ dv de k ->
     "const" <+> jsVar dv <+> "=" <+> jsExpr ctxt de <> semi <> hardline
-    <> iter ctxt k
+      <> iter ctxt k
   PL_Eff _ de k ->
     jsExpr ctxt de <> semi <> hardline
-    <> iter ctxt k
+      <> iter ctxt k
   PL_Var _ dv k ->
     "let" <+> jsVar dv <> semi <> hardline
-    <> iter ctxt k
+      <> iter ctxt k
   PL_Set _ dv da k ->
     jsVar dv <+> "=" <+> jsArg da <> semi <> hardline
-    <> iter ctxt k
+      <> iter ctxt k
   PL_Claim _ _ ct a k ->
     check <> iter ctxt k
-    where check = case ct of
-            CT_Assert -> emptyDoc
-            CT_Assume -> require
-            CT_Require -> require
-            CT_Possible -> emptyDoc
-          require = (jsAssert $ jsArg a) <> hardline
+    where
+      check = case ct of
+        CT_Assert -> emptyDoc
+        CT_Assume -> require
+        CT_Require -> require
+        CT_Possible -> emptyDoc
+      require = (jsAssert $ jsArg a) <> hardline
   PL_LocalIf _ c t f k ->
-    vsep [ jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
-         , iter ctxt k ]
-    
+    vsep
+      [ jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
+      , iter ctxt k
+      ]
+
 jsPLTail :: JSCtxt -> PLTail -> Doc a
 jsPLTail ctxt (PLTail m) = jsCom jsPLTail ctxt m
 
 jsBlock :: JSCtxt -> PLBlock -> Doc a
 jsBlock ctxt (PLBlock _ t a) =
   parens (parens emptyDoc <+> "=>" <+> jsBraces body) <> parens emptyDoc
-  where body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
+  where
+    body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
 
 jsAsn :: JSCtxt -> Bool -> DLAssignment -> Doc a
 jsAsn _ctxt isDefn asn = vsep $ map (uncurry mk1) $ M.toList asnm
-  where DLAssignment asnm = asn
-        mk1 v a = mdecl <> jsVar v <+> "=" <+> jsArg a <> semi
-        mdecl = case isDefn of
-                  True -> "let "
-                  False -> emptyDoc
+  where
+    DLAssignment asnm = asn
+    mk1 v a = mdecl <> jsVar v <+> "=" <+> jsArg a <> semi
+    mdecl = case isDefn of
+      True -> "let "
+      False -> emptyDoc
 
 jsFromSpec :: JSCtxt -> FromSpec -> Doc a
 jsFromSpec ctxt = \case
@@ -200,8 +205,11 @@ jsFromSpec ctxt = \case
 jsETail :: JSCtxt -> ETail -> Doc a
 jsETail ctxt = \case
   ET_Com m -> jsCom jsETail ctxt m
-  ET_Seqn _ f s -> vsep [ jsPLTail ctxt f
-                        , jsETail ctxt s ]
+  ET_Seqn _ f s ->
+    vsep
+      [ jsPLTail ctxt f
+      , jsETail ctxt s
+      ]
   ET_Stop _ a -> "return" <+> jsArg a
   ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
   ET_ToConsensus _ fs_ok which from_me msg mto k_ok -> tp
@@ -211,59 +219,65 @@ jsETail ctxt = \case
         case mto of
           Nothing -> ("false", k_okp)
           Just (delay, k_to) -> (jsArg delay, jsIf (jsTimeoutFlag ctxt') k_top k_okp)
-              where k_top = jsETail ctxt' k_to
+            where
+              k_top = jsETail ctxt' k_to
       msg_vs = map jsVar msg
       k_okp =
         "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi
-        <> hardline <> jsFromSpec ctxt' fs_ok
-        <> jsETail ctxt' k_ok
-      ctxt' = ctxt { ctxt_txn = (ctxt_txn ctxt) + 1 }
+          <> hardline
+          <> jsFromSpec ctxt' fs_ok
+          <> jsETail ctxt' k_ok
+      ctxt' = ctxt {ctxt_txn = (ctxt_txn ctxt) + 1}
       whop = jsCon $ DLC_Bytes $ ctxt_who ctxt
       defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> callp <> semi
       callp =
         case from_me of
           Just (args, amt, svs) ->
             jsApply
-            "ctc.sendrecv"
-            [ whop
-            , jsCon (DLC_Int $ fromIntegral which)
-            , jsCon (DLC_Int $ fromIntegral $ length msg)
-            , vs
-            , amtp
-            , delayp
-            , "null" --- XXX implement simulation to discover transfer in EPP, not here.
-            ]
-            where amtp = jsArg amt
-                  --- ok_sim_p = jsETail ctxt'_sim k_ok
-                  --- ctxt'_sim = ctxt' { ctxt_simulate = True }
-                  vs = jsArray $ (map jsVar svs) ++ (map jsArg args)
+              "ctc.sendrecv"
+              [ whop
+              , jsCon (DLC_Int $ fromIntegral which)
+              , jsCon (DLC_Int $ fromIntegral $ length msg)
+              , vs
+              , amtp
+              , delayp
+              , "null" --- XXX implement simulation to discover transfer in EPP, not here.
+              ]
+            where
+              amtp = jsArg amt
+              --- ok_sim_p = jsETail ctxt'_sim k_ok
+              --- ctxt'_sim = ctxt' { ctxt_simulate = True }
+              vs = jsArray $ (map jsVar svs) ++ (map jsArg args)
           Nothing ->
             jsApply
-            "ctc.recv"
-            [ whop
-            , jsCon (DLC_Int $ fromIntegral which)
-            , jsCon (DLC_Int $ fromIntegral $ length msg)
-            , delayp
-            ]
+              "ctc.recv"
+              [ whop
+              , jsCon (DLC_Int $ fromIntegral which)
+              , jsCon (DLC_Int $ fromIntegral $ length msg)
+              , delayp
+              ]
   ET_While _ asn cond body k ->
     jsAsn ctxt True asn
-    <> hardline
-    <> jsWhile (jsBlock ctxt cond) (jsETail ctxt body)
-    <> hardline
-    <> jsETail ctxt k
+      <> hardline
+      <> jsWhile (jsBlock ctxt cond) (jsETail ctxt body)
+      <> hardline
+      <> jsETail ctxt k
   ET_Continue _ asn ->
     jsAsn ctxt False asn
-    <> hardline
-    <> "continue" <> semi
+      <> hardline
+      <> "continue"
+      <> semi
 
 jsPart :: SLPart -> EPProg -> Doc a
 jsPart p (EPProg _ _ et) =
-    "export" <+> jsFunction (B.unpack p) (["stdlib", "ctc", "interact"]) bodyp'
+  "export" <+> jsFunction (B.unpack p) (["stdlib", "ctc", "interact"]) bodyp'
   where
-    ctxt = JSCtxt
-      { ctxt_who = p
-      , ctxt_txn = 0
-      , ctxt_simulate = False }
+    ctxt =
+      JSCtxt
+        { ctxt_who = p
+        , ctxt_txn = 0
+        , ctxt_simulate = False
+        }
     bodyp' =
       vsep
         [ "const" <+> jsTxn ctxt <+> "= { balance: 0, value: 0 }" <> semi

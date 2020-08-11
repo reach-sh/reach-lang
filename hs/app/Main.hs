@@ -14,7 +14,7 @@ data CompilerToolArgs = CompilerToolArgs
   }
 
 data CompilerToolEnv = CompilerToolEnv
-  { }
+  {}
 
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
 makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
@@ -76,7 +76,8 @@ getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
   return
     CompilerToolEnv
-      { }
+      {
+      }
 
 main :: IO ()
 main = do
