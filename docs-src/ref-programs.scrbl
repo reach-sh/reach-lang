@@ -89,43 +89,40 @@ and @litchar{participantInteractInterface}.
 
 The @litchar{program} argument is a function. The arguments this function accepts must match the number and order of @litchar{participantDefinitions}. The function body is the program to be @tech{compile}d.
 
+
 @section{Types}
 
-A @deftech{base type} is either:
+Reach's @deftech{type}s are:
+
 @itemlist[
-  @item{@reachin{address}, which denotes an @tech{account} @tech{address}; or,}
-  @item{@reachin{uint256}, which denotes an unsigned integer of 256 bits; or,}
-  @item{@reachin{bool}, which denotes a boolean; or,}
-  @item{@reachin{bytes}, which denotes a string of bytes.} ]
+  @item{@reachin{Null}.}
+  @item{@reachin{Bool}, which denotes a boolean.}
+  @item{@reachin{UInt256}, which denotes an unsigned integer of 256 bits.}
+  @item{@reachin{bytes}, which denotes a string of bytes.}
+  @item{@reachin{Address}, which denotes an @tech{account} @tech{address}.}
+  @item{@reachin{Fun([...TArgs], TRet)}, which denotes a function type.}
+  @item{@reachin{Array(...TArgs)}, which denotes a tuple.}
+  @item{@reachin{Obj({...TFields})}, which denotes an object.}]
 
-A @deftech{type} is either a @tech{base type} or a statically-sized homogeneous array of @tech{base type} values, written @reachin{BASE[EXPR]} where @reachin{BASE} is a @tech{base type} and @reachin{EXPR} is an @tech{expression} that statically evaluates to a natural number. For example, the following are all @tech{types}:
-
-@reach{
-  address
-  bool
-  bool[4]
-  uint256[4 + 5]
-  uint256[3 * 7 + 99] }
 
 @section{Identifier Definitions}
 
 An @deftech{identifier definition} is either
 a @tech{value definition}
 or a @tech{function definition}.
-Each of these introduces a @deftech{bound identifier}.
+Each of these introduces one or more @deftech{bound identifier}s.
 
 @(hrule)
 @reach{
   const DELAY = 10;
   const [ Good, Bad ] = [ 42, 43 ]; }
 
-A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachin{LHS} is either a single identifier, e.g. @reachin{isDelicious}, or an array of identifiers, e.g. @reachin{[ bestSushi, mediumestSushi, worstSushi ]}, and @reachin{RHS} is an @tech{expression}. @reachin{RHS} must evaluate to as many @tech{values} as there are identifiers in @reachin{LHS}. Those @tech{values} are available as the corresponding identifiers in the rest of the program.
+@margin-note{@tech{Valid} @deftech{identifiers} follow the same rules as JavaScript identifiers:
+they may consist of Unicode alphanumeric characters,
+or @reachin{_} or @reachin{$},
+but may not begin with a digit.}
 
-@(hrule)
-@reach{
-  const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(); }
-
-An @deftech{enumeration}, written @reachin{const [ ENUM, OPTION_0, ..., OPTION_n ] = makeEnum();}, defines the identifiers @reachin{OPTION_0} through @reachin{OPTION_n} as unique natural numbers and @reachin{ENUM} as a function which abstracts over one numeric argument and returns @reachin{true} if and only if it is one of these natural numbers.
+A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachin{LHS} is either a single identifier, e.g. @reachin{isDelicious}, or an array of identifiers, e.g. @reachin{[ bestSushi, mediumestSushi, worstSushi ]}, and @reachin{RHS} is an @tech{expression}. @reachin{RHS} must evaluate to as many @tech{values} as there are identifiers in @reachin{LHS}. Those @tech{values} are available as their corresponding @tech{bound identifier}s in the rest of the program.
 
 @(hrule)
 @reach{
@@ -133,13 +130,6 @@ An @deftech{enumeration}, written @reachin{const [ ENUM, OPTION_0, ..., OPTION_n
     return (random() % 2) == 0; }; }
 
 A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which abstracts its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
-
-@(hrule)
-@reach{
-  function main() {
-    return 42; }; }
-
-A @deftech{main function} is a @tech{function definition} with the name @reachin{main} and no arguments. The evaluation of the @tech{main function} is the same as its @tech{function body}.
 
 @(hrule)
 
@@ -188,7 +178,10 @@ Distinct from @tech{tails} are @deftech{continuations} which include everything 
 
 @tech{Tails} are statically apparent from the structure of the program source code, while @tech{continuations} are influenced by function calls.
 
-A sequence of @tech{statements} that does not end in a @deftech{terminator statement} (a @tech{statement} with no @tech{tail}), such as a @tech{return statement} or @tech{continue statement} is treated as if it ended with a @tech{return statement} that returned no values, i.e. @reachin{return;}.
+A sequence of @tech{statements} that does not end in a @deftech{terminator statement}
+(a @tech{statement} with no @tech{tail}),
+such as a @tech{return statement} or @tech{continue statement}
+is treated as if it ended with @reachin{return null;}.
 
 The remainder of this section enumerates each kind of @tech{statement}.
 
@@ -235,7 +228,12 @@ evaluates to @reachin{2}.
  } else {
    return "No, waaah!"; } }
 
-A @deftech{conditional statement}, written @reachin{if COND TRUE else FALSE}, where @reachin{COND} is an @tech{expression} which evaluates to a boolean and @reachin{TRUE} and @reachin{FALSE} as @tech{statements} (potentially @tech{block statements}), selects between the @reachin{TRUE} @tech{statement} and @reachin{FALSE} @tech{statement} based on whether @reachin{COND} evaluates to @reachin{true}.
+A @deftech{conditional statement},
+written @reachin{if (COND) TRUE else FALSE},
+where @reachin{COND} is an @tech{expression} which evaluates to a boolean
+and @reachin{TRUE} and @reachin{FALSE} as @tech{statements}
+(potentially @tech{block statements}),
+selects between the @reachin{TRUE} @tech{statement} and @reachin{FALSE} @tech{statement} based on whether @reachin{COND} evaluates to @reachin{true}.
 
 Both @reachin{TRUE} and @reachin{FALSE} have empty @tech{tails}, i.e. the @tech{tail} of the @tech{conditional statement} is not propagated. For example,
 
@@ -372,6 +370,8 @@ where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are the variables 
 
 A @tech{continue statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}.
 
+A @tech{continue statement} may be written without the preceding identifier update, in which case another iteration begins with the same loop state.
+
 @section{Expressions}
 
 There are a large variety of different @deftech{expressions} in Reach programs.
@@ -396,7 +396,15 @@ An identifier, written @reachin{ID}, is an @tech{expression} that evaluates to t
  "reality bytes"
  'it just does' }
 
-A @deftech{literal value}, written @reachin{VALUE}, is an @tech{expression} that evaluates to the given @tech{value}. Numbers may be written in decimal, hexadecimal, or octal. Booleans may be written as @reachin{true} or @reachin{false}. Byte strings may be written between double or single quotes (with no distinction between the different styles) and use the same escaping rules as JavaScript.
+A @deftech{literal value},
+written @reachin{VALUE},
+is an @tech{expression} that evaluates to the given @tech{value}.
+@deftech{Numeric literal}s may be written in decimal, hexadecimal, or octal.
+@deftech{Boolean literal}s may be written as @reachin{true} or @reachin{false}.
+@deftech{String literal}s (aka byte strings)
+may be written between double or single quotes
+(with no distinction between the different styles)
+and use the same escaping rules as JavaScript.
 
 @(hrule)
 
@@ -408,7 +416,11 @@ which is either a @tech{unary operator}, or a @tech{binary operator}.
  ! a
  - a}
 
-A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! -}. @margin-note{Since all numbers are non-negative in Reach, the @reachin{-} iunary operator is useless.} It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
+A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! -}.
+
+@margin-note{Since all numbers are non-negative in Reach, the @reachin{-} unary operator is useless.}
+
+It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
 
 @(hrule)
 @reach{
@@ -446,13 +458,62 @@ An @tech{expression} may be parenthesized, as in @reachin{(EXPR)}.
  [ ]
  [ 1, 2 + 3, 4 * 5 ] }
 
-A @deftech{multiple value expression}, written @reachin{[ EXPR_0, ..., EXPR_n ]}, is an @tech{expression} which evaluates to @reachin{n} values, where @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions} that evaluate to one value.
+A @deftech{tuple literal},
+written @reachin{[ EXPR_0, ..., EXPR_n ]},
+is an @tech{expression} which evaluates to a tuple of @reachin{n} values,
+where @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions}.
 
 @(hrule)
 @reach{
- map[3] }
+ arr[3] }
 
-An @deftech{array reference}, written @reachin{ARRAY_EXPR[IDX_EXPR]}, where @reachin{ARRAY_EXPR} is an @tech{expression} that evaluates to statically sized array and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural number which is less than the size of the array, selects the given element of the array.
+An @deftech{array reference}, written @reachin{ARRAY_EXPR[IDX_EXPR]},
+where @reachin{ARRAY_EXPR} is an @tech{expression} that evaluates to statically sized @deftech{array}
+(a tuple where all values are the same type)
+and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural number which is less than the size of the array,
+selects the element at the given index of the array.
+Array indices start at zero.
+
+@(hrule)
+@reach{
+  { }
+  { x: 3, "yo-yo": 4 }
+}
+
+An @deftech{object literal},
+typically written @reachin{{ KEY_0: EXPR_0, ..., KEY_n: EXPR_n }},
+where @reachin{KEY_0} through @reachin{KEY_n} are @tech{identifiers} or @tech{string literal}s
+and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions},
+is an @tech{expression} which evaluates to an object
+with fields @reachin{KEY_0} through @reachin{KEY_n}.
+
+Additional object literal syntax exists for convenience, such as:
+
+@reach{
+  { ...obj, z: 5 }
+}
+
+An @deftech{object spread}, where all fields from @reachin{obj} are copied into the object, but these fields may be overridden by additional fields specified afterwards.
+
+@reach{
+  { x, z: 5 }
+}
+
+Shorthand for @reachin{{ x: x, z: 5}}, where @reachin{x} is any @tech{bound identifier}.
+
+@(hrule)
+@reach{
+  obj["x"]
+}
+
+An @deftech{object reference},
+written @reachin{OBJ[FIELD]},
+where @reachin{OBJ} is an expression of type object,
+and @reachin{FIELD} is an expression of type bytes,
+accesses the FIELD field of object OBJ.
+
+This syntax is identical to @tech{array reference};
+the difference is only in the types involved.
 
 @(hrule)
 @reach{
@@ -497,6 +558,19 @@ A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., 
 Reach's @deftech{standard library} is a set of @tech{bound identifier}s and @tech{operators} which are implicitly bound in all @tech{modules}.
 It is sometimes treated as a @tech{module} referred to as @litchar{"STDLIB"}.
 All @tech{standard library} @tech{bound identifier}s and @tech{operators} are documented in this section.
+
+@(hrule)
+@reach{
+  const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3); }
+
+An @deftech{enumeration} (or @deftech{enum}, for short),
+can be created with @reachin{makeEnum(N)},
+where @reachin{N} is the number of distinct values in the enum.
+This produces a tuple of @reachin{N+1} values,
+where the first value is a @reachin{Fun([UInt256], Bool)}
+which tells you if its argument is one of the enum's values,
+and the next N values are distinct @reachin{UInt256}s.
+
 
 @(hrule)
 @reach{
