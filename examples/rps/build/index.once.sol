@@ -48,7 +48,7 @@ contract ReachContract is Stdlib {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(2), _last, v7, v5, v6, v15))));
     
     require(msg.sender == v7);
-    require(true && uint256(block.number) < _last + uint256(10) + uint256(10));
+    require(true && uint256(block.number) < _last + uint256(10));
     require((uint256(0) == (msg.value)));
     current_state = uint256(keccak256(abi.encodePacked(uint256(3), uint256(block.number), v7, v5, v6, v15, v48)));
     emit e3(address(this).balance, v48); }
@@ -110,9 +110,10 @@ contract ReachContract is Stdlib {
        }
     v7.transfer((v6 + (_f.v197.elem0)));
     v15.transfer((_f.v197.elem1));
+    emit e5(address(this).balance, v103, v104);
     current_state = 0x0;
     selfdestruct(msg.sender);
-    emit e5(address(this).balance, v103, v104); }
+     }
   
   event e6(uint256 _bal);
   
@@ -146,12 +147,13 @@ contract ReachContract is Stdlib {
     require(current_state == uint256(keccak256(abi.encodePacked(uint256(2), _last, v7, v5, v6, v15))));
     
     require(msg.sender == v15);
-    require(uint256(block.number) >= _last + uint256(10) && uint256(block.number) < _last + uint256(10));
+    require(uint256(block.number) >= _last + uint256(10) && true);
     require((uint256(0) == (msg.value)));
     v15.transfer((address(this).balance));
+
+    emit e8(address(this).balance);
     current_state = 0x0;
-    selfdestruct(msg.sender);
-    emit e8(address(this).balance); }
+    selfdestruct(msg.sender); }
   
   event e9(uint256 _bal);
   

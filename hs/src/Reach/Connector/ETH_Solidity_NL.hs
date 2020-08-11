@@ -295,6 +295,7 @@ solCTail ctxt = \case
     SolTailRes ctxt $ solApply (solLoop_fun which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) <> semi
   CT_Halt _ ->
     SolTailRes ctxt $
+    --- XXX move emit
       vsep
         [ solSet ("current_state") ("0x0")
         , solApply "selfdestruct" ["msg.sender"] <> semi
@@ -515,7 +516,7 @@ compile_sol solf = do
               ++ "\n"
 
 connect_eth :: Connector
-connect_eth outn pl = do
+connect_eth outn _pl = do
   let solf = outn "sol"
-  writeFile solf (show (solPLProg pl))
+  --- writeFile solf (show (solPLProg pl))
   compile_sol solf
