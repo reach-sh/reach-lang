@@ -10,8 +10,6 @@ import qualified Data.Map.Strict as M
 import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
----import Debug.Trace
-
 import Data.Text.Prettyprint.Doc
 import Data.Version (showVersion)
 import Paths_reach (version)
