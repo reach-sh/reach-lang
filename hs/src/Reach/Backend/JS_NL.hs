@@ -160,6 +160,19 @@ jsCom iter ctxt = \case
 jsPLTail :: JSCtxt -> PLTail -> Doc a
 jsPLTail ctxt (PLTail m) = jsCom jsPLTail ctxt m
 
+jsBlock :: JSCtxt -> PLBlock -> Doc a
+jsBlock ctxt (PLBlock _ t a) =
+  parens (parens emptyDoc <+> "=>" <+> jsBraces body) <> parens emptyDoc
+  where body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
+
+jsAsn :: JSCtxt -> Bool -> DLAssignment -> Doc a
+jsAsn _ctxt isDefn asn = vsep $ map (uncurry mk1) $ M.toList asnm
+  where DLAssignment asnm = asn
+        mk1 v a = mdecl <> jsVar v <+> "=" <+> jsArg a <> semi
+        mdecl = case isDefn of
+                  True -> "let "
+                  False -> emptyDoc
+
 jsFromSpec :: JSCtxt -> FromSpec -> Doc a
 jsFromSpec ctxt = \case
   FS_Join v -> "const" <+> jsVar v <+> "=" <+> jsTxn ctxt <> ".from" <> semi <> hardline
@@ -199,7 +212,7 @@ jsETail ctxt = \case
             , vs
             , amtp
             , delayp
-            , "null" --- XXX
+            , "null" --- XXX implement simulation to discover transfer in EPP, not here.
             ]
             where amtp = jsArg amt
                   --- ok_sim_p = jsETail ctxt'_sim k_ok
@@ -213,8 +226,16 @@ jsETail ctxt = \case
             , jsCon (DLC_Int $ fromIntegral $ length msg)
             , delayp
             ]
-  ET_While {} -> error "XXX"
-  ET_Continue {} -> error "XXX"
+  ET_While _ asn cond body k ->
+    jsAsn ctxt True asn
+    <> hardline
+    <> jsWhile (jsBlock ctxt cond) (jsETail ctxt body)
+    <> hardline
+    <> jsETail ctxt k
+  ET_Continue _ asn ->
+    jsAsn ctxt False asn
+    <> hardline
+    <> "continue" <> semi
 
 jsPart :: SLPart -> EPProg -> Doc a
 jsPart p (EPProg _ _ et) =
