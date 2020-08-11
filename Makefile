@@ -13,8 +13,7 @@ todo:
 .PHONY: run-all
 run-all:
 	cd js && $(MAKE) run
-	cd examples/rps && $(MAKE) run
-	cd examples/multisig && $(MAKE) run
+	cd examples && $(MAKE) run-all
 
 .PHONY: build-all
 build-all:
