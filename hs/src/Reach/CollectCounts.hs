@@ -1,7 +1,7 @@
 module Reach.CollectCounts (Count (..), Counts (..), counts, get_count, count_rms, counts_nzs) where
 
 import qualified Data.Map.Strict as M
-import Reach.NL_AST
+import Reach.AST
 
 data Count
   = C_Never

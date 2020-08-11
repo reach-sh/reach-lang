@@ -1,7 +1,7 @@
 module Reach.CompilerTool (CompilerToolOpts (..), makeCompilerOpts, compilerToolMain) where
 
 import qualified Filesystem.Path.CurrentOS as FP
-import Reach.CompilerNL
+import Reach.Compiler
 import System.Directory
 
 data CompilerToolOpts = CompilerToolOpts

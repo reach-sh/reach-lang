@@ -1,4 +1,4 @@
-module Reach.EmbeddedFiles (runtime_smt2, runtime_bt_smt2, stdlib_sol, stdlib_rsh, stdlib_exp_rsh) where
+module Reach.EmbeddedFiles (runtime_smt2, runtime_bt_smt2, stdlib_sol, stdlib_rsh) where
 
 import Data.ByteString (ByteString)
 import Data.FileEmbed
@@ -14,6 +14,3 @@ stdlib_sol = $(embedFile "./sol/stdlib.sol")
 
 stdlib_rsh :: ByteString
 stdlib_rsh = $(embedFile "./rsh/stdlib.rsh")
-
-stdlib_exp_rsh :: ByteString
-stdlib_exp_rsh = $(embedFile "./rsh/stdlib.exp.rsh")

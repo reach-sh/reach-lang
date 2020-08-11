@@ -1,4 +1,4 @@
-module Reach.Backend.JS_NL (backend_js) where
+module Reach.Backend.JS (backend_js) where
 
 import Data.Text.Prettyprint.Doc
 import Data.Version (showVersion)
@@ -6,7 +6,7 @@ import Paths_reach (version)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
-import Reach.NL_AST
+import Reach.AST
 import Reach.Connector
 import Reach.Backend
 import Reach.Util

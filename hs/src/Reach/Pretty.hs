@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Reach.NL_Pretty () where
+module Reach.Pretty () where
 
 import qualified Data.Map.Strict as M
 import Data.Text.Prettyprint.Doc
-import Reach.NL_AST
+import Reach.AST
 
 pform :: Doc ann -> Doc ann -> Doc ann
 pform f xs = group $ parens $ f <+> xs

@@ -1,8 +1,8 @@
-module Reach.NL_Linearize (linearize) where
+module Reach.Linearize (linearize) where
 
 import qualified Data.Map.Strict as M
-import Reach.NL_AST
-import Reach.NL_Type
+import Reach.AST
+import Reach.Type
 import Reach.Util
 
 type LLRets = M.Map Int DLVar

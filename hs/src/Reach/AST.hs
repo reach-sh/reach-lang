@@ -3,7 +3,7 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Reach.NL_AST where
+module Reach.AST where
 
 import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B

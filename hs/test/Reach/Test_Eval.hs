@@ -1,8 +1,8 @@
-module Reach.Test_NL_Eval (test_compileBundle_errs) where
+module Reach.Test_Eval (test_compileBundle_errs) where
 
 import Control.DeepSeq
-import Reach.NL_Eval
-import Reach.NL_Parser
+import Reach.Eval
+import Reach.Parser
 import Reach.Test.Util
 import Test.Tasty
 

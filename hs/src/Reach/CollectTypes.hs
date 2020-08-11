@@ -2,7 +2,7 @@ module Reach.CollectTypes (cts) where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
-import Reach.NL_AST
+import Reach.AST
 
 class CollectsTypes a where
   cts :: a -> S.Set SLType

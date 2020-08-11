@@ -1,4 +1,4 @@
-module Reach.Connector.ETH_Solidity_NL (connect_eth) where
+module Reach.Connector.ETH_Solidity (connect_eth) where
 
 import Control.Monad.ST
 import Data.Aeson
@@ -16,8 +16,8 @@ import Paths_reach (version)
 import Reach.CollectTypes
 import Reach.Connector
 import Reach.EmbeddedFiles
-import Reach.NL_AST
-import Reach.NL_Type
+import Reach.AST
+import Reach.Type
 import Reach.STCounter
 import Reach.Util
 import System.Exit

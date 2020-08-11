@@ -1,9 +1,9 @@
-module Reach.NL_Type (TypeError (..), typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf) where
+module Reach.Type (TypeError (..), typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf) where
 
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.STRef
-import Reach.NL_AST
+import Reach.AST
 import Reach.Util
 
 --- FIXME implement a custom show that is useful

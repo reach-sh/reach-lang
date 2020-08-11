@@ -2,7 +2,7 @@ module Reach.JSUtil (jscl_flatten, jsctl_flatten, jsa_flatten, dropEmptyJSStmts,
 
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
-import Reach.NL_AST
+import Reach.AST
 
 jscl_flatten :: JSCommaList a -> [a]
 jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]

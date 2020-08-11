@@ -13,9 +13,9 @@ import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc
 import Reach.CollectTypes
 import Reach.EmbeddedFiles
-import Reach.NL_AST
-import Reach.NL_Pretty ()
-import Reach.NL_Type
+import Reach.AST
+import Reach.Pretty ()
+import Reach.Type
 import Reach.Util
 import Reach.Verify.SMTParser (parseModel)
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)

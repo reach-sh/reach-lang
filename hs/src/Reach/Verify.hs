@@ -1,7 +1,7 @@
 module Reach.Verify (verify) where
 
 import qualified Data.Text as T
-import Reach.NL_AST
+import Reach.AST
 import Reach.Verify.SMT
 
 data VerifierName = Boolector | CVC4 | Yices | Z3

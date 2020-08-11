@@ -1,4 +1,4 @@
-module Reach.NL_Parser (ParserError (..), JSBundle (..), parseJSFormals, parseJSArrowFormals, jse_expect_id, gatherDeps_top) where
+module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, parseJSArrowFormals, jse_expect_id, gatherDeps_top) where
 
 import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B
@@ -11,7 +11,7 @@ import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.EmbeddedFiles
 import Reach.JSUtil
-import Reach.NL_AST
+import Reach.AST
 import Reach.Util
 import System.Directory
 import System.FilePath
@@ -157,7 +157,7 @@ gatherDeps_stdlib at fmr =
     err_key x = Err_Parse_CyclicImport x
     proc_key _ = do
       let at' = srcloc_src ReachStdLib
-      (gatherDeps_ast at' fmr $ readJsModule $ B.unpack stdlib_exp_rsh)
+      (gatherDeps_ast at' fmr $ readJsModule $ B.unpack stdlib_rsh)
 
 map_order :: Ord a => M.Map a [a] -> [a]
 map_order dm = order

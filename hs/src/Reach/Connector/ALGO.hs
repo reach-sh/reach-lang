@@ -1,7 +1,7 @@
-module Reach.Connector.ALGO_NL (connect_algo) where
+module Reach.Connector.ALGO (connect_algo) where
 
 import Debug.Trace
---- import Reach.NL_AST
+--- import Reach.AST
 import Reach.Connector
 
 connect_algo :: Connector

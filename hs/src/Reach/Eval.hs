@@ -1,4 +1,4 @@
-module Reach.NL_Eval (compileBundle) where
+module Reach.Eval (compileBundle) where
 
 import Control.Monad
 import Control.Monad.ST
@@ -16,9 +16,9 @@ import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Paths_reach (version)
 import Reach.JSUtil
-import Reach.NL_AST
-import Reach.NL_Parser
-import Reach.NL_Type
+import Reach.AST
+import Reach.Parser
+import Reach.Type
 import Reach.STCounter
 import Reach.Util
 import Safe (atMay)
@@ -94,7 +94,7 @@ data EvalError
   | Err_WhileTailEmpty
   deriving (Eq, Generic)
 
---- FIXME I think most of these things should be in NL_Pretty
+--- FIXME I think most of these things should be in Pretty
 
 --- FIXME typeOf may fail causing an error within an error...?
 --- Answer: Make a new function named typeOfM that returns a maybe and

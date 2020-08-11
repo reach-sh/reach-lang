@@ -1,11 +1,11 @@
-module Reach.NL_EPP (epp) where
+module Reach.EPP (epp) where
 
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.STRef
 import Reach.CollectCounts
-import Reach.NL_AST
+import Reach.AST
 import Reach.STCounter
 import Reach.Util
 

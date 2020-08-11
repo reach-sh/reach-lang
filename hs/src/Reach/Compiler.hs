@@ -1,15 +1,15 @@
-module Reach.CompilerNL (CompilerOpts (..), compileNL) where
+module Reach.Compiler (CompilerOpts (..), compileNL) where
 
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
-import Reach.Backend.JS_NL
-import Reach.Connector.ALGO_NL
-import Reach.Connector.ETH_Solidity_NL
-import Reach.NL_EPP
-import Reach.NL_Eval
-import Reach.NL_Linearize
-import Reach.NL_Parser
-import Reach.NL_Pretty ()
+import Reach.Backend.JS
+import Reach.Connector.ALGO
+import Reach.Connector.ETH_Solidity
+import Reach.EPP
+import Reach.Eval
+import Reach.Linearize
+import Reach.Parser
+import Reach.Pretty ()
 import Reach.Verify
 
 data CompilerOpts = CompilerOpts
