@@ -14,16 +14,14 @@ data CompilerToolArgs = CompilerToolArgs
   }
 
 data CompilerToolEnv = CompilerToolEnv
-  { cte_expComp :: Bool
-  }
+  { }
 
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
-makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {..} =
+makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
   CompilerToolOpts
     { cto_outputDir = cta_outputDir
     , cto_source = cta_source
     , cto_tops = if null cta_tops then ["main"] else cta_tops
-    , cto_expComp = cte_expComp
     }
 
 compiler :: FilePath -> Parser CompilerToolArgs
@@ -76,11 +74,9 @@ getCompilerArgs = do
 
 getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
-  expComp <- checkTruthyEnv "REACHC_ENABLE_EXPERIMENTAL_COMPILER"
   return
     CompilerToolEnv
-      { cte_expComp = expComp
-      }
+      { }
 
 main :: IO ()
 main = do
