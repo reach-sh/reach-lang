@@ -2,7 +2,7 @@
 
 export async function A(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const v2 = await interact.getParams();
+  const v2 = stdlib.protect(stdlib.Array(stdlib.UInt256, stdlib.UInt256), await interact.getParams());
   const v3 = v2[0];
   const v4 = v2[1];
   
@@ -38,7 +38,7 @@ export async function A(stdlib, ctc, interact) {
       
       return v50; })()) {
       let v53;
-      const v54 = await interact.getHand();
+      const v54 = stdlib.protect(stdlib.Bytes, await interact.getHand());
       const v55 = stdlib.bytes_eq(v54, 'ROCK');
       const v56 = stdlib.bytes_eq(v54, 'PAPER');
       const v57 = stdlib.bytes_eq(v54, 'SCISSORS');
@@ -58,7 +58,7 @@ export async function A(stdlib, ctc, interact) {
          }
       const v69 = stdlib.random_uint256();
       const v70 = stdlib.keccak256(v69, v53);
-      await interact.commits();
+      stdlib.protect(stdlib.Null, await interact.commits());
       
       stdlib.assert(true);
       
@@ -112,7 +112,7 @@ export async function A(stdlib, ctc, interact) {
               v118 = 'SCISSORS';
                }
              }
-          await interact.reveals(v118);
+          stdlib.protect(stdlib.Null, await interact.reveals(v118));
           
           stdlib.assert(true);
           
@@ -223,7 +223,7 @@ export async function B(stdlib, ctc, interact) {
   const v10 = txn1.value;
   const v11 = stdlib.eq(v9, v10);
   stdlib.assert(v11);
-  await interact.acceptParams(v5, v6);
+  stdlib.protect(stdlib.Null, await interact.acceptParams(v5, v6));
   
   stdlib.assert(true);
   
@@ -263,7 +263,7 @@ export async function B(stdlib, ctc, interact) {
         const v74 = stdlib.eq(0, v73);
         stdlib.assert(v74);
         let v85;
-        const v86 = await interact.getHand();
+        const v86 = stdlib.protect(stdlib.Bytes, await interact.getHand());
         const v87 = stdlib.bytes_eq(v86, 'ROCK');
         const v88 = stdlib.bytes_eq(v86, 'PAPER');
         const v89 = stdlib.bytes_eq(v86, 'SCISSORS');
@@ -281,7 +281,7 @@ export async function B(stdlib, ctc, interact) {
             v85 = 2;
              }
            }
-        await interact.shows();
+        stdlib.protect(stdlib.Null, await interact.shows());
         
         stdlib.assert(true);
         

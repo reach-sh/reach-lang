@@ -64,6 +64,7 @@ data JSCtxt =
          , ctxt_txn :: Int
          , ctxt_simulate :: Bool
          }
+
 jsTxn :: JSCtxt -> Doc a
 jsTxn ctxt = "txn" <> pretty (ctxt_txn ctxt)
 
@@ -71,7 +72,24 @@ jsTimeoutFlag :: JSCtxt -> Doc a
 jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout" 
 
 jsAssert :: Doc a -> Doc a
+--- FIXME Add srcloc and context frames
 jsAssert a = jsApply "stdlib.assert" [a] <> semi
+
+jsContract :: SLType -> Doc a
+jsContract = \case
+  T_Null -> "stdlib.Null"
+  T_Bool -> "stdlib.Bool"
+  T_UInt256 -> "stdlib.UInt256"
+  T_Bytes -> "stdlib.Bytes"
+  T_Address -> "stdlib.Address"
+  T_Fun {} -> impossible "fun dl"
+  T_Array as -> jsApply ("stdlib.Array") $ map jsContract as
+  T_Obj m -> jsApply ("stdlib.Object") [ jsObject $ M.map jsContract m ]
+  T_Forall {} -> impossible "forall dl"
+  T_Var {} -> impossible "var dl"
+
+jsProtect :: SLType -> Doc a -> Doc a
+jsProtect how what = jsApply "stdlib.protect" [ jsContract how, what ]
 
 jsVar :: DLVar -> Doc a
 jsVar (DLVar _ _ _ n) = "v" <> pretty n
@@ -90,9 +108,8 @@ jsArg = \case
   DLA_Con c -> jsCon c
   DLA_Array as -> jsArray $ map jsArg as
   DLA_Obj m -> jsObject $ M.map jsArg m
-  DLA_Interact _ m _ ->
-    --- XXX check type
-    "interact." <> pretty m
+  DLA_Interact _ m t ->
+    jsProtect t $ "interact." <> pretty m
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply ctxt = \case
@@ -127,9 +144,8 @@ jsExpr ctxt = \case
     jsArg aa <> brackets (jsArg ia)
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f
-  DLE_Interact _ _ m as ->
-    --- XXX check type
-    "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
+  DLE_Interact _ _ m t as ->
+    jsProtect t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
   DLE_Digest _ as ->
     jsApply "stdlib.keccak256" $ map jsArg as
 

@@ -662,7 +662,7 @@ evalPrim ctxt at env p sargs =
       case ctxt_mode ctxt of
         SLC_LocalStep -> do
           let (rng, dargs) = checkAndConvert at t $ map snd sargs
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at who m dargs)
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at who m rng dargs)
           return $ SLRes lifts $ secret $ SLV_DLVar dv
         cm ->
           expect_throw at (Err_Eval_IllegalContext cm "interact")

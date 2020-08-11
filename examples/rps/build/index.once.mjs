@@ -2,7 +2,7 @@
 
 export async function A(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const v2 = await interact.getParams();
+  const v2 = stdlib.protect(stdlib.Array(stdlib.UInt256, stdlib.UInt256), await interact.getParams());
   const v3 = v2[0];
   const v4 = v2[1];
   
@@ -31,9 +31,9 @@ export async function A(stdlib, ctc, interact) {
     const v16 = txn2.value;
     const v17 = stdlib.eq(v5, v16);
     stdlib.assert(v17);
-    await interact.partnerIs(v15);
+    stdlib.protect(stdlib.Null, await interact.partnerIs(v15));
     let v29;
-    const v30 = await interact.getHand();
+    const v30 = stdlib.protect(stdlib.Bytes, await interact.getHand());
     const v31 = stdlib.bytes_eq(v30, 'ROCK');
     const v32 = stdlib.bytes_eq(v30, 'PAPER');
     const v33 = stdlib.bytes_eq(v30, 'SCISSORS');
@@ -53,7 +53,7 @@ export async function A(stdlib, ctc, interact) {
        }
     const v45 = stdlib.random_uint256();
     const v46 = stdlib.keccak256(v45, v29);
-    await interact.commits();
+    stdlib.protect(stdlib.Null, await interact.commits());
     
     stdlib.assert(true);
     
@@ -107,7 +107,7 @@ export async function A(stdlib, ctc, interact) {
             v94 = 'SCISSORS';
              }
            }
-        await interact.reveals(v94);
+        stdlib.protect(stdlib.Null, await interact.reveals(v94));
         
         stdlib.assert(true);
         
@@ -264,8 +264,8 @@ export async function B(stdlib, ctc, interact) {
   const v10 = txn1.value;
   const v11 = stdlib.eq(v9, v10);
   stdlib.assert(v11);
-  await interact.partnerIs(v7);
-  await interact.acceptParams(v5, v6);
+  stdlib.protect(stdlib.Null, await interact.partnerIs(v7));
+  stdlib.protect(stdlib.Null, await interact.acceptParams(v5, v6));
   
   stdlib.assert(true);
   
@@ -299,7 +299,7 @@ export async function B(stdlib, ctc, interact) {
       const v50 = stdlib.eq(0, v49);
       stdlib.assert(v50);
       let v61;
-      const v62 = await interact.getHand();
+      const v62 = stdlib.protect(stdlib.Bytes, await interact.getHand());
       const v63 = stdlib.bytes_eq(v62, 'ROCK');
       const v64 = stdlib.bytes_eq(v62, 'PAPER');
       const v65 = stdlib.bytes_eq(v62, 'SCISSORS');
@@ -317,7 +317,7 @@ export async function B(stdlib, ctc, interact) {
           v61 = 2;
            }
          }
-      await interact.shows();
+      stdlib.protect(stdlib.Null, await interact.shows());
       
       stdlib.assert(true);
       

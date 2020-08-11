@@ -79,7 +79,7 @@ instance Countable DLExpr where
       DLE_PrimOp _ _ as -> counts as
       DLE_ArrayRef _ aa ea -> counts [aa, ea]
       DLE_ObjectRef _ aa _ -> counts aa
-      DLE_Interact _ _ _ as -> counts as
+      DLE_Interact _ _ _ _ as -> counts as
       DLE_Digest _ as -> counts as
 
 instance Countable DLAssignment where

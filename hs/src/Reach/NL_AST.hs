@@ -287,7 +287,7 @@ data DLExpr
   = DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_ObjectRef SrcLoc DLArg String
-  | DLE_Interact SrcLoc SLPart String [DLArg]
+  | DLE_Interact SrcLoc SLPart String SLType [DLArg]
   | DLE_Digest SrcLoc [DLArg]
   deriving (Eq, Generic, Show)
 
