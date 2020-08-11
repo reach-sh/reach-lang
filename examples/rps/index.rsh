@@ -144,8 +144,6 @@ export const once =
       assert(implies(outcome == B_WINS, isHand(handB)));
       fair_game(handA, handB, outcome);
 
-      if ( outcome == A_WINS ) {
-        transfer(0).to(A); }
       const [getsA, getsB] = (() => {
         if (outcome == A_WINS) {
           return [2 * wagerAmount, 0]; }

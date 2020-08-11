@@ -77,14 +77,14 @@ jsAssert a = jsApply "stdlib.assert" [a] <> semi
 
 jsContract :: SLType -> Doc a
 jsContract = \case
-  T_Null -> "stdlib.Null"
-  T_Bool -> "stdlib.Bool"
-  T_UInt256 -> "stdlib.UInt256"
-  T_Bytes -> "stdlib.Bytes"
-  T_Address -> "stdlib.Address"
+  T_Null -> "stdlib.T_Null"
+  T_Bool -> "stdlib.T_Bool"
+  T_UInt256 -> "stdlib.T_UInt256"
+  T_Bytes -> "stdlib.T_Bytes"
+  T_Address -> "stdlib.T_Address"
   T_Fun {} -> impossible "fun dl"
-  T_Array as -> jsApply ("stdlib.Array") $ map jsContract as
-  T_Obj m -> jsApply ("stdlib.Object") [ jsObject $ M.map jsContract m ]
+  T_Array as -> jsApply ("stdlib.T_Array") $ [ jsArray $ map jsContract as ]
+  T_Obj m -> jsApply ("stdlib.T_Object") [ jsObject $ M.map jsContract m ]
   T_Forall {} -> impossible "forall dl"
   T_Var {} -> impossible "var dl"
 

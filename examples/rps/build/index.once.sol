@@ -68,7 +68,7 @@ contract ReachContract is Stdlib {
   event e5(uint256 _bal, uint256 v103, uint256 v104);
   struct _F5 {
     uint256 v124;
-    T0 v198;
+    T0 v197;
     bool v129;
     bool v134; }
   function m5(uint256 _last, address payable v7, uint256 v5, uint256 v6, address payable v15, uint256 v48, uint256 v77, uint256 v103, uint256 v104) external payable {
@@ -98,38 +98,20 @@ contract ReachContract is Stdlib {
          }
        }
     if ((_f.v124 == uint256(2))) {
-      v7.transfer(uint256(0));
-      if ((_f.v124 == uint256(2))) {
-        _f.v198 = T0((uint256(2) * v5), uint256(0));
-         }
-      else {
-        if ((_f.v124 == uint256(0))) {
-          _f.v198 = T0(uint256(0), (uint256(2) * v5));
-           }
-        else {
-          _f.v198 = T0(v5, v5);
-           }
-         }
-      v7.transfer((v6 + (_f.v198.elem0)));
-      v15.transfer((_f.v198.elem1));
-      current_state = 0x0;
-      selfdestruct(msg.sender); }
+      _f.v197 = T0((uint256(2) * v5), uint256(0));
+       }
     else {
-      if ((_f.v124 == uint256(2))) {
-        _f.v198 = T0((uint256(2) * v5), uint256(0));
+      if ((_f.v124 == uint256(0))) {
+        _f.v197 = T0(uint256(0), (uint256(2) * v5));
          }
       else {
-        if ((_f.v124 == uint256(0))) {
-          _f.v198 = T0(uint256(0), (uint256(2) * v5));
-           }
-        else {
-          _f.v198 = T0(v5, v5);
-           }
+        _f.v197 = T0(v5, v5);
          }
-      v7.transfer((v6 + (_f.v198.elem0)));
-      v15.transfer((_f.v198.elem1));
-      current_state = 0x0;
-      selfdestruct(msg.sender); }
+       }
+    v7.transfer((v6 + (_f.v197.elem0)));
+    v15.transfer((_f.v197.elem1));
+    current_state = 0x0;
+    selfdestruct(msg.sender);
     emit e5(address(this).balance, v103, v104); }
   
   event e6(uint256 _bal);

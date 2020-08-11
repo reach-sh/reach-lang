@@ -143,103 +143,53 @@
                    };
                  };
                };
-            const "prim":T_Bool:197 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-            if "prim":T_Bool:197 then {
-              let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198;
-              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 then {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200,DLC_Int 0];
-                 }
-              else {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-                if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 then {
-                  const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202];
-                   }
-                else {
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
-                   };
-                 };
-              let "clo app":T_Bytes:206;
-              const "prim":T_Bool:208 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
-              const "prim":T_Bool:209 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
-              const "prim":T_Bool:211 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:208,"prim":T_Bool:209,DLC_Bool False);
-              claim(CT_Require)("prim":T_Bool:211);
-              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-              if "prim":T_Bool:212 then {
-                "clo app":T_Bytes:206 = DLC_Bytes "Bob wins";
-                 }
-              else {
-                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
-                if "prim":T_Bool:213 then {
-                  "clo app":T_Bytes:206 = DLC_Bytes "Draw";
-                   }
-                else {
-                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-                  if "prim":T_Bool:214 then {
-                    "clo app":T_Bytes:206 = DLC_Bytes "Alice wins";
-                     }
-                  else {
-                    const "prim":T_Bool:215 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
-                    if "prim":T_Bool:215 then {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Alice quits";
-                       }
-                    else {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Bob quits";
-                       };
-                     };
-                   };
-                 };
-              exit("clo app":T_Bytes:206); }
+            let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197;
+            const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:198 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
+            if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:198 then {
+              const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:199 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
+              "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:199,DLC_Int 0];
+               }
             else {
-              let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198;
-              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 then {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200,DLC_Int 0];
+              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:200 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:200 then {
+                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:201 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
+                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:201];
                  }
               else {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-                if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 then {
-                  const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202];
-                   }
-                else {
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
-                   };
+                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
                  };
-              let "clo app":T_Bytes:206;
-              const "prim":T_Bool:208 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
-              const "prim":T_Bool:209 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
-              const "prim":T_Bool:211 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:208,"prim":T_Bool:209,DLC_Bool False);
-              claim(CT_Require)("prim":T_Bool:211);
-              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+               };
+            let "clo app":T_Bytes:205;
+            const "prim":T_Bool:207 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
+            const "prim":T_Bool:208 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
+            const "prim":T_Bool:210 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:207,"prim":T_Bool:208,DLC_Bool False);
+            claim(CT_Require)("prim":T_Bool:210);
+            const "prim":T_Bool:211 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+            if "prim":T_Bool:211 then {
+              "clo app":T_Bytes:205 = DLC_Bytes "Bob wins";
+               }
+            else {
+              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
               if "prim":T_Bool:212 then {
-                "clo app":T_Bytes:206 = DLC_Bytes "Bob wins";
+                "clo app":T_Bytes:205 = DLC_Bytes "Draw";
                  }
               else {
-                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
+                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
                 if "prim":T_Bool:213 then {
-                  "clo app":T_Bytes:206 = DLC_Bytes "Draw";
+                  "clo app":T_Bytes:205 = DLC_Bytes "Alice wins";
                    }
                 else {
-                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
+                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
                   if "prim":T_Bool:214 then {
-                    "clo app":T_Bytes:206 = DLC_Bytes "Alice wins";
+                    "clo app":T_Bytes:205 = DLC_Bytes "Alice quits";
                      }
                   else {
-                    const "prim":T_Bool:215 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
-                    if "prim":T_Bool:215 then {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Alice quits";
-                       }
-                    else {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Bob quits";
-                       };
+                    "clo app":T_Bytes:205 = DLC_Bytes "Bob quits";
                      };
                    };
                  };
-              exit("clo app":T_Bytes:206); }; } } } } },
+               };
+            exit("clo app":T_Bytes:205); } } } } },
   "B" = interact {
     acceptParams = T_Fun [T_UInt256,T_UInt256] T_Null,
     getHand = T_Fun [] T_Bytes,
@@ -356,103 +306,53 @@
                    };
                  };
                };
-            const "prim":T_Bool:197 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-            if "prim":T_Bool:197 then {
-              let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198;
-              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 then {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200,DLC_Int 0];
-                 }
-              else {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-                if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 then {
-                  const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202];
-                   }
-                else {
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
-                   };
-                 };
-              let "clo app":T_Bytes:206;
-              const "prim":T_Bool:208 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
-              const "prim":T_Bool:209 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
-              const "prim":T_Bool:211 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:208,"prim":T_Bool:209,DLC_Bool False);
-              claim(CT_Require)("prim":T_Bool:211);
-              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-              if "prim":T_Bool:212 then {
-                "clo app":T_Bytes:206 = DLC_Bytes "Bob wins";
-                 }
-              else {
-                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
-                if "prim":T_Bool:213 then {
-                  "clo app":T_Bytes:206 = DLC_Bytes "Draw";
-                   }
-                else {
-                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-                  if "prim":T_Bool:214 then {
-                    "clo app":T_Bytes:206 = DLC_Bytes "Alice wins";
-                     }
-                  else {
-                    const "prim":T_Bool:215 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
-                    if "prim":T_Bool:215 then {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Alice quits";
-                       }
-                    else {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Bob quits";
-                       };
-                     };
-                   };
-                 };
-              exit("clo app":T_Bytes:206); }
+            let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197;
+            const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:198 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
+            if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:198 then {
+              const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:199 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
+              "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:199,DLC_Int 0];
+               }
             else {
-              let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198;
-              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 then {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200,DLC_Int 0];
+              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:200 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:200 then {
+                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:201 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
+                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:201];
                  }
               else {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-                if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 then {
-                  const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202];
-                   }
-                else {
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
-                   };
+                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
                  };
-              let "clo app":T_Bytes:206;
-              const "prim":T_Bool:208 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
-              const "prim":T_Bool:209 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
-              const "prim":T_Bool:211 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:208,"prim":T_Bool:209,DLC_Bool False);
-              claim(CT_Require)("prim":T_Bool:211);
-              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+               };
+            let "clo app":T_Bytes:205;
+            const "prim":T_Bool:207 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
+            const "prim":T_Bool:208 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
+            const "prim":T_Bool:210 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:207,"prim":T_Bool:208,DLC_Bool False);
+            claim(CT_Require)("prim":T_Bool:210);
+            const "prim":T_Bool:211 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+            if "prim":T_Bool:211 then {
+              "clo app":T_Bytes:205 = DLC_Bytes "Bob wins";
+               }
+            else {
+              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
               if "prim":T_Bool:212 then {
-                "clo app":T_Bytes:206 = DLC_Bytes "Bob wins";
+                "clo app":T_Bytes:205 = DLC_Bytes "Draw";
                  }
               else {
-                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
+                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
                 if "prim":T_Bool:213 then {
-                  "clo app":T_Bytes:206 = DLC_Bytes "Draw";
+                  "clo app":T_Bytes:205 = DLC_Bytes "Alice wins";
                    }
                 else {
-                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
+                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
                   if "prim":T_Bool:214 then {
-                    "clo app":T_Bytes:206 = DLC_Bytes "Alice wins";
+                    "clo app":T_Bytes:205 = DLC_Bytes "Alice quits";
                      }
                   else {
-                    const "prim":T_Bool:215 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
-                    if "prim":T_Bool:215 then {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Alice quits";
-                       }
-                    else {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Bob quits";
-                       };
+                    "clo app":T_Bytes:205 = DLC_Bytes "Bob quits";
                      };
                    };
                  };
-              exit("clo app":T_Bytes:206); }; } } } } },
+               };
+            exit("clo app":T_Bytes:205); } } } } },
   "O" = interact {
     };
   sendrecv join("A":T_Address:7) 1 ()("array idx":T_UInt256:5, "array idx":T_UInt256:6){
@@ -538,103 +438,53 @@
                    };
                  };
                };
-            const "prim":T_Bool:197 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-            if "prim":T_Bool:197 then {
-              let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198;
-              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 then {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200,DLC_Int 0];
-                 }
-              else {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-                if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 then {
-                  const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202];
-                   }
-                else {
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
-                   };
-                 };
-              let "clo app":T_Bytes:206;
-              const "prim":T_Bool:208 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
-              const "prim":T_Bool:209 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
-              const "prim":T_Bool:211 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:208,"prim":T_Bool:209,DLC_Bool False);
-              claim(CT_Require)("prim":T_Bool:211);
-              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-              if "prim":T_Bool:212 then {
-                "clo app":T_Bytes:206 = DLC_Bytes "Bob wins";
-                 }
-              else {
-                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
-                if "prim":T_Bool:213 then {
-                  "clo app":T_Bytes:206 = DLC_Bytes "Draw";
-                   }
-                else {
-                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-                  if "prim":T_Bool:214 then {
-                    "clo app":T_Bytes:206 = DLC_Bytes "Alice wins";
-                     }
-                  else {
-                    const "prim":T_Bool:215 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
-                    if "prim":T_Bool:215 then {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Alice quits";
-                       }
-                    else {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Bob quits";
-                       };
-                     };
-                   };
-                 };
-              exit("clo app":T_Bytes:206); }
+            let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197;
+            const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:198 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
+            if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:198 then {
+              const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:199 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
+              "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:199,DLC_Int 0];
+               }
             else {
-              let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198;
-              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 then {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200,DLC_Int 0];
+              const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:200 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+              if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:200 then {
+                const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:201 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
+                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:201];
                  }
               else {
-                const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-                if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 then {
-                  const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202];
-                   }
-                else {
-                  "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
-                   };
+                "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
                  };
-              let "clo app":T_Bytes:206;
-              const "prim":T_Bool:208 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
-              const "prim":T_Bool:209 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
-              const "prim":T_Bool:211 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:208,"prim":T_Bool:209,DLC_Bool False);
-              claim(CT_Require)("prim":T_Bool:211);
-              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+               };
+            let "clo app":T_Bytes:205;
+            const "prim":T_Bool:207 PL_Once = CP PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:124);
+            const "prim":T_Bool:208 PL_Once = CP PLT("outcome (as clo app)":T_UInt256:124,DLC_Int 5);
+            const "prim":T_Bool:210 PL_Once = CP IF_THEN_ELSE("prim":T_Bool:207,"prim":T_Bool:208,DLC_Bool False);
+            claim(CT_Require)("prim":T_Bool:210);
+            const "prim":T_Bool:211 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+            if "prim":T_Bool:211 then {
+              "clo app":T_Bytes:205 = DLC_Bytes "Bob wins";
+               }
+            else {
+              const "prim":T_Bool:212 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
               if "prim":T_Bool:212 then {
-                "clo app":T_Bytes:206 = DLC_Bytes "Bob wins";
+                "clo app":T_Bytes:205 = DLC_Bytes "Draw";
                  }
               else {
-                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 1);
+                const "prim":T_Bool:213 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
                 if "prim":T_Bool:213 then {
-                  "clo app":T_Bytes:206 = DLC_Bytes "Draw";
+                  "clo app":T_Bytes:205 = DLC_Bytes "Alice wins";
                    }
                 else {
-                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
+                  const "prim":T_Bool:214 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
                   if "prim":T_Bool:214 then {
-                    "clo app":T_Bytes:206 = DLC_Bytes "Alice wins";
+                    "clo app":T_Bytes:205 = DLC_Bytes "Alice quits";
                      }
                   else {
-                    const "prim":T_Bool:215 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 3);
-                    if "prim":T_Bool:215 then {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Alice quits";
-                       }
-                    else {
-                      "clo app":T_Bytes:206 = DLC_Bytes "Bob quits";
-                       };
+                    "clo app":T_Bytes:205 = DLC_Bytes "Bob quits";
                      };
                    };
                  };
-              exit("clo app":T_Bytes:206); }; } } } } }}
+               };
+            exit("clo app":T_Bytes:205); } } } } }}
 
 {
   1 = {
@@ -756,54 +606,28 @@
              };
            };
          };
-      const "prim":T_Bool:197 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-      if "prim":T_Bool:197 then {
-        transfer.(DLC_Int 0).to("A":T_Address:7);
-        let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198;
-        const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-        if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 then {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200,DLC_Int 0];
-           }
-        else {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-          if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 then {
-            const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202];
-             }
-          else {
-            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
-             };
-           };
-        const "array idx":T_UInt256:203 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198[DLC_Int 0];
-        const "array idx":T_UInt256:204 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198[DLC_Int 1];
-        const "prim":T_UInt256:205 PL_Once = CP ADD("array idx":T_UInt256:6,"array idx":T_UInt256:203);
-        transfer.("prim":T_UInt256:205).to("A":T_Address:7);
-        transfer.("array idx":T_UInt256:204).to("B":T_Address:15);
-        (halt! ) }
+      let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197;
+      const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:198 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
+      if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:198 then {
+        const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:199 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
+        "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:199,DLC_Int 0];
+         }
       else {
-        let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198;
-        const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 2);
-        if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:199 then {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:200,DLC_Int 0];
+        const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:200 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
+        if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:200 then {
+          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:201 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:201];
            }
         else {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 PL_Once = CP PEQ("outcome (as clo app)":T_UInt256:124,DLC_Int 0);
-          if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:201 then {
-            const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202 PL_Once = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:202];
-             }
-          else {
-            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
-             };
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
            };
-        const "array idx":T_UInt256:203 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198[DLC_Int 0];
-        const "array idx":T_UInt256:204 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:198[DLC_Int 1];
-        const "prim":T_UInt256:205 PL_Once = CP ADD("array idx":T_UInt256:6,"array idx":T_UInt256:203);
-        transfer.("prim":T_UInt256:205).to("A":T_Address:7);
-        transfer.("array idx":T_UInt256:204).to("B":T_Address:15);
-        (halt! ) }; } },
+         };
+      const "array idx":T_UInt256:202 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197[DLC_Int 0];
+      const "array idx":T_UInt256:203 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:197[DLC_Int 1];
+      const "prim":T_UInt256:204 PL_Once = CP ADD("array idx":T_UInt256:6,"array idx":T_UInt256:202);
+      transfer.("prim":T_UInt256:204).to("A":T_Address:7);
+      transfer.("array idx":T_UInt256:203).to("B":T_Address:15);
+      (halt! ) } },
   6 = {
     again("B":T_Address:15),
     (between [DLC_Int 10] [DLC_Int 10, DLC_Int 10, DLC_Int 10]),

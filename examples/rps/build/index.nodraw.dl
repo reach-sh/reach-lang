@@ -269,18 +269,18 @@ prompt(Left 0) {
       const "prim":T_Bool:223 = CP PEQ("outcome":T_UInt256:26,DLC_Int 1);
       const "prim":T_Bool:225 = CP IF_THEN_ELSE("prim":T_Bool:223,DLC_Bool False,DLC_Bool True);
       claim(CT_Assert)("prim":T_Bool:225);
-      prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:222:37:block "one of [\"getsA\",\"getsB\"] (as clo app)" (T_Array [T_UInt256,T_UInt256]) 226)) {
+      prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:220:37:block "one of [\"getsA\",\"getsB\"] (as clo app)" (T_Array [T_UInt256,T_UInt256]) 226)) {
         const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 = CP PEQ("outcome":T_UInt256:26,DLC_Int 2);
         if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 then {
           const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-          throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:224:18:array [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 228),SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:224:36:decimal 0]).to(226); }
+          throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:222:18:array [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 228),SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:222:36:decimal 0]).to(226); }
         else {
           const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 = CP PEQ("outcome":T_UInt256:26,DLC_Int 0);
           if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 then {
             const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 = CP MUL(DLC_Int 2,"array idx":T_UInt256:5);
-            throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:226:18:array [SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:226:19:decimal 0,SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 230)]).to(226); }
+            throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:224:18:array [SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:224:19:decimal 0,SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 230)]).to(226); }
           else {
-            throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:228:18:array [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:170:8:dot "array idx" T_UInt256 5),SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:170:8:dot "array idx" T_UInt256 5)]).to(226); }; }; };
+            throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:226:18:array [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:168:8:dot "array idx" T_UInt256 5),SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:168:8:dot "array idx" T_UInt256 5)]).to(226); }; }; };
       const "array idx":T_UInt256:231 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226[DLC_Int 0];
       const "array idx":T_UInt256:232 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226[DLC_Int 1];
       const "prim":T_UInt256:233 = CP ADD("array idx":T_UInt256:6,"array idx":T_UInt256:231);
