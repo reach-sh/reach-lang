@@ -1,14 +1,10 @@
 TAG="reachsh/examples-rps:v0.1.1"
 
-build/%.mjs: rsh/%.rsh
-	../../reachc -o build $^
-
-.PHONY: exp-build
-exp-build:
+build/index.once.mjs build/index.nodraw.mjs:
 	REACHC_ENABLE_EXPERIMENTAL_COMPILER=Y ../../reachc -o build index.rsh once nodraw
 
 .PHONY: build
-build: build/rps.mjs build/rps_while.mjs
+build: build/index.once.mjs build/index.nodraw.mjs
 	docker build --tag=$(TAG) .
 
 .PHONY: push
@@ -33,4 +29,4 @@ check:
 
 .PHONY: clean
 clean:
-	rm -f build/rps.mjs build/rps_while.mjs
+	rm -f build/index.once.mjs build/index.nodraw.mjs
