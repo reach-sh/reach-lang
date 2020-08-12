@@ -1,9 +1,9 @@
 'reach 0.1';
 
 export const main = Reach.App(
-  {}, [["A", {}]], (A) => {
+  {}, [["A", {y: UInt256}]], (A) => {
     A.only(() => {
-      const _y = random();
+      const _y = interact.y;
     });
     // This should fail Eval because _y is private.
     A.publish(_y).pay(_y);

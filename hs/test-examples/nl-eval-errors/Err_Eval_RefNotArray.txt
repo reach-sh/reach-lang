@@ -1,1 +1,0 @@
-error: ./Err_Eval_RefNotArray.rsh:6:15:array ref: Invalid array reference. Expected array, got: uint256
