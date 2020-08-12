@@ -193,7 +193,7 @@ solPrimApply = \case
 solExpr :: SolCtxt a -> DLExpr -> Doc a
 solExpr ctxt = \case
   DLE_PrimOp _ p args -> solPrimApply p $ map (solArg ctxt) args
-  DLE_ArrayRef _ ae _ ee ->
+  DLE_ArrayRef _ _ ae _ ee ->
     (solArg ctxt ae) <> brackets (solArg ctxt ee)
   DLE_TupleRef _ ae i ->
     (solArg ctxt ae) <> ".elem" <> pretty i

@@ -959,7 +959,7 @@ evalExpr ctxt at env e =
             let ansv = SLV_DLVar dv
             return $ SLRes (alifts <> ilifts <> lifts') (lvl, ansv)
       let retArrayRef t sz arr_dla idx_dla =
-            retRef t $ DLE_ArrayRef at' arr_dla sz idx_dla
+            retRef t $ DLE_ArrayRef at' (ctxt_stack ctxt) arr_dla sz idx_dla
       let retTupleRef t arr_dla idx =
             retRef t $ DLE_TupleRef at' arr_dla idx
       let retVal idxi arrvs =
@@ -1047,7 +1047,7 @@ evalDecl ctxt at lhs_env rhs_env decl =
                         return (vs_lifts, dvs)
                         where
                           mk_ref i = do
-                            let e = (DLE_ArrayRef vat' (DLA_Var dv) sz (DLA_Con (DLC_Int i)))
+                            let e = (DLE_ArrayRef vat' (ctxt_stack ctxt) (DLA_Var dv) sz (DLA_Con (DLC_Int i)))
                             (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' (ctxt_local_name ctxt "array idx") t) e
                             return $ (i_lifts, SLV_DLVar dvi)
                       _ ->

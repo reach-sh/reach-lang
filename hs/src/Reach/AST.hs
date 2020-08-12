@@ -277,7 +277,7 @@ instance NFData DLArg
 
 data DLExpr
   = DLE_PrimOp SrcLoc PrimOp [DLArg]
-  | DLE_ArrayRef SrcLoc DLArg Integer DLArg
+  | DLE_ArrayRef SrcLoc [SLCtxtFrame] DLArg Integer DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_ObjectRef SrcLoc DLArg String
   | DLE_Interact SrcLoc SLPart String SLType [DLArg]

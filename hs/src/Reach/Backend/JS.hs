@@ -140,7 +140,7 @@ jsExpr :: JSCtxt -> DLExpr -> Doc a
 jsExpr ctxt = \case
   DLE_PrimOp _ p as ->
     jsPrimApply ctxt p $ map jsArg as
-  DLE_ArrayRef _ aa _ ia ->    
+  DLE_ArrayRef _ _ aa _ ia ->    
     jsArg aa <> brackets (jsArg ia)
   DLE_TupleRef _ aa i ->    
     jsArg aa <> brackets (jsCon $ DLC_Int i)

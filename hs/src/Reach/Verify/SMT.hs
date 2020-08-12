@@ -234,7 +234,7 @@ smtPrimOp ctxt p =
     BALANCE ->
       const (smtBalanceRef $ ctxt_balance ctxt)
     TXN_VALUE ->
-      const (smtTxnValueRef $ fromMaybe (impossible "txn value") $ ctxt_mtxn_value ctxt)
+      const (smtTxnValueRef $ ctxt_txn_value ctxt)
   where
     cant = impossible $ "Int doesn't support " ++ show p
     app n = smtApply n
@@ -281,7 +281,8 @@ seVars :: SExpr -> S.Set String
 seVars se =
   case se of
     Atom a ->
-      --- XXX try harder
+      --- FIXME try harder to figure out what is a variable, like v7,
+      --- and what is a function symbol, like <
       S.singleton a
     List l -> mconcatMap seVars l
 
@@ -473,8 +474,14 @@ smt_e ctxt at_dv dv de =
       where
         args' = map (smt_a ctxt at) args
         se = smtPrimOp ctxt cp args'
-    DLE_ArrayRef _at _arr _sz _idx ->
-      error "XXX"
+    DLE_ArrayRef at f arr_da sz idx_da -> do
+      verify1 ctxt at f TBounds check_se
+      pathAddBound ctxt at_dv dv bo se
+      where
+        se = smtApply "select" [ arr_da', idx_da' ]
+        check_se = uint256_le idx_da' (smt_c ctxt at $ DLC_Int sz)
+        arr_da' = smt_a ctxt at arr_da
+        idx_da' = smt_a ctxt at idx_da
     DLE_TupleRef at arr_da i ->
       pathAddBound ctxt at_dv dv bo se
       where
@@ -718,8 +725,16 @@ _smtDefineTypes smt ts = do
           T_Fun {} -> mempty
           T_Forall {} -> impossible "forall in ll"
           T_Var {} -> impossible "var in ll"
-          T_Array {} ->
-            error "XXX"
+          T_Array et sz -> do
+            tni <- type_name et
+            let tn = fst tni
+            let tinv = snd tni
+            void $ SMT.command smt $ smtApply "define-sort" [ Atom n, List [], smtApply "Array" [ Atom tn, uint256_sort ] ]
+            void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
+            let inv se = do
+                  let invarg i = tinv $ smtApply "select" [ se, smt_c (error "no context") (error "no at") (DLC_Int $ i) ]
+                  mapM_ invarg [0..(sz-1)]
+            return inv
           T_Tuple ats -> do
             ts_nis <- mapM type_name ats
             let mkargn _ (i :: Int) = n ++ "_elem" ++ show i
