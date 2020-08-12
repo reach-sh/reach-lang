@@ -20,8 +20,11 @@ export function ensure(f, x) {
   assert(f(x));
   return x; };
 
-export function makeCommitment (x) {
-  const salt = random();
+export const hasRandom = {
+  random: Fun([], UInt256) };
+
+export function makeCommitment (interact, x) {
+  const salt = interact.random();
   const commitment = digest(salt, x);
   return [commitment, salt]; };
 

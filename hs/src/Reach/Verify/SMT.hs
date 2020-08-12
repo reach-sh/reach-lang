@@ -45,16 +45,16 @@ uint256_zero = case use_bitvectors of
   False -> Atom "0"
 
 uint256_le :: SExpr -> SExpr -> SExpr
-uint256_le lhs rhs = smtConsensusPrimOp (impossible "raw") PLE [lhs, rhs]
+uint256_le lhs rhs = smtPrimOp (impossible "raw") PLE [lhs, rhs]
 
 uint256_inv :: Solver -> SExpr -> IO ()
 uint256_inv smt v = SMT.assert smt (uint256_le uint256_zero v)
 
 uint256_sub :: SExpr -> SExpr -> SExpr
-uint256_sub lhs rhs = smtConsensusPrimOp (impossible "raw") SUB [lhs, rhs]
+uint256_sub lhs rhs = smtPrimOp (impossible "raw") SUB [lhs, rhs]
 
 uint256_add :: SExpr -> SExpr -> SExpr
-uint256_add lhs rhs = smtConsensusPrimOp (impossible "raw") ADD [lhs, rhs]
+uint256_add lhs rhs = smtPrimOp (impossible "raw") ADD [lhs, rhs]
 
 smtApply :: String -> [SExpr] -> SExpr
 smtApply f args = List (Atom f : args)
@@ -211,8 +211,8 @@ smtDeclare_v ctxt v t = do
   void $ SMT.declare smt v $ Atom s
   smtTypeInv ctxt t $ Atom v
 
-smtConsensusPrimOp :: SMTCtxt -> ConsensusPrimOp -> [SExpr] -> SExpr
-smtConsensusPrimOp ctxt p =
+smtPrimOp :: SMTCtxt -> PrimOp -> [SExpr] -> SExpr
+smtPrimOp ctxt p =
   case p of
     ADD -> bvapp "bvadd" "+"
     SUB -> bvapp "bvsub" "-"
@@ -468,13 +468,11 @@ smt_a ctxt at_de da =
 smt_e :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv dv de =
   case de of
-    DLE_PrimOp at p args ->
-      case p of
-        RANDOM -> pathAddUnbound ctxt at_dv dv bo
-        CP cp -> pathAddBound ctxt at_dv dv bo se
-          where
-            args' = map (smt_a ctxt at) args
-            se = smtConsensusPrimOp ctxt cp args'
+    DLE_PrimOp at cp args ->
+      pathAddBound ctxt at_dv dv bo se
+      where
+        args' = map (smt_a ctxt at) args
+        se = smtPrimOp ctxt cp args'
     DLE_ArrayRef at arr_da idx_da ->
       pathAddBound ctxt at_dv dv bo se
       where

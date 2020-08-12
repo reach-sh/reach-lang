@@ -56,7 +56,7 @@ export async function A(stdlib, ctc, interact) {
           v53 = 2;
            }
          }
-      const v69 = stdlib.random_uint256();
+      const v69 = stdlib.protect(stdlib.T_UInt256, await interact.random());
       const v70 = stdlib.keccak256(v69, v53);
       stdlib.protect(stdlib.T_Null, await interact.commits());
       

@@ -60,17 +60,18 @@ function fair_game(handA, handB, outcome) {
 const DELAY = 10; // in blocks
 
 const Player =
-  { getHand: Fun([], Bytes),
-    partnerIs: Fun([Address], Null) };
+      { ...hasRandom,
+        getHand: Fun([], Bytes),
+        partnerIs: Fun([Address], Null) };
 const Alice =
-  { ...Player,
-    getParams: Fun([], Array(UInt256, UInt256)),
-    commits: Fun([], Null),
-    reveals: Fun([Bytes], Null) };
+      { ...Player,
+        getParams: Fun([], Array(UInt256, UInt256)),
+        commits: Fun([], Null),
+        reveals: Fun([Bytes], Null) };
 const Bob =
-  { ...Player,
-    acceptParams: Fun([UInt256, UInt256], Null),
-    shows: Fun([], Null) };
+      { ...Player,
+        acceptParams: Fun([UInt256, UInt256], Null),
+        shows: Fun([], Null) };
 
 // XXX Almost every way I tried to abstract these broke because of
 // things not being in the right context... requires more changes to
@@ -103,31 +104,31 @@ export const once =
         const [wagerAmount, escrowAmount] =
               declassify(interact.getParams()); });
       A.publish(wagerAmount, escrowAmount)
-       .pay(wagerAmount + escrowAmount);
+        .pay(wagerAmount + escrowAmount);
       commit();
 
       B.only(() => {
         interact.partnerIs(A);
         interact.acceptParams(wagerAmount, escrowAmount); });
       B.pay(wagerAmount)
-       .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
+        .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
       commit();
 
       A.only(() => {
         interact.partnerIs(B);
         const _handA = getHand(interact);
-        const [_commitA, _saltA] = makeCommitment(_handA);
+        const [_commitA, _saltA] = makeCommitment(interact, _handA);
         const commitA = declassify(_commitA);
         interact.commits(); });
       A.publish(commitA)
-       .timeout(DELAY, closeTo(B, showOutcome(A_QUITS)));
+        .timeout(DELAY, closeTo(B, showOutcome(A_QUITS)));
       commit();
 
       B.only(() => {
         const handB = declassify(getHand(interact));
         interact.shows(); });
       B.publish(handB)
-       .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
+        .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
       require(isHand(handB));
       commit();
 
@@ -166,7 +167,7 @@ export const nodraw =
         const [wagerAmount, escrowAmount] =
               declassify(interact.getParams()); });
       A.publish(wagerAmount, escrowAmount)
-       .pay(wagerAmount + escrowAmount);
+        .pay(wagerAmount + escrowAmount);
       commit();
 
       B.only(() => {
@@ -181,10 +182,10 @@ export const nodraw =
                 && outcome != B_QUITS);
       while ( outcome == DRAW ) {
         commit();
-        
+
         A.only(() => {
           const _handA = getHand(interact);
-          const [_commitA, _saltA] = makeCommitment(_handA);
+          const [_commitA, _saltA] = makeCommitment(interact, _handA);
           const commitA = declassify(_commitA);
           interact.commits(); });
         A.publish(commitA)

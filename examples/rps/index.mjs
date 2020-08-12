@@ -32,7 +32,8 @@ import * as RPSW from './build/index.nodraw.mjs';
 
     const interactWith = (name) => {
       const log = (msg, ret = null) => () => { console.log(`${msg}`); return ret; };
-      return { getParams: log(`(local: ${name} returns wagerAmount ${toUnit(wagerAmount)} ${unit} and escrowAmount ${toUnit(escrowAmount)} ${unit}.)`, [wagerAmount, escrowAmount]),
+      return { ...stdlib.hasRandom,
+               getParams: log(`(local: ${name} returns wagerAmount ${toUnit(wagerAmount)} ${unit} and escrowAmount ${toUnit(escrowAmount)} ${unit}.)`, [wagerAmount, escrowAmount]),
                params: log(`${name} publishes parameters of game: wager of ${toUnit(wagerAmount)} ${unit} and escrow of ${toUnit(escrowAmount)} ${unit}.`),
                acceptParams: (wager, escrow) => log(`${name} accepts the terms: wager of ${toUnit(wager)} ${unit} and escrow of ${toUnit(escrow)} ${unit}.`)(),
                partnerIs: (who) => log(`${name} is playing with ${who}`)(),

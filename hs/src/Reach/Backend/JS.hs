@@ -113,28 +113,27 @@ jsArg = \case
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply ctxt = \case
-  CP ADD -> jsApply "stdlib.add"
-  CP SUB -> jsApply "stdlib.sub"
-  CP MUL -> jsApply "stdlib.mul"
-  CP DIV -> jsApply "stdlib.div"
-  CP MOD -> jsApply "stdlib.mod"
-  CP PLT -> jsApply "stdlib.lt"
-  CP PLE -> jsApply "stdlib.le"
-  CP PEQ -> jsApply "stdlib.eq"
-  CP PGE -> jsApply "stdlib.ge"
-  CP PGT -> jsApply "stdlib.gt"
-  CP LSH -> jsApply "stdlib.lsh"
-  CP RSH -> jsApply "stdlib.rsh"
-  CP BAND -> jsApply "stdlib.band"
-  CP BIOR -> jsApply "stdlib.bior"
-  CP BXOR -> jsApply "stdlib.bxor"
-  CP IF_THEN_ELSE -> \args -> case args of
+  ADD -> jsApply "stdlib.add"
+  SUB -> jsApply "stdlib.sub"
+  MUL -> jsApply "stdlib.mul"
+  DIV -> jsApply "stdlib.div"
+  MOD -> jsApply "stdlib.mod"
+  PLT -> jsApply "stdlib.lt"
+  PLE -> jsApply "stdlib.le"
+  PEQ -> jsApply "stdlib.eq"
+  PGE -> jsApply "stdlib.ge"
+  PGT -> jsApply "stdlib.gt"
+  LSH -> jsApply "stdlib.lsh"
+  RSH -> jsApply "stdlib.rsh"
+  BAND -> jsApply "stdlib.band"
+  BIOR -> jsApply "stdlib.bior"
+  BXOR -> jsApply "stdlib.bxor"
+  IF_THEN_ELSE -> \args -> case args of
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitJS: ITE called with wrong number of arguments"
-  CP BYTES_EQ -> jsApply "stdlib.bytes_eq"
-  CP BALANCE -> \_ -> jsTxn ctxt <> ".balance"
-  CP TXN_VALUE -> \_ -> jsTxn ctxt <> ".value"
-  RANDOM -> jsApply "stdlib.random_uint256"
+  BYTES_EQ -> jsApply "stdlib.bytes_eq"
+  BALANCE -> \_ -> jsTxn ctxt <> ".balance"
+  TXN_VALUE -> \_ -> jsTxn ctxt <> ".value"
 
 jsExpr :: JSCtxt -> DLExpr -> Doc a
 jsExpr ctxt = \case

@@ -43,7 +43,7 @@ zipEq at ce x y =
     ly = length y
 
 data EvalError
-  = Err_Apply_ArgCount Int Int
+  = Err_Apply_ArgCount SrcLoc Int Int
   | Err_Block_Assign JSAssignOp [JSStatement]
   | Err_Block_IllegalJS JSStatement
   | Err_Block_NotNull SLType SLVal
@@ -142,8 +142,8 @@ didYouMean invalidStr validOptions maxClosest = case validOptions of
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
   show = \case
-    Err_Apply_ArgCount nFormals nArgs ->
-      "Invalid function appication. Expected " <> show nFormals <> " args, got " <> show nArgs
+    Err_Apply_ArgCount cloAt nFormals nArgs ->
+      "Invalid function appication. Expected " <> show nFormals <> " args, got " <> show nArgs <> " for function defined at " <> show cloAt
     Err_Block_Assign _jsop _stmts ->
       "Invalid assignment" -- FIXME explain why
     Err_Block_IllegalJS _stmt ->
@@ -289,11 +289,10 @@ base_env =
     , ("assume", SLV_Prim $ SLPrim_claim CT_Assume)
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
-    , ("random", SLV_Prim $ SLPrim_op $ RANDOM)
     , --- Note: This identifier is chosen so that Reach programmers
       --- can't actually use it directly... kind of a hack. :(
-      ("__txn.value__", SLV_Prim $ SLPrim_op $ CP TXN_VALUE)
-    , ("balance", SLV_Prim $ SLPrim_op $ CP BALANCE)
+      ("__txn.value__", SLV_Prim $ SLPrim_op $ TXN_VALUE)
+    , ("balance", SLV_Prim $ SLPrim_op $ BALANCE)
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
     , ("UInt256", SLV_Type T_UInt256)
@@ -442,25 +441,25 @@ binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
 binaryToPrim at env o =
   case o of
     JSBinOpAnd a -> fun a "and"
-    JSBinOpDivide a -> prim a (CP DIV)
-    JSBinOpEq a -> prim a (CP PEQ)
-    JSBinOpGe a -> prim a (CP PGE)
-    JSBinOpGt a -> prim a (CP PGT)
-    JSBinOpLe a -> prim a (CP PLE)
-    JSBinOpLt a -> prim a (CP PLT)
-    JSBinOpMinus a -> prim a (CP SUB)
-    JSBinOpMod a -> prim a (CP MOD)
+    JSBinOpDivide a -> prim a (DIV)
+    JSBinOpEq a -> prim a (PEQ)
+    JSBinOpGe a -> prim a (PGE)
+    JSBinOpGt a -> prim a (PGT)
+    JSBinOpLe a -> prim a (PLE)
+    JSBinOpLt a -> prim a (PLT)
+    JSBinOpMinus a -> prim a (SUB)
+    JSBinOpMod a -> prim a (MOD)
     JSBinOpNeq a -> fun a "neq"
     JSBinOpOr a -> fun a "or"
-    JSBinOpPlus a -> prim a (CP ADD)
-    JSBinOpStrictEq a -> prim a (CP BYTES_EQ)
+    JSBinOpPlus a -> prim a (ADD)
+    JSBinOpStrictEq a -> prim a (BYTES_EQ)
     JSBinOpStrictNeq a -> fun a "bytes_neq"
-    JSBinOpTimes a -> prim a (CP MUL)
-    JSBinOpLsh a -> prim a (CP LSH)
-    JSBinOpRsh a -> prim a (CP RSH)
-    JSBinOpBitAnd a -> prim a (CP BAND)
-    JSBinOpBitOr a -> prim a (CP BIOR)
-    JSBinOpBitXor a -> prim a (CP BXOR)
+    JSBinOpTimes a -> prim a (MUL)
+    JSBinOpLsh a -> prim a (LSH)
+    JSBinOpRsh a -> prim a (RSH)
+    JSBinOpBitAnd a -> prim a (BAND)
+    JSBinOpBitOr a -> prim a (BIOR)
+    JSBinOpBitXor a -> prim a (BXOR)
     j -> expect_throw at $ Err_Parse_IllegalBinOp j
   where
     fun a s = snd $ env_lookup (srcloc_jsa "binop" a at) s env
@@ -572,27 +571,24 @@ evalPrimOp :: SLCtxt s -> SrcLoc -> SLEnv -> PrimOp -> [SLSVal] -> SLComp s SLSV
 evalPrimOp ctxt at _env p sargs =
   case p of
     --- FIXME These should be sensitive to bit widths
-    CP ADD -> nn2n (+)
-    CP SUB -> nn2n (-)
-    CP MUL -> nn2n (*)
+    ADD -> nn2n (+)
+    SUB -> nn2n (-)
+    MUL -> nn2n (*)
     -- FIXME fromIntegral may overflow the Int
-    CP LSH -> nn2n (\a b -> shift a (fromIntegral b))
-    CP RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
-    CP BAND -> nn2n (.&.)
-    CP BIOR -> nn2n (.|.)
-    CP BXOR -> nn2n (xor)
-    CP PLT -> nn2b (<)
-    CP PLE -> nn2b (<=)
-    CP PEQ -> nn2b (==)
-    CP PGE -> nn2b (>=)
-    CP PGT -> nn2b (>)
+    LSH -> nn2n (\a b -> shift a (fromIntegral b))
+    RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
+    BAND -> nn2n (.&.)
+    BIOR -> nn2n (.|.)
+    BXOR -> nn2n (xor)
+    PLT -> nn2b (<)
+    PLE -> nn2b (<=)
+    PEQ -> nn2b (==)
+    PGE -> nn2b (>=)
+    PGT -> nn2b (>)
     _ -> make_var
   where
     args = map snd sargs
-    lvl_ = mconcat $ map fst sargs
-    lvl = case p of
-      RANDOM -> Secret
-      _ -> lvl_
+    lvl = mconcat $ map fst sargs
     nn2b op =
       case args of
         [SLV_Int _ lhs, SLV_Int _ rhs] ->
@@ -729,7 +725,7 @@ evalApplyVals ctxt at env rator randvs =
     SLV_Clo clo_at mname formals (JSBlock body_a body _) clo_env -> do
       ret <- ctxt_alloc ctxt at
       let body_at = srcloc_jsa "block" body_a clo_at
-      let kvs = zipEq clo_at Err_Apply_ArgCount formals randvs
+      let kvs = zipEq at (Err_Apply_ArgCount clo_at) formals randvs
       let clo_env' = foldl' (env_insertp clo_at) clo_env kvs
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
       let clo_sco =
@@ -874,7 +870,7 @@ evalExpr ctxt at env e =
           SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) ->
             case stmts_pure tlifts && stmts_pure flifts of
               True ->
-                keepLifts (tlifts <> flifts) $ lvlMeetR lvl $ evalPrim ctxt at mempty (SLPrim_op $ CP IF_THEN_ELSE) [csv, tsv, fsv]
+                keepLifts (tlifts <> flifts) $ lvlMeetR lvl $ evalPrim ctxt at mempty (SLPrim_op $ IF_THEN_ELSE) [csv, tsv, fsv]
               False -> do
                 ret <- ctxt_alloc ctxt at'
                 let add_ret e_at' elifts ev = (e_ty, (elifts <> (return $ DLS_Return e_at' ret ev)))

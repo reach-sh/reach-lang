@@ -4,7 +4,8 @@
 const DELAY = 10; // in blocks
 
 const Player =
-      { getMove: Fun([UInt256, UInt256], Array(Bool, UInt256)),
+      { ...hasRandom,
+        getMove: Fun([UInt256, UInt256], Array(Bool, UInt256)),
         showOutcome: Fun([Bytes], Null) };
 const Alice =
       { ...Player,
@@ -20,7 +21,7 @@ export const main =
     function (A, B) {
       A.only(() => {
         const [ wagerAmount, initialHeap ] = declassify(interact.getParams());
-        const _coinFlipA = random();
+        const _coinFlipA = interact.random();
         const commitA = declassify(digest(_coinFlipA));});
       A.publish(wagerAmount, initialHeap, commitA)
         .pay(wagerAmount)
@@ -28,7 +29,7 @@ export const main =
 
       B.only(() => {
         interact.acceptParams(wagerAmount, initialHeap);
-        const coinFlipB = declassify(random()); });
+        const coinFlipB = declassify(interact.random()); });
       B.publish(coinFlipB)
         .pay(wagerAmount)
         .timeout(DELAY, closeTo(A, "B never accepted"));

@@ -147,7 +147,7 @@ data SLForm
 
 instance NFData SLForm
 
-data ConsensusPrimOp
+data PrimOp
   = ADD
   | SUB
   | MUL
@@ -170,36 +170,28 @@ data ConsensusPrimOp
   | BXOR
   deriving (Show, Generic, Eq, Ord)
 
-instance NFData ConsensusPrimOp
-
-data PrimOp
-  = CP ConsensusPrimOp
-  | RANDOM
-  deriving (Show, Generic, Eq, Ord)
-
 instance NFData PrimOp
 
 primOpType :: PrimOp -> SLType
-primOpType (CP ADD) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP SUB) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP MUL) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP DIV) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP MOD) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP PLT) = [T_UInt256, T_UInt256] --> T_Bool
-primOpType (CP PLE) = [T_UInt256, T_UInt256] --> T_Bool
-primOpType (CP PEQ) = [T_UInt256, T_UInt256] --> T_Bool
-primOpType (CP PGE) = [T_UInt256, T_UInt256] --> T_Bool
-primOpType (CP PGT) = [T_UInt256, T_UInt256] --> T_Bool
-primOpType (CP IF_THEN_ELSE) = T_Forall "a" ([T_Bool, T_Var "a", T_Var "a"] --> T_Var "a")
-primOpType (CP BYTES_EQ) = ([T_Bytes, T_Bytes] --> T_Bool)
-primOpType (CP BALANCE) = ([] --> T_UInt256)
-primOpType (CP TXN_VALUE) = ([] --> T_UInt256)
-primOpType (CP LSH) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP RSH) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP BAND) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP BIOR) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType (CP BXOR) = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType RANDOM = ([] --> T_UInt256)
+primOpType ADD = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType SUB = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType MUL = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType DIV = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType MOD = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType PLT = [T_UInt256, T_UInt256] --> T_Bool
+primOpType PLE = [T_UInt256, T_UInt256] --> T_Bool
+primOpType PEQ = [T_UInt256, T_UInt256] --> T_Bool
+primOpType PGE = [T_UInt256, T_UInt256] --> T_Bool
+primOpType PGT = [T_UInt256, T_UInt256] --> T_Bool
+primOpType IF_THEN_ELSE = T_Forall "a" ([T_Bool, T_Var "a", T_Var "a"] --> T_Var "a")
+primOpType BYTES_EQ = ([T_Bytes, T_Bytes] --> T_Bool)
+primOpType BALANCE = ([] --> T_UInt256)
+primOpType TXN_VALUE = ([] --> T_UInt256)
+primOpType LSH = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType RSH = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType BAND = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType BIOR = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType BXOR = [T_UInt256, T_UInt256] --> T_UInt256
 
 data SLPrimitive
   = SLPrim_makeEnum

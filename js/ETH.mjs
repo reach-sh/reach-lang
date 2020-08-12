@@ -133,8 +133,11 @@ export const bnToHex = (u, size = 32) => {
 export const bytes_eq = (x, y) =>
   hexOf(x) === hexOf(y);
 
-export const random_uint256 = () =>
+const random_uint256 = () =>
   hexToBN(byteArrayToHex(crypto.randomBytes(32)));
+
+export const hasRandom = {
+  random: random_uint256 };
 
 export const eq    = (a, b) => toBN(a).eq( toBN(b));
 export const add   = (a, b) => toBN(a).add(toBN(b));

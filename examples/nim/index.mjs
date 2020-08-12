@@ -30,6 +30,7 @@ import * as NIM from './build/index.main.mjs';
 
   const interactWith = (name) => {
     return {
+      ...stdlib.hasRandom,
       getParams: () => {
         console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${proto} and heap is 21`);
         return [ wagerAmount, stdlib.toBN(21) ]; }

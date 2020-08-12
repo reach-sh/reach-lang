@@ -161,8 +161,8 @@ solArg ctxt = \case
   da@(DLA_Obj m) -> solApply (solType ctxt (argTypeOf da)) $ map ((solArg ctxt) . snd) $ M.toAscList m
   DLA_Interact {} -> impossible "consensus interact"
 
-solCPrimApply :: ConsensusPrimOp -> [Doc a] -> Doc a
-solCPrimApply = \case
+solPrimApply :: PrimOp -> [Doc a] -> Doc a
+solPrimApply = \case
   ADD -> binOp "+"
   SUB -> binOp "-"
   MUL -> binOp "*"
@@ -189,11 +189,6 @@ solCPrimApply = \case
       [l, r] -> solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
 
-solPrimApply :: PrimOp -> [Doc a] -> Doc a
-solPrimApply = \case
-  CP cp -> solCPrimApply cp
-  _ -> impossible "consensus local prim"
-
 solExpr :: SolCtxt a -> DLExpr -> Doc a
 solExpr ctxt = \case
   DLE_PrimOp _ p args -> solPrimApply p $ map (solArg ctxt) args
@@ -219,7 +214,7 @@ solEventEmit :: SolCtxt a -> Int -> [DLVar] -> Doc a
 solEventEmit ctxt which msg =
   "emit" <+> solApply (solMsg_evt which) (balancep : map (solVar ctxt) msg) <> semi
   where
-    balancep = solCPrimApply BALANCE []
+    balancep = solPrimApply BALANCE []
 
 data HashMode
   = HM_Set
