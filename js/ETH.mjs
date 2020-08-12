@@ -58,7 +58,13 @@ export const T_Bytes = (x) => typeof(x) === 'string';
 
 export const T_Address = (x) => isHex(x) || typeof(x) === 'string';
 
-export const T_Array = (ctcs) => (args) => {
+export const T_Array = (ctc, sz) => (args) => {
+  if (sz != args.length) { return false; }
+  for ( let i = 0; i < sz; i++ ) {
+    if ( ! ctc(args[i]) ) { return false; } }
+  return true; }
+
+export const T_Tuple = (ctcs) => (args) => {
   if (ctcs.length != args.length) { return false; }
   for ( let i = 0; i < ctcs.length; i++ ) {
     if ( ! ctcs[i](args[i]) ) { return false; } }

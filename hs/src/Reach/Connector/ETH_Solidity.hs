@@ -135,6 +135,7 @@ mustBeMem = \case
   T_Address -> False
   T_Fun {} -> impossible "fun"
   T_Array {} -> True
+  T_Tuple {} -> True
   T_Obj {} -> True
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
@@ -157,7 +158,7 @@ solArg :: SolCtxt a -> DLArg -> Doc a
 solArg ctxt = \case
   DLA_Var v -> solVar ctxt v
   DLA_Con c -> solCon c
-  da@(DLA_Array as) -> solApply (solType ctxt (argTypeOf da)) $ map (solArg ctxt) as
+  da@(DLA_Tuple as) -> solApply (solType ctxt (argTypeOf da)) $ map (solArg ctxt) as
   da@(DLA_Obj m) -> solApply (solType ctxt (argTypeOf da)) $ map ((solArg ctxt) . snd) $ M.toAscList m
   DLA_Interact {} -> impossible "consensus interact"
 
@@ -192,12 +193,10 @@ solPrimApply = \case
 solExpr :: SolCtxt a -> DLExpr -> Doc a
 solExpr ctxt = \case
   DLE_PrimOp _ p args -> solPrimApply p $ map (solArg ctxt) args
-  DLE_ArrayRef _ ae ee ->
-    case ee of
-      DLA_Con (DLC_Int i) ->
-        (solArg ctxt ae) <> ".elem" <> pretty i
-      _ ->
-        (solArg ctxt ae) <> brackets (solArg ctxt ee)
+  DLE_ArrayRef _ ae _ ee ->
+    (solArg ctxt ae) <> brackets (solArg ctxt ee)
+  DLE_TupleRef _ ae i ->
+    (solArg ctxt ae) <> ".elem" <> pretty i
   DLE_ObjectRef _ oe f -> (solArg ctxt oe) <> "." <> pretty f
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> solHash $ map (solArg ctxt) args
@@ -415,7 +414,10 @@ _solDefineType1 getTypeName name = \case
   T_Fun {} -> impossible "fun in ct"
   T_Forall {} -> impossible "forall in pl"
   T_Var {} -> impossible "var in pl"
-  T_Array ats -> do
+  T_Array t sz -> do
+    tn <- getTypeName t
+    return $ tn <> brackets (pretty sz)
+  T_Tuple ats -> do
     atsn <- mapM getTypeName ats
     return $ solStruct name $ (flip zip) atsn $ map (pretty . ("elem" ++) . show) ([0 ..] :: [Int])
   T_Obj tm -> do

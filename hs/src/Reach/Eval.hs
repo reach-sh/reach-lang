@@ -54,7 +54,7 @@ data EvalError
   | Err_App_InvalidPartSpec SLVal
   | Err_DeclLHS_IllegalJS JSExpression
   | Err_Decl_IllegalJS JSExpression
-  | Err_Decl_NotArray SLVal
+  | Err_Decl_NotRefable SLVal
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLVal [String] String
   | Err_Eval_ContinueNotInWhile
@@ -67,8 +67,9 @@ data EvalError
   | Err_Eval_NotApplicable SLVal
   | Err_Eval_NotApplicableVals SLVal
   | Err_Eval_NotObject SLVal
-  | Err_Eval_RefNotArray SLVal
+  | Err_Eval_RefNotRefable SLVal
   | Err_Eval_RefNotInt SLVal
+  | Err_Eval_IndirectRefNotArray SLVal
   | Err_Eval_RefOutOfBounds Int Integer
   | Err_Eval_UnboundId SLVar [SLVar]
   | Err_ExpectedPrivate SLVal
@@ -114,7 +115,8 @@ displayTy = \case
   T_Bytes -> "bytes"
   T_Address -> "address"
   T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
-  T_Array _tys -> "array" -- <> displayTyList tys
+  T_Array _ty _sz -> "array" -- <> displayTyList tys
+  T_Tuple _tys -> "tuple"
   T_Obj _m -> "object" -- FIXME
   T_Forall x ty {- SLVar SLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
   T_Var x {- SLVar-} -> x
@@ -166,8 +168,8 @@ instance Show EvalError where
       "Invalid binding. Expressions cannot appear on the LHS."
     Err_Decl_IllegalJS e ->
       "Invalid Reach declaration: " <> conNameOf e
-    Err_Decl_NotArray slval ->
-      "Invalid binding. Expected array, got: " <> displaySlValType slval
+    Err_Decl_NotRefable slval ->
+      "Invalid binding. Expected array or tuple, got: " <> displaySlValType slval
     Err_Decl_WrongArrayLength nIdents nVals ->
       "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
     Err_Dot_InvalidField _slval ks k ->
@@ -197,8 +199,10 @@ instance Show EvalError where
       "Invalid function. Cannot apply: " <> displaySlValType slval
     Err_Eval_NotObject slval ->
       "Invalid field access. Expected object, got: " <> displaySlValType slval
-    Err_Eval_RefNotArray slval ->
-      "Invalid array reference. Expected array, got: " <> displaySlValType slval
+    Err_Eval_RefNotRefable slval ->
+      "Invalid element reference. Expected array or tuple, got: " <> displaySlValType slval
+    Err_Eval_IndirectRefNotArray slval ->
+      "Invalid indirect element reference. Expected array, got: " <> displaySlValType slval
     Err_Eval_RefNotInt slval ->
       "Invalid array index. Expected uint256, got: " <> displaySlValType slval
     Err_Eval_RefOutOfBounds maxi ix ->
@@ -299,6 +303,7 @@ base_env =
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
     , ("Array", SLV_Prim SLPrim_Array)
+    , ("Tuple", SLV_Prim SLPrim_Tuple)
     , ("Object", SLV_Prim SLPrim_Object)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ( "Reach"
@@ -612,14 +617,21 @@ evalPrim ctxt at env p sargs =
       evalPrimOp ctxt at env op sargs
     SLPrim_Fun ->
       case map snd sargs of
-        [(SLV_Array _ dom_arr), (SLV_Type rng)] ->
+        [(SLV_Tuple _ dom_arr), (SLV_Type rng)] ->
           retV $ (lvl, SLV_Type $ T_Fun dom rng)
           where
             lvl = mconcat $ map fst sargs
             dom = map expect_ty dom_arr
         _ -> illegal_args
     SLPrim_Array ->
-      retV $ (lvl, SLV_Type $ T_Array $ map expect_ty $ map snd sargs)
+      case map snd sargs of
+        [(SLV_Type ty), (SLV_Int _ sz)] ->
+          retV $ (lvl, SLV_Type $ T_Array ty sz)
+        _ -> illegal_args
+      where
+        lvl = mconcat $ map fst sargs
+    SLPrim_Tuple ->
+      retV $ (lvl, SLV_Type $ T_Tuple $ map expect_ty $ map snd sargs)
       where
         lvl = mconcat $ map fst sargs
     SLPrim_Object ->
@@ -630,7 +642,7 @@ evalPrim ctxt at env p sargs =
     SLPrim_makeEnum ->
       case sargs of
         [(ilvl, SLV_Int _ i)] ->
-          retV $ (ilvl, SLV_Array at' (enum_pred : map (SLV_Int at') [0 .. (i -1)]))
+          retV $ (ilvl, SLV_Tuple at' (enum_pred : map (SLV_Int at') [0 .. (i -1)]))
           where
             at' = (srcloc_at "makeEnum" Nothing at)
             --- FIXME This sucks... maybe parse an embed string? Would that suck less?... probably want a custom primitive
@@ -645,7 +657,7 @@ evalPrim ctxt at env p sargs =
       case ctxt_mode ctxt of
         SLC_Module ->
           case args of
-            [(SLV_Object _ _), (SLV_Array _ _), (SLV_Clo _ _ _ _ _)] ->
+            [(SLV_Object _ _), (SLV_Tuple _ _), (SLV_Clo _ _ _ _ _)] ->
               retV $ public $ SLV_Prim $ SLPrim_App_Delay at args env
             _ -> illegal_args
           where
@@ -843,9 +855,9 @@ evalExpr ctxt at env e =
       SLRes lifts svs <- evalExprs ctxt at' env (jsa_flatten as)
       let vs = map snd svs
       let lvl = mconcat $ map fst svs
-      return $ SLRes lifts $ (lvl, SLV_Array at' vs)
+      return $ SLRes lifts $ (lvl, SLV_Tuple at' vs)
       where
-        at' = (srcloc_jsa "array" a at)
+        at' = (srcloc_jsa "tuple" a at)
     JSAssignExpression _ _ _ -> illegal
     JSAwaitExpression _ _ -> illegal
     JSCallExpression rator a rands _ -> doCall rator a $ jscl_flatten rands
@@ -937,43 +949,54 @@ evalExpr ctxt at env e =
       let fields = (jse_expect_id at') field
       SLRes reflifts refsv <- evalDot ctxt at' objv fields
       return $ SLRes (olifts <> reflifts) $ lvlMeet obj_lvl $ refsv
-    doRef arr a idx = do
+    doRef arr a idxe = do
       let at' = srcloc_jsa "array ref" a at
       SLRes alifts (arr_lvl, arrv) <- evalExpr ctxt at' env arr
-      SLRes ilifts (idx_lvl, idxv) <- evalExpr ctxt at' env idx
+      SLRes ilifts (idx_lvl, idxv) <- evalExpr ctxt at' env idxe
       let lvl = arr_lvl <> idx_lvl
-      let retRef t arr_dla idx_dla = do
-            (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' (ctxt_local_name ctxt "array ref") t) (DLE_ArrayRef at' arr_dla idx_dla)
+      let retRef t de = do
+            (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' (ctxt_local_name ctxt "ref") t) de
             let ansv = SLV_DLVar dv
             return $ SLRes (alifts <> ilifts <> lifts') (lvl, ansv)
+      let retArrayRef t sz arr_dla idx_dla =
+            retRef t $ DLE_ArrayRef at' arr_dla sz idx_dla
+      let retTupleRef t arr_dla idx =
+            retRef t $ DLE_TupleRef at' arr_dla idx
+      let retVal idxi arrvs =
+            case fromIntegerMay idxi >>= atMay arrvs of
+              Nothing ->
+                expect_throw at' $ Err_Eval_RefOutOfBounds (length arrvs) idxi
+              Just ansv ->
+                return $ SLRes (alifts <> ilifts) (lvl, ansv)
       case idxv of
         SLV_Int _ idxi ->
           case arrv of
-            SLV_Array _ arrvs ->
-              case fromIntegerMay idxi >>= atMay arrvs of
-                Nothing ->
-                  expect_throw at' $ Err_Eval_RefOutOfBounds (length arrvs) idxi
-                Just ansv ->
-                  return $ SLRes (alifts <> ilifts) (lvl, ansv)
-            SLV_DLVar adv@(DLVar _ _ (T_Array ts) _) ->
+            SLV_Tuple _ tupvs -> retVal idxi tupvs 
+            SLV_DLVar adv@(DLVar _ _ (T_Tuple ts) _) ->
               case fromIntegerMay idxi >>= atMay ts of
                 Nothing ->
                   expect_throw at' $ Err_Eval_RefOutOfBounds (length ts) idxi
-                Just t -> retRef t arr_dla idx_dla
+                Just t -> retTupleRef t arr_dla idxi
+                  where
+                    arr_dla = DLA_Var adv
+            SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) ->
+              case idxi < sz of
+                False ->
+                  expect_throw at' $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
+                True -> retArrayRef t sz arr_dla idx_dla
                   where
                     arr_dla = DLA_Var adv
                     idx_dla = DLA_Con (DLC_Int idxi)
             _ ->
-              expect_throw at' $ Err_Eval_RefNotArray arrv
+              expect_throw at' $ Err_Eval_RefNotRefable arrv
         SLV_DLVar idxdv@(DLVar _ _ T_UInt256 _) ->
           case arr_ty of
-            T_Array ts ->
-              retRef elem_ty arr_dla idx_dla
+            T_Array elem_ty sz ->
+              retArrayRef elem_ty sz arr_dla idx_dla
               where
                 idx_dla = DLA_Var idxdv
-                elem_ty = typeMeets at' $ map (\x -> (at', x)) ts
             _ ->
-              expect_throw at' $ Err_Eval_RefNotArray arrv
+              expect_throw at' $ Err_Eval_IndirectRefNotArray arrv
           where
             (arr_ty, arr_dla) = typeOf at' arrv
         _ ->
@@ -1006,19 +1029,29 @@ evalDecl ctxt at lhs_env rhs_env decl =
             let _make_env (lvl, v) = do
                   (vs_lifts, vs) <-
                     case v of
-                      SLV_Array _ x -> return (mempty, x)
-                      SLV_DLVar dv@(DLVar _ _ (T_Array ts) _) -> do
+                      SLV_Tuple _ x -> return (mempty, x)
+                      SLV_DLVar dv@(DLVar _ _ (T_Tuple ts) _) -> do
                         vs_liftsl_and_dvs <- zipWithM mk_ref ts [0 ..]
                         let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
                         let vs_lifts = mconcat vs_liftsl
                         return (vs_lifts, dvs)
                         where
                           mk_ref t i = do
-                            let e = (DLE_ArrayRef vat' (DLA_Var dv) (DLA_Con (DLC_Int i)))
+                            let e = (DLE_TupleRef vat' (DLA_Var dv) i)
+                            (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' (ctxt_local_name ctxt "tuple idx") t) e
+                            return $ (i_lifts, SLV_DLVar dvi)
+                      SLV_DLVar dv@(DLVar _ _ (T_Array t sz) _) -> do
+                        vs_liftsl_and_dvs <- mapM mk_ref [0 .. (sz-1)]
+                        let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
+                        let vs_lifts = mconcat vs_liftsl
+                        return (vs_lifts, dvs)
+                        where
+                          mk_ref i = do
+                            let e = (DLE_ArrayRef vat' (DLA_Var dv) sz (DLA_Con (DLC_Int i)))
                             (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' (ctxt_local_name ctxt "array idx") t) e
                             return $ (i_lifts, SLV_DLVar dvi)
                       _ ->
-                        expect_throw at' (Err_Decl_NotArray v)
+                        expect_throw at' (Err_Decl_NotRefable v)
                   let kvs = zipEq at' Err_Decl_WrongArrayLength ks $ map (\x -> (lvl, x)) vs
                   return $ (vs_lifts, foldl' (env_insertp at') lhs_env kvs)
             return (ks, _make_env)
@@ -1522,7 +1555,7 @@ makeInteract at who spec = SLV_Object at spec'
 compileDApp :: SLVal -> ST s DLProg
 compileDApp topv =
   case topv of
-    SLV_Prim (SLPrim_App_Delay at [(SLV_Object _ _opts), (SLV_Array _ parts), clo] top_env) -> do
+    SLV_Prim (SLPrim_App_Delay at [(SLV_Object _ _opts), (SLV_Tuple _ parts), clo] top_env) -> do
       --- FIXME look at opts
       idxr <- newSTCounter 0
       let ctxt_step =
@@ -1556,7 +1589,7 @@ compileDApp topv =
         partvs = map make_part parts
         make_part v =
           case v of
-            SLV_Array p_at [SLV_Bytes _ bs, SLV_Object iat io] ->
+            SLV_Tuple p_at [SLV_Bytes _ bs, SLV_Object iat io] ->
               secret $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
             _ -> expect_throw at' (Err_App_InvalidPartSpec v)
     _ ->

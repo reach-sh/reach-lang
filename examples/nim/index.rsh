@@ -5,11 +5,11 @@ const DELAY = 10; // in blocks
 
 const Player =
       { ...hasRandom,
-        getMove: Fun([UInt256, UInt256], Array(Bool, UInt256)),
+        getMove: Fun([UInt256, UInt256], Tuple(Bool, UInt256)),
         showOutcome: Fun([Bytes], Null) };
 const Alice =
       { ...Player,
-        getParams: Fun([], Array(UInt256, UInt256)) };
+        getParams: Fun([], Tuple(UInt256, UInt256)) };
 const Bob =
       { ...Player,
         acceptParams: Fun([UInt256, UInt256], Null) };

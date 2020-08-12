@@ -2,7 +2,7 @@
 
 export async function A(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const v2 = stdlib.protect(stdlib.T_Array([stdlib.T_UInt256, stdlib.T_UInt256]), await interact.getParams());
+  const v2 = stdlib.protect(stdlib.T_Tuple([stdlib.T_UInt256, stdlib.T_UInt256]), await interact.getParams());
   const v3 = v2[0];
   const v4 = v2[1];
   

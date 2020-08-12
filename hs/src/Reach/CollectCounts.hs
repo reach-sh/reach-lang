@@ -69,7 +69,7 @@ instance Countable DLArg where
     case a of
       DLA_Var v -> counts v
       DLA_Con {} -> mempty
-      DLA_Array as -> counts as
+      DLA_Tuple as -> counts as
       DLA_Obj as -> counts as
       DLA_Interact {} -> mempty
 
@@ -77,7 +77,8 @@ instance Countable DLExpr where
   counts e =
     case e of
       DLE_PrimOp _ _ as -> counts as
-      DLE_ArrayRef _ aa ea -> counts [aa, ea]
+      DLE_ArrayRef _ aa _ ea -> counts [aa, ea]
+      DLE_TupleRef _ t _ -> counts t
       DLE_ObjectRef _ aa _ -> counts aa
       DLE_Interact _ _ _ _ as -> counts as
       DLE_Digest _ as -> counts as

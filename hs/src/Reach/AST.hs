@@ -97,8 +97,8 @@ data SLType
   | T_Bytes
   | T_Address
   | T_Fun [SLType] SLType
-  | --- XXX Indicate if it is a Tuple or an Array?
-    T_Array [SLType]
+  | T_Array SLType Integer
+  | T_Tuple [SLType]
   | T_Obj (M.Map SLVar SLType)
   | T_Forall SLVar SLType
   | T_Var SLVar
@@ -118,7 +118,7 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Int SrcLoc Integer
   | SLV_Bytes SrcLoc B.ByteString
-  | SLV_Array SrcLoc [SLVal]
+  | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLEnv
   | SLV_DLVar DLVar
@@ -202,6 +202,7 @@ data SLPrimitive
   | SLPrim_interact SrcLoc SLPart String SLType
   | SLPrim_Fun
   | SLPrim_Array
+  | SLPrim_Tuple
   | SLPrim_Object
   | SLPrim_App
   | SLPrim_App_Delay SrcLoc [SLVal] SLEnv
@@ -266,7 +267,7 @@ data DLArg
   = DLA_Var DLVar
   | DLA_Con DLConstant
   | --- FIXME Should be expression?
-    DLA_Array [DLArg]
+    DLA_Tuple [DLArg]
   | --- FIXME Should be expression?
     DLA_Obj (M.Map String DLArg)
   | DLA_Interact SLPart String SLType
@@ -276,7 +277,8 @@ instance NFData DLArg
 
 data DLExpr
   = DLE_PrimOp SrcLoc PrimOp [DLArg]
-  | DLE_ArrayRef SrcLoc DLArg DLArg
+  | DLE_ArrayRef SrcLoc DLArg Integer DLArg
+  | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_ObjectRef SrcLoc DLArg String
   | DLE_Interact SrcLoc SLPart String SLType [DLArg]
   | DLE_Digest SrcLoc [DLArg]
@@ -289,6 +291,7 @@ expr_pure e =
   case e of
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
+    DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
     DLE_Digest {} -> True

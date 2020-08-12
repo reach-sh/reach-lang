@@ -457,7 +457,7 @@ smt_a ctxt at_de da =
             , ctxt_primed_vars = mempty
             }
     DLA_Con c -> smt_c ctxt at_de c
-    DLA_Array as -> cons as
+    DLA_Tuple as -> cons as
     DLA_Obj m -> cons $ M.elems m
     DLA_Interact who i _ -> Atom $ smtInteract ctxt who i
   where
@@ -473,19 +473,15 @@ smt_e ctxt at_dv dv de =
       where
         args' = map (smt_a ctxt at) args
         se = smtPrimOp ctxt cp args'
-    DLE_ArrayRef at arr_da idx_da ->
+    DLE_ArrayRef _at _arr _sz _idx ->
+      error "XXX"
+    DLE_TupleRef at arr_da i ->
       pathAddBound ctxt at_dv dv bo se
       where
-        se =
-          case idx_da of
-            DLA_Con (DLC_Int i) ->
-              smtApply (s ++ "_elem" ++ show i) [arr_da']
-            _ ->
-              smtApply (s ++ "_ref") [arr_da', idx_da']
+        se = smtApply (s ++ "_elem" ++ show i) [arr_da']
         s = smtTypeSort ctxt t
         t = argTypeOf arr_da
         arr_da' = smt_a ctxt at arr_da
-        idx_da' = smt_a ctxt at idx_da
     DLE_ObjectRef at obj_da f ->
       pathAddBound ctxt at_dv dv bo se
       where
@@ -722,9 +718,10 @@ _smtDefineTypes smt ts = do
           T_Fun {} -> mempty
           T_Forall {} -> impossible "forall in ll"
           T_Var {} -> impossible "var in ll"
-          T_Array ats -> do
+          T_Array {} ->
+            error "XXX"
+          T_Tuple ats -> do
             ts_nis <- mapM type_name ats
-            --- XXX detect if homogeneous and use ArrayEx
             let mkargn _ (i :: Int) = n ++ "_elem" ++ show i
             let argns = zipWith mkargn ts_nis [0 ..]
             let mkarg (arg_tn, _) argn = (argn, Atom arg_tn)

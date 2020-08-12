@@ -65,7 +65,7 @@ const Player =
         partnerIs: Fun([Address], Null) };
 const Alice =
       { ...Player,
-        getParams: Fun([], Array(UInt256, UInt256)),
+        getParams: Fun([], Tuple(UInt256, UInt256)),
         commits: Fun([], Null),
         reveals: Fun([Bytes], Null) };
 const Bob =

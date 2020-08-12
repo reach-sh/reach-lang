@@ -3,31 +3,31 @@
   "A" = interact {
     commits = T_Fun [] T_Null,
     getHand = T_Fun [] T_Bytes,
-    getParams = T_Fun [] (T_Array [T_UInt256,T_UInt256]),
+    getParams = T_Fun [] (T_Tuple [T_UInt256,T_UInt256]),
     partnerIs = T_Fun [T_Address] T_Null,
     random = T_Fun [] T_UInt256,
     reveals = T_Fun [T_Bytes] T_Null};
-  const "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Array [T_UInt256,T_UInt256]:2 PL_Many = interact("A")."getParams"();
-  const "array idx":T_UInt256:3 PL_Many = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Array [T_UInt256,T_UInt256]:2[DLC_Int 0];
-  const "array idx":T_UInt256:4 PL_Many = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Array [T_UInt256,T_UInt256]:2[DLC_Int 1];
+  const "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:2 PL_Many = interact("A")."getParams"();
+  const "tuple idx":T_UInt256:3 PL_Many = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:2[0];
+  const "tuple idx":T_UInt256:4 PL_Many = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:2[1];
   
-  const "prim":T_UInt256:8 PL_Once = ADD("array idx":T_UInt256:3,"array idx":T_UInt256:4);
+  const "prim":T_UInt256:8 PL_Once = ADD("tuple idx":T_UInt256:3,"tuple idx":T_UInt256:4);
   
-  sendrecv join("A":T_Address:7) 1 (.publish(("array idx":T_UInt256:3,"array idx":T_UInt256:4), "prim":T_UInt256:8, ()))("array idx":T_UInt256:5, "array idx":T_UInt256:6){
-    const "prim":T_UInt256:9 PL_Once = ADD("array idx":T_UInt256:5,"array idx":T_UInt256:6);
+  sendrecv join("A":T_Address:7) 1 (.publish(("tuple idx":T_UInt256:3,"tuple idx":T_UInt256:4), "prim":T_UInt256:8, ()))("tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6){
+    const "prim":T_UInt256:9 PL_Once = ADD("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:6);
     const "prim":T_UInt256:10 PL_Once = TXN_VALUE();
     const "prim":T_Bool:11 PL_Once = PEQ("prim":T_UInt256:9,"prim":T_UInt256:10);
     claim(CT_Require)("prim":T_Bool:11);
     claim(CT_Require)(DLC_Bool True);
     sendrecv join("B":T_Address:14) 2 ()().timeout(DLC_Int 10, {
       
-      sendrecv again("A":T_Address:7) 10 (.publish((), DLC_Int 0, ("A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6)))(){
+      sendrecv again("A":T_Address:7) 10 (.publish((), DLC_Int 0, ("A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6)))(){
         const "prim":T_UInt256:22 PL_Once = TXN_VALUE();
         const "prim":T_Bool:23 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:22);
         claim(CT_Require)("prim":T_Bool:23);
         exit(DLC_Bytes "Bob quits"); } }){
       const "prim":T_UInt256:15 PL_Once = TXN_VALUE();
-      const "prim":T_Bool:16 PL_Once = PEQ("array idx":T_UInt256:5,"prim":T_UInt256:15);
+      const "prim":T_Bool:16 PL_Once = PEQ("tuple idx":T_UInt256:5,"prim":T_UInt256:15);
       claim(CT_Require)("prim":T_Bool:16);
       loopvar {
         "count":T_UInt256:25 = DLC_Int 0,
@@ -63,7 +63,7 @@
         
         claim(CT_Require)(DLC_Bool True);
         
-        sendrecv again("A":T_Address:7) 4 (.publish(("commitment (as digest)":T_UInt256:70), DLC_Int 0, ("A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6, "B":T_Address:14, "count":T_UInt256:25)))("commitment (as digest)":T_UInt256:72).timeout(DLC_Int 10, {
+        sendrecv again("A":T_Address:7) 4 (.publish(("commitment (as digest)":T_UInt256:70), DLC_Int 0, ("A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6, "B":T_Address:14, "count":T_UInt256:25)))("commitment (as digest)":T_UInt256:72).timeout(DLC_Int 10, {
           sendrecv again("B":T_Address:14) 9 ()(){
             const "prim":T_UInt256:80 PL_Once = TXN_VALUE();
             const "prim":T_Bool:81 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:80);
@@ -75,7 +75,7 @@
           claim(CT_Require)(DLC_Bool True);
           sendrecv again("B":T_Address:14) 5 ()("handB (as clo app)":T_UInt256:101).timeout(DLC_Int 10, {
             
-            sendrecv again("A":T_Address:7) 8 (.publish((), DLC_Int 0, ("A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6, "B":T_Address:14, "commitment (as digest)":T_UInt256:72, "count":T_UInt256:25)))(){
+            sendrecv again("A":T_Address:7) 8 (.publish((), DLC_Int 0, ("A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6, "B":T_Address:14, "commitment (as digest)":T_UInt256:72, "count":T_UInt256:25)))(){
               const "prim":T_UInt256:109 PL_Once = TXN_VALUE();
               const "prim":T_Bool:110 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:109);
               claim(CT_Require)("prim":T_Bool:110);
@@ -109,7 +109,7 @@
             
             claim(CT_Require)(DLC_Bool True);
             
-            sendrecv again("A":T_Address:7) 6 (.publish(("salt (as interact)":T_UInt256:69,"_handA (as clo app)":T_UInt256:53), DLC_Int 0, ("A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6, "B":T_Address:14, "commitment (as digest)":T_UInt256:72, "handB (as clo app)":T_UInt256:101, "count":T_UInt256:25)))("salt (as interact)":T_UInt256:127, "_handA (as clo app)":T_UInt256:128).timeout(DLC_Int 10, {
+            sendrecv again("A":T_Address:7) 6 (.publish(("salt (as interact)":T_UInt256:69,"_handA (as clo app)":T_UInt256:53), DLC_Int 0, ("A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6, "B":T_Address:14, "commitment (as digest)":T_UInt256:72, "handB (as clo app)":T_UInt256:101, "count":T_UInt256:25)))("salt (as interact)":T_UInt256:127, "_handA (as clo app)":T_UInt256:128).timeout(DLC_Int 10, {
               sendrecv again("B":T_Address:14) 7 ()(){
                 const "prim":T_UInt256:136 PL_Once = TXN_VALUE();
                 const "prim":T_Bool:137 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:136);
@@ -157,20 +157,20 @@
                 "count":T_UInt256:25 = "one of [\"count\",\"outcome\"] (as prim)":T_UInt256:221,
                 "outcome":T_UInt256:26 = "roundOutcome (as clo app)":T_UInt256:148}
               continue; } } } }
-      let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226;
+      let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226;
       const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 PL_Once = PEQ("outcome":T_UInt256:26,DLC_Int 2);
       if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 then {
-        const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 PL_Once = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-        "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228,DLC_Int 0];
+        const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 PL_Once = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+        "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228,DLC_Int 0];
          }
       else {
         const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 PL_Once = PEQ("outcome":T_UInt256:26,DLC_Int 0);
         if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 then {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 PL_Once = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230];
+          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 PL_Once = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230];
            }
         else {
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = ["tuple idx":T_UInt256:5,"tuple idx":T_UInt256:5];
            };
          };
       let "clo app":T_Bytes:234;
@@ -210,23 +210,23 @@
     partnerIs = T_Fun [T_Address] T_Null,
     random = T_Fun [] T_UInt256,
     shows = T_Fun [] T_Null};
-  sendrecv join("A":T_Address:7) 1 ()("array idx":T_UInt256:5, "array idx":T_UInt256:6){
-    const "prim":T_UInt256:9 PL_Once = ADD("array idx":T_UInt256:5,"array idx":T_UInt256:6);
+  sendrecv join("A":T_Address:7) 1 ()("tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6){
+    const "prim":T_UInt256:9 PL_Once = ADD("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:6);
     const "prim":T_UInt256:10 PL_Once = TXN_VALUE();
     const "prim":T_Bool:11 PL_Once = PEQ("prim":T_UInt256:9,"prim":T_UInt256:10);
     claim(CT_Require)("prim":T_Bool:11);
-    eff interact("B")."acceptParams"("array idx":T_UInt256:5,"array idx":T_UInt256:6);
+    eff interact("B")."acceptParams"("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:6);
     
     claim(CT_Require)(DLC_Bool True);
     
-    sendrecv join("B":T_Address:14) 2 (.publish((), "array idx":T_UInt256:5, ("A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6)))().timeout(DLC_Int 10, {
+    sendrecv join("B":T_Address:14) 2 (.publish((), "tuple idx":T_UInt256:5, ("A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6)))().timeout(DLC_Int 10, {
       sendrecv again("A":T_Address:7) 10 ()(){
         const "prim":T_UInt256:22 PL_Once = TXN_VALUE();
         const "prim":T_Bool:23 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:22);
         claim(CT_Require)("prim":T_Bool:23);
         exit(DLC_Bytes "Bob quits"); } }){
       const "prim":T_UInt256:15 PL_Once = TXN_VALUE();
-      const "prim":T_Bool:16 PL_Once = PEQ("array idx":T_UInt256:5,"prim":T_UInt256:15);
+      const "prim":T_Bool:16 PL_Once = PEQ("tuple idx":T_UInt256:5,"prim":T_UInt256:15);
       claim(CT_Require)("prim":T_Bool:16);
       loopvar {
         "count":T_UInt256:25 = DLC_Int 0,
@@ -240,7 +240,7 @@
         claim(CT_Require)(DLC_Bool True);
         sendrecv again("A":T_Address:7) 4 ()("commitment (as digest)":T_UInt256:72).timeout(DLC_Int 10, {
           
-          sendrecv again("B":T_Address:14) 9 (.publish((), DLC_Int 0, ("A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6, "B":T_Address:14, "count":T_UInt256:25)))(){
+          sendrecv again("B":T_Address:14) 9 (.publish((), DLC_Int 0, ("A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6, "B":T_Address:14, "count":T_UInt256:25)))(){
             const "prim":T_UInt256:80 PL_Once = TXN_VALUE();
             const "prim":T_Bool:81 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:80);
             claim(CT_Require)("prim":T_Bool:81);
@@ -271,7 +271,7 @@
           
           claim(CT_Require)(DLC_Bool True);
           
-          sendrecv again("B":T_Address:14) 5 (.publish(("handB (as clo app)":T_UInt256:85), DLC_Int 0, ("A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6, "B":T_Address:14, "commitment (as digest)":T_UInt256:72, "count":T_UInt256:25)))("handB (as clo app)":T_UInt256:101).timeout(DLC_Int 10, {
+          sendrecv again("B":T_Address:14) 5 (.publish(("handB (as clo app)":T_UInt256:85), DLC_Int 0, ("A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6, "B":T_Address:14, "commitment (as digest)":T_UInt256:72, "count":T_UInt256:25)))("handB (as clo app)":T_UInt256:101).timeout(DLC_Int 10, {
             sendrecv again("A":T_Address:7) 8 ()(){
               const "prim":T_UInt256:109 PL_Once = TXN_VALUE();
               const "prim":T_Bool:110 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:109);
@@ -287,7 +287,7 @@
             claim(CT_Require)(DLC_Bool True);
             sendrecv again("A":T_Address:7) 6 ()("salt (as interact)":T_UInt256:127, "_handA (as clo app)":T_UInt256:128).timeout(DLC_Int 10, {
               
-              sendrecv again("B":T_Address:14) 7 (.publish((), DLC_Int 0, ("A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6, "B":T_Address:14, "commitment (as digest)":T_UInt256:72, "handB (as clo app)":T_UInt256:101, "count":T_UInt256:25)))(){
+              sendrecv again("B":T_Address:14) 7 (.publish((), DLC_Int 0, ("A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6, "B":T_Address:14, "commitment (as digest)":T_UInt256:72, "handB (as clo app)":T_UInt256:101, "count":T_UInt256:25)))(){
                 const "prim":T_UInt256:136 PL_Once = TXN_VALUE();
                 const "prim":T_Bool:137 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:136);
                 claim(CT_Require)("prim":T_Bool:137);
@@ -334,20 +334,20 @@
                 "count":T_UInt256:25 = "one of [\"count\",\"outcome\"] (as prim)":T_UInt256:221,
                 "outcome":T_UInt256:26 = "roundOutcome (as clo app)":T_UInt256:148}
               continue; } } } }
-      let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226;
+      let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226;
       const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 PL_Once = PEQ("outcome":T_UInt256:26,DLC_Int 2);
       if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 then {
-        const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 PL_Once = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-        "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228,DLC_Int 0];
+        const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 PL_Once = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+        "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228,DLC_Int 0];
          }
       else {
         const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 PL_Once = PEQ("outcome":T_UInt256:26,DLC_Int 0);
         if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 then {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 PL_Once = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230];
+          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 PL_Once = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230];
            }
         else {
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = ["tuple idx":T_UInt256:5,"tuple idx":T_UInt256:5];
            };
          };
       let "clo app":T_Bytes:234;
@@ -383,8 +383,8 @@
       exit("clo app":T_Bytes:234); } },
   "O" = interact {
     };
-  sendrecv join("A":T_Address:7) 1 ()("array idx":T_UInt256:5, "array idx":T_UInt256:6){
-    const "prim":T_UInt256:9 PL_Once = ADD("array idx":T_UInt256:5,"array idx":T_UInt256:6);
+  sendrecv join("A":T_Address:7) 1 ()("tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6){
+    const "prim":T_UInt256:9 PL_Once = ADD("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:6);
     const "prim":T_UInt256:10 PL_Once = TXN_VALUE();
     const "prim":T_Bool:11 PL_Once = PEQ("prim":T_UInt256:9,"prim":T_UInt256:10);
     claim(CT_Require)("prim":T_Bool:11);
@@ -396,7 +396,7 @@
         claim(CT_Require)("prim":T_Bool:23);
         exit(DLC_Bytes "Bob quits"); } }){
       const "prim":T_UInt256:15 PL_Once = TXN_VALUE();
-      const "prim":T_Bool:16 PL_Once = PEQ("array idx":T_UInt256:5,"prim":T_UInt256:15);
+      const "prim":T_Bool:16 PL_Once = PEQ("tuple idx":T_UInt256:5,"prim":T_UInt256:15);
       claim(CT_Require)("prim":T_Bool:16);
       loopvar {
         "count":T_UInt256:25 = DLC_Int 0,
@@ -480,20 +480,20 @@
                 "count":T_UInt256:25 = "one of [\"count\",\"outcome\"] (as prim)":T_UInt256:221,
                 "outcome":T_UInt256:26 = "roundOutcome (as clo app)":T_UInt256:148}
               continue; } } } }
-      let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226;
+      let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226;
       const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 PL_Once = PEQ("outcome":T_UInt256:26,DLC_Int 2);
       if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 then {
-        const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 PL_Once = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-        "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228,DLC_Int 0];
+        const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 PL_Once = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+        "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228,DLC_Int 0];
          }
       else {
         const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 PL_Once = PEQ("outcome":T_UInt256:26,DLC_Int 0);
         if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 then {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 PL_Once = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230];
+          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 PL_Once = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230];
            }
         else {
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = ["tuple idx":T_UInt256:5,"tuple idx":T_UInt256:5];
            };
          };
       let "clo app":T_Bytes:234;
@@ -534,36 +534,36 @@
     (between [] []),
     last = 0,
     [],
-    ["array idx":T_UInt256:5, "array idx":T_UInt256:6],
+    ["tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6],
     {
-      const "prim":T_UInt256:9 PL_Once = ADD("array idx":T_UInt256:5,"array idx":T_UInt256:6);
+      const "prim":T_UInt256:9 PL_Once = ADD("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:6);
       const "prim":T_UInt256:10 PL_Once = TXN_VALUE();
       const "prim":T_Bool:11 PL_Once = PEQ("prim":T_UInt256:9,"prim":T_UInt256:10);
       claim(CT_Require)("prim":T_Bool:11);
       (wait! [ "A":T_Address:7
-             , "array idx":T_UInt256:5
-             , "array idx":T_UInt256:6 ]) } },
+             , "tuple idx":T_UInt256:5
+             , "tuple idx":T_UInt256:6 ]) } },
   2 = {
     join("B":T_Address:14),
     (between [] [DLC_Int 10]),
     last = 1,
-    ["A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6],
+    ["A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6],
     [],
     {
       const "prim":T_UInt256:15 PL_Once = TXN_VALUE();
-      const "prim":T_Bool:16 PL_Once = PEQ("array idx":T_UInt256:5,"prim":T_UInt256:15);
+      const "prim":T_Bool:16 PL_Once = PEQ("tuple idx":T_UInt256:5,"prim":T_UInt256:15);
       claim(CT_Require)("prim":T_Bool:16);
       (jump! 3 [ "A":T_Address:7
-               , "array idx":T_UInt256:5
-               , "array idx":T_UInt256:6
+               , "tuple idx":T_UInt256:5
+               , "tuple idx":T_UInt256:6
                , "B":T_Address:14 ] {
         "count":T_UInt256:25 = DLC_Int 0,
         "outcome":T_UInt256:26 = DLC_Int 1}) } },
   3 = {
     loop!,
     [ "A":T_Address:7
-    , "array idx":T_UInt256:5
-    , "array idx":T_UInt256:6
+    , "tuple idx":T_UInt256:5
+    , "tuple idx":T_UInt256:6
     , "B":T_Address:14 ],
     ["count":T_UInt256:25, "outcome":T_UInt256:26],
     {
@@ -571,40 +571,40 @@
       
       if "prim":T_Bool:50 then {
         (wait! [ "A":T_Address:7
-               , "array idx":T_UInt256:5
-               , "array idx":T_UInt256:6
+               , "tuple idx":T_UInt256:5
+               , "tuple idx":T_UInt256:6
                , "B":T_Address:14
                , "count":T_UInt256:25 ]) }
       else {
-        let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226;
+        let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226;
         const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 PL_Once = PEQ("outcome":T_UInt256:26,DLC_Int 2);
         if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 then {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 PL_Once = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228,DLC_Int 0];
+          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 PL_Once = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+          "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228,DLC_Int 0];
            }
         else {
           const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 PL_Once = PEQ("outcome":T_UInt256:26,DLC_Int 0);
           if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 then {
-            const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 PL_Once = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230];
+            const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 PL_Once = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230];
              }
           else {
-            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226 = ["array idx":T_UInt256:5,"array idx":T_UInt256:5];
+            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226 = ["tuple idx":T_UInt256:5,"tuple idx":T_UInt256:5];
              };
            };
-        const "array idx":T_UInt256:231 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226[DLC_Int 0];
-        const "array idx":T_UInt256:232 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226[DLC_Int 1];
-        const "prim":T_UInt256:233 PL_Once = ADD("array idx":T_UInt256:6,"array idx":T_UInt256:231);
+        const "tuple idx":T_UInt256:231 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226[0];
+        const "tuple idx":T_UInt256:232 PL_Once = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226[1];
+        const "prim":T_UInt256:233 PL_Once = ADD("tuple idx":T_UInt256:6,"tuple idx":T_UInt256:231);
         transfer.("prim":T_UInt256:233).to("A":T_Address:7);
-        transfer.("array idx":T_UInt256:232).to("B":T_Address:14);
+        transfer.("tuple idx":T_UInt256:232).to("B":T_Address:14);
         (halt! ) }; } },
   4 = {
     again("A":T_Address:7),
     (between [] [DLC_Int 10]),
     last = 3,
     [ "A":T_Address:7
-    , "array idx":T_UInt256:5
-    , "array idx":T_UInt256:6
+    , "tuple idx":T_UInt256:5
+    , "tuple idx":T_UInt256:6
     , "B":T_Address:14
     , "count":T_UInt256:25 ],
     ["commitment (as digest)":T_UInt256:72],
@@ -613,8 +613,8 @@
       const "prim":T_Bool:74 PL_Once = PEQ(DLC_Int 0,"prim":T_UInt256:73);
       claim(CT_Require)("prim":T_Bool:74);
       (wait! [ "A":T_Address:7
-             , "array idx":T_UInt256:5
-             , "array idx":T_UInt256:6
+             , "tuple idx":T_UInt256:5
+             , "tuple idx":T_UInt256:6
              , "B":T_Address:14
              , "commitment (as digest)":T_UInt256:72
              , "count":T_UInt256:25 ]) } },
@@ -623,8 +623,8 @@
     (between [] [DLC_Int 10]),
     last = 4,
     [ "A":T_Address:7
-    , "array idx":T_UInt256:5
-    , "array idx":T_UInt256:6
+    , "tuple idx":T_UInt256:5
+    , "tuple idx":T_UInt256:6
     , "B":T_Address:14
     , "commitment (as digest)":T_UInt256:72
     , "count":T_UInt256:25 ],
@@ -638,8 +638,8 @@
       const "prim":T_Bool:116 PL_Once = IF_THEN_ELSE("prim":T_Bool:113,"prim":T_Bool:114,DLC_Bool False);
       claim(CT_Require)("prim":T_Bool:116);
       (wait! [ "A":T_Address:7
-             , "array idx":T_UInt256:5
-             , "array idx":T_UInt256:6
+             , "tuple idx":T_UInt256:5
+             , "tuple idx":T_UInt256:6
              , "B":T_Address:14
              , "commitment (as digest)":T_UInt256:72
              , "handB (as clo app)":T_UInt256:101
@@ -649,8 +649,8 @@
     (between [] [DLC_Int 10]),
     last = 5,
     [ "A":T_Address:7
-    , "array idx":T_UInt256:5
-    , "array idx":T_UInt256:6
+    , "tuple idx":T_UInt256:5
+    , "tuple idx":T_UInt256:6
     , "B":T_Address:14
     , "commitment (as digest)":T_UInt256:72
     , "handB (as clo app)":T_UInt256:101
@@ -696,8 +696,8 @@
          };
       const "one of [\"count\",\"outcome\"] (as prim)":T_UInt256:221 PL_Once = ADD(DLC_Int 1,"count":T_UInt256:25);
       (jump! 3 [ "A":T_Address:7
-               , "array idx":T_UInt256:5
-               , "array idx":T_UInt256:6
+               , "tuple idx":T_UInt256:5
+               , "tuple idx":T_UInt256:6
                , "B":T_Address:14 ] {
         "count":T_UInt256:25 = "one of [\"count\",\"outcome\"] (as prim)":T_UInt256:221,
         "outcome":T_UInt256:26 = "roundOutcome (as clo app)":T_UInt256:148}) } },
@@ -706,8 +706,8 @@
     (between [DLC_Int 10] []),
     last = 5,
     [ "A":T_Address:7
-    , "array idx":T_UInt256:5
-    , "array idx":T_UInt256:6
+    , "tuple idx":T_UInt256:5
+    , "tuple idx":T_UInt256:6
     , "B":T_Address:14
     , "commitment (as digest)":T_UInt256:72
     , "handB (as clo app)":T_UInt256:101
@@ -725,8 +725,8 @@
     (between [DLC_Int 10] []),
     last = 4,
     [ "A":T_Address:7
-    , "array idx":T_UInt256:5
-    , "array idx":T_UInt256:6
+    , "tuple idx":T_UInt256:5
+    , "tuple idx":T_UInt256:6
     , "B":T_Address:14
     , "commitment (as digest)":T_UInt256:72
     , "count":T_UInt256:25 ],
@@ -743,8 +743,8 @@
     (between [DLC_Int 10] []),
     last = 3,
     [ "A":T_Address:7
-    , "array idx":T_UInt256:5
-    , "array idx":T_UInt256:6
+    , "tuple idx":T_UInt256:5
+    , "tuple idx":T_UInt256:6
     , "B":T_Address:14
     , "count":T_UInt256:25 ],
     [],
@@ -759,7 +759,7 @@
     again("A":T_Address:7),
     (between [DLC_Int 10] []),
     last = 1,
-    ["A":T_Address:7, "array idx":T_UInt256:5, "array idx":T_UInt256:6],
+    ["A":T_Address:7, "tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6],
     [],
     {
       const "prim":T_UInt256:22 PL_Once = TXN_VALUE();

@@ -35,7 +35,7 @@ instance Pretty DLArg where
     case a of
       DLA_Var v -> pretty v
       DLA_Con c -> viaShow c
-      DLA_Array as -> brackets $ render_das as
+      DLA_Tuple as -> brackets $ render_das as
       DLA_Obj env -> render_obj env
       DLA_Interact who m t ->
         "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
@@ -47,7 +47,8 @@ instance Pretty DLExpr where
   pretty e =
     case e of
       DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
-      DLE_ArrayRef _ a o -> pretty a <> brackets (pretty o)
+      DLE_ArrayRef _ a _ o -> pretty a <> brackets (pretty o)
+      DLE_TupleRef _ a i -> pretty a <> brackets (pretty i)
       DLE_ObjectRef _ a f -> pretty a <> "." <> pretty f
       DLE_Interact _ who m _ as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
       DLE_Digest _ as -> "digest" <> parens (render_das as)

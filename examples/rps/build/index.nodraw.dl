@@ -3,7 +3,7 @@ parts {
   "A" = interact {
     commits = T_Fun [] T_Null,
     getHand = T_Fun [] T_Bytes,
-    getParams = T_Fun [] (T_Array [T_UInt256,T_UInt256]),
+    getParams = T_Fun [] (T_Tuple [T_UInt256,T_UInt256]),
     partnerIs = T_Fun [T_Address] T_Null,
     random = T_Fun [] T_UInt256,
     reveals = T_Fun [T_Bytes] T_Null},
@@ -18,23 +18,23 @@ parts {
 
 prompt(Left 0) {
   only("A") {
-    const "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Array [T_UInt256,T_UInt256]:2 = interact("A")."getParams"();
-    const "array idx":T_UInt256:3 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Array [T_UInt256,T_UInt256]:2[DLC_Int 0];
-    const "array idx":T_UInt256:4 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Array [T_UInt256,T_UInt256]:2[DLC_Int 1]; };
+    const "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:2 = interact("A")."getParams"();
+    const "tuple idx":T_UInt256:3 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:2[0];
+    const "tuple idx":T_UInt256:4 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:2[1]; };
   only("A") {
-    const "prim":T_UInt256:8 = ADD("array idx":T_UInt256:3,"array idx":T_UInt256:4); };
-  publish("A", join("A":T_Address:7))("array idx":T_UInt256:3,"array idx":T_UInt256:4)("array idx":T_UInt256:5, "array idx":T_UInt256:6).pay("prim":T_UInt256:8){
-    const "prim":T_UInt256:9 = ADD("array idx":T_UInt256:5,"array idx":T_UInt256:6);
+    const "prim":T_UInt256:8 = ADD("tuple idx":T_UInt256:3,"tuple idx":T_UInt256:4); };
+  publish("A", join("A":T_Address:7))("tuple idx":T_UInt256:3,"tuple idx":T_UInt256:4)("tuple idx":T_UInt256:5, "tuple idx":T_UInt256:6).pay("prim":T_UInt256:8){
+    const "prim":T_UInt256:9 = ADD("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:6);
     const "prim":T_UInt256:10 = TXN_VALUE();
     const "prim":T_Bool:11 = PEQ("prim":T_UInt256:9,"prim":T_UInt256:10);
     claim(CT_Require)("prim":T_Bool:11);
     commit();
     only("B") {
-      const "interact":T_Null:13 = interact("B")."acceptParams"("array idx":T_UInt256:5,"array idx":T_UInt256:6); };
+      const "interact":T_Null:13 = interact("B")."acceptParams"("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:6); };
     claim(CT_Require)(DLC_Bool True);
     only("B") {
        };
-    publish("B", join("B":T_Address:14))()().pay("array idx":T_UInt256:5).timeout(DLC_Int 10, {
+    publish("B", join("B":T_Address:14))()().pay("tuple idx":T_UInt256:5).timeout(DLC_Int 10, {
       prompt(Left 21) {
         only("A") {
            };
@@ -48,15 +48,15 @@ prompt(Left 0) {
           throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:31:17:string "Bob quits").to(21); } };
       return DLC_Bytes "Bob quits"; }){
       const "prim":T_UInt256:15 = TXN_VALUE();
-      const "prim":T_Bool:16 = PEQ("array idx":T_UInt256:5,"prim":T_UInt256:15);
+      const "prim":T_Bool:16 = PEQ("tuple idx":T_UInt256:5,"prim":T_UInt256:15);
       claim(CT_Require)("prim":T_Bool:16);
       loopvar {
         "count":T_UInt256:25 = DLC_Int 0,
         "outcome":T_UInt256:26 = DLC_Int 1};
       invariant{
         const "prim":T_UInt256:27 = BALANCE();
-        const "prim":T_UInt256:28 = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-        const "prim":T_UInt256:29 = ADD("prim":T_UInt256:28,"array idx":T_UInt256:6);
+        const "prim":T_UInt256:28 = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+        const "prim":T_UInt256:29 = ADD("prim":T_UInt256:28,"tuple idx":T_UInt256:6);
         const "prim":T_Bool:30 = PEQ("prim":T_UInt256:27,"prim":T_UInt256:29);
         const "prim":T_Bool:32 = PLE(DLC_Int 0,"outcome":T_UInt256:26);
         const "prim":T_Bool:33 = PLT("outcome":T_UInt256:26,DLC_Int 5);
@@ -271,23 +271,23 @@ prompt(Left 0) {
       const "prim":T_Bool:223 = PEQ("outcome":T_UInt256:26,DLC_Int 1);
       const "prim":T_Bool:225 = IF_THEN_ELSE("prim":T_Bool:223,DLC_Bool False,DLC_Bool True);
       claim(CT_Assert)("prim":T_Bool:225);
-      prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:221:37:block "one of [\"getsA\",\"getsB\"] (as clo app)" (T_Array [T_UInt256,T_UInt256]) 226)) {
+      prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:221:37:block "one of [\"getsA\",\"getsB\"] (as clo app)" (T_Tuple [T_UInt256,T_UInt256]) 226)) {
         const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 = PEQ("outcome":T_UInt256:26,DLC_Int 2);
         if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:227 then {
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-          throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:223:18:array [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 228),SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:223:36:decimal 0]).to(226); }
+          const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:228 = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+          throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:223:18:tuple [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 228),SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:223:36:decimal 0]).to(226); }
         else {
           const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 = PEQ("outcome":T_UInt256:26,DLC_Int 0);
           if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 then {
-            const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 = MUL(DLC_Int 2,"array idx":T_UInt256:5);
-            throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:225:18:array [SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:225:19:decimal 0,SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 230)]).to(226); }
+            const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 = MUL(DLC_Int 2,"tuple idx":T_UInt256:5);
+            throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:225:18:tuple [SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:225:19:decimal 0,SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 230)]).to(226); }
           else {
-            throw(SLV_Array /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:227:18:array [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:169:8:dot "array idx" T_UInt256 5),SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:169:8:dot "array idx" T_UInt256 5)]).to(226); }; }; };
-      const "array idx":T_UInt256:231 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226[DLC_Int 0];
-      const "array idx":T_UInt256:232 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Array [T_UInt256,T_UInt256]:226[DLC_Int 1];
-      const "prim":T_UInt256:233 = ADD("array idx":T_UInt256:6,"array idx":T_UInt256:231);
+            throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:227:18:tuple [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:169:8:dot "tuple idx" T_UInt256 5),SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:169:8:dot "tuple idx" T_UInt256 5)]).to(226); }; }; };
+      const "tuple idx":T_UInt256:231 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226[0];
+      const "tuple idx":T_UInt256:232 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:226[1];
+      const "prim":T_UInt256:233 = ADD("tuple idx":T_UInt256:6,"tuple idx":T_UInt256:231);
       transfer.("prim":T_UInt256:233).to("A":T_Address:7);
-      transfer.("array idx":T_UInt256:232).to("B":T_Address:14);
+      transfer.("tuple idx":T_UInt256:232).to("B":T_Address:14);
       commit();
       prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:25:25:block "clo app" T_Bytes 234)) {
         const "prim":T_Bool:236 = PLE(DLC_Int 0,"outcome":T_UInt256:26);

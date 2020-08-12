@@ -42,9 +42,12 @@ typeSubst at env ty =
       doms' <- mapM iter doms
       rng' <- typeSubst at env rng
       return $ T_Fun doms' rng'
-    T_Array ts -> do
+    T_Array t sz -> do
+      t' <- iter t
+      return $ T_Array t' sz
+    T_Tuple ts -> do
       ts' <- mapM iter ts
-      return $ T_Array ts'
+      return $ T_Tuple ts'
     T_Obj oenv -> do
       oenv' <- mapM iter oenv
       return $ T_Obj oenv'
@@ -101,7 +104,7 @@ argTypeOf d =
   case d of
     DLA_Var (DLVar _ _ t _) -> t
     DLA_Con c -> conTypeOf c
-    DLA_Array as -> T_Array $ map argTypeOf as
+    DLA_Tuple as -> T_Tuple $ map argTypeOf as
     DLA_Obj senv -> T_Obj $ M.map argTypeOf senv
     DLA_Interact _ _ t -> t
 
@@ -112,7 +115,7 @@ slToDL at v =
     SLV_Bool _ b -> DLA_Con $ DLC_Bool b
     SLV_Int _ i -> DLA_Con $ DLC_Int i
     SLV_Bytes _ bs -> DLA_Con $ DLC_Bytes bs
-    SLV_Array _ vs -> DLA_Array $ map (slToDL at) vs
+    SLV_Tuple _ vs -> DLA_Tuple $ map (slToDL at) vs
     SLV_Object _ fenv ->
       DLA_Obj $ M.map ((slToDL at) . snd) fenv
     SLV_Clo _ _ _ _ _ -> none

@@ -35,13 +35,14 @@ instance CollectsTypes DLVar where
 instance CollectsTypes DLArg where
   cts (DLA_Var v) = cts v
   cts (DLA_Con {}) = mempty
-  cts (DLA_Array as) = cts as
+  cts (DLA_Tuple as) = cts as
   cts (DLA_Obj m) = cts m
   cts (DLA_Interact _ _ t) = cts t
 
 instance CollectsTypes DLExpr where
   cts (DLE_PrimOp _ _ as) = cts as
-  cts (DLE_ArrayRef _ a i) = cts a <> cts i
+  cts (DLE_ArrayRef _ a _ i) = cts a <> cts i
+  cts (DLE_TupleRef _ t _) = cts t
   cts (DLE_ObjectRef _ a _) = cts a
   cts (DLE_Interact _ _ _ t as) = cts t <> cts as
   cts (DLE_Digest _ as) = cts as
