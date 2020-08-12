@@ -1,10 +1,10 @@
 TAG="reachsh/examples-nim:v0.1.1"
 
-build/%.mjs: %.rsh
-	../../reachc -o build $^
+build/%.main.mjs: %.rsh
+	../../reachc -o build $^ main
 
 .PHONY: build
-build: build/nim.mjs
+build: build/index.main.mjs
 	docker build --tag=$(TAG) .
 
 .PHONY: push
@@ -25,4 +25,4 @@ down:
 
 .PHONY: clean
 clean:
-	rm -f build/nim.mjs
+	rm -f build/index.main.mjs

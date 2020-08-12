@@ -1,6 +1,6 @@
 import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
 import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
-import * as NIM from './build/nim.mjs';
+import * as NIM from './build/index.main.mjs';
 
 ( async () => {
 
@@ -30,25 +30,16 @@ import * as NIM from './build/nim.mjs';
 
   const interactWith = (name) => {
     return {
-      getWagerAmount: () => {
-        console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${proto}`);
-        return wagerAmount; }
-      , getInitialHeap: () => {
-        console.log(`${name} publishes parameters of game: heap is 21`);
-        return stdlib.toBN(21); }
-      , acceptWager: (givenWagerAmount, givenInitialHeap) => {
-        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto} and heap of ${givenInitialHeap}`);
-        return true; }
-      , getHeap: (heap1, heap2) => {
-        console.log(`${name} chooses a heap from: ${heap1} and ${heap2}`);
-        return stdlib.gt(heap1, heap2); }
-      , getAmount: (heap1, heap2) => {
-        void(heap1, heap2);
-        console.log(`${name} chooses an amount of 1`);
-        return stdlib.toBN(1); }
+      getParams: () => {
+        console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${proto} and heap is 21`);
+        return [ wagerAmount, stdlib.toBN(21) ]; }
+      , acceptParams: (givenWagerAmount, givenInitialHeap) => {
+        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto} and heap of ${givenInitialHeap}`); }
+      , getMove: (heap1, heap2) => {
+        console.log(`${name} chooses a heap from: ${heap1} and ${heap2} with amount 1`);
+        return [ stdlib.gt(heap1, heap2), stdlib.toBN(1) ]; }
       , showOutcome: (outcome) => {
-        console.log(`${name} sees the final outcome: ${outcome}`);
-        return true; } }; };
+        console.log(`${name} sees the final outcome: ${outcome}`); } }; };
 
   const [ outcomeAlice, outcomeBob ] =
         await Promise.all([
