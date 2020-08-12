@@ -90,7 +90,6 @@ instance Monoid SecurityLevel where
 --- Static Language
 type SLVar = String
 
---- XXX Make a DLType that removes stuff that can't be in DL?
 data SLType
   = T_Null
   | T_Bool
