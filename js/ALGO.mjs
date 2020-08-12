@@ -39,15 +39,36 @@ const hexOf = x =>
       ? un0x(toHex(x))
       : un0x(toHex(`0x${x}`));
 
-const checkType = (t, x) => {
-  if ( t === 'bool' ) { return typeof(x) === 'boolean'; }
-  else if ( t === 'uint256' ) { return isBN(x); }
-  else if ( t === 'bytes' || t === 'address' ) { return isHex(x) || typeof(x) === 'string'; }
-  else { panic(`Unknown type: ${t}`); } };
+export const T_Null = (v) => v == null;
 
-export const isType = (t, x) => {
-  if ( checkType(t, x) ) { return x; }
-  else { panic(`Expected ${t}, got: "${x}"`); } };
+export const T_Bool = (v) => typeof(v) === 'boolean';
+
+export const T_UInt256 = (v) => isBN(v);
+
+export const T_Bytes = (x) => typeof(x) === 'string';
+
+export const T_Address = (x) => isHex(x) || typeof(x) === 'string';
+
+export const T_Array = (ctc, sz) => (args) => {
+  if (sz != args.length) { return false; }
+  for ( let i = 0; i < sz; i++ ) {
+    if ( ! ctc(args[i]) ) { return false; } }
+  return true; };
+
+export const T_Tuple = (ctcs) => (args) => {
+  if (ctcs.length != args.length) { return false; }
+  for ( let i = 0; i < ctcs.length; i++ ) {
+    if ( ! ctcs[i](args[i]) ) { return false; } }
+  return true; };
+
+export const T_Object = (co) => (vo) => {
+  for ( const prop in co ) {
+    if ( ! co[prop](vo[prop]) ) { return false; } }
+  return true; };
+
+export const protect = (how, what) => {
+  if ( how(what) ) { return what; }
+  else { return panic(`Expected ${how}, got: "${what}"`); } };
 
 export const assert = d => nodeAssert.strict(d);
 
@@ -109,8 +130,11 @@ export const bnToHex = (u, size = 32) => {
 export const bytes_eq = (x, y) =>
   hexOf(x) === hexOf(y);
 
-export const random_uint256 = () =>
+const random_uint256 = () =>
   hexToBN(byteArrayToHex(crypto.randomBytes(32)));
+
+export const hasRandom = {
+  random: random_uint256 };
 
 export const eq    = (a, b) => toBN(a).eq( toBN(b));
 export const add   = (a, b) => toBN(a).add(toBN(b));

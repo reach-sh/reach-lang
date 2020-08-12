@@ -62,22 +62,22 @@ export const T_Array = (ctc, sz) => (args) => {
   if (sz != args.length) { return false; }
   for ( let i = 0; i < sz; i++ ) {
     if ( ! ctc(args[i]) ) { return false; } }
-  return true; }
+  return true; };
 
 export const T_Tuple = (ctcs) => (args) => {
   if (ctcs.length != args.length) { return false; }
   for ( let i = 0; i < ctcs.length; i++ ) {
     if ( ! ctcs[i](args[i]) ) { return false; } }
-  return true; }
+  return true; };
 
 export const T_Object = (co) => (vo) => {
   for ( const prop in co ) {
     if ( ! co[prop](vo[prop]) ) { return false; } }
-  return true; }
+  return true; };
 
 export const protect = (how, what) => {
   if ( how(what) ) { return what; }
-  else { panic(`Expected ${how}, got: "${what}"`); } };
+  else { return panic(`Expected ${how}, got: "${what}"`); } };
 
 export const assert = d => nodeAssert.strict(d);
 
