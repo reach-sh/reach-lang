@@ -1,5 +1,5 @@
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
-import * as MULTISIG from './build/multisig.mjs';
+import * as MULTISIG from './build/index.main.mjs';
 
 ( async () => {
   const startingBalance = stdlib.toWeiBN('100', 'ether');
