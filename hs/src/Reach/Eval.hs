@@ -284,7 +284,6 @@ instance Show EvalError where
       "each not given a tuple as an argument, instead got " <> displaySlValType slval
     Err_Transfer_NotBound who ->
       "cannot transfer to unbound participant, " <> B.unpack who
-      
 
 ensure_public :: SrcLoc -> SLSVal -> SLVal
 ensure_public at (lvl, v) =
@@ -328,7 +327,7 @@ base_env =
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
-    , ("Reach"
+    , ( "Reach"
       , (SLV_Object srcloc_top $
            m_fromList_public
              [("App", SLV_Form SLForm_App)])
@@ -615,7 +614,7 @@ evalForm ctxt at env f args =
       SLRes part_lifts (_, parts_v) <- evalExpr ctxt at env partse
       case parts_v of
         SLV_Tuple _ part_vs -> do
-          res <- mapM (\part -> evalForm ctxt at env (SLForm_Part_Only part) [ thunke ]) part_vs
+          res <- mapM (\part -> evalForm ctxt at env (SLForm_Part_Only part) [thunke]) part_vs
           let res' = map (\(SLRes x (_, y)) -> (x, y)) res
           return $ SLRes part_lifts $ public $ SLV_Form $ SLForm_EachAns res'
         _ ->
@@ -764,11 +763,11 @@ evalPrim ctxt at env p sargs =
             lifts = return $ DLS_Transfer at (ctxt_stack ctxt) who_dla amt_dla
             who_dla =
               case map snd sargs of
-                [ SLV_Participant _ who _ _ Nothing ] ->
+                [SLV_Participant _ who _ _ Nothing] ->
                   case M.lookup who pdvs of
                     Just dv -> convert $ SLV_DLVar dv
                     Nothing -> expect_throw at $ Err_Transfer_NotBound who
-                [ one ] -> convert one
+                [one] -> convert one
                 _ -> illegal_args
             convert = checkType at T_Address
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "transfer.to"
@@ -1264,21 +1263,23 @@ evalStmt ctxt at sco ss =
               case typeOf only_at only_v of
                 (T_Null, _) -> (lifts', penvs')
                 (ty, _) -> expect_throw only_at (Err_Block_NotNull ty only_v)
-              where penvs' = M.insert who penv' penvs
-                    lifts' = return $ DLS_Only only_at who poalifts
+              where
+                penvs' = M.insert who penv' penvs
+                lifts' = return $ DLS_Only only_at who poalifts
             _ -> impossible "doPartOnlyAns not Part_OnlyAns"
       case (ctxt_mode ctxt, ev) of
         (SLC_Step {}, SLV_Prim SLPrim_exitted) ->
           expect_empty_tail "exit" JSNoAnnot sp at ks $
-          return $ SLRes elifts $ SLStmtRes env []
+            return $ SLRes elifts $ SLStmtRes env []
         (SLC_Step pdvs penvs, SLV_Form (SLForm_EachAns onlyans_l)) ->
           keepLifts lifts' $ evalStmt ctxt' at_after sco ks
           where
             (lifts', penvs') = foldl' one (mempty, penvs) onlyans_l
             one (lifts0, penvs0) (poalifts, poa) = (lifts1, penvs1)
-              where (lifts_, penvs1) = doPartOnlyAns penvs0 poalifts poa
-                    lifts1 = lifts0 <> lifts_
-            ctxt' = ctxt {ctxt_mode = SLC_Step pdvs penvs'}          
+              where
+                (lifts_, penvs1) = doPartOnlyAns penvs0 poalifts poa
+                lifts1 = lifts0 <> lifts_
+            ctxt' = ctxt {ctxt_mode = SLC_Step pdvs penvs'}
         (SLC_Step pdvs penvs, poa@(SLV_Form (SLForm_Part_OnlyAns {}))) ->
           keepLifts lifts' $ evalStmt ctxt' at_after sco ks
           where
@@ -1513,12 +1514,13 @@ evalStmt ctxt at sco ss =
       case mlsr of
         Nothing -> rsr
         Just (SLStmtRes _ lrets) -> SLStmtRes env rets
-          where rets =
-                  case (lrets, rrets) of
-                    ([], []) -> []
-                    ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
-                    (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
-                    (_, _) -> lrets ++ rrets
+          where
+            rets =
+              case (lrets, rrets) of
+                ([], []) -> []
+                ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
+                (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
+                (_, _) -> lrets ++ rrets
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =

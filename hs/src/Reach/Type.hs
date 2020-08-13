@@ -3,9 +3,9 @@ module Reach.Type (typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf, type
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.STRef
+import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Util
-import GHC.Stack (HasCallStack)
 
 --- FIXME implement a custom show that is useful
 data TypeError

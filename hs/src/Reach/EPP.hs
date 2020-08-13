@@ -4,14 +4,13 @@ import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.STRef
+import Data.Text.Prettyprint.Doc
+import Debug.Trace
 import Reach.AST
 import Reach.CollectCounts
+import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Util
-
-import Data.Text.Prettyprint.Doc
-import Reach.Pretty()
-import Debug.Trace
 
 data ProRes_ a = ProRes_ Counts a
   deriving (Eq, Show)
@@ -99,10 +98,10 @@ epp_m done back skip look c =
             in back' cs' (PL_Var at dv k'))
     LL_Set at dv da k ->
       look
-      k
-      (\back' _skip' k_cs k' ->
-         let cs' = counts da <> count_rms [dv] k_cs
-         in back' cs' (PL_Set at dv da k'))
+        k
+        (\back' _skip' k_cs k' ->
+           let cs' = counts da <> count_rms [dv] k_cs
+            in back' cs' (PL_Set at dv da k'))
     LL_Claim at f ct ca k ->
       case ct of
         CT_Assert -> skip k
@@ -157,7 +156,7 @@ epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
     LLC_Com c -> do
-      traceM $ "LLC_Com on " ++ (take 64 $ show c) 
+      traceM $ "LLC_Com on " ++ (take 64 $ show c)
       r@(ProResC _ (ProRes_ cs _)) <- epp_m done back skip look c
       traceM $ "LLC_Com on " ++ (take 64 $ show c) ++ " = " ++ (show $ map pretty $ counts_nzs cs)
       return r

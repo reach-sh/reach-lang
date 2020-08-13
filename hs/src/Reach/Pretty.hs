@@ -137,10 +137,11 @@ instance Pretty DLStmt where
         "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret bodys ->
         "prompt" <> parens pret <+> ns bodys <> semi
-        where pret =
-                case ret of
-                  Left _ -> emptyDoc
-                  Right dv -> "let" <+> pretty dv
+        where
+          pret =
+            case ret of
+              Left _ -> emptyDoc
+              Right dv -> "let" <+> pretty dv
       DLS_Stop _ _ ->
         prettyStop
       DLS_Only _ who onlys ->
@@ -262,7 +263,8 @@ instance Pretty a => Pretty (PLCommon a) where
       PL_Return _at -> mempty
       PL_Let _at lc dv de k ->
         "const" <+> pretty lc <> pretty dv <+> "=" <+> pretty de <> semi
-        <> hardline <> pretty k
+          <> hardline
+          <> pretty k
       PL_Eff _ de k ->
         "eff" <+> pretty de <> semi <> hardline <> pretty k
       PL_Var _at dv k ->

@@ -83,7 +83,7 @@ jsContract = \case
   T_Bytes -> "stdlib.T_Bytes"
   T_Address -> "stdlib.T_Address"
   T_Fun {} -> impossible "fun dl"
-  T_Array t sz -> jsApply ("stdlib.T_Array") $ [ jsContract t, jsCon (DLC_Int sz) ]
+  T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLC_Int sz)]
   T_Tuple as -> jsApply ("stdlib.T_Tuple") $ [jsArray $ map jsContract as]
   T_Obj m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
   T_Forall {} -> impossible "forall dl"
@@ -140,9 +140,9 @@ jsExpr :: JSCtxt -> DLExpr -> Doc a
 jsExpr ctxt = \case
   DLE_PrimOp _ p as ->
     jsPrimApply ctxt p $ map jsArg as
-  DLE_ArrayRef _ _ aa _ ia ->    
+  DLE_ArrayRef _ _ aa _ ia ->
     jsArg aa <> brackets (jsArg ia)
-  DLE_TupleRef _ aa i ->    
+  DLE_TupleRef _ aa i ->
     jsArg aa <> brackets (jsCon $ DLC_Int i)
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f

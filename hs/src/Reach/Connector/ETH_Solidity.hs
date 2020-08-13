@@ -501,14 +501,15 @@ extract :: Value -> Either String ConnectorResult
 extract v = case fromJSON v of
   Error e -> Left e
   Success CompiledSolRec {csrAbi, csrCode} ->
-    Right $ M.fromList
-            [ ( "ETH"
-              , M.fromList
-                [ ("ABI", csrAbi)
-                , ("Bytecode", "0x" <> csrCode)
-                ]
-              )
-            ]
+    Right $
+      M.fromList
+        [ ( "ETH"
+          , M.fromList
+              [ ("ABI", csrAbi)
+              , ("Bytecode", "0x" <> csrCode)
+              ]
+          )
+        ]
 
 compile_sol :: FilePath -> IO ConnectorResult
 compile_sol solf = do
@@ -523,11 +524,17 @@ compile_sol solf = do
           case extract v of
             Right cr -> return cr
             Left err ->
-              die $ "failed to extract valid output from solc:\n" ++ show_output
-              ++ "Decode:\n" ++ err ++ "\n"
+              die $
+                "failed to extract valid output from solc:\n" ++ show_output
+                  ++ "Decode:\n"
+                  ++ err
+                  ++ "\n"
         Left err ->
-          die $ "solc failed to produce valid output:\n" ++ show_output
-          ++ "Decode:\n" ++ err ++ "\n"
+          die $
+            "solc failed to produce valid output:\n" ++ show_output
+              ++ "Decode:\n"
+              ++ err
+              ++ "\n"
 
 connect_eth :: Connector
 connect_eth outn pl = do

@@ -478,7 +478,7 @@ smt_e ctxt at_dv dv de =
       verify1 ctxt at f TBounds check_se
       pathAddBound ctxt at_dv dv bo se
       where
-        se = smtApply "select" [ arr_da', idx_da' ]
+        se = smtApply "select" [arr_da', idx_da']
         check_se = uint256_le idx_da' (smt_c ctxt at $ DLC_Int sz)
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
@@ -732,11 +732,11 @@ _smtDefineTypes smt ts = do
             tni <- type_name et
             let tn = fst tni
             let tinv = snd tni
-            void $ SMT.command smt $ smtApply "define-sort" [ Atom n, List [], smtApply "Array" [ Atom tn, uint256_sort ] ]
+            void $ SMT.command smt $ smtApply "define-sort" [Atom n, List [], smtApply "Array" [Atom tn, uint256_sort]]
             void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
             let inv se = do
-                  let invarg i = tinv $ smtApply "select" [ se, smt_c (error "no context") (error "no at") (DLC_Int $ i) ]
-                  mapM_ invarg [0..(sz-1)]
+                  let invarg i = tinv $ smtApply "select" [se, smt_c (error "no context") (error "no at") (DLC_Int $ i)]
+                  mapM_ invarg [0 .. (sz -1)]
             return inv
           T_Tuple ats -> do
             ts_nis <- mapM type_name ats
