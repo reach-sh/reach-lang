@@ -1,0 +1,44 @@
+Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TAssert
+  at ./assert_gt.rsh:8:13:application
+  at ./assert_gt.rsh:5:11:application call to "arrow" (defined at: ./assert_gt.rsh:5:15:arrow)
+
+  Theorem formalization:
+  v2
+
+  This could be violated if...
+    "v1" = 0
+      (from: v1)
+      (bound at: ./assert_gt.rsh:6:31:application)
+      (because: evaluating interact("A")."getX"())
+
+  In context...
+    "v2" = (> v1 0 )
+      (from: v2)
+      (bound at: ./assert_gt.rsh:application)
+      (because: evaluating PGT(v1,DLC_Int 0))
+Verifying with mode = VM_Dishonest RoleContract
+Verifying with mode = VM_Dishonest (RolePart "A")
+Verification failed:
+  in VM_Dishonest (RolePart "A") mode
+  of theorem TAssert
+  at ./assert_gt.rsh:8:13:application
+  at ./assert_gt.rsh:5:11:application call to "arrow" (defined at: ./assert_gt.rsh:5:15:arrow)
+
+  Theorem formalization:
+  v2
+
+  This could be violated if...
+    "v1" = 0
+      (from: v1)
+      (bound at: ./assert_gt.rsh:6:31:application)
+      (because: evaluating interact("A")."getX"())
+
+  In context...
+    "v2" = (> v1 0 )
+      (from: v2)
+      (bound at: ./assert_gt.rsh:application)
+      (because: evaluating PGT(v1,DLC_Int 0))
+Checked 5 theorems; 2 failures. :'(

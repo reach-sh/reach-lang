@@ -1,0 +1,68 @@
+Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TAssert
+  at ./assert_more_expr.rsh:11:13:application
+  at ./assert_more_expr.rsh:7:11:application call to "arrow" (defined at: ./assert_more_expr.rsh:7:15:arrow)
+
+  Theorem formalization:
+  v5
+
+  This could be violated if...
+    "v1" = 0
+      (from: v1)
+      (bound at: ./assert_more_expr.rsh:8:32:application)
+      (because: evaluating interact("A")."getX"())
+    "v2" = 1
+      (from: v2)
+      (bound at: ./assert_more_expr.rsh:9:32:application)
+      (because: evaluating interact("A")."getX"())
+
+  In context...
+    "v5" = (= v4 v3 )
+      (from: v5)
+      (bound at: ./assert_more_expr.rsh:application)
+      (because: evaluating PEQ(v4,v3))
+    "v3" = (* v1 2 )
+      (from: v3)
+      (bound at: ./assert_more_expr.rsh:application)
+      (because: evaluating MUL(v1,DLC_Int 2))
+    "v4" = (+ v1 v2 )
+      (from: v4)
+      (bound at: ./assert_more_expr.rsh:application)
+      (because: evaluating ADD(v1,v2))
+Verifying with mode = VM_Dishonest RoleContract
+Verifying with mode = VM_Dishonest (RolePart "A")
+Verification failed:
+  in VM_Dishonest (RolePart "A") mode
+  of theorem TAssert
+  at ./assert_more_expr.rsh:11:13:application
+  at ./assert_more_expr.rsh:7:11:application call to "arrow" (defined at: ./assert_more_expr.rsh:7:15:arrow)
+
+  Theorem formalization:
+  v5
+
+  This could be violated if...
+    "v1" = 0
+      (from: v1)
+      (bound at: ./assert_more_expr.rsh:8:32:application)
+      (because: evaluating interact("A")."getX"())
+    "v2" = 1
+      (from: v2)
+      (bound at: ./assert_more_expr.rsh:9:32:application)
+      (because: evaluating interact("A")."getX"())
+
+  In context...
+    "v5" = (= v4 v3 )
+      (from: v5)
+      (bound at: ./assert_more_expr.rsh:application)
+      (because: evaluating PEQ(v4,v3))
+    "v3" = (* v1 2 )
+      (from: v3)
+      (bound at: ./assert_more_expr.rsh:application)
+      (because: evaluating MUL(v1,DLC_Int 2))
+    "v4" = (+ v1 v2 )
+      (from: v4)
+      (bound at: ./assert_more_expr.rsh:application)
+      (because: evaluating ADD(v1,v2))
+Checked 5 theorems; 2 failures. :'(
