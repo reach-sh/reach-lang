@@ -311,18 +311,18 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
     const "prim":T_Bool:254 = PEQ("outcome":T_UInt256:33,DLC_Int 1);
     const "prim":T_Bool:256 = IF_THEN_ELSE("prim":T_Bool:254,DLC_Bool False,DLC_Bool True);
     claim(CT_Assert)("prim":T_Bool:256);
-    prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:236:37:block "one of [\"getsA\",\"getsB\"] (as clo app)" (T_Tuple [T_UInt256,T_UInt256]) 257)) {
+    prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:232:37:block "one of [\"getsA\",\"getsB\"] (as clo app)" (T_Tuple [T_UInt256,T_UInt256]) 257)) {
       const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:258 = PEQ("outcome":T_UInt256:33,DLC_Int 2);
       if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:258 then {
         const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:259 = MUL(DLC_Int 2,"tuple idx":T_UInt256:4);
-        throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:238:18:tuple [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 259),SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:238:36:decimal 0]).to(257); }
+        throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:234:18:tuple [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 259),SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:234:36:decimal 0]).to(257); }
       else {
         const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:260 = PEQ("outcome":T_UInt256:33,DLC_Int 0);
         if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:260 then {
           const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:261 = MUL(DLC_Int 2,"tuple idx":T_UInt256:4);
-          throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:240:18:tuple [SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:240:19:decimal 0,SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 261)]).to(257); }
+          throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:236:18:tuple [SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:236:19:decimal 0,SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:application "one of [\"getsA\",\"getsB\"] (as prim)" T_UInt256 261)]).to(257); }
         else {
-          throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:242:18:tuple [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:184:8:dot "tuple idx" T_UInt256 4),SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:184:8:dot "tuple idx" T_UInt256 4)]).to(257); }; }; };
+          throw(SLV_Tuple /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:238:18:tuple [SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:180:8:dot "tuple idx" T_UInt256 4),SLV_DLVar (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:180:8:dot "tuple idx" T_UInt256 4)]).to(257); }; }; };
     const "tuple idx":T_UInt256:262 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:257[0];
     const "tuple idx":T_UInt256:263 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:257[1];
     const "prim":T_UInt256:264 = ADD("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:262);

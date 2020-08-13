@@ -1,10 +1,11 @@
-module Reach.Type (typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf, checkType) where
+module Reach.Type (typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf, typeOfM, checkType) where
 
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.STRef
 import Reach.AST
 import Reach.Util
+import GHC.Stack (HasCallStack)
 
 --- FIXME implement a custom show that is useful
 data TypeError
@@ -108,39 +109,45 @@ argTypeOf d =
     DLA_Obj senv -> T_Obj $ M.map argTypeOf senv
     DLA_Interact _ _ t -> t
 
-slToDL :: SrcLoc -> SLVal -> DLArg
+slToDL :: HasCallStack => SrcLoc -> SLVal -> Maybe DLArg
 slToDL at v =
   case v of
-    SLV_Null _ _ -> DLA_Con $ DLC_Null
-    SLV_Bool _ b -> DLA_Con $ DLC_Bool b
-    SLV_Int _ i -> DLA_Con $ DLC_Int i
-    SLV_Bytes _ bs -> DLA_Con $ DLC_Bytes bs
-    SLV_Tuple _ vs -> DLA_Tuple $ map (slToDL at) vs
-    SLV_Object _ fenv ->
-      DLA_Obj $ M.map ((slToDL at) . snd) fenv
-    SLV_Clo _ _ _ _ _ -> none
-    SLV_DLVar dv -> DLA_Var dv
-    SLV_Type _ -> none
+    SLV_Null _ _ -> return $ DLA_Con $ DLC_Null
+    SLV_Bool _ b -> return $ DLA_Con $ DLC_Bool b
+    SLV_Int _ i -> return $ DLA_Con $ DLC_Int i
+    SLV_Bytes _ bs -> return $ DLA_Con $ DLC_Bytes bs
+    SLV_Tuple _ vs -> do
+      ds <- mapM (slToDL at) vs
+      return $ DLA_Tuple $ ds
+    SLV_Object _ fenv -> do
+      denv <- mapM ((slToDL at) . snd) fenv
+      return $ DLA_Obj denv
+    SLV_Clo _ _ _ _ _ -> Nothing
+    SLV_DLVar dv -> return $ DLA_Var dv
+    SLV_Type _ -> Nothing
     SLV_Participant _ _ _ _ mdv ->
       case mdv of
-        Nothing -> none
-        Just dv -> DLA_Var dv
+        Nothing -> Nothing
+        Just dv -> return $ DLA_Var dv
     SLV_Prim (SLPrim_interact _ who m t) ->
       case t of
-        T_Var {} -> none
-        T_Forall {} -> none
-        T_Fun {} -> none
-        _ -> DLA_Interact who m t
-    SLV_Prim _ -> none
-    SLV_Form _ -> none
-  where
-    none = expect_throw at $ Err_Type_None v
+        T_Var {} -> Nothing
+        T_Forall {} -> Nothing
+        T_Fun {} -> Nothing
+        _ -> return $ DLA_Interact who m t
+    SLV_Prim _ -> Nothing
+    SLV_Form _ -> Nothing
 
-typeOf :: SrcLoc -> SLVal -> (SLType, DLArg)
-typeOf at v = (t, da)
-  where
-    da = slToDL at v
-    t = argTypeOf da
+typeOfM :: HasCallStack => SrcLoc -> SLVal -> Maybe (SLType, DLArg)
+typeOfM at v = do
+  da <- slToDL at v
+  return $ (argTypeOf da, da)
+
+typeOf :: HasCallStack => SrcLoc -> SLVal -> (SLType, DLArg)
+typeOf at v =
+  case typeOfM at v of
+    Just x -> x
+    Nothing -> expect_throw at $ Err_Type_None v
 
 typeCheck :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArg
 typeCheck at env ty val = typeCheck_help at env ty val val_ty res

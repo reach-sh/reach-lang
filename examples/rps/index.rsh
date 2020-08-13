@@ -103,9 +103,7 @@ export const once =
     (A, B, O) => {
       function sendOutcome(which) {
         return () => {
-          A.only((which) => {
-            interact.endsWith(showOutcome(which)); });
-          B.only((which) => {
+          each([A, B], (which) => {
             interact.endsWith(showOutcome(which)); }); }; };
       
       A.only(() => {
@@ -173,9 +171,7 @@ export const nodraw =
     (A, B, O) => {
       function sendOutcome(which) {
         return () => {
-          A.only((which) => {
-            interact.endsWith(showOutcome(which)); });
-          B.only((which) => {
+          each([A, B], (which) => {
             interact.endsWith(showOutcome(which)); }); }; };
 
       A.only(() => {

@@ -140,6 +140,8 @@ instance NFData ToConsensusMode
 
 data SLForm
   = SLForm_App
+  | SLForm_each
+  | SLForm_EachAns [(DLStmts, SLVal)]
   | SLForm_Part_Only SLVal
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
   | SLForm_Part_OnlyAns SrcLoc SLPart SLEnv SLVal

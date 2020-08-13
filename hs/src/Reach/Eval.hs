@@ -103,15 +103,17 @@ data EvalError
   | Err_TopFun_NoName
   | Err_Top_NotApp SLVal
   | Err_While_IllegalInvariant [JSExpression]
+  | Err_Only_NotOneClosure [SLVal]
+  | Err_Each_NotTuple SLVal
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
 
---- FIXME typeOf may fail causing an error within an error...?
---- Answer: Make a new function named typeOfM that returns a maybe and
---- have typeOf error on Nothing
 displaySlValType :: SLVal -> String
-displaySlValType = displayTy . fst . typeOf (SrcLoc Nothing Nothing Nothing)
+displaySlValType sv =
+  case typeOfM (SrcLoc Nothing Nothing Nothing) sv of
+    Just (t, _) -> displayTy t
+    Nothing -> "<" <> conNameOf sv <> ">"
 
 displayTyList :: [SLType] -> String
 displayTyList tys =
@@ -265,9 +267,7 @@ instance Show EvalError where
       where
         found = show (length stmts) <> " more statements"
     Err_ToConsensus_Double mode -> case mode of
-      --- FIXME is this syntactically possible?
-      --- Answer: This means that they wrote A.publish().publish(), etc
-      TCM_Publish -> "Invalid double publish. Hint: commit() before publishing again."
+      TCM_Publish -> "Invalid double publish."
       _ -> "Invalid double toConsensus."
     Err_TopFun_NoName ->
       "Invalid function declaration. Top-level functions must be named."
@@ -277,6 +277,10 @@ instance Show EvalError where
       "Invalid while loop invariant. Expected 1 expr, but got " <> got
       where
         got = show $ length exprs
+    Err_Only_NotOneClosure slvals ->
+      "PART.only not given a single closure as an argument, instead got " <> (show $ map displaySlValType slvals)
+    Err_Each_NotTuple slval ->
+      "each not given a tuple as an argument, instead got " <> displaySlValType slval
 
 ensure_public :: SrcLoc -> SLSVal -> SLVal
 ensure_public at (lvl, v) =
@@ -319,7 +323,12 @@ base_env =
     , ("Object", SLV_Prim SLPrim_Object)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
+<<<<<<< HEAD
     , ( "Reach"
+=======
+    , ("each", SLV_Form SLForm_each)
+    , ("Reach"
+>>>>>>> 4b34145... Add each
       , (SLV_Object srcloc_top $
            m_fromList_public
              [("App", SLV_Form SLForm_App)])
@@ -576,7 +585,7 @@ evalForm ctxt at env f args =
                 evalApplyVals ctxt_localstep at (impossible "Part_only expects clo") only_clo only_args
               let penv'' = foldr' M.delete penv' only_formals
               return $ SLRes (oarg_lifts <> elifts <> alifts) $ public $ SLV_Form $ SLForm_Part_OnlyAns at who penv'' ans
-            _ -> illegal_args 1
+            _ -> expect_throw at $ Err_Only_NotOneClosure $ map snd eargs
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "part.only"
     SLForm_Part_Only _ -> impossible "SLForm_Part_Only args"
     SLForm_Part_OnlyAns {} -> impossible "SLForm_Part_OnlyAns"
@@ -601,6 +610,17 @@ evalForm ctxt at env f args =
             Nothing ->
               expect_throw at $ Err_Eval_NotApplicable rator
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "toConsensus"
+    SLForm_each -> do
+      let (partse, thunke) = two_args
+      SLRes part_lifts (_, parts_v) <- evalExpr ctxt at env partse
+      case parts_v of
+        SLV_Tuple _ part_vs -> do
+          res <- mapM (\part -> evalForm ctxt at env (SLForm_Part_Only part) [ thunke ]) part_vs
+          let res' = map (\(SLRes x (_, y)) -> (x, y)) res
+          return $ SLRes part_lifts $ public $ SLV_Form $ SLForm_EachAns res'
+        _ ->
+          expect_throw at $ Err_Each_NotTuple parts_v
+    SLForm_EachAns {} -> impossible "SLForm_Part_OnlyAns"
   where
     illegal_args n = expect_throw at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -608,6 +628,9 @@ evalForm ctxt at env f args =
     one_arg = case args of
       [x] -> x
       _ -> illegal_args 1
+    two_args = case args of
+      [x, y] -> (x, y)
+      _ -> illegal_args 2
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLEnv -> PrimOp -> [SLSVal] -> SLComp s SLSVal
 evalPrimOp ctxt at _env p sargs =
@@ -1231,18 +1254,31 @@ evalStmt ctxt at sco ss =
       let env = sco_env sco
       SLRes elifts sev <- evalExpr ctxt at env e
       let (_, ev) = sev
+      let doPartOnlyAns penvs poalifts = \case
+            SLV_Form (SLForm_Part_OnlyAns only_at who penv' only_v) ->
+              case typeOf only_at only_v of
+                (T_Null, _) -> (lifts', penvs')
+                (ty, _) -> expect_throw only_at (Err_Block_NotNull ty only_v)
+              where penvs' = M.insert who penv' penvs
+                    lifts' = return $ DLS_Only only_at who poalifts
+            _ -> impossible "doPartOnlyAns not Part_OnlyAns"
       case (ctxt_mode ctxt, ev) of
         (SLC_Step {}, SLV_Prim SLPrim_exitted) ->
           expect_empty_tail "exit" JSNoAnnot sp at ks $
-            return $ SLRes elifts $ SLStmtRes env []
-        (SLC_Step pdvs penvs, SLV_Form (SLForm_Part_OnlyAns only_at who penv' only_v)) ->
-          case typeOf at_after only_v of
-            (T_Null, _) ->
-              keepLifts lifts' $ evalStmt ctxt' at_after sco ks
-              where
-                ctxt' = ctxt {ctxt_mode = SLC_Step pdvs $ M.insert who penv' penvs}
-                lifts' = return $ DLS_Only only_at who elifts
-            (ty, _) -> expect_throw at (Err_Block_NotNull ty ev)
+          return $ SLRes elifts $ SLStmtRes env []
+        (SLC_Step pdvs penvs, SLV_Form (SLForm_EachAns onlyans_l)) ->
+          keepLifts lifts' $ evalStmt ctxt' at_after sco ks
+          where
+            (lifts', penvs') = foldl' one (mempty, penvs) onlyans_l
+            one (lifts0, penvs0) (poalifts, poa) = (lifts1, penvs1)
+              where (lifts_, penvs1) = doPartOnlyAns penvs0 poalifts poa
+                    lifts1 = lifts0 <> lifts_
+            ctxt' = ctxt {ctxt_mode = SLC_Step pdvs penvs'}          
+        (SLC_Step pdvs penvs, poa@(SLV_Form (SLForm_Part_OnlyAns {}))) ->
+          keepLifts lifts' $ evalStmt ctxt' at_after sco ks
+          where
+            (lifts', penvs') = doPartOnlyAns penvs elifts poa
+            ctxt' = ctxt {ctxt_mode = SLC_Step pdvs penvs'}
         (SLC_Step pdvs penvs, SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mmsg mamt mtime)) -> do
           let penv = penvs M.! who
           (msg_env, tmsg_) <-
