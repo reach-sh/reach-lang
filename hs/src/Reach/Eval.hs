@@ -25,13 +25,14 @@ import Safe (atMay)
 import Text.EditDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
+{-
 import Debug.Trace
 import Data.Time.Clock
 import System.IO.Unsafe
-
 debugTrace :: Applicative f => String -> f ()
 debugTrace s =
   traceM $ show (unsafePerformIO $ getCurrentTime) ++ ":" ++ s
+-}
 
 compatibleVersion :: Version
 compatibleVersion = Version (take 2 br) []
@@ -768,8 +769,7 @@ evalPrim ctxt at env p sargs =
         _ -> illegal_args
 
 evalApplyVals :: SLCtxt s -> SrcLoc -> SLEnv -> SLVal -> [SLSVal] -> SLComp s SLAppRes
-evalApplyVals ctxt at env rator randvs = do
-  debugTrace $ "evalApplyVals " ++ (take 16 $ show rator)
+evalApplyVals ctxt at env rator randvs =
   case rator of
     SLV_Prim p -> do
       SLRes lifts val <- evalPrim ctxt at env p randvs
@@ -791,8 +791,14 @@ evalApplyVals ctxt at env rator randvs = do
       let no_prompt (lvl, v) = do
             let lifts' =
                   case body_lifts of
-                    body_lifts' Seq.:|> (DLS_Return _ x y)
-                      | x == ret && y == v ->
+                    body_lifts' Seq.:|> (DLS_Return _ the_ret_label _the_val)
+                      | the_ret_label == ret ->
+                        --- We don't check that the_val is v, because
+                        --- we're relying on the invariant that there
+                        --- was only one Return... this should be
+                        --- true, but if something changes in the
+                        --- future, this might be a place that an
+                        --- error could be introduced.
                         body_lifts'
                     _ ->
                       return $ DLS_Prompt body_at (Left ret) body_lifts
@@ -801,7 +807,6 @@ evalApplyVals ctxt at env rator randvs = do
         [] -> no_prompt $ public $ SLV_Null body_at "clo app"
         [(_, x)] -> no_prompt $ x
         _ -> do
-          debugTrace $ "clo has many results: " ++ show rs
           --- FIXME if all the values are actually the same, then we can treat this as a noprompt
           let r_ty = typeMeets body_at $ map (\(r_at, (_r_lvl, r_sv)) -> (r_at, (fst (typeOf r_at r_sv)))) rs
           let lvl = mconcat $ map fst $ map snd rs
@@ -875,8 +880,7 @@ evalPropertyPair ctxt at env fenv p =
       expect_throw at (Err_Obj_IllegalMethodDefinition p)
 
 evalExpr :: SLCtxt s -> SrcLoc -> SLEnv -> JSExpression -> SLComp s SLSVal
-evalExpr ctxt at env e = do
-  debugTrace $ "evalExpr " ++ (take 16 $ show e)
+evalExpr ctxt at env e =
   case e of
     JSIdentifier a x ->
       retV $ infectWithId x $ env_lookup (srcloc_jsa "id ref" a at) x env
@@ -1112,8 +1116,7 @@ evalDecls ctxt at rhs_env decls =
       keepLifts lifts $ evalDecl ctxt at lhs_env rhs_env decl
 
 evalStmt :: SLCtxt s -> SrcLoc -> SLScope -> [JSStatement] -> SLComp s SLStmtRes
-evalStmt ctxt at sco ss = do
-  debugTrace $ "evalStmt " ++ (take 16 $ show ss)
+evalStmt ctxt at sco ss =
   case ss of
     [] ->
       case sco_must_ret sco of
@@ -1230,7 +1233,6 @@ evalStmt ctxt at sco ss = do
       let env = sco_env sco
       SLRes elifts sev <- evalExpr ctxt at env e
       let (_, ev) = sev
-      debugTrace $ "expr stmt in " ++ (take 16 $ show $ ctxt_mode ctxt) ++ " returned " ++ (take 256 $ show ev)
       case (ctxt_mode ctxt, ev) of
         (SLC_Step {}, SLV_Prim SLPrim_exitted) ->
           expect_empty_tail "exit" JSNoAnnot sp at ks $
@@ -1313,19 +1315,13 @@ evalStmt ctxt at sco ss = do
             case mtime of
               Nothing -> return $ (mempty, (SLStmtRes env mempty), Nothing)
               Just (dt_at, de, (JSBlock _ dt_ss _)) -> do
-                debugTrace $ "ToConsensus before evalExpr delay"
                 SLRes de_lifts de_sv <- evalExpr ctxt at env de
-                debugTrace $ "ToConsensus after evalExpr delay"
                 let de_da = checkType dt_at T_UInt256 $ ensure_public dt_at de_sv
-                debugTrace $ "ToConsensus before evalStmt time"
                 SLRes dta_lifts dt_cr <- evalStmt ctxt dt_at sco dt_ss
-                debugTrace $ "ToConsensus after evalStmt time"
                 return $ (de_lifts, dt_cr, Just (de_da, dta_lifts))
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep env' pdvs' penvs'})
           let sco' = sco {sco_env = env'}
-          debugTrace $ "ToConsensus before evalStmt ks"
           SLRes conlifts k_cr <- evalStmt ctxt_cstep at_after sco' ks
-          debugTrace $ "ToConsensus after evalStmt ks"
           let lifts' = elifts <> tlifts <> amt_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da mtime' (amt_check_lifts <> conlifts))
           return $ SLRes lifts' $ combineStmtRes at_after Public t_cr k_cr
         (SLC_ConsensusStep orig_env pdvs penvs, SLV_Prim SLPrim_committed) -> do
