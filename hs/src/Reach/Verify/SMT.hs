@@ -872,7 +872,7 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger {..})
 
-verify_smt :: FilePath -> LLProg -> String -> [String] -> IO ()
+verify_smt :: FilePath -> LLProg -> String -> [String] -> IO ExitCode
 verify_smt logp lp prog args = do
   (close, logpl) <- newFileLogger logp
   smt <- SMT.newSolver prog args (Just logpl)
@@ -880,5 +880,7 @@ verify_smt logp lp prog args = do
   vec <- _verify_smt smt lp
   zec <- SMT.stop smt
   close
-  maybeDie $ return zec
-  maybeDie $ return vec
+  return $ case (zec, vec) of
+    (ExitSuccess, ExitSuccess) -> ExitSuccess
+    (e@ExitFailure {}, _) -> e
+    (_, e@ExitFailure {}) -> e

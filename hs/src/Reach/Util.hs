@@ -11,9 +11,8 @@ import System.Exit
 bpack :: String -> ByteString
 bpack = TE.encodeUtf8 . T.pack
 
-maybeDie :: IO ExitCode -> IO ()
-maybeDie ma = do
-  ec <- ma
+maybeDie :: ExitCode -> IO ()
+maybeDie ec = do
   unless
     (ec == ExitSuccess)
     (do (exitWith ec))

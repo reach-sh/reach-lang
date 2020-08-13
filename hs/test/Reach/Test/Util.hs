@@ -4,6 +4,7 @@ module Reach.Test.Util
   , goldenTests
   , mkSpecExamplesCoverCtors
   , stderroutExample
+  , stdoutStripAbs
   , tryHard
   )
 where
@@ -93,13 +94,30 @@ replaceBs findThis replaceWithThis = go
         Just bs1' -> bs0 <> replaceWithThis <> go bs1'
         Nothing -> inThis
 
+stripAbs :: FilePath -> LB.ByteString -> LB.ByteString
+stripAbs fp bs = LB.fromStrict bs'
+  where
+    bs' = replaceBs dir "." bsStrict
+    bsStrict = LB.toStrict bs
+    dir = bpack $ takeDirectory fp
+
 errExampleBsStripAbs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
 errExampleBsStripAbs k fp = do
   bs <- errExampleBs k fp
-  let bs' = replaceBs dir "." (LB.toStrict bs)
-  return $ LB.fromStrict bs'
-  where
-    dir = bpack $ takeDirectory fp
+  return $ stripAbs fp bs
+
+-- bs <- errExampleBs k fp
+-- let bs' = replaceBs dir "." (LB.toStrict bs)
+-- return $ LB.fromStrict bs'
+-- where
+--   dir = bpack $ takeDirectory fp
+
+-- TODO better name
+stdoutStripAbs :: String -> (FilePath -> IO LB.ByteString) -> FilePath -> TestTree
+stdoutStripAbs ext k fp = do
+  let goldenFile = replaceExtension fp ext
+      fpBase = takeBaseName fp
+  goldenVsString fpBase goldenFile (stripAbs fp <$> k fp)
 
 -- XXX This is a hack to make tests portable.
 -- Ideally the compiler errors would print relative paths?

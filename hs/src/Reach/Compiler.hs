@@ -10,6 +10,7 @@ import Reach.Eval
 import Reach.Linearize
 import Reach.Parser
 import Reach.Pretty ()
+import Reach.Util
 import Reach.Verify
 
 data CompilerOpts = CompilerOpts
@@ -28,7 +29,7 @@ compileNL copts = do
         out "dl" $ show $ pretty dl
         let ll = linearize dl
         out "ll" $ show $ pretty ll
-        verify outn ll
+        verify outn ll >>= maybeDie
         let pl = epp ll
         out "pl" $ show $ pretty pl
         --- FIXME The particular connector/backend should be part of

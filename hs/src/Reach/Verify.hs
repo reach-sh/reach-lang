@@ -3,11 +3,12 @@ module Reach.Verify (verify) where
 import qualified Data.Text as T
 import Reach.AST
 import Reach.Verify.SMT
+import System.Exit
 
 data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
-verify :: (T.Text -> String) -> LLProg -> IO ()
+verify :: (T.Text -> String) -> LLProg -> IO ExitCode
 verify outn lp =
   --- The verifier should not be choosable by the user, but we may
   --- automatically select different provers based on the attributes
