@@ -1,4 +1,4 @@
-module Reach.Type (TypeError (..), typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf) where
+module Reach.Type (typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf, checkType) where
 
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
@@ -177,3 +177,11 @@ checkAndConvert_i at env t args =
 
 checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArg])
 checkAndConvert at t args = runST $ checkAndConvert_i at mempty t args
+
+checkType :: SrcLoc -> SLType -> SLVal -> DLArg
+checkType at et v =
+  case et == t of
+    True -> da
+    False -> expect_throw at $ Err_Type_Mismatch et t v
+  where
+    (t, da) = typeOf at v

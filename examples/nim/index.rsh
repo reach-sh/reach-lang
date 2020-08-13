@@ -18,7 +18,14 @@ export const main =
   Reach.App(
     {},
     [["A", Alice], ["B", Bob]],
-    function (A, B) {
+    (A, B) => {
+      function sendOutcome(which) {
+        return () => {
+          A.only((which) => {
+            interact.showOutcome(which); });
+          B.only((which) => {
+            interact.showOutcome(which); }); }; };
+
       A.only(() => {
         const [ wagerAmount, initialHeap ] = declassify(interact.getParams());
         const _coinFlipA = interact.random();
@@ -32,13 +39,13 @@ export const main =
         const coinFlipB = declassify(interact.random()); });
       B.publish(coinFlipB)
         .pay(wagerAmount)
-        .timeout(DELAY, closeTo(A, "B never accepted"));
+        .timeout(DELAY, () => closeTo(A, sendOutcome("B never accepted")));
       commit();
 
       A.only(() => {
         const coinFlipA = declassify(_coinFlipA); });
       A.publish(coinFlipA)
-        .timeout(DELAY, closeTo(B, "A never revealed coinflip"));
+        .timeout(DELAY, () => closeTo(B, sendOutcome("A never revealed coinflip")));
       require(commitA == digest(coinFlipA));
       const AisFirst = (( coinFlipA + coinFlipB ) % 2) == 0;
 
@@ -60,7 +67,7 @@ export const main =
             const [ choose1, amount ]  = declassify(interact.getMove(heap1, heap2));
             assume(amount <= (choose1 ? heap1 : heap2)); });
           A.publish(choose1, amount)
-            .timeout(DELAY, closeTo(B, "A timed out move"));
+            .timeout(DELAY, () => closeTo(B, sendOutcome("A timed out move")));
 
           [ AsTurn, heap1, heap2 ] = applyMove(choose1, amount);
           continue;
@@ -71,7 +78,7 @@ export const main =
             const [ choose1, amount ]  = declassify(interact.getMove(heap1, heap2));
             assume(amount <= (choose1 ? heap1 : heap2)); });
           B.publish(choose1, amount)
-            .timeout(DELAY, closeTo(A, "B timed out move"));
+            .timeout(DELAY, () => closeTo(A, sendOutcome("B timed out move")));
 
           [ AsTurn, heap1, heap2 ] = applyMove(choose1, amount);
           continue; } }
@@ -82,8 +89,4 @@ export const main =
       const outcome = AsTurn ? "A won" : "B won";
       commit();
 
-      A.only(() => {
-        interact.showOutcome(outcome); });
-      B.only(() => {
-        interact.showOutcome(outcome); });
-      return "Game is over"; } );
+      sendOutcome(outcome)(); } );

@@ -32,9 +32,7 @@ import * as MULTISIG from './build/index.main.mjs';
   const parentO = await parentP;
   const childO = await childP;
 
-  const showOutcome = ([ oks, nos ]) => `${oks} Yes, ${nos} No`;
-  console.log(`Parent thinks outcome is ${showOutcome(parentO)}.`);
-  console.log(`Child thinks outcome is ${showOutcome(childO)}.`);
+  void(parentO, childO);
 
   console.log(`\nMulti-sig complete\n`);
   process.exit(0); })();

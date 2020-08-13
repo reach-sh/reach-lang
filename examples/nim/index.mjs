@@ -42,13 +42,11 @@ import * as NIM from './build/index.main.mjs';
       , showOutcome: (outcome) => {
         console.log(`${name} sees the final outcome: ${outcome}`); } }; };
 
-  const [ outcomeAlice, outcomeBob ] =
+  const done =
         await Promise.all([
           NIM.A(stdlib, ctcAlice, interactWith('Alice'))
           , NIM.B(stdlib, ctcBob, interactWith('Bob')) ]);
-
-  console.log(`Alice thinks outcome is ${outcomeAlice}.`);
-  console.log(`Bob thinks outcome is ${outcomeBob}.`);
+  void(done);
 
   console.log(`Done!`);
   process.exit(0); })();

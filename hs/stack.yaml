@@ -1,6 +1,7 @@
 resolver: lts-16.3
 
 extra-deps:
+  - ghc-prof-flamegraph-0.2.0.0
   - base64-0.4.1
   - dir-traverse-0.2.2.3@sha256:cbb1e3d0d1f9a3cfcbdc58071fba8a2063bae36bab68279647a331f9a408c18a,2137
   - extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993

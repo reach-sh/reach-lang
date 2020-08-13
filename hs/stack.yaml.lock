@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: ghc-prof-flamegraph-0.2.0.0@sha256:5d21b165ab6cc8c0c9fd4454ea779d42b03ff0dbd856f02c992412c33f8d6499,1785
+    pantry-tree:
+      size: 344
+      sha256: 4e37fa8e1371831e4676936e260b1317ca116303249badad8b6d842a02c324b7
+  original:
+    hackage: ghc-prof-flamegraph-0.2.0.0
+- completed:
     hackage: base64-0.4.1@sha256:aedc26f581f81a112af588eec8cf9c2e8db219a60fafc1cb77fd73672f1f7dcb,2832
     pantry-tree:
       size: 1184

@@ -212,7 +212,7 @@ jsETail ctxt = \case
       [ jsPLTail ctxt f
       , jsETail ctxt s
       ]
-  ET_Stop _ a -> "return" <+> jsArg a
+  ET_Stop _ -> "return" <> semi
   ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
   ET_ToConsensus _ fs_ok which from_me msg mto k_ok -> tp
     where

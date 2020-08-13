@@ -25,7 +25,7 @@ export const main =
     [["Child", { request: Fun([UInt256], UInt256) } ],
      ["Parent", { allowance: Fun([], UInt256),
                   approve: Fun([UInt256, UInt256], Bool) } ]],
-    function (Child, Parent) {
+    (Child, Parent) => {
       Child.publish();
       commit();
   
@@ -58,6 +58,4 @@ export const main =
           [ bal, oks, nos ] = [ bal, oks, nos + 1 ];
           continue; } }
       
-      commit();
-      
-      return [ oks, nos ]; } );
+      commit(); } );

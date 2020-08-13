@@ -62,7 +62,8 @@ const DELAY = 10; // in blocks
 const Player =
       { ...hasRandom,
         getHand: Fun([], Bytes),
-        partnerIs: Fun([Address], Null) };
+        partnerIs: Fun([Address], Null),
+        endsWith: Fun([Bytes], Null) };
 const Alice =
       { ...Player,
         getParams: Fun([], Tuple(UInt256, UInt256)),
@@ -99,7 +100,14 @@ export const once =
   Reach.App(
     {},
     [["A", Alice], ["B", Bob], ["O", {}]],
-    function (A, B, O) {
+    (A, B, O) => {
+      function sendOutcome(which) {
+        return () => {
+          A.only((which) => {
+            interact.endsWith(showOutcome(which)); });
+          B.only((which) => {
+            interact.endsWith(showOutcome(which)); }); }; };
+      
       A.only(() => {
         const [wagerAmount, escrowAmount] =
               declassify(interact.getParams()); });
@@ -111,7 +119,7 @@ export const once =
         interact.partnerIs(A);
         interact.acceptParams(wagerAmount, escrowAmount); });
       B.pay(wagerAmount)
-        .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
+        .timeout(DELAY, () => closeTo(A, sendOutcome(B_QUITS)));
       commit();
 
       A.only(() => {
@@ -121,14 +129,14 @@ export const once =
         const commitA = declassify(_commitA);
         interact.commits(); });
       A.publish(commitA)
-        .timeout(DELAY, closeTo(B, showOutcome(A_QUITS)));
+        .timeout(DELAY, () => closeTo(B, sendOutcome(A_QUITS)));
       commit();
 
       B.only(() => {
         const handB = declassify(getHand(interact));
         interact.shows(); });
       B.publish(handB)
-        .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
+        .timeout(DELAY, () => closeTo(A, sendOutcome(B_QUITS)));
       require(isHand(handB));
       commit();
 
@@ -137,7 +145,7 @@ export const once =
         const handA = declassify(_handA);
         interact.reveals(showHand(handB)); });
       A.publish(saltA, handA)
-        .timeout(DELAY, closeTo(B, showOutcome(A_QUITS)));
+        .timeout(DELAY, () => closeTo(B, sendOutcome(A_QUITS)));
       checkCommitment(commitA, saltA, handA);
       require(isHand(handA));
       const outcome = winner(handA, handB);
@@ -156,13 +164,20 @@ export const once =
       transfer(getsB).to(B);
       commit();
 
-      return showOutcome(outcome); });
+      sendOutcome(outcome)(); });
 
 export const nodraw =
   Reach.App(
     {},
     [["A", Alice], ["B", Bob], ["O", {}]],
-    function (A, B, O) {
+    (A, B, O) => {
+      function sendOutcome(which) {
+        return () => {
+          A.only((which) => {
+            interact.endsWith(showOutcome(which)); });
+          B.only((which) => {
+            interact.endsWith(showOutcome(which)); }); }; };
+
       A.only(() => {
         const [wagerAmount, escrowAmount] =
               declassify(interact.getParams()); });
@@ -173,7 +188,7 @@ export const nodraw =
       B.only(() => {
         interact.acceptParams(wagerAmount, escrowAmount); });
       B.pay(wagerAmount)
-        .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
+        .timeout(DELAY, () => closeTo(A, sendOutcome(B_QUITS)));
 
       var [ count, outcome ] = [ 0, DRAW ];
       invariant((balance() == ((2 * wagerAmount) + escrowAmount))
@@ -189,14 +204,14 @@ export const nodraw =
           const commitA = declassify(_commitA);
           interact.commits(); });
         A.publish(commitA)
-          .timeout(DELAY, closeTo(B, showOutcome(A_QUITS)));
+          .timeout(DELAY, () => closeTo(B, sendOutcome(A_QUITS)));
         commit();
 
         B.only(() => {
           const handB = declassify(getHand(interact));
           interact.shows(); });
         B.publish(handB)
-          .timeout(DELAY, closeTo(A, showOutcome(B_QUITS)));
+          .timeout(DELAY, () => closeTo(A, sendOutcome(B_QUITS)));
         require(isHand(handB));
         commit();
 
@@ -205,7 +220,7 @@ export const nodraw =
           const handA = declassify(_handA);
           interact.reveals(showHand(handB)); });
         A.publish(saltA, handA)
-          .timeout(DELAY, closeTo(B, showOutcome(A_QUITS)));
+          .timeout(DELAY, () => closeTo(B, sendOutcome(A_QUITS)));
         checkCommitment(commitA, saltA, handA);
         require(isHand(handA));
         const roundOutcome = winner(handA, handB);
@@ -229,4 +244,4 @@ export const nodraw =
       transfer(getsB).to(B);
       commit();
 
-      return showOutcome(outcome); });
+      sendOutcome(outcome)(); });

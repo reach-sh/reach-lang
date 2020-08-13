@@ -31,12 +31,12 @@ export function makeCommitment (interact, x) {
 export function checkCommitment (commitment, salt, x) {
   return require(commitment == digest(salt, x)); };
 
-export function closeTo(Who, result) {
-  return () => {
-    Who.publish();
-    transfer(balance()).to(Who);
-    commit();
-    return result; }; };
+export function closeTo(Who, after) {
+  Who.publish();
+  transfer(balance()).to(Who);
+  commit();
+  after();
+  exit(); };
 
 function __decode_testing__() {
   return txn.value; };

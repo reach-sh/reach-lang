@@ -613,6 +613,9 @@ smt_n ctxt n =
       where
         ca' = smt_a ctxt at ca
         go (v, k) =
+          --- FIXME Can we use path constraints to avoid this forking?
+          --- Probably need to do `malloc` on balance variables to
+          --- deal with this.
           smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
           where
             v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
@@ -659,7 +662,7 @@ smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
   case s of
     LLS_Com m -> smt_m smt_s ctxt m
-    LLS_Stop at f _ ->
+    LLS_Stop at f ->
       verify1 ctxt at f TBalanceZero se
       where
         se = smtEq (smtBalanceRef $ ctxt_balance ctxt) uint256_zero

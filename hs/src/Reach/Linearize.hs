@@ -32,6 +32,8 @@ lin_com_s who iters mkk rets s k =
       mkk $ LL_Var at dv $ iters rets' ss k
       where
         rets' = M.insert ret dv rets
+    DLS_Stop {} ->
+      impossible $ who ++ " cannot stop"
     DLS_Only {} ->
       impossible $ who ++ " cannot only"
     DLS_ToConsensus {} ->
@@ -97,6 +99,8 @@ lin_step_s rets s k =
     DLS_If {}
       | not (stmt_local s) ->
         impossible $ "step cannot unlocal if, must occur in consensus"
+    DLS_Stop at fs ->
+      LLS_Stop at fs
     DLS_Only at who ss ->
       LLS_Only at who ls k
       where
@@ -107,26 +111,13 @@ lin_step_s rets s k =
         cons' = lin_con at back cons
         back more = iters rets more k
         mtime' = do
-          (delay_da, DLBlock time_at time_fs time_ss time_da) <- mtime
-          {-
-          --- XXX Timeouts always "exit"
-          --- XXX Not checking the result types
-          let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_fs time_da)
-          return $ (delay_da, time_ll)
-          -}
-          case k of
-            LLS_Stop fin_at _ fin_da -> do
-              let time_ll = lin_ss lin_step_s rets time_ss (LLS_Stop time_at time_fs time_da)
-              case typeMeet at (fin_at, argTypeOf fin_da) (time_at, argTypeOf time_da) of
-                _ -> return $ (delay_da, time_ll)
-            _ ->
-              impossible $ "lin toconsensus w/ non-stop k"
+          (delay_da, time_ss) <- mtime
+          return $ (delay_da, lin_ss lin_step_s rets time_ss k)
     _ ->
       lin_com_s "step" iters LLS_Com rets s k
   where
     iters = lin_ss lin_step_s
 
 linearize :: DLProg -> LLProg
-linearize (DLProg at sps (DLBlock bat fs ss da)) = LLProg at sps step
-  where
-    step = lin_ss lin_step_s mempty ss (LLS_Stop bat fs da)
+linearize (DLProg at sps ss) =
+  LLProg at sps $ lin_ss lin_step_s mempty ss (LLS_Stop at [])

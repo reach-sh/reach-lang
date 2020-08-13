@@ -78,7 +78,7 @@ instance CollectsTypes LLConsensus where
 
 instance CollectsTypes LLStep where
   cts (LLS_Com k) = cts k
-  cts (LLS_Stop _ _ a) = cts a
+  cts (LLS_Stop _ _) = mempty
   cts (LLS_Only _ _ l s) = cts l <> cts s
   cts (LLS_ToConsensus _ _ fs as msg amt mtime c) =
     cts fs <> cts as <> cts msg <> cts amt <> cts mtime <> cts c

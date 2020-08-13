@@ -1,7 +1,7 @@
 TAG="reachsh/examples-rps:v0.1.1"
 
 build/index.once.mjs build/index.nodraw.mjs:
-	REACHC_ENABLE_EXPERIMENTAL_COMPILER=Y ../../reachc -o build index.rsh once nodraw
+	../../reachc -o build index.rsh once nodraw
 
 .PHONY: build
 build: build/index.once.mjs build/index.nodraw.mjs

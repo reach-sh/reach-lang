@@ -90,8 +90,8 @@ prettyTransfer :: DLArg -> DLArg -> Doc a
 prettyTransfer who da =
   "transfer." <> parens (pretty da) <> ".to" <> parens (pretty who) <> semi
 
-prettyStop :: DLArg -> Doc a
-prettyStop da = "exit" <> parens (pretty da) <> semi
+prettyStop :: Doc a
+prettyStop = "exit" <> parens (emptyDoc) <> semi
 
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
@@ -114,6 +114,8 @@ instance Pretty DLStmt where
         "throw" <> parens (viaShow sv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret bodys ->
         "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
+      DLS_Stop _ _ ->
+        prettyStop
       DLS_Only _ who onlys ->
         "only" <> parens (render_sp who) <+> ns onlys <> semi
       DLS_ToConsensus _ who fs as vs amt mtime cons ->
@@ -123,7 +125,7 @@ instance Pretty DLStmt where
           timep =
             case mtime of
               Nothing -> ""
-              Just (td, tp) -> ".timeout" <> (cm [pretty td, (render_nest $ pretty tp)])
+              Just (td, tp) -> ".timeout" <> (cm [pretty td, (render_nest $ render_dls tp)])
       DLS_FromConsensus _ more ->
         "commit()" <> semi <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -148,12 +150,12 @@ instance Pretty SLParts where
   pretty (SLParts m) = "parts" <+> render_obj m <> semi
 
 instance Pretty DLProg where
-  pretty (DLProg _at sps db) =
+  pretty (DLProg _at sps ds) =
     "#lang dl" <> hardline
       <> pretty sps
       <> hardline
       <> hardline
-      <> pretty db
+      <> render_dls ds
 
 --- Linear language
 instance Pretty a => Pretty (LLCommon a) where
@@ -198,7 +200,7 @@ instance Pretty LLStep where
   pretty s =
     case s of
       LLS_Com x -> pretty x
-      LLS_Stop _at _ da -> prettyStop da
+      LLS_Stop _at _ -> prettyStop
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
       LLS_ToConsensus _at who fs as vs amt mtime cons ->
@@ -253,7 +255,7 @@ instance Pretty ETail where
     case e of
       ET_Com c -> pretty c
       ET_Seqn _ x y -> pretty x <> hardline <> pretty y
-      ET_Stop _ da -> prettyStop da
+      ET_Stop _ -> emptyDoc
       ET_If _ ca t f -> prettyIfp ca t f
       ET_ToConsensus _ fs which msend msg mtime k ->
         "sendrecv" <+> fsp <+> whichp <+> parens msendp <> (cm $ map pretty msg) <> timep <> ns (pretty k)

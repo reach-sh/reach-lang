@@ -24,7 +24,7 @@ compileNL copts = do
   let compile1 which = do
         let outn = (output copts) . ((T.pack which <> ".") <>)
         let out = writeFile . outn
-        let dl = compileBundle djp which
+        dl <- compileBundle djp which
         out "dl" $ show $ pretty dl
         let ll = linearize dl
         out "ll" $ show $ pretty ll
@@ -33,7 +33,7 @@ compileNL copts = do
         out "pl" $ show $ pretty pl
         --- FIXME The particular connector/backend should be part of
         --- the `opts` argument to Reach.App
-        crs <-
+        !crs <-
           mempty
             <> connect_eth outn pl
             <> connect_algo outn pl

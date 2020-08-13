@@ -52,6 +52,7 @@ dependencies:
 - tasty-quickcheck
 - tasty-smallcheck
 - text
+- time
 - unordered-containers
 
 default-extensions:

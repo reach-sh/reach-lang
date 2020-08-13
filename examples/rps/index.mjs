@@ -41,22 +41,19 @@ import * as RPSW from './build/index.nodraw.mjs';
                commits: log(`${name} commits to play with (hidden) hand.`),
                shows: log(`${name} sends hand in clear.`),
                reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
-               whilecount: (count) => log(`${name} observed ${count} rounds of the loop`)(),
-               outcome: log(`${name} agrees that game is over.`) }; };
+               endsWith: (outcome) => log(`${name} agrees that game is over and outcome is ${outcome}.`)() }; };
 
     const ctcAlice = await alice.deploy(theRPS);
     const ctcBob = await bob.attach(theRPS, ctcAlice);
     const ctcObs = await obs.attach(theRPS, ctcAlice);
 
-    const [ outcomeAlice, outcomeBob, outcomeObs ] =
+    const done =
           await Promise.all([
             theRPS.A(stdlib, ctcAlice, interactWith('Alice')),
             theRPS.B(stdlib, ctcBob, interactWith('Bob')),
             theRPS.O(stdlib, ctcObs, interactWith('Observer'))]);
 
-    console.log(`Alice thinks outcome is ${outcomeAlice}.`);
-    console.log(`Bob thinks outcome is ${outcomeBob}.`);
-    console.log(`Observer thinks outcome is ${outcomeObs}.`);
+    void(done);
     console.log(`Done!`); };
 
   console.log(`\nRunning game that will Draw\n`);

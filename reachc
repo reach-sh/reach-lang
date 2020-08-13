@@ -6,11 +6,15 @@ HS=${HERE}/hs
 if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
     export STACK_YAML=${HS}/stack.yaml
     MAYBE_FAST="--fast"
+    MAYBE_PROF=""
     if [ "x${REACHC_RELEASE}" = "xY" ] ; then
        MAYBE_FAST=""
     fi
-    stack build ${MAYBE_FAST} && \
-        exec stack exec -- reachc $*
+    if [ "x${REACHC_PROFILE}" = "xY" ] ; then
+       MAYBE_PROF="--profile"
+    fi
+    stack build ${MAYBE_PROF} ${MAYBE_FAST} && \
+        exec stack exec ${MAYBE_PROF} -- reachc $*
 else
     cat<<EOF | docker-compose -f - run reach $*
 version: '3'

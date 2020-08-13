@@ -282,8 +282,8 @@ epp_s st s =
           ProResS p_prts_s cr <- skip k
           let p_prts_s' = extend_locals_look common p_prts_s
           return $ ProResS p_prts_s' cr
-    LLS_Stop at _ da -> do
-      let p_prts_s = pall st (ProRes_ (counts da) (ET_Stop at da))
+    LLS_Stop at _ -> do
+      let p_prts_s = pall st (ProRes_ mempty (ET_Stop at))
       return $ ProResS p_prts_s $ ProRes_ mempty False
     LLS_Only at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s

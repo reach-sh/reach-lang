@@ -139,8 +139,9 @@ data ToConsensusMode
 instance NFData ToConsensusMode
 
 data SLForm
-  = SLForm_Part_Only SLVal
-  | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (JSExpression, JSExpression))
+  = SLForm_App
+  | SLForm_Part_Only SLVal
+  | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
   | SLForm_Part_OnlyAns SrcLoc SLPart SLEnv SLVal
   deriving (Eq, Generic, Show)
 
@@ -204,11 +205,12 @@ data SLPrimitive
   | SLPrim_Array
   | SLPrim_Tuple
   | SLPrim_Object
-  | SLPrim_App
-  | SLPrim_App_Delay SrcLoc [SLVal] SLEnv
+  | SLPrim_App_Delay SrcLoc SLEnv [SLSVal] JSBlock SLEnv
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to DLArg
+  | SLPrim_exit
+  | SLPrim_exitted
   deriving (Eq, Generic, Show)
 
 instance NFData SLPrimitive
@@ -340,6 +342,7 @@ data DLStmt
     DLS_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
+  | DLS_Stop SrcLoc [SLCtxtFrame]
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_ToConsensus
       { dls_tc_at :: SrcLoc
@@ -348,7 +351,7 @@ data DLStmt
       , dls_tc_from_as :: [DLArg]
       , dls_tc_from_msg :: [DLVar]
       , dls_tc_from_amt :: DLArg
-      , dls_tc_mtime :: (Maybe (DLArg, DLBlock))
+      , dls_tc_mtime :: (Maybe (DLArg, DLStmts))
       , dls_tc_cons :: DLStmts
       }
   | DLS_FromConsensus SrcLoc DLStmts
@@ -373,6 +376,7 @@ stmt_pure s =
     DLS_Transfer {} -> False
     DLS_Return {} -> False
     DLS_Prompt _ _ ss -> stmts_pure ss
+    DLS_Stop {} -> False
     DLS_Only _ _ ss -> stmts_pure ss
     DLS_ToConsensus {} -> False
     DLS_FromConsensus _ ss -> stmts_pure ss
@@ -389,6 +393,7 @@ stmt_local s =
     DLS_Transfer {} -> False
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> stmts_local ss
+    DLS_Stop {} -> False
     DLS_Only _ _ ss -> stmts_local ss
     DLS_ToConsensus {} -> False
     DLS_FromConsensus _ ss -> stmts_local ss
@@ -410,7 +415,7 @@ data DLBlock
 instance NFData DLBlock
 
 data DLProg
-  = DLProg SrcLoc SLParts DLBlock
+  = DLProg SrcLoc SLParts DLStmts
   deriving (Generic)
 
 instance NFData DLProg
@@ -447,13 +452,12 @@ data LLConsensus
       , llc_w_body :: LLConsensus
       , llc_w_k :: LLConsensus
       }
-  | --- FIXME Use types to ensure only within while body
-    LLC_Continue SrcLoc DLAssignment
+  | LLC_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 
 data LLStep
   = LLS_Com (LLCommon LLStep)
-  | LLS_Stop SrcLoc [SLCtxtFrame] DLArg
+  | LLS_Stop SrcLoc [SLCtxtFrame]
   | LLS_Only SrcLoc SLPart LLLocal LLStep
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc
@@ -497,9 +501,8 @@ data PLBlock
 
 data ETail
   = ET_Com (PLCommon ETail)
-  | --- FIXME Seqn sucks
-    ET_Seqn SrcLoc PLTail ETail
-  | ET_Stop SrcLoc DLArg
+  | ET_Seqn SrcLoc PLTail ETail
+  | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg ETail ETail
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
@@ -520,8 +523,7 @@ data ETail
       , et_w_body :: ETail
       , et_w_k :: ETail
       }
-  | --- FIXME Types to ensure only within while body
-    ET_Continue SrcLoc DLAssignment
+  | ET_Continue SrcLoc DLAssignment
   deriving (Eq, Show)
 
 data EPProg
@@ -530,8 +532,7 @@ data EPProg
 
 data CTail
   = CT_Com (PLCommon CTail)
-  | --- FIXME Seqn sucks
-    CT_Seqn SrcLoc PLTail CTail
+  | CT_Seqn SrcLoc PLTail CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Transfer SrcLoc DLArg DLArg CTail
   | CT_Wait SrcLoc [DLVar]
