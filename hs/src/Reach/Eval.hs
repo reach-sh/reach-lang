@@ -1081,7 +1081,7 @@ evalDecl ctxt at lhs_env rhs_env decl =
                             (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' (ctxt_local_name ctxt "tuple idx") t) e
                             return $ (i_lifts, SLV_DLVar dvi)
                       SLV_DLVar dv@(DLVar _ _ (T_Array t sz) _) -> do
-                        vs_liftsl_and_dvs <- mapM mk_ref [0 .. (sz -1)]
+                        vs_liftsl_and_dvs <- mapM mk_ref [0 .. (sz - 1)]
                         let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
                         let vs_lifts = mconcat vs_liftsl
                         return (vs_lifts, dvs)
