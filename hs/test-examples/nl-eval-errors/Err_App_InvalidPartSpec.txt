@@ -1,1 +1,1 @@
-error: ./Err_App_InvalidPartSpec.rsh:compileDApp: Invalid participant spec
+error: ./Err_App_InvalidPartSpec.rsh:3:30:application: Invalid participant spec

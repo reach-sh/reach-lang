@@ -2,6 +2,9 @@ XXX Known missing srclocs on err
 
 * Err_Block_Assign
 * Err_App_InvalidPartSpec
+* Err_Block_NotNull  -- regression? 2020-08-13
+* Err_Eval_IfCondNotBool  -- regression? 2020-08-13
+* Err_Eval_IllegalJS  -- regression? 2020-08-13
 
 XXX Known weird srclocs on err
 
@@ -19,3 +22,4 @@ XXX Figure out how to trigger
 * Err_Obj_IllegalFieldValues -- not possible with Grammar7?
 * Err_ToConsensus_Double -- prevented by earlier parsing?
 * Err_TopFun_NoName -- hiding behind Err_Type_None
+* Err_Eval_NotApplicableVals -- previous test example subsumed by Err_ToConsensus_TimeoutArgs

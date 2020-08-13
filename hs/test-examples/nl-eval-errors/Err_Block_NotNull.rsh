@@ -4,7 +4,6 @@ export const main = Reach.App(
   {}, [["A", {}]], (A) => {
     A.only(() => {
       return 1;
-    })
-    return 0;
+    });
   }
 );

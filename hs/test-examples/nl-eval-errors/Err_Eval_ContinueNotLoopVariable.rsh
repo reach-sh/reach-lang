@@ -9,7 +9,5 @@ export const main = Reach.App(
       [ x, y ] = [ x + 1, x ];
       continue;
     }
-
-    return 0;
   }
 );

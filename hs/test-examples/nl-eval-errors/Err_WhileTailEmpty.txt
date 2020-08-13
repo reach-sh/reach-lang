@@ -1,1 +1,0 @@
-error: ./Err_WhileTailEmpty.rsh:9:18:block: Invalid while statement block. Expected continue, but found empty tail.
