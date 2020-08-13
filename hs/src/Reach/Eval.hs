@@ -103,7 +103,6 @@ data EvalError
   | Err_TopFun_NoName
   | Err_Top_NotApp SLVal
   | Err_While_IllegalInvariant [JSExpression]
-  | Err_WhileTailEmpty
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -278,8 +277,6 @@ instance Show EvalError where
       "Invalid while loop invariant. Expected 1 expr, but got " <> got
       where
         got = show $ length exprs
-    Err_WhileTailEmpty ->
-      "Invalid while statement block. Expected continue, exit, or return, but found empty tail."
 
 ensure_public :: SrcLoc -> SLSVal -> SLVal
 ensure_public at (lvl, v) =
@@ -724,10 +721,9 @@ evalPrim ctxt at env p sargs =
     SLPrim_claim ct ->
       return $ SLRes lifts $ public $ SLV_Null at "claim"
       where
-        darg =
-          case checkAndConvert at (T_Fun [T_Bool] T_Null) $ map snd sargs of
-            (_, [x]) -> x
-            _ -> impossible "claim"
+        darg = case map snd sargs of
+                 [ arg ] -> checkType at T_Bool arg
+                 _ -> illegal_args
         lifts = return $ DLS_Claim at (ctxt_stack ctxt) ct darg
     SLPrim_transfer ->
       case ctxt_mode ctxt of
@@ -1125,12 +1121,13 @@ evalStmt ctxt at sco ss =
         RS_NeedExplicit ->
           --- In the presence of `exit()`, it is okay to have a while
           --- that ends in an empty tail, if the empty tail is
-          --- dominated by an exit(). How can we effectively detect
-          --- this? One idea is to insert an `impossible()` and rely
-          --- on the verifier to check it. Another idea is to add
-          --- something to `ctxt` that says `exit` dominates.
+          --- dominated by an exit(). Here we really on two properties
+          --- of the linearizer and the verifier: first, the
+          --- linearizer will completely drop the continuation of
+          --- DLS_Continue and DLS_Stop, so if this assert is not
+          --- removed, then ti will error.
+          keepLifts (return $ DLS_Claim at (ctxt_stack ctxt) CT_Assert (DLA_Con $ DLC_Bool False)) $
           ret []
-          --- XXX expect_throw at $ Err_WhileTailEmpty
         RS_MayBeEmpty -> ret []
       where ret rs = return $ SLRes mempty $ SLStmtRes (sco_env sco) rs
     ((JSStatementBlock a ss' _ sp) : ks) -> do

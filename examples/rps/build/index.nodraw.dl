@@ -130,7 +130,8 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
                 prompt(Left 93) {
                   claim(CT_Require)(DLC_Bool True);
                   const "interact":T_Null:97 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); }; }; };
-            exit(); } }; }){
+            exit(); } };
+        claim(CT_Assert)(DLC_Bool False); }){
         const "prim":T_UInt256:80 = TXN_VALUE();
         const "prim":T_Bool:81 = PEQ(DLC_Int 0,"prim":T_UInt256:80);
         claim(CT_Require)("prim":T_Bool:81);
@@ -179,7 +180,8 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
                   prompt(Left 130) {
                     claim(CT_Require)(DLC_Bool True);
                     const "interact":T_Null:134 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); }; }; };
-              exit(); } }; }){
+              exit(); } };
+          claim(CT_Assert)(DLC_Bool False); }){
           const "prim":T_UInt256:117 = TXN_VALUE();
           const "prim":T_Bool:118 = PEQ(DLC_Int 0,"prim":T_UInt256:117);
           claim(CT_Require)("prim":T_Bool:118);
@@ -227,7 +229,8 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
                     prompt(Left 165) {
                       claim(CT_Require)(DLC_Bool True);
                       const "interact":T_Null:169 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); }; }; };
-                exit(); } }; }){
+                exit(); } };
+            claim(CT_Assert)(DLC_Bool False); }){
             const "prim":T_UInt256:152 = TXN_VALUE();
             const "prim":T_Bool:153 = PEQ(DLC_Int 0,"prim":T_UInt256:152);
             claim(CT_Require)("prim":T_Bool:153);
