@@ -34,14 +34,17 @@ spec_examples_cover_EvalError =
       [ "Err_App_InvalidArgs"
       , "Err_CannotReturn" -- most attempts were not valid js
       , "Err_Decl_IllegalJS"
+      , "Err_Each_NotTuple"
       , "Err_Eval_IllegalLift"
       , "Err_Eval_IndirectRefNotArray"
       , "Err_Eval_NoReturn" -- not syntactically possible?
       , "Err_Eval_NotApplicableVals" -- previous test example subsumed by Err_ToConsensus_TimeoutArgs
+      , "Err_Form_InvalidArgs" -- previous test example subsumed by Err_Only_NotOneClosure
       , "Err_Import_IllegalJS"
       , "Err_Obj_IllegalFieldValues" -- not possible with Grammar7?
       , "Err_ToConsensus_Double" -- prevented by earlier parsing?
       , "Err_TopFun_NoName" -- hiding behind Err_Type_None
+      , "Err_Transfer_NotBound"
       , "Err_While_IllegalInvariant"
       ]
 
