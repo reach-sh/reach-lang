@@ -1,4 +1,8 @@
-module Reach.Test_Util (spec_fromIntegerMay, prop_fromIntegerMay_intRoundTrip) where
+module Reach.Test_Util
+  ( prop_fromIntegerMay_intRoundTrip
+  , spec_fromIntegerMay
+  )
+where
 
 import Reach.Util
 import Test.Hspec

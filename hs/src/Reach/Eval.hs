@@ -1,4 +1,4 @@
-module Reach.Eval (compileBundle) where
+module Reach.Eval (EvalError, compileBundle) where
 
 import Control.Monad
 import Control.Monad.ST
@@ -319,10 +319,10 @@ base_env =
     , ("Object", SLV_Prim SLPrim_Object)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
-    , ("Reach"
+    , ( "Reach"
       , (SLV_Object srcloc_top $
-          m_fromList_public
-          [("App", SLV_Form SLForm_App)])
+           m_fromList_public
+             [("App", SLV_Form SLForm_App)])
       )
     ]
 
@@ -544,7 +544,7 @@ evalForm ctxt at env f args =
         SLC_Module ->
           case args of
             [opte, partse, JSArrowExpression top_formals _ top_s] -> do
-              sargs <- cannotLift "App args" <$> evalExprs ctxt at env [ opte, partse ]
+              sargs <- cannotLift "App args" <$> evalExprs ctxt at env [opte, partse]
               case map snd sargs of
                 [(SLV_Object _ opts), (SLV_Tuple _ parts)] ->
                   retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_vs (jsStmtToBlock top_s) env'
@@ -595,7 +595,7 @@ evalForm ctxt at env f args =
               retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub (Just one_arg) mtime
             Just TCM_Timeout ->
               case args of
-                [ de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ] ->
+                [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] ->
                   retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just (at, de, (jsStmtToBlock dt_s)))
                 _ -> expect_throw at $ Err_ToConsensus_TimeoutArgs args
             Nothing ->
@@ -722,8 +722,8 @@ evalPrim ctxt at env p sargs =
       return $ SLRes lifts $ public $ SLV_Null at "claim"
       where
         darg = case map snd sargs of
-                 [ arg ] -> checkType at T_Bool arg
-                 _ -> illegal_args
+          [arg] -> checkType at T_Bool arg
+          _ -> illegal_args
         lifts = return $ DLS_Claim at (ctxt_stack ctxt) ct darg
     SLPrim_transfer ->
       case ctxt_mode ctxt of
@@ -1011,7 +1011,7 @@ evalExpr ctxt at env e =
       case idxv of
         SLV_Int _ idxi ->
           case arrv of
-            SLV_Tuple _ tupvs -> retVal idxi tupvs 
+            SLV_Tuple _ tupvs -> retVal idxi tupvs
             SLV_DLVar adv@(DLVar _ _ (T_Tuple ts) _) ->
               case fromIntegerMay idxi >>= atMay ts of
                 Nothing ->
@@ -1081,7 +1081,7 @@ evalDecl ctxt at lhs_env rhs_env decl =
                             (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' (ctxt_local_name ctxt "tuple idx") t) e
                             return $ (i_lifts, SLV_DLVar dvi)
                       SLV_DLVar dv@(DLVar _ _ (T_Array t sz) _) -> do
-                        vs_liftsl_and_dvs <- mapM mk_ref [0 .. (sz-1)]
+                        vs_liftsl_and_dvs <- mapM mk_ref [0 .. (sz -1)]
                         let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
                         let vs_lifts = mconcat vs_liftsl
                         return (vs_lifts, dvs)
@@ -1127,9 +1127,10 @@ evalStmt ctxt at sco ss =
           --- DLS_Continue and DLS_Stop, so if this assert is not
           --- removed, then ti will error.
           keepLifts (return $ DLS_Claim at (ctxt_stack ctxt) CT_Assert (DLA_Con $ DLC_Bool False)) $
-          ret []
+            ret []
         RS_MayBeEmpty -> ret []
-      where ret rs = return $ SLRes mempty $ SLStmtRes (sco_env sco) rs
+      where
+        ret rs = return $ SLRes mempty $ SLStmtRes (sco_env sco) rs
     ((JSStatementBlock a ss' _ sp) : ks) -> do
       br <- evalStmt ctxt at_in sco ss'
       retSeqn br at_after ks
@@ -1233,7 +1234,7 @@ evalStmt ctxt at sco ss =
       case (ctxt_mode ctxt, ev) of
         (SLC_Step {}, SLV_Prim SLPrim_exitted) ->
           expect_empty_tail "exit" JSNoAnnot sp at ks $
-          return $ SLRes elifts $ SLStmtRes env []
+            return $ SLRes elifts $ SLStmtRes env []
         (SLC_Step pdvs penvs, SLV_Form (SLForm_Part_OnlyAns only_at who penv' only_v)) ->
           case typeOf at_after only_v of
             (T_Null, _) ->
@@ -1466,12 +1467,13 @@ evalStmt ctxt at sco ss =
           SLRes lifts1 (SLStmtRes env1 rets1) <- evalStmt ctxt at' sco' ks'
           return $ SLRes (lifts0 <> lifts1) (SLStmtRes env1 (rets0 ++ rets1))
     combineStmtRes at' lvl (SLStmtRes _ lrets) (SLStmtRes env rrets) = SLStmtRes env rets
-      where rets =
-              case (lrets, rrets) of
-                ([], []) -> []
-                ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
-                (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
-                (_, _) -> lrets ++ rrets
+      where
+        rets =
+          case (lrets, rrets) of
+            ([], []) -> []
+            ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
+            (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
+            (_, _) -> lrets ++ rrets
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =
@@ -1582,17 +1584,18 @@ compileDApp topv =
       idxr <- newSTCounter 0
       let ctxt_step =
             SLCtxt
-            { ctxt_mode = SLC_Step mempty penvs
-            , ctxt_id = Just idxr
-            , ctxt_stack = []
-            , ctxt_local_mname = Nothing
-            }
+              { ctxt_mode = SLC_Step mempty penvs
+              , ctxt_id = Just idxr
+              , ctxt_stack = []
+              , ctxt_local_mname = Nothing
+              }
       let sco =
             SLScope
-            { sco_ret = Nothing
-            , sco_must_ret = RS_CannotReturn
-            , sco_env = top_env
-            , sco_while_vars = Nothing }
+              { sco_ret = Nothing
+              , sco_must_ret = RS_CannotReturn
+              , sco_env = top_env
+              , sco_while_vars = Nothing
+              }
       SLRes final _ <- evalStmt ctxt_step at' sco top_ss
       return $ DLProg at sps final
       where

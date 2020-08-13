@@ -1,22 +1,25 @@
-module Reach.Test.Util (ReachErr, tryHard, errExample, errExampleStripAbs, stderroutExample, testsFor, goldenTests) where
+module Reach.Test.Util
+  ( errExample
+  , errExampleStripAbs
+  , goldenTests
+  , mkSpecExamplesCoverCtors
+  , stderroutExample
+  , tryHard
+  )
+where
 
 import Control.DeepSeq
 import Control.Exception
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LB
-import Data.Functor.Identity
 import Data.List ((\\))
-import Data.Typeable
 import Generics.Deriving
 import Reach.Util
 import System.Directory
 import System.FilePath
-import Test.SmallCheck.Series
 import Test.Tasty
 import Test.Tasty.Golden
 import Test.Tasty.Hspec
-
-class (Generic a, Typeable a, ConNames (Rep a), Serial Identity a) => ReachErr a
 
 tryHard :: NFData a => Exception e => IO a -> IO (Either e a)
 tryHard m = do
@@ -32,35 +35,27 @@ testNotEmpty label xs = testSpec label $
     [] -> expectationFailure "... it is empty =["
     (_ : _) -> pure ()
 
-testExamplesCover
+mkSpecExamplesCoverCtors
   :: forall err proxy.
-  (ReachErr err)
+  (Generic err, ConNames (Rep err))
   => proxy err
-  -> [FilePath]
-  -> IO TestTree
-testExamplesCover p sources = testSpec label t
-  where
-    label = "Examples covering " <> ty
-    ty = show $ typeRep p
-    constrs = listSeries 1 :: [err]
-    cNames = map conNameOf constrs
-    t = it "list of constructors with missing examples is empty" $ do
-      let missing = cNames \\ map takeBaseName sources
-      missing `shouldBe` []
-
-testsFor
-  :: ReachErr err
-  => proxy err
-  -> (FilePath -> TestTree)
+  -> [String]
   -> String
   -> FilePath
-  -> IO TestTree
-testsFor p mkTest ext subdir = do
-  (sources, gTests) <- goldenTests' mkTest ext subdir
-  testCov <- testExamplesCover p sources
-  let groupLabel = subdir
-  let tests = testCov : gTests
-  return $ testGroup groupLabel tests
+  -> Spec
+mkSpecExamplesCoverCtors _ exceptions = mkSpecExamplesCoverStrs strs
+  where
+    strs = conNames (error "unused" :: err) \\ exceptions
+
+mkSpecExamplesCoverStrs :: [String] -> String -> FilePath -> Spec
+mkSpecExamplesCoverStrs strs ext subdir = describe subdir $
+  it "covers all specified examples" $ do
+    curDir <- getCurrentDirectory
+    let dir = curDir </> "test-examples" </> subdir
+    doesDirectoryExist dir `shouldReturn` True
+    sources <- findByExtension [ext] dir
+    let missing = strs \\ map takeBaseName sources
+    missing `shouldBe` []
 
 goldenTests' :: (FilePath -> TestTree) -> String -> FilePath -> IO ([FilePath], [TestTree])
 goldenTests' mkTest ext subdir = do
