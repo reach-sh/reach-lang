@@ -10,7 +10,7 @@ make hs-build
 # Run the tests
 
 ```bash
-make hs-test-accept
+make hs-test
 ```
 
 # Run tests in "accept new golden values" mode
