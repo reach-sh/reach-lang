@@ -46,5 +46,5 @@ make hs-doc
 # Note: rebuilds whole hs project for profiling
 export REACHC_PROFILE=Y
 ../../reachc src.rsh ident -o build
-../../hs/sbin/prof2svg.hs reachc.prof
+../../hs/sbin/prof2svg.sh reachc.prof
 ```

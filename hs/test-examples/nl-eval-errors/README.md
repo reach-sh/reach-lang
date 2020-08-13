@@ -1,14 +1,13 @@
 XXX Known missing srclocs on err
 
 * Err_Block_Assign
-* Err_App_InvalidPartSpec
 * Err_Block_NotNull  -- regression? 2020-08-13
 * Err_Eval_IfCondNotBool  -- regression? 2020-08-13
 * Err_Eval_IllegalJS  -- regression? 2020-08-13
 
 XXX Known weird srclocs on err
 
-* Err_Block_NotNull
+* Err_App_InvalidPartSpec -- srcloc is of the App(), not bad but could be closer
 
 XXX Figure out how to trigger
 
