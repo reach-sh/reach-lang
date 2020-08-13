@@ -61,12 +61,16 @@ hs-deps:
 
 .PHONY: hs-doc
 hs-doc:
-	stack haddock
+	stack haddock --fast
 
 .PHONY: hs-format
 hs-format:
 	stack build ormolu
-	stack exec -- ormolu --mode inplace $$(find . -name '*.hs')
+	stack exec -- ormolu \
+	  --ghc-opt -XBangPatterns \
+	  --ghc-opt -XCPP \
+	  --ghc-opt -XTypeApplications \
+	  --mode inplace $$(find . -name '*.hs')
 
 .PHONY: build-circle-docker
 build-circle-docker:
