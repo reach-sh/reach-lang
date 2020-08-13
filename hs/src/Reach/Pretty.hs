@@ -21,8 +21,31 @@ instance Pretty SLPart where
 instance Pretty SLType where
   pretty = viaShow
 
+instance Pretty SecurityLevel where
+  pretty = \case
+    Public -> "public"
+    Secret -> "secret"
+
+instance Pretty SLVal where
+  pretty = \case
+    SLV_Null {} -> "null"
+    SLV_Bool _ b -> pretty b
+    SLV_Int _ i -> pretty i
+    SLV_Bytes _ b -> pretty b
+    SLV_Tuple _ as ->
+      brackets $ hsep $ punctuate comma $ map pretty as
+    SLV_Object _ m -> render_obj m
+    SLV_Clo {} -> "<closure>"
+    SLV_DLVar v -> pretty v
+    SLV_Type t -> "<type: " <> pretty t <> ">"
+    SLV_Participant _ who _ _ _ ->
+      "<participant: " <> pretty who <> ">"
+    SLV_Prim {} -> "<primitive>"
+    SLV_Form {} -> "<form>"
+
 instance Pretty DLVar where
-  pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
+  --- pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
+  pretty (DLVar _ _ _ i) = "v" <> viaShow i
 
 render_obj :: Pretty k => Pretty v => M.Map k v -> Doc a
 render_obj env =
@@ -111,9 +134,13 @@ instance Pretty DLStmt where
       DLS_Transfer _ _ who da ->
         prettyTransfer who da
       DLS_Return _ ret sv ->
-        "throw" <> parens (viaShow sv) <> ".to" <> parens (viaShow ret) <> semi
+        "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret bodys ->
-        "prompt" <> parens (viaShow ret) <+> ns bodys <> semi
+        "prompt" <> parens pret <+> ns bodys <> semi
+        where pret =
+                case ret of
+                  Left _ -> emptyDoc
+                  Right dv -> "let" <+> pretty dv
       DLS_Stop _ _ ->
         prettyStop
       DLS_Only _ who onlys ->
@@ -226,16 +253,16 @@ instance Pretty LLProg where
 --- Projected Language
 
 instance Pretty PLLetCat where
-  pretty = viaShow
+  pretty PL_Many = "*"
+  pretty PL_Once = "!"
 
 instance Pretty a => Pretty (PLCommon a) where
   pretty l =
     case l of
       PL_Return _at -> mempty
       PL_Let _at lc dv de k ->
-        "const" <+> pretty dv <+> pretty lc <+> "=" <+> pretty de <> semi
-          <> hardline
-          <> pretty k
+        "const" <+> pretty lc <> pretty dv <+> "=" <+> pretty de <> semi
+        <> hardline <> pretty k
       PL_Eff _ de k ->
         "eff" <+> pretty de <> semi <> hardline <> pretty k
       PL_Var _at dv k ->

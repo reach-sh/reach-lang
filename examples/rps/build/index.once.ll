@@ -19,360 +19,360 @@ parts {
     }};
 
 only("A") {
-  const "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1 = interact("A")."getParams"();
-  const "tuple idx":T_UInt256:2 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1[0];
-  const "tuple idx":T_UInt256:3 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1[1];
+  const v1 = interact("A")."getParams"();
+  const v2 = v1[0];
+  const v3 = v1[1];
    };
 only("A") {
-  const "prim":T_UInt256:7 = ADD("tuple idx":T_UInt256:2,"tuple idx":T_UInt256:3);
+  const v7 = ADD(v2,v3);
    };
-publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt256:3)("tuple idx":T_UInt256:4, "tuple idx":T_UInt256:5).pay("prim":T_UInt256:7){
-  const "prim":T_UInt256:8 = ADD("tuple idx":T_UInt256:4,"tuple idx":T_UInt256:5);
-  const "prim":T_UInt256:9 = TXN_VALUE();
-  const "prim":T_Bool:10 = PEQ("prim":T_UInt256:8,"prim":T_UInt256:9);
-  claim(CT_Require)("prim":T_Bool:10);
+publish("A", join(v6))(v2,v3)(v4, v5).pay(v7){
+  const v8 = ADD(v4,v5);
+  const v9 = TXN_VALUE();
+  const v10 = PEQ(v8,v9);
+  claim(CT_Require)(v10);
   commit();
   only("B") {
-    const "interact":T_Null:12 = interact("B")."partnerIs"("A":T_Address:6);
-    const "interact":T_Null:13 = interact("B")."acceptParams"("tuple idx":T_UInt256:4,"tuple idx":T_UInt256:5);
+    const v12 = interact("B")."partnerIs"(v6);
+    const v13 = interact("B")."acceptParams"(v4,v5);
      };
   only("B") {
      };
-  publish("B", join("B":T_Address:14))()().pay("tuple idx":T_UInt256:4).timeout((DLC_Int 10, {
+  publish("B", join(v14))()().pay(v4).timeout((DLC_Int 10, {
     only("A") {
        };
-    publish("A", again("A":T_Address:6))()().pay(DLC_Int 0){
-      const "prim":T_UInt256:19 = TXN_VALUE();
-      const "prim":T_Bool:20 = PEQ(DLC_Int 0,"prim":T_UInt256:19);
-      claim(CT_Require)("prim":T_Bool:20);
-      const "prim":T_UInt256:21 = BALANCE();
-      transfer.("prim":T_UInt256:21).to("A":T_Address:6);
+    publish("A", again(v6))()().pay(DLC_Int 0){
+      const v19 = TXN_VALUE();
+      const v20 = PEQ(DLC_Int 0,v19);
+      claim(CT_Require)(v20);
+      const v21 = BALANCE();
+      transfer.(v21).to(v6);
       commit();
       only("A") {
         claim(CT_Require)(DLC_Bool True);
-        const "interact":T_Null:27 = interact("A")."endsWith"(DLC_Bytes "Bob quits");
+        const v27 = interact("A")."endsWith"(DLC_Bytes "Bob quits");
          };
       only("B") {
         claim(CT_Require)(DLC_Bool True);
-        const "interact":T_Null:32 = interact("B")."endsWith"(DLC_Bytes "Bob quits");
+        const v32 = interact("B")."endsWith"(DLC_Bytes "Bob quits");
          };
       exit(); } })){
-    const "prim":T_UInt256:15 = TXN_VALUE();
-    const "prim":T_Bool:16 = PEQ("tuple idx":T_UInt256:4,"prim":T_UInt256:15);
-    claim(CT_Require)("prim":T_Bool:16);
+    const v15 = TXN_VALUE();
+    const v16 = PEQ(v4,v15);
+    claim(CT_Require)(v16);
     commit();
     only("A") {
-      const "interact":T_Null:34 = interact("A")."partnerIs"("B":T_Address:14);
-      let "_handA (as clo app)":T_UInt256:36;
-      const "s (as interact)":T_Bytes:37 = interact("A")."getHand"();
-      const "rockP (as prim)":T_Bool:38 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "ROCK");
-      const "paperP (as prim)":T_Bool:39 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "PAPER");
-      const "scissorsP (as prim)":T_Bool:40 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "SCISSORS");
-      const "_handA (as prim)":T_Bool:42 = IF_THEN_ELSE("rockP (as prim)":T_Bool:38,DLC_Bool True,"paperP (as prim)":T_Bool:39);
-      const "_handA (as prim)":T_Bool:44 = IF_THEN_ELSE("_handA (as prim)":T_Bool:42,DLC_Bool True,"scissorsP (as prim)":T_Bool:40);
-      claim(CT_Assume)("_handA (as prim)":T_Bool:44);
-      if "rockP (as prim)":T_Bool:38 then {
-        "_handA (as clo app)":T_UInt256:36 = DLC_Int 0;
+      const v34 = interact("A")."partnerIs"(v14);
+      let v36;
+      const v37 = interact("A")."getHand"();
+      const v38 = BYTES_EQ(v37,DLC_Bytes "ROCK");
+      const v39 = BYTES_EQ(v37,DLC_Bytes "PAPER");
+      const v40 = BYTES_EQ(v37,DLC_Bytes "SCISSORS");
+      const v42 = IF_THEN_ELSE(v38,DLC_Bool True,v39);
+      const v44 = IF_THEN_ELSE(v42,DLC_Bool True,v40);
+      claim(CT_Assume)(v44);
+      if v38 then {
+        v36 = DLC_Int 0;
          }
       else {
-        if "paperP (as prim)":T_Bool:39 then {
-          "_handA (as clo app)":T_UInt256:36 = DLC_Int 1;
+        if v39 then {
+          v36 = DLC_Int 1;
            }
         else {
-          "_handA (as clo app)":T_UInt256:36 = DLC_Int 2;
+          v36 = DLC_Int 2;
            };
          };
-      const "_handA (as prim)":T_Bool:47 = PLE(DLC_Int 0,"_handA (as clo app)":T_UInt256:36);
-      const "_handA (as prim)":T_Bool:48 = PLT("_handA (as clo app)":T_UInt256:36,DLC_Int 3);
-      const "_handA (as prim)":T_Bool:50 = IF_THEN_ELSE("_handA (as prim)":T_Bool:47,"_handA (as prim)":T_Bool:48,DLC_Bool False);
-      claim(CT_Assert)("_handA (as prim)":T_Bool:50);
-      const "salt (as interact)":T_UInt256:52 = interact("A")."random"();
-      const "commitment (as digest)":T_UInt256:53 = digest("salt (as interact)":T_UInt256:52,"_handA (as clo app)":T_UInt256:36);
-      const "interact":T_Null:54 = interact("A")."commits"();
+      const v47 = PLE(DLC_Int 0,v36);
+      const v48 = PLT(v36,DLC_Int 3);
+      const v50 = IF_THEN_ELSE(v47,v48,DLC_Bool False);
+      claim(CT_Assert)(v50);
+      const v52 = interact("A")."random"();
+      const v53 = digest(v52,v36);
+      const v54 = interact("A")."commits"();
        };
     only("A") {
        };
-    publish("A", again("A":T_Address:6))("commitment (as digest)":T_UInt256:53)("commitment (as digest)":T_UInt256:55).pay(DLC_Int 0).timeout((DLC_Int 10, {
+    publish("A", again(v6))(v53)(v55).pay(DLC_Int 0).timeout((DLC_Int 10, {
       only("B") {
          };
-      publish("B", again("B":T_Address:14))()().pay(DLC_Int 0){
-        const "prim":T_UInt256:60 = TXN_VALUE();
-        const "prim":T_Bool:61 = PEQ(DLC_Int 0,"prim":T_UInt256:60);
-        claim(CT_Require)("prim":T_Bool:61);
-        const "prim":T_UInt256:62 = BALANCE();
-        transfer.("prim":T_UInt256:62).to("B":T_Address:14);
+      publish("B", again(v14))()().pay(DLC_Int 0){
+        const v60 = TXN_VALUE();
+        const v61 = PEQ(DLC_Int 0,v60);
+        claim(CT_Require)(v61);
+        const v62 = BALANCE();
+        transfer.(v62).to(v14);
         commit();
         only("A") {
           claim(CT_Require)(DLC_Bool True);
-          const "interact":T_Null:68 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
+          const v68 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
            };
         only("B") {
           claim(CT_Require)(DLC_Bool True);
-          const "interact":T_Null:73 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
+          const v73 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
            };
         exit(); } })){
-      const "prim":T_UInt256:56 = TXN_VALUE();
-      const "prim":T_Bool:57 = PEQ(DLC_Int 0,"prim":T_UInt256:56);
-      claim(CT_Require)("prim":T_Bool:57);
+      const v56 = TXN_VALUE();
+      const v57 = PEQ(DLC_Int 0,v56);
+      claim(CT_Require)(v57);
       commit();
       only("B") {
-        let "handB (as clo app)":T_UInt256:76;
-        const "s (as interact)":T_Bytes:77 = interact("B")."getHand"();
-        const "rockP (as prim)":T_Bool:78 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "ROCK");
-        const "paperP (as prim)":T_Bool:79 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "PAPER");
-        const "scissorsP (as prim)":T_Bool:80 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "SCISSORS");
-        const "handB (as prim)":T_Bool:82 = IF_THEN_ELSE("rockP (as prim)":T_Bool:78,DLC_Bool True,"paperP (as prim)":T_Bool:79);
-        const "handB (as prim)":T_Bool:84 = IF_THEN_ELSE("handB (as prim)":T_Bool:82,DLC_Bool True,"scissorsP (as prim)":T_Bool:80);
-        claim(CT_Assume)("handB (as prim)":T_Bool:84);
-        if "rockP (as prim)":T_Bool:78 then {
-          "handB (as clo app)":T_UInt256:76 = DLC_Int 0;
+        let v76;
+        const v77 = interact("B")."getHand"();
+        const v78 = BYTES_EQ(v77,DLC_Bytes "ROCK");
+        const v79 = BYTES_EQ(v77,DLC_Bytes "PAPER");
+        const v80 = BYTES_EQ(v77,DLC_Bytes "SCISSORS");
+        const v82 = IF_THEN_ELSE(v78,DLC_Bool True,v79);
+        const v84 = IF_THEN_ELSE(v82,DLC_Bool True,v80);
+        claim(CT_Assume)(v84);
+        if v78 then {
+          v76 = DLC_Int 0;
            }
         else {
-          if "paperP (as prim)":T_Bool:79 then {
-            "handB (as clo app)":T_UInt256:76 = DLC_Int 1;
+          if v79 then {
+            v76 = DLC_Int 1;
              }
           else {
-            "handB (as clo app)":T_UInt256:76 = DLC_Int 2;
+            v76 = DLC_Int 2;
              };
            };
-        const "handB (as prim)":T_Bool:87 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:76);
-        const "handB (as prim)":T_Bool:88 = PLT("handB (as clo app)":T_UInt256:76,DLC_Int 3);
-        const "handB (as prim)":T_Bool:90 = IF_THEN_ELSE("handB (as prim)":T_Bool:87,"handB (as prim)":T_Bool:88,DLC_Bool False);
-        claim(CT_Assert)("handB (as prim)":T_Bool:90);
-        const "interact":T_Null:91 = interact("B")."shows"();
+        const v87 = PLE(DLC_Int 0,v76);
+        const v88 = PLT(v76,DLC_Int 3);
+        const v90 = IF_THEN_ELSE(v87,v88,DLC_Bool False);
+        claim(CT_Assert)(v90);
+        const v91 = interact("B")."shows"();
          };
       only("B") {
          };
-      publish("B", again("B":T_Address:14))("handB (as clo app)":T_UInt256:76)("handB (as clo app)":T_UInt256:92).pay(DLC_Int 0).timeout((DLC_Int 10, {
+      publish("B", again(v14))(v76)(v92).pay(DLC_Int 0).timeout((DLC_Int 10, {
         only("A") {
            };
-        publish("A", again("A":T_Address:6))()().pay(DLC_Int 0){
-          const "prim":T_UInt256:97 = TXN_VALUE();
-          const "prim":T_Bool:98 = PEQ(DLC_Int 0,"prim":T_UInt256:97);
-          claim(CT_Require)("prim":T_Bool:98);
-          const "prim":T_UInt256:99 = BALANCE();
-          transfer.("prim":T_UInt256:99).to("A":T_Address:6);
+        publish("A", again(v6))()().pay(DLC_Int 0){
+          const v97 = TXN_VALUE();
+          const v98 = PEQ(DLC_Int 0,v97);
+          claim(CT_Require)(v98);
+          const v99 = BALANCE();
+          transfer.(v99).to(v6);
           commit();
           only("A") {
             claim(CT_Require)(DLC_Bool True);
-            const "interact":T_Null:105 = interact("A")."endsWith"(DLC_Bytes "Bob quits");
+            const v105 = interact("A")."endsWith"(DLC_Bytes "Bob quits");
              };
           only("B") {
             claim(CT_Require)(DLC_Bool True);
-            const "interact":T_Null:110 = interact("B")."endsWith"(DLC_Bytes "Bob quits");
+            const v110 = interact("B")."endsWith"(DLC_Bytes "Bob quits");
              };
           exit(); } })){
-        const "prim":T_UInt256:93 = TXN_VALUE();
-        const "prim":T_Bool:94 = PEQ(DLC_Int 0,"prim":T_UInt256:93);
-        claim(CT_Require)("prim":T_Bool:94);
-        const "prim":T_Bool:112 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:92);
-        const "prim":T_Bool:113 = PLT("handB (as clo app)":T_UInt256:92,DLC_Int 3);
-        const "prim":T_Bool:115 = IF_THEN_ELSE("prim":T_Bool:112,"prim":T_Bool:113,DLC_Bool False);
-        claim(CT_Require)("prim":T_Bool:115);
+        const v93 = TXN_VALUE();
+        const v94 = PEQ(DLC_Int 0,v93);
+        claim(CT_Require)(v94);
+        const v112 = PLE(DLC_Int 0,v92);
+        const v113 = PLT(v92,DLC_Int 3);
+        const v115 = IF_THEN_ELSE(v112,v113,DLC_Bool False);
+        claim(CT_Require)(v115);
         commit();
         only("A") {
-          let "clo app":T_Bytes:117;
-          const "prim":T_Bool:119 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:92);
-          const "prim":T_Bool:120 = PLT("handB (as clo app)":T_UInt256:92,DLC_Int 3);
-          const "prim":T_Bool:122 = IF_THEN_ELSE("prim":T_Bool:119,"prim":T_Bool:120,DLC_Bool False);
-          claim(CT_Require)("prim":T_Bool:122);
-          const "prim":T_Bool:123 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 0);
-          if "prim":T_Bool:123 then {
-            "clo app":T_Bytes:117 = DLC_Bytes "ROCK";
+          let v117;
+          const v119 = PLE(DLC_Int 0,v92);
+          const v120 = PLT(v92,DLC_Int 3);
+          const v122 = IF_THEN_ELSE(v119,v120,DLC_Bool False);
+          claim(CT_Require)(v122);
+          const v123 = PEQ(v92,DLC_Int 0);
+          if v123 then {
+            v117 = DLC_Bytes "ROCK";
              }
           else {
-            const "prim":T_Bool:124 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 1);
-            if "prim":T_Bool:124 then {
-              "clo app":T_Bytes:117 = DLC_Bytes "PAPER";
+            const v124 = PEQ(v92,DLC_Int 1);
+            if v124 then {
+              v117 = DLC_Bytes "PAPER";
                }
             else {
-              "clo app":T_Bytes:117 = DLC_Bytes "SCISSORS";
+              v117 = DLC_Bytes "SCISSORS";
                };
              };
-          const "interact":T_Null:125 = interact("A")."reveals"("clo app":T_Bytes:117);
+          const v125 = interact("A")."reveals"(v117);
            };
         only("A") {
            };
-        publish("A", again("A":T_Address:6))("salt (as interact)":T_UInt256:52,"_handA (as clo app)":T_UInt256:36)("salt (as interact)":T_UInt256:126, "_handA (as clo app)":T_UInt256:127).pay(DLC_Int 0).timeout((DLC_Int 10, {
+        publish("A", again(v6))(v52,v36)(v126, v127).pay(DLC_Int 0).timeout((DLC_Int 10, {
           only("B") {
              };
-          publish("B", again("B":T_Address:14))()().pay(DLC_Int 0){
-            const "prim":T_UInt256:132 = TXN_VALUE();
-            const "prim":T_Bool:133 = PEQ(DLC_Int 0,"prim":T_UInt256:132);
-            claim(CT_Require)("prim":T_Bool:133);
-            const "prim":T_UInt256:134 = BALANCE();
-            transfer.("prim":T_UInt256:134).to("B":T_Address:14);
+          publish("B", again(v14))()().pay(DLC_Int 0){
+            const v132 = TXN_VALUE();
+            const v133 = PEQ(DLC_Int 0,v132);
+            claim(CT_Require)(v133);
+            const v134 = BALANCE();
+            transfer.(v134).to(v14);
             commit();
             only("A") {
               claim(CT_Require)(DLC_Bool True);
-              const "interact":T_Null:140 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
+              const v140 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
                };
             only("B") {
               claim(CT_Require)(DLC_Bool True);
-              const "interact":T_Null:145 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
+              const v145 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
                };
             exit(); } })){
-          const "prim":T_UInt256:128 = TXN_VALUE();
-          const "prim":T_Bool:129 = PEQ(DLC_Int 0,"prim":T_UInt256:128);
-          claim(CT_Require)("prim":T_Bool:129);
-          const "digest":T_UInt256:147 = digest("salt (as interact)":T_UInt256:126,"_handA (as clo app)":T_UInt256:127);
-          const "prim":T_Bool:148 = PEQ("commitment (as digest)":T_UInt256:55,"digest":T_UInt256:147);
-          claim(CT_Require)("prim":T_Bool:148);
-          const "prim":T_Bool:150 = PLE(DLC_Int 0,"_handA (as clo app)":T_UInt256:127);
-          const "prim":T_Bool:151 = PLT("_handA (as clo app)":T_UInt256:127,DLC_Int 3);
-          const "prim":T_Bool:153 = IF_THEN_ELSE("prim":T_Bool:150,"prim":T_Bool:151,DLC_Bool False);
-          claim(CT_Require)("prim":T_Bool:153);
-          let "outcome (as clo app)":T_UInt256:155;
-          const "validA (as prim)":T_Bool:157 = PLE(DLC_Int 0,"_handA (as clo app)":T_UInt256:127);
-          const "validA (as prim)":T_Bool:158 = PLT("_handA (as clo app)":T_UInt256:127,DLC_Int 3);
-          const "validA (as prim)":T_Bool:160 = IF_THEN_ELSE("validA (as prim)":T_Bool:157,"validA (as prim)":T_Bool:158,DLC_Bool False);
-          const "validB (as prim)":T_Bool:162 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:92);
-          const "validB (as prim)":T_Bool:163 = PLT("handB (as clo app)":T_UInt256:92,DLC_Int 3);
-          const "validB (as prim)":T_Bool:165 = IF_THEN_ELSE("validB (as prim)":T_Bool:162,"validB (as prim)":T_Bool:163,DLC_Bool False);
-          const "outcome (as prim)":T_Bool:167 = IF_THEN_ELSE("validA (as prim)":T_Bool:160,"validB (as prim)":T_Bool:165,DLC_Bool False);
-          if "outcome (as prim)":T_Bool:167 then {
-            const "outcome (as prim)":T_UInt256:168 = SUB(DLC_Int 4,"handB (as clo app)":T_UInt256:92);
-            const "outcome (as prim)":T_UInt256:169 = ADD("_handA (as clo app)":T_UInt256:127,"outcome (as prim)":T_UInt256:168);
-            const "outcome (as prim)":T_UInt256:170 = MOD("outcome (as prim)":T_UInt256:169,DLC_Int 3);
-            "outcome (as clo app)":T_UInt256:155 = "outcome (as prim)":T_UInt256:170;
+          const v128 = TXN_VALUE();
+          const v129 = PEQ(DLC_Int 0,v128);
+          claim(CT_Require)(v129);
+          const v147 = digest(v126,v127);
+          const v148 = PEQ(v55,v147);
+          claim(CT_Require)(v148);
+          const v150 = PLE(DLC_Int 0,v127);
+          const v151 = PLT(v127,DLC_Int 3);
+          const v153 = IF_THEN_ELSE(v150,v151,DLC_Bool False);
+          claim(CT_Require)(v153);
+          let v155;
+          const v157 = PLE(DLC_Int 0,v127);
+          const v158 = PLT(v127,DLC_Int 3);
+          const v160 = IF_THEN_ELSE(v157,v158,DLC_Bool False);
+          const v162 = PLE(DLC_Int 0,v92);
+          const v163 = PLT(v92,DLC_Int 3);
+          const v165 = IF_THEN_ELSE(v162,v163,DLC_Bool False);
+          const v167 = IF_THEN_ELSE(v160,v165,DLC_Bool False);
+          if v167 then {
+            const v168 = SUB(DLC_Int 4,v92);
+            const v169 = ADD(v127,v168);
+            const v170 = MOD(v169,DLC_Int 3);
+            v155 = v170;
              }
           else {
-            if "validA (as prim)":T_Bool:160 then {
-              "outcome (as clo app)":T_UInt256:155 = DLC_Int 2;
+            if v160 then {
+              v155 = DLC_Int 2;
                }
             else {
-              if "validB (as prim)":T_Bool:165 then {
-                "outcome (as clo app)":T_UInt256:155 = DLC_Int 0;
+              if v165 then {
+                v155 = DLC_Int 0;
                  }
               else {
-                "outcome (as clo app)":T_UInt256:155 = DLC_Int 1;
+                v155 = DLC_Int 1;
                  };
                };
              };
-          const "outcome (as prim)":T_Bool:173 = PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:155);
-          const "outcome (as prim)":T_Bool:174 = PLT("outcome (as clo app)":T_UInt256:155,DLC_Int 5);
-          const "outcome (as prim)":T_Bool:176 = IF_THEN_ELSE("outcome (as prim)":T_Bool:173,"outcome (as prim)":T_Bool:174,DLC_Bool False);
-          claim(CT_Assert)("outcome (as prim)":T_Bool:176);
-          const "prim":T_Bool:177 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
-          const "prim":T_Bool:179 = PLE(DLC_Int 0,"_handA (as clo app)":T_UInt256:127);
-          const "prim":T_Bool:180 = PLT("_handA (as clo app)":T_UInt256:127,DLC_Int 3);
-          const "prim":T_Bool:182 = IF_THEN_ELSE("prim":T_Bool:179,"prim":T_Bool:180,DLC_Bool False);
-          const "prim":T_Bool:185 = IF_THEN_ELSE("prim":T_Bool:177,DLC_Bool False,DLC_Bool True);
-          const "prim":T_Bool:187 = IF_THEN_ELSE("prim":T_Bool:185,DLC_Bool True,"prim":T_Bool:182);
-          claim(CT_Assert)("prim":T_Bool:187);
-          const "prim":T_Bool:188 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
-          const "prim":T_Bool:190 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:92);
-          const "prim":T_Bool:191 = PLT("handB (as clo app)":T_UInt256:92,DLC_Int 3);
-          const "prim":T_Bool:193 = IF_THEN_ELSE("prim":T_Bool:190,"prim":T_Bool:191,DLC_Bool False);
-          const "prim":T_Bool:196 = IF_THEN_ELSE("prim":T_Bool:188,DLC_Bool False,DLC_Bool True);
-          const "prim":T_Bool:198 = IF_THEN_ELSE("prim":T_Bool:196,DLC_Bool True,"prim":T_Bool:193);
-          claim(CT_Assert)("prim":T_Bool:198);
-          const "prim":T_Bool:200 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
-          const "prim":T_Bool:203 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 0);
-          const "prim":T_Bool:205 = IF_THEN_ELSE("prim":T_Bool:203,"prim":T_Bool:200,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:205);
-          const "prim":T_Bool:207 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 1);
-          const "prim":T_Bool:209 = IF_THEN_ELSE("prim":T_Bool:207,"prim":T_Bool:200,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:209);
-          const "prim":T_Bool:211 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 2);
-          const "prim":T_Bool:213 = IF_THEN_ELSE("prim":T_Bool:211,"prim":T_Bool:200,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:213);
-          const "prim":T_Bool:214 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
-          const "prim":T_Bool:217 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 0);
-          const "prim":T_Bool:219 = IF_THEN_ELSE("prim":T_Bool:217,"prim":T_Bool:214,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:219);
-          const "prim":T_Bool:221 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 1);
-          const "prim":T_Bool:223 = IF_THEN_ELSE("prim":T_Bool:221,"prim":T_Bool:214,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:223);
-          const "prim":T_Bool:225 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 2);
-          const "prim":T_Bool:227 = IF_THEN_ELSE("prim":T_Bool:225,"prim":T_Bool:214,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:227);
-          let "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:228;
-          const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
-          if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 then {
-            const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230 = MUL(DLC_Int 2,"tuple idx":T_UInt256:4);
-            "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:228 = ["one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:230,DLC_Int 0];
+          const v173 = PLE(DLC_Int 0,v155);
+          const v174 = PLT(v155,DLC_Int 5);
+          const v176 = IF_THEN_ELSE(v173,v174,DLC_Bool False);
+          claim(CT_Assert)(v176);
+          const v177 = PEQ(v155,DLC_Int 2);
+          const v179 = PLE(DLC_Int 0,v127);
+          const v180 = PLT(v127,DLC_Int 3);
+          const v182 = IF_THEN_ELSE(v179,v180,DLC_Bool False);
+          const v185 = IF_THEN_ELSE(v177,DLC_Bool False,DLC_Bool True);
+          const v187 = IF_THEN_ELSE(v185,DLC_Bool True,v182);
+          claim(CT_Assert)(v187);
+          const v188 = PEQ(v155,DLC_Int 0);
+          const v190 = PLE(DLC_Int 0,v92);
+          const v191 = PLT(v92,DLC_Int 3);
+          const v193 = IF_THEN_ELSE(v190,v191,DLC_Bool False);
+          const v196 = IF_THEN_ELSE(v188,DLC_Bool False,DLC_Bool True);
+          const v198 = IF_THEN_ELSE(v196,DLC_Bool True,v193);
+          claim(CT_Assert)(v198);
+          const v200 = PEQ(v155,DLC_Int 2);
+          const v203 = PEQ(v127,DLC_Int 0);
+          const v205 = IF_THEN_ELSE(v203,v200,DLC_Bool False);
+          claim(CT_Possible)(v205);
+          const v207 = PEQ(v127,DLC_Int 1);
+          const v209 = IF_THEN_ELSE(v207,v200,DLC_Bool False);
+          claim(CT_Possible)(v209);
+          const v211 = PEQ(v127,DLC_Int 2);
+          const v213 = IF_THEN_ELSE(v211,v200,DLC_Bool False);
+          claim(CT_Possible)(v213);
+          const v214 = PEQ(v155,DLC_Int 0);
+          const v217 = PEQ(v92,DLC_Int 0);
+          const v219 = IF_THEN_ELSE(v217,v214,DLC_Bool False);
+          claim(CT_Possible)(v219);
+          const v221 = PEQ(v92,DLC_Int 1);
+          const v223 = IF_THEN_ELSE(v221,v214,DLC_Bool False);
+          claim(CT_Possible)(v223);
+          const v225 = PEQ(v92,DLC_Int 2);
+          const v227 = IF_THEN_ELSE(v225,v214,DLC_Bool False);
+          claim(CT_Possible)(v227);
+          let v228;
+          const v229 = PEQ(v155,DLC_Int 2);
+          if v229 then {
+            const v230 = MUL(DLC_Int 2,v4);
+            v228 = [v230,DLC_Int 0];
              }
           else {
-            const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:231 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
-            if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:231 then {
-              const "one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:232 = MUL(DLC_Int 2,"tuple idx":T_UInt256:4);
-              "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:228 = [DLC_Int 0,"one of [\"getsA\",\"getsB\"] (as prim)":T_UInt256:232];
+            const v231 = PEQ(v155,DLC_Int 0);
+            if v231 then {
+              const v232 = MUL(DLC_Int 2,v4);
+              v228 = [DLC_Int 0,v232];
                }
             else {
-              "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:228 = ["tuple idx":T_UInt256:4,"tuple idx":T_UInt256:4];
+              v228 = [v4,v4];
                };
              };
-          const "tuple idx":T_UInt256:233 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:228[0];
-          const "tuple idx":T_UInt256:234 = "one of [\"getsA\",\"getsB\"] (as clo app)":T_Tuple [T_UInt256,T_UInt256]:228[1];
-          const "prim":T_UInt256:235 = ADD("tuple idx":T_UInt256:5,"tuple idx":T_UInt256:233);
-          transfer.("prim":T_UInt256:235).to("A":T_Address:6);
-          transfer.("tuple idx":T_UInt256:234).to("B":T_Address:14);
+          const v233 = v228[0];
+          const v234 = v228[1];
+          const v235 = ADD(v5,v233);
+          transfer.(v235).to(v6);
+          transfer.(v234).to(v14);
           commit();
           only("A") {
-            let "clo app":T_Bytes:239;
-            const "prim":T_Bool:241 = PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:155);
-            const "prim":T_Bool:242 = PLT("outcome (as clo app)":T_UInt256:155,DLC_Int 5);
-            const "prim":T_Bool:244 = IF_THEN_ELSE("prim":T_Bool:241,"prim":T_Bool:242,DLC_Bool False);
-            claim(CT_Require)("prim":T_Bool:244);
-            const "prim":T_Bool:245 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
-            if "prim":T_Bool:245 then {
-              "clo app":T_Bytes:239 = DLC_Bytes "Bob wins";
+            let v239;
+            const v241 = PLE(DLC_Int 0,v155);
+            const v242 = PLT(v155,DLC_Int 5);
+            const v244 = IF_THEN_ELSE(v241,v242,DLC_Bool False);
+            claim(CT_Require)(v244);
+            const v245 = PEQ(v155,DLC_Int 0);
+            if v245 then {
+              v239 = DLC_Bytes "Bob wins";
                }
             else {
-              const "prim":T_Bool:246 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 1);
-              if "prim":T_Bool:246 then {
-                "clo app":T_Bytes:239 = DLC_Bytes "Draw";
+              const v246 = PEQ(v155,DLC_Int 1);
+              if v246 then {
+                v239 = DLC_Bytes "Draw";
                  }
               else {
-                const "prim":T_Bool:247 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
-                if "prim":T_Bool:247 then {
-                  "clo app":T_Bytes:239 = DLC_Bytes "Alice wins";
+                const v247 = PEQ(v155,DLC_Int 2);
+                if v247 then {
+                  v239 = DLC_Bytes "Alice wins";
                    }
                 else {
-                  const "prim":T_Bool:248 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 3);
-                  if "prim":T_Bool:248 then {
-                    "clo app":T_Bytes:239 = DLC_Bytes "Alice quits";
+                  const v248 = PEQ(v155,DLC_Int 3);
+                  if v248 then {
+                    v239 = DLC_Bytes "Alice quits";
                      }
                   else {
-                    "clo app":T_Bytes:239 = DLC_Bytes "Bob quits";
+                    v239 = DLC_Bytes "Bob quits";
                      };
                    };
                  };
                };
-            const "interact":T_Null:249 = interact("A")."endsWith"("clo app":T_Bytes:239);
+            const v249 = interact("A")."endsWith"(v239);
              };
           only("B") {
-            let "clo app":T_Bytes:251;
-            const "prim":T_Bool:253 = PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:155);
-            const "prim":T_Bool:254 = PLT("outcome (as clo app)":T_UInt256:155,DLC_Int 5);
-            const "prim":T_Bool:256 = IF_THEN_ELSE("prim":T_Bool:253,"prim":T_Bool:254,DLC_Bool False);
-            claim(CT_Require)("prim":T_Bool:256);
-            const "prim":T_Bool:257 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
-            if "prim":T_Bool:257 then {
-              "clo app":T_Bytes:251 = DLC_Bytes "Bob wins";
+            let v251;
+            const v253 = PLE(DLC_Int 0,v155);
+            const v254 = PLT(v155,DLC_Int 5);
+            const v256 = IF_THEN_ELSE(v253,v254,DLC_Bool False);
+            claim(CT_Require)(v256);
+            const v257 = PEQ(v155,DLC_Int 0);
+            if v257 then {
+              v251 = DLC_Bytes "Bob wins";
                }
             else {
-              const "prim":T_Bool:258 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 1);
-              if "prim":T_Bool:258 then {
-                "clo app":T_Bytes:251 = DLC_Bytes "Draw";
+              const v258 = PEQ(v155,DLC_Int 1);
+              if v258 then {
+                v251 = DLC_Bytes "Draw";
                  }
               else {
-                const "prim":T_Bool:259 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
-                if "prim":T_Bool:259 then {
-                  "clo app":T_Bytes:251 = DLC_Bytes "Alice wins";
+                const v259 = PEQ(v155,DLC_Int 2);
+                if v259 then {
+                  v251 = DLC_Bytes "Alice wins";
                    }
                 else {
-                  const "prim":T_Bool:260 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 3);
-                  if "prim":T_Bool:260 then {
-                    "clo app":T_Bytes:251 = DLC_Bytes "Alice quits";
+                  const v260 = PEQ(v155,DLC_Int 3);
+                  if v260 then {
+                    v251 = DLC_Bytes "Alice quits";
                      }
                   else {
-                    "clo app":T_Bytes:251 = DLC_Bytes "Bob quits";
+                    v251 = DLC_Bytes "Bob quits";
                      };
                    };
                  };
                };
-            const "interact":T_Null:261 = interact("B")."endsWith"("clo app":T_Bytes:251);
+            const v261 = interact("B")."endsWith"(v251);
              };
           exit(); } } } } }

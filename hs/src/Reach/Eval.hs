@@ -89,7 +89,7 @@ data EvalError
   | Err_Form_InvalidArgs SLForm Int [JSExpression]
   | Err_Fun_NamesIllegal
   | Err_Import_IllegalJS JSImportDeclaration
-  | Err_Module_Return (SLRes SLStmtRes)
+  | Err_Module_Return
   | Err_NoHeader [JSModuleItem]
   | Err_Obj_IllegalComputedField SLVal
   | Err_Obj_IllegalFieldValues [JSExpression]
@@ -105,6 +105,7 @@ data EvalError
   | Err_While_IllegalInvariant [JSExpression]
   | Err_Only_NotOneClosure [SLVal]
   | Err_Each_NotTuple SLVal
+  | Err_Transfer_NotBound SLPart
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -238,7 +239,7 @@ instance Show EvalError where
       "Invalid function expression. Anonymous functions must not be named."
     Err_Import_IllegalJS decl ->
       "Invalid Reach import syntax: " <> conNameOf decl
-    Err_Module_Return _x ->
+    Err_Module_Return ->
       "Invalid return statement. Cannot return at top level of module."
     Err_NoHeader _mis ->
       "Invalid Reach file. Expected header '" <> versionHeader <> "'; at top of file."
@@ -281,6 +282,9 @@ instance Show EvalError where
       "PART.only not given a single closure as an argument, instead got " <> (show $ map displaySlValType slvals)
     Err_Each_NotTuple slval ->
       "each not given a tuple as an argument, instead got " <> displaySlValType slval
+    Err_Transfer_NotBound who ->
+      "cannot transfer to unbound participant, " <> B.unpack who
+      
 
 ensure_public :: SrcLoc -> SLSVal -> SLVal
 ensure_public at (lvl, v) =
@@ -323,12 +327,8 @@ base_env =
     , ("Object", SLV_Prim SLPrim_Object)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
-<<<<<<< HEAD
-    , ( "Reach"
-=======
     , ("each", SLV_Form SLForm_each)
     , ("Reach"
->>>>>>> 4b34145... Add each
       , (SLV_Object srcloc_top $
            m_fromList_public
              [("App", SLV_Form SLForm_App)])
@@ -564,7 +564,7 @@ evalForm ctxt at env f args =
                     make_part v =
                       case v of
                         SLV_Tuple p_at [SLV_Bytes _ bs, SLV_Object iat io] ->
-                          secret $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
+                          public $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
                         _ -> expect_throw at (Err_App_InvalidPartSpec v)
                 _ -> expect_throw at (Err_App_InvalidArgs args)
             _ -> expect_throw at (Err_App_InvalidArgs args)
@@ -758,14 +758,19 @@ evalPrim ctxt at env p sargs =
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "transfer"
     SLPrim_transfer_amt_to amt_dla ->
       case ctxt_mode ctxt of
-        SLC_ConsensusStep {} ->
+        SLC_ConsensusStep _ pdvs _ ->
           return $ SLRes lifts $ public $ SLV_Null at "transfer.to"
           where
             lifts = return $ DLS_Transfer at (ctxt_stack ctxt) who_dla amt_dla
             who_dla =
-              case checkAndConvert at (T_Fun [T_Address] T_Null) $ map snd sargs of
-                (_, [x]) -> x
-                _ -> impossible "transfer"
+              case map snd sargs of
+                [ SLV_Participant _ who _ _ Nothing ] ->
+                  case M.lookup who pdvs of
+                    Just dv -> convert $ SLV_DLVar dv
+                    Nothing -> expect_throw at $ Err_Transfer_NotBound who
+                [ one ] -> convert one
+                _ -> illegal_args
+            convert = checkType at T_Address
         cm -> expect_throw at $ Err_Eval_IllegalContext cm "transfer.to"
     SLPrim_exit ->
       case ctxt_mode ctxt of
@@ -1237,7 +1242,7 @@ evalStmt ctxt at sco ss =
             let SLRes flifts (SLStmtRes _ frets) = fr
             let lifts' = return $ DLS_If at' (DLA_Var cond_dv) tlifts flifts
             let levelHelp = SLStmtRes env . map (\(r_at, (r_lvl, r_v)) -> (r_at, (clvl <> r_lvl, r_v)))
-            let ir = SLRes lifts' $ combineStmtRes at' clvl (levelHelp trets) (levelHelp frets)
+            let ir = SLRes lifts' $ combineStmtRes at' clvl (Just (levelHelp trets)) (levelHelp frets)
             retSeqn ir at' ks_ne
           _ ->
             expect_throw at (Err_Eval_IfCondNotBool cv)
@@ -1345,19 +1350,21 @@ evalStmt ctxt at sco ss =
                 rands = JSLOne $ JSExpressionBinary amte (JSBinOpEq a) rhs
                 rhs = JSCallExpression (JSIdentifier a "__txn.value__") a JSLNil a
              in evalExpr ctxt at env' check_amte
-          (tlifts, t_cr, mtime') <-
+          (tlifts, t_mcr, mtime') <-
             case mtime of
-              Nothing -> return $ (mempty, (SLStmtRes env mempty), Nothing)
+              Nothing -> return $ (mempty, Nothing, Nothing)
               Just (dt_at, de, (JSBlock _ dt_ss _)) -> do
                 SLRes de_lifts de_sv <- evalExpr ctxt at env de
                 let de_da = checkType dt_at T_UInt256 $ ensure_public dt_at de_sv
+                --- XXX This is a little suspicious
+                --- let sco' = sco { sco_must_ret = RS_MayBeEmpty }
                 SLRes dta_lifts dt_cr <- evalStmt ctxt dt_at sco dt_ss
-                return $ (de_lifts, dt_cr, Just (de_da, dta_lifts))
+                return $ (de_lifts, Just dt_cr, Just (de_da, dta_lifts))
           let ctxt_cstep = (ctxt {ctxt_mode = SLC_ConsensusStep env' pdvs' penvs'})
           let sco' = sco {sco_env = env'}
           SLRes conlifts k_cr <- evalStmt ctxt_cstep at_after sco' ks
           let lifts' = elifts <> tlifts <> amt_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da mtime' (amt_check_lifts <> conlifts))
-          return $ SLRes lifts' $ combineStmtRes at_after Public t_cr k_cr
+          return $ SLRes lifts' $ combineStmtRes at_after Public t_mcr k_cr
         (SLC_ConsensusStep orig_env pdvs penvs, SLV_Prim SLPrim_committed) -> do
           let addl_env = M.difference env orig_env
           let add_defns penv = env_merge at_after penv addl_env
@@ -1502,14 +1509,16 @@ evalStmt ctxt at sco ss =
                   (_ : _) -> sco {sco_must_ret = RS_ImplicitNull}
           SLRes lifts1 (SLStmtRes env1 rets1) <- evalStmt ctxt at' sco' ks'
           return $ SLRes (lifts0 <> lifts1) (SLStmtRes env1 (rets0 ++ rets1))
-    combineStmtRes at' lvl (SLStmtRes _ lrets) (SLStmtRes env rrets) = SLStmtRes env rets
-      where
-        rets =
-          case (lrets, rrets) of
-            ([], []) -> []
-            ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
-            (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
-            (_, _) -> lrets ++ rrets
+    combineStmtRes at' lvl mlsr rsr@(SLStmtRes env rrets) =
+      case mlsr of
+        Nothing -> rsr
+        Just (SLStmtRes _ lrets) -> SLStmtRes env rets
+          where rets =
+                  case (lrets, rrets) of
+                    ([], []) -> []
+                    ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
+                    (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
+                    (_, _) -> lrets ++ rrets
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =
@@ -1572,7 +1581,7 @@ evalTopBody ctxt at libm env exenv body =
                       exenv
                in evalTopBody ctxt at' libm env' exenv' body'
             SLRes {} ->
-              expect_throw at' $ Err_Module_Return smr
+              expect_throw at' $ Err_Module_Return
 
 type SLMod = (ReachSource, [JSModuleItem])
 
@@ -1637,14 +1646,14 @@ compileDApp topv =
       where
         at' = srcloc_at "compileDApp" Nothing at
         sps = SLParts $ M.fromList $ map make_sps_entry partvs
-        make_sps_entry (Secret, (SLV_Participant _ pn (SLV_Object _ io) _ _)) =
+        make_sps_entry (Public, (SLV_Participant _ pn (SLV_Object _ io) _ _)) =
           (pn, InteractEnv $ M.map getType io)
           where
             getType (_, (SLV_Prim (SLPrim_interact _ _ _ t))) = t
             getType x = impossible $ "make_sps_entry getType " ++ show x
         make_sps_entry x = impossible $ "make_sps_entry " ++ show x
         penvs = M.fromList $ map make_penv partvs
-        make_penv (Secret, (SLV_Participant _ pn io _ _)) =
+        make_penv (Public, (SLV_Participant _ pn io _ _)) =
           (pn, env_insert at' "interact" (secret io) top_env)
         make_penv _ = impossible "SLPrim_App_Delay make_penv"
     _ ->

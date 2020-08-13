@@ -9,6 +9,10 @@ import Reach.CollectCounts
 import Reach.STCounter
 import Reach.Util
 
+import Data.Text.Prettyprint.Doc
+import Reach.Pretty()
+import Debug.Trace
+
 data ProRes_ a = ProRes_ Counts a
   deriving (Eq, Show)
 
@@ -94,9 +98,11 @@ epp_m done back skip look c =
            let cs' = count_rms [dv] k_cs
             in back' cs' (PL_Var at dv k'))
     LL_Set at dv da k ->
-      back cs' (PL_Set at dv da) k
-      where
-        cs' = counts da
+      look
+      k
+      (\back' _skip' k_cs k' ->
+         let cs' = counts da <> count_rms [dv] k_cs
+         in back' cs' (PL_Set at dv da k'))
     LL_Claim at f ct ca k ->
       case ct of
         CT_Assert -> skip k
@@ -138,16 +144,6 @@ extend_locals cs' mkpl p_prts_s = M.map add p_prts_s
     add (ProRes_ p_cs p_et) =
       ProRes_ (cs' <> p_cs) (ET_Com $ mkpl p_et)
 
-extend_localsif :: Counts -> (forall c. c -> c -> c -> PLCommon c) -> SLPartETs -> SLPartETs -> SLPartETs -> SLPartETs
-extend_localsif cs' mkpl p_prts_s_t p_prts_s_f p_prts_s_k = M.mapWithKey add p_prts_s_k
-  where
-    add :: SLPart -> ProRes_ ETail -> ProRes_ ETail
-    add p (ProRes_ k_cs kt) =
-      ProRes_ (cs' <> t_cs <> f_cs <> k_cs) (ET_Com $ mkpl tt ft kt)
-      where
-        ProRes_ t_cs tt = p_prts_s_t M.! p
-        ProRes_ f_cs ft = p_prts_s_f M.! p
-
 extend_locals_look :: MLookCommon -> SLPartETs -> SLPartETs
 extend_locals_look common p_prts_s = M.map add p_prts_s
   where
@@ -160,8 +156,11 @@ extend_locals_look common p_prts_s = M.map add p_prts_s
 epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
-    LLC_Com c ->
-      epp_m done back skip look c
+    LLC_Com c -> do
+      traceM $ "LLC_Com on " ++ (take 64 $ show c) 
+      r@(ProResC _ (ProRes_ cs _)) <- epp_m done back skip look c
+      traceM $ "LLC_Com on " ++ (take 64 $ show c) ++ " = " ++ (show $ map pretty $ counts_nzs cs)
+      return r
       where
         done :: MDone (ST s ProResC)
         done rat =
@@ -329,11 +328,14 @@ epp_s st s =
               FS_Join dv -> (mempty, [dv])
               FS_Again dv -> (counts dv, mempty)
       let msg_and_defns = (msg <> fs_defns)
+      traceM $ "ToC " <> show which <> " cons_vs = " <> (show $ map pretty $ counts_nzs cons_vs)
       let ok_cons_cs = delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
+      traceM $ "ToC " <> show which <> " ok_cons_cs = " <> (show $ map pretty $ counts_nzs ok_cons_cs)
       (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let svs = counts_nzs time_cons_cs
       let from_me = Just (from_as, amt_da, svs)
       let prev = pst_prev_handler st
+      traceM $ "ToC " <> show which <> " svs = " <> (show $ map pretty svs)
       let this_h = C_Handler at int_ok fs prev svs msg ct_cons
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
             ProRes_ cs_' $ ET_ToConsensus at fs which mfrom msg mtime' et_

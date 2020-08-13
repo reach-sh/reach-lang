@@ -74,28 +74,6 @@ const Bob =
         acceptParams: Fun([UInt256, UInt256], Null),
         shows: Fun([], Null) };
 
-// XXX Almost every way I tried to abstract these broke because of
-// things not being in the right context... requires more changes to
-// compiler.
-//
-// For example, I wanted to do
-//
-//  const [wagerAmount, escrowAmount] = setup(A, B);
-//
-// but the While version needs that to end in consensus and the other
-// doesn't, plus the timeouts have weird returns.
-//
-// Then, I tried to do
-//
-//  const roundOutcome = playRound(A, B)
-//
-// But the continuation needs to be in consensus for both and I get
-// strange re-binding issues. I tried to write it as
-//
-//  playRound(A, B, outcome => {....});
-//
-// But I got more problems. Need to try more approaches.
-
 export const once =
   Reach.App(
     {},
@@ -241,3 +219,139 @@ export const nodraw =
       commit();
 
       sendOutcome(outcome)(); });
+
+// Abstracted version
+
+function abs_sendOutcome(A, B, which) {
+  return () => {
+    each([A, B], (which) => {
+      interact.endsWith(showOutcome(which)); }); }; };
+
+function setup(A, B) {
+  A.only(() => {
+    const [wagerAmount, escrowAmount] =
+          declassify(interact.getParams()); });
+  A.publish(wagerAmount, escrowAmount)
+    .pay(wagerAmount + escrowAmount);
+  commit();
+
+  B.only(() => {
+    interact.partnerIs(A);
+    interact.acceptParams(wagerAmount, escrowAmount); });
+  B.pay(wagerAmount)
+    .timeout(DELAY, () => {
+      closeTo(A, abs_sendOutcome(A, B, B_QUITS));
+      // XXX This is to satisfy types which can't reason about guaranteed exit()
+      return [0, 0, A, A]; } );
+  commit();
+
+  A.only(() => {
+    interact.partnerIs(B); });
+
+  return [wagerAmount, escrowAmount, A, B]; };
+
+function round(A, B) {
+  A.only(() => {
+    const _handA = getHand(interact);
+    const [_commitA, _saltA] = makeCommitment(interact, _handA);
+    const commitA = declassify(_commitA);
+    interact.commits(); });
+  A.publish(commitA)
+    .timeout(DELAY, () => {
+      closeTo(B, abs_sendOutcome(A, B, A_QUITS));
+      return A_QUITS; } );
+  commit();
+
+  B.only(() => {
+    const handB = declassify(getHand(interact));
+    interact.shows(); });
+  B.publish(handB)
+    .timeout(DELAY, () => {
+      closeTo(A, abs_sendOutcome(A, B, B_QUITS));
+      return B_QUITS; } );
+  require(isHand(handB));
+  commit();
+
+  A.only(() => {
+    const saltA = declassify(_saltA);
+    const handA = declassify(_handA);
+    interact.reveals(showHand(handB)); });
+  A.publish(saltA, handA)
+    .timeout(DELAY, () => {
+      closeTo(B, abs_sendOutcome(A, B, A_QUITS));
+      return A_QUITS; } );
+  checkCommitment(commitA, saltA, handA);
+  require(isHand(handA));
+  const outcome = winner(handA, handB);
+  assert(implies(outcome == A_WINS, isHand(handA)));
+  assert(implies(outcome == B_WINS, isHand(handB)));
+  fair_game(handA, handB, outcome);
+  commit();
+
+  return outcome; };
+
+function finalize(wagerAmount, escrowAmount, Ap, Bp, outcome) {
+  const [getsA, getsB] = (() => {
+    if (outcome == A_WINS) {
+      return [2 * wagerAmount, 0]; }
+    else if (outcome == B_WINS) {
+      return [0, 2 * wagerAmount]; }
+    else {
+      return [wagerAmount, wagerAmount]; } })();
+  transfer(escrowAmount + getsA).to(Ap);
+  transfer(getsB).to(Bp); }
+
+export const abs_once =
+  Reach.App(
+    {},
+    [["A", Alice], ["B", Bob], ["O", {}]],
+    (A, B, O) => {
+      const [wagerAmount, escrowAmount, Ap, Bp] = setup(A, B);
+
+      const outcome = round(A, B);
+
+      // This is a B publish to be "fair", but it would be "better"
+      // for it to be A publish and have an optimizer combine adjacent
+      // publishes.
+      B.publish()
+        .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)));
+
+      finalize(wagerAmount, escrowAmount, Ap, Bp, outcome);
+      commit();
+
+      abs_sendOutcome(A, B, outcome)(); });
+
+export const abs_nodraw =
+  Reach.App(
+    {},
+    [["A", Alice], ["B", Bob], ["O", {}]],
+    (A, B, O) => {
+      const [wagerAmount, escrowAmount, Ap, Bp] = setup(A, B);
+
+      // See comment above
+      A.publish()
+        .timeout(DELAY, () => closeTo(B, abs_sendOutcome(A, B, A_QUITS)));
+
+      var [ count, outcome ] = [ 0, DRAW ];
+      invariant((balance() == ((2 * wagerAmount) + escrowAmount))
+                && isOutcome(outcome)
+                && outcome != A_QUITS
+                && outcome != B_QUITS);
+      while ( outcome == DRAW ) {
+        commit();
+
+        const roundOutcome = round(A, B);
+
+        // See comment above
+        B.publish()
+          .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)));
+
+        [ count, outcome ] = [ 1 + count, roundOutcome ];
+        continue; }
+
+      assert(outcome != DRAW);
+
+      finalize(wagerAmount, escrowAmount, Ap, Bp, outcome);
+      commit();
+
+      abs_sendOutcome(A, B, outcome)(); });
