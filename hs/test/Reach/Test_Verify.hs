@@ -1,5 +1,6 @@
 module Reach.Test_Verify
   ( test_verify_errs
+  , test_verify_noerrs
   )
 where
 
@@ -25,6 +26,16 @@ partialCompile fp = do
     -- don't really care about this logged output
     outn _ = "/dev/null"
 
+partialCompileExpectSuccess :: FilePath -> IO BL.ByteString
+partialCompileExpectSuccess fp = do
+  (bs, ec) <- partialCompile fp
+  case ec of
+    ExitFailure {} ->
+      fail $
+        ("Expected ExitSuccess, but got " <> show ec <> "\n")
+          <> (bunpack $ BL.toStrict bs)
+    ExitSuccess -> return bs
+
 partialCompileExpectFail :: FilePath -> IO BL.ByteString
 partialCompileExpectFail fp = do
   (bs, ec) <- partialCompile fp
@@ -32,9 +43,16 @@ partialCompileExpectFail fp = do
     ExitSuccess -> fail "Expected ExitFailure, got ExitSuccess"
     ExitFailure {} -> return bs
 
--- Assert that verification fails w/ the given err output
+-- Assert that verification fails and produces the given err output
 verifyGoldenTestFail :: FilePath -> TestTree
 verifyGoldenTestFail = stdoutStripAbs ".txt" partialCompileExpectFail
 
+-- Assert that verification passes and produces the given output
+verifyGoldenTestSuccess :: FilePath -> TestTree
+verifyGoldenTestSuccess = stdoutStripAbs ".txt" partialCompileExpectSuccess
+
 test_verify_errs :: IO TestTree
 test_verify_errs = goldenTests verifyGoldenTestFail ".rsh" "nl-verify-errs"
+
+test_verify_noerrs :: IO TestTree
+test_verify_noerrs = goldenTests verifyGoldenTestSuccess ".rsh" "nl-verify-noerrs"

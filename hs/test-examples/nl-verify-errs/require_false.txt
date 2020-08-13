@@ -1,0 +1,14 @@
+Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TRequire
+  at ./require_false.rsh:5:12:application
+
+  Theorem formalization:
+  false
+
+  This could be violated if...
+
+  In context...
+Verifying with mode = VM_Dishonest RoleContract
+Checked 3 theorems; 1 failures. :'(

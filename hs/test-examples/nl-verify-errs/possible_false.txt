@@ -1,0 +1,25 @@
+Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TPossible
+  at ./possible_false.rsh:5:13:application
+
+  Theorem formalization:
+  false
+
+  This could be violated if...
+
+  In context...
+Verifying with mode = VM_Dishonest RoleContract
+Verification failed:
+  in VM_Dishonest RoleContract mode
+  of theorem TPossible
+  at ./possible_false.rsh:5:13:application
+
+  Theorem formalization:
+  false
+
+  This could be violated if...
+
+  In context...
+Checked 4 theorems; 2 failures. :'(

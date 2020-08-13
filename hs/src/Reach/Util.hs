@@ -1,4 +1,4 @@
-module Reach.Util (bpack, impossible, trimQuotes, fromIntegerMay, maybeDie) where
+module Reach.Util (bpack, bunpack, impossible, trimQuotes, fromIntegerMay, maybeDie) where
 
 import Control.Monad
 import Data.ByteString (ByteString)
@@ -10,6 +10,9 @@ import System.Exit
 -- | A simple substitute for Data.ByteString.Char8.pack that handles unicode
 bpack :: String -> ByteString
 bpack = TE.encodeUtf8 . T.pack
+
+bunpack :: ByteString -> String
+bunpack = T.unpack . TE.decodeUtf8
 
 maybeDie :: ExitCode -> IO ()
 maybeDie ec = do
