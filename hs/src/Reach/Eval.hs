@@ -1123,7 +1123,9 @@ evalStmt ctxt at sco ss = do
           --- In the presence of `exit()`, it is okay to have a while
           --- that ends in an empty tail, if the empty tail is
           --- dominated by an exit(). How can we effectively detect
-          --- this?
+          --- this? One idea is to insert an `impossible()` and rely
+          --- on the verifier to check it. Another idea is to add
+          --- something to `ctxt` that says `exit` dominates.
           ret []
           --- XXX expect_throw at $ Err_WhileTailEmpty
         RS_MayBeEmpty -> ret []

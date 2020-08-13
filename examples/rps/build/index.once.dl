@@ -19,9 +19,10 @@ parts {
     }};
 
 only("A") {
-  const "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1 = interact("A")."getParams"();
-  const "tuple idx":T_UInt256:2 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1[0];
-  const "tuple idx":T_UInt256:3 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1[1]; };
+  prompt(Left 0) {
+    const "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1 = interact("A")."getParams"();
+    const "tuple idx":T_UInt256:2 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1[0];
+    const "tuple idx":T_UInt256:3 = "one of [\"wagerAmount\",\"escrowAmount\"] (as interact)":T_Tuple [T_UInt256,T_UInt256]:1[1]; }; };
 only("A") {
   const "prim":T_UInt256:7 = ADD("tuple idx":T_UInt256:2,"tuple idx":T_UInt256:3); };
 publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt256:3)("tuple idx":T_UInt256:4, "tuple idx":T_UInt256:5).pay("prim":T_UInt256:7){
@@ -31,8 +32,9 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
   claim(CT_Require)("prim":T_Bool:10);
   commit();
   only("B") {
-    const "interact":T_Null:12 = interact("B")."partnerIs"("A":T_Address:6);
-    const "interact":T_Null:13 = interact("B")."acceptParams"("tuple idx":T_UInt256:4,"tuple idx":T_UInt256:5); };
+    prompt(Left 11) {
+      const "interact":T_Null:12 = interact("B")."partnerIs"("A":T_Address:6);
+      const "interact":T_Null:13 = interact("B")."acceptParams"("tuple idx":T_UInt256:4,"tuple idx":T_UInt256:5); }; };
   only("B") {
      };
   publish("B", join("B":T_Address:14))()().pay("tuple idx":T_UInt256:4).timeout(DLC_Int 10, {
@@ -46,41 +48,45 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
         const "prim":T_UInt256:21 = BALANCE();
         transfer.("prim":T_UInt256:21).to("A":T_Address:6);
         commit();
-        only("A") {
-          claim(CT_Require)(DLC_Bool True);
-          const "interact":T_Null:27 = interact("A")."endsWith"(DLC_Bytes "Bob quits"); };
-        only("B") {
-          claim(CT_Require)(DLC_Bool True);
-          const "interact":T_Null:32 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); };
+        prompt(Left 22) {
+          only("A") {
+            prompt(Left 23) {
+              claim(CT_Require)(DLC_Bool True);
+              const "interact":T_Null:27 = interact("A")."endsWith"(DLC_Bytes "Bob quits"); }; };
+          only("B") {
+            prompt(Left 28) {
+              claim(CT_Require)(DLC_Bool True);
+              const "interact":T_Null:32 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); }; }; };
         exit(); } }; }){
     const "prim":T_UInt256:15 = TXN_VALUE();
     const "prim":T_Bool:16 = PEQ("tuple idx":T_UInt256:4,"prim":T_UInt256:15);
     claim(CT_Require)("prim":T_Bool:16);
     commit();
     only("A") {
-      const "interact":T_Null:34 = interact("A")."partnerIs"("B":T_Address:14);
-      prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:12:29:block "_handA (as clo app)" T_UInt256 36)) {
-        const "s (as interact)":T_Bytes:37 = interact("A")."getHand"();
-        const "rockP (as prim)":T_Bool:38 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "ROCK");
-        const "paperP (as prim)":T_Bool:39 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "PAPER");
-        const "scissorsP (as prim)":T_Bool:40 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "SCISSORS");
-        const "_handA (as prim)":T_Bool:42 = IF_THEN_ELSE("rockP (as prim)":T_Bool:38,DLC_Bool True,"paperP (as prim)":T_Bool:39);
-        const "_handA (as prim)":T_Bool:44 = IF_THEN_ELSE("_handA (as prim)":T_Bool:42,DLC_Bool True,"scissorsP (as prim)":T_Bool:40);
-        claim(CT_Assume)("_handA (as prim)":T_Bool:44);
-        if "rockP (as prim)":T_Bool:38 then {
-          throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 0).to(36); }
-        else {
-          if "paperP (as prim)":T_Bool:39 then {
-            throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 1).to(36); }
+      prompt(Left 33) {
+        const "interact":T_Null:34 = interact("A")."partnerIs"("B":T_Address:14);
+        prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:12:29:block "_handA (as clo app)" T_UInt256 36)) {
+          const "s (as interact)":T_Bytes:37 = interact("A")."getHand"();
+          const "rockP (as prim)":T_Bool:38 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "ROCK");
+          const "paperP (as prim)":T_Bool:39 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "PAPER");
+          const "scissorsP (as prim)":T_Bool:40 = BYTES_EQ("s (as interact)":T_Bytes:37,DLC_Bytes "SCISSORS");
+          const "_handA (as prim)":T_Bool:42 = IF_THEN_ELSE("rockP (as prim)":T_Bool:38,DLC_Bool True,"paperP (as prim)":T_Bool:39);
+          const "_handA (as prim)":T_Bool:44 = IF_THEN_ELSE("_handA (as prim)":T_Bool:42,DLC_Bool True,"scissorsP (as prim)":T_Bool:40);
+          claim(CT_Assume)("_handA (as prim)":T_Bool:44);
+          if "rockP (as prim)":T_Bool:38 then {
+            throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 0).to(36); }
           else {
-            throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 2).to(36); }; }; };
-      const "_handA (as prim)":T_Bool:47 = PLE(DLC_Int 0,"_handA (as clo app)":T_UInt256:36);
-      const "_handA (as prim)":T_Bool:48 = PLT("_handA (as clo app)":T_UInt256:36,DLC_Int 3);
-      const "_handA (as prim)":T_Bool:50 = IF_THEN_ELSE("_handA (as prim)":T_Bool:47,"_handA (as prim)":T_Bool:48,DLC_Bool False);
-      claim(CT_Assert)("_handA (as prim)":T_Bool:50);
-      const "salt (as interact)":T_UInt256:52 = interact("A")."random"();
-      const "commitment (as digest)":T_UInt256:53 = digest("salt (as interact)":T_UInt256:52,"_handA (as clo app)":T_UInt256:36);
-      const "interact":T_Null:54 = interact("A")."commits"(); };
+            if "paperP (as prim)":T_Bool:39 then {
+              throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 1).to(36); }
+            else {
+              throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 2).to(36); }; }; };
+        const "_handA (as prim)":T_Bool:47 = PLE(DLC_Int 0,"_handA (as clo app)":T_UInt256:36);
+        const "_handA (as prim)":T_Bool:48 = PLT("_handA (as clo app)":T_UInt256:36,DLC_Int 3);
+        const "_handA (as prim)":T_Bool:50 = IF_THEN_ELSE("_handA (as prim)":T_Bool:47,"_handA (as prim)":T_Bool:48,DLC_Bool False);
+        claim(CT_Assert)("_handA (as prim)":T_Bool:50);
+        const "salt (as interact)":T_UInt256:52 = interact("A")."random"();
+        const "commitment (as digest)":T_UInt256:53 = digest("salt (as interact)":T_UInt256:52,"_handA (as clo app)":T_UInt256:36);
+        const "interact":T_Null:54 = interact("A")."commits"(); }; };
     only("A") {
        };
     publish("A", again("A":T_Address:6))("commitment (as digest)":T_UInt256:53)("commitment (as digest)":T_UInt256:55).pay(DLC_Int 0).timeout(DLC_Int 10, {
@@ -94,38 +100,42 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
           const "prim":T_UInt256:62 = BALANCE();
           transfer.("prim":T_UInt256:62).to("B":T_Address:14);
           commit();
-          only("A") {
-            claim(CT_Require)(DLC_Bool True);
-            const "interact":T_Null:68 = interact("A")."endsWith"(DLC_Bytes "Alice quits"); };
-          only("B") {
-            claim(CT_Require)(DLC_Bool True);
-            const "interact":T_Null:73 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); };
+          prompt(Left 63) {
+            only("A") {
+              prompt(Left 64) {
+                claim(CT_Require)(DLC_Bool True);
+                const "interact":T_Null:68 = interact("A")."endsWith"(DLC_Bytes "Alice quits"); }; };
+            only("B") {
+              prompt(Left 69) {
+                claim(CT_Require)(DLC_Bool True);
+                const "interact":T_Null:73 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); }; }; };
           exit(); } }; }){
       const "prim":T_UInt256:56 = TXN_VALUE();
       const "prim":T_Bool:57 = PEQ(DLC_Int 0,"prim":T_UInt256:56);
       claim(CT_Require)("prim":T_Bool:57);
       commit();
       only("B") {
-        prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:12:29:block "handB (as clo app)" T_UInt256 76)) {
-          const "s (as interact)":T_Bytes:77 = interact("B")."getHand"();
-          const "rockP (as prim)":T_Bool:78 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "ROCK");
-          const "paperP (as prim)":T_Bool:79 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "PAPER");
-          const "scissorsP (as prim)":T_Bool:80 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "SCISSORS");
-          const "handB (as prim)":T_Bool:82 = IF_THEN_ELSE("rockP (as prim)":T_Bool:78,DLC_Bool True,"paperP (as prim)":T_Bool:79);
-          const "handB (as prim)":T_Bool:84 = IF_THEN_ELSE("handB (as prim)":T_Bool:82,DLC_Bool True,"scissorsP (as prim)":T_Bool:80);
-          claim(CT_Assume)("handB (as prim)":T_Bool:84);
-          if "rockP (as prim)":T_Bool:78 then {
-            throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 0).to(76); }
-          else {
-            if "paperP (as prim)":T_Bool:79 then {
-              throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 1).to(76); }
+        prompt(Left 74) {
+          prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:12:29:block "handB (as clo app)" T_UInt256 76)) {
+            const "s (as interact)":T_Bytes:77 = interact("B")."getHand"();
+            const "rockP (as prim)":T_Bool:78 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "ROCK");
+            const "paperP (as prim)":T_Bool:79 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "PAPER");
+            const "scissorsP (as prim)":T_Bool:80 = BYTES_EQ("s (as interact)":T_Bytes:77,DLC_Bytes "SCISSORS");
+            const "handB (as prim)":T_Bool:82 = IF_THEN_ELSE("rockP (as prim)":T_Bool:78,DLC_Bool True,"paperP (as prim)":T_Bool:79);
+            const "handB (as prim)":T_Bool:84 = IF_THEN_ELSE("handB (as prim)":T_Bool:82,DLC_Bool True,"scissorsP (as prim)":T_Bool:80);
+            claim(CT_Assume)("handB (as prim)":T_Bool:84);
+            if "rockP (as prim)":T_Bool:78 then {
+              throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 0).to(76); }
             else {
-              throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 2).to(76); }; }; };
-        const "handB (as prim)":T_Bool:87 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:76);
-        const "handB (as prim)":T_Bool:88 = PLT("handB (as clo app)":T_UInt256:76,DLC_Int 3);
-        const "handB (as prim)":T_Bool:90 = IF_THEN_ELSE("handB (as prim)":T_Bool:87,"handB (as prim)":T_Bool:88,DLC_Bool False);
-        claim(CT_Assert)("handB (as prim)":T_Bool:90);
-        const "interact":T_Null:91 = interact("B")."shows"(); };
+              if "paperP (as prim)":T_Bool:79 then {
+                throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 1).to(76); }
+              else {
+                throw(SLV_Int /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:makeEnum 2).to(76); }; }; };
+          const "handB (as prim)":T_Bool:87 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:76);
+          const "handB (as prim)":T_Bool:88 = PLT("handB (as clo app)":T_UInt256:76,DLC_Int 3);
+          const "handB (as prim)":T_Bool:90 = IF_THEN_ELSE("handB (as prim)":T_Bool:87,"handB (as prim)":T_Bool:88,DLC_Bool False);
+          claim(CT_Assert)("handB (as prim)":T_Bool:90);
+          const "interact":T_Null:91 = interact("B")."shows"(); }; };
       only("B") {
          };
       publish("B", again("B":T_Address:14))("handB (as clo app)":T_UInt256:76)("handB (as clo app)":T_UInt256:92).pay(DLC_Int 0).timeout(DLC_Int 10, {
@@ -139,12 +149,15 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
             const "prim":T_UInt256:99 = BALANCE();
             transfer.("prim":T_UInt256:99).to("A":T_Address:6);
             commit();
-            only("A") {
-              claim(CT_Require)(DLC_Bool True);
-              const "interact":T_Null:105 = interact("A")."endsWith"(DLC_Bytes "Bob quits"); };
-            only("B") {
-              claim(CT_Require)(DLC_Bool True);
-              const "interact":T_Null:110 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); };
+            prompt(Left 100) {
+              only("A") {
+                prompt(Left 101) {
+                  claim(CT_Require)(DLC_Bool True);
+                  const "interact":T_Null:105 = interact("A")."endsWith"(DLC_Bytes "Bob quits"); }; };
+              only("B") {
+                prompt(Left 106) {
+                  claim(CT_Require)(DLC_Bool True);
+                  const "interact":T_Null:110 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); }; }; };
             exit(); } }; }){
         const "prim":T_UInt256:93 = TXN_VALUE();
         const "prim":T_Bool:94 = PEQ(DLC_Int 0,"prim":T_UInt256:93);
@@ -155,21 +168,22 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
         claim(CT_Require)("prim":T_Bool:115);
         commit();
         only("A") {
-          prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:6:26:block "clo app" T_Bytes 117)) {
-            const "prim":T_Bool:119 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:92);
-            const "prim":T_Bool:120 = PLT("handB (as clo app)":T_UInt256:92,DLC_Int 3);
-            const "prim":T_Bool:122 = IF_THEN_ELSE("prim":T_Bool:119,"prim":T_Bool:120,DLC_Bool False);
-            claim(CT_Require)("prim":T_Bool:122);
-            const "prim":T_Bool:123 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 0);
-            if "prim":T_Bool:123 then {
-              throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:8:33:string "ROCK").to(117); }
-            else {
-              const "prim":T_Bool:124 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 1);
-              if "prim":T_Bool:124 then {
-                throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:9:39:string "PAPER").to(117); }
+          prompt(Left 116) {
+            prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:6:26:block "clo app" T_Bytes 117)) {
+              const "prim":T_Bool:119 = PLE(DLC_Int 0,"handB (as clo app)":T_UInt256:92);
+              const "prim":T_Bool:120 = PLT("handB (as clo app)":T_UInt256:92,DLC_Int 3);
+              const "prim":T_Bool:122 = IF_THEN_ELSE("prim":T_Bool:119,"prim":T_Bool:120,DLC_Bool False);
+              claim(CT_Require)("prim":T_Bool:122);
+              const "prim":T_Bool:123 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 0);
+              if "prim":T_Bool:123 then {
+                throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:8:33:string "ROCK").to(117); }
               else {
-                throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:10:17:string "SCISSORS").to(117); }; }; };
-          const "interact":T_Null:125 = interact("A")."reveals"("clo app":T_Bytes:117); };
+                const "prim":T_Bool:124 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 1);
+                if "prim":T_Bool:124 then {
+                  throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:9:39:string "PAPER").to(117); }
+                else {
+                  throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:10:17:string "SCISSORS").to(117); }; }; };
+            const "interact":T_Null:125 = interact("A")."reveals"("clo app":T_Bytes:117); }; };
         only("A") {
            };
         publish("A", again("A":T_Address:6))("salt (as interact)":T_UInt256:52,"_handA (as clo app)":T_UInt256:36)("salt (as interact)":T_UInt256:126, "_handA (as clo app)":T_UInt256:127).pay(DLC_Int 0).timeout(DLC_Int 10, {
@@ -183,12 +197,15 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
               const "prim":T_UInt256:134 = BALANCE();
               transfer.("prim":T_UInt256:134).to("B":T_Address:14);
               commit();
-              only("A") {
-                claim(CT_Require)(DLC_Bool True);
-                const "interact":T_Null:140 = interact("A")."endsWith"(DLC_Bytes "Alice quits"); };
-              only("B") {
-                claim(CT_Require)(DLC_Bool True);
-                const "interact":T_Null:145 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); };
+              prompt(Left 135) {
+                only("A") {
+                  prompt(Left 136) {
+                    claim(CT_Require)(DLC_Bool True);
+                    const "interact":T_Null:140 = interact("A")."endsWith"(DLC_Bytes "Alice quits"); }; };
+                only("B") {
+                  prompt(Left 141) {
+                    claim(CT_Require)(DLC_Bool True);
+                    const "interact":T_Null:145 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); }; }; };
               exit(); } }; }){
           const "prim":T_UInt256:128 = TXN_VALUE();
           const "prim":T_Bool:129 = PEQ(DLC_Int 0,"prim":T_UInt256:128);
@@ -239,26 +256,29 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
           const "prim":T_Bool:196 = IF_THEN_ELSE("prim":T_Bool:188,DLC_Bool False,DLC_Bool True);
           const "prim":T_Bool:198 = IF_THEN_ELSE("prim":T_Bool:196,DLC_Bool True,"prim":T_Bool:193);
           claim(CT_Assert)("prim":T_Bool:198);
-          const "prim":T_Bool:200 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
-          const "prim":T_Bool:203 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 0);
-          const "prim":T_Bool:205 = IF_THEN_ELSE("prim":T_Bool:203,"prim":T_Bool:200,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:205);
-          const "prim":T_Bool:207 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 1);
-          const "prim":T_Bool:209 = IF_THEN_ELSE("prim":T_Bool:207,"prim":T_Bool:200,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:209);
-          const "prim":T_Bool:211 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 2);
-          const "prim":T_Bool:213 = IF_THEN_ELSE("prim":T_Bool:211,"prim":T_Bool:200,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:213);
-          const "prim":T_Bool:214 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
-          const "prim":T_Bool:217 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 0);
-          const "prim":T_Bool:219 = IF_THEN_ELSE("prim":T_Bool:217,"prim":T_Bool:214,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:219);
-          const "prim":T_Bool:221 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 1);
-          const "prim":T_Bool:223 = IF_THEN_ELSE("prim":T_Bool:221,"prim":T_Bool:214,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:223);
-          const "prim":T_Bool:225 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 2);
-          const "prim":T_Bool:227 = IF_THEN_ELSE("prim":T_Bool:225,"prim":T_Bool:214,DLC_Bool False);
-          claim(CT_Possible)("prim":T_Bool:227);
+          prompt(Left 199) {
+            const "prim":T_Bool:200 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
+            prompt(Left 201) {
+              const "prim":T_Bool:203 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 0);
+              const "prim":T_Bool:205 = IF_THEN_ELSE("prim":T_Bool:203,"prim":T_Bool:200,DLC_Bool False);
+              claim(CT_Possible)("prim":T_Bool:205);
+              const "prim":T_Bool:207 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 1);
+              const "prim":T_Bool:209 = IF_THEN_ELSE("prim":T_Bool:207,"prim":T_Bool:200,DLC_Bool False);
+              claim(CT_Possible)("prim":T_Bool:209);
+              const "prim":T_Bool:211 = PEQ("_handA (as clo app)":T_UInt256:127,DLC_Int 2);
+              const "prim":T_Bool:213 = IF_THEN_ELSE("prim":T_Bool:211,"prim":T_Bool:200,DLC_Bool False);
+              claim(CT_Possible)("prim":T_Bool:213); };
+            const "prim":T_Bool:214 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
+            prompt(Left 215) {
+              const "prim":T_Bool:217 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 0);
+              const "prim":T_Bool:219 = IF_THEN_ELSE("prim":T_Bool:217,"prim":T_Bool:214,DLC_Bool False);
+              claim(CT_Possible)("prim":T_Bool:219);
+              const "prim":T_Bool:221 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 1);
+              const "prim":T_Bool:223 = IF_THEN_ELSE("prim":T_Bool:221,"prim":T_Bool:214,DLC_Bool False);
+              claim(CT_Possible)("prim":T_Bool:223);
+              const "prim":T_Bool:225 = PEQ("handB (as clo app)":T_UInt256:92,DLC_Int 2);
+              const "prim":T_Bool:227 = IF_THEN_ELSE("prim":T_Bool:225,"prim":T_Bool:214,DLC_Bool False);
+              claim(CT_Possible)("prim":T_Bool:227); }; };
           prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:156:37:block "one of [\"getsA\",\"getsB\"] (as clo app)" (T_Tuple [T_UInt256,T_UInt256]) 228)) {
             const "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
             if "one of [\"getsA\",\"getsB\"] (as prim)":T_Bool:229 then {
@@ -277,51 +297,54 @@ publish("A", join("A":T_Address:6))("tuple idx":T_UInt256:2,"tuple idx":T_UInt25
           transfer.("prim":T_UInt256:235).to("A":T_Address:6);
           transfer.("tuple idx":T_UInt256:234).to("B":T_Address:14);
           commit();
-          only("A") {
-            prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:25:25:block "clo app" T_Bytes 239)) {
-              const "prim":T_Bool:241 = PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:155);
-              const "prim":T_Bool:242 = PLT("outcome (as clo app)":T_UInt256:155,DLC_Int 5);
-              const "prim":T_Bool:244 = IF_THEN_ELSE("prim":T_Bool:241,"prim":T_Bool:242,DLC_Bool False);
-              claim(CT_Require)("prim":T_Bool:244);
-              const "prim":T_Bool:245 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
-              if "prim":T_Bool:245 then {
-                throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:27:29:string "Bob wins").to(239); }
-              else {
-                const "prim":T_Bool:246 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 1);
-                if "prim":T_Bool:246 then {
-                  throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:28:32:string "Draw").to(239); }
-                else {
-                  const "prim":T_Bool:247 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
-                  if "prim":T_Bool:247 then {
-                    throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:29:34:string "Alice wins").to(239); }
+          prompt(Left 237) {
+            only("A") {
+              prompt(Left 238) {
+                prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:25:25:block "clo app" T_Bytes 239)) {
+                  const "prim":T_Bool:241 = PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:155);
+                  const "prim":T_Bool:242 = PLT("outcome (as clo app)":T_UInt256:155,DLC_Int 5);
+                  const "prim":T_Bool:244 = IF_THEN_ELSE("prim":T_Bool:241,"prim":T_Bool:242,DLC_Bool False);
+                  claim(CT_Require)("prim":T_Bool:244);
+                  const "prim":T_Bool:245 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
+                  if "prim":T_Bool:245 then {
+                    throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:27:29:string "Bob wins").to(239); }
                   else {
-                    const "prim":T_Bool:248 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 3);
-                    if "prim":T_Bool:248 then {
-                      throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:30:35:string "Alice quits").to(239); }
+                    const "prim":T_Bool:246 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 1);
+                    if "prim":T_Bool:246 then {
+                      throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:28:32:string "Draw").to(239); }
                     else {
-                      throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:31:17:string "Bob quits").to(239); }; }; }; }; };
-            const "interact":T_Null:249 = interact("A")."endsWith"("clo app":T_Bytes:239); };
-          only("B") {
-            prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:25:25:block "clo app" T_Bytes 251)) {
-              const "prim":T_Bool:253 = PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:155);
-              const "prim":T_Bool:254 = PLT("outcome (as clo app)":T_UInt256:155,DLC_Int 5);
-              const "prim":T_Bool:256 = IF_THEN_ELSE("prim":T_Bool:253,"prim":T_Bool:254,DLC_Bool False);
-              claim(CT_Require)("prim":T_Bool:256);
-              const "prim":T_Bool:257 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
-              if "prim":T_Bool:257 then {
-                throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:27:29:string "Bob wins").to(251); }
-              else {
-                const "prim":T_Bool:258 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 1);
-                if "prim":T_Bool:258 then {
-                  throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:28:32:string "Draw").to(251); }
-                else {
-                  const "prim":T_Bool:259 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
-                  if "prim":T_Bool:259 then {
-                    throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:29:34:string "Alice wins").to(251); }
+                      const "prim":T_Bool:247 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
+                      if "prim":T_Bool:247 then {
+                        throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:29:34:string "Alice wins").to(239); }
+                      else {
+                        const "prim":T_Bool:248 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 3);
+                        if "prim":T_Bool:248 then {
+                          throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:30:35:string "Alice quits").to(239); }
+                        else {
+                          throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:31:17:string "Bob quits").to(239); }; }; }; }; };
+                const "interact":T_Null:249 = interact("A")."endsWith"("clo app":T_Bytes:239); }; };
+            only("B") {
+              prompt(Left 250) {
+                prompt(Right (DLVar /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:25:25:block "clo app" T_Bytes 251)) {
+                  const "prim":T_Bool:253 = PLE(DLC_Int 0,"outcome (as clo app)":T_UInt256:155);
+                  const "prim":T_Bool:254 = PLT("outcome (as clo app)":T_UInt256:155,DLC_Int 5);
+                  const "prim":T_Bool:256 = IF_THEN_ELSE("prim":T_Bool:253,"prim":T_Bool:254,DLC_Bool False);
+                  claim(CT_Require)("prim":T_Bool:256);
+                  const "prim":T_Bool:257 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 0);
+                  if "prim":T_Bool:257 then {
+                    throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:27:29:string "Bob wins").to(251); }
                   else {
-                    const "prim":T_Bool:260 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 3);
-                    if "prim":T_Bool:260 then {
-                      throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:30:35:string "Alice quits").to(251); }
+                    const "prim":T_Bool:258 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 1);
+                    if "prim":T_Bool:258 then {
+                      throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:28:32:string "Draw").to(251); }
                     else {
-                      throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:31:17:string "Bob quits").to(251); }; }; }; }; };
-            const "interact":T_Null:261 = interact("B")."endsWith"("clo app":T_Bytes:251); }; } } } } }
+                      const "prim":T_Bool:259 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 2);
+                      if "prim":T_Bool:259 then {
+                        throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:29:34:string "Alice wins").to(251); }
+                      else {
+                        const "prim":T_Bool:260 = PEQ("outcome (as clo app)":T_UInt256:155,DLC_Int 3);
+                        if "prim":T_Bool:260 then {
+                          throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:30:35:string "Alice quits").to(251); }
+                        else {
+                          throw(SLV_Bytes /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/examples/rps/index.rsh:31:17:string "Bob quits").to(251); }; }; }; }; };
+                const "interact":T_Null:261 = interact("B")."endsWith"("clo app":T_Bytes:251); }; }; }; } } } } }
