@@ -24,7 +24,7 @@ compileNL copts = do
   let compile1 which = do
         let outn = (output copts) . ((T.pack which <> ".") <>)
         let out = writeFile . outn
-        dl <- compileBundle djp which
+        let dl = compileBundle djp which
         out "dl" $ show $ pretty dl
         let ll = linearize dl
         out "ll" $ show $ pretty ll

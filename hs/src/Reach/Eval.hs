@@ -1634,6 +1634,6 @@ compileBundleST (JSBundle mods) top = do
       [] -> impossible $ "compileBundle: no files"
       ((x, _) : _) -> x
 
-compileBundle :: JSBundle -> SLVar -> IO DLProg
+compileBundle :: JSBundle -> SLVar -> DLProg
 compileBundle jsb top =
-  stToIO $ compileBundleST jsb top
+  runST $ compileBundleST jsb top
