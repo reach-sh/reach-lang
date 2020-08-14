@@ -153,7 +153,7 @@ instance Pretty DLStmt where
           timep =
             case mtime of
               Nothing -> ""
-              Just (td, tp) -> ".timeout" <> (cm [pretty td, (render_nest $ render_dls tp)])
+              Just (td, tp) -> nest 2 (hardline <> ".timeout" <> (cm [pretty td, (render_nest $ render_dls tp)]))
       DLS_FromConsensus _ more ->
         "commit()" <> semi <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -238,7 +238,7 @@ instance Pretty LLStep where
           timep =
             case mtime of
               Nothing -> mempty
-              Just (td, tl) -> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tl)])
+              Just (td, tl) -> nest 2 (hardline <> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tl)]))
     where
       cm l = parens (hsep $ punctuate comma $ l)
       ns = render_nest
@@ -298,7 +298,7 @@ instance Pretty ETail where
           timep =
             case mtime of
               Nothing -> mempty
-              Just (td, tl) -> ".timeout" <> (cm [pretty td, (render_nest $ pretty tl)])
+              Just (td, tl) -> nest 2 (hardline <> ".timeout" <> (cm [pretty td, (render_nest $ pretty tl)]))
       ET_While _ asn cond body k ->
         prettyWhile asn () cond (pretty body) <> hardline <> pretty k
       ET_Continue _ asn -> prettyContinue asn
