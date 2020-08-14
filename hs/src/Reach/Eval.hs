@@ -24,15 +24,7 @@ import Reach.Util
 import Safe (atMay)
 import Text.EditDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
-
-{-
-import Debug.Trace
-import Data.Time.Clock
-import System.IO.Unsafe
-debugTrace :: Applicative f => String -> f ()
-debugTrace s =
-  traceM $ show (unsafePerformIO $ getCurrentTime) ++ ":" ++ s
--}
+---import Debug.Trace
 
 compatibleVersion :: Version
 compatibleVersion = Version (take 2 br) []
@@ -1345,14 +1337,11 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
         SLM_ConsensusStep -> do
           let orig_env = sco_cenv sco
           let addl_env = M.difference env orig_env
-          let add_defns penv = env_merge at penv addl_env
-          let penvs' = penvs_update ctxt sco (\_ e -> add_defns e)
-          let st_step = st {st_mode = SLM_Step}
-          let sco' =
-                sco
-                  { sco_penvs = penvs'
-                  , sco_cenv = env
-                  }
+          let add_defns p penv = env_merge at penv (M.difference addl_env $ ctxt_base_penvs ctxt M.! p)
+          let penvs' = penvs_update ctxt sco add_defns
+          let st_step = st { st_mode = SLM_Step }
+          let sco' = sco { sco_penvs = penvs'
+                         , sco_cenv = env }
           SLRes steplifts k_st cr <- evalStmt ctxt at sco' st_step ks
           let lifts' = (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' k_st cr
