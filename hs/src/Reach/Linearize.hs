@@ -1,21 +1,19 @@
 module Reach.Linearize (linearize) where
 
 import qualified Data.Map.Strict as M
+import qualified Data.Sequence as Seq
 import Reach.AST
 import Reach.Type
 import Reach.Util
 
 type LLRets = M.Map Int DLVar
 
-lin_ss :: (LLRets -> DLStmt -> a -> a) -> LLRets -> DLStmts -> a -> a
-lin_ss lin_s rets ss k = foldr (lin_s rets) k ss
-
-lin_com_s :: String -> (LLRets -> DLStmts -> a -> a) -> (LLCommon a -> a) -> LLRets -> DLStmt -> a -> a
-lin_com_s who iters mkk rets s k =
+lin_com :: String -> (SrcLoc -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> LLRets -> DLStmt -> DLStmts -> a
+lin_com who back mkk rets s ks =
   case s of
-    DLS_Let at dv de -> mkk $ LL_Let at dv de k
-    DLS_Claim at f ct da -> mkk $ LL_Claim at f ct da k
-    DLS_If at ca ts fs -> mkk $ LL_LocalIf at ca t' f' k
+    DLS_Let at dv de -> mkk $ LL_Let at dv de $ back at rets ks
+    DLS_Claim at f ct da -> mkk $ LL_Claim at f ct da $ back at rets ks
+    DLS_If at ca ts fs -> mkk $ LL_LocalIf at ca t' f' $ back at rets ks
       where
         t' = lin_local_rets at rets ts
         f' = lin_local_rets at rets fs
@@ -23,13 +21,13 @@ lin_com_s who iters mkk rets s k =
       impossible $ who ++ " cannot transfer"
     DLS_Return at ret sv ->
       case M.lookup ret rets of
-        Nothing -> k
-        Just dv -> mkk $ LL_Set at dv da k
+        Nothing -> back at rets ks
+        Just dv -> mkk $ LL_Set at dv da $ back at rets ks
           where
             (_, da) = typeOf at sv
-    DLS_Prompt _ (Left _) ss -> iters rets ss k
+    DLS_Prompt at (Left _) ss -> back at rets (ss <> ks)
     DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
-      mkk $ LL_Var at dv $ iters rets' ss k
+      mkk $ LL_Var at dv $ back at rets' (ss <> ks)
       where
         rets' = M.insert ret dv rets
     DLS_Stop {} ->
@@ -45,56 +43,50 @@ lin_com_s who iters mkk rets s k =
     DLS_Continue {} ->
       impossible $ who ++ " cannot while"
 
-lin_local_s :: LLRets -> DLStmt -> LLLocal -> LLLocal
-lin_local_s rets s k =
-  lin_com_s "local" (lin_ss lin_local_s) LLL_Com rets s k
-
 lin_local_rets :: SrcLoc -> LLRets -> DLStmts -> LLLocal
-lin_local_rets at rets ss = lin_ss lin_local_s rets ss $ LLL_Com $ LL_Return at
+lin_local_rets at _ Seq.Empty =
+  LLL_Com $ LL_Return at
+lin_local_rets _ rets (s Seq.:<| ks) =
+  lin_com "local" lin_local_rets LLL_Com rets s ks
 
 lin_local :: SrcLoc -> DLStmts -> LLLocal
-lin_local at ss = lin_local_rets at mempty ss
+lin_local at ks = lin_local_rets at mempty ks
 
-lin_con_s :: (DLStmts -> LLStep) -> LLRets -> DLStmt -> LLConsensus -> LLConsensus
-lin_con_s back rets s k =
+lin_con :: (DLStmts -> LLStep) -> SrcLoc -> LLRets -> DLStmts -> LLConsensus
+lin_con _ at _ Seq.Empty =
+  LLC_Com $ LL_Return at
+lin_con back at_top rets (s Seq.:<| ks) =
   case s of
     DLS_If at ca ts fs
       | not (stmt_local s) ->
         LLC_If at ca t' f'
       where
-        t' = iters rets ts k
-        f' = iters rets fs k
+        t' = lin_con back at rets (ts <> ks)
+        f' = lin_con back at rets (fs <> ks)
     DLS_Transfer at fs who aa ->
-      LLC_Transfer at fs who aa k
+      LLC_Transfer at fs who aa $ lin_con back at rets ks
     DLS_FromConsensus at cons ->
-      case k of
-        LLC_Com (LL_Return ret_at) ->
-          LLC_FromConsensus at ret_at $ back cons
-        _ ->
-          impossible $ "consensus cannot fromconsensus w/ non-empty k"
+      LLC_FromConsensus at at_top $ back (cons <> ks)
     DLS_While at asn inv_b cond_b body ->
-      LLC_While at asn (block inv_b) (block cond_b) body' k
+      LLC_While at asn (block inv_b) (block cond_b) body' $ lin_con back at rets ks
       where
-        body' = iters rets body $ LLC_Com $ LL_Return at
+        body' = lin_con back at rets body 
         --- Note: The invariant and condition can't return
         block (DLBlock ba fs ss a) =
           LLBlock ba fs (lin_local ba ss) a
     DLS_Continue at update ->
-      case k of
-        LLC_Com (LL_Return _ret_at) ->
+      case ks of
+        Seq.Empty ->
           LLC_Continue at update
         _ ->
           impossible $ "consensus cannot continue w/ non-empty k"
     _ ->
-      lin_com_s "consensus" iters LLC_Com rets s k
-  where
-    iters = lin_ss (lin_con_s back)
+      lin_com "consensus" (lin_con back) LLC_Com rets s ks
 
-lin_con :: SrcLoc -> (DLStmts -> LLStep) -> DLStmts -> LLConsensus
-lin_con at back ss = lin_ss (lin_con_s back) mempty ss $ LLC_Com $ LL_Return at
-
-lin_step_s :: LLRets -> DLStmt -> LLStep -> LLStep
-lin_step_s rets s k =
+lin_step :: SrcLoc -> LLRets -> DLStmts -> LLStep
+lin_step at _ Seq.Empty =
+  LLS_Stop at []
+lin_step _ rets (s Seq.:<| ks) =
   case s of
     DLS_If {}
       | not (stmt_local s) ->
@@ -102,22 +94,18 @@ lin_step_s rets s k =
     DLS_Stop at fs ->
       LLS_Stop at fs
     DLS_Only at who ss ->
-      LLS_Only at who ls k
-      where
-        ls = lin_local at ss
+      LLS_Only at who ls $ lin_step at rets ks
+      where ls = lin_local at ss
     DLS_ToConsensus at who fs as ms amt mtime cons ->
       LLS_ToConsensus at who fs as ms amt mtime' cons'
-      where
-        cons' = lin_con at back cons
-        back more = iters rets more k
-        mtime' = do
-          (delay_da, time_ss) <- mtime
-          return $ (delay_da, lin_ss lin_step_s rets time_ss k)
+      where cons' = lin_con back at mempty (cons <> ks)
+            back = lin_step at rets
+            mtime' = do
+              (delay_da, time_ss) <- mtime
+              return $ (delay_da, lin_step at rets (time_ss <> ks))
     _ ->
-      lin_com_s "step" iters LLS_Com rets s k
-  where
-    iters = lin_ss lin_step_s
+      lin_com "step" lin_step LLS_Com rets s ks
 
 linearize :: DLProg -> LLProg
 linearize (DLProg at sps ss) =
-  LLProg at sps $ lin_ss lin_step_s mempty ss (LLS_Stop at [])
+  LLProg at sps $ lin_step at mempty ss

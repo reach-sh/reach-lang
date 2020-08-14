@@ -277,7 +277,6 @@ function round(A, B) {
   assert(implies(outcome == A_WINS, isHand(handA)));
   assert(implies(outcome == B_WINS, isHand(handB)));
   fair_game(handA, handB, outcome);
-  commit();
 
   return outcome; };
 
@@ -300,13 +299,6 @@ const abs_once =
       const [wagerAmount, escrowAmount, Ap, Bp] = setup(A, B);
 
       const outcome = round(A, B);
-
-      // This is a B publish to be "fair", but it would be "better"
-      // for it to be A publish and have an optimizer combine adjacent
-      // publishes.
-      B.publish()
-        .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)));
-
       finalize(wagerAmount, escrowAmount, Ap, Bp, outcome);
       commit();
 
@@ -319,7 +311,15 @@ const abs_nodraw =
     (A, B, O) => {
       const [wagerAmount, escrowAmount, Ap, Bp] = setup(A, B);
 
-      // See comment above
+      // setup ends in `step` mode, but we need to be in `consensus`
+      // mode to start the while loop, so we have to have a blank
+      // publish. We could have either part do it, but we're choosing
+      // `A` to be "fair" and balance out how many times each party
+      // publishes.
+      //
+      // But it would be cool to for it to be `B`, then have an
+      // optimizer than can see that the previous publish was B and
+      // combine them.
       A.publish()
         .timeout(DELAY, () => closeTo(B, abs_sendOutcome(A, B, A_QUITS)));
 
@@ -330,18 +330,11 @@ const abs_nodraw =
                 && outcome != B_QUITS);
       while ( outcome == DRAW ) {
         commit();
-
         const roundOutcome = round(A, B);
-
-        // See comment above
-        B.publish()
-          .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)));
-
         [ count, outcome ] = [ 1 + count, roundOutcome ];
         continue; }
 
       assert(outcome != DRAW);
-
       finalize(wagerAmount, escrowAmount, Ap, Bp, outcome);
       commit();
 
