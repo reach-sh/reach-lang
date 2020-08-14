@@ -493,7 +493,7 @@ Additional object literal syntax exists for convenience, such as:
   { ...obj, z: 5 }
 }
 
-An @deftech{object spread}, where all fields from @reachin{obj} are copied into the object, but these fields may be overridden by additional fields specified afterwards.
+An @deftech{object splice}, where all fields from @reachin{obj} are copied into the object, but these fields may be overridden by additional fields specified afterwards.
 
 @reach{
   { x, z: 5 }
@@ -503,17 +503,14 @@ Shorthand for @reachin{{ x: x, z: 5}}, where @reachin{x} is any @tech{bound iden
 
 @(hrule)
 @reach{
-  obj["x"]
+  obj.x
 }
 
 An @deftech{object reference},
-written @reachin{OBJ[FIELD]},
+written @reachin{OBJ.FIELD},
 where @reachin{OBJ} is an expression of type object,
-and @reachin{FIELD} is an expression of type bytes,
+and @reachin{FIELD} is a @tech{valid} @tech{identifier},
 accesses the FIELD field of object OBJ.
-
-This syntax is identical to @tech{array reference};
-the difference is only in the types involved.
 
 @(hrule)
 @reach{
