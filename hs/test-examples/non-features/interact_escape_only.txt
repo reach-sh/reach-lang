@@ -1,0 +1,7 @@
+
+
+Failed with: error: ./interact_escape_only.rsh:11:6:dot: Err_Type_None (SLV_Object ./interact_escape_only.rsh:5:10:obj (fromList [("getX",(Secret,SLV_Prim (SLPrim_interact ./interact_escape_only.rsh:5:10:obj "A" "getX" (T_Fun [] T_UInt256))))]))
+CallStack (from HasCallStack):
+  error, called at src/Reach/AST.hs:54:23 in reach-0.1.0-Cj0ZK6NfBDSKPcaIVaiXNf:Reach.AST
+  expect_throw, called at src/Reach/Type.hs:150:16 in reach-0.1.0-Cj0ZK6NfBDSKPcaIVaiXNf:Reach.Type
+  typeOf, called at src/Reach/Eval.hs:1300:37 in reach-0.1.0-Cj0ZK6NfBDSKPcaIVaiXNf:Reach.Eval
