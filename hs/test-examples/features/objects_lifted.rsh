@@ -6,12 +6,12 @@ export const main = Reach.App(
           getObj: Fun([], Object({"x": UInt256}))}]],
   (A) => {
     A.only(() => {
-      const obj0 = interact.getObj();
+      const obj0 = declassify(interact.getObj());
       assume(obj0.x == 1);
       require(obj0.x == 1);
 
       const key = "x";
-      const x = interact.getX();
+      const x = declassify(interact.getX());
       assume(x == 1);
 
       const obj1 = {[key]: x}

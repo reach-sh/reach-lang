@@ -24,6 +24,7 @@ import Reach.Util
 import Safe (atMay)
 import Text.EditDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
+
 ---import Debug.Trace
 
 compatibleVersion :: Version
@@ -99,6 +100,9 @@ data EvalError
   | Err_Each_NotParticipant SLVal
   | Err_Transfer_NotBound SLPart
   | Err_Eval_IncompatibleStates SLState SLState
+  | Err_Eval_NotSecretIdent SLVar
+  | Err_Eval_NotPublicIdent SLVar
+  | Err_Eval_LookupUnderscore
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -268,6 +272,14 @@ instance Show EvalError where
       "cannot transfer to unbound participant, " <> B.unpack who
     Err_Eval_IncompatibleStates x y ->
       "incompatible states: " <> show x <> " " <> show y
+    Err_Eval_NotSecretIdent x ->
+      ("Invalid binding in PART.only: " <> x <> ".")
+        <> " Secret identifiers must be prefixed by _."
+        <> " Did you mean to declassify()?"
+    Err_Eval_NotPublicIdent x ->
+      "Invalid binding: " <> x <> ". Public identifiers must not be prefixed by _"
+    Err_Eval_LookupUnderscore ->
+      "Invalid identifier reference. The _ identifier may never be read."
 
 ensure_public :: SrcLoc -> SLSVal -> SLVal
 ensure_public at (lvl, v) =
@@ -318,10 +330,33 @@ base_env =
       )
     ]
 
+-- | Certain idents are special and bypass the public/private
+-- enforced naming convention.
+isSpecialIdent :: SLVar -> Bool
+isSpecialIdent "interact" = True
+isSpecialIdent "__decode_testing__" = True
+isSpecialIdent _ = False
+
+-- | Secret idents start with _, but are not _.
+isSecretIdent :: SLVar -> Bool
+isSecretIdent ('_' : _ : _) = True
+isSecretIdent _ = False
+
+-- | The "_" never actually gets bound;
+-- it is therefore only ident that may be "shadowed".
+-- Secret idents must start with _.
+-- Public idents must not start with _.
+-- Special idents "interact" and "__decode_testing__" skip these rules.
 env_insert :: HasCallStack => SrcLoc -> SLVar -> SLSVal -> SLEnv -> SLEnv
+env_insert _ "_" _ env = env
 env_insert at k v env =
   case M.lookup k env of
-    Nothing -> M.insert k v env
+    Nothing -> case v of
+      -- Note: secret ident enforcement is limited to doOnly
+      (Public, _)
+        | not (isSpecialIdent k) && isSecretIdent k ->
+          expect_throw at (Err_Eval_NotPublicIdent k)
+      _ -> M.insert k v env
     Just _ ->
       expect_throw at (Err_Shadowed k)
 
@@ -331,7 +366,9 @@ env_insertp at = flip (uncurry (env_insert at))
 env_merge :: HasCallStack => SrcLoc -> SLEnv -> SLEnv -> SLEnv
 env_merge at left righte = foldl' (env_insertp at) left $ M.toList righte
 
+-- | The "_" ident may never be looked up.
 env_lookup :: HasCallStack => SrcLoc -> SLVar -> SLEnv -> SLSVal
+env_lookup at "_" _ = expect_throw at (Err_Eval_LookupUnderscore)
 env_lookup at x env =
   case M.lookup x env of
     Just v -> v
@@ -393,20 +430,23 @@ penvs_update ctxt sco f =
 
 sco_update :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update ctxt at sco st addl_env =
-  sco { sco_env = do_merge $ sco_env sco
-      , sco_penvs = sco_penvs'
-      , sco_cenv = sco_cenv' }
-  where sco_penvs' =
-          case st_mode st of
-            SLM_Step -> updated_penvs
-            SLM_ConsensusStep -> updated_penvs
-            _ -> sco_penvs sco
-        updated_penvs = penvs_update ctxt sco (const do_merge)
-        sco_cenv' =
-          case st_mode st of
-            SLM_ConsensusStep -> do_merge $ sco_cenv sco
-            _ -> sco_cenv sco
-        do_merge = flip (env_merge at) addl_env
+  sco
+    { sco_env = do_merge $ sco_env sco
+    , sco_penvs = sco_penvs'
+    , sco_cenv = sco_cenv'
+    }
+  where
+    sco_penvs' =
+      case st_mode st of
+        SLM_Step -> updated_penvs
+        SLM_ConsensusStep -> updated_penvs
+        _ -> sco_penvs sco
+    updated_penvs = penvs_update ctxt sco (const do_merge)
+    sco_cenv' =
+      case st_mode st of
+        SLM_ConsensusStep -> do_merge $ sco_cenv sco
+        _ -> sco_cenv sco
+    do_merge = flip (env_merge at) addl_env
 
 --- A context has global stuff (the variable counter) and abstracts
 --- the control-flow state that leads to the expression, so it
@@ -1012,10 +1052,11 @@ evalExpr ctxt at sco st e = do
             expect_throw at (Err_Eval_IfCondNotBool cv)
     JSArrowExpression aformals a bodys ->
       evalExpr ctxt at sco st e'
-      where e' = JSFunctionExpression a JSIdentNone a fformals a body
-            body = jsStmtToBlock bodys
-            at' = srcloc_jsa "arrow" a at
-            fformals = jsArrowFormalsToFunFormals at' aformals
+      where
+        e' = JSFunctionExpression a JSIdentNone a fformals a body
+        body = jsStmtToBlock bodys
+        at' = srcloc_jsa "arrow" a at
+        fformals = jsArrowFormalsToFunFormals at' aformals
     JSFunctionExpression a name _ jsformals _ body ->
       retV $ public $ SLV_Clo at' fname formals body (sco_to_cloenv sco)
       where
@@ -1185,6 +1226,19 @@ evalDecls ctxt at st rhs_sco decls =
     f (SLRes lifts lhs_st lhs_env) decl =
       keepLifts lifts $ evalDecl ctxt at lhs_st lhs_env rhs_sco decl
 
+-- | Make sure all bindings in this SLEnv respect the rule that
+-- private vars must be named with a leading underscore.
+enforcePrivateUnderscore :: forall m. Monad m => SrcLoc -> SLEnv -> m ()
+enforcePrivateUnderscore at = mapM_ enf . M.toList
+  where
+    enf :: (SLVar, SLSVal) -> m ()
+    enf (k, (secLev, _)) = case secLev of
+      Secret
+        | not (isSpecialIdent k)
+            && not (isSecretIdent k) ->
+          expect_throw at (Err_Eval_NotSecretIdent k)
+      _ -> return ()
+
 doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> (SLPart, SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLScope, SLState)
 doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
   let SLCloEnv only_env only_penvs only_cenv = only_cloenv
@@ -1210,6 +1264,8 @@ doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
       case fst $ typeOf only_at only_v of
         T_Null -> do
           let penv'' = foldr' M.delete penv' only_formals
+          --- TODO: check less things
+          enforcePrivateUnderscore only_at penv''
           let penvs' = M.insert who penv'' penvs
           let lifts' = return $ DLS_Only only_at who (only_lifts <> alifts)
           let st' = st {st_mode = SLM_Step}
@@ -1352,7 +1408,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
     SLV_Prim SLPrim_committed ->
       case st_mode st of
         SLM_ConsensusStep -> do
-          let st_step = st { st_mode = SLM_Step }
+          let st_step = st {st_mode = SLM_Step}
           SLRes steplifts k_st cr <- evalStmt ctxt at sco st_step ks
           let lifts' = (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' k_st cr
@@ -1426,15 +1482,16 @@ evalStmt ctxt at sco st ss =
     (s@(JSAsyncFunction a _ _ _ _ _ _ _) : _) -> illegal a s "async function"
     ((JSFunction a name lp jsformals rp body sp) : ks) ->
       evalStmt ctxt at sco st ss'
-      where at' = srcloc_jsa "fun" a at
-            ss' = (JSConstant a decls sp) : ks
-            decls = JSLOne decl
-            decl = JSVarInitExpression lhs (JSVarInit a rhs)
-            lhs = JSIdentifier a f
-            f = case name of
-              JSIdentNone -> expect_throw at' (Err_TopFun_NoName)
-              JSIdentName _ x -> x
-            rhs = JSFunctionExpression a JSIdentNone lp jsformals rp body
+      where
+        at' = srcloc_jsa "fun" a at
+        ss' = (JSConstant a decls sp) : ks
+        decls = JSLOne decl
+        decl = JSVarInitExpression lhs (JSVarInit a rhs)
+        lhs = JSIdentifier a f
+        f = case name of
+          JSIdentNone -> expect_throw at' (Err_TopFun_NoName)
+          JSIdentName _ x -> x
+        rhs = JSFunctionExpression a JSIdentNone lp jsformals rp body
     (s@(JSGenerator a _ _ _ _ _ _ _) : _) -> illegal a s "generator"
     ((JSIf a la ce ra ts) : ks) -> do
       evalStmt ctxt at sco st ((JSIfElse a la ce ra ts ea fs) : ks)

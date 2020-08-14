@@ -9,7 +9,7 @@ function showHand(handX) {
   else if ( handX == PAPER ) { return 'PAPER'; }
   else { return 'SCISSORS'; } };
 
-function _getHand(interact) {
+function getHand_(interact) {
   const s = interact.getHand();
   const rockP = s === 'ROCK';
   const paperP = s === 'PAPER';
@@ -19,7 +19,7 @@ function _getHand(interact) {
   else if (paperP) { return PAPER; }
   else { return SCISSORS; } };
 function getHand(interact) {
-  return ensure(isHand, _getHand(interact)); };
+  return ensure(isHand, getHand_(interact)); };
 
 const [ isOutcome, B_WINS, DRAW, A_WINS, A_QUITS, B_QUITS ] = makeEnum(5);
 function showOutcome(o) {
@@ -30,7 +30,7 @@ function showOutcome(o) {
   else if (o == A_QUITS) { return 'Alice quits'; }
   else { return 'Bob quits'; } };
 
-function _winner(handA, handB) {
+function winner_(handA, handB) {
   const validA = isHand(handA);
   const validB = isHand(handB);
   if (validA && validB) {
@@ -42,7 +42,7 @@ function _winner(handA, handB) {
   else {
     return DRAW; } };
 function winner(handA, handB) {
-  return ensure(isOutcome, _winner(handA, handB)); };
+  return ensure(isOutcome, winner_(handA, handB)); };
 
 function fair_if(handX, optionX, canWinX) {
   return possible((handX == optionX) && canWinX); };

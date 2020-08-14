@@ -1,1 +1,0 @@
-error: ./Err_ExpectedPublic.rsh:9:26:after expr stmt semicolon: Invalid access of secret value (uint256)

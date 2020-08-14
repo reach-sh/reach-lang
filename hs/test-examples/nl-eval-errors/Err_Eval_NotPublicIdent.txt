@@ -1,0 +1,1 @@
+error: ./Err_Eval_NotPublicIdent.rsh:5:11:id: Invalid binding: _x. Public identifiers must not be prefixed by _

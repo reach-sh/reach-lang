@@ -13,6 +13,7 @@ cb: contract balance
 cbi: contract balance index
 ce: CompileErr
 cnp: ConsensusNetworkProgram
+clo: closure
 com: common
 comp: comparison
 comp: compiler
@@ -82,6 +83,8 @@ s: statement
 sco: scope
 sl: static language
 slc: static language context
+sls: Static Language (w/ Security level)
+slv: static language value
 src: source
 stdlib: standard library
 t: tail (when used as suffix)

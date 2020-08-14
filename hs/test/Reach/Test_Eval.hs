@@ -36,6 +36,7 @@ spec_examples_cover_EvalError =
       , "Err_Decl_IllegalJS"
       , "Err_Each_NotParticipant"
       , "Err_Each_NotTuple"
+      , "Err_ExpectedPublic" -- may not be possible with new enforced _ ident conventions
       , "Err_Eval_IllegalLift"
       , "Err_Eval_IncompatibleStates"
       , "Err_Eval_IndirectRefNotArray"

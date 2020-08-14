@@ -1,1 +1,1 @@
-error: ./Err_Apply_ArgCount.rsh:6:27:application: Invalid function appication. Expected 0 args, got 1 for function defined at ./Err_Apply_ArgCount.rsh:3:14:arrow
+error: ./Err_Apply_ArgCount.rsh:6:27:application: Invalid function appication. Expected 0 args, got 1 for function defined at ./Err_Apply_ArgCount.rsh:3:14:function exp

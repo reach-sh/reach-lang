@@ -3,7 +3,7 @@ Verification failed:
   in VM_Honest mode
   of theorem TPossible
   at ./impossible.rsh:8:15:application
-  at ./impossible.rsh:9:7:after expr stmt semicolon call to "arrow" (defined at: ./impossible.rsh:5:15:arrow)
+  at ./impossible.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./impossible.rsh:5:15:function exp)
 
   Theorem formalization:
   v2
@@ -21,7 +21,7 @@ Verification failed:
   in VM_Dishonest (RolePart "A") mode
   of theorem TPossible
   at ./impossible.rsh:8:15:application
-  at ./impossible.rsh:9:7:after expr stmt semicolon call to "arrow" (defined at: ./impossible.rsh:5:15:arrow)
+  at ./impossible.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./impossible.rsh:5:15:function exp)
 
   Theorem formalization:
   v2
