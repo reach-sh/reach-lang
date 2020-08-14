@@ -4,8 +4,6 @@ import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.STRef
-import Data.Text.Prettyprint.Doc
-import Debug.Trace
 import Reach.AST
 import Reach.CollectCounts
 import Reach.Pretty ()
@@ -155,11 +153,7 @@ extend_locals_look common p_prts_s = M.map add p_prts_s
 epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
-    LLC_Com c -> do
-      traceM $ "LLC_Com on " ++ (take 64 $ show c)
-      r@(ProResC _ (ProRes_ cs _)) <- epp_m done back skip look c
-      traceM $ "LLC_Com on " ++ (take 64 $ show c) ++ " = " ++ (show $ map pretty $ counts_nzs cs)
-      return r
+    LLC_Com c -> epp_m done back skip look c
       where
         done :: MDone (ST s ProResC)
         done rat =
@@ -327,14 +321,11 @@ epp_s st s =
               FS_Join dv -> (mempty, [dv])
               FS_Again dv -> (counts dv, mempty)
       let msg_and_defns = (msg <> fs_defns)
-      traceM $ "ToC " <> show which <> " cons_vs = " <> (show $ map pretty $ counts_nzs cons_vs)
       let ok_cons_cs = delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
-      traceM $ "ToC " <> show which <> " ok_cons_cs = " <> (show $ map pretty $ counts_nzs ok_cons_cs)
       (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let svs = counts_nzs time_cons_cs
       let from_me = Just (from_as, amt_da, svs)
       let prev = pst_prev_handler st
-      traceM $ "ToC " <> show which <> " svs = " <> (show $ map pretty svs)
       let this_h = C_Handler at int_ok fs prev svs msg ct_cons
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
             ProRes_ cs_' $ ET_ToConsensus at fs which mfrom msg mtime' et_

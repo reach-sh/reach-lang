@@ -1297,8 +1297,6 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               Just (dt_at, de, (JSBlock _ dt_ss _)) -> do
                 SLRes de_lifts _ de_sv <- evalExpr ctxt at sco st_pure de
                 let de_da = checkType dt_at T_UInt256 $ ensure_public dt_at de_sv
-                --- XXX This is a little suspicious
-                --- let sco' = sco { sco_must_ret = RS_MayBeEmpty }
                 SLRes dta_lifts dt_st dt_cr <- evalStmt ctxt dt_at sco st dt_ss
                 return $ (de_lifts, Just (dt_st, dt_cr), Just (de_da, dta_lifts))
           let st_cstep = st { st_mode = SLM_ConsensusStep
@@ -1308,7 +1306,10 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                          , sco_penvs = penvs' }
           SLRes conlifts k_st k_cr <- evalStmt ctxt at sco' st_cstep ks
           let lifts' = tlifts <> amt_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da mtime' (amt_check_lifts <> conlifts))
-          --- XXX This might be general logic that applies to any place where we merge, like IFs and SEQNs
+          --- FIXME This might be general logic that applies to any
+          --- place where we merge, like IFs and SEQNs, so if one side
+          --- of an if dies, then the other side doesn't need to merge
+          --- the results.
           case mt_st_cr of
             Nothing ->
               return $ SLRes lifts' k_st k_cr
