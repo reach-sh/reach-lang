@@ -106,18 +106,20 @@ errExampleBsStripAbs k fp = do
   bs <- errExampleBs k fp
   return $ stripAbs fp bs
 
--- bs <- errExampleBs k fp
--- let bs' = replaceBs dir "." (LB.toStrict bs)
--- return $ LB.fromStrict bs'
--- where
---   dir = bpack $ takeDirectory fp
+-- | Drops "CallStack (from HasCallStack):" and everything after
+stripCallStack :: LB.ByteString -> LB.ByteString
+stripCallStack bs = LB.fromStrict bsStrict'
+  where
+    (bsStrict', _) = BS.breakSubstring callStackStr bsStrict
+    bsStrict = LB.toStrict bs
+    callStackStr = "CallStack (from HasCallStack):"
 
 -- TODO better name
 stdoutStripAbs :: String -> (FilePath -> IO LB.ByteString) -> FilePath -> TestTree
 stdoutStripAbs ext k fp = do
   let goldenFile = replaceExtension fp ext
       fpBase = takeBaseName fp
-  goldenVsString fpBase goldenFile (stripAbs fp <$> k fp)
+  goldenVsString fpBase goldenFile (stripCallStack <$> stripAbs fp <$> k fp)
 
 -- XXX This is a hack to make tests portable.
 -- Ideally the compiler errors would print relative paths?
