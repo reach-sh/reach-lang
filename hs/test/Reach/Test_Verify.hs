@@ -4,6 +4,7 @@ module Reach.Test_Verify
   )
 where
 
+import Control.Exception
 import qualified Data.ByteString.Lazy as BL
 import Reach.Eval
 import Reach.Linearize
@@ -15,13 +16,13 @@ import System.Exit
 import System.IO.Silently
 import Test.Tasty
 
-partialCompile :: FilePath -> IO (BL.ByteString, ExitCode)
+partialCompile :: FilePath -> IO (BL.ByteString, Either SomeException ExitCode)
 partialCompile fp = do
   djp <- gatherDeps_top fp
   let dl = compileBundle djp "main"
       ll = linearize dl
-  (s, ec) <- capture $ verify outn ll
-  return (BL.fromStrict $ bpack s, ec)
+  (s, eec) <- capture $ try $ verify outn ll
+  return (BL.fromStrict $ bpack s, eec)
   where
     -- don't really care about this logged output
     outn _ = "/dev/null"
@@ -30,18 +31,20 @@ partialCompileExpectSuccess :: FilePath -> IO BL.ByteString
 partialCompileExpectSuccess fp = do
   (bs, ec) <- partialCompile fp
   case ec of
-    ExitFailure {} ->
+    Left e -> throwIO e
+    Right (ExitFailure {}) ->
       fail $
         ("Expected ExitSuccess, but got " <> show ec <> "\n")
           <> (bunpack $ BL.toStrict bs)
-    ExitSuccess -> return bs
+    Right ExitSuccess -> return bs
 
 partialCompileExpectFail :: FilePath -> IO BL.ByteString
 partialCompileExpectFail fp = do
   (bs, ec) <- partialCompile fp
   case ec of
-    ExitSuccess -> fail "Expected ExitFailure, got ExitSuccess"
-    ExitFailure {} -> return bs
+    Left e -> throwIO e
+    Right ExitSuccess -> fail "Expected ExitFailure, got ExitSuccess"
+    Right (ExitFailure {}) -> return bs
 
 -- Assert that verification fails and produces the given err output
 verifyGoldenTestFail :: FilePath -> TestTree
