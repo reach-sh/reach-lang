@@ -133,13 +133,18 @@ A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n
 
 @(hrule)
 
-All identifiers in Reach programs must be @deftech{unbound} at the position of the program where they are bound, i.e., it is @tech{invalid} to shadow identifiers with new definitions. For example,
+All identifiers in Reach programs must be @deftech{unbound}
+at the position of the program where they are bound,
+i.e., it is @tech{invalid} to shadow identifiers with new definitions.
+For example,
 
 @reach{
  const x = 3;
  const x = 4; }
 
-is @tech{invalid}. This restriction is independent of whether a binding is only known to a single @tech{participant}. For example,
+is @tech{invalid}.
+This restriction is independent of whether a binding is
+only known to a single @tech{participant}. For example,
 
 @reach{
  Alice.only(() => {
@@ -149,11 +154,45 @@ is @tech{invalid}. This restriction is independent of whether a binding is only 
 
 is @tech{invalid}.
 
+The special identifier @reachin{_} is an exception to this rule.
+No matter how many times it is bound, the @reachin{_} binding
+is always considered to be unbound.
+This may be useful for "ignoring" unwanted values, for example:
+
+@reach{
+ const [_, x, _] = [1, 2, 3];
+}
+
 @(hrule)
 
 Top-level @tech{identifier definitions} may be @deftech{export}ed
 by writing @litchar{export const} in place of @litchar{const}.
 An @tech{export}ed identifier in a given @tech{module} may be @tech{import}ed by other @tech{modules}.
+
+
+@section{Security levels and scope}
+
+Reach values are, by default, @tech{public} knowledge to all @tech{participants}.
+However, any value that comes from an @tech{interaction expression}
+is a @deftech{secret}
+which only that participant knows. Furthermore, any values derived
+from @tech{secret} values are also @tech{secret}.
+@tech{Secrets} can only be made @tech{public}
+by using the @tech{declassify} primitive.
+
+When @tech{secret} values are bound to an @tech{identifier}
+within a @tech{local step},
+the identifier name MUST be prefixed by an underscore (@reachin{_}).
+
+When @tech{public} values are bound to an @tech{identifier},
+regardless of context,
+the identifier name MUST NOT be prefixed by an underscore (@reachin{_}).
+
+Consequently, identifiers which appear inside of a
+@tech{function definition} or @tech{lambda expression}
+MAY be prefixed by an underscore.
+This will cause a compiler error if any value bound to that
+identifier is public.
 
 @section{Blocks}
 
@@ -538,9 +577,14 @@ A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)
 @(hrule)
 @reach{
  interact.notify(handA, handB);
- is(uint256, interact.chooseAmount(heap1, heap2)) }
+ interact.chooseAmount(heap1, heap2) }
 
-An @deftech{interaction expression}, written @reachin{is(TYPE, interact.METHOD(EXPR_0, ..., EXPR_n))}, where @reachin{TYPE} is a @tech{type}, @reachin{METHOD} is an identifier, and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions} that evaluate to one value, evaluates to the result of an @tech{interact}ion with a @tech{frontend} that receives the evaluation of the @reachin{n} @tech{expressions} and sends a @tech{value} of @tech{type} @reachin{TYPE} if it is @tech{honest}. The @reachin{is} component may be omitted, in which case it is treated as though it were @reachin{is(boolean, ....)}.
+An @deftech{interaction expression}, written @reachin{interact.METHOD(EXPR_0, ..., EXPR_n)},
+where @reachin{METHOD} is an identifier,
+and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions} that evaluate to one value,
+evaluates to the result of an @tech{interact}ion with a @tech{frontend}
+that receives the evaluation of the @reachin{n} @tech{expressions}
+and sends a @tech{value}.
 
 @(hrule)
 @reach{
