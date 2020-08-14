@@ -1415,20 +1415,17 @@ evalStmt ctxt at sco st ss =
     (s@(JSForOf a _ _ _ _ _ _) : _) -> illegal a s "for of"
     (s@(JSForVarOf a _ _ _ _ _ _ _) : _) -> illegal a s "for var of"
     (s@(JSAsyncFunction a _ _ _ _ _ _ _) : _) -> illegal a s "async function"
-    ((JSFunction a name _ jsformals _ body sp) : ks) ->
-      evalStmt ctxt at_after sco' st ks
-      where
-        env = sco_env sco
-        sco' = sco {sco_env = env'}
-        clo = SLV_Clo at' (Just f) formals body (sco_to_cloenv sco)
-        formals = parseJSFormals at' jsformals
-        at' = srcloc_jsa lab a at
-        at_after = srcloc_after_semi lab a sp at
-        lab = "function def"
-        env' = env_insert at f (public clo) env
-        f = case name of
-          JSIdentNone -> expect_throw at' (Err_TopFun_NoName)
-          JSIdentName _ x -> x
+    ((JSFunction a name lp jsformals rp body sp) : ks) ->
+      evalStmt ctxt at sco st ss'
+      where at' = srcloc_jsa "fun" a at
+            ss' = (JSConstant a decls sp) : ks
+            decls = JSLOne decl
+            decl = JSVarInitExpression lhs (JSVarInit a rhs)
+            lhs = JSIdentifier a f
+            f = case name of
+              JSIdentNone -> expect_throw at' (Err_TopFun_NoName)
+              JSIdentName _ x -> x
+            rhs = JSFunctionExpression a JSIdentNone lp jsformals rp body
     (s@(JSGenerator a _ _ _ _ _ _ _) : _) -> illegal a s "generator"
     ((JSIf a la ce ra ts) : ks) -> do
       evalStmt ctxt at sco st ((JSIfElse a la ce ra ts ea fs) : ks)
