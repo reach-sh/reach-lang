@@ -239,10 +239,7 @@ function setup(A, B) {
     interact.partnerIs(A);
     interact.acceptParams(wagerAmount, escrowAmount); });
   B.pay(wagerAmount)
-    .timeout(DELAY, () => {
-      closeTo(A, abs_sendOutcome(A, B, B_QUITS));
-      // XXX This is to satisfy types which can't reason about guaranteed exit()
-      return [0, 0, A, A]; } );
+    .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)); );
   commit();
 
   A.only(() => {
@@ -257,18 +254,14 @@ function round(A, B) {
     const commitA = declassify(_commitA);
     interact.commits(); });
   A.publish(commitA)
-    .timeout(DELAY, () => {
-      closeTo(B, abs_sendOutcome(A, B, A_QUITS));
-      return A_QUITS; } );
+    .timeout(DELAY, () => closeTo(B, abs_sendOutcome(A, B, A_QUITS)) );
   commit();
 
   B.only(() => {
     const handB = declassify(getHand(interact));
     interact.shows(); });
   B.publish(handB)
-    .timeout(DELAY, () => {
-      closeTo(A, abs_sendOutcome(A, B, B_QUITS));
-      return B_QUITS; } );
+    .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)) );
   require(isHand(handB));
   commit();
 
@@ -277,9 +270,7 @@ function round(A, B) {
     const handA = declassify(_handA);
     interact.reveals(showHand(handB)); });
   A.publish(saltA, handA)
-    .timeout(DELAY, () => {
-      closeTo(B, abs_sendOutcome(A, B, A_QUITS));
-      return A_QUITS; } );
+    .timeout(DELAY, () => closeTo(B, abs_sendOutcome(A, B, A_QUITS)) );
   checkCommitment(commitA, saltA, handA);
   require(isHand(handA));
   const outcome = winner(handA, handB);

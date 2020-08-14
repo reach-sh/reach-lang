@@ -58,8 +58,7 @@ prompt() {
               prompt() {
                 claim(CT_Require)(DLC_Bool True);
                 const v33 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); }; }; };
-          exit(); } };
-      throw([0, 0, <participant: "A">, <participant: "A">]).to(0); }){
+          exit(); } }; }){
       const v16 = TXN_VALUE();
       const v17 = PEQ(v5,v16);
       claim(CT_Require)(v17);
@@ -165,8 +164,7 @@ publish("A", again(v7))()().pay(DLC_Int 0).timeout(DLC_Int 10, {
                 prompt() {
                   claim(CT_Require)(DLC_Bool True);
                   const v120 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); }; }; };
-            exit(); } };
-        throw(3).to(80); }){
+            exit(); } }; }){
         const v103 = TXN_VALUE();
         const v104 = PEQ(DLC_Int 0,v103);
         claim(CT_Require)(v104);
@@ -215,8 +213,7 @@ publish("A", again(v7))()().pay(DLC_Int 0).timeout(DLC_Int 10, {
                   prompt() {
                     claim(CT_Require)(DLC_Bool True);
                     const v157 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); }; }; };
-              exit(); } };
-          throw(4).to(80); }){
+              exit(); } }; }){
           const v140 = TXN_VALUE();
           const v141 = PEQ(DLC_Int 0,v140);
           claim(CT_Require)(v141);
@@ -264,8 +261,7 @@ publish("A", again(v7))()().pay(DLC_Int 0).timeout(DLC_Int 10, {
                     prompt() {
                       claim(CT_Require)(DLC_Bool True);
                       const v192 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); }; }; };
-                exit(); } };
-            throw(3).to(80); }){
+                exit(); } }; }){
             const v175 = TXN_VALUE();
             const v176 = PEQ(DLC_Int 0,v175);
             claim(CT_Require)(v176);
