@@ -10,15 +10,20 @@ import qualified Data.Text as T
 import Reach.Compiler
 import Reach.Test.Util
 import Reach.Util
+import System.Directory
 import System.IO.Silently
 import Test.Tasty
 
 testCompile :: FilePath -> IO (String, (Either SomeException ()))
-testCompile fp = capture $ try $ compileNL copts
+testCompile fp = capture $
+  try $ do
+    createDirectoryIfMissing True outDir
+    compileNL copts
   where
+    outDir = "/tmp/reachc/"
     copts =
       CompilerOpts
-        { output = \x -> "/tmp/" <> T.unpack x
+        { output = \x -> outDir <> T.unpack x
         , source = fp
         , tops = ["main"]
         }
