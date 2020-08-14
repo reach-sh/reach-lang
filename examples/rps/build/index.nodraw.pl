@@ -8,213 +8,241 @@
     partnerIs = T_Fun [T_Address] T_Null,
     random = T_Fun [] T_UInt256,
     reveals = T_Fun [T_Bytes] T_Null};
-  const *v1 = interact("A")."getParams"();
-  const *v2 = v1[0];
-  const *v3 = v1[1];
+  const *v2 = interact("A")."getParams"();
+  const *v3 = v2[0];
+  const *v4 = v2[1];
   
-  const !v7 = ADD(v2,v3);
+  const !v8 = ADD(v3,v4);
   
-  sendrecv join(v6) 1 (.publish((v2,v3), v7, ()))(v4, v5){
-    const !v8 = ADD(v4,v5);
-    const !v9 = TXN_VALUE();
-    const !v10 = PEQ(v8,v9);
-    claim(CT_Require)(v10);
-    sendrecv join(v13) 2 ()().timeout(DLC_Int 10, {
+  sendrecv join(v7) 1 (.publish((v3,v4), v8, ()))(v5, v6){
+    const !v9 = ADD(v5,v6);
+    const !v10 = TXN_VALUE();
+    const !v11 = PEQ(v9,v10);
+    claim(CT_Require)(v11);
+    sendrecv join(v15) 2 ()().timeout(DLC_Int 10, {
       
-      sendrecv again(v6) 10 (.publish((), DLC_Int 0, (v6, v4, v5)))(){
-        const !v18 = TXN_VALUE();
-        const !v19 = PEQ(DLC_Int 0,v18);
-        claim(CT_Require)(v19);
+      sendrecv again(v7) 14 (.publish((), DLC_Int 0, (v7, v5, v6)))(){
+        const !v20 = TXN_VALUE();
+        const !v21 = PEQ(DLC_Int 0,v20);
+        claim(CT_Require)(v21);
         claim(CT_Require)(DLC_Bool True);
         eff interact("A")."endsWith"(DLC_Bytes "Bob quits");
         
          } }){
-      const !v14 = TXN_VALUE();
-      const !v15 = PEQ(v4,v14);
-      claim(CT_Require)(v15);
-      loopvar {
-        v32 = DLC_Int 0,
-        v33 = DLC_Int 1};
-      invariant{
-        () }
-      while{
-        (begin const !v57 = PEQ(v33,DLC_Int 1);
-         v57) }
-      {
-        let v60;
-        const *v61 = interact("A")."getHand"();
-        const *v62 = BYTES_EQ(v61,DLC_Bytes "ROCK");
-        const *v63 = BYTES_EQ(v61,DLC_Bytes "PAPER");
-        const !v64 = BYTES_EQ(v61,DLC_Bytes "SCISSORS");
-        const !v66 = IF_THEN_ELSE(v62,DLC_Bool True,v63);
-        const !v68 = IF_THEN_ELSE(v66,DLC_Bool True,v64);
-        claim(CT_Assume)(v68);
-        if v62 then {
-          v60 = DLC_Int 0;
-           }
-        else {
-          if v63 then {
-            v60 = DLC_Int 1;
+      const !v16 = TXN_VALUE();
+      const !v17 = PEQ(v5,v16);
+      claim(CT_Require)(v17);
+      eff interact("A")."partnerIs"(v15);
+      
+      
+      sendrecv again(v7) 3 (.publish((), DLC_Int 0, (v7, v5, v6, v15)))().timeout(DLC_Int 10, {
+        sendrecv again(v15) 13 ()(){
+          const !v40 = TXN_VALUE();
+          const !v41 = PEQ(DLC_Int 0,v40);
+          claim(CT_Require)(v41);
+          claim(CT_Require)(DLC_Bool True);
+          eff interact("A")."endsWith"(DLC_Bytes "Alice quits");
+          
+           } }){
+        const !v36 = TXN_VALUE();
+        const !v37 = PEQ(DLC_Int 0,v36);
+        claim(CT_Require)(v37);
+        loopvar {
+          v54 = DLC_Int 0,
+          v55 = DLC_Int 1};
+        invariant{
+          () }
+        while{
+          (begin const !v79 = PEQ(v55,DLC_Int 1);
+           v79) }
+        {
+          let v83;
+          const *v84 = interact("A")."getHand"();
+          const *v85 = BYTES_EQ(v84,DLC_Bytes "ROCK");
+          const *v86 = BYTES_EQ(v84,DLC_Bytes "PAPER");
+          const !v87 = BYTES_EQ(v84,DLC_Bytes "SCISSORS");
+          const !v89 = IF_THEN_ELSE(v85,DLC_Bool True,v86);
+          const !v91 = IF_THEN_ELSE(v89,DLC_Bool True,v87);
+          claim(CT_Assume)(v91);
+          if v85 then {
+            v83 = DLC_Int 0;
              }
           else {
-            v60 = DLC_Int 2;
+            if v86 then {
+              v83 = DLC_Int 1;
+               }
+            else {
+              v83 = DLC_Int 2;
+               };
              };
-           };
-        const *v76 = interact("A")."random"();
-        const !v77 = digest(v76,v60);
-        eff interact("A")."commits"();
-        
-        
-        sendrecv again(v6) 4 (.publish((v77), DLC_Int 0, (v6, v4, v5, v13, v32)))(v79).timeout(DLC_Int 10, {
-          sendrecv again(v13) 9 ()(){
-            const !v84 = TXN_VALUE();
-            const !v85 = PEQ(DLC_Int 0,v84);
-            claim(CT_Require)(v85);
-            claim(CT_Require)(DLC_Bool True);
-            eff interact("A")."endsWith"(DLC_Bytes "Alice quits");
-            
-             } }){
-          const !v80 = TXN_VALUE();
-          const !v81 = PEQ(DLC_Int 0,v80);
-          claim(CT_Require)(v81);
-          sendrecv again(v13) 5 ()(v116).timeout(DLC_Int 10, {
-            
-            sendrecv again(v6) 8 (.publish((), DLC_Int 0, (v6, v4, v5, v13, v79, v32)))(){
-              const !v121 = TXN_VALUE();
-              const !v122 = PEQ(DLC_Int 0,v121);
-              claim(CT_Require)(v122);
+          const *v99 = interact("A")."random"();
+          const !v100 = digest(v99,v83);
+          eff interact("A")."commits"();
+          
+          
+          sendrecv again(v7) 5 (.publish((v100), DLC_Int 0, (v7, v5, v6, v15, v54)))(v102).timeout(DLC_Int 10, {
+            sendrecv again(v15) 12 ()(){
+              const !v107 = TXN_VALUE();
+              const !v108 = PEQ(DLC_Int 0,v107);
+              claim(CT_Require)(v108);
               claim(CT_Require)(DLC_Bool True);
-              eff interact("A")."endsWith"(DLC_Bytes "Bob quits");
+              eff interact("A")."endsWith"(DLC_Bytes "Alice quits");
               
                } }){
-            const !v117 = TXN_VALUE();
-            const !v118 = PEQ(DLC_Int 0,v117);
-            claim(CT_Require)(v118);
-            const !v136 = PLE(DLC_Int 0,v116);
-            const !v137 = PLT(v116,DLC_Int 3);
-            const !v139 = IF_THEN_ELSE(v136,v137,DLC_Bool False);
-            claim(CT_Require)(v139);
-            let v141;
-            const !v143 = PLE(DLC_Int 0,v116);
-            const !v144 = PLT(v116,DLC_Int 3);
-            const !v146 = IF_THEN_ELSE(v143,v144,DLC_Bool False);
-            claim(CT_Require)(v146);
-            const !v147 = PEQ(v116,DLC_Int 0);
-            if v147 then {
-              v141 = DLC_Bytes "ROCK";
-               }
-            else {
-              const !v148 = PEQ(v116,DLC_Int 1);
-              if v148 then {
-                v141 = DLC_Bytes "PAPER";
-                 }
-              else {
-                v141 = DLC_Bytes "SCISSORS";
-                 };
-               };
-            eff interact("A")."reveals"(v141);
-            
-            
-            sendrecv again(v6) 6 (.publish((v76,v60), DLC_Int 0, (v6, v4, v5, v13, v79, v116, v32)))(v150, v151).timeout(DLC_Int 10, {
-              sendrecv again(v13) 7 ()(){
-                const !v156 = TXN_VALUE();
-                const !v157 = PEQ(DLC_Int 0,v156);
-                claim(CT_Require)(v157);
+            const !v103 = TXN_VALUE();
+            const !v104 = PEQ(DLC_Int 0,v103);
+            claim(CT_Require)(v104);
+            sendrecv again(v15) 6 ()(v139).timeout(DLC_Int 10, {
+              
+              sendrecv again(v7) 11 (.publish((), DLC_Int 0, (v7, v5, v6, v15, v102, v54)))(){
+                const !v144 = TXN_VALUE();
+                const !v145 = PEQ(DLC_Int 0,v144);
+                claim(CT_Require)(v145);
                 claim(CT_Require)(DLC_Bool True);
-                eff interact("A")."endsWith"(DLC_Bytes "Alice quits");
+                eff interact("A")."endsWith"(DLC_Bytes "Bob quits");
                 
                  } }){
-              const !v152 = TXN_VALUE();
-              const !v153 = PEQ(DLC_Int 0,v152);
-              claim(CT_Require)(v153);
-              const !v171 = digest(v150,v151);
-              const !v172 = PEQ(v79,v171);
-              claim(CT_Require)(v172);
-              const !v174 = PLE(DLC_Int 0,v151);
-              const !v175 = PLT(v151,DLC_Int 3);
-              const !v177 = IF_THEN_ELSE(v174,v175,DLC_Bool False);
-              claim(CT_Require)(v177);
-              let v179;
-              const !v181 = PLE(DLC_Int 0,v151);
-              const !v182 = PLT(v151,DLC_Int 3);
-              const *v184 = IF_THEN_ELSE(v181,v182,DLC_Bool False);
-              const !v186 = PLE(DLC_Int 0,v116);
-              const !v187 = PLT(v116,DLC_Int 3);
-              const *v189 = IF_THEN_ELSE(v186,v187,DLC_Bool False);
-              const !v191 = IF_THEN_ELSE(v184,v189,DLC_Bool False);
-              if v191 then {
-                const !v192 = SUB(DLC_Int 4,v116);
-                const !v193 = ADD(v151,v192);
-                const !v194 = MOD(v193,DLC_Int 3);
-                v179 = v194;
+              const !v140 = TXN_VALUE();
+              const !v141 = PEQ(DLC_Int 0,v140);
+              claim(CT_Require)(v141);
+              const !v159 = PLE(DLC_Int 0,v139);
+              const !v160 = PLT(v139,DLC_Int 3);
+              const !v162 = IF_THEN_ELSE(v159,v160,DLC_Bool False);
+              claim(CT_Require)(v162);
+              let v164;
+              const !v166 = PLE(DLC_Int 0,v139);
+              const !v167 = PLT(v139,DLC_Int 3);
+              const !v169 = IF_THEN_ELSE(v166,v167,DLC_Bool False);
+              claim(CT_Require)(v169);
+              const !v170 = PEQ(v139,DLC_Int 0);
+              if v170 then {
+                v164 = DLC_Bytes "ROCK";
                  }
               else {
-                if v184 then {
-                  v179 = DLC_Int 2;
+                const !v171 = PEQ(v139,DLC_Int 1);
+                if v171 then {
+                  v164 = DLC_Bytes "PAPER";
                    }
                 else {
-                  if v189 then {
-                    v179 = DLC_Int 0;
-                     }
-                  else {
-                    v179 = DLC_Int 1;
-                     };
+                  v164 = DLC_Bytes "SCISSORS";
                    };
                  };
-              const !v252 = ADD(DLC_Int 1,v32);
-              {
-                v32 = v252,
-                v33 = v179}
-              continue; } } } }
-      let v257;
-      const !v258 = PEQ(v33,DLC_Int 2);
-      if v258 then {
-        const !v259 = MUL(DLC_Int 2,v4);
-        v257 = [v259,DLC_Int 0];
-         }
-      else {
-        const !v260 = PEQ(v33,DLC_Int 0);
-        if v260 then {
-          const !v261 = MUL(DLC_Int 2,v4);
-          v257 = [DLC_Int 0,v261];
+              eff interact("A")."reveals"(v164);
+              
+              
+              sendrecv again(v7) 7 (.publish((v99,v83), DLC_Int 0, (v7, v5, v6, v15, v102, v139, v54)))(v173, v174).timeout(DLC_Int 10, {
+                sendrecv again(v15) 10 ()(){
+                  const !v179 = TXN_VALUE();
+                  const !v180 = PEQ(DLC_Int 0,v179);
+                  claim(CT_Require)(v180);
+                  claim(CT_Require)(DLC_Bool True);
+                  eff interact("A")."endsWith"(DLC_Bytes "Alice quits");
+                  
+                   } }){
+                const !v175 = TXN_VALUE();
+                const !v176 = PEQ(DLC_Int 0,v175);
+                claim(CT_Require)(v176);
+                const !v194 = digest(v173,v174);
+                const !v195 = PEQ(v102,v194);
+                claim(CT_Require)(v195);
+                const !v197 = PLE(DLC_Int 0,v174);
+                const !v198 = PLT(v174,DLC_Int 3);
+                const !v200 = IF_THEN_ELSE(v197,v198,DLC_Bool False);
+                claim(CT_Require)(v200);
+                let v202;
+                const !v204 = PLE(DLC_Int 0,v174);
+                const !v205 = PLT(v174,DLC_Int 3);
+                const *v207 = IF_THEN_ELSE(v204,v205,DLC_Bool False);
+                const !v209 = PLE(DLC_Int 0,v139);
+                const !v210 = PLT(v139,DLC_Int 3);
+                const *v212 = IF_THEN_ELSE(v209,v210,DLC_Bool False);
+                const !v214 = IF_THEN_ELSE(v207,v212,DLC_Bool False);
+                if v214 then {
+                  const !v215 = SUB(DLC_Int 4,v139);
+                  const !v216 = ADD(v174,v215);
+                  const !v217 = MOD(v216,DLC_Int 3);
+                  v202 = v217;
+                   }
+                else {
+                  if v207 then {
+                    v202 = DLC_Int 2;
+                     }
+                  else {
+                    if v212 then {
+                      v202 = DLC_Int 0;
+                       }
+                    else {
+                      v202 = DLC_Int 1;
+                       };
+                     };
+                   };
+                sendrecv again(v15) 8 ()().timeout(DLC_Int 10, {
+                  
+                  sendrecv again(v7) 9 (.publish((), DLC_Int 0, (v202, v7, v5, v6, v15, v54)))(){
+                    const !v279 = TXN_VALUE();
+                    const !v280 = PEQ(DLC_Int 0,v279);
+                    claim(CT_Require)(v280);
+                    claim(CT_Require)(DLC_Bool True);
+                    eff interact("A")."endsWith"(DLC_Bytes "Bob quits");
+                    
+                     } }){
+                  const !v275 = TXN_VALUE();
+                  const !v276 = PEQ(DLC_Int 0,v275);
+                  claim(CT_Require)(v276);
+                  const !v293 = ADD(DLC_Int 1,v54);
+                  {
+                    v54 = v293,
+                    v55 = v202}
+                  continue; } } } } }
+        let v299;
+        const !v300 = PEQ(v55,DLC_Int 2);
+        if v300 then {
+          const !v301 = MUL(DLC_Int 2,v5);
+          v299 = [v301,DLC_Int 0];
            }
         else {
-          v257 = [v4,v4];
-           };
-         };
-      let v268;
-      const !v270 = PLE(DLC_Int 0,v33);
-      const !v271 = PLT(v33,DLC_Int 5);
-      const !v273 = IF_THEN_ELSE(v270,v271,DLC_Bool False);
-      claim(CT_Require)(v273);
-      const !v274 = PEQ(v33,DLC_Int 0);
-      if v274 then {
-        v268 = DLC_Bytes "Bob wins";
-         }
-      else {
-        const !v275 = PEQ(v33,DLC_Int 1);
-        if v275 then {
-          v268 = DLC_Bytes "Draw";
-           }
-        else {
-          const !v276 = PEQ(v33,DLC_Int 2);
-          if v276 then {
-            v268 = DLC_Bytes "Alice wins";
+          const !v302 = PEQ(v55,DLC_Int 0);
+          if v302 then {
+            const !v303 = MUL(DLC_Int 2,v5);
+            v299 = [DLC_Int 0,v303];
              }
           else {
-            const !v277 = PEQ(v33,DLC_Int 3);
-            if v277 then {
-              v268 = DLC_Bytes "Alice quits";
+            v299 = [v5,v5];
+             };
+           };
+        let v310;
+        const !v312 = PLE(DLC_Int 0,v55);
+        const !v313 = PLT(v55,DLC_Int 5);
+        const !v315 = IF_THEN_ELSE(v312,v313,DLC_Bool False);
+        claim(CT_Require)(v315);
+        const !v316 = PEQ(v55,DLC_Int 0);
+        if v316 then {
+          v310 = DLC_Bytes "Bob wins";
+           }
+        else {
+          const !v317 = PEQ(v55,DLC_Int 1);
+          if v317 then {
+            v310 = DLC_Bytes "Draw";
+             }
+          else {
+            const !v318 = PEQ(v55,DLC_Int 2);
+            if v318 then {
+              v310 = DLC_Bytes "Alice wins";
                }
             else {
-              v268 = DLC_Bytes "Bob quits";
+              const !v319 = PEQ(v55,DLC_Int 3);
+              if v319 then {
+                v310 = DLC_Bytes "Alice quits";
+                 }
+              else {
+                v310 = DLC_Bytes "Bob quits";
+                 };
                };
              };
            };
-         };
-      eff interact("A")."endsWith"(v268);
-      
-       } },
+        eff interact("A")."endsWith"(v310);
+        
+         } } },
   "B" = interact {
     acceptParams = T_Fun [T_UInt256,T_UInt256] T_Null,
     endsWith = T_Fun [T_Bytes] T_Null,
@@ -222,481 +250,574 @@
     partnerIs = T_Fun [T_Address] T_Null,
     random = T_Fun [] T_UInt256,
     shows = T_Fun [] T_Null};
-  sendrecv join(v6) 1 ()(v4, v5){
-    const !v8 = ADD(v4,v5);
-    const !v9 = TXN_VALUE();
-    const !v10 = PEQ(v8,v9);
-    claim(CT_Require)(v10);
-    eff interact("B")."acceptParams"(v4,v5);
+  sendrecv join(v7) 1 ()(v5, v6){
+    const !v9 = ADD(v5,v6);
+    const !v10 = TXN_VALUE();
+    const !v11 = PEQ(v9,v10);
+    claim(CT_Require)(v11);
+    eff interact("B")."partnerIs"(v7);
+    eff interact("B")."acceptParams"(v5,v6);
     
     
-    sendrecv join(v13) 2 (.publish((), v4, (v6, v4, v5)))().timeout(DLC_Int 10, {
-      sendrecv again(v6) 10 ()(){
-        const !v18 = TXN_VALUE();
-        const !v19 = PEQ(DLC_Int 0,v18);
-        claim(CT_Require)(v19);
+    sendrecv join(v15) 2 (.publish((), v5, (v7, v5, v6)))().timeout(DLC_Int 10, {
+      sendrecv again(v7) 14 ()(){
+        const !v20 = TXN_VALUE();
+        const !v21 = PEQ(DLC_Int 0,v20);
+        claim(CT_Require)(v21);
         claim(CT_Require)(DLC_Bool True);
         eff interact("B")."endsWith"(DLC_Bytes "Bob quits");
         
          } }){
-      const !v14 = TXN_VALUE();
-      const !v15 = PEQ(v4,v14);
-      claim(CT_Require)(v15);
-      loopvar {
-        v32 = DLC_Int 0,
-        v33 = DLC_Int 1};
-      invariant{
-        () }
-      while{
-        (begin const !v57 = PEQ(v33,DLC_Int 1);
-         v57) }
-      {
-        sendrecv again(v6) 4 ()(v79).timeout(DLC_Int 10, {
+      const !v16 = TXN_VALUE();
+      const !v17 = PEQ(v5,v16);
+      claim(CT_Require)(v17);
+      sendrecv again(v7) 3 ()().timeout(DLC_Int 10, {
+        
+        sendrecv again(v15) 13 (.publish((), DLC_Int 0, (v7, v5, v6, v15)))(){
+          const !v40 = TXN_VALUE();
+          const !v41 = PEQ(DLC_Int 0,v40);
+          claim(CT_Require)(v41);
+          claim(CT_Require)(DLC_Bool True);
+          eff interact("B")."endsWith"(DLC_Bytes "Alice quits");
           
-          sendrecv again(v13) 9 (.publish((), DLC_Int 0, (v6, v4, v5, v13, v32)))(){
-            const !v84 = TXN_VALUE();
-            const !v85 = PEQ(DLC_Int 0,v84);
-            claim(CT_Require)(v85);
-            claim(CT_Require)(DLC_Bool True);
-            eff interact("B")."endsWith"(DLC_Bytes "Alice quits");
+           } }){
+        const !v36 = TXN_VALUE();
+        const !v37 = PEQ(DLC_Int 0,v36);
+        claim(CT_Require)(v37);
+        loopvar {
+          v54 = DLC_Int 0,
+          v55 = DLC_Int 1};
+        invariant{
+          () }
+        while{
+          (begin const !v79 = PEQ(v55,DLC_Int 1);
+           v79) }
+        {
+          sendrecv again(v7) 5 ()(v102).timeout(DLC_Int 10, {
             
-             } }){
-          const !v80 = TXN_VALUE();
-          const !v81 = PEQ(DLC_Int 0,v80);
-          claim(CT_Require)(v81);
-          let v100;
-          const *v101 = interact("B")."getHand"();
-          const *v102 = BYTES_EQ(v101,DLC_Bytes "ROCK");
-          const *v103 = BYTES_EQ(v101,DLC_Bytes "PAPER");
-          const !v104 = BYTES_EQ(v101,DLC_Bytes "SCISSORS");
-          const !v106 = IF_THEN_ELSE(v102,DLC_Bool True,v103);
-          const !v108 = IF_THEN_ELSE(v106,DLC_Bool True,v104);
-          claim(CT_Assume)(v108);
-          if v102 then {
-            v100 = DLC_Int 0;
-             }
-          else {
-            if v103 then {
-              v100 = DLC_Int 1;
-               }
-            else {
-              v100 = DLC_Int 2;
-               };
-             };
-          eff interact("B")."shows"();
-          
-          
-          sendrecv again(v13) 5 (.publish((v100), DLC_Int 0, (v6, v4, v5, v13, v79, v32)))(v116).timeout(DLC_Int 10, {
-            sendrecv again(v6) 8 ()(){
-              const !v121 = TXN_VALUE();
-              const !v122 = PEQ(DLC_Int 0,v121);
-              claim(CT_Require)(v122);
+            sendrecv again(v15) 12 (.publish((), DLC_Int 0, (v7, v5, v6, v15, v54)))(){
+              const !v107 = TXN_VALUE();
+              const !v108 = PEQ(DLC_Int 0,v107);
+              claim(CT_Require)(v108);
               claim(CT_Require)(DLC_Bool True);
-              eff interact("B")."endsWith"(DLC_Bytes "Bob quits");
+              eff interact("B")."endsWith"(DLC_Bytes "Alice quits");
               
                } }){
-            const !v117 = TXN_VALUE();
-            const !v118 = PEQ(DLC_Int 0,v117);
-            claim(CT_Require)(v118);
-            const !v136 = PLE(DLC_Int 0,v116);
-            const !v137 = PLT(v116,DLC_Int 3);
-            const !v139 = IF_THEN_ELSE(v136,v137,DLC_Bool False);
-            claim(CT_Require)(v139);
-            sendrecv again(v6) 6 ()(v150, v151).timeout(DLC_Int 10, {
-              
-              sendrecv again(v13) 7 (.publish((), DLC_Int 0, (v6, v4, v5, v13, v79, v116, v32)))(){
-                const !v156 = TXN_VALUE();
-                const !v157 = PEQ(DLC_Int 0,v156);
-                claim(CT_Require)(v157);
+            const !v103 = TXN_VALUE();
+            const !v104 = PEQ(DLC_Int 0,v103);
+            claim(CT_Require)(v104);
+            let v123;
+            const *v124 = interact("B")."getHand"();
+            const *v125 = BYTES_EQ(v124,DLC_Bytes "ROCK");
+            const *v126 = BYTES_EQ(v124,DLC_Bytes "PAPER");
+            const !v127 = BYTES_EQ(v124,DLC_Bytes "SCISSORS");
+            const !v129 = IF_THEN_ELSE(v125,DLC_Bool True,v126);
+            const !v131 = IF_THEN_ELSE(v129,DLC_Bool True,v127);
+            claim(CT_Assume)(v131);
+            if v125 then {
+              v123 = DLC_Int 0;
+               }
+            else {
+              if v126 then {
+                v123 = DLC_Int 1;
+                 }
+              else {
+                v123 = DLC_Int 2;
+                 };
+               };
+            eff interact("B")."shows"();
+            
+            
+            sendrecv again(v15) 6 (.publish((v123), DLC_Int 0, (v7, v5, v6, v15, v102, v54)))(v139).timeout(DLC_Int 10, {
+              sendrecv again(v7) 11 ()(){
+                const !v144 = TXN_VALUE();
+                const !v145 = PEQ(DLC_Int 0,v144);
+                claim(CT_Require)(v145);
                 claim(CT_Require)(DLC_Bool True);
-                eff interact("B")."endsWith"(DLC_Bytes "Alice quits");
+                eff interact("B")."endsWith"(DLC_Bytes "Bob quits");
                 
                  } }){
-              const !v152 = TXN_VALUE();
-              const !v153 = PEQ(DLC_Int 0,v152);
-              claim(CT_Require)(v153);
-              const !v171 = digest(v150,v151);
-              const !v172 = PEQ(v79,v171);
-              claim(CT_Require)(v172);
-              const !v174 = PLE(DLC_Int 0,v151);
-              const !v175 = PLT(v151,DLC_Int 3);
-              const !v177 = IF_THEN_ELSE(v174,v175,DLC_Bool False);
-              claim(CT_Require)(v177);
-              let v179;
-              const !v181 = PLE(DLC_Int 0,v151);
-              const !v182 = PLT(v151,DLC_Int 3);
-              const *v184 = IF_THEN_ELSE(v181,v182,DLC_Bool False);
-              const !v186 = PLE(DLC_Int 0,v116);
-              const !v187 = PLT(v116,DLC_Int 3);
-              const *v189 = IF_THEN_ELSE(v186,v187,DLC_Bool False);
-              const !v191 = IF_THEN_ELSE(v184,v189,DLC_Bool False);
-              if v191 then {
-                const !v192 = SUB(DLC_Int 4,v116);
-                const !v193 = ADD(v151,v192);
-                const !v194 = MOD(v193,DLC_Int 3);
-                v179 = v194;
-                 }
-              else {
-                if v184 then {
-                  v179 = DLC_Int 2;
+              const !v140 = TXN_VALUE();
+              const !v141 = PEQ(DLC_Int 0,v140);
+              claim(CT_Require)(v141);
+              const !v159 = PLE(DLC_Int 0,v139);
+              const !v160 = PLT(v139,DLC_Int 3);
+              const !v162 = IF_THEN_ELSE(v159,v160,DLC_Bool False);
+              claim(CT_Require)(v162);
+              sendrecv again(v7) 7 ()(v173, v174).timeout(DLC_Int 10, {
+                
+                sendrecv again(v15) 10 (.publish((), DLC_Int 0, (v7, v5, v6, v15, v102, v139, v54)))(){
+                  const !v179 = TXN_VALUE();
+                  const !v180 = PEQ(DLC_Int 0,v179);
+                  claim(CT_Require)(v180);
+                  claim(CT_Require)(DLC_Bool True);
+                  eff interact("B")."endsWith"(DLC_Bytes "Alice quits");
+                  
+                   } }){
+                const !v175 = TXN_VALUE();
+                const !v176 = PEQ(DLC_Int 0,v175);
+                claim(CT_Require)(v176);
+                const !v194 = digest(v173,v174);
+                const !v195 = PEQ(v102,v194);
+                claim(CT_Require)(v195);
+                const !v197 = PLE(DLC_Int 0,v174);
+                const !v198 = PLT(v174,DLC_Int 3);
+                const !v200 = IF_THEN_ELSE(v197,v198,DLC_Bool False);
+                claim(CT_Require)(v200);
+                let v202;
+                const !v204 = PLE(DLC_Int 0,v174);
+                const !v205 = PLT(v174,DLC_Int 3);
+                const *v207 = IF_THEN_ELSE(v204,v205,DLC_Bool False);
+                const !v209 = PLE(DLC_Int 0,v139);
+                const !v210 = PLT(v139,DLC_Int 3);
+                const *v212 = IF_THEN_ELSE(v209,v210,DLC_Bool False);
+                const !v214 = IF_THEN_ELSE(v207,v212,DLC_Bool False);
+                if v214 then {
+                  const !v215 = SUB(DLC_Int 4,v139);
+                  const !v216 = ADD(v174,v215);
+                  const !v217 = MOD(v216,DLC_Int 3);
+                  v202 = v217;
                    }
                 else {
-                  if v189 then {
-                    v179 = DLC_Int 0;
+                  if v207 then {
+                    v202 = DLC_Int 2;
                      }
                   else {
-                    v179 = DLC_Int 1;
+                    if v212 then {
+                      v202 = DLC_Int 0;
+                       }
+                    else {
+                      v202 = DLC_Int 1;
+                       };
                      };
                    };
-                 };
-              const !v252 = ADD(DLC_Int 1,v32);
-              {
-                v32 = v252,
-                v33 = v179}
-              continue; } } } }
-      let v257;
-      const !v258 = PEQ(v33,DLC_Int 2);
-      if v258 then {
-        const !v259 = MUL(DLC_Int 2,v4);
-        v257 = [v259,DLC_Int 0];
-         }
-      else {
-        const !v260 = PEQ(v33,DLC_Int 0);
-        if v260 then {
-          const !v261 = MUL(DLC_Int 2,v4);
-          v257 = [DLC_Int 0,v261];
+                
+                sendrecv again(v15) 8 (.publish((), DLC_Int 0, (v202, v7, v5, v6, v15, v54)))().timeout(DLC_Int 10, {
+                  sendrecv again(v7) 9 ()(){
+                    const !v279 = TXN_VALUE();
+                    const !v280 = PEQ(DLC_Int 0,v279);
+                    claim(CT_Require)(v280);
+                    claim(CT_Require)(DLC_Bool True);
+                    eff interact("B")."endsWith"(DLC_Bytes "Bob quits");
+                    
+                     } }){
+                  const !v275 = TXN_VALUE();
+                  const !v276 = PEQ(DLC_Int 0,v275);
+                  claim(CT_Require)(v276);
+                  const !v293 = ADD(DLC_Int 1,v54);
+                  {
+                    v54 = v293,
+                    v55 = v202}
+                  continue; } } } } }
+        let v299;
+        const !v300 = PEQ(v55,DLC_Int 2);
+        if v300 then {
+          const !v301 = MUL(DLC_Int 2,v5);
+          v299 = [v301,DLC_Int 0];
            }
         else {
-          v257 = [v4,v4];
-           };
-         };
-      let v280;
-      const !v282 = PLE(DLC_Int 0,v33);
-      const !v283 = PLT(v33,DLC_Int 5);
-      const !v285 = IF_THEN_ELSE(v282,v283,DLC_Bool False);
-      claim(CT_Require)(v285);
-      const !v286 = PEQ(v33,DLC_Int 0);
-      if v286 then {
-        v280 = DLC_Bytes "Bob wins";
-         }
-      else {
-        const !v287 = PEQ(v33,DLC_Int 1);
-        if v287 then {
-          v280 = DLC_Bytes "Draw";
-           }
-        else {
-          const !v288 = PEQ(v33,DLC_Int 2);
-          if v288 then {
-            v280 = DLC_Bytes "Alice wins";
+          const !v302 = PEQ(v55,DLC_Int 0);
+          if v302 then {
+            const !v303 = MUL(DLC_Int 2,v5);
+            v299 = [DLC_Int 0,v303];
              }
           else {
-            const !v289 = PEQ(v33,DLC_Int 3);
-            if v289 then {
-              v280 = DLC_Bytes "Alice quits";
+            v299 = [v5,v5];
+             };
+           };
+        let v322;
+        const !v324 = PLE(DLC_Int 0,v55);
+        const !v325 = PLT(v55,DLC_Int 5);
+        const !v327 = IF_THEN_ELSE(v324,v325,DLC_Bool False);
+        claim(CT_Require)(v327);
+        const !v328 = PEQ(v55,DLC_Int 0);
+        if v328 then {
+          v322 = DLC_Bytes "Bob wins";
+           }
+        else {
+          const !v329 = PEQ(v55,DLC_Int 1);
+          if v329 then {
+            v322 = DLC_Bytes "Draw";
+             }
+          else {
+            const !v330 = PEQ(v55,DLC_Int 2);
+            if v330 then {
+              v322 = DLC_Bytes "Alice wins";
                }
             else {
-              v280 = DLC_Bytes "Bob quits";
+              const !v331 = PEQ(v55,DLC_Int 3);
+              if v331 then {
+                v322 = DLC_Bytes "Alice quits";
+                 }
+              else {
+                v322 = DLC_Bytes "Bob quits";
+                 };
                };
              };
            };
-         };
-      eff interact("B")."endsWith"(v280);
-      
-       } },
+        eff interact("B")."endsWith"(v322);
+        
+         } } },
   "O" = interact {
     };
-  sendrecv join(v6) 1 ()(v4, v5){
-    const !v8 = ADD(v4,v5);
-    const !v9 = TXN_VALUE();
-    const !v10 = PEQ(v8,v9);
-    claim(CT_Require)(v10);
-    sendrecv join(v13) 2 ()().timeout(DLC_Int 10, {
-      sendrecv again(v6) 10 ()(){
-        const !v18 = TXN_VALUE();
-        const !v19 = PEQ(DLC_Int 0,v18);
-        claim(CT_Require)(v19);
+  sendrecv join(v7) 1 ()(v5, v6){
+    const !v9 = ADD(v5,v6);
+    const !v10 = TXN_VALUE();
+    const !v11 = PEQ(v9,v10);
+    claim(CT_Require)(v11);
+    sendrecv join(v15) 2 ()().timeout(DLC_Int 10, {
+      sendrecv again(v7) 14 ()(){
+        const !v20 = TXN_VALUE();
+        const !v21 = PEQ(DLC_Int 0,v20);
+        claim(CT_Require)(v21);
          } }){
-      const !v14 = TXN_VALUE();
-      const !v15 = PEQ(v4,v14);
-      claim(CT_Require)(v15);
-      loopvar {
-        v32 = DLC_Int 0,
-        v33 = DLC_Int 1};
-      invariant{
-        () }
-      while{
-        (begin const !v57 = PEQ(v33,DLC_Int 1);
-         v57) }
-      {
-        sendrecv again(v6) 4 ()(v79).timeout(DLC_Int 10, {
-          sendrecv again(v13) 9 ()(){
-            const !v84 = TXN_VALUE();
-            const !v85 = PEQ(DLC_Int 0,v84);
-            claim(CT_Require)(v85);
-             } }){
-          const !v80 = TXN_VALUE();
-          const !v81 = PEQ(DLC_Int 0,v80);
-          claim(CT_Require)(v81);
-          sendrecv again(v13) 5 ()(v116).timeout(DLC_Int 10, {
-            sendrecv again(v6) 8 ()(){
-              const !v121 = TXN_VALUE();
-              const !v122 = PEQ(DLC_Int 0,v121);
-              claim(CT_Require)(v122);
+      const !v16 = TXN_VALUE();
+      const !v17 = PEQ(v5,v16);
+      claim(CT_Require)(v17);
+      sendrecv again(v7) 3 ()().timeout(DLC_Int 10, {
+        sendrecv again(v15) 13 ()(){
+          const !v40 = TXN_VALUE();
+          const !v41 = PEQ(DLC_Int 0,v40);
+          claim(CT_Require)(v41);
+           } }){
+        const !v36 = TXN_VALUE();
+        const !v37 = PEQ(DLC_Int 0,v36);
+        claim(CT_Require)(v37);
+        loopvar {
+          v54 = DLC_Int 0,
+          v55 = DLC_Int 1};
+        invariant{
+          () }
+        while{
+          (begin const !v79 = PEQ(v55,DLC_Int 1);
+           v79) }
+        {
+          sendrecv again(v7) 5 ()(v102).timeout(DLC_Int 10, {
+            sendrecv again(v15) 12 ()(){
+              const !v107 = TXN_VALUE();
+              const !v108 = PEQ(DLC_Int 0,v107);
+              claim(CT_Require)(v108);
                } }){
-            const !v117 = TXN_VALUE();
-            const !v118 = PEQ(DLC_Int 0,v117);
-            claim(CT_Require)(v118);
-            const !v136 = PLE(DLC_Int 0,v116);
-            const !v137 = PLT(v116,DLC_Int 3);
-            const !v139 = IF_THEN_ELSE(v136,v137,DLC_Bool False);
-            claim(CT_Require)(v139);
-            sendrecv again(v6) 6 ()(v150, v151).timeout(DLC_Int 10, {
-              sendrecv again(v13) 7 ()(){
-                const !v156 = TXN_VALUE();
-                const !v157 = PEQ(DLC_Int 0,v156);
-                claim(CT_Require)(v157);
+            const !v103 = TXN_VALUE();
+            const !v104 = PEQ(DLC_Int 0,v103);
+            claim(CT_Require)(v104);
+            sendrecv again(v15) 6 ()(v139).timeout(DLC_Int 10, {
+              sendrecv again(v7) 11 ()(){
+                const !v144 = TXN_VALUE();
+                const !v145 = PEQ(DLC_Int 0,v144);
+                claim(CT_Require)(v145);
                  } }){
-              const !v152 = TXN_VALUE();
-              const !v153 = PEQ(DLC_Int 0,v152);
-              claim(CT_Require)(v153);
-              const !v171 = digest(v150,v151);
-              const !v172 = PEQ(v79,v171);
-              claim(CT_Require)(v172);
-              const !v174 = PLE(DLC_Int 0,v151);
-              const !v175 = PLT(v151,DLC_Int 3);
-              const !v177 = IF_THEN_ELSE(v174,v175,DLC_Bool False);
-              claim(CT_Require)(v177);
-              let v179;
-              const !v181 = PLE(DLC_Int 0,v151);
-              const !v182 = PLT(v151,DLC_Int 3);
-              const *v184 = IF_THEN_ELSE(v181,v182,DLC_Bool False);
-              const !v186 = PLE(DLC_Int 0,v116);
-              const !v187 = PLT(v116,DLC_Int 3);
-              const *v189 = IF_THEN_ELSE(v186,v187,DLC_Bool False);
-              const !v191 = IF_THEN_ELSE(v184,v189,DLC_Bool False);
-              if v191 then {
-                const !v192 = SUB(DLC_Int 4,v116);
-                const !v193 = ADD(v151,v192);
-                const !v194 = MOD(v193,DLC_Int 3);
-                v179 = v194;
-                 }
-              else {
-                if v184 then {
-                  v179 = DLC_Int 2;
+              const !v140 = TXN_VALUE();
+              const !v141 = PEQ(DLC_Int 0,v140);
+              claim(CT_Require)(v141);
+              const !v159 = PLE(DLC_Int 0,v139);
+              const !v160 = PLT(v139,DLC_Int 3);
+              const !v162 = IF_THEN_ELSE(v159,v160,DLC_Bool False);
+              claim(CT_Require)(v162);
+              sendrecv again(v7) 7 ()(v173, v174).timeout(DLC_Int 10, {
+                sendrecv again(v15) 10 ()(){
+                  const !v179 = TXN_VALUE();
+                  const !v180 = PEQ(DLC_Int 0,v179);
+                  claim(CT_Require)(v180);
+                   } }){
+                const !v175 = TXN_VALUE();
+                const !v176 = PEQ(DLC_Int 0,v175);
+                claim(CT_Require)(v176);
+                const !v194 = digest(v173,v174);
+                const !v195 = PEQ(v102,v194);
+                claim(CT_Require)(v195);
+                const !v197 = PLE(DLC_Int 0,v174);
+                const !v198 = PLT(v174,DLC_Int 3);
+                const !v200 = IF_THEN_ELSE(v197,v198,DLC_Bool False);
+                claim(CT_Require)(v200);
+                let v202;
+                const !v204 = PLE(DLC_Int 0,v174);
+                const !v205 = PLT(v174,DLC_Int 3);
+                const *v207 = IF_THEN_ELSE(v204,v205,DLC_Bool False);
+                const !v209 = PLE(DLC_Int 0,v139);
+                const !v210 = PLT(v139,DLC_Int 3);
+                const *v212 = IF_THEN_ELSE(v209,v210,DLC_Bool False);
+                const !v214 = IF_THEN_ELSE(v207,v212,DLC_Bool False);
+                if v214 then {
+                  const !v215 = SUB(DLC_Int 4,v139);
+                  const !v216 = ADD(v174,v215);
+                  const !v217 = MOD(v216,DLC_Int 3);
+                  v202 = v217;
                    }
                 else {
-                  if v189 then {
-                    v179 = DLC_Int 0;
+                  if v207 then {
+                    v202 = DLC_Int 2;
                      }
                   else {
-                    v179 = DLC_Int 1;
+                    if v212 then {
+                      v202 = DLC_Int 0;
+                       }
+                    else {
+                      v202 = DLC_Int 1;
+                       };
                      };
                    };
-                 };
-              const !v252 = ADD(DLC_Int 1,v32);
-              {
-                v32 = v252,
-                v33 = v179}
-              continue; } } } }
-      let v257;
-      const !v258 = PEQ(v33,DLC_Int 2);
-      if v258 then {
-        const !v259 = MUL(DLC_Int 2,v4);
-        v257 = [v259,DLC_Int 0];
-         }
-      else {
-        const !v260 = PEQ(v33,DLC_Int 0);
-        if v260 then {
-          const !v261 = MUL(DLC_Int 2,v4);
-          v257 = [DLC_Int 0,v261];
+                sendrecv again(v15) 8 ()().timeout(DLC_Int 10, {
+                  sendrecv again(v7) 9 ()(){
+                    const !v279 = TXN_VALUE();
+                    const !v280 = PEQ(DLC_Int 0,v279);
+                    claim(CT_Require)(v280);
+                     } }){
+                  const !v275 = TXN_VALUE();
+                  const !v276 = PEQ(DLC_Int 0,v275);
+                  claim(CT_Require)(v276);
+                  const !v293 = ADD(DLC_Int 1,v54);
+                  {
+                    v54 = v293,
+                    v55 = v202}
+                  continue; } } } } }
+        let v299;
+        const !v300 = PEQ(v55,DLC_Int 2);
+        if v300 then {
+          const !v301 = MUL(DLC_Int 2,v5);
+          v299 = [v301,DLC_Int 0];
            }
         else {
-          v257 = [v4,v4];
+          const !v302 = PEQ(v55,DLC_Int 0);
+          if v302 then {
+            const !v303 = MUL(DLC_Int 2,v5);
+            v299 = [DLC_Int 0,v303];
+             }
+          else {
+            v299 = [v5,v5];
+             };
            };
-         };
-       } }}
+         } } }}
 
 {
   1 = {
-    join(v6),
+    join(v7),
     (between [] []),
     last = 0,
     [],
-    [v4, v5],
+    [v5, v6],
     {
-      const !v8 = ADD(v4,v5);
-      const !v9 = TXN_VALUE();
-      const !v10 = PEQ(v8,v9);
-      claim(CT_Require)(v10);
-      (wait! [v6, v4, v5]) } },
+      const !v9 = ADD(v5,v6);
+      const !v10 = TXN_VALUE();
+      const !v11 = PEQ(v9,v10);
+      claim(CT_Require)(v11);
+      (wait! [v7, v5, v6]) } },
   2 = {
-    join(v13),
+    join(v15),
     (between [] [DLC_Int 10]),
     last = 1,
-    [v6, v4, v5],
+    [v7, v5, v6],
     [],
     {
-      const !v14 = TXN_VALUE();
-      const !v15 = PEQ(v4,v14);
-      claim(CT_Require)(v15);
-      (jump! 3 [v6, v4, v5, v13] {
-        v32 = DLC_Int 0,
-        v33 = DLC_Int 1}) } },
+      const !v16 = TXN_VALUE();
+      const !v17 = PEQ(v5,v16);
+      claim(CT_Require)(v17);
+      (wait! [v7, v5, v6, v15]) } },
   3 = {
-    loop!,
-    [v6, v4, v5, v13],
-    [v32, v33],
+    again(v7),
+    (between [] [DLC_Int 10]),
+    last = 2,
+    [v7, v5, v6, v15],
+    [],
     {
-      const !v57 = PEQ(v33,DLC_Int 1);
+      const !v36 = TXN_VALUE();
+      const !v37 = PEQ(DLC_Int 0,v36);
+      claim(CT_Require)(v37);
+      (jump! 4 [v7, v5, v6, v15] {
+        v54 = DLC_Int 0,
+        v55 = DLC_Int 1}) } },
+  4 = {
+    loop!,
+    [v7, v5, v6, v15],
+    [v54, v55],
+    {
+      const !v79 = PEQ(v55,DLC_Int 1);
       
-      if v57 then {
-        (wait! [v6, v4, v5, v13, v32]) }
+      if v79 then {
+        (wait! [v7, v5, v6, v15, v54]) }
       else {
-        let v257;
-        const !v258 = PEQ(v33,DLC_Int 2);
-        if v258 then {
-          const !v259 = MUL(DLC_Int 2,v4);
-          v257 = [v259,DLC_Int 0];
+        let v299;
+        const !v300 = PEQ(v55,DLC_Int 2);
+        if v300 then {
+          const !v301 = MUL(DLC_Int 2,v5);
+          v299 = [v301,DLC_Int 0];
            }
         else {
-          const !v260 = PEQ(v33,DLC_Int 0);
-          if v260 then {
-            const !v261 = MUL(DLC_Int 2,v4);
-            v257 = [DLC_Int 0,v261];
+          const !v302 = PEQ(v55,DLC_Int 0);
+          if v302 then {
+            const !v303 = MUL(DLC_Int 2,v5);
+            v299 = [DLC_Int 0,v303];
              }
           else {
-            v257 = [v4,v4];
+            v299 = [v5,v5];
              };
            };
-        const !v262 = v257[0];
-        const !v263 = v257[1];
-        const !v264 = ADD(v5,v262);
-        transfer.(v264).to(v6);
-        transfer.(v263).to(v13);
+        const !v304 = v299[0];
+        const !v305 = v299[1];
+        const !v306 = ADD(v6,v304);
+        transfer.(v306).to(v7);
+        transfer.(v305).to(v15);
         (halt! ) }; } },
-  4 = {
-    again(v6),
-    (between [] [DLC_Int 10]),
-    last = 3,
-    [v6, v4, v5, v13, v32],
-    [v79],
-    {
-      const !v80 = TXN_VALUE();
-      const !v81 = PEQ(DLC_Int 0,v80);
-      claim(CT_Require)(v81);
-      (wait! [v6, v4, v5, v13, v79, v32]) } },
   5 = {
-    again(v13),
+    again(v7),
     (between [] [DLC_Int 10]),
     last = 4,
-    [v6, v4, v5, v13, v79, v32],
-    [v116],
+    [v7, v5, v6, v15, v54],
+    [v102],
     {
-      const !v117 = TXN_VALUE();
-      const !v118 = PEQ(DLC_Int 0,v117);
-      claim(CT_Require)(v118);
-      const !v136 = PLE(DLC_Int 0,v116);
-      const !v137 = PLT(v116,DLC_Int 3);
-      const !v139 = IF_THEN_ELSE(v136,v137,DLC_Bool False);
-      claim(CT_Require)(v139);
-      (wait! [v6, v4, v5, v13, v79, v116, v32]) } },
+      const !v103 = TXN_VALUE();
+      const !v104 = PEQ(DLC_Int 0,v103);
+      claim(CT_Require)(v104);
+      (wait! [v7, v5, v6, v15, v102, v54]) } },
   6 = {
-    again(v6),
+    again(v15),
     (between [] [DLC_Int 10]),
     last = 5,
-    [v6, v4, v5, v13, v79, v116, v32],
-    [v150, v151],
+    [v7, v5, v6, v15, v102, v54],
+    [v139],
     {
-      const !v152 = TXN_VALUE();
-      const !v153 = PEQ(DLC_Int 0,v152);
-      claim(CT_Require)(v153);
-      const !v171 = digest(v150,v151);
-      const !v172 = PEQ(v79,v171);
-      claim(CT_Require)(v172);
-      const !v174 = PLE(DLC_Int 0,v151);
-      const !v175 = PLT(v151,DLC_Int 3);
-      const !v177 = IF_THEN_ELSE(v174,v175,DLC_Bool False);
-      claim(CT_Require)(v177);
-      let v179;
-      const !v181 = PLE(DLC_Int 0,v151);
-      const !v182 = PLT(v151,DLC_Int 3);
-      const *v184 = IF_THEN_ELSE(v181,v182,DLC_Bool False);
-      const !v186 = PLE(DLC_Int 0,v116);
-      const !v187 = PLT(v116,DLC_Int 3);
-      const *v189 = IF_THEN_ELSE(v186,v187,DLC_Bool False);
-      const !v191 = IF_THEN_ELSE(v184,v189,DLC_Bool False);
-      if v191 then {
-        const !v192 = SUB(DLC_Int 4,v116);
-        const !v193 = ADD(v151,v192);
-        const !v194 = MOD(v193,DLC_Int 3);
-        v179 = v194;
+      const !v140 = TXN_VALUE();
+      const !v141 = PEQ(DLC_Int 0,v140);
+      claim(CT_Require)(v141);
+      const !v159 = PLE(DLC_Int 0,v139);
+      const !v160 = PLT(v139,DLC_Int 3);
+      const !v162 = IF_THEN_ELSE(v159,v160,DLC_Bool False);
+      claim(CT_Require)(v162);
+      (wait! [v7, v5, v6, v15, v102, v139, v54]) } },
+  7 = {
+    again(v7),
+    (between [] [DLC_Int 10]),
+    last = 6,
+    [v7, v5, v6, v15, v102, v139, v54],
+    [v173, v174],
+    {
+      const !v175 = TXN_VALUE();
+      const !v176 = PEQ(DLC_Int 0,v175);
+      claim(CT_Require)(v176);
+      const !v194 = digest(v173,v174);
+      const !v195 = PEQ(v102,v194);
+      claim(CT_Require)(v195);
+      const !v197 = PLE(DLC_Int 0,v174);
+      const !v198 = PLT(v174,DLC_Int 3);
+      const !v200 = IF_THEN_ELSE(v197,v198,DLC_Bool False);
+      claim(CT_Require)(v200);
+      let v202;
+      const !v204 = PLE(DLC_Int 0,v174);
+      const !v205 = PLT(v174,DLC_Int 3);
+      const *v207 = IF_THEN_ELSE(v204,v205,DLC_Bool False);
+      const !v209 = PLE(DLC_Int 0,v139);
+      const !v210 = PLT(v139,DLC_Int 3);
+      const *v212 = IF_THEN_ELSE(v209,v210,DLC_Bool False);
+      const !v214 = IF_THEN_ELSE(v207,v212,DLC_Bool False);
+      if v214 then {
+        const !v215 = SUB(DLC_Int 4,v139);
+        const !v216 = ADD(v174,v215);
+        const !v217 = MOD(v216,DLC_Int 3);
+        v202 = v217;
          }
       else {
-        if v184 then {
-          v179 = DLC_Int 2;
+        if v207 then {
+          v202 = DLC_Int 2;
            }
         else {
-          if v189 then {
-            v179 = DLC_Int 0;
+          if v212 then {
+            v202 = DLC_Int 0;
              }
           else {
-            v179 = DLC_Int 1;
+            v202 = DLC_Int 1;
              };
            };
          };
-      const !v252 = ADD(DLC_Int 1,v32);
-      (jump! 3 [v6, v4, v5, v13] {
-        v32 = v252,
-        v33 = v179}) } },
-  7 = {
-    again(v13),
-    (between [DLC_Int 10] []),
-    last = 5,
-    [v6, v4, v5, v13, v79, v116, v32],
-    [],
-    {
-      const !v156 = TXN_VALUE();
-      const !v157 = PEQ(DLC_Int 0,v156);
-      claim(CT_Require)(v157);
-      const !v158 = BALANCE();
-      transfer.(v158).to(v13);
-      (halt! ) } },
+      (wait! [v202, v7, v5, v6, v15, v54]) } },
   8 = {
-    again(v6),
-    (between [DLC_Int 10] []),
-    last = 4,
-    [v6, v4, v5, v13, v79, v32],
+    again(v15),
+    (between [] [DLC_Int 10]),
+    last = 7,
+    [v202, v7, v5, v6, v15, v54],
     [],
     {
-      const !v121 = TXN_VALUE();
-      const !v122 = PEQ(DLC_Int 0,v121);
-      claim(CT_Require)(v122);
-      const !v123 = BALANCE();
-      transfer.(v123).to(v6);
-      (halt! ) } },
+      const !v275 = TXN_VALUE();
+      const !v276 = PEQ(DLC_Int 0,v275);
+      claim(CT_Require)(v276);
+      const !v293 = ADD(DLC_Int 1,v54);
+      (jump! 4 [v7, v5, v6, v15] {
+        v54 = v293,
+        v55 = v202}) } },
   9 = {
-    again(v13),
+    again(v7),
     (between [DLC_Int 10] []),
-    last = 3,
-    [v6, v4, v5, v13, v32],
+    last = 7,
+    [v202, v7, v5, v6, v15, v54],
     [],
     {
-      const !v84 = TXN_VALUE();
-      const !v85 = PEQ(DLC_Int 0,v84);
-      claim(CT_Require)(v85);
-      const !v86 = BALANCE();
-      transfer.(v86).to(v13);
+      const !v279 = TXN_VALUE();
+      const !v280 = PEQ(DLC_Int 0,v279);
+      claim(CT_Require)(v280);
+      const !v281 = BALANCE();
+      transfer.(v281).to(v7);
       (halt! ) } },
   10 = {
-    again(v6),
+    again(v15),
     (between [DLC_Int 10] []),
-    last = 1,
-    [v6, v4, v5],
+    last = 6,
+    [v7, v5, v6, v15, v102, v139, v54],
     [],
     {
-      const !v18 = TXN_VALUE();
-      const !v19 = PEQ(DLC_Int 0,v18);
-      claim(CT_Require)(v19);
-      const !v20 = BALANCE();
-      transfer.(v20).to(v6);
+      const !v179 = TXN_VALUE();
+      const !v180 = PEQ(DLC_Int 0,v179);
+      claim(CT_Require)(v180);
+      const !v181 = BALANCE();
+      transfer.(v181).to(v15);
+      (halt! ) } },
+  11 = {
+    again(v7),
+    (between [DLC_Int 10] []),
+    last = 5,
+    [v7, v5, v6, v15, v102, v54],
+    [],
+    {
+      const !v144 = TXN_VALUE();
+      const !v145 = PEQ(DLC_Int 0,v144);
+      claim(CT_Require)(v145);
+      const !v146 = BALANCE();
+      transfer.(v146).to(v7);
+      (halt! ) } },
+  12 = {
+    again(v15),
+    (between [DLC_Int 10] []),
+    last = 4,
+    [v7, v5, v6, v15, v54],
+    [],
+    {
+      const !v107 = TXN_VALUE();
+      const !v108 = PEQ(DLC_Int 0,v107);
+      claim(CT_Require)(v108);
+      const !v109 = BALANCE();
+      transfer.(v109).to(v15);
+      (halt! ) } },
+  13 = {
+    again(v15),
+    (between [DLC_Int 10] []),
+    last = 2,
+    [v7, v5, v6, v15],
+    [],
+    {
+      const !v40 = TXN_VALUE();
+      const !v41 = PEQ(DLC_Int 0,v40);
+      claim(CT_Require)(v41);
+      const !v42 = BALANCE();
+      transfer.(v42).to(v15);
+      (halt! ) } },
+  14 = {
+    again(v7),
+    (between [DLC_Int 10] []),
+    last = 1,
+    [v7, v5, v6],
+    [],
+    {
+      const !v20 = TXN_VALUE();
+      const !v21 = PEQ(DLC_Int 0,v20);
+      claim(CT_Require)(v21);
+      const !v22 = BALANCE();
+      transfer.(v22).to(v7);
       (halt! ) } }}

@@ -113,6 +113,14 @@ dom --> rng = T_Fun dom rng
 
 type SLPart = B.ByteString
 
+type SLPartEnvs = M.Map SLPart SLEnv
+
+data SLCloEnv
+  = SLCloEnv SLEnv SLPartEnvs SLEnv
+  deriving (Eq, Generic, Show)
+
+instance NFData SLCloEnv
+
 data SLVal
   = SLV_Null SrcLoc String
   | SLV_Bool SrcLoc Bool
@@ -120,7 +128,7 @@ data SLVal
   | SLV_Bytes SrcLoc B.ByteString
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc SLEnv
-  | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLEnv
+  | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLCloEnv
   | SLV_DLVar DLVar
   | SLV_Type SLType
   | SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
@@ -141,10 +149,9 @@ instance NFData ToConsensusMode
 data SLForm
   = SLForm_App
   | SLForm_each
-  | SLForm_EachAns [(DLStmts, SLVal)]
-  | SLForm_Part_Only SLVal
+  | SLForm_EachAns [SLPart] SrcLoc SLCloEnv JSExpression
+  | SLForm_Part_Only SLPart
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
-  | SLForm_Part_OnlyAns SrcLoc SLPart SLEnv SLVal
   deriving (Eq, Generic, Show)
 
 instance NFData SLForm

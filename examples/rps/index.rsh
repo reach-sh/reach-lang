@@ -74,7 +74,7 @@ const Bob =
         acceptParams: Fun([UInt256, UInt256], Null),
         shows: Fun([], Null) };
 
-export const once =
+const con_once =
   Reach.App(
     {},
     [["A", Alice], ["B", Bob], ["O", {}]],
@@ -142,7 +142,7 @@ export const once =
 
       sendOutcome(outcome)(); });
 
-export const nodraw =
+const con_nodraw =
   Reach.App(
     {},
     [["A", Alice], ["B", Bob], ["O", {}]],
@@ -301,7 +301,7 @@ function finalize(wagerAmount, escrowAmount, Ap, Bp, outcome) {
   transfer(escrowAmount + getsA).to(Ap);
   transfer(getsB).to(Bp); }
 
-export const abs_once =
+const abs_once =
   Reach.App(
     {},
     [["A", Alice], ["B", Bob], ["O", {}]],
@@ -321,7 +321,7 @@ export const abs_once =
 
       abs_sendOutcome(A, B, outcome)(); });
 
-export const abs_nodraw =
+const abs_nodraw =
   Reach.App(
     {},
     [["A", Alice], ["B", Bob], ["O", {}]],
@@ -355,3 +355,8 @@ export const abs_nodraw =
       commit();
 
       abs_sendOutcome(A, B, outcome)(); });
+
+// Interface
+
+export const once = abs_once;
+export const nodraw = abs_nodraw;
