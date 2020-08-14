@@ -391,6 +391,23 @@ penvs_update ctxt sco f =
     map (\p -> (p, f p $ sco_lookup_penv ctxt sco p)) $
       M.keys $ ctxt_base_penvs ctxt
 
+sco_update :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
+sco_update ctxt at sco st addl_env =
+  sco { sco_env = do_merge $ sco_env sco
+      , sco_penvs = sco_penvs'
+      , sco_cenv = sco_cenv' }
+  where sco_penvs' =
+          case st_mode st of
+            SLM_Step -> updated_penvs
+            SLM_ConsensusStep -> updated_penvs
+            _ -> sco_penvs sco
+        updated_penvs = penvs_update ctxt sco (const do_merge)
+        sco_cenv' =
+          case st_mode st of
+            SLM_ConsensusStep -> do_merge $ sco_cenv sco
+            _ -> sco_cenv sco
+        do_merge = flip (env_merge at) addl_env
+
 --- A context has global stuff (the variable counter) and abstracts
 --- the control-flow state that leads to the expression, so it
 --- inherits in a function call.
@@ -1262,6 +1279,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                         M.insert whov (lvl_, SLV_Participant at_ who_ io_ as_ (Just $ (pdvs' M.! who)))
                       _ ->
                         impossible $ "participant is not participant"
+          --- XXX use sco_update?
           let env' = add_who_env $ env_merge to_at env msg_env
           let sco_env' = sco {sco_env = env'}
           let penvs' =
@@ -1334,14 +1352,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
     SLV_Prim SLPrim_committed ->
       case st_mode st of
         SLM_ConsensusStep -> do
-          let orig_env = sco_cenv sco
-          let addl_env = M.difference env orig_env
-          let add_defns p penv = env_merge at penv (M.difference addl_env $ ctxt_base_penvs ctxt M.! p)
-          let penvs' = penvs_update ctxt sco add_defns
           let st_step = st { st_mode = SLM_Step }
-          let sco' = sco { sco_penvs = penvs'
-                         , sco_cenv = env }
-          SLRes steplifts k_st cr <- evalStmt ctxt at sco' st_step ks
+          SLRes steplifts k_st cr <- evalStmt ctxt at sco st_step ks
           let lifts' = (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' k_st cr
         _ -> illegal_mode
@@ -1383,10 +1395,8 @@ evalStmt ctxt at sco st ss =
     (s@(JSLet a _ _) : _) -> illegal a s "let"
     (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
     ((JSConstant a decls sp) : ks) -> do
-      let env = sco_env sco
       SLRes lifts st_const addl_env <- evalDecls ctxt at_in st sco decls
-      let env' = env_merge at_in env addl_env
-      let sco' = sco {sco_env = env'}
+      let sco' = sco_update ctxt at_in sco st addl_env
       keepLifts lifts $ evalStmt ctxt at_after sco' st_const ks
       where
         at_after = srcloc_after_semi lab a sp at
@@ -1542,7 +1552,6 @@ evalStmt ctxt at sco st ss =
           ) ->
             case st_mode st of
               SLM_ConsensusStep -> do
-                let env = sco_env sco
                 SLRes init_lifts st_var vars_env <-
                   evalDecls ctxt var_at st sco while_decls
                 let st_var' = stEnsureMode at SLM_ConsensusStep st_var
@@ -1554,8 +1563,7 @@ evalStmt ctxt at sco st ss =
                       return $ (DLVar var_at v t vn, da)
                 while_helpm <- M.traverseWithKey while_help vars_env
                 let unknown_var_env = M.map (public . SLV_DLVar . fst) while_helpm
-                let env' = env_merge at env unknown_var_env
-                let sco_env' = sco {sco_env = env'}
+                let sco_env' = sco_update ctxt at sco st_var' unknown_var_env
                 SLRes inv_lifts _ inv_da <-
                   case jscl_flatten invariant_args of
                     [invariant_e] ->
@@ -1567,9 +1575,8 @@ evalStmt ctxt at sco st ss =
                   checkResType cond_at T_Bool $ evalExpr ctxt cond_at sco_env' st_pure while_cond
                 let cond_b = DLBlock cond_at fs cond_lifts cond_da
                 let while_sco =
-                      sco
+                      sco_env'
                         { sco_while_vars = Just $ M.map fst while_helpm
-                        , sco_env = env'
                         , sco_must_ret = RS_NeedExplicit
                         }
                 SLRes body_lifts body_st (SLStmtRes _ body_rets) <-
@@ -1577,10 +1584,9 @@ evalStmt ctxt at sco st ss =
                 let while_dam = M.fromList $ M.elems while_helpm
                 let the_while =
                       DLS_While var_at (DLAssignment while_dam) inv_b cond_b body_lifts
-                let sco' = sco {sco_env = env'}
                 let st_post = stMerge at body_st st_var'
                 SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <-
-                  evalStmt ctxt while_at sco' st_post ks
+                  evalStmt ctxt while_at sco_env' st_post ks
                 let lifts' = init_lifts <> (return $ the_while) <> k_lifts
                 let rets' = body_rets <> k_rets
                 return $ SLRes lifts' k_st $ SLStmtRes k_env' rets'
