@@ -994,12 +994,11 @@ evalExpr ctxt at sco st e = do
           _ ->
             expect_throw at (Err_Eval_IfCondNotBool cv)
     JSArrowExpression aformals a bodys ->
-      retV $ public $ SLV_Clo at' fname formals body (sco_to_cloenv sco)
-      where
-        at' = srcloc_jsa "arrow" a at
-        fname = Just $ ctxt_local_name ctxt "arrow"
-        body = jsStmtToBlock bodys
-        formals = parseJSArrowFormals at' aformals
+      evalExpr ctxt at sco st e'
+      where e' = JSFunctionExpression a JSIdentNone a fformals a body
+            body = jsStmtToBlock bodys
+            at' = srcloc_jsa "arrow" a at
+            fformals = jsArrowFormalsToFunFormals at' aformals
     JSFunctionExpression a name _ jsformals _ body ->
       retV $ public $ SLV_Clo at' fname formals body (sco_to_cloenv sco)
       where

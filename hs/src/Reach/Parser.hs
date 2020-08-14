@@ -1,4 +1,4 @@
-module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, parseJSArrowFormals, jse_expect_id, gatherDeps_top) where
+module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jse_expect_id, gatherDeps_top) where
 
 import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B
@@ -54,14 +54,18 @@ jse_expect_id at j =
 parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]
 parseJSFormals at jsformals = map (jse_expect_id at) $ jscl_flatten jsformals
 
-parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [SLVar]
-parseJSArrowFormals at aformals =
+jsArrowFormalsToFunFormals :: SrcLoc -> JSArrowParameterList -> JSCommaList JSExpression
+jsArrowFormalsToFunFormals at aformals =
   case aformals of
-    JSUnparenthesizedArrowParameter (JSIdentName _ x) -> [x]
+    JSUnparenthesizedArrowParameter (JSIdentName a x) ->
+      JSLOne (JSIdentifier a x)
     JSUnparenthesizedArrowParameter JSIdentNone ->
       expect_throw at Err_Parser_Arrow_NoFormals
-    JSParenthesizedArrowParameterList _ l _ ->
-      parseJSFormals at l
+    JSParenthesizedArrowParameterList _ l _ -> l
+
+parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [SLVar]
+parseJSArrowFormals at aformals =
+  parseJSFormals at $ jsArrowFormalsToFunFormals at aformals
 
 --- Dependency Gatherer
 type BundleMap a b = ((M.Map a [a]), (M.Map a (Maybe b)))
