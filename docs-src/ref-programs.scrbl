@@ -493,7 +493,9 @@ Additional object literal syntax exists for convenience, such as:
   { ...obj, z: 5 }
 }
 
-An @deftech{object splice}, where all fields from @reachin{obj} are copied into the object, but these fields may be overridden by additional fields specified afterwards.
+An @deftech{object splice},
+where all fields from @reachin{obj} are copied into the object;
+these fields may be accompanied by additional fields specified afterwards.
 
 @reach{
   { x, z: 5 }
