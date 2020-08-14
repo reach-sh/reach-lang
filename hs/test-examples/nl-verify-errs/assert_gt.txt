@@ -3,7 +3,7 @@ Verification failed:
   in VM_Honest mode
   of theorem TAssert
   at ./assert_gt.rsh:8:13:application
-  at ./assert_gt.rsh:5:11:application call to "arrow" (defined at: ./assert_gt.rsh:5:15:arrow)
+  at ./assert_gt.rsh:9:7:after expr stmt semicolon call to "arrow" (defined at: ./assert_gt.rsh:5:15:arrow)
 
   Theorem formalization:
   v2
@@ -25,7 +25,7 @@ Verification failed:
   in VM_Dishonest (RolePart "A") mode
   of theorem TAssert
   at ./assert_gt.rsh:8:13:application
-  at ./assert_gt.rsh:5:11:application call to "arrow" (defined at: ./assert_gt.rsh:5:15:arrow)
+  at ./assert_gt.rsh:9:7:after expr stmt semicolon call to "arrow" (defined at: ./assert_gt.rsh:5:15:arrow)
 
   Theorem formalization:
   v2

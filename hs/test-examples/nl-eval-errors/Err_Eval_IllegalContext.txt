@@ -1,1 +1,0 @@
-error: ./Err_Eval_IllegalContext.rsh:6:11:application: Invalid operation. `part.only` cannot be used in context: consensus step

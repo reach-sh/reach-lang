@@ -1,1 +1,0 @@
-error: ./Err_Only_NotOneClosure.rsh:5:11:application: PART.only not given a single closure as an argument, instead got ["<SLV_Clo>","uint256"]

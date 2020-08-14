@@ -3,4 +3,4 @@
 Failed with: error: ./object_mutation.rsh:assign: Invalid assignment
 CallStack (from HasCallStack):
   error, called at src/Reach/AST.hs:54:23 in reach-0.1.0-Cj0ZK6NfBDSKPcaIVaiXNf:Reach.AST
-  expect_throw, called at src/Reach/Eval.hs:1415:11 in reach-0.1.0-Cj0ZK6NfBDSKPcaIVaiXNf:Reach.Eval
+  expect_throw, called at src/Reach/Eval.hs:1500:11 in reach-0.1.0-Cj0ZK6NfBDSKPcaIVaiXNf:Reach.Eval
