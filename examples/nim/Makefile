@@ -19,6 +19,27 @@ publish:
 run:
 	docker-compose run reach-app
 
+.PHONY: run-devnet
+run-devnet:
+	docker run -it -p 127.0.0.1:18545:8545 reachsh/ethereum-devnet:v0.1.0 
+# ctrl+C to kill
+
+.PHONY: run-alice
+run-alice:
+	docker run -it \
+	  -e ETH_NODE_URI=http://docker.for.mac.localhost:18545 \
+	  --entrypoint=/bin/bash \
+	  $(TAG) \
+	  -c 'npm run interactive --- Alice'
+
+.PHONY: run-bob
+run-bob:
+	docker run -it \
+	  -e ETH_NODE_URI=http://docker.for.mac.localhost:18545 \
+	  --entrypoint=/bin/bash \
+	  $(TAG) \
+	  -c 'npm run interactive --- Bob'
+
 .PHONY: down
 down:
 	docker-compose down
