@@ -1,5 +1,6 @@
 import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
 import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
+import * as stdlib_fake from '@reach-sh/stdlib/FAKE.mjs';
 import * as RPS from './build/index.once.mjs';
 import * as RPSW from './build/index.nodraw.mjs';
 
@@ -20,6 +21,13 @@ import * as RPSW from './build/index.nodraw.mjs';
       wagerAmount: 15,
       toUnit: (x) => x,
       unit: 'microAlgo',
+    } : proto == 'FAKE' ? {
+      stdlib: stdlib_fake,
+      startingBalance: 1 * 1000000,
+      escrowAmount: 25,
+      wagerAmount: 15,
+      toUnit: (x) => x,
+      unit: 'reachies',
     } : process.exit(1)
   );
 

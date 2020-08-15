@@ -16,7 +16,8 @@ export const T_Null = (v) => v == null;
 
 export const T_Bool = (v) => typeof(v) === 'boolean';
 
-export const T_UInt256 = (v) => isBN(v);
+export const T_UInt256 = (v) =>
+  isBN(v) || typeof(v) === 'number';
 
 export const T_Bytes = (x) => typeof(x) === 'string';
 
@@ -41,7 +42,10 @@ export const T_Object = (co) => (vo) => {
 
 export const protect = (how, what) => {
   if ( how(what) ) { return what; }
-  else { throw Error(`Expected ${how}, got: "${what}"`); } };
+  else {
+    const hows = JSON.stringify(how);
+    const whats = JSON.stringify(what);
+    throw Error(`Expected ${hows}, got: "${whats}"`); } };
 
 export const assert = d => nodeAssert.strict(d);
 
@@ -103,7 +107,7 @@ export const bnToHex = (u, size = 32) => {
 export const bytes_eq = (x, y) =>
   hexOf(x) === hexOf(y);
 
-const random_uint256 = () =>
+export const random_uint256 = () =>
   hexToBN(byteArrayToHex(crypto.randomBytes(32)));
 
 export const hasRandom = {
