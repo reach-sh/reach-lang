@@ -6,8 +6,8 @@ const rl = readline.createInterface({
 });
 
 export const yesno = (answer) => {
-  if (answer === 'y') { return answer; }
-  else if (answer === 'n') { return answer; }
+  if (answer === 'y') { return true; }
+  else if (answer === 'n') { return false; }
   else { throw Error(`Only y/n are acceptable.`); }
 };
 

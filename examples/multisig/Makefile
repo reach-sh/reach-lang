@@ -20,6 +20,35 @@ publish:
 run:
 	docker-compose run reach-app
 
+.PHONY: run-devnet
+run-devnet:
+	docker run -it -p 127.0.0.1:18545:8545 reachsh/ethereum-devnet:v0.1.0
+# ctrl+C to kill
+
+.PHONY: run-parent
+run-parent:
+	docker run -it \
+	  -e ETH_NODE_URI=http://docker.for.mac.localhost:18545 \
+	  --entrypoint=/bin/bash \
+	  $(TAG) \
+	  -c 'npm run interactive --- Parent'
+
+.PHONY: run-child
+run-child:
+	docker run -it \
+	  -e ETH_NODE_URI=http://docker.for.mac.localhost:18545 \
+	  --entrypoint=/bin/bash \
+	  $(TAG) \
+	  -c 'npm run interactive --- Child'
+
+.PHONY: run-parent-local
+run-parent-local:
+	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- Parent
+
+.PHONY: run-child-local
+run-child-local:
+	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- Child
+
 .PHONY: down
 down:
 	docker-compose down
