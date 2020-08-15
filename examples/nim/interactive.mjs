@@ -1,7 +1,11 @@
-import * as stdlib from '../../js/ETH.mjs';
-// import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as NIM from './build/index.main.mjs';
 import {ask, yesno, noFurtherQuestions} from './prompt.mjs';
+
+// Set up dependencies to run locally:
+// (cd ../../js && npm link)
+// npm install
+// npm link "@reach-sh/stdlib"
 
 const {fromWei, toWeiBN, newTestAccount, lt, gt, toBN, hasRandom} = stdlib;
 
