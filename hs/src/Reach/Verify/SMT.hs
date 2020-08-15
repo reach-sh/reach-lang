@@ -5,7 +5,7 @@ import Control.Monad.Extra
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.IORef
-import Data.List.Extra (mconcatMap)
+import Data.List.Extra (foldl', mconcatMap)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import qualified Data.Sequence as Seq
@@ -483,6 +483,15 @@ smt_e ctxt at_dv dv de =
         check_se = uint256_le idx_da' (smt_c ctxt at $ DLC_Int sz)
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
+    DLE_ArraySet at f arr_da sz idx_da val_da -> do
+      verify1 ctxt at f TBounds check_se
+      pathAddBound ctxt at_dv dv bo se
+      where
+        se = smtApply "store" [arr_da', idx_da', val_da']
+        check_se = uint256_le idx_da' (smt_c ctxt at $ DLC_Int sz)
+        arr_da' = smt_a ctxt at arr_da
+        idx_da' = smt_a ctxt at idx_da
+        val_da' = smt_a ctxt at val_da
     DLE_TupleRef at arr_da i ->
       pathAddBound ctxt at_dv dv bo se
       where
@@ -733,11 +742,20 @@ _smtDefineTypes smt ts = do
             tni <- type_name et
             let tn = fst tni
             let tinv = snd tni
-            void $ SMT.command smt $ smtApply "define-sort" [Atom n, List [], smtApply "Array" [Atom tn, uint256_sort]]
+            void $ SMT.command smt $ smtApply "define-sort" [Atom n, List [], smtApply "Array" [uint256_sort, Atom tn]]
+            let z = "z_" ++ n
+            void $ SMT.declare smt z $ Atom n
+            let idxs = [0 .. (sz-1)]
+            let idxses = map (smt_c (error "no context") (error "no at") . DLC_Int) idxs
+            let cons_vars = map (("e" ++) . show) idxs
+            let cons_params = map (\x -> (x, Atom tn)) cons_vars
+            let defn1 arrse (idxse, var) = smtApply "store" [ arrse, idxse, Atom var ]
+            let cons_defn = foldl' defn1 (Atom z) $ zip idxses cons_vars
+            void $ SMT.defineFun smt (n ++ "_cons") cons_params (Atom n) cons_defn
             void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
             let inv se = do
-                  let invarg i = tinv $ smtApply "select" [se, smt_c (error "no context") (error "no at") (DLC_Int $ i)]
-                  mapM_ invarg [0 .. (sz -1)]
+                  let invarg ise = tinv $ smtApply "select" [se, ise]
+                  mapM_ invarg idxses
             return inv
           T_Tuple ats -> do
             ts_nis <- mapM type_name ats

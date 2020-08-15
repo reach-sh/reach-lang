@@ -1,6 +1,7 @@
 module Reach.Connector.ETH_Solidity (connect_eth) where
 
 import Control.Monad.ST
+import Control.Monad
 import Data.Aeson
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
@@ -91,7 +92,10 @@ solBlockNumber :: Doc a
 solBlockNumber = "uint256(block.number)"
 
 solHash :: [Doc a] -> Doc a
-solHash a = solApply "uint256" [solApply "keccak256" [solApply "abi.encodePacked" a]]
+solHash a = solApply "uint256" [solApply "keccak256" [solApply "abi.encode" a]]
+
+solArraySet :: Int -> Doc a
+solArraySet i = "array_set" <> pretty i
 
 --- Compiler
 
@@ -101,6 +105,7 @@ data SolCtxt a = SolCtxt
   { ctxt_handler_num :: Int
   , ctxt_varm :: VarMap a
   , ctxt_emit :: Doc a
+  , ctxt_typei :: M.Map SLType Int
   , ctxt_typem :: M.Map SLType (Doc a)
   }
 
@@ -126,6 +131,12 @@ solType ctxt t =
     Nothing -> impossible "cannot map sol type"
     Just x -> x
 
+solTypeI :: SolCtxt a -> SLType -> Int
+solTypeI ctxt t =
+  case M.lookup t $ ctxt_typei ctxt of
+    Nothing -> impossible "cannot map sol type"
+    Just x -> x
+
 mustBeMem :: SLType -> Bool
 mustBeMem = \case
   T_Null -> False
@@ -140,11 +151,13 @@ mustBeMem = \case
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
 
-solArgType :: SolCtxt a -> SLType -> Doc a
-solArgType ctxt t = solType ctxt t <> (if mustBeMem t then " calldata" else "")
+solArgType :: SolCtxt a -> Bool -> SLType -> Doc a
+solArgType ctxt isHandler t = solType ctxt t <> loc_spec
+  where loc_spec = if mustBeMem t then " " <> loc else ""
+        loc = if isHandler then "calldata" else "memory"
 
-solArgDecl :: SolCtxt a -> DLVar -> Doc a
-solArgDecl ctxt dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt t)
+solArgDecl :: SolCtxt a -> Bool -> DLVar -> Doc a
+solArgDecl ctxt isHandler dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt isHandler t)
 
 solCon :: DLConstant -> Doc a
 solCon = \case
@@ -194,8 +207,10 @@ solPrimApply = \case
 solExpr :: SolCtxt a -> DLExpr -> Doc a
 solExpr ctxt = \case
   DLE_PrimOp _ p args -> solPrimApply p $ map (solArg ctxt) args
-  DLE_ArrayRef _ _ ae _ ee ->
-    (solArg ctxt ae) <> brackets (solArg ctxt ee)
+  DLE_ArrayRef _ _ ae _ ie ->
+    (solArg ctxt ae) <> brackets (solArg ctxt ie)
+  DLE_ArraySet _ _ ae _ ie ve ->
+    solApply (solArraySet (solTypeI ctxt (argTypeOf ae))) $ map (solArg ctxt) [ae, ie, ve]
   DLE_TupleRef _ ae i ->
     (solArg ctxt ae) <> ".elem" <> pretty i
   DLE_ObjectRef _ oe f -> (solArg ctxt oe) <> "." <> pretty f
@@ -208,7 +223,7 @@ solTransfer ctxt who amt =
 
 solEvent :: SolCtxt a -> Int -> [DLVar] -> Doc a
 solEvent ctxt which args =
-  "event" <+> solApply (solMsg_evt which) (solDecl "_bal" (solType ctxt T_UInt256) : map (solArgDecl ctxt) args) <> semi
+  "event" <+> solApply (solMsg_evt which) (solDecl "_bal" (solType ctxt T_UInt256) : map (solArgDecl ctxt False) args) <> semi
 
 solEventEmit :: SolCtxt a -> Int -> [DLVar] -> Doc a
 solEventEmit ctxt which msg =
@@ -369,7 +384,7 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [ev
     ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
     evtDefn = solEvent ctxt which msg
-    argDefs = (solDecl solLastBlock (solType ctxt T_UInt256)) : map (solArgDecl ctxt) vs
+    argDefs = (solDecl solLastBlock (solType ctxt T_UInt256)) : map (solArgDecl ctxt True) vs
     ret = "external payable"
     funDefn = solFunction (solMsg_fun which) argDefs ret body
     body =
@@ -397,7 +412,7 @@ solHandler ctxt_top which (C_Loop _at svs msg ct) = vsep [frameDefn, funDefn]
   where
     vs = svs ++ msg
     (ctxt_fin, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs Nothing ct
-    argDefs = map (solArgDecl ctxt_fin) vs
+    argDefs = map (solArgDecl ctxt_fin False) vs
     ret = "internal"
     funDefn = solFunction (solLoop_fun which) argDefs ret body
     body = vsep [frameDecl, ctp]
@@ -405,8 +420,8 @@ solHandler ctxt_top which (C_Loop _at svs msg ct) = vsep [frameDefn, funDefn]
 solHandlers :: SolCtxt a -> CHandlers -> Doc a
 solHandlers ctxt (CHandlers hs) = vsep_with_blank $ map (uncurry (solHandler ctxt)) $ M.toList hs
 
-_solDefineType1 :: (SLType -> ST s (Doc a)) -> Doc a -> SLType -> ST s (Doc a)
-_solDefineType1 getTypeName name = \case
+_solDefineType1 :: (SLType -> ST s (Doc a)) -> Int -> Doc a -> SLType -> ST s ((Doc a), (Doc a))
+_solDefineType1 getTypeName i name = \case
   T_Null -> base
   T_Bool -> base
   T_UInt256 -> base
@@ -417,32 +432,45 @@ _solDefineType1 getTypeName name = \case
   T_Var {} -> impossible "var in pl"
   T_Array t sz -> do
     tn <- getTypeName t
-    return $ tn <> brackets (pretty sz)
+    let me = tn <> brackets (pretty sz)
+    let memem = me <> " memory"
+    let args = [ solDecl "arr" memem
+               , solDecl "idx" "uint256"
+               , solDecl "val" tn ]
+    let ret = "internal" <+> "returns" <+> parens ( solDecl "arrp" memem )
+    let ref arr idx = arr <> brackets ( idx )
+    let assign idx val = (ref "arrp" idx) <+> "=" <+> val <> semi
+    let body = vsep [ ("for" <+> parens ( "uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++") <>
+                       solBraces (assign "i" (ref "arr" "i")))
+                    , assign "idx" "val" ]
+    let set_defn = solFunction (solArraySet i) args ret body
+    return $ (me, set_defn)
   T_Tuple ats -> do
     atsn <- mapM getTypeName ats
-    return $ solStruct name $ (flip zip) atsn $ map (pretty . ("elem" ++) . show) ([0 ..] :: [Int])
+    return $ (name, solStruct name $ (flip zip) atsn $ map (pretty . ("elem" ++) . show) ([0 ..] :: [Int]))
   T_Obj tm -> do
     tmn <- mapM getTypeName tm
-    return $ solStruct name $ map (\(k, v) -> (pretty k, v)) $ M.toAscList tmn
+    return $ (name, solStruct name $ map (\(k, v) -> (pretty k, v)) $ M.toAscList tmn)
   where
     base = impossible "base"
 
-_solDefineType :: STCounter s -> STRef s (M.Map SLType (Maybe (Doc a, Doc a))) -> SLType -> ST s (Doc a)
-_solDefineType tcr tmr t = do
+_solDefineType :: STCounter s -> STRef s (M.Map SLType Int) -> STRef s (M.Map SLType (Maybe (Doc a, Doc a))) -> SLType -> ST s (Doc a)
+_solDefineType tcr timr tmr t = do
   tm <- readSTRef tmr
   case M.lookup t tm of
     Just (Just x) -> return $ fst x
     Just Nothing -> impossible $ "recursive type: " ++ show t
     Nothing -> do
       tn <- incSTCounter tcr
+      modifySTRef timr $ M.insert t tn
       modifySTRef tmr $ M.insert t $ Nothing
       let n = pretty $ "T" ++ show tn
-      def <- _solDefineType1 (_solDefineType tcr tmr) n t
-      modifySTRef tmr $ M.insert t $ Just (n, def)
-      return $ n
+      (tr, def) <- _solDefineType1 (_solDefineType tcr timr tmr) tn n t
+      modifySTRef tmr $ M.insert t $ Just (tr, def)
+      return $ tr
 
-solDefineTypes :: S.Set SLType -> (M.Map SLType (Doc a), Doc a)
-solDefineTypes ts = (M.map fst tm, vsep $ map snd $ M.elems tm)
+solDefineTypes :: S.Set SLType -> (M.Map SLType Int, M.Map SLType (Doc a), Doc a)
+solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
   where
     base_typem =
       M.fromList
@@ -454,11 +482,12 @@ solDefineTypes ts = (M.map fst tm, vsep $ map snd $ M.elems tm)
         ]
     base_tm = M.map (\t -> Just (t, emptyDoc)) base_typem
     tm = M.map (maybe (impossible "unfinished type") id) tmm
-    tmm = runST $ do
+    (tim, tmm) = runST $ do
       tcr <- newSTCounter 0
+      timr <- newSTRef mempty
       tmr <- newSTRef base_tm
-      mapM_ (_solDefineType tcr tmr) $ S.toList ts
-      readSTRef tmr
+      mapM_ (_solDefineType tcr timr tmr) $ S.toList ts
+      liftM2 (,) (readSTRef timr) (readSTRef tmr)
 
 solPLProg :: PLProg -> Doc a
 solPLProg (PLProg _ _ (CPProg at hs)) =
@@ -467,10 +496,11 @@ solPLProg (PLProg _ _ (CPProg at hs)) =
     ctcp =
       solContract "ReachContract is Stdlib" $
         ctcbody
-    (typem, typesp) = solDefineTypes $ cts hs
+    (typei, typem, typesp) = solDefineTypes $ cts hs
     ctxt =
       SolCtxt
         { ctxt_typem = typem
+        , ctxt_typei = typei
         , ctxt_handler_num = 0
         , ctxt_emit = emptyDoc
         , ctxt_varm = mempty
@@ -479,7 +509,8 @@ solPLProg (PLProg _ _ (CPProg at hs)) =
     consp = solApply "constructor" [] <+> "public payable" <+> solBraces consbody
     SolTailRes _ consbody = solCTail ctxt (CT_Wait at [])
     state_defn = "uint256 current_state;"
-    preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
+    preamble = vsep [ "// Automatically generated with Reach" <+> (pretty $ showVersion version)
+                    , "pragma experimental ABIEncoderV2" <> semi ]
 
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text

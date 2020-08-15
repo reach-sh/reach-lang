@@ -14,6 +14,8 @@ parse_define (List (Atom "define-fun" : Atom name : List args : tySExpr : valSEx
     hasArgs = not $ null args
 parse_define (List (Atom "declare-sort" : _)) = Nothing
 parse_define (List (Atom "declare-datatypes" : _)) = Nothing
+parse_define (List (Atom "declare-fun" : _)) = Nothing
+parse_define (List (Atom "forall" : _)) = Nothing
 parse_define e = error $ "invalid define-fun " <> show e
 
 parse_modelse :: SExpr -> [SMTDefine]

@@ -15,7 +15,6 @@ If you want to work on the Reach compiler, you'll need:
 - stack v2.1.3
 - z3 v4.8.8
 - solidity v0.5.11
-- algorand with application TEAL support
 
 Installation on macOS:
 ```

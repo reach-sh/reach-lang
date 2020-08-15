@@ -1,6 +1,8 @@
 'reach 0.1';
 
 // Operator abbreviation expansions
+export function minus (x) {
+  return 0 - x; };
 export function not (x) {
   return (x ? false : true); };
 export function neq (x, y) {

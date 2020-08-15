@@ -2,6 +2,15 @@ import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
 import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
 import * as TTT from './build/index.main.mjs';
 
+function render(st) {
+  let o = '\n\t';
+  for ( let i = 0; i < 9; i++ ) {
+    o += st.xs[i] ? 'X' : st.os[i] ? 'O' : ' ';
+    if ( i != 8 ) {
+      o += (i % 3 == 2) ? '\n\t-----\n\t' : '|'; } }
+  o += '\n';
+  return o; }
+
 ( async () => {
 
   const proto = process.argv[2];
@@ -30,29 +39,26 @@ import * as TTT from './build/index.main.mjs';
 
   const interactWith = (name) => {
     return {
-      getWager: () => {
+      ...stdlib.hasRandom
+      , getWager: () => {
         console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${proto}`);
         return wagerAmount; }
       , acceptWager: (givenWagerAmount) => {
         console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto}`); }
       , getMove: (state) => {
-        console.log(`${name} chooses a move from the state: ${state}`);
-        const xs = state[1];
-        const os = state[2];
-        for ( let i = 0; i < 9; i++ ) {
+        console.log(`${name} chooses a move from the state:${render(state)}`);
+        const xs = state.xs;
+        const os = state.os;
+        while ( xs && os ) {
+          const i = Math.floor( Math.random() * 9 );
           if ( ! ( xs[i] || os[i] ) ) {
-            return i; } }
-        throw Error(`${name} is in impossible situation: choosing a move when none is available`); }
+            return i; } }  }
       , endsWith: (state) => {
-        console.log(`${name} sees the final state: ${state}`); } }; };
+        console.log(`${name} sees the final state: ${render(state)}`); } }; };
 
-  const [ outcomeAlice, outcomeBob ] =
-        await Promise.all([
-          TTT.A(stdlib, ctcAlice, interactWith('Alice'))
-          , TTT.B(stdlib, ctcBob, interactWith('Bob')) ]);
-
-  console.log(`Alice thinks outcome is ${outcomeAlice}.`);
-  console.log(`Bob thinks outcome is ${outcomeBob}.`);
+  await Promise.all([
+    TTT.A(stdlib, ctcAlice, interactWith('Alice')),
+    TTT.B(stdlib, ctcBob, interactWith('Bob')) ]);
 
   console.log(`Done!`);
   process.exit(0); })();

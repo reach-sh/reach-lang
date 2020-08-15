@@ -2,6 +2,7 @@ import * as nodeAssert from 'assert';
 import * as crypto     from 'crypto';
 import ethers          from 'ethers';
 
+// Hex helpers
 const un0x           = h => h.replace(/^0x/, '');
 const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
 const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
@@ -11,6 +12,8 @@ const hexOf = x =>
       typeof x === 'string' && x.slice(0, 2) === '0x'
       ? un0x(toHex(x))
       : un0x(toHex(`0x${x}`));
+
+// Contracts
 
 export const T_Null = (v) => v == null;
 
@@ -123,3 +126,10 @@ export const ge    = (a, b) => toBN(a).gte(toBN(b));
 export const gt    = (a, b) => toBN(a).gt( toBN(b));
 export const le    = (a, b) => toBN(a).lte(toBN(b));
 export const lt    = (a, b) => toBN(a).lt( toBN(b));
+
+// Array helpers
+
+export function array_set(arr, idx, elem) {
+  const arrp = arr.slice();
+  arrp[idx] = elem;
+  return arrp; };

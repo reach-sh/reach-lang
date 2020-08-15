@@ -46,7 +46,7 @@ function winning_p(b) {
   return row(b, 0) || row(b, 1) || row(b, 2)
     || col(b, 0) || col(b, 1) || col(b, 2)
     || seq(b, 0, 0, 1, 1)
-    || (b[cell(0,2)] && b[cell(1,1)] && b[cell(2,0)]); };
+    || seq(b, 0, 2, 1, -1); };
 
 function complete_p(b) {
   return b[0] && b[1] && b[2]
@@ -58,20 +58,18 @@ function ttt_done(st) {
           || winning_p(st.os)
           || complete_p(marks_all(st))); };
 
-function validMove(st, m) {
-  return ( true
-           // Within range
-           && 0 <= m
-           && m < CELLS
-           // spot is not taken
-           && (! marks_all(st)[m]) ); };
+// XXX debug with arrow syntax
+function legalMove(m) { return (0 <= m && m < CELLS); };
+function validMove(st, m) { return (! marks_all(st)[m]); };
 
 function getValidMove(interact, st) {
   const _m = interact.getMove(st);
+  assume(legalMove(_m));
   assume(validMove(st, _m));
   return declassify(_m); };
 
 function applyMove(st, m) {
+  require(legalMove(m));
   require(validMove(st, m));
   const turn = st.xs_turn;
   return { xs_turn: ! turn,

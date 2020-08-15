@@ -7,12 +7,10 @@ import * as waitPort   from 'wait-port';
 import {toBN, isBN, toHex, assert} from './shared.mjs';
 export * from './shared.mjs';
 
-
 const DEBUG = false;
 const debug = msg => { if (DEBUG) {
   console.log(`DEBUG: ${msg}`); } };
 const panic = e => { throw Error(e); };
-
 
 // networkAccount[ETH] = {
 //   // Required for receivers
@@ -249,7 +247,7 @@ export const connectAccount = async networkAccount => {
       const munged = [ last_block, ...args ]
             .map(m => isBN(m) ? m.toString() : m);
 
-      debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${munged}`);
+      debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${JSON.stringify(munged)}`);
       let block_send_attempt = last_block;
       let block_repeat_count = 0;
       while ( ! timeout_delay || block_send_attempt < last_block + timeout_delay ) {
@@ -334,6 +332,9 @@ export const connectAccount = async networkAccount => {
 
           updateLast(ok_t);
           const [ ok_bal, ok_vals ] = getEventData(ok_evt, ok_e);
+
+          debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`)
+          ;
           return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from }; } }
 
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);

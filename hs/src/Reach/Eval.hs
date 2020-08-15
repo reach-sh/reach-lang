@@ -585,7 +585,7 @@ binaryToPrim at env o =
 unaryToPrim :: SrcLoc -> SLEnv -> JSUnaryOp -> SLVal
 unaryToPrim at env o =
   case o of
-    --- XXX JSUnaryOpMinus a -> fun a "minus"
+    JSUnaryOpMinus a -> fun a "minus"
     JSUnaryOpNot a -> fun a "not"
     j -> expect_throw at $ Err_Parse_IllegalUnaOp j
   where
@@ -763,7 +763,7 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
       where
         lvl = mconcat $ map fst sargs
-    --- XXX add make_array
+    --- FIXME add make_array(size, val) -> [ val x size ]
     SLPrim_array ->
       case map snd sargs of
         [(SLV_Type elem_ty), elems_v] ->
@@ -772,20 +772,48 @@ evalPrim ctxt at sco st p sargs =
               retV $ (lvl, SLV_Array at elem_ty elem_vs_checked)
               where elem_vs_checked = map check1 elem_vs
                     check1 sv = checkType at elem_ty sv `seq` sv
-            SLV_DLVar (DLVar _ _ (T_Tuple _elem_tys) _) ->
-              error "XXX"
+            --- FIXME we could support turning a DL Tuple into an array.
             _ -> illegal_args
         _ -> illegal_args
       where
         lvl = mconcat $ map fst sargs
     SLPrim_array_set ->
       case map snd sargs of
-        [_arrv, _idxv, _valv] ->
-          retV $ (lvl, arrv')
-          where arrv' = error "XXX"
+        [arrv, idxv, valv] ->
+          case typeOf at idxv of
+            (T_UInt256, idxda@(DLA_Con (DLC_Int idxi))) ->
+              case arrv of
+                SLV_Array _ elem_ty arrvs ->
+                  case idxi' < length arrvs of
+                    True ->
+                      retV $ (lvl, arrv')
+                      where arrv' = SLV_Array at elem_ty arrvs'
+                            valv_checked = checkType at elem_ty valv `seq` valv
+                            arrvs' = take (idxi' - 1) arrvs ++ [ valv_checked ] ++ drop (idxi' + 1) arrvs
+                    False ->
+                      expect_throw at $ Err_Eval_RefOutOfBounds (length arrvs) idxi
+                SLV_DLVar arrdv@(DLVar _ _ arr_ty@(T_Array elem_ty sz) _) ->
+                  case idxi < sz of
+                    True ->
+                      retArrDV arr_ty $ DLE_ArraySet at (ctxt_stack ctxt) (DLA_Var arrdv) sz idxda valda
+                      where valda = checkType at elem_ty valv
+                    False ->
+                      expect_throw at $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
+                _ -> illegal_args
+              where idxi' = fromIntegral idxi
+            (T_UInt256, idxda) ->
+              case typeOf at arrv of
+                (arr_ty@(T_Array elem_ty sz), arrda) ->
+                  retArrDV arr_ty $ DLE_ArraySet at (ctxt_stack ctxt) arrda sz idxda valda
+                  where valda = checkType at elem_ty valv
+                _ -> illegal_args
+            _ -> illegal_args
         _ -> illegal_args
       where
         lvl = mconcat $ map fst sargs
+        retArrDV t de = do
+          (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "array_set") t) de
+          return $ SLRes lifts' st (lvl, SLV_DLVar dv)
     SLPrim_Tuple ->
       retV $ (lvl, SLV_Type $ T_Tuple $ map expect_ty $ map snd sargs)
       where
