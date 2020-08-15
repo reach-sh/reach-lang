@@ -105,22 +105,26 @@ argTypeOf d =
   case d of
     DLA_Var (DLVar _ _ t _) -> t
     DLA_Con c -> conTypeOf c
+    DLA_Array t as -> T_Array t $ fromIntegral (length as)
     DLA_Tuple as -> T_Tuple $ map argTypeOf as
     DLA_Obj senv -> T_Obj $ M.map argTypeOf senv
     DLA_Interact _ _ t -> t
 
 slToDL :: HasCallStack => SrcLoc -> SLVal -> Maybe DLArg
-slToDL at v =
+slToDL _at v =
   case v of
     SLV_Null _ _ -> return $ DLA_Con $ DLC_Null
     SLV_Bool _ b -> return $ DLA_Con $ DLC_Bool b
     SLV_Int _ i -> return $ DLA_Con $ DLC_Int i
     SLV_Bytes _ bs -> return $ DLA_Con $ DLC_Bytes bs
-    SLV_Tuple _ vs -> do
-      ds <- mapM (slToDL at) vs
+    SLV_Array at' t vs -> do
+      ds <- mapM (slToDL at') vs
+      return $ DLA_Array t ds
+    SLV_Tuple at' vs -> do
+      ds <- mapM (slToDL at') vs
       return $ DLA_Tuple $ ds
-    SLV_Object _ fenv -> do
-      denv <- mapM ((slToDL at) . snd) fenv
+    SLV_Object at' fenv -> do
+      denv <- mapM ((slToDL at') . snd) fenv
       return $ DLA_Obj denv
     SLV_Clo _ _ _ _ _ -> Nothing
     SLV_DLVar dv -> return $ DLA_Var dv

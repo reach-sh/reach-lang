@@ -107,6 +107,7 @@ jsArg :: DLArg -> Doc a
 jsArg = \case
   DLA_Var v -> jsVar v
   DLA_Con c -> jsCon c
+  DLA_Array _ as -> jsArg $ DLA_Tuple as
   DLA_Tuple as -> jsArray $ map jsArg as
   DLA_Obj m -> jsObject $ M.map jsArg m
   DLA_Interact _ m t ->

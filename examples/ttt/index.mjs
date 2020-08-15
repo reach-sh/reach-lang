@@ -1,6 +1,6 @@
 import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
 import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
-import * as TTT from './build/ttt.mjs';
+import * as TTT from './build/index.main.mjs';
 
 ( async () => {
 
@@ -30,12 +30,11 @@ import * as TTT from './build/ttt.mjs';
 
   const interactWith = (name) => {
     return {
-      getWagerAmount: () => {
+      getWager: () => {
         console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${proto}`);
         return wagerAmount; }
       , acceptWager: (givenWagerAmount) => {
-        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto}`);
-        return true; }
+        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto}`); }
       , getMove: (state) => {
         console.log(`${name} chooses a move from the state: ${state}`);
         const xs = state[1];
@@ -44,9 +43,8 @@ import * as TTT from './build/ttt.mjs';
           if ( ! ( xs[i] || os[i] ) ) {
             return i; } }
         throw Error(`${name} is in impossible situation: choosing a move when none is available`); }
-      , showOutcome: (state) => {
-        console.log(`${name} sees the final state: ${state}`);
-        return true; } }; };
+      , endsWith: (state) => {
+        console.log(`${name} sees the final state: ${state}`); } }; };
 
   const [ outcomeAlice, outcomeBob ] =
         await Promise.all([

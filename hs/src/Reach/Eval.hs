@@ -318,6 +318,8 @@ base_env =
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
     , ("Array", SLV_Prim SLPrim_Array)
+    , ("array", SLV_Prim SLPrim_array)
+    , ("array_set", SLV_Prim SLPrim_array_set)
     , ("Tuple", SLV_Prim SLPrim_Tuple)
     , ("Object", SLV_Prim SLPrim_Object)
     , ("Fun", SLV_Prim SLPrim_Fun)
@@ -583,7 +585,7 @@ binaryToPrim at env o =
 unaryToPrim :: SrcLoc -> SLEnv -> JSUnaryOp -> SLVal
 unaryToPrim at env o =
   case o of
-    JSUnaryOpMinus a -> fun a "minus"
+    --- XXX JSUnaryOpMinus a -> fun a "minus"
     JSUnaryOpNot a -> fun a "not"
     j -> expect_throw at $ Err_Parse_IllegalUnaOp j
   where
@@ -758,6 +760,29 @@ evalPrim ctxt at sco st p sargs =
       case map snd sargs of
         [(SLV_Type ty), (SLV_Int _ sz)] ->
           retV $ (lvl, SLV_Type $ T_Array ty sz)
+        _ -> illegal_args
+      where
+        lvl = mconcat $ map fst sargs
+    --- XXX add make_array
+    SLPrim_array ->
+      case map snd sargs of
+        [(SLV_Type elem_ty), elems_v] ->
+          case elems_v of
+            SLV_Tuple _ elem_vs ->
+              retV $ (lvl, SLV_Array at elem_ty elem_vs_checked)
+              where elem_vs_checked = map check1 elem_vs
+                    check1 sv = checkType at elem_ty sv `seq` sv
+            SLV_DLVar (DLVar _ _ (T_Tuple _elem_tys) _) ->
+              error "XXX"
+            _ -> illegal_args
+        _ -> illegal_args
+      where
+        lvl = mconcat $ map fst sargs
+    SLPrim_array_set ->
+      case map snd sargs of
+        [_arrv, _idxv, _valv] ->
+          retV $ (lvl, arrv')
+          where arrv' = error "XXX"
         _ -> illegal_args
       where
         lvl = mconcat $ map fst sargs
@@ -1126,6 +1151,7 @@ evalExpr ctxt at sco st e = do
       case idxv of
         SLV_Int _ idxi ->
           case arrv of
+            SLV_Array _ _ arrvs -> retVal idxi arrvs
             SLV_Tuple _ tupvs -> retVal idxi tupvs
             SLV_DLVar adv@(DLVar _ _ (T_Tuple ts) _) ->
               case fromIntegerMay idxi >>= atMay ts of

@@ -158,6 +158,7 @@ solArg :: SolCtxt a -> DLArg -> Doc a
 solArg ctxt = \case
   DLA_Var v -> solVar ctxt v
   DLA_Con c -> solCon c
+  DLA_Array _ as -> brackets $ hsep $ punctuate comma $ map (solArg ctxt) as
   da@(DLA_Tuple as) -> solApply (solType ctxt (argTypeOf da)) $ map (solArg ctxt) as
   da@(DLA_Obj m) -> solApply (solType ctxt (argTypeOf da)) $ map ((solArg ctxt) . snd) $ M.toAscList m
   DLA_Interact {} -> impossible "consensus interact"

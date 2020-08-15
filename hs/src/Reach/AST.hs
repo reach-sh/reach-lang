@@ -126,6 +126,7 @@ data SLVal
   | SLV_Bool SrcLoc Bool
   | SLV_Int SrcLoc Integer
   | SLV_Bytes SrcLoc B.ByteString
+  | SLV_Array SrcLoc SLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLCloEnv
@@ -212,6 +213,8 @@ data SLPrimitive
   | SLPrim_interact SrcLoc SLPart String SLType
   | SLPrim_Fun
   | SLPrim_Array
+  | SLPrim_array
+  | SLPrim_array_set
   | SLPrim_Tuple
   | SLPrim_Object
   | SLPrim_App_Delay SrcLoc SLEnv [SLSVal] JSBlock SLEnv
@@ -277,6 +280,8 @@ instance NFData DLVar
 data DLArg
   = DLA_Var DLVar
   | DLA_Con DLConstant
+  | --- FIXME Should be expression?
+    DLA_Array SLType [DLArg]
   | --- FIXME Should be expression?
     DLA_Tuple [DLArg]
   | --- FIXME Should be expression?

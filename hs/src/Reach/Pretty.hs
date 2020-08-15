@@ -32,6 +32,8 @@ instance Pretty SLVal where
     SLV_Bool _ b -> pretty b
     SLV_Int _ i -> pretty i
     SLV_Bytes _ b -> pretty b
+    SLV_Array at t as ->
+      "array" <> parens ( pretty t <> comma <+> pretty (SLV_Tuple at as) )
     SLV_Tuple _ as ->
       brackets $ hsep $ punctuate comma $ map pretty as
     SLV_Object _ m -> render_obj m
@@ -58,6 +60,7 @@ instance Pretty DLArg where
     case a of
       DLA_Var v -> pretty v
       DLA_Con c -> viaShow c
+      DLA_Array t as -> "array" <> parens ( pretty t <> comma <+> pretty (DLA_Tuple as) )
       DLA_Tuple as -> brackets $ render_das as
       DLA_Obj env -> render_obj env
       DLA_Interact who m t ->

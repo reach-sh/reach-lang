@@ -69,6 +69,7 @@ instance Countable DLArg where
     case a of
       DLA_Var v -> counts v
       DLA_Con {} -> mempty
+      DLA_Array _ as -> counts as
       DLA_Tuple as -> counts as
       DLA_Obj as -> counts as
       DLA_Interact {} -> mempty

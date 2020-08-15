@@ -458,6 +458,7 @@ smt_a ctxt at_de da =
             , ctxt_primed_vars = mempty
             }
     DLA_Con c -> smt_c ctxt at_de c
+    DLA_Array _ as -> cons as
     DLA_Tuple as -> cons as
     DLA_Obj m -> cons $ M.elems m
     DLA_Interact who i _ -> Atom $ smtInteract ctxt who i

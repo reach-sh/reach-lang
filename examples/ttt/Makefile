@@ -1,10 +1,10 @@
 TAG="reachsh/examples-ttt:v0.1.1"
 
-build/%.mjs: %.rsh
+build/%.main.mjs: %.rsh
 	../../reachc -o build $^
 
 .PHONY: build
-build: build/ttt.mjs
+build: build/index.main.mjs
 	docker build --tag=$(TAG) .
 
 .PHONY: push
@@ -17,4 +17,4 @@ run:
 
 .PHONY: clean
 clean:
-	rm -f build/ttt.mjs
+	rm -f build/index.main.mjs
