@@ -155,9 +155,11 @@ only known to a single @tech{participant}. For example,
 is @tech{invalid}.
 
 The special identifier @reachin{_} is an exception to this rule.
-No matter how many times it is bound, the @reachin{_} binding
-is always considered to be unbound.
-This may be useful for "ignoring" unwanted values, for example:
+The @reachin{_} binding is always considered to be unbound.
+This means means that @reachin{_} is both
+an identifier that can never be read,
+as well as an identifier that may be bound many times.
+This may be useful for ignoring unwanted values, for example:
 
 @reach{
  const [_, x, _] = [1, 2, 3];
