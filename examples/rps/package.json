@@ -19,6 +19,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "predemo": "eslint --ignore-path .gitignore --ext .mjs .",
-    "demo": "node --experimental-modules index.mjs"
+    "demo": "node --experimental-modules index.mjs",
+    "interactive": "node --experimental-modules interactive.mjs"
   }
 }
