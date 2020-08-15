@@ -770,8 +770,9 @@ evalPrim ctxt at sco st p sargs =
           case elems_v of
             SLV_Tuple _ elem_vs ->
               retV $ (lvl, SLV_Array at elem_ty elem_vs_checked)
-              where elem_vs_checked = map check1 elem_vs
-                    check1 sv = checkType at elem_ty sv `seq` sv
+              where
+                elem_vs_checked = map check1 elem_vs
+                check1 sv = checkType at elem_ty sv `seq` sv
             --- FIXME we could support turning a DL Tuple into an array.
             _ -> illegal_args
         _ -> illegal_args
@@ -787,25 +788,29 @@ evalPrim ctxt at sco st p sargs =
                   case idxi' < length arrvs of
                     True ->
                       retV $ (lvl, arrv')
-                      where arrv' = SLV_Array at elem_ty arrvs'
-                            valv_checked = checkType at elem_ty valv `seq` valv
-                            arrvs' = take (idxi' - 1) arrvs ++ [ valv_checked ] ++ drop (idxi' + 1) arrvs
+                      where
+                        arrv' = SLV_Array at elem_ty arrvs'
+                        valv_checked = checkType at elem_ty valv `seq` valv
+                        arrvs' = take (idxi' - 1) arrvs ++ [valv_checked] ++ drop (idxi' + 1) arrvs
                     False ->
                       expect_throw at $ Err_Eval_RefOutOfBounds (length arrvs) idxi
                 SLV_DLVar arrdv@(DLVar _ _ arr_ty@(T_Array elem_ty sz) _) ->
                   case idxi < sz of
                     True ->
                       retArrDV arr_ty $ DLE_ArraySet at (ctxt_stack ctxt) (DLA_Var arrdv) sz idxda valda
-                      where valda = checkType at elem_ty valv
+                      where
+                        valda = checkType at elem_ty valv
                     False ->
                       expect_throw at $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
                 _ -> illegal_args
-              where idxi' = fromIntegral idxi
+              where
+                idxi' = fromIntegral idxi
             (T_UInt256, idxda) ->
               case typeOf at arrv of
                 (arr_ty@(T_Array elem_ty sz), arrda) ->
                   retArrDV arr_ty $ DLE_ArraySet at (ctxt_stack ctxt) arrda sz idxda valda
-                  where valda = checkType at elem_ty valv
+                  where
+                    valda = checkType at elem_ty valv
                 _ -> illegal_args
             _ -> illegal_args
         _ -> illegal_args

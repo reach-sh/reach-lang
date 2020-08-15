@@ -1,7 +1,7 @@
 module Reach.Connector.ETH_Solidity (connect_eth) where
 
-import Control.Monad.ST
 import Control.Monad
+import Control.Monad.ST
 import Data.Aeson
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
@@ -153,8 +153,9 @@ mustBeMem = \case
 
 solArgType :: SolCtxt a -> Bool -> SLType -> Doc a
 solArgType ctxt isHandler t = solType ctxt t <> loc_spec
-  where loc_spec = if mustBeMem t then " " <> loc else ""
-        loc = if isHandler then "calldata" else "memory"
+  where
+    loc_spec = if mustBeMem t then " " <> loc else ""
+    loc = if isHandler then "calldata" else "memory"
 
 solArgDecl :: SolCtxt a -> Bool -> DLVar -> Doc a
 solArgDecl ctxt isHandler dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt isHandler t)
@@ -434,15 +435,20 @@ _solDefineType1 getTypeName i name = \case
     tn <- getTypeName t
     let me = tn <> brackets (pretty sz)
     let memem = me <> " memory"
-    let args = [ solDecl "arr" memem
-               , solDecl "idx" "uint256"
-               , solDecl "val" tn ]
-    let ret = "internal" <+> "returns" <+> parens ( solDecl "arrp" memem )
-    let ref arr idx = arr <> brackets ( idx )
+    let args =
+          [ solDecl "arr" memem
+          , solDecl "idx" "uint256"
+          , solDecl "val" tn
+          ]
+    let ret = "internal" <+> "returns" <+> parens (solDecl "arrp" memem)
+    let ref arr idx = arr <> brackets (idx)
     let assign idx val = (ref "arrp" idx) <+> "=" <+> val <> semi
-    let body = vsep [ ("for" <+> parens ( "uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++") <>
-                       solBraces (assign "i" (ref "arr" "i")))
-                    , assign "idx" "val" ]
+    let body =
+          vsep
+            [ ("for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
+                 <> solBraces (assign "i" (ref "arr" "i")))
+            , assign "idx" "val"
+            ]
     let set_defn = solFunction (solArraySet i) args ret body
     return $ (me, set_defn)
   T_Tuple ats -> do
@@ -509,8 +515,11 @@ solPLProg (PLProg _ _ (CPProg at hs)) =
     consp = solApply "constructor" [] <+> "public payable" <+> solBraces consbody
     SolTailRes _ consbody = solCTail ctxt (CT_Wait at [])
     state_defn = "uint256 current_state;"
-    preamble = vsep [ "// Automatically generated with Reach" <+> (pretty $ showVersion version)
-                    , "pragma experimental ABIEncoderV2" <> semi ]
+    preamble =
+      vsep
+        [ "// Automatically generated with Reach" <+> (pretty $ showVersion version)
+        , "pragma experimental ABIEncoderV2" <> semi
+        ]
 
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text

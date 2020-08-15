@@ -745,11 +745,11 @@ _smtDefineTypes smt ts = do
             void $ SMT.command smt $ smtApply "define-sort" [Atom n, List [], smtApply "Array" [uint256_sort, Atom tn]]
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
-            let idxs = [0 .. (sz-1)]
+            let idxs = [0 .. (sz -1)]
             let idxses = map (smt_c (error "no context") (error "no at") . DLC_Int) idxs
             let cons_vars = map (("e" ++) . show) idxs
             let cons_params = map (\x -> (x, Atom tn)) cons_vars
-            let defn1 arrse (idxse, var) = smtApply "store" [ arrse, idxse, Atom var ]
+            let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]
             let cons_defn = foldl' defn1 (Atom z) $ zip idxses cons_vars
             void $ SMT.defineFun smt (n ++ "_cons") cons_params (Atom n) cons_defn
             void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")

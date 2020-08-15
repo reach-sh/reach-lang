@@ -70,7 +70,7 @@ lin_con back at_top rets (s Seq.:<| ks) =
     DLS_While at asn inv_b cond_b body ->
       LLC_While at asn (block inv_b) (block cond_b) body' $ lin_con back at rets ks
       where
-        body' = lin_con back at rets body 
+        body' = lin_con back at rets body
         --- Note: The invariant and condition can't return
         block (DLBlock ba fs ss a) =
           LLBlock ba fs (lin_local ba ss) a
@@ -95,14 +95,16 @@ lin_step _ rets (s Seq.:<| ks) =
       LLS_Stop at fs
     DLS_Only at who ss ->
       LLS_Only at who ls $ lin_step at rets ks
-      where ls = lin_local at ss
+      where
+        ls = lin_local at ss
     DLS_ToConsensus at who fs as ms amt mtime cons ->
       LLS_ToConsensus at who fs as ms amt mtime' cons'
-      where cons' = lin_con back at mempty (cons <> ks)
-            back = lin_step at rets
-            mtime' = do
-              (delay_da, time_ss) <- mtime
-              return $ (delay_da, lin_step at rets (time_ss <> ks))
+      where
+        cons' = lin_con back at mempty (cons <> ks)
+        back = lin_step at rets
+        mtime' = do
+          (delay_da, time_ss) <- mtime
+          return $ (delay_da, lin_step at rets (time_ss <> ks))
     _ ->
       lin_com "step" lin_step LLS_Com rets s ks
 
