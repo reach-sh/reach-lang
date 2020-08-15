@@ -646,7 +646,7 @@ evalForm ctxt at sco st f args =
           sargs <- cannotLift "App args" <$> evalExprs ctxt at sco st [opte, partse]
           case map snd sargs of
             [(SLV_Object _ opts), (SLV_Tuple _ parts)] ->
-              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_vs (jsStmtToBlock top_s) env'
+              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_vs (jsArrowStmtToBlock top_s) env'
               where
                 env = sco_env sco
                 env' = foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) env $ zipEq at (Err_Apply_ArgCount at) top_args part_vs
@@ -675,7 +675,7 @@ evalForm ctxt at sco st f args =
         Just TCM_Timeout ->
           case args of
             [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] ->
-              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just (at, de, (jsStmtToBlock dt_s)))
+              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just (at, de, (jsArrowStmtToBlock dt_s)))
             _ -> expect_throw at $ Err_ToConsensus_TimeoutArgs args
         Nothing ->
           expect_throw at $ Err_Eval_NotApplicable rator
@@ -1107,7 +1107,7 @@ evalExpr ctxt at sco st e = do
       evalExpr ctxt at sco st e'
       where
         e' = JSFunctionExpression a JSIdentNone a fformals a body
-        body = jsStmtToBlock bodys
+        body = jsArrowStmtToBlock bodys
         at' = srcloc_jsa "arrow" a at
         fformals = jsArrowFormalsToFunFormals at' aformals
     JSFunctionExpression a name _ jsformals _ body ->

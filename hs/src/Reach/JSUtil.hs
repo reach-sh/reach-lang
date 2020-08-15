@@ -1,4 +1,4 @@
-module Reach.JSUtil (jscl_flatten, jsctl_flatten, jsa_flatten, dropEmptyJSStmts, jsStmtToBlock, tp, srcloc_jsa) where
+module Reach.JSUtil (jscl_flatten, jsctl_flatten, jsa_flatten, dropEmptyJSStmts, jsArrowStmtToBlock, tp, srcloc_jsa) where
 
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
@@ -19,9 +19,11 @@ jsa_flatten a = concatMap f a
     f (JSArrayComma _) = []
     f (JSArrayElement e) = [e]
 
-jsStmtToBlock :: JSStatement -> JSBlock
-jsStmtToBlock = \case
+jsArrowStmtToBlock :: JSStatement -> JSBlock
+jsArrowStmtToBlock = \case
   JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
+  JSExpressionStatement e sp -> JSBlock JSNoAnnot [JSReturn JSNoAnnot (Just e) sp] JSNoAnnot
+  JSMethodCall e la args ra sp -> JSBlock la [JSReturn la (Just (JSCallExpression e la args ra)) sp] ra
   bodys -> JSBlock JSNoAnnot [bodys] JSNoAnnot
 
 dropEmptyJSStmts :: [JSStatement] -> [JSStatement]

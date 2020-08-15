@@ -9,58 +9,54 @@ const State = Object({ xs_turn: Bool,
                        xs: Board,
                        os: Board });
 
-const board_mt = array( Bool,
-                        [ false, false, false,
-                          false, false, false,
-                          false, false, false ] );
+const board_mt =
+      array( Bool,
+             [ false, false, false,
+               false, false, false,
+               false, false, false ] );
 
-function ttt_initial(XisFirst) {
-  return { xs_turn: XisFirst,
-           xs: board_mt,
-           os: board_mt }; };
+const ttt_initial = (XisFirst) =>
+      ({ xs_turn: XisFirst,
+         xs: board_mt,
+         os: board_mt });
 
-function cell_both(st, i) {
-  return st.xs[i] || st.os[i]; };
+const cell_both = (st, i) =>
+      (st.xs[i] || st.os[i]);
 
-function marks_all(st) {
-  return array( Bool,
-                [ cell_both(st, 0), cell_both(st, 1), cell_both(st, 2),
-                  cell_both(st, 3), cell_both(st, 4), cell_both(st, 5),
-                  cell_both(st, 6), cell_both(st, 7), cell_both(st, 8) ] ); };
+const marks_all = (st) =>
+      array( Bool,
+             [ cell_both(st, 0), cell_both(st, 1), cell_both(st, 2),
+               cell_both(st, 3), cell_both(st, 4), cell_both(st, 5),
+               cell_both(st, 6), cell_both(st, 7), cell_both(st, 8) ] );
 
-function cell(r, c) {
-  return c + r * COLS; };
+const cell = (r, c) => c + r * COLS;
 
-function seq(b, r, c, dr, dc) {
-  return b[cell(r, c)]
-    && b[cell(r+dr, c+dc)]
-    && b[cell(r+dr+dr, c+dc+dc)]; };
+const seq = (b, r, c, dr, dc) =>
+      (b[cell(r, c)] &&
+       b[cell(r+dr, c+dc)] &&
+       b[cell(r+dr+dr, c+dc+dc)]);
 
-function row(b, r) {
-  return seq(b, r, 0, 0, 1); };
+const row = (b, r) => seq(b, r, 0, 0, 1);
+const col = (b, c) => seq(b, 0, c, 1, 0);
 
-function col(b, c) {
-  return seq(b, 0, c, 1, 0); };
+const winning_p = (b) =>
+      (row(b, 0) || row(b, 1) || row(b, 2) ||
+       col(b, 0) || col(b, 1) || col(b, 2) ||
+       seq(b, 0, 0, 1, 1) ||
+       seq(b, 0, 2, 1, -1));
 
-function winning_p(b) {
-  return row(b, 0) || row(b, 1) || row(b, 2)
-    || col(b, 0) || col(b, 1) || col(b, 2)
-    || seq(b, 0, 0, 1, 1)
-    || seq(b, 0, 2, 1, -1); };
+const complete_p = (b) =>
+      (b[0] && b[1] && b[2] &&
+       b[3] && b[4] && b[5] &&
+       b[6] && b[7] && b[8]);
 
-function complete_p(b) {
-  return b[0] && b[1] && b[2]
-    && b[3] && b[4] && b[5]
-    && b[6] && b[7] && b[8]; };
+const ttt_done = (st) =>
+      (winning_p(st.xs)
+       || winning_p(st.os)
+       || complete_p(marks_all(st)));
 
-function ttt_done(st) {
-  return (winning_p(st.xs)
-          || winning_p(st.os)
-          || complete_p(marks_all(st))); };
-
-// XXX debug with arrow syntax
-function legalMove(m) { return (0 <= m && m < CELLS); };
-function validMove(st, m) { return (! marks_all(st)[m]); };
+const legalMove = (m) => (0 <= m && m < CELLS);
+const validMove = (st, m) => (! marks_all(st)[m]);
 
 function getValidMove(interact, st) {
   const _m = interact.getMove(st);
@@ -76,11 +72,8 @@ function applyMove(st, m) {
            xs: (turn ? array_set(st.xs, m, true) : st.xs),
            os: (turn ? st.os : array_set(st.os, m, true)) }; };
 
-function ttt_winner_is_x( st ) {
-  return winning_p(st.xs); }
-
-function ttt_winner_is_o( st ) {
-  return winning_p(st.os); }
+const ttt_winner_is_x = ( st ) => winning_p(st.xs);
+const ttt_winner_is_o = ( st ) => winning_p(st.os);
 
 // Protocol
 const DELAY = 10; // in blocks
