@@ -19,6 +19,12 @@ publish:
 run:
 	docker-compose run reach-app
 
+.PHONY: run-ganache
+run-ganache:
+	docker run \
+	  -e ETH_NODE_TYPE='in_memory_ganache' \
+	  $(TAG)
+
 .PHONY: run-devnet
 run-devnet:
 	docker run -it -p 127.0.0.1:18545:8545 reachsh/ethereum-devnet:v0.1.0

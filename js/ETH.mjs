@@ -1,8 +1,15 @@
 import Timeout         from 'await-timeout';
 import ethers          from 'ethers';
+import ganache         from 'ganache-core';
 import * as http       from 'http';
 import * as url        from 'url';
 import * as waitPort   from 'wait-port';
+
+// TODO: make ganache a dynamic dependency rather than
+// importing it always.
+// XXX: when using ganache: nvm use 12
+// ganache-core doesn't work with npm version 14 yet
+// https://github.com/trufflesuite/ganache-cli/issues/732#issuecomment-623782405
 
 import {toBN, isBN, toHex, assert} from './shared.mjs';
 export * from './shared.mjs';
@@ -78,11 +85,19 @@ void(flaky); // XXX
 
 // Common interface exports
 
-const uri = process.env.ETH_NODE_URI || 'http://localhost:8545';
-const network = process.env.ETH_NODE_NETWORK || 'unspecified';
+const nodeType = process.env.ETH_NODE_TYPE || 'uri';
+
+const networkDesc = nodeType == 'in_memory_ganache' ? {
+  type: nodeType,
+} : nodeType == 'uri' ? {
+  type: nodeType,
+  uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
+  network: process.env.ETH_NODE_NETWORK || 'unspecified',
+} : panic(`Unknown node type ${nodeType}`);
 
 const portP = (async () => {
-  const { hostname, port, path } = url.parse(uri);
+  if (networkDesc.type != 'uri') { return; }
+  const { hostname, port, path } = url.parse(networkDesc.uri);
   const params = {
     protocol: 'http' // XXX no apparent need to support https
     , host: hostname
@@ -90,13 +105,14 @@ const portP = (async () => {
     , path
     , 'output': 'silent'
     , 'timeout': 1000*60*1 };
-  return await waitPort.default(params);
+  await waitPort.default(params);
 })();
 
 // XXX: doesn't even retry, just returns the first attempt
 const doHealthcheck = async () => {
-  return new Promise((resolve, reject) => {
-    const { hostname, port } = url.parse(uri);
+  if (networkDesc.type != 'uri') { return; }
+  await new Promise((resolve, reject) => {
+    const { hostname, port } = url.parse(networkDesc.uri);
     const data = JSON.stringify({
       jsonrpc: '2.0',
       method: 'web3_clientVersion',
@@ -143,13 +159,21 @@ const devnetP = (async () => {
 })();
 
 const etherspP = (async () => {
-  await devnetP;
-  // Note: `network` must not be undefined. 'unspecified' is ok.
-  // This is specific to ethers v4. Supposedly fixed in ethers v5.
-  // https://github.com/ethers-io/ethers.js/issues/274
-  const ethersp = new ethers.providers.JsonRpcProvider(uri, network);
-  ethersp.pollingInterval = 500; // ms
-  return ethersp;
+  if (networkDesc.type == 'uri') {
+    await devnetP;
+    // Note: `network` must not be undefined. 'unspecified' is ok.
+    // This is specific to ethers v4. Supposedly fixed in ethers v5.
+    // https://github.com/ethers-io/ethers.js/issues/274
+    const ethersp = new ethers.providers.JsonRpcProvider(networkDesc.uri, networkDesc.network);
+    ethersp.pollingInterval = 500; // ms
+    return ethersp;
+  } else if (networkDesc.type == 'in_memory_ganache') {
+    const default_balance_ether = '999999999';
+    const ganachep = ganache.provider({default_balance_ether});
+    return new ethers.providers.Web3Provider(ganachep);
+  } else {
+    return panic(`Unhandled networkDesc.type ${networkDesc.type}`);
+  }
 })();
 
 // XXX expose setProvider

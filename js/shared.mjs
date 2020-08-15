@@ -132,4 +132,4 @@ export const lt    = (a, b) => toBN(a).lt( toBN(b));
 export function array_set(arr, idx, elem) {
   const arrp = arr.slice();
   arrp[idx] = elem;
-  return arrp; };
+  return arrp; }
