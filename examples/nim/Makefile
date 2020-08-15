@@ -40,6 +40,14 @@ run-bob:
 	  $(TAG) \
 	  -c 'npm run interactive --- Bob'
 
+.PHONY: run-alice-local
+run-alice-local:
+	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- Alice
+
+.PHONY: run-bob-local
+run-bob-local:
+	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- Bob
+
 .PHONY: down
 down:
 	docker-compose down

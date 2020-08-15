@@ -26,7 +26,7 @@ export const ask = async (question, validator) => {
     try {
       result = validator(await(ask_(question)));
     } catch (err) {
-      console.log(err);
+      console.log(err.message);
       // TODO: better re-prompt
       question = `valid answer pls? > `;
     }
