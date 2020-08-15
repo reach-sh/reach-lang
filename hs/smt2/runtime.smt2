@@ -6,13 +6,15 @@
 
 (set-logic ALL)
 
+(define-sort UInt256 () Int)
+
 (declare-sort Bytes 0)
 (declare-fun bytes0 () Bytes)
 (declare-fun bytes (Int) Bytes)
 (define-fun Bytes_toBytes ((b Bytes)) Bytes
   b)
 (declare-fun bytesAppend (Bytes Bytes) Bytes)
-(declare-fun digest (Bytes) Int)
+(declare-fun digest (Bytes) UInt256)
 
 (declare-sort Null 0)
 (declare-fun null () Null)
@@ -20,7 +22,6 @@
 
 (declare-fun Bool_toBytes (Bool) Bytes)
 
-(define-sort UInt256 () Int)
 (declare-fun UInt256_toBytes (UInt256) Bytes)
 
 (declare-sort Address 0)
