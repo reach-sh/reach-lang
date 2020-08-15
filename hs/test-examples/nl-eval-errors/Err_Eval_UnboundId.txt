@@ -1,1 +1,1 @@
-error: ./Err_Eval_UnboundId.rsh:9:12:id ref: Invalid unbound identifier: alfa. Did you mean: ["alpha","and","Array","Bool","Fun"]
+error: ./Err_Eval_UnboundId.rsh:9:12:id ref: Invalid unbound identifier: alfa. Did you mean: ["alpha","and","array","Array","Bool"]
