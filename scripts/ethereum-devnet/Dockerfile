@@ -1,4 +1,4 @@
-FROM ethereum/client-go:v1.9.2
+FROM ethereum/client-go:v1.9.19
 
 RUN apk add curl
 
