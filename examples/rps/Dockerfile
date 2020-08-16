@@ -8,4 +8,4 @@ RUN npm install
 
 COPY . /app
 
-CMD npm run demo --- FAKE && npm run demo --- ETH # && npm run demo --- ALGO
+CMD npm run demo --- FAKE && ETH_NODE_TYPE=in_memory_ganache npm run demo --- ETH && npm run demo --- ETH # && npm run demo --- ALGO
