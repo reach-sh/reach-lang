@@ -533,6 +533,7 @@ solPLProg (PLProg _ _ (CPProg at hs)) =
 data CompiledSolRec = CompiledSolRec
   { csrAbi :: T.Text
   , csrCode :: T.Text
+  , csrOpcodes :: T.Text
   }
 
 instance FromJSON CompiledSolRec where
@@ -543,14 +544,17 @@ instance FromJSON CompiledSolRec where
         ctc <- ctcs .: ctcKey
         abit <- ctc .: "abi"
         codebodyt <- ctc .: "bin"
-        return CompiledSolRec {csrAbi = abit, csrCode = codebodyt}
+        opcodest <- ctc .: "opcodes"
+        return CompiledSolRec { csrAbi = abit
+                              , csrCode = codebodyt
+                              , csrOpcodes = opcodest }
       Nothing ->
         fail "Expected contracts object to have a key with suffix ':ReachContract'"
 
 extract :: Value -> Either String ConnectorResult
 extract v = case fromJSON v of
   Error e -> Left e
-  Success CompiledSolRec {csrAbi, csrCode} ->
+  Success CompiledSolRec {..} ->
     case eitherDecode (LB.pack (T.unpack csrAbi)) of
       Left e -> Left e
       Right (csrAbi_parsed :: Value) ->
@@ -559,6 +563,7 @@ extract v = case fromJSON v of
             [ ( "ETH"
               , M.fromList
                 [ ("ABI", csrAbi_pretty)
+                , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
                 , ("Bytecode", "0x" <> csrCode)
                 ]
               )
@@ -569,7 +574,7 @@ extract v = case fromJSON v of
 compile_sol :: FilePath -> IO ConnectorResult
 compile_sol solf = do
   (ec, stdout, stderr) <-
-    readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin", solf] []
+    readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin,opcodes", solf] []
   let show_output = "STDOUT:\n" ++ stdout ++ "\nSTDERR:\n" ++ stderr ++ "\n"
   case ec of
     ExitFailure _ -> die $ "solc failed:\n" ++ show_output
