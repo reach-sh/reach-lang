@@ -928,6 +928,7 @@ evalApplyVals ctxt at sco st rator randvs =
       ret <- ctxt_alloc ctxt at
       let body_at = srcloc_jsa "block" body_a clo_at
       let kvs = zipEq at (Err_Apply_ArgCount clo_at) formals randvs
+      --- XXX Use sco_update and maybe get rid of only args
       let clo_env' = foldl' (env_insertp clo_at) clo_env kvs
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
       let clo_sco =
