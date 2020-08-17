@@ -36,7 +36,7 @@ run-alice:
 	  -e ETH_NODE_URI=http://docker.for.mac.localhost:18545 \
 	  --entrypoint=/bin/bash \
 	  $(TAG) \
-	  -c 'npm run interactive --- Alice'
+	  -c 'npm run interactive --- A'
 
 .PHONY: run-bob
 run-bob:
@@ -44,15 +44,15 @@ run-bob:
 	  -e ETH_NODE_URI=http://docker.for.mac.localhost:18545 \
 	  --entrypoint=/bin/bash \
 	  $(TAG) \
-	  -c 'npm run interactive --- Bob'
+	  -c 'npm run interactive --- B'
 
 .PHONY: run-alice-local
 run-alice-local:
-	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- Alice
+	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- A
 
 .PHONY: run-bob-local
 run-bob-local:
-	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- Bob
+	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- B
 
 .PHONY: down
 down:

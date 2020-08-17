@@ -49,6 +49,24 @@ export const yesno = (answer) => {
 
 // ======== ETH tools ============
 
+// There are three levels of abstraction available
+// (pick one):
+//
+// Highest: do all the things
+// runPart(opts);
+//
+// Next highest: define runners for each part
+// const runA = mkPart({...opts, thisPart: 'A'});
+// const runB = mkPart({...opts, thisPart: 'B'});
+//
+// Lower: use the common tools to define runners for each part
+// const runA = async () => {
+//   const account = promptCreateTestAccount();
+//   const ctc = account.deploy(PROG);
+//   console.log(shareableCtcStr(ctc));
+//   await PROG.A(stdlib, ctc, interact);
+// }
+
 // TODO abstract so it's not specific to ETH
 export const promptCreateTestAccount = async (stdlib) => {
   const start_amt = await ask(
@@ -63,11 +81,9 @@ export const promptCreateTestAccount = async (stdlib) => {
   return account;
 };
 
-
-export const displayCtc = (ctc) => {
-  console.log(`{"address": "${ctc.address}", "creation_block": ${ctc.creation_block}}`);
-};
-
+export const shareableCtcStr = (ctc) => (
+  `{"address": "${ctc.address}", "creation_block": ${ctc.creation_block}}`
+);
 
 export const askCtc = async (prompt) => {
   return await ask(
@@ -92,7 +108,7 @@ const getCtc_ = async (account, opts) => {
 
     console.log(`Other participants are: ${otherParticipants}`);
     console.log(`Show the other participants your deployed contract info:`);
-    displayCtc(ctc);
+    console.log(shareableCtcStr(ctc));
 
     return ctc;
   } else {

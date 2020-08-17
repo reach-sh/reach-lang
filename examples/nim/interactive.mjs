@@ -1,5 +1,5 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as NIM from './build/index.main.mjs';
+import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import { ask, yesno, runPart
        } from '@reach-sh/stdlib/command_line_helpers.mjs';
 

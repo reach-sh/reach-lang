@@ -1,48 +1,18 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as RPS from './build/index.once.mjs';
-import {ask, yesno, noFurtherQuestions} from './prompt.mjs';
+import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import { ask, yesno, runPart
+       } from '@reach-sh/stdlib/command_line_helpers.mjs';
 
 // Set up dependencies to run locally:
 // (cd ../../js && npm link)
 // npm install
 // npm link "@reach-sh/stdlib"
 
-// TODO: less copy/paste between examples; use a shared lib.
-
-const {fromWei, toWeiBN, newTestAccount, hasRandom} = stdlib;
+const {fromWei, toWeiBN, hasRandom} = stdlib;
 
 const name = process.argv[2];
 const toUnit = fromWei;
 const unit = 'ETH';
-
-const promptCreateTestAccount = async () => {
-  const start_amt = await ask(
-    `How much ETH would you like in your test account? (default: 100) > `,
-    (x) => toWeiBN(x || '100', 'ether')
-  );
-
-  console.log(`Creating account...`);
-  const account = await newTestAccount(start_amt);
-  console.log(`...account created.`);
-
-  return account;
-};
-
-const displayCtc = (ctc) => {
-  console.log(`{"address": "${ctc.address}", "creation_block": ${ctc.creation_block}}`);
-};
-
-const askCtc = async () => {
-  return await ask(
-    `Paste Alice's contract info here > `,
-    (objStr) => {
-      const obj = JSON.parse(objStr);
-      if (!obj.address) { throw Error(`Missing address`); }
-      else if (!obj.creation_block) { throw Error(`Missing creation_block`); }
-      else { return obj; }
-    }
-  );
-};
 
 // interact methods
 
@@ -126,43 +96,12 @@ const interact = {
   shows,
 };
 
-
-const runAlice = async () => {
-  console.log(`Hello, Alice. Let's start a game of Rock, Paper, Scissors.`);
-  console.log(`First, we'll connect to the test net.`);
-  const account = await promptCreateTestAccount();
-
-  console.log(`Next, we'll deploy the contract.`);
-  const ctc = await account.deploy(RPS);
-
-  console.log(`Show Bob the deployed contract info:`);
-  displayCtc(ctc);
-
-  console.log(`Alright, let's play!`);
-  await RPS.A(stdlib, ctc, interact);
-  noFurtherQuestions();
-};
-
-
-const runBob = async () => {
-  console.log(`Hello, Bob. Let's start a game of Rock, Paper, Scissors.`);
-  console.log(`First, we'll connect to the test net.`);
-  const account = await promptCreateTestAccount();
-
-  console.log(`Now, ask Alice about the contract info.`);
-  console.log(`Next, we'll attach to Alice's contract.`);
-  const ctcAlice = await askCtc();
-  const ctc = await account.attach(RPS, ctcAlice);
-
-  console.log(`Alright, let's play!`);
-  await RPS.B(stdlib, ctc, interact);
-  noFurtherQuestions();
-};
-
-if (name === 'Alice') {
-  runAlice();
-} else if (name === 'Bob') {
-  runBob();
-} else {
-  throw Error(`Expected Alice or Bob, got ${name}`);
-}
+runPart({
+  PROG: RPS,
+  allPartNames: ['A', 'B'],
+  deployerPartName: 'A',
+  thisPartName: name,
+  greetBegin: `Let's play a game of Rock, Paper, Scissors.`,
+  interact,
+  stdlib,
+});
