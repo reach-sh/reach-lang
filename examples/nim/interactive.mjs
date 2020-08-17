@@ -1,28 +1,16 @@
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as NIM from './build/index.main.mjs';
-import {ask, yesno, noFurtherQuestions} from './prompt.mjs';
+import { ask, yesno, runPart
+       } from '@reach-sh/stdlib/command_line_helpers.mjs';
 
 // Set up dependencies to run locally:
 // (cd ../../js && npm link)
 // npm install
 // npm link "@reach-sh/stdlib"
 
-const {fromWei, toWeiBN, newTestAccount, lt, gt, toBN, hasRandom} = stdlib;
+const {fromWei, toWeiBN, lt, gt, toBN, hasRandom} = stdlib;
 
 const name = process.argv[2];
-
-const promptCreateTestAccount = async () => {
-  const start_amt = await ask(
-    `How much ETH would you like in your test account? (default: 100) > `,
-    (x) => toWeiBN(x || '100', 'ether')
-  );
-
-  console.log(`Creating account...`);
-  const account = await newTestAccount(start_amt);
-  console.log(`...account created.`);
-
-  return account;
-};
 
 const getParams = async () => {
   const wagerAmount = await ask(
@@ -33,7 +21,7 @@ const getParams = async () => {
     `What is the initial heap size for this game? (default: 21) > `,
     (x) => toBN(x || 21)
   );
-  console.log(`{name} publishes parameters of game:
+  console.log(`${name} publishes parameters of game:
 wager of ${fromWei(wagerAmount)}ETH and heap is ${initialHeapSize}`);
 
   return [ wagerAmount, initialHeapSize ];
@@ -67,7 +55,7 @@ const getMove = async (heap1, heap2) => {
       else if (x == 1) {choice = 1;}
       else if (x == 2) {choice = 2;}
       else {throw Error('You must enter 1 or 2');}
-      if (heaps[choice] <= 0) {
+      if (heaps[choice - 1] <= 0) {
         throw Error('You must choose the other one, that one is empty.');
       } else {
         return choice;
@@ -101,59 +89,12 @@ const interact = {
   showOutcome
 };
 
-const displayCtc = (ctc) => {
-  console.log(`{"address": "${ctc.address}", "creation_block": ${ctc.creation_block}}`);
-};
-
-const runAlice = async () => {
-  console.log(`Hello, Alice. Let's start a game of nim.`);
-  console.log(`First, we'll connect to the test net.`);
-
-  const account = await promptCreateTestAccount();
-
-  console.log(`Next, we'll deploy the contract.`);
-  const ctc = await account.deploy(NIM);
-
-  console.log(`Show Bob the deployed contract info:`);
-  displayCtc(ctc);
-
-  console.log(`Alright, let's play!`);
-  await NIM.A(stdlib, ctc, interact);
-  noFurtherQuestions();
-};
-
-const askCtc = async () => {
-  return await ask(
-    `Paste Alice's contract info here > `,
-    (objStr) => {
-      const obj = JSON.parse(objStr);
-      if (!obj.address) { throw Error(`Missing address`); }
-      else if (!obj.creation_block) { throw Error(`Missing creation_block`); }
-      else { return obj; }
-    }
-  );
-};
-
-const runBob = async () => {
-  console.log(`Hello, Bob. Let's start a game of nim.`);
-  console.log(`First, we'll connect to the test net.`);
-
-  const account = await promptCreateTestAccount();
-
-  console.log(`Now, ask Alice about the contract info.`);
-  console.log(`Next, we'll attach to Alice's contract.`);
-  const ctcAlice = await askCtc();
-  const ctc = await account.attach(NIM, ctcAlice);
-
-  console.log(`Alright, let's play!`);
-  await NIM.B(stdlib, ctc, interact);
-  noFurtherQuestions();
-};
-
-if (name === 'Alice') {
-  runAlice();
-} else if (name === 'Bob') {
-  runBob();
-} else {
-  throw Error(`Expected Alice or Bob, got ${name}`);
-}
+runPart({
+  PROG: NIM,
+  allPartNames: ['A', 'B'],
+  deployerPartName: 'A',
+  thisPartName: name,
+  greetBegin: `Let's play a game of nim.`,
+  interact,
+  stdlib,
+});
