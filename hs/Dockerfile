@@ -19,7 +19,7 @@ RUN stack build --system-ghc
 RUN mv "$(stack path --local-install-root --system-ghc)/bin" /build/bin/
 
 # --- Deploy
-FROM ethereum/solc:0.5.11 as solc
+FROM ethereum/solc:0.7.0 as solc
 
 FROM alpine:latest as dl-deps
 RUN apk add wget unzip
