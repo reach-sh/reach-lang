@@ -1,7 +1,7 @@
 // Automatically generated with Reach 0.1.0
 pragma experimental ABIEncoderV2;
 
-pragma solidity ^0.5.17;
+pragma solidity ^0.6.12;
 
 contract Stdlib { }
 
