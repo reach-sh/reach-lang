@@ -1,37 +1,83 @@
-'reach 0.1 exe';
+'reach 0.1';
 
-const Borrower = newParticipant();
-const Lender = newParticipant();
+const ParamsType = Object({
+  collateral: UInt256,
+  pre: UInt256,
+  post: UInt256,
+  maturation: UInt256,
+  maxLenderDelay: UInt256,
+});
 
-const DELAY = 10; // in blocks
+const hasSendOutcome = {
+  sendOutcome: Fun([Bytes], Null),
+};
 
-function main() {
-  Borrower.only(() => {
-    const [ _collateral,
-            _pre,
-            _post,
-            _maturation ] = declassify(is([ uint256,
-                                            uint256,
-                                            uint256,
-                                            uint256 ],
-                                          interact.getParams()));
-    assume(pre < post); });
-  Borrower.publish(collateral, pre, post, maturation)
-    .pay(collateral);
-  require(pre < post);
-  commit();
+export const main = Reach.App(
+  {},
+  [
+    ["Borrower", {
+      ...hasSendOutcome,
+      getParams: Fun([], ParamsType),
+      waitForPayback: Fun([], Null),
+    }],
+    ["Lender", {
+      ...hasSendOutcome,
+      acceptParams: Fun([ParamsType], Null),
+    }],
+  ],
+  (Borrower, Lender) => {
+    const sendOutcome = (which) => {
+      return (() => {
+        each([Borrower, Lender], (which) => {
+          interact.sendOutcome(which);
+        });
+      });
+    };
 
-  Lender.pay(pre)
-    .timeout(DELAY, closeTo(Borrower, false));
-  transfer(pre).to(Borrower);
-  commit();
+    Borrower.only(() => {
+      const params = declassify(interact.getParams());
+      assume(params.pre < params.post); });
+    Borrower.publish(params)
+      .pay(params.collateral);
+    // TODO: allow obj bindings
+    // const {
+    //   collateral,
+    //   pre,
+    //   post,
+    //   maturation,
+    //   maxLenderDelay,
+    // } = params;
+    const collateral = params.collateral;
+    const pre = params.pre;
+    const post = params.post;
+    const maturation = params.maturation;
+    const maxLenderDelay = params.maxLenderDelay;
+    require(pre < post);
+    commit();
 
-  Borrower.only(() => {
-    interact.waitForPayback(); });
-  Borrower.pay(post)
-    .timeout(maturation, closeTo(Lender, false));
-  transfer(post).to(Lender);
-  transfer(collateral).to(Borrower);
-  commit();
+    Lender.only(() => {
+      interact.acceptParams(params);
+    })
+    Lender.pay(pre)
+      .timeout(maxLenderDelay, () => {
+        closeTo(Borrower, sendOutcome(
+          "Lender failed to lend on time"
+        ));
+      });
+    transfer(pre).to(Borrower);
+    commit();
 
-  return true; }
+    Borrower.only(() => {
+      interact.waitForPayback();
+    });
+    Borrower.pay(post)
+      .timeout(maturation, () => {
+        closeTo(Lender, sendOutcome(
+          "Borrower failed to pay on time"
+        ));
+      });
+    transfer(post).to(Lender);
+    transfer(collateral).to(Borrower);
+    commit();
+  }
+);
