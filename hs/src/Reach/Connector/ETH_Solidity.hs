@@ -46,7 +46,7 @@ solContract :: String -> Doc a -> Doc a
 solContract s body = "contract" <+> pretty s <+> solBraces body
 
 solVersion :: Doc a
-solVersion = "pragma solidity ^0.6.12;"
+solVersion = "pragma solidity ^0.7.0;"
 
 solStdLib :: Doc a
 solStdLib = pretty $ B.unpack stdlib_sol
@@ -521,7 +521,7 @@ solPLProg (PLProg _ _ (CPProg at hs)) =
         , ctxt_varm = mempty
         }
     ctcbody = vsep_with_blank $ [state_defn, consp, typesp, solHandlers ctxt hs]
-    consp = solApply "constructor" [] <+> "public payable" <+> solBraces consbody
+    consp = solApply "constructor" [] <+> "payable" <+> solBraces consbody
     SolTailRes _ consbody = solCTail ctxt (CT_Wait at [])
     state_defn = "uint256 current_state;"
     preamble =

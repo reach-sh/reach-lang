@@ -1,7 +1,7 @@
 // Automatically generated with Reach 0.1.0
 pragma experimental ABIEncoderV2;
 
-pragma solidity ^0.6.12;
+pragma solidity ^0.7.0;
 
 contract Stdlib { }
 
@@ -9,7 +9,7 @@ contract Stdlib { }
 contract ReachContract is Stdlib {
   uint256 current_state;
   
-  constructor() public payable {
+  constructor() payable {
     
     current_state = uint256(keccak256(abi.encode(uint256(0), uint256(block.number)))); }
   
