@@ -20,7 +20,7 @@ Installation on macOS:
 ```
 $ brew tap ethereum/ethereum
 $ brew install haskell-stack z3
-$ brew install https://github.com/jeapostrophe/homebrew-ethereum/blob/master/solidity%405_15.rb
+$ brew install https://github.com/jeapostrophe/homebrew-ethereum/blob/master/solidity%405_16.rb
 ```
 
 Installation on Ubuntu:
