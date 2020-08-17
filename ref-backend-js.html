@@ -26,14 +26,16 @@
 <span class="s1">&#39;bytes&#39;</span>   <span class="p">=&gt;</span> <span class="s1">&#39;string&#39;</span>
 <span class="s1">&#39;address&#39;</span> <span class="p">=&gt;</span> <span class="s1">&#39;string&#39;</span> 
 </pre></div>
-</p><p><div class="SIntrapara"><span style="font-weight: bold">&#8212;<wbr></wbr></span></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="nx">toBN</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">uint256</span>
-<span class="nx">isBN</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bool</span>
+</p><p><div class="SIntrapara"><span style="font-weight: bold">&#8212;<wbr></wbr></span></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="nx">bigNumberify</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">uint256</span>
+<span class="nx">isBigNumber</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bool</span>
 </pre></div>
-</div></p><p><a name="(tech._tobn)"></a><span style="font-style: italic">toBN</span> converts a JavaScript number to a BN, the JavaScript representation of Reach&rsquo;s uint256. <a name="(tech._isbn)"></a><span style="font-style: italic">isBN</span> checks if its input is a BN.</p><p><div class="SIntrapara"><span style="font-weight: bold">&#8212;<wbr></wbr></span></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="nx">toHex</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bytes</span>
+</div></p><p><a name="(tech._bignumberify)"></a><span style="font-style: italic">bigNumberify</span> converts a JavaScript number to a BigNumber,
+the JavaScript representation of Reach&rsquo;s uint256.
+<a name="(tech._isbignumber)"></a><span style="font-style: italic">isBigNumber</span> checks if its input is a BigNumber.</p><p><div class="SIntrapara"><span style="font-weight: bold">&#8212;<wbr></wbr></span></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="nx">toHex</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bytes</span>
 <span class="nx">isHex</span><span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bool</span>
 <span class="nx">hexToString</span><span class="p">(</span><span class="nx">bytes</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">string</span>
-<span class="nx">hexToBN</span><span class="p">(</span><span class="nx">bytes</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">uint256</span>
-<span class="nx">bnToHex</span><span class="p">(</span><span class="nx">uint256</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bytes</span>
+<span class="nx">hexToBigNumber</span><span class="p">(</span><span class="nx">bytes</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">uint256</span>
+<span class="nx">bigNumberToHex</span><span class="p">(</span><span class="nx">uint256</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bytes</span>
 <span class="nx">uint256_to_bytes</span><span class="p">(</span><span class="nx">uint256</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bytes</span>
 <span class="nx">bytes_eq</span><span class="p">(</span><span class="nx">bytes</span><span class="p">,</span> <span class="nx">bytes</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">bool</span> 
 </pre></div>
@@ -55,6 +57,6 @@
 </pre></div>
 </div></p><p>Integer comparisons on uint256.</p><p><div class="SIntrapara"><span style="font-weight: bold">&#8212;<wbr></wbr></span></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="nx">toWei</span><span class="p">(</span><span class="nx">ether</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">wei</span>
 <span class="nx">fromWei</span><span class="p">(</span><span class="nx">wei</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">ether</span>
-<span class="nx">toWeiBN</span><span class="p">(</span><span class="nx">ether</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">uint256</span>
+<span class="nx">toWeiBigNumber</span><span class="p">(</span><span class="nx">ether</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="nx">uint256</span>
 </pre></div>
 </div></p><p>Wei conversion functions only exported by the stdlib for ETH.</p><div class="navsetbottom"><span class="navleft"><div class="nosearchform"></div>&nbsp;&nbsp;</span><span class="navright">&nbsp;&nbsp;<a href="ref-backends.html" title="backward to &quot;1.5 Participant Backends&quot;" data-pltdoc="x">&larr; prev</a>&nbsp;&nbsp;<a href="ref-backends.html" title="up to &quot;1.5 Participant Backends&quot;" data-pltdoc="x">up</a>&nbsp;&nbsp;<a href="tut.html" title="forward to &quot;2 Reach Tutorials&quot;" data-pltdoc="x">next &rarr;</a></span>&nbsp;</div></div></div><div id="contextindicator">&nbsp;</div></body></html>
