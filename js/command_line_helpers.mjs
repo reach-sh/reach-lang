@@ -64,8 +64,14 @@ export const yesno = (answer) => {
 //   const account = promptCreateTestAccount();
 //   const ctc = account.deploy(PROG);
 //   console.log(shareableCtcStr(ctc));
-//   await PROG.A(stdlib, ctc, interact);
-// }
+//   return await PROG.A(stdlib, ctc, interact);
+// };
+// const runB = async () => {
+//   const account = promptCreateTestAccount();
+//   const ctcDeployer = askCtc(`paste ctc pls > `);
+//   const ctc = account.attach(PROG, ctcDeployer);
+//   return await PROG.B(stdlib, ctc, interact);
+// };
 
 // TODO abstract so it's not specific to ETH
 export const promptCreateTestAccount = async (stdlib) => {
