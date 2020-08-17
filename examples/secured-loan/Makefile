@@ -1,16 +1,18 @@
 NAME=secured-loan
 TAG="reachsh/examples-$(NAME):v0.1.1"
 
-build/%.mjs: %.rsh
-	../../reachc -o build $^
+build/$(NAME).main.mjs:
+	../../reachc -o build $(NAME).rsh
 
 .PHONY: build
-build: build/$(NAME).mjs
-	docker build --tag=$(TAG) .
+build: build/$(NAME).main.mjs
+	echo "TODO: write Dockerfile"
+#	docker build --tag=$(TAG) .
 
 .PHONY: push
 push:
-	docker push $(TAG)
+	echo "TODO: write Dockerfile"
+#	docker push $(TAG)
 
 .PHONY: publish
 publish:
@@ -18,8 +20,13 @@ publish:
 
 .PHONY: run
 run:
-	docker-compose run reach-app
+	echo "TODO: write docker-compose.yaml"
+#	docker-compose run reach-app
+
+.PHONY: down
+down:
+	echo "TODO: write docker-compose.yaml"
 
 .PHONY: clean
 clean:
-	rm -f build/$(NAME).mjs
+	rm -f build/$(NAME).main.mjs

@@ -1,4 +1,4 @@
-examples = rps nim multisig ttt
+examples = secured-loan rps nim multisig ttt
 
 .PHONY: build-all
 build-all:
