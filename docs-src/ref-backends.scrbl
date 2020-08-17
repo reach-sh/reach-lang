@@ -85,18 +85,20 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 
 @(hrule)
 @js{
- toBN(x) => uint256
- isBN(x) => bool}
+ bigNumberify(x) => uint256
+ isBigNumber(x) => bool}
 
-@deftech{toBN} converts a JavaScript number to a BN, the JavaScript representation of Reach's uint256. @deftech{isBN} checks if its input is a BN.
+@deftech{bigNumberify} converts a JavaScript number to a BigNumber,
+the JavaScript representation of Reach's uint256.
+@deftech{isBigNumber} checks if its input is a BigNumber.
 
 @(hrule)
 @js{
  toHex(x) => bytes
  isHex(x) => bool
  hexToString(bytes) => string
- hexToBN(bytes) => uint256
- bnToHex(uint256) => bytes
+ hexToBigNumber(bytes) => uint256
+ bigNumberToHex(uint256) => bytes
  uint256_to_bytes(uint256) => bytes
  bytes_eq(bytes, bytes) => bool }
 
@@ -138,7 +140,7 @@ Integer comparisons on uint256.
 @js{
  toWei(ether) => wei
  fromWei(wei) => ether
- toWeiBN(ether) => uint256}
+ toWeiBigNumber(ether) => uint256}
 
 Wei conversion functions only exported by the stdlib for ETH.
 

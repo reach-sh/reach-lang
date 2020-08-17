@@ -8,7 +8,7 @@ import { ask, yesno, runPart
 // npm install
 // npm link "@reach-sh/stdlib"
 
-const {fromWei, toWeiBN, hasRandom} = stdlib;
+const {fromWei, toWeiBigNumber, hasRandom} = stdlib;
 
 const name = process.argv[2];
 const toUnit = fromWei;
@@ -19,11 +19,11 @@ const unit = 'ETH';
 const getParams = async () => {
   const wagerAmount = await ask(
     `What is the wager amount in ETH? (default: 5) > `,
-    (x) => toWeiBN(x || '5', 'ether')
+    (x) => toWeiBigNumber(x || '5', 'ether')
   );
   const escrowAmount = await ask(
     `What is the escrow amount in ETH? (default: 0.15) > `,
-    (x) => toWeiBN(x || '0.15', 'ether')
+    (x) => toWeiBigNumber(x || '0.15', 'ether')
   );
 
   console.log(`(local: ${name} sets the parameters of the game: 

@@ -20,7 +20,7 @@ export const T_Null = (v) => v == null;
 export const T_Bool = (v) => typeof(v) === 'boolean';
 
 export const T_UInt256 = (v) =>
-  isBN(v) || typeof(v) === 'number';
+  isBigNumber(v) || typeof(v) === 'number';
 
 export const T_Bytes = (x) => typeof(x) === 'string';
 
@@ -63,8 +63,7 @@ const {
 } = ethers.utils;
 const { isBigNumber } = BigNumber;
 
-export const toBN = bigNumberify;
-export const isBN = isBigNumber;
+export { bigNumberify, isBigNumber };
 
 // Massage the arg into a form keccak256 will handle correctly
 const kek = (arg) => {
@@ -75,9 +74,9 @@ const kek = (arg) => {
       return toUtf8Bytes(arg);
     }
   } else if (typeof(arg) === 'number') {
-    return '0x' + bnToHex(arg);
-  } else if (isBN(arg)) {
-    return '0x' + bnToHex(arg);
+    return '0x' + bigNumberToHex(arg);
+  } else if (isBigNumber(arg)) {
+    return '0x' + bigNumberToHex(arg);
   } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array'){
     return arg;
   } else {
@@ -96,11 +95,11 @@ export const keccak256 = (...args) => {
   return ethers.utils.keccak256(kekCat);
 };
 
-export const hexToBN = h => toBN(hexTo0x(h));
-export const uint256_to_bytes = i => bnToHex(i);
+export const hexToBigNumber = h => bigNumberify(hexTo0x(h));
+export const uint256_to_bytes = i => bigNumberToHex(i);
 
 // size is in bytes; default size 32 = 256 bytes
-export const bnToHex = (u, size = 32) => {
+export const bigNumberToHex = (u, size = 32) => {
   const nPos = bigNumberify(u).toTwos(8 * size);
   const nArr = ethers.utils.padZeros(nPos, size);
   // XXX why do we slice off the 0x?
@@ -111,21 +110,21 @@ export const bytes_eq = (x, y) =>
   hexOf(x) === hexOf(y);
 
 export const random_uint256 = () =>
-  hexToBN(byteArrayToHex(crypto.randomBytes(32)));
+  hexToBigNumber(byteArrayToHex(crypto.randomBytes(32)));
 
 export const hasRandom = {
   random: random_uint256 };
 
-export const eq    = (a, b) => toBN(a).eq( toBN(b));
-export const add   = (a, b) => toBN(a).add(toBN(b));
-export const sub   = (a, b) => toBN(a).sub(toBN(b));
-export const mod   = (a, b) => toBN(a).mod(toBN(b));
-export const mul   = (a, b) => toBN(a).mul(toBN(b));
-export const div   = (a, b) => toBN(a).div(toBN(b));
-export const ge    = (a, b) => toBN(a).gte(toBN(b));
-export const gt    = (a, b) => toBN(a).gt( toBN(b));
-export const le    = (a, b) => toBN(a).lte(toBN(b));
-export const lt    = (a, b) => toBN(a).lt( toBN(b));
+export const eq    = (a, b) => bigNumberify(a).eq( bigNumberify(b));
+export const add   = (a, b) => bigNumberify(a).add(bigNumberify(b));
+export const sub   = (a, b) => bigNumberify(a).sub(bigNumberify(b));
+export const mod   = (a, b) => bigNumberify(a).mod(bigNumberify(b));
+export const mul   = (a, b) => bigNumberify(a).mul(bigNumberify(b));
+export const div   = (a, b) => bigNumberify(a).div(bigNumberify(b));
+export const ge    = (a, b) => bigNumberify(a).gte(bigNumberify(b));
+export const gt    = (a, b) => bigNumberify(a).gt( bigNumberify(b));
+export const le    = (a, b) => bigNumberify(a).lte(bigNumberify(b));
+export const lt    = (a, b) => bigNumberify(a).lt( bigNumberify(b));
 
 // Array helpers
 

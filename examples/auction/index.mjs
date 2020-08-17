@@ -7,19 +7,19 @@ const showOutcomeSally = (o) => o ? 'sold' : 'unsold';
 const showOutcomeBob = (o) => o ? 'won' : 'lost';
 
 ( async () => {
-  const startingBalance = stdlib.toWeiBN('100', 'ether');
+  const startingBalance = stdlib.toWeiBigNumber('100', 'ether');
 
   const sally = await stdlib.newTestAccount(startingBalance);
   console.log(`Sally deploys the contract.`);
   const sallyCtc = await sally.deploy(AUCTION);
   const sallyP = AUCTION.Seller(stdlib, sallyCtc, { bidder: (bid, bidder) => log(`Sally: New bidder ${bidder} at ${bid}`),
                                             winner: (bid, bidder) => log(`Sally: Winnier is ${bidder} at ${bid}`) },
-                                '0', stdlib.toWeiBN('1', 'ether'));
+                                '0', stdlib.toWeiBigNumber('1', 'ether'));
 
   const BOBS = 10;
   const bobPs = new Array(BOBS);
   for ( let i = 0; i < BOBS; i++ ) {
-    const amt = stdlib.toWeiBN((i + 1), 'ether');
+    const amt = stdlib.toWeiBigNumber((i + 1), 'ether');
     const bob = await stdlib.newTestAccount(startingBalance);
     const bobCtc = await bob.attach(AUCTION, sallyCtc);
     const bobP = AUCTION.Buyer( stdlib, bobCtc, { bid: (previous_bid) => log(`Bob(${i}): Bidding ${amt} against ${previous_bid}`), amt });

@@ -9,9 +9,9 @@ import * as RPSW from './build/index.nodraw.mjs';
   const { stdlib, startingBalance, escrowAmount, wagerAmount, toUnit, unit } = (
     proto == 'ETH' ? {
       stdlib: stdlib_eth,
-      startingBalance: stdlib_eth.toWeiBN('100', 'ether'),
-      escrowAmount: stdlib_eth.toWeiBN('0.15', 'ether'),
-      wagerAmount: stdlib_eth.toWeiBN('1.5', 'ether'),
+      startingBalance: stdlib_eth.toWeiBigNumber('100', 'ether'),
+      escrowAmount: stdlib_eth.toWeiBigNumber('0.15', 'ether'),
+      wagerAmount: stdlib_eth.toWeiBigNumber('1.5', 'ether'),
       toUnit: stdlib_eth.fromWei,
       unit: 'ether',
     } : proto == 'ALGO' ? {

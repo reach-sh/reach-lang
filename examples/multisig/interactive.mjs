@@ -8,7 +8,7 @@ import { ask, yesno, runPart
 // npm install
 // npm link "@reach-sh/stdlib"
 
-const {toWeiBN, hasRandom} = stdlib;
+const {toWeiBigNumber, hasRandom} = stdlib;
 const name = process.argv[2];
 
 
@@ -17,7 +17,7 @@ const name = process.argv[2];
 const allowance = async () => {
   const amt = await ask(
     `How much would you like to deposit in ETH? (default: 50) > `,
-    (x) => toWeiBN(x || '50', 'ether')
+    (x) => toWeiBigNumber(x || '50', 'ether')
   );
 
   console.log(`Parent deposits ${stdlib.fromWei(amt)} ETH`);
@@ -37,7 +37,7 @@ const approve = async (howMuch, balance) => {
 const request = async (balance) => {
   const amt = await ask(
     `How much of ${stdlib.fromWei(balance)} ETH do you request in ETH? (default: 10) > `,
-    (x) => stdlib.toWeiBN(x || '10', 'ether')
+    (x) => stdlib.toWeiBigNumber(x || '10', 'ether')
   );
   console.log(`Child requests ${stdlib.fromWei(amt)} ETH out of ${stdlib.fromWei(balance)} ETH`);
   return amt;

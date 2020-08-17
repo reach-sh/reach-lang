@@ -77,7 +77,7 @@ export const yesno = (answer) => {
 export const promptCreateTestAccount = async (stdlib) => {
   const start_amt = await ask(
     `How much ETH would you like in your test account? (default: 100) > `,
-    (x) => stdlib.toWeiBN(x || '100', 'ether')
+    (x) => stdlib.toWeiBigNumber(x || '100', 'ether')
   );
 
   console.log(`Creating account...`);

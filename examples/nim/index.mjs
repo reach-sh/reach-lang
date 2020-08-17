@@ -8,8 +8,8 @@ import * as NIM from './build/index.main.mjs';
   const { stdlib, startingBalance, wagerAmount } =
         ( proto == 'ETH' ?
           { stdlib: stdlib_eth
-            , startingBalance: stdlib_eth.toWeiBN('100', 'ether')
-            , wagerAmount: stdlib_eth.toWeiBN('5', 'ether') }
+            , startingBalance: stdlib_eth.toWeiBigNumber('100', 'ether')
+            , wagerAmount: stdlib_eth.toWeiBigNumber('5', 'ether') }
           : ( proto == 'ALGO' ?
               { stdlib: stdlib_algo
                 , startingBalance: 1000000
@@ -33,12 +33,12 @@ import * as NIM from './build/index.main.mjs';
       ...stdlib.hasRandom,
       getParams: () => {
         console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${proto} and heap is 21`);
-        return [ wagerAmount, stdlib.toBN(21) ]; }
+        return [ wagerAmount, stdlib.bigNumberify(21) ]; }
       , acceptParams: (givenWagerAmount, givenInitialHeap) => {
         console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto} and heap of ${givenInitialHeap}`); }
       , getMove: (heap1, heap2) => {
         console.log(`${name} chooses a heap from: ${heap1} and ${heap2} with amount 1`);
-        return [ stdlib.gt(heap1, heap2), stdlib.toBN(1) ]; }
+        return [ stdlib.gt(heap1, heap2), stdlib.bigNumberify(1) ]; }
       , showOutcome: (outcome) => {
         console.log(`${name} sees the final outcome: ${outcome}`); } }; };
 

@@ -15,7 +15,7 @@ import * as waitPort   from 'wait-port';
 // ganache-core doesn't work with npm version 14 yet
 // https://github.com/trufflesuite/ganache-cli/issues/732#issuecomment-623782405
 
-import {toBN, isBN, toHex, assert} from './shared.mjs';
+import {bigNumberify, isBigNumber, toHex, assert} from './shared.mjs';
 export * from './shared.mjs';
 
 const DEBUG = false;
@@ -50,7 +50,7 @@ export const toWei = (amt, unit) =>
   ethers.utils.parseUnits(amt, unit || 'ether');
 export const fromWei = (amt, unit) =>
   ethers.utils.formatUnits(amt, unit || 'ether');
-export const toWeiBN = (a,b) => toBN(toWei(a, b));
+export const toWeiBigNumber = (a,b) => bigNumberify(toWei(a, b));
 
 // end Unique helpers
 
@@ -185,10 +185,10 @@ export const balanceOf = async acc => {
   if (!networkAccount) panic(`acc.networkAccount missing. Got: ${acc}`);
 
   if (networkAccount.getBalance) {
-    return toBN(await acc.networkAccount.getBalance());
+    return bigNumberify(await acc.networkAccount.getBalance());
   } else if (networkAccount.address) {
     const ethersp = await etherspP;
-    return toBN(await ethersp.getBalance(networkAccount.address));
+    return bigNumberify(await ethersp.getBalance(networkAccount.address));
   } else return panic(`acc.networkAccount.address missing. Got: ${networkAccount}`);
 };
 
@@ -200,7 +200,7 @@ export const balanceOf = async acc => {
 export const transfer = async (to, from, value) => {
   if (!to.address) panic(`Expected to.address: ${to}`);
   if (!from.sendTransaction) panic(`Expected from.sendTransaction: ${from}`);
-  if (!isBN(value)) panic(`Expected a BN: ${value}`);
+  if (!isBigNumber(value)) panic(`Expected a BigNumber: ${value}`);
 
   const txn = { to: to.address, value: toHex(value) };
   debug(`from.sendTransaction(${JSON.stringify(txn)})`);
@@ -241,18 +241,10 @@ export const connectAccount = async networkAccount => {
 
     const updateLast = o => { last_block = o.blockNumber; };
 
-    // XXX Dumb hack because ethers sometimes uses BigNumber not BN
-    // Anything that's not a BigNumber will come back out untouched.
-    const bn2bn = (n) => {
-      if (n && n.constructor && n.constructor.name == 'BigNumber') {
-        return toBN(n);
-      } else return n;
-    };
-
     const getEventData = (ok_evt, ok_e) => {
       const ok_args_abi = ethersCtc.interface.events[ok_evt].inputs;
       const { values } = ethersCtc.interface.parseLog(ok_e);
-      const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => bn2bn(values[a.name]));
+      const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => values[a.name]);
 
       return [ ok_bal, ok_vals ];
     };
@@ -266,7 +258,7 @@ export const connectAccount = async networkAccount => {
       const funcName = `m${funcNum}`;
       // https://github.com/ethereum/web3.js/issues/2077
       const munged = [ last_block, ...args ]
-            .map(m => isBN(m) ? m.toString() : m);
+            .map(m => isBigNumber(m) ? m.toString() : m);
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${JSON.stringify(munged)}`);
       let block_send_attempt = last_block;

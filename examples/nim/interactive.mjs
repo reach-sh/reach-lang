@@ -8,18 +8,18 @@ import { ask, yesno, runPart
 // npm install
 // npm link "@reach-sh/stdlib"
 
-const {fromWei, toWeiBN, lt, gt, toBN, hasRandom} = stdlib;
+const {fromWei, toWeiBigNumber, lt, gt, bigNumberify, hasRandom} = stdlib;
 
 const name = process.argv[2];
 
 const getParams = async () => {
   const wagerAmount = await ask(
     `What is the wager amount in ETH? (default: 5) > `,
-    (x) => toWeiBN(x || '5', 'ether')
+    (x) => toWeiBigNumber(x || '5', 'ether')
   );
   const initialHeapSize = await ask(
     `What is the initial heap size for this game? (default: 21) > `,
-    (x) => toBN(x || 21)
+    (x) => bigNumberify(x || 21)
   );
   console.log(`${name} publishes parameters of game:
 wager of ${fromWei(wagerAmount)}ETH and heap is ${initialHeapSize}`);
@@ -66,7 +66,7 @@ const getMove = async (heap1, heap2) => {
   const amt = await ask(
     `What amount? (default 1) > `,
     (xStr) => {
-      const x = toBN(xStr || 1);
+      const x = bigNumberify(xStr || 1);
       if (gt(x, heap)) { throw Error(`Not allowed: ${x} > ${heap}`); }
       else if (lt(x, 1)) { throw Error(`Not allowed: ${x} < 1`); }
       else { return x; }

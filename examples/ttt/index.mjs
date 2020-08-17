@@ -17,8 +17,8 @@ function render(st) {
   const { stdlib, startingBalance, wagerAmount } =
         ( proto == 'ETH' ?
           { stdlib: stdlib_eth
-            , startingBalance: stdlib_eth.toWeiBN('100', 'ether')
-            , wagerAmount: stdlib_eth.toWeiBN('5', 'ether') }
+            , startingBalance: stdlib_eth.toWeiBigNumber('100', 'ether')
+            , wagerAmount: stdlib_eth.toWeiBigNumber('5', 'ether') }
           : ( proto == 'ALGO' ?
               { stdlib: stdlib_algo
                 , startingBalance: 1000000
