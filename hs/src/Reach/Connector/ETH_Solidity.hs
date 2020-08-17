@@ -563,7 +563,7 @@ extract v = case fromJSON v of
             [ ( "ETH"
               , M.fromList
                 [ ("ABI", csrAbi_pretty)
-                , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
+                --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
                 , ("Bytecode", "0x" <> csrCode)
                 ]
               )
