@@ -15,7 +15,7 @@ import * as waitPort   from 'wait-port';
 // ganache-core doesn't work with npm version 14 yet
 // https://github.com/trufflesuite/ganache-cli/issues/732#issuecomment-623782405
 
-import {bigNumberify, isBigNumber, toHex, assert} from './shared.mjs';
+import {bigNumberify, isBigNumber, assert} from './shared.mjs';
 export * from './shared.mjs';
 
 const DEBUG = false;
@@ -202,7 +202,7 @@ export const transfer = async (to, from, value) => {
   if (!from.sendTransaction) panic(`Expected from.sendTransaction: ${from}`);
   if (!isBigNumber(value)) panic(`Expected a BigNumber: ${value}`);
 
-  const txn = { to: to.address, value: toHex(value) };
+  const txn = { to: to.address, value };
   debug(`from.sendTransaction(${JSON.stringify(txn)})`);
   return await from.sendTransaction(txn);
 };
@@ -268,7 +268,7 @@ export const connectAccount = async networkAccount => {
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
-          const r_fn = await ethersCtc[funcName](...munged, {value: toHex(value)});
+          const r_fn = await ethersCtc[funcName](...munged, {value});
           r_maybe = await r_fn.wait();
         } catch (e) {
           debug(e);
