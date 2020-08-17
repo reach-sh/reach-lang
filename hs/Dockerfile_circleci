@@ -1,4 +1,4 @@
-FROM ethereum/solc:0.5.11 as solc
+FROM ethereum/solc:0.7.0 as solc
 
 FROM alpine:latest as dl-deps
 RUN apk add wget unzip
