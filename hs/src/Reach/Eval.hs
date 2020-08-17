@@ -228,7 +228,11 @@ instance Show EvalError where
     Err_NoHeader _mis ->
       "Invalid Reach file. Expected header '" <> versionHeader <> "'; at top of file."
     Err_Obj_IllegalComputedField slval ->
-      "Invalid computed field name. Fields must be bytes, but got: " <> displaySlValType slval
+      "Invalid computed field name. " <> reason
+      where
+        reason = case displaySlValType slval of
+          "bytes" -> "It must be computable at compile time."
+          ty -> "Fields must be bytes, but got: " <> ty
     Err_Obj_IllegalFieldValues exprs ->
       -- FIXME Is this syntactically possible?
       "Invalid field values. Expected 1 value, got: " <> show (length exprs)

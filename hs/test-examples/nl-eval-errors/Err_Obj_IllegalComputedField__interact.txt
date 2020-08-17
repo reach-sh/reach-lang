@@ -1,0 +1,1 @@
+error: ./Err_Obj_IllegalComputedField__interact.rsh:9:20:computed field name: Invalid computed field name. It must be computable at compile time.

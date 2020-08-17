@@ -11,10 +11,9 @@ export const main = Reach.App(
       const obj = {[key]: 1}
       //           ^ 
       // 11:20:computed field name: Invalid computed field name.
-      // Fields must be bytes, but got: bytes
-      //
-      // TODO: make this message better, or somehow lift the
-      // restriction by inspecting assumptions.
+      // It must be computable at compile time.
+      // 
+      // TODO: lift the restriction by inspecting assumptions.
       require(obj.x == 1);
     });
   }
