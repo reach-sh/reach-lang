@@ -1,6 +1,7 @@
 module Reach.Test_Eval
   ( spec_examples_cover_EvalError
   , spec_examples_cover_ParserError
+  , spec_examples_cover_TypeError
   , test_compileBundle_errs
   )
 where
@@ -10,6 +11,7 @@ import Data.Proxy
 import Reach.Eval
 import Reach.Parser
 import Reach.Test.Util
+import Reach.Type
 import Test.Hspec
 import Test.Tasty
 
@@ -30,6 +32,7 @@ spec_examples_cover_EvalError =
   mkSpecExamplesCoverCtors p exceptions ".rsh" "nl-eval-errors"
   where
     p = Proxy @EvalError
+    -- TODO: exceptions = []
     exceptions =
       [ "Err_App_InvalidArgs"
       , "Err_CannotReturn" -- most attempts were not valid js
@@ -56,8 +59,25 @@ spec_examples_cover_ParserError =
   mkSpecExamplesCoverCtors p exceptions ".rsh" "nl-eval-errors"
   where
     p = Proxy @ParserError
+    -- TODO: exceptions = []
     exceptions =
       [ "Err_Parser_Arrow_NoFormals" -- (=> e) didn't work
       , "Err_Parse_IllegalLiteral" -- undefined didn't work
       , "Err_Parse_NotModule"
+      ]
+
+spec_examples_cover_TypeError :: Spec
+spec_examples_cover_TypeError =
+  mkSpecExamplesCoverCtors p exceptions ".rsh" "nl-eval-errors"
+  where
+    p = Proxy @TypeError
+    -- TODO: exceptions = []
+    exceptions =
+      [ "Err_Type_Mismatch"
+      , "Err_Type_None"
+      , "Err_Type_NotApplicable"
+      , "Err_TypeMeets_None"
+      , "Err_TypeMeets_Mismatch"
+      , "Err_Type_TooFewArguments"
+      , "Err_Type_TooManyArguments"
       ]

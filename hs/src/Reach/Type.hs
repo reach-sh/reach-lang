@@ -1,4 +1,14 @@
-module Reach.Type (typeMeet, typeMeets, checkAndConvert, argTypeOf, typeOf, typeOfM, checkType) where
+module Reach.Type
+  ( TypeError
+  , typeMeet
+  , typeMeets
+  , checkAndConvert
+  , argTypeOf
+  , typeOf
+  , typeOfM
+  , checkType
+  )
+where
 
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
