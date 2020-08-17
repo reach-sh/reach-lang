@@ -151,14 +151,22 @@ mustBeMem = \case
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
 
-solArgType :: SolCtxt a -> Bool -> SLType -> Doc a
-solArgType ctxt isHandler t = solType ctxt t <> loc_spec
-  where
-    loc_spec = if mustBeMem t then " " <> loc else ""
-    loc = if isHandler then "calldata" else "memory"
+data ArgMode
+  = AM_Call
+  | AM_Memory
+  | AM_Event
 
-solArgDecl :: SolCtxt a -> Bool -> DLVar -> Doc a
-solArgDecl ctxt isHandler dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt isHandler t)
+solArgType :: SolCtxt a -> ArgMode -> SLType -> Doc a
+solArgType ctxt am t = solType ctxt t <> loc_spec
+  where
+    loc_spec = if mustBeMem t then loc else ""
+    loc = case am of
+            AM_Call -> " calldata"
+            AM_Memory -> " memory"
+            AM_Event -> ""
+
+solArgDecl :: SolCtxt a -> ArgMode -> DLVar -> Doc a
+solArgDecl ctxt am dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt am t)
 
 solCon :: DLConstant -> Doc a
 solCon = \case
@@ -224,7 +232,7 @@ solTransfer ctxt who amt =
 
 solEvent :: SolCtxt a -> Int -> [DLVar] -> Doc a
 solEvent ctxt which args =
-  "event" <+> solApply (solMsg_evt which) (solDecl "_bal" (solType ctxt T_UInt256) : map (solArgDecl ctxt False) args) <> semi
+  "event" <+> solApply (solMsg_evt which) (solDecl "_bal" (solType ctxt T_UInt256) : map (solArgDecl ctxt AM_Event) args) <> semi
 
 solEventEmit :: SolCtxt a -> Int -> [DLVar] -> Doc a
 solEventEmit ctxt which msg =
@@ -385,7 +393,7 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [ev
     ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
     evtDefn = solEvent ctxt which msg
-    argDefs = (solDecl solLastBlock (solType ctxt T_UInt256)) : map (solArgDecl ctxt True) vs
+    argDefs = (solDecl solLastBlock (solType ctxt T_UInt256)) : map (solArgDecl ctxt AM_Call) vs
     ret = "external payable"
     funDefn = solFunction (solMsg_fun which) argDefs ret body
     body =
@@ -413,7 +421,7 @@ solHandler ctxt_top which (C_Loop _at svs msg ct) = vsep [frameDefn, funDefn]
   where
     vs = svs ++ msg
     (ctxt_fin, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs Nothing ct
-    argDefs = map (solArgDecl ctxt_fin False) vs
+    argDefs = map (solArgDecl ctxt_fin AM_Memory) vs
     ret = "internal"
     funDefn = solFunction (solLoop_fun which) argDefs ret body
     body = vsep [frameDecl, ctp]
