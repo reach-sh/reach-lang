@@ -158,10 +158,7 @@ const devnetP = (async () => {
 const etherspP = (async () => {
   if (networkDesc.type == 'uri') {
     await devnetP;
-    // Note: `network` must not be undefined. 'unspecified' is ok.
-    // This is specific to ethers v4. Supposedly fixed in ethers v5.
-    // https://github.com/ethers-io/ethers.js/issues/274
-    const ethersp = new ethers.providers.JsonRpcProvider(networkDesc.uri, networkDesc.network);
+    const ethersp = new ethers.providers.JsonRpcProvider(networkDesc.uri);
     ethersp.pollingInterval = 500; // ms
     return ethersp;
   } else if (networkDesc.type == 'in_memory_ganache') {
@@ -242,9 +239,9 @@ export const connectAccount = async networkAccount => {
     const updateLast = o => { last_block = o.blockNumber; };
 
     const getEventData = (ok_evt, ok_e) => {
-      const ok_args_abi = ethersCtc.interface.events[ok_evt].inputs;
-      const { values } = ethersCtc.interface.parseLog(ok_e);
-      const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => values[a.name]);
+      const ok_args_abi = ethersCtc.interface.getEvent(ok_evt).inputs;
+      const { args } = ethersCtc.interface.parseLog(ok_e);
+      const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => args[a.name]);
 
       return [ ok_bal, ok_vals ];
     };
@@ -322,7 +319,7 @@ export const connectAccount = async networkAccount => {
           fromBlock: block_poll_start,
           toBlock: block_poll_end,
           address: ethersCtc.address,
-          topics: [ethersCtc.interface.events[ok_evt].topic],
+          topics: [ethersCtc.interface.getEventTopic(ok_evt)],
         });
         if ( es.length == 0 ) {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);

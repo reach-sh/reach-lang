@@ -52,18 +52,16 @@ export const protect = (how, what) => {
 
 export const assert = d => nodeAssert.strict(d);
 
-// XXX export the ethers names for these things?
 const {
-  BigNumber,
-  bigNumberify,
   hexlify,
   toUtf8Bytes,
   toUtf8String,
   isHexString,
 } = ethers.utils;
-const { isBigNumber } = BigNumber;
+const { BigNumber } = ethers;
+export const { isBigNumber } = BigNumber;
+export const bigNumberify = (x) => BigNumber.from(x);
 
-export { bigNumberify, isBigNumber };
 
 // Massage the arg into a form keccak256 will handle correctly
 const kek = (arg) => {
@@ -98,12 +96,14 @@ export const keccak256 = (...args) => {
 export const hexToBigNumber = h => bigNumberify(hexTo0x(h));
 export const uint256_to_bytes = i => bigNumberToHex(i);
 
-// size is in bytes; default size 32 = 256 bytes
-export const bigNumberToHex = (u, size = 32) => {
+export const bigNumberToHex = (u) => {
+  const size = 32; // bytes // TODO: support other sizes?
+  const format = 'ufixed256x0';
   const nPos = bigNumberify(u).toTwos(8 * size);
-  const nArr = ethers.utils.padZeros(nPos, size);
+  // They took away padZeros so we have to use FixedNumber
+  const nFix = ethers.FixedNumber.from(nPos.toString(), format);
   // XXX why do we slice off the 0x?
-  return hexlify(nArr).slice(2);
+  return hexlify(nFix).slice(2);
 };
 
 export const bytes_eq = (x, y) =>
