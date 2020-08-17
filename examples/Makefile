@@ -1,4 +1,4 @@
-examples = rps nim multisig
+examples = rps nim multisig ttt
 
 .PHONY: build-all
 build-all:
