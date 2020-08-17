@@ -1,3 +1,3 @@
 
 
-Failed with: error: ./interact_escape_only.rsh:11:6:dot: TypeError: None. Could not infer type of SLV_Object
+Failed with: error: ./interact_escape_only.rsh:11:6:dot: TypeError: Value cannot exist at runtime.

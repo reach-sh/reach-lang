@@ -33,8 +33,8 @@ instance Show TypeError where
   show (Err_Type_Mismatch expected actual _val) =
     ("TypeError: Mismatch. Expected " <> show expected)
       <> ("but got" <> show actual)
-  show (Err_Type_None val) =
-    "TypeError: None. Could not infer type of " <> conNameOf val
+  show (Err_Type_None _val) =
+    "TypeError: Value cannot exist at runtime."
   show (Err_Type_NotApplicable ty) =
     "TypeError: NotApplicable. Cannot apply this like a function: " <> show ty
   show (Err_TypeMeets_None) =
