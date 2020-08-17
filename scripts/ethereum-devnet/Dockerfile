@@ -4,6 +4,8 @@ RUN apk add curl
 
 ADD run.sh /run.sh
 
+RUN /run.sh init
+
 ENTRYPOINT ["/run.sh"]
 
 HEALTHCHECK \
