@@ -4,6 +4,7 @@ import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.STRef
 import GHC.Stack (HasCallStack)
+import Generics.Deriving
 import Reach.AST
 import Reach.Util
 
@@ -16,7 +17,25 @@ data TypeError
   | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, SLType) (SrcLoc, SLType)
   | Err_Type_TooFewArguments [SLType]
   | Err_Type_TooManyArguments [SLVal]
-  deriving (Eq, Show)
+  deriving (Eq, Generic)
+
+instance Show TypeError where
+  show (Err_Type_Mismatch expected actual _val) =
+    ("TypeError: Mismatch. Expected " <> show expected)
+      <> ("but got" <> show actual)
+  show (Err_Type_None val) =
+    "TypeError: None. Could not infer type of " <> conNameOf val
+  show (Err_Type_NotApplicable ty) =
+    "TypeError: NotApplicable. Cannot apply this like a function: " <> show ty
+  show (Err_TypeMeets_None) =
+    "TypeError: TypeMeets_None. Cannot find the meet of []"
+  show (Err_TypeMeets_Mismatch _at t1 t2) =
+    "TypeError: TypeMeets_Mismatch. These types are mismatched: "
+      <> (show t1 <> " vs " <> show t2)
+  show (Err_Type_TooFewArguments ts) =
+    "TypeError: TooFewArguments. Expected: " <> show ts
+  show (Err_Type_TooManyArguments vs) =
+    "TypeError: TooManyArguments. Surplus: " <> show (length vs)
 
 typeMeet :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
 typeMeet top_at x@(_, xt) y@(_, yt) =
