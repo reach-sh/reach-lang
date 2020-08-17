@@ -14,13 +14,13 @@ Read the
 If you want to work on the Reach compiler, you'll need:
 - stack v2.1.3
 - z3 v4.8.8
-- solidity v0.5.11
+- solidity v0.5.13
 
 Installation on macOS:
 ```
 $ brew tap ethereum/ethereum
 $ brew install haskell-stack z3
-$ brew install https://raw.githubusercontent.com/ethereum/homebrew-ethereum/7fa7027f20cca27f76c679d0c5b35ee3c565f284/solidity.rb
+$ brew install https://github.com/jeapostrophe/homebrew-ethereum/blob/master/solidity%405_13.rb
 ```
 
 Installation on Ubuntu:

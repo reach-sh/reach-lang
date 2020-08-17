@@ -3,6 +3,7 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 import Control.Monad
 import Control.Monad.ST
 import Data.Aeson
+import Data.Aeson.Encode.Pretty
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.HashMap.Strict as HM
@@ -45,7 +46,7 @@ solContract :: String -> Doc a -> Doc a
 solContract s body = "contract" <+> pretty s <+> solBraces body
 
 solVersion :: Doc a
-solVersion = "pragma solidity ^0.5.11;"
+solVersion = "pragma solidity ^0.5.13;"
 
 solStdLib :: Doc a
 solStdLib = pretty $ B.unpack stdlib_sol
@@ -550,15 +551,20 @@ extract :: Value -> Either String ConnectorResult
 extract v = case fromJSON v of
   Error e -> Left e
   Success CompiledSolRec {csrAbi, csrCode} ->
-    Right $
-      M.fromList
-        [ ( "ETH"
-          , M.fromList
-              [ ("ABI", csrAbi)
-              , ("Bytecode", "0x" <> csrCode)
-              ]
-          )
-        ]
+    case eitherDecode (LB.pack (T.unpack csrAbi)) of
+      Left e -> Left e
+      Right (csrAbi_parsed :: Value) ->
+        Right $
+        M.fromList
+            [ ( "ETH"
+              , M.fromList
+                [ ("ABI", csrAbi_pretty)
+                , ("Bytecode", "0x" <> csrCode)
+                ]
+              )
+            ]
+        where csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
+              cfg = defConfig { confIndent = Spaces 2, confCompare = compare }
 
 compile_sol :: FilePath -> IO ConnectorResult
 compile_sol solf = do
