@@ -19,7 +19,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
-    "test": "node --experimental-modules index.mjs",
-    "interactive": "node --experimental-modules interactive.mjs"
+    "test": "node --experimental-modules --unhandled-rejections=strict index.mjs",
+    "interactive": "node --experimental-modules --unhandled-rejections=strict interactive.mjs"
   }
 }

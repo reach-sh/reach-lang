@@ -2,6 +2,10 @@ import algosdk from 'algosdk';
 
 export * from './shared.mjs';
 
+// Note: if you want your programs to exit fail
+// on unhandled promise rejection, use:
+// node --unhandled-rejections=strict
+
 
 const DEBUG = false;
 const debug = msg => { if (DEBUG) {
@@ -26,14 +30,6 @@ const panic = e => { throw Error(e); };
 //   sendrecv: function
 //   recv: function
 // }
-
-
-// XXX: clients might not want this
-process.on('unhandledRejection', error => {
-  console.log('Unhandled Rejection detected!!!!!');
-  console.log(error);
-  process.exit(1);
-});
 
 
 // Common interface exports

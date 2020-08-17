@@ -5,6 +5,10 @@ import * as http       from 'http';
 import * as url        from 'url';
 import * as waitPort   from 'wait-port';
 
+// Note: if you want your programs to exit fail
+// on unhandled promise rejection, use:
+// node --unhandled-rejections=strict
+
 // TODO: make ganache a dynamic dependency rather than
 // importing it always.
 // XXX: when using ganache: nvm use 12
@@ -51,13 +55,6 @@ export const toWeiBN = (a,b) => toBN(toWei(a, b));
 // end Unique helpers
 
 // private helpers
-
-// XXX: clients might not want this
-process.on('unhandledRejection', error => {
-  console.log('Unhandled Rejection detected!!!!!');
-  console.log(error);
-  process.exit(1);
-});
 
 const flaky = async (f) => {
   const max_tries = 3;

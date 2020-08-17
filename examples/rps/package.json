@@ -18,8 +18,8 @@
   "author": "reach.sh",
   "license": "Apache-2.0",
   "scripts": {
-    "predemo": "eslint --ignore-path .gitignore --ext .mjs .",
-    "demo": "node --experimental-modules index.mjs",
-    "interactive": "node --experimental-modules interactive.mjs"
+    "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
+    "test": "node --experimental-modules --unhandled-rejections=strict index.mjs",
+    "interactive": "node --experimental-modules --unhandled-rejections=strict interactive.mjs"
   }
 }
