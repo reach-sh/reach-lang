@@ -228,7 +228,7 @@ export const connectAccount = async networkAccount => {
   const attach = async (bin, ctc) => {
     const ctc_address = ctc.address;
     const creation_block = ctc.creation_block;
-    const ABI = JSON.parse(bin.ETH.ABI);
+    const ABI = JSON.parse(bin._Connectors.ETH.ABI);
     const ethersCtc = new ethers.Contract(ctc_address, ABI, networkAccount);
     const eventOnceP = (e) =>
           new Promise((resolve) => ethersCtc.once(e, (...a) => resolve(a)));
@@ -357,7 +357,7 @@ export const connectAccount = async networkAccount => {
   // Not sure where the v4 contract docs are but this was just as good
   // https://docs.ethers.io/ethers.js/v5-beta/api-contract.html#deployment
   const deploy = async (bin) => {
-    const { ABI, Bytecode } = bin.ETH;
+    const { ABI, Bytecode } = bin._Connectors.ETH;
     const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
     const contract = await factory.deploy();
     await contract.deployed(); // Wait for it to actually be deployed.

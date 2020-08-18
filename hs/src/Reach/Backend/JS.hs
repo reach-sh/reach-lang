@@ -290,15 +290,21 @@ jsPart p (EPProg _ _ et) =
         ]
 
 jsCnp :: String -> M.Map String T.Text -> Doc a
-jsCnp name cnp = "export const" <+> pretty name <+> "=" <+> jsObject (M.map jsBacktickText cnp) <> semi
+jsCnp name cnp = "const" <+> "_" <> pretty name <+> "=" <+> jsObject (M.map jsBacktickText cnp) <> semi
+
+jsConnsExp :: [String] -> Doc a
+jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> semi
+  where
+    connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
 jsPLProg :: ConnectorResult -> PLProg -> Doc a
 jsPLProg cr (PLProg _ (EPPs pm) _) = modp
   where
-    modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp
+    modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
     preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
     partsp = map (uncurry jsPart) $ M.toList pm
     cnpsp = map (uncurry jsCnp) $ M.toList cr
+    connsExp = jsConnsExp (M.keys cr)
 
 backend_js :: Backend
 backend_js outn crs pl = do

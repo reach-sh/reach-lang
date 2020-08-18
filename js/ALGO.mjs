@@ -221,7 +221,7 @@ export const connectAccount = async thisAcc => {
   const deploy = async (bin) => {
     debug(`${shad}: deploy`);
 
-    const { LogicSigProgram, ApprovalProgram, ClearStateProgram } = bin.ALGO;
+    const { LogicSigProgram, ApprovalProgram, ClearStateProgram } = bin._Connectors.ALGO;
 
     debug(`${shad}: deploy: making account`);
     const ctc_acc = algosdk.generateAccount();
