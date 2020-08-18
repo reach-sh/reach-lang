@@ -24,17 +24,9 @@ maybeDie ec = do
 impossible :: HasCallStack => String -> b
 impossible msg = error $ "impossible situation (i.e. compiler error): " ++ msg
 
-tshow :: Show a => a -> T.Text
-tshow = T.pack . show
-
 -- Note: drop 1 is safer than init/tail on empty strings
 trimQuotes :: String -> String
 trimQuotes = reverse . drop 1 . reverse . drop 1
-
-mshow :: Show a => String -> Maybe a -> String -> String
-mshow pre m post = case m of
-  Just a -> pre <> show a <> post
-  Nothing -> ""
 
 -- | Safe fromInteger with bounds checking
 fromIntegerMay :: forall a. (Integral a, Bounded a) => Integer -> Maybe a
