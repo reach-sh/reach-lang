@@ -267,7 +267,7 @@ instance Show EvalError where
       where
         got = show $ length exprs
     Err_Only_NotOneClosure slval ->
-      "PART.only not given a single closure as an argument, instead got " <> (displaySlValType slval)
+      "PART.only not given a single closure, with no arguments, as an argument, instead got " <> (displaySlValType slval)
     Err_Each_NotTuple slval ->
       "each not given a tuple as an argument, instead got " <> displaySlValType slval
     Err_Each_NotParticipant slval ->
@@ -931,21 +931,20 @@ evalApplyVals ctxt at sco st rator randvs =
     SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_env clo_penvs clo_cenv) -> do
       ret <- ctxt_alloc ctxt at
       let body_at = srcloc_jsa "block" body_a clo_at
-      let kvs = zipEq at (Err_Apply_ArgCount clo_at) formals randvs
-      --- XXX Use sco_update and maybe get rid of only args
-      let clo_env' = foldl' (env_insertp clo_at) clo_env kvs
+      let arg_env = M.fromList $ zipEq at (Err_Apply_ArgCount clo_at) formals randvs
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
       let clo_sco =
             (SLScope
                { sco_ret = Just ret
                , sco_must_ret = RS_ImplicitNull
-               , sco_env = clo_env'
+               , sco_env = clo_env
                , sco_while_vars = Nothing
                , sco_penvs = clo_penvs
                , sco_cenv = clo_cenv
                })
+      let clo_sco' = sco_update ctxt clo_at clo_sco st arg_env
       SLRes body_lifts body_st (SLStmtRes clo_env'' rs) <-
-        evalStmt ctxt' body_at clo_sco st body
+        evalStmt ctxt' body_at clo_sco' st body
       let no_prompt (lvl, v) = do
             let lifts' =
                   case body_lifts of
@@ -1307,34 +1306,27 @@ doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> (SLPart, SrcLoc, 
 doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
   let SLCloEnv only_env only_penvs only_cenv = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
-  let penvs = sco_penvs sco
-  let penv = sco_lookup_penv ctxt sco who
-  let sco_penv = sco {sco_env = penv}
+  let sco_only_pre = sco { sco_env = only_env
+                         , sco_penvs = only_penvs
+                         , sco_cenv = only_cenv }
+  let penv = sco_lookup_penv ctxt sco_only_pre who
+  let sco_only = sco_only_pre { sco_env = penv }
   SLRes only_lifts _ only_arg <-
-    evalExpr ctxt only_at sco_penv st_localstep only_synarg
+    evalExpr ctxt only_at sco_only st_localstep only_synarg
   case only_arg of
-    (_, only_clo@(SLV_Clo _ _ only_formals _ _)) -> do
-      let only_vars = map (JSIdentifier JSNoAnnot) only_formals
-      let sco_only_env =
-            sco
-              { sco_env = only_env
-              , sco_penvs = only_penvs
-              , sco_cenv = only_cenv
-              }
-      SLRes oarg_lifts _ only_args <-
-        evalExprs ctxt only_at sco_only_env st_localstep only_vars
+    (_, only_clo@(SLV_Clo _ _ [] _ _)) -> do
       SLRes alifts _ (SLAppRes penv' (_, only_v)) <-
-        evalApplyVals ctxt at (impossible "part_only expects clo") st_localstep only_clo only_args
+        evalApplyVals ctxt at (impossible "part_only expects clo") st_localstep only_clo []
       case fst $ typeOf only_at only_v of
         T_Null -> do
-          let penv'' = foldr' M.delete penv' only_formals
           --- TODO: check less things
-          enforcePrivateUnderscore only_at penv''
-          let penvs' = M.insert who penv'' penvs
+          enforcePrivateUnderscore only_at penv'
+          let penvs = sco_penvs sco
+          let penvs' = M.insert who penv' penvs
           let lifts' = return $ DLS_Only only_at who (only_lifts <> alifts)
           let st' = st {st_mode = SLM_Step}
           let sco' = sco {sco_penvs = penvs'}
-          return ((lifts <> oarg_lifts <> lifts'), sco', st')
+          return ((lifts <> lifts'), sco', st')
         ty ->
           expect_throw only_at (Err_Block_NotNull ty only_v)
     _ -> expect_throw at $ Err_Only_NotOneClosure $ snd only_arg
@@ -1348,12 +1340,12 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           expect_empty_tail "exit" JSNoAnnot sp at ks $
             return $ SLRes mempty (st {st_live = False}) $ SLStmtRes env []
         _ -> illegal_mode
-    SLV_Form (SLForm_EachAns parts only_at only_env only_synarg) ->
+    SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) ->
       case st_mode st of
         SLM_Step -> do
           (lifts', sco', st') <-
             foldM (doOnly ctxt at) (mempty, sco, st) $
-              map (\who -> (who, only_at, only_env, only_synarg)) parts
+              map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
           keepLifts lifts' $ evalStmt ctxt at sco' st' ks
         _ -> illegal_mode
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mmsg mamt mtime) ->

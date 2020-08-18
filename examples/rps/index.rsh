@@ -222,55 +222,55 @@ const con_nodraw =
 
 // Abstracted version
 
-function abs_sendOutcome(A, B, which) {
+function abs_sendOutcome(Ap, Bp, which) {
   return () => {
-    each([A, B], (which) => {
+    each([Ap, Bp], () => {
       interact.endsWith(showOutcome(which)); }); }; };
 
-function setup(A, B) {
-  A.only(() => {
+function setup(Ap, Bp) {
+  Ap.only(() => {
     const [wagerAmount, escrowAmount] =
           declassify(interact.getParams()); });
-  A.publish(wagerAmount, escrowAmount)
+  Ap.publish(wagerAmount, escrowAmount)
     .pay(wagerAmount + escrowAmount);
   commit();
 
-  B.only(() => {
-    interact.partnerIs(A);
+  Bp.only(() => {
+    interact.partnerIs(Ap);
     interact.acceptParams(wagerAmount, escrowAmount); });
-  B.pay(wagerAmount)
-    .timeout(DELAY, () => { closeTo(A, abs_sendOutcome(A, B, B_QUITS)); });
+  Bp.pay(wagerAmount)
+    .timeout(DELAY, () => { closeTo(Ap, abs_sendOutcome(Ap, Bp, B_QUITS)); });
   commit();
 
-  A.only(() => {
-    interact.partnerIs(B); });
+  Ap.only(() => {
+    interact.partnerIs(Bp); });
 
-  return [wagerAmount, escrowAmount, A, B]; };
+  return [wagerAmount, escrowAmount, Ap, Bp]; };
 
-function round(A, B) {
-  A.only(() => {
+function round(Ap, Bp) {
+  Ap.only(() => {
     const _handA = getHand(interact);
     const [_commitA, _saltA] = makeCommitment(interact, _handA);
     const commitA = declassify(_commitA);
     interact.commits(); });
-  A.publish(commitA)
-    .timeout(DELAY, () => { closeTo(B, abs_sendOutcome(A, B, A_QUITS)); } );
+  Ap.publish(commitA)
+    .timeout(DELAY, () => { closeTo(Bp, abs_sendOutcome(Ap, Bp, A_QUITS)); } );
   commit();
 
-  B.only(() => {
+  Bp.only(() => {
     const handB = declassify(getHand(interact));
     interact.shows(); });
-  B.publish(handB)
-    .timeout(DELAY, () => { closeTo(A, abs_sendOutcome(A, B, B_QUITS)); } );
+  Bp.publish(handB)
+    .timeout(DELAY, () => { closeTo(Ap, abs_sendOutcome(Ap, Bp, B_QUITS)); } );
   require(isHand(handB));
   commit();
 
-  A.only(() => {
+  Ap.only(() => {
     const saltA = declassify(_saltA);
     const handA = declassify(_handA);
     interact.reveals(showHand(handB)); });
-  A.publish(saltA, handA)
-    .timeout(DELAY, () => { closeTo(B, abs_sendOutcome(A, B, A_QUITS)); } );
+  Ap.publish(saltA, handA)
+    .timeout(DELAY, () => { closeTo(Bp, abs_sendOutcome(Ap, Bp, A_QUITS)); } );
   checkCommitment(commitA, saltA, handA);
   require(isHand(handA));
   const outcome = winner(handA, handB);

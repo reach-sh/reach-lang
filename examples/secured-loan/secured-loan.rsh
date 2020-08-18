@@ -28,7 +28,7 @@ export const main = Reach.App(
   (Borrower, Lender) => {
     const sendOutcome = (which) => {
       return (() => {
-        each([Borrower, Lender], (which) => {
+        each([Borrower, Lender], () => {
           interact.sendOutcome(which);
         });
       });

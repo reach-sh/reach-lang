@@ -1,10 +1,10 @@
 module Reach.Connector.ALGO (connect_algo) where
 
-import Debug.Trace
+--- import Debug.Trace
 --- import Reach.AST
 import Reach.Connector
 
 connect_algo :: Connector
 connect_algo _outn _pl = do
-  traceM $ "XXX connect_algo"
+  --- XXX connect_algo
   return $ mempty

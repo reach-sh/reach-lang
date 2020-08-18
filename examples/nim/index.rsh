@@ -21,10 +21,8 @@ export const main =
     (A, B) => {
       function sendOutcome(which) {
         return () => {
-          A.only((which) => {
-            interact.showOutcome(which); });
-          B.only((which) => {
-            interact.showOutcome(which); }); }; };
+          each([A, B], () => {
+            interact.showOutcome(which); }) } };
 
       A.only(() => {
         const [ wagerAmount, initialHeap ] = declassify(interact.getParams());
