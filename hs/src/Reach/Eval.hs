@@ -53,6 +53,7 @@ data EvalError
   | Err_Block_While
   | Err_CannotReturn
   | Err_ToConsensus_TimeoutArgs [JSExpression]
+  | Err_App_Interact_NotFirstOrder SLType
   | Err_App_InvalidInteract SLSVal
   | Err_App_InvalidPartSpec SLVal
   | Err_App_InvalidArgs [JSExpression]
@@ -164,6 +165,9 @@ instance Show EvalError where
       "Invalid `return` syntax"
     Err_ToConsensus_TimeoutArgs _jes ->
       "Invalid Participant.timeout args"
+    Err_App_Interact_NotFirstOrder ty ->
+      "Invalid interact specification. Expected first-order type, got: "
+        <> show ty
     Err_App_InvalidInteract (secLev, val) ->
       "Invalid interact specification. Expected public type, got: "
         <> (displaySecurityLevel secLev <> " " <> displaySlValType val)
@@ -334,7 +338,7 @@ base_env =
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
-    , ("Reach"
+    , ( "Reach"
       , (SLV_Object srcloc_top $
            m_fromList_public
              [("App", SLV_Form SLForm_App)])
@@ -1863,7 +1867,9 @@ makeInteract :: SrcLoc -> SLPart -> SLEnv -> SLVal
 makeInteract at who spec = SLV_Object at spec'
   where
     spec' = M.mapWithKey wrap_ty spec
-    wrap_ty k (Public, (SLV_Type t)) = secret $ SLV_Prim $ SLPrim_interact at who k t
+    wrap_ty k (Public, (SLV_Type t)) = case isFirstOrder t of
+      True -> secret $ SLV_Prim $ SLPrim_interact at who k t
+      False -> expect_throw at $ Err_App_Interact_NotFirstOrder t
     wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract v
 
 compileDApp :: SLVal -> ST s DLProg

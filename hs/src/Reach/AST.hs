@@ -106,6 +106,46 @@ data SLType
 
 instance NFData SLType
 
+-- | Fold over SLType, doing something special on Fun
+funFold
+  :: a -- ^ On no SLType inside
+  -> ([SLType] -> a) -- ^ On many SLType inside
+  -> ([SLType] -> SLType -> a) -- ^ On Fun
+  -> SLType -- ^ The type to fold over
+  -> a
+funFold z k fun = go
+  where
+    go = \case
+      T_Null -> z
+      T_Bool -> z
+      T_UInt256 -> z
+      T_Bytes -> z
+      T_Address -> z
+      T_Fun inTys outTy -> fun inTys outTy
+      T_Array ty _ -> go ty
+      T_Tuple tys -> k tys
+      T_Obj m -> k $ M.elems m
+      T_Forall _ ty -> go ty
+      T_Var _ -> z
+
+-- | True if the type is a Fun, or
+-- is a container/forall type with Fun somewhere inside
+hasFun :: SLType -> Bool
+hasFun = funFold z k fun
+  where
+    z = False
+    k = any hasFun
+    fun _ _ = True
+
+-- | True if all Function types within this type
+-- do not accept or return functions.
+isFirstOrder :: SLType -> Bool
+isFirstOrder = funFold z k fun
+  where
+    z = True
+    k = all isFirstOrder
+    fun inTys outTy = not $ any hasFun $ outTy : inTys
+
 showTys :: [SLType] -> String
 showTys = intercalate ", " . map show
 
@@ -127,7 +167,7 @@ instance Show SLType where
   show (T_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
   show (T_Var x) = show x
 
-infix 9 -->
+infixr 9 -->
 
 (-->) :: [SLType] -> SLType -> SLType
 dom --> rng = T_Fun dom rng
