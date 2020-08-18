@@ -1409,7 +1409,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                         M.insert whov (lvl_, SLV_Participant at_ who_ io_ as_ (Just $ (pdvs' M.! who)))
                       _ ->
                         impossible $ "participant is not participant"
-          --- XXX use sco_update?
+          --- NOTE we don't use sco_update, because we have to treat the publish specially
           let env' = add_who_env $ env_merge to_at env msg_env
           let sco_env' = sco {sco_env = env'}
           let penvs' =
