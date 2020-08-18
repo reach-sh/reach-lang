@@ -3,7 +3,7 @@ module Reach.Eval (EvalError, compileBundle) where
 import Control.Monad
 import Control.Monad.ST
 import Data.Bits
-import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString as B
 import Data.Foldable
 import Data.List (intercalate, sortBy)
 import qualified Data.Map.Strict as M
@@ -56,6 +56,7 @@ data EvalError
   | Err_App_InvalidInteract SLSVal
   | Err_App_InvalidPartSpec SLVal
   | Err_App_InvalidArgs [JSExpression]
+  | Err_App_PartUnderscore B.ByteString
   | Err_DeclLHS_IllegalJS JSExpression
   | Err_Decl_IllegalJS JSExpression
   | Err_Decl_NotRefable SLVal
@@ -170,6 +171,9 @@ instance Show EvalError where
       "Invalid participant spec"
     Err_App_InvalidArgs _jes ->
       "Invalid app arguments"
+    Err_App_PartUnderscore bs ->
+      "Invalid participant name. Participant names may not begin with an underscore: "
+        <> bunpack bs
     Err_DeclLHS_IllegalJS _e ->
       "Invalid binding. Expressions cannot appear on the LHS."
     Err_Decl_IllegalJS e ->
@@ -273,7 +277,7 @@ instance Show EvalError where
     Err_Each_NotParticipant slval ->
       "each not given a participant as an argument, instead got " <> displaySlValType slval
     Err_Transfer_NotBound who ->
-      "cannot transfer to unbound participant, " <> B.unpack who
+      "cannot transfer to unbound participant, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
       "incompatible states: " <> show x <> " " <> show y
     Err_Eval_NotSecretIdent x ->
@@ -659,8 +663,10 @@ evalForm ctxt at sco st f args =
                 part_vs = map make_part parts
                 make_part v =
                   case v of
-                    SLV_Tuple p_at [SLV_Bytes _ bs, SLV_Object iat io] ->
-                      public $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
+                    SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat io] ->
+                      case "_" `B.isPrefixOf` bs of
+                        True -> expect_throw bs_at (Err_App_PartUnderscore bs)
+                        False -> public $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
                     _ -> expect_throw at (Err_App_InvalidPartSpec v)
             _ -> expect_throw at (Err_App_InvalidArgs args)
         _ -> expect_throw at (Err_App_InvalidArgs args)
@@ -1003,7 +1009,7 @@ evalPropertyName ctxt at sco st pn =
       keepLifts elifts $
         case ev of
           SLV_Bytes _ fb ->
-            return $ SLRes mempty st_e $ (elvl, B.unpack fb)
+            return $ SLRes mempty st_e $ (elvl, bunpack fb)
           _ ->
             expect_throw at_n $ Err_Obj_IllegalComputedField ev
   where
@@ -1307,11 +1313,14 @@ doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> (SLPart, SrcLoc, 
 doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
   let SLCloEnv only_env only_penvs only_cenv = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
-  let sco_only_pre = sco { sco_env = only_env
-                         , sco_penvs = only_penvs
-                         , sco_cenv = only_cenv }
+  let sco_only_pre =
+        sco
+          { sco_env = only_env
+          , sco_penvs = only_penvs
+          , sco_cenv = only_cenv
+          }
   let penv = sco_lookup_penv ctxt sco_only_pre who
-  let sco_only = sco_only_pre { sco_env = penv }
+  let sco_only = sco_only_pre {sco_env = penv}
   SLRes only_lifts _ only_arg <-
     evalExpr ctxt only_at sco_only st_localstep only_synarg
   case only_arg of
@@ -1379,7 +1388,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               Just pdv ->
                 return $ (pdvs, FS_Again pdv)
               Nothing -> do
-                let whos = B.unpack who
+                let whos = bunpack who
                 whon <- ctxt_alloc ctxt to_at
                 let whodv = DLVar to_at whos T_Address whon
                 return $ ((M.insert who whodv pdvs), FS_Join whodv)

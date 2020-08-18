@@ -1,0 +1,1 @@
+error: ./Err_App_PartUnderscore.rsh:4:9:string: Invalid participant spec. Participant names may not begin with an underscore: _A
