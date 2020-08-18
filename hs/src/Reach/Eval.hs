@@ -334,7 +334,7 @@ base_env =
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
-    , ( "Reach"
+    , ("Reach"
       , (SLV_Object srcloc_top $
            m_fromList_public
              [("App", SLV_Form SLForm_App)])

@@ -10,16 +10,17 @@ supported by Reach version @|reach-vers|.
 
 @section[#:tag "ref-backend-js"]{JavaScript}
 
-The Reach JavaScript @tech{backend} produces a compilation output named @filepath{input.mjs} which exports an asynchronous function for each @tech{participant}. Each function accepts @jsin{3+n} arguments where the first three arguments are @jsin{stdlib}, @jsin{ctc}, and @jsin{interact}, while the remaining arguments are the initial @tech{local state} of the @tech{participant}. These functions should be called by the @tech{frontend}.
+The Reach JavaScript @tech{backend} produces a compilation output named @filepath{input.export.mjs} which exports an asynchronous function for each @tech{participant}. Each function accepts three arguments: @jsin{stdlib}, @jsin{ctc}, and @jsin{interact}. These functions should be called by the @tech{frontend}.
 
 The @jsin{stdlib} argument is provided by either
 @itemlist[
- @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs}; or,}
- @item{the modules @litchar{@"@"reach-sh/stdlib/ALGO.mjs}.} ]
+ @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
+ @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs}; or,} 
+ @item{the module @litchar{@"@"reach-sh/stdlib/FAKE.mjs}.} ]
 
 The @jsin{ctc} argument is the result of a call to @jsin{acc.deploy} or @jsin{acc.attach}.
 
-The @jsin{interact} argument is an object that has a method for each @tech{interact}ion in the corresponding @tech{participant}'s @tech{local computation}.
+The @jsin{interact} argument is an object matching the @tech{participant interact interface} for the corresponding @tech{participant}.
 
 The @jsin{stdlib} modules export the following functions that might be used in this @tech{frontend}.
 
@@ -72,16 +73,46 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 
 @(hrule)
 @js{
- checkType(t, x) => x }
+ protect(t x) => x }
 
-@index{checkType} Asserts that value @jsin{x} has reach type @jsin{t}. An exception is thrown if this is not the case. See the table below for Reach types and their corresponding JavaScript representation:
+@index{protect} Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thrown if this is not the case.
+
+@(hrule)
+@js{
+ T_Null => ReachType
+ T_Bool => ReachType
+ T_UInt256 => ReachType
+ T_Bytes => ReachType
+ T_Address => ReachType
+ T_Array(ReachType, number) => ReachType
+ T_Tuple([ReachType ...]) => ReachType
+ T_Obj({Key: ReachType ...}) => ReachType}
+
+Each of these represent the corresponding Reach @tech{type}.
+See the table below for Reach types and their corresponding JavaScript representation:
 
 @js{
  // Reach  => JavaScript
- 'bool'    => 'boolean'
- 'uint256' => 'BigNumber'
- 'bytes'   => 'string'
- 'address' => 'string' }
+ Null      => null
+ Bool      => 'boolean'
+ UInt256   => 'BigNumber' or 'number'
+ Bytes     => 'string'
+ Address   => 'string'
+ Array     => array
+ Tuple     => array
+ Object    => object }
+
+@(hrule)
+@js{
+ assert(p) }
+
+Throws an exception if not given @jsin{true}.
+
+@(hrule)
+@js{
+ array_set(arr, idx, val) }
+
+Returns a new array identical to @jsin{arr}, except that index @jsin{idx} is @jsin{val}.
 
 @(hrule)
 @js{
@@ -115,6 +146,12 @@ These are additional conversion and comparison utilities.
  random_uint256() => uint256}
 
 @index{random_uint256} Creates 256 random bits as a uint256.
+
+@(hrule)
+@js{
+ hasRandom}
+
+A value suitable for use as a @tech{participant interact interface} requiring a @litchar{random} function.
 
 @(hrule)
 @js{

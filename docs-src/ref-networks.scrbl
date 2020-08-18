@@ -18,11 +18,8 @@ use exactly one word of on-chain state, while each piece of @tech{consensus stat
 The connector provides a binding named @reachin{ETH} to
 @tech{backends}.
 
-During compilation, the connector produces two intermediate outputs
-corresponding to each of these fields: @filepath{input.sol}, containing
-the Solidity code implementing the @tech{contract}, as well as
-@filepath{input.evm}, containing experimental, internally generated EVM
-assembly, which is not used or supported.
+During compilation, the connector produces one intermediate output: @filepath{input.export.sol}, containing
+the Solidity code implementing the @tech{contract}.
 
 @section[#:tag "ref-network-algo"]{Algorand} @(experimental)
 
@@ -36,10 +33,10 @@ The connector provides a binding named @reachin{ALGO} to
 @tech{backends}.
 
 During compilation, the connector produces two intermediate outputs
-corresponding to each of these fields: @filepath{input.teal}, containing
+corresponding to each of these fields: @filepath{input.export.app.teal}, containing
 the TEAL code implementing the @tech{contract} as an
 "Application"-mode @tech{contract}, as well as
-@filepath{input.teal.lsp}, containing the TEAL code implementing a
+@filepath{input.export.lsp.teal}, containing the TEAL code implementing a
 portion of the @tech{contract} as a logic signature program.
 
 It is not guaranteed to produce contracts that obey the size or cost

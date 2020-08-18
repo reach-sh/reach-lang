@@ -27,3 +27,6 @@
 
 (define (hrule)
   @para{@bold{---}})
+
+(define (the-community-link)
+  @link["https://discord.com/channels/628402598663290882"]{the Discord community})

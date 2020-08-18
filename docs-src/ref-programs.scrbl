@@ -1,7 +1,7 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version reach-vers #:tag "ref-programs"]{Reach Programs}
+@title[#:version reach-vers #:tag "ref-programs"]{Programs}
 
 This document describes the structure and content of Reach @tech{programs}, including
 their syntactic forms,
@@ -9,10 +9,10 @@ the @tech{standard library},
 and the standards of @tech{valid} programs.
 
 A Reach @deftech{program} is
-a @tech{module} @tech{export} which is a @tech{Reach.App}, as defined by a @tech{source file}.
+a @tech{module} @tech{export} specified by @tech{Reach.App}, as defined by a @tech{source file}.
 
 @tech{Programs} may be @tech{compile}d using the command
-@litchar{reachc SOURCE EXPORT}.
+@exec{reachc SOURCE EXPORT}.
 
 
 @section{Validity}
@@ -34,7 +34,7 @@ e.g. @filepath{dao.rsh}.
 
 A @deftech{module} starts with @reachin{'reach @|reach-short-vers|';}
 followed by a sequence of @tech{imports} and @tech{identifier definitions}.
-A module must contain one or more @tech{exports}.
+A module can only be compiled or used if it contain one or more @tech{exports}.
 
 
 @section{Imports}
@@ -78,17 +78,19 @@ export const main =
 @litchar{participantDefinitions},
 and @litchar{program}.
 
-The @litchar{options} argument is currently unused.
+The @litchar{options} argument is currently, but must be an object.
 
-The @litchar{participantDefinitions} argument is an array of tuples.
+The @litchar{participantDefinitions} argument is an tuple of tuples.
 Each tuple is a pair of
 @litchar{participantName}
 and @litchar{participantInteractInterface}.
 @litchar{participantName} is a string which indicates the name of the participant function in the generated @tech{backend} code. Each @litchar{participantName} must be unique.
-@litchar{participantInteractInterface} is an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the participant.
+@litchar{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the participant.
 
-The @litchar{program} argument is a function. The arguments this function accepts must match the number and order of @litchar{participantDefinitions}. The function body is the program to be @tech{compile}d.
-
+The @litchar{program} argument must be a syntactic @tech{arrow expression}.
+The arguments to this arrow must match the number and order of @litchar{participantDefinitions}.
+The function body is the program to be @tech{compile}d.
+It specifies a @tech{step}.
 
 @section{Types}
 
@@ -98,11 +100,14 @@ Reach's @deftech{type}s are:
   @item{@reachin{Null}.}
   @item{@reachin{Bool}, which denotes a boolean.}
   @item{@reachin{UInt256}, which denotes an unsigned integer of 256 bits.}
-  @item{@reachin{bytes}, which denotes a string of bytes.}
+  @item{@reachin{Bytes}, which denotes a string of bytes.}
   @item{@reachin{Address}, which denotes an @tech{account} @tech{address}.}
-  @item{@reachin{Fun([...TArgs], TRet)}, which denotes a function type.}
-  @item{@reachin{Array(...TArgs)}, which denotes a tuple.}
-  @item{@reachin{Obj({...TFields})}, which denotes an object.}]
+  @item{@reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a function type.}
+  @item{@reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.}
+  @item{@reachin{Obj({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.}
+  @item{@reachin{Array(ElemenType, size)}, which denotes a tuple.}
+
+]
 
 
 @section{Identifier Definitions}
@@ -122,12 +127,12 @@ they may consist of Unicode alphanumeric characters,
 or @reachin{_} or @reachin{$},
 but may not begin with a digit.}
 
-A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachin{LHS} is either a single identifier, e.g. @reachin{isDelicious}, or an array of identifiers, e.g. @reachin{[ bestSushi, mediumestSushi, worstSushi ]}, and @reachin{RHS} is an @tech{expression}. @reachin{RHS} must evaluate to as many @tech{values} as there are identifiers in @reachin{LHS}. Those @tech{values} are available as their corresponding @tech{bound identifier}s in the rest of the program.
+A @deftech{value definition} is written @reachin{const LHS = RHS;} where @reachin{LHS} is either a single identifier, e.g. @reachin{isDelicious}, or an tuple of identifiers, e.g. @reachin{[ bestSushi, mediumestSushi, worstSushi ]}, and @reachin{RHS} is an @tech{expression}. If @reachin{LHS} is a tuple, then @reachin{RHS} must evaluate to a tuple with as many @tech{values} as there are identifiers in @reachin{LHS}. Those @tech{values} are available as their corresponding @tech{bound identifier}s in the rest of the program.
 
 @(hrule)
 @reach{
   function randomBool() {
-    return (random() % 2) == 0; }; }
+    return (interact.random() % 2) == 0; }; }
 
 A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which abstracts its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
 
@@ -171,16 +176,13 @@ Top-level @tech{identifier definitions} may be @deftech{export}ed
 by writing @litchar{export const} in place of @litchar{const}.
 An @tech{export}ed identifier in a given @tech{module} may be @tech{import}ed by other @tech{modules}.
 
-
 @section{Security levels and scope}
 
-Reach values are, by default, @tech{public} knowledge to all @tech{participants}.
-However, any value that comes from an @tech{interaction expression}
-is a @deftech{secret}
-which only that participant knows. Furthermore, any values derived
-from @tech{secret} values are also @tech{secret}.
-@tech{Secrets} can only be made @tech{public}
-by using the @tech{declassify} primitive.
+The text of Reach program is @tech{public} knowledge to all @tech{participants}.
+However, any value that comes from an @tech{interaction expression} is a @deftech{secret} which only that participant knows.
+Furthermore, any values derived from @tech{secret} values are also @tech{secret}.
+A value, X, is considered derived from another, Y, if the value of Y is provided to a primitive operation to arrive at X, or if Y is used as part of a conditional that influences the definition of X.
+@tech{Secrets} can only be made @tech{public} by using the @tech{declassify} primitive.
 
 When @tech{secret} values are bound to an @tech{identifier}
 within a @tech{local step},
@@ -191,7 +193,7 @@ regardless of context,
 the identifier name MUST NOT be prefixed by an underscore (@reachin{_}).
 
 Consequently, identifiers which appear inside of a
-@tech{function definition} or @tech{lambda expression}
+@tech{function definition} or @tech{arrow expression}
 MAY be prefixed by an underscore.
 This will cause a compiler error if any value bound to that
 identifier is public.
@@ -219,12 +221,18 @@ Distinct from @tech{tails} are @deftech{continuations} which include everything 
 
 @tech{Tails} are statically apparent from the structure of the program source code, while @tech{continuations} are influenced by function calls.
 
-A sequence of @tech{statements} that does not end in a @deftech{terminator statement}
-(a @tech{statement} with no @tech{tail}),
-such as a @tech{return statement} or @tech{continue statement}
-is treated as if it ended with @reachin{return null;}.
+A sequence of @tech{statements} that does not end in a @deftech{terminator statement} (a @tech{statement} with no @tech{tail}), such as a @tech{return statement}, @tech{continue statement}, or @tech{exit statement} is treated as if it ended with @reachin{return null;}.
 
 The remainder of this section enumerates each kind of @tech{statement}.
+
+@subsection{Exit statements}
+
+@reach{
+ exit(); }
+
+An @deftech{exit statement}, written @reachin{exit();}, halts the computation.
+It is a @tech{terminator statement}, so it must have an empty @tech{tail}.
+It may only occur in a @tech{step}.
 
 @subsection{Return statements}
 
@@ -234,7 +242,10 @@ The remainder of this section enumerates each kind of @tech{statement}.
  return f(2, false);
  return; }
 
-A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression} evaluates to the same @tech{value} as @reachin{EXPR}. As a special case, @reachin{return;} is interpreted the same as @reachin{return [];}, that is, it evaluates to zero values.
+A @deftech{return statement}, written @reachin{return EXPR;}, where @reachin{EXPR} is an @tech{expression} evaluates to the same @tech{value} as @reachin{EXPR}.
+As a special case, @reachin{return;} is interpreted the same as @reachin{return null;}.
+
+A @tech{return statement} returns its value to the surrounding function application.
 
 A @tech{return statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}. For example,
 
@@ -317,7 +328,7 @@ An @tech{expression}, @reachin{E}, in a @tech{statement} position is equivalent 
 
 @reach{
  Alice.only(() => {
-   const pretzel = random(); }); }
+   const pretzel = interact.random(); }); }
 
 A @tech{local step} statement is written @reachin{PART.only(() => BLOCK)}, where @reachin{PART} is a @tech{participant} identifier and @reachin{BLOCK} is a @tech{block}. Any bindings defined within the @tech{block} of a @tech{local step} are available in the @tech{statement}'s @tech{tail} as new @tech{local state}. For example,
 
@@ -337,6 +348,15 @@ is a @tech{valid} program where @reachin{Alice}'s @tech{local state} includes th
 
 is an @tech{invalid} program, because @reachin{Bob} does not know @reachin{x}.
 
+@(hrule)
+
+@reach{
+ each([Alice, Bob], () => {
+   const pretzel = interact.random(); }); }
+
+A @tech{local step} statement can be written as @reachin{each(PART_TUPLE () => BLOCK)}, where @reachin{PART_TUPLE} is a tuple of @tech{participants} and @reachin{BLOCK} is a @tech{block}.
+It is an abbreviation of many @tech{local step} statements that could have been written with @reachin{only}.
+
 @subsection{Consensus transfers}
 
 @reach{
@@ -351,23 +371,25 @@ is an @tech{invalid} program, because @reachin{Bob} does not know @reachin{x}.
       .pay(wagerAmount)
       .timeout(DELAY, closeTo(Bob, false)); }
 
-      A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, TIMEOUT_EXPR)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_EXPR} is an @tech{expression} that evaluates to a @tech{timeout} represented by a zero-arity function, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}. The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}, which must occur in the @tech{tail}.
+      A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}. The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}, which must occur in the @tech{tail}.
 
-The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}. The @reachin{timeout} component may always be omitted. For example, the following are all @tech{valid}:
+The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}. The @reachin{timeout} component may always be omitted. Each component may occur any order. For example, the following are all @tech{valid}:
 
 @reach{
  Alice.publish(coinFlip);
 
  Alice.pay(penaltyAmount);
 
+ Alice.pay(penaltyAmount).publish(coinFlip);
+
  Alice.publish(coinFlip)
-      .timeout(DELAY, closeTo(Bob, false));
+      .timeout(DELAY, () => closeTo(Bob, () => exit()));
 
  Alice.pay(penaltyAmount)
       .timeout(DELAY, () => {
         Bob.publish();
         commit();
-        return false; }); }
+        exit(); }); }
 
 @subsection{Commit statements}
 
@@ -389,11 +411,11 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 A @deftech{while statement} may occur within a @tech{consensus step} and is written:
 
 @reach{
- var [ VAR_0, ..., VAR_n ] = INIT_EXPR;
+ var LHS = INIT_EXPR;
  invariant(INVARIANT_EXPR);
  while( COND_EXPR ) BLOCK }
 
-where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are bound to the result of the @tech{expression} @reachin{INIT_EXPR}, which must evaluate to @reachin{n} values, and @reachin{INVARIANT_EXPR} is an @tech{expression}, called the @deftech{loop invariant}, that must be true before and after every execution of the @tech{block} @reachin{BLOCK}, and if @reachin{COND_EXPR} is true, then the @tech{block} executes, and if not, then the loop terminates and control transfers to the @tech{continuation} of the @tech{while statement}. The identifiers @reachin{VAR_0} through @reachin{VAR_n} are bound within @reachin{INVARIANT_EXPR}, @reachin{COND_EXPR}, @reachin{BLOCK}, and the @tech{tail} of the @tech{while statement}.
+where @reachin{LHS} is a valid left-hand side of an @tech{identifier definition} where the @tech{expression} @reachin{INIT_EXPR} is the right-hand side, and @reachin{INVARIANT_EXPR} is an @tech{expression}, called the @deftech{loop invariant}, that must be true before and after every execution of the @tech{block} @reachin{BLOCK}, and if @reachin{COND_EXPR} is true, then the @tech{block} executes, and if not, then the loop terminates and control transfers to the @tech{continuation} of the @tech{while statement}. The identifiers bound by @reachin{LHS} are bound within @reachin{INVARIANT_EXPR}, @reachin{COND_EXPR}, @reachin{BLOCK}, and the @tech{tail} of the @tech{while statement}.
 
 @subsection{Continue statements}
 
@@ -404,14 +426,18 @@ where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are bound to the r
 A @deftech{continue statement} may occur within a @tech{while statement}'s @tech{block} and is written:
 
 @reach{
- [ VAR_0, ..., VAR_n ] = UPDATE_EXPR;
+ LHS = UPDATE_EXPR;
  continue; }
 
-where the identifiers @reachin{VAR_0} through @reachin{VAR_n} are the variables bound by the nearest enclosing @tech{while statement} and @reachin{UPDATE_EXPR} is an @tech{expression} which evaluates to @reachin{n} values.
+where the identifiers bound by @reachin{LHS} are a subset of the variables bound by the nearest enclosing @tech{while statement} and @reachin{UPDATE_EXPR} is an @tech{expression} which may be bound by @reachin{LHS}.
 
 A @tech{continue statement} is a @tech{terminator statement}, so it must have an empty @tech{tail}.
 
-A @tech{continue statement} may be written without the preceding identifier update, in which case another iteration begins with the same loop state.
+A @tech{continue statement} may be written without the preceding identifier update, which is equivalent to writing
+
+@reach{
+ [] = [];
+ continue; }
 
 @section{Expressions}
 
@@ -455,11 +481,10 @@ which is either a @tech{unary operator}, or a @tech{binary operator}.
 @(hrule)
 @reach{
  ! a
- - a}
+ - a
+ typeof a}
 
-A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! -}.
-
-@margin-note{Since all numbers are non-negative in Reach, the @reachin{-} unary operator is useless.}
+A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{EXPR_rhs} is an @tech{expression} and @reachin{UNAOP} is one of the @deftech{unary operator}s: @litchar{! - typeof}.
 
 It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
 
@@ -488,6 +513,8 @@ It is @tech{invalid} to use unary operations on the wrong types of @tech{values}
 
 A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operator}s: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}. The operators @reachin{==} and @reachin{!=} operate on numbers, while the operators @reachin{===} and @reachin{!==} operate on byte strings. Numeric operations, like @reachin{+} and @reachin{>}, only operate on numbers. Since all numbers in Reach are integers, operations like @reachin{/} truncate their result. Boolean operations, like @reachin{&&}, only operate on booleans. It is @tech{invalid} to use binary operations on the wrong types of @tech{values}.
 
+@margin-note{Bitwise operations are not supported by all @tech{consensus networks} and greatly decrease the efficiency of verification.}
+
 @(hrule)
 @reach{
  (a + b) - c }
@@ -499,21 +526,17 @@ An @tech{expression} may be parenthesized, as in @reachin{(EXPR)}.
  [ ]
  [ 1, 2 + 3, 4 * 5 ] }
 
-A @deftech{tuple literal},
-written @reachin{[ EXPR_0, ..., EXPR_n ]},
-is an @tech{expression} which evaluates to a tuple of @reachin{n} values,
-where @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions}.
+A @deftech{tuple} literal, written @reachin{[ EXPR_0, ..., EXPR_n ]}, is an @tech{expression} which evaluates to a tuple of @reachin{n} values, where @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions}.
 
 @(hrule)
 @reach{
  arr[3] }
 
-An @deftech{array reference}, written @reachin{ARRAY_EXPR[IDX_EXPR]},
-where @reachin{ARRAY_EXPR} is an @tech{expression} that evaluates to statically sized @deftech{array}
-(a tuple where all values are the same type)
+A @deftech{reference}, written @reachin{REF_EXPR[IDX_EXPR]},
+where @reachin{REF_EXPR} is an @tech{expression} that evaluates to an @tech{array} or a @tech{tuple}
 and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural number which is less than the size of the array,
 selects the element at the given index of the array.
-Array indices start at zero.
+Indices start at zero.
 
 @(hrule)
 @reach{
@@ -568,7 +591,7 @@ A @deftech{conditional expression}, written @reachin{COND_E ? TRUE_E : FALSE_E},
  ((x) => { const y = x + 1;
            return y + 1; }) }
 
-A @deftech{lambda expression}, written @reachin{(ID_0, ..., ID_n) => EXPR}, where @reachin{ID_0} through @reachin{ID_n} are identifiers and @reachin{EXPR} is an @tech{expression}, evaluates to an function which is an abstraction of @reachin{EXPR} over @reachin{n} values.
+An @deftech{arrow expression}, written @reachin{(ID_0, ..., ID_n) => EXPR}, where @reachin{ID_0} through @reachin{ID_n} are identifiers and @reachin{EXPR} is an @tech{expression}, evaluates to an function which is an abstraction of @reachin{EXPR} over @reachin{n} values.
 
 @(hrule)
 @reach{
@@ -578,22 +601,22 @@ A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)
 
 @(hrule)
 @reach{
- interact.notify(handA, handB);
+ interact.amount
+ interact.notify(handA, handB)
  interact.chooseAmount(heap1, heap2) }
 
-An @deftech{interaction expression}, written @reachin{interact.METHOD(EXPR_0, ..., EXPR_n)},
-where @reachin{METHOD} is an identifier,
-and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions} that evaluate to one value,
-evaluates to the result of an @tech{interact}ion with a @tech{frontend}
-that receives the evaluation of the @reachin{n} @tech{expressions}
-and sends a @tech{value}.
+An @deftech{interaction expression}, written @reachin{interact.METHOD(EXPR_0, ..., EXPR_n)}, where @reachin{METHOD} is an identifier bound in the @tech{participant interact interface} to a function type, and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions} that evaluates to the result of an @tech{interact}ion with a @tech{frontend} that receives the evaluation of the @reachin{n} @tech{expressions} and sends a @tech{value}.
+
+An @tech{interaction expression} may also be written @reachin{interact.KEY}, where @reachin{KEY} is bound in the @tech{participant interact interface} to a non-function type.
+
+An @tech{interaction expression} may only occur in a @tech{local step}.
 
 @(hrule)
 @reach{
  assert( amount <= heap1 )
  step( moveA )
  digest( coinFlip )
- random()
+ interact.random()
  declassify( _coinFlip ) }
 
 A @deftech{function application}, written @reachin{EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)}, where @reachin{EXPR_rator} and @reachin{EXPR_rand_0} through @reachin{EXPR_rand_n} are @tech{expressions} that evaluate to one value. @reachin{EXPR_rator} must evaluate to an abstraction over @reachin{n} values or a primitive of arity @reachin{n}.
@@ -606,6 +629,18 @@ All @tech{standard library} @tech{bound identifier}s and @tech{operators} are do
 
 @(hrule)
 @reach{
+  const x = array([1, 2, 3]); }
+
+@index{array} Converts a @tech{tuple} of homogenueous values into an @deftech{array}.
+
+@(hrule)
+@reach{
+  array_set(arr, idx, val); }
+
+@index{array_set} Returns a new array identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
+
+@(hrule)
+@reach{
   const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3); }
 
 An @deftech{enumeration} (or @deftech{enum}, for short),
@@ -615,7 +650,6 @@ This produces a tuple of @reachin{N+1} values,
 where the first value is a @reachin{Fun([UInt256], Bool)}
 which tells you if its argument is one of the enum's values,
 and the next N values are distinct @reachin{UInt256}s.
-
 
 @(hrule)
 @reach{
@@ -655,12 +689,6 @@ The @deftech{balance} primitive returns the balance of the @tech{contract} @tech
 
 @(hrule)
 @reach{
- random() }
-
-The @deftech{random} primitive returns a random unsigned integer of 256 bits. This primitive may not be called in @tech{consensus steps}.
-
-@(hrule)
-@reach{
  declassify( arg ) }
 
 The @deftech{declassify} primitive performs a @tech{declassification} of the given argument.
@@ -679,9 +707,15 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
 
 @(hrule)
 @reach{
- makeCommitment( x ) }
+ hasRandom }
 
-@index{makeCommitment} Returns two values, @reachin{[ commitment, salt ]}, where @reachin{salt} is a random @reachin{uint256}, and
+@index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments are returns an unsigined integer of 256 bits.
+
+@(hrule)
+@reach{
+ makeCommitment( interact, x ) }
+
+@index{makeCommitment} Returns two values, @reachin{[ commitment, salt ]}, where @reachin{salt} is the result of calling @reachin{interact.random()}, and
 @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
 
 @(hrule)
@@ -692,6 +726,6 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
 
 @(hrule)
 @reach{
- closeTo( Who, value ) }
+ closeTo( Who, after ) }
 
-@index{closeTo} Returns a function which accepts no arguments, has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| with the result @reachin{value}.
+@index{closeTo} Returns has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
