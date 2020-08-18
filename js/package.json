@@ -13,8 +13,7 @@
     "await-timeout": "^0.6.0",
     "ethers": "^5.0.8",
     "ganache-core": "^2.11.2",
-    "wait-port": "^0.2.9",
-    "web3": "1.2.7"
+    "wait-port": "^0.2.9"
   },
   "repository": {
     "type": "git",
