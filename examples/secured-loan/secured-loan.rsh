@@ -59,11 +59,10 @@ export const main = Reach.App(
       interact.acceptParams(params);
     })
     Lender.pay(pre)
-      .timeout(maxLenderDelay, () => {
+      .timeout(maxLenderDelay, () =>
         closeTo(Borrower, sendOutcome(
           "Lender failed to lend on time"
-        ));
-      });
+        )));
     transfer(pre).to(Borrower);
     commit();
 
@@ -71,11 +70,10 @@ export const main = Reach.App(
       interact.waitForPayback();
     });
     Borrower.pay(post)
-      .timeout(maturation, () => {
+      .timeout(maturation, () =>
         closeTo(Lender, sendOutcome(
           "Borrower failed to pay on time"
-        ));
-      });
+        )));
     transfer(post).to(Lender);
     transfer(collateral).to(Borrower);
     commit();

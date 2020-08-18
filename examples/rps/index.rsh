@@ -95,7 +95,7 @@ const con_once =
         interact.partnerIs(A);
         interact.acceptParams(wagerAmount, escrowAmount); });
       B.pay(wagerAmount)
-        .timeout(DELAY, () => { closeTo(A, sendOutcome(B_QUITS)); });
+        .timeout(DELAY, () => closeTo(A, sendOutcome(B_QUITS)));
       commit();
 
       A.only(() => {
@@ -105,14 +105,14 @@ const con_once =
         const commitA = declassify(_commitA);
         interact.commits(); });
       A.publish(commitA)
-        .timeout(DELAY, () => { closeTo(B, sendOutcome(A_QUITS)); });
+        .timeout(DELAY, () => closeTo(B, sendOutcome(A_QUITS)));
       commit();
 
       B.only(() => {
         const handB = declassify(getHand(interact));
         interact.shows(); });
       B.publish(handB)
-        .timeout(DELAY, () => { closeTo(A, sendOutcome(B_QUITS)); });
+        .timeout(DELAY, () => closeTo(A, sendOutcome(B_QUITS)));
       require(isHand(handB));
       commit();
 
@@ -121,7 +121,7 @@ const con_once =
         const handA = declassify(_handA);
         interact.reveals(showHand(handB)); });
       A.publish(saltA, handA)
-        .timeout(DELAY, () => { closeTo(B, sendOutcome(A_QUITS)); });
+        .timeout(DELAY, () => closeTo(B, sendOutcome(A_QUITS)));
       checkCommitment(commitA, saltA, handA);
       require(isHand(handA));
       const outcome = winner(handA, handB);
@@ -162,7 +162,7 @@ const con_nodraw =
       B.only(() => {
         interact.acceptParams(wagerAmount, escrowAmount); });
       B.pay(wagerAmount)
-        .timeout(DELAY, () => { closeTo(A, sendOutcome(B_QUITS)); });
+        .timeout(DELAY, () => closeTo(A, sendOutcome(B_QUITS)));
 
       var [ count, outcome ] = [ 0, DRAW ];
       invariant((balance() == ((2 * wagerAmount) + escrowAmount))
@@ -178,14 +178,14 @@ const con_nodraw =
           const commitA = declassify(_commitA);
           interact.commits(); });
         A.publish(commitA)
-          .timeout(DELAY, () => { closeTo(B, sendOutcome(A_QUITS)); });
+          .timeout(DELAY, () => closeTo(B, sendOutcome(A_QUITS)));
         commit();
 
         B.only(() => {
           const handB = declassify(getHand(interact));
           interact.shows(); });
         B.publish(handB)
-          .timeout(DELAY, () => { closeTo(A, sendOutcome(B_QUITS)); });
+          .timeout(DELAY, () => closeTo(A, sendOutcome(B_QUITS)));
         require(isHand(handB));
         commit();
 
@@ -194,7 +194,7 @@ const con_nodraw =
           const handA = declassify(_handA);
           interact.reveals(showHand(handB)); });
         A.publish(saltA, handA)
-          .timeout(DELAY, () => { closeTo(B, sendOutcome(A_QUITS)); });
+          .timeout(DELAY, () => closeTo(B, sendOutcome(A_QUITS)));
         checkCommitment(commitA, saltA, handA);
         require(isHand(handA));
         const roundOutcome = winner(handA, handB);
@@ -239,7 +239,7 @@ function setup(Ap, Bp) {
     interact.partnerIs(Ap);
     interact.acceptParams(wagerAmount, escrowAmount); });
   Bp.pay(wagerAmount)
-    .timeout(DELAY, () => { closeTo(Ap, abs_sendOutcome(Ap, Bp, B_QUITS)); });
+    .timeout(DELAY, () => closeTo(Ap, abs_sendOutcome(Ap, Bp, B_QUITS)));
   commit();
 
   Ap.only(() => {
@@ -254,14 +254,14 @@ function round(Ap, Bp) {
     const commitA = declassify(_commitA);
     interact.commits(); });
   Ap.publish(commitA)
-    .timeout(DELAY, () => { closeTo(Bp, abs_sendOutcome(Ap, Bp, A_QUITS)); } );
+    .timeout(DELAY, () => closeTo(Bp, abs_sendOutcome(Ap, Bp, A_QUITS)) );
   commit();
 
   Bp.only(() => {
     const handB = declassify(getHand(interact));
     interact.shows(); });
   Bp.publish(handB)
-    .timeout(DELAY, () => { closeTo(Ap, abs_sendOutcome(Ap, Bp, B_QUITS)); } );
+    .timeout(DELAY, () => closeTo(Ap, abs_sendOutcome(Ap, Bp, B_QUITS)) );
   require(isHand(handB));
   commit();
 
@@ -270,7 +270,7 @@ function round(Ap, Bp) {
     const handA = declassify(_handA);
     interact.reveals(showHand(handB)); });
   Ap.publish(saltA, handA)
-    .timeout(DELAY, () => { closeTo(Bp, abs_sendOutcome(Ap, Bp, A_QUITS)); } );
+    .timeout(DELAY, () => closeTo(Bp, abs_sendOutcome(Ap, Bp, A_QUITS)) );
   checkCommitment(commitA, saltA, handA);
   require(isHand(handA));
   const outcome = winner(handA, handB);
@@ -321,7 +321,7 @@ const abs_nodraw =
       // optimizer than can see that the previous publish was B and
       // combine them.
       A.publish()
-        .timeout(DELAY, () => { closeTo(B, abs_sendOutcome(A, B, A_QUITS)); });
+        .timeout(DELAY, () => closeTo(B, abs_sendOutcome(A, B, A_QUITS)));
 
       var [ count, outcome ] = [ 0, DRAW ];
       invariant((balance() == ((2 * wagerAmount) + escrowAmount))
