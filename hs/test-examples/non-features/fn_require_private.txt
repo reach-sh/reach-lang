@@ -1,3 +1,1 @@
-
-
 Failed with: error: ./fn_require_private.rsh:5:23:function exp: Invalid binding: _x. Public identifiers must not be prefixed by _

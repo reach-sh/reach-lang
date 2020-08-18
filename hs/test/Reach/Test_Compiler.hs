@@ -14,9 +14,9 @@ import System.Directory
 import System.IO.Silently
 import Test.Tasty
 
-testCompile :: FilePath -> IO (String, (Either SomeException ()))
-testCompile fp = capture $
-  try $ do
+testCompile :: FilePath -> IO (Either SomeException (String, ()))
+testCompile fp = try $
+  capture $ do
     createDirectoryIfMissing True outDir
     compileNL copts
   where
@@ -32,21 +32,21 @@ testCompile fp = capture $
 testCompileExpectFail :: FilePath -> IO BL.ByteString
 testCompileExpectFail fp =
   testCompile fp >>= \case
-    (s, Right ()) ->
+    (Right (s, ())) ->
       fail $
         "Expected failure, but did not fail."
           <> ("stdout: \n" <> s)
-    (s, Left e) -> return $ BL.fromStrict $ bpack $ s <> "\n\nFailed with: " <> show e
+    (Left e) ->
+      return . BL.fromStrict . bpack $
+        ("Failed with: " <> show e)
 
 testCompileExpectSuccess :: FilePath -> IO BL.ByteString
 testCompileExpectSuccess fp =
   testCompile fp >>= \case
-    (s, Left e) ->
+    (Left e) ->
       fail $
-        "Expected success, but failed.\n"
-          <> ("stdout: \n" <> s)
-          <> ("\n\nFailed with: " <> show e)
-    (s, Right ()) -> return $ BL.fromStrict $ bpack $ s
+        "Expected success, but failed with: " <> show e
+    (Right (s, ())) -> return $ BL.fromStrict $ bpack $ s
 
 compileTestFail :: FilePath -> TestTree
 compileTestFail = stdoutStripAbs ".txt" testCompileExpectFail
