@@ -102,9 +102,30 @@ data SLType
   | T_Obj (M.Map SLVar SLType)
   | T_Forall SLVar SLType
   | T_Var SLVar
-  deriving (Eq, Generic, Show, Ord)
+  deriving (Eq, Generic, Ord)
 
 instance NFData SLType
+
+showTys :: [SLType] -> String
+showTys = intercalate ", " . map show
+
+showTyMap :: M.Map SLVar SLType -> String
+showTyMap = intercalate ", " . map showPair . M.toList
+  where
+    showPair (name, ty) = show name <> ": " <> show ty
+
+instance Show SLType where
+  show T_Null = "Null"
+  show T_Bool = "Bool"
+  show T_UInt256 = "UInt256"
+  show T_Bytes = "Bytes"
+  show T_Address = "Address"
+  show (T_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
+  show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
+  show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
+  show (T_Obj tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (T_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
+  show (T_Var x) = show x
 
 infix 9 -->
 
@@ -211,6 +232,7 @@ data SLPrimitive
   | SLPrim_committed
   | SLPrim_claim ClaimType
   | SLPrim_interact SrcLoc SLPart String SLType
+  | SLPrim_typeOf
   | SLPrim_Fun
   | SLPrim_Array
   | SLPrim_array

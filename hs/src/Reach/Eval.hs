@@ -333,6 +333,7 @@ base_env =
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
+    , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ( "Reach"
       , (SLV_Object srcloc_top $
            m_fromList_public
@@ -595,6 +596,7 @@ unaryToPrim at env o =
   case o of
     JSUnaryOpMinus a -> fun a "minus"
     JSUnaryOpNot a -> fun a "not"
+    JSUnaryOpTypeof a -> fun a "typeOf"
     j -> expect_throw at $ Err_Parse_IllegalUnaOp j
   where
     fun a s = snd $ env_lookup (srcloc_jsa "unop" a at) s env
@@ -766,6 +768,12 @@ evalPrim ctxt at sco st p sargs =
           where
             lvl = mconcat $ map fst sargs
             dom = map expect_ty dom_arr
+        _ -> illegal_args
+    SLPrim_typeOf ->
+      case sargs of
+        [(lvl, val)] -> retV $ (lvl, SLV_Type ty)
+          where
+            (ty, _) = typeOf at val
         _ -> illegal_args
     SLPrim_Array ->
       case map snd sargs of
