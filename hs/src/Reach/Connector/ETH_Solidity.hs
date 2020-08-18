@@ -602,13 +602,13 @@ compile_sol solf = do
               ++ err
               ++ "\n"
 
-connect_eth' :: FilePath -> PLProg -> IO ConnectorResult
-connect_eth' solf pl = do
-  writeFile solf (show (solPLProg pl))
-  compile_sol solf
-
 connect_eth :: Connector
 connect_eth outnMay pl = case outnMay of
-  Just outn -> connect_eth' (outn "sol") pl
-  Nothing -> withSystemTempDirectory "reachc-sol" $ \dir -> do
-    connect_eth' (dir </> "compiled.sol") pl
+  Just outn -> go (outn "sol")
+  Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
+    go (dir </> "compiled.sol")
+  where
+    go :: FilePath -> IO ConnectorResult
+    go solf = do
+      writeFile solf (show (solPLProg pl))
+      compile_sol solf
