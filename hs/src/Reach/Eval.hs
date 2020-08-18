@@ -650,8 +650,9 @@ evalForm ctxt at sco st f args =
           sargs <- cannotLift "App args" <$> evalExprs ctxt at sco st [opte, partse]
           case map snd sargs of
             [(SLV_Object _ opts), (SLV_Tuple _ parts)] ->
-              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_vs (jsStmtToBlock top_s) env'
+              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_vs (jsStmtToBlock top_s) env env'
               where
+                --- FIXME I think it would be better for env' to be created in compileDApp rather than here
                 env = sco_env sco
                 env' = foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) env $ zipEq at (Err_Apply_ArgCount at) top_args part_vs
                 top_args = parseJSArrowFormals at top_formals
@@ -1851,7 +1852,7 @@ makeInteract at who spec = SLV_Object at spec'
 compileDApp :: SLVal -> ST s DLProg
 compileDApp topv =
   case topv of
-    SLV_Prim (SLPrim_App_Delay at _opts partvs (JSBlock _ top_ss _) top_env) -> do
+    SLV_Prim (SLPrim_App_Delay at _opts partvs (JSBlock _ top_ss _) top_env top_env_wps) -> do
       --- FIXME look at opts
       idxr <- newSTCounter 0
       let st_step =
@@ -1871,7 +1872,7 @@ compileDApp topv =
             SLScope
               { sco_ret = Nothing
               , sco_must_ret = RS_CannotReturn
-              , sco_env = top_env
+              , sco_env = top_env_wps
               , sco_while_vars = Nothing
               , sco_penvs = penvs
               , sco_cenv = mempty

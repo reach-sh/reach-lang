@@ -217,7 +217,7 @@ data SLPrimitive
   | SLPrim_array_set
   | SLPrim_Tuple
   | SLPrim_Object
-  | SLPrim_App_Delay SrcLoc SLEnv [SLSVal] JSBlock SLEnv
+  | SLPrim_App_Delay SrcLoc SLEnv [SLSVal] JSBlock SLEnv SLEnv
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to DLArg

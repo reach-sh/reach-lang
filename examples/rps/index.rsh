@@ -222,55 +222,55 @@ const con_nodraw =
 
 // Abstracted version
 
-function abs_sendOutcome(Ap, Bp, which) {
+function abs_sendOutcome(A, B, which) {
   return () => {
-    each([Ap, Bp], () => {
+    each([A, B], () => {
       interact.endsWith(showOutcome(which)); }); }; };
 
-function setup(Ap, Bp) {
-  Ap.only(() => {
+function setup(A, B) {
+  A.only(() => {
     const [wagerAmount, escrowAmount] =
           declassify(interact.getParams()); });
-  Ap.publish(wagerAmount, escrowAmount)
+  A.publish(wagerAmount, escrowAmount)
     .pay(wagerAmount + escrowAmount);
   commit();
 
-  Bp.only(() => {
-    interact.partnerIs(Ap);
+  B.only(() => {
+    interact.partnerIs(A);
     interact.acceptParams(wagerAmount, escrowAmount); });
-  Bp.pay(wagerAmount)
-    .timeout(DELAY, () => closeTo(Ap, abs_sendOutcome(Ap, Bp, B_QUITS)));
+  B.pay(wagerAmount)
+    .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)));
   commit();
 
-  Ap.only(() => {
-    interact.partnerIs(Bp); });
+  A.only(() => {
+    interact.partnerIs(B); });
 
-  return [wagerAmount, escrowAmount, Ap, Bp]; };
+  return [wagerAmount, escrowAmount, A, B]; };
 
-function round(Ap, Bp) {
-  Ap.only(() => {
+function round(A, B) {
+  A.only(() => {
     const _handA = getHand(interact);
     const [_commitA, _saltA] = makeCommitment(interact, _handA);
     const commitA = declassify(_commitA);
     interact.commits(); });
-  Ap.publish(commitA)
-    .timeout(DELAY, () => closeTo(Bp, abs_sendOutcome(Ap, Bp, A_QUITS)) );
+  A.publish(commitA)
+    .timeout(DELAY, () => closeTo(B, abs_sendOutcome(A, B, A_QUITS)) );
   commit();
 
-  Bp.only(() => {
+  B.only(() => {
     const handB = declassify(getHand(interact));
     interact.shows(); });
-  Bp.publish(handB)
-    .timeout(DELAY, () => closeTo(Ap, abs_sendOutcome(Ap, Bp, B_QUITS)) );
+  B.publish(handB)
+    .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)) );
   require(isHand(handB));
   commit();
 
-  Ap.only(() => {
+  A.only(() => {
     const saltA = declassify(_saltA);
     const handA = declassify(_handA);
     interact.reveals(showHand(handB)); });
-  Ap.publish(saltA, handA)
-    .timeout(DELAY, () => closeTo(Bp, abs_sendOutcome(Ap, Bp, A_QUITS)) );
+  A.publish(saltA, handA)
+    .timeout(DELAY, () => closeTo(B, abs_sendOutcome(A, B, A_QUITS)) );
   checkCommitment(commitA, saltA, handA);
   require(isHand(handA));
   const outcome = winner(handA, handB);
@@ -280,7 +280,7 @@ function round(Ap, Bp) {
 
   return outcome; };
 
-function finalize(wagerAmount, escrowAmount, Ap, Bp, outcome) {
+function finalize(wagerAmount, escrowAmount, A, B, outcome) {
   const [getsA, getsB] = (() => {
     if (outcome == A_WINS) {
       return [2 * wagerAmount, 0]; }
@@ -288,8 +288,8 @@ function finalize(wagerAmount, escrowAmount, Ap, Bp, outcome) {
       return [0, 2 * wagerAmount]; }
     else {
       return [wagerAmount, wagerAmount]; } })();
-  transfer(escrowAmount + getsA).to(Ap);
-  transfer(getsB).to(Bp); }
+  transfer(escrowAmount + getsA).to(A);
+  transfer(getsB).to(B); }
 
 const abs_once =
   Reach.App(
