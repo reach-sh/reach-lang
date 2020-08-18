@@ -8,15 +8,18 @@ if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
     MAYBE_FAST="--fast"
     MAYBE_PROF=""
     MAYBE_PROF_OPTS=""
+    MAYBE_DEV_OPTS="--intermediate-files"
     if [ "x${REACHC_RELEASE}" = "xY" ] ; then
        MAYBE_FAST=""
+       MAYBE_DEV_OPTS=""
     fi
     if [ "x${REACHC_PROFILE}" = "xY" ] ; then
        MAYBE_PROF="--profile"
        MAYBE_PROF_OPTS="+RTS -p"
     fi
     stack build ${MAYBE_PROF} ${MAYBE_FAST} && \
-        exec stack exec ${MAYBE_PROF} -- reachc $* ${MAYBE_PROF_OPTS}
+      exec stack exec ${MAYBE_PROF} -- \
+           reachc ${MAYBE_DEV_OPTS} $* ${MAYBE_PROF_OPTS}
 else
     cat<<EOF | docker-compose -f - run reach $*
 version: '3'

@@ -8,6 +8,7 @@ data CompilerToolOpts = CompilerToolOpts
   { cto_outputDir :: FilePath
   , cto_source :: FilePath
   , cto_tops :: [String]
+  , cto_intermediateFiles :: Bool
   }
 
 makeCompilerOpts :: CompilerToolOpts -> IO CompilerOpts
@@ -22,6 +23,7 @@ makeCompilerOpts CompilerToolOpts {..} = do
       { output = outn
       , source = srcp
       , tops = cto_tops
+      , intermediateFiles = cto_intermediateFiles
       }
 
 compilerToolMain :: CompilerToolOpts -> IO ()

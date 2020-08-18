@@ -7,4 +7,4 @@ import Reach.AST
 type ConnectorResult =
   M.Map String (M.Map String T.Text)
 
-type Connector = (T.Text -> String) -> PLProg -> IO ConnectorResult
+type Connector = Maybe (T.Text -> String) -> PLProg -> IO ConnectorResult

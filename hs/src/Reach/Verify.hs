@@ -8,8 +8,8 @@ import System.Exit
 data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
-verify :: (T.Text -> String) -> LLProg -> IO ExitCode
-verify outn lp =
+verify :: Maybe (T.Text -> String) -> LLProg -> IO ExitCode
+verify outnMay lp =
   --- The verifier should not be choosable by the user, but we may
   --- automatically select different provers based on the attributes
   --- of the program.
@@ -28,4 +28,4 @@ verify outn lp =
       -- - doesn't support declare-datatypes
       smt "boolector" ["--smt2"]
   where
-    smt = verify_smt (outn "smt") lp
+    smt = verify_smt (($ "smt") <$> outnMay) lp

@@ -1,16 +1,14 @@
 module Main (main) where
 
-import Data.Char
 import Options.Applicative
 import Reach.CompilerTool
 import System.Directory
-import System.Environment
-import Text.Read (readMaybe)
 
 data CompilerToolArgs = CompilerToolArgs
   { cta_outputDir :: FilePath
   , cta_source :: FilePath
   , cta_tops :: [String]
+  , cta_intermediateFiles :: Bool
   }
 
 data CompilerToolEnv = CompilerToolEnv
@@ -22,6 +20,7 @@ makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
     { cto_outputDir = cta_outputDir
     , cto_source = cta_source
     , cto_tops = if null cta_tops then ["main"] else cta_tops
+    , cto_intermediateFiles = cta_intermediateFiles
     }
 
 compiler :: FilePath -> Parser CompilerToolArgs
@@ -36,30 +35,7 @@ compiler cwd =
          <> value cwd)
     <*> strArgument (metavar "SOURCE")
     <*> many (strArgument (metavar "EXPORTS..."))
-
-checkTruthyEnv :: String -> IO Bool
-checkTruthyEnv varName = do
-  varValMay <- lookupEnv varName
-  case varValMay of
-    Just varVal -> return $ not isFalsy
-      where
-        isFalsy = isNo || isFalse || isEmpty || isZero
-        varValLower = map toLower varVal
-        isNo = varValLower == "no"
-        isFalse = varValLower == "false"
-        isEmpty = varValLower == ""
-        isZero = varValLower == "0"
-    Nothing -> return False
-
-readEnvOrDefault :: Read a => String -> a -> IO a
-readEnvOrDefault varName defaultVal = do
-  varValMay <- lookupEnv varName
-  case varValMay of
-    Nothing -> return defaultVal
-    Just valStr | null valStr -> return defaultVal
-    Just valStr -> case readMaybe valStr of
-      Just val -> return val
-      Nothing -> fail $ "Invalid value " <> valStr <> " for env var " <> varName
+    <*> switch (long "intermediate-files")
 
 getCompilerArgs :: IO CompilerToolArgs
 getCompilerArgs = do

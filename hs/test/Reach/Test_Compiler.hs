@@ -26,6 +26,7 @@ testCompile fp = capture $
         { output = \x -> outDir <> T.unpack x
         , source = fp
         , tops = ["main"]
+        , intermediateFiles = False
         }
 
 testCompileExpectFail :: FilePath -> IO BL.ByteString

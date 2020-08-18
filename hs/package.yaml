@@ -52,6 +52,7 @@ dependencies:
 - tasty-hunit
 - tasty-quickcheck
 - tasty-smallcheck
+- temporary
 - text
 - time
 - unordered-containers

@@ -891,10 +891,10 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger {..})
 
-verify_smt :: FilePath -> LLProg -> String -> [String] -> IO ExitCode
-verify_smt logp lp prog args = do
-  (close, logpl) <- newFileLogger logp
-  smt <- SMT.newSolver prog args (Just logpl)
+verify_smt :: Maybe FilePath -> LLProg -> String -> [String] -> IO ExitCode
+verify_smt logpMay lp prog args = do
+  (close, logplMay) <- mkLogger
+  smt <- SMT.newSolver prog args logplMay
   unlessM (SMT.produceUnsatCores smt) $ impossible "Prover doesn't support possible?"
   vec <- _verify_smt smt lp
   zec <- SMT.stop smt
@@ -903,3 +903,9 @@ verify_smt logp lp prog args = do
     (ExitSuccess, ExitSuccess) -> ExitSuccess
     (e@ExitFailure {}, _) -> e
     (_, e@ExitFailure {}) -> e
+  where
+    mkLogger = case logpMay of
+      Just logp -> do
+        (close, logpl) <- newFileLogger logp
+        return (close, Just logpl)
+      Nothing -> return (return (), Nothing)

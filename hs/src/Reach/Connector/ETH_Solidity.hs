@@ -23,6 +23,8 @@ import Reach.STCounter
 import Reach.Type
 import Reach.Util
 import System.Exit
+import System.FilePath
+import System.IO.Temp
 import System.Process
 
 --- Pretty helpers
@@ -162,9 +164,9 @@ solArgType ctxt am t = solType ctxt t <> loc_spec
   where
     loc_spec = if mustBeMem t then loc else ""
     loc = case am of
-            AM_Call -> " calldata"
-            AM_Memory -> " memory"
-            AM_Event -> ""
+      AM_Call -> " calldata"
+      AM_Memory -> " memory"
+      AM_Event -> ""
 
 solArgDecl :: SolCtxt a -> ArgMode -> DLVar -> Doc a
 solArgDecl ctxt am dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt am t)
@@ -545,9 +547,12 @@ instance FromJSON CompiledSolRec where
         abit <- ctc .: "abi"
         codebodyt <- ctc .: "bin"
         opcodest <- ctc .: "opcodes"
-        return CompiledSolRec { csrAbi = abit
-                              , csrCode = codebodyt
-                              , csrOpcodes = opcodest }
+        return
+          CompiledSolRec
+            { csrAbi = abit
+            , csrCode = codebodyt
+            , csrOpcodes = opcodest
+            }
       Nothing ->
         fail "Expected contracts object to have a key with suffix ':ReachContract'"
 
@@ -559,17 +564,18 @@ extract v = case fromJSON v of
       Left e -> Left e
       Right (csrAbi_parsed :: Value) ->
         Right $
-        M.fromList
+          M.fromList
             [ ( "ETH"
               , M.fromList
-                [ ("ABI", csrAbi_pretty)
-                --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
-                , ("Bytecode", "0x" <> csrCode)
-                ]
+                  [ ("ABI", csrAbi_pretty)
+                  , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
+                    ("Bytecode", "0x" <> csrCode)
+                  ]
               )
             ]
-        where csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
-              cfg = defConfig { confIndent = Spaces 2, confCompare = compare }
+        where
+          csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
+          cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
 
 compile_sol :: FilePath -> IO ConnectorResult
 compile_sol solf = do
@@ -596,8 +602,13 @@ compile_sol solf = do
               ++ err
               ++ "\n"
 
-connect_eth :: Connector
-connect_eth outn pl = do
-  let solf = outn "sol"
+connect_eth' :: FilePath -> PLProg -> IO ConnectorResult
+connect_eth' solf pl = do
   writeFile solf (show (solPLProg pl))
   compile_sol solf
+
+connect_eth :: Connector
+connect_eth outnMay pl = case outnMay of
+  Just outn -> connect_eth' (outn "sol") pl
+  Nothing -> withSystemTempDirectory "reachc-sol" $ \dir -> do
+    connect_eth' (dir </> "compiled.sol") pl

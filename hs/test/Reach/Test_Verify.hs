@@ -21,11 +21,8 @@ partialCompile fp = do
   djp <- gatherDeps_top fp
   let dl = compileBundle djp "main"
       ll = linearize dl
-  (s, eec) <- capture $ try $ verify outn ll
+  (s, eec) <- capture $ try $ verify Nothing ll
   return (BL.fromStrict $ bpack s, eec)
-  where
-    -- don't really care about this logged output
-    outn _ = "/dev/null"
 
 partialCompileExpectSuccess :: FilePath -> IO BL.ByteString
 partialCompileExpectSuccess fp = do

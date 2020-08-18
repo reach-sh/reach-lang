@@ -17,6 +17,7 @@ data CompilerOpts = CompilerOpts
   { output :: T.Text -> String
   , source :: FilePath
   , tops :: [String]
+  , intermediateFiles :: Bool
   }
 
 compileNL :: CompilerOpts -> IO ()
@@ -24,20 +25,25 @@ compileNL copts = do
   djp <- gatherDeps_top $ source copts
   let compile1 which = do
         let outn = (output copts) . ((T.pack which <> ".") <>)
-        let out = writeFile . outn
+        let outnMay = case intermediateFiles copts of
+              True -> Just outn
+              False -> Nothing
+        let interOut = case outnMay of
+              Just f -> writeFile . f
+              Nothing -> \_ _ -> return ()
         let dl = compileBundle djp which
-        out "dl" $ show $ pretty dl
+        interOut "dl" $ show $ pretty dl
         let ll = linearize dl
-        out "ll" $ show $ pretty ll
-        verify outn ll >>= maybeDie
+        interOut "ll" $ show $ pretty ll
+        verify outnMay ll >>= maybeDie
         let pl = epp ll
-        out "pl" $ show $ pretty pl
+        interOut "pl" $ show $ pretty pl
         --- FIXME The particular connector/backend should be part of
         --- the `opts` argument to Reach.App
         !crs <-
           mempty
-            <> connect_eth outn pl
-            <> connect_algo outn pl
+            <> connect_eth outnMay pl
+            <> connect_algo outnMay pl
         backend_js outn crs pl
         return ()
   mapM_ compile1 $ tops copts
