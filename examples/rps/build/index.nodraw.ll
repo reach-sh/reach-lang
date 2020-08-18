@@ -1,20 +1,20 @@
 #lang ll
 parts {
   "A" = interact {
-    commits = T_Fun [] T_Null,
-    endsWith = T_Fun [T_Bytes] T_Null,
-    getHand = T_Fun [] T_Bytes,
-    getParams = T_Fun [] (T_Tuple [T_UInt256,T_UInt256]),
-    partnerIs = T_Fun [T_Address] T_Null,
-    random = T_Fun [] T_UInt256,
-    reveals = T_Fun [T_Bytes] T_Null},
+    commits = Fun([], Null),
+    endsWith = Fun([Bytes], Null),
+    getHand = Fun([], Bytes),
+    getParams = Fun([], Tuple(UInt256, UInt256)),
+    partnerIs = Fun([Address], Null),
+    random = Fun([], UInt256),
+    reveals = Fun([Bytes], Null)},
   "B" = interact {
-    acceptParams = T_Fun [T_UInt256,T_UInt256] T_Null,
-    endsWith = T_Fun [T_Bytes] T_Null,
-    getHand = T_Fun [] T_Bytes,
-    partnerIs = T_Fun [T_Address] T_Null,
-    random = T_Fun [] T_UInt256,
-    shows = T_Fun [] T_Null},
+    acceptParams = Fun([UInt256, UInt256], Null),
+    endsWith = Fun([Bytes], Null),
+    getHand = Fun([], Bytes),
+    partnerIs = Fun([Address], Null),
+    random = Fun([], UInt256),
+    shows = Fun([], Null)},
   "O" = interact {
     }};
 
