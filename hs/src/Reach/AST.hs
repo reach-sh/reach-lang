@@ -102,6 +102,7 @@ data SLType
   | T_Obj (M.Map SLVar SLType)
   | T_Forall SLVar SLType
   | T_Var SLVar
+  | T_Type SLType
   deriving (Eq, Generic, Ord)
 
 instance NFData SLType
@@ -127,6 +128,7 @@ funFold z k fun = go
       T_Obj m -> k $ M.elems m
       T_Forall _ ty -> go ty
       T_Var _ -> z
+      T_Type _ -> z
 
 -- | True if the type is a Fun, or
 -- is a container/forall type with Fun somewhere inside
@@ -166,6 +168,7 @@ instance Show SLType where
   show (T_Obj tyMap) = "Object({" <> showTyMap tyMap <> "})"
   show (T_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
   show (T_Var x) = show x
+  show (T_Type ty) = "Type(" <> show ty <> ")"
 
 infixr 9 -->
 
@@ -272,6 +275,7 @@ data SLPrimitive
   | SLPrim_committed
   | SLPrim_claim ClaimType
   | SLPrim_interact SrcLoc SLPart String SLType
+  | SLPrim_is_type
   | SLPrim_type_eq
   | SLPrim_typeOf
   | SLPrim_Fun

@@ -88,6 +88,7 @@ jsContract = \case
   T_Obj m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
   T_Forall {} -> impossible "forall dl"
   T_Var {} -> impossible "var dl"
+  T_Type {} -> impossible "type dl"
 
 jsProtect :: SLType -> Doc a -> Doc a
 jsProtect how what = jsApply "stdlib.protect" [jsContract how, what]

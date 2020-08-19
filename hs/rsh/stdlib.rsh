@@ -6,6 +6,8 @@ export const poly_eq = (x, y) => {
   // TODO: add structural equality for arrays and objects
   if (type_eq(ty_x, Bytes)) {
     return bytes_eq(x, y);
+  } else if (is_type(x)) {
+    return type_eq(x, y);
   } else {
     return int_eq(x, y);
   }

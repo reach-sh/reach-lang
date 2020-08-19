@@ -153,6 +153,7 @@ mustBeMem = \case
   T_Obj {} -> True
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
+  T_Type {} -> impossible "type"
 
 data ArgMode
   = AM_Call
@@ -468,6 +469,7 @@ _solDefineType1 getTypeName i name = \case
   T_Obj tm -> do
     tmn <- mapM getTypeName tm
     return $ (name, solStruct name $ map (\(k, v) -> (pretty k, v)) $ M.toAscList tmn)
+  T_Type {} -> impossible "type in pl"
   where
     base = impossible "base"
 
