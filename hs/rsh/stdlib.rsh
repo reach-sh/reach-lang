@@ -43,7 +43,7 @@ export const lsh = (x, y) => x << y;
 export const rsh = (x, y) => x >> y;
 export const band = (x, y) => x & y;
 export const bior = (x, y) => x | y;
-export const bxor = (x, y) => neq(x, y);
+export const bxor = (x, y) => x ^ y;
 
 // Library functions
 export function implies (x, y) {
