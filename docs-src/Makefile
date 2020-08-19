@@ -5,7 +5,7 @@ STYLE=solarizedlight
 render:
 	raco scribble --dest .. --dest-name docs --htmls reach.scrbl
 	@rm -f ../minted-$(STYLE)-style.css
-	@cp -f minted.css ../docs/
+	@cp -f minted.css CNAME ../docs/
 
 clean:
 	rm -rf ../docs/
