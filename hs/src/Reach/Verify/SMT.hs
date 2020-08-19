@@ -20,6 +20,7 @@ import Reach.Util
 import Reach.Verify.SMTParser (parseModel)
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
+import System.Directory
 import System.Exit
 import System.IO
 
@@ -294,10 +295,11 @@ set_to_seq = Seq.fromList . S.toList
 
 display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
 display_fail ctxt tat f tk tse mrd = do
+  cwd <- getCurrentDirectory
   putStrLn $ "Verification failed:"
   putStrLn $ "  in " ++ (show $ ctxt_mode ctxt) ++ " mode"
   putStrLn $ "  of theorem " ++ show tk
-  putStrLn $ "  at " ++ show tat
+  putStrLn $ redactAbsStr cwd $ "  at " ++ show tat
   mapM_ (putStrLn . ("  " ++) . show) f
   putStrLn $ ""
   --- FIXME Another way to think about this is to take `tse` and fully
@@ -333,9 +335,11 @@ display_fail ctxt tat f tk tse mrd = do
                           ++ (case mdv of
                                 Nothing -> mempty
                                 Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
-                          ++ [ ("      (bound at: " ++ show at ++ ")")
-                             , ("      (because: " ++ show bo ++ ")")
-                             ]
+                          ++ (map
+                                (redactAbsStr cwd)
+                                [ ("      (bound at: " ++ show at ++ ")")
+                                , ("      (because: " ++ show bo ++ ")")
+                                ])
                   case mvse of
                     Nothing ->
                       --- FIXME It might be useful to do `get-value` rather than parse
