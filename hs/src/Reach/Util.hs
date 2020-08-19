@@ -1,7 +1,21 @@
-module Reach.Util (bpack, bunpack, impossible, trimQuotes, fromIntegerMay, maybeDie) where
+module Reach.Util
+  ( bpack
+  , bunpack
+  , lbpack
+  , lbunpack
+  , impossible
+  , trimQuotes
+  , fromIntegerMay
+  , maybeDie
+  , redactAbs
+  , redactAbsStr
+  )
+where
 
 import Control.Monad
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as BL
+import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import GHC.Stack
@@ -13,6 +27,12 @@ bpack = TE.encodeUtf8 . T.pack
 
 bunpack :: ByteString -> String
 bunpack = T.unpack . TE.decodeUtf8
+
+lbpack :: String -> BL.ByteString
+lbpack = BL.fromStrict . bpack
+
+lbunpack :: BL.ByteString -> String
+lbunpack = bunpack . BL.toStrict
 
 maybeDie :: ExitCode -> IO ()
 maybeDie ec = do
@@ -35,3 +55,9 @@ fromIntegerMay i
       && i >= fromIntegral (minBound :: a) =
     Just $ fromIntegral i
   | otherwise = Nothing
+
+redactAbs :: FilePath -> Text -> Text
+redactAbs dir = T.replace (T.pack dir) "."
+
+redactAbsStr :: FilePath -> String -> String
+redactAbsStr dir = T.unpack . redactAbs dir . T.pack

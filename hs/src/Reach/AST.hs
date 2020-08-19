@@ -15,6 +15,7 @@ import GHC.Generics
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
+import Reach.UnsafeUtil
 
 --- Source Information
 data ReachSource
@@ -51,7 +52,9 @@ instance Show SrcLoc where
         Just (TokenPn _ l c) -> [show l, show c]
 
 expect_throw :: Show a => HasCallStack => SrcLoc -> a -> b
-expect_throw src ce = error $ "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
+expect_throw src ce =
+  error . unsafeRedactAbsStr $
+    "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
 
 srcloc_top :: SrcLoc
 srcloc_top = SrcLoc (Just "<top level>") Nothing Nothing

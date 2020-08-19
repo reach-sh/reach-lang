@@ -59,13 +59,13 @@ testCompileExpectSuccess fp =
 testCompileExpectAny :: FilePath -> IO BL.ByteString
 testCompileExpectAny fp = either id id <$> testCompileOut fp
 
-compileTestFail :: FilePath -> TestTree
+compileTestFail :: FilePath -> IO TestTree
 compileTestFail = stdoutStripAbs ".txt" testCompileExpectFail
 
-compileTestSuccess :: FilePath -> TestTree
+compileTestSuccess :: FilePath -> IO TestTree
 compileTestSuccess = stdoutStripAbs ".txt" testCompileExpectSuccess
 
-compileTestAny :: FilePath -> TestTree
+compileTestAny :: FilePath -> IO TestTree
 compileTestAny = stdoutStripAbs ".txt" testCompileExpectAny
 
 test_language_features :: IO TestTree

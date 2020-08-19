@@ -58,17 +58,17 @@ mkSpecExamplesCoverStrs strs ext subdir = describe subdir $
     let missing = strs \\ map takeBaseName sources
     missing `shouldBe` []
 
-goldenTests' :: (FilePath -> TestTree) -> String -> FilePath -> IO ([FilePath], [TestTree])
+goldenTests' :: (FilePath -> IO TestTree) -> String -> FilePath -> IO ([FilePath], [TestTree])
 goldenTests' mkTest ext subdir = do
   curDir <- getCurrentDirectory
   let dir = curDir </> "test-examples" </> subdir
   sources <- findByExtension [ext] dir
   testNe <- testNotEmpty "this subdir" sources
-  let testSources = testGroup ("testing each " <> ext <> " file") $ map mkTest sources
+  testSources <- testGroup ("testing each " <> ext <> " file") <$> mapM mkTest sources
   let tests = [testNe, testSources]
   return (sources, tests)
 
-goldenTests :: (FilePath -> TestTree) -> String -> FilePath -> IO TestTree
+goldenTests :: (FilePath -> IO TestTree) -> String -> FilePath -> IO TestTree
 goldenTests mkTest ext subdir = do
   (_, gTests) <- goldenTests' mkTest ext subdir
   let groupLabel = subdir
@@ -101,10 +101,19 @@ stripAbs fp bs = LB.fromStrict bs'
     bsStrict = LB.toStrict bs
     dir = bpack $ takeDirectory fp
 
+-- TODO: relax this once the compiler has all relative paths
+-- Just a bunch of dumb hacks to get simpler test output
+stripAllAbs :: FilePath -> FilePath -> LB.ByteString -> LB.ByteString
+stripAllAbs fp cwd = stripAbs fp'' . stripAbs fp' . stripAbs fp
+  where
+    fp' = lbunpack $ stripAbs cwd $ lbpack fp
+    fp'' = lbunpack $ stripAbs (cwd </> "hs") $ lbpack fp
+
 errExampleBsStripAbs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
 errExampleBsStripAbs k fp = do
   bs <- errExampleBs k fp
-  return $ stripAbs fp bs
+  cwd <- getCurrentDirectory
+  return $ stripAllAbs fp cwd bs
 
 -- | Drops "CallStack (from HasCallStack):" and everything after
 stripCallStack :: LB.ByteString -> LB.ByteString
@@ -115,11 +124,12 @@ stripCallStack bs = LB.fromStrict bsStrict'
     callStackStr = "CallStack (from HasCallStack):"
 
 -- TODO better name
-stdoutStripAbs :: String -> (FilePath -> IO LB.ByteString) -> FilePath -> TestTree
+stdoutStripAbs :: String -> (FilePath -> IO LB.ByteString) -> FilePath -> IO TestTree
 stdoutStripAbs ext k fp = do
   let goldenFile = replaceExtension fp ext
       fpBase = takeBaseName fp
-  goldenVsString fpBase goldenFile (stripCallStack <$> stripAbs fp <$> k fp)
+  cwd <- getCurrentDirectory
+  return $ goldenVsString fpBase goldenFile (stripCallStack <$> stripAllAbs fp cwd <$> k fp)
 
 -- XXX This is a hack to make tests portable.
 -- Ideally the compiler errors would print relative paths?

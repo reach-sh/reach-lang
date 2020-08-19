@@ -44,11 +44,11 @@ partialCompileExpectFail fp = do
     Right (ExitFailure {}) -> return bs
 
 -- Assert that verification fails and produces the given err output
-verifyGoldenTestFail :: FilePath -> TestTree
+verifyGoldenTestFail :: FilePath -> IO TestTree
 verifyGoldenTestFail = stdoutStripAbs ".txt" partialCompileExpectFail
 
 -- Assert that verification passes and produces the given output
-verifyGoldenTestSuccess :: FilePath -> TestTree
+verifyGoldenTestSuccess :: FilePath -> IO TestTree
 verifyGoldenTestSuccess = stdoutStripAbs ".txt" partialCompileExpectSuccess
 
 test_verify_errs :: IO TestTree
