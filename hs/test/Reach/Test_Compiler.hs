@@ -1,5 +1,7 @@
 module Reach.Test_Compiler
-  ( test_language_non_features
+  ( test_docs_compiles
+  , test_docs_errors
+  , test_language_non_features
   , test_language_features
   )
 where
@@ -59,3 +61,9 @@ test_language_features = goldenTests compileTestSuccess ".rsh" "features"
 
 test_language_non_features :: IO TestTree
 test_language_non_features = goldenTests compileTestFail ".rsh" "non-features"
+
+test_docs_compiles :: IO TestTree
+test_docs_compiles = goldenTests compileTestSuccess ".rsh" "../../docs-src/x/compiles"
+
+test_docs_errors :: IO TestTree
+test_docs_errors = goldenTests compileTestFail ".rsh" "../../docs-src/x/errors"
