@@ -62,7 +62,7 @@ The elided lines, 11 through 29, contain the body of the application, which we c
 
 @itemlist[
 
-@item{Lines 11 and 12 specify that Alice takes a @tech{local step} where she @tech{declassifies} the amount of tokens request.
+@item{Lines 11 and 12 specify that Alice takes a @tech{local step} where she @tech{declassifies} the amount of tokens requested.
 In Reach, all values from the @tech{frontend} are @tech{secret} until explicitly made @tech{public} with @tech{declassify}.}
 
 @item{Line 13 has Alice publish that value and the logic of the program transitions to specifying what the @tech{contract} does.}
@@ -79,8 +79,8 @@ At this point, Bob's @tech{backend} has learned the value of @reachin{request} a
 @itemlist[
 
 @item{Lines 16 and 17 has Bob perform that delivery.
-@reachin{interact.want} doesn't explicitly return a boolean or anything, because the frontend can just not return if Bob doesn't want to continue.
-A better version of this program might return @reachin{false} and have that communicated to Alice somehow.}
+@reachin{interact.want} doesn't explicitly return a boolean, because the frontend can not return if Bob doesn't want to continue.
+A better version of this program might return @reachin{false} and have that communicated to Alice.}
 
 @item{Lines 18 and 19 have Bob submit a payment matching the appropriate amount and then the @tech{contract} commits.}
 
