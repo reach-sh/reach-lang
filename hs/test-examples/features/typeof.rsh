@@ -27,6 +27,12 @@ export const main = Reach.App(
 
       // Type(UInt256) != Type(Bytes)
       assert(typeOf(XTy) != typeOf(YTy));
+
+      assert(XTy == UInt256);
+
+      const XTyTy = typeOf(XTy);
+      assert(XTyTy == typeOf(UInt256));
+      assert(XTyTy != UInt256);
     });
   }
 );
