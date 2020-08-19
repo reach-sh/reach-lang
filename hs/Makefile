@@ -1,14 +1,19 @@
-TAG="reachsh/reach:v0.1.0"
 NAME="reach"
+IMAGE="reachsh/$(NAME)"
+TAG_TAG="$(IMAGE):stable"
+TAG_MAJOR="$(IMAGE):v0"
+TAG_MINOR="$(TAG_MAJOR).1"
+TAG_EXACT="$(TAG_MINOR).0"
+
 CIRCLE_TAG="reachsh/reach-circle:v0.1.0"
 
 .PHONY: build
 build:
-	docker build --tag=$(TAG) .
+	docker build -t $(TAG_EXACT) -t $(TAG_MINOR) -t $(TAG_MAJOR) -t $(TAG_TAG) .
 
 .PHONY: push
 push:
-	docker push $(TAG)
+	docker push $(TAG_EXACT) $(TAG_MINOR) $(TAG_MAJOR) $(TAG_TAG)
 
 .PHONY: publish
 publish:
