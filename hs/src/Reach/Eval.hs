@@ -132,6 +132,7 @@ displayTy = \case
   T_Obj _m -> "object" -- FIXME
   T_Forall x ty {- SLVar SLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
   T_Var x {- SLVar-} -> x
+  T_Type _ -> "type"
 
 displaySecurityLevel :: SecurityLevel -> String
 displaySecurityLevel Secret = "secret"
@@ -339,6 +340,7 @@ base_env =
     , ("each", SLV_Form SLForm_each)
     , ("int_eq", SLV_Prim $ SLPrim_op PEQ)
     , ("bytes_eq", SLV_Prim $ SLPrim_op BYTES_EQ)
+    , ("is_type", SLV_Prim SLPrim_is_type)
     , ("type_eq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ( "Reach"
@@ -776,6 +778,13 @@ evalPrim ctxt at sco st p sargs =
             lvl = mconcat $ map fst sargs
             dom = map expect_ty dom_arr
         _ -> illegal_args
+    SLPrim_is_type ->
+      case sargs of
+        [(lvl, SLV_Type _)] ->
+          retV $ (lvl, SLV_Bool at True)
+        [(lvl, _)] ->
+          retV $ (lvl, SLV_Bool at False)
+        _ -> illegal_args
     SLPrim_type_eq ->
       case sargs of
         [(lvl1, SLV_Type ty1), (lvl2, SLV_Type ty2)] ->
@@ -783,6 +792,8 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_typeOf ->
       case sargs of
+        [(lvl, (SLV_Type ty))] ->
+          retV $ (lvl, SLV_Type (T_Type ty))
         [(lvl, val)] -> retV $ (lvl, SLV_Type ty)
           where
             (ty, _) = typeOf at val
