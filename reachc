@@ -3,6 +3,10 @@
 HERE=$(dirname $(realpath $0))
 HS=${HERE}/hs
 
+if [ "x${REACH_VERSION}" = "x" ] ; then
+    REACH_VERSION=stable
+fi
+
 if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
     export STACK_YAML=${HS}/stack.yaml
     MAYBE_FAST="--fast"
@@ -25,7 +29,7 @@ else
 version: '3'
 services:
   reach:
-    image: reachsh/reach:v0.1.0
+    image: reachsh/reach:${REACH_VERSION}
     volumes:
       - $PWD:/app
 EOF
