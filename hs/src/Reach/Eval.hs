@@ -337,6 +337,9 @@ base_env =
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
+    , ("int_eq", SLV_Prim $ SLPrim_op PEQ)
+    , ("bytes_eq", SLV_Prim $ SLPrim_op BYTES_EQ)
+    , ("type_eq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ( "Reach"
       , (SLV_Object srcloc_top $
@@ -572,7 +575,7 @@ binaryToPrim at env o =
   case o of
     JSBinOpAnd a -> fun a "and"
     JSBinOpDivide a -> prim a (DIV)
-    JSBinOpEq a -> prim a (PEQ)
+    JSBinOpEq a -> fun a "poly_eq"
     JSBinOpGe a -> prim a (PGE)
     JSBinOpGt a -> prim a (PGT)
     JSBinOpLe a -> prim a (PLE)
@@ -582,7 +585,7 @@ binaryToPrim at env o =
     JSBinOpNeq a -> fun a "neq"
     JSBinOpOr a -> fun a "or"
     JSBinOpPlus a -> prim a (ADD)
-    JSBinOpStrictEq a -> prim a (BYTES_EQ)
+    JSBinOpStrictEq a -> fun a "poly_eq"
     JSBinOpStrictNeq a -> fun a "bytes_neq"
     JSBinOpTimes a -> prim a (MUL)
     JSBinOpLsh a -> prim a (LSH)
@@ -772,6 +775,11 @@ evalPrim ctxt at sco st p sargs =
           where
             lvl = mconcat $ map fst sargs
             dom = map expect_ty dom_arr
+        _ -> illegal_args
+    SLPrim_type_eq ->
+      case sargs of
+        [(lvl1, SLV_Type ty1), (lvl2, SLV_Type ty2)] ->
+          retV $ lvlMeet lvl1 (lvl2, SLV_Bool at (ty1 == ty2))
         _ -> illegal_args
     SLPrim_typeOf ->
       case sargs of

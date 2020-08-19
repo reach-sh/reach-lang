@@ -272,6 +272,7 @@ data SLPrimitive
   | SLPrim_committed
   | SLPrim_claim ClaimType
   | SLPrim_interact SrcLoc SLPart String SLType
+  | SLPrim_type_eq
   | SLPrim_typeOf
   | SLPrim_Fun
   | SLPrim_Array

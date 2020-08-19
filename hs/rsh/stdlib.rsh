@@ -1,5 +1,16 @@
 'reach 0.1';
 
+// Polymorphic eq made from builtins
+export const poly_eq = (x, y) => {
+  const ty_x = typeOf(x);
+  // TODO: add structural equality for arrays and objects
+  if (type_eq(ty_x, Bytes)) {
+    return bytes_eq(x, y);
+  } else {
+    return int_eq(x, y);
+  }
+};
+
 // Operator abbreviation expansions
 export function minus (x) {
   return 0 - x; };
@@ -26,7 +37,6 @@ export const eq  = (x, y) => x == y;
 export const ge  = (x, y) => x >= y;
 export const gt  = (x, y) => x > y;
 export const ite = (b, x, y) => b ? x : y;
-export const bytes_eq = (x, y) => x === y;
 export const lsh = (x, y) => x << y;
 export const rsh = (x, y) => x >> y;
 export const band = (x, y) => x & y;

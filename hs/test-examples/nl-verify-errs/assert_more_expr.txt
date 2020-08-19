@@ -6,7 +6,7 @@ Verification failed:
   at ./assert_more_expr.rsh:12:7:after expr stmt semicolon call to "function" (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
   Theorem formalization:
-  v5
+  v6
 
   This could be violated if...
     "v1" = 0
@@ -19,9 +19,9 @@ Verification failed:
       (because: evaluating interact("A")."getX"())
 
   In context...
-    "v5" = (= v4 v3 )
-      (from: v5)
-      (bound at: ./assert_more_expr.rsh:application)
+    "v6" = (= v4 v3 )
+      (from: v6)
+      (bound at: reach standard library:10:18:application)
       (because: evaluating PEQ(v4,v3))
     "v3" = (* v1 2 )
       (from: v3)
@@ -40,7 +40,7 @@ Verification failed:
   at ./assert_more_expr.rsh:12:7:after expr stmt semicolon call to "function" (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
   Theorem formalization:
-  v5
+  v6
 
   This could be violated if...
     "v1" = 0
@@ -53,9 +53,9 @@ Verification failed:
       (because: evaluating interact("A")."getX"())
 
   In context...
-    "v5" = (= v4 v3 )
-      (from: v5)
-      (bound at: ./assert_more_expr.rsh:application)
+    "v6" = (= v4 v3 )
+      (from: v6)
+      (bound at: reach standard library:10:18:application)
       (because: evaluating PEQ(v4,v3))
     "v3" = (* v1 2 )
       (from: v3)
