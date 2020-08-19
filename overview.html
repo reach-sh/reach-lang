@@ -65,17 +65,17 @@ We could make a small tweak, however, to demonstrate things going wrong.</p><p>L
 <span class="mi">25</span>          <span class="nx">commit</span><span class="p">();</span>
 <span class="p">..</span>          <span class="c1">// ...</span>
 </pre></div>
-</p><p>And then run the compiler</p><p><span class="hspace">&nbsp;&nbsp;</span><span class="stt">reachc -o build </span><a href="https://github.com/reach-sh/reach-lang/blob/master/docs-src/x/over-minimal-error.rsh"><span class="stt">over-minimal-error.rsh</span></a></p><p>It will print out a detailed error message showing the violation.</p><p><div class="highlight"><pre><span></span> <span class="mi">1</span>    <span class="nx">Verifying</span> <span class="kd">with</span> <span class="nx">mode</span> <span class="o">=</span> <span class="nx">VM_Honest</span>
- <span class="mi">2</span>    <span class="nx">Verification</span> <span class="nx">failed</span><span class="o">:</span>
- <span class="mi">3</span>      <span class="k">in</span> <span class="nx">VM_Honest</span> <span class="nx">mode</span>
- <span class="mi">4</span>      <span class="k">of</span> <span class="nx">theorem</span> <span class="nx">TBalanceZero</span>
- <span class="mi">5</span>      <span class="nx">at</span> <span class="p">.</span><span class="o">/</span><span class="nx">over</span><span class="o">-</span><span class="nx">minimal</span><span class="o">-</span><span class="nx">error</span><span class="p">.</span><span class="nx">rsh</span><span class="o">:</span><span class="mi">29</span><span class="o">:</span><span class="mi">11</span><span class="o">:</span><span class="nx">application</span>
- <span class="mi">6</span>    
- <span class="mi">7</span>      <span class="nx">Theorem</span> <span class="nx">formalization</span><span class="o">:</span>
- <span class="mi">8</span>      <span class="p">(</span><span class="o">=</span> <span class="nx">ctc_balance4</span> <span class="mi">0</span> <span class="p">)</span>
- <span class="mi">9</span>    
-<span class="mi">10</span>      <span class="nx">This</span> <span class="nx">could</span> <span class="nx">be</span> <span class="nx">violated</span> <span class="k">if</span><span class="p">...</span>
-<span class="mi">11</span>        <span class="s2">&quot;interact_Alice_request&quot;</span> <span class="o">=</span> <span class="mi">1</span>
+</p><p>And then run the compiler</p><p><span class="hspace">&nbsp;&nbsp;</span><span class="stt">reachc -o build </span><a href="https://github.com/reach-sh/reach-lang/blob/master/docs-src/x/over-minimal-error.rsh"><span class="stt">over-minimal-error.rsh</span></a></p><p>It will print out a detailed error message showing the violation.</p><p><div class="highlight"><pre><span></span> <span class="mi">1</span>    <span class="o">&lt;</span><span class="nx">stdout</span><span class="o">&gt;</span>
+ <span class="mi">2</span>    <span class="nx">Verifying</span> <span class="kd">with</span> <span class="nx">mode</span> <span class="o">=</span> <span class="nx">VM_Honest</span>
+ <span class="mi">3</span>    <span class="nx">Verification</span> <span class="nx">failed</span><span class="o">:</span>
+ <span class="mi">4</span>      <span class="k">in</span> <span class="nx">VM_Honest</span> <span class="nx">mode</span>
+ <span class="mi">5</span>      <span class="k">of</span> <span class="nx">theorem</span> <span class="nx">TBalanceZero</span>
+ <span class="mi">6</span>      <span class="nx">at</span> <span class="p">.</span><span class="o">/</span><span class="nx">over</span><span class="o">-</span><span class="nx">minimal</span><span class="o">-</span><span class="nx">error</span><span class="p">.</span><span class="nx">rsh</span><span class="o">:</span><span class="mi">29</span><span class="o">:</span><span class="mi">11</span><span class="o">:</span><span class="nx">application</span>
+ <span class="mi">7</span>    
+ <span class="mi">8</span>      <span class="nx">Theorem</span> <span class="nx">formalization</span><span class="o">:</span>
+ <span class="mi">9</span>      <span class="p">(</span><span class="o">=</span> <span class="nx">ctc_balance4</span> <span class="mi">0</span> <span class="p">)</span>
+<span class="mi">10</span>    
+<span class="mi">11</span>      <span class="nx">This</span> <span class="nx">could</span> <span class="nx">be</span> <span class="nx">violated</span> <span class="k">if</span><span class="p">...</span>
 <span class="p">..</span>          <span class="c1">// ...</span>
 </pre></div>
 </p><p>Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontends</span></a> that would lead to the property failing to hold.</p><p>There&rsquo;s a lot more to say about <font class="badlink">automatic verification</font>; indeed, it is one of the main reasons programmers of decentralized applications want to use Reach, but we&rsquo;ll leave it at that for now.</p><h4>1.5<tt>&nbsp;</tt><a name="(part._over-interface)"></a>Interface</h4><p>XXX</p><h4>1.6<tt>&nbsp;</tt><a name="(part._over-execute)"></a>Execute</h4><p>XXX</p><h4>1.7<tt>&nbsp;</tt><a name="(part._over-next)"></a>Next steps</h4><p>In this overview, we&rsquo;ve briefly described the structure and fundamental concepts of a Reach application.
