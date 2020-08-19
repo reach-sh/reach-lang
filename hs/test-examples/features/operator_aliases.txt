@@ -1,3 +1,8 @@
+<stdout>
 Verifying with mode = VM_Honest
 Verifying with mode = VM_Dishonest RoleContract
 Checked 22 theorems; No failures!
+
+</stdout>
+<stderr>
+</stderr>

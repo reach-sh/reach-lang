@@ -1,3 +1,4 @@
+<stdout>
 Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
@@ -182,5 +183,9 @@ Verification failed:
       (because: initialization)
 Checked 11 theorems; 4 failures. :'(
 
-
-Failed with: ExitFailure 1
+</stdout>
+<stderr>
+</stderr>
+<exception>
+ExitFailure 1
+</exception>

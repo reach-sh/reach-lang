@@ -5,37 +5,40 @@ module Reach.Test_Compiler
   )
 where
 
-import Control.Exception
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text as T
 import Reach.Compiler
 import Reach.Test.Util
 import Reach.Util
 import System.Directory
-import System.IO.Silently
+import System.IO.Capture
+import System.IO.Temp
 import Test.Tasty
 
-testCompile :: FilePath -> IO (String, (Either SomeException ()))
-testCompile fp = capture $
-  try $ do
-    createDirectoryIfMissing True outDir
-    compileNL copts
-  where
-    outDir = "/tmp/reachc/"
-    copts =
+testCompile :: FilePath -> IO (BL.ByteString, BL.ByteString, BL.ByteString)
+testCompile fp = withSystemTempDirectory "reachc-tests" $ \dir -> do
+  (out, err, ex, _) <- capture $ do
+    createDirectoryIfMissing True dir
+    compileNL $
       CompilerOpts
-        { output = \x -> outDir <> T.unpack x
+        { output = \x -> dir <> T.unpack x
         , source = fp
         , tops = ["main"]
         , intermediateFiles = False
         }
+  return (out, err, ex)
 
 -- Left = compile fail, Right = compile success
 testCompileOut :: FilePath -> IO (Either BL.ByteString BL.ByteString)
 testCompileOut fp =
   testCompile fp >>= \case
-    (s, Left e) -> return $ Left $ BL.fromStrict $ bpack $ s <> "\n\nFailed with: " <> show e
-    (s, Right ()) -> return $ Right $ BL.fromStrict $ bpack $ s
+    (out, err, "") -> return $ Right $ outErr out err
+    (out, err, ex) -> return $ Left $ outErrEx out err ex
+  where
+    outErr out err =
+      "<stdout>\n" <> out <> "\n</stdout>\n" <> "<stderr>\n" <> err <> "</stderr>\n"
+    outErrEx out err ex =
+      outErr out err <> "<exception>\n" <> ex <> "\n</exception>\n"
 
 testCompileExpectFail :: FilePath -> IO BL.ByteString
 testCompileExpectFail fp =

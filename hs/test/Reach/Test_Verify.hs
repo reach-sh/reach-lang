@@ -13,7 +13,7 @@ import Reach.Test.Util
 import Reach.Util
 import Reach.Verify
 import System.Exit
-import System.IO.Silently
+import System.IO.Silently -- TODO: port to System.IO.Capture
 import Test.Tasty
 
 partialCompile :: FilePath -> IO (BL.ByteString, Either SomeException ExitCode)

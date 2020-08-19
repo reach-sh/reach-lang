@@ -27,6 +27,7 @@ dependencies:
 - hexstring
 - hspec
 - hspec-smallcheck
+- io-capture
 - language-javascript >= 0.7.1.0
 - lattices
 - loop

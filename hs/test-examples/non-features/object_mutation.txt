@@ -1,3 +1,7 @@
+<stdout>
 
-
-Failed with: error: ./object_mutation.rsh:assign: Invalid assignment
+</stdout>
+<stderr>
+</stderr>
+<exception>
+error: ./object_mutation.rsh:assign: Invalid assignment
