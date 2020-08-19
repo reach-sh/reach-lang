@@ -14,7 +14,7 @@ This set of documents contains everything you need to know about Reach.
 
 @item{@seclink["tut"]{The tutorial} is a directed series of steps to create a simple @|DApp|. You should start here if you've never used Reach before and want to start at the beginning.}
 
-@item{@seclink["guide"]{The guide} continues @seclink["overview"]{the overview} by discussing the key ideas and concepts used throughout Reach. You will often want to visit the guide to learn the background and "why" of some topic after you get start.}
+@item{@seclink["guide"]{The guide} continues @seclink["overview"]{the overview} by discussing the key ideas and concepts used throughout Reach. You will often want to visit the guide to learn the background and "why" of some topic after you get started.}
 
 @item{@seclink["ref"]{The reference} provides an exhaustive technical reference on each aspect of Reach.}
 

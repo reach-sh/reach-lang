@@ -1,0 +1,183 @@
+Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TBalanceZero
+  at /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:29:11:application
+
+  Theorem formalization:
+  (= ctc_balance4 0 )
+
+  This could be violated if...
+    "interact_Alice_request" = 1
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:4:12:application)
+      (because: interaction)
+
+  In context...
+    "ctc_balance4" = (- ctc_balance3 v14 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:24:29:application)
+      (because: a transfer to v2 of v14)
+    "ctc_balance3" = (+ ctc_balance2 txn_value2 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:23:8:dot)
+      (because: publication)
+    "v14" = (- v1 1 )
+      (from: v14)
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:application)
+      (because: evaluating SUB(v1,DLC_Int 1))
+    "ctc_balance2" = (+ ctc_balance1 txn_value1 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:18:8:dot)
+      (because: publication)
+    "txn_value2" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:23:8:dot)
+      (because: an honest payment from "Alice" of DLC_Int 0)
+    "v1" = interact_Alice_request
+      (from: v1)
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: an honest message from "Alice" of interact("Alice")."request"(UInt256))
+    "ctc_balance1" = (+ ctc_balance0 txn_value0 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: publication)
+    "txn_value1" = v1
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:18:8:dot)
+      (because: an honest payment from "Bob" of v1)
+    "ctc_balance0" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:4:12:application)
+      (because: initialization)
+    "txn_value0" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: an honest payment from "Alice" of DLC_Int 0)
+Verifying with mode = VM_Dishonest RoleContract
+Verification failed:
+  in VM_Dishonest RoleContract mode
+  of theorem TBalanceZero
+  at /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:29:11:application
+
+  Theorem formalization:
+  (= ctc_balance4 0 )
+
+  This could be violated if...
+    "txn_value2" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:23:8:dot)
+      (because: a dishonest payment from "Alice")
+    "v1" = 1
+      (from: v1)
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: a dishonest message from "Alice")
+    "txn_value1" = 1
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:18:8:dot)
+      (because: a dishonest payment from "Bob")
+    "txn_value0" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: a dishonest payment from "Alice")
+
+  In context...
+    "ctc_balance4" = (- ctc_balance3 v14 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:24:29:application)
+      (because: a transfer to v2 of v14)
+    "ctc_balance3" = (+ ctc_balance2 txn_value2 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:23:8:dot)
+      (because: publication)
+    "v14" = (- v1 1 )
+      (from: v14)
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:application)
+      (because: evaluating SUB(v1,DLC_Int 1))
+    "ctc_balance2" = (+ ctc_balance1 txn_value1 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:18:8:dot)
+      (because: publication)
+    "ctc_balance1" = (+ ctc_balance0 txn_value0 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: publication)
+    "ctc_balance0" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:4:12:application)
+      (because: initialization)
+Verifying with mode = VM_Dishonest (RolePart "Alice")
+Verification failed:
+  in VM_Dishonest (RolePart "Alice") mode
+  of theorem TBalanceZero
+  at /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:29:11:application
+
+  Theorem formalization:
+  (= ctc_balance4 0 )
+
+  This could be violated if...
+    "txn_value1" = 1
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:18:8:dot)
+      (because: a dishonest payment from "Bob")
+    "interact_Alice_request" = 1
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:4:12:application)
+      (because: interaction)
+
+  In context...
+    "ctc_balance4" = (- ctc_balance3 v14 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:24:29:application)
+      (because: a transfer to v2 of v14)
+    "ctc_balance3" = (+ ctc_balance2 txn_value2 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:23:8:dot)
+      (because: publication)
+    "v14" = (- v1 1 )
+      (from: v14)
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:application)
+      (because: evaluating SUB(v1,DLC_Int 1))
+    "ctc_balance2" = (+ ctc_balance1 txn_value1 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:18:8:dot)
+      (because: publication)
+    "txn_value2" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:23:8:dot)
+      (because: an honest payment from "Alice" of DLC_Int 0)
+    "v1" = interact_Alice_request
+      (from: v1)
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: an honest message from "Alice" of interact("Alice")."request"(UInt256))
+    "ctc_balance1" = (+ ctc_balance0 txn_value0 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: publication)
+    "ctc_balance0" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:4:12:application)
+      (because: initialization)
+    "txn_value0" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: an honest payment from "Alice" of DLC_Int 0)
+Verifying with mode = VM_Dishonest (RolePart "Bob")
+Verification failed:
+  in VM_Dishonest (RolePart "Bob") mode
+  of theorem TBalanceZero
+  at /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:29:11:application
+
+  Theorem formalization:
+  (= ctc_balance4 0 )
+
+  This could be violated if...
+    "txn_value2" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:23:8:dot)
+      (because: a dishonest payment from "Alice")
+    "v1" = 1
+      (from: v1)
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: a dishonest message from "Alice")
+    "txn_value0" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: a dishonest payment from "Alice")
+
+  In context...
+    "ctc_balance4" = (- ctc_balance3 v14 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:24:29:application)
+      (because: a transfer to v2 of v14)
+    "ctc_balance3" = (+ ctc_balance2 txn_value2 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:23:8:dot)
+      (because: publication)
+    "v14" = (- v1 1 )
+      (from: v14)
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:application)
+      (because: evaluating SUB(v1,DLC_Int 1))
+    "ctc_balance2" = (+ ctc_balance1 txn_value1 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:18:8:dot)
+      (because: publication)
+    "ctc_balance1" = (+ ctc_balance0 txn_value0 )
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:13:8:dot)
+      (because: publication)
+    "txn_value1" = v1
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:18:8:dot)
+      (because: an honest payment from "Bob" of v1)
+    "ctc_balance0" = 0
+      (bound at: /Users/jay/Dev/scm/bitbucket.jeapostrophe/reach/reach-lang/docs-src/x/over-minimal-error.rsh:4:12:application)
+      (because: initialization)
+Checked 11 theorems; 4 failures. :'(

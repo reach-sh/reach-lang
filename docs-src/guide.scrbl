@@ -8,3 +8,5 @@ XXX
 @local-table-of-contents[#:style 'immediate-only]
 
 XXX
+
+XXX loop invariants
