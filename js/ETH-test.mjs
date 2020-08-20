@@ -31,6 +31,17 @@ runTests(() => { describe('The `web3` stdlib', () => {
     });
   });
 
+  describe('exposes a `toHex` function that', () => {
+    const hand = 'ROCK';
+    const handHex = stdlib.toHex(hand);
+
+    it('works correctly with `bytes_eq`', () => {
+      expect(stdlib.bytes_eq(handHex, hand)).toBe(true);
+    });
+    it('is idempotent', () => {
+      expect(stdlib.toHex(handHex)).toBe(handHex);
+    });
+  });
 
   describe('exposes a `bigNumberify` function that', () => {
     it('correctly translates integer inputs to their `BigNumber` equivalents', () =>

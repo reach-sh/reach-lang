@@ -3,15 +3,18 @@ import * as crypto     from 'crypto';
 import ethers          from 'ethers';
 
 // Hex helpers
-const un0x           = h => h.replace(/^0x/, '');
+// const un0x           = h => h.replace(/^0x/, ''); // unused
 const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
 const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = b => Array.from(b, byteToHex).join('');
 
-const hexOf = x =>
-      typeof x === 'string' && x.slice(0, 2) === '0x'
-      ? un0x(toHex(x))
-      : un0x(toHex(`0x${x}`));
+// const hexOf = x =>
+//       typeof x === 'string' && x.slice(0, 2) === '0x'
+//       ? un0x(toHex(x))
+//       : un0x(toHex(`0x${x}`));
+const hexOf = x => toHex(x);
+// TODO: why was this stripping off the 0x?
+// Why was it slapping 0x on non-hex strings?
 
 // Contracts
 
@@ -27,6 +30,7 @@ export const T_Bytes = (x) => {
     if (isHex(x)) {
       return true;
     } else {
+      // TODO: fix things so this restriction is not necessary
       throw Error(`Please use toHex on string sent to Reach: "${x}"`);
     }
   } else {

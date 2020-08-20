@@ -45,7 +45,7 @@ import * as RPSW from './build/index.nodraw.mjs';
                params: log(`${name} publishes parameters of game: wager of ${toUnit(wagerAmount)} ${unit} and escrow of ${toUnit(escrowAmount)} ${unit}.`),
                acceptParams: (wager, escrow) => log(`${name} accepts the terms: wager of ${toUnit(wager)} ${unit} and escrow of ${toUnit(escrow)} ${unit}.`)(),
                partnerIs: (who) => log(`${name} is playing with ${who}`)(),
-               getHand: async () => { const res = await getHand(); log(`(local: ${name} plays ${res}.)`)(); return res; },
+               getHand: async () => { const res = await getHand(); log(`(local: ${name} plays ${res}.)`)(); return stdlib.toHex(res); },
                commits: log(`${name} commits to play with (hidden) hand.`),
                shows: log(`${name} sends hand in clear.`),
                reveals: (handB) => log(`${name} reveals salt and hand, after learning B played ${handB}.`)(),
