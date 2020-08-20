@@ -16,7 +16,6 @@ import GHC.Generics
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
-import Reach.Report.Unsafe
 import Reach.UnsafeUtil
 
 --- Source Information
@@ -55,7 +54,7 @@ instance Show SrcLoc where
 
 expect_throw :: Show a => HasCallStack => SrcLoc -> a -> b
 expect_throw src ce =
-  unsafeReportError . unsafeRedactAbs . T.pack $
+  error . T.unpack . unsafeRedactAbs . T.pack $
     "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
 
 srcloc_top :: SrcLoc

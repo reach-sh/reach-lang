@@ -4,12 +4,12 @@ import Control.Exception
 import Control.Monad (when)
 import Data.Aeson
 import Data.Aeson.TH
+import Data.Fixed (Pico)
 import Data.Time
 import Options.Applicative
 import Reach.CompilerTool
 import Reach.Report
 import Reach.Report.TH
-import Reach.Report.Unsafe
 import System.Directory
 
 data CompilerToolArgs = CompilerToolArgs
@@ -81,6 +81,19 @@ sendStartReport args env = do
   dest <- getReportDestination
   sendReport dest r'
 
+errorGracePeriodMicroseconds :: Int
+errorGracePeriodMicroseconds = 10_000_000
+
+successGracePeriodMicroseconds :: NominalDiffTime -> Int
+successGracePeriodMicroseconds elapsed =
+  picoToMicroInt $ nominalDiffTimeToSeconds elapsed * graceFactor
+  where
+    graceFactor = 0.1
+    -- Note: fromEnum on Pico overflows the Int at 100s of days,
+    -- but our use case is seconds/mins which should be fine.
+    picoToMicroInt (p :: Pico) = fromEnum $ p / picosInMicro
+    picosInMicro = 1_000_000
+
 main :: IO ()
 main = do
   startTime <- getCurrentTime
@@ -91,15 +104,21 @@ main = do
   sendStartReport args env
   -- TODO: collect interesting stats to report at the end
   (e :: Either SomeException ()) <- try $ compilerToolMain ctool_opts
+  either reportError return e
   endTime <- getCurrentTime
   let result :: String = either (const "failure") (const "success") e
+  let elapsed = diffUTCTime endTime startTime
   let stats =
         object
-          [ "elapsed" .= diffUTCTime endTime startTime
+          [ "elapsed" .= elapsed
           , "result" .= result
           ]
   report "end" stats
   waitReports 3_000_000 -- microseconds
   case e of
-    Left exn -> throwIO exn
-    Right () -> return ()
+    Left exn -> do
+      waitReports errorGracePeriodMicroseconds
+      throwIO exn
+    Right () -> do
+      waitReports $ successGracePeriodMicroseconds elapsed
+      return ()
