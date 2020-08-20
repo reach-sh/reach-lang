@@ -42,4 +42,4 @@ file = "src/Reach/UnsafeUtil.hs"
 [[check]]
 type = "Exclude"
 id = "STAN-0212"
-file = "src/Reach/Report/Unsafe.hs"
+file = "src/Reach/Report/UnsafeGlobals.hs"
