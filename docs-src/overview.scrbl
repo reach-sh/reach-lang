@@ -116,6 +116,10 @@ The only thing left is for Bob's @tech{backend} to deliver the information to hi
 
 ]
 
+@(hrule)
+
+Reach programmers don't need to think about details like @emph{contract storage}, @emph{protocol diagrams}, @emph{state validation}, or @emph{network details}; instead, they can focus exclusively on the business logic of their application.
+
 @section[#:tag "over-compile"]{Compile}
 
 After a Reach programmer writes this application in a file like @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}], they could run
@@ -125,12 +129,14 @@ After a Reach programmer writes this application in a file like @reachexlink["ov
 and the @exec{build} directory will contain a new file named @reachexlink["build/over-minimal.main.mjs" @exec{over-minimal.main.mjs}], which contains a JavaScript implementation of a @tech{backend} for each participant, as well as the Ethereum bytecode for the @tech{contract}.
 
 @margin-note{If you are curious, you can take a look at this file by going to @reachexlink["build/over-minimal.main.mjs"].
-The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at @reachexlink["build/over-minimal.main.sol"] to see the original code that it was compiled from.}
+The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at @reachexlink["build/over-minimal.main.sol"] to see the original Solidity source that it is compiled from.}
 
 For this 30 line application, the Reach compiler generated 51 lines of JavaScript code into two functions, one for Alice and one for Bob.
 Separately, it generated 55 lines of Solidity code to implement the contract.
-If a programmer wasn't using Reach, they would have to write each of these three modules separately and keep them synchronized at every step of the development process.
-Morever, Reach doesn't only work for Ethereum, it is blockchain agnostic and can be easily configured to target other consensus networks, like Algorand.
+If a programmer wasn't using Reach, they would have to write these 106 lines in these three modules separately and keep them synchronized at every step of the development process.
+
+Morever, Reach doesn't only work for Ethereum, it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target other @tech{consensus networks}, like Algorand.
+Nor is Reach tied to JavaScript, it can be configured to target other @tech{backend} languages, like Go.
 
 @section[#:tag "over-verify"]{Verify}
 
@@ -159,45 +165,121 @@ It will print out a detailed error message showing the violation.
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by @tech{frontends} that would lead to the property failing to hold.
 In this case, it reports that if Alice were to pass an @reachin{interact.request} over @reachin{1} at the start of the program on line 4, then the balance of the contract would not be provably @reachin{0} at the end of the program.
 
-There's a lot more to say about @seclink["guide-assert"]{automatic verification}; indeed, it is one of the main reasons programmers of decentralized applications want to use Reach, but we'll leave it at that for now.
+@(hrule)
+
+Reach programmers don't need to be worried about entire categories of errors, because the compiler automatically checks their code and ensures that those errors aren't present.
+Of course, there's a lot more to say about the details of @seclink["guide-assert"]{automatic verification}; indeed, it is one of the most powerful features of Reach, but we'll leave it at that for now.
 
 @section[#:tag "over-interface"]{Interface}
 
-@margin-note{You can look at the entire example program by visiting @reachexlink["over-minimal.mjs"].}
+The backend produced by the Reach compiler isn't an application on its own.
+In particular, each @tech{participant} needs a @tech{frontend} to interact with.
+In a real deployment, this interfacing code would be tied to a GUI, like a Web or smartphone app.
+Let's look at a simple command-line version that demonstrates how it would work for testing on a private devnet.
 
-XXX
+@margin-note{You can look at the entire example interface program by visiting @reachexlink["over-minimal.mjs"].}
+
+The program is just 23 lines long and the shell of it is quite simple:
 
 @reachex[#:mode js
          #:show-lines? #t "over-minimal.mjs"
          'skip 14 21 "    // ..."]
 
-XXX
+@itemlist[
+
+@item{Lines 1 and 2 import the Reach standard library and the compiled app backend.}
+
+@item{Line 5 is the only part of the program that species to run on Ethereum. (Technically line 1 does as, but we provide standard libraries with identical interfaces for different consensus networks.)}
+
+@item{Lines 7 and 8 initialize new test accounts for Alice and Bob.}
+
+@item{Line 10 has Alice deploy the contact on the consensus network.}
+
+@item{Line 11 has Bob attach to the contract.
+The value @jsin{ctcAlice} contains no secret information and could easily be printed out and shared with Bob outside of the consensus network.}
+
+@item{Lines 13 through 22 launch the backends and wait for their completion, we'll look at the details in a moment.}
+
+]
+
+This code will be very similar for all testing programs and demonstrates how straight-forward it is to scaffold a Reach application for testing.
+
+Let's look at initializing and interfacing each participant, starting with Alice.
 
 @reachex[#:mode js
          #:show-lines? #t "over-minimal.mjs"
          'only 14 17 "    // ..."]
 
-XXX
+@itemlist[
+
+@item{Line 14 extracts the backend for Alice.}
+
+@item{Line 15 passes it the appropriate standard library and contract handle.
+It needs these to be able to interface with the chosen consensus network.}
+
+@item{Line 16 provides the @reachin{request} value.}
+
+@item{Line 17 provides the @reachin{info} value.}
+
+]
+
+Let's look at Bob next.
 
 @reachex[#:mode js
          #:show-lines? #t "over-minimal.mjs"
          'only 18 21 "    // ..."]
 
-XXX
+@itemlist[
+
+@item{Lines 18 and 19 initialize Bob just like Alice.}
+
+@item{Line 20 provides his @reachin{want} function, which produces a log message and always accepts.}
+
+@item{Line 21 provides his @reachin{got} function, which displays the secret on the console as well.}
+
+]
+
+@(hrule)
+
+Reach completely abstracts all the details of the chosen @tech{consensus network} from the programmer, except for those directly impinging on business decisions, like the amounts of currency transacted.
+Reach allows programmers to focus on the business logic of their application at every stage, from the core application to the interfacing elements.
 
 @section[#:tag "over-execute"]{Execute}
 
-XXX
+It's now time to execute this test program and ensure that everything is working correctly.
+In this case, we've set up our application simply: there's one Reach file for the application and one JavaScript file for the interface.
+This is a common practice, so Reach comes with a simple wrapper script to build and execute such applications.
+We just run:
 
-@reachexlink["over-minimal.sh"]
+@commandline{reach-run over-minimal}
 
-XXX
+And then Reach
+
+@itemlist[
+
+@item{compiles @reachexlink["over-minimal.rsh" "over-minimal.rsh"];}
+
+@item{creates a temporary Node package;}
+
+@item{builds a Docker image based on Reach's standard image for the package; and,}
+
+@item{runs the application connected to Reach's standard private Ethereum devnet image.
+(If you @exec{REACH_ETH_MODE=ganache} to the commandline, then Reach will use @link["https://www.trufflesuite.com/ganache"]{Ganache} instead.)}
+
+]
+
+On typical developer laptops, this entire process takes seconds and can be completely integrated into existing development IDEs, like VSCode, so Reach developers can compile, verify, build, launch, and test their Reach app with a single command.
+
+@(hrule)
+
+Reach completely abstracts all the details of building and maintaining @tech{consensus network} test environments and build scripts from the programmer, so they can focus exclusively on the business logic of their application.
 
 @section[#:tag "over-next"]{Next steps}
 
 In this overview, we've briefly described the structure and fundamental concepts of a Reach application.
 We've shown how to construct a simple program, compile it, connect an interface, and run it.
 Since this is only a brief overview of what Reach can do, we left a lot out.
+But even so, it is should be clear why Reach is easiest and safest programming language for decentralized application development.
 
 Furthermore, this program has many flaws and should not be used in practice.
 For example, it provides no protection to Bob in the event that Alice fails to deliver the information and makes no attempt to ensure that the information is what he wants.

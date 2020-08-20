@@ -9,4 +9,3 @@ XXX
 
 XXX
 
-XXX loop invariants

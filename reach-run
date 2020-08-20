@@ -1,11 +1,25 @@
 #!/bin/sh -e
 
-APP=over-minimal
+APP=$1
+RSH=${APP}.rsh
+MJS=${APP}.mjs
+
+if [ "x$APP" = "x" ] ||
+       ! [ -f ${RSH} ] ||
+       ! [ -f ${MJS} ]; then
+    echo "Usage: reach-run APP"
+    echo "  where APP.rsh"
+    echo "    and APP.mjs"
+    echo "  exists in current directory."
+    exit 1
+fi
+
+HERE=$(dirname $(realpath $0))
 
 DOCKERFILE=Dockerfile.${APP}
 PACKAGE_JSON=package.json.${APP}
 
-../../reachc -o build ${APP}.rsh
+${HERE}/reachc -o build ${RSH}
 
 cat >${PACKAGE_JSON} <<EOF
 {
@@ -17,7 +31,7 @@ cat >${PACKAGE_JSON} <<EOF
   "author": "reach.sh",
   "license": "Apache-2.0",
   "scripts": {
-    "app": "node --experimental-modules --unhandled-rejections=strict ${APP}.mjs"
+    "app": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
   }
 }
 EOF
@@ -31,7 +45,7 @@ COPY package.json.${APP} /app/package.json
 RUN npm link '@reach-sh/stdlib'
 RUN npm install
 
-COPY ${APP}.mjs /app
+COPY ${MJS} /app
 RUN mkdir /app/build
 COPY build/${APP}.main.mjs /app/build
 
@@ -41,6 +55,19 @@ EOF
 docker build -f ${DOCKERFILE} -t reachsh/reach-app-${APP}:latest .
 
 rm -f package.json.${APP} ${DOCKERFILE}
+
+if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
+
+    cat<<EOF | docker-compose -f - run reach-app
+version: '3'
+services:
+  reach-app:
+    image: reachsh/reach-app-${APP}:latest
+    environment:
+      - ETH_NODE_TYPE=in_memory_ganache
+EOF
+
+else
 
 cat<<EOF | docker-compose -f - run reach-app
 version: '3'
@@ -54,3 +81,5 @@ services:
   devnet:
     image: reachsh/ethereum-devnet:v0.1.0
 EOF
+
+fi

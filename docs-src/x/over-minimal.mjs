@@ -1,21 +1,21 @@
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
-import * as App from './build/over-minimal.main.mjs';
+import * as backend from './build/over-minimal.main.mjs';
 
 ( async () => {
-  const etherToWei = (n) => stdlib.toWeiBigNumber(n, 'ether');
+  const toNetworkFormat = (n) => stdlib.toWeiBigNumber(n, 'ether');
 
-  const accAlice = await stdlib.newTestAccount(etherToWei('5'));
-  const accBob = await stdlib.newTestAccount(etherToWei('10'));
+  const accAlice = await stdlib.newTestAccount(toNetworkFormat('5'));
+  const accBob = await stdlib.newTestAccount(toNetworkFormat('10'));
 
-  const ctcAlice = await accAlice.deploy(App);
-  const ctcBob = await accBob.attach(App, ctcAlice);
+  const ctcAlice = await accAlice.deploy(backend);
+  const ctcBob = await accBob.attach(backend, ctcAlice);
 
   await Promise.all([
-    App.Alice(
+    backend.Alice(
       stdlib, ctcAlice,
-      { request: etherToWei('5'),
-        info: stdlib.toHex('If you wear the Holy Glasses, you can see beyond evil illusions.') }),
-    App.Bob(
+      { request: toNetworkFormat('5'),
+        info: stdlib.toHex('If you wear these, you can see beyond evil illusions.') }),
+    backend.Bob(
       stdlib, ctcBob,
       { want: (amt) => console.log(`Alice asked Bob for ${amt}`),
         got: (secret) => console.log(`Alice's secret is: ${stdlib.hexToString(secret)}`) })

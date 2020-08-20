@@ -417,6 +417,8 @@ A @deftech{while statement} may occur within a @tech{consensus step} and is writ
 
 where @reachin{LHS} is a valid left-hand side of an @tech{identifier definition} where the @tech{expression} @reachin{INIT_EXPR} is the right-hand side, and @reachin{INVARIANT_EXPR} is an @tech{expression}, called the @deftech{loop invariant}, that must be true before and after every execution of the @tech{block} @reachin{BLOCK}, and if @reachin{COND_EXPR} is true, then the @tech{block} executes, and if not, then the loop terminates and control transfers to the @tech{continuation} of the @tech{while statement}. The identifiers bound by @reachin{LHS} are bound within @reachin{INVARIANT_EXPR}, @reachin{COND_EXPR}, @reachin{BLOCK}, and the @tech{tail} of the @tech{while statement}.
 
+@margin-note{Read about finding @seclink["guide-loop-invs"]{loop invariants} in the Reach guide.}
+
 @subsection{Continue statements}
 
 @reach{
