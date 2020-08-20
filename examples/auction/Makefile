@@ -2,7 +2,7 @@ NAME=auction
 TAG="reachsh/examples-$(NAME):v0.1.1"
 
 build/%.mjs: %.rsh
-	../../reachc -o build $^
+	../../reach compile -o build $^
 
 .PHONY: build
 build: build/$(NAME).mjs

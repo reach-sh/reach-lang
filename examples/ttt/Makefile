@@ -1,7 +1,7 @@
 TAG="reachsh/examples-ttt:v0.1.1"
 
 build/%.main.mjs: %.rsh
-	../../reachc -o build $^
+	../../reach compile -o build $^
 
 .PHONY: build
 build: build/index.main.mjs

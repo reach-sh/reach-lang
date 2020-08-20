@@ -2,7 +2,7 @@ NAME=secured-loan
 TAG="reachsh/examples-$(NAME):v0.1.1"
 
 build/$(NAME).main.mjs:
-	../../reachc -o build $(NAME).rsh
+	../../reach compile -o build $(NAME).rsh
 
 .PHONY: build
 build: build/$(NAME).main.mjs

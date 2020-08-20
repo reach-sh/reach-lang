@@ -34,7 +34,8 @@ If you are looking for something specific, here are some places to look:
 
 ]
 
-@margin-note{The source of this site is available on @hyperlink["https://github.com/reach-sh/reach-lang/tree/master/docs-src"]{GitHub}.}
+@margin-note{The source of this site is available on @hyperlink["https://github.com/reach-sh/reach-lang/tree/master/docs-src"]{GitHub};
+we welcome @link["https://github.com/reach-sh/reach-lang/pulls"]{Pull Requests} for improvements and @link["https://github.com/reach-sh/reach-lang/issues"]{Issues} for problem reports!}
 
 @(table-of-contents)
 

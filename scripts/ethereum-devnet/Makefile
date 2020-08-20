@@ -1,4 +1,4 @@
-TAG="reachsh/ethereum-devnet:v0.1.0"
+TAG="reachsh/ethereum-devnet:v0.1.1"
 NAME="devnet"
 
 .PHONY: build

@@ -124,12 +124,13 @@ Reach programmers don't need to think about details like @emph{contract storage}
 
 After a Reach programmer writes this application in a file like @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}], they could run
 
-@commandline{reachc -o build @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}]}
+@commandline{reach compile -o build @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}]}
 
 and the @exec{build} directory will contain a new file named @reachexlink["build/over-minimal.main.mjs" @exec{over-minimal.main.mjs}], which contains a JavaScript implementation of a @tech{backend} for each participant, as well as the Ethereum bytecode for the @tech{contract}.
 
 @margin-note{If you are curious, you can take a look at this file by going to @reachexlink["build/over-minimal.main.mjs"].
-The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at @reachexlink["build/over-minimal.main.sol"] to see the original Solidity source that it is compiled from.}
+The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at @reachexlink["build/over-minimal.main.sol"] to see the original Solidity source that it is compiled from.
+Reach can leave files like these in place when run with @DFlag{intermediate-files}.}
 
 For this 30 line application, the Reach compiler generated 51 lines of JavaScript code into two functions, one for Alice and one for Bob.
 Separately, it generated 55 lines of Solidity code to implement the contract.
@@ -154,7 +155,7 @@ Let's change the third step to leave a single unit in the balance:
 
 And then run the compiler
 
-@commandline{reachc -o build @reachexlink["over-minimal-error.rsh" @exec{over-minimal-error.rsh}]}
+@commandline{reach compile -o build @reachexlink["over-minimal-error.rsh" @exec{over-minimal-error.rsh}]}
 
 It will print out a detailed error message showing the violation.
 
@@ -189,7 +190,8 @@ The program is just 23 lines long and the shell of it is quite simple:
 
 @item{Lines 1 and 2 import the Reach standard library and the compiled app backend.}
 
-@item{Line 5 is the only part of the program that species to run on Ethereum. (Technically line 1 does as, but we provide standard libraries with identical interfaces for different consensus networks.)}
+@item{Line 5 is the only part of the program that species to run on Ethereum.
+(Technically line 1 does as well, but we provide standard libraries with identical interfaces for different consensus networks.)}
 
 @item{Lines 7 and 8 initialize new test accounts for Alice and Bob.}
 
@@ -251,7 +253,7 @@ In this case, we've set up our application simply: there's one Reach file for th
 This is a common practice, so Reach comes with a simple wrapper script to build and execute such applications.
 We just run:
 
-@commandline{reach-run over-minimal}
+@commandline{reach run over-minimal}
 
 And then Reach
 
@@ -264,7 +266,7 @@ And then Reach
 @item{builds a Docker image based on Reach's standard image for the package; and,}
 
 @item{runs the application connected to Reach's standard private Ethereum devnet image.
-(If you @exec{REACH_ETH_MODE=ganache} to the commandline, then Reach will use @link["https://www.trufflesuite.com/ganache"]{Ganache} instead.)}
+(If you add @exec{REACH_ETH_MODE=ganache} to the command line, then Reach will use @link["https://www.trufflesuite.com/ganache"]{Ganache} instead.)}
 
 ]
 

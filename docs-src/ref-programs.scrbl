@@ -12,8 +12,7 @@ A Reach @deftech{program} is
 a @tech{module} @tech{export} specified by @tech{Reach.App}, as defined by a @tech{source file}.
 
 @tech{Programs} may be @tech{compile}d using the command
-@exec{reachc SOURCE EXPORT}.
-
+@exec{reach compile SOURCE EXPORT}; see @secref["ref-usage"] for more usage options.
 
 @section{Validity}
 

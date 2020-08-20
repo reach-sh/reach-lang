@@ -1,0 +1,153 @@
+#!/bin/sh
+
+REACH=${0}
+HERE=$(dirname $(realpath ${REACH}))
+
+if [ "x${REACH_VERSION}" = "x" ] ; then
+    REACH_VERSION=v0.1.1
+fi
+
+function do_compile() {
+    HS=${HERE}/hs
+    if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
+        export STACK_YAML=${HS}/stack.yaml
+        MAYBE_FAST="--fast"
+        MAYBE_PROF=""
+        MAYBE_PROF_OPTS=""
+        MAYBE_DEV_OPTS="--intermediate-files"
+        if [ "x${REACHC_RELEASE}" = "xY" ] ; then
+            MAYBE_FAST=""
+            MAYBE_DEV_OPTS=""
+        fi
+        if [ "x${REACHC_PROFILE}" = "xY" ] ; then
+            MAYBE_PROF="--profile"
+            MAYBE_PROF_OPTS="+RTS -p"
+        fi
+        stack build ${MAYBE_PROF} ${MAYBE_FAST} && \
+            stack exec ${MAYBE_PROF} -- \
+                  reachc ${MAYBE_DEV_OPTS} $* ${MAYBE_PROF_OPTS}
+    else
+        cat<<EOF | docker-compose -f - run --rm reach $*
+version: '3'
+services:
+  reach:
+    image: reachsh/reach:${REACH_VERSION}
+    volumes:
+      - $PWD:/app
+EOF
+    fi
+}
+
+function do_run() {
+    APP=$1
+    RSH=${APP}.rsh
+    MJS=${APP}.mjs
+
+    if [ "x$APP" = "x" ] ||
+           ! [ -f ${RSH} ] ||
+           ! [ -f ${MJS} ]; then
+        echo "Usage: reach-run APP"
+        echo "  where APP.rsh"
+        echo "    and APP.mjs"
+        echo "  exists in current directory."
+        exit 1
+    fi
+
+    DOCKERFILE=Dockerfile.${APP}
+    PACKAGE_JSON=package.json.${APP}
+
+    do_compile -o build ${RSH}
+
+    cat >${PACKAGE_JSON} <<EOF
+{
+  "name": "@reach-sh/${APP}",
+  "type": "module",
+  "dependencies": {
+    "@reach-sh/stdlib": "${REACH_VERSION}"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "scripts": {
+    "app": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
+  }
+}
+EOF
+
+    cat >${DOCKERFILE} <<EOF
+FROM reachsh/stdlib:${REACH_VERSION}
+
+WORKDIR /app
+
+COPY package.json.${APP} /app/package.json
+RUN npm link '@reach-sh/stdlib'
+RUN npm install
+
+COPY ${MJS} /app
+RUN mkdir /app/build
+COPY build/${APP}.main.mjs /app/build
+
+CMD npm run app
+EOF
+
+    docker build -f ${DOCKERFILE} -t reachsh/reach-app-${APP}:latest .
+
+    rm -f package.json.${APP} ${DOCKERFILE}
+
+    function run() {
+        docker-compose -f - run --rm reach-app $*
+    }
+
+    if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
+
+        cat<<EOF | run
+version: '3'
+services:
+  reach-app:
+    image: reachsh/reach-app-${APP}:latest
+    environment:
+      - ETH_NODE_TYPE=in_memory_ganache
+EOF
+
+    else
+
+        cat<<EOF | run
+version: '3'
+services:
+  reach-app:
+    image: reachsh/reach-app-${APP}:latest
+    depends_on:
+      - devnet
+    environment:
+      - ETH_NODE_URI=http://devnet:8545
+  devnet:
+    image: reachsh/ethereum-devnet:${REACH_VERSION}
+EOF
+    fi
+}
+
+SUBCOMMAND=$1
+shift
+
+case ${SUBCOMMAND} in
+    compile)
+        do_compile $*
+        ;;
+    run)
+        do_run $*
+        ;;
+    upgrade)
+        NEW=reach.$$
+        curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o ${NEW} && \
+            chmod +x ${NEW} && \
+            cp -f ${NEW} ${REACH}
+        exit 0
+        ;;
+    *)
+        echo "Usage: reach COMMAND"
+        echo " where COMMAND is one of"
+        echo "  compile --- compile an app"
+        echo "  run     --- run a simple app"
+        echo "  upgrade --- upgrade Reach"
+        exit 0
+        ;;
+esac
