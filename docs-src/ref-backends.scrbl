@@ -22,7 +22,32 @@ The @jsin{ctc} argument is the result of a call to @jsin{acc.deploy} or @jsin{ac
 
 The @jsin{interact} argument is an object matching the @tech{participant interact interface} for the corresponding @tech{participant}.
 
-The @jsin{stdlib} modules export the following functions that might be used in this @tech{frontend}.
+@(hrule)
+
+This backend does not guarantee that values returned from @jsin{interact} which return to @jsin{interact} are identical in the sense of JavaScript's @jsin{===} operator.
+For example, if the Reach program,
+
+@reach{
+ Reach.App({},
+  [["A", { get: Bytes, give: Fun([Bytes], Bool) }]],
+  (A) => {
+   A.only(() => {
+    const x = interact.give(interact.get); });
+   A.publish(x);
+   commit(); }); }
+
+is given the @jsin{interact} object,
+
+@js{
+ const x = "A string";
+ { get: x,
+   give: (str) => x === str } }
+
+then it is not guaranteed that @reachin{A} will publish @reachin{true}, because the @jsin{str} given to @jsin{give} may not be @jsin{x}.
+
+@(hrule)
+
+The @jsin{stdlib} modules export the following functions that might be used in this @tech{frontend}:
 
 @(hrule)
 @js{
