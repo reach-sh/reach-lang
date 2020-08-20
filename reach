@@ -7,7 +7,7 @@ if [ "x${REACH_VERSION}" = "x" ] ; then
     REACH_VERSION=v0.1.1
 fi
 
-function do_compile {
+do_compile () {
     HS=${HERE}/hs
     if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
         export STACK_YAML=${HS}/stack.yaml
@@ -38,7 +38,7 @@ EOF
     fi
 }
 
-function do_run {
+do_run () {
     APP=$1
     RSH=${APP}.rsh
     MJS=${APP}.mjs
@@ -93,7 +93,7 @@ EOF
 
     rm -f package.json.${APP} ${DOCKERFILE}
 
-    function run {
+    run () {
         docker-compose -f - run --rm reach-app $*
     }
 
