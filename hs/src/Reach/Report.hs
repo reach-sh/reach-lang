@@ -1,13 +1,12 @@
 module Reach.Report
   ( Report (..)
-  , ReportDestination
+  , ReportDestination (..)
   , ReportUrl (..)
   , ReportRef (..)
   , ReportArgs (..)
   , CompileLogId
   , makeReport
   , newCompileLogId
-  , sendReport
   , reportToDest
   , makeReportUrl
   , makeReportRef
@@ -15,6 +14,8 @@ module Reach.Report
   )
 where
 
+import Control.Concurrent
+import Control.Concurrent.Async
 import Control.Monad.Reader
 import Data.Aeson
 import Data.Aeson.TH
@@ -59,25 +60,38 @@ $(deriveJSON reachJSONOptions 'Report)
 class ReportDestination dest where
   sendReport :: dest -> Report -> IO ()
 
-data ReportUrl = ReportUrl Request Manager
+  -- | Int is number of microseconds to wait
+  finalizeReports :: dest -> Int -> IO ()
+  finalizeReports _ _ = return ()
+
+data ReportUrl = ReportUrl Request Manager (IORef [Async ()])
 
 makeReportUrl :: String -> IO ReportUrl
 makeReportUrl url = do
   req <- parseRequest url
   manager <- newManager tlsManagerSettings
   let req' = setRequestMethod "POST" req
-  return $ ReportUrl req' manager
+  asyncsRef <- newIORef []
+  return $ ReportUrl req' manager asyncsRef
 
 makeDynamoReportUrl :: IO ReportUrl
 makeDynamoReportUrl = makeReportUrl "https://log.reach.sh/submit"
 
--- TODO: do this in forked thread?
 instance ReportDestination ReportUrl where
-  sendReport (ReportUrl req manager) r = flip runReaderT manager $ do
-    let req' = setRequestBodyJSON r req
-    lift $ print req'
-    res <- httpNoBody req'
-    lift $ print res
+  sendReport (ReportUrl req manager asyncsRef) r = do
+    m <- async . void $
+      flip runReaderT manager $ do
+        lift $ putStrLn "sending..."
+        let req' = setRequestBodyJSON r req
+        void $ httpNoBody req'
+        lift $ putStrLn "...sent"
+    modifyIORef asyncsRef (m :)
+
+  finalizeReports (ReportUrl _ _ asyncsRef) microseconds = do
+    asyncs <- readIORef asyncsRef
+    waitAll <- async $ mapM_ waitCatch asyncs
+    timeUp <- async $ threadDelay microseconds
+    waitEither_ waitAll timeUp
 
 data ReportRef = ReportRef (IORef [Report])
 

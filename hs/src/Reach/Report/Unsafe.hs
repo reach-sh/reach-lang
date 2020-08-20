@@ -15,6 +15,7 @@ module Reach.Report.Unsafe
   , -- For regular usage (opt out) & testing
     disableReporting
   , enableReporting
+  , waitReports
   , getReportDestination
   , -- For testing
     setReportDestination
@@ -35,6 +36,7 @@ data SomeReportDestination where
 
 instance ReportDestination SomeReportDestination where
   sendReport (SomeReportDestination dest) t = sendReport dest t
+  finalizeReports (SomeReportDestination dest) = finalizeReports dest
 
 -- | Global var for report destination.
 -- Reporting is disabled by default.
@@ -66,9 +68,11 @@ noReportDestination :: SomeReportDestination
 noReportDestination = SomeReportDestination ()
 
 unsafeReportError :: HasCallStack => Text -> a
-unsafeReportError t = error . unsafePerformIO $ do
-  reportError t
-  return (T.unpack t)
+unsafeReportError t = error $! s
+  where
+    s = unsafePerformIO $ do
+      reportError t
+      return (T.unpack t)
 {-# NOINLINE unsafeReportError #-}
 
 disableReporting :: IO ()
@@ -111,3 +115,8 @@ report tag val = do
       { ra_tag = tag
       , ra_val = toJSON val
       }
+
+waitReports :: Int -> IO ()
+waitReports microseconds = do
+  dest <- getReportDestination
+  finalizeReports dest microseconds

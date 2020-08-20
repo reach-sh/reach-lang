@@ -1,5 +1,6 @@
 module Main (main) where
 
+import Control.Exception
 import Control.Monad (when)
 import Data.Aeson
 import Data.Aeson.TH
@@ -89,7 +90,16 @@ main = do
   when (cta_enableReporting args) $ enableReporting
   sendStartReport args env
   -- TODO: collect interesting stats to report at the end
-  compilerToolMain ctool_opts
+  (e :: Either SomeException ()) <- try $ compilerToolMain ctool_opts
   endTime <- getCurrentTime
-  let stats = object ["elapsed" .= diffUTCTime endTime startTime]
+  let result :: String = either (const "failure") (const "success") e
+  let stats =
+        object
+          [ "elapsed" .= diffUTCTime endTime startTime
+          , "result" .= result
+          ]
   report "end" stats
+  waitReports 3_000_000 -- microseconds
+  case e of
+    Left exn -> throwIO exn
+    Right () -> return ()
