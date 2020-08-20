@@ -154,6 +154,46 @@ runTests(() => { describe('The `web3` stdlib', () => {
        .toBe(true));
   });
 
+  describe('protect', () => {
+    const hello = 'hello';
+    const helloHex = stdlib.toHex('hello');
+    const addr = '0xdeadbeef';
+    const n = 10;
+    const bn = bigNumberify(n);
+
+    const {
+      protect, T_Null, T_Bool, T_Bytes, T_Address, T_UInt256,
+      T_Object, T_Array, T_Tuple,
+    } = stdlib;
+    it('converts nully things to Null', () => {
+      expect(protect(T_Null, null)).toBe(null);
+      expect(protect(T_Null, undefined)).toBe(null);
+    });
+    it('converts bytesy things to Bytes', () => {
+      expect(protect(T_Bytes, hello)).toBe(helloHex);
+      expect(protect(T_Bytes, helloHex)).toBe(helloHex);
+    });
+    it('converts numbery things to UInt256', () => {
+      expect(protect(T_UInt256, n)).toBe(bn);
+      expect(protect(T_UInt256, bn)).toBe(bn);
+    });
+    it('handles Bool', () => {
+      expect(protect(T_Bool, true)).toBe(true);
+    });
+    it('handles Address', () => {
+      expect(protect(T_Address, addr)).toBe(addr);
+    });
+    it('recurses into Tuples', () => {
+      expect(protect(T_Tuple([T_UInt256]), [n])).toBe([bn]);
+    });
+    it('recurses into Objects', () => {
+      expect(protect(T_Object({'x': T_Bytes}), {'x': hello})).toBe({'x': helloHex});
+    });
+    it('recurses into Arrays', () => {
+      expect(protect(T_Array(T_Null, 1), [undefined])).toBe([null]);
+    });
+  });
+
   describe('exports', () => {
     const stdlibExports = Object.keys(stdlib).sort();
     const algoStdlibExports = Object.keys(ALGO_stdlib).sort();
