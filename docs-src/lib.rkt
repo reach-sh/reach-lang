@@ -48,8 +48,9 @@
          #:show-lines? [show-lines? #f]
          path . which)
   (define input (file->lines (build-path x path)))
-  (define-values (num-pad ls)
-    (cond [(not show-lines?) (values "" input)]
+  (define-values (num-pad add-num)
+    (cond [(not show-lines?)
+           (values "" (λ (i e) e))]
           [else
            (define line-buffer "    ")
            (define max-line-w
@@ -59,39 +60,53 @@
            (values
             (string-append (make-string max-line-w #\.)
                            line-buffer)
-            (for/list ([e (in-list input)]
-                       [i (in-naturals 1)])
+            (λ (i e)
               (string-append (~r #:min-width max-line-w i)
                              line-buffer
                              e)))]))
+  (define (add-nums x)
+    (for/list ([e (in-list x)]
+               [i (in-naturals 1)])
+      (add-num i e)))
   (define sel
     (match which
-      ['() ls]
+      ['() (add-nums input)]
       [(list 'skip from to skip-s)
        (define once? #f)
        (filter
         (λ (x) x)
-        (for/list ([e (in-list ls)]
+        (for/list ([e (in-list input)]
                    [i (in-naturals 1)])
           (if (and (<= from i) (<= i to))
             (if once? #f
                 (begin (set! once? #t)
                        (string-append num-pad skip-s)))
-            e)))]
+            (add-num i e))))]
       [(list 'only from to skip-s)
-       ;; XXX trim leading spaces?
+       (define trim-amt
+         (let loop ([l (string->list skip-s)])
+           (match l
+             ['() 0]
+             [(cons #\space l) (add1 (loop l))]
+             [_ 0])))
+       (define (do-trim s)
+         (define-values (spaces others)
+           (split-at (string->list s) trim-amt))
+         (unless (andmap (λ (x) (char=? #\space x)) spaces)
+           (error 'do-trim "~v" (vector path which s)))
+         (list->string others))
        (define once? #f)
        (filter
         (λ (x) x)
-        (for/list ([e (in-list ls)]
+        (for/list ([e (in-list input)]
                    [i (in-naturals 1)])
           (if (and (<= from i) (<= i to))
-            (begin (set! once? #f) e)
+            (begin (set! once? #f) (add-num i (do-trim e)))
             (if once? #f
                 (begin (set! once? #t)
-                       (string-append num-pad skip-s))))))]
-      [(list from) (drop ls from)]
-      [(list #f to) (take ls to)]
+                       (string-append num-pad (do-trim skip-s)))))))]
+      [(list from) (drop (add-nums input) from)]
+      [(list #f to) (take (add-nums input) to)]
       [(list from to)
-       (drop (reverse (drop (reverse ls) to)) from)]))
+       (drop (reverse (drop (reverse (add-nums input)) to)) from)]))
   (apply mode (add-between sel "\n")))
