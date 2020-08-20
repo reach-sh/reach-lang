@@ -11,10 +11,12 @@ import Data.List
 import qualified Data.Map.Strict as M
 import Data.Monoid
 import qualified Data.Sequence as Seq
+import qualified Data.Text as T
 import GHC.Generics
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
+import Reach.Report.Unsafe
 import Reach.UnsafeUtil
 
 --- Source Information
@@ -53,7 +55,7 @@ instance Show SrcLoc where
 
 expect_throw :: Show a => HasCallStack => SrcLoc -> a -> b
 expect_throw src ce =
-  error . unsafeRedactAbsStr $
+  unsafeReportError . unsafeRedactAbs . T.pack $
     "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
 
 srcloc_top :: SrcLoc

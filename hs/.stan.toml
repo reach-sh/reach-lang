@@ -37,3 +37,9 @@ file = "src/Reach/EmbeddedFiles.hs"
 type = "Exclude"
 id = "STAN-0212"
 file = "src/Reach/UnsafeUtil.hs"
+
+# We carefully use unsafePerformIO in this module
+[[check]]
+type = "Exclude"
+id = "STAN-0212"
+file = "src/Reach/Report/Unsafe.hs"

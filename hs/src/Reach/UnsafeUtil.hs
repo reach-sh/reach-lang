@@ -3,15 +3,16 @@
 -- For advice on writing unsafe functions, see:
 -- http://hackage.haskell.org/package/base/docs/System-IO-Unsafe.html
 
-module Reach.UnsafeUtil (unsafeRedactAbsStr) where
+module Reach.UnsafeUtil (unsafeRedactAbs) where
 
+import Data.Text (Text)
 import Reach.Util
 import System.Directory
 import System.IO.Unsafe
 
 -- | s/${pwd}/./g
-unsafeRedactAbsStr :: String -> String
-unsafeRedactAbsStr s = unsafePerformIO $ do
+unsafeRedactAbs :: Text -> Text
+unsafeRedactAbs s = unsafePerformIO $ do
   dir <- getCurrentDirectory
-  return $ redactAbsStr dir s
-{-# NOINLINE unsafeRedactAbsStr #-}
+  return $ redactAbs dir s
+{-# NOINLINE unsafeRedactAbs #-}

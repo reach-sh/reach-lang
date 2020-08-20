@@ -1,7 +1,14 @@
 module Main (main) where
 
+import Control.Monad (when)
+import Data.Aeson
+import Data.Aeson.TH
+import Data.Time
 import Options.Applicative
 import Reach.CompilerTool
+import Reach.Report
+import Reach.Report.TH
+import Reach.Report.Unsafe
 import System.Directory
 
 data CompilerToolArgs = CompilerToolArgs
@@ -9,10 +16,15 @@ data CompilerToolArgs = CompilerToolArgs
   , cta_source :: FilePath
   , cta_tops :: [String]
   , cta_intermediateFiles :: Bool
+  , cta_enableReporting :: Bool
   }
+
+$(deriveJSON reachJSONOptions 'CompilerToolArgs)
 
 data CompilerToolEnv = CompilerToolEnv
   {}
+
+$(deriveJSON reachJSONOptions 'CompilerToolEnv)
 
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
 makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
@@ -36,6 +48,7 @@ compiler cwd =
     <*> strArgument (metavar "SOURCE")
     <*> many (strArgument (metavar "EXPORTS..."))
     <*> switch (long "intermediate-files")
+    <*> switch (long "enable-reporting")
 
 getCompilerArgs :: IO CompilerToolArgs
 getCompilerArgs = do
@@ -55,9 +68,28 @@ getCompilerEnv = do
       {
       }
 
+-- Note: This impl is a little more manual than other invocations because
+-- we want to make sure startCompileLogId and CompileLogId match.
+sendStartReport :: CompilerToolArgs -> CompilerToolEnv -> IO ()
+sendStartReport args env = do
+  let val = object ["args" .= args, "env" .= env]
+  r <- makeReport ReportArgs {ra_tag = "start", ra_val = val}
+  let compileLogId = report_CompileLogId r
+  setStartCompileLogId compileLogId
+  let r' = r {report_startCompileLogId = Just compileLogId}
+  dest <- getReportDestination
+  sendReport dest r'
+
 main :: IO ()
 main = do
+  startTime <- getCurrentTime
   args <- getCompilerArgs
   env <- getCompilerEnv
   let ctool_opts = makeCompilerToolOpts args env
+  when (cta_enableReporting args) $ enableReporting
+  sendStartReport args env
+  -- TODO: collect interesting stats to report at the end
   compilerToolMain ctool_opts
+  endTime <- getCurrentTime
+  let stats = object ["elapsed" .= diffUTCTime endTime startTime]
+  report "end" stats

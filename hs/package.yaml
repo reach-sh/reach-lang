@@ -27,6 +27,8 @@ dependencies:
 - hexstring
 - hspec
 - hspec-smallcheck
+- http-conduit
+- http-client-tls
 - io-capture
 - language-javascript >= 0.7.1.0
 - lattices
@@ -63,6 +65,7 @@ default-extensions:
 - DeriveAnyClass
 - DeriveDataTypeable
 - DeriveGeneric
+- DerivingStrategies
 - EmptyDataDeriving
 - FlexibleContexts
 - FlexibleInstances
