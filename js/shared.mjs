@@ -18,51 +18,135 @@ const hexOf = x => toHex(x);
 
 // Contracts
 
-export const T_Null = (v) => v == null;
-
-export const T_Bool = (v) => typeof(v) === 'boolean';
-
-export const T_UInt256 = (v) =>
-  isBigNumber(v) || typeof(v) === 'number';
-
-export const T_Bytes = (x) => {
-  if (typeof(x) === 'string') {
-    if (isHex(x)) {
-      return true;
-    } else {
-      // TODO: fix things so this restriction is not necessary
-      throw Error(`Please use toHex on string sent to Reach: "${x}"`);
+export const T_Null = {
+  name: 'Null',
+  canonicalize: (v) => {
+    // Doesn't check with triple eq; we're being lenient here
+    if (v != null) {
+      throw Error(`Expected null, but got ${JSON.stringify(v)}`);
     }
-  } else {
-    return false;
+    return null;
+  },
+};
+
+export const T_Bool = {
+  name: 'Bool',
+  canonicalize: (v) => {
+    if (typeof(v) !== 'boolean') {
+      throw Error(`Expected boolean, but got ${JSON.stringify(v)}`);
+    }
+    return v;
+  },
+};
+
+export const T_UInt256 = {
+  name: 'UInt256',
+  canonicalize: (v) => {
+    if (isBigNumber(v)) {
+      return v;
+    }
+    if (typeof(v) === 'number') {
+      return bigNumberify(v);
+    }
+    throw Error(`Expected BigNumber or number, but got ${JSON.stringify(v)}`);
   }
 };
 
-export const T_Address = (x) => isHex(x); // || typeof(x) === 'string';
+export const T_Bytes = {
+  name: 'Bytes',
+  canonicalize: (x) => {
+    if (typeof(x) !== 'string') {
+      throw Error(`Bytes expected string, but got ${JSON.stringify(x)}`);
+    }
+    if (isHex(x)) {
+      return x;
+    } else {
+      return toHex(x);
+      // TODO: fix things so this restriction is not necessary
+      // throw Error(`Please use toHex on string sent to Reach: "${x}"`);
+    }
+  },
+};
 
-export const T_Array = (ctc, sz) => (args) => {
-  if (sz != args.length) { return false; }
-  for ( let i = 0; i < sz; i++ ) {
-    if ( ! ctc(args[i]) ) { return false; } }
-  return true; };
+export const T_Address = {
+  name: 'Address',
+  canonicalize: (x) => {
+    if (typeof x !== 'string') {
+      throw Error(`Address must be a string, but got: ${JSON.stringify(x)}`);
+    }
+    if (x.slice(0,2) !== '0x') {
+      throw Error(`Address must start with 0x, but got: ${JSON.stringify(x)}`);
+    }
+    if (!isHex(x)) {
+      throw Error(`Address must be a valid hex string, but got: ${JSON.stringify(x)}`);
+    }
+    // TODO check address length?
+    return x;
+  },
+};
 
-export const T_Tuple = (ctcs) => (args) => {
-  if (ctcs.length != args.length) { return false; }
-  for ( let i = 0; i < ctcs.length; i++ ) {
-    if ( ! ctcs[i](args[i]) ) { return false; } }
-  return true; };
+export const T_Array = (ctc, sz) => {
+  // TODO: check ctc, sz for sanity
+  return {
+    name: `Array(${ctc.name}, ${sz})`,
+    canonicalize: (args) => {
+      if (!Array.isArray(args)) {
+        throw Error(`Expected an Array, but got ${JSON.stringify(args)}`);
+      }
+      if (sz != args.length) {
+        throw Error(`Expected array of length ${sz}, but got ${args.length}`);
+      }
+      return args.map((arg) => ctc.canonicalize(arg));
+    },
+  };
+};
 
-export const T_Object = (co) => (vo) => {
-  for ( const prop in co ) {
-    if ( ! co[prop](vo[prop]) ) { return false; } }
-  return true; };
+export const T_Tuple = (ctcs) => {
+  // TODO: check ctcs for sanity
+  return {
+    name: `Tuple(${ctcs.map((ctc) => ` ${ctc.name} `)})`,
+    canonicalize: (args) => {
+      if (!Array.isArray(args)) {
+        throw Error(`Expected a Tuple, but got ${JSON.stringify(args)}`);
+      }
+      if (ctcs.length != args.length) {
+        throw Error(`Expected tuple of size ${ctcs.length}, but got ${args.length}`);
+      }
+      return args.map((arg, i) => ctcs[i].canonicalize(arg));
+    }
+  };
+};
 
-export const protect = (how, what) => {
-  if ( how(what) ) { return what; }
-  else {
-    const hows = JSON.stringify(how);
-    const whats = JSON.stringify(what);
-    throw Error(`Expected ${hows}, got: "${whats}"`); } };
+export const T_Object = (co) => {
+  // TODO: check co for sanity
+  return {
+    name: `Object(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
+    canonicalize: (vo) => {
+      if (typeof(vo) !== 'object') {
+        throw Error(`Expected object, but got ${JSON.stringify(vo)}`);
+      }
+      const obj = {};
+      for ( const prop in co ) {
+        // This is dumb but it's how ESLint says to do it
+        // https://eslint.org/docs/rules/no-prototype-builtins
+        if (!{}.hasOwnProperty.call(vo, prop)) {
+          throw Error(`Expected prop ${prop}, but didn't found it in ${Object.keys(vo)}`);
+        }
+        obj[prop] = co[prop].canonicalize(vo[prop]);
+      }
+      return obj;
+    },
+  };
+};
+
+export const protect = (ctc, v) => {
+  try {
+    return ctc.canonicalize(v);
+  } catch (e) {
+    console.log(`Protect failed: expected ${ctc.name} but got ${JSON.stringify(v)}`);
+    throw e;
+  }
+};
 
 export const assert = d => nodeAssert.strict(d);
 

@@ -14,7 +14,7 @@ import * as backend from './build/over-minimal.main.mjs';
     backend.Alice(
       stdlib, ctcAlice,
       { request: toNetworkFormat('5'),
-        info: stdlib.toHex('If you wear these, you can see beyond evil illusions.') }),
+        info: 'If you wear these, you can see beyond evil illusions.' }),
     backend.Bob(
       stdlib, ctcBob,
       { want: (amt) => console.log(`Alice asked Bob for ${amt}`),

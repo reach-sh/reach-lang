@@ -1,3 +1,4 @@
+examples = over-minimal
 all: render check
 
 STYLE=solarizedlight
@@ -16,3 +17,7 @@ check:
 install:
 	raco pkg install
 	pip install pygments-style-solarized
+
+.PHONY: run-all-examples
+run-all-examples:
+	(set -e; for example in $(examples) ; do (cd x/ && ../../reach run $$example) ; done)

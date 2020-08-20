@@ -38,6 +38,7 @@ publish-all:
 .PHONY: rebuild-and-run-all-examples
 rebuild-and-run-all-examples:
 	cd examples && time $(MAKE) clean-all build-all run-all
+	cd docs-src && make run-all-examples
 
 .PHONY: rbe
 rbe: rebuild-and-run-all-examples
