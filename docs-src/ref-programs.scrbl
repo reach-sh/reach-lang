@@ -512,9 +512,9 @@ It is @tech{invalid} to use unary operations on the wrong types of @tech{values}
  a <= b
  a < b }
 
-A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operator}s: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}. The operators @reachin{==} and @reachin{!=} operate on numbers, while the operators @reachin{===} and @reachin{!==} operate on byte strings. Numeric operations, like @reachin{+} and @reachin{>}, only operate on numbers. Since all numbers in Reach are integers, operations like @reachin{/} truncate their result. Boolean operations, like @reachin{&&}, only operate on booleans. It is @tech{invalid} to use binary operations on the wrong types of @tech{values}.
-
 @margin-note{Bitwise operations are not supported by all @tech{consensus networks} and greatly decrease the efficiency of verification.}
+
+A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operator}s: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}. The operators @reachin{==} and @reachin{!=} operate on numbers, while the operators @reachin{===} and @reachin{!==} operate on byte strings. Numeric operations, like @reachin{+} and @reachin{>}, only operate on numbers. Since all numbers in Reach are integers, operations like @reachin{/} truncate their result. Boolean operations, like @reachin{&&}, only operate on booleans. It is @tech{invalid} to use binary operations on the wrong types of @tech{values}.
 
 @(hrule)
 @reach{
@@ -730,3 +730,59 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
  closeTo( Who, after ) }
 
 @index{closeTo} Returns has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
+
+@(hrule)
+@reach{
+ and(a, b)  // &&
+ or(a, b)   // ||
+ add(a, b)  // +
+ sub(a, b)  // -
+ mul(a, b)  // *
+ div(a, b)  // /
+ mod(a, b)  // %
+ lt(a, b)   // <
+ le(a, b)   // <=
+ ge(a, b)   // >=
+ gt(a, b)   // >
+ lsh(a, b)  // <<
+ rsh(a, b)  // >>
+ band(a, b) // &
+ bior(a, b) // |
+ bxor(a, b) // ^
+ eq(a, b)   // ==, ===
+ neq(a, b)  // !=, !==
+}
+
+All @tech{binary expression} operators have a corresponidng named function in the @tech{standard library}.
+Note that while @reachin{&&} and @reachin{||} may not evaluate their second argument,
+their corresponding named functions @reachin{and} and @reachin{or}, always do.
+
+@reach{
+ poly_eq(a, b)  // eq on Bytes, types, or UInt256
+ bytes_eq(a, b) // eq on Bytes
+ type_eq(a, b)  // eq on types
+ int_eq(a, b)   // eq on UInt256
+}
+
+Note that @reachin{==} is a function which operates on multiple types.
+Both arguments must be of the same type.
+Specialized functions exist for equality checking on each supported type.
+
+@(hrule)
+@reach{
+ ite(choosesFirst, [heap1 - amount, heap2], [heap1, heap2 - amount])
+}
+
+@tech{Conditional expression}s may also be written with the @reachin{ite} function,
+however, note that this function always evaluates both of its branches,
+while the regular conditional expression only evaluates one branch.
+
+@(hrule)
+@reach{
+ typeOf(x)  // type
+ is_type(t) // Bool
+}
+
+The @reachin{typeOf} primitive function is the same as @reachin{typeof}:
+it returns the type of its argument.
+The @reachin{is_type} function returns @reachin{true} if its argument is a type.
