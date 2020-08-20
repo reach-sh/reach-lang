@@ -43,7 +43,10 @@
     (format "https://github.com/reach-sh/reach-lang/blob/master/docs-src/x/~a" p))
   @link[url (or label url)])
 
-(define (reachex #:show-lines? [show-lines? #f] path . which)
+(define (reachex
+         #:mode [mode reach]
+         #:show-lines? [show-lines? #f]
+         path . which)
   (define input (file->lines (build-path x path)))
   (define-values (num-pad ls)
     (cond [(not show-lines?) (values "" input)]
@@ -76,6 +79,7 @@
                        (string-append num-pad skip-s)))
             e)))]
       [(list 'only from to skip-s)
+       ;; XXX trim leading spaces?
        (define once? #f)
        (filter
         (λ (x) x)
@@ -90,4 +94,4 @@
       [(list #f to) (take ls to)]
       [(list from to)
        (drop (reverse (drop (reverse ls) to)) from)]))
-  (apply reach (add-between sel "\n")))
+  (apply mode (add-between sel "\n")))

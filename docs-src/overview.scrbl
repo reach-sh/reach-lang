@@ -152,18 +152,44 @@ And then run the compiler
 
 It will print out a detailed error message showing the violation.
 
-@reachex[#:show-lines? #t "over-minimal-error.txt"
-         'only 1 11 "      // ..."]
+@reachex[#:mode verbatim
+         #:show-lines? #t "over-minimal-error.txt"
+         'only 2 13 "// ..."]
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by @tech{frontends} that would lead to the property failing to hold.
+In this case, it reports that if Alice were to pass an @reachin{interact.request} over @reachin{1} at the start of the program on line 4, then the balance of the contract would not be provably @reachin{0} at the end of the program.
 
 There's a lot more to say about @seclink["guide-assert"]{automatic verification}; indeed, it is one of the main reasons programmers of decentralized applications want to use Reach, but we'll leave it at that for now.
 
 @section[#:tag "over-interface"]{Interface}
 
+@margin-note{You can look at the entire example program by visiting @reachexlink["over-minimal.mjs"].}
+
+XXX
+
+@reachex[#:mode js
+         #:show-lines? #t "over-minimal.mjs"
+         'skip 14 21 "    // ..."]
+
+XXX
+
+@reachex[#:mode js
+         #:show-lines? #t "over-minimal.mjs"
+         'only 14 17 "    // ..."]
+
+XXX
+
+@reachex[#:mode js
+         #:show-lines? #t "over-minimal.mjs"
+         'only 18 21 "    // ..."]
+
 XXX
 
 @section[#:tag "over-execute"]{Execute}
+
+XXX
+
+@reachexlink["over-minimal.sh"]
 
 XXX
 
@@ -180,9 +206,9 @@ In the rest of @seclink["guide"]{the guide}, we discuss design issues like this.
 
 @itemlist[
 
-@item{Performing @seclink["guide-assert"]{automatic verification} of your application; or}
+@item{Effectively using @seclink["guide-assert"]{automatic verification} to check your application; or,}
 
-@item{Fortifying your application against @seclink["guide-timeout"]{non-participation}.}
+@item{Fortifying your application against @seclink["guide-timeout"]{non-participation}; or,}
 
 @item{Building @seclink["guide-abstract"]{interaction abstractions} for related applications.}
 
