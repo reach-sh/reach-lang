@@ -22,10 +22,6 @@ export function neq (x, y) {
   return not(x == y); };
 export function bytes_neq (x, y) {
   return not(x === y); };
-export function or (x, y) {
-  return (x ? true : y); };
-export function and (x, y) {
-  return (x ? y : false); };
 
 // Operator aliases
 export const add = (x, y) => x + y;
@@ -44,6 +40,8 @@ export const rsh = (x, y) => x >> y;
 export const band = (x, y) => x & y;
 export const bior = (x, y) => x | y;
 export const bxor = (x, y) => x ^ y;
+export const or = (x, y) => x || y;
+export const and = (x, y) => x && y;
 
 // Library functions
 export function implies (x, y) {

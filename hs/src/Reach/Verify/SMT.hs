@@ -309,7 +309,7 @@ display_fail ctxt tat f tk tse mrd = do
   --- below) and then just show the remaining variables found by the
   --- model.
   putStrLn $ "  Theorem formalization:"
-  putStrLn $ "  " ++ (SMT.showsSExpr tse "")
+  putStrLn $ "  " ++ (SMT.showsSExpr (smtAddPathConstraints ctxt tse) "")
   putStrLn $ ""
   putStrLn $ "  This could be violated if..."
   let pm =
@@ -364,15 +364,18 @@ display_fail ctxt tat f tk tse mrd = do
   putStrLn $ "  In context..."
   mapM_ putStrLn vctxt
 
-smtAssert :: SMTCtxt -> SExpr -> SMTComp
-smtAssert ctxt se = SMT.assert smt se'
+smtAddPathConstraints :: SMTCtxt -> SExpr -> SExpr
+smtAddPathConstraints ctxt se = se'
   where
-    smt = ctxt_smt ctxt
     se' =
       case ctxt_path_constraint ctxt of
         [] -> se
         pcs ->
           smtApply "=>" [(smtApply "and" pcs), se]
+
+smtAssert :: SMTCtxt -> SExpr -> SMTComp
+smtAssert ctxt se = SMT.assert smt $ smtAddPathConstraints ctxt se
+  where smt = ctxt_smt ctxt
 
 verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> SMTComp
 verify1 ctxt at mf tk se = SMT.inNewScope smt $ do

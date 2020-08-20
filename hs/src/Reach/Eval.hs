@@ -575,7 +575,7 @@ ctxt_stack_push ctxt f =
 binaryToPrim :: SrcLoc -> SLEnv -> JSBinOp -> SLVal
 binaryToPrim at env o =
   case o of
-    JSBinOpAnd a -> fun a "and"
+    JSBinOpAnd _ -> impossible "and"
     JSBinOpDivide a -> prim a (DIV)
     JSBinOpEq a -> fun a "poly_eq"
     JSBinOpGe a -> prim a (PGE)
@@ -585,7 +585,7 @@ binaryToPrim at env o =
     JSBinOpMinus a -> prim a (SUB)
     JSBinOpMod a -> prim a (MOD)
     JSBinOpNeq a -> fun a "neq"
-    JSBinOpOr a -> fun a "or"
+    JSBinOpOr _ -> impossible "or"
     JSBinOpPlus a -> prim a (ADD)
     JSBinOpStrictEq a -> fun a "poly_eq"
     JSBinOpStrictNeq a -> fun a "bytes_neq"
@@ -1109,7 +1109,14 @@ evalExpr ctxt at sco st e = do
     JSClassExpression _ _ _ _ _ _ -> illegal
     JSCommaExpression _ _ _ -> illegal
     JSExpressionBinary lhs op rhs ->
-      doCallV st (binaryToPrim at env op) JSNoAnnot [lhs, rhs]
+      case op of
+        JSBinOpAnd a -> tern a True
+        JSBinOpOr a -> tern a False
+        _ ->
+          doCallV st (binaryToPrim at env op) JSNoAnnot [lhs, rhs]
+      where tern a isAnd = evalExpr ctxt at sco st $ JSExpressionTernary lhs a te a fe
+              where (te, fe) = case isAnd of True -> (rhs, JSLiteral a "false")
+                                             False -> (JSLiteral a "true", rhs)
     JSExpressionParen a ie _ ->
       evalExpr ctxt (srcloc_jsa "paren" a at) sco st ie
     JSExpressionPostfix _ _ -> illegal
