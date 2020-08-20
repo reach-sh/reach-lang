@@ -22,9 +22,19 @@ export const T_Bool = (v) => typeof(v) === 'boolean';
 export const T_UInt256 = (v) =>
   isBigNumber(v) || typeof(v) === 'number';
 
-export const T_Bytes = (x) => typeof(x) === 'string';
+export const T_Bytes = (x) => {
+  if (typeof(x) === 'string') {
+    if (isHex(x)) {
+      return true;
+    } else {
+      throw Error(`Please use toHex on string sent to Reach: "${x}"`);
+    }
+  } else {
+    return false;
+  }
+};
 
-export const T_Address = (x) => isHex(x) || typeof(x) === 'string';
+export const T_Address = (x) => isHex(x); // || typeof(x) === 'string';
 
 export const T_Array = (ctc, sz) => (args) => {
   if (sz != args.length) { return false; }
