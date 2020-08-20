@@ -8,5 +8,5 @@ services:
       - ETH_NODE_URI=http://devnet:8545
       - ALGO_SERVER=http://docker.for.mac.localhost
   devnet:
-    image: reachsh/ethereum-devnet:v0.1.0
+    image: reachsh/ethereum-devnet:v0.1.1
 

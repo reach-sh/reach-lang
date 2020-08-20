@@ -8,5 +8,5 @@ services:
     environment:
       - ETH_NODE_URI=http://devnet:8545
   devnet:
-    image: reachsh/ethereum-devnet:v0.1.0
+    image: reachsh/ethereum-devnet:v0.1.1
     

@@ -27,7 +27,7 @@ run-ganache:
 
 .PHONY: run-devnet
 run-devnet:
-	docker run -it -p 127.0.0.1:18545:8545 reachsh/ethereum-devnet:v0.1.0
+	docker run -it -p 127.0.0.1:18545:8545 reachsh/ethereum-devnet:v0.1.1
 # ctrl+C to kill
 
 .PHONY: run-alice
