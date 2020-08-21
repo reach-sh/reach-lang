@@ -29,7 +29,7 @@ In other words, this backend does not ensure that Reach programs are parametric 
 
 Positive and negative are best understood by example with a function type: a positive position is supplied by the function, such as the result; while a negative position is supplied by the caller, such as the arguments.
 These notions generalize, however, to higher (and lower) order contexts.
-In the case of Reach, this means that non-function values in @tech{participant interact interface} are positive.
+In the case of Reach, this means that non-function values in a @tech{participant interact interface} are positive.
 
 For example, if the Reach program,
 
