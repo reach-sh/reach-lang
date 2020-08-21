@@ -11,6 +11,10 @@ The following guides are available:
 
 @local-table-of-contents[#:style 'immediate-only]
 
+@section[#:tag "guide-testing"]{Testing and validating decentralized applications}
+
+XXX
+
 @section[#:tag "guide-assert"]{How and what to verify}
 
 XXX
