@@ -18,7 +18,7 @@ all: check run-all
 .PHONY: check
 check:
 	@find hs -name '*.hs' | xargs wc
-	@ag --color --ignore ./Makefile --ignore docs-src/Makefile --ignore svg/todo.svg --ignore README.md --ignore-dir docs --ignore '*.dead' '(xxx|todo|fixme)'
+	@ag --color --ignore ./Makefile --ignore docs-src/Makefile --ignore svg/todo.svg --ignore README.md --ignore-dir docs --ignore 'package-lock.json' --ignore '*.dead' '(xxx|todo|fixme)'
 
 .PHONY: todo
 todo:

@@ -87,6 +87,8 @@ do_run () {
 }
 EOF
 
+    # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
+    
     cat >${DOCKERFILE} <<EOF
 FROM reachsh/stdlib:${REACH_VERSION}
 
