@@ -50,6 +50,7 @@ is given the @jsin{interact} object,
    give: (str) => x === str } }
 
 then it is not guaranteed that @reachin{A} will publish @reachin{true}, because the @jsin{str} given to @jsin{give} may not be identical to @jsin{x}.
+(However, they are @jsin{bytes_eq}.)
 
 @(hrule)
 
