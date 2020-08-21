@@ -7,6 +7,11 @@ if [ "x${REACH_VERSION}" = "x" ] ; then
     REACH_VERSION=v0.1.1
 fi
 
+if ! (which docker docker-compose &>/dev/null) ; then
+    echo "Reach relies on an installation of docker and docker-compose"
+    exit 1
+fi
+
 do_compile () {
     HS=${HERE}/hs
 
@@ -21,7 +26,8 @@ do_compile () {
       esac
     done
 
-    if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
+    ID=$(docker info --format '{{.ID}}')
+    if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] && (which stack &>/dev/null) ; then
         export STACK_YAML=${HS}/stack.yaml
         MAYBE_FAST="--fast"
         MAYBE_PROF=""
@@ -35,11 +41,12 @@ do_compile () {
             MAYBE_PROF="--profile"
             MAYBE_PROF_OPTS="+RTS -p"
         fi
+        export REACHC_ID=${ID}
         stack build ${MAYBE_PROF} ${MAYBE_FAST} && \
             stack exec ${MAYBE_PROF} -- \
                   reachc ${MAYBE_DEV_OPTS} $* ${MAYBE_PROF_OPTS}
     else
-        cat<<EOF | docker-compose -f - run --rm reach $*
+        cat<<EOF | docker-compose -f - run --rm -e "REACHC_ID=${ID}" reach $*
 version: '3'
 services:
   reach:

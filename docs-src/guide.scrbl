@@ -35,3 +35,7 @@ XXX
 
 XXX
 
+@section[#:tag "guide-reach"]{How does Reach work?}
+
+XXX
+
