@@ -24,7 +24,13 @@ The @jsin{interact} argument is an object matching the @tech{participant interac
 
 @(hrule)
 
-This backend does not guarantee that values returned from @jsin{interact} which return to @jsin{interact} are identical in the sense of JavaScript's @jsin{===} operator.
+This backend does not guarantee that values in a positive position in a @tech{participant interact interface}, that are later passed to a negative position in a @tech{participant interact interface}, will be identical, in the sense of JavaScript's @jsin{===} operator, to the original value.
+In other words, this backend does not ensure that Reach programs are parametric over JavaScript values that they interact with.
+
+Positive and negative are best understood by example with a function type: a positive position is supplied by the function, such as the result; while a negative position is supplied by the caller, such as the arguments.
+These notions generalize, however, to higher (and lower) order contexts.
+In the case of Reach, this means that non-function values in @tech{participant interact interface} are positive.
+
 For example, if the Reach program,
 
 @reach{
@@ -43,7 +49,7 @@ is given the @jsin{interact} object,
  { get: x,
    give: (str) => x === str } }
 
-then it is not guaranteed that @reachin{A} will publish @reachin{true}, because the @jsin{str} given to @jsin{give} may not be @jsin{x}.
+then it is not guaranteed that @reachin{A} will publish @reachin{true}, because the @jsin{str} given to @jsin{give} may not be identical to @jsin{x}.
 
 @(hrule)
 
