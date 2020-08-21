@@ -1,7 +1,7 @@
 <stdout>
 Verifying with mode = VM_Honest
 Verifying with mode = VM_Dishonest RoleContract
-Checked 14 theorems; No failures!
+Checked 16 theorems; No failures!
 
 </stdout>
 <stderr>

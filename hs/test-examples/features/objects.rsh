@@ -36,10 +36,9 @@ export const main = Reach.App(
     const obj5 = {x};
     assert(obj5.x == 1);
 
-    // TODO: object splice + keys can be overridden
-    // "Invalid name shadowing. Cannot be rebound: x"
-    // const obj5 = {...obj3, x: 2};
-    // assert(obj5.x == 2);
+    // object splice + keys can be overridden
+    const obj6 = {...obj3, x: 2};
+    assert(obj6.x == 2);
 
     // TODO: structural object equality comparison
     // "Err_Type_Mismatch" (int vs obj)

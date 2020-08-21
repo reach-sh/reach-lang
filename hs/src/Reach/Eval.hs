@@ -362,29 +362,43 @@ isSecretIdent :: SLVar -> Bool
 isSecretIdent ('_' : _ : _) = True
 isSecretIdent _ = False
 
+data EnvInsertMode = AllowShadowing | DisallowShadowing
+
 -- | The "_" never actually gets bound;
 -- it is therefore only ident that may be "shadowed".
 -- Secret idents must start with _.
 -- Public idents must not start with _.
 -- Special idents "interact" and "__decode_testing__" skip these rules.
-env_insert :: HasCallStack => SrcLoc -> SLVar -> SLSVal -> SLEnv -> SLEnv
-env_insert _ "_" _ env = env
-env_insert at k v env =
-  case M.lookup k env of
-    Nothing -> case v of
+env_insert_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLVar -> SLSVal -> SLEnv -> SLEnv
+env_insert_ _ _ "_" _ env = env
+env_insert_ insMode at k v env = case insMode of
+  DisallowShadowing ->
+    case M.lookup k env of
+      Nothing -> go
+      Just _ -> expect_throw at (Err_Shadowed k)
+  AllowShadowing -> go
+  where
+    go = case v of
       -- Note: secret ident enforcement is limited to doOnly
       (Public, _)
         | not (isSpecialIdent k) && isSecretIdent k ->
           expect_throw at (Err_Eval_NotPublicIdent k)
       _ -> M.insert k v env
-    Just _ ->
-      expect_throw at (Err_Shadowed k)
+
+env_insert :: HasCallStack => SrcLoc -> SLVar -> SLSVal -> SLEnv -> SLEnv
+env_insert = env_insert_ DisallowShadowing
+
+env_insertp_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLEnv -> (SLVar, SLSVal) -> SLEnv
+env_insertp_ imode at = flip (uncurry (env_insert_ imode at))
 
 env_insertp :: HasCallStack => SrcLoc -> SLEnv -> (SLVar, SLSVal) -> SLEnv
-env_insertp at = flip (uncurry (env_insert at))
+env_insertp = env_insertp_ DisallowShadowing
+
+env_merge_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
+env_merge_ imode at left righte = foldl' (env_insertp_ imode at) left $ M.toList righte
 
 env_merge :: HasCallStack => SrcLoc -> SLEnv -> SLEnv -> SLEnv
-env_merge at left righte = foldl' (env_insertp at) left $ M.toList righte
+env_merge = env_merge_ DisallowShadowing
 
 -- | The "_" ident may never be looked up.
 env_lookup :: HasCallStack => SrcLoc -> SLVar -> SLEnv -> SLSVal
@@ -1065,7 +1079,7 @@ evalPropertyPair ctxt at sco st fenv p =
         case vs of
           [e] -> do
             SLRes vlifts st_sv sv <- evalExpr ctxt at' sco st_name e
-            return $ SLRes vlifts st_sv $ (flvl, env_insert at' f sv fenv)
+            return $ SLRes vlifts st_sv $ (flvl, env_insert_ AllowShadowing at' f sv fenv)
           _ -> expect_throw at' (Err_Obj_IllegalFieldValues vs)
     JSPropertyIdentRef a v ->
       evalPropertyPair ctxt at sco st fenv p'
@@ -1079,7 +1093,7 @@ evalPropertyPair ctxt at sco st fenv p =
       keepLifts slifts $
         case sv of
           SLV_Object _ senv ->
-            return $ SLRes mempty st_se $ (slvl, env_merge at' fenv senv)
+            return $ SLRes mempty st_se $ (slvl, env_merge_ AllowShadowing at' fenv senv)
           _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
     JSObjectMethod {} ->
       expect_throw at (Err_Obj_IllegalMethodDefinition p)
@@ -1123,9 +1137,12 @@ evalExpr ctxt at sco st e = do
         JSBinOpOr a -> tern a False
         _ ->
           doCallV st (binaryToPrim at env op) JSNoAnnot [lhs, rhs]
-      where tern a isAnd = evalExpr ctxt at sco st $ JSExpressionTernary lhs a te a fe
-              where (te, fe) = case isAnd of True -> (rhs, JSLiteral a "false")
-                                             False -> (JSLiteral a "true", rhs)
+      where
+        tern a isAnd = evalExpr ctxt at sco st $ JSExpressionTernary lhs a te a fe
+          where
+            (te, fe) = case isAnd of
+              True -> (rhs, JSLiteral a "false")
+              False -> (JSLiteral a "true", rhs)
     JSExpressionParen a ie _ ->
       evalExpr ctxt (srcloc_jsa "paren" a at) sco st ie
     JSExpressionPostfix _ _ -> illegal
