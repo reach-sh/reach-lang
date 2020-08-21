@@ -46,3 +46,9 @@ rbe: rebuild-and-run-all-examples
 .PHONY: docs
 docs:
 	cd docs-src && $(MAKE)
+
+.PHONY: reach-lint
+reach-lint:
+	./reach lint docs-src/  # XXX: "bad example" files must still pass lint?
+	./reach lint hs/rsh/
+	./reach lint hs/test-examples/features  # XXX: no way for linter to allow rebinding _ ?

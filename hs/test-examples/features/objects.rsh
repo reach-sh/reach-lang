@@ -18,18 +18,18 @@ export const main = Reach.App(
     // assert(obj1_x1 == 1);
 
     // object str field
-    const obj2 = {"x": 1};
+    const obj2 = {'x': 1};
     assert(obj2.x == 1);
 
     // object computed field
-    const field = "x";
+    const field = 'x';
     const obj3 = {[field]: 1};
     assert(obj3.x == 1);
 
     // object splice, keys can be added
-    const obj4 = {...obj3, y: "yval"};
+    const obj4 = {...obj3, y: 'yval'};
     assert(obj4.x == 1);
-    assert(obj4.y === "yval");
+    assert(obj4.y === 'yval');
 
     // object field shorthand
     const x = 1;

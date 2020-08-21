@@ -13,7 +13,7 @@ const fnDeclassify = (_x) => { return declassify(_x); };
 const fnPolymorphic = (x) => { return x + 1; };
 
 export const main = Reach.App(
-  {}, [["A", {x: UInt256}]], (A) => {
+  {}, [['A', {x: UInt256}]], (A) => {
     A.only(() => {
       const _x = interact.x;
       assume(_x == 1);
@@ -28,7 +28,7 @@ export const main = Reach.App(
       require(x2 == 2);
 
       const _x11 = fnPolymorphic(_x10);
-      require(_x11 == 11)
+      require(_x11 == 11);
     });
   }
 );

@@ -2,19 +2,19 @@
 
 export const main = Reach.App(
   {},
-  [["A", {getX: Fun([], UInt256),
-          getObj: Fun([], Object({"x": UInt256}))}]],
+  [['A', {getX: Fun([], UInt256),
+          getObj: Fun([], Object({'x': UInt256}))}]],
   (A) => {
     A.only(() => {
       const obj0 = declassify(interact.getObj());
       assume(obj0.x == 1);
       require(obj0.x == 1);
 
-      const key = "x";
+      const key = 'x';
       const x = declassify(interact.getX());
       assume(x == 1);
 
-      const obj1 = {[key]: x}
+      const obj1 = {[key]: x};
       require(obj1.x == 1);
 
       // TODO: object field ref []

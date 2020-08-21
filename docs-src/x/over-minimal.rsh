@@ -12,7 +12,7 @@ export const main =
         const request = declassify(interact.request); });
       A.publish(request);
       commit();
-      
+
       B.only(() => {
         interact.want(request); });
       B.pay(request);

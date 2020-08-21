@@ -1,0 +1,68 @@
+# vim: set tabstop=2 shiftwidth=2 expandtab softtabstop=2 autoindent smartindent:
+# http://eslint.org/docs/rules
+
+# Copied from js/.eslintrc.yaml
+
+rules:
+  linebreak-style:
+    - error
+    - unix
+  semi:
+    - error
+    - always
+  comma-dangle:
+    - off
+  no-mixed-spaces-and-tabs:
+    - off
+  no-extra-boolean-cast:
+    - off
+  no-console:
+    - off
+  no-constant-condition:
+    - off
+  no-debugger:
+    - off
+  block-scoped-var:
+    - error
+  keyword-spacing:
+    - warn
+  no-trailing-spaces:
+    - error
+  quotes:
+    - warn
+    - single
+    - allowTemplateLiterals: true
+  no-duplicate-imports:
+    - error
+  max-len:
+    - error
+    - code:       256
+      ignoreUrls: true
+  no-tabs:
+    - error
+
+  # Because of Reach's different scoping rules,
+  # we can't use the undef/unused warnings
+  no-undef:
+    - off
+  no-unused-vars:
+    - off
+
+
+env:
+  es6:      true
+  node:     true
+  browser:  true
+
+globals:
+  baseDir: true
+  _: true
+
+extends:
+  - 'eslint:recommended'
+
+parserOptions:
+  sourceType:  module
+  ecmaVersion: 10
+
+parser: babel-eslint
