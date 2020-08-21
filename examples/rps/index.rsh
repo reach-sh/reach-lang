@@ -4,7 +4,7 @@
 
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 function showHand(handX) {
-  require(isHand(handX));
+  assert(isHand(handX));
   if ( handX == ROCK ) { return 'ROCK'; }
   else if ( handX == PAPER ) { return 'PAPER'; }
   else { return 'SCISSORS'; } };
@@ -23,7 +23,7 @@ function getHand(interact) {
 
 const [ isOutcome, B_WINS, DRAW, A_WINS, A_QUITS, B_QUITS ] = makeEnum(5);
 function showOutcome(o) {
-  require(isOutcome(o));
+  assert(isOutcome(o));
   if (o == B_WINS) { return 'Bob wins'; }
   else if (o == DRAW) { return 'Draw'; }
   else if (o == A_WINS) { return 'Alice wins'; }

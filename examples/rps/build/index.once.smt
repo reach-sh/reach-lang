@@ -1213,6 +1213,11 @@
     (+ (declare-fun ctc_balance3 () UInt256 ))
     (+ (assert (<= 0 ctc_balance3 ) ))
     (+ (assert (= ctc_balance3 (- ctc_balance2 v25 ) ) ))
+    (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
     (+ (assert true ))
     (+ (declare-fun v34 () Null ))
     (push
@@ -1297,6 +1302,11 @@
      (+ (declare-fun ctc_balance4 () UInt256 ))
      (+ (assert (<= 0 ctc_balance4 ) ))
      (+ (assert (= ctc_balance4 (- ctc_balance3 v76 ) ) ))
+     (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
      (+ (assert true ))
      (+ (declare-fun v85 () Null ))
      (push
@@ -1349,6 +1359,11 @@
       (+ (declare-fun ctc_balance5 () UInt256 ))
       (+ (assert (<= 0 ctc_balance5 ) ))
       (+ (assert (= ctc_balance5 (- ctc_balance4 v121 ) ) ))
+      (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
       (+ (assert true ))
       (+ (declare-fun v130 () Null ))
       (push
@@ -1386,6 +1401,11 @@
      (+ (assert (= v147 (< v112 3 ) ) ))
      (+ (declare-fun v148 () Bool ))
      (+ (assert (= v148 (ite v146 v147 false ) ) ))
+     (push
+      (+ (assert (not v148 ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
      (+ (assert v148 ))
      (+ (declare-fun v150 () Bool ))
      (+ (assert (= v150 (= v112 0 ) ) ))
@@ -1421,6 +1441,11 @@
        (+ (declare-fun ctc_balance6 () UInt256 ))
        (+ (assert (<= 0 ctc_balance6 ) ))
        (+ (assert (= ctc_balance6 (- ctc_balance5 v164 ) ) ))
+       (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
        (+ (assert true ))
        (+ (declare-fun v173 () Null ))
        (push
@@ -1645,6 +1670,11 @@
       (+ (assert (= v277 (< v191 5 ) ) ))
       (+ (declare-fun v278 () Bool ))
       (+ (assert (= v278 (ite v276 v277 false ) ) ))
+      (push
+       (+ (assert (not v278 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
       (+ (assert v278 ))
       (+ (declare-fun v280 () Bool ))
       (+ (assert (= v280 (= v191 0 ) ) ))
@@ -1722,6 +1752,11 @@
     (+ (declare-fun ctc_balance3 () UInt256 ))
     (+ (assert (<= 0 ctc_balance3 ) ))
     (+ (assert (= ctc_balance3 (- ctc_balance2 v25 ) ) ))
+    (push
+     (+ (assert (not true ) ))
+     (+ (check-sat ))
+     (- unsat)
+    )
     (+ (assert true ))
     (+ (declare-fun v42 () Null ))
     (push
@@ -1772,6 +1807,11 @@
      (+ (declare-fun ctc_balance4 () UInt256 ))
      (+ (assert (<= 0 ctc_balance4 ) ))
      (+ (assert (= ctc_balance4 (- ctc_balance3 v76 ) ) ))
+     (push
+      (+ (assert (not true ) ))
+      (+ (check-sat ))
+      (- unsat)
+     )
      (+ (assert true ))
      (+ (declare-fun v93 () Null ))
      (push
@@ -1851,6 +1891,11 @@
       (+ (declare-fun ctc_balance5 () UInt256 ))
       (+ (assert (<= 0 ctc_balance5 ) ))
       (+ (assert (= ctc_balance5 (- ctc_balance4 v121 ) ) ))
+      (push
+       (+ (assert (not true ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
       (+ (assert true ))
       (+ (declare-fun v138 () Null ))
       (push
@@ -1910,6 +1955,11 @@
        (+ (declare-fun ctc_balance6 () UInt256 ))
        (+ (assert (<= 0 ctc_balance6 ) ))
        (+ (assert (= ctc_balance6 (- ctc_balance5 v164 ) ) ))
+       (push
+        (+ (assert (not true ) ))
+        (+ (check-sat ))
+        (- unsat)
+       )
        (+ (assert true ))
        (+ (declare-fun v181 () Null ))
        (push
@@ -2131,6 +2181,11 @@
       (+ (assert (= v292 (< v191 5 ) ) ))
       (+ (declare-fun v293 () Bool ))
       (+ (assert (= v293 (ite v291 v292 false ) ) ))
+      (push
+       (+ (assert (not v293 ) ))
+       (+ (check-sat ))
+       (- unsat)
+      )
       (+ (assert v293 ))
       (+ (declare-fun v295 () Bool ))
       (+ (assert (= v295 (= v191 0 ) ) ))

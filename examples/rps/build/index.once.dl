@@ -53,11 +53,11 @@ prompt() {
             prompt() {
               only("A") {
                 prompt() {
-                  claim(CT_Require)(DLC_Bool True);
+                  claim(CT_Assert)(DLC_Bool True);
                   const v34 = interact("A")."endsWith"(DLC_Bytes "Bob quits"); }; };
               only("B") {
                 prompt() {
-                  claim(CT_Require)(DLC_Bool True);
+                  claim(CT_Assert)(DLC_Bool True);
                   const v42 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); }; }; };
             exit(); } }; }){
       const v17 = TXN_VALUE();
@@ -110,11 +110,11 @@ prompt() {
           prompt() {
             only("A") {
               prompt() {
-                claim(CT_Require)(DLC_Bool True);
+                claim(CT_Assert)(DLC_Bool True);
                 const v85 = interact("A")."endsWith"(DLC_Bytes "Alice quits"); }; };
             only("B") {
               prompt() {
-                claim(CT_Require)(DLC_Bool True);
+                claim(CT_Assert)(DLC_Bool True);
                 const v93 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); }; }; };
           exit(); } }; }){
     const v68 = TXN_VALUE();
@@ -160,11 +160,11 @@ prompt() {
             prompt() {
               only("A") {
                 prompt() {
-                  claim(CT_Require)(DLC_Bool True);
+                  claim(CT_Assert)(DLC_Bool True);
                   const v130 = interact("A")."endsWith"(DLC_Bytes "Bob quits"); }; };
               only("B") {
                 prompt() {
-                  claim(CT_Require)(DLC_Bool True);
+                  claim(CT_Assert)(DLC_Bool True);
                   const v138 = interact("B")."endsWith"(DLC_Bytes "Bob quits"); }; }; };
             exit(); } }; }){
       const v113 = TXN_VALUE();
@@ -181,7 +181,7 @@ prompt() {
             const v146 = PLE(DLC_Int 0,v112);
             const v147 = PLT(v112,DLC_Int 3);
             const v148 = IF_THEN_ELSE(v146,v147,DLC_Bool False);
-            claim(CT_Require)(v148);
+            claim(CT_Assert)(v148);
             const v150 = PEQ(v112,DLC_Int 0);
             if v150 then {
               throw("ROCK").to(144); }
@@ -209,11 +209,11 @@ prompt() {
               prompt() {
                 only("A") {
                   prompt() {
-                    claim(CT_Require)(DLC_Bool True);
+                    claim(CT_Assert)(DLC_Bool True);
                     const v173 = interact("A")."endsWith"(DLC_Bytes "Alice quits"); }; };
                 only("B") {
                   prompt() {
-                    claim(CT_Require)(DLC_Bool True);
+                    claim(CT_Assert)(DLC_Bool True);
                     const v181 = interact("B")."endsWith"(DLC_Bytes "Alice quits"); }; }; };
               exit(); } }; }){
         const v156 = TXN_VALUE();
@@ -315,7 +315,7 @@ prompt() {
         const v276 = PLE(DLC_Int 0,v191);
         const v277 = PLT(v191,DLC_Int 5);
         const v278 = IF_THEN_ELSE(v276,v277,DLC_Bool False);
-        claim(CT_Require)(v278);
+        claim(CT_Assert)(v278);
         const v280 = PEQ(v191,DLC_Int 0);
         if v280 then {
           throw("Bob wins").to(274); }
@@ -340,7 +340,7 @@ prompt() {
         const v291 = PLE(DLC_Int 0,v191);
         const v292 = PLT(v191,DLC_Int 5);
         const v293 = IF_THEN_ELSE(v291,v292,DLC_Bool False);
-        claim(CT_Require)(v293);
+        claim(CT_Assert)(v293);
         const v295 = PEQ(v191,DLC_Int 0);
         if v295 then {
           throw("Bob wins").to(289); }

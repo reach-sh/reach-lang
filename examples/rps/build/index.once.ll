@@ -50,11 +50,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
         transfer.(v25).to(v7);
         commit();
         only("A") {
-          claim(CT_Require)(DLC_Bool True);
+          claim(CT_Assert)(DLC_Bool True);
           const v34 = interact("A")."endsWith"(DLC_Bytes "Bob quits");
            };
         only("B") {
-          claim(CT_Require)(DLC_Bool True);
+          claim(CT_Assert)(DLC_Bool True);
           const v42 = interact("B")."endsWith"(DLC_Bytes "Bob quits");
            };
         exit(); } })){
@@ -107,11 +107,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
           transfer.(v76).to(v16);
           commit();
           only("A") {
-            claim(CT_Require)(DLC_Bool True);
+            claim(CT_Assert)(DLC_Bool True);
             const v85 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
              };
           only("B") {
-            claim(CT_Require)(DLC_Bool True);
+            claim(CT_Assert)(DLC_Bool True);
             const v93 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
              };
           exit(); } })){
@@ -159,11 +159,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
             transfer.(v121).to(v7);
             commit();
             only("A") {
-              claim(CT_Require)(DLC_Bool True);
+              claim(CT_Assert)(DLC_Bool True);
               const v130 = interact("A")."endsWith"(DLC_Bytes "Bob quits");
                };
             only("B") {
-              claim(CT_Require)(DLC_Bool True);
+              claim(CT_Assert)(DLC_Bool True);
               const v138 = interact("B")."endsWith"(DLC_Bytes "Bob quits");
                };
             exit(); } })){
@@ -180,7 +180,7 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
           const v146 = PLE(DLC_Int 0,v112);
           const v147 = PLT(v112,DLC_Int 3);
           const v148 = IF_THEN_ELSE(v146,v147,DLC_Bool False);
-          claim(CT_Require)(v148);
+          claim(CT_Assert)(v148);
           const v150 = PEQ(v112,DLC_Int 0);
           if v150 then {
             v144 = DLC_Bytes "ROCK";
@@ -210,11 +210,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
               transfer.(v164).to(v16);
               commit();
               only("A") {
-                claim(CT_Require)(DLC_Bool True);
+                claim(CT_Assert)(DLC_Bool True);
                 const v173 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
                  };
               only("B") {
-                claim(CT_Require)(DLC_Bool True);
+                claim(CT_Assert)(DLC_Bool True);
                 const v181 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
                  };
               exit(); } })){
@@ -320,7 +320,7 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
             const v276 = PLE(DLC_Int 0,v191);
             const v277 = PLT(v191,DLC_Int 5);
             const v278 = IF_THEN_ELSE(v276,v277,DLC_Bool False);
-            claim(CT_Require)(v278);
+            claim(CT_Assert)(v278);
             const v280 = PEQ(v191,DLC_Int 0);
             if v280 then {
               v274 = DLC_Bytes "Bob wins";
@@ -353,7 +353,7 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
             const v291 = PLE(DLC_Int 0,v191);
             const v292 = PLT(v191,DLC_Int 5);
             const v293 = IF_THEN_ELSE(v291,v292,DLC_Bool False);
-            claim(CT_Require)(v293);
+            claim(CT_Assert)(v293);
             const v295 = PEQ(v191,DLC_Int 0);
             if v295 then {
               v289 = DLC_Bytes "Bob wins";

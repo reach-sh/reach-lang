@@ -26,7 +26,6 @@
           const !v22 = TXN_VALUE();
           const !v24 = PEQ(DLC_Int 0,v22);
           claim(CT_Require)(v24);
-          claim(CT_Require)(DLC_Bool True);
           eff interact("A")."endsWith"(DLC_Bytes "Bob quits");
           
            } }){
@@ -42,7 +41,6 @@
             const !v50 = TXN_VALUE();
             const !v52 = PEQ(DLC_Int 0,v50);
             claim(CT_Require)(v52);
-            claim(CT_Require)(DLC_Bool True);
             eff interact("A")."endsWith"(DLC_Bytes "Alice quits");
             
              } }){
@@ -88,7 +86,6 @@
                 const !v125 = TXN_VALUE();
                 const !v127 = PEQ(DLC_Int 0,v125);
                 claim(CT_Require)(v127);
-                claim(CT_Require)(DLC_Bool True);
                 eff interact("A")."endsWith"(DLC_Bytes "Alice quits");
                 
                  } }){
@@ -102,7 +99,6 @@
                   const !v170 = TXN_VALUE();
                   const !v172 = PEQ(DLC_Int 0,v170);
                   claim(CT_Require)(v172);
-                  claim(CT_Require)(DLC_Bool True);
                   eff interact("A")."endsWith"(DLC_Bytes "Bob quits");
                   
                    } }){
@@ -114,10 +110,6 @@
               const !v194 = IF_THEN_ELSE(v192,v193,DLC_Bool False);
               claim(CT_Require)(v194);
               let v196;
-              const !v198 = PLE(DLC_Int 0,v164);
-              const !v199 = PLT(v164,DLC_Int 3);
-              const !v200 = IF_THEN_ELSE(v198,v199,DLC_Bool False);
-              claim(CT_Require)(v200);
               const !v202 = PEQ(v164,DLC_Int 0);
               if v202 then {
                 v196 = DLC_Bytes "ROCK";
@@ -140,7 +132,6 @@
                     const !v213 = TXN_VALUE();
                     const !v215 = PEQ(DLC_Int 0,v213);
                     claim(CT_Require)(v215);
-                    claim(CT_Require)(DLC_Bool True);
                     eff interact("A")."endsWith"(DLC_Bytes "Alice quits");
                     
                      } }){
@@ -203,10 +194,6 @@
              };
            };
         let v332;
-        const !v334 = PLE(DLC_Int 0,v72);
-        const !v335 = PLT(v72,DLC_Int 5);
-        const !v336 = IF_THEN_ELSE(v334,v335,DLC_Bool False);
-        claim(CT_Require)(v336);
         const !v338 = PEQ(v72,DLC_Int 0);
         if v338 then {
           v332 = DLC_Bytes "Bob wins";
@@ -257,7 +244,6 @@
           const !v22 = TXN_VALUE();
           const !v24 = PEQ(DLC_Int 0,v22);
           claim(CT_Require)(v24);
-          claim(CT_Require)(DLC_Bool True);
           eff interact("B")."endsWith"(DLC_Bytes "Bob quits");
           
            } }){
@@ -271,7 +257,6 @@
             const !v50 = TXN_VALUE();
             const !v52 = PEQ(DLC_Int 0,v50);
             claim(CT_Require)(v52);
-            claim(CT_Require)(DLC_Bool True);
             eff interact("B")."endsWith"(DLC_Bytes "Alice quits");
             
              } }){
@@ -294,7 +279,6 @@
                 const !v125 = TXN_VALUE();
                 const !v127 = PEQ(DLC_Int 0,v125);
                 claim(CT_Require)(v127);
-                claim(CT_Require)(DLC_Bool True);
                 eff interact("B")."endsWith"(DLC_Bytes "Alice quits");
                 
                  } }){
@@ -329,7 +313,6 @@
                   const !v170 = TXN_VALUE();
                   const !v172 = PEQ(DLC_Int 0,v170);
                   claim(CT_Require)(v172);
-                  claim(CT_Require)(DLC_Bool True);
                   eff interact("B")."endsWith"(DLC_Bytes "Bob quits");
                   
                    } }){
@@ -347,7 +330,6 @@
                     const !v213 = TXN_VALUE();
                     const !v215 = PEQ(DLC_Int 0,v213);
                     claim(CT_Require)(v215);
-                    claim(CT_Require)(DLC_Bool True);
                     eff interact("B")."endsWith"(DLC_Bytes "Alice quits");
                     
                      } }){
@@ -410,10 +392,6 @@
              };
            };
         let v347;
-        const !v349 = PLE(DLC_Int 0,v72);
-        const !v350 = PLT(v72,DLC_Int 5);
-        const !v351 = IF_THEN_ELSE(v349,v350,DLC_Bool False);
-        claim(CT_Require)(v351);
         const !v353 = PEQ(v72,DLC_Int 0);
         if v353 then {
           v347 = DLC_Bytes "Bob wins";

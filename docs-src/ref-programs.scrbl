@@ -663,12 +663,14 @@ and the next N values are distinct @reachin{UInt256}s.
  assume( claim ) }
 
 @index{assume} An @tech{assumption} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{frontends}.
+This may only appear in a @tech{local step}.
 
 @(hrule)
 @reach{
  require( claim ) }
 
 @index{require} An @tech{requirement} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{participants}.
+This may only appear in a @tech{consensus step}.
 
 @(hrule)
 @reach{

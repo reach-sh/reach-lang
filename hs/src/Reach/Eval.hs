@@ -490,6 +490,7 @@ data SLMode
     SLM_LocalStep
   | --- A "toconsensus" moves from "step" to "consensus step" then to "step" again
     SLM_ConsensusStep
+  | SLM_ConsensusPure
   deriving (Eq, Generic, Show)
 
 --- A state represents the state of the protocol, so it is returned
@@ -913,8 +914,16 @@ evalPrim ctxt at sco st p sargs =
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "digest") rng) (DLE_Digest at dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
     SLPrim_claim ct ->
-      return $ SLRes lifts st $ public $ SLV_Null at "claim"
+      case (st_mode st, ct) of
+        (SLM_LocalStep, CT_Assume) -> good
+        (SLM_ConsensusStep, CT_Require) -> good
+        (SLM_ConsensusPure, CT_Require) -> good
+        (_, CT_Assert) -> good
+        (_, CT_Possible) -> good
+        (cm, _) ->
+          expect_throw at $ Err_Eval_IllegalMode cm $ "assert " ++ show ct
       where
+        good = return $ SLRes lifts st $ public $ SLV_Null at "claim"
         darg = case map snd sargs of
           [arg] -> checkType at T_Bool arg
           _ -> illegal_args
@@ -1399,7 +1408,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mmsg mamt mtime) ->
       case (st_mode st, st_live st) of
         (SLM_Step, True) -> do
-          let st_pure = st {st_mode = SLM_Module}
+          let st_pure = st {st_mode = SLM_ConsensusPure}
           let pdvs = st_pdvs st
           let penv = sco_lookup_penv ctxt sco who
           (msg_env, tmsg_) <-
@@ -1716,7 +1725,7 @@ evalStmt ctxt at sco st ss =
                 SLRes init_lifts st_var vars_env <-
                   evalDecls ctxt var_at st sco while_decls
                 let st_var' = stEnsureMode at SLM_ConsensusStep st_var
-                let st_pure = st_var' {st_mode = SLM_Module}
+                let st_pure = st_var' {st_mode = SLM_ConsensusPure}
                 let while_help v sv = do
                       let (_, val) = sv
                       vn <- ctxt_alloc ctxt var_at

@@ -50,11 +50,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
         transfer.(v25).to(v7);
         commit();
         only("A") {
-          claim(CT_Require)(DLC_Bool True);
+          claim(CT_Assert)(DLC_Bool True);
           const v34 = interact("A")."endsWith"(DLC_Bytes "Bob quits");
            };
         only("B") {
-          claim(CT_Require)(DLC_Bool True);
+          claim(CT_Assert)(DLC_Bool True);
           const v42 = interact("B")."endsWith"(DLC_Bytes "Bob quits");
            };
         exit(); } })){
@@ -79,11 +79,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
           transfer.(v53).to(v16);
           commit();
           only("A") {
-            claim(CT_Require)(DLC_Bool True);
+            claim(CT_Assert)(DLC_Bool True);
             const v62 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
              };
           only("B") {
-            claim(CT_Require)(DLC_Bool True);
+            claim(CT_Assert)(DLC_Bool True);
             const v70 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
              };
           exit(); } })){
@@ -158,11 +158,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
               transfer.(v128).to(v16);
               commit();
               only("A") {
-                claim(CT_Require)(DLC_Bool True);
+                claim(CT_Assert)(DLC_Bool True);
                 const v137 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
                  };
               only("B") {
-                claim(CT_Require)(DLC_Bool True);
+                claim(CT_Assert)(DLC_Bool True);
                 const v145 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
                  };
               exit(); } })){
@@ -210,11 +210,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
                 transfer.(v173).to(v7);
                 commit();
                 only("A") {
-                  claim(CT_Require)(DLC_Bool True);
+                  claim(CT_Assert)(DLC_Bool True);
                   const v182 = interact("A")."endsWith"(DLC_Bytes "Bob quits");
                    };
                 only("B") {
-                  claim(CT_Require)(DLC_Bool True);
+                  claim(CT_Assert)(DLC_Bool True);
                   const v190 = interact("B")."endsWith"(DLC_Bytes "Bob quits");
                    };
                 exit(); } })){
@@ -231,7 +231,7 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
               const v198 = PLE(DLC_Int 0,v164);
               const v199 = PLT(v164,DLC_Int 3);
               const v200 = IF_THEN_ELSE(v198,v199,DLC_Bool False);
-              claim(CT_Require)(v200);
+              claim(CT_Assert)(v200);
               const v202 = PEQ(v164,DLC_Int 0);
               if v202 then {
                 v196 = DLC_Bytes "ROCK";
@@ -261,11 +261,11 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
                   transfer.(v216).to(v16);
                   commit();
                   only("A") {
-                    claim(CT_Require)(DLC_Bool True);
+                    claim(CT_Assert)(DLC_Bool True);
                     const v225 = interact("A")."endsWith"(DLC_Bytes "Alice quits");
                      };
                   only("B") {
-                    claim(CT_Require)(DLC_Bool True);
+                    claim(CT_Assert)(DLC_Bool True);
                     const v233 = interact("B")."endsWith"(DLC_Bytes "Alice quits");
                      };
                   exit(); } })){
@@ -379,7 +379,7 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
         const v334 = PLE(DLC_Int 0,v72);
         const v335 = PLT(v72,DLC_Int 5);
         const v336 = IF_THEN_ELSE(v334,v335,DLC_Bool False);
-        claim(CT_Require)(v336);
+        claim(CT_Assert)(v336);
         const v338 = PEQ(v72,DLC_Int 0);
         if v338 then {
           v332 = DLC_Bytes "Bob wins";
@@ -412,7 +412,7 @@ publish("A", join(v7))(v3,v4)(v5, v6).pay(v8){
         const v349 = PLE(DLC_Int 0,v72);
         const v350 = PLT(v72,DLC_Int 5);
         const v351 = IF_THEN_ELSE(v349,v350,DLC_Bool False);
-        claim(CT_Require)(v351);
+        claim(CT_Assert)(v351);
         const v353 = PEQ(v72,DLC_Int 0);
         if v353 then {
           v347 = DLC_Bytes "Bob wins";

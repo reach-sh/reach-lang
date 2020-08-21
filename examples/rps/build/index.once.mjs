@@ -23,7 +23,6 @@ export async function A(stdlib, ctc, interact) {
     const v22 = txn3.value;
     const v24 = stdlib.eq(0, v22);
     stdlib.assert(v24);
-    stdlib.assert(true);
     stdlib.protect(stdlib.T_Null, await interact.endsWith('Bob quits'));
     
     return; }
@@ -66,7 +65,6 @@ export async function A(stdlib, ctc, interact) {
       const v73 = txn4.value;
       const v75 = stdlib.eq(0, v73);
       stdlib.assert(v75);
-      stdlib.assert(true);
       stdlib.protect(stdlib.T_Null, await interact.endsWith('Alice quits'));
       
       return; }
@@ -83,7 +81,6 @@ export async function A(stdlib, ctc, interact) {
         const v118 = txn5.value;
         const v120 = stdlib.eq(0, v118);
         stdlib.assert(v120);
-        stdlib.assert(true);
         stdlib.protect(stdlib.T_Null, await interact.endsWith('Bob quits'));
         
         return; }
@@ -97,10 +94,6 @@ export async function A(stdlib, ctc, interact) {
         const v142 = v140 ? v141 : false;
         stdlib.assert(v142);
         let v144;
-        const v146 = stdlib.le(0, v112);
-        const v147 = stdlib.lt(v112, 3);
-        const v148 = v146 ? v147 : false;
-        stdlib.assert(v148);
         const v150 = stdlib.eq(v112, 0);
         if (v150) {
           v144 = 'ROCK';
@@ -124,7 +117,6 @@ export async function A(stdlib, ctc, interact) {
           const v161 = txn6.value;
           const v163 = stdlib.eq(0, v161);
           stdlib.assert(v163);
-          stdlib.assert(true);
           stdlib.protect(stdlib.T_Null, await interact.endsWith('Alice quits'));
           
           return; }
@@ -184,10 +176,6 @@ export async function A(stdlib, ctc, interact) {
                }
              }
           let v274;
-          const v276 = stdlib.le(0, v191);
-          const v277 = stdlib.lt(v191, 5);
-          const v278 = v276 ? v277 : false;
-          stdlib.assert(v278);
           const v280 = stdlib.eq(v191, 0);
           if (v280) {
             v274 = 'Bob wins';
@@ -236,7 +224,6 @@ export async function B(stdlib, ctc, interact) {
     const v22 = txn3.value;
     const v24 = stdlib.eq(0, v22);
     stdlib.assert(v24);
-    stdlib.assert(true);
     stdlib.protect(stdlib.T_Null, await interact.endsWith('Bob quits'));
     
     return; }
@@ -254,7 +241,6 @@ export async function B(stdlib, ctc, interact) {
       const v73 = txn4.value;
       const v75 = stdlib.eq(0, v73);
       stdlib.assert(v75);
-      stdlib.assert(true);
       stdlib.protect(stdlib.T_Null, await interact.endsWith('Alice quits'));
       
       return; }
@@ -292,7 +278,6 @@ export async function B(stdlib, ctc, interact) {
         const v118 = txn5.value;
         const v120 = stdlib.eq(0, v118);
         stdlib.assert(v120);
-        stdlib.assert(true);
         stdlib.protect(stdlib.T_Null, await interact.endsWith('Bob quits'));
         
         return; }
@@ -313,7 +298,6 @@ export async function B(stdlib, ctc, interact) {
           const v161 = txn6.value;
           const v163 = stdlib.eq(0, v161);
           stdlib.assert(v163);
-          stdlib.assert(true);
           stdlib.protect(stdlib.T_Null, await interact.endsWith('Alice quits'));
           
           return; }
@@ -373,10 +357,6 @@ export async function B(stdlib, ctc, interact) {
                }
              }
           let v289;
-          const v291 = stdlib.le(0, v191);
-          const v292 = stdlib.lt(v191, 5);
-          const v293 = v291 ? v292 : false;
-          stdlib.assert(v293);
           const v295 = stdlib.eq(v191, 0);
           if (v295) {
             v289 = 'Bob wins';
