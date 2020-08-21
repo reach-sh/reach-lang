@@ -28,7 +28,7 @@ export const main = Reach.App(
       const _x11 = fnPolymorphic(_x10);
       const x11 = declassify(_x11);
     });
-    A.publish(x10, x, x2, x11)
+    A.publish(x10, x, x2, x11);
     require(x10 == 10);
     require(x == 1);
     require(x2 == 2);
