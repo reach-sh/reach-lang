@@ -62,7 +62,7 @@ function getValidMove(interact, st) {
   const _m = interact.getMove(st);
   assume(legalMove(_m));
   assume(validMove(st, _m));
-  return declassify(_m); };
+  return declassify(_m); }
 
 function applyMove(st, m) {
   require(legalMove(m));
@@ -70,7 +70,7 @@ function applyMove(st, m) {
   const turn = st.xs_turn;
   return { xs_turn: ! turn,
            xs: (turn ? array_set(st.xs, m, true) : st.xs),
-           os: (turn ? st.os : array_set(st.os, m, true)) }; };
+           os: (turn ? st.os : array_set(st.os, m, true)) }; }
 
 const ttt_winner_is_x = ( st ) => winning_p(st.xs);
 const ttt_winner_is_o = ( st ) => winning_p(st.os);
@@ -92,7 +92,7 @@ const Bob =
 export const main =
   Reach.App(
     {},
-    [["A", Alice], ["B", Bob]],
+    [['A', Alice], ['B', Bob]],
     (A, B) => {
       A.only(() => {
         const wagerAmount = declassify(interact.getWager());

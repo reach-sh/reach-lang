@@ -11,15 +11,20 @@ rules:
     - error
     - always
   comma-dangle:
-    - off
-  no-mixed-spaces-and-tabs:
-    - off
+    - error
+    - arrays: always-multiline
+      objects: always-multiline
+      imports: always-multiline
+      exports: always-multiline
+      # TODO: allow or require on functions once parser supports
+      functions: never
   no-extra-boolean-cast:
     - off
   no-console:
     - off
   no-constant-condition:
-    - off
+    - error
+    - checkLoops: false
   no-debugger:
     - off
   block-scoped-var:
@@ -31,21 +36,28 @@ rules:
   quotes:
     - warn
     - single
-    - allowTemplateLiterals: true
+    # TODO: enable template literals once we implement them
+    - allowTemplateLiterals: false
+      avoidEscape: true
   no-duplicate-imports:
     - error
   max-len:
     - error
-    - code:       256
+    - code:       80
       ignoreUrls: true
   no-tabs:
     - error
+  no-mixed-spaces-and-tabs:
+    - off # just say no to tabs
 
   # Because of Reach's different scoping rules,
   # we can't use the undef/unused warnings
   no-undef:
     - off
   no-unused-vars:
+    - off
+  # TODO: enable this once we fix anti-examples/partial_loop_var_updates.rsh
+  no-self-assign:
     - off
 
 

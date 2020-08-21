@@ -1,5 +1,7 @@
 'reach 0.1';
 
+// anti-example at bottom of file
+
 /*
   This is an abstraction of a multi-signature wallet.
 
@@ -52,10 +54,12 @@ export const main =
 
         if ( approval ) {
           transfer(howMuch).to(Child);
-          [ bal, oks, nos ] = [ bal - howMuch, oks + 1, nos ];
+          // XXX solc: got 4, but expected 5
+          [ bal, oks ] = [ bal - howMuch, oks + 1 ];
           continue; }
         else {
-          [ bal, oks, nos ] = [ bal, oks, nos + 1 ];
+          // XXX solc: got 3, but expected 5
+          nos = nos + 1;
           continue; } }
 
       commit(); } );

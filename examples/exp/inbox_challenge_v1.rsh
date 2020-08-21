@@ -27,7 +27,10 @@ function inside(Asserter, Challenger,
                 lowerHash, upperHash, chainLength,
                 callback) {
   Challenger.only(() => {
-    const challengeHuh = declassify(is(bool, interact.assert(lowerHash, upperHash, chainLength))); } );
+    const challengeHuh = declassify(
+      interact.assert(lowerHash, upperHash, chainLength)
+    );
+  });
   Challenger.publish(challengeHuh)
     .timeout(DELAY, Asserter, () => {
       callback(true);
@@ -50,7 +53,9 @@ function inside(Asserter, Challenger,
       assert(firstLength < segments);
       commit();
       Asserter.only(() => {
-        const newHashes = declassify(is(uint256[K], interact.split(lower, upper, K)));
+        const newHashes = declassify(
+          interact.split(lower, upper, K)
+        );
         assume(newHashes[0] == lower);
         assume(newHashes[lastSegment] == upper); });
       Asserter.publish(newHashes)
@@ -62,7 +67,9 @@ function inside(Asserter, Challenger,
       require(newHashes[lastSegment] == upper);
       commit();
       Challenger.only(() => {
-        const challengedSegment = declassify(is(uint256, interact.challengedSegment(newHashes, segments)));
+        const challengedSegment = declassify(
+          interact.challengedSegment(newHashes, segments)
+        );
         assume(challengedSegment < lastSegment); });
       Challenger.publish(challengedSegment)
         .timeout(DELAY, _, () => {
@@ -79,8 +86,8 @@ function inside(Asserter, Challenger,
 
     commit();
     Asserter.only(() => {
-      const value = declassify(is(uint256, interact.onestepproof(lower, upper)));
-      assume(digest(lower, value) == upper) });
+      const value = declassify(interact.onestepproof(lower, upper));
+      assume(digest(lower, value) == upper); });
     Asserter.publish(value)
       .timeout(DELAY, _, () => {
         callback(false);
@@ -102,7 +109,7 @@ function main() {
       lowerHash,
       upperHash,
       chainLength,
-    ] = declassify( is([address, address, address, uint256, uint256, uint256 ], interact.getParams())); });
+    ] = declassify(interact.getParams()); });
   Rollup.publish(CallbackDest, Asserter, Challenger,
                  lowerHash, upperHash, chainLength);
   commit();

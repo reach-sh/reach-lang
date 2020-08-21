@@ -12,12 +12,12 @@ function main() {
             _Recipient,
             _maturity,
             _refund,
-            _dormant
+            _dormant,
           ] = declassify(is([ uint256,
                               address,
                               uint256,
                               uint256,
-                              uint256
+                              uint256,
                             ], interact.getParams())); });
   Payer.publish(payment, Recipient, maturity, refund, dormant)
     .pay(payment);
@@ -25,10 +25,10 @@ function main() {
 
   Recipient.publish()
     .wait(maturity)
-    .timeout(refund, closeTo(Payer, "Returned to funder"))
-    .timeout(dormant, closeTo(Bystander, "Removed by bystander"));
+    .timeout(refund, closeTo(Payer, 'Returned to funder'))
+    .timeout(dormant, closeTo(Bystander, 'Removed by bystander'));
   transfer(payment).to(Recipient);
   commit();
 
-  return "Extracted by recepient";
-};
+  return 'Extracted by recepient';
+}

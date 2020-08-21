@@ -1,6 +1,7 @@
 # XXX: "bad example" files must still pass lint?
 linted_reach_src_dirs = \
 	docs-src/ \
+  examples/ \
 	hs/rsh/ \
 	hs/test-examples/
 

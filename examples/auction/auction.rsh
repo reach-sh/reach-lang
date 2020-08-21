@@ -11,7 +11,7 @@ function main() {
     const reserve = declassify(is(uint256, interact.reserve())); });
   Seller.publish(product, reserve)
     .pay(reserve);
-  
+
   Bidders.only(() => {
     const bid = declassify(is(uint256, interact.bid())); });
   const Buyer =

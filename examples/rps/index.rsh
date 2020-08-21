@@ -7,7 +7,7 @@ function showHand(handX) {
   assert(isHand(handX));
   if ( handX == ROCK ) { return 'ROCK'; }
   else if ( handX == PAPER ) { return 'PAPER'; }
-  else { return 'SCISSORS'; } };
+  else { return 'SCISSORS'; } }
 
 function getHand_(interact) {
   const s = interact.getHand();
@@ -17,9 +17,9 @@ function getHand_(interact) {
   assume(rockP || paperP || scissorsP);
   if (rockP) { return ROCK; }
   else if (paperP) { return PAPER; }
-  else { return SCISSORS; } };
+  else { return SCISSORS; } }
 function getHand(interact) {
-  return ensure(isHand, getHand_(interact)); };
+  return ensure(isHand, getHand_(interact)); }
 
 const [ isOutcome, B_WINS, DRAW, A_WINS, A_QUITS, B_QUITS ] = makeEnum(5);
 function showOutcome(o) {
@@ -28,7 +28,7 @@ function showOutcome(o) {
   else if (o == DRAW) { return 'Draw'; }
   else if (o == A_WINS) { return 'Alice wins'; }
   else if (o == A_QUITS) { return 'Alice quits'; }
-  else { return 'Bob quits'; } };
+  else { return 'Bob quits'; } }
 
 function winner_(handA, handB) {
   const validA = isHand(handA);
@@ -40,21 +40,21 @@ function winner_(handA, handB) {
   else if (validB) {
     return B_WINS; }
   else {
-    return DRAW; } };
+    return DRAW; } }
 function winner(handA, handB) {
-  return ensure(isOutcome, winner_(handA, handB)); };
+  return ensure(isOutcome, winner_(handA, handB)); }
 
 function fair_if(handX, optionX, canWinX) {
-  return possible((handX == optionX) && canWinX); };
+  return possible((handX == optionX) && canWinX); }
 
 function fair_for_player(handX, canWinX) {
   fair_if(handX, ROCK, canWinX);
   fair_if(handX, PAPER, canWinX);
-  fair_if(handX, SCISSORS, canWinX); };
+  fair_if(handX, SCISSORS, canWinX); }
 
 function fair_game(handA, handB, outcome) {
   fair_for_player(handA, (outcome == A_WINS));
-  fair_for_player(handB, (outcome == B_WINS)); };
+  fair_for_player(handB, (outcome == B_WINS)); }
 
 // Protocol
 const DELAY = 10; // in blocks
@@ -77,13 +77,13 @@ const Bob =
 const con_once =
   Reach.App(
     {},
-    [["A", Alice], ["B", Bob], ["O", {}]],
+    [['A', Alice], ['B', Bob], ['O', {}]],
     (A, B, O) => {
       function sendOutcome(which) {
         return () => {
           each([A, B], (which) => {
-            interact.endsWith(showOutcome(which)); }); }; };
-      
+            interact.endsWith(showOutcome(which)); }); }; }
+
       A.only(() => {
         const [wagerAmount, escrowAmount] =
               declassify(interact.getParams()); });
@@ -145,12 +145,12 @@ const con_once =
 const con_nodraw =
   Reach.App(
     {},
-    [["A", Alice], ["B", Bob], ["O", {}]],
+    [['A', Alice], ['B', Bob], ['O', {}]],
     (A, B, O) => {
       function sendOutcome(which) {
         return () => {
           each([A, B], (which) => {
-            interact.endsWith(showOutcome(which)); }); }; };
+            interact.endsWith(showOutcome(which)); }); }; }
 
       A.only(() => {
         const [wagerAmount, escrowAmount] =
@@ -225,7 +225,7 @@ const con_nodraw =
 function abs_sendOutcome(A, B, which) {
   return () => {
     each([A, B], () => {
-      interact.endsWith(showOutcome(which)); }); }; };
+      interact.endsWith(showOutcome(which)); }); }; }
 
 function setup(A, B) {
   A.only(() => {
@@ -245,7 +245,7 @@ function setup(A, B) {
   A.only(() => {
     interact.partnerIs(B); });
 
-  return [wagerAmount, escrowAmount, A, B]; };
+  return [wagerAmount, escrowAmount, A, B]; }
 
 function round(A, B) {
   A.only(() => {
@@ -278,7 +278,7 @@ function round(A, B) {
   assert(implies(outcome == B_WINS, isHand(handB)));
   fair_game(handA, handB, outcome);
 
-  return outcome; };
+  return outcome; }
 
 function finalize(wagerAmount, escrowAmount, A, B, outcome) {
   const [getsA, getsB] = (() => {
@@ -294,7 +294,7 @@ function finalize(wagerAmount, escrowAmount, A, B, outcome) {
 const abs_once =
   Reach.App(
     {},
-    [["A", Alice], ["B", Bob], ["O", {}]],
+    [['A', Alice], ['B', Bob], ['O', {}]],
     (A, B, O) => {
       const [wagerAmount, escrowAmount, Ap, Bp] = setup(A, B);
 
@@ -307,7 +307,7 @@ const abs_once =
 const abs_nodraw =
   Reach.App(
     {},
-    [["A", Alice], ["B", Bob], ["O", {}]],
+    [['A', Alice], ['B', Bob], ['O', {}]],
     (A, B, O) => {
       const [wagerAmount, escrowAmount, Ap, Bp] = setup(A, B);
 

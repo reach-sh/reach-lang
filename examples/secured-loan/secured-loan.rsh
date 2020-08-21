@@ -15,12 +15,12 @@ const hasSendOutcome = {
 export const main = Reach.App(
   {},
   [
-    ["Borrower", {
+    ['Borrower', {
       ...hasSendOutcome,
       getParams: Fun([], ParamsType),
       waitForPayback: Fun([], Null),
     }],
-    ["Lender", {
+    ['Lender', {
       ...hasSendOutcome,
       acceptParams: Fun([ParamsType], Null),
     }],
@@ -57,11 +57,11 @@ export const main = Reach.App(
 
     Lender.only(() => {
       interact.acceptParams(params);
-    })
+    });
     Lender.pay(pre)
       .timeout(maxLenderDelay, () =>
         closeTo(Borrower, sendOutcome(
-          "Lender failed to lend on time"
+          'Lender failed to lend on time'
         )));
     transfer(pre).to(Borrower);
     commit();
@@ -72,7 +72,7 @@ export const main = Reach.App(
     Borrower.pay(post)
       .timeout(maturation, () =>
         closeTo(Lender, sendOutcome(
-          "Borrower failed to pay on time"
+          'Borrower failed to pay on time'
         )));
     transfer(post).to(Lender);
     transfer(collateral).to(Borrower);
