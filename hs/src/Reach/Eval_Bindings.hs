@@ -63,7 +63,7 @@ objectLiteralBinding lhs at _at' _ctxt _lhs_env _props = do
   let ks = ["XXX"] :: [String]
       makeEnv _slsVal = do
         -- XXX
-        return undefined
+        return ()
   _ <- return (ks, makeEnv :: a -> IO ())
 
   expect_throw at (Err_DeclLHS_IllegalJS lhs)
