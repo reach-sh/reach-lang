@@ -4,12 +4,11 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
-import Data.Version (showVersion)
-import Paths_reach (version)
 import Reach.AST
 import Reach.Backend
 import Reach.Connector
 import Reach.Util
+import Reach.Version
 
 --- Pretty helpers
 
@@ -302,7 +301,7 @@ jsPLProg :: ConnectorResult -> PLProg -> Doc a
 jsPLProg cr (PLProg _ (EPPs pm) _) = modp
   where
     modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
-    preamble = pretty $ "// Automatically generated with Reach " ++ showVersion version
+    preamble = pretty $ "// Automatically generated with Reach " ++ versionStr
     partsp = map (uncurry jsPart) $ M.toList pm
     cnpsp = map (uncurry jsCnp) $ M.toList cr
     connsExp = jsConnsExp (M.keys cr)

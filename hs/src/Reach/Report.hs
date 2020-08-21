@@ -38,9 +38,9 @@ import Network.HTTP.Client.Conduit (httpNoBody)
 import Network.HTTP.Client.TLS
 import Network.HTTP.Conduit
 import Network.HTTP.Simple (setRequestBodyJSON, setRequestMethod)
-import Paths_reach (version)
 import Reach.Report.Types
 import Reach.Report.UnsafeGlobals
+import Reach.Version
 
 data ReportArgs = ReportArgs
   { ra_tag :: Text

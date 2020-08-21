@@ -13,8 +13,6 @@ import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
-import Data.Version (showVersion)
-import Paths_reach (version)
 import Reach.AST
 import Reach.CollectTypes
 import Reach.Connector
@@ -22,6 +20,7 @@ import Reach.EmbeddedFiles
 import Reach.STCounter
 import Reach.Type
 import Reach.Util
+import Reach.Version
 import System.Exit
 import System.FilePath
 import System.IO.Temp
@@ -530,7 +529,7 @@ solPLProg (PLProg _ _ (CPProg at hs)) =
     state_defn = "uint256 current_state;"
     preamble =
       vsep
-        [ "// Automatically generated with Reach" <+> (pretty $ showVersion version)
+        [ "// Automatically generated with Reach" <+> (pretty versionStr)
         , "pragma experimental ABIEncoderV2" <> semi
         ]
 

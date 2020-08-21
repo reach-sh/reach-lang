@@ -31,8 +31,12 @@ export const main = Reach.App(
     assert(obj4.x == 1);
     assert(obj4.y === 'yval');
 
-    // object field shorthand
+    // object destructuring
+    // const {x} = obj4;
+    // assert(x == 1);
     const x = 1;
+
+    // object field shorthand
     const obj5 = {x};
     assert(obj5.x == 1);
 
