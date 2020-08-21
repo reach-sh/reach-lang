@@ -5,7 +5,12 @@ const f = (x, y) => x + y;
 export const main = Reach.App(
   {},
   [],
-  () => {},
-); // <-- reachc: "RightParenToken {tokenSpan = TokenPn 97 9 1, tokenComment = [WhiteSpace (TokenPn 96 8 12) \"\\n\"]}"
+  () => {
+    const z = f(
+      1,
+      2,
+    );
+  }
+); // <-- reachc: "RightParenToken {tokenSpan = TokenPn 134 12 5,
+// tokenComment = [WhiteSpace (TokenPn 129 11 9) \"\\n\"]}"
 // It doesn't parse the function call where the final arg has a trailing comma
-
