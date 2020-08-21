@@ -9,6 +9,18 @@ fi
 
 do_compile () {
     HS=${HERE}/hs
+
+    # try to lint any args that are .rsh files
+    for RSH in $*; do
+      case $RSH in
+        *.rsh)
+          if [ -f ${RSH} ]; then
+            do_lint ${RSH} || :
+          fi
+          ;;
+      esac
+    done
+
     if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] ; then
         export STACK_YAML=${HS}/stack.yaml
         MAYBE_FAST="--fast"
@@ -126,14 +138,16 @@ EOF
 }
 
 do_lint () {
-  # TODO: make it work outside the repo
-  # TODO: make it not require eslint to be installed locally
-  # TODO: get it to propagate its error code
-  eslint \
-    --config ${HERE}/eslint/.eslintrc.yaml \
-    --ext .rsh \
-    --no-eslintrc \
-    $*
+  # XXX: make it work outside the repo
+  # XXX: make it not require eslint to be installed locally
+  # XXX: get it to propagate its error code if run on its own
+  if command -v eslint &> /dev/null; then
+    eslint \
+      --config ${HERE}/eslint/.eslintrc.yaml \
+      --ext .rsh \
+      --no-eslintrc \
+      $*
+  fi
 }
 
 SUBCOMMAND=$1
