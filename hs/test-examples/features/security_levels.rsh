@@ -19,16 +19,19 @@ export const main = Reach.App(
       assume(_x == 1);
 
       const _x10 = fnSecret(_x);
-      require(_x10 == 10);
+      const x10 = declassify(_x10);
 
       const x = fnDeclassify(_x);
-      require(x == 1);
 
       const x2 = fnPolymorphic(x);
-      require(x2 == 2);
 
       const _x11 = fnPolymorphic(_x10);
-      require(_x11 == 11);
+      const x11 = declassify(_x11);
     });
+    A.publish(x10, x, x2, x11)
+    require(x10 == 10);
+    require(x == 1);
+    require(x2 == 2);
+    require(x11 == 11);
   }
 );
