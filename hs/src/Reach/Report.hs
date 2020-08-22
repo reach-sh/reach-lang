@@ -21,9 +21,6 @@ type Report = Either SomeException ()
 startReport :: Maybe String -> IO (Report -> IO ())
 startReport mwho = do
   startTime <- getCurrentTime
-  let who = case mwho of
-        Just x -> x
-        Nothing -> show startTime
   req <- parseRequest reportUrl
   manager <- newManager tlsManagerSettings
   let req' = setRequestMethod "POST" req
@@ -47,7 +44,7 @@ startReport mwho = do
             Right () -> ("success", Just 1_000_000)
     let rep =
           object
-            [ "userId" .= who
+            [ "userId" .= maybe "Numerius Negidius" id mwho
             , "startTime" .= startTime
             , "version" .= version
             , "elapsed" .= elapsed
