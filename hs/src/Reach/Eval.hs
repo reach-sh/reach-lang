@@ -1360,10 +1360,10 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
         let mk_ref k = do
               let e = (DLE_ObjectRef at' (DLA_Var dv) k)
               let t = case M.lookup k tenv of
-                        Nothing -> expect_throw at' $ Err_Dot_InvalidField val (M.keys tenv) k
-                        Just x -> x
+                    Nothing -> expect_throw at' $ Err_Dot_InvalidField val (M.keys tenv) k
+                    Just x -> x
               (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt "object ref") t) e
-              return $ (i_lifts, (k, SLV_DLVar dvi))                  
+              return $ (i_lifts, (k, SLV_DLVar dvi))
         ks_liftsl_and_dvs <- mapM mk_ref ks
         let (ks_liftsl, ks_dvs) = unzip ks_liftsl_and_dvs
         let ks_lifts = mconcat ks_liftsl
@@ -1377,7 +1377,7 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
               --- DLA_{Array,Tuple,Obj} into DLExpr to work, so I'll
               --- leave for later.
               error "XXX"
-        let lhs_env'' = foldl' (\lhs_env' (k,v) -> env_insert at' k (lvl, v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
+        let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (lvl, v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
         return (ks_lifts <> spread_lifts, lhs_env'')
       SLV_Object _ env -> return $ (mempty, lhs_env'')
         where
