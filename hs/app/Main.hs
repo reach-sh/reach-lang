@@ -1,15 +1,9 @@
 module Main (main) where
 
 import Control.Exception
-import Control.Monad (when)
-import Data.Aeson
-import Data.Aeson.TH
-import Data.Fixed (Pico)
-import Data.Time
 import Options.Applicative
 import Reach.CompilerTool
 import Reach.Report
-import Reach.Report.TH
 import System.Directory
 import System.Environment
 
@@ -21,13 +15,9 @@ data CompilerToolArgs = CompilerToolArgs
   , cta_enableReporting :: Bool
   }
 
-$(deriveJSON reachJSONOptions 'CompilerToolArgs)
-
 data CompilerToolEnv = CompilerToolEnv
   { cte_REACHC_ID :: Maybe String
   }
-
-$(deriveJSON reachJSONOptions 'CompilerToolEnv)
 
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
 makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
@@ -72,56 +62,18 @@ getCompilerEnv = do
       { cte_REACHC_ID = reachcId
       }
 
--- Note: This impl is a little more manual than other invocations because
--- we want to make sure startCompileLogId and CompileLogId match.
-sendStartReport :: CompilerToolArgs -> CompilerToolEnv -> IO ()
-sendStartReport args env = do
-  let val = object ["args" .= args, "env" .= env]
-  r <- makeReport ReportArgs {ra_tag = "start", ra_val = val}
-  let compileLogId = report_CompileLogId r
-  setStartCompileLogId compileLogId
-  let r' = r {report_startCompileLogId = Just compileLogId}
-  dest <- getReportDestination
-  sendReport dest r'
-
-errorGracePeriodMicroseconds :: Int
-errorGracePeriodMicroseconds = 10_000_000
-
-successGracePeriodMicroseconds :: NominalDiffTime -> Int
-successGracePeriodMicroseconds elapsed =
-  picoToMicroInt $ nominalDiffTimeToSeconds elapsed * graceFactor
-  where
-    graceFactor = 0.1
-    -- Note: fromEnum on Pico overflows the Int at 100s of days,
-    -- but our use case is seconds/mins which should be fine.
-    picoToMicroInt (p :: Pico) = fromEnum $ p / picosInMicro
-    picosInMicro = 1_000_000
-
 main :: IO ()
 main = do
-  startTime <- getCurrentTime
   args <- getCompilerArgs
   env <- getCompilerEnv
+  report <-
+    case cta_enableReporting args of
+      True -> startReport (cte_REACHC_ID env)
+      False -> return $ const $ return ()
   let ctool_opts = makeCompilerToolOpts args env
-  when (cta_enableReporting args) $ enableReporting (cte_REACHC_ID env)
-  sendStartReport args env
-  -- TODO: collect interesting stats to report at the end
+  --- TODO: collect interesting stats to report at the end
   (e :: Either SomeException ()) <- try $ compilerToolMain ctool_opts
-  either reportError return e
-  endTime <- getCurrentTime
-  let result :: String = either (const "failure") (const "success") e
-  let elapsed = diffUTCTime endTime startTime
-  let stats =
-        object
-          [ "elapsed" .= elapsed
-          , "result" .= result
-          ]
-  report "end" stats
-  waitReports 3_000_000 -- microseconds
+  report e
   case e of
-    Left exn -> do
-      waitReports errorGracePeriodMicroseconds
-      throwIO exn
-    Right () -> do
-      waitReports $ successGracePeriodMicroseconds elapsed
-      return ()
+    Left exn -> throwIO exn
+    Right () -> return ()

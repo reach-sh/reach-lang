@@ -2,7 +2,6 @@ module Reach.Verify.SMT (verify_smt) where
 
 import Control.Monad
 import Control.Monad.Extra
-import Data.Aeson (object, (.=))
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.IORef
@@ -16,7 +15,6 @@ import Reach.AST
 import Reach.CollectTypes
 import Reach.EmbeddedFiles
 import Reach.Pretty ()
-import Reach.Report (report)
 import Reach.Type
 import Reach.Util
 import Reach.Verify.SMTParser (parseModel)
@@ -855,7 +853,6 @@ _verify_smt smt lp = do
   ss <- readIORef succ_ref
   fs <- readIORef fail_ref
   putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
-  report "verify" $ object ["successful" .= ss, "failed" .= fs]
   (if (fs == 0)
      then do
        putStrLn $ " No failures!"
