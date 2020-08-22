@@ -1362,7 +1362,7 @@ evalDeclLHSObject at at' _ctxt _lhs_env props = (ks', makeEnv)
           env' = case kSpreadMay of
             Just spreadName -> env_insert at spreadName (lvl, spreadObj) envWithKs
             Nothing -> envWithKs
-          envWithKs = M.restrictKeys env ksSet
+          envWithKs = M.fromList $ map (\k -> (k, env_lookup at' k env)) ks
           envWithoutKs = M.withoutKeys env ksSet
           ksSet = S.fromList ks
           spreadObj = SLV_Object at' envWithoutKs

@@ -1,0 +1,1 @@
+error: ./Err_Decl_NotObject.rsh:3:7:object: Invalid binding. Expected object, got: uint256

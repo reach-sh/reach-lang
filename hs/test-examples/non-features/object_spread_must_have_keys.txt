@@ -1,0 +1,7 @@
+<stdout>
+
+</stdout>
+<stderr>
+</stderr>
+<exception>
+error: ./object_spread_must_have_keys.rsh:3:7:object: Invalid unbound identifier: x. Did you mean: ["y"]
