@@ -24,7 +24,6 @@ It is always @tech{invalid} to use a @tech{value} with an operation for which it
 For example, @reachin{1 + true} is @tech{invalid}.
 In other words, Reach enforces a static type discipline.
 
-
 @section{Modules}
 
 A Reach @deftech{source file} is a textual file which specifies a Reach @tech{module}.
@@ -34,7 +33,7 @@ e.g. @filepath{dao.rsh}.
 A @deftech{module} starts with @reachin{'reach @|reach-short-vers|';}
 followed by a sequence of @tech{imports} and @tech{identifier definitions}.
 A module can only be compiled or used if it contain one or more @tech{exports}.
-
+@margin-note{See @seclink["guide-versions"]{the guide section on versions} to understand how Reach uses version numbers like this.}
 
 @section{Imports}
 
@@ -49,7 +48,6 @@ The @tech{exports} from the @tech{module} defined by @filepath{LIB.rsh} are incl
 @margin-note{The path given to an @tech{import} may include @litchar{..} to specify files outside the current directory.
 Relative paths resolve relative to the parent directory of the @tech{source file} in which they appear.}
 
-
 @section{Comments}
 
 @reach{
@@ -59,7 +57,6 @@ Relative paths resolve relative to the parent directory of the @tech{source file
        */ }
 
 Comments are text that is ignored by the compiler.  Text starting with @litchar{//} up until the end of the line forms a @deftech{single-line comment}.  Text enclosed with @litchar{/*} and @litchar{*/} forms a @deftech{multi-line comment}.  It is @tech{invalid} to nest a @tech{multi-line comment} within a @tech{multi-line comment}.
-
 
 @section{Reach.App}
 
@@ -104,10 +101,10 @@ Reach's @deftech{type}s are:
   @item{@reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a function type.}
   @item{@reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.}
   @item{@reachin{Obj({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.}
-  @item{@reachin{Array(ElemenType, size)}, which denotes a tuple.}
-
+  @item{@reachin{Array(ElemenType, size)}, which denotes a statically-sized array.}
 ]
 
+@margin-note{See @seclink["guide-types"]{the guide section on types} to get some pointers about using types effectively in Reach.}
 
 @section{Identifier Definitions}
 
@@ -353,7 +350,7 @@ is an @tech{invalid} program, because @reachin{Bob} does not know @reachin{x}.
  each([Alice, Bob], () => {
    const pretzel = interact.random(); }); }
 
-A @tech{local step} statement can be written as @reachin{each(PART_TUPLE () => BLOCK)}, where @reachin{PART_TUPLE} is a tuple of @tech{participants} and @reachin{BLOCK} is a @tech{block}.
+An @deftech{each} @tech{local step} statement can be written as @reachin{each(PART_TUPLE () => BLOCK)}, where @reachin{PART_TUPLE} is a tuple of @tech{participants} and @reachin{BLOCK} is a @tech{block}.
 It is an abbreviation of many @tech{local step} statements that could have been written with @reachin{only}.
 
 @subsection{Consensus transfers}
@@ -370,7 +367,9 @@ It is an abbreviation of many @tech{local step} statements that could have been 
       .pay(wagerAmount)
       .timeout(DELAY, closeTo(Bob, false)); }
 
-      A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}. The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}, which must occur in the @tech{tail}.
+A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}. The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}, which must occur in the @tech{tail}.
+
+@margin-note{See @seclink["guide-timeout"]{the guide section on non-participation} to undertand when to use timeouts and how to use them most effectively.}
 
 The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}. The @reachin{timeout} component may always be omitted. Each component may occur any order. For example, the following are all @tech{valid}:
 
@@ -657,6 +656,8 @@ and the next N values are distinct @reachin{UInt256}s.
  assert( claim ) }
 
 @index{assert} A @tech{static assertion} which is only @tech{valid} if @reachin{claim} always evaluates to @reachin{true}. @margin-note{The Reach compiler will produce a counter-example (i.e. an assignment of the identifiers in the program to falsify the @reachin{claim}) when an @tech{invalid} @reachin{claim} is provided. It is possible to write a @reachin{claim} that actually always evaluates to @reachin{true}, but for which our current approach cannot prove always evaluates to @reachin{true}; if this is the case, Reach will fail to compile the program, reporting that its analysis is incomplete. Reach will never produce an erroneous counter-example.}
+
+@margin-note{See @seclink["guide-assert"]{the guide section on verification} to better understand how and what to verify in your program.}
 
 @(hrule)
 @reach{

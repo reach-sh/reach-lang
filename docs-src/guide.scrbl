@@ -15,6 +15,10 @@ The following guides are available:
 
 XXX
 
+@section[#:tag "guide-types"]{Using types effectively in Reach}
+
+XXX
+
 @section[#:tag "guide-testing"]{Testing and validating decentralized applications}
 
 XXX

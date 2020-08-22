@@ -79,7 +79,7 @@ do_run () {
     DOCKERFILE=Dockerfile.${APP}
     PACKAGE_JSON=package.json.${APP}
 
-    do_compile -o build ${RSH}
+    do_compile -o build ${RSH} || exit 1
 
     # XXX Can we add eslint on the JS?
     
@@ -117,8 +117,13 @@ CMD npm run app
 EOF
 
     docker build -f ${DOCKERFILE} -t reachsh/reach-app-${APP}:latest .
+    DOCKER_EXIT=$?
 
     rm -f package.json.${APP} ${DOCKERFILE}
+
+    if [ $DOCKER_EXIT -ne 0 ] ; then
+        exit $DOCKER_EXIT
+    fi
 
     run () {
         docker-compose -f - run --rm reach-app $*
