@@ -8,10 +8,9 @@ where
 
 import Data.Version (Version (..), makeVersion, showVersion)
 
--- Note(Dan): Sorry, this is really dumb, but
--- Paths_reach breaks my flimsy ide tooling
--- See test/Reach/Test_Version where it is asserted that
--- this is up to date.
+--- FIXME make lemonade of this monstrosity by trying to unify all the
+--- version numbers everywhere with some file at the root of the repo
+--- named VERSION?
 version :: Version
 version = makeVersion [0, 1, 0]
 

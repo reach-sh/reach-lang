@@ -1,10 +1,11 @@
-module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jse_expect_id, gatherDeps_top) where
+module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jse_expect_id, jso_expect_id, gatherDeps_top) where
 
 import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
 import Data.IORef
 import qualified Data.Map.Strict as M
+import GHC.Stack (HasCallStack)
 import GHC.Generics (Generic)
 import GHC.IO.Encoding
 import Language.JavaScript.Parser
@@ -47,11 +48,16 @@ instance Show ParserError where
     "Not a module: " <> (take 256 $ show ast)
 
 --- Helpers
-jse_expect_id :: SrcLoc -> JSExpression -> String
+jse_expect_id :: HasCallStack => SrcLoc -> JSExpression -> String
 jse_expect_id at j =
   case j of
     (JSIdentifier _ x) -> x
     _ -> expect_throw at (Err_Parse_ExpectIdentifier j)
+
+jso_expect_id :: HasCallStack => SrcLoc -> JSObjectProperty -> String
+jso_expect_id at = \case
+  JSPropertyIdentRef _ x -> x
+  j -> expect_throw at $ Err_Parse_ExpectIdentifierProp j
 
 --- FIXME Support more binding forms
 parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]

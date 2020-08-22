@@ -1,8 +1,13 @@
-module Reach.JSUtil (jscl_flatten, jsctl_flatten, jsa_flatten, dropEmptyJSStmts, jsArrowStmtToBlock, jsStmtToBlock, tp, srcloc_jsa) where
+module Reach.JSUtil (jso_flatten, jscl_flatten, jsctl_flatten, jsa_flatten, dropEmptyJSStmts, jsArrowStmtToBlock, jsStmtToBlock, tp, srcloc_jsa) where
 
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST
+
+jso_flatten :: JSObjectPropertyList -> [JSObjectProperty]
+jso_flatten = \case
+  JSCTLComma jscl _ -> jscl_flatten jscl
+  JSCTLNone jscl -> jscl_flatten jscl
 
 jscl_flatten :: JSCommaList a -> [a]
 jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]
