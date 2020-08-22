@@ -20,8 +20,7 @@ startReport mwho = do
   startTime <- getCurrentTime
   req <- parseRequest $ "https://log.reach.sh/submit"
   manager <- newManager tlsManagerSettings
-  let send log_req =
-        async $ runReaderT (httpNoBody log_req) manager
+  let send log_req = async $ runReaderT (httpNoBody log_req) manager
 
   --- Prime the connection to the server
   _ignored <- send (setRequestMethod "OPTIONS" req)
@@ -39,5 +38,5 @@ startReport mwho = do
     m <- send (setRequestBodyJSON rep $ setRequestMethod "POST" req)
     let block = waitCatch m
     case what of
-      Left _ -> void block
+      Left  {} -> void  block
       Right () -> race_ block (threadDelay 1_000_000)
