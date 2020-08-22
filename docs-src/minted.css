@@ -1,3 +1,11 @@
+.highlight {
+    font-size: 1rem;
+}
+
+.highlight-inline {
+    font-size: 1rem;
+}
+
 .highlight-inline {
     /* https://github.com/wilbowma/scribble-minted/issues/2
 
