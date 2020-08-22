@@ -39,15 +39,16 @@ startReport mwho = do
   req <- parseRequest reportUrl
   manager <- newManager tlsManagerSettings
   let req' = setRequestMethod "POST" req
+  let send obj = async . void $
+        flip runReaderT manager $ do
+        let log_req = setRequestBodyJSON obj req'
+        void $ httpNoBody log_req
 
-  --- FIXME we want to start the TCP/IP & HTTP handshake right now, so
+  --- NOTE we want to start the TCP/IP & HTTP handshake right now, so
   --- we send a dummy request that will be rejected by the logger, so
   --- that the manager will start a keep-alive connection, so that at
   --- the end, things will go fast.
-  _ignored <- async . void $
-    flip runReaderT manager $ do
-    let log_req = setRequestBodyJSON (object []) req'
-    void $ httpNoBody log_req
+  _ignored <- send (object [])
   
   return $ \what -> do
     endTime <- getCurrentTime
@@ -63,16 +64,8 @@ startReport mwho = do
           , "version" .= version
           , "elapsed" .= elapsed
           , "result" .= result ]
-
-    m <- async . void $
-      flip runReaderT manager $ do
-        let log_req = setRequestBodyJSON rep req'
-        void $ httpNoBody log_req
-
+    m <- send rep
     let block = waitCatch m
     case mtimeout of
       Nothing -> void block
-      Just usecs -> do
-        ba <- async block
-        tda <- async (threadDelay usecs)
-        waitEither_ ba tda
+      Just usecs -> race_ block (threadDelay usecs)
