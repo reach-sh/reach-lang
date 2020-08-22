@@ -5,9 +5,9 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
 import Data.IORef
 import qualified Data.Map.Strict as M
-import GHC.Stack (HasCallStack)
 import GHC.Generics (Generic)
 import GHC.IO.Encoding
+import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST

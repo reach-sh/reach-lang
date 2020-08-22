@@ -4,15 +4,14 @@ import Control.Monad
 import Control.Monad.ST
 import Data.Bits
 import qualified Data.ByteString as B
-import Data.List (intercalate, sortBy)
-import qualified Data.Set as S
-import Data.Ord (comparing)
-import Generics.Deriving
-import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Data.Foldable
+import Data.List (intercalate, sortBy)
 import qualified Data.Map.Strict as M
+import Data.Ord (comparing)
 import qualified Data.Sequence as Seq
+import qualified Data.Set as S
 import GHC.Stack (HasCallStack)
+import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST
@@ -23,6 +22,7 @@ import Reach.Type
 import Reach.Util
 import Reach.Version
 import Safe (atMay)
+import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
 ---import Debug.Trace
@@ -1338,31 +1338,35 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
 
 evalDeclLHSObject :: SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> JSObjectPropertyList -> ([String], SLSVal -> ST s (DLStmts, SLEnv))
 evalDeclLHSObject at at' _ctxt _lhs_env props = (ks', makeEnv)
-  where ks' = ks <> maybe [] (\a -> [a]) kSpreadMay
-        (ks, kSpreadMay) = parseIdentsAndSpread $ jso_flatten props
-        parseIdentsAndSpread = \case
-          [] -> ([], Nothing)
-          [ (JSObjectSpread a e0) ] ->
-            ([], (Just $ jse_expect_id at'' e0))
-            where at'' = srcloc_jsa "object spread" a at'
-          [ (JSObjectSpread a _), _ ] ->
-            expect_throw at'' $ Err_Decl_ObjectSpreadNotLast
-            where at'' = srcloc_jsa "object spread" a at'
-          (e0 : eNs) -> ( (x0 : xNs), smN )
-            where (xNs, smN) = parseIdentsAndSpread eNs
-                  x0 = jso_expect_id at' e0            
-        makeEnv (lvl, v) = case v of
-          --- FIXME: Support DLVar of object
-          SLV_Object _ env -> return $ (mempty, env')
-            where
-              env' = case kSpreadMay of
-                Just spreadName -> env_insert at spreadName (lvl, spreadObj) envWithKs
-                Nothing -> envWithKs
-              envWithKs = M.restrictKeys env ksSet
-              envWithoutKs = M.withoutKeys env ksSet
-              ksSet = S.fromList ks
-              spreadObj = SLV_Object at' envWithoutKs
-          _ -> expect_throw at' (Err_Decl_NotObject v)
+  where
+    ks' = ks <> maybe [] (\a -> [a]) kSpreadMay
+    (ks, kSpreadMay) = parseIdentsAndSpread $ jso_flatten props
+    parseIdentsAndSpread = \case
+      [] -> ([], Nothing)
+      [(JSObjectSpread a e0)] ->
+        ([], (Just $ jse_expect_id at'' e0))
+        where
+          at'' = srcloc_jsa "object spread" a at'
+      [(JSObjectSpread a _), _] ->
+        expect_throw at'' $ Err_Decl_ObjectSpreadNotLast
+        where
+          at'' = srcloc_jsa "object spread" a at'
+      (e0 : eNs) -> ((x0 : xNs), smN)
+        where
+          (xNs, smN) = parseIdentsAndSpread eNs
+          x0 = jso_expect_id at' e0
+    makeEnv (lvl, v) = case v of
+      --- FIXME: Support DLVar of object
+      SLV_Object _ env -> return $ (mempty, env')
+        where
+          env' = case kSpreadMay of
+            Just spreadName -> env_insert at spreadName (lvl, spreadObj) envWithKs
+            Nothing -> envWithKs
+          envWithKs = M.restrictKeys env ksSet
+          envWithoutKs = M.withoutKeys env ksSet
+          ksSet = S.fromList ks
+          spreadObj = SLV_Object at' envWithoutKs
+      _ -> expect_throw at' (Err_Decl_NotObject v)
 
 evalDecl :: SLCtxt s -> SrcLoc -> SLState -> SLEnv -> SLScope -> JSExpression -> SLComp s SLEnv
 evalDecl ctxt at st lhs_env rhs_sco decl =

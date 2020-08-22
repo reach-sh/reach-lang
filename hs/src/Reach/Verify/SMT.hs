@@ -375,7 +375,8 @@ smtAddPathConstraints ctxt se = se'
 
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
 smtAssert ctxt se = SMT.assert smt $ smtAddPathConstraints ctxt se
-  where smt = ctxt_smt ctxt
+  where
+    smt = ctxt_smt ctxt
 
 verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> SMTComp
 verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
