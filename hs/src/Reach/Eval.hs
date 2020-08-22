@@ -452,6 +452,11 @@ ctxt_lift_expr ctxt at mk_var e = do
   let s = DLS_Let at dv e
   return (dv, return s)
 
+ctxt_lift_arg :: SLCtxt s -> SrcLoc -> SrcLoc -> String -> DLArg -> ST s (DLVar, DLStmts)
+ctxt_lift_arg ctxt at at' name a =
+  ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt name) t) (DLE_Arg at' a)
+  where t = argTypeOf a
+
 ctxt_local_name :: SLCtxt s -> SLVar -> SLVar
 ctxt_local_name ctxt def =
   case ctxt_local_mname ctxt of
@@ -1373,9 +1378,8 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
             Just _spreadName ->
               --- XXX This has to make a bunch of new DLVars for each
               --- field left out of ks, then assemble a new object
-              --- that has all those. I think this will require moving
-              --- DLA_{Array,Tuple,Obj} into DLExpr to work, so I'll
-              --- leave for later.
+              --- that has all those. The object should be bound to a
+              --- DLVar bound to a DLE_Arg using ctxt_lift_arg
               error "XXX"
         let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (lvl, v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
         return (ks_lifts <> spread_lifts, lhs_env'')

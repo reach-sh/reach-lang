@@ -351,19 +351,17 @@ instance NFData DLVar
 data DLArg
   = DLA_Var DLVar
   | DLA_Con DLConstant
-  | --- FIXME Should be expression?
-    DLA_Array SLType [DLArg]
-  | --- FIXME Should be expression?
-    DLA_Tuple [DLArg]
-  | --- FIXME Should be expression?
-    DLA_Obj (M.Map String DLArg)
+  | DLA_Array SLType [DLArg]
+  | DLA_Tuple [DLArg]
+  | DLA_Obj (M.Map String DLArg)
   | DLA_Interact SLPart String SLType
   deriving (Eq, Generic, Show)
 
 instance NFData DLArg
 
 data DLExpr
-  = DLE_PrimOp SrcLoc PrimOp [DLArg]
+  = DLE_Arg SrcLoc DLArg
+  | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc [SLCtxtFrame] DLArg Integer DLArg
   | DLE_ArraySet SrcLoc [SLCtxtFrame] DLArg Integer DLArg DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
@@ -377,6 +375,7 @@ instance NFData DLExpr
 expr_pure :: DLExpr -> Bool
 expr_pure e =
   case e of
+    DLE_Arg {} -> True
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True

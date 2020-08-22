@@ -77,6 +77,7 @@ instance Countable DLArg where
 instance Countable DLExpr where
   counts e =
     case e of
+      DLE_Arg _ a -> counts a
       DLE_PrimOp _ _ as -> counts as
       DLE_ArrayRef _ _ aa _ ea -> counts [aa, ea]
       DLE_ArraySet _ _ aa _ ia va -> counts [aa, ia, va]

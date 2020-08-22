@@ -478,6 +478,8 @@ smt_a ctxt at_de da =
 smt_e :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv dv de =
   case de of
+    DLE_Arg at da ->
+      pathAddBound ctxt at_dv dv bo $ smt_a ctxt at da
     DLE_PrimOp at cp args ->
       pathAddBound ctxt at_dv dv bo se
       where
