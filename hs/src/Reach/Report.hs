@@ -6,7 +6,6 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Exception
 import Control.Monad.Reader
-import Data.Fixed (Pico)
 import Network.HTTP.Client.Conduit (httpNoBody)
 import Network.HTTP.Client.TLS
 import Network.HTTP.Conduit
@@ -15,17 +14,6 @@ import Reach.Version
 
 reportUrl :: String
 reportUrl = "https://log.reach.sh/submit"
-
-successGracePeriodMicroseconds :: NominalDiffTime -> Int
-successGracePeriodMicroseconds elapsed =
-  max one_sec $ min one_sec $ picoToMicroInt $ nominalDiffTimeToSeconds elapsed * graceFactor
-  where
-    graceFactor = 0.1
-    -- Note: fromEnum on Pico overflows the Int at 100s of days,
-    -- but our use case is seconds/mins which should be fine.
-    picoToMicroInt (p :: Pico) = fromEnum $ p / picosInMicro
-    picosInMicro = 1_000_000
-    one_sec = 10_000_000
 
 --- FIXME change this to map of show-able things?
 type Report = Either SomeException ()
@@ -56,7 +44,7 @@ startReport mwho = do
     let (result, mtimeout) =
           case what of
             Left exn -> (("error: " <> show exn), Nothing)
-            Right () -> ("success", Just $ successGracePeriodMicroseconds elapsed)
+            Right () -> ("success", Just 1_000_000)
     let rep =
           object
           [ "userId" .= who
