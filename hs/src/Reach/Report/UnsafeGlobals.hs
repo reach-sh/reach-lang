@@ -6,6 +6,7 @@
 module Reach.Report.UnsafeGlobals
   ( globalReportDestination
   , globalStartCompileLogId
+  , globalReportUser
   )
 where
 
@@ -26,3 +27,9 @@ globalStartCompileLogId :: IORef (Maybe CompileLogId)
 globalStartCompileLogId = unsafePerformIO $ do
   newIORef Nothing
 {-# NOINLINE globalStartCompileLogId #-}
+
+-- | Global var for ReportUser
+globalReportUser :: IORef (Maybe ReportUser)
+globalReportUser = unsafePerformIO $ do
+  newIORef Nothing
+{-# NOINLINE globalReportUser #-}

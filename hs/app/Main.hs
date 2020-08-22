@@ -11,6 +11,7 @@ import Reach.CompilerTool
 import Reach.Report
 import Reach.Report.TH
 import System.Directory
+import System.Environment
 
 data CompilerToolArgs = CompilerToolArgs
   { cta_outputDir :: FilePath
@@ -23,7 +24,8 @@ data CompilerToolArgs = CompilerToolArgs
 $(deriveJSON reachJSONOptions 'CompilerToolArgs)
 
 data CompilerToolEnv = CompilerToolEnv
-  {}
+  { cte_REACHC_ID :: Maybe String
+  }
 
 $(deriveJSON reachJSONOptions 'CompilerToolEnv)
 
@@ -64,9 +66,10 @@ getCompilerArgs = do
 
 getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
+  reachcId <- lookupEnv "REACHC_ID"
   return
     CompilerToolEnv
-      {
+      { cte_REACHC_ID = reachcId
       }
 
 -- Note: This impl is a little more manual than other invocations because
@@ -100,7 +103,7 @@ main = do
   args <- getCompilerArgs
   env <- getCompilerEnv
   let ctool_opts = makeCompilerToolOpts args env
-  when (cta_enableReporting args) $ enableReporting
+  when (cta_enableReporting args) $ enableReporting (cte_REACHC_ID env)
   sendStartReport args env
   -- TODO: collect interesting stats to report at the end
   (e :: Either SomeException ()) <- try $ compilerToolMain ctool_opts

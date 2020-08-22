@@ -33,6 +33,7 @@ import Control.Monad.Reader
 import Data.Aeson
 import Data.IORef
 import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Time
 import Network.HTTP.Client.Conduit (httpNoBody)
 import Network.HTTP.Client.TLS
@@ -89,8 +90,15 @@ instance ReportDestination ReportRef where
 newCompileLogId :: IO CompileLogId
 newCompileLogId = CompileLogId <$> getCurrentTime
 
+unknownUser :: ReportUser
+unknownUser = ReportUser "Unknown"
+
 getReportUser :: IO ReportUser
-getReportUser = return $ ReportUser "XXX:ReportUser"
+getReportUser =
+  readIORef globalReportUser
+    >>= pure . \case
+      Just user -> user
+      Nothing -> unknownUser
 
 makeReport :: ReportArgs -> IO Report
 makeReport args = do
@@ -119,10 +127,11 @@ reportToDest dest startCompileLogId args = do
   r <- makeReport args
   sendReport dest $ r {report_startCompileLogId = Just startCompileLogId}
 
-enableReporting :: IO ()
-enableReporting = do
+enableReporting :: Maybe String -> IO ()
+enableReporting reportUserMay = do
   dest <- SomeReportDestination <$> makeDynamoReportUrl
   setReportDestination dest
+  writeIORef globalReportUser (ReportUser . T.pack <$> reportUserMay)
 
 -- | Just a type-constrained report
 reportText :: Text -> Text -> IO ()
