@@ -20,6 +20,7 @@ data ParserError
   = Err_Parse_CyclicImport ReachSource
   | Err_Parser_Arrow_NoFormals
   | Err_Parse_ExpectIdentifier JSExpression
+  | Err_Parse_ExpectIdentifierProp JSObjectProperty
   | Err_Parse_IllegalBinOp JSBinOp
   | Err_Parse_IllegalLiteral String
   | Err_Parse_IllegalUnaOp JSUnaryOp
@@ -34,6 +35,8 @@ instance Show ParserError where
     "Arg list for function is missing."
   show (Err_Parse_ExpectIdentifier _e) =
     "Expected identifier, got expression."
+  show (Err_Parse_ExpectIdentifierProp _e) =
+    "Expected identifier in object properties list, got expression."
   show (Err_Parse_IllegalBinOp op) =
     "Illegal binary operation: " <> show op
   show (Err_Parse_IllegalLiteral lit) =

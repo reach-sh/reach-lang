@@ -916,19 +916,21 @@ evalDecl ctxt at st lhs_env rhs_sco decl =
   case decl of
     JSVarInitExpression lhs (JSVarInit va rhs) -> do
       let vat' = srcloc_jsa "var initializer" va at
-      (lhs_ns, make_env) <-
-        case lhs of
-          (JSIdentifier a x) -> do
-            let _make_env v = return (mempty, env_insert (srcloc_jsa "id" a at) x v lhs_env)
-            return ([x], _make_env)
-          (JSArrayLiteral a xs _) -> do
-            let at' = srcloc_jsa "array" a at
-            arrayLiteralBinding vat' at at' ctxt lhs_env xs
-          (JSObjectLiteral a props _) -> do
-            let at' = srcloc_jsa "object" a at
-            objectLiteralBinding lhs at at' ctxt lhs_env props
-          _ ->
-            expect_throw at (Err_DeclLHS_IllegalJS lhs)
+      let (lhs_ns, make_env) =
+            case lhs of
+              (JSIdentifier a x) -> ([x], _make_env)
+                where
+                  _make_env v = return (mempty, env_insert (srcloc_jsa "id" a at) x v lhs_env)
+              (JSArrayLiteral a xs _) ->
+                arrayLiteralBinding vat' at at' ctxt lhs_env xs
+                where
+                  at' = srcloc_jsa "array" a at
+              (JSObjectLiteral a props _) ->
+                objectLiteralBinding lhs at at' ctxt lhs_env props
+                where
+                  at' = srcloc_jsa "object" a at
+              _ ->
+                expect_throw at (Err_DeclLHS_IllegalJS lhs)
       let ctxt' = ctxt_local_name_set ctxt lhs_ns
       SLRes rhs_lifts rhs_st v <- evalExpr ctxt' vat' rhs_sco st rhs
       (lhs_lifts, lhs_env') <- make_env v

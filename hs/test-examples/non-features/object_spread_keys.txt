@@ -1,0 +1,7 @@
+<stdout>
+
+</stdout>
+<stderr>
+</stderr>
+<exception>
+error: ./object_spread_keys.rsh:12:19:dot: Invalid field: x. Did you mean: ["y"]
