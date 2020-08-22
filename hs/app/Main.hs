@@ -71,8 +71,8 @@ main = do
       True -> return $ const $ return ()
       False -> startReport (cte_REACHC_ID env)
   let ctool_opts = makeCompilerToolOpts args env
-  --- TODO: collect interesting stats to report at the end
-  (e :: Either SomeException ()) <- try $ compilerToolMain ctool_opts
+  (e :: Either SomeException ()) <-
+    try $ compilerToolMain ctool_opts
   report e
   case e of
     Left exn -> throwIO exn

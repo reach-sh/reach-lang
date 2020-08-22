@@ -12,43 +12,32 @@ import Network.HTTP.Conduit
 import Network.HTTP.Simple (setRequestBodyJSON, setRequestMethod)
 import Reach.Version
 
-reportUrl :: String
-reportUrl = "https://log.reach.sh/submit"
-
---- FIXME change this to map of show-able things?
+--- TODO maybe have each part collect some information and report it back through a (Map String String)
 type Report = Either SomeException ()
 
 startReport :: Maybe String -> IO (Report -> IO ())
 startReport mwho = do
   startTime <- getCurrentTime
-  req <- parseRequest reportUrl
+  req <- parseRequest $ "https://log.reach.sh/submit"
   manager <- newManager tlsManagerSettings
   let send log_req =
         async $ runReaderT (httpNoBody log_req) manager
 
-  --- NOTE we want to start the TCP/IP & HTTP handshake right now, so
-  --- we send a dummy request that will be rejected by the logger, so
-  --- that the manager will start a keep-alive connection, so that at
-  --- the end, things will go fast.
+  --- Prime the connection to the server
   _ignored <- send (setRequestMethod "OPTIONS" req)
 
   return $ \what -> do
     endTime <- getCurrentTime
-    let elapsed = diffUTCTime endTime startTime
-    let (result, mtimeout) =
-          case what of
-            Left exn -> (("error: " <> show exn), Nothing)
-            Right () -> ("success", Just 1_000_000)
     let rep =
           object
-            [ "userId" .= maybe "Numerius Negidius" id mwho
+            [ "userId"    .= maybe "Numerius Negidius" id mwho
             , "startTime" .= startTime
-            , "version" .= version
-            , "elapsed" .= elapsed
-            , "result" .= result
+            , "version"   .= version
+            , "elapsed"   .= diffUTCTime endTime startTime
+            , "result"    .= show what
             ]
     m <- send (setRequestBodyJSON rep $ setRequestMethod "POST" req)
     let block = waitCatch m
-    case mtimeout of
-      Nothing -> void block
-      Just usecs -> race_ block (threadDelay usecs)
+    case what of
+      Left _ -> void block
+      Right () -> race_ block (threadDelay 1_000_000)
