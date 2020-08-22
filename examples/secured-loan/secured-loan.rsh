@@ -39,19 +39,8 @@ export const main = Reach.App(
       assume(params.pre < params.post); });
     Borrower.publish(params)
       .pay(params.collateral);
-    // TODO: allow obj bindings
-    // const {
-    //   collateral,
-    //   pre,
-    //   post,
-    //   maturation,
-    //   maxLenderDelay,
-    // } = params;
-    const collateral = params.collateral;
-    const pre = params.pre;
-    const post = params.post;
-    const maturation = params.maturation;
-    const maxLenderDelay = params.maxLenderDelay;
+    const { collateral, pre, post, maturation, maxLenderDelay }
+          = params;
     require(pre < post);
     commit();
 
