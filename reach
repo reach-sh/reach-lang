@@ -4,6 +4,7 @@ REACH=${0}
 HERE=$(dirname $(realpath ${REACH}))
 
 if [ "x${REACH_VERSION}" = "x" ] ; then
+    # XXX maybe should be v0.1
     REACH_VERSION=v0.1.1
 fi
 
@@ -182,12 +183,24 @@ case ${SUBCOMMAND} in
             cp -f ${NEW} ${REACH}
         exit 0
         ;;
+    update)
+        docker pull "reachsh/reach:${REACH_VERSION}"
+        docker pull "reachsh/stdlib:${REACH_VERSION}"
+        docker pull "reachsh/ethereum-devnet:${REACH_VERSION}"
+        exit 0
+        ;;
+    version)
+        echo "reach ${REACH_VERSION}"
+        exit 0
+        ;;
     *)
         echo "Usage: reach COMMAND"
         echo " where COMMAND is one of"
         echo "  compile --- compile an app"
         echo "  run     --- run a simple app"
         echo "  upgrade --- upgrade Reach"
+        echo "  update  --- update Reach Docker images"
+        echo "  version --- display version"
         exit 0
         ;;
 esac

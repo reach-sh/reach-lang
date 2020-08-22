@@ -87,6 +87,18 @@ You can upgrade your Reach installation by executing
 
 @commandline{reach upgrade}
 
+@subsection[#:tag "ref-usage-update"]{@tt{reach update}}
+
+You can update the Docker images used by your Reach installation by executing
+
+@commandline{reach update}
+
+@subsection[#:tag "ref-usage-version"]{@tt{reach version}}
+
+You can see what version of Reach you have installed by running
+
+@commandline{reach version}
+
 @include-section["ref-model.scrbl"]
 @include-section["ref-programs.scrbl"]
 @include-section["ref-networks.scrbl"]

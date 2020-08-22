@@ -3,6 +3,7 @@ module Main (main) where
 import Control.Exception
 import Options.Applicative
 import Reach.CompilerTool
+import Reach.Version
 import Reach.Report
 import System.Directory
 import System.Environment
@@ -51,7 +52,7 @@ getCompilerArgs = do
           (compiler cwd <**> helper)
           (fullDesc
              <> progDesc "verify and compile an Reach program"
-             <> header "reachc - Reach compiler")
+             <> header ("reachc " <> versionStr <> " - Reach compiler"))
   execParser opts
 
 getCompilerEnv :: IO CompilerToolEnv
