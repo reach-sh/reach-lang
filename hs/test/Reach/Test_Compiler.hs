@@ -19,7 +19,7 @@ testCompile :: FilePath -> IO (BL.ByteString, BL.ByteString, BL.ByteString)
 testCompile fp = withSystemTempDirectory "reachc-tests" $ \dir -> do
   (out, err, ex, _) <- capture $ do
     createDirectoryIfMissing True dir
-    compileNL $
+    compile $
       CompilerOpts
         { output = \x -> dir <> T.unpack x
         , source = fp
