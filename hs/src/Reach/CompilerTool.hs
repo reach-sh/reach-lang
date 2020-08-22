@@ -29,4 +29,4 @@ makeCompilerOpts CompilerToolOpts {..} = do
 compilerToolMain :: CompilerToolOpts -> IO ()
 compilerToolMain ctool_opts@CompilerToolOpts {..} = do
   copts <- makeCompilerOpts ctool_opts
-  compileNL copts
+  compile copts

@@ -1,4 +1,4 @@
-module Reach.Compiler (CompilerOpts (..), compileNL) where
+module Reach.Compiler (CompilerOpts (..), compile) where
 
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
@@ -20,8 +20,8 @@ data CompilerOpts = CompilerOpts
   , intermediateFiles :: Bool
   }
 
-compileNL :: CompilerOpts -> IO ()
-compileNL copts = do
+compile :: CompilerOpts -> IO ()
+compile copts = do
   djp <- gatherDeps_top $ source copts
   let compile1 which = do
         let outn = (output copts) . ((T.pack which <> ".") <>)
