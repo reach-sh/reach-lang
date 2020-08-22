@@ -12,7 +12,7 @@ data CompilerToolArgs = CompilerToolArgs
   , cta_source :: FilePath
   , cta_tops :: [String]
   , cta_intermediateFiles :: Bool
-  , cta_enableReporting :: Bool
+  , cta_disableReporting :: Bool
   }
 
 data CompilerToolEnv = CompilerToolEnv
@@ -41,7 +41,7 @@ compiler cwd =
     <*> strArgument (metavar "SOURCE")
     <*> many (strArgument (metavar "EXPORTS..."))
     <*> switch (long "intermediate-files")
-    <*> switch (long "enable-reporting")
+    <*> switch (long "disable-reporting")
 
 getCompilerArgs :: IO CompilerToolArgs
 getCompilerArgs = do
@@ -67,9 +67,9 @@ main = do
   args <- getCompilerArgs
   env <- getCompilerEnv
   report <-
-    case cta_enableReporting args of
-      True -> startReport (cte_REACHC_ID env)
-      False -> return $ const $ return ()
+    case cta_disableReporting args of
+      True -> return $ const $ return ()
+      False -> startReport (cte_REACHC_ID env)
   let ctool_opts = makeCompilerToolOpts args env
   --- TODO: collect interesting stats to report at the end
   (e :: Either SomeException ()) <- try $ compilerToolMain ctool_opts

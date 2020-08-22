@@ -32,7 +32,7 @@ do_compile () {
         MAYBE_FAST="--fast"
         MAYBE_PROF=""
         MAYBE_PROF_OPTS=""
-        MAYBE_DEV_OPTS="--intermediate-files"
+        MAYBE_DEV_OPTS="--disable-reporting --intermediate-files"
         if [ "x${REACHC_RELEASE}" = "xY" ] ; then
             MAYBE_FAST=""
             MAYBE_DEV_OPTS=""

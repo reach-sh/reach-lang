@@ -59,10 +59,8 @@ startReport mwho = do
 
     m <- async . void $
       flip runReaderT manager $ do
-        lift $ putStrLn "sending..."
         let log_req = setRequestBodyJSON rep req'
         void $ httpNoBody log_req
-        lift $ putStrLn "...sent"
 
     let block = waitCatch m
     case mtimeout of
