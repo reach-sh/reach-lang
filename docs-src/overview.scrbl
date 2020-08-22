@@ -124,7 +124,7 @@ Reach programmers don't need to think about details like @emph{contract storage}
 
 After a Reach programmer writes this application in a file like @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}], they could run
 
-@commandline{reach compile -o build @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}]}
+@cmd{reach compile -o build @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}]}
 
 and the @exec{build} directory will contain a new file named @reachexlink["build/over-minimal.main.mjs" @exec{over-minimal.main.mjs}], which contains a JavaScript implementation of a @tech{backend} for each participant, as well as the Ethereum bytecode for the @tech{contract}.
 
@@ -155,7 +155,7 @@ Let's change the third step to leave a single unit in the balance:
 
 And then run the compiler
 
-@commandline{reach compile -o build @reachexlink["over-minimal-error.rsh" @exec{over-minimal-error.rsh}]}
+@cmd{reach compile -o build @reachexlink["over-minimal-error.rsh" @exec{over-minimal-error.rsh}]}
 
 It will print out a detailed error message showing the violation.
 
@@ -253,7 +253,7 @@ In this case, we've set up our application simply: there's one Reach file for th
 This is a common practice, so Reach comes with a simple wrapper script to build and execute such applications.
 We just run:
 
-@commandline{reach run over-minimal}
+@cmd{reach run over-minimal}
 
 And then Reach
 

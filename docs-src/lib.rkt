@@ -2,6 +2,7 @@
 (require scribble/manual
          scribble/minted
          scriblib/figure
+         scribble/core
          racket/match
          racket/format
          racket/list
@@ -36,6 +37,9 @@
 (define (the-community-link)
   @link["https://discord.com/channels/628402598663290882"]{the Discord community})
 
+(define (cmd . args)
+  (apply commandline @bold{@exec{$}} " " args))
+
 (define-runtime-path x "x")
 
 (define (reachexlink p [label #f])
@@ -45,8 +49,22 @@
 
 (define (reachex
          #:mode [mode reach]
+         #:link [link? #f]
          #:show-lines? [show-lines? #f]
          path . which)
+
+  (define ((do-link lab) content)
+    (list
+     (tabular
+      #:style 'boxed
+      (list (list (reachexlink path (exec lab)))))
+     content))
+  (define maybe-link
+    (match link?
+      [#f (λ (x) x)]
+      [#t (do-link path)]
+      [lab (do-link lab)]))
+  
   (define input (file->lines (build-path x path)))
   (define-values (num-pad add-num)
     (cond [(not show-lines?)
@@ -109,4 +127,4 @@
       [(list #f to) (take (add-nums input) to)]
       [(list from to)
        (drop (reverse (drop (reverse (add-nums input)) to)) from)]))
-  (apply mode (add-between sel "\n")))
+  (maybe-link (apply mode (add-between sel "\n"))))

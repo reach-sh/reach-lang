@@ -12,7 +12,7 @@ This document contains an exhaustive discussion of each of the parts of the Reac
 
 Reach is a Dockerized program, so its only dependencies are @link["https://www.docker.com/get-started"]{Docker} and @link["https://docs.docker.com/compose/install/"]{Docker Compose}. You can install it by running:
 
-@commandline{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach}
+@cmd{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach}
 
 in your project repository.
 You can copy this file to other repositories or move it to a directory in your @envvar{PATH}, like @exec{~/bin}.
@@ -25,7 +25,7 @@ Reach has a few sub-commands, each with their own options.
 
 You compile your Reach code by executing
 
-@commandline{reach compile SOURCE EXPORT ...}
+@cmd{reach compile SOURCE EXPORT ...}
 
 where @exec{SOURCE} is your @tech{source file},
 and each @exec{EXPORT} is an @tech{export}ed @tech{Reach.App}.
@@ -46,7 +46,7 @@ If no @exec{EXPORT} is provided, then @litchar{main} is used.
 
 You can run a simple Reach application by executing
 
-@commandline{reach run APP}
+@cmd{reach run APP}
 
 This assumes
 
@@ -85,19 +85,19 @@ It then
 
 You can upgrade your Reach installation by executing
 
-@commandline{reach upgrade}
+@cmd{reach upgrade}
 
 @subsection[#:tag "ref-usage-update"]{@tt{reach update}}
 
 You can update the Docker images used by your Reach installation by executing
 
-@commandline{reach update}
+@cmd{reach update}
 
 @subsection[#:tag "ref-usage-version"]{@tt{reach version}}
 
 You can see what version of Reach you have installed by running
 
-@commandline{reach version}
+@cmd{reach version}
 
 @include-section["ref-model.scrbl"]
 @include-section["ref-programs.scrbl"]

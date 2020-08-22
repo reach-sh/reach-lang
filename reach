@@ -60,7 +60,9 @@ EOF
 }
 
 do_run () {
-    APP=$1
+    ARG=$1
+    cd $(dirname "$ARG")
+    APP=$(basename "$ARG")
     RSH=${APP}.rsh
     MJS=${APP}.mjs
 

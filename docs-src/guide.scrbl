@@ -11,6 +11,10 @@ The following guides are available:
 
 @local-table-of-contents[#:style 'immediate-only]
 
+@section[#:tag "guide-versions"]{How does Reach use version numbers?}
+
+XXX
+
 @section[#:tag "guide-testing"]{Testing and validating decentralized applications}
 
 XXX
