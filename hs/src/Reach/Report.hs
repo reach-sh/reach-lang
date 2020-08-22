@@ -23,17 +23,14 @@ startReport mwho = do
   startTime <- getCurrentTime
   req <- parseRequest reportUrl
   manager <- newManager tlsManagerSettings
-  let req' = setRequestMethod "POST" req
-  let send obj = async . void $
-        flip runReaderT manager $ do
-          let log_req = setRequestBodyJSON obj req'
-          void $ httpNoBody log_req
+  let send log_req =
+        async $ runReaderT (httpNoBody log_req) manager
 
   --- NOTE we want to start the TCP/IP & HTTP handshake right now, so
   --- we send a dummy request that will be rejected by the logger, so
   --- that the manager will start a keep-alive connection, so that at
   --- the end, things will go fast.
-  _ignored <- send (object [])
+  _ignored <- send (setRequestMethod "OPTIONS" req)
 
   return $ \what -> do
     endTime <- getCurrentTime
@@ -50,7 +47,7 @@ startReport mwho = do
             , "elapsed" .= elapsed
             , "result" .= result
             ]
-    m <- send rep
+    m <- send (setRequestBodyJSON rep $ setRequestMethod "POST" req)
     let block = waitCatch m
     case mtimeout of
       Nothing -> void block
