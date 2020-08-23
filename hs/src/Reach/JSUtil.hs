@@ -1,4 +1,4 @@
-module Reach.JSUtil (jso_flatten, jscl_flatten, jsctl_flatten, jsa_flatten, dropEmptyJSStmts, jsArrowStmtToBlock, jsStmtToBlock, tp, srcloc_jsa) where
+module Reach.JSUtil (jso_flatten, jscl_flatten, jsctl_flatten, toJSCL, jsa_flatten, dropEmptyJSStmts, jsArrowStmtToBlock, jsStmtToBlock, tp, srcloc_jsa) where
 
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
@@ -13,6 +13,12 @@ jscl_flatten :: JSCommaList a -> [a]
 jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]
 jscl_flatten (JSLOne a) = [a]
 jscl_flatten (JSLNil) = []
+
+toJSCL :: [a] -> JSCommaList a
+toJSCL l = helper (reverse l) JSLNil
+  where helper [] acc = acc
+        helper (x : ys) acc =
+          helper ys (JSLCons acc JSNoAnnot x)
 
 jsctl_flatten :: JSCommaTrailingList a -> [a]
 jsctl_flatten (JSCTLComma a _) = jscl_flatten a

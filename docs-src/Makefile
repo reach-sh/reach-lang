@@ -1,4 +1,4 @@
-examples = over-minimal tut-1/tut tut-2/tut tut-3/tut
+examples = over-minimal tut-1/tut tut-2/tut tut-3/tut tut-4-attack/tut tut-4/tut
 all: render check
 
 STYLE=solarizedlight

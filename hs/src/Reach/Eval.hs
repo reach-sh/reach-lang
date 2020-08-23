@@ -64,6 +64,8 @@ data EvalError
   | Err_Eval_IndirectRefNotArray SLVal
   | Err_Eval_RefOutOfBounds Int Integer
   | Err_Eval_UnboundId SLVar [SLVar]
+  | Err_Verify_NotUnaryArrow JSExpression
+  | Err_Verify_NotFunction SLVal
   | Err_ExpectedPrivate SLVal
   | Err_ExpectedPublic SLVal
   | Err_Export_IllegalJS JSExportDeclaration
@@ -178,6 +180,10 @@ instance Show EvalError where
       "Invalid binding. Expected array or tuple, got: " <> displaySlValType slval
     Err_Decl_WrongArrayLength nIdents nVals ->
       "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
+    Err_Verify_NotUnaryArrow e ->
+      "verify requires an unparenthesized unary arrow as its only argument, got: " <> conNameOf e
+    Err_Verify_NotFunction v ->
+      "verify requires a function as the value of its argument, got " <> displaySlValType v 
     Err_Dot_InvalidField _slval ks k ->
       "Invalid field: " <> k <> didYouMean k ks 5
     Err_Eval_ContinueNotInWhile ->
@@ -244,10 +250,9 @@ instance Show EvalError where
       "Invalid object spread. Expected object, got: " <> displaySlValType slval
     Err_Prim_InvalidArgs prim slvals ->
       "Invalid args for " <> displayPrim prim <> ". got: "
-        <> displayTyList (map (fst . typeOf noSrcLoc) slvals)
+        <> "[" <> (intercalate ", " $ map displaySlValType slvals) <> "]"
       where
         displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
-        noSrcLoc = SrcLoc Nothing Nothing Nothing
     Err_Shadowed n ->
       -- FIXME tell the srcloc of the original binding
       "Invalid name shadowing. Cannot be rebound: " <> n
@@ -322,7 +327,9 @@ isSecretIdent :: SLVar -> Bool
 isSecretIdent ('_' : _ : _) = True
 isSecretIdent _ = False
 
-data EnvInsertMode = AllowShadowing | DisallowShadowing
+data EnvInsertMode
+  = AllowShadowing
+  | DisallowShadowing
 
 -- | The "_" never actually gets bound;
 -- it is therefore only ident that may be "shadowed".
@@ -390,6 +397,8 @@ base_env =
     , ("UInt256", SLV_Type T_UInt256)
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
+    , ("verify", SLV_Form SLForm_verify)
+    , ("forall", SLV_Form SLForm_forall)
     , ("Array", SLV_Prim SLPrim_Array)
     , ("array", SLV_Prim SLPrim_array)
     , ("array_set", SLV_Prim SLPrim_array_set)
@@ -529,8 +538,8 @@ penvs_update ctxt sco f =
     map (\p -> (p, f p $ sco_lookup_penv ctxt sco p)) $
       M.keys $ ctxt_base_penvs ctxt
 
-sco_update :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
-sco_update ctxt at sco st addl_env =
+sco_update_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
+sco_update_ imode ctxt at sco st addl_env =
   sco
     { sco_env = do_merge $ sco_env sco
     , sco_penvs = sco_penvs'
@@ -547,7 +556,10 @@ sco_update ctxt at sco st addl_env =
       case st_mode st of
         SLM_ConsensusStep -> do_merge $ sco_cenv sco
         _ -> sco_cenv sco
-    do_merge = flip (env_merge at) addl_env
+    do_merge = flip (env_merge_ imode at) addl_env
+
+sco_update :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
+sco_update = sco_update_ DisallowShadowing
 
 stMerge :: HasCallStack => SrcLoc -> SLState -> SLState -> SLState
 stMerge at x y =
@@ -737,6 +749,16 @@ evalForm ctxt at sco st f args =
         _ ->
           expect_throw at $ Err_Each_NotTuple parts_v
     SLForm_EachAns {} -> impossible "SLForm_Part_OnlyAns"
+    SLForm_forall {} ->
+      error "XXX"
+    SLForm_verify {} -> do
+      let arg = one_arg
+      case arg of
+        JSArrowExpression (JSUnparenthesizedArrowParameter (JSIdentName _ whatv)) _ how_s -> do
+          let how_b = jsStmtToBlock how_s
+          return $ SLRes mempty st $ public $ SLV_Prim $ SLPrim_doVerify at whatv how_b (sco_to_cloenv sco)
+        what ->
+          expect_throw at $ Err_Verify_NotUnaryArrow what
   where
     illegal_args n = expect_throw at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -980,6 +1002,7 @@ evalPrim ctxt at sco st p sargs =
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "exit"
     SLPrim_exitted -> illegal_args
+    SLPrim_doVerify {} -> illegal_args
   where
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)
     retV v = return $ SLRes mempty st v
@@ -1611,6 +1634,24 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           let lifts' = (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' k_st cr
         _ -> illegal_mode
+    SLV_Prim (SLPrim_doVerify verify_at what how verify_cloenv) -> do
+      let JSBlock how_al how_ss how_ar = how
+      let (whatlvl, whatv) = env_lookup at what env
+      case whatv of
+        SLV_Clo _ _ what_args _ _ -> do
+          let what_args_jscl = toJSCL $ map (JSIdentifier how_al) $ what_args
+          let how_sp = JSSemi how_ar
+          let verify_stmt = JSStatementBlock how_al how_ss how_ar how_sp
+          let params = JSParenthesizedArrowParameterList how_al JSLNil how_ar
+          let verify_arrow = JSArrowExpression params how_al verify_stmt
+          let verify_call = JSMethodCall verify_arrow how_al JSLNil how_ar how_sp
+          let normal_call = JSReturn how_al (Just $ JSCallExpression (JSIdentifier how_al what) how_al what_args_jscl how_ar) how_sp
+          let what'_body = JSBlock how_al [ verify_call, normal_call ] how_ar
+          let whatv' = SLV_Clo verify_at (Just what) what_args what'_body verify_cloenv
+          let sco' = sco_update_ AllowShadowing ctxt at sco st (M.singleton what (whatlvl, whatv'))
+          evalStmt ctxt at sco' st ks
+        _ ->
+          expect_throw verify_at $ Err_Verify_NotFunction whatv
     _ ->
       case typeOf at ev of
         (T_Null, _) -> evalStmt ctxt at sco st ks

@@ -221,6 +221,8 @@ data SLForm
   | SLForm_EachAns [SLPart] SrcLoc SLCloEnv JSExpression
   | SLForm_Part_Only SLPart
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
+  | SLForm_forall
+  | SLForm_verify
   deriving (Eq, Generic, Show)
 
 instance NFData SLForm
@@ -294,6 +296,7 @@ data SLPrimitive
   | SLPrim_transfer_amt_to DLArg
   | SLPrim_exit
   | SLPrim_exitted
+  | SLPrim_doVerify SrcLoc SLVar JSBlock SLCloEnv
   deriving (Eq, Generic, Show)
 
 instance NFData SLPrimitive
