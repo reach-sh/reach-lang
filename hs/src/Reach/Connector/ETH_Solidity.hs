@@ -286,10 +286,10 @@ solCom iter ctxt = \case
   PL_Claim _ _ ct a k -> SolTailRes ctxt check <> iter ctxt k
     where
       check = case ct of
-        CT_Assert -> emptyDoc
+        CT_Assert -> impossible "assert"
         CT_Assume -> require
         CT_Require -> require
-        CT_Possible -> emptyDoc
+        CT_Possible -> impossible "possible"
       require = solRequire (solArg ctxt a) <> semi
   PL_LocalIf _ ca t f k -> SolTailRes ctxt (solIf ca' t' f') <> iter ctxt k
     where

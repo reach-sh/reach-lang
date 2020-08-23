@@ -103,9 +103,10 @@ epp_m done back skip look c =
     LL_Claim at f ct ca k ->
       case ct of
         CT_Assert -> skip k
+        CT_Assume -> keep
+        CT_Require -> keep
         CT_Possible -> skip k
-        _ -> back cs' (PL_Claim at f ct ca) k
-          where
+      where keep = back cs' (PL_Claim at f ct ca) k
             cs' = counts ca
     LL_LocalIf at ca t f k ->
       look

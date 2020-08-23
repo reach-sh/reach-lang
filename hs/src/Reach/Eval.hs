@@ -938,13 +938,14 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_claim ct ->
       case (st_mode st, ct) of
         (SLM_LocalStep, CT_Assume) -> good
+        (cm, CT_Assume) -> bad cm
         (SLM_ConsensusStep, CT_Require) -> good
         (SLM_ConsensusPure, CT_Require) -> good
+        (cm, CT_Require) -> bad cm
         (_, CT_Assert) -> good
         (_, CT_Possible) -> good
-        (cm, _) ->
-          expect_throw at $ Err_Eval_IllegalMode cm $ "assert " ++ show ct
       where
+        bad cm = expect_throw at $ Err_Eval_IllegalMode cm $ "assert " ++ show ct
         good = return $ SLRes lifts st $ public $ SLV_Null at "claim"
         darg = case map snd sargs of
           [arg] -> checkType at T_Bool arg

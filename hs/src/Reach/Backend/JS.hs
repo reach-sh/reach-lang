@@ -177,10 +177,10 @@ jsCom iter ctxt = \case
     check <> iter ctxt k
     where
       check = case ct of
-        CT_Assert -> emptyDoc
+        CT_Assert -> impossible "assert"
         CT_Assume -> require
         CT_Require -> require
-        CT_Possible -> emptyDoc
+        CT_Possible -> impossible "possible"
       require = (jsAssert $ jsArg a) <> hardline
   PL_LocalIf _ c t f k ->
     vsep
