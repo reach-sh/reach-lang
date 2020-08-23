@@ -10,7 +10,7 @@ It contains everything you need to know to build and test this application.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
 On the hand, if this is too simple, then you may want to look at @seclink["howtos"]{some how-to guides} for larger projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
 
-If you're ready, click through to the first step!
+If you're ready, click through to the @seclink["tut-0"]{first step}!
 
 @local-table-of-contents[#:style 'immediate-only]
 
@@ -48,7 +48,7 @@ You'll know that everything is in order if you can run
 
 @(hrule)
 
-Now that your Reach installation is in order, you should open a text editor and get ready to write your first Reach application!
+Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-1"]{write your first Reach application}!
 
 @section[#:tag "tut-1"]{Step 1: Scaffolding and Setup}
 
@@ -125,7 +125,7 @@ This is now enough for Reach to compile and run our program. Let's try by runnin
 Reach should now build and launch a Docker container for this application.
 Since the application doesn't do anything, you'll just see a lot of diagnostic messages though, so that's not very exciting.
 
-In the next step, we'll implement the logic of @|RPS| and our application will start doing something!
+In @seclink["tut-2"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
 
 @section[#:tag "tut-2"]{Step 2: Rock, Paper, and Scissors}
 
@@ -264,7 +264,7 @@ That's why every time you run @exec{reach run tut}, both Alice and Bob will see 
 
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-2/tut.rsh" @exec{tut.rsh}] and @reachexlink["tut-2/tut.mjs" @exec{tut.mjs}] to make sure you copied everything down correctly!}
 
-Next, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
+In @seclink["tut-3"]{the next step}, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
 
 @section[#:tag "tut-3"]{Step 3: Bets and Wagers}
 
@@ -452,7 +452,7 @@ Alice is doing okay, if she keeps this up, she'll make a fortune on @|RPS|!
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-3/tut.rsh" @exec{tut.rsh}] and @reachexlink["tut-3/tut.mjs" @exec{tut.mjs}] to make sure you copied everything down correctly!}
 
 Now that there is a reason to play this game, it turns out that there's a major security vulnerability.
-We'll fix this in the next step; make sure you don't launch with this version, or Alice is going to go broke!
+We'll fix this in @seclink["tut-4"]{the next step}; make sure you don't launch with this version, or Alice is going to go broke!
 
 @section[#:tag "tut-4"]{Step 4: Trust and Commitments}
 
