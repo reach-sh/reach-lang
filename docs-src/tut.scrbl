@@ -342,7 +342,7 @@ First, we need to update the @tech{participant interact interface}.
 
 @reachex[#:show-lines? #t "tut-3/tut.rsh"
          #:link "tut.rsh"
-         'skip 18 41 "     // ..."]
+         'skip 18 41 "      // ..."]
 
 @itemlist[
 
@@ -361,7 +361,7 @@ Let's look at Alice's first step first.
 
 @reachex[#:show-lines? #t "tut-3/tut.rsh"
          #:link "tut.rsh"
-         'only 18 23 "     // ..."]
+         'only 18 23 "      // ..."]
 
 @itemlist[
 
@@ -380,7 +380,7 @@ Next, Bob needs to be shown the wager and given the opportunity to accept it and
 
 @reachex[#:show-lines? #t "tut-3/tut.rsh"
          #:link "tut.rsh"
-         'only 25 29 "     // ..."]
+         'only 25 29 "      // ..."]
 
 @itemlist[
 
@@ -396,7 +396,7 @@ Before, it would compute the outcome and then commit the state; but now, it need
 
 @reachex[#:show-lines? #t "tut-3/tut.rsh"
          #:link "tut.rsh"
-         'only 31 38 "     // ..."]
+         'only 31 38 "      // ..."]
 
 @itemlist[
 
@@ -446,6 +446,9 @@ Bob went from 10.0 to 4.999999999999978229.
 
 @margin-note{How come Alice and Bob's balance goes back to @litchar{10.0} each time?
 It's because every time we run @exec{reach run tut}, it starts a completely fresh instance of the testing network and creates new accounts for each player.}
+
+@margin-note{How come the balances aren't exactly @litchar{10}, @litchar{15}, and @litchar{5}?
+It's because Ethereum transactions cost "gas" to run.}
 
 Alice is doing okay, if she keeps this up, she'll make a fortune on @|RPS|!
 
