@@ -42,6 +42,7 @@ instance CollectsTypes DLArg where
 
 instance CollectsTypes DLExpr where
   cts (DLE_Arg _ a) = cts a
+  cts (DLE_Impossible _ _) = mempty
   cts (DLE_PrimOp _ _ as) = cts as
   cts (DLE_ArrayRef _ _ a _ i) = cts a <> cts i
   cts (DLE_ArraySet _ _ a _ i v) = cts a <> cts i <> cts v

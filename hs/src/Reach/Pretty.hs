@@ -73,6 +73,7 @@ instance Pretty DLExpr where
   pretty e =
     case e of
       DLE_Arg _ a -> pretty a
+      DLE_Impossible _ msg -> "impossible" <> parens (pretty msg)
       DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
       DLE_ArrayRef _ _ a _ o -> pretty a <> brackets (pretty o)
       DLE_ArraySet _ _ a _ i v -> "array_set" <> render_das [a, i, v]

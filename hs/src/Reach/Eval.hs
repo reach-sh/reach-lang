@@ -986,9 +986,7 @@ evalPrim ctxt at sco st p sargs =
       case sargs of
         [ (lvl, one) ] -> do
           let t = expect_ty one
-          dvi <- ctxt_alloc ctxt at
-          let dv = DLVar at (ctxt_local_name ctxt "forall") t dvi
-          let lifts = return $ DLS_Prompt at (Right dv) mempty
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "forall") t) (DLE_Impossible at $ "cannot inspect value from forall")
           return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
         [ one, (lvl, two) ] -> do
           SLRes elifts st_e one' <- evalPrim ctxt at sco st SLPrim_forall [ one ]

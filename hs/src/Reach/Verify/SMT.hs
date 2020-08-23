@@ -480,6 +480,8 @@ smt_e ctxt at_dv dv de =
   case de of
     DLE_Arg at da ->
       pathAddBound ctxt at_dv dv bo $ smt_a ctxt at da
+    DLE_Impossible _ _ ->
+      pathAddUnbound ctxt at_dv dv bo
     DLE_PrimOp at cp args ->
       pathAddBound ctxt at_dv dv bo se
       where

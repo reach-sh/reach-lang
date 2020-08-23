@@ -362,6 +362,7 @@ instance NFData DLArg
 
 data DLExpr
   = DLE_Arg SrcLoc DLArg
+  | DLE_Impossible SrcLoc String
   | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc [SLCtxtFrame] DLArg Integer DLArg
   | DLE_ArraySet SrcLoc [SLCtxtFrame] DLArg Integer DLArg DLArg
@@ -377,6 +378,7 @@ expr_pure :: DLExpr -> Bool
 expr_pure e =
   case e of
     DLE_Arg {} -> True
+    DLE_Impossible {} -> True
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True

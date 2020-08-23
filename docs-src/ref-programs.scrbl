@@ -661,6 +661,20 @@ and the next N values are distinct @reachin{UInt256}s.
 
 @(hrule)
 @reach{
+ forall( Type )
+ forall( Type, (var) => BLOCK ) }
+
+@index{forall} The single argument version returns an abstract value of the given type.
+It may only be referenced inside of @tech{assert}ions; any other reference is invalid.
+
+The two argument version is an abbreviation of calling the second argument with the result of @reachin{forall(Type)}.
+This is convenient for writing general claims about expressions, such as
+
+@reach{
+ forall(UInt256, (x) => assert(x == x)); }
+
+@(hrule)
+@reach{
  assume( claim ) }
 
 @index{assume} An @tech{assumption} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{frontends}.
