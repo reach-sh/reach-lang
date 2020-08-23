@@ -30,9 +30,9 @@ export const main =
       
       const outcome = (handA + (4 - handB)) % 3;
       const [forA, forB] =
+            outcome == 2 ? [2, 0] :
             outcome == 0 ? [0, 2] :
-            outcome == 1 ? [1, 1] :
-            [2, 0];
+            [1, 1];
       transfer(forA * wager).to(A);
       transfer(forB * wager).to(B);
       commit();

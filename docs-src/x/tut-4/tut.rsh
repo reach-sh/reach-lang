@@ -2,9 +2,9 @@
 
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
+
 const winner = (handA, handB) =>
       ((handA + (4 - handB)) % 3);
-
 forall(UInt256, handA =>
   forall(UInt256, handB =>
     assert(isOutcome(winner(handA, handB)))));
@@ -34,9 +34,9 @@ export const main =
         const handA = declassify(interact.getHand()); });
       A.publish(wager, handA)
         .pay(wager);
-      // XXX unknowable(B, A(handA));
       commit();
 
+      // XXX unknowable(B, A(handA));
       B.only(() => {
         interact.acceptWager(wager);
         const handB = declassify(interact.getHand()); });
@@ -45,9 +45,9 @@ export const main =
 
       const outcome = winner(handA, handB);
       const [forA, forB] =
+            outcome == A_WINS ? [2, 0] :
             outcome == B_WINS ? [0, 2] :
-            outcome == DRAW ? [1, 1] :
-            [2, 0];
+            [1, 1];
       transfer(forA * wager).to(A);
       transfer(forB * wager).to(B);
       commit();
