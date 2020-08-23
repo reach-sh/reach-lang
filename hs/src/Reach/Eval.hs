@@ -398,7 +398,7 @@ base_env =
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
     , ("verify", SLV_Form SLForm_verify)
-    , ("forall", SLV_Form SLForm_forall)
+    , ("forall", SLV_Prim SLPrim_forall)
     , ("Array", SLV_Prim SLPrim_Array)
     , ("array", SLV_Prim SLPrim_array)
     , ("array_set", SLV_Prim SLPrim_array_set)
@@ -749,8 +749,6 @@ evalForm ctxt at sco st f args =
         _ ->
           expect_throw at $ Err_Each_NotTuple parts_v
     SLForm_EachAns {} -> impossible "SLForm_Part_OnlyAns"
-    SLForm_forall {} ->
-      error "XXX"
     SLForm_verify {} -> do
       let arg = one_arg
       case arg of
@@ -1003,6 +1001,20 @@ evalPrim ctxt at sco st p sargs =
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "exit"
     SLPrim_exitted -> illegal_args
     SLPrim_doVerify {} -> illegal_args
+    SLPrim_forall {} ->
+      case sargs of
+        [ (lvl, one) ] -> do
+          let t = expect_ty one
+          dvi <- ctxt_alloc ctxt at
+          let dv = DLVar at (ctxt_local_name ctxt "forall") t dvi
+          let lifts = return $ DLS_Prompt at (Right dv) mempty
+          return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
+        [ one, (lvl, two) ] -> do
+          SLRes elifts st_e one' <- evalPrim ctxt at sco st SLPrim_forall [ one ]
+          SLRes alifts st_a (SLAppRes _ ans) <-
+            evalApplyVals ctxt at sco st_e two [ one' ]
+          return $ SLRes (elifts <> alifts) st_a $ lvlMeet lvl ans
+        _ -> illegal_args
   where
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)
     retV v = return $ SLRes mempty st v
@@ -1635,6 +1647,10 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           return $ SLRes lifts' k_st cr
         _ -> illegal_mode
     SLV_Prim (SLPrim_doVerify verify_at what how verify_cloenv) -> do
+      --- FIXME This implementation is pretty insane... it attaches
+      --- the verifications to every call site of the
+      --- function. Really, we need a way to just capture let these
+      --- kinds of assertions occur at the top-level.
       let JSBlock how_al how_ss how_ar = how
       let (whatlvl, whatv) = env_lookup at what env
       case whatv of

@@ -1,16 +1,16 @@
 'reach 0.1';
 
-const [ Hand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
-const [ Outcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
+const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
+const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 const winner = (handA, handB) =>
       ((handA + (4 - handB)) % 3);
 verify(winner => {
-  // XXX assert(is(Fun([Hand, Hand], Outcome), winner));
+  assert(isOutcome(winner(forall(UInt256), forall(UInt256))));
   assert(winner(ROCK, PAPER) == B_WINS);
   assert(winner(PAPER, ROCK) == A_WINS);
   assert(winner(ROCK, ROCK) == DRAW);
-  /*assert(forall(Hand, (hand) =>
-    winner(hand, hand) == DRAW)); */
+  assert(forall(UInt256, (hand) =>
+    winner(hand, hand) == DRAW));
 });
 
 const Player =
