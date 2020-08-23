@@ -64,8 +64,6 @@ data EvalError
   | Err_Eval_IndirectRefNotArray SLVal
   | Err_Eval_RefOutOfBounds Int Integer
   | Err_Eval_UnboundId SLVar [SLVar]
-  | Err_Verify_NotUnaryArrow JSExpression
-  | Err_Verify_NotFunction SLVal
   | Err_ExpectedPrivate SLVal
   | Err_ExpectedPublic SLVal
   | Err_Export_IllegalJS JSExportDeclaration
@@ -180,10 +178,6 @@ instance Show EvalError where
       "Invalid binding. Expected array or tuple, got: " <> displaySlValType slval
     Err_Decl_WrongArrayLength nIdents nVals ->
       "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
-    Err_Verify_NotUnaryArrow e ->
-      "verify requires an unparenthesized unary arrow as its only argument, got: " <> conNameOf e
-    Err_Verify_NotFunction v ->
-      "verify requires a function as the value of its argument, got " <> displaySlValType v 
     Err_Dot_InvalidField _slval ks k ->
       "Invalid field: " <> k <> didYouMean k ks 5
     Err_Eval_ContinueNotInWhile ->
@@ -397,7 +391,6 @@ base_env =
     , ("UInt256", SLV_Type T_UInt256)
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
-    , ("verify", SLV_Form SLForm_verify)
     , ("forall", SLV_Prim SLPrim_forall)
     , ("Array", SLV_Prim SLPrim_Array)
     , ("array", SLV_Prim SLPrim_array)
@@ -438,7 +431,7 @@ checkResType at et m = do
 --- the control-flow state that leads to the expression, so it
 --- inherits in a function call.
 data SLCtxt s = SLCtxt
-  { ctxt_id :: Maybe (STCounter s)
+  { ctxt_id :: STCounter s
   , ctxt_stack :: [SLCtxtFrame]
   , ctxt_local_mname :: Maybe [SLVar]
   , ctxt_base_penvs :: SLPartEnvs
@@ -449,10 +442,7 @@ instance Show (SLCtxt s) where
 
 ctxt_alloc :: SLCtxt s -> SrcLoc -> ST s Int
 ctxt_alloc ctxt _at = do
-  let idr = case ctxt_id ctxt of
-        Just x -> x
-        Nothing -> impossible $ "attempt to lift without id"
-  incSTCounter idr
+  incSTCounter $ ctxt_id ctxt
 
 ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s (DLVar, DLStmts)
 ctxt_lift_expr ctxt at mk_var e = do
@@ -749,14 +739,6 @@ evalForm ctxt at sco st f args =
         _ ->
           expect_throw at $ Err_Each_NotTuple parts_v
     SLForm_EachAns {} -> impossible "SLForm_Part_OnlyAns"
-    SLForm_verify {} -> do
-      let arg = one_arg
-      case arg of
-        JSArrowExpression (JSUnparenthesizedArrowParameter (JSIdentName _ whatv)) _ how_s -> do
-          let how_b = jsStmtToBlock how_s
-          return $ SLRes mempty st $ public $ SLV_Prim $ SLPrim_doVerify at whatv how_b (sco_to_cloenv sco)
-        what ->
-          expect_throw at $ Err_Verify_NotUnaryArrow what
   where
     illegal_args n = expect_throw at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -1000,7 +982,6 @@ evalPrim ctxt at sco st p sargs =
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "exit"
     SLPrim_exitted -> illegal_args
-    SLPrim_doVerify {} -> illegal_args
     SLPrim_forall {} ->
       case sargs of
         [ (lvl, one) ] -> do
@@ -1646,28 +1627,6 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           let lifts' = (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' k_st cr
         _ -> illegal_mode
-    SLV_Prim (SLPrim_doVerify verify_at what how verify_cloenv) -> do
-      --- FIXME This implementation is pretty insane... it attaches
-      --- the verifications to every call site of the
-      --- function. Really, we need a way to just capture let these
-      --- kinds of assertions occur at the top-level.
-      let JSBlock how_al how_ss how_ar = how
-      let (whatlvl, whatv) = env_lookup at what env
-      case whatv of
-        SLV_Clo _ _ what_args _ _ -> do
-          let what_args_jscl = toJSCL $ map (JSIdentifier how_al) $ what_args
-          let how_sp = JSSemi how_ar
-          let verify_stmt = JSStatementBlock how_al how_ss how_ar how_sp
-          let params = JSParenthesizedArrowParameterList how_al JSLNil how_ar
-          let verify_arrow = JSArrowExpression params how_al verify_stmt
-          let verify_call = JSMethodCall verify_arrow how_al JSLNil how_ar how_sp
-          let normal_call = JSReturn how_al (Just $ JSCallExpression (JSIdentifier how_al what) how_al what_args_jscl how_ar) how_sp
-          let what'_body = JSBlock how_al [ verify_call, normal_call ] how_ar
-          let whatv' = SLV_Clo verify_at (Just what) what_args what'_body verify_cloenv
-          let sco' = sco_update_ AllowShadowing ctxt at sco st (M.singleton what (whatlvl, whatv'))
-          evalStmt ctxt at sco' st ks
-        _ ->
-          expect_throw verify_at $ Err_Verify_NotFunction whatv
     _ ->
       case typeOf at ev of
         (T_Null, _) -> evalStmt ctxt at sco st ks
@@ -1990,7 +1949,7 @@ evalTopBody ctxt at st libm env exenv body =
                    })
           smr <- evalStmt ctxt at' sco st [sm]
           case smr of
-            SLRes Seq.Empty _ (SLStmtRes env' []) ->
+            SLRes lifts _ (SLStmtRes env' []) ->
               let exenv' = case isExport of
                     True ->
                       --- If this is an exporting statement,
@@ -1999,7 +1958,9 @@ evalTopBody ctxt at st libm env exenv body =
                       env_merge at' exenv (M.difference env' env)
                     False ->
                       exenv
-               in evalTopBody ctxt at' st libm env' exenv' body'
+               in
+                keepLifts lifts $
+                evalTopBody ctxt at' st libm env' exenv' body'
             SLRes {} ->
               expect_throw at' $ Err_Module_Return
 
@@ -2007,8 +1968,8 @@ type SLMod = (ReachSource, [JSModuleItem])
 
 type SLLibs = (M.Map ReachSource SLEnv)
 
-evalLib :: SLMod -> SLLibs -> ST s SLLibs
-evalLib (src, body) libm = do
+evalLib :: STCounter s -> SLMod -> (DLStmts, SLLibs) -> ST s (DLStmts, SLLibs)
+evalLib idxr (src, body) (liblifts, libm) = do
   let st =
         SLState
           { st_mode = SLM_Module
@@ -2017,13 +1978,14 @@ evalLib (src, body) libm = do
           }
   let ctxt_top =
         (SLCtxt
-           { ctxt_id = Nothing
+           { ctxt_id = idxr
            , ctxt_stack = []
            , ctxt_local_mname = Nothing
            , ctxt_base_penvs = mempty
            })
-  exenv <- cannotLift "evalLibs" <$> evalTopBody ctxt_top prev_at st libm stdlib_env mt_env body'
-  return $ M.insert src exenv libm
+  SLRes more_lifts _ exenv <-
+    evalTopBody ctxt_top prev_at st libm stdlib_env mt_env body'
+  return $ (liblifts <> more_lifts, M.insert src exenv libm)
   where
     stdlib_env =
       case src of
@@ -2037,8 +1999,8 @@ evalLib (src, body) libm = do
             ((srcloc_after_semi "header" a sp at), j)
         _ -> expect_throw at (Err_NoHeader body)
 
-evalLibs :: [SLMod] -> ST s SLLibs
-evalLibs mods = foldrM evalLib mempty mods
+evalLibs :: STCounter s -> [SLMod] -> ST s (DLStmts, SLLibs)
+evalLibs idxr mods = foldrM (evalLib idxr) (mempty, mempty) mods
 
 makeInteract :: SrcLoc -> SLPart -> SLEnv -> SLVal
 makeInteract at who spec = SLV_Object at spec'
@@ -2049,12 +2011,11 @@ makeInteract at who spec = SLV_Object at spec'
       False -> expect_throw at $ Err_App_Interact_NotFirstOrder t
     wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract v
 
-compileDApp :: SLVal -> ST s DLProg
-compileDApp topv =
+compileDApp :: STCounter s -> DLStmts -> SLVal -> ST s DLProg
+compileDApp idxr liblifts topv =
   case topv of
     SLV_Prim (SLPrim_App_Delay at _opts partvs (JSBlock _ top_ss _) top_env top_env_wps) -> do
       --- FIXME look at opts
-      idxr <- newSTCounter 0
       let st_step =
             SLState
               { st_mode = SLM_Step
@@ -2063,7 +2024,7 @@ compileDApp topv =
               }
       let ctxt =
             SLCtxt
-              { ctxt_id = Just idxr
+              { ctxt_id = idxr
               , ctxt_stack = []
               , ctxt_local_mname = Nothing
               , ctxt_base_penvs = penvs
@@ -2078,7 +2039,7 @@ compileDApp topv =
               , sco_cenv = mempty
               }
       SLRes final _ _ <- evalStmt ctxt at' sco st_step top_ss
-      return $ DLProg at sps final
+      return $ DLProg at sps (liblifts <> final)
       where
         at' = srcloc_at "compileDApp" Nothing at
         sps = SLParts $ M.fromList $ map make_sps_entry partvs
@@ -2097,7 +2058,8 @@ compileDApp topv =
 
 compileBundleST :: JSBundle -> SLVar -> ST s DLProg
 compileBundleST (JSBundle mods) top = do
-  libm <- evalLibs mods
+  idxr <- newSTCounter 0
+  (liblifts, libm) <- evalLibs idxr mods
   let exe_ex = libm M.! exe
   let topv = case M.lookup top exe_ex of
         Just (Public, x) -> x
@@ -2105,7 +2067,7 @@ compileBundleST (JSBundle mods) top = do
           impossible "private before dapp"
         Nothing ->
           expect_throw srcloc_top (Err_Eval_UnboundId top $ M.keys exe_ex)
-  compileDApp topv
+  compileDApp idxr liblifts topv
   where
     exe = case mods of
       [] -> impossible $ "compileBundle: no files"

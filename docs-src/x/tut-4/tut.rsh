@@ -4,14 +4,15 @@ const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 const winner = (handA, handB) =>
       ((handA + (4 - handB)) % 3);
-verify(winner => {
-  assert(isOutcome(winner(forall(UInt256), forall(UInt256))));
-  assert(winner(ROCK, PAPER) == B_WINS);
-  assert(winner(PAPER, ROCK) == A_WINS);
-  assert(winner(ROCK, ROCK) == DRAW);
-  assert(forall(UInt256, (hand) =>
-    winner(hand, hand) == DRAW));
-});
+
+forall(UInt256, handA =>
+  forall(UInt256, handB =>
+    assert(isOutcome(winner(handA, handB)))));
+assert(winner(ROCK, PAPER) == B_WINS);
+assert(winner(PAPER, ROCK) == A_WINS);
+assert(winner(ROCK, ROCK) == DRAW);
+assert(forall(UInt256, (hand) =>
+  winner(hand, hand) == DRAW));
 
 const Player =
       { getHand: Fun([], UInt256),
