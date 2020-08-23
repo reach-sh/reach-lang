@@ -108,11 +108,17 @@
              [(cons #\space l) (add1 (loop l))]
              [_ 0])))
        (define (do-trim s)
-         (define-values (spaces others)
-           (split-at (string->list s) trim-amt))
-         (unless (andmap (λ (x) (char=? #\space x)) spaces)
-           (error 'do-trim "~v" (vector path which s)))
-         (list->string others))
+         (cond
+           [(<= trim-amt (string-length s))
+            (define-values (spaces others)
+              (split-at (string->list s) trim-amt))
+            (cond
+              [(andmap (λ (x) (char=? #\space x)) spaces)
+               (list->string others)]
+              [else
+               s])]
+           [else
+            s]))
        (define once? #f)
        (filter
         (λ (x) x)

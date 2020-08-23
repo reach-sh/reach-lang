@@ -3,6 +3,8 @@
 
 @title[#:version reach-vers #:tag "tut" #:style 'toc]{Tutorial}
 
+@(define RPS @emph{Rock, Paper, Scissors})
+
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
@@ -50,7 +52,7 @@ Now that your Reach installation is in order, you should open a text editor and 
 
 @section[#:tag "tut-1"]{Step 1: Scaffolding and Setup}
 
-In this tutorial, we'll be building a version of @emph{Rock, Paper, Scissors} where two players, @emph{Alice} and @emph{Bob}, can wager on the result of the game.
+In this tutorial, we'll be building a version of @|RPS| where two players, @emph{Alice} and @emph{Bob}, can wager on the result of the game.
 We'll start simple and slowly make the application more fully featured.
 
 You should following along by copying each part of the program and seeing how things go.
@@ -123,11 +125,11 @@ This is now enough for Reach to compile and run our program. Let's try by runnin
 Reach should now build and launch a Docker container for this application.
 Since the application doesn't do anything, you'll just see a lot of diagnostic messages though, so that's not very exciting.
 
-In the next step, we'll implement the logic of @emph{Rock, Paper, Scissors} and our application will start doing something!
+In the next step, we'll implement the logic of @|RPS| and our application will start doing something!
 
 @section[#:tag "tut-2"]{Step 2: Rock, Paper, and Scissors}
 
-In this section, we'll have Alice and Bob actually execute the game of @emph{Rock, Paper, Scissors}.
+In this section, we'll have Alice and Bob actually execute the game of @|RPS|.
 
 We have to decide how to represent the hands of the game.
 A simple way is to represent them as the numbers @reachin{0}, @reachin{1}, and @reachin{2}, standing for @litchar{Rock}, @litchar{Paper}, and @litchar{Scissors}.
@@ -211,7 +213,7 @@ The next step is similar, in that Bob publishes his hand; however, we don't imme
 @item{Lines 17 through 19 match Alice's similar @tech{local step} and @tech{consensus transfer}.}
 
 @item{But, line 21 computes the outcome of the game before committing.
-(@reachin{(handA + (4 - handB)) % 3} is a clever equation to compute the winner of a game of @emph{Rock, Paper, Scissors} using modular arithmetic.)}
+(@reachin{(handA + (4 - handB)) % 3} is a clever equation to compute the winner of a game of @|RPS| using modular arithmetic.)}
 
 ]
 
@@ -254,7 +256,11 @@ Alice saw outcome Alice wins
 Bob saw outcome Alice wins
 }
 
-Alice is pretty good at @emph{Rock, Paper, Scissors}!
+Alice is pretty good at @|RPS|!
+
+@tech{Consensus networks} in general, and Reach specifically, guarantee that all participants agree on the outcome of the their decentralized computation.
+Indeed, this is where the name @tech{consensus network} comes from, as they enable these distributed, and untrusted, parties to come to a consensus, or agreement, about the intermediate states of a computation; and if they agree on the intermediate states, they will also agree on the output.
+That's why every time you run @exec{reach run tut}, both Alice and Bob will see the same outcome!
 
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-2/tut.rsh" @exec{tut.rsh}] and @reachexlink["tut-2/tut.mjs" @exec{tut.mjs}] to make sure you copied everything down correctly!}
 
@@ -262,7 +268,191 @@ Next, we'll add some stakes to the game, because Alice needs to take her skills 
 
 @section[#:tag "tut-3"]{Step 3: Bets and Wagers}
 
-XXX
+Although it's fun to play @|RPS| with friends for a laugh, it's even better to play it with enemies and your entire life-savings on the line!
+Let's change our program so that Alice can offer a wager to Bob and whoever wins will take the pot.
+
+This time, let's start with changes to the JavaScript @tech{frontend} and then we'll go back into the Reach code and connect the new methods up.
+
+Since we're going to be having funds get transfered, we'll record the balances of each participant before the game starts, so we can more clearly show what they won at the end.
+We'll add this code in between account creation and contract deployment.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-3/tut.mjs"
+         #:link "tut.mjs"
+         'only 7 13 "  // ..."]
+
+@itemlist[
+
+@item{Line 9 shows a helpful function for getting the balance of a participant and displaying it.}
+
+@item{Line 10 and 11 get the balance before the game starts for both Alice and Bob.}
+
+]
+
+Next, we'll update Alice's interface object to include her wager.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-3/tut.mjs"
+         #:link "tut.mjs"
+         'only 26 30 "    // ..."]
+
+@itemlist[
+
+@item{Line 28 splices the common @jsin{Player} interface into Alice's interface.}
+
+@item{Line 29 defines her wager as @litchar{5} units of the @tech{network token}.
+This is an example of using a concrete value, rather than a function, in a @tech{participant interact interface}.}
+
+]
+
+For Bob, we'll modify his interface to show the wager and immediately accept it by returning.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-3/tut.mjs"
+         #:link "tut.mjs"
+         'only 31 35 "    // ..."]
+
+@itemlist[
+
+@item{Line 34 defines the @jsin{acceptWager} function.}
+
+]
+
+Finally, after the computation is over, we'll get the balance again and show a message summarizing the effect.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-3/tut.mjs"
+         #:link "tut.mjs"
+         'only 36 44 "  // ..."]
+
+@itemlist[
+
+@item{Lines 38 and 39 get the balances afterwards.}
+
+@item{Lines 41 and 42 print out the effect.}
+
+]
+
+These changes to the @tech{frontend} only deal with issues of presentation and interfacing.
+The actual business logic of making the wager and transfer the funds will happen in the Reach code.
+
+Let's look at that now.
+
+First, we need to update the @tech{participant interact interface}.
+
+@reachex[#:show-lines? #t "tut-3/tut.rsh"
+         #:link "tut.rsh"
+         'skip 18 41 "     // ..."]
+
+@itemlist[
+
+@item{Lines 6 through 8 define Alice's interface as the @reachin{Player} interface, plus an integer value called @reachin{wager}.}
+
+@item{Lines 9 through 11 do the same for Bob, where he has a method called @reachin{acceptWager} that can look at the wager value.}
+
+@item{Line 16 associates these interfaces with the corresponding participants.
+The format of this line is a @tech{tuple} of @tech{tuples}, where the first value in the @tech{tuple} is a string that names the @tech{backend} @tech{participant} and the second value is the @tech{participant interact interface}.
+It's conventional to name them similarly.}
+
+]
+
+Each of the three parts of the application have to be updated to deal with the wager.
+Let's look at Alice's first step first.
+
+@reachex[#:show-lines? #t "tut-3/tut.rsh"
+         #:link "tut.rsh"
+         'only 18 23 "     // ..."]
+
+@itemlist[
+
+@item{Line 19 has Alice @tech{declassify} the wager for transmission.}
+
+@item{Line 21 is updated so that Alice shares the wager amount with Bob.}
+
+@item{Line 22 has her transfer the amount as part of her @tech{publication}.
+The Reach compiler would throw an exception if @reachin{wager} did not appear on line 21, but did appear on line 22.
+Change the program and try it.
+This is because the @tech{consensus network} needs to be able to verify that the amount of @tech{network tokens} included in Alice's @tech{publication} match some computation available to @tech{consensus network}.}
+
+]
+
+Next, Bob needs to be shown the wager and given the opportunity to accept it and transfer his funds.
+
+@reachex[#:show-lines? #t "tut-3/tut.rsh"
+         #:link "tut.rsh"
+         'only 25 29 "     // ..."]
+
+@itemlist[
+
+@item{Line 26 has Bob accept the wager.
+If he doesn't like the terms, his @tech{frontend} can just not respond to this method and the @|DApp| will stall.}
+
+@item{Line 29 has Bob pay the wager as well.}
+
+]
+
+The @|DApp| is now running in a @tech{consensus step}.
+Before, it would compute the outcome and then commit the state; but now, it needs to look at the outcome and use it to balance the account.
+
+@reachex[#:show-lines? #t "tut-3/tut.rsh"
+         #:link "tut.rsh"
+         'only 31 38 "     // ..."]
+
+@itemlist[
+
+@item{Lines 33 through 35 computes the amounts given to each participant depending on the outcome.}
+
+@item{Lines 36 and 37 transfer the corresponding amounts.}
+
+@item{Line 38 commits the state of the application and allows the participants to see the outcome and complete.}
+
+]
+
+At this point, we can run the program and see its output by running
+
+@cmd{reach run tut}
+
+Since the players act randomly, the results will be different every time.
+When I ran the program three times, this is the output I got:
+
+@verbatim{
+$ reach run tut
+Alice played Paper
+Bob accepts the wager of 5.0.
+Bob played Rock
+Alice saw outcome Alice wins
+Bob saw outcome Alice wins
+Alice went from 10.0 to 14.999999999999687163.
+Bob went from 10.0 to 4.999999999999978229.
+
+$ reach run tut
+Alice played Paper
+Bob accepts the wager of 5.0.
+Bob played Scissors
+Alice saw outcome Bob wins
+Bob saw outcome Bob wins
+Alice went from 10.0 to 4.999999999999687163.
+Bob went from 10.0 to 14.999999999999978246.
+
+$ reach run tut
+Alice played Rock
+Bob accepts the wager of 5.0.
+Bob played Scissors
+Alice saw outcome Alice wins
+Bob saw outcome Alice wins
+Alice went from 10.0 to 14.999999999999687175.
+Bob went from 10.0 to 4.999999999999978229.
+}
+
+@margin-note{How come Alice and Bob's balance goes back to @litchar{10.0} each time?
+It's because every time we run @exec{reach run tut}, it starts a completely fresh instance of the testing network and creates new accounts for each player.}
+
+Alice is doing okay, if she keeps this up, she'll make a fortune on @|RPS|!
+
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-3/tut.rsh" @exec{tut.rsh}] and @reachexlink["tut-3/tut.mjs" @exec{tut.mjs}] to make sure you copied everything down correctly!}
+
+Now that there is a reason to play this game, it turns out that there's a major security vulnerability.
+We'll fix this in the next step; make sure you don't launch with this version, or Alice is going to go broke!
 
 @section[#:tag "tut-4"]{Step 4: Trust and Commitments}
 
@@ -282,4 +472,45 @@ XXX
 
 @section[#:tag "tut-8"]{Step 8: Onward and Further}
 
-XXX
+Let's review what we've done through this tutorial:
+
+@itemlist[
+
+@item{In @seclink["tut-0"]{part zero}, we saw how Reach can be installed with one command on almost any system without any dependencies beyond what most developers have anyways.}
+
+@item{In @seclink["tut-1"]{part one}, we saw how Reach programs have a succinct setup that easily abstracts the details of your chosen @tech{consensus network} into a couple lines and three key API calls.}
+
+@item{In @seclink["tut-2"]{part two}, we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.}
+
+@item{In @seclink["tut-3"]{part three}, we saw that it is just as easy for Reach to deal with tokens and network transactions as it is to deal with data sharing.}
+
+@item{In @seclink["tut-4"]{part four}, we were introduce to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
+
+@item{In @seclink["tut-5"]{part five}, we saw how Reach allows you to specify how to deal with @seclink["guide-timeout"]{non-participation} and protect against funds being locked in contracts.}
+
+@item{In @seclink["tut-6"]{part six}, we saw how Reach can express arbitrary length interactions and how flexible the Reach @tech{frontends} are to variations in the @tech{backend}.}
+
+@item{In @seclink["tut-7"]{part seven}, we saw how to decouple your Reach program from the Reach standard testing environment and launch an interactive version on a real network.}
+
+]
+
+Despite having done so much, this is really just a brief introduction to what is possible with Reach.
+
+It's now time for you to start working on your own application!
+
+@itemlist[
+
+@item{You may want to continue reading with a @seclink["howtos"]{how-to guide} that walks through the development of a different application.}
+
+@item{Or, maybe you'd like to spent some time in @seclink["guide"]{the guide} learning about the background of some of the concepts used in Reach programs.}
+
+@item{Or, maybe it's time for you to dive into @seclink["ref"]{the reference} and look into the minutae of Reach's features.}
+
+]
+
+Now matter what you decide to read or work on next, we hope you'll join us on @(the-community-link).
+Once you join, message @litchar{@"@"team, I just completed the tutorial!} and we'll give you the @litchar{tutorial veteran} role, so you can more easily help others work through it!
+
+Thanks for spending your afternoon with us!
+
+XXX show programs one last time

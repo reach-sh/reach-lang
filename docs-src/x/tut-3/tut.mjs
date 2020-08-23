@@ -3,9 +3,12 @@ import * as backend from './build/tut.main.mjs';
 
 ( async () => {
   const toNetworkFormat = (n) => stdlib.toWeiBigNumber(n, 'ether');
-
   const accAlice = await stdlib.newTestAccount(toNetworkFormat('10'));
   const accBob = await stdlib.newTestAccount(toNetworkFormat('10'));
+
+  const getBalance = async (who) => stdlib.fromWei ( await stdlib.balanceOf(who) );
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
 
   const ctcAlice = await accAlice.deploy(backend);
   const ctcBob = await accBob.attach(backend, ctcAlice);
@@ -22,9 +25,20 @@ import * as backend from './build/tut.main.mjs';
   await Promise.all([
     backend.Alice(
       stdlib, ctcAlice,
-      Player('Alice')),
+      { ...Player('Alice'),
+        wager: toNetworkFormat('5')
+      }),
     backend.Bob(
       stdlib, ctcBob,
-      Player('Bob'))
+      { ...Player('Bob'),
+        acceptWager: (amt) =>
+        console.log(`Bob accepts the wager of ${stdlib.fromWei(amt)}.`) } )
   ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
 })();
