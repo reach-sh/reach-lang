@@ -1,4 +1,5 @@
 <stdout>
+Verifying knowledge assertions
 Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
