@@ -21,6 +21,11 @@ The connector provides a binding named @reachin{ETH} to
 During compilation, the connector produces one intermediate output: @filepath{input.export.sol}, containing
 the Solidity code implementing the @tech{contract}.
 
+A few details of Ethereum leak through to Reach.
+In Ethereum, @tech{time} corresponds to block numbers.
+The node that a given @tech{participant} is connected to does not instantly know that it's blocks are correctly and may revert past transactions after it reaches consensus with the rest of the network.
+This means that Reach applications must not make externally observable effects until after such consensus is reached.
+
 @section[#:tag "ref-network-algo"]{Algorand} @(experimental)
 
 The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a set of
