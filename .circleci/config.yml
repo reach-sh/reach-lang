@@ -120,6 +120,15 @@ jobs:
             git push origin gh-pages
       - slack/status:
           fail_only: true
+  shellcheck:
+    docker:
+      - image: 'cimg/base:stable'
+    steps:
+      - checkout
+      - shellcheck/install
+      - run:
+          name: Run shellcheck
+          command: make sh-lint
 
 workflows:
   build-and-test:
@@ -133,4 +142,4 @@ workflows:
               only: master
   shellcheck:
     jobs:
-      - shellcheck/check
+      - shellcheck
