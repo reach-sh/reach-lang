@@ -2,7 +2,7 @@
 Verifying knowledge assertions
 Verification failed:
   of theorem unknowable("Bob", v1)
-  at ./tut-4-attack/tut-fails.rsh:25:17:application
+  at ./tut-fails.rsh:25:17:application
 
   v1 -> v3 -> "Bob"
 Verifying with mode = VM_Honest
@@ -14,3 +14,6 @@ Checked 15 theorems; 1 failures. :'(
 </stdout>
 <stderr>
 </stderr>
+<exception>
+ExitFailure 1
+</exception>

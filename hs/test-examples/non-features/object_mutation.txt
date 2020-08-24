@@ -4,4 +4,5 @@
 <stderr>
 </stderr>
 <exception>
+ExitFailure 1
 error: ./object_mutation.rsh:assign: Invalid assignment
