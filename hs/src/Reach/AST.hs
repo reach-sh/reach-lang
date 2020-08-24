@@ -221,6 +221,7 @@ data SLForm
   | SLForm_EachAns [SLPart] SrcLoc SLCloEnv JSExpression
   | SLForm_Part_Only SLPart
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
+  | SLForm_unknowable
   deriving (Eq, Generic, Show)
 
 instance NFData SLForm
@@ -400,7 +401,9 @@ data ClaimType
   | --- Check if an assignment of variables exists to make
     --- this true.
     CT_Possible
-  deriving (Eq, Generic, Show, Ord)
+  | --- Check if one part can't know what another party does know
+    CT_Unknowable SLPart [DLArg]
+  deriving (Eq, Generic, Show)
 
 instance NFData ClaimType
 

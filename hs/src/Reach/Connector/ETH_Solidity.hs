@@ -290,6 +290,7 @@ solCom iter ctxt = \case
         CT_Assume -> require
         CT_Require -> require
         CT_Possible -> impossible "possible"
+        CT_Unknowable {} -> impossible "unknowable"
       require = solRequire (solArg ctxt a) <> semi
   PL_LocalIf _ ca t f k -> SolTailRes ctxt (solIf ca' t' f') <> iter ctxt k
     where

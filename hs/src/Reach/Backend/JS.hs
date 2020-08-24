@@ -181,6 +181,7 @@ jsCom iter ctxt = \case
         CT_Assume -> require
         CT_Require -> require
         CT_Possible -> impossible "possible"
+        CT_Unknowable {} -> impossible "unknowable"
       require = (jsAssert $ jsArg a) <> hardline
   PL_LocalIf _ c t f k ->
     vsep

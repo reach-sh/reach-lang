@@ -36,7 +36,7 @@ export const main =
         .pay(wager);
       commit();
 
-      // XXX unknowable(B, A(handA));
+      unknowable(B, A(handA));
       B.only(() => {
         interact.acceptWager(wager);
         const handB = declassify(interact.getHand()); });

@@ -92,6 +92,7 @@ data EvalError
   | Err_Eval_NotSecretIdent SLVar
   | Err_Eval_NotPublicIdent SLVar
   | Err_Eval_LookupUnderscore
+  | Err_Unknowable_NotParticipant SLVal
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -271,6 +272,8 @@ instance Show EvalError where
       "each not given a tuple as an argument, instead got " <> displaySlValType slval
     Err_Each_NotParticipant slval ->
       "each not given a participant as an argument, instead got " <> displaySlValType slval
+    Err_Unknowable_NotParticipant slval ->
+      "unknowable not given a participant as an argument, instead got " <> displaySlValType slval
     Err_Transfer_NotBound who ->
       "cannot transfer to unbound participant, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
@@ -382,6 +385,7 @@ base_env =
     , ("assume", SLV_Prim $ SLPrim_claim CT_Assume)
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
+    , ("unknowable", SLV_Form $ SLForm_unknowable)
     , --- Note: This identifier is chosen so that Reach programmers
       --- can't actually use it directly... kind of a hack. :(
       ("__txn.value__", SLV_Prim $ SLPrim_op $ TXN_VALUE)
@@ -739,6 +743,28 @@ evalForm ctxt at sco st f args =
         _ ->
           expect_throw at $ Err_Each_NotTuple parts_v
     SLForm_EachAns {} -> impossible "SLForm_Part_OnlyAns"
+    SLForm_unknowable ->
+      case st_mode st of
+        SLM_Step -> do
+          let (notter_e, snd_part) = two_args          
+          let (knower_e, whats_e) = jsCallLike at snd_part
+          let whats_i = map (jse_expect_id at) whats_e
+          SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st notter_e
+          let participant_who = \case
+                SLV_Participant _ who _ _ _ -> who
+                v -> expect_throw at $ Err_Unknowable_NotParticipant v
+          let notter = participant_who v_n
+          SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
+          let knower = participant_who v_kn
+          let knower_env = sco_lookup_penv ctxt sco knower
+          let whats_v = map snd $ map (flip (env_lookup at) knower_env) whats_i
+          let whats_da = map snd $ map (typeOf at) whats_v
+          let ct = CT_Unknowable notter whats_da
+          let lifts' = return $ DLS_Claim at (ctxt_stack ctxt) ct (DLA_Con $ DLC_Bool True)
+          let lifts = lifts_n <> lifts_kn <> lifts'
+          return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
+        cm ->
+          expect_throw at $ Err_Eval_IllegalMode cm $ "unknowable"
   where
     illegal_args n = expect_throw at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -942,6 +968,7 @@ evalPrim ctxt at sco st p sargs =
         (SLM_ConsensusStep, CT_Require) -> good
         (SLM_ConsensusPure, CT_Require) -> good
         (cm, CT_Require) -> bad cm
+        (_, CT_Unknowable {}) -> impossible "unknowable"
         (_, CT_Assert) -> good
         (_, CT_Possible) -> good
       where

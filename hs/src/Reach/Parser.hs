@@ -1,4 +1,4 @@
-module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jse_expect_id, jso_expect_id, gatherDeps_top) where
+module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jsCallLike, jse_expect_id, jso_expect_id, gatherDeps_top) where
 
 import Control.DeepSeq
 import qualified Data.ByteString.Char8 as B
@@ -26,6 +26,7 @@ data ParserError
   | Err_Parse_IllegalLiteral String
   | Err_Parse_IllegalUnaOp JSUnaryOp
   | Err_Parse_NotModule JSAST
+  | Err_Parse_NotCallLike JSExpression
   deriving (Generic, Eq)
 
 --- FIXME implement a custom show that is useful
@@ -36,6 +37,8 @@ instance Show ParserError where
     "Arg list for function is missing."
   show (Err_Parse_ExpectIdentifier _e) =
     "Expected identifier, got expression."
+  show (Err_Parse_NotCallLike _e) =
+    "Expected a call-like expression, got something else."
   show (Err_Parse_ExpectIdentifierProp _e) =
     "Expected identifier in object properties list, got expression."
   show (Err_Parse_IllegalBinOp op) =
@@ -76,6 +79,15 @@ parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [SLVar]
 parseJSArrowFormals at aformals =
   parseJSFormals at $ jsArrowFormalsToFunFormals at aformals
 
+jsCallLike :: SrcLoc -> JSExpression -> (JSExpression, [JSExpression])
+jsCallLike at = \case
+  JSCallExpression rator _ rands _ ->
+    ( rator, jscl_flatten rands )
+  JSMemberExpression rator _ rands _ ->
+    ( rator, jscl_flatten rands )
+  e ->
+    expect_throw at $ Err_Parse_NotCallLike e
+    
 --- Dependency Gatherer
 type BundleMap a b = ((M.Map a [a]), (M.Map a (Maybe b)))
 

@@ -544,13 +544,19 @@ smt_m iter ctxt m =
       where
         this_m =
           case ct of
-            CT_Possible -> possible_m
             CT_Assert -> check_m TAssert <> assert_m
             CT_Assume -> assert_m
             CT_Require ->
               case ctxt_mode ctxt of
                 VM_Honest -> check_m TRequire <> assert_m
                 VM_Dishonest {} -> assert_m
+            CT_Possible -> possible_m
+            CT_Unknowable {} ->
+              case ctxt_mode ctxt of
+                VM_Honest -> do
+                  putStrLn $ "XXX unknowable"
+                  mempty
+                VM_Dishonest {} -> mempty              
         ca' = smt_a ctxt at ca
         possible_m = check_m TPossible
         check_m tk =
