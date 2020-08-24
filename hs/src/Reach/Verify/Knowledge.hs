@@ -108,7 +108,7 @@ query ctxt at f who whats = do
 knows :: KCtxt -> Point -> S.Set Point -> IO ()
 knows ctxt from tos = do
   let tons = S.union tos (ctxt_back_ptrs ctxt)
-  mconcatMap (know1 ctxt from) $ S.toList tons
+  mapM_ (know1 ctxt from) $ S.toList tons
 
 all_points :: DLArg -> S.Set Point
 all_points = \case
@@ -123,7 +123,7 @@ all_points = \case
 
 kgq_a_all :: KCtxt -> DLArg -> IO ()
 kgq_a_all ctxt a =
-  mconcatMap (flip (knows ctxt) (all_points a)) $ map P_Part (ctxt_ps ctxt)
+  mapM_ (flip (knows ctxt) (all_points a)) $ map P_Part (ctxt_ps ctxt)
 
 kgq_a_only :: KCtxt -> DLVar -> DLArg -> IO ()
 kgq_a_only ctxt v a =
@@ -163,7 +163,7 @@ kgq_m iter ctxt = \case
           (CT_Require, _) -> mempty
           (CT_Possible, _) -> mempty
           (CT_Unknowable who, (DLA_Tuple whats)) ->
-            mconcatMap query_each whats
+            mapM_ query_each whats
             where
               query_each = query ctxt at f who . all_points
           (CT_Unknowable {}, _) ->
@@ -180,10 +180,10 @@ kgq_l ctxt = \case
   LLL_Com m -> kgq_m kgq_l ctxt m
 
 kgq_asn :: KCtxt -> DLAssignment -> IO ()
-kgq_asn ctxt (DLAssignment m) = mconcatMap (uncurry (kgq_a_only ctxt)) $ M.toList m
+kgq_asn ctxt (DLAssignment m) = mapM_ (uncurry (kgq_a_only ctxt)) $ M.toList m
 
 kgq_asn_def :: KCtxt -> DLAssignment -> IO ()
-kgq_asn_def ctxt (DLAssignment m) = mconcatMap (kgq_a_all ctxt . DLA_Var) $ M.keys m
+kgq_asn_def ctxt (DLAssignment m) = mapM_ (kgq_a_all ctxt . DLA_Var) $ M.keys m
 
 kgq_n :: KCtxt -> LLConsensus -> IO ()
 kgq_n ctxt = \case
@@ -223,7 +223,7 @@ kgq_s ctxt = \case
       <> ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       <> ctxtNewScope ctxt (kgq_n ctxt next_n)
     where
-      msg_to_as = mconcatMap (uncurry (kgq_a_only ctxt)) $ zip from_msg from_as
+      msg_to_as = mapM_ (uncurry (kgq_a_only ctxt)) $ zip from_msg from_as
 
 kgq_pie1 :: KCtxt -> SLPart -> SLVar -> IO ()
 kgq_pie1 ctxt who what = knows ctxt (P_Part who) $ S.singleton $ P_Interact who what
@@ -231,7 +231,7 @@ kgq_pie1 ctxt who what = knows ctxt (P_Part who) $ S.singleton $ P_Interact who 
 kgq_pie :: KCtxt -> SLPart -> InteractEnv -> IO ()
 kgq_pie ctxt who (InteractEnv m) =
   (knows ctxt (P_Part who) $ S.singleton $ P_Con)
-    <> (mconcatMap (kgq_pie1 ctxt who) $ M.keys m)
+    <> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
 kgq_lp mh vst (LLProg _ (SLParts psm) s) = do
@@ -249,7 +249,7 @@ kgq_lp mh vst (LLProg _ (SLParts psm) s) = do
           , ctxt_back_ptrs = mempty
           , ctxt_kg = kgr
           }
-  mconcatMap (uncurry (kgq_pie ctxt)) $ M.toList psm
+  mapM_ (uncurry (kgq_pie ctxt)) $ M.toList psm
   kgq_s ctxt s
 
 verify_knowledge :: Maybe FilePath -> VerifySt -> LLProg -> IO ()
