@@ -21,7 +21,7 @@ export const main =
       A.publish(wager, handA)
         .pay(wager);
       commit();
-      
+
       B.only(() => {
         interact.acceptWager(wager);
         const handB = (handA + 1) % 3; });
@@ -38,7 +38,7 @@ export const main =
       transfer(forA * wager).to(A);
       transfer(forB * wager).to(B);
       commit();
-      
+
       each([A, B], () => {
         interact.seeOutcome(outcome); });
       exit(); });
