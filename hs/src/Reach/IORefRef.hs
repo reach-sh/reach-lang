@@ -1,5 +1,6 @@
 module Reach.IORefRef (IORefRef, newIORefRef, modifyIORefRef, paramIORefRef, readIORefRef) where
 
+import Control.Exception
 import Data.IORef
 
 type IORefRef a = (IORef (IORef a))
@@ -20,11 +21,12 @@ readIORefRef rr = do
   readIORef r
 
 paramIORefRef :: (IORefRef a) -> IO b -> IO b
-paramIORefRef rr m = do
-  old_r <- readIORef rr
-  old_v <- readIORef old_r
-  new_r <- newIORef old_v
-  writeIORef rr new_r
-  ans <- m
-  writeIORef rr old_r
-  return $ ans
+paramIORefRef rr m = bracket acquire release go
+  where
+    acquire = readIORef rr
+    release = writeIORef rr
+    go old_r = do
+      old_v <- readIORef old_r
+      new_r <- newIORef old_v
+      writeIORef rr new_r
+      m
