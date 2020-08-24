@@ -12,8 +12,8 @@ c: contract
 cb: contract balance
 cbi: contract balance index
 ce: CompileErr
-cnp: ConsensusNetworkProgram
 clo: closure
+cnp: ConsensusNetworkProgram
 com: common
 comp: comparison
 comp: compiler
@@ -56,6 +56,7 @@ info: information
 ior: inclusive or
 iv: inline variable
 k: continuation (the thing to call after this is done)
+kgq: knowledge graph query
 l: Language
 lab: label
 loc: location
@@ -71,6 +72,7 @@ p: pretty (when used as suffix) (type = Doc a)
 p: prim op (as in PLE, PEQ, etc)
 p: variable ?
 pf: FilePath
+pie: participant interaction environment
 prim: primitive
 pro: projection
 prog: program
