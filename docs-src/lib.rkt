@@ -16,9 +16,9 @@
 
 (current-pygmentize-default-style 'solarizedlight)
 (define (reach . contents)
-  (apply minted "javascript" contents))
+  (apply minted "reach" contents))
 (define (reachin . contents)
-  (apply mintinline "javascript" contents))
+  (apply mintinline "reach" contents))
 
 (define (js . contents)
   (apply minted "javascript" contents))
