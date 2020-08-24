@@ -129,6 +129,8 @@ jobs:
       - run:
           name: Run shellcheck
           command: make sh-lint
+      - slack/status:
+          fail_only: true
 
 workflows:
   build-and-test:
