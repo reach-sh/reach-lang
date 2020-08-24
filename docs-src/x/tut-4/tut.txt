@@ -1,0 +1,11 @@
+<stdout>
+Verifying with mode = VM_Honest
+XXX unknowable
+Verifying with mode = VM_Dishonest RoleContract
+Verifying with mode = VM_Dishonest (RolePart "Alice")
+Verifying with mode = VM_Dishonest (RolePart "Bob")
+Checked 34 theorems; No failures!
+
+</stdout>
+<stderr>
+</stderr>
