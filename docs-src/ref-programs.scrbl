@@ -655,9 +655,18 @@ and the next N values are distinct @reachin{UInt256}s.
 @reach{
  assert( claim ) }
 
-@index{assert} A @tech{static assertion} which is only @tech{valid} if @reachin{claim} always evaluates to @reachin{true}. @margin-note{The Reach compiler will produce a counter-example (i.e. an assignment of the identifiers in the program to falsify the @reachin{claim}) when an @tech{invalid} @reachin{claim} is provided. It is possible to write a @reachin{claim} that actually always evaluates to @reachin{true}, but for which our current approach cannot prove always evaluates to @reachin{true}; if this is the case, Reach will fail to compile the program, reporting that its analysis is incomplete. Reach will never produce an erroneous counter-example.}
+@index{assert} A @tech{static assertion} which is only @tech{valid} if @reachin{claim} always evaluates to @reachin{true}.
+@margin-note{The Reach compiler will produce a counter-example (i.e. an assignment of the identifiers in the program to falsify the @reachin{claim}) when an @tech{invalid} @reachin{claim} is provided.
+It is possible to write a @reachin{claim} that actually always evaluates to @reachin{true}, but for which our current approach cannot prove always evaluates to @reachin{true}; if this is the case, Reach will fail to compile the program, reporting that its analysis is incomplete.
+Reach will never produce an erroneous counter-example.}
 
 @margin-note{See @seclink["guide-assert"]{the guide section on verification} to better understand how and what to verify in your program.}
+
+@(hrule)
+@reach{
+ unknowable( Notter, Knower(var_0, ..., var_N) ) }
+
+@index{unknowable} A @tech{knowledge assertion} that the @tech{participant} @reachin{Notter} @emph{does not} know the variables @reachin{var_0} through @reachin{var_N} which the @tech{participant} @reachin{Knower} @emph{does} know.
 
 @(hrule)
 @reach{
@@ -697,7 +706,7 @@ This may only appear in a @tech{consensus step}.
 @reach{
  digest( arg_0, ..., arg_n ) }
 
-The @deftech{digest} primitive performs a @link["https://en.wikipedia.org/wiki/Cryptographic_hash_function"]{cryptographic hash} of the binary encoding of the given arguments, using the Keccak256 algorithm.
+The @tech{digest} primitive performs a @link["https://en.wikipedia.org/wiki/Cryptographic_hash_function"]{cryptographic hash} of the binary encoding of the given arguments, using the Keccak256 algorithm.
 
 @(hrule)
 @reach{

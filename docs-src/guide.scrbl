@@ -47,7 +47,7 @@ XXX
 
 XXX
 
-@section[#:tag "guide-limits"]{Reach's Limitations and Roadmap}
+@section[#:tag "guide-limits"]{What are Reach's limitations and its future roadmap}
 
 XXX
 
