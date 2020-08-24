@@ -16,7 +16,7 @@ check:
 
 install:
 	raco pkg install
-	pip install pygments-style-solarized
+	pip3 install pygments-style-solarized
 	cd ../py/ && make install # pygments-reach
 
 .PHONY: run-all-examples
