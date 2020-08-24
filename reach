@@ -209,8 +209,12 @@ case ${SUBCOMMAND} in
         docker pull "reachsh/ethereum-devnet:${REACH_VERSION}"
         exit 0
         ;;
-    version)
+    version|--version)
         echo "reach ${REACH_VERSION}"
+        exit 0
+        ;;
+    numeric-version|--numeric-version)
+        echo "${REACH_VERSION}"
         exit 0
         ;;
     *)
