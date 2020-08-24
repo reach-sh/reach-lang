@@ -551,7 +551,7 @@ smt_m iter ctxt m =
                 VM_Honest -> check_m TRequire <> assert_m
                 VM_Dishonest {} -> assert_m
             CT_Possible -> possible_m
-            CT_Unknowable {} ->
+            CT_Unknowable _who ->
               case ctxt_mode ctxt of
                 VM_Honest -> do
                   putStrLn $ "XXX unknowable"

@@ -402,7 +402,7 @@ data ClaimType
     --- this true.
     CT_Possible
   | --- Check if one part can't know what another party does know
-    CT_Unknowable SLPart [DLArg]
+    CT_Unknowable SLPart
   deriving (Eq, Generic, Show)
 
 instance NFData ClaimType

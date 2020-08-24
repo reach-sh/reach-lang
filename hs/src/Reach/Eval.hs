@@ -759,8 +759,8 @@ evalForm ctxt at sco st f args =
           let knower_env = sco_lookup_penv ctxt sco knower
           let whats_v = map snd $ map (flip (env_lookup at) knower_env) whats_i
           let whats_da = map snd $ map (typeOf at) whats_v
-          let ct = CT_Unknowable notter whats_da
-          let lifts' = return $ DLS_Claim at (ctxt_stack ctxt) ct (DLA_Con $ DLC_Bool True)
+          let ct = CT_Unknowable notter
+          let lifts' = return $ DLS_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da)
           let lifts = lifts_n <> lifts_kn <> lifts'
           return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
         cm ->

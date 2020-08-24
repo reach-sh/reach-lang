@@ -58,19 +58,12 @@ instance CollectsTypes FromSpec where
   cts (FS_Join v) = cts v
   cts (FS_Again v) = cts v
 
-instance CollectsTypes ClaimType where
-  cts CT_Assert = mempty
-  cts CT_Assume = mempty
-  cts CT_Require = mempty
-  cts CT_Possible = mempty
-  cts (CT_Unknowable _ a) = cts a
-
 instance CollectsTypes a => CollectsTypes (LLCommon a) where
   cts (LL_Return _) = mempty
   cts (LL_Let _ v e k) = cts v <> cts e <> cts k
   cts (LL_Var _ v k) = cts v <> cts k
   cts (LL_Set _ v a k) = cts v <> cts a <> cts k
-  cts (LL_Claim _ _ ct a k) = cts ct <> cts a <> cts k
+  cts (LL_Claim _ _ _ a k) = cts a <> cts k
   cts (LL_LocalIf _ a t f k) = cts a <> cts t <> cts f <> cts k
 
 instance CollectsTypes LLLocal where
