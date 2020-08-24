@@ -13,3 +13,101 @@
     margin: 0em;
     white-space: pre-wrap;
 }
+
+/* normal text like: f(x) */
+.nx {
+    color: #000000 !important;
+}
+
+/* string literals like: 'asdf' */
+.s1 {
+    color: #228b22 !important;
+}
+
+/* string literals like: "asdf" */
+.s2 {
+    color: #228b22 !important;
+}
+
+/* More strings, like in backticks: `asdf` */
+.sb {
+    color: #228b22 !important;
+}
+
+/* template brackets within backticks, like: `${a}`*/
+.si {
+    color: #843c24 !important;
+}
+
+/* int literals *and* line numbers like: 3 */
+.mi {
+    color: #228b22 !important;
+}
+
+/* int literals like: 0xdeadbeef */
+.mh {
+    color: #228b22 !important;
+}
+
+/* literals like: true, false, null */
+.kc {
+    color: #228b22 !important;
+}
+
+/* keywords like: var */
+.kd {
+    color: #843c24 !important;
+}
+
+/* special known idents? like in js: Math, Promise */
+.nb {
+    color: #000000 !important;
+}
+
+/* keywords like: export, const */
+.kr {
+    color: #843c24 !important;
+}
+
+/* keywords like: return */
+.k {
+    color: #843c24 !important;
+}
+
+/* operators, like: = */
+.o {
+    color: #843c24 !important;
+}
+
+/* parens, like: []() */
+.p {
+    color: #843c24 !important;
+}
+
+/* single-line comment, like: // */
+.c1 {
+    color: #c2741f !important;
+}
+
+/* multi-line comment, like this. */
+.cm {
+    color: #c2741f !important;
+}
+
+/* the following are just notes and don't actually color anything */
+
+.link {
+    color: #0077aa;
+}
+
+.result {
+    color: #0000af;
+}
+
+.stdout {
+    color: #960096;
+}
+
+.fail {
+    color: #ff0000;
+}
