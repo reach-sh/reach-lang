@@ -64,7 +64,7 @@ docs:
 
 .PHONY: reach-lint
 reach-lint:
-	(set -e; for dir in $(linted_reach_src_dirs); do \
+	@(set -e; for dir in $(linted_reach_src_dirs); do \
 		echo linting $$dir; \
 		./reach lint $$dir $(ignored_reach_sources); \
 	done)
@@ -74,4 +74,11 @@ reach-lint-fix:
 	(set -e; for dir in $(linted_reach_src_dirs); do \
 		echo fixing $$dir; \
 		./reach lint --fix $$dir $(ignored_reach_sources); \
+	done)
+
+.PHONY: sh-lint
+sh-lint:
+	@(set -e; for f in $$(find . -not \( -path '*/node_modules/*' -prune \) -name '*.sh') ./reach; do \
+		echo linting $$f; \
+		shellcheck $$f ; \
 	done)

@@ -1,14 +1,14 @@
 #!/bin/sh
 
 REACH=${0}
-HERE=$(dirname $(realpath ${REACH}))
+HERE=$(dirname "$(realpath "${REACH}")")
 
 if [ "x${REACH_VERSION}" = "x" ] ; then
     # XXX maybe should be v0.1
     REACH_VERSION=v0.1.1
 fi
 
-if ! (which docker docker-compose &>/dev/null) ; then
+if ! (which docker docker-compose > /dev/null 2>&1) ; then
     echo "Reach relies on an installation of docker and docker-compose"
     exit 1
 fi
@@ -17,38 +17,49 @@ do_compile () {
     HS=${HERE}/hs
 
     # try to lint any args that are .rsh files
-    for RSH in $*; do
-      case $RSH in
+    for RSH in "$@"; do
+      case "$RSH" in
         *.rsh)
-          if [ -f ${RSH} ]; then
-            do_lint ${RSH} || :
+          if [ -f "${RSH}" ]; then
+            do_lint "${RSH}" || :
           fi
           ;;
       esac
     done
 
+    # Note: shellcheck says splatting is dangerous,
+    # (because what if file names have spaces),
+    # but also, sh doesn't have array splicing, so... this.
+    # It's a little less mix-and-match
+    reachc_release () {
+      stack build && \
+        stack exec -- \
+              reachc "$@"
+    }
+    reachc_prof () {
+      stack build --profile --fast && \
+        stack exec --profile -- \
+              reachc --disable-reporting --intermediate-files "$@" +RTS -p
+    }
+    reachc_dev () {
+      stack build --fast && \
+        stack exec -- \
+              reachc --disable-reporting --intermediate-files "$@"
+    }
+
     ID=$(docker info --format '{{.ID}}' 2>/dev/null)
-    if [ -z "${REACH_DOCKER}" ] && [ -d ${HS}/.stack-work ] && (which stack &>/dev/null) ; then
-        export STACK_YAML=${HS}/stack.yaml
-        MAYBE_FAST="--fast"
-        MAYBE_PROF=""
-        MAYBE_PROF_OPTS=""
-        MAYBE_DEV_OPTS="--intermediate-files"
-        MAYBE_DEV_OPTS="--disable-reporting ${MAYBE_DEV_OPTS}"
-        if [ "x${REACHC_RELEASE}" = "xY" ] ; then
-            MAYBE_FAST=""
-            MAYBE_DEV_OPTS=""
-        fi
-        if [ "x${REACHC_PROFILE}" = "xY" ] ; then
-            MAYBE_PROF="--profile"
-            MAYBE_PROF_OPTS="+RTS -p"
-        fi
+    if [ -z "${REACH_DOCKER}" ] && [ -d "${HS}/.stack-work" ] && (which stack > /dev/null 2>&1) ; then
+        export STACK_YAML="${HS}/stack.yaml"
         export REACHC_ID=${ID}
-        stack build ${MAYBE_PROF} ${MAYBE_FAST} && \
-            stack exec ${MAYBE_PROF} -- \
-                  reachc ${MAYBE_DEV_OPTS} $* ${MAYBE_PROF_OPTS}
+        if [ "x${REACHC_RELEASE}" = "xY" ] ; then
+          reachc_release "$@"
+        elif [ "x${REACHC_PROFILE}" = "xY" ] ; then
+          reachc_prof "$@"
+        else
+          reachc_dev "$@"
+        fi
     else
-        cat<<EOF | docker-compose -f - run --rm -e "REACHC_ID=${ID}" reach $*
+        cat<<EOF | docker-compose -f - run --rm -e "REACHC_ID=${ID}" reach "$@"
 version: '3'
 services:
   reach:
@@ -61,14 +72,14 @@ EOF
 
 do_run () {
     ARG=$1
-    cd $(dirname "$ARG")
-    APP=$(basename "$ARG")
-    RSH=${APP}.rsh
-    MJS=${APP}.mjs
+    cd "$(dirname "$ARG")" || exit
+    APP="$(basename "$ARG")"
+    RSH="${APP}.rsh"
+    MJS="${APP}.mjs"
 
     if [ "x$APP" = "x" ] ||
-           ! [ -f ${RSH} ] ||
-           ! [ -f ${MJS} ]; then
+           ! [ -f "${RSH}" ] ||
+           ! [ -f "${MJS}" ]; then
         echo "Usage: reach-run APP"
         echo "  where APP.rsh"
         echo "    and APP.mjs"
@@ -79,11 +90,11 @@ do_run () {
     DOCKERFILE=Dockerfile.${APP}
     PACKAGE_JSON=package.json.${APP}
 
-    do_compile -o build ${RSH} || exit 1
+    do_compile -o build "${RSH}" || exit 1
 
     # XXX Can we add eslint on the JS?
     
-    cat >${PACKAGE_JSON} <<EOF
+    cat >"${PACKAGE_JSON}" <<EOF
 {
   "name": "@reach-sh/${APP}",
   "type": "module",
@@ -100,7 +111,7 @@ EOF
 
     # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
     
-    cat >${DOCKERFILE} <<EOF
+    cat >"${DOCKERFILE}" <<EOF
 FROM reachsh/stdlib:${REACH_VERSION}
 
 WORKDIR /app
@@ -116,17 +127,19 @@ COPY build/${APP}.main.mjs /app/build
 CMD npm run app
 EOF
 
-    docker build -f ${DOCKERFILE} -t reachsh/reach-app-${APP}:latest .
+    docker build -f "${DOCKERFILE}" -t "reachsh/reach-app-${APP}:latest" .
     DOCKER_EXIT=$?
 
-    rm -f package.json.${APP} ${DOCKERFILE}
+    rm -f "package.json.${APP}" "${DOCKERFILE}"
 
     if [ $DOCKER_EXIT -ne 0 ] ; then
         exit $DOCKER_EXIT
     fi
 
+    # Note: shellcheck thinks this use of "$@" is weird
+    # shellcheck disable=SC2120
     run () {
-        docker-compose -f - run --rm reach-app $*
+        docker-compose -f - run --rm reach-app "$@"
     }
 
     if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
@@ -161,12 +174,12 @@ do_lint () {
   # XXX: make it work outside the repo
   # XXX: make it not require eslint to be installed locally
   # XXX: get it to propagate its error code if run on its own
-  if command -v eslint &> /dev/null; then
+  if command -v eslint > /dev/null 2>&1; then
     eslint \
-      --config ${HERE}/eslint/.eslintrc.yaml \
+      --config "${HERE}/eslint/.eslintrc.yaml" \
       --ext .rsh \
       --no-eslintrc \
-      $*
+      "$@"
   fi
 }
 
@@ -175,19 +188,19 @@ shift
 
 case ${SUBCOMMAND} in
     compile)
-        do_compile $*
+        do_compile "$@"
         ;;
     run)
-        do_run $*
+        do_run "$@"
         ;;
     lint)
-        do_lint $*
+        do_lint "$@"
         ;;
     upgrade)
         NEW=reach.$$
         curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o ${NEW} && \
             chmod +x ${NEW} && \
-            cp -f ${NEW} ${REACH}
+            cp -f ${NEW} "${REACH}"
         exit 0
         ;;
     update)

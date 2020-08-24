@@ -2,7 +2,7 @@
 
 MINIT=${1:-noinit}
 
-PORT=30303
+# PORT=30303  # unused?
 RPCPORT=8545
 
 geth --allow-insecure-unlock \
