@@ -63,7 +63,7 @@ Let's start by creating a file named @exec{tut.rsh} and fill it with this:
 @reachex[#:show-lines? #t "tut-1/tut.rsh"
          #:link "tut.rsh"]
 
-@margin-note{Did you notice that @reachexlink["tut-1.rsh" @exec{tut.rsh}] was a link in the box above the code sample?
+@margin-note{Did you notice that @reachexlink["tut-1/tut.rsh" @exec{tut.rsh}] was a link in the box above the code sample?
 You can always click on these links to see the entire file in our @hyperlink["https://github.com/reach-sh/reach-lang"]{GitHub} repository.}
 
 @margin-note{Did your text editor recognize @exec{tut.rsh} as a Reach program and give you proper syntax hightlighting?
@@ -459,7 +459,335 @@ We'll fix this in @seclink["tut-4"]{the next step}; make sure you don't launch w
 
 @section[#:tag "tut-4"]{Step 4: Trust and Commitments}
 
-XXX
+In the last section, we made it so that Alice and Bob can actually exchange currency when they play @|RPS|.
+However, the version of the application we wrote has a fundamental flaw: Bob can win every game!
+
+How is that possible?
+We showed executions of the game where Alice won, like the following
+
+@verbatim{
+$ reach run tut
+Alice played Rock
+Bob accepts the wager of 5.0.
+Bob played Scissors
+Alice saw outcome Alice wins
+Bob saw outcome Alice wins
+Alice went from 10.0 to 14.999999999999687175.
+Bob went from 10.0 to 4.999999999999978229.
+}
+
+The problem is that these version of the game only executed an @tech{honest} version of Bob, that is, one that followed the Reach program exactly, including in his private @tech{local steps}.
+It is possible for a deviant and dis@tech{honest} version of a Bob @tech{backend} to execute different code and always win by computing the appropriate guess based on what value Alice provided for @reachin{handA}.
+
+If we change Bob's code to the following:
+
+@reachex[#:show-lines? #t "tut-4-attack/tut.rsh"
+         #:link "tut.rsh"
+         'only 25 29 "      // ..."]
+
+then he will ignore the @tech{frontend} and just compute the correct value.
+
+If we run this version of the program, we will see output like this:
+
+@verbatim{
+$ reach run tut
+Alice played Scissors
+Bob accepts the wager of 5.0.
+Alice saw outcome Bob wins
+Bob saw outcome Bob wins
+Alice went from 10.0 to 4.999999999999683071.
+Bob went from 10.0 to 14.999999999999978232.
+}
+
+In this version, unlike the @tech{honest} version, Bob never consults the @tech{frontend} and so it never prints out the message of what hand Bob played.
+No matter what Alice chooses, Bob will always win.
+
+@(hrule)
+
+In fact, Reach comes with an @seclink["guide-assert"]{automatic verification} engine that we can use to mathematically prove that this version will always result in the @reachin{outcome} variable equalling @reachin{0}, which means Bob wins.
+We can instruct Reach to prove this theorem by add these lines after computing the @reachin{outcome}:
+
+@reachex[#:show-lines? #t "tut-4-attack/tut.rsh"
+         #:link "tut.rsh"
+         'only 31 34 "      // ..."]
+
+@itemlist[
+
+@item{Line 32 requires that the dis@tech{honest} version of Bob be used for the proof.}
+
+@item{Line 33 conducts the proof by including an @tech{assert} statement in the program.}
+
+]
+
+Before we had this line in the file, when we ran @exec{reach run tut}, it would print out the message:
+
+@reachex[#:mode verbatim
+         #:show-lines? #t "tut-3/tut.txt"
+         #:link "tut.txt"
+         'only 2 7 "      // ..."]
+
+But now, it prints out
+
+@reachex[#:mode verbatim
+         #:show-lines? #t "tut-4-attack/tut.txt"
+         #:link "tut.txt"
+         'only 2 7 "      // ..."]
+
+@itemlist[
+
+@item{Line 7 is different and shows that more theorems have been proven about our program.
+It prints out three more, rather than one more, because the theorem is proved differently in the different verification modes.}
+
+]
+
+@(hrule)
+
+Many programming languages include @link["https://en.wikipedia.org/wiki/Assertion_(software_development)"]{assertions} like this, but Reach is one of a small category where the compiler doesn't just insert a runtime check for the property, but actually conducts a mathematical proof at compile-time that the expression @emph{always} evaluates to @reachin{true}.
+
+In this case, we used Reach's @seclink["guide-assert"]{automatic verification} engine to prove that an attack did what we expected it would.
+But, it is better to use verification to show that @emph{no flaw} exists and @emph{no attack} is possible.
+
+Reach includes some such assertions automatically in every program.
+That's why every version of @|RPS| has said that a number of theorems were checked.
+We can see what these theorems do by deliberating inserting an error in the program.
+
+Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
+
+@reachex[#:show-lines? #t "tut-4-attack/tut-bad.rsh"
+         #:link "tut.rsh"
+         'only 34 41 "      // ..."]
+
+@itemlist[
+
+@item{Line 36 has @reachin{[0, 1]}, but should have @reachin{[0, 2]}.}
+
+]
+
+When we run @exec{reach compile tut}, it gives details about the error:
+
+@reachex[#:mode verbatim
+         #:show-lines? #t "tut-4-attack/tut-bad.txt"
+         #:link "tut.txt"
+         'only 4 12 ""]
+
+There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are
+
+@itemlist[
+
+@item{Line 6 says that this is an attempt to prove the theorem that the balance at the end of the program is zero, which means that no @tech{network tokens} are sealed in the @tech{contract} forever.}
+
+@item{Line 7 says that this happens when the program exits on line 45, which directs the programmer to that path through the program.}
+
+]
+
+These kinds of @seclink["guide-assert"]{automatic verifications} are helpful for Reach programmers, because they don't need to remember to put them in their program, and they will still be protected from entire categories of errors.
+
+@(hrule)
+
+However, now let's add an @tech{assert}ion to the program that will ensure that every version of the program that allows Bob to know Alice's hand before he chooses his own will be rejected.
+
+We'll go back to the version of @reachexlink["tut-3/tut.rsh" @exec{tut.rsh}] from the last section, which has an @tech{honest} version of Bob.
+(Click on the preceeding link if you need to see what it contained.)
+
+We'll add a single line to the program after Alice publishes, but before Bob takes a @tech{local step}:
+
+@reachex[#:show-lines? #t "tut-4-attack/tut-fails.rsh"
+         #:link "tut.rsh"
+         'only 21 28 "      // ..."]
+
+@itemlist[
+
+@item{Line 25 contains a @tech{knowledge assertion} that Bob cannot know Alice's value @reachin{handA} at this point in the program.
+In this case, it is obvious that this is not true, because Alice shares @reachin{handA} at line 21.
+In many cases, this is not obvious and Reach's @seclink["guide-assert"]{automatic verification} engine has to reason about how values that Bob @emph{does know} are connected to values that might be related to Alice's secret values.}
+
+]
+
+When we run @exec{reach run tut}, it reports that this assertion is false:
+
+@reachex[#:mode verbatim
+         #:show-lines? #t "tut-4-attack/tut-fails.txt"
+         #:link "tut.txt"
+         'only 3 5 ""]
+
+It is not enough to correct failures and attacks when you discover them.
+You must @bold{always} add an assertion to your program that would fail to hold if the attack or failure were present.
+This ensures that all similar attacks are not present and that they will not accidentally be reintroduced.
+
+@(hrule)
+
+Let's use these insights into @seclink["guide-assert"]{automatic verification} and rewrite our @|RPS| so that it is more trustworthy and secure.
+
+Since we've been making lots of changes to the code, let's start fresh with a new version and we'll look at every single line again, to make sure that you aren't missing anything.
+
+First, we'll define the rules of @|RPS| a little bit more abstractly, so we can separate the logic of the game from the details of the application:
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 1 7 "// ..."]
+
+@itemlist[
+
+@item{Line 1 is the usual Reach version header.}
+
+@item{Lines 3 and 4 define @tech{enumeration}s for the hands that may be played, as well as the outcomes of the game.}
+
+@item{Lines 6 and 7 define the function that computes the winner of the game.}
+
+]
+
+When we first wrote @|RPS|, we asked you to trust that this formula for computing the winner is correct, but is good to actually check.
+One way to check would be to implement a JavaScript @tech{frontend} that didn't interact with a real user, nor would it randomly generate values, but instead, it would return specific testing scenario values and check that the output is as expected.
+That's a typical way to debug and is possible with Reach.
+However, Reach allows us to write such test cases directly into the Reach program as verification assertions.
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 9 11 "// ..."]
+
+@itemlist[
+
+@item{Line 9 makes an @tech{assert}ion that when Alice plays Rock and Bob plays Paper, then Bob wins as expected.}
+
+]
+
+But, Reach's @seclink["guide-assert"]{automatic verification} allows us to express even more powerful statements about our program's behavior.
+For example, we can state that no matter what values are provided for @reachin{handA} and @reachin{handB}, @reachin{winner} will always provide a valid outcome:
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 13 15 "// ..."]
+
+And we can specify that whenever the same value is provided for both hands, no matter what it is, @reachin{winner} always returns @reachin{DRAW}:
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 17 18 "// ..."]
+
+These examples both use @reachin{forall}, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
+
+Let's continue the program by specifying the @tech{participant interact interface}s for Alice and Bob.
+These will be mostly the same as before, except that we will also expect that each @tech{frontend} can provide access to random numbers.
+We'll use these later on to protect Alice's hand.
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 20 35 "// ..."]
+
+The only line that is different is line 21, which includes @reachin{hasRandom}, from the Reach standard library, in the interface.
+
+This is the source of the only line that needs to change in our JavaScript @tech{frontend} as well:
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-4/tut.mjs"
+         #:link "tut.mjs"
+         'only 18 24 "  // ..."]
+
+This line of JavaScript allows each @tech{participant}'s Reach code to generate random numbers as necessary.
+
+We're now at the crucial juncture where we will implement the actual application and ensure that Alice's hand is protected until after Bob reveals his hand.
+The simplest thing would be to have Alice just publish the wager, but this, of course, would just leave Bob vulnerable.
+We need to Alice to be able to publish her hand, but also keep it secret.
+This is a job for a @link["https://en.wikipedia.org/wiki/Commitment_scheme"]{cryptographic commitment scheme}.
+Reach's standard library comes with @reachin{makeCommitment} to make this easier for you.
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 36 42 "      // ..."]
+
+@itemlist[
+
+@item{Line 37 has Alice compute her hand, but @emph{not} declassify it.}
+
+@item{Line 38 has her compute a commitment to the hand.
+It comes with a secret "salt" value that must be revealed later.}
+
+@item{Line 39 has Alice declassify the commitment and her wager.}
+
+@item{Line 40 has her publish them and with line 41 has her include the wager funds in the publication.}
+
+]
+
+At this point, we can state the @tech{knowledge assertion} that Bob can't know either the hand or the "salt" and continue with his part of the program.
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 44 50 "      // ..."]
+
+@itemlist[
+
+@item{Line 44 states the @tech{knowledge assertion}.}
+
+@item{Lines 45 through 49 are unchanged from the original version.}
+
+@item{Line 50 has the transaction commit, without computing the payout, because we can't yet, because Alice's hand is not yet public.}
+
+]
+
+We now return to Alice who can reveal her secrets.
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 52 55 "      // ..."]
+
+@itemlist[
+
+@item{Line 53 has Alice declassify the secret information.}
+
+@item{Line 54 has her publish it.}
+
+@item{Line 55 checks that the published values match the original values.
+This will always be the case with @tech{honest} participants, but dis@tech{honest} participants may violate this assumption.}
+
+]
+
+The rest of the program is unchanged from the original version, except that it uses the new names for the outcomes:
+
+@reachex[#:show-lines? #t "tut-4/tut.rsh"
+         #:link "tut.rsh"
+         'only 57 68 "      // ..."]
+
+Since we didn't have to change the @tech{frontend} in any meaningful way, the output of running @exec{reach run tut} is still the same as it ever was:
+
+@verbatim{
+$ reach run tut
+Alice played Scissors
+Bob accepts the wager of 5.0.
+Bob played Paper
+Bob saw outcome Alice wins
+Alice saw outcome Alice wins
+Alice went from 10.0 to 14.999999999999553643.
+Bob went from 10.0 to 4.999999999999969352.
+
+$ reach run tut
+Alice played Paper
+Bob accepts the wager of 5.0.
+Bob played Scissors
+Bob saw outcome Bob wins
+Alice saw outcome Bob wins
+Alice went from 10.0 to 4.999999999999553626.
+Bob went from 10.0 to 14.999999999999969352.
+
+$ reach run tut
+Alice played Scissors
+Bob accepts the wager of 5.0.
+Bob played Scissors
+Bob saw outcome Draw
+Alice saw outcome Draw
+Alice went from 10.0 to 9.999999999999550271.
+Bob went from 10.0 to 9.999999999999969352.
+}
+
+Except now, behind the scenes, and unbeknownest to the business logic, Alice now takes two steps in program and Bob only takes one, and she is protected against Bob finding her hand and using it to ensure he wins!
+
+When we compile this version of the application, Reach's @seclink["guide-assert"]{automatic formal verification} engine proves many theorems and protects us against a plethora of mistakes one might make when writing even a simple application like this.
+Non-Reach programs that try to write decentralized applications are on their own trying to ensure that these problems don't exist.
+
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-4/tut.rsh" @exec{tut.rsh}] and @reachexlink["tut-4/tut.mjs" @exec{tut.mjs}] to make sure you copied everything down correctly!}
+
+Now our implementation of @|RPS| is secure and doesn't contain any exploits for either Alice or Bob to guarantee a win.
+However, it still has a final category of mistake that is common in decentralized applications: @seclink["guide-timeout"]{non-participation}.
+We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch with this version, or Alice may decide to back out of the game when she knows she's going to lose!
 
 @section[#:tag "tut-5"]{Step 5: Timeouts and Participation}
 
