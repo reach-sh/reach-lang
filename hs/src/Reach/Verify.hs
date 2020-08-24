@@ -1,18 +1,29 @@
 module Reach.Verify (verify) where
 
 import qualified Data.Text as T
+import Data.IORef
+import Control.Monad
 import Reach.AST
 import Reach.Verify.SMT
+import Reach.Verify.Knowledge
+import Reach.Verify.Shared
 import System.Exit
 
 data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
 verify :: Maybe (T.Text -> String) -> LLProg -> IO ExitCode
-verify outnMay lp =
+verify outnMay lp = do
+  succ_ref <- newIORef 0
+  fail_ref <- newIORef 0
+  let vst = VerifySt { vst_res_succ = succ_ref
+                     , vst_res_fail = fail_ref }
+  verify_knowledge (($ "know") <$> outnMay) vst lp
   --- The verifier should not be choosable by the user, but we may
   --- automatically select different provers based on the attributes
   --- of the program.
+  let smt :: String -> [String] -> IO ()
+      smt s a = void $ verify_smt (($ "smt") <$> outnMay) vst lp s a
   case Z3 of
     Z3 ->
       smt "z3" ["-smt2", "-in"]
@@ -27,5 +38,13 @@ verify outnMay lp =
       -- - doesn't support unsat-cores
       -- - doesn't support declare-datatypes
       smt "boolector" ["--smt2"]
-  where
-    smt = verify_smt (($ "smt") <$> outnMay) lp
+  ss <- readIORef succ_ref
+  fs <- readIORef fail_ref
+  putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
+  case fs == 0 of
+    True -> do
+      putStrLn $ " No failures!"
+      return ExitSuccess
+    False -> do
+      putStrLn $ " " ++ show fs ++ " failures. :'("
+      return $ ExitFailure 1

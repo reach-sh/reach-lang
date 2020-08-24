@@ -17,6 +17,7 @@ import Reach.EmbeddedFiles
 import Reach.Pretty ()
 import Reach.Type
 import Reach.Util
+import Reach.Verify.Shared
 import Reach.Verify.SMTParser (parseModel)
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
@@ -551,12 +552,7 @@ smt_m iter ctxt m =
                 VM_Honest -> check_m TRequire <> assert_m
                 VM_Dishonest {} -> assert_m
             CT_Possible -> possible_m
-            CT_Unknowable _who ->
-              case ctxt_mode ctxt of
-                VM_Honest -> do
-                  putStrLn $ "XXX unknowable"
-                  mempty
-                VM_Dishonest {} -> mempty              
+            CT_Unknowable {} -> mempty          
         ca' = smt_a ctxt at ca
         possible_m = check_m TPossible
         check_m tk =
@@ -823,11 +819,9 @@ _smtDefineTypes smt ts = do
   mapM_ type_name ts
   readIORef tmr
 
-_verify_smt :: Solver -> LLProg -> IO ExitCode
-_verify_smt smt lp = do
+_verify_smt :: VerifySt -> Solver -> LLProg -> IO ()
+_verify_smt vst smt lp = do
   SMT.loadString smt smtStdLib
-  succ_ref <- newIORef 0
-  fail_ref <- newIORef 0
   bindingsrr <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
   let LLProg at (SLParts pies_m) s = lp
@@ -835,8 +829,8 @@ _verify_smt smt lp = do
         SMTCtxt
           { ctxt_smt = smt
           , ctxt_typem = typem
-          , ctxt_res_succ = succ_ref
-          , ctxt_res_fail = fail_ref
+          , ctxt_res_succ = vst_res_succ vst
+          , ctxt_res_fail = vst_res_fail vst
           , ctxt_modem = Nothing
           , ctxt_path_constraint = []
           , ctxt_bindingsrr = bindingsrr
@@ -860,16 +854,6 @@ _verify_smt smt lp = do
         ctxtNewScope ctxt' $ smt_s ctxt' s
   let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
   mapM_ smt_s_top ms
-  ss <- readIORef succ_ref
-  fs <- readIORef fail_ref
-  putStr $ "Checked " ++ (show $ ss + fs) ++ " theorems;"
-  (if (fs == 0)
-     then do
-       putStrLn $ " No failures!"
-       return ExitSuccess
-     else do
-       putStrLn $ " " ++ show fs ++ " failures. :'("
-       return $ ExitFailure 1)
 
 newFileLogger :: FilePath -> IO (IO (), Logger)
 newFileLogger p = do
@@ -910,18 +894,15 @@ newFileLogger p = do
       close = hClose logh
   return (close, Logger {..})
 
-verify_smt :: Maybe FilePath -> LLProg -> String -> [String] -> IO ExitCode
-verify_smt logpMay lp prog args = do
+verify_smt :: Maybe FilePath -> VerifySt -> LLProg -> String -> [String] -> IO ExitCode
+verify_smt logpMay vst lp prog args = do
   (close, logplMay) <- mkLogger
   smt <- SMT.newSolver prog args logplMay
   unlessM (SMT.produceUnsatCores smt) $ impossible "Prover doesn't support possible?"
-  vec <- _verify_smt smt lp
+  _verify_smt vst smt lp
   zec <- SMT.stop smt
   close
-  return $ case (zec, vec) of
-    (ExitSuccess, ExitSuccess) -> ExitSuccess
-    (e@ExitFailure {}, _) -> e
-    (_, e@ExitFailure {}) -> e
+  return $ zec
   where
     mkLogger = case logpMay of
       Just logp -> do
