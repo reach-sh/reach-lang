@@ -34,11 +34,6 @@
     color: #228b22 !important;
 }
 
-/* template brackets within backticks, like: `${a}`*/
-.si {
-    color: #843c24 !important;
-}
-
 /* int literals *and* line numbers like: 3 */
 .mi {
     color: #228b22 !important;
@@ -54,34 +49,39 @@
     color: #228b22 !important;
 }
 
-/* keywords like: var */
+/* parens, like: []() */
+.p {
+    color: #843c24 !important;
+}
+
+/* template brackets within backticks, like: `${a}`*/
+.si {
+    color: #843c24 !important;
+}
+
+/* declaration keywords like: var, export, const */
 .kd {
-    color: #843c24 !important;
-}
-
-/* special known idents? like in js: Math, Promise */
-.nb {
-    color: #000000 !important;
-}
-
-/* keywords like: export, const */
-.kr {
-    color: #843c24 !important;
-}
-
-/* keywords like: return */
-.k {
     color: #843c24 !important;
 }
 
 /* operators, like: = */
 .o {
-    color: #843c24 !important;
+    color: #0000af !important;
 }
 
-/* parens, like: []() */
-.p {
-    color: #843c24 !important;
+/* Name.Builtin. Special known idents like: Reach, UInt256 */
+.nb {
+    color: #0000af !important;
+}
+
+/* reserved keywords like: enum? */
+.kr {
+    color: #960096 !important;
+}
+
+/* control keywords like: return */
+.k {
+    color: #960096 !important;
 }
 
 /* single-line comment, like: // */
