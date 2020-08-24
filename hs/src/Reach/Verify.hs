@@ -1,11 +1,11 @@
 module Reach.Verify (verify) where
 
-import qualified Data.Text as T
-import Data.IORef
 import Control.Monad
+import Data.IORef
+import qualified Data.Text as T
 import Reach.AST
-import Reach.Verify.SMT
 import Reach.Verify.Knowledge
+import Reach.Verify.SMT
 import Reach.Verify.Shared
 import System.Exit
 
@@ -16,8 +16,11 @@ verify :: Maybe (T.Text -> String) -> LLProg -> IO ExitCode
 verify outnMay lp = do
   succ_ref <- newIORef 0
   fail_ref <- newIORef 0
-  let vst = VerifySt { vst_res_succ = succ_ref
-                     , vst_res_fail = fail_ref }
+  let vst =
+        VerifySt
+          { vst_res_succ = succ_ref
+          , vst_res_fail = fail_ref
+          }
   verify_knowledge (($ "know") <$> outnMay) vst lp
   --- The verifier should not be choosable by the user, but we may
   --- automatically select different provers based on the attributes

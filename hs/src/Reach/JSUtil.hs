@@ -16,9 +16,10 @@ jscl_flatten (JSLNil) = []
 
 toJSCL :: [a] -> JSCommaList a
 toJSCL l = helper (reverse l) JSLNil
-  where helper [] acc = acc
-        helper (x : ys) acc =
-          helper ys (JSLCons acc JSNoAnnot x)
+  where
+    helper [] acc = acc
+    helper (x : ys) acc =
+      helper ys (JSLCons acc JSNoAnnot x)
 
 jsctl_flatten :: JSCommaTrailingList a -> [a]
 jsctl_flatten (JSCTLComma a _) = jscl_flatten a

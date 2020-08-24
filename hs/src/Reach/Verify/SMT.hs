@@ -18,8 +18,8 @@ import Reach.IORefRef
 import Reach.Pretty ()
 import Reach.Type
 import Reach.Util
-import Reach.Verify.Shared
 import Reach.Verify.SMTParser (parseModel)
+import Reach.Verify.Shared
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
 import System.Directory
@@ -533,7 +533,7 @@ smt_m iter ctxt m =
                 VM_Honest -> check_m TRequire <> assert_m
                 VM_Dishonest {} -> assert_m
             CT_Possible -> possible_m
-            CT_Unknowable {} -> mempty          
+            CT_Unknowable {} -> mempty
         ca' = smt_a ctxt at ca
         possible_m = check_m TPossible
         check_m tk =

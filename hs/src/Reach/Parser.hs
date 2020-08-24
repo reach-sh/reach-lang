@@ -82,12 +82,12 @@ parseJSArrowFormals at aformals =
 jsCallLike :: SrcLoc -> JSExpression -> (JSExpression, [JSExpression])
 jsCallLike at = \case
   JSCallExpression rator _ rands _ ->
-    ( rator, jscl_flatten rands )
+    (rator, jscl_flatten rands)
   JSMemberExpression rator _ rands _ ->
-    ( rator, jscl_flatten rands )
+    (rator, jscl_flatten rands)
   e ->
     expect_throw at $ Err_Parse_NotCallLike e
-    
+
 --- Dependency Gatherer
 type BundleMap a b = ((M.Map a [a]), (M.Map a (Maybe b)))
 

@@ -3,8 +3,8 @@ module Main (main) where
 import Control.Exception
 import Options.Applicative
 import Reach.CompilerTool
-import Reach.Version
 import Reach.Report
+import Reach.Version
 import System.Directory
 import System.Environment
 

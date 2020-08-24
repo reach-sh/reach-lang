@@ -107,8 +107,9 @@ epp_m done back skip look c =
         CT_Require -> keep
         CT_Possible -> skip k
         CT_Unknowable {} -> skip k
-      where keep = back cs' (PL_Claim at f ct ca) k
-            cs' = counts ca
+      where
+        keep = back cs' (PL_Claim at f ct ca) k
+        cs' = counts ca
     LL_LocalIf at ca t f k ->
       look
         k

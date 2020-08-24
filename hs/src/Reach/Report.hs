@@ -29,14 +29,14 @@ startReport mwho = do
     endTime <- getCurrentTime
     let rep =
           object
-            [ "userId"    .= maybe "Numerius Negidius" id mwho
+            [ "userId" .= maybe "Numerius Negidius" id mwho
             , "startTime" .= startTime
-            , "version"   .= version
-            , "elapsed"   .= diffUTCTime endTime startTime
-            , "result"    .= show what
+            , "version" .= version
+            , "elapsed" .= diffUTCTime endTime startTime
+            , "result" .= show what
             ]
     m <- send (setRequestBodyJSON rep $ setRequestMethod "POST" req)
     let block = waitCatch m
     case what of
-      Left  {} -> void  block
+      Left {} -> void block
       Right () -> race_ block (threadDelay 1_000_000)

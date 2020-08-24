@@ -89,4 +89,3 @@ instance Countable DLExpr where
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
-

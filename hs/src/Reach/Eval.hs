@@ -245,7 +245,9 @@ instance Show EvalError where
       "Invalid object spread. Expected object, got: " <> displaySlValType slval
     Err_Prim_InvalidArgs prim slvals ->
       "Invalid args for " <> displayPrim prim <> ". got: "
-        <> "[" <> (intercalate ", " $ map displaySlValType slvals) <> "]"
+        <> "["
+        <> (intercalate ", " $ map displaySlValType slvals)
+        <> "]"
       where
         displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
     Err_Shadowed n ->
@@ -458,7 +460,8 @@ ctxt_lift_expr ctxt at mk_var e = do
 ctxt_lift_arg :: SLCtxt s -> SrcLoc -> SrcLoc -> String -> DLArg -> ST s (DLVar, DLStmts)
 ctxt_lift_arg ctxt at at' name a =
   ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt name) t) (DLE_Arg at' a)
-  where t = argTypeOf a
+  where
+    t = argTypeOf a
 
 ctxt_local_name :: SLCtxt s -> SLVar -> SLVar
 ctxt_local_name ctxt def =
@@ -746,7 +749,7 @@ evalForm ctxt at sco st f args =
     SLForm_unknowable ->
       case st_mode st of
         SLM_Step -> do
-          let (notter_e, snd_part) = two_args          
+          let (notter_e, snd_part) = two_args
           let (knower_e, whats_e) = jsCallLike at snd_part
           let whats_i = map (jse_expect_id at) whats_e
           SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st notter_e
@@ -1012,14 +1015,14 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_exitted -> illegal_args
     SLPrim_forall {} ->
       case sargs of
-        [ (lvl, one) ] -> do
+        [(lvl, one)] -> do
           let t = expect_ty one
           (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "forall") t) (DLE_Impossible at $ "cannot inspect value from forall")
           return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
-        [ one, (lvl, two) ] -> do
-          SLRes elifts st_e one' <- evalPrim ctxt at sco st SLPrim_forall [ one ]
+        [one, (lvl, two)] -> do
+          SLRes elifts st_e one' <- evalPrim ctxt at sco st SLPrim_forall [one]
           SLRes alifts st_a (SLAppRes _ ans) <-
-            evalApplyVals ctxt at sco st_e two [ one' ]
+            evalApplyVals ctxt at sco st_e two [one']
           return $ SLRes (elifts <> alifts) st_a $ lvlMeet lvl ans
         _ -> illegal_args
   where
@@ -1984,9 +1987,8 @@ evalTopBody ctxt at st libm env exenv body =
                       env_merge at' exenv (M.difference env' env)
                     False ->
                       exenv
-               in
-                keepLifts lifts $
-                evalTopBody ctxt at' st libm env' exenv' body'
+               in keepLifts lifts $
+                    evalTopBody ctxt at' st libm env' exenv' body'
             SLRes {} ->
               expect_throw at' $ Err_Module_Return
 
