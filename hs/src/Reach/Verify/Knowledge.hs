@@ -86,6 +86,9 @@ query ctxt at f who whats = do
   let bad = inc $ ctxt_res_fail ctxt
   let disp1 _ Nothing = mempty
       disp1 what (Just path) =
+        --- FIXME we could keep some extra information, like the
+        --- binding origin from SMT to say why these variables are
+        --- connected.
         putStrLn $ "  " ++ show (hcat $ punctuate " -> " $ map pretty (what:path))
   let disp = do
         cwd <- getCurrentDirectory
@@ -222,6 +225,7 @@ kgq_pie ctxt who (InteractEnv m) =
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
 kgq_lp mh vst (LLProg _ (SLParts psm) s) = do
+  putStrLn $ "Verifying knowledge assertions"
   let ps = M.keys psm
   llr <- newIORefRef 0
   kgr <- newIORefRef mempty
