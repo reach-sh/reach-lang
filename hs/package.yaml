@@ -42,6 +42,7 @@ dependencies:
 - prettyprinter
 - process
 - safe
+- search-algorithms
 - silently
 - simple-smt
 - smallcheck

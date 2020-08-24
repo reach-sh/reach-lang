@@ -14,6 +14,7 @@ import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.CollectTypes
 import Reach.EmbeddedFiles
+import Reach.IORefRef
 import Reach.Pretty ()
 import Reach.Type
 import Reach.Util
@@ -128,7 +129,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_balance :: Int
   , ctxt_mtxn_value :: Maybe Int
   , ctxt_path_constraint :: [SExpr]
-  , ctxt_bindingsrr :: IORef (IORef (M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr)))
+  , ctxt_bindingsrr :: (IORefRef (M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr)))
   , ctxt_while_invariant :: Maybe (LLBlock LLLocal)
   , ctxt_loop_var_subst :: M.Map DLVar DLArg
   , ctxt_primed_vars :: S.Set DLVar
@@ -140,29 +141,9 @@ ctxt_mode ctxt =
     Nothing -> impossible "uninitialized"
     Just x -> x
 
-newIORefRef :: a -> IO (IORef (IORef a))
-newIORefRef v = do
-  r <- newIORef v
-  newIORef r
-
-modifyIORefRef :: IORef (IORef a) -> (a -> a) -> IO ()
-modifyIORefRef rr f = do
-  r <- readIORef rr
-  modifyIORef r f
-
-paramIORef :: IORef (IORef a) -> IO b -> IO b
-paramIORef rr m = do
-  old_r <- readIORef rr
-  old_v <- readIORef old_r
-  new_r <- newIORef old_v
-  writeIORef rr new_r
-  ans <- m
-  writeIORef rr old_r
-  return $ ans
-
 ctxtNewScope :: SMTCtxt -> SMTComp -> SMTComp
 ctxtNewScope ctxt m = do
-  paramIORef (ctxt_bindingsrr ctxt) $
+  paramIORefRef (ctxt_bindingsrr ctxt) $
     SMT.inNewScope (ctxt_smt ctxt) $ m
 
 ctxt_txn_value :: SMTCtxt -> Int
@@ -320,7 +301,7 @@ display_fail ctxt tat f tk tse mrd = do
             mempty
           Just (RD_Model m) -> do
             parseModel m
-  bindingsm <- readIORef =<< (readIORef $ ctxt_bindingsrr ctxt)
+  bindingsm <- readIORefRef $ ctxt_bindingsrr ctxt
   let show_vars :: (S.Set String) -> (Seq.Seq String) -> IO [String]
       show_vars shown q =
         case q of

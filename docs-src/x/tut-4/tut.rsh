@@ -31,19 +31,20 @@ export const main =
     (A, B) => {
       A.only(() => {
         const wager = declassify(interact.wager);
-        const handA = declassify(interact.getHand()); });
-      A.publish(wager, handA)
+        const _handA = interact.getHand();
+        const X = declassify(_handA - 1); });
+      A.publish(wager, X)
         .pay(wager);
       commit();
 
-      unknowable(B, A(handA));
+      unknowable(B, A(_handA));
       B.only(() => {
         interact.acceptWager(wager);
         const handB = declassify(interact.getHand()); });
       B.publish(handB)
         .pay(wager);
 
-      const outcome = winner(handA, handB);
+      const outcome = winner(X + 1, handB);
       const [forA, forB] =
             outcome == A_WINS ? [2, 0] :
             outcome == B_WINS ? [0, 2] :
