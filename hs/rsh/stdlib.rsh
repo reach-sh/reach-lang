@@ -74,5 +74,5 @@ function __decode_testing__() {
 
 // object functions
 export function object_set(o, k, e) {
-  return {...o, [k]: e}
+  return {...o, [k]: e};
 }
