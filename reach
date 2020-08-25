@@ -71,9 +71,14 @@ EOF
 }
 
 do_run () {
-    ARG=$1
-    cd "$(dirname "$ARG")" || exit
-    APP="$(basename "$ARG")"
+    if [ "x$1" = "x" ] ; then
+        APP="index"
+    else
+        ARG=$1
+        cd "$(dirname "$ARG")" || exit
+        APP="$(basename "$ARG")"
+    fi
+    
     RSH="${APP}.rsh"
     MJS="${APP}.mjs"
 

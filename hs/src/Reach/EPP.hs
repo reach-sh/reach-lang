@@ -292,8 +292,10 @@ epp_s st s =
       which <- newHandler st
       let (int_ok, delay_cs, continue_time) =
             case mtime of
-              Nothing -> (prev_int, mempty, continue_time_)
+              Nothing ->
+                (int_ok_, mempty, continue_time_)
                 where
+                  int_ok_ = interval_no_to prev_int
                   continue_time_ ok_cons_cs =
                     return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
               Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)

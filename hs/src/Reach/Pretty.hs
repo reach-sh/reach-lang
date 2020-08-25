@@ -67,7 +67,7 @@ instance Pretty DLArg where
         "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
 
 render_das :: [DLArg] -> Doc a
-render_das as = hcat $ punctuate comma $ map pretty as
+render_das as = hsep $ punctuate comma $ map pretty as
 
 instance Pretty DLExpr where
   pretty e =
@@ -358,7 +358,8 @@ instance Pretty CHandler where
       ]
 
 instance Pretty CInterval where
-  pretty (CBetween from to) = pform "between" $ pretty from <+> pretty to
+  pretty (CBetween from to) = pform "between" $ go from <+> go to
+    where go = brackets . render_das
 
 instance Pretty CTail where
   pretty (CT_Com e) = pretty e

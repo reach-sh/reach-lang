@@ -645,11 +645,15 @@ default_interval = CBetween [] []
 
 interval_add_from :: CInterval -> DLArg -> CInterval
 interval_add_from (CBetween froml tol) x =
-  CBetween (x : froml) tol
+  CBetween (x : froml) (x : tol)
 
 interval_add_to :: CInterval -> DLArg -> CInterval
 interval_add_to (CBetween froml tol) x =
   CBetween froml (x : tol)
+
+interval_no_to :: CInterval -> CInterval
+interval_no_to (CBetween froml _) =
+  CBetween froml []
 
 data CHandler
   = C_Handler

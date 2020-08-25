@@ -36,6 +36,18 @@ export const main = Reach.App(
     const wrapUp = () => closeTo(A, () => {});
     const k3 = thrice(goThunk, wrapUp);
 
+    /* This code makes some weird timeouts. The goal is so that
+
+       msg1 = (-inf, +inf)
+       \Y msg2 = [0, 10)
+          \- msg3 = (-inf, +inf)
+       \T msg4 = [10, 20)
+          \Y msg5 = (-inf, +inf)
+          \T msg6 = [20, 30)
+             \Y msg7 = (-inf, +inf)
+             \T msg8 = [30, +inf)
+     */
+
     k3();
     wrapUp();
   }
