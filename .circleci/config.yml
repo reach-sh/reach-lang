@@ -141,7 +141,7 @@ jobs:
       - checkout
       - run:
           name: install eslint
-          command: sudo npm install -g eslint
+          command: (cd eslint && sudo npm install -g eslint && npm install)
       - run:
           name: Run reach linter
           command: make reach-lint
