@@ -77,8 +77,8 @@ do_run () {
         ARG=$1
         cd "$(dirname "$ARG")" || exit
         APP="$(basename "$ARG")"
+        shift
     fi
-    shift
     
     RSH="${APP}.rsh"
     MJS="${APP}.mjs"
