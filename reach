@@ -192,6 +192,17 @@ do_lint () {
   fi
 }
 
+do_usage () {
+  echo "Usage: reach COMMAND"
+  echo " where COMMAND is one of"
+  echo "  compile --- compile an app"
+  echo "  run     --- run a simple app"
+  echo "  upgrade --- upgrade Reach"
+  echo "  update  --- update Reach Docker images"
+  echo "  version --- display version"
+  echo "  help    --- show this info"
+}
+
 SUBCOMMAND=$1
 shift
 
@@ -226,14 +237,12 @@ case ${SUBCOMMAND} in
         echo "${REACH_VERSION}"
         exit 0
         ;;
-    *)
-        echo "Usage: reach COMMAND"
-        echo " where COMMAND is one of"
-        echo "  compile --- compile an app"
-        echo "  run     --- run a simple app"
-        echo "  upgrade --- upgrade Reach"
-        echo "  update  --- update Reach Docker images"
-        echo "  version --- display version"
+    help|--help)
+        do_usage
         exit 0
+        ;;
+    *)
+        do_usage
+        exit 1
         ;;
 esac
