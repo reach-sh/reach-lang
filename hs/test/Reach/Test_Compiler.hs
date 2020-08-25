@@ -1,5 +1,5 @@
 module Reach.Test_Compiler
-  ( test_docs
+  ( test_examples
   , test_language_non_features
   , test_language_features
   )
@@ -11,13 +11,13 @@ import Reach.Compiler
 import Reach.Test.Util
 import Reach.Util
 import System.Directory
+import System.IO.Capture
 import System.IO.Temp
-import Test.Main
 import Test.Tasty
 
 testCompile :: FilePath -> IO (BL.ByteString, BL.ByteString, BL.ByteString)
 testCompile fp = withSystemTempDirectory "reachc-tests" $ \dir -> do
-  pr <- captureProcessResult $ do
+  (out, err, ex, _) <- capture $ do
     createDirectoryIfMissing True dir
     compile $
       CompilerOpts
@@ -26,11 +26,7 @@ testCompile fp = withSystemTempDirectory "reachc-tests" $ \dir -> do
         , tops = ["main"]
         , intermediateFiles = False
         }
-  let ex = case prExitCode pr of
-        ExitSuccess -> ""
-        ec@(ExitFailure {}) ->
-          bpack $ show ec <> (maybe "" (("\n" <>) . show) $ prException pr)
-  return (BL.fromStrict $ prStdout pr, BL.fromStrict $ prStderr pr, BL.fromStrict $ ex)
+  return (out, err, ex)
 
 -- Left = compile fail, Right = compile success
 testCompileOut :: FilePath -> IO (Either BL.ByteString BL.ByteString)
@@ -78,5 +74,5 @@ test_language_features = goldenTests compileTestSuccess ".rsh" "features"
 test_language_non_features :: IO TestTree
 test_language_non_features = goldenTests compileTestFail ".rsh" "non-features"
 
-test_docs :: IO TestTree
-test_docs = goldenTests compileTestAny ".rsh" "../../docs-src/x"
+test_examples :: IO TestTree
+test_examples = goldenTests compileTestAny ".rsh" "../../examples/"

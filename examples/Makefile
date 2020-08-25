@@ -1,4 +1,4 @@
-dead = exp/ auction/
+dead = anti/ auction/ exp/
 examples = $(filter-out $(dead), $(sort $(dir $(wildcard */.))))
 
 .PHONY: build-all
