@@ -17,9 +17,10 @@ This set of documents contains everything you need to know about Reach.
 @item{@seclink["tut"]{The tutorial} is a directed series of steps to create a simple @|DApp|. You should start here if you've never used Reach before and want to start at the beginning.}
 
 @item{@seclink["guide"]{The guide} continues @seclink["overview"]{the overview} by discussing the key ideas and concepts used throughout Reach.
-You will often want to visit the guide to learn the background and "why" of some topic after you get started.}
+You will often want to visit the guide to learn the background and "why" of some topic after you get started using it.}
 
-@item{@seclink["howtos"]{The how-tos} are a collection of recipes for building specific things in Reach and demonstrate effective use of Reach, as well as some of the design decisions that Reach programmers are faced with.}
+@item{@seclink["workshop"]{The workshop} continues @seclink["tut"]{the tutorial} with a set of self-study projects to help you practice and learn Reach.
+Each project contains a completed solution, so it is also a collection of recipes for building specific things in Reach and demonstrate effective use of Reach, as well as some of the design decisions that Reach programmers are faced with.}
 
 @item{Finally, @seclink["ref"]{the reference} provides an exhaustive technical reference on each aspect of Reach.}
 
@@ -46,6 +47,6 @@ we welcome @link["https://github.com/reach-sh/reach-lang/pulls"]{Pull Requests} 
 @include-section["overview.scrbl"]
 @include-section["tut.scrbl"]
 @include-section["guide.scrbl"]
-@include-section["howto.scrbl"]
+@include-section["workshop.scrbl"]
 @include-section["ref.scrbl"]
 @index-section[]

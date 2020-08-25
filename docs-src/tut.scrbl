@@ -8,13 +8,13 @@
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
-On the hand, if this is too simple, then you may want to look at @seclink["howtos"]{some how-to guides} for larger projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
+On the hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less contrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
 
 If you're ready, click through to the @seclink["tut-0"]{first step}!
 
 @local-table-of-contents[#:style 'immediate-only]
 
-@section[#:tag "tut-0"]{Step 0: Install and Initialize}
+@section[#:tag "tut-0"]{Install and Initialize}
 
 Reach is designed to work on POSIX systems with @link["https://www.docker.com/get-started"]{Docker} and @link["https://docs.docker.com/compose/install/"]{Docker Compose}. installed.
 You'll know that you have them install if you can run
@@ -52,7 +52,7 @@ You'll know that everything is in order if you can run
 
 Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-1"]{write your first Reach application}!
 
-@section[#:tag "tut-1"]{Step 1: Scaffolding and Setup}
+@section[#:tag "tut-1"]{Scaffolding and Setup}
 
 In this tutorial, we'll be building a version of @|RPS| where two players, @emph{Alice} and @emph{Bob}, can wager on the result of the game.
 We'll start simple and slowly make the application more fully featured.
@@ -129,7 +129,7 @@ Since the application doesn't do anything, you'll just see a lot of diagnostic m
 
 In @seclink["tut-2"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
 
-@section[#:tag "tut-2"]{Step 2: Rock, Paper, and Scissors}
+@section[#:tag "tut-2"]{Rock, Paper, and Scissors}
 
 In this section, we'll have Alice and Bob actually execute the game of @|RPS|.
 
@@ -268,7 +268,7 @@ That's why every time you run @exec{./reach run}, both Alice and Bob will see th
 
 In @seclink["tut-3"]{the next step}, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
 
-@section[#:tag "tut-3"]{Step 3: Bets and Wagers}
+@section[#:tag "tut-3"]{Bets and Wagers}
 
 Although it's fun to play @|RPS| with friends for a laugh, it's even better to play it with enemies and your entire life-savings on the line!
 Let's change our program so that Alice can offer a wager to Bob and whoever wins will take the pot.
@@ -459,7 +459,7 @@ Alice is doing okay, if she keeps this up, she'll make a fortune on @|RPS|!
 Now that there is a reason to play this game, it turns out that there's a major security vulnerability.
 We'll fix this in @seclink["tut-4"]{the next step}; make sure you don't launch with this version, or Alice is going to go broke!
 
-@section[#:tag "tut-4"]{Step 4: Trust and Commitments}
+@section[#:tag "tut-4"]{Trust and Commitments}
 
 In the last section, we made it so that Alice and Bob can actually exchange currency when they play @|RPS|.
 However, the version of the application we wrote has a fundamental flaw: Bob can win every game!
@@ -791,19 +791,19 @@ Now our implementation of @|RPS| is secure and doesn't contain any exploits for 
 However, it still has a final category of mistake that is common in decentralized applications: @seclink["guide-timeout"]{non-participation}.
 We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch with this version, or Alice may decide to back out of the game when she knows she's going to lose!
 
-@section[#:tag "tut-5"]{Step 5: Timeouts and Participation}
+@section[#:tag "tut-5"]{Timeouts and Participation}
 
 XXX
 
-@section[#:tag "tut-6"]{Step 6: Play and Play Again}
+@section[#:tag "tut-6"]{Play and Play Again}
 
 XXX
 
-@section[#:tag "tut-7"]{Step 7: Interaction and Independence}
+@section[#:tag "tut-7"]{Interaction and Independence}
 
 XXX
 
-@section[#:tag "tut-8"]{Step 8: Onward and Further}
+@section[#:tag "tut-8"]{Onward and Further}
 
 Let's review what we've done through this tutorial:
 
@@ -833,7 +833,7 @@ It's now time for you to start working on your own application!
 
 @itemlist[
 
-@item{You may want to continue reading with a @seclink["howtos"]{how-to guide} that walks through the development of a different application.}
+@item{You may want to start @seclink["workshop"]{the workshop}, which is a self-study course on practicing and learning Reach through different specific projects.}
 
 @item{Or, maybe you'd like to spent some time in @seclink["guide"]{the guide} learning about the background of some of the concepts used in Reach programs.}
 
