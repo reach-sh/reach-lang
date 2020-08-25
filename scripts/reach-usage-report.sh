@@ -7,7 +7,10 @@
 
 echo '{'
 
-echo '  "repository_stats":'
+echo '  "report_date":'
+echo "\"$(TZ=Z date +%FT%TZ)\""
+
+echo ', "repository_stats":'
 curl -s https://hub.docker.com/v2/repositories/reachsh/reach/ | \
   jq '{pull_count: .pull_count, last_updated: .last_updated}'
 
