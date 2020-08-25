@@ -2,6 +2,18 @@ import * as nodeAssert from 'assert';
 import * as crypto     from 'crypto';
 import ethers          from 'ethers';
 
+let DEBUG = false;
+export const setDEBUG = (b) => {
+  if (b === false || b === true) {
+    DEBUG = b;
+  } else {
+    throw Error(`Expected bool, got ${JSON.stringify(b)}`);
+  }
+};
+export const getDEBUG = () => { return DEBUG; };
+export const debug = msg => { if (getDEBUG()) {
+  console.log(`DEBUG: ${msg}`); } };
+
 // Hex helpers
 // const un0x           = h => h.replace(/^0x/, ''); // unused
 const hexTo0x        = h => '0x' + h.replace(/^0x/, '');

@@ -1,16 +1,11 @@
 import algosdk from 'algosdk';
 
+import {debug} from './shared.mjs';
 export * from './shared.mjs';
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
-
-
-const DEBUG = false;
-const debug = msg => { if (DEBUG) {
-  console.log(`DEBUG: ${msg}`); } };
-const panic = e => { throw Error(e); };
 
 
 // networkAccount[ALGO] = {
@@ -98,7 +93,7 @@ export const transfer = async (to, from, value) => {
   const signedTxn = algosdk.signTransaction(txn, from.sk);
   const res = await sendAndConfirm( signedTxn, txn.lastRound );
   if ( ! res ) {
-    panic(`Transfer failed: ${to} ${from} ${value}`); }
+    throw Error(`Transfer failed: ${to} ${from} ${value}`); }
   return res; };
 
 export const connectAccount = async thisAcc => {

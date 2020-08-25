@@ -5,6 +5,13 @@ import * as http       from 'http';
 import * as url        from 'url';
 import * as waitPort   from 'wait-port';
 
+import {
+  getDEBUG, debug, bigNumberify, isBigNumber, assert,
+} from './shared.mjs';
+export * from './shared.mjs';
+
+const panic = e => { throw Error(e); };
+
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
@@ -14,14 +21,6 @@ import * as waitPort   from 'wait-port';
 // XXX: when using ganache: nvm use 12
 // ganache-core doesn't work with npm version 14 yet
 // https://github.com/trufflesuite/ganache-cli/issues/732#issuecomment-623782405
-
-import {bigNumberify, isBigNumber, assert} from './shared.mjs';
-export * from './shared.mjs';
-
-const DEBUG = false;
-const debug = msg => { if (DEBUG) {
-  console.log(`DEBUG: ${msg}`); } };
-const panic = e => { throw Error(e); };
 
 // networkAccount[ETH] = {
 //   // Required for receivers
@@ -91,6 +90,7 @@ const networkDesc = nodeType == 'in_memory_ganache' ? {
   uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
   network: process.env.ETH_NODE_NETWORK || 'unspecified',
 } : panic(`Unknown node type ${nodeType}`);
+// ^ I resent that this can't be written throw Error(e)
 
 const portP = (async () => {
   if (networkDesc.type != 'uri') { return; }
@@ -131,7 +131,7 @@ const doHealthcheck = async () => {
       debug(`statusCode: ${res.statusCode}`);
       res.on('data', (d) => {
         debug('rpc health check succeeded');
-        if (DEBUG) {
+        if (getDEBUG()) {
           process.stdout.write(d);
         }
         resolve({res, d});
@@ -166,7 +166,7 @@ const etherspP = (async () => {
     const ganachep = ganache.provider({default_balance_ether});
     return new ethers.providers.Web3Provider(ganachep);
   } else {
-    return panic(`Unhandled networkDesc.type ${networkDesc.type}`);
+    throw Error(`Unhandled networkDesc.type ${networkDesc.type}`);
   }
 })();
 
@@ -179,14 +179,14 @@ const ethersBlockOnceP = async () => {
 
 export const balanceOf = async acc => {
   const { networkAccount } = acc;
-  if (!networkAccount) panic(`acc.networkAccount missing. Got: ${acc}`);
+  if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
 
   if (networkAccount.getBalance) {
     return bigNumberify(await acc.networkAccount.getBalance());
   } else if (networkAccount.address) {
     const ethersp = await etherspP;
     return bigNumberify(await ethersp.getBalance(networkAccount.address));
-  } else return panic(`acc.networkAccount.address missing. Got: ${networkAccount}`);
+  } else throw Error(`acc.networkAccount.address missing. Got: ${networkAccount}`);
 };
 
 // XXX dead code?
@@ -195,9 +195,9 @@ export const balanceOf = async acc => {
 //   ethers.utils.defaultAbiCoder.encode([t], [v]);
 
 export const transfer = async (to, from, value) => {
-  if (!to.address) panic(`Expected to.address: ${to}`);
-  if (!from.sendTransaction) panic(`Expected from.sendTransaction: ${from}`);
-  if (!isBigNumber(value)) panic(`Expected a BigNumber: ${value}`);
+  if (!to.address) throw Error(`Expected to.address: ${to}`);
+  if (!from.sendTransaction) throw Error(`Expected from.sendTransaction: ${from}`);
+  if (!isBigNumber(value)) throw Error(`Expected a BigNumber: ${value}`);
 
   const txn = { to: to.address, value };
   debug(`from.sendTransaction(${JSON.stringify(txn)})`);
@@ -276,7 +276,7 @@ export const connectAccount = async networkAccount => {
             block_repeat_count++; }
           block_send_attempt = current_block;
           if ( timeout_delay && block_repeat_count > 32 ) {
-            panic(`${shad}: ${label} send ${funcName} ${timeout_delay} --- REPEAT @ ${block_send_attempt} x ${block_repeat_count}`); }
+            throw Error(`${shad}: ${label} send ${funcName} ${timeout_delay} --- REPEAT @ ${block_send_attempt} x ${block_repeat_count}`); }
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY FAIL --- ${last_block} ${current_block} ${block_repeat_count} ${block_send_attempt}`);
           continue; }
 
