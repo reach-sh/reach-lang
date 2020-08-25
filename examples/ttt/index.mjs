@@ -23,7 +23,9 @@ function render(st) {
               { stdlib: stdlib_algo
                 , startingBalance: 1000000
                 , wagerAmount: 5 }
-              : process.exit(1) ) );
+              : (() => {
+                console.log(`Unknown protocol: ${proto}`);
+                process.exit(1); })() ) );
 
   console.log(`\nMaking accounts\n`);
 

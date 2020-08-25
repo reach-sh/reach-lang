@@ -78,6 +78,7 @@ do_run () {
         cd "$(dirname "$ARG")" || exit
         APP="$(basename "$ARG")"
     fi
+    shift
     
     RSH="${APP}.rsh"
     MJS="${APP}.mjs"
@@ -131,7 +132,8 @@ COPY ${MJS} /app
 RUN mkdir /app/build
 COPY build/${APP}.main.mjs /app/build
 
-CMD npm run app
+# FIXME This a little insane, but I can't seem to get the arguments to pass correctly otherwise. Perhaps shellcheck's warning about "$@" was correct?
+CMD npm run app -- $@
 EOF
 
     docker build -f "${DOCKERFILE}" -t "reachsh/reach-app-${APP}:latest" .
@@ -146,7 +148,7 @@ EOF
     # Note: shellcheck thinks this use of "$@" is weird
     # shellcheck disable=SC2120
     run () {
-        docker-compose -f - run --rm reach-app "$@"
+        docker-compose -f - run --rm reach-app
     }
 
     if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
