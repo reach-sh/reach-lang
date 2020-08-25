@@ -1,14 +1,14 @@
 check: expected actual
 	diff -u $^ || exit 1
 
-actual: build/main.main.pl
+actual: build/index.main.pl
 	grep -B 2 between $^ > $@
 
-build/main.main.pl: main.rsh
+build/index.main.pl: index.rsh
 	../../reach compile -o build $^
 
 run:
-	../../reach run main
+	../../reach run
 
 clean:
-	rm -f build/main.main.pl
+	rm -f build/index.main.pl

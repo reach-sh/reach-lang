@@ -1,5 +1,5 @@
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
-import * as backend from './build/main.main.mjs';
+import * as backend from './build/index.main.mjs';
 
 const parseEth = (n) => stdlib.toWeiBigNumber(n, 'ether');
 const getBalance = async (who) => stdlib.fromWei ( await stdlib.balanceOf(who) );
