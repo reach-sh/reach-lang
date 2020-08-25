@@ -40,11 +40,11 @@
 (define (cmd . args)
   (apply commandline @bold{@exec{$}} " " args))
 
-(define-runtime-path x "x")
+(define-runtime-path x "../examples/")
 
 (define (reachexlink p [label #f])
   (define url
-    (format "https://github.com/reach-sh/reach-lang/blob/master/docs-src/x/~a" p))
+    (format "https://github.com/reach-sh/reach-lang/blob/master/examples/~a" p))
   @link[url (or label (exec p))])
 
 (define (reachex

@@ -18,10 +18,6 @@ push:
 	docker push $(TAG_MAJOR)
 #	docker push $(TAG_TAG)
 
-.PHONY: publish
-publish:
-	echo Go to https://hackage.haskell.org/packages/upload
-
 # TODO: dockerized stan so that make check does not require local hs install?
 .PHONY: check
 check: hs-check

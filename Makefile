@@ -1,7 +1,6 @@
 # XXX: "bad example" files must still pass lint?
 linted_reach_src_dirs = \
-	docs-src/ \
-  examples/ \
+	examples/ \
 	hs/rsh/ \
 	hs/test-examples/
 
@@ -33,28 +32,24 @@ run-all:
 
 .PHONY: build-all
 build-all:
-	cd hs && $(MAKE) build
+	cd hs && $(MAKE) build build-circle-docker
 	cd scripts/ethereum-devnet && $(MAKE) build
 	cd js && $(MAKE) build
 	cd examples && $(MAKE) clean-all build-all
 
 .PHONY: push-all
 push-all:
-	cd hs && $(MAKE) push
+	cd hs && $(MAKE) push push-circle-docker
 	cd scripts/ethereum-devnet && $(MAKE) push
 	cd js && $(MAKE) push
-	cd examples && $(MAKE) push-all
 
 .PHONY: publish-all
 publish-all:
-	cd hs && $(MAKE) publish
 	cd js && $(MAKE) publish
-	cd examples && $(MAKE) publish-all
 
 .PHONY: rebuild-and-run-all-examples
 rebuild-and-run-all-examples:
 	cd examples && time $(MAKE) clean-all build-all run-all
-	cd docs-src && make run-all-examples
 
 .PHONY: rbe
 rbe: rebuild-and-run-all-examples
