@@ -1,6 +1,6 @@
 .PHONY: check
 check: expected actual
-	diff -u $^ || exit 1
+	diff -u $^
 
 actual: build/index.main.pl
 	grep -B 2 between $^ > $@
