@@ -63,6 +63,10 @@ srcloc_top = SrcLoc (Just "<top level>") Nothing Nothing
 srcloc_src :: ReachSource -> SrcLoc
 srcloc_src rs = SrcLoc Nothing Nothing (Just rs)
 
+get_srcloc_src :: SrcLoc -> ReachSource
+get_srcloc_src (SrcLoc _ _ (Just rs)) = rs
+get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile "src" -- XXX
+
 srcloc_at :: String -> (Maybe TokenPosn) -> SrcLoc -> SrcLoc
 srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
 

@@ -7,6 +7,7 @@ import Control.DeepSeq
 import GHC.Generics
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import Language.JavaScript.Parser.Lexer
 
 deriving instance Generic TokenPosn
 
@@ -150,3 +151,8 @@ instance NFData JSImportSpecifier
 
 -- deriving instance Generic JSMethodDefinition
 -- instance NFData JSMethodDefinition
+
+-- | This is fine because the Show instance is derived
+deriving instance Read Token
+
+deriving instance Generic Token

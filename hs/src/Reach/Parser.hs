@@ -5,17 +5,20 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
 import Data.IORef
 import qualified Data.Map.Strict as M
-import GHC.Generics (Generic)
 import GHC.IO.Encoding
 import GHC.Stack (HasCallStack)
+import Generics.Deriving (Generic, conNameOf)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
+import Language.JavaScript.Parser.Lexer
 import Reach.AST
 import Reach.EmbeddedFiles
 import Reach.JSUtil
+import Reach.UnsafeUtil
 import Reach.Util
 import System.Directory
 import System.FilePath
+import Text.Read (readMaybe)
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource
@@ -153,6 +156,28 @@ updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = d
 gatherDeps_from :: SrcLoc -> Maybe ReachSource
 gatherDeps_from (SrcLoc _ _ mrs) = mrs
 
+tryPrettifyError :: SrcLoc -> String -> String
+tryPrettifyError at' e = case readMaybe e of
+  Just (t :: Token) ->
+    "Unexpected token, " <> ty <> " at " <> atStr <> tokLit
+    where
+      ty = conNameOf t
+      ts = tokenSpan t
+      SrcLoc sl0 _ sl2 = at'
+      at = SrcLoc sl0 (Just ts) sl2
+      atStr = unsafeRedactAbsStr $ show at
+      unsafeTlit = " \"" <> tokenLiteral t <> "\""
+      -- Don't want to enumerate them all because it's a lot
+      tokLit = case t of
+        IdentifierToken {} -> unsafeTlit
+        _ -> ""
+  _ -> e
+
+gatherDeps_ast_rewriteErr :: SrcLoc -> IORef JSBundleMap -> String -> IO [JSModuleItem]
+gatherDeps_ast_rewriteErr at' fmr s = case parseModule s (show $ get_srcloc_src at') of
+  Left e -> error $ tryPrettifyError at' e -- TODO: prettify
+  Right r -> gatherDeps_ast at' fmr r
+
 gatherDeps_file :: SrcLoc -> IORef JSBundleMap -> FilePath -> IO FilePath
 gatherDeps_file at fmr src_rel =
   updatePartialAvoidCycles at fmr (gatherDeps_from at) [ReachStdLib] get_key ret_key err_key proc_key
@@ -171,7 +196,7 @@ gatherDeps_file at fmr src_rel =
       content <- readFile src_abs
       withCurrentDirectory
         (takeDirectory src_abs)
-        (gatherDeps_ast at' fmr $ readJsModule content)
+        (gatherDeps_ast_rewriteErr at' fmr content)
 
 gatherDeps_stdlib :: SrcLoc -> IORef JSBundleMap -> IO ()
 gatherDeps_stdlib at fmr =
@@ -182,7 +207,7 @@ gatherDeps_stdlib at fmr =
     err_key x = Err_Parse_CyclicImport x
     proc_key _ = do
       let at' = srcloc_src ReachStdLib
-      (gatherDeps_ast at' fmr $ readJsModule $ B.unpack stdlib_rsh)
+      (gatherDeps_ast_rewriteErr at' fmr $ B.unpack stdlib_rsh)
 
 map_order :: Ord a => M.Map a [a] -> [a]
 map_order dm = order
