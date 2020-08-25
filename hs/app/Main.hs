@@ -7,13 +7,14 @@ import Reach.Report
 import Reach.Version
 import System.Directory
 import System.Environment
+import System.FilePath
 
 data CompilerToolArgs = CompilerToolArgs
-  { cta_outputDir :: FilePath
+  { cta_intermediateFiles :: Bool
+  , cta_disableReporting :: Bool
+  , cta_outputDir :: FilePath
   , cta_source :: FilePath
   , cta_tops :: [String]
-  , cta_intermediateFiles :: Bool
-  , cta_disableReporting :: Bool
   }
 
 data CompilerToolEnv = CompilerToolEnv
@@ -32,17 +33,17 @@ makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
 compiler :: FilePath -> Parser CompilerToolArgs
 compiler cwd =
   CompilerToolArgs
-    <$> strOption
+    <$> switch (long "intermediate-files")
+    <*> switch (long "disable-reporting")
+    <*> strOption
       (long "output"
          <> short 'o'
          <> metavar "DIR"
          <> help "Directory for output files"
          <> showDefault
-         <> value cwd)
-    <*> strArgument (metavar "SOURCE")
+         <> value (cwd </> "build"))
+    <*> strArgument ((metavar "SOURCE") <> value ("index.rsh"))
     <*> many (strArgument (metavar "EXPORTS..."))
-    <*> switch (long "intermediate-files")
-    <*> switch (long "disable-reporting")
 
 getCompilerArgs :: IO CompilerToolArgs
 getCompilerArgs = do

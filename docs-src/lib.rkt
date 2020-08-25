@@ -45,7 +45,7 @@
 (define (reachexlink p [label #f])
   (define url
     (format "https://github.com/reach-sh/reach-lang/blob/master/docs-src/x/~a" p))
-  @link[url (or label url)])
+  @link[url (or label (exec p))])
 
 (define (reachex
          #:mode [mode reach]

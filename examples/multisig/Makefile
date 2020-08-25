@@ -2,7 +2,7 @@ NAME=multisig
 TAG="reachsh/examples-$(NAME):v0.1.1"
 
 build/%.main.mjs: %.rsh
-	../../reach compile -o build $^ main
+	../../reach compile $^ main
 
 .PHONY: build
 build: build/index.main.mjs

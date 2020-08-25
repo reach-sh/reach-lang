@@ -29,13 +29,16 @@ You compile your Reach code by executing
 
 where @exec{SOURCE} is your @tech{source file},
 and each @exec{EXPORT} is an @tech{export}ed @tech{Reach.App}.
+
+If no @exec{SOURCE} is provided, then @exec{index.rsh} is used.
+
 If no @exec{EXPORT} is provided, then @litchar{main} is used.
 
 @exec{reach compile} supports the following options:
 
 @itemlist[
 
-  @item{@Flag{o}/@DFlag{output} @nonterm{OUTPUT} --- Writes the compiler output files to @nonterm{OUTPUT}, which is the current directory by default.}
+  @item{@Flag{o}/@DFlag{output} @nonterm{OUTPUT} --- Writes compiler output files to @nonterm{OUTPUT}, which is @exec{$CWD/build} (the @exec{build} directory of the current directory) by default.}
 
   @item{@DFlag{intermediate-files} --- Write intermediate files, which may be interesting for debugging compilation failures or using in other contexts.}
 
@@ -47,6 +50,10 @@ If no @exec{EXPORT} is provided, then @litchar{main} is used.
 You can run a simple Reach application by executing
 
 @cmd{reach run APP}
+
+If no @exec{APP} is provided, @exec{index} is used.
+
+If @exec{APP} is a directory, then @exec{APP/index} is used.
 
 This assumes
 

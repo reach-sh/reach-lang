@@ -1,7 +1,7 @@
 TAG="reachsh/examples-rps:v0.1.1"
 
 build/index.once.mjs build/index.nodraw.mjs:
-	../../reach compile -o build index.rsh once nodraw
+	../../reach compile index.rsh once nodraw
 
 .PHONY: build
 build: build/index.once.mjs build/index.nodraw.mjs

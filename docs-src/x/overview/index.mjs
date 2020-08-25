@@ -1,5 +1,5 @@
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
-import * as backend from './build/over-minimal.main.mjs';
+import * as backend from './build/index.main.mjs';
 
 ( async () => {
   const toNetworkFormat = (n) => stdlib.toWeiBigNumber(n, 'ether');

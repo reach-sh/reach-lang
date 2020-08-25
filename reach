@@ -75,6 +75,9 @@ do_run () {
         APP="index"
     else
         ARG=$1
+        if [ -d "$ARG" ] ; then
+           ARG="$ARG/index"
+        fi
         cd "$(dirname "$ARG")" || exit
         APP="$(basename "$ARG")"
         shift
@@ -98,7 +101,7 @@ do_run () {
 
     # XXX could we use an embedded Makefile-like logic to go faster when there are no changes?
     
-    do_compile -o build "${RSH}" || exit 1
+    do_compile "${RSH}" || exit 1
 
     # XXX Can we add eslint on the JS?
     

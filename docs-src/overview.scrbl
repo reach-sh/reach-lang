@@ -32,11 +32,11 @@ The Reach compiler automatically derives a @tech{contract} for the @tech{consens
 
 Let's look at a simple Reach program where two principals, Alice and Bob interact. In this @|DApp|, Alice has some information that Bob might want and she has an amount of network tokens in mind that she'd like to trade for it.
 
-@margin-note{You can look at the entire example program by visiting @reachexlink["over-minimal.rsh"].}
+@margin-note{You can look at the entire example program by visiting @reachexlink["overview/index.rsh"].}
 
 The main part of the program looks like this:
 
-@reachex[#:show-lines? #t "over-minimal.rsh"
+@reachex[#:show-lines? #t "overview/index.rsh"
          'skip 11 29 "      // ...body..."]
 
 @itemlist[
@@ -57,7 +57,7 @@ The main part of the program looks like this:
 
 The elided lines, 11 through 29, contain the body of the application, which we can divide into four parts.
 
-@reachex[#:show-lines? #t "over-minimal.rsh"
+@reachex[#:show-lines? #t "overview/index.rsh"
          'only 11 14 "      // ..."]
 
 @itemlist[
@@ -73,7 +73,7 @@ In Reach, all values from the @tech{frontend} are @tech{secret} until explicitly
 
 At this point, Bob's @tech{backend} has learned the value of @reachin{request} and can deliver it to Bob's @tech{frontend} for his approval. This happens next.
 
-@reachex[#:show-lines? #t "over-minimal.rsh"
+@reachex[#:show-lines? #t "overview/index.rsh"
          'only 16 19 "      // ..."]
 
 @itemlist[
@@ -88,7 +88,7 @@ A better version of this program might return @reachin{false} and have that comm
 
 It's now Alice's turn again,
 
-@reachex[#:show-lines? #t "over-minimal.rsh"
+@reachex[#:show-lines? #t "overview/index.rsh"
          'only 21 25 "      // ..."]
 
 @itemlist[
@@ -105,7 +105,7 @@ It's now Alice's turn again,
 
 The only thing left is for Bob's @tech{backend} to deliver the information to his @tech{frontend}.
 
-@reachex[#:show-lines? #t "over-minimal.rsh"
+@reachex[#:show-lines? #t "overview/index.rsh"
          'only 27 29 "      // ..."]
 
 @itemlist[
@@ -122,14 +122,14 @@ Reach programmers don't need to think about details like @emph{contract storage}
 
 @section[#:tag "over-compile"]{Compile}
 
-After a Reach programmer writes this application in a file like @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}], they could run
+After a Reach programmer writes this application in a file like @reachexlink["overview/index.rsh" @exec{overview/index.rsh}], they could run
 
-@cmd{reach compile -o build @reachexlink["over-minimal.rsh" @exec{over-minimal.rsh}]}
+@cmd{reach compile @reachexlink["overview/index.rsh"]}
 
-and the @exec{build} directory will contain a new file named @reachexlink["build/over-minimal.main.mjs" @exec{over-minimal.main.mjs}], which contains a JavaScript implementation of a @tech{backend} for each participant, as well as the Ethereum bytecode for the @tech{contract}.
+and the @exec{build} directory will contain a new file named @reachexlink["overview/build/index.main.mjs" @exec{index.main.mjs}], which contains a JavaScript implementation of a @tech{backend} for each participant, as well as the Ethereum bytecode for the @tech{contract}.
 
-@margin-note{If you are curious, you can take a look at this file by going to @reachexlink["build/over-minimal.main.mjs"].
-The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at @reachexlink["build/over-minimal.main.sol"] to see the original Solidity source that it is compiled from.
+@margin-note{If you are curious, you can take a look at this file by going to @reachexlink["overview/build/index.main.mjs"].
+The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at @reachexlink["overview/build/index.main.sol"] to see the original Solidity source that it is compiled from.
 Reach can leave files like these in place when run with @DFlag{intermediate-files}.}
 
 For this 30 line application, the Reach compiler generated 51 lines of JavaScript code into two functions, one for Alice and one for Bob.
@@ -150,17 +150,17 @@ We could make a small tweak, however, to demonstrate things going wrong.
 
 Let's change the third step to leave a single unit in the balance:
 
-@reachex[#:show-lines? #t "over-minimal-error.rsh"
+@reachex[#:show-lines? #t "overview/index-error.rsh"
          'only 21 25 "      // ..."]
 
 And then run the compiler
 
-@cmd{reach compile -o build @reachexlink["over-minimal-error.rsh" @exec{over-minimal-error.rsh}]}
+@cmd{reach compile @reachexlink["overview/index-error.rsh"]}
 
 It will print out a detailed error message showing the violation.
 
 @reachex[#:mode verbatim
-         #:show-lines? #t "over-minimal-error.txt"
+         #:show-lines? #t "overview/index-error.txt"
          'only 2 13 "// ..."]
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by @tech{frontends} that would lead to the property failing to hold.
@@ -178,12 +178,12 @@ In particular, each @tech{participant} needs a @tech{frontend} to interact with.
 In a real deployment, this interfacing code would be tied to a GUI, like a Web or smartphone app.
 Let's look at a simple command-line version that demonstrates how it would work for testing on a private devnet.
 
-@margin-note{You can look at the entire example interface program by visiting @reachexlink["over-minimal.mjs"].}
+@margin-note{You can look at the entire example interface program by visiting @reachexlink["overview/index.mjs"].}
 
 The program is just 23 lines long and the shell of it is quite simple:
 
 @reachex[#:mode js
-         #:show-lines? #t "over-minimal.mjs"
+         #:show-lines? #t "overview/index.mjs"
          'skip 14 21 "    // ..."]
 
 @itemlist[
@@ -209,7 +209,7 @@ This code will be very similar for all testing programs and demonstrates how str
 Let's look at initializing and interfacing each participant, starting with Alice.
 
 @reachex[#:mode js
-         #:show-lines? #t "over-minimal.mjs"
+         #:show-lines? #t "overview/index.mjs"
          'only 14 17 "    // ..."]
 
 @itemlist[
@@ -228,7 +228,7 @@ It needs these to be able to interface with the chosen consensus network.}
 Let's look at Bob next.
 
 @reachex[#:mode js
-         #:show-lines? #t "over-minimal.mjs"
+         #:show-lines? #t "overview/index.mjs"
          'only 18 21 "    // ..."]
 
 @itemlist[
@@ -253,13 +253,13 @@ In this case, we've set up our application simply: there's one Reach file for th
 This is a common practice, so Reach comes with a simple wrapper script to build and execute such applications.
 We just run:
 
-@cmd{reach run over-minimal}
+@cmd{reach run}
 
 And then Reach
 
 @itemlist[
 
-@item{compiles @reachexlink["over-minimal.rsh" "over-minimal.rsh"];}
+@item{compiles @reachexlink["overview/index.rsh" "overview/index.rsh"];}
 
 @item{creates a temporary Node package;}
 

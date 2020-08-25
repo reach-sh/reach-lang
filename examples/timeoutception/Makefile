@@ -6,7 +6,7 @@ actual: build/index.main.pl
 	grep -B 2 between $^ > $@
 
 build/index.main.pl: index.rsh
-	../../reach compile -o build $^
+	../../reach compile $^
 
 .PHONY: build
 build: check
