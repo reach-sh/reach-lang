@@ -134,6 +134,19 @@ jobs:
           command: make sh-lint
       - slack/status:
           fail_only: true
+  reach-lint:
+    docker:
+      - image: 'circleci/node:12.18.3'
+    steps:
+      - checkout
+      - run:
+          name: install eslint
+          command: sudo npm install -g eslint
+      - run:
+          name: Run reach linter
+          command: make reach-lint
+      - slack/status:
+          fail_only: true
 
 workflows:
   build-and-test:
@@ -145,6 +158,7 @@ workflows:
           filters:
             branches:
               only: master
-  shellcheck:
+  lint:
     jobs:
       - shellcheck
+      - reach-lint

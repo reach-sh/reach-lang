@@ -39,13 +39,13 @@ export const main =
       function informTimeout() {
         each([A, B], () => {
           interact.informTimeout(); }); }
-      
+
       A.only(() => {
         const _handA = interact.getHand();
         const [_commitA, _saltA] = makeCommitment(interact, _handA);
         const [wager, commitA] = declassify([interact.wager, _commitA]); });
       A.publish(wager, commitA)
-        .pay(wager)
+        .pay(wager);
       commit();
 
       unknowable(B, A(_handA, _saltA));

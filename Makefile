@@ -8,6 +8,7 @@ linted_reach_src_dirs = \
 # XXX: no way for linter to allow rebinding _ ?
 # TODO: clear out old subdirs
 ignored_reach_sources = \
+	--ignore-pattern hs/test-examples/non-features/js_parse_err.rsh \
 	--ignore-pattern hs/test-examples/features/underscore.rsh \
 	--ignore-pattern hs/test-examples/nl-eval-errors/ \
 	--ignore-pattern hs/test-examples/parse-errors/ \
