@@ -19,7 +19,7 @@ Verification failed:
     "v2" = (> v1 0 )
       (from: v2)
       (bound at: ./assert_gt.rsh:application)
-      (because: evaluating PGT(v1,DLC_Int 0))
+      (because: evaluating PGT(v1, DLC_Int 0))
 Verifying with mode = VM_Dishonest RoleContract
 Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:
@@ -41,5 +41,5 @@ Verification failed:
     "v2" = (> v1 0 )
       (from: v2)
       (bound at: ./assert_gt.rsh:application)
-      (because: evaluating PGT(v1,DLC_Int 0))
+      (because: evaluating PGT(v1, DLC_Int 0))
 Checked 5 theorems; 2 failures. :'(
