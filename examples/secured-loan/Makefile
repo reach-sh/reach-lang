@@ -9,15 +9,6 @@ build: build/$(NAME).main.mjs
 	echo "TODO: write Dockerfile"
 #	docker build --tag=$(TAG) .
 
-.PHONY: push
-push:
-	echo "TODO: write Dockerfile"
-#	docker push $(TAG)
-
-.PHONY: publish
-publish:
-	npm publish --access public
-
 .PHONY: run
 run:
 	echo "TODO: write docker-compose.yaml"

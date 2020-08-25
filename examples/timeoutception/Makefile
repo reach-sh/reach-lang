@@ -1,3 +1,4 @@
+.PHONY: check
 check: expected actual
 	diff -u $^ || exit 1
 
@@ -7,8 +8,17 @@ actual: build/index.main.pl
 build/index.main.pl: index.rsh
 	../../reach compile -o build $^
 
+.PHONY: build
+build: check
+
+.PHONY: run
 run:
 	../../reach run
 
+.PHONY: down
+down:
+	@echo
+
+.PHONY: clean
 clean:
 	rm -f build/index.main.pl

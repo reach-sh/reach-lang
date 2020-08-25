@@ -7,14 +7,6 @@ build/index.once.mjs build/index.nodraw.mjs:
 build: build/index.once.mjs build/index.nodraw.mjs
 	docker build --tag=$(TAG) .
 
-.PHONY: push
-push:
-	docker push $(TAG)
-
-.PHONY: publish
-publish:
-	npm publish --access public
-
 .PHONY: run
 run:
 	docker-compose run reach-app

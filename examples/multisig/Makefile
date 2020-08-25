@@ -8,14 +8,6 @@ build/%.main.mjs: %.rsh
 build: build/index.main.mjs
 	docker build --tag=$(TAG) .
 
-.PHONY: push
-push:
-	docker push $(TAG)
-
-.PHONY: publish
-publish:
-	npm publish --access public
-
 .PHONY: run
 run:
 	docker-compose run reach-app

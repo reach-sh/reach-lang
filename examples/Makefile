@@ -1,4 +1,4 @@
-examples = secured-loan rps nim multisig ttt
+examples = secured-loan rps nim multisig ttt timeoutception
 
 .PHONY: build-all
 build-all:
@@ -14,11 +14,3 @@ run-all:
 .PHONY: clean-all
 clean-all:
 	(set -e; for example in $(examples) ; do (cd $$example && $(MAKE) clean) ; done)
-
-.PHONY: push-all
-push-all:
-	(set -e; for exapmle in $(examples) ; do (cd $$example && $(MAKE) push) ; done)
-
-.PHONY: publish-all
-publish-all:
-	(set -e; for exapmle in $(examples) ; do (cd $$example && $(MAKE) publish) ; done)
