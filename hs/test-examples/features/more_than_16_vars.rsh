@@ -31,13 +31,3 @@ export const main = Reach.App(
     );
   }
 );
-
-// solc failed:
-// STDOUT:
-
-// STDERR:
-// Compiler error: Stack too deep, try removing local variables.
-//   --> build/vars_over_16.main.sol:25:71:
-//   |
-//   25 |     require(current_state == uint256(keccak256(abi.encode(uint256(0), _last))));
-//   |                                                                       ^^^^^
