@@ -74,7 +74,7 @@ export const main =
 @litchar{participantDefinitions},
 and @litchar{program}.
 
-The @litchar{options} argument is currently, but must be an object.
+The @litchar{options} argument is currently unused, but must be an object.
 
 The @litchar{participantDefinitions} argument is an tuple of tuples.
 Each tuple is a pair of
