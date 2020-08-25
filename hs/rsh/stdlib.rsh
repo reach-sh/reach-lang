@@ -71,3 +71,8 @@ export function closeTo(Who, after) {
 
 function __decode_testing__() {
   return txn.value; }
+
+// object functions
+export function object_set(o, k, e) {
+  return {...o, [k]: e}
+}
