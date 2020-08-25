@@ -27,6 +27,6 @@ aws dynamodb scan \
     --select SPECIFIC_ATTRIBUTES \
     --projection-expression userId
 )
-  echo "$CompileLog" | jq '{row_count: .Count, unique_users: (.Items | map(.userId.S) | unique | length)}'
+echo "$CompileLog" | jq '{row_count: .Count, unique_users: (.Items | map(.userId.S) | unique | length)}'
 
 echo '}'
