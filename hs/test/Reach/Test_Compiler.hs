@@ -11,13 +11,16 @@ import Reach.Compiler
 import Reach.Test.Util
 import Reach.Util
 import System.Directory
-import System.IO.Capture
+-- import System.IO.Capture
+
 import System.IO.Temp
+import Test.Main
 import Test.Tasty
 
 testCompile :: FilePath -> IO (BL.ByteString, BL.ByteString, BL.ByteString)
 testCompile fp = withSystemTempDirectory "reachc-tests" $ \dir -> do
-  (out, err, ex, _) <- capture $ do
+  pr <- captureProcessResult $ do
+    -- (out, err, ex, _) <- capture $ do -- System.IO.Capture
     createDirectoryIfMissing True dir
     compile $
       CompilerOpts
@@ -26,7 +29,12 @@ testCompile fp = withSystemTempDirectory "reachc-tests" $ \dir -> do
         , tops = ["main"]
         , intermediateFiles = False
         }
-  return (out, err, ex)
+  -- return (out, err, ex) -- System.IO.Capture
+  let ex = case prExitCode pr of
+        ExitSuccess -> ""
+        ec@(ExitFailure {}) ->
+          bpack $ show ec <> (maybe "" (("\n" <>) . show) $ prException pr)
+  return (BL.fromStrict $ prStdout pr, BL.fromStrict $ prStderr pr, BL.fromStrict $ ex)
 
 -- Left = compile fail, Right = compile success
 testCompileOut :: FilePath -> IO (Either BL.ByteString BL.ByteString)

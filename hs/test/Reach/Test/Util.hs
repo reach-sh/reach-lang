@@ -104,10 +104,11 @@ stripAbs fp bs = LB.fromStrict bs'
 -- TODO: relax this once the compiler has all relative paths
 -- Just a bunch of dumb hacks to get simpler test output
 stripAllAbs :: FilePath -> FilePath -> LB.ByteString -> LB.ByteString
-stripAllAbs fp cwd = stripAbs fp'' . stripAbs fp' . stripAbs fp
+stripAllAbs fp cwd = stripAbs fp''' . stripAbs fp'' . stripAbs fp' . stripAbs fp
   where
     fp' = lbunpack $ stripAbs cwd $ lbpack fp
     fp'' = lbunpack $ stripAbs (cwd </> "hs") $ lbpack fp
+    fp''' = lbunpack $ "./test-examples/../../examples/"
 
 errExampleBsStripAbs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
 errExampleBsStripAbs k fp = do
