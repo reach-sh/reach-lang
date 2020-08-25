@@ -13,7 +13,10 @@ build:
 
 .PHONY: push
 push:
-	docker push $(TAG_EXACT) $(TAG_MINOR) $(TAG_MAJOR) $(TAG_TAG)
+	docker push $(TAG_EXACT)
+	docker push $(TAG_MINOR)
+	docker push $(TAG_MAJOR)
+#	docker push $(TAG_TAG)
 
 .PHONY: publish
 publish:
