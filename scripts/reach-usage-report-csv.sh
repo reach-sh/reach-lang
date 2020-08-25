@@ -11,4 +11,4 @@ REPORT_FILE='report.csv'
 UsageReport=$("$HERE/reach-usage-report.sh")
 
 echo 'report_date,pull_count,row_count,unique_users' > $REPORT_FILE
-echo $UsageReport | jq '[.report_date, .repository_stats.pull_count, .CompileLog.row_count, .CompileLog.unique_users] | @csv' -r >> $REPORT_FILE
+echo "$UsageReport" | jq '[.report_date, .repository_stats.pull_count, .CompileLog.row_count, .CompileLog.unique_users] | @csv' -r >> $REPORT_FILE
