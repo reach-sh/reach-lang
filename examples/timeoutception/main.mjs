@@ -10,11 +10,11 @@ console.log(`getting started...`);
   const beforeBal = await getBalance(acc);
   console.log(`A starts with ${beforeBal}`);
 
-  const ask = () => {
+  const ask = async () => {
     for (let i = 0; i < 15; i++) {
       console.log(`acc keys: ${Object.keys(acc)}`);
       console.log(`A delays...`);
-      stdlib.transfer(acc.networkAccount, acc.networkAccount, parseEth('0.1'));
+      await stdlib.transfer(acc.networkAccount, acc.networkAccount, parseEth('0.1'));
     }
     return 2;
   };
