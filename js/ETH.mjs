@@ -265,7 +265,7 @@ export const connectAccount = async networkAccount => {
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
-          const r_fn = await ethersCtc[funcName](...munged, {value});
+          const r_fn = await ethersCtc[funcName](munged, {value});
           r_maybe = await r_fn.wait();
         } catch (e) {
           debug(e);

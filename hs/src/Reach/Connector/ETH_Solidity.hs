@@ -81,14 +81,20 @@ solStruct name fields = "struct" <+> name <+> solBraces (vsep $ map (<> semi) $ 
 solMsg_evt :: Pretty i => i -> Doc a
 solMsg_evt i = "e" <> pretty i
 
+solMsg_arg :: Pretty i => i -> Doc a
+solMsg_arg i = "a" <> pretty i
+
 solMsg_fun :: Pretty i => i -> Doc a
 solMsg_fun i = "m" <> pretty i
 
 solLoop_fun :: Pretty i => i -> Doc a
 solLoop_fun i = "l" <> pretty i
 
+solLastBlockDef :: Doc a
+solLastBlockDef = "_last"
+
 solLastBlock :: Doc a
-solLastBlock = "_last"
+solLastBlock = "_a." <> solLastBlockDef
 
 solBlockNumber :: Doc a
 solBlockNumber = "uint256(block.number)"
@@ -120,6 +126,9 @@ solRawVar (DLVar _ _ _ n) = pretty $ "v" ++ show n
 
 solMemVar :: DLVar -> Doc a
 solMemVar dv = "_f." <> solRawVar dv
+
+solArgVar :: DLVar -> Doc a
+solArgVar dv = "_a." <> solRawVar dv
 
 solVar :: SolCtxt a -> DLVar -> Doc a
 solVar ctxt v =
@@ -159,14 +168,16 @@ data ArgMode
   | AM_Memory
   | AM_Event
 
+solArgLoc :: ArgMode -> Doc a
+solArgLoc = \case
+  AM_Call -> " calldata"
+  AM_Memory -> " memory"
+  AM_Event -> ""
+
 solArgType :: SolCtxt a -> ArgMode -> SLType -> Doc a
 solArgType ctxt am t = solType ctxt t <> loc_spec
   where
-    loc_spec = if mustBeMem t then loc else ""
-    loc = case am of
-      AM_Call -> " calldata"
-      AM_Memory -> " memory"
-      AM_Event -> ""
+    loc_spec = if mustBeMem t then solArgLoc am else ""
 
 solArgDecl :: SolCtxt a -> ArgMode -> DLVar -> Doc a
 solArgDecl ctxt am dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt am t)
@@ -325,7 +336,7 @@ solCTail ctxt = \case
     SolTailRes ctxt $
       vsep
         [ ctxt_emit ctxt
-        , solApply (solLoop_fun which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) <> semi
+        , solApply (solLoop_fun which) [ solApply (solMsg_arg which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) ] <> semi
         ]
   CT_Halt _ ->
     SolTailRes ctxt $
@@ -375,7 +386,7 @@ manyVars_c = \case
 solCTail_top :: SolCtxt a -> Int -> [DLVar] -> Maybe [DLVar] -> CTail -> (SolCtxt a, Doc a, Doc a, Doc a)
 solCTail_top ctxt which vs mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
   where
-    argsm = M.fromList $ map (\v -> (v, solRawVar v)) vs
+    argsm = M.fromList $ map (\v -> (v, solArgVar v)) vs
     mvars = manyVars_c ct
     mvarsm = M.fromList $ map (\v -> (v, solMemVar v)) $ S.toList mvars
     (frameDefn, frameDecl) = solFrame ctxt' which mvars
@@ -392,14 +403,26 @@ solCTail_top ctxt which vs mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
         , ctxt_varm = mvarsm <> argsm <> (ctxt_varm ctxt)
         }
 
+solArgDefn :: SolCtxt a -> Int -> ArgMode -> [DLVar] -> (Doc a, [Doc a])
+solArgDefn ctxt which am vs = (argDefn, argDefs)
+  where argDefs = [ solDecl "_a" ((solMsg_arg which) <> solArgLoc am) ]
+        argDefn = solStruct (solMsg_arg which) ntys
+        ntys = mgiven ++ v_ntys
+        mgiven = case am of
+                   AM_Call -> [(solLastBlockDef, (solType ctxt T_UInt256))]
+                   _ -> []
+        v_ntys = map go vs
+        go dv@(DLVar _ _ t _) = ((solRawVar dv), (solType ctxt t))
+
 solHandler :: SolCtxt a -> Int -> CHandler -> Doc a
-solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [evtDefn, frameDefn, funDefn]
+solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
+  vsep [evtDefn, argDefn, frameDefn, funDefn]
   where
     vs = svs ++ msg
     ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
     evtDefn = solEvent ctxt which msg
-    argDefs = (solDecl solLastBlock (solType ctxt T_UInt256)) : map (solArgDecl ctxt AM_Call) vs
+    (argDefn, argDefs) = solArgDefn ctxt which AM_Call vs
     ret = "external payable"
     funDefn = solFunction (solMsg_fun which) argDefs ret body
     body =
@@ -423,11 +446,12 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) = vsep [ev
           case mv of
             [] -> "true"
             mvs -> solBinOp (if sign then ">=" else "<") solBlockNumber (foldl' (solBinOp "+") solLastBlock (map (solArg ctxt) mvs))
-solHandler ctxt_top which (C_Loop _at svs msg ct) = vsep [frameDefn, funDefn]
+solHandler ctxt_top which (C_Loop _at svs msg ct) =
+  vsep [argDefn, frameDefn, funDefn]
   where
     vs = svs ++ msg
     (ctxt_fin, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs Nothing ct
-    argDefs = map (solArgDecl ctxt_fin AM_Memory) vs
+    (argDefn, argDefs) = solArgDefn ctxt_fin which AM_Memory vs
     ret = "internal"
     funDefn = solFunction (solLoop_fun which) argDefs ret body
     body = vsep [frameDecl, ctp]
