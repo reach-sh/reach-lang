@@ -25,6 +25,8 @@ and
 
 @cmd{docker-compose --version}
 
+@margin-note{If you're using Windows, consult @seclink["guide-windows"]{the guide to using Reach on Windows}.}
+
 Once you've confirmed that they are installed, choose a directory for this project. We recommend
 
 @cmd{mkdir -p ~/reach/tut && cd ~/reach/tut}

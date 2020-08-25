@@ -17,6 +17,8 @@ Reach is a Dockerized program, so its only dependencies are @link["https://www.d
 in your project repository.
 You can copy this file to other repositories or move it to a directory in your @envvar{PATH}, like @exec{~/bin}.
 
+@margin-note{If you're using Windows, consult @seclink["guide-windows"]{the guide to using Reach on Windows}.}
+
 @section[#:tag "ref-usage"]{Usage}
 
 Reach has a few sub-commands, each with their own options.

@@ -11,6 +11,8 @@ The following guides are available:
 
 @local-table-of-contents[#:style 'immediate-only]
 
+@include-section["guide-windows.scrbl"]
+
 @section[#:tag "guide-versions"]{How does Reach use version numbers?}
 
 XXX
