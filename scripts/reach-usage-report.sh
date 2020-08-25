@@ -19,13 +19,14 @@ curl -s https://hub.docker.com/v2/repositories/reachsh/reach/tags/ | \
 # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html
 
 # TODO: is paging an issue when the table gets larger?
-echo ', "CompileLog_count":'
+echo ', "CompileLog":'
+CompileLog=$(
 aws dynamodb scan \
     --table-name CompileLog \
     --consistent-read \
-    --select COUNT | \
-  jq '.Count'
-
-# TODO: distinct user count
+    --select SPECIFIC_ATTRIBUTES \
+    --projection-expression userId
+)
+  echo "$CompileLog" | jq '{row_count: .Count, unique_users: (.Items | map(.userId.S) | unique | length)}'
 
 echo '}'
