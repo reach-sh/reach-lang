@@ -460,6 +460,9 @@ ctxt_lift_expr ctxt at mk_var e = do
   let s = DLS_Let at dv e
   return (dv, return s)
 
+ctxt_lift_expr_w :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> WriterT DLStmts (ST s) DLVar
+ctxt_lift_expr_w ctxt at mk_var e = WriterT $ ctxt_lift_expr ctxt at mk_var e
+
 ctxt_lift_arg :: SLCtxt s -> SrcLoc -> SrcLoc -> String -> DLArg -> ST s (DLVar, DLStmts)
 ctxt_lift_arg ctxt at at' name a =
   ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt name) t) (DLE_Arg at' a)
@@ -1398,34 +1401,28 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
   where
     --- FIXME Support spreads in array literals
     ks = map (jse_expect_id at') $ jsa_flatten xs
-    makeEnv (lvl, v) = WriterT $ do
-      (vs_lifts, vs) <-
+    makeEnv (lvl, v) = do
+      vs <-
         case v of
-          SLV_Tuple _ x -> return (mempty, x)
+          SLV_Tuple _ x -> pure x
           SLV_DLVar dv@(DLVar _ _ (T_Tuple ts) _) -> do
-            vs_liftsl_and_dvs <- zipWithM mk_ref ts [0 ..]
-            let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
-            let vs_lifts = mconcat vs_liftsl
-            return (vs_lifts, dvs)
+            zipWithM mk_ref ts [0 ..]
             where
               mk_ref t i = do
                 let e = (DLE_TupleRef vat' (DLA_Var dv) i)
-                (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' (ctxt_local_name ctxt "tuple idx") t) e
-                return $ (i_lifts, SLV_DLVar dvi)
+                dvi <- ctxt_lift_expr_w ctxt at (DLVar vat' (ctxt_local_name ctxt "tuple idx") t) e
+                pure $ SLV_DLVar dvi
           SLV_DLVar dv@(DLVar _ _ (T_Array t sz) _) -> do
-            vs_liftsl_and_dvs <- mapM mk_ref [0 .. (sz - 1)]
-            let (vs_liftsl, dvs) = unzip vs_liftsl_and_dvs
-            let vs_lifts = mconcat vs_liftsl
-            return (vs_lifts, dvs)
+            mapM mk_ref [0 .. (sz - 1)]
             where
               mk_ref i = do
                 let e = (DLE_ArrayRef vat' (ctxt_stack ctxt) (DLA_Var dv) sz (DLA_Con (DLC_Int i)))
-                (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar vat' (ctxt_local_name ctxt "array idx") t) e
-                return $ (i_lifts, SLV_DLVar dvi)
+                dvi <- ctxt_lift_expr_w ctxt at (DLVar vat' (ctxt_local_name ctxt "array idx") t) e
+                pure $ SLV_DLVar dvi
           _ ->
             expect_throw at' (Err_Decl_NotRefable v)
       let kvs = zipEq at' Err_Decl_WrongArrayLength ks $ map (\x -> (lvl, x)) vs
-      return $ (foldl' (env_insertp at') lhs_env kvs, vs_lifts)
+      return $ foldl' (env_insertp at') lhs_env kvs
 
 -- | const {x, y, ...obj} = ...;
 --
@@ -1455,38 +1452,35 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
         where
           (xNs, smN) = parseIdentsAndSpread eNs
           x0 = jso_expect_id at' e0
-    makeEnv (lvl, val) = WriterT $ case val of
+    makeEnv (lvl, val) = case val of
       SLV_DLVar dv@(DLVar _ _ (T_Obj tenv) _) -> do
         let mk_ref_ k = do
               let e = (DLE_ObjectRef at' (DLA_Var dv) k)
               let t = case M.lookup k tenv of
                     Nothing -> expect_throw at' $ Err_Dot_InvalidField val (M.keys tenv) k
                     Just x -> x
-              ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt "object ref") t) e
+              ctxt_lift_expr_w ctxt at (DLVar at' (ctxt_local_name ctxt "object ref") t) e
         let mk_ref k = do
-              (dvi, i_lifts) <- mk_ref_ k
-              return $ ((k, SLV_DLVar dvi), i_lifts)
-        ks_liftsl_and_dvs <- mapM mk_ref ks
-        let (ks_dvs, ks_liftsl) = unzip ks_liftsl_and_dvs
-        let ks_lifts = mconcat ks_liftsl
-        (spread_lifts, spread_dvs) <-
+              dvi <- mk_ref_ k
+              pure (k, SLV_DLVar dvi)
+        ks_dvs <- mapM mk_ref ks
+        spread_dvs <-
           case kSpreadMay of
-            Nothing -> return $ (mempty, mempty)
+            Nothing -> pure mempty
             Just spreadName -> do
-              let mkDlArg k _t = WriterT $ do
-                    (dvi, i_lifts) <- mk_ref_ k
-                    pure $ (DLA_Var dvi, i_lifts)
+              let mkDlArg k _t = do
+                    dvi <- mk_ref_ k
+                    pure $ DLA_Var dvi
               let tenvWithoutKs = M.withoutKeys tenv ksSet
-              (objDlEnv, objDlEnvLifts) <-
-                runWriterT (M.traverseWithKey mkDlArg tenvWithoutKs)
+              objDlEnv <- M.traverseWithKey mkDlArg tenvWithoutKs
               let de = DLE_Arg at' $ DLA_Obj objDlEnv
               let spreadTy = T_Obj $ tenvWithoutKs
               let mdv = DLVar at' (ctxt_local_name ctxt "obj") spreadTy
-              (dlv, lifts) <- ctxt_lift_expr ctxt at mdv de
-              return (objDlEnvLifts <> lifts, [(spreadName, SLV_DLVar dlv)])
+              dlv <- ctxt_lift_expr_w ctxt at mdv de
+              pure [(spreadName, SLV_DLVar dlv)]
         let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (lvl, v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
-        return (lhs_env'', ks_lifts <> spread_lifts)
-      SLV_Object _ env -> return $ (lhs_env'', mempty)
+        return lhs_env''
+      SLV_Object _ env -> pure lhs_env''
         where
           lhs_env'' = case kSpreadMay of
             Just spreadName -> env_insert at spreadName (lvl, spreadObj) envWithKs
