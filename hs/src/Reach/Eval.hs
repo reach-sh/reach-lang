@@ -911,14 +911,14 @@ evalPrim ctxt at sco st p sargs =
           return $ SLRes lifts' st (lvl, SLV_DLVar dv)
     SLPrim_Tuple ->
       retV $ (lvl, SLV_Type $ T_Tuple $ map expect_ty $ map snd sargs)
-
     SLPrim_tuple_set ->
       case map snd sargs of
         [tup, (SLV_Int _ idxi), val] ->
           case tup of
             SLV_Tuple _ tupvs ->
-              retV $ check_idxi tupvs $ (lvl, SLV_Tuple at $ zipWith go [0..] tupvs)
-              where go i v = if idxi == i then val else v
+              retV $ check_idxi tupvs $ (lvl, SLV_Tuple at $ zipWith go [0 ..] tupvs)
+              where
+                go i v = if idxi == i then val else v
             SLV_DLVar tupdv@(DLVar _ _ (T_Tuple tuptys) _) -> do
               let mkdv i t = do
                     let de = DLE_TupleRef at (DLA_Var tupdv) i
@@ -926,15 +926,15 @@ evalPrim ctxt at sco st p sargs =
                     (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
                     return $ (lifts, [SLV_DLVar dv])
               let go i t = if idxi == i then return (mempty, [val]) else mkdv i t
-              (lifts, tupvs) <- mconcatMap (uncurry go) $ zip [0..] tuptys
+              (lifts, tupvs) <- mconcatMap (uncurry go) $ zip [0 ..] tuptys
               return $ check_idxi tupvs $ SLRes lifts st $ (lvl, SLV_Tuple at tupvs)
             _ -> illegal_args
           where
             check_idxi l r =
               if idxi < fromIntegral len then r else expect_throw at $ Err_Eval_RefOutOfBounds len idxi
-              where len = length l
+              where
+                len = length l
         _ -> illegal_args
-
     SLPrim_Object ->
       case map snd sargs of
         [(SLV_Object _ objm)] ->
@@ -1159,11 +1159,26 @@ evalPropertyPair ctxt at sco st fenv p =
     JSObjectSpread a se -> do
       let at' = srcloc_jsa "...obj" a at
       SLRes slifts st_se (slvl, sv) <- evalExpr ctxt at' sco st se
+      let mkRes lifts env = return $ SLRes lifts st_se $ (slvl, env_merge_ AllowShadowing at' fenv env)
       keepLifts slifts $
         case sv of
-          --- XXX Support DLVar here
-          SLV_Object _ senv ->
-            return $ SLRes mempty st_se $ (slvl, env_merge_ AllowShadowing at' fenv senv)
+          SLV_Object _ senv -> mkRes mempty senv
+          SLV_DLVar dlv@(DLVar _at _s objTy _i) -> case objTy of
+            T_Obj tenv -> do
+              -- mconcat over SLEnvs is safe here b/c each is a singleton w/ unique key
+              (lifts, env) <- mconcatMap (uncurry mkOneEnv) $ M.toList tenv
+              mkRes lifts env
+              where
+                mkOneEnv k v = do
+                  (lifts, vv) <- mkOneVar k v
+                  return (lifts, M.singleton k $ toSLSVal vv)
+                mkOneVar k t = do
+                  let de = DLE_ObjectRef at (DLA_Var dlv) k
+                  let mdv = DLVar at (ctxt_local_name ctxt "obj_ref") t
+                  (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
+                  return $ (lifts, dv)
+                toSLSVal v = (slvl, SLV_DLVar v)
+            _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
           _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
     JSObjectMethod {} ->
       --- XXX why not?
@@ -1406,6 +1421,14 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
       let kvs = zipEq at' Err_Decl_WrongArrayLength ks $ map (\x -> (lvl, x)) vs
       return $ (vs_lifts, foldl' (env_insertp at') lhs_env kvs)
 
+-- | const {x, y, ...obj} = ...;
+-- Checks that:
+-- *
+-- Returns a tuple of:
+-- * boundIdents
+-- * mkEnv, a function which
+--   * accepts an SLSVal (the RHS of the decl)
+--   * returns the DLStmts and SLEnv produced by this assignment
 evalDeclLHSObject :: SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> JSObjectPropertyList -> ([String], SLSVal -> ST s (DLStmts, SLEnv))
 evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
   where

@@ -24,20 +24,18 @@ export const main = Reach.App(
     // const obj1_x1 = obj1["x"];
     // assert(obj1_x1 == 1);
 
-    // TODO: allow dynamic obj splice
     // object splice, keys can be added
-    // const obj2 = {...obj0, y: "yval"};
-    // require(obj2.x == 1);
-    // require(obj2.y === "yval");
+    const obj2 = {...obj0, y: 99};
+    require(obj2.x == 1);
+    require(obj2.y == 99);
 
     // object field shorthand
     const obj3 = {x};
     require(obj3.x == 1);
 
-    // TODO: object splice + keys can be overridden
-    // "Invalid name shadowing. Cannot be rebound: x"
-    // const obj5 = {...obj3, x: 2};
-    // assert(obj5.x == 2);
+    // object splice + keys can be overridden
+    const obj5 = {...obj3, x: 2};
+    assert(obj5.x == 2);
 
     // TODO: structural object equality comparison
     // "Err_Type_Mismatch" (int vs obj)

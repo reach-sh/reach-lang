@@ -6,7 +6,7 @@ export const main = Reach.App(
     // that is allowed to be bound multiple times
 
     // Ignore parts of an array
-    const [_, x, _] = [1, 2, 3];
+    // const [_, x, _] = [1, 2, 3];
 
     // Ignore arguments
     const f = (_, _, z) => { return z; };
