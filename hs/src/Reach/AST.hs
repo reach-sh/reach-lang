@@ -292,6 +292,7 @@ data SLPrimitive
   | SLPrim_array
   | SLPrim_array_set
   | SLPrim_Tuple
+  | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_App_Delay SrcLoc SLEnv [SLSVal] JSBlock SLEnv SLEnv
   | SLPrim_op PrimOp

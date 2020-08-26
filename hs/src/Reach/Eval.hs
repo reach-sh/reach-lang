@@ -6,7 +6,9 @@ import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
 import Data.List (intercalate, sortBy)
+import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
+import Data.Monoid
 import Data.Ord (comparing)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
@@ -402,6 +404,7 @@ base_env =
     , ("array", SLV_Prim SLPrim_array)
     , ("array_set", SLV_Prim SLPrim_array_set)
     , ("Tuple", SLV_Prim SLPrim_Tuple)
+    , ("tuple_set", SLV_Prim SLPrim_tuple_set)
     , ("Object", SLV_Prim SLPrim_Object)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
@@ -817,7 +820,7 @@ evalPrimOp ctxt at _sco st p sargs =
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "prim") rng) (DLE_PrimOp at p dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
 
-evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
+evalPrim :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
 evalPrim ctxt at sco st p sargs =
   case p of
     SLPrim_op op ->
@@ -917,6 +920,53 @@ evalPrim ctxt at sco st p sargs =
       retV $ (lvl, SLV_Type $ T_Tuple $ map expect_ty $ map snd sargs)
       where
         lvl = mconcat $ map fst sargs
+
+    -- XXX: tuple_set is still broken and can't actually be used
+    SLPrim_tuple_set ->
+      -- TODO: more static computation, when possible
+      case sargs of
+        [(lvlTup, tup), (lvlIdx, idx), (lvlVal, val)] ->
+          case (typeOf at tup, typeOf at idx, typeOf at val) of
+            -- TODO: ensure that valTy == argTys[idx]
+            (((T_Tuple argTys), dlaTup), (T_UInt256, dlIdx), (_valTy, dlaVal)) -> getTup'
+              where
+                getTup' :: ST s (SLRes SLSVal)
+                getTup' = do
+                  slvals <- getSlvals
+                  let allLifts = mconcatMap (\(SLRes ls _ _) -> ls) slvals
+                  let lastSt = case getLast (mconcatMap (\(SLRes _ stLast _) -> Last (Just stLast)) slvals) of
+                        Nothing -> st -- wat
+                        Just lst -> lst
+                  let allLvl = mconcatMap (\(SLRes _ _ c) -> fst c) slvals
+                  let allVals = map (\(SLRes _ _ c) -> snd c) slvals
+                  return $ SLRes allLifts lastSt (allLvl, SLV_Tuple at allVals)
+                getSlvals :: ST s [SLRes SLSVal]
+                getSlvals = mapM (uncurry appIdxVal) $ zip [0 ..] argTys
+                appIdxVal :: Int -> SLType -> ST s (SLRes SLSVal)
+                appIdxVal i tyIte = do
+                  (ite, iteLifts) <- getIte
+                  return $ SLRes iteLifts st (lvl, SLV_DLVar ite)
+                  where
+                    -- idx == i ? val : dlTup[idx]
+                    getIte :: ST s (DLVar, DLStmts)
+                    getIte = do
+                      (b, bStmts) <- getB
+                      (tt, ttStmts) <- getTT
+                      (ff, ffStmts) <- getFF
+                      (ite, iteStmts) <- retTupDV "ite" tyIte $ DLE_PrimOp at IF_THEN_ELSE [b, tt, ff]
+                      return (ite, bStmts <> ttStmts <> ffStmts <> iteStmts)
+                    getB :: ST s (DLArg, DLStmts) = do
+                      (peq, peqStmts) <- retTupDV "peq" T_Bool $ DLE_PrimOp at PEQ [dlIdx, DLA_Con $ DLC_Int $ toInteger i]
+                      return (DLA_Var peq, peqStmts)
+                    getTT :: ST s (DLArg, DLStmts) = return (dlaVal, mempty)
+                    getFF :: ST s (DLArg, DLStmts) = do
+                      (ff, ffStmts) <- retTupDV "ff" tyIte $ DLE_TupleRef at dlaTup $ toInteger i
+                      return (DLA_Var ff, ffStmts)
+                    retTupDV :: String -> SLType -> DLExpr -> (ST s (DLVar, DLStmts))
+                    retTupDV s tzz de = ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt s) tzz) de
+                lvl = lvlTup <> lvlIdx <> lvlVal
+            _ -> illegal_args
+        _ -> illegal_args
     SLPrim_Object ->
       case sargs of
         [(lvl, SLV_Object _ objm)] ->
