@@ -10,19 +10,51 @@
 
 (declare-sort Bytes 0)
 (declare-fun bytes0 () Bytes)
+
 (declare-fun bytes (Int) Bytes)
+;; (assert
+;;  (forall ((x Int) (y Int))
+;;          (=> (not (= x y))
+;;              (not (= (bytes x) (bytes y))))))
+
 (define-fun Bytes_toBytes ((b Bytes)) Bytes
   b)
+
 (declare-fun bytesAppend (Bytes Bytes) Bytes)
+;; (assert
+;;  (forall ((b Bytes))
+;;          (= b (bytesAppend bytes0 b))))
+;; (assert
+;;  (forall ((b Bytes))
+;;          (= b (bytesAppend b bytes0))))
+;; (assert
+;;  (forall ((x Bytes) (y Bytes) (z Bytes))
+;;          (= (bytesAppend x (bytesAppend y z))
+;;             (bytesAppend (bytesAppend x y) z))))
+
 (declare-fun digest (Bytes) UInt256)
 
 (declare-sort Null 0)
 (declare-fun null () Null)
-(declare-fun Null_toBytes (Null) Bytes)
+(define-fun Null_toBytes ((n Null)) Bytes
+  bytes0)
 
 (declare-fun Bool_toBytes (Bool) Bytes)
+;; (assert
+;;  (forall ((x Bool) (y Bool))
+;;          (=> (not (= x y))
+;;              (not (= (Bool_toBytes x) (Bool_toBytes y))))))
 
 (declare-fun UInt256_toBytes (UInt256) Bytes)
+;; (assert
+;;  (forall ((x UInt256) (y UInt256))
+;;          (=> (not (= x y))
+;;              (not (= (UInt256_toBytes x) (UInt256_toBytes y))))))
 
 (declare-sort Address 0)
+
 (declare-fun Address_toBytes (Address) Bytes)
+;; (assert
+;;  (forall ((x Address) (y Address))
+;;          (=> (not (= x y))
+;;              (not (= (Address_toBytes x) (Address_toBytes y))))))

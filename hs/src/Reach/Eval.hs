@@ -801,18 +801,30 @@ evalPrimOp ctxt at _sco st p sargs =
     ADD -> nn2n (+)
     SUB -> nn2n (-)
     MUL -> nn2n (*)
+    DIV -> nn2n (div)
+    MOD -> nn2n (mod)
+    PLT -> nn2b (<)
+    PLE -> nn2b (<=)
+    PEQ -> nn2b (==)
+    PGE -> nn2b (>=)
+    PGT -> nn2b (>)
+    IF_THEN_ELSE ->
+      case args of
+        [SLV_Bool _ b, t, f] -> static $ if b then t else f
+        _ -> make_var
+    BYTES_EQ ->
+      case args of
+        [SLV_Bytes _ x, SLV_Bytes _ y] ->
+          static $ SLV_Bool at $ x == y
+        _ -> make_var
+    BALANCE -> make_var
+    TXN_VALUE -> make_var
     -- FIXME fromIntegral may overflow the Int
     LSH -> nn2n (\a b -> shift a (fromIntegral b))
     RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
     BAND -> nn2n (.&.)
     BIOR -> nn2n (.|.)
     BXOR -> nn2n (xor)
-    PLT -> nn2b (<)
-    PLE -> nn2b (<=)
-    PEQ -> nn2b (==)
-    PGE -> nn2b (>=)
-    PGT -> nn2b (>)
-    _ -> make_var
   where
     args = map snd sargs
     lvl = mconcat $ map fst sargs

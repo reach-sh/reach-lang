@@ -708,6 +708,22 @@ smt_s ctxt s =
               zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at msg_dv (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
           pathAddBound_v ctxt Nothing at (smtBalance cbi') T_UInt256 O_ToConsensus (uint256_add (smtBalanceRef cbi) (smtTxnValueRef tv'))
 
+_smt_declare_toBytes :: Solver -> String -> IO ()
+_smt_declare_toBytes smt n = do
+  let an = Atom n
+  let ntb = n ++ "_toBytes"
+  void $ SMT.declareFun smt ntb [an] (Atom "Bytes")
+  --- XXX The injective assertions cause Z3 to go off the rails
+  {- Assert that _toBytes is injective
+  let x = Atom "x"
+  let y = Atom "y"
+  let xb = smtApply ntb [ x ]
+  let yb = smtApply ntb [ y ]
+  void $ SMT.assert smt $ smtApply "forall" [ List [ List [ x, an ], List [ y, an ] ]
+                                            , smtApply "=>" [ smtNot (smtEq x y)
+                                                            , smtNot (smtEq xb yb) ] ]
+  -}
+
 _smtDefineTypes :: Solver -> S.Set SLType -> IO SMTTypeMap
 _smtDefineTypes smt ts = do
   tnr <- newIORef (0 :: Int)
@@ -748,7 +764,7 @@ _smtDefineTypes smt ts = do
             let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]
             let cons_defn = foldl' defn1 (Atom z) $ zip idxses cons_vars
             void $ SMT.defineFun smt (n ++ "_cons") cons_params (Atom n) cons_defn
-            void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
+            _smt_declare_toBytes smt n
             let inv se = do
                   let invarg ise = tinv $ smtApply "select" [se, ise]
                   mapM_ invarg idxses
@@ -760,7 +776,7 @@ _smtDefineTypes smt ts = do
             let mkarg (arg_tn, _) argn = (argn, Atom arg_tn)
             let args = zipWith mkarg ts_nis argns
             SMT.declareDatatype smt n [] [(n ++ "_cons", args)]
-            void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
+            _smt_declare_toBytes smt n
             let inv se = do
                   let invarg (_, arg_inv) argn = arg_inv $ smtApply argn [se]
                   zipWithM_ invarg ts_nis argns
@@ -777,7 +793,7 @@ _smtDefineTypes smt ts = do
             let mkarg (argn, (at, inv)) = ((argn, Atom at), inv)
             let args = map mkarg ts_nis
             SMT.declareDatatype smt n [] [(n ++ "_cons", map fst args)]
-            void $ SMT.declareFun smt (n ++ "_toBytes") [Atom n] (Atom "Bytes")
+            _smt_declare_toBytes smt n
             let inv se = do
                   let invarg ((argn, _), arg_inv) = arg_inv $ smtApply argn [se]
                   mapM_ invarg args
