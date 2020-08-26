@@ -1,10 +1,16 @@
 'reach 0.1';
 
+export function not (x) {
+  return (x ? false : true); }
+export const bool_eq = (x, y) => (x ? y : !y);
+
 // Polymorphic eq made from builtins
 export const poly_eq = (x, y) => {
   const ty_x = typeOf(x);
   // TODO: add structural equality for arrays and objects
-  if (type_eq(ty_x, Bytes)) {
+  if (type_eq(ty_x, Bool)) {
+    return bool_eq(x, y);
+  } else if (type_eq(ty_x, Bytes)) {
     return bytes_eq(x, y);
   } else if (is_type(x)) {
     return type_eq(x, y);
@@ -16,8 +22,6 @@ export const poly_eq = (x, y) => {
 // Operator abbreviation expansions
 export function minus (x) {
   return 0 - x; }
-export function not (x) {
-  return (x ? false : true); }
 export function neq (x, y) {
   return not(x == y); }
 export function bytes_neq (x, y) {

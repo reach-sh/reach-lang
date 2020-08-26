@@ -8,7 +8,6 @@ import Data.Foldable
 import Data.List (intercalate, sortBy)
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
-import Data.Monoid
 import Data.Ord (comparing)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
@@ -830,26 +829,25 @@ evalPrim ctxt at sco st p sargs =
         [(SLV_Tuple _ dom_arr), (SLV_Type rng)] ->
           retV $ (lvl, SLV_Type $ T_Fun dom rng)
           where
-            lvl = mconcat $ map fst sargs
             dom = map expect_ty dom_arr
         _ -> illegal_args
     SLPrim_is_type ->
-      case sargs of
-        [(lvl, SLV_Type _)] ->
+      case map snd sargs of
+        [SLV_Type _] ->
           retV $ (lvl, SLV_Bool at True)
-        [(lvl, _)] ->
+        [_] ->
           retV $ (lvl, SLV_Bool at False)
         _ -> illegal_args
     SLPrim_type_eq ->
-      case sargs of
-        [(lvl1, SLV_Type ty1), (lvl2, SLV_Type ty2)] ->
-          retV $ lvlMeet lvl1 (lvl2, SLV_Bool at (ty1 == ty2))
+      case map snd sargs of
+        [(SLV_Type ty1), (SLV_Type ty2)] ->
+          retV $ (lvl, SLV_Bool at (ty1 == ty2))
         _ -> illegal_args
     SLPrim_typeOf ->
-      case sargs of
-        [(lvl, (SLV_Type ty))] ->
+      case map snd sargs of
+        [(SLV_Type ty)] ->
           retV $ (lvl, SLV_Type (T_Type ty))
-        [(lvl, val)] -> retV $ (lvl, SLV_Type ty)
+        [val] -> retV $ (lvl, SLV_Type ty)
           where
             (ty, _) = typeOf at val
         _ -> illegal_args
@@ -858,8 +856,6 @@ evalPrim ctxt at sco st p sargs =
         [(SLV_Type ty), (SLV_Int _ sz)] ->
           retV $ (lvl, SLV_Type $ T_Array ty sz)
         _ -> illegal_args
-      where
-        lvl = mconcat $ map fst sargs
     --- FIXME add make_array(size, val) -> [ val x size ]
     SLPrim_array ->
       case map snd sargs of
@@ -873,8 +869,6 @@ evalPrim ctxt at sco st p sargs =
             --- FIXME we could support turning a DL Tuple into an array.
             _ -> illegal_args
         _ -> illegal_args
-      where
-        lvl = mconcat $ map fst sargs
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] ->
@@ -912,70 +906,46 @@ evalPrim ctxt at sco st p sargs =
             _ -> illegal_args
         _ -> illegal_args
       where
-        lvl = mconcat $ map fst sargs
         retArrDV t de = do
           (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "array_set") t) de
           return $ SLRes lifts' st (lvl, SLV_DLVar dv)
     SLPrim_Tuple ->
       retV $ (lvl, SLV_Type $ T_Tuple $ map expect_ty $ map snd sargs)
-      where
-        lvl = mconcat $ map fst sargs
 
-    -- XXX: tuple_set is still broken and can't actually be used
     SLPrim_tuple_set ->
-      -- TODO: more static computation, when possible
-      case sargs of
-        [(lvlTup, tup), (lvlIdx, idx), (lvlVal, val)] ->
-          case (typeOf at tup, typeOf at idx, typeOf at val) of
-            -- TODO: ensure that valTy == argTys[idx]
-            (((T_Tuple argTys), dlaTup), (T_UInt256, dlIdx), (_valTy, dlaVal)) -> getTup'
-              where
-                getTup' :: ST s (SLRes SLSVal)
-                getTup' = do
-                  slvals <- getSlvals
-                  let allLifts = mconcatMap (\(SLRes ls _ _) -> ls) slvals
-                  let lastSt = case getLast (mconcatMap (\(SLRes _ stLast _) -> Last (Just stLast)) slvals) of
-                        Nothing -> st -- wat
-                        Just lst -> lst
-                  let allLvl = mconcatMap (\(SLRes _ _ c) -> fst c) slvals
-                  let allVals = map (\(SLRes _ _ c) -> snd c) slvals
-                  return $ SLRes allLifts lastSt (allLvl, SLV_Tuple at allVals)
-                getSlvals :: ST s [SLRes SLSVal]
-                getSlvals = mapM (uncurry appIdxVal) $ zip [0 ..] argTys
-                appIdxVal :: Int -> SLType -> ST s (SLRes SLSVal)
-                appIdxVal i tyIte = do
-                  (ite, iteLifts) <- getIte
-                  return $ SLRes iteLifts st (lvl, SLV_DLVar ite)
-                  where
-                    -- idx == i ? val : dlTup[idx]
-                    getIte :: ST s (DLVar, DLStmts)
-                    getIte = do
-                      (b, bStmts) <- getB
-                      (tt, ttStmts) <- getTT
-                      (ff, ffStmts) <- getFF
-                      (ite, iteStmts) <- retTupDV "ite" tyIte $ DLE_PrimOp at IF_THEN_ELSE [b, tt, ff]
-                      return (ite, bStmts <> ttStmts <> ffStmts <> iteStmts)
-                    getB :: ST s (DLArg, DLStmts) = do
-                      (peq, peqStmts) <- retTupDV "peq" T_Bool $ DLE_PrimOp at PEQ [dlIdx, DLA_Con $ DLC_Int $ toInteger i]
-                      return (DLA_Var peq, peqStmts)
-                    getTT :: ST s (DLArg, DLStmts) = return (dlaVal, mempty)
-                    getFF :: ST s (DLArg, DLStmts) = do
-                      (ff, ffStmts) <- retTupDV "ff" tyIte $ DLE_TupleRef at dlaTup $ toInteger i
-                      return (DLA_Var ff, ffStmts)
-                    retTupDV :: String -> SLType -> DLExpr -> (ST s (DLVar, DLStmts))
-                    retTupDV s tzz de = ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt s) tzz) de
-                lvl = lvlTup <> lvlIdx <> lvlVal
+      case map snd sargs of
+        [tup, (SLV_Int _ idxi), val] ->
+          case tup of
+            SLV_Tuple _ tupvs ->
+              retV $ check_idxi tupvs $ (lvl, SLV_Tuple at $ zipWith go [0..] tupvs)
+              where go i v = if idxi == i then val else v
+            SLV_DLVar tupdv@(DLVar _ _ (T_Tuple tuptys) _) -> do
+              let mkdv i t = do
+                    let de = DLE_TupleRef at (DLA_Var tupdv) i
+                    let mdv = DLVar at (ctxt_local_name ctxt "tuple_set") t
+                    (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
+                    return $ (lifts, [SLV_DLVar dv])
+              let go i t = if idxi == i then return (mempty, [val]) else mkdv i t
+              (lifts, tupvs) <- mconcatMap (uncurry go) $ zip [0..] tuptys
+              return $ check_idxi tupvs $ SLRes lifts st $ (lvl, SLV_Tuple at tupvs)
             _ -> illegal_args
+          where
+            check_idxi l r =
+              case fromIntegerMay idxi >>= atMay l of
+                Nothing ->
+                  expect_throw at $ Err_Eval_RefOutOfBounds (length l) idxi
+                Just _ -> r
         _ -> illegal_args
+
     SLPrim_Object ->
-      case sargs of
-        [(lvl, SLV_Object _ objm)] ->
+      case map snd sargs of
+        [(SLV_Object _ objm)] ->
           retV $ (lvl, SLV_Type $ T_Obj $ M.map (expect_ty . snd) objm)
         _ -> illegal_args
     SLPrim_makeEnum ->
-      case sargs of
-        [(ilvl, SLV_Int _ i)] ->
-          retV $ (ilvl, SLV_Tuple at' (enum_pred : map (SLV_Int at') [0 .. (i -1)]))
+      case map snd sargs of
+        [(SLV_Int _ i)] ->
+          retV $ (lvl, SLV_Tuple at' (enum_pred : map (SLV_Int at') [0 .. (i -1)]))
           where
             at' = (srcloc_at "makeEnum" Nothing at)
             --- FIXME This sucks... maybe parse an embed string? Would that suck less?... probably want a custom primitive
@@ -997,8 +967,8 @@ evalPrim ctxt at sco st p sargs =
         cm ->
           expect_throw at (Err_Eval_IllegalMode cm "interact")
     SLPrim_declassify ->
-      case sargs of
-        [(lvl, val)] ->
+      case map snd sargs of
+        [val] ->
           case lvl of
             Secret -> retV $ public $ val
             Public -> expect_throw at $ Err_ExpectedPrivate val
@@ -1010,7 +980,6 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_committed -> illegal_args
     SLPrim_digest -> do
       let rng = T_UInt256
-      let lvl = mconcat $ map fst sargs
       let dargs = map snd $ map ((typeOf at) . snd) sargs
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "digest") rng) (DLE_Digest at dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
@@ -1065,17 +1034,18 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_exitted -> illegal_args
     SLPrim_forall {} ->
       case sargs of
-        [(lvl, one)] -> do
+        [(olvl, one)] -> do
           let t = expect_ty one
           (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "forall") t) (DLE_Impossible at $ "cannot inspect value from forall")
-          return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
-        [one, (lvl, two)] -> do
+          return $ SLRes lifts st $ (olvl, SLV_DLVar dv)
+        [one, (tlvl, two)] -> do
           SLRes elifts st_e one' <- evalPrim ctxt at sco st SLPrim_forall [one]
           SLRes alifts st_a (SLAppRes _ ans) <-
             evalApplyVals ctxt at sco st_e two [one']
-          return $ SLRes (elifts <> alifts) st_a $ lvlMeet lvl ans
+          return $ SLRes (elifts <> alifts) st_a $ lvlMeet tlvl ans
         _ -> illegal_args
   where
+    lvl = mconcatMap fst sargs
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)
     retV v = return $ SLRes mempty st v
     rator = SLV_Prim p
