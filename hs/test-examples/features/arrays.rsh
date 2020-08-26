@@ -15,6 +15,6 @@ export const main = Reach.App(
       const xs4 = declassify(tuple_set(_xs3, 1, 1)); });
     A.publish(xs4);
     commit();
-    
+
   }
 );

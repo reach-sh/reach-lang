@@ -641,6 +641,22 @@ All @tech{standard library} @tech{bound identifier}s and @tech{operators} are do
 
 @(hrule)
 @reach{
+ tuple_set(tup, idx, val);
+}
+
+@index{tuple_set} Returns a new tuple identical to @reachin{tup},
+except that index @reachin{idx} is replaced with @reachin{val}.
+
+@(hrule)
+@reach{
+ object_set(obj, fld, val);
+}
+
+@index{object_set} Returns a new object identical to @reachin{obj},
+except that field @reachin{fld} is replaced with @reachin{val}.
+
+@(hrule)
+@reach{
   const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3); }
 
 An @deftech{enumeration} (or @deftech{enum}, for short),
@@ -784,7 +800,8 @@ Note that while @reachin{&&} and @reachin{||} may not evaluate their second argu
 their corresponding named functions @reachin{and} and @reachin{or}, always do.
 
 @reach{
- poly_eq(a, b)  // eq on Bytes, types, or UInt256
+ poly_eq(a, b)  // eq on Bool, Bytes, types, or UInt256
+ bool_eq(a, b)  // eq on Bool
  bytes_eq(a, b) // eq on Bytes
  type_eq(a, b)  // eq on types
  int_eq(a, b)   // eq on UInt256
@@ -812,3 +829,4 @@ while the regular conditional expression only evaluates one branch.
 The @reachin{typeOf} primitive function is the same as @reachin{typeof}:
 it returns the type of its argument.
 The @reachin{is_type} function returns @reachin{true} if its argument is a type.
+Any expression satisfying @reachin{is_type} is compiled away and does not exist at runtime.
