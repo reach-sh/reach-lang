@@ -931,10 +931,8 @@ evalPrim ctxt at sco st p sargs =
             _ -> illegal_args
           where
             check_idxi l r =
-              case fromIntegerMay idxi >>= atMay l of
-                Nothing ->
-                  expect_throw at $ Err_Eval_RefOutOfBounds (length l) idxi
-                Just _ -> r
+              if idxi < fromIntegral len then r else expect_throw at $ Err_Eval_RefOutOfBounds len idxi
+              where len = length l
         _ -> illegal_args
 
     SLPrim_Object ->
