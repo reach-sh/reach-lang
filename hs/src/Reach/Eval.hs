@@ -2,6 +2,7 @@ module Reach.Eval (EvalError, compileBundle) where
 
 import Control.Monad
 import Control.Monad.ST
+import Control.Monad.Writer
 import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
@@ -1427,18 +1428,19 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
       return $ (vs_lifts, foldl' (env_insertp at') lhs_env kvs)
 
 -- | const {x, y, ...obj} = ...;
--- Checks that:
--- *
+--
 -- Returns a tuple of:
--- * boundIdents
+-- * boundIdents (e.g. ["x", "y", "obj"])
 -- * mkEnv, a function which
 --   * accepts an SLSVal (the RHS of the decl)
+--   * checks that RHS is an object that has the specified keys
 --   * returns the DLStmts and SLEnv produced by this assignment
 evalDeclLHSObject :: SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> JSObjectPropertyList -> ([String], SLSVal -> ST s (DLStmts, SLEnv))
 evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
   where
     ks' = ks <> maybe [] (\a -> [a]) kSpreadMay
     (ks, kSpreadMay) = parseIdentsAndSpread $ jso_flatten props
+    ksSet = S.fromList ks
     parseIdentsAndSpread = \case
       [] -> ([], Nothing)
       [(JSObjectSpread a e0)] ->
@@ -1455,12 +1457,14 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
           x0 = jso_expect_id at' e0
     makeEnv (lvl, val) = case val of
       SLV_DLVar dv@(DLVar _ _ (T_Obj tenv) _) -> do
-        let mk_ref k = do
+        let mk_ref_ k = do
               let e = (DLE_ObjectRef at' (DLA_Var dv) k)
               let t = case M.lookup k tenv of
                     Nothing -> expect_throw at' $ Err_Dot_InvalidField val (M.keys tenv) k
                     Just x -> x
-              (dvi, i_lifts) <- ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt "object ref") t) e
+              ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt "object ref") t) e
+        let mk_ref k = do
+              (dvi, i_lifts) <- mk_ref_ k
               return $ (i_lifts, (k, SLV_DLVar dvi))
         ks_liftsl_and_dvs <- mapM mk_ref ks
         let (ks_liftsl, ks_dvs) = unzip ks_liftsl_and_dvs
@@ -1468,12 +1472,18 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
         (spread_lifts, spread_dvs) <-
           case kSpreadMay of
             Nothing -> return $ (mempty, mempty)
-            Just _spreadName ->
-              --- XXX This has to make a bunch of new DLVars for each
-              --- field left out of ks, then assemble a new object
-              --- that has all those. The object should be bound to a
-              --- DLVar bound to a DLE_Arg using ctxt_lift_arg
-              error "XXX"
+            Just spreadName -> do
+              let mkDlArg k _t = WriterT $ do
+                    (dvi, i_lifts) <- mk_ref_ k
+                    pure $ (DLA_Var dvi, i_lifts)
+              let tenvWithoutKs = M.withoutKeys tenv ksSet
+              (objDlEnv, objDlEnvLifts) <-
+                runWriterT (M.traverseWithKey mkDlArg tenvWithoutKs)
+              let de = DLE_Arg at' $ DLA_Obj objDlEnv
+              let spreadTy = T_Obj $ tenvWithoutKs
+              let mdv = DLVar at' (ctxt_local_name ctxt "obj") spreadTy
+              (dlv, lifts) <- ctxt_lift_expr ctxt at mdv de
+              return (objDlEnvLifts <> lifts, [(spreadName, SLV_DLVar dlv)])
         let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (lvl, v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
         return (ks_lifts <> spread_lifts, lhs_env'')
       SLV_Object _ env -> return $ (mempty, lhs_env'')
@@ -1483,7 +1493,6 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
             Nothing -> envWithKs
           envWithKs = foldl' (\lhs_env' k -> env_insert at' k (env_lookup at' k env) lhs_env') lhs_env ks
           envWithoutKs = M.withoutKeys env ksSet
-          ksSet = S.fromList ks
           spreadObj = SLV_Object at' envWithoutKs
       _ -> expect_throw at' (Err_Decl_NotObject val)
 

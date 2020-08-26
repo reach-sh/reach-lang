@@ -37,6 +37,11 @@ export const main = Reach.App(
     const obj5 = {...obj3, x: 2};
     assert(obj5.x == 2);
 
+    // object splice binding
+    const {y, ...obj6} = obj2;
+    assert(y == 99);
+    require(obj6.x == 1);
+
     // TODO: structural object equality comparison
     // "Err_Type_Mismatch" (int vs obj)
     // assert(obj0 == obj1);
