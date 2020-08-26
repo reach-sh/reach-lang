@@ -819,7 +819,7 @@ evalPrimOp ctxt at _sco st p sargs =
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "prim") rng) (DLE_PrimOp at p dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
 
-evalPrim :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
+evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
 evalPrim ctxt at sco st p sargs =
   case p of
     SLPrim_op op ->
