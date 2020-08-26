@@ -49,7 +49,7 @@ export const main = Reach.App(
 
     // object splice binding
     const {y, ...obj7} = obj4;
-    assert(y == "yval");
+    assert(y == 'yval');
     assert(obj7.x == 1);
 
     // TODO: structural object equality comparison

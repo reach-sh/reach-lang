@@ -8,11 +8,5 @@ export const main = Reach.App(
     });
     A.publish(x);
     require(bytes_eq(x, 'x'));
-    // Error: Operator == not compatible with types bytes calldata and literal_string "x"
-    // --> build/bytes_eq_consensus.main.sol:33:14:
-    //   |
-    //   33 |     require((_a.v2 == "x"));
-    //   |              ^^^^^^^^^^^^
-
   }
 );
