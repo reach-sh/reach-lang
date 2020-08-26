@@ -1166,6 +1166,7 @@ evalPropertyPair ctxt at sco st fenv p =
             return $ SLRes mempty st_se $ (slvl, env_merge_ AllowShadowing at' fenv senv)
           _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
     JSObjectMethod {} ->
+      --- XXX why not?
       expect_throw at (Err_Obj_IllegalMethodDefinition p)
 
 evalExpr :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> SLComp s SLSVal
