@@ -1159,29 +1159,23 @@ evalPropertyPair ctxt at sco st fenv p =
     JSObjectSpread a se -> do
       let at' = srcloc_jsa "...obj" a at
       SLRes slifts st_se (slvl, sv) <- evalExpr ctxt at' sco st se
-      let mkRes lifts env = return $ SLRes lifts st_se $ (slvl, env_merge_ AllowShadowing at' fenv env)
+      let mkRes lifts env =
+            return $ SLRes lifts st_se $ (slvl, env_merge_ AllowShadowing at' fenv env)
       keepLifts slifts $
         case sv of
           SLV_Object _ senv -> mkRes mempty senv
-          SLV_DLVar dlv@(DLVar _at _s objTy _i) -> case objTy of
-            T_Obj tenv -> do
-              -- mconcat over SLEnvs is safe here b/c each is a singleton w/ unique key
-              (lifts, env) <- mconcatMap (uncurry mkOneEnv) $ M.toList tenv
-              mkRes lifts env
-              where
-                mkOneEnv k v = do
-                  (lifts, vv) <- mkOneVar k v
-                  return (lifts, M.singleton k $ toSLSVal vv)
-                mkOneVar k t = do
+          SLV_DLVar dlv@(DLVar _at _s (T_Obj tenv) _i) -> do
+            let mkOneEnv k t = do
                   let de = DLE_ObjectRef at (DLA_Var dlv) k
                   let mdv = DLVar at (ctxt_local_name ctxt "obj_ref") t
                   (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
-                  return $ (lifts, dv)
-                toSLSVal v = (slvl, SLV_DLVar v)
-            _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
+                  return $ (lifts, M.singleton k $ (slvl, SLV_DLVar dv))
+            -- mconcat over SLEnvs is safe here b/c each is a singleton w/ unique key
+            (lifts, env) <- mconcatMap (uncurry mkOneEnv) $ M.toList tenv
+            mkRes lifts env
           _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
     JSObjectMethod {} ->
-      --- XXX why not?
+      --- FIXME support these
       expect_throw at (Err_Obj_IllegalMethodDefinition p)
 
 evalExpr :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> SLComp s SLSVal
