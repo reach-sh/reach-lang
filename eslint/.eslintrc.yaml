@@ -56,6 +56,9 @@ rules:
     - off
   no-unused-vars:
     - off
+  # Disabling this lets you use _ for multiple ignored args
+  no-redeclare:
+    - off
   # TODO: enable this once we fix anti-examples/partial_loop_var_updates.rsh
   no-self-assign:
     - off
