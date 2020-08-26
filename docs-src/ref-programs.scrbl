@@ -635,14 +635,15 @@ All @tech{standard library} @tech{bound identifier}s and @tech{operators} are do
 
 @(hrule)
 @reach{
-  array_set(arr, idx, val); }
+  array_set(arr, idx, val);
+  arr.set(idx, val); }
 
 @index{array_set} Returns a new array identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
 
 @(hrule)
 @reach{
  tuple_set(tup, idx, val);
-}
+ tup.set(idx, val); }
 
 @index{tuple_set} Returns a new tuple identical to @reachin{tup},
 except that index @reachin{idx} is replaced with @reachin{val}.
@@ -650,6 +651,7 @@ except that index @reachin{idx} is replaced with @reachin{val}.
 @(hrule)
 @reach{
  object_set(obj, fld, val);
+ { ...obj, [fld]: val };
 }
 
 @index{object_set} Returns a new object identical to @reachin{obj},

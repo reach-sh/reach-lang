@@ -301,6 +301,7 @@ data SLPrimitive
   | SLPrim_exit
   | SLPrim_exitted
   | SLPrim_forall
+  | SLPrim_PrimDelay SrcLoc SLPrimitive [SLSVal]
   deriving (Eq, Generic, Show)
 
 instance NFData SLPrimitive

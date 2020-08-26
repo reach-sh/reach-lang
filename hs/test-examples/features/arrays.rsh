@@ -7,7 +7,7 @@ export const main = Reach.App(
     const xs = [0, true, 2, 3];
     assert(xs[1] == true);
 
-    const xs2 = tuple_set(xs, 1, false);
+    const xs2 = xs.set(1, false);
     assert(xs2[1] == false);
 
     A.only(() => {

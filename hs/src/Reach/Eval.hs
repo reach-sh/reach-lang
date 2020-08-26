@@ -651,8 +651,8 @@ infectWithId v (lvl, sv) = (lvl, sv')
           SLV_Participant at who io (Just v) mdv
         _ -> sv
 
-evalDot :: SLCtxt s -> SrcLoc -> SLState -> SLVal -> String -> SLComp s SLSVal
-evalDot ctxt at st obj field =
+evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
+evalDot ctxt at _sco st obj field =
   case obj of
     SLV_Object _ env ->
       case M.lookup field env of
@@ -674,9 +674,18 @@ evalDot ctxt at st obj field =
         "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
         "timeout" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
         _ -> illegal_field ["publish", "pay", "timeout"]
+    SLV_Tuple {} ->
+      case field of
+        "set" -> delayCall SLPrim_tuple_set
+        _ -> illegal_field ["set"]
+    SLV_Array {} ->
+      case field of
+        "set" -> delayCall SLPrim_array_set
+        _ -> illegal_field ["set"]
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
+    delayCall p = retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)]
     retDLVar tm obj_dla slvl =
       case M.lookup field tm of
         Nothing -> illegal_field (M.keys tm)
@@ -1042,6 +1051,8 @@ evalPrim ctxt at sco st p sargs =
             evalApplyVals ctxt at sco st_e two [one']
           return $ SLRes (elifts <> alifts) st_a $ lvlMeet tlvl ans
         _ -> illegal_args
+    SLPrim_PrimDelay _at dp dargs ->
+      evalPrim ctxt at sco st dp $ dargs ++ sargs
   where
     lvl = mconcatMap fst sargs
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)
@@ -1315,7 +1326,7 @@ evalExpr ctxt at sco st e = do
       let at' = srcloc_jsa "dot" a at
       SLRes olifts obj_st (obj_lvl, objv) <- evalExpr ctxt at' sco st obj
       let fields = (jse_expect_id at') field
-      SLRes reflifts ref_st refsv <- evalDot ctxt at' obj_st objv fields
+      SLRes reflifts ref_st refsv <- evalDot ctxt at' sco obj_st objv fields
       return $ SLRes (olifts <> reflifts) ref_st $ lvlMeet obj_lvl $ refsv
     doRef arr a idxe = do
       let at' = srcloc_jsa "array ref" a at
