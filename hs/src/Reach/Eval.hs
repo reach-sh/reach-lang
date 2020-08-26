@@ -1143,6 +1143,7 @@ evalPropertyPair ctxt at sco st fenv p =
       SLRes slifts st_se (slvl, sv) <- evalExpr ctxt at' sco st se
       keepLifts slifts $
         case sv of
+          --- XXX Support DLVar here
           SLV_Object _ senv ->
             return $ SLRes mempty st_se $ (slvl, env_merge_ AllowShadowing at' fenv senv)
           _ -> expect_throw at (Err_Obj_SpreadNotObj sv)
