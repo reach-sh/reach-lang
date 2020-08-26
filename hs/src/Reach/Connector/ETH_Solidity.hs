@@ -64,6 +64,12 @@ solBinOp o l r = l <+> pretty o <+> r
 solEq :: Doc a -> Doc a -> Doc a
 solEq = solBinOp "=="
 
+solAnd :: Doc a -> Doc a -> Doc a
+solAnd = solBinOp "&&"
+
+solBytesLength :: Doc a -> Doc a
+solBytesLength x = "bytes(" <> x <> ").length"
+
 solSet :: Doc a -> Doc a -> Doc a
 solSet x y = solBinOp "=" x y <> semi
 
@@ -219,7 +225,11 @@ solPrimApply = \case
   IF_THEN_ELSE -> \case
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitSol: ITE wrong args"
-  BYTES_EQ -> binOp "=="
+  BYTES_EQ -> \case
+    [x, y] ->
+      solAnd (solEq (solBytesLength x) (solBytesLength y))
+             (solEq (solHash [x]) (solHash [y]))
+    _ -> impossible $ "emitSol: BYTES_EQ wrong args"
   BALANCE -> \_ -> "address(this).balance"
   TXN_VALUE -> \_ -> "msg.value"
   where
