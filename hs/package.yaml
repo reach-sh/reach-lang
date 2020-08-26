@@ -79,6 +79,7 @@ default-extensions:
 - NamedFieldPuns
 - NumericUnderscores
 - OverloadedStrings
+- PartialTypeSignatures
 - RankNTypes
 - RecordWildCards
 - ScopedTypeVariables

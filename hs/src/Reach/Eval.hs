@@ -1393,12 +1393,12 @@ evalExprs ctxt at sco st rands =
       return $ SLRes (lifts0 <> liftsN) stN (sval0 : svalN)
 
 evalDeclLHSArray
-  :: SrcLoc -> SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> [JSArrayElement] -> ([String], SLSVal -> ST s (DLStmts, SLEnv))
+  :: SrcLoc -> SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> [JSArrayElement] -> ([String], SLSVal -> WriterT DLStmts (ST s) SLEnv)
 evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
   where
     --- FIXME Support spreads in array literals
     ks = map (jse_expect_id at') $ jsa_flatten xs
-    makeEnv (lvl, v) = do
+    makeEnv (lvl, v) = WriterT $ do
       (vs_lifts, vs) <-
         case v of
           SLV_Tuple _ x -> return (mempty, x)
@@ -1425,7 +1425,7 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
           _ ->
             expect_throw at' (Err_Decl_NotRefable v)
       let kvs = zipEq at' Err_Decl_WrongArrayLength ks $ map (\x -> (lvl, x)) vs
-      return $ (vs_lifts, foldl' (env_insertp at') lhs_env kvs)
+      return $ (foldl' (env_insertp at') lhs_env kvs, vs_lifts)
 
 -- | const {x, y, ...obj} = ...;
 --
@@ -1435,7 +1435,7 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
 --   * accepts an SLSVal (the RHS of the decl)
 --   * checks that RHS is an object that has the specified keys
 --   * returns the DLStmts and SLEnv produced by this assignment
-evalDeclLHSObject :: SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> JSObjectPropertyList -> ([String], SLSVal -> ST s (DLStmts, SLEnv))
+evalDeclLHSObject :: SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> JSObjectPropertyList -> ([String], SLSVal -> WriterT DLStmts (ST s) SLEnv)
 evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
   where
     ks' = ks <> maybe [] (\a -> [a]) kSpreadMay
@@ -1455,7 +1455,7 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
         where
           (xNs, smN) = parseIdentsAndSpread eNs
           x0 = jso_expect_id at' e0
-    makeEnv (lvl, val) = case val of
+    makeEnv (lvl, val) = WriterT $ case val of
       SLV_DLVar dv@(DLVar _ _ (T_Obj tenv) _) -> do
         let mk_ref_ k = do
               let e = (DLE_ObjectRef at' (DLA_Var dv) k)
@@ -1465,9 +1465,9 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
               ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt "object ref") t) e
         let mk_ref k = do
               (dvi, i_lifts) <- mk_ref_ k
-              return $ (i_lifts, (k, SLV_DLVar dvi))
+              return $ ((k, SLV_DLVar dvi), i_lifts)
         ks_liftsl_and_dvs <- mapM mk_ref ks
-        let (ks_liftsl, ks_dvs) = unzip ks_liftsl_and_dvs
+        let (ks_dvs, ks_liftsl) = unzip ks_liftsl_and_dvs
         let ks_lifts = mconcat ks_liftsl
         (spread_lifts, spread_dvs) <-
           case kSpreadMay of
@@ -1485,8 +1485,8 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
               (dlv, lifts) <- ctxt_lift_expr ctxt at mdv de
               return (objDlEnvLifts <> lifts, [(spreadName, SLV_DLVar dlv)])
         let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (lvl, v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
-        return (ks_lifts <> spread_lifts, lhs_env'')
-      SLV_Object _ env -> return $ (mempty, lhs_env'')
+        return (lhs_env'', ks_lifts <> spread_lifts)
+      SLV_Object _ env -> return $ (lhs_env'', mempty)
         where
           lhs_env'' = case kSpreadMay of
             Just spreadName -> env_insert at spreadName (lvl, spreadObj) envWithKs
@@ -1505,7 +1505,7 @@ evalDecl ctxt at st lhs_env rhs_sco decl =
             case lhs of
               (JSIdentifier a x) -> ([x], _make_env)
                 where
-                  _make_env v = return (mempty, env_insert (srcloc_jsa "id" a at) x v lhs_env)
+                  _make_env v = return (env_insert (srcloc_jsa "id" a at) x v lhs_env)
               (JSArrayLiteral a xs _) ->
                 evalDeclLHSArray vat' at at' ctxt lhs_env xs
                 where
@@ -1518,7 +1518,7 @@ evalDecl ctxt at st lhs_env rhs_sco decl =
                 expect_throw at (Err_DeclLHS_IllegalJS lhs)
       let ctxt' = ctxt_local_name_set ctxt lhs_ns
       SLRes rhs_lifts rhs_st v <- evalExpr ctxt' vat' rhs_sco st rhs
-      (lhs_lifts, lhs_env') <- make_env v
+      (lhs_env', lhs_lifts) <- runWriterT $ make_env v
       return $ SLRes (rhs_lifts <> lhs_lifts) rhs_st lhs_env'
     _ ->
       expect_throw at (Err_Decl_IllegalJS decl)
