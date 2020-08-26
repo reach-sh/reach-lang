@@ -5,14 +5,13 @@ import Options.Applicative
 import Reach.CompilerTool
 import Reach.Report
 import Reach.Version
-import System.Directory
 import System.Environment
 import System.FilePath
 
 data CompilerToolArgs = CompilerToolArgs
   { cta_intermediateFiles :: Bool
   , cta_disableReporting :: Bool
-  , cta_outputDir :: FilePath
+  , cta_outputDir :: Maybe FilePath
   , cta_source :: FilePath
   , cta_tops :: [String]
   }
@@ -24,33 +23,34 @@ data CompilerToolEnv = CompilerToolEnv
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
 makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
   CompilerToolOpts
-    { cto_outputDir = cta_outputDir
+    { cto_outputDir = maybe defaultOutputDir id cta_outputDir
     , cto_source = cta_source
     , cto_tops = if null cta_tops then ["main"] else cta_tops
     , cto_intermediateFiles = cta_intermediateFiles
     }
+  where
+    defaultOutputDir = takeDirectory cta_source </> "build"
 
-compiler :: FilePath -> Parser CompilerToolArgs
-compiler cwd =
+compiler :: Parser CompilerToolArgs
+compiler =
   CompilerToolArgs
     <$> switch (long "intermediate-files")
     <*> switch (long "disable-reporting")
-    <*> strOption
-      (long "output"
-         <> short 'o'
-         <> metavar "DIR"
-         <> help "Directory for output files"
-         <> showDefault
-         <> value (cwd </> "build"))
+    <*> optional
+      (strOption
+         (long "output"
+            <> short 'o'
+            <> metavar "DIR"
+            <> help "Directory for output files"
+            <> showDefault))
     <*> strArgument ((metavar "SOURCE") <> value ("index.rsh"))
     <*> many (strArgument (metavar "EXPORTS..."))
 
 getCompilerArgs :: IO CompilerToolArgs
 getCompilerArgs = do
-  cwd <- getCurrentDirectory
   let opts =
         info
-          (compiler cwd <**> helper)
+          (compiler <**> helper)
           (fullDesc
              <> progDesc "verify and compile an Reach program"
              <> header ("reachc " <> versionStr <> " - Reach compiler"))
