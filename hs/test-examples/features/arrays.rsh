@@ -1,7 +1,5 @@
 'reach 0.1';
 
-// TODO: fix tuple_set and then move this to
-// hs/test-examples/features/arrays.rsh
 export const main = Reach.App(
   {}, [['A', {get: Fun([],Tuple(UInt256, Bool, UInt256))}]], (A) => {
     const xs = [0, true, 2, 3];
