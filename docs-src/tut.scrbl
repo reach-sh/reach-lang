@@ -127,6 +127,8 @@ This is now enough for Reach to compile and run our program. Let's try by runnin
 Reach should now build and launch a Docker container for this application.
 Since the application doesn't do anything, you'll just see a lot of diagnostic messages though, so that's not very exciting.
 
+@margin-note{The entire process that we just went through can be automated by running @cmd{./reach init} when you start your next project!}
+
 In @seclink["tut-2"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
 
 @section[#:tag "tut-2"]{Rock, Paper, and Scissors}
@@ -197,7 +199,7 @@ First, Alice's backend interacts with her frontend, gets her hand, and publishes
 
 @item{Line 13 also @tech{declassifies} the value, because in Reach, all information from @tech{frontends} is @tech{secret} until it is explicitly made public.}
 
-@item{Line 14 publishes the value to the @tech{consensus network}, so it can be used to evaluate the outcome of the game.
+@item{Line 14 has Alice @tech{join} the application by publishing the value to the @tech{consensus network}, so it can be used to evaluate the outcome of the game.
 Once this happens, the code is in a "@tech{consensus step}" where all participants act together.}
 
 @item{Line 15 commits the state of the @tech{consensus network} and returns to "@tech{local step}" where individual participants can act alone.}
@@ -212,7 +214,7 @@ The next step is similar, in that Bob publishes his hand; however, we don't imme
 
 @itemlist[
 
-@item{Lines 17 through 19 match Alice's similar @tech{local step} and @tech{consensus transfer}.}
+@item{Lines 17 through 19 match Alice's similar @tech{local step} and @tech{join}ing of the application through a @tech{consensus transfer} @tech{publication}.}
 
 @item{But, line 21 computes the outcome of the game before committing.
 (@reachin{(handA + (4 - handB)) % 3} is a clever equation to compute the winner of a game of @|RPS| using modular arithmetic.)}
@@ -793,7 +795,183 @@ We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch w
 
 @section[#:tag "tut-5"]{Timeouts and Participation}
 
-XXX
+In the last section, we removed a security vulnerability from @|RPS| that was a clear attack on the viability of the application.
+In this section, we'll focus on a more subtle issue that is important and unique to decentralized applications: @seclink["guide-timeout"]{non-participation}.
+
+Non-participation refers to the act of one party ceasing to continue playing their role in an application.
+
+In traditional client-server programs, like an Web server, this would be the case of a client stopping sending requests to the server, or the server stopping sending responses to the client.
+In these sorts of traditional programs, non-participation is an exceptional circumstances that normally leads to an error message for clients and, at most, a log entry for servers.
+Sometimes traditional programs will need to recycle resources, like network ports, on non-participation, but they would have also needed to do that if the transaction ended by normal means.
+In other words, for traditional client-server programs, it is not necessary for designers to meticulously consider the consequences of non-participation.
+
+In contrast, decentralized applications must be careful designed with an eye towards their behavior in the face of non-participation.
+For example, consider what happens in our @|RPS| game if after Alice has paid her wager, Bob never accepts and the application doesn't continue.
+In this case, Alice's @tech{network tokens} would be locked inside of the @tech{contract} and lost to her.
+Similarly, if after Bob accepted and paid his wager, Alice stopped participating and never submitted her hand, then both their funds would be locked away forever.
+In each of these cases, both parties would be greatly hurt and their fear of that outcome would introduce an additional cost to transacting, which would lower the value they got from participating in the application.
+Of course, in a situation like @|RPS| this is unlikely to be an important matter, but recall that @|RPS| is a microcosm of decentralized application design.
+
+@margin-note{Technically, in the first case, when Bob fails to start the application, Alice is not locked away from her funds: since Bob's identity is not fixed until after his first message, she could start the game as Bob and then she'd win all of the funds, less any transaction costs of the @tech{consensus network}.
+In the second case, however, there would be no recourse for either party.}
+
+In the rest of this section, we'll discuss how Reach helps address non-participation.
+For a longer discussion, refer to @seclink["guide-timeout"]{the guide chapter on non-participation}.
+
+@(hrule)
+
+In Reach, non-participation is handled through a "timeout" mechanism whereby each @tech{consensus transfer} can be paired with a @tech{step} that occurs for all @tech{participants} if the @tech{originator} of the @tech{consensus transfer} fails to make the required @tech{publication} before a particular @tech{time}.
+We'll integrate this mechanism into our version of @|RPS| and deliberately insert non-participation into our JavaScript testing program to watch the consequences play out.
+
+First, we'll modify the @tech{participant interact interface} to allow the @tech{frontend} to be informed that a timeout occurred.
+
+@reachex[#:show-lines? #t "tut-5/index.rsh"
+         #:link #t
+         'only 20 24 "// ..."]
+
+@itemlist[
+
+@item{Line 24 introduces a new method, @reachin{informTimeout}, that receives no arguments and returns no information.
+We'll call this function when a timeout occurs.}
+
+]
+
+We'll make a slight tweak to our JavaScript @tech{frontend} to be able to receive this message and display it on the console.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-5/index.mjs"
+         #:link #t
+         'only 18 26 "  // ..."]
+
+Back in the Reach program, we'll define an identifier at the top of our program to use a standard deadline throughout the program.
+
+@reachex[#:show-lines? #t "tut-5/index.rsh"
+         #:link #t
+         'only 32 33 "// ..."]
+
+Next, at the start of the Reach application, we'll define a helper function to inform each of the participants of the timeout by calling this new method.
+
+@reachex[#:show-lines? #t "tut-5/index.rsh"
+         #:link #t
+         'only 37 42 "    // ..."]
+
+@itemlist[
+
+@item{Line 38 defines the function as an @tech{arrow expression}.}
+
+@item{Line 39 has each of the participants perform a @tech{local step}.}
+
+@item{Line 40 has them call the new @reachin{informTimeout} method.}
+
+]
+
+We won't change Alice's first message, because there is no consequence to her non-participant: if she doesn't start the game, then no one is any worse off.
+
+@reachex[#:show-lines? #t "tut-5/index.rsh"
+         #:link #t
+         'only 46 47 "      // ..."]
+
+However, we will adjust Bob's first message, because if he fails to participate, then Alice's initial wager will be lost to her.
+
+@reachex[#:show-lines? #t "tut-5/index.rsh"
+         #:link #t
+         'only 54 56 "      // ..."]
+
+@itemlist[
+
+@item{Line 56 adds a timeout handler to Bob's @tech{publication}.}
+
+]
+
+The timeout handler specifies that if Bob does not complete perform this action within a @tech{time delta} of @reachin{DEADLINE}, then the application transitions to @tech{step} given by the arrow expression.
+In this case, the timeout code is a call to @reachin{closeTo}, which is a Reach standard library function that has Alice send a message and transfer all of the funds in the @tech{contract} to herself, then call the given function afterwards.
+This means that if Bob fails to publish his hand, then Alice will take her @tech{network tokens} back.
+
+We will add a similar timeout handler to Alice's second message.
+
+@reachex[#:show-lines? #t "tut-5/index.rsh"
+         #:link #t
+         'only 61 62 "      // ..."]
+
+But in this case, Bob will be able to claim all of the funds if Alice doesn't participate.
+You might think that it would be "fair" for Alice's funds to be returned to Alice and Bob's to Bob.
+However, if we implemented it that way, then Alice would be wise to always timeout if she were going to lose, which she knows will happen, because she knows her hand and Bob's hand.
+
+These are the only changes we need to make to the Reach program to make it robust against non-participation: seven lines!
+
+@(hrule)
+
+Let's modify the JavaScript @tech{frontend} to deliberately cause a timeout sometimes when Bob is supposed to accept the wager.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-5/index.mjs"
+         #:link #t
+         'only 28 44 "  // ..."]
+
+@itemlist[
+
+@item{Line 37 through 44 redefines Bob's @jsin{acceptWager} method so half of the time it will take at least ten blocks on the Ethereum network by performing ten useless transfer transactions.
+We know that ten is the value of @reachin{DEADLINE}, so this will cause a timeout.}
+
+]
+
+@(hrule)
+
+Let's run the program and see what happens:
+
+@verbatim{
+$ ./reach run
+Alice played Rock
+Bob accepts the wager of 5.0.
+Bob played Paper
+Bob saw outcome Bob wins
+Alice saw outcome Bob wins
+Alice went from 10.0 to 4.999999999999386833.
+Bob went from 10.0 to 14.999999999999969143.
+
+$ ./reach run
+Alice played Scissors
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+Bob played Scissors
+Bob observed a timeout
+Alice observed a timeout
+Alice went from 10.0 to 9.999999999999388565.
+Bob went from 10.0 to 9.99999999999979.
+
+$ ./reach run
+Alice played Paper
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+  Bob takes his sweet time...
+Bob played Scissors
+Bob observed a timeout
+Alice observed a timeout
+Alice went from 10.0 to 9.999999999999388565.
+Bob went from 10.0 to 9.99999999999979.
+}
+
+Of course, when you run, you may not get two of the three times ending in a timeout.
+
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-5/index.rsh"] and @reachexlink["tut-5/index.mjs"] to make sure you copied everything down correctly!}
+
+Now our implementation of @|RPS| is robust against either participant dropping from the game.
+In @seclink["tut-6"]{the next step}, we'll extend the application to disallow draws and have Alice and Bob play again until there is a winner.
 
 @section[#:tag "tut-6"]{Play and Play Again}
 

@@ -29,16 +29,15 @@ const Bob =
       { ...Player,
         acceptWager: Fun([UInt256], Null) };
 
-const DELAY = 10;
-
+const DEADLINE = 10;
 export const main =
   Reach.App(
     {},
     [['Alice', Alice], ['Bob', Bob]],
     (A, B) => {
-      function informTimeout() {
+      const informTimeout = () => {
         each([A, B], () => {
-          interact.informTimeout(); }); }
+          interact.informTimeout(); }); };
 
       A.only(() => {
         const _handA = interact.getHand();
@@ -54,13 +53,13 @@ export const main =
         const handB = declassify(interact.getHand()); });
       B.publish(handB)
         .pay(wager)
-        .timeout(DELAY, () => closeTo(A, informTimeout));
+        .timeout(DEADLINE, () => closeTo(A, informTimeout));
       commit();
 
       A.only(() => {
         const [saltA, handA] = declassify([_saltA, _handA]); });
       A.publish(saltA, handA)
-        .timeout(DELAY, () => closeTo(B, informTimeout));
+        .timeout(DEADLINE, () => closeTo(B, informTimeout));
       checkCommitment(commitA, saltA, handA);
 
       const outcome = winner(handA, handB);

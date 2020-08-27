@@ -7,15 +7,29 @@ This document describes the fundamental assumptions and concepts of Reach. First
 
 @section[#:tag "ref-model-eval"]{Evaluation Model}
 
-Reach programs specify a decentralized application (@deftech{DApp}), which is a distributed computation involving many @tech{participants} and utilizing one @tech{contract} on one @tech{consensus network} for reaching agreement on the intermediate @tech{values} of the computation. @margin-note{"Many" is a technical term that means "zero or more".} When the computation terminates, all @tech{participants} agree on the outcome, because they agreed on the intermediate @tech{values}.
+Reach programs specify a decentralized application (@deftech{DApp}), which is a distributed computation involving many @tech{participants} and utilizing one @tech{contract} on one @tech{consensus network} for reaching agreement on the intermediate @tech{values} of the computation.
+@margin-note{"Many" is a technical term that means "zero or more".}
+When the computation terminates, all @tech{participants} agree on the outcome, because they agreed on the intermediate @tech{values}.
+
+At the start of a Reach computation, the set of @tech{participants} is not necessarily known and can evolve throughout the execution of the application.
 
 A @deftech{consensus network} is a network protocol with a @tech{network token}, a set of @tech{accounts}, a set of @tech{contracts}, and a @tech{time}.
 A @deftech{network token} is an opaque unit of account.
 A @tech{consensus network}'s @deftech{time} is some monotonically increasing discrete value from a totally ordered set.
 A @deftech{time delta} represents the difference between two points in @tech{time} as a discrete number of @tech{time} units.
-@tech{Consensus networks} support @deftech{transfers} of @tech{network tokens} between @tech{accounts}. An @deftech{account} is a unique identity (called an @deftech{address}) with a non-negative balance of @tech{network tokens}. @tech{Accounts} may sign @tech{values} in a way that may not be repudiated or impersonated; this is called @deftech{publication}. @deftech{Contracts} are @tech{accounts} with three extra capacities: they persistently store @tech{values} (called the @deftech{consensus state}), they may receive @tech{publications}, and when they receive @tech{publications}, they systematically process them and may modify their @tech{consensus state}, make @tech{publications}, and may @tech{transfer} @tech{network tokens} in response to the reception. The chapter, @secref["ref-networks"], discusses which @tech{consensus networks} are supported by Reach. @margin-note{This description of @tech{consensus networks} is an abstraction that may not be directly implemented by actual networks. For example, in UTXO-based networks, there is not typically an explicitly represented @tech{account} balance ledger. However, such networks do @emph{abstractly} have @tech{accounts} with balances, because particular private keys represent @tech{accounts} which have exclusive access to some set of @tech{network tokens} which is their balance.}
+@tech{Consensus networks} support @deftech{transfers} of @tech{network tokens} between @tech{accounts}. An @deftech{account} is a unique identity (called an @deftech{address}) with a non-negative balance of @tech{network tokens}.
+@tech{Accounts} may sign @tech{values} in a way that may not be repudiated or impersonated; this is called @deftech{publication}.
+@deftech{Contracts} are @tech{accounts} with three extra capacities: they persistently store @tech{values} (called the @deftech{consensus state}), they may receive @tech{publications}, and when they receive @tech{publications}, they systematically process them and may modify their @tech{consensus state}, make @tech{publications}, and may @tech{transfer} @tech{network tokens} in response to the reception.
+The chapter, @secref["ref-networks"], discusses which @tech{consensus networks} are supported by Reach.
+@margin-note{This description of @tech{consensus networks} is an abstraction that may not be directly implemented by actual networks.
+For example, in UTXO-based networks, there is not typically an explicitly represented @tech{account} balance ledger.
+However, such networks do @emph{abstractly} have @tech{accounts} with balances, because particular private keys represent @tech{accounts} which have exclusive access to some set of @tech{network tokens} which is their balance.}
 
-A @deftech{participant} is a logical actor which takes part in a @|DApp|. It is associated with an @tech{account} on the @tech{consensus network}. @margin-note{The same @tech{account} may be used by multiple @tech{participants} in a @|DApp|.} A @tech{participant} has persistently stored @tech{values}, called its @deftech{local state}. It has a @tech{frontend} which it @tech{interacts} with. A @deftech{frontend} is an abstract actor which supports a set of functions which consume and produce @tech{values}; when a @tech{participant} invokes one of these functions it is referred to as @deftech{interact}ion.
+A @deftech{participant} is a logical actor which takes part in a @|DApp|.
+A @tech{participatnt} is said to @deftech{join} an application when it first makes a @tech{publication}.
+It is associated with an @tech{account} on the @tech{consensus network}.
+@margin-note{The same @tech{account} may be used by multiple @tech{participants} in a @|DApp|.}
+A @tech{participant} has persistently stored @tech{values}, called its @deftech{local state}. It has a @tech{frontend} which it @tech{interacts} with. A @deftech{frontend} is an abstract actor which supports a set of functions which consume and produce @tech{values}; when a @tech{participant} invokes one of these functions it is referred to as @deftech{interact}ion.
 
 Since @DApps have an associated @tech{contract}, they have an associated @tech{account}. @margin-note{The @tech{contract} account must be distinct from all @tech{participant} @tech{accounts}.} This @tech{account} is assumed to be empty when the computation starts.@margin-note{On some @tech{consensus networks}, it is possible for @tech{transfers} to a @tech{contract} @tech{account} to occur outside of the purview of Reach. If this occurs, then those @tech{network tokens} are remitted to the @tech{originator} of the final @tech{consensus transfer}.} Any @tech{network token}s transferred into the @tech{account} must be removed by the @|DApp|'s completion. This is called the @deftech{token linearity property}.
 
@@ -38,29 +52,29 @@ A @deftech{value} is either: the @litchar{null} value, a boolean, an unsigned in
 @(let ()
 (local-require pict)
 (define (add-edge all from label to)
-  (pin-arrow-line
-   10 all
-   from rc-find
-   to lc-find
-   #:line-width 3
-   #:label (inset (text label) 5)))
+(pin-arrow-line
+10 all
+from rc-find
+to lc-find
+#:line-width 3
+#:label (inset (text label) 5)))
 
 (define (state ls)
-  (frame (inset (apply vc-append (map text ls)) 5)))
+(frame (inset (apply vc-append (map text ls)) 5)))
 
 (define p
-  (let* ([initial (blank)]
-         [local-private (state '("local" "private"))]
-         [local-public (state '("local" "public"))]
-         [consensus (state '("consensus"))]
-         [p (hc-append 75
-                       initial local-private
-                       local-public consensus)]
-         [p (add-edge p initial "" local-private)]
-         [p (add-edge p local-private "declassify" local-public)]
-         [p (add-edge p local-public "publish" consensus)]
-         [p (inset p 25)])
-    p))
+(let* ([initial (blank)]
+[local-private (state '("local" "private"))]
+[local-public (state '("local" "public"))]
+[consensus (state '("consensus"))]
+[p (hc-append 75
+initial local-private
+local-public consensus)]
+[p (add-edge p initial "" local-private)]
+[p (add-edge p local-private "declassify" local-public)]
+[p (add-edge p local-public "publish" consensus)]
+[p (inset p 25)])
+p))
 
 p)}
 
@@ -90,4 +104,3 @@ If @tech{requirements} are violated at runtime, then the @tech{connector} ensure
 @section[#:tag "ref-model-syntax"]{Syntax Model}
 
 Reach programs are specified via a subset of well-formed JavaScript syntax inside @tech{source files}. The section @secref["ref-programs"] describes the syntax of Reach programs in detail.
-

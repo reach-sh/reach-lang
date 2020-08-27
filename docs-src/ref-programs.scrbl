@@ -367,11 +367,15 @@ It is an abbreviation of many @tech{local step} statements that could have been 
       .pay(wagerAmount)
       .timeout(DELAY, closeTo(Bob, false)); }
 
-A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}. The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}, which must occur in the @tech{tail}.
+A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
+The @tech{tail} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}, which must occur in the @tech{tail}.
 
 @margin-note{See @seclink["guide-timeout"]{the guide section on non-participation} to undertand when to use timeouts and how to use them most effectively.}
 
-The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}. The @reachin{timeout} component may always be omitted. Each component may occur any order. For example, the following are all @tech{valid}:
+The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}.
+The @reachin{timeout} component may always be omitted.
+Each component may occur in any order.
+For example, the following are all @tech{valid}:
 
 @reach{
  Alice.publish(coinFlip);
@@ -388,6 +392,8 @@ The @reachin{publish} component exclusive-or the @reachin{pay} component may be 
         Bob.publish();
         commit();
         exit(); }); }
+
+If the named participant has not yet @tech{join}ed the application, then this statement has the effect of them @tech{join}ing, after which @reachin{PART} may be used as a @tech{address}.
 
 @subsection{Commit statements}
 
