@@ -40,7 +40,7 @@ If no @exec{EXPORT} is provided, then @litchar{main} is used.
 
 @itemlist[
 
-  @item{@Flag{o}/@DFlag{output} @nonterm{OUTPUT} --- Writes compiler output files to @nonterm{OUTPUT}, which is @exec{$CWD/build} (the @exec{build} directory of the current directory) by default.}
+  @item{@Flag{o}/@DFlag{output} @nonterm{OUTPUT} --- Writes compiler output files to @nonterm{OUTPUT}, which defaults to a directory named @exec{build} in the same directory as @exec{SOURCE}.}
 
   @item{@DFlag{intermediate-files} --- Write intermediate files, which may be interesting for debugging compilation failures or using in other contexts.}
 
