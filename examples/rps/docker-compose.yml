@@ -2,6 +2,8 @@ version: '3'
 services:
   reach-app:
     image: reachsh/examples-rps:v0.1.1
+    entrypoint: /bin/bash
+    command: -c 'npm run test --- FAKE && (ETH_NODE_TYPE=in_memory_ganache npm run test --- ETH) && npm run test --- ETH' # && npm run test --- ALGO
     depends_on:
       - devnet
     environment:

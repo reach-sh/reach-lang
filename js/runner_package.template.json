@@ -1,6 +1,10 @@
 {
   "name": "@reach-sh/untitled-reach-app",
   "type": "module",
+  "devDependencies": {
+    "babel-eslint": "^10.0.3",
+    "eslint": "^7.7.0"
+  },
   "dependencies": {
     "@reach-sh/stdlib": "{{REACH_VERSION}}"
   },

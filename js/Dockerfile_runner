@@ -24,4 +24,4 @@ RUN npm link '@reach-sh/stdlib'
 RUN npm install
 RUN mkdir /app/build
 
-ENTRYPOINT ["npm", "run", "app", "--"]
+CMD ["app"]

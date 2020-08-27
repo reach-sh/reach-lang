@@ -8,5 +8,5 @@ RUN npm link
 COPY . /stdlib
 
 ENV REACH_RUNNER_MOUNT_DIR /app
-ENTRYPOINT ["npm", "run", "runner"]
-CMD ["FAKE", "index.mjs"]
+ENTRYPOINT ["npm", "run", "--"]
+CMD ["runner", "FAKE", "index.mjs"]

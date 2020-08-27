@@ -27,25 +27,23 @@ run-devnet:
 run-parent:
 	docker run -it \
 	  -e ETH_NODE_URI=http://docker.for.mac.localhost:18545 \
-	  --entrypoint=/bin/bash \
 	  $(TAG) \
-	  -c 'npm run interactive --- Parent'
+	  interactive Parent
 
 .PHONY: run-child
 run-child:
 	docker run -it \
 	  -e ETH_NODE_URI=http://docker.for.mac.localhost:18545 \
-	  --entrypoint=/bin/bash \
 	  $(TAG) \
-	  -c 'npm run interactive --- Child'
+	  interactive Child
 
 .PHONY: run-parent-local
 run-parent-local:
-	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- Parent
+	ETH_NODE_URI=http://127.0.0.1:18545 npm run -- interactive Parent
 
 .PHONY: run-child-local
 run-child-local:
-	ETH_NODE_URI=http://127.0.0.1:18545 npm run interactive --- Child
+	ETH_NODE_URI=http://127.0.0.1:18545 npm run -- interactive Child
 
 .PHONY: down
 down:

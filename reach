@@ -103,8 +103,7 @@ FROM reachsh/runner:${REACH_VERSION}
 # COPY package.json /app/
 # RUN npm install
 
-COPY ${APP}.mjs /app/index.mjs
-COPY build/${APP}.main.mjs /app/build/index.main.mjs
+COPY . /app
 EOF
 
   if [ "x$VERBOSE" = "xY" ] ; then echo writing $PACKAGE_JSON; fi
