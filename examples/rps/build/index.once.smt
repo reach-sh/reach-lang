@@ -14,7 +14,7 @@
 (+ (declare-fun digest (Bytes ) UInt256 ))
 (+ (declare-sort Null 0 ))
 (+ (declare-fun null () Null ))
-(+ (declare-fun Null_toBytes (Null ) Bytes ))
+(+ (define-fun Null_toBytes ((n Null ) ) Bytes bytes0 ))
 (+ (declare-fun Bool_toBytes (Bool ) Bytes ))
 (+ (declare-fun UInt256_toBytes (UInt256 ) Bytes ))
 (+ (declare-sort Address 0 ))
