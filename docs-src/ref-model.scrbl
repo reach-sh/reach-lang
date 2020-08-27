@@ -26,7 +26,7 @@ For example, in UTXO-based networks, there is not typically an explicitly repres
 However, such networks do @emph{abstractly} have @tech{accounts} with balances, because particular private keys represent @tech{accounts} which have exclusive access to some set of @tech{network tokens} which is their balance.}
 
 A @deftech{participant} is a logical actor which takes part in a @|DApp|.
-A @tech{participatnt} is said to @deftech{join} an application when it first makes a @tech{publication}.
+A @tech{participant} is said to @deftech{join} an application when it first makes a @tech{publication}.
 It is associated with an @tech{account} on the @tech{consensus network}.
 @margin-note{The same @tech{account} may be used by multiple @tech{participants} in a @|DApp|.}
 A @tech{participant} has persistently stored @tech{values}, called its @deftech{local state}. It has a @tech{frontend} which it @tech{interacts} with. A @deftech{frontend} is an abstract actor which supports a set of functions which consume and produce @tech{values}; when a @tech{participant} invokes one of these functions it is referred to as @deftech{interact}ion.
