@@ -62,14 +62,14 @@ docs:
 reach-lint:
 	@(set -e; for dir in $(linted_reach_src_dirs); do \
 		echo linting $$dir; \
-		./reach lint $$dir $(ignored_reach_sources); \
+		./reach lint --max-warnings 0 $$dir $(ignored_reach_sources); \
 	done)
 
 .PHONY: reach-lint-fix
 reach-lint-fix:
 	(set -e; for dir in $(linted_reach_src_dirs); do \
 		echo fixing $$dir; \
-		./reach lint --fix $$dir $(ignored_reach_sources); \
+		./reach lint --max-warnings 0 --fix $$dir $(ignored_reach_sources); \
 	done)
 
 .PHONY: sh-lint
