@@ -35,7 +35,7 @@
   @para{@bold{---}})
 
 (define (the-community-link)
-  @link["https://discord.com/channels/628402598663290882"]{the Discord community})
+  @link["https://discord.gg/AZsgcXu"]{the Discord community})
 
 (define (cmd . args)
   (apply commandline @bold{@exec{$}} " " args))
