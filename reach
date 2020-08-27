@@ -73,10 +73,8 @@ EOF
 do_init () {
   APP="$1"
   if [ "x$1" = "x" ] ; then
-    APP="index"
+    APP="$(basename "$(pwd)")"
   fi
-  MJS="$APP.mjs"
-  RSH="$APP.rsh"
   VERBOSE=Y
 
   DOCKERFILE="DOCKERFILE"
@@ -85,6 +83,7 @@ do_init () {
   MAKEFILE="Makefile"
 
   if [ "x$2" = "x--temporary" ] ; then
+    APP="index"
     DOCKERFILE="$DOCKERFILE.$APP"
     PACKAGE_JSON="$PACKAGE_JSON.$APP"
     DOCKER_COMPOSE_YAML="$DOCKER_COMPOSE_YAML.$APP"
@@ -92,6 +91,9 @@ do_init () {
     VERBOSE=N
     TEMPORARY=Y
   fi
+
+  MJS="$APP.mjs"
+  RSH="$APP.rsh"
 
   if [ "x$VERBOSE" = "xY" ] ; then echo writing $DOCKERFILE; fi
   cat >"${DOCKERFILE}" <<EOF
@@ -160,7 +162,7 @@ EOF
     cat >"${MAKEFILE}" <<EOF
 .PHONY: run
 run:
-	reach compile index.rsh main && \\
+	reach compile "${APP}.rsh" main && \\
 	  docker build -f "${DOCKERFILE}" -t "reachsh/reach-app-${APP}:latest" . && \\
 	  docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm reach-app
 EOF
@@ -182,7 +184,7 @@ EOF
       if [ "x$VERBOSE" = "xY" ] ; then echo writing "$MJS"; fi
       cat >"${MJS}" <<EOF
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
-import * as backend from './build/index.main.mjs';
+import * as backend from './build/${APP}.main.mjs';
 
 (async () => {
   const startingBalance = stdlib.toWeiBigNumber('100', 'ether');
