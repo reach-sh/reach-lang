@@ -1,0 +1,27 @@
+ARG REACH_VERSION_ARG
+
+# do not secify this arg to be different than REACH_VERSION_ARG
+ARG REACH_STDLIB_TAG=reachsh/stdlib:$REACH_VERSION_ARG
+
+FROM $REACH_STDLIB_TAG
+
+# Import the arg from above.
+ARG REACH_VERSION_ARG
+
+WORKDIR /app
+
+RUN curl -sSL https://git.io/get-mo -o mo \
+    && chmod +x mo \
+    && mv mo /usr/local/bin
+
+ENV REACH_VERSION $REACH_VERSION_ARG
+
+COPY runner_package.template.json /app/package.template.json
+
+RUN mo /app/package.template.json > /app/package.json
+RUN rm /app/package.template.json
+RUN npm link '@reach-sh/stdlib'
+RUN npm install
+RUN mkdir /app/build
+
+ENTRYPOINT ["npm", "run", "app", "--"]

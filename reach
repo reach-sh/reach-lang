@@ -77,7 +77,7 @@ do_init () {
   fi
   VERBOSE=Y
 
-  DOCKERFILE="DOCKERFILE"
+  DOCKERFILE="Dockerfile"
   PACKAGE_JSON="package.json"
   DOCKER_COMPOSE_YAML="docker-compose.yaml"
   MAKEFILE="Makefile"
@@ -97,19 +97,14 @@ do_init () {
 
   if [ "x$VERBOSE" = "xY" ] ; then echo writing $DOCKERFILE; fi
   cat >"${DOCKERFILE}" <<EOF
-FROM reachsh/stdlib:${REACH_VERSION}
+FROM reachsh/runner:${REACH_VERSION}
 
-WORKDIR /app
+# If your project needs more node dependencies:
+# COPY package.json /app/
+# RUN npm install
 
-COPY ${PACKAGE_JSON} /app/package.json
-RUN npm link '@reach-sh/stdlib'
-RUN npm install
-
-COPY ${MJS} /app
-RUN mkdir /app/build
-COPY build/${APP}.main.mjs /app/build
-
-CMD npm run app
+COPY ${APP}.mjs /app/index.mjs
+COPY build/${APP}.main.mjs /app/build/index.main.mjs
 EOF
 
   if [ "x$VERBOSE" = "xY" ] ; then echo writing $PACKAGE_JSON; fi

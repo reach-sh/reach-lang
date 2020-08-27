@@ -1,0 +1,12 @@
+{
+  "name": "@reach-sh/untitled-reach-app",
+  "type": "module",
+  "dependencies": {
+    "@reach-sh/stdlib": "{{REACH_VERSION}}"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "scripts": {
+    "app": "node --experimental-modules --unhandled-rejections=strict index.mjs"
+  }
+}
