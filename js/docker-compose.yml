@@ -3,6 +3,7 @@ services:
   stdlib:
     image: reachsh/stdlib:v0.1.1
     build: .
+    entrypoint: npm run test
     depends_on:
       - devnet
     environment:
