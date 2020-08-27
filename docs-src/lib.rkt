@@ -42,6 +42,11 @@
 
 (define-runtime-path x "../examples/")
 
+(define (exloc . ps)
+  (number->string
+   (for/sum ([p (in-list ps)])
+    (length (file->lines (build-path x p))))))
+
 (define (reachexlink p [label #f])
   (define url
     (format "https://github.com/reach-sh/reach-lang/blob/master/examples/~a" p))
