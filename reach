@@ -70,6 +70,163 @@ EOF
     fi
 }
 
+do_init () {
+  APP="$1"
+  if [ "x$1" = "x" ] ; then
+    APP="index"
+  fi
+  MJS="$APP.mjs"
+  RSH="$APP.rsh"
+  VERBOSE=Y
+
+  DOCKERFILE="DOCKERFILE"
+  PACKAGE_JSON="package.json"
+  DOCKER_COMPOSE_YAML="docker-compose.yaml"
+  MAKEFILE="Makefile"
+
+  if [ "x$2" = "x--temporary" ] ; then
+    DOCKERFILE="$DOCKERFILE.$APP"
+    PACKAGE_JSON="$PACKAGE_JSON.$APP"
+    DOCKER_COMPOSE_YAML="$DOCKER_COMPOSE_YAML.$APP"
+    MAKEFILE=""
+    VERBOSE=N
+    TEMPORARY=Y
+  fi
+
+  if [ "x$VERBOSE" = "xY" ] ; then echo writing $DOCKERFILE; fi
+  cat >"${DOCKERFILE}" <<EOF
+FROM reachsh/stdlib:${REACH_VERSION}
+
+WORKDIR /app
+
+COPY ${PACKAGE_JSON} /app/package.json
+RUN npm link '@reach-sh/stdlib'
+RUN npm install
+
+COPY ${MJS} /app
+RUN mkdir /app/build
+COPY build/${APP}.main.mjs /app/build
+
+CMD npm run app
+EOF
+
+  if [ "x$VERBOSE" = "xY" ] ; then echo writing $PACKAGE_JSON; fi
+  # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
+  cat >"${PACKAGE_JSON}" <<EOF
+{
+  "name": "@reach-sh/${APP}",
+  "type": "module",
+  "dependencies": {
+    "@reach-sh/stdlib": "${REACH_VERSION}"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "scripts": {
+    "app": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
+  }
+}
+EOF
+
+  if [ "x$VERBOSE" = "xY" ] ; then echo writing $DOCKER_COMPOSE_YAML; fi
+  if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
+
+    cat >"${DOCKER_COMPOSE_YAML}" <<EOF
+version: '3'
+services:
+  reach-app:
+    image: reachsh/reach-app-${APP}:latest
+    environment:
+      - ETH_NODE_TYPE=in_memory_ganache
+EOF
+
+  else
+    cat >"${DOCKER_COMPOSE_YAML}" <<EOF
+version: '3'
+services:
+  reach-app:
+    image: reachsh/reach-app-${APP}:latest
+    depends_on:
+      - devnet
+    environment:
+      - ETH_NODE_URI=http://devnet:8545
+  devnet:
+    image: reachsh/ethereum-devnet:${REACH_VERSION}
+EOF
+  fi
+
+  if [ "x$TEMPORARY" != "xY" ] ; then
+    if [ "x$VERBOSE" = "xY" ] ; then echo writing "$MAKEFILE"; fi
+    # TODO: a better makefile
+    cat >"${MAKEFILE}" <<EOF
+.PHONY: run
+run:
+	reach compile index.rsh main && \\
+	  docker build -f "${DOCKERFILE}" -t "reachsh/reach-app-${APP}:latest" . && \\
+	  docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm reach-app
+EOF
+
+    if [ ! -f "$RSH" ] ; then
+      if [ "x$VERBOSE" = "xY" ] ; then echo writing "$RSH"; fi
+      cat >"${RSH}" <<EOF
+'reach 0.1';
+
+export const main = Reach.App(
+  {}, [['Alice', {}], ['Bob', {}]], (Alice, Bob) => {
+    // ...
+  }
+);
+EOF
+    fi
+
+    if [ ! -f "$MJS" ] ; then
+      if [ "x$VERBOSE" = "xY" ] ; then echo writing "$MJS"; fi
+      cat >"${MJS}" <<EOF
+import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import * as backend from './build/index.main.mjs';
+
+(async () => {
+  const startingBalance = stdlib.toWeiBigNumber('100', 'ether');
+
+  const alice = await stdlib.newTestAccount(startingBalance);
+  const bob = await stdlib.newTestAccount(startingBalance);
+
+  const ctcAlice = await alice.deploy(backend);
+  const ctcBob = await bob.attach(backend, ctcAlice);
+
+  await Promise.all([
+    backend.Alice(
+      stdlib, ctcAlice,
+      { ...stdlib.hasRandom }
+    ),
+    backend.Bob(
+      stdlib, ctcBob,
+      { ...stdlib.hasRandom }
+    ),
+  ]);
+
+  console.log('Hello, Alice and Bob!');
+})();
+EOF
+    fi
+
+    GITIGNORE=".gitignore"
+    if [ ! -f "$GITIGNORE" ] ; then
+      if [ "x$VERBOSE" = "xY" ] ; then echo writing "$GITIGNORE"; fi
+      cat >"$GITIGNORE" <<EOF
+build/
+EOF
+    fi
+
+  fi  # end if for non-temp file gen
+
+}
+
+run_ () {
+  F="$1"
+  shift
+  docker-compose -f "$F" run --rm reach-app "$@"
+}
+
 do_run () {
     if [ "x$1" = "x" ] ; then
         APP="index"
@@ -98,88 +255,32 @@ do_run () {
 
     DOCKERFILE=Dockerfile.${APP}
     PACKAGE_JSON=package.json.${APP}
+    DOCKER_COMPOSE_YAML=docker-compose.yaml.${APP}
 
+    # XXX Can we add eslint on the JS?
+    
     # XXX could we use an embedded Makefile-like logic to go faster when there are no changes?
     
     do_compile "${RSH}" || exit 1
 
-    # XXX Can we add eslint on the JS?
-    
-    cat >"${PACKAGE_JSON}" <<EOF
-{
-  "name": "@reach-sh/${APP}",
-  "type": "module",
-  "dependencies": {
-    "@reach-sh/stdlib": "${REACH_VERSION}"
-  },
-  "author": "reach.sh",
-  "license": "Apache-2.0",
-  "scripts": {
-    "app": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
-  }
-}
-EOF
-
-    # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
-    
-    cat >"${DOCKERFILE}" <<EOF
-FROM reachsh/stdlib:${REACH_VERSION}
-
-WORKDIR /app
-
-COPY package.json.${APP} /app/package.json
-RUN npm link '@reach-sh/stdlib'
-RUN npm install
-
-COPY ${MJS} /app
-RUN mkdir /app/build
-COPY build/${APP}.main.mjs /app/build
-
-# FIXME This a little insane, but I can't seem to get the arguments to pass correctly otherwise. Perhaps shellcheck's warning about "$@" was correct?
-CMD npm run app -- $@
-EOF
+    # XXX do something different if it has already been non-temporarily initted?
+    do_init "$APP" --temporary
 
     docker build -f "${DOCKERFILE}" -t "reachsh/reach-app-${APP}:latest" .
     DOCKER_EXIT=$?
 
-    rm -f "package.json.${APP}" "${DOCKERFILE}"
-
-    if [ $DOCKER_EXIT -ne 0 ] ; then
-        exit $DOCKER_EXIT
-    fi
-
-    # Note: shellcheck thinks this use of "$@" is weird
-    # shellcheck disable=SC2120
-    run () {
-        docker-compose -f - run --rm reach-app
+    cleanup () {
+      # echo rm -f "${PACKAGE_JSON}" "${DOCKERFILE}" "${DOCKER_COMPOSE_YAML}"
+      rm -f "${PACKAGE_JSON}" "${DOCKERFILE}" "${DOCKER_COMPOSE_YAML}"
     }
 
-    if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
-
-        cat<<EOF | run
-version: '3'
-services:
-  reach-app:
-    image: reachsh/reach-app-${APP}:latest
-    environment:
-      - ETH_NODE_TYPE=in_memory_ganache
-EOF
-
-    else
-
-        cat<<EOF | run
-version: '3'
-services:
-  reach-app:
-    image: reachsh/reach-app-${APP}:latest
-    depends_on:
-      - devnet
-    environment:
-      - ETH_NODE_URI=http://devnet:8545
-  devnet:
-    image: reachsh/ethereum-devnet:${REACH_VERSION}
-EOF
+    if [ $DOCKER_EXIT -ne 0 ] ; then
+      cleanup
+      exit $DOCKER_EXIT
     fi
+
+    run_ "$DOCKER_COMPOSE_YAML" "$@"
+    cleanup
 }
 
 do_lint () {
@@ -199,6 +300,7 @@ do_usage () {
   echo "Usage: reach COMMAND"
   echo " where COMMAND is one of"
   echo "  compile --- compile an app"
+  echo "  init    --- set up scaffolding for a simple app"
   echo "  run     --- run a simple app"
   echo "  upgrade --- upgrade Reach"
   echo "  update  --- update Reach Docker images"
@@ -215,6 +317,9 @@ case ${SUBCOMMAND} in
         ;;
     run)
         do_run "$@"
+        ;;
+    init)
+        do_init "$@"
         ;;
     lint)
         do_lint "$@"
