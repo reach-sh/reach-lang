@@ -41,6 +41,25 @@ import * as backend from './build/index.main.mjs';
 
   const interact = { ...stdlib.hasRandom };
 
+  interact.informTimeout = () => {
+    console.log(`There was a timeout.`);
+    process.exit(1); };
+
+  if ( isAlice ) {
+    const amt = await ask(
+      `How much do you want to wager?`,
+      toNetworkFormat );
+    interact.wager = amt; }
+  else {
+    interact.acceptWager =
+      async (amt) => {
+        if ( await ask(
+          `Do you accept the wager of ${stdlib.fromWei(amt)}?`,
+          yesno) ) {
+          return; }
+        else {
+          process.exit(0); } } }
+
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const HANDS = {'Rock': 0, 'R': 0, 'r': 0,
                  'Paper': 1, 'P': 1, 'p': 1,
@@ -61,24 +80,6 @@ import * as backend from './build/index.main.mjs';
   interact.seeOutcome =
     async (outcome) => {
       console.log(`The outcome is: ${OUTCOME[outcome]}`); };
-
-  interact.informTimeout = () => {
-    console.log(`There was a timeout.`); };
-
-  if ( isAlice ) {
-    const amt = await ask(
-      `How much do you want to wager?`,
-      toNetworkFormat );
-    interact.wager = amt; }
-  else {
-    interact.acceptWager =
-      async (amt) => {
-        if ( await ask(
-          `Do you accept the wager of ${stdlib.fromWei(amt)}?`,
-          yesno) ) {
-          return; }
-        else {
-          process.exit(0); } } }
 
   const part = isAlice ? backend.Alice : backend.Bob;
   await part(stdlib, ctc, interact);
