@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-REACH=${0}
+export REACH=${0}
 HERE=$(dirname "$(realpath "${REACH}")")
 
 if [ "x${REACH_VERSION}" = "x" ] ; then
@@ -14,6 +14,7 @@ if ! (which docker docker-compose > /dev/null 2>&1) ; then
   exit 1
 fi
 
+# shellcheck disable=SC2016
 fatal_infinite_reach_run_loop () {
   echo 'reach run has detected an infinite loop'
   echo '`make run` may not call `reach run` with no arguments'
@@ -21,7 +22,7 @@ fatal_infinite_reach_run_loop () {
 }
 
 fatal_connector_mode_coming_soon () {
-  echo 'Sorry. Support for $REACH_CONNECTOR_MODE is coming soon!'
+  echo "Sorry. Support for $REACH_CONNECTOR_MODE is coming soon!"
   exit 1
 }
 
