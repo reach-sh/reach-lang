@@ -274,10 +274,7 @@ run-${APP}: build
 
 .PHONY: down
 down: down-${APP}
-
-.PHONY: down-${APP}
-down-${APP}:
-	docker-compose down ${SERVICE}
+	docker-compose -f "${DOCKER_COMPOSE_YAML}" down
 EOF
 
   GITIGNORE=".gitignore"
