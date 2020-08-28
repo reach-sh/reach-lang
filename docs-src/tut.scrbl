@@ -1487,7 +1487,7 @@ Next, the JavaScript frontend:
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t]
 
-We wrote @exloc["tut-7/index.rsh"] lines of Reach and @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] together.
+We wrote @exloc["tut-7/index.rsh"] lines of Reach and @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] lines together.
 
 Behind the scenes, Reach generated @exloc["tut-7/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-7/build/index.main.sol"]), as well as @exloc["tut-7/build/index.main.mjs"] lines of JavaScript (which you can look at here: @reachexlink["tut-7/build/index.main.mjs"]).
 If we weren't using Reach, then we'd have to write these @exloc["tut-7/build/index.main.sol" "tut-7/build/index.main.mjs"] lines ourselves and ensure that they are consistent and updated at every change to the application.
