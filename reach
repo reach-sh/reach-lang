@@ -506,7 +506,7 @@ do_usage () {
   echo "  compile --- compile an app"
   echo "  init    --- set up source files for a simple app"
   echo "  run     --- run a simple app"
-  echo "  scaffold -- set up docker scaffolding for a simple app"
+  echo "  scaffold -- set up Docker scaffolding for a simple app"
   echo "  upgrade --- upgrade Reach"
   echo "  update  --- update Reach Docker images"
   echo "  version --- display version"

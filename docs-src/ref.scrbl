@@ -47,6 +47,12 @@ If no @exec{EXPORT} is provided, then @litchar{main} is used.
   @item{The enviroment variable @envvar{REACH_VERSION} controls which version of the compiler is used.}
 ]
 
+@subsection[#:tag "ref-usage-init"]{@tt{reach init}}
+
+You can create template @exec{index.rsh} and @exec{index.mjs} files for a simple Reach app by running
+
+@cmd{reach init}
+
 @subsection[#:tag "ref-usage-run"]{@tt{reach run}}
 
 You can run a simple Reach application by executing
@@ -89,6 +95,13 @@ It then
 
 ]
 
+@subsection[#:tag "ref-usage-scaffold"]{@tt{reach scaffold}}
+
+You can create template @exec{package.json}, @exec{Dockerfile}, @exec{docker-compose.yml}, and @exec{Makefile} files for a simple Reach app by running
+
+@cmd{reach scaffold}
+
+The files created are the same as those used temporarily by @exec{reach run}.
 
 @subsection[#:tag "ref-usage-upgrade"]{@tt{reach upgrade}}
 
