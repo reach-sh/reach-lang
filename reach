@@ -204,9 +204,9 @@ COPY . /app
 EOF
 
   # TODO: s/lint/preapp. It's disabled because sometimes our
+  # generated code trips the linter
   # TODO: ^ The same goes for js/runner_package.template.json
 
-  # generated code trips the linter
   if $VERBOSE ; then echo writing $PACKAGE_JSON; fi
   # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
   cat >"${PACKAGE_JSON}" <<EOF
@@ -381,13 +381,36 @@ do_run () {
 
   # XXX Can we add eslint on the JS?
 
-  # XXX do something different if it has already been non-temporarily initted?
-  do_scaffold --isolate --quiet "$APP"
+  MAKEFILE=Makefile
+  DOCKERFILE=Dockerfile
+  PACKAGE_JSON=package.json
+  DOCKER_COMPOSE_YAML=docker-compose.yaml
 
-  MAKEFILE=Makefile.${APP}
-  DOCKERFILE=Dockerfile.${APP}
-  PACKAGE_JSON=package.json.${APP}
-  DOCKER_COMPOSE_YAML=docker-compose.yaml.${APP}
+  NONE_EXIST=true
+  if [ -f "$MAKEFILE" ] || [ -f "$DOCKERFILE" ] || [ -f "$PACKAGE_JSON" ] || [ -f "$DOCKER_COMPOSE_YAML" ] ; then
+    NONE_EXIST=false
+  fi
+
+  if $NONE_EXIST ; then
+    do_scaffold --isolate --quiet "$APP"
+
+    # Note: do_scaffold --isolate has mutated these vars like so:
+    # MAKEFILE=$MAKEFILE.${APP}
+    # DOCKERFILE=$Dockerfile.${APP}
+    # PACKAGE_JSON=$PACKAGE_JSON.${APP}
+    # DOCKER_COMPOSE_YAML=$DOCKER_COMPOSE_YAML.${APP}
+  else
+    NOT_ALL_EXIST=true
+    if [ -f "$MAKEFILE" ] && [ -f "$DOCKERFILE" ] && [ -f "$PACKAGE_JSON" ] && [ -f "$DOCKER_COMPOSE_YAML" ] ; then
+      NOT_ALL_EXIST=false
+    fi
+
+    if $NOT_ALL_EXIST ; then
+      # TODO: more description on err
+      echo "I'm confused, some scaffolded files exist, but not all"
+      exit 1
+    fi
+  fi
 
   cleanup () {
     do_unscaffold --isolate --quiet "$APP"
