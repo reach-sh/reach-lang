@@ -1,5 +1,6 @@
 #!/bin/sh
 
+
 REACH=${0}
 HERE=$(dirname "$(realpath "${REACH}")")
 
@@ -414,13 +415,23 @@ do_run () {
     do_unscaffold --isolate --quiet "$APP"
   }
 
-  if [ "x$*" = "x" ] ; then
+  if [ "x$@" = "x" ] ; then
     make -f "$MAKEFILE" build run
   else
-    # Note: this has to be $* and not $@ because
-    # ARGS must be one string for the Makefile.
-    # TODO: escape it or something so that args don't get word split?
-    make -f "$MAKEFILE" build "run-$APP" ARGS="$*"
+    # This is nuts and possibly a little bit wrong.
+    # Easier methods exist but they are outside of POSIX standard.
+    escape_args () {
+      for arg in "$@" ; do
+        escaped_arg=""
+        for word in $arg ; do
+          escaped_arg="$escaped_arg$(printf "%s\ " "$word")"
+        done
+        echo "${escaped_arg%??}"
+      done
+    }
+    ARGS=$(escape_args "$@")
+    # Yes it apparently has to be $(echo $ARGS) because reasons.
+    make -f "$MAKEFILE" build "run-$APP" ARGS="$(echo $ARGS)"
   fi
 
   do_unscaffold --isolate --quiet "$APP"
