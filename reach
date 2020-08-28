@@ -384,7 +384,8 @@ do_run () {
   DOCKER_COMPOSE_YAML=docker-compose.yaml
 
   NONE_EXIST=true
-  if [ -f "$MAKEFILE" ] || [ -f "$DOCKERFILE" ] || [ -f "$PACKAGE_JSON" ] || [ -f "$DOCKER_COMPOSE_YAML" ] ; then
+  # Note: Makefile excluded from this check
+  if [ -f "$DOCKERFILE" ] || [ -f "$PACKAGE_JSON" ] || [ -f "$DOCKER_COMPOSE_YAML" ] ; then
     NONE_EXIST=false
   fi
 
