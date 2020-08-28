@@ -27,3 +27,7 @@ run-bob:
 .PHONY: down
 down:
 	docker-compose down
+
+.PHONY: clean
+clean:
+	rm -f build/index.main.mjs
