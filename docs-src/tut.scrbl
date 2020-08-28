@@ -508,7 +508,7 @@ No matter what Alice chooses, Bob will always win.
 
 @(hrule)
 
-In fact, Reach comes with an @seclink["guide-assert"]{automatic verification} engine that we can use to mathematically prove that this version will always result in the @reachin{outcome} variable equalling @reachin{0}, which means Bob wins.
+In fact, Reach comes with an    @seclink["guide-assert"]{automatic verification} engine that we can use to mathematically prove that this version will always result in the @reachin{outcome} variable equalling @reachin{0}, which means Bob wins.
 We can instruct Reach to prove this theorem by add these lines after computing the @reachin{outcome}:
 
 @reachex[#:show-lines? #t "tut-4-attack/index.rsh"
@@ -975,7 +975,240 @@ In @seclink["tut-6"]{the next step}, we'll extend the application to disallow dr
 
 @section[#:tag "tut-6"]{Play and Play Again}
 
-XXX
+In this section, we extend our code so application so that Alice and Bob will continue to play the against each other until their game does not end in a draw.
+
+This will only require a change to the Reach program, not the JavaScript @tech{frontend}, but we will take the opportunity to modify the @tech{frontend} so that timeouts can happen to both parties when they are asked to submit their hands.
+Let's do that to get it out of the way and not distract from the main task of removing draws.
+
+We'll modify the @jsin{Player} interact object so that it will have a different @jsin{getHand} method, as well take an extra argument, for the player's account.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-6/index.mjs"
+         #:link #t
+         'only 18 33 "  // ..."]
+
+@itemlist[
+
+@item{Line 18 adds the additional argument.
+We'll use this in the new @jsin{getHand} method.}
+
+@item{Lines 23 through 28 moves the forced timeout code that we wrote for Bob's @jsin{acceptWager} function into this method.
+We also change the threshold so that timeouts only happen 1% of the time.
+This isn't a very interesting behavior, so we'll make it much less frequent.}
+
+@item{Line 27 uses the new parameter so that the delaying player performs needless transfers to and from themselves.}
+
+]
+
+We also adjust the calls to @jsin{Player} in Alice and Bob's initialization code to pass the extra parameter, as well as adjust Bob's @jsin{acceptWager} function to remove the timeout code, since we're testing that differently now.
+It's just a matter of reverting to the simpler version from before.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-6/index.mjs"
+         #:link #t
+         'only 35 46 "  // ..."]
+
+@itemlist[
+
+@item{Line 37 passes the new argument for Alice.}
+
+@item{Line 42 passes it for Bob.}
+
+@item{Line 44 and 45 has the simpler @jsin{acceptWager} method for Bob.}
+
+]
+
+@(hrule)
+
+Now, let's look at the Reach application.
+All of the details about the playing of the game and the interface to the players will remain the same.
+The only thing that's going to be different is the order the actions take place.
+
+It used to be that the steps were:
+
+@itemlist[
+#:style 'ordered
+
+@item{Alice sends her wager and commitment.}
+
+@item{Bob accepts the wager and sends his hand.}
+
+@item{Alice reveals her hand.}
+
+@item{The game ends.}
+
+]
+
+But, now because the players may submit many hands, but should only  have a single wager, we'll break these steps up differently, as follows:
+
+@itemlist[
+#:style 'ordered
+
+@item{Alice sends her wager.}
+
+@item{Bob accepts the wager.}
+
+@item{Alice sends her commitment.}
+
+@item{Bob sends his hand.}
+
+@item{Alice reveals her hand.}
+
+@item{If it's draw, return to step 3; otherwise, the game ends.}
+
+]
+
+Let's make these changes now.
+
+@reachex[#:show-lines? #t "tut-6/index.rsh"
+         #:link #t
+         'only 42 46 "      // ..."]
+
+@itemlist[
+
+@item{Line 44 has Alice pubish and pay the wager.}
+
+]
+
+@reachex[#:show-lines? #t "tut-6/index.rsh"
+         #:link #t
+         'only 48 52 "      // ..."]
+
+@itemlist[
+
+@item{Line 50 has Bob pay the wager.}
+
+@item{Line 52 does @bold{not} have this @tech{consensus step} commit.}
+
+]
+
+@(hrule)
+
+It's now time to begin the repeatable section of the application, where each party will repeatedly submit hands until the the outcome is not a draw.
+In normal programming languages, such a circumstance would be implemented with a @jsin{while} loop, which is exactly what we'll do in Reach.
+However, @reachin{while} loops in Reach require extra care, as discussed in @seclink["guide-loop-invs"]{the guide on loops in Reach}, so we'll take it slow.
+
+In the rest of a Reach program, all identifier bindings are static and unchangable, but if this were the case throughout all of Reach, then @reachin{while} loops would either never start or never terminate, because the loop condition would never change.
+So, a @reachin{while} loop in Reach can introduce a variable binding.
+
+Next, because of Reach's @seclink["guide-assert"]{automatic verification} engine, we must be able to make a statement about what properties of the program are invariant before and after a @reachin{while} loop body's execution, a so-called @seclink["guide-loop-invs"]{"loop invariant"}.
+
+Finally, such loops @emph{may only occur} inside of @tech{consensus steps}.
+That's why Bob's transaction was not committed, because we need to remain inside of the consensus to start the @reachin{while} loop.
+This is because all of the @tech{participants} must agree on the direction of control flow in the application.
+
+Here's what the structure looks like:
+
+@reachex[#:show-lines? #t "tut-6/index.rsh"
+         #:link #t
+         'only 53 55 "      // ..."]
+
+@itemlist[
+
+@item{Line 53 defines the loop variable, @reachin{outcome}.}
+
+@item{Line 54 states the invariant that body of the loop does not change the balance in the @tech{contract} account and that  @reachin{outcome} is a valid outcome.}
+
+@item{Line 55 begins the loop with the condition that it continues as long as the outcome is a draw.}
+
+]
+
+Now, let's look at the body of the loop for the remaining steps, starting with Alice's commitment to her hand.
+
+@reachex[#:show-lines? #t "tut-6/index.rsh"
+         #:link #t
+         'only 56 54 "        // ..."]
+
+@itemlist[
+
+@item{Line 56 commits the last transaction, which at the start of the loop is Bob's acceptance of the wager, and at subsequent runs of the loop is Alice's publication of her hand.}
+
+@item{Lines 58 through 64 are almost identical to the older version, except the wager is already known and paid.}
+
+]
+
+@reachex[#:show-lines? #t "tut-6/index.rsh"
+         #:link #t
+         'only 66 71 "        // ..."]
+
+Similarly, Bob's code is almost identical to the prior version, except that he's already accepted and paid the wager.
+
+@reachex[#:show-lines? #t "tut-6/index.rsh"
+         #:link #t
+         'only 73 77 "        // ..."]
+
+Alice's next step is actually identical, because she is still revealing her hand in exactly the same way.
+
+Next is the end of the loop.
+
+@reachex[#:show-lines? #t "tut-6/index.rsh"
+         #:link #t
+         'only 79 80 "        // ..."]
+
+@itemlist[
+
+@item{Line 79 updates the @reachin{outcome} loop variable with the new value.}
+
+@item{Line 80 continues the loop.
+Unlike most programming languages, Reach @bold{requires} that @reachin{continue} be explicitly written in the loop body.}
+
+]
+
+The rest of the program could be exactly the same as it was before, except now it occurs outside of the loop, but we will simplify it, because we know that the outcome can never be a draw.
+
+@reachex[#:show-lines? #t "tut-6/index.rsh"
+         #:link #t
+         'only 82 88 "      // ..."]
+
+@itemlist[
+
+@item{Line 82 asserts that the outcome is never draw, which is trivially true because otherwise the @reachin{while} loop would not have exitted.}
+
+@item{Line 83 transfers the funds to the winner.}
+
+]
+
+@(hrule)
+
+Let's run the program and see what happens:
+
+@verbatim{
+$ ./reach run
+Bob accepts the wager of 5.0.
+Alice played Paper
+Bob played Rock
+Bob saw outcome Alice wins
+Alice saw outcome Alice wins
+Alice went from 10.0 to 14.999999999999040261.
+Bob went from 10.0 to 4.999999999999938085.
+
+$ ./reach run
+Bob accepts the wager of 5.0.
+Alice played Rock
+Bob played Rock
+Alice played Paper
+Bob played Scissors
+Bob saw outcome Bob wins
+Alice saw outcome Bob wins
+Alice went from 10.0 to 4.999999999998975474.
+Bob went from 10.0 to 14.999999999999906275.
+
+$ ./reach run
+Bob accepts the wager of 5.0.
+Alice played Scissors
+Bob played Rock
+Bob saw outcome Bob wins
+Alice saw outcome Bob wins
+Alice went from 10.0 to 4.999999999999040265.
+Bob went from 10.0 to 14.999999999999938097.
+}
+
+As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.
+
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-6/index.rsh"] and @reachexlink["tut-6/index.mjs"] to make sure you copied everything down correctly!}
+
+Now our implementation of @|RPS| will always result in a pay-out, which is much more fun for everyone.
+In @seclink["tut-7"]{the final step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
 
 @section[#:tag "tut-7"]{Interaction and Independence}
 

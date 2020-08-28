@@ -7,7 +7,8 @@ Reach assumes the presence of a POSIX-compliant shell, as well as @link["https:/
 
 The best way to get this set up on Windows is to
 
-@itemlist[#:style 'ordered
+@itemlist[
+#:style 'ordered
 
 @item{Install Windows 10, version 2004 or higher.}
 

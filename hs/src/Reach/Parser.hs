@@ -183,6 +183,9 @@ gatherDeps_file at fmr src_rel =
   updatePartialAvoidCycles at fmr (gatherDeps_from at) [ReachStdLib] get_key ret_key err_key proc_key
   where
     get_key () = do
+      --- XXX This needs to disallow .. and absolute paths, maybe it's
+      --- possible to do something like checking if makeRelative ∘
+      --- makeAbsolute is the identity?
       src_abs <- makeAbsolute src_rel
       return $ ReachSourceFile src_abs
     ret_key (ReachSourceFile x) = x

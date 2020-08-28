@@ -23,9 +23,9 @@ import * as backend from './build/index.main.mjs';
       if ( Math.random() <= 0.01 ) {
         for ( let i = 0; i < 10; i++ ) {
           console.log(`  ${Who} takes their sweet time sending it back...`);
-          await stdlib.transfer(accWho.networkAccount, accWho.networkAccount,
-                                toNetworkFormat('0')); }
-      }
+          await stdlib.transfer(
+            accWho.networkAccount, accWho.networkAccount,
+            toNetworkFormat('0')); } }
       return hand; },
     seeOutcome: (outcome) =>
     console.log(`${Who} saw outcome ${OUTCOME[outcome]}`),

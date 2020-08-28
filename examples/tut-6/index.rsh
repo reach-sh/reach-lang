@@ -51,7 +51,7 @@ export const main =
         .timeout(DEADLINE, () => closeTo(A, informTimeout));
 
       var outcome = DRAW;
-      invariant(balance() == 2 * wager);
+      invariant(balance() == 2 * wager && isOutcome(outcome) );
       while ( outcome == DRAW ) {
         commit();
 
@@ -79,12 +79,8 @@ export const main =
         outcome = winner(handA, handB);
         continue; }
 
-      const [forA, forB] =
-            outcome == A_WINS ? [2, 0] :
-            outcome == B_WINS ? [0, 2] :
-            [1, 1];
-      transfer(forA * wager).to(A);
-      transfer(forB * wager).to(B);
+      assert(outcome == A_WINS || outcome == B_WINS);
+      transfer(2 * wager).to(outcome == A_WINS ? A : B);
       commit();
 
       each([A, B], () => {

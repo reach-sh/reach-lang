@@ -16,13 +16,35 @@ This will help us improve the language, our developer tools, and the project mat
 The best way is through the @link["https://github.com/reach-sh/reach-lang/issues"]{GitHub issue tracker} or by messaging @litchar{@"@"team} in @(the-community-link).}
 
 We highly recommend going through @seclink["overview"]{the overview} and @seclink["tut"]{the tutorial} before continuing through the workshop.
+However, you can do most workshops in any order.
+If there's a pre-requisite, it will be explicitly mentioned.
 
 @local-table-of-contents[#:style 'immediate-only]
 
-@section[#:tag "workshop-nim"]{How to build Nim in Reach}
+@section[#:tag "workshop-rps-fair"]{Workshop: Fair Rock-Paper-Scissors}
 
 XXX
 
-@section[#:tag "workshop-ttt"]{How to build Tic-Tac-Toe in Reach}
+@section[#:tag "workshop-rps-batched"]{Workshop: Batched Rock-Paper-Scissors}
+
+XXX
+
+@section[#:tag "workshop-secured-loan"]{Workshop: Secured Loan}
+
+XXX
+
+@section[#:tag "workshop-trust-fund"]{Workshop: Trust Fund}
+
+XXX
+
+@section[#:tag "workshop-guardian-account"]{Workshop: Guardian Account}
+
+XXX
+
+@section[#:tag "workshop-nim"]{Workshop: Nim}
+
+XXX
+
+@section[#:tag "workshop-ttt"]{Workshop: Tic-Tac-Toe}
 
 XXX

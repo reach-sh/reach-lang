@@ -45,8 +45,9 @@ then the path @filepath{LIB.rsh} must resolve to another Reach @tech{source file
 The @tech{exports} from the @tech{module} defined by @filepath{LIB.rsh} are included in the set of @tech{bound identifier}s in @litchar{X}.
 @tech{Import} cycles are @tech{invalid}.
 
-@margin-note{The path given to an @tech{import} may include @litchar{..} to specify files outside the current directory.
-Relative paths resolve relative to the parent directory of the @tech{source file} in which they appear.}
+The path given to an @tech{import} may @bold{not} include @litchar{..} to specify files outside the current directory @bold{nor} may it be an absolute path.
+
+It @bold{must} be a relative path, which is resolved relative to the parent directory of the @tech{source file} in which they appear.
 
 @section{Comments}
 
