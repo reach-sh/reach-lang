@@ -203,6 +203,10 @@ FROM reachsh/runner:${REACH_VERSION}
 COPY . /app
 EOF
 
+  # TODO: s/lint/preapp. It's disabled because sometimes our
+  # TODO: ^ The same goes for js/runner_package.template.json
+
+  # generated code trips the linter
   if $VERBOSE ; then echo writing $PACKAGE_JSON; fi
   # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
   cat >"${PACKAGE_JSON}" <<EOF
@@ -215,7 +219,7 @@ EOF
   "author": "reach.sh",
   "license": "Apache-2.0",
   "scripts": {
-    "preapp": "eslint --ignore-path .gitignore --ext .mjs .",
+    "lint": "eslint --ignore-path .gitignore --ext .mjs .",
     "app": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
   }
 }
@@ -262,8 +266,18 @@ build: build/${APP}.main.mjs
 	docker build -f ${DOCKERFILE} --tag=${IMAGE_TAG} .
 
 .PHONY: run
-run: build
-	docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm ${SERVICE}
+run: run-${APP}
+
+.PHONY: run-${APP}
+run-${APP}: build
+	docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm ${SERVICE} \$(ARGS)
+
+.PHONY: down
+down: down-${APP}
+
+.PHONY: down-${APP}
+down-${APP}:
+	docker-compose down ${SERVICE}
 EOF
 
   GITIGNORE=".gitignore"
@@ -340,61 +354,52 @@ do_run () {
   # make build run
   # unscaffold if UNSCAFFOLD 
 
-    if [ "x$1" = "x" ] ; then
-        APP="index"
-    else
-        ARG=$1
-        if [ -d "$ARG" ] ; then
-           ARG="$ARG/index"
-        fi
-        cd "$(dirname "$ARG")" || exit
-        APP="$(basename "$ARG")"
-        shift
+  if [ "x$1" = "x" ] ; then
+    APP="index"
+  else
+    ARG=$1
+    if [ -d "$ARG" ] ; then
+      ARG="$ARG/index"
     fi
-    
-    RSH="${APP}.rsh"
-    MJS="${APP}.mjs"
+    cd "$(dirname "$ARG")" || exit
+    APP="$(basename "$ARG")"
+    shift
+  fi
 
-    if [ "x$APP" = "x" ] ||
-           ! [ -f "${RSH}" ] ||
-           ! [ -f "${MJS}" ]; then
-        echo "Usage: reach-run APP"
-        echo "  where APP.rsh"
-        echo "    and APP.mjs"
-        echo "  exists in current directory."
-        exit 1
-    fi
+  RSH="${APP}.rsh"
+  MJS="${APP}.mjs"
 
-    MAKEFILE=Makefile.${APP}
-    DOCKERFILE=Dockerfile.${APP}
-    PACKAGE_JSON=package.json.${APP}
-    DOCKER_COMPOSE_YAML=docker-compose.yaml.${APP}
+  if [ "x$APP" = "x" ] ||
+       ! [ -f "${RSH}" ] ||
+       ! [ -f "${MJS}" ]; then
+    echo "Usage: reach-run APP"
+    echo "  where APP.rsh"
+    echo "    and APP.mjs"
+    echo "  exists in current directory."
+    exit 1
+  fi
 
-    # XXX Can we add eslint on the JS?
+  # XXX Can we add eslint on the JS?
 
-    # XXX could we use an embedded Makefile-like logic to go faster when there are no changes?
+  # XXX do something different if it has already been non-temporarily initted?
+  do_scaffold --isolate --quiet "$APP"
 
-    # XXX do something different if it has already been non-temporarily initted?
-    do_scaffold --isolate --quiet "$APP"
+  MAKEFILE=Makefile.${APP}
+  DOCKERFILE=Dockerfile.${APP}
+  PACKAGE_JSON=package.json.${APP}
+  DOCKER_COMPOSE_YAML=docker-compose.yaml.${APP}
 
-    make -f "$MAKEFILE" build
-    DOCKER_EXIT=$?
+  cleanup () {
+    do_unscaffold --isolate --quiet "$APP"
+  }
 
-    cleanup () {
-      do_unscaffold --isolate --quiet "$APP"
-    }
-
-    if [ $DOCKER_EXIT -ne 0 ] ; then
-      cleanup
-      exit $DOCKER_EXIT
-    fi
-
-    DIR="$(basename "$(pwd)")"
-    PROJ="$DIR-$APP"
-
-    # run_ "$DOCKER_COMPOSE_YAML" "$PROJ" "$@"
-    make -f "$MAKEFILE" run
-    cleanup
+  # TODO: run with args if provided
+  make -f "$MAKEFILE" build run
+  do_unscaffold --isolate --quiet "$APP"
+  MAKE_EXIT=$?
+  if [ $MAKE_EXIT -ne 0 ] ; then
+    exit $MAKE_EXIT
+  fi
 }
 
 do_lint () {
@@ -414,8 +419,9 @@ do_usage () {
   echo "Usage: reach COMMAND"
   echo " where COMMAND is one of"
   echo "  compile --- compile an app"
-  echo "  init    --- set up scaffolding for a simple app"
+  echo "  init    --- set up source files for a simple app"
   echo "  run     --- run a simple app"
+  echo "  scaffold -- set up docker scaffolding for a simple app"
   echo "  upgrade --- upgrade Reach"
   echo "  update  --- update Reach Docker images"
   echo "  version --- display version"
