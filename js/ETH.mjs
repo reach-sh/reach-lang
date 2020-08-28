@@ -364,10 +364,28 @@ export const connectAccount = async networkAccount => {
     const deployTxn = await networkAccount.provider.getTransaction(contract.deployTransaction.hash);
     // XXX the equivalent of rejectInvalidReceiptFor?
     // This may be handled already in contract.deployed()
-    return await attach(bin, { address: contract.address, creation_block: deployTxn.blockNumber });
+
+    const ctc = { address: contract.address, creation_block: deployTxn.blockNumber };
+    ctc.info = `{"address": "${ctc.address}", "creation_block": ${ctc.creation_block}}`;
+
+    return await attach(bin, ctc);
   };
 
   return { deploy, attach, networkAccount }; };
+
+export const ctcFromInfo = (infoStr) => {
+  const obj = JSON.parse(infoStr);
+  if (!obj.address) {
+    throw Error(`Missing address`); }
+  else if (!obj.creation_block) {
+    throw Error(`Missing creation_block`); }
+  else { return obj; } };
+
+export const newAccountFromMnemonic = async (phrase) => {
+  const ethersp = await etherspP;
+  const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(ethersp);
+  const acc = await connectAccount(networkAccount);
+  return acc; };
 
 export const newTestAccount = async (startingBalance) => {
   debug(`newTestAccount(${startingBalance})`);

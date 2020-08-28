@@ -1,0 +1,18 @@
+version: '3'
+services:
+  alice:
+    image: reachsh/reach-app-tut-7:latest
+    depends_on:
+      - devnet
+    environment:
+      - ETH_NODE_URI=http://devnet:8545
+    stdin_open: true
+  bob:
+    image: reachsh/reach-app-tut-7:latest
+    depends_on:
+      - devnet
+    environment:
+      - ETH_NODE_URI=http://devnet:8545
+    stdin_open: true
+  devnet:
+    image: reachsh/ethereum-devnet:v0.1.1

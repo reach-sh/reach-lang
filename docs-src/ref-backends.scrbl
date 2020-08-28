@@ -58,6 +58,13 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 
 @(hrule)
 @js{
+ async newAccountFromMnemonic() => acc }
+
+@index{newAccountFromMnemonic} Returns a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given mnemonic phrase.
+The details of the mnemonic phrase encoding are specified uniquely to the @tech{consensus network}.
+
+@(hrule)
+@js{
  async newTestAccount(balance) => acc }
 
 @index{newTestAccount} Returns a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network} with a given balance of @tech{network tokens}. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
@@ -84,6 +91,18 @@ The @jsin{stdlib} modules export the following functions that might be used in t
  async acc.deploy(bin) => ctc }
 
 @index{acc.deploy} Returns a Reach @tech{contract} abstraction after deploying a Reach @DApp @tech{contract} based on the @jsin{bin} argument provided. This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+
+@(hrule)
+@js{
+ ctc.info => string }
+
+@index{ctc.info} Returns a string that may be given to @jsin{ctcFromInfo} to construct a Reach @tech{contract} abstraction representing this contract.
+
+@(hrule)
+@js{
+ ctcFromInfo(string) => ctc }
+
+@index{ctcFromInfo} Constructs a Reach @tech{contract} abstraction from a string acquired via @jsin{ctc.info}.
 
 @(hrule)
 @js{
@@ -213,3 +232,20 @@ Integer comparisons on uint256.
 
 Wei conversion functions only exported by the stdlib for ETH.
 
+@(hrule)
+
+This backend also provides the helper module @litchar{@"@"reach-sh/stdlib/ask.mjs} for constructing console interfaces to your @tech{frontends}.
+
+It provides the following exports:
+
+@js{
+ async ask(string, (string => result)) => result
+ yesno(string) => boolean
+ done() => null
+}
+ 
+@index{ask} @jsin{ask} is an asynchronous function that asks a question on the console and returns the first result that its second argument does not error on.
+
+@index{yesno} @jsin{yesno} is an argument appropriate to give as the second argument to @jsin{ask} that parses "Yes"/"No" answers.
+
+@index{done} @jsin{done} indicates that no more questions will be asked.
