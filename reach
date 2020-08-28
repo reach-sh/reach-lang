@@ -5,14 +5,51 @@ REACH=${0}
 HERE=$(dirname "$(realpath "${REACH}")")
 
 if [ "x${REACH_VERSION}" = "x" ] ; then
-    # XXX maybe should be v0.1
-    REACH_VERSION=v0.1.1
+  # XXX maybe should be v0.1
+  REACH_VERSION=v0.1.1
 fi
 
 if ! (which docker docker-compose > /dev/null 2>&1) ; then
-    echo "Reach relies on an installation of docker and docker-compose"
-    exit 1
+  echo "Reach relies on an installation of docker and docker-compose"
+  exit 1
 fi
+
+ensure_testnet () {
+  # Makes sure to set REACH_TESTNET_MODE to one of:
+  # * ETH-ganache     # TODO: distinguish in-memory ganache?
+  # * ETH-geth
+  # * FAKE
+  # * ALGO-something  # TODO: support. # TODO: what is 'something' called?
+  # (or error)
+  # This can be derived from REACH_TESTNET and possibly REACH_ETH_MODE
+
+  REACH_TESTNET=${REACH_TESTNET:-ETH}
+  case "$REACH_TESTNET" in
+    "ETH")
+      REACH_TESTNET_MODE=${REACH_TESTNET_MODE:-ETH-${REACH_ETH_MODE:-geth}}
+      case "$REACH_TESTNET_MODE" in
+        "ETH-ganache|ETH-geth")
+        # this is fine
+        ;;
+        *)
+          echo "Unrecognized REACH_TESTNET_MODE=$REACH_TESTNET_MODE"
+          ;;
+      esac
+      ;;
+    "FAKE")
+      echo "Sorry; support for REACH_TESTNET=FAKE coming soon!"
+      exit 1
+      ;;
+    "ALGO")
+      echo "Sorry; support for REACH_TESTNET=ALGO coming soon!"
+      exit 1
+      ;;
+    *)
+      echo "Unrecognized REACH_TESTNET=$REACH_TESTNET"
+      exit 1
+      ;;
+  esac
+}
 
 do_compile () {
     HS=${HERE}/hs
@@ -157,6 +194,8 @@ do_scaffold () {
   # lol I hope you didn't misspell --isolate or --quiet
   # TODO: better arg parsing
 
+  ensure_testnet
+
   ISOLATE=false
   if [ "x$1" = "x--isolate" ] ; then
     ISOLATE=true
@@ -230,9 +269,9 @@ EOF
   IMAGE="reachsh/${SERVICE}"
   IMAGE_TAG="${IMAGE}:latest"
   if $VERBOSE ; then echo writing $DOCKER_COMPOSE_YML; fi
-  if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
-
-    cat >"${DOCKER_COMPOSE_YML}" <<EOF
+  case "$REACH_TESTNET_MODE" in
+    "ETH-ganache")
+      cat >"${DOCKER_COMPOSE_YML}" <<EOF
 version: '3'
 services:
   ${SERVICE}:
@@ -240,9 +279,9 @@ services:
     environment:
       - ETH_NODE_TYPE=in_memory_ganache
 EOF
-
-  else
-    cat >"${DOCKER_COMPOSE_YML}" <<EOF
+      ;;
+    "ETH-geth")
+      cat >"${DOCKER_COMPOSE_YML}" <<EOF
 version: '3'
 services:
   ${SERVICE}:
@@ -254,7 +293,11 @@ services:
   devnet:
     image: reachsh/ethereum-devnet:${REACH_VERSION}
 EOF
-  fi
+      ;;
+    *)
+      echo "impossible: unsupported REACH_TESTNET_MODE=$REACH_TESTNET_MODE"
+      exit 1
+  esac
 
   if $VERBOSE ; then echo writing "$MAKEFILE"; fi
   # TODO: a better makefile
@@ -351,6 +394,8 @@ do_run () {
   # * if some exist: error
   # make build run
   # unscaffold if UNSCAFFOLD 
+
+  ensure_testnet
 
   if [ "x$1" = "x" ] ; then
     APP="index"
