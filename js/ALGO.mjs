@@ -273,3 +273,6 @@ export const newTestAccount = async (startingBalance) => {
   await transfer(acc, FAUCET, startingBalance);
   showBalance('after', acc);
   return await connectAccount(acc); };
+
+export const ctcFromInfo = false; // XXX
+export const newAccountFromMnemonic = false; // XXX
