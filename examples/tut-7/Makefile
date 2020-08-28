@@ -1,5 +1,5 @@
 build/%.main.mjs: %.rsh
-	reach compile $^ main
+	../../reach compile $^ main
 
 .PHONY: build
 build: build/index.main.mjs
