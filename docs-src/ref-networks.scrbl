@@ -26,6 +26,20 @@ In Ethereum, @tech{time} corresponds to block numbers.
 The node that a given @tech{participant} is connected to does not instantly know that it's blocks are correctly and may revert past transactions after it reaches consensus with the rest of the network.
 This means that Reach applications must not make externally observable effects until after such consensus is reached.
 
+@tech{Backends} must respect the following environment variables:
+
+@itemlist[
+
+@item{@envvar{ETH_NODE_TYPE} may be either @litchar{in_memory_ganache}, to use an in memory instance of Ganache, or @litchar{uri} to use a URI.}
+
+@item{@envvar{ETH_NODE_URI} is used to contact the Ethereum node.
+It defaults to @litchar{http://localhost:8545}.}
+
+@item{@envvar{ETH_NODE_NETWORK} is used to name the Ethereum network.
+It defaults to @litchar{unspecified}.}
+
+]
+
 @section[#:tag "ref-network-algo"]{Algorand} @(experimental)
 
 The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a set of
