@@ -45,11 +45,18 @@
 (define (exloc . ps)
   (number->string
    (for/sum ([p (in-list ps)])
-    (length (file->lines (build-path x p))))))
+     (length (file->lines (build-path x p))))))
 
-(define (reachexlink p [label #f])
+(define (reachexlink p [label #f] #:loc [loc #f])
   (define url
-    (format "https://github.com/reach-sh/reach-lang/blob/master/examples/~a" p))
+    (format "https://github.com/reach-sh/reach-lang/blob/master/examples/~a~a"
+            p
+            (match loc
+              [#f ""]
+              [(cons from to)
+               (format "#L~a-L~a" from to)]
+              [from
+               (format "#L~a" from)])))
   @link[url (or label (exec p))])
 
 (define (reachex
@@ -58,18 +65,18 @@
          #:show-lines? [show-lines? #f]
          path . which)
 
-  (define ((do-link lab) content)
+  (define ((do-link lab) link-loc content)
     (list
      (tabular
       #:style 'boxed
-      (list (list (reachexlink path (exec lab)))))
+      (list (list (reachexlink path (exec lab) #:loc link-loc))))
      content))
   (define maybe-link
     (match link?
-      [#f (λ (x) x)]
+      [#f (λ (_ x) x)]
       [#t (do-link path)]
       [lab (do-link lab)]))
-  
+
   (define input (file->lines (build-path x path)))
   (define-values (num-pad add-num)
     (cond [(not show-lines?)
@@ -91,20 +98,25 @@
     (for/list ([e (in-list x)]
                [i (in-naturals 1)])
       (add-num i e)))
-  (define sel
+  (define-values (link-loc sel)
     (match which
-      ['() (add-nums input)]
+      ['()
+       (values
+        #f
+        (add-nums input))]
       [(list 'skip from to skip-s)
        (define once? #f)
-       (filter
-        (λ (x) x)
-        (for/list ([e (in-list input)]
-                   [i (in-naturals 1)])
-          (if (and (<= from i) (<= i to))
-            (if once? #f
-                (begin (set! once? #t)
-                       (string-append num-pad skip-s)))
-            (add-num i e))))]
+       (values
+        #f
+        (filter
+         (λ (x) x)
+         (for/list ([e (in-list input)]
+                    [i (in-naturals 1)])
+           (if (and (<= from i) (<= i to))
+             (if once? #f
+                 (begin (set! once? #t)
+                        (string-append num-pad skip-s)))
+             (add-num i e)))))]
       [(list 'only from to skip-s)
        (define trim-amt
          (let loop ([l (string->list skip-s)])
@@ -125,17 +137,27 @@
            [else
             s]))
        (define once? #f)
-       (filter
-        (λ (x) x)
-        (for/list ([e (in-list input)]
-                   [i (in-naturals 1)])
-          (if (and (<= from i) (<= i to))
-            (begin (set! once? #f) (add-num i (do-trim e)))
-            (if once? #f
-                (begin (set! once? #t)
-                       (string-append num-pad (do-trim skip-s)))))))]
-      [(list from) (drop (add-nums input) from)]
-      [(list #f to) (take (add-nums input) to)]
+       (values
+        (cons from to)
+        (filter
+         (λ (x) x)
+         (for/list ([e (in-list input)]
+                    [i (in-naturals 1)])
+           (if (and (<= from i) (<= i to))
+             (begin (set! once? #f) (add-num i (do-trim e)))
+             (if once? #f
+                 (begin (set! once? #t)
+                        (string-append num-pad (do-trim skip-s))))))))]
+      [(list from)
+       (values
+        from
+        (drop (add-nums input) from))]
+      [(list #f to)
+       (values
+        #f
+        (take (add-nums input) to))]
       [(list from to)
-       (drop (reverse (drop (reverse (add-nums input)) to)) from)]))
-  (maybe-link (apply mode (add-between sel "\n"))))
+       (values
+        (cons from to)
+        (drop (reverse (drop (reverse (add-nums input)) to)) from))]))
+  (maybe-link link-loc (apply mode (add-between sel "\n"))))
