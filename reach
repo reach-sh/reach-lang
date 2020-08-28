@@ -328,7 +328,7 @@ run_ () {
   shift
   PROJ="$1"
   shift
-  docker-compose -f "$F" run --rm reach-app-${PROJ} "$@"
+  docker-compose -f "$F" run --rm "reach-app-${PROJ}" "$@"
 }
 
 do_run () {
