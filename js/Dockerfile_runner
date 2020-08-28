@@ -18,6 +18,9 @@ ENV REACH_VERSION $REACH_VERSION_ARG
 
 COPY runner_package.template.json /app/package.template.json
 
+# TODO: use a gentler linter for this
+COPY .eslintrc.yaml /app/
+
 RUN mo /app/package.template.json > /app/package.json
 RUN rm /app/package.template.json
 RUN npm link '@reach-sh/stdlib'

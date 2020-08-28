@@ -71,99 +71,32 @@ EOF
 }
 
 do_init () {
+  # reach init [APP]
+  # ----------
+  # APP defaults to index
+  # fail if $APP.mjs or $APP.rsh exist
+  # write $APP.mjs and $APP.rsh
+
   APP="$1"
-  if [ "x$1" = "x" ] ; then
-    APP="$(basename "$(pwd)")"
-  fi
-  VERBOSE=Y
-
-  DOCKERFILE="Dockerfile"
-  PACKAGE_JSON="package.json"
-  DOCKER_COMPOSE_YAML="docker-compose.yaml"
-  MAKEFILE="Makefile"
-
-  if [ "x$2" = "x--temporary" ] ; then
-    APP="index"
-    DOCKERFILE="$DOCKERFILE.$APP"
-    PACKAGE_JSON="$PACKAGE_JSON.$APP"
-    DOCKER_COMPOSE_YAML="$DOCKER_COMPOSE_YAML.$APP"
-    MAKEFILE=""
-    VERBOSE=N
-    TEMPORARY=Y
-  fi
-
-  MJS="$APP.mjs"
-  RSH="$APP.rsh"
-
-  if [ "x$VERBOSE" = "xY" ] ; then echo writing $DOCKERFILE; fi
-  cat >"${DOCKERFILE}" <<EOF
-FROM reachsh/runner:${REACH_VERSION}
-
-# If your project needs more node dependencies:
-# COPY package.json /app/
-# RUN npm install
-
-COPY . /app
-EOF
-
-  if [ "x$VERBOSE" = "xY" ] ; then echo writing $PACKAGE_JSON; fi
-  # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
-  cat >"${PACKAGE_JSON}" <<EOF
-{
-  "name": "@reach-sh/${APP}",
-  "type": "module",
-  "dependencies": {
-    "@reach-sh/stdlib": "${REACH_VERSION}"
-  },
-  "author": "reach.sh",
-  "license": "Apache-2.0",
-  "scripts": {
-    "app": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
-  }
-}
-EOF
-
-  if [ "x$VERBOSE" = "xY" ] ; then echo writing $DOCKER_COMPOSE_YAML; fi
-  if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
-
-    cat >"${DOCKER_COMPOSE_YAML}" <<EOF
-version: '3'
-services:
-  reach-app:
-    image: reachsh/reach-app-${APP}:latest
-    environment:
-      - ETH_NODE_TYPE=in_memory_ganache
-EOF
-
+  if [ "x$APP" = "x" ] ; then
+    APP=index
   else
-    cat >"${DOCKER_COMPOSE_YAML}" <<EOF
-version: '3'
-services:
-  reach-app:
-    image: reachsh/reach-app-${APP}:latest
-    depends_on:
-      - devnet
-    environment:
-      - ETH_NODE_URI=http://devnet:8545
-  devnet:
-    image: reachsh/ethereum-devnet:${REACH_VERSION}
-EOF
+    shift
   fi
 
-  if [ "x$TEMPORARY" != "xY" ] ; then
-    if [ "x$VERBOSE" = "xY" ] ; then echo writing "$MAKEFILE"; fi
-    # TODO: a better makefile
-    cat >"${MAKEFILE}" <<EOF
-.PHONY: run
-run:
-	reach compile "${APP}.rsh" main && \\
-	  docker build -f "${DOCKERFILE}" -t "reachsh/reach-app-${APP}:latest" . && \\
-	  docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm reach-app
-EOF
+  RSH="$APP.rsh"
+  MJS="$APP.mjs"
 
-    if [ ! -f "$RSH" ] ; then
-      if [ "x$VERBOSE" = "xY" ] ; then echo writing "$RSH"; fi
-      cat >"${RSH}" <<EOF
+  if [ -f "$RSH" ] ; then
+    echo "$RSH already exists"
+    exit 1
+  fi
+  if [ -f "$MJS" ] ; then
+    echo "$MJS already exists"
+  fi
+
+  echo writing "$RSH"
+  cat >"${RSH}" <<EOF
 'reach 0.1';
 
 export const main = Reach.App(
@@ -172,11 +105,9 @@ export const main = Reach.App(
   }
 );
 EOF
-    fi
 
-    if [ ! -f "$MJS" ] ; then
-      if [ "x$VERBOSE" = "xY" ] ; then echo writing "$MJS"; fi
-      cat >"${MJS}" <<EOF
+  echo writing "$MJS"
+  cat >"${MJS}" <<EOF
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/${APP}.main.mjs';
 
@@ -203,27 +134,212 @@ import * as backend from './build/${APP}.main.mjs';
   console.log('Hello, Alice and Bob!');
 })();
 EOF
-    fi
+}
 
-    GITIGNORE=".gitignore"
-    if [ ! -f "$GITIGNORE" ] ; then
-      if [ "x$VERBOSE" = "xY" ] ; then echo writing "$GITIGNORE"; fi
-      cat >"$GITIGNORE" <<EOF
-build/
+do_scaffold () {
+  # reach scaffold [--isolate] [--quiet] [APP]
+  # --------------
+  # if next arg is --isolate, set ISOLATE flag & shift
+  # if next arg is --quiet, disable VERBOSE flag & shift
+  # APP is next arg, defaults to index
+  # write each of the below if they do not exist
+  # * .gitignore
+  # * .dockerignore
+  # Suffix the following file names with .$APP if ISOLATE:
+  # Error if any of the below exist:
+  # Write each of the below:
+  # * package.yaml
+  # * Dockerfile
+  # * docker-compose.yaml
+  # * Makefile
+
+  # lol I hope you didn't misspell --isolate or --quiet
+  # TODO: better arg parsing
+
+  ISOLATE=false
+  if [ "x$1" = "x--isolate" ] ; then
+    ISOLATE=true
+    shift
+  fi
+
+  VERBOSE=true
+  if [ "x$1" = "x--quiet" ] ; then
+    VERBOSE=false
+    shift
+  fi
+
+  APP="$1"
+  if [ "x$APP" = "x" ] ; then
+    APP="index"
+  else
+    shift
+  fi
+
+  PROJ="$(basename "$(pwd)")"
+  DOCKERFILE="Dockerfile"
+  PACKAGE_JSON="package.json"
+  DOCKER_COMPOSE_YAML="docker-compose.yaml"
+  MAKEFILE="Makefile"
+
+  if $ISOLATE ; then
+    PROJ="$PROJ-$APP"
+    DOCKERFILE="$DOCKERFILE.$APP"
+    PACKAGE_JSON="$PACKAGE_JSON.$APP"
+    DOCKER_COMPOSE_YAML="$DOCKER_COMPOSE_YAML.$APP"
+    MAKEFILE="$MAKEFILE.$APP"
+  fi
+
+  MJS="$APP.mjs"
+  RSH="$APP.rsh"
+
+  if $VERBOSE ; then echo writing $DOCKERFILE; fi
+  cat >"${DOCKERFILE}" <<EOF
+FROM reachsh/runner:${REACH_VERSION}
+
+# If your project needs more node dependencies:
+# COPY package.json /app/
+# RUN npm install
+
+COPY . /app
 EOF
-    fi
 
-  fi  # end if for non-temp file gen
+  if $VERBOSE ; then echo writing $PACKAGE_JSON; fi
+  # XXX We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
+  cat >"${PACKAGE_JSON}" <<EOF
+{
+  "name": "@reach-sh/${PROJ}",
+  "type": "module",
+  "dependencies": {
+    "@reach-sh/stdlib": "${REACH_VERSION}"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "scripts": {
+    "preapp": "eslint --ignore-path .gitignore --ext .mjs .",
+    "app": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
+  }
+}
+EOF
 
+  SERVICE="reach-app-${PROJ}"
+  IMAGE="reachsh/${SERVICE}"
+  IMAGE_TAG="${IMAGE}:latest"
+  if $VERBOSE ; then echo writing $DOCKER_COMPOSE_YAML; fi
+  if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
+
+    cat >"${DOCKER_COMPOSE_YAML}" <<EOF
+version: '3'
+services:
+  ${SERVICE}:
+    image: ${IMAGE_TAG}
+    environment:
+      - ETH_NODE_TYPE=in_memory_ganache
+EOF
+
+  else
+    cat >"${DOCKER_COMPOSE_YAML}" <<EOF
+version: '3'
+services:
+  ${SERVICE}:
+    image: ${IMAGE_TAG}
+    depends_on:
+      - devnet
+    environment:
+      - ETH_NODE_URI=http://devnet:8545
+  devnet:
+    image: reachsh/ethereum-devnet:${REACH_VERSION}
+EOF
+  fi
+
+  if $VERBOSE ; then echo writing "$MAKEFILE"; fi
+  # TODO: a better makefile
+  cat >"${MAKEFILE}" <<EOF
+build/%.main.mjs: %.rsh
+	reach compile $^ main
+
+.PHONY: build
+build: build/${APP}.main.mjs
+	docker build -f ${DOCKERFILE} --tag=${IMAGE_TAG} .
+
+.PHONY: run
+run: build
+	docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm ${SERVICE}
+EOF
+
+  GITIGNORE=".gitignore"
+  if [ ! -f "$GITIGNORE" ] ; then
+    if $VERBOSE ; then echo writing "$GITIGNORE"; fi
+    cat >"$GITIGNORE" <<EOF
+build/
+node_modules/
+EOF
+  fi
+
+  DOCKERIGNORE=".dockerignore"
+  if [ ! -f "$DOCKERIGNORE" ] ; then
+    if $VERBOSE ; then echo writing "$DOCKERIGNORE" ; fi
+    cat >"$DOCKERIGNORE" <<EOF
+node_modules/
+EOF
+  fi
+
+}
+
+do_unscaffold () {
+  ISOLATE=false
+  if [ "x$1" = "x--isolate" ] ; then
+    ISOLATE=true
+    shift
+  fi
+
+  VERBOSE=true
+  if [ "x$1" = "x--quiet" ] ; then
+    VERBOSE=false
+    shift
+  fi
+
+  APP="$1"
+  if [ "x$APP" = "x" ] ; then
+    APP="index"
+  else
+    shift
+  fi
+
+  DOCKERFILE="Dockerfile"
+  PACKAGE_JSON="package.json"
+  DOCKER_COMPOSE_YAML="docker-compose.yaml"
+  MAKEFILE="Makefile"
+
+  if $ISOLATE ; then
+    DOCKERFILE="$DOCKERFILE.$APP"
+    PACKAGE_JSON="$PACKAGE_JSON.$APP"
+    DOCKER_COMPOSE_YAML="$DOCKER_COMPOSE_YAML.$APP"
+    MAKEFILE="$MAKEFILE.$APP"
+  fi
+
+  for file in $DOCKERFILE $PACKAGE_JSON $DOCKER_COMPOSE_YAML $MAKEFILE ; do
+    if $VERBOSE ; then echo deleting $file ; fi
+    rm -f $file
+  done
 }
 
 run_ () {
   F="$1"
   shift
-  docker-compose -f "$F" run --rm reach-app "$@"
+  PROJ="$1"
+  shift
+  docker-compose -f "$F" run --rm reach-app-${PROJ} "$@"
 }
 
 do_run () {
+  # reach run args
+  # check state of scaffolded files
+  # * if none exist: scaffold in --isolate --quiet mode, set flag UNSCAFFOLD
+  # * if all exist: just use the existing things
+  # * if some exist: error
+  # make build run
+  # unscaffold if UNSCAFFOLD 
+
     if [ "x$1" = "x" ] ; then
         APP="index"
     else
@@ -249,25 +365,23 @@ do_run () {
         exit 1
     fi
 
+    MAKEFILE=Makefile.${APP}
     DOCKERFILE=Dockerfile.${APP}
     PACKAGE_JSON=package.json.${APP}
     DOCKER_COMPOSE_YAML=docker-compose.yaml.${APP}
 
     # XXX Can we add eslint on the JS?
-    
+
     # XXX could we use an embedded Makefile-like logic to go faster when there are no changes?
-    
-    do_compile "${RSH}" || exit 1
 
     # XXX do something different if it has already been non-temporarily initted?
-    do_init "$APP" --temporary
+    do_scaffold --isolate --quiet "$APP"
 
-    docker build -f "${DOCKERFILE}" -t "reachsh/reach-app-${APP}:latest" .
+    make -f "$MAKEFILE" build
     DOCKER_EXIT=$?
 
     cleanup () {
-      # echo rm -f "${PACKAGE_JSON}" "${DOCKERFILE}" "${DOCKER_COMPOSE_YAML}"
-      rm -f "${PACKAGE_JSON}" "${DOCKERFILE}" "${DOCKER_COMPOSE_YAML}"
+      do_unscaffold --isolate --quiet "$APP"
     }
 
     if [ $DOCKER_EXIT -ne 0 ] ; then
@@ -275,7 +389,11 @@ do_run () {
       exit $DOCKER_EXIT
     fi
 
-    run_ "$DOCKER_COMPOSE_YAML" "$@"
+    DIR="$(basename "$(pwd)")"
+    PROJ="$DIR-$APP"
+
+    # run_ "$DOCKER_COMPOSE_YAML" "$PROJ" "$@"
+    make -f "$MAKEFILE" run
     cleanup
 }
 
@@ -316,6 +434,12 @@ case ${SUBCOMMAND} in
         ;;
     init)
         do_init "$@"
+        ;;
+    scaffold)
+        do_scaffold "$@"
+        ;;
+    unscaffold)
+        do_unscaffold "$@"
         ;;
     lint)
         do_lint "$@"

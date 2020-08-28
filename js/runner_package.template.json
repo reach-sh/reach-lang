@@ -11,6 +11,7 @@
   "author": "reach.sh",
   "license": "Apache-2.0",
   "scripts": {
+    "preapp": "eslint --ignore-path .gitignore --ext .mjs .",
     "app": "node --experimental-modules --unhandled-rejections=strict index.mjs"
   }
 }
