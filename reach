@@ -415,7 +415,7 @@ do_run () {
     do_unscaffold --isolate --quiet "$APP"
   }
 
-  if [ "x$@" = "x" ] ; then
+  if [ "x$*" = "x" ] ; then
     make -f "$MAKEFILE" build run
   else
     # This is nuts and possibly a little bit wrong.
@@ -430,7 +430,8 @@ do_run () {
       done
     }
     ARGS=$(escape_args "$@")
-    # Yes it apparently has to be $(echo $ARGS) because reasons.
+    # Yes it apparently has to be exactly "$(echo $ARGS)" because reasons.
+    # shellcheck disable=SC2116,SC2086
     make -f "$MAKEFILE" build "run-$APP" ARGS="$(echo $ARGS)"
   fi
 
