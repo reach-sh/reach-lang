@@ -3,7 +3,7 @@
 
 @title[#:version reach-vers #:tag "workshop" #:style 'toc]{Workshop}
 
-The workshop is a collection of self-study projects to help your practice and learn Reach building specific projects.
+The workshop is a collection of self-study projects to help you on your way to mastery building decentralized applications through practice by building specific projects in Reach.
 It is designed to help direct you along the path of learning effective use of Reach and points out for you some of the design decisions that Reach programmers often make.
 
 Unlike @seclink["tut"]{the tutorial}, it is not meant for you just to copy code and see what appears; instead, you're meant to work on your own to build a project yourself.

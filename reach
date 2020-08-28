@@ -186,7 +186,7 @@ do_scaffold () {
   # Suffix the following file names with .$APP if ISOLATE:
   # Error if any of the below exist:
   # Write each of the below:
-  # * package.yaml
+  # * package.json
   # * Dockerfile
   # * docker-compose.yml
   # * Makefile

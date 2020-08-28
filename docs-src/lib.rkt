@@ -25,6 +25,11 @@
 (define (jsin . contents)
   (apply mintinline "javascript" contents))
 
+(define (yaml . contents)
+  (apply minted "yaml" contents))
+(define (makefile . contents)
+  (apply minted "makefile" contents))
+
 (define DApp @tech{DApp})
 (define DApps @tech{DApps})
 

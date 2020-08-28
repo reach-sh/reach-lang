@@ -12,10 +12,18 @@ run: check
 check:
 	./check.sh
 
-.PHONY: run-index
-run-index:
+.PHONY: run-live
+run-live:
+	docker-compose run --rm live
+
+.PHONY: run-alice
+run-alice:
 	docker-compose run --rm alice
 
+.PHONY: run-bob
+run-bob:
+	docker-compose run --rm bob
+
 .PHONY: down
-down: down-index
+down:
 	docker-compose down

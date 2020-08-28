@@ -1,6 +1,6 @@
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
-import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 import * as backend from './build/index.main.mjs';
+import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 
 ( async () => {
   const toNetworkFormat = (n) => stdlib.toWeiBigNumber(n, 'ether');
@@ -9,7 +9,7 @@ import * as backend from './build/index.main.mjs';
     `Are you Alice?`, yesno);
   const who = isAlice ? 'Alice' : 'Bob';
 
-  console.log(`Starting Rock, Paper, Scissors as ${who}`);
+  console.log(`Starting Rock, Paper, Scissors! as ${who}`);
 
   let acc = null;
   if ( await ask(
@@ -20,11 +20,9 @@ import * as backend from './build/index.main.mjs';
       `What is your account mnemonic?`, (x => x));
     acc = await stdlib.newAccountFromMnemonic(phrase); }
 
-  const doDeploy = await ask(
-    `Do you want to deploy the game? (y/n)`, yesno);
-
   let ctc = null;
-  if ( doDeploy ) {
+  if ( await ask(
+    `Do you want to deploy the contract? (y/n)`, yesno) ) {
     ctc = await acc.deploy(backend);
     console.log(`The contract is deployed as = ${ctc.info}`); }
   else {

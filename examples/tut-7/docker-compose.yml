@@ -1,5 +1,9 @@
 version: '3'
 services:
+  live:
+    image: reachsh/reach-app-tut-7:latest
+    environment:
+      - ETH_NODE_URI
   alice:
     image: reachsh/reach-app-tut-7:latest
     depends_on:

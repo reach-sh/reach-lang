@@ -1212,7 +1212,240 @@ In @seclink["tut-7"]{the final step}, we'll show how to exit "testing" mode with
 
 @section[#:tag "tut-7"]{Interaction and Independence}
 
-XXX
+In the last section, we made our @|RPS| run until there was a definitive winner.
+In this section, we won't be making any changes to the Reach program itself.
+Instead, we'll go under the covers of @exec{reach run}, as well as build a version of our game that is interactive and can be played away from a private developer test network.
+
+@(hrule)
+
+In the past, when we've run @exec{./reach run}, it would create a Docker image just for our Reach program that contained a temporary Node.js package connecting our JavaScript @tech{frontend} to the Reach standard library and a fresh instance of a private developer test network.
+Since in this section, we will customize this and build a non-automated version of @|RPS|, as well as give the option to connect to a real Ethereum network.
+
+We'll start by running
+
+@cmd{./reach scaffold}
+
+which will automatically generate the following files for us:
+
+@itemlist[
+
+@item{@exec{package.json} --- A Node.js package file that connects our @exec{index.mjs} to the Reach standard library.}
+
+@item{@exec{Dockerfile} --- A Docker image script that builds our package efficiently and runs it.}
+
+@item{@exec{docker-compose.yml} --- A Docker Compose script that connects our Docker image to a fresh instance of the Reach private developer test network.}
+
+@item{@exec{Makefile} --- A @exec{Makefile} that easily rebuilds and runs the Docker image.}
+
+]
+
+We're going to leave the first two files unchanged.
+You can look at them at @reachexlink["tut-7/package.json"] and @reachexlink["tut-7/Dockerfile"], but the details aren't especially important.
+However, we'll customize the other two files.
+
+First, let's look at the @reachexlink["tut-7/docker-compose.yml"] file:
+
+@reachex[#:mode yaml
+         #:show-lines? #t "tut-7/docker-compose.yml"
+         #:link #t]
+
+@itemlist[
+
+@item{Lines 3 through 6 define a service for connecting to a "live" Ethereum network.}
+
+@item{Lines 7 through 13 define a service for running a test instance named @litchar{alice}.}
+
+@item{Lines 14 through 20 duplicate this service with the name @litchar{bob}, so we can start two different instances.}
+
+@item{Lines 21 and 22 define the Reach private developer test network service.}
+
+]
+
+With these inplace, we can run
+
+@cmd{docker-compose run WHICH}
+
+where @exec{WHICH} is @litchar{live} for a live instance, or @litchar{alice} or @litchar{bob} for a test instance.
+If we use the live version, then we have to define the environment variable @envvar{ETH_NODE_URI} as the URI of our Ethereum node.
+
+We'll modify the @reachexlink["tut-7/Makefile"] to have commands to run each of these variants:
+
+@reachex[#:mode makefile
+         #:show-lines? #t "tut-7/Makefile"
+         #:link #t
+         'only 15 25 ""]
+
+However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
+Let's modify the JavaScript @tech{frontend} and make them interactive.
+
+@(hrule)
+
+We'll start from scratch and show every line of the program again.
+You'll see a lot of similarity between this and the last version, but for completeness, we'll show every line.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 1 6 "  // ..."]
+
+@itemlist[
+
+@item{Lines 1 and 2 are the same as before: importing the standard library and the backend.}
+
+@item{Line 3 is new and imports a helpful library for simple console applications called @exec{ask.mjs} from the Reach standard library.
+We'll see how these three functions are used below.}
+
+]
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 8 12 "  // ..."]
+
+@itemlist[
+
+@item{Lines 8 and 9 ask the question whether they are playing as Alice and expect a "Yes" or "No" answer.
+@jsin{ask} presents a prompt and collects a line of input until its argument does not error.
+@jsin{yesno} errors if it is not given "y" or "n".}
+
+]
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 14 21 "  // ..."]
+
+@itemlist[
+
+@item{Lines 15 and 16 present the user with the choice of creating a test account if they can or inputing a mnemonic to load an existing account.}
+
+@item{Line 17 creates the test account as before.}
+
+@item{Line 21 loads the existing account.}
+
+]
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 23 32 "  // ..."]
+
+@itemlist[
+
+@item{Lines 24 and 25 ask if the participant will deploy the contract.}
+
+@item{Lines 26 and 27 deploy it and print out public information (@jsin{ctc.info}) that can be given to the other player.}
+
+@item{Lines 29 through 27 request, parse, and process this information.
+@jsin{stdlib.ctcFromInfo} parses a @jsin{ctc.info} string into a @jsin{ctc} object.}
+
+]
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 34 27 "  // ..."]
+
+Next we define a few helper functions and start the participant interaction interface.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 42 44 "  // ..."]
+
+First we define a timeout handler.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 46 59 "  // ..."]
+
+Next, we request the wager amount or define the @jsin{acceptWager} method, depending on if we are Alice or not.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 61 75 "  // ..."]
+
+Next, we define the shared @jsin{getHand} method.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 77 80 "  // ..."]
+
+Finally, the @jsin{seeOutcome} method.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t
+         'only 82 89 "  // ..."]
+
+Lastly, we choose the appropriate backend function and await its completion.
+
+@(hrule)
+
+We can now run
+
+@cmd{make run-alice}
+
+in one terminal in this directory and
+
+@cmd{make run-bob}
+
+in another terminal in this directory.
+
+Here's an example run:
+
+@verbatim{
+$ make run-alice
+Are you Alice?
+y
+Starting Rock, Paper, Scissors as Alice
+Would you like to create an account? (only possible on devnet)
+y
+Do you want to deploy the game? (y/n)
+y
+The contract is deployed as = {"address": "0xdd1a445d4a85C4676094f84fFe19Fb3d76E502E0", "creation_block": 73}
+Your balance is 999.999999999999123878
+How much do you want to wager?
+10
+What hand will you play?
+r
+You played Rock
+The outcome is: Bob wins
+Your balance is now 989.999999999999040247}
+
+and
+
+@verbatim{
+$ make run-bob
+Are you Alice?
+n
+Starting Rock, Paper, Scissors as Bob
+Would you like to create an account? (only possible on devnet)
+y
+Do you want to deploy the game? (y/n)
+n
+Please paste the contract information:
+{"address": "0xdd1a445d4a85C4676094f84fFe19Fb3d76E502E0", "creation_block": 73}
+Your balance is 1000.0
+Do you accept the wager of 10.0?
+y
+What hand will you play?
+p
+You played Paper
+The outcome is: Bob wins
+Your balance is now 1009.999999999999938073}
+
+Of course, when you run the exact amounts and addresses may be different.
+
+@margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-7/index.rsh"], @reachexlink["tut-7/index.mjs"], @reachexlink["tut-7/package.json"], @reachexlink["tut-7/Dockerfile"], @reachexlink["tut-7/docker-compose.yml"], and @reachexlink["tut-7/Makefile"] to make sure you copied everything down correctly!}
+
+Now our implementation of @|RPS| is finished!
+We are protected against attacks, timeouts, and draws, and we can run interactively on non-test networks.
+
+In @seclink["tut-8"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
 
 @section[#:tag "tut-8"]{Onward and Further}
 
@@ -1240,7 +1473,26 @@ Let's review what we've done through this tutorial:
 
 Despite having done so much, this is really just a brief introduction to what is possible with Reach.
 
-It's now time for you to start working on your own application!
+How difficult was all this?
+Let's look at the final versions of our programs.
+
+First, let's look at the Reach program:
+
+@reachex[#:show-lines? #t "tut-7/index.rsh"
+         #:link #t]
+
+Next, the JavaScript frontend:
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-7/index.mjs"
+         #:link #t]
+
+We wrote @exloc["tut-7/index.rsh"] lines of Reach and @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] together.
+
+Behind the scenes, Reach generated @exloc["tut-7/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-7/build/index.main.sol"]), as well as @exloc["tut-7/build/index.main.mjs"] lines of JavaScript (which you can look at here: @reachexlink["tut-7/build/index.main.mjs"]).
+If we weren't using Reach, then we'd have to write these @exloc["tut-7/build/index.main.sol" "tut-7/build/index.main.mjs"] lines ourselves and ensure that they are consistent and updated at every change to the application.
+
+Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own application!
 
 @itemlist[
 
@@ -1256,5 +1508,3 @@ Now matter what you decide to read or work on next, we hope you'll join us on @(
 Once you join, message @litchar{@"@"team, I just completed the tutorial!} and we'll give you the @litchar{tutorial veteran} role, so you can more easily help others work through it!
 
 Thanks for spending your afternoon with us!
-
-XXX show programs one last time
