@@ -1,12 +1,23 @@
-version: '3'
+version: '3.4'
+x-app-base: &app-base
+  image: reachsh/examples-nim:v0.1.1
 services:
-  reach-app:
-    image: reachsh/examples-nim:v0.1.1
+  devnet:
+    image: reachsh/ethereum-devnet:v0.1.1
+  reach-app-ETH-test-geth-dockerized: &default-app
+    <<: *app-base
     depends_on:
       - devnet
     environment:
+      - REACH_CONNECTOR_MODE=ETH-test-geth-dockerized
       - ETH_NODE_URI=http://devnet:8545
       - ALGO_SERVER=http://docker.for.mac.localhost
-  devnet:
-    image: reachsh/ethereum-devnet:v0.1.1
-
+  reach-app-ETH-test-ganache-embedded:
+    <<: *app-base
+    environment:
+      - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded
+  reach-app-FAKE-test-mock-embedded:
+    <<: *app-base
+    environment:
+      - REACH_CONNECTOR_MODE=FAKE-test-mock-embedded
+  reach-app: *default-app

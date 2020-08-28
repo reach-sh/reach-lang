@@ -21,7 +21,7 @@
     "preapp": "eslint --ignore-path .gitignore --ext .mjs .",
     "app": "node --experimental-modules --unhandled-rejections=strict index.mjs ETH",
     "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
-    "test": "node --experimental-modules --unhandled-rejections=strict index.mjs",
+    "index": "node --experimental-modules --unhandled-rejections=strict index.mjs",
     "interactive": "node --experimental-modules --unhandled-rejections=strict interactive.mjs"
   }
 }

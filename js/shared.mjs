@@ -242,3 +242,35 @@ export function array_set(arr, idx, elem) {
   const arrp = arr.slice();
   arrp[idx] = elem;
   return arrp; }
+
+// Fragment defaulting goes to to bottom
+const knownConnectorModes = [
+  'ETH-test-geth-dockerized',
+  'ETH-test-ganache-embedded',
+  'FAKE-test-mock-embedded',
+  'ALGO-test-something-dockerized',
+];
+
+const defaults = {
+};
+
+// Populate defaults
+for (const knownConnectorMode of knownConnectorModes) {
+  let prefix = false;
+  for (const piece of knownConnectorMode.split('-')) {
+    prefix = prefix ? `${prefix}-${piece}` : piece;
+    if (!defaults[prefix]) {
+      defaults[prefix] = knownConnectorMode;
+    }
+  }
+}
+
+export function getConnectorMode() {
+  const connectorMode = process.env.REACH_CONNECTOR_MODE || 'ETH';
+  const canonicalized = defaults[connectorMode];
+  if (typeof canonicalized === 'string') {
+    return canonicalized;
+  } else {
+    throw Error(`Unrecognized REACH_CONNECTOR_MODE=${connectorMode}`);
+  }
+}

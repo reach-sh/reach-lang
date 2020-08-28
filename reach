@@ -14,41 +14,96 @@ if ! (which docker docker-compose > /dev/null 2>&1) ; then
   exit 1
 fi
 
+fatal_infinite_reach_run_loop () {
+  echo 'reach run has detected an infinite loop'
+  echo '`make run` may not call `reach run` with no arguments'
+  echo 'instead try something like `reach run index` from `make run`'
+}
+
+fatal_connector_mode_coming_soon () {
+  echo 'Sorry. Support for $REACH_CONNECTOR_MODE is coming soon!'
+  exit 1
+}
+
+fatal_pls_report () {
+  echo "Please report this as a reach bug: https://github.com/reach-sh/reach-lang/issues"
+  exit 1
+}
+
+fatal_impossible_connector_mode() {
+  echo "impossible: unsupported REACH_CONNECTOR_MODE=$REACH_CONNECTOR_MODE"
+  fatal_pls_report
+}
+
+fatal_unrecognized_connector_mode() {
+  echo "Unrecognized REACH_CONNECTOR_MODE=$REACH_CONNECTOR_MODE"
+  exit 1
+}
+
 ensure_testnet () {
-  # Makes sure to set REACH_TESTNET_MODE to one of:
-  # * ETH-ganache     # TODO: distinguish in-memory ganache?
-  # * ETH-geth
-  # * FAKE
-  # * ALGO-something  # TODO: support. # TODO: what is 'something' called?
+  # Makes sure to set REACH_CONNECTOR_MODE to one of:
+  # * ETH-test-geth-dockerized
+  # * ETH-test-ganache-embedded
+  # * FAKE-test-mock-embedded
+  # * ALGO-test-something-dockerized
+  # $WHAT-$WHERE-$HOW-$HOW_WHERE
   # (or error)
   # This can be derived from REACH_TESTNET and possibly REACH_ETH_MODE
 
-  REACH_TESTNET=${REACH_TESTNET:-ETH}
-  case "$REACH_TESTNET" in
+  # Expand defaults
+  REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE:-ETH}
+  case "$REACH_CONNECTOR_MODE" in
     "ETH")
-      REACH_TESTNET_MODE=${REACH_TESTNET_MODE:-ETH-${REACH_ETH_MODE:-geth}}
-      case "$REACH_TESTNET_MODE" in
-        "ETH-ganache|ETH-geth")
-        # this is fine
-        ;;
-        *)
-          echo "Unrecognized REACH_TESTNET_MODE=$REACH_TESTNET_MODE"
-          ;;
-      esac
+      REACH_CONNECTOR_MODE="ETH-test-geth-dockerized"
+      ;;
+    "ETH-test")
+      REACH_CONNECTOR_MODE="ETH-test-geth-dockerized"
+      ;;
+    "ETH-test-geth")
+      REACH_CONNECTOR_MODE="ETH-test-geth-dockerized"
+      ;;
+    "ETH-test-ganache")
+      REACH_CONNECTOR_MODE="ETH-test-ganache-embedded"
       ;;
     "FAKE")
-      echo "Sorry; support for REACH_TESTNET=FAKE coming soon!"
-      exit 1
+      REACH_CONNECTOR_MODE="FAKE-test-mock-embedded"
       ;;
+    "FAKE-test")
+      REACH_CONNECTOR_MODE="FAKE-test-mock-embedded"
+      ;;
+    "FAKE-test-mock")
+      REACH_CONNECTOR_MODE="FAKE-test-mock-embedded"
+      ;;
+    # TODO: what is 'default' called for ALGO?
     "ALGO")
-      echo "Sorry; support for REACH_TESTNET=ALGO coming soon!"
-      exit 1
+      REACH_CONNECTOR_MODE="ALGO-test-default-dockerized"
       ;;
-    *)
-      echo "Unrecognized REACH_TESTNET=$REACH_TESTNET"
-      exit 1
+    "ALGO-test")
+      REACH_CONNECTOR_MODE="ALGO-test-default-dockerized"
+      ;;
+    "ALGO-test-default")
+      REACH_CONNECTOR_MODE="ALGO-test-default-dockerized"
       ;;
   esac
+
+  # ensure it is one of the supported things
+  case "$REACH_CONNECTOR_MODE" in
+    "ETH-test-geth-dockerized")
+      ;;
+    "ETH-test-ganache-embedded")
+      ;;
+    "FAKE-test-mock-embedded")
+      ;;
+    "ALGO-test-something-dockerized")
+      fatal_connector_mode_coming_soon
+      ;;
+    *)
+      fatal_unrecognized_connector_mode
+      ;;
+  esac
+
+  # make sure sub-commands receive this
+  export REACH_CONNECTOR_MODE
 }
 
 do_compile () {
@@ -233,14 +288,17 @@ do_scaffold () {
   RSH="$APP.rsh"
 
   if $VERBOSE ; then echo writing $DOCKERFILE; fi
+  # TODO: remove the package.json -> package.json if not --isolate
   cat >"${DOCKERFILE}" <<EOF
 FROM reachsh/runner:${REACH_VERSION}
 
 # If your project needs more node dependencies:
-# COPY package.json /app/
+# COPY ${PACKAGE_JSON} /app/package.json
 # RUN npm install
 
 COPY . /app
+RUN cp /app/${PACKAGE_JSON} /app/package.json
+CMD ["${APP}"]
 EOF
 
   # TODO: s/lint/preapp. It's disabled because sometimes our
@@ -260,7 +318,7 @@ EOF
   "license": "Apache-2.0",
   "scripts": {
     "lint": "eslint --ignore-path .gitignore --ext .mjs .",
-    "app": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
+    "${APP}": "node --experimental-modules --unhandled-rejections=strict ${MJS}"
   }
 }
 EOF
@@ -269,52 +327,52 @@ EOF
   IMAGE="reachsh/${SERVICE}"
   IMAGE_TAG="${IMAGE}:latest"
   if $VERBOSE ; then echo writing $DOCKER_COMPOSE_YML; fi
-  case "$REACH_TESTNET_MODE" in
-    "ETH-ganache")
-      cat >"${DOCKER_COMPOSE_YML}" <<EOF
-version: '3'
+  cat >"${DOCKER_COMPOSE_YML}" <<EOF
+version: '3.4'
+x-app-base: &app-base
+  image: ${IMAGE_TAG}
 services:
-  ${SERVICE}:
-    image: ${IMAGE_TAG}
-    environment:
-      - ETH_NODE_TYPE=in_memory_ganache
-EOF
-      ;;
-    "ETH-geth")
-      cat >"${DOCKER_COMPOSE_YML}" <<EOF
-version: '3'
-services:
-  ${SERVICE}:
-    image: ${IMAGE_TAG}
+  devnet:
+    image: reachsh/ethereum-devnet:${REACH_VERSION}
+  ${SERVICE}-ETH-test-geth-dockerized: &default-app
+    <<: *app-base
     depends_on:
       - devnet
     environment:
+      - REACH_CONNECTOR_MODE=ETH-test-geth-dockerized
       - ETH_NODE_URI=http://devnet:8545
-  devnet:
-    image: reachsh/ethereum-devnet:${REACH_VERSION}
+  ${SERVICE}-ETH-test-ganache-embedded:
+    <<: *app-base
+    environment:
+      - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded
+  ${SERVICE}-FAKE-test-mock-embedded:
+    <<: *app-base
+    environment:
+      - REACH_CONNECTOR_MODE=FAKE-test-mock-embedded
+  ${SERVICE}-: *default-app
+  ${SERVICE}: *default-app
 EOF
-      ;;
-    *)
-      echo "impossible: unsupported REACH_TESTNET_MODE=$REACH_TESTNET_MODE"
-      exit 1
-  esac
+
 
   if $VERBOSE ; then echo writing "$MAKEFILE"; fi
   # TODO: a better makefile
   cat >"${MAKEFILE}" <<EOF
+REACH = reach
+
 build/%.main.mjs: %.rsh
-	reach compile $^ main
+	\$(REACH) compile $^ main
 
 .PHONY: build
 build: build/${APP}.main.mjs
 	docker build -f ${DOCKERFILE} --tag=${IMAGE_TAG} .
 
 .PHONY: run
-run: run-${APP}
+run:
+	\$(REACH) run ${APP}
 
-.PHONY: run-${APP}
-run-${APP}: build
-	docker-compose -f "${DOCKER_COMPOSE_YML}" run --rm ${SERVICE} app \$(ARGS)
+.PHONY: run-target
+run-target: build
+	docker-compose -f "${DOCKER_COMPOSE_YML}" run --rm ${SERVICE} \$(ARGS)
 
 .PHONY: down
 down: down-${APP}
@@ -397,16 +455,25 @@ do_run () {
 
   ensure_testnet
 
+  if $BARE_REACH_RUN ; then fatal_infinite_reach_run_loop ; fi
+
+  export BARE_REACH_RUN=false
   if [ "x$1" = "x" ] ; then
+    export BARE_REACH_RUN=true
     APP="index"
   else
     ARG=$1
+    shift
+
+    # TODO: better arg parsing at some point
+    if [ "x$ARG" = "x--" ] ; then
+      ARG="index"
+    fi
     if [ -d "$ARG" ] ; then
       ARG="$ARG/index"
     fi
     cd "$(dirname "$ARG")" || exit
     APP="$(basename "$ARG")"
-    shift
   fi
 
   RSH="${APP}.rsh"
@@ -460,13 +527,13 @@ do_run () {
     do_unscaffold --isolate --quiet "$APP"
   }
 
-  if [ "x$*" = "x" ] ; then
+  if $BARE_REACH_RUN ; then
     make -f "$MAKEFILE" build run
   else
     # This is nuts and possibly a little bit wrong.
     # Easier methods exist but they are outside of POSIX standard.
     escape_args () {
-      for arg in "$@" ; do
+      for arg in "$APP" "$@" ; do
         escaped_arg=""
         for word in $arg ; do
           escaped_arg="$escaped_arg$(printf "%s\ " "$word")"
@@ -477,7 +544,7 @@ do_run () {
     ARGS=$(escape_args "$@")
     # Yes it apparently has to be exactly "$(echo $ARGS)" because reasons.
     # shellcheck disable=SC2116,SC2086
-    make -f "$MAKEFILE" build "run-$APP" ARGS="$(echo $ARGS)"
+    make -f "$MAKEFILE" build "run-target" ARGS="$(echo $ARGS)"
   fi
 
   do_unscaffold --isolate --quiet "$APP"

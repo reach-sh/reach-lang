@@ -2,6 +2,7 @@ import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/index.main.mjs';
 
 console.log(process.argv);
+stdlib.assert(process.argv[3] === 'Mr. Postman');
 
 (async () => {
   const startingBalance = stdlib.toWeiBigNumber('100', 'ether');

@@ -9,17 +9,18 @@ build: build/index.main.mjs
 
 .PHONY: run
 run:
-	docker-compose run --rm reach-app
+	../../reach run index
 
-.PHONY: run-index
-run-index:
-	docker-compose run --rm reach-app test \$(ARGS)
+.PHONY: run-target
+run-target:
+	docker-compose run --rm reach-app-$${REACH_CONNECTOR_MODE:-ETH-test-geth-dockerized} $(ARGS)
 
 .PHONY: run-ganache
 run-ganache:
-	docker run \
-	  -e ETH_NODE_TYPE='in_memory_ganache' \
-	  $(TAG)
+	REACH_CONNECTOR_MODE=ETH-test-ganache-embedded make run
+# docker run \
+#   -e REACH_CONNECTOR_MODE='ETH-test-ganache-embedded' \
+#   $(TAG)
 
 .PHONY: run-devnet
 run-devnet:

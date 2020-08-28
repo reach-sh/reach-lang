@@ -1,23 +1,19 @@
 import Timeout         from 'await-timeout';
 import ethers          from 'ethers';
-import ganache         from 'ganache-core';
 import * as http       from 'http';
 import * as url        from 'url';
 import * as waitPort   from 'wait-port';
 
 import {
   getDEBUG, debug, bigNumberify, isBigNumber, assert,
+  getConnectorMode,
 } from './shared.mjs';
 export * from './shared.mjs';
-
-const panic = e => { throw Error(e); };
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-// TODO: make ganache a dynamic dependency rather than
-// importing it always.
 // XXX: when using ganache: nvm use 12
 // ganache-core doesn't work with npm version 14 yet
 // https://github.com/trufflesuite/ganache-cli/issues/732#issuecomment-623782405
@@ -81,16 +77,19 @@ void(flaky); // XXX
 
 // Common interface exports
 
-const nodeType = process.env.ETH_NODE_TYPE || 'uri';
+const connectorMode = getConnectorMode();
 
-const networkDesc = nodeType == 'in_memory_ganache' ? {
-  type: nodeType,
-} : nodeType == 'uri' ? {
-  type: nodeType,
+const networkDesc = connectorMode == 'ETH-test-ganache-embedded' ? {
+  type: 'ganache-embedded',
+} : connectorMode == 'ETH-test-geth-dockerized' ? {
+  type: 'uri',
   uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
   network: process.env.ETH_NODE_NETWORK || 'unspecified',
-} : panic(`Unknown node type ${nodeType}`);
-// ^ I resent that this can't be written throw Error(e)
+} : connectorMode == 'FAKE-test-mock-embedded' ? {
+  type: 'skip',
+} : {
+  type: 'skip',
+};
 
 const portP = (async () => {
   if (networkDesc.type != 'uri') { return; }
@@ -161,19 +160,31 @@ const etherspP = (async () => {
     const ethersp = new ethers.providers.JsonRpcProvider(networkDesc.uri);
     ethersp.pollingInterval = 500; // ms
     return ethersp;
-  } else if (networkDesc.type == 'in_memory_ganache') {
+  } else if (networkDesc.type == 'ganache-embedded') {
+    const {default: ganache} = await import('ganache-core');
     const default_balance_ether = '999999999';
     const ganachep = ganache.provider({default_balance_ether});
     return new ethers.providers.Web3Provider(ganachep);
   } else {
-    throw Error(`Unhandled networkDesc.type ${networkDesc.type}`);
+    // This lib was imported, but not for its net connection.
+    return null;
   }
 })();
+
+async function getEthersP() {
+  const ethersp = await etherspP;
+  if (ethersp === null) {
+    throw Error(`Using stdlib/ETH is incompatible with REACH_CONNECTOR_MODE=${connectorMode}`);
+  } else {
+    return ethersp;
+  }
+}
+
 
 // XXX expose setProvider
 
 const ethersBlockOnceP = async () => {
-  const ethersp = await etherspP;
+  const ethersp = await getEthersP();
   return new Promise((resolve) => ethersp.once('block', (n) => resolve(n)));
 };
 
@@ -184,7 +195,7 @@ export const balanceOf = async acc => {
   if (networkAccount.getBalance) {
     return bigNumberify(await acc.networkAccount.getBalance());
   } else if (networkAccount.address) {
-    const ethersp = await etherspP;
+    const ethersp = await getEthersP();
     return bigNumberify(await ethersp.getBalance(networkAccount.address));
   } else throw Error(`acc.networkAccount.address missing. Got: ${networkAccount}`);
 };
@@ -214,14 +225,14 @@ const rejectInvalidReceiptFor = async (txHash, r) =>
                   : resolve(r));
 
 const fetchAndRejectInvalidReceiptFor = async txHash => {
-  const ethersp = await etherspP;
+  const ethersp = await getEthersP();
   const r = await ethersp.getTransactionReceipt(txHash);
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
 export const connectAccount = async networkAccount => {
   // XXX networkAccount MUST be a wallet to deploy/attach
-  const ethersp = await etherspP;
+  const ethersp = await getEthersP();
   const { address } = networkAccount;
   const shad = address.substring(2,6);
 
@@ -389,7 +400,7 @@ export const newAccountFromMnemonic = async (phrase) => {
 
 export const newTestAccount = async (startingBalance) => {
   debug(`newTestAccount(${startingBalance})`);
-  const ethersp = await etherspP;
+  const ethersp = await getEthersP();
   const prefunder = ethersp.getSigner();
 
   const networkAccount = ethers.Wallet.createRandom().connect(ethersp);

@@ -15,7 +15,7 @@ run:
 .PHONY: run-ganache
 run-ganache:
 	docker run \
-	  -e ETH_NODE_TYPE='in_memory_ganache' \
+	  -e REACH_CONNECTOR_MODE='ETH-test-ganache-embedded' \
 	  $(TAG)
 
 .PHONY: run-devnet

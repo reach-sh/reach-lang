@@ -29,6 +29,7 @@
   "scripts": {
     "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
     "test": "node --experimental-modules ETH-test.mjs",
-    "runner": "node --experimental-modules --unhandled-rejections=strict runner.mjs"
+    "runner": "node --experimental-modules --unhandled-rejections=strict runner.mjs",
+    "zzz": "node --experimental-modules --unhandled-rejections=strict test.mjs"
   }
 }

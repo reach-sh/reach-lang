@@ -4,9 +4,11 @@ services:
     image: reachsh/stdlib:v0.1.1
     build: .
     entrypoint: npm run test
-    depends_on:
-      - devnet
     environment:
-      - ETH_NODE_URI=http://devnet:8545
-  devnet:
-    image: reachsh/ethereum-devnet:v0.1.1
+      - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded
+  #   depends_on:
+  #     - devnet
+  #   environment:
+  #     - ETH_NODE_URI=http://devnet:8545
+  # devnet:
+  #   image: reachsh/ethereum-devnet:v0.1.1
