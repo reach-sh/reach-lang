@@ -1,5 +1,6 @@
 import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
 import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
+import * as stdlib_fake from '@reach-sh/stdlib/FAKE.mjs';
 import * as NIM from './build/index.main.mjs';
 
 ( async () => {
@@ -12,6 +13,10 @@ import * as NIM from './build/index.main.mjs';
             , wagerAmount: stdlib_eth.toWeiBigNumber('5', 'ether') }
           : ( proto == 'ALGO' ?
               { stdlib: stdlib_algo
+                , startingBalance: 1000000
+                , wagerAmount: 5 }
+              : ( proto == 'FAKE' ) ?
+              { stdlib: stdlib_fake
                 , startingBalance: 1000000
                 , wagerAmount: 5 }
               : process.exit(1) ) );

@@ -13,7 +13,7 @@ run:
 
 .PHONY: run-index
 run-index:
-	docker-compose run --rm reach-app app \$(ARGS)
+	docker-compose run --rm reach-app test \$(ARGS)
 
 .PHONY: run-ganache
 run-ganache:
