@@ -270,7 +270,7 @@ run: run-${APP}
 
 .PHONY: run-${APP}
 run-${APP}: build
-	docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm ${SERVICE} \$(ARGS)
+	docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm ${SERVICE} app \$(ARGS)
 
 .PHONY: down
 down: down-${APP}
@@ -416,8 +416,15 @@ do_run () {
     do_unscaffold --isolate --quiet "$APP"
   }
 
-  # TODO: run with args if provided
-  make -f "$MAKEFILE" build run
+  if [ "x$*" = "x" ] ; then
+    make -f "$MAKEFILE" build run
+  else
+    # Note: this has to be $* and not $@ because
+    # ARGS must be one string for the Makefile.
+    # TODO: escape it or something so that args don't get word split?
+    make -f "$MAKEFILE" build "run-$APP" ARGS="$*"
+  fi
+
   do_unscaffold --isolate --quiet "$APP"
   MAKE_EXIT=$?
   if [ $MAKE_EXIT -ne 0 ] ; then
