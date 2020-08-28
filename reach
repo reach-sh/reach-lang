@@ -41,7 +41,7 @@ fatal_unrecognized_connector_mode() {
   exit 1
 }
 
-ensure_testnet () {
+ensure_connector_mode () {
   # Makes sure to set REACH_CONNECTOR_MODE to one of:
   # * ETH-test-geth-dockerized
   # * ETH-test-ganache-embedded
@@ -250,7 +250,7 @@ do_scaffold () {
   # lol I hope you didn't misspell --isolate or --quiet
   # TODO: better arg parsing
 
-  ensure_testnet
+  ensure_connector_mode
 
   ISOLATE=false
   if [ "x$1" = "x--isolate" ] ; then
@@ -454,7 +454,7 @@ do_run () {
   # make build run
   # unscaffold if UNSCAFFOLD 
 
-  ensure_testnet
+  ensure_connector_mode
 
   if $BARE_REACH_RUN ; then fatal_infinite_reach_run_loop ; fi
 

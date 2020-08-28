@@ -1,4 +1,4 @@
-REACH = reach
+REACH = ../../reach
 
 build/%.main.mjs: %.rsh
 	$(REACH) compile $^ main
