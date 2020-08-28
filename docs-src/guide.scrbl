@@ -43,7 +43,7 @@ XXX
 
 @section[#:tag "guide-loop-invs"]{Finding and using loop invariants}
 
-XXX
+XXX 
 
 @section[#:tag "guide-reach"]{How does Reach work?}
 
