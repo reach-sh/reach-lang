@@ -150,7 +150,7 @@ do_scaffold () {
   # Write each of the below:
   # * package.yaml
   # * Dockerfile
-  # * docker-compose.yaml
+  # * docker-compose.yml
   # * Makefile
 
   # lol I hope you didn't misspell --isolate or --quiet
@@ -178,14 +178,14 @@ do_scaffold () {
   PROJ="$(basename "$(pwd)")"
   DOCKERFILE="Dockerfile"
   PACKAGE_JSON="package.json"
-  DOCKER_COMPOSE_YAML="docker-compose.yaml"
+  DOCKER_COMPOSE_YML="docker-compose.yml"
   MAKEFILE="Makefile"
 
   if $ISOLATE ; then
     PROJ="$PROJ-$APP"
     DOCKERFILE="$DOCKERFILE.$APP"
     PACKAGE_JSON="$PACKAGE_JSON.$APP"
-    DOCKER_COMPOSE_YAML="$DOCKER_COMPOSE_YAML.$APP"
+    DOCKER_COMPOSE_YML="$DOCKER_COMPOSE_YML.$APP"
     MAKEFILE="$MAKEFILE.$APP"
   fi
 
@@ -228,10 +228,10 @@ EOF
   SERVICE="reach-app-${PROJ}"
   IMAGE="reachsh/${SERVICE}"
   IMAGE_TAG="${IMAGE}:latest"
-  if $VERBOSE ; then echo writing $DOCKER_COMPOSE_YAML; fi
+  if $VERBOSE ; then echo writing $DOCKER_COMPOSE_YML; fi
   if [ "x${REACH_ETH_MODE}" = "xganache" ] ; then
 
-    cat >"${DOCKER_COMPOSE_YAML}" <<EOF
+    cat >"${DOCKER_COMPOSE_YML}" <<EOF
 version: '3'
 services:
   ${SERVICE}:
@@ -241,7 +241,7 @@ services:
 EOF
 
   else
-    cat >"${DOCKER_COMPOSE_YAML}" <<EOF
+    cat >"${DOCKER_COMPOSE_YML}" <<EOF
 version: '3'
 services:
   ${SERVICE}:
@@ -270,11 +270,11 @@ run: run-${APP}
 
 .PHONY: run-${APP}
 run-${APP}: build
-	docker-compose -f "${DOCKER_COMPOSE_YAML}" run --rm ${SERVICE} app \$(ARGS)
+	docker-compose -f "${DOCKER_COMPOSE_YML}" run --rm ${SERVICE} app \$(ARGS)
 
 .PHONY: down
 down: down-${APP}
-	docker-compose -f "${DOCKER_COMPOSE_YAML}" down
+	docker-compose -f "${DOCKER_COMPOSE_YML}" down
 EOF
 
   GITIGNORE=".gitignore"
@@ -318,17 +318,17 @@ do_unscaffold () {
 
   DOCKERFILE="Dockerfile"
   PACKAGE_JSON="package.json"
-  DOCKER_COMPOSE_YAML="docker-compose.yaml"
+  DOCKER_COMPOSE_YML="docker-compose.yml"
   MAKEFILE="Makefile"
 
   if $ISOLATE ; then
     DOCKERFILE="$DOCKERFILE.$APP"
     PACKAGE_JSON="$PACKAGE_JSON.$APP"
-    DOCKER_COMPOSE_YAML="$DOCKER_COMPOSE_YAML.$APP"
+    DOCKER_COMPOSE_YML="$DOCKER_COMPOSE_YML.$APP"
     MAKEFILE="$MAKEFILE.$APP"
   fi
 
-  for file in $DOCKERFILE $PACKAGE_JSON $DOCKER_COMPOSE_YAML $MAKEFILE ; do
+  for file in $DOCKERFILE $PACKAGE_JSON $DOCKER_COMPOSE_YML $MAKEFILE ; do
     if $VERBOSE ; then echo deleting $file ; fi
     rm -f $file
   done
@@ -381,11 +381,11 @@ do_run () {
   MAKEFILE=Makefile
   DOCKERFILE=Dockerfile
   PACKAGE_JSON=package.json
-  DOCKER_COMPOSE_YAML=docker-compose.yaml
+  DOCKER_COMPOSE_YML=docker-compose.yml
 
   NONE_EXIST=true
   # Note: Makefile excluded from this check
-  if [ -f "$DOCKERFILE" ] || [ -f "$PACKAGE_JSON" ] || [ -f "$DOCKER_COMPOSE_YAML" ] ; then
+  if [ -f "$DOCKERFILE" ] || [ -f "$PACKAGE_JSON" ] || [ -f "$DOCKER_COMPOSE_YML" ] ; then
     NONE_EXIST=false
   fi
 
@@ -396,10 +396,10 @@ do_run () {
     # MAKEFILE=$MAKEFILE.${APP}
     # DOCKERFILE=$Dockerfile.${APP}
     # PACKAGE_JSON=$PACKAGE_JSON.${APP}
-    # DOCKER_COMPOSE_YAML=$DOCKER_COMPOSE_YAML.${APP}
+    # DOCKER_COMPOSE_YML=$DOCKER_COMPOSE_YML.${APP}
   else
     NOT_ALL_EXIST=true
-    if [ -f "$MAKEFILE" ] && [ -f "$DOCKERFILE" ] && [ -f "$PACKAGE_JSON" ] && [ -f "$DOCKER_COMPOSE_YAML" ] ; then
+    if [ -f "$MAKEFILE" ] && [ -f "$DOCKERFILE" ] && [ -f "$PACKAGE_JSON" ] && [ -f "$DOCKER_COMPOSE_YML" ] ; then
       NOT_ALL_EXIST=false
     fi
 

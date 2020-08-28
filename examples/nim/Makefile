@@ -9,7 +9,11 @@ build: build/index.main.mjs
 
 .PHONY: run
 run:
-	docker-compose run reach-app
+	docker-compose run --rm reach-app
+
+.PHONY: run-index
+run-index:
+	docker-compose run --rm reach-app app \$(ARGS)
 
 .PHONY: run-ganache
 run-ganache:
