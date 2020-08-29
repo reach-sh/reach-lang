@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	reach compile index.rsh rps rental
+	../../reach compile index.rsh rps rental
 
 .PHONY: run
 run:

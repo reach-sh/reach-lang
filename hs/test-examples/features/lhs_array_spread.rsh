@@ -8,7 +8,7 @@ export const main = Reach.App(
     const [ t, ...foo ] = [ 0 ];
     assert(t == 0);
     assert(foo.length == 0);
-    
+
     const xs = [0, true, 2, 3];
     assert(xs.length == 4);
 
