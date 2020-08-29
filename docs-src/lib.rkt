@@ -50,7 +50,10 @@
 (define (exloc . ps)
   (number->string
    (for/sum ([p (in-list ps)])
-     (length (file->lines (build-path x p))))))
+     (match p
+       [(? number?) p]
+       [_
+        (length (file->lines (build-path x p)))]))))
 
 (define (reachexlink p [label #f] #:loc [loc #f])
   (define url

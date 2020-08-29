@@ -132,9 +132,9 @@ and the @exec{build} directory will contain a new file named @reachexlink["overv
 The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at @reachexlink["overview/build/index.main.sol"] to see the original Solidity source that it is compiled from.
 Reach can leave files like these in place when run with @DFlag{intermediate-files}.}
 
-For this @exloc["overview/index.rsh"] line application, the Reach compiler generated @exloc["overview/build/index.main.mjs"] lines of JavaScript code in two functions, one for Alice and one for Bob.
+For this @exloc["overview/index.rsh"] line application, the Reach compiler generated @exloc["overview/build/index.main.mjs" -152] lines of JavaScript code in two functions, one for Alice and one for Bob.
 Separately, it generated @exloc["overview/build/index.main.sol"] lines of Solidity code to implement the contract.
-If a programmer wasn't using Reach, they would have to write these @exloc["overview/build/index.main.mjs" "overview/build/index.main.sol"] lines in these three modules separately and keep them synchronized at every step of the development process.
+If a programmer wasn't using Reach, they would have to write these @exloc["overview/build/index.main.mjs" "overview/build/index.main.sol" -152] lines in these three modules separately and keep them synchronized at every step of the development process.
 
 Morever, Reach doesn't only work for Ethereum, it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target other @tech{consensus networks}, like Algorand.
 Nor is Reach tied to JavaScript, it can be configured to target other @tech{backend} languages, like Go.
