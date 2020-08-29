@@ -390,6 +390,10 @@ EOF
   cat >"${MAKEFILE}" <<EOF
 REACH = reach
 
+.PHONY: clean
+clean:
+	rm -rf build/*.main.mjs
+
 build/%.main.mjs: %.rsh
 	\$(REACH) compile $^ main
 
