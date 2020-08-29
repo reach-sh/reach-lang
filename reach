@@ -51,7 +51,8 @@ fatal_connector_mode_coming_soon () {
 }
 
 fatal_pls_report () {
-  echo "Please report this as a reach bug: https://github.com/reach-sh/reach-lang/issues"
+    echo "Please report this as an issue with the reach command at:"
+    echo "  https://github.com/reach-sh/reach-lang/issues"
   exit 1
 }
 
