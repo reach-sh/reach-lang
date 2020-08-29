@@ -14,6 +14,7 @@ The following guides are available:
 @include-section["guide-windows.scrbl"]
 @include-section["guide-versions.scrbl"]
 @include-section["guide-loop-invs.scrbl"]
+@include-section["guide-timeout.scrbl"]
 @include-section["guide-limits.scrbl"]
 @include-section["guide-reach.scrbl"]
 
@@ -34,9 +35,5 @@ XXX
 XXX
 
 @section[#:tag "guide-abstract"]{Building decentralized abstractions}
-
-XXX
-
-@section[#:tag "guide-timeout"]{Non-participation: What it is and how to protect against it}
 
 XXX
