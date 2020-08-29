@@ -313,8 +313,13 @@ do_scaffold () {
   MJS="$APP.mjs"
   RSH="$APP.rsh"
 
+  if $ISOLATE ; then
+    CPLINE="RUN cp /app/${PACKAGE_JSON} /app/package.json"
+  else
+    # Omit this line of the file if not --isolate
+    CPLINE=""
+  fi
   if $VERBOSE ; then echo writing $DOCKERFILE; fi
-  # TODO: remove the package.json -> package.json if not --isolate
   cat >"${DOCKERFILE}" <<EOF
 FROM reachsh/runner:${REACH_VERSION}
 
@@ -323,7 +328,7 @@ FROM reachsh/runner:${REACH_VERSION}
 # RUN npm install
 
 COPY . /app
-RUN cp /app/${PACKAGE_JSON} /app/package.json
+${CPLINE}
 CMD ["${APP}"]
 EOF
 
