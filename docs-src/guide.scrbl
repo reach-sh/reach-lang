@@ -13,6 +13,7 @@ The following guides are available:
 
 @include-section["guide-windows.scrbl"]
 @include-section["guide-versions.scrbl"]
+@include-section["guide-loop-invs.scrbl"]
 @include-section["guide-limits.scrbl"]
 @include-section["guide-reach.scrbl"]
 
@@ -39,8 +40,3 @@ XXX
 @section[#:tag "guide-timeout"]{Non-participation: What it is and how to protect against it}
 
 XXX
-
-@section[#:tag "guide-loop-invs"]{Finding and using loop invariants}
-
-XXX 
-
