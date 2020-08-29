@@ -1,0 +1,8 @@
+<stdout>
+
+</stdout>
+<stderr>
+</stderr>
+<exception>
+ExitFailure 1
+error: <top level>: Invalid unbound identifier: main. Did you mean: ["rps","rental"]

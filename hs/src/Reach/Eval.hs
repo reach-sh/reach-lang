@@ -24,6 +24,7 @@ import Reach.Type
 import Reach.Util
 import Reach.Version
 import Safe (atMay)
+import Safe.Exact (splitAtExactMay)
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
@@ -47,6 +48,7 @@ data EvalError
   | Err_App_PartUnderscore B.ByteString
   | Err_DeclLHS_IllegalJS JSExpression
   | Err_Decl_ObjectSpreadNotLast
+  | Err_Decl_ArraySpreadNotLast
   | Err_Decl_NotObject SLVal
   | Err_Decl_IllegalJS JSExpression
   | Err_Decl_NotRefable SLVal
@@ -175,6 +177,8 @@ instance Show EvalError where
       "Invalid Reach declaration: " <> conNameOf e
     Err_Decl_ObjectSpreadNotLast ->
       "Object spread on left-hand side of binding must occur in last position"
+    Err_Decl_ArraySpreadNotLast ->
+      "Array spread on left-hand side of binding must occur in last position"
     Err_Decl_NotObject slval ->
       "Invalid binding. Expected object, got: " <> displaySlValType slval
     Err_Decl_NotRefable slval ->
@@ -678,13 +682,15 @@ evalDot ctxt at _sco st obj field =
         "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
         "timeout" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
         _ -> illegal_field ["publish", "pay", "timeout"]
-    SLV_Tuple {} ->
+    SLV_Tuple _ vs ->
       case field of
         "set" -> delayCall SLPrim_tuple_set
+        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
         _ -> illegal_field ["set"]
-    SLV_Array {} ->
+    SLV_Array _ _ vs ->
       case field of
         "set" -> delayCall SLPrim_array_set
+        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
         _ -> illegal_field ["set"]
     v ->
       expect_throw at (Err_Eval_NotObject v)
@@ -1409,10 +1415,24 @@ evalExprs ctxt at sco st rands =
 
 evalDeclLHSArray
   :: SrcLoc -> SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> [JSArrayElement] -> ([String], SLSVal -> WriterT DLStmts (ST s) SLEnv)
-evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
+evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks', makeEnv)
   where
-    --- FIXME Support spreads in array literals
-    ks = map (jse_expect_id at') $ jsa_flatten xs
+    ks' = ks <> maybe [] (\a -> [a]) kSpreadMay
+    (ks, kSpreadMay) = parseIdentsAndSpread $ jsa_flatten xs
+    parseIdentsAndSpread = \case
+      [] -> ([], Nothing)
+      [(JSSpreadExpression a e0)] ->
+        ([], (Just $ jse_expect_id at'' e0))
+        where
+          at'' = srcloc_jsa "array spread" a at'
+      [(JSSpreadExpression a _), _] ->
+        expect_throw at'' $ Err_Decl_ArraySpreadNotLast
+        where
+          at'' = srcloc_jsa "array spread" a at'
+      (e0 : eNs) -> ((x0 : xNs), smN)
+        where
+          (xNs, smN) = parseIdentsAndSpread eNs
+          x0 = jse_expect_id at' e0
     makeEnv (lvl, v) = do
       vs <-
         case v of
@@ -1433,8 +1453,18 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks, makeEnv)
                 pure $ SLV_DLVar dvi
           _ ->
             expect_throw at' (Err_Decl_NotRefable v)
-      let kvs = zipEq at' Err_Decl_WrongArrayLength ks $ map (\x -> (lvl, x)) vs
-      return $ foldl' (env_insertp at') lhs_env kvs
+      let ks_len = length ks
+      case splitAtExactMay ks_len vs of
+        Nothing ->
+          expect_throw at' $ Err_Decl_WrongArrayLength ks_len (length vs)
+        Just (before, after) -> do
+          let add_spread =
+                case kSpreadMay of
+                  Nothing -> id
+                  Just sn ->
+                    env_insert at' sn (lvl, SLV_Tuple at' after)
+          let kvs = zip ks $ map (\x -> (lvl, x)) before
+          return $ foldl' (env_insertp at') (add_spread lhs_env) kvs
 
 -- | const {x, y, ...obj} = ...;
 --
