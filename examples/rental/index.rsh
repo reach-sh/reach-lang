@@ -119,7 +119,7 @@ export const fair = Reach.App(
     invariant(balance() == 2 * terms);
     while ( ! (gleaveT || gleaveL) ) {
       commit();
-      
+
       T.only(() => {
         const _leaveT = interact.leave();
         const [_commitT, _saltT] = makeCommitment(interact, _leaveT);
