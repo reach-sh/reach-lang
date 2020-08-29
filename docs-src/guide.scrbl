@@ -14,6 +14,7 @@ The following guides are available:
 @include-section["guide-windows.scrbl"]
 @include-section["guide-versions.scrbl"]
 @include-section["guide-limits.scrbl"]
+@include-section["guide-reach.scrbl"]
 
 @section[#:tag "guide-types"]{Using types effectively in Reach}
 
@@ -42,8 +43,4 @@ XXX
 @section[#:tag "guide-loop-invs"]{Finding and using loop invariants}
 
 XXX 
-
-@section[#:tag "guide-reach"]{How does Reach work?}
-
-XXX
 
