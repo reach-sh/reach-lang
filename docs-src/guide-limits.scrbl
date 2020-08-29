@@ -58,6 +58,7 @@ This is analogous to using the so-called @link["https://en.wikipedia.org/wiki/Ma
 
 This solution indicates why non-determinism is difficult: participants must be able to submit their values without knowing the other values in flight, yet must also still reach consensus on the outcome of the computation.
 Non-commutativity would be acceptable, but would be lower-performance as participants that "missed" and were not the first sender would be required to review the first value to ensure that they compute the same answer as the @tech{consensus state}.
+This "reviewing" would be observable by @tech{frontend}s if they were involved in computing the initial value.
 }
 
 ]
