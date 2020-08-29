@@ -1,5 +1,29 @@
 #!/bin/sh
 
+# Rules for how reach interacts with your Makefile,
+# if you have all of the expected scaffolded files.
+# ------------------------------------------------
+#
+# reach run
+#
+# --> must call exactly once -->
+# make run
+#
+# * must not call bare reach run
+#
+# --> may call many times -->
+# REACH_CONNECTOR_MODE=$M reach run $T $ARGS...
+#
+# * must always export REACH_CONNECTOR_MODE in a canonical form
+#
+# --> must call exactly once (per called) -->
+# make run-target ARGS="$T $(ARGS)"
+#
+# * must not call reach run at all
+#
+# --> expected to be something like -->
+# docker-compose run --rm reach-app-$${REACH_CONNECTOR_MODE} $T $(ARGS)
+
 
 export REACH=${0}
 HERE=$(dirname "$(realpath "${REACH}")")
@@ -373,7 +397,7 @@ run:
 
 .PHONY: run-target
 run-target: build
-	docker-compose -f "${DOCKER_COMPOSE_YML}" run --rm ${SERVICE} \$(ARGS)
+	docker-compose -f "${DOCKER_COMPOSE_YML}" run --rm ${SERVICE}-\$\${REACH_CONNECTOR_MODE} \$(ARGS)
 
 .PHONY: down
 down: down-${APP}
