@@ -13,6 +13,7 @@ The following guides are available:
 
 @include-section["guide-windows.scrbl"]
 @include-section["guide-versions.scrbl"]
+@include-section["guide-limits.scrbl"]
 
 @section[#:tag "guide-types"]{Using types effectively in Reach}
 
@@ -43,10 +44,6 @@ XXX
 XXX 
 
 @section[#:tag "guide-reach"]{How does Reach work?}
-
-XXX
-
-@section[#:tag "guide-limits"]{What are Reach's limitations and its future roadmap}
 
 XXX
 
