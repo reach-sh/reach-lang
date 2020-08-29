@@ -13,21 +13,10 @@ The following guides are available:
 
 @include-section["guide-windows.scrbl"]
 @include-section["guide-versions.scrbl"]
+@include-section["guide-assert.scrbl"]
 @include-section["guide-loop-invs.scrbl"]
 @include-section["guide-timeout.scrbl"]
 @include-section["guide-determ.scrbl"]
 @include-section["guide-abstract.scrbl"]
 @include-section["guide-limits.scrbl"]
 @include-section["guide-reach.scrbl"]
-
-@section[#:tag "guide-types"]{Using types effectively in Reach}
-
-XXX
-
-@section[#:tag "guide-testing"]{Testing and validating decentralized applications}
-
-XXX
-
-@section[#:tag "guide-assert"]{How and what to verify}
-
-XXX

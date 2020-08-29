@@ -105,8 +105,6 @@ Reach's @deftech{type}s are:
   @item{@reachin{Array(ElemenType, size)}, which denotes a statically-sized array.}
 ]
 
-@margin-note{See @seclink["guide-types"]{the guide section on types} to get some pointers about using types effectively in Reach.}
-
 @section{Identifier Definitions}
 
 An @deftech{identifier definition} is either

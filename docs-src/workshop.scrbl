@@ -41,7 +41,7 @@ XXX
 
 XXX
 
-@section[#:tag "workshop-abstract-simul"]{Workshop: Simultaneous Loops}
+@section[#:tag "workshop-abstract-simul"]{Workshop: Simultaneous Games}
 
 XXX
 
