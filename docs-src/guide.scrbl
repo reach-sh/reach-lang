@@ -16,6 +16,7 @@ The following guides are available:
 @include-section["guide-loop-invs.scrbl"]
 @include-section["guide-timeout.scrbl"]
 @include-section["guide-determ.scrbl"]
+@include-section["guide-abstract.scrbl"]
 @include-section["guide-limits.scrbl"]
 @include-section["guide-reach.scrbl"]
 
@@ -28,9 +29,5 @@ XXX
 XXX
 
 @section[#:tag "guide-assert"]{How and what to verify}
-
-XXX
-
-@section[#:tag "guide-abstract"]{Building decentralized abstractions}
 
 XXX

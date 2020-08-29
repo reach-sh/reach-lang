@@ -26,3 +26,5 @@ For example, in the rental agreement, if we felt there was no advantage for goin
 But, is there no advantage?
 If both the tenant and the landlord want to exit in the same month, but the landlord goes first, and then the landlord would suffer a loss of their deposit; but, if they fairly shared their choice at the same time, then they could both be refunded in this case.
 This is an example of the Pareto improvements that are possible in decentralized applications relative to existing institutions.
+
+@margin-note{See @secref["workshop-rental"] for a discussion of this example in further detail.}

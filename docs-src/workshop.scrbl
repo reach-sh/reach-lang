@@ -37,6 +37,14 @@ XXX
 
 XXX
 
+@section[#:tag "workshop-rental"]{Workshop: Rental Agreement}
+
+XXX
+
+@section[#:tag "workshop-abstract-simul"]{Workshop: Simultaneous Loops}
+
+XXX
+
 @section[#:tag "workshop-guardian-account"]{Workshop: Guardian Account}
 
 XXX
