@@ -23,6 +23,14 @@ You can copy this file to other repositories or move it to a directory in your @
 
 Reach has a few sub-commands, each with their own options.
 
+However, all commands support the following options:
+
+@itemlist[
+
+@item{The environment variable @envvar{REACH_VERSION} signifies what @seclink["guide-versions"]{version of Reach} to use.}
+
+]
+
 @subsection[#:tag "ref-usage-compile"]{@tt{reach compile}}
 
 You compile your Reach code by executing

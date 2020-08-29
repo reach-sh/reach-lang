@@ -12,10 +12,7 @@ The following guides are available:
 @local-table-of-contents[#:style 'immediate-only]
 
 @include-section["guide-windows.scrbl"]
-
-@section[#:tag "guide-versions"]{How does Reach use version numbers?}
-
-XXX
+@include-section["guide-versions.scrbl"]
 
 @section[#:tag "guide-types"]{Using types effectively in Reach}
 
