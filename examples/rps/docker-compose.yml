@@ -1,14 +1,24 @@
-version: '3'
+version: '3.4'
+x-app-base: &app-base
+  image: reachsh/reach-app-rps:latest
 services:
-  reach-app:
-    image: reachsh/examples-rps:v0.1.1
-    entrypoint: /bin/bash
-    command: -c 'npm run test --- FAKE && (REACH_CONNECTOR_MODE=ETH-test-ganache-embedded npm run test --- ETH) && npm run test --- ETH' # && npm run test --- ALGO
+  devnet:
+    image: reachsh/ethereum-devnet:v0.1.1
+  reach-app-rps-ETH-test-geth-dockerized: &default-app
+    <<: *app-base
     depends_on:
       - devnet
     environment:
+      - REACH_CONNECTOR_MODE=ETH-test-geth-dockerized
       - ETH_NODE_URI=http://devnet:8545
-      - ALGO_SERVER=http://docker.for.mac.localhost
-  devnet:
-    image: reachsh/ethereum-devnet:v0.1.1
+  reach-app-rps-ETH-test-ganache-embedded:
+    <<: *app-base
+    environment:
+      - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded
+  reach-app-rps-FAKE-test-mock-embedded:
+    <<: *app-base
+    environment:
+      - REACH_CONNECTOR_MODE=FAKE-test-mock-embedded
+  reach-app-rps-: *default-app
+  reach-app-rps: *default-app
 

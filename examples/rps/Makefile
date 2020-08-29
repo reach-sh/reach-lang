@@ -1,7 +1,8 @@
-TAG="reachsh/examples-rps:v0.1.1"
+TAG="reachsh/reach-app-rps:latest"
+REACH = ../../reach
 
 build/index.once.mjs build/index.nodraw.mjs:
-	../../reach compile index.rsh once nodraw
+	$(REACH) compile index.rsh once nodraw
 
 .PHONY: build
 build: build/index.once.mjs build/index.nodraw.mjs
@@ -9,7 +10,14 @@ build: build/index.once.mjs build/index.nodraw.mjs
 
 .PHONY: run
 run:
-	docker-compose run reach-app
+	     REACH_CONNECTOR_MODE=FAKE             $(REACH) run index \
+	  && REACH_CONNECTOR_MODE=ETH-test-geth    $(REACH) run index \
+	  && REACH_CONNECTOR_MODE=ETH-test-ganache $(REACH) run index
+#	  && REACH_CONNECTOR_MODE=ALGO             $(REACH) run index
+
+.PHONY: run-target
+run-target:
+	docker-compose run --rm reach-app-rps-$${REACH_CONNECTOR_MODE} $(ARGS)
 
 .PHONY: run-ganache
 run-ganache:

@@ -4,8 +4,10 @@ import * as stdlib_fake from '@reach-sh/stdlib/FAKE.mjs';
 import * as RPS from './build/index.once.mjs';
 import * as RPSW from './build/index.nodraw.mjs';
 
+const connectorMode = stdlib_fake.getConnectorMode();
+const proto = connectorMode.split('-')[0];
+
 ( async () => {
-  const proto = process.argv[2];
   const { stdlib, startingBalance, escrowAmount, wagerAmount, toUnit, unit } = (
     proto == 'ETH' ? {
       stdlib: stdlib_eth,
