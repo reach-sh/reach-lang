@@ -96,6 +96,7 @@ data EvalError
   | Err_Eval_NotSecretIdent SLVar
   | Err_Eval_NotPublicIdent SLVar
   | Err_Eval_LookupUnderscore
+  | Err_Eval_NotSpreadable SLVal
   | Err_Unknowable_NotParticipant SLVal
   deriving (Eq, Generic)
 
@@ -249,6 +250,8 @@ instance Show EvalError where
       "Invalid field name. Fields must be bytes, but got: uint256"
     Err_Obj_SpreadNotObj slval ->
       "Invalid object spread. Expected object, got: " <> displaySlValType slval
+    Err_Eval_NotSpreadable slval ->
+      "Value not spreadable. Expected tuple or array, got: " <> displaySlValType slval
     Err_Prim_InvalidArgs prim slvals ->
       "Invalid args for " <> displayPrim prim <> ". got: "
         <> "["
@@ -850,6 +853,22 @@ evalPrimOp ctxt at _sco st p sargs =
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "prim") rng) (DLE_PrimOp at p dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
 
+explodeTupleLike :: SLCtxt s -> SrcLoc -> String -> DLVar -> ST s (DLStmts, [SLVal])
+explodeTupleLike ctxt at lab tupdv@(DLVar _ _ tupt _) =
+  case tupt of
+    T_Tuple tuptys -> do
+      mconcatMap (uncurry (flip (mkdv DLE_TupleRef))) $ zip [0 ..] tuptys
+    T_Array t sz -> do
+      let mkde _ da i = DLE_ArrayRef at (ctxt_stack ctxt) da sz (DLA_Con $ DLC_Int i) 
+      mconcatMap (mkdv mkde t) [ 0 .. sz-1 ]
+    _ ->
+      expect_throw at $ Err_Eval_NotSpreadable (SLV_DLVar tupdv)
+  where mkdv mkde t i =  do
+          let de = mkde at (DLA_Var tupdv) i
+          let mdv = DLVar at (ctxt_local_name ctxt lab) t
+          (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
+          return $ (lifts, [SLV_DLVar dv])
+
 evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
 evalPrim ctxt at sco st p sargs =
   case p of
@@ -950,15 +969,11 @@ evalPrim ctxt at sco st p sargs =
               retV $ check_idxi tupvs $ (lvl, SLV_Tuple at $ zipWith go [0 ..] tupvs)
               where
                 go i v = if idxi == i then val else v
-            SLV_DLVar tupdv@(DLVar _ _ (T_Tuple tuptys) _) -> do
-              let mkdv i t = do
-                    let de = DLE_TupleRef at (DLA_Var tupdv) i
-                    let mdv = DLVar at (ctxt_local_name ctxt "tuple_set") t
-                    (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
-                    return $ (lifts, [SLV_DLVar dv])
-              let go i t = if idxi == i then return (mempty, [val]) else mkdv i t
-              (lifts, tupvs) <- mconcatMap (uncurry go) $ zip [0 ..] tuptys
-              return $ check_idxi tupvs $ SLRes lifts st $ (lvl, SLV_Tuple at tupvs)
+            SLV_DLVar tupdv -> do
+              (lifts, tupvs) <- explodeTupleLike ctxt at "tuple_set" tupdv
+              let go i v = if idxi == i then val else v
+              let tupvs' = zipWith go [0 ..] tupvs
+              return $ check_idxi tupvs $ SLRes lifts st $ (lvl, SLV_Tuple at tupvs')
             _ -> illegal_args
           where
             check_idxi l r =
@@ -1408,10 +1423,27 @@ evalExprs :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSExpression] -> SLCom
 evalExprs ctxt at sco st rands =
   case rands of
     [] -> return $ SLRes mempty st []
-    (rand0 : randN) -> do
-      SLRes lifts0 st0 sval0 <- evalExpr ctxt at sco st rand0
+    (e0 : randN) -> do
+      SLRes lifts0 st0 svals0 <-
+        case e0 of
+          JSSpreadExpression a rand0 -> do
+            let at' = srcloc_jsa "spread" a at
+            SLRes l0 s0 (lvl, v0) <- evalExpr ctxt at' sco st rand0
+            let addlvl v = (lvl, v)
+            let ret vs = return $ SLRes l0 s0 $ map addlvl vs
+            case v0 of
+              SLV_Array _ _ vs -> ret vs
+              SLV_Tuple _ vs -> ret vs
+              SLV_DLVar dv -> do
+                (lifts, vs) <- explodeTupleLike ctxt at' "spread" dv
+                return $ SLRes (l0 <> lifts) s0 $ map addlvl vs
+              _ ->
+                expect_throw at' $ Err_Eval_NotSpreadable v0
+          rand0 -> do
+            SLRes l0 s0 v0 <- evalExpr ctxt at sco st rand0
+            return $ SLRes l0 s0 [v0]
       SLRes liftsN stN svalN <- evalExprs ctxt at sco st0 randN
-      return $ SLRes (lifts0 <> liftsN) stN (sval0 : svalN)
+      return $ SLRes (lifts0 <> liftsN) stN (svals0 <> svalN)
 
 evalDeclLHSArray
   :: SrcLoc -> SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> [JSArrayElement] -> ([String], SLSVal -> WriterT DLStmts (ST s) SLEnv)
