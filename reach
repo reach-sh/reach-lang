@@ -491,13 +491,15 @@ do_run () {
 
   ensure_connector_mode
 
-  if $BARE_REACH_RUN ; then fatal_infinite_reach_run_loop ; fi
-
-  export BARE_REACH_RUN=false
+  export BARE_REACH_RUN=${BARE_REACH_RUN:-false}
   if [ "x$1" = "x" ] ; then
+    if $BARE_REACH_RUN ; then fatal_infinite_reach_run_loop ; fi
     export BARE_REACH_RUN=true
     APP="index"
   else
+    # XXX Hypothetically this opens up the possibility of inf mutual recursion
+    # XXX Not worrying about it for now...
+    export BARE_REACH_RUN=false
     ARG=$1
     shift
 
