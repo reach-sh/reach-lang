@@ -1344,7 +1344,7 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 34 27 "  // ..."]
+         'only 34 40 "  // ..."]
 
 Next we define a few helper functions and start the participant interaction interface.
 
