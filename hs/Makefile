@@ -21,7 +21,7 @@ push: build
 
 .PHONY: build-circle-docker
 build-circle-docker: stack
-	docker build -f Dockerfile_circleci --tag=$(CIRCLE_IMAGE):latest .
+	docker build -f Dockerfile.circleci --tag=$(CIRCLE_IMAGE):latest .
 
 .PHONY: push-circle-docker
 push-circle-docker: build-circle-docker
