@@ -8,3 +8,6 @@ run:
 .PHONY: clean
 clean:
 	rm -f build/index.*
+
+.PHONY: down
+down:
