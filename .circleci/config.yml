@@ -9,19 +9,8 @@ jobs:
     steps:
       - checkout
       - run:
-          name: install pygments-reach
-          command: (cd py && make install)
-      - run:
-          name: render docs
-          command: (cd docs-src && make render)
-      - store_artifacts:
-          path: docs/
-      - run:
-          name: render todo
-          command: |
-            make todo
-      - store_artifacts:
-          path: todo.html
+          name: install mo
+          command: (curl -sSL https://git.io/get-mo -o mo && chmod +x mo && mv mo /usr/local/bin)
       - run:
           name: hs package.yaml
           command: (cd hs && make package.yaml)
@@ -62,6 +51,20 @@ jobs:
           command: (cd hs && make hs-check)
       - store_artifacts:
           path: hs/stan.html
+      - run:
+          name: install pygments-reach
+          command: (cd py && make install)
+      - run:
+          name: render docs
+          command: (cd docs-src && make render)
+      - store_artifacts:
+          path: docs/
+      - run:
+          name: render todo
+          command: |
+            make todo
+      - store_artifacts:
+          path: todo.html
       - setup_remote_docker
       - run:
           name: build ethereum-devnet
