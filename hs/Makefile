@@ -5,7 +5,7 @@ TAG_MAJOR="$(IMAGE):v0"
 TAG_MINOR="$(TAG_MAJOR).1"
 TAG_EXACT="$(TAG_MINOR).1"
 
-CIRCLE_TAG="reachsh/reach-circle:v0.1.1"
+CIRCLE_TAG="reachsh/reach-circle:v0.1.2"
 
 .PHONY: build
 build:

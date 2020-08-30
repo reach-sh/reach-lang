@@ -9,7 +9,6 @@ RUN unzip z3-${Z3_VER}-x64-ubuntu-16.04.zip
 RUN rm z3-${Z3_VER}-x64-ubuntu-16.04.zip
 RUN ln -s /z3/z3-${Z3_VER}-x64-ubuntu-16.04/bin/z3 /z3/z3
 
-
 FROM ubuntu:18.04
 
 RUN apt-get update && apt-get install -y \
@@ -19,7 +18,9 @@ RUN apt-get update && apt-get install -y \
   libtinfo-dev \
   locales \
   python3-pip \
-  software-properties-common
+  software-properties-common \
+  silversearcher-ag \
+  aha
 
 # doc deps
 RUN add-apt-repository -y ppa:plt/racket && \
@@ -38,7 +39,7 @@ RUN ln -s /z3/z3 /usr/bin/z3
 # stack
 RUN curl -sSL https://get.haskellstack.org/ | sh
 
-RUN stack --resolver lts-16.3 setup
+RUN stack --resolver lts-16.12 setup
 
 # Thanks for the hint. Not sure why language-javascript built fine before this.
 # https://github.com/tianon/docker-brew-debian/issues/45#issuecomment-325235517

@@ -5,7 +5,7 @@ orbs:
 jobs:
   build-and-test:
     docker:
-      - image: reachsh/reach-circle:v0.1.1
+      - image: reachsh/reach-circle:v0.1.2
     steps:
       - checkout
       - run:
@@ -19,8 +19,6 @@ jobs:
       - run:
           name: render todo
           command: |
-            # XXX move into docker container
-            apt-get update && apt-get install -y silversearcher-ag aha
             make todo
       - store_artifacts:
           path: todo.html
@@ -61,7 +59,6 @@ jobs:
           command: (cd hs && make hs-check)
       - store_artifacts:
           path: hs/stan.html
-
       - setup_remote_docker
       - run:
           name: build ethereum-devnet

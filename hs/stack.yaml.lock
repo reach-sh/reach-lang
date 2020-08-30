@@ -5,54 +5,12 @@
 
 packages:
 - completed:
-    hackage: ghc-prof-flamegraph-0.2.0.0@sha256:5d21b165ab6cc8c0c9fd4454ea779d42b03ff0dbd856f02c992412c33f8d6499,1785
-    pantry-tree:
-      size: 344
-      sha256: 4e37fa8e1371831e4676936e260b1317ca116303249badad8b6d842a02c324b7
-  original:
-    hackage: ghc-prof-flamegraph-0.2.0.0
-- completed:
-    hackage: base64-0.4.1@sha256:aedc26f581f81a112af588eec8cf9c2e8db219a60fafc1cb77fd73672f1f7dcb,2832
-    pantry-tree:
-      size: 1184
-      sha256: 51a4bbf7742a9ce771b56c2ec5c22e2d6aac4394a712949c111b86c4b3040c80
-  original:
-    hackage: base64-0.4.1
-- completed:
-    hackage: dir-traverse-0.2.2.3@sha256:cbb1e3d0d1f9a3cfcbdc58071fba8a2063bae36bab68279647a331f9a408c18a,2137
-    pantry-tree:
-      size: 389
-      sha256: ba5b192c9bbd353ca46b3d308d4519ecf7a298e1d559c4350ddcee9591112246
-  original:
-    hackage: dir-traverse-0.2.2.3@sha256:cbb1e3d0d1f9a3cfcbdc58071fba8a2063bae36bab68279647a331f9a408c18a,2137
-- completed:
-    hackage: extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993
-    pantry-tree:
-      size: 959
-      sha256: 51d9fd7481a6459247322c57df3f0c799294760a5a9db2f6cf851b3b9bb18cee
-  original:
-    hackage: extensions-0.0.0.1@sha256:16517ab9df3dd6c7a20da746c8ed02cfd59c8cb40ae5719aef8b5dd4edceadc0,3993
-- completed:
     hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
     pantry-tree:
       size: 273
       sha256: 65849cbd4749744033f0e23c317a4cb12b7a24eb0ca9d2610c95b6dc72b3f470
   original:
     hackage: io-capture-1.0.0@sha256:52fcd84902340df8e860a70bb646503cf3dcd11b4f43e9659ef38e341f68e909,1233
-- completed:
-    hackage: microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
-    pantry-tree:
-      size: 421
-      sha256: ad9e1d73267680bd860c83f5910c671d641410d571b7f7ce2dae97e494ae7fcd
-  original:
-    hackage: microaeson-0.1.0.0@sha256:43dd72c13b2cde29d3fb9a7a67178b6eaaa4280bb6809c52fb4a32487bd5cb25,3318
-- completed:
-    hackage: posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c,1160
-    pantry-tree:
-      size: 386
-      sha256: e9824c495e3e2a3a1f737b5d2fcdd0ea1ce6b2919cec252c1ef7ca3b19dedf57
-  original:
-    hackage: posix-escape-0.1@sha256:adbb650397cd8685ea220b40739ee80d4e8329643a98aa2993a6f13a598bd18c
 - completed:
     hackage: simple-smt-0.9.5@sha256:70e6f694d401d23783b6f5c62774262a01cc7c305a64a13690ab7664a4f98ebf,736
     pantry-tree:
@@ -67,38 +25,6 @@ packages:
       sha256: b0bccc20c9438f1353dedf7efc70716e58e6fc7e741a47617e9a6c1be59f0a1d
   original:
     hackage: tasty-html-0.4.1.2@sha256:7c8be5359940fcbd0228b9a1f5dc9a1113a9a5e03dc9b9ae018eb17f870aef13,1241
-- completed:
-    hackage: trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
-    pantry-tree:
-      size: 561
-      sha256: ac206379a8cc718331a68f50b1c62ffe3ce959f125602a5af53e4c20a9f29943
-  original:
-    hackage: trial-0.0.0.0@sha256:6eac7caf6fe4acb34a446a7f89142e8dc6d18b72376a790db730c7f4693e4627,4160
-- completed:
-    hackage: trial-optparse-applicative-0.0.0.0@sha256:ba05edfc327a281766df5e0f44d91229e6a98afaf59abe1894b293453f076192,2449
-    pantry-tree:
-      size: 298
-      sha256: 7abd3e2f92d6d5c4397a548a48b2fca4fcfc5e14e87e5e1682d8e82258eeac90
-  original:
-    hackage: trial-optparse-applicative-0.0.0.0@sha256:ba05edfc327a281766df5e0f44d91229e6a98afaf59abe1894b293453f076192,2449
-- completed:
-    hackage: trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441
-    pantry-tree:
-      size: 273
-      sha256: 3152e712f79027cb673c5b87378895ac41506697fe567a0ac84f2cfb38210354
-  original:
-    hackage: trial-tomland-0.0.0.0@sha256:baf2f085376392e71bb725b8626dbfa5e91d2af4b2e5690c7c69574d2462497f,2441
-- completed:
-    name: haskell-evm
-    version: 0.1.0
-    git: https://github.com/reach-sh/haskell-evm.git
-    pantry-tree:
-      size: 509
-      sha256: 10740336bb40f8fcae3aa57955598ae76c0aebe2e69f2f6e63385a405d72da9f
-    commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
-  original:
-    git: https://github.com/reach-sh/haskell-evm.git
-    commit: 114fd36f78eec2a76287a62a7333ab8bf2270808
 - completed:
     name: stan
     version: 0.0.1.0
@@ -134,7 +60,7 @@ packages:
     commit: f16c62c18db1b328ee481c781171ea61f354ff70
 snapshots:
 - completed:
-    size: 531696
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/3.yaml
-    sha256: 65e3a94c65ad07fa1913649e3f1e36c4af51bf528a5d9fd217bdc1b46d0477cc
-  original: lts-16.3
+    size: 532377
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/12.yaml
+    sha256: f914cfa23fef85bdf895e300a8234d9d0edc2dbec67f4bc9c53f85867c50eab6
+  original: lts-16.12

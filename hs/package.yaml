@@ -24,7 +24,6 @@ dependencies:
 - file-embed >= 0.0.9
 - filepath
 - generic-deriving
-- haskell-evm
 - hexstring
 - hspec
 - hspec-smallcheck

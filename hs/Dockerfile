@@ -1,5 +1,5 @@
 # --- Deps
-FROM fpco/stack-build:lts-16.3 as build-deps
+FROM fpco/stack-build:lts-16.12 as build-deps
 WORKDIR /build
 
 # First build long-term stable dependencies
@@ -10,7 +10,7 @@ COPY stack.yaml package.yaml stack.yaml.lock /build/
 RUN stack build --system-ghc --dependencies-only
 
 # --- Build
-FROM fpco/stack-build:lts-16.3 as build
+FROM fpco/stack-build:lts-16.12 as build
 WORKDIR /build
 COPY --from=build-deps /root/.stack /root/.stack
 COPY . /build/
