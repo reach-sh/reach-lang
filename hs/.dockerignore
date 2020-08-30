@@ -1,5 +1,7 @@
 /.stack-work
 /.dockerignore
 /Dockerfile
+/Dockerfile_circleci
 /docker-compose.yml
 /reach
+/Makefile

@@ -2,7 +2,7 @@
   "name": "@reach-sh/tut-7",
   "type": "module",
   "dependencies": {
-    "@reach-sh/stdlib": "v0.1.1"
+    "@reach-sh/stdlib": "v0.1.2"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",

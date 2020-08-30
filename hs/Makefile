@@ -1,22 +1,21 @@
-NAME="reach"
-IMAGE="reachsh/$(NAME)"
-TAG_TAG="$(IMAGE):stable"
-TAG_MAJOR="$(IMAGE):v0"
-TAG_MINOR="$(TAG_MAJOR).1"
-TAG_EXACT="$(TAG_MINOR).1"
-
-CIRCLE_TAG="reachsh/reach-circle:v0.1.2"
+IMAGE="reachsh/reach"
+CIRCLE_IMAGE="reachsh/reach-circle"
 
 .PHONY: build
 build:
-	docker build -t $(TAG_EXACT) -t $(TAG_MINOR) -t $(TAG_MAJOR) -t $(TAG_TAG) .
+	docker build --tag=$(IMAGE):latest .
 
 .PHONY: push
 push:
-	docker push $(TAG_EXACT)
-	docker push $(TAG_MINOR)
-	docker push $(TAG_MAJOR)
-#	docker push $(TAG_TAG)
+	../scripts/docker-push.sh $(IMAGE)
+
+.PHONY: build-circle-docker
+build-circle-docker:
+	docker build -f Dockerfile_circleci --tag=$(CIRCLE_IMAGE):latest .
+
+.PHONY: push-circle-docker
+push-circle-docker:
+	../scripts/docker-push.sh $(CIRCLE_IMAGE)
 
 # TODO: dockerized stan so that make check does not require local hs install?
 .PHONY: check
@@ -75,11 +74,3 @@ hs-format:
 	  --ghc-opt -XCPP \
 	  --ghc-opt -XTypeApplications \
 	  --mode inplace $$(find . -name '*.hs')
-
-.PHONY: build-circle-docker
-build-circle-docker:
-	docker build -f Dockerfile_circleci --tag $(CIRCLE_TAG) .
-
-.PHONY: push-circle-docker
-push-circle-docker:
-	docker push $(CIRCLE_TAG)

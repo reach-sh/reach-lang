@@ -7,12 +7,16 @@
          racket/format
          racket/list
          racket/file
+         racket/string
          racket/runtime-path)
 (provide (all-defined-out)
          (all-from-out scriblib/figure))
 
-(define reach-short-vers "0.1")
-(define reach-vers "0.1.0")
+;; XXX Get these from Haskell
+(define reach-vers
+  "0.1.2")
+(define reach-short-vers
+  (string-join (take (string-split reach-vers ".") 2) "."))
 
 (current-pygmentize-default-style 'solarizedlight)
 (define (reach . contents)

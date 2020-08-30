@@ -3,10 +3,16 @@
 MODE="$1"
 EXAMPLES=$(find . -depth 1 -type d | sort)
 
+has_target() {
+    make -q "$MODE"
+    RESULT=$?
+    [ "$RESULT" -eq 0 ] || [ "$RESULT" -eq 1 ]
+}
+
 for e in $EXAMPLES ; do
     echo "$e"
     (cd "$e" || exit 0
-     if [ -f Makefile ] ; then
+     if [ -f Makefile ] && has_target ; then
          make "$MODE"
          RESULT=$?
          if [ "$MODE" = "build" ] && [ "$RESULT" -ne 0 ] ; then

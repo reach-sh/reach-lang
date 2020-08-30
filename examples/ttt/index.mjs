@@ -1,5 +1,6 @@
 import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
 import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
+import * as stdlib_fake from '@reach-sh/stdlib/FAKE.mjs';
 import * as TTT from './build/index.main.mjs';
 
 function render(st) {
@@ -11,9 +12,11 @@ function render(st) {
   o += '\n';
   return o; }
 
+const connectorMode = stdlib_fake.getConnectorMode();
+const proto = connectorMode.split('-')[0];
+
 ( async () => {
 
-  const proto = process.argv[2];
   const { stdlib, startingBalance, wagerAmount } =
         ( proto == 'ETH' ?
           { stdlib: stdlib_eth

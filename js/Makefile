@@ -1,20 +1,20 @@
-VER="v0.1.1"
-TAG="reachsh/stdlib:$(VER)"
-RUNNER_TAG="reachsh/runner:$(VER)"
-NAME="stdlib"
+include ../VERSION
+IMAGE="reachsh/stdlib"
+RUNNER_IMAGE="reachsh/runner"
 
 .PHONY: build
 build:
-	docker build --tag=$(TAG) .
-	docker build --tag=$(RUNNER_TAG) \
+	docker build --tag=$(IMAGE):latest .
+	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
+	docker build --tag=$(RUNNER_IMAGE):latest \
 	  --file Dockerfile_runner \
-	  --build-arg REACH_VERSION_ARG=$(VER) \
+	  --build-arg REACH_VERSION_ARG=$(VERSION) \
 	  .
 
 .PHONY: push
 push:
-	docker push $(TAG)
-	docker push $(RUNNER_TAG)
+	../scripts/docker-push.sh $(IMAGE)
+	../scripts/docker-push.sh $(RUNNER_IMAGE)
 
 .PHONY: publish
 publish:
@@ -22,7 +22,7 @@ publish:
 
 .PHONY: run
 run:
-	docker-compose run $(NAME)
+	docker-compose run stdlib
 
 .PHONY: down
 down:

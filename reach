@@ -28,9 +28,15 @@
 export REACH=${0}
 HERE=$(dirname "$(realpath "${REACH}")")
 
+# XXX Get from VERSION in Haskell version
+REACH_DEFAULT_VERSION=0.1
 if [ "x${REACH_VERSION}" = "x" ] ; then
-  # XXX maybe should be v0.1
-  REACH_VERSION=v0.1.1
+    REACH_VERSION="${REACH_DEFAULT_VERSION}"
+fi
+if [ "${REACH_VERSION}" = "stable" ] ; then
+    REACH_VERSION_SHORT="${REACH_DEFAULT_VERSION}"
+else
+    REACH_VERSION_SHORT=$(echo "$REACH_VERSION" | sed 's/^v//' | awk -F. '{print $1"."$2}')
 fi
 
 if ! (which docker docker-compose > /dev/null 2>&1) ; then
@@ -217,7 +223,7 @@ do_init () {
 
   echo writing "$RSH"
   cat >"${RSH}" <<EOF
-'reach 0.1';
+'reach ${REACH_VERSION_SHORT}';
 
 export const main = Reach.App(
   {}, [['Alice', {}], ['Bob', {}]], (Alice, Bob) => {

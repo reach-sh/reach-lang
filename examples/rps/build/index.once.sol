@@ -1,4 +1,4 @@
-// Automatically generated with Reach 0.1.0
+// Automatically generated with Reach 0.1.2
 pragma experimental ABIEncoderV2;
 
 pragma solidity ^0.7.0;

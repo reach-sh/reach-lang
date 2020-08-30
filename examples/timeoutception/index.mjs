@@ -6,7 +6,7 @@ const getBalance = async (who) => stdlib.fromWei ( await stdlib.balanceOf(who) )
 
 console.log(`getting started...`);
 (async() => {
-  const acc = await stdlib.newTestAccount(parseEth('10'));
+  const acc = await stdlib.newTestAccount(parseEth('100'));
   const beforeBal = await getBalance(acc);
   console.log(`A starts with ${beforeBal}`);
 
@@ -14,7 +14,7 @@ console.log(`getting started...`);
     for (let i = 0; i < 15; i++) {
       console.log(`acc keys: ${Object.keys(acc)}`);
       console.log(`A delays...`);
-      await stdlib.transfer(acc.networkAccount, acc.networkAccount, parseEth('0.1'));
+      await stdlib.transfer(acc.networkAccount, acc.networkAccount, parseEth('1'));
     }
     return 2;
   };

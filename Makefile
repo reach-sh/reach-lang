@@ -16,8 +16,16 @@ ignored_reach_sources = \
 .PHONY: all
 all: check run-all
 
+.PHONY: check-vers
+check-vers:
+	ag --ignore '*lock*' --ignore hs/stack.yaml '0\.1\.0' || exit 0
+	@echo Should be empty
+	ag --ignore '*lock*' --ignore hs/stack.yaml '0\.1\.1' || exit 0
+	@echo Should be empty
+	@ag --ignore '*lock*' --ignore hs/stack.yaml --ignore eslint/package.json --ignore '*rsh' --ignore '*txt' --ignore '*-lock*' '0\.1'
+
 .PHONY: check
-check:
+check: check-vers
 	@find hs -name '*.hs' | xargs wc
 	@ag --color --ignore ./Makefile --ignore docs-src/Makefile --ignore svg/todo.svg --ignore README.md --ignore-dir docs --ignore 'package-lock.json' --ignore '*.dead' '(xxx|todo|fixme)'
 

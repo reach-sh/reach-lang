@@ -1,8 +1,7 @@
 import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
 import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
 import * as stdlib_fake from '@reach-sh/stdlib/FAKE.mjs';
-import * as RPS from './build/index.once.mjs';
-import * as RPSW from './build/index.nodraw.mjs';
+import * as RPS from './build/index.main.mjs';
 
 const connectorMode = stdlib_fake.getConnectorMode();
 const proto = connectorMode.split('-')[0];
@@ -12,8 +11,8 @@ const proto = connectorMode.split('-')[0];
     proto == 'ETH' ? {
       stdlib: stdlib_eth,
       startingBalance: stdlib_eth.toWeiBigNumber('100', 'ether'),
-      escrowAmount: stdlib_eth.toWeiBigNumber('0.15', 'ether'),
-      wagerAmount: stdlib_eth.toWeiBigNumber('1.5', 'ether'),
+      escrowAmount: stdlib_eth.toWeiBigNumber('1', 'ether'),
+      wagerAmount: stdlib_eth.toWeiBigNumber('5', 'ether'),
       toUnit: stdlib_eth.fromWei,
       unit: 'ether',
     } : proto == 'ALGO' ? {
@@ -66,10 +65,6 @@ const proto = connectorMode.split('-')[0];
     void(done);
     console.log(`Done!`); };
 
-  console.log(`\nRunning game that will Draw\n`);
-  const staticHand = (hand) => () => hand;
-  await demo(RPS, staticHand('ROCK'));
-
   console.log(`\nRunning game that may Draw\n`);
   const randomArray = a => a[ Math.floor(Math.random() * a.length) ];
   const randomHand = () => randomArray([ 'ROCK', 'PAPER', 'SCISSORS' ]);
@@ -84,6 +79,7 @@ const proto = connectorMode.split('-')[0];
   await demo(RPS, delayHand);
 
   console.log(`\nRunning game that may not Draw\n`);
+  const staticHand = (hand) => () => hand;
   const onceThen = (first, after) => {
     let called = 0;
     return () => {
@@ -92,7 +88,7 @@ const proto = connectorMode.split('-')[0];
       else {
         called++;
         return first(); } }; };
-  await demo(RPSW, onceThen(staticHand('PAPER'), randomHand));
+  await demo(RPS, onceThen(staticHand('PAPER'), randomHand));
 
   console.log(`\nAll games are complete!\n`);
   process.exit(0); })();

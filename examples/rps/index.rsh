@@ -343,4 +343,4 @@ const abs_nodraw =
 // Interface
 
 export const once = abs_once;
-export const nodraw = abs_nodraw;
+export const main = abs_nodraw;
