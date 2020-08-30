@@ -22,7 +22,7 @@ check-vers:
 	@echo Should be empty
 	ag --ignore '*lock*' --ignore hs/stack.yaml '0\.1\.1' || exit 0
 	@echo Should be empty
-	@ag --ignore '*lock*' --ignore hs/stack.yaml --ignore eslint/package.json --ignore '*rsh' --ignore '*txt' --ignore '*-lock*' '0\.1'
+	ag --ignore '*lock*' --ignore hs/stack.yaml --ignore eslint/package.json --ignore '*rsh' --ignore '*txt' --ignore '*-lock*' '0\.1'
 
 .PHONY: check
 check: check-vers
