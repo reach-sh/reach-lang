@@ -1,22 +1,11 @@
-examples = $(sort $(dir $(wildcard */.)))
-
 .PHONY: build-all
 build-all:
-	(set -e; \
-	for example in $(examples) ; do \
-		(cd $$example && (if [ -f Makefile ] ; then $(MAKE) build ; else ../../reach compile ; fi));\
-	done)
+	./all.sh build
 
 .PHONY: run-all
 run-all:
-	(set -e; \
-	for example in $(examples); do \
-		(cd $$example && (if [ -f Makefile ] ; then $(MAKE) run down ; else ../../reach run ; fi)); \
-	done)
+	./all.sh run
 
 .PHONY: clean-all
 clean-all:
-	(set -e; \
-	for example in $(examples) ; do \
-		(cd $$example && ([ ! -f Makefile ] || $(MAKE) clean)); \
-	done)
+	./all.sh clean
