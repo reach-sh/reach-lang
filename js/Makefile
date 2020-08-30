@@ -2,8 +2,15 @@ include ../VERSION
 IMAGE="reachsh/stdlib"
 RUNNER_IMAGE="reachsh/runner"
 
+package.json: package.mo.json ../VERSION 
+	(source ../VERSION && export VERSION && mo $< > $@)
+
+.PHONY: clean
+clean:
+	rm -f package.json
+
 .PHONY: build
-build:
+build: package.json
 	docker build --tag=$(IMAGE):latest .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
 	docker build --tag=$(RUNNER_IMAGE):latest \

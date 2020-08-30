@@ -1,6 +1,6 @@
 {
   "name": "@reach-sh/stdlib",
-  "version": "0.1.2",
+  "version": "{{VERSION}}",
   "description": "Standard library for Reach Platform",
   "type": "module",
   "main": "index.mjs",

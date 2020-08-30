@@ -16,13 +16,13 @@ RUN curl -sSL https://git.io/get-mo -o mo \
 
 ENV REACH_VERSION $REACH_VERSION_ARG
 
-COPY runner_package.template.json /app/package.template.json
+COPY runner_package.mo.json /app/package.mo.json
 
 # TODO: use a gentler linter for this
 COPY .eslintrc.yaml /app/
 
-RUN mo /app/package.template.json > /app/package.json
-RUN rm /app/package.template.json
+RUN mo /app/package.mo.json > /app/package.json
+RUN rm /app/package.mo.json
 RUN npm link '@reach-sh/stdlib'
 RUN npm install
 RUN mkdir /app/build
