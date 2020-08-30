@@ -3,7 +3,7 @@ IMAGE="reachsh/stdlib"
 RUNNER_IMAGE="reachsh/runner"
 
 package.json: package.mo.json ../VERSION 
-	(source ../VERSION && export VERSION && mo $< > $@)
+	(. ../VERSION && export VERSION && mo $< > $@)
 
 .PHONY: clean
 clean:

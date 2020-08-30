@@ -2,7 +2,7 @@ IMAGE="reachsh/reach"
 CIRCLE_IMAGE="reachsh/reach-circle"
 
 package.yaml: package.mo.yaml ../VERSION
-	(source ../VERSION && export VERSION && mo $< > $@)
+	(. ../VERSION && export VERSION && mo $< > $@)
 
 .PHONY: stack
 stack: package.yaml

@@ -22,6 +22,9 @@ jobs:
             make todo
       - store_artifacts:
           path: todo.html
+      - run:
+          name: hs package.yaml
+          command: (cd hs && make package.yaml)
       - restore_cache:
           keys:
             - hs-2-{{ checksum "hs/stack.yaml" }}-{{ checksum "hs/package.yaml" }}
