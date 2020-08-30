@@ -8,9 +8,7 @@ where
 
 import Data.Version (Version (..), makeVersion, showVersion)
 
---- FIXME make lemonade of this monstrosity by trying to unify all the
---- version numbers everywhere with some file at the root of the repo
---- named VERSION?
+--- XXX Move into embedded files and get from /VERSION
 version :: Version
 version = makeVersion [0, 1, 2]
 

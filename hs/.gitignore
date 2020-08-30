@@ -6,3 +6,4 @@ test.out/
 .hie/
 stan.html
 test-reports/
+package.yaml
