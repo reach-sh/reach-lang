@@ -16,6 +16,7 @@ for e in $EXAMPLES ; do
          if [ "$MODE" = "run" ] ; then
              make down
          fi
+         ( exit 0 )
      else
          case "$MODE" in
              build)
@@ -24,6 +25,10 @@ for e in $EXAMPLES ; do
              run)
                  ../../reach run
                  ;;
+             # XXX make reachc clean
+             #clean)
+             #    ../../reach clean
+             #    ;;
          esac
      fi) || exit 1
 done
