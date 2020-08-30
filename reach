@@ -410,7 +410,7 @@ run-target: build
 	docker-compose -f "${DOCKER_COMPOSE_YML}" run --rm ${SERVICE}-\$\${REACH_CONNECTOR_MODE} \$(ARGS)
 
 .PHONY: down
-down: down-${APP}
+down:
 	docker-compose -f "${DOCKER_COMPOSE_YML}" down
 EOF
 
