@@ -359,7 +359,8 @@ instance Pretty CHandler where
 
 instance Pretty CInterval where
   pretty (CBetween from to) = pform "between" $ go from <+> go to
-    where go = brackets . render_das
+    where
+      go = brackets . render_das
 
 instance Pretty CTail where
   pretty (CT_Com e) = pretty e

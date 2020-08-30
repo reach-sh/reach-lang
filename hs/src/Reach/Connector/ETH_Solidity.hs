@@ -227,8 +227,9 @@ solPrimApply = \case
     _ -> impossible $ "emitSol: ITE wrong args"
   BYTES_EQ -> \case
     [x, y] ->
-      solAnd (solEq (solBytesLength x) (solBytesLength y))
-             (solEq (solHash [x]) (solHash [y]))
+      solAnd
+        (solEq (solBytesLength x) (solBytesLength y))
+        (solEq (solHash [x]) (solHash [y]))
     _ -> impossible $ "emitSol: BYTES_EQ wrong args"
   BALANCE -> \_ -> "address(this).balance"
   TXN_VALUE -> \_ -> "msg.value"
@@ -346,7 +347,7 @@ solCTail ctxt = \case
     SolTailRes ctxt $
       vsep
         [ ctxt_emit ctxt
-        , solApply (solLoop_fun which) [ solApply (solMsg_arg which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn)) ] <> semi
+        , solApply (solLoop_fun which) [solApply (solMsg_arg which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn))] <> semi
         ]
   CT_Halt _ ->
     SolTailRes ctxt $
@@ -415,14 +416,15 @@ solCTail_top ctxt which vs mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
 
 solArgDefn :: SolCtxt a -> Int -> ArgMode -> [DLVar] -> (Doc a, [Doc a])
 solArgDefn ctxt which am vs = (argDefn, argDefs)
-  where argDefs = [ solDecl "_a" ((solMsg_arg which) <> solArgLoc am) ]
-        argDefn = solStruct (solMsg_arg which) ntys
-        ntys = mgiven ++ v_ntys
-        mgiven = case am of
-                   AM_Call -> [(solLastBlockDef, (solType ctxt T_UInt256))]
-                   _ -> []
-        v_ntys = map go vs
-        go dv@(DLVar _ _ t _) = ((solRawVar dv), (solType ctxt t))
+  where
+    argDefs = [solDecl "_a" ((solMsg_arg which) <> solArgLoc am)]
+    argDefn = solStruct (solMsg_arg which) ntys
+    ntys = mgiven ++ v_ntys
+    mgiven = case am of
+      AM_Call -> [(solLastBlockDef, (solType ctxt T_UInt256))]
+      _ -> []
+    v_ntys = map go vs
+    go dv@(DLVar _ _ t _) = ((solRawVar dv), (solType ctxt t))
 
 solHandler :: SolCtxt a -> Int -> CHandler -> Doc a
 solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =

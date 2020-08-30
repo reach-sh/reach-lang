@@ -859,15 +859,16 @@ explodeTupleLike ctxt at lab tupdv@(DLVar _ _ tupt _) =
     T_Tuple tuptys -> do
       mconcatMap (uncurry (flip (mkdv DLE_TupleRef))) $ zip [0 ..] tuptys
     T_Array t sz -> do
-      let mkde _ da i = DLE_ArrayRef at (ctxt_stack ctxt) da sz (DLA_Con $ DLC_Int i) 
-      mconcatMap (mkdv mkde t) [ 0 .. sz-1 ]
+      let mkde _ da i = DLE_ArrayRef at (ctxt_stack ctxt) da sz (DLA_Con $ DLC_Int i)
+      mconcatMap (mkdv mkde t) [0 .. sz -1]
     _ ->
       expect_throw at $ Err_Eval_NotSpreadable (SLV_DLVar tupdv)
-  where mkdv mkde t i =  do
-          let de = mkde at (DLA_Var tupdv) i
-          let mdv = DLVar at (ctxt_local_name ctxt lab) t
-          (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
-          return $ (lifts, [SLV_DLVar dv])
+  where
+    mkdv mkde t i = do
+      let de = mkde at (DLA_Var tupdv) i
+      let mdv = DLVar at (ctxt_local_name ctxt lab) t
+      (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
+      return $ (lifts, [SLV_DLVar dv])
 
 evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
 evalPrim ctxt at sco st p sargs =

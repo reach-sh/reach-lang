@@ -713,23 +713,24 @@ _smt_declare_toBytes smt n = do
   let an = Atom n
   let ntb = n ++ "_toBytes"
   void $ SMT.declareFun smt ntb [an] (Atom "Bytes")
-  --- FIXME The injective assertions cause Z3 to go off the
-  --- rails. Another strategy would be to make a datatype for all the
-  --- bytes variants. However, this would imply that an encoding of a
-  --- bytes can never be equal to the encoding of a string, and so
-  --- on. I think it may be safer to only do injectiveness like this
-  --- and figure out why it is breaking. However, if we leave it out
-  --- now, then we are doing a conservative approximation that is
-  --- sound, because more things are equal than really are.
-  {- Assert that _toBytes is injective
-  let x = Atom "x"
-  let y = Atom "y"
-  let xb = smtApply ntb [ x ]
-  let yb = smtApply ntb [ y ]
-  void $ SMT.assert smt $ smtApply "forall" [ List [ List [ x, an ], List [ y, an ] ]
-                                            , smtApply "=>" [ smtNot (smtEq x y)
-                                                            , smtNot (smtEq xb yb) ] ]
-  -}
+
+--- FIXME The injective assertions cause Z3 to go off the
+--- rails. Another strategy would be to make a datatype for all the
+--- bytes variants. However, this would imply that an encoding of a
+--- bytes can never be equal to the encoding of a string, and so
+--- on. I think it may be safer to only do injectiveness like this
+--- and figure out why it is breaking. However, if we leave it out
+--- now, then we are doing a conservative approximation that is
+--- sound, because more things are equal than really are.
+{- Assert that _toBytes is injective
+let x = Atom "x"
+let y = Atom "y"
+let xb = smtApply ntb [ x ]
+let yb = smtApply ntb [ y ]
+void $ SMT.assert smt $ smtApply "forall" [ List [ List [ x, an ], List [ y, an ] ]
+                                          , smtApply "=>" [ smtNot (smtEq x y)
+                                                          , smtNot (smtEq xb yb) ] ]
+-}
 
 _smtDefineTypes :: Solver -> S.Set SLType -> IO SMTTypeMap
 _smtDefineTypes smt ts = do
