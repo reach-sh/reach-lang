@@ -12,11 +12,20 @@
 (provide (all-defined-out)
          (all-from-out scriblib/figure))
 
-;; XXX Get these from Haskell
+(define-runtime-path VERSION "../VERSION")
+(define version-ht
+  (for/fold ([ht (hasheq)]) ([l (in-list (file->lines VERSION))])
+    (match (string-split l "=")
+      [(list key val) (hash-set ht (string->symbol key) val)]
+      [_ (eprintf "VERSION: skipped ~v\n" l) ht])))
+(define (v k)
+  (hash-ref version-ht k
+            (λ () (error 'version "~a not in ~v" k version-ht))))
+
 (define reach-vers
-  "0.1.2")
+  (string-join (list (v 'MAJOR) (v 'MINOR) (v 'PATCH)) "."))
 (define reach-short-vers
-  (string-join (take (string-split reach-vers ".") 2) "."))
+  (string-join (list (v 'MAJOR) (v 'MINOR)) "."))
 
 (current-pygmentize-default-style 'solarizedlight)
 (define (reach . contents)
