@@ -14,6 +14,7 @@ clean: hs-clean
 .PHONY: build
 build: stack
 	docker build --tag=$(IMAGE):latest .
+	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push
 push: build

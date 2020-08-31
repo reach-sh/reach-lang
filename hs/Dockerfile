@@ -32,7 +32,7 @@ RUN ln -s /z3/z3-${Z3_VER}-x64-ubuntu-16.04/bin/z3 /z3/z3
 
 FROM ubuntu:18.04 as deps
 RUN apt-get update
-RUN apt-get install -y libgmp10
+RUN apt-get install -y libgmp10 ca-certificates
 COPY --from=dl-deps /z3 /z3
 RUN ln -s /z3/z3 /usr/bin/z3
 COPY --from=solc /usr/bin/solc /usr/bin/solc
