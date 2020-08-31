@@ -5,6 +5,8 @@
 
 # https://docs.docker.com/registry/spec/api/
 
+. ../VERSION
+
 echo '{'
 
 echo '  "report_date":'
@@ -14,10 +16,16 @@ echo ', "repository_stats":'
 curl -s https://hub.docker.com/v2/repositories/reachsh/reach/ | \
   jq '{pull_count: .pull_count, last_updated: .last_updated}'
 
-echo ', "tag_info":'
-curl -s https://hub.docker.com/v2/repositories/reachsh/reach/tags/ | \
-  jq '.results | map({name: .name, who: .last_updater_username, when: .last_updated})'
+echo ', "tag_info": {'
+echo '    "json": "is hard"'
+for CONTAINER in reach stdlib runner ethereum-devnet ; do
 
+  echo ",   \"$CONTAINER\":"
+  curl -s "https://hub.docker.com/v2/repositories/reachsh/$CONTAINER/tags/" | \
+    jq ".results | map(select(.name == \"$VERSION\") | {name: .name, who: .last_updater_username, when: .last_updated})"
+
+done
+echo '}'
 
 # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html
 
