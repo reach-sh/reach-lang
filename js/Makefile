@@ -14,9 +14,10 @@ build: package.json
 	docker build --tag=$(IMAGE):latest .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
 	docker build --tag=$(RUNNER_IMAGE):latest \
-	  --file Dockerfile_runner \
+	  --file Dockerfile.runner \
 	  --build-arg REACH_VERSION_ARG=$(VERSION) \
 	  .
+	TAG_ONLY=1 ../scripts/docker-push.sh $(RUNNER_IMAGE)
 
 .PHONY: push
 push:
