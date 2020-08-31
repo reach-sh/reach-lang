@@ -4,9 +4,9 @@ import * as http       from 'http';
 import * as url        from 'url';
 import * as waitPort   from 'wait-port';
 
+import { getConnectorMode }  from './loader.mjs';
 import {
   getDEBUG, debug, bigNumberify, isBigNumber, assert,
-  getConnectorMode,
 } from './shared.mjs';
 export * from './shared.mjs';
 

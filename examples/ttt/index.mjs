@@ -1,6 +1,4 @@
-import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
-import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
-import * as stdlib_fake from '@reach-sh/stdlib/FAKE.mjs';
+import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as TTT from './build/index.main.mjs';
 
 function render(st) {
@@ -12,22 +10,21 @@ function render(st) {
   o += '\n';
   return o; }
 
-const connectorMode = stdlib_fake.getConnectorMode();
-const proto = connectorMode.split('-')[0];
-
 ( async () => {
 
-  const { stdlib, startingBalance, wagerAmount } =
-        ( proto == 'ETH' ?
-          { stdlib: stdlib_eth
-            , startingBalance: stdlib_eth.toWeiBigNumber('100', 'ether')
-            , wagerAmount: stdlib_eth.toWeiBigNumber('5', 'ether') }
-          : ( proto == 'ALGO' ?
-              { stdlib: stdlib_algo
+  const connector = stdlib_loader.getConnector();
+  const stdlib = await stdlib_loader.loadStdlib();
+  const { startingBalance, wagerAmount } =
+        ( connector == 'ETH' ?
+          { stdlib: stdlib
+            , startingBalance: stdlib.toWeiBigNumber('100', 'ether')
+            , wagerAmount: stdlib.toWeiBigNumber('5', 'ether') }
+          : ( connector == 'ALGO' ?
+              { stdlib: stdlib
                 , startingBalance: 1000000
                 , wagerAmount: 5 }
               : (() => {
-                console.log(`Unknown protocol: ${proto}`);
+                console.log(`Unknown connector: ${connector}`);
                 process.exit(1); })() ) );
 
   console.log(`\nMaking accounts\n`);
@@ -46,10 +43,10 @@ const proto = connectorMode.split('-')[0];
     return {
       ...stdlib.hasRandom
       , getWager: () => {
-        console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${proto}`);
+        console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${connector}`);
         return wagerAmount; }
       , acceptWager: (givenWagerAmount) => {
-        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto}`); }
+        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${connector}`); }
       , getMove: (state) => {
         console.log(`${name} chooses a move from the state:${render(state)}`);
         const xs = state.xs;

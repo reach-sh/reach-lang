@@ -1,29 +1,21 @@
-import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
-import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
-import * as stdlib_fake from '@reach-sh/stdlib/FAKE.mjs';
+import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as NIM from './build/index.main.mjs';
 
-const connectorMode = stdlib_fake.getConnectorMode();
-console.log(connectorMode);
-
-const proto = connectorMode.split('-')[0];
-
 ( async () => {
-
-  const { stdlib, startingBalance, wagerAmount } =
-        ( proto == 'ETH' ?
-          { stdlib: stdlib_eth
-            , startingBalance: stdlib_eth.toWeiBigNumber('100', 'ether')
-            , wagerAmount: stdlib_eth.toWeiBigNumber('5', 'ether') }
-          : ( proto == 'ALGO' ?
-              { stdlib: stdlib_algo
-                , startingBalance: 1000000
-                , wagerAmount: 5 }
-              : ( proto == 'FAKE' ) ?
-              { stdlib: stdlib_fake
-                , startingBalance: 1000000
-                , wagerAmount: 5 }
-              : process.exit(1) ) );
+  const connector = stdlib_loader.getConnector();
+  const stdlib = await stdlib_loader.loadStdlib();
+  const { startingBalance, wagerAmount } =
+        ( connector == 'ETH' ? {
+          startingBalance: stdlib.toWeiBigNumber('100', 'ether'),
+          wagerAmount: stdlib.toWeiBigNumber('5', 'ether'),
+        } : ( connector == 'ALGO' ? {
+          stdlib: stdlib,
+          startingBalance: 1000000,
+          wagerAmount: 5,
+        } : ( connector == 'FAKE' ) ? {
+          startingBalance: 1000000,
+          wagerAmount: 5,
+        } : process.exit(1) ) );
 
   console.log(`\nMaking accounts\n`);
 
@@ -41,10 +33,10 @@ const proto = connectorMode.split('-')[0];
     return {
       ...stdlib.hasRandom,
       getParams: () => {
-        console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${proto} and heap is 21`);
+        console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${connector} and heap is 21`);
         return [ wagerAmount, stdlib.bigNumberify(21) ]; }
       , acceptParams: (givenWagerAmount, givenInitialHeap) => {
-        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${proto} and heap of ${givenInitialHeap}`); }
+        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${connector} and heap of ${givenInitialHeap}`); }
       , getMove: (heap1, heap2) => {
         console.log(`${name} chooses a heap from: ${heap1} and ${heap2} with amount 1`);
         return [ stdlib.gt(heap1, heap2), stdlib.bigNumberify(1) ]; }
