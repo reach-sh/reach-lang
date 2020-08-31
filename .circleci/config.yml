@@ -143,6 +143,12 @@ jobs:
     steps:
       - checkout
       - run:
+          name: install mo
+          command: (curl -sSL https://git.io/get-mo -o mo && chmod +x mo && mv mo /usr/local/bin)
+      - run:
+          name: package.json
+          command: (cd js && make package.json)
+      - run:
           name: install eslint
           command: (cd js && sudo npm install -g eslint && npm install)
       - run:
