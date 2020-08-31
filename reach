@@ -545,12 +545,20 @@ do_run () {
   if $NONE_EXIST ; then
     do_scaffold --isolate --quiet "$APP"
 
+    cleanup () {
+      do_unscaffold --isolate --quiet "$APP"
+    }
+
     # Note: do_scaffold --isolate has mutated these vars like so:
     # MAKEFILE=$MAKEFILE.${APP}
     # DOCKERFILE=$Dockerfile.${APP}
     # PACKAGE_JSON=$PACKAGE_JSON.${APP}
     # DOCKER_COMPOSE_YML=$DOCKER_COMPOSE_YML.${APP}
   else
+    cleanup () {
+      :
+    }
+
     ALL_EXIST=false
     if [ -f "$MAKEFILE" ] && [ -f "$DOCKERFILE" ] && [ -f "$PACKAGE_JSON" ] && [ -f "$DOCKER_COMPOSE_YML" ] ; then
       ALL_EXIST=true
@@ -572,12 +580,13 @@ do_run () {
     fi
   fi
 
-  cleanup () {
-    do_unscaffold --isolate --quiet "$APP"
-  }
-
   reach_make () {
     RUN_FROM_REACH=true make "$@" REACH="${REACH}"
+    MAKE_EXIT=$?
+    if [ $MAKE_EXIT -ne 0 ] ; then
+      cleanup
+      exit $MAKE_EXIT
+    fi
   }
 
   reach_make_f () {
@@ -619,11 +628,7 @@ do_run () {
     reach_make_f run-target ARGS="$(echo $ARGS)"
   fi
 
-  do_unscaffold --isolate --quiet "$APP"
-  MAKE_EXIT=$?
-  if [ $MAKE_EXIT -ne 0 ] ; then
-    exit $MAKE_EXIT
-  fi
+  cleanup
 }
 
 # TODO: allow linting outside of PWD
