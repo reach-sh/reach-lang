@@ -1268,14 +1268,16 @@ First, let's look at the @reachexlink["tut-7/docker-compose.yml"] file:
 
 @itemlist[
 
-@item{Lines 3 through 6 define a service for connecting to a "live" Ethereum network.}
+@item{Lines 2 and 3 define a service for starting our application.
+Your line 3 will say @litchar{tut}, rather than @litchar{tut-7}, if you've stayed in the same directory througout the tutorial.}
 
-@item{Lines 7 through 13 define a service for running a test instance named @litchar{alice}.}
+@item{Lines 5 and 6 define the Reach private developer test network service.}
 
-@item{Lines 14 through 20 duplicate this service with the name @litchar{bob}, so we can start two different instances.}
+@item{Lines 7 through 23 define services that allow the application to be run with different networks.}
 
-@item{Lines 21 and 22 define the Reach private developer test network service.}
+@item{We'll add lines 25 through 28 as a service for connecting to a "live" Ethereum network, specified by the environment variable @envvar{ETH_NODE_URI}.}
 
+@item{We'll also add lines 29 through 33 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
 
 With these inplace, we can run
@@ -1290,7 +1292,7 @@ We'll modify the @reachexlink["tut-7/Makefile"] to have commands to run each of 
 @reachex[#:mode makefile
          #:show-lines? #t "tut-7/Makefile"
          #:link #t
-         'only 15 25 ""]
+         'only 25 35 ""]
 
 However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
 Let's modify the JavaScript @tech{frontend} and make them interactive.
@@ -1403,6 +1405,10 @@ Lastly, we choose the appropriate backend function and await its completion.
 @(hrule)
 
 We can now run
+
+@cmd{make build}
+
+to rebuilt the images, then
 
 @cmd{make run-alice}
 

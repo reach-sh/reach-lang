@@ -1,22 +1,33 @@
-version: '3'
+version: '3.4'
+x-app-base: &app-base
+  image: reachsh/reach-app-tut-7:latest
 services:
+  devnet:
+    image: reachsh/ethereum-devnet:latest
+  reach-app-tut-7-ETH-test-geth-dockerized: &default-app
+    <<: *app-base
+    depends_on:
+      - devnet
+    environment:
+      - REACH_CONNECTOR_MODE=ETH-test-geth-dockerized
+      - ETH_NODE_URI=http://devnet:8545
+  reach-app-tut-7-ETH-test-ganache-embedded:
+    <<: *app-base
+    environment:
+      - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded
+  reach-app-tut-7-FAKE-test-mock-embedded:
+    <<: *app-base
+    environment:
+      - REACH_CONNECTOR_MODE=FAKE-test-mock-embedded
+  reach-app-tut-7-: *default-app
+  reach-app-tut-7: *default-app
+  # After this is new!
   live:
-    image: reachsh/reach-app-tut-7:latest
+    <<: *app-base
     environment:
       - ETH_NODE_URI
-  alice:
-    image: reachsh/reach-app-tut-7:latest
-    depends_on:
-      - devnet
-    environment:
-      - ETH_NODE_URI=http://devnet:8545
+  player: &player
+    <<: *default-app
     stdin_open: true
-  bob:
-    image: reachsh/reach-app-tut-7:latest
-    depends_on:
-      - devnet
-    environment:
-      - ETH_NODE_URI=http://devnet:8545
-    stdin_open: true
-  devnet:
-    image: reachsh/ethereum-devnet:stable
+  alice: *player 
+  bob: *player 

@@ -1,9 +1,19 @@
+REACH = ../../reach
+
+.PHONY: clean
+clean:
+	rm -rf build/*.main.mjs
+
 build/%.main.mjs: %.rsh
-	../../reach compile $^ main
+	$(REACH) compile $^ main
 
 .PHONY: build
 build: build/index.main.mjs
-	docker build --tag=reachsh/reach-app-tut-7:latest .
+	docker build -f Dockerfile --tag=reachsh/reach-app-tut-7:latest .
+
+.PHONY: down
+down:
+	docker-compose -f "docker-compose.yml" down
 
 .PHONY: run
 run: check
@@ -23,11 +33,3 @@ run-alice:
 .PHONY: run-bob
 run-bob:
 	docker-compose run --rm bob
-
-.PHONY: down
-down:
-	docker-compose down
-
-.PHONY: clean
-clean:
-	rm -f build/index.main.mjs
