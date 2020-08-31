@@ -21,10 +21,15 @@ COPY runner_package.mo.json /app/package.mo.json
 # TODO: use a gentler linter for this
 COPY .eslintrc.yaml /app/
 
+COPY .reach.eslintrc.yaml /app/
+
+# TODO: move npm install so it doesn't rebuild so much
+# TODO: copy package.lock as well?
 RUN mo /app/package.mo.json > /app/package.json
 RUN rm /app/package.mo.json
 RUN npm link '@reach-sh/stdlib'
 RUN npm install
+RUN npm install -g eslint
 RUN mkdir /app/build
 
 CMD ["app"]

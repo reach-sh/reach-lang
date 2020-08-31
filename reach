@@ -626,17 +626,30 @@ do_run () {
   fi
 }
 
+# TODO: allow linting outside of PWD
+# TODO: try to not mount all of PWD?
 do_lint () {
-  # XXX: make it work outside the repo
-  # XXX: make it not require eslint to be installed locally
-  # XXX: get it to propagate its error code if run on its own
-  if command -v eslint > /dev/null 2>&1; then
-    eslint \
-      --config "${HERE}/eslint/.eslintrc.yaml" \
-      --ext .rsh \
-      --no-eslintrc \
-      "$@"
-  fi
+  docker \
+    run \
+    --tty \
+    --mount "type=bind,source=$PWD,target=$PWD" \
+    --workdir "$PWD" \
+    --entrypoint eslint \
+    reachsh/runner:latest \
+    --ext .rsh \
+    --config /app/.reach.eslintrc.yaml \
+    --no-eslintrc \
+    "$@"
+
+  # TODO: not use dockerized if eslint & config available locally?
+  # (dockerized is slower)
+  # if command -v eslint > /dev/null 2>&1; then
+  #   eslint \
+  #     --config "${HERE}/js/.reach.eslintrc.yaml" \
+  #     --ext .rsh \
+  #     --no-eslintrc \
+  #     "$@"
+  # fi
 }
 
 do_usage () {
