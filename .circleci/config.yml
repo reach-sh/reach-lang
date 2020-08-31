@@ -145,6 +145,8 @@ jobs:
       - run:
           name: install eslint
           command: (cd js && sudo npm install -g eslint && npm install)
+      # TODO: not need docker for reach lint
+      - setup_remote_docker
       - run:
           name: Run reach linter
           command: make reach-lint
