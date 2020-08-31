@@ -200,7 +200,7 @@ data SLVal
   | SLV_Bytes SrcLoc B.ByteString
   | SLV_Array SrcLoc SLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
-  | SLV_Object SrcLoc SLEnv
+  | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLCloEnv
   | SLV_DLVar DLVar
   | SLV_Type SLType

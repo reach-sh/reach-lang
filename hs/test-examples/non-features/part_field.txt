@@ -1,0 +1,8 @@
+<stdout>
+
+</stdout>
+<stderr>
+</stderr>
+<exception>
+ExitFailure 1
+error: ./part_field.rsh:8:26:dot: wager is not a field of A's interaction interface. Did you mean: ["getWager"]

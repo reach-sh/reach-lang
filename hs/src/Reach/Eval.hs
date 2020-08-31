@@ -103,10 +103,15 @@ data EvalError
 --- FIXME I think most of these things should be in Pretty
 
 displaySlValType :: SLVal -> String
-displaySlValType sv =
-  case typeOfM (SrcLoc Nothing Nothing Nothing) sv of
-    Just (t, _) -> displayTy t
-    Nothing -> "<" <> conNameOf sv <> ">"
+displaySlValType = \case
+  SLV_Participant _ who _ _ _ ->
+    "<participant " <> (bunpack who) <> ">"
+  SLV_Object _ (Just lab) _ ->
+    lab
+  sv ->
+    case typeOfM (SrcLoc Nothing Nothing Nothing) sv of
+      Just (t, _) -> displayTy t
+      Nothing -> "<" <> conNameOf sv <> ">"
 
 displayTyList :: [SLType] -> String
 displayTyList tys =
@@ -186,8 +191,8 @@ instance Show EvalError where
       "Invalid binding. Expected array or tuple, got: " <> displaySlValType slval
     Err_Decl_WrongArrayLength nIdents nVals ->
       "Invalid array binding. nIdents:" <> show nIdents <> " does not match nVals:" <> show nVals
-    Err_Dot_InvalidField _slval ks k ->
-      "Invalid field: " <> k <> didYouMean k ks 5
+    Err_Dot_InvalidField slval ks k ->
+      k <> " is not a field of " <> displaySlValType slval <> didYouMean k ks 5
     Err_Eval_ContinueNotInWhile ->
       "Invalid continue. Expected to be inside of a while."
     Err_Eval_ContinueNotLoopVariable var ->
@@ -422,7 +427,7 @@ base_env =
     , ("type_eq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ( "Reach"
-      , (SLV_Object srcloc_top $
+      , (SLV_Object srcloc_top (Just $ "Reach") $
            m_fromList_public
              [("App", SLV_Form SLForm_App)])
       )
@@ -665,7 +670,7 @@ infectWithId v (lvl, sv) = (lvl, sv')
 evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
 evalDot ctxt at _sco st obj field =
   case obj of
-    SLV_Object _ env ->
+    SLV_Object _ _ env ->
       case M.lookup field env of
         Just v -> retV $ v
         Nothing -> illegal_field (M.keys env)
@@ -718,7 +723,7 @@ evalForm ctxt at sco st f args =
         [opte, partse, JSArrowExpression top_formals _ top_s] -> do
           sargs <- cannotLift "App args" <$> evalExprs ctxt at sco st [opte, partse]
           case map snd sargs of
-            [(SLV_Object _ opts), (SLV_Tuple _ parts)] ->
+            [(SLV_Object _ _ opts), (SLV_Tuple _ parts)] ->
               retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_vs (jsStmtToBlock top_s) env env'
               where
                 --- FIXME I think it would be better for env' to be created in compileDApp rather than here
@@ -728,7 +733,7 @@ evalForm ctxt at sco st f args =
                 part_vs = map make_part parts
                 make_part v =
                   case v of
-                    SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat io] ->
+                    SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat _ io] ->
                       case "_" `B.isPrefixOf` bs of
                         True -> expect_throw bs_at (Err_App_PartUnderscore bs)
                         False -> public $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
@@ -984,7 +989,7 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_Object ->
       case map snd sargs of
-        [(SLV_Object _ objm)] ->
+        [(SLV_Object _ _ objm)] ->
           retV $ (lvl, SLV_Type $ T_Obj $ M.map (expect_ty . snd) objm)
         _ -> illegal_args
     SLPrim_makeEnum ->
@@ -1048,7 +1053,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_transfer ->
       case map (typeOf at) $ ensure_publics at sargs of
         [(T_UInt256, amt_dla)] ->
-          return $ SLRes mempty st $ public $ SLV_Object at $ M.fromList [("to", (Public, SLV_Prim (SLPrim_transfer_amt_to amt_dla)))]
+          return $ SLRes mempty st $ public $ SLV_Object at (Just "transfer") $ M.fromList [("to", (Public, SLV_Prim (SLPrim_transfer_amt_to amt_dla)))]
         _ -> illegal_args
     SLPrim_transfer_amt_to amt_dla ->
       case st_mode st of
@@ -1212,7 +1217,7 @@ evalPropertyPair ctxt at sco st fenv p =
             return $ SLRes lifts st_se $ (slvl, env_merge_ AllowShadowing at' fenv env)
       keepLifts slifts $
         case sv of
-          SLV_Object _ senv -> mkRes mempty senv
+          SLV_Object _ _ senv -> mkRes mempty senv
           SLV_DLVar dlv@(DLVar _at _s (T_Obj tenv) _i) -> do
             let mkOneEnv k t = do
                   let de = DLE_ObjectRef at (DLA_Var dlv) k
@@ -1337,8 +1342,11 @@ evalExpr ctxt at sco st e = do
     JSObjectLiteral a plist _ -> do
       SLRes olifts st_fin (lvl, fenv) <-
         foldlM f (SLRes mempty st (mempty, mempty)) $ jsctl_flatten plist
-      return $ SLRes olifts st_fin $ (lvl, SLV_Object at' fenv)
+      return $ SLRes olifts st_fin $ (lvl, SLV_Object at' lab fenv)
       where
+        lab = case ctxt_local_mname ctxt of
+                Just [ x ] -> Just x
+                _ -> Nothing
         at' = srcloc_jsa "obj" a at
         f (SLRes lifts st_f (lvl, oenv)) pp =
           keepLifts lifts $ lvlMeetR lvl $ evalPropertyPair ctxt at' sco st_f oenv pp
@@ -1555,14 +1563,14 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
               pure [(spreadName, SLV_DLVar dlv)]
         let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (lvl, v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
         return lhs_env''
-      SLV_Object _ env -> pure lhs_env''
+      SLV_Object _ _ env -> pure lhs_env''
         where
           lhs_env'' = case kSpreadMay of
             Just spreadName -> env_insert at spreadName (lvl, spreadObj) envWithKs
             Nothing -> envWithKs
           envWithKs = foldl' (\lhs_env' k -> env_insert at' k (env_lookup at' k env) lhs_env') lhs_env ks
           envWithoutKs = M.withoutKeys env ksSet
-          spreadObj = SLV_Object at' envWithoutKs
+          spreadObj = SLV_Object at' Nothing envWithoutKs
       _ -> expect_throw at' (Err_Decl_NotObject val)
 
 evalDecl :: SLCtxt s -> SrcLoc -> SLState -> SLEnv -> SLScope -> JSExpression -> SLComp s SLEnv
@@ -2157,8 +2165,9 @@ evalLibs :: STCounter s -> [SLMod] -> ST s (DLStmts, SLLibs)
 evalLibs idxr mods = foldrM (evalLib idxr) (mempty, mempty) mods
 
 makeInteract :: SrcLoc -> SLPart -> SLEnv -> SLVal
-makeInteract at who spec = SLV_Object at spec'
+makeInteract at who spec = SLV_Object at lab spec'
   where
+    lab = Just $ (bunpack who) <> "'s interaction interface"
     spec' = M.mapWithKey wrap_ty spec
     wrap_ty k (Public, (SLV_Type t)) = case isFirstOrder t of
       True -> secret $ SLV_Prim $ SLPrim_interact at who k t
@@ -2197,7 +2206,7 @@ compileDApp idxr liblifts topv =
       where
         at' = srcloc_at "compileDApp" Nothing at
         sps = SLParts $ M.fromList $ map make_sps_entry partvs
-        make_sps_entry (Public, (SLV_Participant _ pn (SLV_Object _ io) _ _)) =
+        make_sps_entry (Public, (SLV_Participant _ pn (SLV_Object _ _ io) _ _)) =
           (pn, InteractEnv $ M.map getType io)
           where
             getType (_, (SLV_Prim (SLPrim_interact _ _ _ t))) = t

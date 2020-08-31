@@ -5,4 +5,4 @@
 </stderr>
 <exception>
 ExitFailure 1
-error: ./object_spread_keys.rsh:12:19:dot: Invalid field: x. Did you mean: ["y"]
+error: ./object_spread_keys.rsh:12:19:dot: x is not a field of object. Did you mean: ["y"]

@@ -151,7 +151,7 @@ slToDL _at v =
     SLV_Tuple at' vs -> do
       ds <- mapM (slToDL at') vs
       return $ DLA_Tuple $ ds
-    SLV_Object at' fenv -> do
+    SLV_Object at' _ fenv -> do
       denv <- mapM ((slToDL at') . snd) fenv
       return $ DLA_Obj denv
     SLV_Clo _ _ _ _ _ -> Nothing
