@@ -144,7 +144,7 @@ jobs:
       - checkout
       - run:
           name: install mo
-          command: (curl -sSL https://git.io/get-mo -o mo && chmod +x mo && mv mo /usr/local/bin)
+          command: (curl -sSL https://git.io/get-mo -o mo && chmod +x mo && sudo mv mo /usr/local/bin)
       - run:
           name: package.json
           command: (cd js && make package.json)
