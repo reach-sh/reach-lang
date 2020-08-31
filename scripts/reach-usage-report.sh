@@ -5,7 +5,10 @@
 
 # https://docs.docker.com/registry/spec/api/
 
-. "../VERSION"
+HERE="$(dirname "$(realpath "${0}")")";
+
+# shellcheck source=../VERSION
+. "${HERE}/../VERSION"
 
 echo '{'
 
