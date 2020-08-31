@@ -5,10 +5,7 @@
 
 # https://docs.docker.com/registry/spec/api/
 
-PROJ_ROOT="$(dirname "$(realpath "${0}")")/.."
-
-# shellcheck source=VERSION
-. "${PROJ_ROOT}/VERSION"
+. "../VERSION"
 
 echo '{'
 
