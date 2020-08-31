@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Rules for how reach interacts with your Makefile,
-# if you have all of the expected scaffolded files.
+# if you have *all* of the expected scaffolded files.
 # ------------------------------------------------
 #
 # reach run
@@ -496,15 +496,12 @@ do_run () {
 
   ensure_connector_mode
 
-  export BARE_REACH_RUN=${BARE_REACH_RUN:-false}
+  export RUN_FROM_REACH=${RUN_FROM_REACH:-false}
   if [ "x$1" = "x" ] ; then
-    if $BARE_REACH_RUN ; then fatal_infinite_reach_run_loop ; fi
-    export BARE_REACH_RUN=true
+    BARE_REACH_RUN=true
     APP="index"
   else
-    # XXX Hypothetically this opens up the possibility of inf mutual recursion
-    # XXX Not worrying about it for now...
-    export BARE_REACH_RUN=false
+    BARE_REACH_RUN=false
     ARG=$1
     shift
 
@@ -554,12 +551,21 @@ do_run () {
     # PACKAGE_JSON=$PACKAGE_JSON.${APP}
     # DOCKER_COMPOSE_YML=$DOCKER_COMPOSE_YML.${APP}
   else
-    NOT_ALL_EXIST=true
+    ALL_EXIST=false
     if [ -f "$MAKEFILE" ] && [ -f "$DOCKERFILE" ] && [ -f "$PACKAGE_JSON" ] && [ -f "$DOCKER_COMPOSE_YML" ] ; then
-      NOT_ALL_EXIST=false
+      ALL_EXIST=true
     fi
 
-    if $NOT_ALL_EXIST ; then
+    # We trust our scaffolded makefiles,
+    # so we only need to check for infinite recurrsion on:
+    # * reach run ($BARE_REACH_RUN), since this is the only potential avenue for inf recursion
+    # * a proj with customized scaffolding. ($ALL_EXIST)
+    # * running from inside another reach run ($RUN_FROM_REACH)
+    if $BARE_REACH_RUN && $ALL_EXIST && $RUN_FROM_REACH ; then
+      fatal_infinite_reach_run_loop
+    fi
+
+    if ! $ALL_EXIST ; then
       # TODO: more description on err
       echo "I'm confused, some scaffolded files exist, but not all"
       exit 1
@@ -570,9 +576,32 @@ do_run () {
     do_unscaffold --isolate --quiet "$APP"
   }
 
+  reach_make () {
+    RUN_FROM_REACH=true make "$@" REACH="${REACH}"
+  }
+
+  reach_make_f () {
+    reach_make -f "$MAKEFILE" "$@"
+  }
+
   if $BARE_REACH_RUN ; then
-    make -f "$MAKEFILE" build run
+    # Always build from "scaffolded" file
+    reach_make_f build
+    # Run from Makefile if present and not "run from reach"
+    if [ -f Makefile ] && ! $RUN_FROM_REACH ; then
+      reach_make run
+    else
+      reach_make_f run
+    fi
   else
+    # It is assumed that if this is being called from within reach run,
+    # then the build step has already been handled.
+    # TODO: better use of makefiles so that we just call make build anyway,
+    # and it is a noop if nothing needs to be done.
+    if ! $RUN_FROM_REACH ; then
+      reach_make_f build
+    fi
+
     # This is nuts and possibly a little bit wrong.
     # Easier methods exist but they are outside of POSIX standard.
     escape_args () {
@@ -587,7 +616,7 @@ do_run () {
     ARGS=$(escape_args "$@")
     # Yes it apparently has to be exactly "$(echo $ARGS)" because reasons.
     # shellcheck disable=SC2116,SC2086
-    make -f "$MAKEFILE" build "run-target" ARGS="$(echo $ARGS)"
+    reach_make_f run-target ARGS="$(echo $ARGS)"
   fi
 
   do_unscaffold --isolate --quiet "$APP"
