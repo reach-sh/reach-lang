@@ -251,26 +251,31 @@ const knownConnectorModes = [
   'ALGO-test-something-dockerized',
 ];
 
-const defaults = {
+const connectorModeDefaults = {
 };
 
-// Populate defaults
+// Populate connectorModeDefaults
 for (const knownConnectorMode of knownConnectorModes) {
   let prefix = false;
   for (const piece of knownConnectorMode.split('-')) {
     prefix = prefix ? `${prefix}-${piece}` : piece;
-    if (!defaults[prefix]) {
-      defaults[prefix] = knownConnectorMode;
+    if (!connectorModeDefaults[prefix]) {
+      connectorModeDefaults[prefix] = knownConnectorMode;
     }
   }
 }
 
-export function getConnectorMode() {
-  const connectorMode = process.env.REACH_CONNECTOR_MODE || 'ETH';
-  const canonicalized = defaults[connectorMode];
+export function canonicalizeConnectorMode(connectorMode) {
+  const canonicalized = connectorModeDefaults[connectorMode];
   if (typeof canonicalized === 'string') {
     return canonicalized;
   } else {
     throw Error(`Unrecognized REACH_CONNECTOR_MODE=${connectorMode}`);
   }
+
+}
+
+export function getConnectorMode() {
+  const connectorMode = process.env.REACH_CONNECTOR_MODE || 'ETH';
+  return canonicalizeConnectorMode(connectorMode);
 }

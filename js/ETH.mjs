@@ -85,8 +85,6 @@ const networkDesc = connectorMode == 'ETH-test-ganache-embedded' ? {
   type: 'uri',
   uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
   network: process.env.ETH_NODE_NETWORK || 'unspecified',
-} : connectorMode == 'FAKE-test-mock-embedded' ? {
-  type: 'skip',
 } : {
   type: 'skip',
 };
