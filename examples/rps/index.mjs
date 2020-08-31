@@ -1,29 +1,24 @@
-import * as stdlib_eth from '@reach-sh/stdlib/ETH.mjs';
-import * as stdlib_algo from '@reach-sh/stdlib/ALGO.mjs';
-import * as stdlib_fake from '@reach-sh/stdlib/FAKE.mjs';
+import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as RPS from './build/index.main.mjs';
 
-const connectorMode = stdlib_fake.getConnectorMode();
-const proto = connectorMode.split('-')[0];
-
 ( async () => {
-  const { stdlib, startingBalance, escrowAmount, wagerAmount, toUnit, unit } = (
-    proto == 'ETH' ? {
-      stdlib: stdlib_eth,
-      startingBalance: stdlib_eth.toWeiBigNumber('100', 'ether'),
-      escrowAmount: stdlib_eth.toWeiBigNumber('1', 'ether'),
-      wagerAmount: stdlib_eth.toWeiBigNumber('5', 'ether'),
-      toUnit: stdlib_eth.fromWei,
+  const stdlib = await stdlib_loader.loadStdlib();
+  const connector = stdlib_loader.getConnector();
+
+  const { startingBalance, escrowAmount, wagerAmount, toUnit, unit } = (
+    connector == 'ETH' ? {
+      startingBalance: stdlib.toWeiBigNumber('100', 'ether'),
+      escrowAmount: stdlib.toWeiBigNumber('1', 'ether'),
+      wagerAmount: stdlib.toWeiBigNumber('5', 'ether'),
+      toUnit: stdlib.fromWei,
       unit: 'ether',
-    } : proto == 'ALGO' ? {
-      stdlib: stdlib_algo,
+    } : connector == 'ALGO' ? {
       startingBalance: 1 * 1000000,
       escrowAmount: 25,
       wagerAmount: 15,
       toUnit: (x) => x,
       unit: 'microAlgo',
-    } : proto == 'FAKE' ? {
-      stdlib: stdlib_fake,
+    } : connector == 'FAKE' ? {
       startingBalance: 1 * 1000000,
       escrowAmount: 25,
       wagerAmount: 15,
