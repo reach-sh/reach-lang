@@ -656,6 +656,7 @@ case ${SUBCOMMAND} in
     update)
         docker pull "reachsh/reach:${REACH_VERSION}"
         docker pull "reachsh/stdlib:${REACH_VERSION}"
+        docker pull "reachsh/runner:${REACH_VERSION}"
         docker pull "reachsh/ethereum-devnet:${REACH_VERSION}"
         exit 0
         ;;

@@ -52,7 +52,6 @@ If no @exec{EXPORT} is provided, then @litchar{main} is used.
 
   @item{@DFlag{intermediate-files} --- Write intermediate files, which may be interesting for debugging compilation failures or using in other contexts.}
 
-  @item{The enviroment variable @envvar{REACH_VERSION} controls which version of the compiler is used.}
 ]
 
 @subsection[#:tag "ref-usage-init"]{@tt{reach init}}
@@ -77,7 +76,8 @@ This assumes
 
 @item{Your Reach program is named @exec{APP.rsh}.}
 
-@item{You are using the JavaScript backend, your interfacing code is named @exec{APP.mjs}, it assumes the backend is located at @exec{build/APP.main.mjs}, and only depends on the Reach standard library.}
+@item{You are using the JavaScript backend and your @tech{frontend} is named @exec{APP.mjs}.
+It also assumes the backend is located at @exec{build/APP.main.mjs}, and only depends on the Reach standard library.}
 
 ]
 
@@ -97,8 +97,6 @@ It then
 
 @itemlist[
 
-  @item{The enviroment variable @envvar{REACH_VERSION} controls which version of the compiler and runtime is used.}
-
   @item{If the environment variable @envvar{REACH_ETH_MODE} is bound to @exec{ganache}, then Reach will use @link["https://www.trufflesuite.com/ganache"]{Ganache} instead of a private network.}
 
 ]
@@ -117,11 +115,15 @@ You can upgrade your Reach installation by executing
 
 @cmd{reach upgrade}
 
+This may change the default version used by @exec{reach} commands.
+
 @subsection[#:tag "ref-usage-update"]{@tt{reach update}}
 
 You can update the Docker images used by your Reach installation by executing
 
 @cmd{reach update}
+
+This may change the patch version used by @exec{reach} commands.
 
 @subsection[#:tag "ref-usage-version"]{@tt{reach version}}
 
