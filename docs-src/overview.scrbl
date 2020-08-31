@@ -11,8 +11,10 @@ When you're ready to really begin a project, you can start with one of those, or
 
 @DApps are made of multiple agents interacting with each other through some backend @tech{consensus network}, like Ethereum or Algorand.
 These agents act on behalf of principals that provide direction and authority through information.
+These principals might be humans or other autonomous agents or even committees and organizations with their own structure.
 The consensus network allows these agents to transfer and receive value in the form of network-specific tokens, like ETH or ALGO.
-The network also allows contracts to ensure that each agent follows the same rules as they take turns computing and publishing values and information.
+The network also allows the creation of "contracts" that ensure that each agent follows the same rules as they take turns computing and publishing values and information.
+The details of these "contracts" are specific to each consensus network, but they are implicitly trusted by all agents and principals, because their operation can be independently verified to match the previously agreed-upon rules.
 
 A single Reach program incorporates all aspects of a @|DApp|:
 @itemlist[
@@ -136,7 +138,7 @@ For this @exloc["overview/index.rsh"] line application, the Reach compiler gener
 Separately, it generated @exloc["overview/build/index.main.sol"] lines of Solidity code to implement the contract.
 If a programmer wasn't using Reach, they would have to write these @exloc["overview/build/index.main.mjs" "overview/build/index.main.sol" -152] lines in these three modules separately and keep them synchronized at every step of the development process.
 
-Morever, Reach doesn't only work for Ethereum, it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target other @tech{consensus networks}, like Algorand.
+Morever, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target other @tech{consensus networks}, like Algorand.
 Nor is Reach tied to JavaScript, it can be configured to target other @tech{backend} languages, like Go.
 
 @section[#:tag "over-verify"]{Verify}
@@ -190,7 +192,7 @@ The program is just @exloc["overview/index.mjs"] lines long and the shell of it 
 
 @item{Lines 1 and 2 import the Reach standard library and the compiled app backend.}
 
-@item{Line 5 is the only part of the program that species to run on Ethereum.
+@item{Line 5 is the only part of the program that is specifically tied to the Ethereum network.
 (Technically line 1 does as well, but we provide standard libraries with identical interfaces for different consensus networks.)}
 
 @item{Lines 7 and 8 initialize new test accounts for Alice and Bob.}
@@ -290,9 +292,9 @@ In the rest of @seclink["guide"]{the guide}, we discuss design issues like this.
 
 @itemlist[
 
-@item{Effectively using @seclink["guide-assert"]{automatic verification} to check your application; or,}
+@item{Effectively using @seclink["guide-assert"]{automatic verification} to check your application;}
 
-@item{Fortifying your application against @seclink["guide-timeout"]{non-participation}; or,}
+@item{Fortifying your application against @seclink["guide-timeout"]{non-participation};}
 
 @item{Building @seclink["guide-abstract"]{interaction abstractions} for related applications.}
 
@@ -304,7 +306,7 @@ However, unless you're ready to dive deep now, the next steps for you are to:
 
 @item{@seclink["install"]{Install Reach};}
 
-@item{Work through the @seclink["tut"]{tutorial}; and,}
+@item{Work through the @seclink["tut"]{tutorial};}
 
 @item{Join @(the-community-link).}
 
