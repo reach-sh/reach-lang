@@ -10,3 +10,6 @@ cradle:
               component: "reach:test:reach-test"
             - path: "./app"
               component: "reach:exe:reachc"
+# XXX when hie-bios is upgraded to 0.7.0
+#            stackYaml: "./hs/stack.yaml"
+#            components:
