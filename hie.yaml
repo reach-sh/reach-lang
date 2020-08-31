@@ -1,15 +1,38 @@
 cradle:
   multi:
+    - path: "./"
+      config:
+        cradle:
+          none:
+            
     - path: "./hs"
       config:
         cradle:
           stack:
-            - path: "./src"
+            - path: "./hs/src"
               component: "reach:lib"
-            - path: "./test"
+            - path: "./hs/test"
               component: "reach:test:reach-test"
-            - path: "./app"
+            - path: "./hs/app"
               component: "reach:exe:reachc"
-# XXX when hie-bios is upgraded to 0.7.0
-#            stackYaml: "./hs/stack.yaml"
-#            components:
+
+# XXX Once hie-bios is upgraded to 0.7.0
+# cradle:
+#   multi:
+#     - path: ./
+#       config:
+#         cradle:
+#           none:
+#
+#     - path: ./hs/
+#       config:
+#         cradle:
+#           stack:
+#             stackYaml: ./hs/stack.yaml
+#             components:
+#               - path: ./hs/src
+#                 component: reach:lib
+#               - path: ./hs/test
+#                 component: reach:test:reach-test
+#               - path: ./hs/app
+#                 component: reach:exe:reachc
