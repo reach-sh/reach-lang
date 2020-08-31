@@ -3,6 +3,9 @@
          scribble/minted
          scriblib/figure
          scribble/core
+         scribble/html-properties
+         scribble/html-render
+         (only-in xml cdata)
          racket/match
          racket/format
          racket/list
@@ -11,6 +14,14 @@
          racket/runtime-path)
 (provide (all-defined-out)
          (all-from-out scriblib/figure))
+
+;; (define-runtime-path analytics-p "analytics.html")
+;; (define analytics (file->string analytics-p))
+;; (define analytics-head (cdata #f #f analytics))
+;; (define (insert x l)
+;;   (if (member x l) l (cons x l)))
+;; (current-html-render-head-prefix
+;;  (insert analytics-head (current-html-render-head-prefix)))
 
 (define-runtime-path VERSION "../VERSION")
 (define version-ht

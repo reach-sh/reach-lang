@@ -6,6 +6,7 @@ render:
 	raco scribble --dest .. --dest-name docs --htmls reach.scrbl
 	@rm -f ../minted-$(STYLE)-style.css
 	@cp -f minted.css CNAME ../docs/
+	./add-analytics.sh
 
 clean:
 	rm -rf ../docs/

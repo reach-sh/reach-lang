@@ -29,6 +29,16 @@ RUN add-apt-repository -y ppa:plt/racket && \
     raco pkg install https://github.com/jeapostrophe/scribble-minted.git && \
     pip3 install pygments-style-solarized
 
+# Maybe:
+# RUN pip3 install pygments-style-solarized
+
+# RUN add-apt-repository -y ppa:plt/racket
+# RUN apt-get update
+# RUN apt-get install -y racket && \
+#         raco pkg remove --force --no-setup scribble-lib && \
+#         raco pkg install https://github.com/jeapostrophe/scribble.git/?path=scribble-lib
+# RUN raco pkg install https://github.com/jeapostrophe/scribble-minted.git
+
 # solc
 COPY --from=solc /usr/bin/solc /usr/bin/solc
 
