@@ -1,9 +1,11 @@
 module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jsCallLike, jse_expect_id, jso_expect_id, gatherDeps_top) where
 
 import Control.DeepSeq
+import Control.Monad (when)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Graph as G
 import Data.IORef
+import Data.List (isPrefixOf)
 import qualified Data.Map.Strict as M
 import GHC.IO.Encoding
 import GHC.Stack (HasCallStack)
@@ -28,6 +30,8 @@ data ParserError
   | Err_Parse_IllegalBinOp JSBinOp
   | Err_Parse_IllegalLiteral String
   | Err_Parse_IllegalUnaOp JSUnaryOp
+  | Err_Parse_ImportAbsolute FilePath
+  | Err_Parse_ImportDotDot FilePath
   | Err_Parse_NotModule JSAST
   | Err_Parse_NotCallLike JSExpression
   deriving (Generic, Eq)
@@ -50,6 +54,10 @@ instance Show ParserError where
     "Illegal literal: " <> show lit
   show (Err_Parse_IllegalUnaOp unop) =
     "Illegal unary operator: " <> show unop
+  show (Err_Parse_ImportAbsolute fp) =
+    "Invalid import: absolute path imports are not supported: " <> fp
+  show (Err_Parse_ImportDotDot fp) =
+    "Invalid import: dotdot path imports are not supported: " <> fp
   show (Err_Parse_NotModule ast) =
     "Not a module: " <> (take 256 $ show ast)
 
@@ -109,10 +117,10 @@ gatherDeps_imd :: SrcLoc -> IORef JSBundleMap -> JSImportDeclaration -> IO JSImp
 gatherDeps_imd at fmr j =
   case j of
     JSImportDeclaration ic (JSFromClause ab aa s) sm -> do
-      s_abs <- gatherDeps_file (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
+      s_abs <- gatherDeps_file GatherNotTop (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
       return $ JSImportDeclaration ic (JSFromClause ab aa s_abs) sm
     JSImportDeclarationBare a s sm -> do
-      s_abs <- gatherDeps_file (srcloc_at "import bare" (tp a) at) fmr $ trimQuotes s
+      s_abs <- gatherDeps_file GatherNotTop (srcloc_at "import bare" (tp a) at) fmr $ trimQuotes s
       return $ JSImportDeclarationBare a s_abs sm
 
 gatherDeps_mi :: SrcLoc -> IORef JSBundleMap -> JSModuleItem -> IO JSModuleItem
@@ -178,15 +186,21 @@ gatherDeps_ast_rewriteErr at' fmr s = case parseModule s (show $ get_srcloc_src 
   Left e -> error $ tryPrettifyError at' e -- TODO: prettify
   Right r -> gatherDeps_ast at' fmr r
 
-gatherDeps_file :: SrcLoc -> IORef JSBundleMap -> FilePath -> IO FilePath
-gatherDeps_file at fmr src_rel =
+data GatherContext = GatherTop | GatherNotTop
+  deriving (Eq)
+
+gatherDeps_file :: GatherContext -> SrcLoc -> IORef JSBundleMap -> FilePath -> IO FilePath
+gatherDeps_file gctxt at fmr src_rel =
   updatePartialAvoidCycles at fmr (gatherDeps_from at) [ReachStdLib] get_key ret_key err_key proc_key
   where
     get_key () = do
-      --- XXX This needs to disallow .. and absolute paths, maybe it's
-      --- possible to do something like checking if makeRelative ∘
-      --- makeAbsolute is the identity?
       src_abs <- makeAbsolute src_rel
+      reRel <- makeRelativeToCurrentDirectory src_abs
+      when (gctxt == GatherNotTop) $ do
+        when (isAbsolute src_rel) $ do
+          expect_throw at (Err_Parse_ImportAbsolute src_rel)
+        when ("../" `isPrefixOf` reRel) $ do
+          expect_throw at (Err_Parse_ImportDotDot src_rel)
       return $ ReachSourceFile src_abs
     ret_key (ReachSourceFile x) = x
     ret_key (ReachStdLib) = no_stdlib
@@ -225,7 +239,7 @@ gatherDeps_top :: FilePath -> IO JSBundle
 gatherDeps_top src_p = do
   fmr <- newIORef (mempty, mempty)
   let at = srcloc_top
-  _src_abs_p <- gatherDeps_file at fmr src_p
+  _src_abs_p <- gatherDeps_file GatherTop at fmr src_p
   gatherDeps_stdlib at fmr
   (dm, fm) <- readIORef fmr
   return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) $ map_order dm
