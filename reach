@@ -629,27 +629,28 @@ do_run () {
 # TODO: allow linting outside of PWD
 # TODO: try to not mount all of PWD?
 do_lint () {
-  docker \
-    run \
-    --tty \
-    --mount "type=bind,source=$PWD,target=$PWD" \
-    --workdir "$PWD" \
-    --entrypoint eslint \
-    reachsh/runner:latest \
-    --ext .rsh \
-    --config /app/.reach.eslintrc.yaml \
-    --no-eslintrc \
-    "$@"
+  LINT_CONFIG="${HERE}/js/.reach.eslintrc.yaml"
+  if command -v eslint > /dev/null 2>&1 && [ -f "$LINT_CONFIG" ]; then
+    eslint \
+      --config "$LINT_CONFIG" \
+      --ext .rsh \
+      --no-eslintrc \
+      "$@"
+  else
+    DIR="$(pwd)"
+    docker \
+      run \
+      --tty \
+      --mount "type=bind,source=$DIR,target=$DIR" \
+      --workdir "$DIR" \
+      --entrypoint eslint \
+      "reachsh/runner:$REACH_VERSION" \
+      --ext .rsh \
+      --config /app/.reach.eslintrc.yaml \
+      --no-eslintrc \
+      "$@"
+  fi
 
-  # TODO: not use dockerized if eslint & config available locally?
-  # (dockerized is slower)
-  # if command -v eslint > /dev/null 2>&1; then
-  #   eslint \
-  #     --config "${HERE}/js/.reach.eslintrc.yaml" \
-  #     --ext .rsh \
-  #     --no-eslintrc \
-  #     "$@"
-  # fi
 }
 
 do_usage () {
