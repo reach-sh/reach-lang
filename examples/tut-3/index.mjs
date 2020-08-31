@@ -3,10 +3,11 @@ import * as backend from './build/index.main.mjs';
 
 ( async () => {
   const toNetworkFormat = (n) => stdlib.toWeiBigNumber(n, 'ether');
+  
   const accAlice = await stdlib.newTestAccount(toNetworkFormat('10'));
   const accBob = await stdlib.newTestAccount(toNetworkFormat('10'));
 
-  const getBalance = async (who) => stdlib.fromWei ( await stdlib.balanceOf(who) );
+  const getBalance = async (who) => stdlib.fromWei( await stdlib.balanceOf(who) );
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 

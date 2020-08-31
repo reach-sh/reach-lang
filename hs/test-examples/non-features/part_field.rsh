@@ -2,7 +2,7 @@
 
 export const main = Reach.App(
   {},
-  [['A', {getWager: Fun([],UInt256)}],],
+  [['A', {getWager: Fun([],UInt256)}]],
   (A) => {
     A.only(() => {
       declassify(interact.wager);

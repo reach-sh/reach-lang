@@ -8,7 +8,7 @@
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
-On the hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less contrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
+On the other hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less contrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
 
 If you're ready, click through to the @seclink["tut-0"]{first step}!
 
@@ -103,6 +103,8 @@ In this case, we choose Ethereum for simplicity.}
 
 @item{Line 2 imports your backend, which @exec{./reach compile} will produce.}
 
+@item{Line 4 defines an asynchronous function that will be the body of our frontend.}
+
 @item{Line 5 defines a helpful function for defining quantities in ETH.}
 
 @item{Lines 7 and 8 create test accounts with initial endowments for Alice and Bob.
@@ -117,6 +119,8 @@ This will only work on the Reach-provided developer testing network.}
 @item{Lines 17 through 19 initialize Bob's backend.}
 
 @item{Line 13 waits for the backends to complete.}
+
+@item{Line 21 calls this asynchronous function that we've defined.}
 
 ]
 
@@ -197,6 +201,8 @@ First, Alice's backend interacts with her frontend, gets her hand, and publishes
 
 @item{That means that the variable, @reachin{handA}, bound on line 13 is known only to Alice.}
 
+@item{Line 13 binds that value to the result of interacting with Alice through the @reachin{getHand} method, which we wrote in JavaScript.}
+
 @item{Line 13 also @tech{declassifies} the value, because in Reach, all information from @tech{frontends} is @tech{secret} until it is explicitly made public.}
 
 @item{Line 14 has Alice @tech{join} the application by publishing the value to the @tech{consensus network}, so it can be used to evaluate the outcome of the game.
@@ -217,7 +223,8 @@ The next step is similar, in that Bob publishes his hand; however, we don't imme
 @item{Lines 17 through 19 match Alice's similar @tech{local step} and @tech{join}ing of the application through a @tech{consensus transfer} @tech{publication}.}
 
 @item{But, line 21 computes the outcome of the game before committing.
-(@reachin{(handA + (4 - handB)) % 3} is a clever equation to compute the winner of a game of @|RPS| using modular arithmetic.)}
+(@reachin{(handA + (4 - handB)) % 3} is a clever equation to compute the winner of a game of @|RPS| using modular arithmetic.
+Consider when @reachin{handA} is @reachin{0} (i.e., @litchar{Rock}) and @reachin{handB} is @reachin{2} (i.e., @litchar{Scissors}), then this equation is @reachin{((handA + (4 - handB)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2}, which is the last outcome, that is @litchar{A wins}, as we expect it to be.)}
 
 ]
 
@@ -283,13 +290,13 @@ We'll add this code in between account creation and contract deployment.
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 7 13 "  // ..."]
+         'only 8 12 "  // ..."]
 
 @itemlist[
 
-@item{Line 9 shows a helpful function for getting the balance of a participant and displaying it.}
+@item{Line 10 shows a helpful function for getting the balance of a participant and displaying it.}
 
-@item{Line 10 and 11 get the balance before the game starts for both Alice and Bob.}
+@item{Line 11 and 12 get the balance before the game starts for both Alice and Bob.}
 
 ]
 
@@ -298,13 +305,13 @@ Next, we'll update Alice's interface object to include her wager.
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 26 30 "    // ..."]
+         'only 27 31 "    // ..."]
 
 @itemlist[
 
-@item{Line 28 splices the common @jsin{Player} interface into Alice's interface.}
+@item{Line 29 splices the common @jsin{Player} interface into Alice's interface.}
 
-@item{Line 29 defines her wager as @litchar{5} units of the @tech{network token}.
+@item{Line 30 defines her wager as @litchar{5} units of the @tech{network token}.
 This is an example of using a concrete value, rather than a function, in a @tech{participant interact interface}.}
 
 ]
@@ -314,11 +321,11 @@ For Bob, we'll modify his interface to show the wager and immediately accept it 
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 31 35 "    // ..."]
+         'only 32 36 "    // ..."]
 
 @itemlist[
 
-@item{Line 34 defines the @jsin{acceptWager} function.}
+@item{Line 35 defines the @jsin{acceptWager} function.}
 
 ]
 
@@ -327,13 +334,13 @@ Finally, after the computation is over, we'll get the balance again and show a m
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 36 44 "  // ..."]
+         'only 37 45 "  // ..."]
 
 @itemlist[
 
-@item{Lines 38 and 39 get the balances afterwards.}
+@item{Lines 39 and 40 get the balances afterwards.}
 
-@item{Lines 41 and 42 print out the effect.}
+@item{Lines 42 and 43 print out the effect.}
 
 ]
 
@@ -714,6 +721,9 @@ It comes with a secret "salt" value that must be revealed later.}
 
 At this point, we can state the @tech{knowledge assertion} that Bob can't know either the hand or the "salt" and continue with his part of the program.
 
+@margin-note{It is important to include the salt in the commitment, so that multiple commitments to the same value are not identical.
+Similarly, it is important not to share the salt until later, because if an attacker knows the set of possible values, they can enumerate them and compare with the result of the commitment and learn the value.}
+
 @reachex[#:show-lines? #t "tut-4/index.rsh"
          #:link #t
          'only 44 50 "      // ..."]
@@ -782,7 +792,7 @@ Alice went from 10.0 to 9.999999999999550271.
 Bob went from 10.0 to 9.999999999999969352.
 }
 
-Except now, behind the scenes, and unbeknownest to the business logic, Alice now takes two steps in program and Bob only takes one, and she is protected against Bob finding her hand and using it to ensure he wins!
+Except now, behind the scenes, and without any changes to the frontend, Alice now takes two steps in program and Bob only takes one, and she is protected against Bob finding her hand and using it to ensure he wins!
 
 When we compile this version of the application, Reach's @seclink["guide-assert"]{automatic formal verification} engine proves many theorems and protects us against a plethora of mistakes one might make when writing even a simple application like this.
 Non-Reach programs that try to write decentralized applications are on their own trying to ensure that these problems don't exist.

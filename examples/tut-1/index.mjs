@@ -18,4 +18,4 @@ import * as backend from './build/index.main.mjs';
       stdlib, ctcBob,
       {})
   ]);
-})();
+})(); // <-- Don't forget these!
