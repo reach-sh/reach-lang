@@ -5,4 +5,4 @@ services:
     build: .
     entrypoint: npm run test
     environment:
-      - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded
+      - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache

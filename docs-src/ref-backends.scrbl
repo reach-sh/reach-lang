@@ -15,8 +15,10 @@ The Reach JavaScript @tech{backend} produces a compilation output named @filepat
 The @jsin{stdlib} argument is provided by either
 @itemlist[
  @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
- @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs}; or,} 
- @item{the module @litchar{@"@"reach-sh/stdlib/FAKE.mjs}.} ]
+ @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs};}
+ @item{the module @litchar{@"@"reach-sh/stdlib/FAKE.mjs}; or,}
+ @item{the async function @litchar{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
+]
 
 The @jsin{ctc} argument is the result of a call to @jsin{acc.deploy} or @jsin{acc.attach}.
 
@@ -51,6 +53,54 @@ is given the @jsin{interact} object,
 
 then it is not guaranteed that @reachin{A} will publish @reachin{true}, because the @jsin{str} given to @jsin{give} may not be identical to @jsin{x}.
 (However, they are @jsin{bytes_eq}.)
+
+@(hrule)
+
+The @jsin{loader} module exports the following functions
+that might help you write code that is portable to multiple consensus networks.
+
+@(hrule)
+@js{
+  canonicalizeConnectorMode(string) => string
+}
+
+@index{canonicalizeConnectorMode} Expands a connector mode prefix
+to its full, canonical name. The canonical connector modes are:
+
+@js{
+  'ETH-test-dockerized-geth'   // Default for ETH, ETH-test, and ETH-test-dockerized
+  'ETH-test-embedded-ganache'  // Default for ETH-test-embedded
+  'FAKE-test-embedded-mock'    // Default for FAKE, FAKE-test, and FAKE-test-embedded
+  'ALGO-test-dockerized-goal'  // Default for ALGO, ALGO-test, and ALGO-test-dockerized
+}
+
+@(hrule)
+@js{
+  getConnectorMode() => string
+}
+
+@index{getConnectorMode} Returns the canonicalized connector mode, based on the
+@jsin{process.env.REACH_CONNECTOR_MODE} environment variable.
+If the variable is missing or empty, it will return the canonicalized form of @jsin{'ETH'}.
+
+@(hrule)
+@js{
+  getConnector() => string
+}
+
+@index{getConnector} Returns the first piece of @jsin{getConnectorMode()},
+which indicates the abbreviated name of the network being connected to.
+Connectors are one of the following: @jsin{['ETH', 'FAKE', 'ALGO']}.
+
+@(hrule)
+@js{
+  async loadStdlib(connectorMode) => stdlib
+}
+
+@index{loadStdlib} Returns a stlib based on the provided @jsin{connectorMode} string.
+You may omit the @jsin{connectorMode} argument, in which case
+@jsin{getConnectorMode()} will be used to select the correct stdlib.
+
 
 @(hrule)
 

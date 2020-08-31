@@ -75,10 +75,10 @@ fatal_unrecognized_connector_mode() {
 
 ensure_connector_mode () {
   # Makes sure to set REACH_CONNECTOR_MODE to one of:
-  # * ETH-test-geth-dockerized
-  # * ETH-test-ganache-embedded
-  # * FAKE-test-mock-embedded
-  # * ALGO-test-something-dockerized
+  # * ETH-test-dockerized-geth
+  # * ETH-test-embedded-ganache
+  # * FAKE-test-embedded-mock
+  # * ALGO-test-dockerized-goal
   # $WHAT-$WHERE-$HOW-$HOW_WHERE
   # (or error)
   # This can be derived from REACH_TESTNET and possibly REACH_ETH_MODE
@@ -87,47 +87,46 @@ ensure_connector_mode () {
   REACH_CONNECTOR_MODE=${REACH_CONNECTOR_MODE:-ETH}
   case "$REACH_CONNECTOR_MODE" in
     "ETH")
-      REACH_CONNECTOR_MODE="ETH-test-geth-dockerized"
+      REACH_CONNECTOR_MODE="ETH-test-dockerized-geth"
       ;;
     "ETH-test")
-      REACH_CONNECTOR_MODE="ETH-test-geth-dockerized"
+      REACH_CONNECTOR_MODE="ETH-test-dockerized-geth"
       ;;
-    "ETH-test-geth")
-      REACH_CONNECTOR_MODE="ETH-test-geth-dockerized"
+    "ETH-test-dockerized")
+      REACH_CONNECTOR_MODE="ETH-test-dockerized-geth"
       ;;
-    "ETH-test-ganache")
-      REACH_CONNECTOR_MODE="ETH-test-ganache-embedded"
+    "ETH-test-embedded")
+      REACH_CONNECTOR_MODE="ETH-test-embedded-ganache"
       ;;
     "FAKE")
-      REACH_CONNECTOR_MODE="FAKE-test-mock-embedded"
+      REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
       ;;
     "FAKE-test")
-      REACH_CONNECTOR_MODE="FAKE-test-mock-embedded"
+      REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
       ;;
-    "FAKE-test-mock")
-      REACH_CONNECTOR_MODE="FAKE-test-mock-embedded"
+    "FAKE-test-embedded")
+      REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
       ;;
-    # TODO: what is 'default' called for ALGO?
     "ALGO")
-      REACH_CONNECTOR_MODE="ALGO-test-default-dockerized"
+      REACH_CONNECTOR_MODE="ALGO-test-dockerized-goal"
       ;;
     "ALGO-test")
-      REACH_CONNECTOR_MODE="ALGO-test-default-dockerized"
+      REACH_CONNECTOR_MODE="ALGO-test-dockerized-goal"
       ;;
-    "ALGO-test-default")
-      REACH_CONNECTOR_MODE="ALGO-test-default-dockerized"
+    "ALGO-test-dockerized")
+      REACH_CONNECTOR_MODE="ALGO-test-dockerized-goal"
       ;;
   esac
 
   # ensure it is one of the supported things
   case "$REACH_CONNECTOR_MODE" in
-    "ETH-test-geth-dockerized")
+    "ETH-test-dockerized-geth")
       ;;
-    "ETH-test-ganache-embedded")
+    "ETH-test-embedded-ganache")
       ;;
-    "FAKE-test-mock-embedded")
+    "FAKE-test-embedded-mock")
       ;;
-    "ALGO-test-something-dockerized")
+    "ALGO-test-dockerized-goal")
       fatal_connector_mode_coming_soon
       ;;
     *)
@@ -372,21 +371,21 @@ x-app-base: &app-base
 services:
   devnet:
     image: reachsh/ethereum-devnet:${REACH_VERSION}
-  ${SERVICE}-ETH-test-geth-dockerized: &default-app
+  ${SERVICE}-ETH-test-dockerized-geth: &default-app
     <<: *app-base
     depends_on:
       - devnet
     environment:
-      - REACH_CONNECTOR_MODE=ETH-test-geth-dockerized
+      - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://devnet:8545
-  ${SERVICE}-ETH-test-ganache-embedded:
+  ${SERVICE}-ETH-test-embedded-ganache:
     <<: *app-base
     environment:
-      - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded
-  ${SERVICE}-FAKE-test-mock-embedded:
+      - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
+  ${SERVICE}-FAKE-test-embedded-mock:
     <<: *app-base
     environment:
-      - REACH_CONNECTOR_MODE=FAKE-test-mock-embedded
+      - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
   ${SERVICE}-: *default-app
   ${SERVICE}: *default-app
 EOF

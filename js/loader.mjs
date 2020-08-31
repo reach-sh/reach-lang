@@ -1,9 +1,9 @@
 // Fragment defaulting goes to to bottom
 const knownConnectorModes = [
-  'ETH-test-geth-dockerized',
-  'ETH-test-ganache-embedded',
-  'FAKE-test-mock-embedded',
-  'ALGO-test-something-dockerized',
+  'ETH-test-dockerized-geth',
+  'ETH-test-embedded-ganache',
+  'FAKE-test-embedded-mock',
+  'ALGO-test-dockerized-goal',
 ];
 
 const connectorModeDefaults = {

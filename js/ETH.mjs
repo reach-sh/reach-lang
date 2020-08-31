@@ -79,9 +79,9 @@ void(flaky); // XXX
 
 const connectorMode = getConnectorMode();
 
-const networkDesc = connectorMode == 'ETH-test-ganache-embedded' ? {
-  type: 'ganache-embedded',
-} : connectorMode == 'ETH-test-geth-dockerized' ? {
+const networkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
+  type: 'embedded-ganache',
+} : connectorMode == 'ETH-test-dockerized-geth' ? {
   type: 'uri',
   uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
   network: process.env.ETH_NODE_NETWORK || 'unspecified',
@@ -158,7 +158,7 @@ const etherspP = (async () => {
     const ethersp = new ethers.providers.JsonRpcProvider(networkDesc.uri);
     ethersp.pollingInterval = 500; // ms
     return ethersp;
-  } else if (networkDesc.type == 'ganache-embedded') {
+  } else if (networkDesc.type == 'embedded-ganache') {
     const {default: ganache} = await import('ganache-core');
     const default_balance_ether = '999999999';
     const ganachep = ganache.provider({default_balance_ether});
