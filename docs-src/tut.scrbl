@@ -795,7 +795,7 @@ Bob went from 10.0 to 9.999999999999969352.
 Except now, behind the scenes, and without any changes to the frontend, Alice now takes two steps in program and Bob only takes one, and she is protected against Bob finding her hand and using it to ensure he wins!
 
 When we compile this version of the application, Reach's @seclink["guide-assert"]{automatic formal verification} engine proves many theorems and protects us against a plethora of mistakes one might make when writing even a simple application like this.
-Non-Reach programs that try to write decentralized applications are on their own trying to ensure that these problems don't exist.
+Non-Reach programmers that try to write decentralized applications are on their own trying to ensure that these problems don't exist.
 
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-4/index.rsh"] and @reachexlink["tut-4/index.mjs"] to make sure you copied everything down correctly!}
 
@@ -858,6 +858,13 @@ Back in the Reach program, we'll define an identifier at the top of our program 
 @reachex[#:show-lines? #t "tut-5/index.rsh"
          #:link #t
          'only 32 33 "// ..."]
+
+@itemlist[
+
+@item{Line 32 defines the deadline as ten @tech{time delta} units, which are an abstraction of the underlying notion of @tech{time} in the @tech{consensus network}.
+In many networks, like Ethereum, this number is a number of blocks.}
+
+]
 
 Next, at the start of the Reach application, we'll define a helper function to inform each of the participants of the timeout by calling this new method.
 
@@ -1127,7 +1134,7 @@ Now, let's look at the body of the loop for the remaining steps, starting with A
 
 @reachex[#:show-lines? #t "tut-6/index.rsh"
          #:link #t
-         'only 56 54 "        // ..."]
+         'only 56 64 "        // ..."]
 
 @itemlist[
 
