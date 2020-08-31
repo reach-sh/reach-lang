@@ -84,5 +84,5 @@ reach-lint-fix:
 sh-lint:
 	@(set -e; for f in $$(find . -not \( -path '*/node_modules/*' -prune \) -name '*.sh') ./reach; do \
 		echo linting $$f; \
-		shellcheck $$f ; \
+		shellcheck --external-sources $$f ; \
 	done)
