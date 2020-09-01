@@ -10,21 +10,21 @@ However, we&rsquo;ll customize the other two files.</p><p>First, let&rsquo;s loo
  <span class="nt">4    services</span><span class="p">:</span>
  <span class="nt">5      devnet</span><span class="p">:</span>
  <span class="nt">6        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/ethereum-devnet:latest</span>
- <span class="nt">7      reach-app-tut-7-ETH-test-geth-dockerized</span><span class="p">:</span> <span class="nl">&amp;default-app</span>
+ <span class="nt">7      reach-app-tut-7-ETH-test-dockerized-geth</span><span class="p">:</span> <span class="nl">&amp;default-app</span>
  <span class="nt">8        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
  <span class="nt">9        depends_on</span><span class="p">:</span>
 <span class="l l-Scalar l-Scalar-Plain">10          - devnet</span>
 <span class="l l-Scalar l-Scalar-Plain">11        environment</span><span class="p p-Indicator">:</span>
-<span class="l l-Scalar l-Scalar-Plain">12          - REACH_CONNECTOR_MODE=ETH-test-geth-dockerized</span>
+<span class="l l-Scalar l-Scalar-Plain">12          - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth</span>
 <span class="l l-Scalar l-Scalar-Plain">13          - ETH_NODE_URI=http://devnet:8545</span>
-<span class="nt">14      reach-app-tut-7-ETH-test-ganache-embedded</span><span class="p">:</span>
+<span class="nt">14      reach-app-tut-7-ETH-test-embedded-ganache</span><span class="p">:</span>
 <span class="nt">15        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
 <span class="nt">16        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">17          - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded</span>
-<span class="nt">18      reach-app-tut-7-FAKE-test-mock-embedded</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">17          - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache</span>
+<span class="nt">18      reach-app-tut-7-FAKE-test-embedded-mock</span><span class="p">:</span>
 <span class="nt">19        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
 <span class="nt">20        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">21          - REACH_CONNECTOR_MODE=FAKE-test-mock-embedded</span>
+<span class="l l-Scalar l-Scalar-Plain">21          - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock</span>
 <span class="nt">22      reach-app-tut-7-</span><span class="p">:</span> <span class="nv">*default-app</span>
 <span class="nt">23      reach-app-tut-7</span><span class="p">:</span> <span class="nv">*default-app</span>
 <span class="l l-Scalar l-Scalar-Plain">24</span>      <span class="c1"># After this is new!</span>
