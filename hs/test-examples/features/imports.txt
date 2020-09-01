@@ -1,0 +1,9 @@
+<stdout>
+Verifying knowledge assertions
+Verifying with mode = VM_Honest
+Verifying with mode = VM_Dishonest RoleContract
+Checked 6 theorems; No failures!
+
+</stdout>
+<stderr>
+</stderr>

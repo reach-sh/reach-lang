@@ -1345,8 +1345,8 @@ evalExpr ctxt at sco st e = do
       return $ SLRes olifts st_fin $ (lvl, SLV_Object at' lab fenv)
       where
         lab = case ctxt_local_mname ctxt of
-                Just [ x ] -> Just x
-                _ -> Nothing
+          Just [x] -> Just x
+          _ -> Nothing
         at' = srcloc_jsa "obj" a at
         f (SLRes lifts st_f (lvl, oenv)) pp =
           keepLifts lifts $ lvlMeetR lvl $ evalPropertyPair ctxt at' sco st_f oenv pp
@@ -2089,8 +2089,62 @@ evalTopBody ctxt at st libm env exenv body =
                     Just x -> x
                     Nothing ->
                       impossible $ "dependency not found"
-            --- FIXME support more kinds
-            _ -> expect_throw at (Err_Import_IllegalJS im)
+            JSImportDeclaration importClause fromClause sp ->
+              evalTopBody ctxt at_after st libm env' exenv body'
+              where
+                at_after = srcloc_after_semi lab a sp at
+                at' = srcloc_jsa lab a at
+                lab = "import"
+                env' = env_merge at' env newIdents
+                JSFromClause _ a libn = fromClause
+                libex =
+                  case M.lookup (ReachSourceFile libn) libm of
+                    Just x -> x
+                    Nothing ->
+                      impossible $ "dependency not found"
+                newIdents = case importClause of
+                  JSImportClauseNameSpace (JSImportNameSpace _ _ nsIdent) ->
+                    M.singleton ns $ moduleObj nsIdent libex
+                    where
+                      (_, ns) = getIdent nsIdent
+                  JSImportClauseNamed (JSImportsNamed _ namesCl _) ->
+                    -- Check that all dest idents are unique amongst themselves
+                    case renamesSize == destsSize of
+                      -- env_merge will take care of conflicts later
+                      True -> foldMap toSing renames
+                      False -> illegal_import -- TODO: explain why
+                    where
+                      toSing ((_srcAt, srcIdent), (_destAt, destIdent)) =
+                        M.singleton destIdent $ case M.lookup srcIdent libex of
+                          Just expr -> expr
+                          Nothing -> illegal_import -- TODO: explain why
+                      renames = map rename $ jscl_flatten namesCl
+                      rename = \case
+                        JSImportSpecifier jsident ->
+                          (locatedIdent, locatedIdent)
+                          where
+                            locatedIdent = getIdent jsident
+                        JSImportSpecifierAs jsSrcIdent _ jsDestIdent ->
+                          (getIdent jsSrcIdent, getIdent jsDestIdent)
+                      renamesSize = length renames
+                      destsSize = S.size . S.fromList $ map getDest renames
+                        where
+                          getDest (_, (_, dest)) = dest
+                  -- Reach does not use the JS concept of "default" imports
+                  -- TODO: better error message about this
+                  JSImportClauseDefault {} -> illegal_import
+                  JSImportClauseDefaultNameSpace {} -> illegal_import
+                  JSImportClauseDefaultNamed {} -> illegal_import
+          where
+            moduleObj nsIdent libex = (Public, SLV_Object nsAt nslab libex)
+              where
+                nsAt = srcloc_jsa ns nsA at
+                nslab = Just $ "module " <> ns
+                (nsA, ns) = getIdent nsIdent
+            getIdent = \case
+              JSIdentName nsA ns -> (nsA, ns)
+              JSIdentNone -> illegal_import -- does this ever happen?
+            illegal_import = expect_throw at (Err_Import_IllegalJS im)
         (JSModuleExportDeclaration a ed) ->
           case ed of
             JSExport s _ -> doStmt at' True s
