@@ -91,12 +91,22 @@ An @tech{export}ed identifier in a given @tech{module} may be @tech{import}ed by
 
 @subsubsection[#:tag "ref-programs-import"]{@tt{import}}
 
-@reach{import "games-of-chance.rsh";}
+@reach{import 'games-of-chance.rsh';}
 
 When a @tech{module}, @litchar{X}, contains an @deftech{import},
 written @reachin{import "LIB.rsh";},
 then the path @filepath{LIB.rsh} must resolve to another Reach @tech{source file}.
 The @tech{exports} from the @tech{module} defined by @filepath{LIB.rsh} are included in the set of @tech{bound identifier}s in @litchar{X}.
+
+@reach{import {flipCoin, rollDice as d6} from 'games-of-chance.rsh';}
+
+Import statements may limit or rename the imported @tech{identifiers}.
+
+@reach{import * as gamesOfChance from 'games-of-chance.rsh';}
+
+Imports may instead bind the entire @tech{module} to a single @tech{identifier},
+which is an @tech{object} with @tech{fields} corresponding to that @tech{module}'s @tech{exports}.
+
 @tech{Import} cycles are @tech{invalid}.
 
 The path given to an @tech{import} may @bold{not} include @litchar{..} to specify files outside the current directory @bold{nor} may it be an absolute path.
@@ -834,7 +844,7 @@ An @deftech{object literal},
 typically written @reachin{{ KEY_0: EXPR_0, ..., KEY_n: EXPR_n }},
 where @reachin{KEY_0} through @reachin{KEY_n} are @tech{identifiers} or @tech{string literal}s
 and @reachin{EXPR_0} through @reachin{EXPR_n} are @tech{expressions},
-is an @tech{expression} which evaluates to an object
+is an @tech{expression} which evaluates to an @deftech{object}
 with fields @reachin{KEY_0} through @reachin{KEY_n}.
 
 Additional object literal syntax exists for convenience, such as:
@@ -863,7 +873,7 @@ An @deftech{object reference},
 written @reachin{OBJ.FIELD},
 where @reachin{OBJ} is an expression of type object,
 and @reachin{FIELD} is a @tech{valid} @tech{identifier},
-accesses the FIELD field of object OBJ.
+accesses the FIELD @deftech{field} of object OBJ.
 
 @subsubsection{@tt{object_set}}
 
