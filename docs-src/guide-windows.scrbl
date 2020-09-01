@@ -14,7 +14,7 @@ The best way to get this set up on Windows is to
 
 @item{Enable the @link["https://docs.microsoft.com/en-us/windows/wsl/install-win10"]{Windows Subsystem for Linux} feature, specifically the WSL 2 option.}
 
-@item{Download and install the @link["https://docs.docker.com/docker-for-windows/wsl/"]{Docker Desktop WSL 2 backend}.}
+@item{Download and install @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}, and enable the @link["https://docs.docker.com/docker-for-windows/wsl/"]{Docker Desktop WSL 2 backend}.}
 
 @item{Follow the instructions from Docker on @link["https://docs.docker.com/docker-for-windows/wsl/#develop-with-docker-and-wsl-2"]{developing with Docker and WSL 2}.}
 

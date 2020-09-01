@@ -17,6 +17,7 @@ If you're ready, click through to the @seclink["tut-0"]{first step}!
 @section[#:tag "tut-0"]{Install and Initialize}
 
 Reach is designed to work on POSIX systems with @link["https://www.docker.com/get-started"]{Docker} and @link["https://docs.docker.com/compose/install/"]{Docker Compose}. installed.
+The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
 You'll know that you have them install if you can run
 
 @cmd{docker --version}

@@ -10,7 +10,9 @@ This document contains an exhaustive discussion of each of the parts of the Reac
 
 @section[#:tag "install"]{Installation}
 
-Reach is a Dockerized program, so its only dependencies are @link["https://www.docker.com/get-started"]{Docker} and @link["https://docs.docker.com/compose/install/"]{Docker Compose}. You can install it by running:
+Reach is a Dockerized program, so its only dependencies are @link["https://www.docker.com/get-started"]{Docker} and @link["https://docs.docker.com/compose/install/"]{Docker Compose}.
+The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
+You can install it by running:
 
 @cmd{curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach}
 
