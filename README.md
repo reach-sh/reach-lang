@@ -6,7 +6,7 @@ We are building the next generation blockchain development platform that will co
 
 This repository is for the Reach language, the domain-specific language for trustworthy DApps used by the Reach platform.
 
-Read the [documentation](http://docs.reach.sh).
+Read the [documentation](https://docs.reach.sh).
 
 # Development
 
