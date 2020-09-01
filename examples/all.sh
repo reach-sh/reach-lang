@@ -1,7 +1,7 @@
 #!/bin/sh
 
 MODE="$1"
-EXAMPLES=$(find . -depth 1 -type d | sort)
+EXAMPLES=$(find . -mindepth 1 -maxdepth 1 -type d | sort)
 
 has_target() {
     make -q "$MODE"
