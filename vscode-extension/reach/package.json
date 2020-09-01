@@ -10,14 +10,14 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:reach.helloWorld"
+		"onCommand:reach.run"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "reach.helloWorld",
-				"title": "Hello World"
+				"command": "reach.run",
+				"title": "Reach run"
 			}
 		]
 	},
