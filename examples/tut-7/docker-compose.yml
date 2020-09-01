@@ -4,21 +4,21 @@ x-app-base: &app-base
 services:
   devnet:
     image: reachsh/ethereum-devnet:latest
-  reach-app-tut-7-ETH-test-geth-dockerized: &default-app
+  reach-app-tut-7-ETH-test-dockerized-geth: &default-app
     <<: *app-base
     depends_on:
       - devnet
     environment:
-      - REACH_CONNECTOR_MODE=ETH-test-geth-dockerized
+      - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://devnet:8545
-  reach-app-tut-7-ETH-test-ganache-embedded:
+  reach-app-tut-7-ETH-test-embedded-ganache:
     <<: *app-base
     environment:
-      - REACH_CONNECTOR_MODE=ETH-test-ganache-embedded
-  reach-app-tut-7-FAKE-test-mock-embedded:
+      - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
+  reach-app-tut-7-FAKE-test-embedded-mock:
     <<: *app-base
     environment:
-      - REACH_CONNECTOR_MODE=FAKE-test-mock-embedded
+      - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
   reach-app-tut-7-: *default-app
   reach-app-tut-7: *default-app
   # After this is new!
