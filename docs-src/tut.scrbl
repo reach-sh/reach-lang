@@ -56,9 +56,9 @@ Now that your Reach installation is in order, you should open a text editor and 
 @section[#:tag "tut-1"]{Scaffolding and Setup}
 
 In this tutorial, we'll be building a version of @|RPS| where two players, @emph{Alice} and @emph{Bob}, can wager on the result of the game.
-We'll start simple and slowly make the application more fully featured.
+We'll start simple and slowly make the application more fully-featured.
 
-You should following along by copying each part of the program and seeing how things go.
+You should follow along by copying each part of the program and seeing how things go.
 If you're like us, you may find it beneficial to type each line out, rather than copying & pasting so you can start building your muscle memory and begin to get a sense for each part of a Reach program.
 
 Let's start by creating a file named @exec{index.rsh} and fill it with this:
@@ -517,7 +517,7 @@ No matter what Alice chooses, Bob will always win.
 @(hrule)
 
 In fact, Reach comes with an    @seclink["guide-assert"]{automatic verification} engine that we can use to mathematically prove that this version will always result in the @reachin{outcome} variable equalling @reachin{0}, which means Bob wins.
-We can instruct Reach to prove this theorem by add these lines after computing the @reachin{outcome}:
+We can instruct Reach to prove this theorem by adding these lines after computing the @reachin{outcome}:
 
 @reachex[#:show-lines? #t "tut-4-attack/index.rsh"
          #:link #t
@@ -548,7 +548,7 @@ But now, it prints out
 @itemlist[
 
 @item{Line 7 is different and shows that more theorems have been proven about our program.
-It prints out three more, rather than one more, because the theorem is proved differently in the different verification modes.}
+It prints out five more, rather than one more, because the theorem is proved differently in the different verification modes.}
 
 ]
 
@@ -816,7 +816,7 @@ In these sorts of traditional programs, non-participation is an exceptional circ
 Sometimes traditional programs will need to recycle resources, like network ports, on non-participation, but they would have also needed to do that if the transaction ended by normal means.
 In other words, for traditional client-server programs, it is not necessary for designers to meticulously consider the consequences of non-participation.
 
-In contrast, decentralized applications must be careful designed with an eye towards their behavior in the face of non-participation.
+In contrast, decentralized applications must be carefully designed with an eye towards their behavior in the face of non-participation.
 For example, consider what happens in our @|RPS| game if after Alice has paid her wager, Bob never accepts and the application doesn't continue.
 In this case, Alice's @tech{network tokens} would be locked inside of the @tech{contract} and lost to her.
 Similarly, if after Bob accepted and paid his wager, Alice stopped participating and never submitted her hand, then both their funds would be locked away forever.
@@ -1281,7 +1281,7 @@ Your line 3 will say @litchar{tut}, rather than @litchar{tut-7}, if you've staye
 @item{We'll also add lines 29 through 33 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
 
-With these inplace, we can run
+With these in place, we can run
 
 @cmd{docker-compose run WHICH}
 

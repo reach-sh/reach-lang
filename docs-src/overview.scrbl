@@ -3,7 +3,7 @@
 
 @title[#:version reach-vers #:tag "overview"]{Overview}
 
-This is an informal overview of what Reach does and what the structure of a Reach program is.
+This is an informal overview of Reach and the structure of a Reach program.
 The goal of this document is to give enough technical specifics to help you understand what Reach does, but it isn't intended as either a @seclink["tut"]{tutorial} or a @seclink["ref"]{reference}.
 When you're ready to really begin a project, you can start with one of those, or @seclink["workshop"]{the workshop}.
 
@@ -13,7 +13,7 @@ When you're ready to really begin a project, you can start with one of those, or
 These agents act on behalf of principals that provide direction and authority through information.
 These principals might be humans or other autonomous agents or even committees and organizations with their own structure.
 The consensus network allows these agents to transfer and receive value in the form of network-specific tokens, like ETH or ALGO.
-The network also allows the creation of "contracts" that ensure that each agent follows the same rules as they take turns computing and publishing values and information.
+The network also allows the creation of "contracts" that ensure that all agents follow the same rules as they take turns computing and publishing values and information.
 The details of these "contracts" are specific to each consensus network, but they are implicitly trusted by all agents and principals, because their operation can be independently verified to match the previously agreed-upon rules.
 
 A single Reach program incorporates all aspects of a @|DApp|:
@@ -32,7 +32,7 @@ The Reach compiler automatically derives a @tech{contract} for the @tech{consens
 
 @section[#:tag "over-minimal"]{A minial Reach program}
 
-Let's look at a simple Reach program where two principals, Alice and Bob interact. In this @|DApp|, Alice has some information that Bob might want and she has an amount of network tokens in mind that she'd like to trade for it.
+Let's look at a simple Reach program where two principals, Alice and Bob, interact. In this @|DApp|, Alice has some information that Bob might want and she has an amount of network tokens in mind that she'd like to trade for it.
 
 @margin-note{You can look at the entire example program by visiting @reachexlink["overview/index.rsh"].}
 
