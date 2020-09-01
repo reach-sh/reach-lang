@@ -39,8 +39,6 @@ rules:
     # TODO: enable template literals once we implement them
     - allowTemplateLiterals: false
       avoidEscape: true
-  no-duplicate-imports:
-    - error
   max-len:
     - error
     - code:       80
@@ -62,7 +60,9 @@ rules:
   # TODO: enable this once we fix anti-examples/partial_loop_var_updates.rsh
   no-self-assign:
     - off
-
+  # This is a silly rule
+  no-duplicate-imports:
+    - off
 
 env:
   es6:      true
