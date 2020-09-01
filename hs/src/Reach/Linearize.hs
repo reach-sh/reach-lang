@@ -12,13 +12,11 @@ lin_com :: String -> (SrcLoc -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> 
 lin_com who back mkk rets s ks =
   case s of
     DLS_Let at dv de -> mkk $ LL_Let at dv de $ back at rets ks
-    DLS_Claim at f ct da -> mkk $ LL_Claim at f ct da $ back at rets ks
-    DLS_If at ca ts fs -> mkk $ LL_LocalIf at ca t' f' $ back at rets ks
+    DLS_If at ca _ True ts fs ->
+      mkk $ LL_LocalIf at ca t' f' $ back at rets ks
       where
         t' = lin_local_rets at rets ts
         f' = lin_local_rets at rets fs
-    DLS_Transfer {} ->
-      impossible $ who ++ " cannot transfer"
     DLS_Return at ret sv ->
       case M.lookup ret rets of
         Nothing -> back at rets ks
@@ -30,6 +28,8 @@ lin_com who back mkk rets s ks =
       mkk $ LL_Var at dv $ back at rets' (ss <> ks)
       where
         rets' = M.insert ret dv rets
+    DLS_If _ _ _ False _ _ ->
+      impossible $ who ++ " cannot non-local if"
     DLS_Stop {} ->
       impossible $ who ++ " cannot stop"
     DLS_Only {} ->
@@ -57,14 +57,11 @@ lin_con _ at _ Seq.Empty =
   LLC_Com $ LL_Return at
 lin_con back at_top rets (s Seq.:<| ks) =
   case s of
-    DLS_If at ca ts fs
-      | not (stmt_local s) ->
+    DLS_If at ca _ False ts fs ->
         LLC_If at ca t' f'
       where
         t' = lin_con back at rets (ts <> ks)
         f' = lin_con back at rets (fs <> ks)
-    DLS_Transfer at fs who aa ->
-      LLC_Transfer at fs who aa $ lin_con back at rets ks
     DLS_FromConsensus at cons ->
       LLC_FromConsensus at at_top $ back (cons <> ks)
     DLS_While at asn inv_b cond_b body ->

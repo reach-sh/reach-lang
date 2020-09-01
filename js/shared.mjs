@@ -151,16 +151,19 @@ export const T_Object = (co) => {
   };
 };
 
-export const protect = (ctc, v) => {
+const format_ai = (ai) => JSON.stringify(ai);
+
+export const protect = (ctc, v, ai = null) => {
   try {
     return ctc.canonicalize(v);
   } catch (e) {
-    console.log(`Protect failed: expected ${ctc.name} but got ${JSON.stringify(v)}`);
+    console.log(`Protect failed: expected ${ctc.name} but got ${JSON.stringify(v)}${format_ai(ai)}`);
     throw e;
   }
 };
 
-export const assert = d => nodeAssert.strict(d);
+export const assert = (d, ai = null) =>
+nodeAssert.strict(d, format_ai(ai));
 
 const {
   hexlify,

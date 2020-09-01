@@ -32,6 +32,18 @@ export const connectAccount = async networkAccount => {
   const attach = async (bin, ctc) => {
     let last_block = ctc.creation_block;
 
+    const iam = (some_addr) => {
+      if ( some_addr == address ) {
+        return address;
+      } else {
+        throw Error(`I should be ${some_addr}, but am ${address}`);
+      }
+    };
+
+    const wait = (delta) => {
+      while ( BLOCK_NUMBER < (last_block + delta) ) {
+        BLOCKS[ BLOCK_NUMBER++ ] = { type: 'wait' }; } };
+
     const sendrecv = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
       // XXX use try_p to figure out what transfers from the contract
       // to make, like in ALGO
@@ -65,7 +77,7 @@ export const connectAccount = async networkAccount => {
       debug(`${label} recv ${funcNum} --- timeout`);
       return { didTimeout: true }; };
 
-    return { ...ctc, sendrecv, recv }; };
+    return { ...ctc, sendrecv, recv, iam, wait }; };
 
   const deploy = async (bin) => {
     const contract = makeAccount();

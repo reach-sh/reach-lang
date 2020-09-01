@@ -56,6 +56,7 @@ data EvalError
   | Err_Dot_InvalidField SLVal [String] String
   | Err_Eval_ContinueNotInWhile
   | Err_Eval_ContinueNotLoopVariable SLVar
+  | Err_Eval_PartSet_Bound SLPart
   | Err_Eval_IfCondNotBool SLVal
   | Err_Eval_IllegalMode SLMode String
   | Err_Eval_IllegalJS JSExpression
@@ -179,6 +180,8 @@ instance Show EvalError where
         <> bunpack bs
     Err_DeclLHS_IllegalJS _e ->
       "Invalid binding. Expressions cannot appear on the LHS."
+    Err_Eval_PartSet_Bound who ->
+      (bunpack who) <> " is bound and cannot be rebound"
     Err_Decl_IllegalJS e ->
       "Invalid Reach declaration: " <> conNameOf e
     Err_Decl_ObjectSpreadNotLast ->
@@ -404,6 +407,7 @@ base_env =
     , ("unknowable", SLV_Form $ SLForm_unknowable)
     , --- Note: This identifier is chosen so that Reach programmers
       --- can't actually use it directly... kind of a hack. :(
+      --- But we insert it to check the amount of transfers
       ("__txn.value__", SLV_Prim $ SLPrim_op $ TXN_VALUE)
     , ("balance", SLV_Prim $ SLPrim_op $ BALANCE)
     , ("Null", SLV_Type T_Null)
@@ -426,6 +430,8 @@ base_env =
     , ("is_type", SLV_Prim SLPrim_is_type)
     , ("type_eq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
+    , ("wait", SLV_Prim SLPrim_wait)
+    , ("part_set", SLV_Prim SLPrim_part_set)
     , ( "Reach"
       , (SLV_Object srcloc_top (Just $ "Reach") $
            m_fromList_public
@@ -469,7 +475,7 @@ ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s (DLVar,
 ctxt_lift_expr ctxt at mk_var e = do
   x <- ctxt_alloc ctxt at
   let dv = mk_var x
-  let s = DLS_Let at dv e
+  let s = DLS_Let at (Just dv) e
   return (dv, return s)
 
 ctxt_lift_expr_w :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> WriterT DLStmts (ST s) DLVar
@@ -683,6 +689,7 @@ evalDot ctxt at _sco st obj field =
         "only" -> retV $ public $ SLV_Form (SLForm_Part_Only who)
         "publish" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing)
         "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing)
+        "set" -> delayCall SLPrim_part_set
         _ -> illegal_field ["only", "publish", "pay"]
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
       case field of
@@ -792,7 +799,7 @@ evalForm ctxt at sco st f args =
           let whats_v = map snd $ map (flip (env_lookup at) knower_env) whats_i
           let whats_da = map snd $ map (typeOf at) whats_v
           let ct = CT_Unknowable notter
-          let lifts' = return $ DLS_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da)
+          let lifts' = return $ DLS_Let at Nothing (DLE_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da))
           let lifts = lifts_n <> lifts_kn <> lifts'
           return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
         cm ->
@@ -1012,7 +1019,7 @@ evalPrim ctxt at sco st p sargs =
       case st_mode st of
         SLM_LocalStep -> do
           let (rng, dargs) = checkAndConvert at t $ map snd sargs
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at who m rng dargs)
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at (ctxt_stack ctxt) who m rng dargs)
           return $ SLRes lifts st $ secret $ SLV_DLVar dv
         cm ->
           expect_throw at (Err_Eval_IllegalMode cm "interact")
@@ -1049,7 +1056,7 @@ evalPrim ctxt at sco st p sargs =
         darg = case map snd sargs of
           [arg] -> checkType at T_Bool arg
           _ -> illegal_args
-        lifts = return $ DLS_Claim at (ctxt_stack ctxt) ct darg
+        lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg
     SLPrim_transfer ->
       case map (typeOf at) $ ensure_publics at sargs of
         [(T_UInt256, amt_dla)] ->
@@ -1060,7 +1067,7 @@ evalPrim ctxt at sco st p sargs =
         SLM_ConsensusStep ->
           return $ SLRes lifts st $ public $ SLV_Null at "transfer.to"
           where
-            lifts = return $ DLS_Transfer at (ctxt_stack ctxt) who_dla amt_dla
+            lifts = return $ DLS_Let at Nothing $ DLE_Transfer at (ctxt_stack ctxt) who_dla amt_dla
             who_dla =
               case map snd sargs of
                 [SLV_Participant _ who _ _ Nothing] ->
@@ -1096,6 +1103,23 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_PrimDelay _at dp dargs ->
       evalPrim ctxt at sco st dp $ dargs ++ sargs
+    SLPrim_wait ->
+      case st_mode st of
+        SLM_Step ->
+          case sargs of
+            [amt_sv] -> do
+              let amt_da = checkType at T_UInt256 $ ensure_public at amt_sv
+              return $ SLRes (return $ DLS_Let at Nothing (DLE_Wait at amt_da)) st $ public $ SLV_Null at "wait"
+            _ -> illegal_args
+        cm -> expect_throw at $ Err_Eval_IllegalMode cm "wait"
+    SLPrim_part_set ->
+      case map snd sargs of
+        [(SLV_Participant _ who _ _ _), addr] -> do
+          let addr_da = checkType at T_Address addr
+          retV $ (lvl, (SLV_Prim $ SLPrim_part_setted at who addr_da))
+        _ -> illegal_args
+    SLPrim_part_setted {} ->
+      expect_throw at (Err_Eval_NotApplicable rator)
   where
     lvl = mconcatMap fst sargs
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)
@@ -1312,7 +1336,8 @@ evalExpr ctxt at sco st e = do
                 let (f_ty, flifts') = add_ret f_at' flifts fv
                 let ty = typeMeet at' (t_at', t_ty) (f_at', f_ty)
                 let ans_dv = DLVar at' (ctxt_local_name ctxt "clo app") ty ret
-                let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) tlifts' flifts'
+                let isLocal = stmts_local tlifts' && stmts_local flifts'
+                let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) False isLocal tlifts' flifts'
                 let lifts' = return $ DLS_Prompt at' (Right ans_dv) body_lifts
                 return $ SLRes lifts' st_tf $ (lvl, SLV_DLVar ans_dv)
           _ ->
@@ -1655,6 +1680,20 @@ doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
 evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
   case ev of
+    SLV_Prim (SLPrim_part_setted at' who addr_da) ->
+      case st_mode st of
+        SLM_ConsensusStep -> do
+          let pdvs = st_pdvs st
+          case M.lookup who pdvs of
+            Just _ ->
+              expect_throw at' $ Err_Eval_PartSet_Bound who
+            Nothing -> do
+              let who_s = bunpack who
+              (whodv, lifts) <- ctxt_lift_expr ctxt at (DLVar at' who_s T_Address) (DLE_PartSet at' who addr_da)
+              let pdvs' = M.insert who whodv pdvs
+              let st' = st { st_pdvs = pdvs' }
+              keepLifts lifts $ evalStmt ctxt at sco st' ks
+        _ -> illegal_mode
     SLV_Prim SLPrim_exitted ->
       case (st_mode st, st_live st) of
         (SLM_Step, True) ->
@@ -1813,7 +1852,7 @@ evalStmt ctxt at sco st ss =
           --- linearizer will completely drop the continuation of
           --- DLS_Continue and DLS_Stop, so if this assert is not
           --- removed, then ti will error.
-          keepLifts (return $ DLS_Claim at (ctxt_stack ctxt) CT_Assert (DLA_Con $ DLC_Bool False)) $
+          keepLifts (return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) CT_Assert (DLA_Con $ DLC_Bool False)) $
             ret []
         RS_MayBeEmpty -> ret []
       where
@@ -1897,7 +1936,10 @@ evalStmt ctxt at sco st ss =
             SLRes tlifts st_t (SLStmtRes _ trets) <- evalStmt ctxt t_at' sco' st_c [ts]
             SLRes flifts st_f (SLStmtRes _ frets) <- evalStmt ctxt f_at' sco' st_c [fs]
             let st_tf = stMerge at' st_t st_f
-            let lifts' = return $ DLS_If at' (DLA_Var cond_dv) tlifts flifts
+            let isX which = which tlifts && which flifts
+            let isPure = isX stmts_pure
+            let isLocal = isX stmts_local
+            let lifts' = return $ DLS_If at' (DLA_Var cond_dv) isPure isLocal tlifts flifts
             let levelHelp = SLStmtRes (sco_env sco) . map (\(r_at, (r_lvl, r_v)) -> (r_at, (clvl <> r_lvl, r_v)))
             let ir = SLRes lifts' st_tf $ combineStmtRes at' clvl (levelHelp trets) (levelHelp frets)
             retSeqn ir at' ks_ne

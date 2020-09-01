@@ -129,32 +129,27 @@ kgq_a_only :: KCtxt -> DLVar -> DLArg -> IO ()
 kgq_a_only ctxt v a =
   knows ctxt (P_Var v) (all_points a)
 
-kgq_e :: KCtxt -> DLVar -> DLExpr -> IO ()
-kgq_e ctxt v = \case
-  DLE_Arg _ a -> kgq_a_only ctxt v a
+kgq_a_onlym :: KCtxt -> Maybe DLVar -> DLArg -> IO ()
+kgq_a_onlym ctxt mv a =
+  case mv of
+    Nothing -> mempty
+    Just v -> kgq_a_only ctxt v a
+
+kgq_e :: KCtxt -> Maybe DLVar -> DLExpr -> IO ()
+kgq_e ctxt mv = \case
+  DLE_Arg _ a -> kgq_a_onlym ctxt mv a
   DLE_Impossible {} -> mempty
-  DLE_PrimOp _ _ as -> kgq_a_only ctxt v (DLA_Tuple as)
-  DLE_ArrayRef _ _ a _ e -> kgq_a_only ctxt v (DLA_Tuple [a, e])
-  DLE_ArraySet _ _ a _ e n -> kgq_a_only ctxt v (DLA_Tuple [a, e, n])
-  DLE_TupleRef _ a _ -> kgq_a_only ctxt v a
-  DLE_ObjectRef _ a _ -> kgq_a_only ctxt v a
-  DLE_Interact _ who what t as -> kgq_a_only ctxt v (DLA_Tuple $ (DLA_Interact who what t) : as)
+  DLE_PrimOp _ _ as -> kgq_a_onlym ctxt mv (DLA_Tuple as)
+  DLE_ArrayRef _ _ a _ e -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e])
+  DLE_ArraySet _ _ a _ e n -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e, n])
+  DLE_TupleRef _ a _ -> kgq_a_onlym ctxt mv a
+  DLE_ObjectRef _ a _ -> kgq_a_onlym ctxt mv a
+  DLE_Interact _ _ who what t as ->
+    kgq_a_onlym ctxt mv (DLA_Tuple $ (DLA_Interact who what t) : as)
   DLE_Digest _ _ ->
     --- This line right here is where all the magic happens
     mempty
-
-kgq_m :: (KCtxt -> a -> IO ()) -> KCtxt -> LLCommon a -> IO ()
-kgq_m iter ctxt = \case
-  LL_Return {} -> mempty
-  LL_Let _ dv de k ->
-    kgq_e ctxt dv de
-      <> iter ctxt k
-  LL_Var _ _dv k ->
-    iter ctxt k
-  LL_Set _ dv da k ->
-    kgq_a_only ctxt dv da
-      <> iter ctxt k
-  LL_Claim at f ct what k -> this <> iter ctxt k
+  DLE_Claim at f ct what -> this
     where
       this =
         case (ct, what) of
@@ -168,6 +163,24 @@ kgq_m iter ctxt = \case
               query_each = query ctxt at f who . all_points
           (CT_Unknowable {}, _) ->
             impossible "not tuple unknowable"
+  DLE_Transfer _ _ _ amt ->
+    kgq_a_all ctxt amt
+  DLE_Wait _ amt ->
+    kgq_a_all ctxt amt
+  DLE_PartSet _ _ arg ->
+    kgq_a_all ctxt arg
+
+kgq_m :: (KCtxt -> a -> IO ()) -> KCtxt -> LLCommon a -> IO ()
+kgq_m iter ctxt = \case
+  LL_Return {} -> mempty
+  LL_Let _ mdv de k ->
+    kgq_e ctxt mdv de
+      <> iter ctxt k
+  LL_Var _ _dv k ->
+    iter ctxt k
+  LL_Set _ dv da k ->
+    kgq_a_only ctxt dv da
+      <> iter ctxt k
   LL_LocalIf _ ca t f k ->
     kgq_l ctxt' t
       <> kgq_l ctxt' f
@@ -193,8 +206,6 @@ kgq_n ctxt = \case
       <> ctxtNewScope ctxt' (kgq_n ctxt' f)
     where
       ctxt' = ctxt_add_back ctxt ca
-  LLC_Transfer _ _ _ amt k ->
-    kgq_a_all ctxt amt <> kgq_n ctxt k
   LLC_FromConsensus _ _ k -> kgq_s ctxt k
   LLC_While _ asn _ (LLBlock _ _ cond_l ca) body k ->
     kgq_asn_def ctxt asn

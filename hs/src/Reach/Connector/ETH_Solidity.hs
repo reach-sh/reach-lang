@@ -238,24 +238,40 @@ solPrimApply = \case
       [l, r] -> solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
 
-solExpr :: SolCtxt a -> DLExpr -> Doc a
-solExpr ctxt = \case
-  DLE_Arg _ a -> solArg ctxt a
+solExpr :: SolCtxt a -> Doc a -> DLExpr -> Doc a
+solExpr ctxt sp = \case
+  DLE_Arg _ a -> solArg ctxt a <> sp
   DLE_Impossible at msg -> expect_throw at msg
-  DLE_PrimOp _ p args -> solPrimApply p $ map (solArg ctxt) args
+  DLE_PrimOp _ p args ->
+    (solPrimApply p $ map (solArg ctxt) args) <> sp
   DLE_ArrayRef _ _ ae _ ie ->
-    (solArg ctxt ae) <> brackets (solArg ctxt ie)
+    (solArg ctxt ae) <> brackets (solArg ctxt ie) <> sp
   DLE_ArraySet _ _ ae _ ie ve ->
-    solApply (solArraySet (solTypeI ctxt (argTypeOf ae))) $ map (solArg ctxt) [ae, ie, ve]
+    (solApply (solArraySet (solTypeI ctxt (argTypeOf ae))) $ map (solArg ctxt) [ae, ie, ve]) <> sp
   DLE_TupleRef _ ae i ->
-    (solArg ctxt ae) <> ".elem" <> pretty i
-  DLE_ObjectRef _ oe f -> (solArg ctxt oe) <> "." <> pretty f
+    (solArg ctxt ae) <> ".elem" <> pretty i <> sp
+  DLE_ObjectRef _ oe f ->
+    (solArg ctxt oe) <> "." <> pretty f <> sp
   DLE_Interact {} -> impossible "consensus interact"
-  DLE_Digest _ args -> solHash $ map (solArg ctxt) args
+  DLE_Digest _ args ->
+    (solHash $ map (solArg ctxt) args) <> sp
+  DLE_Transfer _ _ who amt ->
+    solTransfer ctxt who amt <> sp
+  DLE_Claim _ _ ct a -> check <> sp
+    where
+      check = case ct of
+        CT_Assert -> impossible "assert"
+        CT_Assume -> require
+        CT_Require -> require
+        CT_Possible -> impossible "possible"
+        CT_Unknowable {} -> impossible "unknowable"
+      require = solRequire (solArg ctxt a)
+  DLE_Wait {} -> emptyDoc
+  DLE_PartSet _ _ a -> (solArg ctxt a) <> sp
 
 solTransfer :: SolCtxt a -> DLArg -> DLArg -> Doc a
 solTransfer ctxt who amt =
-  (solArg ctxt who) <> "." <> solApply "transfer" [solArg ctxt amt] <> semi
+  (solArg ctxt who) <> "." <> solApply "transfer" [solArg ctxt amt]
 
 solEvent :: SolCtxt a -> Int -> [DLVar] -> Doc a
 solEvent ctxt which args =
@@ -294,26 +310,16 @@ solCom iter ctxt = \case
   PL_Let _ PL_Once dv de k -> iter ctxt' k
     where
       ctxt' = ctxt {ctxt_varm = M.insert dv de' $ ctxt_varm ctxt}
-      de' = parens $ solExpr ctxt de
+      de' = parens $ solExpr ctxt emptyDoc de
   PL_Let _ PL_Many dv de k -> SolTailRes ctxt dv_set <> iter ctxt k
     where
-      dv_set = solSet (solMemVar dv) (solExpr ctxt de)
+      dv_set = solSet (solMemVar dv) (solExpr ctxt emptyDoc de)
   PL_Eff _ de k -> SolTailRes ctxt dv_run <> iter ctxt k
-    where
-      dv_run = solExpr ctxt de <> semi
+    where dv_run = solExpr ctxt semi de
   PL_Var _ _ k -> iter ctxt k
   PL_Set _ dv da k -> SolTailRes ctxt dv_set <> iter ctxt k
     where
       dv_set = solSet (solMemVar dv) (solArg ctxt da)
-  PL_Claim _ _ ct a k -> SolTailRes ctxt check <> iter ctxt k
-    where
-      check = case ct of
-        CT_Assert -> impossible "assert"
-        CT_Assume -> require
-        CT_Require -> require
-        CT_Possible -> impossible "possible"
-        CT_Unknowable {} -> impossible "unknowable"
-      require = solRequire (solArg ctxt a) <> semi
   PL_LocalIf _ ca t f k -> SolTailRes ctxt (solIf ca' t' f') <> iter ctxt k
     where
       ca' = solArg ctxt ca
@@ -334,9 +340,6 @@ solCTail ctxt = \case
       SolTailRes ctxt'_t t' = solCTail ctxt t
       SolTailRes ctxt'_f f' = solCTail ctxt f
       ctxt' = ctxt'_t <> ctxt'_f
-  CT_Transfer _ who amt k -> SolTailRes ctxt' $ vsep [solTransfer ctxt who amt, k']
-    where
-      SolTailRes ctxt' k' = solCTail ctxt k
   CT_Wait _ svs ->
     SolTailRes ctxt $
       vsep
@@ -378,7 +381,6 @@ manyVars_m iter = \case
   PL_Eff _ _ k -> iter k
   PL_Var _ dv k -> S.insert dv $ iter k
   PL_Set _ _ _ k -> iter k
-  PL_Claim _ _ _ _ k -> iter k
   PL_LocalIf _ _ t f k -> manyVars_p t <> manyVars_p f <> iter k
 
 manyVars_p :: PLTail -> S.Set DLVar
@@ -389,7 +391,6 @@ manyVars_c = \case
   CT_Com m -> manyVars_m manyVars_c m
   CT_Seqn _ p c -> manyVars_p p <> manyVars_c c
   CT_If _ _ t f -> manyVars_c t <> manyVars_c f
-  CT_Transfer _ _ _ k -> manyVars_c k
   CT_Wait {} -> mempty
   CT_Jump {} -> mempty
   CT_Halt {} -> mempty

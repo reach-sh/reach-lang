@@ -19,6 +19,8 @@ We highly recommend going through @seclink["overview"]{the overview} and @seclin
 However, you can do most workshops in any order.
 If there's a pre-requisite, it will be explicitly mentioned.
 
+Here are the current workshops, in the order we recommend doing them:
+
 @local-table-of-contents[#:style 'immediate-only]
 
 @section[#:tag "workshop-rps-fair"]{Workshop: Fair Rock-Paper-Scissors}

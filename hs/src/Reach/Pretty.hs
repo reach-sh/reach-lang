@@ -79,8 +79,13 @@ instance Pretty DLExpr where
       DLE_ArraySet _ _ a _ i v -> "array_set" <> render_das [a, i, v]
       DLE_TupleRef _ a i -> pretty a <> brackets (pretty i)
       DLE_ObjectRef _ a f -> pretty a <> "." <> pretty f
-      DLE_Interact _ who m _ as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
+      DLE_Interact _ _ who m _ as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
       DLE_Digest _ as -> "digest" <> parens (render_das as)
+      DLE_Claim _ _ ct a -> prettyClaim ct a
+      DLE_Transfer _ _ who da ->
+        prettyTransfer who da
+      DLE_Wait _ a -> "wait" <> parens (pretty a)
+      DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
 
 render_sp :: SLPart -> Doc a
 render_sp p = viaShow p
@@ -132,13 +137,14 @@ instance Pretty FromSpec where
 instance Pretty DLStmt where
   pretty d =
     case d of
-      DLS_Let _ v e ->
-        "const" <+> pretty v <+> "=" <+> pretty e <> semi
-      DLS_Claim _ _ ct a -> prettyClaim ct a
-      DLS_If _ ca ts fs ->
+      DLS_Let _ mv e ->
+        case mv of
+          Just v ->
+            "const" <+> pretty v <+> "=" <+> pretty e <> semi
+          Nothing ->
+            pretty e <> semi
+      DLS_If _ ca _ _ ts fs ->
         prettyIf ca (render_dls ts) (render_dls fs)
-      DLS_Transfer _ _ who da ->
-        prettyTransfer who da
       DLS_Return _ ret sv ->
         "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret bodys ->
@@ -204,8 +210,6 @@ instance Pretty a => Pretty (LLCommon a) where
         "let" <+> pretty dv <> semi <> hardline <> pretty k
       LL_Set _at dv da k ->
         pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
-      LL_Claim _at _f ct a k ->
-        prettyClaim ct a <> hardline <> pretty k
       LL_LocalIf _at ca t f k ->
         prettyIfp ca t f <> hardline <> pretty k
 
@@ -217,8 +221,6 @@ instance Pretty LLConsensus where
     case s of
       LLC_Com x -> pretty x
       LLC_If _at ca t f -> prettyIfp ca t f
-      LLC_Transfer _at _ who da k ->
-        prettyTransfer who da <> hardline <> pretty k
       LLC_FromConsensus _at _ret_at k ->
         "commit()" <> semi <> hardline <> pretty k
       LLC_While _at asn inv cond body k ->
@@ -277,8 +279,6 @@ instance Pretty a => Pretty (PLCommon a) where
         "let" <+> pretty dv <> semi <> hardline <> pretty k
       PL_Set _at dv da k ->
         pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
-      PL_Claim _at _f ct a k ->
-        prettyClaim ct a <> hardline <> pretty k
       PL_LocalIf _at ca t f k ->
         prettyIfp ca t f <> hardline <> pretty k
 
@@ -366,8 +366,6 @@ instance Pretty CTail where
   pretty (CT_Com e) = pretty e
   pretty (CT_Seqn _ x y) = pretty x <> hardline <> pretty y
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
-  pretty (CT_Transfer _ to amt ctail) =
-    prettyTransfer to amt <> hardline <> pretty ctail
   pretty (CT_Wait _ vars) = pform "wait!" $ pretty vars
   pretty (CT_Jump _ which vars assignment) = pform "jump!" args
     where

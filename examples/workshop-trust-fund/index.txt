@@ -1,0 +1,12 @@
+<stdout>
+Verifying knowledge assertions
+Verifying with mode = VM_Honest
+Verifying with mode = VM_Dishonest RoleContract
+Verifying with mode = VM_Dishonest (RolePart "Bystander")
+Verifying with mode = VM_Dishonest (RolePart "Funder")
+Verifying with mode = VM_Dishonest (RolePart "Receiver")
+Checked 34 theorems; No failures!
+
+</stdout>
+<stderr>
+</stderr>

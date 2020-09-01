@@ -302,6 +302,9 @@ data SLPrimitive
   | SLPrim_exitted
   | SLPrim_forall
   | SLPrim_PrimDelay SrcLoc SLPrimitive [SLSVal]
+  | SLPrim_part_set
+  | SLPrim_part_setted SrcLoc SLPart DLArg
+  | SLPrim_wait
   deriving (Eq, Generic, Show)
 
 instance NFData SLPrimitive
@@ -367,33 +370,6 @@ data DLArg
 
 instance NFData DLArg
 
-data DLExpr
-  = DLE_Arg SrcLoc DLArg
-  | DLE_Impossible SrcLoc String
-  | DLE_PrimOp SrcLoc PrimOp [DLArg]
-  | DLE_ArrayRef SrcLoc [SLCtxtFrame] DLArg Integer DLArg
-  | DLE_ArraySet SrcLoc [SLCtxtFrame] DLArg Integer DLArg DLArg
-  | DLE_TupleRef SrcLoc DLArg Integer
-  | DLE_ObjectRef SrcLoc DLArg String
-  | DLE_Interact SrcLoc SLPart String SLType [DLArg]
-  | DLE_Digest SrcLoc [DLArg]
-  deriving (Eq, Generic, Show)
-
-instance NFData DLExpr
-
-expr_pure :: DLExpr -> Bool
-expr_pure e =
-  case e of
-    DLE_Arg {} -> True
-    DLE_Impossible {} -> True
-    DLE_PrimOp {} -> True
-    DLE_ArrayRef {} -> True
-    DLE_ArraySet {} -> True
-    DLE_TupleRef {} -> True
-    DLE_ObjectRef {} -> True
-    DLE_Interact {} -> False
-    DLE_Digest {} -> True
-
 data ClaimType
   = --- Verified on all paths
     CT_Assert
@@ -413,6 +389,58 @@ data ClaimType
 
 instance NFData ClaimType
 
+data DLExpr
+  = DLE_Arg SrcLoc DLArg
+  | DLE_Impossible SrcLoc String
+  | DLE_PrimOp SrcLoc PrimOp [DLArg]
+  | DLE_ArrayRef SrcLoc [SLCtxtFrame] DLArg Integer DLArg
+  | DLE_ArraySet SrcLoc [SLCtxtFrame] DLArg Integer DLArg DLArg
+  | DLE_TupleRef SrcLoc DLArg Integer
+  | DLE_ObjectRef SrcLoc DLArg String
+  | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String SLType [DLArg]
+  | DLE_Digest SrcLoc [DLArg]
+  | DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
+  | DLE_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
+  | DLE_Wait SrcLoc DLArg
+  | DLE_PartSet SrcLoc SLPart DLArg
+  deriving (Eq, Generic, Show)
+
+instance NFData DLExpr
+
+expr_pure :: DLExpr -> Bool
+expr_pure e =
+  case e of
+    DLE_Arg {} -> True
+    DLE_Impossible {} -> True
+    DLE_PrimOp {} -> True
+    DLE_ArrayRef {} -> True
+    DLE_ArraySet {} -> True
+    DLE_TupleRef {} -> True
+    DLE_ObjectRef {} -> True
+    DLE_Interact {} -> False
+    DLE_Digest {} -> True
+    DLE_Claim {} -> False
+    DLE_Transfer {} -> False
+    DLE_Wait {} -> False
+    DLE_PartSet {} -> False
+
+expr_local :: DLExpr -> Bool
+expr_local e =
+  case e of
+    DLE_Arg {} -> True
+    DLE_Impossible {} -> True
+    DLE_PrimOp {} -> True
+    DLE_ArrayRef {} -> True
+    DLE_ArraySet {} -> True
+    DLE_TupleRef {} -> True
+    DLE_ObjectRef {} -> True
+    DLE_Interact {} -> True
+    DLE_Digest {} -> True
+    DLE_Claim {} -> True
+    DLE_Transfer {} -> False
+    DLE_Wait {} -> False
+    DLE_PartSet {} -> True
+
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)
   deriving (Eq, Generic, Show, Monoid, Semigroup)
@@ -430,14 +458,9 @@ data FromSpec
 instance NFData FromSpec
 
 data DLStmt
-  = DLS_Let SrcLoc DLVar DLExpr
-  | --- FIXME move to DLExpr
-    DLS_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
-  | --- FIXME Record whether it is pure or local in the statement and
-    --- track in monad results to avoid quadratic behavior
-    DLS_If SrcLoc DLArg DLStmts DLStmts
-  | --- FIXME move to DLExpr
-    DLS_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
+  = DLS_Let SrcLoc (Maybe DLVar) DLExpr
+  | --- Pure and then Local
+    DLS_If SrcLoc DLArg Bool Bool DLStmts DLStmts
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Stop SrcLoc [SLCtxtFrame]
@@ -469,9 +492,7 @@ stmt_pure :: DLStmt -> Bool
 stmt_pure s =
   case s of
     DLS_Let _ _ e -> expr_pure e
-    DLS_Claim {} -> False
-    DLS_If _ _ x y -> stmts_pure x && stmts_pure y
-    DLS_Transfer {} -> False
+    DLS_If _ _ p _ _ _ -> p
     DLS_Return {} -> False
     DLS_Prompt _ _ ss -> stmts_pure ss
     DLS_Stop {} -> False
@@ -484,11 +505,8 @@ stmt_pure s =
 stmt_local :: DLStmt -> Bool
 stmt_local s =
   case s of
-    DLS_Let {} -> True
-    DLS_Claim {} -> True
-    DLS_If _ _ x y -> stmts_local x && stmts_local y
-    --- FIXME If we could make LL_LocalIf be recursive in the type parameter, then we could allow this as a local operation and avoid copying the continuation. Perhaps a better thing is to make transfer an effectful expression and just rely on the let code. Probably wise to do the same to Claim to clean up the code.
-    DLS_Transfer {} -> False
+    DLS_Let _ _ e -> expr_local e
+    DLS_If _ _ _ l _ _ -> l
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> stmts_local ss
     DLS_Stop {} -> False
@@ -521,10 +539,9 @@ instance NFData DLProg
 --- Linear Language
 data LLCommon a
   = LL_Return SrcLoc
-  | LL_Let SrcLoc DLVar DLExpr a
+  | LL_Let SrcLoc (Maybe DLVar) DLExpr a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
-  | LL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a
   | LL_LocalIf SrcLoc DLArg LLLocal LLLocal a
   deriving (Eq, Show)
 
@@ -539,7 +556,6 @@ data LLBlock a
 data LLConsensus
   = LLC_Com (LLCommon LLConsensus)
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
-  | LLC_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg LLConsensus
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
   | --- inv then cond then body then kont
     LLC_While
@@ -579,13 +595,15 @@ data PLLetCat
   | PL_Many
   deriving (Eq, Show)
 
+instance Semigroup PLLetCat where
+  _ <> _ = PL_Many
+
 data PLCommon a
   = PL_Return SrcLoc
   | PL_Let SrcLoc PLLetCat DLVar DLExpr a
   | PL_Eff SrcLoc DLExpr a
   | PL_Var SrcLoc DLVar a
   | PL_Set SrcLoc DLVar DLArg a
-  | PL_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg a
   | PL_LocalIf SrcLoc DLArg PLTail PLTail a
   deriving (Eq, Show)
 
@@ -632,7 +650,6 @@ data CTail
   = CT_Com (PLCommon CTail)
   | CT_Seqn SrcLoc PLTail CTail
   | CT_If SrcLoc DLArg CTail CTail
-  | CT_Transfer SrcLoc DLArg DLArg CTail
   | CT_Wait SrcLoc [DLVar]
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   | CT_Halt SrcLoc

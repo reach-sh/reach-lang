@@ -48,8 +48,12 @@ instance CollectsTypes DLExpr where
   cts (DLE_ArraySet _ _ a _ i v) = cts a <> cts i <> cts v
   cts (DLE_TupleRef _ t _) = cts t
   cts (DLE_ObjectRef _ a _) = cts a
-  cts (DLE_Interact _ _ _ t as) = cts t <> cts as
+  cts (DLE_Interact _ _ _ _ t as) = cts t <> cts as
   cts (DLE_Digest _ as) = cts as
+  cts (DLE_Claim _ _ _ a) = cts a
+  cts (DLE_Transfer _ _ x y) = cts x <> cts y
+  cts (DLE_Wait _ a) = cts a
+  cts (DLE_PartSet _ _ a) = cts a
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
@@ -63,7 +67,6 @@ instance CollectsTypes a => CollectsTypes (LLCommon a) where
   cts (LL_Let _ v e k) = cts v <> cts e <> cts k
   cts (LL_Var _ v k) = cts v <> cts k
   cts (LL_Set _ v a k) = cts v <> cts a <> cts k
-  cts (LL_Claim _ _ _ a k) = cts a <> cts k
   cts (LL_LocalIf _ a t f k) = cts a <> cts t <> cts f <> cts k
 
 instance CollectsTypes LLLocal where
@@ -75,7 +78,6 @@ instance CollectsTypes a => CollectsTypes (LLBlock a) where
 instance CollectsTypes LLConsensus where
   cts (LLC_Com k) = cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f
-  cts (LLC_Transfer _ _ to amt k) = cts to <> cts amt <> cts k
   cts (LLC_FromConsensus _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
@@ -96,7 +98,6 @@ instance CollectsTypes a => CollectsTypes (PLCommon a) where
   cts (PL_Eff _ de k) = cts de <> cts k
   cts (PL_Var _ dv k) = cts dv <> cts k
   cts (PL_Set _ dv da k) = cts dv <> cts da <> cts k
-  cts (PL_Claim _ _ _ ca k) = cts ca <> cts k
   cts (PL_LocalIf _ ca t f k) = cts ca <> cts t <> cts f <> cts k
 
 instance CollectsTypes PLTail where
@@ -106,7 +107,6 @@ instance CollectsTypes CTail where
   cts (CT_Com m) = cts m
   cts (CT_Seqn _ b a) = cts b <> cts a
   cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
-  cts (CT_Transfer _ to amt k) = cts to <> cts amt <> cts k
   cts (CT_Wait _ svs) = cts svs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
   cts (CT_Halt _) = mempty

@@ -1,0 +1,1 @@
+error: ./Err_Eval_PartSet_Bound.rsh:17:15:application: B is bound and cannot be rebound

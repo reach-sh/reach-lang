@@ -255,6 +255,22 @@ export const connectAccount = async networkAccount => {
       return [ ok_bal, ok_vals ];
     };
 
+    const iam = (some_addr) => {
+      if ( some_addr == address ) {
+        return address;
+      } else {
+        throw Error(`I should be ${some_addr}, but am ${address}`);
+      }
+    };
+
+    const wait = (delta) => {
+      void(delta);
+      // If we are on a real network, then actually wait.
+      // If we are on a fake network, then stimulate it by making transfers?
+      // Maybe replace the empty transfers in the example code with this?
+      throw Error(`XXX Not implemented: wait`);
+    };
+
     const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
       void(try_p, evt_cnt);
       return sendrecv(label, funcNum, args, value, timeout_delay); };
@@ -361,7 +377,7 @@ export const connectAccount = async networkAccount => {
       rec_res.didTimeout = true;
       return rec_res; };
 
-    return { ...ctc, sendrecv: sendrecv_top, recv: recv_top }; };
+    return { ...ctc, sendrecv: sendrecv_top, recv: recv_top, iam, wait }; };
 
   // Not sure where the v4 contract docs are but this was just as good
   // https://docs.ethers.io/ethers.js/v5-beta/api-contract.html#deployment

@@ -117,6 +117,19 @@ export const connectAccount = async thisAcc => {
       prevRound = confirmedRound;
       return { didTimeout: false, data: ok_args, value: ok_val, balance: ok_bal, from: txn.from }; };
 
+    const iam = (some_addr) => {
+      if ( some_addr == thisAcc.addr ) {
+        return thisAcc.addr;
+      } else {
+        throw Error(`I should be ${some_addr}, but am ${thisAcc.addr}`);
+      }
+    };
+
+    const wait = (delta) => {
+      void(delta);
+      throw Error(`XXX Not implemented: wait`);
+    };
+
     const sendrecv = async (label, okNum, evt_cnt, args, value, timeout_delay, timeNum, try_p) => {
       debug(`${shad}: ${label} sendrecv ${okNum} ${timeout_delay} --- START`);
 
@@ -211,7 +224,7 @@ export const connectAccount = async thisAcc => {
           rec_res.didTimeout = true;
           return rec_res; } } };
 
-    return { ...ctc, sendrecv, recv }; };
+    return { ...ctc, sendrecv, recv, iam, wait }; };
 
   const deploy = async (bin) => {
     debug(`${shad}: deploy`);

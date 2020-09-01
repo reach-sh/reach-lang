@@ -400,14 +400,16 @@ pathAddBound_v ctxt mdv at_dv v t bo se = do
   SMT.assert smt (smtEq (Atom $ v) se)
   modifyIORefRef (ctxt_bindingsrr ctxt) $ M.insert v (mdv, at_dv, bo, Just se)
 
-pathAddUnbound :: SMTCtxt -> SrcLoc -> DLVar -> BindingOrigin -> SMTComp
-pathAddUnbound ctxt at_dv dv bo = do
+pathAddUnbound :: SMTCtxt -> SrcLoc -> Maybe DLVar -> BindingOrigin -> SMTComp
+pathAddUnbound _ _ Nothing _ = mempty
+pathAddUnbound ctxt at_dv (Just dv) bo = do
   let DLVar _ _ t _ = dv
   let v = smtVar ctxt dv
   pathAddUnbound_v ctxt (Just dv) at_dv v t bo
 
-pathAddBound :: SMTCtxt -> SrcLoc -> DLVar -> BindingOrigin -> SExpr -> SMTComp
-pathAddBound ctxt at_dv dv bo se = do
+pathAddBound :: SMTCtxt -> SrcLoc -> Maybe DLVar -> BindingOrigin -> SExpr -> SMTComp
+pathAddBound _ _ Nothing _ _ = mempty
+pathAddBound ctxt at_dv (Just dv) bo se = do
   let DLVar _ _ t _ = dv
   let v = smtVar ctxt dv
   pathAddBound_v ctxt (Just dv) at_dv v t bo se
@@ -457,21 +459,21 @@ smt_a ctxt at_de da =
     t = argTypeOf da
     cons as = smtApply (s ++ "_cons") (map (smt_a ctxt at_de) as)
 
-smt_e :: SMTCtxt -> SrcLoc -> DLVar -> DLExpr -> SMTComp
-smt_e ctxt at_dv dv de =
+smt_e :: SMTCtxt -> SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
+smt_e ctxt at_dv mdv de =
   case de of
     DLE_Arg at da ->
-      pathAddBound ctxt at_dv dv bo $ smt_a ctxt at da
+      pathAddBound ctxt at_dv mdv bo $ smt_a ctxt at da
     DLE_Impossible _ _ ->
-      pathAddUnbound ctxt at_dv dv bo
+      pathAddUnbound ctxt at_dv mdv bo
     DLE_PrimOp at cp args ->
-      pathAddBound ctxt at_dv dv bo se
+      pathAddBound ctxt at_dv mdv bo se
       where
         args' = map (smt_a ctxt at) args
         se = smtPrimOp ctxt cp args'
     DLE_ArrayRef at f arr_da sz idx_da -> do
       verify1 ctxt at f TBounds check_se
-      pathAddBound ctxt at_dv dv bo se
+      pathAddBound ctxt at_dv mdv bo se
       where
         se = smtApply "select" [arr_da', idx_da']
         check_se = uint256_le idx_da' (smt_c ctxt at $ DLC_Int sz)
@@ -479,7 +481,7 @@ smt_e ctxt at_dv dv de =
         idx_da' = smt_a ctxt at idx_da
     DLE_ArraySet at f arr_da sz idx_da val_da -> do
       verify1 ctxt at f TBounds check_se
-      pathAddBound ctxt at_dv dv bo se
+      pathAddBound ctxt at_dv mdv bo se
       where
         se = smtApply "store" [arr_da', idx_da', val_da']
         check_se = uint256_le idx_da' (smt_c ctxt at $ DLC_Int sz)
@@ -487,42 +489,26 @@ smt_e ctxt at_dv dv de =
         idx_da' = smt_a ctxt at idx_da
         val_da' = smt_a ctxt at val_da
     DLE_TupleRef at arr_da i ->
-      pathAddBound ctxt at_dv dv bo se
+      pathAddBound ctxt at_dv mdv bo se
       where
         se = smtApply (s ++ "_elem" ++ show i) [arr_da']
         s = smtTypeSort ctxt t
         t = argTypeOf arr_da
         arr_da' = smt_a ctxt at arr_da
     DLE_ObjectRef at obj_da f ->
-      pathAddBound ctxt at_dv dv bo se
+      pathAddBound ctxt at_dv mdv bo se
       where
         se = smtApply (s ++ "_" ++ f) [obj_da']
         s = smtTypeSort ctxt t
         t = argTypeOf obj_da
         obj_da' = smt_a ctxt at obj_da
     DLE_Interact {} ->
-      pathAddUnbound ctxt at_dv dv bo
+      pathAddUnbound ctxt at_dv mdv bo
     DLE_Digest at args ->
-      pathAddBound ctxt at dv bo se
+      pathAddBound ctxt at mdv bo se
       where
         se = smtApply "digest" [smtDigestCombine ctxt at args]
-  where
-    bo = O_Expr de
-
-smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
-smt_m iter ctxt m =
-  case m of
-    LL_Return {} -> mempty
-    LL_Let at dv de k -> smt_e ctxt at dv de <> iter ctxt k
-    LL_Var at dv k -> var_m <> iter ctxt k
-      where
-        var_m =
-          pathAddUnbound ctxt at dv O_Var
-    LL_Set at dv va k -> set_m <> iter ctxt k
-      where
-        set_m =
-          smtAssert ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
-    LL_Claim at f ct ca k -> this_m <> iter ctxt k
+    DLE_Claim at f ct ca -> this_m
       where
         this_m =
           case ct of
@@ -540,6 +526,44 @@ smt_m iter ctxt m =
           verify1 ctxt at f tk ca'
         assert_m =
           smtAssert ctxt ca'
+    DLE_Transfer {} ->
+      impossible "transfer"
+    DLE_Wait {} ->
+      mempty
+    DLE_PartSet {} ->
+      mempty
+  where
+    bo = O_Expr de
+
+smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
+smt_m iter ctxt m =
+  case m of
+    LL_Return {} -> mempty
+    LL_Let at mdv de k ->
+      case de of
+        DLE_Transfer at' f to amt -> transfer_m <> iter ctxt' k
+          where
+            transfer_m = do
+              verify1 ctxt at' f TBalanceSufficient amt_le_se
+              pathAddBound_v ctxt Nothing at' (smtBalance cbi') T_UInt256 bo cbi'_se
+            bo = O_Transfer to amt
+            cbi = ctxt_balance ctxt
+            cbi' = cbi + 1
+            amt_se = smt_a ctxt at' amt
+            cbi_se = smtBalanceRef cbi
+            cbi'_se = uint256_sub cbi_se amt_se
+            amt_le_se = uint256_le amt_se cbi_se
+            ctxt' = ctxt {ctxt_balance = cbi'}
+        _ ->
+          smt_e ctxt at mdv de <> iter ctxt k
+    LL_Var at dv k -> var_m <> iter ctxt k
+      where
+        var_m =
+          pathAddUnbound ctxt at (Just dv) O_Var
+    LL_Set at dv va k -> set_m <> iter ctxt k
+      where
+        set_m =
+          smtAssert ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
     LL_LocalIf at ca t f k ->
       smt_l ctxt_t t <> smt_l ctxt_f f <> iter ctxt k
       where
@@ -574,10 +598,10 @@ gatherDefinedVars_m :: (LLCommon LLLocal) -> S.Set DLVar
 gatherDefinedVars_m m =
   case m of
     LL_Return {} -> mempty
-    LL_Let _ dv _ k -> S.singleton dv <> gatherDefinedVars_l k
+    LL_Let _ mdv _ k ->
+      maybe mempty S.singleton mdv <> gatherDefinedVars_l k
     LL_Var _ dv k -> S.singleton dv <> gatherDefinedVars_l k
     LL_Set _ _ _ k -> gatherDefinedVars_l k
-    LL_Claim _ _ _ _ k -> gatherDefinedVars_l k
     LL_LocalIf _ _ t f k -> gatherDefinedVars_l t <> gatherDefinedVars_l f <> gatherDefinedVars_l k
 
 gatherDefinedVars_l :: LLLocal -> S.Set DLVar
@@ -607,7 +631,7 @@ smt_asn_def ctxt at asn = mapM_ def1 $ M.keys asnm
   where
     DLAssignment asnm = asn
     def1 dv =
-      pathAddUnbound ctxt at dv O_Assignment
+      pathAddUnbound ctxt at (Just dv) O_Assignment
 
 smt_n :: SMTCtxt -> LLConsensus -> SMTComp
 smt_n ctxt n =
@@ -624,19 +648,6 @@ smt_n ctxt n =
           smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
           where
             v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
-    LLC_Transfer at f to amt k -> transfer_m <> smt_n ctxt' k
-      where
-        transfer_m = do
-          verify1 ctxt at f TBalanceSufficient amt_le_se
-          pathAddBound_v ctxt Nothing at (smtBalance cbi') T_UInt256 bo cbi'_se
-        bo = O_Transfer to amt
-        cbi = ctxt_balance ctxt
-        cbi' = cbi + 1
-        amt_se = smt_a ctxt at amt
-        cbi_se = smtBalanceRef cbi
-        cbi'_se = uint256_sub cbi_se amt_se
-        amt_le_se = uint256_le amt_se cbi_se
-        ctxt' = ctxt {ctxt_balance = cbi'}
     LLC_FromConsensus _ _ s -> smt_s ctxt s
     LLC_While at asn inv cond body k ->
       mapM_ (ctxtNewScope ctxt) [before_m, loop_m, after_m]
@@ -661,7 +672,7 @@ smt_fs ctxt at fs =
   case fs of
     FS_Again _ -> mempty
     FS_Join dv ->
-      pathAddUnbound ctxt at dv O_Join
+      pathAddUnbound ctxt at (Just dv) O_Join
 
 smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
@@ -702,10 +713,10 @@ smt_s ctxt s =
           case shouldSimulate ctxt from of
             False -> do
               pathAddUnbound_v ctxt Nothing at (smtTxnValue tv') T_UInt256 (O_DishonestPay from)
-              mapM_ (\msg_dv -> pathAddUnbound ctxt at msg_dv (O_DishonestMsg from)) from_msg
+              mapM_ (\msg_dv -> pathAddUnbound ctxt at (Just msg_dv) (O_DishonestMsg from)) from_msg
             True -> do
               pathAddBound_v ctxt Nothing at (smtTxnValue tv') T_UInt256 (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
-              zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at msg_dv (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
+              zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at (Just msg_dv) (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
           pathAddBound_v ctxt Nothing at (smtBalance cbi') T_UInt256 O_ToConsensus (uint256_add (smtBalanceRef cbi) (smtTxnValueRef tv'))
 
 _smt_declare_toBytes :: Solver -> String -> IO ()

@@ -225,6 +225,14 @@ For example, the following are all @tech{valid}:
 
 If the named participant has not yet @tech{join}ed the application, then this statement has the effect of them @tech{join}ing, after which @reachin{PART} may be used as a @tech{address}.
 
+@subsubsection{@tt{wait}}
+
+@reach{
+ wait(AMT); }
+
+A @deftech{wait statement}, written @reachin{wait(AMOUNT);}, delays the computation until @reachin{AMOUNT} @tech{time delta} units have passed.
+It may only occur in a @tech{step}.
+
 @subsubsection{@tt{exit}}
 
 @reach{
@@ -319,6 +327,16 @@ However, some additional statements are allowed.
  commit(); }
 
 A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @tech{statement}'s @tech{continuation} as the next @tech{step} of the @DApp computation. In other words, it ends the current @tech{consensus step} and allows more @tech{local steps}.
+
+@subsubsection{@tt{part_set} and @tt{.set}}
+
+@reach{
+ part_set(PART, ADDR);
+ PART.set(ADDR); }
+
+@index{part_set} Assigns the given @tech{participant} to the given address.
+If a @tech{backend} is running for this @tech{participant} and its address does not match the given address, then it will abort.
+This may only occur within a @tech{consensus step}.
 
 @subsubsection{@tt{while}}
 

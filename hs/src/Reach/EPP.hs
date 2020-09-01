@@ -72,22 +72,29 @@ epp_m
   -> (a -> MLookCommon -> res)
   -> LLCommon a
   -> res
-epp_m done back skip look c =
+epp_m done _back skip look c =
   case c of
     LL_Return at -> done at
-    LL_Let at dv de k ->
-      look
-        k
-        (\back' skip' k_cs k' ->
-           let cs' = counts de <> count_rms [dv] k_cs
-               doLet lc = back' cs' (PL_Let at lc dv de k')
-            in case get_count dv k_cs of
-                 C_Never ->
+    LL_Let at mdv de k ->
+      case de of
+        DLE_Claim _ _ CT_Assert _ -> skip k
+        DLE_Claim _ _ CT_Possible _ -> skip k
+        DLE_Claim _ _ (CT_Unknowable {}) _ -> skip k
+        _ ->
+          look k
+          (\back' skip' k_cs k' ->
+             let maybe_skip vs = 
                    case expr_pure de of
                      True -> skip' k_cs k'
-                     False -> back' cs' (PL_Eff at de k')
-                 C_Once -> doLet PL_Once
-                 C_Many -> doLet PL_Many)
+                     False -> back' (cs' vs) (PL_Eff at de k')
+                 cs' vs = counts de <> count_rms vs k_cs
+             in case mdv of
+                  Nothing -> maybe_skip []
+                  Just dv ->
+                    case get_count dv k_cs of
+                      Count Nothing -> maybe_skip [dv]
+                      Count (Just lc) ->
+                        back' (cs' [dv]) (PL_Let at lc dv de k'))
     LL_Var at dv k ->
       look
         k
@@ -100,16 +107,6 @@ epp_m done back skip look c =
         (\back' _skip' k_cs k' ->
            let cs' = counts da <> count_rms [dv] k_cs
             in back' cs' (PL_Set at dv da k'))
-    LL_Claim at f ct ca k ->
-      case ct of
-        CT_Assert -> skip k
-        CT_Assume -> keep
-        CT_Require -> keep
-        CT_Possible -> skip k
-        CT_Unknowable {} -> skip k
-      where
-        keep = back cs' (PL_Claim at f ct ca) k
-        cs' = counts ca
     LL_LocalIf at ca t f k ->
       look
         k
@@ -191,11 +188,6 @@ epp_n st n =
       let cs' = counts ca <> cs_t <> cs_f
       let ct' = CT_If at ca ct_t ct_f
       return $ ProResC p_prts' (ProRes_ cs' ct')
-    LLC_Transfer at _ to amt k -> do
-      ProResC p_prts_s (ProRes_ cs_k ct_k) <- epp_n st k
-      let cs_k' = counts to <> counts amt <> cs_k
-      let ct_k' = CT_Transfer at to amt ct_k
-      return $ ProResC p_prts_s (ProRes_ cs_k' ct_k')
     LLC_FromConsensus at1 _at2 s -> do
       let st' = st {pst_interval = default_interval}
       ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st' s
@@ -265,18 +257,23 @@ epp_s st s =
       where
         done :: MDone (ST s ProResS)
         done rat =
-          return $ ProResS (pall st (ProRes_ mempty $ ET_Com $ PL_Return rat)) (ProRes_ mempty False)
+          return $ ProResS (pall st' (ProRes_ mempty $ ET_Com $ PL_Return rat)) (ProRes_ mempty False)
         back :: MBack LLStep (ST s ProResS)
         back cs' mkpl k = do
           ProResS p_prts_s cr <- skip k
           let p_prts_s' = extend_locals cs' mkpl p_prts_s
           return $ ProResS p_prts_s' cr
-        skip k = epp_s st k
+        skip k = epp_s st' k
         look :: LLStep -> MLookCommon -> (ST s ProResS)
         look k common = do
           ProResS p_prts_s cr <- skip k
           let p_prts_s' = extend_locals_look common p_prts_s
           return $ ProResS p_prts_s' cr
+        st' =
+          case c of
+            (LL_Let _ _ (DLE_Wait _ amt) _) ->
+              st { pst_interval = interval_add_from (pst_interval st) amt }
+            _ -> st
     LLS_Stop at _ -> do
       let p_prts_s = pall st (ProRes_ mempty (ET_Stop at))
       return $ ProResS p_prts_s $ ProRes_ mempty False
@@ -326,7 +323,8 @@ epp_s st s =
               FS_Join dv -> (mempty, [dv])
               FS_Again dv -> (counts dv, mempty)
       let msg_and_defns = (msg <> fs_defns)
-      let ok_cons_cs = delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
+      let int_ok_cs = counts int_ok
+      let ok_cons_cs = int_ok_cs <> delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
       (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let svs = counts_nzs time_cons_cs
       let from_me = Just (from_as, amt_da, svs)

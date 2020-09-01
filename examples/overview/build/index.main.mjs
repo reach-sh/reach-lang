@@ -4,25 +4,35 @@ export async function Alice(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
   
   
-  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.protect(stdlib.T_UInt256, interact.request)], 0, false, null);
+  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.protect(stdlib.T_UInt256, interact.request, null)], 0, false, null);
   const [v1] = txn1.data;
   const v2 = txn1.from;
   const v3 = txn1.value;
   const v5 = stdlib.eq(0, v3);
-  stdlib.assert(v5);
+  stdlib.assert(v5, {
+    at: './index.rsh:application',
+    fs: [],
+    who: 'Alice' });
   const txn2 = await ctc.recv('Alice', 2, 0, false);
   const [] = txn2.data;
   const v8 = txn2.from;
   const v9 = txn2.value;
   const v11 = stdlib.eq(v1, v9);
-  stdlib.assert(v11);
+  stdlib.assert(v11, {
+    at: './index.rsh:application',
+    fs: [],
+    who: 'Alice' });
   
   
-  const txn3 = await ctc.sendrecv('Alice', 3, 1, [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info)], 0, false, null);
+  const txn3 = await ctc.sendrecv('Alice', 3, 1, [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], 0, false, null);
   const [v13] = txn3.data;
   const v14 = txn3.value;
   const v16 = stdlib.eq(0, v14);
-  stdlib.assert(v16);
+  stdlib.assert(v16, {
+    at: './index.rsh:application',
+    fs: [],
+    who: 'Alice' });
+  // stdlib.transfer(v2, v1);
   return; }
 export async function Bob(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
@@ -31,8 +41,14 @@ export async function Bob(stdlib, ctc, interact) {
   const v2 = txn1.from;
   const v3 = txn1.value;
   const v5 = stdlib.eq(0, v3);
-  stdlib.assert(v5);
-  stdlib.protect(stdlib.T_Null, await interact.want(v1));
+  stdlib.assert(v5, {
+    at: './index.rsh:application',
+    fs: [],
+    who: 'Bob' });
+  stdlib.protect(stdlib.T_Null, await interact.want(v1), {
+    at: './index.rsh:17:22:application',
+    fs: ['at ./index.rsh:17:35:after expr stmt semicolon call to "function" (defined at: ./index.rsh:16:17:function exp)'],
+    who: 'Bob' });
   
   
   const txn2 = await ctc.sendrecv('Bob', 2, 0, [v2, v1], v1, false, null);
@@ -40,13 +56,23 @@ export async function Bob(stdlib, ctc, interact) {
   const v8 = txn2.from;
   const v9 = txn2.value;
   const v11 = stdlib.eq(v1, v9);
-  stdlib.assert(v11);
+  stdlib.assert(v11, {
+    at: './index.rsh:application',
+    fs: [],
+    who: 'Bob' });
   const txn3 = await ctc.recv('Bob', 3, 1, false);
   const [v13] = txn3.data;
   const v14 = txn3.value;
   const v16 = stdlib.eq(0, v14);
-  stdlib.assert(v16);
-  stdlib.protect(stdlib.T_Null, await interact.got(v13));
+  stdlib.assert(v16, {
+    at: './index.rsh:application',
+    fs: [],
+    who: 'Bob' });
+  // stdlib.transfer(v2, v1);
+  stdlib.protect(stdlib.T_Null, await interact.got(v13), {
+    at: './index.rsh:28:21:application',
+    fs: ['at ./index.rsh:28:31:after expr stmt semicolon call to "function" (defined at: ./index.rsh:27:17:function exp)'],
+    who: 'Bob' });
   
   return; }
 

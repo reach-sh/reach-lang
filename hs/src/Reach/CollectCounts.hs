@@ -3,22 +3,11 @@ module Reach.CollectCounts (Count (..), Counts (..), counts, get_count, count_rm
 import qualified Data.Map.Strict as M
 import Reach.AST
 
-data Count
-  = C_Never
-  | C_Once
-  | C_Many
+newtype Count = Count (Maybe PLLetCat)
   deriving (Show, Eq)
+  deriving newtype (Semigroup)
 
-instance Monoid Count where
-  mempty = C_Never
-
-instance Semigroup Count where
-  C_Never <> x = x
-  x <> C_Never = x
-  C_Once <> C_Once = C_Many
-  _ <> _ = C_Many
-
-newtype Counts = Counts (M.Map DLVar Count)
+newtype Counts = Counts (M.Map DLVar PLLetCat)
   deriving (Show, Eq)
 
 instance Monoid Counts where
@@ -30,17 +19,13 @@ instance Semigroup Counts where
       m3 = M.unionWith (<>) m1 m2
 
 get_count :: DLVar -> Counts -> Count
-get_count v (Counts m) =
-  case M.lookup v m of
-    Nothing -> mempty
-    Just x -> x
+get_count v (Counts m) = Count $ M.lookup v m
 
 count_rms :: [DLVar] -> Counts -> Counts
 count_rms vs (Counts cs) = Counts $ foldr M.delete cs vs
 
 counts_nzs :: Counts -> [DLVar]
-counts_nzs (Counts cs) =
-  map fst $ filter (\(_, c) -> c /= C_Never) $ M.toList cs
+counts_nzs (Counts cs) = M.keys cs
 
 class Countable a where
   counts :: a -> Counts
@@ -62,7 +47,7 @@ instance Countable v => Countable (M.Map k v) where
   counts m = counts $ M.elems m
 
 instance Countable DLVar where
-  counts dv = Counts $ M.singleton dv C_Once
+  counts dv = Counts $ M.singleton dv PL_Once
 
 instance Countable DLArg where
   counts a =
@@ -84,8 +69,15 @@ instance Countable DLExpr where
       DLE_ArraySet _ _ aa _ ia va -> counts [aa, ia, va]
       DLE_TupleRef _ t _ -> counts t
       DLE_ObjectRef _ aa _ -> counts aa
-      DLE_Interact _ _ _ _ as -> counts as
+      DLE_Interact _ _ _ _ _ as -> counts as
       DLE_Digest _ as -> counts as
+      DLE_Claim _ _ _ a -> counts a
+      DLE_Transfer _ _ x y -> counts [x, y]
+      DLE_Wait _ a -> counts a
+      DLE_PartSet _ _ a -> counts a
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
+
+instance Countable CInterval where
+  counts (CBetween from to) = counts from <> counts to

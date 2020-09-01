@@ -9,6 +9,7 @@ import Reach.Backend
 import Reach.Connector
 import Reach.Util
 import Reach.Version
+import Reach.UnsafeUtil
 
 --- Pretty helpers
 
@@ -70,10 +71,6 @@ jsTxn ctxt = "txn" <> pretty (ctxt_txn ctxt)
 jsTimeoutFlag :: JSCtxt -> Doc a
 jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout"
 
-jsAssert :: Doc a -> Doc a
---- FIXME Add srcloc and context frames
-jsAssert a = jsApply "stdlib.assert" [a] <> semi
-
 jsContract :: SLType -> Doc a
 jsContract = \case
   T_Null -> "stdlib.T_Null"
@@ -89,8 +86,17 @@ jsContract = \case
   T_Var {} -> impossible "var dl"
   T_Type {} -> impossible "type dl"
 
-jsProtect :: SLType -> Doc a -> Doc a
-jsProtect how what = jsApply "stdlib.protect" [jsContract how, what]
+jsProtect :: Doc a -> SLType -> Doc a -> Doc a
+jsProtect ai how what =
+  jsApply "stdlib.protect" $ [jsContract how, what, ai]
+
+jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Doc a
+jsAssertInfo ctxt at fs =
+  jsObject $ M.fromList [ ("who"::String, who_p), ("at", at_p), ("fs", fs_p) ]
+  where
+    who_p = jsCon $ DLC_Bytes $ ctxt_who ctxt
+    at_p = jsString $ unsafeRedactAbsStr $ show at
+    fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs 
 
 jsVar :: DLVar -> Doc a
 jsVar (DLVar _ _ _ n) = "v" <> pretty n
@@ -111,7 +117,7 @@ jsArg = \case
   DLA_Tuple as -> jsArray $ map jsArg as
   DLA_Obj m -> jsObject $ M.map jsArg m
   DLA_Interact _ m t ->
-    jsProtect t $ "interact." <> pretty m
+    jsProtect "null" t $ "interact." <> pretty m
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply ctxt = \case
@@ -153,10 +159,31 @@ jsExpr ctxt = \case
     jsArg aa <> brackets (jsCon $ DLC_Int i)
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f
-  DLE_Interact _ _ m t as ->
-    jsProtect t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
+  DLE_Interact at fs _ m t as ->
+    jsProtect (jsAssertInfo ctxt at fs) t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
   DLE_Digest _ as ->
     jsApply "stdlib.keccak256" $ map jsArg as
+  DLE_Claim at fs ct a ->
+    check
+    where
+      check = case ct of
+        CT_Assert -> impossible "assert"
+        CT_Assume -> require
+        CT_Require -> require
+        CT_Possible -> impossible "possible"
+        CT_Unknowable {} -> impossible "unknowable"
+      require =
+        jsApply "stdlib.assert" $ [ jsArg a, jsAssertInfo ctxt at fs ] 
+  DLE_Transfer _ _ who amt ->
+    "//" <+> (jsApply "stdlib.transfer" $ map jsArg [who, amt])
+  DLE_Wait _ amt ->
+    jsApply "ctc.wait" [ jsArg amt ]
+  DLE_PartSet _ who what ->
+    case ctxt_who ctxt == who of
+      True ->
+        jsApply "ctc.iam" [ jsArg what ]
+      False ->
+        jsArg what
 
 jsCom :: (JSCtxt -> k -> Doc a) -> JSCtxt -> PLCommon k -> Doc a
 jsCom iter ctxt = \case
@@ -173,16 +200,6 @@ jsCom iter ctxt = \case
   PL_Set _ dv da k ->
     jsVar dv <+> "=" <+> jsArg da <> semi <> hardline
       <> iter ctxt k
-  PL_Claim _ _ ct a k ->
-    check <> iter ctxt k
-    where
-      check = case ct of
-        CT_Assert -> impossible "assert"
-        CT_Assume -> require
-        CT_Require -> require
-        CT_Possible -> impossible "possible"
-        CT_Unknowable {} -> impossible "unknowable"
-      require = (jsAssert $ jsArg a) <> hardline
   PL_LocalIf _ c t f k ->
     vsep
       [ jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
