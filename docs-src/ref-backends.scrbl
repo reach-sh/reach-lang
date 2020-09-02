@@ -170,6 +170,40 @@ For convenience, if @jsin{ctcInfo} is an object with a @jsin{getInfo} method, it
 
 @index{transfer} Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to}, which are provided by @tech{connector}-specific @tech{account} specifications.
 
+@(hrule)
+@js{
+ async getNetworkTime() => time
+}
+
+@index{getNetworkTime} Gets the current consensus network @tech{time}.
+For @litchar{ETH}, @litchar{ALGO}, and @litchar{FAKE},
+this is the current block number.
+
+@(hrule)
+@js{
+ async waitUntilTime(time, onProgress)
+}
+
+@index{waitUntilTime} Waits until the specified consensus network @tech{time}.
+In @deftech{isolated testing modes}, which are @litchar{REACH_CONNECTOR_MODE}s
+@litchar{$NET-test-dockerized-$IMPL} and @litchar{$NET-test-embedded-$IMPL}
+for all valid @litchar{$NET} and @litchar{$IMPL},
+this will also force time to pass on the network,
+usually by sending trivial transactions.
+
+You may provide an optional @jsin{onProgress} callback, used for reporting progress,
+which may be called many times up until the specified @tech{time}.
+It will receive an object with keys @jsin{currentTime} and @jsin{targetTime},
+
+@(hrule)
+@js{
+ async wait(timedelta, onProgress)
+}
+
+A convenience function for delaying by a certain @tech{time delta}.
+The expression @jsin{await wait(delta, onProgress)} is the same as
+@jsin{await waitUntilTime(await getCurrentTime() + delta, onProgress)}.
+
 @subsubsection[#:tag "ref-backend-js-stdlib-utils"]{Utilities}
 
 @js{
