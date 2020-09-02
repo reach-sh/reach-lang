@@ -1,0 +1,1 @@
+error: ./Err_App_InvalidOption.rsh:3:30:application: deploMode is not a valid app option. Did you mean: ["deployMode"]

@@ -548,7 +548,7 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
       liftM2 (,) (readSTRef timr) (readSTRef tmr)
 
 solPLProg :: PLProg -> Doc a
-solPLProg (PLProg _ _ (CPProg at hs)) =
+solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
   vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp]
   where
     ctcp =

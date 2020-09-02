@@ -42,6 +42,8 @@ data EvalError
   | Err_CannotReturn
   | Err_ToConsensus_TimeoutArgs [JSExpression]
   | Err_App_Interact_NotFirstOrder SLType
+  | Err_App_InvalidOption SLVar [SLVar]
+  | Err_App_InvalidOptionValue SLVar String
   | Err_App_InvalidInteract SLSVal
   | Err_App_InvalidPartSpec SLVal
   | Err_App_InvalidArgs [JSExpression]
@@ -55,6 +57,7 @@ data EvalError
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLVal [String] String
   | Err_Eval_ContinueNotInWhile
+  | Err_Eval_IllegalWait DeployMode
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_PartSet_Bound SLPart
   | Err_Eval_IfCondNotBool SLVal
@@ -175,6 +178,10 @@ instance Show EvalError where
       "Invalid participant spec"
     Err_App_InvalidArgs _jes ->
       "Invalid app arguments"
+    Err_App_InvalidOption opt opts ->
+      opt <> " is not a valid app option" <> didYouMean opt opts 5
+    Err_App_InvalidOptionValue opt msg ->
+      "Invalid value for app option, " <> opt <> ": " <> msg
     Err_App_PartUnderscore bs ->
       "Invalid participant name. Participant names may not begin with an underscore: "
         <> bunpack bs
@@ -182,6 +189,8 @@ instance Show EvalError where
       "Invalid binding. Expressions cannot appear on the LHS."
     Err_Eval_PartSet_Bound who ->
       (bunpack who) <> " is bound and cannot be rebound"
+    Err_Eval_IllegalWait dm ->
+      "Cannot wait or timeout until after first message in deployMode " <> show dm
     Err_Decl_IllegalJS e ->
       "Invalid Reach declaration: " <> conNameOf e
     Err_Decl_ObjectSpreadNotLast ->
@@ -459,7 +468,8 @@ checkResType at et m = do
 --- the control-flow state that leads to the expression, so it
 --- inherits in a function call.
 data SLCtxt s = SLCtxt
-  { ctxt_id :: STCounter s
+  { ctxt_dlo :: DLOpts
+  , ctxt_id :: STCounter s
   , ctxt_stack :: [SLCtxtFrame]
   , ctxt_local_mname :: Maybe [SLVar]
   , ctxt_base_penvs :: SLPartEnvs
@@ -467,7 +477,7 @@ data SLCtxt s = SLCtxt
 
 instance Show (SLCtxt s) where
   show _ = "<context>"
-
+          
 ctxt_alloc :: SLCtxt s -> SrcLoc -> ST s Int
 ctxt_alloc ctxt _at = do
   incSTCounter $ ctxt_id ctxt
@@ -515,10 +525,24 @@ data SLState = SLState
   { --- A function call may modify the mode
     st_mode :: SLMode
   , st_live :: Bool
+  , st_after_first :: Bool
   , --- A function call may cause a participant to join
     st_pdvs :: SLPartDVars
   }
   deriving (Eq, Show)
+
+allowed_to_wait :: SLCtxt s -> SrcLoc -> SLState -> x -> x
+allowed_to_wait ctxt at st =
+  case dm of
+    DM_constructor -> id
+    DM_firstMsg -> after_first
+  where
+    dm = dlo_deployMode $ ctxt_dlo ctxt
+    after_first =
+      case st_after_first st of
+        True -> id
+        False ->
+          expect_throw at $ Err_Eval_IllegalWait dm
 
 type SLPartDVars = M.Map SLPart DLVar
 
@@ -784,7 +808,7 @@ evalForm ctxt at sco st f args =
         Just TCM_Pay ->
           retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub (Just one_arg) mtime
         Just TCM_Timeout ->
-          case args of
+          case allowed_to_wait ctxt at st $ args of
             [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] ->
               retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just (at, de, (jsStmtToBlock dt_s)))
             _ -> expect_throw at $ Err_ToConsensus_TimeoutArgs args
@@ -810,7 +834,6 @@ evalForm ctxt at sco st f args =
         SLM_Step -> do
           let (notter_e, snd_part) = two_args
           let (knower_e, whats_e) = jsCallLike at snd_part
-          let whats_i = map (jse_expect_id at) whats_e
           SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st notter_e
           let participant_who = \case
                 SLV_Participant _ who _ _ _ -> who
@@ -818,12 +841,14 @@ evalForm ctxt at sco st f args =
           let notter = participant_who v_n
           SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
           let knower = participant_who v_kn
-          let knower_env = sco_lookup_penv ctxt sco knower
-          let whats_v = map snd $ map (flip (env_lookup at) knower_env) whats_i
+          let sco_knower = sco { sco_env = sco_lookup_penv ctxt sco knower }
+          let st_whats = st { st_mode = SLM_LocalStep }
+          SLRes lifts_whats _ whats_sv <- evalExprs ctxt at sco_knower st_whats whats_e 
+          let whats_v = map snd whats_sv
           let whats_da = map snd $ map (typeOf at) whats_v
           let ct = CT_Unknowable notter
           let lifts' = return $ DLS_Let at Nothing (DLE_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da))
-          let lifts = lifts_n <> lifts_kn <> lifts'
+          let lifts = lifts_n <> lifts_kn <> lifts_whats <> lifts'
           return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
         cm ->
           expect_throw at $ Err_Eval_IllegalMode cm $ "unknowable"
@@ -1127,7 +1152,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_PrimDelay _at dp dargs ->
       evalPrim ctxt at sco st dp $ dargs ++ sargs
     SLPrim_wait ->
-      case st_mode st of
+      case allowed_to_wait ctxt at st $ st_mode st of
         SLM_Step ->
           case sargs of
             [amt_sv] -> do
@@ -1822,6 +1847,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                 st
                   { st_mode = SLM_ConsensusStep
                   , st_pdvs = pdvs'
+                  , st_after_first = True
                   }
           let sco' =
                 sco
@@ -2257,10 +2283,12 @@ evalLib idxr (src, body) (liblifts, libm) = do
           { st_mode = SLM_Module
           , st_live = False
           , st_pdvs = mempty
+          , st_after_first = False
           }
   let ctxt_top =
         (SLCtxt
-           { ctxt_id = idxr
+           { ctxt_dlo = app_default_opts
+           , ctxt_id = idxr
            , ctxt_stack = []
            , ctxt_local_mname = Nothing
            , ctxt_base_penvs = mempty
@@ -2294,20 +2322,47 @@ makeInteract at who spec = SLV_Object at lab spec'
       False -> expect_throw at $ Err_App_Interact_NotFirstOrder t
     wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract v
 
+app_default_opts :: DLOpts
+app_default_opts =
+  DLOpts { dlo_deployMode = DM_constructor }
+
+app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts )
+app_options = M.fromList [ ("deployMode", opt_deployMode) ]
+  where
+    opt_deployMode opts v =
+      case v of
+        SLV_Bytes _ "firstMsg" -> up DM_firstMsg
+        SLV_Bytes _ "constructor" -> up DM_constructor
+        SLV_Bytes _ bs -> Left $ bss <> " is not a deployMode" <> didYouMean bss [ "firstMsg", "constructor" ] 2
+          where bss = bunpack bs
+        _ -> Left $ "expected bytes"
+      where up m = Right $ opts { dlo_deployMode = m }
+
 compileDApp :: STCounter s -> DLStmts -> SLVal -> ST s DLProg
 compileDApp idxr liblifts topv =
   case topv of
-    SLV_Prim (SLPrim_App_Delay at _opts partvs (JSBlock _ top_ss _) top_env top_env_wps) -> do
-      --- FIXME look at opts
+    SLV_Prim (SLPrim_App_Delay at opts partvs (JSBlock _ top_ss _) top_env top_env_wps) -> do
+      let dlo = M.foldrWithKey use_opt app_default_opts (M.map snd opts)
+            where use_opt k v acc =
+                    case M.lookup k app_options of
+                      Nothing ->
+                        expect_throw at $ Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
+                      Just opt ->
+                        case opt acc v of
+                          Right x -> x
+                          Left x ->
+                            expect_throw at $ Err_App_InvalidOptionValue k x
       let st_step =
             SLState
               { st_mode = SLM_Step
               , st_live = True
               , st_pdvs = mempty
+              , st_after_first = False
               }
       let ctxt =
             SLCtxt
-              { ctxt_id = idxr
+              { ctxt_dlo = dlo
+              , ctxt_id = idxr
               , ctxt_stack = []
               , ctxt_local_mname = Nothing
               , ctxt_base_penvs = penvs
@@ -2322,7 +2377,7 @@ compileDApp idxr liblifts topv =
               , sco_cenv = mempty
               }
       SLRes final _ _ <- evalStmt ctxt at' sco st_step top_ss
-      return $ DLProg at sps (liblifts <> final)
+      return $ DLProg at dlo sps (liblifts <> final)
       where
         at' = srcloc_at "compileDApp" Nothing at
         sps = SLParts $ M.fromList $ map make_sps_entry partvs

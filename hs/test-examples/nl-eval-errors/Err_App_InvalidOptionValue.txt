@@ -1,0 +1,1 @@
+error: ./Err_App_InvalidOptionValue.rsh:3:30:application: Invalid value for app option, deployMode: factory is not a deployMode. Did you mean: ["firstMsg","constructor"]

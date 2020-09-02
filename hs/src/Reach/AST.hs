@@ -333,6 +333,14 @@ instance Show SLCtxtFrame where
 instance NFData SLCtxtFrame
 
 --- Dynamic Language
+
+data DeployMode
+  = DM_constructor
+  | DM_firstMsg
+  deriving (Eq, Generic, Show)
+
+instance NFData DeployMode
+
 newtype InteractEnv
   = InteractEnv (M.Map SLVar SLType)
   deriving (Eq, Generic, Show, Monoid, Semigroup)
@@ -530,8 +538,13 @@ data DLBlock
 
 instance NFData DLBlock
 
+data DLOpts = DLOpts { dlo_deployMode :: DeployMode }
+  deriving (Generic, Eq, Show)
+
+instance NFData DLOpts
+
 data DLProg
-  = DLProg SrcLoc SLParts DLStmts
+  = DLProg SrcLoc DLOpts SLParts DLStmts
   deriving (Generic)
 
 instance NFData DLProg
@@ -585,8 +598,11 @@ data LLStep
       }
   deriving (Eq, Show)
 
+data LLOpts = LLOpts { llo_deployMode :: DeployMode }
+  deriving (Generic, Eq, Show)
+
 data LLProg
-  = LLProg SrcLoc SLParts LLStep
+  = LLProg SrcLoc LLOpts SLParts LLStep
   deriving (Eq, Show)
 
 --- Projected Language
@@ -702,6 +718,9 @@ data CPProg
 newtype EPPs = EPPs (M.Map SLPart EPProg)
   deriving (Eq, Show, Monoid, Semigroup)
 
+data PLOpts = PLOpts { plo_deployMode :: DeployMode }
+  deriving (Generic, Eq, Show)
+
 data PLProg
-  = PLProg SrcLoc EPPs CPProg
+  = PLProg SrcLoc PLOpts EPPs CPProg
   deriving (Eq, Show)

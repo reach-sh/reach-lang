@@ -106,5 +106,7 @@ lin_step _ rets (s Seq.:<| ks) =
       lin_com "step" lin_step LLS_Com rets s ks
 
 linearize :: DLProg -> LLProg
-linearize (DLProg at sps ss) =
-  LLProg at sps $ lin_step at mempty ss
+linearize (DLProg at (DLOpts {..}) sps ss) =
+  LLProg at opts' sps $ lin_step at mempty ss
+  where opts' = LLOpts {..}
+        llo_deployMode = dlo_deployMode

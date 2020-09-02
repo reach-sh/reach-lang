@@ -348,7 +348,7 @@ epp_s st s =
       return $ ProResS p_prts (ProRes_ time_cons_cs True)
 
 epp :: LLProg -> PLProg
-epp (LLProg at ps s) = runST $ do
+epp (LLProg at (LLOpts {..}) ps s) = runST $ do
   let SLParts p_to_ie = ps
   nhr <- newSTCounter 1
   hsr <- newSTRef $ mempty
@@ -373,4 +373,5 @@ epp (LLProg at ps s) = runST $ do
           Nothing ->
             impossible $ "part not in projection"
   let pps = EPPs $ M.mapWithKey mk_pp p_to_ie
-  return $ PLProg at pps cp
+  let plo_deployMode = llo_deployMode
+  return $ PLProg at (PLOpts {..}) pps cp

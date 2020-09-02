@@ -90,7 +90,7 @@ instance CollectsTypes LLStep where
     cts fs <> cts as <> cts msg <> cts amt <> cts mtime <> cts c
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ ps s) = cts ps <> cts s
+  cts (LLProg _ _ ps s) = cts ps <> cts s
 
 instance CollectsTypes a => CollectsTypes (PLCommon a) where
   cts (PL_Return _) = mempty

@@ -1,0 +1,1 @@
+error: ./Err_Eval_IllegalWait.rsh:7:9:application: Cannot wait or timeout until after first message in deployMode DM_firstMsg

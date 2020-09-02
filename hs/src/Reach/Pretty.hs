@@ -190,7 +190,7 @@ instance Pretty SLParts where
   pretty (SLParts m) = "parts" <+> render_obj m <> semi
 
 instance Pretty DLProg where
-  pretty (DLProg _at sps ds) =
+  pretty (DLProg _at _ sps ds) =
     "#lang dl" <> hardline
       <> pretty sps
       <> hardline
@@ -252,7 +252,7 @@ instance Pretty LLStep where
       ns = render_nest
 
 instance Pretty LLProg where
-  pretty (LLProg _at sps db) =
+  pretty (LLProg _at _ sps db) =
     "#lang ll" <> hardline
       <> pretty sps
       <> hardline
@@ -325,7 +325,7 @@ instance Pretty EPPs where
   pretty (EPPs m) = render_obj m
 
 instance Pretty PLProg where
-  pretty (PLProg _ ps cp) =
+  pretty (PLProg _ _ ps cp) =
     "#lang pl" <> hardline
       <> pretty ps
       <> hardline

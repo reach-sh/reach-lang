@@ -849,7 +849,7 @@ _verify_smt vst smt lp = do
   dspdr <- newIORef mempty
   bindingsrr <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
-  let LLProg at (SLParts pies_m) s = lp
+  let LLProg at (LLOpts {..}) (SLParts pies_m) s = lp
   let ctxt =
         SMTCtxt
           { ctxt_smt = smt

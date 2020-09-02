@@ -320,7 +320,7 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
 jsPLProg :: ConnectorResult -> PLProg -> Doc a
-jsPLProg cr (PLProg _ (EPPs pm) _) = modp
+jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
   where
     modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
     preamble = pretty $ "// Automatically generated with Reach " ++ versionStr
