@@ -265,7 +265,7 @@ export const connectAccount = async networkAccount => {
 
     const wait = async (delta) => {
       const targetTime = last_block + delta;
-      const waitP = waitUntilBlock(targetTime);
+      const waitP = waitUntilTime(targetTime);
       // TODO: make users start a block ticker explicitly?
       if (isIsolatedNetwork) {
         fastForwardTo(targetTime);
@@ -298,7 +298,7 @@ export const connectAccount = async networkAccount => {
           debug(e);
           // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
           await Timeout.set(1);
-          const current_block = await ethersp.getBlockNumber();
+          const current_block = await getNetworkTime();
           if ( current_block == block_send_attempt ) {
             block_repeat_count++; }
           block_send_attempt = current_block;
@@ -354,7 +354,7 @@ export const connectAccount = async networkAccount => {
 
           await Timeout.set(1);
           void(ethersBlockOnceP); // This might be a better option too, because we won't need to delay
-          block_poll_end = await ethersp.getBlockNumber();
+          block_poll_end = await getNetworkTime();
 
           continue;
         } else {
@@ -437,12 +437,12 @@ export const newTestAccount = async (startingBalance) => {
   }
 };
 
-export const getBlockNumber = async () => {
+export const getNetworkTime = async () => {
   const ethersp = await getEthersP();
   return await ethersp.getBlockNumber();
 };
 
-const waitUntilBlock = async (targetTime) => {
+const waitUntilTime = async (targetTime) => {
   const ethersp = await getEthersP();
   return await Promise((resolve) => {
     const onBlock = async (blockNumber) => {
@@ -453,14 +453,14 @@ const waitUntilBlock = async (targetTime) => {
     };
     ethersp.on('block', onBlock);
     // Also "re-emit" the current block
-    getBlockNumber().then(onBlock);
+    getNetworkTime().then(onBlock);
   });
 };
 
 export const fastForwardTo = async (targetTime) => {
   requireIsolatedNetwork('fastForwardTo');
-  while (await getBlockNumber() < targetTime) {
-    await nextBlock();
+  while (await getNetworkTime() < targetTime) {
+    await stepTime();
   }
 };
 
@@ -476,13 +476,14 @@ const requireIsolatedNetwork = (label) => {
 
 const dummyAccountP = (async () => {
   if (isIsolatedNetwork) {
-    return await newTestAccount(toWeiBigNumber('1000', 'ether')).catch();
+    return await newTestAccount(toWeiBigNumber('1000', 'ether'));
   } else {
-    return null;}
+    return null;
+  }
 })();
 
-export const nextBlock = async () => {
-  requireIsolatedNetwork('nextBlock');
+export const stepTime = async () => {
+  requireIsolatedNetwork('stepTime');
   const dummyAccount = await dummyAccountP;
   const acc = dummyAccount.networkAccount;
   return await transfer(acc, acc, toWeiBigNumber('0', 'ether'));

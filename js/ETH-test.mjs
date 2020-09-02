@@ -211,14 +211,14 @@ runTests(async () => { await describe('The `web3` stdlib', async () => {
   });
 
   await describe('block manipulation', async () => {
-    await stdlib.nextBlock();
-    expect(await stdlib.getBlockNumber()).toBe(2);
+    await stdlib.stepTime();
+    expect(await stdlib.getNetworkTime()).toBe(2);
 
-    await stdlib.nextBlock();
-    expect(await stdlib.getBlockNumber()).toBe(3);
+    await stdlib.stepTime();
+    expect(await stdlib.getNetworkTime()).toBe(3);
 
     await stdlib.fastForwardTo(7);
-    expect(await stdlib.getBlockNumber()).toBe(7);
+    expect(await stdlib.getNetworkTime()).toBe(7);
   });
 
 }); });

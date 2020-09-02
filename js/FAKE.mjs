@@ -101,18 +101,18 @@ export const newTestAccount = async (startingBalance) => {
   transfer(acc, REACHY_RICH, startingBalance);
   return await connectAccount( acc ); };
 
-export function getBlockNumber() {
+export function getNetworkTime() {
   return BLOCKS.length;
 }
 
 export function fastForwardTo(targetTime) {
   while ( BLOCKS.length < targetTime) {
-    nextBlock();
+    stepTime();
   }
 }
 
-export function nextBlock() {
-  BLOCKS.push({ type: 'next' });
+export function stepTime() {
+  BLOCKS.push({ type: 'step' });
 }
 
 export const ctcFromInfo = false; // XXX

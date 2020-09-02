@@ -69,7 +69,7 @@ import * as RPS from './build/index.main.mjs';
   const delayHand = async () => {
     for ( let i = 0; i < 10; i++ ) {
       console.log(`\tAlice takes her sweet time...`);
-      await stdlib.nextBlock();
+      await stdlib.stepTime();
     }
     return randomHand();
   };
