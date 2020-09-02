@@ -115,5 +115,4 @@ export function stepTime() {
   BLOCKS.push({ type: 'step' });
 }
 
-export const ctcFromInfo = false; // XXX
 export const newAccountFromMnemonic = false; // XXX

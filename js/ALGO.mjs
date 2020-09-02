@@ -287,7 +287,6 @@ export const newTestAccount = async (startingBalance) => {
   showBalance('after', acc);
   return await connectAccount(acc); };
 
-export const ctcFromInfo = false; // XXX
 export const newAccountFromMnemonic = false; // XXX
 
 export const stepTime = false; // XXX

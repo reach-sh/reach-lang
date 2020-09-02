@@ -228,28 +228,39 @@ const fetchAndRejectInvalidReceiptFor = async txHash => {
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
+const extractInfo = async (ctcOrInfo) => {
+  if ( ctcOrInfo.getInfo ) {
+    return extractInfo( await ctcOrInfo.getInfo() ); }
+  else if ( ctcOrInfo.address && ctcOrInfo.creation_block ) {
+    return ctcOrInfo; }
+  else {
+    throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`); } };
+
 export const connectAccount = async networkAccount => {
   // XXX networkAccount MUST be a wallet to deploy/attach
   const ethersp = await getEthersP();
   const { address } = networkAccount;
   const shad = address.substring(2,6);
 
-  const attach = async (bin, ctc) => {
-    const ctc_address = ctc.address;
-    const creation_block = ctc.creation_block;
-    const ABI = JSON.parse(bin._Connectors.ETH.ABI);
-    const ethersCtc = new ethers.Contract(ctc_address, ABI, networkAccount);
-    const eventOnceP = (e) =>
-          new Promise((resolve) => ethersCtc.once(e, (...a) => resolve(a)));
+  const attach = async (bin, parentCtc) => {
+    const info = await extractInfo(parentCtc);
+    const getInfo = async () =>
+          ({ address: info.address,
+             creation_block: info.creation_block });
 
-    debug(`${shad}: created at ${creation_block}`);
-    let last_block = creation_block;
+    const ABI = JSON.parse(bin._Connectors.ETH.ABI);
+    const ethersC = new ethers.Contract(info.address, ABI, networkAccount);
+    const eventOnceP = (e) =>
+          new Promise((resolve) => ethersC.once(e, (...a) => resolve(a)));
+
+    debug(`${shad}: created at ${info.creation_block}`);
+    let last_block = info.creation_block;
 
     const updateLast = o => { last_block = o.blockNumber; };
 
     const getEventData = (ok_evt, ok_e) => {
-      const ok_args_abi = ethersCtc.interface.getEvent(ok_evt).inputs;
-      const { args } = ethersCtc.interface.parseLog(ok_e);
+      const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
+      const { args } = ethersC.interface.parseLog(ok_e);
       const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => args[a.name]);
 
       return [ ok_bal, ok_vals ];
@@ -292,7 +303,7 @@ export const connectAccount = async networkAccount => {
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
-          const r_fn = await ethersCtc[funcName](munged, {value});
+          const r_fn = await ethersC[funcName](munged, {value});
           r_maybe = await r_fn.wait();
         } catch (e) {
           debug(e);
@@ -345,8 +356,8 @@ export const connectAccount = async networkAccount => {
         const es = await ethersp.getLogs({
           fromBlock: block_poll_start,
           toBlock: block_poll_end,
-          address: ethersCtc.address,
-          topics: [ethersCtc.interface.getEventTopic(ok_evt)],
+          address: ethersC.address,
+          topics: [ethersC.interface.getEventTopic(ok_evt)],
         });
         if ( es.length == 0 ) {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);
@@ -380,7 +391,7 @@ export const connectAccount = async networkAccount => {
       rec_res.didTimeout = true;
       return rec_res; };
 
-    return { ...ctc, sendrecv: sendrecv_top, recv: recv_top, iam, wait }; };
+    return { sendrecv: sendrecv_top, recv: recv_top, iam, wait, getInfo }; };
 
   // https://docs.ethers.io/v5/api/contract/contract-factory/
   const deploy = async (bin) => {
@@ -393,20 +404,10 @@ export const connectAccount = async networkAccount => {
     // This may be handled already in contract.deployed()
 
     const ctc = { address: contract.address, creation_block: deployTxn.blockNumber };
-    ctc.info = `{"address": "${ctc.address}", "creation_block": ${ctc.creation_block}}`;
-
     return await attach(bin, ctc);
   };
 
   return { deploy, attach, networkAccount }; };
-
-export const ctcFromInfo = (infoStr) => {
-  const obj = JSON.parse(infoStr);
-  if (!obj.address) {
-    throw Error(`Missing address`); }
-  else if (!obj.creation_block) {
-    throw Error(`Missing creation_block`); }
-  else { return obj; } };
 
 export const newAccountFromMnemonic = async (phrase) => {
   const ethersp = await etherspP;

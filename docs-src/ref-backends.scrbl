@@ -144,21 +144,19 @@ The details of the mnemonic phrase encoding are specified uniquely to the @tech{
 
 @(hrule)
 @js{
- ctc.info => string }
+ async ctc.getInfo() => ctcInfo }
 
-@index{ctc.info} Returns a string that may be given to @jsin{ctcFromInfo} to construct a Reach @tech{contract} abstraction representing this contract.
-
-@(hrule)
-@js{
- ctcFromInfo(string) => ctc }
-
-@index{ctcFromInfo} Constructs a Reach @tech{contract} abstraction from a string acquired via @jsin{ctc.info}.
+@index{ctc.getInfo} Returns an object that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
+This object may be stringified with @jsin{JSON.stringify} for printing and parsed again with @jsin{JSON.parse} without any loss of information.
 
 @(hrule)
 @js{
- async acc.attach(bin, ctc) => ctc }
+ async acc.attach(bin, ctcInfo) => ctc }
 
-@index{acc.attach} Returns a Reach @tech{contract} abstraction based on a deployed Reach @DApp @tech{contract} provided in the @jsin{ctc} argument and the @jsin{bin} argument. This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+@index{acc.attach} Returns a Reach @tech{contract} abstraction based on a deployed Reach @DApp @tech{contract} provided in the @jsin{ctcInfo} argument and the @jsin{bin} argument.
+This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+
+For convenience, if @jsin{ctcInfo} is an object with a @jsin{getInfo} method, it is called to extract the information; this means that the result of @jsin{deploy} is allowed as a valid input.
 
 @(hrule)
 @js{

@@ -24,11 +24,12 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
   if ( await ask(
     `Do you want to deploy the contract? (y/n)`, yesno) ) {
     ctc = await acc.deploy(backend);
-    console.log(`The contract is deployed as = ${ctc.info}`); }
+    const info = await ctc.getInfo();
+    console.log(`The contract is deployed as = ${JSON.stringify(info)}`); }
   else {
     const info = await ask(
       `Please paste the contract information:`,
-      stdlib.ctcFromInfo );
+      JSON.parse );
     ctc = await acc.attach(backend, info); }
 
   const getBalance = async () =>

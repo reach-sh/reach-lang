@@ -1374,58 +1374,57 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 23 32 "  // ..."]
+         'only 23 33 "  // ..."]
 
 @itemlist[
 
 @item{Lines 24 and 25 ask if the participant will deploy the contract.}
 
-@item{Lines 26 and 27 deploy it and print out public information (@jsin{ctc.info}) that can be given to the other player.}
+@item{Lines 26 and 28 deploy it and print out public information (@jsin{ctc.getInfo}) that can be given to the other player.}
 
-@item{Lines 29 through 27 request, parse, and process this information.
-@jsin{stdlib.ctcFromInfo} parses a @jsin{ctc.info} string into a @jsin{ctc} object.}
+@item{Lines 30 through 33 request, parse, and process this information.}
 
 ]
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 34 40 "  // ..."]
+         'only 35 41 "  // ..."]
 
 Next we define a few helper functions and start the participant interaction interface.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 42 44 "  // ..."]
+         'only 43 45 "  // ..."]
 
 First we define a timeout handler.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 46 59 "  // ..."]
+         'only 47 60 "  // ..."]
 
 Next, we request the wager amount or define the @jsin{acceptWager} method, depending on if we are Alice or not.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 61 75 "  // ..."]
+         'only 62 76 "  // ..."]
 
 Next, we define the shared @jsin{getHand} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 77 80 "  // ..."]
+         'only 78 81 "  // ..."]
 
 Finally, the @jsin{seeOutcome} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 82 89 "  // ..."]
+         'only 83 90 "  // ..."]
 
 Lastly, we choose the appropriate backend function and await its completion.
 
