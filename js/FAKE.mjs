@@ -58,7 +58,7 @@ export const connectAccount = async networkAccount => {
 
       if ( ! timeout_delay || BLOCKS.length < last_block + timeout_delay ) {
         debug(`${label} send ${funcNum} --- post`);
-        transfer(ctc, networkAccount, value);
+        transfer(networkAccount, ctc, value);
         BLOCKS[BLOCKS.length-1].event = { funcNum, from: address, data: args.slice(-1 * evt_cnt), value, balance: BALANCES[ctc.address] };
         return await recv( label, funcNum, evt_cnt, timeout_delay ); }
       else {
@@ -106,7 +106,7 @@ export const newTestAccount = async (startingBalance) => {
   const acc = makeAccount();
   debug(`new account: ${acc.address}`);
   BALANCES[REACHY_RICH.address] = startingBalance;
-  transfer(acc, REACHY_RICH, startingBalance);
+  transfer(REACHY_RICH, acc, startingBalance);
   return await connectAccount( acc );
 };
 
@@ -119,6 +119,7 @@ export function wait(delta, onProgress) {
 }
 
 export function waitUntilTime(targetTime, onProgress) {
+  onProgress = onProgress || (() => {});
   // FAKE is basically synchronous,
   // so it doesn't make sense to actually "wait" idly.
   while ( BLOCKS.length < targetTime) {
