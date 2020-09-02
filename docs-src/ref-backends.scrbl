@@ -200,7 +200,7 @@ It will receive an object with keys @jsin{currentTime} and @jsin{targetTime},
  async wait(timedelta, onProgress)
 }
 
-A convenience function for delaying by a certain @tech{time delta}.
+@index{wait} A convenience function for delaying by a certain @tech{time delta}.
 The expression @jsin{await wait(delta, onProgress)} is the same as
 @jsin{await waitUntilTime(await getCurrentTime() + delta, onProgress)}.
 
