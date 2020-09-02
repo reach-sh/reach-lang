@@ -289,6 +289,6 @@ export const newTestAccount = async (startingBalance) => {
 
 export const newAccountFromMnemonic = false; // XXX
 
-export const stepTime = false; // XXX
 export const getNetworkTime = false; // XXX
-export const fastForwardTo = false; // XXX
+export const waitUntilTime = false; // XXX
+export const wait = false; // XXX

@@ -8,14 +8,15 @@ console.log(`getting started...`);
 (async() => {
   const acc = await stdlib.newTestAccount(parseEth('100'));
   const beforeBal = await getBalance(acc);
-  console.log(`A starts with ${beforeBal}`);
+  const beforeTime = await stdlib.getNetworkTime();
+  console.log(`At ${beforeTime} A starts with ${beforeBal}`);
 
   const ask = async () => {
-    for (let i = 0; i < 15; i++) {
-      console.log(`acc keys: ${Object.keys(acc)}`);
-      console.log(`A delays...`);
-      await stdlib.transfer(acc.networkAccount, acc.networkAccount, parseEth('1'));
-    }
+    await stdlib.wait(15, ({currentTime, targetTime}) => {
+      if (currentTime < targetTime) {
+        console.log(`At ${currentTime} A is waiting for ${targetTime - currentTime} more...`);
+      }
+    });
     return 2;
   };
   const interact = {ask};
@@ -24,5 +25,6 @@ console.log(`getting started...`);
   await backend.A(stdlib, ctc, interact);
 
   const afterBal = await getBalance(acc);
-  console.log(`A now has ${afterBal}`);
+  const afterTime = await stdlib.getNetworkTime();
+  console.log(`At ${afterTime} A now has ${afterBal}`);
 })();

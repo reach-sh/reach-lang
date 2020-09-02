@@ -210,15 +210,35 @@ runTests(async () => { await describe('The `web3` stdlib', async () => {
     }
   });
 
-  await describe('block manipulation', async () => {
-    await stdlib.stepTime();
+  await describe('wait', async () => {
+    // Note: this test could go faster with a faster pollingInterval
+    // I think.
+    let prog0 = 1;
+    await stdlib.wait(1, ({currentTime}) => {
+      describe(`prog0: ${prog0}`, () => {
+        expect(currentTime >= 0 && currentTime <= 1).toBe(true);
+        prog0++;
+      });
+    });
+    expect(await stdlib.getNetworkTime()).toBe(1);
+
+    let prog1 = 1;
+    await stdlib.wait(1, ({currentTime}) => {
+      describe(`prog1: ${prog1}`, () => {
+        expect(currentTime >= 1 && currentTime <= 2).toBe(true);
+        prog1++;
+      });
+    });
     expect(await stdlib.getNetworkTime()).toBe(2);
 
-    await stdlib.stepTime();
-    expect(await stdlib.getNetworkTime()).toBe(3);
-
-    await stdlib.fastForwardTo(7);
-    expect(await stdlib.getNetworkTime()).toBe(7);
+    let prog2 = 1;
+    await stdlib.waitUntilTime(5, ({currentTime}) => {
+      describe(`prog2: ${prog2}`, () => {
+        expect(currentTime >= 2 && currentTime <= 5).toBe(true);
+        prog2++;
+      });
+    });
+    expect(await stdlib.getNetworkTime()).toBe(5);
   });
 
 }); });

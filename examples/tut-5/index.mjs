@@ -38,7 +38,7 @@ import * as backend from './build/index.main.mjs';
           if ( Math.random() <= 0.5 ) {
             for ( let i = 0; i < 10; i++ ) {
               console.log(`  Bob takes his sweet time...`);
-              await stdlib.transfer(accBob.networkAccount, accBob.networkAccount, toNetworkFormat('0')); }
+              await stdlib.wait(1); }
           } else {
             console.log(`Bob accepts the wager of ${stdlib.fromWei(amt)}.`); } } } )
   ]);

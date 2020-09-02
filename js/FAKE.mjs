@@ -4,8 +4,11 @@ import * as stdlib from './shared.mjs';
 export * from './shared.mjs';
 
 const DEBUG = false;
-const debug = msg => { if (DEBUG) {
-  console.log(`DEBUG@${BLOCKS.length}: ${msg}`); } };
+const debug = msg => {
+  if (DEBUG) {
+    console.log(`DEBUG@${BLOCKS.length}: ${msg}`);
+  }
+};
 
 const REACHY_RICH = { address: 'reachy_rich' };
 
@@ -23,7 +26,8 @@ export const transfer = async (to, from, value) => {
   debug(`transfer ${froma} -> ${toa} of ${value}`);
   BLOCKS.push({ to: toa, from: froma, value });
   BALANCES[toa] = stdlib.add(BALANCES[toa], value);
-  BALANCES[froma] = stdlib.sub(BALANCES[froma], value); };
+  BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
+};
 
 export const connectAccount = async networkAccount => {
   const { address } = networkAccount;
@@ -40,7 +44,8 @@ export const connectAccount = async networkAccount => {
     };
 
     const wait = (delta) => {
-      fastForwardTo(last_block + delta);
+      // Don't wait from current time, wait from last_block
+      waitUntilTime(last_block + delta);
     };
 
     const sendrecv = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
@@ -88,31 +93,35 @@ export const connectAccount = async networkAccount => {
 
   return { deploy, attach, networkAccount }; };
 
-const makeAccount =
-      () => {
-        const address = stdlib.random_uint256();
-        BALANCES[address] = 0;
-        return { address }; };
+const makeAccount = () => {
+  const address = stdlib.random_uint256();
+  BALANCES[address] = 0;
+  return { address };
+};
 
 export const newTestAccount = async (startingBalance) => {
   const acc = makeAccount();
   debug(`new account: ${acc.address}`);
   BALANCES[REACHY_RICH.address] = startingBalance;
   transfer(acc, REACHY_RICH, startingBalance);
-  return await connectAccount( acc ); };
+  return await connectAccount( acc );
+};
 
 export function getNetworkTime() {
   return BLOCKS.length;
 }
 
-export function fastForwardTo(targetTime) {
-  while ( BLOCKS.length < targetTime) {
-    stepTime();
-  }
+export function wait(delta, onProgress) {
+  return waitUntilTime(getNetworkTime() + delta, onProgress);
 }
 
-export function stepTime() {
-  BLOCKS.push({ type: 'step' });
+export function waitUntilTime(targetTime, onProgress) {
+  // FAKE is basically synchronous,
+  // so it doesn't make sense to actually "wait" idly.
+  while ( BLOCKS.length < targetTime) {
+    onProgress({currentTime: BLOCKS.length, targetTime});
+    BLOCKS.push({ type: 'wait' });
+  }
 }
 
 export const newAccountFromMnemonic = false; // XXX

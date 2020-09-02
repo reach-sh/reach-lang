@@ -39,6 +39,14 @@ export * from './shared.mjs';
 //   recv: function
 // }
 
+const connectorMode = getConnectorMode();
+
+// Certain functions either behave differently,
+// or are only available on an "isolated" network.
+const isIsolatedNetwork =
+      connectorMode.startsWith('ETH-test-dockerized') ||
+      connectorMode.startsWith('ETH-test-embedded');
+
 // Unique helpers
 
 export const toWei = (amt, unit) =>
@@ -76,8 +84,6 @@ void(flaky); // XXX
 // end private helpers
 
 // Common interface exports
-
-const connectorMode = getConnectorMode();
 
 const networkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
   type: 'embedded-ganache',
@@ -152,38 +158,41 @@ const devnetP = (async () => {
   return await doHealthcheck();
 })();
 
-const etherspP = (async () => {
-  if (networkDesc.type == 'uri') {
-    await devnetP;
-    const ethersp = new ethers.providers.JsonRpcProvider(networkDesc.uri);
-    ethersp.pollingInterval = 500; // ms
-    return ethersp;
-  } else if (networkDesc.type == 'embedded-ganache') {
-    const {default: ganache} = await import('ganache-core');
-    const default_balance_ether = '999999999';
-    const ganachep = ganache.provider({default_balance_ether});
-    return new ethers.providers.Web3Provider(ganachep);
-  } else {
-    // This lib was imported, but not for its net connection.
-    return null;
-  }
-})();
+// async () => provider
+const getProvider = (() => {
+  const etherspP = (async () => {
+    if (networkDesc.type == 'uri') {
+      await devnetP;
+      const provider = new ethers.providers.JsonRpcProvider(networkDesc.uri);
+      provider.pollingInterval = 500; // ms
+      return provider;
+    } else if (networkDesc.type == 'embedded-ganache') {
+      const {default: ganache} = await import('ganache-core');
+      const default_balance_ether = '999999999';
+      const ganachep = ganache.provider({default_balance_ether});
+      return new ethers.providers.Web3Provider(ganachep);
+    } else {
+      // This lib was imported, but not for its net connection.
+      return null;
+    }
+  })();
 
-async function getEthersP() {
-  const ethersp = await etherspP;
-  if (ethersp === null) {
-    throw Error(`Using stdlib/ETH is incompatible with REACH_CONNECTOR_MODE=${connectorMode}`);
-  } else {
-    return ethersp;
-  }
-}
+  return async () => {
+    const provider = await etherspP;
+    if (provider === null) {
+      throw Error(`Using stdlib/ETH is incompatible with REACH_CONNECTOR_MODE=${connectorMode}`);
+    } else {
+      return provider;
+    }
+  };
+})();
 
 
 // XXX expose setProvider
 
 const ethersBlockOnceP = async () => {
-  const ethersp = await getEthersP();
-  return new Promise((resolve) => ethersp.once('block', (n) => resolve(n)));
+  const provider = await getProvider();
+  return new Promise((resolve) => provider.once('block', (n) => resolve(n)));
 };
 
 export const balanceOf = async acc => {
@@ -193,8 +202,8 @@ export const balanceOf = async acc => {
   if (networkAccount.getBalance) {
     return bigNumberify(await acc.networkAccount.getBalance());
   } else if (networkAccount.address) {
-    const ethersp = await getEthersP();
-    return bigNumberify(await ethersp.getBalance(networkAccount.address));
+    const provider = await getProvider();
+    return bigNumberify(await provider.getBalance(networkAccount.address));
   } else throw Error(`acc.networkAccount.address missing. Got: ${networkAccount}`);
 };
 
@@ -203,7 +212,15 @@ export const balanceOf = async acc => {
 // const encode = (t, v) =>
 //   ethers.utils.defaultAbiCoder.encode([t], [v]);
 
-export const transfer = async (to, from, value) => {
+// Arg order follows "src before dst" convention
+// From and to may be:
+// * an acc
+// * a networkAccount
+// From may also be:
+// * getSigner()
+export const transfer = async (from, to, value) => {
+  if (from.networkAccount) return await transfer(from.networkAccount, to, value);
+  if (to.networkAccount) return await transfer(from, to.networkAccount, value);
   if (!to.address) throw Error(`Expected to.address: ${to}`);
   if (!from.sendTransaction) throw Error(`Expected from.sendTransaction: ${from}`);
   if (!isBigNumber(value)) throw Error(`Expected a BigNumber: ${value}`);
@@ -223,8 +240,8 @@ const rejectInvalidReceiptFor = async (txHash, r) =>
                   : resolve(r));
 
 const fetchAndRejectInvalidReceiptFor = async txHash => {
-  const ethersp = await getEthersP();
-  const r = await ethersp.getTransactionReceipt(txHash);
+  const provider = await getProvider();
+  const r = await provider.getTransactionReceipt(txHash);
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
@@ -238,7 +255,7 @@ const extractInfo = async (ctcOrInfo) => {
 
 export const connectAccount = async networkAccount => {
   // XXX networkAccount MUST be a wallet to deploy/attach
-  const ethersp = await getEthersP();
+  const provider = await getProvider();
   const { address } = networkAccount;
   const shad = address.substring(2,6);
 
@@ -275,13 +292,8 @@ export const connectAccount = async networkAccount => {
     };
 
     const wait = async (delta) => {
-      const targetTime = last_block + delta;
-      const waitP = waitUntilTime(targetTime);
-      // TODO: make users start a block ticker explicitly?
-      if (isIsolatedNetwork) {
-        fastForwardTo(targetTime);
-      }
-      await waitP;
+      // Don't wait from current time, wait from last_block
+      return await waitUntilTime(last_block + delta);
     };
 
     const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
@@ -353,7 +365,7 @@ export const connectAccount = async networkAccount => {
       let block_poll_end = block_poll_start;
       while ( ! timeout_delay || block_poll_start < last_block + timeout_delay ) {
         void(eventOnceP); // This might be nice for performance, but it may miss things too.
-        const es = await ethersp.getLogs({
+        const es = await provider.getLogs({
           fromBlock: block_poll_start,
           toBlock: block_poll_end,
           address: ethersC.address,
@@ -375,7 +387,7 @@ export const connectAccount = async networkAccount => {
 
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
           void(ok_r);
-          const ok_t = await ethersp.getTransaction(ok_e.transactionHash);
+          const ok_t = await provider.getTransaction(ok_e.transactionHash);
           debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
           updateLast(ok_t);
@@ -410,23 +422,42 @@ export const connectAccount = async networkAccount => {
   return { deploy, attach, networkAccount }; };
 
 export const newAccountFromMnemonic = async (phrase) => {
-  const ethersp = await etherspP;
-  const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(ethersp);
+  const provider = await getProvider();
+  const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(provider);
   const acc = await connectAccount(networkAccount);
-  return acc; };
+  return acc;
+};
+
+// async () => signer
+const getSigner = (() => {
+  const signerP = (async () => {
+    if (isIsolatedNetwork) {
+      const provider = await getProvider();
+      return provider.getSigner();
+    } else {
+      // Signer may not be accessed on non-isolated networks
+      return null;
+    }
+  })();
+
+  return async () => {
+    requireIsolatedNetwork('getSigner');
+    return await signerP;
+  };
+})();
 
 export const newTestAccount = async (startingBalance) => {
   debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork();
-  const ethersp = await getEthersP();
-  const prefunder = ethersp.getSigner();
+  const provider = await getProvider();
+  const signer = await getSigner();
 
-  const networkAccount = ethers.Wallet.createRandom().connect(ethersp);
+  const networkAccount = ethers.Wallet.createRandom().connect(provider);
   const to = networkAccount.address;
 
   try {
     debug(`awaiting transfer: ${to}`);
-    await transfer(networkAccount, prefunder, startingBalance);
+    await transfer(signer, networkAccount, startingBalance);
     debug(`got transfer. awaiting connectAccount: ${to}`);
     const acc = await connectAccount(networkAccount);
     debug(`got connectAccount: ${to}`);
@@ -438,35 +469,60 @@ export const newTestAccount = async (startingBalance) => {
 };
 
 export const getNetworkTime = async () => {
-  const ethersp = await getEthersP();
-  return await ethersp.getBlockNumber();
+  const provider = await getProvider();
+  return await provider.getBlockNumber();
 };
 
-const waitUntilTime = async (targetTime) => {
-  const ethersp = await getEthersP();
-  return await Promise((resolve) => {
-    const onBlock = async (blockNumber) => {
-      if (blockNumber >= targetTime) {
-        ethersp.off('block', onBlock);
-        resolve(blockNumber);
+// onProgress callback is optional, it will be given an obj
+// {currentTime, targetTime}
+export const wait = async (delta, onProgress) => {
+  const now = await getNetworkTime();
+  return await waitUntilTime(now + delta, onProgress);
+};
+
+// onProgress callback is optional, it will be given an obj
+// {currentTime, targetTime}
+export const waitUntilTime = async (targetTime, onProgress) => {
+  if (isIsolatedNetwork) {
+    return await fastForwardTo(targetTime, onProgress);
+  } else {
+    return actuallyWaitUntilTime(targetTime, onProgress);
+  }
+};
+
+// onProgress callback is optional, it will be given an obj
+// {currentTime, targetTime}
+const actuallyWaitUntilTime = async (targetTime, onProgress) => {
+  onProgress = onProgress || (() => {});
+  const provider = await getProvider();
+  return await new Promise((resolve) => {
+    const onBlock = async (currentTime) => {
+      // Does not block on the progress fn if it is async
+      onProgress({currentTime, targetTime});
+      if (currentTime >= targetTime) {
+        provider.off('block', onBlock);
+        resolve(currentTime);
       }
     };
-    ethersp.on('block', onBlock);
+    provider.on('block', onBlock);
+
     // Also "re-emit" the current block
+    // Note: this sometimes causes the starting block
+    // to be processed twice, which should be harmless.
     getNetworkTime().then(onBlock);
   });
 };
 
-export const fastForwardTo = async (targetTime) => {
+const fastForwardTo = async (targetTime, onProgress) => {
   requireIsolatedNetwork('fastForwardTo');
-  while (await getNetworkTime() < targetTime) {
+  let currentTime;
+  while ((currentTime = await getNetworkTime()) < targetTime) {
+    onProgress({currentTime, targetTime});
     await stepTime();
   }
+  // Also report progress at completion time
+  onProgress({currentTime, targetTime});
 };
-
-const isIsolatedNetwork =
-      connectorMode.startsWith('ETH-test-dockerized') ||
-      connectorMode.startsWith('ETH-test-embedded');
 
 const requireIsolatedNetwork = (label) => {
   if (!isIsolatedNetwork) {
@@ -475,16 +531,15 @@ const requireIsolatedNetwork = (label) => {
 };
 
 const dummyAccountP = (async () => {
-  if (isIsolatedNetwork) {
-    return await newTestAccount(toWeiBigNumber('1000', 'ether'));
-  } else {
-    return null;
-  }
+  const provider = await getProvider();
+  const networkAccount = ethers.Wallet.createRandom().connect(provider);
+  const acc = await connectAccount(networkAccount);
+  return acc;
 })();
 
-export const stepTime = async () => {
+const stepTime = async () => {
   requireIsolatedNetwork('stepTime');
-  const dummyAccount = await dummyAccountP;
-  const acc = dummyAccount.networkAccount;
-  return await transfer(acc, acc, toWeiBigNumber('0', 'ether'));
+  const signer = await getSigner();
+  const acc = await dummyAccountP;
+  return await transfer(signer, acc, toWeiBigNumber('0', 'ether'));
 };
