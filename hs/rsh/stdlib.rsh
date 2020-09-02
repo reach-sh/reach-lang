@@ -73,7 +73,8 @@ export function closeTo(Who, after) {
 
 // object functions
 
-// FIXME unfortunate that this name is taken here. Maybe I really need SLV_HaskellFunction
+// FIXME unfortunate that this name is taken here. Maybe I really need
+// SLV_HaskellFunction
 export function Object_set(o, k, e) {
   return {...o, [k]: e};
 }
