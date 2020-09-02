@@ -22,13 +22,13 @@ export async function Alice(stdlib, ctc, interact) {
     const v41 = stdlib.eq(0, v39);
     stdlib.assert(v41, {
       at: 'reach standard library:application',
-      fs: ['at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+      fs: ['at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
       who: 'Alice' });
     const v42 = txn3.balance;
     // stdlib.transfer(v28, v42);
     stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
       at: './index.rsh:40:33:application',
-      fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:73:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+      fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:71:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
       who: 'Alice' });
     
     return; }
@@ -51,8 +51,8 @@ export async function Alice(stdlib, ctc, interact) {
         fs: ['at ./index.rsh:61:51:after expr stmt semicolon call to "function" (defined at: ./index.rsh:58:19:function exp)'],
         who: 'Alice' });
       const v63 = stdlib.protect(stdlib.T_UInt256, await interact.random(), {
-        at: 'reach standard library:62:31:application',
-        fs: ['at ./index.rsh:60:52:application call to "makeCommitment (as function)" (defined at: reach standard library:61:8:function exp)', 'at ./index.rsh:61:51:after expr stmt semicolon call to "function" (defined at: ./index.rsh:58:19:function exp)'],
+        at: 'reach standard library:60:31:application',
+        fs: ['at ./index.rsh:60:52:application call to "makeCommitment (as function)" (defined at: reach standard library:59:8:function exp)', 'at ./index.rsh:61:51:after expr stmt semicolon call to "function" (defined at: ./index.rsh:58:19:function exp)'],
         who: 'Alice' });
       const v64 = stdlib.keccak256(v63, v61);
       
@@ -65,13 +65,13 @@ export async function Alice(stdlib, ctc, interact) {
         const v72 = stdlib.eq(0, v70);
         stdlib.assert(v72, {
           at: 'reach standard library:application',
-          fs: ['at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+          fs: ['at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
           who: 'Alice' });
         const v73 = txn4.balance;
         // stdlib.transfer(v34, v73);
         stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
           at: './index.rsh:40:33:application',
-          fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:73:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+          fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:71:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
           who: 'Alice' });
         
         return; }
@@ -92,13 +92,13 @@ export async function Alice(stdlib, ctc, interact) {
           const v88 = stdlib.eq(0, v86);
           stdlib.assert(v88, {
             at: 'reach standard library:application',
-            fs: ['at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+            fs: ['at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
             who: 'Alice' });
           const v89 = txn5.balance;
           // stdlib.transfer(v28, v89);
           stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
             at: './index.rsh:40:33:application',
-            fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:73:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+            fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:71:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
             who: 'Alice' });
           
           return; }
@@ -120,13 +120,13 @@ export async function Alice(stdlib, ctc, interact) {
             const v104 = stdlib.eq(0, v102);
             stdlib.assert(v104, {
               at: 'reach standard library:application',
-              fs: ['at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+              fs: ['at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
               who: 'Alice' });
             const v105 = txn6.balance;
             // stdlib.transfer(v34, v105);
             stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
               at: './index.rsh:40:33:application',
-              fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:73:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+              fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:71:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
               who: 'Alice' });
             
             return; }
@@ -141,8 +141,8 @@ export async function Alice(stdlib, ctc, interact) {
             const v112 = stdlib.keccak256(v96, v97);
             const v114 = stdlib.eq(v65, v112);
             stdlib.assert(v114, {
-              at: 'reach standard library:67:17:application',
-              fs: ['at ./index.rsh:77:24:application call to "checkCommitment (as function)" (defined at: reach standard library:66:8:function exp)'],
+              at: 'reach standard library:65:17:application',
+              fs: ['at ./index.rsh:77:24:application call to "checkCommitment (as function)" (defined at: reach standard library:64:8:function exp)'],
               who: 'Alice' });
             const v116 = stdlib.sub(4, v81);
             const v117 = stdlib.add(v97, v116);
@@ -184,13 +184,13 @@ export async function Bob(stdlib, ctc, interact) {
     const v41 = stdlib.eq(0, v39);
     stdlib.assert(v41, {
       at: 'reach standard library:application',
-      fs: ['at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+      fs: ['at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
       who: 'Bob' });
     const v42 = txn3.balance;
     // stdlib.transfer(v28, v42);
     stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
       at: './index.rsh:40:33:application',
-      fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:73:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+      fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:71:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
       who: 'Bob' });
     
     return; }
@@ -217,13 +217,13 @@ export async function Bob(stdlib, ctc, interact) {
         const v72 = stdlib.eq(0, v70);
         stdlib.assert(v72, {
           at: 'reach standard library:application',
-          fs: ['at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+          fs: ['at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
           who: 'Bob' });
         const v73 = txn4.balance;
         // stdlib.transfer(v34, v73);
         stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
           at: './index.rsh:40:33:application',
-          fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:73:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+          fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:71:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
           who: 'Bob' });
         
         return; }
@@ -249,13 +249,13 @@ export async function Bob(stdlib, ctc, interact) {
           const v88 = stdlib.eq(0, v86);
           stdlib.assert(v88, {
             at: 'reach standard library:application',
-            fs: ['at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+            fs: ['at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
             who: 'Bob' });
           const v89 = txn5.balance;
           // stdlib.transfer(v28, v89);
           stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
             at: './index.rsh:40:33:application',
-            fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:73:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+            fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:71:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
             who: 'Bob' });
           
           return; }
@@ -276,13 +276,13 @@ export async function Bob(stdlib, ctc, interact) {
             const v104 = stdlib.eq(0, v102);
             stdlib.assert(v104, {
               at: 'reach standard library:application',
-              fs: ['at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+              fs: ['at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
               who: 'Bob' });
             const v105 = txn6.balance;
             // stdlib.transfer(v34, v105);
             stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
               at: './index.rsh:40:33:application',
-              fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:73:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:69:8:function exp)'],
+              fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:71:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:67:8:function exp)'],
               who: 'Bob' });
             
             return; }
@@ -297,8 +297,8 @@ export async function Bob(stdlib, ctc, interact) {
             const v112 = stdlib.keccak256(v96, v97);
             const v114 = stdlib.eq(v65, v112);
             stdlib.assert(v114, {
-              at: 'reach standard library:67:17:application',
-              fs: ['at ./index.rsh:77:24:application call to "checkCommitment (as function)" (defined at: reach standard library:66:8:function exp)'],
+              at: 'reach standard library:65:17:application',
+              fs: ['at ./index.rsh:77:24:application call to "checkCommitment (as function)" (defined at: reach standard library:64:8:function exp)'],
               who: 'Bob' });
             const v116 = stdlib.sub(4, v81);
             const v117 = stdlib.add(v97, v116);
