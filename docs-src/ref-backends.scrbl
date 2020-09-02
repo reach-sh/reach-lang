@@ -166,9 +166,10 @@ For convenience, if @jsin{ctcInfo} is an object with a @jsin{getInfo} method, it
 
 @(hrule)
 @js{
- async transfer(from:networkAccount, to:networkAccount, amount) => void }
+ async transfer(from:acc, to:acc, amount:BigNumber) => void }
 
-@index{transfer} Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to}, which are provided by @tech{connector}-specific @tech{account} specifications.
+@index{transfer} Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to},
+which are @tech{account}s, such as those returned by @jsin{connectAccount}.
 
 @(hrule)
 @js{

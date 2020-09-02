@@ -19,7 +19,9 @@ const BALANCES = {};
 
 export const balanceOf = async acc => BALANCES[acc.address];
 
-export const transfer = async (to, from, value) => {
+export const transfer = async (from, to, value) => {
+  if (from.networkAccount) return await transfer(from.networkAccount, to, value);
+  if (to.networkAccount) return await transfer(from, to.networkAccount, value);
   const toa = to.address;
   const froma = from.address;
   stdlib.assert(stdlib.le(value, BALANCES[froma]));
@@ -27,6 +29,7 @@ export const transfer = async (to, from, value) => {
   BLOCKS.push({ to: toa, from: froma, value });
   BALANCES[toa] = stdlib.add(BALANCES[toa], value);
   BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
+  return null;
 };
 
 export const connectAccount = async networkAccount => {

@@ -83,7 +83,9 @@ const getTxnParams = async () => {
 const fillTxn = async ( round_width, txn ) => {
   return fillTxnWithParams( false, round_width, await getTxnParams(), txn ); };
 
-export const transfer = async (to, from, value) => {
+export const transfer = async (from, to, value) => {
+  if (from.networkAccount) return await transfer(from.networkAccount, to, value);
+  if (to.networkAccount) return await transfer(from, to.networkAccount, value);
   // FIXME these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
   const txn = await fillTxn( default_range_width, {
     'type': 'pay',
