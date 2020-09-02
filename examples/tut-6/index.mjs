@@ -17,7 +17,7 @@ import * as backend from './build/index.main.mjs';
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
   const Player = (Who) => ({
     ...stdlib.hasRandom,
-    getHand: async () => {
+    getHand: async () => { // <-- async now
       const hand = Math.floor(Math.random()*3);
       console.log(`${Who} played ${HAND[hand]}`);
       if ( Math.random() <= 0.01 ) {
