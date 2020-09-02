@@ -16,14 +16,17 @@ If you're ready, click through to the @seclink["tut-0"]{first step}!
 
 @section[#:tag "tut-0"]{Install and Initialize}
 
-Reach is designed to work on POSIX systems with @link["https://www.docker.com/get-started"]{Docker} and @link["https://docs.docker.com/compose/install/"]{Docker Compose}. installed.
+Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.
 The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
-You'll know that you have them install if you can run
 
+@margin-note{You probably already have @exec{make} installed.
+For example, OS X and many other POSIX systems come with @exec{make}, but some versions of Linux do not include it by default and will require you to install it.
+If you're on Ubuntu, you can run @exec{sudo apt install make}.}
+
+You'll know that you have everything installed if you can run the following three commands without errors
+
+@cmd{make --version}
 @cmd{docker --version}
-
-and
-
 @cmd{docker-compose --version}
 
 @margin-note{If you're using Windows, consult @seclink["guide-windows"]{the guide to using Reach on Windows}.}

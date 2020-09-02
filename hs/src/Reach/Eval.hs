@@ -1784,6 +1784,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                 rator = JSIdentifier a "require"
                 a = JSNoAnnot
                 rands = JSLOne $ JSExpressionBinary amte (JSBinOpEq a) rhs
+                --- FIXME Use something like delayapp and get rid of this hack.
                 rhs = JSCallExpression (JSIdentifier a "__txn.value__") a JSLNil a
              in evalExpr ctxt at sco_env' st_pure check_amte
           (tlifts, mt_st_cr, mtime') <-

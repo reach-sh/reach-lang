@@ -58,3 +58,5 @@ XXX
 @section[#:tag "workshop-ttt"]{Workshop: Tic-Tac-Toe}
 
 XXX
+
+XXX hash lock
