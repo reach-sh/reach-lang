@@ -69,8 +69,10 @@ import * as RPS from './build/index.main.mjs';
   const delayHand = async () => {
     for ( let i = 0; i < 10; i++ ) {
       console.log(`\tAlice takes her sweet time...`);
-      await stdlib.transfer(alice.networkAccount, alice.networkAccount, wagerAmount); }
-    return randomHand(); };
+      await stdlib.nextBlock();
+    }
+    return randomHand();
+  };
   await demo(RPS, delayHand);
 
   console.log(`\nRunning game that may not Draw\n`);
