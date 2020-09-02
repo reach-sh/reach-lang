@@ -15,7 +15,7 @@ import * as backend from './build/index.main.mjs';
 
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
-  const Player = (Who, accWho) => ({
+  const Player = (Who) => ({
     ...stdlib.hasRandom,
     getHand: async () => {
       const hand = Math.floor(Math.random()*3);
@@ -23,9 +23,7 @@ import * as backend from './build/index.main.mjs';
       if ( Math.random() <= 0.01 ) {
         for ( let i = 0; i < 10; i++ ) {
           console.log(`  ${Who} takes their sweet time sending it back...`);
-          await stdlib.wait(1);
-        }
-      }
+          await stdlib.wait(1); } }
       return hand; },
     seeOutcome: (outcome) =>
     console.log(`${Who} saw outcome ${OUTCOME[outcome]}`),
@@ -35,12 +33,12 @@ import * as backend from './build/index.main.mjs';
   await Promise.all([
     backend.Alice(
       stdlib, ctcAlice,
-      { ...Player('Alice', accAlice),
+      { ...Player('Alice'),
         wager: toNetworkFormat('5')
       }),
     backend.Bob(
       stdlib, ctcBob,
-      { ...Player('Bob', accBob),
+      { ...Player('Bob'),
         acceptWager: (amt) =>
         console.log(`Bob accepts the wager of ${stdlib.fromWei(amt)}.`)  } )
   ]);

@@ -954,7 +954,7 @@ Let's modify the JavaScript @tech{frontend} to deliberately cause a timeout some
 
 @itemlist[
 
-@item{Line 37 through 44 redefines Bob's @jsin{acceptWager} method as an asynchronous function where half of the time it will take at least ten blocks on the Ethereum network by performing ten useless transfer transactions.
+@item{Line 37 through 44 redefines Bob's @jsin{acceptWager} method as an asynchronous function where half of the time it will take at least ten blocks on the Ethereum network by waiting for ten units of time to pass.
 We know that ten is the value of @reachin{DEADLINE}, so this will cause a timeout.}
 
 ]
@@ -1024,41 +1024,32 @@ In this section, we extend our code so application so that Alice and Bob will co
 This will only require a change to the Reach program, not the JavaScript @tech{frontend}, but we will take the opportunity to modify the @tech{frontend} so that timeouts can happen to both parties when they are asked to submit their hands.
 Let's do that to get it out of the way and not distract from the main task of removing draws.
 
-We'll modify the @jsin{Player} interact object so that it will have a different @jsin{getHand} method, as well take an extra argument, for the player's account.
+We'll modify the @jsin{Player} interact object so that it will have a different @jsin{getHand} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-6/index.mjs"
          #:link #t
-         'only 18 33 "  // ..."]
+         'only 18 31 "  // ..."]
 
 @itemlist[
 
-@item{Line 18 adds the additional argument.
-We'll use this in the new @jsin{getHand} method.}
-
-@item{Lines 23 through 28 moves the forced timeout code that we wrote for Bob's @jsin{acceptWager} function into this method.
+@item{Lines 23 through 26 moves the forced timeout code that we wrote for Bob's @jsin{acceptWager} function into this method.
 We also change the threshold so that timeouts only happen 1% of the time.
 This isn't a very interesting behavior, so we'll make it much less frequent.}
 
-@item{Line 27 uses the new parameter so that the delaying player performs needless transfers to and from themselves.}
-
 ]
 
-We also adjust the calls to @jsin{Player} in Alice and Bob's initialization code to pass the extra parameter, as well as adjust Bob's @jsin{acceptWager} function to remove the timeout code, since we're testing that differently now.
+We also adjust Bob's @jsin{acceptWager} function to remove the timeout code, since we're testing that differently now.
 It's just a matter of reverting to the simpler version from before.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-6/index.mjs"
          #:link #t
-         'only 35 46 "  // ..."]
+         'only 33 44 "  // ..."]
 
 @itemlist[
 
-@item{Line 37 passes the new argument for Alice.}
-
-@item{Line 42 passes it for Bob.}
-
-@item{Line 44 and 45 has the simpler @jsin{acceptWager} method for Bob.}
+@item{Line 42 and 43 has the simpler @jsin{acceptWager} method for Bob.}
 
 ]
 
