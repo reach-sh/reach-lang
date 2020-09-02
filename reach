@@ -217,7 +217,7 @@ do_compile () {
       case "$RSH" in
         *.rsh)
           if [ -f "${RSH}" ]; then
-            (cd "$(dirname "$RSH")" && do_lint "$(basename "${RSH}")" || :)
+            (cd "$(dirname "$RSH")" && do_lint "$(basename "${RSH}")") || :
           fi
           ;;
       esac
