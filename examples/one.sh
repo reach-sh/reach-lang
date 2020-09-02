@@ -36,7 +36,6 @@ echo "$e"
         ../../reach compile
         ;;
       run)
-        echo "$(pwd)"
         ../../reach run
         ;;
       # XXX make reachc clean
