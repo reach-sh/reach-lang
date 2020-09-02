@@ -202,7 +202,7 @@ In this case, we'll choose Alice.
 This might seem like an unnecessary distinction to make, but it is a very subtle point about the way that Reach works.
 In our @tech{frontend}, we explicitly ran @reachin{backend.Alice} and @reachin{backend.Bob}.
 When we did that, we were committing that particular JavaScript thread to be either Alice or Bob.
-In our game, whoever choose to run the Alice backend is the one that will go first.
+In our game, whoever chose to run the Alice backend is the one that will go first.
 In other words, @bold{Alice goes first}.
 This will be more obvious at @seclink["tut-7"]{the end of the tutorial} when we'll make the choice interactively about which role to play.}
 
@@ -725,7 +725,7 @@ The second, line 19 in the JavaScript, adds @reachin{hasRandom} to the implement
 
 We're now at the crucial juncture where we will implement the actual application and ensure that Alice's hand is protected until after Bob reveals his hand.
 The simplest thing would be to have Alice just publish the wager, but this, of course, would just leave Bob vulnerable.
-We need to Alice to be able to publish her hand, but also keep it secret.
+We need Alice to be able to publish her hand, but also keep it secret.
 This is a job for a @link["https://en.wikipedia.org/wiki/Commitment_scheme"]{cryptographic commitment scheme}.
 Reach's standard library comes with @reachin{makeCommitment} to make this easier for you.
 
@@ -837,7 +837,7 @@ In this section, we'll focus on a more subtle issue that is important and unique
 
 Non-participation refers to the act of one party ceasing to continue playing their role in an application.
 
-In traditional client-server programs, like an Web server, this would be the case of a client stopping sending requests to the server, or the server stopping sending responses to the client.
+In traditional client-server programs, like a Web server, this would be the case of a client stopping sending requests to the server, or the server stopping sending responses to the client.
 In these sorts of traditional programs, non-participation is an exceptional circumstances that normally leads to an error message for clients and, at most, a log entry for servers.
 Sometimes traditional programs will need to recycle resources, like network ports, on non-participation, but they would have also needed to do that if the transaction ended by normal means.
 In other words, for traditional client-server programs, it is not necessary for designers to meticulously consider the consequences of non-participation.
@@ -1019,7 +1019,7 @@ In @seclink["tut-6"]{the next step}, we'll extend the application to disallow dr
 
 @section[#:tag "tut-6"]{Play and Play Again}
 
-In this section, we extend our code so application so that Alice and Bob will continue to play the against each other until their game does not end in a draw.
+In this section, we extend our application so that Alice and Bob will continue to play against each other until their game does not end in a draw.
 
 This will only require a change to the Reach program, not the JavaScript @tech{frontend}, but we will take the opportunity to modify the @tech{frontend} so that timeouts can happen to both parties when they are asked to submit their hands.
 Let's do that to get it out of the way and not distract from the main task of removing draws.
@@ -1501,7 +1501,7 @@ Let's review what we've done through this tutorial:
 
 @item{In @seclink["tut-3"]{part three}, we saw that it is just as easy for Reach to deal with tokens and network transactions as it is to deal with data sharing.}
 
-@item{In @seclink["tut-4"]{part four}, we were introduce to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
+@item{In @seclink["tut-4"]{part four}, we introduce you to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
 
 @item{In @seclink["tut-5"]{part five}, we saw how Reach allows you to specify how to deal with @seclink["guide-timeout"]{non-participation} and protect against funds being locked in contracts.}
 
@@ -1538,13 +1538,13 @@ Now that you've seen an entire Reach application from beginning to end, it's tim
 
 @item{You may want to start @seclink["workshop"]{the workshop}, which is a self-study course on practicing and learning Reach through different specific projects.}
 
-@item{Or, maybe you'd like to spent some time in @seclink["guide"]{the guide} learning about the background of some of the concepts used in Reach programs.}
+@item{Or, maybe you'd like to spend some time in @seclink["guide"]{the guide} learning about the background of some of the concepts used in Reach programs.}
 
 @item{Or, maybe it's time for you to dive into @seclink["ref"]{the reference} and look into the minutae of Reach's features.}
 
 ]
 
-Now matter what you decide to read or work on next, we hope you'll join us on @(the-community-link).
+No matter what you decide to read or work on next, we hope you'll join us on @(the-community-link).
 Once you join, message @litchar{@"@"team, I just completed the tutorial!} and we'll give you the @litchar{tutorial veteran} role, so you can more easily help others work through it!
 
 Thanks for spending your afternoon with us!
