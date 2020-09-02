@@ -191,6 +191,21 @@ There should be nothing interesting or controversial about these implementations
 
 Let's return to the Reach program and look inside of the body of the program for what actions Alice and Bob take.
 
+In a real-life game of @|RPS|, Alice and Bob simultaneously decide what hand they will play and reveal it at the same time.
+"Simultaneity" is a complex concept that is hard to realize in practice.
+For example, if you've ever player against a little kid, you may notice them trying to see what you're going to choose and delaying until the last minute to show their hand so they will win.
+In a decentralized application, it is not possible to have simultaneity.
+Instead, we have to select a particular participant who will "go first".
+In this case, we'll choose Alice.
+
+@margin-note{Does Alice go first, or do we call the player that goes first "Alice"?
+This might seem like an unnecessary distinction to make, but it is a very subtle point about the way that Reach works.
+In our @tech{frontend}, we explicitly ran @reachin{backend.Alice} and @reachin{backend.Bob}.
+When we did that, we were committing that particular JavaScript thread to be either Alice or Bob.
+In our game, whoever choose to run the Alice backend is the one that will go first.
+In other words, @bold{Alice goes first}.
+This will be more obvious at @seclink["tut-7"]{the end of the tutorial} when we'll make the choice interactively about which role to play.}
+
 The game proceeds in three steps.
 
 First, Alice's backend interacts with her frontend, gets her hand, and publishes it.
@@ -519,7 +534,9 @@ No matter what Alice chooses, Bob will always win.
 
 @(hrule)
 
-In fact, Reach comes with an    @seclink["guide-assert"]{automatic verification} engine that we can use to mathematically prove that this version will always result in the @reachin{outcome} variable equalling @reachin{0}, which means Bob wins.
+Is it just a fluke of the random number generator that we observed Bob always winning?
+How would we know?
+Reach comes with an    @seclink["guide-assert"]{automatic verification} engine that we can use to mathematically prove that this version will always result in the @reachin{outcome} variable equalling @reachin{0}, which means Bob wins.
 We can instruct Reach to prove this theorem by adding these lines after computing the @reachin{outcome}:
 
 @reachex[#:show-lines? #t "tut-4-attack/index.rsh"
@@ -680,6 +697,9 @@ And we can specify that whenever the same value is provided for both hands, no m
          'only 17 18 "// ..."]
 
 These examples both use @reachin{forall}, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
+You might think that these theorems will take a very long time to prove, because they have to loop over all @(number->nice-string (expt 2 (* 256 3))) possibilities for the bits of @reachin{handA} (twice!) and @reachin{handB}.
+In fact, on the author's MacBook Pro from early 2015, it takes less than half a second.
+That's because Reach uses an advanced @seclink["guide-reach"]{symbolic execution engine} to reason about this theorem abstractly without considering individual values.
 
 Let's continue the program by specifying the @tech{participant interact interface}s for Alice and Bob.
 These will be mostly the same as before, except that we will also expect that each @tech{frontend} can provide access to random numbers.
@@ -826,7 +846,7 @@ Similarly, if after Bob accepted and paid his wager, Alice stopped participating
 In each of these cases, both parties would be greatly hurt and their fear of that outcome would introduce an additional cost to transacting, which would lower the value they got from participating in the application.
 Of course, in a situation like @|RPS| this is unlikely to be an important matter, but recall that @|RPS| is a microcosm of decentralized application design.
 
-@margin-note{Technically, in the first case, when Bob fails to start the application, Alice is not locked away from her funds: since Bob's identity is not fixed until after his first message, she could start the game as Bob and then she'd win all of the funds, less any transaction costs of the @tech{consensus network}.
+@margin-note{Technically, in the first case, when Bob fails to start the application, Alice is not locked away from her funds: since Bob's identity is not fixed until after his first message, she could start another instance of the game as the Bob role and then she'd win all of the funds, less any transaction costs of the @tech{consensus network}.
 In the second case, however, there would be no recourse for either party.}
 
 In the rest of this section, we'll discuss how Reach helps address non-participation.

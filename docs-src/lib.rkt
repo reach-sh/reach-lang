@@ -193,3 +193,28 @@
         (cons from to)
         (drop (reverse (drop (reverse (add-nums input)) to)) from))]))
   (maybe-link link-loc (apply mode (add-between sel "\n"))))
+
+(define (number->nice-string n)
+  (define fullr
+    (append*
+     (for/list ([c (in-list (reverse (string->list (number->string n))))]
+                [i (in-naturals)])
+       (if (and (zero? (modulo i 3)) (not (zero? i)))
+         (list #\, c)
+         (list c)))))
+  (define len (length fullr))
+  (define before 30)
+  (define after 32)
+  (if (< len (+ before after))
+    (list->string
+     (reverse fullr))
+    (list->string
+     (append (take (reverse fullr) before)
+             (string->list
+              (format "...~a digits..."
+                      (- len before after)))
+             (reverse (take fullr after))))))
+(module+ test
+  (number->nice-string 123456)
+  (number->nice-string (expt 2 (* 256 3))))
+
