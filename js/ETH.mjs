@@ -514,6 +514,7 @@ const actuallyWaitUntilTime = async (targetTime, onProgress) => {
 };
 
 const fastForwardTo = async (targetTime, onProgress) => {
+  onProgress = onProgress || (() => {});
   requireIsolatedNetwork('fastForwardTo');
   let currentTime;
   while ((currentTime = await getNetworkTime()) < targetTime) {
