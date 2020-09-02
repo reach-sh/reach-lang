@@ -60,3 +60,5 @@ XXX
 XXX
 
 XXX hash lock
+
+XXX use design recipe

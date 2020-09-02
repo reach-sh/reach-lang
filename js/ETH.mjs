@@ -382,8 +382,7 @@ export const connectAccount = async networkAccount => {
 
     return { ...ctc, sendrecv: sendrecv_top, recv: recv_top, iam, wait }; };
 
-  // Not sure where the v4 contract docs are but this was just as good
-  // https://docs.ethers.io/ethers.js/v5-beta/api-contract.html#deployment
+  // https://docs.ethers.io/v5/api/contract/contract-factory/
   const deploy = async (bin) => {
     const { ABI, Bytecode } = bin._Connectors.ETH;
     const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
