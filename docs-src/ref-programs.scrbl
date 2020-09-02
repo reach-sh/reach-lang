@@ -260,9 +260,9 @@ However, some additional expressions are allowed.
 @subsubsection{@tt{unknowable}}
 
 @reach{
- unknowable( Notter, Knower(var_0, ..., var_N) ) }
+ unknowable( Notter, Knower(expr_0, ..., expr_N) ) }
 
-@index{unknowable} A @tech{knowledge assertion} that the @tech{participant} @reachin{Notter} @emph{does not} know the variables @reachin{var_0} through @reachin{var_N} which the @tech{participant} @reachin{Knower} @emph{does} know.
+@index{unknowable} A @tech{knowledge assertion} that the @tech{participant} @reachin{Notter} @emph{does not} know the results of the evaluations of expressions @reachin{expr_0} through @reachin{expr_N}, but that the @tech{participant} @reachin{Knower} @emph{does} know those values.
 
 @subsubsection{@tt{closeTo}}
 
