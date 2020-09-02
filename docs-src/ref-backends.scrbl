@@ -17,14 +17,14 @@ The @jsin{stdlib} argument is provided by either
  @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
  @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs};}
  @item{the module @litchar{@"@"reach-sh/stdlib/FAKE.mjs}; or,}
- @item{the async function @litchar{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
+ @item{the @jsin{async} function @litchar{loadStdlib} from @litchar{@"@"reach-sh/stdlib/loader.mjs}.}
 ]
 
 The @jsin{ctc} argument is the result of a call to @jsin{acc.deploy} or @jsin{acc.attach}.
 
 The @jsin{interact} argument is an object matching the @tech{participant interact interface} for the corresponding @tech{participant}.
 
-@(hrule)
+@subsection[#:tag "ref-backend-js-guarantees"]{Guarantees}
 
 This backend does not guarantee that values in a positive position in a @tech{participant interact interface}, that are later passed to a negative position in a @tech{participant interact interface}, will be identical, in the sense of JavaScript's @jsin{===} operator, to the original value.
 In other words, this backend does not ensure that Reach programs are parametric over JavaScript values that they interact with.
@@ -54,9 +54,9 @@ is given the @jsin{interact} object,
 then it is not guaranteed that @reachin{A} will publish @reachin{true}, because the @jsin{str} given to @jsin{give} may not be identical to @jsin{x}.
 (However, they are @jsin{bytes_eq}.)
 
-@(hrule)
+@subsection[#:tag "ref-backend-js-loader.mjs"]{@tt{loader.mjs}}
 
-The @jsin{loader} module exports the following functions
+The @tt{loader.mjs} module exports the following functions
 that might help you write code that is portable to multiple consensus networks.
 
 @(hrule)
@@ -102,7 +102,7 @@ You may omit the @jsin{connectorMode} argument, in which case
 @jsin{getConnectorMode()} will be used to select the correct stdlib.
 
 
-@(hrule)
+@subsection[#:tag "ref-backend-js-stdlib"]{Standard Library}
 
 The @jsin{stdlib} modules export the following functions that might be used in this @tech{frontend}:
 
@@ -172,7 +172,8 @@ The details of the mnemonic phrase encoding are specified uniquely to the @tech{
 
 @index{transfer} Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to}, which are provided by @tech{connector}-specific @tech{account} specifications.
 
-@(hrule)
+@subsubsection[#:tag "ref-backend-js-stdlib-utils"]{Utilities}
+
 @js{
  protect(t x) => x }
 
@@ -274,7 +275,10 @@ Integer arithmetic on uint256.
 
 Integer comparisons on uint256.
 
-@(hrule)
+@subsection[#:tag "ref-backend-js-ETH.mjs"]{@tt{ETH.mjs}}
+
+The following exports are defined only in the Ethereum standard library.
+
 @js{
  toWei(ether) => wei
  fromWei(wei) => ether
@@ -282,7 +286,7 @@ Integer comparisons on uint256.
 
 Wei conversion functions only exported by the stdlib for ETH.
 
-@(hrule)
+@subsection[#:tag "ref-backend-js-ask.mjs"]{@tt{ask.mjs}}
 
 This backend also provides the helper module @litchar{@"@"reach-sh/stdlib/ask.mjs} for constructing console interfaces to your @tech{frontends}.
 

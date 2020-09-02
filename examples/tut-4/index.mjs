@@ -16,7 +16,7 @@ import * as backend from './build/index.main.mjs';
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
   const Player = (Who) => ({
-    ...stdlib.hasRandom,
+    ...stdlib.hasRandom, // <--- new!
     getHand: () => { const hand = Math.floor(Math.random()*3);
                      console.log(`${Who} played ${HAND[hand]}`);
                      return hand; },

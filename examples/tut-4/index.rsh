@@ -18,7 +18,7 @@ forall(UInt256, (hand) =>
   assert(winner(hand, hand) == DRAW));
 
 const Player =
-      { ...hasRandom,
+      { ...hasRandom, // <--- new!
         getHand: Fun([], UInt256),
         seeOutcome: Fun([UInt256], Null) };
 const Alice =

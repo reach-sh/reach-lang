@@ -707,18 +707,21 @@ We'll use these later on to protect Alice's hand.
 
 @reachex[#:show-lines? #t "tut-4/index.rsh"
          #:link #t
-         'only 20 35 "// ..."]
+         'only 20 23 "// ..."]
 
 The only line that is different is line 21, which includes @reachin{hasRandom}, from the Reach standard library, in the interface.
-
-This is the source of the only line that needs to change in our JavaScript @tech{frontend} as well:
 
 @reachex[#:mode js
          #:show-lines? #t "tut-4/index.mjs"
          #:link #t
          'only 18 24 "  // ..."]
 
-This line of JavaScript allows each @tech{participant}'s Reach code to generate random numbers as necessary.
+Similarly, we only need to modify one line of our JavaScript @tech{frontend}.
+Line 19 allows each @tech{participant}'s Reach code to generate random numbers as necessary.
+
+These two changes might look identical, but they mean very different things.
+The first, line 21 in the Reach program, adds @reachin{hasRandom} to the interface that the @tech{backend} expects the @tech{frontend} to provide.
+The second, line 19 in the JavaScript, adds @reachin{hasRandom} to the implementation that the @tech{frontend} provides to the @tech{backend}.
 
 We're now at the crucial juncture where we will implement the actual application and ensure that Alice's hand is protected until after Bob reveals his hand.
 The simplest thing would be to have Alice just publish the wager, but this, of course, would just leave Bob vulnerable.
