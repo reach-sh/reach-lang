@@ -486,7 +486,7 @@ export const waitUntilTime = async (targetTime, onProgress) => {
   if (isIsolatedNetwork) {
     return await fastForwardTo(targetTime, onProgress);
   } else {
-    return actuallyWaitUntilTime(targetTime, onProgress);
+    return await actuallyWaitUntilTime(targetTime, onProgress);
   }
 };
 
