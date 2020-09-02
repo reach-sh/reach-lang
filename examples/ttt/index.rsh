@@ -69,8 +69,8 @@ function applyMove(st, m) {
   require(validMove(st, m));
   const turn = st.xs_turn;
   return { xs_turn: ! turn,
-           xs: (turn ? array_set(st.xs, m, true) : st.xs),
-           os: (turn ? st.os : array_set(st.os, m, true)) }; }
+           xs: (turn ? st.xs.set(m, true) : st.xs),
+           os: (turn ? st.os : st.os.set(m, true)) }; }
 
 const ttt_winner_is_x = ( st ) => winning_p(st.xs);
 const ttt_winner_is_o = ( st ) => winning_p(st.os);

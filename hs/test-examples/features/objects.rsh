@@ -36,7 +36,7 @@ export const main = Reach.App(
     assert(x == 1);
     assert(obj4a.y == 'yval');
 
-    const obj4b = object_set(obj4, field, 2);
+    const obj4b = Object.set(obj4, field, 2);
     assert(obj4b.x == 2);
 
     // object field shorthand

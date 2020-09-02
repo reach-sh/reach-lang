@@ -94,11 +94,11 @@ class ReachLexer(RegexLexer):
              r'decodeURIComponent|encodeURI|encodeURIComponent|'
              r'Error|eval|isFinite|isNaN|isSafeInteger|parseFloat|parseInt|'
              # The reach ones
-             r'UInt256|Reach|App|Fun|Null|Bool|Bytes|Address|Tuple|Obj|'
+             r'UInt256|Reach|App|Fun|Null|Bool|Bytes|Address|Tuple|Participant|'
              r'balance|digest|implies|ensure|hasRandom|makeCommitment|checkCommitment|closeTo|'
              r'and|or|add|sub|mul|div|mod|lt|le|gt|ge|lsh|rsh|band|bior|bxor|eq|neq|'
-             r'poly_eq|bytes_eq|type_eq|int_eq|ite|typeOf|is_type|'
-             r'array|array_set|makeEnum|'
+             r'polyEq|polyNeq|typeEq|intEq|ite|typeOf|isType|'
+             r'array|makeEnum|'
              r'document|this|window)\b', Name.Builtin),
             (JS_IDENT, Name.Other),
             (r'"(\\\\|\\"|[^"])*"', String.Double),

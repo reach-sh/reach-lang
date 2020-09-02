@@ -207,7 +207,7 @@ export const keccak256 = (...args) => {
 };
 
 export const hexToBigNumber = h => bigNumberify(hexTo0x(h));
-export const uint256_to_bytes = i => bigNumberToHex(i);
+export const uint256ToBytes = i => bigNumberToHex(i);
 
 export const bigNumberToHex = (u) => {
   const size = 32; // bytes // TODO: support other sizes?
@@ -219,14 +219,14 @@ export const bigNumberToHex = (u) => {
   return hexlify(nFix).slice(2);
 };
 
-export const bytes_eq = (x, y) =>
+export const bytesEq = (x, y) =>
   hexOf(x) === hexOf(y);
 
-export const random_uint256 = () =>
+export const randomUInt256 = () =>
   hexToBigNumber(byteArrayToHex(crypto.randomBytes(32)));
 
 export const hasRandom = {
-  random: random_uint256 };
+  random: randomUInt256 };
 
 export const eq    = (a, b) => bigNumberify(a).eq( bigNumberify(b));
 export const add   = (a, b) => bigNumberify(a).add(bigNumberify(b));
@@ -241,7 +241,7 @@ export const lt    = (a, b) => bigNumberify(a).lt( bigNumberify(b));
 
 // Array helpers
 
-export function array_set(arr, idx, elem) {
+export function Array_set(arr, idx, elem) {
   const arrp = arr.slice();
   arrp[idx] = elem;
   return arrp; }

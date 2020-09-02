@@ -14,7 +14,7 @@ export const main =
       commit();
 
       C.publish();
-      part_set(B, b);
+      Participant.set(B, b);
       commit();
 
       exit(); });

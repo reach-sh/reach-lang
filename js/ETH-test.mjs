@@ -37,7 +37,7 @@ runTests(async () => { await describe('The `web3` stdlib', async () => {
     const handHex = stdlib.toHex(hand);
 
     it('works correctly with `bytes_eq`', () => {
-      expect(stdlib.bytes_eq(handHex, hand)).toBe(true);
+      expect(stdlib.bytesEq(handHex, hand)).toBe(true);
     });
     it('is idempotent', () => {
       expect(stdlib.toHex(handHex)).toBe(handHex);

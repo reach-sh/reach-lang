@@ -4,9 +4,9 @@ export const main = Reach.App(
   {}, [['A', {x: Bytes}]], (A) => {
     A.only(() => {
       const x = declassify(interact.x);
-      assume(bytes_eq(x, 'x'));
+      assume(bytesEq(x, 'x'));
     });
     A.publish(x);
-    require(bytes_eq(x, 'x'));
+    require(bytesEq(x, 'x'));
   }
 );

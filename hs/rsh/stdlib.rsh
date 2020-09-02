@@ -2,30 +2,28 @@
 
 export function not (x) {
   return (x ? false : true); }
-export const bool_eq = (x, y) => (x ? y : !y);
+export const boolEq = (x, y) => (x ? y : !y);
 
 // Polymorphic eq made from builtins
-export const poly_eq = (x, y) => {
+export const polyEq = (x, y) => {
   const ty_x = typeOf(x);
   // TODO: add structural equality for arrays and objects
-  if (type_eq(ty_x, Bool)) {
-    return bool_eq(x, y);
-  } else if (type_eq(ty_x, Bytes)) {
-    return bytes_eq(x, y);
-  } else if (is_type(x)) {
-    return type_eq(x, y);
+  if (typeEq(ty_x, Bool)) {
+    return boolEq(x, y);
+  } else if (typeEq(ty_x, Bytes)) {
+    return bytesEq(x, y);
+  } else if (isType(x)) {
+    return typeEq(x, y);
   } else {
-    return int_eq(x, y);
+    return intEq(x, y);
   }
 };
 
 // Operator abbreviation expansions
 export function minus (x) {
   return 0 - x; }
-export function neq (x, y) {
+export function polyNeq (x, y) {
   return not(x == y); }
-export function bytes_neq (x, y) {
-  return not(x === y); }
 
 // Operator aliases
 export const add = (x, y) => x + y;
@@ -73,10 +71,9 @@ export function closeTo(Who, after) {
   after();
   exit(); }
 
-function __decode_testing__() {
-  return txn.value; }
-
 // object functions
-export function object_set(o, k, e) {
+
+// FIXME unfortunate that this name is taken here. Maybe I really need SLV_HaskellFunction
+export function Object_set(o, k, e) {
   return {...o, [k]: e};
 }

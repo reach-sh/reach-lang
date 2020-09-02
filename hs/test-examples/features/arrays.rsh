@@ -10,7 +10,7 @@ export const main = Reach.App(
 
     A.only(() => {
       const _xs3 = interact.get();
-      const xs4 = declassify(tuple_set(_xs3, 1, 1)); });
+      const xs4 = declassify(Tuple.set(_xs3, 1, 1)); });
     A.publish(xs4);
     commit();
 

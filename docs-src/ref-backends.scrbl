@@ -52,7 +52,7 @@ is given the @jsin{interact} object,
    give: (str) => x === str } }
 
 then it is not guaranteed that @reachin{A} will publish @reachin{true}, because the @jsin{str} given to @jsin{give} may not be identical to @jsin{x}.
-(However, they are @jsin{bytes_eq}.)
+(However, they are @jsin{bytesEq}.)
 
 @subsection[#:tag "ref-backend-js-loader.mjs"]{@tt{loader.mjs}}
 
@@ -212,7 +212,7 @@ Throws an exception if not given @jsin{true}.
 
 @(hrule)
 @js{
- array_set(arr, idx, val) }
+ Array_set(arr, idx, val) }
 
 Returns a new array identical to @jsin{arr}, except that index @jsin{idx} is @jsin{val}.
 
@@ -232,8 +232,8 @@ the JavaScript representation of Reach's uint256.
  hexToString(bytes) => string
  hexToBigNumber(bytes) => uint256
  bigNumberToHex(uint256) => bytes
- uint256_to_bytes(uint256) => bytes
- bytes_eq(bytes, bytes) => bool }
+ uint256ToBytes(uint256) => bytes
+ bytesEq(bytes, bytes) => bool }
 
 These are additional conversion and comparison utilities.
 
@@ -245,9 +245,9 @@ These are additional conversion and comparison utilities.
 
 @(hrule)
 @js{
- random_uint256() => uint256}
+ randomUInt256() => uint256}
 
-@index{random_uint256} Creates 256 random bits as a uint256.
+@index{randomUInt256} Creates 256 random bits as a uint256.
 
 @(hrule)
 @js{

@@ -338,13 +338,13 @@ However, some additional statements are allowed.
 
 A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @tech{statement}'s @tech{continuation} as the next @tech{step} of the @DApp computation. In other words, it ends the current @tech{consensus step} and allows more @tech{local steps}.
 
-@subsubsection{@tt{part_set} and @tt{.set}}
+@subsubsection{@tt{Participant.set} and @tt{.set}}
 
 @reach{
- part_set(PART, ADDR);
+ Participant.set(PART, ADDR);
  PART.set(ADDR); }
 
-@index{part_set} Assigns the given @tech{participant} to the given address.
+@index{Participant.set} Assigns the given @tech{participant} to the given address.
 If a @tech{backend} is running for this @tech{participant} and its address does not match the given address, then it will abort.
 This may only occur within a @tech{consensus step}.
 
@@ -670,13 +670,13 @@ Reach's @deftech{type}s are represented with programs by the following identifie
 
 @reach{
  typeOf(x)  // type
- is_type(t) // Bool
+ isType(t) // Bool
 }
 
 The @reachin{typeOf} primitive function is the same as @reachin{typeof}:
 it returns the type of its argument.
-The @reachin{is_type} function returns @reachin{true} if its argument is a type.
-Any expression satisfying @reachin{is_type} is compiled away and does not exist at runtime.
+The @reachin{isType} function returns @reachin{true} if its argument is a type.
+Any expression satisfying @reachin{isType} is compiled away and does not exist at runtime.
 
 @subsubsection{Literal values}
 
@@ -747,24 +747,24 @@ Boolean operations, like @reachin{&&}, only operate on booleans.
 It is @tech{invalid} to use binary operations on the wrong types of @tech{values}.
 
 @reach{
- and(a, b)  // &&
- or(a, b)   // ||
- add(a, b)  // +
- sub(a, b)  // -
- mul(a, b)  // *
- div(a, b)  // /
- mod(a, b)  // %
- lt(a, b)   // <
- le(a, b)   // <=
- ge(a, b)   // >=
- gt(a, b)   // >
- lsh(a, b)  // <<
- rsh(a, b)  // >>
- band(a, b) // &
- bior(a, b) // |
- bxor(a, b) // ^
- eq(a, b)   // ==, ===
- neq(a, b)  // !=, !==
+ and(a, b)     // &&
+ or(a, b)      // ||
+ add(a, b)     // +
+ sub(a, b)     // -
+ mul(a, b)     // *
+ div(a, b)     // /
+ mod(a, b)     // %
+ lt(a, b)      // <
+ le(a, b)      // <=
+ ge(a, b)      // >=
+ gt(a, b)      // >
+ lsh(a, b)     // <<
+ rsh(a, b)     // >>
+ band(a, b)    // &
+ bior(a, b)    // |
+ bxor(a, b)    // ^
+ polyEq(a, b)  // ==, ===
+ polyNeq(a, b) // !=, !==
 }
 
 All @tech{binary expression} operators have a corresponidng named function in the standard library.
@@ -772,11 +772,11 @@ Note that while @reachin{&&} and @reachin{||} may not evaluate their second argu
 their corresponding named functions @reachin{and} and @reachin{or}, always do.
 
 @reach{
- poly_eq(a, b)  // eq on Bool, Bytes, types, or UInt256
- bool_eq(a, b)  // eq on Bool
- bytes_eq(a, b) // eq on Bytes
- type_eq(a, b)  // eq on types
- int_eq(a, b)   // eq on UInt256
+ polyEq(a, b)  // eq on Bool, Bytes, types, or UInt256
+ boolEq(a, b)  // eq on Bool
+ bytesEq(a, b) // eq on Bytes
+ typeEq(a, b)  // eq on types
+ intEq(a, b)   // eq on UInt256
 }
 
 Note that @reachin{==} is a function which operates on multiple types.
@@ -818,18 +818,18 @@ and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural numbe
 selects the element at the given index of the array.
 Indices start at zero.
 
-@subsubsection{@tt{tuple_set}, @tt{array_set}, and @tt{.set}}
+@subsubsection{@tt{Tuple.set}, @tt{Array.set}, and @tt{.set}}
 
 @reach{
- tuple_set(tup, idx, val);
+ Tuple.set(tup, idx, val);
  tup.set(idx, val);
- array_set(arr, idx, val);
+ Array.set(arr, idx, val);
  arr.set(idx, val); }
 
-@index{tuple_set} Returns a new tuple identical to @reachin{tup},
+@index{Tuple.set} Returns a new tuple identical to @reachin{tup},
 except that index @reachin{idx} is replaced with @reachin{val}.
 
-@index{array_set} Returns a new array identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
+@index{Array.set} Returns a new array identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
 
@@ -875,14 +875,15 @@ where @reachin{OBJ} is an expression of type object,
 and @reachin{FIELD} is a @tech{valid} @tech{identifier},
 accesses the FIELD @deftech{field} of object OBJ.
 
-@subsubsection{@tt{object_set}}
+@subsubsection{@tt{Object.set}}
 
 @reach{
- object_set(obj, fld, val);
+ Object.set(obj, fld, val);
+ Object_set(obj, fld, val);
  { ...obj, [fld]: val };
 }
 
-@index{object_set} Returns a new object identical to @reachin{obj},
+@index{Object.set} Returns a new object identical to @reachin{obj},
 except that field @reachin{fld} is replaced with @reachin{val}.
 
 @subsubsection{Conditional expression}

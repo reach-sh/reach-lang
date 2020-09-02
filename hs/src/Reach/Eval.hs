@@ -418,20 +418,21 @@ base_env =
     , ("forall", SLV_Prim SLPrim_forall)
     , ("Array", SLV_Prim SLPrim_Array)
     , ("array", SLV_Prim SLPrim_array)
-    , ("array_set", SLV_Prim SLPrim_array_set)
     , ("Tuple", SLV_Prim SLPrim_Tuple)
-    , ("tuple_set", SLV_Prim SLPrim_tuple_set)
     , ("Object", SLV_Prim SLPrim_Object)
     , ("Fun", SLV_Prim SLPrim_Fun)
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
-    , ("int_eq", SLV_Prim $ SLPrim_op PEQ)
-    , ("bytes_eq", SLV_Prim $ SLPrim_op BYTES_EQ)
-    , ("is_type", SLV_Prim SLPrim_is_type)
-    , ("type_eq", SLV_Prim SLPrim_type_eq)
+    , ("intEq", SLV_Prim $ SLPrim_op PEQ)
+    , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
+    , ("isType", SLV_Prim SLPrim_is_type)
+    , ("typeEq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ("wait", SLV_Prim SLPrim_wait)
-    , ("part_set", SLV_Prim SLPrim_part_set)
+    , ("Participant"
+       , (SLV_Object srcloc_top (Just $ "Participant") $
+         m_fromList_public
+           [("set", SLV_Prim SLPrim_part_set)]))
     , ( "Reach"
       , (SLV_Object srcloc_top (Just $ "Reach") $
            m_fromList_public
@@ -631,18 +632,18 @@ binaryToPrim at env o =
   case o of
     JSBinOpAnd _ -> impossible "and"
     JSBinOpDivide a -> prim a (DIV)
-    JSBinOpEq a -> fun a "poly_eq"
+    JSBinOpEq a -> fun a "polyEq"
     JSBinOpGe a -> prim a (PGE)
     JSBinOpGt a -> prim a (PGT)
     JSBinOpLe a -> prim a (PLE)
     JSBinOpLt a -> prim a (PLT)
     JSBinOpMinus a -> prim a (SUB)
     JSBinOpMod a -> prim a (MOD)
-    JSBinOpNeq a -> fun a "neq"
+    JSBinOpNeq a -> fun a "polyNeq"
     JSBinOpOr _ -> impossible "or"
     JSBinOpPlus a -> prim a (ADD)
-    JSBinOpStrictEq a -> fun a "poly_eq"
-    JSBinOpStrictNeq a -> fun a "bytes_neq"
+    JSBinOpStrictEq a -> fun a "polyEq"
+    JSBinOpStrictNeq a -> fun a "polyNeq"
     JSBinOpTimes a -> prim a (MUL)
     JSBinOpLsh a -> prim a (LSH)
     JSBinOpRsh a -> prim a (RSH)
@@ -674,7 +675,7 @@ infectWithId v (lvl, sv) = (lvl, sv')
         _ -> sv
 
 evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
-evalDot ctxt at _sco st obj field =
+evalDot ctxt at sco st obj field =
   case obj of
     SLV_Object _ _ env ->
       case M.lookup field env of
@@ -690,7 +691,7 @@ evalDot ctxt at _sco st obj field =
         "publish" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing)
         "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing)
         "set" -> delayCall SLPrim_part_set
-        _ -> illegal_field ["only", "publish", "pay"]
+        _ -> illegal_field ["only", "publish", "pay", "set"]
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
       case field of
         "publish" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime)
@@ -701,11 +702,33 @@ evalDot ctxt at _sco st obj field =
       case field of
         "set" -> delayCall SLPrim_tuple_set
         "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
-        _ -> illegal_field ["set"]
+        _ -> illegal_field ["set", "length"]
+    SLV_DLVar (DLVar _ _ (T_Tuple ts) _) ->
+      case field of
+        "set" -> delayCall SLPrim_tuple_set
+        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length ts
+        _ -> illegal_field ["set", "length"]
     SLV_Array _ _ vs ->
       case field of
         "set" -> delayCall SLPrim_array_set
         "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
+        _ -> illegal_field ["set", "length"]
+    SLV_DLVar (DLVar _ _ (T_Array _ sz) _) ->
+      case field of
+        "set" -> delayCall SLPrim_array_set
+        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ sz
+        _ -> illegal_field ["set", "length"]
+    SLV_Prim SLPrim_Tuple ->
+      case field of
+        "set" -> retV $ public $ SLV_Prim $ SLPrim_tuple_set
+        _ -> illegal_field ["set"]
+    SLV_Prim SLPrim_Array ->
+      case field of
+        "set" -> retV $ public $ SLV_Prim $ SLPrim_array_set
+        _ -> illegal_field ["set"]
+    SLV_Prim SLPrim_Object ->
+      case field of
+        "set" -> retV $ env_lookup at "Object_set" $ sco_env sco
         _ -> illegal_field ["set"]
     v ->
       expect_throw at (Err_Eval_NotObject v)
