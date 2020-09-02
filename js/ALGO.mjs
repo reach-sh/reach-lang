@@ -289,3 +289,7 @@ export const newTestAccount = async (startingBalance) => {
 
 export const ctcFromInfo = false; // XXX
 export const newAccountFromMnemonic = false; // XXX
+
+export const nextBlock = false; // XXX
+export const getBlockNumber = false; // XXX
+export const fastForwardTo = false; // XXX

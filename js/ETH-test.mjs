@@ -1,8 +1,9 @@
 import { runTests, describe, it, expect } from './tester.mjs';
 import * as stdlib from './ETH.mjs';
 import * as ALGO_stdlib from './ALGO.mjs';
+import * as FAKE_stdlib from './FAKE.mjs';
 
-runTests(() => { describe('The `web3` stdlib', () => {
+runTests(async () => { await describe('The `web3` stdlib', async () => {
   const bigNumberify = stdlib.bigNumberify;
 
   describe('exposes a `bigNumberToHex` function that', () => {
@@ -196,14 +197,28 @@ runTests(() => { describe('The `web3` stdlib', () => {
 
   describe('exports', () => {
     const stdlibExports = Object.keys(stdlib).sort();
-    const algoStdlibExports = Object.keys(ALGO_stdlib).sort();
 
-    it('should only export a few extra things compared to ALGO', () =>
-       expect(stdlibExports.filter(x => !algoStdlibExports.includes(x)))
-       .toBe(['fromWei', 'toWei', 'toWeiBigNumber']));
+    for (const [otherName, otherStdlib] of [['ALGO', ALGO_stdlib], ['FAKE', FAKE_stdlib]]) {
+      const otherStdlibExports = Object.keys(otherStdlib).sort();
+      it(`should only export a few extra things compared to ${otherName}`, () =>
+         expect(stdlibExports.filter(x => !otherStdlibExports.includes(x)))
+         .toBe(['fromWei', 'toWei', 'toWeiBigNumber']));
 
-    it('should export everything that ALGO does', () =>
-       expect(algoStdlibExports.filter(x => !stdlibExports.includes(x)))
-       .toBe([]));
+      it(`should export everything that ${otherName} does`, () =>
+         expect(otherStdlibExports.filter(x => !stdlibExports.includes(x)))
+         .toBe([]));
+    }
   });
+
+  await describe('block manipulation', async () => {
+    await stdlib.nextBlock();
+    expect(await stdlib.getBlockNumber()).toBe(2);
+
+    await stdlib.nextBlock();
+    expect(await stdlib.getBlockNumber()).toBe(3);
+
+    await stdlib.fastForwardTo(7);
+    expect(await stdlib.getBlockNumber()).toBe(7);
+  });
+
 }); });

@@ -5,11 +5,10 @@ export * from './shared.mjs';
 
 const DEBUG = false;
 const debug = msg => { if (DEBUG) {
-  console.log(`DEBUG@${BLOCK_NUMBER}: ${msg}`); } };
+  console.log(`DEBUG@${BLOCKS.length}: ${msg}`); } };
 
 const REACHY_RICH = { address: 'reachy_rich' };
 
-let BLOCK_NUMBER = 0;
 // This can be exposed to the user for checking the trace of blocks
 // for testing.
 const BLOCKS = [];
@@ -22,7 +21,7 @@ export const transfer = async (to, from, value) => {
   const froma = from.address;
   stdlib.assert(stdlib.le(value, BALANCES[froma]));
   debug(`transfer ${froma} -> ${toa} of ${value}`);
-  BLOCKS[BLOCK_NUMBER++] = { to: toa, from: froma, value };
+  BLOCKS.push({ to: toa, from: froma, value });
   BALANCES[toa] = stdlib.add(BALANCES[toa], value);
   BALANCES[froma] = stdlib.sub(BALANCES[froma], value); };
 
@@ -41,18 +40,18 @@ export const connectAccount = async networkAccount => {
     };
 
     const wait = (delta) => {
-      while ( BLOCK_NUMBER < (last_block + delta) ) {
-        BLOCKS[ BLOCK_NUMBER++ ] = { type: 'wait' }; } };
+      fastForwardTo(last_block + delta);
+    };
 
     const sendrecv = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
       // XXX use try_p to figure out what transfers from the contract
       // to make, like in ALGO
       void(try_p);
 
-      if ( ! timeout_delay || BLOCK_NUMBER < last_block + timeout_delay ) {
+      if ( ! timeout_delay || BLOCKS.length < last_block + timeout_delay ) {
         debug(`${label} send ${funcNum} --- post`);
         transfer(ctc, networkAccount, value);
-        BLOCKS[BLOCK_NUMBER-1].event = { funcNum, from: address, data: args.slice(-1 * evt_cnt), value, balance: BALANCES[ctc.address] };
+        BLOCKS[BLOCKS.length-1].event = { funcNum, from: address, data: args.slice(-1 * evt_cnt), value, balance: BALANCES[ctc.address] };
         return await recv( label, funcNum, evt_cnt, timeout_delay ); }
       else {
         debug(`${label} send ${funcNum} --- timeout`);
@@ -65,7 +64,7 @@ export const connectAccount = async networkAccount => {
         const b = BLOCKS[check_block];
         if ( ! b || ! b.event || b.event.funcNum != funcNum ) {
           debug(`${label} recv ${funcNum} --- wait`);
-          check_block = Math.min( check_block + 1, BLOCK_NUMBER );
+          check_block = Math.min( check_block + 1, BLOCKS.length );
           await Timeout.set(1);
           continue; }
         else {
@@ -83,7 +82,7 @@ export const connectAccount = async networkAccount => {
     const contract = makeAccount();
     debug(`new contract: ${contract.address}`);
     return await attach(bin, { ...contract,
-                               creation_block: BLOCK_NUMBER,
+                               creation_block: BLOCKS.length,
                                events: {} });
   };
 
@@ -101,3 +100,20 @@ export const newTestAccount = async (startingBalance) => {
   BALANCES[REACHY_RICH.address] = startingBalance;
   transfer(acc, REACHY_RICH, startingBalance);
   return await connectAccount( acc ); };
+
+export function getBlockNumber() {
+  return BLOCKS.length;
+}
+
+export function fastForwardTo(targetTime) {
+  while ( BLOCKS.length < targetTime) {
+    nextBlock();
+  }
+}
+
+export function nextBlock() {
+  BLOCKS.push({ type: 'next' });
+}
+
+export const ctcFromInfo = false; // XXX
+export const newAccountFromMnemonic = false; // XXX

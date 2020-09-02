@@ -263,12 +263,14 @@ export const connectAccount = async networkAccount => {
       }
     };
 
-    const wait = (delta) => {
-      void(delta);
-      // If we are on a real network, then actually wait.
-      // If we are on a fake network, then stimulate it by making transfers?
-      // Maybe replace the empty transfers in the example code with this?
-      throw Error(`XXX Not implemented: wait`);
+    const wait = async (delta) => {
+      const targetTime = last_block + delta;
+      const waitP = waitUntilBlock(targetTime);
+      // TODO: make users start a block ticker explicitly?
+      if (isIsolatedNetwork) {
+        fastForwardTo(targetTime);
+      }
+      await waitP;
     };
 
     const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
@@ -368,9 +370,10 @@ export const connectAccount = async networkAccount => {
           updateLast(ok_t);
           const [ ok_bal, ok_vals ] = getEventData(ok_evt, ok_e);
 
-          debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`)
-          ;
-          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from }; } }
+          debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
+          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from };
+        }
+      }
 
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);
       const rec_res = {};
@@ -414,6 +417,7 @@ export const newAccountFromMnemonic = async (phrase) => {
 
 export const newTestAccount = async (startingBalance) => {
   debug(`newTestAccount(${startingBalance})`);
+  requireIsolatedNetwork();
   const ethersp = await getEthersP();
   const prefunder = ethersp.getSigner();
 
@@ -431,4 +435,55 @@ export const newTestAccount = async (startingBalance) => {
     console.log(`Trouble with account ${to}`);
     throw e;
   }
+};
+
+export const getBlockNumber = async () => {
+  const ethersp = await getEthersP();
+  return await ethersp.getBlockNumber();
+};
+
+const waitUntilBlock = async (targetTime) => {
+  const ethersp = await getEthersP();
+  return await Promise((resolve) => {
+    const onBlock = async (blockNumber) => {
+      if (blockNumber >= targetTime) {
+        ethersp.off('block', onBlock);
+        resolve(blockNumber);
+      }
+    };
+    ethersp.on('block', onBlock);
+    // Also "re-emit" the current block
+    getBlockNumber().then(onBlock);
+  });
+};
+
+export const fastForwardTo = async (targetTime) => {
+  requireIsolatedNetwork('fastForwardTo');
+  while (await getBlockNumber() < targetTime) {
+    await nextBlock();
+  }
+};
+
+const isIsolatedNetwork =
+      connectorMode.startsWith('ETH-test-dockerized') ||
+      connectorMode.startsWith('ETH-test-embedded');
+
+const requireIsolatedNetwork = (label) => {
+  if (!isIsolatedNetwork) {
+    throw Error(`Invalid operation ${label} in REACH_CONNECTOR_MODE=${connectorMode}`);
+  }
+};
+
+const dummyAccountP = (async () => {
+  if (isIsolatedNetwork) {
+    return await newTestAccount(toWeiBigNumber('1000', 'ether')).catch();
+  } else {
+    return null;}
+})();
+
+export const nextBlock = async () => {
+  requireIsolatedNetwork('nextBlock');
+  const dummyAccount = await dummyAccountP;
+  const acc = dummyAccount.networkAccount;
+  return await transfer(acc, acc, toWeiBigNumber('0', 'ether'));
 };
