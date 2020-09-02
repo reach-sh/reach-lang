@@ -20,10 +20,5 @@ Verification failed:
   at ./assume_false.rsh:7:13:application
   at ./assume_false.rsh:12:7:after expr stmt semicolon call to "function" (defined at: ./assume_false.rsh:5:15:function exp)
 
-  Theorem formalization:
-  false
-
-  This could be violated if...
-
-  In context...
+  (details omitted on repeat)
 Checked 5 theorems; 2 failures. :'(

@@ -954,7 +954,7 @@ Let's modify the JavaScript @tech{frontend} to deliberately cause a timeout some
 
 @itemlist[
 
-@item{Line 37 through 44 redefines Bob's @jsin{acceptWager} method so half of the time it will take at least ten blocks on the Ethereum network by performing ten useless transfer transactions.
+@item{Line 37 through 44 redefines Bob's @jsin{acceptWager} method as an asynchronous function where half of the time it will take at least ten blocks on the Ethereum network by performing ten useless transfer transactions.
 We know that ten is the value of @reachin{DEADLINE}, so this will cause a timeout.}
 
 ]

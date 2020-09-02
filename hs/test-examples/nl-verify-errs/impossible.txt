@@ -24,14 +24,5 @@ Verification failed:
   at ./impossible.rsh:8:15:application
   at ./impossible.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./impossible.rsh:5:15:function exp)
 
-  Theorem formalization:
-  v2
-
-  This could be violated if...
-
-  In context...
-    "v2" = (< v1 0 )
-      (from: v2)
-      (bound at: ./impossible.rsh:application)
-      (because: evaluating PLT(v1, DLC_Int 0))
+  (details omitted on repeat)
 Checked 5 theorems; 2 failures. :'(

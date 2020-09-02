@@ -133,6 +133,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_while_invariant :: Maybe (LLBlock LLLocal)
   , ctxt_loop_var_subst :: M.Map DLVar DLArg
   , ctxt_primed_vars :: S.Set DLVar
+  , ctxt_displayed :: IORef (S.Set SExpr)
   }
 
 ctxt_mode :: SMTCtxt -> VerifyMode
@@ -275,8 +276,8 @@ set_to_seq = Seq.fromList . S.toList
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
 
-display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe ResultDesc -> IO ()
-display_fail ctxt tat f tk tse mrd = do
+display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Bool -> Maybe ResultDesc -> IO ()
+display_fail ctxt tat f tk tse repeated mrd = do
   cwd <- getCurrentDirectory
   putStrLn $ "Verification failed:"
   putStrLn $ "  in " ++ (show $ ctxt_mode ctxt) ++ " mode"
@@ -284,65 +285,70 @@ display_fail ctxt tat f tk tse mrd = do
   putStrLn $ redactAbsStr cwd $ "  at " ++ show tat
   mapM_ (putStrLn . ("  " ++) . show) f
   putStrLn $ ""
-  --- FIXME Another way to think about this is to take `tse` and fully
-  --- substitute everything that came from the program (the "context"
-  --- below) and then just show the remaining variables found by the
-  --- model.
-  putStrLn $ "  Theorem formalization:"
-  putStrLn $ "  " ++ (SMT.showsSExpr (smtAddPathConstraints ctxt tse) "")
-  putStrLn $ ""
-  putStrLn $ "  This could be violated if..."
-  let pm =
-        case mrd of
-          Nothing ->
-            mempty
-          Just (RD_UnsatCore _uc) -> do
-            --- FIXME Do something useful here
-            mempty
-          Just (RD_Model m) -> do
-            parseModel m
-  bindingsm <- readIORefRef $ ctxt_bindingsrr ctxt
-  let show_vars :: (S.Set String) -> (Seq.Seq String) -> IO [String]
-      show_vars shown q =
-        case q of
-          Seq.Empty -> return $ []
-          (v0 Seq.:<| q') -> do
-            (vc, v0vars) <-
-              case M.lookup v0 bindingsm of
-                Nothing ->
-                  return $ (mempty, mempty)
-                Just (mdv, at, bo, mvse) -> do
-                  let this se =
-                        [("    " ++ show v0 ++ " = " ++ (SMT.showsSExpr se ""))]
-                          ++ (case mdv of
-                                Nothing -> mempty
-                                Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
-                          ++ (map
-                                (redactAbsStr cwd)
-                                [ ("      (bound at: " ++ show at ++ ")")
-                                , ("      (because: " ++ show bo ++ ")")
-                                ])
-                  case mvse of
+  case repeated of
+    True -> do
+      --- FIXME have an option to force these to display
+      putStrLn $ "  (details omitted on repeat)"
+    False -> do
+      --- FIXME Another way to think about this is to take `tse` and fully
+      --- substitute everything that came from the program (the "context"
+      --- below) and then just show the remaining variables found by the
+      --- model.
+      putStrLn $ "  Theorem formalization:"
+      putStrLn $ "  " ++ (SMT.showsSExpr (smtAddPathConstraints ctxt tse) "")
+      putStrLn $ ""
+      putStrLn $ "  This could be violated if..."
+      let pm =
+            case mrd of
+              Nothing ->
+                mempty
+              Just (RD_UnsatCore _uc) -> do
+                --- FIXME Do something useful here
+                mempty
+              Just (RD_Model m) -> do
+                parseModel m
+      bindingsm <- readIORefRef $ ctxt_bindingsrr ctxt
+      let show_vars :: (S.Set String) -> (Seq.Seq String) -> IO [String]
+          show_vars shown q =
+            case q of
+              Seq.Empty -> return $ []
+              (v0 Seq.:<| q') -> do
+                (vc, v0vars) <-
+                  case M.lookup v0 bindingsm of
                     Nothing ->
-                      --- FIXME It might be useful to do `get-value` rather than parse
-                      case M.lookup v0 pm of
+                      return $ (mempty, mempty)
+                    Just (mdv, at, bo, mvse) -> do
+                      let this se =
+                            [("    " ++ show v0 ++ " = " ++ (SMT.showsSExpr se ""))]
+                            ++ (case mdv of
+                                  Nothing -> mempty
+                                  Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
+                            ++ (map
+                                 (redactAbsStr cwd)
+                                 [ ("      (bound at: " ++ show at ++ ")")
+                                 , ("      (because: " ++ show bo ++ ")")
+                                 ])
+                      case mvse of
                         Nothing ->
-                          return $ mempty
-                        Just (_ty, se) -> do
-                          mapM_ putStrLn (this se)
-                          return $ ([], seVars se)
-                    Just se ->
-                      return $ ((this se), seVars se)
-            let nvars = S.difference v0vars shown
-            let shown' = S.union shown nvars
-            let new_q = set_to_seq nvars
-            let q'' = q' <> new_q
-            liftM (vc ++) $ show_vars shown' q''
-  let tse_vars = seVars tse
-  vctxt <- show_vars tse_vars $ set_to_seq $ tse_vars
-  putStrLn $ ""
-  putStrLn $ "  In context..."
-  mapM_ putStrLn vctxt
+                          --- FIXME It might be useful to do `get-value` rather than parse
+                          case M.lookup v0 pm of
+                            Nothing ->
+                              return $ mempty
+                            Just (_ty, se) -> do
+                              mapM_ putStrLn (this se)
+                              return $ ([], seVars se)
+                        Just se ->
+                          return $ ((this se), seVars se)
+                let nvars = S.difference v0vars shown
+                let shown' = S.union shown nvars
+                let new_q = set_to_seq nvars
+                let q'' = q' <> new_q
+                liftM (vc ++) $ show_vars shown' q''
+      let tse_vars = seVars tse
+      vctxt <- show_vars tse_vars $ set_to_seq $ tse_vars
+      putStrLn $ ""
+      putStrLn $ "  In context..."
+      mapM_ putStrLn vctxt
 
 smtAddPathConstraints :: SMTCtxt -> SExpr -> SExpr
 smtAddPathConstraints ctxt se = se'
@@ -379,7 +385,9 @@ verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
       modifyIORef (ctxt_res_succ ctxt) $ (1 +)
     bad mgetm = do
       mm <- mgetm
-      display_fail ctxt at mf tk se mm
+      dspd <- readIORef $ ctxt_displayed ctxt
+      display_fail ctxt at mf tk se (elem se dspd) mm
+      modifyIORef (ctxt_displayed ctxt) (S.insert se)
       modifyIORef (ctxt_res_fail ctxt) $ (1 +)
     isPossible =
       case tk of
@@ -838,6 +846,7 @@ _smtDefineTypes smt ts = do
 _verify_smt :: VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt vst smt lp = do
   SMT.loadString smt smtStdLib
+  dspdr <- newIORef mempty
   bindingsrr <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
   let LLProg at (SLParts pies_m) s = lp
@@ -855,6 +864,7 @@ _verify_smt vst smt lp = do
           , ctxt_while_invariant = Nothing
           , ctxt_loop_var_subst = mempty
           , ctxt_primed_vars = mempty
+          , ctxt_displayed = dspdr
           }
   let defineIE who (v, it) =
         case it of

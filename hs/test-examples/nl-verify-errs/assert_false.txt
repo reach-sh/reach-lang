@@ -17,10 +17,5 @@ Verification failed:
   of theorem TAssert
   at ./assert_false.rsh:5:11:application
 
-  Theorem formalization:
-  false
-
-  This could be violated if...
-
-  In context...
+  (details omitted on repeat)
 Checked 4 theorems; 2 failures. :'(

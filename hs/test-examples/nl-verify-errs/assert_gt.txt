@@ -28,18 +28,5 @@ Verification failed:
   at ./assert_gt.rsh:8:13:application
   at ./assert_gt.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./assert_gt.rsh:5:15:function exp)
 
-  Theorem formalization:
-  v2
-
-  This could be violated if...
-    "v1" = 0
-      (from: v1)
-      (bound at: ./assert_gt.rsh:6:31:application)
-      (because: evaluating interact("A")."getX"())
-
-  In context...
-    "v2" = (> v1 0 )
-      (from: v2)
-      (bound at: ./assert_gt.rsh:application)
-      (because: evaluating PGT(v1, DLC_Int 0))
+  (details omitted on repeat)
 Checked 5 theorems; 2 failures. :'(
