@@ -97,7 +97,7 @@ export const connectAccount = async networkAccount => {
   return { deploy, attach, networkAccount }; };
 
 const makeAccount = () => {
-  const address = stdlib.randomUInt256();
+  const address = stdlib.toHex(stdlib.randomUInt256());
   BALANCES[address] = 0;
   return { address };
 };
