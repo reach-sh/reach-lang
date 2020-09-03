@@ -10,9 +10,15 @@ clean:
 	rm -f package.json
 
 .PHONY: build
-build: package.json
+build: build-stdlib build-runner
+
+.PHONY: build-stdlib
+build-stdlib: package.json
 	docker build --tag=$(IMAGE):latest .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
+
+.PHONY: build-runner
+build-runner:
 	docker build --tag=$(RUNNER_IMAGE):latest \
 	  --file Dockerfile.runner \
 	  --build-arg REACH_VERSION_ARG=$(VERSION) \

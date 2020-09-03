@@ -39,9 +39,25 @@ solNum i = pretty $ "uint256(" ++ show i ++ ")"
 solBraces :: Doc a -> Doc a
 solBraces body = braces (nest 2 $ hardline <> body <> space)
 
+data SolFunctionLike a
+  = SFL_Constructor
+  | SFL_Function Bool (Doc a)
+solFunctionLike :: SolFunctionLike a -> [Doc a] -> Doc a -> Doc a -> Doc a
+solFunctionLike sfl args ret body =
+  sflp <+> ret' <+> solBraces body
+  where
+    ret' = ext' <> ret
+    (ext', sflp) =
+      case sfl of
+        SFL_Constructor ->
+          (emptyDoc, solApply "constructor" args)
+        SFL_Function ext name ->
+          (ext'', "function" <+> solApply name args)
+          where ext'' = if ext then "external " else " "
+
 solFunction :: Doc a -> [Doc a] -> Doc a -> Doc a -> Doc a
-solFunction name args ret body =
-  "function" <+> solApply name args <+> ret <+> solBraces body
+solFunction name =
+  solFunctionLike (SFL_Function False name)
 
 solContract :: String -> Doc a -> Doc a
 solContract s body = "contract" <+> pretty s <+> solBraces body
@@ -121,6 +137,7 @@ data SolCtxt a = SolCtxt
   , ctxt_emit :: Doc a
   , ctxt_typei :: M.Map SLType Int
   , ctxt_typem :: M.Map SLType (Doc a)
+  , ctxt_deployMode :: DeployMode
   }
 
 instance Semigroup (SolCtxt a) where
@@ -435,12 +452,19 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
     ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
     evtDefn = solEvent ctxt which msg
-    (argDefn, argDefs) = solArgDefn ctxt which AM_Call vs
-    ret = "external payable"
-    funDefn = solFunction (solMsg_fun which) argDefs ret body
+    (argDefn, argDefs) = solArgDefn ctxt which am vs
+    ret = "payable"
+    (hashCheck, am, sfl) =
+      case (which, ctxt_deployMode ctxt_top) of
+        (1, DM_firstMsg) ->
+          (emptyDoc, AM_Memory, SFL_Constructor)
+        _ ->
+          (hcp, AM_Call, SFL_Function True (solMsg_fun which))
+          where hcp = (solRequire $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
+    funDefn = solFunctionLike sfl argDefs ret body
     body =
       vsep
-        [ (solRequire $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
+        [ hashCheck
         , frameDecl
         , fromCheck
         , timeoutCheck
@@ -547,9 +571,9 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
       mapM_ (_solDefineType tcr timr tmr) $ S.toList ts
       liftM2 (,) (readSTRef timr) (readSTRef tmr)
 
-solPLProg :: PLProg -> Doc a
+solPLProg :: PLProg -> (ConnectorInfo, Doc a)
 solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
-  vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp]
+  (cinfo, vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp])
   where
     ctcp =
       solContract "ReachContract is Stdlib" $
@@ -562,10 +586,18 @@ solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
         , ctxt_handler_num = 0
         , ctxt_emit = emptyDoc
         , ctxt_varm = mempty
+        , ctxt_deployMode = plo_deployMode
         }
     ctcbody = vsep_with_blank $ [state_defn, consp, typesp, solHandlers ctxt hs]
-    consp = solApply "constructor" [] <+> "payable" <+> solBraces consbody
-    SolTailRes _ consbody = solCTail ctxt (CT_Wait at [])
+    consp =
+      case plo_deployMode of
+        DM_constructor ->
+          solFunctionLike SFL_Constructor [] "payable" consbody
+          where
+            SolTailRes _ consbody = solCTail ctxt (CT_Wait at [])
+        DM_firstMsg ->
+          emptyDoc
+    cinfo = M.fromList [ ("deployMode", T.pack $ show plo_deployMode) ]
     state_defn = "uint256 current_state;"
     preamble =
       vsep
@@ -597,29 +629,31 @@ instance FromJSON CompiledSolRec where
       Nothing ->
         fail "Expected contracts object to have a key with suffix ':ReachContract'"
 
-extract :: Value -> Either String ConnectorResult
-extract v = case fromJSON v of
+extract :: ConnectorInfo -> Value -> Either String ConnectorResult
+extract cinfo v = case fromJSON v of
   Error e -> Left e
   Success CompiledSolRec {..} ->
     case eitherDecode (LB.pack (T.unpack csrAbi)) of
       Left e -> Left e
       Right (csrAbi_parsed :: Value) ->
         Right $
-          M.fromList
+        M.fromList
             [ ( "ETH"
-              , M.fromList
+              , M.union
+                (M.fromList
                   [ ("ABI", csrAbi_pretty)
                   , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
                     ("Bytecode", "0x" <> csrCode)
-                  ]
+                  ])
+                cinfo
               )
             ]
         where
           csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
           cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
 
-compile_sol :: FilePath -> IO ConnectorResult
-compile_sol solf = do
+compile_sol :: ConnectorInfo -> FilePath -> IO ConnectorResult
+compile_sol cinfo solf = do
   (ec, stdout, stderr) <-
     readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin,opcodes", solf] []
   let show_output = "STDOUT:\n" ++ stdout ++ "\nSTDERR:\n" ++ stderr ++ "\n"
@@ -628,7 +662,7 @@ compile_sol solf = do
     ExitSuccess ->
       case (eitherDecode $ LB.pack stdout) of
         Right v ->
-          case extract v of
+          case extract cinfo v of
             Right cr -> return cr
             Left err ->
               die $
@@ -651,5 +685,6 @@ connect_eth outnMay pl = case outnMay of
   where
     go :: FilePath -> IO ConnectorResult
     go solf = do
-      writeFile solf (show (solPLProg pl))
-      compile_sol solf
+      let (cinfo, sol) = solPLProg pl
+      writeFile solf (show sol)
+      compile_sol cinfo solf

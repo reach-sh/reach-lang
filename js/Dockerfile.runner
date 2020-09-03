@@ -13,6 +13,7 @@ WORKDIR /app
 RUN curl -sSL https://git.io/get-mo -o mo \
     && chmod +x mo \
     && mv mo /usr/local/bin
+RUN npm install -g eslint
 
 ENV REACH_VERSION $REACH_VERSION_ARG
 
@@ -29,7 +30,6 @@ RUN mo /app/package.mo.json > /app/package.json
 RUN rm /app/package.mo.json
 RUN npm link '@reach-sh/stdlib'
 RUN npm install
-RUN npm install -g eslint
 RUN mkdir /app/build
 
 CMD ["app"]

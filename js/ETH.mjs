@@ -245,37 +245,70 @@ const fetchAndRejectInvalidReceiptFor = async txHash => {
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
-const extractInfo = async (ctcOrInfo) => {
-  if ( ctcOrInfo.getInfo ) {
-    return extractInfo( await ctcOrInfo.getInfo() ); }
-  else if ( ctcOrInfo.address && ctcOrInfo.creation_block ) {
-    return ctcOrInfo; }
-  else {
-    throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`); } };
-
 export const connectAccount = async networkAccount => {
   // XXX networkAccount MUST be a wallet to deploy/attach
   const provider = await getProvider();
   const { address } = networkAccount;
   const shad = address.substring(2,6);
 
+  const extractInfo = async (ctcOrInfo) => {
+    const { getInfo, address, creation_block } = ctcOrInfo;
+    if ( getInfo ) {
+      return extractInfo( await getInfo() ); }
+    else if ( address && creation_block ) {
+      return { address, creation_block }; }
+    else {
+      throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`); } };
+
   const attach = async (bin, parentCtc) => {
-    const info = await extractInfo(parentCtc);
-    const getInfo = async () =>
-          ({ address: info.address,
-             creation_block: info.creation_block });
-
     const ABI = JSON.parse(bin._Connectors.ETH.ABI);
-    const ethersC = new ethers.Contract(info.address, ABI, networkAccount);
-    const eventOnceP = (e) =>
-          new Promise((resolve) => ethersC.once(e, (...a) => resolve(a)));
 
-    debug(`${shad}: created at ${info.creation_block}`);
-    let last_block = info.creation_block;
+    let info = null;
+    let _waitForInfo = null;
+    if ( parentCtc.reallyDeploy ) {
+      _waitForInfo = async (internal, args, value) => {
+        if ( ! internal ) {
+          return false; }
+        if ( args == null || value == null ) {
+          throw Error(`Out of order sendrecv`); }
+        const deployRes = await parentCtc.reallyDeploy([args], value);
+        debug(`${shad}: waitForInfo deployRes = ${JSON.stringify(deployRes)}`);
+        const { transactionHash, ...deployInfo } = deployRes;
+        info = deployInfo;
+        _waitForInfo = async () => true;
+        return { wait: async () => ({ transactionHash }) }; };
+    } else {
+      _waitForInfo = async () => {
+        info = await extractInfo(parentCtc);
+        return true; }; }
+
+    let _ethersC = null;
+    let last_block = null;
+    const getC = async () => {
+      if ( _ethersC ) { return _ethersC; }
+      await _waitForInfo(true);
+      debug(`${shad}: attach to creation at ${info.creation_block}`);
+      last_block = info.creation_block;
+      _ethersC = new ethers.Contract(info.address, ABI, networkAccount);
+      return _ethersC; };
+    const callC = async (funcName, args, value) => {
+      if ( parentCtc.reallyDeploy && funcName == `m1` ) {
+        return await _waitForInfo(true, args, value);
+      } else {
+        return (await getC())[funcName]([last_block, ...args], {value}); } };
+
+    let _getInfo = async () => {
+      while ( ! await _waitForInfo(false) ) {
+        await Timeout.set(1); }
+      _getInfo = async () => ({ address: info.address,
+                                creation_block: info.creation_block });
+      return await _getInfo(); };
+    const getInfo = async () => {
+      return await _getInfo(); };
 
     const updateLast = o => { last_block = o.blockNumber; };
 
-    const getEventData = (ok_evt, ok_e) => {
+    const getEventData = (ethersC, ok_evt, ok_e) => {
       const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
       const { args } = ethersC.interface.parseLog(ok_e);
       const [ ok_bal, ...ok_vals ] = ok_args_abi.map(a => args[a.name]);
@@ -304,18 +337,18 @@ export const connectAccount = async networkAccount => {
     const sendrecv = async (label, funcNum, args, value, timeout_delay) => {
       const funcName = `m${funcNum}`;
       // https://github.com/ethereum/web3.js/issues/2077
-      const munged = [ last_block, ...args ]
+      const munged = [ ...args ]
             .map(m => isBigNumber(m) ? m.toString() : m);
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${JSON.stringify(munged)}`);
-      let block_send_attempt = last_block;
+      let block_send_attempt = (last_block || 0);
       let block_repeat_count = 0;
-      while ( ! timeout_delay || block_send_attempt < last_block + timeout_delay ) {
+      while ( ! timeout_delay || block_send_attempt < (last_block || 0) + timeout_delay ) {
         let r_maybe = false;
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
-          const r_fn = await ethersC[funcName](munged, {value});
+          const r_fn = await callC(funcName, munged, value);
           r_maybe = await r_fn.wait();
         } catch (e) {
           debug(e);
@@ -358,13 +391,13 @@ export const connectAccount = async networkAccount => {
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (label, okNum, timeout_delay) => {
+      const ethersC = (await getC());
       const ok_evt = `e${okNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
 
       let block_poll_start = last_block;
       let block_poll_end = block_poll_start;
       while ( ! timeout_delay || block_poll_start < last_block + timeout_delay ) {
-        void(eventOnceP); // This might be nice for performance, but it may miss things too.
         const es = await provider.getLogs({
           fromBlock: block_poll_start,
           toBlock: block_poll_end,
@@ -391,7 +424,7 @@ export const connectAccount = async networkAccount => {
           debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
           updateLast(ok_t);
-          const [ ok_bal, ok_vals ] = getEventData(ok_evt, ok_e);
+          const [ ok_bal, ok_vals ] = getEventData(ethersC, ok_evt, ok_e);
 
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
           return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from };
@@ -407,15 +440,26 @@ export const connectAccount = async networkAccount => {
 
   // https://docs.ethers.io/v5/api/contract/contract-factory/
   const deploy = async (bin) => {
-    const { ABI, Bytecode } = bin._Connectors.ETH;
+    const { ABI, Bytecode, deployMode } = bin._Connectors.ETH;
     const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
-    const contract = await factory.deploy();
-    await contract.deployed(); // Wait for it to actually be deployed.
-    const deployTxn = await networkAccount.provider.getTransaction(contract.deployTransaction.hash);
-    // XXX the equivalent of rejectInvalidReceiptFor?
-    // This may be handled already in contract.deployed()
 
-    const ctc = { address: contract.address, creation_block: deployTxn.blockNumber };
+    const reallyDeploy = async (args, value) => {
+      debug(`${shad}: reallyDeploying with ${JSON.stringify([args, value])}`);
+      const contract = await factory.deploy(...args, {value});
+      // Wait for it to actually be deployed.
+      const deploy_r = await contract.deployTransaction.wait();
+
+      return { address: contract.address,
+               creation_block: deploy_r.blockNumber,
+               transactionHash: deploy_r.transactionHash }; };
+
+    let ctc = null;
+    if ( deployMode == `DM_firstMsg` ) {
+      debug(`${shad}: delaying deploy-ment`);
+      ctc = { reallyDeploy }; }
+    else {
+      ctc = await reallyDeploy([], 0); }
+
     return await attach(bin, ctc);
   };
 
