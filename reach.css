@@ -1,0 +1,10 @@
+.btn {
+    float: right;
+}
+
+.clippy {
+    margin-top: -3px;
+    position: relative;
+    top: 3px;
+    width: 1.25em;
+}
