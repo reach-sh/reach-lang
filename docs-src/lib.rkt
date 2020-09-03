@@ -97,11 +97,20 @@
          #:show-lines? [show-lines? #f]
          path . which)
 
-  (define ((do-link lab) link-loc content)
+  (define ((do-link lab) link-loc content)    
+    (define copy
+      (cond
+        [copyt
+         (define raw
+           `(button ([class "btn"] [data-clipboard-text ,(string-join copyt "\n")])
+                    (img ([class "clippy"] [width "13"] [src "clippy.svg"] [alt "Copy to clipboard"]) " ")))
+         (elem #:style (style #f (list (xexpr-property raw 'nbsp))) " ")]
+        [else
+         ""]))
     (list
      (tabular
       #:style 'boxed
-      (list (list (reachexlink path (exec lab) #:loc link-loc))))
+      (list (list (para (reachexlink path (exec lab) #:loc link-loc) copy))))
      content))
   (define maybe-link
     (match link?
@@ -130,25 +139,28 @@
     (for/list ([e (in-list x)]
                [i (in-naturals 1)])
       (add-num i e)))
-  (define-values (link-loc sel)
+  (define (unzip l) (cons (map car l) (map cdr l)))
+  (define-values (link-loc copyt sel)
     (match which
       ['()
        (values
-        #f
+        #f input
         (add-nums input))]
       [(list 'skip from to skip-s)
        (define once? #f)
-       (values
-        #f
-        (filter
-         (λ (x) x)
-         (for/list ([e (in-list input)]
-                    [i (in-naturals 1)])
-           (if (and (<= from i) (<= i to))
-             (if once? #f
-                 (begin (set! once? #t)
-                        (string-append num-pad skip-s)))
-             (add-num i e)))))]
+       (define uz
+         (unzip
+          (filter
+           (λ (x) x)
+           (for/list ([e (in-list input)]
+                      [i (in-naturals 1)])
+             (if (and (<= from i) (<= i to))
+               (if once? #f
+                   (begin (set! once? #t)
+                          (cons skip-s
+                                (string-append num-pad skip-s))))
+               (cons e (add-num i e)))))))
+       (values #f (car uz) (cdr uz))]
       [(list 'only from to skip-s)
        (define trim-amt
          (let loop ([l (string->list skip-s)])
@@ -171,6 +183,10 @@
        (define once? #f)
        (values
         (cons from to)
+        (for/list ([e (in-list input)]
+                   [i (in-naturals 1)]
+                   #:when (and (<= from i) (<= i to)))
+          e)
         (filter
          (λ (x) x)
          (for/list ([e (in-list input)]
@@ -183,15 +199,20 @@
       [(list from)
        (values
         from
+        (drop input from)
         (drop (add-nums input) from))]
       [(list #f to)
        (values
         #f
+        (take input to)
         (take (add-nums input) to))]
       [(list from to)
+       (define (f x)
+         (drop (reverse (drop (reverse x) to)) from))
        (values
         (cons from to)
-        (drop (reverse (drop (reverse (add-nums input)) to)) from))]))
+        (f input)
+        (f (add-nums input)))]))
   (maybe-link link-loc (apply mode (add-between sel "\n"))))
 
 (define (number->nice-string n)

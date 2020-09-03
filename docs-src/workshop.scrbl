@@ -31,6 +31,10 @@ XXX
 
 XXX
 
+@section[#:tag "workshop-rps-firstmsg"]{Workshop: First Message Rock-Paper-Scissors}
+
+XXX
+
 @section[#:tag "workshop-secured-loan"]{Workshop: Secured Loan}
 
 XXX

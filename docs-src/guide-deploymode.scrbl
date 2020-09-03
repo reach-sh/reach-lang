@@ -3,7 +3,7 @@
 
 @title[#:version reach-vers #:tag "guide-deploymode"]{Choosing a deployment mode}
 
-@reachin{Reach.App} takes an option named @reachin{deployMode} (as described @seclink["ref-programs-reach.app"]{in the reference}) that determines how the @tech{contract} of a Reach application should be @tech{deployed}.
+@reachin{Reach.App} takes an option named @reachin{deployMode} (as described @seclink["ref-programs-reach.app"]{in the reference}) that determines how the @tech{contract} of a Reach application should be @tech{deploy}ed.
 
 The options are:
 
