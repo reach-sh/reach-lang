@@ -1,6 +1,7 @@
 module Reach.Eval (EvalError, compileBundle) where
 
 import Control.Monad
+import Control.Monad.Except
 import Control.Monad.ST
 import Control.Monad.Writer
 import Data.Bits
@@ -17,7 +18,9 @@ import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST
+import Reach.Eval.Lookup
 import Reach.JSUtil
+import Reach.Parse.Renames
 import Reach.Parser
 import Reach.STCounter
 import Reach.Type
@@ -75,6 +78,7 @@ data EvalError
   | Err_ExpectedPrivate SLVal
   | Err_ExpectedPublic SLVal
   | Err_Export_IllegalJS JSExportDeclaration
+  | Err_Export_Missing String String [String] -- label, needle, haystack
   | Err_Form_InvalidArgs SLForm Int [JSExpression]
   | Err_Fun_NamesIllegal
   | Err_Import_IllegalJS JSImportDeclaration
@@ -242,6 +246,8 @@ instance Show EvalError where
       "Invalid access of secret value (" <> displaySlValType slval <> ")"
     Err_Export_IllegalJS exportDecl ->
       "Invalid Reach export syntax: " <> conNameOf exportDecl
+    Err_Export_Missing label k ks ->
+      "Invalid Reach export. Could not find " <> label <> ": " <> k <> didYouMean k ks 5
     Err_Form_InvalidArgs _SLForm n es ->
       "Invalid args. Expected " <> show n <> " but got " <> show (length es)
     Err_Fun_NamesIllegal ->
@@ -438,10 +444,11 @@ base_env =
     , ("typeEq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ("wait", SLV_Prim SLPrim_wait)
-    , ("Participant"
-       , (SLV_Object srcloc_top (Just $ "Participant") $
-         m_fromList_public
-           [("set", SLV_Prim SLPrim_part_set)]))
+    , ( "Participant"
+      , (SLV_Object srcloc_top (Just $ "Participant") $
+           m_fromList_public
+             [("set", SLV_Prim SLPrim_part_set)])
+      )
     , ( "Reach"
       , (SLV_Object srcloc_top (Just $ "Reach") $
            m_fromList_public
@@ -450,14 +457,6 @@ base_env =
     ]
 
 -- General compiler utilities
-srcloc_after_semi :: String -> JSAnnot -> JSSemi -> SrcLoc -> SrcLoc
-srcloc_after_semi lab a sp at =
-  case sp of
-    JSSemi x -> srcloc_jsa (alab ++ " semicolon") x at
-    _ -> srcloc_jsa alab a at
-  where
-    alab = "after " ++ lab
-
 checkResType :: SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
 checkResType at et m = do
   SLRes lifts st (_lvl, v) <- m
@@ -477,7 +476,7 @@ data SLCtxt s = SLCtxt
 
 instance Show (SLCtxt s) where
   show _ = "<context>"
-          
+
 ctxt_alloc :: SLCtxt s -> SrcLoc -> ST s Int
 ctxt_alloc ctxt _at = do
   incSTCounter $ ctxt_id ctxt
@@ -841,9 +840,9 @@ evalForm ctxt at sco st f args =
           let notter = participant_who v_n
           SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
           let knower = participant_who v_kn
-          let sco_knower = sco { sco_env = sco_lookup_penv ctxt sco knower }
-          let st_whats = st { st_mode = SLM_LocalStep }
-          SLRes lifts_whats _ whats_sv <- evalExprs ctxt at sco_knower st_whats whats_e 
+          let sco_knower = sco {sco_env = sco_lookup_penv ctxt sco knower}
+          let st_whats = st {st_mode = SLM_LocalStep}
+          SLRes lifts_whats _ whats_sv <- evalExprs ctxt at sco_knower st_whats whats_e
           let whats_v = map snd whats_sv
           let whats_da = map snd $ map (typeOf at) whats_v
           let ct = CT_Unknowable notter
@@ -1739,7 +1738,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               let who_s = bunpack who
               (whodv, lifts) <- ctxt_lift_expr ctxt at (DLVar at' who_s T_Address) (DLE_PartSet at' who addr_da)
               let pdvs' = M.insert who whodv pdvs
-              let st' = st { st_pdvs = pdvs' }
+              let st' = st {st_pdvs = pdvs'}
               keepLifts lifts $ evalStmt ctxt at sco st' ks
         _ -> illegal_mode
     SLV_Prim SLPrim_exitted ->
@@ -2240,10 +2239,39 @@ evalTopBody ctxt at st libm env exenv body =
         (JSModuleExportDeclaration a ed) ->
           case ed of
             JSExport s _ -> doStmt at' True s
-            --- FIXME support more kinds
-            _ -> expect_throw at' (Err_Export_IllegalJS ed)
+            JSExportFrom exportClause fromClause _semi ->
+              exportAll exenvNew
+              where
+                renames = case runExcept (exportClauseToRenames exportClause) of
+                  Left _ -> illegal_export -- TODO explain why
+                  Right x -> x
+                JSFromClause _ _ fromModuleName = fromClause
+                srcf = ReachSourceFile fromModuleName
+                exenvNew = case runExcept $ lookupRenamesModuleEnv at' renames srcf libm of
+                  Left e -> illegal_export_missing e
+                  Right x -> x
+            JSExportLocals exportClause _semi ->
+              exportAll exenvNew
+              where
+                renames = case runExcept (exportClauseToRenames exportClause) of
+                  Left _ -> illegal_export -- TODO: explain why
+                  Right x -> x
+                exenvNew = case runExcept $ lookupRenamesEnv "bound identifier" renames env of
+                  Left e -> illegal_export_missing e
+                  Right x -> x
           where
+            illegal_export :: HasCallStack => a
+            illegal_export = expect_throw at' (Err_Export_IllegalJS ed)
+            illegal_export_missing :: HasCallStack => EvalLookupErr String -> a
+            illegal_export_missing (Err_EvalLookup_Missing label missingAt k ks) =
+              expect_throw at'' (Err_Export_Missing label k ks)
+              where
+                at'' = srcloc_lab_only "export" <> missingAt <> at'
             at' = srcloc_jsa "export" a at
+            exportAll exenvNew =
+              evalTopBody ctxt at' st libm env exenv' body'
+              where
+                exenv' = env_merge at' exenv exenvNew
         (JSModuleStatementListItem s) -> doStmt at False s
       where
         doStmt at' isExport sm = do
@@ -2273,8 +2301,6 @@ evalTopBody ctxt at st libm env exenv body =
               expect_throw at' $ Err_Module_Return
 
 type SLMod = (ReachSource, [JSModuleItem])
-
-type SLLibs = (M.Map ReachSource SLEnv)
 
 evalLib :: STCounter s -> SLMod -> (DLStmts, SLLibs) -> ST s (DLStmts, SLLibs)
 evalLib idxr (src, body) (liblifts, libm) = do
@@ -2324,34 +2350,37 @@ makeInteract at who spec = SLV_Object at lab spec'
 
 app_default_opts :: DLOpts
 app_default_opts =
-  DLOpts { dlo_deployMode = DM_constructor }
+  DLOpts {dlo_deployMode = DM_constructor}
 
-app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts )
-app_options = M.fromList [ ("deployMode", opt_deployMode) ]
+app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
+app_options = M.fromList [("deployMode", opt_deployMode)]
   where
     opt_deployMode opts v =
       case v of
         SLV_Bytes _ "firstMsg" -> up DM_firstMsg
         SLV_Bytes _ "constructor" -> up DM_constructor
-        SLV_Bytes _ bs -> Left $ bss <> " is not a deployMode" <> didYouMean bss [ "firstMsg", "constructor" ] 2
-          where bss = bunpack bs
+        SLV_Bytes _ bs -> Left $ bss <> " is not a deployMode" <> didYouMean bss ["firstMsg", "constructor"] 2
+          where
+            bss = bunpack bs
         _ -> Left $ "expected bytes"
-      where up m = Right $ opts { dlo_deployMode = m }
+      where
+        up m = Right $ opts {dlo_deployMode = m}
 
 compileDApp :: STCounter s -> DLStmts -> SLVal -> ST s DLProg
 compileDApp idxr liblifts topv =
   case topv of
     SLV_Prim (SLPrim_App_Delay at opts partvs (JSBlock _ top_ss _) top_env top_env_wps) -> do
       let dlo = M.foldrWithKey use_opt app_default_opts (M.map snd opts)
-            where use_opt k v acc =
-                    case M.lookup k app_options of
-                      Nothing ->
-                        expect_throw at $ Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
-                      Just opt ->
-                        case opt acc v of
-                          Right x -> x
-                          Left x ->
-                            expect_throw at $ Err_App_InvalidOptionValue k x
+            where
+              use_opt k v acc =
+                case M.lookup k app_options of
+                  Nothing ->
+                    expect_throw at $ Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
+                  Just opt ->
+                    case opt acc v of
+                      Right x -> x
+                      Left x ->
+                        expect_throw at $ Err_App_InvalidOptionValue k x
       let st_step =
             SLState
               { st_mode = SLM_Step

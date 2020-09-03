@@ -4,7 +4,5 @@ export const main = Reach.App(
   {}, [], () => { return 0; }
 );
 
-const x = 3;
-
-// TODO: more specific error message
-export {x, x};
+// Exporting an ident that isn't bound
+export {x};

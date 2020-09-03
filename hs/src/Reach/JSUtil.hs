@@ -1,4 +1,20 @@
-module Reach.JSUtil (jso_flatten, jscl_flatten, jsctl_flatten, toJSCL, jsa_flatten, dropEmptyJSStmts, jsArrowStmtToBlock, jsStmtToBlock, tp, srcloc_jsa) where
+module Reach.JSUtil
+  ( jso_flatten
+  , jscl_flatten
+  , jsctl_flatten
+  , toJSCL
+  , jsa_flatten
+  , dropEmptyJSStmts
+  , jsArrowStmtToBlock
+  , jsStmtToBlock
+  , tp
+  , srcloc_jsa
+  , srcloc_after_semi
+  , srcloc_lab_only
+  , srcloc_jsa_only
+  , srcloc_src_only
+  )
+where
 
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
@@ -62,3 +78,20 @@ tp JSNoAnnot = Nothing
 
 srcloc_jsa :: String -> JSAnnot -> SrcLoc -> SrcLoc
 srcloc_jsa lab a at = srcloc_at lab (tp a) at
+
+srcloc_after_semi :: String -> JSAnnot -> JSSemi -> SrcLoc -> SrcLoc
+srcloc_after_semi lab a sp at =
+  case sp of
+    JSSemi x -> srcloc_jsa (alab ++ " semicolon") x at
+    JSSemiAuto -> srcloc_jsa alab a at
+  where
+    alab = "after " ++ lab
+
+srcloc_lab_only :: String -> SrcLoc
+srcloc_lab_only s = SrcLoc (Just s) Nothing Nothing
+
+srcloc_jsa_only :: JSAnnot -> SrcLoc
+srcloc_jsa_only a = SrcLoc Nothing (tp a) Nothing
+
+srcloc_src_only :: ReachSource -> SrcLoc
+srcloc_src_only src = SrcLoc Nothing Nothing (Just src)

@@ -39,6 +39,19 @@ data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
 
 instance NFData SrcLoc
 
+-- This is a "defaulting" instance where the left info is preferred,
+-- but can fall back on the right if info is absent from the left.
+instance Semigroup SrcLoc where
+  SrcLoc mlab mpos msrc <> SrcLoc mlab' mpos' msrc' =
+    SrcLoc (firstJust mlab mlab') (firstJust mpos mpos') (firstJust msrc msrc')
+    where
+      firstJust (Just x) _ = Just x
+      firstJust _ (Just y) = Just y
+      firstJust Nothing Nothing = Nothing
+
+instance Monoid SrcLoc where
+  mempty = SrcLoc Nothing Nothing Nothing
+
 instance Show SrcLoc where
   show (SrcLoc mlab mtp mrs) = concat $ intersperse ":" $ concat [sr, loc, lab]
     where
@@ -538,7 +551,7 @@ data DLBlock
 
 instance NFData DLBlock
 
-data DLOpts = DLOpts { dlo_deployMode :: DeployMode }
+data DLOpts = DLOpts {dlo_deployMode :: DeployMode}
   deriving (Generic, Eq, Show)
 
 instance NFData DLOpts
@@ -598,7 +611,7 @@ data LLStep
       }
   deriving (Eq, Show)
 
-data LLOpts = LLOpts { llo_deployMode :: DeployMode }
+data LLOpts = LLOpts {llo_deployMode :: DeployMode}
   deriving (Generic, Eq, Show)
 
 data LLProg
@@ -718,7 +731,7 @@ data CPProg
 newtype EPPs = EPPs (M.Map SLPart EPProg)
   deriving (Eq, Show, Monoid, Semigroup)
 
-data PLOpts = PLOpts { plo_deployMode :: DeployMode }
+data PLOpts = PLOpts {plo_deployMode :: DeployMode}
   deriving (Generic, Eq, Show)
 
 data PLProg
