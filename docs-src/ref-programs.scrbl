@@ -130,21 +130,38 @@ export const main =
 }
 
 @deftech{Reach.App} is a function which accepts three arguments:
-@litchar{options},
-@litchar{participantDefinitions},
-and @litchar{program}.
+@reachin{options},
+@reachin{participantDefinitions},
+and @reachin{program}.
 
-The @litchar{options} argument is currently unused, but must be an object.
+The @reachin{options} must be an object.
+It supports the following options:
 
-The @litchar{participantDefinitions} argument is an tuple of tuples.
+@tabular[
+#:style 'boxed
+(list
+
+(list
+ @reachin{deployMode}
+ @~
+ @para{@reachin{'constructor'} (default) or @reachin{'firstMsg'}}
+ @~
+ @para{Determines whether @tech{contract} should be @tech{deploy}ed independently (@reachin{'constructor'}) or as part of the first @tech{publication} (@reachin{'firstMsg'}).
+ If deployed as part of the first publication, then the first publication must precede all uses of @reachin{wait} and @reachin{.timeout}.
+ See @seclink["guide-deploymode"]{the guide on deployment modes} for a discussion of why to choose a particular mode.}
+ )
+
+)]
+
+The @reachin{participantDefinitions} argument is an tuple of tuples.
 Each tuple is a pair of
-@litchar{participantName}
-and @litchar{participantInteractInterface}.
-@litchar{participantName} is a string which indicates the name of the participant function in the generated @tech{backend} code. Each @litchar{participantName} must be unique.
-@litchar{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the participant.
+@reachin{participantName}
+and @reachin{participantInteractInterface}.
+@reachin{participantName} is a string which indicates the name of the participant function in the generated @tech{backend} code. Each @reachin{participantName} must be unique.
+@reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the participant.
 
-The @litchar{program} argument must be a syntactic @tech{arrow expression}.
-The arguments to this arrow must match the number and order of @litchar{participantDefinitions}.
+The @reachin{program} argument must be a syntactic @tech{arrow expression}.
+The arguments to this arrow must match the number and order of @reachin{participantDefinitions}.
 The function body is the program to be @tech{compile}d.
 It specifies a @tech{step}, which means its content is specified by @Secref["ref-programs-step"].
 
@@ -209,6 +226,7 @@ It is an abbreviation of many @tech{local step} statements that could have been 
 
 A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
 The @tech{continuation} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
+The @tech{continuation} of a timeout block is the same as the continuation as the continuation as the function the timeout occurs within.
 
 @margin-note{See @seclink["guide-timeout"]{the guide section on non-participation} to undertand when to use timeouts and how to use them most effectively.}
 

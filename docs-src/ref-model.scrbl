@@ -20,6 +20,7 @@ A @deftech{time delta} represents the difference between two points in @tech{tim
 @tech{Consensus networks} support @deftech{transfers} of @tech{network tokens} between @tech{accounts}. An @deftech{account} is a unique identity (called an @deftech{address}) with a non-negative balance of @tech{network tokens}.
 @tech{Accounts} may sign @tech{values} in a way that may not be repudiated or impersonated; this is called @deftech{publication}.
 @deftech{Contracts} are @tech{accounts} with three extra capacities: they persistently store @tech{values} (called the @deftech{consensus state}), they may receive @tech{publications}, and when they receive @tech{publications}, they systematically process them and may modify their @tech{consensus state}, make @tech{publications}, and may @tech{transfer} @tech{network tokens} in response to the reception.
+The creation of a @tech{contract} is called @deftech{deploy}ment.
 The chapter, @secref["ref-networks"], discusses which @tech{consensus networks} are supported by Reach.
 @margin-note{This description of @tech{consensus networks} is an abstraction that may not be directly implemented by actual networks.
 For example, in UTXO-based networks, there is not typically an explicitly represented @tech{account} balance ledger.

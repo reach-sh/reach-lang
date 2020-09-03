@@ -59,6 +59,14 @@ XXX
 
 XXX
 
-XXX hash lock
+@section[#:tag "workshop-utility"]{Workshop: Periodic Payment}
+
+XXX
+
+@section[#:tag "workshop-hash-lock"]{Workshop: Hash Lock}
+
+XXX
 
 XXX use design recipe
+
+XXX warning about online block mining attack
