@@ -1,0 +1,1 @@
+error: ./Err_Eval_IncompatibleStates.rsh:6:28:after expr stmt semicolon: incompatible states: SLState {st_mode = SLM_Step, st_live = True, st_after_first = False, st_pdvs = fromList []} SLState {st_mode = SLM_Step, st_live = True, st_after_first = True, st_pdvs = fromList [("A",DLVar ./Err_Eval_IncompatibleStates.rsh:5:6:dot "A" Address 0)]}

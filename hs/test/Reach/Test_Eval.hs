@@ -41,7 +41,6 @@ spec_examples_cover_EvalError =
       , "Err_Each_NotTuple"
       , "Err_ExpectedPublic" -- may not be possible with new enforced _ ident conventions
       , "Err_Eval_IllegalLift"
-      , "Err_Eval_IncompatibleStates"
       , "Err_Eval_IndirectRefNotArray"
       , "Err_Eval_NoReturn" -- not syntactically possible?
       , "Err_Eval_NotApplicableVals" -- previous test example subsumed by Err_ToConsensus_TimeoutArgs
