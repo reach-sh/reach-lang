@@ -8,7 +8,8 @@
 // export {x} from './lib.rsh';
 // TODO:         error: ./test-examples/features/exports.rsh:8:1:export:
 // Invalid Reach export syntax: JSExportFrom
-// This one fails because the module loader needs to also notice this and load it
+// This one fails because the module loader needs to
+// also notice this and load it
 
 const y = 3;
 export {y, y as z};
