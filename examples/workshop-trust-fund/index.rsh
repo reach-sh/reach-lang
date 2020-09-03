@@ -1,51 +1,76 @@
 'reach 0.1';
 
-export const main =
-  Reach.App(
-    {},
-    [['Funder',
-      { getParams:
-        Fun([], Object({ payment: UInt256,
-                         R_addr: Address,
-                         maturity: UInt256,
-                         refund: UInt256,
-                         dormant: UInt256 })),
-        refunded: Fun([], Null) }],
-     ['Receiver',
-      { willReceive: Fun([UInt256, UInt256], Null),
-        received: Fun([], Null) }],
-     ['Bystander', {}]],
-    (F, R, B) => {
-      F.only(() => {
-        const { payment, R_addr, maturity,
-                refund, dormant } =
-              declassify(interact.getParams()); });
-      F.publish(payment, R_addr, maturity,
-                refund, dormant)
-        .pay(payment);
-      R.set(R_addr);
-      commit();
+const FunderInteract = {
+  getParams: Fun([], Object({
+    ReceiverAddress:  Address,
+    BystanderAddress: Address,
+    payment:          UInt256, // WEI
+    maturity:         UInt256, // time delta
+    refund:           UInt256, // time delta
+    dormant:          UInt256, // time delta
+  })),
+  notifyRefunded: Fun([], Null),
+};
 
-      R.only(() => {
-        interact.willReceive(payment, maturity); });
+const ReceiverInteract = {
+  notifyWillReceive: Fun([Object({
+    payment:  UInt256, // WEI
+    maturity: UInt256, // time delta
+  })], Null),
+  notifyReceived: Fun([], Null),
+};
 
-      wait(maturity);
+const BystanderInteract = {};
 
-      R.publish()
-        .timeout(refund, () => {
-          F.publish()
-            .timeout(dormant, () => closeTo(B, () => {}));
-          transfer(payment).to(F);
-          commit();
+const main_fn = (Funder, Receiver, Bystander) => {
+  Funder.only(() => {
+    const {
+      ReceiverAddress, BystanderAddress,
+      payment, maturity, refund, dormant,
+    } = declassify(interact.getParams());
+  });
+  Funder.publish(
+    ReceiverAddress, BystanderAddress,
+    payment, maturity, refund, dormant
+  ).pay(payment);
+  Receiver.set(ReceiverAddress);
+  commit();
 
-          F.only(() => {
-            interact.refunded(); });
+  Receiver.only(() => {
+    interact.notifyWillReceive({payment, maturity});
+  });
 
-          exit(); });
-      transfer(payment).to(R);
-      commit();
+  wait(maturity);
 
-      R.only(() => {
-        interact.received(); });
+  const doRefund = () => {
+    Funder.publish()
+      .timeout(dormant, () => closeTo(Bystander, () => {}));
+    transfer(payment).to(Funder);
+    commit();
+    Funder.only(() => {
+      interact.notifyRefunded();
+    });
+    exit(); // you NEED this exit why?
+  };
 
-      exit(); });
+  Receiver.publish()
+    .timeout(refund, () => doRefund());
+  transfer(payment).to(Receiver);
+  commit();
+
+  Receiver.only(() => {
+    interact.notifyReceived();
+  });
+
+  exit();
+};
+
+export const main = Reach.App(
+  {},
+  [
+    ['Funder', FunderInteract],
+    ['Receiver', ReceiverInteract],
+    ['Bystander', BystanderInteract],
+  ],
+  (F, R, B) => main_fn(F, R, B)
+);
