@@ -1,5 +1,6 @@
 module Reach.Eval.Lookup
   ( SLLibs
+  , lookupModuleEnv
   , lookupRenamesModuleEnv
   , lookupRenamesEnv
   , EvalLookupErr (..)
@@ -27,14 +28,22 @@ stringifyReachSourceErr = \case
   Err_EvalLookup_Missing label at k ks ->
     Err_EvalLookup_Missing label at (show k) (fmap show ks)
 
+-- | Select down and rename identifiers from an SLEnv.
 lookupRenamesEnv :: String -> Renames -> SLEnv -> Except (EvalLookupErr String) SLEnv
 lookupRenamesEnv label renames env = traverse toSing renames
   where
     toSing ri = lookup label (ri_srcAt ri) (ri_src ri) env
 
+-- | Get the SLEnv exported by a module
+lookupModuleEnv :: SrcLoc -> ReachSource -> SLLibs -> Except (EvalLookupErr String) SLEnv
+lookupModuleEnv at srcm libm = do
+  withExcept stringifyReachSourceErr $ lookup "module" at srcm libm
+
+-- | Get the SLEnv exported by a module,
+-- with identifiers selected down and renamed.
 lookupRenamesModuleEnv :: SrcLoc -> Renames -> ReachSource -> SLLibs -> Except (EvalLookupErr String) SLEnv
 lookupRenamesModuleEnv at renames srcm libm = do
-  libex <- withExcept stringifyReachSourceErr $ lookup "module" at srcm libm
+  libex <- lookupModuleEnv at srcm libm
   lookupRenamesEnv label renames libex
   where
     label = case srcm of

@@ -82,6 +82,7 @@ data EvalError
   | Err_Form_InvalidArgs SLForm Int [JSExpression]
   | Err_Fun_NamesIllegal
   | Err_Import_IllegalJS JSImportDeclaration
+  | Err_Import_Missing String String [String]
   | Err_Module_Return
   | Err_NoHeader [JSModuleItem]
   | Err_Obj_IllegalComputedField SLVal
@@ -254,6 +255,8 @@ instance Show EvalError where
       "Invalid function expression. Anonymous functions must not be named."
     Err_Import_IllegalJS decl ->
       "Invalid Reach import syntax: " <> conNameOf decl
+    Err_Import_Missing label k ks ->
+      "Invalid Reach import. Could not find " <> label <> ": " <> k <> didYouMean k ks 5
     Err_Module_Return ->
       "Invalid return statement. Cannot return at top level of module."
     Err_NoHeader _mis ->
@@ -2188,39 +2191,22 @@ evalTopBody ctxt at st libm env exenv body =
                 lab = "import"
                 env' = env_merge at' env newIdents
                 JSFromClause _ a libn = fromClause
-                libex =
-                  case M.lookup (ReachSourceFile libn) libm of
-                    Just x -> x
-                    Nothing ->
-                      impossible $ "dependency not found"
+                srcm = ReachSourceFile libn
                 newIdents = case importClause of
                   JSImportClauseNameSpace (JSImportNameSpace _ _ nsIdent) ->
-                    M.singleton ns $ moduleObj nsIdent libex
+                    case runExcept $ lookupModuleEnv at' srcm libm of
+                      Left _e -> impossible "missing import"
+                      Right libex ->
+                        M.singleton ns $ moduleObj nsIdent libex
                     where
                       (_, ns) = getIdent nsIdent
-                  JSImportClauseNamed (JSImportsNamed _ namesCl _) ->
-                    -- Check that all dest idents are unique amongst themselves
-                    case renamesSize == destsSize of
-                      -- env_merge will take care of conflicts later
-                      True -> foldMap toSing renames
-                      False -> illegal_import -- TODO: explain why
-                    where
-                      toSing ((_srcAt, srcIdent), (_destAt, destIdent)) =
-                        M.singleton destIdent $ case M.lookup srcIdent libex of
-                          Just expr -> expr
-                          Nothing -> illegal_import -- TODO: explain why
-                      renames = map rename $ jscl_flatten namesCl
-                      rename = \case
-                        JSImportSpecifier jsident ->
-                          (locatedIdent, locatedIdent)
-                          where
-                            locatedIdent = getIdent jsident
-                        JSImportSpecifierAs jsSrcIdent _ jsDestIdent ->
-                          (getIdent jsSrcIdent, getIdent jsDestIdent)
-                      renamesSize = length renames
-                      destsSize = S.size . S.fromList $ map getDest renames
-                        where
-                          getDest (_, (_, dest)) = dest
+                  JSImportClauseNamed jsImportsNamed ->
+                    case runExcept $ importsNamedToRenames jsImportsNamed of
+                      Left _e -> illegal_import -- TODO: explain why
+                      Right renames -> case runExcept $ lookupRenamesModuleEnv at' renames srcm libm of
+                        Left e -> illegal_import_missing e
+                        Right x -> x
+                  -- runExcept $ lookupRenamesModuleEnv at' renames src libm of
                   -- Reach does not use the JS concept of "default" imports
                   -- TODO: better error message about this
                   JSImportClauseDefault {} -> illegal_import
@@ -2235,7 +2221,13 @@ evalTopBody ctxt at st libm env exenv body =
             getIdent = \case
               JSIdentName nsA ns -> (nsA, ns)
               JSIdentNone -> illegal_import -- does this ever happen?
+            illegal_import :: HasCallStack => a
             illegal_import = expect_throw at (Err_Import_IllegalJS im)
+            illegal_import_missing :: HasCallStack => EvalLookupErr String -> a
+            illegal_import_missing (Err_EvalLookup_Missing label missingAt k ks) =
+              expect_throw at'' (Err_Import_Missing label k ks)
+              where
+                at'' = srcloc_lab_only "export" <> missingAt <> at
         (JSModuleExportDeclaration a ed) ->
           case ed of
             JSExport s _ -> doStmt at' True s
