@@ -125,7 +125,7 @@ export const main =
 <span class="mi">36</span>        <span class="p">[[</span><span class="s1">&#39;Alice&#39;</span><span class="p">,</span> <span class="nx">Alice</span><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="nx">Bob</span><span class="p">]],</span>
 <span class="mi">37</span>        <span class="p">(</span><span class="nx">A</span><span class="p">,</span> <span class="nx">B</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
 <span class="mi">38</span>          <span class="kd">const</span> <span class="nx">informTimeout</span> <span class="o">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
-<span class="mi">39</span>            <span class="nx">each</span><span class="p">([</span><span class="nx">A</span><span class="p">,</span> <span class="nx">B</span><span class="p">],</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+<span class="mi">39</span>            <span class="k">each</span><span class="p">([</span><span class="nx">A</span><span class="p">,</span> <span class="nx">B</span><span class="p">],</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
 <span class="mi">40</span>              <span class="k">interact</span><span class="p">.</span><span class="nx">informTimeout</span><span class="p">();</span> <span class="p">});</span> <span class="p">};</span>
 <span class="mi">41</span>    
 <span class="mi">42</span>          <span class="nx">A</span><span class="p">.</span><span class="k">only</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
@@ -172,7 +172,7 @@ export const main =
 <span class="mi">83</span>          <span class="k">transfer</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="nx">wager</span><span class="p">).</span><span class="nx">to</span><span class="p">(</span><span class="nx">outcome</span> <span class="o">==</span> <span class="nx">A_WINS</span> <span class="o">?</span> <span class="nx">A</span> <span class="o">:</span> <span class="nx">B</span><span class="p">);</span>
 <span class="mi">84</span>          <span class="k">commit</span><span class="p">();</span>
 <span class="mi">85</span>    
-<span class="mi">86</span>          <span class="nx">each</span><span class="p">([</span><span class="nx">A</span><span class="p">,</span> <span class="nx">B</span><span class="p">],</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+<span class="mi">86</span>          <span class="k">each</span><span class="p">([</span><span class="nx">A</span><span class="p">,</span> <span class="nx">B</span><span class="p">],</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
 <span class="mi">87</span>            <span class="k">interact</span><span class="p">.</span><span class="nx">seeOutcome</span><span class="p">(</span><span class="nx">outcome</span><span class="p">);</span> <span class="p">});</span>
 <span class="mi">88</span>          <span class="k">exit</span><span class="p">();</span> <span class="p">});</span>
 </pre></div>
