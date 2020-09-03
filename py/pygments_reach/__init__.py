@@ -77,7 +77,7 @@ class ReachLexer(RegexLexer):
             (r'(for|in|while|do|break|return|continue|switch|case|default|if|else|'
              r'throw|try|catch|finally|new|delete|typeof|instanceof|void|yield|'
              # Reach ones
-             r'interact|commit|exit|only|timeout|publish|pay|declassify|transfer|'
+             r'interact|commit|exit|only|each|timeout|publish|pay|declassify|transfer|'
              r'invariant|assert|require|assume|possible|unknowable|forall|'
              r'this|of)\b', Keyword, 'slashstartsregex'),
             (r'(var|let|with|function|'
