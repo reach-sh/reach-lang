@@ -7,6 +7,7 @@ import * as waitPort   from 'wait-port';
 import { getConnectorMode }  from './loader.mjs';
 import {
   getDEBUG, debug, bigNumberify, isBigNumber, assert,
+  add, ge, lt,
 } from './shared.mjs';
 export * from './shared.mjs';
 
@@ -326,7 +327,11 @@ export const connectAccount = async networkAccount => {
 
     const wait = async (delta) => {
       // Don't wait from current time, wait from last_block
-      return await waitUntilTime(last_block + delta);
+      // XXX
+      debug(`=====Waiting ${delta} from ${last_block}: ${address}`);
+      const p = await waitUntilTime(add(last_block, delta));
+      debug(`=====Done waiting ${delta} from ${last_block}: ${address}`);
+      return p;
     };
 
     const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
@@ -354,7 +359,7 @@ export const connectAccount = async networkAccount => {
           debug(e);
           // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
           await Timeout.set(1);
-          const current_block = await getNetworkTime();
+          const current_block = await getNetworkTimeNumber();
           if ( current_block == block_send_attempt ) {
             block_repeat_count++; }
           block_send_attempt = current_block;
@@ -410,7 +415,7 @@ export const connectAccount = async networkAccount => {
 
           await Timeout.set(1);
           void(ethersBlockOnceP); // This might be a better option too, because we won't need to delay
-          block_poll_end = await getNetworkTime();
+          block_poll_end = await getNetworkTimeNumber();
 
           continue;
         } else {
@@ -512,25 +517,30 @@ export const newTestAccount = async (startingBalance) => {
   }
 };
 
-export const getNetworkTime = async () => {
+const getNetworkTimeNumber = async () => {
   const provider = await getProvider();
   return await provider.getBlockNumber();
+};
+
+export const getNetworkTime = async () => {
+  return bigNumberify(await getNetworkTimeNumber());
 };
 
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
 export const wait = async (delta, onProgress) => {
   const now = await getNetworkTime();
-  return await waitUntilTime(now + delta, onProgress);
+  return await waitUntilTime(add(now, delta), onProgress);
 };
 
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
 export const waitUntilTime = async (targetTime, onProgress) => {
+  targetTime = bigNumberify(targetTime);
   if (isIsolatedNetwork) {
-    return await fastForwardTo(targetTime, onProgress);
+    await fastForwardTo(targetTime, onProgress);
   } else {
-    return await actuallyWaitUntilTime(targetTime, onProgress);
+    await actuallyWaitUntilTime(targetTime, onProgress);
   }
 };
 
@@ -543,7 +553,7 @@ const actuallyWaitUntilTime = async (targetTime, onProgress) => {
     const onBlock = async (currentTime) => {
       // Does not block on the progress fn if it is async
       onProgress({currentTime, targetTime});
-      if (currentTime >= targetTime) {
+      if (ge(currentTime, targetTime)) {
         provider.off('block', onBlock);
         resolve(currentTime);
       }
@@ -561,7 +571,7 @@ const fastForwardTo = async (targetTime, onProgress) => {
   onProgress = onProgress || (() => {});
   requireIsolatedNetwork('fastForwardTo');
   let currentTime;
-  while ((currentTime = await getNetworkTime()) < targetTime) {
+  while (lt(currentTime = await getNetworkTime(), targetTime)) {
     onProgress({currentTime, targetTime});
     await stepTime();
   }

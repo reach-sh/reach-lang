@@ -48,7 +48,7 @@ export const connectAccount = async networkAccount => {
 
     const wait = (delta) => {
       // Don't wait from current time, wait from last_block
-      waitUntilTime(last_block + delta);
+      waitUntilTime(stdlib.add(last_block, delta));
     };
 
     const sendrecv = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
@@ -111,21 +111,25 @@ export const newTestAccount = async (startingBalance) => {
 };
 
 export function getNetworkTime() {
-  return BLOCKS.length;
+  return stdlib.bigNumberify(BLOCKS.length);
 }
 
 export function wait(delta, onProgress) {
-  return waitUntilTime(getNetworkTime() + delta, onProgress);
+  return waitUntilTime(stdlib.add(getNetworkTime(), delta), onProgress);
 }
 
 export function waitUntilTime(targetTime, onProgress) {
+  targetTime = stdlib.bigNumberify(targetTime);
   onProgress = onProgress || (() => {});
   // FAKE is basically synchronous,
   // so it doesn't make sense to actually "wait" idly.
-  while ( BLOCKS.length < targetTime) {
-    onProgress({currentTime: BLOCKS.length, targetTime});
+  let currentTime;
+  while (stdlib.lt((currentTime = getNetworkTime()), targetTime)) {
+    onProgress({currentTime, targetTime});
     BLOCKS.push({ type: 'wait' });
   }
+  // Also report progress at completion time
+  onProgress({currentTime, targetTime});
 }
 
 export const newAccountFromMnemonic = false; // XXX

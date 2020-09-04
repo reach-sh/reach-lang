@@ -4,7 +4,7 @@ import * as ALGO_stdlib from './ALGO.mjs';
 import * as FAKE_stdlib from './FAKE.mjs';
 
 runTests(async () => { await describe('The `web3` stdlib', async () => {
-  const bigNumberify = stdlib.bigNumberify;
+  const {bigNumberify, ge, le} = stdlib;
 
   describe('exposes a `bigNumberToHex` function that', () => {
     it('correctly translates positive `BigNumber`s to hex', () => {
@@ -216,29 +216,29 @@ runTests(async () => { await describe('The `web3` stdlib', async () => {
     let prog0 = 1;
     await stdlib.wait(1, ({currentTime}) => {
       describe(`prog0: ${prog0}`, () => {
-        expect(currentTime >= 0 && currentTime <= 1).toBe(true);
+        expect(ge(currentTime, 0) && le(currentTime, 1)).toBe(true);
         prog0++;
       });
     });
-    expect(await stdlib.getNetworkTime()).toBe(1);
+    expect(await stdlib.getNetworkTime()).toBe(bigNumberify(1));
 
     let prog1 = 1;
     await stdlib.wait(1, ({currentTime}) => {
       describe(`prog1: ${prog1}`, () => {
-        expect(currentTime >= 1 && currentTime <= 2).toBe(true);
+        expect(ge(currentTime, 1) && le(currentTime, 2)).toBe(true);
         prog1++;
       });
     });
-    expect(await stdlib.getNetworkTime()).toBe(2);
+    expect(await stdlib.getNetworkTime()).toBe(bigNumberify(2));
 
     let prog2 = 1;
     await stdlib.waitUntilTime(5, ({currentTime}) => {
       describe(`prog2: ${prog2}`, () => {
-        expect(currentTime >= 2 && currentTime <= 5).toBe(true);
+        expect(ge(currentTime, 2) && le(currentTime, 5)).toBe(true);
         prog2++;
       });
     });
-    expect(await stdlib.getNetworkTime()).toBe(5);
+    expect(await stdlib.getNetworkTime()).toBe(bigNumberify(5));
   });
 
 }); });
