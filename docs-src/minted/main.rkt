@@ -81,7 +81,6 @@
           'nowrap "True"
           'lineseparator "<br />"))
 
-;; XXX This doesn't work :'(
 (define mint-scope (make-parameter #f))
 
 (define mint-defines-once-box (box #f))

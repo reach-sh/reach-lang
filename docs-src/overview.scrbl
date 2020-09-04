@@ -1,6 +1,6 @@
 #lang scribble/manual
 @(require "lib.rkt")
-(mint-scope "overview")
+@(mint-scope "overview")
 
 @title[#:version reach-vers #:tag "overview"]{Overview}
 
