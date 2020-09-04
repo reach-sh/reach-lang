@@ -1,7 +1,6 @@
 module Reach.Eval (EvalError, compileBundle) where
 
 import Control.Monad
-import Control.Monad.Except
 import Control.Monad.ST
 import Control.Monad.Writer
 import Data.Bits
@@ -18,9 +17,7 @@ import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST
-import Reach.Eval.Lookup
 import Reach.JSUtil
-import Reach.Parse.Renames
 import Reach.Parser
 import Reach.STCounter
 import Reach.Type
@@ -77,12 +74,9 @@ data EvalError
   | Err_Eval_UnboundId SLVar [SLVar]
   | Err_ExpectedPrivate SLVal
   | Err_ExpectedPublic SLVal
-  | Err_Export_IllegalJS JSExportDeclaration
-  | Err_Export_Missing String String [String] -- label, needle, haystack
   | Err_Form_InvalidArgs SLForm Int [JSExpression]
   | Err_Fun_NamesIllegal
-  | Err_Import_IllegalJS JSImportDeclaration
-  | Err_Import_Missing String String [String]
+  | Err_Import_IllegalJS JSImportClause
   | Err_Module_Return
   | Err_NoHeader [JSModuleItem]
   | Err_Obj_IllegalComputedField SLVal
@@ -245,18 +239,12 @@ instance Show EvalError where
         <> ("but this " <> displaySlValType slval <> " is public.")
     Err_ExpectedPublic slval ->
       "Invalid access of secret value (" <> displaySlValType slval <> ")"
-    Err_Export_IllegalJS exportDecl ->
-      "Invalid Reach export syntax: " <> conNameOf exportDecl
-    Err_Export_Missing label k ks ->
-      "Invalid Reach export. Could not find " <> label <> ": " <> k <> didYouMean k ks 5
     Err_Form_InvalidArgs _SLForm n es ->
       "Invalid args. Expected " <> show n <> " but got " <> show (length es)
     Err_Fun_NamesIllegal ->
       "Invalid function expression. Anonymous functions must not be named."
     Err_Import_IllegalJS decl ->
       "Invalid Reach import syntax: " <> conNameOf decl
-    Err_Import_Missing label k ks ->
-      "Invalid Reach import. Could not find " <> label <> ": " <> k <> didYouMean k ks 5
     Err_Module_Return ->
       "Invalid return statement. Cannot return at top level of module."
     Err_NoHeader _mis ->
@@ -2163,107 +2151,80 @@ expect_empty_tail lab a sp at ks res =
       where
         at' = srcloc_after_semi lab a sp at
 
+type SLLibs = (M.Map ReachSource SLEnv)
+
+lookupDep :: ReachSource -> SLLibs -> SLEnv
+lookupDep rs libm =
+  case M.lookup rs libm of
+    Just x -> x
+    Nothing -> impossible $ "dependency not found"
+
+evalFromClause :: SLLibs -> JSFromClause -> SLEnv
+evalFromClause libm (JSFromClause _ _ libn) =
+  lookupDep (ReachSourceFile libn) libm
+
+evalImExportSpecifiers :: SrcLoc -> SLEnv -> (a -> (JSIdent, JSIdent)) -> (JSCommaList a) -> SLEnv
+evalImExportSpecifiers at env go cl =
+  foldl' (env_merge at) mempty $ map (uncurry p) $ map go $ jscl_flatten cl
+  where p f t = p' (parseIdent at f) (parseIdent at t)
+        p' (_, f) (_, t) = M.singleton t $ env_lookup at f env
+
+evalImportClause :: SrcLoc -> SLEnv -> JSImportClause -> SLEnv
+evalImportClause at env im =
+  case im of
+    JSImportClauseNameSpace (JSImportNameSpace _ _ ji) ->
+      M.singleton ns $ (Public, SLV_Object at' (Just $ "module " <> ns) env)
+      where
+        (at', ns) = parseIdent at ji
+    JSImportClauseNamed (JSImportsNamed _ iscl _) ->
+      evalImExportSpecifiers at env go iscl
+      where go = \case
+              JSImportSpecifier x -> (x, x)
+              JSImportSpecifierAs x _ y -> (x, y)
+    JSImportClauseDefault {} -> illegal_import
+    JSImportClauseDefaultNameSpace {} -> illegal_import
+    JSImportClauseDefaultNamed {} -> illegal_import
+  where
+    illegal_import = expect_throw at (Err_Import_IllegalJS im)
+
+evalExportClause :: SrcLoc -> SLEnv -> JSExportClause -> SLEnv
+evalExportClause at env (JSExportClause _ escl _) =
+  evalImExportSpecifiers at env go escl
+  where go = \case
+          JSExportSpecifier x -> (x, x)
+          JSExportSpecifierAs x _ y -> (x, y)
+
 evalTopBody :: SLCtxt s -> SrcLoc -> SLState -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> SLComp s SLEnv
 evalTopBody ctxt at st libm env exenv body =
   case body of
     [] -> return $ SLRes mempty st exenv
     mi : body' ->
       case mi of
-        (JSModuleImportDeclaration _ im) ->
+        (JSModuleImportDeclaration a im) ->
           case im of
-            JSImportDeclarationBare a libn sp ->
-              evalTopBody ctxt at_after st libm env' exenv body'
+            JSImportDeclarationBare _ libn _ ->
+              evalTopBody ctxt at' st libm env' exenv body'
               where
-                at_after = srcloc_after_semi lab a sp at
-                at' = srcloc_jsa lab a at
-                lab = "import"
                 env' = env_merge at' env libex
-                libex =
-                  case M.lookup (ReachSourceFile libn) libm of
-                    Just x -> x
-                    Nothing ->
-                      impossible $ "dependency not found"
-            JSImportDeclaration importClause fromClause sp ->
-              evalTopBody ctxt at_after st libm env' exenv body'
+                libex = lookupDep (ReachSourceFile libn) libm
+            JSImportDeclaration ic fc _ ->
+              evalTopBody ctxt at' st libm env' exenv body'
               where
-                at_after = srcloc_after_semi lab a sp at
-                at' = srcloc_jsa lab a at
-                lab = "import"
-                env' = env_merge at' env newIdents
-                JSFromClause _ a libn = fromClause
-                srcm = ReachSourceFile libn
-                newIdents = case importClause of
-                  JSImportClauseNameSpace (JSImportNameSpace _ _ nsIdent) ->
-                    case runExcept $ lookupModuleEnv at' srcm libm of
-                      Left _e -> impossible "missing import"
-                      Right libex ->
-                        M.singleton ns $ moduleObj nsIdent libex
-                    where
-                      (_, ns) = getIdent nsIdent
-                  JSImportClauseNamed jsImportsNamed ->
-                    case runExcept $ importsNamedToRenames jsImportsNamed of
-                      Left _e -> illegal_import -- TODO: explain why
-                      Right renames -> case runExcept $ lookupRenamesModuleEnv at' renames srcm libm of
-                        Left e -> illegal_import_missing e
-                        Right x -> x
-                  -- runExcept $ lookupRenamesModuleEnv at' renames src libm of
-                  -- Reach does not use the JS concept of "default" imports
-                  -- TODO: better error message about this
-                  JSImportClauseDefault {} -> illegal_import
-                  JSImportClauseDefaultNameSpace {} -> illegal_import
-                  JSImportClauseDefaultNamed {} -> illegal_import
+                env' = env_merge at' env news
+                news = evalImportClause at' ienv ic
+                ienv = evalFromClause libm fc
           where
-            moduleObj nsIdent libex = (Public, SLV_Object nsAt nslab libex)
-              where
-                nsAt = srcloc_jsa ns nsA at
-                nslab = Just $ "module " <> ns
-                (nsA, ns) = getIdent nsIdent
-            getIdent = \case
-              JSIdentName nsA ns -> (nsA, ns)
-              JSIdentNone -> illegal_import -- does this ever happen?
-            illegal_import :: HasCallStack => a
-            illegal_import = expect_throw at (Err_Import_IllegalJS im)
-            illegal_import_missing :: HasCallStack => EvalLookupErr String -> a
-            illegal_import_missing (Err_EvalLookup_Missing label missingAt k ks) =
-              expect_throw at'' (Err_Import_Missing label k ks)
-              where
-                at'' = srcloc_lab_only "export" <> missingAt <> at
-        (JSModuleExportDeclaration a ed) ->
-          case ed of
+            at' = srcloc_jsa "import" a at
+        (JSModuleExportDeclaration a ex) ->
+          case ex of
             JSExport s _ -> doStmt at' True s
-            JSExportFrom exportClause fromClause _semi ->
-              exportAll exenvNew
-              where
-                renames = case runExcept (exportClauseToRenames exportClause) of
-                  Left _ -> illegal_export -- TODO explain why
-                  Right x -> x
-                JSFromClause _ _ fromModuleName = fromClause
-                srcf = ReachSourceFile fromModuleName
-                exenvNew = case runExcept $ lookupRenamesModuleEnv at' renames srcf libm of
-                  Left e -> illegal_export_missing e
-                  Right x -> x
-            JSExportLocals exportClause _semi ->
-              exportAll exenvNew
-              where
-                renames = case runExcept (exportClauseToRenames exportClause) of
-                  Left _ -> illegal_export -- TODO: explain why
-                  Right x -> x
-                exenvNew = case runExcept $ lookupRenamesEnv "bound identifier" renames env of
-                  Left e -> illegal_export_missing e
-                  Right x -> x
+            JSExportFrom ec fc _ -> go ec (evalFromClause libm fc)
+            JSExportLocals ec _ -> go ec env
           where
-            illegal_export :: HasCallStack => a
-            illegal_export = expect_throw at' (Err_Export_IllegalJS ed)
-            illegal_export_missing :: HasCallStack => EvalLookupErr String -> a
-            illegal_export_missing (Err_EvalLookup_Missing label missingAt k ks) =
-              expect_throw at'' (Err_Export_Missing label k ks)
-              where
-                at'' = srcloc_lab_only "export" <> missingAt <> at'
             at' = srcloc_jsa "export" a at
-            exportAll exenvNew =
-              evalTopBody ctxt at' st libm env exenv' body'
-              where
-                exenv' = env_merge at' exenv exenvNew
+            go ec eenv =
+              evalTopBody ctxt at' st libm env (env_merge at' exenv news) body'
+              where news = evalExportClause at' eenv ec
         (JSModuleStatementListItem s) -> doStmt at False s
       where
         doStmt at' isExport sm = do

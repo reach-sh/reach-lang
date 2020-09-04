@@ -1,1 +1,0 @@
-error: ./Err_Export_IllegalJS.rsh:10:1:export: Invalid Reach export syntax: JSExportLocals

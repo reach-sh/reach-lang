@@ -1,4 +1,4 @@
-module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jsCallLike, jse_expect_id, jso_expect_id, gatherDeps_top) where
+module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jsCallLike, parseIdent, jse_expect_id, jso_expect_id, gatherDeps_top) where
 
 import Control.DeepSeq
 import Control.Monad (when)
@@ -34,6 +34,7 @@ data ParserError
   | Err_Parse_ImportDotDot FilePath
   | Err_Parse_NotModule JSAST
   | Err_Parse_NotCallLike JSExpression
+  | Err_Parse_JSIdentNone
   deriving (Generic, Eq)
 
 --- FIXME implement a custom show that is useful
@@ -42,6 +43,8 @@ instance Show ParserError where
     "Cyclic import! " <> show rs
   show Err_Parser_Arrow_NoFormals =
     "Arg list for function is missing."
+  show Err_Parse_JSIdentNone =
+    "Expected identifier, found none"
   show (Err_Parse_ExpectIdentifier _e) =
     "Expected identifier, got expression."
   show (Err_Parse_NotCallLike _e) =
@@ -62,6 +65,13 @@ instance Show ParserError where
     "Not a module: " <> (take 256 $ show ast)
 
 --- Helpers
+parseIdent :: SrcLoc -> JSIdent -> (SrcLoc, String)
+parseIdent at = \case
+  JSIdentName a ident ->
+    (srcloc_jsa ident a at, ident)
+  JSIdentNone ->
+    expect_throw at $ Err_Parse_JSIdentNone
+
 jse_expect_id :: HasCallStack => SrcLoc -> JSExpression -> String
 jse_expect_id at j =
   case j of

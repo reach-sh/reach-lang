@@ -1,1 +1,1 @@
-error: ./Err_Fun_NamesIllegal.rsh:1:12:after header semicolon: Invalid Reach import syntax: JSImportDeclaration
+error: ./Err_Fun_NamesIllegal.rsh:3:1:import: Invalid Reach import syntax: JSImportClauseDefault

@@ -63,6 +63,7 @@ spec_examples_cover_ParserError =
       [ "Err_Parser_Arrow_NoFormals" -- (=> e) didn't work
       , "Err_Parse_IllegalLiteral" -- undefined didn't work
       , "Err_Parse_NotModule"
+      , "Err_Parse_JSIdentNone"
       ]
 
 spec_examples_cover_TypeError :: Spec
