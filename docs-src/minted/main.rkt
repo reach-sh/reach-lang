@@ -109,6 +109,7 @@
 
   (define scope
     '()
+    ;; XXX This is too aggressive in JS.
     #;
     (if scopee (list scopee) '()))
   (define langs (string->symbol lang))
