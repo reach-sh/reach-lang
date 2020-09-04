@@ -2,14 +2,15 @@
     font-size: 1rem;
 }
 
-.highlight-inline {
-    font-size: 1rem;
+.highlight a {
+    text-decoration: none;
 }
 
-.highlight-inline {
-    /* https://github.com/wilbowma/scribble-minted/issues/2
+.highlight .badlink {
+    text-decoration: none;
+}
 
-    display: inline-table; */
+code.highlight {
     margin: 0em;
     white-space: pre-wrap;
 }
