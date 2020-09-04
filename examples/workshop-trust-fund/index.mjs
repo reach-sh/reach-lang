@@ -1,9 +1,9 @@
 import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
 
-const MATURITY = 10;
-const REFUND = 5;
-const DORMANT = 5;
+const MATURITY = 50;
+const REFUND = 50;
+const DORMANT = 50;
 
 const runDemo = async (delay) => {
   delay = delay || 0;
@@ -11,6 +11,8 @@ const runDemo = async (delay) => {
 
   const stdlib = await stdlib_loader.loadStdlib();
   const connector = stdlib_loader.getConnector();
+  const money = connector;
+  const time = 'blocks';
 
   // stdlib.setDEBUG(true);
 
@@ -24,9 +26,58 @@ const runDemo = async (delay) => {
 
   const getBalance = async (who) => fromCurrency(await stdlib.balanceOf(who));
 
-  const notify = (who, what) => {
-    console.log(`${who} is notified that ${what}.`);
+  const notify = async (who, what) => {
+    const at = await stdlib.getNetworkTime();
+    console.log(`@${at}: ${who} is notified: ${what}`);
   };
+  const hasNotifications = (who) => ({
+    notifyStarted: async () => {
+      await notify(who, 'The program has started');
+    },
+    notifyWillReceive: async ({payment, maturity}) => {
+      const paymentStr = `${fromCurrency(payment)} ${money}`;
+      const maturityStr = `${maturity} ${time}`;
+      await notify(
+        who,
+        `Receiver will receive ${paymentStr} after ${maturityStr}.`
+      );
+    },
+    notifyMaturity: async ({refund}) => {
+      const refundStr = `${refund} ${time}`;
+      await notify(
+        who,
+        `The fund has reached maturity.`
+          + ` Receiver has up to ${refundStr} to collect.`
+      );
+    },
+    notifyReceived: async () => {
+      await notify(who, 'Receiver has received the payment.');
+    },
+    notifyReceiverTookTooLong: async ({dormant}) => {
+      const dormantStr = `${dormant} ${time}`;
+      await notify(
+        who,
+        `Receiver took too long.`
+          + ` Funder has up to ${dormantStr} to get refunded.`
+      );
+    },
+    notifyRefunded: async () => {
+      await notify(who, 'Funder has been refunded the payment.');
+    },
+    notifyFunderTookTooLong: async () => {
+      await notify(
+        who,
+        'Funder took took too long'
+          + ' Bystander may now yoink the abandoned payment.'
+      );
+    },
+    notifyYoinked: async () => {
+      await notify(who, 'Bystander has yoinked the abandoned payment.');
+    },
+    notifyExited: async () => {
+      await notify(who, 'The program has exited');
+    }
+  });
 
   const startingBalance = toCurrency('100');
 
@@ -47,49 +98,40 @@ const runDemo = async (delay) => {
   };
 
   const funderP = (async () => {
-    console.log(`Funder has joined the contract.`);
     await backend.Funder(stdlib, ctcFunder, {
+      ...hasNotifications('Funder'),
       getParams: () => params,
-      notifyRefunded: async () => {
-        notify('Funder', 'Funder has been refunded the payment.');
-      }
     });
-    console.log(`Funder is done with the contract.`);
   })();
 
   const receiverP = (async () => {
+    console.log('Receiver begins to wait...');
     await stdlib.wait(delay, ({currentTime, targetTime}) => {
-      console.log(`wait progress... ${currentTime} -> ${targetTime}`);
+      console.log(`Receiver wait progress... ${currentTime} -> ${targetTime}`);
     });
-    console.log(`Receiver joins the contract.`);
     try {
       await backend.Receiver(stdlib, ctcReceiver, {
-        notifyWillReceive: ({payment, maturity}) => {
-          const paymentStr = fromCurrency(payment);
-          notify('Receiver', `Receiver will receive ${paymentStr} after ${maturity}.`);
-        },
-        notifyReceived: () => {
-          notify('Receiver', 'Receiver has received the payment.');
-        },
+        ...hasNotifications('Receiver'),
       });
     } catch (e) {
       notify('Receiver', `Receiver errored: ${e.message}`);
     }
-    console.log(`Receiver is done with the contract.`);
   })();
 
   const bystanderP = (async () => {
-    console.log(`Bystander joins the contract.`);
-    await backend.Bystander(stdlib, ctcBystander, {});
-    console.log(`Bystander is done with the contract.`);
+    await backend.Bystander(stdlib, ctcBystander, {
+      ...hasNotifications('Bystander'),
+    });
   })();
 
   await Promise.all([funderP, receiverP, bystanderP]);
+  for (const [who, acc] of [['Funder', funder], ['Receiver', receiver], ['Bystander', bystander]]) {
+    console.log(`${who} has a balance of ${await getBalance(acc)}`);
+  }
   console.log(`demo complete with delay ${delay}`);
 };
 
 (async () => {
   await runDemo();
-  // TODO
-  // await runDemo(20);
+  // await runDemo(MATURITY + REFUND + 20);
 })();
