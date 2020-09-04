@@ -69,7 +69,8 @@ class ReachLexer(RegexLexer):
             (r'0[oO][0-7]+', Number.Oct),
             (r'0[xX][0-9a-fA-F]+', Number.Hex),
             (r'[0-9]+', Number.Integer),
-            (r'\.\.\.|=>', Punctuation),
+            (r'\.\.\.', Punctuation),
+            (r'=>', Operator),
             (r'\+\+|--|~|&&|\?|:|\|\||\\(?=\n)|'
              r'(<<|>>>?|==?|!=?|[-<>+*%&|^/])=?', Operator, 'slashstartsregex'),
             (r'[{(\[;,]', Punctuation, 'slashstartsregex'),
