@@ -425,6 +425,8 @@ export const connectAccount = async networkAccount => {
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (label, okNum, timeout_delay) => {
+      // TODO: support BigNumber delays?
+      timeout_delay = timeout_delay && timeout_delay.toNumber();
       const ethersC = (await getC());
       const ok_evt = `e${okNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
