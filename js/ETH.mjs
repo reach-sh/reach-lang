@@ -364,6 +364,8 @@ export const connectAccount = async networkAccount => {
 
     /* eslint require-atomic-updates: off */
     const sendrecv = async (label, funcNum, args, value, timeout_delay) => {
+      // TODO: support BigNumber delays?
+      timeout_delay = toNumberMay(timeout_delay);
       const funcName = `m${funcNum}`;
       // https://github.com/ethereum/web3.js/issues/2077
       const munged = [...args]
@@ -426,7 +428,7 @@ export const connectAccount = async networkAccount => {
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv = async (label, okNum, timeout_delay) => {
       // TODO: support BigNumber delays?
-      timeout_delay = timeout_delay && timeout_delay.toNumber();
+      timeout_delay = toNumberMay(timeout_delay);
       const ethersC = (await getC());
       const ok_evt = `e${okNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
@@ -434,6 +436,11 @@ export const connectAccount = async networkAccount => {
       let block_poll_start = last_block;
       let block_poll_end = block_poll_start;
       while (!timeout_delay || block_poll_start < last_block + timeout_delay) {
+        // console.log(
+        //   `~~~ ${label} is polling [${block_poll_start}, ${block_poll_end}]\n` +
+        //     `  ~ ${label} will stop polling at ${last_block} + ${timeout_delay} = ${last_block + timeout_delay}`,
+        // );
+
         const es = await provider.getLogs({
           fromBlock: block_poll_start,
           toBlock: block_poll_end,
@@ -606,6 +613,7 @@ const actuallyWaitUntilTime = async (targetTime, onProgress) => {
 };
 
 const fastForwardTo = async (targetTime, onProgress) => {
+  // console.log(`>>> FFWD TO: ${targetTime}`);
   onProgress = onProgress || (() => {});
   requireIsolatedNetwork('fastForwardTo');
   let currentTime;
@@ -615,6 +623,7 @@ const fastForwardTo = async (targetTime, onProgress) => {
   }
   // Also report progress at completion time
   onProgress({ currentTime, targetTime });
+  // console.log(`<<< FFWD TO: ${targetTime} complete. It's ${currentTime}`);
 };
 
 const requireIsolatedNetwork = (label) => {
@@ -635,4 +644,12 @@ const stepTime = async () => {
   const signer = await getSigner();
   const acc = await dummyAccountP;
   return await transfer(signer, acc, toWeiBigNumber('0', 'ether'));
+};
+
+const toNumberMay = (x) => {
+  if (isBigNumber(x)) {
+    return x.toNumber();
+  } else {
+    return x;
+  }
 };
