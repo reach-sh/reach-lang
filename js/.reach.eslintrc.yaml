@@ -5,13 +5,13 @@
 
 rules:
   linebreak-style:
-    - error
+    - warn
     - unix
   semi:
-    - error
+    - warn
     - always
   comma-dangle:
-    - error
+    - warn
     - arrays: always-multiline
       objects: always-multiline
       imports: always-multiline
@@ -23,16 +23,16 @@ rules:
   no-console:
     - off
   no-constant-condition:
-    - error
+    - warn
     - checkLoops: false
   no-debugger:
     - off
   block-scoped-var:
-    - error
+    - warn
   keyword-spacing:
     - warn
   no-trailing-spaces:
-    - error
+    - warn
   quotes:
     - warn
     - single
@@ -40,11 +40,11 @@ rules:
     - allowTemplateLiterals: false
       avoidEscape: true
   max-len:
-    - error
+    - warn
     - code:       80
       ignoreUrls: true
   no-tabs:
-    - error
+    - warn
   no-mixed-spaces-and-tabs:
     - off # just say no to tabs
 
