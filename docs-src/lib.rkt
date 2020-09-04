@@ -1,6 +1,5 @@
 #lang at-exp racket/base
 (require scribble/manual
-         scribble/minted
          scriblib/figure
          scribble/core
          scribble/html-properties
@@ -11,9 +10,11 @@
          racket/list
          racket/file
          racket/string
-         racket/runtime-path)
+         racket/runtime-path
+         "./minted/main.rkt")
 (provide (all-defined-out)
-         (all-from-out scriblib/figure))
+         (all-from-out scriblib/figure)
+         mint-scope mint-define!)
 
 ;; (define-runtime-path analytics-p "analytics.html")
 ;; (define analytics (file->string analytics-p))
@@ -28,6 +29,7 @@
   (for/fold ([ht (hasheq)]) ([l (in-list (file->lines VERSION))])
     (match (string-split l "=")
       [(list key val) (hash-set ht (string->symbol key) val)]
+      ["" (void)]
       [_ (eprintf "VERSION: skipped ~v\n" l) ht])))
 (define (v k)
   (hash-ref version-ht k
@@ -38,21 +40,20 @@
 (define reach-short-vers
   (string-join (list (v 'MAJOR) (v 'MINOR)) "."))
 
-(current-pygmentize-default-style 'solarizedlight)
 (define (reach . contents)
-  (apply minted "reach" contents))
+  (apply mint "reach" contents))
 (define (reachin . contents)
-  (apply mintinline "reach" contents))
+  (apply mint #:inline? #t "reach" contents))
 
 (define (js . contents)
-  (apply minted "javascript" contents))
+  (apply mint "javascript" contents))
 (define (jsin . contents)
-  (apply mintinline "javascript" contents))
+  (apply mint #:inline? #t "javascript" contents))
 
 (define (yaml . contents)
-  (apply minted "yaml" contents))
+  (apply mint "yaml" contents))
 (define (makefile . contents)
-  (apply minted "makefile" contents))
+  (apply mint "makefile" contents))
 
 (define DApp @tech{DApp})
 (define DApps @tech{DApps})

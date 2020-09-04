@@ -15,6 +15,7 @@ If you're ready, click through to the @seclink["tut-0"]{first step}!
 @local-table-of-contents[#:style 'immediate-only]
 
 @section[#:tag "tut-0"]{Install and Initialize}
+(mint-scope "tut-0")
 
 Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.
 The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
@@ -57,6 +58,7 @@ You'll know that everything is in order if you can run
 Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-1"]{write your first Reach application}!
 
 @section[#:tag "tut-1"]{Scaffolding and Setup}
+(mint-scope "tut-1")
 
 In this tutorial, we'll be building a version of @|RPS| where two players, @emph{Alice} and @emph{Bob}, can wager on the result of the game.
 We'll start simple and slowly make the application more fully-featured.
@@ -69,8 +71,14 @@ Let's start by creating a file named @exec{index.rsh} and fill it with this:
 @reachex[#:show-lines? #t "tut-1/index.rsh"
          #:link #t]
 
+@margin-note{Did you notice that @reachin{export}, @reachin{const}, @reachin{exit}, and so on are links?
+In Reach code samples, you can click on the names of keywords and standard library functions to be brought to their documentation.}
+
 @margin-note{Did you notice that @reachexlink["tut-1/index.rsh"] was a link in the box above the code sample?
 You can always click on these links to see the entire file in our @hyperlink["https://github.com/reach-sh/reach-lang"]{GitHub} repository.}
+
+@margin-note{Did you notice the attractive clipboard icon on the top the right of that box?
+You can click on it and the content of the code box will be copied onto your clipboard.}
 
 @margin-note{Did your text editor recognize @exec{index.rsh} as a Reach program and give you proper syntax hightlighting?
 If not, then you can manually configure it to treat Reach (@exec{.rsh}) files as JavaScript and things will be mostly correct.}
@@ -97,6 +105,9 @@ Open a new file named @exec{index.mjs} and fill it with this:
 @reachex[#:mode js
          #:show-lines? #t "tut-1/index.mjs"
          #:link #t]
+
+@margin-note{Did you notice that @jsin{toWeiBigNumber}, @reachin{newTestAccount}, @reachin{deploy}, and so on are links?
+In JavaScript code samples, you can click on the names of standard library functions to be brought to their documentation.}
 
 This JavaScript code is similarly schematic and will be consistent across all of your test programs.
 
@@ -140,6 +151,7 @@ Since the application doesn't do anything, you'll just see a lot of diagnostic m
 In @seclink["tut-2"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
 
 @section[#:tag "tut-2"]{Rock, Paper, and Scissors}
+(mint-scope "tut-2")
 
 In this section, we'll have Alice and Bob actually execute the game of @|RPS|.
 
@@ -297,6 +309,7 @@ That's why every time you run @exec{./reach run}, both Alice and Bob will see th
 In @seclink["tut-3"]{the next step}, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
 
 @section[#:tag "tut-3"]{Bets and Wagers}
+(mint-scope "tut-3")
 
 Although it's fun to play @|RPS| with friends for a laugh, it's even better to play it with enemies and your entire life-savings on the line!
 Let's change our program so that Alice can offer a wager to Bob and whoever wins will take the pot.
@@ -488,6 +501,7 @@ Now that there is a reason to play this game, it turns out that there's a major 
 We'll fix this in @seclink["tut-4"]{the next step}; make sure you don't launch with this version, or Alice is going to go broke!
 
 @section[#:tag "tut-4"]{Trust and Commitments}
+(mint-scope "tut-4")
 
 In the last section, we made it so that Alice and Bob can actually exchange currency when they play @|RPS|.
 However, the version of the application we wrote has a fundamental flaw: Bob can win every game!
@@ -831,6 +845,7 @@ However, it still has a final category of mistake that is common in decentralize
 We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch with this version, or Alice may decide to back out of the game when she knows she's going to lose!
 
 @section[#:tag "tut-5"]{Timeouts and Participation}
+(mint-scope "tut-5")
 
 In the last section, we removed a security vulnerability from @|RPS| that was a clear attack on the viability of the application.
 In this section, we'll focus on a more subtle issue that is important and unique to decentralized applications: @seclink["guide-timeout"]{non-participation}.
@@ -1018,6 +1033,7 @@ Now our implementation of @|RPS| is robust against either participant dropping f
 In @seclink["tut-6"]{the next step}, we'll extend the application to disallow draws and have Alice and Bob play again until there is a winner.
 
 @section[#:tag "tut-6"]{Play and Play Again}
+(mint-scope "tut-6")
 
 In this section, we extend our application so that Alice and Bob will continue to play against each other until their game does not end in a draw.
 
@@ -1246,6 +1262,7 @@ Now our implementation of @|RPS| will always result in a pay-out, which is much 
 In @seclink["tut-7"]{the final step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
 
 @section[#:tag "tut-7"]{Interaction and Independence}
+(mint-scope "tut-7")
 
 In the last section, we made our @|RPS| run until there was a definitive winner.
 In this section, we won't be making any changes to the Reach program itself.
@@ -1488,6 +1505,7 @@ We are protected against attacks, timeouts, and draws, and we can run interactiv
 In @seclink["tut-8"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
 
 @section[#:tag "tut-8"]{Onward and Further}
+(mint-scope "tut-8")
 
 Let's review what we've done through this tutorial:
 

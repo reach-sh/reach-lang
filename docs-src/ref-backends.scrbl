@@ -10,9 +10,17 @@ supported by Reach version @|reach-vers|.
 
 @section[#:tag "ref-backend-js"]{JavaScript}
 
-The Reach JavaScript @tech{backend} produces a compilation output named @filepath{input.export.mjs} which exports an asynchronous function for each @tech{participant}. Each function accepts three arguments: @jsin{stdlib}, @jsin{ctc}, and @jsin{interact}. These functions should be called by the @tech{frontend}.
+The Reach JavaScript @tech{backend} produces a compilation output named @filepath{input.export.mjs} which exports an asynchronous function for each @tech{participant}.
+This will normally be imported by writing:
 
-The @jsin{stdlib} argument is provided by either
+@(mint-define! '("backend"))
+@js{
+ import * as backend from './build/index.main.mjs';
+}
+
+Each function accepts three arguments: @jsin{stdlib}, @jsin{ctc}, and @jsin{interact}. These functions should be called by the @tech{frontend}.
+
+The @(mint-define! '("stdlib")) @jsin{stdlib} argument is provided by either
 @itemlist[
  @item{the module @litchar{@"@"reach-sh/stdlib/ETH.mjs};}
  @item{the module @litchar{@"@"reach-sh/stdlib/ALGO.mjs};}
@@ -60,11 +68,13 @@ The @tt{loader.mjs} module exports the following functions
 that might help you write code that is portable to multiple consensus networks.
 
 @(hrule)
+
+@(mint-define! '("canonicalizeConnectorMode"))
 @js{
   canonicalizeConnectorMode(string) => string
 }
 
-@index{canonicalizeConnectorMode} Expands a connector mode prefix
+Expands a connector mode prefix
 to its full, canonical name. The canonical connector modes are:
 
 @js{
@@ -75,55 +85,63 @@ to its full, canonical name. The canonical connector modes are:
 }
 
 @(hrule)
+
+@(mint-define! '("getConnectorMode"))
 @js{
   getConnectorMode() => string
 }
 
-@index{getConnectorMode} Returns the canonicalized connector mode, based on the
+Returns the canonicalized connector mode, based on the
 @jsin{process.env.REACH_CONNECTOR_MODE} environment variable.
 If the variable is missing or empty, it will return the canonicalized form of @jsin{'ETH'}.
 
 @(hrule)
+
+@(mint-define! '("getConnector"))
 @js{
   getConnector() => string
 }
 
-@index{getConnector} Returns the first piece of @jsin{getConnectorMode()},
+Returns the first piece of @jsin{getConnectorMode()},
 which indicates the abbreviated name of the network being connected to.
 Connectors are one of the following: @jsin{['ETH', 'FAKE', 'ALGO']}.
 
 @(hrule)
+
+@(mint-define! '("loadStdLib"))
 @js{
   async loadStdlib(connectorMode) => stdlib
 }
 
-@index{loadStdlib} Returns a stlib based on the provided @jsin{connectorMode} string.
+Returns a stlib based on the provided @jsin{connectorMode} string.
 You may omit the @jsin{connectorMode} argument, in which case
 @jsin{getConnectorMode()} will be used to select the correct stdlib.
-
 
 @subsection[#:tag "ref-backend-js-stdlib"]{Standard Library}
 
 The @jsin{stdlib} modules export the following functions that might be used in this @tech{frontend}:
 
 @(hrule)
+@(mint-define! '("newAccountFromMnemonic"))
 @js{
  async newAccountFromMnemonic() => acc }
 
-@index{newAccountFromMnemonic} Returns a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given mnemonic phrase.
+Returns a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given mnemonic phrase.
 The details of the mnemonic phrase encoding are specified uniquely to the @tech{consensus network}.
 
 @(hrule)
+@(mint-define! '("newTestAccount"))
 @js{
  async newTestAccount(balance) => acc }
 
-@index{newTestAccount} Returns a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network} with a given balance of @tech{network tokens}. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
+Returns a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network} with a given balance of @tech{network tokens}. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
 
 @(hrule)
+@(mint-define! '("connectAccount"))
 @js{
  async connectAccount(networkAccount) => acc }
 
-@index{connectAccount} Returns a Reach @tech{account} abstraction for an existing @tech{account} for the @tech{consensus network} based on the @tech{connector}-specific @tech{account} specification provided by the @jsin{networkAccount} argument.
+Returns a Reach @tech{account} abstraction for an existing @tech{account} for the @tech{consensus network} based on the @tech{connector}-specific @tech{account} specification provided by the @jsin{networkAccount} argument.
 
 @js{
     // network => networkAccount type
@@ -131,18 +149,23 @@ The details of the mnemonic phrase encoding are specified uniquely to the @tech{
     ALGO       => {addr: string, sk: UInt8Array(64)}}
 
 @(hrule)
+@(mint-define! '("networkAccount"))
 @js{
  acc.networkAccount => networkAccount }
 
 @index{acc.networkAccount} Returns the @tech{connector}-specific @tech{account} specification of a Reach @tech{account} abstraction.
 
 @(hrule)
+
+@(mint-define! '("deploy"))
 @js{
  async acc.deploy(bin) => ctc }
 
 @index{acc.deploy} Returns a Reach @tech{contract} abstraction after deploying a Reach @DApp @tech{contract} based on the @jsin{bin} argument provided. This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
 
 @(hrule)
+
+@(mint-define! '("getInfo"))
 @js{
  async ctc.getInfo() => ctcInfo }
 
@@ -150,6 +173,8 @@ The details of the mnemonic phrase encoding are specified uniquely to the @tech{
 This object may be stringified with @jsin{JSON.stringify} for printing and parsed again with @jsin{JSON.parse} without any loss of information.
 
 @(hrule)
+
+@(mint-define! '("attach"))
 @js{
  async acc.attach(bin, ctcInfo) => ctc }
 
@@ -159,33 +184,41 @@ This @jsin{bin} argument is the @filepath{input.mjs} module produced by the Java
 For convenience, if @jsin{ctcInfo} is an object with a @jsin{getInfo} method, it is called to extract the information; this means that the result of @jsin{deploy} is allowed as a valid input.
 
 @(hrule)
+
+@(mint-define! '("balanceOf"))
 @js{
  async balanceOf(acc) => amount }
 
-@index{balanceOf} Returns the balance of @tech{network tokens} held by the @tech{account} given by a Reach @tech{account} abstraction provided by the @jsin{acc} argument.
+Returns the balance of @tech{network tokens} held by the @tech{account} given by a Reach @tech{account} abstraction provided by the @jsin{acc} argument.
 
 @(hrule)
+
+@(mint-define! '("transfer"))
 @js{
  async transfer(from:acc, to:acc, amount:BigNumber) => void }
 
-@index{transfer} Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to},
+Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to},
 which are @tech{account}s, such as those returned by @jsin{connectAccount}.
 
 @(hrule)
+
+@(mint-define! '("getNetworkTime"))
 @js{
  async getNetworkTime() => time
 }
 
-@index{getNetworkTime} Gets the current consensus network @tech{time}.
+Gets the current consensus network @tech{time}.
 For @litchar{ETH}, @litchar{ALGO}, and @litchar{FAKE},
 this is the current block number, represented as a @litchar{BigNumber}.
 
 @(hrule)
+
+@(mint-define! '("waitUntilTime"))
 @js{
  async waitUntilTime(time, onProgress)
 }
 
-@index{waitUntilTime} Waits until the specified consensus network @tech{time}.
+Waits until the specified consensus network @tech{time}.
 In @deftech{isolated testing modes}, which are @litchar{REACH_CONNECTOR_MODE}s
 @litchar{$NET-test-dockerized-$IMPL} and @litchar{$NET-test-embedded-$IMPL}
 for all valid @litchar{$NET} and @litchar{$IMPL},
@@ -197,22 +230,26 @@ which may be called many times up until the specified @tech{time}.
 It will receive an object with keys @jsin{currentTime} and @jsin{targetTime},
 
 @(hrule)
+
+@(mint-define! '("wait"))
 @js{
  async wait(timedelta, onProgress)
 }
 
-@index{wait} A convenience function for delaying by a certain @tech{time delta}.
+A convenience function for delaying by a certain @tech{time delta}.
 The expression @jsin{await wait(delta, onProgress)} is the same as
 @jsin{await waitUntilTime(add(await getNetworkTime(), delta), onProgress)}.
 
 @subsubsection[#:tag "ref-backend-js-stdlib-utils"]{Utilities}
 
+@(mint-define! '("protect"))
 @js{
  protect(t x) => x }
 
-@index{protect} Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thrown if this is not the case.
+Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thrown if this is not the case.
 
 @(hrule)
+@(mint-define! '("T_Null") '("T_Bool") '("T_UInt256") '("T_Bytes") '("T_Address") '("T_Array") '("T_Tuple") '("T_Obj"))
 @js{
  T_Null => ReachType
  T_Bool => ReachType
@@ -238,18 +275,21 @@ See the table below for Reach types and their corresponding JavaScript represent
  Object    => object }
 
 @(hrule)
+@(mint-define! '("assert"))
 @js{
  assert(p) }
 
 Throws an exception if not given @jsin{true}.
 
 @(hrule)
+@(mint-define! '("Array_set"))
 @js{
  Array_set(arr, idx, val) }
 
 Returns a new array identical to @jsin{arr}, except that index @jsin{idx} is @jsin{val}.
 
 @(hrule)
+@(mint-define! '("bigNumberify") '("isBigNumber"))
 @js{
  bigNumberify(x) => uint256
  isBigNumber(x) => bool}
@@ -259,6 +299,7 @@ the JavaScript representation of Reach's uint256.
 @deftech{isBigNumber} checks if its input is a BigNumber.
 
 @(hrule)
+@(mint-define! '("toHex") '("isHex") '("hexToString") '("hexToBigNumber") '("bigNumberToHex") '("uint256ToBytes") '("bytesEq"))
 @js{
  toHex(x) => bytes
  isHex(x) => bool
@@ -271,16 +312,18 @@ the JavaScript representation of Reach's uint256.
 These are additional conversion and comparison utilities.
 
 @(hrule)
+@(mint-define! '("keccak256"))
 @js{
  keccak256(x) => uint256}
 
-@index{keccak256} Hashes the value.
+Hashes the value.
 
 @(hrule)
+@(mint-define! '("randomUInt256"))
 @js{
  randomUInt256() => uint256}
 
-@index{randomUInt256} Creates 256 random bits as a uint256.
+Creates 256 random bits as a uint256.
 
 @(hrule)
 @js{
@@ -289,6 +332,7 @@ These are additional conversion and comparison utilities.
 A value suitable for use as a @tech{participant interact interface} requiring a @litchar{random} function.
 
 @(hrule)
+@(mint-define! '("add") '("sub") '("mod") '("mul") '("div"))
 @js{
  add(uint256, uint256) => uint256
  sub(uint256, uint256) => uint256
@@ -299,6 +343,7 @@ A value suitable for use as a @tech{participant interact interface} requiring a 
 Integer arithmetic on uint256.
 
 @(hrule)
+@(mint-define! '("eq") '("ge") '("gt") '("le") '("lt"))
 @js{
  eq(uint256, uint256) => bool
  ge(uint256, uint256) => bool
@@ -312,6 +357,7 @@ Integer comparisons on uint256.
 
 The following exports are defined only in the Ethereum standard library.
 
+@(mint-define! '("toWei") '("fromWei") '("toWeiBigNumber"))
 @js{
  toWei(ether) => wei
  fromWei(wei) => ether
@@ -323,16 +369,22 @@ Wei conversion functions only exported by the stdlib for ETH.
 
 This backend also provides the helper module @litchar{@"@"reach-sh/stdlib/ask.mjs} for constructing console interfaces to your @tech{frontends}.
 
+@(mint-define! '("ask"))
+@js{
+  import * as ask from '@"@"reach-sh/stdlib/ask.mjs';
+}
+
 It provides the following exports:
 
+@(mint-define! '("ask") '("yesno") '("done"))
 @js{
  async ask(string, (string => result)) => result
  yesno(string) => boolean
  done() => null
 }
  
-@index{ask} @jsin{ask} is an asynchronous function that asks a question on the console and returns the first result that its second argument does not error on.
+@jsin{ask} is an asynchronous function that asks a question on the console and returns the first result that its second argument does not error on.
 
-@index{yesno} @jsin{yesno} is an argument appropriate to give as the second argument to @jsin{ask} that parses "Yes"/"No" answers.
+@jsin{yesno} is an argument appropriate to give as the second argument to @jsin{ask} that parses "Yes"/"No" answers.
 
-@index{done} @jsin{done} indicates that no more questions will be asked.
+@jsin{done} indicates that no more questions will be asked.

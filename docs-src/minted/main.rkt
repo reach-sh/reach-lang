@@ -9,7 +9,9 @@
          scribble/html-properties
          scribble/core
          scribble/base)
-(provide mint)
+(provide mint
+         mint-scope
+         mint-define!)
 
 (define (system*-maybe bin . args)
   (let ([res (apply system*/exit-code bin args)])
@@ -79,12 +81,23 @@
           'nowrap "True"
           'lineseparator "<br />"))
 
-(define (mint #:defines [defines #f]
+;; XXX This doesn't work :'(
+(define mint-scope (make-parameter #f))
+
+(define mint-defines-once-box (box #f))
+(define (mint-define! . defs)
+  (set-box! mint-defines-once-box defs))
+(define (get-once)
+  (begin0 (unbox mint-defines-once-box)
+    (set-box! mint-defines-once-box #f)))
+
+(define (mint #:defines [defines (get-once)]
               #:inline? [inline? #f]
               #:options [opts (hasheq)]
-              #:scope [scopee #f]
-              lang content)
-
+              #:scope [scopee (mint-scope)]
+              lang . contentl)
+  (define content (apply string-append contentl))
+  
   (define opts-p
     (if inline?
       (hash-union mint-inline-options opts)

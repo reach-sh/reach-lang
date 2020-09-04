@@ -78,7 +78,7 @@ However, some additional statements are allowed.
 @subsubsection[#:tag "ref-programs-export"]{@tt{export}}
 
 Module-level @tech{identifier definitions} may be @deftech{export}ed
-by writing @litchar{export} in front of them.
+by writing @(mint-define! '("export")) @reachin{export} in front of them.
 For example,
 @reach{
   export const x = 1;
@@ -91,6 +91,7 @@ An @tech{export}ed identifier in a given @tech{module} may be @tech{import}ed by
 
 @subsubsection[#:tag "ref-programs-import"]{@tt{import}}
 
+@(mint-define! '("import"))
 @reach{import 'games-of-chance.rsh';}
 
 When a @tech{module}, @litchar{X}, contains an @deftech{import},
@@ -98,6 +99,7 @@ written @reachin{import "LIB.rsh";},
 then the path @filepath{LIB.rsh} must resolve to another Reach @tech{source file}.
 The @tech{exports} from the @tech{module} defined by @filepath{LIB.rsh} are included in the set of @tech{bound identifier}s in @litchar{X}.
 
+@(mint-define! '("from"))
 @reach{import {flipCoin, rollDice as d6} from 'games-of-chance.rsh';}
 
 Import statements may limit or rename the imported @tech{identifiers}.
@@ -120,6 +122,7 @@ However, some additional expressions are allowed.
 
 @subsubsection[#:tag "ref-programs-reach.app"]{@tt{Reach.App}}
 
+@(mint-define! '("Reach") '("App"))
 @reach{
 export const main =
   Reach.App({}, [["A", {displayResult: Fun(Int, Null)}]], (A) => {
@@ -142,7 +145,7 @@ It supports the following options:
 (list
 
 (list
- @reachin{deployMode}
+ @(begin @(mint-define! '("deployMode")) @reachin{deployMode})
  @~
  @para{@reachin{'constructor'} (default) or @reachin{'firstMsg'}}
  @~
@@ -179,6 +182,7 @@ However, some additional statements are allowed.
 
 @subsubsection{@tt{only} and @tt{each}}
 
+@(mint-define! '("only"))
 @reach{
  Alice.only(() => {
    const pretzel = interact.random(); }); }
@@ -203,6 +207,7 @@ is an @tech{invalid} program, because @reachin{Bob} does not know @reachin{x}.
 
 @(hrule)
 
+@(mint-define! '("each"))
 @reach{
  each([Alice, Bob], () => {
    const pretzel = interact.random(); }); }
@@ -212,6 +217,7 @@ It is an abbreviation of many @tech{local step} statements that could have been 
 
 @subsubsection{@tt{publish}, @tt{pay}, and @tt{timeout}}
 
+@(mint-define! '("publish") '("pay") '("timeout"))
 @reach{
  Alice.publish(wagerAmount)
       .pay(wagerAmount)
@@ -255,6 +261,7 @@ If the named participant has not yet @tech{join}ed the application, then this st
 
 @subsubsection{@tt{wait}}
 
+@(mint-define! '("wait"))
 @reach{
  wait(AMT); }
 
@@ -263,6 +270,7 @@ It may only occur in a @tech{step}.
 
 @subsubsection{@tt{exit}}
 
+@(mint-define! '("exit"))
 @reach{
  exit(); }
 
@@ -277,6 +285,7 @@ However, some additional expressions are allowed.
 
 @subsubsection{@tt{unknowable}}
 
+@(mint-define! '("unknowable"))
 @reach{
  unknowable( Notter, Knower(expr_0, ..., expr_N) ) }
 
@@ -284,6 +293,7 @@ However, some additional expressions are allowed.
 
 @subsubsection{@tt{closeTo}}
 
+@(mint-define! '("closeTo"))
 @reach{
  closeTo( Who, after ) }
 
@@ -305,6 +315,7 @@ However, some additional expressions are allowed.
 
 @subsubsection{@tt{interact}}
 
+@(mint-define! '("interact"))
 @reach{
  interact.amount
  interact.notify(handA, handB)
@@ -318,6 +329,7 @@ An @tech{interaction expression} may only occur in a @tech{local step}.
 
 @subsubsection{@tt{assume}}
 
+@(mint-define! '("assume"))
 @reach{
  assume( claim ) }
 
@@ -326,6 +338,7 @@ This may only appear in a @tech{local step}.
 
 @subsubsection{@tt{declassify}}
 
+@(mint-define! '("declassify"))
 @reach{
  declassify( arg ) }
 
@@ -333,6 +346,7 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
 
 @subsubsection{@tt{makeCommitment}}
 
+@(mint-define! '("makeCommitment"))
 @reach{
  makeCommitment( interact, x ) }
 
@@ -351,6 +365,7 @@ However, some additional statements are allowed.
 
 @subsubsection{@tt{commit}}
 
+@(mint-define! '("commit"))
 @reach{
  commit(); }
 
@@ -358,6 +373,7 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 
 @subsubsection{@tt{Participant.set} and @tt{.set}}
 
+@(mint-define! '("Participant"))
 @reach{
  Participant.set(PART, ADDR);
  PART.set(ADDR); }
@@ -368,6 +384,7 @@ This may only occur within a @tech{consensus step}.
 
 @subsubsection{@tt{while}}
 
+@(mint-define! '("while") '("var") '("invariant"))
 @reach{
  var [ heap1, heap2 ] = [ 21, 21 ];
  invariant(balance() == 2 * wagerAmount);
@@ -389,6 +406,7 @@ where @reachin{LHS} is a valid left-hand side of an @tech{identifier definition}
 
 @subsubsection{@tt{continue}}
 
+@(mint-define! '("continue"))
 @reach{
  [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
  continue; }
@@ -416,6 +434,7 @@ However, some additional expressions are allowed.
 
 @subsubsection{@tt{transfer}}
 
+@(mint-define! '("transfer"))
 @reach{
  transfer(10).to(Alice) }
 
@@ -423,6 +442,7 @@ A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)
 
 @subsubsection{@tt{require}}
 
+@(mint-define! '("require"))
 @reach{
  require( claim ) }
 
@@ -431,6 +451,7 @@ This may only appear in a @tech{consensus step}.
 
 @subsubsection{@tt{checkCommitment}}
 
+@(mint-define! '("checkCommitment"))
 @reach{
  checkCommitment( commitment, salt, x ) }
 
@@ -488,6 +509,8 @@ or a @tech{function definition}.
 Each of these introduces one or more @deftech{bound identifier}s.
 
 @(hrule)
+
+@(mint-define! '("const"))
 @reach{
   const DELAY = 10;
   const [ Good, Bad ] = [ 42, 43 ]; }
@@ -528,6 +551,8 @@ If a @reachin{LHS} is an @nonterm{LHS-obj-seq}, then the corresponding @reachin{
 Those @tech{values} are available as their corresponding @tech{bound identifier}s in the statement's @tech{tail}.
 
 @(hrule)
+
+@(mint-define! '("function"))
 @reach{
   function randomBool() {
     return (interact.random() % 2) == 0; }; }
@@ -570,6 +595,7 @@ This may be useful for ignoring unwanted values, for example:
 
 @subsubsection{@tt{return}}
 
+@(mint-define! '("return"))
 @reach{
  return 17;
  return 3 + 4;
@@ -591,6 +617,7 @@ is @tech{invalid}, because the first @reachin{return}'s @tech{tail} is not empty
 
 @subsubsection{@tt{if}}
 
+@(mint-define! '("if") '("else"))
 @reach{
  if ( 1 + 2 < 3 ) {
    return "Yes!";
@@ -675,17 +702,18 @@ A spread expression (@reachin{...expr}) may appear in the list of operands to a 
 Reach's @deftech{type}s are represented with programs by the following identifiers and constructors:
 
 @itemlist[
-  @item{@reachin{Null}.}
-  @item{@reachin{Bool}, which denotes a boolean.}
-  @item{@reachin{UInt256}, which denotes an unsigned integer of 256 bits.}
-  @item{@reachin{Bytes}, which denotes a string of bytes.}
-  @item{@reachin{Address}, which denotes an @tech{account} @tech{address}.}
-  @item{@reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a function type.}
-  @item{@reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.}
-  @item{@reachin{Obj({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.}
-  @item{@reachin{Array(ElemenType, size)}, which denotes a statically-sized array.}
+  @item{@(mint-define! '("Null")) @reachin{Null}.}
+  @item{@(mint-define! '("Bool")) @reachin{Bool}, which denotes a boolean.}
+  @item{@(mint-define! '("UInt256")) @reachin{UInt256}, which denotes an unsigned integer of 256 bits.}
+  @item{@(mint-define! '("Bytes")) @reachin{Bytes}, which denotes a string of bytes.}
+  @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
+  @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a function type.}
+  @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.}
+  @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.}
+  @item{@(mint-define! '("Array")) @reachin{Array(ElemenType, size)}, which denotes a statically-sized array.}
 ]
 
+@(mint-define! '("typeOf") '("isType"))
 @reach{
  typeOf(x)  // type
  isType(t) // Bool
@@ -698,18 +726,21 @@ Any expression satisfying @reachin{isType} is compiled away and does not exist a
 
 @subsubsection{Literal values}
 
+@(mint-define! '("true") '("false") '("null"))
 @reach{
  10
  0xdeadbeef
  007
  true
  false
+ null
  "reality bytes"
  'it just does' }
 
 A @deftech{literal value},
 written @reachin{VALUE},
 is an @tech{expression} that evaluates to the given @tech{value}.
+The @deftech{null literal} may be written as @reachin{null}.
 @deftech{Numeric literal}s may be written in decimal, hexadecimal, or octal.
 @deftech{Boolean literal}s may be written as @reachin{true} or @reachin{false}.
 @deftech{String literal}s (aka byte strings)
@@ -723,6 +754,8 @@ An @deftech{operator} is a special identifier,
 which is either a @tech{unary operator}, or a @tech{binary operator}.
 
 @(hrule)
+
+@(mint-define! '("!") '("-") '("typeof"))
 @reach{
  ! a
  - a
@@ -733,6 +766,8 @@ A @deftech{unary expression}, written @reachin{UNAOP EXPR_rhs}, where @reachin{E
 It is @tech{invalid} to use unary operations on the wrong types of @tech{values}.
 
 @(hrule)
+
+@(mint-define! '("&" "&") '("||") '("+") '("-") '("*") '("/") '("%") '("|") '("&") '("^") '("<" "<") '(">" ">") '("==") '("!=") '("===") '("!==") '(">") '(">" "=") '("<" "=") '("<"))
 @reach{
  a && b
  a || b
@@ -764,6 +799,7 @@ Since all numbers in Reach are integers, operations like @reachin{/} truncate th
 Boolean operations, like @reachin{&&}, only operate on booleans.
 It is @tech{invalid} to use binary operations on the wrong types of @tech{values}.
 
+@(mint-define! '("and") '("or") '("add") '("sub") '("mul") '("div") '("mod") '("lt") '("le") '("ge") '("gt") '("lsh") '("rsh") '("band") '("bior") '("band") '("bxor") '("polyEq") '("polyNeq"))
 @reach{
  and(a, b)     // &&
  or(a, b)      // ||
@@ -789,6 +825,7 @@ All @tech{binary expression} operators have a corresponidng named function in th
 Note that while @reachin{&&} and @reachin{||} may not evaluate their second argument,
 their corresponding named functions @reachin{and} and @reachin{or}, always do.
 
+@(mint-define! '("boolEq") '("bytesEq") '("typeEq") '("intEq"))
 @reach{
  polyEq(a, b)  // eq on Bool, Bytes, types, or UInt256
  boolEq(a, b)  // eq on Bool
@@ -820,10 +857,11 @@ A @deftech{tuple} literal, written @reachin{[ EXPR_0, ..., EXPR_n ]}, is an @tec
 
 @subsubsection{@tt{array}}
 
+@(mint-define! '("array"))
 @reach{
   const x = array([1, 2, 3]); }
 
-@index{array} Converts a @tech{tuple} of homogenueous values into an @deftech{array}.
+Converts a @tech{tuple} of homogenueous values into an @deftech{array}.
 
 @subsubsection{Element reference}
 
@@ -895,6 +933,7 @@ accesses the FIELD @deftech{field} of object OBJ.
 
 @subsubsection{@tt{Object.set}}
 
+@(mint-define! '("Object_set"))
 @reach{
  Object.set(obj, fld, val);
  Object_set(obj, fld, val);
@@ -906,11 +945,13 @@ except that field @reachin{fld} is replaced with @reachin{val}.
 
 @subsubsection{Conditional expression}
 
+@(mint-define! '("?"))
 @reach{
  choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ] }
 
 A @deftech{conditional expression}, written @reachin{COND_E ? TRUE_E : FALSE_E}, where @reachin{COND_E}, @reachin{TRUE_E}, and @reachin{FALSE_E} are @tech{expressions}, selects between the @tech{values} which @reachin{TRUE_E} and @reachin{FALSE_E} evaluate to based on whether @reachin{COND_E} evaluates to @reachin{true}.
 
+@(mint-define! '("ite"))
 @reach{
  ite(choosesFirst, [heap1 - amount, heap2], [heap1, heap2 - amount])
 }
@@ -921,6 +962,7 @@ while the regular conditional expression only evaluates one branch.
 
 @subsubsection{Arrow expression}
 
+@(mint-define! '("=" ">"))
 @reach{
  (() => 4)
  ((x) => x + 1)
@@ -931,6 +973,7 @@ An @deftech{arrow expression}, written @reachin{(ID_0, ..., ID_n) => EXPR}, wher
 
 @subsubsection{@tt{makeEnum}}
 
+@(mint-define! '("makeEnum"))
 @reach{
   const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3); }
 
@@ -944,6 +987,7 @@ and the next N values are distinct @reachin{UInt256}s.
 
 @subsubsection{@tt{assert}}
 
+@(mint-define! '("assert"))
 @reach{
  assert( claim ) }
 
@@ -956,6 +1000,7 @@ Reach will never produce an erroneous counter-example.}
 
 @subsubsection{@tt{forall}}
 
+@(mint-define! '("forall"))
 @reach{
  forall( Type )
  forall( Type, (var) => BLOCK ) }
@@ -971,6 +1016,7 @@ This is convenient for writing general claims about expressions, such as
 
 @subsubsection{@tt{possible}}
 
+@(mint-define! '("possible"))
 @reach{
  possible( claim ) }
 
@@ -978,6 +1024,7 @@ This is convenient for writing general claims about expressions, such as
 
 @subsubsection{@tt{digest}}
 
+@(mint-define! '("digest"))
 @reach{
  digest( arg_0, ..., arg_n ) }
 
@@ -985,6 +1032,7 @@ The @tech{digest} primitive performs a @link["https://en.wikipedia.org/wiki/Cryp
 
 @subsubsection{@tt{balance}}
 
+@(mint-define! '("balance"))
 @reach{
  balance() }
 
@@ -992,6 +1040,7 @@ The @deftech{balance} primitive returns the balance of the @tech{contract} @tech
 
 @subsubsection{@tt{implies}}
 
+@(mint-define! '("implies"))
 @reach{
  implies( x, y ) }
 
@@ -999,6 +1048,7 @@ The @deftech{balance} primitive returns the balance of the @tech{contract} @tech
 
 @subsubsection{@tt{ensure}}
 
+@(mint-define! '("ensure"))
 @reach{
  ensure( pred, x ) }
 
@@ -1006,6 +1056,7 @@ The @deftech{balance} primitive returns the balance of the @tech{contract} @tech
 
 @subsubsection{@tt{hasRandom}}
 
+@(mint-define! '("hasRandom"))
 @reach{
  hasRandom }
 

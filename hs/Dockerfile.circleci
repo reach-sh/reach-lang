@@ -25,9 +25,9 @@ RUN apt-get update && apt-get install -y \
 # doc deps
 RUN add-apt-repository -y ppa:plt/racket && \
     apt-get update && \
-    apt-get install -y racket && \
-    raco pkg install https://github.com/jeapostrophe/scribble-minted.git && \
-    pip3 install pygments-style-solarized
+    apt-get install -y racket # && \
+#    raco pkg install https://github.com/jeapostrophe/scribble-minted.git && \
+#    pip3 install pygments-style-solarized
 
 # Maybe:
 # RUN pip3 install pygments-style-solarized

@@ -1,11 +1,8 @@
 all: render check
 
-STYLE=solarizedlight
-
 .PHONY: rebuild
 rebuild:
-	raco scribble --dest .. --dest-name docs --htmls reach.scrbl
-	@rm -f ../minted-$(STYLE)-style.css
+	raco scribble --dest .. --dest-name docs --htmls reach.scrbl 2>&1 | tee scribble.log
 	./add-scripts.sh
 
 .PHONY: copy
@@ -26,5 +23,4 @@ check:
 .PHONY: install
 install:
 	raco pkg install
-	pip3 install pygments-style-solarized
 	cd ../py/ && make install # pygments-reach

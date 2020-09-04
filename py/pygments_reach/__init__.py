@@ -83,7 +83,7 @@ class ReachLexer(RegexLexer):
              r'this|of)\b', Keyword, 'slashstartsregex'),
             (r'(var|let|with|function|'
              # reach ones
-             r'export|const|import'
+             r'export|const|import|from|as'
              r')\b', Keyword.Declaration, 'slashstartsregex'),
             (r'(abstract|boolean|byte|char|class|debugger|double|enum|'
              r'extends|final|float|goto|implements|int|interface|long|native|'
@@ -95,7 +95,7 @@ class ReachLexer(RegexLexer):
              r'decodeURIComponent|encodeURI|encodeURIComponent|'
              r'Error|eval|isFinite|isNaN|isSafeInteger|parseFloat|parseInt|'
              # The reach ones
-             r'UInt256|Reach|App|Fun|Null|Bool|Bytes|Address|Tuple|Participant|'
+             r'UInt256|Reach|App|Fun|Null|Bool|Bytes|Address|Tuple|Participant|deployMode|'
              r'balance|digest|implies|ensure|hasRandom|makeCommitment|checkCommitment|closeTo|'
              r'and|or|add|sub|mul|div|mod|lt|le|gt|ge|lsh|rsh|band|bior|bxor|eq|neq|'
              r'polyEq|polyNeq|typeEq|intEq|ite|typeOf|isType|'
