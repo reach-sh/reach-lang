@@ -7,9 +7,9 @@ import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.Backend
 import Reach.Connector
+import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
-import Reach.UnsafeUtil
 
 --- Pretty helpers
 
@@ -92,11 +92,11 @@ jsProtect ai how what =
 
 jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Doc a
 jsAssertInfo ctxt at fs =
-  jsObject $ M.fromList [ ("who"::String, who_p), ("at", at_p), ("fs", fs_p) ]
+  jsObject $ M.fromList [("who" :: String, who_p), ("at", at_p), ("fs", fs_p)]
   where
     who_p = jsCon $ DLC_Bytes $ ctxt_who ctxt
     at_p = jsString $ unsafeRedactAbsStr $ show at
-    fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs 
+    fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
 
 jsVar :: DLVar -> Doc a
 jsVar (DLVar _ _ _ n) = "v" <> pretty n
@@ -173,15 +173,15 @@ jsExpr ctxt = \case
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
       require =
-        jsApply "stdlib.assert" $ [ jsArg a, jsAssertInfo ctxt at fs ] 
+        jsApply "stdlib.assert" $ [jsArg a, jsAssertInfo ctxt at fs]
   DLE_Transfer _ _ who amt ->
     "//" <+> (jsApply "stdlib.transfer" $ map jsArg [who, amt])
   DLE_Wait _ amt ->
-    jsApply "ctc.wait" [ jsArg amt ]
+    "await" <+> jsApply "ctc.wait" [jsArg amt]
   DLE_PartSet _ who what ->
     case ctxt_who ctxt == who of
       True ->
-        jsApply "ctc.iam" [ jsArg what ]
+        jsApply "ctc.iam" [jsArg what]
       False ->
         jsArg what
 
