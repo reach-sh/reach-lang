@@ -3,7 +3,6 @@
 const FunderInteract = {
   getParams: Fun([], Object({
     ReceiverAddress:  Address,
-    BystanderAddress: Address,
     payment:          UInt256, // WEI
     maturity:         UInt256, // time delta
     refund:           UInt256, // time delta
@@ -25,12 +24,12 @@ const BystanderInteract = {};
 const main_fn = (Funder, Receiver, Bystander) => {
   Funder.only(() => {
     const {
-      ReceiverAddress, BystanderAddress,
+      ReceiverAddress,
       payment, maturity, refund, dormant,
     } = declassify(interact.getParams());
   });
   Funder.publish(
-    ReceiverAddress, BystanderAddress,
+    ReceiverAddress,
     payment, maturity, refund, dormant
   ).pay(payment);
   Receiver.set(ReceiverAddress);
@@ -50,7 +49,7 @@ const main_fn = (Funder, Receiver, Bystander) => {
     Funder.only(() => {
       interact.notifyRefunded();
     });
-    exit(); // you NEED this exit why?
+    exit();
   };
 
   Receiver.publish()
