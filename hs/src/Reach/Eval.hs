@@ -2165,9 +2165,9 @@ evalFromClause libm (JSFromClause _ _ libn) =
 
 evalImExportSpecifiers :: SrcLoc -> SLEnv -> (a -> (JSIdent, JSIdent)) -> (JSCommaList a) -> SLEnv
 evalImExportSpecifiers at env go cl =
-  foldl' (env_merge at) mempty $ map (uncurry p) $ map go $ jscl_flatten cl
+  foldl' (env_insertp at) mempty $ map (uncurry p) $ map go $ jscl_flatten cl
   where p f t = p' (parseIdent at f) (parseIdent at t)
-        p' (_, f) (_, t) = M.singleton t $ env_lookup at f env
+        p' (_, f) (_, t) = (t, env_lookup at f env)
 
 evalImportClause :: SrcLoc -> SLEnv -> JSImportClause -> SLEnv
 evalImportClause at env im =
