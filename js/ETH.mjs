@@ -4,9 +4,7 @@ import * as http from 'http';
 import * as url from 'url';
 import * as waitPort from 'wait-port';
 
-import {
-  getConnectorMode,
-} from './loader.mjs';
+import { getConnectorMode } from './loader.mjs';
 import {
   getDEBUG,
   debug,
@@ -105,14 +103,8 @@ const networkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
 };
 
 const portP = (async () => {
-  if (networkDesc.type != 'uri') {
-    return;
-  }
-  const {
-    hostname,
-    port,
-    path,
-  } = url.parse(networkDesc.uri);
+  if (networkDesc.type != 'uri') { return; }
+  const { hostname, port, path } = url.parse(networkDesc.uri);
   const params = {
     protocol: 'http' // XXX no apparent need to support https
       ,
@@ -127,14 +119,9 @@ const portP = (async () => {
 
 // XXX: doesn't even retry, just returns the first attempt
 const doHealthcheck = async () => {
-  if (networkDesc.type != 'uri') {
-    return;
-  }
+  if (networkDesc.type != 'uri') { return; }
   await new Promise((resolve, reject) => {
-    const {
-      hostname,
-      port,
-    } = url.parse(networkDesc.uri);
+    const { hostname, port } = url.parse(networkDesc.uri);
     const data = JSON.stringify({
       jsonrpc: '2.0',
       method: 'web3_clientVersion',
@@ -159,10 +146,7 @@ const doHealthcheck = async () => {
         if (getDEBUG()) {
           process.stdout.write(d);
         }
-        resolve({
-          res,
-          d,
-        });
+        resolve({ res, d });
       });
     });
     req.on('error', (e) => {
@@ -192,13 +176,9 @@ const getProvider = (() => {
       provider.pollingInterval = 500; // ms
       return provider;
     } else if (networkDesc.type == 'embedded-ganache') {
-      const {
-        default: ganache,
-      } = await import('ganache-core');
+      const { default: ganache } = await import('ganache-core');
       const default_balance_ether = '999999999';
-      const ganachep = ganache.provider({
-        default_balance_ether,
-      });
+      const ganachep = ganache.provider({ default_balance_ether });
       return new ethers.providers.Web3Provider(ganachep);
     } else {
       // This lib was imported, but not for its net connection.
@@ -225,9 +205,7 @@ const ethersBlockOnceP = async () => {
 };
 
 export const balanceOf = async acc => {
-  const {
-    networkAccount,
-  } = acc;
+  const { networkAccount } = acc;
   if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
 
   if (networkAccount.getBalance) {
@@ -256,10 +234,7 @@ export const transfer = async (from, to, value) => {
   if (!from.sendTransaction) throw Error(`Expected from.sendTransaction: ${from}`);
   if (!isBigNumber(value)) throw Error(`Expected a BigNumber: ${value}`);
 
-  const txn = {
-    to: to.address,
-    value,
-  };
+  const txn = { to: to.address, value };
   debug(`from.sendTransaction(${JSON.stringify(txn)})`);
   return await from.sendTransaction(txn);
 };
@@ -282,24 +257,15 @@ const fetchAndRejectInvalidReceiptFor = async txHash => {
 export const connectAccount = async networkAccount => {
   // XXX networkAccount MUST be a wallet to deploy/attach
   const provider = await getProvider();
-  const {
-    address,
-  } = networkAccount;
+  const { address } = networkAccount;
   const shad = address.substring(2, 6);
 
   const extractInfo = async (ctcOrInfo) => {
-    const {
-      getInfo,
-      address,
-      creation_block,
-    } = ctcOrInfo;
+    const { getInfo, address, creation_block } = ctcOrInfo;
     if (getInfo) {
       return extractInfo(await getInfo());
     } else if (address && creation_block) {
-      return {
-        address,
-        creation_block,
-      };
+      return { address, creation_block };
     } else {
       throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`);
     }
@@ -320,17 +286,10 @@ export const connectAccount = async networkAccount => {
         }
         const deployRes = await parentCtc.reallyDeploy([args], value);
         debug(`${shad}: waitForInfo deployRes = ${JSON.stringify(deployRes)}`);
-        const {
-          transactionHash,
-          ...deployInfo
-        } = deployRes;
+        const { transactionHash, ...deployInfo } = deployRes;
         info = deployInfo;
         _waitForInfo = async () => true;
-        return {
-          wait: async () => ({
-            transactionHash,
-          }),
-        };
+        return { wait: async () => ({ transactionHash }) };
       };
     } else {
       _waitForInfo = async () => {
@@ -342,9 +301,7 @@ export const connectAccount = async networkAccount => {
     let _ethersC = null;
     let last_block = null;
     const getC = async () => {
-      if (_ethersC) {
-        return _ethersC;
-      }
+      if (_ethersC) { return _ethersC; }
       await _waitForInfo(true);
       debug(`${shad}: attach to creation at ${info.creation_block}`);
       last_block = info.creation_block;
@@ -355,9 +312,7 @@ export const connectAccount = async networkAccount => {
       if (parentCtc.reallyDeploy && funcName == `m1`) {
         return await _waitForInfo(true, args, value);
       } else {
-        return (await getC())[funcName]([last_block, ...args], {
-          value,
-        });
+        return (await getC())[funcName]([last_block, ...args], { value });
       }
     };
 
@@ -375,15 +330,11 @@ export const connectAccount = async networkAccount => {
       return await _getInfo();
     };
 
-    const updateLast = o => {
-      last_block = o.blockNumber;
-    };
+    const updateLast = o => { last_block = o.blockNumber; };
 
     const getEventData = (ethersC, ok_evt, ok_e) => {
       const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
-      const {
-        args,
-      } = ethersC.interface.parseLog(ok_e);
+      const { args } = ethersC.interface.parseLog(ok_e);
       const [ok_bal, ...ok_vals] = ok_args_abi.map(a => args[a.name]);
 
       return [ok_bal, ok_vals];
@@ -399,6 +350,7 @@ export const connectAccount = async networkAccount => {
 
     const wait = async (delta) => {
       // Don't wait from current time, wait from last_block
+      // XXX
       debug(`=====Waiting ${delta} from ${last_block}: ${address}`);
       const p = await waitUntilTime(add(last_block, delta));
       debug(`=====Done waiting ${delta} from ${last_block}: ${address}`);
@@ -509,13 +461,7 @@ export const connectAccount = async networkAccount => {
           const [ok_bal, ok_vals] = getEventData(ethersC, ok_evt, ok_e);
 
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
-          return {
-            didTimeout: false,
-            data: ok_vals,
-            value: ok_t.value,
-            balance: ok_bal,
-            from: ok_t.from,
-          };
+          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from };
         }
       }
 
@@ -525,29 +471,17 @@ export const connectAccount = async networkAccount => {
       return rec_res;
     };
 
-    return {
-      sendrecv: sendrecv_top,
-      recv: recv_top,
-      iam,
-      wait,
-      getInfo,
-    };
+    return { sendrecv: sendrecv_top, recv: recv_top, iam, wait, getInfo };
   };
 
   // https://docs.ethers.io/v5/api/contract/contract-factory/
   const deploy = async (bin) => {
-    const {
-      ABI,
-      Bytecode,
-      deployMode,
-    } = bin._Connectors.ETH;
+    const { ABI, Bytecode, deployMode } = bin._Connectors.ETH;
     const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
 
     const reallyDeploy = async (args, value) => {
       debug(`${shad}: reallyDeploying with ${JSON.stringify([args, value])}`);
-      const contract = await factory.deploy(...args, {
-        value,
-      });
+      const contract = await factory.deploy(...args, { value });
       // Wait for it to actually be deployed.
       const deploy_r = await contract.deployTransaction.wait();
 
@@ -561,9 +495,7 @@ export const connectAccount = async networkAccount => {
     let ctc = null;
     if (deployMode == `DM_firstMsg`) {
       debug(`${shad}: delaying deploy-ment`);
-      ctc = {
-        reallyDeploy,
-      };
+      ctc = { reallyDeploy };
     } else {
       ctc = await reallyDeploy([], 0);
     }
@@ -571,11 +503,7 @@ export const connectAccount = async networkAccount => {
     return await attach(bin, ctc);
   };
 
-  return {
-    deploy,
-    attach,
-    networkAccount,
-  };
+  return { deploy, attach, networkAccount };
 };
 
 export const newAccountFromMnemonic = async (phrase) => {
@@ -660,10 +588,7 @@ const actuallyWaitUntilTime = async (targetTime, onProgress) => {
   return await new Promise((resolve) => {
     const onBlock = async (currentTime) => {
       // Does not block on the progress fn if it is async
-      onProgress({
-        currentTime,
-        targetTime,
-      });
+      onProgress({ currentTime, targetTime });
       if (ge(currentTime, targetTime)) {
         provider.off('block', onBlock);
         resolve(currentTime);
@@ -683,17 +608,11 @@ const fastForwardTo = async (targetTime, onProgress) => {
   requireIsolatedNetwork('fastForwardTo');
   let currentTime;
   while (lt(currentTime = await getNetworkTime(), targetTime)) {
-    onProgress({
-      currentTime,
-      targetTime,
-    });
+    onProgress({ currentTime, targetTime });
     await stepTime();
   }
   // Also report progress at completion time
-  onProgress({
-    currentTime,
-    targetTime,
-  });
+  onProgress({ currentTime, targetTime });
 };
 
 const requireIsolatedNetwork = (label) => {

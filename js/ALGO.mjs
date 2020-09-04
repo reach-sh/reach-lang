@@ -1,8 +1,6 @@
 import algosdk from 'algosdk';
 
-import {
-  debug,
-} from './shared.mjs';
+import { debug } from './shared.mjs';
 export * from './shared.mjs';
 
 // Note: if you want your programs to exit fail
@@ -132,13 +130,7 @@ export const connectAccount = async thisAcc => {
       const confirmedRound = txn.round;
       const ok_bal = await getBalanceAt(ctc.address, confirmedRound);
       prevRound = confirmedRound;
-      return {
-        didTimeout: false,
-        data: ok_args,
-        value: ok_val,
-        balance: ok_bal,
-        from: txn.from,
-      };
+      return { didTimeout: false, data: ok_args, value: ok_val, balance: ok_bal, from: txn.from };
     };
 
     const iam = (some_addr) => {
@@ -193,13 +185,7 @@ export const connectAccount = async thisAcc => {
               'amount': amount,
             }));
         };
-        const fake_txn_res = {
-          didTimeout: false,
-          data: args,
-          value: value,
-          balance: (await getBalanceAt(ctc.address, prevRound)),
-          from: thisAcc.addr,
-        };
+        const fake_txn_res = { didTimeout: false, data: args, value: value, balance: (await getBalanceAt(ctc.address, prevRound)), from: thisAcc.addr };
         try_p(txn_out, fake_txn_res);
 
         const txns = [appTxn, valTxn, ...otherTxns];
@@ -266,23 +252,13 @@ export const connectAccount = async thisAcc => {
       }
     };
 
-    return {
-      ...ctc,
-      sendrecv,
-      recv,
-      iam,
-      wait,
-    };
+    return { ...ctc, sendrecv, recv, iam, wait };
   };
 
   const deploy = async (bin) => {
     debug(`${shad}: deploy`);
 
-    const {
-      LogicSigProgram,
-      ApprovalProgram,
-      ClearStateProgram,
-    } = bin._Connectors.ALGO;
+    const { LogicSigProgram, ApprovalProgram, ClearStateProgram } = bin._Connectors.ALGO;
 
     debug(`${shad}: deploy: making account`);
     const ctc_acc = algosdk.generateAccount();
@@ -297,9 +273,7 @@ export const connectAccount = async thisAcc => {
       'ApplicationArgs': [],
       'ApprovalProgram': ApprovalProgram,
       'ClearStateProgram': ClearStateProgram,
-      'GlobalStateSchema': {
-        'NumByteSlice': 2,
-      },
+      'GlobalStateSchema': { 'NumByteSlice': 2 },
       'Accounts': [ctc_acc.addr],
       // FIXME: Use note field for link to Reach code
     });
@@ -315,21 +289,12 @@ export const connectAccount = async thisAcc => {
     const logic_sig = algosdk.makeLogicSig(Buffer.from(LogicSigProgram, 'base64'), [appId]);
     logic_sig.sign(ctc_acc.sk);
 
-    const ctc = {
-      address: ctc_acc.addr,
-      appId,
-      creationRound,
-      logic_sig,
-    };
+    const ctc = { address: ctc_acc.addr, appId, creationRound, logic_sig };
 
     return attach(bin, ctc);
   };
 
-  return {
-    deploy,
-    attach,
-    networkAccount: thisAcc,
-  };
+  return { deploy, attach, networkAccount: thisAcc };
 };
 
 const getBalanceAt = async (addr, round) => {

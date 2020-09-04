@@ -10,9 +10,7 @@ export const setDEBUG = (b) => {
     throw Error(`Expected bool, got ${JSON.stringify(b)}`);
   }
 };
-export const getDEBUG = () => {
-  return DEBUG;
-};
+export const getDEBUG = () => { return DEBUG; };
 export const debug = msg => {
   if (getDEBUG()) {
     console.log(`DEBUG: ${msg}`);
@@ -176,12 +174,8 @@ const {
   toUtf8String,
   isHexString,
 } = ethers.utils;
-const {
-  BigNumber,
-} = ethers;
-export const {
-  isBigNumber,
-} = BigNumber;
+const { BigNumber } = ethers;
+export const { isBigNumber } = BigNumber;
 export const bigNumberify = (x) => BigNumber.from(x);
 
 

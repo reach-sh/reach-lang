@@ -10,9 +10,7 @@ const debug = msg => {
   }
 };
 
-const REACHY_RICH = {
-  address: 'reachy_rich',
-};
+const REACHY_RICH = { address: 'reachy_rich' };
 
 // This can be exposed to the user for checking the trace of blocks
 // for testing.
@@ -28,20 +26,14 @@ export const transfer = async (from, to, value) => {
   const froma = from.address;
   stdlib.assert(stdlib.le(value, BALANCES[froma]));
   debug(`transfer ${froma} -> ${toa} of ${value}`);
-  BLOCKS.push({
-    to: toa,
-    from: froma,
-    value,
-  });
+  BLOCKS.push({ to: toa, from: froma, value });
   BALANCES[toa] = stdlib.add(BALANCES[toa], value);
   BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
   return null;
 };
 
 export const connectAccount = async networkAccount => {
-  const {
-    address,
-  } = networkAccount;
+  const { address } = networkAccount;
 
   const attach = async (bin, ctc) => {
     let last_block = ctc.creation_block;
@@ -67,19 +59,11 @@ export const connectAccount = async networkAccount => {
       if (!timeout_delay || BLOCKS.length < last_block + timeout_delay) {
         debug(`${label} send ${funcNum} --- post`);
         transfer(networkAccount, ctc, value);
-        BLOCKS[BLOCKS.length - 1].event = {
-          funcNum,
-          from: address,
-          data: args.slice(-1 * evt_cnt),
-          value,
-          balance: BALANCES[ctc.address],
-        };
+        BLOCKS[BLOCKS.length - 1].event = { funcNum, from: address, data: args.slice(-1 * evt_cnt), value, balance: BALANCES[ctc.address] };
         return await recv(label, funcNum, evt_cnt, timeout_delay);
       } else {
         debug(`${label} send ${funcNum} --- timeout`);
-        return {
-          didTimeout: true,
-        };
+        return { didTimeout: true };
       }
     };
 
@@ -97,29 +81,15 @@ export const connectAccount = async networkAccount => {
           debug(`${label} recv ${funcNum} --- recv`);
           last_block = check_block;
           const evt = b.event;
-          return {
-            didTimeout: false,
-            data: evt.data,
-            value: evt.value,
-            balance: evt.balance,
-            from: evt.from,
-          };
+          return { didTimeout: false, data: evt.data, value: evt.value, balance: evt.balance, from: evt.from };
         }
       }
 
       debug(`${label} recv ${funcNum} --- timeout`);
-      return {
-        didTimeout: true,
-      };
+      return { didTimeout: true };
     };
 
-    return {
-      ...ctc,
-      sendrecv,
-      recv,
-      iam,
-      wait,
-    };
+    return { ...ctc, sendrecv, recv, iam, wait };
   };
 
   const deploy = async (bin) => {
@@ -132,19 +102,13 @@ export const connectAccount = async networkAccount => {
     });
   };
 
-  return {
-    deploy,
-    attach,
-    networkAccount,
-  };
+  return { deploy, attach, networkAccount };
 };
 
 const makeAccount = () => {
   const address = stdlib.toHex(stdlib.randomUInt256());
   BALANCES[address] = 0;
-  return {
-    address,
-  };
+  return { address };
 };
 
 export const newTestAccount = async (startingBalance) => {
@@ -170,19 +134,11 @@ export function waitUntilTime(targetTime, onProgress) {
   // so it doesn't make sense to actually "wait" idly.
   let currentTime;
   while (stdlib.lt((currentTime = getNetworkTime()), targetTime)) {
-    onProgress({
-      currentTime,
-      targetTime,
-    });
-    BLOCKS.push({
-      type: 'wait',
-    });
+    onProgress({ currentTime, targetTime });
+    BLOCKS.push({ type: 'wait' });
   }
   // Also report progress at completion time
-  onProgress({
-    currentTime,
-    targetTime,
-  });
+  onProgress({ currentTime, targetTime });
 }
 
 export const newAccountFromMnemonic = false; // XXX

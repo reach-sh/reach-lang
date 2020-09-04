@@ -1,26 +1,15 @@
-import {
-  runTests,
-  describe,
-  it,
-  expect,
-} from './tester.mjs';
+import { runTests, describe, it, expect } from './tester.mjs';
 import * as stdlib from './ETH.mjs';
 import * as ALGO_stdlib from './ALGO.mjs';
 import * as FAKE_stdlib from './FAKE.mjs';
 
 runTests(async () => {
   await describe('The `web3` stdlib', async () => {
-    const {
-      bigNumberify,
-      ge,
-      le,
-    } = stdlib;
+    const { bigNumberify, ge, le } = stdlib;
 
     describe('exposes a `bigNumberToHex` function that', () => {
       it('correctly translates positive `BigNumber`s to hex', () => {
-        const {
-          bigNumberToHex,
-        } = stdlib;
+        const { bigNumberToHex } = stdlib;
 
         expect(bigNumberToHex(0)).toBe('0000000000000000000000000000000000000000000000000000000000000000');
         expect(bigNumberToHex(1)).toBe('0000000000000000000000000000000000000000000000000000000000000001');
@@ -33,9 +22,7 @@ runTests(async () => {
       });
 
       it('correctly translates negative `BigNumber`s to hex', () => {
-        const {
-          bigNumberToHex,
-        } = stdlib;
+        const { bigNumberToHex } = stdlib;
 
         expect(bigNumberToHex(-1)).toBe('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
         expect(bigNumberToHex(-10)).toBe('fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6');
@@ -72,9 +59,7 @@ runTests(async () => {
         expect(stdlib.isBigNumber(bigNumberify('987654321'))).toBe(true));
 
       it('returns `false` for non-`BigNumber` arguments', () => {
-        const {
-          isBigNumber,
-        } = stdlib;
+        const { isBigNumber } = stdlib;
 
         expect(isBigNumber(98765.4321)).toBe(false);
         expect(isBigNumber('98765.43')).toBe(false);
@@ -97,10 +82,7 @@ runTests(async () => {
 
       describe('`ge` that', () => {
         it('returns `true` when its first argument is greater than or equal to its second', () => {
-          const {
-            ge,
-            bigNumberify,
-          } = stdlib;
+          const { ge, bigNumberify } = stdlib;
 
           expect(ge(bigNumberify(5), bigNumberify(5))).toBe(true);
           expect(ge(bigNumberify(5), bigNumberify(4))).toBe(true);
@@ -117,10 +99,7 @@ runTests(async () => {
           .toBe(true));
 
         it('returns `false` when its first argument is equal to or less than its second', () => {
-          const {
-            gt,
-            bigNumberify,
-          } = stdlib;
+          const { gt, bigNumberify } = stdlib;
 
           expect(gt(bigNumberify(5), bigNumberify(5))).toBe(false);
           expect(gt(bigNumberify(5), bigNumberify(6))).toBe(false);
@@ -129,10 +108,7 @@ runTests(async () => {
 
       describe('`le` that', () => {
         it('returns `true` when its first argument is lesser than or equal to its second', () => {
-          const {
-            le,
-            bigNumberify,
-          } = stdlib;
+          const { le, bigNumberify } = stdlib;
 
           expect(le(bigNumberify(5), bigNumberify(5))).toBe(true);
           expect(le(bigNumberify(4), bigNumberify(5))).toBe(true);
@@ -149,10 +125,7 @@ runTests(async () => {
           .toBe(true));
 
         it('returns `false` when its first argument is equal to or greater than its second', () => {
-          const {
-            lt,
-            bigNumberify,
-          } = stdlib;
+          const { lt, bigNumberify } = stdlib;
 
           expect(lt(bigNumberify(5), bigNumberify(5))).toBe(false);
           expect(lt(bigNumberify(6), bigNumberify(5))).toBe(false);
@@ -223,13 +196,7 @@ runTests(async () => {
         expect(protect(T_Tuple([T_UInt256]), [n])).toBe([bn]);
       });
       it('recurses into Objects', () => {
-        expect(protect(T_Object({
-          'x': T_Bytes,
-        }), {
-          'x': hello,
-        })).toBe({
-          'x': helloHex,
-        });
+        expect(protect(T_Object({ 'x': T_Bytes }), { 'x': hello })).toBe({ 'x': helloHex });
       });
       it('recurses into Arrays', () => {
         expect(protect(T_Array(T_Null, 1), [undefined])).toBe([null]);
@@ -258,9 +225,7 @@ runTests(async () => {
       // Note: this test could go faster with a faster pollingInterval
       // I think.
       let prog0 = 1;
-      await stdlib.wait(1, ({
-        currentTime,
-      }) => {
+      await stdlib.wait(1, ({ currentTime }) => {
         describe(`prog0: ${prog0}`, () => {
           expect(ge(currentTime, 0) && le(currentTime, 1)).toBe(true);
           prog0++;
@@ -269,9 +234,7 @@ runTests(async () => {
       expect(await stdlib.getNetworkTime()).toBe(bigNumberify(1));
 
       let prog1 = 1;
-      await stdlib.wait(1, ({
-        currentTime,
-      }) => {
+      await stdlib.wait(1, ({ currentTime }) => {
         describe(`prog1: ${prog1}`, () => {
           expect(ge(currentTime, 1) && le(currentTime, 2)).toBe(true);
           prog1++;
@@ -280,9 +243,7 @@ runTests(async () => {
       expect(await stdlib.getNetworkTime()).toBe(bigNumberify(2));
 
       let prog2 = 1;
-      await stdlib.waitUntilTime(5, ({
-        currentTime,
-      }) => {
+      await stdlib.waitUntilTime(5, ({ currentTime }) => {
         describe(`prog2: ${prog2}`, () => {
           expect(ge(currentTime, 2) && le(currentTime, 5)).toBe(true);
           prog2++;

@@ -1,13 +1,9 @@
-import {
-  getStdlib,
-} from './loader.mjs';
+import { getStdlib } from './loader.mjs';
 
 const mountDir = process.env.REACH_RUNNER_MOUNT_DIR || '.';
 
 export async function run(file, ...args) {
-  if (!file) {
-    throw Error('Run requires an argument.');
-  }
+  if (!file) { throw Error('Run requires an argument.'); }
   const m = await import(`${mountDir}/${file}`);
   const stdlib = await getStdlib();
   m.main(stdlib, ...args);

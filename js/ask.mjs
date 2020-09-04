@@ -38,11 +38,5 @@ export const done = () => {
 
 // The answer arg be 'y' (true) or 'n' (false)
 export const yesno = (answer) => {
-  if (answer === 'y') {
-    return true;
-  } else if (answer === 'n') {
-    return false;
-  } else {
-    throw Error(`Only y/n are acceptable.`);
-  }
+  if (answer === 'y') { return true; } else if (answer === 'n') { return false; } else { throw Error(`Only y/n are acceptable.`); }
 };
