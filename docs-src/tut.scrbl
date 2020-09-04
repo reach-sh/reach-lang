@@ -21,7 +21,7 @@ The best way to install Docker on Mac and Windows is with @link["https://www.doc
 
 @margin-note{You probably already have @exec{make} installed.
 For example, OS X and many other POSIX systems come with @exec{make}, but some versions of Linux do not include it by default and will require you to install it.
-If you're on Ubuntu, you can run @exec{sudo apt install make}.}
+If you're on Ubuntu, you can run @exec{sudo apt install make} to get it.}
 
 You'll know that you have everything installed if you can run the following three commands without errors
 
