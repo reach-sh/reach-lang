@@ -9,7 +9,8 @@ rules:
     - error
     - always
   comma-dangle:
-    - off
+    - error
+    - always-multiline
   no-mixed-spaces-and-tabs:
     - off
   no-extra-boolean-cast:

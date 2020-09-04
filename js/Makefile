@@ -44,3 +44,8 @@ down:
 
 .PHONY: test
 test: run
+
+.PHONY: format
+format:
+	js-beautify --indent-size 2 --end-with-newline --replace --file ETH.mjs
+	eslint --fix ETH.mjs
