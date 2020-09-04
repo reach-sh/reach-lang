@@ -73,10 +73,9 @@ parseIdent at = \case
     expect_throw at $ Err_Parse_JSIdentNone
 
 jse_expect_id :: HasCallStack => SrcLoc -> JSExpression -> String
-jse_expect_id at j =
-  case j of
-    (JSIdentifier _ x) -> x
-    _ -> expect_throw at (Err_Parse_ExpectIdentifier j)
+jse_expect_id at = \case
+  (JSIdentifier _ x) -> x
+  j -> expect_throw at (Err_Parse_ExpectIdentifier j)
 
 jso_expect_id :: HasCallStack => SrcLoc -> JSObjectProperty -> String
 jso_expect_id at = \case
@@ -88,13 +87,12 @@ parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]
 parseJSFormals at jsformals = map (jse_expect_id at) $ jscl_flatten jsformals
 
 jsArrowFormalsToFunFormals :: SrcLoc -> JSArrowParameterList -> JSCommaList JSExpression
-jsArrowFormalsToFunFormals at aformals =
-  case aformals of
-    JSUnparenthesizedArrowParameter (JSIdentName a x) ->
-      JSLOne (JSIdentifier a x)
-    JSUnparenthesizedArrowParameter JSIdentNone ->
-      expect_throw at Err_Parser_Arrow_NoFormals
-    JSParenthesizedArrowParameterList _ l _ -> l
+jsArrowFormalsToFunFormals at = \case
+  JSUnparenthesizedArrowParameter (JSIdentName a x) ->
+    JSLOne (JSIdentifier a x)
+  JSUnparenthesizedArrowParameter JSIdentNone ->
+    expect_throw at Err_Parser_Arrow_NoFormals
+  JSParenthesizedArrowParameterList _ l _ -> l
 
 parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [SLVar]
 parseJSArrowFormals at aformals =
@@ -123,31 +121,44 @@ instance NFData JSBundle where
       go [] = ()
       go ((rs, jmi) : rest) = rnf rs `seq` jmi `seq` go rest
 
+gatherDeps_fc :: SrcLoc -> IORef JSBundleMap -> JSFromClause -> IO JSFromClause
+gatherDeps_fc at fmr (JSFromClause ab aa s) = do
+  s_abs <- gatherDeps_file GatherNotTop (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
+  return $ JSFromClause ab aa s_abs
+
 gatherDeps_imd :: SrcLoc -> IORef JSBundleMap -> JSImportDeclaration -> IO JSImportDeclaration
-gatherDeps_imd at fmr j =
-  case j of
-    JSImportDeclaration ic (JSFromClause ab aa s) sm -> do
-      s_abs <- gatherDeps_file GatherNotTop (srcloc_at "import from" (tp ab) at) fmr $ trimQuotes s
-      return $ JSImportDeclaration ic (JSFromClause ab aa s_abs) sm
-    JSImportDeclarationBare a s sm -> do
-      s_abs <- gatherDeps_file GatherNotTop (srcloc_at "import bare" (tp a) at) fmr $ trimQuotes s
-      return $ JSImportDeclarationBare a s_abs sm
+gatherDeps_imd at fmr = \case
+  JSImportDeclaration ic fc sm -> do
+    fc' <- gatherDeps_fc at fmr fc
+    return $ JSImportDeclaration ic fc' sm
+  JSImportDeclarationBare a s sm -> do
+    s_abs <- gatherDeps_file GatherNotTop (srcloc_at "import bare" (tp a) at) fmr $ trimQuotes s
+    return $ JSImportDeclarationBare a s_abs sm
+
+gatherDeps_exd :: SrcLoc -> IORef JSBundleMap -> JSExportDeclaration -> IO JSExportDeclaration
+gatherDeps_exd at fmr = \case
+  JSExportFrom ec fc sp -> do
+    fc' <- gatherDeps_fc at fmr fc
+    return $ JSExportFrom ec fc' sp
+  exd ->
+    return exd
 
 gatherDeps_mi :: SrcLoc -> IORef JSBundleMap -> JSModuleItem -> IO JSModuleItem
-gatherDeps_mi at fmr j =
-  case j of
-    JSModuleImportDeclaration a imd -> do
-      imd' <- gatherDeps_imd (srcloc_at "import" (tp a) at) fmr imd
-      return $ JSModuleImportDeclaration a imd'
-    mi -> return mi
+gatherDeps_mi at fmr = \case
+  JSModuleImportDeclaration a imd -> do
+    imd' <- gatherDeps_imd (srcloc_at "import" (tp a) at) fmr imd
+    return $ JSModuleImportDeclaration a imd'
+  JSModuleExportDeclaration a exd -> do
+    exd' <- gatherDeps_exd (srcloc_at "export" (tp a) at) fmr exd
+    return $ JSModuleExportDeclaration a exd'
+  mi -> return mi
 
 gatherDeps_ast :: SrcLoc -> IORef JSBundleMap -> JSAST -> IO [JSModuleItem]
-gatherDeps_ast at fmr j =
-  case j of
-    JSAstModule mis _ ->
-      mapM (gatherDeps_mi at fmr) mis
-    _ ->
-      expect_throw at (Err_Parse_NotModule j)
+gatherDeps_ast at fmr = \case
+  JSAstModule mis _ ->
+    mapM (gatherDeps_mi at fmr) mis
+  j ->
+    expect_throw at (Err_Parse_NotModule j)
 
 updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef (BundleMap a b) -> Maybe a -> [a] -> (() -> IO a) -> (a -> c) -> (a -> ParserError) -> (a -> IO b) -> IO c
 updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = do

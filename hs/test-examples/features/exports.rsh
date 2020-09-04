@@ -5,11 +5,7 @@
 // export * from './lib.rsh';
 // TODO: Unexpected token, MulToken at ./test-examples/features/exports.rsh:5:8
 
-// export {x} from './lib.rsh';
-// TODO:         error: ./test-examples/features/exports.rsh:8:1:export:
-// Invalid Reach export syntax: JSExportFrom
-// This one fails because the module loader needs to
-// also notice this and load it
+export {x} from './lib.rsh';
 
 const y = 3;
 export {y, y as z};
