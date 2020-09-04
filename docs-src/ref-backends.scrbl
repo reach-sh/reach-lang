@@ -178,7 +178,7 @@ which are @tech{account}s, such as those returned by @jsin{connectAccount}.
 
 @index{getNetworkTime} Gets the current consensus network @tech{time}.
 For @litchar{ETH}, @litchar{ALGO}, and @litchar{FAKE},
-this is the current block number.
+this is the current block number, represented as a @litchar{BigNumber}.
 
 @(hrule)
 @js{
@@ -203,7 +203,7 @@ It will receive an object with keys @jsin{currentTime} and @jsin{targetTime},
 
 @index{wait} A convenience function for delaying by a certain @tech{time delta}.
 The expression @jsin{await wait(delta, onProgress)} is the same as
-@jsin{await waitUntilTime(await getCurrentTime() + delta, onProgress)}.
+@jsin{await waitUntilTime(add(await getNetworkTime(), delta), onProgress)}.
 
 @subsubsection[#:tag "ref-backend-js-stdlib-utils"]{Utilities}
 
