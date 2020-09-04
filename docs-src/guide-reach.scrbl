@@ -23,4 +23,4 @@ The Reach compiler uses the following strategy for analysis and compiling progra
 
 ]
 
-Reach is proud to be implemented in @link["https://en.wikipedia.org/wiki/Haskell_(programming_language)"]{Haskell} using the @link["https://en.wikipedia.org/wiki/Glasgow_Haskell_Compiler"]{Glorious Haskell Compiler}; use the @link["https://en.wikipedia.org/wiki/Z3_Theorem_Prover"]{Z3 theorem prover} for verification; use  @link["https://www.racket-lang.org/"]{Racket}'s @link["https://docs.racket-lang.org/scribble/"]{Scribble} tool for documentation; and use @link["https://www.docker.com/"]{Docker} for containerization.
+Reach is proud to: be implemented in @link["https://en.wikipedia.org/wiki/Haskell_(programming_language)"]{Haskell} using the @link["https://en.wikipedia.org/wiki/Glasgow_Haskell_Compiler"]{Glorious Haskell Compiler}; use the @link["https://en.wikipedia.org/wiki/Z3_Theorem_Prover"]{Z3 theorem prover} for verification; use  @link["https://www.racket-lang.org/"]{Racket}'s @link["https://docs.racket-lang.org/scribble/"]{Scribble} tool for documentation; and use @link["https://www.docker.com/"]{Docker} for containerization.
