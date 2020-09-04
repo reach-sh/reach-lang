@@ -1,6 +1,8 @@
 import algosdk from 'algosdk';
 
-import {debug} from './shared.mjs';
+import {
+  debug,
+} from './shared.mjs';
 export * from './shared.mjs';
 
 // Note: if you want your programs to exit fail
@@ -45,26 +47,32 @@ const currentRound = async () => (await algodClient.status()).lastRound;
 const waitForConfirmation = async (txId, untilRound) => {
   while (true) {
     const lastRound = await currentRound();
-    if ( lastRound > untilRound ) {
-      return false; }
+    if (lastRound > untilRound) {
+      return false;
+    }
     const pendingInfo =
-          await algodClient.pendingTransactionInformation(txId);
+      await algodClient.pendingTransactionInformation(txId);
     if (pendingInfo.round != null && pendingInfo.round > 0) {
-      return pendingInfo; }
-    await algodClient.statusAfterBlock(lastRound + 1); } };
+      return pendingInfo;
+    }
+    await algodClient.statusAfterBlock(lastRound + 1);
+  }
+};
 
 const sendsAndConfirm = async (txns, untilRound) => {
   const btxns = txns.map(o => o.blob);
   const tx = await algodClient.sendRawTransactions(btxns);
   // FIXME https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
-  return (await waitForConfirmation(tx.txID, untilRound)); };
+  return (await waitForConfirmation(tx.txID, untilRound));
+};
 
 const sendAndConfirm = async (txn, untilRound) => {
   await algodClient.sendRawTransaction(txn.blob);
-  return (await waitForConfirmation(txn.txID, untilRound)); };
+  return (await waitForConfirmation(txn.txID, untilRound));
+};
 
 // Backend
-const fillTxnWithParams = ( firstRound, round_width, params, txn ) => {
+const fillTxnWithParams = (firstRound, round_width, params, txn) => {
   const theFirstRound = firstRound ? firstRound : params.lastRound;
   // FIXME these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
   txn.fee = params.minFee;
@@ -72,34 +80,40 @@ const fillTxnWithParams = ( firstRound, round_width, params, txn ) => {
   txn.lastRound = theFirstRound + round_width;
   txn.genesisID = params.genesisID;
   txn.genesisHash = params.genesishashb64;
-  return txn; };
+  return txn;
+};
 
 const getTxnParams = async () => {
   debug(`fillTxn: getting params`);
   const params = await algodClient.getTransactionParams();
   debug(`fillTxn: got params`);
-  return params; };
+  return params;
+};
 
-const fillTxn = async ( round_width, txn ) => {
-  return fillTxnWithParams( false, round_width, await getTxnParams(), txn ); };
+const fillTxn = async (round_width, txn) => {
+  return fillTxnWithParams(false, round_width, await getTxnParams(), txn);
+};
 
 export const transfer = async (from, to, value) => {
   if (from.networkAccount) return await transfer(from.networkAccount, to, value);
   if (to.networkAccount) return await transfer(from, to.networkAccount, value);
   // FIXME these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
-  const txn = await fillTxn( default_range_width, {
+  const txn = await fillTxn(default_range_width, {
     'type': 'pay',
     'from': from.addr,
     'to': to.addr,
-    'amount': value } );
+    'amount': value,
+  });
   const signedTxn = algosdk.signTransaction(txn, from.sk);
-  const res = await sendAndConfirm( signedTxn, txn.lastRound );
-  if ( ! res ) {
-    throw Error(`Transfer failed: ${to} ${from} ${value}`); }
-  return res; };
+  const res = await sendAndConfirm(signedTxn, txn.lastRound);
+  if (!res) {
+    throw Error(`Transfer failed: ${to} ${from} ${value}`);
+  }
+  return res;
+};
 
 export const connectAccount = async thisAcc => {
-  const shad = thisAcc.addr.substring(2,6);
+  const shad = thisAcc.addr.substring(2, 6);
   debug(`${shad}: connectAccount`);
 
   const attach = async (bin, ctc) => {
@@ -112,15 +126,23 @@ export const connectAccount = async thisAcc => {
       const ok_val = txn.ApplicationArgs[1];
       const ok_args = [];
       const len = txn.ApplicationArgs.length;
-      for ( let i = 0; i < evt_cnt; i++ ) {
-        ok_args[evt_cnt - 1 - i] = txn.ApplicationArgs[len - i]; }
+      for (let i = 0; i < evt_cnt; i++) {
+        ok_args[evt_cnt - 1 - i] = txn.ApplicationArgs[len - i];
+      }
       const confirmedRound = txn.round;
       const ok_bal = await getBalanceAt(ctc.address, confirmedRound);
       prevRound = confirmedRound;
-      return { didTimeout: false, data: ok_args, value: ok_val, balance: ok_bal, from: txn.from }; };
+      return {
+        didTimeout: false,
+        data: ok_args,
+        value: ok_val,
+        balance: ok_bal,
+        from: txn.from,
+      };
+    };
 
     const iam = (some_addr) => {
-      if ( some_addr == thisAcc.addr ) {
+      if (some_addr == thisAcc.addr) {
         return thisAcc.addr;
       } else {
         throw Error(`I should be ${some_addr}, but am ${thisAcc.addr}`);
@@ -136,120 +158,151 @@ export const connectAccount = async thisAcc => {
       debug(`${shad}: ${label} sendrecv ${okNum} ${timeout_delay} --- START`);
 
       const this_is_a_timeout = timeout_delay ? false : true;
-      if ( this_is_a_timeout ) {
-        timeout_delay = default_range_width; }
+      if (this_is_a_timeout) {
+        timeout_delay = default_range_width;
+      }
 
       do {
         const params = await getTxnParams();
         const appTxn = await fillTxnWithParams(
           prevRound, timeout_delay, params, {
             'from': thisAcc.addr
-            // FIXME JS SDK doesn't handle encoding this kind of txn
-            , 'type': 'appl'
-            , 'ApplicationId': ctc.appId
-            , 'OnCompletion': 'noOp'
-            , 'ApplicationArgs': [okNum, prevRound, value, ...args]
-            , 'Accounts' : [ ctc.address ]
-          } );
+              // FIXME JS SDK doesn't handle encoding this kind of txn
+              ,
+            'type': 'appl',
+            'ApplicationId': ctc.appId,
+            'OnCompletion': 'noOp',
+            'ApplicationArgs': [okNum, prevRound, value, ...args],
+            'Accounts': [ctc.address],
+          });
         const valTxn = await fillTxnWithParams(
           prevRound, timeout_delay, params, {
-            'type': 'pay'
-            , 'from': thisAcc.addr
-            , 'to': ctc.address
-            , 'amount': value
-          } );
+            'type': 'pay',
+            'from': thisAcc.addr,
+            'to': ctc.address,
+            'amount': value,
+          });
 
         const otherTxns = [];
-        const txn_out = async ( to, amount ) => {
-          otherTxns.push( await fillTxnWithParams(
+        const txn_out = async (to, amount) => {
+          otherTxns.push(await fillTxnWithParams(
             prevRound, timeout_delay, params, {
-              'type': 'pay'
-              , 'from': ctc.address
-              , 'to': to
-              , 'amount': amount
-            } ) );
+              'type': 'pay',
+              'from': ctc.address,
+              'to': to,
+              'amount': amount,
+            }));
         };
-        const fake_txn_res = { didTimeout: false, data: args, value: value, balance: (await getBalanceAt(ctc.address, prevRound)), from: thisAcc.addr };
-        try_p( txn_out, fake_txn_res );
+        const fake_txn_res = {
+          didTimeout: false,
+          data: args,
+          value: value,
+          balance: (await getBalanceAt(ctc.address, prevRound)),
+          from: thisAcc.addr,
+        };
+        try_p(txn_out, fake_txn_res);
 
-        const txns = [ appTxn, valTxn, ...otherTxns ];
+        const txns = [appTxn, valTxn, ...otherTxns];
         const txnGroup = algosdk.assignGroupID(txns);
         void(txnGroup);
         const signedTxns = [
-          algosdk.signTransaction(appTxn, thisAcc.sk)
-          , algosdk.signTransaction(valTxn, thisAcc.sk)
-          , ...otherTxns.map(
+          algosdk.signTransaction(appTxn, thisAcc.sk), algosdk.signTransaction(valTxn, thisAcc.sk), ...otherTxns.map(
             txn =>
-              // FIXME relies on https://github.com/algorand/go-algorand/issues/1051 fix
-              algosdk.signLogicSigTransaction(
-                txn, ctc.logic_sig, [] )) ];
+            // FIXME relies on https://github.com/algorand/go-algorand/issues/1051 fix
+            algosdk.signLogicSigTransaction(
+              txn, ctc.logic_sig, [])),
+        ];
 
-        const confirmedTxn = await sendsAndConfirm( signedTxns, appTxn.lastRound );
-        if ( confirmedTxn ) {
+        const confirmedTxn = await sendsAndConfirm(signedTxns, appTxn.lastRound);
+        if (confirmedTxn) {
           debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- OKAY`);
           // FIXME no documentation on whether confirmedTxn has something for each txn in a group or only one thing. We made need to call returnFromTxn with appTxn for the data and confirmedTxn for the round/etc
-          return (await returnFromTxn( confirmedTxn, evt_cnt )); }
+          return (await returnFromTxn(confirmedTxn, evt_cnt));
+        }
 
-        if ( ! this_is_a_timeout ) {
+        if (!this_is_a_timeout) {
           debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- FAIL/TIMEOUT`);
           const rec_res = await recv(label, timeNum, 0, false, false, false, false, false);
           rec_res.didTimeout = true;
-          return rec_res; } }
-      while ( this_is_a_timeout ); };
+          return rec_res;
+        }
+      }
+      while (this_is_a_timeout);
+    };
 
     const recv = async (label, okNum, ok_cnt, timeout_delay, timeout_me, timeout_args, timeNum, try_p) => {
       debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- START`);
 
       const this_is_a_timeout = timeout_delay ? false : true;
-      if ( this_is_a_timeout ) {
-        timeout_delay = default_range_width; }
+      if (this_is_a_timeout) {
+        timeout_delay = default_range_width;
+      }
 
-      while ( 1 ) {
+      while (1) {
         const startRound = this_is_a_timeout ? prevRound : await currentRound();
         const untilRound = prevRound + timeout_delay;
-        while ( (await currentRound()) < untilRound ) {
+        while ((await currentRound()) < untilRound) {
           // FIXME maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
           const resp = await algodClient.transactionByAddress(ctc.address, startRound, untilRound);
           resp.transactions.forEach(async txn => {
-            if ( txn.type == 'appl'
-                 && txn.ApplicationId == ctc.appId
-                 && txn.ApplicationArgs[0] == okNum
-                 && txn.ApplicationArgs[1] == prevRound ) {
+            if (txn.type == 'appl' &&
+              txn.ApplicationId == ctc.appId &&
+              txn.ApplicationArgs[0] == okNum &&
+              txn.ApplicationArgs[1] == prevRound) {
               debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- OKAY`);
-              return (await returnFromTxn( txn, ok_cnt )); } }); }
+              return (await returnFromTxn(txn, ok_cnt));
+            }
+          });
+        }
 
-        if ( ! this_is_a_timeout ) {
+        if (!this_is_a_timeout) {
           debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- TIMEOUT`);
-          const rec_res = timeout_me
-                ? await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, try_p )
-                : await recv(label, timeNum, 0, false, false, false, false, false);
+          const rec_res = timeout_me ?
+            await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, try_p) :
+            await recv(label, timeNum, 0, false, false, false, false, false);
           rec_res.didTimeout = true;
-          return rec_res; } } };
+          return rec_res;
+        }
+      }
+    };
 
-    return { ...ctc, sendrecv, recv, iam, wait }; };
+    return {
+      ...ctc,
+      sendrecv,
+      recv,
+      iam,
+      wait,
+    };
+  };
 
   const deploy = async (bin) => {
     debug(`${shad}: deploy`);
 
-    const { LogicSigProgram, ApprovalProgram, ClearStateProgram } = bin._Connectors.ALGO;
+    const {
+      LogicSigProgram,
+      ApprovalProgram,
+      ClearStateProgram,
+    } = bin._Connectors.ALGO;
 
     debug(`${shad}: deploy: making account`);
     const ctc_acc = algosdk.generateAccount();
 
     debug(`${shad}: deploy: filling transaction`);
-    const appTxn = await fillTxn( default_range_width, {
+    const appTxn = await fillTxn(default_range_width, {
       // FIXME JS SDK doesn't handle this kind of txn
-      'from': thisAcc.addr
-      , 'type': 'appl'
-      , 'ApplicationId': 0
-      , 'OnCompletion': 'noOp'
-      , 'ApplicationArgs': []
-      , 'ApprovalProgram': ApprovalProgram
-      , 'ClearStateProgram': ClearStateProgram
-      , 'GlobalStateSchema': { 'NumByteSlice': 2 }
-      , 'Accounts' : [ ctc_acc.addr ]
+      'from': thisAcc.addr,
+      'type': 'appl',
+      'ApplicationId': 0,
+      'OnCompletion': 'noOp',
+      'ApplicationArgs': [],
+      'ApprovalProgram': ApprovalProgram,
+      'ClearStateProgram': ClearStateProgram,
+      'GlobalStateSchema': {
+        'NumByteSlice': 2,
+      },
+      'Accounts': [ctc_acc.addr],
       // FIXME: Use note field for link to Reach code
-    } );
+    });
     debug(`${shad}: deploy: signing transction`);
     const signedTxn = algosdk.signTransaction(appTxn, thisAcc.sk);
     debug(`${shad}: deploy: txn signed, sending`);
@@ -259,35 +312,48 @@ export const connectAccount = async thisAcc => {
     const creationRound = confirmedTxn.round;
 
     // FIXME relies on https://github.com/algorand/go-algorand/issues/1051 fix
-    const logic_sig = algosdk.makeLogicSig(Buffer.from(LogicSigProgram, 'base64'), [ appId ]);
-    logic_sig.sign( ctc_acc.sk );
+    const logic_sig = algosdk.makeLogicSig(Buffer.from(LogicSigProgram, 'base64'), [appId]);
+    logic_sig.sign(ctc_acc.sk);
 
-    const ctc = { address: ctc_acc.addr, appId, creationRound, logic_sig };
+    const ctc = {
+      address: ctc_acc.addr,
+      appId,
+      creationRound,
+      logic_sig,
+    };
 
-    return attach(bin, ctc); };
+    return attach(bin, ctc);
+  };
 
-  return { deploy, attach, networkAccount: thisAcc }; };
+  return {
+    deploy,
+    attach,
+    networkAccount: thisAcc,
+  };
+};
 
 const getBalanceAt = async (addr, round) => {
   void(round);
   // FIXME: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
-  return (await algodClient.accountInformation(addr)).amount; };
+  return (await algodClient.accountInformation(addr)).amount;
+};
 
 export const balanceOf = async acc => {
-  return (await getBalanceAt(acc.addr, await currentRound())); };
+  return (await getBalanceAt(acc.addr, await currentRound()));
+};
 
 const showBalance = async (note, acc) => {
   console.log(
-    '%s: balance: %d microAlgos'
-    , note
-    , (await balanceOf(acc))); };
+    '%s: balance: %d microAlgos', note, (await balanceOf(acc)));
+};
 
 export const newTestAccount = async (startingBalance) => {
   const acc = algosdk.generateAccount();
   showBalance('before', acc);
   await transfer(acc, FAUCET, startingBalance);
   showBalance('after', acc);
-  return await connectAccount(acc); };
+  return await connectAccount(acc);
+};
 
 export const newAccountFromMnemonic = false; // XXX
 

@@ -6,8 +6,7 @@ const knownConnectorModes = [
   'ALGO-test-dockerized-goal',
 ];
 
-const connectorModeDefaults = {
-};
+const connectorModeDefaults = {};
 
 // Populate connectorModeDefaults
 for (const knownConnectorMode of knownConnectorModes) {

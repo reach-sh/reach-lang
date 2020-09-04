@@ -22,7 +22,7 @@ export const ask = async (question, validator) => {
   let result = undefined;
   do {
     try {
-      result = validator(await(ask_(question)));
+      result = validator(await (ask_(question)));
     } catch (err) {
       console.log(err.message);
       // TODO: better re-prompt
@@ -38,7 +38,11 @@ export const done = () => {
 
 // The answer arg be 'y' (true) or 'n' (false)
 export const yesno = (answer) => {
-  if (answer === 'y') { return true; }
-  else if (answer === 'n') { return false; }
-  else { throw Error(`Only y/n are acceptable.`); }
+  if (answer === 'y') {
+    return true;
+  } else if (answer === 'n') {
+    return false;
+  } else {
+    throw Error(`Only y/n are acceptable.`);
+  }
 };

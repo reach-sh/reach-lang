@@ -1,6 +1,6 @@
 import * as nodeAssert from 'assert';
-import * as crypto     from 'crypto';
-import ethers          from 'ethers';
+import * as crypto from 'crypto';
+import ethers from 'ethers';
 
 let DEBUG = false;
 export const setDEBUG = (b) => {
@@ -10,14 +10,19 @@ export const setDEBUG = (b) => {
     throw Error(`Expected bool, got ${JSON.stringify(b)}`);
   }
 };
-export const getDEBUG = () => { return DEBUG; };
-export const debug = msg => { if (getDEBUG()) {
-  console.log(`DEBUG: ${msg}`); } };
+export const getDEBUG = () => {
+  return DEBUG;
+};
+export const debug = msg => {
+  if (getDEBUG()) {
+    console.log(`DEBUG: ${msg}`);
+  }
+};
 
 // Hex helpers
 // const un0x           = h => h.replace(/^0x/, ''); // unused
-const hexTo0x        = h => '0x' + h.replace(/^0x/, '');
-const byteToHex      = b => (b & 0xFF).toString(16).padStart(2, '0');
+const hexTo0x = h => '0x' + h.replace(/^0x/, '');
+const byteToHex = b => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = b => Array.from(b, byteToHex).join('');
 
 // const hexOf = x =>
@@ -61,7 +66,7 @@ export const T_UInt256 = {
       return bigNumberify(v);
     }
     throw Error(`Expected BigNumber or number, but got ${JSON.stringify(v)}`);
-  }
+  },
 };
 
 export const T_Bytes = {
@@ -86,7 +91,7 @@ export const T_Address = {
     if (typeof x !== 'string') {
       throw Error(`Address must be a string, but got: ${JSON.stringify(x)}`);
     }
-    if (x.slice(0,2) !== '0x') {
+    if (x.slice(0, 2) !== '0x') {
       throw Error(`Address must start with 0x, but got: ${JSON.stringify(x)}`);
     }
     if (!isHex(x)) {
@@ -125,7 +130,7 @@ export const T_Tuple = (ctcs) => {
         throw Error(`Expected tuple of size ${ctcs.length}, but got ${args.length}`);
       }
       return args.map((arg, i) => ctcs[i].canonicalize(arg));
-    }
+    },
   };
 };
 
@@ -138,7 +143,7 @@ export const T_Object = (co) => {
         throw Error(`Expected object, but got ${JSON.stringify(vo)}`);
       }
       const obj = {};
-      for ( const prop in co ) {
+      for (const prop in co) {
         // This is dumb but it's how ESLint says to do it
         // https://eslint.org/docs/rules/no-prototype-builtins
         if (!{}.hasOwnProperty.call(vo, prop)) {
@@ -163,7 +168,7 @@ export const protect = (ctc, v, ai = null) => {
 };
 
 export const assert = (d, ai = null) =>
-nodeAssert.strict(d, format_ai(ai));
+  nodeAssert.strict(d, format_ai(ai));
 
 const {
   hexlify,
@@ -171,8 +176,12 @@ const {
   toUtf8String,
   isHexString,
 } = ethers.utils;
-const { BigNumber } = ethers;
-export const { isBigNumber } = BigNumber;
+const {
+  BigNumber,
+} = ethers;
+export const {
+  isBigNumber,
+} = BigNumber;
 export const bigNumberify = (x) => BigNumber.from(x);
 
 
@@ -188,7 +197,7 @@ const kek = (arg) => {
     return '0x' + bigNumberToHex(arg);
   } else if (isBigNumber(arg)) {
     return '0x' + bigNumberToHex(arg);
-  } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array'){
+  } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array') {
     return arg;
   } else {
     throw Error(`Can't kek this: ${arg}`);
@@ -226,22 +235,24 @@ export const randomUInt256 = () =>
   hexToBigNumber(byteArrayToHex(crypto.randomBytes(32)));
 
 export const hasRandom = {
-  random: randomUInt256 };
+  random: randomUInt256,
+};
 
-export const eq    = (a, b) => bigNumberify(a).eq( bigNumberify(b));
-export const add   = (a, b) => bigNumberify(a).add(bigNumberify(b));
-export const sub   = (a, b) => bigNumberify(a).sub(bigNumberify(b));
-export const mod   = (a, b) => bigNumberify(a).mod(bigNumberify(b));
-export const mul   = (a, b) => bigNumberify(a).mul(bigNumberify(b));
-export const div   = (a, b) => bigNumberify(a).div(bigNumberify(b));
-export const ge    = (a, b) => bigNumberify(a).gte(bigNumberify(b));
-export const gt    = (a, b) => bigNumberify(a).gt( bigNumberify(b));
-export const le    = (a, b) => bigNumberify(a).lte(bigNumberify(b));
-export const lt    = (a, b) => bigNumberify(a).lt( bigNumberify(b));
+export const eq = (a, b) => bigNumberify(a).eq(bigNumberify(b));
+export const add = (a, b) => bigNumberify(a).add(bigNumberify(b));
+export const sub = (a, b) => bigNumberify(a).sub(bigNumberify(b));
+export const mod = (a, b) => bigNumberify(a).mod(bigNumberify(b));
+export const mul = (a, b) => bigNumberify(a).mul(bigNumberify(b));
+export const div = (a, b) => bigNumberify(a).div(bigNumberify(b));
+export const ge = (a, b) => bigNumberify(a).gte(bigNumberify(b));
+export const gt = (a, b) => bigNumberify(a).gt(bigNumberify(b));
+export const le = (a, b) => bigNumberify(a).lte(bigNumberify(b));
+export const lt = (a, b) => bigNumberify(a).lt(bigNumberify(b));
 
 // Array helpers
 
 export function Array_set(arr, idx, elem) {
   const arrp = arr.slice();
   arrp[idx] = elem;
-  return arrp; }
+  return arrp;
+}
