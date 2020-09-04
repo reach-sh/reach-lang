@@ -108,6 +108,8 @@
                 (string-trim x "<br />" #:left? #f))))
 
   (define scope
+    '()
+    #;
     (if scopee (list scopee) '()))
   (define langs (string->symbol lang))
   (define (mktag x) (list langs x))
