@@ -300,7 +300,7 @@ Bob saw outcome Alice wins
 
 Alice is pretty good at @|RPS|!
 
-@tech{Consensus networks} in general, and Reach specifically, guarantee that all participants agree on the outcome of the their decentralized computation.
+@tech{Consensus networks} in general, and Reach specifically, guarantee that all participants agree on the outcome of their decentralized computation.
 Indeed, this is where the name @tech{consensus network} comes from, as they enable these distributed, and untrusted, parties to come to a consensus, or agreement, about the intermediate states of a computation; and if they agree on the intermediate states, they will also agree on the output.
 That's why every time you run @exec{./reach run}, both Alice and Bob will see the same outcome!
 
@@ -1035,7 +1035,7 @@ In @seclink["tut-6"]{the next step}, we'll extend the application to disallow dr
 @section[#:tag "tut-6"]{Play and Play Again}
 @(mint-scope "tut-6")
 
-In this section, we extend our application so that Alice and Bob will continue to play against each other until their game does not end in a draw.
+In this section, we extend our application so that Alice and Bob will continue to play against each other until there is a clear winner, so if it is a draw they will continue playing.
 
 This will only require a change to the Reach program, not the JavaScript @tech{frontend}, but we will take the opportunity to modify the @tech{frontend} so that timeouts can happen to both parties when they are asked to submit their hands.
 Let's do that to get it out of the way and not distract from the main task of removing draws.
@@ -1117,7 +1117,7 @@ Let's make these changes now.
 
 @itemlist[
 
-@item{Line 44 has Alice pubish and pay the wager.}
+@item{Line 44 has Alice publish and pay the wager.}
 
 ]
 
@@ -1461,7 +1461,7 @@ y
 Starting Rock, Paper, Scissors as Alice
 Would you like to create an account? (only possible on devnet)
 y
-Do you want to deploy the game? (y/n)
+Do you want to deploy the contract? (y/n)
 y
 The contract is deployed as = {"address": "0xdd1a445d4a85C4676094f84fFe19Fb3d76E502E0", "creation_block": 73}
 Your balance is 999.999999999999123878
@@ -1482,7 +1482,7 @@ n
 Starting Rock, Paper, Scissors as Bob
 Would you like to create an account? (only possible on devnet)
 y
-Do you want to deploy the game? (y/n)
+Do you want to deploy the contract? (y/n)
 n
 Please paste the contract information:
 {"address": "0xdd1a445d4a85C4676094f84fFe19Fb3d76E502E0", "creation_block": 73}
