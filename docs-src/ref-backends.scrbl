@@ -363,7 +363,7 @@ The following exports are defined only in the Ethereum standard library.
  fromWei(wei) => ether
  toWeiBigNumber(ether) => uint256}
 
-Wei conversion functions only exported by the stdlib for ETH.
+The functions convert amounts of Ethereum (ETH) to and from Wei, which is the base unit of Ethereum.
 
 @subsection[#:tag "ref-backend-js-ask.mjs"]{@tt{ask.mjs}}
 

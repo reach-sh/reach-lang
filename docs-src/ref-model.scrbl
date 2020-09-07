@@ -5,6 +5,12 @@
 
 This document describes the fundamental assumptions and concepts of Reach. First, we discuss the model of running a Reach program in @secref["ref-model-eval"]. Next, we discuss the details about compilation of a Reach program that are relevant to Reach programmers in @secref["ref-model-compile"]. Finally, we discuss how Reach programs are syntactically constructed in @secref["ref-model-syntax"].
 
+@margin-note{This is not an introduction to Reach.
+We recommend reading @seclink["overview"]{the overview} for an introduction to what Reach is and the @seclink["tut"]{tutorial} to get started with programming Reach.
+
+Furthermore, it is not an introduction to @tech{consensus networks} or "blockchain".
+If you would like to read such an introduction, we recommend the @link["https://en.wikipedia.org/wiki/Consensus_(computer_science)"]{Wikipedia article on consensus} and the @link["https://en.wikipedia.org/wiki/Blockchain"]{Wikipedia article on blockchains}.}
+
 @section[#:tag "ref-model-eval"]{Evaluation Model}
 
 Reach programs specify a decentralized application (@deftech{DApp}), which is a distributed computation involving many @tech{participants} and utilizing one @tech{contract} on one @tech{consensus network} for reaching agreement on the intermediate @tech{values} of the computation.
@@ -22,9 +28,19 @@ A @deftech{time delta} represents the difference between two points in @tech{tim
 @deftech{Contracts} are @tech{accounts} with three extra capacities: they persistently store @tech{values} (called the @deftech{consensus state}), they may receive @tech{publications}, and when they receive @tech{publications}, they systematically process them and may modify their @tech{consensus state}, make @tech{publications}, and may @tech{transfer} @tech{network tokens} in response to the reception.
 The creation of a @tech{contract} is called @deftech{deploy}ment.
 The chapter, @secref["ref-networks"], discusses which @tech{consensus networks} are supported by Reach.
+
 @margin-note{This description of @tech{consensus networks} is an abstraction that may not be directly implemented by actual networks.
+
 For example, in UTXO-based networks, there is not typically an explicitly represented @tech{account} balance ledger.
-However, such networks do @emph{abstractly} have @tech{accounts} with balances, because particular private keys represent @tech{accounts} which have exclusive access to some set of @tech{network tokens} which is their balance.}
+However, such networks do @emph{abstractly} have @tech{accounts} with balances, because particular private keys represent @tech{accounts} which have exclusive access to some set of @tech{network tokens} which is their balance.
+
+Similarly, Reach's notion of time may appear overly abstract ("monotonically increasing ... totally ordered set") if you know that many consensus networks are based on blockchains and use the chain length, also called the height or block number, as a notion of time.
+In this case, @tech{time} would be a natural number, which is a prototypical model of a totally ordered set.
+However, Reach is flexible enough to support non-blockchain-based consensus networks, so it does not mandate this particular natural number-based notion of time.
+
+Finally, Reach's definition of @tech{consensus network} does not require any particular technology or features of this.
+In particular, it does not only refer to so-called "layer-1" protocols, nor does it exclude centralized systems with trusted parties controlling the network.
+}
 
 A @deftech{participant} is a logical actor which takes part in a @|DApp|.
 A @tech{participant} is said to @deftech{join} an application when it first makes a @tech{publication}.

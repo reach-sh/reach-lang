@@ -66,7 +66,10 @@ We'll start simple and slowly make the application more fully-featured.
 You should follow along by copying each part of the program and seeing how things go.
 If you're like us, you may find it beneficial to type each line out, rather than copying & pasting so you can start building your muscle memory and begin to get a sense for each part of a Reach program.
 
-Let's start by creating a file named @exec{index.rsh} and fill it with this:
+Let's start by creating a file named @exec{index.rsh}.
+It doesn't matter where you put this file, but we recommend putting in the current directory, which would be @exec{~/reach/tut} if you're following along exactly.
+In all the subsequent code samples, we'll label the files the the chapter of the tutorial you're reading.
+For example, start off by typing the following into @exec{index.rsh}:
 
 @reachex[#:show-lines? #t "tut-1/index.rsh"
          #:link #t]
@@ -377,7 +380,7 @@ Finally, after the computation is over, we'll get the balance again and show a m
 ]
 
 These changes to the @tech{frontend} only deal with issues of presentation and interfacing.
-The actual business logic of making the wager and transfer the funds will happen in the Reach code.
+The actual business logic of making the wager and transferring the funds will happen in the Reach code.
 
 Let's look at that now.
 
@@ -434,7 +437,8 @@ If he doesn't like the terms, his @tech{frontend} can just not respond to this m
 
 ]
 
-The @|DApp| is now running in a @tech{consensus step}.
+The @|DApp| is now running in a @tech{consensus step} and 
+the contract itself now holds twice the wager amount.
 Before, it would compute the outcome and then commit the state; but now, it needs to look at the outcome and use it to balance the account.
 
 @reachex[#:show-lines? #t "tut-3/index.rsh"
@@ -443,9 +447,11 @@ Before, it would compute the outcome and then commit the state; but now, it need
 
 @itemlist[
 
-@item{Lines 33 through 35 computes the amounts given to each participant depending on the outcome.}
+@item{Lines 33 through 35 computes the amounts given to each participant depending on the outcome by determining how many @reachin{wager} amounts each party gets.
+If the outcome is @reachin{2}, @litchar{Alice wins}, then she gets two portions; while if it is @reachin{0}, @litchar{Bob wins}, then he gets two portions; otherwise they each get one portion.}
 
-@item{Lines 36 and 37 transfer the corresponding amounts.}
+@item{Lines 36 and 37 transfer the corresponding amounts.
+This transfer takes place from the contract to the participants, not from the participants to each other, because all of the funds reside inside of the contract.}
 
 @item{Line 38 commits the state of the application and allows the participants to see the outcome and complete.}
 
@@ -492,6 +498,10 @@ It's because every time we run @exec{./reach run}, it starts a completely fresh 
 
 @margin-note{How come the balances aren't exactly @litchar{10}, @litchar{15}, and @litchar{5}?
 It's because Ethereum transactions cost "gas" to run.}
+
+@margin-note{Why does Alice win slightly less than Bob when she wins?
+She has to pay to @tech{deploy} the contract, because she calls @jsin{acc.deploy} in her @tech{frontend}.
+The @seclink["guide-deploymode"]{guide section on deployment} discusses how to avoid this difference.}
 
 Alice is doing okay, if she keeps this up, she'll make a fortune on @|RPS|!
 
