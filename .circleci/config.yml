@@ -167,9 +167,8 @@ jobs:
       - run:
           name: run hadolint
           command: make docker-lint
-      # TODO: enable slack notifs once ready
-      # - slack/status:
-      #     fail_only: true
+      - slack/status:
+          fail_only: true
 
 workflows:
   build-and-test:
