@@ -245,8 +245,11 @@ jsETail ctxt = \case
       (delayp, k_p) =
         case mto of
           Nothing -> ("false", k_okp)
-          Just (delay, k_to) -> (jsArg delay, jsIf (jsTimeoutFlag ctxt') k_top k_okp)
+          Just (delays, k_to) -> (jsSum delays, jsIf (jsTimeoutFlag ctxt') k_top k_okp)
             where
+              jsSum [] = impossible "no delay"
+              jsSum [x] = jsArg x
+              jsSum (x:xs) = jsBinOp "+" (jsArg x) (jsSum xs)
               k_top = jsETail ctxt' k_to
       msg_vs = map jsVar msg
       k_okp =

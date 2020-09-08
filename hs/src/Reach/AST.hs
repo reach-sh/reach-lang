@@ -658,7 +658,7 @@ data ETail
              Maybe ([DLArg], DLArg, [DLVar])
              )
       , et_tc_from_msg :: [DLVar]
-      , et_tc_from_mtime :: (Maybe (DLArg, ETail))
+      , et_tc_from_mtime :: (Maybe ([DLArg], ETail))
       , et_tc_cons :: ETail
       }
   | ET_While
@@ -690,6 +690,9 @@ data CInterval
 
 default_interval :: CInterval
 default_interval = CBetween [] []
+
+interval_from :: CInterval -> [DLArg]
+interval_from (CBetween froml _) = froml
 
 interval_add_from :: CInterval -> DLArg -> CInterval
 interval_add_from (CBetween froml tol) x =

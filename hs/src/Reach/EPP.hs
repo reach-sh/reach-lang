@@ -297,7 +297,8 @@ epp_s st s =
                     return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
               Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)
                 where
-                  delay_cs_ = counts delaya
+                  delayas = interval_from int_to
+                  delay_cs_ = counts delayas
                   int_to = interval_add_from prev_int delaya
                   int_ok_ = interval_add_to prev_int delaya
                   continue_time_ ok_cons_cs = do
@@ -310,7 +311,7 @@ epp_s st s =
                       epp_s st_to delays
                     let cs' = delay_cs_ <> tcons_cs
                     let update (ProRes_ tk_cs tk_et) =
-                          ProRes_ (tk_cs <> delay_cs_) (Just (delaya, tk_et))
+                          ProRes_ (tk_cs <> delay_cs_) (Just (delayas, tk_et))
                     return $ (cs', M.map update delay_prts)
       let st_cons =
             st
