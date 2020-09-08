@@ -169,6 +169,23 @@ jobs:
           command: make docker-lint
       - slack/status:
           fail_only: true
+  experimental-algorand-devnet:
+    docker:
+      - image: reachsh/reach-circle:v0.1.2
+    steps:
+      - checkout
+      - run:
+          name: build algorand-devnet
+          command: make build
+      - run:
+          name: check algorand-devnet
+          command: |
+            make run &
+            sleep 1
+            make status
+          # TODO: a better test, proper wait
+      - slack/status:
+          fail_only: true
 
 workflows:
   build-and-test:
@@ -185,3 +202,6 @@ workflows:
       - shellcheck
       - reach-lint
       - docker-lint
+  experimental-devnets:
+    jobs:
+      - experimental-algorand-devnet
