@@ -17,7 +17,9 @@ const REACHY_RICH = { address: 'reachy_rich' };
 const BLOCKS = [];
 const BALANCES = {};
 
-export const balanceOf = async acc => BALANCES[acc.address];
+export const balanceOf = async acc => {
+  if ( acc.networkAccount ) { acc = acc.networkAccount; }
+  return BALANCES[acc.address]; };
 
 export const transfer = async (from, to, value) => {
   if (from.networkAccount) return await transfer(from.networkAccount, to, value);
