@@ -162,6 +162,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: install make
+          command: apk add make
+      - run:
           name: run hadolint
           command: make docker-lint
       # TODO: enable slack notifs once ready
