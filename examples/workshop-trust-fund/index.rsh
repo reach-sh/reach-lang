@@ -78,6 +78,7 @@ const main_fn = (Funder, Receiver, Bystander) => {
     Bystander.publish();
     transfer(payment).to(Bystander);
     commit();
+    everyone((interact) => interact.notifyYoinked());
     doExit();
   };
 
