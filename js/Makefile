@@ -1,9 +1,14 @@
 include ../VERSION
 IMAGE="reachsh/stdlib"
 RUNNER_IMAGE="reachsh/runner"
+NODE_VERSION="12.18.3"
+ESLINT_VERSION="7.7.0"
 
 package.json: package.mo.json ../VERSION 
-	(. ../VERSION && export VERSION && mo $< > $@)
+	VERSION=$(VERSION) ESLINT_VERSION=$(ESLINT_VERSION) mo $< > $@
+
+runner_package.json: runner_package.mo.json ../VERSION 
+	VERSION=$(VERSION) ESLINT_VERSION=$(ESLINT_VERSION) mo $< > $@
 
 .PHONY: clean
 clean:
@@ -14,14 +19,17 @@ build: build-stdlib build-runner
 
 .PHONY: build-stdlib
 build-stdlib: package.json
-	docker build --tag=$(IMAGE):latest .
+	docker build --tag=$(IMAGE):latest \
+	  --build-arg NODE_VERSION=$(NODE_VERSION) \
+	  --build-arg ESLINT_VERSION=$(ESLINT_VERSION) \
+	  .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
 
 .PHONY: build-runner
-build-runner:
+build-runner: runner_package.json
 	docker build --tag=$(RUNNER_IMAGE):latest \
 	  --file Dockerfile.runner \
-	  --build-arg REACH_VERSION_ARG=$(VERSION) \
+	  --build-arg REACH_VERSION=$(VERSION) \
 	  .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(RUNNER_IMAGE)
 

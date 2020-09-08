@@ -1,8 +1,14 @@
-FROM node:12.18.3
+ARG NODE_VERSION
+ARG NODE_IMAGE=node:$NODE_VERSION
+
+# hadolint ignore=DL3006
+FROM $NODE_IMAGE
 
 WORKDIR /stdlib
+ARG ESLINT_VERSION
 COPY package.json /stdlib
 RUN npm install
+RUN npm install -g eslint@$ESLINT_VERSION
 RUN npm link
 
 COPY . /stdlib

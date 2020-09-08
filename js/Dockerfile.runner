@@ -1,35 +1,22 @@
-ARG REACH_VERSION_ARG
+ARG REACH_VERSION
+ARG REACH_IMAGE=reachsh/stdlib:$REACH_VERSION
 
-# do not secify this arg to be different than REACH_VERSION_ARG
-ARG REACH_STDLIB_TAG=reachsh/stdlib:$REACH_VERSION_ARG
-
-FROM $REACH_STDLIB_TAG
-
-# Import the arg from above.
-ARG REACH_VERSION_ARG
+# hadolint ignore=DL3006
+FROM $REACH_IMAGE
 
 WORKDIR /app
 
-RUN curl -sSL https://git.io/get-mo -o mo \
-    && chmod +x mo \
-    && mv mo /usr/local/bin
-RUN npm install -g eslint
-
-ENV REACH_VERSION $REACH_VERSION_ARG
-
-COPY runner_package.mo.json /app/package.mo.json
+COPY runner_package.json /app/package.json
 
 # TODO: use a gentler linter for this
 COPY .eslintrc.yaml /app/
 
 COPY .reach.eslintrc.yaml /app/
 
-# TODO: move npm install so it doesn't rebuild so much
-# TODO: copy package.lock as well?
-RUN mo /app/package.mo.json > /app/package.json
-RUN rm /app/package.mo.json
 RUN npm link '@reach-sh/stdlib'
-RUN npm install
+# Make use of stuff already installed for stdlib
+# RUN npm install
+RUN cp -r /stdlib/node_modules /app/node_modules
 RUN mkdir /app/build
 
 CMD ["app"]

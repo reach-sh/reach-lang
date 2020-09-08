@@ -6,7 +6,7 @@
   "main": "index.mjs",
   "devDependencies": {
     "babel-eslint": "^10.0.3",
-    "eslint": "^6.3.0"
+    "eslint": "{{ESLINT_VERSION}}"
   },
   "dependencies": {
     "algosdk": "^1.5.0",
