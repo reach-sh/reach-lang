@@ -1,7 +1,8 @@
 FROM ethereum/solc:0.7.0 as solc
 
-FROM alpine:latest as dl-deps
-RUN apk add wget unzip
+FROM alpine:3 as dl-deps
+RUN apk add wget=1.20.3-r1 unzip=6.0-r7 --no-cache
+
 WORKDIR /z3
 ENV Z3_VER 4.8.8
 RUN wget https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-x64-ubuntu-16.04.zip
@@ -10,22 +11,35 @@ RUN rm z3-${Z3_VER}-x64-ubuntu-16.04.zip
 RUN ln -s /z3/z3-${Z3_VER}-x64-ubuntu-16.04/bin/z3 /z3/z3
 
 FROM ubuntu:18.04
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN apt-get update && apt-get install -y \
-  curl \
-  docker-compose \
-  libgmp10 \
-  libtinfo-dev \
-  locales \
-  python3-pip \
-  software-properties-common \
-  silversearcher-ag \
-  aha
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  aha=0.4.10.6-4 \
+  curl=7.58.0-2ubuntu3.10 \
+  docker-compose=1.17.1-2 \
+  gcc=4:7.4.0-1ubuntu2.3 \
+  git=1:2.17.1-1ubuntu0.7 \
+  gnupg=2.2.4-1ubuntu1.2 \
+  libc6-dev=2.27-3ubuntu1.2 \
+  libffi-dev=3.2.1-8 \
+  libgmp-dev=2:6.1.2+dfsg-2 \
+  libgmp10=2:6.1.2+dfsg-2 \
+  libtinfo-dev=6.1-1ubuntu1.18.04 \
+  locales=2.27-3ubuntu1.2 \
+  make=4.1-9.1ubuntu1 \
+  netbase=5.4 \
+  python3-pip=9.0.1-2.3~ubuntu1.18.04.2 \
+  silversearcher-ag=2.1.0-1 \
+  software-properties-common=0.96.24.32.14 \
+  xz-utils=5.2.2-1.3 \
+  zlib1g-dev=1:1.2.11.dfsg-0ubuntu2 \
+  && add-apt-repository -y ppa:plt/racket \
+  && apt-get update \
+  && apt-get install -y racket=7.7+ppa1-1~bionic1 --no-install-recommends \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-# doc deps
-RUN add-apt-repository -y ppa:plt/racket && \
-    apt-get update && \
-    apt-get install -y racket # && \
 #    raco pkg install https://github.com/jeapostrophe/scribble-minted.git && \
 #    pip3 install pygments-style-solarized
 
