@@ -3,6 +3,7 @@ IMAGE="reachsh/ethereum-devnet"
 .PHONY: build
 build:
 	docker build --tag=$(IMAGE):latest .
+	TAG_ONLY=1 ../docker-push.sh $(IMAGE)
 
 .PHONY: push
 push: build

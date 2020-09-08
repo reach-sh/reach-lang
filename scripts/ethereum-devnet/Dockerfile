@@ -1,8 +1,8 @@
 FROM ethereum/client-go:v1.9.19
 
-RUN apk add curl
+RUN apk add curl=7.69.1-r0 --no-cache
 
-ADD run.sh /run.sh
+COPY run.sh /run.sh
 
 RUN /run.sh init
 
