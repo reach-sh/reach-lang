@@ -174,6 +174,7 @@ jobs:
       - image: reachsh/reach-circle:v0.1.2
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: build algorand-devnet
           command: (cd scripts/algorand-devnet && make build)
