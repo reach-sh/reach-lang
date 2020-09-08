@@ -176,13 +176,15 @@ jobs:
       - checkout
       - run:
           name: build algorand-devnet
-          command: make build
+          command: (cd scripts/algorand-devnet && make build)
       - run:
           name: check algorand-devnet
           command: |
+            cd scripts/algorand-devnet
             make run &
             sleep 1
             make status
+            cd -
           # TODO: a better test, proper wait
       - slack/status:
           fail_only: true
