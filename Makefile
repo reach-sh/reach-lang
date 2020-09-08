@@ -75,7 +75,7 @@ reach-lint:
 
 .PHONY: reach-lint-fix
 reach-lint-fix:
-	(set -e; for dir in $(linted_reach_src_dirs); do \
+	@(set -e; for dir in $(linted_reach_src_dirs); do \
 		echo fixing $$dir; \
 		./reach lint --max-warnings 0 --fix $$dir $(ignored_reach_sources); \
 	done)
@@ -86,3 +86,8 @@ sh-lint:
 		echo linting $$f; \
 		shellcheck --external-sources --source-path SCRIPTDIR $$f ; \
 	done)
+
+# (cd hs && stack install hadolint)
+.PHONY: docker-lint
+docker-lint:
+	find . -not \( -path '*/node_modules/*' -prune \) -name 'Dockerfile*' | xargs hadolint

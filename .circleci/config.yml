@@ -156,6 +156,17 @@ jobs:
           command: make reach-lint
       - slack/status:
           fail_only: true
+  docker-lint:
+    docker:
+      - image: 'hadolint/hadolint:v1.18.0-6-ga0d655d-alpine'
+    steps:
+      - checkout
+      - run:
+          name: run hadolint
+          command: make docker-lint
+      # TODO: enable slack notifs once ready
+      # - slack/status:
+      #     fail_only: true
 
 workflows:
   build-and-test:
@@ -171,3 +182,4 @@ workflows:
     jobs:
       - shellcheck
       - reach-lint
+      - docker-lint
