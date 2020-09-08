@@ -39,16 +39,14 @@ RUN git clone $GIT_CLONE_REPO $PROJ_NAME
 WORKDIR $SRC
 RUN git checkout $GIT_COMMIT && ./scripts/configure_dev.sh && make install
 
-# TODO: move above
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
-
 ENV ALGORAND_DATA=/var/lib/algorand
 RUN mkdir -p $ALGORAND_DATA
 RUN cp -p installer/genesis/devnet/genesis.json $ALGORAND_DATA/genesis.json
 
+COPY algorand_data/ $ALGORAND_DATA/
+
+EXPOSE 4180
+
 # You can't use env vars in ENTRYPOINT/CMD
 # otherwise we'd use $ALGORAND_DATA
-EXPOSE 8080
 ENTRYPOINT ["algod", "-d", "/var/lib/algorand"]
