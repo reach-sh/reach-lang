@@ -1,7 +1,17 @@
 FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt update && apt-get install -y git libboost-all-dev wget sqlite3 autoconf sudo tzdata bsdmainutils
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  git=1:2.17.1-1ubuntu0.7 \
+  libboost-all-dev=1.65.1.0ubuntu1 \
+  wget=1.19.4-1ubuntu2.2 \
+  sqlite3=3.22.0-1ubuntu0.4 \
+  autoconf=2.69-11 \
+  sudo=1.8.21p2-3ubuntu1.2 \
+  tzdata=2020a-0ubuntu0.18.04 \
+  bsdmainutils=11.1.2ubuntu1 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root
 ARG GOLANG_VERSION=1.14.7
