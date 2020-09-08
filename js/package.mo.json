@@ -9,7 +9,7 @@
     "eslint": "{{ESLINT_VERSION}}"
   },
   "dependencies": {
-    "algosdk": "^1.5.0",
+    "algosdk": "^1.7.0",
     "await-timeout": "^0.6.0",
     "ethers": "^5.0.8",
     "ganache-core": "^2.11.2",
