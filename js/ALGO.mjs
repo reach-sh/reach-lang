@@ -9,8 +9,8 @@ export * from './shared.mjs';
 
 
 // networkAccount[ALGO] = {
-//   addr: string
-//   sk: Uint8Array(64)
+//   addr: string         // Address
+//   sk: Uint8Array(64)   // Secret Key
 // }
 
 // ctc[ALGO] = {
@@ -29,18 +29,24 @@ export * from './shared.mjs';
 
 // Common interface exports
 
-const token = process.env.ALGO_TOKEN || '88f05de47936c12a756a28012aba3a24c3d06c45acd27fdcadb2a08ba32dc658';
+// TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
+const token = process.env.ALGO_TOKEN || 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const server = process.env.ALGO_SERVER || 'http://localhost';
-const port = process.env.ALGO_PORT || 8080;
-const algodClient = new algosdk.Algod(token, server, port);
+const port = process.env.ALGO_PORT || 4180;
+// XXX do not export
+export const algodClient = new algosdk.Algodv2(token, server, port);
 
 const default_range_width = 1000;
 
-const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'truck lobster turn fish foot paper select enough basket scout rack swallow chuckle laugh lava trumpet evidence pottery range news satoshi want popular absent math'));
+// XXX do not export
+export const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'pulp abstract olive name enjoy trick float comfort verb danger eternal laptop acquire fetch message marble jump level spirit during benefit sure dry absent history'));
+// if using the default:
+// assert(FAUCET.addr === 'EYTSJVJIMJDUSRRNTMVLORTLTOVDWZ6SWOSY77JHPDWSD7K3P53IB3GUPQ');
+
 
 // Helpers
 
-const currentRound = async () => (await algodClient.status()).lastRound;
+const currentRound = async () => (await algodClient.status().do()).lastRound;
 
 const waitForConfirmation = async (txId, untilRound) => {
   while (true) {
@@ -49,46 +55,55 @@ const waitForConfirmation = async (txId, untilRound) => {
       return false;
     }
     const pendingInfo =
-      await algodClient.pendingTransactionInformation(txId);
+      await algodClient.pendingTransactionInformation(txId).do();
     if (pendingInfo.round != null && pendingInfo.round > 0) {
       return pendingInfo;
     }
-    await algodClient.statusAfterBlock(lastRound + 1);
+    await algodClient.statusAfterBlock(lastRound + 1).do();
   }
 };
 
 const sendsAndConfirm = async (txns, untilRound) => {
   const btxns = txns.map(o => o.blob);
-  const tx = await algodClient.sendRawTransactions(btxns);
+  const tx = await algodClient.sendRawTransactions(btxns).do();
   // FIXME https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
   return (await waitForConfirmation(tx.txID, untilRound));
 };
 
 const sendAndConfirm = async (txn, untilRound) => {
-  await algodClient.sendRawTransaction(txn.blob);
+  await algodClient.sendRawTransaction(txn.blob).do();
   return (await waitForConfirmation(txn.txID, untilRound));
 };
 
 // Backend
-const fillTxnWithParams = (firstRound, round_width, params, txn) => {
-  const theFirstRound = firstRound ? firstRound : params.lastRound;
+const fillTxnWithParams = (firstRound, round_width, params, txn0) => {
+  // Don't need these anymore?
+  void(round_width);
+  void(firstRound);
+  // const theFirstRound = firstRound ? firstRound : params.lastRound;
   // FIXME these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
-  txn.fee = params.minFee;
-  txn.firstRound = theFirstRound;
-  txn.lastRound = theFirstRound + round_width;
-  txn.genesisID = params.genesisID;
-  txn.genesisHash = params.genesishashb64;
-  return txn;
+  // Fixed?
+  // txn.flatFee = params.flatFee;
+  // txn.fee = params.fee;
+  // txn.firstRound = theFirstRound;
+  // txn.lastRound = theFirstRound + round_width;
+  // txn.genesisID = params.genesisID;
+  // txn.genesisHash = params.genesisHash;
+  return {
+    ...params,
+    ...txn0,
+  };
 };
 
 const getTxnParams = async () => {
   debug(`fillTxn: getting params`);
-  const params = await algodClient.getTransactionParams();
+  const params = await algodClient.getTransactionParams().do();
   debug(`fillTxn: got params`);
   return params;
 };
 
-const fillTxn = async (round_width, txn) => {
+// XXX do not export
+export const fillTxn = async (round_width, txn) => {
   return fillTxnWithParams(false, round_width, await getTxnParams(), txn);
 };
 
@@ -229,7 +244,7 @@ export const connectAccount = async thisAcc => {
         const untilRound = prevRound + timeout_delay;
         while ((await currentRound()) < untilRound) {
           // FIXME maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
-          const resp = await algodClient.transactionByAddress(ctc.address, startRound, untilRound);
+          const resp = await algodClient.transactionByAddress(ctc.address, startRound, untilRound).do();
           resp.transactions.forEach(async txn => {
             if (txn.type == 'appl' &&
               txn.ApplicationId == ctc.appId &&
@@ -300,22 +315,24 @@ export const connectAccount = async thisAcc => {
 const getBalanceAt = async (addr, round) => {
   void(round);
   // FIXME: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
-  return (await algodClient.accountInformation(addr)).amount;
+  return (await algodClient.accountInformation(addr).do()).amount;
 };
 
 export const balanceOf = async acc => {
   return (await getBalanceAt(acc.addr, await currentRound()));
 };
 
-const showBalance = async (note, acc) => {
-  console.log(
-    '%s: balance: %d microAlgos', note, (await balanceOf(acc)));
+// XXX do not export
+export const showBalance = async (note, acc) => {
+  const bal = await balanceOf(acc);
+  const showBal = algosdk.algosToMicroalgos(bal).toFixed(2);
+  console.log('%s: balance: %s algos', note, showBal);
 };
 
 export const newTestAccount = async (startingBalance) => {
   const acc = algosdk.generateAccount();
   showBalance('before', acc);
-  await transfer(acc, FAUCET, startingBalance);
+  await transfer(FAUCET, acc, startingBalance);
   showBalance('after', acc);
   return await connectAccount(acc);
 };
