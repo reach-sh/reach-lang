@@ -33,13 +33,12 @@ export * from './shared.mjs';
 const token = process.env.ALGO_TOKEN || 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const server = process.env.ALGO_SERVER || 'http://localhost';
 const port = process.env.ALGO_PORT || 4180;
-// XXX do not export
-export const algodClient = new algosdk.Algodv2(token, server, port);
+const algodClient = new algosdk.Algodv2(token, server, port);
 
 const default_range_width = 1000;
 
-// XXX do not export
-export const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'pulp abstract olive name enjoy trick float comfort verb danger eternal laptop acquire fetch message marble jump level spirit during benefit sure dry absent history'));
+// eslint-disable-next-line max-len
+const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'pulp abstract olive name enjoy trick float comfort verb danger eternal laptop acquire fetch message marble jump level spirit during benefit sure dry absent history'));
 // if using the default:
 // assert(FAUCET.addr === 'EYTSJVJIMJDUSRRNTMVLORTLTOVDWZ6SWOSY77JHPDWSD7K3P53IB3GUPQ');
 
@@ -102,8 +101,7 @@ const getTxnParams = async () => {
   return params;
 };
 
-// XXX do not export
-export const fillTxn = async (round_width, txn) => {
+const fillTxn = async (round_width, txn) => {
   return fillTxnWithParams(false, round_width, await getTxnParams(), txn);
 };
 
@@ -322,8 +320,7 @@ export const balanceOf = async acc => {
   return (await getBalanceAt(acc.addr, await currentRound()));
 };
 
-// XXX do not export
-export const showBalance = async (note, acc) => {
+const showBalance = async (note, acc) => {
   const bal = await balanceOf(acc);
   const showBal = algosdk.algosToMicroalgos(bal).toFixed(2);
   console.log('%s: balance: %s algos', note, showBal);
