@@ -77,9 +77,9 @@ typeSubst at env ty =
     T_Tuple ts -> do
       ts' <- mapM iter ts
       return $ T_Tuple ts'
-    T_Obj oenv -> do
+    T_Object oenv -> do
       oenv' <- mapM iter oenv
-      return $ T_Obj oenv'
+      return $ T_Object oenv'
     T_Var var ->
       case M.lookup var env of
         Nothing ->
@@ -135,7 +135,7 @@ argTypeOf d =
     DLA_Con c -> conTypeOf c
     DLA_Array t as -> T_Array t $ fromIntegral (length as)
     DLA_Tuple as -> T_Tuple $ map argTypeOf as
-    DLA_Obj senv -> T_Obj $ M.map argTypeOf senv
+    DLA_Obj senv -> T_Object $ M.map argTypeOf senv
     DLA_Interact _ _ t -> t
 
 slToDL :: HasCallStack => SrcLoc -> SLVal -> Maybe DLArg

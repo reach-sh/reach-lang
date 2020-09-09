@@ -128,7 +128,7 @@ displayTy = \case
   T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
   T_Array _ty _sz -> "array" -- <> displayTyList tys
   T_Tuple _tys -> "tuple"
-  T_Obj _m -> "object" -- FIXME
+  T_Object _m -> "object" -- FIXME
   T_Forall x ty {- SLVar SLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
   T_Var x {- SLVar-} -> x
   T_Type _ -> "type"
@@ -699,9 +699,9 @@ evalDot ctxt at sco st obj field =
       case M.lookup field env of
         Just v -> retV $ sss_sls v
         Nothing -> illegal_field (M.keys env)
-    SLV_DLVar obj_dv@(DLVar _ _ (T_Obj tm) _) ->
+    SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
       retDLVar tm (DLA_Var obj_dv) Public
-    SLV_Prim (SLPrim_interact _ who m it@(T_Obj tm)) ->
+    SLV_Prim (SLPrim_interact _ who m it@(T_Object tm)) ->
       retDLVar tm (DLA_Interact who m it) Secret
 
     SLV_Participant _ who _ vas _ ->
@@ -1142,7 +1142,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_Object ->
       case map snd sargs of
         [(SLV_Object _ _ objm)] ->
-          retV $ (lvl, SLV_Type $ T_Obj $ M.map (expect_ty . sss_val) objm)
+          retV $ (lvl, SLV_Type $ T_Object $ M.map (expect_ty . sss_val) objm)
         _ -> illegal_args
     SLPrim_makeEnum ->
       case map snd sargs of
@@ -1406,7 +1406,7 @@ evalPropertyPair ctxt at sco st fenv p =
       keepLifts slifts $
         case sv of
           SLV_Object _ _ senv -> mkRes mempty senv
-          SLV_DLVar dlv@(DLVar _at _s (T_Obj tenv) _i) -> do
+          SLV_DLVar dlv@(DLVar _at _s (T_Object tenv) _i) -> do
             let mkOneEnv k t = do
                   let de = DLE_ObjectRef at (DLA_Var dlv) k
                   let mdv = DLVar at (ctxt_local_name ctxt "obj_ref") t
@@ -1727,7 +1727,7 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
           (xNs, smN) = parseIdentsAndSpread eNs
           x0 = jso_expect_id at' e0
     makeEnv (lvl, val) = case val of
-      SLV_DLVar dv@(DLVar _ _ (T_Obj tenv) _) -> do
+      SLV_DLVar dv@(DLVar _ _ (T_Object tenv) _) -> do
         let mk_ref_ k = do
               let e = (DLE_ObjectRef at' (DLA_Var dv) k)
               let t = case M.lookup k tenv of
@@ -1748,7 +1748,7 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
               let tenvWithoutKs = M.withoutKeys tenv ksSet
               objDlEnv <- M.traverseWithKey mkDlArg tenvWithoutKs
               let de = DLE_Arg at' $ DLA_Obj objDlEnv
-              let spreadTy = T_Obj $ tenvWithoutKs
+              let spreadTy = T_Object $ tenvWithoutKs
               let mdv = DLVar at' (ctxt_local_name ctxt "obj") spreadTy
               dlv <- ctxt_lift_expr_w ctxt at mdv de
               pure [(spreadName, SLV_DLVar dlv)]

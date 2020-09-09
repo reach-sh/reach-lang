@@ -808,7 +808,7 @@ _smtDefineTypes smt ts = do
                   let invarg (_, arg_inv) argn = arg_inv $ smtApply argn [se]
                   zipWithM_ invarg ts_nis argns
             return inv
-          T_Obj tm -> do
+          T_Object tm -> do
             let tml = M.toAscList tm
             ts_nis <-
               mapM

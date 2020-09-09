@@ -183,7 +183,7 @@ mustBeMem = \case
   T_Fun {} -> impossible "fun"
   T_Array {} -> True
   T_Tuple {} -> True
-  T_Obj {} -> True
+  T_Object {} -> True
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
   T_Type {} -> impossible "type"
@@ -533,7 +533,7 @@ _solDefineType1 getTypeName i name = \case
   T_Tuple ats -> do
     atsn <- mapM getTypeName ats
     return $ (name, solStruct name $ (flip zip) atsn $ map (pretty . ("elem" ++) . show) ([0 ..] :: [Int]))
-  T_Obj tm -> do
+  T_Object tm -> do
     tmn <- mapM getTypeName tm
     return $ (name, solStruct name $ map (\(k, v) -> (pretty k, v)) $ M.toAscList tmn)
   T_Type {} -> impossible "type in pl"

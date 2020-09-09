@@ -123,7 +123,7 @@ data SLType
   | T_Fun [SLType] SLType
   | T_Array SLType Integer
   | T_Tuple [SLType]
-  | T_Obj (M.Map SLVar SLType)
+  | T_Object (M.Map SLVar SLType)
   | T_Forall SLVar SLType
   | T_Var SLVar
   | T_Type SLType
@@ -149,7 +149,7 @@ funFold z k fun = go
       T_Fun inTys outTy -> fun inTys outTy
       T_Array ty _ -> go ty
       T_Tuple tys -> k tys
-      T_Obj m -> k $ M.elems m
+      T_Object m -> k $ M.elems m
       T_Forall _ ty -> go ty
       T_Var _ -> z
       T_Type _ -> z
@@ -189,7 +189,7 @@ instance Show SLType where
   show (T_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
   show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
   show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
-  show (T_Obj tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
   show (T_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
   show (T_Var x) = show x
   show (T_Type ty) = "Type(" <> show ty <> ")"

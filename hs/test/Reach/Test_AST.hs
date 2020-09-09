@@ -11,7 +11,7 @@ spec_isFirstOrder = describe "isFirstOrder" $ do
     isFirstOrder ([] --> T_Null) `shouldBe` True
     isFirstOrder (T_Array T_Bool 3) `shouldBe` True
     isFirstOrder (T_Tuple [T_Address]) `shouldBe` True
-    isFirstOrder (T_Obj (M.fromList [("x", T_Bytes)]))
+    isFirstOrder (T_Object (M.fromList [("x", T_Bytes)]))
       `shouldBe` True
     isFirstOrder (T_Forall "a" $ T_Var "a")
       `shouldBe` True
@@ -23,7 +23,7 @@ spec_isFirstOrder = describe "isFirstOrder" $ do
       `shouldBe` False
 
   it "returns True when less obvs" $ do
-    isFirstOrder (T_Obj (M.fromList [("f", [] --> T_Null)]))
+    isFirstOrder (T_Object (M.fromList [("f", [] --> T_Null)]))
       `shouldBe` True
     isFirstOrder (T_Forall "a" $ [] --> T_Var "a")
       `shouldBe` True

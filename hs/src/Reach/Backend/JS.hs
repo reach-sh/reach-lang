@@ -75,7 +75,7 @@ jsContract = \case
   T_Fun {} -> impossible "fun dl"
   T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLC_Int sz)]
   T_Tuple as -> jsApply ("stdlib.T_Tuple") $ [jsArray $ map jsContract as]
-  T_Obj m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
+  T_Object m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
   T_Forall {} -> impossible "forall dl"
   T_Var {} -> impossible "var dl"
   T_Type {} -> impossible "type dl"
