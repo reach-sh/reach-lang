@@ -85,7 +85,8 @@ data EvalError
   | Err_Obj_IllegalMethodDefinition JSObjectProperty
   | Err_Obj_IllegalNumberField JSPropertyName
   | Err_Obj_SpreadNotObj SLVal
-  | Err_Prim_InvalidArgs SLPrimitive [SLVal]
+  | --- FIXME add count
+    Err_Prim_InvalidArgs SLPrimitive [SLVal]
   | Err_Shadowed SLVar SLSSVal SLSSVal -- var, alreadyBound, new (invalid)
   | Err_TailNotEmpty [JSStatement]
   | Err_ToConsensus_Double ToConsensusMode
@@ -728,17 +729,19 @@ evalDot ctxt at sco st obj field =
     SLV_Array _ _ vs ->
       case field of
         "set" -> delayCall SLPrim_array_set
+        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
         "concat" -> delayCall SLPrim_array_concat
         "map" -> delayCall SLPrim_array_map
-        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
-        _ -> illegal_field ["set", "length", "concat", "map"]    
+        "reduce" -> delayCall SLPrim_array_reduce
+        _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
     SLV_DLVar (DLVar _ _ (T_Array _ sz) _) ->
       case field of
         "set" -> delayCall SLPrim_array_set
+        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ sz
         "concat" -> delayCall SLPrim_array_concat
         "map" -> delayCall SLPrim_array_map
-        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ sz
-        _ -> illegal_field ["set", "length", "concat", "map"]
+        "reduce" -> delayCall SLPrim_array_reduce
+        _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
     SLV_Prim SLPrim_Tuple ->
       case field of
         "set" -> retV $ public $ SLV_Prim $ SLPrim_tuple_set
@@ -749,6 +752,8 @@ evalDot ctxt at sco st obj field =
         "iota" -> retV $ public $ SLV_Prim $ SLPrim_Array_iota
         "concat" -> retV $ public $ SLV_Prim $ SLPrim_array_concat
         "map" -> retV $ public $ SLV_Prim $ SLPrim_array_map
+        "reduce" -> retV $ public $ SLV_Prim $ SLPrim_array_reduce
+        --- FIXME make Array.length
         _ -> illegal_field ["set", "iota", "concat", "map"]
     SLV_Prim SLPrim_Object ->
       case field of
@@ -1003,13 +1008,12 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_array_map -> do
       let (x, f) = two_args
-      let f' z = evalApplyVals ctxt at sco st f [(lvl, z)]
       let (xt, _) = typeOf at x
       case xt of
         T_Array x_ty _XXX_x_sz -> do
-          dv_in_idx <- ctxt_alloc ctxt at
-          let dv_in = SLV_DLVar $ DLVar at "map in" x_ty dv_in_idx
-          SLRes _XXX_f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' dv_in
+          let f' a = evalApplyVals ctxt at sco st f [(lvl, a)]
+          a_dsv <- make_dlvar_sv "map in" x_ty
+          SLRes _XXX_f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' a_dsv
           let (f_ty, _XXX_f_da) = typeOf at f_v
           case x of
             SLV_Array _ _ x_vs -> do
@@ -1021,6 +1025,35 @@ evalPrim ctxt at sco st p sargs =
                       ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
               (lifts', vs') <- foldM evalem (mempty, []) x_vs
               return $ SLRes lifts' f_st (f_lvl, SLV_Array at f_ty vs')
+            SLV_DLVar _x_dv -> do
+              error "XXX dlvar"
+            _ -> impossible "not array"
+        _ -> --- FIXME expected array
+          illegal_args
+    SLPrim_array_reduce -> do
+      let (x, z, f) = three_args
+      let (xt, _) = typeOf at x
+      case xt of
+        T_Array x_ty _XXX_x_sz -> do
+          let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
+          let (z_ty, _XXX_z_da) = typeOf at z
+          b_dsv <- make_dlvar_sv "reduce acc" z_ty
+          a_dsv <- make_dlvar_sv "reduce in" x_ty
+          SLRes _XXX_f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
+          let (f_ty, _XXX_f_da) = typeOf at f_v
+          case x of
+            SLV_Array _ _ x_vs -> do
+              let evalem (prev_lifts, prev_z) xv = do
+                    SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' prev_z xv
+                    --- Note: We are artificially restricting reduce
+                    --- to be parameteric in the state. We also ensure
+                    --- that they type is the same as the anonymous
+                    --- version.
+                    return $ stMerge at f_st xv_st `seq`
+                      checkType at f_ty xv_v' `seq`
+                      ((prev_lifts <> xv_lifts), xv_v')
+              (lifts', z') <- foldM evalem (mempty, z) x_vs
+              return $ SLRes lifts' f_st (f_lvl, z')
             SLV_DLVar _x_dv -> do
               error "XXX dlvar"
             _ -> impossible "not array"
@@ -1220,19 +1253,26 @@ evalPrim ctxt at sco st p sargs =
       expect_throw at (Err_Eval_NotApplicable rator)
   where
     lvl = mconcatMap fst sargs
-    illegal_args = expect_throw at (Err_Prim_InvalidArgs p $ map snd sargs)
+    args = map snd sargs
+    illegal_args = expect_throw at (Err_Prim_InvalidArgs p args)
     retV v = return $ SLRes mempty st v
     rator = SLV_Prim p
     expect_ty v =
       case v of
         SLV_Type t -> t
         _ -> illegal_args
-    one_arg = case map snd sargs of
+    one_arg = case args of
       [x] -> x
       _ -> illegal_args
-    two_args = case map snd sargs of
+    two_args = case args of
       [x, y] -> (x, y)
       _ -> illegal_args
+    three_args = case args of
+      [x, y, z] -> (x, y, z)
+      _ -> illegal_args
+    make_dlvar_sv lab ty = do
+      dv <- ctxt_alloc ctxt at
+      return $ SLV_DLVar $ DLVar at lab ty dv
 
 evalApplyVals :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> [SLSVal] -> SLComp s SLAppRes
 evalApplyVals ctxt at sco st rator randvs =

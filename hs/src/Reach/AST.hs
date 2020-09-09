@@ -311,6 +311,7 @@ data SLPrimitive
   | SLPrim_array_set
   | SLPrim_array_concat
   | SLPrim_array_map
+  | SLPrim_array_reduce
   | SLPrim_Tuple
   | SLPrim_tuple_set
   | SLPrim_Object
