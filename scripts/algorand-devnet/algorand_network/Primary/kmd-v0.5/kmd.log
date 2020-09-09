@@ -1,0 +1,2 @@
+time="2020-09-09T20:46:41.147687 +0000" level=info msg="failed to mlockall: cannot allocate memory" file=mlock_linux.go function=main.tryMlockall line=30
+time="2020-09-09T20:46:41.159738 +0000" level=info msg="started kmd on sock: 127.0.0.1:7833" file=main.go function=main.runKmd line=118
