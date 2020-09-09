@@ -26,6 +26,8 @@ export * from './shared.mjs';
 //   recv: function
 // }
 
+const log_pretty = (obj) =>
+      console.log(JSON.parse(JSON.stringify(obj)));
 
 // Common interface exports
 
@@ -45,33 +47,45 @@ const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE |
 
 // Helpers
 
-const currentRound = async () => (await algodClient.status().do()).lastRound;
+const getLastRound = async () =>
+      (await algodClient.status().do())['last-round'];
 
 const waitForConfirmation = async (txId, untilRound) => {
-  while (true) {
-    const lastRound = await currentRound();
-    if (lastRound > untilRound) {
-      return false;
-    }
+  let lastRound = null;
+  do {
+    const lastRoundAfterCall = lastRound
+          ? algodClient.statusAfterBlock(lastRound)
+          : algodClient.status();
+    lastRound = (await lastRoundAfterCall.do())['last-round'];
     const pendingInfo =
       await algodClient.pendingTransactionInformation(txId).do();
-    if (pendingInfo.round != null && pendingInfo.round > 0) {
+    const confirmedRound = pendingInfo['confirmed-round'];
+    if (confirmedRound && confirmedRound > 0) {
       return pendingInfo;
     }
-    await algodClient.statusAfterBlock(lastRound + 1).do();
-  }
+  } while (lastRound < untilRound);
+  return false;
 };
 
-const sendsAndConfirm = async (txns, untilRound) => {
-  const btxns = txns.map(o => o.blob);
-  const tx = await algodClient.sendRawTransactions(btxns).do();
-  // FIXME https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
-  return (await waitForConfirmation(tx.txID, untilRound));
+// XXX Untested but something like this should work
+// [{signedTxn, txn}] -> ()
+const sendsAndConfirm = async (txns) => {
+  const signedTxns = txns.map(pair => pair.signedTxn);
+  await algodClient.sendRawTransactions(signedTxns).do();
+  return Promise.all([
+    ...txns.map(pair => waitForConfirmation(pair.txn.txID().toString(), pair.txn.lastRound)),
+  ]);
+  // // FIXME https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
+  // const untilRound = Math.max(...txns.map(pair => pair.txn.lastRound));
+  // const tx = await algodClient.sendRawTransactions(signedTxns).do();
+  // return (await waitForConfirmation(tx.txID, untilRound));
 };
 
-const sendAndConfirm = async (txn, untilRound) => {
-  await algodClient.sendRawTransaction(txn.blob).do();
-  return (await waitForConfirmation(txn.txID, untilRound));
+const sendAndConfirm = async (signedTxn, txn) => {
+  const txID = txn.txID().toString();
+  const untilRound = txn.lastRound;
+  await algodClient.sendRawTransaction(signedTxn).do();
+  return await waitForConfirmation(txID, untilRound);
 };
 
 // Backend
@@ -108,17 +122,19 @@ const fillTxn = async (round_width, txn) => {
 export const transfer = async (from, to, value) => {
   if (from.networkAccount) return await transfer(from.networkAccount, to, value);
   if (to.networkAccount) return await transfer(from, to.networkAccount, value);
-  // FIXME these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
-  const txn = await fillTxn(default_range_width, {
-    'type': 'pay',
-    'from': from.addr,
-    'to': to.addr,
-    'amount': value,
-  });
-  const signedTxn = algosdk.signTransaction(txn, from.sk);
-  const res = await sendAndConfirm(signedTxn, txn.lastRound);
+  if (to.addr) return await transfer(from, to.addr, value);
+
+  const params = await algodClient.getTransactionParams().do();
+  const note = algosdk.encodeObj('@reach-sh/ALGO.mjs transfer');
+  const txnArgs = [from.addr, to, value, undefined, note, params];
+  const txn = algosdk.makePaymentTxnWithSuggestedParams(...txnArgs);
+  const signedTxn = txn.signTxn(from.sk);
+  const res = await sendAndConfirm(signedTxn, txn);
+
   if (!res) {
-    throw Error(`Transfer failed: ${to} ${from} ${value}`);
+    const txID = txn.txID().toString();
+    log_pretty({txID, from, to, value});
+    throw Error(`Transfer failed: ${from} ${to} ${value}`);
   }
   return res;
 };
@@ -238,9 +254,9 @@ export const connectAccount = async thisAcc => {
       }
 
       while (1) {
-        const startRound = this_is_a_timeout ? prevRound : await currentRound();
+        const startRound = this_is_a_timeout ? prevRound : await getLastRound();
         const untilRound = prevRound + timeout_delay;
-        while ((await currentRound()) < untilRound) {
+        while ((await getLastRound()) < untilRound) {
           // FIXME maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
           const resp = await algodClient.transactionByAddress(ctc.address, startRound, untilRound).do();
           resp.transactions.forEach(async txn => {
@@ -317,12 +333,12 @@ const getBalanceAt = async (addr, round) => {
 };
 
 export const balanceOf = async acc => {
-  return (await getBalanceAt(acc.addr, await currentRound()));
+  return (await getBalanceAt(acc.addr, await getLastRound()));
 };
 
 const showBalance = async (note, acc) => {
   const bal = await balanceOf(acc);
-  const showBal = algosdk.algosToMicroalgos(bal).toFixed(2);
+  const showBal = algosdk.microalgosToAlgos(bal).toFixed(2);
   console.log('%s: balance: %s algos', note, showBal);
 };
 
@@ -336,6 +352,6 @@ export const newTestAccount = async (startingBalance) => {
 
 export const newAccountFromMnemonic = false; // XXX
 
-export const getNetworkTime = false; // XXX
+export const getNetworkTime = getLastRound;
 export const waitUntilTime = false; // XXX
 export const wait = false; // XXX
