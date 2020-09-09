@@ -308,11 +308,13 @@ data SLPrimitive
   | SLPrim_Array
   | SLPrim_Array_iota
   | SLPrim_array
+  | SLPrim_array_length
   | SLPrim_array_set
   | SLPrim_array_concat
   | SLPrim_array_map
   | SLPrim_array_reduce
   | SLPrim_Tuple
+  | SLPrim_tuple_length
   | SLPrim_tuple_set
   | SLPrim_Object
   | SLPrim_App_Delay SrcLoc SLEnv [SLSVal] JSBlock SLEnv SLEnv

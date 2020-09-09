@@ -703,6 +703,7 @@ evalDot ctxt at sco st obj field =
       retDLVar tm (DLA_Var obj_dv) Public
     SLV_Prim (SLPrim_interact _ who m it@(T_Obj tm)) ->
       retDLVar tm (DLA_Interact who m it) Secret
+
     SLV_Participant _ who _ vas _ ->
       case field of
         "only" -> retV $ public $ SLV_Form (SLForm_Part_Only who)
@@ -716,45 +717,49 @@ evalDot ctxt at sco st obj field =
         "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
         "timeout" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
         _ -> illegal_field ["publish", "pay", "timeout"]
-    SLV_Tuple _ vs ->
+
+    SLV_Tuple _ _ ->
       case field of
         "set" -> delayCall SLPrim_tuple_set
-        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
+        "length" -> delayCall SLPrim_tuple_length
         _ -> illegal_field ["set", "length"]
-    SLV_DLVar (DLVar _ _ (T_Tuple ts) _) ->
+    SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
       case field of
         "set" -> delayCall SLPrim_tuple_set
-        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length ts
+        "length" -> delayCall SLPrim_tuple_length
         _ -> illegal_field ["set", "length"]
-    SLV_Array _ _ vs ->
-      case field of
-        "set" -> delayCall SLPrim_array_set
-        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
-        "concat" -> delayCall SLPrim_array_concat
-        "map" -> delayCall SLPrim_array_map
-        "reduce" -> delayCall SLPrim_array_reduce
-        _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
-    SLV_DLVar (DLVar _ _ (T_Array _ sz) _) ->
-      case field of
-        "set" -> delayCall SLPrim_array_set
-        "length" -> retV $ public $ SLV_Int at $ fromIntegral $ sz
-        "concat" -> delayCall SLPrim_array_concat
-        "map" -> delayCall SLPrim_array_map
-        "reduce" -> delayCall SLPrim_array_reduce
-        _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
     SLV_Prim SLPrim_Tuple ->
       case field of
         "set" -> retV $ public $ SLV_Prim $ SLPrim_tuple_set
-        _ -> illegal_field ["set"]
+        "length" -> retV $ public $ SLV_Prim $ SLPrim_tuple_length
+        _ -> illegal_field ["set", "length"]
+
+    SLV_Array _ _ _ ->
+      case field of
+        "set" -> delayCall SLPrim_array_set
+        "length" -> delayCall SLPrim_array_length
+        "concat" -> delayCall SLPrim_array_concat
+        "map" -> delayCall SLPrim_array_map
+        "reduce" -> delayCall SLPrim_array_reduce
+        _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
+    SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
+      case field of
+        "set" -> delayCall SLPrim_array_set
+        "length" -> delayCall SLPrim_array_length
+        "concat" -> delayCall SLPrim_array_concat
+        "map" -> delayCall SLPrim_array_map
+        "reduce" -> delayCall SLPrim_array_reduce
+        _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
     SLV_Prim SLPrim_Array ->
       case field of
+        "length" -> retV $ public $ SLV_Prim $ SLPrim_array_length
         "set" -> retV $ public $ SLV_Prim $ SLPrim_array_set
         "iota" -> retV $ public $ SLV_Prim $ SLPrim_Array_iota
         "concat" -> retV $ public $ SLV_Prim $ SLPrim_array_concat
         "map" -> retV $ public $ SLV_Prim $ SLPrim_array_map
         "reduce" -> retV $ public $ SLV_Prim $ SLPrim_array_reduce
-        --- FIXME make Array.length
-        _ -> illegal_field ["set", "iota", "concat", "map"]
+        _ -> illegal_field ["length", "set", "iota", "concat", "map", "reduce"]
+
     SLV_Prim SLPrim_Object ->
       case field of
         "set" -> retV $ sss_sls $ env_lookup at "Object_set" $ sco_env sco
@@ -974,6 +979,22 @@ evalPrim ctxt at sco st p sargs =
         [(SLV_Type ty), (SLV_Int _ sz)] ->
           retV $ (lvl, SLV_Type $ T_Array ty sz)
         _ -> illegal_args
+    SLPrim_tuple_length -> do
+      let a = one_arg
+      case a of
+        SLV_Tuple _ vs ->
+          retV $ public $ SLV_Int at $ fromIntegral $ length vs
+        SLV_DLVar (DLVar _ _ (T_Tuple ts) _) ->
+          retV $ public $ SLV_Int at $ fromIntegral $ length ts
+        _ -> illegal_args
+    SLPrim_array_length -> do
+      let a = one_arg
+      case a of
+        SLV_Array _ _ vs ->
+          retV $ public $ SLV_Int at $ fromIntegral $ length vs
+        SLV_DLVar (DLVar _ _ (T_Array _ sz) _) ->
+          retV $ public $ SLV_Int at $ fromIntegral $ sz
+        _ -> illegal_args
     SLPrim_Array_iota ->
       case map snd sargs of
         [SLV_Int _ sz] ->
@@ -1003,8 +1024,7 @@ evalPrim ctxt at sco st p sargs =
               let de = error $ "XXX " <> show xa <> show ya -- DLE_ArrayConcat at xa ya
               (dv, lifts') <- ctxt_lift_expr ctxt at mkdv de
               return $ SLRes lifts' st (lvl, SLV_DLVar dv)
-            _ -> --- FIXME expected arrays
-              illegal_args
+            _ -> illegal_args
         _ -> illegal_args
     SLPrim_array_map -> do
       let (x, f) = two_args
@@ -1028,8 +1048,7 @@ evalPrim ctxt at sco st p sargs =
             SLV_DLVar _x_dv -> do
               error "XXX dlvar"
             _ -> impossible "not array"
-        _ -> --- FIXME expected array
-          illegal_args
+        _ -> illegal_args
     SLPrim_array_reduce -> do
       let (x, z, f) = three_args
       let (xt, _) = typeOf at x
@@ -1057,8 +1076,7 @@ evalPrim ctxt at sco st p sargs =
             SLV_DLVar _x_dv -> do
               error "XXX dlvar"
             _ -> impossible "not array"
-        _ -> --- FIXME expected array
-          illegal_args
+        _ -> illegal_args
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] ->
