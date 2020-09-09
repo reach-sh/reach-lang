@@ -205,6 +205,7 @@ workflows:
       - shellcheck
       - reach-lint
       - docker-lint
-  experimental-devnets:
-    jobs:
-      - experimental-algorand-devnet
+  # TODO: re-enable / integrate with build-and-test
+  # experimental-devnets:
+  #   jobs:
+  #     - experimental-algorand-devnet
