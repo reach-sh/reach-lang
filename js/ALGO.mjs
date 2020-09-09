@@ -27,7 +27,7 @@ export * from './shared.mjs';
 // }
 
 const log_pretty = (obj) =>
-      console.log(JSON.parse(JSON.stringify(obj)));
+  console.log(JSON.parse(JSON.stringify(obj)));
 
 // Common interface exports
 
@@ -48,14 +48,14 @@ const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE |
 // Helpers
 
 const getLastRound = async () =>
-      (await algodClient.status().do())['last-round'];
+  (await algodClient.status().do())['last-round'];
 
 const waitForConfirmation = async (txId, untilRound) => {
   let lastRound = null;
   do {
-    const lastRoundAfterCall = lastRound
-          ? algodClient.statusAfterBlock(lastRound)
-          : algodClient.status();
+    const lastRoundAfterCall = lastRound ?
+      algodClient.statusAfterBlock(lastRound) :
+      algodClient.status();
     lastRound = (await lastRoundAfterCall.do())['last-round'];
     const pendingInfo =
       await algodClient.pendingTransactionInformation(txId).do();
@@ -133,7 +133,7 @@ export const transfer = async (from, to, value) => {
 
   if (!res) {
     const txID = txn.txID().toString();
-    log_pretty({txID, from, to, value});
+    log_pretty({ txID, from, to, value });
     throw Error(`Transfer failed: ${from} ${to} ${value}`);
   }
   return res;
