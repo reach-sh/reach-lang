@@ -220,7 +220,8 @@ data SLVal
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLCloEnv
   | SLV_DLVar DLVar
   | SLV_Type SLType
-  | SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
+  | --- FIXME I think we can delete some of these fields, like the SLVal and the M DLVar
+    SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   deriving (Eq, Generic, Show)
@@ -305,8 +306,11 @@ data SLPrimitive
   | SLPrim_typeOf
   | SLPrim_Fun
   | SLPrim_Array
+  | SLPrim_Array_iota
   | SLPrim_array
   | SLPrim_array_set
+  | SLPrim_array_concat
+  | SLPrim_array_map
   | SLPrim_Tuple
   | SLPrim_tuple_set
   | SLPrim_Object

@@ -728,13 +728,17 @@ evalDot ctxt at sco st obj field =
     SLV_Array _ _ vs ->
       case field of
         "set" -> delayCall SLPrim_array_set
+        "concat" -> delayCall SLPrim_array_concat
+        "map" -> delayCall SLPrim_array_map
         "length" -> retV $ public $ SLV_Int at $ fromIntegral $ length vs
-        _ -> illegal_field ["set", "length"]
+        _ -> illegal_field ["set", "length", "concat", "map"]    
     SLV_DLVar (DLVar _ _ (T_Array _ sz) _) ->
       case field of
         "set" -> delayCall SLPrim_array_set
+        "concat" -> delayCall SLPrim_array_concat
+        "map" -> delayCall SLPrim_array_map
         "length" -> retV $ public $ SLV_Int at $ fromIntegral $ sz
-        _ -> illegal_field ["set", "length"]
+        _ -> illegal_field ["set", "length", "concat", "map"]
     SLV_Prim SLPrim_Tuple ->
       case field of
         "set" -> retV $ public $ SLV_Prim $ SLPrim_tuple_set
@@ -742,7 +746,10 @@ evalDot ctxt at sco st obj field =
     SLV_Prim SLPrim_Array ->
       case field of
         "set" -> retV $ public $ SLV_Prim $ SLPrim_array_set
-        _ -> illegal_field ["set"]
+        "iota" -> retV $ public $ SLV_Prim $ SLPrim_Array_iota
+        "concat" -> retV $ public $ SLV_Prim $ SLPrim_array_concat
+        "map" -> retV $ public $ SLV_Prim $ SLPrim_array_map
+        _ -> illegal_field ["set", "iota", "concat", "map"]
     SLV_Prim SLPrim_Object ->
       case field of
         "set" -> retV $ sss_sls $ env_lookup at "Object_set" $ sco_env sco
@@ -939,12 +946,11 @@ evalPrim ctxt at sco st p sargs =
             dom = map expect_ty dom_arr
         _ -> illegal_args
     SLPrim_is_type ->
-      case map snd sargs of
-        [SLV_Type _] ->
+      case one_arg of
+        SLV_Type _ ->
           retV $ (lvl, SLV_Bool at True)
-        [_] ->
+        _ ->
           retV $ (lvl, SLV_Bool at False)
-        _ -> illegal_args
     SLPrim_type_eq ->
       case map snd sargs of
         [(SLV_Type ty1), (SLV_Type ty2)] ->
@@ -963,7 +969,11 @@ evalPrim ctxt at sco st p sargs =
         [(SLV_Type ty), (SLV_Int _ sz)] ->
           retV $ (lvl, SLV_Type $ T_Array ty sz)
         _ -> illegal_args
-    --- FIXME add make_array(size, val) -> [ val x size ]
+    SLPrim_Array_iota ->
+      case map snd sargs of
+        [SLV_Int _ sz] ->
+          retV $ (lvl, SLV_Array at T_UInt256 $ map (SLV_Int at) [0 .. (sz-1)])
+        _ -> illegal_args
     SLPrim_array ->
       case map snd sargs of
         [(SLV_Type elem_ty), elems_v] ->
@@ -976,6 +986,46 @@ evalPrim ctxt at sco st p sargs =
             --- FIXME we could support turning a DL Tuple into an array.
             _ -> illegal_args
         _ -> illegal_args
+    SLPrim_array_concat ->
+      case map snd sargs of
+        [ SLV_Array x_at x_ty x_vs, SLV_Array y_at y_ty y_vs ] ->
+          retV $ (lvl, SLV_Array at (typeMeet at (x_at, x_ty) (y_at, y_ty)) $ x_vs ++ y_vs)
+        [ x, y ] ->
+          case (typeOf at x, typeOf at y) of
+            ((T_Array x_ty x_sz, xa), (T_Array y_ty y_sz, ya)) -> do
+              let t = (T_Array (typeMeet at (at, x_ty) (at, y_ty)) (x_sz + y_sz))
+              let mkdv = (DLVar at (ctxt_local_name ctxt "array_concat") t)
+              let de = error $ "XXX " <> show xa <> show ya -- DLE_ArrayConcat at xa ya
+              (dv, lifts') <- ctxt_lift_expr ctxt at mkdv de
+              return $ SLRes lifts' st (lvl, SLV_DLVar dv)
+            _ -> --- FIXME expected arrays
+              illegal_args
+        _ -> illegal_args
+    SLPrim_array_map -> do
+      let (x, f) = two_args
+      let f' z = evalApplyVals ctxt at sco st f [(lvl, z)]
+      let (xt, _) = typeOf at x
+      case xt of
+        T_Array x_ty _XXX_x_sz -> do
+          dv_in_idx <- ctxt_alloc ctxt at
+          let dv_in = SLV_DLVar $ DLVar at "map in" x_ty dv_in_idx
+          SLRes _XXX_f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' dv_in
+          let (f_ty, _XXX_f_da) = typeOf at f_v
+          case x of
+            SLV_Array _ _ x_vs -> do
+              let evalem (prev_lifts, prev_vs) xv = do
+                    SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' xv
+                    --- Note: We are artificially restricting maps to
+                    --- be parameteric in the state.
+                    return $ stMerge at f_st xv_st `seq`
+                      ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
+              (lifts', vs') <- foldM evalem (mempty, []) x_vs
+              return $ SLRes lifts' f_st (f_lvl, SLV_Array at f_ty vs')
+            SLV_DLVar _x_dv -> do
+              error "XXX dlvar"
+            _ -> impossible "not array"
+        _ -> --- FIXME expected array
+          illegal_args
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] ->
@@ -1177,6 +1227,12 @@ evalPrim ctxt at sco st p sargs =
       case v of
         SLV_Type t -> t
         _ -> illegal_args
+    one_arg = case map snd sargs of
+      [x] -> x
+      _ -> illegal_args
+    two_args = case map snd sargs of
+      [x, y] -> (x, y)
+      _ -> illegal_args
 
 evalApplyVals :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> [SLSVal] -> SLComp s SLAppRes
 evalApplyVals ctxt at sco st rator randvs =
