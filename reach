@@ -149,7 +149,7 @@ ensure_connector_mode () {
   # * ETH-test-dockerized-geth
   # * ETH-test-embedded-ganache
   # * FAKE-test-embedded-mock
-  # * ALGO-test-dockerized-goal
+  # * ALGO-test-dockerized-algod
   # $WHAT-$WHERE-$HOW-$HOW_WHERE
   # (or error)
   # This can be derived from REACH_TESTNET and possibly REACH_ETH_MODE
@@ -179,13 +179,13 @@ ensure_connector_mode () {
       REACH_CONNECTOR_MODE="FAKE-test-embedded-mock"
       ;;
     "ALGO")
-      REACH_CONNECTOR_MODE="ALGO-test-dockerized-goal"
+      REACH_CONNECTOR_MODE="ALGO-test-dockerized-algod"
       ;;
     "ALGO-test")
-      REACH_CONNECTOR_MODE="ALGO-test-dockerized-goal"
+      REACH_CONNECTOR_MODE="ALGO-test-dockerized-algod"
       ;;
     "ALGO-test-dockerized")
-      REACH_CONNECTOR_MODE="ALGO-test-dockerized-goal"
+      REACH_CONNECTOR_MODE="ALGO-test-dockerized-algod"
       ;;
   esac
 
@@ -197,8 +197,7 @@ ensure_connector_mode () {
       ;;
     "FAKE-test-embedded-mock")
       ;;
-    "ALGO-test-dockerized-goal")
-      fatal_connector_mode_coming_soon
+    "ALGO-test-dockerized-algod")
       ;;
     *)
       fatal_unrecognized_connector_mode
@@ -442,6 +441,8 @@ x-app-base: &app-base
 services:
   devnet:
     image: reachsh/ethereum-devnet:${REACH_VERSION}
+  algorand-devnet:
+    image: reachsh/algorand-devnet:${REACH_VERSION}
   ${SERVICE}-ETH-test-dockerized-geth: &default-app
     <<: *app-base
     depends_on:
@@ -457,6 +458,14 @@ services:
     <<: *app-base
     environment:
       - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
+  ${SERVICE}-ALGO-test-dockerized-algod:
+    <<: *app-base
+    depends_on:
+      - algorand-devnet
+    environment:
+      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - ALGO_SERVER=http://algorand-devnet
+      - ALGO_PORT=4180
   ${SERVICE}-: *default-app
   ${SERVICE}: *default-app
 EOF

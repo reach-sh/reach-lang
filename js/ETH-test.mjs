@@ -206,18 +206,22 @@ runTests(async () => {
     describe('exports', () => {
       const stdlibExports = Object.keys(stdlib).sort();
 
-      for (const [otherName, otherStdlib] of [
-          ['ALGO', ALGO_stdlib],
-          ['FAKE', FAKE_stdlib],
+      const ETH_extra_exports = ['fromWei', 'toWei', 'toWeiBigNumber'];
+      const ALGO_extra_exports = ['algosToMicroalgos', 'microalgosToAlgos'];
+      const FAKE_extra_exports = [];
+
+      for (const [otherName, otherStdlib, otherExtraExports] of [
+          ['ALGO', ALGO_stdlib, ALGO_extra_exports],
+          ['FAKE', FAKE_stdlib, FAKE_extra_exports],
         ]) {
         const otherStdlibExports = Object.keys(otherStdlib).sort();
         it(`should only export a few extra things compared to ${otherName}`, () =>
           expect(stdlibExports.filter(x => !otherStdlibExports.includes(x)))
-          .toBe(['fromWei', 'toWei', 'toWeiBigNumber']));
+          .toBe(ETH_extra_exports));
 
         it(`should export everything that ${otherName} does`, () =>
           expect(otherStdlibExports.filter(x => !stdlibExports.includes(x)))
-          .toBe([]));
+          .toBe(otherExtraExports));
       }
     });
 

@@ -3,6 +3,11 @@ import algosdk from 'algosdk';
 import { debug } from './shared.mjs';
 export * from './shared.mjs';
 
+export const {
+  algosToMicroalgos,
+  microalgosToAlgos,
+} = algosdk;
+
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
@@ -333,20 +338,22 @@ const getBalanceAt = async (addr, round) => {
 };
 
 export const balanceOf = async acc => {
-  return (await getBalanceAt(acc.addr, await getLastRound()));
+  const { networkAccount } = acc;
+  if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
+  return (await getBalanceAt(networkAccount.addr, await getLastRound()));
 };
 
-const showBalance = async (note, acc) => {
-  const bal = await balanceOf(acc);
+const showBalance = async (note, networkAccount) => {
+  const bal = await balanceOf({ networkAccount });
   const showBal = algosdk.microalgosToAlgos(bal).toFixed(2);
   console.log('%s: balance: %s algos', note, showBal);
 };
 
 export const newTestAccount = async (startingBalance) => {
   const acc = algosdk.generateAccount();
-  showBalance('before', acc);
+  await showBalance('before', acc);
   await transfer(FAUCET, acc, startingBalance);
-  showBalance('after', acc);
+  await showBalance('after', acc);
   return await connectAccount(acc);
 };
 

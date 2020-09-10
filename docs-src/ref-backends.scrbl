@@ -81,7 +81,7 @@ to its full, canonical name. The canonical connector modes are:
   'ETH-test-dockerized-geth'   // Default for ETH, ETH-test, and ETH-test-dockerized
   'ETH-test-embedded-ganache'  // Default for ETH-test-embedded
   'FAKE-test-embedded-mock'    // Default for FAKE, FAKE-test, and FAKE-test-embedded
-  'ALGO-test-dockerized-goal'  // Default for ALGO, ALGO-test, and ALGO-test-dockerized
+  'ALGO-test-dockerized-algod' // Default for ALGO, ALGO-test, and ALGO-test-dockerized
 }
 
 @(hrule)

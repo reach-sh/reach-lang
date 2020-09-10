@@ -3,7 +3,7 @@ const knownConnectorModes = [
   'ETH-test-dockerized-geth',
   'ETH-test-embedded-ganache',
   'FAKE-test-embedded-mock',
-  'ALGO-test-dockerized-goal',
+  'ALGO-test-dockerized-algod',
 ];
 
 const connectorModeDefaults = {};
