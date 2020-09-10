@@ -1,3 +1,4 @@
 /Makefile
-.dockerignore
-Dockerfile
+/.dockerignore
+/Dockerfile
+/NOTES.md
