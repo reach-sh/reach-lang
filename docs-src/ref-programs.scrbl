@@ -87,6 +87,23 @@ For example,
 }
 are valid @tech{exports}.
 
+Module-level identifiers may also be @tech{export}ed after the fact,
+and may be renamed during export. For example,
+
+@reach{
+ const w = 2;
+ const z = 0;
+ export {w, z as zero};
+}
+
+Identifiers from other modules may be re-exported (and renamed),
+even if they are not imported in the current module.
+For example,
+
+@reach{
+ export {u, x as other_x} from './other-module.rsh';
+}
+
 An @tech{export}ed identifier in a given @tech{module} may be @tech{import}ed by other @tech{modules}.
 
 @subsubsection[#:tag "ref-programs-import"]{@tt{import}}
