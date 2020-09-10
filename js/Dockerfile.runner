@@ -16,7 +16,9 @@ COPY .reach.eslintrc.yaml /app/
 RUN npm link '@reach-sh/stdlib'
 # Make use of stuff already installed for stdlib
 # RUN npm install
-RUN cp -r /stdlib/node_modules /app/node_modules
+# RUN cp -r /stdlib/node_modules /app/node_modules
+RUN mkdir -p /app/node_modules
+RUN ln -s /stdlib/node_modules/* /app/node_modules/
 RUN mkdir /app/build
 
 CMD ["app"]
