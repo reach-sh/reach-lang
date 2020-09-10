@@ -1,3 +1,5 @@
+REACH=../../reach
+
 .PHONY: run
 run:
-	REACH_CONNECTOR_MODE=ALGO-test-dockerized reach run index
+	REACH_CONNECTOR_MODE=ALGO-test-dockerized $(REACH) run index
