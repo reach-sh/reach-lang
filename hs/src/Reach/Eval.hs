@@ -116,10 +116,6 @@ displaySlValType = \case
       Just (t, _) -> displayTy t
       Nothing -> "<" <> conNameOf sv <> ">"
 
-displayTyList :: [SLType] -> String
-displayTyList tys =
-  "[" <> (intercalate ", " $ map displayTy tys) <> "]"
-
 displayTy :: SLType -> String
 displayTy = \case
   T_Null -> "null"
@@ -482,11 +478,12 @@ ctxt_lift_expr ctxt at mk_var e = do
 ctxt_lift_expr_w :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> WriterT DLStmts (ST s) DLVar
 ctxt_lift_expr_w ctxt at mk_var e = WriterT $ ctxt_lift_expr ctxt at mk_var e
 
-ctxt_lift_arg :: SLCtxt s -> SrcLoc -> SrcLoc -> String -> DLArg -> ST s (DLVar, DLStmts)
-ctxt_lift_arg ctxt at at' name a =
-  ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt name) t) (DLE_Arg at' a)
-  where
-    t = argTypeOf a
+-- Unused
+-- ctxt_lift_arg :: SLCtxt s -> SrcLoc -> SrcLoc -> String -> DLArg -> ST s (DLVar, DLStmts)
+-- ctxt_lift_arg ctxt at at' name a =
+--   ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt name) t) (DLE_Arg at' a)
+--   where
+--     t = argTypeOf a
 
 ctxt_local_name :: SLCtxt s -> SLVar -> SLVar
 ctxt_local_name ctxt def =
@@ -2166,8 +2163,9 @@ evalFromClause libm (JSFromClause _ _ libn) =
 evalImExportSpecifiers :: SrcLoc -> SLEnv -> (a -> (JSIdent, JSIdent)) -> (JSCommaList a) -> SLEnv
 evalImExportSpecifiers at env go cl =
   foldl' (env_insertp at) mempty $ map (uncurry p) $ map go $ jscl_flatten cl
-  where p f t = p' (parseIdent at f) (parseIdent at t)
-        p' (_, f) (_, t) = (t, env_lookup at f env)
+  where
+    p f t = p' (parseIdent at f) (parseIdent at t)
+    p' (_, f) (_, t) = (t, env_lookup at f env)
 
 evalImportClause :: SrcLoc -> SLEnv -> JSImportClause -> SLEnv
 evalImportClause at env im =
@@ -2178,9 +2176,10 @@ evalImportClause at env im =
         (at', ns) = parseIdent at ji
     JSImportClauseNamed (JSImportsNamed _ iscl _) ->
       evalImExportSpecifiers at env go iscl
-      where go = \case
-              JSImportSpecifier x -> (x, x)
-              JSImportSpecifierAs x _ y -> (x, y)
+      where
+        go = \case
+          JSImportSpecifier x -> (x, x)
+          JSImportSpecifierAs x _ y -> (x, y)
     JSImportClauseDefault {} -> illegal_import
     JSImportClauseDefaultNameSpace {} -> illegal_import
     JSImportClauseDefaultNamed {} -> illegal_import
@@ -2190,9 +2189,10 @@ evalImportClause at env im =
 evalExportClause :: SrcLoc -> SLEnv -> JSExportClause -> SLEnv
 evalExportClause at env (JSExportClause _ escl _) =
   evalImExportSpecifiers at env go escl
-  where go = \case
-          JSExportSpecifier x -> (x, x)
-          JSExportSpecifierAs x _ y -> (x, y)
+  where
+    go = \case
+      JSExportSpecifier x -> (x, x)
+      JSExportSpecifierAs x _ y -> (x, y)
 
 evalTopBody :: SLCtxt s -> SrcLoc -> SLState -> SLLibs -> SLEnv -> SLEnv -> [JSModuleItem] -> SLComp s SLEnv
 evalTopBody ctxt at st libm env exenv body =
@@ -2224,7 +2224,8 @@ evalTopBody ctxt at st libm env exenv body =
             at' = srcloc_jsa "export" a at
             go ec eenv =
               evalTopBody ctxt at' st libm env (env_merge at' exenv news) body'
-              where news = evalExportClause at' eenv ec
+              where
+                news = evalExportClause at' eenv ec
         (JSModuleStatementListItem s) -> doStmt at False s
       where
         doStmt at' isExport sm = do

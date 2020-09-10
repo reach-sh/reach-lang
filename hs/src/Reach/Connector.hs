@@ -6,6 +6,7 @@ import Reach.AST
 
 type ConnectorInfo =
   M.Map String T.Text
+
 type ConnectorResult =
   M.Map String ConnectorInfo
 

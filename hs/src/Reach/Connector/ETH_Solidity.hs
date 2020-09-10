@@ -42,6 +42,7 @@ solBraces body = braces (nest 2 $ hardline <> body <> space)
 data SolFunctionLike a
   = SFL_Constructor
   | SFL_Function Bool (Doc a)
+
 solFunctionLike :: SolFunctionLike a -> [Doc a] -> Doc a -> Doc a -> Doc a
 solFunctionLike sfl args ret body =
   sflp <+> ret' <+> solBraces body
@@ -53,7 +54,8 @@ solFunctionLike sfl args ret body =
           (emptyDoc, solApply "constructor" args)
         SFL_Function ext name ->
           (ext'', "function" <+> solApply name args)
-          where ext'' = if ext then "external " else " "
+          where
+            ext'' = if ext then "external " else " "
 
 solFunction :: Doc a -> [Doc a] -> Doc a -> Doc a -> Doc a
 solFunction name =
@@ -332,7 +334,8 @@ solCom iter ctxt = \case
     where
       dv_set = solSet (solMemVar dv) (solExpr ctxt emptyDoc de)
   PL_Eff _ de k -> SolTailRes ctxt dv_run <> iter ctxt k
-    where dv_run = solExpr ctxt semi de
+    where
+      dv_run = solExpr ctxt semi de
   PL_Var _ _ k -> iter ctxt k
   PL_Set _ dv da k -> SolTailRes ctxt dv_set <> iter ctxt k
     where
@@ -460,7 +463,8 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
           (emptyDoc, AM_Memory, SFL_Constructor)
         _ ->
           (hcp, AM_Call, SFL_Function True (solMsg_fun which))
-          where hcp = (solRequire $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
+          where
+            hcp = (solRequire $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
     funDefn = solFunctionLike sfl argDefs ret body
     body =
       vsep
@@ -597,7 +601,7 @@ solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
             SolTailRes _ consbody = solCTail ctxt (CT_Wait at [])
         DM_firstMsg ->
           emptyDoc
-    cinfo = M.fromList [ ("deployMode", T.pack $ show plo_deployMode) ]
+    cinfo = M.fromList [("deployMode", T.pack $ show plo_deployMode)]
     state_defn = "uint256 current_state;"
     preamble =
       vsep
@@ -637,15 +641,15 @@ extract cinfo v = case fromJSON v of
       Left e -> Left e
       Right (csrAbi_parsed :: Value) ->
         Right $
-        M.fromList
+          M.fromList
             [ ( "ETH"
               , M.union
-                (M.fromList
-                  [ ("ABI", csrAbi_pretty)
-                  , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
-                    ("Bytecode", "0x" <> csrCode)
-                  ])
-                cinfo
+                  (M.fromList
+                     [ ("ABI", csrAbi_pretty)
+                     , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
+                       ("Bytecode", "0x" <> csrCode)
+                     ])
+                  cinfo
               )
             ]
         where

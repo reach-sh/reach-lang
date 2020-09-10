@@ -320,14 +320,14 @@ display_fail ctxt tat f tk tse repeated mrd = do
                     Just (mdv, at, bo, mvse) -> do
                       let this se =
                             [("    " ++ show v0 ++ " = " ++ (SMT.showsSExpr se ""))]
-                            ++ (case mdv of
-                                  Nothing -> mempty
-                                  Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
-                            ++ (map
-                                 (redactAbsStr cwd)
-                                 [ ("      (bound at: " ++ show at ++ ")")
-                                 , ("      (because: " ++ show bo ++ ")")
-                                 ])
+                              ++ (case mdv of
+                                    Nothing -> mempty
+                                    Just dv -> ["      (from: " ++ show (pretty dv) ++ ")"])
+                              ++ (map
+                                    (redactAbsStr cwd)
+                                    [ ("      (bound at: " ++ show at ++ ")")
+                                    , ("      (because: " ++ show bo ++ ")")
+                                    ])
                       case mvse of
                         Nothing ->
                           --- FIXME It might be useful to do `get-value` rather than parse

@@ -58,7 +58,7 @@ lin_con _ at _ Seq.Empty =
 lin_con back at_top rets (s Seq.:<| ks) =
   case s of
     DLS_If at ca _ False ts fs ->
-        LLC_If at ca t' f'
+      LLC_If at ca t' f'
       where
         t' = lin_con back at rets (ts <> ks)
         f' = lin_con back at rets (fs <> ks)
@@ -108,5 +108,6 @@ lin_step _ rets (s Seq.:<| ks) =
 linearize :: DLProg -> LLProg
 linearize (DLProg at (DLOpts {..}) sps ss) =
   LLProg at opts' sps $ lin_step at mempty ss
-  where opts' = LLOpts {..}
-        llo_deployMode = dlo_deployMode
+  where
+    opts' = LLOpts {..}
+    llo_deployMode = dlo_deployMode

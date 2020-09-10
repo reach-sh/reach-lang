@@ -31,17 +31,11 @@ jsFunction :: String -> [Doc a] -> Doc a -> Doc a
 jsFunction name args body =
   "async function" <+> jsApply name args <+> jsBraces body
 
-jsLambda :: [Doc a] -> Doc a -> Doc a
-jsLambda args body = "async" <+> jsApply "" args <+> "=>" <+> jsBraces body
-
 jsWhile :: Doc a -> Doc a -> Doc a
 jsWhile cond body = "while" <+> parens cond <+> jsBraces body
 
 jsReturn :: Doc a -> Doc a
 jsReturn a = "return" <+> a <> semi
-
-jsBinOp :: String -> Doc a -> Doc a -> Doc a
-jsBinOp o l r = l <+> pretty o <+> r
 
 jsIf :: Doc a -> Doc a -> Doc a -> Doc a
 jsIf cap ttp ftp = "if" <+> parens cap <+> jsBraces ttp <> hardline <> "else" <+> jsBraces ftp

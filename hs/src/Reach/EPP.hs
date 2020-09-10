@@ -81,20 +81,21 @@ epp_m done _back skip look c =
         DLE_Claim _ _ CT_Possible _ -> skip k
         DLE_Claim _ _ (CT_Unknowable {}) _ -> skip k
         _ ->
-          look k
-          (\back' skip' k_cs k' ->
-             let maybe_skip vs = 
-                   case expr_pure de of
-                     True -> skip' k_cs k'
-                     False -> back' (cs' vs) (PL_Eff at de k')
-                 cs' vs = counts de <> count_rms vs k_cs
-             in case mdv of
-                  Nothing -> maybe_skip []
-                  Just dv ->
-                    case get_count dv k_cs of
-                      Count Nothing -> maybe_skip [dv]
-                      Count (Just lc) ->
-                        back' (cs' [dv]) (PL_Let at lc dv de k'))
+          look
+            k
+            (\back' skip' k_cs k' ->
+               let maybe_skip vs =
+                     case expr_pure de of
+                       True -> skip' k_cs k'
+                       False -> back' (cs' vs) (PL_Eff at de k')
+                   cs' vs = counts de <> count_rms vs k_cs
+                in case mdv of
+                     Nothing -> maybe_skip []
+                     Just dv ->
+                       case get_count dv k_cs of
+                         Count Nothing -> maybe_skip [dv]
+                         Count (Just lc) ->
+                           back' (cs' [dv]) (PL_Let at lc dv de k'))
     LL_Var at dv k ->
       look
         k
@@ -272,7 +273,7 @@ epp_s st s =
         st' =
           case c of
             (LL_Let _ _ (DLE_Wait _ amt) _) ->
-              st { pst_interval = interval_add_from (pst_interval st) amt }
+              st {pst_interval = interval_add_from (pst_interval st) amt}
             _ -> st
     LLS_Stop at _ -> do
       let p_prts_s = pall st (ProRes_ mempty (ET_Stop at))
