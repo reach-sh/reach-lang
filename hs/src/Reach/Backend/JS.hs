@@ -249,7 +249,7 @@ jsETail ctxt = \case
             where
               jsSum [] = impossible "no delay"
               jsSum [x] = jsArg x
-              jsSum (x:xs) = jsBinOp "+" (jsArg x) (jsSum xs)
+              jsSum (x : xs) = jsApply "stdlib.add" [jsArg x, jsSum xs]
               k_top = jsETail ctxt' k_to
       msg_vs = map jsVar msg
       k_okp =
