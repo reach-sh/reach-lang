@@ -785,6 +785,7 @@ case ${SUBCOMMAND} in
         docker pull "reachsh/stdlib:${REACH_VERSION}"
         docker pull "reachsh/runner:${REACH_VERSION}"
         docker pull "reachsh/ethereum-devnet:${REACH_VERSION}"
+        docker pull "reachsh/algorand-devnet:${REACH_VERSION}"
         exit 0
         ;;
     version|--version)
