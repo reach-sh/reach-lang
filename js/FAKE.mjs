@@ -145,3 +145,4 @@ export function waitUntilTime(targetTime, onProgress) {
 }
 
 export const newAccountFromMnemonic = false; // XXX
+export const verifyContract = false; // XXX

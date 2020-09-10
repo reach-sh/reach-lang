@@ -362,3 +362,4 @@ export const newAccountFromMnemonic = false; // XXX
 export const getNetworkTime = getLastRound;
 export const waitUntilTime = false; // XXX
 export const wait = false; // XXX
+export const verifyContract = false; // XXX

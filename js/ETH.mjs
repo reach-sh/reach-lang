@@ -261,11 +261,11 @@ export const connectAccount = async networkAccount => {
   const shad = address.substring(2, 6);
 
   const extractInfo = async (ctcOrInfo) => {
-    const { getInfo, address, creation_block } = ctcOrInfo;
+    const { getInfo, address, creation_block, args} = ctcOrInfo;
     if (getInfo) {
       return extractInfo(await getInfo());
-    } else if (address && creation_block) {
-      return { address, creation_block };
+    } else if (address && creation_block && args) {
+      return { address, creation_block, args };
     } else {
       throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`);
     }
@@ -285,9 +285,10 @@ export const connectAccount = async networkAccount => {
           throw Error(`Out of order sendrecv`);
         }
         const deployRes = await parentCtc.reallyDeploy([args], value);
+        // XXX ^ why is this [args] and not just args?
         debug(`${shad}: waitForInfo deployRes = ${JSON.stringify(deployRes)}`);
         const { transactionHash, ...deployInfo } = deployRes;
-        info = deployInfo;
+        info = { ...deployInfo, args }; // XXX use the returned args from reallyDeploy?
         _waitForInfo = async () => true;
         return { wait: async () => ({ transactionHash }) };
       };
@@ -303,6 +304,7 @@ export const connectAccount = async networkAccount => {
     const getC = async () => {
       if (_ethersC) { return _ethersC; }
       await _waitForInfo(true);
+      await verifyContract(info, bin);
       debug(`${shad}: attach to creation at ${info.creation_block}`);
       last_block = info.creation_block;
       _ethersC = new ethers.Contract(info.address, ABI, networkAccount);
@@ -323,6 +325,7 @@ export const connectAccount = async networkAccount => {
       _getInfo = async () => ({
         address: info.address,
         creation_block: info.creation_block,
+        args: info.args,
       });
       return await _getInfo();
     };
@@ -497,6 +500,7 @@ export const connectAccount = async networkAccount => {
       return {
         address: contract.address,
         creation_block: deploy_r.blockNumber,
+        args: args,
         transactionHash: deploy_r.transactionHash,
       };
     };
@@ -651,5 +655,67 @@ const toNumberMay = (x) => {
     return x.toNumber();
   } else {
     return x;
+  }
+};
+
+// Check the contract info and the associated deployed bytecode;
+// Verify that:
+// * it matches the bytecode you are expecting.
+// * it was deployed at exactly creation_block.
+// Throws an Error if any verifications fail
+export const verifyContract = async (ctcInfo, backend) => {
+  const {ABI, Bytecode} = backend._Connectors.ETH;
+  const {address, creation_block, args} = ctcInfo;
+  const factory = new ethers.ContractFactory(ABI, Bytecode);
+
+  // TODO: is there a way to get the creation_block & bytecode with a single api call?
+  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getCode
+  const provider = await getProvider();
+  const nocode = await provider.getCode(address, creation_block - 1);
+  if (nocode !== '0x') {
+    throw Error(`Contract was deployed earlier than ${creation_block} (as was claimed)`);
+  }
+  const actual = await provider.getCode(address, creation_block);
+
+  // XXX Why is this (args) and not (...args) ?
+  const deployData = factory.getDeployTransaction(args).data;
+  if (!deployData.startsWith(backend._Connectors.ETH.Bytecode)) {
+    throw Error(`Impossible: contract with args is not prefixed by backend Bytecode`);
+  }
+
+  // FIXME this is based on empirical observation, feels hacky
+  // deployData looks like this: [init][setup][theRest]
+  // actual looks like this:     [init][theRest]
+  // FIXME The "setup" string is not consistent in content, but is consistent in length? Why?
+  const initLen = 13;
+  const setupLen = 156;
+  const expected = deployData.slice(0, initLen) + deployData.slice(initLen + setupLen);
+
+  if (expected.length <= 0) {
+    throw Error(`Impossible: contract expectation is empty`);
+  }
+
+  if (actual !== expected) {
+    // XXX there is a larger chunk missing if deployed w/ args
+    // Not sure how to handle this yet
+    // Run against examples/workshop-hash-lock for args.length > 0
+    // Idea: maybe if we we compile bytecode w/o the first message,
+    // it will be identical to that?
+    if (args.length > 0) {
+      return true;
+    }
+
+    const displayLen = 60;
+    console.log('--------------------------------------------');
+    console.log('expected start: ' + expected.slice(0, displayLen));
+    console.log('actual   start: ' + actual.slice(0, displayLen));
+    console.log('--------------------------------------------');
+    console.log('expected   end: ' + expected.slice(expected.length - displayLen));
+    console.log('actual     end: ' + actual.slice(actual.length - displayLen));
+    console.log('--------------------------------------------');
+    console.log('expected   len: ' + expected.length);
+    console.log('actual     len: ' + actual.length);
+    console.log('--------------------------------------------');
+    throw Error(`Contract bytecode does not match expected bytecode.`);
   }
 };
