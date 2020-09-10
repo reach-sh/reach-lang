@@ -70,6 +70,9 @@ expect_throw src ce =
   error . T.unpack . unsafeRedactAbs . T.pack $
     "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
 
+srcloc_builtin :: SrcLoc
+srcloc_builtin = SrcLoc (Just "<builtin>") Nothing Nothing
+
 srcloc_top :: SrcLoc
 srcloc_top = SrcLoc (Just "<top level>") Nothing Nothing
 
@@ -324,14 +327,31 @@ instance NFData SLPrimitive
 
 type SLSVal = (SecurityLevel, SLVal)
 
-type SLEnv = M.Map SLVar SLSVal
+data SLSSVal = SLSSVal
+  { sss_at :: SrcLoc
+  , sss_level :: SecurityLevel
+  , sss_val :: SLVal
+  }
+  deriving (Eq, Generic, Show)
+
+instance NFData SLSSVal
+
+sss_sls :: SLSSVal -> SLSVal
+sss_sls (SLSSVal _ level val) = (level, val)
+
+sls_sss :: SrcLoc -> SLSVal -> SLSSVal
+sls_sss at (level, val) = SLSSVal at level val
+
+type SLEnv = M.Map SLVar SLSSVal
 
 mt_env :: SLEnv
 mt_env = mempty
 
-m_fromList_public :: [(SLVar, SLVal)] -> SLEnv
-m_fromList_public kvs =
-  M.fromList $ map (\(k, v) -> (k, (Public, v))) kvs
+m_fromList_public :: SrcLoc -> [(SLVar, SLVal)] -> SLEnv
+m_fromList_public at kvs =
+  M.fromList $ map go kvs
+  where
+    go (k, v) = (k, SLSSVal at Public v)
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

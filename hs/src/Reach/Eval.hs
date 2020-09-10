@@ -1,5 +1,6 @@
 module Reach.Eval (EvalError, compileBundle) where
 
+import Control.Arrow (second)
 import Control.Monad
 import Control.Monad.ST
 import Control.Monad.Writer
@@ -354,7 +355,7 @@ data EnvInsertMode
 -- Secret idents must start with _.
 -- Public idents must not start with _.
 -- Special idents "interact" and "__decode_testing__" skip these rules.
-env_insert_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLVar -> SLSVal -> SLEnv -> SLEnv
+env_insert_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
 env_insert_ _ _ "_" _ env = env
 env_insert_ insMode at k v env = case insMode of
   DisallowShadowing ->
@@ -365,18 +366,18 @@ env_insert_ insMode at k v env = case insMode of
   where
     go = case v of
       -- Note: secret ident enforcement is limited to doOnly
-      (Public, _)
+      (SLSSVal _ Public _)
         | not (isSpecialIdent k) && isSecretIdent k ->
           expect_throw at (Err_Eval_NotPublicIdent k)
       _ -> M.insert k v env
 
-env_insert :: HasCallStack => SrcLoc -> SLVar -> SLSVal -> SLEnv -> SLEnv
+env_insert :: HasCallStack => SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
 env_insert = env_insert_ DisallowShadowing
 
-env_insertp_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLEnv -> (SLVar, SLSVal) -> SLEnv
+env_insertp_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
 env_insertp_ imode at = flip (uncurry (env_insert_ imode at))
 
-env_insertp :: HasCallStack => SrcLoc -> SLEnv -> (SLVar, SLSVal) -> SLEnv
+env_insertp :: HasCallStack => SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
 env_insertp = env_insertp_ DisallowShadowing
 
 env_merge_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
@@ -386,7 +387,7 @@ env_merge :: HasCallStack => SrcLoc -> SLEnv -> SLEnv -> SLEnv
 env_merge = env_merge_ DisallowShadowing
 
 -- | The "_" ident may never be looked up.
-env_lookup :: HasCallStack => SrcLoc -> SLVar -> SLEnv -> SLSVal
+env_lookup :: HasCallStack => SrcLoc -> SLVar -> SLEnv -> SLSSVal
 env_lookup at "_" _ = expect_throw at (Err_Eval_LookupUnderscore)
 env_lookup at x env =
   case M.lookup x env of
@@ -394,9 +395,12 @@ env_lookup at x env =
     Nothing ->
       expect_throw at (Err_Eval_UnboundId x $ M.keys env)
 
+m_fromList_public_builtin :: [(SLVar, SLVal)] -> SLEnv
+m_fromList_public_builtin = m_fromList_public srcloc_builtin
+
 base_env :: SLEnv
 base_env =
-  m_fromList_public
+  m_fromList_public_builtin
     [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
     , ("declassify", SLV_Prim SLPrim_declassify)
     , ("commit", SLV_Prim SLPrim_commit)
@@ -432,13 +436,13 @@ base_env =
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ("wait", SLV_Prim SLPrim_wait)
     , ( "Participant"
-      , (SLV_Object srcloc_top (Just $ "Participant") $
-           m_fromList_public
+      , (SLV_Object srcloc_builtin (Just $ "Participant") $
+           m_fromList_public_builtin
              [("set", SLV_Prim SLPrim_part_set)])
       )
     , ( "Reach"
-      , (SLV_Object srcloc_top (Just $ "Reach") $
-           m_fromList_public
+      , (SLV_Object srcloc_builtin (Just $ "Reach") $
+           m_fromList_public_builtin
              [("App", SLV_Form SLForm_App)])
       )
     ]
@@ -663,7 +667,7 @@ binaryToPrim at env o =
     JSBinOpBitXor a -> prim a (BXOR)
     j -> expect_throw at $ Err_Parse_IllegalBinOp j
   where
-    fun a s = snd $ env_lookup (srcloc_jsa "binop" a at) s env
+    fun a s = sss_val $ env_lookup (srcloc_jsa "binop" a at) s env
     prim _a p = SLV_Prim $ SLPrim_op p
 
 unaryToPrim :: SrcLoc -> SLEnv -> JSUnaryOp -> SLVal
@@ -674,7 +678,7 @@ unaryToPrim at env o =
     JSUnaryOpTypeof a -> fun a "typeOf"
     j -> expect_throw at $ Err_Parse_IllegalUnaOp j
   where
-    fun a s = snd $ env_lookup (srcloc_jsa "unop" a at) s env
+    fun a s = sss_val $ env_lookup (srcloc_jsa "unop" a at) s env
 
 infectWithId :: SLVar -> SLSVal -> SLSVal
 infectWithId v (lvl, sv) = (lvl, sv')
@@ -690,7 +694,7 @@ evalDot ctxt at sco st obj field =
   case obj of
     SLV_Object _ _ env ->
       case M.lookup field env of
-        Just v -> retV $ v
+        Just v -> retV $ sss_sls v
         Nothing -> illegal_field (M.keys env)
     SLV_DLVar obj_dv@(DLVar _ _ (T_Obj tm) _) ->
       retDLVar tm (DLA_Var obj_dv) Public
@@ -739,7 +743,7 @@ evalDot ctxt at sco st obj field =
         _ -> illegal_field ["set"]
     SLV_Prim SLPrim_Object ->
       case field of
-        "set" -> retV $ env_lookup at "Object_set" $ sco_env sco
+        "set" -> retV $ sss_sls $ env_lookup at "Object_set" $ sco_env sco
         _ -> illegal_field ["set"]
     v ->
       expect_throw at (Err_Eval_NotObject v)
@@ -769,7 +773,10 @@ evalForm ctxt at sco st f args =
               where
                 --- FIXME I think it would be better for env' to be created in compileDApp rather than here
                 env = sco_env sco
-                env' = foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) env $ zipEq at (Err_Apply_ArgCount at) top_args part_vs
+                env' =
+                  foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) env $
+                    map (second (sls_sss at)) $ -- TODO: double check this srcloc
+                      zipEq at (Err_Apply_ArgCount at) top_args part_vs
                 top_args = parseJSArrowFormals at top_formals
                 part_vs = map make_part parts
                 make_part v =
@@ -1032,7 +1039,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_Object ->
       case map snd sargs of
         [(SLV_Object _ _ objm)] ->
-          retV $ (lvl, SLV_Type $ T_Obj $ M.map (expect_ty . snd) objm)
+          retV $ (lvl, SLV_Type $ T_Obj $ M.map (expect_ty . sss_val) objm)
         _ -> illegal_args
     SLPrim_makeEnum ->
       case map snd sargs of
@@ -1095,7 +1102,11 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_transfer ->
       case map (typeOf at) $ ensure_publics at sargs of
         [(T_UInt256, amt_dla)] ->
-          return $ SLRes mempty st $ public $ SLV_Object at (Just "transfer") $ M.fromList [("to", (Public, SLV_Prim (SLPrim_transfer_amt_to amt_dla)))]
+          return . SLRes mempty st . public $
+            SLV_Object at (Just "transfer") $
+              M.fromList [("to", SLSSVal srcloc_builtin Public transferToPrim)]
+          where
+            transferToPrim = SLV_Prim (SLPrim_transfer_amt_to amt_dla)
         _ -> illegal_args
     SLPrim_transfer_amt_to amt_dla ->
       case st_mode st of
@@ -1171,10 +1182,11 @@ evalApplyVals ctxt at sco st rator randvs =
     SLV_Prim p -> do
       SLRes lifts st' val <- evalPrim ctxt at sco st p randvs
       return $ SLRes lifts st' $ SLAppRes (sco_env sco) val
+    -- TODO: have formals remember their srclocs
     SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_env clo_penvs clo_cenv) -> do
       ret <- ctxt_alloc ctxt at
       let body_at = srcloc_jsa "block" body_a clo_at
-      let arg_env = M.fromList $ zipEq at (Err_Apply_ArgCount clo_at) formals randvs
+      let arg_env = M.fromList $ map (second (sls_sss at)) $ zipEq at (Err_Apply_ArgCount clo_at) formals randvs
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
       let clo_sco =
             (SLScope
@@ -1261,7 +1273,8 @@ evalPropertyPair ctxt at sco st fenv p =
         case vs of
           [e] -> do
             SLRes vlifts st_sv sv <- evalExpr ctxt at' sco st_name e
-            return $ SLRes vlifts st_sv $ (flvl, env_insert_ AllowShadowing at' f sv fenv)
+            let sv' = sls_sss at' sv
+            return $ SLRes vlifts st_sv $ (flvl, env_insert_ AllowShadowing at' f sv' fenv)
           _ -> expect_throw at' (Err_Obj_IllegalFieldValues vs)
     JSPropertyIdentRef a v ->
       evalPropertyPair ctxt at sco st fenv p'
@@ -1282,7 +1295,8 @@ evalPropertyPair ctxt at sco st fenv p =
                   let de = DLE_ObjectRef at (DLA_Var dlv) k
                   let mdv = DLVar at (ctxt_local_name ctxt "obj_ref") t
                   (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
-                  return $ (lifts, M.singleton k $ (slvl, SLV_DLVar dv))
+                  return $ (lifts, M.singleton k $ SLSSVal at slvl $ SLV_DLVar dv) -- TODO: double check this srcloc
+
             -- mconcat over SLEnvs is safe here b/c each is a singleton w/ unique key
             (lifts, env) <- mconcatMap (uncurry mkOneEnv) $ M.toList tenv
             mkRes lifts env
@@ -1296,7 +1310,7 @@ evalExpr ctxt at sco st e = do
   let env = sco_env sco
   case e of
     JSIdentifier a x ->
-      retV $ infectWithId x $ env_lookup (srcloc_jsa "id ref" a at) x env
+      retV $ infectWithId x $ sss_sls $ env_lookup (srcloc_jsa "id ref" a at) x env
     JSDecimal a ns -> retV $ public $ SLV_Int (srcloc_jsa "decimal" a at) $ numberValue 10 ns
     JSLiteral a l ->
       case l of
@@ -1563,8 +1577,9 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks', makeEnv)
                 case kSpreadMay of
                   Nothing -> id
                   Just sn ->
-                    env_insert at' sn (lvl, SLV_Tuple at' after)
-          let kvs = zip ks $ map (\x -> (lvl, x)) before
+                    env_insert at' sn $ SLSSVal at' lvl $ SLV_Tuple at' after -- TODO: double check this srcloc
+          let kvs = zip ks $ map (\x -> SLSSVal at' lvl x) before
+          -- TODO: have ks remember their own srcloc
           return $ foldl' (env_insertp at') (add_spread lhs_env) kvs
 
 -- | const {x, y, ...obj} = ...;
@@ -1621,12 +1636,14 @@ evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
               let mdv = DLVar at' (ctxt_local_name ctxt "obj") spreadTy
               dlv <- ctxt_lift_expr_w ctxt at mdv de
               pure [(spreadName, SLV_DLVar dlv)]
-        let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (lvl, v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
+        let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (SLSSVal at lvl v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
+        -- TODO: ^ double check this srcloc
         return lhs_env''
       SLV_Object _ _ env -> pure lhs_env''
         where
           lhs_env'' = case kSpreadMay of
-            Just spreadName -> env_insert at spreadName (lvl, spreadObj) envWithKs
+            Just spreadName -> env_insert at spreadName (SLSSVal at' lvl spreadObj) envWithKs
+            -- TODO: ^ double check this srcloc
             Nothing -> envWithKs
           envWithKs = foldl' (\lhs_env' k -> env_insert at' k (env_lookup at' k env) lhs_env') lhs_env ks
           envWithoutKs = M.withoutKeys env ksSet
@@ -1642,7 +1659,8 @@ evalDecl ctxt at st lhs_env rhs_sco decl =
             case lhs of
               (JSIdentifier a x) -> ([x], _make_env)
                 where
-                  _make_env v = return (env_insert (srcloc_jsa "id" a at) x v lhs_env)
+                  idAt = srcloc_jsa "id" a at
+                  _make_env v = return (env_insert idAt x (sls_sss idAt v) lhs_env)
               (JSArrayLiteral a xs _) ->
                 evalDeclLHSArray vat' at at' ctxt lhs_env xs
                 where
@@ -1669,11 +1687,10 @@ evalDecls ctxt at st rhs_sco decls =
 
 -- | Make sure all bindings in this SLEnv respect the rule that
 -- private vars must be named with a leading underscore.
-enforcePrivateUnderscore :: forall m. Monad m => SrcLoc -> SLEnv -> m ()
+enforcePrivateUnderscore :: Monad m => SrcLoc -> SLEnv -> m ()
 enforcePrivateUnderscore at = mapM_ enf . M.toList
   where
-    enf :: (SLVar, SLSVal) -> m ()
-    enf (k, (secLev, _)) = case secLev of
+    enf (k, (SLSSVal _ secLev _)) = case secLev of
       Secret
         | not (isSpecialIdent k)
             && not (isSecretIdent k) ->
@@ -1756,8 +1773,9 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                 let mk var = do
                       let val =
                             case env_lookup to_at var penv of
-                              (Public, x) -> x
-                              (Secret, x) ->
+                              (SLSSVal _ Public x) -> x
+                              (SLSSVal _ Secret x) ->
+                                -- TODO: use binding loc in error
                                 expect_throw at $ Err_ExpectedPublic x
                       let (t, da) = typeOf to_at val
                       let m = case da of
@@ -1766,7 +1784,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                       x <- ctxt_alloc ctxt to_at
                       return $ (da, DLVar to_at m t x)
                 tvs <- mapM mk msg
-                return $ (foldl' (env_insertp at) mempty $ zip msg $ map (public . SLV_DLVar) $ map snd tvs, tvs)
+                return $ (foldl' (env_insertp at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ map snd tvs, tvs)
+          -- TODO: ^ double check this srcloc
           --- We go back to the original env from before the to-consensus step
           (pdvs', fs) <-
             case M.lookup who pdvs of
@@ -1782,8 +1801,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                   Nothing -> \x -> x
                   Just whov ->
                     case env_lookup to_at whov env of
-                      (lvl_, SLV_Participant at_ who_ io_ as_ _) ->
-                        M.insert whov (lvl_, SLV_Participant at_ who_ io_ as_ (Just $ (pdvs' M.! who)))
+                      (SLSSVal idAt lvl_ (SLV_Participant at_ who_ io_ as_ _)) ->
+                        M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ io_ as_ (Just $ (pdvs' M.! who))))
                       _ ->
                         impossible $ "participant is not participant"
           --- NOTE we don't use sco_update, because we have to treat the publish specially
@@ -2018,7 +2037,7 @@ evalStmt ctxt at sco st ss =
                                   Nothing ->
                                     expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
                                   Just x -> x
-                                val = ensure_public var_at sv
+                                val = ensure_public var_at $ sss_sls sv
                                 da = checkType at et val
                                 DLVar _ _ et _ = dv
               let lifts' = decl_lifts <> (return $ DLS_Continue cont_at cont_das)
@@ -2070,12 +2089,13 @@ evalStmt ctxt at sco st ss =
                 let st_var' = stEnsureMode at SLM_ConsensusStep st_var
                 let st_pure = st_var' {st_mode = SLM_ConsensusPure}
                 let while_help v sv = do
-                      let (_, val) = sv
+                      let (SLSSVal _ _ val) = sv
                       vn <- ctxt_alloc ctxt var_at
                       let (t, da) = typeOf var_at val
                       return $ (DLVar var_at v t vn, da)
                 while_helpm <- M.traverseWithKey while_help vars_env
-                let unknown_var_env = M.map (public . SLV_DLVar . fst) while_helpm
+                let unknown_var_env = M.map (sls_sss var_at . public . SLV_DLVar . fst) while_helpm
+                -- TODO: ^ double check this srcloc
                 let sco_env' = sco_update ctxt at sco st_var' unknown_var_env
                 SLRes inv_lifts _ inv_da <-
                   case jscl_flatten invariant_args of
@@ -2171,7 +2191,7 @@ evalImportClause :: SrcLoc -> SLEnv -> JSImportClause -> SLEnv
 evalImportClause at env im =
   case im of
     JSImportClauseNameSpace (JSImportNameSpace _ _ ji) ->
-      M.singleton ns $ (Public, SLV_Object at' (Just $ "module " <> ns) env)
+      M.singleton ns $ (SLSSVal at' Public $ SLV_Object at' (Just $ "module " <> ns) env)
       where
         (at', ns) = parseIdent at ji
     JSImportClauseNamed (JSImportsNamed _ iscl _) ->
@@ -2297,10 +2317,11 @@ makeInteract at who spec = SLV_Object at lab spec'
   where
     lab = Just $ (bunpack who) <> "'s interaction interface"
     spec' = M.mapWithKey wrap_ty spec
-    wrap_ty k (Public, (SLV_Type t)) = case isFirstOrder t of
-      True -> secret $ SLV_Prim $ SLPrim_interact at who k t
+    wrap_ty k (SLSSVal idAt Public (SLV_Type t)) = case isFirstOrder t of
+      True -> sls_sss idAt $ secret $ SLV_Prim $ SLPrim_interact at who k t
       False -> expect_throw at $ Err_App_Interact_NotFirstOrder t
-    wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract v
+    -- TODO: add idAt info to the err below?
+    wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract $ sss_sls v
 
 app_default_opts :: DLOpts
 app_default_opts =
@@ -2324,7 +2345,7 @@ compileDApp :: STCounter s -> DLStmts -> SLVal -> ST s DLProg
 compileDApp idxr liblifts topv =
   case topv of
     SLV_Prim (SLPrim_App_Delay at opts partvs (JSBlock _ top_ss _) top_env top_env_wps) -> do
-      let dlo = M.foldrWithKey use_opt app_default_opts (M.map snd opts)
+      let dlo = M.foldrWithKey use_opt app_default_opts (M.map sss_val opts)
             where
               use_opt k v acc =
                 case M.lookup k app_options of
@@ -2367,12 +2388,12 @@ compileDApp idxr liblifts topv =
         make_sps_entry (Public, (SLV_Participant _ pn (SLV_Object _ _ io) _ _)) =
           (pn, InteractEnv $ M.map getType io)
           where
-            getType (_, (SLV_Prim (SLPrim_interact _ _ _ t))) = t
+            getType (SLSSVal _ _ (SLV_Prim (SLPrim_interact _ _ _ t))) = t
             getType x = impossible $ "make_sps_entry getType " ++ show x
         make_sps_entry x = impossible $ "make_sps_entry " ++ show x
         penvs = M.fromList $ map make_penv partvs
         make_penv (Public, (SLV_Participant _ pn io _ _)) =
-          (pn, env_insert at' "interact" (secret io) top_env)
+          (pn, env_insert at' "interact" (sls_sss at' $ secret io) top_env) -- TODO: double check this srcloc
         make_penv _ = impossible "SLPrim_App_Delay make_penv"
     _ ->
       expect_throw srcloc_top (Err_Top_NotApp topv)
@@ -2383,7 +2404,7 @@ compileBundleST (JSBundle mods) top = do
   (liblifts, libm) <- evalLibs idxr mods
   let exe_ex = libm M.! exe
   let topv = case M.lookup top exe_ex of
-        Just (Public, x) -> x
+        Just (SLSSVal _ Public x) -> x
         Just _ ->
           impossible "private before dapp"
         Nothing ->

@@ -26,6 +26,10 @@ instance Pretty SecurityLevel where
     Public -> "public"
     Secret -> "secret"
 
+instance Pretty SLSSVal where
+  pretty (SLSSVal _ level val) = pretty (level, val) -- <> "@" <> pretty at
+  -- TODO: incorporate srcloc in pretty?
+
 instance Pretty SLVal where
   pretty = \case
     SLV_Null {} -> "null"
