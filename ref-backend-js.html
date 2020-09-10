@@ -22,7 +22,7 @@ that might help you write code that is portable to multiple consensus networks.<
 to its full, canonical name. The canonical connector modes are:</p><p><div class="highlight"><pre><span></span><span class="s1">&#39;ETH-test-dockerized-geth&#39;</span>   <span class="c1">// Default for ETH, ETH-test, and ETH-test-dockerized</span>
 <span class="s1">&#39;ETH-test-embedded-ganache&#39;</span>  <span class="c1">// Default for ETH-test-embedded</span>
 <span class="s1">&#39;FAKE-test-embedded-mock&#39;</span>    <span class="c1">// Default for FAKE, FAKE-test, and FAKE-test-embedded</span>
-<span class="s1">&#39;ALGO-test-dockerized-goal&#39;</span>  <span class="c1">// Default for ALGO, ALGO-test, and ALGO-test-dockerized</span>
+<span class="s1">&#39;ALGO-test-dockerized-algod&#39;</span> <span class="c1">// Default for ALGO, ALGO-test, and ALGO-test-dockerized</span>
 </pre></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p><div class="highlight"><pre><span></span><a name="(javascript._((get.Connector.Mode)))"></a><a name="(idx._(gentag._124))"></a><span class="nx">getConnectorMode</span><span class="p">()</span> <span class="p">=&gt;</span> <font class="badlink"><span class="nx">string</span></font>
 </pre></div></p><p>Returns the canonicalized connector mode, based on the
 <code class="highlight"><font class="badlink"><span class="nx">process</span></font><span class="p">.</span><font class="badlink"><span class="nx">env</span></font><span class="p">.</span><font class="badlink"><span class="nx">REACH_CONNECTOR_MODE</span></font></code> environment variable.
