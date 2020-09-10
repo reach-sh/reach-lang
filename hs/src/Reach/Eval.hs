@@ -86,7 +86,7 @@ data EvalError
   | Err_Obj_IllegalNumberField JSPropertyName
   | Err_Obj_SpreadNotObj SLVal
   | Err_Prim_InvalidArgs SLPrimitive [SLVal]
-  | Err_Shadowed SLVar
+  | Err_Shadowed SLVar SLSSVal SLSSVal -- var, alreadyBound, new (invalid)
   | Err_TailNotEmpty [JSStatement]
   | Err_ToConsensus_Double ToConsensusMode
   | Err_TopFun_NoName
@@ -270,9 +270,11 @@ instance Show EvalError where
         <> "]"
       where
         displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
-    Err_Shadowed n ->
+    Err_Shadowed n (SLSSVal at0 _ _) (SLSSVal at _ _) ->
       -- FIXME tell the srcloc of the original binding
-      "Invalid name shadowing. Cannot be rebound: " <> n
+      "Invalid name shadowing"
+        <> (". Identifier '" <> n <> "' is already bound at " <> show at0)
+        <> (". It cannot be bound again at " <> show at)
     Err_TailNotEmpty stmts ->
       "Invalid statement block. Expected empty tail, but found " <> found
       where
@@ -361,7 +363,7 @@ env_insert_ insMode at k v env = case insMode of
   DisallowShadowing ->
     case M.lookup k env of
       Nothing -> go
-      Just _ -> expect_throw at (Err_Shadowed k)
+      Just v0 -> expect_throw at (Err_Shadowed k v0 v)
   AllowShadowing -> go
   where
     go = case v of
