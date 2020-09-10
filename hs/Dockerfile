@@ -22,7 +22,7 @@ RUN mv "$(stack path --local-install-root --system-ghc)/bin" /build/bin/
 FROM ethereum/solc:0.7.0 as solc
 
 FROM alpine:3 as dl-deps
-RUN apk add wget=1.20.3-r1 unzip=1.31.1-r16 --no-cache
+RUN apk add wget=1.20.3-r1 unzip=6.0-r7 --no-cache
 WORKDIR /z3
 ENV Z3_VER 4.8.8
 RUN wget https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-x64-ubuntu-16.04.zip
