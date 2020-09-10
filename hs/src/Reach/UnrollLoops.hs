@@ -157,8 +157,8 @@ llReplace :: (LLCommon a -> a) -> LLCommon a -> LLCommon LLLocal -> LLCommon a
 llReplace mkk nk = \case
   LL_Return {} -> nk
   LL_Let at mdv e k -> LL_Let at mdv e $ iter k
-  LL_ArrayMap at ans x a sa f r k -> LL_ArrayMap at ans x a sa f r $ iter k
-  LL_ArrayReduce at ans x z b a sa f r k -> LL_ArrayReduce at ans x z b a sa f r $ iter k
+  LL_ArrayMap at ans x a f r k -> LL_ArrayMap at ans x a f r $ iter k
+  LL_ArrayReduce at ans x z b a f r k -> LL_ArrayReduce at ans x z b a f r $ iter k
   LL_Var at x k -> LL_Var at x $ iter k
   LL_Set at x v k -> LL_Set at x v $ iter k
   LL_LocalIf at c t f k -> LL_LocalIf at c t f $ iter k
@@ -186,10 +186,10 @@ ul_m mkk ul_k = \case
     (pure mkk) <*> ((pure $ LL_Set at) <*> ul_v v <*> ul_a a <*> ul_k k)
   LL_LocalIf at c t f k ->
     (pure mkk) <*> ((pure $ LL_LocalIf at) <*> ul_a c <*> ul_l t <*> ul_l f <*> ul_k k)
-  LL_ArrayMap at ans x0 a _ f r k -> do
+  LL_ArrayMap at ans x0 a f r k -> do
     recordUnroll
-    x <- ul_v x0
-    (xlifts, (_, x')) <- collectLifts $ ul_explode at (DLA_Var x)
+    x <- ul_a x0
+    (xlifts, (_, x')) <- collectLifts $ ul_explode at x
     let r_ty = argTypeOf r
     let f' a_a = freshRenaming $ do
           a' <- ul_v_rn a
@@ -200,10 +200,10 @@ ul_m mkk ul_k = \case
     k' <- ul_k k
     let m' = llSeqn mkk fs (LL_Let at (Just ans') (DLE_Arg at $ DLA_Array r_ty r') k')
     return $ addLifts mkk m' (xlifts <> lifts)
-  LL_ArrayReduce at ans x0 z b a _ f r k -> do
+  LL_ArrayReduce at ans x0 z b a f r k -> do
     recordUnroll
-    x <- ul_v x0
-    (xlifts, (_, x')) <- collectLifts $ ul_explode at (DLA_Var x)
+    x <- ul_a x0
+    (xlifts, (_, x')) <- collectLifts $ ul_explode at x
     z' <- ul_a z
     let f' (fs, b_a) a_a = freshRenaming $ do
           b' <- ul_v_rn b

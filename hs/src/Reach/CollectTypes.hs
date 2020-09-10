@@ -75,8 +75,8 @@ instance CollectsTypes FromSpec where
 instance CollectsTypes a => CollectsTypes (LLCommon a) where
   cts (LL_Return _) = mempty
   cts (LL_Let _ v e k) = cts v <> cts e <> cts k
-  cts (LL_ArrayMap _ ans x a _ f r k) = cts ans <> cts x <> cts a <> cts f <> cts r <> cts k
-  cts (LL_ArrayReduce _ ans x z b a _ f r k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts r <> cts k
+  cts (LL_ArrayMap _ ans x a f r k) = cts ans <> cts x <> cts a <> cts f <> cts r <> cts k
+  cts (LL_ArrayReduce _ ans x z b a f r k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts r <> cts k
   cts (LL_Var _ v k) = cts v <> cts k
   cts (LL_Set _ v a k) = cts v <> cts a <> cts k
   cts (LL_LocalIf _ a t f k) = cts a <> cts t <> cts f <> cts k

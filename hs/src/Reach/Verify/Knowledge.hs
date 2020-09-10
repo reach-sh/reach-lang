@@ -181,14 +181,14 @@ kgq_m iter ctxt = \case
   LL_Let _ mdv de k ->
     kgq_e ctxt mdv de >>
     iter ctxt k
-  LL_ArrayMap _ ans x a _ f r k ->
-    kgq_v_only ctxt a x >>
+  LL_ArrayMap _ ans x a f r k ->
+    kgq_a_only ctxt a x >>
     kgq_a_only ctxt ans r >>
     kgq_l ctxt f >>
     iter ctxt k
-  LL_ArrayReduce _ ans x z b a _ f r k ->
+  LL_ArrayReduce _ ans x z b a f r k ->
     kgq_a_only ctxt b z >>
-    kgq_v_only ctxt a x >>
+    kgq_a_only ctxt a x >>
     kgq_a_only ctxt ans r >>
     kgq_l ctxt f >>
     iter ctxt k

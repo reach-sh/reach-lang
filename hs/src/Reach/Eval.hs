@@ -1035,34 +1035,34 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_array_map -> do
       let (x, f) = two_args
-      let (xt, _) = typeOf at x
+      let (xt, x_da) = typeOf at x
       case xt of
         T_Array x_ty x_sz -> do
           let f' a = evalApplyVals ctxt at sco st f [(lvl, a)]
           (a_dv, a_dsv) <- make_dlvar "map in" x_ty
           SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' a_dsv
           let (f_ty, f_da) = typeOf at f_v
-          --- XXX if not local, then unroll
-          case x of
-            SLV_Array _ _ x_vs -> do
+          let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
+          case shouldUnroll of
+            True -> do
+              (lifts', x_vs) <- explodeTupleLike ctxt at "map" x
               let evalem (prev_lifts, prev_vs) xv = do
                     SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' xv
                     --- Note: We are artificially restricting maps to
                     --- be parameteric in the state.
                     return $ stMerge at f_st xv_st `seq`
                       ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
-              (lifts', vs') <- foldM evalem (mempty, []) x_vs
-              return $ SLRes lifts' f_st (f_lvl, SLV_Array at f_ty vs')
-            SLV_DLVar x_dv -> do
+              (lifts'', vs') <- foldM evalem (mempty, []) x_vs
+              return $ SLRes (lifts' <> lifts'') f_st (f_lvl, SLV_Array at f_ty vs')
+            False -> do
               let t = T_Array f_ty x_sz
               (ans_dv, ans_dsv) <- make_dlvar "array_map" t
-              let lifts' = return $ DLS_ArrayMap at ans_dv x_dv a_dv (mkAnnot f_lifts) f_lifts f_da
+              let lifts' = return $ DLS_ArrayMap at ans_dv x_da a_dv f_lifts f_da
               return $ SLRes lifts' st (lvl, ans_dsv)
-            _ -> impossible "not array"
         _ -> illegal_args
     SLPrim_array_reduce -> do
       let (x, z, f) = three_args
-      let (xt, _) = typeOf at x
+      let (xt, x_da) = typeOf at x
       case xt of
         T_Array x_ty _ -> do
           let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
@@ -1070,10 +1070,11 @@ evalPrim ctxt at sco st p sargs =
           (b_dv, b_dsv) <- make_dlvar "reduce acc" z_ty
           (a_dv, a_dsv) <- make_dlvar "reduce in" x_ty
           SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
-          --- XXX if not local, then unroll
           let (f_ty, f_da) = typeOf at f_v
-          case x of
-            SLV_Array _ _ x_vs -> do
+          let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
+          case shouldUnroll of
+            True -> do
+              (lifts', x_vs) <- explodeTupleLike ctxt at "reduce" x
               let evalem (prev_lifts, prev_z) xv = do
                     SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' prev_z xv
                     --- Note: We are artificially restricting reduce
@@ -1083,13 +1084,12 @@ evalPrim ctxt at sco st p sargs =
                     return $ stMerge at f_st xv_st `seq`
                       checkType at f_ty xv_v' `seq`
                       ((prev_lifts <> xv_lifts), xv_v')
-              (lifts', z') <- foldM evalem (mempty, z) x_vs
-              return $ SLRes lifts' f_st (f_lvl, z')
-            SLV_DLVar x_dv -> do
+              (lifts'', z') <- foldM evalem (mempty, z) x_vs
+              return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
+            False -> do
               (ans_dv, ans_dsv) <- make_dlvar "array_reduce" f_ty
-              let lifts' = return $ DLS_ArrayReduce at ans_dv x_dv z_da b_dv a_dv (mkAnnot f_lifts) f_lifts f_da
+              let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_lifts f_da
               return $ SLRes lifts' st (lvl, ans_dsv)
-            _ -> impossible "not array"
         _ -> illegal_args
     SLPrim_array_set ->
       case map snd sargs of

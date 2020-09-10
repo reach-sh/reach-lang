@@ -225,6 +225,10 @@ data SLVal
   | SLV_Form SLForm
   deriving (Eq, Generic, Show)
 
+isLiteralArray :: SLVal -> Bool
+isLiteralArray (SLV_Array {}) = True
+isLiteralArray _ = False
+
 instance NFData SLVal
 
 data ToConsensusMode
@@ -539,8 +543,8 @@ instance NFData FromSpec
 
 data DLStmt
   = DLS_Let SrcLoc (Maybe DLVar) DLExpr
-  | DLS_ArrayMap SrcLoc DLVar DLVar DLVar StmtAnnot DLStmts DLArg
-  | DLS_ArrayReduce SrcLoc DLVar DLVar DLArg DLVar DLVar StmtAnnot DLStmts DLArg
+  | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLStmts DLArg
+  | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLStmts DLArg
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
@@ -572,8 +576,8 @@ instance NFData DLStmt
 instance IsPure DLStmt where
   isPure = \case
     DLS_Let _ _ e -> isPure e
-    DLS_ArrayMap _ _ _ _ ba _ _ -> isPure ba
-    DLS_ArrayReduce _ _ _ _ _ _ ba _ _ -> isPure ba
+    DLS_ArrayMap {} -> True
+    DLS_ArrayReduce {} -> True
     DLS_If _ _ a _ _ -> isPure a
     DLS_Return {} -> False
     DLS_Prompt _ _ ss -> isPure ss
@@ -587,8 +591,8 @@ instance IsPure DLStmt where
 instance IsLocal DLStmt where
   isLocal = \case
     DLS_Let _ _ e -> isLocal e
-    DLS_ArrayMap _ _ _ _ ba _ _ -> isLocal ba
-    DLS_ArrayReduce _ _ _ _ _ _ ba _ _ -> isLocal ba
+    DLS_ArrayMap {} -> True
+    DLS_ArrayReduce {} -> True
     DLS_If _ _ a _ _ -> isLocal a
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> isLocal ss
@@ -622,8 +626,8 @@ instance NFData DLProg
 data LLCommon a
   = LL_Return SrcLoc
   | LL_Let SrcLoc (Maybe DLVar) DLExpr a
-  | LL_ArrayMap SrcLoc DLVar DLVar DLVar StmtAnnot LLLocal DLArg a
-  | LL_ArrayReduce SrcLoc DLVar DLVar DLArg DLVar DLVar StmtAnnot LLLocal DLArg a
+  | LL_ArrayMap SrcLoc DLVar DLArg DLVar LLLocal DLArg a
+  | LL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar LLLocal DLArg a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_LocalIf SrcLoc DLArg LLLocal LLLocal a

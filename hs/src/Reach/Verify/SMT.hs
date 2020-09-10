@@ -503,7 +503,9 @@ smt_e ctxt at_dv mdv de =
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
         val_da' = smt_a ctxt at val_da
-    DLE_ArrayConcat {} -> impossible "array_concat"
+    DLE_ArrayConcat {} ->
+      --- FIXME: This might be possible to do by generating a function
+      impossible "array_concat"
     DLE_TupleRef at arr_da i ->
       pathAddBound ctxt at_dv mdv bo se
       where
@@ -576,8 +578,12 @@ smt_m iter ctxt m =
       where
         var_m =
           pathAddUnbound ctxt at (Just dv) O_Var
-    LL_ArrayMap {} -> impossible "array_map"
-    LL_ArrayReduce {} -> impossible "array_reduce"
+    LL_ArrayMap {} ->
+      --- FIXME: It might be possible to do this in Z3 by generating a function
+      impossible "array_map"
+    LL_ArrayReduce {} ->
+      --- NOTE: I don't think this is possible
+      impossible "array_reduce"
     LL_Set at dv va k -> set_m <> iter ctxt k
       where
         set_m =

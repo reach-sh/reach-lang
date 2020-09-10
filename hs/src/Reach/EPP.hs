@@ -95,9 +95,9 @@ epp_m done _back skip look c =
                       Count Nothing -> maybe_skip [dv]
                       Count (Just lc) ->
                         back' (cs' [dv]) (PL_Let at lc dv de k'))
-    LL_ArrayMap _XXX_at _XXX_ans _XXX_x _XXX_a _XXX_sa _XXX_f _XXX_r _XXX_k ->
+    LL_ArrayMap _XXX_at _XXX_ans _XXX_x _XXX_a _XXX_f _XXX_r _XXX_k ->
       error "XXX"
-    LL_ArrayReduce _XXX_at _XXX_ans _XXX_x _XXX_z _XXX_b _XXX_a _XXX_sa _XXX_f _XXX_r _XXX_k ->
+    LL_ArrayReduce _XXX_at _XXX_ans _XXX_x _XXX_z _XXX_b _XXX_a _XXX_f _XXX_r _XXX_k ->
       error "XXX"
     LL_Var at dv k ->
       look

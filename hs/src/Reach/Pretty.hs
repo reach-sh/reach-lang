@@ -134,11 +134,11 @@ prettyTransfer who da =
 prettyStop :: Doc a
 prettyStop = "exit" <> parens (emptyDoc) <> semi
 
-prettyMap :: Pretty a => DLVar -> DLVar -> DLVar -> a -> DLArg -> Doc ann
+prettyMap :: Pretty a => DLVar -> DLArg -> DLVar -> a -> DLArg -> Doc ann
 prettyMap ans x a f r = "map" <+> pretty ans <+> "=" <+> "for" <+> parens ( pretty a <+> "in" <+> pretty x ) <+>
   braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
 
-prettyReduce :: Pretty a => DLVar -> DLVar -> DLArg -> DLVar -> DLVar -> a -> DLArg -> Doc ann
+prettyReduce :: Pretty a => DLVar -> DLArg -> DLArg -> DLVar -> DLVar -> a -> DLArg -> Doc ann
 prettyReduce ans x z b a f r = "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens ( pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x ) <+>
   braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
 
@@ -158,8 +158,8 @@ instance Pretty DLStmt where
             "const" <+> pretty v <+> "=" <+> pretty e <> semi
           Nothing ->
             pretty e <> semi
-      DLS_ArrayMap _ ans x a _ f r -> prettyMap ans x a f r
-      DLS_ArrayReduce _ ans x z b a _ f r -> prettyReduce ans x z b a f r
+      DLS_ArrayMap _ ans x a f r -> prettyMap ans x a f r
+      DLS_ArrayReduce _ ans x z b a f r -> prettyReduce ans x z b a f r
       DLS_If _ ca _ ts fs ->
         prettyIf ca (render_dls ts) (render_dls fs)
       DLS_Return _ ret sv ->
@@ -226,8 +226,8 @@ instance Pretty a => Pretty (LLCommon a) where
         "const" <+> pretty dv <+> "=" <+> pretty de <> semi
           <> hardline
           <> pretty k
-      LL_ArrayMap _ ans x a _ f r k -> prettyMap ans x a f r <> hardline <> pretty k
-      LL_ArrayReduce _ ans x z b a _ f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
+      LL_ArrayMap _ ans x a f r k -> prettyMap ans x a f r <> hardline <> pretty k
+      LL_ArrayReduce _ ans x z b a f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
       LL_Var _at dv k ->
         "let" <+> pretty dv <> semi <> hardline <> pretty k
       LL_Set _at dv da k ->

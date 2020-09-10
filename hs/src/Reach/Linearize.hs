@@ -12,11 +12,11 @@ lin_com :: String -> (SrcLoc -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> 
 lin_com who back mkk rets s ks =
   case s of
     DLS_Let at dv de -> mkk $ LL_Let at dv de $ back at rets ks
-    DLS_ArrayMap at ans x a sa f r | isLocal sa ->
-      mkk $ LL_ArrayMap at ans x a sa f' r $ back at rets ks
+    DLS_ArrayMap at ans x a f r ->
+      mkk $ LL_ArrayMap at ans x a f' r $ back at rets ks
       where f' = lin_local at f
-    DLS_ArrayReduce at ans x z b a sa f r | isLocal sa -> 
-      mkk $ LL_ArrayReduce at ans x z b a sa f' r $ back at rets ks
+    DLS_ArrayReduce at ans x z b a f r -> 
+      mkk $ LL_ArrayReduce at ans x z b a f' r $ back at rets ks
       where f' = lin_local at f
     DLS_If at ca _ ts fs | isLocal s ->
       mkk $ LL_LocalIf at ca t' f' $ back at rets ks
@@ -34,10 +34,6 @@ lin_com who back mkk rets s ks =
       mkk $ LL_Var at dv $ back at rets' (ss <> ks)
       where
         rets' = M.insert ret dv rets
-    DLS_ArrayMap {} ->
-      impossible $ who ++ " cannot non-local map"
-    DLS_ArrayReduce {} ->
-      impossible $ who ++ " cannot non-local reduce"
     DLS_If {} ->
       impossible $ who ++ " cannot non-local if"
     DLS_Stop {} ->
