@@ -721,12 +721,12 @@ evalDot ctxt at sco st obj field =
     SLV_Tuple _ _ ->
       case field of
         "set" -> delayCall SLPrim_tuple_set
-        "length" -> delayCall SLPrim_tuple_length
+        "length" -> doCall SLPrim_tuple_length
         _ -> illegal_field ["set", "length"]
     SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
       case field of
         "set" -> delayCall SLPrim_tuple_set
-        "length" -> delayCall SLPrim_tuple_length
+        "length" -> doCall SLPrim_tuple_length
         _ -> illegal_field ["set", "length"]
     SLV_Prim SLPrim_Tuple ->
       case field of
@@ -737,7 +737,7 @@ evalDot ctxt at sco st obj field =
     SLV_Array _ _ _ ->
       case field of
         "set" -> delayCall SLPrim_array_set
-        "length" -> delayCall SLPrim_array_length
+        "length" -> doCall SLPrim_array_length
         "concat" -> delayCall SLPrim_array_concat
         "map" -> delayCall SLPrim_array_map
         "reduce" -> delayCall SLPrim_array_reduce
@@ -745,7 +745,7 @@ evalDot ctxt at sco st obj field =
     SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
       case field of
         "set" -> delayCall SLPrim_array_set
-        "length" -> delayCall SLPrim_array_length
+        "length" -> doCall SLPrim_array_length
         "concat" -> delayCall SLPrim_array_concat
         "map" -> delayCall SLPrim_array_map
         "reduce" -> delayCall SLPrim_array_reduce
@@ -768,6 +768,9 @@ evalDot ctxt at sco st obj field =
       expect_throw at (Err_Eval_NotObject v)
   where
     delayCall p = retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)]
+    doCall p = do
+      SLRes lifts st' (SLAppRes _ v) <- evalApplyVals ctxt at sco st (SLV_Prim p) [(public obj)]
+      return $ SLRes lifts st' v
     retDLVar tm obj_dla slvl =
       case M.lookup field tm of
         Nothing -> illegal_field (M.keys tm)
@@ -926,18 +929,22 @@ evalPrimOp ctxt at _sco st p sargs =
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "prim") rng) (DLE_PrimOp at p dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
 
-explodeTupleLike :: SLCtxt s -> SrcLoc -> String -> DLVar -> ST s (DLStmts, [SLVal])
-explodeTupleLike ctxt at lab tupdv@(DLVar _ _ tupt _) =
-  case tupt of
-    T_Tuple tuptys -> do
-      mconcatMap (uncurry (flip (mkdv DLE_TupleRef))) $ zip [0 ..] tuptys
-    T_Array t sz -> do
+explodeTupleLike :: SLCtxt s -> SrcLoc -> String -> SLVal -> ST s (DLStmts, [SLVal])
+explodeTupleLike ctxt at lab tuplv =
+  case tuplv of
+    SLV_Tuple _ vs ->
+      return (mempty, vs)
+    SLV_Array _ _ vs ->
+      return (mempty, vs)
+    SLV_DLVar tupdv@(DLVar _ _ (T_Tuple tuptys) _) ->
+      mconcatMap (uncurry (flip (mkdv tupdv DLE_TupleRef))) $ zip [0 ..] tuptys
+    SLV_DLVar tupdv@(DLVar _ _ (T_Array t sz) _) -> do
       let mkde _ da i = DLE_ArrayRef at (ctxt_stack ctxt) da sz (DLA_Con $ DLC_Int i)
-      mconcatMap (mkdv mkde t) [0 .. sz -1]
+      mconcatMap (mkdv tupdv mkde t) [0 .. sz -1]
     _ ->
-      expect_throw at $ Err_Eval_NotSpreadable (SLV_DLVar tupdv)
+      expect_throw at $ Err_Eval_NotSpreadable tuplv
   where
-    mkdv mkde t i = do
+    mkdv tupdv mkde t i = do
       let de = mkde at (DLA_Var tupdv) i
       let mdv = DLVar at (ctxt_local_name ctxt lab) t
       (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
@@ -1128,18 +1135,11 @@ evalPrim ctxt at sco st p sargs =
       retV $ (lvl, SLV_Type $ T_Tuple $ map expect_ty $ map snd sargs)
     SLPrim_tuple_set ->
       case map snd sargs of
-        [tup, (SLV_Int _ idxi), val] ->
-          case tup of
-            SLV_Tuple _ tupvs ->
-              retV $ check_idxi tupvs $ (lvl, SLV_Tuple at $ zipWith go [0 ..] tupvs)
-              where
-                go i v = if idxi == i then val else v
-            SLV_DLVar tupdv -> do
-              (lifts, tupvs) <- explodeTupleLike ctxt at "tuple_set" tupdv
-              let go i v = if idxi == i then val else v
-              let tupvs' = zipWith go [0 ..] tupvs
-              return $ check_idxi tupvs $ SLRes lifts st $ (lvl, SLV_Tuple at tupvs')
-            _ -> illegal_args
+        [tup, (SLV_Int _ idxi), val] -> do
+          (lifts, tupvs) <- explodeTupleLike ctxt at "tuple_set" tup
+          let go i v = if idxi == i then val else v
+          let tupvs' = zipWith go [0 ..] tupvs
+          return $ check_idxi tupvs $ SLRes lifts st $ (lvl, SLV_Tuple at tupvs')
           where
             check_idxi l r =
               if idxi < fromIntegral len then r else expect_throw at $ Err_Eval_RefOutOfBounds len idxi
@@ -1637,15 +1637,8 @@ evalExprs ctxt at sco st rands =
             let at' = srcloc_jsa "spread" a at
             SLRes l0 s0 (lvl, v0) <- evalExpr ctxt at' sco st rand0
             let addlvl v = (lvl, v)
-            let ret vs = return $ SLRes l0 s0 $ map addlvl vs
-            case v0 of
-              SLV_Array _ _ vs -> ret vs
-              SLV_Tuple _ vs -> ret vs
-              SLV_DLVar dv -> do
-                (lifts, vs) <- explodeTupleLike ctxt at' "spread" dv
-                return $ SLRes (l0 <> lifts) s0 $ map addlvl vs
-              _ ->
-                expect_throw at' $ Err_Eval_NotSpreadable v0
+            (lifts, vs) <- explodeTupleLike ctxt at' "spread" v0
+            return $ SLRes (l0 <> lifts) s0 $ map addlvl vs
           rand0 -> do
             SLRes l0 s0 v0 <- evalExpr ctxt at sco st rand0
             return $ SLRes l0 s0 [v0]

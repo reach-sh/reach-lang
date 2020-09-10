@@ -2,7 +2,7 @@
 
 export const main = Reach.App(
   {},
-  [['A', { get: Fun([],Tuple(UInt256, Bool, UInt256)),
+  [['A', { get: Fun([], Tuple(UInt256, Bool, UInt256)),
            put: Fun([UInt256, Bool, Tuple(UInt256)], Null) }]],
   (A) => {
     const [ t, ...foo ] = [ 0 ];

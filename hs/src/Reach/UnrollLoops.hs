@@ -17,16 +17,23 @@ type App s = ReaderT (Env s) (ST s)
 type Lifts = Seq.Seq (SrcLoc, DLVar, DLExpr)
 
 data Env s = Env
-  { eCounter :: STCounter s
+  { eDidUnroll :: STRef s Bool
+  , eCounter :: STCounter s
   , eRenaming :: STRef s (M.Map Int Int)
   , emLifts :: Maybe (STRef s Lifts) }
 
 mkEnv0 :: ST s (Env s)
 mkEnv0 = do
+  eDidUnroll <- newSTRef False
   eCounter <- newSTCounter 0
   eRenaming <- newSTRef mempty
   let emLifts = Nothing
   return $ Env {..}
+
+recordUnroll :: App s ()
+recordUnroll = do
+  Env {..} <- ask
+  lift $ writeSTRef eDidUnroll True
 
 allocIdx :: App s Int
 allocIdx = do
@@ -119,6 +126,7 @@ ul_e = \case
   DLE_ArrayRef at fs a sz i -> (pure $ DLE_ArrayRef at fs) <*> ul_a a <*> pure sz <*> ul_a i
   DLE_ArraySet at fs a sz i v -> (pure $ DLE_ArraySet at fs) <*> ul_a a <*> pure sz <*> ul_a i <*> ul_a v
   DLE_ArrayConcat at x0 y0 -> do
+    recordUnroll
     x <- ul_a x0
     y <- ul_a y0
     (x_ty, x') <- ul_explode at x
@@ -179,6 +187,7 @@ ul_m mkk ul_k = \case
   LL_LocalIf at c t f k ->
     (pure mkk) <*> ((pure $ LL_LocalIf at) <*> ul_a c <*> ul_l t <*> ul_l f <*> ul_k k)
   LL_ArrayMap at ans x0 a _ f r k -> do
+    recordUnroll
     x <- ul_v x0
     (xlifts, (_, x')) <- collectLifts $ ul_explode at (DLA_Var x)
     let r_ty = argTypeOf r
@@ -192,6 +201,7 @@ ul_m mkk ul_k = \case
     let m' = llSeqn mkk fs (LL_Let at (Just ans') (DLE_Arg at $ DLA_Array r_ty r') k')
     return $ addLifts mkk m' (xlifts <> lifts)
   LL_ArrayReduce at ans x0 z b a _ f r k -> do
+    recordUnroll
     x <- ul_v x0
     (xlifts, (_, x')) <- collectLifts $ ul_explode at (DLA_Var x)
     z' <- ul_a z
@@ -259,4 +269,12 @@ ul_p (LLProg at opts ps s) = do
 unrollLoops :: LLProg -> LLProg
 unrollLoops lp = runST $ do
   env0 <- mkEnv0
-  flip runReaderT env0 $ ul_p lp
+  lp' <- flip runReaderT env0 $ ul_p lp
+  let Env {..} = env0
+  --- Note: Maybe laziness makes this fast? If not, then it would be
+  --- good to do a quick check to see if there is any need before
+  --- going through the work of doing it.
+  didUnroll <- readSTRef eDidUnroll
+  case didUnroll of
+    True -> return $ lp'
+    False -> return lp

@@ -41,6 +41,7 @@ instance Pretty SLVal where
       "array" <> parens (pretty t <> comma <+> pretty (SLV_Tuple at as))
     SLV_Tuple _ as ->
       brackets $ hsep $ punctuate comma $ map pretty as
+    SLV_Object _ (Just lab) _ -> pretty lab
     SLV_Object _ _ m -> render_obj m
     SLV_Clo {} -> "<closure>"
     SLV_DLVar v -> pretty v
