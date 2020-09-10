@@ -12,7 +12,13 @@ lin_com :: String -> (SrcLoc -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> 
 lin_com who back mkk rets s ks =
   case s of
     DLS_Let at dv de -> mkk $ LL_Let at dv de $ back at rets ks
-    DLS_If at ca _ True ts fs ->
+    DLS_ArrayMap at ans x a sa f r | isLocal sa ->
+      mkk $ LL_ArrayMap at ans x a sa f' r $ back at rets ks
+      where f' = lin_local at f
+    DLS_ArrayReduce at ans x z b a sa f r | isLocal sa -> 
+      mkk $ LL_ArrayReduce at ans x z b a sa f' r $ back at rets ks
+      where f' = lin_local at f
+    DLS_If at ca _ ts fs | isLocal s ->
       mkk $ LL_LocalIf at ca t' f' $ back at rets ks
       where
         t' = lin_local_rets at rets ts
@@ -28,7 +34,11 @@ lin_com who back mkk rets s ks =
       mkk $ LL_Var at dv $ back at rets' (ss <> ks)
       where
         rets' = M.insert ret dv rets
-    DLS_If _ _ _ False _ _ ->
+    DLS_ArrayMap {} ->
+      impossible $ who ++ " cannot non-local map"
+    DLS_ArrayReduce {} ->
+      impossible $ who ++ " cannot non-local reduce"
+    DLS_If {} ->
       impossible $ who ++ " cannot non-local if"
     DLS_Stop {} ->
       impossible $ who ++ " cannot stop"
@@ -57,8 +67,8 @@ lin_con _ at _ Seq.Empty =
   LLC_Com $ LL_Return at
 lin_con back at_top rets (s Seq.:<| ks) =
   case s of
-    DLS_If at ca _ False ts fs ->
-      LLC_If at ca t' f'
+    DLS_If at ca _ ts fs | not (isLocal s) ->
+        LLC_If at ca t' f'
       where
         t' = lin_con back at rets (ts <> ks)
         f' = lin_con back at rets (fs <> ks)
@@ -85,8 +95,7 @@ lin_step at _ Seq.Empty =
   LLS_Stop at []
 lin_step _ rets (s Seq.:<| ks) =
   case s of
-    DLS_If {}
-      | not (stmt_local s) ->
+    DLS_If {} | not (isLocal s) ->
         impossible $ "step cannot unlocal if, must occur in consensus"
     DLS_Stop at fs ->
       LLS_Stop at fs

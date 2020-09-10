@@ -3,6 +3,7 @@ module Reach.CollectTypes (cts) where
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Reach.AST
+import Reach.Type
 
 class CollectsTypes a where
   cts :: a -> S.Set SLType
@@ -21,7 +22,20 @@ instance (CollectsTypes a, CollectsTypes b) => CollectsTypes (a, b) where
   cts (x, y) = cts x <> cts y
 
 instance CollectsTypes SLType where
-  cts t = S.singleton t
+  cts t = S.singleton t <>
+    case t of
+      T_Null -> mempty
+      T_Bool -> mempty
+      T_UInt256 -> mempty
+      T_Bytes -> mempty
+      T_Address -> mempty
+      T_Fun dom rng -> cts dom <> cts rng
+      T_Array e _ -> cts e
+      T_Tuple elems -> cts elems
+      T_Object m -> cts m
+      T_Forall _ t' -> cts t'
+      T_Var _ -> mempty
+      T_Type _ -> mempty
 
 instance CollectsTypes InteractEnv where
   cts (InteractEnv m) = cts m
@@ -33,12 +47,7 @@ instance CollectsTypes DLVar where
   cts (DLVar _ _ t _) = cts t
 
 instance CollectsTypes DLArg where
-  cts (DLA_Var v) = cts v
-  cts (DLA_Con {}) = mempty
-  cts (DLA_Array t as) = cts t <> cts as
-  cts (DLA_Tuple as) = cts as
-  cts (DLA_Obj m) = cts m
-  cts (DLA_Interact _ _ t) = cts t
+  cts a = cts (argTypeOf a)
 
 instance CollectsTypes DLExpr where
   cts (DLE_Arg _ a) = cts a
@@ -46,6 +55,7 @@ instance CollectsTypes DLExpr where
   cts (DLE_PrimOp _ _ as) = cts as
   cts (DLE_ArrayRef _ _ a _ i) = cts a <> cts i
   cts (DLE_ArraySet _ _ a _ i v) = cts a <> cts i <> cts v
+  cts (DLE_ArrayConcat _ x y) = cts x <> cts y
   cts (DLE_TupleRef _ t _) = cts t
   cts (DLE_ObjectRef _ a _) = cts a
   cts (DLE_Interact _ _ _ _ t as) = cts t <> cts as
@@ -65,6 +75,8 @@ instance CollectsTypes FromSpec where
 instance CollectsTypes a => CollectsTypes (LLCommon a) where
   cts (LL_Return _) = mempty
   cts (LL_Let _ v e k) = cts v <> cts e <> cts k
+  cts (LL_ArrayMap _ ans x a _ f r k) = cts ans <> cts x <> cts a <> cts f <> cts r <> cts k
+  cts (LL_ArrayReduce _ ans x z b a _ f r k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts r <> cts k
   cts (LL_Var _ v k) = cts v <> cts k
   cts (LL_Set _ v a k) = cts v <> cts a <> cts k
   cts (LL_LocalIf _ a t f k) = cts a <> cts t <> cts f <> cts k

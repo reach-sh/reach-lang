@@ -9,7 +9,6 @@ import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import Data.List
 import qualified Data.Map.Strict as M
-import Data.Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Text as T
 import GHC.Generics
@@ -81,7 +80,7 @@ srcloc_src rs = SrcLoc Nothing Nothing (Just rs)
 
 get_srcloc_src :: SrcLoc -> ReachSource
 get_srcloc_src (SrcLoc _ _ (Just rs)) = rs
-get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile "src" -- XXX
+get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile "src" -- FIXME
 
 srcloc_at :: String -> (Maybe TokenPosn) -> SrcLoc -> SrcLoc
 srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
@@ -437,12 +436,45 @@ data ClaimType
 
 instance NFData ClaimType
 
+class IsPure a where
+  isPure :: a -> Bool
+class IsLocal a where
+  isLocal :: a -> Bool
+
+data StmtAnnot
+  = StmtAnnot { sa_pure :: Bool
+              , sa_local :: Bool }
+  deriving (Eq, Show, Generic)
+
+instance NFData StmtAnnot
+
+instance Semigroup StmtAnnot where
+  (StmtAnnot xp xl) <> (StmtAnnot yp yl) = (StmtAnnot (xp && yp) (xl && yl))
+
+instance IsPure StmtAnnot where
+  isPure = sa_pure
+
+instance IsLocal StmtAnnot where
+  isLocal = sa_local
+
+instance IsPure a => IsPure (Seq.Seq a) where
+  isPure = all isPure
+
+instance IsLocal a => IsLocal (Seq.Seq a) where
+  isLocal = all isLocal
+
+mkAnnot :: IsPure a => IsLocal a => a -> StmtAnnot
+mkAnnot a = StmtAnnot {..}
+  where sa_pure = isPure a
+        sa_local = isLocal a
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_Impossible SrcLoc String
   | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc [SLCtxtFrame] DLArg Integer DLArg
   | DLE_ArraySet SrcLoc [SLCtxtFrame] DLArg Integer DLArg DLArg
+  | DLE_ArrayConcat SrcLoc DLArg DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_ObjectRef SrcLoc DLArg String
   | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String SLType [DLArg]
@@ -455,14 +487,14 @@ data DLExpr
 
 instance NFData DLExpr
 
-expr_pure :: DLExpr -> Bool
-expr_pure e =
-  case e of
+instance IsPure DLExpr where
+  isPure = \case
     DLE_Arg {} -> True
     DLE_Impossible {} -> True
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
+    DLE_ArrayConcat {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
@@ -472,14 +504,14 @@ expr_pure e =
     DLE_Wait {} -> False
     DLE_PartSet {} -> False
 
-expr_local :: DLExpr -> Bool
-expr_local e =
-  case e of
+instance IsLocal DLExpr where
+  isLocal = \case
     DLE_Arg {} -> True
     DLE_Impossible {} -> True
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
+    DLE_ArrayConcat {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> True
@@ -507,8 +539,9 @@ instance NFData FromSpec
 
 data DLStmt
   = DLS_Let SrcLoc (Maybe DLVar) DLExpr
-  | --- Pure and then Local
-    DLS_If SrcLoc DLArg Bool Bool DLStmts DLStmts
+  | DLS_ArrayMap SrcLoc DLVar DLVar DLVar StmtAnnot DLStmts DLArg
+  | DLS_ArrayReduce SrcLoc DLVar DLVar DLArg DLVar DLVar StmtAnnot DLStmts DLArg
+  | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Stop SrcLoc [SLCtxtFrame]
@@ -536,41 +569,37 @@ data DLStmt
 
 instance NFData DLStmt
 
-stmt_pure :: DLStmt -> Bool
-stmt_pure s =
-  case s of
-    DLS_Let _ _ e -> expr_pure e
-    DLS_If _ _ p _ _ _ -> p
+instance IsPure DLStmt where
+  isPure = \case
+    DLS_Let _ _ e -> isPure e
+    DLS_ArrayMap _ _ _ _ ba _ _ -> isPure ba
+    DLS_ArrayReduce _ _ _ _ _ _ ba _ _ -> isPure ba
+    DLS_If _ _ a _ _ -> isPure a
     DLS_Return {} -> False
-    DLS_Prompt _ _ ss -> stmts_pure ss
+    DLS_Prompt _ _ ss -> isPure ss
     DLS_Stop {} -> False
-    DLS_Only _ _ ss -> stmts_pure ss
+    DLS_Only _ _ ss -> isPure ss
     DLS_ToConsensus {} -> False
-    DLS_FromConsensus _ ss -> stmts_pure ss
+    DLS_FromConsensus _ ss -> isPure ss
     DLS_While {} -> False
     DLS_Continue {} -> False
 
-stmt_local :: DLStmt -> Bool
-stmt_local s =
-  case s of
-    DLS_Let _ _ e -> expr_local e
-    DLS_If _ _ _ l _ _ -> l
+instance IsLocal DLStmt where
+  isLocal = \case
+    DLS_Let _ _ e -> isLocal e
+    DLS_ArrayMap _ _ _ _ ba _ _ -> isLocal ba
+    DLS_ArrayReduce _ _ _ _ _ _ ba _ _ -> isLocal ba
+    DLS_If _ _ a _ _ -> isLocal a
     DLS_Return {} -> True
-    DLS_Prompt _ _ ss -> stmts_local ss
+    DLS_Prompt _ _ ss -> isLocal ss
     DLS_Stop {} -> False
-    DLS_Only _ _ ss -> stmts_local ss
+    DLS_Only _ _ ss -> isLocal ss
     DLS_ToConsensus {} -> False
-    DLS_FromConsensus _ ss -> stmts_local ss
+    DLS_FromConsensus _ ss -> isLocal ss
     DLS_While {} -> False
     DLS_Continue {} -> False
 
 type DLStmts = Seq.Seq DLStmt
-
-stmts_pure :: Foldable f => f DLStmt -> Bool
-stmts_pure fs = getAll $ foldMap (All . stmt_pure) fs
-
-stmts_local :: Foldable f => f DLStmt -> Bool
-stmts_local fs = getAll $ foldMap (All . stmt_local) fs
 
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
@@ -593,6 +622,8 @@ instance NFData DLProg
 data LLCommon a
   = LL_Return SrcLoc
   | LL_Let SrcLoc (Maybe DLVar) DLExpr a
+  | LL_ArrayMap SrcLoc DLVar DLVar DLVar StmtAnnot LLLocal DLArg a
+  | LL_ArrayReduce SrcLoc DLVar DLVar DLArg DLVar DLVar StmtAnnot LLLocal DLArg a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_LocalIf SrcLoc DLArg LLLocal LLLocal a

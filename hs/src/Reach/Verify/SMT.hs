@@ -18,6 +18,7 @@ import Reach.IORefRef
 import Reach.Pretty ()
 import Reach.Type
 import Reach.Util
+import Reach.UnrollLoops
 import Reach.Verify.SMTParser (parseModel)
 import Reach.Verify.Shared
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
@@ -183,10 +184,16 @@ smtVar ctxt dv@(DLVar _ _ _ i) = "v" ++ show i ++ mp
         False -> ""
 
 smtTypeSort :: SMTCtxt -> SLType -> String
-smtTypeSort ctxt t = fst $ (ctxt_typem ctxt) M.! t
+smtTypeSort ctxt t =
+  case M.lookup t (ctxt_typem ctxt) of
+    Just (s, _) -> s
+    Nothing -> impossible $ "smtTypeSort " <> show t
 
 smtTypeInv :: SMTCtxt -> SLType -> SMTTypeInv
-smtTypeInv ctxt t = snd $ (ctxt_typem ctxt) M.! t
+smtTypeInv ctxt t =
+  case M.lookup t (ctxt_typem ctxt) of
+    Just (_, i) -> i
+    Nothing -> impossible $ "smtTypeInv " <> show t
 
 smtDeclare_v :: SMTCtxt -> String -> SLType -> IO ()
 smtDeclare_v ctxt v t = do
@@ -496,6 +503,7 @@ smt_e ctxt at_dv mdv de =
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
         val_da' = smt_a ctxt at val_da
+    DLE_ArrayConcat {} -> impossible "array_concat"
     DLE_TupleRef at arr_da i ->
       pathAddBound ctxt at_dv mdv bo se
       where
@@ -568,6 +576,8 @@ smt_m iter ctxt m =
       where
         var_m =
           pathAddUnbound ctxt at (Just dv) O_Var
+    LL_ArrayMap {} -> impossible "array_map"
+    LL_ArrayReduce {} -> impossible "array_reduce"
     LL_Set at dv va k -> set_m <> iter ctxt k
       where
         set_m =
@@ -608,6 +618,8 @@ gatherDefinedVars_m m =
     LL_Return {} -> mempty
     LL_Let _ mdv _ k ->
       maybe mempty S.singleton mdv <> gatherDefinedVars_l k
+    LL_ArrayMap {} -> impossible "array_map"
+    LL_ArrayReduce {} -> impossible "array_reduce"
     LL_Var _ dv k -> S.singleton dv <> gatherDefinedVars_l k
     LL_Set _ _ _ k -> gatherDefinedVars_l k
     LL_LocalIf _ _ t f k -> gatherDefinedVars_l t <> gatherDefinedVars_l f <> gatherDefinedVars_l k
@@ -881,8 +893,14 @@ _verify_smt vst smt lp = do
   let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
   mapM_ smt_s_top ms
 
+hPutStrLn' :: Handle -> String -> IO ()
+hPutStrLn' h s = do
+  hPutStrLn h s
+  hFlush h
+
 newFileLogger :: FilePath -> IO (IO (), Logger)
 newFileLogger p = do
+  logh_xio <- openFile (p <> ".xio.smt") WriteMode
   logh <- openFile p WriteMode
   tabr <- newIORef 0
   let logLevel = return 0
@@ -895,6 +913,7 @@ newFileLogger p = do
       send_tag = "[send->]"
       recv_tag = "[<-recv]"
       logMessage m' = do
+        hPutStrLn' logh_xio m'
         let (which, m) = splitAt (length send_tag) m'
         let short_which = if which == send_tag then "+" else "-"
         if (which == recv_tag && m == " success")
@@ -903,21 +922,20 @@ newFileLogger p = do
             if (m == " (push 1 )")
               then do
                 printTab
-                hPutStrLn logh $ "(push"
-                hFlush logh
+                hPutStrLn' logh $ "(push"
                 logTab
               else
                 if (m == " (pop 1 )")
                   then do
                     logUntab
                     printTab
-                    hPutStrLn logh $ ")"
-                    hFlush logh
+                    hPutStrLn' logh $ ")"
                   else do
                     printTab
-                    hPutStrLn logh $ "(" ++ short_which ++ m ++ ")"
-                    hFlush logh
-      close = hClose logh
+                    hPutStrLn' logh $ "(" ++ short_which ++ m ++ ")"
+      close = do
+        hClose logh
+        hClose logh_xio
   return (close, Logger {..})
 
 verify_smt :: Maybe FilePath -> VerifySt -> LLProg -> String -> [String] -> IO ExitCode
@@ -925,7 +943,11 @@ verify_smt logpMay vst lp prog args = do
   (close, logplMay) <- mkLogger
   smt <- SMT.newSolver prog args logplMay
   unlessM (SMT.produceUnsatCores smt) $ impossible "Prover doesn't support possible?"
-  _verify_smt vst smt lp
+  let ulp = unrollLoops lp
+  case logpMay of
+    Nothing -> return ()
+    Just x -> writeFile (x <> ".ulp") (show $ pretty ulp)
+  _verify_smt vst smt $ ulp
   zec <- SMT.stop smt
   close
   return $ zec

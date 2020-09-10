@@ -1021,7 +1021,7 @@ evalPrim ctxt at sco st p sargs =
             ((T_Array x_ty x_sz, xa), (T_Array y_ty y_sz, ya)) -> do
               let t = (T_Array (typeMeet at (at, x_ty) (at, y_ty)) (x_sz + y_sz))
               let mkdv = (DLVar at (ctxt_local_name ctxt "array_concat") t)
-              let de = error $ "XXX " <> show xa <> show ya -- DLE_ArrayConcat at xa ya
+              let de = DLE_ArrayConcat at xa ya
               (dv, lifts') <- ctxt_lift_expr ctxt at mkdv de
               return $ SLRes lifts' st (lvl, SLV_DLVar dv)
             _ -> illegal_args
@@ -1030,11 +1030,12 @@ evalPrim ctxt at sco st p sargs =
       let (x, f) = two_args
       let (xt, _) = typeOf at x
       case xt of
-        T_Array x_ty _XXX_x_sz -> do
+        T_Array x_ty x_sz -> do
           let f' a = evalApplyVals ctxt at sco st f [(lvl, a)]
-          a_dsv <- make_dlvar_sv "map in" x_ty
-          SLRes _XXX_f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' a_dsv
-          let (f_ty, _XXX_f_da) = typeOf at f_v
+          (a_dv, a_dsv) <- make_dlvar "map in" x_ty
+          SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' a_dsv
+          let (f_ty, f_da) = typeOf at f_v
+          --- XXX if not local, then unroll
           case x of
             SLV_Array _ _ x_vs -> do
               let evalem (prev_lifts, prev_vs) xv = do
@@ -1045,21 +1046,25 @@ evalPrim ctxt at sco st p sargs =
                       ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
               (lifts', vs') <- foldM evalem (mempty, []) x_vs
               return $ SLRes lifts' f_st (f_lvl, SLV_Array at f_ty vs')
-            SLV_DLVar _x_dv -> do
-              error "XXX dlvar"
+            SLV_DLVar x_dv -> do
+              let t = T_Array f_ty x_sz
+              (ans_dv, ans_dsv) <- make_dlvar "array_map" t
+              let lifts' = return $ DLS_ArrayMap at ans_dv x_dv a_dv (mkAnnot f_lifts) f_lifts f_da
+              return $ SLRes lifts' st (lvl, ans_dsv)
             _ -> impossible "not array"
         _ -> illegal_args
     SLPrim_array_reduce -> do
       let (x, z, f) = three_args
       let (xt, _) = typeOf at x
       case xt of
-        T_Array x_ty _XXX_x_sz -> do
+        T_Array x_ty _ -> do
           let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
-          let (z_ty, _XXX_z_da) = typeOf at z
-          b_dsv <- make_dlvar_sv "reduce acc" z_ty
-          a_dsv <- make_dlvar_sv "reduce in" x_ty
-          SLRes _XXX_f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
-          let (f_ty, _XXX_f_da) = typeOf at f_v
+          let (z_ty, z_da) = typeOf at z
+          (b_dv, b_dsv) <- make_dlvar "reduce acc" z_ty
+          (a_dv, a_dsv) <- make_dlvar "reduce in" x_ty
+          SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
+          --- XXX if not local, then unroll
+          let (f_ty, f_da) = typeOf at f_v
           case x of
             SLV_Array _ _ x_vs -> do
               let evalem (prev_lifts, prev_z) xv = do
@@ -1073,8 +1078,10 @@ evalPrim ctxt at sco st p sargs =
                       ((prev_lifts <> xv_lifts), xv_v')
               (lifts', z') <- foldM evalem (mempty, z) x_vs
               return $ SLRes lifts' f_st (f_lvl, z')
-            SLV_DLVar _x_dv -> do
-              error "XXX dlvar"
+            SLV_DLVar x_dv -> do
+              (ans_dv, ans_dsv) <- make_dlvar "array_reduce" f_ty
+              let lifts' = return $ DLS_ArrayReduce at ans_dv x_dv z_da b_dv a_dv (mkAnnot f_lifts) f_lifts f_da
+              return $ SLRes lifts' st (lvl, ans_dsv)
             _ -> impossible "not array"
         _ -> illegal_args
     SLPrim_array_set ->
@@ -1288,9 +1295,10 @@ evalPrim ctxt at sco st p sargs =
     three_args = case args of
       [x, y, z] -> (x, y, z)
       _ -> illegal_args
-    make_dlvar_sv lab ty = do
-      dv <- ctxt_alloc ctxt at
-      return $ SLV_DLVar $ DLVar at lab ty dv
+    make_dlvar lab ty = do
+      dvi <- ctxt_alloc ctxt at
+      let dv = DLVar at lab ty dvi
+      return $ (dv, SLV_DLVar dv)
 
 evalApplyVals :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> [SLSVal] -> SLComp s SLAppRes
 evalApplyVals ctxt at sco st rator randvs =
@@ -1487,7 +1495,8 @@ evalExpr ctxt at sco st e = do
             SLRes flifts st_f fsv@(flvl, fv) <- evalExpr ctxt f_at' sco st_c fe
             let lvl = clvl <> tlvl <> flvl
             let st_tf = stMerge at st_t st_f
-            case stmts_pure tlifts && stmts_pure flifts of
+            let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
+            case isPure sa of
               True ->
                 keepLifts (tlifts <> flifts) $
                   lvlMeetR lvl $
@@ -1501,8 +1510,7 @@ evalExpr ctxt at sco st e = do
                 let (f_ty, flifts') = add_ret f_at' flifts fv
                 let ty = typeMeet at' (t_at', t_ty) (f_at', f_ty)
                 let ans_dv = DLVar at' (ctxt_local_name ctxt "clo app") ty ret
-                let isLocal = stmts_local tlifts' && stmts_local flifts'
-                let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) False isLocal tlifts' flifts'
+                let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
                 let lifts' = return $ DLS_Prompt at' (Right ans_dv) body_lifts
                 return $ SLRes lifts' st_tf $ (lvl, SLV_DLVar ans_dv)
           _ ->
@@ -2108,10 +2116,8 @@ evalStmt ctxt at sco st ss =
             SLRes tlifts st_t (SLStmtRes _ trets) <- evalStmt ctxt t_at' sco' st_c [ts]
             SLRes flifts st_f (SLStmtRes _ frets) <- evalStmt ctxt f_at' sco' st_c [fs]
             let st_tf = stMerge at' st_t st_f
-            let isX which = which tlifts && which flifts
-            let isPure = isX stmts_pure
-            let isLocal = isX stmts_local
-            let lifts' = return $ DLS_If at' (DLA_Var cond_dv) isPure isLocal tlifts flifts
+            let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
+            let lifts' = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts flifts
             let levelHelp = SLStmtRes (sco_env sco) . map (\(r_at, (r_lvl, r_v)) -> (r_at, (clvl <> r_lvl, r_v)))
             let ir = SLRes lifts' st_tf $ combineStmtRes at' clvl (levelHelp trets) (levelHelp frets)
             retSeqn ir at' ks_ne

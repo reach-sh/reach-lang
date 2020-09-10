@@ -3,6 +3,7 @@
 module Reach.Pretty () where
 
 import qualified Data.Map.Strict as M
+import qualified Data.Sequence as Seq
 import Data.Text.Prettyprint.Doc
 import Reach.AST
 
@@ -80,7 +81,8 @@ instance Pretty DLExpr where
       DLE_Impossible _ msg -> "impossible" <> parens (pretty msg)
       DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
       DLE_ArrayRef _ _ a _ o -> pretty a <> brackets (pretty o)
-      DLE_ArraySet _ _ a _ i v -> "array_set" <> render_das [a, i, v]
+      DLE_ArraySet _ _ a _ i v -> "array_set" <> (parens $ render_das [a, i, v])
+      DLE_ArrayConcat _ x y -> "array_concat" <> (parens $ render_das [x, y])
       DLE_TupleRef _ a i -> pretty a <> brackets (pretty i)
       DLE_ObjectRef _ a f -> pretty a <> "." <> pretty f
       DLE_Interact _ _ who m _ as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
@@ -131,6 +133,14 @@ prettyTransfer who da =
 prettyStop :: Doc a
 prettyStop = "exit" <> parens (emptyDoc) <> semi
 
+prettyMap :: Pretty a => DLVar -> DLVar -> DLVar -> a -> DLArg -> Doc ann
+prettyMap ans x a f r = "map" <+> pretty ans <+> "=" <+> "for" <+> parens ( pretty a <+> "in" <+> pretty x ) <+>
+  braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
+
+prettyReduce :: Pretty a => DLVar -> DLVar -> DLArg -> DLVar -> DLVar -> a -> DLArg -> Doc ann
+prettyReduce ans x z b a f r = "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens ( pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x ) <+>
+  braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
+
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
@@ -147,7 +157,9 @@ instance Pretty DLStmt where
             "const" <+> pretty v <+> "=" <+> pretty e <> semi
           Nothing ->
             pretty e <> semi
-      DLS_If _ ca _ _ ts fs ->
+      DLS_ArrayMap _ ans x a _ f r -> prettyMap ans x a f r
+      DLS_ArrayReduce _ ans x z b a _ f r -> prettyReduce ans x z b a f r
+      DLS_If _ ca _ ts fs ->
         prettyIf ca (render_dls ts) (render_dls fs)
       DLS_Return _ ret sv ->
         "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
@@ -183,6 +195,9 @@ instance Pretty DLStmt where
 render_dls :: DLStmts -> Doc a
 render_dls ss = concatWith (surround hardline) $ fmap pretty ss
 
+instance Pretty (Seq.Seq DLStmt) where
+  pretty = render_dls
+
 instance Pretty DLBlock where
   pretty (DLBlock _at _ ss da) =
     render_dls ss <> hardline <> "return" <+> pretty da <> semi
@@ -210,6 +225,8 @@ instance Pretty a => Pretty (LLCommon a) where
         "const" <+> pretty dv <+> "=" <+> pretty de <> semi
           <> hardline
           <> pretty k
+      LL_ArrayMap _ ans x a _ f r k -> prettyMap ans x a f r <> hardline <> pretty k
+      LL_ArrayReduce _ ans x z b a _ f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
       LL_Var _at dv k ->
         "let" <+> pretty dv <> semi <> hardline <> pretty k
       LL_Set _at dv da k ->

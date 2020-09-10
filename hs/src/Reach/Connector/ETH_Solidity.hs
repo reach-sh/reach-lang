@@ -267,6 +267,8 @@ solExpr ctxt sp = \case
     (solArg ctxt ae) <> brackets (solArg ctxt ie) <> sp
   DLE_ArraySet _ _ ae _ ie ve ->
     (solApply (solArraySet (solTypeI ctxt (argTypeOf ae))) $ map (solArg ctxt) [ae, ie, ve]) <> sp
+  DLE_ArrayConcat _XXX_at _XXX_x_da _XXX_y_da ->
+    error "XXX"
   DLE_TupleRef _ ae i ->
     (solArg ctxt ae) <> ".elem" <> pretty i <> sp
   DLE_ObjectRef _ oe f ->

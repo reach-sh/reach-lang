@@ -81,21 +81,24 @@ epp_m done _back skip look c =
         DLE_Claim _ _ CT_Possible _ -> skip k
         DLE_Claim _ _ (CT_Unknowable {}) _ -> skip k
         _ ->
-          look
-            k
-            (\back' skip' k_cs k' ->
-               let maybe_skip vs =
-                     case expr_pure de of
-                       True -> skip' k_cs k'
-                       False -> back' (cs' vs) (PL_Eff at de k')
-                   cs' vs = counts de <> count_rms vs k_cs
-                in case mdv of
-                     Nothing -> maybe_skip []
-                     Just dv ->
-                       case get_count dv k_cs of
-                         Count Nothing -> maybe_skip [dv]
-                         Count (Just lc) ->
-                           back' (cs' [dv]) (PL_Let at lc dv de k'))
+          look k
+          (\back' skip' k_cs k' ->
+             let maybe_skip vs = 
+                   case isPure de of
+                     True -> skip' k_cs k'
+                     False -> back' (cs' vs) (PL_Eff at de k')
+                 cs' vs = counts de <> count_rms vs k_cs
+             in case mdv of
+                  Nothing -> maybe_skip []
+                  Just dv ->
+                    case get_count dv k_cs of
+                      Count Nothing -> maybe_skip [dv]
+                      Count (Just lc) ->
+                        back' (cs' [dv]) (PL_Let at lc dv de k'))
+    LL_ArrayMap _XXX_at _XXX_ans _XXX_x _XXX_a _XXX_sa _XXX_f _XXX_r _XXX_k ->
+      error "XXX"
+    LL_ArrayReduce _XXX_at _XXX_ans _XXX_x _XXX_z _XXX_b _XXX_a _XXX_sa _XXX_f _XXX_r _XXX_k ->
+      error "XXX"
     LL_Var at dv k ->
       look
         k
