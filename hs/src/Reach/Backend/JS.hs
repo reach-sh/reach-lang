@@ -201,6 +201,10 @@ jsCom iter ctxt = \case
       [ jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
       , iter ctxt k
       ]
+  PL_ArrayMap {} -> -- _ ans x a f r k ->
+    error "XXX"
+  PL_ArrayReduce {} -> -- _ ans x z b a f r k ->
+    error "XXX"
 
 jsPLTail :: JSCtxt -> PLTail -> Doc a
 jsPLTail ctxt (PLTail m) = jsCom jsPLTail ctxt m

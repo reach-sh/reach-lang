@@ -95,10 +95,30 @@ epp_m done _back skip look c =
                       Count Nothing -> maybe_skip [dv]
                       Count (Just lc) ->
                         back' (cs' [dv]) (PL_Let at lc dv de k'))
-    LL_ArrayMap _XXX_at _XXX_ans _XXX_x _XXX_a _XXX_f _XXX_r _XXX_k ->
-      error "XXX"
-    LL_ArrayReduce _XXX_at _XXX_ans _XXX_x _XXX_z _XXX_b _XXX_a _XXX_f _XXX_r _XXX_k ->
-      error "XXX"
+    LL_ArrayMap at ans x a f r k ->
+      look k
+      (\back' skip' k_cs k' ->
+         case get_count ans k_cs of
+           Count Nothing -> skip' k_cs k'
+           Count (Just _) ->
+             --- Note: Maybe use LetCat for fusing?
+             back' cs' (PL_ArrayMap at ans x a f' r k')
+             where cs' = (counts x <> f_cs' <> counts r <> k_cs')
+                   k_cs' = count_rms [ans] k_cs
+                   f_cs' = count_rms [a] f_cs
+                   ProResL (ProRes_ f_cs f') = epp_l f k_cs')
+    LL_ArrayReduce at ans x z b a f r k ->
+      look k
+      (\back' skip' k_cs k' ->
+         case get_count ans k_cs of
+           Count Nothing -> skip' k_cs k'
+           Count (Just _) ->
+             --- Note: Maybe use LetCat for fusing?
+             back' cs' (PL_ArrayReduce at ans x z b a f' r k')
+             where cs' = (counts x <> counts z <> f_cs' <> counts r <> k_cs')
+                   k_cs' = count_rms [ans] k_cs
+                   f_cs' = count_rms [b, a] f_cs
+                   ProResL (ProRes_ f_cs f') = epp_l f k_cs')
     LL_Var at dv k ->
       look
         k

@@ -107,6 +107,8 @@ instance CollectsTypes LLProg where
 instance CollectsTypes a => CollectsTypes (PLCommon a) where
   cts (PL_Return _) = mempty
   cts (PL_Let _ _ dv de k) = cts dv <> cts de <> cts k
+  cts (PL_ArrayMap _ ans x a f r k) = cts ans <> cts x <> cts a <> cts f <> cts r <> cts k
+  cts (PL_ArrayReduce _ ans x z b a f r k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts r <> cts k
   cts (PL_Eff _ de k) = cts de <> cts k
   cts (PL_Var _ dv k) = cts dv <> cts k
   cts (PL_Set _ dv da k) = cts dv <> cts da <> cts k

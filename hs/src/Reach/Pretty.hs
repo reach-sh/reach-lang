@@ -295,6 +295,8 @@ instance Pretty a => Pretty (PLCommon a) where
         "const" <+> pretty lc <> pretty dv <+> "=" <+> pretty de <> semi
           <> hardline
           <> pretty k
+      PL_ArrayMap _ ans x a f r k -> prettyMap ans x a f r <> hardline <> pretty k
+      PL_ArrayReduce _ ans x z b a f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
       PL_Eff _ de k ->
         "eff" <+> pretty de <> semi <> hardline <> pretty k
       PL_Var _at dv k ->

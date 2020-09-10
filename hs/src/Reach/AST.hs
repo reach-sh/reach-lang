@@ -692,6 +692,8 @@ instance Semigroup PLLetCat where
 data PLCommon a
   = PL_Return SrcLoc
   | PL_Let SrcLoc PLLetCat DLVar DLExpr a
+  | PL_ArrayMap SrcLoc DLVar DLArg DLVar PLTail DLArg a
+  | PL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar PLTail DLArg a
   | PL_Eff SrcLoc DLExpr a
   | PL_Var SrcLoc DLVar a
   | PL_Set SrcLoc DLVar DLArg a

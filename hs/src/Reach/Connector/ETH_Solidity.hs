@@ -347,6 +347,10 @@ solCom iter ctxt = \case
       ca' = solArg ctxt ca
       SolTailRes _ t' = solPLTail ctxt t
       SolTailRes _ f' = solPLTail ctxt f
+  PL_ArrayMap {} -> -- _ ans x a f r k ->
+    error "XXX"
+  PL_ArrayReduce {} -> -- _ ans x z b a f r k ->
+    error "XXX"
 
 solPLTail :: SolCtxt a -> PLTail -> SolTailRes a
 solPLTail ctxt (PLTail m) = solCom solPLTail ctxt m
@@ -404,6 +408,10 @@ manyVars_m iter = \case
   PL_Var _ dv k -> S.insert dv $ iter k
   PL_Set _ _ _ k -> iter k
   PL_LocalIf _ _ t f k -> manyVars_p t <> manyVars_p f <> iter k
+  PL_ArrayMap {} -> -- _ ans x a f r k ->
+    error "XXX"
+  PL_ArrayReduce {} -> -- _ ans x z b a f r k ->
+    error "XXX"
 
 manyVars_p :: PLTail -> S.Set DLVar
 manyVars_p (PLTail m) = manyVars_m manyVars_p m
