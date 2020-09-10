@@ -149,8 +149,8 @@ jsExpr ctxt = \case
     jsArg aa <> brackets (jsArg ia)
   DLE_ArraySet _ _ aa _ ia va ->
     jsApply "stdlib.Array_set" $ map jsArg [aa, ia, va]
-  DLE_ArrayConcat _XXX_at _XXX_x_da _XXX_y_da ->
-    error "XXX"
+  DLE_ArrayConcat _ x y ->
+    jsApply "stdlib.Array_concat" $ map jsArg [x, y]
   DLE_TupleRef _ aa i ->
     jsArg aa <> brackets (jsCon $ DLC_Int i)
   DLE_ObjectRef _ oa f ->
@@ -201,10 +201,12 @@ jsCom iter ctxt = \case
       [ jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
       , iter ctxt k
       ]
-  PL_ArrayMap {} -> -- _ ans x a f r k ->
-    error "XXX"
-  PL_ArrayReduce {} -> -- _ ans x z b a f r k ->
-    error "XXX"
+  PL_ArrayMap _ ans x a f r k ->
+    "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "map" [ (jsApply "" [ jsArg $ DLA_Var a ] <+> "=>" <+> jsBraces ( jsPLTail ctxt f <> hardline <> jsReturn (jsArg r) )) ] <>
+    hardline <> iter ctxt k
+  PL_ArrayReduce _ ans x z b a f r k ->
+    "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "reduce" [ (jsApply "" ( map (jsArg . DLA_Var) [ b, a ] ) <+> "=>" <+> jsBraces ( jsPLTail ctxt f <> hardline <> jsReturn (jsArg r) )), jsArg z ] <>
+    hardline <> iter ctxt k
 
 jsPLTail :: JSCtxt -> PLTail -> Doc a
 jsPLTail ctxt (PLTail m) = jsCom jsPLTail ctxt m

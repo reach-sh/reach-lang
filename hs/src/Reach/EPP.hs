@@ -106,7 +106,8 @@ epp_m done _back skip look c =
              where cs' = (counts x <> f_cs' <> counts r <> k_cs')
                    k_cs' = count_rms [ans] k_cs
                    f_cs' = count_rms [a] f_cs
-                   ProResL (ProRes_ f_cs f') = epp_l f k_cs')
+                   fk_cs' = k_cs' <> counts r
+                   ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
     LL_ArrayReduce at ans x z b a f r k ->
       look k
       (\back' skip' k_cs k' ->
@@ -118,7 +119,8 @@ epp_m done _back skip look c =
              where cs' = (counts x <> counts z <> f_cs' <> counts r <> k_cs')
                    k_cs' = count_rms [ans] k_cs
                    f_cs' = count_rms [b, a] f_cs
-                   ProResL (ProRes_ f_cs f') = epp_l f k_cs')
+                   fk_cs' = k_cs' <> counts r
+                   ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
     LL_Var at dv k ->
       look
         k
