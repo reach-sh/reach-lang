@@ -88,7 +88,7 @@ For example,
 are valid @tech{exports}.
 
 Module-level identifiers may also be @tech{export}ed after the fact,
-and may be renamed during export. For example,
+and may be renamed during export. For example:
 
 @reach{
  const w = 2;
@@ -98,7 +98,7 @@ and may be renamed during export. For example,
 
 Identifiers from other modules may be re-exported (and renamed),
 even if they are not imported in the current module.
-For example,
+For example:
 
 @reach{
  export {u, x as other_x} from './other-module.rsh';
