@@ -14,8 +14,6 @@ const runDemo = async (delay) => {
   const money = connector;
   const time = 'blocks';
 
-  // stdlib.setDEBUG(true);
-
   const fromCurrency =
         connector == 'ETH' ? (amt) => stdlib.fromWei(amt) :
         (amt) => amt.toString(); // ?
@@ -133,5 +131,6 @@ const runDemo = async (delay) => {
 
 (async () => {
   await runDemo();
-  // await runDemo(MATURITY + REFUND + 20);
+  await runDemo(MATURITY + REFUND + 20);
+  // TODO: demo Bystander yoink
 })();
