@@ -347,17 +347,24 @@ solCom iter ctxt = \case
       ca' = solArg ctxt ca
       SolTailRes _ t' = solPLTail ctxt t
       SolTailRes _ f' = solPLTail ctxt f
-  PL_ArrayMap _ ans _XXX_x _XXX_a f _XXX_r k ->
+  PL_ArrayMap _ ans x a f r k ->
     SolTailRes ctxt map_p <> iter ctxt k
-    where sz = case ans of DLVar _ _ (T_Array _ x) _ -> x
-                           _ -> impossible "array"
-          map_p =
-            vsep [ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
-                   <> solBraces ( vsep [ "XXX;"
-                                       , f'
-                                       , "XXX;"
-                                       ] ) ]
-          SolTailRes _ f' = solPLTail ctxt f
+    where
+      sz = case ans of
+        DLVar _ _ (T_Array _ sz_) _ -> sz_
+        _ -> impossible "array"
+      ref arr idx = arr <> brackets idx
+      map_p =
+        vsep
+          [ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
+              <> solBraces
+                (vsep
+                   [ solVar ctxt a <+> "=" <+> (ref (solArg ctxt x) "i") <> semi
+                   , f'
+                   , (ref (solVar ctxt ans) "i") <+> "=" <+> solArg ctxt r <> semi
+                   ])
+          ]
+      SolTailRes _ f' = solPLTail ctxt f
   PL_ArrayReduce _ _XXX_ans _XXX_x _XXX_z _XXX_b _XXX_a _XXX_f _XXX_r k ->
     SolTailRes ctxt "XXX;" <> iter ctxt k
 
@@ -421,7 +428,8 @@ manyVars_m iter = \case
     s_inserts [ans, a] (manyVars_p f <> iter k)
   PL_ArrayReduce _ ans _ _ b a f _ k ->
     s_inserts [ans, b, a] (manyVars_p f <> iter k)
-  where s_inserts l = S.union (S.fromList l)
+  where
+    s_inserts l = S.union (S.fromList l)
 
 manyVars_p :: PLTail -> S.Set DLVar
 manyVars_p (PLTail m) = manyVars_m manyVars_p m

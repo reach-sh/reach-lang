@@ -138,7 +138,7 @@ kgq_a_onlym ctxt mv a =
     Nothing -> mempty
     Just v -> kgq_a_only ctxt v a
 
-kgq_e :: KCtxt -> Maybe DLVar -> DLExpr-> IO ()
+kgq_e :: KCtxt -> Maybe DLVar -> DLExpr -> IO ()
 kgq_e ctxt mv = \case
   DLE_Arg _ a -> kgq_a_onlym ctxt mv a
   DLE_Impossible {} -> mempty
@@ -179,28 +179,28 @@ kgq_m :: (KCtxt -> a -> IO ()) -> KCtxt -> LLCommon a -> IO ()
 kgq_m iter ctxt = \case
   LL_Return {} -> mempty
   LL_Let _ mdv de k ->
-    kgq_e ctxt mdv de >>
-    iter ctxt k
+    kgq_e ctxt mdv de
+      >> iter ctxt k
   LL_ArrayMap _ ans x a f r k ->
-    kgq_a_only ctxt a x >>
-    kgq_a_only ctxt ans r >>
-    kgq_l ctxt f >>
-    iter ctxt k
+    kgq_a_only ctxt a x
+      >> kgq_a_only ctxt ans r
+      >> kgq_l ctxt f
+      >> iter ctxt k
   LL_ArrayReduce _ ans x z b a f r k ->
-    kgq_a_only ctxt b z >>
-    kgq_a_only ctxt a x >>
-    kgq_a_only ctxt ans r >>
-    kgq_l ctxt f >>
-    iter ctxt k
+    kgq_a_only ctxt b z
+      >> kgq_a_only ctxt a x
+      >> kgq_a_only ctxt ans r
+      >> kgq_l ctxt f
+      >> iter ctxt k
   LL_Var _ _dv k ->
     iter ctxt k
   LL_Set _ dv da k ->
-    kgq_a_only ctxt dv da >>
-    iter ctxt k
+    kgq_a_only ctxt dv da
+      >> iter ctxt k
   LL_LocalIf _ ca t f k ->
-    kgq_l ctxt' t >>
-    kgq_l ctxt' f >>
-    iter ctxt k
+    kgq_l ctxt' t
+      >> kgq_l ctxt' f
+      >> iter ctxt k
     where
       ctxt' = ctxt_add_back ctxt ca
 
@@ -218,17 +218,17 @@ kgq_n :: KCtxt -> LLConsensus -> IO ()
 kgq_n ctxt = \case
   LLC_Com m -> kgq_m kgq_n ctxt m
   LLC_If _ ca t f ->
-    ctxtNewScope ctxt' (kgq_n ctxt' t) >>
-    ctxtNewScope ctxt' (kgq_n ctxt' f)
+    ctxtNewScope ctxt' (kgq_n ctxt' t)
+      >> ctxtNewScope ctxt' (kgq_n ctxt' f)
     where
       ctxt' = ctxt_add_back ctxt ca
   LLC_FromConsensus _ _ k -> kgq_s ctxt k
   LLC_While _ asn _ (LLBlock _ _ cond_l ca) body k ->
-    kgq_asn_def ctxt asn >>
-    kgq_asn ctxt asn >>
-    kgq_l ctxt cond_l >>
-    kgq_n ctxt' body >>
-    kgq_n ctxt' k
+    kgq_asn_def ctxt asn
+      >> kgq_asn ctxt asn
+      >> kgq_l ctxt cond_l
+      >> kgq_n ctxt' body
+      >> kgq_n ctxt' k
     where
       ctxt' = ctxt_add_back ctxt ca
   LLC_Continue _ asn ->
@@ -245,10 +245,10 @@ kgq_s ctxt = \case
   LLS_Stop {} -> mempty
   LLS_Only _at who loc k -> kgq_l (ctxt_restrict ctxt who) loc >> kgq_s ctxt k
   LLS_ToConsensus _at _from fs from_as from_msg from_amt mtime next_n ->
-    kgq_fs ctxt fs >> msg_to_as >> kgq_a_all ctxt from_amt >>
-    kgq_a_all ctxt (DLA_Tuple $ map DLA_Var from_msg) >>
-    ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime) >>
-    ctxtNewScope ctxt (kgq_n ctxt next_n)
+    kgq_fs ctxt fs >> msg_to_as >> kgq_a_all ctxt from_amt
+      >> kgq_a_all ctxt (DLA_Tuple $ map DLA_Var from_msg)
+      >> ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
+      >> ctxtNewScope ctxt (kgq_n ctxt next_n)
     where
       msg_to_as = mapM_ (uncurry (kgq_a_only ctxt)) $ zip from_msg from_as
 
@@ -257,8 +257,8 @@ kgq_pie1 ctxt who what = knows ctxt (P_Part who) $ S.singleton $ P_Interact who 
 
 kgq_pie :: KCtxt -> SLPart -> InteractEnv -> IO ()
 kgq_pie ctxt who (InteractEnv m) =
-  (knows ctxt (P_Part who) $ S.singleton $ P_Con) >>
-  (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
+  (knows ctxt (P_Part who) $ S.singleton $ P_Con)
+    >> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
 kgq_lp mh vst (LLProg _ (LLOpts {..}) (SLParts psm) s) = do

@@ -2,15 +2,15 @@ module Reach.UnrollLoops (unrollLoops) where
 
 import Control.Monad.Reader
 import Control.Monad.ST
-import qualified Data.Map.Strict as M
-import qualified Data.Sequence as Seq
-import Data.STRef
 import Data.Foldable
-import Reach.AST
-import Reach.Type
-import Reach.STCounter
-import Reach.Util
+import qualified Data.Map.Strict as M
+import Data.STRef
+import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
+import Reach.AST
+import Reach.STCounter
+import Reach.Type
+import Reach.Util
 
 type App s = ReaderT (Env s) (ST s)
 
@@ -20,7 +20,8 @@ data Env s = Env
   { eDidUnroll :: STRef s Bool
   , eCounter :: STCounter s
   , eRenaming :: STRef s (M.Map Int Int)
-  , emLifts :: Maybe (STRef s Lifts) }
+  , emLifts :: Maybe (STRef s Lifts)
+  }
 
 mkEnv0 :: ST s (Env s)
 mkEnv0 = do
@@ -44,7 +45,7 @@ collectLifts :: App s a -> App s (Lifts, a)
 collectLifts m = do
   Env {..} <- ask
   newLifts <- lift $ newSTRef mempty
-  res <- local (\e -> e { emLifts = Just newLifts }) m
+  res <- local (\e -> e {emLifts = Just newLifts}) m
   lifts <- lift $ readSTRef newLifts
   return $ (lifts, res)
 
@@ -68,7 +69,7 @@ freshRenaming m = do
   Env {..} <- ask
   oldRenaming <- lift $ readSTRef eRenaming
   newRenaming <- lift $ newSTRef oldRenaming
-  local (\e -> e { eRenaming = newRenaming }) m
+  local (\e -> e {eRenaming = newRenaming}) m
 
 ul_v_rn :: DLVar -> App s DLVar
 ul_v_rn (DLVar at lab t idx) = do
@@ -110,7 +111,7 @@ ul_explode at a =
     DLA_Interact _ _ (T_Array t sz) -> do_explode t sz
     _ -> impossible "explode not array"
   where
-    do_explode t sz = pure (,) <*> pure t <*> mapM mk1 [0..(sz-1)]
+    do_explode t sz = pure (,) <*> pure t <*> mapM mk1 [0 .. (sz -1)]
       where
         mk1 i = do
           idx <- allocIdx
@@ -143,7 +144,8 @@ ul_e = \case
 
 ul_asn1 :: Bool -> (DLVar, DLArg) -> App s (DLVar, DLArg)
 ul_asn1 def (v, a) = (pure (,)) <*> ul_v_def v <*> ul_a a
-  where ul_v_def = if def then ul_v_rn else ul_v
+  where
+    ul_v_def = if def then ul_v_rn else ul_v
 
 ul_asn :: Bool -> DLAssignment -> App s DLAssignment
 ul_asn def (DLAssignment m) = (pure $ DLAssignment) <*> ((pure M.fromList) <*> mapM (ul_asn1 def) (M.toList m))
@@ -162,7 +164,8 @@ llReplace mkk nk = \case
   LL_Var at x k -> LL_Var at x $ iter k
   LL_Set at x v k -> LL_Set at x v $ iter k
   LL_LocalIf at c t f k -> LL_LocalIf at c t f $ iter k
-  where iter = mkk . llReplace' mkk nk
+  where
+    iter = mkk . llReplace' mkk nk
 
 llReplace' :: (LLCommon a -> a) -> LLCommon a -> LLLocal -> LLCommon a
 llReplace' mkk nk (LLL_Com m) = llReplace mkk nk m
@@ -245,7 +248,7 @@ ul_n = \case
 ul_fs :: FromSpec -> App s FromSpec
 ul_fs = \case
   FS_Join v -> (pure $ FS_Join) <*> ul_v_rn v
-  FS_Again v -> (pure $ FS_Again) <*> ul_v v 
+  FS_Again v -> (pure $ FS_Again) <*> ul_v v
 
 ul_mtime :: Maybe (DLArg, LLStep) -> App s (Maybe (DLArg, LLStep))
 ul_mtime = \case

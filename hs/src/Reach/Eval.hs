@@ -703,7 +703,6 @@ evalDot ctxt at sco st obj field =
       retDLVar tm (DLA_Var obj_dv) Public
     SLV_Prim (SLPrim_interact _ who m it@(T_Object tm)) ->
       retDLVar tm (DLA_Interact who m it) Secret
-
     SLV_Participant _ who _ vas _ ->
       case field of
         "only" -> retV $ public $ SLV_Form (SLForm_Part_Only who)
@@ -717,7 +716,6 @@ evalDot ctxt at sco st obj field =
         "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
         "timeout" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
         _ -> illegal_field ["publish", "pay", "timeout"]
-
     SLV_Tuple _ _ ->
       case field of
         "set" -> delayCall SLPrim_tuple_set
@@ -733,7 +731,6 @@ evalDot ctxt at sco st obj field =
         "set" -> retV $ public $ SLV_Prim $ SLPrim_tuple_set
         "length" -> retV $ public $ SLV_Prim $ SLPrim_tuple_length
         _ -> illegal_field ["set", "length"]
-
     SLV_Array _ _ _ ->
       case field of
         "set" -> delayCall SLPrim_array_set
@@ -759,7 +756,6 @@ evalDot ctxt at sco st obj field =
         "map" -> retV $ public $ SLV_Prim $ SLPrim_array_map
         "reduce" -> retV $ public $ SLV_Prim $ SLPrim_array_reduce
         _ -> illegal_field ["length", "set", "iota", "concat", "map", "reduce"]
-
     SLV_Prim SLPrim_Object ->
       case field of
         "set" -> retV $ sss_sls $ env_lookup at "Object_set" $ sco_env sco
@@ -1005,7 +1001,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_Array_iota ->
       case map snd sargs of
         [SLV_Int _ sz] ->
-          retV $ (lvl, SLV_Array at T_UInt256 $ map (SLV_Int at) [0 .. (sz-1)])
+          retV $ (lvl, SLV_Array at T_UInt256 $ map (SLV_Int at) [0 .. (sz -1)])
         _ -> illegal_args
     SLPrim_array ->
       case map snd sargs of
@@ -1021,9 +1017,9 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_array_concat ->
       case map snd sargs of
-        [ SLV_Array x_at x_ty x_vs, SLV_Array y_at y_ty y_vs ] ->
+        [SLV_Array x_at x_ty x_vs, SLV_Array y_at y_ty y_vs] ->
           retV $ (lvl, SLV_Array at (typeMeet at (x_at, x_ty) (y_at, y_ty)) $ x_vs ++ y_vs)
-        [ x, y ] ->
+        [x, y] ->
           case (typeOf at x, typeOf at y) of
             ((T_Array x_ty x_sz, xa), (T_Array y_ty y_sz, ya)) -> do
               let t = (T_Array (typeMeet at (at, x_ty) (at, y_ty)) (x_sz + y_sz))
@@ -1050,8 +1046,9 @@ evalPrim ctxt at sco st p sargs =
                     SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' xv
                     --- Note: We are artificially restricting maps to
                     --- be parameteric in the state.
-                    return $ stMerge at f_st xv_st `seq`
-                      ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
+                    return $
+                      stMerge at f_st xv_st
+                        `seq` ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
               (lifts'', vs') <- foldM evalem (mempty, []) x_vs
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, SLV_Array at f_ty vs')
             False -> do
@@ -1081,9 +1078,10 @@ evalPrim ctxt at sco st p sargs =
                     --- to be parameteric in the state. We also ensure
                     --- that they type is the same as the anonymous
                     --- version.
-                    return $ stMerge at f_st xv_st `seq`
-                      checkType at f_ty xv_v' `seq`
-                      ((prev_lifts <> xv_lifts), xv_v')
+                    return $
+                      stMerge at f_st xv_st
+                        `seq` checkType at f_ty xv_v'
+                        `seq` ((prev_lifts <> xv_lifts), xv_v')
               (lifts'', z') <- foldM evalem (mempty, z) x_vs
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
             False -> do

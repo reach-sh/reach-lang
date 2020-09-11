@@ -13,11 +13,11 @@ where
 import Control.Monad.ST
 import qualified Data.Map.Strict as M
 import Data.STRef
+import Data.Text.Prettyprint.Doc
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
-import Data.Text.Prettyprint.Doc
-import Reach.Pretty ()
 import Reach.AST
+import Reach.Pretty ()
 import Reach.Util
 
 data TypeError
@@ -35,7 +35,7 @@ instance Show TypeError where
     ("TypeError: Mismatch. Expected " <> show expected)
       <> (" but got " <> show actual)
   show (Err_Type_None val) =
-    "TypeError: Value cannot exist at runtime: " <> show (pretty val) 
+    "TypeError: Value cannot exist at runtime: " <> show (pretty val)
   show (Err_Type_NotApplicable ty) =
     "TypeError: NotApplicable. Cannot apply this like a function: " <> show ty
   show (Err_TypeMeets_None) =

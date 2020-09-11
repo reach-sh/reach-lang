@@ -22,20 +22,21 @@ instance (CollectsTypes a, CollectsTypes b) => CollectsTypes (a, b) where
   cts (x, y) = cts x <> cts y
 
 instance CollectsTypes SLType where
-  cts t = S.singleton t <>
-    case t of
-      T_Null -> mempty
-      T_Bool -> mempty
-      T_UInt256 -> mempty
-      T_Bytes -> mempty
-      T_Address -> mempty
-      T_Fun dom rng -> cts dom <> cts rng
-      T_Array e _ -> cts e
-      T_Tuple elems -> cts elems
-      T_Object m -> cts m
-      T_Forall _ t' -> cts t'
-      T_Var _ -> mempty
-      T_Type _ -> mempty
+  cts t =
+    S.singleton t
+      <> case t of
+        T_Null -> mempty
+        T_Bool -> mempty
+        T_UInt256 -> mempty
+        T_Bytes -> mempty
+        T_Address -> mempty
+        T_Fun dom rng -> cts dom <> cts rng
+        T_Array e _ -> cts e
+        T_Tuple elems -> cts elems
+        T_Object m -> cts m
+        T_Forall _ t' -> cts t'
+        T_Var _ -> mempty
+        T_Type _ -> mempty
 
 instance CollectsTypes InteractEnv where
   cts (InteractEnv m) = cts m

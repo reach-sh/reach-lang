@@ -442,12 +442,14 @@ instance NFData ClaimType
 
 class IsPure a where
   isPure :: a -> Bool
+
 class IsLocal a where
   isLocal :: a -> Bool
 
-data StmtAnnot
-  = StmtAnnot { sa_pure :: Bool
-              , sa_local :: Bool }
+data StmtAnnot = StmtAnnot
+  { sa_pure :: Bool
+  , sa_local :: Bool
+  }
   deriving (Eq, Show, Generic)
 
 instance NFData StmtAnnot
@@ -469,8 +471,9 @@ instance IsLocal a => IsLocal (Seq.Seq a) where
 
 mkAnnot :: IsPure a => IsLocal a => a -> StmtAnnot
 mkAnnot a = StmtAnnot {..}
-  where sa_pure = isPure a
-        sa_local = isLocal a
+  where
+    sa_pure = isPure a
+    sa_local = isLocal a
 
 data DLExpr
   = DLE_Arg SrcLoc DLArg

@@ -135,12 +135,14 @@ prettyStop :: Doc a
 prettyStop = "exit" <> parens (emptyDoc) <> semi
 
 prettyMap :: Pretty a => DLVar -> DLArg -> DLVar -> a -> DLArg -> Doc ann
-prettyMap ans x a f r = "map" <+> pretty ans <+> "=" <+> "for" <+> parens ( pretty a <+> "in" <+> pretty x ) <+>
-  braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
+prettyMap ans x a f r =
+  "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <+> "in" <+> pretty x)
+    <+> braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
 
 prettyReduce :: Pretty a => DLVar -> DLArg -> DLArg -> DLVar -> DLVar -> a -> DLArg -> Doc ann
-prettyReduce ans x z b a f r = "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens ( pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x ) <+>
-  braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
+prettyReduce ans x z b a f r =
+  "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
+    <+> braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
 
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m

@@ -81,46 +81,51 @@ epp_m done _back skip look c =
         DLE_Claim _ _ CT_Possible _ -> skip k
         DLE_Claim _ _ (CT_Unknowable {}) _ -> skip k
         _ ->
-          look k
-          (\back' skip' k_cs k' ->
-             let maybe_skip vs = 
-                   case isPure de of
-                     True -> skip' k_cs k'
-                     False -> back' (cs' vs) (PL_Eff at de k')
-                 cs' vs = counts de <> count_rms vs k_cs
-             in case mdv of
-                  Nothing -> maybe_skip []
-                  Just dv ->
-                    case get_count dv k_cs of
-                      Count Nothing -> maybe_skip [dv]
-                      Count (Just lc) ->
-                        back' (cs' [dv]) (PL_Let at lc dv de k'))
+          look
+            k
+            (\back' skip' k_cs k' ->
+               let maybe_skip vs =
+                     case isPure de of
+                       True -> skip' k_cs k'
+                       False -> back' (cs' vs) (PL_Eff at de k')
+                   cs' vs = counts de <> count_rms vs k_cs
+                in case mdv of
+                     Nothing -> maybe_skip []
+                     Just dv ->
+                       case get_count dv k_cs of
+                         Count Nothing -> maybe_skip [dv]
+                         Count (Just lc) ->
+                           back' (cs' [dv]) (PL_Let at lc dv de k'))
     LL_ArrayMap at ans x a f r k ->
-      look k
-      (\back' skip' k_cs k' ->
-         case get_count ans k_cs of
-           Count Nothing -> skip' k_cs k'
-           Count (Just _) ->
-             --- Note: Maybe use LetCat for fusing?
-             back' cs' (PL_ArrayMap at ans x a f' r k')
-             where cs' = (counts x <> f_cs' <> counts r <> k_cs')
-                   k_cs' = count_rms [ans] k_cs
-                   f_cs' = count_rms [a] f_cs
-                   fk_cs' = k_cs' <> counts r
-                   ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
+      look
+        k
+        (\back' skip' k_cs k' ->
+           case get_count ans k_cs of
+             Count Nothing -> skip' k_cs k'
+             Count (Just _) ->
+               --- Note: Maybe use LetCat for fusing?
+               back' cs' (PL_ArrayMap at ans x a f' r k')
+               where
+                 cs' = (counts x <> f_cs' <> counts r <> k_cs')
+                 k_cs' = count_rms [ans] k_cs
+                 f_cs' = count_rms [a] f_cs
+                 fk_cs' = k_cs' <> counts r
+                 ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
     LL_ArrayReduce at ans x z b a f r k ->
-      look k
-      (\back' skip' k_cs k' ->
-         case get_count ans k_cs of
-           Count Nothing -> skip' k_cs k'
-           Count (Just _) ->
-             --- Note: Maybe use LetCat for fusing?
-             back' cs' (PL_ArrayReduce at ans x z b a f' r k')
-             where cs' = (counts x <> counts z <> f_cs' <> counts r <> k_cs')
-                   k_cs' = count_rms [ans] k_cs
-                   f_cs' = count_rms [b, a] f_cs
-                   fk_cs' = k_cs' <> counts r
-                   ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
+      look
+        k
+        (\back' skip' k_cs k' ->
+           case get_count ans k_cs of
+             Count Nothing -> skip' k_cs k'
+             Count (Just _) ->
+               --- Note: Maybe use LetCat for fusing?
+               back' cs' (PL_ArrayReduce at ans x z b a f' r k')
+               where
+                 cs' = (counts x <> counts z <> f_cs' <> counts r <> k_cs')
+                 k_cs' = count_rms [ans] k_cs
+                 f_cs' = count_rms [b, a] f_cs
+                 fk_cs' = k_cs' <> counts r
+                 ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
     LL_Var at dv k ->
       look
         k

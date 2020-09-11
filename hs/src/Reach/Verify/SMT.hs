@@ -17,8 +17,8 @@ import Reach.EmbeddedFiles
 import Reach.IORefRef
 import Reach.Pretty ()
 import Reach.Type
-import Reach.Util
 import Reach.UnrollLoops
+import Reach.Util
 import Reach.Verify.SMTParser (parseModel)
 import Reach.Verify.Shared
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)

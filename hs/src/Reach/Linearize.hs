@@ -14,12 +14,15 @@ lin_com who back mkk rets s ks =
     DLS_Let at dv de -> mkk $ LL_Let at dv de $ back at rets ks
     DLS_ArrayMap at ans x a f r ->
       mkk $ LL_ArrayMap at ans x a f' r $ back at rets ks
-      where f' = lin_local at f
-    DLS_ArrayReduce at ans x z b a f r -> 
+      where
+        f' = lin_local at f
+    DLS_ArrayReduce at ans x z b a f r ->
       mkk $ LL_ArrayReduce at ans x z b a f' r $ back at rets ks
-      where f' = lin_local at f
-    DLS_If at ca _ ts fs | isLocal s ->
-      mkk $ LL_LocalIf at ca t' f' $ back at rets ks
+      where
+        f' = lin_local at f
+    DLS_If at ca _ ts fs
+      | isLocal s ->
+        mkk $ LL_LocalIf at ca t' f' $ back at rets ks
       where
         t' = lin_local_rets at rets ts
         f' = lin_local_rets at rets fs
@@ -63,7 +66,8 @@ lin_con _ at _ Seq.Empty =
   LLC_Com $ LL_Return at
 lin_con back at_top rets (s Seq.:<| ks) =
   case s of
-    DLS_If at ca _ ts fs | not (isLocal s) ->
+    DLS_If at ca _ ts fs
+      | not (isLocal s) ->
         LLC_If at ca t' f'
       where
         t' = lin_con back at rets (ts <> ks)
@@ -91,7 +95,8 @@ lin_step at _ Seq.Empty =
   LLS_Stop at []
 lin_step _ rets (s Seq.:<| ks) =
   case s of
-    DLS_If {} | not (isLocal s) ->
+    DLS_If {}
+      | not (isLocal s) ->
         impossible $ "step cannot unlocal if, must occur in consensus"
     DLS_Stop at fs ->
       LLS_Stop at fs
