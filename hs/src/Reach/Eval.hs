@@ -706,96 +706,92 @@ infectWithId v (lvl, sv) = (lvl, sv')
           SLV_Participant at who io (Just v) mdv
         _ -> sv
 
-evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
-evalDot ctxt at sco st obj field =
+evalAsEnv :: SrcLoc -> SLVal -> M.Map SLVar (SLCtxt s -> SLScope -> SLState -> SLComp s SLSVal)
+evalAsEnv at obj =
   case obj of
     SLV_Object _ _ env ->
-      case M.lookup field env of
-        Just v -> retV $ sss_sls v
-        Nothing -> illegal_field (M.keys env)
+      M.map (retV . sss_sls) env
     SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
       retDLVar tm (DLA_Var obj_dv) Public
     SLV_Prim (SLPrim_interact _ who m it@(T_Object tm)) ->
       retDLVar tm (DLA_Interact who m it) Secret
     SLV_Participant _ who _ vas _ ->
-      case field of
-        "only" -> retV $ public $ SLV_Form (SLForm_Part_Only who)
-        "publish" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing)
-        "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing)
-        "set" -> delayCall SLPrim_part_set
-        _ -> illegal_field ["only", "publish", "pay", "set"]
+      M.fromList
+      [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who)),
+        ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing)),
+        ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing)),
+        ("set", delayCall SLPrim_part_set) ]
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
-      case field of
-        "publish" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime)
-        "pay" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)
-        "timeout" -> retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)
-        _ -> illegal_field ["publish", "pay", "timeout"]
+      M.fromList
+      [ ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime)),
+        ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)),
+        ("timeout", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)) ]
+    --- FIXME rewrite the rest to look at the type and go from there
     SLV_Tuple _ _ ->
-      case field of
-        "set" -> delayCall SLPrim_tuple_set
-        "length" -> doCall SLPrim_tuple_length
-        _ -> illegal_field ["set", "length"]
+      M.fromList
+      [ ("set", delayCall SLPrim_tuple_set),
+        ("length", doCall SLPrim_tuple_length) ]
     SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
-      case field of
-        "set" -> delayCall SLPrim_tuple_set
-        "length" -> doCall SLPrim_tuple_length
-        _ -> illegal_field ["set", "length"]
+      M.fromList
+      [ ("set", delayCall SLPrim_tuple_set),
+        ("length", doCall SLPrim_tuple_length) ]
     SLV_Prim SLPrim_Tuple ->
-      case field of
-        "set" -> retV $ public $ SLV_Prim $ SLPrim_tuple_set
-        "length" -> retV $ public $ SLV_Prim $ SLPrim_tuple_length
-        _ -> illegal_field ["set", "length"]
+      M.fromList
+      [ ("set", retV $ public $ SLV_Prim $ SLPrim_tuple_set),
+        ("length", retV $ public $ SLV_Prim $ SLPrim_tuple_length) ]
     SLV_Array _ _ _ ->
-      case field of
-        "set" -> delayCall SLPrim_array_set
-        "length" -> doCall SLPrim_array_length
-        "concat" -> delayCall SLPrim_array_concat
-        "map" -> delayCall SLPrim_array_map
-        "reduce" -> delayCall SLPrim_array_reduce
-        "zip" -> delayCall SLPrim_array_zip
-        _ -> illegal_field ["set", "length", "concat", "map", "reduce", "zip"]
+      M.fromList
+      [ ("set", delayCall SLPrim_array_set),
+        ("length", doCall SLPrim_array_length),
+        ("concat", delayCall SLPrim_array_concat),
+        ("map", delayCall SLPrim_array_map),
+        ("reduce", delayCall SLPrim_array_reduce),
+        ("zip", delayCall SLPrim_array_zip) ]
     SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
-      case field of
-        "set" -> delayCall SLPrim_array_set
-        "length" -> doCall SLPrim_array_length
-        "concat" -> delayCall SLPrim_array_concat
-        "map" -> delayCall SLPrim_array_map
-        "reduce" -> delayCall SLPrim_array_reduce
-        "zip" -> delayCall SLPrim_array_zip
-        _ -> illegal_field ["set", "length", "concat", "map", "reduce", "zip"]
+      M.fromList
+      [ ("set", delayCall SLPrim_array_set),
+        ("length", doCall SLPrim_array_length),
+        ("concat", delayCall SLPrim_array_concat),
+        ("map", delayCall SLPrim_array_map),
+        ("reduce", delayCall SLPrim_array_reduce),
+        ("zip", delayCall SLPrim_array_zip) ]
     SLV_Prim SLPrim_Array ->
-      case field of
-        "empty" -> retV $ sss_sls $ env_lookup at "Array_empty" $ sco_env sco
-        "replicate" -> retV $ sss_sls $ env_lookup at "Array_replicate" $ sco_env sco
-        "length" -> retV $ public $ SLV_Prim $ SLPrim_array_length
-        "set" -> retV $ public $ SLV_Prim $ SLPrim_array_set
-        "iota" -> retV $ public $ SLV_Prim $ SLPrim_Array_iota
-        "concat" -> retV $ public $ SLV_Prim $ SLPrim_array_concat
-        "map" -> retV $ public $ SLV_Prim $ SLPrim_array_map
-        "reduce" -> retV $ public $ SLV_Prim $ SLPrim_array_reduce
-        "zip" -> retV $ public $ SLV_Prim $ SLPrim_array_zip
-        _ -> illegal_field ["length", "set", "iota", "concat", "map", "reduce", "zip"]
+      M.fromList
+      [ ("empty", retStdLib "Array_empty"),
+        ("replicate", retStdLib "Array_replicate"),
+        ("length", retV $ public $ SLV_Prim $ SLPrim_array_length),
+        ("set", retV $ public $ SLV_Prim $ SLPrim_array_set),
+        ("iota", retV $ public $ SLV_Prim $ SLPrim_Array_iota),
+        ("concat", retV $ public $ SLV_Prim $ SLPrim_array_concat),
+        ("map", retV $ public $ SLV_Prim $ SLPrim_array_map),
+        ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce),
+        ("zip", retV $ public $ SLV_Prim $ SLPrim_array_zip) ]
     SLV_Prim SLPrim_Object ->
-      case field of
-        "set" -> retV $ sss_sls $ env_lookup at "Object_set" $ sco_env sco
-        _ -> illegal_field ["set"]
+      M.fromList
+      [ ("set", retStdLib "Object_set") ]
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
     delayCall p = retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)]
-    doCall p = do
+    doCall p ctxt sco st = do
       SLRes lifts st' (SLAppRes _ v) <- evalApplyVals ctxt at sco st (SLV_Prim p) [(public obj)]
       return $ SLRes lifts st' v
     retDLVar tm obj_dla slvl =
-      case M.lookup field tm of
-        Nothing -> illegal_field (M.keys tm)
-        Just t -> do
+      M.mapWithKey retk tm
+      where
+        retk field t ctxt _sco st = do
           (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "object ref") t) (DLE_ObjectRef at obj_dla field)
           let ansv = SLV_DLVar dv
           return $ SLRes lifts' st (slvl, ansv)
-    retV sv = return $ SLRes mempty st sv
-    illegal_field ks =
-      expect_throw at (Err_Dot_InvalidField obj ks field)
+    retV sv _ctxt _sco st = return $ SLRes mempty st sv
+    retStdLib n ctxt sco st = retV (sss_sls $ env_lookup at n $ sco_env sco) ctxt sco st
+
+evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
+evalDot ctxt at sco st obj field = do
+  let env = evalAsEnv at obj
+  case M.lookup field env of
+    Just gv -> gv ctxt sco st
+    Nothing -> expect_throw at $ Err_Dot_InvalidField obj (M.keys env) field
 
 evalForm :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLForm -> [JSExpression] -> SLComp s SLSVal
 evalForm ctxt at sco st f args =
@@ -2310,7 +2306,20 @@ evalStmt ctxt at sco st ss =
         var_at = (srcloc_jsa "var" var_a at)
     ((JSWhile a _ _ _ _) : _) ->
       expect_throw (srcloc_jsa "while" a at) (Err_Block_While)
-    (s@(JSWith a _ _ _ _ _) : _) -> illegal a s "with"
+    ((JSWith a _ oe _ body sp) : ks) -> do
+      let at' = srcloc_jsa "with stmt" a at
+      SLRes o_lifts o_st (olvl, ov) <- evalExpr ctxt at' sco st oe
+      let mk_o_env' = evalAsEnv at' ov
+      let eval1 (SLRes lifts0 st0 env1) (f, getv) = do
+            SLRes lifts1 st1 val <- getv ctxt sco st0
+            return $ SLRes (lifts0 <> lifts1) st1 $ M.insert f val env1
+      SLRes env_lifts env_st o_env' <- foldM eval1 (SLRes mempty o_st mempty) $ M.toList mk_o_env'
+      let o_env = M.map (sls_sss at . lvlMeet olvl) o_env'
+      let sco' = sco_update ctxt at' sco o_st o_env
+      SLRes body_lifts body_st (SLStmtRes _ body_rets) <- evalStmt ctxt at' sco' env_st [body]
+      let at_after = srcloc_after_semi "with stmt" a sp at
+      SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <- evalStmt ctxt at_after sco body_st ks
+      return $ SLRes (o_lifts <> env_lifts <> body_lifts <> k_lifts) k_st $ SLStmtRes k_env' (body_rets <> k_rets)
   where
     illegal a s lab =
       expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)

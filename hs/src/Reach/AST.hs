@@ -347,6 +347,10 @@ data SLSSVal = SLSSVal
 
 instance NFData SLSSVal
 
+sss_restrict :: SecurityLevel -> SLSSVal -> SLSSVal
+sss_restrict lvl1 (SLSSVal at lvl2 val) =
+  (SLSSVal at (lvl1 <> lvl2) val)
+
 sss_sls :: SLSSVal -> SLSVal
 sss_sls (SLSSVal _ level val) = (level, val)
 

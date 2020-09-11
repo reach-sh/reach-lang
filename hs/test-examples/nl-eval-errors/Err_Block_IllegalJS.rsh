@@ -2,7 +2,7 @@
 
 const f = () => {
   const obj = {x: 0};
-  with(obj) { return x; };
+  throw obj;
 }
 
 export const main = Reach.App(
