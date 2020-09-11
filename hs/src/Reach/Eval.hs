@@ -749,6 +749,8 @@ evalDot ctxt at sco st obj field =
         _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
     SLV_Prim SLPrim_Array ->
       case field of
+        "empty" -> retV $ sss_sls $ env_lookup at "Array_empty" $ sco_env sco
+        "replicate" -> retV $ sss_sls $ env_lookup at "Array_replicate" $ sco_env sco
         "length" -> retV $ public $ SLV_Prim $ SLPrim_array_length
         "set" -> retV $ public $ SLV_Prim $ SLPrim_array_set
         "iota" -> retV $ public $ SLV_Prim $ SLPrim_Array_iota

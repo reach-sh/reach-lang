@@ -71,10 +71,12 @@ export function closeTo(Who, after) {
   after();
   exit(); }
 
-// object functions
+// Standard library functions that should be hidden in some way, like SLV_HaskellFunction FIXME
 
-// FIXME unfortunate that this name is taken here. Maybe I really need
-// SLV_HaskellFunction
 export function Object_set(o, k, e) {
   return {...o, [k]: e};
 }
+export const Array_empty =
+  Array.iota(0);
+export const Array_replicate =
+  (sz, v) => Array.iota(sz).map(x => v);
