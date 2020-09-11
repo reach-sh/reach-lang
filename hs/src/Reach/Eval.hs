@@ -2306,20 +2306,26 @@ evalStmt ctxt at sco st ss =
         var_at = (srcloc_jsa "var" var_a at)
     ((JSWhile a _ _ _ _) : _) ->
       expect_throw (srcloc_jsa "while" a at) (Err_Block_While)
-    ((JSWith a _ oe _ body sp) : ks) -> do
-      let at' = srcloc_jsa "with stmt" a at
-      SLRes o_lifts o_st (olvl, ov) <- evalExpr ctxt at' sco st oe
-      let mk_o_env' = evalAsEnv at' ov
-      let eval1 (SLRes lifts0 st0 env1) (f, getv) = do
-            SLRes lifts1 st1 val <- getv ctxt sco st0
-            return $ SLRes (lifts0 <> lifts1) st1 $ M.insert f val env1
-      SLRes env_lifts env_st o_env' <- foldM eval1 (SLRes mempty o_st mempty) $ M.toList mk_o_env'
-      let o_env = M.map (sls_sss at . lvlMeet olvl) o_env'
-      let sco' = sco_update ctxt at' sco o_st o_env
-      SLRes body_lifts body_st (SLStmtRes _ body_rets) <- evalStmt ctxt at' sco' env_st [body]
-      let at_after = srcloc_after_semi "with stmt" a sp at
-      SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <- evalStmt ctxt at_after sco body_st ks
-      return $ SLRes (o_lifts <> env_lifts <> body_lifts <> k_lifts) k_st $ SLStmtRes k_env' (body_rets <> k_rets)
+    (s@(JSWith a _ oe _ body sp) : ks) ->
+      case True of
+        True -> illegal a s "with"
+        False -> do
+          --- Because of the inlining-nature of Reach functions, this
+          --- exposes too much of a function's definition and breaks
+          --- the abstraction.
+          let at' = srcloc_jsa "with stmt" a at
+          SLRes o_lifts o_st (olvl, ov) <- evalExpr ctxt at' sco st oe
+          let mk_o_env' = evalAsEnv at' ov
+          let eval1 (SLRes lifts0 st0 env1) (f, getv) = do
+                SLRes lifts1 st1 val <- getv ctxt sco st0
+                return $ SLRes (lifts0 <> lifts1) st1 $ M.insert f val env1
+          SLRes env_lifts env_st o_env' <- foldM eval1 (SLRes mempty o_st mempty) $ M.toList mk_o_env'
+          let o_env = M.map (sls_sss at . lvlMeet olvl) o_env'
+          let sco' = sco_update ctxt at' sco o_st o_env
+          SLRes body_lifts body_st (SLStmtRes _ body_rets) <- evalStmt ctxt at' sco' env_st [body]
+          let at_after = srcloc_after_semi "with stmt" a sp at
+          SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <- evalStmt ctxt at_after sco body_st ks
+          return $ SLRes (o_lifts <> env_lifts <> body_lifts <> k_lifts) k_st $ SLStmtRes k_env' (body_rets <> k_rets)
   where
     illegal a s lab =
       expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
