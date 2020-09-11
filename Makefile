@@ -9,6 +9,7 @@ linted_reach_src_dirs = \
 ignored_reach_sources = \
 	--ignore-pattern hs/test-examples/non-features/js_parse_err.rsh \
 	--ignore-pattern hs/test-examples/features/underscore.rsh \
+	--ignore-pattern hs/test-examples/features/with.rsh \
 	--ignore-pattern hs/test-examples/nl-eval-errors/ \
 	--ignore-pattern hs/test-examples/parse-errors/ \
 	--ignore-pattern hs/test-examples/compile-errors/
