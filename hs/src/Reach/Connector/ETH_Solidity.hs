@@ -267,8 +267,8 @@ solExpr ctxt sp = \case
     (solArg ctxt ae) <> brackets (solArg ctxt ie) <> sp
   DLE_ArraySet _ _ ae _ ie ve ->
     (solApply (solArraySet (solTypeI ctxt (argTypeOf ae))) $ map (solArg ctxt) [ae, ie, ve]) <> sp
-  DLE_ArrayConcat _XXX_at _XXX_x_da _XXX_y_da ->
-    error "XXX"
+  DLE_ArrayConcat _ _XXX_x_da _XXX_y_da ->
+    "XXX" <> sp
   DLE_TupleRef _ ae i ->
     (solArg ctxt ae) <> ".elem" <> pretty i <> sp
   DLE_ObjectRef _ oe f ->
@@ -347,10 +347,19 @@ solCom iter ctxt = \case
       ca' = solArg ctxt ca
       SolTailRes _ t' = solPLTail ctxt t
       SolTailRes _ f' = solPLTail ctxt f
-  PL_ArrayMap {} -> -- _ ans x a f r k ->
-    error "XXX"
-  PL_ArrayReduce {} -> -- _ ans x z b a f r k ->
-    error "XXX"
+  PL_ArrayMap _ ans _XXX_x _XXX_a f _XXX_r k ->
+    SolTailRes ctxt map_p <> iter ctxt k
+    where sz = case ans of DLVar _ _ (T_Array _ x) _ -> x
+                           _ -> impossible "array"
+          map_p =
+            vsep [ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
+                   <> solBraces ( vsep [ "XXX;"
+                                       , f'
+                                       , "XXX;"
+                                       ] ) ]
+          SolTailRes _ f' = solPLTail ctxt f
+  PL_ArrayReduce _ _XXX_ans _XXX_x _XXX_z _XXX_b _XXX_a _XXX_f _XXX_r k ->
+    SolTailRes ctxt "XXX;" <> iter ctxt k
 
 solPLTail :: SolCtxt a -> PLTail -> SolTailRes a
 solPLTail ctxt (PLTail m) = solCom solPLTail ctxt m
@@ -408,10 +417,11 @@ manyVars_m iter = \case
   PL_Var _ dv k -> S.insert dv $ iter k
   PL_Set _ _ _ k -> iter k
   PL_LocalIf _ _ t f k -> manyVars_p t <> manyVars_p f <> iter k
-  PL_ArrayMap {} -> -- _ ans x a f r k ->
-    error "XXX"
-  PL_ArrayReduce {} -> -- _ ans x z b a f r k ->
-    error "XXX"
+  PL_ArrayMap _ ans _ a f _ k ->
+    s_inserts [ans, a] (manyVars_p f <> iter k)
+  PL_ArrayReduce _ ans _ _ b a f _ k ->
+    s_inserts [ans, b, a] (manyVars_p f <> iter k)
+  where s_inserts l = S.union (S.fromList l)
 
 manyVars_p :: PLTail -> S.Set DLVar
 manyVars_p (PLTail m) = manyVars_m manyVars_p m
@@ -523,11 +533,13 @@ _solDefineType1 getTypeName i name = \case
   T_Array t sz -> do
     tn <- getTypeName t
     let me = tn <> brackets (pretty sz)
-    let memem = me <> " memory"
+    let inmem = solArgLoc AM_Memory
+    let memem = me <> inmem
+    let tnmem = tn <> (if mustBeMem t then inmem else "")
     let args =
           [ solDecl "arr" memem
           , solDecl "idx" "uint256"
-          , solDecl "val" tn
+          , solDecl "val" tnmem
           ]
     let ret = "internal" <+> "returns" <+> parens (solDecl "arrp" memem)
     let ref arr idx = arr <> brackets (idx)

@@ -150,7 +150,7 @@ jsExpr ctxt = \case
   DLE_ArraySet _ _ aa _ ia va ->
     jsApply "stdlib.Array_set" $ map jsArg [aa, ia, va]
   DLE_ArrayConcat _ x y ->
-    jsApply "stdlib.Array_concat" $ map jsArg [x, y]
+    jsArg x <> "." <> jsApply "concat" [ jsArg y ]
   DLE_TupleRef _ aa i ->
     jsArg aa <> brackets (jsCon $ DLC_Int i)
   DLE_ObjectRef _ oa f ->
