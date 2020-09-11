@@ -6,13 +6,14 @@ import * as waitPort from 'wait-port';
 
 import { getConnectorMode } from './loader.mjs';
 import {
-  getDEBUG,
-  debug,
-  bigNumberify,
-  isBigNumber,
-  assert,
   add,
+  assert,
+  bigNumberify,
+  debug,
   ge,
+  getDEBUG,
+  isBigNumber,
+  keccak256,
   lt,
 } from './shared.mjs';
 export * from './shared.mjs';
@@ -265,11 +266,11 @@ export const connectAccount = async networkAccount => {
   const shad = address.substring(2, 6);
 
   const extractInfo = async (ctcOrInfo) => {
-    const { getInfo, address, creation_block, args, value } = ctcOrInfo;
+    const { getInfo, address, creation_block, args, value, creator } = ctcOrInfo;
     if (getInfo) {
       return extractInfo(await getInfo());
-    } else if (address && creation_block && args && value != undefined) {
-      return { address, creation_block, args, value };
+    } else if (address && creation_block && args && value != undefined && creator) {
+      return { address, creation_block, args, value, creator };
     } else {
       throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`);
     }
@@ -331,6 +332,7 @@ export const connectAccount = async networkAccount => {
         creation_block: info.creation_block,
         args: info.args,
         value: info.value,
+        creator: info.creator,
       });
       return await _getInfo();
     };
@@ -510,6 +512,7 @@ export const connectAccount = async networkAccount => {
         creation_block: deploy_r.blockNumber,
         args,
         value,
+        creator: address,
         transactionHash: deploy_r.transactionHash,
       };
     };
@@ -674,7 +677,7 @@ const toNumberMay = (x) => {
 // Throws an Error if any verifications fail
 export const verifyContract = async (ctcInfo, backend) => {
   const {ABI, Bytecode} = backend._Connectors.ETH;
-  const {address, creation_block, args} = ctcInfo;
+  const {address, creation_block, args, value, creator} = ctcInfo;
   const factory = new ethers.ContractFactory(ABI, Bytecode);
 
   // TODO: is there a way to get the creation_block & bytecode with a single api call?
@@ -697,9 +700,11 @@ export const verifyContract = async (ctcInfo, backend) => {
   // actual looks like this:     [init][body]
   // XXX the labels "init", "setup", and "teardown" are probably misleading
   // FIXME: for 0-arg contract deploys, it appears that:
+  // * "init" is of length 13
   // * "setup" is not consistent in content, but is of length 156
   // * "teardown" is of length 0
   // FIXME: for n-arg contract deploys, it appears that:
+  // * "init" is of length 13
   // * "setup" is of length >= 0 (and probably >= 156)
   // * "teardown" is of length >= 0
   const initLen = 13;
@@ -736,5 +741,30 @@ export const verifyContract = async (ctcInfo, backend) => {
       throw Error(`Contract bytecode does not match expected bytecode.`);
     }
   }
+
+  const bal = await provider.getBalance(address, creation_block);
+  // bal is allowed to exceed expectations, for example,
+  // if someone spuriously transferred extra money to the contract
+  if (!ge(bal, value)) {
+    console.log('bal expected: ' + value);
+    console.log('bal actual  : ' + bal);
+    throw Error(`Contract initial balance does not match expected initial balance`);
+  }
+
+  if (args.length == 0) {
+    const st = await provider.getStorageAt(address, 0, creation_block);
+    const expectedSt = keccak256(0, creation_block);
+    if (st !== expectedSt) {
+      console.log('st expected: ' + expectedSt);
+      console.log('st actual  : ' + st);
+      throw Error(`Contract initial state does not match expected initial state.`);
+    }
+  } else {
+    // TODO: figure out freeVars using creator and args
+    void(creator);
+    // const expectedSt = keccak256(1, creation_block, ...freeVars)
+    // if st !== expectedSt throw Error
+  }
+
   return true;
 };

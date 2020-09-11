@@ -193,6 +193,8 @@ const kek = (arg) => {
     return '0x' + bigNumberToHex(arg);
   } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array') {
     return arg;
+  } else if (Array.isArray(arg)) {
+    return ethers.utils.concat(arg.map(kek).map(ethers.utils.arrayify));
   } else {
     throw Error(`Can't kek this: ${arg}`);
   }
@@ -203,9 +205,7 @@ export const isHex = isHexString;
 export const hexToString = toUtf8String;
 
 export const keccak256 = (...args) => {
-  const kekArgs = args.map(kek);
-  const kekArrs = kekArgs.map(ethers.utils.arrayify);
-  const kekCat = ethers.utils.concat(kekArrs);
+  const kekCat = kek(args);
   return ethers.utils.keccak256(kekCat);
 };
 
