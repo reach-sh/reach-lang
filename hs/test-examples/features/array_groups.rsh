@@ -36,7 +36,11 @@ export const main = Reach.App(
               Array.iota(4),
               0, (acc, x, y, z) => acc + x + y + z); });
 
-    assert(Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y)) == ((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3));
+    assert(
+      Array
+        .iota(4)
+        .reduce(Array.iota(4), 0, (x, y, z) => (z + x + y)) ==
+        ((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3));
 
     A.publish(a3, a4, v5, a6, a7);
     const c4 =
