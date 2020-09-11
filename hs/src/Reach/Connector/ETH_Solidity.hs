@@ -129,6 +129,9 @@ solHash a = solApply "uint256" [solApply "keccak256" [solApply "abi.encode" a]]
 solArraySet :: Int -> Doc a
 solArraySet i = "array_set" <> pretty i
 
+solArrayRef :: Doc a -> Doc a -> Doc a
+solArrayRef arr idx = arr <> brackets idx
+
 --- Compiler
 
 type VarMap a = M.Map DLVar (Doc a)
@@ -264,11 +267,11 @@ solExpr ctxt sp = \case
   DLE_PrimOp _ p args ->
     (solPrimApply p $ map (solArg ctxt) args) <> sp
   DLE_ArrayRef _ _ ae _ ie ->
-    (solArg ctxt ae) <> brackets (solArg ctxt ie) <> sp
+    solArrayRef (solArg ctxt ae) (solArg ctxt ie) <> sp
   DLE_ArraySet _ _ ae _ ie ve ->
     (solApply (solArraySet (solTypeI ctxt (argTypeOf ae))) $ map (solArg ctxt) [ae, ie, ve]) <> sp
-  DLE_ArrayConcat _ _XXX_x_da _XXX_y_da ->
-    "XXX" <> sp
+  DLE_ArrayConcat {} ->
+    impossible "array concat"
   DLE_TupleRef _ ae i ->
     (solArg ctxt ae) <> ".elem" <> pretty i <> sp
   DLE_ObjectRef _ oe f ->
@@ -325,9 +328,23 @@ data SolTailRes a = SolTailRes (SolCtxt a) (Doc a)
 instance Semigroup (SolTailRes a) where
   (SolTailRes ctxt_x xp) <> (SolTailRes ctxt_y yp) = SolTailRes (ctxt_x <> ctxt_y) (xp <> hardline <> yp)
 
+arraySize :: DLArg -> Integer
+arraySize a =
+  case argTypeOf a of
+    T_Array _ sz -> sz
+    _ -> impossible "arraySize"
+
 solCom :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> PLCommon k -> SolTailRes a
 solCom iter ctxt = \case
   PL_Return _ -> SolTailRes ctxt emptyDoc
+  PL_Let _ _ dv (DLE_ArrayConcat _ x y) k -> SolTailRes ctxt concat_p <> iter ctxt k
+    where
+      concat_p = vsep [ copy x 0, copy y (arraySize x) ]
+      copy src (off :: Integer) =
+        "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
+        <> solBraces ( solArrayRef (solVar ctxt dv) (solBinOp "+" "i" (solNum off)) <+> "=" <+>
+                       solArrayRef (solArg ctxt src) "i" <> semi )
+        where sz = arraySize src
   PL_Let _ PL_Once dv de k -> iter ctxt' k
     where
       ctxt' = ctxt {ctxt_varm = M.insert dv de' $ ctxt_varm ctxt}
@@ -350,23 +367,35 @@ solCom iter ctxt = \case
   PL_ArrayMap _ ans x a f r k ->
     SolTailRes ctxt map_p <> iter ctxt k
     where
-      sz = case ans of
-        DLVar _ _ (T_Array _ sz_) _ -> sz_
-        _ -> impossible "array"
-      ref arr idx = arr <> brackets idx
+      sz = arraySize x
       map_p =
         vsep
           [ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
               <> solBraces
                 (vsep
-                   [ solVar ctxt a <+> "=" <+> (ref (solArg ctxt x) "i") <> semi
+                   [ solVar ctxt a <+> "=" <+> (solArrayRef (solArg ctxt x) "i") <> semi
                    , f'
-                   , (ref (solVar ctxt ans) "i") <+> "=" <+> solArg ctxt r <> semi
+                   , (solArrayRef (solVar ctxt ans) "i") <+> "=" <+> solArg fctxt r <> semi
                    ])
           ]
-      SolTailRes _ f' = solPLTail ctxt f
-  PL_ArrayReduce _ _XXX_ans _XXX_x _XXX_z _XXX_b _XXX_a _XXX_f _XXX_r k ->
-    SolTailRes ctxt "XXX;" <> iter ctxt k
+      SolTailRes fctxt f' = solPLTail ctxt f
+  PL_ArrayReduce _ ans x z b a f r k ->
+    SolTailRes ctxt reduce_p <> iter ctxt k
+    where
+      sz = arraySize x
+      reduce_p =
+        vsep
+          [ (solVar ctxt b) <+> "=" <+> solArg ctxt z <> semi
+          , "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
+              <> solBraces
+                (vsep
+                   [ solVar ctxt a <+> "=" <+> (solArrayRef (solArg ctxt x) "i") <> semi
+                   , f'
+                   , (solVar ctxt b) <+> "=" <+> solArg fctxt r <> semi
+                   ])
+          , (solVar ctxt ans) <+> "=" <+> (solVar ctxt b) <> semi
+          ]
+      SolTailRes fctxt f' = solPLTail ctxt f
 
 solPLTail :: SolCtxt a -> PLTail -> SolTailRes a
 solPLTail ctxt (PLTail m) = solCom solPLTail ctxt m
@@ -415,9 +444,12 @@ solFrame ctxt i sim = if null fs then (emptyDoc, emptyDoc) else (frame_defp, fra
 manyVars_m :: (a -> S.Set DLVar) -> PLCommon a -> S.Set DLVar
 manyVars_m iter = \case
   PL_Return {} -> mempty
-  PL_Let _ lc dv _ k -> mdv <> iter k
+  PL_Let _ lc dv de k -> mdv <> iter k
     where
-      mdv = case lc of
+      lc' = case de of
+              DLE_ArrayConcat {} -> PL_Many
+              _ -> lc
+      mdv = case lc' of
         PL_Once -> mempty
         PL_Many -> S.singleton dv
   PL_Eff _ _ k -> iter k
@@ -550,12 +582,11 @@ _solDefineType1 getTypeName i name = \case
           , solDecl "val" tnmem
           ]
     let ret = "internal" <+> "returns" <+> parens (solDecl "arrp" memem)
-    let ref arr idx = arr <> brackets (idx)
-    let assign idx val = (ref "arrp" idx) <+> "=" <+> val <> semi
+    let assign idx val = (solArrayRef "arrp" idx) <+> "=" <+> val <> semi
     let body =
           vsep
             [ ("for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
-                 <> solBraces (assign "i" (ref "arr" "i")))
+                 <> solBraces (assign "i" (solArrayRef "arr" "i")))
             , assign "idx" "val"
             ]
     let set_defn = solFunction (solArraySet i) args ret body

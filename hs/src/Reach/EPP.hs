@@ -106,10 +106,11 @@ epp_m done _back skip look c =
                --- Note: Maybe use LetCat for fusing?
                back' cs' (PL_ArrayMap at ans x a f' r k')
                where
-                 cs' = (counts x <> f_cs' <> counts r <> k_cs')
+                 cs' = (counts x <> f_cs' <> k_cs')
                  k_cs' = count_rms [ans] k_cs
                  f_cs' = count_rms [a] f_cs
-                 fk_cs' = k_cs' <> counts r
+                 --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
+                 fk_cs' = k_cs' <> (counts r <> counts r)
                  ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
     LL_ArrayReduce at ans x z b a f r k ->
       look
@@ -121,10 +122,11 @@ epp_m done _back skip look c =
                --- Note: Maybe use LetCat for fusing?
                back' cs' (PL_ArrayReduce at ans x z b a f' r k')
                where
-                 cs' = (counts x <> counts z <> f_cs' <> counts r <> k_cs')
+                 cs' = (counts x <> counts z <> f_cs' <> k_cs')
                  k_cs' = count_rms [ans] k_cs
                  f_cs' = count_rms [b, a] f_cs
-                 fk_cs' = k_cs' <> counts r
+                 --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
+                 fk_cs' = k_cs' <> (counts r <> counts r)
                  ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
     LL_Var at dv k ->
       look
