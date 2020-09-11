@@ -339,12 +339,14 @@ solCom iter ctxt = \case
   PL_Return _ -> SolTailRes ctxt emptyDoc
   PL_Let _ _ dv (DLE_ArrayConcat _ x y) k -> SolTailRes ctxt concat_p <> iter ctxt k
     where
-      concat_p = vsep [ copy x 0, copy y (arraySize x) ]
+      concat_p = vsep [copy x 0, copy y (arraySize x)]
       copy src (off :: Integer) =
         "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
-        <> solBraces ( solArrayRef (solVar ctxt dv) (solBinOp "+" "i" (solNum off)) <+> "=" <+>
-                       solArrayRef (solArg ctxt src) "i" <> semi )
-        where sz = arraySize src
+          <> solBraces
+            (solArrayRef (solVar ctxt dv) (solBinOp "+" "i" (solNum off)) <+> "="
+               <+> solArrayRef (solArg ctxt src) "i" <> semi)
+        where
+          sz = arraySize src
   PL_Let _ PL_Once dv de k -> iter ctxt' k
     where
       ctxt' = ctxt {ctxt_varm = M.insert dv de' $ ctxt_varm ctxt}
@@ -447,8 +449,8 @@ manyVars_m iter = \case
   PL_Let _ lc dv de k -> mdv <> iter k
     where
       lc' = case de of
-              DLE_ArrayConcat {} -> PL_Many
-              _ -> lc
+        DLE_ArrayConcat {} -> PL_Many
+        _ -> lc
       mdv = case lc' of
         PL_Once -> mempty
         PL_Many -> S.singleton dv
