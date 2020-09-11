@@ -39,6 +39,10 @@ export * from './shared.mjs';
 //   address: string
 //   creation_block: int
 //
+//   // More fields indicating initialization status
+//   args: array<array<string>>. See comment on reallyDeploy
+//   value: UInt256 or number or string or something.
+//
 //   // internal fields
 //   // * not required to call acc.attach(bin, ctc)
 //   // * required by backend
@@ -261,11 +265,11 @@ export const connectAccount = async networkAccount => {
   const shad = address.substring(2, 6);
 
   const extractInfo = async (ctcOrInfo) => {
-    const { getInfo, address, creation_block, args} = ctcOrInfo;
+    const { getInfo, address, creation_block, args, value } = ctcOrInfo;
     if (getInfo) {
       return extractInfo(await getInfo());
-    } else if (address && creation_block && args) {
-      return { address, creation_block, args };
+    } else if (address && creation_block && args && value != undefined) {
+      return { address, creation_block, args, value };
     } else {
       throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`);
     }
@@ -284,11 +288,11 @@ export const connectAccount = async networkAccount => {
         if (args == null || value == null) {
           throw Error(`Out of order sendrecv`);
         }
+        // [args] because: see comment on reallyDeploy
         const deployRes = await parentCtc.reallyDeploy([args], value);
-        // XXX ^ why is this [args] and not just args?
         debug(`${shad}: waitForInfo deployRes = ${JSON.stringify(deployRes)}`);
         const { transactionHash, ...deployInfo } = deployRes;
-        info = { ...deployInfo, args }; // XXX use the returned args from reallyDeploy?
+        info = deployInfo;
         _waitForInfo = async () => true;
         return { wait: async () => ({ transactionHash }) };
       };
@@ -326,6 +330,7 @@ export const connectAccount = async networkAccount => {
         address: info.address,
         creation_block: info.creation_block,
         args: info.args,
+        value: info.value,
       });
       return await _getInfo();
     };
@@ -491,6 +496,9 @@ export const connectAccount = async networkAccount => {
     const { ABI, Bytecode, deployMode } = bin._Connectors.ETH;
     const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
 
+    // args : Option(Array(string))
+    // where Option is represented as [] for None, and [x] for Some(x)
+    // In the Some case, the args are intentionally tupled into a single Array arg
     const reallyDeploy = async (args, value) => {
       debug(`${shad}: reallyDeploying with ${JSON.stringify([args, value])}`);
       const contract = await factory.deploy(...args, { value });
@@ -500,7 +508,8 @@ export const connectAccount = async networkAccount => {
       return {
         address: contract.address,
         creation_block: deploy_r.blockNumber,
-        args: args,
+        args,
+        value,
         transactionHash: deploy_r.transactionHash,
       };
     };
@@ -677,16 +686,22 @@ export const verifyContract = async (ctcInfo, backend) => {
   }
   const actual = await provider.getCode(address, creation_block);
 
-  // XXX Why is this (args) and not (...args) ?
-  const deployData = factory.getDeployTransaction(args).data;
+  // see comment on reallyDeploy about args
+  const deployData = factory.getDeployTransaction(...args).data;
   if (!deployData.startsWith(backend._Connectors.ETH.Bytecode)) {
     throw Error(`Impossible: contract with args is not prefixed by backend Bytecode`);
   }
 
   // FIXME this is based on empirical observation, feels hacky
-  // deployData looks like this: [init][setup][theRest]
-  // actual looks like this:     [init][theRest]
-  // FIXME The "setup" string is not consistent in content, but is consistent in length? Why?
+  // deployData looks like this: [init][setup][body][teardown]
+  // actual looks like this:     [init][body]
+  // XXX the labels "init", "setup", and "teardown" are probably misleading
+  // FIXME: for 0-arg contract deploys, it appears that:
+  // * "setup" is not consistent in content, but is of length 156
+  // * "teardown" is of length 0
+  // FIXME: for n-arg contract deploys, it appears that:
+  // * "setup" is of length >= 0 (and probably >= 156)
+  // * "teardown" is of length >= 0
   const initLen = 13;
   const setupLen = 156;
   const expected = deployData.slice(0, initLen) + deployData.slice(initLen + setupLen);
@@ -696,26 +711,30 @@ export const verifyContract = async (ctcInfo, backend) => {
   }
 
   if (actual !== expected) {
-    // XXX there is a larger chunk missing if deployed w/ args
-    // Not sure how to handle this yet
-    // Run against examples/workshop-hash-lock for args.length > 0
-    // Idea: maybe if we we compile bytecode w/o the first message,
-    // it will be identical to that?
-    if (args.length > 0) {
-      return true;
-    }
+    // FIXME: Empirical observation says that 0-arg contract deploys
+    // should === expected. However, this is fragile (?), so it's ok
+    // to only pass the next check.
 
-    const displayLen = 60;
-    console.log('--------------------------------------------');
-    console.log('expected start: ' + expected.slice(0, displayLen));
-    console.log('actual   start: ' + actual.slice(0, displayLen));
-    console.log('--------------------------------------------');
-    console.log('expected   end: ' + expected.slice(expected.length - displayLen));
-    console.log('actual     end: ' + actual.slice(actual.length - displayLen));
-    console.log('--------------------------------------------');
-    console.log('expected   len: ' + expected.length);
-    console.log('actual     len: ' + actual.length);
-    console.log('--------------------------------------------');
-    throw Error(`Contract bytecode does not match expected bytecode.`);
+    // FIXME: the 13-char header is also fragile, but we're just
+    // running with that assumption for now.
+
+    const deployNoInit = deployData.slice(initLen);
+    const actualNoInit = actual.slice(initLen);
+    if (actualNoInit.length === 0 || !deployNoInit.includes(actualNoInit)) {
+      // FIXME: this display is not so helful for the n-arg contract deploy case.
+      const displayLen = 60;
+      console.log('--------------------------------------------');
+      console.log('expected start: ' + expected.slice(0, displayLen));
+      console.log('actual   start: ' + actual.slice(0, displayLen));
+      console.log('--------------------------------------------');
+      console.log('expected   end: ' + expected.slice(expected.length - displayLen));
+      console.log('actual     end: ' + actual.slice(actual.length - displayLen));
+      console.log('--------------------------------------------');
+      console.log('expected   len: ' + expected.length);
+      console.log('actual     len: ' + actual.length);
+      console.log('--------------------------------------------');
+      throw Error(`Contract bytecode does not match expected bytecode.`);
+    }
   }
+  return true;
 };
