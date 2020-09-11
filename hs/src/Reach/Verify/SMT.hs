@@ -506,6 +506,9 @@ smt_e ctxt at_dv mdv de =
     DLE_ArrayConcat {} ->
       --- FIXME: This might be possible to do by generating a function
       impossible "array_concat"
+    DLE_ArrayZip {} ->
+      --- FIXME: This might be possible to do by using `map`
+      impossible "array_zip"
     DLE_TupleRef at arr_da i ->
       pathAddBound ctxt at_dv mdv bo se
       where

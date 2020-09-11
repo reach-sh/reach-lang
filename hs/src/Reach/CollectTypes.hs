@@ -57,6 +57,7 @@ instance CollectsTypes DLExpr where
   cts (DLE_ArrayRef _ _ a _ i) = cts a <> cts i
   cts (DLE_ArraySet _ _ a _ i v) = cts a <> cts i <> cts v
   cts (DLE_ArrayConcat _ x y) = cts x <> cts y
+  cts (DLE_ArrayZip _ x y) = cts x <> cts y
   cts (DLE_TupleRef _ t _) = cts t
   cts (DLE_ObjectRef _ a _) = cts a
   cts (DLE_Interact _ _ _ _ t as) = cts t <> cts as

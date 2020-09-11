@@ -272,6 +272,8 @@ solExpr ctxt sp = \case
     (solApply (solArraySet (solTypeI ctxt (argTypeOf ae))) $ map (solArg ctxt) [ae, ie, ve]) <> sp
   DLE_ArrayConcat {} ->
     impossible "array concat"
+  DLE_ArrayZip {} ->
+    impossible "array zip"
   DLE_TupleRef _ ae i ->
     (solArg ctxt ae) <> ".elem" <> pretty i <> sp
   DLE_ObjectRef _ oe f ->
@@ -347,6 +349,15 @@ solCom iter ctxt = \case
                <+> solArrayRef (solArg ctxt src) "i" <> semi)
         where
           sz = arraySize src
+  PL_Let _ _ dv@(DLVar _ _ t _) (DLE_ArrayZip _ x y) k -> SolTailRes ctxt zip_p <> iter ctxt k
+    where
+      zip_p =
+        "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty $ xy_sz) <> semi <+> "i++")
+          <> solBraces (solArrayRef (solVar ctxt dv) "i" <+> "=" <+> solApply tcon [ ith x, ith y ] <> semi)
+      tcon = solType ctxt xy_ty
+      ith which = solArrayRef (solArg ctxt which) "i"
+      (xy_ty, xy_sz) = case t of T_Array a b -> (a, b)
+                                 _ -> impossible "array_zip"
   PL_Let _ PL_Once dv de k -> iter ctxt' k
     where
       ctxt' = ctxt {ctxt_varm = M.insert dv de' $ ctxt_varm ctxt}
@@ -450,6 +461,7 @@ manyVars_m iter = \case
     where
       lc' = case de of
         DLE_ArrayConcat {} -> PL_Many
+        DLE_ArrayZip {} -> PL_Many
         _ -> lc
       mdv = case lc' of
         PL_Once -> mempty

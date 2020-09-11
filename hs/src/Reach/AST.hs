@@ -316,6 +316,7 @@ data SLPrimitive
   | SLPrim_array_concat
   | SLPrim_array_map
   | SLPrim_array_reduce
+  | SLPrim_array_zip
   | SLPrim_Tuple
   | SLPrim_tuple_length
   | SLPrim_tuple_set
@@ -482,6 +483,7 @@ data DLExpr
   | DLE_ArrayRef SrcLoc [SLCtxtFrame] DLArg Integer DLArg
   | DLE_ArraySet SrcLoc [SLCtxtFrame] DLArg Integer DLArg DLArg
   | DLE_ArrayConcat SrcLoc DLArg DLArg
+  | DLE_ArrayZip SrcLoc DLArg DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_ObjectRef SrcLoc DLArg String
   | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String SLType [DLArg]
@@ -502,6 +504,7 @@ instance IsPure DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
+    DLE_ArrayZip {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
@@ -519,6 +522,7 @@ instance IsLocal DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
+    DLE_ArrayZip {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> True

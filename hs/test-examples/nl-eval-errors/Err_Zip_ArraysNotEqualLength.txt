@@ -1,0 +1,1 @@
+error: ./Err_Zip_ArraysNotEqualLength.rsh:6:32:application: Zip requires arrays of equal length, but got 5 and 3

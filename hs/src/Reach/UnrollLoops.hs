@@ -154,6 +154,14 @@ ul_e = \case
     (x_ty, x') <- ul_explode at x
     (_, y') <- ul_explode at y
     return $ DLE_Arg at $ DLA_Array x_ty $ x' ++ y'
+  DLE_ArrayZip at x0 y0 -> do
+    recordUnroll
+    x <- ul_a x0
+    y <- ul_a y0
+    (x_ty, x') <- ul_explode at x
+    (y_ty, y') <- ul_explode at y
+    let ty = T_Tuple [x_ty, y_ty]
+    return $ DLE_Arg at $ DLA_Array ty $ zipWith (\xe ye -> DLA_Tuple [xe, ye]) x' y'
   DLE_TupleRef at t i -> (pure $ DLE_TupleRef at) <*> ul_a t <*> pure i
   DLE_ObjectRef at o k -> (pure $ DLE_ObjectRef at) <*> ul_a o <*> pure k
   DLE_Interact at fs p m t as -> (pure $ DLE_Interact at fs p m t) <*> ul_as as

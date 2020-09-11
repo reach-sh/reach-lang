@@ -147,6 +147,8 @@ kgq_e ctxt mv = \case
   DLE_ArraySet _ _ a _ e n -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e, n])
   DLE_ArrayConcat _ x_da y_da ->
     kgq_a_onlym ctxt mv x_da >> kgq_a_onlym ctxt mv y_da
+  DLE_ArrayZip _ x_da y_da ->
+    kgq_a_onlym ctxt mv x_da >> kgq_a_onlym ctxt mv y_da
   DLE_TupleRef _ a _ -> kgq_a_onlym ctxt mv a
   DLE_ObjectRef _ a _ -> kgq_a_onlym ctxt mv a
   DLE_Interact _ _ who what t as ->

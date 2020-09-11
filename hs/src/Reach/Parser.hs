@@ -1,4 +1,8 @@
-module Reach.Parser (ParserError (..), JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jsCallLike, parseIdent, jse_expect_id, jso_expect_id, gatherDeps_top) where
+module Reach.Parser
+  (ParserError (..),
+   JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jsCallLike, parseIdent, jse_expect_id, jso_expect_id, gatherDeps_top
+  , readJsExpr)
+where
 
 import Control.DeepSeq
 import Control.Monad (when)
@@ -106,6 +110,12 @@ jsCallLike at = \case
     (rator, jscl_flatten rands)
   e ->
     expect_throw at $ Err_Parse_NotCallLike e
+
+readJsExpr :: HasCallStack => String -> JSExpression
+readJsExpr s =
+  case readJs s of
+    JSAstProgram [JSExpressionStatement e _] _ -> e
+    v -> impossible $ "readJsExpr " <> show v
 
 --- Dependency Gatherer
 type BundleMap a b = ((M.Map a [a]), (M.Map a (Maybe b)))

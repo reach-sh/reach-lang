@@ -250,3 +250,6 @@ export function Array_set(arr, idx, elem) {
   arrp[idx] = elem;
   return arrp;
 }
+
+export const Array_zip =
+  (x, y) => x.map((e, i) => [e, y[i]]);

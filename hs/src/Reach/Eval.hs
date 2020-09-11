@@ -103,6 +103,7 @@ data EvalError
   | Err_Eval_LookupUnderscore
   | Err_Eval_NotSpreadable SLVal
   | Err_Unknowable_NotParticipant SLVal
+  | Err_Zip_ArraysNotEqualLength Integer Integer
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -148,6 +149,8 @@ didYouMean invalidStr validOptions maxClosest = case validOptions of
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
   show = \case
+    Err_Zip_ArraysNotEqualLength x y ->
+      "Zip requires arrays of equal length, but got " <> show x <> " and " <> show y
     Err_Apply_ArgCount cloAt nFormals nArgs ->
       "Invalid function appication. Expected " <> show nFormals <> " args, got " <> show nArgs <> " for function defined at " <> show cloAt
     Err_Block_Assign _jsop _stmts ->
@@ -415,7 +418,7 @@ base_env =
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
     , --- Note: This identifier is chosen so that Reach programmers
-      --- can't actually use it directly... kind of a hack. :(
+      --- can't actually use it directly... kind of a hack.
       --- But we insert it to check the amount of transfers
       ("__txn.value__", SLV_Prim $ SLPrim_op $ TXN_VALUE)
     , ("balance", SLV_Prim $ SLPrim_op $ BALANCE)
@@ -449,6 +452,17 @@ base_env =
              [("App", SLV_Form SLForm_App)])
       )
     ]
+
+jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
+jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
+  where cloenv = SLCloEnv env mempty mempty
+        env = M.map (SLSSVal at Public) env_
+        (args, body) =
+          case readJsExpr js of
+            JSArrowExpression aformals _ bodys -> (a_, b_)
+              where b_ = jsArrowStmtToBlock bodys
+                    a_ = parseJSArrowFormals at aformals
+            _ -> impossible "not arrow"
 
 -- General compiler utilities
 checkResType :: SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
@@ -738,7 +752,8 @@ evalDot ctxt at sco st obj field =
         "concat" -> delayCall SLPrim_array_concat
         "map" -> delayCall SLPrim_array_map
         "reduce" -> delayCall SLPrim_array_reduce
-        _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
+        "zip" -> delayCall SLPrim_array_zip
+        _ -> illegal_field ["set", "length", "concat", "map", "reduce", "zip"]
     SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
       case field of
         "set" -> delayCall SLPrim_array_set
@@ -746,7 +761,8 @@ evalDot ctxt at sco st obj field =
         "concat" -> delayCall SLPrim_array_concat
         "map" -> delayCall SLPrim_array_map
         "reduce" -> delayCall SLPrim_array_reduce
-        _ -> illegal_field ["set", "length", "concat", "map", "reduce"]
+        "zip" -> delayCall SLPrim_array_zip
+        _ -> illegal_field ["set", "length", "concat", "map", "reduce", "zip"]
     SLV_Prim SLPrim_Array ->
       case field of
         "empty" -> retV $ sss_sls $ env_lookup at "Array_empty" $ sco_env sco
@@ -757,7 +773,8 @@ evalDot ctxt at sco st obj field =
         "concat" -> retV $ public $ SLV_Prim $ SLPrim_array_concat
         "map" -> retV $ public $ SLV_Prim $ SLPrim_array_map
         "reduce" -> retV $ public $ SLV_Prim $ SLPrim_array_reduce
-        _ -> illegal_field ["length", "set", "iota", "concat", "map", "reduce"]
+        "zip" -> retV $ public $ SLV_Prim $ SLPrim_array_zip
+        _ -> illegal_field ["length", "set", "iota", "concat", "map", "reduce", "zip"]
     SLV_Prim SLPrim_Object ->
       case field of
         "set" -> retV $ sss_sls $ env_lookup at "Object_set" $ sco_env sco
@@ -1031,11 +1048,35 @@ evalPrim ctxt at sco st p sargs =
               return $ SLRes lifts' st (lvl, SLV_DLVar dv)
             _ -> illegal_args
         _ -> illegal_args
-    SLPrim_array_map -> do
-      let (x, f) = two_args
+    SLPrim_array_zip -> do
+      let (x, y) = two_args
       let (xt, x_da) = typeOf at x
-      case xt of
-        T_Array x_ty x_sz -> do
+      let (x_ty, x_sz) = mustBeArray xt
+      let (yt, y_da) = typeOf at y
+      let (y_ty, y_sz) = mustBeArray yt
+      let ty' = T_Tuple [x_ty, y_ty]
+      unless (x_sz == y_sz) $ do
+        expect_throw at $ Err_Zip_ArraysNotEqualLength x_sz y_sz
+      let sz' = x_sz
+      case isLiteralArray x && isLiteralArray y of
+        True -> do
+          (xlifts', x_vs) <- explodeTupleLike ctxt at "zip" x
+          (ylifts', y_vs) <- explodeTupleLike ctxt at "zip" y
+          let vs' = zipWith (\xe ye -> SLV_Tuple at [xe, ye]) x_vs y_vs
+          return $ SLRes (xlifts' <> ylifts') st (lvl, SLV_Array at ty' vs')
+        False -> do
+          let t = T_Array ty' sz'
+          let mkdv = (DLVar at (ctxt_local_name ctxt "array_zip") t)
+          let de = DLE_ArrayZip at x_da y_da
+          (dv, lifts') <- ctxt_lift_expr ctxt at mkdv de
+          return $ SLRes lifts' st (lvl, SLV_DLVar dv)
+    SLPrim_array_map ->
+      case args of
+        [] -> illegal_args
+        [_] -> illegal_args
+        [x, f] -> do
+          let (xt, x_da) = typeOf at x
+          let (x_ty, x_sz) = mustBeArray xt
           let f' a = evalApplyVals ctxt at sco st f [(lvl, a)]
           (a_dv, a_dsv) <- make_dlvar "map in" x_ty
           SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' a_dsv
@@ -1050,7 +1091,7 @@ evalPrim ctxt at sco st p sargs =
                     --- be parameteric in the state.
                     return $
                       stMerge at f_st xv_st
-                        `seq` ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
+                      `seq` ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
               (lifts'', vs') <- foldM evalem (mempty, []) x_vs
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, SLV_Array at f_ty vs')
             False -> do
@@ -1058,39 +1099,47 @@ evalPrim ctxt at sco st p sargs =
               (ans_dv, ans_dsv) <- make_dlvar "array_map" t
               let lifts' = return $ DLS_ArrayMap at ans_dv x_da a_dv f_lifts f_da
               return $ SLRes lifts' st (lvl, ans_dsv)
-        _ -> illegal_args
+        x:y:args' -> do
+          let (f, more) = case reverse args' of
+                            f_:rmore -> (f_, reverse rmore)
+                            _ -> impossible "array_map"
+          SLRes xy_lifts xy_st (SLAppRes _ xy_v) <-
+            evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_array_zip) $ map public [x, y]
+          let clo_args = concatMap ((",c" <>) . show) [0..(length more - 1)]
+          let f' = jsClo at "zip" ("(ab" <> clo_args <> ") => f(ab[0], ab[1]" <> clo_args <> ")") (M.fromList [("f", f)])
+          SLRes m_lifts m_st (SLAppRes _ m_v) <-
+            evalApplyVals ctxt at sco xy_st (SLV_Prim $ SLPrim_array_map) (xy_v : (map public $ more ++ [f']))
+          return $ SLRes (xy_lifts <> m_lifts) m_st m_v
     SLPrim_array_reduce -> do
       let (x, z, f) = three_args
       let (xt, x_da) = typeOf at x
-      case xt of
-        T_Array x_ty _ -> do
-          let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
-          let (z_ty, z_da) = typeOf at z
-          (b_dv, b_dsv) <- make_dlvar "reduce acc" z_ty
-          (a_dv, a_dsv) <- make_dlvar "reduce in" x_ty
-          SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
-          let (f_ty, f_da) = typeOf at f_v
-          let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
-          case shouldUnroll of
-            True -> do
-              (lifts', x_vs) <- explodeTupleLike ctxt at "reduce" x
-              let evalem (prev_lifts, prev_z) xv = do
-                    SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' prev_z xv
-                    --- Note: We are artificially restricting reduce
-                    --- to be parameteric in the state. We also ensure
-                    --- that they type is the same as the anonymous
-                    --- version.
-                    return $
-                      stMerge at f_st xv_st
-                        `seq` checkType at f_ty xv_v'
-                        `seq` ((prev_lifts <> xv_lifts), xv_v')
-              (lifts'', z') <- foldM evalem (mempty, z) x_vs
-              return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
-            False -> do
-              (ans_dv, ans_dsv) <- make_dlvar "array_reduce" f_ty
-              let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_lifts f_da
-              return $ SLRes lifts' st (lvl, ans_dsv)
-        _ -> illegal_args
+      let (x_ty, _) = mustBeArray xt
+      let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
+      let (z_ty, z_da) = typeOf at z
+      (b_dv, b_dsv) <- make_dlvar "reduce acc" z_ty
+      (a_dv, a_dsv) <- make_dlvar "reduce in" x_ty
+      SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
+      let (f_ty, f_da) = typeOf at f_v
+      let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
+      case shouldUnroll of
+        True -> do
+          (lifts', x_vs) <- explodeTupleLike ctxt at "reduce" x
+          let evalem (prev_lifts, prev_z) xv = do
+                SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' prev_z xv
+                --- Note: We are artificially restricting reduce
+                --- to be parameteric in the state. We also ensure
+                --- that they type is the same as the anonymous
+                --- version.
+                return $
+                  stMerge at f_st xv_st
+                  `seq` checkType at f_ty xv_v'
+                  `seq` ((prev_lifts <> xv_lifts), xv_v')
+          (lifts'', z') <- foldM evalem (mempty, z) x_vs
+          return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
+        False -> do
+          (ans_dv, ans_dsv) <- make_dlvar "array_reduce" f_ty
+          let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_lifts f_da
+          return $ SLRes lifts' st (lvl, ans_dsv)
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] ->
@@ -1153,17 +1202,11 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_makeEnum ->
       case map snd sargs of
-        [(SLV_Int _ i)] ->
+        [iv@(SLV_Int _ i)] ->
           retV $ (lvl, SLV_Tuple at' (enum_pred : map (SLV_Int at') [0 .. (i -1)]))
           where
+            enum_pred = jsClo at' (ctxt_local_name ctxt "makeEnum") "(x) => ((0 <= x) && (x < M))" (M.fromList [("M", iv)])
             at' = (srcloc_at "makeEnum" Nothing at)
-            --- FIXME This sucks... maybe parse an embed string? Would that suck less?... probably want a custom primitive
-            --- FIXME also, env is a weird choice here... really want stdlib_env
-            enum_pred = SLV_Clo at' fname ["x"] pbody (sco_to_cloenv sco)
-            fname = Just $ ctxt_local_name ctxt "makeEnum"
-            pbody = JSBlock JSNoAnnot [(JSReturn JSNoAnnot (Just (JSExpressionBinary lhs (JSBinOpAnd JSNoAnnot) rhs)) JSSemiAuto)] JSNoAnnot
-            lhs = (JSExpressionBinary (JSDecimal JSNoAnnot "0") (JSBinOpLe JSNoAnnot) (JSIdentifier JSNoAnnot "x"))
-            rhs = (JSExpressionBinary (JSIdentifier JSNoAnnot "x") (JSBinOpLt JSNoAnnot) (JSDecimal JSNoAnnot (show i)))
         _ -> illegal_args
     SLPrim_App_Delay {} ->
       expect_throw at (Err_Eval_NotApplicable rator)
@@ -1295,6 +1338,10 @@ evalPrim ctxt at sco st p sargs =
     three_args = case args of
       [x, y, z] -> (x, y, z)
       _ -> illegal_args
+    mustBeArray t =
+      case t of
+        T_Array ty sz -> (ty, sz)
+        _ -> illegal_args
     make_dlvar lab ty = do
       dvi <- ctxt_alloc ctxt at
       let dv = DLVar at lab ty dvi

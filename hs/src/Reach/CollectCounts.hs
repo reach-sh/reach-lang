@@ -68,6 +68,7 @@ instance Countable DLExpr where
       DLE_ArrayRef _ _ aa _ ea -> counts [aa, ea]
       DLE_ArraySet _ _ aa _ ia va -> counts [aa, ia, va]
       DLE_ArrayConcat _ x y -> counts x <> counts y
+      DLE_ArrayZip _ x y -> counts x <> counts y
       DLE_TupleRef _ t _ -> counts t
       DLE_ObjectRef _ aa _ -> counts aa
       DLE_Interact _ _ _ _ _ as -> counts as
