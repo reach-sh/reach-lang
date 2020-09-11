@@ -16,10 +16,12 @@ type App s = ReaderT (Env s) (ST s)
 
 type Lifts = Seq.Seq (SrcLoc, DLVar, DLExpr)
 
+type Renaming = Either DLVar DLArg
+
 data Env s = Env
   { eDidUnroll :: STRef s Bool
   , eCounter :: STCounter s
-  , eRenaming :: STRef s (M.Map Int Int)
+  , eRenaming :: STRef s (M.Map Int Renaming)
   , emLifts :: Maybe (STRef s Lifts)
   }
 
@@ -75,25 +77,44 @@ ul_v_rn :: DLVar -> App s DLVar
 ul_v_rn (DLVar at lab t idx) = do
   idx' <- allocIdx
   Env {..} <- ask
-  lift $ modifySTRef eRenaming (M.insert idx idx')
-  return (DLVar at lab t idx')
+  let v' = DLVar at lab t idx'
+  lift $ modifySTRef eRenaming (M.insert idx (Left v'))
+  return v'
 
 ul_vs_rn :: [DLVar] -> App s [DLVar]
 ul_vs_rn = mapM ul_v_rn
 
-ul_v :: DLVar -> App s DLVar
-ul_v (DLVar at lab t idx) = do
+lookupRenaming :: DLVar -> App s Renaming
+lookupRenaming (DLVar _ _ _ idx) = do
   Env {..} <- ask
   r <- lift $ readSTRef eRenaming
   case M.lookup idx r of
-    Just idx' ->
-      return (DLVar at lab t idx')
-    Nothing ->
-      impossible "unbound var"
+    Just x -> return x
+    Nothing -> impossible "unbound var"
+
+ul_v :: DLVar -> App s DLVar
+ul_v v = do
+  r <- lookupRenaming v
+  case r of
+    Left v' -> return v'
+    Right _ ->
+      impossible "var is renamed to arg"
+
+ul_v_rna :: DLVar -> DLArg -> App s ()
+ul_v_rna (DLVar _ _ _ idx) a = do
+  Env {..} <- ask
+  lift $ modifySTRef eRenaming (M.insert idx (Right a))
+
+ul_va :: DLVar -> App s DLArg
+ul_va v = do
+  r <- lookupRenaming v
+  case r of
+    Left v' -> return $ DLA_Var v'
+    Right a -> return a
 
 ul_a :: DLArg -> App s DLArg
 ul_a = \case
-  DLA_Var v -> (pure $ DLA_Var) <*> ul_v v
+  DLA_Var v -> ul_va v
   DLA_Con c -> (pure $ DLA_Con c)
   DLA_Array t as -> (pure $ DLA_Array t) <*> ul_as as
   DLA_Tuple as -> (pure $ DLA_Tuple) <*> ul_as as
@@ -195,8 +216,7 @@ ul_m mkk ul_k = \case
     (xlifts, (_, x')) <- collectLifts $ ul_explode at x
     let r_ty = argTypeOf r
     let f' a_a = freshRenaming $ do
-          a' <- ul_v_rn a
-          liftLet at a' $ DLE_Arg at a_a
+          ul_v_rna a a_a
           (pure (,)) <*> ul_l f <*> ul_a r
     (lifts, (fs, r')) <- collectLifts $ liftM unzip $ mapM f' x'
     ans' <- ul_v_rn ans
@@ -209,13 +229,9 @@ ul_m mkk ul_k = \case
     (xlifts, (_, x')) <- collectLifts $ ul_explode at x
     z' <- ul_a z
     let f' (fs, b_a) a_a = freshRenaming $ do
-          b' <- ul_v_rn b
-          a' <- ul_v_rn a
-          (flifts, f_body') <- collectLifts $ do
-            --- FIXME It would be cool to do substitution of these rather than lifting lets
-            liftLet at b' $ DLE_Arg at b_a
-            liftLet at a' $ DLE_Arg at a_a
-            ul_l f
+          ul_v_rna b b_a
+          ul_v_rna a a_a
+          (flifts, f_body') <- collectLifts $ ul_l f
           r' <- ul_a r
           let LLL_Com f_body'm = f_body'
           let f_body'' = addLifts LLL_Com f_body'm flifts
