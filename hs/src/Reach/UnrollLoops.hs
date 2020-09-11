@@ -212,6 +212,7 @@ ul_m mkk ul_k = \case
           b' <- ul_v_rn b
           a' <- ul_v_rn a
           (flifts, f_body') <- collectLifts $ do
+            --- FIXME It would be cool to do substitution of these rather than lifting lets
             liftLet at b' $ DLE_Arg at b_a
             liftLet at a' $ DLE_Arg at a_a
             ul_l f

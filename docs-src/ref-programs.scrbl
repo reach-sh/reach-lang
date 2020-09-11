@@ -891,26 +891,97 @@ and @reachin{IDX_EXPR} is an @tech{expression} that evaluates to a natural numbe
 selects the element at the given index of the array.
 Indices start at zero.
 
-@subsubsection{@tt{Tuple.set}, @tt{Array.set}, and @tt{.set}}
+@subsubsection{Array & tuple length: @tt{Tuple.length}, @tt{Array.length}, and @tt{.length}}
 
+@(mint-define! '("length"))
+@reach{
+ Tuple.length(tup);
+ tup.length;
+ Array.length(arr);
+ arr.length; }
+
+@index{Tuple.length} @reachin{Tuple.length} Returns the length of the given tuple.
+
+@index{Array.length} @reachin{Array.length} Returns the length of the given array.
+
+Both may be abbreviated as @reachin{expr.length} where @reachin{expr} evaluates to a tuple or an array.
+
+@subsubsection{Array & tuple update: @tt{Tuple.set}, @tt{Array.set}, and @tt{.set}}
+
+@(mint-define! '("set"))
 @reach{
  Tuple.set(tup, idx, val);
  tup.set(idx, val);
  Array.set(arr, idx, val);
  arr.set(idx, val); }
 
-@index{Tuple.set} Returns a new tuple identical to @reachin{tup},
+@index{Tuple.set} @reachin{Tuple.set} Returns a new tuple identical to @reachin{tup},
 except that index @reachin{idx} is replaced with @reachin{val}.
 
-@index{Array.set} Returns a new array identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
+@index{Array.set} @reachin{Array.set} Returns a new array identical to @reachin{arr}, except that index @reachin{idx} is replaced with @reachin{val}.
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
+
+@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, @tt{Array.empty}, and @tt{Array.replicate} }
+
+@(mint-define! '("iota"))
+@reach{
+ Array.iota(5) }
+
+@index{Array.iota} @reachin{Array.iota(len)} returns an array of length @reachin{len}, where each element is the same as its index.
+For example, @reachin{Array.iota(4)} returns @reachin{[0, 1, 2, 3]}.
+The given @reachin{len} must evaluate to an integer at compile-time.
+
+@(mint-define! '("Array_replicate" "replicate"))
+@reach{
+ Array.replicate(5, "five")
+ Array_replicate(5, "five") }
+
+@index{Array.replicate} @reachin{Array.replicate(len, val)} returns an array of length @reachin{len}, where each element is @reachin{val}.
+For example, @reachin{Array.replicate(4, "four")} returns @reachin{["four", "four", "four", "four"]}.
+The given @reachin{len} must evaluate to an integer at compile-time.
+
+@(mint-define! '("concat"))
+@reach{
+ Array.concat(x, y)
+ x.concat(y) }
+
+@index{Array.concat} @reachin{Array.concat(x, y)} concatenates the two arrays @reachin{x} and @reachin{y}.
+This may be abbreviated as @reachin{x.concat(y)}.
+
+@(mint-define! '("Array_empty" "empty"))
+@reach{
+ Array_empty
+ Array.empty }
+
+@index{Array.empty} @reachin{Array.empty} is an array with no elements.
+It is the identity element of @reachin{Array.concat}.
+It may also be written @reachin{Array_empty}.
+
+@(mint-define! '("map"))
+@reach{
+ Array.map(arr, f)
+ arr.map(f) }
+
+@index{Array.map} @reachin{Array.map(arr, f)} returns a new array, @reachin{arr_mapped}, the same size as @reachin{arr}, where @reachin{arr_mapped[i] = f(arr[i])} for all @reachin{i}.
+For example, @reachin{Array.iota(4).map(add)} returns @reachin{[1, 2, 3, 4]}.
+This may be abbreviated as @reachin{arr.map(f)}.
+
+@(mint-define! '("reduce"))
+@reach{
+ Array.reduce(arr, z, f)
+ arr.reduce(z, f) }
+
+@index{Array.reduce} @reachin{Array.reduce(arr, z, f)} returns the @link["https://en.wikipedia.org/wiki/Fold_(higher-order_function)"]{left fold} of the function @reachin{f} over the given array with the initial value @reachin{z}.
+For example, @reachin{Array.iota(4).reduce(0, add)} returns @reachin{((0 + 1) + 2) + 3 = 6}.
+This may be abbreviated as @reachin{arr.reduce(z, f)}.
 
 @subsubsection{Objects}
 
 @reach{
   { }
   { x: 3, "yo-yo": 4 }
+  { [1 < 2 ? "one" : "two"]: 5 }
 }
 
 An @deftech{object literal},
