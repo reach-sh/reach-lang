@@ -14,141 +14,133 @@ Should be empty
 ag --ignore '*lock*' --ignore hs/stack.yaml '0\.1\.1' || exit 0
 Should be empty
 ag --ignore '*lock*' --ignore hs/stack.yaml --ignore eslint/package.json --ignore '*rsh' --ignore '*txt' --ignore '*-lock*' '0\.1'
-hs/Dockerfile.circleci:32:  python3-pip=9.0.1-2.3~ubuntu1.18.04.2 \
+vscode-extension/reach/README.md:42:### 1.0.1
 vscode-extension/reach/package.json:5:	&quot;version&quot;: &quot;0.0.1&quot;,
 vscode-extension/reach/package.json:41:		&quot;mocha&quot;: &quot;^8.0.1&quot;,
-vscode-extension/reach/README.md:42:### 1.0.1
-VERSION:5:STABLE=0.1.2
-scripts/algorand-devnet/algorand_network/Primary/kmd-v0.5/kmd.log:2:time=&quot;2020-09-09T20:46:41.159738 +0000&quot; level=info msg=&quot;started kmd on sock: 127.0.0.1:7833&quot; file=main.go function=main.runKmd line=118
 scripts/algorand-devnet/algorand_network/Primary/kmd-v0.5/kmd.net:1:127.0.0.1:7833
+scripts/algorand-devnet/algorand_network/Primary/kmd-v0.5/kmd.log:2:time=&quot;2020-09-09T20:46:41.159738 +0000&quot; level=info msg=&quot;started kmd on sock: 127.0.0.1:7833&quot; file=main.go function=main.runKmd line=118
 scripts/algorand-devnet/Dockerfile:16:  tzdata=2020a-0ubuntu0.18.04 \
 reach:103:REACH_DEFAULT_VERSION=0.1
+VERSION:5:STABLE=0.1.2
 examples/tut-7/package.json:5:    &quot;@reach-sh/stdlib&quot;: &quot;0.1&quot;
-    50    201   2441 hs/.stack-work/dist/x86_64-linux/Cabal-3.0.1.0/build/reachc/autogen/Paths_reach.hs
-    50    201   2445 hs/.stack-work/dist/x86_64-linux/Cabal-3.0.1.0/build/reach-test/autogen/Paths_reach.hs
-    50    201   2434 hs/.stack-work/dist/x86_64-linux/Cabal-3.0.1.0/build/autogen/Paths_reach.hs
-    33    133   1057 hs/test/Reach/Test_AST.hs
-    86    367   2861 hs/test/Reach/Test_Compiler.hs
-    58    230   1871 hs/test/Reach/Test_Verify.hs
+hs/Dockerfile.circleci:32:  python3-pip=9.0.1-2.3~ubuntu1.18.04.2 \
     83    252   2602 hs/test/Reach/Test_Eval.hs
+    33    133   1057 hs/test/Reach/Test_AST.hs
      9     27    251 hs/test/Reach/Test_Version.hs
     26    106    747 hs/test/Reach/Test_Util.hs
+    58    230   1871 hs/test/Reach/Test_Verify.hs
+    86    367   2861 hs/test/Reach/Test_Compiler.hs
    160    850   5713 hs/test/Reach/Test/Util.hs
      4     12    190 hs/test/Main.hs
      3      5     47 hs/Setup.hs
-    16     48    559 hs/src/Reach/EmbeddedFiles.hs
-    22     72    637 hs/src/Reach/UnsafeUtil.hs
-    42    172   1419 hs/src/Reach/Report.hs
-    32    119    743 hs/src/Reach/IORefRef.hs
-   123    692   4072 hs/src/Reach/Linearize.hs
-   411   2279  15907 hs/src/Reach/EPP.hs
-   968   4765  32600 hs/src/Reach/Verify/SMT.hs
+    50    201   2445 hs/.stack-work/dist/x86_64-linux/Cabal-3.0.1.0/build/reach-test/autogen/Paths_reach.hs
+    50    201   2434 hs/.stack-work/dist/x86_64-linux/Cabal-3.0.1.0/build/autogen/Paths_reach.hs
+    50    201   2441 hs/.stack-work/dist/x86_64-linux/Cabal-3.0.1.0/build/reachc/autogen/Paths_reach.hs
+    81    264   2244 hs/app/Main.hs
+   279   1361  10246 hs/src/Reach/Parser.hs
+     7     26    183 hs/src/Reach/Backend.hs
+   400   2348  13523 hs/src/Reach/Pretty.hs
+   305   1936  10013 hs/src/Reach/UnrollLoops.hs
+    63    242   1571 hs/src/Reach/Util.hs
+   290   1564   9120 hs/src/Reach/Verify/Knowledge.hs
      8     22    158 hs/src/Reach/Verify/Shared.hs
     34    184   1159 hs/src/Reach/Verify/SMTParser.hs
-   290   1564   9120 hs/src/Reach/Verify/Knowledge.hs
-   228   1104   7009 hs/src/Reach/Type.hs
-   343   1868  11146 hs/src/Reach/Backend/JS.hs
-   305   1936  10013 hs/src/Reach/UnrollLoops.hs
-    18     66    407 hs/src/Reach/STCounter.hs
-    10     26    213 hs/src/Reach/Connector/ALGO.hs
-   769   4057  25372 hs/src/Reach/Connector/ETH_Solidity.hs
-    50    203   1483 hs/src/Reach/Compiler.hs
-    85    421   2462 hs/src/Reach/CollectCounts.hs
-   138    963   4577 hs/src/Reach/CollectTypes.hs
-   279   1361  10246 hs/src/Reach/Parser.hs
-   400   2348  13523 hs/src/Reach/Pretty.hs
-  2606  15476 111743 hs/src/Reach/Eval.hs
-    63    242   1571 hs/src/Reach/Util.hs
+   968   4765  32600 hs/src/Reach/Verify/SMT.hs
+    53    235   1560 hs/src/Reach/Verify.hs
     13     42    333 hs/src/Reach/Connector.hs
+    18     66    407 hs/src/Reach/STCounter.hs
+   769   4057  25372 hs/src/Reach/Connector/ETH_Solidity.hs
+    10     26    213 hs/src/Reach/Connector/ALGO.hs
+   343   1868  11146 hs/src/Reach/Backend/JS.hs
+    50    203   1483 hs/src/Reach/Compiler.hs
+   123    692   4072 hs/src/Reach/Linearize.hs
+   158    305   3044 hs/src/Reach/JSOrphans.hs
+    32    116   1001 hs/src/Reach/CompilerTool.hs
+   228   1104   7009 hs/src/Reach/Type.hs
+    32    119    743 hs/src/Reach/IORefRef.hs
+   817   3099  20895 hs/src/Reach/AST.hs
+    22     72    637 hs/src/Reach/UnsafeUtil.hs
+    42    172   1419 hs/src/Reach/Report.hs
     24     70    515 hs/src/Reach/Version.hs
     97    396   2660 hs/src/Reach/JSUtil.hs
-    53    235   1560 hs/src/Reach/Verify.hs
-    32    116   1001 hs/src/Reach/CompilerTool.hs
-     7     26    183 hs/src/Reach/Backend.hs
-   817   3099  20895 hs/src/Reach/AST.hs
-   158    305   3044 hs/src/Reach/JSOrphans.hs
-    81    264   2244 hs/app/Main.hs
+    16     48    559 hs/src/Reach/EmbeddedFiles.hs
+   138    963   4577 hs/src/Reach/CollectTypes.hs
+    85    421   2462 hs/src/Reach/CollectCounts.hs
+  2606  15476 111743 hs/src/Reach/Eval.hs
+   411   2279  15907 hs/src/Reach/EPP.hs
   9134  47126 321233 total
-<span style="color:lime;font-weight:bold;">js/Dockerfile.runner</span>:<span style="color:yellow;font-weight:bold;">11</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: use a gentler linter for this
-<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">31</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: why was this stripping off the 0x?
-<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">80</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: fix things so this restriction is not necessary
-<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">98</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span> check address length?
-<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">104</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: check ctc, sz for sanity
-<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">120</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: check ctcs for sanity
-<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">136</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: check co for sanity
-<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">216</span>:  const size = 32; // bytes // <span style="color:dimgray;background-color:yellow;">TODO</span>: support other sizes?
-<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">221</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> why do we slice off the 0x?
-<span style="color:lime;font-weight:bold;">js/FAKE.mjs</span>:<span style="color:yellow;font-weight:bold;">58</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span> use try_p to figure out what transfers from the contract
-<span style="color:lime;font-weight:bold;">js/FAKE.mjs</span>:<span style="color:yellow;font-weight:bold;">147</span>:export const newAccountFromMnemonic = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">js/FAKE.mjs</span>:<span style="color:yellow;font-weight:bold;">148</span>:export const verifyContract = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">js/ask.mjs</span>:<span style="color:yellow;font-weight:bold;">28</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: better re-prompt
-<span style="color:lime;font-weight:bold;">js/runner.mjs</span>:<span style="color:yellow;font-weight:bold;">17</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: only run main if running as script?
-<span style="color:lime;font-weight:bold;">non-examples/anti/partial_loop_var_updates.rsh</span>:<span style="color:yellow;font-weight:bold;">57</span>:          // <span style="color:dimgray;background-color:yellow;">XXX</span> solc: got 4, but expected 5
-<span style="color:lime;font-weight:bold;">non-examples/anti/partial_loop_var_updates.rsh</span>:<span style="color:yellow;font-weight:bold;">61</span>:          // <span style="color:dimgray;background-color:yellow;">XXX</span> solc: got 3, but expected 5
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">39</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: read token from scripts/algorand-devnet/algorand_data/algod.token
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">75</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> Untested but something like this should work
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">83</span>:  // // <span style="color:dimgray;background-color:yellow;">FIXME</span> https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">102</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">180</span>:      throw Error(`<span style="color:dimgray;background-color:yellow;">XXX</span> Not implemented: wait`);
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">196</span>:              // <span style="color:dimgray;background-color:yellow;">FIXME</span> JS SDK doesn't handle encoding this kind of txn
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">231</span>:            // <span style="color:dimgray;background-color:yellow;">FIXME</span> relies on https://github.com/algorand/go-algorand/issues/1051 fix
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">239</span>:          // <span style="color:dimgray;background-color:yellow;">FIXME</span> no documentation on whether confirmedTxn has something for each txn in a group or only one thing. We made need to call returnFromTxn with appTxn for the data and confirmedTxn for the round/etc
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">265</span>:          // <span style="color:dimgray;background-color:yellow;">FIXME</span> maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">302</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span> JS SDK doesn't handle this kind of txn
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">312</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Use note field for link to Reach code
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">322</span>:    // <span style="color:dimgray;background-color:yellow;">FIXME</span> relies on https://github.com/algorand/go-algorand/issues/1051 fix
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">336</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">360</span>:export const newAccountFromMnemonic = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">363</span>:export const waitUntilTime = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">364</span>:export const wait = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">365</span>:export const verifyContract = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">24</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span>: when using ganache: nvm use 12
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">93</span>:void(flaky); // <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">113</span>:    protocol: 'http' // <span style="color:dimgray;background-color:yellow;">XXX</span> no apparent need to support https
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">124</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span>: doesn't even retry, just returns the first attempt
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">204</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> expose setProvider
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">223</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> dead code?
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">262</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> networkAccount MUST be a wallet to deploy/attach
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">361</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">375</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: support BigNumber delays?
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">394</span>:          // <span style="color:dimgray;background-color:yellow;">XXX</span> What should we do...? If we fail, but there's no timeout delay... then we should just die
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">413</span>:        // <span style="color:dimgray;background-color:yellow;">XXX</span> It might be a little dangerous to rely on the polling to just work
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">422</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span> If we were trying to join, but we got sniped, then we'll
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">438</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: support BigNumber delays?
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">680</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: is there a way to get the creation_block &amp; bytecode with a single api call?
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">695</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> this is based on empirical observation, feels hacky
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">698</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> the labels &quot;init&quot;, &quot;setup&quot;, and &quot;teardown&quot; are probably misleading
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">699</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span>: for 0-arg contract deploys, it appears that:
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">702</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span>: for n-arg contract deploys, it appears that:
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">714</span>:    // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Empirical observation says that 0-arg contract deploys
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">718</span>:    // <span style="color:dimgray;background-color:yellow;">FIXME</span>: the 13-char header is also fragile, but we're just
-<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">724</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span>: this display is not so helful for the n-arg contract deploy case.
-<span style="color:lime;font-weight:bold;">non-examples/anti/lifted_computed_field_name.rsh</span>:<span style="color:yellow;font-weight:bold;">16</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: lift the restriction by inspecting assumptions.
 <span style="color:lime;font-weight:bold;">non-examples/anti/rps_double_isHand_fail.rsh</span>:<span style="color:yellow;font-weight:bold;">22</span>:    return A_WINS; // <span style="color:dimgray;background-color:yellow;">XXX</span> A wins by default? shouldn't happen.
 <span style="color:lime;font-weight:bold;">non-examples/anti/rps_double_isHand_fail.rsh</span>:<span style="color:yellow;font-weight:bold;">162</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> Delete this and uncomment the following
 <span style="color:lime;font-weight:bold;">non-examples/anti/rps_double_isHand_fail.rsh</span>:<span style="color:yellow;font-weight:bold;">165</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: reorganize this code to reduce duplication.
+<span style="color:lime;font-weight:bold;">non-examples/anti/partial_loop_var_updates.rsh</span>:<span style="color:yellow;font-weight:bold;">57</span>:          // <span style="color:dimgray;background-color:yellow;">XXX</span> solc: got 4, but expected 5
+<span style="color:lime;font-weight:bold;">non-examples/anti/partial_loop_var_updates.rsh</span>:<span style="color:yellow;font-weight:bold;">61</span>:          // <span style="color:dimgray;background-color:yellow;">XXX</span> solc: got 3, but expected 5
 <span style="color:lime;font-weight:bold;">non-examples/anti/rps_double_break_invariant.rsh</span>:<span style="color:yellow;font-weight:bold;">22</span>:    return A_WINS; // <span style="color:dimgray;background-color:yellow;">XXX</span> A wins by default? shouldn't happen.
 <span style="color:lime;font-weight:bold;">non-examples/anti/rps_double_break_invariant.rsh</span>:<span style="color:yellow;font-weight:bold;">161</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> Delete this and uncomment the following
 <span style="color:lime;font-weight:bold;">non-examples/anti/rps_double_break_invariant.rsh</span>:<span style="color:yellow;font-weight:bold;">164</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: reorganize this code to reduce duplication.
-<span style="color:lime;font-weight:bold;">hs/package.mo.yaml</span>:<span style="color:yellow;font-weight:bold;">100</span>:# - -Wmonomorphism-restriction # <span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">hs/Makefile</span>:<span style="color:yellow;font-weight:bold;">31</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: dockerized stan so that make check does not require local hs install?
+<span style="color:lime;font-weight:bold;">non-examples/anti/lifted_computed_field_name.rsh</span>:<span style="color:yellow;font-weight:bold;">16</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: lift the restriction by inspecting assumptions.
+<span style="color:lime;font-weight:bold;">scripts/reach-usage-report.sh</span>:<span style="color:yellow;font-weight:bold;">35</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: is paging an issue when the table gets larger?
+<span style="color:lime;font-weight:bold;">scripts/algorand-devnet/NOTES.md</span>:<span style="color:yellow;font-weight:bold;">6</span>:<span style="color:dimgray;background-color:yellow;">TODO</span>: figure out how to run a devnet
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">28</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">32</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">36</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">40</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">44</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">48</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">52</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">56</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">60</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">64</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">68</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">72</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">74</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> use design recipe
+<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">76</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> warning about online block mining attack
+<span style="color:lime;font-weight:bold;">docs-src/minted/main.rkt</span>:<span style="color:yellow;font-weight:bold;">112</span>:    ;; <span style="color:dimgray;background-color:yellow;">XXX</span> This is too aggressive in JS.
+<span style="color:lime;font-weight:bold;">hie.yaml</span>:<span style="color:yellow;font-weight:bold;">19</span>:# <span style="color:dimgray;background-color:yellow;">XXX</span> Once hie-bios is upgraded to 0.7.0
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">102</span>:# <span style="color:dimgray;background-color:yellow;">XXX</span> Get from VERSION in Haskell version
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">352</span>:  # <span style="color:dimgray;background-color:yellow;">TODO</span>: better arg parsing
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">411</span>:  # <span style="color:dimgray;background-color:yellow;">TODO</span>: s/lint/preapp. It's disabled because sometimes our
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">413</span>:  # <span style="color:dimgray;background-color:yellow;">TODO</span>: ^ The same goes for js/runner_package.template.json
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">416</span>:  # <span style="color:dimgray;background-color:yellow;">XXX</span> We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">475</span>:  # <span style="color:dimgray;background-color:yellow;">TODO</span>: a better makefile
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">588</span>:    # <span style="color:dimgray;background-color:yellow;">TODO</span>: better arg parsing at some point
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">612</span>:  # <span style="color:dimgray;background-color:yellow;">XXX</span> Can we add eslint on the JS?
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">657</span>:      # <span style="color:dimgray;background-color:yellow;">TODO</span>: more description on err
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">688</span>:    # <span style="color:dimgray;background-color:yellow;">TODO</span>: better use of makefiles so that we just call make build anyway,
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">714</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: allow linting outside of PWD
+<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">715</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: try to not mount all of PWD?
+<span style="color:lime;font-weight:bold;">py/pygments_reach/__init__.py</span>:<span style="color:yellow;font-weight:bold;">40</span>:    # <span style="color:dimgray;background-color:yellow;">TODO</span>?
+<span style="color:lime;font-weight:bold;">py/pygments_reach/__init__.py</span>:<span style="color:yellow;font-weight:bold;">118</span>:            # <span style="color:dimgray;background-color:yellow;">TODO</span>: should this include single-line comments and allow nesting strings?
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">51</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">64</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">67</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">70</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">73</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">76</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">79</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">82</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">87</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> SendRecv&quot;)
+<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">91</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Recv&quot;)
+<span style="color:lime;font-weight:bold;">examples/workshop-trust-fund/Makefile</span>:<span style="color:yellow;font-weight:bold;">7</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: FAKE always lets the receiver collect the payment
+<span style="color:lime;font-weight:bold;">examples/workshop-trust-fund/Makefile</span>:<span style="color:yellow;font-weight:bold;">8</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: FAKE doesn't simulate the part of the contract that pays out
+<span style="color:lime;font-weight:bold;">examples/one.sh</span>:<span style="color:yellow;font-weight:bold;">41</span>:      # <span style="color:dimgray;background-color:yellow;">XXX</span> make reachc clean
+<span style="color:lime;font-weight:bold;">examples/workshop-trust-fund/index.mjs</span>:<span style="color:yellow;font-weight:bold;">135</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: demo Bystander yoink
 <span style="color:lime;font-weight:bold;">hs/rsh/stdlib.rsh</span>:<span style="color:yellow;font-weight:bold;">10</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: add structural equality for arrays and objects
 <span style="color:lime;font-weight:bold;">hs/rsh/stdlib.rsh</span>:<span style="color:yellow;font-weight:bold;">75</span>:// SLV_HaskellFunction <span style="color:dimgray;background-color:yellow;">FIXME</span>
-<span style="color:lime;font-weight:bold;">hs/test/Reach/Test_Verify.hs</span>:<span style="color:yellow;font-weight:bold;">16</span>:import System.IO.Silently -- <span style="color:dimgray;background-color:yellow;">TODO</span>: port to System.IO.Capture
 <span style="color:lime;font-weight:bold;">hs/test/Reach/Test_Eval.hs</span>:<span style="color:yellow;font-weight:bold;">35</span>:    -- <span style="color:dimgray;background-color:yellow;">TODO</span>: exceptions = []
 <span style="color:lime;font-weight:bold;">hs/test/Reach/Test_Eval.hs</span>:<span style="color:yellow;font-weight:bold;">61</span>:    -- <span style="color:dimgray;background-color:yellow;">TODO</span>: exceptions = []
 <span style="color:lime;font-weight:bold;">hs/test/Reach/Test_Eval.hs</span>:<span style="color:yellow;font-weight:bold;">74</span>:    -- <span style="color:dimgray;background-color:yellow;">TODO</span>: exceptions = []
+<span style="color:lime;font-weight:bold;">hs/test/Reach/Test_Verify.hs</span>:<span style="color:yellow;font-weight:bold;">16</span>:import System.IO.Silently -- <span style="color:dimgray;background-color:yellow;">TODO</span>: port to System.IO.Capture
+<span style="color:lime;font-weight:bold;">hs/Makefile</span>:<span style="color:yellow;font-weight:bold;">31</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: dockerized stan so that make check does not require local hs install?
 <span style="color:lime;font-weight:bold;">hs/test/Reach/Test/Util.hs</span>:<span style="color:yellow;font-weight:bold;">104</span>:-- <span style="color:dimgray;background-color:yellow;">TODO</span>: relax this once the compiler has all relative paths
 <span style="color:lime;font-weight:bold;">hs/test/Reach/Test/Util.hs</span>:<span style="color:yellow;font-weight:bold;">127</span>:-- <span style="color:dimgray;background-color:yellow;">TODO</span> better name
 <span style="color:lime;font-weight:bold;">hs/test/Reach/Test/Util.hs</span>:<span style="color:yellow;font-weight:bold;">135</span>:-- <span style="color:dimgray;background-color:yellow;">XXX</span> This is a hack to make tests portable.
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Report.hs</span>:<span style="color:yellow;font-weight:bold;">15</span>:--- <span style="color:dimgray;background-color:yellow;">TODO</span> maybe have each part collect some information and report it back through a (Map String String)
-<span style="color:lime;font-weight:bold;">hs/src/Reach/EPP.hs</span>:<span style="color:yellow;font-weight:bold;">31</span>:  , --- <span style="color:dimgray;background-color:yellow;">FIXME</span> These would be maps when we have labelled loops
-<span style="color:lime;font-weight:bold;">hs/src/Reach/EPP.hs</span>:<span style="color:yellow;font-weight:bold;">67</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> Try to simplify these types after all the cases are covered... maybe some of the values are always the same.
-<span style="color:lime;font-weight:bold;">hs/src/Reach/EPP.hs</span>:<span style="color:yellow;font-weight:bold;">112</span>:                 --- <span style="color:dimgray;background-color:yellow;">FIXME</span>: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
-<span style="color:lime;font-weight:bold;">hs/src/Reach/EPP.hs</span>:<span style="color:yellow;font-weight:bold;">128</span>:                 --- <span style="color:dimgray;background-color:yellow;">FIXME</span>: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Type.hs</span>:<span style="color:yellow;font-weight:bold;">53</span>:  --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Find meet of objects
+<span style="color:lime;font-weight:bold;">hs/package.mo.yaml</span>:<span style="color:yellow;font-weight:bold;">100</span>:# - -Wmonomorphism-restriction # <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Parser.hs</span>:<span style="color:yellow;font-weight:bold;">44</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> implement a custom show that is useful
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Parser.hs</span>:<span style="color:yellow;font-weight:bold;">89</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> Support more binding forms
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Parser.hs</span>:<span style="color:yellow;font-weight:bold;">217</span>:  Left e -&gt; error $ tryPrettifyError at' e -- <span style="color:dimgray;background-color:yellow;">TODO</span>: prettify
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Pretty.hs</span>:<span style="color:yellow;font-weight:bold;">32</span>:  -- <span style="color:dimgray;background-color:yellow;">TODO</span>: incorporate srcloc in pretty?
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/Knowledge.hs</span>:<span style="color:yellow;font-weight:bold;">92</span>:        --- <span style="color:dimgray;background-color:yellow;">FIXME</span> we could keep some extra information, like the
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Backend/JS.hs</span>:<span style="color:yellow;font-weight:bold;">280</span>:              , &quot;null&quot; --- <span style="color:dimgray;background-color:yellow;">XXX</span> implement simulation to discover transfer in EPP, not here.
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Connector/ALGO.hs</span>:<span style="color:yellow;font-weight:bold;">9</span>:  --- <span style="color:dimgray;background-color:yellow;">XXX</span> connect_algo
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/SMT.hs</span>:<span style="color:yellow;font-weight:bold;">32</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> decide on fixed bitvectors
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/SMT.hs</span>:<span style="color:yellow;font-weight:bold;">275</span>:      --- <span style="color:dimgray;background-color:yellow;">FIXME</span> try harder to figure out what is a variable, like v7,
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/SMT.hs</span>:<span style="color:yellow;font-weight:bold;">297</span>:      --- <span style="color:dimgray;background-color:yellow;">FIXME</span> have an option to force these to display
@@ -160,17 +152,21 @@ examples/tut-7/package.json:5:    &quot;@reach-sh/stdlib&quot;: &quot;0.1&quot;
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/SMT.hs</span>:<span style="color:yellow;font-weight:bold;">585</span>:      --- <span style="color:dimgray;background-color:yellow;">FIXME</span>: It might be possible to do this in Z3 by generating a function
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/SMT.hs</span>:<span style="color:yellow;font-weight:bold;">674</span>:          --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Can we use path constraints to avoid this forking?
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Verify/SMT.hs</span>:<span style="color:yellow;font-weight:bold;">757</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> The injective assertions cause Z3 to go off the
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Connector/ALGO.hs</span>:<span style="color:yellow;font-weight:bold;">9</span>:  --- <span style="color:dimgray;background-color:yellow;">XXX</span> connect_algo
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Backend/JS.hs</span>:<span style="color:yellow;font-weight:bold;">280</span>:              , &quot;null&quot; --- <span style="color:dimgray;background-color:yellow;">XXX</span> implement simulation to discover transfer in EPP, not here.
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Compiler.hs</span>:<span style="color:yellow;font-weight:bold;">41</span>:        --- <span style="color:dimgray;background-color:yellow;">FIXME</span> The particular connector/backend should be part of
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Connector/ETH_Solidity.hs</span>:<span style="color:yellow;font-weight:bold;">149</span>:  --- <span style="color:dimgray;background-color:yellow;">FIXME</span> maybe merge the maps?
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Parser.hs</span>:<span style="color:yellow;font-weight:bold;">44</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> implement a custom show that is useful
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Parser.hs</span>:<span style="color:yellow;font-weight:bold;">89</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> Support more binding forms
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Parser.hs</span>:<span style="color:yellow;font-weight:bold;">217</span>:  Left e -&gt; error $ tryPrettifyError at' e -- <span style="color:dimgray;background-color:yellow;">TODO</span>: prettify
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Version.hs</span>:<span style="color:yellow;font-weight:bold;">11</span>:--- <span style="color:dimgray;background-color:yellow;">XXX</span> Move into embedded files and get from /VERSION
-<span style="color:lime;font-weight:bold;">hs/src/Reach/Pretty.hs</span>:<span style="color:yellow;font-weight:bold;">32</span>:  -- <span style="color:dimgray;background-color:yellow;">TODO</span>: incorporate srcloc in pretty?
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Report.hs</span>:<span style="color:yellow;font-weight:bold;">15</span>:--- <span style="color:dimgray;background-color:yellow;">TODO</span> maybe have each part collect some information and report it back through a (Map String String)
 <span style="color:lime;font-weight:bold;">hs/src/Reach/AST.hs</span>:<span style="color:yellow;font-weight:bold;">83</span>:get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile &quot;src&quot; -- <span style="color:dimgray;background-color:yellow;">FIXME</span>
 <span style="color:lime;font-weight:bold;">hs/src/Reach/AST.hs</span>:<span style="color:yellow;font-weight:bold;">222</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> I think we can delete some of these fields, like the SLVal and the M DLVar
 <span style="color:lime;font-weight:bold;">hs/src/Reach/AST.hs</span>:<span style="color:yellow;font-weight:bold;">266</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> make this illegal outside assert/invariant
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Type.hs</span>:<span style="color:yellow;font-weight:bold;">53</span>:  --- <span style="color:dimgray;background-color:yellow;">FIXME</span> Find meet of objects
+<span style="color:lime;font-weight:bold;">hs/src/Reach/Version.hs</span>:<span style="color:yellow;font-weight:bold;">11</span>:--- <span style="color:dimgray;background-color:yellow;">XXX</span> Move into embedded files and get from /VERSION
+<span style="color:lime;font-weight:bold;">hs/src/Reach/EPP.hs</span>:<span style="color:yellow;font-weight:bold;">31</span>:  , --- <span style="color:dimgray;background-color:yellow;">FIXME</span> These would be maps when we have labelled loops
+<span style="color:lime;font-weight:bold;">hs/src/Reach/EPP.hs</span>:<span style="color:yellow;font-weight:bold;">67</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> Try to simplify these types after all the cases are covered... maybe some of the values are always the same.
+<span style="color:lime;font-weight:bold;">hs/src/Reach/EPP.hs</span>:<span style="color:yellow;font-weight:bold;">112</span>:                 --- <span style="color:dimgray;background-color:yellow;">FIXME</span>: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
+<span style="color:lime;font-weight:bold;">hs/src/Reach/EPP.hs</span>:<span style="color:yellow;font-weight:bold;">128</span>:                 --- <span style="color:dimgray;background-color:yellow;">FIXME</span>: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
+<span style="color:lime;font-weight:bold;">hs/test-examples/features/objects_lifted.rsh</span>:<span style="color:yellow;font-weight:bold;">22</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span>: object field ref []
+<span style="color:lime;font-weight:bold;">hs/test-examples/features/objects_lifted.rsh</span>:<span style="color:yellow;font-weight:bold;">45</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span>: structural object equality comparison
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Eval.hs</span>:<span style="color:yellow;font-weight:bold;">88</span>:  | --- <span style="color:dimgray;background-color:yellow;">FIXME</span> add count
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Eval.hs</span>:<span style="color:yellow;font-weight:bold;">109</span>:--- <span style="color:dimgray;background-color:yellow;">FIXME</span> I think most of these things should be in Pretty
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Eval.hs</span>:<span style="color:yellow;font-weight:bold;">132</span>:  T_Object _m -&gt; &quot;object&quot; -- <span style="color:dimgray;background-color:yellow;">FIXME</span>
@@ -205,17 +201,14 @@ examples/tut-7/package.json:5:    &quot;@reach-sh/stdlib&quot;: &quot;0.1&quot;
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Eval.hs</span>:<span style="color:yellow;font-weight:bold;">2271</span>:                -- <span style="color:dimgray;background-color:yellow;">TODO</span>: ^ double check this srcloc
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Eval.hs</span>:<span style="color:yellow;font-weight:bold;">2509</span>:    -- <span style="color:dimgray;background-color:yellow;">TODO</span>: add idAt info to the err below?
 <span style="color:lime;font-weight:bold;">hs/src/Reach/Eval.hs</span>:<span style="color:yellow;font-weight:bold;">2582</span>:          (pn, env_insert at' &quot;interact&quot; (sls_sss at' $ secret io) top_env) -- <span style="color:dimgray;background-color:yellow;">TODO</span>: double check this srcloc
-<span style="color:lime;font-weight:bold;">hs/test-examples/nl-eval-errors/export_rebind.rsh</span>:<span style="color:yellow;font-weight:bold;">9</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: more specific error message
-<span style="color:lime;font-weight:bold;">hs/test-examples/compile-errors/CE_Unreachable.rsh</span>:<span style="color:yellow;font-weight:bold;">5</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> port this to NL; unrelated error inserted to make test pass
-<span style="color:lime;font-weight:bold;">hs/test-examples/compile-errors/CE_ArrayLenNotConstant.txt</span>:<span style="color:yellow;font-weight:bold;">1</span>:CE_ArrayLenNotConstant.rsh:8:26: array length is not constant: &quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Implement show for part of InlineV&quot;
-<span style="color:lime;font-weight:bold;">hs/test-examples/nl-verify-noerrs/assert_false_unreachable.rsh</span>:<span style="color:yellow;font-weight:bold;">9</span>:          // <span style="color:dimgray;background-color:yellow;">XXX</span> Known failing test case
-<span style="color:lime;font-weight:bold;">hs/test-examples/nl-verify-errs/assume_false.rsh</span>:<span style="color:yellow;font-weight:bold;">9</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span> the below assume should cause a failure on its own.
-<span style="color:lime;font-weight:bold;">hs/test-examples/non-features/fn_require_private.rsh</span>:<span style="color:yellow;font-weight:bold;">11</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span>: the error message should point to the call site
 <span style="color:lime;font-weight:bold;">hs/test-examples/features/exports.rsh</span>:<span style="color:yellow;font-weight:bold;">6</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: Unexpected token, MulToken at ./test-examples/features/exports.rsh:5:8
 <span style="color:lime;font-weight:bold;">hs/test-examples/features/objects.rsh</span>:<span style="color:yellow;font-weight:bold;">15</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span>: object field ref []
 <span style="color:lime;font-weight:bold;">hs/test-examples/features/objects.rsh</span>:<span style="color:yellow;font-weight:bold;">55</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span>: structural object equality comparison
-<span style="color:lime;font-weight:bold;">hs/test-examples/features/objects_lifted.rsh</span>:<span style="color:yellow;font-weight:bold;">22</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span>: object field ref []
-<span style="color:lime;font-weight:bold;">hs/test-examples/features/objects_lifted.rsh</span>:<span style="color:yellow;font-weight:bold;">45</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span>: structural object equality comparison
+<span style="color:lime;font-weight:bold;">hs/test-examples/non-features/fn_require_private.rsh</span>:<span style="color:yellow;font-weight:bold;">11</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span>: the error message should point to the call site
+<span style="color:lime;font-weight:bold;">hs/test-examples/nl-verify-noerrs/assert_false_unreachable.rsh</span>:<span style="color:yellow;font-weight:bold;">9</span>:          // <span style="color:dimgray;background-color:yellow;">XXX</span> Known failing test case
+<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.2.out</span>:<span style="color:yellow;font-weight:bold;">31</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
+<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.2.out</span>:<span style="color:yellow;font-weight:bold;">62</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
+<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/rps__rsh__rps_while.rsh.0.out</span>:<span style="color:yellow;font-weight:bold;">30</span>:... v16 = 2 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.3.out</span>:<span style="color:yellow;font-weight:bold;">19</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.3.out</span>:<span style="color:yellow;font-weight:bold;">30</span>:... v8 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.3.out</span>:<span style="color:yellow;font-weight:bold;">52</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
@@ -223,56 +216,63 @@ examples/tut-7/package.json:5:    &quot;@reach-sh/stdlib&quot;: &quot;0.1&quot;
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.3.out</span>:<span style="color:yellow;font-weight:bold;">122</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.3.out</span>:<span style="color:yellow;font-weight:bold;">157</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.3.out</span>:<span style="color:yellow;font-weight:bold;">192</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
-<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.2.out</span>:<span style="color:yellow;font-weight:bold;">31</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
-<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.2.out</span>:<span style="color:yellow;font-weight:bold;">62</span>:... ctc_balance3 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
-<span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/rps__rsh__rps_while.rsh.0.out</span>:<span style="color:yellow;font-weight:bold;">30</span>:... v16 = 2 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
 <span style="color:lime;font-weight:bold;">hs/test-examples/verification-errors/multisig__multisig.rsh.0.out</span>:<span style="color:yellow;font-weight:bold;">23</span>:... v8 = 1 -- <span style="color:dimgray;background-color:yellow;">XXX</span> reachc error, bad info on var
-<span style="color:lime;font-weight:bold;">docs-src/minted/main.rkt</span>:<span style="color:yellow;font-weight:bold;">112</span>:    ;; <span style="color:dimgray;background-color:yellow;">XXX</span> This is too aggressive in JS.
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">28</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">32</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">36</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">40</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">44</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">48</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">52</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">56</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">60</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">64</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">68</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">72</span>:<span style="color:dimgray;background-color:yellow;">XXX</span>
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">74</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> use design recipe
-<span style="color:lime;font-weight:bold;">docs-src/workshop.scrbl</span>:<span style="color:yellow;font-weight:bold;">76</span>:<span style="color:dimgray;background-color:yellow;">XXX</span> warning about online block mining attack
-<span style="color:lime;font-weight:bold;">hie.yaml</span>:<span style="color:yellow;font-weight:bold;">19</span>:# <span style="color:dimgray;background-color:yellow;">XXX</span> Once hie-bios is upgraded to 0.7.0
-<span style="color:lime;font-weight:bold;">py/pygments_reach/__init__.py</span>:<span style="color:yellow;font-weight:bold;">40</span>:    # <span style="color:dimgray;background-color:yellow;">TODO</span>?
-<span style="color:lime;font-weight:bold;">py/pygments_reach/__init__.py</span>:<span style="color:yellow;font-weight:bold;">118</span>:            # <span style="color:dimgray;background-color:yellow;">TODO</span>: should this include single-line comments and allow nesting strings?
-<span style="color:lime;font-weight:bold;">scripts/algorand-devnet/NOTES.md</span>:<span style="color:yellow;font-weight:bold;">6</span>:<span style="color:dimgray;background-color:yellow;">TODO</span>: figure out how to run a devnet
-<span style="color:lime;font-weight:bold;">scripts/reach-usage-report.sh</span>:<span style="color:yellow;font-weight:bold;">35</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: is paging an issue when the table gets larger?
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">51</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">64</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">67</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">70</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">73</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">76</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">79</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">82</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span>&quot;) }
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">87</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> SendRecv&quot;)
-<span style="color:lime;font-weight:bold;">go/src/reach-sh/stdlib/stdlib.go</span>:<span style="color:yellow;font-weight:bold;">91</span>:  panic(&quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Recv&quot;)
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">102</span>:# <span style="color:dimgray;background-color:yellow;">XXX</span> Get from VERSION in Haskell version
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">352</span>:  # <span style="color:dimgray;background-color:yellow;">TODO</span>: better arg parsing
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">411</span>:  # <span style="color:dimgray;background-color:yellow;">TODO</span>: s/lint/preapp. It's disabled because sometimes our
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">413</span>:  # <span style="color:dimgray;background-color:yellow;">TODO</span>: ^ The same goes for js/runner_package.template.json
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">416</span>:  # <span style="color:dimgray;background-color:yellow;">XXX</span> We could optimize this by making reachsh/stdlib-app with everything except the MJS files and make the package linking/install go faster.
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">475</span>:  # <span style="color:dimgray;background-color:yellow;">TODO</span>: a better makefile
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">588</span>:    # <span style="color:dimgray;background-color:yellow;">TODO</span>: better arg parsing at some point
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">612</span>:  # <span style="color:dimgray;background-color:yellow;">XXX</span> Can we add eslint on the JS?
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">657</span>:      # <span style="color:dimgray;background-color:yellow;">TODO</span>: more description on err
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">688</span>:    # <span style="color:dimgray;background-color:yellow;">TODO</span>: better use of makefiles so that we just call make build anyway,
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">714</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: allow linting outside of PWD
-<span style="color:lime;font-weight:bold;">reach</span>:<span style="color:yellow;font-weight:bold;">715</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: try to not mount all of PWD?
-<span style="color:lime;font-weight:bold;">examples/one.sh</span>:<span style="color:yellow;font-weight:bold;">41</span>:      # <span style="color:dimgray;background-color:yellow;">XXX</span> make reachc clean
-<span style="color:lime;font-weight:bold;">examples/workshop-trust-fund/Makefile</span>:<span style="color:yellow;font-weight:bold;">7</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: FAKE always lets the receiver collect the payment
-<span style="color:lime;font-weight:bold;">examples/workshop-trust-fund/Makefile</span>:<span style="color:yellow;font-weight:bold;">8</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: FAKE doesn't simulate the part of the contract that pays out
-<span style="color:lime;font-weight:bold;">examples/workshop-trust-fund/index.mjs</span>:<span style="color:yellow;font-weight:bold;">135</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: demo Bystander yoink
+<span style="color:lime;font-weight:bold;">hs/test-examples/compile-errors/CE_ArrayLenNotConstant.txt</span>:<span style="color:yellow;font-weight:bold;">1</span>:CE_ArrayLenNotConstant.rsh:8:26: array length is not constant: &quot;<span style="color:dimgray;background-color:yellow;">XXX</span> Implement show for part of InlineV&quot;
+<span style="color:lime;font-weight:bold;">hs/test-examples/compile-errors/CE_Unreachable.rsh</span>:<span style="color:yellow;font-weight:bold;">5</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> port this to NL; unrelated error inserted to make test pass
+<span style="color:lime;font-weight:bold;">hs/test-examples/nl-verify-errs/assume_false.rsh</span>:<span style="color:yellow;font-weight:bold;">9</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span> the below assume should cause a failure on its own.
+<span style="color:lime;font-weight:bold;">hs/test-examples/nl-eval-errors/export_rebind.rsh</span>:<span style="color:yellow;font-weight:bold;">9</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: more specific error message
+<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">31</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: why was this stripping off the 0x?
+<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">80</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: fix things so this restriction is not necessary
+<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">98</span>:    // <span style="color:dimgray;background-color:yellow;">TODO</span> check address length?
+<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">104</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: check ctc, sz for sanity
+<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">120</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: check ctcs for sanity
+<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">136</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: check co for sanity
+<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">216</span>:  const size = 32; // bytes // <span style="color:dimgray;background-color:yellow;">TODO</span>: support other sizes?
+<span style="color:lime;font-weight:bold;">js/shared.mjs</span>:<span style="color:yellow;font-weight:bold;">221</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> why do we slice off the 0x?
+<span style="color:lime;font-weight:bold;">js/Dockerfile.runner</span>:<span style="color:yellow;font-weight:bold;">11</span>:# <span style="color:dimgray;background-color:yellow;">TODO</span>: use a gentler linter for this
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">39</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: read token from scripts/algorand-devnet/algorand_data/algod.token
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">75</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> Untested but something like this should work
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">83</span>:  // // <span style="color:dimgray;background-color:yellow;">FIXME</span> https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">102</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">180</span>:      throw Error(`<span style="color:dimgray;background-color:yellow;">XXX</span> Not implemented: wait`);
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">196</span>:              // <span style="color:dimgray;background-color:yellow;">FIXME</span> JS SDK doesn't handle encoding this kind of txn
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">231</span>:            // <span style="color:dimgray;background-color:yellow;">FIXME</span> relies on https://github.com/algorand/go-algorand/issues/1051 fix
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">239</span>:          // <span style="color:dimgray;background-color:yellow;">FIXME</span> no documentation on whether confirmedTxn has something for each txn in a group or only one thing. We made need to call returnFromTxn with appTxn for the data and confirmedTxn for the round/etc
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">265</span>:          // <span style="color:dimgray;background-color:yellow;">FIXME</span> maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">302</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span> JS SDK doesn't handle this kind of txn
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">312</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Use note field for link to Reach code
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">322</span>:    // <span style="color:dimgray;background-color:yellow;">FIXME</span> relies on https://github.com/algorand/go-algorand/issues/1051 fix
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">336</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">360</span>:export const newAccountFromMnemonic = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">363</span>:export const waitUntilTime = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">364</span>:export const wait = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">js/ALGO.mjs</span>:<span style="color:yellow;font-weight:bold;">365</span>:export const verifyContract = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">js/runner.mjs</span>:<span style="color:yellow;font-weight:bold;">17</span>:// <span style="color:dimgray;background-color:yellow;">TODO</span>: only run main if running as script?
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">24</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span>: when using ganache: nvm use 12
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">93</span>:void(flaky); // <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">113</span>:    protocol: 'http' // <span style="color:dimgray;background-color:yellow;">XXX</span> no apparent need to support https
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">124</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span>: doesn't even retry, just returns the first attempt
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">204</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> expose setProvider
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">223</span>:// <span style="color:dimgray;background-color:yellow;">XXX</span> dead code?
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">262</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> networkAccount MUST be a wallet to deploy/attach
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">361</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">375</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: support BigNumber delays?
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">394</span>:          // <span style="color:dimgray;background-color:yellow;">XXX</span> What should we do...? If we fail, but there's no timeout delay... then we should just die
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">413</span>:        // <span style="color:dimgray;background-color:yellow;">XXX</span> It might be a little dangerous to rely on the polling to just work
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">422</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span> If we were trying to join, but we got sniped, then we'll
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">438</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: support BigNumber delays?
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">680</span>:  // <span style="color:dimgray;background-color:yellow;">TODO</span>: is there a way to get the creation_block &amp; bytecode with a single api call?
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">695</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span> this is based on empirical observation, feels hacky
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">698</span>:  // <span style="color:dimgray;background-color:yellow;">XXX</span> the labels &quot;init&quot;, &quot;setup&quot;, and &quot;teardown&quot; are probably misleading
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">699</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span>: for 0-arg contract deploys, it appears that:
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">702</span>:  // <span style="color:dimgray;background-color:yellow;">FIXME</span>: for n-arg contract deploys, it appears that:
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">714</span>:    // <span style="color:dimgray;background-color:yellow;">FIXME</span>: Empirical observation says that 0-arg contract deploys
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">718</span>:    // <span style="color:dimgray;background-color:yellow;">FIXME</span>: the 13-char header is also fragile, but we're just
+<span style="color:lime;font-weight:bold;">js/ETH.mjs</span>:<span style="color:yellow;font-weight:bold;">724</span>:      // <span style="color:dimgray;background-color:yellow;">FIXME</span>: this display is not so helful for the n-arg contract deploy case.
+<span style="color:lime;font-weight:bold;">js/FAKE.mjs</span>:<span style="color:yellow;font-weight:bold;">58</span>:      // <span style="color:dimgray;background-color:yellow;">XXX</span> use try_p to figure out what transfers from the contract
+<span style="color:lime;font-weight:bold;">js/FAKE.mjs</span>:<span style="color:yellow;font-weight:bold;">147</span>:export const newAccountFromMnemonic = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">js/FAKE.mjs</span>:<span style="color:yellow;font-weight:bold;">148</span>:export const verifyContract = false; // <span style="color:dimgray;background-color:yellow;">XXX</span>
+<span style="color:lime;font-weight:bold;">js/ask.mjs</span>:<span style="color:yellow;font-weight:bold;">28</span>:      // <span style="color:dimgray;background-color:yellow;">TODO</span>: better re-prompt
 make[1]: Leaving directory '/root/project'
 </pre>
 </body>
