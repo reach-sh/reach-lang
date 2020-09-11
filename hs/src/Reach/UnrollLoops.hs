@@ -202,9 +202,6 @@ llReplace' mkk nk (LLL_Com m) = llReplace mkk nk m
 llSeqn :: (LLCommon a -> a) -> [LLLocal] -> LLCommon a -> LLCommon a
 llSeqn mkk fs k = foldr' (flip $ llReplace' mkk) k fs
 
-snoc :: [a] -> a -> [a]
-snoc xs x = xs ++ [x]
-
 ul_m :: (LLCommon a -> a) -> (a -> App s a) -> LLCommon a -> App s a
 ul_m mkk ul_k = \case
   LL_Return at -> (pure $ mkk $ LL_Return at)
@@ -243,11 +240,11 @@ ul_m mkk ul_k = \case
           r' <- ul_a r
           let LLL_Com f_body'm = f_body'
           let f_body'' = addLifts LLL_Com f_body'm flifts
-          return $ (snoc fs f_body'', r')
-    (fs, r') <- foldlM f' ([], z') x'
+          return $ (fs Seq.|> f_body'', r')
+    (fs, r') <- foldlM f' (mempty, z') x'
     ans' <- ul_v_rn ans
     k' <- ul_k k
-    let m' = llSeqn mkk fs (LL_Let at (Just ans') (DLE_Arg at r') k')
+    let m' = llSeqn mkk (toList fs) (LL_Let at (Just ans') (DLE_Arg at r') k')
     return $ addLifts mkk m' xlifts
 
 ul_l :: LLLocal -> App s LLLocal

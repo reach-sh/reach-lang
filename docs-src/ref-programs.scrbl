@@ -922,7 +922,7 @@ except that index @reachin{idx} is replaced with @reachin{val}.
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
 
-@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, @tt{Array.empty}, and @tt{Array.replicate} }
+@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.empty}, @tt{Array.zip} & @tt{.zip}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, and @tt{Array.replicate} }
 
 @(mint-define! '("iota"))
 @reach{
@@ -958,14 +958,25 @@ This may be abbreviated as @reachin{x.concat(y)}.
 It is the identity element of @reachin{Array.concat}.
 It may also be written @reachin{Array_empty}.
 
+@(mint-define! '("zip"))
+@reach{
+ Array.zip(x, y)
+ x.zip(y) }
+
+@index{Array.zip} @reachin{Array.zip(x, y)} returns a new array the same size as @reachin{x} and @reachin{y} (which must be thes same size) whose elements are tuples of the elements of @reachin{x} and @reachin{y}.
+This may be abbreviated as @reachin{x.zip(y)}.
+
 @(mint-define! '("map"))
 @reach{
  Array.map(arr, f)
  arr.map(f) }
 
 @index{Array.map} @reachin{Array.map(arr, f)} returns a new array, @reachin{arr_mapped}, the same size as @reachin{arr}, where @reachin{arr_mapped[i] = f(arr[i])} for all @reachin{i}.
-For example, @reachin{Array.iota(4).map(add)} returns @reachin{[1, 2, 3, 4]}.
+For example, @reachin{Array.iota(4).map(x => x+1)} returns @reachin{[1, 2, 3, 4]}.
 This may be abbreviated as @reachin{arr.map(f)}.
+
+This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{f} argument.
+For example, @reachin{Array.iota(4).map(Array.iota(4), add)} returns @reachin{[0, 2, 4, 6]}.
 
 @(mint-define! '("reduce"))
 @reach{
@@ -975,6 +986,9 @@ This may be abbreviated as @reachin{arr.map(f)}.
 @index{Array.reduce} @reachin{Array.reduce(arr, z, f)} returns the @link["https://en.wikipedia.org/wiki/Fold_(higher-order_function)"]{left fold} of the function @reachin{f} over the given array with the initial value @reachin{z}.
 For example, @reachin{Array.iota(4).reduce(0, add)} returns @reachin{((0 + 1) + 2) + 3 = 6}.
 This may be abbreviated as @reachin{arr.reduce(z, f)}.
+
+This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{z} argument.
+For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y))} returns @reachin{((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3)}.
 
 @subsubsection{Objects}
 

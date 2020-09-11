@@ -1110,36 +1110,51 @@ evalPrim ctxt at sco st p sargs =
           SLRes m_lifts m_st (SLAppRes _ m_v) <-
             evalApplyVals ctxt at sco xy_st (SLV_Prim $ SLPrim_array_map) (xy_v : (map public $ more ++ [f']))
           return $ SLRes (xy_lifts <> m_lifts) m_st m_v
-    SLPrim_array_reduce -> do
-      let (x, z, f) = three_args
-      let (xt, x_da) = typeOf at x
-      let (x_ty, _) = mustBeArray xt
-      let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
-      let (z_ty, z_da) = typeOf at z
-      (b_dv, b_dsv) <- make_dlvar "reduce acc" z_ty
-      (a_dv, a_dsv) <- make_dlvar "reduce in" x_ty
-      SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
-      let (f_ty, f_da) = typeOf at f_v
-      let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
-      case shouldUnroll of
-        True -> do
-          (lifts', x_vs) <- explodeTupleLike ctxt at "reduce" x
-          let evalem (prev_lifts, prev_z) xv = do
-                SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' prev_z xv
-                --- Note: We are artificially restricting reduce
-                --- to be parameteric in the state. We also ensure
-                --- that they type is the same as the anonymous
-                --- version.
-                return $
-                  stMerge at f_st xv_st
-                  `seq` checkType at f_ty xv_v'
-                  `seq` ((prev_lifts <> xv_lifts), xv_v')
-          (lifts'', z') <- foldM evalem (mempty, z) x_vs
-          return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
-        False -> do
-          (ans_dv, ans_dsv) <- make_dlvar "array_reduce" f_ty
-          let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_lifts f_da
-          return $ SLRes lifts' st (lvl, ans_dsv)
+    SLPrim_array_reduce ->
+      case args of
+        [] -> illegal_args
+        [_] -> illegal_args
+        [_, _] -> illegal_args
+        [x, z, f] -> do
+          let (xt, x_da) = typeOf at x
+          let (x_ty, _) = mustBeArray xt
+          let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
+          let (z_ty, z_da) = typeOf at z
+          (b_dv, b_dsv) <- make_dlvar "reduce acc" z_ty
+          (a_dv, a_dsv) <- make_dlvar "reduce in" x_ty
+          SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
+          let (f_ty, f_da) = typeOf at f_v
+          let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
+          case shouldUnroll of
+            True -> do
+              (lifts', x_vs) <- explodeTupleLike ctxt at "reduce" x
+              let evalem (prev_lifts, prev_z) xv = do
+                    SLRes xv_lifts xv_st (SLAppRes _ (_, xv_v')) <- f' prev_z xv
+                    --- Note: We are artificially restricting reduce
+                    --- to be parameteric in the state. We also ensure
+                    --- that they type is the same as the anonymous
+                    --- version.
+                    return $
+                      stMerge at f_st xv_st
+                      `seq` checkType at f_ty xv_v'
+                      `seq` ((prev_lifts <> xv_lifts), xv_v')
+              (lifts'', z') <- foldM evalem (mempty, z) x_vs
+              return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
+            False -> do
+              (ans_dv, ans_dsv) <- make_dlvar "array_reduce" f_ty
+              let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_lifts f_da
+              return $ SLRes lifts' st (lvl, ans_dsv)
+        x:y:args' -> do
+          let (f, z, more) = case reverse args' of
+                            f_:z_:rmore -> (f_, z_, reverse rmore)
+                            _ -> impossible "array_reduce"
+          SLRes xy_lifts xy_st (SLAppRes _ xy_v) <-
+            evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_array_zip) $ map public [x, y]
+          let clo_args = concatMap ((",c" <>) . show) [0..(length more - 1)]
+          let f' = jsClo at "zip" ("(z,ab" <> clo_args <> ") => f(z, ab[0], ab[1]" <> clo_args <> ")") (M.fromList [("f", f)])
+          SLRes m_lifts m_st (SLAppRes _ m_v) <-
+            evalApplyVals ctxt at sco xy_st (SLV_Prim $ SLPrim_array_reduce) (xy_v : (map public $ more ++ [z,f']))
+          return $ SLRes (xy_lifts <> m_lifts) m_st m_v
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] ->
@@ -1335,7 +1350,7 @@ evalPrim ctxt at sco st p sargs =
     two_args = case args of
       [x, y] -> (x, y)
       _ -> illegal_args
-    three_args = case args of
+    _three_args = case args of
       [x, y, z] -> (x, y, z)
       _ -> illegal_args
     mustBeArray t =

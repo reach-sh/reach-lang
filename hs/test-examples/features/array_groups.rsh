@@ -28,9 +28,17 @@ export const main = Reach.App(
             Array.map(Array.iota(4),
                       Array.iota(4),
                       Array.iota(4),
-                      (x, y, z) => x + y + z); });
+                      (x, y, z) => x + y + z);
+      const a7 =
+            Array.reduce(
+              Array.iota(4),
+              Array.iota(4),
+              Array.iota(4),
+              0, (acc, x, y, z) => acc + x + y + z); });
 
-    A.publish(a3, a4, v5, a6);
+    assert(Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y)) == ((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3));
+
+    A.publish(a3, a4, v5, a6, a7);
     const c4 =
           Array.map(Array.iota(35),
                     a3.map(o => o.x)
