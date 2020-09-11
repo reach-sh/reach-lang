@@ -71,7 +71,8 @@ export function closeTo(Who, after) {
   after();
   exit(); }
 
-// Standard library functions that should be hidden in some way, like SLV_HaskellFunction FIXME
+// Standard library functions that should be hidden in some way, like
+// SLV_HaskellFunction FIXME
 
 export function Object_set(o, k, e) {
   return {...o, [k]: e};

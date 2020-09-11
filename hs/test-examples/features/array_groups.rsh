@@ -6,7 +6,11 @@ export const main = Reach.App(
            put: Fun([ Array(UInt256, 12),
                       UInt256, UInt256 ], Null) }]],
   (A) => {
-    const a0 = Array.iota(5).concat(Array.iota(5)).concat(Array.empty).concat(Array.replicate(2, 1));
+    const a0 =
+          Array.iota(5)
+          .concat(Array.iota(5))
+          .concat(Array.empty)
+          .concat(Array.replicate(2, 1));
     const a1 = a0.map(x => x+1);
     const v2 = a1.reduce(0, add);
 
@@ -25,9 +29,9 @@ export const main = Reach.App(
     A.publish(x);
     require(x == c5);
     commit();
-    
+
     A.only(() => {
       interact.put(a1, v2, c5); });
-    
+
     exit();
   });
