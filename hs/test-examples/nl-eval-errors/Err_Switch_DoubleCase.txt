@@ -1,0 +1,1 @@
+error: ./Err_Switch_DoubleCase.rsh:11:24:block: switch contains duplicate case, None at ./Err_Switch_DoubleCase.rsh:14:9:case; first defined at ./Err_Switch_DoubleCase.rsh:13:9:case

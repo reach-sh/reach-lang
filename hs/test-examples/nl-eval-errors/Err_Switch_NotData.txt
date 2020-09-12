@@ -1,0 +1,1 @@
+error: ./Err_Switch_NotData.rsh:7:16:after const semicolon: switch expects data instance, but got uint256
