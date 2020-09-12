@@ -19,6 +19,7 @@ This will normally be imported by writing:
 }
 
 Each function accepts three arguments: @jsin{stdlib}, @jsin{ctc}, and @jsin{interact}. These functions should be called by the @tech{frontend}.
+For example, if a Reach program contains a participant named @reachin{'A'} in the argument to @reachin{Reach.App}, then the JavaScript backend will include a function named @jsin{A}.
 
 The @(mint-define! '("stdlib")) @jsin{stdlib} argument is provided by either
 @itemlist[
@@ -31,6 +32,11 @@ The @(mint-define! '("stdlib")) @jsin{stdlib} argument is provided by either
 The @jsin{ctc} argument is the result of a call to @jsin{acc.deploy} or @jsin{acc.attach}.
 
 The @jsin{interact} argument is an object matching the @tech{participant interact interface} for the corresponding @tech{participant}.
+
+The JavaScript backend also provides an export named @jsin{_version}, which is a string representation of the Reach version used to compile the program.
+For example, the version of Reach used to produce this documentation would contain the string @jsin{'@|reach-vers|'}.
+
+Finally, the backend will provide an export named @jsin{_Connectors}, which is an opaque object representing the @tech{connectors} this app was compiled to.
 
 @subsection[#:tag "ref-backend-js-guarantees"]{Guarantees}
 
