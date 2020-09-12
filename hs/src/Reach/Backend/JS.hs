@@ -9,6 +9,7 @@ import Reach.Backend
 import Reach.Connector
 import Reach.UnsafeUtil
 import Reach.Util
+import Reach.Type
 import Reach.Version
 
 --- Pretty helpers
@@ -65,6 +66,11 @@ jsTxn ctxt = "txn" <> pretty (ctxt_txn ctxt)
 jsTimeoutFlag :: JSCtxt -> Doc a
 jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout"
 
+--- FIXME use Haskell state to keep track of which contracts have been
+--- constructed and then use a JS backend map to store these so we
+--- don't create them ovre and over... or do something like the sol
+--- and smt backends and collect the set of types and define them all
+--- up front.
 jsContract :: SLType -> Doc a
 jsContract = \case
   T_Null -> "stdlib.T_Null"
@@ -185,6 +191,12 @@ jsExpr ctxt = \case
       False ->
         jsArg what
 
+jsEmitSwitch :: (JSCtxt -> k -> Doc a) -> JSCtxt -> SrcLoc -> DLVar -> SwitchCases k -> Doc a
+jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens ( jsVar ov <> "[0]" ) <+> jsBraces (vsep $ map cm1 $ M.toAscList csm)
+  where cm1 (vn, (ov', body)) = "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'
+          where set_and_body' = vsep [ "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
+                                     , iter ctxt body ]
+
 jsCom :: (JSCtxt -> k -> Doc a) -> JSCtxt -> PLCommon k -> Doc a
 jsCom iter ctxt = \case
   PL_Return {} -> emptyDoc
@@ -205,8 +217,9 @@ jsCom iter ctxt = \case
       [ jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
       , iter ctxt k
       ]
-  PL_LocalSwitch _ _XXX_ov _XXX_csm _XXX_k ->
-    error "XXX"
+  PL_LocalSwitch at ov csm k ->
+    vsep [ jsEmitSwitch jsPLTail ctxt at ov csm
+         , iter ctxt k ]
   PL_ArrayMap _ ans x a f r k ->
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "map" [(jsApply "" [jsArg $ DLA_Var a] <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r)))]
       <> hardline
@@ -249,8 +262,7 @@ jsETail ctxt = \case
       ]
   ET_Stop _ -> "return" <> semi
   ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
-  ET_Switch _ _XXX_ov _XXX_csm ->
-    error "XXX"
+  ET_Switch at ov csm -> jsEmitSwitch jsETail ctxt at ov csm
   ET_ToConsensus _ fs_ok which from_me msg mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
@@ -280,6 +292,7 @@ jsETail ctxt = \case
               [ whop
               , jsCon (DLC_Int $ fromIntegral which)
               , jsCon (DLC_Int $ fromIntegral $ length msg)
+              , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var svs ++ args
               , vs
               , amtp
               , delayp
@@ -338,7 +351,8 @@ jsPLProg :: ConnectorResult -> PLProg -> Doc a
 jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
   where
     modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
-    preamble = pretty $ "// Automatically generated with Reach " ++ versionStr
+    preamble = vsep [ pretty $ "// Automatically generated with Reach " ++ versionStr
+                    , "export const _version =" <+> jsString versionStr ]
     partsp = map (uncurry jsPart) $ M.toList pm
     cnpsp = map (uncurry jsCnp) $ M.toList cr
     connsExp = jsConnsExp (M.keys cr)
