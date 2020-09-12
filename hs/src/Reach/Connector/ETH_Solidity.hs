@@ -187,6 +187,7 @@ mustBeMem = \case
   T_Array {} -> True
   T_Tuple {} -> True
   T_Object {} -> True
+  T_Data {} -> True
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
   T_Type {} -> impossible "type"
@@ -225,6 +226,7 @@ solArg ctxt = \case
   DLA_Array _ as -> brackets $ hsep $ punctuate comma $ map (solArg ctxt) as
   da@(DLA_Tuple as) -> solApply (solType ctxt (argTypeOf da)) $ map (solArg ctxt) as
   da@(DLA_Obj m) -> solApply (solType ctxt (argTypeOf da)) $ map ((solArg ctxt) . snd) $ M.toAscList m
+  DLA_Data _XXX_dt _XXX_vn _XXX_vv -> error "XXX"
   DLA_Interact {} -> impossible "consensus interact"
 
 solPrimApply :: PrimOp -> [Doc a] -> Doc a
@@ -611,6 +613,8 @@ _solDefineType1 getTypeName i name = \case
   T_Object tm -> do
     tmn <- mapM getTypeName tm
     return $ (name, solStruct name $ map (\(k, v) -> (pretty k, v)) $ M.toAscList tmn)
+  T_Data _XXX_tm -> do
+    error "XXX"
   T_Type {} -> impossible "type in pl"
   where
     base = impossible "base"

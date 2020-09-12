@@ -26,6 +26,9 @@ lin_com who back mkk rets s ks =
       where
         t' = lin_local_rets at rets ts
         f' = lin_local_rets at rets fs
+    DLS_Switch _XXX_at _XXX_dv _ _XXX_cm
+      | isLocal s ->
+        error "XXX"
     DLS_Return at ret sv ->
       case M.lookup ret rets of
         Nothing -> back at rets ks
@@ -39,6 +42,8 @@ lin_com who back mkk rets s ks =
         rets' = M.insert ret dv rets
     DLS_If {} ->
       impossible $ who ++ " cannot non-local if"
+    DLS_Switch {} ->
+      impossible $ who ++ " cannot non-local switch"
     DLS_Stop {} ->
       impossible $ who ++ " cannot stop"
     DLS_Only {} ->
@@ -72,6 +77,9 @@ lin_con back at_top rets (s Seq.:<| ks) =
       where
         t' = lin_con back at rets (ts <> ks)
         f' = lin_con back at rets (fs <> ks)
+    DLS_Switch _XXX_at _XXX_dv _ _XXX_cm
+      | not (isLocal s) ->
+        error "XXX"
     DLS_FromConsensus at cons ->
       LLC_FromConsensus at at_top $ back (cons <> ks)
     DLS_While at asn inv_b cond_b body ->
@@ -98,6 +106,9 @@ lin_step _ rets (s Seq.:<| ks) =
     DLS_If {}
       | not (isLocal s) ->
         impossible $ "step cannot unlocal if, must occur in consensus"
+    DLS_Switch {}
+      | not (isLocal s) ->
+        impossible $ "step cannot unlocal switch, must occur in consensus"
     DLS_Stop at fs ->
       LLS_Stop at fs
     DLS_Only at who ss ->

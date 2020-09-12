@@ -50,14 +50,14 @@ instance Countable DLVar where
   counts dv = Counts $ M.singleton dv PL_Once
 
 instance Countable DLArg where
-  counts a =
-    case a of
-      DLA_Var v -> counts v
-      DLA_Con {} -> mempty
-      DLA_Array _ as -> counts as
-      DLA_Tuple as -> counts as
-      DLA_Obj as -> counts as
-      DLA_Interact {} -> mempty
+  counts = \case
+    DLA_Var v -> counts v
+    DLA_Con {} -> mempty
+    DLA_Array _ as -> counts as
+    DLA_Tuple as -> counts as
+    DLA_Obj as -> counts as
+    DLA_Data _ _ v -> counts v
+    DLA_Interact {} -> mempty
 
 instance Countable DLExpr where
   counts e =

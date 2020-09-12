@@ -104,6 +104,10 @@ data EvalError
   | Err_Eval_NotSpreadable SLVal
   | Err_Unknowable_NotParticipant SLVal
   | Err_Zip_ArraysNotEqualLength Integer Integer
+  | Err_Switch_NotData SLVal
+  | Err_Switch_DoubleCase SrcLoc SrcLoc (Maybe SLVar)
+  | Err_Switch_MissingCases [SLVar]
+  | Err_Switch_ExtraCases [SLVar]
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -130,6 +134,7 @@ displayTy = \case
   T_Array _ty _sz -> "array" -- <> displayTyList tys
   T_Tuple _tys -> "tuple"
   T_Object _m -> "object" -- FIXME
+  T_Data _m -> "data" -- FIXME
   T_Forall x ty {- SLVar SLType -} -> "Forall(" <> x <> ": " <> displayTy ty <> ")"
   T_Var x {- SLVar-} -> x
   T_Type _ -> "type"
@@ -314,6 +319,14 @@ instance Show EvalError where
       "Invalid binding: " <> x <> ". Public identifiers must not be prefixed by _"
     Err_Eval_LookupUnderscore ->
       "Invalid identifier reference. The _ identifier may never be read."
+    Err_Switch_NotData x ->
+      "switch expects data instance, but got " <> displaySlValType x
+    Err_Switch_DoubleCase at0 at1 mc ->
+      "switch contains duplicate case, " <> (maybe "default" id mc) <> " at " <> show at1 <> "; first defined at " <> show at0
+    Err_Switch_MissingCases cs ->
+      "switch missing cases: " <> show cs
+    Err_Switch_ExtraCases cs ->
+      "switch contains extra cases: " <> show cs
 
 --- Utilities
 zipEq :: Show e => SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -428,6 +441,7 @@ base_env =
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
     , ("forall", SLV_Prim SLPrim_forall)
+    , ("Data", SLV_Prim SLPrim_Data)
     , ("Array", SLV_Prim SLPrim_Array)
     , ("array", SLV_Prim SLPrim_array)
     , ("Tuple", SLV_Prim SLPrim_Tuple)
@@ -651,7 +665,9 @@ data SLExits
   | MayExit
   deriving (Eq, Show)
 
-data SLStmtRes = SLStmtRes SLEnv [(SrcLoc, SLSVal)]
+type SLStmtRets = [(SrcLoc, SLSVal)]
+
+data SLStmtRes = SLStmtRes SLEnv SLStmtRets
 
 data SLAppRes = SLAppRes SLEnv SLSVal
 
@@ -769,6 +785,8 @@ evalAsEnv at obj =
     SLV_Prim SLPrim_Object ->
       M.fromList
       [ ("set", retStdLib "Object_set") ]
+    SLV_Type dt@(T_Data varm) ->
+      M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant dt k t) varm 
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
@@ -1074,7 +1092,7 @@ evalPrim ctxt at sco st p sargs =
           let (xt, x_da) = typeOf at x
           let (x_ty, x_sz) = mustBeArray xt
           let f' a = evalApplyVals ctxt at sco st f [(lvl, a)]
-          (a_dv, a_dsv) <- make_dlvar "map in" x_ty
+          (a_dv, a_dsv) <- make_dlvar at "map in" x_ty
           SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' a_dsv
           let (f_ty, f_da) = typeOf at f_v
           let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
@@ -1092,7 +1110,7 @@ evalPrim ctxt at sco st p sargs =
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, SLV_Array at f_ty vs')
             False -> do
               let t = T_Array f_ty x_sz
-              (ans_dv, ans_dsv) <- make_dlvar "array_map" t
+              (ans_dv, ans_dsv) <- make_dlvar at "array_map" t
               let lifts' = return $ DLS_ArrayMap at ans_dv x_da a_dv f_lifts f_da
               return $ SLRes lifts' st (lvl, ans_dsv)
         x:y:args' -> do
@@ -1116,8 +1134,8 @@ evalPrim ctxt at sco st p sargs =
           let (x_ty, _) = mustBeArray xt
           let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
           let (z_ty, z_da) = typeOf at z
-          (b_dv, b_dsv) <- make_dlvar "reduce acc" z_ty
-          (a_dv, a_dsv) <- make_dlvar "reduce in" x_ty
+          (b_dv, b_dsv) <- make_dlvar at "reduce acc" z_ty
+          (a_dv, a_dsv) <- make_dlvar at "reduce in" x_ty
           SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
           let (f_ty, f_da) = typeOf at f_v
           let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
@@ -1137,7 +1155,7 @@ evalPrim ctxt at sco st p sargs =
               (lifts'', z') <- foldM evalem (mempty, z) x_vs
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
             False -> do
-              (ans_dv, ans_dsv) <- make_dlvar "array_reduce" f_ty
+              (ans_dv, ans_dsv) <- make_dlvar at "array_reduce" f_ty
               let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_lifts f_da
               return $ SLRes lifts' st (lvl, ans_dsv)
         x:y:args' -> do
@@ -1330,6 +1348,16 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_part_setted {} ->
       expect_throw at (Err_Eval_NotApplicable rator)
+    SLPrim_Data -> do
+      let argm = case args of
+            [SLV_Object _ _ m] -> m
+            _ -> illegal_args
+      let varm = M.map (expect_ty . sss_val) argm
+      retV $ (lvl, SLV_Type $ T_Data varm)
+    SLPrim_Data_variant t vn vt -> do
+      let vv = one_arg
+      let vv_da = checkType at vt vv
+      retV $ (lvl, SLV_Data at t vn $ vv_da `seq` vv)
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -1353,9 +1381,9 @@ evalPrim ctxt at sco st p sargs =
       case t of
         T_Array ty sz -> (ty, sz)
         _ -> illegal_args
-    make_dlvar lab ty = do
+    make_dlvar at' lab ty = do
       dvi <- ctxt_alloc ctxt at
-      let dv = DLVar at lab ty dvi
+      let dv = DLVar at' lab ty dvi
       return $ (dv, SLV_DLVar dv)
 
 evalApplyVals :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> [SLSVal] -> SLComp s SLAppRes
@@ -2246,7 +2274,75 @@ evalStmt ctxt at sco st ss =
       let lifts' = return $ DLS_Return at' ret ev
       expect_empty_tail lab a sp at ks $
         return $ SLRes (elifts <> lifts') st_rt (SLStmtRes env [(at', sev)])
-    (s@(JSSwitch a _ _ _ _ _ _ _) : _) -> illegal a s "switch"
+    (JSSwitch a _ de _ _ cases _ sp : ks) -> do
+      let at' = srcloc_jsa "switch" a at
+      let de_v = jse_expect_id at' de
+      let env = sco_env sco
+      let (de_lvl, de_val) = sss_sls $ env_lookup at' de_v env
+      let (de_ty, _) = typeOf at de_val
+      let varm = case de_ty of
+                   T_Data m -> m
+                   _ -> expect_throw at $ Err_Switch_NotData de_val
+      let ks_ne = dropEmptyJSStmts ks
+      let sco' =
+            case ks_ne of
+              [] -> sco
+              _ -> sco {sco_must_ret = RS_MayBeEmpty}
+      let case_insert k v@(at1, _) m =
+            case M.lookup k m of
+              Nothing -> M.insert k v m
+              Just (at0, _) -> expect_throw at $ Err_Switch_DoubleCase at0 at1 (Just k)
+      let case_minserts cs v m = M.unions $ m : map (flip M.singleton v) cs
+      let add_case (seenDefault, casem0) = \case
+            JSCase ca ve _ body -> (seenDefault, case_insert vn (at_c, body) casem0)
+              where at_c = srcloc_jsa "case" ca at'
+                    vn = jse_expect_id at_c ve
+            JSDefault ca _ body ->
+              case seenDefault of
+                Just at_c' -> expect_throw at $ Err_Switch_DoubleCase at_c at_c' Nothing
+                Nothing -> ((Just at_c), case_minserts (M.keys varm) (at_c, body) casem0)
+              where at_c = srcloc_jsa "case" ca at'
+      let (_, casesm) = foldl' add_case (Nothing, mempty) cases
+      let all_cases = M.keysSet varm
+      let given_cases = M.keysSet casesm
+      let missing_cases = all_cases S.\\ given_cases
+      unless (S.null missing_cases) $ do
+        expect_throw at' $ Err_Switch_MissingCases $ S.toList missing_cases
+      let extra_cases = given_cases S.\\ all_cases
+      unless (S.null extra_cases) $ do
+        expect_throw at' $ Err_Switch_ExtraCases $ S.toList extra_cases
+      let select (at_c, body) vv = do
+            let addl_env = M.singleton de_v (sls_sss at_c (de_lvl, vv))
+            let sco'' = sco_update_ AllowShadowing ctxt at_c sco' st addl_env
+            evalStmt ctxt at_c sco'' st body
+      let select_one vn c@(at_c, _) = do
+            let vt = varm M.! vn
+            dvi <- ctxt_alloc ctxt at
+            let dv' = DLVar at_c ("switch " <> vn) vt dvi
+            return $ (dv', at_c, select c $ SLV_DLVar dv')
+      let select_all dv = do
+            let casemm = M.mapWithKey select_one casesm
+            let cmb (mst', sa', mrets', casemm') (vn, casem) = do
+                  (dv', at_c, casem') <- casem
+                  SLRes case_lifts case_st (SLStmtRes _ case_rets) <- casem'
+                  let st'' = case mst' of Nothing -> case_st
+                                          Just st' -> stMerge at_c st' case_st
+                  let sa'' = sa' <> mkAnnot case_lifts
+                  let rets'' = case mrets' of Nothing -> case_rets
+                                              Just rets' -> combineStmtRets at_c de_lvl rets' case_rets
+                  let casemm'' = M.insert vn (dv', case_lifts) casemm'
+                  return $ (Just st'', sa'', Just rets'', casemm'')
+            (mst', sa', mrets', casemm') <- foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
+            let rets' = maybe mempty id mrets'
+            let lifts' = return $ DLS_Switch at dv sa' casemm'
+            return $ SLRes lifts' (maybe st id mst') $ SLStmtRes mempty rets'
+      fr <-
+        case de_val of
+          SLV_Data _ _ vn vv -> select (casesm M.! vn) vv
+          SLV_DLVar dv -> select_all dv
+          _ -> impossible "switch mvar"
+      let at'_after = srcloc_after_semi "switch" a sp at
+      retSeqn fr at'_after ks_ne
     (s@(JSThrow a _ _) : _) -> illegal a s "throw"
     (s@(JSTry a _ _ _) : _) -> illegal a s "try"
     ((JSVariable var_a while_decls _vsp) : var_ks) ->
@@ -2268,7 +2364,6 @@ evalStmt ctxt at sco st ss =
                       return $ (DLVar var_at v t vn, da)
                 while_helpm <- M.traverseWithKey while_help vars_env
                 let unknown_var_env = M.map (sls_sss var_at . public . SLV_DLVar . fst) while_helpm
-                -- TODO: ^ double check this srcloc
                 let sco_env' = sco_update ctxt at sco st_var' unknown_var_env
                 SLRes inv_lifts _ inv_da <-
                   case jscl_flatten invariant_args of
@@ -2339,17 +2434,19 @@ evalStmt ctxt at sco st ss =
                   [] -> sco
                   (_ : _) -> sco {sco_must_ret = RS_ImplicitNull}
           SLRes lifts1 st1 (SLStmtRes env1 rets1) <- evalStmt ctxt at' sco' st0 ks'
-          return $ SLRes (lifts0 <> lifts1) st1 (SLStmtRes env1 (rets0 ++ rets1))
+          return $ SLRes (lifts0 <> lifts1) st1 (SLStmtRes env1 (rets0 <> rets1))
 
 combineStmtRes :: SrcLoc -> SecurityLevel -> SLStmtRes -> SLStmtRes -> SLStmtRes
-combineStmtRes at' lvl (SLStmtRes _ lrets) (SLStmtRes env rrets) = SLStmtRes env rets
-  where
-    rets =
-      case (lrets, rrets) of
-        ([], []) -> []
-        ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
-        (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
-        (_, _) -> lrets ++ rrets
+combineStmtRes at' lvl (SLStmtRes _ lrets) (SLStmtRes env rrets) =
+  SLStmtRes env $ combineStmtRets at' lvl lrets rrets
+
+combineStmtRets :: SrcLoc -> SecurityLevel -> SLStmtRets -> SLStmtRets -> SLStmtRets
+combineStmtRets at' lvl lrets rrets =
+  case (lrets, rrets) of
+    ([], []) -> []
+    ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
+    (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
+    (_, _) -> lrets ++ rrets
 
 expect_empty_tail :: String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail lab a sp at ks res =

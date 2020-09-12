@@ -76,6 +76,7 @@ jsContract = \case
   T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLC_Int sz)]
   T_Tuple as -> jsApply ("stdlib.T_Tuple") $ [jsArray $ map jsContract as]
   T_Object m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
+  T_Data m -> jsApply ("stdlib.T_Data") [jsObject $ M.map jsContract m]
   T_Forall {} -> impossible "forall dl"
   T_Var {} -> impossible "var dl"
   T_Type {} -> impossible "type dl"
@@ -110,6 +111,7 @@ jsArg = \case
   DLA_Array _ as -> jsArg $ DLA_Tuple as
   DLA_Tuple as -> jsArray $ map jsArg as
   DLA_Obj m -> jsObject $ M.map jsArg m
+  DLA_Data _ vn vv -> jsArray [ jsString vn, jsArg vv ]
   DLA_Interact _ m t ->
     jsProtect "null" t $ "interact." <> pretty m
 

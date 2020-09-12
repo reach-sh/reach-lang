@@ -44,6 +44,7 @@ instance Pretty SLVal where
     SLV_Object _ (Just lab) _ -> pretty lab
     SLV_Object _ _ m -> render_obj m
     SLV_Clo {} -> "<closure>"
+    SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
     SLV_DLVar v -> pretty v
     SLV_Type t -> "<type: " <> pretty t <> ">"
     SLV_Participant _ who _ _ _ ->
@@ -62,15 +63,15 @@ render_obj env =
     render_p (k, oa) = pretty k <+> "=" <+> pretty oa
 
 instance Pretty DLArg where
-  pretty a =
-    case a of
-      DLA_Var v -> pretty v
-      DLA_Con c -> viaShow c
-      DLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLA_Tuple as))
-      DLA_Tuple as -> brackets $ render_das as
-      DLA_Obj env -> render_obj env
-      DLA_Interact who m t ->
-        "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
+  pretty = \case
+    DLA_Var v -> pretty v
+    DLA_Con c -> viaShow c
+    DLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLA_Tuple as))
+    DLA_Tuple as -> brackets $ render_das as
+    DLA_Obj env -> render_obj env
+    DLA_Data _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
+    DLA_Interact who m t ->
+      "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
 
 render_das :: [DLArg] -> Doc a
 render_das as = hsep $ punctuate comma $ map pretty as
@@ -109,6 +110,12 @@ prettyIf ca t f =
 
 prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc a
 prettyIfp ca t f = prettyIf ca (pretty t) (pretty f)
+
+prettySwitch :: (Pretty a, Pretty b, Pretty c) => a -> M.Map b (a, c) -> Doc ann
+prettySwitch ov csm =
+  "switch" <+> parens (pretty ov) <+> render_nest (concatWith (surround hardline) $ map render_p $ M.toList csm)
+  where
+    render_p (k, (nv, ss)) = "case" <+> pretty k <+> "as" <+> pretty nv <> ":" <+> render_nest (pretty ss)
 
 prettyWhile :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc ann -> Doc ann
 prettyWhile asn inv cond bodyp =
@@ -165,6 +172,8 @@ instance Pretty DLStmt where
       DLS_ArrayReduce _ ans x z b a f r -> prettyReduce ans x z b a f r
       DLS_If _ ca _ ts fs ->
         prettyIf ca (render_dls ts) (render_dls fs)
+      DLS_Switch _ ov _ csm ->
+        prettySwitch ov csm
       DLS_Return _ ret sv ->
         "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
       DLS_Prompt _ ret bodys ->

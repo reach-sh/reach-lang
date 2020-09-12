@@ -117,6 +117,7 @@ all_points = \case
   DLA_Array _ as -> more as
   DLA_Tuple as -> more as
   DLA_Obj m -> more $ M.elems m
+  DLA_Data _ _ a -> all_points a
   DLA_Interact who what _ -> S.singleton $ P_Interact who what
   where
     more = mconcatMap all_points

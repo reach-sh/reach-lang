@@ -468,6 +468,7 @@ smt_a ctxt at_de da =
     DLA_Array _ as -> cons as
     DLA_Tuple as -> cons as
     DLA_Obj m -> cons $ M.elems m
+    DLA_Data _XXX_t _XXX_vn _XXX_vv -> error "XXX"
     DLA_Interact who i _ -> Atom $ smtInteract ctxt who i
   where
     s = smtTypeSort ctxt t
@@ -829,6 +830,8 @@ _smtDefineTypes smt ts = do
                   let invarg (_, arg_inv) argn = arg_inv $ smtApply argn [se]
                   zipWithM_ invarg ts_nis argns
             return inv
+          T_Data _XXX_tm -> do
+            error "XXX"
           T_Object tm -> do
             let tml = M.toAscList tm
             ts_nis <-

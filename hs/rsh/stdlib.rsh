@@ -46,6 +46,12 @@ export const or = (x, y) => x || y;
 export const and = (x, y) => x && y;
 
 // Library functions
+export const Maybe = (A) => Data({None: Null, Some: A});
+export const fromMaybe = (onNull, onSome, v) => {
+  switch (v) {
+  case None: return onNull();
+  case Some: return onSome(v); } };
+
 export function implies (x, y) {
   return (not(x) || y); }
 

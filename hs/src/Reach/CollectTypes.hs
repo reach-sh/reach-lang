@@ -34,6 +34,7 @@ instance CollectsTypes SLType where
         T_Array e _ -> cts e
         T_Tuple elems -> cts elems
         T_Object m -> cts m
+        T_Data m -> cts m
         T_Forall _ t' -> cts t'
         T_Var _ -> mempty
         T_Type _ -> mempty

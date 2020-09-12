@@ -123,6 +123,7 @@ data SLType
   | T_Array SLType Integer
   | T_Tuple [SLType]
   | T_Object (M.Map SLVar SLType)
+  | T_Data (M.Map SLVar SLType)
   | T_Forall SLVar SLType
   | T_Var SLVar
   | T_Type SLType
@@ -149,6 +150,7 @@ funFold z k fun = go
       T_Array ty _ -> go ty
       T_Tuple tys -> k tys
       T_Object m -> k $ M.elems m
+      T_Data m -> k $ M.elems m
       T_Forall _ ty -> go ty
       T_Var _ -> z
       T_Type _ -> z
@@ -189,6 +191,7 @@ instance Show SLType where
   show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
   show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
   show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
+  show (T_Data tyMap) = "Object({" <> showTyMap tyMap <> "})"
   show (T_Forall x t) = "Forall(" <> show x <> ", " <> show t <> ")"
   show (T_Var x) = show x
   show (T_Type ty) = "Type(" <> show ty <> ")"
@@ -217,6 +220,7 @@ data SLVal
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLCloEnv
+  | SLV_Data SrcLoc SLType SLVar SLVal
   | SLV_DLVar DLVar
   | SLV_Type SLType
   | --- FIXME I think we can delete some of these fields, like the SLVal and the M DLVar
@@ -308,6 +312,8 @@ data SLPrimitive
   | SLPrim_type_eq
   | SLPrim_typeOf
   | SLPrim_Fun
+  | SLPrim_Data
+  | SLPrim_Data_variant SLType SLVar SLType
   | SLPrim_Array
   | SLPrim_Array_iota
   | SLPrim_array
@@ -421,6 +427,7 @@ data DLArg
   | DLA_Array SLType [DLArg]
   | DLA_Tuple [DLArg]
   | DLA_Obj (M.Map String DLArg)
+  | DLA_Data SLType String DLArg
   | DLA_Interact SLPart String SLType
   deriving (Eq, Generic, Show)
 
@@ -461,6 +468,9 @@ instance NFData StmtAnnot
 
 instance Semigroup StmtAnnot where
   (StmtAnnot xp xl) <> (StmtAnnot yp yl) = (StmtAnnot (xp && yp) (xl && yl))
+
+instance Monoid StmtAnnot where
+  mempty = StmtAnnot True True
 
 instance IsPure StmtAnnot where
   isPure = sa_pure
@@ -557,6 +567,7 @@ data DLStmt
   | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLStmts DLArg
   | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLStmts DLArg
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
+  | DLS_Switch SrcLoc DLVar StmtAnnot (M.Map SLVar (DLVar, DLStmts))
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Stop SrcLoc [SLCtxtFrame]
@@ -590,6 +601,7 @@ instance IsPure DLStmt where
     DLS_ArrayMap {} -> True
     DLS_ArrayReduce {} -> True
     DLS_If _ _ a _ _ -> isPure a
+    DLS_Switch _ _ a _ -> isPure a
     DLS_Return {} -> False
     DLS_Prompt _ _ ss -> isPure ss
     DLS_Stop {} -> False
@@ -605,6 +617,7 @@ instance IsLocal DLStmt where
     DLS_ArrayMap {} -> True
     DLS_ArrayReduce {} -> True
     DLS_If _ _ a _ _ -> isLocal a
+    DLS_Switch _ _ a _ -> isLocal a
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> isLocal ss
     DLS_Stop {} -> False

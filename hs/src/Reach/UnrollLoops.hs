@@ -119,6 +119,7 @@ ul_a = \case
   DLA_Array t as -> (pure $ DLA_Array t) <*> ul_as as
   DLA_Tuple as -> (pure $ DLA_Tuple) <*> ul_as as
   DLA_Obj m -> (pure $ DLA_Obj) <*> mapM ul_a m
+  DLA_Data t vn vv -> DLA_Data t vn <$> ul_a vv
   DLA_Interact p m t -> (pure $ DLA_Interact p m t)
 
 ul_as :: [DLArg] -> App s [DLArg]

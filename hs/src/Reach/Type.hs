@@ -123,22 +123,21 @@ typeCheck_help at env ty val val_ty res =
           expect_throw at $ Err_Type_Mismatch ty val_ty val
 
 conTypeOf :: DLConstant -> SLType
-conTypeOf c =
-  case c of
-    DLC_Null -> T_Null
-    DLC_Bool _ -> T_Bool
-    DLC_Int _ -> T_UInt256
-    DLC_Bytes _ -> T_Bytes
+conTypeOf = \case
+  DLC_Null -> T_Null
+  DLC_Bool _ -> T_Bool
+  DLC_Int _ -> T_UInt256
+  DLC_Bytes _ -> T_Bytes
 
 argTypeOf :: DLArg -> SLType
-argTypeOf d =
-  case d of
-    DLA_Var (DLVar _ _ t _) -> t
-    DLA_Con c -> conTypeOf c
-    DLA_Array t as -> T_Array t $ fromIntegral (length as)
-    DLA_Tuple as -> T_Tuple $ map argTypeOf as
-    DLA_Obj senv -> T_Object $ M.map argTypeOf senv
-    DLA_Interact _ _ t -> t
+argTypeOf = \case
+  DLA_Var (DLVar _ _ t _) -> t
+  DLA_Con c -> conTypeOf c
+  DLA_Array t as -> T_Array t $ fromIntegral (length as)
+  DLA_Tuple as -> T_Tuple $ map argTypeOf as
+  DLA_Obj senv -> T_Object $ M.map argTypeOf senv
+  DLA_Data t _ _ -> t
+  DLA_Interact _ _ t -> t
 
 slToDL :: HasCallStack => SrcLoc -> SLVal -> Maybe DLArg
 slToDL _at v =
@@ -157,6 +156,8 @@ slToDL _at v =
       denv <- mapM ((slToDL at') . sss_val) fenv
       return $ DLA_Obj denv
     SLV_Clo _ _ _ _ _ -> Nothing
+    SLV_Data at' t vn sv ->
+      DLA_Data t vn <$> slToDL at' sv
     SLV_DLVar dv -> return $ DLA_Var dv
     SLV_Type _ -> Nothing
     SLV_Participant _ _ _ _ mdv ->
