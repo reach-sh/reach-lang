@@ -54,10 +54,10 @@ export const connectAccount = async networkAccount => {
       waitUntilTime(stdlib.add(last_block, delta));
     };
 
-    const sendrecv = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
+    const sendrecv = async (label, funcNum, evt_cnt, tys, args, value, timeout_delay, try_p) => {
       // XXX use try_p to figure out what transfers from the contract
       // to make, like in ALGO
-      void(try_p);
+      void(tys, try_p);
 
       if (!timeout_delay || BLOCKS.length < last_block + timeout_delay) {
         debug(`${label} send ${funcNum} --- post`);
