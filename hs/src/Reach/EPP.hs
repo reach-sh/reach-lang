@@ -153,8 +153,9 @@ epp_m done _back skip look c =
       look
       k
       (\back' _skip' k_cs k' ->
-         let cm1 (ov', l) = (l'_cs, (ov', l'))
+         let cm1 (ov', l) = (l'_cs', (ov', l'))
                where ProResL (ProRes_ l'_cs l') = epp_l l k_cs
+                     l'_cs' = count_rms [ov'] l'_cs
              csm'0 = M.map cm1 csm
              csm' = M.map snd csm'0
              cs' = counts ov <> (mconcatMap fst $ M.elems csm'0)
@@ -243,7 +244,7 @@ epp_n st n =
                   csm'p = M.map snd csm'0p
       let p_prts' = pmap st mkp
       let csm'ct = M.map (\(ov', ProResC _ (ProRes_ _ ct)) -> (ov', ct)) csm'0
-      let cs' = counts ov <> (mconcatMap (\(_, ProResC _ (ProRes_ cs _)) -> cs) $ M.elems csm'0)
+      let cs' = counts ov <> (mconcatMap (\(ov', ProResC _ (ProRes_ cs _)) -> count_rms [ov'] cs) $ M.elems csm'0)
       return $ ProResC p_prts' (ProRes_ cs' $ CT_Switch at ov csm'ct)
     LLC_FromConsensus at1 _at2 s -> do
       let st' = st {pst_interval = default_interval}

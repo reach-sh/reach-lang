@@ -575,6 +575,8 @@ smtSwitch sm ctxt at ov csm iter =
     ova = DLA_Var ov
     ovp = smt_a ctxt at ova
     ovt = argTypeOf ova
+    ovtm = case ovt of T_Data m -> m
+                       _ -> impossible "switch"
     pc = ctxt_path_constraint ctxt
     cm1 (vn, (ov', l)) =
       case sm of
@@ -585,7 +587,7 @@ smtSwitch sm ctxt at ov csm iter =
       where ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
             eqc = smtEq ovp ov'p
             udef_m = pathAddUnbound ctxt at (Just ov') (O_SwitchCase vn)
-            ov'p = smt_a ctxt at (DLA_Data ovt vn (DLA_Var ov'))
+            ov'p = smt_a ctxt at (DLA_Data ovtm vn (DLA_Var ov'))
 
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
 smt_m iter ctxt m =

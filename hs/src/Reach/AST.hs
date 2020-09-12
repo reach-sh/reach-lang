@@ -220,7 +220,7 @@ data SLVal
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLCloEnv
-  | SLV_Data SrcLoc SLType SLVar SLVal
+  | SLV_Data SrcLoc (M.Map SLVar SLType) SLVar SLVal
   | SLV_DLVar DLVar
   | SLV_Type SLType
   | --- FIXME I think we can delete some of these fields, like the SLVal and the M DLVar
@@ -313,7 +313,7 @@ data SLPrimitive
   | SLPrim_typeOf
   | SLPrim_Fun
   | SLPrim_Data
-  | SLPrim_Data_variant SLType SLVar SLType
+  | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
   | SLPrim_Array
   | SLPrim_Array_iota
   | SLPrim_array
@@ -427,7 +427,7 @@ data DLArg
   | DLA_Array SLType [DLArg]
   | DLA_Tuple [DLArg]
   | DLA_Obj (M.Map String DLArg)
-  | DLA_Data SLType String DLArg
+  | DLA_Data (M.Map SLVar SLType) String DLArg
   | DLA_Interact SLPart String SLType
   deriving (Eq, Generic, Show)
 

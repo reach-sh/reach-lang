@@ -785,8 +785,8 @@ evalAsEnv at obj =
     SLV_Prim SLPrim_Object ->
       M.fromList
       [ ("set", retStdLib "Object_set") ]
-    SLV_Type dt@(T_Data varm) ->
-      M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant dt k t) varm 
+    SLV_Type (T_Data varm) ->
+      M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t) varm 
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where

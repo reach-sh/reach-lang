@@ -12,6 +12,7 @@ import qualified Data.Map.Strict as M
 import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
+import Data.List.Extra (mconcatMap)
 import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.CollectTypes
@@ -94,11 +95,19 @@ solSet x y = solBinOp "=" x y <> semi
 solIf :: Doc a -> Doc a -> Doc a -> Doc a
 solIf c t f = "if" <+> parens c <+> solBraces t <> hardline <> "else" <+> solBraces f
 
+--- FIXME don't nest
+solIfs :: [(Doc a, Doc a)] -> Doc a
+solIfs [] = emptyDoc
+solIfs ((c, t):more) = solIf c t $ solIfs more
+
 solDecl :: Doc a -> Doc a -> Doc a
 solDecl n ty = ty <+> n
 
 solStruct :: Doc a -> [(Doc a, Doc a)] -> Doc a
 solStruct name fields = "struct" <+> name <+> solBraces (vsep $ map (<> semi) $ map (uncurry solDecl) fields)
+
+solEnum :: Doc a -> [Doc a] -> Doc a
+solEnum name opts = "enum" <+> name <+> braces (hcat $ intersperse (comma <> space) opts)
 
 --- Runtime helpers
 
@@ -131,6 +140,9 @@ solArraySet i = "array_set" <> pretty i
 
 solArrayRef :: Doc a -> Doc a -> Doc a
 solArrayRef arr idx = arr <> brackets idx
+
+solVariant :: Doc a -> SLVar -> Doc a
+solVariant t vn = "_enum_" <> t <> "." <> pretty vn
 
 --- Compiler
 
@@ -213,21 +225,25 @@ solArgDecl ctxt am dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt 
 
 solCon :: DLConstant -> Doc a
 solCon = \case
-  DLC_Null -> "void"
+  DLC_Null -> "true"
   DLC_Bool True -> "true"
   DLC_Bool False -> "false"
   DLC_Int i -> solNum i
   DLC_Bytes s -> dquotes $ pretty $ B.unpack s
 
 solArg :: SolCtxt a -> DLArg -> Doc a
-solArg ctxt = \case
-  DLA_Var v -> solVar ctxt v
-  DLA_Con c -> solCon c
-  DLA_Array _ as -> brackets $ hsep $ punctuate comma $ map (solArg ctxt) as
-  da@(DLA_Tuple as) -> solApply (solType ctxt (argTypeOf da)) $ map (solArg ctxt) as
-  da@(DLA_Obj m) -> solApply (solType ctxt (argTypeOf da)) $ map ((solArg ctxt) . snd) $ M.toAscList m
-  DLA_Data _XXX_dt _XXX_vn _XXX_vv -> error "XXX"
-  DLA_Interact {} -> impossible "consensus interact"
+solArg ctxt da =
+  case da of
+    DLA_Var v -> solVar ctxt v
+    DLA_Con c -> solCon c
+    DLA_Array _ as -> brackets $ hsep $ punctuate comma $ map (solArg ctxt) as
+    DLA_Tuple as -> con $ map (solArg ctxt) as
+    DLA_Obj m -> con $ map ((solArg ctxt) . snd) $ M.toAscList m
+    DLA_Data tm vn vv -> con $ (solVariant t vn) : (map (\(vn', _) -> if vn == vn' then solArg ctxt vv else "0") $ M.toAscList tm)
+    DLA_Interact {} -> impossible "consensus interact"
+  where
+    t = solType ctxt (argTypeOf da)
+    con = solApply t
 
 solPrimApply :: PrimOp -> [Doc a] -> Doc a
 solPrimApply = \case
@@ -338,6 +354,17 @@ arraySize a =
     T_Array _ sz -> sz
     _ -> impossible "arraySize"
 
+solSwitch :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> SrcLoc -> DLVar -> SwitchCases k -> SolTailRes a
+solSwitch iter ctxt _at ov csm = SolTailRes ctxt $ solIfs $ map cm1 $ M.toAscList csm
+  where t = solType ctxt $ argTypeOf (DLA_Var ov)
+        cm1 (vn, (ov', body)) = (c, set_and_body')
+          where
+            c = solEq ((solVar ctxt ov) <> ".which") (solVariant t vn)
+            set_and_body' =
+              vsep [ solSet (solMemVar ov') ((solVar ctxt ov) <> "._" <> pretty vn)
+                   , body' ]
+            SolTailRes _ body' = iter ctxt body
+
 solCom :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> PLCommon k -> SolTailRes a
 solCom iter ctxt = \case
   PL_Return _ -> SolTailRes ctxt emptyDoc
@@ -379,7 +406,7 @@ solCom iter ctxt = \case
       ca' = solArg ctxt ca
       SolTailRes _ t' = solPLTail ctxt t
       SolTailRes _ f' = solPLTail ctxt f
-  PL_LocalSwitch _ _XXX_ov _XXX_csm _XXX_k -> error "XXX"
+  PL_LocalSwitch at ov csm k -> solSwitch solPLTail ctxt at ov csm <> iter ctxt k
   PL_ArrayMap _ ans x a f r k ->
     SolTailRes ctxt map_p <> iter ctxt k
     where
@@ -427,7 +454,7 @@ solCTail ctxt = \case
       SolTailRes ctxt'_t t' = solCTail ctxt t
       SolTailRes ctxt'_f f' = solCTail ctxt f
       ctxt' = ctxt'_t <> ctxt'_f
-  CT_Switch _ _XXX_ov _XXX_csm -> error "XXX"
+  CT_Switch at ov csm -> solSwitch solCTail ctxt at ov csm
   CT_Wait _ svs ->
     SolTailRes ctxt $
       vsep
@@ -474,7 +501,8 @@ manyVars_m iter = \case
   PL_Var _ dv k -> S.insert dv $ iter k
   PL_Set _ _ _ k -> iter k
   PL_LocalIf _ _ t f k -> manyVars_p t <> manyVars_p f <> iter k
-  PL_LocalSwitch _ _ _XXX_csm k -> error "XXX" <> iter k
+  PL_LocalSwitch _ _ csm k -> (mconcatMap cm1 $ M.elems csm) <> iter k
+    where cm1 (ov', c) = S.insert ov' $ manyVars_p c
   PL_ArrayMap _ ans _ a f _ k ->
     s_inserts [ans, a] (manyVars_p f <> iter k)
   PL_ArrayReduce _ ans _ _ b a f _ k ->
@@ -490,7 +518,8 @@ manyVars_c = \case
   CT_Com m -> manyVars_m manyVars_c m
   CT_Seqn _ p c -> manyVars_p p <> manyVars_c c
   CT_If _ _ t f -> manyVars_c t <> manyVars_c f
-  CT_Switch _ _ _XXX_csm -> error "XXX"
+  CT_Switch _ _ csm -> mconcatMap cm1 $ M.elems csm
+    where cm1 (ov', c) = S.insert ov' $ manyVars_c c
   CT_Wait {} -> mempty
   CT_Jump {} -> mempty
   CT_Halt {} -> mempty
@@ -617,8 +646,15 @@ _solDefineType1 getTypeName i name = \case
   T_Object tm -> do
     tmn <- mapM getTypeName tm
     return $ (name, solStruct name $ map (\(k, v) -> (pretty k, v)) $ M.toAscList tmn)
-  T_Data _XXX_tm -> do
-    error "XXX"
+  T_Data tm -> do
+    tmn <- mapM getTypeName tm
+    --- XXX Try to use bytes and abi.decode; Why not right away? The
+    --- length of the bytes would not be predictable, which means the
+    --- gas cost would be arbitrary.
+    let enumn = "_enum_" <> name
+    let enump = solEnum enumn $ map (pretty . fst) $ M.toAscList tmn
+    let structp = solStruct name $ ("which", enumn) : map (\(k, t) -> (pretty ("_" <> k), t)) (M.toAscList tmn)
+    return $ (name, vsep [ enump, structp ])
   T_Type {} -> impossible "type in pl"
   where
     base = impossible "base"
@@ -643,7 +679,7 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
   where
     base_typem =
       M.fromList
-        [ (T_Null, "void")
+        [ (T_Null, "bool")
         , (T_Bool, "bool")
         , (T_UInt256, "uint256")
         , (T_Bytes, "bytes")

@@ -136,7 +136,7 @@ argTypeOf = \case
   DLA_Array t as -> T_Array t $ fromIntegral (length as)
   DLA_Tuple as -> T_Tuple $ map argTypeOf as
   DLA_Obj senv -> T_Object $ M.map argTypeOf senv
-  DLA_Data t _ _ -> t
+  DLA_Data t _ _ -> T_Data t
   DLA_Interact _ _ t -> t
 
 slToDL :: HasCallStack => SrcLoc -> SLVal -> Maybe DLArg
