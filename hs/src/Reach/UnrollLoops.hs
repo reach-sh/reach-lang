@@ -194,6 +194,7 @@ llReplace mkk nk = \case
   LL_Var at x k -> LL_Var at x $ iter k
   LL_Set at x v k -> LL_Set at x v $ iter k
   LL_LocalIf at c t f k -> LL_LocalIf at c t f $ iter k
+  LL_LocalSwitch at ov csm k -> LL_LocalSwitch at ov csm $ iter k
   where
     iter = mkk . llReplace' mkk nk
 
@@ -216,6 +217,10 @@ ul_m mkk ul_k = \case
     (pure mkk) <*> ((pure $ LL_Set at) <*> ul_v v <*> ul_a a <*> ul_k k)
   LL_LocalIf at c t f k ->
     (pure mkk) <*> ((pure $ LL_LocalIf at) <*> ul_a c <*> ul_l t <*> ul_l f <*> ul_k k)
+  LL_LocalSwitch at ov csm k ->
+    mkk <$> (LL_LocalSwitch at <$> ul_v ov <*> mapM cm1 csm <*> ul_k k)
+    where
+      cm1 (ov', l) = (,) <$> ul_v_rn ov' <*> ul_l l
   LL_ArrayMap at ans x0 a f r k -> do
     recordUnroll
     x <- ul_a x0
@@ -261,6 +266,10 @@ ul_n = \case
   LLC_Com m -> ul_m LLC_Com ul_n m
   LLC_If at c t f ->
     (pure $ LLC_If at) <*> ul_a c <*> ul_n t <*> ul_n f
+  LLC_Switch at ov csm ->
+    LLC_Switch at <$> ul_v ov <*> mapM cm1 csm
+    where
+      cm1 (ov', n) = (,) <$> ul_v_rn ov' <*> ul_n n
   LLC_FromConsensus at at' s ->
     (pure $ LLC_FromConsensus at at') <*> ul_s s
   LLC_While at asn inv cond body k ->

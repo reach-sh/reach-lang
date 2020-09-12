@@ -26,9 +26,12 @@ lin_com who back mkk rets s ks =
       where
         t' = lin_local_rets at rets ts
         f' = lin_local_rets at rets fs
-    DLS_Switch _XXX_at _XXX_dv _ _XXX_cm
+    DLS_Switch at dv _ cm
       | isLocal s ->
-        error "XXX"
+        mkk $ LL_LocalSwitch at dv cm' $ back at rets ks
+      where
+        cm' = M.map cm1 cm
+        cm1 (dv', l) = (dv', lin_local_rets at rets l)
     DLS_Return at ret sv ->
       case M.lookup ret rets of
         Nothing -> back at rets ks
@@ -77,9 +80,12 @@ lin_con back at_top rets (s Seq.:<| ks) =
       where
         t' = lin_con back at rets (ts <> ks)
         f' = lin_con back at rets (fs <> ks)
-    DLS_Switch _XXX_at _XXX_dv _ _XXX_cm
+    DLS_Switch at dv _ cm
       | not (isLocal s) ->
-        error "XXX"
+        LLC_Switch at dv cm'
+        where
+          cm' = M.map cm1 cm
+          cm1 (dv', c) = (dv', lin_con back at rets (c <> ks))
     DLS_FromConsensus at cons ->
       LLC_FromConsensus at at_top $ back (cons <> ks)
     DLS_While at asn inv_b cond_b body ->

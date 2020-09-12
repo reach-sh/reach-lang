@@ -231,36 +231,37 @@ instance Pretty DLProg where
 
 --- Linear language
 instance Pretty a => Pretty (LLCommon a) where
-  pretty l =
-    case l of
-      LL_Return _at -> mempty
-      LL_Let _at dv de k ->
-        "const" <+> pretty dv <+> "=" <+> pretty de <> semi
-          <> hardline
-          <> pretty k
-      LL_ArrayMap _ ans x a f r k -> prettyMap ans x a f r <> hardline <> pretty k
-      LL_ArrayReduce _ ans x z b a f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
-      LL_Var _at dv k ->
-        "let" <+> pretty dv <> semi <> hardline <> pretty k
-      LL_Set _at dv da k ->
-        pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
-      LL_LocalIf _at ca t f k ->
-        prettyIfp ca t f <> hardline <> pretty k
+  pretty = \case
+    LL_Return _at -> mempty
+    LL_Let _at dv de k ->
+      "const" <+> pretty dv <+> "=" <+> pretty de <> semi
+      <> hardline
+      <> pretty k
+    LL_ArrayMap _ ans x a f r k -> prettyMap ans x a f r <> hardline <> pretty k
+    LL_ArrayReduce _ ans x z b a f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
+    LL_Var _at dv k ->
+      "let" <+> pretty dv <> semi <> hardline <> pretty k
+    LL_Set _at dv da k ->
+      pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
+    LL_LocalIf _at ca t f k ->
+      prettyIfp ca t f <> hardline <> pretty k
+    LL_LocalSwitch _at ov csm k ->
+      prettySwitch ov csm <> hardline <> pretty k
 
 instance Pretty LLLocal where
   pretty (LLL_Com x) = pretty x
 
 instance Pretty LLConsensus where
-  pretty s =
-    case s of
-      LLC_Com x -> pretty x
-      LLC_If _at ca t f -> prettyIfp ca t f
-      LLC_FromConsensus _at _ret_at k ->
-        "commit()" <> semi <> hardline <> pretty k
-      LLC_While _at asn inv cond body k ->
-        prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
-      LLC_Continue _at asn ->
-        prettyContinue asn
+  pretty = \case
+    LLC_Com x -> pretty x
+    LLC_If _at ca t f -> prettyIfp ca t f
+    LLC_Switch _at ov csm -> prettySwitch ov csm
+    LLC_FromConsensus _at _ret_at k ->
+      "commit()" <> semi <> hardline <> pretty k
+    LLC_While _at asn inv cond body k ->
+      prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
+    LLC_Continue _at asn ->
+      prettyContinue asn
 
 instance Pretty a => Pretty (LLBlock a) where
   pretty (LLBlock _ _ ts ta) =

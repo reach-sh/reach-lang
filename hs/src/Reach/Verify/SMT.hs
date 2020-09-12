@@ -51,8 +51,8 @@ uint256_zero = case use_bitvectors of
 uint256_le :: SExpr -> SExpr -> SExpr
 uint256_le lhs rhs = smtPrimOp (impossible "raw") PLE [lhs, rhs]
 
-uint256_inv :: Solver -> SExpr -> IO ()
-uint256_inv smt v = SMT.assert smt (uint256_le uint256_zero v)
+uint256_inv :: SMTTypeInv
+uint256_inv v = uint256_le uint256_zero v
 
 uint256_sub :: SExpr -> SExpr -> SExpr
 uint256_sub lhs rhs = smtPrimOp (impossible "raw") SUB [lhs, rhs]
@@ -62,6 +62,12 @@ uint256_add lhs rhs = smtPrimOp (impossible "raw") ADD [lhs, rhs]
 
 smtApply :: String -> [SExpr] -> SExpr
 smtApply f args = List (Atom f : args)
+
+smtAndAll :: [SExpr] -> SExpr
+smtAndAll = \case
+  [] -> Atom "true"
+  [x] -> x
+  xs -> smtApply "and" xs
 
 smtEq :: SExpr -> SExpr -> SExpr
 smtEq x y = smtApply "=" [x, y]
@@ -94,6 +100,7 @@ data BindingOrigin
   | O_Expr DLExpr
   | O_Join
   | O_Assignment
+  | O_SwitchCase SLVar
   deriving (Eq)
 
 instance Show BindingOrigin where
@@ -111,12 +118,12 @@ instance Show BindingOrigin where
       O_Expr e -> "evaluating " ++ sp e
       O_Join -> "participant join"
       O_Assignment -> "loop variable"
+      O_SwitchCase vn -> "switch case " <> vn
     where
       sp :: Pretty a => a -> String
       sp = show . pretty
 
-type SMTTypeInv =
-  SExpr -> IO ()
+type SMTTypeInv = SExpr -> SExpr
 
 type SMTTypeMap =
   M.Map SLType (String, SMTTypeInv)
@@ -189,10 +196,10 @@ smtTypeSort ctxt t =
     Just (s, _) -> s
     Nothing -> impossible $ "smtTypeSort " <> show t
 
-smtTypeInv :: SMTCtxt -> SLType -> SMTTypeInv
-smtTypeInv ctxt t =
+smtTypeInv :: SMTCtxt -> SLType -> SExpr -> IO ()
+smtTypeInv ctxt t se =
   case M.lookup t (ctxt_typem ctxt) of
-    Just (_, i) -> i
+    Just (_, i) -> smtAssert ctxt $ i se
     Nothing -> impossible $ "smtTypeInv " <> show t
 
 smtDeclare_v :: SMTCtxt -> String -> SLType -> IO ()
@@ -364,7 +371,7 @@ smtAddPathConstraints ctxt se = se'
       case ctxt_path_constraint ctxt of
         [] -> se
         pcs ->
-          smtApply "=>" [(smtApply "and" pcs), se]
+          smtApply "=>" [(smtAndAll pcs), se]
 
 smtAssert :: SMTCtxt -> SExpr -> SMTComp
 smtAssert ctxt se = SMT.assert smt $ smtAddPathConstraints ctxt se
@@ -468,7 +475,7 @@ smt_a ctxt at_de da =
     DLA_Array _ as -> cons as
     DLA_Tuple as -> cons as
     DLA_Obj m -> cons $ M.elems m
-    DLA_Data _XXX_t _XXX_vn _XXX_vv -> error "XXX"
+    DLA_Data _ vn vv -> smtApply (s ++ "_" ++ vn) [ smt_a ctxt at_de vv ]
     DLA_Interact who i _ -> Atom $ smtInteract ctxt who i
   where
     s = smtTypeSort ctxt t
@@ -557,6 +564,29 @@ smt_e ctxt at_dv mdv de =
   where
     bo = O_Expr de
 
+data SwitchMode
+  = SM_Local
+  | SM_Consensus
+
+smtSwitch :: SwitchMode -> SMTCtxt -> SrcLoc -> DLVar -> SwitchCases a -> (SMTCtxt -> a -> SMTComp) -> SMTComp
+smtSwitch sm ctxt at ov csm iter =
+  mconcatMap cm1 (M.toList csm) 
+  where
+    ova = DLA_Var ov
+    ovp = smt_a ctxt at ova
+    ovt = argTypeOf ova
+    pc = ctxt_path_constraint ctxt
+    cm1 (vn, (ov', l)) =
+      case sm of
+        SM_Local ->
+          udef_m <> iter ctxt' l
+        SM_Consensus ->
+          udef_m <> smtAssert ctxt eqc <> iter ctxt l
+      where ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
+            eqc = smtEq ovp ov'p
+            udef_m = pathAddUnbound ctxt at (Just ov') (O_SwitchCase vn)
+            ov'p = smt_a ctxt at (DLA_Data ovt vn (DLA_Var ov'))
+
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
 smt_m iter ctxt m =
   case m of
@@ -599,6 +629,8 @@ smt_m iter ctxt m =
         ctxt_t = ctxt {ctxt_path_constraint = ca_se : pc}
         pc = ctxt_path_constraint ctxt
         ca_se = smt_a ctxt at ca
+    LL_LocalSwitch at ov csm k ->
+      smtSwitch SM_Local ctxt at ov csm smt_l <> iter ctxt k
 
 smt_l :: SMTCtxt -> LLLocal -> SMTComp
 smt_l ctxt (LLL_Com m) = smt_m smt_l ctxt m
@@ -633,6 +665,9 @@ gatherDefinedVars_m m =
     LL_Var _ dv k -> S.singleton dv <> gatherDefinedVars_l k
     LL_Set _ _ _ k -> gatherDefinedVars_l k
     LL_LocalIf _ _ t f k -> gatherDefinedVars_l t <> gatherDefinedVars_l f <> gatherDefinedVars_l k
+    LL_LocalSwitch _ _ csm k ->
+      mconcatMap cm1 (M.toList csm) <> gatherDefinedVars_l k
+      where cm1 (_, (ov, cs)) = S.singleton ov <> gatherDefinedVars_l cs
 
 gatherDefinedVars_l :: LLLocal -> S.Set DLVar
 gatherDefinedVars_l (LLL_Com m) = gatherDefinedVars_m m
@@ -678,6 +713,8 @@ smt_n ctxt n =
           smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
           where
             v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
+    LLC_Switch at ov csm ->
+      smtSwitch SM_Consensus ctxt at ov csm smt_n
     LLC_FromConsensus _ _ s -> smt_s ctxt s
     LLC_While at asn inv cond body k ->
       mapM_ (ctxtNewScope ctxt) [before_m, loop_m, after_m]
@@ -776,13 +813,13 @@ void $ SMT.assert smt $ smtApply "forall" [ List [ List [ x, an ], List [ y, an 
 _smtDefineTypes :: Solver -> S.Set SLType -> IO SMTTypeMap
 _smtDefineTypes smt ts = do
   tnr <- newIORef (0 :: Int)
-  let none _ = mempty
+  let none _ = smtAndAll []
   tmr <-
     newIORef
       (M.fromList
          [ (T_Null, ("Null", none))
          , (T_Bool, ("Bool", none))
-         , (T_UInt256, ("UInt256", uint256_inv smt))
+         , (T_UInt256, ("UInt256", uint256_inv))
          , (T_Bytes, ("Bytes", none))
          , (T_Address, ("Address", none))
          ])
@@ -795,7 +832,7 @@ _smtDefineTypes smt ts = do
           T_UInt256 -> base
           T_Bytes -> base
           T_Address -> base
-          T_Fun {} -> mempty
+          T_Fun {} -> return none
           T_Forall {} -> impossible "forall in ll"
           T_Var {} -> impossible "var in ll"
           T_Type {} -> impossible "type in ll"
@@ -816,7 +853,7 @@ _smtDefineTypes smt ts = do
             _smt_declare_toBytes smt n
             let inv se = do
                   let invarg ise = tinv $ smtApply "select" [se, ise]
-                  mapM_ invarg idxses
+                  smtAndAll $ map invarg idxses
             return inv
           T_Tuple ats -> do
             ts_nis <- mapM type_name ats
@@ -828,10 +865,22 @@ _smtDefineTypes smt ts = do
             _smt_declare_toBytes smt n
             let inv se = do
                   let invarg (_, arg_inv) argn = arg_inv $ smtApply argn [se]
-                  zipWithM_ invarg ts_nis argns
+                  smtAndAll $ zipWith invarg ts_nis argns
             return inv
-          T_Data _XXX_tm -> do
-            error "XXX"
+          T_Data tm -> do
+            tm_nis <- M.mapKeys ((n ++ "_") ++) <$> mapM type_name tm
+            let mkvar (vn', (arg_tn, _)) = (vn', [(vn' <> "_v", Atom arg_tn)])
+            let vars = map mkvar $ M.toList tm_nis
+            SMT.declareDatatype smt n [] vars
+            _smt_declare_toBytes smt n
+            let inv_f = n ++ "_inv"
+            let x = Atom "x"
+            let mkvar_inv (vn', (_, arg_inv)) = List [ List [ (Atom vn'), x ], arg_inv x ]
+            let vars_inv = map mkvar_inv $ M.toList tm_nis
+            let inv_defn = smtApply "match" [x, List vars_inv]
+            void $ SMT.defineFun smt inv_f [("x", Atom n)] (Atom "Bool") inv_defn
+            let inv se = smtApply inv_f [se]
+            return inv
           T_Object tm -> do
             let tml = M.toAscList tm
             ts_nis <-
@@ -847,7 +896,7 @@ _smtDefineTypes smt ts = do
             _smt_declare_toBytes smt n
             let inv se = do
                   let invarg ((argn, _), arg_inv) = arg_inv $ smtApply argn [se]
-                  mapM_ invarg args
+                  smtAndAll $ map invarg args
             return inv
       type_name :: SLType -> IO (String, SMTTypeInv)
       type_name t = do

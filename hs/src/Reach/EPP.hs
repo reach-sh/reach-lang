@@ -148,6 +148,8 @@ epp_m done _back skip look c =
                ProResL (ProRes_ t'_cs t') = epp_l t k_cs
                ProResL (ProRes_ f'_cs f') = epp_l f k_cs
             in back' cs' $ PL_LocalIf at ca t' f' k')
+    LL_LocalSwitch _XXX_at _XXX_ov _XXX_csm _XXX_k ->
+      error "XXX"
 
 epp_l :: LLLocal -> Counts -> ProResL
 epp_l (LLL_Com com) ok_cs = epp_m done back skip look com
@@ -221,6 +223,8 @@ epp_n st n =
       let cs' = counts ca <> cs_t <> cs_f
       let ct' = CT_If at ca ct_t ct_f
       return $ ProResC p_prts' (ProRes_ cs' ct')
+    LLC_Switch _XXX_at _XXX_ov _XXX_csm ->
+      error "XXX"
     LLC_FromConsensus at1 _at2 s -> do
       let st' = st {pst_interval = default_interval}
       ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st' s

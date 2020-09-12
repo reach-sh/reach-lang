@@ -562,12 +562,16 @@ data FromSpec
 
 instance NFData FromSpec
 
+type SwitchCases a =
+  --- FIXME at the SrcLoc of the case
+  M.Map SLVar (DLVar, a)
+
 data DLStmt
   = DLS_Let SrcLoc (Maybe DLVar) DLExpr
   | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLStmts DLArg
   | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLStmts DLArg
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
-  | DLS_Switch SrcLoc DLVar StmtAnnot (M.Map SLVar (DLVar, DLStmts))
+  | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Stop SrcLoc [SLCtxtFrame]
@@ -655,6 +659,7 @@ data LLCommon a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_LocalIf SrcLoc DLArg LLLocal LLLocal a
+  | LL_LocalSwitch SrcLoc DLVar (SwitchCases LLLocal) a
   deriving (Eq, Show)
 
 data LLLocal
@@ -668,6 +673,7 @@ data LLBlock a
 data LLConsensus
   = LLC_Com (LLCommon LLConsensus)
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
+  | LLC_Switch SrcLoc DLVar (SwitchCases LLConsensus)
   | LLC_FromConsensus SrcLoc SrcLoc LLStep
   | --- inv then cond then body then kont
     LLC_While

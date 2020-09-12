@@ -42,13 +42,20 @@ export const main = Reach.App(
     const ci3 = cp3.x + cp3.y + cp3.z;
     const c3p = { ...cp3, x: ci3 };
 
-    commit();
+    switch (mi) {
+    case None:
+      commit();
 
-    A.only(() => {
-      const x = c3p; });
-    A.publish(x);
-    require(x.x == ci3);
-    commit();
+      exit();
+    case Some:
+      commit();
 
-    exit();
+      A.only(() => {
+        const x = c3p; });
+      A.publish(x);
+      require(x.x == ci3);
+      commit();
+
+      exit();
+    }
   } );

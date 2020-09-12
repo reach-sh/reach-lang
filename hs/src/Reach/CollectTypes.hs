@@ -83,6 +83,7 @@ instance CollectsTypes a => CollectsTypes (LLCommon a) where
   cts (LL_Var _ v k) = cts v <> cts k
   cts (LL_Set _ v a k) = cts v <> cts a <> cts k
   cts (LL_LocalIf _ a t f k) = cts a <> cts t <> cts f <> cts k
+  cts (LL_LocalSwitch _ v csm k) = cts v <> cts csm <> cts k
 
 instance CollectsTypes LLLocal where
   cts (LLL_Com a) = cts a
@@ -93,6 +94,7 @@ instance CollectsTypes a => CollectsTypes (LLBlock a) where
 instance CollectsTypes LLConsensus where
   cts (LLC_Com k) = cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f
+  cts (LLC_Switch _ v csm) = cts v <> cts csm
   cts (LLC_FromConsensus _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
