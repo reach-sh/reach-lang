@@ -208,13 +208,13 @@ kgq_m iter ctxt = \case
       ctxt' = ctxt_add_back ctxt ca
   LL_LocalSwitch _ ov csm k ->
     mapM_ cm1 csm
-    >> iter ctxt k
+      >> iter ctxt k
     where
       oa = DLA_Var ov
       ctxt' = ctxt_add_back ctxt oa
       cm1 (ov', l) =
         kgq_a_only ctxt ov' oa
-        >> kgq_l ctxt' l
+          >> kgq_l ctxt' l
 
 kgq_l :: KCtxt -> LLLocal -> IO ()
 kgq_l ctxt = \case
@@ -241,8 +241,8 @@ kgq_n ctxt = \case
       ctxt' = ctxt_add_back ctxt oa
       cm1 (ov', n) =
         ctxtNewScope ctxt' $
-        kgq_a_only ctxt' ov' oa >>
-        kgq_n ctxt' n
+          kgq_a_only ctxt' ov' oa
+            >> kgq_n ctxt' n
   LLC_FromConsensus _ _ k -> kgq_s ctxt k
   LLC_While _ asn _ (LLBlock _ _ cond_l ca) body k ->
     kgq_asn_def ctxt asn

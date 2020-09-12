@@ -1,7 +1,16 @@
 module Reach.Parser
-  (ParserError (..),
-   JSBundle (..), parseJSFormals, jsArrowFormalsToFunFormals, parseJSArrowFormals, jsCallLike, parseIdent, jse_expect_id, jso_expect_id, gatherDeps_top
-  , readJsExpr)
+  ( ParserError (..)
+  , JSBundle (..)
+  , parseJSFormals
+  , jsArrowFormalsToFunFormals
+  , parseJSArrowFormals
+  , jsCallLike
+  , parseIdent
+  , jse_expect_id
+  , jso_expect_id
+  , gatherDeps_top
+  , readJsExpr
+  )
 where
 
 import Control.DeepSeq

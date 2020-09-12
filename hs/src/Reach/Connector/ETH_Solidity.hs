@@ -8,11 +8,11 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.HashMap.Strict as HM
 import Data.List (find, foldl', intersperse)
+import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
-import Data.List.Extra (mconcatMap)
 import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.CollectTypes
@@ -98,7 +98,7 @@ solIf c t f = "if" <+> parens c <+> solBraces t <> hardline <> "else" <+> solBra
 --- FIXME don't nest
 solIfs :: [(Doc a, Doc a)] -> Doc a
 solIfs [] = emptyDoc
-solIfs ((c, t):more) = solIf c t $ solIfs more
+solIfs ((c, t) : more) = solIf c t $ solIfs more
 
 solDecl :: Doc a -> Doc a -> Doc a
 solDecl n ty = ty <+> n
@@ -356,14 +356,17 @@ arraySize a =
 
 solSwitch :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> SrcLoc -> DLVar -> SwitchCases k -> SolTailRes a
 solSwitch iter ctxt _at ov csm = SolTailRes ctxt $ solIfs $ map cm1 $ M.toAscList csm
-  where t = solType ctxt $ argTypeOf (DLA_Var ov)
-        cm1 (vn, (ov', body)) = (c, set_and_body')
-          where
-            c = solEq ((solVar ctxt ov) <> ".which") (solVariant t vn)
-            set_and_body' =
-              vsep [ solSet (solMemVar ov') ((solVar ctxt ov) <> "._" <> pretty vn)
-                   , body' ]
-            SolTailRes _ body' = iter ctxt body
+  where
+    t = solType ctxt $ argTypeOf (DLA_Var ov)
+    cm1 (vn, (ov', body)) = (c, set_and_body')
+      where
+        c = solEq ((solVar ctxt ov) <> ".which") (solVariant t vn)
+        set_and_body' =
+          vsep
+            [ solSet (solMemVar ov') ((solVar ctxt ov) <> "._" <> pretty vn)
+            , body'
+            ]
+        SolTailRes _ body' = iter ctxt body
 
 solCom :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> PLCommon k -> SolTailRes a
 solCom iter ctxt = \case
@@ -382,11 +385,12 @@ solCom iter ctxt = \case
     where
       zip_p =
         "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty $ xy_sz) <> semi <+> "i++")
-          <> solBraces (solArrayRef (solVar ctxt dv) "i" <+> "=" <+> solApply tcon [ ith x, ith y ] <> semi)
+          <> solBraces (solArrayRef (solVar ctxt dv) "i" <+> "=" <+> solApply tcon [ith x, ith y] <> semi)
       tcon = solType ctxt xy_ty
       ith which = solArrayRef (solArg ctxt which) "i"
-      (xy_ty, xy_sz) = case t of T_Array a b -> (a, b)
-                                 _ -> impossible "array_zip"
+      (xy_ty, xy_sz) = case t of
+        T_Array a b -> (a, b)
+        _ -> impossible "array_zip"
   PL_Let _ PL_Once dv de k -> iter ctxt' k
     where
       ctxt' = ctxt {ctxt_varm = M.insert dv de' $ ctxt_varm ctxt}
@@ -502,7 +506,8 @@ manyVars_m iter = \case
   PL_Set _ _ _ k -> iter k
   PL_LocalIf _ _ t f k -> manyVars_p t <> manyVars_p f <> iter k
   PL_LocalSwitch _ _ csm k -> (mconcatMap cm1 $ M.elems csm) <> iter k
-    where cm1 (ov', c) = S.insert ov' $ manyVars_p c
+    where
+      cm1 (ov', c) = S.insert ov' $ manyVars_p c
   PL_ArrayMap _ ans _ a f _ k ->
     s_inserts [ans, a] (manyVars_p f <> iter k)
   PL_ArrayReduce _ ans _ _ b a f _ k ->
@@ -519,7 +524,8 @@ manyVars_c = \case
   CT_Seqn _ p c -> manyVars_p p <> manyVars_c c
   CT_If _ _ t f -> manyVars_c t <> manyVars_c f
   CT_Switch _ _ csm -> mconcatMap cm1 $ M.elems csm
-    where cm1 (ov', c) = S.insert ov' $ manyVars_c c
+    where
+      cm1 (ov', c) = S.insert ov' $ manyVars_c c
   CT_Wait {} -> mempty
   CT_Jump {} -> mempty
   CT_Halt {} -> mempty
@@ -654,7 +660,7 @@ _solDefineType1 getTypeName i name = \case
     let enumn = "_enum_" <> name
     let enump = solEnum enumn $ map (pretty . fst) $ M.toAscList tmn
     let structp = solStruct name $ ("which", enumn) : map (\(k, t) -> (pretty ("_" <> k), t)) (M.toAscList tmn)
-    return $ (name, vsep [ enump, structp ])
+    return $ (name, vsep [enump, structp])
   T_Type {} -> impossible "type in pl"
   where
     base = impossible "base"

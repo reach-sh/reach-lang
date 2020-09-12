@@ -475,7 +475,7 @@ smt_a ctxt at_de da =
     DLA_Array _ as -> cons as
     DLA_Tuple as -> cons as
     DLA_Obj m -> cons $ M.elems m
-    DLA_Data _ vn vv -> smtApply (s ++ "_" ++ vn) [ smt_a ctxt at_de vv ]
+    DLA_Data _ vn vv -> smtApply (s ++ "_" ++ vn) [smt_a ctxt at_de vv]
     DLA_Interact who i _ -> Atom $ smtInteract ctxt who i
   where
     s = smtTypeSort ctxt t
@@ -570,13 +570,14 @@ data SwitchMode
 
 smtSwitch :: SwitchMode -> SMTCtxt -> SrcLoc -> DLVar -> SwitchCases a -> (SMTCtxt -> a -> SMTComp) -> SMTComp
 smtSwitch sm ctxt at ov csm iter =
-  mconcatMap cm1 (M.toList csm) 
+  mconcatMap cm1 (M.toList csm)
   where
     ova = DLA_Var ov
     ovp = smt_a ctxt at ova
     ovt = argTypeOf ova
-    ovtm = case ovt of T_Data m -> m
-                       _ -> impossible "switch"
+    ovtm = case ovt of
+      T_Data m -> m
+      _ -> impossible "switch"
     pc = ctxt_path_constraint ctxt
     cm1 (vn, (ov', l)) =
       case sm of
@@ -584,10 +585,11 @@ smtSwitch sm ctxt at ov csm iter =
           udef_m <> iter ctxt' l
         SM_Consensus ->
           udef_m <> smtAssert ctxt eqc <> iter ctxt l
-      where ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
-            eqc = smtEq ovp ov'p
-            udef_m = pathAddUnbound ctxt at (Just ov') (O_SwitchCase vn)
-            ov'p = smt_a ctxt at (DLA_Data ovtm vn (DLA_Var ov'))
+      where
+        ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
+        eqc = smtEq ovp ov'p
+        udef_m = pathAddUnbound ctxt at (Just ov') (O_SwitchCase vn)
+        ov'p = smt_a ctxt at (DLA_Data ovtm vn (DLA_Var ov'))
 
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
 smt_m iter ctxt m =
@@ -669,7 +671,8 @@ gatherDefinedVars_m m =
     LL_LocalIf _ _ t f k -> gatherDefinedVars_l t <> gatherDefinedVars_l f <> gatherDefinedVars_l k
     LL_LocalSwitch _ _ csm k ->
       mconcatMap cm1 (M.toList csm) <> gatherDefinedVars_l k
-      where cm1 (_, (ov, cs)) = S.singleton ov <> gatherDefinedVars_l cs
+      where
+        cm1 (_, (ov, cs)) = S.singleton ov <> gatherDefinedVars_l cs
 
 gatherDefinedVars_l :: LLLocal -> S.Set DLVar
 gatherDefinedVars_l (LLL_Com m) = gatherDefinedVars_m m
@@ -877,7 +880,7 @@ _smtDefineTypes smt ts = do
             _smt_declare_toBytes smt n
             let inv_f = n ++ "_inv"
             let x = Atom "x"
-            let mkvar_inv (vn', (_, arg_inv)) = List [ List [ (Atom vn'), x ], arg_inv x ]
+            let mkvar_inv (vn', (_, arg_inv)) = List [List [(Atom vn'), x], arg_inv x]
             let vars_inv = map mkvar_inv $ M.toList tm_nis
             let inv_defn = smtApply "match" [x, List vars_inv]
             void $ SMT.defineFun smt inv_f [("x", Atom n)] (Atom "Bool") inv_defn

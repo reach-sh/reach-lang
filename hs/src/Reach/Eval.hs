@@ -469,14 +469,16 @@ base_env =
 
 jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
 jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
-  where cloenv = SLCloEnv env mempty mempty
-        env = M.map (SLSSVal at Public) env_
-        (args, body) =
-          case readJsExpr js of
-            JSArrowExpression aformals _ bodys -> (a_, b_)
-              where b_ = jsArrowStmtToBlock bodys
-                    a_ = parseJSArrowFormals at aformals
-            _ -> impossible "not arrow"
+  where
+    cloenv = SLCloEnv env mempty mempty
+    env = M.map (SLSSVal at Public) env_
+    (args, body) =
+      case readJsExpr js of
+        JSArrowExpression aformals _ bodys -> (a_, b_)
+          where
+            b_ = jsArrowStmtToBlock bodys
+            a_ = parseJSArrowFormals at aformals
+        _ -> impossible "not arrow"
 
 -- General compiler utilities
 checkResType :: SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
@@ -733,60 +735,68 @@ evalAsEnv at obj =
       retDLVar tm (DLA_Interact who m it) Secret
     SLV_Participant _ who _ vas _ ->
       M.fromList
-      [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who)),
-        ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing)),
-        ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing)),
-        ("set", delayCall SLPrim_part_set) ]
+        [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who))
+        , ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing))
+        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing))
+        , ("set", delayCall SLPrim_part_set)
+        ]
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
       M.fromList
-      [ ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime)),
-        ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime)),
-        ("timeout", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime)) ]
+        [ ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime))
+        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime))
+        , ("timeout", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime))
+        ]
     --- FIXME rewrite the rest to look at the type and go from there
     SLV_Tuple _ _ ->
       M.fromList
-      [ ("set", delayCall SLPrim_tuple_set),
-        ("length", doCall SLPrim_tuple_length) ]
+        [ ("set", delayCall SLPrim_tuple_set)
+        , ("length", doCall SLPrim_tuple_length)
+        ]
     SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
       M.fromList
-      [ ("set", delayCall SLPrim_tuple_set),
-        ("length", doCall SLPrim_tuple_length) ]
+        [ ("set", delayCall SLPrim_tuple_set)
+        , ("length", doCall SLPrim_tuple_length)
+        ]
     SLV_Prim SLPrim_Tuple ->
       M.fromList
-      [ ("set", retV $ public $ SLV_Prim $ SLPrim_tuple_set),
-        ("length", retV $ public $ SLV_Prim $ SLPrim_tuple_length) ]
+        [ ("set", retV $ public $ SLV_Prim $ SLPrim_tuple_set)
+        , ("length", retV $ public $ SLV_Prim $ SLPrim_tuple_length)
+        ]
     SLV_Array _ _ _ ->
       M.fromList
-      [ ("set", delayCall SLPrim_array_set),
-        ("length", doCall SLPrim_array_length),
-        ("concat", delayCall SLPrim_array_concat),
-        ("map", delayCall SLPrim_array_map),
-        ("reduce", delayCall SLPrim_array_reduce),
-        ("zip", delayCall SLPrim_array_zip) ]
+        [ ("set", delayCall SLPrim_array_set)
+        , ("length", doCall SLPrim_array_length)
+        , ("concat", delayCall SLPrim_array_concat)
+        , ("map", delayCall SLPrim_array_map)
+        , ("reduce", delayCall SLPrim_array_reduce)
+        , ("zip", delayCall SLPrim_array_zip)
+        ]
     SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
       M.fromList
-      [ ("set", delayCall SLPrim_array_set),
-        ("length", doCall SLPrim_array_length),
-        ("concat", delayCall SLPrim_array_concat),
-        ("map", delayCall SLPrim_array_map),
-        ("reduce", delayCall SLPrim_array_reduce),
-        ("zip", delayCall SLPrim_array_zip) ]
+        [ ("set", delayCall SLPrim_array_set)
+        , ("length", doCall SLPrim_array_length)
+        , ("concat", delayCall SLPrim_array_concat)
+        , ("map", delayCall SLPrim_array_map)
+        , ("reduce", delayCall SLPrim_array_reduce)
+        , ("zip", delayCall SLPrim_array_zip)
+        ]
     SLV_Prim SLPrim_Array ->
       M.fromList
-      [ ("empty", retStdLib "Array_empty"),
-        ("replicate", retStdLib "Array_replicate"),
-        ("length", retV $ public $ SLV_Prim $ SLPrim_array_length),
-        ("set", retV $ public $ SLV_Prim $ SLPrim_array_set),
-        ("iota", retV $ public $ SLV_Prim $ SLPrim_Array_iota),
-        ("concat", retV $ public $ SLV_Prim $ SLPrim_array_concat),
-        ("map", retV $ public $ SLV_Prim $ SLPrim_array_map),
-        ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce),
-        ("zip", retV $ public $ SLV_Prim $ SLPrim_array_zip) ]
+        [ ("empty", retStdLib "Array_empty")
+        , ("replicate", retStdLib "Array_replicate")
+        , ("length", retV $ public $ SLV_Prim $ SLPrim_array_length)
+        , ("set", retV $ public $ SLV_Prim $ SLPrim_array_set)
+        , ("iota", retV $ public $ SLV_Prim $ SLPrim_Array_iota)
+        , ("concat", retV $ public $ SLV_Prim $ SLPrim_array_concat)
+        , ("map", retV $ public $ SLV_Prim $ SLPrim_array_map)
+        , ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce)
+        , ("zip", retV $ public $ SLV_Prim $ SLPrim_array_zip)
+        ]
     SLV_Prim SLPrim_Object ->
       M.fromList
-      [ ("set", retStdLib "Object_set") ]
+        [("set", retStdLib "Object_set")]
     SLV_Type (T_Data varm) ->
-      M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t) varm 
+      M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t) varm
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
@@ -1105,7 +1115,7 @@ evalPrim ctxt at sco st p sargs =
                     --- be parameteric in the state.
                     return $
                       stMerge at f_st xv_st
-                      `seq` ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
+                        `seq` ((prev_lifts <> xv_lifts), prev_vs ++ [xv_v'])
               (lifts'', vs') <- foldM evalem (mempty, []) x_vs
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, SLV_Array at f_ty vs')
             False -> do
@@ -1113,13 +1123,13 @@ evalPrim ctxt at sco st p sargs =
               (ans_dv, ans_dsv) <- make_dlvar at "array_map" t
               let lifts' = return $ DLS_ArrayMap at ans_dv x_da a_dv f_lifts f_da
               return $ SLRes lifts' st (lvl, ans_dsv)
-        x:y:args' -> do
+        x : y : args' -> do
           let (f, more) = case reverse args' of
-                            f_:rmore -> (f_, reverse rmore)
-                            _ -> impossible "array_map"
+                f_ : rmore -> (f_, reverse rmore)
+                _ -> impossible "array_map"
           SLRes xy_lifts xy_st (SLAppRes _ xy_v) <-
             evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_array_zip) $ map public [x, y]
-          let clo_args = concatMap ((",c" <>) . show) [0..(length more - 1)]
+          let clo_args = concatMap ((",c" <>) . show) [0 .. (length more - 1)]
           let f' = jsClo at "zip" ("(ab" <> clo_args <> ") => f(ab[0], ab[1]" <> clo_args <> ")") (M.fromList [("f", f)])
           SLRes m_lifts m_st (SLAppRes _ m_v) <-
             evalApplyVals ctxt at sco xy_st (SLV_Prim $ SLPrim_array_map) (xy_v : (map public $ more ++ [f']))
@@ -1150,24 +1160,24 @@ evalPrim ctxt at sco st p sargs =
                     --- version.
                     return $
                       stMerge at f_st xv_st
-                      `seq` checkType at f_ty xv_v'
-                      `seq` ((prev_lifts <> xv_lifts), xv_v')
+                        `seq` checkType at f_ty xv_v'
+                        `seq` ((prev_lifts <> xv_lifts), xv_v')
               (lifts'', z') <- foldM evalem (mempty, z) x_vs
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
             False -> do
               (ans_dv, ans_dsv) <- make_dlvar at "array_reduce" f_ty
               let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_lifts f_da
               return $ SLRes lifts' st (lvl, ans_dsv)
-        x:y:args' -> do
+        x : y : args' -> do
           let (f, z, more) = case reverse args' of
-                            f_:z_:rmore -> (f_, z_, reverse rmore)
-                            _ -> impossible "array_reduce"
+                f_ : z_ : rmore -> (f_, z_, reverse rmore)
+                _ -> impossible "array_reduce"
           SLRes xy_lifts xy_st (SLAppRes _ xy_v) <-
             evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_array_zip) $ map public [x, y]
-          let clo_args = concatMap ((",c" <>) . show) [0..(length more - 1)]
+          let clo_args = concatMap ((",c" <>) . show) [0 .. (length more - 1)]
           let f' = jsClo at "zip" ("(z,ab" <> clo_args <> ") => f(z, ab[0], ab[1]" <> clo_args <> ")") (M.fromList [("f", f)])
           SLRes m_lifts m_st (SLAppRes _ m_v) <-
-            evalApplyVals ctxt at sco xy_st (SLV_Prim $ SLPrim_array_reduce) (xy_v : (map public $ more ++ [z,f']))
+            evalApplyVals ctxt at sco xy_st (SLV_Prim $ SLPrim_array_reduce) (xy_v : (map public $ more ++ [z, f']))
           return $ SLRes (xy_lifts <> m_lifts) m_st m_v
     SLPrim_array_set ->
       case map snd sargs of
@@ -2281,8 +2291,8 @@ evalStmt ctxt at sco st ss =
       let (de_lvl, de_val) = sss_sls $ env_lookup at' de_v env
       let (de_ty, _) = typeOf at de_val
       let varm = case de_ty of
-                   T_Data m -> m
-                   _ -> expect_throw at $ Err_Switch_NotData de_val
+            T_Data m -> m
+            _ -> expect_throw at $ Err_Switch_NotData de_val
       let ks_ne = dropEmptyJSStmts ks
       let sco' =
             case ks_ne of
@@ -2295,13 +2305,15 @@ evalStmt ctxt at sco st ss =
       let case_minserts cs v m = M.unions $ m : map (flip M.singleton v) cs
       let add_case (seenDefault, casem0) = \case
             JSCase ca ve _ body -> (seenDefault, case_insert vn (at_c, body) casem0)
-              where at_c = srcloc_jsa "case" ca at'
-                    vn = jse_expect_id at_c ve
+              where
+                at_c = srcloc_jsa "case" ca at'
+                vn = jse_expect_id at_c ve
             JSDefault ca _ body ->
               case seenDefault of
                 Just at_c' -> expect_throw at $ Err_Switch_DoubleCase at_c at_c' Nothing
                 Nothing -> ((Just at_c), case_minserts (M.keys varm) (at_c, body) casem0)
-              where at_c = srcloc_jsa "case" ca at'
+              where
+                at_c = srcloc_jsa "case" ca at'
       let (_, casesm) = foldl' add_case (Nothing, mempty) cases
       let all_cases = M.keysSet varm
       let given_cases = M.keysSet casesm
@@ -2325,11 +2337,13 @@ evalStmt ctxt at sco st ss =
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do
                   (dv', at_c, casem') <- casem
                   SLRes case_lifts case_st (SLStmtRes _ case_rets) <- casem'
-                  let st'' = case mst' of Nothing -> case_st
-                                          Just st' -> stMerge at_c st' case_st
+                  let st'' = case mst' of
+                        Nothing -> case_st
+                        Just st' -> stMerge at_c st' case_st
                   let sa'' = sa' <> mkAnnot case_lifts
-                  let rets'' = case mrets' of Nothing -> case_rets
-                                              Just rets' -> combineStmtRets at_c de_lvl rets' case_rets
+                  let rets'' = case mrets' of
+                        Nothing -> case_rets
+                        Just rets' -> combineStmtRets at_c de_lvl rets' case_rets
                   let casemm'' = M.insert vn (dv', case_lifts) casemm'
                   return $ (Just st'', sa'', Just rets'', casemm'')
             (mst', sa', mrets', casemm') <- foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm

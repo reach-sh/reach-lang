@@ -83,9 +83,9 @@ lin_con back at_top rets (s Seq.:<| ks) =
     DLS_Switch at dv _ cm
       | not (isLocal s) ->
         LLC_Switch at dv cm'
-        where
-          cm' = M.map cm1 cm
-          cm1 (dv', c) = (dv', lin_con back at rets (c <> ks))
+      where
+        cm' = M.map cm1 cm
+        cm1 (dv', c) = (dv', lin_con back at rets (c <> ks))
     DLS_FromConsensus at cons ->
       LLC_FromConsensus at at_top $ back (cons <> ks)
     DLS_While at asn inv_b cond_b body ->
