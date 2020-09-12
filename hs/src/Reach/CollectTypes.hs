@@ -118,6 +118,7 @@ instance CollectsTypes a => CollectsTypes (PLCommon a) where
   cts (PL_Var _ dv k) = cts dv <> cts k
   cts (PL_Set _ dv da k) = cts dv <> cts da <> cts k
   cts (PL_LocalIf _ ca t f k) = cts ca <> cts t <> cts f <> cts k
+  cts (PL_LocalSwitch _ v csm k) = cts v <> cts csm <> cts k
 
 instance CollectsTypes PLTail where
   cts (PLTail m) = cts m
@@ -126,6 +127,7 @@ instance CollectsTypes CTail where
   cts (CT_Com m) = cts m
   cts (CT_Seqn _ b a) = cts b <> cts a
   cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
+  cts (CT_Switch _ v csm) = cts v <> cts csm
   cts (CT_Wait _ svs) = cts svs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
   cts (CT_Halt _) = mempty

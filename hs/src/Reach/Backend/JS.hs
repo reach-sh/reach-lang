@@ -205,6 +205,8 @@ jsCom iter ctxt = \case
       [ jsIf (jsArg c) (jsPLTail ctxt t) (jsPLTail ctxt f)
       , iter ctxt k
       ]
+  PL_LocalSwitch _ _XXX_ov _XXX_csm _XXX_k ->
+    error "XXX"
   PL_ArrayMap _ ans x a f r k ->
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "map" [(jsApply "" [jsArg $ DLA_Var a] <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r)))]
       <> hardline
@@ -247,6 +249,8 @@ jsETail ctxt = \case
       ]
   ET_Stop _ -> "return" <> semi
   ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
+  ET_Switch _ _XXX_ov _XXX_csm ->
+    error "XXX"
   ET_ToConsensus _ fs_ok which from_me msg mto k_ok -> tp
     where
       tp = vsep [defp, k_p]

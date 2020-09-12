@@ -9,6 +9,7 @@ import Reach.CollectCounts
 import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Util
+import Data.List.Extra (mconcatMap)
 
 data ProRes_ a = ProRes_ Counts a
   deriving (Eq, Show)
@@ -148,8 +149,16 @@ epp_m done _back skip look c =
                ProResL (ProRes_ t'_cs t') = epp_l t k_cs
                ProResL (ProRes_ f'_cs f') = epp_l f k_cs
             in back' cs' $ PL_LocalIf at ca t' f' k')
-    LL_LocalSwitch _XXX_at _XXX_ov _XXX_csm _XXX_k ->
-      error "XXX"
+    LL_LocalSwitch at ov csm k ->
+      look
+      k
+      (\back' _skip' k_cs k' ->
+         let cm1 (ov', l) = (l'_cs, (ov', l'))
+               where ProResL (ProRes_ l'_cs l') = epp_l l k_cs
+             csm'0 = M.map cm1 csm
+             csm' = M.map snd csm'0
+             cs' = counts ov <> (mconcatMap fst $ M.elems csm'0)
+         in back' cs' $ PL_LocalSwitch at ov csm' k')
 
 epp_l :: LLLocal -> Counts -> ProResL
 epp_l (LLL_Com com) ok_cs = epp_m done back skip look com
@@ -223,8 +232,19 @@ epp_n st n =
       let cs' = counts ca <> cs_t <> cs_f
       let ct' = CT_If at ca ct_t ct_f
       return $ ProResC p_prts' (ProRes_ cs' ct')
-    LLC_Switch _XXX_at _XXX_ov _XXX_csm ->
-      error "XXX"
+    LLC_Switch at ov csm -> do
+      let cm1 (ov', l) = (,) <$> (pure ov') <*> epp_n st l
+      csm'0 <- mapM cm1 csm
+      let mkp p = ProRes_ cs_p $ ET_Switch at ov csm'p
+            where csm'0p = M.map (\(ov', ProResC p_prts _) ->
+                                    let ProRes_ cs_p_c et_p_c =  p_prts M.! p
+                                    in (count_rms [ov'] cs_p_c, (ov', et_p_c))) csm'0
+                  cs_p = mconcatMap fst $ M.elems csm'0p
+                  csm'p = M.map snd csm'0p
+      let p_prts' = pmap st mkp
+      let csm'ct = M.map (\(ov', ProResC _ (ProRes_ _ ct)) -> (ov', ct)) csm'0
+      let cs' = counts ov <> (mconcatMap (\(_, ProResC _ (ProRes_ cs _)) -> cs) $ M.elems csm'0)
+      return $ ProResC p_prts' (ProRes_ cs' $ CT_Switch at ov csm'ct)
     LLC_FromConsensus at1 _at2 s -> do
       let st' = st {pst_interval = default_interval}
       ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st' s

@@ -379,6 +379,7 @@ solCom iter ctxt = \case
       ca' = solArg ctxt ca
       SolTailRes _ t' = solPLTail ctxt t
       SolTailRes _ f' = solPLTail ctxt f
+  PL_LocalSwitch _ _XXX_ov _XXX_csm _XXX_k -> error "XXX"
   PL_ArrayMap _ ans x a f r k ->
     SolTailRes ctxt map_p <> iter ctxt k
     where
@@ -426,6 +427,7 @@ solCTail ctxt = \case
       SolTailRes ctxt'_t t' = solCTail ctxt t
       SolTailRes ctxt'_f f' = solCTail ctxt f
       ctxt' = ctxt'_t <> ctxt'_f
+  CT_Switch _ _XXX_ov _XXX_csm -> error "XXX"
   CT_Wait _ svs ->
     SolTailRes ctxt $
       vsep
@@ -472,6 +474,7 @@ manyVars_m iter = \case
   PL_Var _ dv k -> S.insert dv $ iter k
   PL_Set _ _ _ k -> iter k
   PL_LocalIf _ _ t f k -> manyVars_p t <> manyVars_p f <> iter k
+  PL_LocalSwitch _ _ _XXX_csm k -> error "XXX" <> iter k
   PL_ArrayMap _ ans _ a f _ k ->
     s_inserts [ans, a] (manyVars_p f <> iter k)
   PL_ArrayReduce _ ans _ _ b a f _ k ->
@@ -487,6 +490,7 @@ manyVars_c = \case
   CT_Com m -> manyVars_m manyVars_c m
   CT_Seqn _ p c -> manyVars_p p <> manyVars_c c
   CT_If _ _ t f -> manyVars_c t <> manyVars_c f
+  CT_Switch _ _ _XXX_csm -> error "XXX"
   CT_Wait {} -> mempty
   CT_Jump {} -> mempty
   CT_Halt {} -> mempty

@@ -728,6 +728,7 @@ data PLCommon a
   | PL_Var SrcLoc DLVar a
   | PL_Set SrcLoc DLVar DLArg a
   | PL_LocalIf SrcLoc DLArg PLTail PLTail a
+  | PL_LocalSwitch SrcLoc DLVar (SwitchCases PLTail) a
   deriving (Eq, Show)
 
 data PLTail
@@ -743,6 +744,7 @@ data ETail
   | ET_Seqn SrcLoc PLTail ETail
   | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg ETail ETail
+  | ET_Switch SrcLoc DLVar (SwitchCases ETail)
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
       , et_tc_fs :: FromSpec
@@ -773,6 +775,7 @@ data CTail
   = CT_Com (PLCommon CTail)
   | CT_Seqn SrcLoc PLTail CTail
   | CT_If SrcLoc DLArg CTail CTail
+  | CT_Switch SrcLoc DLVar (SwitchCases CTail)
   | CT_Wait SrcLoc [DLVar]
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   | CT_Halt SrcLoc

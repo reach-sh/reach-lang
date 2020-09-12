@@ -301,23 +301,24 @@ instance Pretty PLLetCat where
   pretty PL_Once = "!"
 
 instance Pretty a => Pretty (PLCommon a) where
-  pretty l =
-    case l of
-      PL_Return _at -> mempty
-      PL_Let _at lc dv de k ->
-        "const" <+> pretty lc <> pretty dv <+> "=" <+> pretty de <> semi
-          <> hardline
-          <> pretty k
-      PL_ArrayMap _ ans x a f r k -> prettyMap ans x a f r <> hardline <> pretty k
-      PL_ArrayReduce _ ans x z b a f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
-      PL_Eff _ de k ->
-        "eff" <+> pretty de <> semi <> hardline <> pretty k
-      PL_Var _at dv k ->
-        "let" <+> pretty dv <> semi <> hardline <> pretty k
-      PL_Set _at dv da k ->
-        pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
-      PL_LocalIf _at ca t f k ->
-        prettyIfp ca t f <> hardline <> pretty k
+  pretty = \case
+    PL_Return _at -> mempty
+    PL_Let _at lc dv de k ->
+      "const" <+> pretty lc <> pretty dv <+> "=" <+> pretty de <> semi
+      <> hardline
+      <> pretty k
+    PL_ArrayMap _ ans x a f r k -> prettyMap ans x a f r <> hardline <> pretty k
+    PL_ArrayReduce _ ans x z b a f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
+    PL_Eff _ de k ->
+      "eff" <+> pretty de <> semi <> hardline <> pretty k
+    PL_Var _at dv k ->
+      "let" <+> pretty dv <> semi <> hardline <> pretty k
+    PL_Set _at dv da k ->
+      pretty dv <+> "=" <+> pretty da <> semi <> hardline <> pretty k
+    PL_LocalIf _at ca t f k ->
+      prettyIfp ca t f <> hardline <> pretty k
+    PL_LocalSwitch _ ov csm k ->
+      prettySwitch ov csm <> hardline <> pretty k
 
 instance Pretty PLTail where
   pretty (PLTail x) = pretty x
@@ -329,6 +330,7 @@ instance Pretty ETail where
       ET_Seqn _ x y -> pretty x <> hardline <> pretty y
       ET_Stop _ -> emptyDoc
       ET_If _ ca t f -> prettyIfp ca t f
+      ET_Switch _ ov csm -> prettySwitch ov csm
       ET_ToConsensus _ fs which msend msg mtime k ->
         "sendrecv" <+> fsp <+> whichp <+> parens msendp <> (cm $ map pretty msg) <> timep <> ns (pretty k)
         where
@@ -403,6 +405,7 @@ instance Pretty CTail where
   pretty (CT_Com e) = pretty e
   pretty (CT_Seqn _ x y) = pretty x <> hardline <> pretty y
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
+  pretty (CT_Switch _ ov csm) = prettySwitch ov csm
   pretty (CT_Wait _ vars) = pform "wait!" $ pretty vars
   pretty (CT_Jump _ which vars assignment) = pform "jump!" args
     where
