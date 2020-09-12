@@ -367,13 +367,14 @@ export const connectAccount = async networkAccount => {
       return p;
     };
 
-    const sendrecv_top = async (label, funcNum, evt_cnt, args, value, timeout_delay, try_p) => {
+    const sendrecv_top = async (label, funcNum, evt_cnt, tys, args, value, timeout_delay, try_p) => {
       void(try_p, evt_cnt);
-      return sendrecv(label, funcNum, args, value, timeout_delay);
+      return sendrecv(label, funcNum, tys, args, value, timeout_delay);
     };
 
     /* eslint require-atomic-updates: off */
-    const sendrecv = async (label, funcNum, args, value, timeout_delay) => {
+    const sendrecv = async (label, funcNum, tys, args, value, timeout_delay) => {
+      // XXX use tys
       // TODO: support BigNumber delays?
       timeout_delay = toNumberMay(timeout_delay);
       const funcName = `m${funcNum}`;

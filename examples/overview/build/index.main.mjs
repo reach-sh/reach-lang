@@ -1,10 +1,11 @@
 // Automatically generated with Reach 0.1.2
+export const _version = '0.1.2'
 
 export async function Alice(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
   
   
-  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.protect(stdlib.T_UInt256, interact.request, null)], 0, false, null);
+  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.request, null)], 0, false, null);
   const [v1] = txn1.data;
   const v2 = txn1.from;
   const v3 = txn1.value;
@@ -24,7 +25,7 @@ export async function Alice(stdlib, ctc, interact) {
     who: 'Alice' });
   
   
-  const txn3 = await ctc.sendrecv('Alice', 3, 1, [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], 0, false, null);
+  const txn3 = await ctc.sendrecv('Alice', 3, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Bytes], [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], 0, false, null);
   const [v13] = txn3.data;
   const v14 = txn3.value;
   const v16 = stdlib.eq(0, v14);
@@ -51,7 +52,7 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   
   
-  const txn2 = await ctc.sendrecv('Bob', 2, 0, [v2, v1], v1, false, null);
+  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt256], [v2, v1], v1, false, null);
   const [] = txn2.data;
   const v8 = txn2.from;
   const v9 = txn2.value;

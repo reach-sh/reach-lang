@@ -154,6 +154,22 @@ export const T_Object = (co) => {
   };
 };
 
+export const T_Data = (co) => {
+  // TODO: check co for sanity
+  return {
+    name: `Data(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
+    canonicalize: (io) => {
+      if (!Array.isArray(io) && io.length == 2) {
+        throw Error(`Expected an array of length two to represent a data instance, but got ${JSON.stringify(io)}`);
+      }
+      const vn = io[0];
+      if (!{}.hasOwnProperty.call(co, vn)) {
+        throw Error(`Expected a variant in ${Object.keys(co)}, but got ${vn}`); }
+      return [ vn, co[vn].canonicalize(io[1]) ];
+    },
+  };
+};
+
 const format_ai = (ai) => JSON.stringify(ai);
 
 export const protect = (ctc, v, ai = null) => {

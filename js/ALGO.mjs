@@ -180,7 +180,8 @@ export const connectAccount = async thisAcc => {
       throw Error(`XXX Not implemented: wait`);
     };
 
-    const sendrecv = async (label, okNum, evt_cnt, args, value, timeout_delay, timeNum, try_p) => {
+    const sendrecv = async (label, okNum, evt_cnt, tys, args, value, timeout_delay, timeNum, try_p) => {
+      void(tys); // XXX
       debug(`${shad}: ${label} sendrecv ${okNum} ${timeout_delay} --- START`);
 
       const this_is_a_timeout = timeout_delay ? false : true;
