@@ -63,6 +63,8 @@ rules:
   # This is a silly rule
   no-duplicate-imports:
     - off
+  no-fallthrough:
+    - off
 
 env:
   es6:      true
