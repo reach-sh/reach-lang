@@ -2309,6 +2309,11 @@ evalStmt ctxt at sco st ss =
                 at_c = srcloc_jsa "case" ca at'
                 vn = jse_expect_id at_c ve
             JSDefault ca _ body ->
+              --- XXX default bodies need to not be able to see the
+              --- variable as the type of the case... that'd be really
+              --- weird. This will presumably hook into the same
+              --- system as Null values where the variable doesn't get
+              --- bound.
               case seenDefault of
                 Just at_c' -> expect_throw at $ Err_Switch_DoubleCase at_c at_c' Nothing
                 Nothing -> ((Just at_c), case_minserts (M.keys varm) (at_c, body) casem0)

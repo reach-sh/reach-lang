@@ -264,7 +264,8 @@ Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thro
  T_Address => ReachType
  T_Array(ReachType, number) => ReachType
  T_Tuple([ReachType ...]) => ReachType
- T_Obj({Key: ReachType ...}) => ReachType}
+ T_Obj({Key: ReachType ...}) => ReachType
+ T_Data({Variant: ReachType ...}) => ReachType}
 
 Each of these represent the corresponding Reach @tech{type}.
 See the table below for Reach types and their corresponding JavaScript representation:
@@ -278,7 +279,10 @@ See the table below for Reach types and their corresponding JavaScript represent
  Address   => 'string'
  Array     => array
  Tuple     => array
- Object    => object }
+ Object    => object
+ Data      => ['variant', value] }
+
+For example, the Reach type @reachin{MInt = Data({None: Null, Some: UInt256})} inhabitant @reachin{MInt.Some(42)} is represented as @reachin{['Some', 42]} in JavaScript.
 
 @(hrule)
 @(mint-define! '("assert"))

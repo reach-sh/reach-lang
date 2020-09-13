@@ -661,6 +661,31 @@ is erroneous, because the identifier @reachin{z} is not bound outside the @tech{
 
 A @tech{conditional statement} may only include a @tech{consensus transfer} in @reachin{TRUE} or @reachin{FALSE} if it is within a @tech{consensus step}, because its statements are in the same context as the conditional statement itself.
 
+@subsubsection{@tt{switch}}
+
+@(mint-define! '("switch") '("case") '("default"))
+@reach{
+ const mi = Maybe(UInt256).Some(42);
+ switch ( mi ) {
+  case None: return 8;
+  case Some: return mi + 10; }
+ switch ( mi ) {
+  case None: return 8;
+  default: return 41; } }
+
+A @deftech{switch statement},
+written @reachin{switch (VAR) { CASE ... }},
+where @reachin{VAR} is a variable bound to a @tech{data instance}
+and @reachin{CASE} is either @reachin{case VARIANT: STMT ...}, where @reachin{VARIANT} is a variant, or @reachin{default: STMT ...}, @reachin{STMT} is a sequence of statements,
+selects the appropriate sequence of statements based on which variant @reachin{VAR} holds.
+Within the body of a @reachin{switch} case, @reachin{VAR} has the type of variant; i.e. in a @reachin{Some} case of a @reachin{Maybe(UInt256)} @reachin{switch}, the variable is bound to an integer.
+
+All cases have empty @tech{tails}, i.e. the @tech{tail} of the @tech{switch statement} is not propagated. 
+
+A @tech{switch statement} may only include a @tech{consensus transfer} in its cases if it is within a @tech{consensus step}, because its statements are in the same context as the conditional statement itself.
+
+It is @tech{invalid} for a case to appear multiple times, or be missing, or to be superfluous (i.e. for a variant that does not exist in the @reachin{Data} type of @reachin{VAR}).
+
 @subsubsection{Block statements}
 
 A @deftech{block statement} is when a @tech{block} occurs in a @tech{statement} position, then it establishes a local, separate scope for the definitions of identifiers within that @tech{block}. In other words, the @tech{block} is evaluated for effect, but the @tech{tail} of the @tech{statements} within the @tech{block} are isolated from the surrounding @tech{tail}. For example,
@@ -725,10 +750,17 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Bytes")) @reachin{Bytes}, which denotes a string of bytes.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
   @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a function type.}
-  @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.}
-  @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.}
-  @item{@(mint-define! '("Array")) @reachin{Array(ElemenType, size)}, which denotes a statically-sized array.}
+  @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.
+  (Refer to @secref["ref-programs-tuples"] for constructing tuples.)}
+  @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.
+  (Refer to @secref["ref-programs-objects"] for constructing objects.)}
+  @item{@(mint-define! '("Array")) @reachin{Array(ElemenType, size)}, which denotes a statically-sized array.
+  (Refer to @secref["ref-programs-arrays"] for constructing arrays.)}
+  @item{@(mint-define! '("Data")) @reachin{Data({variant_0: Type_0, ..., variant_N: Type_N})}, which denotes a @link["https://en.wikipedia.org/wiki/Tagged_union"]{tagged union} (or @emph{sum type}).
+  (Refer to @secref["ref-programs-data"] for constructing @tech{data instances}.)}
 ]
+
+@reachin{Object} and @reachin{Data} are commonly used to implemented @link["https://en.wikipedia.org/wiki/Algebraic_data_type"]{algebraic data types} in Reach.
 
 @(mint-define! '("typeOf") '("isType"))
 @reach{
@@ -862,7 +894,7 @@ Specialized functions exist for equality checking on each supported type.
 
 An @tech{expression} may be parenthesized, as in @reachin{(EXPR)}.
 
-@subsubsection{Tuples}
+@subsubsection[#:tag "ref-programs-tuples"]{Tuples}
 
 @reach{
  [ ]
@@ -872,7 +904,7 @@ A @deftech{tuple} literal, written @reachin{[ EXPR_0, ..., EXPR_n ]}, is an @tec
 
 @reachin{...expr} may appear inside tuple expressions, in which case the spreaded expression must evaluate to a tuple or array, which is spliced in place.
 
-@subsubsection{@tt{array}}
+@subsubsection[#:tag "ref-programs-arrays"]{@tt{array}}
 
 @(mint-define! '("array"))
 @reach{
@@ -990,7 +1022,7 @@ This may be abbreviated as @reachin{arr.reduce(z, f)}.
 This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{z} argument.
 For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y))} returns @reachin{((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3)}.
 
-@subsubsection{Objects}
+@subsubsection[#:tag "ref-programs-objects"]{Objects}
 
 @reach{
   { }
@@ -1044,6 +1076,46 @@ accesses the FIELD @deftech{field} of object OBJ.
 
 @index{Object.set} Returns a new object identical to @reachin{obj},
 except that field @reachin{fld} is replaced with @reachin{val}.
+
+@subsubsection[#:tag "ref-programs-data"]{Data}
+
+@reach{
+ const Taste = Data({Salty: Null,
+                     Spicy: Null,
+                     Sweet: Null,
+                     Umami: Null});
+ const burger = Taste.Umami(null);
+ 
+ const Shape = Data({ Circle: Object({r: UInt256}),
+                      Square: Object({s: UInt256}),
+                      Rect: Object({w: UInt256, h: UInt256}) });
+ const nice = Shape.Circle({r: 5}); }
+
+A @deftech{data instance} is written @reachin{DATA.VARIANT(VALUE)}, where @reachin{DATA} is @reachin{Data} type, @reachin{VARIANT} is the name of one of @reachin{DATA}'s variants, and @reachin{VALUE} is a value matching the type of the variant.
+
+@tech{Data instances} are consumed by @reachin{switch} statements.
+
+@subsubsection{@tt{Maybe}}
+
+@(mint-define! '("Maybe") '("Some") '("None") '("fromMaybe"))
+@reach{
+ const MayInt = Maybe(UInt256);
+ const bidA = MayInt.Some(42);
+ const bidB = MayInt.None(null);
+
+ const getBid = (m) => fromMaybe((() => 0), ((x) => x), m);
+ const bidSum = getBid(bidA) + getBid(bidB);
+ assert(bidSum == 42); }
+
+@link["https://en.wikipedia.org/wiki/Option_type"]{Option types} are represented in Reach through the built-in @reachin{Data} type, @reachin{Maybe}, which has two variants: @reachin{Some} and @reachin{None}.
+
+@reachin{Maybe} is defined by
+@reach{
+ export const Maybe = (A) => Data({None: Null, Some: A}); }
+
+This means it is a function that returns a @reachin{Data} type specialized to a particular type in the @reachin{Some} variant.
+
+@reachin{Maybe} instances can be conveniently consumed by @reachin{fromMaybe(onNone, onSome, mValue)}, where @reachin{onNone} is a function of no arguments which is called when @reachin{mValue} is @reachin{None}, @reachin{onSome} is a function of on argument which is called with the value when @reachin{mValue} is @reachin{Some}, and @reachin{mValue} is a @tech{data instance} of @reachin{Maybe}.
 
 @subsubsection{Conditional expression}
 
