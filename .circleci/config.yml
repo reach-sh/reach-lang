@@ -5,7 +5,7 @@ orbs:
 jobs:
   build-and-test:
     docker:
-      - image: reachsh/reach-circle:v0.1.2
+      - image: reachsh/reach-circle:0.1.2
     steps:
       - checkout
       - run:
