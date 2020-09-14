@@ -559,7 +559,7 @@ const getSigner = (() => {
 
 export const newTestAccount = async (startingBalance) => {
   debug(`newTestAccount(${startingBalance})`);
-  requireIsolatedNetwork();
+  requireIsolatedNetwork('newTestAccount');
   const provider = await getProvider();
   const signer = await getSigner();
 
