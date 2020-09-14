@@ -7,6 +7,7 @@ WORKDIR /build
 # RUN stack build --system-ghc --dependencies-only
 
 COPY stack.yaml package.yaml stack.yaml.lock /build/
+RUN stack setup --system-ghc # in case system-ghc doesn't cut it
 RUN stack build --system-ghc --dependencies-only
 
 # --- Build
