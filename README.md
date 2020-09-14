@@ -19,6 +19,7 @@ Installation on macOS:
 ```
 $ brew tap ethereum/ethereum
 $ brew install haskell-stack z3
+# go back in time to when this was solidity 0.7.0
 $ brew install solidity
 ```
 
