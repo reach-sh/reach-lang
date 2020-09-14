@@ -255,7 +255,7 @@ The expression @jsin{await wait(delta, onProgress)} is the same as
 Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thrown if this is not the case.
 
 @(hrule)
-@(mint-define! '("T_Null") '("T_Bool") '("T_UInt256") '("T_Bytes") '("T_Address") '("T_Array") '("T_Tuple") '("T_Obj"))
+@(mint-define! '("T_Null") '("T_Bool") '("T_UInt256") '("T_Bytes") '("T_Address") '("T_Array") '("T_Tuple") '("T_Object"))
 @js{
  T_Null => ReachType
  T_Bool => ReachType
@@ -264,7 +264,7 @@ Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thro
  T_Address => ReachType
  T_Array(ReachType, number) => ReachType
  T_Tuple([ReachType ...]) => ReachType
- T_Obj({Key: ReachType ...}) => ReachType
+ T_Object({Key: ReachType ...}) => ReachType
  T_Data({Variant: ReachType ...}) => ReachType}
 
 Each of these represent the corresponding Reach @tech{type}.
