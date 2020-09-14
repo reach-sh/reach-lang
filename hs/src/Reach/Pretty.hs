@@ -111,11 +111,11 @@ prettyIf ca t f =
 prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc a
 prettyIfp ca t f = prettyIf ca (pretty t) (pretty f)
 
-prettySwitch :: (Pretty a, Pretty b, Pretty c) => a -> M.Map b (a, c) -> Doc ann
+prettySwitch :: (Pretty a, Pretty b, Pretty c) => a -> M.Map b (Maybe a, c) -> Doc ann
 prettySwitch ov csm =
   "switch" <+> parens (pretty ov) <+> render_nest (concatWith (surround hardline) $ map render_p $ M.toList csm)
   where
-    render_p (k, (nv, ss)) = "case" <+> pretty k <+> "as" <+> pretty nv <> ":" <+> render_nest (pretty ss)
+    render_p (k, (mnv, ss)) = "case" <+> pretty k <+> "as" <+> pretty mnv <> ":" <+> render_nest (pretty ss)
 
 prettyWhile :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc ann -> Doc ann
 prettyWhile asn inv cond bodyp =

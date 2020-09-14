@@ -7,7 +7,7 @@ import Data.Digest.CRC32
 import Data.IORef
 import Data.List.Extra (foldl', mconcatMap)
 import qualified Data.Map as M
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, maybeToList)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc
@@ -579,7 +579,7 @@ smtSwitch sm ctxt at ov csm iter =
       T_Data m -> m
       _ -> impossible "switch"
     pc = ctxt_path_constraint ctxt
-    cm1 (vn, (ov', l)) =
+    cm1 (vn, (mov', l)) =
       case sm of
         SM_Local ->
           udef_m <> iter ctxt' l
@@ -587,9 +587,13 @@ smtSwitch sm ctxt at ov csm iter =
           udef_m <> smtAssert ctxt eqc <> iter ctxt l
       where
         ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
-        eqc = smtEq ovp ov'p
-        udef_m = pathAddUnbound ctxt at (Just ov') (O_SwitchCase vn)
-        ov'p = smt_a ctxt at (DLA_Data ovtm vn (DLA_Var ov'))
+        eqc =
+          case mov' of
+            Just ov' -> smtEq ovp ov'p
+              where ov'p = smt_a ctxt at (DLA_Data ovtm vn (DLA_Var ov'))
+            Nothing -> Atom "true"
+        udef_m = pathAddUnbound ctxt at mov' (O_SwitchCase vn)
+        
 
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
 smt_m iter ctxt m =
@@ -672,7 +676,7 @@ gatherDefinedVars_m m =
     LL_LocalSwitch _ _ csm k ->
       mconcatMap cm1 (M.toList csm) <> gatherDefinedVars_l k
       where
-        cm1 (_, (ov, cs)) = S.singleton ov <> gatherDefinedVars_l cs
+        cm1 (_, (mov, cs)) = S.fromList (maybeToList mov) <> gatherDefinedVars_l cs
 
 gatherDefinedVars_l :: LLLocal -> S.Set DLVar
 gatherDefinedVars_l (LLL_Com m) = gatherDefinedVars_m m

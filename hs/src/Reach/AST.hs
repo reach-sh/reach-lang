@@ -564,7 +564,7 @@ instance NFData FromSpec
 
 type SwitchCases a =
   --- FIXME at the SrcLoc of the case
-  M.Map SLVar (DLVar, a)
+  M.Map SLVar (Maybe DLVar, a)
 
 data DLStmt
   = DLS_Let SrcLoc (Maybe DLVar) DLExpr

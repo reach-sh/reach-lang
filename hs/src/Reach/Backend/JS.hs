@@ -194,13 +194,11 @@ jsExpr ctxt = \case
 jsEmitSwitch :: (JSCtxt -> k -> Doc a) -> JSCtxt -> SrcLoc -> DLVar -> SwitchCases k -> Doc a
 jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> jsBraces (vsep $ map cm1 $ M.toAscList csm)
   where
-    cm1 (vn, (ov', body)) = "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'
+    cm1 (vn, (mov', body)) = "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'
       where
-        set_and_body' =
-          vsep
-            [ "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
-            , iter ctxt body
-            ]
+        set_and_body' = vsep [ set' , iter ctxt body ]
+        set' = case mov' of Just ov' -> "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
+                            Nothing -> emptyDoc
 
 jsCom :: (JSCtxt -> k -> Doc a) -> JSCtxt -> PLCommon k -> Doc a
 jsCom iter ctxt = \case

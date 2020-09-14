@@ -81,6 +81,10 @@ ul_v_rn (DLVar at lab t idx) = do
   lift $ modifySTRef eRenaming (M.insert idx (Left v'))
   return v'
 
+ul_mv_rn :: Maybe DLVar -> App s (Maybe DLVar)
+ul_mv_rn Nothing = return Nothing
+ul_mv_rn (Just v) = Just <$> ul_v_rn v
+
 ul_vs_rn :: [DLVar] -> App s [DLVar]
 ul_vs_rn = mapM ul_v_rn
 
@@ -220,7 +224,7 @@ ul_m mkk ul_k = \case
   LL_LocalSwitch at ov csm k ->
     mkk <$> (LL_LocalSwitch at <$> ul_v ov <*> mapM cm1 csm <*> ul_k k)
     where
-      cm1 (ov', l) = (,) <$> ul_v_rn ov' <*> ul_l l
+      cm1 (mov', l) = (,) <$> (ul_mv_rn mov') <*> ul_l l
   LL_ArrayMap at ans x0 a f r k -> do
     recordUnroll
     x <- ul_a x0
@@ -269,7 +273,7 @@ ul_n = \case
   LLC_Switch at ov csm ->
     LLC_Switch at <$> ul_v ov <*> mapM cm1 csm
     where
-      cm1 (ov', n) = (,) <$> ul_v_rn ov' <*> ul_n n
+      cm1 (mov', n) = (,) <$> ul_mv_rn mov' <*> ul_n n
   LLC_FromConsensus at at' s ->
     (pure $ LLC_FromConsensus at at') <*> ul_s s
   LLC_While at asn inv cond body k ->

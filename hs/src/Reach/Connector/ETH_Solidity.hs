@@ -11,6 +11,7 @@ import Data.List (find, foldl', intersperse)
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.STRef
+import Data.Maybe
 import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
@@ -358,14 +359,13 @@ solSwitch :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> SrcLoc -> DLVar ->
 solSwitch iter ctxt _at ov csm = SolTailRes ctxt $ solIfs $ map cm1 $ M.toAscList csm
   where
     t = solType ctxt $ argTypeOf (DLA_Var ov)
-    cm1 (vn, (ov', body)) = (c, set_and_body')
+    cm1 (vn, (mov', body)) = (c, set_and_body')
       where
         c = solEq ((solVar ctxt ov) <> ".which") (solVariant t vn)
-        set_and_body' =
-          vsep
-            [ solSet (solMemVar ov') ((solVar ctxt ov) <> "._" <> pretty vn)
-            , body'
-            ]
+        set_and_body' = vsep [ set', body' ]
+        set' = case mov' of
+                 Just ov' -> solSet (solMemVar ov') ((solVar ctxt ov) <> "._" <> pretty vn)
+                 Nothing -> emptyDoc
         SolTailRes _ body' = iter ctxt body
 
 solCom :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> PLCommon k -> SolTailRes a
@@ -507,7 +507,7 @@ manyVars_m iter = \case
   PL_LocalIf _ _ t f k -> manyVars_p t <> manyVars_p f <> iter k
   PL_LocalSwitch _ _ csm k -> (mconcatMap cm1 $ M.elems csm) <> iter k
     where
-      cm1 (ov', c) = S.insert ov' $ manyVars_p c
+      cm1 (mov', c) = S.union (S.fromList $ maybeToList mov') $ manyVars_p c
   PL_ArrayMap _ ans _ a f _ k ->
     s_inserts [ans, a] (manyVars_p f <> iter k)
   PL_ArrayReduce _ ans _ _ b a f _ k ->
@@ -525,7 +525,7 @@ manyVars_c = \case
   CT_If _ _ t f -> manyVars_c t <> manyVars_c f
   CT_Switch _ _ csm -> mconcatMap cm1 $ M.elems csm
     where
-      cm1 (ov', c) = S.insert ov' $ manyVars_c c
+      cm1 (mov', c) = S.union (S.fromList $ maybeToList mov') $ manyVars_c c
   CT_Wait {} -> mempty
   CT_Jump {} -> mempty
   CT_Halt {} -> mempty

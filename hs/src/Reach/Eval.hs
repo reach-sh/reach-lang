@@ -2298,25 +2298,20 @@ evalStmt ctxt at sco st ss =
             case ks_ne of
               [] -> sco
               _ -> sco {sco_must_ret = RS_MayBeEmpty}
-      let case_insert k v@(at1, _) m =
+      let case_insert k v@(at1, _, _) m =
             case M.lookup k m of
               Nothing -> M.insert k v m
-              Just (at0, _) -> expect_throw at $ Err_Switch_DoubleCase at0 at1 (Just k)
+              Just (at0, _, _) -> expect_throw at $ Err_Switch_DoubleCase at0 at1 (Just k)
       let case_minserts cs v m = M.unions $ m : map (flip M.singleton v) cs
       let add_case (seenDefault, casem0) = \case
-            JSCase ca ve _ body -> (seenDefault, case_insert vn (at_c, body) casem0)
+            JSCase ca ve _ body -> (seenDefault, case_insert vn (at_c, True, body) casem0)
               where
                 at_c = srcloc_jsa "case" ca at'
                 vn = jse_expect_id at_c ve
             JSDefault ca _ body ->
-              --- XXX default bodies need to not be able to see the
-              --- variable as the type of the case... that'd be really
-              --- weird. This will presumably hook into the same
-              --- system as Null values where the variable doesn't get
-              --- bound.
               case seenDefault of
                 Just at_c' -> expect_throw at $ Err_Switch_DoubleCase at_c at_c' Nothing
-                Nothing -> ((Just at_c), case_minserts (M.keys varm) (at_c, body) casem0)
+                Nothing -> ((Just at_c), case_minserts (M.keys varm) (at_c, False, body) casem0)
               where
                 at_c = srcloc_jsa "case" ca at'
       let (_, casesm) = foldl' add_case (Nothing, mempty) cases
@@ -2328,19 +2323,31 @@ evalStmt ctxt at sco st ss =
       let extra_cases = given_cases S.\\ all_cases
       unless (S.null extra_cases) $ do
         expect_throw at' $ Err_Switch_ExtraCases $ S.toList extra_cases
-      let select (at_c, body) vv = do
-            let addl_env = M.singleton de_v (sls_sss at_c (de_lvl, vv))
+      let select at_c body mvv = do
+            let addl_env = case mvv of
+                             Just vv -> M.singleton de_v (sls_sss at_c (de_lvl, vv))
+                             Nothing -> mempty
             let sco'' = sco_update_ AllowShadowing ctxt at_c sco' st addl_env
             evalStmt ctxt at_c sco'' st body
-      let select_one vn c@(at_c, _) = do
-            let vt = varm M.! vn
-            dvi <- ctxt_alloc ctxt at
-            let dv' = DLVar at_c ("switch " <> vn) vt dvi
-            return $ (dv', at_c, select c $ SLV_DLVar dv')
+      let select_one vn (at_c, shouldBind, body) = do
+            (mdv', mvv) <-
+              case shouldBind of
+                True -> do
+                  let vt = varm M.! vn
+                  case vt of
+                    T_Null ->
+                      return (Nothing, Just $ SLV_Null at_c "case")
+                    _ -> do
+                      dvi <- ctxt_alloc ctxt at
+                      let dv' = DLVar at_c ("switch " <> vn) vt dvi
+                      return (Just dv', Just $ SLV_DLVar dv')
+                False ->
+                  return (Nothing, Nothing)
+            return $ (mdv', at_c, select at_c body mvv)
       let select_all dv = do
             let casemm = M.mapWithKey select_one casesm
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do
-                  (dv', at_c, casem') <- casem
+                  (mdv', at_c, casem') <- casem
                   SLRes case_lifts case_st (SLStmtRes _ case_rets) <- casem'
                   let st'' = case mst' of
                         Nothing -> case_st
@@ -2349,7 +2356,7 @@ evalStmt ctxt at sco st ss =
                   let rets'' = case mrets' of
                         Nothing -> case_rets
                         Just rets' -> combineStmtRets at_c de_lvl rets' case_rets
-                  let casemm'' = M.insert vn (dv', case_lifts) casemm'
+                  let casemm'' = M.insert vn (mdv', case_lifts) casemm'
                   return $ (Just st'', sa'', Just rets'', casemm'')
             (mst', sa', mrets', casemm') <- foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
             let rets' = maybe mempty id mrets'
@@ -2357,7 +2364,13 @@ evalStmt ctxt at sco st ss =
             return $ SLRes lifts' (maybe st id mst') $ SLStmtRes mempty rets'
       fr <-
         case de_val of
-          SLV_Data _ _ vn vv -> select (casesm M.! vn) vv
+          SLV_Data _ _ vn vv ->
+            select at_c body mvv
+            where (at_c, shouldBind, body) = (casesm M.! vn)
+                  mvv =
+                    case shouldBind of
+                      False -> Nothing
+                      True -> Just vv
           SLV_DLVar dv -> select_all dv
           _ -> impossible "switch mvar"
       let at'_after = srcloc_after_semi "switch" a sp at
