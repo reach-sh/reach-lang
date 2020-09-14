@@ -1365,7 +1365,10 @@ evalPrim ctxt at sco st p sargs =
       let varm = M.map (expect_ty . sss_val) argm
       retV $ (lvl, SLV_Type $ T_Data varm)
     SLPrim_Data_variant t vn vt -> do
-      let vv = one_arg
+      let vv =
+            case (vt, args) of
+              (T_Null, []) -> SLV_Null at "variant"
+              _ -> one_arg
       let vv_da = checkType at vt vv
       retV $ (lvl, SLV_Data at t vn $ vv_da `seq` vv)
   where
