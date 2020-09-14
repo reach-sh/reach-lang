@@ -11,7 +11,7 @@
   "dependencies": {
     "algosdk": "^1.7.0",
     "await-timeout": "^0.6.0",
-    "ethers": "^5.0.8",
+    "ethers": "^5.0.13",
     "ganache-core": "^2.11.2",
     "wait-port": "^0.2.9"
   },
