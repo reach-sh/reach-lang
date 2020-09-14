@@ -159,7 +159,7 @@ export const T_Data = (co) => {
   return {
     name: `Data(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
     canonicalize: (io) => {
-      if (!Array.isArray(io) && io.length == 2) {
+      if (!(Array.isArray(io) && io.length == 2)) {
         throw Error(`Expected an array of length two to represent a data instance, but got ${JSON.stringify(io)}`);
       }
       const vn = io[0];
