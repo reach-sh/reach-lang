@@ -196,9 +196,10 @@ jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> 
   where
     cm1 (vn, (mov', body)) = "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'
       where
-        set_and_body' = vsep [ set' , iter ctxt body ]
-        set' = case mov' of Just ov' -> "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
-                            Nothing -> emptyDoc
+        set_and_body' = vsep [set', iter ctxt body]
+        set' = case mov' of
+          Just ov' -> "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
+          Nothing -> emptyDoc
 
 jsCom :: (JSCtxt -> k -> Doc a) -> JSCtxt -> PLCommon k -> Doc a
 jsCom iter ctxt = \case

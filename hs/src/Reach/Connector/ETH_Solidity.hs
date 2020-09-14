@@ -10,8 +10,8 @@ import qualified Data.HashMap.Strict as HM
 import Data.List (find, foldl', intersperse)
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
-import Data.STRef
 import Data.Maybe
+import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
@@ -362,10 +362,10 @@ solSwitch iter ctxt _at ov csm = SolTailRes ctxt $ solIfs $ map cm1 $ M.toAscLis
     cm1 (vn, (mov', body)) = (c, set_and_body')
       where
         c = solEq ((solVar ctxt ov) <> ".which") (solVariant t vn)
-        set_and_body' = vsep [ set', body' ]
+        set_and_body' = vsep [set', body']
         set' = case mov' of
-                 Just ov' -> solSet (solMemVar ov') ((solVar ctxt ov) <> "._" <> pretty vn)
-                 Nothing -> emptyDoc
+          Just ov' -> solSet (solMemVar ov') ((solVar ctxt ov) <> "._" <> pretty vn)
+          Nothing -> emptyDoc
         SolTailRes _ body' = iter ctxt body
 
 solCom :: (SolCtxt a -> k -> SolTailRes a) -> SolCtxt a -> PLCommon k -> SolTailRes a

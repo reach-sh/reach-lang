@@ -590,10 +590,10 @@ smtSwitch sm ctxt at ov csm iter =
         eqc =
           case mov' of
             Just ov' -> smtEq ovp ov'p
-              where ov'p = smt_a ctxt at (DLA_Data ovtm vn (DLA_Var ov'))
+              where
+                ov'p = smt_a ctxt at (DLA_Data ovtm vn (DLA_Var ov'))
             Nothing -> Atom "true"
         udef_m = pathAddUnbound ctxt at mov' (O_SwitchCase vn)
-        
 
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
 smt_m iter ctxt m =

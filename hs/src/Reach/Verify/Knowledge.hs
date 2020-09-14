@@ -241,8 +241,8 @@ kgq_n ctxt = \case
       ctxt' = ctxt_add_back ctxt oa
       cm1 (mov', n) =
         ctxtNewScope ctxt' $
-        kgq_a_onlym ctxt' mov' oa
-        >> kgq_n ctxt' n
+          kgq_a_onlym ctxt' mov' oa
+            >> kgq_n ctxt' n
   LLC_FromConsensus _ _ k -> kgq_s ctxt k
   LLC_While _ asn _ (LLBlock _ _ cond_l ca) body k ->
     kgq_asn_def ctxt asn

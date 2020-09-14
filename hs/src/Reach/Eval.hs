@@ -2328,8 +2328,8 @@ evalStmt ctxt at sco st ss =
         expect_throw at' $ Err_Switch_ExtraCases $ S.toList extra_cases
       let select at_c body mvv = do
             let addl_env = case mvv of
-                             Just vv -> M.singleton de_v (sls_sss at_c (de_lvl, vv))
-                             Nothing -> mempty
+                  Just vv -> M.singleton de_v (sls_sss at_c (de_lvl, vv))
+                  Nothing -> mempty
             let sco'' = sco_update_ AllowShadowing ctxt at_c sco' st addl_env
             evalStmt ctxt at_c sco'' st body
       let select_one vn (at_c, shouldBind, body) = do
@@ -2369,11 +2369,12 @@ evalStmt ctxt at sco st ss =
         case de_val of
           SLV_Data _ _ vn vv ->
             select at_c body mvv
-            where (at_c, shouldBind, body) = (casesm M.! vn)
-                  mvv =
-                    case shouldBind of
-                      False -> Nothing
-                      True -> Just vv
+            where
+              (at_c, shouldBind, body) = (casesm M.! vn)
+              mvv =
+                case shouldBind of
+                  False -> Nothing
+                  True -> Just vv
           SLV_DLVar dv -> select_all dv
           _ -> impossible "switch mvar"
       let at'_after = srcloc_after_semi "switch" a sp at
