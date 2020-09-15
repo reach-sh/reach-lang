@@ -173,7 +173,10 @@ runTests(async () => {
         T_Object,
         T_Array,
         T_Tuple,
+        T_Data,
       } = stdlib;
+
+      const T_MaybeInt = T_Data({'Some': T_UInt256, 'None': T_Null});
       it('converts nully things to Null', () => {
         expect(protect(T_Null, null)).toBe(null);
         expect(protect(T_Null, undefined)).toBe(null);
@@ -200,6 +203,10 @@ runTests(async () => {
       });
       it('recurses into Arrays', () => {
         expect(protect(T_Array(T_Null, 1), [undefined])).toBe([null]);
+      });
+      it('recurses into Data', () => {
+        expect(protect(T_MaybeInt, ['Some', n])).toBe(['Some', bn]);
+        expect(protect(T_MaybeInt, ['None', undefined])).toBe(['None', null]);
       });
     });
 
