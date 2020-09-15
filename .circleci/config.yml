@@ -116,7 +116,8 @@ jobs:
             git rm -r .
             cp -r /tmp/docs_workspace/docs/* .
             git add .
-            git commit -m "[ci skip] docs for $CIRCLE_SHA1"
+            # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
+            git diff-index --quiet HEAD || git commit -m "[ci skip] docs for $CIRCLE_SHA1"
             git push origin gh-pages
       - slack/status:
           fail_only: true
