@@ -367,14 +367,14 @@ export const connectAccount = async networkAccount => {
       return p;
     };
 
-    const sendrecv_top = async (label, funcNum, evt_cnt, tys, args, value, timeout_delay, try_p) => {
+    const sendrecv_top = async (label, funcNum, evt_cnt, tys, args, value, out_tys, timeout_delay, try_p) => {
       void(try_p, evt_cnt);
-      return sendrecv(label, funcNum, tys, args, value, timeout_delay);
+      return sendrecv(label, funcNum, tys, args, value, out_tys, timeout_delay);
     };
 
     // XXX: receive expected tys of output and use them to unmunge
     /* eslint require-atomic-updates: off */
-    const sendrecv = async (label, funcNum, tys, args, value, timeout_delay) => {
+    const sendrecv = async (label, funcNum, tys, args, value, out_tys, timeout_delay) => {
       // XXX use tys
       // TODO: support BigNumber delays?
       timeout_delay = toNumberMay(timeout_delay);
@@ -422,7 +422,7 @@ export const connectAccount = async networkAccount => {
         // last_block = ok_r.blockNumber;
         void(ok_r);
 
-        return await recv(label, funcNum, timeout_delay);
+        return await recv(label, funcNum, out_tys, timeout_delay);
       }
 
       // XXX If we were trying to join, but we got sniped, then we'll
@@ -436,12 +436,12 @@ export const connectAccount = async networkAccount => {
     };
 
     // XXX: receive expected tys of output and use them to unmunge
-    const recv_top = async (label, okNum, ok_cnt, timeout_delay) => {
-      return recv(label, okNum, timeout_delay);
+    const recv_top = async (label, okNum, ok_cnt, out_tys, timeout_delay) => {
+      return recv(label, okNum, out_tys, timeout_delay);
     };
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const recv = async (label, okNum, timeout_delay) => {
+    const recv = async (label, okNum, out_tys, timeout_delay) => {
       // TODO: support BigNumber delays?
       timeout_delay = toNumberMay(timeout_delay);
       const ethersC = (await getC());
@@ -483,9 +483,13 @@ export const connectAccount = async networkAccount => {
 
           updateLast(ok_t);
           const [ok_bal, ok_vals] = getEventData(ethersC, ok_evt, ok_e);
+          if (ok_vals.length !== out_tys.length) {
+            throw Error(`Expected ${out_tys.length} values from event data, but got ${ok_vals.length}.`);
+          }
+          const data = ok_vals.map((v, i) => out_tys[i].unmunge(v));
 
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
-          return { didTimeout: false, data: ok_vals, value: ok_t.value, balance: ok_bal, from: ok_t.from };
+          return { didTimeout: false, data, value: ok_t.value, balance: ok_bal, from: ok_t.from };
         }
       }
 

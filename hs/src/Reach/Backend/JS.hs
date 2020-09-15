@@ -301,6 +301,7 @@ jsETail ctxt = \case
               , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var svs ++ args
               , vs
               , amtp
+              , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
               , delayp
               , "null" --- XXX implement simulation to discover transfer in EPP, not here.
               ]
@@ -315,6 +316,7 @@ jsETail ctxt = \case
               [ whop
               , jsCon (DLC_Int $ fromIntegral which)
               , jsCon (DLC_Int $ fromIntegral $ length msg)
+              , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
               , delayp
               ]
   ET_While _ asn cond body k ->
