@@ -5,6 +5,7 @@ const demo = async (x) => {
   const stdlib = await stdlib_loader.loadStdlib();
   const connector = await stdlib_loader.getConnector();
 
+  // stdlib.setDEBUG(true);
   const startingBalance =
         connector == 'ETH' ? stdlib.toWeiBigNumber('100', 'ether') :
         1000000;
@@ -42,6 +43,9 @@ const demo = async (x) => {
   await Promise.all([
     backend.Alice(stdlib, ctcAlice, {
       ...stdlib.hasRandom,
+      getX: () => {
+        return x || 0;
+      },
       getMx: () => {
         console.log(`Alice.getMx`);
         if (x) {
