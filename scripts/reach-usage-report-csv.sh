@@ -18,6 +18,6 @@ echo 'report_date,pull_count,row_count,unique_users' > $REPORT_FILE
 if [ "x$UP_TO" = "x" ] ; then
   echo "$UsageReport" | jq -r '[.report_date, .repository_stats.pull_count, .CompileLog.row_count, .CompileLog.unique_users] | @csv' >> $REPORT_FILE
 else
-  echo "$UsageReport" | jq -r '["'"${UP_TO}"'", "n/a", "n/a", .CompileLog.unique_users] | @csv' > $REPORT_FILE
+  echo "$UsageReport" | jq -r '["'"${UP_TO}"'", "n/a", "n/a", .CompileLog.unique_users] | @csv' >> $REPORT_FILE
 fi
 echo "Wrote report to $REPORT_FILE"
