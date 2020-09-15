@@ -17,6 +17,20 @@ export const debug = msg => {
   }
 };
 
+export const assert = (d, ai = null) =>
+  nodeAssert.strict(d, format_ai(ai));
+
+const {
+  hexlify,
+  toUtf8Bytes,
+  toUtf8String,
+  isHexString,
+} = ethers.utils;
+const { BigNumber } = ethers;
+export const { isBigNumber } = BigNumber;
+export const bigNumberify = (x) => BigNumber.from(x);
+
+
 // Hex helpers
 // const un0x           = h => h.replace(/^0x/, ''); // unused
 const hexTo0x = h => '0x' + h.replace(/^0x/, '');
@@ -51,6 +65,7 @@ export const T_Null = {
   // TODO: is this needed?
   munge: (v) => {void(v); return false;},
   unmunge: (v) => {void(v); return null;},
+  defaultValue: null,
 };
 
 export const T_Bool = {
@@ -63,6 +78,7 @@ export const T_Bool = {
   },
   munge: (v) => v,
   unmunge: (v) => v,
+  defaultValue: false,
 };
 
 export const T_UInt256 = {
@@ -89,6 +105,7 @@ export const T_UInt256 = {
   // It looks like munging BigNumber to string is no longer needed?
   // munge: (v) => v.toString(),
   unmunge: (v) => v,
+  defaultValue: bigNumberify(0),
 };
 
 export const T_Bytes = {
@@ -107,6 +124,7 @@ export const T_Bytes = {
   },
   munge: (v) => v,
   unmunge: (v) => v,
+  defaultValue: '0x0',
 };
 
 export const T_Address = {
@@ -126,6 +144,7 @@ export const T_Address = {
   },
   munge: (v) => v,
   unmunge: (v) => v,
+  defaultValue: '0x' + Array(64).fill('0').join(''),
 };
 
 export const T_Array = (ctc, sz) => {
@@ -147,6 +166,9 @@ export const T_Array = (ctc, sz) => {
     unmunge: (v) => {
       return v.map((arg) => ctc.unmunge(arg));
     },
+    defaultValue: (() => {
+      return Array(sz).fill(ctc.defaultValue);
+    }),
   };
 };
 
@@ -169,6 +191,9 @@ export const T_Tuple = (ctcs) => {
     unmunge: (args) => {
       return args.map((arg, i) => ctcs[i].unmunge(arg));
     },
+    defaultValue: (() => {
+      return ctcs.map(ctc => ctc.defaultValue);
+    })(),
   };
 };
 
@@ -206,6 +231,13 @@ export const T_Object = (co) => {
       }
       return obj;
     },
+    defaultValue: (() => {
+      const obj = {};
+      for (const prop in co) {
+        obj[prop] = co[prop].defaultValue;
+      }
+      return obj;
+    })(),
   };
 };
 
@@ -231,13 +263,31 @@ export const T_Data = (co) => {
     },
     munge: ([label, v]) => {
       console.log(`XXX munging [${label}, ${v}]`);
-      return [labelMap[label], co[label].munge(v)];
+      const i = labelMap[label];
+      // const bi = bigNumberify(i);
+      const vals = ascLabels.map((label) => {
+        const vco = co[label];
+        return vco.munge(vco.defaultValue);
+      });
+      vals[i] = co[label].munge(v);
+      // const ret = [bi].concat(vals);
+      const ret = [i].concat(vals);
+      console.log(`XXX munged: ${ret}`);
+      return ret;
     },
-    unmunge: ([i, v]) => {
-      console.log(`XXX unmunhging [${i}, ${v}]`);
-      const label = ascLabels[i];
-      return [label, co[label].unmunge(v)];
+    // unmunge: ([bi, v]) => {
+    unmunge: (vs) => {
+      void(vs);
+      throw Error(`XXX TODO XXX unmunge`);
+      // const i = bi.toNumber();
+      // console.log(`XXX unmunging [${i}, ${v}]`);
+      // const label = ascLabels[i];
+      // return [label, co[label].unmunge(v)];
     },
+    defaultValue: (() => {
+      const label = ascLabels[0];
+      return [label, co[label].defaultValue];
+    })(),
   };
 };
 
@@ -251,20 +301,6 @@ export const protect = (ctc, v, ai = null) => {
     throw e;
   }
 };
-
-export const assert = (d, ai = null) =>
-  nodeAssert.strict(d, format_ai(ai));
-
-const {
-  hexlify,
-  toUtf8Bytes,
-  toUtf8String,
-  isHexString,
-} = ethers.utils;
-const { BigNumber } = ethers;
-export const { isBigNumber } = BigNumber;
-export const bigNumberify = (x) => BigNumber.from(x);
-
 
 // Massage the arg into a form keccak256 will handle correctly
 const kek = (arg) => {
