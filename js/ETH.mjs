@@ -404,7 +404,13 @@ export const connectAccount = async networkAccount => {
             block_repeat_count++;
           }
           block_send_attempt = current_block;
-          if (timeout_delay && block_repeat_count > 32) {
+          if (/* timeout_delay && */ block_repeat_count > 32) {
+            if (e.code === 'UNPREDICTABLE_GAS_LIMIT') {
+              let error = e;
+              while (error.error) {error = error.error;}
+              console.log(`impossible: The message you are trying to send appears to be invalid.`);
+              console.log(error);
+            }
             throw Error(`${shad}: ${label} send ${funcName} ${timeout_delay} --- REPEAT @ ${block_send_attempt} x ${block_repeat_count}`);
           }
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY FAIL --- ${last_block} ${current_block} ${block_repeat_count} ${block_send_attempt}`);
