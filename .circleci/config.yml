@@ -51,10 +51,6 @@ jobs:
           command: (cd hs && make hs-check)
       - store_artifacts:
           path: hs/stan.html
-      # TODO: move installation of python setuptools to Dockerfile.circleci
-      - run:
-          name: install python setuptools
-          command: apt-get update && apt-get install python3-setuptools=39.0.1-2
       - run:
           name: install pygments-reach
           command: (cd py && make install)
