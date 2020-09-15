@@ -33,6 +33,12 @@ const hexOf = x => toHex(x);
 
 // Contracts
 
+// .name is used for error display purposes only
+// .canonicalize turns stuff into the "canonical backend representation"
+// .munge expects a canonicalized value, and "munges" it for sending to the network
+// .unmunge is the inverse of .munge
+// TODO: decouple .munge and .unmunge from this module
+
 export const T_Null = {
   name: 'Null',
   canonicalize: (v) => {
@@ -42,6 +48,9 @@ export const T_Null = {
     }
     return null;
   },
+  // TODO: is this needed?
+  munge: (v) => {void(v); return false;},
+  unmunge: (v) => {void(v); return null;},
 };
 
 export const T_Bool = {
@@ -52,6 +61,8 @@ export const T_Bool = {
     }
     return v;
   },
+  munge: (v) => v,
+  unmunge: (v) => v,
 };
 
 export const T_UInt256 = {
@@ -63,8 +74,21 @@ export const T_UInt256 = {
     if (typeof(v) === 'number') {
       return bigNumberify(v);
     }
+    if (typeof(v) === 'string') {
+      if (v.slice(0,2) == '0x' && v.length == 66) {
+        // TODO: also check it is entirely 0-9 a-f
+        return bigNumberify(v);
+      } else {
+        throw Error(`String does not represent a BigNumber. ${JSON.stringify(v)}`);
+      }
+    }
     throw Error(`Expected BigNumber or number, but got ${JSON.stringify(v)}`);
   },
+  munge: (v) => v,
+  // TODO: double check:
+  // It looks like munging BigNumber to string is no longer needed?
+  // munge: (v) => v.toString(),
+  unmunge: (v) => v,
 };
 
 export const T_Bytes = {
@@ -81,6 +105,8 @@ export const T_Bytes = {
       // throw Error(`Please use toHex on string sent to Reach: "${x}"`);
     }
   },
+  munge: (v) => v,
+  unmunge: (v) => v,
 };
 
 export const T_Address = {
@@ -98,6 +124,8 @@ export const T_Address = {
     // TODO check address length?
     return x;
   },
+  munge: (v) => v,
+  unmunge: (v) => v,
 };
 
 export const T_Array = (ctc, sz) => {
@@ -112,6 +140,12 @@ export const T_Array = (ctc, sz) => {
         throw Error(`Expected array of length ${sz}, but got ${args.length}`);
       }
       return args.map((arg) => ctc.canonicalize(arg));
+    },
+    munge: (v) => {
+      return v.map((arg) => ctc.munge(arg));
+    },
+    unmunge: (v) => {
+      return v.map((arg) => ctc.unmunge(arg));
     },
   };
 };
@@ -128,6 +162,12 @@ export const T_Tuple = (ctcs) => {
         throw Error(`Expected tuple of size ${ctcs.length}, but got ${args.length}`);
       }
       return args.map((arg, i) => ctcs[i].canonicalize(arg));
+    },
+    munge: (args) => {
+      return args.map((arg, i) => ctcs[i].munge(arg));
+    },
+    unmunge: (args) => {
+      return args.map((arg, i) => ctcs[i].unmunge(arg));
     },
   };
 };
@@ -151,11 +191,33 @@ export const T_Object = (co) => {
       }
       return obj;
     },
+    munge: (vo) => {
+      const obj = {};
+      for (const prop in co) {
+        obj[prop] = co[prop].munge(vo[prop]);
+      }
+      return obj;
+    },
+    // TODO: reduce duplication somehow
+    unmunge: (vo) => {
+      const obj = {};
+      for (const prop in co) {
+        obj[prop] = co[prop].unmunge(vo[prop]);
+      }
+      return obj;
+    },
   };
 };
 
 export const T_Data = (co) => {
   // TODO: check co for sanity
+  // ascLabels[i] = label
+  // labelMap[label] = i
+  const ascLabels = Object.keys(co).sort();
+  const labelMap = {};
+  for (const i in ascLabels) {
+    labelMap[ascLabels[i]] = i;
+  }
   return {
     name: `Data(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
     canonicalize: (io) => {
@@ -166,6 +228,15 @@ export const T_Data = (co) => {
       if (!{}.hasOwnProperty.call(co, vn)) {
         throw Error(`Expected a variant in ${Object.keys(co)}, but got ${vn}`); }
       return [ vn, co[vn].canonicalize(io[1]) ];
+    },
+    munge: ([label, v]) => {
+      console.log(`XXX munging [${label}, ${v}]`);
+      return [labelMap[label], co[label].munge(v)];
+    },
+    unmunge: ([i, v]) => {
+      console.log(`XXX unmunhging [${i}, ${v}]`);
+      const label = ascLabels[i];
+      return [label, co[label].unmunge(v)];
     },
   };
 };

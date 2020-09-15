@@ -372,6 +372,7 @@ export const connectAccount = async networkAccount => {
       return sendrecv(label, funcNum, tys, args, value, timeout_delay);
     };
 
+    // XXX: receive expected tys of output and use them to unmunge
     /* eslint require-atomic-updates: off */
     const sendrecv = async (label, funcNum, tys, args, value, timeout_delay) => {
       // XXX use tys
@@ -379,8 +380,10 @@ export const connectAccount = async networkAccount => {
       timeout_delay = toNumberMay(timeout_delay);
       const funcName = `m${funcNum}`;
       // https://github.com/ethereum/web3.js/issues/2077
-      const munged = [...args]
-        .map(m => isBigNumber(m) ? m.toString() : m);
+      if (tys.length !== args.length) {
+        throw Error(`tys.length (${tys.length}) !== args.length (${args.length})`);
+      }
+      const munged = args.map((m, i) => tys[i].munge(tys[i].canonicalize(m)));
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${JSON.stringify(munged)}`);
       let block_send_attempt = (last_block || 0);
@@ -432,6 +435,7 @@ export const connectAccount = async networkAccount => {
       return rec_res;
     };
 
+    // XXX: receive expected tys of output and use them to unmunge
     const recv_top = async (label, okNum, ok_cnt, timeout_delay) => {
       return recv(label, okNum, timeout_delay);
     };
