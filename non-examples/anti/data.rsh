@@ -20,7 +20,9 @@ export const main = Reach.App(
   }
 );
 
-// Error: Invalid type for argument in function call. Invalid implicit conversion from int_const 0 to bool requested.
+// TODO: fixed for UInt256 and Null, but not for all types
+// Error: Invalid type for argument in function call.
+// Invalid implicit conversion from int_const 0 to bool requested.
 //   --> ./build/data.main.sol:53:46:
 //   |
 //   53 |       l2(a2(_a.v1, _f.v10, T0(_enum_T0.Some, 0, _f.v10))); }

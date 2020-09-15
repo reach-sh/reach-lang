@@ -240,11 +240,16 @@ solArg ctxt da =
     DLA_Array _ as -> brackets $ hsep $ punctuate comma $ map (solArg ctxt) as
     DLA_Tuple as -> con $ map (solArg ctxt) as
     DLA_Obj m -> con $ map ((solArg ctxt) . snd) $ M.toAscList m
-    DLA_Data tm vn vv -> con $ (solVariant t vn) : (map (\(vn', _) -> if vn == vn' then solArg ctxt vv else "0") $ M.toAscList tm)
+    DLA_Data tm vn vv -> con $ (solVariant t vn) : (map (\(vn', ty) -> if vn == vn' then solArg ctxt vv else defaultVal ty) $ M.toAscList tm)
     DLA_Interact {} -> impossible "consensus interact"
   where
     t = solType ctxt (argTypeOf da)
     con = solApply t
+    defaultVal = \case
+      T_UInt256 -> "0"
+      T_Bool -> "false"
+      T_Null -> "false"
+      ty -> error $ "XXX defaultVal not implemented yet for " <> show ty
 
 solPrimApply :: PrimOp -> [Doc a] -> Doc a
 solPrimApply = \case
