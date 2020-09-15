@@ -1,7 +1,7 @@
 import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
 
-(async () => {
+const demo = async (x) => {
   const stdlib = await stdlib_loader.loadStdlib();
   const connector = await stdlib_loader.getConnector();
 
@@ -17,17 +17,37 @@ import * as backend from './build/index.main.mjs';
   console.log(`Bob will attach to the contract.`);
   const ctcBob = await bob.attach(backend, ctcAlice);
 
+  const showThing = (showLabel) => (mx) => {
+    console.log(`Bob.${showLabel}`);
+    const [label, val] = mx;
+    switch (label) {
+    case 'Some':
+      console.log(`Maybe(UInt256).Some(${val})`);
+      if (stdlib.isBigNumber(val)) {
+        console.log(`  where ${val} is a BigNumber`);
+      } else {
+        console.log(`  where ${val} is not a BigNumber`);
+      }
+      break;
+    case 'None':
+      console.log(`Maybe(UInt256).None()`);
+      break;
+    default:
+      console.log(`Unexected: ${mx}`);
+      break;
+    }
+  };
+
   console.log(`Both will play their parts.`);
   await Promise.all([
     backend.Alice(stdlib, ctcAlice, {
       ...stdlib.hasRandom,
       getMx: () => {
         console.log(`Alice.getMx`);
-        const x = Math.floor(Math.random() * 10);
-        if (x < 5) {
-          return ['None', null];
-        } else {
+        if (x) {
           return ['Some', x];
+        } else {
+          return ['None', null];
         }
       },
     }),
@@ -35,29 +55,16 @@ import * as backend from './build/index.main.mjs';
       stdlib, ctcBob,
       {
         ...stdlib.hasRandom,
-        showMx: (mx) => {
-          console.log(`Bob.showMx`);
-          const [label, val] = mx;
-          switch (label) {
-          case 'Some':
-            console.log(`Maybe(UInt256).Some(${val})`);
-            if (stdlib.isBigNumber(val)) {
-              console.log(`  where ${val} is a BigNumber`);
-            } else {
-              console.log(`  where ${val} is not a BigNumber`);
-            }
-            break;
-          case 'None':
-            console.log(`Maybe(UInt256).None()`);
-            break;
-          default:
-            console.log(`Unexected: ${mx}`);
-            break;
-          }
-        }
+        showMx: showThing('showMx'),
+        showMy: showThing('showMy'),
       }
     ),
   ]);
 
   console.log('Alice and Bob are done.');
+};
+
+(async () => {
+  await demo(1);
+  await demo(null);
 })();
