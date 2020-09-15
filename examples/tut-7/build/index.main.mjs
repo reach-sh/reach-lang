@@ -5,7 +5,7 @@ export async function Alice(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
   
   
-  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.wager, null)], stdlib.protect(stdlib.T_UInt256, interact.wager, null), false, null);
+  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.wager, null)], stdlib.protect(stdlib.T_UInt256, interact.wager, null), [stdlib.T_UInt256], false, null);
   const [v27] = txn1.data;
   const v28 = txn1.from;
   const v29 = txn1.value;
@@ -14,10 +14,10 @@ export async function Alice(stdlib, ctc, interact) {
     at: './index.rsh:application',
     fs: [],
     who: 'Alice' });
-  const txn2 = await ctc.recv('Alice', 2, 0, 10);
+  const txn2 = await ctc.recv('Alice', 2, 0, [], 10);
   if (txn2.didTimeout) {
     
-    const txn3 = await ctc.sendrecv('Alice', 10, 0, [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], 0, false, null);
+    const txn3 = await ctc.sendrecv('Alice', 10, 0, [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], 0, [], false, null);
     const [] = txn3.data;
     const v39 = txn3.value;
     const v41 = stdlib.eq(0, v39);
@@ -58,9 +58,9 @@ export async function Alice(stdlib, ctc, interact) {
       const v64 = stdlib.keccak256(v63, v61);
       
       
-      const txn3 = await ctc.sendrecv('Alice', 4, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v64], 0, 10, null);
+      const txn3 = await ctc.sendrecv('Alice', 4, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v64], 0, [stdlib.T_UInt256], 10, null);
       if (txn3.didTimeout) {
-        const txn4 = await ctc.recv('Alice', 9, 0, false);
+        const txn4 = await ctc.recv('Alice', 9, 0, [], false);
         const [] = txn4.data;
         const v70 = txn4.value;
         const v72 = stdlib.eq(0, v70);
@@ -84,10 +84,10 @@ export async function Alice(stdlib, ctc, interact) {
           at: './index.rsh:application',
           fs: [],
           who: 'Alice' });
-        const txn4 = await ctc.recv('Alice', 5, 1, 10);
+        const txn4 = await ctc.recv('Alice', 5, 1, [stdlib.T_UInt256], 10);
         if (txn4.didTimeout) {
           
-          const txn5 = await ctc.sendrecv('Alice', 8, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v65], 0, false, null);
+          const txn5 = await ctc.sendrecv('Alice', 8, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v65], 0, [], false, null);
           const [] = txn5.data;
           const v86 = txn5.value;
           const v88 = stdlib.eq(0, v86);
@@ -113,9 +113,9 @@ export async function Alice(stdlib, ctc, interact) {
             who: 'Alice' });
           
           
-          const txn5 = await ctc.sendrecv('Alice', 6, 2, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81, v63, v61], 0, 10, null);
+          const txn5 = await ctc.sendrecv('Alice', 6, 2, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81, v63, v61], 0, [stdlib.T_UInt256, stdlib.T_UInt256], 10, null);
           if (txn5.didTimeout) {
-            const txn6 = await ctc.recv('Alice', 7, 0, false);
+            const txn6 = await ctc.recv('Alice', 7, 0, [], false);
             const [] = txn6.data;
             const v102 = txn6.value;
             const v104 = stdlib.eq(0, v102);
@@ -162,7 +162,7 @@ export async function Alice(stdlib, ctc, interact) {
     return; } }
 export async function Bob(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('Bob', 1, 1, false);
+  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt256], false);
   const [v27] = txn1.data;
   const v28 = txn1.from;
   const v29 = txn1.value;
@@ -177,9 +177,9 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   
   
-  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], v27, 10, null);
+  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], v27, [], 10, null);
   if (txn2.didTimeout) {
-    const txn3 = await ctc.recv('Bob', 10, 0, false);
+    const txn3 = await ctc.recv('Bob', 10, 0, [], false);
     const [] = txn3.data;
     const v39 = txn3.value;
     const v41 = stdlib.eq(0, v39);
@@ -209,10 +209,10 @@ export async function Bob(stdlib, ctc, interact) {
       const v59 = stdlib.eq(v48, 1);
       
       return v59; })()) {
-      const txn3 = await ctc.recv('Bob', 4, 1, 10);
+      const txn3 = await ctc.recv('Bob', 4, 1, [stdlib.T_UInt256], 10);
       if (txn3.didTimeout) {
         
-        const txn4 = await ctc.sendrecv('Bob', 9, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address], [v28, v27, v34], 0, false, null);
+        const txn4 = await ctc.sendrecv('Bob', 9, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address], [v28, v27, v34], 0, [], false, null);
         const [] = txn4.data;
         const v70 = txn4.value;
         const v72 = stdlib.eq(0, v70);
@@ -242,9 +242,9 @@ export async function Bob(stdlib, ctc, interact) {
           who: 'Bob' });
         
         
-        const txn4 = await ctc.sendrecv('Bob', 5, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v80], 0, 10, null);
+        const txn4 = await ctc.sendrecv('Bob', 5, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v80], 0, [stdlib.T_UInt256], 10, null);
         if (txn4.didTimeout) {
-          const txn5 = await ctc.recv('Bob', 8, 0, false);
+          const txn5 = await ctc.recv('Bob', 8, 0, [], false);
           const [] = txn5.data;
           const v86 = txn5.value;
           const v88 = stdlib.eq(0, v86);
@@ -268,10 +268,10 @@ export async function Bob(stdlib, ctc, interact) {
             at: './index.rsh:application',
             fs: [],
             who: 'Bob' });
-          const txn5 = await ctc.recv('Bob', 6, 2, 10);
+          const txn5 = await ctc.recv('Bob', 6, 2, [stdlib.T_UInt256, stdlib.T_UInt256], 10);
           if (txn5.didTimeout) {
             
-            const txn6 = await ctc.sendrecv('Bob', 7, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81], 0, false, null);
+            const txn6 = await ctc.sendrecv('Bob', 7, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81], 0, [], false, null);
             const [] = txn6.data;
             const v102 = txn6.value;
             const v104 = stdlib.eq(0, v102);
