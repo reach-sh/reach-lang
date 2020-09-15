@@ -4,9 +4,6 @@ import * as backend from './build/index.main.mjs';
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
   const connector = await stdlib_loader.getConnector();
-  // TODO: expose data constructors via backend, incl user-defined
-  // const {Some, None} = backend._DataConstructors;
-  const {Some, None} = stdlib;
 
   const startingBalance =
         connector == 'ETH' ? stdlib.toWeiBigNumber('100', 'ether') :
@@ -28,9 +25,9 @@ import * as backend from './build/index.main.mjs';
         console.log(`Alice.getMx`);
         const x = Math.floor(Math.random() * 10);
         if (x < 5) {
-          return None();
+          return ['None', null];
         } else {
-          return Some(x);
+          return ['Some', x];
         }
       },
     }),

@@ -269,7 +269,3 @@ export function Array_set(arr, idx, elem) {
 
 export const Array_zip =
   (x, y) => x.map((e, i) => [e, y[i]]);
-
-// TODO: expose data constructors via backend, incl user-defined
-export const Some = (x) => ['Some', x];
-export const None = () => ['None', null];
