@@ -15,7 +15,7 @@ export const main = Reach.App(
     A.only(() => {
       const mi = declassify(interact.get1());
       const i = MUInt256.Some(42);
-      const iv = fromMaybe((() => assert(false)), ((x) => x), i);
+      const iv = fromMaybe(i, (() => assert(false)), ((x) => x));
       const i2 = (() => { switch ( mi ) {
         case None: return iv;
         case Some: return iv + mi; } })();
@@ -31,7 +31,7 @@ export const main = Reach.App(
     A.publish(mi, p);
 
     const ci = MUInt256.Some(42);
-    const civ = fromMaybe((() => assert(false)), ((x) => x), ci);
+    const civ = fromMaybe(ci, (() => assert(false)), ((x) => x));
     const ci2 = (() => { switch ( mi ) {
       case None: return civ;
       case Some:

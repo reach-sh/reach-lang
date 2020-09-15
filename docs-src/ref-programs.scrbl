@@ -1104,7 +1104,7 @@ As a special case, when the type of a variant is @reachin{Null}, the @reachin{VA
  const bidA = MayInt.Some(42);
  const bidB = MayInt.None(null);
 
- const getBid = (m) => fromMaybe((() => 0), ((x) => x), m);
+ const getBid = (m) => fromMaybe(m, (() => 0), ((x) => x));
  const bidSum = getBid(bidA) + getBid(bidB);
  assert(bidSum == 42); }
 
@@ -1116,7 +1116,7 @@ As a special case, when the type of a variant is @reachin{Null}, the @reachin{VA
 
 This means it is a function that returns a @reachin{Data} type specialized to a particular type in the @reachin{Some} variant.
 
-@reachin{Maybe} instances can be conveniently consumed by @reachin{fromMaybe(onNone, onSome, mValue)}, where @reachin{onNone} is a function of no arguments which is called when @reachin{mValue} is @reachin{None}, @reachin{onSome} is a function of on argument which is called with the value when @reachin{mValue} is @reachin{Some}, and @reachin{mValue} is a @tech{data instance} of @reachin{Maybe}.
+@reachin{Maybe} instances can be conveniently consumed by @reachin{fromMaybe(mValue, onNone, onSome)}, where @reachin{onNone} is a function of no arguments which is called when @reachin{mValue} is @reachin{None}, @reachin{onSome} is a function of on argument which is called with the value when @reachin{mValue} is @reachin{Some}, and @reachin{mValue} is a @tech{data instance} of @reachin{Maybe}.
 
 @subsubsection{Conditional expression}
 

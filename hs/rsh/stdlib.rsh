@@ -47,7 +47,7 @@ export const and = (x, y) => x && y;
 
 // Library functions
 export const Maybe = (A) => Data({None: Null, Some: A});
-export const fromMaybe = (onNull, onSome, v) => {
+export const fromMaybe = (v, onNull, onSome) => {
   switch (v) {
   case None: return onNull();
   case Some: return onSome(v); } };
