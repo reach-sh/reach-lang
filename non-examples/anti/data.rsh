@@ -1,0 +1,26 @@
+'reach 0.1';
+
+export const main = Reach.App(
+  {},
+  [['Alice', {x: UInt256}]],
+  (A) => {
+    A.only(() => {
+      const x = declassify(interact.x);
+    });
+    A.publish(x);
+
+    var [i, mx0] = [0, Maybe(UInt256).None()];
+    invariant(true);
+    while (i < x) {
+      const nextI = i + 1;
+      [i, mx0] = [nextI, Maybe(UInt256).Some(nextI)];
+      continue;
+    }
+    commit();
+  }
+);
+
+// Error: Invalid type for argument in function call. Invalid implicit conversion from int_const 0 to bool requested.
+//   --> ./build/data.main.sol:53:46:
+//   |
+//   53 |       l2(a2(_a.v1, _f.v10, T0(_enum_T0.Some, 0, _f.v10))); }
