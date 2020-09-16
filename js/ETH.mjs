@@ -411,6 +411,8 @@ export const connectAccount = async networkAccount => {
               console.log(`impossible: The message you are trying to send appears to be invalid.`);
               console.log(error);
             }
+            console.log(`args:`);
+            console.log(munged);
             throw Error(`${shad}: ${label} send ${funcName} ${timeout_delay} --- REPEAT @ ${block_send_attempt} x ${block_repeat_count}`);
           }
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY FAIL --- ${last_block} ${current_block} ${block_repeat_count} ${block_send_attempt}`);
