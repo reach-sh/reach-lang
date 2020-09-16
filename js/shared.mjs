@@ -262,27 +262,19 @@ export const T_Data = (co) => {
       return [ vn, co[vn].canonicalize(io[1]) ];
     },
     munge: ([label, v]) => {
-      console.log(`XXX munging [${label}, ${v}]`);
       const i = labelMap[label];
-      // const bi = bigNumberify(i);
       const vals = ascLabels.map((label) => {
         const vco = co[label];
         return vco.munge(vco.defaultValue);
       });
       vals[i] = co[label].munge(v);
-      // const ret = [bi].concat(vals);
-      const ret = [i].concat(vals);
-      console.log(`XXX munged: ${ret}`);
-      return ret;
+      return [i].concat(vals);
     },
-    // unmunge: ([bi, v]) => {
     unmunge: (vs) => {
-      void(vs);
-      throw Error(`XXX TODO XXX unmunge`);
-      // const i = bi.toNumber();
-      // console.log(`XXX unmunging [${i}, ${v}]`);
-      // const label = ascLabels[i];
-      // return [label, co[label].unmunge(v)];
+      const i = vs[0];
+      const label = ascLabels[i];
+      const val = vs[i+1];
+      return [label, co[label].unmunge(val)];
     },
     defaultValue: (() => {
       const label = ascLabels[0];
