@@ -34,22 +34,30 @@ export const main =
         interact.funded(); });
       wait(maturity);
 
-      const payTo = (Who) => {
+      const giveChance = (Who, then) => {
+        Who.only(() => interact.ready());
+
+        if ( then.timeout ) {
+          Who.publish()
+            .timeout(then.delta, () => then.after()); }
+        else {
+          Who.publish(); }
+
         transfer(payment).to(Who);
         commit();
         Who.only(() => interact.recvd(payment));
         exit(); };
 
-      Receiver.only(() => interact.ready());
-      Receiver.publish()
-        .timeout(refund, () => {
-          Funder.only(() => interact.ready());
-          Funder.publish()
-            .timeout(dormant, () => {
-              Bystander.only(() => interact.ready());
-              Bystander.publish();
-              payTo(Bystander); });
-
-          payTo(Funder); });
-
-      payTo(Receiver); } );
+      giveChance(
+        Receiver,
+        { timeout: true,
+          delta: refund,
+          after: () =>
+          giveChance(
+            Funder,
+            { timeout: true,
+              delta: dormant,
+              after: () =>
+              giveChance(
+                Bystander,
+                { timeout: false }) }) }); } );
