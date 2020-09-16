@@ -62,7 +62,7 @@ export const T_Null = {
     }
     return null;
   },
-  // TODO: is this needed?
+  // null is represented in solidity as false
   munge: (v) => { void(v); return false; },
   unmunge: (v) => { void(v); return null; },
   defaultValue: null,
