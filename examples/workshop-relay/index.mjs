@@ -2,7 +2,8 @@ import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
-  const startingBalance = stdlib.toWeiBigNumber('100', 'ether');
+  const toCurrency = (amt) => stdlib.toWeiBigNumber(amt, 'ether');
+  const startingBalance = toCurrency('100');
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
@@ -25,13 +26,16 @@ import * as backend from './build/index.main.mjs';
         getRelay:
         async () => {
           console.log(`Alice creates a Relay account`);
-          const accRelay = await stdlib.newTestAccount(startingBalance);
+          const accRelay = await stdlib.newTestAccount(
+            toCurrency('0'));
           console.log(`Alice shares it with Bob off chain.`);
           accRelayProvide(accRelay);
           return accRelay.networkAccount.address; } } ),
     (async () => {
       console.log(`Bob waits for Alice to give him the information about the Relay account.`);
       const accRelay = await accRelayP;
+      console.log(`Bob deposits some funds into the Relay to use it.`);
+      await stdlib.transfer(accBob, accRelay, toCurrency('1'));
       console.log(`Bob attaches to the contract as the Relay.`);
       const ctcRelay = await accRelay.attach(backend, ctcAlice);
       console.log(`Bob joins the application as the Relay.`);
