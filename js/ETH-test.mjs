@@ -176,7 +176,7 @@ runTests(async () => {
         T_Data,
       } = stdlib;
 
-      const T_MaybeInt = T_Data({'Some': T_UInt256, 'None': T_Null});
+      const T_MaybeInt = T_Data({ 'Some': T_UInt256, 'None': T_Null });
       it('converts nully things to Null', () => {
         expect(protect(T_Null, null)).toBe(null);
         expect(protect(T_Null, undefined)).toBe(null);

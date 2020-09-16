@@ -404,10 +404,10 @@ export const connectAccount = async networkAccount => {
             block_repeat_count++;
           }
           block_send_attempt = current_block;
-          if (/* timeout_delay && */ block_repeat_count > 32) {
+          if ( /* timeout_delay && */ block_repeat_count > 32) {
             if (e.code === 'UNPREDICTABLE_GAS_LIMIT') {
               let error = e;
-              while (error.error) {error = error.error;}
+              while (error.error) { error = error.error; }
               console.log(`impossible: The message you are trying to send appears to be invalid.`);
               console.log(error);
             }
@@ -693,8 +693,8 @@ const toNumberMay = (x) => {
 // * it was deployed at exactly creation_block.
 // Throws an Error if any verifications fail
 export const verifyContract = async (ctcInfo, backend) => {
-  const {ABI, Bytecode} = backend._Connectors.ETH;
-  const {address, creation_block, args, value, creator} = ctcInfo;
+  const { ABI, Bytecode } = backend._Connectors.ETH;
+  const { address, creation_block, args, value, creator } = ctcInfo;
   const factory = new ethers.ContractFactory(ABI, Bytecode);
 
   // TODO: is there a way to get the creation_block & bytecode with a single api call?

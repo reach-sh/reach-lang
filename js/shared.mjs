@@ -63,8 +63,8 @@ export const T_Null = {
     return null;
   },
   // TODO: is this needed?
-  munge: (v) => {void(v); return false;},
-  unmunge: (v) => {void(v); return null;},
+  munge: (v) => { void(v); return false; },
+  unmunge: (v) => { void(v); return null; },
   defaultValue: null,
 };
 
@@ -91,7 +91,7 @@ export const T_UInt256 = {
       return bigNumberify(v);
     }
     if (typeof(v) === 'string') {
-      if (v.slice(0,2) == '0x' && v.length == 66) {
+      if (v.slice(0, 2) == '0x' && v.length == 66) {
         // TODO: also check it is entirely 0-9 a-f
         return bigNumberify(v);
       } else {
@@ -258,9 +258,20 @@ export const T_Data = (co) => {
       }
       const vn = io[0];
       if (!{}.hasOwnProperty.call(co, vn)) {
-        throw Error(`Expected a variant in ${Object.keys(co)}, but got ${vn}`); }
-      return [ vn, co[vn].canonicalize(io[1]) ];
+        throw Error(`Expected a variant in ${Object.keys(co)}, but got ${vn}`);
+      }
+      return [vn, co[vn].canonicalize(io[1])];
     },
+    // Data representation in js is a 2-tuple:
+    // [label, val]
+    // where label : string
+    // and val : co[label]
+    //
+    // Data representation in solidity is an N+1-tuple: (actually a struct)
+    // [labelInt, v0, ..., vN]
+    // where labelInt : number, 0 <= labelInt < N
+    // vN : co[ascLabels[i]]
+    //
     munge: ([label, v]) => {
       const i = labelMap[label];
       const vals = ascLabels.map((label) => {
@@ -270,10 +281,16 @@ export const T_Data = (co) => {
       vals[i] = co[label].munge(v);
       return [i].concat(vals);
     },
+    // Note: when it comes back from solidity, vs behaves like an N+1-tuple,
+    // but also has secret extra keys you can access,
+    // based on the struct field names.
+    // e.g. Maybe has keys vs["which"], vs["_None"], and vs["_Some"],
+    // corresponding to    vs[0],       vs[1],       and vs[2] respectively.
+    // We don't currently use these, but we could.
     unmunge: (vs) => {
       const i = vs[0];
       const label = ascLabels[i];
-      const val = vs[i+1];
+      const val = vs[i + 1];
       return [label, co[label].unmunge(val)];
     },
     defaultValue: (() => {
