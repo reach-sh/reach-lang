@@ -283,16 +283,15 @@ This means that the @tech{contract} won't exist on the @tech{consensus network} 
 This is a good choice for most contracts, if it is allowed.
 (As @seclink["guide-deploymode"]{the guide discusses}, some applications cannot be deployed like this.}
 
-@margin-note{Unfortunately, on many @tech{consensus networks}, like Ethereum, this application is dangerous to run.
+@margin-note{Unfortunately, on many @tech{consensus networks}, like Ethereum and Algorand, this application is dangerous to run.
 The problem is that a malicious miner, like Eve, can intercept Bob's message that provides him the funds, refuse to forward it through to the consensus network, take the password from it, and submit it for her own account.
 There is not a good general solution to this problem, meaning a theorem that we could insert into our program to make sure this attack isn't possible, because the whole point of this application is that Bob's identity is not known at the time that Alice sends the first message.
 Ideally, such networks would support a kind of cryptographic operation where Bob could prove that he knows the password without revealing it.
-There are some ideas on how to provide this sort of thing on Ethereum through zero-knowledge proofs and homomorphic encryption, but there is no widely accepted and available solution.
+There are some ideas on how to provide this sort of thing through zero-knowledge proofs and homomorphic encryption, but there is no widely accepted and available solution.
 
-On the other hand, other @tech{consensus networks}, like Algorand, offer a unique "offline" deployment mode where Bob  can do exactly this.
-
-In short: Don't run this program on Ethereum, but it's okay on Algorand with the @reachin{'offline'} deployment mode.
-If you want to do something like this on Ethereum, then continue to the @seclink["workshop-trust-fund"]{next workshop } on trust funds.}
+In short: Don't run this program.
+If you want to do something @emph{like this}, then continue to the @seclink["workshop-trust-fund"]{next workshop } on trust funds.
+If you want to do exactly this, then stay tuned for a more complex zero-knowledge version.}
 
 Next, we'll settle for a simple testing program for now, to show that the application, and let the rest of our full stack team deal with actually building the interface.
 Here's the JavaScript @tech{frontend} we wrote:
