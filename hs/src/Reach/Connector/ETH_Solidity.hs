@@ -35,6 +35,9 @@ vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 --- Solidity helpers
 
+solString :: String -> Doc a
+solString s = squotes $ pretty s
+
 solNum :: Show n => n -> Doc a
 solNum i = pretty $ "uint256(" ++ show i ++ ")"
 
@@ -75,8 +78,8 @@ solStdLib = pretty $ B.unpack stdlib_sol
 solApply :: Doc a -> [Doc a] -> Doc a
 solApply f args = f <> parens (hcat $ intersperse (comma <> space) args)
 
-solRequire :: Doc a -> Doc a
-solRequire a = solApply "require" [a]
+solRequire :: String -> Doc a -> Doc a
+solRequire msg a = solApply "require" [a, solString msg ]
 
 solBinOp :: String -> Doc a -> Doc a -> Doc a
 solBinOp o l r = l <+> pretty o <+> r
@@ -307,7 +310,7 @@ solExpr ctxt sp = \case
     (solHash $ map (solArg ctxt) args) <> sp
   DLE_Transfer _ _ who amt ->
     solTransfer ctxt who amt <> sp
-  DLE_Claim _ _ ct a -> check <> sp
+  DLE_Claim at _ ct a -> check <> sp
     where
       check = case ct of
         CT_Assert -> impossible "assert"
@@ -315,7 +318,7 @@ solExpr ctxt sp = \case
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
-      require = solRequire (solArg ctxt a)
+      require = solRequire (show at) (solArg ctxt a)
   DLE_Wait {} -> emptyDoc
   DLE_PartSet _ _ a -> (solArg ctxt a) <> sp
 
@@ -584,7 +587,7 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
         _ ->
           (hcp, AM_Call, SFL_Function True (solMsg_fun which))
           where
-            hcp = (solRequire $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
+            hcp = (solRequire "state check" $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
     funDefn = solFunctionLike sfl argDefs ret body
     body =
       vsep
@@ -597,8 +600,8 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
     (fromm, fromCheck) =
       case fs of
         FS_Join from -> ((M.singleton from "msg.sender"), emptyDoc)
-        FS_Again from -> (mempty, (solRequire $ solEq ("msg.sender") (solVar ctxt from)) <> semi)
-    timeoutCheck = solRequire (solBinOp "&&" int_fromp int_top) <> semi
+        FS_Again from -> (mempty, (solRequire "sender check" $ solEq ("msg.sender") (solVar ctxt from)) <> semi)
+    timeoutCheck = solRequire "timeout check" (solBinOp "&&" int_fromp int_top) <> semi
       where
         CBetween from to = interval
         int_fromp = check True from
