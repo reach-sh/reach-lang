@@ -93,11 +93,12 @@ solApply f args = f <> parens (hcat $ intersperse (comma <> space) args)
 --- stdlib.
 solRequire :: String -> Doc a -> Doc a
 solRequire umsg a = solApply "require" $ [a] <> mmsg
-  where smsg = unsafeRedactAbsStr umsg
-        mmsg =
-          case includeRequireMsg of
-            True -> [solString smsg]
-            False -> []
+  where
+    smsg = unsafeRedactAbsStr umsg
+    mmsg =
+      case includeRequireMsg of
+        True -> [solString smsg]
+        False -> []
 
 solBinOp :: String -> Doc a -> Doc a -> Doc a
 solBinOp o l r = l <+> pretty o <+> r

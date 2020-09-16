@@ -262,11 +262,11 @@ epp_n st n =
       return $ ProResC p_prts_s (ProRes_ cons_cs ctw)
     LLC_While at asn _inv cond body k -> do
       loop_num <- newHandler st
-      let st_k = st { pst_prev_handler = loop_num }
+      let st_k = st {pst_prev_handler = loop_num}
       ProResC p_prts_k (ProRes_ cs_k ct_k) <- epp_n st_k k
       let loop_vars = assignment_vars asn
       let LLBlock cond_at _ cond_l cond_da = cond
-      let st_body0 = st_k { pst_loop_num = Just loop_num }
+      let st_body0 = st_k {pst_loop_num = Just loop_num}
 
       --- This might be insane
       let fixSVS loop_svs0 run = do
