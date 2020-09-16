@@ -1,14 +1,9 @@
 import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
 
-const MATURITY = 50;
-const REFUND = 50;
-const DORMANT = 50;
-
-const runDemo = async (fdelay = 0, rdelay = 0) => {
+const runDemo = async (delayFunder, delayReceiver) => {
   const stdlib = await stdlib_loader.loadStdlib();
   const connector = stdlib_loader.getConnector();
-
   const toCurrency =
         connector == 'ETH' ? (amt) => stdlib.toWeiBigNumber(amt, 'ether') :
         (amt) => stdlib.bigNumberify(amt);
@@ -17,7 +12,12 @@ const runDemo = async (fdelay = 0, rdelay = 0) => {
         (amt) => amt.toString(); // ?
   const getBalance = async (who) => fromCurrency(await stdlib.balanceOf(who));
 
-  console.log(`Begin demo with funder delay(${fdelay}) and receiver delay(${rdelay}).`);
+  const MATURITY = 10;
+  const REFUND = 10;
+  const DORMANT = 10;
+  const fDelay = delayFunder ? MATURITY + REFUND + DORMANT + 1 : 0;
+  const rDelay = delayReceiver ? MATURITY + REFUND + 1 : 0;
+  console.log(`Begin demo with funder delay(${fDelay}) and receiver delay(${rDelay}).`);
 
   const common = (who, delay = 0) => ({
     funded: async () => {
@@ -40,21 +40,21 @@ const runDemo = async (fdelay = 0, rdelay = 0) => {
 
   await Promise.all([
     backend.Funder(stdlib, ctcFunder, {
-      ...common('Funder', fdelay),
+      ...common('Funder', fDelay),
       getParams: () => ({
         receiverAddr: receiver.networkAccount.address,
         payment: toCurrency('10'),
         maturity: MATURITY,
         refund: REFUND,
         dormant: DORMANT, }) }),
-    backend.Receiver(stdlib, ctcReceiver, common('Receiver', rdelay)),
+    backend.Receiver(stdlib, ctcReceiver, common('Receiver', rDelay)),
     backend.Bystander(stdlib, ctcBystander, common('Bystander')) ]);
   for (const [who, acc] of [['Funder', funder], ['Receiver', receiver], ['Bystander', bystander]]) {
     console.log(`${who} has a balance of ${await getBalance(acc)}`); }
   console.log(`\n`); };
 
 (async () => {
-  await runDemo(0, 0);
-  await runDemo(0, MATURITY + REFUND + 1);
-  await runDemo(MATURITY + REFUND + DORMANT + 1, MATURITY + REFUND + 1);
+  await runDemo(false, false);
+  await runDemo(false, true);
+  await runDemo(true, true);
 })();

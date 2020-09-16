@@ -290,7 +290,7 @@ Ideally, such networks would support a kind of cryptographic operation where Bob
 There are some ideas on how to provide this sort of thing through zero-knowledge proofs and homomorphic encryption, but there is no widely accepted and available solution.
 
 In short: Don't run this program.
-If you want to do something @emph{like this}, then continue to the @seclink["workshop-trust-fund"]{next workshop } on trust funds.
+If you want to do something @emph{like this}, then continue to the @seclink["workshop-relay"]{next workshop } on relays.
 If you want to do exactly this, then stay tuned for a more complex zero-knowledge version.}
 
 Next, we'll settle for a simple testing program for now, to show that the application, and let the rest of our full stack team deal with actually building the interface.
@@ -320,6 +320,6 @@ There's no right way to program and in our own Reach development, we use a combi
 Try both and keep them both in mind during your own development.
 
 If you found this workshop rewarding, please let us know on @(the-community-link)!
-If you want to know what to do next, a natural extension of the concepts in this workshop is a @seclink["workshop-trust-fund"]{trust fund}.
+If you want to know what to do next, a natural extension of the concepts in this workshop is a @seclink["workshop-relay"]{relay account}.
 Why don't you check it out?
 

@@ -25,6 +25,10 @@ Here are the current workshops, in the order we recommend doing them:
 
 @include-section["workshop-hash-lock.scrbl"]
 
+@section[#:tag "workshop-relay"]{Workshop: Relay Account}
+
+XXX
+
 @section[#:tag "workshop-trust-fund"]{Workshop: Trust Fund}
 
 XXX
