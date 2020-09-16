@@ -291,7 +291,8 @@ There are some ideas on how to provide this sort of thing on Ethereum through ze
 
 On the other hand, other @tech{consensus networks}, like Algorand, offer a unique "offline" deployment mode where Bob  can do exactly this.
 
-In short: Don't run this program on Ethereum, but it's okay on Algorand with the @reachin{'offline'} deployment mode.}
+In short: Don't run this program on Ethereum, but it's okay on Algorand with the @reachin{'offline'} deployment mode.
+If you want to do something like this on Ethereum, then continue to the @seclink["workshop-trust-fund"]{next workshop } on trust funds.}
 
 Next, we'll settle for a simple testing program for now, to show that the application, and let the rest of our full stack team deal with actually building the interface.
 Here's the JavaScript @tech{frontend} we wrote:
