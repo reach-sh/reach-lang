@@ -21,6 +21,7 @@ import Reach.Connector
 import Reach.EmbeddedFiles
 import Reach.STCounter
 import Reach.Type
+import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
 import System.Exit
@@ -318,7 +319,7 @@ solExpr ctxt sp = \case
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
-      require = solRequire (show at) (solArg ctxt a)
+      require = solRequire (unsafeRedactAbsStr $ show at) (solArg ctxt a)
   DLE_Wait {} -> emptyDoc
   DLE_PartSet _ _ a -> (solArg ctxt a) <> sp
 
@@ -574,6 +575,7 @@ solHandler :: SolCtxt a -> Int -> CHandler -> Doc a
 solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
   vsep [evtDefn, argDefn, frameDefn, funDefn]
   where
+    checkMsg s = s <> " check " <> show which
     vs = svs ++ msg
     ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
@@ -587,7 +589,7 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
         _ ->
           (hcp, AM_Call, SFL_Function True (solMsg_fun which))
           where
-            hcp = (solRequire "state check" $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
+            hcp = (solRequire (checkMsg "state") $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
     funDefn = solFunctionLike sfl argDefs ret body
     body =
       vsep
@@ -600,8 +602,8 @@ solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
     (fromm, fromCheck) =
       case fs of
         FS_Join from -> ((M.singleton from "msg.sender"), emptyDoc)
-        FS_Again from -> (mempty, (solRequire "sender check" $ solEq ("msg.sender") (solVar ctxt from)) <> semi)
-    timeoutCheck = solRequire "timeout check" (solBinOp "&&" int_fromp int_top) <> semi
+        FS_Again from -> (mempty, (solRequire (checkMsg "sender") $ solEq ("msg.sender") (solVar ctxt from)) <> semi)
+    timeoutCheck = solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
       where
         CBetween from to = interval
         int_fromp = check True from
