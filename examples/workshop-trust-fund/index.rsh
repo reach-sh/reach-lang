@@ -1,65 +1,39 @@
 'reach 0.1';
 
-const Common = {
-  ready: Fun([], Null),
-  recvd: Fun([UInt256], Null),
-};
+const common = {
+  funded: Fun([], Null),
+  ready : Fun([], Null),
+  recvd : Fun([UInt256], Null) };
 
 export const main =
   Reach.App(
     { deployMode: 'firstMsg' },
-    [
-      ['Funder', {
-        ...Common,
-        funded: Fun([], Null),
-        getParams: Fun([], Object({
-          receiverAddr:     Address,
-          payment:          UInt256, // WEI
-          maturity:         UInt256, // time delta
-          refund:           UInt256, // time delta
-          dormant:          UInt256, // time delta
-        })),
-      }],
-      ['Receiver', {
-        ...Common,
-      }],
-      ['Bystander', {
-        ...Common,
-      }],
-    ],
+    [ [   'Funder', {
+      ...common,
+      getParams: Fun([], Object({
+        receiverAddr: Address,
+        payment:      UInt256,
+        maturity:     UInt256,
+        refund:       UInt256,
+        dormant:      UInt256 })) }],
+      [ 'Receiver', common],
+      ['Bystander', common] ],
     (Funder, Receiver, Bystander) => {
       Funder.only(() => {
-        const {
-          receiverAddr,
-          payment, maturity, refund, dormant,
-        } = declassify(interact.getParams());
-      });
+        const { receiverAddr,
+                payment, maturity, refund, dormant }
+              = declassify(interact.getParams()); });
       Funder.publish(
         receiverAddr,
-        payment, maturity, refund, dormant
-      ).pay(payment);
+        payment, maturity, refund, dormant )
+        .pay(payment);
       Receiver.set(receiverAddr);
       commit();
 
-      Funder.only(() => {
+      each([Funder, Receiver, Bystander], () => {
         interact.funded(); });
       wait(maturity);
 
-      /*
-giveChance(
-        Receiver,
-        { len: refund,
-          after:
-          () =>
-          giveChance(
-            Funder,
-            { len: dormant,
-              after:
-              giveChance(
-                Bystander,
-                false ) }) } );
-      */
-      
       const payTo = (Who) => {
         transfer(payment).to(Who);
         commit();

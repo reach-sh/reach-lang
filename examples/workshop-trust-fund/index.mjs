@@ -5,29 +5,28 @@ const MATURITY = 50;
 const REFUND = 50;
 const DORMANT = 50;
 
-const runDemo = async (delay) => {
-  delay = delay || 0;
-  console.log(`Begin demo with delay ${delay}`);
-
+const runDemo = async (fdelay = 0, rdelay = 0) => {
   const stdlib = await stdlib_loader.loadStdlib();
   const connector = stdlib_loader.getConnector();
-  const money = connector;
-  const time = 'blocks';
-
-  const fromCurrency =
-        connector == 'ETH' ? (amt) => stdlib.fromWei(amt) :
-        (amt) => amt.toString(); // ?
 
   const toCurrency =
         connector == 'ETH' ? (amt) => stdlib.toWeiBigNumber(amt, 'ether') :
         (amt) => stdlib.bigNumberify(amt);
-
+  const fromCurrency =
+        connector == 'ETH' ? (amt) => stdlib.fromWei(amt) :
+        (amt) => amt.toString(); // ?
   const getBalance = async (who) => fromCurrency(await stdlib.balanceOf(who));
 
-  const Common = (who) => ({
-    ready: async () => console.log(`${who} is ready to receive the funds.`),
-    recvd: async () => console.log(`${who} received the funds.`),
-  });
+  console.log(`Begin demo with funder delay(${fdelay}) and receiver delay(${rdelay}).`);
+
+  const common = (who, delay = 0) => ({
+    funded: async () => {
+      console.log(`${who} sees that the account is funded.`);
+      if ( delay != 0 ) {
+        console.log(`${who} begins to wait...`);
+        await stdlib.wait(delay); } },
+    ready : async () => console.log(`${who} is ready to receive the funds.`),
+    recvd : async () => console.log(`${who} received the funds.`) });
 
   const startingBalance = toCurrency('100');
 
@@ -39,35 +38,23 @@ const runDemo = async (delay) => {
   const ctcReceiver = await receiver.attach(backend, ctcFunder);
   const ctcBystander = await bystander.attach(backend, ctcFunder);
 
-  const receiverP = (async () => {
-    console.log('Receiver begins to wait...');
-    await stdlib.wait(delay, ({currentTime, targetTime}) => {
-      console.log(`Receiver wait progress... ${currentTime} -> ${targetTime}`);
-    });
-    await backend.Receiver(stdlib, ctcReceiver, Common('Receiver'));
-  })();
-
   await Promise.all([
     backend.Funder(stdlib, ctcFunder, {
-      ...Common('Funder'),
-      funded: () => console.log(`Funder made the first payment`),
+      ...common('Funder', fdelay),
       getParams: () => ({
         receiverAddr: receiver.networkAccount.address,
         payment: toCurrency('10'),
         maturity: MATURITY,
         refund: REFUND,
-        dormant: DORMANT,
-      }), }),
-    receiverP,
-    backend.Bystander(stdlib, ctcBystander, Common('Bystander'))]);
+        dormant: DORMANT, }) }),
+    backend.Receiver(stdlib, ctcReceiver, common('Receiver', rdelay)),
+    backend.Bystander(stdlib, ctcBystander, common('Bystander')) ]);
   for (const [who, acc] of [['Funder', funder], ['Receiver', receiver], ['Bystander', bystander]]) {
-    console.log(`${who} has a balance of ${await getBalance(acc)}`);
-  }
-  console.log(`demo complete with delay ${delay}`);
-};
+    console.log(`${who} has a balance of ${await getBalance(acc)}`); }
+  console.log(`\n`); };
 
 (async () => {
-  await runDemo();
-  await runDemo(MATURITY + REFUND + 20);
-  // TODO: demo Bystander yoink
+  await runDemo(0, 0);
+  await runDemo(0, MATURITY + REFUND + 1);
+  await runDemo(MATURITY + REFUND + DORMANT + 1, MATURITY + REFUND + 1);
 })();
