@@ -164,6 +164,9 @@ solArraySet i = "array_set" <> pretty i
 solArrayRef :: Doc a -> Doc a -> Doc a
 solArrayRef arr idx = arr <> brackets idx
 
+solArrayLit :: [Doc a] -> Doc a
+solArrayLit xs = brackets $ hcat $ intersperse (comma <> space) xs
+
 solVariant :: Doc a -> SLVar -> Doc a
 solVariant t vn = "_enum_" <> t <> "." <> pretty vn
 
@@ -271,7 +274,18 @@ solArg ctxt da =
       T_UInt256 -> "0"
       T_Bool -> "false"
       T_Null -> "false"
-      ty -> error $ "XXX defaultVal not implemented yet for " <> show ty
+      T_Bytes -> "\"\"" -- XXX is this valid?
+      T_Address -> "0x" <> pretty (replicate 64 '0')
+      T_Fun {} -> impossible "defaultVal for Fun"
+      T_Array ty n -> solArrayLit $ replicate (fromInteger n) $ defaultVal ty
+      T_Tuple tys -> solArrayLit $ map defaultVal tys
+      T_Object _tyMap {- (M.Map SLVar SLType) -} ->
+        error $ "XXX defaultVal not yet implemented for Object"
+      T_Data _variantMap {- (M.Map SLVar SLType) -} ->
+        error $ "XXX defaultVal not yet implemented for Data"
+      T_Forall {} -> impossible "defaultVal for Forall"
+      T_Var {} -> impossible "defaultVal for Var"
+      T_Type {} -> impossible "defaultVal for Type"
 
 solPrimApply :: PrimOp -> [Doc a] -> Doc a
 solPrimApply = \case
