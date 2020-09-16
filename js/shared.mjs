@@ -248,7 +248,7 @@ export const T_Data = (co) => {
   const ascLabels = Object.keys(co).sort();
   const labelMap = {};
   for (const i in ascLabels) {
-    labelMap[ascLabels[i]] = i;
+    labelMap[ascLabels[i]] = parseInt(i);
   }
   return {
     name: `Data(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
