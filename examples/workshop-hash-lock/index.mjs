@@ -24,8 +24,8 @@ import * as backend from './build/index.main.mjs';
         pass: thePass } ),
     backend.Bob(
       stdlib, ctcBob,
-      { getPass: (hpass) => {
-        console.log(`Bob asked to give the preimage of ${hpass}.`);
+      { getPass: () => {
+        console.log(`Bob asked to give the preimage.`);
         console.log(`Returning: ${thePass}`);
         return thePass; } } )
   ]);

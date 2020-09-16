@@ -23,6 +23,12 @@ Here are the current workshops, in the order we recommend doing them:
 
 @local-table-of-contents[#:style 'immediate-only]
 
+@include-section["workshop-hash-lock.scrbl"]
+
+@section[#:tag "workshop-trust-fund"]{Workshop: Trust Fund}
+
+XXX
+
 @section[#:tag "workshop-rps-fair"]{Workshop: Fair Rock-Paper-Scissors}
 
 XXX
@@ -36,10 +42,6 @@ XXX
 XXX
 
 @section[#:tag "workshop-secured-loan"]{Workshop: Secured Loan}
-
-XXX
-
-@section[#:tag "workshop-trust-fund"]{Workshop: Trust Fund}
 
 XXX
 
@@ -67,10 +69,3 @@ XXX
 
 XXX
 
-@section[#:tag "workshop-hash-lock"]{Workshop: Hash Lock}
-
-XXX
-
-XXX use design recipe
-
-XXX warning about online block mining attack
