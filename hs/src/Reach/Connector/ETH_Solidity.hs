@@ -29,8 +29,16 @@ import System.FilePath
 import System.IO.Temp
 import System.Process
 
---- Pretty helpers
+--- Debugging tools
 
+--- You can turn this to True and manually change the Solidity file
+dontWriteSol :: Bool
+dontWriteSol = False
+
+includeRequireMsg :: Bool
+includeRequireMsg = False
+
+--- Pretty helpers
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ intersperse emptyDoc l
 
@@ -79,8 +87,17 @@ solStdLib = pretty $ B.unpack stdlib_sol
 solApply :: Doc a -> [Doc a] -> Doc a
 solApply f args = f <> parens (hcat $ intersperse (comma <> space) args)
 
+--- XXX these add size to the contract without much payoff. A better
+--- thing would be to encode a number and then emit a dictionary of
+--- what the error codes mean that would be used by our connector
+--- stdlib.
 solRequire :: String -> Doc a -> Doc a
-solRequire msg a = solApply "require" [a, solString msg ]
+solRequire umsg a = solApply "require" $ [a] <> mmsg
+  where smsg = unsafeRedactAbsStr umsg
+        mmsg =
+          case includeRequireMsg of
+            True -> [solString smsg]
+            False -> []
 
 solBinOp :: String -> Doc a -> Doc a -> Doc a
 solBinOp o l r = l <+> pretty o <+> r
@@ -319,7 +336,7 @@ solExpr ctxt sp = \case
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
-      require = solRequire (unsafeRedactAbsStr $ show at) (solArg ctxt a)
+      require = solRequire (show at) (solArg ctxt a)
   DLE_Wait {} -> emptyDoc
   DLE_PartSet _ _ a -> (solArg ctxt a) <> sp
 
@@ -572,10 +589,10 @@ solArgDefn ctxt which am vs = (argDefn, argDefs)
     go dv@(DLVar _ _ t _) = ((solRawVar dv), (solType ctxt t))
 
 solHandler :: SolCtxt a -> Int -> CHandler -> Doc a
-solHandler ctxt_top which (C_Handler _at interval fs prev svs msg ct) =
+solHandler ctxt_top which (C_Handler at interval fs prev svs msg ct) =
   vsep [evtDefn, argDefn, frameDefn, funDefn]
   where
-    checkMsg s = s <> " check " <> show which
+    checkMsg s = s <> " check at " <> show at
     vs = svs ++ msg
     ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
@@ -825,5 +842,6 @@ connect_eth outnMay pl = case outnMay of
     go :: FilePath -> IO ConnectorResult
     go solf = do
       let (cinfo, sol) = solPLProg pl
-      writeFile solf (show sol)
+      unless dontWriteSol $ do
+        writeFile solf (show sol)
       compile_sol cinfo solf
