@@ -1,38 +1,71 @@
 import * as nodeAssert from 'assert';
 import * as crypto from 'crypto';
 import ethers from 'ethers';
+
+type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
-let DEBUG = false;
-export const setDEBUG = (b) => {
+
+let DEBUG: boolean = false;
+export const setDEBUG = (b: boolean) => {
   if (b === false || b === true) {
     DEBUG = b;
   } else {
     throw Error(`Expected bool, got ${JSON.stringify(b)}`);
   }
 };
-export const getDEBUG = () => { return DEBUG; };
-export const debug = (msg) => {
+export const getDEBUG = (): boolean => { return DEBUG; };
+export const debug = (msg: any) => {
   if (getDEBUG()) {
     console.log(`DEBUG: ${msg}`);
   }
 };
-export const assert = (d, ai = null) => nodeAssert.strict(d, format_ai(ai));
-const { hexlify, toUtf8Bytes, toUtf8String, isHexString } = ethers.utils;
+
+export const assert = (d: any, ai: any = null) =>
+  nodeAssert.strict(d, format_ai(ai));
+
+const {
+  hexlify,
+  toUtf8Bytes,
+  toUtf8String,
+  isHexString,
+} = ethers.utils;
 export const { isBigNumber } = BigNumber;
-export const bigNumberify = (x) => BigNumber.from(x);
+export const bigNumberify = (x: any): BigNumber => BigNumber.from(x);
+
 // Hex helpers
 // const un0x           = h => h.replace(/^0x/, ''); // unused
-const hexTo0x = (h) => '0x' + h.replace(/^0x/, '');
-const byteToHex = (b) => (b & 0xFF).toString(16).padStart(2, '0');
-const byteArrayToHex = (b) => Array.from(b, byteToHex).join('');
+const hexTo0x = (h: string): string => '0x' + h.replace(/^0x/, '');
+const byteToHex = (b: number): string => (b & 0xFF).toString(16).padStart(2, '0');
+const byteArrayToHex = (b: any): string => Array.from(b, byteToHex).join('');
+
 // const hexOf = x =>
 //       typeof x === 'string' && x.slice(0, 2) === '0x'
 //       ? un0x(toHex(x))
 //       : un0x(toHex(`0x${x}`));
-const hexOf = (x) => toHex(x);
-export const T_Null = {
+const hexOf = (x: any): string => toHex(x);
+// TODO: why was this stripping off the 0x?
+// Why was it slapping 0x on non-hex strings?
+
+
+// Contracts
+
+// .name is used for error display purposes only
+// .canonicalize turns stuff into the "canonical backend representation"
+// .munge expects a canonicalized value, and "munges" it for sending to the network
+// .unmunge is the inverse of .munge
+// TODO: decouple .munge and .unmunge from this module
+
+type Contract <T> = {
+  name: string,
+  canonicalize: (v: any) => T,
+  munge: (v: T) => any,
+  unmunge: (v: any) => T,
+  defaultValue: T,
+};
+
+export const T_Null: Contract<null> = {
   name: 'Null',
-  canonicalize: (v) => {
+  canonicalize: (v: any): null => {
     // Doesn't check with triple eq; we're being lenient here
     if (v != null) {
       throw Error(`Expected null, but got ${JSON.stringify(v)}`);
@@ -40,25 +73,27 @@ export const T_Null = {
     return null;
   },
   // null is represented in solidity as false
-  munge: (v) => { void(v); return false; },
-  unmunge: (v) => { void(v); return null; },
+  munge: (v: null): false => { void(v); return false; },
+  unmunge: (v: false): null => { void(v); return null; },
   defaultValue: null,
 };
-export const T_Bool = {
+
+export const T_Bool: Contract<boolean> = {
   name: 'Bool',
-  canonicalize: (v) => {
+  canonicalize: (v: any): boolean => {
     if (typeof(v) !== 'boolean') {
       throw Error(`Expected boolean, but got ${JSON.stringify(v)}`);
     }
     return v;
   },
-  munge: (v) => v,
-  unmunge: (v) => v,
+  munge: (v: boolean): boolean => v,
+  unmunge: (v: boolean): boolean => v,
   defaultValue: false,
 };
-export const T_UInt256 = {
+
+export const T_UInt256: Contract<BigNumber> = {
   name: 'UInt256',
-  canonicalize: (v) => {
+  canonicalize: (v: any): BigNumber => {
     if (isBigNumber(v)) {
       return v;
     }
@@ -75,17 +110,18 @@ export const T_UInt256 = {
     }
     throw Error(`Expected BigNumber or number, but got ${JSON.stringify(v)}`);
   },
-  munge: (v) => v,
+  munge: (v: BigNumber): BigNumber => v,
   // TODO: double check:
   // It looks like munging BigNumber to string is no longer needed?
   // munge: (v) => v.toString(),
-  unmunge: (v) => v,
+  unmunge: (v: BigNumber): BigNumber => v,
   defaultValue: bigNumberify(0),
 };
+
 // TODO: define some wrapper type Bytes?
-export const T_Bytes = {
+export const T_Bytes: Contract<string> = {
   name: 'Bytes',
-  canonicalize: (x) => {
+  canonicalize: (x: any): string => {
     if (typeof(x) !== 'string') {
       throw Error(`Bytes expected string, but got ${JSON.stringify(x)}`);
     }
@@ -97,14 +133,15 @@ export const T_Bytes = {
       // throw Error(`Please use toHex on string sent to Reach: "${x}"`);
     }
   },
-  munge: (v) => v,
-  unmunge: (v) => v,
+  munge: (v: string): string => v,
+  unmunge: (v: string): string => v,
   defaultValue: '0x0',
 };
+
 // TODO: use a wrapper type for canonicalized form
-export const T_Address = {
+export const T_Address: Contract<string> = {
   name: 'Address',
-  canonicalize: (x) => {
+  canonicalize: (x: any): string => {
     if (typeof x !== 'string') {
       throw Error(`Address must be a string, but got: ${JSON.stringify(x)}`);
     }
@@ -117,15 +154,16 @@ export const T_Address = {
     // TODO check address length?
     return x;
   },
-  munge: (v) => v,
-  unmunge: (v) => v,
+  munge: (v: string): string => v,
+  unmunge: (v: string): string => v,
   defaultValue: '0x' + Array(64).fill('0').join(''),
 };
-export const T_Array = (ctc, sz) => {
+
+export const T_Array = <T>(ctc: Contract <T> , sz: number): Contract<Array<T>> => {
   // TODO: check ctc, sz for sanity
   return {
     name: `Array(${ctc.name}, ${sz})`,
-    canonicalize: (args) => {
+    canonicalize: (args: any): Array<T> => {
       if (!Array.isArray(args)) {
         throw Error(`Expected an Array, but got ${JSON.stringify(args)}`);
       }
@@ -134,10 +172,10 @@ export const T_Array = (ctc, sz) => {
       }
       return args.map((arg) => ctc.canonicalize(arg));
     },
-    munge: (v) => {
+    munge: (v: Array<T>): Array<any> => {
       return v.map((arg) => ctc.munge(arg));
     },
-    unmunge: (v) => {
+    unmunge: (v: Array<any>): Array<T> => {
       return v.map((arg) => ctc.unmunge(arg));
     },
     defaultValue: (() => {
@@ -145,13 +183,14 @@ export const T_Array = (ctc, sz) => {
     })(),
   };
 };
+
 // TODO: way too hard to figure out how to teach typescript the type of this
 // T is just the "union of all types in the tuple"
-export const T_Tuple = (ctcs) => {
+export const T_Tuple = <T>(ctcs: Array <Contract<T>>): Contract<Array<T>> => {
   // TODO: check ctcs for sanity
   return {
     name: `Tuple(${ctcs.map((ctc) => ` ${ctc.name} `)})`,
-    canonicalize: (args) => {
+    canonicalize: (args: any): Array<T> => {
       if (!Array.isArray(args)) {
         throw Error(`Expected a Tuple, but got ${JSON.stringify(args)}`);
       }
@@ -160,28 +199,36 @@ export const T_Tuple = (ctcs) => {
       }
       return args.map((arg, i) => ctcs[i].canonicalize(arg));
     },
-    munge: (args) => {
+    munge: (args: Array<T>): Array<any> => {
       return args.map((arg, i) => ctcs[i].munge(arg));
     },
-    unmunge: (args) => {
-      return args.map((arg, i) => ctcs[i].unmunge(arg));
+    unmunge: (args: Array<any>): Array<T> => {
+      return args.map((arg: any, i: number) => ctcs[i].unmunge(arg));
     },
     defaultValue: (() => {
       return ctcs.map(ctc => ctc.defaultValue);
     })(),
   };
 };
+
+
 // TODO: way too hard to teach typescript the type of this
 // T is just the "union of all object value types"
-export const T_Object = (co) => {
+export const T_Object = <T>(co: {
+  [key: string]: Contract <T>
+}): Contract <{[key: string]: T}> => {
   // TODO: check co for sanity
   return {
     name: `Object(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
-    canonicalize: (vo) => {
+    canonicalize: (vo: any): {
+      [key: string]: T
+    } => {
       if (typeof(vo) !== 'object') {
         throw Error(`Expected object, but got ${JSON.stringify(vo)}`);
       }
-      const obj = {};
+      const obj: {
+        [key: string]: T
+      } = {};
       for (const prop in co) {
         // This is dumb but it's how ESLint says to do it
         // https://eslint.org/docs/rules/no-prototype-builtins
@@ -192,23 +239,37 @@ export const T_Object = (co) => {
       }
       return obj;
     },
-    munge: (vo) => {
-      const obj = {};
+    munge: (vo: {
+      [key: string]: T
+    }): {
+      [key: string]: any
+    } => {
+      const obj: {
+        [key: string]: any
+      } = {};
       for (const prop in co) {
         obj[prop] = co[prop].munge(vo[prop]);
       }
       return obj;
     },
     // TODO: reduce duplication somehow
-    unmunge: (vo) => {
-      const obj = {};
+    unmunge: (vo: {
+      [key: string]: any
+    }): {
+      [key: string]: T
+    } => {
+      const obj: {
+        [key: string]: T
+      } = {};
       for (const prop in co) {
         obj[prop] = co[prop].unmunge(vo[prop]);
       }
       return obj;
     },
     defaultValue: (() => {
-      const obj = {};
+      const obj: {
+        [key: string]: T
+      } = {};
       for (const prop in co) {
         obj[prop] = co[prop].defaultValue;
       }
@@ -216,20 +277,25 @@ export const T_Object = (co) => {
     })(),
   };
 };
+
 // TODO: way too hard to teach typescript the type of this
 // T is just the "union of all variant types"
-export const T_Data = (co) => {
+export const T_Data = <T>(co: {
+  [key: string]: Contract<T>
+}): Contract<[string, T]> => {
   // TODO: check co for sanity
   // ascLabels[i] = label
   // labelMap[label] = i
   const ascLabels = Object.keys(co).sort();
-  const labelMap = {};
+  const labelMap: {
+    [key: string]: number
+  } = {};
   for (const i in ascLabels) {
     labelMap[ascLabels[i]] = parseInt(i);
   }
   return {
     name: `Data(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
-    canonicalize: (io) => {
+    canonicalize: (io: any): [string, T] => {
       if (!(Array.isArray(io) && io.length == 2)) {
         throw Error(`Expected an array of length two to represent a data instance, but got ${JSON.stringify(io)}`);
       }
@@ -249,7 +315,7 @@ export const T_Data = (co) => {
     // where labelInt : number, 0 <= labelInt < N
     // vN : co[ascLabels[i]]
     //
-    munge: (vt) => {
+    munge: (vt: [string, T]): Array<any> => {
       // Typescript is stupid about destructuring tuple tupes =(
       const label = vt[0];
       const v = vt[1];
@@ -267,20 +333,22 @@ export const T_Data = (co) => {
     // e.g. Maybe has keys vs["which"], vs["_None"], and vs["_Some"],
     // corresponding to    vs[0],       vs[1],       and vs[2] respectively.
     // We don't currently use these, but we could.
-    unmunge: (vs) => {
+    unmunge: (vs: Array<any>): [string, T] => {
       const i = vs[0];
       const label = ascLabels[i];
       const val = vs[i + 1];
       return [label, co[label].unmunge(val)];
     },
-    defaultValue: (() => {
+    defaultValue: ((): [string, T] => {
       const label = ascLabels[0];
       return [label, co[label].defaultValue];
     })(),
   };
 };
-const format_ai = (ai) => JSON.stringify(ai);
-export function protect(ctc, v, ai = null) {
+
+const format_ai = (ai: any) => JSON.stringify(ai);
+
+export function protect <T>(ctc: Contract<T>, v: any, ai: any = null) {
   try {
     return ctc.canonicalize(v);
   } catch (e) {
@@ -288,8 +356,9 @@ export function protect(ctc, v, ai = null) {
     throw e;
   }
 }
+
 // Massage the arg into a form keccak256 will handle correctly
-const kek = (arg) => {
+const kek = (arg: any): string | Uint8Array => {
   if (typeof(arg) === 'string') {
     if (isHex(arg)) {
       return arg;
@@ -308,16 +377,20 @@ const kek = (arg) => {
     throw Error(`Can't kek this: ${arg}`);
   }
 };
-export const toHex = (x) => hexlify(kek(x));
+
+export const toHex = (x: any) => hexlify(kek(x));
 export const isHex = isHexString;
 export const hexToString = toUtf8String;
-export const keccak256 = (...args) => {
+
+export const keccak256 = (...args: Array<any>) => {
   const kekCat = kek(args);
   return ethers.utils.keccak256(kekCat);
 };
-export const hexToBigNumber = (h) => bigNumberify(hexTo0x(h));
-export const uint256ToBytes = (i) => bigNumberToHex(i);
-export const bigNumberToHex = (u) => {
+
+export const hexToBigNumber = (h: string): BigNumber => bigNumberify(hexTo0x(h));
+export const uint256ToBytes = (i: BigNumber): string => bigNumberToHex(i);
+
+export const bigNumberToHex = (u: BigNumber | number) => {
   const size = 32; // bytes // TODO: support other sizes?
   const format = 'ufixed256x0';
   const nPos = bigNumberify(u).toTwos(8 * size);
@@ -326,25 +399,37 @@ export const bigNumberToHex = (u) => {
   // XXX why do we slice off the 0x?
   return hexlify(nFix).slice(2);
 };
-export const bytesEq = (x, y) => hexOf(x) === hexOf(y);
-export const randomUInt256 = () => hexToBigNumber(byteArrayToHex(crypto.randomBytes(32)));
+
+export const bytesEq = (x: any, y: any): boolean =>
+  hexOf(x) === hexOf(y);
+
+export const randomUInt256 = (): BigNumber =>
+  hexToBigNumber(byteArrayToHex(crypto.randomBytes(32)));
+
 export const hasRandom = {
   random: randomUInt256,
 };
-export const eq = (a, b) => bigNumberify(a).eq(bigNumberify(b));
-export const add = (a, b) => bigNumberify(a).add(bigNumberify(b));
-export const sub = (a, b) => bigNumberify(a).sub(bigNumberify(b));
-export const mod = (a, b) => bigNumberify(a).mod(bigNumberify(b));
-export const mul = (a, b) => bigNumberify(a).mul(bigNumberify(b));
-export const div = (a, b) => bigNumberify(a).div(bigNumberify(b));
-export const ge = (a, b) => bigNumberify(a).gte(bigNumberify(b));
-export const gt = (a, b) => bigNumberify(a).gt(bigNumberify(b));
-export const le = (a, b) => bigNumberify(a).lte(bigNumberify(b));
-export const lt = (a, b) => bigNumberify(a).lt(bigNumberify(b));
+
+type num = BigNumber | number
+
+export const eq = (a: num, b: num): boolean => bigNumberify(a).eq(bigNumberify(b));
+export const add = (a: num, b: num): BigNumber => bigNumberify(a).add(bigNumberify(b));
+export const sub = (a: num, b: num): BigNumber => bigNumberify(a).sub(bigNumberify(b));
+export const mod = (a: num, b: num): BigNumber => bigNumberify(a).mod(bigNumberify(b));
+export const mul = (a: num, b: num): BigNumber => bigNumberify(a).mul(bigNumberify(b));
+export const div = (a: num, b: num): BigNumber => bigNumberify(a).div(bigNumberify(b));
+export const ge = (a: num, b: num): boolean => bigNumberify(a).gte(bigNumberify(b));
+export const gt = (a: num, b: num): boolean => bigNumberify(a).gt(bigNumberify(b));
+export const le = (a: num, b: num): boolean => bigNumberify(a).lte(bigNumberify(b));
+export const lt = (a: num, b: num): boolean => bigNumberify(a).lt(bigNumberify(b));
+
 // Array helpers
-export function Array_set(arr, idx, elem) {
+
+export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   const arrp = arr.slice();
   arrp[idx] = elem;
   return arrp;
 }
-export const Array_zip = (x, y) => x.map((e, i) => [e, y[i]]);
+
+export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
+  x.map((e, i): [X, Y] => [e, y[i]]);

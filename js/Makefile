@@ -15,7 +15,7 @@ clean:
 	rm -f package.json
 
 .PHONY: build
-build: build-stdlib build-runner
+build: build-stdlib build-runner shared.mjs
 
 .PHONY: build-stdlib
 build-stdlib: package.json
@@ -62,3 +62,11 @@ format:
 		--replace \
 		*.mjs
 	eslint --fix *.mjs
+
+# TODO: generalize the below
+shared.mjs: build/shared.js
+	cp build/shared.js shared.mjs
+	$(MAKE) format
+
+build/shared.js: shared.ts tsconfig.json package.json
+	npm run tsc
