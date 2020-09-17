@@ -1,15 +1,25 @@
 module Reach.EPP (epp) where
 
+import Control.Monad
 import Control.Monad.ST
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.STRef
+import Generics.Deriving (Generic)
 import Reach.AST
 import Reach.CollectCounts
 import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Util
+
+data EPPError
+  = Err_ContinueDomination
+  deriving (Eq, Generic)
+
+instance Show EPPError where
+  show Err_ContinueDomination =
+    "Continue must be dominated by communication"
 
 data ProRes_ a = ProRes_ Counts a
   deriving (Eq, Show)
@@ -303,6 +313,8 @@ epp_n st n =
     LLC_Continue at asn -> do
       let this_loop = fromMaybe (impossible "no loop") $ pst_loop_num st
       let loop_svs = fromMaybe (impossible "no loop") $ pst_loop_svs st
+      when (this_loop == pst_prev_handler st) $
+        expect_throw at Err_ContinueDomination
       let asn_cs = counts asn
       let cons_cs' = asn_cs <> counts loop_svs
       let ct' = CT_Jump at this_loop loop_svs asn

@@ -14,12 +14,7 @@ export const main = Reach.App(
       const x = declassify(interact.getX());
     });
     Alice.publish(x);
-    var [i, mx0] = [0, Maybe(UInt256).None()];
-    invariant(true);
-    while (i < x) {
-      [i, mx0] = [i + 1, Maybe(UInt256).Some(i + 1)];
-      continue;
-    }
+    const [i, mx0] = [0, Maybe(UInt256).None()];
     commit();
 
     Bob.only(() => {
