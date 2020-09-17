@@ -43,6 +43,7 @@ dependencies:
 - process
 - safe
 - search-algorithms
+- shell-monad
 - silently
 - simple-smt
 - smallcheck
@@ -108,7 +109,16 @@ library:
 executables:
   reachc:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         app/reachc
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - reach
+  gen-reach:
+    main:                Main.hs
+    source-dirs:         app/gen-reach
     ghc-options:
     - -threaded
     - -rtsopts

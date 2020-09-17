@@ -13,8 +13,10 @@ cradle:
               component: "reach:lib"
             - path: "./hs/test"
               component: "reach:test:reach-test"
-            - path: "./hs/app"
+            - path: "./hs/app/reachc"
               component: "reach:exe:reachc"
+            - path: "./hs/app/gen-reach"
+              component: "reach:exe:gen-reach"
 
 # XXX Once hie-bios is upgraded to 0.7.0
 # cradle:

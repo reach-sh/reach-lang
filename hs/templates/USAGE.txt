@@ -1,0 +1,10 @@
+Usage: reach COMMAND
+where COMMAND is one of
+ compile  --- compile an app
+ init     --- set up source files for a simple app
+ run      --- run a simple app
+ scaffold --- set up Docker scaffolding for a simple app
+ upgrade  --- upgrade Reach
+ update   --- update Reach Docker images
+ version  --- display version
+ help     --- show this info

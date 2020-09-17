@@ -85,3 +85,9 @@ hs-format: stack
 	  --ghc-opt -XCPP \
 	  --ghc-opt -XTypeApplications \
 	  --mode inplace $$(find . -name '*.hs')
+
+.PHONY: gen-reach
+gen-reach: stack
+	stack build --fast :gen-reach
+	stack exec gen-reach > sbin/reach
+	chmod +x sbin/reach

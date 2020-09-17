@@ -4,5 +4,7 @@ cradle:
       component: "reach:lib"
     - path: "./test"
       component: "reach:reach-test"
-    - path: "./app"
+    - path: "./app/reachc"
       component: "reach:exe:reachc"
+    - path: "./app/gen-reach"
+      component: "reach:exe:gen-reach"
