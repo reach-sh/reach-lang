@@ -25,10 +25,10 @@ import * as backend from './build/index.main.mjs';
       { amt: stdlib.toWeiBigNumber('25', 'ether'),
         getRelay:
         async () => {
-          console.log(`Alice creates a Relay account`);
+          console.log(`Alice creates a Relay account.`);
           const accRelay = await stdlib.newTestAccount(
             toCurrency('0'));
-          console.log(`Alice shares it with Bob off chain.`);
+          console.log(`Alice shares it with Bob outside of the network.`);
           accRelayProvide(accRelay);
           return accRelay.networkAccount.address; } } ),
     (async () => {

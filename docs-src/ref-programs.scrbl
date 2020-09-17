@@ -399,6 +399,8 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
 If a @tech{backend} is running for this @tech{participant} and its address does not match the given address, then it will abort.
 This may only occur within a @tech{consensus step}.
 
+@margin-note{@secref["workshop-relay"] is a good introductory project that demonstrates how to use this feature of Reach.}
+
 @subsubsection{@tt{while}}
 
 @(mint-define! '("while") '("var") '("invariant"))

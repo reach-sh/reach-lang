@@ -24,14 +24,8 @@ Here are the current workshops, in the order we recommend doing them:
 @local-table-of-contents[#:style 'immediate-only]
 
 @include-section["workshop-hash-lock.scrbl"]
-
-@section[#:tag "workshop-relay"]{Workshop: Relay Account}
-
-XXX
-
-@section[#:tag "workshop-trust-fund"]{Workshop: Trust Fund}
-
-XXX
+@include-section["workshop-relay.scrbl"]
+@include-section["workshop-trust-fund.scrbl"]
 
 @section[#:tag "workshop-rps-fair"]{Workshop: Fair Rock-Paper-Scissors}
 
