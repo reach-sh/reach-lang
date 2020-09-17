@@ -30,6 +30,8 @@
   },
   "homepage": "https://github.com/reach-sh/reach-lang#readme",
   "scripts": {
+    "beautify": "js-beautify --indent-size=2 --end-with-newline --brace-style=collapse-preserve-inline --replace *.mjs",
+    "format": "eslint --ignore-path .gitignore --ext .mjs --fix .",
     "pretest": "eslint --ignore-path .gitignore --ext .mjs .",
     "test": "node --experimental-modules ETH-test.mjs",
     "runner": "node --experimental-modules --unhandled-rejections=strict runner.mjs",

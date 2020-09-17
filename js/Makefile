@@ -54,14 +54,9 @@ down:
 test: run
 
 .PHONY: format
-format:
-	js-beautify \
-		--indent-size=2 \
-		--end-with-newline \
-		--brace-style=collapse-preserve-inline \
-		--replace \
-		*.mjs
-	eslint --fix *.mjs
+format: package.json
+	npm run beautify
+	npm run format
 
 # TODO: generalize the below
 shared.mjs: build/shared.js
