@@ -95,8 +95,8 @@ _canonicalize_file_path() (
 # --> expected to be something like -->
 # docker-compose run --rm reach-app-$${REACH_CONNECTOR_MODE} $T $(ARGS)
 
-
-export REACH="$(realpath "$0")"
+REACH="$(realpath "$0")"
+export REACH
 HERE="$(dirname "$REACH")"
 
 # XXX Get from VERSION in Haskell version
