@@ -47,9 +47,12 @@ jobs:
       - store_artifacts:
           path: hs/stan.html
       - setup_remote_docker
+      - run:
+          name: build ethereum-devnet
+          command: (cd scripts/ethereum-devnet && make build)
       # TODO: cache node_modules?
       - run:
-          name: install js dependencies
+          name: build and test js
           command: |
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
             export NVM_DIR="$HOME/.nvm"
@@ -57,12 +60,7 @@ jobs:
             nvm install 12.18.3
             nvm use 12.18.3
             (cd js && make package.json && npm install)
-      - run:
-          name: build ethereum-devnet
-          command: (cd scripts/ethereum-devnet && make build)
-      - run:
-          name: build and test js
-          command: (cd js && make build test)
+            (cd js && make build test)
       - run:
           name: rebuild examples
           command: (cd examples && make clean-all build-all)
