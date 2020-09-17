@@ -447,7 +447,7 @@ A @tech{continue statement} may be written without the preceding identifier upda
  continue; }
 
 A @tech{continue statement} must be dominated by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}.
-This restriction may be lifted in future versions of Reach will perform termination checking.
+This restriction may be lifted in future versions of Reach, which will perform termination checking.
 
 @subsection[#:tag "ref-programs-consensus-exprs"]{Expressions}
 
