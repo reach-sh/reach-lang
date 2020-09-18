@@ -224,7 +224,7 @@ Receiver has a balance of 100.0
 Bystander has a balance of 109.999956956
 }
 
-@section{Discussion and Next Steps}
+@section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
 
 Great job!
 You could use this application today and start put your child's college funds away for safe keeping!

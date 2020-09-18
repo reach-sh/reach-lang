@@ -307,7 +307,7 @@ Alice went from 100.0 to 74.999999999999823944.
 Bob went from 100.0 to 124.999999999999978599.
 }
 
-@section{Discussion}
+@section[#:tag (format "~a-dns" TAG)]{Discussion}
 
 You did it!
 

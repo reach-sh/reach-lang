@@ -3,8 +3,6 @@
 
 @title[#:version reach-vers #:tag "tut" #:style 'toc]{Tutorial}
 
-@(define RPS @emph{Rock, Paper, Scissors})
-
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.

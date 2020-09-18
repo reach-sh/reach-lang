@@ -57,6 +57,7 @@
 
 (define DApp @tech{DApp})
 (define DApps @tech{DApps})
+(define RPS @emph{Rock, Paper, Scissors!})
 
 (define (experimental)
   @margin-note{This section describes an experimental feature of Reach.})

@@ -199,7 +199,7 @@ Alice went from 100.0 to 74.999999999999804065.
 Bob went from 100.0 to 123.999999999999979.
 }
 
-@section{Discussion and Next Steps}
+@section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
 
 Great job!
 You could use this application today and start minting gift cards of tokens for your friends on their birthdays!
