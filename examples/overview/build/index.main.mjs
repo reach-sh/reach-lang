@@ -77,6 +77,13 @@ export async function Bob(stdlib, ctc, interact) {
   
   return; }
 
+const _ALGO = {
+  h1: `XXX
+  `,
+  h2: `XXX
+  `,
+  h3: `XXX
+  ` };
 const _ETH = {
   ABI: `[
     {
@@ -230,4 +237,5 @@ const _ETH = {
   deployMode: `DM_constructor` };
 
 export const _Connectors = {
+  ALGO: _ALGO,
   ETH: _ETH };

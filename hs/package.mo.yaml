@@ -19,6 +19,7 @@ dependencies:
 - deepseq
 - digest
 - directory
+- dlist
 - edit-distance
 - extra
 - file-embed >= 0.0.9
