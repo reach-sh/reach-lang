@@ -20,7 +20,7 @@ build: build-stdlib build-runner
 .PHONY: build-stdlib
 build-stdlib: package.json shared.mjs loader.mjs ETH.mjs FAKE.mjs ALGO.mjs
 	$(MAKE) format
-	sbin/fix_imports.sh loader shared
+	sbin/fix_imports.sh
 
 	docker build --tag=$(IMAGE):latest \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
