@@ -54,7 +54,7 @@ const stdlibFiles = {
 
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
-export function getConnector(connectorMode: string): Connector {
+export function getConnector(connectorMode?: string): Connector {
   connectorMode = connectorMode || getConnectorMode();
   const connector = connectorMode.split('-')[0];
   if (isKnownConnector(connector)) {
@@ -66,7 +66,7 @@ export function getConnector(connectorMode: string): Connector {
 
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
-export async function loadStdlib(connectorMode: string) {
+export async function loadStdlib(connectorMode?: string) {
   connectorMode = connectorMode ?
     canonicalizeConnectorMode(connectorMode) :
     getConnectorMode();
