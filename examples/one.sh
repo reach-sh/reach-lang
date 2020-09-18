@@ -6,7 +6,7 @@ e="$2"
 
 has_target() {
   set +e
-  make -q "$MODE"
+  make -q "$MODE" 2> /dev/null
   RESULT=$?
   set -e
   [ "$RESULT" -eq 0 ] || [ "$RESULT" -eq 1 ]
@@ -38,10 +38,9 @@ echo "$e"
       run)
         ../../reach run
         ;;
-      # XXX make reachc clean
-      #clean)
-      #    ../../reach clean
-      #    ;;
+      clean)
+        ../../reach clean
+        ;;
     esac
   fi
 ) || exit 1
