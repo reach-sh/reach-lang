@@ -1,6 +1,7 @@
 Usage: reach COMMAND
 where COMMAND is one of
  compile  --- compile an app
+ clean    --- delete compiled artifacts
  init     --- set up source files for a simple app
  run      --- run a simple app
  scaffold --- set up Docker scaffolding for a simple app

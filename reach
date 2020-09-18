@@ -265,6 +265,31 @@ EOF
     fi
 }
 
+do_clean () {
+  # TODO: add `make clean` to scaffolded makefile,
+  # and just scaffold & make clean instead?
+  # This implementation was simpler, though.
+  MODULE="$1"
+  if [ "x$MODULE" = "x" ] ; then
+    MODULE="index"
+  else
+    shift
+    if [ -d "$MODULE" ] ; then
+      cd "$MODULE" || exit 1
+      MODULE="index"
+    fi
+  fi
+
+  IDENT="$1"
+  if [ "x$IDENT" = "x" ] ; then
+    IDENT="main"
+  else
+    shift
+  fi
+
+  rm -f "build/$MODULE.$IDENT.mjs"
+}
+
 do_init () {
   # reach init [APP]
   # ----------
@@ -742,6 +767,7 @@ do_usage () {
   echo "Usage: reach COMMAND"
   echo " where COMMAND is one of"
   echo "  compile --- compile an app"
+  echo "  clean   --- delete compiled artifacts"
   echo "  init    --- set up source files for a simple app"
   echo "  run     --- run a simple app"
   echo "  scaffold -- set up Docker scaffolding for a simple app"
@@ -757,6 +783,9 @@ shift
 case ${SUBCOMMAND} in
     compile)
         do_compile "$@"
+        ;;
+    clean)
+        do_clean "$@"
         ;;
     run)
         do_run "$@"
