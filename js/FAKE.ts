@@ -1,22 +1,95 @@
 import Timeout from 'await-timeout';
-import * as stdlib from './shared.mjs';
-export * from './shared.mjs';
+import {BigNumber} from 'ethers';
+
+import * as stdlib from './shared';
+import { TyContract } from './shared';
+export * from './shared';
+
 const DEBUG = false;
-const debug = (msg) => {
+const debug = (msg: any): void => {
   if (DEBUG) {
     console.log(`DEBUG@${BLOCKS.length}: ${msg}`);
   }
 };
-const REACHY_RICH = { address: 'reachy_rich' };
+
+type Address = string;
+type NetworkAccount = {address: Address};
+type Account = {
+  networkAccount: NetworkAccount,
+  deploy?: (bin: Backend) => Promise<Contract>,
+  attach?: (bin: Backend, ctc: Contract) => Promise<ContractAttached>,
+};
+
+type Backend = null;
+type Contract = {
+  address: Address,
+  creation_block: number,
+};
+
+type ContractAttached = {
+  address: Address,
+  creation_block: number,
+  sendrecv: (...xs: any) => any,
+  recv: (...xs: any) => any,
+  iam: (some_addr: Address) => Address,
+  wait: (...xs: any) => any,
+};
+
+// TODO
+type ContractOut = any;
+// TODO: move common interfaces to shared
+type Recv = {
+  didTimeout: false,
+  data: Array<ContractOut>,
+  value: BigNumber,
+  balance: BigNumber,
+  from: Address,
+} | { didTimeout: true };
+
+const REACHY_RICH: NetworkAccount = {address: 'reachy_rich'};
+
+type Event = {
+  funcNum: number,
+  from: Address,
+  data: Array<any>,
+  value: BigNumber,
+  balance: BigNumber,
+};
+
+type TransferBlock = {
+  type: 'transfer',
+  to: Address,
+  from: Address,
+  value: BigNumber,
+};
+
+type EventBlock = {
+  type: 'event',
+  to: Address,
+  from: Address,
+  value: BigNumber,
+  event: Event,
+};
+
+type WaitBlock = {
+  type: 'wait',
+  currentTime: BigNumber,
+  targetTime: BigNumber,
+};
+
+type Block = TransferBlock | EventBlock | WaitBlock;
+
 // This can be exposed to the user for checking the trace of blocks
 // for testing.
-const BLOCKS = [];
+const BLOCKS: Array<Block> = [];
 // key: Address, but ts doesn't like aliases here
-const BALANCES = {};
-export const balanceOf = async (acc) => {
+const BALANCES: {[key: string]: BigNumber} = {};
+
+export const balanceOf = async (acc: Account) => {
   return BALANCES[acc.networkAccount.address];
 };
-export const transfer = async (from, to, value) => {
+
+export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<void> => {
   const toa = to.networkAccount.address;
   const froma = from.networkAccount.address;
   stdlib.assert(stdlib.le(value, BALANCES[froma]));
@@ -25,35 +98,43 @@ export const transfer = async (from, to, value) => {
   BALANCES[toa] = stdlib.add(BALANCES[toa], value);
   BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
 };
-export const connectAccount = async (networkAccount) => {
+
+export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const { address } = networkAccount;
-  const attach = async (bin, ctc) => {
+
+  const attach = async (bin: Backend, ctc: Contract): Promise<ContractAttached> => {
     void(bin);
     let last_block = ctc.creation_block;
-    const iam = (some_addr) => {
+
+    const iam = (some_addr: Address): Address => {
       if (some_addr == address) {
         return address;
       } else {
         throw Error(`I should be ${some_addr}, but am ${address}`);
       }
     };
-    const wait = (delta) => {
+
+    const wait = (delta: BigNumber): void => {
       // Don't wait from current time, wait from last_block
       waitUntilTime(stdlib.add(last_block, delta));
     };
-    const sendrecv = async (label, funcNum, evt_cnt, tys, args, value, out_tys, timeout_delay, try_p) => {
+
+    const sendrecv = async (
+      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+      args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+      timeout_delay: undefined | number | BigNumber, try_p: any
+    ): Promise<Recv> => {
       // XXX use try_p to figure out what transfers from the contract
       // to make, like in ALGO
       void(tys);
       void(try_p);
       timeout_delay = toNumberMay(timeout_delay);
+
       if (!timeout_delay || stdlib.lt(BLOCKS.length, stdlib.add(last_block, timeout_delay))) {
         debug(`${label} send ${funcNum} --- post`);
-        transfer({ networkAccount }, { networkAccount: ctc }, value);
+        transfer({networkAccount}, {networkAccount: ctc}, value);
         const transferBlock = BLOCKS[BLOCKS.length - 1];
-        if (transferBlock.type !== 'transfer') {
-          throw Error('impossible: intervening block');
-        }
+        if (transferBlock.type !== 'transfer') { throw Error('impossible: intervening block'); }
         const event = { funcNum, from: address, data: args.slice(-1 * evt_cnt), value, balance: BALANCES[ctc.address] };
         BLOCKS[BLOCKS.length - 1] = { ...transferBlock, type: 'event', event };
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
@@ -62,10 +143,15 @@ export const connectAccount = async (networkAccount) => {
         return { didTimeout: true };
       }
     };
-    const recv = async (label, funcNum, ok_cnt, out_tys, timeout_delay) => {
+
+    const recv = async (
+      label: string, funcNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
+      timeout_delay: number | BigNumber | undefined,
+    ): Promise<Recv> => {
       void(ok_cnt);
       void(out_tys);
       timeout_delay = toNumberMay(timeout_delay);
+
       let check_block = last_block;
       while (!timeout_delay || stdlib.lt(check_block, stdlib.add(last_block, timeout_delay))) {
         debug(`${label} recv ${funcNum} --- check ${check_block}`);
@@ -82,40 +168,52 @@ export const connectAccount = async (networkAccount) => {
           return { didTimeout: false, data: evt.data, value: evt.value, balance: evt.balance, from: evt.from };
         }
       }
+
       debug(`${label} recv ${funcNum} --- timeout`);
       return { didTimeout: true };
     };
+
     return { ...ctc, sendrecv, recv, iam, wait };
   };
-  const deploy = async (bin) => {
+
+  const deploy = async (bin: Backend): Promise<Contract> => {
     const contract = makeAccount();
     debug(`new contract: ${contract.address}`);
     return await attach(bin, {
       ...contract,
       creation_block: BLOCKS.length,
+      // events: {},
     });
   };
+
   return { deploy, attach, networkAccount };
 };
-const makeAccount = () => {
+
+const makeAccount = (): NetworkAccount => {
   const address = stdlib.toHex(stdlib.randomUInt256());
   BALANCES[address] = stdlib.bigNumberify(0);
   return { address };
 };
-export const newTestAccount = async (startingBalance) => {
+
+export const newTestAccount = async (startingBalance: BigNumber) => {
   const networkAccount = makeAccount();
   debug(`new account: ${networkAccount.address}`);
   BALANCES[REACHY_RICH.address] = startingBalance;
-  transfer({ networkAccount: REACHY_RICH }, { networkAccount }, startingBalance);
+  transfer({networkAccount: REACHY_RICH}, {networkAccount}, startingBalance);
   return await connectAccount(networkAccount);
 };
+
 export function getNetworkTime() {
   return stdlib.bigNumberify(BLOCKS.length);
 }
-export function wait(delta, onProgress) {
+
+type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => void
+
+export function wait(delta: BigNumber | number, onProgress?: OnProgress): BigNumber {
   return waitUntilTime(stdlib.add(getNetworkTime(), delta), onProgress);
 }
-export function waitUntilTime(targetTime, onProgress) {
+
+export function waitUntilTime(targetTime: BigNumber | number, onProgress?: OnProgress): BigNumber {
   targetTime = stdlib.bigNumberify(targetTime);
   const onProg = onProgress || (() => {});
   // FAKE is basically synchronous,
@@ -129,12 +227,15 @@ export function waitUntilTime(targetTime, onProgress) {
   onProg({ currentTime, targetTime });
   return currentTime;
 }
+
 export const newAccountFromMnemonic = false; // XXX
 export const verifyContract = false; // XXX
-const toNumberMay = (x) => {
+
+const toNumberMay = (x: number | BigNumber | undefined) => {
   if (stdlib.isBigNumber(x)) {
     return x.toNumber();
   } else {
     return x;
   }
 };
+
