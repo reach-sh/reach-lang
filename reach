@@ -599,6 +599,10 @@ do_run () {
   # make build run
   # unscaffold if UNSCAFFOLD 
 
+  ANY_CUSTOMIZATION=false
+  if ! [ "x$REACH_CONNECTOR_MODE" = "x" ] ; then
+    ANY_CUSTOMIZATION=true
+  fi
   ensure_connector_mode
 
   export RUN_FROM_REACH=${RUN_FROM_REACH:-false}
@@ -607,6 +611,7 @@ do_run () {
     APP="index"
   else
     BARE_REACH_RUN=false
+    ANY_CUSTOMIZATION=true
     ARG=$1
     shift
 
@@ -702,7 +707,7 @@ do_run () {
     # Always build from "scaffolded" file
     reach_make_f build
     # Run from Makefile if present and not "run from reach"
-    if [ -f Makefile ] && ! $RUN_FROM_REACH ; then
+    if [ -f Makefile ] && ! $RUN_FROM_REACH && ! $ANY_CUSTOMIZATION; then
       reach_make run
     else
       reach_make_f run
