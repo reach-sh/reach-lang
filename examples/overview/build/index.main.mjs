@@ -78,11 +78,21 @@ export async function Bob(stdlib, ctc, interact) {
   return; }
 
 const _ALGO = {
-  h1: `XXX
+  h1: `// XXX let
+  // XXX let
+  // XXX eff
+  // XXX wait
   `,
-  h2: `XXX
+  h2: `// XXX let
+  // XXX let
+  // XXX eff
+  // XXX wait
   `,
-  h3: `XXX
+  h3: `// XXX let
+  // XXX let
+  // XXX eff
+  // XXX eff
+  b halt
   ` };
 const _ETH = {
   ABI: `[
