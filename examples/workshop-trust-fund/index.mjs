@@ -1,7 +1,7 @@
 import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
 
-const runDemo = async (delayFunder, delayReceiver) => {
+const runDemo = async (delayReceiver, delayFunder) => {
   const stdlib = await stdlib_loader.loadStdlib();
   const connector = stdlib_loader.getConnector();
   const toCurrency =
@@ -55,6 +55,6 @@ const runDemo = async (delayFunder, delayReceiver) => {
 
 (async () => {
   await runDemo(false, false);
-  await runDemo(false, true);
+  await runDemo(true, false);
   await runDemo(true, true);
 })();

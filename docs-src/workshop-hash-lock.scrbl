@@ -1,15 +1,16 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version reach-vers #:tag "workshop-hash-lock"]{Workshop: Hash Lock}
+@(define TAG "workshop-hash-lock")
+@title[#:version reach-vers #:tag TAG]{Workshop: Hash Lock}
 
 In this workshop, we'll design an application that allows a payer to lock funds with a secret password, independent from their @tech{consensus network} identity, which can be drawn by anyone possessing the secret password.
 This is a useful way for a payer to show that they have funds and have committed to disbursing them, without deciding beforehand who they are paying.
 
 @(workshop-deps)
-@(workshop-init "workshop-hash-lock")
+@(workshop-init TAG)
 
-@(drstep-pr "whl")
+@(drstep-pr TAG)
 
 The first step in any program design is to perform problem analysis and determine what information is relevant to the problem.
 When writting decentralized applications in Reach, this information analysis includes an analysis of the set of @tech{participants} involved in a computation.
@@ -49,7 +50,7 @@ Compared to normal languages, Reach does do a bit automatically for you: it auto
 You still have to solve them yourself though!
 But, at least you know about them because of Reach.
 
-@(drstep-dd "whl")
+@(drstep-dd TAG)
 
 Humans and their social systems deal with information, but computers can only interact with data, which is merely a representation of information using particular structures, like numbers, arrays, and so on.
 After problem analysis, we know what information our program will deal with, but next we need to decide how to translate that information into concrete data.
@@ -101,7 +102,7 @@ Have you ever had a password that was 32 characters long?
 At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholder like @jsin{42} or something for the actual value.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.
 
-@(drstep-cc "whl")
+@(drstep-cc TAG)
 
 A fundamental aspect of a decentralized application is the pattern of communication and transfer among the participants, including the consensus network.
 For example, who initiates the application?
@@ -174,7 +175,7 @@ The body of your application should look something like:
 
 We can now move on to the next part of designing a decentralized application: verification.
 
-@(drstep-ai "whl")
+@(drstep-ai TAG)
 
 When we are programming, we hold a complex theory of the behavior of the program inside of our minds that helps us know what should happen next in the program based on what has happened before and what is true at every point in the program.
 As programs become more complex, this theory becomes more and more difficult to grasp, so we might make mistakes.
@@ -229,7 +230,7 @@ At this point, we are almost ready to complete our program and make it so that w
 You've probably noticed that in our samples, the variables @reachin{pass}, @reachin{amt}, and @reachin{passDigest} are undefined.
 We'll handle that next.
 
-@(drstep-ii "whl")
+@(drstep-ii TAG)
 
 A key concept of Reach programs is that they are concerned solely with the communication and consensus portions of a decentralized applications.
 @tech{Frontends} are responsible for all other aspects of the program.
@@ -261,7 +262,7 @@ We'll get a happy message that all our theorems are true.
 Great job!
 But we still need to run our program!
 
-@(drstep-de "whl")
+@(drstep-de TAG)
 
 At this point, we need to decide how we're going to deploy this program and really use it in the world.
 We need to decide how to deploy the contract, as well as what kind of user interaction modality we'll implement inside of our @tech{frontend}.

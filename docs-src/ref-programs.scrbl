@@ -647,13 +647,13 @@ is @tech{invalid}, because the first @reachin{return}'s @tech{tail} is not empty
    return "No, waaah!"; } }
 
 A @deftech{conditional statement},
-written @reachin{if (COND) TRUE else FALSE},
-where @reachin{COND} is an @tech{expression} which evaluates to a boolean
-and @reachin{TRUE} and @reachin{FALSE} as @tech{statements}
+written @reachin{if (COND) NOT_FALSE else FALSE},
+where @reachin{COND} is an @tech{expression}
+and @reachin{NOT_FALSE} and @reachin{FALSE} as @tech{statements}
 (potentially @tech{block statements}),
-selects between the @reachin{TRUE} @tech{statement} and @reachin{FALSE} @tech{statement} based on whether @reachin{COND} evaluates to @reachin{true}.
+selects between the @reachin{NOT_FALSE} @tech{statement} and @reachin{FALSE} @tech{statement} based on whether @reachin{COND} evaluates to @reachin{false}.
 
-Both @reachin{TRUE} and @reachin{FALSE} have empty @tech{tails}, i.e. the @tech{tail} of the @tech{conditional statement} is not propagated. For example,
+Both @reachin{NOT_FALSE} and @reachin{FALSE} have empty @tech{tails}, i.e. the @tech{tail} of the @tech{conditional statement} is not propagated. For example,
 
 @reach{
  if ( x < y ) {
@@ -664,7 +664,7 @@ Both @reachin{TRUE} and @reachin{FALSE} have empty @tech{tails}, i.e. the @tech{
 
 is erroneous, because the identifier @reachin{z} is not bound outside the @tech{conditional statement}.
 
-A @tech{conditional statement} may only include a @tech{consensus transfer} in @reachin{TRUE} or @reachin{FALSE} if it is within a @tech{consensus step}, because its statements are in the same context as the conditional statement itself.
+A @tech{conditional statement} may only include a @tech{consensus transfer} in @reachin{NOT_FALSE} or @reachin{FALSE} if it is within a @tech{consensus step}, because its statements are in the same context as the conditional statement itself.
 
 @subsubsection{@tt{switch}}
 
@@ -1129,7 +1129,7 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
 @reach{
  choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ] }
 
-A @deftech{conditional expression}, written @reachin{COND_E ? TRUE_E : FALSE_E}, where @reachin{COND_E}, @reachin{TRUE_E}, and @reachin{FALSE_E} are @tech{expressions}, selects between the @tech{values} which @reachin{TRUE_E} and @reachin{FALSE_E} evaluate to based on whether @reachin{COND_E} evaluates to @reachin{true}.
+A @deftech{conditional expression}, written @reachin{COND_E ? NOT_FALSE_E : FALSE_E}, where @reachin{COND_E}, @reachin{NOT_FALSE_E}, and @reachin{FALSE_E} are @tech{expressions}, selects between the @tech{values} which @reachin{NOT_FALSE_E} and @reachin{FALSE_E} evaluate to based on whether @reachin{COND_E} evaluates to @reachin{false}.
 
 @(mint-define! '("ite"))
 @reach{

@@ -67,3 +67,7 @@ XXX
 
 XXX
 
+@section[#:tag "workshop-oracle"]{Workshop: Oracle}
+
+XXX
+

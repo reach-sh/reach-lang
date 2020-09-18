@@ -37,9 +37,9 @@ export const main =
       const giveChance = (Who, then) => {
         Who.only(() => interact.ready());
 
-        if ( then.timeout ) {
+        if ( then ) {
           Who.publish()
-            .timeout(then.delta, () => then.after()); }
+            .timeout(then.deadline, () => then.after()); }
         else {
           Who.publish(); }
 
@@ -50,14 +50,10 @@ export const main =
 
       giveChance(
         Receiver,
-        { timeout: true,
-          delta: refund,
+        { deadline: refund,
           after: () =>
           giveChance(
             Funder,
-            { timeout: true,
-              delta: dormant,
+            { deadline: dormant,
               after: () =>
-              giveChance(
-                Bystander,
-                { timeout: false }) }) }); } );
+              giveChance(Bystander, false) }) }); } );

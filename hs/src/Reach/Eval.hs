@@ -61,7 +61,6 @@ data EvalError
   | Err_Eval_IllegalWait DeployMode
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_PartSet_Bound SLPart
-  | Err_Eval_IfCondNotBool SLVal
   | Err_Eval_IllegalMode SLMode String
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_NoReturn
@@ -214,8 +213,6 @@ instance Show EvalError where
       "Invalid continue. Expected to be inside of a while."
     Err_Eval_ContinueNotLoopVariable var ->
       "Invalid loop variable update. Expected loop variable, got: " <> var
-    Err_Eval_IfCondNotBool slval ->
-      "Invalid if statement. Expected if condition to be bool, got: " <> displaySlValType slval
     Err_Eval_IllegalMode mode s ->
       "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode
     Err_Eval_IllegalJS e ->
@@ -1613,7 +1610,7 @@ evalExpr ctxt at sco st e = do
                 let lifts' = return $ DLS_Prompt at' (Right ans_dv) body_lifts
                 return $ SLRes lifts' st_tf $ (lvl, SLV_DLVar ans_dv)
           _ ->
-            expect_throw at (Err_Eval_IfCondNotBool cv)
+            lvlMeetR clvl $ evalExpr ctxt t_at' sco st_c te
     JSArrowExpression aformals a bodys ->
       evalExpr ctxt at sco st e'
       where
@@ -2213,8 +2210,9 @@ evalStmt ctxt at sco st ss =
             let levelHelp = SLStmtRes (sco_env sco) . map (\(r_at, (r_lvl, r_v)) -> (r_at, (clvl <> r_lvl, r_v)))
             let ir = SLRes lifts' st_tf $ combineStmtRes at' clvl (levelHelp trets) (levelHelp frets)
             retSeqn ir at' ks_ne
-          _ ->
-            expect_throw at (Err_Eval_IfCondNotBool cv)
+          _ -> do
+            nr <- evalStmt ctxt t_at' sco' st_c [ts]
+            retSeqn nr at' ks_ne
     (s@(JSLabelled _ a _) : _) ->
       --- FIXME We could allow labels on whiles and have a mapping in
       --- sco_while_vars from a while label to the set of variables

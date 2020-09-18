@@ -1,1 +1,0 @@
-error: ./Err_Eval_IfCondNotBool.rsh:compileDApp: Invalid if statement. Expected if condition to be bool, got: bytes
