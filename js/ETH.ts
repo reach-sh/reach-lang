@@ -1,21 +1,154 @@
 import Timeout from 'await-timeout';
-import ethers from 'ethers';
+import ethers, { BigNumber, providers } from 'ethers';
 import * as http from 'http';
 import * as url from 'url';
 import * as waitPort from 'wait-port';
-import { getConnectorMode } from './loader.mjs';
-import { add, assert, bigNumberify, debug, ge, getDEBUG, isBigNumber, keccak256, lt } from './shared.mjs';
-export * from './shared.mjs';
-const connectorMode = getConnectorMode();
+
+import { ConnectorMode, getConnectorMode } from './loader';
+import {
+  add,
+  assert,
+  bigNumberify,
+  debug,
+  ge,
+  getDEBUG,
+  isBigNumber,
+  keccak256,
+  lt,
+  TyContract,
+} from './shared';
+export * from './shared';
+
+type Provider = ethers.providers.Provider;
+type TransactionReceipt = ethers.providers.TransactionReceipt;
+type Wallet = ethers.Wallet;
+
+// Note: if you want your programs to exit fail
+// on unhandled promise rejection, use:
+// node --unhandled-rejections=strict
+
+// XXX: when using ganache: nvm use 12
+// ganache-core doesn't work with npm version 14 yet
+// https://github.com/trufflesuite/ganache-cli/issues/732#issuecomment-623782405
+
+// XXX move up
+type DeployMode = 'DM_firstMsg' | null; // TODO
+type Backend = {_Connectors: {ETH: {
+  ABI: string,
+  Bytecode: string,
+  deployMode: DeployMode
+}}};
+type ParentCtc = {
+  reallyDeploy?: (...args: any) => any,
+  getInfo?: () => Promise<ContractInfo>,
+};
+
+
+// TODO: a wrapper obj with smart constructor?
+type Address = string;
+
+type NetworkAccount = {
+  address?: Address, // required for receivers
+  sendTransaction?: (...xs: any) => any, // required for senders
+  getBalance?: (...xs: any) => any, // TODO: better type
+} | Wallet; // required to deploy/attach
+
+// TODO: better type on this
+type ContractArg = any;
+
+// TODO: this type needs serious help.
+// It has several variants where stuff is missing that should be better categorized.
+type Contract = {
+  address?: Address,
+  creation_block?: number,
+
+  // More fields indicating initialization status
+  args?: Array<Array<ContractArg>>, // See comment on reallyDeploy
+  value?: BigNumber, // or number or string or something.
+
+  // internal fields
+  // * not required to call acc.attach(bin, ctc)
+  // * required by backend
+  // TODO: better types on these
+  sendrecv?: (...argz: any) => any,
+  recv?: (...argz: any) => any,
+
+  getInfo?: () => Promise<ContractInfo>,
+  creator?: Address // XXX
+
+  wait?: (...argz: any) => any,
+  iam?: (some_addr: Address) => Address,
+};
+
+type ContractAttached = {
+  getInfo: () => Promise<ContractInfo>,
+
+  address: Address,
+  creation_block: number,
+
+  args: Array<Array<ContractArg>>,
+  value: BigNumber,
+  creator: Address, // XXX
+
+  sendrecv: (...argz: any) => any,
+  recv: (...argz: any) => any,
+}
+
+type ContractInfo = {
+  getInfo?: () => Promise<ContractInfo>,
+  address: Address,
+  creation_block: number,
+  args: Array<Array<ContractArg>>,
+  value: BigNumber,
+  creator: Address, // XXX
+  transactionHash?: Hash,
+}
+
+type ContractNoInfo = {
+  getInfo: () => Promise<ContractInfo>,
+  address?: Address,
+  creation_block?: number,
+  args?: Array<Array<ContractArg>>,
+  value?: BigNumber,
+  creator?: Address, // XXX
+};
+
+type CtcOrInfo = Contract | ContractInfo | ContractNoInfo;
+
+type Account = {
+  // TODO: better types for these
+  deploy?: (...argz: any) => any,
+  attach?: (...argz: any) => any,
+  networkAccount: NetworkAccount,
+};
+
+const connectorMode: ConnectorMode = getConnectorMode();
+
 // Certain functions either behave differently,
 // or are only available on an "isolated" network.
-const isIsolatedNetwork = connectorMode.startsWith('ETH-test-dockerized') ||
+const isIsolatedNetwork: boolean =
+  connectorMode.startsWith('ETH-test-dockerized') ||
   connectorMode.startsWith('ETH-test-embedded');
+
 // Unique helpers
-export const toWei = (amt, unit) => ethers.utils.parseUnits(amt, unit || 'ether');
-export const fromWei = (amt, unit) => ethers.utils.formatUnits(amt, unit || 'ether');
-export const toWeiBigNumber = (amt, unit) => bigNumberify(toWei(amt, unit));
-const networkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
+
+export const toWei = (amt: string, unit?: string): BigNumber =>
+  ethers.utils.parseUnits(amt, unit || 'ether');
+export const fromWei = (amt: BigNumber, unit?: string): string =>
+  ethers.utils.formatUnits(amt, unit || 'ether');
+export const toWeiBigNumber = (amt: string, unit?: string): BigNumber =>
+  bigNumberify(toWei(amt, unit));
+
+// end Unique helpers
+
+// Common interface exports
+
+type NetworkDesc =
+  {type: 'uri', uri: string, network: string} |
+  {type: 'embedded-ganache'} |
+  {type: 'skip'}
+
+const networkDesc: NetworkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
   type: 'embedded-ganache',
 } : connectorMode == 'ETH-test-dockerized-geth' ? {
   type: 'uri',
@@ -24,16 +157,15 @@ const networkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
 } : {
   type: 'skip',
 };
-const portP = (async () => {
-  if (networkDesc.type != 'uri') {
-    return;
-  }
+
+const portP: Promise<void> = (async () => {
+  if (networkDesc.type != 'uri') { return; }
   const { hostname, port, path } = url.parse(networkDesc.uri);
   if (!port) {
     throw Error(`Could not parse port from uri: ${networkDesc.uri}`);
   }
   await waitPort.default({
-    protocol: 'http',
+    protocol: 'http', // XXX no apparent need to support https
     host: hostname || undefined,
     port: parseInt(port, 10),
     path: path || undefined,
@@ -41,11 +173,10 @@ const portP = (async () => {
     'timeout': 1000 * 60 * 1,
   });
 })();
+
 // XXX: doesn't even retry, just returns the first attempt
-const doHealthcheck = async () => {
-  if (networkDesc.type != 'uri') {
-    return;
-  }
+const doHealthcheck = async (): Promise<void> => {
+  if (networkDesc.type != 'uri') { return; }
   await new Promise((resolve, reject) => {
     const { hostname, port } = url.parse(networkDesc.uri);
     const data = JSON.stringify({
@@ -86,14 +217,16 @@ const doHealthcheck = async () => {
     debug('req.end...');
   });
 };
-const devnetP = (async () => {
+
+const devnetP: Promise<void> = (async () => {
   await portP;
   debug('Got portP, waiting for health');
   return await doHealthcheck();
 })();
+
 // async () => provider
-const getProvider = (() => {
-  const etherspP = (async () => {
+const getProvider: () => Promise<Provider> = (() => {
+  const etherspP: Promise<Provider | null> = (async () => {
     if (networkDesc.type == 'uri') {
       await devnetP;
       const provider = new ethers.providers.JsonRpcProvider(networkDesc.uri);
@@ -110,7 +243,8 @@ const getProvider = (() => {
       return null;
     }
   })();
-  return async () => {
+
+  return async (): Promise<Provider> => {
     const provider = await etherspP;
     if (provider === null) {
       throw Error(`Using stdlib/ETH is incompatible with REACH_CONNECTOR_MODE=${connectorMode}`);
@@ -119,55 +253,67 @@ const getProvider = (() => {
     }
   };
 })();
+
+
 // XXX expose setProvider
-const ethersBlockOnceP = async () => {
+
+const ethersBlockOnceP = async (): Promise<number> => {
   const provider = await getProvider();
   return new Promise((resolve) => provider.once('block', (n) => resolve(n)));
 };
-export const balanceOf = async (acc) => {
+
+export const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
-  if (!networkAccount)
-    throw Error(`acc.networkAccount missing. Got: ${acc}`);
+  if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
+
   if (networkAccount.getBalance) {
     return bigNumberify(await networkAccount.getBalance());
   } else if (networkAccount.address) {
     const provider = await getProvider();
     return bigNumberify(await provider.getBalance(networkAccount.address));
-  } else
-    throw Error(`acc.networkAccount.address missing. Got: ${networkAccount}`);
+  } else throw Error(`acc.networkAccount.address missing. Got: ${networkAccount}`);
 };
+
 // Arg order follows "src before dst" convention
-export const transfer = async (from, to, value) => {
-  if (!isBigNumber(value))
-    throw Error(`Expected a BigNumber: ${value}`);
+export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<any> => {
+  if (!isBigNumber(value)) throw Error(`Expected a BigNumber: ${value}`);
+
   const sender = from.networkAccount;
-  if (!sender || !sender.sendTransaction)
-    throw Error(`Expected from.networkAccount.sendTransaction: ${from}`);
+  if (!sender || !sender.sendTransaction) throw Error(`Expected from.networkAccount.sendTransaction: ${from}`);
+
   const receiver = to.networkAccount && to.networkAccount.address;
-  if (!receiver)
-    throw Error(`Expected to.networkAccount.address: ${to}`);
+  if (!receiver) throw Error(`Expected to.networkAccount.address: ${to}`);
+
   const txn = { to: receiver, value };
   debug(`sender.sendTransaction(${JSON.stringify(txn)})`);
   return await sender.sendTransaction(txn);
 };
-const rejectInvalidReceiptFor = async (txHash, r) => new Promise((resolve, reject) => !r ? reject(`No receipt for txHash: ${txHash}`) :
-  r.transactionHash !== txHash ? reject(`Bad txHash; ${txHash} !== ${r.transactionHash}`) :
-  !r.status ? reject(`Transaction: ${txHash} was reverted by EVM\n${r}`) :
-  resolve(r));
-const fetchAndRejectInvalidReceiptFor = async (txHash) => {
+
+// Helpers for sendrecv and recv
+
+type Hash = string;
+
+const rejectInvalidReceiptFor = async (txHash: Hash, r?: TransactionReceipt): Promise<TransactionReceipt> =>
+  new Promise((resolve, reject) =>
+    !r ? reject(`No receipt for txHash: ${txHash}`) :
+    r.transactionHash !== txHash ? reject(`Bad txHash; ${txHash} !== ${r.transactionHash}`) :
+    !r.status ? reject(`Transaction: ${txHash} was reverted by EVM\n${r}`) :
+    resolve(r));
+
+const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
   const provider = await getProvider();
   const r = await provider.getTransactionReceipt(txHash);
   return await rejectInvalidReceiptFor(txHash, r);
 };
-export const connectAccount = async (networkAccount) => {
+
+export const connectAccount = async (networkAccount: NetworkAccount) => {
   // XXX networkAccount MUST be a wallet to deploy/attach
   const provider = await getProvider();
   const { address } = networkAccount;
-  if (!address) {
-    throw Error(`Expected networkAccount.address: ${networkAccount}`);
-  }
+  if (!address) { throw Error(`Expected networkAccount.address: ${networkAccount}`); }
   const shad = address.substring(2, 6);
-  const extractInfo = async (ctcOrInfo) => {
+
+  const extractInfo = async (ctcOrInfo: CtcOrInfo): Promise<ContractInfo> => {
     const { getInfo, address, creation_block, args, value, creator } = ctcOrInfo;
     if (address && creation_block && args && value != undefined && creator) {
       return { address, creation_block, args, value, creator };
@@ -177,10 +323,12 @@ export const connectAccount = async (networkAccount) => {
       throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`);
     }
   };
-  const attach = async (bin, parentCtc) => {
+
+  const attach = async (bin: Backend, parentCtc: ParentCtc): Promise<Contract> => {
     const ABI = JSON.parse(bin._Connectors.ETH.ABI);
-    let info = null;
-    let _waitForInfo = null;
+
+    let info: null | ContractInfo = null;
+    let _waitForInfo: null | ((...args: any) => Promise<any>) = null;
     if (parentCtc.reallyDeploy) {
       const reallyDeploy = parentCtc.reallyDeploy;
       _waitForInfo = async (internal, args, value) => {
@@ -204,79 +352,77 @@ export const connectAccount = async (networkAccount) => {
         return true;
       };
     }
-    let _ethersC = null;
-    let last_block = null;
+
+    let _ethersC: null | ethers.Contract = null;
+    let last_block: null | number = null;
     const getC = async () => {
-      if (!_waitForInfo) {
-        throw Error(`impossible: _waitForInfo is null`);
-      }
+      if (!_waitForInfo) { throw Error(`impossible: _waitForInfo is null`); }
       if (!ethers.Signer.isSigner(networkAccount)) {
         throw Error(`networkAccount must be a Signer (read: Wallet). ${networkAccount}`);
       }
-      if (_ethersC) {
-        return _ethersC;
-      }
+      if (_ethersC) { return _ethersC; }
       await _waitForInfo(true);
-      if (!info) {
-        throw Error(`impossible: info is null`);
-      }
+      if (!info) { throw Error(`impossible: info is null`); }
       await verifyContract(info, bin);
       debug(`${shad}: attach to creation at ${info.creation_block}`);
       last_block = info.creation_block;
       _ethersC = new ethers.Contract(info.address, ABI, networkAccount);
       return _ethersC;
     };
-    const callC = async (funcName, args, value) => {
+    const callC = async (
+      funcName: string, args: Array<Array<ContractArg>>, value: BigNumber,
+      // TODO: find better name for this
+    ): Promise<{wait: () => Promise<TransactionReceipt>}> => {
       if (parentCtc.reallyDeploy && funcName == `m1`) {
-        if (!_waitForInfo) {
-          throw Error(`impossible: _waitForInfo is null`);
-        }
+        if (!_waitForInfo) { throw Error(`impossible: _waitForInfo is null`); }
         return await _waitForInfo(true, args, value);
       } else {
         return (await getC())[funcName]([last_block, ...args], { value });
       }
     };
-    let _getInfo = async () => {
-      if (!_waitForInfo) {
-        throw Error(`impossible: _waitForInfo is null`);
-      }
+
+    let _getInfo = async (): Promise<ContractInfo> => {
+      if (!_waitForInfo) { throw Error(`impossible: _waitForInfo is null`); }
       while (!await _waitForInfo(false)) {
         await Timeout.set(1);
       }
-      _getInfo = async () => {
-        if (!info) {
-          throw Error(`impossible: info is null`);
-        }
+      _getInfo = async (): Promise<ContractInfo> => {
+        if (!info) { throw Error(`impossible: info is null`); }
         return info;
       };
       return await _getInfo();
     };
-    const getInfo = async () => {
+    const getInfo = async (): Promise<ContractInfo> => {
       return await _getInfo();
     };
-    const updateLast = (o) => {
-      if (!o.blockNumber) {
-        throw Error(`Expected blockNumber, ${o}`);
-      }
+
+    const updateLast = (o: {blockNumber?: number}): void => {
+      if (!o.blockNumber) { throw Error(`Expected blockNumber, ${o}`); }
       last_block = o.blockNumber;
     };
-    const getEventData = (ethersC, ok_evt, ok_e) => {
+
+    // XXX move up
+    type E = {topics: Array<string>, data: string};
+    const getEventData = (
+      ethersC: ethers.Contract, ok_evt: string, ok_e: E
+    ): [BigNumber, Array<any>] => {
       const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
       const { args } = ethersC.interface.parseLog(ok_e);
       const [ok_bal, ...ok_vals] = ok_args_abi.map(a => args[a.name]);
+
       return [ok_bal, ok_vals];
     };
-    const iam = (some_addr) => {
+
+    const iam = (some_addr: Address): Address => {
       if (some_addr == address) {
         return address;
       } else {
         throw Error(`I should be ${some_addr}, but am ${address}`);
       }
     };
-    const wait = async (delta) => {
-      if (!last_block) {
-        throw Error(`Impossible: last_block is null`);
-      }
+
+    const wait = async (delta: BigNumber): Promise<BigNumber> => {
+      if (!last_block) { throw Error(`Impossible: last_block is null`); }
       // Don't wait from current time, wait from last_block
       // XXX
       debug(`=====Waiting ${delta} from ${last_block}: ${address}`);
@@ -284,14 +430,24 @@ export const connectAccount = async (networkAccount) => {
       debug(`=====Done waiting ${delta} from ${last_block}: ${address}`);
       return p;
     };
-    const sendrecv_top = async (label, funcNum, evt_cnt, tys, args, value, out_tys, timeout_delay, try_p) => {
+
+    const sendrecv_top = async (
+      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+      args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+      timeout_delay: undefined | number | BigNumber, try_p: any
+    ): Promise<Recv> => {
       void(try_p);
       void(evt_cnt);
       return sendrecv(label, funcNum, tys, args, value, out_tys, timeout_delay);
     };
+
     // XXX: receive expected tys of output and use them to unmunge
     /* eslint require-atomic-updates: off */
-    const sendrecv = async (label, funcNum, tys, args, value, out_tys, timeout_delay) => {
+    const sendrecv = async (
+      label: string, funcNum: number, tys: Array<TyContract<any>>,
+      args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+      timeout_delay: undefined | number | BigNumber
+    ): Promise<Recv> => {
       // XXX use tys
       // TODO: support BigNumber delays?
       timeout_delay = toNumberMay(timeout_delay);
@@ -301,11 +457,13 @@ export const connectAccount = async (networkAccount) => {
         throw Error(`tys.length (${tys.length}) !== args.length (${args.length})`);
       }
       const munged = args.map((m, i) => tys[i].munge(tys[i].canonicalize(m)));
+
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${JSON.stringify(munged)}`);
       let block_send_attempt = (last_block || 0);
       let block_repeat_count = 0;
       while (!timeout_delay || lt(block_send_attempt, add((last_block || 0), timeout_delay))) {
-        let r_maybe = null;
+        let r_maybe: TransactionReceipt | null = null;
+
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
           const r_fn = await callC(funcName, munged, value);
@@ -322,9 +480,7 @@ export const connectAccount = async (networkAccount) => {
           if ( /* timeout_delay && */ block_repeat_count > 32) {
             if (e.code === 'UNPREDICTABLE_GAS_LIMIT') {
               let error = e;
-              while (error.error) {
-                error = error.error;
-              }
+              while (error.error) { error = error.error; }
               console.log(`impossible: The message you are trying to send appears to be invalid.`);
               console.log(error);
             }
@@ -335,43 +491,68 @@ export const connectAccount = async (networkAccount) => {
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY FAIL --- ${last_block} ${current_block} ${block_repeat_count} ${block_send_attempt}`);
           continue;
         }
+
         assert(r_maybe !== null);
         const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
+
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- OKAY`);
+
         // XXX It might be a little dangerous to rely on the polling to just work
+
         // It may be the case that the next line could speed things up?
         // last_block = ok_r.blockNumber;
         void(ok_r);
+
         return await recv(label, funcNum, out_tys, timeout_delay);
       }
+
       // XXX If we were trying to join, but we got sniped, then we'll
       // think that there is a timeout and then we'll wait forever for
       // the timeout message.
+
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
-      return { didTimeout: true };
+      return {didTimeout: true};
     };
+
+    // TODO
+    type ContractOut = any;
+    // XXX move up
+    type Recv = {
+      didTimeout: false,
+      data: Array<ContractOut>,
+      value: BigNumber,
+      balance: BigNumber,
+      from: Address,
+    } | { didTimeout: true };
+
     // XXX: receive expected tys of output and use them to unmunge
-    const recv_top = async (label, okNum, ok_cnt, out_tys, timeout_delay) => {
+    const recv_top = async (
+      label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
+      timeout_delay: number | BigNumber | undefined,
+    ): Promise<Recv> => {
       void(ok_cnt);
       return recv(label, okNum, out_tys, timeout_delay);
     };
+
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const recv = async (label, okNum, out_tys, timeout_delay) => {
+    const recv = async (label: string, okNum: number, out_tys: Array<TyContract<any>>,
+      timeout_delay: number | BigNumber | undefined,
+    ): Promise<Recv> => {
       // TODO: support BigNumber delays?
       timeout_delay = toNumberMay(timeout_delay);
       const ethersC = (await getC());
       const ok_evt = `e${okNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
-      if (!last_block) {
-        throw Error(`impossible: block_poll_start is null`);
-      }
-      let block_poll_start = last_block;
+
+      if(!last_block) { throw Error(`impossible: block_poll_start is null`)};
+      let block_poll_start: number = last_block;
       let block_poll_end = block_poll_start;
       while (!timeout_delay || lt(block_poll_start, add(last_block, timeout_delay))) {
         // console.log(
         //   `~~~ ${label} is polling [${block_poll_start}, ${block_poll_end}]\n` +
         //     `  ~ ${label} will stop polling at ${last_block} + ${timeout_delay} = ${last_block + timeout_delay}`,
         // );
+
         const es = await provider.getLogs({
           fromBlock: block_poll_start,
           toBlock: block_poll_end,
@@ -381,48 +562,61 @@ export const connectAccount = async (networkAccount) => {
         if (es.length == 0) {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);
           block_poll_start = block_poll_end;
+
           await Timeout.set(1);
           void(ethersBlockOnceP); // This might be a better option too, because we won't need to delay
           block_poll_end = await getNetworkTimeNumber();
+
           continue;
         } else {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY`);
+
           const ok_e = es[0];
+
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
           void(ok_r);
           const ok_t = await provider.getTransaction(ok_e.transactionHash);
           // The .gas field doesn't exist on this anymore, apparently?
           // debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
+
           updateLast(ok_t);
           const [ok_bal, ok_vals] = getEventData(ethersC, ok_evt, ok_e);
           if (ok_vals.length !== out_tys.length) {
             throw Error(`Expected ${out_tys.length} values from event data, but got ${ok_vals.length}.`);
           }
-          const data = ok_vals.map((v, i) => out_tys[i].unmunge(v));
+          const data = ok_vals.map((v: any, i: number) => out_tys[i].unmunge(v));
+
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
           return { didTimeout: false, data, value: ok_t.value, balance: ok_bal, from: ok_t.from };
         }
       }
+
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- TIMEOUT`);
-      return { didTimeout: true };
+      return {didTimeout: true} ;
     };
+
     return { sendrecv: sendrecv_top, recv: recv_top, iam, wait, getInfo };
   };
+
   // https://docs.ethers.io/v5/api/contract/contract-factory/
-  const deploy = async (bin) => {
+  const deploy = async (bin: Backend): Promise<Contract> => {
     if (!ethers.Signer.isSigner(networkAccount)) {
       throw Error(`Signer required to deploy, ${networkAccount}`);
     }
     const { ABI, Bytecode, deployMode } = bin._Connectors.ETH;
     const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
+
     // args : Option(Array(string))
     // where Option is represented as [] for None, and [x] for Some(x)
     // In the Some case, the args are intentionally tupled into a single Array arg
-    const reallyDeploy = async (args, value) => {
+    const reallyDeploy = async (
+      args: Array<Array<ContractArg>>, value: BigNumber
+    ): Promise<ContractInfo> => {
       debug(`${shad}: reallyDeploying with ${JSON.stringify([args, value])}`);
       const contract = await factory.deploy(...args, { value });
       // Wait for it to actually be deployed.
       const deploy_r = await contract.deployTransaction.wait();
+
       return {
         address: contract.address,
         creation_block: deploy_r.blockNumber,
@@ -432,24 +626,29 @@ export const connectAccount = async (networkAccount) => {
         transactionHash: deploy_r.transactionHash,
       };
     };
-    let ctc = null;
+
+    let ctc: ParentCtc | null = null;
     if (deployMode == `DM_firstMsg`) {
       debug(`${shad}: delaying deploy-ment`);
       ctc = { reallyDeploy };
     } else {
       ctc = await reallyDeploy([], bigNumberify(0));
     }
+
     return await attach(bin, ctc);
   };
+
   return { deploy, attach, networkAccount };
 };
-export const newAccountFromMnemonic = async (phrase) => {
+
+export const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(provider);
   const acc = await connectAccount(networkAccount);
   return acc;
 };
-const getSigner = (() => {
+
+const getSigner: () => Promise<ethers.Signer> = (() => {
   const signerP = (async () => {
     if (isIsolatedNetwork) {
       const provider = await getProvider();
@@ -461,21 +660,25 @@ const getSigner = (() => {
       return null;
     }
   })();
+
   return async () => {
     requireIsolatedNetwork('getSigner');
     return await signerP;
   };
 })();
-export const newTestAccount = async (startingBalance) => {
+
+export const newTestAccount = async (startingBalance: BigNumber): Promise<Account> => {
   debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork('newTestAccount');
   const provider = await getProvider();
   const signer = await getSigner();
+
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
   const to = networkAccount.address;
+
   try {
     debug(`awaiting transfer: ${to}`);
-    await transfer({ networkAccount: signer }, { networkAccount }, startingBalance);
+    await transfer({networkAccount: signer}, {networkAccount}, startingBalance);
     debug(`got transfer. awaiting connectAccount: ${to}`);
     const acc = await connectAccount(networkAccount);
     debug(`got connectAccount: ${to}`);
@@ -485,22 +688,28 @@ export const newTestAccount = async (startingBalance) => {
     throw e;
   }
 };
-const getNetworkTimeNumber = async () => {
+
+const getNetworkTimeNumber = async (): Promise<number> => {
   const provider = await getProvider();
   return await provider.getBlockNumber();
 };
-export const getNetworkTime = async () => {
+
+export const getNetworkTime = async (): Promise<BigNumber> => {
   return bigNumberify(await getNetworkTimeNumber());
 };
+
+type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => any;
+
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
-export const wait = async (delta, onProgress) => {
+export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
   return await waitUntilTime(add(now, delta), onProgress);
 };
+
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
-export const waitUntilTime = async (targetTime, onProgress) => {
+export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   targetTime = bigNumberify(targetTime);
   if (isIsolatedNetwork) {
     return await fastForwardTo(targetTime, onProgress);
@@ -508,14 +717,15 @@ export const waitUntilTime = async (targetTime, onProgress) => {
     return await actuallyWaitUntilTime(targetTime, onProgress);
   }
 };
+
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
-const actuallyWaitUntilTime = async (targetTime, onProgress) => {
-  const onProg = onProgress || (() => {});
+const actuallyWaitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+  const onProg: OnProgress = onProgress || (() => {});
   const provider = await getProvider();
   return await new Promise((resolve) => {
-    const onBlock = async (currentTimeNum) => {
-      const currentTime = bigNumberify(currentTimeNum);
+    const onBlock = async (currentTimeNum: number | BigNumber) => {
+      const currentTime = bigNumberify(currentTimeNum)
       // Does not block on the progress fn if it is async
       onProg({ currentTime, targetTime });
       if (ge(currentTime, targetTime)) {
@@ -524,15 +734,17 @@ const actuallyWaitUntilTime = async (targetTime, onProgress) => {
       }
     };
     provider.on('block', onBlock);
+
     // Also "re-emit" the current block
     // Note: this sometimes causes the starting block
     // to be processed twice, which should be harmless.
     getNetworkTime().then(onBlock);
   });
 };
-const fastForwardTo = async (targetTime, onProgress) => {
+
+const fastForwardTo = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   // console.log(`>>> FFWD TO: ${targetTime}`);
-  const onProg = onProgress || (() => {});
+  const onProg: OnProgress = onProgress || (() => {});
   requireIsolatedNetwork('fastForwardTo');
   let currentTime;
   while (lt(currentTime = await getNetworkTime(), targetTime)) {
@@ -544,39 +756,45 @@ const fastForwardTo = async (targetTime, onProgress) => {
   // console.log(`<<< FFWD TO: ${targetTime} complete. It's ${currentTime}`);
   return currentTime;
 };
-const requireIsolatedNetwork = (label) => {
+
+const requireIsolatedNetwork = (label: string): void => {
   if (!isIsolatedNetwork) {
     throw Error(`Invalid operation ${label} in REACH_CONNECTOR_MODE=${connectorMode}`);
   }
 };
-const dummyAccountP = (async () => {
+
+const dummyAccountP: Promise<Account> = (async () => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
   const acc = await connectAccount(networkAccount);
   return acc;
 })();
+
 const stepTime = async () => {
   requireIsolatedNetwork('stepTime');
   const signer = await getSigner();
   const acc = await dummyAccountP;
-  return await transfer({ networkAccount: signer }, acc, toWeiBigNumber('0', 'ether'));
+  return await transfer({networkAccount: signer}, acc, toWeiBigNumber('0', 'ether'));
 };
-const toNumberMay = (x) => {
+
+const toNumberMay = (x: number | BigNumber | undefined) => {
   if (isBigNumber(x)) {
     return x.toNumber();
   } else {
     return x;
   }
 };
+
 // Check the contract info and the associated deployed bytecode;
 // Verify that:
 // * it matches the bytecode you are expecting.
 // * it was deployed at exactly creation_block.
 // Throws an Error if any verifications fail
-export const verifyContract = async (ctcInfo, backend) => {
+export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
   const { ABI, Bytecode } = backend._Connectors.ETH;
   const { address, creation_block, args, value, creator } = ctcInfo;
   const factory = new ethers.ContractFactory(ABI, Bytecode);
+
   // TODO: is there a way to get the creation_block & bytecode with a single api call?
   // https://docs.ethers.io/v5/api/providers/provider/#Provider-getCode
   const provider = await getProvider();
@@ -585,6 +803,7 @@ export const verifyContract = async (ctcInfo, backend) => {
     throw Error(`Contract was deployed earlier than ${creation_block} (as was claimed)`);
   }
   const actual = await provider.getCode(address, creation_block);
+
   // see comment on reallyDeploy about args
   const deployData = factory.getDeployTransaction(...args).data;
   if (typeof deployData !== 'string') {
@@ -594,6 +813,7 @@ export const verifyContract = async (ctcInfo, backend) => {
   if (!deployData.startsWith(backend._Connectors.ETH.Bytecode)) {
     throw Error(`Impossible: contract with args is not prefixed by backend Bytecode`);
   }
+
   // FIXME this is based on empirical observation, feels hacky
   // deployData looks like this: [init][setup][body][teardown]
   // actual looks like this:     [init][body]
@@ -609,15 +829,19 @@ export const verifyContract = async (ctcInfo, backend) => {
   const initLen = 13;
   const setupLen = 156;
   const expected = deployData.slice(0, initLen) + deployData.slice(initLen + setupLen);
+
   if (expected.length <= 0) {
     throw Error(`Impossible: contract expectation is empty`);
   }
+
   if (actual !== expected) {
     // FIXME: Empirical observation says that 0-arg contract deploys
     // should === expected. However, this is fragile (?), so it's ok
     // to only pass the next check.
+
     // FIXME: the 13-char header is also fragile, but we're just
     // running with that assumption for now.
+
     const deployNoInit = deployData.slice(initLen);
     const actualNoInit = actual.slice(initLen);
     if (actualNoInit.length === 0 || !deployNoInit.includes(actualNoInit)) {
@@ -636,6 +860,7 @@ export const verifyContract = async (ctcInfo, backend) => {
       throw Error(`Contract bytecode does not match expected bytecode.`);
     }
   }
+
   const bal = await provider.getBalance(address, creation_block);
   // bal is allowed to exceed expectations, for example,
   // if someone spuriously transferred extra money to the contract
@@ -644,6 +869,7 @@ export const verifyContract = async (ctcInfo, backend) => {
     console.log('bal actual  : ' + bal);
     throw Error(`Contract initial balance does not match expected initial balance`);
   }
+
   if (args.length == 0) {
     const st = await provider.getStorageAt(address, 0, creation_block);
     const expectedSt = keccak256(0, creation_block);
@@ -658,5 +884,6 @@ export const verifyContract = async (ctcInfo, backend) => {
     // const expectedSt = keccak256(1, creation_block, ...freeVars)
     // if st !== expectedSt throw Error
   }
+
   return true;
 };

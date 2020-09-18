@@ -3,6 +3,8 @@ import * as crypto from 'crypto';
 import ethers from 'ethers';
 
 type BigNumber = ethers.BigNumber;
+type num = BigNumber | number
+
 const BigNumber = ethers.BigNumber;
 
 let DEBUG: boolean = false;
@@ -55,7 +57,7 @@ const hexOf = (x: any): string => toHex(x);
 // .unmunge is the inverse of .munge
 // TODO: decouple .munge and .unmunge from this module
 
-type Contract <T> = {
+export type TyContract<T> = {
   name: string,
   canonicalize: (v: any) => T,
   munge: (v: T) => any,
@@ -63,7 +65,7 @@ type Contract <T> = {
   defaultValue: T,
 };
 
-export const T_Null: Contract<null> = {
+export const T_Null: TyContract<null> = {
   name: 'Null',
   canonicalize: (v: any): null => {
     // Doesn't check with triple eq; we're being lenient here
@@ -78,7 +80,7 @@ export const T_Null: Contract<null> = {
   defaultValue: null,
 };
 
-export const T_Bool: Contract<boolean> = {
+export const T_Bool: TyContract<boolean> = {
   name: 'Bool',
   canonicalize: (v: any): boolean => {
     if (typeof(v) !== 'boolean') {
@@ -91,7 +93,7 @@ export const T_Bool: Contract<boolean> = {
   defaultValue: false,
 };
 
-export const T_UInt256: Contract<BigNumber> = {
+export const T_UInt256: TyContract<BigNumber> = {
   name: 'UInt256',
   canonicalize: (v: any): BigNumber => {
     if (isBigNumber(v)) {
@@ -119,7 +121,7 @@ export const T_UInt256: Contract<BigNumber> = {
 };
 
 // TODO: define some wrapper type Bytes?
-export const T_Bytes: Contract<string> = {
+export const T_Bytes: TyContract<string> = {
   name: 'Bytes',
   canonicalize: (x: any): string => {
     if (typeof(x) !== 'string') {
@@ -139,7 +141,7 @@ export const T_Bytes: Contract<string> = {
 };
 
 // TODO: use a wrapper type for canonicalized form
-export const T_Address: Contract<string> = {
+export const T_Address: TyContract<string> = {
   name: 'Address',
   canonicalize: (x: any): string => {
     if (typeof x !== 'string') {
@@ -159,7 +161,7 @@ export const T_Address: Contract<string> = {
   defaultValue: '0x' + Array(64).fill('0').join(''),
 };
 
-export const T_Array = <T>(ctc: Contract <T> , sz: number): Contract<Array<T>> => {
+export const T_Array = <T>(ctc: TyContract <T> , sz: number): TyContract<Array<T>> => {
   // TODO: check ctc, sz for sanity
   return {
     name: `Array(${ctc.name}, ${sz})`,
@@ -186,7 +188,7 @@ export const T_Array = <T>(ctc: Contract <T> , sz: number): Contract<Array<T>> =
 
 // TODO: way too hard to figure out how to teach typescript the type of this
 // T is just the "union of all types in the tuple"
-export const T_Tuple = <T>(ctcs: Array <Contract<T>>): Contract<Array<T>> => {
+export const T_Tuple = <T>(ctcs: Array <TyContract<T>>): TyContract<Array<T>> => {
   // TODO: check ctcs for sanity
   return {
     name: `Tuple(${ctcs.map((ctc) => ` ${ctc.name} `)})`,
@@ -215,8 +217,8 @@ export const T_Tuple = <T>(ctcs: Array <Contract<T>>): Contract<Array<T>> => {
 // TODO: way too hard to teach typescript the type of this
 // T is just the "union of all object value types"
 export const T_Object = <T>(co: {
-  [key: string]: Contract <T>
-}): Contract <{[key: string]: T}> => {
+  [key: string]: TyContract <T>
+}): TyContract <{[key: string]: T}> => {
   // TODO: check co for sanity
   return {
     name: `Object(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
@@ -281,8 +283,8 @@ export const T_Object = <T>(co: {
 // TODO: way too hard to teach typescript the type of this
 // T is just the "union of all variant types"
 export const T_Data = <T>(co: {
-  [key: string]: Contract<T>
-}): Contract<[string, T]> => {
+  [key: string]: TyContract<T>
+}): TyContract<[string, T]> => {
   // TODO: check co for sanity
   // ascLabels[i] = label
   // labelMap[label] = i
@@ -348,7 +350,7 @@ export const T_Data = <T>(co: {
 
 const format_ai = (ai: any) => JSON.stringify(ai);
 
-export function protect <T>(ctc: Contract<T>, v: any, ai: any = null) {
+export function protect <T>(ctc: TyContract<T>, v: any, ai: any = null) {
   try {
     return ctc.canonicalize(v);
   } catch (e) {
@@ -390,7 +392,7 @@ export const keccak256 = (...args: Array<any>) => {
 export const hexToBigNumber = (h: string): BigNumber => bigNumberify(hexTo0x(h));
 export const uint256ToBytes = (i: BigNumber): string => bigNumberToHex(i);
 
-export const bigNumberToHex = (u: BigNumber | number) => {
+export const bigNumberToHex = (u: num) => {
   const size = 32; // bytes // TODO: support other sizes?
   const format = 'ufixed256x0';
   const nPos = bigNumberify(u).toTwos(8 * size);
@@ -409,8 +411,6 @@ export const randomUInt256 = (): BigNumber =>
 export const hasRandom = {
   random: randomUInt256,
 };
-
-type num = BigNumber | number
 
 export const eq = (a: num, b: num): boolean => bigNumberify(a).eq(bigNumberify(b));
 export const add = (a: num, b: num): BigNumber => bigNumberify(a).add(bigNumberify(b));

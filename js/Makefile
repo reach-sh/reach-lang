@@ -15,10 +15,10 @@ clean:
 	rm -f package.json
 
 .PHONY: build
-build: build-stdlib build-runner shared.mjs
+build: build-stdlib build-runner
 
 .PHONY: build-stdlib
-build-stdlib: package.json
+build-stdlib: package.json shared.mjs loader.mjs ETH.mjs
 	docker build --tag=$(IMAGE):latest \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg ESLINT_VERSION=$(ESLINT_VERSION) \
@@ -63,5 +63,21 @@ shared.mjs: build/shared.js
 	cp build/shared.js shared.mjs
 	$(MAKE) format
 
+loader.mjs: build/loader.js
+	cp build/loader.js loader.mjs
+	$(MAKE) format
+
+ETH.mjs: build/ETH.js loader.mjs shared.mjs
+	cp build/ETH.js ETH.mjs
+	$(MAKE) format
+	sbin/fix_imports.sh ETH.mjs loader shared
+# TODO: figure out what's up with imports
+
 build/shared.js: shared.ts tsconfig.json package.json
+	npm run tsc
+
+build/loader.js: loader.ts tsconfig.json package.json
+	npm run tsc
+
+build/ETH.js: ETH.ts tsconfig.json package.json
 	npm run tsc

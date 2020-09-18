@@ -1,19 +1,29 @@
+export type ConnectorMode =
+  'ETH-test-dockerized-geth' |
+  'ETH-test-embedded-ganache' |
+  'FAKE-test-embedded-mock' |
+  'ALGO-test-dockerized-algod';
+
 // Order is significant, earlier = default for shared prefix
 // e.g. ETH defaults to ETH-test-dockerized-geth
-const knownConnectorModes = [
+const knownConnectorModes: Array<ConnectorMode> = [
   'ETH-test-dockerized-geth',
   'ETH-test-embedded-ganache',
   'FAKE-test-embedded-mock',
   'ALGO-test-dockerized-algod',
 ];
 
-function isKnownConnector(s) {
+export type Connector = 'ETH' | 'ALGO' | 'FAKE';
+
+function isKnownConnector(s: string): s is Connector {
   return (s === 'ETH' || s === 'ALGO' || s === 'FAKE');
 }
-const connectorModeDefaults = {};
+
+const connectorModeDefaults: {[key: string]: ConnectorMode} = {};
+
 // Populate connectorModeDefaults
 for (const knownConnectorMode of knownConnectorModes) {
-  let prefix = null;
+  let prefix: string | null = null;
   for (const piece of knownConnectorMode.split('-')) {
     prefix = prefix ? `${prefix}-${piece}` : piece;
     if (!connectorModeDefaults[prefix]) {
@@ -21,7 +31,8 @@ for (const knownConnectorMode of knownConnectorModes) {
     }
   }
 }
-export function canonicalizeConnectorMode(connectorMode) {
+
+export function canonicalizeConnectorMode(connectorMode: string): ConnectorMode {
   const canonicalized = connectorModeDefaults[connectorMode];
   if (canonicalized) {
     return canonicalized;
@@ -29,18 +40,21 @@ export function canonicalizeConnectorMode(connectorMode) {
     throw Error(`Unrecognized REACH_CONNECTOR_MODE=${connectorMode}`);
   }
 }
-export function getConnectorMode() {
+
+export function getConnectorMode(): ConnectorMode {
   const connectorMode = process.env.REACH_CONNECTOR_MODE || 'ETH';
   return canonicalizeConnectorMode(connectorMode);
 }
+
 const stdlibFiles = {
   'ETH': './ETH.mjs',
   'ALGO': './ALGO.mjs',
   'FAKE': './FAKE.mjs',
 };
+
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
-export function getConnector(connectorMode) {
+export function getConnector(connectorMode: string): Connector {
   connectorMode = connectorMode || getConnectorMode();
   const connector = connectorMode.split('-')[0];
   if (isKnownConnector(connector)) {
@@ -49,9 +63,10 @@ export function getConnector(connectorMode) {
     throw Error(`impossible: unknown connector: ${connector}`);
   }
 }
+
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
-export async function loadStdlib(connectorMode) {
+export async function loadStdlib(connectorMode: string) {
   connectorMode = connectorMode ?
     canonicalizeConnectorMode(connectorMode) :
     getConnectorMode();

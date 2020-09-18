@@ -5,6 +5,7 @@
   "type": "module",
   "main": "index.mjs",
   "devDependencies": {
+    "@types/await-timeout": "^0.3.1",
     "@types/node": "^14.11.1",
     "babel-eslint": "^10.0.3",
     "eslint": "{{ESLINT_VERSION}}",
