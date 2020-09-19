@@ -4,6 +4,8 @@ import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
+import Data.ByteString.Base64 (encodeBase64')
+import qualified Data.ByteString.Char8 as B
 import Control.Monad.Reader
 import Data.IORef
 import Data.Word
@@ -12,10 +14,14 @@ import Reach.AST
 import Reach.Connector
 import Reach.Util
 
-type ScratchSlot = Word8
+encodeBase64 :: B.ByteString -> LT.Text
+encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
 
 texty :: Show a => a -> LT.Text
 texty x = LT.pack $ show x
+
+type ScratchSlot = Word8
+type TxnIdx = Word8 --- XXX actually only 16 IIRC
 
 type TEAL = LT.Text
 
@@ -42,8 +48,9 @@ data Env = Env
   , eWhich :: Int
   , eLabelR :: IORef Int
   , eOutputR :: IORef TEALs
-  , eHP :: Word8
-  , eSP :: Word8
+  , eTxnsR :: IORef TxnIdx
+  , eHP :: ScratchSlot
+  , eSP :: ScratchSlot
   , eVars :: M.Map DLVar ScratchSlot
   , eLets :: M.Map DLVar (App ()) }
 
@@ -62,6 +69,10 @@ label :: LT.Text -> App ()
 label = output . label_
 comment :: LT.Text -> App ()
 comment = output . comment_
+or_fail :: App ()
+or_fail = code "bz" ["revert"]
+op :: LT.Text -> App ()
+op = flip code []
 
 bad :: LT.Text -> App ()
 bad lab = do
@@ -91,7 +102,7 @@ lookup_let dv = do
   Env {..} <- ask
   case M.lookup dv eLets of
     Just m -> m
-    Nothing -> impossible $ "lookup_let " <> show dv <> " in " <> show (M.keys eLets)
+    Nothing -> impossible $ "lookup_let"
 
 store_var :: DLVar -> ScratchSlot -> App a -> App a
 store_var dv ss m = do
@@ -104,7 +115,7 @@ lookup_var dv = do
   Env {..} <- ask
   case M.lookup dv eVars of
     Just x -> return $ x
-    Nothing -> impossible "lookup_var"
+    Nothing -> impossible $ "lookup_var " <> show dv
 
 salloc :: (ScratchSlot -> App a) -> App a
 salloc fm = do
@@ -115,10 +126,25 @@ salloc fm = do
   local (\e -> e { eSP = eSP' }) $
     fm eSP
 
+talloc :: App TxnIdx
+talloc = do
+  Env {..} <- ask
+  liftIO $ modifyIORef eTxnsR (1+)
+  txni <- liftIO $ readIORef eTxnsR
+  --- XXX check if > bound
+  return txni
+
+cc :: DLConstant -> App ()
+cc = \case
+  DLC_Null -> cc $ DLC_Int 0
+  DLC_Bool b -> cc $ DLC_Int $ if b then 1 else 0
+  DLC_Int i -> code "int" [ texty i ]
+  DLC_Bytes bs -> code "byte" [ "base64(" <> encodeBase64 bs <> ")" ]
+
 ca :: DLArg -> App ()
 ca = \case
   DLA_Var v -> lookup_let v
-  DLA_Con {} -> xxx "con"
+  DLA_Con c -> cc c
   DLA_Array {} -> xxx "array"
   DLA_Tuple {} -> xxx "tuple"
   DLA_Obj {} -> xxx "obj"
@@ -127,7 +153,25 @@ ca = \case
 
 cprim :: PrimOp -> App ()
 cprim = \case
-  p -> xxx $ texty p
+  ADD -> op "+"
+  SUB -> op "-"
+  MUL -> op "*"
+  DIV -> op "/"
+  MOD -> op "%"
+  PLT -> op "<"
+  PLE -> op "<="
+  PEQ -> op "=="
+  PGT -> op ">"
+  PGE -> op ">="
+  LSH -> xxx "LSH"
+  RSH -> xxx "RSH"
+  BAND -> op "&"
+  BIOR -> op "|"
+  BXOR -> op "^"
+  BYTES_EQ -> op "=="
+  IF_THEN_ELSE -> xxx "ITE"
+  BALANCE -> xxx "BALANCE"
+  TXN_VALUE -> code "gtxn" [ texty txnToContract, "Amount" ]
 
 ce :: DLExpr -> App ()
 ce = \case
@@ -144,7 +188,24 @@ ce = \case
   DLE_ObjectRef {} -> xxx "obj ref"
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest {} -> xxx "digest"
-  DLE_Transfer {} -> xxx "transfer"
+  DLE_Transfer _ _ who amt -> do
+    txni <- talloc
+    code "gtxn" [ texty txni, "TypeEnum" ]
+    code "int" [ "pay" ]
+    op "=="
+    or_fail
+    code "gtxn" [ texty txni, "Receiver" ]
+    ca who
+    op "=="
+    or_fail
+    code "gtxn" [ texty txni, "Amount" ]
+    ca amt
+    op "=="
+    or_fail
+    code "gtxn" [ texty txni, "Sender" ]
+    lookup_me
+    op "=="
+    or_fail
   DLE_Claim _ _ t a ->
     case t of
       CT_Assert -> impossible "assert"
@@ -152,10 +213,7 @@ ce = \case
       CT_Require -> check
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
-      where
-        check = do
-          ca a
-          code "bz" ["revert"]
+      where check = ca a >> or_fail
   DLE_Wait {} -> return ()
   DLE_PartSet _ _ a -> ca a
 
@@ -205,23 +263,108 @@ ct = \case
     label false_lab
     ct ft
   CT_Switch {} -> xxx "switch"
-  CT_Wait {} -> xxx "wait"
+  CT_Wait _ svs -> do
+    cstate HM_Set svs
+    code "arg" [ texty argNextSt ]
+    op "=="
+    or_fail
+    halt_should_be False
   CT_Jump {} -> xxx "jump"
-  CT_Halt _ -> do
-    code "b" ["halt"]
+  CT_Halt _ -> halt_should_be True
+
+data HashMode
+  = HM_Set
+  | HM_Check Int
+  deriving (Eq, Show)
+
+cstate :: HashMode -> [DLVar] -> App ()
+cstate _XXX_hm _XXX_svs = do
+  xxx "cstate"
+
+halt_should_be :: Bool -> App ()
+halt_should_be b = do
+  code "arg" [ texty argHalts ]
+  cc $ DLC_Bool b
+  op "=="
+  or_fail
+  code "b" ["done"]
+
+-- Txns:
+-- 0   : Application call
+-- 1   : Zero to handler account
+-- 2   : Transfer to contract account
+-- 3.. : Transfers from contract to user
+txnToContract :: Word8
+txnToContract = 2
+txnFirstUser :: Word8
+txnFirstUser = 3
+-- Args:
+-- 0   : Previous state
+-- 1   : Next state
+-- 2   : Contract account address
+-- 3   : Handler halts
+-- 4.. : Handler arguments
+argPrevSt :: Word8
+argPrevSt = 0
+argNextSt :: Word8
+argNextSt = 1
+argMe :: Word8
+argMe = 2
+argHalts :: Word8
+argHalts = 3
+argFirstUser :: Word8
+argFirstUser = 4
+
+lookup_me :: App ()
+lookup_me = code "arg" [ texty argMe ]
+lookup_sender :: App ()
+lookup_sender = code "gtxn" [ texty txnToContract, "Sender" ]
 
 ch :: Shared -> Int -> CHandler -> IO (Maybe TEALs)
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _at _XXX_int _XXX_fs _XXX_last _XXX_svs _XXX_msg body) = do
+ch eShared eWhich (C_Handler _at _XXX_int fs prev svs msg body) = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
   let eHP = 0
   let eSP = 255
+  eTxnsR <- newIORef $ txnFirstUser - 1
   let eVars = mempty
-  let eLets = mempty
-  flip runReaderT (Env {..}) (ct body)
-  ts <- readIORef eOutputR
-  return $ Just ts
+  let mkarg dv (i::Int) = (dv, code "arg" [ texty i ])
+  let args = svs <> msg
+  let eLets0 = M.fromList $ zipWith mkarg args [ (fromIntegral argFirstUser) .. ]
+  let eLets =
+        case fs of
+          FS_Join dv ->
+            M.insert dv lookup_sender eLets0
+          FS_Again {} ->
+            eLets0
+  flip runReaderT (Env {..}) $ do
+    case fs of
+      FS_Join {} -> return ()
+      FS_Again dv -> do
+        lookup_sender
+        ca $ DLA_Var dv
+        op "=="
+        or_fail
+    cstate (HM_Check prev) svs
+    code "arg" [ texty argPrevSt ]
+    op "=="
+    or_fail
+    xxx "check timeout"
+    ct body
+    label "revert"
+    cc $ DLC_Int 0
+    op "return"
+  post_ts <- readIORef eOutputR
+  writeIORef eOutputR mempty
+  txns <- readIORef eTxnsR
+  flip runReaderT (Env {..}) $ do
+    code "global" [ "GroupSize" ]
+    cc $ DLC_Int $ fromIntegral $ 1 + txns
+    op "=="
+    or_fail
+  pre_ts <- readIORef eOutputR
+  return $ Just $ pre_ts <> post_ts
 
 type Disp = String -> T.Text -> IO ()
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
@@ -232,19 +375,24 @@ compile_algo disp pl = do
   let sHandlers = hm
   sFailedR <- newIORef False
   let shared = Shared {..}
+  let addProg lab t = do
+        modifyIORef resr (M.insert lab t)
+        disp lab t
   forM_ (M.toList hm) $ \ (hi, hh) -> do
     mht <- ch shared hi hh
     case mht of
       Nothing -> return ()
-      Just ht -> do
-        let lab = "m" <> show hi
-        let htt = render ht
-        modifyIORef resr (M.insert lab htt)
-        disp lab htt
-  res <- readIORef resr
+      Just ht -> addProg ("m" <> show hi) $ render ht
+  let appm = return $ comment_ "XXX app"
+  let clearm = return $ comment_ "XXX clear"
+  let ctcm = return $ comment_ "XXX ctc"
+  addProg "appApproval" $ render appm
+  addProg "appClear" $ render clearm
+  addProg "ctc" $ render ctcm
+  res0 <- readIORef resr
   sFailed <- readIORef sFailedR
-  let res' = M.insert "unsupported" (T.pack $ show sFailed) res
-  return res'
+  let res1 = M.insert "unsupported" (T.pack $ show sFailed) res0
+  return res1
 
 connect_algo :: Connector
 connect_algo moutn pl = do
