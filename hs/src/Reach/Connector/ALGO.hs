@@ -13,6 +13,7 @@ import qualified Data.DList as DL
 import Reach.AST
 import Reach.Connector
 import Reach.Util
+import Reach.Type
 
 encodeBase64 :: B.ByteString -> LT.Text
 encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
@@ -38,7 +39,7 @@ render :: TEALs -> T.Text
 render ts = tt
   where tt = LT.toStrict lt
         lt = LT.unlines lts
-        lts = DL.toList ts
+        lts = "#pragma version 2" : DL.toList ts
 
 data Shared = Shared
   { sHandlers :: M.Map Int CHandler
@@ -73,6 +74,8 @@ or_fail :: App ()
 or_fail = code "bz" ["revert"]
 op :: LT.Text -> App ()
 op = flip code []
+nop :: App ()
+nop = return ()
 
 bad :: LT.Text -> App ()
 bad lab = do
@@ -134,6 +137,22 @@ talloc = do
   --- XXX check if > bound
   return txni
 
+ctobs :: SLType -> App ()
+ctobs = \case
+  T_UInt256 -> op "itob"
+  T_Bool -> op "itob"
+  T_Null -> op "itob"
+  T_Bytes -> nop
+  T_Address -> nop
+  T_Fun {} -> impossible "fun"
+  T_Array {} -> xxx "array to bs"
+  T_Tuple {} -> xxx "tuple to bs"
+  T_Object {} -> xxx "object to bs"
+  T_Data {} -> xxx "data to bs"
+  T_Forall {} -> impossible "forall"
+  T_Var {} -> impossible "var"
+  T_Type {} -> impossible "type"
+
 cc :: DLConstant -> App ()
 cc = \case
   DLC_Null -> cc $ DLC_Int 0
@@ -151,35 +170,52 @@ ca = \case
   DLA_Data {} -> xxx "data"
   DLA_Interact {} -> impossible "consensus interact"
 
-cprim :: PrimOp -> App ()
+cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
-  ADD -> op "+"
-  SUB -> op "-"
-  MUL -> op "*"
-  DIV -> op "/"
-  MOD -> op "%"
-  PLT -> op "<"
-  PLE -> op "<="
-  PEQ -> op "=="
-  PGT -> op ">"
-  PGE -> op ">="
-  LSH -> xxx "LSH"
-  RSH -> xxx "RSH"
-  BAND -> op "&"
-  BIOR -> op "|"
-  BXOR -> op "^"
-  BYTES_EQ -> op "=="
-  IF_THEN_ELSE -> xxx "ITE"
-  BALANCE -> xxx "BALANCE"
-  TXN_VALUE -> code "gtxn" [ texty txnToContract, "Amount" ]
+  ADD -> call "+"
+  SUB -> call "-"
+  MUL -> call "*"
+  DIV -> call "/"
+  MOD -> call "%"
+  PLT -> call "<"
+  PLE -> call "<="
+  PEQ -> call "=="
+  PGT -> call ">"
+  PGE -> call ">="
+  LSH -> const $ xxx "LSH"
+  RSH -> const $ xxx "RSH"
+  BAND -> call "&"
+  BIOR -> call "|"
+  BXOR -> call "^"
+  BYTES_EQ -> call "=="
+  IF_THEN_ELSE -> const $ xxx "ITE"
+  BALANCE -> const $ xxx "BALANCE"
+  TXN_VALUE -> const $ code "gtxn" [ texty txnToContract, "Amount" ]
+  where
+    call o = \args -> do
+      forM_ args ca
+      op o
+
+csum :: [DLArg] -> App ()
+csum = \case
+  [] -> cc $ DLC_Int 0
+  [v] -> ca v
+  v:vs -> csum vs >> ca v >> op "+"
+
+cdigest :: [(SLType, App ())] -> App ()
+cdigest l = do
+  mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
+  op "keccak256"
+  op "btoi"
+  where go may_concat (t, m) = m >> ctobs t >> may_concat
+        no_concat = nop
+        yes_concat = op "concat"
 
 ce :: DLExpr -> App ()
 ce = \case
   DLE_Arg _ a -> ca a
   DLE_Impossible at msg -> expect_throw at msg
-  DLE_PrimOp _ p args -> do
-    forM_ args ca
-    cprim p
+  DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef {} -> xxx "array ref"
   DLE_ArraySet {} -> xxx "array set"
   DLE_ArrayConcat {} -> xxx "array concat"
@@ -187,7 +223,8 @@ ce = \case
   DLE_TupleRef {} -> xxx "tuple ref"
   DLE_ObjectRef {} -> xxx "obj ref"
   DLE_Interact {} -> impossible "consensus interact"
-  DLE_Digest {} -> xxx "digest"
+  DLE_Digest _ args -> cdigest $ map go args
+    where go a = (argTypeOf a, ca a)
   DLE_Transfer _ _ who amt -> do
     txni <- talloc
     code "gtxn" [ texty txni, "TypeEnum" ]
@@ -214,7 +251,7 @@ ce = \case
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
       where check = ca a >> or_fail
-  DLE_Wait {} -> return ()
+  DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
 
 cm :: (a -> App ()) -> PLCommon a -> App ()
@@ -278,8 +315,17 @@ data HashMode
   deriving (Eq, Show)
 
 cstate :: HashMode -> [DLVar] -> App ()
-cstate _XXX_hm _XXX_svs = do
-  xxx "cstate"
+cstate hm svs = do
+  which <-
+    case hm of
+      HM_Set -> do
+        Env {..} <- ask
+        return eWhich
+      HM_Check prev ->
+        return prev
+  let go a = (argTypeOf a, ca a)
+  let whicha w = DLA_Con $ DLC_Int $ fromIntegral w
+  cdigest $ map go $ whicha which : map DLA_Var svs
 
 halt_should_be :: Bool -> App ()
 halt_should_be b = do
@@ -294,35 +340,54 @@ halt_should_be b = do
 -- 1   : Zero to handler account
 -- 2   : Transfer to contract account
 -- 3.. : Transfers from contract to user
+txnAppl :: Word8
+txnAppl = 0
+txnToHandler :: Word8
+txnToHandler = txnAppl + 1
 txnToContract :: Word8
-txnToContract = 2
+txnToContract = txnToHandler + 1
 txnFirstUser :: Word8
-txnFirstUser = 3
+txnFirstUser = txnToContract + 1
+
 -- Args:
 -- 0   : Previous state
 -- 1   : Next state
 -- 2   : Contract account address
 -- 3   : Handler halts
--- 4.. : Handler arguments
+-- 4   : Last round
+-- 5.. : Handler arguments
 argPrevSt :: Word8
 argPrevSt = 0
 argNextSt :: Word8
-argNextSt = 1
+argNextSt = argPrevSt + 1
 argMe :: Word8
-argMe = 2
+argMe = argNextSt + 1
 argHalts :: Word8
-argHalts = 3
+argHalts = argMe + 1
+argLast :: Word8
+argLast = argHalts + 1
 argFirstUser :: Word8
-argFirstUser = 4
+argFirstUser = argLast + 1
 
 lookup_me :: App ()
 lookup_me = code "arg" [ texty argMe ]
 lookup_sender :: App ()
 lookup_sender = code "gtxn" [ texty txnToContract, "Sender" ]
+lookup_last :: App ()
+lookup_last = code "arg" [ texty argLast ]
+
+std_footer :: App ()
+std_footer = do
+  label "revert"
+  cc $ DLC_Int 0
+  op "return"
+  label "done"
+  cc $ DLC_Int 1
+  op "return"
 
 ch :: Shared -> Int -> CHandler -> IO (Maybe TEALs)
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _at _XXX_int fs prev svs msg body) = do
+ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
   let eHP = 0
@@ -339,6 +404,7 @@ ch eShared eWhich (C_Handler _at _XXX_int fs prev svs msg body) = do
           FS_Again {} ->
             eLets0
   flip runReaderT (Env {..}) $ do
+    --- XXX it does not appear to be possible to check that the number of arguments is correct... so what happens if we go beyond, you just crash? or you get 0?
     case fs of
       FS_Join {} -> return ()
       FS_Again dv -> do
@@ -350,11 +416,8 @@ ch eShared eWhich (C_Handler _at _XXX_int fs prev svs msg body) = do
     code "arg" [ texty argPrevSt ]
     op "=="
     or_fail
-    xxx "check timeout"
     ct body
-    label "revert"
-    cc $ DLC_Int 0
-    op "return"
+    std_footer
   post_ts <- readIORef eOutputR
   writeIORef eOutputR mempty
   txns <- readIORef eTxnsR
@@ -363,6 +426,23 @@ ch eShared eWhich (C_Handler _at _XXX_int fs prev svs msg body) = do
     cc $ DLC_Int $ fromIntegral $ 1 + txns
     op "=="
     or_fail
+    let check_time f = \case
+          [] -> nop
+          as -> do
+            lookup_last
+            csum as
+            op "+"
+            let go i = do
+                  op "dup"
+                  code "gtxn" [ texty i, f ]
+                  op "=="
+                  or_fail
+            forM_ [0..txns] go
+            op "pop"
+    (do
+      let CBetween from to = int
+      check_time "FirstValid" from
+      check_time "LastValid" to)
   pre_ts <- readIORef eOutputR
   return $ Just $ pre_ts <> post_ts
 
@@ -383,9 +463,39 @@ compile_algo disp pl = do
     case mht of
       Nothing -> return ()
       Just ht -> addProg ("m" <> show hi) $ render ht
-  let appm = return $ comment_ "XXX app"
-  let clearm = return $ comment_ "XXX clear"
-  let ctcm = return $ comment_ "XXX ctc"
+  let simple m = do
+        -- FIXME this is a hack. make fun parameterized over the interesting stuff and merge with ch
+        let eShared = shared
+        let eWhich = 0
+        eLabelR <- newIORef 0
+        eOutputR <- newIORef mempty
+        eTxnsR <- newIORef 0
+        let eHP = 0
+        let eSP = 0
+        let eVars = mempty
+        let eLets = mempty
+        flip runReaderT (Env {..}) $ m >> std_footer
+        outs <- readIORef eOutputR
+        return outs
+  appm <- simple $ do
+    xxx "if not initialized, do it and quit"
+    xxx "not halts"
+    xxx "check group size"
+    xxx "check txnAppl?"
+    xxx "check txnToHandler"
+    xxx "check txnToContract?"
+    xxx "prev st is correct"
+    xxx "me is correct"
+    xxx "last is correct"
+    xxx "update next state"
+    xxx "update last"
+    xxx "update halts"
+    code "b" ["done"]
+  clearm <- simple $ do
+    xxx "check halts"
+  ctcm <- simple $ do
+    xxx "check group size"
+    xxx "check txnAppl"
   addProg "appApproval" $ render appm
   addProg "appClear" $ render clearm
   addProg "ctc" $ render ctcm
