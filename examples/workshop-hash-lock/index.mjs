@@ -2,13 +2,13 @@ import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
-  const startingBalance = stdlib.toWeiBigNumber('100', 'ether');
+  const startingBalance = stdlib.parseCurrency({ETH: 100});
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 
   const getBalance = async (who) =>
-        stdlib.fromWei ( await stdlib.balanceOf(who) );
+        stdlib.formatCurrency(await stdlib.balanceOf(who), 4);
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
@@ -18,16 +18,17 @@ import * as backend from './build/index.main.mjs';
   const thePass = stdlib.randomUInt256();
 
   await Promise.all([
-    backend.Alice(
-      stdlib, ctcAlice,
-      { amt: stdlib.toWeiBigNumber('25', 'ether'),
-        pass: thePass } ),
-    backend.Bob(
-      stdlib, ctcBob,
-      { getPass: () => {
+    backend.Alice(stdlib, ctcAlice, {
+      amt: stdlib.parseCurrency({ETH: 25}),
+      pass: thePass,
+    }),
+    backend.Bob(stdlib, ctcBob, {
+      getPass: () => {
         console.log(`Bob asked to give the preimage.`);
         console.log(`Returning: ${thePass}`);
-        return thePass; } } )
+        return thePass;
+      },
+    }),
   ]);
 
   const afterAlice = await getBalance(accAlice);

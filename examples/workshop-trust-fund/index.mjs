@@ -4,13 +4,11 @@ import * as backend from './build/index.main.mjs';
 const runDemo = async (delayReceiver, delayFunder) => {
   const stdlib = await stdlib_loader.loadStdlib();
   const connector = stdlib_loader.getConnector();
-  const toCurrency =
-        connector == 'ETH' ? (amt) => stdlib.toWeiBigNumber(amt, 'ether') :
-        (amt) => stdlib.bigNumberify(amt);
-  const fromCurrency =
-        connector == 'ETH' ? (amt) => stdlib.fromWei(amt) :
-        (amt) => amt.toString(); // ?
-  const getBalance = async (who) => fromCurrency(await stdlib.balanceOf(who));
+  const amt = (x) => stdlib.parseCurrency({ETH: x, FAKE: x});
+  const getBalance = async (who) => stdlib.formatCurrency(
+    await stdlib.balanceOf(who),
+    connector === 'FAKE' ? 0 : 4
+  );
 
   const MATURITY = 10;
   const REFUND = 10;
@@ -24,11 +22,14 @@ const runDemo = async (delayReceiver, delayFunder) => {
       console.log(`${who} sees that the account is funded.`);
       if ( delay != 0 ) {
         console.log(`${who} begins to wait...`);
-        await stdlib.wait(delay); } },
+        await stdlib.wait(delay);
+      }
+    },
     ready : async () => console.log(`${who} is ready to receive the funds.`),
-    recvd : async () => console.log(`${who} received the funds.`) });
+    recvd : async () => console.log(`${who} received the funds.`)
+  });
 
-  const startingBalance = toCurrency('100');
+  const startingBalance = amt(100);
 
   const funder = await stdlib.newTestAccount(startingBalance);
   const receiver = await stdlib.newTestAccount(startingBalance);
@@ -43,15 +44,20 @@ const runDemo = async (delayReceiver, delayFunder) => {
       ...common('Funder', fDelay),
       getParams: () => ({
         receiverAddr: receiver.networkAccount.address,
-        payment: toCurrency('10'),
+        payment: amt(10),
         maturity: MATURITY,
         refund: REFUND,
-        dormant: DORMANT, }) }),
+        dormant: DORMANT,
+      }),
+    }),
     backend.Receiver(stdlib, ctcReceiver, common('Receiver', rDelay)),
-    backend.Bystander(stdlib, ctcBystander, common('Bystander')) ]);
+    backend.Bystander(stdlib, ctcBystander, common('Bystander')),
+  ]);
   for (const [who, acc] of [['Funder', funder], ['Receiver', receiver], ['Bystander', bystander]]) {
-    console.log(`${who} has a balance of ${await getBalance(acc)}`); }
-  console.log(`\n`); };
+    console.log(`${who} has a balance of ${await getBalance(acc)}`);
+  }
+  console.log(`\n`);
+};
 
 (async () => {
   await runDemo(false, false);

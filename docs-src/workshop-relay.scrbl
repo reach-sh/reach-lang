@@ -175,9 +175,9 @@ Here's the JavaScript @tech{frontend} we wrote:
 We do a few sneaky things in this program:
 @itemlist[
  @item{Lines 18 through 20 create a JavaScript @link["https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise"]{Promise} that will be filled in later by Alice.}
- @item{Alice's @reachin{getRelay} function (lines 26 through 33) creates the new account and communicates it "outside of the network" through the aforementioned Promise.}
- @item{Bob's thread (lines 34 through 46) waits for the Promise to resolve and then connects to the application with this new account.}
- @item{The Relay's @reachin{getBob} function (lines 44 through 46) returns his own address to receive the funds.}
+ @item{Alice's @reachin{getRelay} function (lines 25 through 32) creates the new account and communicates it "outside of the network" through the aforementioned Promise.}
+ @item{Bob's thread (lines 34 through 48) waits for the Promise to resolve and then connects to the application with this new account.}
+ @item{The Relay's @reachin{getBob} function (lines 43 through 46) returns his own address to receive the funds.}
 ]
 
 If this program is scary for you, don't worry!

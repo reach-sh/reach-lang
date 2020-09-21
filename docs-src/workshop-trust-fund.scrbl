@@ -181,7 +181,7 @@ Here's the JavaScript @tech{frontend} we wrote:
 @reachex[#:show-lines? #t "workshop-trust-fund/index.mjs"
          #:link #t]
 
-The most interesting part of this program is on lines 25 through 27 when we optionally cause a delay in the participant after they receive the signal that the account is funded.
+The most interesting part of this program is on lines 23 through 26 when we optionally cause a delay in the participant after they receive the signal that the account is funded.
 
 Let's see what it looks like when we run this program:
 
