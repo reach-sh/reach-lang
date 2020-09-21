@@ -138,3 +138,38 @@ const toNumberMay = (x) => {
     return x;
   }
 };
+/** @description the display name of the standard unit of currency for the network */
+export const standardUnit = 'reachies';
+/** @description the display name of the atomic (smallest) unit of currency for the network */
+export const atomicUnit = 'reachies';
+/**
+ * @description  Parse currency by network
+ * @param cm  a currency map, keyed by network, values are the standard unit for that network.
+ *   For stdlib/ETH, this map must include ETH. The unit is ethers.
+ * @returns  the amount in the atomic unit of the network.
+ *   For stdlib/ETH this is WEI.
+ * @example  parseCurrency({FAKE: 100}).toString() // => '100'
+ */
+export function parseCurrency(cm) {
+  if (!cm.FAKE) {
+    throw Error(`Expected FAKE in ${Object.keys(cm)}`);
+  }
+  return stdlib.bigNumberify(cm.FAKE.toString());
+}
+/**
+ * @description  Format currency by network
+ * @param amt  the amount in the atomic unit of the network.
+ *   For stdlib/ETH this is WEI.
+ * @param decimals  up to how many decimal places to display in the standard unit.
+ *   Trailing zeroes will be omitted.
+ *   For stdlib/ETH this must be an int from 0 to 18 inclusive, and defaults to 18.
+ * @returns  a string representation of that amount in the standard unit for that network.
+ *   For stdlib/ETH this is ethers.
+ * @example  formatCurrency(bigNumberify('100')); // => '100'
+ */
+export function formatCurrency(amt, decimals = 0) {
+  if (!(Number.isInteger(decimals) && decimals === 0)) {
+    throw Error(`Expected decimals to be the integer 0, but got ${decimals}.`);
+  }
+  return amt.toString();
+}

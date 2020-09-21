@@ -214,7 +214,7 @@ runTests(async () => {
       const stdlibExports = Object.keys(stdlib).sort();
 
       const ETH_extra_exports = ['fromWei', 'toWei', 'toWeiBigNumber'];
-      const ALGO_extra_exports = ['algosToMicroalgos', 'microalgosToAlgos'];
+      const ALGO_extra_exports = [];
       const FAKE_extra_exports = [];
 
       for (const [otherName, otherStdlib, otherExtraExports] of [
@@ -230,6 +230,44 @@ runTests(async () => {
           expect(otherStdlibExports.filter(x => !stdlibExports.includes(x)))
           .toBe(otherExtraExports));
       }
+    });
+
+    describe('currency conversions', () => {
+      const amt = '123.456';
+      // 3 is the number of decimals to shift over to make 123.456 a whole number
+      const amtWei = bigNumberify('10').pow(18 - 3).mul('123456');
+      const amtTruncTo2 = amt.slice(0, amt.length - 1); // truncates! does not round
+      it(`should convert to WEI correctly`, () => {
+        expect(stdlib.parseCurrency({ ETH: amt })).toBe(amtWei);
+      });
+      it(`should convert from WEI correctly`, () => {
+        expect(stdlib.formatCurrency(amtWei)).toBe(amt);
+        expect(stdlib.formatCurrency(amtWei, 2)).toBe(amtTruncTo2);
+      });
+
+      // Ok I know this is ETH-test, but... I'm lazy ~ Dan
+      // XXX: amtMicroAlgos: BigNumber
+      const amtMicroAlgos = bigNumberify('10').pow(6 - 3).mul('123456').toNumber();
+      it(`should convert to microAlgos correctly`, () => {
+        expect(ALGO_stdlib.parseCurrency({ ALGO: amt })).toBe(amtMicroAlgos);
+      });
+      it(`should convert from microAlgos correctly`, () => {
+        expect(ALGO_stdlib.formatCurrency(amtMicroAlgos)).toBe(amt);
+        expect(ALGO_stdlib.formatCurrency(amtMicroAlgos, 2)).toBe(amtTruncTo2);
+      });
+
+      // Excess is truncated; no such thing as fractional reachies.
+      const amtReachiesStr = '123';
+      const amtReachies = bigNumberify(amtReachiesStr);
+      it(`should convert to reachies correctly`, () => {
+        expect(FAKE_stdlib.parseCurrency({ FAKE: amtReachiesStr })).toBe(amtReachies);
+      });
+      it(`should convert from reachies correctly`, () => {
+        expect(FAKE_stdlib.formatCurrency(amtReachies)).toBe(amtReachiesStr);
+        // Again, no decimal places for reachies.
+        expect(FAKE_stdlib.formatCurrency(amtReachies, 0)).toBe(amtReachiesStr);
+      });
+
     });
 
     await describe('wait', async () => {

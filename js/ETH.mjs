@@ -12,8 +12,12 @@ const connectorMode = getConnectorMode();
 const isIsolatedNetwork = connectorMode.startsWith('ETH-test-dockerized') ||
   connectorMode.startsWith('ETH-test-embedded');
 // Unique helpers
+// TODO: delete deprecated functions
+/** @deprecated */
 export const toWei = (amt, unit) => ethers.utils.parseUnits(amt, unit || 'ether');
+/** @deprecated */
 export const fromWei = (amt, unit) => ethers.utils.formatUnits(amt, unit || 'ether');
+/** @deprecated */
 export const toWeiBigNumber = (amt, unit) => bigNumberify(toWei(amt, unit));
 const networkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
   type: 'embedded-ganache',
@@ -660,3 +664,42 @@ export const verifyContract = async (ctcInfo, backend) => {
   }
   return true;
 };
+/** @description the display name of the standard unit of currency for the network */
+export const standardUnit = 'ether';
+/** @description the display name of the atomic (smallest) unit of currency for the network */
+export const atomicUnit = 'WEI';
+/**
+ * @description  Parse currency by network
+ * @param cm  a currency map, keyed by network, values are the standard unit for that network.
+ *   For stdlib/ETH, this map must include ETH. The unit is ethers.
+ * @returns  the amount in the atomic unit of the network.
+ *   For stdlib/ETH this is WEI.
+ * @example  parseCurrency({ETH: 100}).toString() // => '100000000000000000000'
+ */
+export function parseCurrency(cm) {
+  if (!cm.ETH) {
+    throw Error(`Expected ETH in ${Object.keys(cm)}`);
+  }
+  return bigNumberify(ethers.utils.parseUnits(cm.ETH.toString(), standardUnit));
+}
+/**
+ * @description  Format currency by network
+ * @param amt  the amount in the atomic unit of the network.
+ *   For stdlib/ETH this is WEI.
+ * @param decimals  up to how many decimal places to display in the standard unit.
+ *   Trailing zeroes will be omitted. Excess decimal places will be truncated. (not rounded)
+ *   For stdlib/ETH this must be an int from 0 to 18 inclusive, and defaults to 18.
+ *   For stdlib/ETH only, whole numbers will always be displayed with .0 at the end.
+ * @returns  a string representation of that amount in the standard unit for that network.
+ *   For stdlib/ETH this is ethers.
+ * @example  formatCurrency(bigNumberify('100000000000000000000')); // => '100'
+ */
+export function formatCurrency(amt, decimals = 18) {
+  // Recall that 1 WEI = 10^18 ether
+  if (!(Number.isInteger(decimals) && 0 <= decimals && decimals <= 18)) {
+    throw Error(`Expected decimals to be an integer from 0 to 18, but got ${decimals}.`);
+  }
+  const decimalsToForget = 18 - decimals;
+  const divAmt = amt.div(bigNumberify(10).pow(decimalsToForget));
+  return ethers.utils.formatUnits(divAmt, decimals);
+}

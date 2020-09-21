@@ -1,3 +1,5 @@
+import { Connector } from "./shared";
+
 export type ConnectorMode =
   'ETH-test-dockerized-geth' |
   'ETH-test-embedded-ganache' |
@@ -12,8 +14,6 @@ const knownConnectorModes: Array<ConnectorMode> = [
   'FAKE-test-embedded-mock',
   'ALGO-test-dockerized-algod',
 ];
-
-export type Connector = 'ETH' | 'ALGO' | 'FAKE';
 
 function isKnownConnector(s: string): s is Connector {
   return (s === 'ETH' || s === 'ALGO' || s === 'FAKE');

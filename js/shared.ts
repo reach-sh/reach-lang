@@ -433,3 +433,7 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
 
 export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
   x.map((e, i): [X, Y] => [e, y[i]]);
+
+export type CurrencyAmount = string | number | BigNumber
+export type Connector = 'ETH' | 'ALGO' | 'FAKE';
+export type CurrencyMap = { [connector in Connector]?: CurrencyAmount }
