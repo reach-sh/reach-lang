@@ -29,9 +29,9 @@ ENV SRC_PARENT $GOPATH/src/github.com/algorand
 RUN mkdir -p $SRC_PARENT
 
 WORKDIR $SRC_PARENT
-ARG GIT_CLONE_REPO=https://github.com/algorand/go-algorand
-ARG GIT_COMMIT=b648e0d75ac89440afb435b7acbad1d6711d24ad
-# ^ master as of Sept 7, 2020
+ARG GIT_CLONE_REPO=https://github.com/jeapostrophe/go-algorand
+ARG GIT_COMMIT=595aa4722824be2bbad92ec367267584a87f29fe
+# ^ Jay's fork
 ENV PROJ_NAME go-algorand
 ENV SRC $SRC_PARENT/$PROJ_NAME
 RUN git clone $GIT_CLONE_REPO $PROJ_NAME
