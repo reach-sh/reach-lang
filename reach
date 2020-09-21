@@ -332,7 +332,7 @@ import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/${APP}.main.mjs';
 
 (async () => {
-  const startingBalance = stdlib.toWeiBigNumber('100', 'ether');
+  const startingBalance = stdlib.parseCurrency({ETH: 100});
 
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
