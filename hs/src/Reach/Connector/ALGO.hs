@@ -206,6 +206,7 @@ cdigest :: [(SLType, App ())] -> App ()
 cdigest l = do
   mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
   op "keccak256"
+  --- XXX this will panic
   op "btoi"
   where go may_concat (t, m) = m >> ctobs t >> may_concat
         no_concat = nop
@@ -394,6 +395,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
   let eSP = 255
   eTxnsR <- newIORef $ txnFirstUser - 1
   let eVars = mempty
+  --- XXX need to convert from bytes (all args are bytes)
   let mkarg dv (i::Int) = (dv, code "arg" [ texty i ])
   let args = svs <> msg
   let eLets0 = M.fromList $ zipWith mkarg args [ (fromIntegral argFirstUser) .. ]
