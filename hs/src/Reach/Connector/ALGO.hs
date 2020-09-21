@@ -35,6 +35,8 @@ comment_ t = "// " <> t
 
 type TEALs = DL.DList TEAL
 
+--- FIXME optimize "btoi >> itob" into ""
+
 render :: TEALs -> T.Text
 render ts = tt
   where tt = LT.toStrict lt
@@ -72,10 +74,22 @@ comment :: LT.Text -> App ()
 comment = output . comment_
 or_fail :: App ()
 or_fail = code "bz" ["revert"]
+eq_or_fail :: App ()
+eq_or_fail = op "==" >> or_fail
 op :: LT.Text -> App ()
 op = flip code []
 nop :: App ()
 nop = return ()
+
+app_global_get :: B.ByteString -> App ()
+app_global_get k = do
+  cc $ DLC_Bytes $ k
+  op "app_global_get"
+app_global_put :: B.ByteString -> App () -> App ()
+app_global_put k mkv = do
+  cc $ DLC_Bytes $ k
+  mkv
+  op "app_global_put"
 
 bad :: LT.Text -> App ()
 bad lab = do
@@ -149,6 +163,22 @@ ctobs = \case
   T_Tuple {} -> xxx "tuple to bs"
   T_Object {} -> xxx "object to bs"
   T_Data {} -> xxx "data to bs"
+  T_Forall {} -> impossible "forall"
+  T_Var {} -> impossible "var"
+  T_Type {} -> impossible "type"
+
+cfrombs :: SLType -> App ()
+cfrombs = \case
+  T_UInt256 -> op "btoi"
+  T_Bool -> op "btoi"
+  T_Null -> op "btoi"
+  T_Bytes -> nop
+  T_Address -> nop
+  T_Fun {} -> impossible "fun"
+  T_Array {} -> xxx "array from bs"
+  T_Tuple {} -> xxx "tuple from bs"
+  T_Object {} -> xxx "object from bs"
+  T_Data {} -> xxx "data from bs"
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
   T_Type {} -> impossible "type"
@@ -230,20 +260,16 @@ ce = \case
     txni <- talloc
     code "gtxn" [ texty txni, "TypeEnum" ]
     code "int" [ "pay" ]
-    op "=="
-    or_fail
+    eq_or_fail
     code "gtxn" [ texty txni, "Receiver" ]
     ca who
-    op "=="
-    or_fail
+    eq_or_fail
     code "gtxn" [ texty txni, "Amount" ]
     ca amt
-    op "=="
-    or_fail
+    eq_or_fail
     code "gtxn" [ texty txni, "Sender" ]
     lookup_me
-    op "=="
-    or_fail
+    eq_or_fail
   DLE_Claim _ _ t a ->
     case t of
       CT_Assert -> impossible "assert"
@@ -304,8 +330,7 @@ ct = \case
   CT_Wait _ svs -> do
     cstate HM_Set svs
     code "arg" [ texty argNextSt ]
-    op "=="
-    or_fail
+    eq_or_fail
     halt_should_be False
   CT_Jump {} -> xxx "jump"
   CT_Halt _ -> halt_should_be True
@@ -331,10 +356,18 @@ cstate hm svs = do
 halt_should_be :: Bool -> App ()
 halt_should_be b = do
   code "arg" [ texty argHalts ]
+  cfrombs T_Bool
   cc $ DLC_Bool b
-  op "=="
-  or_fail
+  eq_or_fail
   code "b" ["done"]
+
+-- State:
+keyHalts :: B.ByteString
+keyHalts = "h"
+keyState :: B.ByteString
+keyState = "s"
+keyLast :: B.ByteString
+keyLast = "l"
 
 -- Txns:
 -- 0   : Application call
@@ -371,11 +404,11 @@ argFirstUser :: Word8
 argFirstUser = argLast + 1
 
 lookup_me :: App ()
-lookup_me = code "arg" [ texty argMe ]
+lookup_me = code "arg" [ texty argMe ] >> cfrombs T_Address
 lookup_sender :: App ()
 lookup_sender = code "gtxn" [ texty txnToContract, "Sender" ]
 lookup_last :: App ()
-lookup_last = code "arg" [ texty argLast ]
+lookup_last = code "arg" [ texty argLast ] >> cfrombs T_UInt256
 
 std_footer :: App ()
 std_footer = do
@@ -395,10 +428,11 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
   let eSP = 255
   eTxnsR <- newIORef $ txnFirstUser - 1
   let eVars = mempty
-  --- XXX need to convert from bytes (all args are bytes)
-  let mkarg dv (i::Int) = (dv, code "arg" [ texty i ])
+  let mkarg dv@(DLVar _ _ t _) (i::Int) = (dv, code "arg" [ texty i ] >> cfrombs t)
   let args = svs <> msg
-  let eLets0 = M.fromList $ zipWith mkarg args [ (fromIntegral argFirstUser) .. ]
+  let argFirstUser' = fromIntegral argFirstUser
+  let eLets0 = M.fromList $ zipWith mkarg args [ argFirstUser' .. ]
+  let argCount = argFirstUser' + length args
   let eLets =
         case fs of
           FS_Join dv ->
@@ -406,18 +440,18 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
           FS_Again {} ->
             eLets0
   flip runReaderT (Env {..}) $ do
-    --- XXX it does not appear to be possible to check that the number of arguments is correct... so what happens if we go beyond, you just crash? or you get 0?
+    code "txn" [ "NumArgs" ]
+    cc $ DLC_Int $ fromIntegral $ argCount
+    eq_or_fail
     case fs of
       FS_Join {} -> return ()
       FS_Again dv -> do
         lookup_sender
         ca $ DLA_Var dv
-        op "=="
-        or_fail
+        eq_or_fail
     cstate (HM_Check prev) svs
     code "arg" [ texty argPrevSt ]
-    op "=="
-    or_fail
+    eq_or_fail
     ct body
     std_footer
   post_ts <- readIORef eOutputR
@@ -426,8 +460,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
   flip runReaderT (Env {..}) $ do
     code "global" [ "GroupSize" ]
     cc $ DLC_Int $ fromIntegral $ 1 + txns
-    op "=="
-    or_fail
+    eq_or_fail
     let check_time f = \case
           [] -> nop
           as -> do
@@ -437,8 +470,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
             let go i = do
                   op "dup"
                   code "gtxn" [ texty i, f ]
-                  op "=="
-                  or_fail
+                  eq_or_fail
             forM_ [0..txns] go
             op "pop"
     (do
@@ -481,22 +513,43 @@ compile_algo disp pl = do
         return outs
   appm <- simple $ do
     xxx "if not initialized, do it and quit"
-    xxx "not halts"
-    xxx "check group size"
+    app_global_get keyHalts
+    cc $ DLC_Bool $ False
+    eq_or_fail
+    code "global" [ "GroupSize" ]
+    cc $ DLC_Int $ fromIntegral $ txnFirstUser
+    op ">="
+    or_fail
     xxx "check txnAppl?"
     xxx "check txnToHandler"
     xxx "check txnToContract?"
-    xxx "prev st is correct"
+    app_global_get keyState
+    code "gtxna" [ texty txnToHandler, texty argPrevSt ]
+    cfrombs T_Bytes
+    eq_or_fail
     xxx "me is correct"
-    xxx "last is correct"
-    xxx "update next state"
-    xxx "update last"
-    xxx "update halts"
+    app_global_get keyLast
+    code "gtxna" [ texty txnToHandler, texty argLast ]
+    cfrombs T_UInt256
+    eq_or_fail
+    app_global_put keyState $ do
+      code "gtxna" [ texty txnToHandler, texty argNextSt ]
+      cfrombs T_Bytes
+    app_global_put keyLast $ do
+      code "global" [ "Round" ]
+    app_global_put keyHalts $ do
+      code "gtxna" [ texty txnToHandler, texty argHalts ]
+      cfrombs T_Bool
     code "b" ["done"]
   clearm <- simple $ do
-    xxx "check halts"
+    app_global_get keyHalts
+    cc $ DLC_Bool $ True
+    eq_or_fail
   ctcm <- simple $ do
-    xxx "check group size"
+    code "global" [ "GroupSize" ]
+    cc $ DLC_Int $ fromIntegral $ txnFirstUser
+    op ">="
+    or_fail
     xxx "check txnAppl"
   addProg "appApproval" $ render appm
   addProg "appClear" $ render clearm
