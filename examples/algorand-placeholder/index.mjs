@@ -1,17 +1,29 @@
-import * as stdlib from '@reach-sh/stdlib/ALGO.mjs';
+import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
+// import * as stdlib from '@reach-sh/stdlib/ALGO.mjs';
 // import * as backend from './build/index.main.mjs';
 
 (async () => {
-  const startingBalance = stdlib.algosToMicroalgos(100);
-  console.log(`Let us begin by giving each participant ${startingBalance} microalgos`);
+  const stdlib = await stdlibLoader.loadStdlib();
+  const connector = stdlibLoader.getConnector();
 
+  // Very rough approximation of value of 1 algo
+  const proportionalToAlgo = (x) => stdlib.parseCurrency({
+    ETH: x / 1000,
+    ALGO: x,
+    FAKE: x * 1000, // just pretend; actually worthless
+  });
+
+  const startingBalance = proportionalToAlgo(1000);
+
+  const decimals = connector === 'FAKE' ? 0 : 2;
   const showCurrency = (amt) =>
-        `${stdlib.microalgosToAlgos(amt).toFixed(2)} ALGO`;
+        `${stdlib.formatCurrency(amt, decimals)} ${stdlib.standardUnit}`;
   const logBalance = async (who, acc) => {
     const bal = await stdlib.balanceOf(acc);
     console.log(`${who} has balance ${showCurrency(bal)}`);
   };
 
+  console.log(`Let us begin by giving each participant ${showCurrency(startingBalance)}`);
   console.log('creating test accounts');
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
@@ -35,7 +47,7 @@ import * as stdlib from '@reach-sh/stdlib/ALGO.mjs';
   await logBalance('Alice', alice);
   await logBalance('Bob', bob);
 
-  await stdlib.transfer(alice, bob, stdlib.algosToMicroalgos(10));
+  await stdlib.transfer(alice, bob, proportionalToAlgo(100));
   console.log('Alice transferred Bob some money.');
 
   await logBalance('Alice', alice);
