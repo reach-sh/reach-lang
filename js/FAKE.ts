@@ -253,7 +253,7 @@ export const atomicUnit = 'reachies';
  * @example  parseCurrency({FAKE: 100}).toString() // => '100'
  */
 export function parseCurrency(cm: CurrencyMap): BigNumber {
-  if (!cm.FAKE) { throw Error(`Expected FAKE in ${Object.keys(cm)}`); }
+  if (cm.FAKE === undefined) { throw Error(`Expected FAKE in ${Object.keys(cm)}`); }
   return stdlib.bigNumberify(cm.FAKE.toString());
 }
 

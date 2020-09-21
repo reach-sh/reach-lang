@@ -24,12 +24,11 @@ import * as backend from './build/index.main.mjs';
       amt: stdlib.parseCurrency({ETH: 25}),
       getRelay: async () => {
         console.log(`Alice creates a Relay account.`);
-        const accRelay = await stdlib.newTestAccount(
-          stdlib.parseCurrency({ETH: 0}));
+        const accRelay = await stdlib.newTestAccount(stdlib.parseCurrency({ETH: 0}));
         console.log(`Alice shares it with Bob outside of the network.`);
         accRelayProvide(accRelay);
         return accRelay.networkAccount.address;
-      }
+      },
     }),
     (async () => {
       console.log(`Bob waits for Alice to give him the information about the Relay account.`);

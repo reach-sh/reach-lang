@@ -388,7 +388,7 @@ export const atomicUnit = 'microAlgos';
  * @example  parseCurrency({ALGO: 100}).toString() // => '100000000'
  */
 export function parseCurrency(cm: CurrencyMap): number {
-  if (!cm.ALGO) { throw Error(`Expected ALGO in ${Object.keys(cm)}`); }
+  if (cm.ALGO === undefined) { throw Error(`Expected ALGO in ${Object.keys(cm)}`); }
   const amt =
     isBigNumber(cm.ALGO) ? cm.ALGO.toNumber()
     : typeof cm.ALGO === 'string' ? parseFloat(cm.ALGO)

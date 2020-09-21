@@ -908,7 +908,7 @@ export const atomicUnit = 'WEI';
  * @example  parseCurrency({ETH: 100}).toString() // => '100000000000000000000'
  */
 export function parseCurrency(cm: CurrencyMap): BigNumber {
-  if (!cm.ETH) { throw Error(`Expected ETH in ${Object.keys(cm)}`); }
+  if (cm.ETH === undefined) { throw Error(`Expected ETH in ${Object.keys(cm)}`); }
   return bigNumberify(ethers.utils.parseUnits(cm.ETH.toString(), standardUnit));
 }
 

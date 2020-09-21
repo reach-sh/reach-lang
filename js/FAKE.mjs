@@ -151,7 +151,7 @@ export const atomicUnit = 'reachies';
  * @example  parseCurrency({FAKE: 100}).toString() // => '100'
  */
 export function parseCurrency(cm) {
-  if (!cm.FAKE) {
+  if (cm.FAKE === undefined) {
     throw Error(`Expected FAKE in ${Object.keys(cm)}`);
   }
   return stdlib.bigNumberify(cm.FAKE.toString());
