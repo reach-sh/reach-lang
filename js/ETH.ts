@@ -9,7 +9,6 @@ import {
   add,
   assert,
   bigNumberify,
-  Connector,
   CurrencyMap,
   debug,
   ge,
@@ -131,21 +130,6 @@ const connectorMode: ConnectorMode = getConnectorMode();
 const isIsolatedNetwork: boolean =
   connectorMode.startsWith('ETH-test-dockerized') ||
   connectorMode.startsWith('ETH-test-embedded');
-
-// Unique helpers
-
-// TODO: delete deprecated functions
-/** @deprecated */
-export const toWei = (amt: string, unit?: string): BigNumber =>
-  ethers.utils.parseUnits(amt, unit || 'ether');
-/** @deprecated */
-export const fromWei = (amt: BigNumber, unit?: string): string =>
-  ethers.utils.formatUnits(amt, unit || 'ether');
-/** @deprecated */
-export const toWeiBigNumber = (amt: string, unit?: string): BigNumber =>
-  bigNumberify(toWei(amt, unit));
-
-// end Unique helpers
 
 // Common interface exports
 
@@ -780,7 +764,7 @@ const stepTime = async () => {
   requireIsolatedNetwork('stepTime');
   const signer = await getSigner();
   const acc = await dummyAccountP;
-  return await transfer({networkAccount: signer}, acc, toWeiBigNumber('0', 'ether'));
+  return await transfer({networkAccount: signer}, acc, parseCurrency({ETH: 0}));
 };
 
 const toNumberMay = (x: number | BigNumber | undefined) => {

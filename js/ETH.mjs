@@ -11,14 +11,6 @@ const connectorMode = getConnectorMode();
 // or are only available on an "isolated" network.
 const isIsolatedNetwork = connectorMode.startsWith('ETH-test-dockerized') ||
   connectorMode.startsWith('ETH-test-embedded');
-// Unique helpers
-// TODO: delete deprecated functions
-/** @deprecated */
-export const toWei = (amt, unit) => ethers.utils.parseUnits(amt, unit || 'ether');
-/** @deprecated */
-export const fromWei = (amt, unit) => ethers.utils.formatUnits(amt, unit || 'ether');
-/** @deprecated */
-export const toWeiBigNumber = (amt, unit) => bigNumberify(toWei(amt, unit));
 const networkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
   type: 'embedded-ganache',
 } : connectorMode == 'ETH-test-dockerized-geth' ? {
@@ -563,7 +555,7 @@ const stepTime = async () => {
   requireIsolatedNetwork('stepTime');
   const signer = await getSigner();
   const acc = await dummyAccountP;
-  return await transfer({ networkAccount: signer }, acc, toWeiBigNumber('0', 'ether'));
+  return await transfer({ networkAccount: signer }, acc, parseCurrency({ ETH: 0 }));
 };
 const toNumberMay = (x) => {
   if (isBigNumber(x)) {

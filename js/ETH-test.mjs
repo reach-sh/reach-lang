@@ -213,7 +213,7 @@ runTests(async () => {
     describe('exports', () => {
       const stdlibExports = Object.keys(stdlib).sort();
 
-      const ETH_extra_exports = ['fromWei', 'toWei', 'toWeiBigNumber'];
+      const ETH_extra_exports = [];
       const ALGO_extra_exports = [];
       const FAKE_extra_exports = [];
 
