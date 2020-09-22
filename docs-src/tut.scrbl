@@ -121,7 +121,7 @@ In this case, we choose Ethereum for simplicity.}
 
 @item{Line 4 defines an asynchronous function that will be the body of our frontend.}
 
-@item{Line 5 defines a quantity of ethers as the startinmg balance for each test account.}
+@item{Line 5 defines a quantity of @tech{network token}s as the starting balance for each test account.}
 
 @item{Lines 7 and 8 create test accounts with initial endowments for Alice and Bob.
 This will only work on the Reach-provided developer testing network.}
