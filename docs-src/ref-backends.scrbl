@@ -375,8 +375,8 @@ The following exports are for dealing with network tokens.
  formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
 }
 
-These functions handle amounts in a network's @deftech{standard unit} and its @deftech{atomic unit}.
-A @deftech{standard unit} is the @deftech{network token} unit most commonly associated with a network.
+These functions handle amounts in a network's @tech{standard unit} and its @tech{atomic unit}.
+A @deftech{standard unit} is the @tech{network token} unit most commonly associated with a network.
 For example, the @tech{standard unit} of Ethereum is ETH.
 An @deftech{atomic unit} is the smallest unit of measure for the @tech{standard unit}.
 For example, the atomic unit of Ethereum is WEI.
