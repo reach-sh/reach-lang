@@ -121,7 +121,7 @@ In this case, we choose Ethereum for simplicity.}
 
 @item{Line 4 defines an asynchronous function that will be the body of our frontend.}
 
-@item{Line 5 defines a helpful function for defining quantities in ETH.}
+@item{Line 5 defines a quantity of ethers as the startinmg balance for each test account.}
 
 @item{Lines 7 and 8 create test accounts with initial endowments for Alice and Bob.
 This will only work on the Reach-provided developer testing network.}
@@ -130,13 +130,13 @@ This will only work on the Reach-provided developer testing network.}
 
 @item{Line 11 has Bob attach to it.}
 
-@item{Lines 14 through 16 initialize Alice's backend.}
+@item{Lines 14 through 17 initialize Alice's backend.}
 
-@item{Lines 17 through 19 initialize Bob's backend.}
+@item{Lines 18 through 21 initialize Bob's backend.}
 
 @item{Line 13 waits for the backends to complete.}
 
-@item{Line 21 calls this asynchronous function that we've defined.}
+@item{Line 23 calls this asynchronous function that we've defined.}
 
 ]
 
@@ -183,7 +183,7 @@ Before continuing with the Reach application, let's move over to the JavaScript 
 @reachex[#:mode js
          #:show-lines? #t "tut-2/index.mjs"
          #:link #t
-         'only 13 29 "  // ..."]
+         'only 13 35 "  // ..."]
 
 @itemlist[
 
@@ -191,11 +191,11 @@ Before continuing with the Reach application, let's move over to the JavaScript 
 
 @item{Line 15 defines a constructor for the @jsin{Player} implementation.}
 
-@item{Lines 16 through 18 define the @jsin{getHand} method.}
+@item{Lines 16 through 20 define the @jsin{getHand} method.}
 
-@item{Lines 19 and 20 define the @jsin{seeOutcome} method.}
+@item{Lines 21 through 23 define the @jsin{seeOutcome} method.}
 
-@item{Finally, lines 25 and 28 instantiate the implementation once for Alice and once for Bob.
+@item{Finally, lines 29 and 33 instantiate the implementation once for Alice and once for Bob.
 These are the actual objects that will be bound to @reachin{interact} in the Reach program.}
 
 ]
@@ -327,7 +327,7 @@ We'll add this code in between account creation and contract deployment.
 
 @itemlist[
 
-@item{Line 10 shows a helpful function for getting the balance of a participant and displaying it.}
+@item{Line 10 shows a helpful function for getting the balance of a participant and displaying it to 4 decimal places.}
 
 @item{Line 11 and 12 get the balance before the game starts for both Alice and Bob.}
 
@@ -338,13 +338,13 @@ Next, we'll update Alice's interface object to include her wager.
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 27 31 "    // ..."]
+         'only 27 30 "    // ..."]
 
 @itemlist[
 
-@item{Line 29 splices the common @jsin{Player} interface into Alice's interface.}
+@item{Line 28 splices the common @jsin{Player} interface into Alice's interface.}
 
-@item{Line 30 defines her wager as @litchar{5} units of the @tech{network token}.
+@item{Line 29 defines her wager as @litchar{5} units of the @tech{network token}.
 This is an example of using a concrete value, rather than a function, in a @tech{participant interact interface}.}
 
 ]
@@ -354,11 +354,11 @@ For Bob, we'll modify his interface to show the wager and immediately accept it 
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 32 36 "    // ..."]
+         'only 31 36 "    // ..."]
 
 @itemlist[
 
-@item{Line 35 defines the @jsin{acceptWager} function.}
+@item{Lines 33 through 35 define the @jsin{acceptWager} function.}
 
 ]
 
@@ -736,10 +736,10 @@ The only line that is different is line 21, which includes @reachin{hasRandom}, 
 @reachex[#:mode js
          #:show-lines? #t "tut-4/index.mjs"
          #:link #t
-         'only 18 24 "  // ..."]
+         'only 19 29 "  // ..."]
 
 Similarly, we only need to modify one line of our JavaScript @tech{frontend}.
-Line 19 allows each @tech{participant}'s Reach code to generate random numbers as necessary.
+Line 20 allows each @tech{participant}'s Reach code to generate random numbers as necessary.
 
 These two changes might look identical, but they mean very different things.
 The first, line 21 in the Reach program, adds @reachin{hasRandom} to the interface that the @tech{backend} expects the @tech{frontend} to provide.
@@ -901,7 +901,7 @@ We'll make a slight tweak to our JavaScript @tech{frontend} to be able to receiv
 @reachex[#:mode js
          #:show-lines? #t "tut-5/index.mjs"
          #:link #t
-         'only 18 26 "  // ..."]
+         'only 19 32 "  // ..."]
 
 Back in the Reach program, we'll define an identifier at the top of our program to use a standard deadline throughout the program.
 
@@ -973,11 +973,11 @@ Let's modify the JavaScript @tech{frontend} to deliberately cause a timeout some
 @reachex[#:mode js
          #:show-lines? #t "tut-5/index.mjs"
          #:link #t
-         'only 28 44 "  // ..."]
+         'only 34 50 "  // ..."]
 
 @itemlist[
 
-@item{Line 37 through 44 redefines Bob's @jsin{acceptWager} method as an asynchronous function where half of the time it will take at least ten blocks on the Ethereum network by waiting for ten units of time to pass.
+@item{Lines 39 through 49 redefine Bob's @jsin{acceptWager} method as an asynchronous function where half of the time it will take at least ten blocks on the Ethereum network by waiting for ten units of time to pass.
 We know that ten is the value of @reachin{DEADLINE}, so this will cause a timeout.}
 
 ]
@@ -1053,11 +1053,11 @@ We'll modify the @jsin{Player} interact object so that it will have a different 
 @reachex[#:mode js
          #:show-lines? #t "tut-6/index.mjs"
          #:link #t
-         'only 18 31 "  // ..."]
+         'only 19 38 "  // ..."]
 
 @itemlist[
 
-@item{Lines 23 through 26 moves the forced timeout code that we wrote for Bob's @jsin{acceptWager} function into this method.
+@item{Lines 24 through 29 moves the forced timeout code that we wrote for Bob's @jsin{acceptWager} function into this method.
 We also change the threshold so that timeouts only happen 1% of the time.
 This isn't a very interesting behavior, so we'll make it much less frequent.}
 
@@ -1069,11 +1069,11 @@ It's just a matter of reverting to the simpler version from before.
 @reachex[#:mode js
          #:show-lines? #t "tut-6/index.mjs"
          #:link #t
-         'only 33 44 "  // ..."]
+         'only 40 51 "  // ..."]
 
 @itemlist[
 
-@item{Line 42 and 43 has the simpler @jsin{acceptWager} method for Bob.}
+@item{Lines 47 through 49 have the simpler @jsin{acceptWager} method for Bob.}
 
 ]
 
@@ -1348,7 +1348,7 @@ You'll see a lot of similarity between this and the last version, but for comple
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 1 6 "  // ..."]
+         'only 1 5 "  // ..."]
 
 @itemlist[
 
@@ -1362,7 +1362,7 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 8 12 "  // ..."]
+         'only 6 10 "  // ..."]
 
 @itemlist[
 
@@ -1375,72 +1375,72 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 14 21 "  // ..."]
+         'only 12 27 "  // ..."]
 
 @itemlist[
 
-@item{Lines 15 and 16 present the user with the choice of creating a test account if they can or inputing a mnemonic to load an existing account.}
+@item{Lines 15 through 18 present the user with the choice of creating a test account if they can or inputing a mnemonic to load an existing account.}
 
-@item{Line 17 creates the test account as before.}
+@item{Line 20 creates the test account as before.}
 
-@item{Line 21 loads the existing account.}
+@item{Line 26 loads the existing account.}
 
 ]
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 23 33 "  // ..."]
+         'only 29 44 "  // ..."]
 
 @itemlist[
 
-@item{Lines 24 and 25 ask if the participant will deploy the contract.}
+@item{Lines 30 through 33 ask if the participant will deploy the contract.}
 
-@item{Lines 26 and 28 deploy it and print out public information (@jsin{ctc.getInfo}) that can be given to the other player.}
+@item{Lines 35 through 37 deploy it and print out public information (@jsin{ctc.getInfo}) that can be given to the other player.}
 
-@item{Lines 30 through 33 request, parse, and process this information.}
+@item{Lines 39 through 43 request, parse, and process this information.}
 
 ]
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 35 41 "  // ..."]
+         'only 46 51 "  // ..."]
 
 Next we define a few helper functions and start the participant interaction interface.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 43 45 "  // ..."]
+         'only 53 56 "  // ..."]
 
 First we define a timeout handler.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 47 60 "  // ..."]
+         'only 58 76 "  // ..."]
 
 Next, we request the wager amount or define the @jsin{acceptWager} method, depending on if we are Alice or not.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 62 76 "  // ..."]
+         'only 78 94 "  // ..."]
 
 Next, we define the shared @jsin{getHand} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 78 81 "  // ..."]
+         'only 96 99 "  // ..."]
 
 Finally, the @jsin{seeOutcome} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 83 90 "  // ..."]
+         'only 101 107 "  // ..."]
 
 Lastly, we choose the appropriate backend function and await its completion.
 

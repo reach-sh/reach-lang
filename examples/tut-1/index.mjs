@@ -1,11 +1,11 @@
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/index.main.mjs';
 
-( async () => {
-  const toNetworkFormat = (n) => stdlib.toWeiBigNumber(n, 'ether');
+(async () => {
+  const startingBalance = stdlib.parseCurrency({ETH: 10});
 
-  const accAlice = await stdlib.newTestAccount(toNetworkFormat('10'));
-  const accBob = await stdlib.newTestAccount(toNetworkFormat('10'));
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
 
   const ctcAlice = await accAlice.deploy(backend);
   const ctcBob = await accBob.attach(backend, ctcAlice);
@@ -13,9 +13,11 @@ import * as backend from './build/index.main.mjs';
   await Promise.all([
     backend.Alice(
       stdlib, ctcAlice,
-      {}),
+      {},
+    ),
     backend.Bob(
       stdlib, ctcBob,
-      {})
+      {},
+    ),
   ]);
 })(); // <-- Don't forget these!
