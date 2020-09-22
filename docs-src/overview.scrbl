@@ -187,23 +187,23 @@ The program is just @exloc["overview/index.mjs"] lines long and the shell of it 
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.mjs"
-         'skip 14 21 "    // ..."]
+         'skip 12 19 "    // ..."]
 
 @itemlist[
 
 @item{Lines 1 and 2 import the Reach standard library and the compiled app backend.}
 
-@item{Line 5 is the only part of the program that is specifically tied to the Ethereum network.
-(Technically line 1 does as well, but we provide standard libraries with identical interfaces for different consensus networks.)}
+@item{Line 1 is the only part of the program that is specifically tied to the Ethereum network,
+but note that we provide standard libraries with identical interfaces for different consensus networks.}
 
-@item{Lines 7 and 8 initialize new test accounts for Alice and Bob.}
+@item{Lines 5 and 6 initialize new test accounts for Alice and Bob.}
 
-@item{Line 10 has Alice deploy the contact on the consensus network.}
+@item{Line 8 has Alice deploy the contact on the consensus network.}
 
-@item{Line 11 has Bob attach to the contract.
+@item{Line 9 has Bob attach to the contract.
 The value @jsin{ctcAlice} contains no secret information and could easily be printed out and shared with Bob outside of the consensus network.}
 
-@item{Lines 13 through 22 launch the backends and wait for their completion, we'll look at the details in a moment.}
+@item{Lines 11 through 20 launch the backends and wait for their completion, we'll look at the details in a moment.}
 
 ]
 
@@ -213,18 +213,18 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.mjs"
-         'only 14 17 "    // ..."]
+         'only 12 15 "    // ..."]
 
 @itemlist[
 
-@item{Line 14 extracts the backend for Alice.}
+@item{Line 12 extracts the backend for Alice.}
 
-@item{Line 14 also passes it the appropriate standard library and contract handle.
+@item{Line 12 also passes it the appropriate standard library and contract handle.
 It needs these to be able to interface with the chosen consensus network.}
 
-@item{Line 15 provides the @reachin{request} value.}
+@item{Line 13 provides the @reachin{request} value.}
 
-@item{Line 16 provides the @reachin{info} value.}
+@item{Line 14 provides the @reachin{info} value.}
 
 ]
 
@@ -232,15 +232,15 @@ Let's look at Bob next.
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.mjs"
-         'only 18 21 "    // ..."]
+         'only 16 19 "    // ..."]
 
 @itemlist[
 
-@item{Line 18 initializes Bob just like Alice.}
+@item{Line 16 initializes Bob just like Alice.}
 
-@item{Line 19 provides his @reachin{want} function, which produces a log message and always accepts.}
+@item{Line 17 provides his @reachin{want} function, which produces a log message and always accepts.}
 
-@item{Line 20 provides his @reachin{got} function, which displays the secret on the console as well.}
+@item{Line 18 provides his @reachin{got} function, which displays the secret on the console as well.}
 
 ]
 

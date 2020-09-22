@@ -2,8 +2,6 @@ import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
-  const toNetworkCurrency = (x) => stdlib.parseCurrency({ETH: x});
-
   const accAlice = await stdlib.newTestAccount(toNetworkCurrency(5));
   const accBob = await stdlib.newTestAccount(toNetworkCurrency(10));
 
