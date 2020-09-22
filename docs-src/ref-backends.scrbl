@@ -363,17 +363,30 @@ Integer arithmetic on uint256.
 
 Integer comparisons on uint256.
 
-@subsection[#:tag "ref-backend-js-ETH.mjs"]{@tt{ETH.mjs}}
+@(hrule)
 
-The following exports are defined only in the Ethereum standard library.
+The following exports are for dealing with network tokens.
 
-@(mint-define! '("toWei") '("fromWei") '("toWeiBigNumber"))
+@(mint-define! '("standardUnit") '("atomicUnit") '("parseCurrency") '("formatCurrency"))
 @js{
- toWei(ether) => wei
- fromWei(wei) => ether
- toWeiBigNumber(ether) => uint256}
+ standardUnit // string
+ atomicUnit // string
+ parseCurrency(standardUnitAmount) => atomicUnitAmount
+ formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
+}
 
-The functions convert amounts of Ethereum (ETH) to and from Wei, which is the base unit of Ethereum.
+These functions handle amounts in a network's @deftech{standard unit} and its @deftech{atomic unit}.
+A @deftech{standard unit} is the @deftech{network token} unit most commonly associated with a network.
+For example, the @tech{standard unit} of Ethereum is ETH.
+An @deftech{atomic unit} is the smallest unit of measure for the @tech{standard unit}.
+For example, the atomic unit of Ethereum is WEI.
+An @tech{atomic unit} is @deftech{atomic}, which means it cannot be divided into smaller units.
+
+Because there are 1,000,000,000,000,000,000 WEI in 1 ETH,
+BigNumber is used to represet values in WEI.
+
+Quantities of a @tech{network token} should always be passed into Reach
+in the token's @tech{atomic unit}.
 
 @subsection[#:tag "ref-backend-js-ask.mjs"]{@tt{ask.mjs}}
 
