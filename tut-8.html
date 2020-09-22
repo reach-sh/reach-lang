@@ -194,7 +194,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
     yesno
   );
   if (createAcc) {
-    acc = await stdlib.newTestAccount(stdlib.parseCurrency({ETH: 1000}));
+    acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
   } else {
     const phrase = await ask(
       `What is your account mnemonic?`,
@@ -235,7 +235,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
   if (isAlice) {
     const amt = await ask(
       `How much do you want to wager?`,
-      (x) =&gt; stdlib.parseCurrency({ETH: x})
+      stdlib.parseCurrency
     );
     interact.wager = amt;
   } else {
@@ -301,7 +301,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 <span class="mf">17</span>        <a href="ref-backend-js.html#%28javascript._%28%28yesno%29%29%29" class="nx" data-pltdoc="x">yesno</a>
 <span class="mf">18</span>      <span class="p">);</span>
 <span class="mf">19</span>      <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">createAcc</span></font><span class="p">)</span> <span class="p">{</span>
-<span class="mf">20</span>        <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28new.Test.Account%29%29%29" class="nx" data-pltdoc="x">newTestAccount</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><font class="badlink"><span class="nx">parseCurrency</span></font><span class="p">({</span><font class="badlink"><span class="nx">ETH</span></font><font class="badlink"><span class="o">:</span></font> <span class="mf">1000</span><span class="p">}));</span>
+<span class="mf">20</span>        <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28new.Test.Account%29%29%29" class="nx" data-pltdoc="x">newTestAccount</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><font class="badlink"><span class="nx">parseCurrency</span></font><span class="p">(</span><span class="mf">1000</span><span class="p">));</span>
 <span class="mf">21</span>      <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
 <span class="mf">22</span>        <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">phrase</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
 <span class="mf">23</span>          <span class="sb">`What is your account mnemonic?`</span><span class="p">,</span>
@@ -342,7 +342,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 <span class="mf">58</span>      <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">isAlice</span></font><span class="p">)</span> <span class="p">{</span>
 <span class="mf">59</span>        <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">amt</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
 <span class="mf">60</span>          <span class="sb">`How much do you want to wager?`</span><span class="p">,</span>
-<span class="mf">61</span>          <span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">)</span> <span class="p">=&gt;</span> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><font class="badlink"><span class="nx">parseCurrency</span></font><span class="p">({</span><font class="badlink"><span class="nx">ETH</span></font><font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">x</span></font><span class="p">})</span>
+<span class="mf">61</span>          <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><font class="badlink"><span class="nx">parseCurrency</span></font>
 <span class="mf">62</span>        <span class="p">);</span>
 <span class="mf">63</span>        <font class="badlink"><span class="nx">interact</span></font><span class="p">.</span><font class="badlink"><span class="nx">wager</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">amt</span></font><span class="p">;</span>
 <span class="mf">64</span>      <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
