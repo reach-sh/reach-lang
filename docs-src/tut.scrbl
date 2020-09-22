@@ -993,7 +993,7 @@ Let's modify the JavaScript @tech{frontend} to deliberately cause a timeout some
 
 @itemlist[
 
-@item{Lines 39 through 49 redefine Bob's @jsin{acceptWager} method as an asynchronous function where half of the time it will take at least ten blocks on the Ethereum network by waiting for ten units of time to pass.
+@item{Lines 41 through 49 redefine Bob's @jsin{acceptWager} method as an asynchronous function where half of the time it will take at least ten blocks on the Ethereum network by waiting for ten units of time to pass.
 We know that ten is the value of @reachin{DEADLINE}, so this will cause a timeout.}
 
 ]
@@ -1382,7 +1382,7 @@ We'll see how these three functions are used below.}
 
 @itemlist[
 
-@item{Lines 8 and 9 ask the question whether they are playing as Alice and expect a "Yes" or "No" answer.
+@item{Lines 6 through 9 ask the question whether they are playing as Alice and expect a "Yes" or "No" answer.
 @jsin{ask} presents a prompt and collects a line of input until its argument does not error.
 @jsin{yesno} errors if it is not given "y" or "n".}
 
@@ -1421,42 +1421,42 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 46 51 "  // ..."]
+         'only 46 52 "  // ..."]
 
 Next we define a few helper functions and start the participant interaction interface.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 53 56 "  // ..."]
+         'only 54 57 "  // ..."]
 
 First we define a timeout handler.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 58 76 "  // ..."]
+         'only 59 77 "  // ..."]
 
 Next, we request the wager amount or define the @jsin{acceptWager} method, depending on if we are Alice or not.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 78 94 "  // ..."]
+         'only 79 95 "  // ..."]
 
 Next, we define the shared @jsin{getHand} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 96 99 "  // ..."]
+         'only 97 100 "  // ..."]
 
 Finally, the @jsin{seeOutcome} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 101 107 "  // ..."]
+         'only 102 108 "  // ..."]
 
 Lastly, we choose the appropriate backend function and await its completion.
 
@@ -1487,7 +1487,7 @@ Would you like to create an account? (only possible on devnet)
 y
 Do you want to deploy the contract? (y/n)
 y
-The contract is deployed as = {"address": "0xdd1a445d4a85C4676094f84fFe19Fb3d76E502E0", "creation_block": 73}
+The contract is deployed as = {"address":"0xc2a875afbdFb39b1341029A7deceC03750519Db6","creation_block":18,"args":[],"value":{"type":"BigNumber","hex":"0x00"},"creator":"0x2486Cf6C788890885D71667BBCCD1A783131547D"}
 Your balance is 999.9999
 How much do you want to wager?
 10
@@ -1509,7 +1509,7 @@ y
 Do you want to deploy the contract? (y/n)
 n
 Please paste the contract information:
-{"address": "0xdd1a445d4a85C4676094f84fFe19Fb3d76E502E0", "creation_block": 73}
+{"address":"0xc2a875afbdFb39b1341029A7deceC03750519Db6","creation_block":18,"args":[],"value":{"type":"BigNumber","hex":"0x00"},"creator":"0x2486Cf6C788890885D71667BBCCD1A783131547D"}
 Your balance is 1000
 Do you accept the wager of 10?
 y
