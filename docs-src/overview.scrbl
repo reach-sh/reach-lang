@@ -219,12 +219,12 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 @item{Line 14 extracts the backend for Alice.}
 
-@item{Line 15 passes it the appropriate standard library and contract handle.
+@item{Line 14 also passes it the appropriate standard library and contract handle.
 It needs these to be able to interface with the chosen consensus network.}
 
-@item{Line 16 provides the @reachin{request} value.}
+@item{Line 15 provides the @reachin{request} value.}
 
-@item{Line 17 provides the @reachin{info} value.}
+@item{Line 16 provides the @reachin{info} value.}
 
 ]
 
@@ -236,11 +236,11 @@ Let's look at Bob next.
 
 @itemlist[
 
-@item{Lines 18 and 19 initialize Bob just like Alice.}
+@item{Line 18 initializes Bob just like Alice.}
 
-@item{Line 20 provides his @reachin{want} function, which produces a log message and always accepts.}
+@item{Line 19 provides his @reachin{want} function, which produces a log message and always accepts.}
 
-@item{Line 21 provides his @reachin{got} function, which displays the secret on the console as well.}
+@item{Line 20 provides his @reachin{got} function, which displays the secret on the console as well.}
 
 ]
 
