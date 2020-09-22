@@ -54,6 +54,7 @@ render ts = tt
 data Shared = Shared
   { sHandlers :: M.Map Int CHandler
   , sFailedR :: IORef Bool }
+type Lets = M.Map DLVar (App ())
 data Env = Env
   { eShared :: Shared
   , eWhich :: Int
@@ -63,7 +64,7 @@ data Env = Env
   , eHP :: ScratchSlot
   , eSP :: ScratchSlot
   , eVars :: M.Map DLVar ScratchSlot
-  , eLets :: M.Map DLVar (App ()) }
+  , eLets :: Lets }
 
 -- I'd rather not embed in IO, but when I used ST in UnrollLoops, it was
 -- really annoying to have the world parameter
@@ -163,6 +164,11 @@ talloc = do
   txni <- liftIO $ readIORef eTxnsR
   --- XXX check if > bound
   return txni
+
+how_many_txns :: App TxnIdx
+how_many_txns = do
+  Env {..} <- ask
+  liftIO $ readIORef eTxnsR
 
 ctobs :: SLType -> App ()
 ctobs = \case
@@ -396,6 +402,8 @@ keyState = "s"
 keyLast :: B.ByteString
 keyLast = "l"
 
+-- FIXME Dan says to use some cool deriving Enum stuff for Txn and Arg
+
 -- Txns:
 -- 0   : Application call
 -- 1   : Zero from handler account
@@ -443,15 +451,20 @@ std_footer = do
   cc $ DLC_Int 1
   op "return"
 
-ch :: Shared -> Int -> CHandler -> IO (Maybe TEALs)
-ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
+runApp :: Shared -> Int -> Lets -> App () -> IO TEALs
+runApp eShared eWhich eLets m = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
   let eHP = 0
   let eSP = 255
   eTxnsR <- newIORef $ txnFromContract0 - 1
   let eVars = mempty
+  flip runReaderT (Env {..}) m
+  readIORef eOutputR
+
+ch :: Shared -> Int -> CHandler -> IO (Maybe TEALs)
+ch _ _ (C_Loop {}) = return $ Nothing
+ch eShared eWhich (C_Handler _ int fs prev svs msg body) = fmap Just $ do
   let mkarg dv@(DLVar _ _ t _) (i::Int) = (dv, code "arg" [ texty i ] >> cfrombs t)
   let args = svs <> msg
   let argFirstUser' = fromIntegral argFirstUser
@@ -463,7 +476,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
             M.insert dv lookup_sender eLets0
           FS_Again {} ->
             eLets0
-  flip runReaderT (Env {..}) $ do
+  runApp eShared eWhich eLets $ do
     comment "Check txnAppl"
     code "gtxn" [ texty txnAppl, "TypeEnum" ]
     code "int" [ "appl" ]
@@ -515,14 +528,14 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
     code "arg" [ texty argPrevSt ]
     eq_or_fail
     ct body
-    std_footer
-  post_ts <- readIORef eOutputR
-  writeIORef eOutputR mempty
-  txns <- readIORef eTxnsR
-  flip runReaderT (Env {..}) $ do
+
+    txns <- how_many_txns
+    comment "Check GroupSize"
     code "global" [ "GroupSize" ]
     cc $ DLC_Int $ fromIntegral $ 1 + txns
     eq_or_fail
+
+    comment "Check time limits"
     let check_time f = \case
           [] -> nop
           as -> do
@@ -539,8 +552,8 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
       let CBetween from to = int
       check_time "FirstValid" from
       check_time "LastValid" to)
-  pre_ts <- readIORef eOutputR
-  return $ Just $ pre_ts <> post_ts
+
+    std_footer
 
 type Disp = String -> T.Text -> IO ()
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
@@ -566,20 +579,7 @@ compile_algo disp pl = do
           code "byte" [ template $ LT.pack lab ]
           op "=="
           op "||"
-  let simple m = do
-        -- FIXME this is a hack. make fun parameterized over the interesting stuff and merge with ch
-        let eShared = shared
-        let eWhich = 0
-        eLabelR <- newIORef 0
-        eOutputR <- newIORef mempty
-        eTxnsR <- newIORef 0
-        let eHP = 0
-        let eSP = 0
-        let eVars = mempty
-        let eLets = mempty
-        flip runReaderT (Env {..}) $ m >> std_footer
-        outs <- readIORef eOutputR
-        return outs
+  let simple m = runApp shared 0 mempty $ m >> std_footer
   appm <- simple $ do
     comment "Check that we're an App"
     code "txn" [ "TypeEnum" ]
