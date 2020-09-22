@@ -6,26 +6,22 @@ function render(st) {
   for ( let i = 0; i < 9; i++ ) {
     o += st.xs[i] ? 'X' : st.os[i] ? 'O' : ' ';
     if ( i != 8 ) {
-      o += (i % 3 == 2) ? '\n\t-----\n\t' : '|'; } }
+      o += (i % 3 == 2) ? '\n\t-----\n\t' : '|';
+    }
+  }
   o += '\n';
-  return o; }
+  return o;
+}
 
-( async () => {
-
-  const connector = stdlib_loader.getConnector();
+(async () => {
   const stdlib = await stdlib_loader.loadStdlib();
-  const { startingBalance, wagerAmount } =
-        ( connector == 'ETH' ?
-          { stdlib: stdlib
-            , startingBalance: stdlib.toWeiBigNumber('100', 'ether')
-            , wagerAmount: stdlib.toWeiBigNumber('5', 'ether') }
-          : ( connector == 'ALGO' ?
-              { stdlib: stdlib
-                , startingBalance: 1000000
-                , wagerAmount: 5 }
-              : (() => {
-                console.log(`Unknown connector: ${connector}`);
-                process.exit(1); })() ) );
+  const startingBalance = stdlib.parseCurrency({
+    ETH: 100, ALGO: 100, FAKE: 100,
+  });
+  const wagerAmount = stdlib.parseCurrency({
+    ETH: 5, ALGO: 5, FAKE: 5,
+  });
+  const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
 
   console.log(`\nMaking accounts\n`);
 
@@ -39,28 +35,37 @@ function render(st) {
 
   console.log(`\nRunning a random game\n`);
 
-  const interactWith = (name) => {
-    return {
-      ...stdlib.hasRandom
-      , getWager: () => {
-        console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${connector}`);
-        return wagerAmount; }
-      , acceptWager: (givenWagerAmount) => {
-        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${connector}`); }
-      , getMove: (state) => {
-        console.log(`${name} chooses a move from the state:${render(state)}`);
-        const xs = state.xs;
-        const os = state.os;
-        while ( xs && os ) {
-          const i = Math.floor( Math.random() * 9 );
-          if ( ! ( xs[i] || os[i] ) ) {
-            return i; } }  }
-      , endsWith: (state) => {
-        console.log(`${name} sees the final state: ${render(state)}`); } }; };
+  const interactWith = (name) => ({
+    ...stdlib.hasRandom,
+    getWager: () => {
+      console.log(`${name} publishes parameters of game: wager of ${dispAmt(wagerAmount)}`);
+      return wagerAmount;
+    },
+    acceptWager: (givenWagerAmount) => {
+      console.log(`${name} accepts parameters of game: wager of ${dispAmt(givenWagerAmount)}`);
+    },
+    getMove: (state) => {
+      console.log(`${name} chooses a move from the state:${render(state)}`);
+      const xs = state.xs;
+      const os = state.os;
+      while ( xs && os ) {
+        const i = Math.floor( Math.random() * 9 );
+        if ( ! ( xs[i] || os[i] ) ) {
+          return i;
+        }
+      }
+      throw Error(`impossible to make a move`);
+    },
+    endsWith: (state) => {
+      console.log(`${name} sees the final state: ${render(state)}`);
+    },
+  });
 
   await Promise.all([
     TTT.A(stdlib, ctcAlice, interactWith('Alice')),
-    TTT.B(stdlib, ctcBob, interactWith('Bob')) ]);
+    TTT.B(stdlib, ctcBob, interactWith('Bob')),
+  ]);
 
   console.log(`Done!`);
-  process.exit(0); })();
+  process.exit(0);
+})();

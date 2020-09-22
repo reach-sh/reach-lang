@@ -1,22 +1,16 @@
 import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as NIM from './build/index.main.mjs';
 
-( async () => {
-  const connector = stdlib_loader.getConnector();
+(async () => {
   const stdlib = await stdlib_loader.loadStdlib();
-  const { startingBalance, wagerAmount } =
-        ( connector == 'ETH' ? {
-          startingBalance: stdlib.toWeiBigNumber('100', 'ether'),
-          wagerAmount: stdlib.toWeiBigNumber('5', 'ether'),
-        } : ( connector == 'ALGO' ? {
-          stdlib: stdlib,
-          startingBalance: 1000000,
-          wagerAmount: 5,
-        } : ( connector == 'FAKE' ) ? {
-          startingBalance: 1000000,
-          wagerAmount: 5,
-        } : process.exit(1) ) );
+  const startingBalance = stdlib.parseCurrency({
+    ETH: 100, ALGO: 100, FAKE: 100,
+  });
+  const wagerAmount = stdlib.parseCurrency({
+    ETH: 5, ALGO: 5, FAKE: 5,
+  });
 
+  const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
   console.log(`\nMaking accounts\n`);
 
   const alice = await stdlib.newTestAccount(startingBalance);
@@ -29,25 +23,29 @@ import * as NIM from './build/index.main.mjs';
 
   console.log(`\nRunning a random game\n`);
 
-  const interactWith = (name) => {
-    return {
-      ...stdlib.hasRandom,
-      getParams: () => {
-        console.log(`${name} publishes parameters of game: wager of ${wagerAmount}${connector} and heap is 21`);
-        return [ wagerAmount, stdlib.bigNumberify(21) ]; }
-      , acceptParams: (givenWagerAmount, givenInitialHeap) => {
-        console.log(`${name} accepts parameters of game: wager of ${givenWagerAmount}${connector} and heap of ${givenInitialHeap}`); }
-      , getMove: (heap1, heap2) => {
-        console.log(`${name} chooses a heap from: ${heap1} and ${heap2} with amount 1`);
-        return [ stdlib.gt(heap1, heap2), stdlib.bigNumberify(1) ]; }
-      , showOutcome: (outcome) => {
-        console.log(`${name} sees the final outcome: ${outcome}`); } }; };
+  const interactWith = (name) => ({
+    ...stdlib.hasRandom,
+    getParams: () => {
+      console.log(`${name} publishes parameters of game: wager of ${dispAmt(wagerAmount)} and heap is 21`);
+      return [ wagerAmount, stdlib.bigNumberify(21) ];
+    },
+    acceptParams: (givenWagerAmount, givenInitialHeap) => {
+      console.log(`${name} accepts parameters of game: wager of ${dispAmt(givenWagerAmount)} and heap of ${givenInitialHeap}`);
+    },
+    getMove: (heap1, heap2) => {
+      console.log(`${name} chooses a heap from: ${heap1} and ${heap2} with amount 1`);
+      return [ stdlib.gt(heap1, heap2), stdlib.bigNumberify(1) ];
+    },
+    showOutcome: (outcome) => {
+      console.log(`${name} sees the final outcome: ${outcome}`);
+    },
+  });
 
-  const done =
-        await Promise.all([
-          NIM.A(stdlib, ctcAlice, interactWith('Alice'))
-          , NIM.B(stdlib, ctcBob, interactWith('Bob')) ]);
-  void(done);
+  await Promise.all([
+    NIM.A(stdlib, ctcAlice, interactWith('Alice')),
+    NIM.B(stdlib, ctcBob, interactWith('Bob')),
+  ]);
 
   console.log(`Done!`);
-  process.exit(0); })();
+  process.exit(0);
+})();

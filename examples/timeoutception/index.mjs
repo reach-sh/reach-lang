@@ -1,8 +1,9 @@
 import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/index.main.mjs';
 
-const parseEth = (n) => stdlib.toWeiBigNumber(n, 'ether');
-const getBalance = async (who) => stdlib.fromWei ( await stdlib.balanceOf(who) );
+const parseEth = (n) => stdlib.parseCurrency({ETH: n});
+const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
+const getBalance = async (who) => dispAmt(await stdlib.balanceOf(who));
 
 console.log(`getting started...`);
 (async() => {
