@@ -238,7 +238,7 @@ runTests(async () => {
       const amtWei = bigNumberify('10').pow(18 - 3).mul('123456');
       const amtTruncTo2 = amt.slice(0, amt.length - 1); // truncates! does not round
       it(`should convert to WEI correctly`, () => {
-        expect(stdlib.parseCurrency({ ETH: amt })).toBe(amtWei);
+        expect(stdlib.parseCurrency(amt)).toBe(amtWei);
       });
       it(`should convert from WEI correctly`, () => {
         expect(stdlib.formatCurrency(amtWei)).toBe(amt);
@@ -247,9 +247,10 @@ runTests(async () => {
 
       // Ok I know this is ETH-test, but... I'm lazy ~ Dan
       // XXX: amtMicroAlgos: BigNumber
+      // 3 is the number of decimals to shift over to make 123.456 a whole number
       const amtMicroAlgos = bigNumberify('10').pow(6 - 3).mul('123456').toNumber();
       it(`should convert to microAlgos correctly`, () => {
-        expect(ALGO_stdlib.parseCurrency({ ALGO: amt })).toBe(amtMicroAlgos);
+        expect(ALGO_stdlib.parseCurrency(amt)).toBe(amtMicroAlgos);
       });
       it(`should convert from microAlgos correctly`, () => {
         expect(ALGO_stdlib.formatCurrency(amtMicroAlgos)).toBe(amt);
@@ -260,7 +261,7 @@ runTests(async () => {
       const amtReachiesStr = '123';
       const amtReachies = bigNumberify(amtReachiesStr);
       it(`should convert to reachies correctly`, () => {
-        expect(FAKE_stdlib.parseCurrency({ FAKE: amtReachiesStr })).toBe(amtReachies);
+        expect(FAKE_stdlib.parseCurrency(amtReachiesStr)).toBe(amtReachies);
       });
       it(`should convert from reachies correctly`, () => {
         expect(FAKE_stdlib.formatCurrency(amtReachies)).toBe(amtReachiesStr);

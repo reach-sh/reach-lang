@@ -436,4 +436,3 @@ export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
 
 export type CurrencyAmount = string | number | BigNumber
 export type Connector = 'ETH' | 'ALGO' | 'FAKE';
-export type CurrencyMap = { [connector in Connector]?: CurrencyAmount }

@@ -1,6 +1,6 @@
 import algosdk, { Address, ApiCall, Round, SignedTxn, StatusInfo, TxId, Txn, TxnInfo, TxnParams, Wallet } from 'algosdk';
 
-import { CurrencyMap, debug, isBigNumber } from './shared';
+import { CurrencyAmount, debug, isBigNumber } from './shared';
 export * from './shared';
 
 // Note: if you want your programs to exit fail
@@ -374,46 +374,40 @@ export const newTestAccount = async (startingBalance: number) => {
 };
 
 /** @description the display name of the standard unit of currency for the network */
-export const standardUnit = 'algos';
+export const standardUnit = 'ALGO';
 /** @description the display name of the atomic (smallest) unit of currency for the network */
-export const atomicUnit = 'microAlgos';
+export const atomicUnit = 'μALGO';
 
 // XXX return BigNumber
 /**
  * @description  Parse currency by network
- * @param cm  a currency map, keyed by network, values are the standard unit for that network.
- *   For stdlib/ALGO, this map must include ALGO. The unit is algos.
- * @returns  the amount in the atomic unit of the network.
- *   For stdlib/ALGO this is microAlgos.
- * @example  parseCurrency({ALGO: 100}).toString() // => '100000000'
+ * @param amt  value in the {@link standardUnit} for the network.
+ * @returns  the amount in the {@link atomicUnit} of the network.
+ * @example  parseCurrency(100).toString() // => '100000000'
  */
-export function parseCurrency(cm: CurrencyMap): number {
-  if (cm.ALGO === undefined) { throw Error(`Expected ALGO in ${Object.keys(cm)}`); }
-  const amt =
-    isBigNumber(cm.ALGO) ? cm.ALGO.toNumber()
-    : typeof cm.ALGO === 'string' ? parseFloat(cm.ALGO)
-    : cm.ALGO;
-  return algosdk.algosToMicroalgos(amt);
+export function parseCurrency(amt: CurrencyAmount): number {
+  const numericAmt =
+    isBigNumber(amt) ? amt.toNumber()
+    : typeof amt === 'string' ? parseFloat(amt)
+    : amt;
+  return algosdk.algosToMicroalgos(numericAmt);
 }
 
 // XXX amt: BigNumber
 /**
  * @description  Format currency by network
- * @param amt  the amount in the atomic unit of the network.
- *   For stdlib/ALGO this is microAlgos.
- * @param decimals  up to how many decimal places to display in the standard unit.
+ * @param amt  the amount in the {@link atomicUnit} of the network.
+ * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
  *   Trailing zeroes will be omitted. Excess decimal places will be truncated. (not rounded)
- *   For stdlib/ALGO this must be an int from 0 to 9 inclusive, and defaults to 9.
- * @returns  a string representation of that amount in the standard unit for that network.
- *   For stdlib/ALGO this is algos.
- * @example  formatCurrency(100000000); // => '100'
+ *   This argument defaults to maximum precision.
+ * @returns  a string representation of that amount in the {@link standardUnit} for that network.
+ * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  */
 export function formatCurrency(amt: number, decimals: number = 6): string {
   // Recall that 1 algo = 10^6 microalgos
-  if (!(Number.isInteger(decimals) && 0 <= decimals && decimals <= 6)) {
-    throw Error(`Expected decimals to be an integer from 0 to 6, but got ${decimals}.`);
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
-
   // Use decimals+1 and then slice it off to truncate instead of round
   const algosStr = algosdk.microalgosToAlgos(amt).toFixed(decimals+1);
   // Have to roundtrip thru Number to drop trailing zeroes

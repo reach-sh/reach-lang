@@ -555,7 +555,7 @@ const stepTime = async () => {
   requireIsolatedNetwork('stepTime');
   const signer = await getSigner();
   const acc = await dummyAccountP;
-  return await transfer({ networkAccount: signer }, acc, parseCurrency({ ETH: 0 }));
+  return await transfer({ networkAccount: signer }, acc, parseCurrency(0));
 };
 const toNumberMay = (x) => {
   if (isBigNumber(x)) {
@@ -657,41 +657,41 @@ export const verifyContract = async (ctcInfo, backend) => {
   return true;
 };
 /** @description the display name of the standard unit of currency for the network */
-export const standardUnit = 'ether';
+export const standardUnit = 'ETH';
 /** @description the display name of the atomic (smallest) unit of currency for the network */
 export const atomicUnit = 'WEI';
 /**
  * @description  Parse currency by network
- * @param cm  a currency map, keyed by network, values are the standard unit for that network.
- *   For stdlib/ETH, this map must include ETH. The unit is ethers.
- * @returns  the amount in the atomic unit of the network.
- *   For stdlib/ETH this is WEI.
- * @example  parseCurrency({ETH: 100}).toString() // => '100000000000000000000'
+ * @param amt  value in the {@link standardUnit} for the network.
+ * @returns  the amount in the {@link atomicUnit} of the network.
+ * @example  parseCurrency(100).toString() // => '100000000000000000000'
  */
-export function parseCurrency(cm) {
-  if (cm.ETH === undefined) {
-    throw Error(`Expected ETH in ${Object.keys(cm)}`);
-  }
-  return bigNumberify(ethers.utils.parseUnits(cm.ETH.toString(), standardUnit));
+export function parseCurrency(amt) {
+  return bigNumberify(ethers.utils.parseUnits(amt.toString(), 'ether'));
 }
 /**
  * @description  Format currency by network
- * @param amt  the amount in the atomic unit of the network.
- *   For stdlib/ETH this is WEI.
- * @param decimals  up to how many decimal places to display in the standard unit.
+ * @param amt  the amount in the {@link atomicUnit} of the network.
+ * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
  *   Trailing zeroes will be omitted. Excess decimal places will be truncated. (not rounded)
- *   For stdlib/ETH this must be an int from 0 to 18 inclusive, and defaults to 18.
- *   For stdlib/ETH only, whole numbers will always be displayed with .0 at the end.
- * @returns  a string representation of that amount in the standard unit for that network.
- *   For stdlib/ETH this is ethers.
+ *   This argument defaults to maximum precision.
+ * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000000000000000')); // => '100'
  */
 export function formatCurrency(amt, decimals = 18) {
-  // Recall that 1 WEI = 10^18 ether
-  if (!(Number.isInteger(decimals) && 0 <= decimals && decimals <= 18)) {
-    throw Error(`Expected decimals to be an integer from 0 to 18, but got ${decimals}.`);
+  // Recall that 1 WEI = 10e18 ETH
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
+  // Truncate
+  decimals = Math.min(decimals, 18);
   const decimalsToForget = 18 - decimals;
   const divAmt = amt.div(bigNumberify(10).pow(decimalsToForget));
-  return ethers.utils.formatUnits(divAmt, decimals);
+  const amtStr = ethers.utils.formatUnits(divAmt, decimals);
+  // If the str ends with .0, chop it off
+  if (amtStr.slice(amtStr.length - 2) == '.0') {
+    return amtStr.slice(0, amtStr.length - 2);
+  } else {
+    return amtStr;
+  }
 }

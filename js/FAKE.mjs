@@ -139,37 +139,31 @@ const toNumberMay = (x) => {
   }
 };
 /** @description the display name of the standard unit of currency for the network */
-export const standardUnit = 'reachies';
+export const standardUnit = 'FAKE';
 /** @description the display name of the atomic (smallest) unit of currency for the network */
-export const atomicUnit = 'reachies';
+export const atomicUnit = 'FAKE';
 /**
  * @description  Parse currency by network
- * @param cm  a currency map, keyed by network, values are the standard unit for that network.
- *   For stdlib/ETH, this map must include ETH. The unit is ethers.
- * @returns  the amount in the atomic unit of the network.
- *   For stdlib/ETH this is WEI.
- * @example  parseCurrency({FAKE: 100}).toString() // => '100'
+ * @param amt  value in the {@link standardUnit} for the network.
+ * @returns  the amount in the {@link atomicUnit} of the network.
+ * @example  parseCurrency(100).toString() // => '100'
  */
-export function parseCurrency(cm) {
-  if (cm.FAKE === undefined) {
-    throw Error(`Expected FAKE in ${Object.keys(cm)}`);
-  }
-  return stdlib.bigNumberify(cm.FAKE.toString());
+export function parseCurrency(amt) {
+  return stdlib.bigNumberify(amt.toString());
 }
 /**
  * @description  Format currency by network
- * @param amt  the amount in the atomic unit of the network.
- *   For stdlib/ETH this is WEI.
- * @param decimals  up to how many decimal places to display in the standard unit.
- *   Trailing zeroes will be omitted.
- *   For stdlib/ETH this must be an int from 0 to 18 inclusive, and defaults to 18.
- * @returns  a string representation of that amount in the standard unit for that network.
- *   For stdlib/ETH this is ethers.
+ * @param amt  the amount in the {@link atomicUnit} of the network.
+ * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
+ *   Trailing zeroes will be omitted. Excess decimal places will be truncated. (not rounded)
+ *   This argument defaults to maximum precision.
+ * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100')); // => '100'
  */
 export function formatCurrency(amt, decimals = 0) {
-  if (!(Number.isInteger(decimals) && decimals === 0)) {
-    throw Error(`Expected decimals to be the integer 0, but got ${decimals}.`);
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
+  void(decimals); // There are no fractional quantities in FAKE
   return amt.toString();
 }
