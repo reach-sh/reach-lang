@@ -467,7 +467,7 @@ When I ran the program three times, this is the output I got:
 @verbatim{
 $ ./reach run
 Alice played Paper
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Bob played Rock
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
@@ -476,7 +476,7 @@ Bob went from 10.0 to 4.9999.
 
 $ ./reach run
 Alice played Paper
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
@@ -485,7 +485,7 @@ Bob went from 10.0 to 14.9999.
 
 $ ./reach run
 Alice played Rock
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
@@ -522,7 +522,7 @@ We showed executions of the game where Alice won, like the following
 @verbatim{
 $ ./reach run
 Alice played Rock
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
@@ -546,7 +546,7 @@ If we run this version of the program, we will see output like this:
 @verbatim{
 $ ./reach run
 Alice played Scissors
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
 Alice went from 10.0 to 4.9999.
@@ -817,7 +817,7 @@ Since we didn't have to change the @tech{frontend} in any meaningful way, the ou
 @verbatim{
 $ ./reach run
 Alice played Scissors
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
@@ -826,7 +826,7 @@ Bob went from 10.0 to 4.9999.
 
 $ ./reach run
 Alice played Paper
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
@@ -835,7 +835,7 @@ Bob went from 10.0 to 14.9999.
 
 $ ./reach run
 Alice played Scissors
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Bob played Scissors
 Bob saw outcome Draw
 Alice saw outcome Draw
@@ -991,7 +991,7 @@ Let's run the program and see what happens:
 @verbatim{
 $ ./reach run
 Alice played Rock
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
@@ -1235,7 +1235,7 @@ Let's run the program and see what happens:
 
 @verbatim{
 $ ./reach run
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Alice played Paper
 Bob played Rock
 Bob saw outcome Alice wins
@@ -1244,7 +1244,7 @@ Alice went from 10.0 to 14.9999.
 Bob went from 10.0 to 4.9999.
 
 $ ./reach run
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Alice played Rock
 Bob played Rock
 Alice played Paper
@@ -1255,7 +1255,7 @@ Alice went from 10.0 to 4.9999.
 Bob went from 10.0 to 14.9999.
 
 $ ./reach run
-Bob accepts the wager of 5.0.
+Bob accepts the wager of 5.
 Alice played Scissors
 Bob played Rock
 Bob saw outcome Bob wins
