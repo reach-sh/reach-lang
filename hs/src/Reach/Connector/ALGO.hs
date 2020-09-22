@@ -21,6 +21,9 @@ encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
 texty :: Show a => a -> LT.Text
 texty x = LT.pack $ show x
 
+template :: LT.Text -> LT.Text
+template x = "{{" <> x <> "}}"
+
 type ScratchSlot = Word8
 type TxnIdx = Word8 --- XXX actually only 16 IIRC
 
@@ -35,13 +38,18 @@ comment_ t = "// " <> t
 
 type TEALs = DL.DList TEAL
 
---- FIXME optimize "btoi >> itob" into ""
+optimize :: [LT.Text] -> [LT.Text]
+optimize = \case
+  [] -> []
+  "btoi" : "itob" : l -> optimize l
+  "itob" : "btoi" : l -> optimize l
+  x : l -> x : optimize l
 
 render :: TEALs -> T.Text
 render ts = tt
   where tt = LT.toStrict lt
         lt = LT.unlines lts
-        lts = "#pragma version 2" : DL.toList ts
+        lts = "#pragma version 2" : (optimize $ DL.toList ts)
 
 data Shared = Shared
   { sHandlers :: M.Map Int CHandler
@@ -90,6 +98,11 @@ app_global_put k mkv = do
   cc $ DLC_Bytes $ k
   mkv
   op "app_global_put"
+check_rekeyto :: App ()
+check_rekeyto = do
+  code "txn" [ "RekeyTo" ]
+  code "global" [ "ZeroAddress" ]
+  eq_or_fail
 
 bad :: LT.Text -> App ()
 bad lab = do
@@ -268,7 +281,8 @@ ce = \case
     ca amt
     eq_or_fail
     code "gtxn" [ texty txni, "Sender" ]
-    lookup_me
+    code "byte" [ tContractAddr ]
+    cfrombs T_Address
     eq_or_fail
   DLE_Claim _ _ t a ->
     case t of
@@ -361,6 +375,19 @@ halt_should_be b = do
   eq_or_fail
   code "b" ["done"]
 
+-- Intialization:
+--
+-- 0. Alice creates the application; gets Id
+-- 1. Alice creates the contract account; embeds Id; gets Me
+-- 2. Alice creates the handler contracts; embeds Id & Me; gets H_i
+-- 3. Alice updates the application; embedding Me & H_i
+
+-- Template
+tApplicationID :: LT.Text
+tApplicationID = template "ApplicationID"
+tContractAddr :: LT.Text
+tContractAddr = template "ContractAddr"
+
 -- State:
 keyHalts :: B.ByteString
 keyHalts = "h"
@@ -371,40 +398,37 @@ keyLast = "l"
 
 -- Txns:
 -- 0   : Application call
--- 1   : Zero to handler account
+-- 1   : Zero from handler account
 -- 2   : Transfer to contract account
 -- 3.. : Transfers from contract to user
 txnAppl :: Word8
 txnAppl = 0
+txnFromHandler :: Word8
+txnFromHandler = txnAppl + 1
 txnToHandler :: Word8
-txnToHandler = txnAppl + 1
+txnToHandler = txnFromHandler + 1
 txnToContract :: Word8
 txnToContract = txnToHandler + 1
-txnFirstUser :: Word8
-txnFirstUser = txnToContract + 1
+txnFromContract0 :: Word8
+txnFromContract0 = txnToContract + 1
 
 -- Args:
 -- 0   : Previous state
 -- 1   : Next state
--- 2   : Contract account address
--- 3   : Handler halts
--- 4   : Last round
--- 5.. : Handler arguments
+-- 2   : Handler halts
+-- 3   : Last round
+-- 4.. : Handler arguments
 argPrevSt :: Word8
 argPrevSt = 0
 argNextSt :: Word8
 argNextSt = argPrevSt + 1
-argMe :: Word8
-argMe = argNextSt + 1
 argHalts :: Word8
-argHalts = argMe + 1
+argHalts = argNextSt + 1
 argLast :: Word8
 argLast = argHalts + 1
 argFirstUser :: Word8
 argFirstUser = argLast + 1
 
-lookup_me :: App ()
-lookup_me = code "arg" [ texty argMe ] >> cfrombs T_Address
 lookup_sender :: App ()
 lookup_sender = code "gtxn" [ texty txnToContract, "Sender" ]
 lookup_last :: App ()
@@ -426,7 +450,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
   eOutputR <- newIORef mempty
   let eHP = 0
   let eSP = 255
-  eTxnsR <- newIORef $ txnFirstUser - 1
+  eTxnsR <- newIORef $ txnFromContract0 - 1
   let eVars = mempty
   let mkarg dv@(DLVar _ _ t _) (i::Int) = (dv, code "arg" [ texty i ] >> cfrombs t)
   let args = svs <> msg
@@ -440,6 +464,44 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = do
           FS_Again {} ->
             eLets0
   flip runReaderT (Env {..}) $ do
+    comment "Check txnAppl"
+    code "gtxn" [ texty txnAppl, "TypeEnum" ]
+    code "int" [ "appl" ]
+    eq_or_fail
+    code "gtxn" [ texty txnAppl, "ApplicationID" ]
+    code "byte" [ tApplicationID ]
+    cfrombs T_UInt256
+    eq_or_fail
+
+    comment "Check txnToHandler"
+    code "gtxn" [ texty txnToHandler, "TypeEnum" ]
+    code "int" [ "pay" ]
+    eq_or_fail
+    code "gtxn" [ texty txnToHandler, "Receiver" ]
+    code "txn" [ "Sender" ]
+    eq_or_fail
+
+    comment "Check txnToContract"
+    code "gtxn" [ texty txnToContract, "TypeEnum" ]
+    code "int" [ "pay" ]
+    eq_or_fail
+    code "gtxn" [ texty txnToContract, "Receiver" ]
+    code "byte" [ tContractAddr ]
+    eq_or_fail
+
+    comment "Check txnFromHandler (us)"
+    code "txn" [ "GroupIndex" ]
+    cc $ DLC_Int $ fromIntegral $ txnFromHandler
+    eq_or_fail
+    code "txn" [ "TypeEnum" ]
+    code "int" [ "pay" ]
+    eq_or_fail
+    code "txn" [ "Amount" ]
+    cc $ DLC_Int $ 0
+    eq_or_fail
+    code "txn" [ "Receiver" ]
+    code "gtxn" [ texty txnToHandler, "Sender" ]
+    eq_or_fail
     code "txn" [ "NumArgs" ]
     cc $ DLC_Int $ fromIntegral $ argCount
     eq_or_fail
@@ -492,11 +554,18 @@ compile_algo disp pl = do
   let addProg lab t = do
         modifyIORef resr (M.insert lab t)
         disp lab t
-  forM_ (M.toList hm) $ \ (hi, hh) -> do
+  hchecks <- forM (M.toList hm) $ \ (hi, hh) -> do
     mht <- ch shared hi hh
     case mht of
-      Nothing -> return ()
-      Just ht -> addProg ("m" <> show hi) $ render ht
+      Nothing -> return $ return ()
+      Just ht -> do
+        let lab = "m" <> show hi
+        addProg lab $ render ht
+        return $ do
+          code "gtxn" [ texty txnFromHandler, "Sender" ]
+          code "byte" [ template $ LT.pack lab ]
+          op "=="
+          op "||"
   let simple m = do
         -- FIXME this is a hack. make fun parameterized over the interesting stuff and merge with ch
         let eShared = shared
@@ -512,45 +581,90 @@ compile_algo disp pl = do
         outs <- readIORef eOutputR
         return outs
   appm <- simple $ do
-    xxx "if not initialized, do it and quit"
+    comment "Check that we're an App"
+    code "txn" [ "TypeEnum" ]
+    code "int" [ "appl" ]
+    eq_or_fail
+    check_rekeyto
+    comment "Check if we need to initialize"
+    app_global_get keyLast
+    code "bz" [ "init" ]
     app_global_get keyHalts
     cc $ DLC_Bool $ False
     eq_or_fail
+    comment "Check that everyone's here"
     code "global" [ "GroupSize" ]
-    cc $ DLC_Int $ fromIntegral $ txnFirstUser
+    cc $ DLC_Int $ fromIntegral $ txnFromContract0
     op ">="
     or_fail
-    xxx "check txnAppl?"
-    xxx "check txnToHandler"
-    xxx "check txnToContract?"
+    comment "Check txnAppl (us)"
+    code "txn" [ "GroupIndex" ]
+    cc $ DLC_Int $ fromIntegral $ txnAppl
+    eq_or_fail
+    comment "Check txnFromHandler"
+    cc $ DLC_Bool $ False
+    forM_ hchecks id
+    or_fail
     app_global_get keyState
-    code "gtxna" [ texty txnToHandler, texty argPrevSt ]
+    code "gtxna" [ texty txnFromHandler, "Args", texty argPrevSt ]
     cfrombs T_Bytes
     eq_or_fail
-    xxx "me is correct"
     app_global_get keyLast
-    code "gtxna" [ texty txnToHandler, texty argLast ]
+    code "gtxna" [ texty txnFromHandler, "Args", texty argLast ]
     cfrombs T_UInt256
     eq_or_fail
+    comment "Don't check anyone else, because Handler does"
+    comment "Update state"
     app_global_put keyState $ do
-      code "gtxna" [ texty txnToHandler, texty argNextSt ]
+      code "gtxna" [ texty txnFromHandler, "Args", texty argNextSt ]
       cfrombs T_Bytes
     app_global_put keyLast $ do
       code "global" [ "Round" ]
     app_global_put keyHalts $ do
-      code "gtxna" [ texty txnToHandler, texty argHalts ]
+      code "gtxna" [ texty txnFromHandler, "Args", texty argHalts ]
       cfrombs T_Bool
-    code "b" ["done"]
+    code "b" [ "done" ]
+    label "init"
+    xxx "init"
+    code "b" [ "done" ]
   clearm <- simple $ do
+    comment "We're alone"
+    code "global" [ "GroupSize" ]
+    cc $ DLC_Int $ 1
+    eq_or_fail
+    comment "We're halted"
     app_global_get keyHalts
     cc $ DLC_Bool $ True
     eq_or_fail
+    code "b" [ "done" ]
   ctcm <- simple $ do
+    comment "Check size"
     code "global" [ "GroupSize" ]
-    cc $ DLC_Int $ fromIntegral $ txnFirstUser
+    cc $ DLC_Int $ fromIntegral $ txnFromContract0
     op ">="
     or_fail
-    xxx "check txnAppl"
+    comment "Check txnAppl"
+    code "gtxn" [ texty txnAppl, "TypeEnum" ]
+    code "int" [ "appl" ]
+    eq_or_fail
+    code "gtxn" [ texty txnAppl, "ApplicationID" ]
+    code "byte" [ tApplicationID ]
+    cfrombs T_UInt256
+    eq_or_fail
+    comment "Don't check anything else, because app does"
+    comment "Check us"
+    code "txn" [ "TypeEnum" ]
+    code "int" [ "pay" ]
+    eq_or_fail
+    check_rekeyto
+    code "txn" [ "CloseRemainderTo" ]
+    code "global" [ "ZeroAddress" ]
+    eq_or_fail
+    code "txn" [ "GroupIndex" ]
+    cc $ DLC_Int $ fromIntegral $ txnFromContract0
+    op ">="
+    or_fail
+    code "b" [ "done" ]
   addProg "appApproval" $ render appm
   addProg "appClear" $ render clearm
   addProg "ctc" $ render ctcm
