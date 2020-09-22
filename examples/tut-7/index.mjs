@@ -44,7 +44,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
   }
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
-  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const getBalance = async () => fmt(await stdlib.balanceOf(acc));
 
   const before = await getBalance();
   console.log(`Your balance is ${before}`);
