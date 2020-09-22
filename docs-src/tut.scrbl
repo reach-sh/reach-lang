@@ -323,13 +323,15 @@ We'll add this code in between account creation and contract deployment.
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 8 12 "  // ..."]
+         'only 5 12 "  // ..."]
 
 @itemlist[
 
-@item{Line 10 shows a helpful function for getting the balance of a participant and displaying it to 4 decimal places.}
+@item{Line 9 shows a helpful function for displaying currency amounts with up to 4 decimal places.}
 
-@item{Line 11 and 12 get the balance before the game starts for both Alice and Bob.}
+@item{Line 10 shows a helpful function for getting the balance of a participant and displaying it with up to 4 decimal places.}
+
+@item{Lines 11 and 12 get the balance before the game starts for both Alice and Bob.}
 
 ]
 
@@ -469,8 +471,8 @@ Bob accepts the wager of 5.0.
 Bob played Rock
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10.0 to 14.999999999999687163.
-Bob went from 10.0 to 4.999999999999978229.
+Alice went from 10.0 to 14.9999.
+Bob went from 10.0 to 4.9999.
 
 $ ./reach run
 Alice played Paper
@@ -478,8 +480,8 @@ Bob accepts the wager of 5.0.
 Bob played Scissors
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10.0 to 4.999999999999687163.
-Bob went from 10.0 to 14.999999999999978246.
+Alice went from 10.0 to 4.9999.
+Bob went from 10.0 to 14.9999.
 
 $ ./reach run
 Alice played Rock
@@ -487,8 +489,8 @@ Bob accepts the wager of 5.0.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10.0 to 14.999999999999687175.
-Bob went from 10.0 to 4.999999999999978229.
+Alice went from 10.0 to 14.9999.
+Bob went from 10.0 to 4.9999.
 }
 
 @margin-note{How come Alice and Bob's balance goes back to @litchar{10.0} each time?
@@ -524,8 +526,8 @@ Bob accepts the wager of 5.0.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10.0 to 14.999999999999687175.
-Bob went from 10.0 to 4.999999999999978229.
+Alice went from 10.0 to 14.9999.
+Bob went from 10.0 to 4.9999.
 }
 
 The problem is that these version of the game only executed an @tech{honest} version of Bob, that is, one that followed the Reach program exactly, including in his private @tech{local steps}.
@@ -547,8 +549,8 @@ Alice played Scissors
 Bob accepts the wager of 5.0.
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10.0 to 4.999999999999683071.
-Bob went from 10.0 to 14.999999999999978232.
+Alice went from 10.0 to 4.9999.
+Bob went from 10.0 to 14.9999.
 }
 
 In this version, unlike the @tech{honest} version, Bob never consults the @tech{frontend} and so it never prints out the message of what hand Bob played.
@@ -819,8 +821,8 @@ Bob accepts the wager of 5.0.
 Bob played Paper
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10.0 to 14.999999999999553643.
-Bob went from 10.0 to 4.999999999999969352.
+Alice went from 10.0 to 14.9999.
+Bob went from 10.0 to 4.9999.
 
 $ ./reach run
 Alice played Paper
@@ -828,8 +830,8 @@ Bob accepts the wager of 5.0.
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10.0 to 4.999999999999553626.
-Bob went from 10.0 to 14.999999999999969352.
+Alice went from 10.0 to 4.9999.
+Bob went from 10.0 to 14.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -837,8 +839,8 @@ Bob accepts the wager of 5.0.
 Bob played Scissors
 Bob saw outcome Draw
 Alice saw outcome Draw
-Alice went from 10.0 to 9.999999999999550271.
-Bob went from 10.0 to 9.999999999999969352.
+Alice went from 10.0 to 9.9999.
+Bob went from 10.0 to 9.9999.
 }
 
 Except now, behind the scenes, and without any changes to the frontend, Alice now takes two steps in program and Bob only takes one, and she is protected against Bob finding her hand and using it to ensure he wins!
@@ -993,8 +995,8 @@ Bob accepts the wager of 5.0.
 Bob played Paper
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10.0 to 4.999999999999386833.
-Bob went from 10.0 to 14.999999999999969143.
+Alice went from 10.0 to 4.9999.
+Bob went from 10.0 to 14.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -1011,8 +1013,8 @@ Alice played Scissors
 Bob played Scissors
 Bob observed a timeout
 Alice observed a timeout
-Alice went from 10.0 to 9.999999999999388565.
-Bob went from 10.0 to 9.99999999999979.
+Alice went from 10.0 to 9.9999.
+Bob went from 10.0 to 9.9999.
 
 $ ./reach run
 Alice played Paper
@@ -1029,8 +1031,8 @@ Alice played Paper
 Bob played Scissors
 Bob observed a timeout
 Alice observed a timeout
-Alice went from 10.0 to 9.999999999999388565.
-Bob went from 10.0 to 9.99999999999979.
+Alice went from 10.0 to 9.9999.
+Bob went from 10.0 to 9.9999.
 }
 
 Of course, when you run, you may not get two of the three times ending in a timeout.
@@ -1238,8 +1240,8 @@ Alice played Paper
 Bob played Rock
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10.0 to 14.999999999999040261.
-Bob went from 10.0 to 4.999999999999938085.
+Alice went from 10.0 to 14.9999.
+Bob went from 10.0 to 4.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.0.
@@ -1249,8 +1251,8 @@ Alice played Paper
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10.0 to 4.999999999998975474.
-Bob went from 10.0 to 14.999999999999906275.
+Alice went from 10.0 to 4.9999.
+Bob went from 10.0 to 14.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.0.
@@ -1258,8 +1260,8 @@ Alice played Scissors
 Bob played Rock
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10.0 to 4.999999999999040265.
-Bob went from 10.0 to 14.999999999999938097.
+Alice went from 10.0 to 4.9999.
+Bob went from 10.0 to 14.9999.
 }
 
 As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.
@@ -1472,14 +1474,14 @@ y
 Do you want to deploy the contract? (y/n)
 y
 The contract is deployed as = {"address": "0xdd1a445d4a85C4676094f84fFe19Fb3d76E502E0", "creation_block": 73}
-Your balance is 999.999999999999123878
+Your balance is 999.9999
 How much do you want to wager?
 10
 What hand will you play?
 r
 You played Rock
 The outcome is: Bob wins
-Your balance is now 989.999999999999040247}
+Your balance is now 989.9999}
 
 and
 
@@ -1501,7 +1503,7 @@ What hand will you play?
 p
 You played Paper
 The outcome is: Bob wins
-Your balance is now 1009.999999999999938073}
+Your balance is now 1009.9999}
 
 Of course, when you run the exact amounts and addresses may be different.
 

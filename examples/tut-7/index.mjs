@@ -43,7 +43,8 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
     ctc = await acc.attach(backend, info);
   }
 
-  const getBalance = async () => stdlib.formatCurrency(await stdlib.balanceOf(acc), 4);
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
 
   const before = await getBalance();
   console.log(`Your balance is ${before}`);
@@ -64,7 +65,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
   } else {
     interact.acceptWager = async (amt) => {
       const accepted = await ask(
-        `Do you accept the wager of ${stdlib.formatCurrency(amt, 4)}?`,
+        `Do you accept the wager of ${fmt(amt)}?`,
         yesno
       );
       if (accepted) {

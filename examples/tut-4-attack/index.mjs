@@ -3,11 +3,11 @@ import * as backend from './build/index.main.mjs';
 
 (async () => {
   const startingBalance = stdlib.parseCurrency(10);
-
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 
-  const getBalance = async (who) => stdlib.formatCurrency(await stdlib.balanceOf(who), 4);
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
@@ -35,7 +35,7 @@ import * as backend from './build/index.main.mjs';
     backend.Bob(stdlib, ctcBob, {
       ...Player('Bob'),
       acceptWager: (amt) => {
-        console.log(`Bob accepts the wager of ${stdlib.formatCurrency(amt, 4)}.`);
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
       },
     }),
   ]);
