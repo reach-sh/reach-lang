@@ -5,7 +5,7 @@ console.log(process.argv);
 stdlib.assert(process.argv[3] === 'Mr. Postman');
 
 (async () => {
-  const startingBalance = stdlib.toWeiBigNumber('100', 'ether');
+  const startingBalance = stdlib.parseCurrency({ETH: 100});
 
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
