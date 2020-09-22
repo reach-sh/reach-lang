@@ -25,7 +25,7 @@ template :: LT.Text -> LT.Text
 template x = "{{" <> x <> "}}"
 
 type ScratchSlot = Word8
-type TxnIdx = Word8 --- XXX actually only 16 IIRC
+type TxnIdx = Word8 --- FIXME actually only 16 IIRC
 
 type TEAL = LT.Text
 
@@ -162,7 +162,7 @@ talloc = do
   Env {..} <- ask
   liftIO $ modifyIORef eTxnsR (1+)
   txni <- liftIO $ readIORef eTxnsR
-  --- XXX check if > bound
+  --- FIXME check if > bound
   return txni
 
 how_many_txns :: App TxnIdx
@@ -255,8 +255,7 @@ cdigest :: [(SLType, App ())] -> App ()
 cdigest l = do
   mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
   op "keccak256"
-  --- XXX this will panic
-  op "btoi"
+  --- FIXME need to change digest to return bytes
   where go may_concat (t, m) = m >> ctobs t >> may_concat
         no_concat = nop
         yes_concat = op "concat"
@@ -625,7 +624,12 @@ compile_algo disp pl = do
       cfrombs T_Bool
     code "b" [ "done" ]
     label "init"
-    xxx "init"
+    app_global_put keyState $ do
+      cstate HM_Set []
+    app_global_put keyLast $ do
+      code "global" [ "Round" ]
+    app_global_put keyHalts $ do
+      cc $ DLC_Bool $ False
     code "b" [ "done" ]
   clearm <- simple $ do
     comment "We're alone"
