@@ -22,7 +22,7 @@ echo "$e"
     set -e
     if [ "$MODE" = "run" ] ; then
       set +e
-      make down
+      make down 2> /dev/null
       set -e
     fi
     if [ "$RESULT" -ne 0 ] ; then
