@@ -471,8 +471,8 @@ Bob accepts the wager of 5.
 Bob played Rock
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10.0 to 14.9999.
-Bob went from 10.0 to 4.9999.
+Alice went from 10 to 14.9999.
+Bob went from 10 to 4.9999.
 
 $ ./reach run
 Alice played Paper
@@ -480,8 +480,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10.0 to 4.9999.
-Bob went from 10.0 to 14.9999.
+Alice went from 10 to 4.9999.
+Bob went from 10 to 14.9999.
 
 $ ./reach run
 Alice played Rock
@@ -489,11 +489,11 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10.0 to 14.9999.
-Bob went from 10.0 to 4.9999.
+Alice went from 10 to 14.9999.
+Bob went from 10 to 4.9999.
 }
 
-@margin-note{How come Alice and Bob's balance goes back to @litchar{10.0} each time?
+@margin-note{How come Alice and Bob's balance goes back to @litchar{10} each time?
 It's because every time we run @exec{./reach run}, it starts a completely fresh instance of the testing network and creates new accounts for each player.}
 
 @margin-note{How come the balances aren't exactly @litchar{10}, @litchar{15}, and @litchar{5}?
@@ -526,8 +526,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10.0 to 14.9999.
-Bob went from 10.0 to 4.9999.
+Alice went from 10 to 14.9999.
+Bob went from 10 to 4.9999.
 }
 
 The problem is that these version of the game only executed an @tech{honest} version of Bob, that is, one that followed the Reach program exactly, including in his private @tech{local steps}.
@@ -549,8 +549,8 @@ Alice played Scissors
 Bob accepts the wager of 5.
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10.0 to 4.9999.
-Bob went from 10.0 to 14.9999.
+Alice went from 10 to 4.9999.
+Bob went from 10 to 14.9999.
 }
 
 In this version, unlike the @tech{honest} version, Bob never consults the @tech{frontend} and so it never prints out the message of what hand Bob played.
@@ -821,8 +821,8 @@ Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10.0 to 14.9999.
-Bob went from 10.0 to 4.9999.
+Alice went from 10 to 14.9999.
+Bob went from 10 to 4.9999.
 
 $ ./reach run
 Alice played Paper
@@ -830,8 +830,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10.0 to 4.9999.
-Bob went from 10.0 to 14.9999.
+Alice went from 10 to 4.9999.
+Bob went from 10 to 14.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -839,8 +839,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Bob saw outcome Draw
 Alice saw outcome Draw
-Alice went from 10.0 to 9.9999.
-Bob went from 10.0 to 9.9999.
+Alice went from 10 to 9.9999.
+Bob went from 10 to 9.9999.
 }
 
 Except now, behind the scenes, and without any changes to the frontend, Alice now takes two steps in program and Bob only takes one, and she is protected against Bob finding her hand and using it to ensure he wins!
@@ -995,8 +995,8 @@ Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10.0 to 4.9999.
-Bob went from 10.0 to 14.9999.
+Alice went from 10 to 4.9999.
+Bob went from 10 to 14.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -1013,8 +1013,8 @@ Alice played Scissors
 Bob played Scissors
 Bob observed a timeout
 Alice observed a timeout
-Alice went from 10.0 to 9.9999.
-Bob went from 10.0 to 9.9999.
+Alice went from 10 to 9.9999.
+Bob went from 10 to 9.9999.
 
 $ ./reach run
 Alice played Paper
@@ -1031,8 +1031,8 @@ Alice played Paper
 Bob played Scissors
 Bob observed a timeout
 Alice observed a timeout
-Alice went from 10.0 to 9.9999.
-Bob went from 10.0 to 9.9999.
+Alice went from 10 to 9.9999.
+Bob went from 10 to 9.9999.
 }
 
 Of course, when you run, you may not get two of the three times ending in a timeout.
@@ -1240,8 +1240,8 @@ Alice played Paper
 Bob played Rock
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10.0 to 14.9999.
-Bob went from 10.0 to 4.9999.
+Alice went from 10 to 14.9999.
+Bob went from 10 to 4.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.
@@ -1251,8 +1251,8 @@ Alice played Paper
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10.0 to 4.9999.
-Bob went from 10.0 to 14.9999.
+Alice went from 10 to 4.9999.
+Bob went from 10 to 14.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.
@@ -1260,8 +1260,8 @@ Alice played Scissors
 Bob played Rock
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10.0 to 4.9999.
-Bob went from 10.0 to 14.9999.
+Alice went from 10 to 4.9999.
+Bob went from 10 to 14.9999.
 }
 
 As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.
@@ -1496,8 +1496,8 @@ Do you want to deploy the contract? (y/n)
 n
 Please paste the contract information:
 {"address": "0xdd1a445d4a85C4676094f84fFe19Fb3d76E502E0", "creation_block": 73}
-Your balance is 1000.0
-Do you accept the wager of 10.0?
+Your balance is 1000
+Do you accept the wager of 10?
 y
 What hand will you play?
 p
