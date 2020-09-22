@@ -2,7 +2,7 @@ import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
-  const startingBalance = stdlib.parseCurrency({ETH: 10});
+  const startingBalance = stdlib.parseCurrency(10);
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
@@ -31,7 +31,7 @@ import * as backend from './build/index.main.mjs';
   await Promise.all([
     backend.Alice(stdlib, ctcAlice, {
       ...Player('Alice'),
-      wager: stdlib.parseCurrency({ETH: 5}),
+      wager: stdlib.parseCurrency(5),
     }),
     backend.Bob(stdlib, ctcBob, {
       ...Player('Bob'),

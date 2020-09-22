@@ -17,7 +17,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
     yesno
   );
   if (createAcc) {
-    acc = await stdlib.newTestAccount(stdlib.parseCurrency({ETH: 1000}));
+    acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
   } else {
     const phrase = await ask(
       `What is your account mnemonic?`,
@@ -58,7 +58,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
   if (isAlice) {
     const amt = await ask(
       `How much do you want to wager?`,
-      (x) => stdlib.parseCurrency({ETH: x})
+      stdlib.parseCurrency
     );
     interact.wager = amt;
   } else {
