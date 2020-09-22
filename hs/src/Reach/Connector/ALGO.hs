@@ -394,6 +394,7 @@ tContractAddr :: LT.Text
 tContractAddr = template "ContractAddr"
 
 -- State:
+-- XXX get rid of this and use oncompletion?
 keyHalts :: B.ByteString
 keyHalts = "h"
 keyState :: B.ByteString
@@ -526,6 +527,8 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = fmap Just $ do
     cstate (HM_Check prev) svs
     code "arg" [ texty argPrevSt ]
     eq_or_fail
+
+    comment "Run body"
     ct body
 
     txns <- how_many_txns

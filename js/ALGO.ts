@@ -7,7 +7,6 @@ export * from './shared';
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-
 type NetworkAccount = Wallet;
 type Account = {
   networkAccount: NetworkAccount,
