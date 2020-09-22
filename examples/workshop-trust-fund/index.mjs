@@ -3,11 +3,8 @@ import * as backend from './build/index.main.mjs';
 
 const runDemo = async (delayReceiver, delayFunder) => {
   const stdlib = await stdlib_loader.loadStdlib();
-  const connector = stdlib_loader.getConnector();
-  const amt = (x) => stdlib.parseCurrency({ETH: x, FAKE: x});
   const getBalance = async (who) => stdlib.formatCurrency(
-    await stdlib.balanceOf(who),
-    connector === 'FAKE' ? 0 : 4
+    await stdlib.balanceOf(who), 4,
   );
 
   const MATURITY = 10;
@@ -29,7 +26,7 @@ const runDemo = async (delayReceiver, delayFunder) => {
     recvd : async () => console.log(`${who} received the funds.`)
   });
 
-  const startingBalance = amt(100);
+  const startingBalance = stdlib.parseCurrency(100);
 
   const funder = await stdlib.newTestAccount(startingBalance);
   const receiver = await stdlib.newTestAccount(startingBalance);
@@ -44,7 +41,7 @@ const runDemo = async (delayReceiver, delayFunder) => {
       ...common('Funder', fDelay),
       getParams: () => ({
         receiverAddr: receiver.networkAccount.address,
-        payment: amt(10),
+        payment: stdlib.parseCurrency(10),
         maturity: MATURITY,
         refund: REFUND,
         dormant: DORMANT,
