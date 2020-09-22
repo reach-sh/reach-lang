@@ -2,15 +2,15 @@ import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as MULTISIG from './build/index.main.mjs';
 
 (async () => {
-  const startingBalance = stdlib.parseCurrency({ETH: 100});
-  const smallest = stdlib.parseCurrency({ETH: 1});
+  const startingBalance = stdlib.parseCurrency(100);
+  const smallest = stdlib.parseCurrency(1);
 
   const parent = await stdlib.newTestAccount(startingBalance);
   const parentCtc = await parent.deploy(MULTISIG);
   console.log(`Parent deploys the contract.`);
   const parentInteract = {
     allowance: () => {
-      const amt = stdlib.parseCurrency({ETH: 50});
+      const amt = stdlib.parseCurrency(50);
       console.log(`Parent deposits ${stdlib.formatCurrency(amt)}`);
       return amt;
     },

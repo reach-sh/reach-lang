@@ -6,11 +6,7 @@ const demo = async (x) => {
   const connector = await stdlib_loader.getConnector();
 
   // stdlib.setDEBUG(true);
-  const startingBalance = stdlib.parseCurrency({
-    ETH: 100,
-    ALGO: 100,
-    FAKE: 100,
-  });
+  const startingBalance = stdlib.parseCurrency(100);
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
 

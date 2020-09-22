@@ -1,5 +1,4 @@
 import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
-// import * as stdlib from '@reach-sh/stdlib/ALGO.mjs';
 // import * as backend from './build/index.main.mjs';
 
 (async () => {
@@ -7,11 +6,11 @@ import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
   const connector = stdlibLoader.getConnector();
 
   // Very rough approximation of value of 1 algo
-  const proportionalToAlgo = (x) => stdlib.parseCurrency({
-    ETH: x / 1000,
-    ALGO: x,
-    FAKE: x * 1000, // just pretend; actually worthless
-  });
+  const proportionalToAlgo = (x) => stdlib.parseCurrency(
+    connector === 'ETH' ? x / 1000
+      : connector === 'ALGO' ? x
+      : x * 5 // Disclaimer: this is pretend; FAKE has no worth
+  );
 
   const startingBalance = proportionalToAlgo(1000);
 

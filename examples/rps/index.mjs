@@ -4,12 +4,9 @@ import * as RPS from './build/index.main.mjs';
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
 
-  const toCurrency = (x) => stdlib.parseCurrency({
-    ETH: x, ALGO: x, FAKE: x,
-  });
-  const startingBalance = toCurrency(100);
-  const escrowAmount = toCurrency(1);
-  const wagerAmount = toCurrency(5);
+  const startingBalance = stdlib.parseCurrency(100);
+  const escrowAmount = stdlib.parseCurrency(1);
+  const wagerAmount = stdlib.parseCurrency(5);
 
   const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
 

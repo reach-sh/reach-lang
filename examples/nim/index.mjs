@@ -3,12 +3,8 @@ import * as NIM from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
-  const startingBalance = stdlib.parseCurrency({
-    ETH: 100, ALGO: 100, FAKE: 100,
-  });
-  const wagerAmount = stdlib.parseCurrency({
-    ETH: 5, ALGO: 5, FAKE: 5,
-  });
+  const startingBalance = stdlib.parseCurrency(100);
+  const wagerAmount = stdlib.parseCurrency(5);
 
   const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
   console.log(`\nMaking accounts\n`);
