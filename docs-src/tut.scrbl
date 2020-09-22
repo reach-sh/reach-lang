@@ -340,13 +340,13 @@ Next, we'll update Alice's interface object to include her wager.
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 27 30 "    // ..."]
+         'only 31 34 "    // ..."]
 
 @itemlist[
 
-@item{Line 28 splices the common @jsin{Player} interface into Alice's interface.}
+@item{Line 32 splices the common @jsin{Player} interface into Alice's interface.}
 
-@item{Line 29 defines her wager as @litchar{5} units of the @tech{network token}.
+@item{Line 33 defines her wager as @litchar{5} units of the @tech{network token}.
 This is an example of using a concrete value, rather than a function, in a @tech{participant interact interface}.}
 
 ]
@@ -356,11 +356,11 @@ For Bob, we'll modify his interface to show the wager and immediately accept it 
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 31 36 "    // ..."]
+         'only 35 40 "    // ..."]
 
 @itemlist[
 
-@item{Lines 33 through 35 define the @jsin{acceptWager} function.}
+@item{Lines 37 through 39 define the @jsin{acceptWager} function.}
 
 ]
 
@@ -369,13 +369,13 @@ Finally, after the computation is over, we'll get the balance again and show a m
 @reachex[#:mode js
          #:show-lines? #t "tut-3/index.mjs"
          #:link #t
-         'only 37 45 "  // ..."]
+         'only 43 47 "  // ..."]
 
 @itemlist[
 
-@item{Lines 39 and 40 get the balances afterwards.}
+@item{Lines 43 and 44 get the balances afterwards.}
 
-@item{Lines 42 and 43 print out the effect.}
+@item{Lines 46 and 47 print out the effect.}
 
 ]
 
@@ -497,9 +497,23 @@ Bob went from 10 to 4.9999.
 It's because every time we run @exec{./reach run}, it starts a completely fresh instance of the testing network and creates new accounts for each player.}
 
 @margin-note{How come the balances aren't exactly @litchar{10}, @litchar{15}, and @litchar{5}?
-It's because Ethereum transactions cost "gas" to run.}
+It's because Ethereum transactions cost "gas" to run.
 
-@margin-note{Why does Alice win slightly less than Bob when she wins?
+If we had shown all the decimals, they'd look like this:
+
+@(hrule)
+
+@verbatim{
+Alice went from 10 to 14.999999999999687163.
+Bob went from 10 to 4.999999999999978229.
+...
+Alice went from 10 to 4.999999999999687163.
+Bob went from 10 to 14.999999999999978246.
+}
+
+@(hrule)
+
+Why does Alice win slightly less than Bob when she wins?
 She has to pay to @tech{deploy} the contract, because she calls @jsin{acc.deploy} in her @tech{frontend}.
 The @seclink["guide-deploymode"]{guide section on deployment} discusses how to avoid this difference.}
 
@@ -745,7 +759,7 @@ Line 20 allows each @tech{participant}'s Reach code to generate random numbers a
 
 These two changes might look identical, but they mean very different things.
 The first, line 21 in the Reach program, adds @reachin{hasRandom} to the interface that the @tech{backend} expects the @tech{frontend} to provide.
-The second, line 19 in the JavaScript, adds @reachin{hasRandom} to the implementation that the @tech{frontend} provides to the @tech{backend}.
+The second, line 20 in the JavaScript, adds @reachin{hasRandom} to the implementation that the @tech{frontend} provides to the @tech{backend}.
 
 We're now at the crucial juncture where we will implement the actual application and ensure that Alice's hand is protected until after Bob reveals his hand.
 The simplest thing would be to have Alice just publish the wager, but this, of course, would just leave Bob vulnerable.
