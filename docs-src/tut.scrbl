@@ -107,7 +107,7 @@ Open a new file named @exec{index.mjs} and fill it with this:
          #:show-lines? #t "tut-1/index.mjs"
          #:link #t]
 
-@margin-note{Did you notice that @jsin{toWeiBigNumber}, @jsin{newTestAccount}, @jsin{deploy}, and so on are links?
+@margin-note{Did you notice that @jsin{parseCurrency}, @jsin{newTestAccount}, @jsin{deploy}, and so on are links?
 In JavaScript code samples, you can click on the names of standard library functions to be brought to their documentation.}
 
 This JavaScript code is similarly schematic and will be consistent across all of your test programs.
