@@ -104,8 +104,7 @@ It then
 
 @itemlist[
   @item{
-    @index{REACH_CONNECTOR_MODE}
-    The environment variable @envvar{REACH_CONNECTOR_MODE} specifies which context to run in.
+    The environment variable @deftech{REACH_CONNECTOR_MODE} specifies which context to run in.
     The default, if this variable is unset or empty, is @litchar{ETH-test-dockerized-geth}.
     The options are:
 

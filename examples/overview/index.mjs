@@ -1,7 +1,9 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import * as loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
+  const stdlib = await loader.loadStdlib();
+
   const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(5));
   const accBob = await stdlib.newTestAccount(stdlib.parseCurrency(10));
 
