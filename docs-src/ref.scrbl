@@ -103,9 +103,18 @@ It then
 @exec{reach run} supports the following options:
 
 @itemlist[
+  @item{
+    The environment variable @envvar{REACH_CONNECTOR_MODE} specifies which context to run in.
+    The default, if this variable is unset or empty, is @litchar{ETH-test-dockerized-geth}.
+    The options are:
 
-  @item{If the environment variable @envvar{REACH_ETH_MODE} is bound to @exec{ganache}, then Reach will use @link["https://www.trufflesuite.com/ganache"]{Ganache} instead of a private network.}
-
+    @itemlist[
+      @item{@litchar{ETH-test-dockerized-geth}, which uses a dockerized private Ethereum network.}
+      @item{@litchar{ETH-test-embedded-ganache}, which uses @link["https://www.trufflesuite.com/ganache"]{Ganache} instead of a private network.}
+      @item{@litchar{ALGO-test-dockerized-algod}, which uses a dockerized private Algorand network.}
+      @item{@litchar{FAKE-test-embedded-mock}, which uses a simplified mock network.}
+    ]
+  }
 ]
 
 @subsection[#:tag "ref-usage-scaffold"]{@tt{reach scaffold}}
