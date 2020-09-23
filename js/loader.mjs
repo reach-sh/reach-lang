@@ -33,11 +33,6 @@ export function getConnectorMode() {
   const connectorMode = process.env.REACH_CONNECTOR_MODE || 'ETH';
   return canonicalizeConnectorMode(connectorMode);
 }
-const stdlibFiles = {
-  'ETH': './ETH.mjs',
-  'ALGO': './ALGO.mjs',
-  'FAKE': './FAKE.mjs',
-};
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
 export function getConnector(connectorMode) {
@@ -49,6 +44,7 @@ export function getConnector(connectorMode) {
     throw Error(`impossible: unknown connector: ${connector}`);
   }
 }
+// XXX make an interface for Stdlib, return Promise<Stdlib>
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
 export async function loadStdlib(connectorMode) {
@@ -56,5 +52,14 @@ export async function loadStdlib(connectorMode) {
     canonicalizeConnectorMode(connectorMode) :
     getConnectorMode();
   const connector = getConnector(connectorMode);
-  return await import(stdlibFiles[connector]);
+  const module = `./${connector}`;
+  try {
+    return await import(module);
+  } catch (e) {
+    try {
+      return await import(`${module}.js`);
+    } catch (e) {
+      return await import(`${module}.mjs`);
+    }
+  }
 }

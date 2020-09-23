@@ -18,7 +18,7 @@ clean:
 build: build-stdlib build-runner
 
 .PHONY: build-stdlib
-build-stdlib: package.json shared.mjs loader.mjs ETH.mjs FAKE.mjs ALGO.mjs ask.mjs runner.mjs
+build-stdlib: package.json shared.mjs loader.mjs ETH.mjs FAKE.mjs ALGO.mjs ask.mjs runner.mjs index.mjs
 	$(MAKE) format
 	sbin/fix_imports.sh
 

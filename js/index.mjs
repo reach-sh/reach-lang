@@ -1,1 +1,1 @@
-void(0);
+export { loadStdlib } from './loader.mjs';
