@@ -48,3 +48,10 @@ file = "src/Reach/UnsafeUtil.hs"
 type = "Exclude"
 id = "STAN-0212"
 file = "src/Reach/Report/UnsafeGlobals.hs"
+
+# Usage of 'for_' or 'forM_' on numerical ranges is slow
+# but it's not that bad
+[[check]]
+type = "Exclude"
+id = "STAN-0210"
+file = "src/Reach/Connector/ALGO.hs"
