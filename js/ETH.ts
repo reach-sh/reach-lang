@@ -83,16 +83,10 @@ type Contract = {
 
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
-
-  address: Address,
-  creation_block: number,
-
-  args: Array<Array<ContractArg>>,
-  value: BigNumber,
-  creator: Address, // XXX
-
   sendrecv: (...argz: any) => any,
   recv: (...argz: any) => any,
+  wait: (...argz: any) => any,
+  iam: (some_addr: Address) => Address,
 }
 
 type ContractInfo = {
@@ -314,7 +308,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     }
   };
 
-  const attach = async (bin: Backend, parentCtc: ParentCtc): Promise<Contract> => {
+  const attach = async (bin: Backend, parentCtc: ParentCtc): Promise<ContractAttached> => {
     const ABI = JSON.parse(bin._Connectors.ETH.ABI);
 
     let info: null | ContractInfo = null;
@@ -589,7 +583,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   };
 
   // https://docs.ethers.io/v5/api/contract/contract-factory/
-  const deploy = async (bin: Backend): Promise<Contract> => {
+  const deploy = async (bin: Backend): Promise<ContractAttached> => {
     if (!ethers.Signer.isSigner(networkAccount)) {
       throw Error(`Signer required to deploy, ${networkAccount}`);
     }
