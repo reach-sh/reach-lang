@@ -10,20 +10,6 @@ declare module 'algosdk' {
     addr: Address,
     sk: SecretKey, // TODO: describe length? (64)
   }
-  declare function mnemonicToSecretKey(mn: string): Wallet
-  declare function encodeObj(obj: any): Uint8Array
-  // TODO: BigNumber not any, without breaking everything
-  declare function makePaymentTxnWithSuggestedParams(
-      from: Address, to: Address, amount: number, closeRemainderTo: undefined,
-      note: Uint8Array, params: TxnParams
-  ): Txn;
-  declare function generateAccount(): Wallet
-
-  declare class ApiCall<T> {
-    // This isn't real, don't create
-    do(): Promise<T>;
-  }
-
   declare type SignedTxn = {
     opaque: undefined // TODO
   }
@@ -48,6 +34,19 @@ declare module 'algosdk' {
     amount: number // bignumber?
   }
   declare type TxId = string;
+  declare type ApiCall<T> = {
+    do(): Promise<T>,
+  };
+
+  declare function mnemonicToSecretKey(mn: string): Wallet
+  declare function encodeObj(obj: any): Uint8Array
+  // TODO: BigNumber not any, without breaking everything
+  declare function makePaymentTxnWithSuggestedParams(
+      from: Address, to: Address, amount: number, closeRemainderTo: undefined,
+      note: Uint8Array, params: TxnParams
+  ): Txn;
+  declare function generateAccount(): Wallet
+
   declare class Algodv2 {
     constructor(
       token?: string,

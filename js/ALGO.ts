@@ -1,4 +1,6 @@
-import algosdk, { Address, ApiCall, Round, SignedTxn, StatusInfo, TxId, Txn, TxnInfo, TxnParams, Wallet } from 'algosdk';
+// XXX: do not import any types from algosdk; instead copy/paste them below
+// XXX: can stop doing this workaround once @types/algosdk is shippable
+import algosdk from 'algosdk';
 
 import { CurrencyAmount, debug, isBigNumber } from './shared';
 export * from './shared';
@@ -6,6 +8,45 @@ export * from './shared';
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
+
+// XXX Copy/pasted type defs from types/algosdk
+// This is so that this module can be exported without our custom types/algosdk
+// The unused ones are commented out
+type Round = number
+type Address = string
+type SecretKey = Uint8Array // length 64
+  // TODO: find the proper algo terminology for Wallet
+type Wallet = {
+    addr: Address,
+    sk: SecretKey, // TODO: describe length? (64)
+  }
+type SignedTxn = {
+    opaque: undefined // TODO
+  }
+type Txn = {
+    txID: () => TxIdWrapper,
+    lastRound: number,
+    signTxn: (sk: SecretKey) => SignedTxn,
+  }
+type TxnParams = {
+    boop: string, // TODO
+  }
+type StatusInfo = {
+    'last-round': number,
+  }
+type TxIdWrapper = {
+    toString: () => string
+  }
+type TxnInfo = {
+    'confirmed-round': number,
+  }
+// type AcctInfo = {
+//     amount: number // bignumber?
+//   }
+type TxId = string;
+type ApiCall<T> = {
+  do: () => Promise<T>,
+};
 
 type NetworkAccount = Wallet;
 type Account = {

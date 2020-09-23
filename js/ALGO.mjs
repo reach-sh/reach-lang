@@ -1,3 +1,5 @@
+// XXX: do not import any types from algosdk; instead copy/paste them below
+// XXX: can stop doing this workaround once @types/algosdk is shippable
 import algosdk from 'algosdk';
 import { debug, isBigNumber } from './shared.mjs';
 export * from './shared.mjs';
