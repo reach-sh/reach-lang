@@ -104,14 +104,15 @@ It then
 
 @itemlist[
   @item{
+    @index{REACH_CONNECTOR_MODE}
     The environment variable @envvar{REACH_CONNECTOR_MODE} specifies which context to run in.
     The default, if this variable is unset or empty, is @litchar{ETH-test-dockerized-geth}.
     The options are:
 
     @itemlist[
-      @item{@litchar{ETH-test-dockerized-geth}, which uses a dockerized private Ethereum network.}
+      @item{@litchar{ETH-test-dockerized-geth}, which uses a Dockerized private Ethereum network.}
       @item{@litchar{ETH-test-embedded-ganache}, which uses @link["https://www.trufflesuite.com/ganache"]{Ganache} instead of a private network.}
-      @item{@litchar{ALGO-test-dockerized-algod}, which uses a dockerized private Algorand network.}
+      @item{@litchar{ALGO-test-dockerized-algod}, which uses a Dockerized private Algorand network.}
       @item{@litchar{FAKE-test-embedded-mock}, which uses a simplified mock network.}
     ]
   }
