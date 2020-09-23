@@ -407,8 +407,9 @@ keyLast = "l"
 -- Txns:
 -- 0   : Application call
 -- 1   : Zero from handler account
--- 2   : Transfer to contract account
--- 3.. : Transfers from contract to user
+-- 2   : Transfer fee to the handler account
+-- 3   : Transfer to contract account
+-- 4.. : Transfers from contract to user
 txnAppl :: Word8
 txnAppl = 0
 txnFromHandler :: Word8
