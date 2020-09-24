@@ -18,6 +18,9 @@ data CompilerToolArgs = CompilerToolArgs
 
 data CompilerToolEnv = CompilerToolEnv
   { cte_REACHC_ID :: Maybe String
+  , cte_CI :: Maybe String -- most CI services
+  , cte_GITHUB_ACTIONS :: Maybe String -- Github Actions
+  , cte_TF_BUILD :: Maybe String -- Azure Pipelines
   }
 
 makeCompilerToolOpts :: CompilerToolArgs -> CompilerToolEnv -> CompilerToolOpts
@@ -58,20 +61,28 @@ getCompilerArgs = do
 
 getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
-  reachcId <- lookupEnv "REACHC_ID"
-  return
-    CompilerToolEnv
-      { cte_REACHC_ID = reachcId
-      }
+  cte_REACHC_ID <- lookupEnv "REACHC_ID"
+  cte_CI <- lookupEnv "CI"
+  cte_GITHUB_ACTIONS <- lookupEnv "GITHUB_ACTIONS"
+  cte_TF_BUILD <- lookupEnv "TF_BUILD"
+  return CompilerToolEnv {..}
+
+shouldReport :: CompilerToolArgs -> CompilerToolEnv -> Bool
+shouldReport CompilerToolArgs {..} CompilerToolEnv {..} =
+  not cta_disableReporting
+    && all emptyish [cte_CI, cte_GITHUB_ACTIONS, cte_TF_BUILD]
+  where
+    emptyish Nothing = True
+    emptyish (Just x) = x == ""
 
 main :: IO ()
 main = do
   args <- getCompilerArgs
   env <- getCompilerEnv
   report <-
-    case cta_disableReporting args of
-      True -> return $ const $ return ()
-      False -> startReport (cte_REACHC_ID env)
+    case shouldReport args env of
+      False -> return $ const $ return ()
+      True -> startReport (cte_REACHC_ID env)
   let ctool_opts = makeCompilerToolOpts args env
   (e :: Either SomeException ()) <-
     try $ compilerToolMain ctool_opts
