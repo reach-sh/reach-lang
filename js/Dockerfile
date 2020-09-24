@@ -12,6 +12,9 @@ RUN npm install -g eslint@$ESLINT_VERSION
 RUN npm link
 
 COPY . /stdlib
+RUN npm run tsc
+RUN ./sbin/fix.sh
+RUN rm ./sbin/fix.sh
 
 ENV REACH_RUNNER_MOUNT_DIR /app
 ENTRYPOINT ["npm", "run", "--"]

@@ -18,17 +18,12 @@ clean:
 build: build-stdlib build-runner
 
 .PHONY: build-stdlib
-build-stdlib: package.json shared.mjs loader.mjs ETH.mjs FAKE.mjs ALGO.mjs ask.mjs runner.mjs index.mjs
-	$(MAKE) format
-	sbin/fix_imports.sh
-
+build-stdlib: package.json
 	docker build --tag=$(IMAGE):latest \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg ESLINT_VERSION=$(ESLINT_VERSION) \
 	  .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
-# TODO: figure out the import weirdness
-# TODO: drop .mjs files in repo, push `npm run tsc` into the container
 
 .PHONY: build-runner
 build-runner: runner_package.json
@@ -63,8 +58,4 @@ format: package.json
 	npm run beautify
 	npm run format
 
-%.mjs: build/%.js
-	cp $^ $@
 
-build/%.js: %.ts tsconfig.json package.json
-	npm run tsc
