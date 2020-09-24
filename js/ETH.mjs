@@ -20,21 +20,23 @@ const networkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
 } : {
   type: 'skip',
 };
+const protocolPort = {
+  'https:': 443,
+  'http:': 80,
+};
 const portP = (async () => {
   if (networkDesc.type != 'uri') {
     return;
   }
-  const { hostname, port, path } = url.parse(networkDesc.uri);
-  if (!port) {
-    throw Error(`Could not parse port from uri: ${networkDesc.uri}`);
+  const { hostname, port, protocol } = url.parse(networkDesc.uri);
+  if (!(protocol === 'http:' || protocol === 'https:')) {
+    throw Error(`Unsupported protocol ${protocol}`);
   }
   await waitPort.default({
-    protocol: 'http',
     host: hostname || undefined,
-    port: parseInt(port, 10),
-    path: path || undefined,
-    'output': 'silent',
-    'timeout': 1000 * 60 * 1,
+    port: (port && parseInt(port, 10)) || protocolPort[protocol],
+    output: 'silent',
+    timeout: 1000 * 60 * 1,
   });
 })();
 // XXX: doesn't even retry, just returns the first attempt
@@ -43,7 +45,6 @@ const doHealthcheck = async () => {
     return;
   }
   await new Promise((resolve, reject) => {
-    const { hostname, port } = url.parse(networkDesc.uri);
     const data = JSON.stringify({
       jsonrpc: '2.0',
       method: 'web3_clientVersion',
@@ -52,9 +53,7 @@ const doHealthcheck = async () => {
     });
     debug('Sending health check request...');
     const opts = {
-      hostname,
-      port,
-      path: '/',
+      ...url.parse(networkDesc.uri),
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
