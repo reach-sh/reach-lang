@@ -164,6 +164,11 @@ const portP: Promise<void> = (async () => {
 // XXX: doesn't even retry, just returns the first attempt
 const doHealthcheck = async (): Promise<void> => {
   if (networkDesc.type != 'uri') { return; }
+  const uriObj = url.parse(networkDesc.uri);
+
+  // XXX the code below only supports http
+  if (uriObj.protocol !== 'http:') { return; }
+
   await new Promise((resolve, reject) => {
     const data = JSON.stringify({
       jsonrpc: '2.0',
@@ -173,7 +178,7 @@ const doHealthcheck = async (): Promise<void> => {
     });
     debug('Sending health check request...');
     const opts = {
-      ...url.parse(networkDesc.uri),
+      ...uriObj,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
