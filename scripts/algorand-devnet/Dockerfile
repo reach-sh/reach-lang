@@ -43,9 +43,9 @@ ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=$ALGORAND_NETWORK/Primary
 
 COPY algorand_network/ $ALGORAND_NETWORK/
+COPY algorand_data/* $ALGORAND_DATA/
+COPY start.sh /
 
 EXPOSE 4180
 
-# You can't use env vars in ENTRYPOINT/CMD
-# otherwise we'd use $ALGORAND_DATA
-ENTRYPOINT ["algod", "-d", "/var/lib/algorand_network/Primary"]
+ENTRYPOINT ["/bin/sh", "/start.sh"]

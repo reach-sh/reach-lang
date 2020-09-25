@@ -6,7 +6,6 @@ NET_DIR=algorand_network
 NET_NAME=devnet
 NET_TEMPLATE=network_template.json
 NET_PRIMARY_NODE_DIR="$NET_DIR/Primary"
-DATA_TEMPLATE_DIR=algorand_data
 
 FAUCET_ADDRESS_FILE="$NET_DIR/FAUCET.address"
 FAUCET_MNEMONIC_FILE="$NET_DIR/FAUCET.mnemonic"
@@ -37,6 +36,4 @@ cat "$FAUCET_ADDRESS_FILE" \
   | cut -f 6- -d ' ' \
   | xargs echo > "$FAUCET_MNEMONIC_FILE"
 
-# Finally, files in $DATA_TEMPLATE_DIR may override the generated stuff
-# for the node.
-cp -r "$DATA_TEMPLATE_DIR"/* "$NET_PRIMARY_NODE_DIR/"
+

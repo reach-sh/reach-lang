@@ -23,9 +23,10 @@ run-shell: build
 
 .PHONY: status
 status:
-	@curl -s \
+	@curl --verbose -s \
 		-H "X-Algo-API-Token: $$(cat algorand_data/algod.token)" \
-		localhost:4180/v2/status
+		-d "int 1" \
+		localhost:4180/v2/teal/compile
 
 # Intentionally not specifying deps for this because we don't
 # want to get into loops.
