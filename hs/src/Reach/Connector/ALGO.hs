@@ -22,7 +22,7 @@ texty :: Show a => a -> LT.Text
 texty x = LT.pack $ show x
 
 template :: LT.Text -> LT.Text
-template x = "{{" <> x <> "}}"
+template x = "\"{{" <> x <> "}}\""
 
 type ScratchSlot = Word8
 type TxnIdx = Word8 --- FIXME actually only 16 IIRC
@@ -41,6 +41,8 @@ type TEALs = DL.DList TEAL
 optimize :: [LT.Text] -> [LT.Text]
 optimize = \case
   [] -> []
+  --- FIXME generalize
+  "b alone" : "alone:" : l -> "alone:" : l
   "btoi" : "itob" : l -> optimize l
   "itob" : "btoi" : l -> optimize l
   x : l -> x : optimize l
@@ -394,7 +396,6 @@ tContractAddr :: LT.Text
 tContractAddr = template "ContractAddr"
 
 -- State:
--- XXX get rid of this and use oncompletion?
 keyHalts :: B.ByteString
 keyHalts = "h"
 keyState :: B.ByteString
@@ -494,6 +495,9 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = fmap Just $ do
     code "gtxn" [ texty txnToHandler, "Receiver" ]
     code "txn" [ "Sender" ]
     eq_or_fail
+    code "gtxn" [ texty txnToHandler, "Amount" ]
+    code "gtxn" [ texty txnFromHandler, "Fee" ]
+    eq_or_fail
 
     comment "Check txnToContract"
     code "gtxn" [ texty txnToContract, "TypeEnum" ]
@@ -566,15 +570,20 @@ compile_algo disp pl = do
   resr <- newIORef mempty
   let sHandlers = hm
   sFailedR <- newIORef False
+  when (plo_deployMode == DM_firstMsg) $ do
+    writeIORef sFailedR True
   let shared = Shared {..}
   let addProg lab t = do
         modifyIORef resr (M.insert lab t)
         disp lab t
+  --- FIXME this is really lame
+  countR <- newIORef (0 :: Int)
   hchecks <- forM (M.toList hm) $ \ (hi, hh) -> do
     mht <- ch shared hi hh
     case mht of
       Nothing -> return $ return ()
       Just ht -> do
+        modifyIORef countR (1+)
         let lab = "m" <> show hi
         addProg lab $ render ht
         return $ do
@@ -582,18 +591,39 @@ compile_algo disp pl = do
           code "byte" [ template $ LT.pack lab ]
           op "=="
           op "||"
+  howManySteps <- readIORef countR
   let simple m = runApp shared 0 mempty $ m >> std_footer
+  app0m <- simple $ do
+    comment "Check that we're an App"
+    code "txn" [ "TypeEnum" ]
+    code "int" [ "appl" ]
+    eq_or_fail
+    check_rekeyto
+    code "global" [ "GroupSize" ]
+    cc $ DLC_Int $ 1
+    eq_or_fail
+    code "txn" [ "OnCompletion" ]
+    code "int" [ "UpdateApplication" ]
+    op "=="
+    -- There is no OnCompletion for creating the application and this program has to succeed on the very first transaction (I think they intended it to initalize the state.) so we just say yes until we get an update, which at that time we really start things
+    code "bz" [ "done" ]
+    app_global_put keyState $ do
+      cstate HM_Set []
+    app_global_put keyLast $ do
+      code "global" [ "Round" ]
+    app_global_put keyHalts $ do
+      cc $ DLC_Bool $ False
+    code "b" [ "done" ]
   appm <- simple $ do
     comment "Check that we're an App"
     code "txn" [ "TypeEnum" ]
     code "int" [ "appl" ]
     eq_or_fail
     check_rekeyto
-    comment "Check if we need to initialize"
-    app_global_get keyLast
-    code "bz" [ "init" ]
     app_global_get keyHalts
-    cc $ DLC_Bool $ False
+    code "bnz" [ "halted" ]
+    code "txn" [ "OnCompletion" ]
+    code "int" [ "NoOp" ]
     eq_or_fail
     comment "Check that everyone's here"
     code "global" [ "GroupSize" ]
@@ -627,13 +657,13 @@ compile_algo disp pl = do
       code "gtxna" [ texty txnFromHandler, "Args", texty argHalts ]
       cfrombs T_Bool
     code "b" [ "done" ]
-    label "init"
-    app_global_put keyState $ do
-      cstate HM_Set []
-    app_global_put keyLast $ do
-      code "global" [ "Round" ]
-    app_global_put keyHalts $ do
-      cc $ DLC_Bool $ False
+    label "halted"
+    code "txn" [ "OnCompletion" ]
+    code "int" [ "DeleteApplication" ]
+    eq_or_fail
+    code "global" [ "GroupSize" ]
+    cc $ DLC_Int $ 1
+    eq_or_fail
     code "b" [ "done" ]
   clearm <- simple $ do
     comment "We're alone"
@@ -673,13 +703,15 @@ compile_algo disp pl = do
     op ">="
     or_fail
     code "b" [ "done" ]
+  addProg "appApproval0" $ render app0m
   addProg "appApproval" $ render appm
   addProg "appClear" $ render clearm
   addProg "ctc" $ render ctcm
   res0 <- readIORef resr
   sFailed <- readIORef sFailedR
   let res1 = M.insert "unsupported" (T.pack $ show sFailed) res0
-  return res1
+  let res2 = M.insert "steps" (T.pack $ show howManySteps) res1
+  return res2
 
 connect_algo :: Connector
 connect_algo moutn pl = do

@@ -47,6 +47,11 @@ declare module 'algosdk' {
   ): Txn;
   declare function generateAccount(): Wallet
 
+  declare type CompileResult = {
+    result: string,
+    hash: string
+  }
+
   declare class Algodv2 {
     constructor(
       token?: string,
@@ -62,5 +67,6 @@ declare module 'algosdk' {
     sendRawTransaction(signedTxn: SignedTxn): ApiCall<void>
     getTransactionParams(): ApiCall<TxnParams>
     accountInformation(addr: Address): ApiCall<AcctInfo>
+    compile(code: String): ApiCall<CompileResult>
   }
 }
