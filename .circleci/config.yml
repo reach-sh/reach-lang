@@ -68,6 +68,9 @@ jobs:
           name: run examples
           command: (cd examples && make run-all)
           no_output_timeout: 1m
+      - run:
+          name: Is dockerhub up to date?
+          command: scripts/docker-check.sh || echo 'XXX allowed to fail'
       - slack/status:
           fail_only: true
 
