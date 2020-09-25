@@ -12,8 +12,8 @@ RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 # --- Deploy
 FROM ethereum/solc:0.7.1 as solc
 
-FROM alpine:3 as dl-deps
-RUN apk add wget=1.20.3-r1 unzip=6.0-r7 --no-cache
+FROM alpine:3.12 as dl-deps
+RUN apk add wget=1.20.3-r1 unzip=6.0-r8 --no-cache
 WORKDIR /z3
 ENV Z3_VER 4.8.9
 RUN wget https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-x64-ubuntu-16.04.zip
