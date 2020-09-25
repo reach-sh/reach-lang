@@ -1,23 +1,13 @@
-# --- Deps
-FROM fpco/stack-build:lts-16.12 as build-deps
-WORKDIR /build
-
-# First build long-term stable dependencies
-# COPY long-term/*.yaml{,.lock} /opt/build/  
-# RUN stack build --system-ghc --dependencies-only
-
-COPY stack.yaml package.yaml stack.yaml.lock /build/
-RUN stack setup --system-ghc # in case system-ghc doesn't cut it
-RUN stack build --system-ghc --dependencies-only
-
 # --- Build
-FROM fpco/stack-build:lts-16.12 as build
+FROM reachsh/haskell-builder:lts-16.12 as build
 WORKDIR /build
-COPY --from=build-deps /root/.stack /root/.stack
-COPY . /build/
-RUN stack build --system-ghc
 
-RUN mv "$(stack path --local-install-root --system-ghc)/bin" /build/bin/
+COPY stack.yaml package.yaml stack.yaml.lock ./
+RUN stack build --dependencies-only
+
+COPY . /build/
+RUN stack build
+RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 
 # --- Deploy
 FROM ethereum/solc:0.7.1 as solc
