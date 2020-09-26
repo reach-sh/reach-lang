@@ -11,7 +11,11 @@ RUN npm install
 RUN npm install -g eslint@$ESLINT_VERSION
 RUN npm link
 
+RUN rm -fr /stdlib/node_modules/algosdk
+
 COPY . /stdlib
+RUN mv js-algorand-sdk /stdlib/node_modules/algosdk
+
 RUN npm run tsc
 RUN ./sbin/fix.sh
 RUN rm ./sbin/fix.sh

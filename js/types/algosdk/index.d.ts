@@ -38,6 +38,7 @@ declare module 'algosdk' {
     do(): Promise<T>,
   };
 
+  declare function addressPublicKey(addr: Address): Uint8Array
   declare function mnemonicToSecretKey(mn: string): Wallet
   declare function encodeObj(obj: any): Uint8Array
   // TODO: BigNumber not any, without breaking everything

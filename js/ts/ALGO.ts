@@ -1,6 +1,7 @@
 // XXX: do not import any types from algosdk; instead copy/paste them below
 // XXX: can stop doing this workaround once @types/algosdk is shippable
 import algosdk from 'algosdk';
+import base32 from 'hi-base32';
 import { BigNumber  } from 'ethers';
 
 import { CurrencyAmount, debug, isBigNumber, getDEBUG, setDEBUG } from './shared';
@@ -450,9 +451,17 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       }
     }
 
-    const appApproval0_bin = 
-      await compileTEAL('appApproval0', appApproval0);
-    const appClear_bin = 
+    // XXX I'd use replaceAll if I could, but I'm pretty sure there's just one occurrence. It would be better to extend ConnectorInfo so these are functions
+
+    const replaceAddr = (label: string, addr: Address, x:string): string =>
+      x.replace(`"{{${label}}}"`, 
+               `base32(${base32.encode(algosdk.addressPublicKey(addr)).toString()})`)
+
+    const appApproval0_subst =
+      replaceAddr('Deployer', thisAcc.addr, appApproval0);
+    const appApproval0_bin =
+      await compileTEAL('appApproval0', appApproval0_subst);
+    const appClear_bin =
       await compileTEAL('appClear', appClear);
 
     const createRes =
@@ -475,7 +484,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const subst_appid = (x: string) => x.replace('{{ApplicationID}}', ApplicationID.toString());
 
     const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
-    const subst_ctc = (x: string) => x.replace('{{ContractAddr}}', ctc_bin.hash);
+    const subst_ctc = (x: string) => replaceAddr('ContractAddr', ctc_bin.hash, x);
 
     const stepCode_bin: { [key: string]: CompileResultBytes } = {};
     let appApproval_subst = appApproval;
@@ -485,7 +494,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       const cr = await compileTEAL(mN, mc_subst);
       stepCode_bin[mN] = cr;
       appApproval_subst =
-        appApproval_subst.replace(`{{${mN}}}`, cr.hash);
+        replaceAddr(mN, cr.hash, appApproval_subst);
     }
 
     const appApproval_bin = 

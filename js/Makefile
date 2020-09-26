@@ -18,12 +18,17 @@ clean:
 build: build-stdlib build-runner
 
 .PHONY: build-stdlib
-build-stdlib: package.json
+build-stdlib: package.json js-algorand-sdk
 	docker build --tag=$(IMAGE):latest \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg ESLINT_VERSION=$(ESLINT_VERSION) \
 	  .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
+
+.PHONY: js-algorand-sdk
+js-algorand-sdk:
+	[ -d ../../algorand/js-algorand-sdk ] && cp -fr ../../algorand/js-algorand-sdk ./js-algorand-sdk
+	[ -d js-algorand-sdk ] || git clone http://github.com/jeapostrophe/js-algorand-sdk.git
 
 .PHONY: build-runner
 build-runner: runner_package.json

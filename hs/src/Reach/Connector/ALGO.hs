@@ -394,6 +394,8 @@ tApplicationID :: LT.Text
 tApplicationID = template "ApplicationID"
 tContractAddr :: LT.Text
 tContractAddr = template "ContractAddr"
+tDeployer :: LT.Text
+tDeployer = template "Deployer"
 
 -- State:
 keyHalts :: B.ByteString
@@ -602,17 +604,25 @@ compile_algo disp pl = do
     code "global" [ "GroupSize" ]
     cc $ DLC_Int $ 1
     eq_or_fail
+    code "txn" [ "Sender" ]
+    code "byte" [ tDeployer ]
+    eq_or_fail
+    code "txn" [ "ApplicationID" ]
+    code "bz" [ "init" ]
     code "txn" [ "OnCompletion" ]
     code "int" [ "UpdateApplication" ]
-    op "=="
-    -- There is no OnCompletion for creating the application and this program has to succeed on the very first transaction (I think they intended it to initalize the state.) so we just say yes until we get an update, which at that time we really start things
-    code "bz" [ "done" ]
+    eq_or_fail
     app_global_put keyState $ do
       cstate HM_Set []
     app_global_put keyLast $ do
       code "global" [ "Round" ]
     app_global_put keyHalts $ do
       cc $ DLC_Bool $ False
+    code "b" [ "done" ]
+    label "init"
+    code "txn" [ "OnCompletion" ]
+    code "int" [ "NoOp" ]
+    eq_or_fail
     code "b" [ "done" ]
   appm <- simple $ do
     comment "Check that we're an App"
