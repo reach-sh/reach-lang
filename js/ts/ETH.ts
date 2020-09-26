@@ -423,9 +423,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const sendrecv_top = async (
       label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-      timeout_delay: undefined | number | BigNumber, try_p: any
+      timeout_delay: undefined | number | BigNumber, sim_p: any
     ): Promise<Recv> => {
-      void(try_p);
+      void(sim_p);
       void(evt_cnt);
       return sendrecv(label, funcNum, tys, args, value, out_tys, timeout_delay);
     };

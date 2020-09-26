@@ -2,9 +2,12 @@
 // XXX: can stop doing this workaround once @types/algosdk is shippable
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
-import { BigNumber  } from 'ethers';
+import { BigNumber } from 'ethers';
 
-import { CurrencyAmount, debug, isBigNumber, getDEBUG, setDEBUG } from './shared';
+import {
+  CurrencyAmount, debug,
+  isBigNumber, bigNumberify,
+  getDEBUG, setDEBUG } from './shared';
 export * from './shared';
 
 setDEBUG(true);
@@ -33,8 +36,13 @@ type Txn = {
     signTxn: (sk: SecretKey) => SignedTxn,
   }
 type TxnParams = {
-    boop: string, // TODO
-  }
+  flatFee: boolean,
+  fee: number,
+  firstRound: number,
+  lastRound: number,
+  genesisID: number,
+  genesisHash: string,
+}
 type StatusInfo = {
     'last-round': number,
   }
@@ -54,7 +62,7 @@ type ApiCall<T> = {
 };
 type CompileResultBytes = {
   result: Uint8Array,
-  hash: string
+  hash: Address
 };
 
 type NetworkAccount = Wallet;
@@ -74,6 +82,25 @@ type Backend = {_Connectors: {ALGO: {
   unsupported: BoolString,
 }}};
 
+type Digest = BigNumber;
+type SimRes = {
+  prevSt: Digest,
+  txns: Array<SimTxn>,
+  nextSt: Digest,
+  isHalt : boolean,
+};
+type SimTxn = {
+  to: Address,
+  amt: BigNumber,
+};
+
+type CompiledBackend = {
+  appApproval: CompileResultBytes,
+  appClear: CompileResultBytes,
+  ctc: CompileResultBytes,
+  steps: { [key: string]: CompileResultBytes },
+};
+
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
   sendrecv: (...argz: any) => any,
@@ -84,7 +111,7 @@ type ContractAttached = {
 
 type ContractInfo = {
   getInfo?: () => Promise<ContractInfo>,
-  creation_round: number,
+  creationRound: number,
   ApplicationID: number,
 };
 
@@ -108,9 +135,6 @@ const token = process.env.ALGO_TOKEN || 'c87f5580d7a866317b4bfe9e8b8d1dda955636c
 const server = process.env.ALGO_SERVER || 'http://localhost';
 const port = process.env.ALGO_PORT || 4180;
 const algodClient = new algosdk.Algodv2(token, server, port);
-
-const default_range_width = 1000;
-void(default_range_width); // XXX
 
 // eslint-disable-next-line max-len
 const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'pulp abstract olive name enjoy trick float comfort verb danger eternal laptop acquire fetch message marble jump level spirit during benefit sure dry absent history'));
@@ -139,56 +163,20 @@ const waitForConfirmation = async (txId: TxId, untilRound: number): Promise<null
   return null;
 };
 
-// XXX Untested but something like this should work
-// [{signedTxn, txn}] -> ()
-const sendsAndConfirm = async (
-  txns: Array<{signedTxn: SignedTxn, txn: Txn}>
-): Promise<Array<null | TxnInfo>> => {
-  const signedTxns = txns.map(pair => pair.signedTxn);
-  await algodClient.sendRawTransactions(signedTxns).do();
-  return Promise.all([
-    ...txns.map(pair => waitForConfirmation(pair.txn.txID().toString(), pair.txn.lastRound)),
-  ]);
-  // // FIXME https://developer.algorand.org/docs/features/atomic_transfers/ ... Send transactions ... claims that tx has a txId field, but it doesn't as far as I can tell, because this crashes.
-  // const untilRound = Math.max(...txns.map(pair => pair.txn.lastRound));
-  // const tx = await algodClient.sendRawTransactions(signedTxns).do();
-  // return (await waitForConfirmation(tx.txID, untilRound));
-};
-void(sendsAndConfirm); // XXX
-
 const sendAndConfirm = async (
-  label:string, signedTxn: SignedTxn, txn: Txn
+  label:string, stx_or_stxs: SignedTxn | Array<SignedTxn>, txn: Txn
 ): Promise<null | TxnInfo> => {
   const txID = txn.txID().toString();
   const untilRound = txn.lastRound;
   try {
-    await algodClient.sendRawTransaction(signedTxn).do();
+    await algodClient.sendRawTransaction(stx_or_stxs).do();
   } catch (e) {
-    throw Error(`sendAndConfirm ${label} failed:\n${JSON.stringify(e)}\n\ton\n${JSON.stringify(txn)}`);
+    throw Error(`sendAndConfirm ${label} failed:\n${JSON.stringify(e)}\n\ton\n${JSON.stringify(stx_or_stxs)}`);
   }
   return await waitForConfirmation(txID, untilRound);
 };
 
 // // Backend
-// const fillTxnWithParams = (firstRound, round_width, params, txn0) => {
-//   // Don't need these anymore?
-//   void(round_width);
-//   void(firstRound);
-//   // const theFirstRound = firstRound ? firstRound : params.lastRound;
-//   // FIXME these fields don't match the documentation https://developer.algorand.org/docs/reference/transactions/ so update once they fix this issue https://github.com/algorand/js-algorand-sdk/issues/144
-//   // Fixed?
-//   // txn.flatFee = params.flatFee;
-//   // txn.fee = params.fee;
-//   // txn.firstRound = theFirstRound;
-//   // txn.lastRound = theFirstRound + round_width;
-//   // txn.genesisID = params.genesisID;
-//   // txn.genesisHash = params.genesisHash;
-//   return {
-//     ...params,
-//     ...txn0,
-//   };
-// };
-
 const compileTEAL = async (label: string, code: string): Promise<CompileResultBytes> => {
   debug(`compile ${label}`)
   let s, r;
@@ -234,47 +222,92 @@ const sign_and_send_sync = async (
 //   return fillTxnWithParams(false, round_width, await getTxnParams(), txn);
 // };
 
-// XXX s/number/BigNumber
-export const transfer = async (from: Account, to: Account, value: number): Promise<TxnInfo> => {
+export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<TxnInfo> => {
+  const valuen = value.toNumber();
   const sender = from.networkAccount;
   const receiver = to.networkAccount.addr;
 
   const note = algosdk.encodeObj('@reach-sh/ALGO.mjs transfer');
   return await sign_and_send_sync(
-    `transfer ${from} ${to} ${value}`,
+    `transfer ${from} ${to} ${valuen}`,
     sender.sk,
     algosdk.makePaymentTxnWithSuggestedParams(
-      sender.addr, receiver, value, undefined, note, await getTxnParams(),
+      sender.addr, receiver, valuen, undefined, note, await getTxnParams(),
     ));
 };
+
+// XXX I'd use replaceAll if I could, but I'm pretty sure there's just one occurrence. It would be better to extend ConnectorInfo so these are functions
+const replaceAddr = (label: string, addr: Address, x:string): string =>
+x.replace(`"{{${label}}}"`,
+          `base32(${base32.encode(algosdk.addressPublicKey(addr)).toString()})`);
+
+function must_be_supported(bin: Backend) {
+  const algob = bin._Connectors.ALGO;
+  const { unsupported } = algob;
+  if ( unsupported == `True` ) {
+    throw Error(`This Reach application is not supported on Algorand.`);
+  }
+}
+
+async function compileFor(bin: Backend, ApplicationID: number): Promise<CompiledBackend> {
+  must_be_supported(bin);
+  const algob = bin._Connectors.ALGO;
+
+  const { appApproval, appClear, ctc, steps } = algob;
+  const stepsN = parseInt(steps);
+  const stepCode: { [key: string]: string } = {};
+  for ( let i = 1; i <= stepsN; i++ ) {
+    const key = `m${i}`
+    stepCode[key] = algob[key];
+    if ( !stepCode[key] ) {
+      throw Error(`Expected ${key} in ${JSON.stringify(algob)}`);
+    }
+  }
+
+  const subst_appid = (x: string) => x.replace('{{ApplicationID}}', ApplicationID.toString());
+
+  const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
+  const subst_ctc = (x: string) => replaceAddr('ContractAddr', ctc_bin.hash, x);
+
+  const stepCode_bin: { [key: string]: CompileResultBytes } = {};
+  let appApproval_subst = appApproval;
+  for ( const mN in stepCode  ) {
+    const mc = stepCode[mN];
+    const mc_subst = subst_ctc(subst_appid(mc));
+    const cr = await compileTEAL(mN, mc_subst);
+    stepCode_bin[mN] = cr;
+    appApproval_subst =
+      replaceAddr(mN, cr.hash, appApproval_subst);
+  }
+
+  const appApproval_bin =
+    await compileTEAL('appApproval_subst', appApproval_subst);
+  const appClear_bin =
+    await compileTEAL('appClear', appClear);
+
+  return { appApproval: appApproval_bin,
+    appClear: appClear_bin,
+    ctc: ctc_bin,
+    steps: stepCode_bin,
+  };
+};
+
+const ui8z = new Uint8Array();
 
 export const connectAccount = async (networkAccount: NetworkAccount) => {
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
   debug(`${shad}: connectAccount`);
 
-  const attach = async (bin: Backend, ctc: ContractInfo): Promise<ContractAttached> => {
-    void(bin); // XXX
+  const attach = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<ContractAttached> => {
+    const ctcInfo = await ctcInfoP;
+    const getInfo = async () => ctcInfo;
+    const ApplicationID = ctcInfo.ApplicationID;
+    let lastRound = ctcInfo.creationRound;
+    debug(`${shad}: attach ${ApplicationID} created at ${lastRound}`);
 
-    const getInfo = async () => ctc;
-
-//     debug(`${shad}: attach ${ctc.address}`);
-
-//     let prevRound = ctc.creationRound;
-//     debug(`${shad}: attach created at ${prevRound}`);
-
-//     const returnFromTxn = async (txn, evt_cnt) => {
-//       const ok_val = txn.ApplicationArgs[1];
-//       const ok_args = [];
-//       const len = txn.ApplicationArgs.length;
-//       for (let i = 0; i < evt_cnt; i++) {
-//         ok_args[evt_cnt - 1 - i] = txn.ApplicationArgs[len - i];
-//       }
-//       const confirmedRound = txn.round;
-//       const ok_bal = await getBalanceAt(ctc.address, confirmedRound);
-//       prevRound = confirmedRound;
-//       return { didTimeout: false, data: ok_args, value: ok_val, balance: ok_bal, from: txn.from };
-//     };
+    const bin_comp = await compileFor(bin, ApplicationID);
+    const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
     const iam = (some_addr: Address): Address => {
       if (some_addr == thisAcc.addr) {
@@ -289,78 +322,127 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       throw Error(`XXX Not implemented: wait`);
     };
 
-     const sendrecv = async (
-       label: string,
-       okNum: number,
-       evt_cnt: number, 
-       tys: Array<any>,
-       args: Array<any>,
-       value: BigNumber,
-       out_tys: Array<any>,
-       timeout_delay: undefined | BigNumber,
-       try_p: any
-     ) => {
-       void(label);
-       void(okNum);
-       void(evt_cnt);
-       void(tys);
-       void(args);
-       void(value);
-       void(out_tys);
-       void(timeout_delay);
-       void(try_p);
-//       debug(`${shad}: ${label} sendrecv ${okNum} ${timeout_delay} --- START`);
+    const sendrecv = async (
+      label: string,
+      funcNum: number,
+      evt_cnt: number, 
+      tys: Array<any>,
+      args: Array<any>,
+      value: BigNumber,
+      out_tys: Array<any>,
+      timeout_delay: undefined | BigNumber,
+      sim_p: () => SimRes,
+    ) => {
+      const funcName = `m${funcNum}`;
+      debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- START`);
+      const handler = bin_comp.steps[funcName];
 
-//       const this_is_a_timeout = timeout_delay ? false : true;
-//       if (this_is_a_timeout) {
-//         timeout_delay = default_range_width;
-//       }
+      const sim_r = sim_p();
+      const isHalt = sim_r.isHalt;
+      const sim_txns = sim_r.txns;
+
+      const munged_args =
+        // XXX this needs to be customized for Algorand
+        args.map((m, i) => tys[i].munge(tys[i].canonicalize(m)));
+      const actual_args =
+        [ sim_r.prevSt, sim_r.nextSt, isHalt, lastRound, ...munged_args ];
+
+      debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- PREPARE w/ ${JSON.stringify(actual_args)}`);
+      const handler_with_args =
+        algosdk.makeLogicSig(handler.result, actual_args);
+
+      while ( true ){
+        const params = await getTxnParams();
+        if ( timeout_delay ) {
+          const tdn = timeout_delay.toNumber();
+          params.lastRound = lastRound + tdn;
+          if ( params.firstRound > params.lastRound ) {
+            debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
+            return {didTimeout: true};
+          }
+        }
+
+        debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- ASSEMBLE w/ ${JSON.stringify(params)}`);
+        const whichAppl =
+          isHalt ?
+          // We are treating it like any party can delete the application, but the docs say it may only be possible for the creator. The code appears to not care: https://github.com/algorand/go-algorand/blob/0e9cc6b0c2ddc43c3cfa751d61c1321d8707c0da/ledger/apply/application.go#L589
+          algosdk.makeApplicationDeleteTxn :
+          algosdk.makeApplicationNoOpTxn;
+        const txnAppl =
+          whichAppl(
+            thisAcc.addr, params, ApplicationID);
+        const txnFromHandler =
+          algosdk.makePaymentTxnWithSuggestedParams(
+            handler.hash, 
+            thisAcc.addr,
+            0, undefined, ui8z,
+            params);
+        const txnToHandler =
+          algosdk.makePaymentTxnWithSuggestedParams(
+            thisAcc.addr,
+            handler.hash,
+            params.fee,
+            undefined, ui8z,
+            params);
+        const txnToContract =
+          algosdk.makePaymentTxnWithSuggestedParams(
+            thisAcc.addr,
+            bin_comp.ctc.hash,
+            value.toNumber(),
+            undefined, ui8z,
+            params);
+        const txnFromContracts =
+          sim_txns.map(
+            (txn_nfo: SimTxn) =>
+            algosdk.makePaymentTxnWithSuggestedParams(
+              bin_comp.ctc.hash,
+              txn_nfo.to,
+              txn_nfo.amt.toNumber(),
+              undefined, ui8z,
+              params));
+        const txns = [
+          txnAppl, 
+          txnFromHandler,
+          txnToHandler,
+          txnToContract,
+          ...txnFromContracts ];
+        algosdk.assignGroupID(txns);
+
+        const sign_me = (x: Txn) => x.signTxn(thisAcc.sk);
+
+        const txnAppl_s = sign_me(txnAppl);
+        const txnFromHandler_s =
+          algosdk.signLogicSigTransactionObject(
+            txnFromHandler, handler_with_args);
+        const txnToHandler_s = sign_me(txnToHandler);
+        const txnToContract_s = sign_me(txnToContract);
+        const txnFromContracts_s =
+          txnFromContracts.map(
+            (txn: Txn) => 
+            algosdk.signLogicSigTransactionObject(txn, ctc_prog));
+
+        const txns_s = [
+          txnAppl_s,
+          txnFromHandler_s,
+          txnToHandler_s,
+          txnToContract_s,
+          ...txnFromContracts_s ];
+
+        debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- SEND`);
+        const res = await sendAndConfirm(
+          `${shad}: ${label} sendrecv ${funcName}`,
+          txns_s,
+          txnAppl
+        );
+        if ( ! res ) {
+          // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
+          throw Error(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- FAIL: ${JSON.stringify(res)}`);
+        }
+
+        return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
+      }
 
 //       do {
-//         const params = await getTxnParams();
-//         const appTxn = await fillTxnWithParams(
-//           prevRound, timeout_delay, params, {
-//             'from': thisAcc.addr
-//               // FIXME JS SDK doesn't handle encoding this kind of txn
-//               ,
-//             'type': 'appl',
-//             'ApplicationId': ctc.appId,
-//             'OnCompletion': 'noOp',
-//             'ApplicationArgs': [okNum, prevRound, value, ...args],
-//             'Accounts': [ctc.address],
-//           });
-//         const valTxn = await fillTxnWithParams(
-//           prevRound, timeout_delay, params, {
-//             'type': 'pay',
-//             'from': thisAcc.addr,
-//             'to': ctc.address,
-//             'amount': value,
-//           });
-
-//         const otherTxns = [];
-//         const txn_out = async (to, amount) => {
-//           otherTxns.push(await fillTxnWithParams(
-//             prevRound, timeout_delay, params, {
-//               'type': 'pay',
-//               'from': ctc.address,
-//               'to': to,
-//               'amount': amount,
-//             }));
-//         };
-//         const fake_txn_res = { didTimeout: false, data: args, value: value, balance: (await getBalanceAt(ctc.address, prevRound)), from: thisAcc.addr };
-//         try_p(txn_out, fake_txn_res);
-
-//         const txns = [appTxn, valTxn, ...otherTxns];
-//         const txnGroup = algosdk.assignGroupID(txns);
-//         void(txnGroup);
-//         const signedTxns = [
-//           algosdk.signTransaction(appTxn, thisAcc.sk), algosdk.signTransaction(valTxn, thisAcc.sk), ...otherTxns.map(
-//             txn =>
-//             // FIXME relies on https://github.com/algorand/go-algorand/issues/1051 fix
-//             algosdk.signLogicSigTransaction(
-//               txn, ctc.logic_sig, [])),
-//         ];
-
 //         const confirmedTxn = await sendsAndConfirm(signedTxns, appTxn.lastRound);
 //         if (confirmedTxn) {
 //           debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- OKAY`);
@@ -376,21 +458,20 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 //         }
 //       }
 //       while (this_is_a_timeout);
-      throw Error(`XXX sendrecv`)
-     };
+    };
 
-     const recv = async (
-       label: string,
-       okNum: number, 
-       ok_cnt: number,
-       out_tys: Array<any>,
-       timeout_delay: undefined | BigNumber
-     ) => {
-       void(label);
-       void(okNum);
-       void(ok_cnt);
-       void(out_tys);
-       void(timeout_delay);
+    const recv = async (
+      label: string,
+      funcNum: number, 
+      ok_cnt: number,
+      out_tys: Array<any>,
+      timeout_delay: undefined | BigNumber
+    ) => {
+      void(label);
+      void(funcNum);
+      void(ok_cnt);
+      void(out_tys);
+      void(timeout_delay);
 
 //       debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- START`);
 
@@ -426,36 +507,17 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 //         }
 //       }
       throw Error(`XXX recv`);
-     };
+    };
 
-     return { getInfo, sendrecv, recv, iam, wait };
-   };
+    return { getInfo, sendrecv, recv, iam, wait };
+  };
 
   const deploy = async (bin: Backend): Promise<ContractAttached> => {
+    must_be_supported(bin);
     debug(`${shad} deploy`);
     const algob = bin._Connectors.ALGO;
 
-    const { unsupported } = algob;
-    if ( unsupported == `True` ) {
-      throw Error(`This Reach application is not supported on Algorand.`);
-    }
-
-    const { appApproval0, appApproval, appClear, ctc, steps } = algob;
-    const stepsN = parseInt(steps);
-    const stepCode: { [key: string]: string } = {};
-    for ( let i = 1; i <= stepsN; i++ ) {
-      const key = `m${i}`
-      stepCode[key] = algob[key];
-      if ( !stepCode[key] ) {
-        throw Error(`Expected ${key} in ${JSON.stringify(algob)}`);
-      }
-    }
-
-    // XXX I'd use replaceAll if I could, but I'm pretty sure there's just one occurrence. It would be better to extend ConnectorInfo so these are functions
-
-    const replaceAddr = (label: string, addr: Address, x:string): string =>
-      x.replace(`"{{${label}}}"`, 
-               `base32(${base32.encode(algosdk.addressPublicKey(addr)).toString()})`)
+    const { appApproval0, appClear } = algob;
 
     const appApproval0_subst =
       replaceAddr('Deployer', thisAcc.addr, appApproval0);
@@ -468,10 +530,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       await sign_and_send_sync(
         'ApplicationCreate',
         thisAcc.sk,
-        // @ts-ignore XXX
         algosdk.makeApplicationCreateTxn(
           thisAcc.addr, await getTxnParams(),
-          // @ts-ignore XXX
           algosdk.OnApplicationComplete.NoOpOC,
           appApproval0_bin.result,
           appClear_bin.result,
@@ -481,41 +541,23 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     if ( ! ApplicationID ) {
       throw Error(`No application-index in ${JSON.stringify(createRes)}`);
     }
-    const subst_appid = (x: string) => x.replace('{{ApplicationID}}', ApplicationID.toString());
-
-    const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
-    const subst_ctc = (x: string) => replaceAddr('ContractAddr', ctc_bin.hash, x);
-
-    const stepCode_bin: { [key: string]: CompileResultBytes } = {};
-    let appApproval_subst = appApproval;
-    for ( const mN in stepCode  ) {
-      const mc = stepCode[mN];
-      const mc_subst = subst_ctc(subst_appid(mc));
-      const cr = await compileTEAL(mN, mc_subst);
-      stepCode_bin[mN] = cr;
-      appApproval_subst =
-        replaceAddr(mN, cr.hash, appApproval_subst);
-    }
-
-    const appApproval_bin = 
-      await compileTEAL('appApproval_subst', appApproval_subst);
+    const bin_comp = await compileFor(bin, ApplicationID);
 
     const updateRes =
       await sign_and_send_sync(
         'ApplicationUpdate',
         thisAcc.sk,
-        // @ts-ignore XXX
         algosdk.makeApplicationUpdateTxn(
           thisAcc.addr, await getTxnParams(),
-          ApplicationID, appApproval_bin.result,
+          ApplicationID, bin_comp.appApproval.result,
           appClear_bin.result));
 
-    const creation_round = updateRes['confirmed-round'];
-    const ctcInfo: ContractInfo =
-      { ApplicationID, creation_round };
+    const creationRound = updateRes['confirmed-round'];
+    const getInfo = async (): Promise<ContractInfo> =>
+      ({ ApplicationID, creationRound });
 
-    debug(`${shad} application created: ${JSON.stringify(ctcInfo)}`);
-    return await attach(bin, ctcInfo);
+    debug(`${shad} application created`);
+    return await attach(bin, getInfo());
   };
 //   const deploy = async (bin) => {
 
@@ -574,8 +616,7 @@ const showBalance = async (note: string, networkAccount: NetworkAccount) => {
   console.log('%s: balance: %s algos', note, showBal);
 };
 
-// XXX s/number/BigNumber
-export const newTestAccount = async (startingBalance: number) => {
+export const newTestAccount = async (startingBalance: BigNumber) => {
   const networkAccount = algosdk.generateAccount();
   if (getDEBUG()) { await showBalance('before', networkAccount); }
   await transfer({networkAccount: FAUCET}, {networkAccount}, startingBalance);
@@ -588,22 +629,20 @@ export const standardUnit = 'ALGO';
 /** @description the display name of the atomic (smallest) unit of currency for the network */
 export const atomicUnit = 'μALGO';
 
-// XXX return BigNumber
 /**
  * @description  Parse currency by network
  * @param amt  value in the {@link standardUnit} for the network.
  * @returns  the amount in the {@link atomicUnit} of the network.
  * @example  parseCurrency(100).toString() // => '100000000'
  */
-export function parseCurrency(amt: CurrencyAmount): number {
+export function parseCurrency(amt: CurrencyAmount): BigNumber {
   const numericAmt =
     isBigNumber(amt) ? amt.toNumber()
     : typeof amt === 'string' ? parseFloat(amt)
     : amt;
-  return algosdk.algosToMicroalgos(numericAmt);
+  return bigNumberify(algosdk.algosToMicroalgos(numericAmt));
 }
 
-// XXX amt: BigNumber
 /**
  * @description  Format currency by network
  * @param amt  the amount in the {@link atomicUnit} of the network.
@@ -613,13 +652,13 @@ export function parseCurrency(amt: CurrencyAmount): number {
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  */
-export function formatCurrency(amt: number, decimals: number = 6): string {
+export function formatCurrency(amt: BigNumber, decimals: number = 6): string {
   // Recall that 1 algo = 10^6 microalgos
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
   // Use decimals+1 and then slice it off to truncate instead of round
-  const algosStr = algosdk.microalgosToAlgos(amt).toFixed(decimals+1);
+  const algosStr = algosdk.microalgosToAlgos(amt.toNumber()).toFixed(decimals+1);
   // Have to roundtrip thru Number to drop trailing zeroes
   return Number(algosStr.slice(0, algosStr.length - 1)).toString();
 }

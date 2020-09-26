@@ -19,7 +19,12 @@ declare module 'algosdk' {
     signTxn: (sk: SecretKey) => SignedTxn,
   }
   declare type TxnParams = {
-    boop: string, // TODO
+    flatFee: boolean,
+    fee: number,
+    firstRound: number,
+    lastRound: number,
+    genesisID: number,
+    genesisHash: string,
   }
   declare type StatusInfo = {
     'last-round': number,
@@ -41,17 +46,61 @@ declare module 'algosdk' {
   declare function addressPublicKey(addr: Address): Uint8Array
   declare function mnemonicToSecretKey(mn: string): Wallet
   declare function encodeObj(obj: any): Uint8Array
-  // TODO: BigNumber not any, without breaking everything
-  declare function makePaymentTxnWithSuggestedParams(
-      from: Address, to: Address, amount: number, closeRemainderTo: undefined,
-      note: Uint8Array, params: TxnParams
-  ): Txn;
   declare function generateAccount(): Wallet
 
   declare type CompileResult = {
     result: string,
     hash: string
   }
+
+  // TODO: BigNumber not any, without breaking everything
+  declare function makePaymentTxnWithSuggestedParams(
+      from: Address, to: Address, amount: number, closeRemainderTo: undefined,
+      note: Uint8Array, params: TxnParams
+  ): Txn;
+  declare type LogicArg = number | Uint8Array | string;
+  declare function makeLogicSig(
+    program: Uint8Array,
+    args: Array<LogicArg>
+  ): LogicSig;
+  declare function signLogicSigTransactionObject(
+    txn: Txn, lsig: LogicSig
+  ): SignedTxn;
+  declare function makeApplicationCreateTxn(
+    from: Address,
+    suggestedParams: TxnParams,
+    onComplete: OnApplicationComplete,
+    approvalProgram: Uint8Array,
+    clearProgram: Uint8Array,
+    numLocalInts: number,
+    numLocalByteSlices: number,
+    numGlobalInts: number,
+    numGlobalByteSlices: number
+  ): Txn;
+  declare function makeApplicationUpdateTxn(
+    from: Address,
+    suggestedParams: TxnParams,
+    appIndex: number,
+    approvalProgram: Uint8Array,
+    clearProgram: Uint8Array
+  ): Txn;
+  declare function makeApplicationDeleteTxn(
+    from: Address,
+    suggestedParams: TxnParams,
+    appIndex: number
+  ): Txn;
+  declare function makeApplicationNoOpTxn(
+    from: Address,
+    suggestedParams: TxnParams,
+    appIndex: number
+  ): Txn;
+  declare function assignGroupID(
+    txns: Array<Txn>
+  );
+
+  declare const OnApplicationComplete: {
+    NoOpOC: OnApplicationComplete,
+  };
 
   declare class Algodv2 {
     constructor(
@@ -64,8 +113,7 @@ declare module 'algosdk' {
     status(): ApiCall<StatusInfo>
     statusAfterBlock(blockNumber: number): ApiCall<StatusInfo>
     pendingTransactionInformation(txId: TxId): ApiCall<TxnInfo>
-    sendRawTransactions(signedTxns: Array<SignedTxn>): ApiCall<void>
-    sendRawTransaction(signedTxn: SignedTxn): ApiCall<void>
+    sendRawTransaction(stx_or_stxs: SignedTxn | Array<SignedTxn>): ApiCall<void>
     getTransactionParams(): ApiCall<TxnParams>
     accountInformation(addr: Address): ApiCall<AcctInfo>
     compile(code: String): ApiCall<CompileResult>
