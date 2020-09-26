@@ -265,11 +265,15 @@ epp_n st n =
       let st' = st {pst_interval = default_interval}
       ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st' s
       let svs = counts_nzs cons_cs
-      let ctw =
+      let from_info =
             case more_chb of
-              True -> CT_Wait at1 svs
-              False -> CT_Halt at1
-      return $ ProResC p_prts_s (ProRes_ cons_cs ctw)
+              True -> Just svs
+              False -> Nothing
+      let mkp (ProRes_ cs_p et_p) =
+            ProRes_ cs_p (ET_FromConsensus from_info et_p)
+      let p_prts_s' = M.map mkp p_prts_s
+      let ctw = CT_From at1 from_info
+      return $ ProResC p_prts_s' (ProRes_ cons_cs ctw)
     LLC_While at asn _inv cond body k -> do
       loop_num <- newHandler st
       let st_k = st {pst_prev_handler = loop_num}

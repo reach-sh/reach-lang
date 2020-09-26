@@ -500,19 +500,19 @@ solCTail ctxt = \case
       SolTailRes ctxt'_f f' = solCTail ctxt f
       ctxt' = ctxt'_t <> ctxt'_f
   CT_Switch at ov csm -> solSwitch solCTail ctxt at ov csm
-  CT_Wait _ svs ->
-    SolTailRes ctxt $
-      vsep
-        [ ctxt_emit ctxt
-        , solSet ("current_state") (solHashState ctxt HM_Set svs)
-        ]
   CT_Jump _ which svs asn ->
     SolTailRes ctxt $
       vsep
         [ ctxt_emit ctxt
         , solApply (solLoop_fun which) [solApply (solMsg_arg which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn))] <> semi
         ]
-  CT_Halt _ ->
+  CT_From _ (Just svs) ->
+    SolTailRes ctxt $
+      vsep
+        [ ctxt_emit ctxt
+        , solSet ("current_state") (solHashState ctxt HM_Set svs)
+        ]
+  CT_From _ Nothing ->
     SolTailRes ctxt $
       vsep
         [ ctxt_emit ctxt
@@ -567,9 +567,8 @@ manyVars_c = \case
   CT_Switch _ _ csm -> mconcatMap cm1 $ M.elems csm
     where
       cm1 (mov', c) = S.union (S.fromList $ maybeToList mov') $ manyVars_c c
-  CT_Wait {} -> mempty
   CT_Jump {} -> mempty
-  CT_Halt {} -> mempty
+  CT_From {} -> mempty
 
 solCTail_top :: SolCtxt a -> Int -> [DLVar] -> Maybe [DLVar] -> CTail -> (SolCtxt a, Doc a, Doc a, Doc a)
 solCTail_top ctxt which vs mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
@@ -765,7 +764,7 @@ solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
         DM_constructor ->
           solFunctionLike SFL_Constructor [] "payable" consbody
           where
-            SolTailRes _ consbody = solCTail ctxt (CT_Wait at [])
+            SolTailRes _ consbody = solCTail ctxt (CT_From at (Just []))
         DM_firstMsg ->
           emptyDoc
     cinfo = M.fromList [("deployMode", T.pack $ show plo_deployMode)]

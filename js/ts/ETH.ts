@@ -81,13 +81,25 @@ type Contract = {
   iam?: (some_addr: Address) => Address,
 };
 
+// XXX Merge with ALGO and put in shared
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
-  sendrecv: (...argz: any) => any,
-  recv: (...argz: any) => any,
+  sendrecv: (...argz: any) => Promise<Recv>,
+  recv: (...argz: any) => Promise<Recv>,
   wait: (...argz: any) => any,
   iam: (some_addr: Address) => Address,
-}
+};
+
+// TODO
+type ContractOut = any;
+// XXX move up
+type Recv = {
+  didTimeout: false,
+  data: Array<ContractOut>,
+  value: BigNumber,
+  balance: BigNumber,
+  from: Address,
+} | { didTimeout: true };
 
 type ContractInfo = {
   getInfo?: () => Promise<ContractInfo>,
@@ -502,17 +514,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
       return {didTimeout: true};
     };
-
-    // TODO
-    type ContractOut = any;
-    // XXX move up
-    type Recv = {
-      didTimeout: false,
-      data: Array<ContractOut>,
-      value: BigNumber,
-      balance: BigNumber,
-      from: Address,
-    } | { didTimeout: true };
 
     // XXX: receive expected tys of output and use them to unmunge
     const recv_top = async (

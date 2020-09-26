@@ -745,6 +745,7 @@ data ETail
   | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg ETail ETail
   | ET_Switch SrcLoc DLVar (SwitchCases ETail)
+  | ET_FromConsensus (Maybe [DLVar]) ETail
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
       , et_tc_fs :: FromSpec
@@ -776,9 +777,8 @@ data CTail
   | CT_Seqn SrcLoc PLTail CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Switch SrcLoc DLVar (SwitchCases CTail)
-  | CT_Wait SrcLoc [DLVar]
+  | CT_From SrcLoc (Maybe [DLVar])
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
-  | CT_Halt SrcLoc
   deriving (Eq, Show)
 
 data CInterval

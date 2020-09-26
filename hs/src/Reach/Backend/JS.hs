@@ -53,7 +53,7 @@ jsBacktickText :: T.Text -> Doc a
 jsBacktickText x = "`" <> pretty x <> "`"
 
 --- Compiler
-
+--
 data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
   , ctxt_txn :: Int
@@ -121,6 +121,10 @@ jsArg = \case
   DLA_Interact _ m t ->
     jsProtect "null" t $ "interact." <> pretty m
 
+jsDigest :: [DLArg] -> Doc a
+jsDigest as =
+    jsApply "stdlib.keccak256" $ map jsArg as
+
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply ctxt = \case
   ADD -> jsApply "stdlib.add"
@@ -167,8 +171,7 @@ jsExpr ctxt = \case
     jsArg oa <> "." <> pretty f
   DLE_Interact at fs _ m t as ->
     jsProtect (jsAssertInfo ctxt at fs) t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
-  DLE_Digest _ as ->
-    jsApply "stdlib.keccak256" $ map jsArg as
+  DLE_Digest _ as -> jsDigest as
   DLE_Claim at fs ct a ->
     check
     where
@@ -181,7 +184,12 @@ jsExpr ctxt = \case
       require =
         jsApply "stdlib.assert" $ [jsArg a, jsAssertInfo ctxt at fs]
   DLE_Transfer _ _ who amt ->
-    "//" <+> (jsApply "stdlib.transfer" $ map jsArg [who, amt])
+    case ctxt_simulate ctxt of
+      False -> emptyDoc
+      True ->
+        jsApply "sim_r.txns.push" 
+          [ jsObject $ M.fromList $ [ ("to"::String, jsArg who)
+                                    , ("amt"::String, jsArg amt) ] ]
   DLE_Wait _ amt ->
     "await" <+> jsApply "ctc.wait" [jsArg amt]
   DLE_PartSet _ who what ->
@@ -269,6 +277,19 @@ jsETail ctxt = \case
   ET_Stop _ -> "return" <> semi
   ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
   ET_Switch at ov csm -> jsEmitSwitch jsETail ctxt at ov csm
+  ET_FromConsensus msvs k ->
+    case ctxt_simulate ctxt of
+      False -> kp
+      True ->
+        vsep [ "sim_r.nextSt =" <+> nextSt' <> semi
+             , "sim_r.isHalt =" <+> isHalt' <> semi ]
+    where kp = jsETail ctxt k
+          (nextSt', isHalt') =
+            case msvs of
+              Nothing -> ( jsCon $ DLC_Bytes ""
+                         , jsCon $ DLC_Bool True )
+              Just svs -> ( jsDigest (map DLA_Var svs)
+                          , jsCon $ DLC_Bool False )
   ET_ToConsensus _ fs_ok which from_me msg mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
@@ -282,11 +303,11 @@ jsETail ctxt = \case
               jsSum (x : xs) = jsApply "stdlib.add" [jsArg x, jsSum xs]
               k_top = jsETail ctxt' k_to
       msg_vs = map jsVar msg
-      k_okp =
+      k_defp =
         "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi
           <> hardline
           <> jsFromSpec ctxt' fs_ok
-          <> jsETail ctxt' k_ok
+      k_okp = k_defp <> jsETail ctxt' k_ok
       ctxt' = ctxt {ctxt_txn = (ctxt_txn ctxt) + 1}
       whop = jsCon $ DLC_Bytes $ ctxt_who ctxt
       defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> callp <> semi
@@ -298,17 +319,23 @@ jsETail ctxt = \case
               [ whop
               , jsCon (DLC_Int $ fromIntegral which)
               , jsCon (DLC_Int $ fromIntegral $ length msg)
-              , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var svs ++ args
+              , jsArray $ map (jsContract . argTypeOf) $ svs_as ++ args
               , vs
               , amtp
               , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
               , delayp
-              , "null" --- XXX implement simulation to discover transfer in EPP, not here.
+              , parens $ "(" <> jsTxn ctxt' <> ") => " <> jsBraces sim_body
               ]
             where
+              svs_as = map DLA_Var svs
               amtp = jsArg amt
-              --- ok_sim_p = jsETail ctxt'_sim k_ok
-              --- ctxt'_sim = ctxt' { ctxt_simulate = True }
+              sim_body = vsep [ "const sim_r = { txns: [] };"
+                              , "sim_r.prevSt =" <+> jsDigest svs_as <> semi
+                              , k_defp
+                              , sim_body_core
+                              , "return sim_r;" ]
+              sim_body_core = jsETail ctxt'_sim k_ok
+              ctxt'_sim = ctxt' { ctxt_simulate = True }
               vs = jsArray $ (map jsVar svs) ++ (map jsArg args)
           Nothing ->
             jsApply

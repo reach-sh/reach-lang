@@ -348,13 +348,17 @@ ct = \case
     label false_lab
     ct ft
   CT_Switch {} -> xxx "switch"
-  CT_Wait _ svs -> do
-    cstate HM_Set svs
+  CT_Jump {} -> xxx "jump"
+  CT_From _ msvs -> do
+    cnextSt
     code "arg" [ texty argNextSt ]
     eq_or_fail
-    halt_should_be False
-  CT_Jump {} -> xxx "jump"
-  CT_Halt _ -> halt_should_be True
+    halt_should_be isHalt
+    where
+      (cnextSt, isHalt) =
+        case msvs of
+          Nothing -> (cc (DLC_Bytes ""), True)
+          Just svs -> (cstate HM_Set svs, False)
 
 data HashMode
   = HM_Set

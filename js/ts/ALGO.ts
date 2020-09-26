@@ -103,11 +103,22 @@ type CompiledBackend = {
 
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
-  sendrecv: (...argz: any) => any,
-  recv: (...argz: any) => any,
+  sendrecv: (...argz: any) => Promise<Recv>,
+  recv: (...argz: any) => Promise<Recv>,
   wait: (...argz: any) => any,
   iam: (some_addr: Address) => Address,
 };
+
+// TODO
+type ContractOut = any;
+// XXX move up
+type Recv = {
+  didTimeout: false,
+  data: Array<ContractOut>,
+  value: BigNumber,
+  balance: BigNumber,
+  from: Address,
+} | { didTimeout: true };
 
 type ContractInfo = {
   getInfo?: () => Promise<ContractInfo>,
@@ -331,13 +342,20 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       value: BigNumber,
       out_tys: Array<any>,
       timeout_delay: undefined | BigNumber,
-      sim_p: () => SimRes,
-    ) => {
+      sim_p: (fake: Recv) => SimRes,
+    ): Promise<Recv> => {
       const funcName = `m${funcNum}`;
       debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- START`);
       const handler = bin_comp.steps[funcName];
 
-      const sim_r = sim_p();
+      const fake_res = {
+        didTimeout: false,
+        data: args,
+        value: value,
+        balance: bigNumberify('0'), // XXX
+        from: thisAcc.addr,
+      };
+      const sim_r = sim_p( fake_res );
       const isHalt = sim_r.isHalt;
       const sim_txns = sim_r.txns;
 
@@ -441,36 +459,19 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       }
-
-//       do {
-//         const confirmedTxn = await sendsAndConfirm(signedTxns, appTxn.lastRound);
-//         if (confirmedTxn) {
-//           debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- OKAY`);
-//           // FIXME no documentation on whether confirmedTxn has something for each txn in a group or only one thing. We made need to call returnFromTxn with appTxn for the data and confirmedTxn for the round/etc
-//           return (await returnFromTxn(confirmedTxn, evt_cnt));
-//         }
-
-//         if (!this_is_a_timeout) {
-//           debug(`${shad}: ${label} send ${okNum} ${timeout_delay} --- FAIL/TIMEOUT`);
-//           const rec_res = await recv(label, timeNum, 0, false, false, false, false, false);
-//           rec_res.didTimeout = true;
-//           return rec_res;
-//         }
-//       }
-//       while (this_is_a_timeout);
     };
 
     const recv = async (
       label: string,
       funcNum: number, 
-      ok_cnt: number,
-      out_tys: Array<any>,
+      evt_cnt: number,
+      tys: Array<any>,
       timeout_delay: undefined | BigNumber
-    ) => {
+    ): Promise<Recv> => {
       void(label);
       void(funcNum);
-      void(ok_cnt);
-      void(out_tys);
+      void(evt_cnt);
+      void(tys);
       void(timeout_delay);
 
 //       debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- START`);

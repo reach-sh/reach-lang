@@ -331,6 +331,12 @@ instance Pretty ETail where
       ET_Stop _ -> emptyDoc
       ET_If _ ca t f -> prettyIfp ca t f
       ET_Switch _ ov csm -> prettySwitch ov csm
+      ET_FromConsensus msvs k ->
+        "fromConsensus" <+> msvs' <+> semi
+        <> hardline <> pretty k
+        where msvs' = case msvs of
+                        Nothing -> emptyDoc
+                        Just svs -> cm $ map pretty svs
       ET_ToConsensus _ fs which msend msg mtime k ->
         "sendrecv" <+> fsp <+> whichp <+> parens msendp <> (cm $ map pretty msg) <> timep <> ns (pretty k)
         where
@@ -406,8 +412,10 @@ instance Pretty CTail where
   pretty (CT_Seqn _ x y) = pretty x <> hardline <> pretty y
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Switch _ ov csm) = prettySwitch ov csm
-  pretty (CT_Wait _ vars) = pform "wait!" $ pretty vars
+  pretty (CT_From _ mvars) =
+    case mvars of
+      Nothing -> pform_ "halt!"
+      Just vars -> pform "wait!" $ pretty vars
   pretty (CT_Jump _ which vars assignment) = pform "jump!" args
     where
       args = pretty which <+> pretty vars <+> pretty assignment
-  pretty (CT_Halt _) = pform_ "halt!"

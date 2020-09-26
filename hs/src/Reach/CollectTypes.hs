@@ -128,9 +128,8 @@ instance CollectsTypes CTail where
   cts (CT_Seqn _ b a) = cts b <> cts a
   cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
   cts (CT_Switch _ v csm) = cts v <> cts csm
-  cts (CT_Wait _ svs) = cts svs
+  cts (CT_From _ msvs) = cts msvs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
-  cts (CT_Halt _) = mempty
 
 instance CollectsTypes CInterval where
   cts (CBetween from to) = cts from <> cts to
