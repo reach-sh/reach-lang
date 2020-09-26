@@ -118,4 +118,16 @@ declare module 'algosdk' {
     accountInformation(addr: Address): ApiCall<AcctInfo>
     compile(code: String): ApiCall<CompileResult>
   }
+
+  declare class Indexer {
+    constructor(
+      token?: string,
+      baseServer?: string,
+      port?: string | number,
+      headers?: {}, // TODO
+    )
+
+    // XXX
+    searchForTransactions(): any
+  }
 }

@@ -107,7 +107,7 @@ jsCon = \case
   DLC_Null -> "null"
   DLC_Bool True -> "true"
   DLC_Bool False -> "false"
-  DLC_Int i -> pretty i
+  DLC_Int i -> jsApply "stdlib.bigNumberify" [ pretty i ]
   DLC_Bytes b -> jsString $ B.unpack b
 
 jsArg :: DLArg -> Doc a

@@ -146,6 +146,7 @@ const token = process.env.ALGO_TOKEN || 'c87f5580d7a866317b4bfe9e8b8d1dda955636c
 const server = process.env.ALGO_SERVER || 'http://localhost';
 const port = process.env.ALGO_PORT || 4180;
 const algodClient = new algosdk.Algodv2(token, server, port);
+const indexer = new algosdk.Indexer(token, server, port);
 
 // eslint-disable-next-line max-len
 const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'pulp abstract olive name enjoy trick float comfort verb danger eternal laptop acquire fetch message marble jump level spirit during benefit sure dry absent history'));
@@ -363,11 +364,13 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         // XXX this needs to be customized for Algorand
         args.map((m, i) => tys[i].munge(tys[i].canonicalize(m)));
       const actual_args =
+        // XXX need to munge these differently
         [ sim_r.prevSt, sim_r.nextSt, isHalt, lastRound, ...munged_args ];
 
       debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- PREPARE w/ ${JSON.stringify(actual_args)}`);
       const handler_with_args =
         algosdk.makeLogicSig(handler.result, actual_args);
+      debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- PREPARED = '${JSON.stringify(handler_with_args)}'`);
 
       while ( true ){
         const params = await getTxnParams();
@@ -468,46 +471,38 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       tys: Array<any>,
       timeout_delay: undefined | BigNumber
     ): Promise<Recv> => {
-      void(label);
-      void(funcNum);
-      void(evt_cnt);
-      void(tys);
-      void(timeout_delay);
+      const funcName = `m${funcNum}`;
+      debug(`${shad}: ${label} recv ${funcName} ${timeout_delay} --- START`);
+      const handler = bin_comp.steps[funcName];
 
-//       debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- START`);
+      const timeoutRound =
+        timeout_delay ?
+        lastRound + timeout_delay.toNumber() :
+        undefined;
 
-//       const this_is_a_timeout = timeout_delay ? false : true;
-//       if (this_is_a_timeout) {
-//         timeout_delay = default_range_width;
-//       }
+      while ( true ) {
+        const currentRound = await getLastRound();
+        if ( timeoutRound && timeoutRound < currentRound ) {
+          return { didTimeout: true };
+        }
 
-//       while (1) {
-//         const startRound = this_is_a_timeout ? prevRound : await getLastRound();
-//         const untilRound = prevRound + timeout_delay;
-//         while ((await getLastRound()) < untilRound) {
-//           // FIXME maxj says there will be a better query api in the future, when that is in place, push this forEach to the indexer
-//           const resp = await algodClient.transactionByAddress(ctc.address, startRound, untilRound).do();
-//           resp.transactions.forEach(async txn => {
-//             if (txn.type == 'appl' &&
-//               txn.ApplicationId == ctc.appId &&
-//               txn.ApplicationArgs[0] == okNum &&
-//               txn.ApplicationArgs[1] == prevRound) {
-//               debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- OKAY`);
-//               return (await returnFromTxn(txn, ok_cnt));
-//             }
-//           });
-//         }
+        let query = indexer.searchForTransactions()
+          .address(handler.hash)
+          .addressRole("sender")
+          .minRound(lastRound);
+        if ( timeoutRound ) {
+          query = query.maxRound(timeoutRound);
+        }
+        debug(`query is ${JSON.stringify(query)}`);
+        const res = await query.do();
+        debug(`res is ${JSON.stringify(res)}`);
 
-//         if (!this_is_a_timeout) {
-//           debug(`${shad}: ${label} recv ${okNum} ${timeout_delay} --- TIMEOUT`);
-//           const rec_res = timeout_me ?
-//             await sendrecv(label, timeNum, 0, timeout_args, 0, false, false, try_p) :
-//             await recv(label, timeNum, 0, false, false, false, false, false);
-//           rec_res.didTimeout = true;
-//           return rec_res;
-//         }
-//       }
-      throw Error(`XXX recv`);
+        void(tys);
+        void(evt_cnt);
+        // XXX need to parse res
+
+        throw Error(`XXX recv`);
+      }
     };
 
     return { getInfo, sendrecv, recv, iam, wait };
