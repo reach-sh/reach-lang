@@ -486,7 +486,7 @@ services:
       - ethereum-devnet
     environment:
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
-      - ETH_NODE_URI=http://devnet:8545
+      - ETH_NODE_URI=http://ethereum-devnet:8545
   ${SERVICE}-ETH-test-embedded-ganache:
     <<: *app-base
     environment:
