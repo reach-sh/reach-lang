@@ -464,14 +464,26 @@ version: '3.4'
 x-app-base: &app-base
   image: ${IMAGE_TAG}
 services:
-  devnet:
+  ethereum-devnet:
     image: reachsh/ethereum-devnet:${REACH_VERSION}
   algorand-devnet:
     image: reachsh/algorand-devnet:${REACH_VERSION}
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+  algorand-postgres-db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
   ${SERVICE}-ETH-test-dockerized-geth: &default-app
     <<: *app-base
     depends_on:
-      - devnet
+      - ethereum-devnet
     environment:
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
       - ETH_NODE_URI=http://devnet:8545

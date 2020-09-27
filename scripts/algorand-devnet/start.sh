@@ -8,7 +8,7 @@ touch algorand-indexer.yaml
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
   --token "reach-devnet" \
-  --postgres "host=localhost port=5432 user=algorand password=indexer dbname=reach-devnet sslmode=disable"
+  --postgres "host=algorand-postgres-db port=5432 user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
 
 # LOG="${ALGORAND_DATA}/node.log"
 # while ! [ -f "${LOG}" ] ; do sleep 1 ; done
