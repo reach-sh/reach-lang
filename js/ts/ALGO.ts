@@ -3,6 +3,7 @@
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
 import { BigNumber } from 'ethers';
+import Timeout from 'await-timeout';
 
 import {
   CurrencyAmount, debug,
@@ -217,9 +218,16 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
 
 const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
-  const params = await algodClient.getTransactionParams().do();
-  debug(`fillTxn: got params: ${JSON.stringify(params)}`);
-  return params;
+  while (true) {
+    const params = await algodClient.getTransactionParams().do();
+    debug(`fillTxn: got params: ${JSON.stringify(params)}`);
+    if (params.firstRound !== 0) {
+      return params;
+    }
+    debug(`...but firstRound is 0, so let's wait and try again.`);
+    // Assumption: firstRound will move past 0 on its own.
+    await Timeout.set(1);
+  }
 };
 
 const sign_and_send_sync = async (
@@ -606,15 +614,15 @@ const getBalanceAt = async (addr: Address, round: Round): Promise<number> => {
   return (await algodClient.accountInformation(addr).do()).amount;
 };
 
-export const balanceOf = async (acc: Account) => {
+export const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
   if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
-  return (await getBalanceAt(networkAccount.addr, await getLastRound()));
+  return bigNumberify(await getBalanceAt(networkAccount.addr, await getLastRound()));
 };
 
 const showBalance = async (note: string, networkAccount: NetworkAccount) => {
   const bal = await balanceOf({ networkAccount });
-  const showBal = algosdk.microalgosToAlgos(bal).toFixed(2);
+  const showBal = formatCurrency(bal, 2);
   console.log('%s: balance: %s algos', note, showBal);
 };
 

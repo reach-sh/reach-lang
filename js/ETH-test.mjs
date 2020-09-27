@@ -246,9 +246,8 @@ runTests(async () => {
       });
 
       // Ok I know this is ETH-test, but... I'm lazy ~ Dan
-      // XXX: amtMicroAlgos: BigNumber
       // 3 is the number of decimals to shift over to make 123.456 a whole number
-      const amtMicroAlgos = bigNumberify('10').pow(6 - 3).mul('123456').toNumber();
+      const amtMicroAlgos = bigNumberify('10').pow(6 - 3).mul('123456');
       it(`should convert to microAlgos correctly`, () => {
         expect(ALGO_stdlib.parseCurrency(amt)).toBe(amtMicroAlgos);
       });
