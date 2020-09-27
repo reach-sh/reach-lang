@@ -471,6 +471,7 @@ services:
     depends_on:
       - algorand-postgres-db
     environment:
+      - POSTGRES_HOST=algorand-postgres-db
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
       - POSTGRES_DB=pgdb
