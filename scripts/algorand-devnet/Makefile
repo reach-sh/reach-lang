@@ -15,11 +15,11 @@ push:
 
 .PHONY: run
 run: build
-	docker run -t -p 4180:4180 $(IMAGE):latest
+	docker run --name algodev --rm -t -p 4180:4180 -p 8980:8980 $(IMAGE):latest
 
 .PHONY: run-shell
 run-shell: build
-	docker run -it -p 4180:4180 --entrypoint /bin/bash $(IMAGE):latest
+	docker run --name algodev --rm -it -p 4180:4180 -p 8980:8980 --entrypoint /bin/bash $(IMAGE):latest
 
 .PHONY: status
 status:
@@ -27,6 +27,12 @@ status:
 		-H "X-Algo-API-Token: $$(cat algorand_data/algod.token)" \
 		-d "int 1" \
 		localhost:4180/v2/teal/compile
+
+.PHONY: index-status
+index-status:
+	@curl --verbose -s \
+		-H "X-Indexer-API-Token: $$(cat algorand_data/algod.token)" \
+		localhost:8980/v2/transactions?min-round=0
 
 # Intentionally not specifying deps for this because we don't
 # want to get into loops.

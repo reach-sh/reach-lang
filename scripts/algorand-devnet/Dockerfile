@@ -28,24 +28,25 @@ ENV PATH   $GOPATH/bin:$GOROOT/bin:$PATH
 ENV SRC_PARENT $GOPATH/src/github.com/algorand
 RUN mkdir -p $SRC_PARENT
 
+# algod
 WORKDIR $SRC_PARENT
-ARG GIT_CLONE_REPO=https://github.com/jeapostrophe/go-algorand
-ARG GIT_COMMIT=595aa4722824be2bbad92ec367267584a87f29fe
-# ^ Jay's fork
-ENV PROJ_NAME go-algorand
-ENV SRC $SRC_PARENT/$PROJ_NAME
-RUN git clone $GIT_CLONE_REPO $PROJ_NAME
+RUN git clone https://github.com/jeapostrophe/go-algorand
+WORKDIR $SRC_PARENT/go-algorand
+RUN git checkout 595aa4722824be2bbad92ec367267584a87f29fe && ./scripts/configure_dev.sh && make install
 
-WORKDIR $SRC
-RUN git checkout $GIT_COMMIT && ./scripts/configure_dev.sh && make install
+# indexer
+WORKDIR $SRC_PARENT
+RUN git clone https://github.com/algorand/indexer
+WORKDIR $SRC_PARENT/indexer
+RUN make
 
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=$ALGORAND_NETWORK/Primary
-
 COPY algorand_network/ $ALGORAND_NETWORK/
 COPY algorand_data/* $ALGORAND_DATA/
 COPY start.sh /
 
 EXPOSE 4180
+EXPOSE 8980
 
 ENTRYPOINT ["/bin/sh", "/start.sh"]

@@ -7,6 +7,7 @@ import { BigNumber } from 'ethers';
 import {
   CurrencyAmount, debug,
   isBigNumber, bigNumberify,
+  T_UInt256, T_Bool,
   getDEBUG, setDEBUG } from './shared';
 export * from './shared';
 
@@ -146,7 +147,11 @@ const token = process.env.ALGO_TOKEN || 'c87f5580d7a866317b4bfe9e8b8d1dda955636c
 const server = process.env.ALGO_SERVER || 'http://localhost';
 const port = process.env.ALGO_PORT || 4180;
 const algodClient = new algosdk.Algodv2(token, server, port);
-const indexer = new algosdk.Indexer(token, server, port);
+
+const itoken = process.env.ALGO_INDEXER_TOKEN || 'reach-devnet';
+const iserver = process.env.ALGO_INDEXER_SERVER || 'http://localhost';
+const iport = process.env.ALGO_INDEXER_PORT || 8980;
+const indexer = new algosdk.Indexer(itoken, iserver, iport);
 
 // eslint-disable-next-line max-len
 const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'pulp abstract olive name enjoy trick float comfort verb danger eternal laptop acquire fetch message marble jump level spirit during benefit sure dry absent history'));
@@ -360,16 +365,17 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       const isHalt = sim_r.isHalt;
       const sim_txns = sim_r.txns;
 
+      const actual_args =
+        [ sim_r.prevSt, sim_r.nextSt, isHalt, lastRound, ...args ];
+      const actual_tys =
+        [ T_UInt256, T_UInt256, T_Bool, T_UInt256, ...tys ];
       const munged_args =
         // XXX this needs to be customized for Algorand
-        args.map((m, i) => tys[i].munge(tys[i].canonicalize(m)));
-      const actual_args =
-        // XXX need to munge these differently
-        [ sim_r.prevSt, sim_r.nextSt, isHalt, lastRound, ...munged_args ];
+        actual_args.map((m, i) => actual_tys[i].munge(actual_tys[i].canonicalize(m)));
 
-      debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- PREPARE w/ ${JSON.stringify(actual_args)}`);
+      debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- PREPARE w/ ${JSON.stringify(munged_args)}`);
       const handler_with_args =
-        algosdk.makeLogicSig(handler.result, actual_args);
+        algosdk.makeLogicSig(handler.result, munged_args);
       debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- PREPARED = '${JSON.stringify(handler_with_args)}'`);
 
       while ( true ){

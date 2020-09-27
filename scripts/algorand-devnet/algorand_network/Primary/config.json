@@ -1,7 +1,7 @@
 {
     "Version": 11,
     "AnnounceParticipationKey": false,
-    "Archival": false,
+    "Archival": true,
     "BaseLoggerDebugLevel": 4,
     "BroadcastConnectionsLimit": -1,
     "CadaverSizeTarget": 1073741824,
@@ -42,7 +42,7 @@
     "IncomingConnectionsLimit": 10000,
     "IncomingMessageFilterBucketCount": 5,
     "IncomingMessageFilterBucketSize": 512,
-    "IsIndexerActive": false,
+    "IsIndexerActive": true,
     "LogArchiveMaxAge": "",
     "LogArchiveName": "node.archive.log",
     "LogSizeLimit": 1073741824,
