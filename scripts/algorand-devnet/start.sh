@@ -1,7 +1,15 @@
-#!/bin/sh
+#!/bin/sh -x
 
+echo Starting algod
 algod -d "${ALGORAND_DATA}" &
 
+echo Checking for algod.net
+while ! [ -f "${ALGORAND_DATA}/algod.net" ] ; do
+  echo "Waiting to start indexer..."
+  sleep 1
+done
+
+echo Starting indexer
 touch algorand-indexer.yaml
 ./cmd/algorand-indexer/algorand-indexer daemon \
   --algod "${ALGORAND_DATA}" \
