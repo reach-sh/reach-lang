@@ -27,7 +27,7 @@ build-stdlib: package.json js-algorand-sdk
 
 .PHONY: js-algorand-sdk
 js-algorand-sdk:
-	if [ -d ../../algorand/js-algorand-sdk ] ; then cp -fr ../../algorand/js-algorand-sdk ./js-algorand-sdk ; fi
+	if [ -d ../../algorand/js-algorand-sdk ] ; then cp -fr ../../algorand/js-algorand-sdk ./ ; fi
 	if ! [ -d js-algorand-sdk ] ; then git clone http://github.com/jeapostrophe/js-algorand-sdk.git ; fi
 
 .PHONY: build-runner
