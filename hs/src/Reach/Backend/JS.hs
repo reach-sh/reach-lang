@@ -274,7 +274,10 @@ jsETail ctxt = \case
       [ jsPLTail ctxt f
       , jsETail ctxt s
       ]
-  ET_Stop _ -> "return" <> semi
+  ET_Stop _ ->
+    case ctxt_simulate ctxt of
+      False -> "return" <> semi
+      True -> emptyDoc
   ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
   ET_Switch at ov csm -> jsEmitSwitch jsETail ctxt at ov csm
   ET_FromConsensus msvs k ->
@@ -347,16 +350,27 @@ jsETail ctxt = \case
               , delayp
               ]
   ET_While _ asn cond body k ->
-    jsAsn ctxt True asn
-      <> hardline
-      <> jsWhile (jsBlock ctxt cond) (jsETail ctxt body)
-      <> hardline
-      <> jsETail ctxt k
+    case ctxt_simulate ctxt of
+      False ->
+        jsAsn ctxt True asn
+        <> hardline
+        <> jsWhile (jsBlock ctxt cond) (jsETail ctxt body)
+        <> hardline
+        <> jsETail ctxt k
+        -- XXX record while details
+      True ->
+        -- XXX simulate while by emitting an if
+        emptyDoc
   ET_Continue _ asn ->
-    jsAsn ctxt False asn
-      <> hardline
-      <> "continue"
-      <> semi
+    case ctxt_simulate ctxt of
+      False ->
+        jsAsn ctxt False asn
+        <> hardline
+        <> "continue"
+        <> semi
+      True ->
+        -- XXX simulate continue by looking at while details
+        emptyDoc
 
 jsPart :: SLPart -> EPProg -> Doc a
 jsPart p (EPProg _ _ et) =
