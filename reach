@@ -246,7 +246,8 @@ do_compile () {
     if [ -z "${REACH_DOCKER}" ] && [ -d "${HS}/.stack-work" ] && (which stack > /dev/null 2>&1) ; then
         export STACK_YAML="${HS}/stack.yaml"
         export REACHC_ID=${ID}
-        export REACHC_HASH="$("${HS}/../scripts/git-hash.sh")"
+        REACHC_HASH="$("${HS}/../scripts/git-hash.sh")"
+        export REACHC_HASH
         if [ "x${REACHC_RELEASE}" = "xY" ] ; then
           reachc_release "$@"
         elif [ "x${REACHC_PROFILE}" = "xY" ] ; then
