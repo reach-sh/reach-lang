@@ -13,7 +13,7 @@ clean: hs-clean
 
 .PHONY: build
 build: stack
-	docker build --tag=$(IMAGE):latest .
+	docker build --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" --tag=$(IMAGE):latest .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push

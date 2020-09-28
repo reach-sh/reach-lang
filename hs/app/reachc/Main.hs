@@ -1,11 +1,13 @@
 module Main (main) where
 
 import Control.Exception
+import Control.Monad
 import Options.Applicative
 import Reach.CompilerTool
 import Reach.Report
 import Reach.Version
 import System.Environment
+import System.Exit
 import System.FilePath
 
 data CompilerToolArgs = CompilerToolArgs
@@ -18,6 +20,7 @@ data CompilerToolArgs = CompilerToolArgs
 
 data CompilerToolEnv = CompilerToolEnv
   { cte_REACHC_ID :: Maybe String
+  , cte_REACHC_HASH :: Maybe String
   , cte_CI :: Maybe String -- most CI services
   , cte_GITHUB_ACTIONS :: Maybe String -- Github Actions
   , cte_TF_BUILD :: Maybe String -- Azure Pipelines
@@ -49,19 +52,20 @@ compiler =
     <*> strArgument ((metavar "SOURCE") <> value ("index.rsh"))
     <*> many (strArgument (metavar "EXPORTS..."))
 
-getCompilerArgs :: IO CompilerToolArgs
-getCompilerArgs = do
+getCompilerArgs :: String -> IO CompilerToolArgs
+getCompilerArgs versionCliDisp = do
   let opts =
         info
           (compiler <**> helper)
           (fullDesc
              <> progDesc "verify and compile an Reach program"
-             <> header ("reachc " <> versionStr <> " - Reach compiler"))
+             <> header versionCliDisp)
   execParser opts
 
 getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
   cte_REACHC_ID <- lookupEnv "REACHC_ID"
+  cte_REACHC_HASH <- lookupEnv "REACHC_HASH"
   cte_CI <- lookupEnv "CI"
   cte_GITHUB_ACTIONS <- lookupEnv "GITHUB_ACTIONS"
   cte_TF_BUILD <- lookupEnv "TF_BUILD"
@@ -77,8 +81,22 @@ shouldReport CompilerToolArgs {..} CompilerToolEnv {..} =
 
 main :: IO ()
 main = do
-  args <- getCompilerArgs
   env <- getCompilerEnv
+  let hashStr = case cte_REACHC_HASH env of
+        Just hash -> " (" <> hash <> ")"
+        Nothing -> ""
+  let versionCliDisp = ("reachc " <> versionStr <> hashStr <> " - Reach compiler")
+  rawArgs <- getArgs
+  when ("--version" `elem` rawArgs) $ do
+    putStrLn versionCliDisp
+    exitSuccess
+  when ("--numeric-version" `elem` rawArgs) $ do
+    putStrLn versionStr
+    exitSuccess
+  when ("--hash" `elem` rawArgs) $ do
+    maybe exitFailure putStrLn $ cte_REACHC_HASH env
+    exitSuccess
+  args <- getCompilerArgs versionCliDisp
   report <-
     case shouldReport args env of
       False -> return $ const $ return ()

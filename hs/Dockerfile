@@ -36,3 +36,5 @@ FROM deps as app
 COPY --from=build /build/bin/reachc /usr/bin/reachc
 WORKDIR /app
 ENTRYPOINT ["/usr/bin/reachc"]
+ARG REACHC_HASH
+ENV REACHC_HASH="${REACHC_HASH}"
