@@ -392,10 +392,10 @@ export const keccak256 = (...args: Array<any>) => {
 export const hexToBigNumber = (h: string): BigNumber => bigNumberify(hexTo0x(h));
 export const uint256ToBytes = (i: BigNumber): string => bigNumberToHex(i);
 
-export const bigNumberToHex = (u: num) => {
-  const size = 32; // bytes // TODO: support other sizes?
-  const format = 'ufixed256x0';
-  const nPos = bigNumberify(u).toTwos(8 * size);
+export const bigNumberToHex = (u: num, size: number = 32) => {
+  const width = 8 * size;
+  const format = `ufixed${width}x0`;
+  const nPos = bigNumberify(u).toTwos(width);
   // They took away padZeros so we have to use FixedNumber
   const nFix = ethers.FixedNumber.from(nPos.toString(), format);
   // XXX why do we slice off the 0x?

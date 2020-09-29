@@ -2,12 +2,12 @@
 // XXX: can stop doing this workaround once @types/algosdk is shippable
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
-import { BigNumber } from 'ethers';
+import ethers, { BigNumber } from 'ethers';
 import Timeout from 'await-timeout';
 
 import {
   CurrencyAmount, debug,
-  isBigNumber, bigNumberify,
+  isBigNumber, bigNumberify, bigNumberToHex,
   T_UInt256, T_Bool,
   getDEBUG, setDEBUG } from './shared';
 export * from './shared';
@@ -30,7 +30,8 @@ type Wallet = {
     sk: SecretKey, // TODO: describe length? (64)
   }
 type SignedTxn = {
-    opaque: undefined // TODO
+    txID: string,
+    blob: Uint8Array
   }
 type Txn = {
     txID: () => TxIdWrapper,
@@ -62,7 +63,10 @@ type TxId = string;
 type ApiCall<T> = {
   do: () => Promise<T>,
 };
+type LogicArg = Uint8Array | string;
+
 type CompileResultBytes = {
+  src: String,
   result: Uint8Array,
   hash: Address
 };
@@ -103,6 +107,14 @@ type CompiledBackend = {
   steps: { [key: string]: CompileResultBytes },
 };
 
+type Recv = {
+  didTimeout: false,
+  data: Array<ContractOut>,
+  value: BigNumber,
+  balance: BigNumber,
+  from: Address,
+} | { didTimeout: true };
+
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
   sendrecv: (...argz: any) => Promise<Recv>,
@@ -113,14 +125,6 @@ type ContractAttached = {
 
 // TODO
 type ContractOut = any;
-// XXX move up
-type Recv = {
-  didTimeout: false,
-  data: Array<ContractOut>,
-  value: BigNumber,
-  balance: BigNumber,
-  from: Address,
-} | { didTimeout: true };
 
 type ContractInfo = {
   getInfo?: () => Promise<ContractInfo>,
@@ -164,7 +168,7 @@ const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE |
 const getLastRound = async (): Promise<Round> =>
   (await algodClient.status().do())['last-round'];
 
-const waitForConfirmation = async (txId: TxId, untilRound: number): Promise<null | TxnInfo> => {
+const waitForConfirmation = async (txId: TxId, untilRound: number): Promise<TxnInfo> => {
   let lastRound: null | number = null;
   do {
     const lastRoundAfterCall: ApiCall<StatusInfo> = lastRound ?
@@ -178,18 +182,19 @@ const waitForConfirmation = async (txId: TxId, untilRound: number): Promise<null
       return pendingInfo;
     }
   } while (lastRound < untilRound);
-  return null;
+
+  throw { type: 'waitForConfirmation', txId, untilRound, lastRound };
 };
 
 const sendAndConfirm = async (
-  label:string, stx_or_stxs: SignedTxn | Array<SignedTxn>, txn: Txn
-): Promise<null | TxnInfo> => {
+  stx_or_stxs: SignedTxn | Array<SignedTxn>, txn: Txn
+): Promise<TxnInfo> => {
   const txID = txn.txID().toString();
   const untilRound = txn.lastRound;
   try {
     await algodClient.sendRawTransaction(stx_or_stxs).do();
   } catch (e) {
-    throw Error(`sendAndConfirm ${label} failed:\n${JSON.stringify(e)}\n\ton\n${JSON.stringify(stx_or_stxs)}`);
+    throw { type: 'sendRawTransaction', e };
   }
   return await waitForConfirmation(txID, untilRound);
 };
@@ -208,6 +213,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
 
   if ( s == 200 ) {
     debug(`compile ${label} succeeded: ${JSON.stringify(r)}`);
+    r.src = code;
     r.result = new Uint8Array(Buffer.from(r.result, "base64"));
     // debug(`compile transformed: ${JSON.stringify(r)}`);
     return r;
@@ -236,11 +242,11 @@ const sign_and_send_sync = async (
   txn: Txn,
 ): Promise<TxnInfo> => {
   const txn_s = txn.signTxn(sk);
-  const res = await sendAndConfirm(label, txn_s, txn);
-  if ( ! res ) {
-    throw Error(`${label} txn failed: ${JSON.stringify(txn)}`);
+  try {
+    return await sendAndConfirm(txn_s, txn);
+  } catch (e) {
+    throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${JSON.stringify(e)}`);
   }
-  return res;
 };
 
 // const fillTxn = async (round_width, txn) => {
@@ -264,7 +270,7 @@ export const transfer = async (from: Account, to: Account, value: BigNumber): Pr
 // XXX I'd use replaceAll if I could, but I'm pretty sure there's just one occurrence. It would be better to extend ConnectorInfo so these are functions
 const replaceAddr = (label: string, addr: Address, x:string): string =>
 x.replace(`"{{${label}}}"`,
-          `base32(${base32.encode(algosdk.addressPublicKey(addr)).toString()})`);
+          `base32(${base32.encode(algosdk.decodeAddress(addr).publicKey).toString()})`);
 
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
@@ -319,6 +325,19 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
 
 const ui8z = new Uint8Array();
 
+// XXX I'm using this to inspect the msgpack struct, but maybe just do a round-trip through encode/decode and see what I get?
+const base64ify = (x: any): String => Buffer.from(x).toString('base64');
+
+const format_failed_request = (e: any) => {
+  const ep = JSON.parse(JSON.stringify(e));
+  const db64 =
+    ep.req ?
+    (ep.req.data ? base64ify(ep.req.data) :
+     `no data, but ${JSON.stringify(Object.keys(ep.req))}`) :
+     `no req, but ${JSON.stringify(Object.keys(ep))}`;
+  return `\n${db64}\n${JSON.stringify(JSON.parse(e.text))}`;
+};
+
 export const connectAccount = async (networkAccount: NetworkAccount) => {
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
@@ -359,7 +378,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
       const funcName = `m${funcNum}`;
-      debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- START`);
+      const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeout_delay}`;
+      debug(`${dhead} --- START`);
       const handler = bin_comp.steps[funcName];
 
       const fake_res = {
@@ -378,13 +398,36 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       const actual_tys =
         [ T_UInt256, T_UInt256, T_Bool, T_UInt256, ...tys ];
       const munged_args =
-        // XXX this needs to be customized for Algorand
+        // XXX this needs to be customized for Algorand, so I don't have to safeify. Ideally munge would return Uint8Array for everything.
         actual_args.map((m, i) => actual_tys[i].munge(actual_tys[i].canonicalize(m)));
 
-      debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- PREPARE w/ ${JSON.stringify(munged_args)}`);
+      const safeify = (x: any): LogicArg => {
+        if ( isBigNumber(x) ) {
+          // XXX Does it matter that this is not msgpacked as an int?
+          const size = x.lt(bigNumberify(2).pow(64)) ? 8 : 32;
+          const h = '0x' + bigNumberToHex(x, size);
+          debug(`${x} =${size}> ${h}`);
+          const r = ethers.utils.arrayify(h);
+          return r;
+        } else if ( typeof x === 'boolean' ) {
+          return safeify(bigNumberify(x ? 1 : 0));
+        } else if ( typeof x === 'string' ) {
+          return x;
+        } else {
+          throw Error(`can't safeify ${JSON.stringify(x)}`);
+        }
+      };
+      const safe_args: Array<LogicArg> = munged_args.map(safeify);
+      safe_args.forEach((x) => { 
+        if (! ( typeof x === 'string' || x instanceof Uint8Array ) ) {
+          throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
+        }
+      });
+
+      debug(`${dhead} --- PREPARE`); // XXX display safe_args usefully
       const handler_with_args =
-        algosdk.makeLogicSig(handler.result, munged_args);
-      debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- PREPARED = '${JSON.stringify(handler_with_args)}'`);
+        algosdk.makeLogicSig(handler.result, safe_args);
+      debug(`${dhead} --- PREPARED`); // XXX display handler_with_args usefully, like with base64ify toBytes
 
       while ( true ){
         const params = await getTxnParams();
@@ -392,12 +435,12 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           const tdn = timeout_delay.toNumber();
           params.lastRound = lastRound + tdn;
           if ( params.firstRound > params.lastRound ) {
-            debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL/TIMEOUT`);
+            debug(`${dhead} --- FAIL/TIMEOUT`);
             return {didTimeout: true};
           }
         }
 
-        debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- ASSEMBLE w/ ${JSON.stringify(params)}`);
+        debug(`${dhead} --- ASSEMBLE w/ ${JSON.stringify(params)}`);
         const whichAppl =
           isHalt ?
           // We are treating it like any party can delete the application, but the docs say it may only be possible for the creator. The code appears to not care: https://github.com/algorand/go-algorand/blob/0e9cc6b0c2ddc43c3cfa751d61c1321d8707c0da/ledger/apply/application.go#L589
@@ -449,6 +492,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const txnFromHandler_s =
           algosdk.signLogicSigTransactionObject(
             txnFromHandler, handler_with_args);
+        debug(`txnFromHandler_s: ${base64ify(txnFromHandler_s.blob)}`);
         const txnToHandler_s = sign_me(txnToHandler);
         const txnToContract_s = sign_me(txnToContract);
         const txnFromContracts_s =
@@ -461,19 +505,56 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           txnFromHandler_s,
           txnToHandler_s,
           txnToContract_s,
-          ...txnFromContracts_s ];
+          ...txnFromContracts_s
+        ];
 
-        debug(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- SEND`);
-        const res = await sendAndConfirm(
-          `${shad}: ${label} sendrecv ${funcName}`,
-          txns_s,
-          txnAppl
-        );
-        if ( ! res ) {
-          // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
-          throw Error(`${shad}: ${label} sendrecv ${funcName} ${timeout_delay} --- FAIL: ${JSON.stringify(res)}`);
+        // XXX rather than bothering with this, add an option to algod to producing debugging output when running lsigs
+        if ( getDEBUG() ) {
+          const dr_apps: Array<any> = [
+            // XXX
+          ];
+          const dr_accts: Array<any> = [
+            // XXX
+          ];
+          void(dr_apps);
+          void(dr_accts);
+          const dr_srcs: Array<any> = [
+         //   new algosdk.modelsv2.DryrunSource("approv", bin_comp.appApproval.src, 0),
+            new algosdk.modelsv2.DryrunSource("lsig", handler.src, 1)
+          ];
+          for ( let i = 0; i < sim_txns.length; i++ ) {
+            dr_srcs.push(new algosdk.modelsv2.DryrunSource("lsig", bin_comp.ctc.src, 4 + i));
+          }
+          const dr = new algosdk.modelsv2.DryrunRequest({
+            txns: txns_s,
+            // accounts: dr_accts,
+            // apps: dr_apps,
+            sources: dr_srcs });
+          try {
+            const drr = await algodClient.dryrun(dr).do();
+            // XXX parse this, rather than just displaying it
+            console.log(`dryrun:\n${JSON.stringify(drr, null, 2)}`);
+          } catch (e: any) {
+            console.log(`${dhead} --- DRY-RUN:\n${format_failed_request(e)}`);
+          }
         }
 
+        debug(`${dhead} --- SEND: ${txns_s.length}`);
+        let res;
+        try {
+          // XXX somewhere in this, txnFromHandler appears to be dropped
+          res = await sendAndConfirm( txns_s, txnAppl );
+        } catch (e) {
+          if ( e.type == "sendRawTransaction" ) {
+            // XXX when this fails, it is dropping the lsig txn
+            throw Error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);
+          } else {
+            throw Error(`${dhead} --- FAIL:\n${JSON.stringify(e)}`);
+          }
+        }
+
+        // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
+        void(res);
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       }
     };
@@ -486,7 +567,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       timeout_delay: undefined | BigNumber
     ): Promise<Recv> => {
       const funcName = `m${funcNum}`;
-      debug(`${shad}: ${label} recv ${funcName} ${timeout_delay} --- START`);
+      const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
+      debug(`${dhead} --- START`);
       const handler = bin_comp.steps[funcName];
 
       const timeoutRound =
@@ -507,9 +589,22 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         if ( timeoutRound ) {
           query = query.maxRound(timeoutRound);
         }
-        debug(`query is ${JSON.stringify(query)}`);
-        const res = await query.do();
-        debug(`res is ${JSON.stringify(res)}`);
+        debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
+        let res;
+        try {
+          res = await query.do();
+        } catch (e) {
+          throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
+        }
+
+        if ( res.transactions.length == 0 ) {
+          debug(`${dhead} --- RESULT = empty`);
+          // XXX Look at the round in res and wait for a new round
+          await Timeout.set(1);
+          continue;
+        }
+
+        debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
 
         void(tys);
         void(evt_cnt);

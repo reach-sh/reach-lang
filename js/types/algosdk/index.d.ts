@@ -11,7 +11,8 @@ declare module 'algosdk' {
     sk: SecretKey, // TODO: describe length? (64)
   }
   declare type SignedTxn = {
-    opaque: undefined // TODO
+    txID: string,
+    blob: Uint8Array
   }
   declare type Txn = {
     txID: () => TxIdWrapper,
@@ -43,7 +44,12 @@ declare module 'algosdk' {
     do(): Promise<T>,
   };
 
-  declare function addressPublicKey(addr: Address): Uint8Array
+  declare type RawAddress = {
+    publicKey: Uint8Array,
+    checksum: Uint8Array
+  }
+
+  declare function decodeAddress(addr: Address): RawAddress
   declare function mnemonicToSecretKey(mn: string): Wallet
   declare function encodeObj(obj: any): Uint8Array
   declare function generateAccount(): Wallet
@@ -58,7 +64,7 @@ declare module 'algosdk' {
       from: Address, to: Address, amount: number, closeRemainderTo: undefined,
       note: Uint8Array, params: TxnParams
   ): Txn;
-  declare type LogicArg = number | Uint8Array | string;
+  declare type LogicArg = Uint8Array | string;
   declare function makeLogicSig(
     program: Uint8Array,
     args: Array<LogicArg>
@@ -117,6 +123,8 @@ declare module 'algosdk' {
     getTransactionParams(): ApiCall<TxnParams>
     accountInformation(addr: Address): ApiCall<AcctInfo>
     compile(code: String): ApiCall<CompileResult>
+    // XXX
+    dryrun(req: any): ApiCall<any>
   }
 
   declare class Indexer {
@@ -130,4 +138,7 @@ declare module 'algosdk' {
     // XXX
     searchForTransactions(): any
   }
+
+  // XXX
+  declare const modelsv2: any
 }
