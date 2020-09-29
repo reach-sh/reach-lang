@@ -107,7 +107,7 @@ jsCon = \case
   DLC_Null -> "null"
   DLC_Bool True -> "true"
   DLC_Bool False -> "false"
-  DLC_Int i -> jsApply "stdlib.bigNumberify" [ pretty i ]
+  DLC_Int i -> jsApply "stdlib.bigNumberify" [pretty i]
   DLC_Bytes b -> jsString $ B.unpack b
 
 jsArg :: DLArg -> Doc a
@@ -123,7 +123,7 @@ jsArg = \case
 
 jsDigest :: [DLArg] -> Doc a
 jsDigest as =
-    jsApply "stdlib.keccak256" $ map jsArg as
+  jsApply "stdlib.keccak256" $ map jsArg as
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply ctxt = \case
@@ -187,9 +187,14 @@ jsExpr ctxt = \case
     case ctxt_simulate ctxt of
       False -> emptyDoc
       True ->
-        jsApply "sim_r.txns.push" 
-          [ jsObject $ M.fromList $ [ ("to"::String, jsArg who)
-                                    , ("amt"::String, jsArg amt) ] ]
+        jsApply
+          "sim_r.txns.push"
+          [ jsObject $
+              M.fromList $
+                [ ("to" :: String, jsArg who)
+                , ("amt" :: String, jsArg amt)
+                ]
+          ]
   DLE_Wait _ amt ->
     "await" <+> jsApply "ctc.wait" [jsArg amt]
   DLE_PartSet _ who what ->
@@ -284,15 +289,22 @@ jsETail ctxt = \case
     case ctxt_simulate ctxt of
       False -> kp
       True ->
-        vsep [ "sim_r.nextSt =" <+> nextSt' <> semi
-             , "sim_r.isHalt =" <+> isHalt' <> semi ]
-    where kp = jsETail ctxt k
-          (nextSt', isHalt') =
-            case msvs of
-              Nothing -> ( jsCon $ DLC_Bytes ""
-                         , jsCon $ DLC_Bool True )
-              Just svs -> ( jsDigest (map DLA_Var svs)
-                          , jsCon $ DLC_Bool False )
+        vsep
+          [ "sim_r.nextSt =" <+> nextSt' <> semi
+          , "sim_r.isHalt =" <+> isHalt' <> semi
+          ]
+    where
+      kp = jsETail ctxt k
+      (nextSt', isHalt') =
+        case msvs of
+          Nothing ->
+            ( jsCon $ DLC_Bytes ""
+            , jsCon $ DLC_Bool True
+            )
+          Just svs ->
+            ( jsDigest (map DLA_Var svs)
+            , jsCon $ DLC_Bool False
+            )
   ET_ToConsensus _ fs_ok which from_me msg mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
@@ -332,13 +344,16 @@ jsETail ctxt = \case
             where
               svs_as = map DLA_Var svs
               amtp = jsArg amt
-              sim_body = vsep [ "const sim_r = { txns: [] };"
-                              , "sim_r.prevSt =" <+> jsDigest svs_as <> semi
-                              , k_defp
-                              , sim_body_core
-                              , "return sim_r;" ]
+              sim_body =
+                vsep
+                  [ "const sim_r = { txns: [] };"
+                  , "sim_r.prevSt =" <+> jsDigest svs_as <> semi
+                  , k_defp
+                  , sim_body_core
+                  , "return sim_r;"
+                  ]
               sim_body_core = jsETail ctxt'_sim k_ok
-              ctxt'_sim = ctxt' { ctxt_simulate = True }
+              ctxt'_sim = ctxt' {ctxt_simulate = True}
               vs = jsArray $ (map jsVar svs) ++ (map jsArg args)
           Nothing ->
             jsApply
@@ -353,11 +368,11 @@ jsETail ctxt = \case
     case ctxt_simulate ctxt of
       False ->
         jsAsn ctxt True asn
-        <> hardline
-        <> jsWhile (jsBlock ctxt cond) (jsETail ctxt body)
-        <> hardline
-        <> jsETail ctxt k
-        -- XXX record while details
+          <> hardline
+          <> jsWhile (jsBlock ctxt cond) (jsETail ctxt body)
+          <> hardline
+          <> jsETail ctxt k
+      -- XXX record while details
       True ->
         -- XXX simulate while by emitting an if
         emptyDoc
@@ -365,9 +380,9 @@ jsETail ctxt = \case
     case ctxt_simulate ctxt of
       False ->
         jsAsn ctxt False asn
-        <> hardline
-        <> "continue"
-        <> semi
+          <> hardline
+          <> "continue"
+          <> semi
       True ->
         -- XXX simulate continue by looking at while details
         emptyDoc
