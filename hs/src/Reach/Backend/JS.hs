@@ -418,7 +418,7 @@ jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
     preamble =
       vsep
         [ pretty $ "// Automatically generated with Reach " ++ versionStr
-        , "export const _version =" <+> jsString versionStr
+        , "export const _version =" <+> jsString versionStr <> semi
         ]
     partsp = map (uncurry jsPart) $ M.toList pm
     cnpsp = map (uncurry jsCnp) $ M.toList cr
