@@ -31,7 +31,7 @@ A single Reach program incorporates all aspects of a @|DApp|:
 In Reach, a programmer only needs to specify the actions of @tech{participants}---what they do individually and what they do in unison.
 The Reach compiler automatically derives a @tech{contract} for the @tech{consensus network} via a @tech{connector} that enforces these rules.
 
-@section[#:tag "over-minimal"]{A minial Reach program}
+@section[#:tag "over-minimal"]{A minimal Reach program}
 
 Let's look at a simple Reach program where two principals, Alice and Bob, interact. In this @|DApp|, Alice has some information that Bob might want and she has an amount of network tokens in mind that she'd like to trade for it.
 
