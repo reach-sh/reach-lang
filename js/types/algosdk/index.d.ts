@@ -10,9 +10,10 @@ declare module 'algosdk' {
     addr: Address,
     sk: SecretKey, // TODO: describe length? (64)
   }
-  declare type SignedTxn = {
+  declare type SignedTxn = Uint8Array;
+  declare type SignedTxn_LSig = {
     txID: string,
-    blob: Uint8Array
+    blob: SignedTxn
   }
   declare type Txn = {
     txID: () => TxIdWrapper,
@@ -71,7 +72,7 @@ declare module 'algosdk' {
   ): LogicSig;
   declare function signLogicSigTransactionObject(
     txn: Txn, lsig: LogicSig
-  ): SignedTxn;
+  ): SignedTxn_LSig;
   declare function makeApplicationCreateTxn(
     from: Address,
     suggestedParams: TxnParams,

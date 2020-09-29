@@ -29,10 +29,7 @@ type Wallet = {
     addr: Address,
     sk: SecretKey, // TODO: describe length? (64)
   }
-type SignedTxn = {
-    txID: string,
-    blob: Uint8Array
-  }
+type SignedTxn = Uint8Array;
 type Txn = {
     txID: () => TxIdWrapper,
     lastRound: number,
@@ -191,8 +188,11 @@ const sendAndConfirm = async (
 ): Promise<TxnInfo> => {
   const txID = txn.txID().toString();
   const untilRound = txn.lastRound;
+  const req = algodClient.sendRawTransaction(stx_or_stxs);
+  // @ts-ignore XXX
+  debug(`sendAndConfirm: ${base64ify(req.txnBytesToPost)}`);
   try {
-    await algodClient.sendRawTransaction(stx_or_stxs).do();
+    await req.do();
   } catch (e) {
     throw { type: 'sendRawTransaction', e };
   }
@@ -260,7 +260,7 @@ export const transfer = async (from: Account, to: Account, value: BigNumber): Pr
 
   const note = algosdk.encodeObj('@reach-sh/ALGO.mjs transfer');
   return await sign_and_send_sync(
-    `transfer ${from} ${to} ${valuen}`,
+    `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuen}`,
     sender.sk,
     algosdk.makePaymentTxnWithSuggestedParams(
       sender.addr, receiver, valuen, undefined, note, await getTxnParams(),
@@ -335,7 +335,8 @@ const format_failed_request = (e: any) => {
     (ep.req.data ? base64ify(ep.req.data) :
      `no data, but ${JSON.stringify(Object.keys(ep.req))}`) :
      `no req, but ${JSON.stringify(Object.keys(ep))}`;
-  return `\n${db64}\n${JSON.stringify(JSON.parse(e.text))}`;
+  const msg = e.text ? JSON.parse(e.text) : e;
+  return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount) => {
@@ -491,14 +492,14 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const txnAppl_s = sign_me(txnAppl);
         const txnFromHandler_s =
           algosdk.signLogicSigTransactionObject(
-            txnFromHandler, handler_with_args);
-        debug(`txnFromHandler_s: ${base64ify(txnFromHandler_s.blob)}`);
+            txnFromHandler, handler_with_args).blob;
+        debug(`txnFromHandler_s: ${base64ify(txnFromHandler_s)}`);
         const txnToHandler_s = sign_me(txnToHandler);
         const txnToContract_s = sign_me(txnToContract);
         const txnFromContracts_s =
           txnFromContracts.map(
             (txn: Txn) => 
-            algosdk.signLogicSigTransactionObject(txn, ctc_prog));
+            algosdk.signLogicSigTransactionObject(txn, ctc_prog).blob);
 
         const txns_s = [
           txnAppl_s,
@@ -509,7 +510,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         ];
 
         // XXX rather than bothering with this, add an option to algod to producing debugging output when running lsigs
-        if ( getDEBUG() ) {
+        if ( false && getDEBUG() ) {
           const dr_apps: Array<any> = [
             // XXX
           ];
