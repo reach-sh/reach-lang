@@ -51,22 +51,17 @@ type NetworkAccount = {
   getBalance?: (...xs: any) => any, // TODO: better type
 } | Wallet; // required to deploy/attach
 
-// TODO: better type on these. Should they be the same?
-type ContractArg = any;
-type ContractOut = any;
-
 // XXX Merge with ALGO and put in shared
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
-  // XXX update this; some of these numbers are coming in from backend as BigNumber
   sendrecv: (
-    label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+    label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
     args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-    timeout_delay: undefined | number | BigNumber, sim_p: any
+    timeout_delay: BigNumber | false, sim_p: any,
   ) => Promise<Recv>,
   recv: (
-    label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
-    timeout_delay: number | BigNumber | undefined,
+    label: string, okNum: BigNumber, ok_cnt: BigNumber, out_tys: Array<TyContract<any>>,
+    timeout_delay: BigNumber | false,
   ) => Promise<Recv>,
   wait: (delta: BigNumber) => Promise<BigNumber>,
   iam: (some_addr: Address) => Address,
@@ -74,7 +69,7 @@ type ContractAttached = {
 
 type Recv = {
   didTimeout: false,
-  data: Array<ContractOut>,
+  data: Array<any>,
   value: BigNumber,
   balance: BigNumber,
   from: Address,
@@ -90,13 +85,13 @@ type ContractInfo = {
 
 // For when you init the contract with the 1st message
 type ContractInitInfo = {
-  args: Array<ContractArg>,
+  args: Array<any>,
   value: BigNumber,
 };
 
 // For either deployment case
 type ContractInitInfo2 = {
-  argsMay: Maybe<Array<ContractArg>>,
+  argsMay: Maybe<Array<any>>,
   value: BigNumber,
 };
 
@@ -370,9 +365,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           throw Error(`Cannot wait yet; contract is not actually deployed`);
         },
         sendrecv: async (
-          label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+          label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
           args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-          timeout_delay: undefined | number | BigNumber, sim_p: any
+          timeout_delay: BigNumber | false, sim_p: any,
         ): Promise<Recv> => {
           debug(`${shad}: ${label} sendrecv m${funcNum} (deferred deploy)`);
           void(evt_cnt);
@@ -480,7 +475,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     })();
 
     const callC = async (
-      funcName: string, lastBlock: number, args: Array<Array<ContractArg>>, value: BigNumber,
+      funcName: string, lastBlock: number, args: Array<Array<any>>, value: BigNumber,
     ): Promise<{wait: () => Promise<TransactionReceipt>}> => {
       return (await getC())[funcName]([lastBlock, ...args], { value });
     };
@@ -511,9 +506,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const getInfo = async () => await infoP;
 
     const sendrecv_impl = async (
-      label: string, funcNum: number, tys: Array<TyContract<any>>,
+      label: string, funcNum: BigNumber, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-      timeout_delay: undefined | number | BigNumber
+      timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       const funcName = `m${funcNum}`;
       if (tys.length !== args.length) {
@@ -581,9 +576,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     };
 
     const sendrecv = async (
-      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+      label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-      timeout_delay: undefined | number | BigNumber, sim_p: any
+      timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
       void(evt_cnt);
       void(sim_p);
@@ -592,8 +587,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv_impl = async (
-      label: string, okNum: number, out_tys: Array<TyContract<any>>,
-      timeout_delay: number | BigNumber | undefined,
+      label: string, okNum: BigNumber, out_tys: Array<TyContract<any>>,
+      timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       const lastBlock = await getLastBlock();
       const ok_evt = `e${okNum}`;
@@ -644,8 +639,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     };
 
     const recv = async (
-      label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
-      timeout_delay: number | BigNumber | undefined,
+      label: string, okNum: BigNumber, ok_cnt: BigNumber, out_tys: Array<TyContract<any>>,
+      timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
       return await recv_impl(label, okNum, out_tys, timeout_delay);
