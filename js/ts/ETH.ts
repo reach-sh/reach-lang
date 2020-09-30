@@ -23,6 +23,7 @@ export * from './shared';
 type Provider = ethers.providers.Provider;
 type TransactionReceipt = ethers.providers.TransactionReceipt;
 type Wallet = ethers.Wallet;
+type Log = ethers.providers.Log;
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
@@ -32,17 +33,12 @@ type Wallet = ethers.Wallet;
 // ganache-core doesn't work with npm version 14 yet
 // https://github.com/trufflesuite/ganache-cli/issues/732#issuecomment-623782405
 
-// XXX move up
-type DeployMode = 'DM_firstMsg' | null; // TODO
+type DeployMode = 'DM_firstMsg' | 'DM_constructor';
 type Backend = {_Connectors: {ETH: {
   ABI: string,
   Bytecode: string,
   deployMode: DeployMode
 }}};
-type ParentCtc = {
-  reallyDeploy?: (...args: any) => any,
-  getInfo?: () => Promise<ContractInfo>,
-};
 
 
 // TODO: a wrapper obj with smart constructor?
@@ -54,45 +50,26 @@ type NetworkAccount = {
   getBalance?: (...xs: any) => any, // TODO: better type
 } | Wallet; // required to deploy/attach
 
-// TODO: better type on this
+// TODO: better type on these. Should they be the same?
 type ContractArg = any;
-
-// TODO: this type needs serious help.
-// It has several variants where stuff is missing that should be better categorized.
-type Contract = {
-  address?: Address,
-  creation_block?: number,
-
-  // More fields indicating initialization status
-  args?: Array<Array<ContractArg>>, // See comment on reallyDeploy
-  value?: BigNumber, // or number or string or something.
-
-  // internal fields
-  // * not required to call acc.attach(bin, ctc)
-  // * required by backend
-  // TODO: better types on these
-  sendrecv?: (...argz: any) => any,
-  recv?: (...argz: any) => any,
-
-  getInfo?: () => Promise<ContractInfo>,
-  creator?: Address // XXX
-
-  wait?: (...argz: any) => any,
-  iam?: (some_addr: Address) => Address,
-};
+type ContractOut = any;
 
 // XXX Merge with ALGO and put in shared
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
-  sendrecv: (...argz: any) => Promise<Recv>,
-  recv: (...argz: any) => Promise<Recv>,
-  wait: (...argz: any) => any,
+  sendrecv: (
+    label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+    args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+    timeout_delay: undefined | number | BigNumber, sim_p: any
+  ) => Promise<Recv>,
+  recv: (
+    label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
+    timeout_delay: number | BigNumber | undefined,
+  ) => Promise<Recv>,
+  wait: (delta: BigNumber) => Promise<BigNumber>,
   iam: (some_addr: Address) => Address,
 };
 
-// TODO
-type ContractOut = any;
-// XXX move up
 type Recv = {
   didTimeout: false,
   data: Array<ContractOut>,
@@ -102,25 +79,24 @@ type Recv = {
 } | { didTimeout: true };
 
 type ContractInfo = {
-  getInfo?: () => Promise<ContractInfo>,
   address: Address,
   creation_block: number,
-  args: Array<Array<ContractArg>>,
-  value: BigNumber,
-  creator: Address, // XXX
+  creator: Address,
   transactionHash?: Hash,
-}
-
-type ContractNoInfo = {
-  getInfo: () => Promise<ContractInfo>,
-  address?: Address,
-  creation_block?: number,
-  args?: Array<Array<ContractArg>>,
-  value?: BigNumber,
-  creator?: Address, // XXX
+  init?: ContractInitInfo,
 };
 
-type CtcOrInfo = Contract | ContractInfo | ContractNoInfo;
+// For when you init the contract with the 1st message
+type ContractInitInfo = {
+  args: Array<ContractArg>,
+  value: BigNumber,
+};
+
+// For either deployment case
+type ContractInitInfo2 = {
+  argsMay: Maybe<Array<ContractArg>>,
+  value: BigNumber,
+};
 
 type Account = {
   // TODO: better types for these
@@ -128,6 +104,25 @@ type Account = {
   attach?: (...argz: any) => any,
   networkAccount: NetworkAccount,
 };
+
+// Given a func that takes an optional arg, and a Maybe arg:
+// f: (arg?: X) => Y
+// arg: Maybe<X>
+//
+// You can apply the function like this:
+// f(...argMay)
+type Some<T> = [T];
+type None = [];
+type Maybe<T> = None | Some<T>;
+function isNone<T>(m: Maybe<T>): m is None {
+  return m.length === 0;
+}
+function isSome<T>(m: Maybe<T>): m is Some<T> {
+  return !isNone(m);
+}
+const Some = <T>(m: T): Some<T> => [m];
+const None: None = [];
+void(isSome);
 
 const connectorMode: ConnectorMode = getConnectorMode();
 
@@ -314,99 +309,179 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   if (!address) { throw Error(`Expected networkAccount.address: ${networkAccount}`); }
   const shad = address.substring(2, 6);
 
-  const extractInfo = async (ctcOrInfo: CtcOrInfo): Promise<ContractInfo> => {
-    const { getInfo, address, creation_block, args, value, creator } = ctcOrInfo;
-    if (address && creation_block && args && value != undefined && creator) {
-      return { address, creation_block, args, value, creator };
-    } else if (getInfo) {
-      return extractInfo(await getInfo());
+  const iam = (some_addr: Address): Address => {
+    if (some_addr == address) {
+      return address;
     } else {
-      throw Error(`Expected contract information, got something else: ${JSON.stringify(ctcOrInfo)}`);
+      throw Error(`I should be ${some_addr}, but am ${address}`);
     }
   };
 
-  const attach = async (bin: Backend, parentCtc: ParentCtc): Promise<ContractAttached> => {
-    const ABI = JSON.parse(bin._Connectors.ETH.ABI);
-
-    let info: null | ContractInfo = null;
-    let _waitForInfo: null | ((...args: any) => Promise<any>) = null;
-    if (parentCtc.reallyDeploy) {
-      const reallyDeploy = parentCtc.reallyDeploy;
-      _waitForInfo = async (internal, args, value) => {
-        if (!internal) {
-          return false;
-        }
-        if (args == null || value == null) {
-          throw Error(`Out of order sendrecv`);
-        }
-        // [args] because: see comment on reallyDeploy
-        const deployRes = await reallyDeploy([args], value);
-        debug(`${shad}: waitForInfo deployRes = ${JSON.stringify(deployRes)}`);
-        const { transactionHash, ...deployInfo } = deployRes;
-        info = deployInfo;
-        _waitForInfo = async () => true;
-        return { wait: async () => ({ transactionHash }) };
-      };
-    } else {
-      _waitForInfo = async () => {
-        info = await extractInfo(parentCtc);
-        return true;
-      };
+  const deploy = async (bin: Backend): Promise<ContractAttached> => {
+    if (!ethers.Signer.isSigner(networkAccount)) {
+      throw Error(`Signer required to deploy, ${networkAccount}`);
     }
 
-    let _ethersC: null | ethers.Contract = null;
-    let last_block: null | number = null;
-    const getC = async () => {
-      if (!_waitForInfo) { throw Error(`impossible: _waitForInfo is null`); }
-      if (!ethers.Signer.isSigner(networkAccount)) {
-        throw Error(`networkAccount must be a Signer (read: Wallet). ${networkAccount}`);
-      }
-      if (_ethersC) { return _ethersC; }
-      await _waitForInfo(true);
-      if (!info) { throw Error(`impossible: info is null`); }
-      await verifyContract(info, bin);
-      debug(`${shad}: attach to creation at ${info.creation_block}`);
-      last_block = info.creation_block;
-      _ethersC = new ethers.Contract(info.address, ABI, networkAccount);
-      return _ethersC;
-    };
-    const callC = async (
-      funcName: string, args: Array<Array<ContractArg>>, value: BigNumber,
-      // TODO: find better name for this
-    ): Promise<{wait: () => Promise<TransactionReceipt>}> => {
-      if (parentCtc.reallyDeploy && funcName == `m1`) {
-        if (!_waitForInfo) { throw Error(`impossible: _waitForInfo is null`); }
-        return await _waitForInfo(true, args, value);
-      } else {
-        return (await getC())[funcName]([last_block, ...args], { value });
-      }
+    const {infoP, resolveInfo} = (() => {
+      let resolveInfo = (info: ContractInfo) => { void(info); };
+      const infoP = new Promise<ContractInfo>(resolve => {
+        resolveInfo = resolve;
+      });
+      return {infoP, resolveInfo};
+    })();
+
+    const performDeploy = async (
+      init?: ContractInitInfo
+    ): Promise<ContractAttached> => {
+      debug(`${shad}: performDeploy with ${JSON.stringify(init)}`);
+      const { argsMay, value } = initOrDefaultArgs(init);
+
+      const { ABI, Bytecode } = bin._Connectors.ETH;
+      const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
+
+      const contract = await factory.deploy(...argsMay, { value });
+      const deploy_r = await contract.deployTransaction.wait();
+      const info: ContractInfo = {
+        address: contract.address,
+        creation_block: deploy_r.blockNumber,
+        creator: address,
+        transactionHash: deploy_r.transactionHash,
+        init,
+      };
+
+      resolveInfo(info);
+      return await attach(bin, infoP);
     };
 
-    let _getInfo = async (): Promise<ContractInfo> => {
-      if (!_waitForInfo) { throw Error(`impossible: _waitForInfo is null`); }
-      while (!await _waitForInfo(false)) {
-        await Timeout.set(1);
-      }
-      _getInfo = async (): Promise<ContractInfo> => {
-        if (!info) { throw Error(`impossible: info is null`); }
-        return info;
+    const attachDeferDeploy = (): ContractAttached => {
+      // impl starts with a shim that deploys on first sendrecv,
+      // then replaces itself with the real impl once deployed.
+      let impl: ContractAttached = {
+        recv: async (...args) => {
+          void(args);
+          throw Error(`Cannot recv yet; contract is not actually deployed`);
+        },
+        wait: async (...args) => {
+          // Wait times are relative to contract events
+          // Wait without an initial contract event is nonsense
+          void(args);
+          throw Error(`Cannot wait yet; contract is not actually deployed`);
+        },
+        sendrecv: async (
+          label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+          args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+          timeout_delay: undefined | number | BigNumber, sim_p: any
+        ): Promise<Recv> => {
+          debug(`${shad}: ${label} sendrecv m${funcNum} (deferred deploy)`);
+          void(sim_p);
+          // TODO: munge/unmunge roundtrip?
+          void(tys);
+          void(out_tys);
+
+          assert(funcNum === 1);
+          assert(evt_cnt === 1);
+          assert(timeout_delay === undefined);
+
+          // shim impl is replaced with real impl
+          impl = await performDeploy({args, value});
+
+          // simulated recv
+          return {
+            didTimeout: false,
+            data: args,
+            value,
+            // Because this is the 1st sendrecv, balance = value
+            balance: value,
+            from: address,
+          };
+        },
+        getInfo: async () => {
+          // Danger: deadlock possible
+          return await infoP;
+        },
+        // iam doesn't make sense to check before ctc deploy, but it is harmless.
+        iam,
       };
-      return await _getInfo();
+      // Return a wrapper around the impl. This obj and its fields do not mutate,
+      // but the fields are closures around a mutating ref to impl.
+      return {
+        sendrecv: (...args) => impl.sendrecv(...args),
+        recv: (...args) => impl.recv(...args),
+        wait: (...args) => impl.wait(...args),
+        getInfo: (...args) => impl.getInfo(...args),
+        iam: (...args) => impl.iam(...args),
+      }
+    }
+
+    switch (bin._Connectors.ETH.deployMode) {
+      case 'DM_firstMsg':
+        return attachDeferDeploy();
+      case 'DM_constructor':
+        return await performDeploy();
+      default:
+        throw Error(`Unrecognized deployMode: ${bin._Connectors.ETH.deployMode}`);
     };
-    const getInfo = async (): Promise<ContractInfo> => {
-      return await _getInfo();
-    };
+  };
+
+  const attach = async (
+    bin: Backend,
+    infoP: Promise<ContractInfo>,
+  ): Promise<ContractAttached> => {
+    // unofficially: infoP can also be ContractAttached
+    // This should be considered deprecated
+    // TODO: remove at next Reach version bump?
+    // @ts-ignore
+    if (infoP.getInfo) {
+      // @ts-ignore
+      infoP = infoP.getInfo();
+    }
+
+    const ABI = JSON.parse(bin._Connectors.ETH.ABI);
+
+    // Attached state
+    const {getLastBlock, setLastBlock} = (() => {
+      let lastBlock: number | null = null;
+      const setLastBlock = (n: number): void => {
+        lastBlock = n;
+      };
+      const getLastBlock = async (): Promise<number> => {
+        if (typeof lastBlock === 'number') { return lastBlock; }
+        const info = await infoP;
+        setLastBlock(info.creation_block);
+        return info.creation_block;
+      }
+      return {getLastBlock, setLastBlock};
+    })();
 
     const updateLast = (o: {blockNumber?: number}): void => {
       if (!o.blockNumber) { throw Error(`Expected blockNumber, ${o}`); }
-      last_block = o.blockNumber;
+      setLastBlock(o.blockNumber);
     };
 
-    // XXX move up
-    type E = {topics: Array<string>, data: string};
-    const getEventData = (
-      ethersC: ethers.Contract, ok_evt: string, ok_e: E
-    ): [BigNumber, Array<any>] => {
+    const getC = (() => {
+      let _ethersC: ethers.Contract | null = null;
+      return async () => {
+        if (_ethersC) { return _ethersC; }
+        const info = await infoP;
+        await verifyContract(info, bin);
+        if (!ethers.Signer.isSigner(networkAccount)) {
+          throw Error(`networkAccount must be a Signer (read: Wallet). ${networkAccount}`);
+        }
+        _ethersC = new ethers.Contract(info.address, ABI, networkAccount);
+        return _ethersC;
+      }
+    })();
+
+    const callC = async (
+      funcName: string, lastBlock: number, args: Array<Array<ContractArg>>, value: BigNumber,
+    ): Promise<{wait: () => Promise<TransactionReceipt>}> => {
+      return (await getC())[funcName]([lastBlock, ...args], { value });
+    };
+
+    const getEventData = async (
+      ok_evt: string, ok_e: Log
+    ): Promise<[BigNumber, Array<any>]> => {
+      const ethersC = await getC();
       const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
       const { args } = ethersC.interface.parseLog(ok_e);
       const [ok_bal, ...ok_vals] = ok_args_abi.map(a => args[a.name]);
@@ -414,60 +489,41 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       return [ok_bal, ok_vals];
     };
 
-    const iam = (some_addr: Address): Address => {
-      if (some_addr == address) {
-        return address;
-      } else {
-        throw Error(`I should be ${some_addr}, but am ${address}`);
-      }
-    };
+    const getLogs = async (
+      fromBlock: number, toBlock: number, ok_evt: string,
+    ): Promise<Array<Log>> => {
+      const ethersC = await getC();
+      return await provider.getLogs({
+        fromBlock,
+        toBlock,
+        address: ethersC.address,
+        topics: [ethersC.interface.getEventTopic(ok_evt)],
+      });
+    }
 
-    const wait = async (delta: BigNumber): Promise<BigNumber> => {
-      if (!last_block) { throw Error(`Impossible: last_block is null`); }
-      // Don't wait from current time, wait from last_block
-      // XXX
-      debug(`=====Waiting ${delta} from ${last_block}: ${address}`);
-      const p = await waitUntilTime(add(last_block, delta));
-      debug(`=====Done waiting ${delta} from ${last_block}: ${address}`);
-      return p;
-    };
+    const getInfo = async () => await infoP;
 
-    const sendrecv_top = async (
-      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
-      args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-      timeout_delay: undefined | number | BigNumber, sim_p: any
-    ): Promise<Recv> => {
-      void(sim_p);
-      void(evt_cnt);
-      return sendrecv(label, funcNum, tys, args, value, out_tys, timeout_delay);
-    };
-
-    // XXX: receive expected tys of output and use them to unmunge
-    /* eslint require-atomic-updates: off */
-    const sendrecv = async (
+    const sendrecv_impl = async (
       label: string, funcNum: number, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
       timeout_delay: undefined | number | BigNumber
     ): Promise<Recv> => {
-      // XXX use tys
-      // TODO: support BigNumber delays?
-      timeout_delay = toNumberMay(timeout_delay);
       const funcName = `m${funcNum}`;
-      // https://github.com/ethereum/web3.js/issues/2077
       if (tys.length !== args.length) {
         throw Error(`tys.length (${tys.length}) !== args.length (${args.length})`);
       }
       const munged = args.map((m, i) => tys[i].munge(tys[i].canonicalize(m)));
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${JSON.stringify(munged)}`);
-      let block_send_attempt = (last_block || 0);
+      const lastBlock = await getLastBlock();
+      let block_send_attempt = lastBlock;
       let block_repeat_count = 0;
-      while (!timeout_delay || lt(block_send_attempt, add((last_block || 0), timeout_delay))) {
+      while (!timeout_delay || lt(block_send_attempt, add(lastBlock, timeout_delay))) {
         let r_maybe: TransactionReceipt | null = null;
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
-          const r_fn = await callC(funcName, munged, value);
+          const r_fn = await callC(funcName, lastBlock,  munged, value);
           r_maybe = await r_fn.wait();
         } catch (e) {
           debug(e);
@@ -489,7 +545,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             console.log(munged);
             throw Error(`${shad}: ${label} send ${funcName} ${timeout_delay} --- REPEAT @ ${block_send_attempt} x ${block_repeat_count}`);
           }
-          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY FAIL --- ${last_block} ${current_block} ${block_repeat_count} ${block_send_attempt}`);
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY FAIL --- ${lastBlock} ${current_block} ${block_repeat_count} ${block_send_attempt}`);
           continue;
         }
 
@@ -502,9 +558,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
         // It may be the case that the next line could speed things up?
         // last_block = ok_r.blockNumber;
+        // XXX ^ but do not globally mutate lastBlock.
+        // wait relies on lastBlock to refer to the last ctc event
         void(ok_r);
 
-        return await recv(label, funcNum, out_tys, timeout_delay);
+        return await recv_impl(label, funcNum, out_tys, timeout_delay);
       }
 
       // XXX If we were trying to join, but we got sniped, then we'll
@@ -515,40 +573,34 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       return {didTimeout: true};
     };
 
-    // XXX: receive expected tys of output and use them to unmunge
-    const recv_top = async (
-      label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
-      timeout_delay: number | BigNumber | undefined,
+    const sendrecv = async (
+      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+      args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+      timeout_delay: undefined | number | BigNumber, sim_p: any
     ): Promise<Recv> => {
-      void(ok_cnt);
-      return recv(label, okNum, out_tys, timeout_delay);
-    };
+      void(evt_cnt);
+      void(sim_p);
+      return await sendrecv_impl(label, funcNum, tys, args, value, out_tys, timeout_delay);
+    }
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
-    const recv = async (label: string, okNum: number, out_tys: Array<TyContract<any>>,
+    const recv_impl = async (
+      label: string, okNum: number, out_tys: Array<TyContract<any>>,
       timeout_delay: number | BigNumber | undefined,
     ): Promise<Recv> => {
-      // TODO: support BigNumber delays?
-      timeout_delay = toNumberMay(timeout_delay);
-      const ethersC = (await getC());
+      const lastBlock = await getLastBlock();
       const ok_evt = `e${okNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
 
-      if(!last_block) { throw Error(`impossible: block_poll_start is null`)};
-      let block_poll_start: number = last_block;
+      let block_poll_start: number = lastBlock;
       let block_poll_end = block_poll_start;
-      while (!timeout_delay || lt(block_poll_start, add(last_block, timeout_delay))) {
+      while (!timeout_delay || lt(block_poll_start, add(lastBlock, timeout_delay))) {
         // console.log(
         //   `~~~ ${label} is polling [${block_poll_start}, ${block_poll_end}]\n` +
         //     `  ~ ${label} will stop polling at ${last_block} + ${timeout_delay} = ${last_block + timeout_delay}`,
         // );
 
-        const es = await provider.getLogs({
-          fromBlock: block_poll_start,
-          toBlock: block_poll_end,
-          address: ethersC.address,
-          topics: [ethersC.interface.getEventTopic(ok_evt)],
-        });
+        const es = await getLogs(block_poll_start, block_poll_end, ok_evt);
         if (es.length == 0) {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);
           block_poll_start = block_poll_end;
@@ -562,7 +614,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY`);
 
           const ok_e = es[0];
-
           const ok_r = await fetchAndRejectInvalidReceiptFor(ok_e.transactionHash);
           void(ok_r);
           const ok_t = await provider.getTransaction(ok_e.transactionHash);
@@ -570,7 +621,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           // debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
           updateLast(ok_t);
-          const [ok_bal, ok_vals] = getEventData(ethersC, ok_evt, ok_e);
+          const [ok_bal, ok_vals] = await getEventData(ok_evt, ok_e);
           if (ok_vals.length !== out_tys.length) {
             throw Error(`Expected ${out_tys.length} values from event data, but got ${ok_vals.length}.`);
           }
@@ -585,47 +636,25 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       return {didTimeout: true} ;
     };
 
-    return { sendrecv: sendrecv_top, recv: recv_top, iam, wait, getInfo };
-  };
-
-  // https://docs.ethers.io/v5/api/contract/contract-factory/
-  const deploy = async (bin: Backend): Promise<ContractAttached> => {
-    if (!ethers.Signer.isSigner(networkAccount)) {
-      throw Error(`Signer required to deploy, ${networkAccount}`);
-    }
-    const { ABI, Bytecode, deployMode } = bin._Connectors.ETH;
-    const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
-
-    // args : Option(Array(string))
-    // where Option is represented as [] for None, and [x] for Some(x)
-    // In the Some case, the args are intentionally tupled into a single Array arg
-    const reallyDeploy = async (
-      args: Array<Array<ContractArg>>, value: BigNumber
-    ): Promise<ContractInfo> => {
-      debug(`${shad}: reallyDeploying with ${JSON.stringify([args, value])}`);
-      const contract = await factory.deploy(...args, { value });
-      // Wait for it to actually be deployed.
-      const deploy_r = await contract.deployTransaction.wait();
-
-      return {
-        address: contract.address,
-        creation_block: deploy_r.blockNumber,
-        args,
-        value,
-        creator: address,
-        transactionHash: deploy_r.transactionHash,
-      };
+    const recv = async (
+      label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
+      timeout_delay: number | BigNumber | undefined,
+    ): Promise<Recv> => {
+      void(ok_cnt);
+      return await recv_impl(label, okNum, out_tys, timeout_delay);
     };
 
-    let ctc: ParentCtc | null = null;
-    if (deployMode == `DM_firstMsg`) {
-      debug(`${shad}: delaying deploy-ment`);
-      ctc = { reallyDeploy };
-    } else {
-      ctc = await reallyDeploy([], bigNumberify(0));
+    const wait = async (delta: BigNumber) => {
+      const lastBlock = await getLastBlock();
+      // Don't wait from current time, wait from last_block
+      debug(`=====Waiting ${delta} from ${lastBlock}: ${address}`);
+      const p = await waitUntilTime(add(lastBlock, delta));
+      debug(`=====Done waiting ${delta} from ${lastBlock}: ${address}`);
+      return p;
     }
 
-    return await attach(bin, ctc);
+    // Note: wait is the local one not the global one of the same name.
+    return { getInfo, sendrecv, recv, wait, iam, };
   };
 
   return { deploy, attach, networkAccount };
@@ -767,14 +796,6 @@ const stepTime = async () => {
   return await transfer({networkAccount: signer}, acc, parseCurrency(0));
 };
 
-const toNumberMay = (x: number | BigNumber | undefined) => {
-  if (isBigNumber(x)) {
-    return x.toNumber();
-  } else {
-    return x;
-  }
-};
-
 // Check the contract info and the associated deployed bytecode;
 // Verify that:
 // * it matches the bytecode you are expecting.
@@ -782,7 +803,8 @@ const toNumberMay = (x: number | BigNumber | undefined) => {
 // Throws an Error if any verifications fail
 export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
   const { ABI, Bytecode } = backend._Connectors.ETH;
-  const { address, creation_block, args, value, creator } = ctcInfo;
+  const { address, creation_block, init, creator } = ctcInfo;
+  const { argsMay, value } = initOrDefaultArgs(init);
   const factory = new ethers.ContractFactory(ABI, Bytecode);
 
   // TODO: is there a way to get the creation_block & bytecode with a single api call?
@@ -794,8 +816,8 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
   }
   const actual = await provider.getCode(address, creation_block);
 
-  // see comment on reallyDeploy about args
-  const deployData = factory.getDeployTransaction(...args).data;
+  // XXX should this also pass {value}, like factory.deploy() does?
+  const deployData = factory.getDeployTransaction(...argsMay).data;
   if (typeof deployData !== 'string') {
     // TODO: could also be Ethers.utils.bytes, apparently? Or undefined... why?
     throw Error(`Impossible: deployData is not string ${deployData}`);
@@ -860,7 +882,7 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
     throw Error(`Contract initial balance does not match expected initial balance`);
   }
 
-  if (args.length == 0) {
+  if (isNone(argsMay)) {
     const st = await provider.getStorageAt(address, 0, creation_block);
     const expectedSt = keccak256(0, creation_block);
     if (st !== expectedSt) {
@@ -892,6 +914,11 @@ export const atomicUnit = 'WEI';
 export function parseCurrency(amt: CurrencyAmount): BigNumber {
   return bigNumberify(ethers.utils.parseUnits(amt.toString(), 'ether'));
 }
+
+const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
+  argsMay: init ? Some(init.args) : None,
+  value: init ? init.value : bigNumberify(0),
+});
 
 /**
  * @description  Format currency by network
