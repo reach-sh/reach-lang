@@ -32,7 +32,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
     yesno
   );
   if (deployCtc) {
-    ctc = await acc.deploy(backend);
+    ctc = acc.deploy(backend);
     const info = await ctc.getInfo();
     console.log(`The contract is deployed as = ${JSON.stringify(info)}`);
   } else {
@@ -40,7 +40,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
       `Please paste the contract information:`,
       JSON.parse
     );
-    ctc = await acc.attach(backend, info);
+    ctc = acc.attach(backend, info);
   }
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);

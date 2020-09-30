@@ -3,18 +3,16 @@ import * as backend from './build/index.main.mjs';
 
 const demo = async (x) => {
   const stdlib = await stdlib_loader.loadStdlib();
-  const connector = await stdlib_loader.getConnector();
 
-  // stdlib.setDEBUG(true);
   const startingBalance = stdlib.parseCurrency(100);
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
 
   console.log(`Alice will deploy the contract.`);
-  const ctcAlice = await alice.deploy(backend);
+  const ctcAlice = alice.deploy(backend);
 
   console.log(`Bob will attach to the contract.`);
-  const ctcBob = await bob.attach(backend, ctcAlice);
+  const ctcBob = bob.attach(backend, ctcAlice.getInfo());
 
   const showThing = (showLabel) => (mx) => {
     console.log(`Bob.${showLabel}`);
@@ -53,14 +51,11 @@ const demo = async (x) => {
         }
       },
     }),
-    backend.Bob(
-      stdlib, ctcBob,
-      {
-        ...stdlib.hasRandom,
-        showMx: showThing('showMx'),
-        showMy: showThing('showMy'),
-      }
-    ),
+    backend.Bob(stdlib, ctcBob, {
+      ...stdlib.hasRandom,
+      showMx: showThing('showMx'),
+      showMy: showThing('showMy'),
+    }),
   ]);
 
   console.log('Alice and Bob are done.');

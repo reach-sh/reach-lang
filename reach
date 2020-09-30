@@ -334,13 +334,13 @@ import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/${APP}.main.mjs';
 
 (async () => {
-  const startingBalance = stdlib.parseCurrency({ETH: 100});
+  const startingBalance = stdlib.parseCurrency(100);
 
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
 
-  const ctcAlice = await alice.deploy(backend);
-  const ctcBob = await bob.attach(backend, ctcAlice);
+  const ctcAlice = alice.deploy(backend);
+  const ctcBob = bob.attach(backend, ctcAlice.getInfo());
 
   await Promise.all([
     backend.Alice(

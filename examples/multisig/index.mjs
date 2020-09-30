@@ -6,7 +6,7 @@ import * as MULTISIG from './build/index.main.mjs';
   const smallest = stdlib.parseCurrency(1);
 
   const parent = await stdlib.newTestAccount(startingBalance);
-  const parentCtc = await parent.deploy(MULTISIG);
+  const parentCtc = parent.deploy(MULTISIG);
   console.log(`Parent deploys the contract.`);
   const parentInteract = {
     allowance: () => {
@@ -23,7 +23,7 @@ import * as MULTISIG from './build/index.main.mjs';
   const parentP = MULTISIG.Parent(stdlib, parentCtc, parentInteract);
 
   const child = await stdlib.newTestAccount(startingBalance);
-  const childCtc = await child.attach(MULTISIG, parentCtc);
+  const childCtc = child.attach(MULTISIG, parentCtc.getInfo());
   const UNITS = 8;
   const childInteract = {
     request: (balance) => {

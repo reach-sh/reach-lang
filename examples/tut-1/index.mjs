@@ -7,8 +7,8 @@ import * as backend from './build/index.main.mjs';
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 
-  const ctcAlice = await accAlice.deploy(backend);
-  const ctcBob = await accBob.attach(backend, ctcAlice);
+  const ctcAlice = accAlice.deploy(backend);
+  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
   await Promise.all([
     backend.Alice(
