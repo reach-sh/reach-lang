@@ -23,3 +23,6 @@ RUN rm ./sbin/fix.sh
 ENV REACH_RUNNER_MOUNT_DIR /app
 ENTRYPOINT ["npm", "run", "--"]
 CMD ["runner", "FAKE", "index.mjs"]
+
+ARG REACH_GIT_HASH
+ENV REACH_GIT_HASH="${REACH_GIT_HASH}"

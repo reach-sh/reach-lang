@@ -22,6 +22,7 @@ build-stdlib: package.json js-algorand-sdk
 	docker build --tag=$(IMAGE):latest \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg ESLINT_VERSION=$(ESLINT_VERSION) \
+	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
 
