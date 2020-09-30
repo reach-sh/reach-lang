@@ -445,8 +445,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     if (infoP.getInfo) {
       console.log(
         `Calling attach with another Contract is deprecated.`
-        + ` Please replace bobAcc.attach(bin, aliceCtc)`
-        + ` with bobAcc.attach(bin, aliceCtc.getInfo())`
+        + ` Please replace accBob.attach(backend, ctcAlice)`
+        + ` with accBob.attach(bin, ctcAlice.getInfo())`
       );
       // @ts-ignore
       infoP = infoP.getInfo();
