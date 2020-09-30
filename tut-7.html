@@ -158,7 +158,7 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
     yesno
   );
   if (deployCtc) {
-    ctc = await acc.deploy(backend);
+    ctc = acc.deploy(backend);
     const info = await ctc.getInfo();
     console.log(`The contract is deployed as = ${JSON.stringify(info)}`);
   } else {
@@ -166,7 +166,7 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
       `Please paste the contract information:`,
       JSON.parse
     );
-    ctc = await acc.attach(backend, info);
+    ctc = acc.attach(backend, info);
   }"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
 <span class="mf">29</span>    <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="kc">null</span></font><span class="p">;</span>
 <span class="mf">30</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">deployCtc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
@@ -174,7 +174,7 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
 <span class="mf">32</span>      <a href="ref-backend-js.html#%28javascript._%28%28yesno%29%29%29" class="nx" data-pltdoc="x">yesno</a>
 <span class="mf">33</span>    <span class="p">);</span>
 <span class="mf">34</span>    <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">deployCtc</span></font><span class="p">)</span> <span class="p">{</span>
-<span class="mf">35</span>      <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28deploy%29%29%29" class="nx" data-pltdoc="x">deploy</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">);</span>
+<span class="mf">35</span>      <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28deploy%29%29%29" class="nx" data-pltdoc="x">deploy</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">);</span>
 <span class="mf">36</span>      <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">info</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">ctc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28get.Info%29%29%29" class="nx" data-pltdoc="x">getInfo</a><span class="p">();</span>
 <span class="mf">37</span>      <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`The contract is deployed as = </span><span class="si">${</span><font class="badlink"><span class="nx">JSON</span></font><span class="p">.</span><font class="badlink"><span class="nx">stringify</span></font><span class="p">(</span><font class="badlink"><span class="nx">info</span></font><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
 <span class="mf">38</span>    <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
@@ -182,7 +182,7 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
 <span class="mf">40</span>        <span class="sb">`Please paste the contract information:`</span><span class="p">,</span>
 <span class="mf">41</span>        <font class="badlink"><span class="nx">JSON</span></font><span class="p">.</span><font class="badlink"><span class="nx">parse</span></font>
 <span class="mf">42</span>      <span class="p">);</span>
-<span class="mf">43</span>      <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28attach%29%29%29" class="nx" data-pltdoc="x">attach</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">,</span> <font class="badlink"><span class="nx">info</span></font><span class="p">);</span>
+<span class="mf">43</span>      <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28attach%29%29%29" class="nx" data-pltdoc="x">attach</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">,</span> <font class="badlink"><span class="nx">info</span></font><span class="p">);</span>
 <span class="mf">44</span>    <span class="p">}</span>
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div></div></p><ul><li><p>Lines 30 through 33 ask if the participant will deploy the contract.</p></li><li><p>Lines 35 through 37 deploy it and print out public information (<code class="highlight"><font class="badlink"><span class="nx">ctc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28get.Info%29%29%29" class="nx" data-pltdoc="x">getInfo</a></code>) that can be given to the other player.</p></li><li><p>Lines 39 through 43 request, parse, and process this information.</p></li></ul><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L46-L52"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const fmt = (x) =&gt; stdlib.formatCurrency(x, 4);
