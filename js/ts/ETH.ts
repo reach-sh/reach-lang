@@ -12,6 +12,7 @@ import {
   CurrencyAmount,
   debug,
   ge,
+  eq,
   getDEBUG,
   isBigNumber,
   keccak256,
@@ -57,6 +58,7 @@ type ContractOut = any;
 // XXX Merge with ALGO and put in shared
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
+  // XXX update this; some of these numbers are coming in from backend as BigNumber
   sendrecv: (
     label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
     args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
@@ -373,14 +375,19 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           timeout_delay: undefined | number | BigNumber, sim_p: any
         ): Promise<Recv> => {
           debug(`${shad}: ${label} sendrecv m${funcNum} (deferred deploy)`);
+          void(evt_cnt);
           void(sim_p);
           // TODO: munge/unmunge roundtrip?
           void(tys);
           void(out_tys);
 
-          assert(funcNum === 1);
-          assert(evt_cnt === 1);
-          assert(timeout_delay === undefined);
+          // The following must be true for the first sendrecv.
+          try {
+            assert(eq(funcNum, 1));
+            assert(!timeout_delay);
+          } catch (e) {
+            throw Error(`impossible: Deferred deploy sendrecv assumptions violated.\n${e}`);
+          }
 
           // shim impl is replaced with real impl
           impl = await performDeploy({args, value});
