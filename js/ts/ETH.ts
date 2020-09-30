@@ -52,7 +52,7 @@ type NetworkAccount = {
 } | Wallet; // required to deploy/attach
 
 // XXX Merge with ALGO and put in shared
-type ContractAttached = {
+type Contract = {
   getInfo: () => Promise<ContractInfo>,
   sendrecv: (
     label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
@@ -96,11 +96,14 @@ type ContractInitInfo2 = {
 };
 
 type Account = {
-  // TODO: better types for these
-  deploy?: (...argz: any) => any,
-  attach?: (...argz: any) => any,
+  deploy: (bin: Backend) => Contract,
+  attach: (bin: Backend, infoP: ContractInfo | Promise<ContractInfo>) => Contract,
   networkAccount: NetworkAccount,
 };
+
+type AccountTransferable = Account | {
+  networkAccount: NetworkAccount,
+}
 
 // Given a func that takes an optional arg, and a Maybe arg:
 // f: (arg?: X) => Y
@@ -268,7 +271,11 @@ export const balanceOf = async (acc: Account): Promise<BigNumber> => {
 };
 
 // Arg order follows "src before dst" convention
-export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<any> => {
+export const transfer = async (
+  from: AccountTransferable,
+  to: AccountTransferable,
+  value: BigNumber
+): Promise<any> => {
   if (!isBigNumber(value)) throw Error(`Expected a BigNumber: ${value}`);
 
   const sender = from.networkAccount;
@@ -299,7 +306,7 @@ const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
-export const connectAccount = async (networkAccount: NetworkAccount) => {
+export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   // XXX networkAccount MUST be a wallet to deploy/attach
   const provider = await getProvider();
   const { address } = networkAccount;
@@ -314,7 +321,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     }
   };
 
-  const deploy = async (bin: Backend): Promise<ContractAttached> => {
+  const deploy = (bin: Backend): Contract => {
     if (!ethers.Signer.isSigner(networkAccount)) {
       throw Error(`Signer required to deploy, ${networkAccount}`);
     }
@@ -327,33 +334,34 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       return {infoP, resolveInfo};
     })();
 
-    const performDeploy = async (
+    const performDeploy = (
       init?: ContractInitInfo
-    ): Promise<ContractAttached> => {
+    ): Contract => {
       debug(`${shad}: performDeploy with ${JSON.stringify(init)}`);
       const { argsMay, value } = initOrDefaultArgs(init);
 
       const { ABI, Bytecode } = bin._Connectors.ETH;
       const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
 
-      const contract = await factory.deploy(...argsMay, { value });
-      const deploy_r = await contract.deployTransaction.wait();
-      const info: ContractInfo = {
-        address: contract.address,
-        creation_block: deploy_r.blockNumber,
-        creator: address,
-        transactionHash: deploy_r.transactionHash,
-        init,
-      };
-
-      resolveInfo(info);
-      return await attach(bin, infoP);
+      (async () => {
+        const contract = await factory.deploy(...argsMay, { value });
+        const deploy_r = await contract.deployTransaction.wait();
+        const info: ContractInfo = {
+          address: contract.address,
+          creation_block: deploy_r.blockNumber,
+          creator: address,
+          transactionHash: deploy_r.transactionHash,
+          init,
+        };
+        resolveInfo(info);
+      })();
+      return attach(bin, infoP);
     };
 
-    const attachDeferDeploy = (): ContractAttached => {
+    const attachDeferDeploy = (): Contract => {
       // impl starts with a shim that deploys on first sendrecv,
       // then replaces itself with the real impl once deployed.
-      let impl: ContractAttached = {
+      let impl: Contract = {
         recv: async (...args) => {
           void(args);
           throw Error(`Cannot recv yet; contract is not actually deployed`);
@@ -385,7 +393,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           }
 
           // shim impl is replaced with real impl
-          impl = await performDeploy({args, value});
+          impl = performDeploy({args, value});
+          await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
           return {
@@ -419,21 +428,26 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       case 'DM_firstMsg':
         return attachDeferDeploy();
       case 'DM_constructor':
-        return await performDeploy();
+        return performDeploy();
       default:
         throw Error(`Unrecognized deployMode: ${bin._Connectors.ETH.deployMode}`);
     };
   };
 
-  const attach = async (
+  const attach = (
     bin: Backend,
-    infoP: Promise<ContractInfo>,
-  ): Promise<ContractAttached> => {
-    // unofficially: infoP can also be ContractAttached
+    infoP: ContractInfo | Promise<ContractInfo>,
+  ): Contract => {
+    // unofficially: infoP can also be Contract
     // This should be considered deprecated
     // TODO: remove at next Reach version bump?
     // @ts-ignore
     if (infoP.getInfo) {
+      console.log(
+        `Calling attach with another Contract is deprecated.`
+        + ` Please replace bobAcc.attach(bin, aliceCtc)`
+        + ` with bobAcc.attach(bin, aliceCtc.getInfo())`
+      );
       // @ts-ignore
       infoP = infoP.getInfo();
     }
