@@ -422,6 +422,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const pk = algosdk.decodeAddress(thisAcc.addr).publicKey;
   debug(`${shad}: connectAccount`);
 
+  // XXX don't be async
   const attach = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<ContractAttached> => {
     const ctcInfo = await ctcInfoP;
     const getInfo = async () => ctcInfo;
@@ -430,6 +431,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     debug(`${shad}: attach ${ApplicationID} created at ${lastRound}`);
 
     const bin_comp = await compileFor(bin, ApplicationID);
+    // XXX check that the application bytecode is what we expect
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
     const iam = (some_addr: RawAddress): RawAddress => {
@@ -698,6 +700,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     return { getInfo, sendrecv, recv, iam, wait };
   };
 
+  // XXX don't be async
   const deploy = async (bin: Backend): Promise<ContractAttached> => {
     must_be_supported(bin);
     debug(`${shad} deploy`);
