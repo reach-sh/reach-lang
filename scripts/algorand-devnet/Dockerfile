@@ -42,7 +42,17 @@ WORKDIR $SRC_PARENT
 RUN git clone https://github.com/algorand/indexer
 WORKDIR $SRC_PARENT/indexer
 RUN make
+RUN cp $SRC_PARENT/indexer/cmd/algorand-indexer/algorand-indexer $GOPATH/bin
 
+# debugger
+WORKDIR /
+RUN apt-get install -y software-properties-common && \
+  add-apt-repository -y ppa:plt/racket && \
+  apt-get update && \
+  apt-get install -y racket
+COPY server.rkt /
+
+WORKDIR /
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=$ALGORAND_NETWORK/Primary
 COPY algorand_network/ $ALGORAND_NETWORK/

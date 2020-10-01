@@ -1,8 +1,11 @@
 #lang racket/base
 (require net/url
+         racket/list
          racket/runtime-path
          racket/file
+         racket/path
          web-server/http
+         web-server/dispatch
          web-server/servlet-env
          web-server/http/empty)
 
@@ -21,9 +24,38 @@
   (do-log))
 (define logger (thread do-log))
 
-(define (start req)
+(define (drop-log req _method)
   (thread-send logger req)
   (response/empty #:code 200))
+
+(define (list-logs req)
+  (response/xexpr
+    `(html
+       (body
+         (ul
+           ,@(for/list ([wn (in-list
+                             (sort
+                               (map (lambda (x) (string->number (path->string (file-name-from-path x))))
+                                    (directory-list output-dir))
+                               <=))])
+              (define w (number->string wn))
+              `(li (a ([href ,(debug-url view-log w)])
+                      ,w))))))))
+
+(define (view-log req which)
+  (define p (build-path output-dir which))
+  (response/full
+    200 #"OK"
+    (file-or-directory-modify-seconds p)
+    APPLICATION/JSON-MIME-TYPE
+    empty
+    (list (file->bytes p))))
+
+(define-values (debug-dispatch debug-url)
+  (dispatch-rules
+    [("") list-logs]
+    [("view" (string-arg)) view-log]
+    [("exec" (string-arg)) #:method "post" drop-log]))
 
 (module+ main
   (serve/servlet
@@ -31,4 +63,4 @@
     #:port 9392
     #:listen-ip #f
     #:servlet-regexp #rx""
-    start))
+    debug-dispatch))

@@ -1,5 +1,10 @@
 #!/bin/sh -x
 
+echo Starting debugger
+racket server.rkt &
+
+export TEAL_DEBUGGER_URL=http://localhost:9392
+
 echo Starting algod
 algod -d "${ALGORAND_DATA}" &
 
@@ -11,7 +16,7 @@ done
 
 echo Starting indexer
 touch algorand-indexer.yaml
-./cmd/algorand-indexer/algorand-indexer daemon \
+algorand-indexer daemon \
   --algod "${ALGORAND_DATA}" \
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
