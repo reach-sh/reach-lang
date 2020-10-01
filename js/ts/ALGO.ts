@@ -10,10 +10,10 @@ import {
   isBigNumber, bigNumberify,
   bigNumberToHex, hexToBigNumber,
   T_UInt256, T_Bool, setDigestWidth,
-  getDEBUG, setDEBUG } from './shared';
+  getDEBUG /*, setDEBUG */ } from './shared';
 export * from './shared';
 
-setDEBUG(true);
+// setDEBUG(true);
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
@@ -486,7 +486,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         }
 
         debug(`${dhead} --- ASSEMBLE w/ ${JSON.stringify(params)}`);
-        
+
         const txnFromContracts =
           sim_txns.map(
             (txn_nfo: SimTxn) =>
@@ -587,7 +587,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         debug(`${dhead} --- SEND: ${txns_s.length}`);
         let res;
         try {
-          // XXX somewhere in this, txnFromHandler appears to be dropped
           res = await sendAndConfirm( txns_s, txnAppl );
         } catch (e) {
           if ( e.type == "sendRawTransaction" ) {
