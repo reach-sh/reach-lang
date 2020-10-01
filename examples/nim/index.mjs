@@ -14,8 +14,8 @@ import * as NIM from './build/index.main.mjs';
 
   console.log(`\nDeploying and attaching\n`);
 
-  const ctcAlice = alice.deploy(NIM);
-  const ctcBob = bob.attach(NIM, ctcAlice.getInfo());
+  const ctcAlice = await alice.deploy(NIM);
+  const ctcBob = await bob.attach(NIM, ctcAlice.getInfo());
 
   console.log(`\nRunning a random game\n`);
 

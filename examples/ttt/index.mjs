@@ -26,8 +26,8 @@ function render(st) {
 
   console.log(`\nDeploying and attaching\n`);
 
-  const ctcAlice = alice.deploy(TTT);
-  const ctcBob = bob.attach(TTT, ctcAlice.getInfo());
+  const ctcAlice = await alice.deploy(TTT);
+  const ctcBob = await bob.attach(TTT, ctcAlice.getInfo());
 
   console.log(`\nRunning a random game\n`);
 

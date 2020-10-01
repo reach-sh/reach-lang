@@ -31,9 +31,9 @@ import * as RPS from './build/index.main.mjs';
       endsWith: (outcome) => log(`${name} agrees that game is over and outcome is ${outcome}.`)()
     });
 
-    const ctcAlice = alice.deploy(theRPS);
-    const ctcBob = bob.attach(theRPS, ctcAlice.getInfo());
-    const ctcObs = obs.attach(theRPS, ctcAlice.getInfo());
+    const ctcAlice = await alice.deploy(theRPS);
+    const ctcBob = await bob.attach(theRPS, ctcAlice.getInfo());
+    const ctcObs = await obs.attach(theRPS, ctcAlice.getInfo());
 
     await Promise.all([
       theRPS.A(stdlib, ctcAlice, interactWith('Alice')),

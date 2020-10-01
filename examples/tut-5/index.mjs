@@ -11,8 +11,8 @@ import * as backend from './build/index.main.mjs';
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = await accAlice.deploy(backend);
+  const ctcBob = await accBob.attach(backend, ctcAlice.getInfo());
 
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
