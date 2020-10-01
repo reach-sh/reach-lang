@@ -1,4 +1,14 @@
-#!/bin/sh -x
+#!/bin/bash -x
+
+POSTGRES_PORT=5432
+
+# shellcheck disable=SC2153
+echo "Wait for $POSTGRES_HOST:$POSTGRES_PORT"
+# shellcheck disable=SC2188
+while ! <"/dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT"; do
+  echo not ready yet, trying again in 1s...
+  sleep 1
+done
 
 echo Starting debugger
 racket server.rkt &
@@ -21,7 +31,7 @@ algorand-indexer daemon \
   --pidfile "${ALGORAND_DATA}/indexer.pid" \
   --dev-mode \
   --token "reach-devnet" \
-  --postgres "host=${POSTGRES_HOST} port=5432 user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
+  --postgres "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
 
 # LOG="${ALGORAND_DATA}/node.log"
 # while ! [ -f "${LOG}" ] ; do sleep 1 ; done
