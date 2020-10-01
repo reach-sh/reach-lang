@@ -18,12 +18,12 @@ export type IRecv<Address> = {
 export type IContract<ContractInfo, Address> = {
   getInfo: () => Promise<ContractInfo>,
   sendrecv: (
-    label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
+    label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
     args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
     timeout_delay: BigNumber | false, sim_p: any,
   ) => Promise<IRecv<Address>>,
   recv: (
-    label: string, okNum: BigNumber, ok_cnt: BigNumber, out_tys: Array<TyContract<any>>,
+    label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
     timeout_delay: BigNumber | false,
   ) => Promise<IRecv<Address>>,
   wait: (delta: BigNumber) => Promise<BigNumber>,

@@ -350,7 +350,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           throw Error(`Cannot wait yet; contract is not actually deployed`);
         },
         sendrecv: async (
-          label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
+          label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
           args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
           timeout_delay: BigNumber | false, sim_p: any,
         ): Promise<Recv> => {
@@ -497,7 +497,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const getInfo = async () => await infoP;
 
     const sendrecv_impl = async (
-      label: string, funcNum: BigNumber, tys: Array<TyContract<any>>,
+      label: string, funcNum: number, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
@@ -567,7 +567,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (
-      label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
+      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
       timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
@@ -578,7 +578,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv_impl = async (
-      label: string, okNum: BigNumber, out_tys: Array<TyContract<any>>,
+      label: string, okNum: number, out_tys: Array<TyContract<any>>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       const lastBlock = await getLastBlock();
@@ -630,7 +630,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (
-      label: string, okNum: BigNumber, ok_cnt: BigNumber, out_tys: Array<TyContract<any>>,
+      label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);

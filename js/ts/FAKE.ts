@@ -27,7 +27,7 @@ type AccountTransferrable = stdlib.IAccountTransferable<NetworkAccount>
 const REACHY_RICH: NetworkAccount = {address: 'reachy_rich'};
 
 type Event = {
-  funcNum: BigNumber,
+  funcNum: number,
   from: Address,
   data: Array<any>,
   value: BigNumber,
@@ -119,7 +119,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (
-      label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
+      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
       timeout_delay: BigNumber | false, try_p: any
     ): Promise<Recv> => {
@@ -135,7 +135,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         transfer({networkAccount}, {networkAccount: {address: info.address}}, value);
         const transferBlock = BLOCKS[BLOCKS.length - 1];
         if (transferBlock.type !== 'transfer') { throw Error('impossible: intervening block'); }
-        const event = { funcNum, from: address, data: args.slice(-1 * evt_cnt.toNumber()), value, balance: BALANCES[info.address] };
+        const event = { funcNum, from: address, data: args.slice(-1 * evt_cnt), value, balance: BALANCES[info.address] };
         BLOCKS[BLOCKS.length - 1] = { ...transferBlock, type: 'event', event };
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       } else {
@@ -145,7 +145,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (
-      label: string, funcNum: BigNumber, ok_cnt: BigNumber, out_tys: Array<TyContract<any>>,
+      label: string, funcNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
