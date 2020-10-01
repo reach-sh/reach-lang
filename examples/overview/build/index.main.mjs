@@ -2,12 +2,14 @@
 export const _version = '0.1.2';
 
 export async function Alice(stdlib, ctc, interact) {
-  const txn0 = { balance: 0, value: 0 };
+  const txn0 = {
+    balance: stdlib.bigNumberify(0),
+    value: stdlib.bigNumberify(0) };
   
   
-  const txn1 = await ctc.sendrecv('Alice', stdlib.bigNumberify(1), stdlib.bigNumberify(1), [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.request, null)], stdlib.bigNumberify(0), [stdlib.T_UInt256], false, ((txn1) => {
+  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.request, null)], stdlib.bigNumberify(0), [stdlib.T_UInt256], false, ((txn1) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.keccak256();
+    sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(0));
     const [v1] = txn1.data;
     const v2 = txn1.from;
     
@@ -17,7 +19,7 @@ export async function Alice(stdlib, ctc, interact) {
       at: './index.rsh:application',
       fs: [],
       who: 'Alice' });
-    sim_r.nextSt = stdlib.keccak256(v2, v1);
+    sim_r.nextSt = stdlib.keccak256(stdlib.bigNumberify(1), v2, v1);
     sim_r.isHalt = false;
     return sim_r; }));
   const [v1] = txn1.data;
@@ -28,7 +30,7 @@ export async function Alice(stdlib, ctc, interact) {
     at: './index.rsh:application',
     fs: [],
     who: 'Alice' });
-  const txn2 = await ctc.recv('Alice', stdlib.bigNumberify(2), stdlib.bigNumberify(0), [], false);
+  const txn2 = await ctc.recv('Alice', 2, 0, [], false);
   const [] = txn2.data;
   const v8 = txn2.from;
   const v9 = txn2.value;
@@ -39,9 +41,9 @@ export async function Alice(stdlib, ctc, interact) {
     who: 'Alice' });
   
   
-  const txn3 = await ctc.sendrecv('Alice', stdlib.bigNumberify(3), stdlib.bigNumberify(1), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Bytes], [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], stdlib.bigNumberify(0), [stdlib.T_Bytes], false, ((txn3) => {
+  const txn3 = await ctc.sendrecv('Alice', 3, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Bytes], [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], stdlib.bigNumberify(0), [stdlib.T_Bytes], false, ((txn3) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.keccak256(v2, v1);
+    sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(2), v2, v1);
     const [v13] = txn3.data;
     
     const v14 = txn3.value;
@@ -53,7 +55,7 @@ export async function Alice(stdlib, ctc, interact) {
     sim_r.txns.push({
       amt: v1,
       to: v2 });
-    sim_r.nextSt = '';
+    sim_r.nextSt = stdlib.keccak256();
     sim_r.isHalt = true;
     return sim_r; }));
   const [v13] = txn3.data;
@@ -66,8 +68,10 @@ export async function Alice(stdlib, ctc, interact) {
   ;
   return; }
 export async function Bob(stdlib, ctc, interact) {
-  const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('Bob', stdlib.bigNumberify(1), stdlib.bigNumberify(1), [stdlib.T_UInt256], false);
+  const txn0 = {
+    balance: stdlib.bigNumberify(0),
+    value: stdlib.bigNumberify(0) };
+  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt256], false);
   const [v1] = txn1.data;
   const v2 = txn1.from;
   const v3 = txn1.value;
@@ -82,9 +86,9 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   
   
-  const txn2 = await ctc.sendrecv('Bob', stdlib.bigNumberify(2), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256], [v2, v1], v1, [], false, ((txn2) => {
+  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt256], [v2, v1], v1, [], false, ((txn2) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.keccak256(v2, v1);
+    sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(1), v2, v1);
     const [] = txn2.data;
     const v8 = txn2.from;
     
@@ -94,7 +98,7 @@ export async function Bob(stdlib, ctc, interact) {
       at: './index.rsh:application',
       fs: [],
       who: 'Bob' });
-    sim_r.nextSt = stdlib.keccak256(v2, v1);
+    sim_r.nextSt = stdlib.keccak256(stdlib.bigNumberify(2), v2, v1);
     sim_r.isHalt = false;
     return sim_r; }));
   const [] = txn2.data;
@@ -105,7 +109,7 @@ export async function Bob(stdlib, ctc, interact) {
     at: './index.rsh:application',
     fs: [],
     who: 'Bob' });
-  const txn3 = await ctc.recv('Bob', stdlib.bigNumberify(3), stdlib.bigNumberify(1), [stdlib.T_Bytes], false);
+  const txn3 = await ctc.recv('Bob', 3, 1, [stdlib.T_Bytes], false);
   const [v13] = txn3.data;
   const v14 = txn3.value;
   const v16 = stdlib.eq(stdlib.bigNumberify(0), v14);
@@ -132,13 +136,6 @@ const _ALGO = {
   global ZeroAddress
   ==
   bz revert
-  byte base64(aA==)
-  app_global_get
-  bnz halted
-  txn OnCompletion
-  int NoOp
-  ==
-  bz revert
   // Check that everyone's here
   global GroupSize
   int 4
@@ -151,50 +148,53 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler
   int 0
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m1}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m2}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m3}}"
   ==
   ||
   bz revert
   byte base64(cw==)
   app_global_get
-  gtxna 1 Args 0
+  gtxna 2 Args 0
   ==
   bz revert
   byte base64(bA==)
   app_global_get
-  gtxna 1 Args 3
+  gtxna 2 Args 4
   btoi
   ==
   bz revert
   // Don't check anyone else, because Handler does
   // Update state
   byte base64(cw==)
-  gtxna 1 Args 1
+  gtxna 2 Args 1
   app_global_put
   byte base64(bA==)
   global Round
   app_global_put
   byte base64(aA==)
-  gtxna 1 Args 2
+  gtxna 2 Args 2
   btoi
   app_global_put
+  byte base64(aA==)
+  app_global_get
+  bnz halted
+  txn OnCompletion
+  int NoOp
+  ==
+  bz revert
   b done
   halted:
   txn OnCompletion
   int DeleteApplication
-  ==
-  bz revert
-  global GroupSize
-  int 1
   ==
   bz revert
   b done
@@ -215,16 +215,16 @@ const _ALGO = {
   global ZeroAddress
   ==
   bz revert
-  global GroupSize
-  int 1
-  ==
-  bz revert
   txn Sender
   byte "{{Deployer}}"
   ==
   bz revert
   txn ApplicationID
   bz init
+  global GroupSize
+  int 5
+  ==
+  bz revert
   txn OnCompletion
   int UpdateApplication
   ==
@@ -242,6 +242,10 @@ const _ALGO = {
   app_global_put
   b done
   init:
+  global GroupSize
+  int 1
+  ==
+  bz revert
   txn OnCompletion
   int NoOp
   ==
@@ -328,16 +332,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -351,7 +355,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -363,11 +367,11 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 5
+  int 6
   ==
   bz revert
   int 0
@@ -379,13 +383,16 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   int 1
   itob
   gtxn 3 Sender
   concat
-  arg 4
+  arg 5
   concat
   keccak256
   arg 1
@@ -400,6 +407,11 @@ const _ALGO = {
   // Check GroupSize
   global GroupSize
   int 4
+  ==
+  bz revert
+  arg 3
+  btoi
+  int 0
   ==
   bz revert
   // Check time limits
@@ -422,16 +434,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -445,7 +457,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -457,34 +469,37 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 6
+  int 7
   ==
   bz revert
   int 1
   itob
-  arg 4
-  concat
   arg 5
+  concat
+  arg 6
   concat
   keccak256
   arg 0
   ==
   bz revert
   // Run body
-  arg 5
+  arg 6
   btoi
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   int 2
   itob
-  arg 4
-  concat
   arg 5
+  concat
+  arg 6
   concat
   keccak256
   arg 1
@@ -499,6 +514,11 @@ const _ALGO = {
   // Check GroupSize
   global GroupSize
   int 4
+  ==
+  bz revert
+  arg 3
+  btoi
+  int 0
   ==
   bz revert
   // Check time limits
@@ -521,16 +541,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -544,7 +564,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -556,22 +576,22 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 7
+  int 8
   ==
   bz revert
   gtxn 3 Sender
-  arg 4
+  arg 5
   ==
   bz revert
   int 2
   itob
-  arg 4
-  concat
   arg 5
+  concat
+  arg 6
   concat
   keccak256
   arg 0
@@ -580,6 +600,9 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   gtxn 4 TypeEnum
@@ -587,20 +610,16 @@ const _ALGO = {
   ==
   bz revert
   gtxn 4 Receiver
-  arg 4
+  arg 5
   ==
   bz revert
   gtxn 4 Amount
-  arg 5
+  arg 6
   btoi
   ==
   bz revert
   gtxn 4 Sender
   byte "{{ContractAddr}}"
-  ==
-  bz revert
-  byte base64()
-  arg 1
   ==
   bz revert
   arg 2
@@ -612,6 +631,11 @@ const _ALGO = {
   // Check GroupSize
   global GroupSize
   int 5
+  ==
+  bz revert
+  arg 3
+  btoi
+  gtxn 4 Fee
   ==
   bz revert
   // Check time limits
