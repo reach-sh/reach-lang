@@ -21,9 +21,10 @@ docker run -d --name algopgdb --rm -e POSTGRES_USER -e POSTGRES_PASSWORD -e POST
 export TEAL_DEBUGGER_URL=http://localhost:9392
 
 export POSTGRES_HOST=localhost
-export ALGORAND_DATA=$(pwd)/local/Primary
+ALGORAND_DATA=$(pwd)/local/Primary
+export ALGORAND_DATA
 START=$(pwd)/start.sh
-cd ../../../algorand/indexer
+cd ../../../algorand/indexer || (echo 'please clone algorand/indexer in the right place' && exit 1)
 ${START} || exit 0
 
 clean
