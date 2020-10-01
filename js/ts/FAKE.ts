@@ -5,51 +5,29 @@ import * as stdlib from './shared';
 import { CurrencyAmount, TyContract } from './shared';
 export * from './shared';
 
-const DEBUG = false;
-const debug = (msg: any): void => {
-  if (DEBUG) {
-    console.log(`DEBUG@${BLOCKS.length}: ${msg}`);
-  }
+export const debug = (msg: any): void => {
+  stdlib.debug(`${BLOCKS.length}: ${msg}}`);
 };
 
 type Address = string;
 type NetworkAccount = {address: Address};
-type Account = {
-  networkAccount: NetworkAccount,
-  deploy?: (bin: Backend) => Promise<Contract>,
-  attach?: (bin: Backend, ctc: Contract) => Promise<ContractAttached>,
-};
-
 type Backend = null;
-type Contract = {
+
+// XXX Add optional "deploy after first message" info
+type ContractInfo = {
   address: Address,
   creation_block: number,
-};
+}
 
-type ContractAttached = {
-  address: Address,
-  creation_block: number,
-  sendrecv: (...xs: any) => any,
-  recv: (...xs: any) => any,
-  iam: (some_addr: Address) => Address,
-  wait: (...xs: any) => any,
-};
-
-// TODO
-type ContractOut = any;
-// TODO: move common interfaces to shared
-type Recv = {
-  didTimeout: false,
-  data: Array<ContractOut>,
-  value: BigNumber,
-  balance: BigNumber,
-  from: Address,
-} | { didTimeout: true };
+type Recv = stdlib.IRecv<Address>
+type Contract = stdlib.IContract<ContractInfo, Address>;
+type Account = stdlib.IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
+type AccountTransferrable = stdlib.IAccountTransferable<NetworkAccount>
 
 const REACHY_RICH: NetworkAccount = {address: 'reachy_rich'};
 
 type Event = {
-  funcNum: number,
+  funcNum: BigNumber,
   from: Address,
   data: Array<any>,
   value: BigNumber,
@@ -89,7 +67,11 @@ export const balanceOf = async (acc: Account) => {
   return BALANCES[acc.networkAccount.address];
 };
 
-export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<void> => {
+export const transfer = async (
+  from: AccountTransferrable,
+  to: AccountTransferrable,
+  value: BigNumber
+): Promise<void> => {
   const toa = to.networkAccount.address;
   const froma = from.networkAccount.address;
   stdlib.assert(stdlib.le(value, BALANCES[froma]));
@@ -102,40 +84,58 @@ export const transfer = async (from: Account, to: Account, value: BigNumber): Pr
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const { address } = networkAccount;
 
-  const attach = async (bin: Backend, ctc: Contract): Promise<ContractAttached> => {
+  const attach = (
+    bin: Backend,
+    infoP: ContractInfo | Promise<ContractInfo>
+  ): Contract => {
     void(bin);
-    let last_block = ctc.creation_block;
+
+    // state
+    const {getLastBlock, setLastBlock} = (() => {
+      let lastBlock: number | null = null;
+      const setLastBlock = (n: number): void => {
+        lastBlock = n;
+      };
+      const getLastBlock = async (): Promise<number> => {
+        if (typeof lastBlock === 'number') { return lastBlock; }
+        const info = await infoP;
+        setLastBlock(info.creation_block);
+        return info.creation_block;
+      }
+      return {getLastBlock, setLastBlock};
+    })();
 
     const iam = (some_addr: Address): Address => {
-      if (some_addr == address) {
+      if (some_addr === address) {
         return address;
       } else {
         throw Error(`I should be ${some_addr}, but am ${address}`);
       }
     };
 
-    const wait = (delta: BigNumber): void => {
+    const wait = async (delta: BigNumber): Promise<BigNumber> => {
       // Don't wait from current time, wait from last_block
-      waitUntilTime(stdlib.add(last_block, delta));
+      return waitUntilTime(stdlib.add(await getLastBlock(), delta));
     };
 
     const sendrecv = async (
-      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
+      label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-      timeout_delay: undefined | number | BigNumber, try_p: any
+      timeout_delay: BigNumber | false, try_p: any
     ): Promise<Recv> => {
       // XXX use try_p to figure out what transfers from the contract
       // to make, like in ALGO
       void(tys);
       void(try_p);
-      timeout_delay = toNumberMay(timeout_delay);
 
+      const last_block = await getLastBlock();
+      const info = await infoP;
       if (!timeout_delay || stdlib.lt(BLOCKS.length, stdlib.add(last_block, timeout_delay))) {
         debug(`${label} send ${funcNum} --- post`);
-        transfer({networkAccount}, {networkAccount: ctc}, value);
+        transfer({networkAccount}, {networkAccount: {address: info.address}}, value);
         const transferBlock = BLOCKS[BLOCKS.length - 1];
         if (transferBlock.type !== 'transfer') { throw Error('impossible: intervening block'); }
-        const event = { funcNum, from: address, data: args.slice(-1 * evt_cnt), value, balance: BALANCES[ctc.address] };
+        const event = { funcNum, from: address, data: args.slice(-1 * evt_cnt.toNumber()), value, balance: BALANCES[info.address] };
         BLOCKS[BLOCKS.length - 1] = { ...transferBlock, type: 'event', event };
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       } else {
@@ -145,25 +145,25 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (
-      label: string, funcNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
-      timeout_delay: number | BigNumber | undefined,
+      label: string, funcNum: BigNumber, ok_cnt: BigNumber, out_tys: Array<TyContract<any>>,
+      timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
       void(out_tys);
-      timeout_delay = toNumberMay(timeout_delay);
 
+      const last_block = await getLastBlock();
       let check_block = last_block;
       while (!timeout_delay || stdlib.lt(check_block, stdlib.add(last_block, timeout_delay))) {
         debug(`${label} recv ${funcNum} --- check ${check_block}`);
         const b = BLOCKS[check_block];
-        if (!b || b.type !== 'event' || !b.event || b.event.funcNum != funcNum) {
+        if (!b || b.type !== 'event' || !b.event || !stdlib.eq(b.event.funcNum, funcNum)) {
           debug(`${label} recv ${funcNum} --- wait`);
           check_block = Math.min(check_block + 1, BLOCKS.length);
           await Timeout.set(1);
           continue;
         } else {
           debug(`${label} recv ${funcNum} --- recv`);
-          last_block = check_block;
+          setLastBlock(check_block);
           const evt = b.event;
           return { didTimeout: false, data: evt.data, value: evt.value, balance: evt.balance, from: evt.from };
         }
@@ -173,13 +173,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { didTimeout: true };
     };
 
-    return { ...ctc, sendrecv, recv, iam, wait };
+    const getInfo = async () => await infoP;
+
+    return { getInfo, sendrecv, recv, iam, wait };
   };
 
-  const deploy = async (bin: Backend): Promise<Contract> => {
+  const deploy = (bin: Backend): Contract => {
     const contract = makeAccount();
     debug(`new contract: ${contract.address}`);
-    return await attach(bin, {
+    return attach(bin, {
       ...contract,
       creation_block: BLOCKS.length,
       // events: {},
@@ -230,14 +232,6 @@ export function waitUntilTime(targetTime: BigNumber | number, onProgress?: OnPro
 
 export const newAccountFromMnemonic = false; // XXX
 export const verifyContract = false; // XXX
-
-const toNumberMay = (x: number | BigNumber | undefined) => {
-  if (stdlib.isBigNumber(x)) {
-    return x.toNumber();
-  } else {
-    return x;
-  }
-};
 
 /** @description the display name of the standard unit of currency for the network */
 export const standardUnit = 'FAKE';

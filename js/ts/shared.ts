@@ -7,6 +7,39 @@ type num = BigNumber | number
 
 const BigNumber = ethers.BigNumber;
 
+export type IRecv<Address> = {
+  didTimeout: false,
+  data: Array<any>,
+  value: BigNumber,
+  balance: BigNumber,
+  from: Address,
+} | { didTimeout: true };
+
+export type IContract<ContractInfo, Address> = {
+  getInfo: () => Promise<ContractInfo>,
+  sendrecv: (
+    label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
+    args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+    timeout_delay: BigNumber | false, sim_p: any,
+  ) => Promise<IRecv<Address>>,
+  recv: (
+    label: string, okNum: BigNumber, ok_cnt: BigNumber, out_tys: Array<TyContract<any>>,
+    timeout_delay: BigNumber | false,
+  ) => Promise<IRecv<Address>>,
+  wait: (delta: BigNumber) => Promise<BigNumber>,
+  iam: (some_addr: Address) => Address,
+};
+
+export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
+  networkAccount: NetworkAccount,
+  deploy: (bin: Backend) => Contract,
+  attach: (bin: Backend, ctc: ContractInfo | Promise<ContractInfo>) => Contract,
+}
+
+export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any> | {
+  networkAccount: NetworkAccount,
+}
+
 let DEBUG: boolean = false;
 export const setDEBUG = (b: boolean) => {
   if (b === false || b === true) {

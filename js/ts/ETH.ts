@@ -18,6 +18,9 @@ import {
   keccak256,
   lt,
   TyContract,
+  IContract,
+  IRecv,
+  IAccount,
 } from './shared';
 export * from './shared';
 
@@ -51,30 +54,6 @@ type NetworkAccount = {
   getBalance?: (...xs: any) => any, // TODO: better type
 } | Wallet; // required to deploy/attach
 
-// XXX Merge with ALGO and put in shared
-type Contract = {
-  getInfo: () => Promise<ContractInfo>,
-  sendrecv: (
-    label: string, funcNum: BigNumber, evt_cnt: BigNumber, tys: Array<TyContract<any>>,
-    args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-    timeout_delay: BigNumber | false, sim_p: any,
-  ) => Promise<Recv>,
-  recv: (
-    label: string, okNum: BigNumber, ok_cnt: BigNumber, out_tys: Array<TyContract<any>>,
-    timeout_delay: BigNumber | false,
-  ) => Promise<Recv>,
-  wait: (delta: BigNumber) => Promise<BigNumber>,
-  iam: (some_addr: Address) => Address,
-};
-
-type Recv = {
-  didTimeout: false,
-  data: Array<any>,
-  value: BigNumber,
-  balance: BigNumber,
-  from: Address,
-} | { didTimeout: true };
-
 type ContractInfo = {
   address: Address,
   creation_block: number,
@@ -82,6 +61,10 @@ type ContractInfo = {
   transactionHash?: Hash,
   init?: ContractInitInfo,
 };
+
+type Recv = IRecv<Address>
+type Contract = IContract<ContractInfo, Address>;
+type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
 
 // For when you init the contract with the 1st message
 type ContractInitInfo = {
@@ -93,12 +76,6 @@ type ContractInitInfo = {
 type ContractInitInfo2 = {
   argsMay: Maybe<Array<any>>,
   value: BigNumber,
-};
-
-type Account = {
-  deploy: (bin: Backend) => Contract,
-  attach: (bin: Backend, infoP: ContractInfo | Promise<ContractInfo>) => Contract,
-  networkAccount: NetworkAccount,
 };
 
 type AccountTransferable = Account | {
