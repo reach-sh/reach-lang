@@ -2,12 +2,14 @@
 export const _version = '0.1.2';
 
 export async function Alice(stdlib, ctc, interact) {
-  const txn0 = { balance: 0, value: 0 };
+  const txn0 = {
+    balance: stdlib.bigNumberify(0),
+    value: stdlib.bigNumberify(0) };
   
   
-  const txn1 = await ctc.sendrecv('Alice', stdlib.bigNumberify(1), stdlib.bigNumberify(1), [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.wager, null)], stdlib.protect(stdlib.T_UInt256, interact.wager, null), [stdlib.T_UInt256], false, ((txn1) => {
+  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.wager, null)], stdlib.protect(stdlib.T_UInt256, interact.wager, null), [stdlib.T_UInt256], false, ((txn1) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.keccak256();
+    sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(0));
     const [v27] = txn1.data;
     const v28 = txn1.from;
     
@@ -17,7 +19,7 @@ export async function Alice(stdlib, ctc, interact) {
       at: './index.rsh:application',
       fs: [],
       who: 'Alice' });
-    sim_r.nextSt = stdlib.keccak256(v28, v27);
+    sim_r.nextSt = stdlib.keccak256(stdlib.bigNumberify(1), v28, v27);
     sim_r.isHalt = false;
     return sim_r; }));
   const [v27] = txn1.data;
@@ -28,12 +30,12 @@ export async function Alice(stdlib, ctc, interact) {
     at: './index.rsh:application',
     fs: [],
     who: 'Alice' });
-  const txn2 = await ctc.recv('Alice', stdlib.bigNumberify(2), stdlib.bigNumberify(0), [], stdlib.bigNumberify(10));
+  const txn2 = await ctc.recv('Alice', 2, 0, [], stdlib.bigNumberify(10));
   if (txn2.didTimeout) {
     
-    const txn3 = await ctc.sendrecv('Alice', stdlib.bigNumberify(10), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], stdlib.bigNumberify(0), [], false, ((txn3) => {
+    const txn3 = await ctc.sendrecv('Alice', 10, 0, [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], stdlib.bigNumberify(0), [], false, ((txn3) => {
       const sim_r = { txns: [] };
-      sim_r.prevSt = stdlib.keccak256(v28, v27);
+      sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(1), v28, v27);
       const [] = txn3.data;
       
       const v39 = txn3.value;
@@ -46,7 +48,7 @@ export async function Alice(stdlib, ctc, interact) {
       sim_r.txns.push({
         amt: v42,
         to: v28 });
-      sim_r.nextSt = '';
+      sim_r.nextSt = stdlib.keccak256();
       sim_r.isHalt = true;
       return sim_r; }));
     const [] = txn3.data;
@@ -89,9 +91,9 @@ export async function Alice(stdlib, ctc, interact) {
       const v64 = stdlib.keccak256(v63, v61);
       
       
-      const txn3 = await ctc.sendrecv('Alice', stdlib.bigNumberify(4), stdlib.bigNumberify(1), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v64], stdlib.bigNumberify(0), [stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn3) => {
+      const txn3 = await ctc.sendrecv('Alice', 4, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v64], stdlib.bigNumberify(0), [stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn3) => {
         const sim_r = { txns: [] };
-        sim_r.prevSt = stdlib.keccak256(v28, v27, v34);
+        sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(3), v28, v27, v34);
         const [v65] = txn3.data;
         
         const v66 = txn3.value;
@@ -100,11 +102,11 @@ export async function Alice(stdlib, ctc, interact) {
           at: './index.rsh:application',
           fs: [],
           who: 'Alice' });
-        sim_r.nextSt = stdlib.keccak256(v28, v27, v34, v65);
+        sim_r.nextSt = stdlib.keccak256(stdlib.bigNumberify(4), v28, v27, v34, v65);
         sim_r.isHalt = false;
         return sim_r; }));
       if (txn3.didTimeout) {
-        const txn4 = await ctc.recv('Alice', stdlib.bigNumberify(9), stdlib.bigNumberify(0), [], false);
+        const txn4 = await ctc.recv('Alice', 9, 0, [], false);
         const [] = txn4.data;
         const v70 = txn4.value;
         const v72 = stdlib.eq(stdlib.bigNumberify(0), v70);
@@ -128,12 +130,12 @@ export async function Alice(stdlib, ctc, interact) {
           at: './index.rsh:application',
           fs: [],
           who: 'Alice' });
-        const txn4 = await ctc.recv('Alice', stdlib.bigNumberify(5), stdlib.bigNumberify(1), [stdlib.T_UInt256], stdlib.bigNumberify(10));
+        const txn4 = await ctc.recv('Alice', 5, 1, [stdlib.T_UInt256], stdlib.bigNumberify(10));
         if (txn4.didTimeout) {
           
-          const txn5 = await ctc.sendrecv('Alice', stdlib.bigNumberify(8), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v65], stdlib.bigNumberify(0), [], false, ((txn5) => {
+          const txn5 = await ctc.sendrecv('Alice', 8, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v65], stdlib.bigNumberify(0), [], false, ((txn5) => {
             const sim_r = { txns: [] };
-            sim_r.prevSt = stdlib.keccak256(v28, v27, v34, v65);
+            sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(4), v28, v27, v34, v65);
             const [] = txn5.data;
             
             const v86 = txn5.value;
@@ -146,7 +148,7 @@ export async function Alice(stdlib, ctc, interact) {
             sim_r.txns.push({
               amt: v89,
               to: v28 });
-            sim_r.nextSt = '';
+            sim_r.nextSt = stdlib.keccak256();
             sim_r.isHalt = true;
             return sim_r; }));
           const [] = txn5.data;
@@ -174,9 +176,9 @@ export async function Alice(stdlib, ctc, interact) {
             who: 'Alice' });
           
           
-          const txn5 = await ctc.sendrecv('Alice', stdlib.bigNumberify(6), stdlib.bigNumberify(2), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81, v63, v61], stdlib.bigNumberify(0), [stdlib.T_UInt256, stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn5) => {
+          const txn5 = await ctc.sendrecv('Alice', 6, 2, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81, v63, v61], stdlib.bigNumberify(0), [stdlib.T_UInt256, stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn5) => {
             const sim_r = { txns: [] };
-            sim_r.prevSt = stdlib.keccak256(v28, v27, v34, v65, v81);
+            sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(5), v28, v27, v34, v65, v81);
             const [v96, v97] = txn5.data;
             
             const v98 = txn5.value;
@@ -197,7 +199,7 @@ export async function Alice(stdlib, ctc, interact) {
             
             return sim_r; }));
           if (txn5.didTimeout) {
-            const txn6 = await ctc.recv('Alice', stdlib.bigNumberify(7), stdlib.bigNumberify(0), [], false);
+            const txn6 = await ctc.recv('Alice', 7, 0, [], false);
             const [] = txn6.data;
             const v102 = txn6.value;
             const v104 = stdlib.eq(stdlib.bigNumberify(0), v102);
@@ -243,8 +245,10 @@ export async function Alice(stdlib, ctc, interact) {
     
     return; } }
 export async function Bob(stdlib, ctc, interact) {
-  const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('Bob', stdlib.bigNumberify(1), stdlib.bigNumberify(1), [stdlib.T_UInt256], false);
+  const txn0 = {
+    balance: stdlib.bigNumberify(0),
+    value: stdlib.bigNumberify(0) };
+  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt256], false);
   const [v27] = txn1.data;
   const v28 = txn1.from;
   const v29 = txn1.value;
@@ -259,9 +263,9 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   
   
-  const txn2 = await ctc.sendrecv('Bob', stdlib.bigNumberify(2), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], v27, [], stdlib.bigNumberify(10), ((txn2) => {
+  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], v27, [], stdlib.bigNumberify(10), ((txn2) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.keccak256(v28, v27);
+    sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(1), v28, v27);
     const [] = txn2.data;
     const v34 = txn2.from;
     
@@ -274,7 +278,7 @@ export async function Bob(stdlib, ctc, interact) {
     
     return sim_r; }));
   if (txn2.didTimeout) {
-    const txn3 = await ctc.recv('Bob', stdlib.bigNumberify(10), stdlib.bigNumberify(0), [], false);
+    const txn3 = await ctc.recv('Bob', 10, 0, [], false);
     const [] = txn3.data;
     const v39 = txn3.value;
     const v41 = stdlib.eq(stdlib.bigNumberify(0), v39);
@@ -304,12 +308,12 @@ export async function Bob(stdlib, ctc, interact) {
       const v59 = stdlib.eq(v48, stdlib.bigNumberify(1));
       
       return v59; })()) {
-      const txn3 = await ctc.recv('Bob', stdlib.bigNumberify(4), stdlib.bigNumberify(1), [stdlib.T_UInt256], stdlib.bigNumberify(10));
+      const txn3 = await ctc.recv('Bob', 4, 1, [stdlib.T_UInt256], stdlib.bigNumberify(10));
       if (txn3.didTimeout) {
         
-        const txn4 = await ctc.sendrecv('Bob', stdlib.bigNumberify(9), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address], [v28, v27, v34], stdlib.bigNumberify(0), [], false, ((txn4) => {
+        const txn4 = await ctc.sendrecv('Bob', 9, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address], [v28, v27, v34], stdlib.bigNumberify(0), [], false, ((txn4) => {
           const sim_r = { txns: [] };
-          sim_r.prevSt = stdlib.keccak256(v28, v27, v34);
+          sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(3), v28, v27, v34);
           const [] = txn4.data;
           
           const v70 = txn4.value;
@@ -322,7 +326,7 @@ export async function Bob(stdlib, ctc, interact) {
           sim_r.txns.push({
             amt: v73,
             to: v34 });
-          sim_r.nextSt = '';
+          sim_r.nextSt = stdlib.keccak256();
           sim_r.isHalt = true;
           return sim_r; }));
         const [] = txn4.data;
@@ -354,9 +358,9 @@ export async function Bob(stdlib, ctc, interact) {
           who: 'Bob' });
         
         
-        const txn4 = await ctc.sendrecv('Bob', stdlib.bigNumberify(5), stdlib.bigNumberify(1), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v80], stdlib.bigNumberify(0), [stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn4) => {
+        const txn4 = await ctc.sendrecv('Bob', 5, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v80], stdlib.bigNumberify(0), [stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn4) => {
           const sim_r = { txns: [] };
-          sim_r.prevSt = stdlib.keccak256(v28, v27, v34, v65);
+          sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(4), v28, v27, v34, v65);
           const [v81] = txn4.data;
           
           const v82 = txn4.value;
@@ -365,11 +369,11 @@ export async function Bob(stdlib, ctc, interact) {
             at: './index.rsh:application',
             fs: [],
             who: 'Bob' });
-          sim_r.nextSt = stdlib.keccak256(v28, v27, v34, v65, v81);
+          sim_r.nextSt = stdlib.keccak256(stdlib.bigNumberify(5), v28, v27, v34, v65, v81);
           sim_r.isHalt = false;
           return sim_r; }));
         if (txn4.didTimeout) {
-          const txn5 = await ctc.recv('Bob', stdlib.bigNumberify(8), stdlib.bigNumberify(0), [], false);
+          const txn5 = await ctc.recv('Bob', 8, 0, [], false);
           const [] = txn5.data;
           const v86 = txn5.value;
           const v88 = stdlib.eq(stdlib.bigNumberify(0), v86);
@@ -393,12 +397,12 @@ export async function Bob(stdlib, ctc, interact) {
             at: './index.rsh:application',
             fs: [],
             who: 'Bob' });
-          const txn5 = await ctc.recv('Bob', stdlib.bigNumberify(6), stdlib.bigNumberify(2), [stdlib.T_UInt256, stdlib.T_UInt256], stdlib.bigNumberify(10));
+          const txn5 = await ctc.recv('Bob', 6, 2, [stdlib.T_UInt256, stdlib.T_UInt256], stdlib.bigNumberify(10));
           if (txn5.didTimeout) {
             
-            const txn6 = await ctc.sendrecv('Bob', stdlib.bigNumberify(7), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81], stdlib.bigNumberify(0), [], false, ((txn6) => {
+            const txn6 = await ctc.sendrecv('Bob', 7, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81], stdlib.bigNumberify(0), [], false, ((txn6) => {
               const sim_r = { txns: [] };
-              sim_r.prevSt = stdlib.keccak256(v28, v27, v34, v65, v81);
+              sim_r.prevSt = stdlib.keccak256(stdlib.bigNumberify(5), v28, v27, v34, v65, v81);
               const [] = txn6.data;
               
               const v102 = txn6.value;
@@ -411,7 +415,7 @@ export async function Bob(stdlib, ctc, interact) {
               sim_r.txns.push({
                 amt: v105,
                 to: v34 });
-              sim_r.nextSt = '';
+              sim_r.nextSt = stdlib.keccak256();
               sim_r.isHalt = true;
               return sim_r; }));
             const [] = txn6.data;
@@ -470,13 +474,6 @@ const _ALGO = {
   global ZeroAddress
   ==
   bz revert
-  byte base64(aA==)
-  app_global_get
-  bnz halted
-  txn OnCompletion
-  int NoOp
-  ==
-  bz revert
   // Check that everyone's here
   global GroupSize
   int 4
@@ -489,74 +486,77 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler
   int 0
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m1}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m2}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m4}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m5}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m6}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m7}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m8}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m9}}"
   ==
   ||
-  gtxn 1 Sender
+  gtxn 2 Sender
   byte "{{m10}}"
   ==
   ||
   bz revert
   byte base64(cw==)
   app_global_get
-  gtxna 1 Args 0
+  gtxna 2 Args 0
   ==
   bz revert
   byte base64(bA==)
   app_global_get
-  gtxna 1 Args 3
+  gtxna 2 Args 4
   btoi
   ==
   bz revert
   // Don't check anyone else, because Handler does
   // Update state
   byte base64(cw==)
-  gtxna 1 Args 1
+  gtxna 2 Args 1
   app_global_put
   byte base64(bA==)
   global Round
   app_global_put
   byte base64(aA==)
-  gtxna 1 Args 2
+  gtxna 2 Args 2
   btoi
   app_global_put
+  byte base64(aA==)
+  app_global_get
+  bnz halted
+  txn OnCompletion
+  int NoOp
+  ==
+  bz revert
   b done
   halted:
   txn OnCompletion
   int DeleteApplication
-  ==
-  bz revert
-  global GroupSize
-  int 1
   ==
   bz revert
   b done
@@ -577,16 +577,16 @@ const _ALGO = {
   global ZeroAddress
   ==
   bz revert
-  global GroupSize
-  int 1
-  ==
-  bz revert
   txn Sender
   byte "{{Deployer}}"
   ==
   bz revert
   txn ApplicationID
   bz init
+  global GroupSize
+  int 11
+  ==
+  bz revert
   txn OnCompletion
   int UpdateApplication
   ==
@@ -604,6 +604,10 @@ const _ALGO = {
   app_global_put
   b done
   init:
+  global GroupSize
+  int 1
+  ==
+  bz revert
   txn OnCompletion
   int NoOp
   ==
@@ -690,16 +694,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -713,7 +717,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -725,11 +729,11 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 5
+  int 6
   ==
   bz revert
   int 0
@@ -739,16 +743,19 @@ const _ALGO = {
   ==
   bz revert
   // Run body
-  arg 4
+  arg 5
   btoi
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   int 1
   itob
   gtxn 3 Sender
   concat
-  arg 4
+  arg 5
   concat
   keccak256
   arg 1
@@ -763,6 +770,11 @@ const _ALGO = {
   // Check GroupSize
   global GroupSize
   int 4
+  ==
+  bz revert
+  arg 3
+  btoi
+  int 0
   ==
   bz revert
   // Check time limits
@@ -785,16 +797,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -808,7 +820,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -820,22 +832,22 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 6
+  int 7
   ==
   bz revert
   gtxn 3 Sender
-  arg 4
+  arg 5
   ==
   bz revert
   int 1
   itob
-  arg 4
-  concat
   arg 5
+  concat
+  arg 6
   concat
   keccak256
   arg 0
@@ -844,6 +856,9 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   gtxn 4 TypeEnum
@@ -851,7 +866,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 4 Receiver
-  arg 4
+  arg 5
   ==
   bz revert
   gtxn 4 Amount
@@ -860,10 +875,6 @@ const _ALGO = {
   bz revert
   gtxn 4 Sender
   byte "{{ContractAddr}}"
-  ==
-  bz revert
-  byte base64()
-  arg 1
   ==
   bz revert
   arg 2
@@ -877,8 +888,13 @@ const _ALGO = {
   int 5
   ==
   bz revert
-  // Check time limits
   arg 3
+  btoi
+  gtxn 4 Fee
+  ==
+  bz revert
+  // Check time limits
+  arg 4
   btoi
   int 10
   +
@@ -922,16 +938,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -945,7 +961,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -957,27 +973,30 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 6
+  int 7
   ==
   bz revert
   int 1
   itob
-  arg 4
-  concat
   arg 5
+  concat
+  arg 6
   concat
   keccak256
   arg 0
   ==
   bz revert
   // Run body
-  arg 5
+  arg 6
   btoi
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   // XXX jump
@@ -986,8 +1005,13 @@ const _ALGO = {
   int 4
   ==
   bz revert
-  // Check time limits
   arg 3
+  btoi
+  int 0
+  ==
+  bz revert
+  // Check time limits
+  arg 4
   btoi
   int 10
   +
@@ -1027,16 +1051,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -1050,7 +1074,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -1062,24 +1086,24 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 8
+  int 9
   ==
   bz revert
   gtxn 3 Sender
-  arg 4
+  arg 5
   ==
   bz revert
   int 3
   itob
-  arg 4
-  concat
   arg 5
   concat
   arg 6
+  concat
+  arg 7
   concat
   keccak256
   arg 0
@@ -1088,17 +1112,20 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   int 4
   itob
-  arg 4
-  concat
   arg 5
   concat
   arg 6
   concat
   arg 7
+  concat
+  arg 8
   concat
   keccak256
   arg 1
@@ -1115,8 +1142,13 @@ const _ALGO = {
   int 4
   ==
   bz revert
-  // Check time limits
   arg 3
+  btoi
+  int 0
+  ==
+  bz revert
+  // Check time limits
+  arg 4
   btoi
   int 10
   +
@@ -1156,16 +1188,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -1179,7 +1211,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -1191,26 +1223,26 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 9
+  int 10
   ==
   bz revert
   gtxn 3 Sender
-  arg 6
+  arg 7
   ==
   bz revert
   int 4
   itob
-  arg 4
-  concat
   arg 5
   concat
   arg 6
   concat
   arg 7
+  concat
+  arg 8
   concat
   keccak256
   arg 0
@@ -1219,12 +1251,13 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   int 5
   itob
-  arg 4
-  concat
   arg 5
   concat
   arg 6
@@ -1232,6 +1265,8 @@ const _ALGO = {
   arg 7
   concat
   arg 8
+  concat
+  arg 9
   concat
   keccak256
   arg 1
@@ -1248,8 +1283,13 @@ const _ALGO = {
   int 4
   ==
   bz revert
-  // Check time limits
   arg 3
+  btoi
+  int 0
+  ==
+  bz revert
+  // Check time limits
+  arg 4
   btoi
   int 10
   +
@@ -1289,16 +1329,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -1312,7 +1352,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -1324,21 +1364,19 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 11
+  int 12
   ==
   bz revert
   gtxn 3 Sender
-  arg 4
+  arg 5
   ==
   bz revert
   int 5
   itob
-  arg 4
-  concat
   arg 5
   concat
   arg 6
@@ -1347,6 +1385,8 @@ const _ALGO = {
   concat
   arg 8
   concat
+  arg 9
+  concat
   keccak256
   arg 0
   ==
@@ -1354,12 +1394,15 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
-  arg 7
+  arg 8
   btoi
-  arg 9
   arg 10
+  arg 11
   concat
   keccak256
   ==
@@ -1370,8 +1413,13 @@ const _ALGO = {
   int 4
   ==
   bz revert
-  // Check time limits
   arg 3
+  btoi
+  int 0
+  ==
+  bz revert
+  // Check time limits
+  arg 4
   btoi
   int 10
   +
@@ -1411,16 +1459,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -1434,7 +1482,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -1446,21 +1494,19 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 9
+  int 10
   ==
   bz revert
   gtxn 3 Sender
-  arg 6
+  arg 7
   ==
   bz revert
   int 5
   itob
-  arg 4
-  concat
   arg 5
   concat
   arg 6
@@ -1469,6 +1515,8 @@ const _ALGO = {
   concat
   arg 8
   concat
+  arg 9
+  concat
   keccak256
   arg 0
   ==
@@ -1476,6 +1524,9 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   gtxn 4 TypeEnum
@@ -1483,7 +1534,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 4 Receiver
-  arg 6
+  arg 7
   ==
   bz revert
   gtxn 4 Amount
@@ -1492,10 +1543,6 @@ const _ALGO = {
   bz revert
   gtxn 4 Sender
   byte "{{ContractAddr}}"
-  ==
-  bz revert
-  byte base64()
-  arg 1
   ==
   bz revert
   arg 2
@@ -1509,8 +1556,13 @@ const _ALGO = {
   int 5
   ==
   bz revert
-  // Check time limits
   arg 3
+  btoi
+  gtxn 4 Fee
+  ==
+  bz revert
+  // Check time limits
+  arg 4
   btoi
   int 10
   +
@@ -1554,16 +1606,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -1577,7 +1629,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -1589,26 +1641,26 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 8
+  int 9
   ==
   bz revert
   gtxn 3 Sender
-  arg 4
+  arg 5
   ==
   bz revert
   int 4
   itob
-  arg 4
-  concat
   arg 5
   concat
   arg 6
   concat
   arg 7
+  concat
+  arg 8
   concat
   keccak256
   arg 0
@@ -1617,6 +1669,9 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   gtxn 4 TypeEnum
@@ -1624,7 +1679,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 4 Receiver
-  arg 4
+  arg 5
   ==
   bz revert
   gtxn 4 Amount
@@ -1633,10 +1688,6 @@ const _ALGO = {
   bz revert
   gtxn 4 Sender
   byte "{{ContractAddr}}"
-  ==
-  bz revert
-  byte base64()
-  arg 1
   ==
   bz revert
   arg 2
@@ -1650,8 +1701,13 @@ const _ALGO = {
   int 5
   ==
   bz revert
-  // Check time limits
   arg 3
+  btoi
+  gtxn 4 Fee
+  ==
+  bz revert
+  // Check time limits
+  arg 4
   btoi
   int 10
   +
@@ -1695,16 +1751,16 @@ const _ALGO = {
   ==
   bz revert
   // Check txnToHandler
-  gtxn 2 TypeEnum
+  gtxn 1 TypeEnum
   int pay
   ==
   bz revert
-  gtxn 2 Receiver
+  gtxn 1 Receiver
   txn Sender
   ==
   bz revert
-  gtxn 2 Amount
-  gtxn 1 Fee
+  gtxn 1 Amount
+  gtxn 2 Fee
   ==
   bz revert
   // Check txnToContract
@@ -1718,7 +1774,7 @@ const _ALGO = {
   bz revert
   // Check txnFromHandler (us)
   txn GroupIndex
-  int 1
+  int 2
   ==
   bz revert
   txn TypeEnum
@@ -1730,24 +1786,24 @@ const _ALGO = {
   ==
   bz revert
   txn Receiver
-  gtxn 2 Sender
+  gtxn 1 Sender
   ==
   bz revert
   txn NumArgs
-  int 7
+  int 8
   ==
   bz revert
   gtxn 3 Sender
-  arg 6
+  arg 7
   ==
   bz revert
   int 3
   itob
-  arg 4
-  concat
   arg 5
   concat
   arg 6
+  concat
+  arg 7
   concat
   keccak256
   arg 0
@@ -1756,6 +1812,9 @@ const _ALGO = {
   // Run body
   int 0
   gtxn 3 Amount
+  arg 3
+  btoi
+  -
   ==
   bz revert
   gtxn 4 TypeEnum
@@ -1763,7 +1822,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 4 Receiver
-  arg 6
+  arg 7
   ==
   bz revert
   gtxn 4 Amount
@@ -1772,10 +1831,6 @@ const _ALGO = {
   bz revert
   gtxn 4 Sender
   byte "{{ContractAddr}}"
-  ==
-  bz revert
-  byte base64()
-  arg 1
   ==
   bz revert
   arg 2
@@ -1789,8 +1844,13 @@ const _ALGO = {
   int 5
   ==
   bz revert
-  // Check time limits
   arg 3
+  btoi
+  gtxn 4 Fee
+  ==
+  bz revert
+  // Check time limits
+  arg 4
   btoi
   int 10
   +
