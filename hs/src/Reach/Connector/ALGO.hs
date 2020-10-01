@@ -241,17 +241,24 @@ cprim = \case
   BYTES_EQ -> call "=="
   IF_THEN_ELSE -> const $ xxx "ITE"
   BALANCE -> const $ xxx "BALANCE"
-  TXN_VALUE -> const $ code "gtxn" [ texty txnToContract, "Amount" ]
+  TXN_VALUE -> const $ do
+    --- XXX dedicate a scratch slot for this
+    code "gtxn" [ texty txnToContract, "Amount" ]
+    lookup_fee_amount
+    op "-"
   where
     call o = \args -> do
       forM_ args ca
       op o
 
-csum :: [DLArg] -> App ()
-csum = \case
+csum_ :: [App ()] -> App ()
+csum_ = \case
   [] -> cc $ DLC_Int 0
-  [v] -> ca v
-  v:vs -> csum vs >> ca v >> op "+"
+  [m] -> m
+  m:ms -> csum_ ms >> m >> op "+"
+
+csum :: [DLArg] -> App ()
+csum = csum_ . map ca
 
 cdigest :: [(SLType, App ())] -> App ()
 cdigest l = do
@@ -350,15 +357,18 @@ ct = \case
   CT_Switch {} -> xxx "switch"
   CT_Jump {} -> xxx "jump"
   CT_From _ msvs -> do
-    cnextSt
-    code "arg" [ texty argNextSt ]
-    eq_or_fail
+    check_nextSt
     halt_should_be isHalt
     where
-      (cnextSt, isHalt) =
+      (isHalt, check_nextSt) =
         case msvs of
-          Nothing -> (cc (DLC_Bytes ""), True)
-          Just svs -> (cstate HM_Set svs, False)
+          --- XXX fix this so it makes sure it is zero bytes
+          Nothing -> (True, return ())
+          Just svs -> (False, ck)
+                where ck = do
+                        cstate HM_Set svs
+                        code "arg" [ texty argNextSt ]
+                        eq_or_fail
 
 data HashMode
   = HM_Set
@@ -419,12 +429,12 @@ keyLast = "l"
 -- 4.. : Transfers from contract to user
 txnAppl :: Word8
 txnAppl = 0
-txnFromHandler :: Word8
-txnFromHandler = txnAppl + 1
 txnToHandler :: Word8
-txnToHandler = txnFromHandler + 1
+txnToHandler = txnAppl + 1
+txnFromHandler :: Word8
+txnFromHandler = txnToHandler + 1
 txnToContract :: Word8
-txnToContract = txnToHandler + 1
+txnToContract = txnFromHandler + 1
 txnFromContract0 :: Word8
 txnFromContract0 = txnToContract + 1
 
@@ -432,16 +442,19 @@ txnFromContract0 = txnToContract + 1
 -- 0   : Previous state
 -- 1   : Next state
 -- 2   : Handler halts
--- 3   : Last round
--- 4.. : Handler arguments
+-- 3   : Fee amount
+-- 4   : Last round
+-- 5.. : Handler arguments
 argPrevSt :: Word8
 argPrevSt = 0
 argNextSt :: Word8
 argNextSt = argPrevSt + 1
 argHalts :: Word8
 argHalts = argNextSt + 1
+argFeeAmount :: Word8
+argFeeAmount = argHalts + 1
 argLast :: Word8
-argLast = argHalts + 1
+argLast = argFeeAmount + 1
 argFirstUser :: Word8
 argFirstUser = argLast + 1
 
@@ -449,6 +462,8 @@ lookup_sender :: App ()
 lookup_sender = code "gtxn" [ texty txnToContract, "Sender" ]
 lookup_last :: App ()
 lookup_last = code "arg" [ texty argLast ] >> cfrombs T_UInt256
+lookup_fee_amount :: App ()
+lookup_fee_amount = code "arg" [ texty argFeeAmount ] >> cfrombs T_UInt256
 
 std_footer :: App ()
 std_footer = do
@@ -490,6 +505,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = fmap Just $ do
     code "int" [ "appl" ]
     eq_or_fail
     code "gtxn" [ texty txnAppl, "ApplicationID" ]
+    --- XXX Make this int
     code "byte" [ tApplicationID ]
     cfrombs T_UInt256
     eq_or_fail
@@ -539,6 +555,8 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = fmap Just $ do
     code "arg" [ texty argPrevSt ]
     eq_or_fail
 
+    --- XXX close remainder to is deployer if halts, zero otherwise
+
     comment "Run body"
     ct body
 
@@ -546,6 +564,10 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg body) = fmap Just $ do
     comment "Check GroupSize"
     code "global" [ "GroupSize" ]
     cc $ DLC_Int $ fromIntegral $ 1 + txns
+    eq_or_fail
+
+    lookup_fee_amount
+    csum_ $ map (\i -> code "gtxn" [ texty i, "Fee" ]) [txnFromContract0 .. txns]
     eq_or_fail
 
     comment "Check time limits"
@@ -605,14 +627,15 @@ compile_algo disp pl = do
     code "int" [ "appl" ]
     eq_or_fail
     check_rekeyto
-    code "global" [ "GroupSize" ]
-    cc $ DLC_Int $ 1
-    eq_or_fail
     code "txn" [ "Sender" ]
     code "byte" [ tDeployer ]
     eq_or_fail
     code "txn" [ "ApplicationID" ]
     code "bz" [ "init" ]
+    code "global" [ "GroupSize" ]
+    cc $ DLC_Int $ fromIntegral $ 2 + howManySteps
+    eq_or_fail
+    --- XXX can we constrain the other txns to transfer the correct amount?
     code "txn" [ "OnCompletion" ]
     code "int" [ "UpdateApplication" ]
     eq_or_fail
@@ -624,6 +647,9 @@ compile_algo disp pl = do
       cc $ DLC_Bool $ False
     code "b" [ "done" ]
     label "init"
+    code "global" [ "GroupSize" ]
+    cc $ DLC_Int $ 1
+    eq_or_fail
     code "txn" [ "OnCompletion" ]
     code "int" [ "NoOp" ]
     eq_or_fail
@@ -634,11 +660,6 @@ compile_algo disp pl = do
     code "int" [ "appl" ]
     eq_or_fail
     check_rekeyto
-    app_global_get keyHalts
-    code "bnz" [ "halted" ]
-    code "txn" [ "OnCompletion" ]
-    code "int" [ "NoOp" ]
-    eq_or_fail
     comment "Check that everyone's here"
     code "global" [ "GroupSize" ]
     cc $ DLC_Int $ fromIntegral $ txnFromContract0
@@ -667,16 +688,19 @@ compile_algo disp pl = do
       cfrombs T_Bytes
     app_global_put keyLast $ do
       code "global" [ "Round" ]
+    --- XXX we don't actually need halts
     app_global_put keyHalts $ do
       code "gtxna" [ texty txnFromHandler, "Args", texty argHalts ]
       cfrombs T_Bool
+    app_global_get keyHalts
+    code "bnz" [ "halted" ]
+    code "txn" [ "OnCompletion" ]
+    code "int" [ "NoOp" ]
+    eq_or_fail
     code "b" [ "done" ]
     label "halted"
     code "txn" [ "OnCompletion" ]
     code "int" [ "DeleteApplication" ]
-    eq_or_fail
-    code "global" [ "GroupSize" ]
-    cc $ DLC_Int $ 1
     eq_or_fail
     code "b" [ "done" ]
   clearm <- simple $ do
@@ -689,6 +713,7 @@ compile_algo disp pl = do
     cc $ DLC_Bool $ True
     eq_or_fail
     code "b" [ "done" ]
+  -- XXX ctc needs to allow deployer to get back minimum balance
   ctcm <- simple $ do
     comment "Check size"
     code "global" [ "GroupSize" ]

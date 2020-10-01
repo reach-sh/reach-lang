@@ -18,6 +18,7 @@ declare module 'algosdk' {
   declare type Txn = {
     txID: () => TxIdWrapper,
     lastRound: number,
+    fee: number,
     signTxn: (sk: SecretKey) => SignedTxn,
   }
   declare type TxnParams = {
@@ -45,12 +46,14 @@ declare module 'algosdk' {
     do(): Promise<T>,
   };
 
-  declare type RawAddress = {
-    publicKey: Uint8Array,
+  declare type RawAddress = Uint8Array;
+  declare type DecodedAddress = {
+    publicKey: RawAddress,
     checksum: Uint8Array
   }
 
-  declare function decodeAddress(addr: Address): RawAddress
+  declare function encodeAddress(publicKey: RawAddress): Address
+  declare function decodeAddress(addr: Address): DecodedAddress
   declare function mnemonicToSecretKey(mn: string): Wallet
   declare function encodeObj(obj: any): Uint8Array
   declare function generateAccount(): Wallet

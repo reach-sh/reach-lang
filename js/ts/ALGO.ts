@@ -7,8 +7,9 @@ import Timeout from 'await-timeout';
 
 import {
   CurrencyAmount, debug,
-  isBigNumber, bigNumberify, bigNumberToHex,
-  T_UInt256, T_Bool,
+  isBigNumber, bigNumberify,
+  bigNumberToHex, hexToBigNumber,
+  T_UInt256, T_Bool, setDigestWidth,
   getDEBUG, setDEBUG } from './shared';
 export * from './shared';
 
@@ -23,6 +24,7 @@ setDEBUG(true);
 // The unused ones are commented out
 type Round = number
 type Address = string
+type RawAddress = Uint8Array;
 type SecretKey = Uint8Array // length 64
   // TODO: find the proper algo terminology for Wallet
 type Wallet = {
@@ -33,6 +35,7 @@ type SignedTxn = Uint8Array;
 type Txn = {
     txID: () => TxIdWrapper,
     lastRound: number,
+    fee: number,
     signTxn: (sk: SecretKey) => SignedTxn,
   }
 type TxnParams = {
@@ -93,7 +96,7 @@ type SimRes = {
   isHalt : boolean,
 };
 type SimTxn = {
-  to: Address,
+  to: RawAddress,
   amt: BigNumber,
 };
 
@@ -109,7 +112,7 @@ type Recv = {
   data: Array<ContractOut>,
   value: BigNumber,
   balance: BigNumber,
-  from: Address,
+  from: RawAddress,
 } | { didTimeout: true };
 
 type ContractAttached = {
@@ -117,12 +120,13 @@ type ContractAttached = {
   sendrecv: (...argz: any) => Promise<Recv>,
   recv: (...argz: any) => Promise<Recv>,
   wait: (...argz: any) => any,
-  iam: (some_addr: Address) => Address,
+  iam: (some_addr: RawAddress) => RawAddress,
 };
 
 // TODO
 type ContractOut = any;
 
+// XXX Add who the creator is to refund them
 type ContractInfo = {
   getInfo?: () => Promise<ContractInfo>,
   creationRound: number,
@@ -207,7 +211,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
     r = await algodClient.compile(code).do();
     s = 200;
   } catch (e) {
-    s = e.statusCode;
+    s = typeof e === 'object' ? e.statusCode : 'not object';
     r = e;
   }
 
@@ -232,7 +236,7 @@ const getTxnParams = async (): Promise<TxnParams> => {
     }
     debug(`...but firstRound is 0, so let's wait and try again.`);
     // Assumption: firstRound will move past 0 on its own.
-    await Timeout.set(1);
+    await Timeout.set(1000);
   }
 };
 
@@ -267,10 +271,21 @@ export const transfer = async (from: Account, to: Account, value: BigNumber): Pr
     ));
 };
 
-// XXX I'd use replaceAll if I could, but I'm pretty sure there's just one occurrence. It would be better to extend ConnectorInfo so these are functions
+// XXX I'd use x.replaceAll if I could (not supported in this node version), but it would be better to extend ConnectorInfo so these are functions
+const replaceAll = (orig: string, what: string, whatp: string): string => {
+  const once = orig.replace(what, whatp);
+  if ( once === orig ) {
+    return orig;
+  } else {
+    return replaceAll(once, what, whatp);
+  }
+};
+
+const replaceUint8Array = (label: string, arr: Uint8Array, x:string): string =>
+  replaceAll(x, `"{{${label}}}"`, `base32(${base32.encode(arr).toString()})`);
+
 const replaceAddr = (label: string, addr: Address, x:string): string =>
-x.replace(`"{{${label}}}"`,
-          `base32(${base32.encode(algosdk.decodeAddress(addr).publicKey).toString()})`);
+  replaceUint8Array(label, algosdk.decodeAddress(addr).publicKey, x);
 
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
@@ -295,10 +310,16 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
     }
   }
 
-  const subst_appid = (x: string) => x.replace('{{ApplicationID}}', ApplicationID.toString());
+  const subst_appid = (x: string) =>
+    replaceUint8Array(
+      'ApplicationID',
+      // @ts-ignore XXX
+      safeify(T_UInt256, bigNumberify(ApplicationID)),
+      x);
 
   const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
-  const subst_ctc = (x: string) => replaceAddr('ContractAddr', ctc_bin.hash, x);
+  const subst_ctc = (x: string) =>
+    replaceAddr('ContractAddr', ctc_bin.hash, x);
 
   const stepCode_bin: { [key: string]: CompileResultBytes } = {};
   let appApproval_subst = appApproval;
@@ -339,9 +360,66 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
+const presafeify = (ty: any, x: any): any => {
+  if ( ty.name === 'Address' ) {
+    return '0x' + Buffer.from(x).toString('hex')
+  }
+  return x;
+}
+
+const safeify = (ty: any, x: any): LogicArg => {
+  if ( ty.name === 'Address' ) {
+    return Buffer.from(x.slice(2), 'hex'); }
+  if ( isBigNumber(x) ) {
+    // XXX Does it matter that this is not msgpacked as an int?
+    const size = x.lt(bigNumberify(2).pow(64)) ? 8 : 32;
+    const h = '0x' + bigNumberToHex(x, size);
+    debug(`${x} =${size}> ${h}`);
+    const r = ethers.utils.arrayify(h);
+    return r; }
+  if ( typeof x === 'boolean' ) {
+    return safeify(T_UInt256, bigNumberify(x ? 1 : 0)); }
+  if ( typeof x === 'string' ) {
+    return ethers.utils.arrayify(x); }
+  throw Error(`can't safeify ${JSON.stringify(x)}`);
+};
+
+const desafeify = (ty: any, v: Buffer): any => {
+  if ( ty.name === 'UInt256' ) {
+    return hexToBigNumber('0x' + v.toString('hex'));
+  }
+  if ( ty.name == 'Bytes' ) {
+    return '0x' + v.toString('hex');
+  }
+  throw Error(`can't desafeify ${JSON.stringify(ty)} and ${JSON.stringify(v)}`);
+}
+
+const doQuery = async (dhead:string, query: any): Promise<any> => {
+  //debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
+  let res;
+  try {
+    res = await query.do();
+  } catch (e) {
+    throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
+  }
+
+  if ( res.transactions.length == 0 ) {
+    // debug(`${dhead} --- RESULT = empty`);
+    // XXX Look at the round in res and wait for a new round
+    return null;
+  }
+
+  debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
+  // @ts-ignore XXX
+  const txn = res.transactions[0];
+
+  return txn;
+};
+
 export const connectAccount = async (networkAccount: NetworkAccount) => {
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
+  const pk = algosdk.decodeAddress(thisAcc.addr).publicKey;
   debug(`${shad}: connectAccount`);
 
   const attach = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<ContractAttached> => {
@@ -354,11 +432,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const bin_comp = await compileFor(bin, ApplicationID);
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
-    const iam = (some_addr: Address): Address => {
-      if (some_addr == thisAcc.addr) {
-        return thisAcc.addr;
+    const iam = (some_addr: RawAddress): RawAddress => {
+      if (some_addr == pk) {
+        return pk;
       } else {
-        throw Error(`I should be ${some_addr}, but am ${thisAcc.addr}`);
+        throw Error(`I should be ${some_addr}, but am ${pk}`);
       }
     };
 
@@ -383,52 +461,18 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       debug(`${dhead} --- START`);
       const handler = bin_comp.steps[funcName];
 
+      // XXX become the monster
+      setDigestWidth(8);
       const fake_res = {
         didTimeout: false,
         data: args,
         value: value,
         balance: bigNumberify('0'), // XXX
-        from: thisAcc.addr,
+        from: pk,
       };
       const sim_r = sim_p( fake_res );
       const isHalt = sim_r.isHalt;
       const sim_txns = sim_r.txns;
-
-      const actual_args =
-        [ sim_r.prevSt, sim_r.nextSt, isHalt, lastRound, ...args ];
-      const actual_tys =
-        [ T_UInt256, T_UInt256, T_Bool, T_UInt256, ...tys ];
-      const munged_args =
-        // XXX this needs to be customized for Algorand, so I don't have to safeify. Ideally munge would return Uint8Array for everything.
-        actual_args.map((m, i) => actual_tys[i].munge(actual_tys[i].canonicalize(m)));
-
-      const safeify = (x: any): LogicArg => {
-        if ( isBigNumber(x) ) {
-          // XXX Does it matter that this is not msgpacked as an int?
-          const size = x.lt(bigNumberify(2).pow(64)) ? 8 : 32;
-          const h = '0x' + bigNumberToHex(x, size);
-          debug(`${x} =${size}> ${h}`);
-          const r = ethers.utils.arrayify(h);
-          return r;
-        } else if ( typeof x === 'boolean' ) {
-          return safeify(bigNumberify(x ? 1 : 0));
-        } else if ( typeof x === 'string' ) {
-          return x;
-        } else {
-          throw Error(`can't safeify ${JSON.stringify(x)}`);
-        }
-      };
-      const safe_args: Array<LogicArg> = munged_args.map(safeify);
-      safe_args.forEach((x) => { 
-        if (! ( typeof x === 'string' || x instanceof Uint8Array ) ) {
-          throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
-        }
-      });
-
-      debug(`${dhead} --- PREPARE`); // XXX display safe_args usefully
-      const handler_with_args =
-        algosdk.makeLogicSig(handler.result, safe_args);
-      debug(`${dhead} --- PREPARED`); // XXX display handler_with_args usefully, like with base64ify toBytes
 
       while ( true ){
         const params = await getTxnParams();
@@ -442,11 +486,49 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         }
 
         debug(`${dhead} --- ASSEMBLE w/ ${JSON.stringify(params)}`);
+        
+        const txnFromContracts =
+          sim_txns.map(
+            (txn_nfo: SimTxn) =>
+            algosdk.makePaymentTxnWithSuggestedParams(
+              bin_comp.ctc.hash,
+              algosdk.encodeAddress(txn_nfo.to),
+              txn_nfo.amt.toNumber(),
+              undefined, ui8z,
+              params));
+        const totalFromFee =
+          txnFromContracts.reduce(((sum: number, txn: Txn): number => sum + txn.fee), 0);
+        debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
+
+        debug(`${dhead} --- isHalt = ${JSON.stringify(isHalt)}`);
+
+        const actual_args =
+        [ sim_r.prevSt, sim_r.nextSt, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
+      const actual_tys =
+        [ T_UInt256, T_UInt256, T_Bool, T_UInt256, T_UInt256, ...tys ];
+      debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
+      const munged_args =
+        // XXX this needs to be customized for Algorand, so I don't have to safeify. Ideally munge would return Uint8Array for everything.
+        actual_args.map((m, i) => actual_tys[i].munge(actual_tys[i].canonicalize(presafeify(actual_tys[i], m))));
+
+      const safe_args: Array<LogicArg> = munged_args.map((m, i) => safeify(actual_tys[i], m));
+      safe_args.forEach((x) => { 
+        if (! ( typeof x === 'string' || x instanceof Uint8Array ) ) {
+          throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
+        }
+      });
+
+      debug(`${dhead} --- PREPARE`); // XXX display safe_args usefully
+      const handler_with_args =
+        algosdk.makeLogicSig(handler.result, safe_args);
+      debug(`${dhead} --- PREPARED`); // XXX display handler_with_args usefully, like with base64ify toBytes
+
         const whichAppl =
           isHalt ?
           // We are treating it like any party can delete the application, but the docs say it may only be possible for the creator. The code appears to not care: https://github.com/algorand/go-algorand/blob/0e9cc6b0c2ddc43c3cfa751d61c1321d8707c0da/ledger/apply/application.go#L589
           algosdk.makeApplicationDeleteTxn :
           algosdk.makeApplicationNoOpTxn;
+        // XXX if it is a halt, generate closeremaindertos for all the handlers and the contract account
         const txnAppl =
           whichAppl(
             thisAcc.addr, params, ApplicationID);
@@ -456,33 +538,26 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             thisAcc.addr,
             0, undefined, ui8z,
             params);
+        debug(`${dhead} --- txnFromHandler = ${JSON.stringify(txnFromHandler)}`);
         const txnToHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
             thisAcc.addr,
             handler.hash,
-            params.fee,
+            txnFromHandler.fee,
             undefined, ui8z,
             params);
+        debug(`${dhead} --- txnToHandler = ${JSON.stringify(txnToHandler)}`);
         const txnToContract =
           algosdk.makePaymentTxnWithSuggestedParams(
             thisAcc.addr,
             bin_comp.ctc.hash,
-            value.toNumber(),
+            value.toNumber() + totalFromFee,
             undefined, ui8z,
             params);
-        const txnFromContracts =
-          sim_txns.map(
-            (txn_nfo: SimTxn) =>
-            algosdk.makePaymentTxnWithSuggestedParams(
-              bin_comp.ctc.hash,
-              txn_nfo.to,
-              txn_nfo.amt.toNumber(),
-              undefined, ui8z,
-              params));
         const txns = [
           txnAppl, 
-          txnFromHandler,
           txnToHandler,
+          txnFromHandler,
           txnToContract,
           ...txnFromContracts ];
         algosdk.assignGroupID(txns);
@@ -503,42 +578,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
         const txns_s = [
           txnAppl_s,
-          txnFromHandler_s,
           txnToHandler_s,
+          txnFromHandler_s,
           txnToContract_s,
           ...txnFromContracts_s
         ];
-
-        // XXX rather than bothering with this, add an option to algod to producing debugging output when running lsigs
-        if ( false && getDEBUG() ) {
-          const dr_apps: Array<any> = [
-            // XXX
-          ];
-          const dr_accts: Array<any> = [
-            // XXX
-          ];
-          void(dr_apps);
-          void(dr_accts);
-          const dr_srcs: Array<any> = [
-         //   new algosdk.modelsv2.DryrunSource("approv", bin_comp.appApproval.src, 0),
-            new algosdk.modelsv2.DryrunSource("lsig", handler.src, 1)
-          ];
-          for ( let i = 0; i < sim_txns.length; i++ ) {
-            dr_srcs.push(new algosdk.modelsv2.DryrunSource("lsig", bin_comp.ctc.src, 4 + i));
-          }
-          const dr = new algosdk.modelsv2.DryrunRequest({
-            txns: txns_s,
-            // accounts: dr_accts,
-            // apps: dr_apps,
-            sources: dr_srcs });
-          try {
-            const drr = await algodClient.dryrun(dr).do();
-            // XXX parse this, rather than just displaying it
-            console.log(`dryrun:\n${JSON.stringify(drr, null, 2)}`);
-          } catch (e: any) {
-            console.log(`${dhead} --- DRY-RUN:\n${format_failed_request(e)}`);
-          }
-        }
 
         debug(`${dhead} --- SEND: ${txns_s.length}`);
         let res;
@@ -555,7 +599,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         }
 
         // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
-        void(res);
+        debug(`${dhead} --- SUCCESS: ${JSON.stringify(res)}`);
+
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       }
     };
@@ -590,28 +635,64 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         if ( timeoutRound ) {
           query = query.maxRound(timeoutRound);
         }
-        debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
-        let res;
-        try {
-          res = await query.do();
-        } catch (e) {
-          throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`);
-        }
 
-        if ( res.transactions.length == 0 ) {
-          debug(`${dhead} --- RESULT = empty`);
-          // XXX Look at the round in res and wait for a new round
-          await Timeout.set(1);
+        const txn = await doQuery(dhead, query);
+        if ( ! txn ) {
+          // XXX perhaps wait until a new round has happened
+          await Timeout.set(2000);
           continue;
         }
 
-        debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
+        const ctc_args: Array<string> =
+          // @ts-ignore XXX
+          txn.signature.logicsig.args;
+        debug(`${dhead} --- ctc_args = ${JSON.stringify(ctc_args)}`);
 
-        void(tys);
-        void(evt_cnt);
-        // XXX need to parse res
+        const args = evt_cnt == 0 ? [] : ctc_args.slice(-1 * evt_cnt);
+        debug(`${dhead} --- args = ${JSON.stringify(args)}`);
 
-        throw Error(`XXX recv`);
+        const args_bufs: Array<Buffer> =
+          args.map((x: string): Buffer => Buffer.from(x, 'base64'));
+        debug(`${dhead} --- args_bufs = ${JSON.stringify(args_bufs)}`);
+
+        const args_un =
+          args_bufs.map((v: Buffer, i: number) => desafeify(tys[i], v));
+        debug(`${dhead} --- args_un = ${JSON.stringify(args_un)}`);
+
+        const totalFromFee =
+          desafeify(T_UInt256, Buffer.from(ctc_args[3], 'base64'));
+        debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
+
+        const fromAddr =
+          txn['payment-transaction'].receiver;
+        const from =
+          algosdk.decodeAddress(fromAddr).publicKey;
+        debug(`${dhead} --- from = ${JSON.stringify(from)} = ${fromAddr}`);
+
+        const oldLastRound = lastRound;
+        lastRound = txn['confirmed-round'];
+        debug(`${dhead} --- updating round from ${oldLastRound} to ${lastRound}`);
+
+        // XXX ideally we'd get the whole transaction group before and not need to do this.
+        const ptxn =
+          await doQuery(
+            dhead,
+            indexer.searchForTransactions()
+              .address(bin_comp.ctc.hash)
+              .addressRole("receiver")
+              .round(lastRound));
+
+        const value =
+          bigNumberify(ptxn['payment-transaction'].amount)
+            .sub(totalFromFee);
+        debug(`${dhead} --- value = ${JSON.stringify(value)}`);
+
+        return {
+          didTimeout: false,
+          data: args_un,
+          balance: bigNumberify(0), // XXX
+          value, from,
+        };
       }
     };
 
@@ -623,7 +704,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     debug(`${shad} deploy`);
     const algob = bin._Connectors.ALGO;
 
-    const { appApproval0, appClear } = algob;
+    const { appApproval0, appClear, steps } = algob;
+    const stepsN = parseInt(steps);
 
     const appApproval0_subst =
       replaceAddr('Deployer', thisAcc.addr, appApproval0);
@@ -649,14 +731,57 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     }
     const bin_comp = await compileFor(bin, ApplicationID);
 
-    const updateRes =
-      await sign_and_send_sync(
-        'ApplicationUpdate',
-        thisAcc.sk,
-        algosdk.makeApplicationUpdateTxn(
-          thisAcc.addr, await getTxnParams(),
-          ApplicationID, bin_comp.appApproval.result,
-          appClear_bin.result));
+    const minBalance = 100000; // XXX get from SDK
+
+    const params = await getTxnParams();
+    const txnUpdate =
+      algosdk.makeApplicationUpdateTxn(
+        thisAcc.addr, params,
+        ApplicationID, bin_comp.appApproval.result,
+        appClear_bin.result);
+    const txnToContract =
+      algosdk.makePaymentTxnWithSuggestedParams(
+        thisAcc.addr,
+        bin_comp.ctc.hash,
+        minBalance,
+        undefined, ui8z,
+        params);
+    const txnToHandlers = [];
+    for ( let i = 1; i <= stepsN; i++ ) {
+      const key = `m${i}`;
+      txnToHandlers.push(
+        algosdk.makePaymentTxnWithSuggestedParams(
+          thisAcc.addr,
+          bin_comp.steps[key].hash,
+          minBalance,
+          undefined, ui8z,
+          params)); }
+
+    const txns = [
+      txnUpdate,
+      txnToContract,
+      ...txnToHandlers
+    ];
+    algosdk.assignGroupID(txns);
+
+    const txnUpdate_s =
+      txnUpdate.signTxn(thisAcc.sk);
+    const txnToContract_s =
+      txnToContract.signTxn(thisAcc.sk);
+    const txnToHandlers_s =
+      txnToHandlers.map((tx: Txn): SignedTxn => tx.signTxn(thisAcc.sk));
+    const txns_s = [
+      txnUpdate_s,
+      txnToContract_s,
+      ...txnToHandlers_s,
+    ];
+
+    let updateRes;
+    try {
+        updateRes = await sendAndConfirm( txns_s, txnUpdate );
+    } catch (e) {
+      throw Error(`deploy: ${JSON.stringify(e)}`);
+    }
 
     const creationRound = updateRes['confirmed-round'];
     const getInfo = async (): Promise<ContractInfo> =>

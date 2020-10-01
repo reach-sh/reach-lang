@@ -285,7 +285,7 @@ jsETail ctxt = \case
       True -> emptyDoc
   ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
   ET_Switch at ov csm -> jsEmitSwitch jsETail ctxt at ov csm
-  ET_FromConsensus msvs k ->
+  ET_FromConsensus _ which msvs k ->
     case ctxt_simulate ctxt of
       False -> kp
       True ->
@@ -298,14 +298,14 @@ jsETail ctxt = \case
       (nextSt', isHalt') =
         case msvs of
           Nothing ->
-            ( jsCon $ DLC_Bytes ""
+            ( jsDigest [] --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
             , jsCon $ DLC_Bool True
             )
           Just svs ->
-            ( jsDigest (map DLA_Var svs)
+            ( jsDigest (DLA_Con (DLC_Int $ fromIntegral which) : (map DLA_Var svs))
             , jsCon $ DLC_Bool False
             )
-  ET_ToConsensus _ fs_ok which from_me msg mto k_ok -> tp
+  ET_ToConsensus _ fs_ok prev which from_me msg mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
       (delayp, k_p) =
@@ -332,8 +332,8 @@ jsETail ctxt = \case
             jsApply
               "ctc.sendrecv"
               [ whop
-              , jsCon (DLC_Int $ fromIntegral which)
-              , jsCon (DLC_Int $ fromIntegral $ length msg)
+              , pretty which
+              , pretty (length msg)
               , jsArray $ map (jsContract . argTypeOf) $ svs_as ++ args
               , vs
               , amtp
@@ -347,7 +347,7 @@ jsETail ctxt = \case
               sim_body =
                 vsep
                   [ "const sim_r = { txns: [] };"
-                  , "sim_r.prevSt =" <+> jsDigest svs_as <> semi
+                  , "sim_r.prevSt =" <+> jsDigest (DLA_Con (DLC_Int $ fromIntegral prev) : svs_as) <> semi
                   , k_defp
                   , sim_body_core
                   , "return sim_r;"
@@ -359,8 +359,8 @@ jsETail ctxt = \case
             jsApply
               "ctc.recv"
               [ whop
-              , jsCon (DLC_Int $ fromIntegral which)
-              , jsCon (DLC_Int $ fromIntegral $ length msg)
+              , pretty which
+              , pretty (length msg)
               , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
               , delayp
               ]
@@ -399,7 +399,10 @@ jsPart p (EPProg _ _ et) =
         }
     bodyp' =
       vsep
-        [ "const" <+> jsTxn ctxt <+> "= { balance: 0, value: 0 }" <> semi
+        [ "const" <+> jsTxn ctxt <+> "=" <+>
+          jsObject (M.fromList [ ("balance"::String, jsCon $ DLC_Int 0)
+                               , ("value"::String, jsCon $ DLC_Int 0) ])
+          <> semi
         , jsETail ctxt et
         ]
 

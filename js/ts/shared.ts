@@ -393,6 +393,10 @@ export function protect <T>(ctc: TyContract<T>, v: any, ai: any = null) {
 }
 
 // Massage the arg into a form keccak256 will handle correctly
+let digestWidth = 32;
+export const setDigestWidth = (sz: number): void => {
+  digestWidth = sz;
+};
 const kek = (arg: any): string | Uint8Array => {
   if (typeof(arg) === 'string') {
     if (isHex(arg)) {
@@ -401,9 +405,9 @@ const kek = (arg: any): string | Uint8Array => {
       return toUtf8Bytes(arg);
     }
   } else if (typeof(arg) === 'number') {
-    return '0x' + bigNumberToHex(arg);
+    return '0x' + bigNumberToHex(arg, digestWidth);
   } else if (isBigNumber(arg)) {
-    return '0x' + bigNumberToHex(arg);
+    return '0x' + bigNumberToHex(arg, digestWidth);
   } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array') {
     return arg;
   } else if (Array.isArray(arg)) {
@@ -417,9 +421,12 @@ export const toHex = (x: any) => hexlify(kek(x));
 export const isHex = isHexString;
 export const hexToString = toUtf8String;
 
+// XXX the JS backend expects this to be a BigNumber
 export const keccak256 = (...args: Array<any>) => {
   const kekCat = kek(args);
-  return ethers.utils.keccak256(kekCat);
+  const r = ethers.utils.keccak256(kekCat);
+  debug(`keccak(${JSON.stringify(args)}) => internal(${JSON.stringify(kekCat)}) => ${JSON.stringify(r)}`);
+  return r;
 };
 
 export const hexToBigNumber = (h: string): BigNumber => bigNumberify(hexTo0x(h));

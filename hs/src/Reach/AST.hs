@@ -745,10 +745,11 @@ data ETail
   | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg ETail ETail
   | ET_Switch SrcLoc DLVar (SwitchCases ETail)
-  | ET_FromConsensus (Maybe [DLVar]) ETail
+  | ET_FromConsensus SrcLoc Int (Maybe [DLVar]) ETail
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
       , et_tc_fs :: FromSpec
+      , et_tc_prev :: Int
       , et_tc_which :: Int
       , et_tc_from_me
         :: ( ---     args     amt    saved_vs

@@ -265,12 +265,13 @@ epp_n st n =
       let st' = st {pst_interval = default_interval}
       ProResS p_prts_s (ProRes_ cons_cs more_chb) <- epp_s st' s
       let svs = counts_nzs cons_cs
+      let which = pst_prev_handler st
       let from_info =
             case more_chb of
               True -> Just svs
               False -> Nothing
       let mkp (ProRes_ cs_p et_p) =
-            ProRes_ cs_p (ET_FromConsensus from_info et_p)
+            ProRes_ cs_p (ET_FromConsensus at1 which from_info et_p)
       let p_prts_s' = M.map mkp p_prts_s
       let ctw = CT_From at1 from_info
       return $ ProResC p_prts_s' (ProRes_ cons_cs ctw)
@@ -408,7 +409,7 @@ epp_s st s =
       let prev = pst_prev_handler st
       let this_h = C_Handler at int_ok fs prev svs msg ct_cons
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
-            ProRes_ cs_' $ ET_ToConsensus at fs which mfrom msg mtime' et_
+            ProRes_ cs_' $ ET_ToConsensus at fs prev which mfrom msg mtime' et_
             where
               cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms msg_and_defns cs_
       let mk_sender_et = mk_et from_me
