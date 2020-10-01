@@ -15,11 +15,11 @@ push:
 
 .PHONY: run
 run: build
-	docker run --name algodev --rm -t -p 4180:4180 -p 8980:8980 $(IMAGE):latest
+	docker-compose run --service-ports algorand-devnet
 
 .PHONY: run-shell
 run-shell: build
-	docker run --name algodev --rm -it -p 4180:4180 -p 8980:8980 --entrypoint /bin/bash $(IMAGE):latest
+	docker run --name algodev --rm -it -p 4180:4180 -p 8980:8980 -p 9392:9392 --entrypoint /bin/bash $(IMAGE):latest
 
 .PHONY: status
 status:
@@ -31,7 +31,7 @@ status:
 .PHONY: index-status
 index-status:
 	@curl --verbose -s \
-		-H "X-Indexer-API-Token: $$(cat algorand_data/algod.token)" \
+		-H "X-Indexer-API-Token: reach-devnet" \
 		localhost:8980/v2/transactions?min-round=0
 
 # Intentionally not specifying deps for this because we don't

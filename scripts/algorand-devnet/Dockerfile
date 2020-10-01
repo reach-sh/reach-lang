@@ -32,7 +32,10 @@ RUN mkdir -p $SRC_PARENT
 WORKDIR $SRC_PARENT
 RUN git clone https://github.com/jeapostrophe/go-algorand
 WORKDIR $SRC_PARENT/go-algorand
-RUN git checkout 595aa4722824be2bbad92ec367267584a87f29fe && ./scripts/configure_dev.sh && make install
+# RUN git checkout 595aa4722824be2bbad92ec367267584a87f29fe && ./scripts/configure_dev.sh && make install
+RUN ./scripts/configure_dev.sh
+RUN git fetch && git reset --hard dc2fd238b2e63579ba81bdc9695dd18fd5b719c7
+RUN make install
 
 # indexer
 WORKDIR $SRC_PARENT
@@ -46,6 +49,7 @@ COPY algorand_network/ $ALGORAND_NETWORK/
 COPY algorand_data/* $ALGORAND_DATA/
 COPY start.sh /
 
+EXPOSE 9392
 EXPOSE 4180
 EXPOSE 8980
 

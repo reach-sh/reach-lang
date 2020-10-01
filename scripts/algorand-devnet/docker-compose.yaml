@@ -1,0 +1,21 @@
+version: "3"
+services:
+  algorand-devnet:
+    image: reachsh/algorand-devnet:latest
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+    ports:
+      - "4180:4180"
+      - "8980:8980"
+      - "9392:9392"
+  algorand-postgres-db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
