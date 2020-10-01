@@ -1,11 +1,25 @@
 // Automatically generated with Reach 0.1.2
-export const _version = '0.1.2'
+export const _version = '0.1.2';
 
 export async function Alice(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
   
   
-  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.wager, null)], stdlib.protect(stdlib.T_UInt256, interact.wager, null), [stdlib.T_UInt256], false, null);
+  const txn1 = await ctc.sendrecv('Alice', stdlib.bigNumberify(1), stdlib.bigNumberify(1), [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.wager, null)], stdlib.protect(stdlib.T_UInt256, interact.wager, null), [stdlib.T_UInt256], false, ((txn1) => {
+    const sim_r = { txns: [] };
+    sim_r.prevSt = stdlib.keccak256();
+    const [v27] = txn1.data;
+    const v28 = txn1.from;
+    
+    const v29 = txn1.value;
+    const v31 = stdlib.eq(v27, v29);
+    stdlib.assert(v31, {
+      at: './index.rsh:application',
+      fs: [],
+      who: 'Alice' });
+    sim_r.nextSt = stdlib.keccak256(v28, v27);
+    sim_r.isHalt = false;
+    return sim_r; }));
   const [v27] = txn1.data;
   const v28 = txn1.from;
   const v29 = txn1.value;
@@ -14,19 +28,36 @@ export async function Alice(stdlib, ctc, interact) {
     at: './index.rsh:application',
     fs: [],
     who: 'Alice' });
-  const txn2 = await ctc.recv('Alice', 2, 0, [], 10);
+  const txn2 = await ctc.recv('Alice', stdlib.bigNumberify(2), stdlib.bigNumberify(0), [], stdlib.bigNumberify(10));
   if (txn2.didTimeout) {
     
-    const txn3 = await ctc.sendrecv('Alice', 10, 0, [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], 0, [], false, null);
+    const txn3 = await ctc.sendrecv('Alice', stdlib.bigNumberify(10), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], stdlib.bigNumberify(0), [], false, ((txn3) => {
+      const sim_r = { txns: [] };
+      sim_r.prevSt = stdlib.keccak256(v28, v27);
+      const [] = txn3.data;
+      
+      const v39 = txn3.value;
+      const v41 = stdlib.eq(stdlib.bigNumberify(0), v39);
+      stdlib.assert(v41, {
+        at: 'reach standard library:application',
+        fs: ['at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
+        who: 'Alice' });
+      const v42 = txn3.balance;
+      sim_r.txns.push({
+        amt: v42,
+        to: v28 });
+      sim_r.nextSt = '';
+      sim_r.isHalt = true;
+      return sim_r; }));
     const [] = txn3.data;
     const v39 = txn3.value;
-    const v41 = stdlib.eq(0, v39);
+    const v41 = stdlib.eq(stdlib.bigNumberify(0), v39);
     stdlib.assert(v41, {
       at: 'reach standard library:application',
       fs: ['at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
       who: 'Alice' });
     const v42 = txn3.balance;
-    // stdlib.transfer(v28, v42);
+    ;
     stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
       at: './index.rsh:40:33:application',
       fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
@@ -42,9 +73,9 @@ export async function Alice(stdlib, ctc, interact) {
       at: './index.rsh:application',
       fs: [],
       who: 'Alice' });
-    let v48 = 1;
+    let v48 = stdlib.bigNumberify(1);
     while ((() => {
-      const v59 = stdlib.eq(v48, 1);
+      const v59 = stdlib.eq(v48, stdlib.bigNumberify(1));
       
       return v59; })()) {
       const v61 = stdlib.protect(stdlib.T_UInt256, await interact.getHand(), {
@@ -58,18 +89,31 @@ export async function Alice(stdlib, ctc, interact) {
       const v64 = stdlib.keccak256(v63, v61);
       
       
-      const txn3 = await ctc.sendrecv('Alice', 4, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v64], 0, [stdlib.T_UInt256], 10, null);
+      const txn3 = await ctc.sendrecv('Alice', stdlib.bigNumberify(4), stdlib.bigNumberify(1), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v64], stdlib.bigNumberify(0), [stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn3) => {
+        const sim_r = { txns: [] };
+        sim_r.prevSt = stdlib.keccak256(v28, v27, v34);
+        const [v65] = txn3.data;
+        
+        const v66 = txn3.value;
+        const v68 = stdlib.eq(stdlib.bigNumberify(0), v66);
+        stdlib.assert(v68, {
+          at: './index.rsh:application',
+          fs: [],
+          who: 'Alice' });
+        sim_r.nextSt = stdlib.keccak256(v28, v27, v34, v65);
+        sim_r.isHalt = false;
+        return sim_r; }));
       if (txn3.didTimeout) {
-        const txn4 = await ctc.recv('Alice', 9, 0, [], false);
+        const txn4 = await ctc.recv('Alice', stdlib.bigNumberify(9), stdlib.bigNumberify(0), [], false);
         const [] = txn4.data;
         const v70 = txn4.value;
-        const v72 = stdlib.eq(0, v70);
+        const v72 = stdlib.eq(stdlib.bigNumberify(0), v70);
         stdlib.assert(v72, {
           at: 'reach standard library:application',
           fs: ['at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
           who: 'Alice' });
         const v73 = txn4.balance;
-        // stdlib.transfer(v34, v73);
+        ;
         stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
           at: './index.rsh:40:33:application',
           fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
@@ -79,24 +123,41 @@ export async function Alice(stdlib, ctc, interact) {
       else {
         const [v65] = txn3.data;
         const v66 = txn3.value;
-        const v68 = stdlib.eq(0, v66);
+        const v68 = stdlib.eq(stdlib.bigNumberify(0), v66);
         stdlib.assert(v68, {
           at: './index.rsh:application',
           fs: [],
           who: 'Alice' });
-        const txn4 = await ctc.recv('Alice', 5, 1, [stdlib.T_UInt256], 10);
+        const txn4 = await ctc.recv('Alice', stdlib.bigNumberify(5), stdlib.bigNumberify(1), [stdlib.T_UInt256], stdlib.bigNumberify(10));
         if (txn4.didTimeout) {
           
-          const txn5 = await ctc.sendrecv('Alice', 8, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v65], 0, [], false, null);
+          const txn5 = await ctc.sendrecv('Alice', stdlib.bigNumberify(8), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v34, v65], stdlib.bigNumberify(0), [], false, ((txn5) => {
+            const sim_r = { txns: [] };
+            sim_r.prevSt = stdlib.keccak256(v28, v27, v34, v65);
+            const [] = txn5.data;
+            
+            const v86 = txn5.value;
+            const v88 = stdlib.eq(stdlib.bigNumberify(0), v86);
+            stdlib.assert(v88, {
+              at: 'reach standard library:application',
+              fs: ['at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
+              who: 'Alice' });
+            const v89 = txn5.balance;
+            sim_r.txns.push({
+              amt: v89,
+              to: v28 });
+            sim_r.nextSt = '';
+            sim_r.isHalt = true;
+            return sim_r; }));
           const [] = txn5.data;
           const v86 = txn5.value;
-          const v88 = stdlib.eq(0, v86);
+          const v88 = stdlib.eq(stdlib.bigNumberify(0), v86);
           stdlib.assert(v88, {
             at: 'reach standard library:application',
             fs: ['at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
             who: 'Alice' });
           const v89 = txn5.balance;
-          // stdlib.transfer(v28, v89);
+          ;
           stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
             at: './index.rsh:40:33:application',
             fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
@@ -106,35 +167,20 @@ export async function Alice(stdlib, ctc, interact) {
         else {
           const [v81] = txn4.data;
           const v82 = txn4.value;
-          const v84 = stdlib.eq(0, v82);
+          const v84 = stdlib.eq(stdlib.bigNumberify(0), v82);
           stdlib.assert(v84, {
             at: './index.rsh:application',
             fs: [],
             who: 'Alice' });
           
           
-          const txn5 = await ctc.sendrecv('Alice', 6, 2, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81, v63, v61], 0, [stdlib.T_UInt256, stdlib.T_UInt256], 10, null);
-          if (txn5.didTimeout) {
-            const txn6 = await ctc.recv('Alice', 7, 0, [], false);
-            const [] = txn6.data;
-            const v102 = txn6.value;
-            const v104 = stdlib.eq(0, v102);
-            stdlib.assert(v104, {
-              at: 'reach standard library:application',
-              fs: ['at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
-              who: 'Alice' });
-            const v105 = txn6.balance;
-            // stdlib.transfer(v34, v105);
-            stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
-              at: './index.rsh:40:33:application',
-              fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
-              who: 'Alice' });
-            
-            return; }
-          else {
+          const txn5 = await ctc.sendrecv('Alice', stdlib.bigNumberify(6), stdlib.bigNumberify(2), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81, v63, v61], stdlib.bigNumberify(0), [stdlib.T_UInt256, stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn5) => {
+            const sim_r = { txns: [] };
+            sim_r.prevSt = stdlib.keccak256(v28, v27, v34, v65, v81);
             const [v96, v97] = txn5.data;
+            
             const v98 = txn5.value;
-            const v100 = stdlib.eq(0, v98);
+            const v100 = stdlib.eq(stdlib.bigNumberify(0), v98);
             stdlib.assert(v100, {
               at: './index.rsh:application',
               fs: [],
@@ -145,15 +191,51 @@ export async function Alice(stdlib, ctc, interact) {
               at: 'reach standard library:71:17:application',
               fs: ['at ./index.rsh:77:24:application call to "checkCommitment (as function)" (defined at: reach standard library:70:8:function exp)'],
               who: 'Alice' });
-            const v116 = stdlib.sub(4, v81);
+            const v116 = stdlib.sub(stdlib.bigNumberify(4), v81);
             const v117 = stdlib.add(v97, v116);
-            const v118 = stdlib.mod(v117, 3);
+            const v118 = stdlib.mod(v117, stdlib.bigNumberify(3));
+            
+            return sim_r; }));
+          if (txn5.didTimeout) {
+            const txn6 = await ctc.recv('Alice', stdlib.bigNumberify(7), stdlib.bigNumberify(0), [], false);
+            const [] = txn6.data;
+            const v102 = txn6.value;
+            const v104 = stdlib.eq(stdlib.bigNumberify(0), v102);
+            stdlib.assert(v104, {
+              at: 'reach standard library:application',
+              fs: ['at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
+              who: 'Alice' });
+            const v105 = txn6.balance;
+            ;
+            stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
+              at: './index.rsh:40:33:application',
+              fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
+              who: 'Alice' });
+            
+            return; }
+          else {
+            const [v96, v97] = txn5.data;
+            const v98 = txn5.value;
+            const v100 = stdlib.eq(stdlib.bigNumberify(0), v98);
+            stdlib.assert(v100, {
+              at: './index.rsh:application',
+              fs: [],
+              who: 'Alice' });
+            const v112 = stdlib.keccak256(v96, v97);
+            const v114 = stdlib.eq(v65, v112);
+            stdlib.assert(v114, {
+              at: 'reach standard library:71:17:application',
+              fs: ['at ./index.rsh:77:24:application call to "checkCommitment (as function)" (defined at: reach standard library:70:8:function exp)'],
+              who: 'Alice' });
+            const v116 = stdlib.sub(stdlib.bigNumberify(4), v81);
+            const v117 = stdlib.add(v97, v116);
+            const v118 = stdlib.mod(v117, stdlib.bigNumberify(3));
             v48 = v118;
             continue; } } } }
-    const v124 = stdlib.mul(2, v27);
-    const v126 = stdlib.eq(v48, 2);
+    const v124 = stdlib.mul(stdlib.bigNumberify(2), v27);
+    const v126 = stdlib.eq(v48, stdlib.bigNumberify(2));
     const v127 = v126 ? v28 : v34;
-    // stdlib.transfer(v127, v124);
+    ;
     stdlib.protect(stdlib.T_Null, await interact.seeOutcome(v48), {
       at: './index.rsh:87:28:application',
       fs: ['at ./index.rsh:87:41:after expr stmt semicolon call to "function" (defined at: ./index.rsh:86:23:function exp)'],
@@ -162,7 +244,7 @@ export async function Alice(stdlib, ctc, interact) {
     return; } }
 export async function Bob(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt256], false);
+  const txn1 = await ctc.recv('Bob', stdlib.bigNumberify(1), stdlib.bigNumberify(1), [stdlib.T_UInt256], false);
   const [v27] = txn1.data;
   const v28 = txn1.from;
   const v29 = txn1.value;
@@ -177,18 +259,31 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   
   
-  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], v27, [], 10, null);
+  const txn2 = await ctc.sendrecv('Bob', stdlib.bigNumberify(2), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256], [v28, v27], v27, [], stdlib.bigNumberify(10), ((txn2) => {
+    const sim_r = { txns: [] };
+    sim_r.prevSt = stdlib.keccak256(v28, v27);
+    const [] = txn2.data;
+    const v34 = txn2.from;
+    
+    const v35 = txn2.value;
+    const v37 = stdlib.eq(v27, v35);
+    stdlib.assert(v37, {
+      at: './index.rsh:application',
+      fs: [],
+      who: 'Bob' });
+    
+    return sim_r; }));
   if (txn2.didTimeout) {
-    const txn3 = await ctc.recv('Bob', 10, 0, [], false);
+    const txn3 = await ctc.recv('Bob', stdlib.bigNumberify(10), stdlib.bigNumberify(0), [], false);
     const [] = txn3.data;
     const v39 = txn3.value;
-    const v41 = stdlib.eq(0, v39);
+    const v41 = stdlib.eq(stdlib.bigNumberify(0), v39);
     stdlib.assert(v41, {
       at: 'reach standard library:application',
       fs: ['at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
       who: 'Bob' });
     const v42 = txn3.balance;
-    // stdlib.transfer(v28, v42);
+    ;
     stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
       at: './index.rsh:40:33:application',
       fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:51:41:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
@@ -204,24 +299,41 @@ export async function Bob(stdlib, ctc, interact) {
       at: './index.rsh:application',
       fs: [],
       who: 'Bob' });
-    let v48 = 1;
+    let v48 = stdlib.bigNumberify(1);
     while ((() => {
-      const v59 = stdlib.eq(v48, 1);
+      const v59 = stdlib.eq(v48, stdlib.bigNumberify(1));
       
       return v59; })()) {
-      const txn3 = await ctc.recv('Bob', 4, 1, [stdlib.T_UInt256], 10);
+      const txn3 = await ctc.recv('Bob', stdlib.bigNumberify(4), stdlib.bigNumberify(1), [stdlib.T_UInt256], stdlib.bigNumberify(10));
       if (txn3.didTimeout) {
         
-        const txn4 = await ctc.sendrecv('Bob', 9, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address], [v28, v27, v34], 0, [], false, null);
+        const txn4 = await ctc.sendrecv('Bob', stdlib.bigNumberify(9), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address], [v28, v27, v34], stdlib.bigNumberify(0), [], false, ((txn4) => {
+          const sim_r = { txns: [] };
+          sim_r.prevSt = stdlib.keccak256(v28, v27, v34);
+          const [] = txn4.data;
+          
+          const v70 = txn4.value;
+          const v72 = stdlib.eq(stdlib.bigNumberify(0), v70);
+          stdlib.assert(v72, {
+            at: 'reach standard library:application',
+            fs: ['at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
+            who: 'Bob' });
+          const v73 = txn4.balance;
+          sim_r.txns.push({
+            amt: v73,
+            to: v34 });
+          sim_r.nextSt = '';
+          sim_r.isHalt = true;
+          return sim_r; }));
         const [] = txn4.data;
         const v70 = txn4.value;
-        const v72 = stdlib.eq(0, v70);
+        const v72 = stdlib.eq(stdlib.bigNumberify(0), v70);
         stdlib.assert(v72, {
           at: 'reach standard library:application',
           fs: ['at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
           who: 'Bob' });
         const v73 = txn4.balance;
-        // stdlib.transfer(v34, v73);
+        ;
         stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
           at: './index.rsh:40:33:application',
           fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:63:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
@@ -231,7 +343,7 @@ export async function Bob(stdlib, ctc, interact) {
       else {
         const [v65] = txn3.data;
         const v66 = txn3.value;
-        const v68 = stdlib.eq(0, v66);
+        const v68 = stdlib.eq(stdlib.bigNumberify(0), v66);
         stdlib.assert(v68, {
           at: './index.rsh:application',
           fs: [],
@@ -242,18 +354,31 @@ export async function Bob(stdlib, ctc, interact) {
           who: 'Bob' });
         
         
-        const txn4 = await ctc.sendrecv('Bob', 5, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v80], 0, [stdlib.T_UInt256], 10, null);
+        const txn4 = await ctc.sendrecv('Bob', stdlib.bigNumberify(5), stdlib.bigNumberify(1), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v80], stdlib.bigNumberify(0), [stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn4) => {
+          const sim_r = { txns: [] };
+          sim_r.prevSt = stdlib.keccak256(v28, v27, v34, v65);
+          const [v81] = txn4.data;
+          
+          const v82 = txn4.value;
+          const v84 = stdlib.eq(stdlib.bigNumberify(0), v82);
+          stdlib.assert(v84, {
+            at: './index.rsh:application',
+            fs: [],
+            who: 'Bob' });
+          sim_r.nextSt = stdlib.keccak256(v28, v27, v34, v65, v81);
+          sim_r.isHalt = false;
+          return sim_r; }));
         if (txn4.didTimeout) {
-          const txn5 = await ctc.recv('Bob', 8, 0, [], false);
+          const txn5 = await ctc.recv('Bob', stdlib.bigNumberify(8), stdlib.bigNumberify(0), [], false);
           const [] = txn5.data;
           const v86 = txn5.value;
-          const v88 = stdlib.eq(0, v86);
+          const v88 = stdlib.eq(stdlib.bigNumberify(0), v86);
           stdlib.assert(v88, {
             at: 'reach standard library:application',
             fs: ['at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
             who: 'Bob' });
           const v89 = txn5.balance;
-          // stdlib.transfer(v28, v89);
+          ;
           stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
             at: './index.rsh:40:33:application',
             fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:70:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
@@ -263,24 +388,41 @@ export async function Bob(stdlib, ctc, interact) {
         else {
           const [v81] = txn4.data;
           const v82 = txn4.value;
-          const v84 = stdlib.eq(0, v82);
+          const v84 = stdlib.eq(stdlib.bigNumberify(0), v82);
           stdlib.assert(v84, {
             at: './index.rsh:application',
             fs: [],
             who: 'Bob' });
-          const txn5 = await ctc.recv('Bob', 6, 2, [stdlib.T_UInt256, stdlib.T_UInt256], 10);
+          const txn5 = await ctc.recv('Bob', stdlib.bigNumberify(6), stdlib.bigNumberify(2), [stdlib.T_UInt256, stdlib.T_UInt256], stdlib.bigNumberify(10));
           if (txn5.didTimeout) {
             
-            const txn6 = await ctc.sendrecv('Bob', 7, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81], 0, [], false, null);
+            const txn6 = await ctc.sendrecv('Bob', stdlib.bigNumberify(7), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_UInt256], [v28, v27, v34, v65, v81], stdlib.bigNumberify(0), [], false, ((txn6) => {
+              const sim_r = { txns: [] };
+              sim_r.prevSt = stdlib.keccak256(v28, v27, v34, v65, v81);
+              const [] = txn6.data;
+              
+              const v102 = txn6.value;
+              const v104 = stdlib.eq(stdlib.bigNumberify(0), v102);
+              stdlib.assert(v104, {
+                at: 'reach standard library:application',
+                fs: ['at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
+                who: 'Bob' });
+              const v105 = txn6.balance;
+              sim_r.txns.push({
+                amt: v105,
+                to: v34 });
+              sim_r.nextSt = '';
+              sim_r.isHalt = true;
+              return sim_r; }));
             const [] = txn6.data;
             const v102 = txn6.value;
-            const v104 = stdlib.eq(0, v102);
+            const v104 = stdlib.eq(stdlib.bigNumberify(0), v102);
             stdlib.assert(v104, {
               at: 'reach standard library:application',
               fs: ['at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
               who: 'Bob' });
             const v105 = txn6.balance;
-            // stdlib.transfer(v34, v105);
+            ;
             stdlib.protect(stdlib.T_Null, await interact.informTimeout(), {
               at: './index.rsh:40:33:application',
               fs: ['at ./index.rsh:40:39:after expr stmt semicolon call to "function" (defined at: ./index.rsh:39:25:function exp)', 'at reach standard library:77:8:application call to "informTimeout (as function)" (defined at: ./index.rsh:38:32:function exp)', 'at ./index.rsh:76:43:application call to "closeTo (as function)" (defined at: reach standard library:73:8:function exp)'],
@@ -290,7 +432,7 @@ export async function Bob(stdlib, ctc, interact) {
           else {
             const [v96, v97] = txn5.data;
             const v98 = txn5.value;
-            const v100 = stdlib.eq(0, v98);
+            const v100 = stdlib.eq(stdlib.bigNumberify(0), v98);
             stdlib.assert(v100, {
               at: './index.rsh:application',
               fs: [],
@@ -301,15 +443,15 @@ export async function Bob(stdlib, ctc, interact) {
               at: 'reach standard library:71:17:application',
               fs: ['at ./index.rsh:77:24:application call to "checkCommitment (as function)" (defined at: reach standard library:70:8:function exp)'],
               who: 'Bob' });
-            const v116 = stdlib.sub(4, v81);
+            const v116 = stdlib.sub(stdlib.bigNumberify(4), v81);
             const v117 = stdlib.add(v97, v116);
-            const v118 = stdlib.mod(v117, 3);
+            const v118 = stdlib.mod(v117, stdlib.bigNumberify(3));
             v48 = v118;
             continue; } } } }
-    const v124 = stdlib.mul(2, v27);
-    const v126 = stdlib.eq(v48, 2);
+    const v124 = stdlib.mul(stdlib.bigNumberify(2), v27);
+    const v126 = stdlib.eq(v48, stdlib.bigNumberify(2));
     const v127 = v126 ? v28 : v34;
-    // stdlib.transfer(v127, v124);
+    ;
     stdlib.protect(stdlib.T_Null, await interact.seeOutcome(v48), {
       at: './index.rsh:87:28:application',
       fs: ['at ./index.rsh:87:41:after expr stmt semicolon call to "function" (defined at: ./index.rsh:86:23:function exp)'],
@@ -317,6 +459,1371 @@ export async function Bob(stdlib, ctc, interact) {
     
     return; } }
 
+const _ALGO = {
+  appApproval: `#pragma version 2
+  // Check that we're an App
+  txn TypeEnum
+  int appl
+  ==
+  bz revert
+  txn RekeyTo
+  global ZeroAddress
+  ==
+  bz revert
+  byte base64(aA==)
+  app_global_get
+  bnz halted
+  txn OnCompletion
+  int NoOp
+  ==
+  bz revert
+  // Check that everyone's here
+  global GroupSize
+  int 4
+  >=
+  bz revert
+  // Check txnAppl (us)
+  txn GroupIndex
+  int 0
+  ==
+  bz revert
+  // Check txnFromHandler
+  int 0
+  gtxn 1 Sender
+  byte "{{m1}}"
+  ==
+  ||
+  gtxn 1 Sender
+  byte "{{m2}}"
+  ==
+  ||
+  gtxn 1 Sender
+  byte "{{m4}}"
+  ==
+  ||
+  gtxn 1 Sender
+  byte "{{m5}}"
+  ==
+  ||
+  gtxn 1 Sender
+  byte "{{m6}}"
+  ==
+  ||
+  gtxn 1 Sender
+  byte "{{m7}}"
+  ==
+  ||
+  gtxn 1 Sender
+  byte "{{m8}}"
+  ==
+  ||
+  gtxn 1 Sender
+  byte "{{m9}}"
+  ==
+  ||
+  gtxn 1 Sender
+  byte "{{m10}}"
+  ==
+  ||
+  bz revert
+  byte base64(cw==)
+  app_global_get
+  gtxna 1 Args 0
+  ==
+  bz revert
+  byte base64(bA==)
+  app_global_get
+  gtxna 1 Args 3
+  btoi
+  ==
+  bz revert
+  // Don't check anyone else, because Handler does
+  // Update state
+  byte base64(cw==)
+  gtxna 1 Args 1
+  app_global_put
+  byte base64(bA==)
+  global Round
+  app_global_put
+  byte base64(aA==)
+  gtxna 1 Args 2
+  btoi
+  app_global_put
+  b done
+  halted:
+  txn OnCompletion
+  int DeleteApplication
+  ==
+  bz revert
+  global GroupSize
+  int 1
+  ==
+  bz revert
+  b done
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  appApproval0: `#pragma version 2
+  // Check that we're an App
+  txn TypeEnum
+  int appl
+  ==
+  bz revert
+  txn RekeyTo
+  global ZeroAddress
+  ==
+  bz revert
+  global GroupSize
+  int 1
+  ==
+  bz revert
+  txn Sender
+  byte "{{Deployer}}"
+  ==
+  bz revert
+  txn ApplicationID
+  bz init
+  txn OnCompletion
+  int UpdateApplication
+  ==
+  bz revert
+  byte base64(cw==)
+  int 0
+  itob
+  keccak256
+  app_global_put
+  byte base64(bA==)
+  global Round
+  app_global_put
+  byte base64(aA==)
+  int 0
+  app_global_put
+  b done
+  init:
+  txn OnCompletion
+  int NoOp
+  ==
+  bz revert
+  b done
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  appClear: `#pragma version 2
+  // We're alone
+  global GroupSize
+  int 1
+  ==
+  bz revert
+  // We're halted
+  byte base64(aA==)
+  app_global_get
+  int 1
+  ==
+  bz revert
+  b done
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  ctc: `#pragma version 2
+  // Check size
+  global GroupSize
+  int 4
+  >=
+  bz revert
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Don't check anything else, because app does
+  // Check us
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn RekeyTo
+  global ZeroAddress
+  ==
+  bz revert
+  txn CloseRemainderTo
+  global ZeroAddress
+  ==
+  bz revert
+  txn GroupIndex
+  int 4
+  >=
+  bz revert
+  b done
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m1: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 5
+  ==
+  bz revert
+  int 0
+  itob
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  arg 4
+  btoi
+  gtxn 3 Amount
+  ==
+  bz revert
+  int 1
+  itob
+  gtxn 3 Sender
+  concat
+  arg 4
+  concat
+  keccak256
+  arg 1
+  ==
+  bz revert
+  arg 2
+  btoi
+  int 0
+  ==
+  bz revert
+  b done
+  // Check GroupSize
+  global GroupSize
+  int 4
+  ==
+  bz revert
+  // Check time limits
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m10: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 6
+  ==
+  bz revert
+  gtxn 3 Sender
+  arg 4
+  ==
+  bz revert
+  int 1
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  int 0
+  gtxn 3 Amount
+  ==
+  bz revert
+  gtxn 4 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 4 Receiver
+  arg 4
+  ==
+  bz revert
+  gtxn 4 Amount
+  // XXX BALANCE
+  ==
+  bz revert
+  gtxn 4 Sender
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  byte base64()
+  arg 1
+  ==
+  bz revert
+  arg 2
+  btoi
+  int 1
+  ==
+  bz revert
+  b done
+  // Check GroupSize
+  global GroupSize
+  int 5
+  ==
+  bz revert
+  // Check time limits
+  arg 3
+  btoi
+  int 10
+  +
+  dup
+  gtxn 0 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 1 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 2 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 3 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 4 FirstValid
+  ==
+  bz revert
+  pop
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m2: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 6
+  ==
+  bz revert
+  int 1
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  arg 5
+  btoi
+  gtxn 3 Amount
+  ==
+  bz revert
+  // XXX jump
+  // Check GroupSize
+  global GroupSize
+  int 4
+  ==
+  bz revert
+  // Check time limits
+  arg 3
+  btoi
+  int 10
+  +
+  dup
+  gtxn 0 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 1 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 2 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 3 LastValid
+  ==
+  bz revert
+  pop
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m4: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 8
+  ==
+  bz revert
+  gtxn 3 Sender
+  arg 4
+  ==
+  bz revert
+  int 3
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  arg 6
+  concat
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  int 0
+  gtxn 3 Amount
+  ==
+  bz revert
+  int 4
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  arg 6
+  concat
+  arg 7
+  concat
+  keccak256
+  arg 1
+  ==
+  bz revert
+  arg 2
+  btoi
+  int 0
+  ==
+  bz revert
+  b done
+  // Check GroupSize
+  global GroupSize
+  int 4
+  ==
+  bz revert
+  // Check time limits
+  arg 3
+  btoi
+  int 10
+  +
+  dup
+  gtxn 0 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 1 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 2 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 3 LastValid
+  ==
+  bz revert
+  pop
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m5: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 9
+  ==
+  bz revert
+  gtxn 3 Sender
+  arg 6
+  ==
+  bz revert
+  int 4
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  arg 6
+  concat
+  arg 7
+  concat
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  int 0
+  gtxn 3 Amount
+  ==
+  bz revert
+  int 5
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  arg 6
+  concat
+  arg 7
+  concat
+  arg 8
+  concat
+  keccak256
+  arg 1
+  ==
+  bz revert
+  arg 2
+  btoi
+  int 0
+  ==
+  bz revert
+  b done
+  // Check GroupSize
+  global GroupSize
+  int 4
+  ==
+  bz revert
+  // Check time limits
+  arg 3
+  btoi
+  int 10
+  +
+  dup
+  gtxn 0 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 1 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 2 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 3 LastValid
+  ==
+  bz revert
+  pop
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m6: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 11
+  ==
+  bz revert
+  gtxn 3 Sender
+  arg 4
+  ==
+  bz revert
+  int 5
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  arg 6
+  concat
+  arg 7
+  concat
+  arg 8
+  concat
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  int 0
+  gtxn 3 Amount
+  ==
+  bz revert
+  arg 7
+  btoi
+  arg 9
+  arg 10
+  concat
+  keccak256
+  ==
+  bz revert
+  // XXX jump
+  // Check GroupSize
+  global GroupSize
+  int 4
+  ==
+  bz revert
+  // Check time limits
+  arg 3
+  btoi
+  int 10
+  +
+  dup
+  gtxn 0 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 1 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 2 LastValid
+  ==
+  bz revert
+  dup
+  gtxn 3 LastValid
+  ==
+  bz revert
+  pop
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m7: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 9
+  ==
+  bz revert
+  gtxn 3 Sender
+  arg 6
+  ==
+  bz revert
+  int 5
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  arg 6
+  concat
+  arg 7
+  concat
+  arg 8
+  concat
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  int 0
+  gtxn 3 Amount
+  ==
+  bz revert
+  gtxn 4 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 4 Receiver
+  arg 6
+  ==
+  bz revert
+  gtxn 4 Amount
+  // XXX BALANCE
+  ==
+  bz revert
+  gtxn 4 Sender
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  byte base64()
+  arg 1
+  ==
+  bz revert
+  arg 2
+  btoi
+  int 1
+  ==
+  bz revert
+  b done
+  // Check GroupSize
+  global GroupSize
+  int 5
+  ==
+  bz revert
+  // Check time limits
+  arg 3
+  btoi
+  int 10
+  +
+  dup
+  gtxn 0 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 1 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 2 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 3 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 4 FirstValid
+  ==
+  bz revert
+  pop
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m8: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 8
+  ==
+  bz revert
+  gtxn 3 Sender
+  arg 4
+  ==
+  bz revert
+  int 4
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  arg 6
+  concat
+  arg 7
+  concat
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  int 0
+  gtxn 3 Amount
+  ==
+  bz revert
+  gtxn 4 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 4 Receiver
+  arg 4
+  ==
+  bz revert
+  gtxn 4 Amount
+  // XXX BALANCE
+  ==
+  bz revert
+  gtxn 4 Sender
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  byte base64()
+  arg 1
+  ==
+  bz revert
+  arg 2
+  btoi
+  int 1
+  ==
+  bz revert
+  b done
+  // Check GroupSize
+  global GroupSize
+  int 5
+  ==
+  bz revert
+  // Check time limits
+  arg 3
+  btoi
+  int 10
+  +
+  dup
+  gtxn 0 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 1 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 2 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 3 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 4 FirstValid
+  ==
+  bz revert
+  pop
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  m9: `#pragma version 2
+  // Check txnAppl
+  gtxn 0 TypeEnum
+  int appl
+  ==
+  bz revert
+  gtxn 0 ApplicationID
+  byte "{{ApplicationID}}"
+  btoi
+  ==
+  bz revert
+  // Check txnToHandler
+  gtxn 2 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 2 Receiver
+  txn Sender
+  ==
+  bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
+  // Check txnToContract
+  gtxn 3 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 3 Receiver
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  // Check txnFromHandler (us)
+  txn GroupIndex
+  int 1
+  ==
+  bz revert
+  txn TypeEnum
+  int pay
+  ==
+  bz revert
+  txn Amount
+  int 0
+  ==
+  bz revert
+  txn Receiver
+  gtxn 2 Sender
+  ==
+  bz revert
+  txn NumArgs
+  int 7
+  ==
+  bz revert
+  gtxn 3 Sender
+  arg 6
+  ==
+  bz revert
+  int 3
+  itob
+  arg 4
+  concat
+  arg 5
+  concat
+  arg 6
+  concat
+  keccak256
+  arg 0
+  ==
+  bz revert
+  // Run body
+  int 0
+  gtxn 3 Amount
+  ==
+  bz revert
+  gtxn 4 TypeEnum
+  int pay
+  ==
+  bz revert
+  gtxn 4 Receiver
+  arg 6
+  ==
+  bz revert
+  gtxn 4 Amount
+  // XXX BALANCE
+  ==
+  bz revert
+  gtxn 4 Sender
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  byte base64()
+  arg 1
+  ==
+  bz revert
+  arg 2
+  btoi
+  int 1
+  ==
+  bz revert
+  b done
+  // Check GroupSize
+  global GroupSize
+  int 5
+  ==
+  bz revert
+  // Check time limits
+  arg 3
+  btoi
+  int 10
+  +
+  dup
+  gtxn 0 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 1 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 2 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 3 FirstValid
+  ==
+  bz revert
+  dup
+  gtxn 4 FirstValid
+  ==
+  bz revert
+  pop
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  steps: `9`,
+  unsupported: `True` };
 const _ETH = {
   ABI: `[
     {
@@ -821,4 +2328,5 @@ const _ETH = {
   deployMode: `DM_constructor` };
 
 export const _Connectors = {
+  ALGO: _ALGO,
   ETH: _ETH };

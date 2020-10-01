@@ -1,20 +1,34 @@
 // Automatically generated with Reach 0.1.2
-export const _version = '0.1.2'
+export const _version = '0.1.2';
 
 export async function Alice(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
   
   
-  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.request, null)], 0, [stdlib.T_UInt256], false, null);
+  const txn1 = await ctc.sendrecv('Alice', stdlib.bigNumberify(1), stdlib.bigNumberify(1), [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.request, null)], stdlib.bigNumberify(0), [stdlib.T_UInt256], false, ((txn1) => {
+    const sim_r = { txns: [] };
+    sim_r.prevSt = stdlib.keccak256();
+    const [v1] = txn1.data;
+    const v2 = txn1.from;
+    
+    const v3 = txn1.value;
+    const v5 = stdlib.eq(stdlib.bigNumberify(0), v3);
+    stdlib.assert(v5, {
+      at: './index.rsh:application',
+      fs: [],
+      who: 'Alice' });
+    sim_r.nextSt = stdlib.keccak256(v2, v1);
+    sim_r.isHalt = false;
+    return sim_r; }));
   const [v1] = txn1.data;
   const v2 = txn1.from;
   const v3 = txn1.value;
-  const v5 = stdlib.eq(0, v3);
+  const v5 = stdlib.eq(stdlib.bigNumberify(0), v3);
   stdlib.assert(v5, {
     at: './index.rsh:application',
     fs: [],
     who: 'Alice' });
-  const txn2 = await ctc.recv('Alice', 2, 0, [], false);
+  const txn2 = await ctc.recv('Alice', stdlib.bigNumberify(2), stdlib.bigNumberify(0), [], false);
   const [] = txn2.data;
   const v8 = txn2.from;
   const v9 = txn2.value;
@@ -25,23 +39,39 @@ export async function Alice(stdlib, ctc, interact) {
     who: 'Alice' });
   
   
-  const txn3 = await ctc.sendrecv('Alice', 3, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Bytes], [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], 0, [stdlib.T_Bytes], false, null);
+  const txn3 = await ctc.sendrecv('Alice', stdlib.bigNumberify(3), stdlib.bigNumberify(1), [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Bytes], [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], stdlib.bigNumberify(0), [stdlib.T_Bytes], false, ((txn3) => {
+    const sim_r = { txns: [] };
+    sim_r.prevSt = stdlib.keccak256(v2, v1);
+    const [v13] = txn3.data;
+    
+    const v14 = txn3.value;
+    const v16 = stdlib.eq(stdlib.bigNumberify(0), v14);
+    stdlib.assert(v16, {
+      at: './index.rsh:application',
+      fs: [],
+      who: 'Alice' });
+    sim_r.txns.push({
+      amt: v1,
+      to: v2 });
+    sim_r.nextSt = '';
+    sim_r.isHalt = true;
+    return sim_r; }));
   const [v13] = txn3.data;
   const v14 = txn3.value;
-  const v16 = stdlib.eq(0, v14);
+  const v16 = stdlib.eq(stdlib.bigNumberify(0), v14);
   stdlib.assert(v16, {
     at: './index.rsh:application',
     fs: [],
     who: 'Alice' });
-  // stdlib.transfer(v2, v1);
+  ;
   return; }
 export async function Bob(stdlib, ctc, interact) {
   const txn0 = { balance: 0, value: 0 };
-  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt256], false);
+  const txn1 = await ctc.recv('Bob', stdlib.bigNumberify(1), stdlib.bigNumberify(1), [stdlib.T_UInt256], false);
   const [v1] = txn1.data;
   const v2 = txn1.from;
   const v3 = txn1.value;
-  const v5 = stdlib.eq(0, v3);
+  const v5 = stdlib.eq(stdlib.bigNumberify(0), v3);
   stdlib.assert(v5, {
     at: './index.rsh:application',
     fs: [],
@@ -52,7 +82,21 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   
   
-  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt256], [v2, v1], v1, [], false, null);
+  const txn2 = await ctc.sendrecv('Bob', stdlib.bigNumberify(2), stdlib.bigNumberify(0), [stdlib.T_Address, stdlib.T_UInt256], [v2, v1], v1, [], false, ((txn2) => {
+    const sim_r = { txns: [] };
+    sim_r.prevSt = stdlib.keccak256(v2, v1);
+    const [] = txn2.data;
+    const v8 = txn2.from;
+    
+    const v9 = txn2.value;
+    const v11 = stdlib.eq(v1, v9);
+    stdlib.assert(v11, {
+      at: './index.rsh:application',
+      fs: [],
+      who: 'Bob' });
+    sim_r.nextSt = stdlib.keccak256(v2, v1);
+    sim_r.isHalt = false;
+    return sim_r; }));
   const [] = txn2.data;
   const v8 = txn2.from;
   const v9 = txn2.value;
@@ -61,15 +105,15 @@ export async function Bob(stdlib, ctc, interact) {
     at: './index.rsh:application',
     fs: [],
     who: 'Bob' });
-  const txn3 = await ctc.recv('Bob', 3, 1, [stdlib.T_Bytes], false);
+  const txn3 = await ctc.recv('Bob', stdlib.bigNumberify(3), stdlib.bigNumberify(1), [stdlib.T_Bytes], false);
   const [v13] = txn3.data;
   const v14 = txn3.value;
-  const v16 = stdlib.eq(0, v14);
+  const v16 = stdlib.eq(stdlib.bigNumberify(0), v14);
   stdlib.assert(v16, {
     at: './index.rsh:application',
     fs: [],
     who: 'Bob' });
-  // stdlib.transfer(v2, v1);
+  ;
   stdlib.protect(stdlib.T_Null, await interact.got(v13), {
     at: './index.rsh:28:21:application',
     fs: ['at ./index.rsh:28:31:after expr stmt semicolon call to "function" (defined at: ./index.rsh:27:17:function exp)'],
@@ -88,13 +132,11 @@ const _ALGO = {
   global ZeroAddress
   ==
   bz revert
-  // Check if we need to initialize
-  byte base64(bA==)
-  app_global_get
-  bz init
   byte base64(aA==)
   app_global_get
-  int 0
+  bnz halted
+  txn OnCompletion
+  int NoOp
   ==
   bz revert
   // Check that everyone's here
@@ -110,15 +152,15 @@ const _ALGO = {
   // Check txnFromHandler
   int 0
   gtxn 1 Sender
-  byte {{m1}}
+  byte "{{m1}}"
   ==
   ||
   gtxn 1 Sender
-  byte {{m2}}
+  byte "{{m2}}"
   ==
   ||
   gtxn 1 Sender
-  byte {{m3}}
+  byte "{{m3}}"
   ==
   ||
   bz revert
@@ -146,7 +188,47 @@ const _ALGO = {
   btoi
   app_global_put
   b done
-  init:
+  halted:
+  txn OnCompletion
+  int DeleteApplication
+  ==
+  bz revert
+  global GroupSize
+  int 1
+  ==
+  bz revert
+  b done
+  revert:
+  int 0
+  return
+  done:
+  int 1
+  return
+  `,
+  appApproval0: `#pragma version 2
+  // Check that we're an App
+  txn TypeEnum
+  int appl
+  ==
+  bz revert
+  txn RekeyTo
+  global ZeroAddress
+  ==
+  bz revert
+  global GroupSize
+  int 1
+  ==
+  bz revert
+  txn Sender
+  byte "{{Deployer}}"
+  ==
+  bz revert
+  txn ApplicationID
+  bz init
+  txn OnCompletion
+  int UpdateApplication
+  ==
+  bz revert
   byte base64(cw==)
   int 0
   itob
@@ -158,6 +240,12 @@ const _ALGO = {
   byte base64(aA==)
   int 0
   app_global_put
+  b done
+  init:
+  txn OnCompletion
+  int NoOp
+  ==
+  bz revert
   b done
   revert:
   int 0
@@ -198,7 +286,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 0 ApplicationID
-  byte {{ApplicationID}}
+  byte "{{ApplicationID}}"
   btoi
   ==
   bz revert
@@ -235,7 +323,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 0 ApplicationID
-  byte {{ApplicationID}}
+  byte "{{ApplicationID}}"
   btoi
   ==
   bz revert
@@ -248,13 +336,17 @@ const _ALGO = {
   txn Sender
   ==
   bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
   // Check txnToContract
   gtxn 3 TypeEnum
   int pay
   ==
   bz revert
   gtxn 3 Receiver
-  byte {{ContractAddr}}
+  byte "{{ContractAddr}}"
   ==
   bz revert
   // Check txnFromHandler (us)
@@ -325,7 +417,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 0 ApplicationID
-  byte {{ApplicationID}}
+  byte "{{ApplicationID}}"
   btoi
   ==
   bz revert
@@ -338,13 +430,17 @@ const _ALGO = {
   txn Sender
   ==
   bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
   // Check txnToContract
   gtxn 3 TypeEnum
   int pay
   ==
   bz revert
   gtxn 3 Receiver
-  byte {{ContractAddr}}
+  byte "{{ContractAddr}}"
   ==
   bz revert
   // Check txnFromHandler (us)
@@ -420,7 +516,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 0 ApplicationID
-  byte {{ApplicationID}}
+  byte "{{ApplicationID}}"
   btoi
   ==
   bz revert
@@ -433,13 +529,17 @@ const _ALGO = {
   txn Sender
   ==
   bz revert
+  gtxn 2 Amount
+  gtxn 1 Fee
+  ==
+  bz revert
   // Check txnToContract
   gtxn 3 TypeEnum
   int pay
   ==
   bz revert
   gtxn 3 Receiver
-  byte {{ContractAddr}}
+  byte "{{ContractAddr}}"
   ==
   bz revert
   // Check txnFromHandler (us)
@@ -496,7 +596,11 @@ const _ALGO = {
   ==
   bz revert
   gtxn 4 Sender
-  byte {{ContractAddr}}
+  byte "{{ContractAddr}}"
+  ==
+  bz revert
+  byte base64()
+  arg 1
   ==
   bz revert
   arg 2
@@ -518,6 +622,7 @@ const _ALGO = {
   int 1
   return
   `,
+  steps: `3`,
   unsupported: `False` };
 const _ETH = {
   ABI: `[
