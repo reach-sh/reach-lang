@@ -46,10 +46,14 @@ RUN cp $SRC_PARENT/indexer/cmd/algorand-indexer/algorand-indexer $GOPATH/bin
 
 # debugger
 WORKDIR /
-RUN apt-get install -y software-properties-common && \
-  add-apt-repository -y ppa:plt/racket && \
-  apt-get update && \
-  apt-get install -y racket
+RUN apt-get install -y --no-install-recommends \
+  software-properties-common=0.96.24.32.14 \
+  && add-apt-repository -y ppa:plt/racket \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  racket=7.7+ppa1-1~bionic1 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 COPY server.rkt /
 
 WORKDIR /
