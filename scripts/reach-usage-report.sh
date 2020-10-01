@@ -27,7 +27,7 @@ curl -s https://hub.docker.com/v2/repositories/reachsh/reach/ | \
 
 echo ', "tag_info": {'
 echo '    "json": "is hard"'
-for CONTAINER in reach stdlib runner ethereum-devnet ; do
+for CONTAINER in reach stdlib runner ethereum-devnet algorand-devnet ; do
 
   echo ",   \"$CONTAINER\":"
   curl -s "https://hub.docker.com/v2/repositories/reachsh/$CONTAINER/tags/" | \
