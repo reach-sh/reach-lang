@@ -62,8 +62,9 @@ type ContractInfo = {
   init?: ContractInitInfo,
 };
 
+type Digest = string // XXX
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Address>;
+type Contract = IContract<ContractInfo, Digest, Address>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
 
 // For when you init the contract with the 1st message
@@ -374,14 +375,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
-          return {
-            didTimeout: false,
-            data: args,
-            value,
-            // Because this is the 1st sendrecv, balance = value
-            balance: value,
-            from: address,
-          };
+          // return {
+          //   didTimeout: false,
+          //   // should be the final "evt_cnt" number of args,
+          //   // not all args
+          //   data: args,
+          //   value,
+          //   // Because this is the 1st sendrecv, balance = value
+          //   balance: value,
+          //   from: address,
+          // };
+          return await impl.recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
         },
         getInfo: async () => {
           // Danger: deadlock possible

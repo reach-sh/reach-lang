@@ -19,12 +19,14 @@ type ContractInfo = {
   creation_block: number,
 }
 
+type Digest = Array<any>;
 type Recv = stdlib.IRecv<Address>
-type Contract = stdlib.IContract<ContractInfo, Address>;
+type RecvNoTimeout = stdlib.IRecvNoTimeout<Address>
+type Contract = stdlib.IContract<ContractInfo, Digest, Address>;
 type Account = stdlib.IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
 type AccountTransferrable = stdlib.IAccountTransferable<NetworkAccount>
-
-const REACHY_RICH: NetworkAccount = {address: 'reachy_rich'};
+type SimRes = stdlib.ISimRes<Digest, Address>;
+type SimTxn = stdlib.ISimTxn<Address>;
 
 type Event = {
   funcNum: number,
@@ -32,6 +34,7 @@ type Event = {
   data: Array<any>,
   value: BigNumber,
   balance: BigNumber,
+  txns: Array<SimTxn>,
 };
 
 type TransferBlock = {
@@ -55,7 +58,12 @@ type WaitBlock = {
   targetTime: BigNumber,
 };
 
-type Block = TransferBlock | EventBlock | WaitBlock;
+type ContractBlock = {
+  type: 'contract',
+  address: Address
+}
+
+type Block = TransferBlock | EventBlock | ContractBlock | WaitBlock;
 
 // This can be exposed to the user for checking the trace of blocks
 // for testing.
@@ -63,10 +71,37 @@ const BLOCKS: Array<Block> = [];
 // key: Address, but ts doesn't like aliases here
 const BALANCES: {[key: string]: BigNumber} = {};
 
+const toAcct = (address: Address): AccountTransferrable => ({
+  networkAccount: {address}
+});
+
+const REACHY_RICH: AccountTransferrable = toAcct('reachy_rich');
+
 export const balanceOf = async (acc: Account) => {
   return BALANCES[acc.networkAccount.address];
 };
 
+/**
+ * @description performs a transfer; no block created
+ */
+const transfer_ = (
+  froma: Address,
+  toa: Address,
+  value: BigNumber,
+  is_ctc?: boolean,
+): void => {
+  if (is_ctc) {
+    debug('transfer_: contract is paying out to someone');
+  }
+  stdlib.assert(stdlib.le(value, BALANCES[froma]));
+  debug(`transfer_ ${froma} -> ${toa} of ${value}`);
+  BALANCES[toa] = stdlib.add(BALANCES[toa], value);
+  BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
+}
+
+/**
+ * @description performs a transfer & creates a transfer block
+ */
 export const transfer = async (
   from: AccountTransferrable,
   to: AccountTransferrable,
@@ -74,11 +109,10 @@ export const transfer = async (
 ): Promise<void> => {
   const toa = to.networkAccount.address;
   const froma = from.networkAccount.address;
-  stdlib.assert(stdlib.le(value, BALANCES[froma]));
-  debug(`transfer ${froma} -> ${toa} of ${value}`);
-  BLOCKS.push({ type: 'transfer', to: toa, from: froma, value });
-  BALANCES[toa] = stdlib.add(BALANCES[toa], value);
-  BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
+  transfer_(froma, toa, value);
+  const block: TransferBlock = { type: 'transfer', to: toa, from: froma, value };
+  debug(`transfer: ${JSON.stringify(block)}`);
+  BLOCKS.push(block);
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
@@ -121,22 +155,47 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv = async (
       label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
       args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-      timeout_delay: BigNumber | false, try_p: any
+      timeout_delay: BigNumber | false, sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
-      // XXX use try_p to figure out what transfers from the contract
-      // to make, like in ALGO
       void(tys);
-      void(try_p);
 
+      stdlib.assert(args.length === tys.length, {
+        expected: args.length,
+        actual: tys.length,
+        message: 'tys does not have expected length',
+      });
+      const data = args.slice(args.length - evt_cnt).map((v, i) => {
+        return out_tys[i].munge(v);
+      });
       const last_block = await getLastBlock();
-      const info = await infoP;
+      const ctcInfo = await infoP;
       if (!timeout_delay || stdlib.lt(BLOCKS.length, stdlib.add(last_block, timeout_delay))) {
         debug(`${label} send ${funcNum} --- post`);
-        transfer({networkAccount}, {networkAccount: {address: info.address}}, value);
+
+        transfer({networkAccount}, toAcct(ctcInfo.address), value);
+        const stubbedRecv: RecvNoTimeout = {
+          didTimeout: false,
+          data,
+          value,
+          from: address,
+          // XXX this is probably broken, pls fix rsh balance()
+          balance: BALANCES[ctcInfo.address],
+        }
+        const {txns} = sim_p(stubbedRecv);
+
+        // Instead of processing these atomically & rolling back on failure
+        // it is just assumed that using FAKE means it is all in one JS thread.
+        // (A failed transfer will crash the whole thing.)
+        for (const txn of txns) {
+          transfer_(ctcInfo.address, txn.to, txn.amt, true);
+        }
         const transferBlock = BLOCKS[BLOCKS.length - 1];
         if (transferBlock.type !== 'transfer') { throw Error('impossible: intervening block'); }
-        const event = { funcNum, from: address, data: args.slice(-1 * evt_cnt), value, balance: BALANCES[info.address] };
-        BLOCKS[BLOCKS.length - 1] = { ...transferBlock, type: 'event', event };
+        const event: Event = { ...stubbedRecv, funcNum, balance: BALANCES[ctcInfo.address], txns };
+        const block: EventBlock = { ...transferBlock, type: 'event', event };
+        debug(`sendrecv: transforming transfer block into event block: ${JSON.stringify(block)}`)
+        BLOCKS[BLOCKS.length - 1] = block;
+
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       } else {
         debug(`${label} send ${funcNum} --- timeout`);
@@ -181,9 +240,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const deploy = (bin: Backend): Contract => {
     const contract = makeAccount();
     debug(`new contract: ${contract.address}`);
+    BLOCKS.push({type: 'contract', address: contract.address});
     return attach(bin, {
       ...contract,
-      creation_block: BLOCKS.length,
+      creation_block: BLOCKS.length - 1,
       // events: {},
     });
   };
@@ -200,8 +260,8 @@ const makeAccount = (): NetworkAccount => {
 export const newTestAccount = async (startingBalance: BigNumber) => {
   const networkAccount = makeAccount();
   debug(`new account: ${networkAccount.address}`);
-  BALANCES[REACHY_RICH.address] = startingBalance;
-  transfer({networkAccount: REACHY_RICH}, {networkAccount}, startingBalance);
+  BALANCES[REACHY_RICH.networkAccount.address] = startingBalance;
+  transfer(REACHY_RICH, {networkAccount}, startingBalance);
   return await connectAccount(networkAccount);
 };
 

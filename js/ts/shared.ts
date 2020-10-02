@@ -7,27 +7,31 @@ type num = BigNumber | number
 
 const BigNumber = ethers.BigNumber;
 
-export type IRecv<Address> = {
+export type IRecvNoTimeout<RawAddress> =  {
   didTimeout: false,
   data: Array<any>,
   value: BigNumber,
   balance: BigNumber,
-  from: Address,
-} | { didTimeout: true };
+  from: RawAddress,
+};
 
-export type IContract<ContractInfo, Address> = {
+export type IRecv<RawAddress> = IRecvNoTimeout<RawAddress> | {
+  didTimeout: true
+}
+
+export type IContract<ContractInfo, Digest, RawAddress> = {
   getInfo: () => Promise<ContractInfo>,
   sendrecv: (
     label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
     args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
-    timeout_delay: BigNumber | false, sim_p: any,
-  ) => Promise<IRecv<Address>>,
+    timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => ISimRes<Digest, RawAddress>,
+  ) => Promise<IRecv<RawAddress>>,
   recv: (
     label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
     timeout_delay: BigNumber | false,
-  ) => Promise<IRecv<Address>>,
+  ) => Promise<IRecv<RawAddress>>,
   wait: (delta: BigNumber) => Promise<BigNumber>,
-  iam: (some_addr: Address) => Address,
+  iam: (some_addr: RawAddress) => RawAddress,
 };
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
@@ -39,6 +43,17 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
 export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any> | {
   networkAccount: NetworkAccount,
 }
+
+export type ISimRes<Digest, RawAddress> = {
+  prevSt: Digest,
+  txns: Array<ISimTxn<RawAddress>>,
+  nextSt: Digest,
+  isHalt : boolean,
+};
+export type ISimTxn<RawAddress> = {
+  to: RawAddress,
+  amt: BigNumber,
+};
 
 let DEBUG: boolean = process.env.REACH_DEBUG ? true : false;
 export const setDEBUG = (b: boolean) => {
