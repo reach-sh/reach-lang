@@ -40,7 +40,7 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-let DEBUG: boolean = false;
+let DEBUG: boolean = process.env.REACH_DEBUG ? true : false;
 export const setDEBUG = (b: boolean) => {
   if (b === false || b === true) {
     DEBUG = b;
