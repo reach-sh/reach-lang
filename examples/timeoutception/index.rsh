@@ -7,22 +7,19 @@ const Player = {
 const DELAY = 10;
 
 // Stupid game: send money or do a thing if you don't.
-function go(who, k) {
+function go(who, kOk, kTime) {
   who.only(() => {
     const amt = declassify(interact.ask());
   });
   who.publish(amt)
     .pay(amt)
-    .timeout(DELAY, () => k());
+    .timeout(DELAY, () => kTime());
   commit();
+  kOk();
 }
 
-function gogo(who, kTim) {
-  return () => go(who, kTim);
-}
-
-function thrice(f, x) {
-  return f(f(f(x)));
+function thrice(f, x, y) {
+  return f(x, f(x, f(x, y)));
 }
 
 export const main = Reach.App(
@@ -32,9 +29,9 @@ export const main = Reach.App(
     A.publish();
     commit();
 
-    const goThunk = (k) => () => go(A, k);
+    const goThunk = (kOk, kTime) => () => go(A, kOk, kTime);
     const wrapUp = () => closeTo(A, () => {});
-    const k3 = thrice(goThunk, wrapUp);
+    const k3 = thrice(goThunk, wrapUp, wrapUp);
 
     /* This code makes some weird timeouts. The goal is so that
 
@@ -49,6 +46,5 @@ export const main = Reach.App(
      */
 
     k3();
-    wrapUp();
   }
 );

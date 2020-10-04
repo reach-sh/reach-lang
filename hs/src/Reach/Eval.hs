@@ -1380,7 +1380,7 @@ evalPrim ctxt at sco st p sargs =
         SLM_Step ->
           case sargs of
             [] -> do
-              let zero = SLV_Int at 0
+              let zero = SLV_Int srcloc_builtin 0
               tbzero <- doAssertBalance ctxt at sco st zero PEQ
               let gbs = st_globals st
               let st' = st { st_globals = gbs { g_balance = zero } }
