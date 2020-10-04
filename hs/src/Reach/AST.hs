@@ -335,7 +335,7 @@ data SLPrimitive
   | SLPrim_exit
   | SLPrim_exitted
   | SLPrim_forall
-  | SLPrim_PrimDelay SrcLoc SLPrimitive [SLSVal]
+  | SLPrim_PrimDelay SrcLoc SLPrimitive [SLSVal] [SLSVal]
   | SLPrim_part_set
   | SLPrim_part_setted SrcLoc SLPart DLArg
   | SLPrim_wait

@@ -19,7 +19,7 @@ contract ReachContract is Stdlib {
   
   
   
-  event e1(uint256 _bal, uint256 v1);
+  event e1(uint256 v1);
   struct a1 {
     uint256 _last;
     uint256 v1; }
@@ -29,11 +29,11 @@ contract ReachContract is Stdlib {
     
     
     require(true && true);
-    require((uint256(0) == (msg.value)));
-    emit e1(address(this).balance, _a.v1);
+    require((msg.value == uint256(0)));
+    emit e1(_a.v1);
     current_state = uint256(keccak256(abi.encode(uint256(1), uint256(block.number), msg.sender, _a.v1))); }
   
-  event e2(uint256 _bal);
+  event e2();
   struct a2 {
     uint256 _last;
     address payable v2;
@@ -44,11 +44,11 @@ contract ReachContract is Stdlib {
     
     
     require(true && true);
-    require((_a.v1 == (msg.value)));
-    emit e2(address(this).balance);
+    require((msg.value == _a.v1));
+    emit e2();
     current_state = uint256(keccak256(abi.encode(uint256(2), uint256(block.number), _a.v2, _a.v1))); }
   
-  event e3(uint256 _bal, bytes v13);
+  event e3(bytes v13);
   struct a3 {
     uint256 _last;
     address payable v2;
@@ -60,8 +60,8 @@ contract ReachContract is Stdlib {
     
     require(msg.sender == _a.v2);
     require(true && true);
-    require((uint256(0) == (msg.value)));
+    require((msg.value == uint256(0)));
     _a.v2.transfer(_a.v1);
-    emit e3(address(this).balance, _a.v13);
+    emit e3(_a.v13);
     current_state = 0x0;
     selfdestruct(msg.sender); } }

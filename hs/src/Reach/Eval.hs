@@ -810,7 +810,7 @@ evalAsEnv at obj =
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
-    delayCall p = retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)]
+    delayCall p = retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
     doCall p ctxt sco st = do
       SLRes lifts st' (SLAppRes _ v) <- evalApplyVals ctxt at sco st (SLV_Prim p) [(public obj)]
       return $ SLRes lifts st' v
@@ -997,9 +997,9 @@ explodeTupleLike ctxt at lab tuplv =
       (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
       return $ (lifts, [SLV_DLVar dv])
 
-doAssertBalance :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> ST s DLStmts
-doAssertBalance ctxt at sco st op rhs = do
-  let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [ (Public, rhs) ]
+doAssertBalance :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> PrimOp -> ST s DLStmts
+doAssertBalance ctxt at sco st lhs op = do
+  let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [ (Public, lhs) ] []
   let balance_v = g_balance $ st_globals st
   SLRes cmp_lifts _ (SLAppRes _ cmp_v) <- evalApplyVals ctxt at sco st cmp_rator [ (Public, balance_v) ]
   let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
@@ -1010,7 +1010,7 @@ doAssertBalance ctxt at sco st op rhs = do
 
 doBalanceUpdate :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp s ()
 doBalanceUpdate ctxt at sco st op rhs = do
-  let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [ (Public, rhs) ]
+  let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [ (Public, rhs) ]
   let gbs = st_globals st
   let balance_v = g_balance gbs
   SLRes lifts _ (SLAppRes _ (_, balance_v')) <-
@@ -1336,7 +1336,7 @@ evalPrim ctxt at sco st p sargs =
       case st_mode st of
         SLM_ConsensusStep -> do
           let amt_dla = checkType at T_UInt256 amt_sv
-          tbsuff <- doAssertBalance ctxt at sco st PGE amt_sv
+          tbsuff <- doAssertBalance ctxt at sco st amt_sv PLE
           --- XXX We can now remove the stack from DLE_Transfer
           SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
           let lifts = tbsuff <> (return $ DLS_Let at Nothing $ DLE_Transfer at (ctxt_stack ctxt) who_dla amt_dla) <> balup
@@ -1356,10 +1356,13 @@ evalPrim ctxt at sco st p sargs =
       case st_mode st of
         SLM_Step ->
           case sargs of
-            [] ->
-              return $ SLRes lifts st $ public $ SLV_Prim $ SLPrim_exitted
-              where
-                lifts = return $ DLS_Stop at (ctxt_stack ctxt)
+            [] -> do
+              let zero = SLV_Int at 0
+              tbzero <- doAssertBalance ctxt at sco st zero PEQ
+              let gbs = st_globals st
+              let st' = st { st_globals = gbs { g_balance = zero } }
+              let lifts = tbzero <> (return $ DLS_Stop at (ctxt_stack ctxt))
+              return $ SLRes lifts st' $ public $ SLV_Prim $ SLPrim_exitted
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "exit"
     SLPrim_exitted -> illegal_args
@@ -1375,8 +1378,8 @@ evalPrim ctxt at sco st p sargs =
             evalApplyVals ctxt at sco st_e two [one']
           return $ SLRes (elifts <> alifts) st_a $ lvlMeet tlvl ans
         _ -> illegal_args
-    SLPrim_PrimDelay _at dp dargs ->
-      evalPrim ctxt at sco st dp $ dargs ++ sargs
+    SLPrim_PrimDelay _at dp bargs aargs ->
+      evalPrim ctxt at sco st dp $ bargs <> sargs <> aargs
     SLPrim_wait ->
       case allowed_to_wait ctxt at st $ st_mode st of
         SLM_Step ->
@@ -1999,9 +2002,10 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
         _ -> illegal_mode
     SLV_Prim SLPrim_exitted ->
       case (st_mode st, st_live st) of
-        (SLM_Step, True) ->
+        (SLM_Step, True) -> do
+          let st' = st { st_live = False}
           expect_empty_tail "exit" JSNoAnnot sp at ks $
-            return $ SLRes mempty (st {st_live = False}) $ SLStmtRes env []
+            return $ SLRes mempty st' $ SLStmtRes env []
         _ -> illegal_mode
     SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) ->
       case st_mode st of
@@ -2086,7 +2090,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt256
           SLRes amt_check_lifts _ _ <- do
             --- XXX Merge with doAssertBalance somehow
-            let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [ (Public, SLV_DLVar amt_dv) ]
+            let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [ (Public, SLV_DLVar amt_dv) ] []
             SLRes cmp_lifts _ cmp_v <- evalApply ctxt at sco_env' st_pure cmp_rator [ amte ]
             let req_rator = SLV_Prim $ SLPrim_claim CT_Require
             keepLifts cmp_lifts $
@@ -2762,7 +2766,8 @@ compileDApp idxr liblifts topv =
       SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
       -- XXX This means we can remove fs from LLS_Stop, but it would be nice to
       -- know which return point was the problem
-      tbzero <- doAssertBalance ctxt at sco st_final PEQ $ SLV_Int at 0
+      -- XXX instead put an exit in the program text at the end?
+      tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at 0) PEQ
       return $ DLProg at dlo sps (liblifts <> final <> tbzero)
       where
         at' = srcloc_at "compileDApp" Nothing at

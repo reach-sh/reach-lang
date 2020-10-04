@@ -3,11 +3,11 @@ Verifying knowledge assertions
 Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
-  of theorem TBalanceZero
+  of theorem TAssert
   at ./overview/index-error.rsh:29:11:application
 
   Theorem formalization:
-  (= ctc_balance4 0 )
+  v22
 
   This could be violated if...
     "interact_Alice_request" = 1
@@ -15,56 +15,64 @@ Verification failed:
       (because: interaction)
 
   In context...
-    "ctc_balance4" = (- ctc_balance3 v17 )
+    "v22" = (= 0 v19 )
+      (from: v22)
+      (bound at: ./overview/index-error.rsh:29:11:application)
+      (because: evaluating PEQ(DLC_Int 0, v19))
+    "v19" = (- v16 v17 )
+      (from: v19)
       (bound at: ./overview/index-error.rsh:24:29:application)
-      (because: a transfer to v2 of v17)
-    "ctc_balance3" = (+ ctc_balance2 txn_value2 )
-      (bound at: ./overview/index-error.rsh:23:8:dot)
-      (because: publication)
+      (because: evaluating SUB(v16, v17))
+    "v16" = (+ v11 v14 )
+      (from: v16)
+      (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
+      (because: evaluating ADD(v11, v14))
     "v17" = (- v1 1 )
       (from: v17)
       (bound at: ./overview/index-error.rsh:application)
       (because: evaluating SUB(v1, DLC_Int 1))
-    "ctc_balance2" = (+ ctc_balance1 txn_value1 )
-      (bound at: ./overview/index-error.rsh:18:8:dot)
-      (because: publication)
-    "txn_value2" = 0
+    "v11" = (+ v5 v9 )
+      (from: v11)
+      (bound at: ./overview/index-error.rsh:18:21:after expr stmt semicolon)
+      (because: evaluating ADD(v5, v9))
+    "v14" = 0
+      (from: v14)
       (bound at: ./overview/index-error.rsh:23:8:dot)
       (because: an honest payment from "Alice" of DLC_Int 0)
     "v1" = interact_Alice_request
       (from: v1)
       (bound at: ./overview/index-error.rsh:13:8:dot)
       (because: an honest message from "Alice" of interact("Alice")."request"(UInt256))
-    "ctc_balance1" = (+ ctc_balance0 txn_value0 )
-      (bound at: ./overview/index-error.rsh:13:8:dot)
-      (because: publication)
-    "txn_value1" = v1
+    "v5" = (+ 0 v3 )
+      (from: v5)
+      (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
+      (because: evaluating ADD(DLC_Int 0, v3))
+    "v9" = v1
+      (from: v9)
       (bound at: ./overview/index-error.rsh:18:8:dot)
       (because: an honest payment from "Bob" of v1)
-    "ctc_balance0" = 0
-      (bound at: ./overview/index-error.rsh:4:12:application)
-      (because: initialization)
-    "txn_value0" = 0
+    "v3" = 0
+      (from: v3)
       (bound at: ./overview/index-error.rsh:13:8:dot)
       (because: an honest payment from "Alice" of DLC_Int 0)
 Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
-  of theorem TBalanceZero
+  of theorem TAssert
   at ./overview/index-error.rsh:29:11:application
 
   (details omitted on repeat)
 Verifying with mode = VM_Dishonest (RolePart "Alice")
 Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
-  of theorem TBalanceZero
+  of theorem TAssert
   at ./overview/index-error.rsh:29:11:application
 
   (details omitted on repeat)
 Verifying with mode = VM_Dishonest (RolePart "Bob")
 Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
-  of theorem TBalanceZero
+  of theorem TAssert
   at ./overview/index-error.rsh:29:11:application
 
   (details omitted on repeat)

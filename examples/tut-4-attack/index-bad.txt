@@ -3,11 +3,11 @@ Verifying knowledge assertions
 Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
-  of theorem TBalanceZero
+  of theorem TAssert
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   Theorem formalization:
-  (= ctc_balance4 0 )
+  v44
 
   This could be violated if...
     "interact_Alice_wager" = 1
@@ -19,19 +19,26 @@ Verification failed:
       (because: evaluating interact("Alice")."getHand"())
 
   In context...
-    "ctc_balance4" = (- ctc_balance3 v35 )
+    "v44" = (= 0 v39 )
+      (from: v44)
+      (bound at: ./tut-4-attack/index-bad.rsh:45:11:application)
+      (because: evaluating PEQ(DLC_Int 0, v39))
+    "v39" = (- v36 v37 )
+      (from: v39)
       (bound at: ./tut-4-attack/index-bad.rsh:40:32:application)
-      (because: a transfer to v13 of v35)
-    "ctc_balance3" = (- ctc_balance2 v34 )
+      (because: evaluating SUB(v36, v37))
+    "v36" = (- v16 v34 )
+      (from: v36)
       (bound at: ./tut-4-attack/index-bad.rsh:39:32:application)
-      (because: a transfer to v4 of v34)
-    "v35" = (* v33 v2 )
-      (from: v35)
+      (because: evaluating SUB(v16, v34))
+    "v37" = (* v33 v2 )
+      (from: v37)
       (bound at: ./tut-4-attack/index-bad.rsh:application)
       (because: evaluating MUL(v33, v2))
-    "ctc_balance2" = (+ ctc_balance1 txn_value1 )
-      (bound at: ./tut-4-attack/index-bad.rsh:28:8:dot)
-      (because: publication)
+    "v16" = (+ v7 v14 )
+      (from: v16)
+      (bound at: ./tut-4-attack/index-bad.rsh:29:20:after expr stmt semicolon)
+      (because: evaluating ADD(v7, v14))
     "v34" = (* v32 v2 )
       (from: v34)
       (bound at: ./tut-4-attack/index-bad.rsh:application)
@@ -44,12 +51,14 @@ Verification failed:
       (from: v33)
       (bound at: ./tut-4-attack/index-bad.rsh:34:7:const)
       (because: evaluating v31[1])
-    "ctc_balance1" = (+ ctc_balance0 txn_value0 )
-      (bound at: ./tut-4-attack/index-bad.rsh:21:8:dot)
-      (because: publication)
-    "txn_value1" = v2
+    "v14" = v2
+      (from: v14)
       (bound at: ./tut-4-attack/index-bad.rsh:28:8:dot)
       (because: an honest payment from "Bob" of v2)
+    "v7" = (+ 0 v5 )
+      (from: v7)
+      (bound at: ./tut-4-attack/index-bad.rsh:22:20:after expr stmt semicolon)
+      (because: evaluating ADD(DLC_Int 0, v5))
     "v32" = (T2_elem0 v31 )
       (from: v32)
       (bound at: ./tut-4-attack/index-bad.rsh:34:7:const)
@@ -58,10 +67,8 @@ Verification failed:
       (from: v31)
       (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
       (because: evaluating IF_THEN_ELSE(v27, [DLC_Int 0, DLC_Int 1], v30))
-    "ctc_balance0" = 0
-      (bound at: ./tut-4-attack/index-bad.rsh:14:12:application)
-      (because: initialization)
-    "txn_value0" = interact_Alice_wager
+    "v5" = interact_Alice_wager
+      (from: v5)
       (bound at: ./tut-4-attack/index-bad.rsh:21:8:dot)
       (because: an honest payment from "Alice" of interact("Alice")."wager"(UInt256))
     "v27" = (= v19 0 )
@@ -107,21 +114,21 @@ Verification failed:
 Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
-  of theorem TBalanceZero
+  of theorem TAssert
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   (details omitted on repeat)
 Verifying with mode = VM_Dishonest (RolePart "Alice")
 Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
-  of theorem TBalanceZero
+  of theorem TAssert
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   (details omitted on repeat)
 Verifying with mode = VM_Dishonest (RolePart "Bob")
 Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
-  of theorem TBalanceZero
+  of theorem TAssert
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   (details omitted on repeat)
