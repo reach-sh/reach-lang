@@ -150,6 +150,29 @@ didYouMean invalidStr validOptions maxClosest = case validOptions of
     closest = take maxClosest $ sortBy (comparing distance) validOptions
     distance = restrictedDamerauLevenshteinDistance defaultEditCosts invalidStr
 
+showVS :: Show a => a -> a -> String
+showVS fx fy = show fx <> " vs " <> show fy
+
+showDiff :: Eq b => a -> a -> (a -> b) -> String -> (b -> b -> String) -> String
+showDiff x y f lab s =
+  let fx = f x
+      fy = f y
+    in case fx == fy of
+        True -> ""
+        False -> "\n  " <> lab <> ": " <> s fx fy
+
+showGlobalsDiff :: SLGlobals -> SLGlobals -> String
+showGlobalsDiff x y =
+  showDiff x y g_balance "Balance" showVS
+
+showStateDiff :: SLState -> SLState -> String
+showStateDiff x y =
+  showDiff x y st_mode "Mode" showVS <>
+  showDiff x y st_live "Live" showVS <>
+  showDiff x y st_after_first "After First Message" showVS <>
+  showDiff x y st_pdvs "Participant Definitions" showVS <>
+  showDiff x y st_globals "Globals" showGlobalsDiff
+
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
   show = \case
@@ -307,7 +330,7 @@ instance Show EvalError where
     Err_Transfer_NotBound who ->
       "cannot transfer to unbound participant, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
-      "incompatible states: " <> show x <> " " <> show y
+      "incompatible states:" <> showStateDiff x y
     Err_Eval_NotSecretIdent x ->
       ("Invalid binding in PART.only: " <> x <> ".")
         <> " Secret identifiers must be prefixed by _."
