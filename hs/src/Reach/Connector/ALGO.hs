@@ -240,12 +240,6 @@ cprim = \case
   BXOR -> call "^"
   BYTES_EQ -> call "=="
   IF_THEN_ELSE -> const $ xxx "ITE"
-  BALANCE -> const $ xxx "BALANCE"
-  TXN_VALUE -> const $ do
-    --- XXX dedicate a scratch slot for this
-    code "gtxn" [ texty txnToContract, "Amount" ]
-    lookup_fee_amount
-    op "-"
   where
     call o = \args -> do
       forM_ args ca
@@ -487,18 +481,24 @@ runApp eShared eWhich eLets m = do
 
 ch :: Shared -> Int -> CHandler -> IO (Maybe TEALs)
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int fs prev svs msg body) = fmap Just $ do
+ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
   let mkarg dv@(DLVar _ _ t _) (i::Int) = (dv, code "arg" [ texty i ] >> cfrombs t)
   let args = svs <> msg
   let argFirstUser' = fromIntegral argFirstUser
   let eLets0 = M.fromList $ zipWith mkarg args [ argFirstUser' .. ]
   let argCount = argFirstUser' + length args
-  let eLets =
+  let eLets1 =
         case fs of
           FS_Join dv ->
             M.insert dv lookup_sender eLets0
           FS_Again {} ->
             eLets0
+  let lookup_txn_value = do
+        code "gtxn" [ texty txnToContract, "Amount" ]
+        lookup_fee_amount
+        op "-"
+  let eLets =
+        M.insert amtv lookup_txn_value eLets1
   runApp eShared eWhich eLets $ do
     comment "Check txnAppl"
     code "gtxn" [ texty txnAppl, "TypeEnum" ]

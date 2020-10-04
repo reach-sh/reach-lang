@@ -362,6 +362,12 @@ isSecretIdent :: SLVar -> Bool
 isSecretIdent ('_' : _ : _) = True
 isSecretIdent _ = False
 
+internalVar :: SLVar -> SLVar
+internalVar v = "." <> v
+
+internalVar_balance :: SLVar
+internalVar_balance = internalVar "balance"
+
 data EnvInsertMode
   = AllowShadowing
   | DisallowShadowing
@@ -427,11 +433,7 @@ base_env =
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
-    , --- Note: This identifier is chosen so that Reach programmers
-      --- can't actually use it directly... kind of a hack.
-      --- But we insert it to check the amount of transfers
-      ("__txn.value__", SLV_Prim $ SLPrim_op $ TXN_VALUE)
-    , ("balance", SLV_Prim $ SLPrim_op $ BALANCE)
+    , ("balance", SLV_Prim $ SLPrim_global_read $ SLG_balance )
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
     , ("UInt256", SLV_Type T_UInt256)
@@ -498,14 +500,17 @@ data SLCtxt s = SLCtxt
 instance Show (SLCtxt s) where
   show _ = "<context>"
 
-ctxt_alloc :: SLCtxt s -> SrcLoc -> ST s Int
-ctxt_alloc ctxt _at = do
+ctxt_alloc :: SLCtxt s -> ST s Int
+ctxt_alloc ctxt =
   incSTCounter $ ctxt_id ctxt
 
+ctxt_mkvar :: SLCtxt s -> (Int -> DLVar) -> ST s DLVar
+ctxt_mkvar ctxt mkvar =
+  mkvar <$> ctxt_alloc ctxt
+
 ctxt_lift_expr :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> ST s (DLVar, DLStmts)
-ctxt_lift_expr ctxt at mk_var e = do
-  x <- ctxt_alloc ctxt at
-  let dv = mk_var x
+ctxt_lift_expr ctxt at mkvar e = do
+  dv <- ctxt_mkvar ctxt mkvar
   let s = DLS_Let at (Just dv) e
   return (dv, return s)
 
@@ -540,6 +545,13 @@ data SLMode
   | SLM_ConsensusPure
   deriving (Eq, Generic, Show)
 
+data SLGlobals = SLGlobals
+  { g_balance :: SLVal }
+  deriving (Eq, Show)
+
+global_ref :: SLGlobal -> SLGlobals -> SLVal
+global_ref SLG_balance = g_balance
+
 --- A state represents the state of the protocol, so it is returned
 --- out of a function call.
 data SLState = SLState
@@ -549,6 +561,7 @@ data SLState = SLState
   , st_after_first :: Bool
   , --- A function call may cause a participant to join
     st_pdvs :: SLPartDVars
+  , st_globals :: SLGlobals
   }
   deriving (Eq, Show)
 
@@ -938,8 +951,6 @@ evalPrimOp ctxt at _sco st p sargs =
         [SLV_Bytes _ x, SLV_Bytes _ y] ->
           static $ SLV_Bool at $ x == y
         _ -> make_var
-    BALANCE -> make_var
-    TXN_VALUE -> make_var
     -- FIXME fromIntegral may overflow the Int
     LSH -> nn2n (\a b -> shift a (fromIntegral b))
     RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
@@ -986,9 +997,33 @@ explodeTupleLike ctxt at lab tuplv =
       (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
       return $ (lifts, [SLV_DLVar dv])
 
+doAssertBalance :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> ST s DLStmts
+doAssertBalance ctxt at sco st op rhs = do
+  let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [ (Public, rhs) ]
+  let balance_v = g_balance $ st_globals st
+  SLRes cmp_lifts _ (SLAppRes _ cmp_v) <- evalApplyVals ctxt at sco st cmp_rator [ (Public, balance_v) ]
+  let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
+  SLRes res_lifts _ _ <-
+    keepLifts cmp_lifts $
+      evalApplyVals ctxt at sco st ass_rator [ cmp_v ]
+  return res_lifts
+
+doBalanceUpdate :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp s ()
+doBalanceUpdate ctxt at sco st op rhs = do
+  let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [ (Public, rhs) ]
+  let gbs = st_globals st
+  let balance_v = g_balance gbs
+  SLRes lifts _ (SLAppRes _ (_, balance_v')) <-
+    evalApplyVals ctxt at sco st up_rator [ (Public, balance_v ) ]
+  let gbs' = gbs { g_balance = balance_v' }
+  let st' = st { st_globals = gbs' }
+  return $ SLRes lifts st' ()
+
 evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
 evalPrim ctxt at sco st p sargs =
   case p of
+    SLPrim_global_read g ->
+      retV $ (Public, global_ref g $ st_globals st)
     SLPrim_op op ->
       evalPrimOp ctxt at sco st op sargs
     SLPrim_Fun ->
@@ -1289,20 +1324,24 @@ evalPrim ctxt at sco st p sargs =
           _ -> illegal_args
         lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg
     SLPrim_transfer ->
-      case map (typeOf at) $ ensure_publics at sargs of
-        [(T_UInt256, amt_dla)] ->
+      case ensure_publics at sargs of
+        [amt_sv] ->
           return . SLRes mempty st . public $
             SLV_Object at (Just "transfer") $
               M.fromList [("to", SLSSVal srcloc_builtin Public transferToPrim)]
           where
-            transferToPrim = SLV_Prim (SLPrim_transfer_amt_to amt_dla)
+            transferToPrim = SLV_Prim (SLPrim_transfer_amt_to amt_sv)
         _ -> illegal_args
-    SLPrim_transfer_amt_to amt_dla ->
+    SLPrim_transfer_amt_to amt_sv ->
       case st_mode st of
-        SLM_ConsensusStep ->
-          return $ SLRes lifts st $ public $ SLV_Null at "transfer.to"
+        SLM_ConsensusStep -> do
+          let amt_dla = checkType at T_UInt256 amt_sv
+          tbsuff <- doAssertBalance ctxt at sco st PGE amt_sv
+          --- XXX We can now remove the stack from DLE_Transfer
+          SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
+          let lifts = tbsuff <> (return $ DLS_Let at Nothing $ DLE_Transfer at (ctxt_stack ctxt) who_dla amt_dla) <> balup
+          return $ SLRes lifts st' $ public $ SLV_Null at "transfer.to"
           where
-            lifts = return $ DLS_Let at Nothing $ DLE_Transfer at (ctxt_stack ctxt) who_dla amt_dla
             who_dla =
               case map snd sargs of
                 [SLV_Participant _ who _ _ Nothing] ->
@@ -1392,8 +1431,7 @@ evalPrim ctxt at sco st p sargs =
         T_Array ty sz -> (ty, sz)
         _ -> illegal_args
     make_dlvar at' lab ty = do
-      dvi <- ctxt_alloc ctxt at
-      let dv = DLVar at' lab ty dvi
+      dv <- ctxt_mkvar ctxt $ DLVar at' lab ty
       return $ (dv, SLV_DLVar dv)
 
 evalApplyVals :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> [SLSVal] -> SLComp s SLAppRes
@@ -1404,7 +1442,7 @@ evalApplyVals ctxt at sco st rator randvs =
       return $ SLRes lifts st' $ SLAppRes (sco_env sco) val
     -- TODO: have formals remember their srclocs
     SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_env clo_penvs clo_cenv) -> do
-      ret <- ctxt_alloc ctxt at
+      ret <- ctxt_alloc ctxt
       let body_at = srcloc_jsa "block" body_a clo_at
       let arg_env = M.fromList $ map (second (sls_sss at)) $ zipEq at (Err_Apply_ArgCount clo_at) formals randvs
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
@@ -1598,7 +1636,7 @@ evalExpr ctxt at sco st e = do
                   lvlMeetR lvl $
                     evalPrim ctxt at sco st_tf (SLPrim_op $ IF_THEN_ELSE) [csv, tsv, fsv]
               False -> do
-                ret <- ctxt_alloc ctxt at'
+                ret <- ctxt_alloc ctxt
                 let add_ret e_at' elifts ev = (e_ty, (elifts <> (return $ DLS_Return e_at' ret ev)))
                       where
                         (e_ty, _) = typeOf e_at' ev
@@ -1994,8 +2032,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                       let m = case da of
                             DLA_Var (DLVar _ v _ _) -> v
                             _ -> "msg"
-                      x <- ctxt_alloc ctxt to_at
-                      return $ (da, DLVar to_at m t x)
+                      dv <- ctxt_mkvar ctxt $ DLVar to_at m t
+                      return $ (da, dv)
                 tvs <- mapM mk msg
                 return $ (foldl' (env_insertp at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ map snd tvs, tvs)
           -- TODO: ^ double check this srcloc
@@ -2006,8 +2044,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                 return $ (pdvs, FS_Again pdv)
               Nothing -> do
                 let whos = bunpack who
-                whon <- ctxt_alloc ctxt to_at
-                let whodv = DLVar to_at whos T_Address whon
+                whodv <- ctxt_mkvar ctxt $ DLVar to_at whos T_Address
                 return $ ((M.insert who whodv pdvs), FS_Join whodv)
           let add_who_env :: SLEnv -> SLEnv =
                 case vas of
@@ -2046,14 +2083,14 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                 SLRes amt_lifts_ _ amt_sv <- evalExpr ctxt at sco_penv' st_pure amte_
                 return $ (amte_, amt_lifts_, checkType at T_UInt256 $ ensure_public at amt_sv)
           let amt_compute_lifts = return $ DLS_Only at who amt_lifts
-          SLRes amt_check_lifts _ _ <-
-            let check_amte = JSCallExpression rator a rands a
-                rator = JSIdentifier a "require"
-                a = JSNoAnnot
-                rands = JSLOne $ JSExpressionBinary amte (JSBinOpEq a) rhs
-                --- FIXME Use something like delayapp and get rid of this hack.
-                rhs = JSCallExpression (JSIdentifier a "__txn.value__") a JSLNil a
-             in evalExpr ctxt at sco_env' st_pure check_amte
+          amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt256
+          SLRes amt_check_lifts _ _ <- do
+            --- XXX Merge with doAssertBalance somehow
+            let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [ (Public, SLV_DLVar amt_dv) ]
+            SLRes cmp_lifts _ cmp_v <- evalApply ctxt at sco_env' st_pure cmp_rator [ amte ]
+            let req_rator = SLV_Prim $ SLPrim_claim CT_Require
+            keepLifts cmp_lifts $
+              evalApplyVals ctxt at sco_env' st_pure req_rator [ cmp_v ]
           (tlifts, mt_st_cr, mtime') <-
             case mtime of
               Nothing -> return $ (mempty, Nothing, Nothing)
@@ -2074,8 +2111,9 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                   , sco_cenv = env'
                   , sco_penvs = penvs'
                   }
-          SLRes conlifts k_st k_cr <- evalStmt ctxt at sco' st_cstep ks
-          let lifts' = tlifts <> amt_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da mtime' (amt_check_lifts <> conlifts))
+          SLRes balup st_cstep' () <- doBalanceUpdate ctxt at sco' st_cstep ADD (SLV_DLVar amt_dv)
+          SLRes conlifts k_st k_cr <- evalStmt ctxt at sco' st_cstep' ks
+          let lifts' = tlifts <> amt_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da amt_dv mtime' (amt_check_lifts <> balup <> conlifts))
           --- FIXME This might be general logic that applies to any
           --- place where we merge, like IFs and SEQNs, so if one side
           --- of an if dies, then the other side doesn't need to merge
@@ -2237,24 +2275,33 @@ evalStmt ctxt at sco st ss =
               SLRes decl_lifts st_decl decl_env <-
                 evalDecl ctxt var_at st mempty sco decl
               let st_decl' = stEnsureMode at SLM_ConsensusStep st_decl
-              let cont_das =
-                    DLAssignment $
-                      case sco_while_vars sco of
-                        Nothing -> expect_throw cont_at $ Err_Eval_ContinueNotInWhile
-                        Just whilem -> M.fromList $ map f $ M.toList decl_env
+              let whilem =
+                    case sco_while_vars sco of
+                      Nothing -> expect_throw cont_at $ Err_Eval_ContinueNotInWhile
+                      Just x -> x
+              let cont_dam =
+                    M.fromList $ map f $ M.toList decl_env
+                      where
+                        f (v, sv) = (dv, da)
                           where
-                            f (v, sv) = (dv, da)
-                              where
-                                dv = case M.lookup v whilem of
-                                  Nothing ->
-                                    expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
-                                  Just x -> x
-                                val = ensure_public var_at $ sss_sls sv
-                                da = checkType at et val
-                                DLVar _ _ et _ = dv
+                            dv = case M.lookup v whilem of
+                              Nothing ->
+                                expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
+                              Just x -> x
+                            val = ensure_public var_at $ sss_sls sv
+                            da = checkType at et val
+                            DLVar _ _ et _ = dv
+              let gbs = st_globals st_decl'
+              let balance_da = checkType cont_at T_UInt256 $ g_balance gbs
+              let unknown_balance_dv = whilem M.! internalVar_balance
+              let cont_dam' =
+                    M.insert unknown_balance_dv balance_da cont_dam
+              let cont_das = DLAssignment cont_dam'
+              let unknown_bal_v = SLV_DLVar unknown_balance_dv
+              let st_decl'_bal = st_decl' { st_globals = gbs { g_balance = unknown_bal_v } }
               let lifts' = decl_lifts <> (return $ DLS_Continue cont_at cont_das)
               expect_empty_tail lab cont_a cont_sp cont_at cont_ks $
-                return $ SLRes lifts' st_decl' $ SLStmtRes env []
+                return $ SLRes lifts' st_decl'_bal $ SLStmtRes env []
             cm -> expect_throw var_at $ Err_Eval_IllegalMode cm "continue"
           where
             lab = "continue"
@@ -2339,8 +2386,7 @@ evalStmt ctxt at sco st ss =
                     T_Null ->
                       return (Nothing, Just $ SLV_Null at_c "case")
                     _ -> do
-                      dvi <- ctxt_alloc ctxt at
-                      let dv' = DLVar at_c ("switch " <> vn) vt dvi
+                      dv' <- ctxt_mkvar ctxt $ DLVar at_c ("switch " <> vn) vt
                       return (Just dv', Just $ SLV_DLVar dv')
                 False ->
                   return (Nothing, Nothing)
@@ -2387,17 +2433,24 @@ evalStmt ctxt at sco st ss =
           ) ->
             case st_mode st of
               SLM_ConsensusStep -> do
-                SLRes init_lifts st_var vars_env <-
+                SLRes init_lifts st_var vars_env_ <-
                   evalDecls ctxt var_at st sco while_decls
-                let st_var' = stEnsureMode at SLM_ConsensusStep st_var
-                let st_pure = st_var' {st_mode = SLM_ConsensusPure}
+                let gbs = st_globals st_var
+                let balance_v = sls_sss var_at (Public, g_balance gbs)
+                let vars_env =
+                      --- XXX This could be broken with multiple loops
+                      env_insert var_at internalVar_balance balance_v vars_env_
                 let while_help v sv = do
                       let (SLSSVal _ _ val) = sv
-                      vn <- ctxt_alloc ctxt var_at
                       let (t, da) = typeOf var_at val
-                      return $ (DLVar var_at v t vn, da)
+                      dv <- ctxt_mkvar ctxt $ DLVar var_at v t
+                      return $ (dv, da)
                 while_helpm <- M.traverseWithKey while_help vars_env
                 let unknown_var_env = M.map (sls_sss var_at . public . SLV_DLVar . fst) while_helpm
+                let unknown_bal_v = sss_val $ unknown_var_env M.! internalVar_balance
+                let st_var_bal = st_var { st_globals = gbs { g_balance = unknown_bal_v } }
+                let st_var' = stEnsureMode at SLM_ConsensusStep st_var_bal
+                let st_pure = st_var' {st_mode = SLM_ConsensusPure}
                 let sco_env' = sco_update ctxt at sco st_var' unknown_var_env
                 SLRes inv_lifts _ inv_da <-
                   case jscl_flatten invariant_args of
@@ -2601,12 +2654,15 @@ type SLMod = (ReachSource, [JSModuleItem])
 
 evalLib :: STCounter s -> SLMod -> (DLStmts, SLLibs) -> ST s (DLStmts, SLLibs)
 evalLib idxr (src, body) (liblifts, libm) = do
+  let at = srcloc_src src
   let st =
         SLState
           { st_mode = SLM_Module
           , st_live = False
           , st_pdvs = mempty
           , st_after_first = False
+          , st_globals = SLGlobals
+            { g_balance = SLV_Int at 0  }
           }
   let ctxt_top =
         (SLCtxt
@@ -2616,21 +2672,19 @@ evalLib idxr (src, body) (liblifts, libm) = do
            , ctxt_local_mname = Nothing
            , ctxt_base_penvs = mempty
            })
+  let stdlib_env =
+        case src of
+          ReachStdLib -> base_env
+          ReachSourceFile _ -> M.union (libm M.! ReachStdLib) base_env
+  let (prev_at, body') =
+        case body of
+          ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a hs) sp)) : j)
+            | (trimQuotes hs) == versionHeader ->
+              ((srcloc_after_semi "header" a sp at), j)
+          _ -> expect_throw at (Err_NoHeader body)
   SLRes more_lifts _ exenv <-
     evalTopBody ctxt_top prev_at st libm stdlib_env mt_env body'
   return $ (liblifts <> more_lifts, M.insert src exenv libm)
-  where
-    stdlib_env =
-      case src of
-        ReachStdLib -> base_env
-        ReachSourceFile _ -> M.union (libm M.! ReachStdLib) base_env
-    at = (srcloc_src src)
-    (prev_at, body') =
-      case body of
-        ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a hs) sp)) : j)
-          | (trimQuotes hs) == versionHeader ->
-            ((srcloc_after_semi "header" a sp at), j)
-        _ -> expect_throw at (Err_NoHeader body)
 
 evalLibs :: STCounter s -> [SLMod] -> ST s (DLStmts, SLLibs)
 evalLibs idxr mods = foldrM (evalLib idxr) (mempty, mempty) mods
@@ -2685,6 +2739,8 @@ compileDApp idxr liblifts topv =
               , st_live = True
               , st_pdvs = mempty
               , st_after_first = False
+              , st_globals = SLGlobals
+                { g_balance = SLV_Int at 0 }
               }
       let ctxt =
             SLCtxt
@@ -2703,8 +2759,11 @@ compileDApp idxr liblifts topv =
               , sco_penvs = penvs
               , sco_cenv = mempty
               }
-      SLRes final _ _ <- evalStmt ctxt at' sco st_step top_ss
-      return $ DLProg at dlo sps (liblifts <> final)
+      SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
+      -- XXX This means we can remove fs from LLS_Stop, but it would be nice to
+      -- know which return point was the problem
+      tbzero <- doAssertBalance ctxt at sco st_final PEQ $ SLV_Int at 0
+      return $ DLProg at dlo sps (liblifts <> final <> tbzero)
       where
         at' = srcloc_at "compileDApp" Nothing at
         sps = SLParts $ M.fromList $ map make_sps_entry partvs

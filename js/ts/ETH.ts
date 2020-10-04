@@ -477,13 +477,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const getEventData = async (
       ok_evt: string, ok_e: Log
-    ): Promise<[BigNumber, Array<any>]> => {
+    ): Promise<Array<any>> => {
       const ethersC = await getC();
       const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
       const { args } = ethersC.interface.parseLog(ok_e);
-      const [ok_bal, ...ok_vals] = ok_args_abi.map(a => args[a.name]);
-
-      return [ok_bal, ok_vals];
+      return ok_args_abi.map(a => args[a.name]);
     };
 
     const getLogs = async (
@@ -618,14 +616,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
           updateLast(ok_t);
-          const [ok_bal, ok_vals] = await getEventData(ok_evt, ok_e);
+          const ok_vals = await getEventData(ok_evt, ok_e);
           if (ok_vals.length !== out_tys.length) {
             throw Error(`Expected ${out_tys.length} values from event data, but got ${ok_vals.length}.`);
           }
           const data = ok_vals.map((v: any, i: number) => out_tys[i].unmunge(v));
 
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
-          return { didTimeout: false, data, value: ok_t.value, balance: ok_bal, from: ok_t.from };
+          return { didTimeout: false, data, value: ok_t.value, from: ok_t.from };
         }
       }
 

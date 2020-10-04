@@ -33,7 +33,6 @@ type Event = {
   from: Address,
   data: Array<any>,
   value: BigNumber,
-  balance: BigNumber,
   txns: Array<SimTxn>,
 };
 
@@ -178,8 +177,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           data,
           value,
           from: address,
-          // XXX this is probably broken, pls fix rsh balance()
-          balance: BALANCES[ctcInfo.address],
         }
         const {txns} = sim_p(stubbedRecv);
 
@@ -191,7 +188,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
         const transferBlock = BLOCKS[BLOCKS.length - 1];
         if (transferBlock.type !== 'transfer') { throw Error('impossible: intervening block'); }
-        const event: Event = { ...stubbedRecv, funcNum, balance: BALANCES[ctcInfo.address], txns };
+        const event: Event = { ...stubbedRecv, funcNum, txns };
         const block: EventBlock = { ...transferBlock, type: 'event', event };
         debug(`sendrecv: transforming transfer block into event block: ${JSON.stringify(block)}`)
         BLOCKS[BLOCKS.length - 1] = block;
@@ -224,7 +221,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(`${label} recv ${funcNum} --- recv`);
           setLastBlock(check_block);
           const evt = b.event;
-          return { didTimeout: false, data: evt.data, value: evt.value, balance: evt.balance, from: evt.from };
+          return { didTimeout: false, data: evt.data, value: evt.value, from: evt.from };
         }
       }
 

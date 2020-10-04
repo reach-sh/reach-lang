@@ -103,8 +103,8 @@ instance CollectsTypes LLStep where
   cts (LLS_Com k) = cts k
   cts (LLS_Stop _ _) = mempty
   cts (LLS_Only _ _ l s) = cts l <> cts s
-  cts (LLS_ToConsensus _ _ fs as msg amt mtime c) =
-    cts fs <> cts as <> cts msg <> cts amt <> cts mtime <> cts c
+  cts (LLS_ToConsensus _ _ fs as msg amt amtv mtime c) =
+    cts fs <> cts as <> cts msg <> cts amt <> cts amtv <> cts mtime <> cts c
 
 instance CollectsTypes LLProg where
   cts (LLProg _ _ ps s) = cts ps <> cts s
@@ -135,7 +135,7 @@ instance CollectsTypes CInterval where
   cts (CBetween from to) = cts from <> cts to
 
 instance CollectsTypes CHandler where
-  cts (C_Handler _ int fs _ svs msg body) = cts int <> cts fs <> cts svs <> cts msg <> cts body
+  cts (C_Handler _ int fs _ svs msg amtv body) = cts int <> cts fs <> cts svs <> cts msg <> cts amtv <> cts body
   cts (C_Loop _ svs vars body) = cts svs <> cts vars <> cts body
 
 instance CollectsTypes CHandlers where

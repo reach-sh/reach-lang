@@ -313,8 +313,6 @@ solPrimApply = \case
         (solEq (solBytesLength x) (solBytesLength y))
         (solEq (solHash [x]) (solHash [y]))
     _ -> impossible $ "emitSol: BYTES_EQ wrong args"
-  BALANCE -> \_ -> "address(this).balance"
-  TXN_VALUE -> \_ -> "msg.value"
   where
     binOp op = \case
       [l, r] -> solBinOp op l r
@@ -361,13 +359,11 @@ solTransfer ctxt who amt =
 
 solEvent :: SolCtxt a -> Int -> [DLVar] -> Doc a
 solEvent ctxt which args =
-  "event" <+> solApply (solMsg_evt which) (solDecl "_bal" (solType ctxt T_UInt256) : map (solArgDecl ctxt AM_Event) args) <> semi
+  "event" <+> solApply (solMsg_evt which) (map (solArgDecl ctxt AM_Event) args) <> semi
 
 solEventEmit :: SolCtxt a -> Int -> [DLVar] -> Doc a
 solEventEmit ctxt which msg =
-  "emit" <+> solApply (solMsg_evt which) (balancep : map (solVar ctxt) msg) <> semi
-  where
-    balancep = solPrimApply BALANCE []
+  "emit" <+> solApply (solMsg_evt which) (map (solVar ctxt) msg) <> semi
 
 data HashMode
   = HM_Set
@@ -603,12 +599,13 @@ solArgDefn ctxt which am vs = (argDefn, argDefs)
     go dv@(DLVar _ _ t _) = ((solRawVar dv), (solType ctxt t))
 
 solHandler :: SolCtxt a -> Int -> CHandler -> Doc a
-solHandler ctxt_top which (C_Handler at interval fs prev svs msg ct) =
+solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
   vsep [evtDefn, argDefn, frameDefn, funDefn]
   where
+    amtmm = M.singleton amtv "msg.value"
     checkMsg s = s <> " check at " <> show at
     vs = svs ++ msg
-    ctxt_from = ctxt_top {ctxt_varm = fromm <> (ctxt_varm ctxt_top)}
+    ctxt_from = ctxt_top {ctxt_varm = amtmm <> fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
     evtDefn = solEvent ctxt which msg
     (argDefn, argDefs) = solArgDefn ctxt which am vs

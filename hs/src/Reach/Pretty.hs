@@ -187,8 +187,8 @@ instance Pretty DLStmt where
         prettyStop
       DLS_Only _ who onlys ->
         "only" <> parens (render_sp who) <+> ns onlys <> semi
-      DLS_ToConsensus _ who fs as vs amt mtime cons ->
-        "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns cons
+      DLS_ToConsensus _ who fs as vs amt amtv mtime cons ->
+        "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> parens (pretty amtv <+> "=" <+> amtp) <> timep <> ns cons
         where
           amtp = ".pay" <> parens (pretty amt)
           timep =
@@ -274,8 +274,8 @@ instance Pretty LLStep where
       LLS_Stop _at _ -> prettyStop
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
-      LLS_ToConsensus _at who fs as vs amt mtime cons ->
-        "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> amtp <> timep <> ns (pretty cons)
+      LLS_ToConsensus _at who fs as vs amt amtv mtime cons ->
+        "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> parens (pretty amtv <+> "=" <+> amtp) <> timep <> ns (pretty cons)
         where
           amtp = ".pay" <> parens (pretty amt)
           timep =
@@ -338,8 +338,8 @@ instance Pretty ETail where
                         Nothing -> emptyDoc
                         Just svs -> cm $ map pretty svs
               whichp = viaShow which
-      ET_ToConsensus _ fs prev which msend msg mtime k ->
-        "sendrecv" <+> fsp <+> prevp <+> whichp <+> parens msendp <> (cm $ map pretty msg) <> timep <> ns (pretty k)
+      ET_ToConsensus _ fs prev which msend msg amtv mtime k ->
+        "sendrecv" <+> fsp <+> prevp <+> whichp <+> parens msendp <> (cm $ map pretty msg) <+> pretty amtv <> timep <> ns (pretty k)
         where
           fsp = pretty fs
           prevp = viaShow prev
@@ -387,13 +387,14 @@ instance Pretty CHandlers where
     render_obj m
 
 instance Pretty CHandler where
-  pretty (C_Handler _ int fs last_i svs msg body) =
+  pretty (C_Handler _ int fs last_i svs msg amtv body) =
     pbrackets
       [ pretty fs
       , pretty int
       , "last = " <> pretty last_i
       , pretty svs
       , pretty msg
+      , pretty amtv
       , render_nest $ pretty body
       ]
   pretty (C_Loop _ svs vars body) =

@@ -111,7 +111,6 @@ type Recv = {
   didTimeout: false,
   data: Array<ContractOut>,
   value: BigNumber,
-  balance: BigNumber,
   from: RawAddress,
 } | { didTimeout: true };
 
@@ -466,9 +465,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       setDigestWidth(8);
       const fake_res = {
         didTimeout: false,
-        data: args,
+        data: args, // XXX should be slice(-1 * evt_cnt)
         value: value,
-        balance: bigNumberify('0'), // XXX
         from: pk,
       };
       const sim_r = sim_p( fake_res );
@@ -690,7 +688,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         return {
           didTimeout: false,
           data: args_un,
-          balance: bigNumberify(0), // XXX
           value, from,
         };
       }

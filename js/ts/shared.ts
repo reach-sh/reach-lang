@@ -11,7 +11,6 @@ export type IRecvNoTimeout<RawAddress> =  {
   didTimeout: false,
   data: Array<any>,
   value: BigNumber,
-  balance: BigNumber,
   from: RawAddress,
 };
 

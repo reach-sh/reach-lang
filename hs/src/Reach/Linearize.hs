@@ -121,8 +121,8 @@ lin_step _ rets (s Seq.:<| ks) =
       LLS_Only at who ls $ lin_step at rets ks
       where
         ls = lin_local at ss
-    DLS_ToConsensus at who fs as ms amt mtime cons ->
-      LLS_ToConsensus at who fs as ms amt mtime' cons'
+    DLS_ToConsensus at who fs as ms amt amtv mtime cons ->
+      LLS_ToConsensus at who fs as ms amt amtv mtime' cons'
       where
         cons' = lin_con back at mempty (cons <> ks)
         back = lin_step at rets

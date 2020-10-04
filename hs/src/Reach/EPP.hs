@@ -361,7 +361,7 @@ epp_s st s =
       let who_prt_only = ProRes_ who_body_cs $ ET_Seqn at who_body_lt who_k_et
       let p_prts = M.insert who who_prt_only p_prts_k
       return $ ProResS p_prts prchs_k
-    LLS_ToConsensus at from fs from_as msg amt_da mtime cons -> do
+    LLS_ToConsensus at from fs from_as msg amt_da amt_dv mtime cons -> do
       let prev_int = pst_interval st
       which <- newHandler st
       let (int_ok, delay_cs, continue_time) =
@@ -400,16 +400,16 @@ epp_s st s =
             case fs of
               FS_Join dv -> (mempty, [dv])
               FS_Again dv -> (counts dv, mempty)
-      let msg_and_defns = (msg <> fs_defns)
+      let msg_and_defns = (msg <> [amt_dv] <> fs_defns)
       let int_ok_cs = counts int_ok
       let ok_cons_cs = int_ok_cs <> delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
       (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let svs = counts_nzs time_cons_cs
       let from_me = Just (from_as, amt_da, svs)
       let prev = pst_prev_handler st
-      let this_h = C_Handler at int_ok fs prev svs msg ct_cons
+      let this_h = C_Handler at int_ok fs prev svs msg amt_dv ct_cons
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
-            ProRes_ cs_' $ ET_ToConsensus at fs prev which mfrom msg mtime' et_
+            ProRes_ cs_' $ ET_ToConsensus at fs prev which mfrom msg amt_dv mtime' et_
             where
               cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms msg_and_defns cs_
       let mk_sender_et = mk_et from_me

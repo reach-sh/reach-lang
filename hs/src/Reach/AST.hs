@@ -267,9 +267,6 @@ data PrimOp
   | PGT
   | IF_THEN_ELSE
   | BYTES_EQ
-  | --- FIXME make this illegal outside assert/invariant
-    BALANCE
-  | TXN_VALUE
   | LSH
   | RSH
   | BAND
@@ -292,13 +289,17 @@ primOpType PGE = [T_UInt256, T_UInt256] --> T_Bool
 primOpType PGT = [T_UInt256, T_UInt256] --> T_Bool
 primOpType IF_THEN_ELSE = T_Forall "b" (T_Forall "a" ([T_Var "b", T_Var "a", T_Var "a"] --> T_Var "a"))
 primOpType BYTES_EQ = ([T_Bytes, T_Bytes] --> T_Bool)
-primOpType BALANCE = ([] --> T_UInt256)
-primOpType TXN_VALUE = ([] --> T_UInt256)
 primOpType LSH = [T_UInt256, T_UInt256] --> T_UInt256
 primOpType RSH = [T_UInt256, T_UInt256] --> T_UInt256
 primOpType BAND = [T_UInt256, T_UInt256] --> T_UInt256
 primOpType BIOR = [T_UInt256, T_UInt256] --> T_UInt256
 primOpType BXOR = [T_UInt256, T_UInt256] --> T_UInt256
+
+data SLGlobal
+  = SLG_balance
+  deriving (Eq, Generic, Show)
+
+instance NFData SLGlobal
 
 data SLPrimitive
   = SLPrim_makeEnum
@@ -330,7 +331,7 @@ data SLPrimitive
   | SLPrim_App_Delay SrcLoc SLEnv [SLSVal] JSBlock SLEnv SLEnv
   | SLPrim_op PrimOp
   | SLPrim_transfer
-  | SLPrim_transfer_amt_to DLArg
+  | SLPrim_transfer_amt_to SLVal
   | SLPrim_exit
   | SLPrim_exitted
   | SLPrim_forall
@@ -338,6 +339,7 @@ data SLPrimitive
   | SLPrim_part_set
   | SLPrim_part_setted SrcLoc SLPart DLArg
   | SLPrim_wait
+  | SLPrim_global_read SLGlobal
   deriving (Eq, Generic, Show)
 
 instance NFData SLPrimitive
@@ -502,7 +504,8 @@ data DLExpr
   | DLE_ObjectRef SrcLoc DLArg String
   | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String SLType [DLArg]
   | DLE_Digest SrcLoc [DLArg]
-  | DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
+  | --- XXX add message
+    DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
   | DLE_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
@@ -583,6 +586,7 @@ data DLStmt
       , dls_tc_from_as :: [DLArg]
       , dls_tc_from_msg :: [DLVar]
       , dls_tc_from_amt :: DLArg
+      , dls_tc_from_amtv :: DLVar
       , dls_tc_mtime :: (Maybe (DLArg, DLStmts))
       , dls_tc_cons :: DLStmts
       }
@@ -698,6 +702,7 @@ data LLStep
       , lls_tc_from_as :: [DLArg]
       , lls_tc_from_msg :: [DLVar]
       , lls_tc_from_amt :: DLArg
+      , lls_tc_from_amtv :: DLVar
       , lls_tc_mtime :: (Maybe (DLArg, LLStep))
       , lls_tc_cons :: LLConsensus
       }
@@ -756,6 +761,7 @@ data ETail
              Maybe ([DLArg], DLArg, [DLVar])
              )
       , et_tc_from_msg :: [DLVar]
+      , et_tc_from_amtv :: DLVar
       , et_tc_from_mtime :: (Maybe ([DLArg], ETail))
       , et_tc_cons :: ETail
       }
@@ -812,6 +818,7 @@ data CHandler
       , ch_last :: Int
       , ch_svs :: [DLVar]
       , ch_msg :: [DLVar]
+      , ch_amtv :: DLVar
       , ch_body :: CTail
       }
   | C_Loop

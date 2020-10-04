@@ -298,8 +298,8 @@ ul_s = \case
     (pure $ LLS_Stop at fs)
   LLS_Only at p l s ->
     (pure $ LLS_Only at p) <*> ul_l l <*> ul_s s
-  LLS_ToConsensus at from fs from_as from_msg from_amt mtime cons ->
-    (pure $ LLS_ToConsensus at from) <*> ul_fs fs <*> ul_as from_as <*> ul_vs_rn from_msg <*> ul_a from_amt <*> ul_mtime mtime <*> ul_n cons
+  LLS_ToConsensus at from fs from_as from_msg from_amt from_amtv mtime cons ->
+    (pure $ LLS_ToConsensus at from) <*> ul_fs fs <*> ul_as from_as <*> ul_vs_rn from_msg <*> ul_a from_amt <*> ul_v_rn from_amtv <*> ul_mtime mtime <*> ul_n cons
 
 ul_p :: LLProg -> App s LLProg
 ul_p (LLProg at opts ps s) = do

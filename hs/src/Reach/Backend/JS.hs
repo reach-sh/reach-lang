@@ -126,7 +126,7 @@ jsDigest as =
   jsApply "stdlib.keccak256" $ map jsArg as
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
-jsPrimApply ctxt = \case
+jsPrimApply _ctxt = \case
   ADD -> jsApply "stdlib.add"
   SUB -> jsApply "stdlib.sub"
   MUL -> jsApply "stdlib.mul"
@@ -146,8 +146,6 @@ jsPrimApply ctxt = \case
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitJS: ITE called with wrong number of arguments"
   BYTES_EQ -> jsApply "stdlib.bytesEq"
-  BALANCE -> \_ -> jsTxn ctxt <> ".balance"
-  TXN_VALUE -> \_ -> jsTxn ctxt <> ".value"
 
 jsExpr :: JSCtxt -> DLExpr -> Doc a
 jsExpr ctxt = \case
@@ -305,7 +303,7 @@ jsETail ctxt = \case
             ( jsDigest (DLA_Con (DLC_Int $ fromIntegral which) : (map DLA_Var svs))
             , jsCon $ DLC_Bool False
             )
-  ET_ToConsensus _ fs_ok prev which from_me msg mto k_ok -> tp
+  ET_ToConsensus _ fs_ok prev which from_me msg amtv mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
       (delayp, k_p) =
@@ -319,9 +317,9 @@ jsETail ctxt = \case
               k_top = jsETail ctxt' k_to
       msg_vs = map jsVar msg
       k_defp =
-        "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi
-          <> hardline
-          <> jsFromSpec ctxt' fs_ok
+        "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi <> hardline
+        <> "const" <+> jsVar amtv <+> "=" <+> (jsTxn ctxt') <> ".value" <> semi <> hardline
+        <> jsFromSpec ctxt' fs_ok
       k_okp = k_defp <> jsETail ctxt' k_ok
       ctxt' = ctxt {ctxt_txn = (ctxt_txn ctxt) + 1}
       whop = jsCon $ DLC_Bytes $ ctxt_who ctxt
@@ -397,14 +395,7 @@ jsPart p (EPProg _ _ et) =
         , ctxt_txn = 0
         , ctxt_simulate = False
         }
-    bodyp' =
-      vsep
-        [ "const" <+> jsTxn ctxt <+> "=" <+>
-          jsObject (M.fromList [ ("balance"::String, jsCon $ DLC_Int 0)
-                               , ("value"::String, jsCon $ DLC_Int 0) ])
-          <> semi
-        , jsETail ctxt et
-        ]
+    bodyp' = jsETail ctxt et
 
 jsCnp :: String -> M.Map String T.Text -> Doc a
 jsCnp name cnp = "const" <+> "_" <> pretty name <+> "=" <+> jsObject (M.map jsBacktickText cnp) <> semi
