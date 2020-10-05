@@ -7,7 +7,7 @@ Verification failed:
   at ./overview/index-error.rsh:29:11:application
 
   Theorem formalization:
-  v22
+  v28
 
   This could be violated if...
     "interact_Alice_request" = 1
@@ -15,46 +15,66 @@ Verification failed:
       (because: interaction)
 
   In context...
-    "v22" = (= 0 v19 )
-      (from: v22)
+    "v28" = (= 0 v27 )
+      (from: v28)
       (bound at: ./overview/index-error.rsh:29:11:application)
-      (because: evaluating PEQ(DLC_Int 0, v19))
-    "v19" = (- v16 v17 )
-      (from: v19)
+      (because: evaluating PEQ(DLC_Int 0, v27))
+    "v27" = v24
+      (from: v27)
+      (bound at: ./overview/index-error.rsh:29:11:application)
+      (because: evaluating v24)
+    "v24" = (- v23 v20 )
+      (from: v24)
       (bound at: ./overview/index-error.rsh:24:29:application)
-      (because: evaluating SUB(v16, v17))
-    "v16" = (+ v11 v14 )
-      (from: v16)
-      (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
-      (because: evaluating ADD(v11, v14))
-    "v17" = (- v1 1 )
-      (from: v17)
+      (because: evaluating SUB(v23, v20))
+    "v20" = (- v1 1 )
+      (from: v20)
       (bound at: ./overview/index-error.rsh:application)
       (because: evaluating SUB(v1, DLC_Int 1))
-    "v11" = (+ v5 v9 )
-      (from: v11)
-      (bound at: ./overview/index-error.rsh:18:21:after expr stmt semicolon)
-      (because: evaluating ADD(v5, v9))
-    "v14" = 0
-      (from: v14)
-      (bound at: ./overview/index-error.rsh:23:8:dot)
-      (because: an honest payment from "Alice" of DLC_Int 0)
+    "v23" = v19
+      (from: v23)
+      (bound at: ./overview/index-error.rsh:24:29:application)
+      (because: evaluating v19)
     "v1" = interact_Alice_request
       (from: v1)
       (bound at: ./overview/index-error.rsh:13:8:dot)
       (because: an honest message from "Alice" of interact("Alice")."request"(UInt256))
-    "v5" = (+ 0 v3 )
-      (from: v5)
-      (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
-      (because: evaluating ADD(DLC_Int 0, v3))
-    "v9" = v1
-      (from: v9)
+    "v19" = (+ v18 v16 )
+      (from: v19)
+      (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
+      (because: evaluating ADD(v18, v16))
+    "v16" = 0
+      (from: v16)
+      (bound at: ./overview/index-error.rsh:23:8:dot)
+      (because: an honest payment from "Alice" of DLC_Int 0)
+    "v18" = v13
+      (from: v18)
+      (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
+      (because: evaluating v13)
+    "v13" = (+ v12 v10 )
+      (from: v13)
+      (bound at: ./overview/index-error.rsh:18:21:after expr stmt semicolon)
+      (because: evaluating ADD(v12, v10))
+    "v10" = v1
+      (from: v10)
       (bound at: ./overview/index-error.rsh:18:8:dot)
       (because: an honest payment from "Bob" of v1)
+    "v12" = v6
+      (from: v12)
+      (bound at: ./overview/index-error.rsh:18:21:after expr stmt semicolon)
+      (because: evaluating v6)
+    "v6" = (+ v5 v3 )
+      (from: v6)
+      (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
+      (because: evaluating ADD(v5, v3))
     "v3" = 0
       (from: v3)
       (bound at: ./overview/index-error.rsh:13:8:dot)
       (because: an honest payment from "Alice" of DLC_Int 0)
+    "v5" = 0
+      (from: v5)
+      (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
+      (because: evaluating DLC_Int 0)
 Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode

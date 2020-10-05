@@ -161,17 +161,12 @@ showDiff x y f lab s =
         True -> ""
         False -> "\n  " <> lab <> ": " <> s fx fy
 
-showGlobalsDiff :: SLGlobals -> SLGlobals -> String
-showGlobalsDiff x y =
-  showDiff x y g_balance "Balance" showVS
-
 showStateDiff :: SLState -> SLState -> String
 showStateDiff x y =
   showDiff x y st_mode "Mode" showVS <>
   showDiff x y st_live "Live" showVS <>
   showDiff x y st_after_first "After First Message" showVS <>
-  showDiff x y st_pdvs "Participant Definitions" showVS <>
-  showDiff x y st_globals "Globals" showGlobalsDiff
+  showDiff x y st_pdvs "Participant Definitions" showVS
 
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
@@ -456,7 +451,7 @@ base_env =
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
-    , ("balance", SLV_Prim $ SLPrim_global_read $ SLG_balance )
+    , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance )
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
     , ("UInt256", SLV_Type T_UInt256)
@@ -568,13 +563,6 @@ data SLMode
   | SLM_ConsensusPure
   deriving (Eq, Generic, Show)
 
-data SLGlobals = SLGlobals
-  { g_balance :: SLVal }
-  deriving (Eq, Show)
-
-global_ref :: SLGlobal -> SLGlobals -> SLVal
-global_ref SLG_balance = g_balance
-
 --- A state represents the state of the protocol, so it is returned
 --- out of a function call.
 data SLState = SLState
@@ -584,7 +572,6 @@ data SLState = SLState
   , st_after_first :: Bool
   , --- A function call may cause a participant to join
     st_pdvs :: SLPartDVars
-  , st_globals :: SLGlobals
   }
   deriving (Eq, Show)
 
@@ -1020,33 +1007,47 @@ explodeTupleLike ctxt at lab tuplv =
       (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
       return $ (lifts, [SLV_DLVar dv])
 
+doFluidRef :: SLCtxt s -> SrcLoc -> SLState -> FluidVar -> SLComp s SLSVal
+doFluidRef ctxt at st fv =
+  case st_mode st of
+    SLM_Module -> 
+     expect_throw at $ Err_Eval_IllegalMode (st_mode st) "fluid ref"
+    _ -> do
+      let fvt = fluidVarType fv
+      dv <- ctxt_mkvar ctxt (DLVar at (ctxt_local_name ctxt "fluid") fvt)
+      let lifts = return $ DLS_FluidRef at dv fv
+      return $ SLRes lifts st $ public $ SLV_DLVar dv
+
+doFluidSet :: SrcLoc -> FluidVar -> SLSVal -> DLStmts
+doFluidSet at fv ssv = return $ DLS_FluidSet at fv da
+  where da = checkType at (fluidVarType fv) sv
+        sv = ensure_public at ssv
+
 doAssertBalance :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> PrimOp -> ST s DLStmts
 doAssertBalance ctxt at sco st lhs op = do
   let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [ (Public, lhs) ] []
-  let balance_v = g_balance $ st_globals st
-  SLRes cmp_lifts _ (SLAppRes _ cmp_v) <- evalApplyVals ctxt at sco st cmp_rator [ (Public, balance_v) ]
+  SLRes fr_lifts fr_st balance_v <- doFluidRef ctxt at st FV_balance
+  SLRes cmp_lifts _ (SLAppRes _ cmp_v) <- evalApplyVals ctxt at sco fr_st cmp_rator [ balance_v ]
   let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
   SLRes res_lifts _ _ <-
-    keepLifts cmp_lifts $
+    keepLifts (fr_lifts <> cmp_lifts) $
       evalApplyVals ctxt at sco st ass_rator [ cmp_v ]
   return res_lifts
 
 doBalanceUpdate :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp s ()
 doBalanceUpdate ctxt at sco st op rhs = do
   let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [ (Public, rhs) ]
-  let gbs = st_globals st
-  let balance_v = g_balance gbs
-  SLRes lifts _ (SLAppRes _ (_, balance_v')) <-
-    evalApplyVals ctxt at sco st up_rator [ (Public, balance_v ) ]
-  let gbs' = gbs { g_balance = balance_v' }
-  let st' = st { st_globals = gbs' }
-  return $ SLRes lifts st' ()
+  SLRes fr_lifts fr_st balance_v <- doFluidRef ctxt at st FV_balance
+  SLRes lifts st' (SLAppRes _ balance_v') <-
+    evalApplyVals ctxt at sco fr_st up_rator [ balance_v ]
+  let fs_lifts = doFluidSet at FV_balance balance_v'
+  return $ SLRes (fr_lifts <> lifts <> fs_lifts) st' ()
 
 evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
 evalPrim ctxt at sco st p sargs =
   case p of
-    SLPrim_global_read g ->
-      retV $ (Public, global_ref g $ st_globals st)
+    SLPrim_fluid_read fv ->
+      doFluidRef ctxt at st fv
     SLPrim_op op ->
       evalPrimOp ctxt at sco st op sargs
     SLPrim_Fun ->
@@ -1382,10 +1383,8 @@ evalPrim ctxt at sco st p sargs =
             [] -> do
               let zero = SLV_Int srcloc_builtin 0
               tbzero <- doAssertBalance ctxt at sco st zero PEQ
-              let gbs = st_globals st
-              let st' = st { st_globals = gbs { g_balance = zero } }
               let lifts = tbzero <> (return $ DLS_Stop at (ctxt_stack ctxt))
-              return $ SLRes lifts st' $ public $ SLV_Prim $ SLPrim_exitted
+              return $ SLRes lifts st $ public $ SLV_Prim $ SLPrim_exitted
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "exit"
     SLPrim_exitted -> illegal_args
@@ -2318,17 +2317,20 @@ evalStmt ctxt at sco st ss =
                             val = ensure_public var_at $ sss_sls sv
                             da = checkType at et val
                             DLVar _ _ et _ = dv
-              let gbs = st_globals st_decl'
-              let balance_da = checkType cont_at T_UInt256 $ g_balance gbs
+              SLRes fr_lifts _ balance_v <-
+                doFluidRef ctxt cont_at st_decl FV_balance
+              let balance_da =
+                    checkType cont_at T_UInt256 $
+                      ensure_public cont_at balance_v
               let unknown_balance_dv = whilem M.! internalVar_balance
               let cont_dam' =
                     M.insert unknown_balance_dv balance_da cont_dam
               let cont_das = DLAssignment cont_dam'
-              let unknown_bal_v = SLV_DLVar unknown_balance_dv
-              let st_decl'_bal = st_decl' { st_globals = gbs { g_balance = unknown_bal_v } }
-              let lifts' = decl_lifts <> (return $ DLS_Continue cont_at cont_das)
+              let lifts' = 
+                    decl_lifts <> fr_lifts
+                    <> (return $ DLS_Continue cont_at cont_das)
               expect_empty_tail lab cont_a cont_sp cont_at cont_ks $
-                return $ SLRes lifts' st_decl'_bal $ SLStmtRes env []
+                return $ SLRes lifts' st_decl' $ SLStmtRes env []
             cm -> expect_throw var_at $ Err_Eval_IllegalMode cm "continue"
           where
             lab = "continue"
@@ -2462,8 +2464,9 @@ evalStmt ctxt at sco st ss =
               SLM_ConsensusStep -> do
                 SLRes init_lifts st_var vars_env_ <-
                   evalDecls ctxt var_at st sco while_decls
-                let gbs = st_globals st_var
-                let balance_v = sls_sss var_at (Public, g_balance gbs)
+                SLRes fr_lifts _ balance_sv <-
+                  doFluidRef ctxt var_at st_var FV_balance
+                let balance_v = sls_sss var_at balance_sv
                 let vars_env =
                       --- XXX This could be broken with multiple loops
                       env_insert var_at internalVar_balance balance_v vars_env_
@@ -2474,16 +2477,17 @@ evalStmt ctxt at sco st ss =
                       return $ (dv, da)
                 while_helpm <- M.traverseWithKey while_help vars_env
                 let unknown_var_env = M.map (sls_sss var_at . public . SLV_DLVar . fst) while_helpm
-                let unknown_bal_v = sss_val $ unknown_var_env M.! internalVar_balance
-                let st_var_bal = st_var { st_globals = gbs { g_balance = unknown_bal_v } }
-                let st_var' = stEnsureMode at SLM_ConsensusStep st_var_bal
+                let unknown_bal_v = sss_sls $ unknown_var_env M.! internalVar_balance
+                let bal_lifts = doFluidSet at FV_balance unknown_bal_v
+                let st_var' = stEnsureMode at SLM_ConsensusStep st_var
                 let st_pure = st_var' {st_mode = SLM_ConsensusPure}
                 let sco_env' = sco_update ctxt at sco st_var' unknown_var_env
-                SLRes inv_lifts _ inv_da <-
+                SLRes inv_lifts_ _ inv_da <-
                   case jscl_flatten invariant_args of
                     [invariant_e] ->
                       checkResType inv_at T_Bool $ evalExpr ctxt inv_at sco_env' st_pure invariant_e
                     ial -> expect_throw inv_at $ Err_While_IllegalInvariant ial
+                let inv_lifts = bal_lifts <> inv_lifts_
                 let fs = ctxt_stack ctxt
                 let inv_b = DLBlock inv_at fs inv_lifts inv_da
                 SLRes cond_lifts _ cond_da <-
@@ -2494,15 +2498,18 @@ evalStmt ctxt at sco st ss =
                         { sco_while_vars = Just $ M.map fst while_helpm
                         , sco_must_ret = RS_NeedExplicit
                         }
-                SLRes body_lifts body_st (SLStmtRes _ body_rets) <-
+                SLRes body_lifts_ body_st (SLStmtRes _ body_rets) <-
                   evalStmt ctxt while_at while_sco st_var' [while_body]
+                let body_lifts = bal_lifts <> body_lifts_
                 let while_dam = M.fromList $ M.elems while_helpm
                 let the_while =
                       DLS_While var_at (DLAssignment while_dam) inv_b cond_b body_lifts
                 let st_post = stMerge at body_st st_var'
                 SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <-
                   evalStmt ctxt while_at sco_env' st_post ks
-                let lifts' = init_lifts <> (return $ the_while) <> k_lifts
+                let lifts' = 
+                      init_lifts <> fr_lifts <> (return $ the_while) <>
+                        bal_lifts <> k_lifts
                 let rets' = body_rets <> k_rets
                 return $ SLRes lifts' k_st $ SLStmtRes k_env' rets'
               cm -> expect_throw var_at $ Err_Eval_IllegalMode cm "while"
@@ -2688,8 +2695,6 @@ evalLib idxr (src, body) (liblifts, libm) = do
           , st_live = False
           , st_pdvs = mempty
           , st_after_first = False
-          , st_globals = SLGlobals
-            { g_balance = SLV_Int at 0  }
           }
   let ctxt_top =
         (SLCtxt
@@ -2766,8 +2771,6 @@ compileDApp idxr liblifts topv =
               , st_live = True
               , st_pdvs = mempty
               , st_after_first = False
-              , st_globals = SLGlobals
-                { g_balance = SLV_Int at 0 }
               }
       let ctxt =
             SLCtxt
@@ -2786,12 +2789,13 @@ compileDApp idxr liblifts topv =
               , sco_penvs = penvs
               , sco_cenv = mempty
               }
+      let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
       SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
       -- XXX This means we can remove fs from LLS_Stop, but it would be nice to
       -- know which return point was the problem
       -- XXX instead put an exit in the program text at the end?
-      tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at 0) PEQ
-      return $ DLProg at dlo sps (liblifts <> final <> tbzero)
+      tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
+      return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)
       where
         at' = srcloc_at "compileDApp" Nothing at
         sps = SLParts $ M.fromList $ map make_sps_entry partvs

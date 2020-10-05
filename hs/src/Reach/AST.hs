@@ -295,11 +295,14 @@ primOpType BAND = [T_UInt256, T_UInt256] --> T_UInt256
 primOpType BIOR = [T_UInt256, T_UInt256] --> T_UInt256
 primOpType BXOR = [T_UInt256, T_UInt256] --> T_UInt256
 
-data SLGlobal
-  = SLG_balance
-  deriving (Eq, Generic, Show)
+data FluidVar
+  = FV_balance
+  deriving (Eq, Ord, Generic, Show)
 
-instance NFData SLGlobal
+instance NFData FluidVar
+
+fluidVarType :: FluidVar -> SLType
+fluidVarType FV_balance = T_UInt256
 
 data SLPrimitive
   = SLPrim_makeEnum
@@ -339,7 +342,7 @@ data SLPrimitive
   | SLPrim_part_set
   | SLPrim_part_setted SrcLoc SLPart DLArg
   | SLPrim_wait
-  | SLPrim_global_read SLGlobal
+  | SLPrim_fluid_read FluidVar
   deriving (Eq, Generic, Show)
 
 instance NFData SLPrimitive
@@ -599,6 +602,8 @@ data DLStmt
       , dls_w_body :: DLStmts
       }
   | DLS_Continue SrcLoc DLAssignment
+  | DLS_FluidSet SrcLoc FluidVar DLArg
+  | DLS_FluidRef SrcLoc DLVar FluidVar
   deriving (Eq, Generic, Show)
 
 instance NFData DLStmt
@@ -618,6 +623,8 @@ instance IsPure DLStmt where
     DLS_FromConsensus _ ss -> isPure ss
     DLS_While {} -> False
     DLS_Continue {} -> False
+    DLS_FluidSet {} -> False
+    DLS_FluidRef {} -> True
 
 instance IsLocal DLStmt where
   isLocal = \case
@@ -634,6 +641,8 @@ instance IsLocal DLStmt where
     DLS_FromConsensus _ ss -> isLocal ss
     DLS_While {} -> False
     DLS_Continue {} -> False
+    DLS_FluidSet {} -> True
+    DLS_FluidRef {} -> True
 
 type DLStmts = Seq.Seq DLStmt
 

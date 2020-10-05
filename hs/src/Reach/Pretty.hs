@@ -52,6 +52,9 @@ instance Pretty SLVal where
     SLV_Prim {} -> "<primitive>"
     SLV_Form {} -> "<form>"
 
+instance Pretty FluidVar where
+  pretty FV_balance = "balance"
+
 instance Pretty DLVar where
   --- pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
   pretty (DLVar _ _ _ i) = "v" <> viaShow i
@@ -201,6 +204,10 @@ instance Pretty DLStmt where
         prettyWhile asn inv cond $ render_dls body
       DLS_Continue _ cont_da ->
         prettyContinue cont_da
+      DLS_FluidSet _ fv da ->
+        "fluid" <+> pretty fv <+> ":=" <+> pretty da
+      DLS_FluidRef _ dv fv ->
+        pretty dv <+> "<-" <+> "fluid" <+> pretty fv
     where
       ns x = render_nest $ render_dls x
       cm l = parens (hsep $ punctuate comma $ l)
