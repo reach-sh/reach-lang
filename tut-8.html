@@ -209,7 +209,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
     yesno
   );
   if (deployCtc) {
-    ctc = await acc.deploy(backend);
+    ctc = acc.deploy(backend);
     const info = await ctc.getInfo();
     console.log(`The contract is deployed as = ${JSON.stringify(info)}`);
   } else {
@@ -217,7 +217,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
       `Please paste the contract information:`,
       JSON.parse
     );
-    ctc = await acc.attach(backend, info);
+    ctc = acc.attach(backend, info);
   }
 
   const fmt = (x) =&gt; stdlib.formatCurrency(x, 4);
@@ -317,7 +317,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 <span class="mf">32</span>        <a href="ref-backend-js.html#%28javascript._%28%28yesno%29%29%29" class="nx" data-pltdoc="x">yesno</a>
 <span class="mf">33</span>      <span class="p">);</span>
 <span class="mf">34</span>      <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">deployCtc</span></font><span class="p">)</span> <span class="p">{</span>
-<span class="mf">35</span>        <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28deploy%29%29%29" class="nx" data-pltdoc="x">deploy</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">);</span>
+<span class="mf">35</span>        <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28deploy%29%29%29" class="nx" data-pltdoc="x">deploy</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">);</span>
 <span class="mf">36</span>        <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">info</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">ctc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28get.Info%29%29%29" class="nx" data-pltdoc="x">getInfo</a><span class="p">();</span>
 <span class="mf">37</span>        <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`The contract is deployed as = </span><span class="si">${</span><font class="badlink"><span class="nx">JSON</span></font><span class="p">.</span><font class="badlink"><span class="nx">stringify</span></font><span class="p">(</span><font class="badlink"><span class="nx">info</span></font><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
 <span class="mf">38</span>      <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
@@ -325,7 +325,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 <span class="mf">40</span>          <span class="sb">`Please paste the contract information:`</span><span class="p">,</span>
 <span class="mf">41</span>          <font class="badlink"><span class="nx">JSON</span></font><span class="p">.</span><font class="badlink"><span class="nx">parse</span></font>
 <span class="mf">42</span>        <span class="p">);</span>
-<span class="mf">43</span>        <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28attach%29%29%29" class="nx" data-pltdoc="x">attach</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">,</span> <font class="badlink"><span class="nx">info</span></font><span class="p">);</span>
+<span class="mf">43</span>        <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">acc</span></font><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28attach%29%29%29" class="nx" data-pltdoc="x">attach</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">,</span> <font class="badlink"><span class="nx">info</span></font><span class="p">);</span>
 <span class="mf">44</span>      <span class="p">}</span>
 <span class="mf">45</span>    
 <span class="mf">46</span>      <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">fmt</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">)</span> <span class="p">=&gt;</span> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28format.Currency%29%29%29" class="nx" data-pltdoc="x">formatCurrency</a><span class="p">(</span><font class="badlink"><span class="nx">x</span></font><span class="p">,</span> <span class="mf">4</span><span class="p">);</span>
