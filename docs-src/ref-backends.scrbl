@@ -116,10 +116,10 @@ Connectors are one of the following: @jsin{['ETH', 'FAKE', 'ALGO']}.
 
 @(mint-define! '("loadStdLib"))
 @js{
-  async loadStdlib(connectorMode) => stdlib
+  loadStdlib(connectorMode) => Promise<stdlib>
 }
 
-Returns a stlib based on the provided @jsin{connectorMode} string.
+Returns a Promise for a stlib based on the provided @jsin{connectorMode} string.
 You may omit the @jsin{connectorMode} argument, in which case
 @jsin{getConnectorMode()} will be used to select the correct stdlib.
 
@@ -130,24 +130,24 @@ The @jsin{stdlib} modules export the following functions that might be used in t
 @(hrule)
 @(mint-define! '("newAccountFromMnemonic"))
 @js{
- async newAccountFromMnemonic() => acc }
+ newAccountFromMnemonic() => Promise<acc> }
 
-Returns a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given mnemonic phrase.
+Returns a Promise for a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given mnemonic phrase.
 The details of the mnemonic phrase encoding are specified uniquely to the @tech{consensus network}.
 
 @(hrule)
 @(mint-define! '("newTestAccount"))
 @js{
- async newTestAccount(balance) => acc }
+ newTestAccount(balance) => Promise<acc> }
 
-Returns a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network} with a given balance of @tech{network tokens}. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
+Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network} with a given balance of @tech{network tokens}. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
 
 @(hrule)
 @(mint-define! '("connectAccount"))
 @js{
- async connectAccount(networkAccount) => acc }
+ connectAccount(networkAccount) => Promise<acc> }
 
-Returns a Reach @tech{account} abstraction for an existing @tech{account} for the @tech{consensus network} based on the @tech{connector}-specific @tech{account} specification provided by the @jsin{networkAccount} argument.
+Returns a Promise for a Reach @tech{account} abstraction for an existing @tech{account} for the @tech{consensus network} based on the @tech{connector}-specific @tech{account} specification provided by the @jsin{networkAccount} argument.
 
 @js{
     // network => networkAccount type
@@ -176,11 +176,11 @@ To wait for deployment, see @reachin{ctc.getInfo}.
 
 @(mint-define! '("getInfo"))
 @js{
- async ctc.getInfo() => ctcInfo }
+ ctc.getInfo() => Promise<ctcInfo> }
 
 @index{ctc.getInfo} Returns a Promise for an object that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
 This object may be stringified with @jsin{JSON.stringify} for printing and parsed again with @jsin{JSON.parse} without any loss of information.
-The Promise will only be resolved once the contract is actually deployed on the network.
+The Promise will only be resolved after the contract is actually deployed on the network.
 If you are using @reachin{{deployMode: 'firstMsg'}},
 avoid blocking on this Promise with @jsin{await} until after the first @reachin{publish} has occurred.
 Awaiting @reachin{getInfo} too early may cause your program to enter a state of deadlock.
@@ -198,27 +198,28 @@ This @jsin{bin} argument is the @filepath{input.mjs} module produced by the Java
 
 @(mint-define! '("balanceOf"))
 @js{
- async balanceOf(acc) => amount }
+ balanceOf(acc) => Promise<amount> }
 
-Returns the balance of @tech{network tokens} held by the @tech{account} given by a Reach @tech{account} abstraction provided by the @jsin{acc} argument.
+Returns a Promise for the balance of @tech{network tokens} held by the @tech{account} given by a Reach @tech{account} abstraction provided by the @jsin{acc} argument.
 
 @(hrule)
 
 @(mint-define! '("transfer"))
 @js{
- async transfer(from:acc, to:acc, amount:BigNumber) => void }
+ transfer(from:acc, to:acc, amount:BigNumber) => Promise<void> }
 
 Transfers @jsin{amount} @tech{network tokens} from @jsin{from} to @jsin{to},
 which are @tech{account}s, such as those returned by @jsin{connectAccount}.
+The returned Promise will only be resolved after the transfer completes.
 
 @(hrule)
 
 @(mint-define! '("getNetworkTime"))
 @js{
- async getNetworkTime() => time
+ getNetworkTime() => Promise<time>
 }
 
-Gets the current consensus network @tech{time}.
+Returns a Promise for the current consensus network @tech{time}.
 For @litchar{ETH}, @litchar{ALGO}, and @litchar{FAKE},
 this is the current block number, represented as a @litchar{BigNumber}.
 
@@ -226,10 +227,10 @@ this is the current block number, represented as a @litchar{BigNumber}.
 
 @(mint-define! '("waitUntilTime"))
 @js{
- async waitUntilTime(time, onProgress)
+ waitUntilTime(time, onProgress) => Promise<void>
 }
 
-Waits until the specified consensus network @tech{time}.
+Returns a Promise that will only be resolved after the specified consensus network @tech{time}.
 In @deftech{isolated testing modes}, which are @litchar{REACH_CONNECTOR_MODE}s
 @litchar{$NET-test-dockerized-$IMPL} and @litchar{$NET-test-embedded-$IMPL}
 for all valid @litchar{$NET} and @litchar{$IMPL},
@@ -244,12 +245,13 @@ It will receive an object with keys @jsin{currentTime} and @jsin{targetTime},
 
 @(mint-define! '("wait"))
 @js{
- async wait(timedelta, onProgress)
+ wait(timedelta, onProgress) => Promise<void>
 }
 
-A convenience function for delaying by a certain @tech{time delta}.
+Returns a Promise that will only be resolved after the specified @tech{time delta} has elapsed.
 The expression @jsin{await wait(delta, onProgress)} is the same as
 @jsin{await waitUntilTime(add(await getNetworkTime(), delta), onProgress)}.
+As with @jsin{waitUntilTime}, the @jsin{onProgress} callback is optional.
 
 @subsubsection[#:tag "ref-backend-js-stdlib-utils"]{Utilities}
 
@@ -406,12 +408,12 @@ It provides the following exports:
 
 @(mint-define! '("ask") '("yesno") '("done"))
 @js{
- async ask(string, (string => result)) => result
+ ask(string, (string => result)) => Promise<result>
  yesno(string) => boolean
  done() => null
 }
  
-@jsin{ask} is an asynchronous function that asks a question on the console and returns the first result that its second argument does not error on.
+@jsin{ask} is an asynchronous function that asks a question on the console and returns a Promise for the first result that its second argument does not error on.
 
 @jsin{yesno} is an argument appropriate to give as the second argument to @jsin{ask} that parses "Yes"/"No" answers.
 
