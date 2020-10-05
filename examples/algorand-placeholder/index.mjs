@@ -28,8 +28,8 @@ import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
   const bob = await stdlib.newTestAccount(startingBalance);
   console.log('...created.');
 
-  // const ctcAlice = await alice.deploy(backend);
-  // const ctcBob = await bob.attach(backend, ctcAlice.getInfo());
+  // const ctcAlice = alice.deploy(backend);
+  // const ctcBob = bob.attach(backend, ctcAlice.getInfo());
 
   // await Promise.all([
   //   backend.Alice(

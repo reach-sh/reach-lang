@@ -10,8 +10,8 @@ stdlib.assert(process.argv[3] === 'Mr. Postman');
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
 
-  const ctcAlice = await alice.deploy(backend);
-  const ctcBob = await bob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = alice.deploy(backend);
+  const ctcBob = bob.attach(backend, ctcAlice.getInfo());
 
   await Promise.all([
     backend.Alice(

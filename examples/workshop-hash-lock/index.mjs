@@ -12,8 +12,8 @@ import * as backend from './build/index.main.mjs';
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
-  const ctcAlice = await accAlice.deploy(backend);
-  const ctcBob = await accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.deploy(backend);
+  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
   const thePass = stdlib.randomUInt256();
 

@@ -9,10 +9,10 @@ const demo = async (x) => {
   const bob = await stdlib.newTestAccount(startingBalance);
 
   console.log(`Alice will deploy the contract.`);
-  const ctcAlice = await alice.deploy(backend);
+  const ctcAlice = alice.deploy(backend);
 
   console.log(`Bob will attach to the contract.`);
-  const ctcBob = await bob.attach(backend, ctcAlice.getInfo());
+  const ctcBob = bob.attach(backend, ctcAlice.getInfo());
 
   const showThing = (showLabel) => (mx) => {
     console.log(`Bob.${showLabel}`);
