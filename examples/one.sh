@@ -7,9 +7,9 @@ e="$2"
 has_target() {
   set +e
   make -q "$MODE" 2> /dev/null
-  RESULT=$?
+  RESULT_T=$?
   set -e
-  [ "$RESULT" -eq 0 ] || [ "$RESULT" -eq 1 ]
+  [ $RESULT_T -eq 0 ] || [ $RESULT_T -eq 1 ]
 }
 
 echo "$e"
@@ -29,8 +29,9 @@ echo "$e"
       else
         ../../reach down
       fi
+      MODE="run"
     fi
-    if [ "$RESULT" -ne 0 ] ; then
+    if [ $RESULT -ne 0 ] ; then
       echo "$e" "$MODE" failed
       exit 1
     fi
@@ -44,11 +45,11 @@ echo "$e"
         # sorry, this is ugly
         set +e
         ../../reach run
+        RESULT=$?
         set -e
-        RESULT="$?"
         ../../reach down
-        if [ "$RESULT" -ne 0 ] ; then
-          exit "$RESULT"
+        if [ $RESULT -ne 0 ] ; then
+          exit $RESULT
         fi
         ;;
       down)
