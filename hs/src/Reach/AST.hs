@@ -1,7 +1,5 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoDeriveAnyClass #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Reach.AST where
 
@@ -28,10 +26,6 @@ instance NFData ReachSource -- DeriveAnyClass is turned off
 instance Show ReachSource where
   show ReachStdLib = "reach standard library"
   show (ReachSourceFile fp) = fp
-
-instance Ord TokenPosn where
-  compare (TokenPn x_a x_l x_c) (TokenPn y_a y_l y_c) =
-    compare [x_a, x_l, x_c] [y_a, y_l, y_c]
 
 data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
   deriving (Eq, Generic, Ord)
