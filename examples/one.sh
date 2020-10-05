@@ -21,9 +21,14 @@ echo "$e"
     RESULT=$?
     set -e
     if [ "$MODE" = "run" ] ; then
-      set +e
-      make down 2> /dev/null
-      set -e
+      MODE="down"
+      if has_target ; then
+        set +e
+        make down 2> /dev/null
+        set -e
+      else
+        ../../reach down
+      fi
     fi
     if [ "$RESULT" -ne 0 ] ; then
       echo "$e" "$MODE" failed
@@ -36,7 +41,18 @@ echo "$e"
         ../../reach compile
         ;;
       run)
+        # sorry, this is ugly
+        set +e
         ../../reach run
+        set -e
+        RESULT="$?"
+        ../../reach down
+        if [ "$RESULT" -ne 0 ] ; then
+          exit "$RESULT"
+        fi
+        ;;
+      down)
+        ../../reach down
         ;;
       clean)
         ../../reach clean
