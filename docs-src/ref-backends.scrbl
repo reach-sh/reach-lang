@@ -165,9 +165,12 @@ Returns a Reach @tech{account} abstraction for an existing @tech{account} for th
 
 @(mint-define! '("deploy"))
 @js{
- async acc.deploy(bin) => ctc }
+ acc.deploy(bin) => ctc }
 
-@index{acc.deploy} Returns a Reach @tech{contract} abstraction after deploying a Reach @DApp @tech{contract} based on the @jsin{bin} argument provided. This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+@index{acc.deploy} Returns a Reach @tech{contract} abstraction after kicking off the deploy of a Reach @DApp @tech{contract} based on the @jsin{bin} argument provided.
+This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+This function does not block on the completion of deployment.
+To wait for deployment, see @reachin{ctc.getInfo}.
 
 @(hrule)
 
@@ -175,16 +178,20 @@ Returns a Reach @tech{account} abstraction for an existing @tech{account} for th
 @js{
  async ctc.getInfo() => ctcInfo }
 
-@index{ctc.getInfo} Returns an object that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
+@index{ctc.getInfo} Returns a Promise for an object that may be given to @jsin{attach} to construct a Reach @tech{contract} abstraction representing this contract.
 This object may be stringified with @jsin{JSON.stringify} for printing and parsed again with @jsin{JSON.parse} without any loss of information.
+The Promise will only be resolved once the contract is actually deployed on the network.
+If you are using @reachin{{deployMode: 'firstMsg'}},
+avoid blocking on this Promise with @jsin{await} until after the first @reachin{publish} has occurred.
+Awaiting @reachin{getInfo} too early may cause your program to enter a state of deadlock.
 
 @(hrule)
 
 @(mint-define! '("attach"))
 @js{
- async acc.attach(bin, ctcInfo) => ctc }
+ acc.attach(bin, ctcInfoP) => ctc }
 
-@index{acc.attach} Returns a Reach @tech{contract} abstraction based on a deployed Reach @DApp @tech{contract} provided in the @jsin{ctcInfo} argument and the @jsin{bin} argument.
+@index{acc.attach} Returns a Reach @tech{contract} abstraction based on a deployed Reach @DApp @tech{contract} provided in the @jsin{ctcInfo} argument (or a Promise for ctcInfo) and the @jsin{bin} argument.
 This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
 
 For convenience, if @jsin{ctcInfo} is an object with a @jsin{getInfo} method, it is called to extract the information; this means that the result of @jsin{deploy} is allowed as a valid input.
