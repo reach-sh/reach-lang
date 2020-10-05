@@ -1,4 +1,3 @@
-{-# LANGUAGE NoDeriveAnyClass #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 module Reach.AST where
@@ -19,18 +18,14 @@ import Reach.UnsafeUtil
 data ReachSource
   = ReachStdLib
   | ReachSourceFile FilePath
-  deriving (Eq, Ord, Generic)
-
-instance NFData ReachSource -- DeriveAnyClass is turned off
+  deriving (Eq, Generic, NFData, Ord)
 
 instance Show ReachSource where
   show ReachStdLib = "reach standard library"
   show (ReachSourceFile fp) = fp
 
 data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
-  deriving (Eq, Generic, Ord)
-
-instance NFData SrcLoc
+  deriving (Eq, Generic, NFData, Ord)
 
 -- This is a "defaulting" instance where the left info is preferred,
 -- but can fall back on the right if info is absent from the left.
@@ -83,9 +78,7 @@ srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
 data SecurityLevel
   = Secret
   | Public
-  deriving (Show, Generic, Eq)
-
-instance NFData SecurityLevel
+  deriving (Eq, Generic, NFData, Show)
 
 public :: a -> (SecurityLevel, a)
 public x = (Public, x)
@@ -121,9 +114,7 @@ data SLType
   | T_Forall SLVar SLType
   | T_Var SLVar
   | T_Type SLType
-  deriving (Eq, Generic, Ord)
-
-instance NFData SLType
+  deriving (Eq, Generic, NFData, Ord)
 
 -- | Fold over SLType, doing something special on Fun
 funFold
@@ -201,9 +192,7 @@ type SLPartEnvs = M.Map SLPart SLEnv
 
 data SLCloEnv
   = SLCloEnv SLEnv SLPartEnvs SLEnv
-  deriving (Eq, Generic, Show)
-
-instance NFData SLCloEnv
+  deriving (Eq, Generic, NFData, Show)
 
 data SLVal
   = SLV_Null SrcLoc String
@@ -221,21 +210,17 @@ data SLVal
     SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic, NFData, Show)
 
 isLiteralArray :: SLVal -> Bool
 isLiteralArray (SLV_Array {}) = True
 isLiteralArray _ = False
 
-instance NFData SLVal
-
 data ToConsensusMode
   = TCM_Publish
   | TCM_Pay
   | TCM_Timeout
-  deriving (Eq, Generic, Show)
-
-instance NFData ToConsensusMode
+  deriving (Eq, Generic, NFData, Show)
 
 data SLForm
   = SLForm_App
@@ -244,9 +229,7 @@ data SLForm
   | SLForm_Part_Only SLPart
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
   | SLForm_unknowable
-  deriving (Eq, Generic, Show)
-
-instance NFData SLForm
+  deriving (Eq, Generic, NFData, Show)
 
 data PrimOp
   = ADD
@@ -266,9 +249,7 @@ data PrimOp
   | BAND
   | BIOR
   | BXOR
-  deriving (Show, Generic, Eq, Ord)
-
-instance NFData PrimOp
+  deriving (Eq, Generic, NFData, Ord, Show)
 
 primOpType :: PrimOp -> SLType
 primOpType ADD = [T_UInt256, T_UInt256] --> T_UInt256
@@ -291,9 +272,7 @@ primOpType BXOR = [T_UInt256, T_UInt256] --> T_UInt256
 
 data FluidVar
   = FV_balance
-  deriving (Eq, Ord, Generic, Show)
-
-instance NFData FluidVar
+  deriving (Eq, Generic, NFData, Ord, Show)
 
 fluidVarType :: FluidVar -> SLType
 fluidVarType FV_balance = T_UInt256
@@ -337,9 +316,7 @@ data SLPrimitive
   | SLPrim_part_setted SrcLoc SLPart DLArg
   | SLPrim_wait
   | SLPrim_fluid_read FluidVar
-  deriving (Eq, Generic, Show)
-
-instance NFData SLPrimitive
+  deriving (Eq, Generic, NFData, Show)
 
 type SLSVal = (SecurityLevel, SLVal)
 
@@ -348,9 +325,7 @@ data SLSSVal = SLSSVal
   , sss_level :: SecurityLevel
   , sss_val :: SLVal
   }
-  deriving (Eq, Generic, Show)
-
-instance NFData SLSSVal
+  deriving (Eq, Generic, NFData, Show)
 
 sss_restrict :: SecurityLevel -> SLSSVal -> SLSSVal
 sss_restrict lvl1 (SLSSVal at lvl2 val) =
@@ -375,7 +350,7 @@ m_fromList_public at kvs =
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, NFData)
 
 instance Show SLCtxtFrame where
   show (SLC_CloApp call_at clo_at mname) =
@@ -383,42 +358,32 @@ instance Show SLCtxtFrame where
     where
       name = maybe "[unknown function]" show mname
 
-instance NFData SLCtxtFrame
-
 --- Dynamic Language
 
 data DeployMode
   = DM_constructor
   | DM_firstMsg
-  deriving (Eq, Generic, Show)
-
-instance NFData DeployMode
+  deriving (Eq, Generic, NFData, Show)
 
 newtype InteractEnv
   = InteractEnv (M.Map SLVar SLType)
-  deriving (Eq, Generic, Show, Monoid, Semigroup)
-
-instance NFData InteractEnv
+  deriving (Eq, Generic, Show)
+  deriving newtype (Monoid, NFData, Semigroup)
 
 newtype SLParts
   = SLParts (M.Map SLPart InteractEnv)
-  deriving (Eq, Generic, Show, Monoid, Semigroup)
-
-instance NFData SLParts
+  deriving (Eq, Generic, Show)
+  deriving newtype (Monoid, NFData, Semigroup)
 
 data DLConstant
   = DLC_Null
   | DLC_Bool Bool
   | DLC_Int Integer
   | DLC_Bytes B.ByteString
-  deriving (Eq, Generic, Show, Ord)
-
-instance NFData DLConstant
+  deriving (Eq, Generic, NFData, Show, Ord)
 
 data DLVar = DLVar SrcLoc String SLType Int
-  deriving (Eq, Generic, Show, Ord)
-
-instance NFData DLVar
+  deriving (Eq, Generic, NFData, Show, Ord)
 
 data DLArg
   = DLA_Var DLVar
@@ -428,9 +393,7 @@ data DLArg
   | DLA_Obj (M.Map String DLArg)
   | DLA_Data (M.Map SLVar SLType) String DLArg
   | DLA_Interact SLPart String SLType
-  deriving (Eq, Generic, Show)
-
-instance NFData DLArg
+  deriving (Eq, Generic, NFData, Show)
 
 data ClaimType
   = --- Verified on all paths
@@ -447,9 +410,7 @@ data ClaimType
     CT_Possible
   | --- Check if one part can't know what another party does know
     CT_Unknowable SLPart
-  deriving (Eq, Generic, Show)
-
-instance NFData ClaimType
+  deriving (Eq, Generic, NFData, Show)
 
 class IsPure a where
   isPure :: a -> Bool
@@ -461,9 +422,7 @@ data StmtAnnot = StmtAnnot
   { sa_pure :: Bool
   , sa_local :: Bool
   }
-  deriving (Eq, Show, Generic)
-
-instance NFData StmtAnnot
+  deriving (Eq, Generic, NFData, Show)
 
 instance Semigroup StmtAnnot where
   (StmtAnnot xp xl) <> (StmtAnnot yp yl) = (StmtAnnot (xp && yp) (xl && yl))
@@ -506,9 +465,7 @@ data DLExpr
   | DLE_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
-  deriving (Eq, Generic, Show)
-
-instance NFData DLExpr
+  deriving (Eq, Generic, NFData, Show)
 
 instance IsPure DLExpr where
   isPure = \case
@@ -548,9 +505,8 @@ instance IsLocal DLExpr where
 
 newtype DLAssignment
   = DLAssignment (M.Map DLVar DLArg)
-  deriving (Eq, Generic, Show, Monoid, Semigroup)
-
-instance NFData DLAssignment
+  deriving (Eq, Generic, Show)
+  deriving newtype (Monoid, NFData, Semigroup)
 
 assignment_vars :: DLAssignment -> [DLVar]
 assignment_vars (DLAssignment m) = M.keys m
@@ -558,9 +514,7 @@ assignment_vars (DLAssignment m) = M.keys m
 data FromSpec
   = FS_Join DLVar
   | FS_Again DLVar
-  deriving (Eq, Generic, Show)
-
-instance NFData FromSpec
+  deriving (Eq, Generic, NFData, Show)
 
 type SwitchCases a =
   --- FIXME at the SrcLoc of the case
@@ -598,9 +552,7 @@ data DLStmt
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
-  deriving (Eq, Generic, Show)
-
-instance NFData DLStmt
+  deriving (Eq, Generic, NFData, Show)
 
 instance IsPure DLStmt where
   isPure = \case
@@ -642,20 +594,14 @@ type DLStmts = Seq.Seq DLStmt
 
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
-  deriving (Eq, Generic, Show)
-
-instance NFData DLBlock
+  deriving (Eq, Generic, NFData, Show)
 
 data DLOpts = DLOpts {dlo_deployMode :: DeployMode}
-  deriving (Generic, Eq, Show)
-
-instance NFData DLOpts
+  deriving (Eq, Generic, NFData, Show)
 
 data DLProg
   = DLProg SrcLoc DLOpts SLParts DLStmts
-  deriving (Generic)
-
-instance NFData DLProg
+  deriving (Generic, NFData)
 
 --- Linear Language
 data LLCommon a
@@ -833,14 +779,16 @@ data CHandler
   deriving (Eq, Show)
 
 newtype CHandlers = CHandlers (M.Map Int CHandler)
-  deriving (Eq, Show, Monoid, Semigroup)
+  deriving (Eq, Show)
+  deriving newtype (Monoid, Semigroup)
 
 data CPProg
   = CPProg SrcLoc CHandlers
   deriving (Eq, Show)
 
 newtype EPPs = EPPs (M.Map SLPart EPProg)
-  deriving (Eq, Show, Monoid, Semigroup)
+  deriving (Eq, Show)
+  deriving newtype (Monoid, Semigroup)
 
 data PLOpts = PLOpts {plo_deployMode :: DeployMode}
   deriving (Generic, Eq, Show)
