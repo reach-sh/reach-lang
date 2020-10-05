@@ -4,6 +4,7 @@ where COMMAND is one of
  clean    --- delete compiled artifacts
  init     --- set up source files for a simple app
  run      --- run a simple app
+ down     --- halt any dockerized devnets for this app
  scaffold --- set up Docker scaffolding for a simple app
  upgrade  --- upgrade Reach
  update   --- update Reach Docker images

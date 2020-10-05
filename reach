@@ -613,6 +613,38 @@ do_unscaffold () {
   done
 }
 
+do_down () {
+  # TODO: not duplicate so much from do_run
+  # Note: Makefile excluded from this check
+  if [ -f "$DOCKERFILE" ] || [ -f "$PACKAGE_JSON" ] || [ -f "$DOCKER_COMPOSE_YML" ] ; then
+    NONE_EXIST=false
+  fi
+
+  if $NONE_EXIST ; then
+    do_scaffold --isolate --quiet "$APP"
+  fi
+
+  cleanup () {
+      do_unscaffold --isolate --quiet "$APP"
+  }
+
+  reach_make () {
+    RUN_FROM_REACH=true make "$@" REACH="${REACH}"
+    MAKE_EXIT=$?
+    if [ $MAKE_EXIT -ne 0 ] ; then
+      cleanup
+      exit $MAKE_EXIT
+    fi
+  }
+
+  reach_make_f () {
+      reach_make -f "$MAKEFILE" "$@"
+  }
+
+  reach_make_f down
+  cleanup
+}
+
 run_ () {
   F="$1"
   shift
@@ -806,6 +838,7 @@ do_usage () {
   echo "  clean   --- delete compiled artifacts"
   echo "  init    --- set up source files for a simple app"
   echo "  run     --- run a simple app"
+  echo "  down    --- halt any dockerized devnets for this app"
   echo "  scaffold -- set up Docker scaffolding for a simple app"
   echo "  upgrade --- upgrade Reach"
   echo "  update  --- update Reach Docker images"
@@ -834,6 +867,9 @@ case ${SUBCOMMAND} in
         ;;
     unscaffold)
         do_unscaffold "$@"
+        ;;
+    down)
+        do_down "$@"
         ;;
     lint)
         do_lint "$@"
