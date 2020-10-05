@@ -97,9 +97,10 @@ epp_m done _back skip look c =
             (\back' skip' k_cs k' ->
                let maybe_skip vs =
                      case isPure de of
-                       True -> skip' k_cs k'
+                       True -> skip' (k_cs' vs) k'
                        False -> back' (cs' vs) (PL_Eff at de k')
-                   cs' vs = counts de <> count_rms vs k_cs
+                   cs' vs = counts de <> k_cs' vs
+                   k_cs' vs = count_rms vs k_cs
                 in case mdv of
                      Nothing -> maybe_skip []
                      Just dv ->
@@ -334,18 +335,25 @@ epp_s st s =
       where
         done :: MDone (ST s ProResS)
         done rat =
-          return $ ProResS (pall st' (ProRes_ mempty $ ET_Com $ PL_Return rat)) (ProRes_ mempty False)
+          return $ ProResS 
+            (pall st' (ProRes_ mempty $ ET_Com $ PL_Return rat))
+            (ProRes_ mempty False)
         back :: MBack LLStep (ST s ProResS)
         back cs' mkpl k = do
-          ProResS p_prts_s cr <- skip k
+          ProResS p_prts_s (ProRes_ cs_k morech) <- skip k
           let p_prts_s' = extend_locals cs' mkpl p_prts_s
-          return $ ProResS p_prts_s' cr
+          let cs_k' = cs' <> cs_k
+          return $ ProResS p_prts_s' (ProRes_ cs_k' morech)
         skip k = epp_s st' k
         look :: LLStep -> MLookCommon -> (ST s ProResS)
         look k common = do
-          ProResS p_prts_s cr <- skip k
+          ProResS p_prts_s (ProRes_ cs_k morech) <- skip k
+          let ProRes_ cs_k' () = common back' skip' cs_k ()
+                where
+                  skip' = ProRes_
+                  back' x _ = ProRes_ x ()
           let p_prts_s' = extend_locals_look common p_prts_s
-          return $ ProResS p_prts_s' cr
+          return $ ProResS p_prts_s' (ProRes_ cs_k' morech)
         st' =
           case c of
             (LL_Let _ _ (DLE_Wait _ amt) _) ->
