@@ -422,8 +422,15 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const pk = algosdk.decodeAddress(thisAcc.addr).publicKey;
   debug(`${shad}: connectAccount`);
 
-  // XXX don't be async
-  const attach = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<ContractAttached> => {
+  const iam = (some_addr: RawAddress): RawAddress => {
+    if (some_addr == pk) {
+      return pk;
+    } else {
+      throw Error(`I should be ${some_addr}, but am ${pk}`);
+    }
+  };
+
+  const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>): Promise<ContractAttached> => {
     const ctcInfo = await ctcInfoP;
     const getInfo = async () => ctcInfo;
     const ApplicationID = ctcInfo.ApplicationID;
@@ -433,14 +440,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const bin_comp = await compileFor(bin, ApplicationID);
     // XXX check that the application bytecode is what we expect
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
-
-    const iam = (some_addr: RawAddress): RawAddress => {
-      if (some_addr == pk) {
-        return pk;
-      } else {
-        throw Error(`I should be ${some_addr}, but am ${pk}`);
-      }
-    };
 
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
       void(delta);
@@ -700,8 +699,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     return { getInfo, sendrecv, recv, iam, wait };
   };
 
-  // XXX don't be async
-  const deploy = async (bin: Backend): Promise<ContractAttached> => {
+  const deployP = async (bin: Backend): Promise<ContractAttached> => {
     must_be_supported(bin);
     debug(`${shad} deploy`);
     const algob = bin._Connectors.ALGO;
@@ -790,8 +788,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       ({ ApplicationID, creationRound });
 
     debug(`${shad} application created`);
-    return await attach(bin, getInfo());
+    return await attachP(bin, getInfo());
   };
+
 //   const deploy = async (bin) => {
 
 //     debug(`${shad}: deploy: making account`);
@@ -828,6 +827,27 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 //     return attach(bin, ctc);
 //   };
 
+  /**
+   * @description Push await down into the functions of a ContractAttached
+   * @param implP A promise of an implementation of ContractAttached
+   */
+  const deferP = (implP: Promise<ContractAttached>): ContractAttached => {
+    return {
+      getInfo: async () => (await implP).getInfo(),
+      sendrecv: async (...args: any) => (await implP).sendrecv(...args),
+      recv: async (...args: any) => (await implP).recv(...args),
+      wait: async(...args: any) => (await implP).wait(...args),
+      iam, // doesn't need to await the implP
+    }
+  };
+
+  const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): ContractAttached => {
+    return deferP(attachP(bin, ctcInfoP));
+  };
+
+  const deploy = (bin: Backend): ContractAttached => {
+    return deferP(deployP(bin));
+  };
   return { deploy, attach, networkAccount };
 };
 
