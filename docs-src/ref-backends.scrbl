@@ -194,8 +194,6 @@ Awaiting @reachin{getInfo} too early may cause your program to enter a state of 
 @index{acc.attach} Returns a Reach @tech{contract} abstraction based on a deployed Reach @DApp @tech{contract} provided in the @jsin{ctcInfo} argument (or a Promise for ctcInfo) and the @jsin{bin} argument.
 This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
 
-For convenience, if @jsin{ctcInfo} is an object with a @jsin{getInfo} method, it is called to extract the information; this means that the result of @jsin{deploy} is allowed as a valid input.
-
 @(hrule)
 
 @(mint-define! '("balanceOf"))
