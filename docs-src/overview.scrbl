@@ -281,6 +281,12 @@ On typical developer laptops, this entire process takes seconds and can be compl
 @(hrule)
 
 Reach completely abstracts all the details of building and maintaining @tech{consensus network} test environments and build scripts from the programmer, so they can focus exclusively on the business logic of their application.
+In fact, Reach works for multiple networks, so if we instead run
+
+@cmd{REACH_CONNECTOR_MODE=ALGO reach run}
+
+Then Reach will instead start up a private Algorand devnet image and use the Algorand @tech{connector}.
+The developer does not need to change anything about their program, because Reach is entirely agnostic to the @tech{consensus network} choice during deployment.
 
 @section[#:tag "over-next"]{Next steps}
 

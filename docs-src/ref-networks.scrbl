@@ -40,24 +40,33 @@ It defaults to @litchar{unspecified}.}
 
 ]
 
-@section[#:tag "ref-network-algo"]{Algorand} @(experimental)
+@section[#:tag "ref-network-algo"]{Algorand}
 
 The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a set of
 @tech{contracts} that manage one instance of the @|DApp|'s
-execution. It relies on the "Application" feature of the Algorand
-network. It uses two words of on-chain state in two application
-keys.
+execution.
+
+It uses finite on-chain state: two integers and one byte string.
+The DApp consists of one application, one contract-controlled escrow account, and @tt{N} contract-controlled handlers for each of the @tt{N} steps of your Reach program.
+During compilation, the connector produces intermediate outputs for each of these contracts.
+These contracts embed references to each through their template arguments, which is done automatically by the Reach standard library implementation.
+
+It relies on a patched version of @tt{algod} that includes @link["https://github.com/algorand/go-algorand/pull/1533"]{our implementation of stateless contract argument inspection}.
+It uses the Algorand @tt{indexer} version 2 to lookup and monitor @tech{publications}; in other words, it does @emph{not} rely on any communication network other than Algorand itself.
 
 The connector provides a binding named @reachin{ALGO} to
 @tech{backends}.
 
-During compilation, the connector produces two intermediate outputs
-corresponding to each of these fields: @filepath{input.export.app.teal}, containing
-the TEAL code implementing the @tech{contract} as an
-"Application"-mode @tech{contract}, as well as
-@filepath{input.export.lsp.teal}, containing the TEAL code implementing a
-portion of the @tech{contract} as a logic signature program.
+@tech{Backends} must respect the following environment variables:
 
-It is not guaranteed to produce contracts that obey the size or cost
-limits of the Algorand network, nor does it produce any warning when
-it violates these limits.
+@itemlist[
+
+@item{@envvar{ALGO_TOKEN} is used as the API token for your @tt{algod}.}
+@item{@envvar{ALGO_SERVER} is used as the address of your @tt{algod}.}
+@item{@envvar{ALGO_PORT} is used as the port of your @tt{algod}.}
+
+@item{@envvar{ALGO_INDEXER_TOKEN} is used as the API token for your @tt{indexer}.}
+@item{@envvar{ALGO_INDEXER_SERVER} is used as the address of your @tt{indexer}.}
+@item{@envvar{ALGO_INDEXER_PORT} is used as the port of your @tt{indexer}.}
+
+]
