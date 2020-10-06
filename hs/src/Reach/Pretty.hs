@@ -340,11 +340,13 @@ instance Pretty ETail where
       ET_Switch _ ov csm -> prettySwitch ov csm
       ET_FromConsensus _ which msvs k ->
         "fromConsensus" <+> whichp <+> msvs' <+> semi
-        <> hardline <> pretty k
-        where msvs' = case msvs of
-                        Nothing -> emptyDoc
-                        Just svs -> cm $ map pretty svs
-              whichp = viaShow which
+          <> hardline
+          <> pretty k
+        where
+          msvs' = case msvs of
+            Nothing -> emptyDoc
+            Just svs -> cm $ map pretty svs
+          whichp = viaShow which
       ET_ToConsensus _ fs prev which msend msg amtv mtime k ->
         "sendrecv" <+> fsp <+> prevp <+> whichp <+> parens msendp <> (cm $ map pretty msg) <+> pretty amtv <> timep <> ns (pretty k)
         where

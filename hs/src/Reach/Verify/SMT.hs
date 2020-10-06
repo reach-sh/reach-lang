@@ -255,7 +255,7 @@ set_to_seq = Seq.fromList . S.toList
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
 
-display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString-> Bool -> Maybe ResultDesc -> IO ()
+display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> IO ()
 display_fail ctxt tat f tk tse mmsg repeated mrd = do
   cwd <- getCurrentDirectory
   putStrLn $ "Verification failed:"

@@ -158,16 +158,16 @@ showDiff :: Eq b => a -> a -> (a -> b) -> String -> (b -> b -> String) -> String
 showDiff x y f lab s =
   let fx = f x
       fy = f y
-    in case fx == fy of
+   in case fx == fy of
         True -> ""
         False -> "\n  " <> lab <> ": " <> s fx fy
 
 showStateDiff :: SLState -> SLState -> String
 showStateDiff x y =
-  showDiff x y st_mode "Mode" showVS <>
-  showDiff x y st_live "Live" showVS <>
-  showDiff x y st_after_first "After First Message" showVS <>
-  showDiff x y st_pdvs "Participant Definitions" showVS
+  showDiff x y st_mode "Mode" showVS
+    <> showDiff x y st_live "Live" showVS
+    <> showDiff x y st_after_first "After First Message" showVS
+    <> showDiff x y st_pdvs "Participant Definitions" showVS
 
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
@@ -454,7 +454,7 @@ base_env =
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
-    , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance )
+    , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance)
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
     , ("UInt256", SLV_Type T_UInt256)
@@ -1024,8 +1024,8 @@ explodeTupleLike ctxt at lab tuplv =
 doFluidRef :: SLCtxt s -> SrcLoc -> SLState -> FluidVar -> SLComp s SLSVal
 doFluidRef ctxt at st fv =
   case st_mode st of
-    SLM_Module -> 
-     expect_throw at $ Err_Eval_IllegalMode (st_mode st) "fluid ref"
+    SLM_Module ->
+      expect_throw at $ Err_Eval_IllegalMode (st_mode st) "fluid ref"
     _ -> do
       let fvt = fluidVarType fv
       dv <- ctxt_mkvar ctxt (DLVar at (ctxt_local_name ctxt "fluid") fvt)
@@ -1034,26 +1034,27 @@ doFluidRef ctxt at st fv =
 
 doFluidSet :: SrcLoc -> FluidVar -> SLSVal -> DLStmts
 doFluidSet at fv ssv = return $ DLS_FluidSet at fv da
-  where da = checkType at (fluidVarType fv) sv
-        sv = ensure_public at ssv
+  where
+    da = checkType at (fluidVarType fv) sv
+    sv = ensure_public at ssv
 
 doAssertBalance :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> PrimOp -> ST s DLStmts
 doAssertBalance ctxt at sco st lhs op = do
-  let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [ (Public, lhs) ] []
+  let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [(Public, lhs)] []
   SLRes fr_lifts fr_st balance_v <- doFluidRef ctxt at st FV_balance
-  SLRes cmp_lifts _ (SLAppRes _ cmp_v) <- evalApplyVals ctxt at sco fr_st cmp_rator [ balance_v ]
+  SLRes cmp_lifts _ (SLAppRes _ cmp_v) <- evalApplyVals ctxt at sco fr_st cmp_rator [balance_v]
   let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
   SLRes res_lifts _ _ <-
     keepLifts (fr_lifts <> cmp_lifts) $
-      evalApplyVals ctxt at sco st ass_rator [ cmp_v, public $ SLV_Bytes at "balance assertion" ]
+      evalApplyVals ctxt at sco st ass_rator [cmp_v, public $ SLV_Bytes at "balance assertion"]
   return res_lifts
 
 doBalanceUpdate :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp s ()
 doBalanceUpdate ctxt at sco st op rhs = do
-  let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [ (Public, rhs) ]
+  let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
   SLRes fr_lifts fr_st balance_v <- doFluidRef ctxt at st FV_balance
   SLRes lifts st' (SLAppRes _ balance_v') <-
-    evalApplyVals ctxt at sco fr_st up_rator [ balance_v ]
+    evalApplyVals ctxt at sco fr_st up_rator [balance_v]
   let fs_lifts = doFluidSet at FV_balance balance_v'
   return $ SLRes (fr_lifts <> lifts <> fs_lifts) st' ()
 
@@ -1365,9 +1366,9 @@ evalPrim ctxt at sco st p sargs =
         good = return $ SLRes lifts st $ public $ SLV_Null at "claim"
         (darg, mmsg) = case map snd sargs of
           [arg] ->
-            ( checkType at T_Bool arg, Nothing)
+            (checkType at T_Bool arg, Nothing)
           [arg, marg] ->
-            ( checkType at T_Bool arg, Just $ mustBeBytes at marg )
+            (checkType at T_Bool arg, Just $ mustBeBytes at marg)
           _ -> illegal_args
         lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg mmsg
     SLPrim_transfer ->
@@ -2047,7 +2048,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
     SLV_Prim SLPrim_exitted ->
       case (st_mode st, st_live st) of
         (SLM_Step, True) -> do
-          let st' = st { st_live = False}
+          let st' = st {st_live = False}
           expect_empty_tail "exit" JSNoAnnot sp at ks $
             return $ SLRes mempty st' $ SLStmtRes env []
         _ -> illegal_mode
@@ -2134,11 +2135,11 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt256
           SLRes amt_check_lifts _ _ <- do
             --- XXX Merge with doAssertBalance somehow
-            let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [ (Public, SLV_DLVar amt_dv) ] []
-            SLRes cmp_lifts _ cmp_v <- evalApply ctxt at sco_env' st_pure cmp_rator [ amte ]
+            let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar amt_dv)] []
+            SLRes cmp_lifts _ cmp_v <- evalApply ctxt at sco_env' st_pure cmp_rator [amte]
             let req_rator = SLV_Prim $ SLPrim_claim CT_Require
             keepLifts cmp_lifts $
-              evalApplyVals ctxt at sco_env' st_pure req_rator [ cmp_v, public $ SLV_Bytes at $ "pay amount correct" ]
+              evalApplyVals ctxt at sco_env' st_pure req_rator [cmp_v, public $ SLV_Bytes at $ "pay amount correct"]
           (tlifts, mt_st_cr, mtime') <-
             case mtime of
               Nothing -> return $ (mempty, Nothing, Nothing)
@@ -2329,16 +2330,16 @@ evalStmt ctxt at sco st ss =
                       Just x -> x
               let cont_dam =
                     M.fromList $ map f $ M.toList decl_env
-                      where
-                        f (v, sv) = (dv, da)
-                          where
-                            dv = case M.lookup v whilem of
-                              Nothing ->
-                                expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
-                              Just x -> x
-                            val = ensure_public var_at $ sss_sls sv
-                            da = checkType at et val
-                            DLVar _ _ et _ = dv
+                    where
+                      f (v, sv) = (dv, da)
+                        where
+                          dv = case M.lookup v whilem of
+                            Nothing ->
+                              expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
+                            Just x -> x
+                          val = ensure_public var_at $ sss_sls sv
+                          da = checkType at et val
+                          DLVar _ _ et _ = dv
               SLRes fr_lifts _ balance_v <-
                 doFluidRef ctxt cont_at st_decl FV_balance
               let balance_da =
@@ -2348,9 +2349,9 @@ evalStmt ctxt at sco st ss =
               let cont_dam' =
                     M.insert unknown_balance_dv balance_da cont_dam
               let cont_das = DLAssignment cont_dam'
-              let lifts' = 
+              let lifts' =
                     decl_lifts <> fr_lifts
-                    <> (return $ DLS_Continue cont_at cont_das)
+                      <> (return $ DLS_Continue cont_at cont_das)
               expect_empty_tail lab cont_a cont_sp cont_at cont_ks $
                 return $ SLRes lifts' st_decl' $ SLStmtRes env []
             cm -> expect_throw var_at $ Err_Eval_IllegalMode cm "continue"
@@ -2529,9 +2530,10 @@ evalStmt ctxt at sco st ss =
                 let st_post = stMerge at body_st st_var'
                 SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <-
                   evalStmt ctxt while_at sco_env' st_post ks
-                let lifts' = 
-                      init_lifts <> fr_lifts <> (return $ the_while) <>
-                        bal_lifts <> k_lifts
+                let lifts' =
+                      init_lifts <> fr_lifts <> (return $ the_while)
+                        <> bal_lifts
+                        <> k_lifts
                 let rets' = body_rets <> k_rets
                 return $ SLRes lifts' k_st $ SLStmtRes k_env' rets'
               cm -> expect_throw var_at $ Err_Eval_IllegalMode cm "while"

@@ -270,7 +270,7 @@ kgq_s ctxt = \case
   LLS_Stop {} -> mempty
   LLS_Only _at who loc k -> kgq_l (ctxt_restrict ctxt who) loc >> kgq_s ctxt k
   LLS_ToConsensus _at _from fs from_as from_msg from_amt from_amtv mtime next_n ->
-    kgq_fs ctxt fs >> msg_to_as 
+    kgq_fs ctxt fs >> msg_to_as
       >> kgq_a_only ctxt from_amtv from_amt
       >> kgq_a_all ctxt (DLA_Var from_amtv)
       >> kgq_a_all ctxt (DLA_Tuple $ map DLA_Var from_msg)

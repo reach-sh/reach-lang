@@ -2,20 +2,20 @@ module Reach.Connector.ALGO (connect_algo) where
 
 -- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ALGO.hs.dead
 
+import Control.Monad.Reader
+import Data.ByteString.Base64 (encodeBase64')
+import qualified Data.ByteString.Char8 as B
+import qualified Data.DList as DL
+import Data.IORef
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
-import Data.ByteString.Base64 (encodeBase64')
-import qualified Data.ByteString.Char8 as B
-import Control.Monad.Reader
-import Data.IORef
 import Data.Word
-import qualified Data.DList as DL
 import Reach.AST
 import Reach.Connector
-import Reach.Util
 import Reach.Type
+import Reach.Util
 
 encodeBase64 :: B.ByteString -> LT.Text
 encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
@@ -27,14 +27,17 @@ template :: LT.Text -> LT.Text
 template x = "\"{{" <> x <> "}}\""
 
 type ScratchSlot = Word8
+
 type TxnIdx = Word8 --- FIXME actually only 16 IIRC
 
 type TEAL = LT.Text
 
 code_ :: LT.Text -> [LT.Text] -> TEAL
 code_ fun args = LT.unwords $ fun : args
+
 label_ :: LT.Text -> TEAL
 label_ lab = lab <> ":"
+
 comment_ :: LT.Text -> TEAL
 comment_ t = "// " <> t
 
@@ -51,14 +54,18 @@ optimize = \case
 
 render :: TEALs -> T.Text
 render ts = tt
-  where tt = LT.toStrict lt
-        lt = LT.unlines lts
-        lts = "#pragma version 2" : (optimize $ DL.toList ts)
+  where
+    tt = LT.toStrict lt
+    lt = LT.unlines lts
+    lts = "#pragma version 2" : (optimize $ DL.toList ts)
 
 data Shared = Shared
   { sHandlers :: M.Map Int CHandler
-  , sFailedR :: IORef Bool }
+  , sFailedR :: IORef Bool
+  }
+
 type Lets = M.Map DLVar (App ())
+
 data Env = Env
   { eShared :: Shared
   , eWhich :: Int
@@ -68,7 +75,8 @@ data Env = Env
   , eHP :: ScratchSlot
   , eSP :: ScratchSlot
   , eVars :: M.Map DLVar ScratchSlot
-  , eLets :: Lets }
+  , eLets :: Lets
+  }
 
 -- I'd rather not embed in IO, but when I used ST in UnrollLoops, it was
 -- really annoying to have the world parameter
@@ -81,16 +89,22 @@ output t = do
 
 code :: LT.Text -> [LT.Text] -> App ()
 code f args = output $ code_ f args
+
 label :: LT.Text -> App ()
 label = output . label_
+
 comment :: LT.Text -> App ()
 comment = output . comment_
+
 or_fail :: App ()
 or_fail = code "bz" ["revert"]
+
 eq_or_fail :: App ()
 eq_or_fail = op "==" >> or_fail
+
 op :: LT.Text -> App ()
 op = flip code []
+
 nop :: App ()
 nop = return ()
 
@@ -98,15 +112,17 @@ app_global_get :: B.ByteString -> App ()
 app_global_get k = do
   cc $ DLC_Bytes $ k
   op "app_global_get"
+
 app_global_put :: B.ByteString -> App () -> App ()
 app_global_put k mkv = do
   cc $ DLC_Bytes $ k
   mkv
   op "app_global_put"
+
 check_rekeyto :: App ()
 check_rekeyto = do
-  code "txn" [ "RekeyTo" ]
-  code "global" [ "ZeroAddress" ]
+  code "txn" ["RekeyTo"]
+  code "global" ["ZeroAddress"]
   eq_or_fail
 
 bad :: LT.Text -> App ()
@@ -129,7 +145,7 @@ freshLabel = do
 store_let :: DLVar -> App () -> App a -> App a
 store_let dv cgen m = do
   Env {..} <- ask
-  local (\e -> e { eLets = M.insert dv cgen eLets }) $
+  local (\e -> e {eLets = M.insert dv cgen eLets}) $
     m
 
 lookup_let :: DLVar -> App ()
@@ -142,7 +158,7 @@ lookup_let dv = do
 store_var :: DLVar -> ScratchSlot -> App a -> App a
 store_var dv ss m = do
   Env {..} <- ask
-  local (\e -> e { eVars = M.insert dv ss eVars }) $
+  local (\e -> e {eVars = M.insert dv ss eVars}) $
     m
 
 lookup_var :: DLVar -> App ScratchSlot
@@ -156,15 +172,15 @@ salloc :: (ScratchSlot -> App a) -> App a
 salloc fm = do
   Env {..} <- ask
   let eSP' = eSP - 1
-  when ( eSP' == eHP ) $ do
+  when (eSP' == eHP) $ do
     bad "too much memory"
-  local (\e -> e { eSP = eSP' }) $
+  local (\e -> e {eSP = eSP'}) $
     fm eSP
 
 talloc :: App TxnIdx
 talloc = do
   Env {..} <- ask
-  liftIO $ modifyIORef eTxnsR (1+)
+  liftIO $ modifyIORef eTxnsR (1 +)
   txni <- liftIO $ readIORef eTxnsR
   --- FIXME check if > bound
   return txni
@@ -210,8 +226,8 @@ cc :: DLConstant -> App ()
 cc = \case
   DLC_Null -> cc $ DLC_Int 0
   DLC_Bool b -> cc $ DLC_Int $ if b then 1 else 0
-  DLC_Int i -> code "int" [ texty i ]
-  DLC_Bytes bs -> code "byte" [ "base64(" <> encodeBase64 bs <> ")" ]
+  DLC_Int i -> code "int" [texty i]
+  DLC_Bytes bs -> code "byte" ["base64(" <> encodeBase64 bs <> ")"]
 
 ca :: DLArg -> App ()
 ca = \case
@@ -251,7 +267,7 @@ csum_ :: [App ()] -> App ()
 csum_ = \case
   [] -> cc $ DLC_Int 0
   [m] -> m
-  m:ms -> csum_ ms >> m >> op "+"
+  m : ms -> csum_ ms >> m >> op "+"
 
 csum :: [DLArg] -> App ()
 csum = csum_ . map ca
@@ -260,10 +276,11 @@ cdigest :: [(SLType, App ())] -> App ()
 cdigest l = do
   mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
   op "keccak256"
-  --- FIXME need to change digest to return bytes
-  where go may_concat (t, m) = m >> ctobs t >> may_concat
-        no_concat = nop
-        yes_concat = op "concat"
+  where
+    --- FIXME need to change digest to return bytes
+    go may_concat (t, m) = m >> ctobs t >> may_concat
+    no_concat = nop
+    yes_concat = op "concat"
 
 ce :: DLExpr -> App ()
 ce = \case
@@ -278,20 +295,21 @@ ce = \case
   DLE_ObjectRef {} -> xxx "obj ref"
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
-    where go a = (argTypeOf a, ca a)
+    where
+      go a = (argTypeOf a, ca a)
   DLE_Transfer _ who amt -> do
     txni <- talloc
-    code "gtxn" [ texty txni, "TypeEnum" ]
-    code "int" [ "pay" ]
+    code "gtxn" [texty txni, "TypeEnum"]
+    code "int" ["pay"]
     eq_or_fail
-    code "gtxn" [ texty txni, "Receiver" ]
+    code "gtxn" [texty txni, "Receiver"]
     ca who
     eq_or_fail
-    code "gtxn" [ texty txni, "Amount" ]
+    code "gtxn" [texty txni, "Amount"]
     ca amt
     eq_or_fail
-    code "gtxn" [ texty txni, "Sender" ]
-    code "byte" [ tContractAddr ]
+    code "gtxn" [texty txni, "Sender"]
+    code "byte" [tContractAddr]
     cfrombs T_Address
     eq_or_fail
   DLE_Claim _ _fs t a _mmsg ->
@@ -302,7 +320,8 @@ ce = \case
       CT_Require -> check
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
-      where check = ca a >> or_fail
+    where
+      check = ca a >> or_fail
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
 
@@ -315,20 +334,20 @@ cm ck = \case
     salloc $ \loc -> do
       let loct = texty loc
       ce de
-      code "store" [ loct ]
-      store_let dv (code "load" [ loct ]) $ ck k
+      code "store" [loct]
+      store_let dv (code "load" [loct]) $ ck k
   PL_ArrayMap {} -> xxx "map"
   PL_ArrayReduce {} -> xxx "reduce"
   PL_Eff _ de k -> ce de >> ck k
   PL_Var _ dv k ->
     salloc $ \loc -> do
       store_var dv loc $
-        store_let dv (code "load" [ texty loc ]) $
+        store_let dv (code "load" [texty loc]) $
           ck k
   PL_Set _ dv da k -> do
     loc <- lookup_var dv
     ca da
-    code "store" [ texty loc ]
+    code "store" [texty loc]
     ck k
   PL_LocalIf _ _a _tp _fp k -> do
     xxx "local if"
@@ -362,10 +381,11 @@ ct = \case
           --- XXX fix this so it makes sure it is zero bytes
           Nothing -> (True, return ())
           Just svs -> (False, ck)
-                where ck = do
-                        cstate HM_Set svs
-                        code "arg" [ texty argNextSt ]
-                        eq_or_fail
+            where
+              ck = do
+                cstate HM_Set svs
+                code "arg" [texty argNextSt]
+                eq_or_fail
 
 data HashMode
   = HM_Set
@@ -387,7 +407,7 @@ cstate hm svs = do
 
 halt_should_be :: Bool -> App ()
 halt_should_be b = do
-  code "arg" [ texty argHalts ]
+  code "arg" [texty argHalts]
   cfrombs T_Bool
   cc $ DLC_Bool b
   eq_or_fail
@@ -403,16 +423,20 @@ halt_should_be b = do
 -- Template
 tApplicationID :: LT.Text
 tApplicationID = template "ApplicationID"
+
 tContractAddr :: LT.Text
 tContractAddr = template "ContractAddr"
+
 tDeployer :: LT.Text
 tDeployer = template "Deployer"
 
 -- State:
 keyHalts :: B.ByteString
 keyHalts = "h"
+
 keyState :: B.ByteString
 keyState = "s"
+
 keyLast :: B.ByteString
 keyLast = "l"
 
@@ -426,12 +450,16 @@ keyLast = "l"
 -- 4.. : Transfers from contract to user
 txnAppl :: Word8
 txnAppl = 0
+
 txnToHandler :: Word8
 txnToHandler = txnAppl + 1
+
 txnFromHandler :: Word8
 txnFromHandler = txnToHandler + 1
+
 txnToContract :: Word8
 txnToContract = txnFromHandler + 1
+
 txnFromContract0 :: Word8
 txnFromContract0 = txnToContract + 1
 
@@ -444,23 +472,30 @@ txnFromContract0 = txnToContract + 1
 -- 5.. : Handler arguments
 argPrevSt :: Word8
 argPrevSt = 0
+
 argNextSt :: Word8
 argNextSt = argPrevSt + 1
+
 argHalts :: Word8
 argHalts = argNextSt + 1
+
 argFeeAmount :: Word8
 argFeeAmount = argHalts + 1
+
 argLast :: Word8
 argLast = argFeeAmount + 1
+
 argFirstUser :: Word8
 argFirstUser = argLast + 1
 
 lookup_sender :: App ()
-lookup_sender = code "gtxn" [ texty txnToContract, "Sender" ]
+lookup_sender = code "gtxn" [texty txnToContract, "Sender"]
+
 lookup_last :: App ()
-lookup_last = code "arg" [ texty argLast ] >> cfrombs T_UInt256
+lookup_last = code "arg" [texty argLast] >> cfrombs T_UInt256
+
 lookup_fee_amount :: App ()
-lookup_fee_amount = code "arg" [ texty argFeeAmount ] >> cfrombs T_UInt256
+lookup_fee_amount = code "arg" [texty argFeeAmount] >> cfrombs T_UInt256
 
 std_footer :: App ()
 std_footer = do
@@ -485,10 +520,10 @@ runApp eShared eWhich eLets m = do
 ch :: Shared -> Int -> CHandler -> IO (Maybe TEALs)
 ch _ _ (C_Loop {}) = return $ Nothing
 ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
-  let mkarg dv@(DLVar _ _ t _) (i::Int) = (dv, code "arg" [ texty i ] >> cfrombs t)
+  let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
   let args = svs <> msg
   let argFirstUser' = fromIntegral argFirstUser
-  let eLets0 = M.fromList $ zipWith mkarg args [ argFirstUser' .. ]
+  let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser' ..]
   let argCount = argFirstUser' + length args
   let eLets1 =
         case fs of
@@ -497,55 +532,55 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
           FS_Again {} ->
             eLets0
   let lookup_txn_value = do
-        code "gtxn" [ texty txnToContract, "Amount" ]
+        code "gtxn" [texty txnToContract, "Amount"]
         lookup_fee_amount
         op "-"
   let eLets =
         M.insert amtv lookup_txn_value eLets1
   runApp eShared eWhich eLets $ do
     comment "Check txnAppl"
-    code "gtxn" [ texty txnAppl, "TypeEnum" ]
-    code "int" [ "appl" ]
+    code "gtxn" [texty txnAppl, "TypeEnum"]
+    code "int" ["appl"]
     eq_or_fail
-    code "gtxn" [ texty txnAppl, "ApplicationID" ]
+    code "gtxn" [texty txnAppl, "ApplicationID"]
     --- XXX Make this int
-    code "byte" [ tApplicationID ]
+    code "byte" [tApplicationID]
     cfrombs T_UInt256
     eq_or_fail
 
     comment "Check txnToHandler"
-    code "gtxn" [ texty txnToHandler, "TypeEnum" ]
-    code "int" [ "pay" ]
+    code "gtxn" [texty txnToHandler, "TypeEnum"]
+    code "int" ["pay"]
     eq_or_fail
-    code "gtxn" [ texty txnToHandler, "Receiver" ]
-    code "txn" [ "Sender" ]
+    code "gtxn" [texty txnToHandler, "Receiver"]
+    code "txn" ["Sender"]
     eq_or_fail
-    code "gtxn" [ texty txnToHandler, "Amount" ]
-    code "gtxn" [ texty txnFromHandler, "Fee" ]
+    code "gtxn" [texty txnToHandler, "Amount"]
+    code "gtxn" [texty txnFromHandler, "Fee"]
     eq_or_fail
 
     comment "Check txnToContract"
-    code "gtxn" [ texty txnToContract, "TypeEnum" ]
-    code "int" [ "pay" ]
+    code "gtxn" [texty txnToContract, "TypeEnum"]
+    code "int" ["pay"]
     eq_or_fail
-    code "gtxn" [ texty txnToContract, "Receiver" ]
-    code "byte" [ tContractAddr ]
+    code "gtxn" [texty txnToContract, "Receiver"]
+    code "byte" [tContractAddr]
     eq_or_fail
 
     comment "Check txnFromHandler (us)"
-    code "txn" [ "GroupIndex" ]
+    code "txn" ["GroupIndex"]
     cc $ DLC_Int $ fromIntegral $ txnFromHandler
     eq_or_fail
-    code "txn" [ "TypeEnum" ]
-    code "int" [ "pay" ]
+    code "txn" ["TypeEnum"]
+    code "int" ["pay"]
     eq_or_fail
-    code "txn" [ "Amount" ]
+    code "txn" ["Amount"]
     cc $ DLC_Int $ 0
     eq_or_fail
-    code "txn" [ "Receiver" ]
-    code "gtxn" [ texty txnToHandler, "Sender" ]
+    code "txn" ["Receiver"]
+    code "gtxn" [texty txnToHandler, "Sender"]
     eq_or_fail
-    code "txn" [ "NumArgs" ]
+    code "txn" ["NumArgs"]
     cc $ DLC_Int $ fromIntegral $ argCount
     eq_or_fail
     case fs of
@@ -555,7 +590,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
         ca $ DLA_Var dv
         eq_or_fail
     cstate (HM_Check prev) svs
-    code "arg" [ texty argPrevSt ]
+    code "arg" [texty argPrevSt]
     eq_or_fail
 
     --- XXX close remainder to is deployer if halts, zero otherwise
@@ -565,12 +600,12 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
 
     txns <- how_many_txns
     comment "Check GroupSize"
-    code "global" [ "GroupSize" ]
+    code "global" ["GroupSize"]
     cc $ DLC_Int $ fromIntegral $ 1 + txns
     eq_or_fail
 
     lookup_fee_amount
-    csum_ $ map (\i -> code "gtxn" [ texty i, "Fee" ]) [txnFromContract0 .. txns]
+    csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnFromContract0 .. txns]
     eq_or_fail
 
     comment "Check time limits"
@@ -582,18 +617,19 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
             op "+"
             let go i = do
                   op "dup"
-                  code "gtxn" [ texty i, f ]
+                  code "gtxn" [texty i, f]
                   eq_or_fail
-            forM_ [0..txns] go
+            forM_ [0 .. txns] go
             op "pop"
     (do
-      let CBetween from to = int
-      check_time "FirstValid" from
-      check_time "LastValid" to)
+       let CBetween from to = int
+       check_time "FirstValid" from
+       check_time "LastValid" to)
 
     std_footer
 
 type Disp = String -> T.Text -> IO ()
+
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
   let PLProg _at (PLOpts {..}) _ cpp = pl
@@ -609,67 +645,67 @@ compile_algo disp pl = do
         disp lab t
   --- FIXME this is really lame
   countR <- newIORef (0 :: Int)
-  hchecks <- forM (M.toList hm) $ \ (hi, hh) -> do
+  hchecks <- forM (M.toList hm) $ \(hi, hh) -> do
     mht <- ch shared hi hh
     case mht of
       Nothing -> return $ return ()
       Just ht -> do
-        modifyIORef countR (1+)
+        modifyIORef countR (1 +)
         let lab = "m" <> show hi
         addProg lab $ render ht
         return $ do
-          code "gtxn" [ texty txnFromHandler, "Sender" ]
-          code "byte" [ template $ LT.pack lab ]
+          code "gtxn" [texty txnFromHandler, "Sender"]
+          code "byte" [template $ LT.pack lab]
           op "=="
           op "||"
   howManySteps <- readIORef countR
   let simple m = runApp shared 0 mempty $ m >> std_footer
   app0m <- simple $ do
     comment "Check that we're an App"
-    code "txn" [ "TypeEnum" ]
-    code "int" [ "appl" ]
+    code "txn" ["TypeEnum"]
+    code "int" ["appl"]
     eq_or_fail
     check_rekeyto
-    code "txn" [ "Sender" ]
-    code "byte" [ tDeployer ]
+    code "txn" ["Sender"]
+    code "byte" [tDeployer]
     eq_or_fail
-    code "txn" [ "ApplicationID" ]
-    code "bz" [ "init" ]
-    code "global" [ "GroupSize" ]
+    code "txn" ["ApplicationID"]
+    code "bz" ["init"]
+    code "global" ["GroupSize"]
     cc $ DLC_Int $ fromIntegral $ 2 + howManySteps
     eq_or_fail
     --- XXX can we constrain the other txns to transfer the correct amount?
-    code "txn" [ "OnCompletion" ]
-    code "int" [ "UpdateApplication" ]
+    code "txn" ["OnCompletion"]
+    code "int" ["UpdateApplication"]
     eq_or_fail
     app_global_put keyState $ do
       cstate HM_Set []
     app_global_put keyLast $ do
-      code "global" [ "Round" ]
+      code "global" ["Round"]
     app_global_put keyHalts $ do
       cc $ DLC_Bool $ False
-    code "b" [ "done" ]
+    code "b" ["done"]
     label "init"
-    code "global" [ "GroupSize" ]
+    code "global" ["GroupSize"]
     cc $ DLC_Int $ 1
     eq_or_fail
-    code "txn" [ "OnCompletion" ]
-    code "int" [ "NoOp" ]
+    code "txn" ["OnCompletion"]
+    code "int" ["NoOp"]
     eq_or_fail
-    code "b" [ "done" ]
+    code "b" ["done"]
   appm <- simple $ do
     comment "Check that we're an App"
-    code "txn" [ "TypeEnum" ]
-    code "int" [ "appl" ]
+    code "txn" ["TypeEnum"]
+    code "int" ["appl"]
     eq_or_fail
     check_rekeyto
     comment "Check that everyone's here"
-    code "global" [ "GroupSize" ]
+    code "global" ["GroupSize"]
     cc $ DLC_Int $ fromIntegral $ txnFromContract0
     op ">="
     or_fail
     comment "Check txnAppl (us)"
-    code "txn" [ "GroupIndex" ]
+    code "txn" ["GroupIndex"]
     cc $ DLC_Int $ fromIntegral $ txnAppl
     eq_or_fail
     comment "Check txnFromHandler"
@@ -677,74 +713,74 @@ compile_algo disp pl = do
     forM_ hchecks id
     or_fail
     app_global_get keyState
-    code "gtxna" [ texty txnFromHandler, "Args", texty argPrevSt ]
+    code "gtxna" [texty txnFromHandler, "Args", texty argPrevSt]
     cfrombs T_Bytes
     eq_or_fail
     app_global_get keyLast
-    code "gtxna" [ texty txnFromHandler, "Args", texty argLast ]
+    code "gtxna" [texty txnFromHandler, "Args", texty argLast]
     cfrombs T_UInt256
     eq_or_fail
     comment "Don't check anyone else, because Handler does"
     comment "Update state"
     app_global_put keyState $ do
-      code "gtxna" [ texty txnFromHandler, "Args", texty argNextSt ]
+      code "gtxna" [texty txnFromHandler, "Args", texty argNextSt]
       cfrombs T_Bytes
     app_global_put keyLast $ do
-      code "global" [ "Round" ]
+      code "global" ["Round"]
     --- XXX we don't actually need halts
     app_global_put keyHalts $ do
-      code "gtxna" [ texty txnFromHandler, "Args", texty argHalts ]
+      code "gtxna" [texty txnFromHandler, "Args", texty argHalts]
       cfrombs T_Bool
     app_global_get keyHalts
-    code "bnz" [ "halted" ]
-    code "txn" [ "OnCompletion" ]
-    code "int" [ "NoOp" ]
+    code "bnz" ["halted"]
+    code "txn" ["OnCompletion"]
+    code "int" ["NoOp"]
     eq_or_fail
-    code "b" [ "done" ]
+    code "b" ["done"]
     label "halted"
-    code "txn" [ "OnCompletion" ]
-    code "int" [ "DeleteApplication" ]
+    code "txn" ["OnCompletion"]
+    code "int" ["DeleteApplication"]
     eq_or_fail
-    code "b" [ "done" ]
+    code "b" ["done"]
   clearm <- simple $ do
     comment "We're alone"
-    code "global" [ "GroupSize" ]
+    code "global" ["GroupSize"]
     cc $ DLC_Int $ 1
     eq_or_fail
     comment "We're halted"
     app_global_get keyHalts
     cc $ DLC_Bool $ True
     eq_or_fail
-    code "b" [ "done" ]
+    code "b" ["done"]
   -- XXX ctc needs to allow deployer to get back minimum balance
   ctcm <- simple $ do
     comment "Check size"
-    code "global" [ "GroupSize" ]
+    code "global" ["GroupSize"]
     cc $ DLC_Int $ fromIntegral $ txnFromContract0
     op ">="
     or_fail
     comment "Check txnAppl"
-    code "gtxn" [ texty txnAppl, "TypeEnum" ]
-    code "int" [ "appl" ]
+    code "gtxn" [texty txnAppl, "TypeEnum"]
+    code "int" ["appl"]
     eq_or_fail
-    code "gtxn" [ texty txnAppl, "ApplicationID" ]
-    code "byte" [ tApplicationID ]
+    code "gtxn" [texty txnAppl, "ApplicationID"]
+    code "byte" [tApplicationID]
     cfrombs T_UInt256
     eq_or_fail
     comment "Don't check anything else, because app does"
     comment "Check us"
-    code "txn" [ "TypeEnum" ]
-    code "int" [ "pay" ]
+    code "txn" ["TypeEnum"]
+    code "int" ["pay"]
     eq_or_fail
     check_rekeyto
-    code "txn" [ "CloseRemainderTo" ]
-    code "global" [ "ZeroAddress" ]
+    code "txn" ["CloseRemainderTo"]
+    code "global" ["ZeroAddress"]
     eq_or_fail
-    code "txn" [ "GroupIndex" ]
+    code "txn" ["GroupIndex"]
     cc $ DLC_Int $ fromIntegral $ txnFromContract0
     op ">="
     or_fail
-    code "b" [ "done" ]
+    code "b" ["done"]
   addProg "appApproval0" $ render app0m
   addProg "appApproval" $ render appm
   addProg "appClear" $ render clearm
@@ -763,5 +799,4 @@ connect_algo moutn pl = do
           Just outn ->
             TIO.writeFile (outn $ T.pack $ which <> ".teal") c
   res <- compile_algo disp pl
-  return $ M.fromList [ ("ALGO", res) ]
-
+  return $ M.fromList [("ALGO", res)]

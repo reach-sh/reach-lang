@@ -14,14 +14,15 @@ lin_com :: String -> (SrcLoc -> FluidEnv -> LLRets -> DLStmts -> a) -> (LLCommon
 lin_com who back mkk fve rets s ks =
   case s of
     DLS_FluidSet at fv da -> back at fve' rets ks
-      where fve' = M.insert fv (at, da) fve
+      where
+        fve' = M.insert fv (at, da) fve
     DLS_FluidRef at dv fv ->
       mkk $ LL_Let at (Just dv) (DLE_Arg at' da) $ back at fve rets ks
       where
         (at', da) =
-           case M.lookup fv fve of
-              Nothing -> impossible $ "fluid ref unbound: " <> show fv
-              Just x -> x
+          case M.lookup fv fve of
+            Nothing -> impossible $ "fluid ref unbound: " <> show fv
+            Just x -> x
     DLS_Let at mdv de -> mkk $ LL_Let at mdv de $ back at fve rets ks
     DLS_ArrayMap at ans x a f r ->
       mkk $ LL_ArrayMap at ans x a f' r $ back at fve rets ks

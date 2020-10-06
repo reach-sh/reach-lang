@@ -91,16 +91,19 @@ jsProtect :: Doc a -> SLType -> Doc a -> Doc a
 jsProtect ai how what =
   jsApply "stdlib.protect" $ [jsContract how, what, ai]
 
-jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString ->  Doc a
+jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> Doc a
 jsAssertInfo ctxt at fs mmsg =
-  jsObject $ M.fromList [ ("who" :: String, who_p)
-                        , ("msg", msg_p)
-                        , ("at", at_p)
-                        , ("fs", fs_p)]
+  jsObject $
+    M.fromList
+      [ ("who" :: String, who_p)
+      , ("msg", msg_p)
+      , ("at", at_p)
+      , ("fs", fs_p)
+      ]
   where
     msg_p = case mmsg of
-              Nothing -> "null"
-              Just b -> jsString $ B.unpack b
+      Nothing -> "null"
+      Just b -> jsString $ bunpack b
     who_p = jsCon $ DLC_Bytes $ ctxt_who ctxt
     at_p = jsString $ unsafeRedactAbsStr $ show at
     fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
@@ -114,7 +117,7 @@ jsCon = \case
   DLC_Bool True -> "true"
   DLC_Bool False -> "false"
   DLC_Int i -> jsApply "stdlib.bigNumberify" [pretty i]
-  DLC_Bytes b -> jsString $ B.unpack b
+  DLC_Bytes b -> jsString $ bunpack b
 
 jsArg :: DLArg -> Doc a
 jsArg = \case
@@ -174,7 +177,7 @@ jsExpr ctxt = \case
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f
   DLE_Interact at fs _ m t as ->
-    jsProtect (jsAssertInfo ctxt at fs (Just $ B.pack m)) t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
+    jsProtect (jsAssertInfo ctxt at fs (Just $ bpack m)) t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
   DLE_Digest _ as -> jsDigest as
   DLE_Claim at fs ct a mmsg ->
     check
@@ -324,8 +327,11 @@ jsETail ctxt = \case
       msg_vs = map jsVar msg
       k_defp =
         "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi <> hardline
-        <> "const" <+> jsVar amtv <+> "=" <+> (jsTxn ctxt') <> ".value" <> semi <> hardline
-        <> jsFromSpec ctxt' fs_ok
+          <> "const" <+> jsVar amtv <+> "=" <+> (jsTxn ctxt')
+          <> ".value"
+          <> semi
+          <> hardline
+          <> jsFromSpec ctxt' fs_ok
       k_okp = k_defp <> jsETail ctxt' k_ok
       ctxt' = ctxt {ctxt_txn = (ctxt_txn ctxt) + 1}
       whop = jsCon $ DLC_Bytes $ ctxt_who ctxt
@@ -393,7 +399,7 @@ jsETail ctxt = \case
 
 jsPart :: SLPart -> EPProg -> Doc a
 jsPart p (EPProg _ _ et) =
-  "export" <+> jsFunction (B.unpack p) (["stdlib", "ctc", "interact"]) bodyp'
+  "export" <+> jsFunction (bunpack p) (["stdlib", "ctc", "interact"]) bodyp'
   where
     ctxt =
       JSCtxt

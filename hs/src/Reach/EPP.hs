@@ -335,9 +335,10 @@ epp_s st s =
       where
         done :: MDone (ST s ProResS)
         done rat =
-          return $ ProResS 
-            (pall st' (ProRes_ mempty $ ET_Com $ PL_Return rat))
-            (ProRes_ mempty False)
+          return $
+            ProResS
+              (pall st' (ProRes_ mempty $ ET_Com $ PL_Return rat))
+              (ProRes_ mempty False)
         back :: MBack LLStep (ST s ProResS)
         back cs' mkpl k = do
           ProResS p_prts_s (ProRes_ cs_k morech) <- skip k
