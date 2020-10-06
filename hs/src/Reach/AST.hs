@@ -452,8 +452,8 @@ data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_Impossible SrcLoc String
   | DLE_PrimOp SrcLoc PrimOp [DLArg]
-  | DLE_ArrayRef SrcLoc [SLCtxtFrame] DLArg Integer DLArg
-  | DLE_ArraySet SrcLoc [SLCtxtFrame] DLArg Integer DLArg DLArg
+  | DLE_ArrayRef SrcLoc DLArg DLArg
+  | DLE_ArraySet SrcLoc DLArg DLArg DLArg
   | DLE_ArrayConcat SrcLoc DLArg DLArg
   | DLE_ArrayZip SrcLoc DLArg DLArg
   | DLE_TupleRef SrcLoc DLArg Integer

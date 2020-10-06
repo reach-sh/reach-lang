@@ -85,8 +85,8 @@ instance Pretty DLExpr where
       DLE_Arg _ a -> pretty a
       DLE_Impossible _ msg -> "impossible" <> parens (pretty msg)
       DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
-      DLE_ArrayRef _ _ a _ o -> pretty a <> brackets (pretty o)
-      DLE_ArraySet _ _ a _ i v -> "array_set" <> (parens $ render_das [a, i, v])
+      DLE_ArrayRef _ a o -> pretty a <> brackets (pretty o)
+      DLE_ArraySet _ a i v -> "array_set" <> (parens $ render_das [a, i, v])
       DLE_ArrayConcat _ x y -> "array_concat" <> (parens $ render_das [x, y])
       DLE_ArrayZip _ x y -> "array_zip" <> (parens $ render_das [x, y])
       DLE_TupleRef _ a i -> pretty a <> brackets (pretty i)

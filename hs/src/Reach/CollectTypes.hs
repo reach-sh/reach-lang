@@ -55,8 +55,8 @@ instance CollectsTypes DLExpr where
   cts (DLE_Arg _ a) = cts a
   cts (DLE_Impossible _ _) = mempty
   cts (DLE_PrimOp _ _ as) = cts as
-  cts (DLE_ArrayRef _ _ a _ i) = cts a <> cts i
-  cts (DLE_ArraySet _ _ a _ i v) = cts a <> cts i <> cts v
+  cts (DLE_ArrayRef _ a i) = cts a <> cts i
+  cts (DLE_ArraySet _ a i v) = cts a <> cts i <> cts v
   cts (DLE_ArrayConcat _ x y) = cts x <> cts y
   cts (DLE_ArrayZip _ x y) = cts x <> cts y
   cts (DLE_TupleRef _ t _) = cts t

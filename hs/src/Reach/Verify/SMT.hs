@@ -227,11 +227,8 @@ smtDigestCombine ctxt at args =
 --- Verifier
 
 data TheoremKind
-  = TAssert
-  | TRequire
-  | TPossible
+  = TClaim ClaimType
   | TInvariant
-  | TBounds
   deriving (Show)
 
 data ResultDesc
@@ -278,7 +275,7 @@ display_fail ctxt tat f tk tse mmsg repeated mrd = do
       --- below) and then just show the remaining variables found by the
       --- model.
       putStrLn $ "  Theorem formalization:"
-      putStrLn $ "  " ++ (SMT.showsSExpr (smtAddPathConstraints ctxt tse) "")
+      putStrLn $ "  " ++ (SMT.showsSExpr tse "")
       putStrLn $ ""
       putStrLn $ "  This could be violated if..."
       let pm =
@@ -349,7 +346,8 @@ smtAssert ctxt se = SMT.assert smt $ smtAddPathConstraints ctxt se
 
 verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SMTComp
 verify1 ctxt at mf tk se mmsg = SMT.inNewScope smt $ do
-  smtAssert ctxt $ if isPossible then se else smtNot se
+  forM_ (ctxt_path_constraint ctxt) $ SMT.assert smt
+  SMT.assert smt $ if isPossible then se else smtNot se
   r <- SMT.check smt
   case isPossible of
     True ->
@@ -374,7 +372,7 @@ verify1 ctxt at mf tk se mmsg = SMT.inNewScope smt $ do
       modifyIORef (ctxt_res_fail ctxt) $ (1 +)
     isPossible =
       case tk of
-        TPossible -> True
+        TClaim CT_Possible -> True
         _ -> False
 
 pathAddUnbound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> SLType -> BindingOrigin -> SMTComp
@@ -466,20 +464,16 @@ smt_e ctxt at_dv mdv de =
       where
         args' = map (smt_a ctxt at) args
         se = smtPrimOp ctxt cp args'
-    DLE_ArrayRef at f arr_da sz idx_da -> do
-      verify1 ctxt at f TBounds check_se Nothing
+    DLE_ArrayRef at arr_da idx_da -> do
       pathAddBound ctxt at_dv mdv bo se
       where
         se = smtApply "select" [arr_da', idx_da']
-        check_se = uint256_le idx_da' (smt_c ctxt at $ DLC_Int sz)
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
-    DLE_ArraySet at f arr_da sz idx_da val_da -> do
-      verify1 ctxt at f TBounds check_se Nothing
+    DLE_ArraySet at arr_da idx_da val_da -> do
       pathAddBound ctxt at_dv mdv bo se
       where
         se = smtApply "store" [arr_da', idx_da', val_da']
-        check_se = uint256_le idx_da' (smt_c ctxt at $ DLC_Int sz)
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
         val_da' = smt_a ctxt at val_da
@@ -513,18 +507,17 @@ smt_e ctxt at_dv mdv de =
       where
         this_m =
           case ct of
-            CT_Assert -> check_m TAssert <> assert_m
+            CT_Assert -> check_m <> assert_m
             CT_Assume -> assert_m
             CT_Require ->
               case ctxt_mode ctxt of
-                VM_Honest -> check_m TRequire <> assert_m
+                VM_Honest -> check_m <> assert_m
                 VM_Dishonest {} -> assert_m
-            CT_Possible -> possible_m
+            CT_Possible -> check_m
             CT_Unknowable {} -> mempty
         ca' = smt_a ctxt at ca
-        possible_m = check_m TPossible
-        check_m tk =
-          verify1 ctxt at f tk ca' mmsg
+        check_m =
+          verify1 ctxt at f (TClaim ct) ca' mmsg
         assert_m =
           smtAssert ctxt ca'
     DLE_Transfer {} ->

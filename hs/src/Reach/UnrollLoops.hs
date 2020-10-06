@@ -142,7 +142,7 @@ ul_explode at a =
         mk1 i = do
           idx <- allocIdx
           let v = DLVar at "ul" t idx
-          liftLet at v $ DLE_ArrayRef at [] a sz (DLA_Con (DLC_Int $ fromIntegral i))
+          liftLet at v $ DLE_ArrayRef at a (DLA_Con (DLC_Int $ fromIntegral i))
           return $ DLA_Var v
 
 ul_e :: DLExpr -> App s DLExpr
@@ -150,8 +150,8 @@ ul_e = \case
   DLE_Arg at a -> (pure $ DLE_Arg at) <*> ul_a a
   DLE_Impossible at lab -> pure $ DLE_Impossible at lab
   DLE_PrimOp at p as -> (pure $ DLE_PrimOp at p) <*> ul_as as
-  DLE_ArrayRef at fs a sz i -> (pure $ DLE_ArrayRef at fs) <*> ul_a a <*> pure sz <*> ul_a i
-  DLE_ArraySet at fs a sz i v -> (pure $ DLE_ArraySet at fs) <*> ul_a a <*> pure sz <*> ul_a i <*> ul_a v
+  DLE_ArrayRef at a i -> (pure $ DLE_ArrayRef at) <*> ul_a a <*> ul_a i
+  DLE_ArraySet at a i v -> (pure $ DLE_ArraySet at) <*> ul_a a <*> ul_a i <*> ul_a v
   DLE_ArrayConcat at x0 y0 -> do
     recordUnroll
     x <- ul_a x0

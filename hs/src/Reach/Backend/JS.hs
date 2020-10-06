@@ -164,9 +164,9 @@ jsExpr ctxt = \case
     expect_throw at msg
   DLE_PrimOp _ p as ->
     jsPrimApply ctxt p $ map jsArg as
-  DLE_ArrayRef _ _ aa _ ia ->
+  DLE_ArrayRef _ aa ia ->
     jsArg aa <> brackets (jsArg ia)
-  DLE_ArraySet _ _ aa _ ia va ->
+  DLE_ArraySet _ aa ia va ->
     jsApply "stdlib.Array_set" $ map jsArg [aa, ia, va]
   DLE_ArrayConcat _ x y ->
     jsArg x <> "." <> jsApply "concat" [jsArg y]

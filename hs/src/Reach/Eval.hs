@@ -1010,7 +1010,7 @@ explodeTupleLike ctxt at lab tuplv =
     SLV_DLVar tupdv@(DLVar _ _ (T_Tuple tuptys) _) ->
       mconcatMap (uncurry (flip (mkdv tupdv DLE_TupleRef))) $ zip [0 ..] tuptys
     SLV_DLVar tupdv@(DLVar _ _ (T_Array t sz) _) -> do
-      let mkde _ da i = DLE_ArrayRef at (ctxt_stack ctxt) da sz (DLA_Con $ DLC_Int i)
+      let mkde _ da i = DLE_ArrayRef at da (DLA_Con $ DLC_Int i)
       mconcatMap (mkdv tupdv mkde t) [0 .. sz -1]
     _ ->
       expect_throw at $ Err_Eval_NotSpreadable tuplv
@@ -1048,6 +1048,16 @@ doAssertBalance ctxt at sco st lhs op = do
     keepLifts (fr_lifts <> cmp_lifts) $
       evalApplyVals ctxt at sco st ass_rator [cmp_v, public $ SLV_Bytes at "balance assertion"]
   return res_lifts
+
+doArrayBoundsCheck :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> Integer -> SLVal -> SLComp s a -> SLComp s a
+doArrayBoundsCheck ctxt at sco st sz idxv m = do
+  SLRes cmp_lifts _ (SLAppRes _ cmp_v) <-
+    evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_op PLT) [ public idxv, public $ SLV_Int at sz ]
+  SLRes check_lifts _ _ <-
+    evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_claim CT_Assert) $
+      [ cmp_v, public $ SLV_Bytes at "array bounds check" ]
+  let lifts = cmp_lifts <> check_lifts
+  keepLifts lifts $ m
 
 doBalanceUpdate :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp s ()
 doBalanceUpdate ctxt at sco st op rhs = do
@@ -1275,7 +1285,8 @@ evalPrim ctxt at sco st p sargs =
                 SLV_DLVar arrdv@(DLVar _ _ arr_ty@(T_Array elem_ty sz) _) ->
                   case idxi < sz of
                     True ->
-                      retArrDV arr_ty $ DLE_ArraySet at (ctxt_stack ctxt) (DLA_Var arrdv) sz idxda valda
+                      doArrayBoundsCheck ctxt at sco st sz idxv $
+                        retArrDV arr_ty $ DLE_ArraySet at (DLA_Var arrdv) idxda valda
                       where
                         valda = checkType at elem_ty valv
                     False ->
@@ -1286,7 +1297,8 @@ evalPrim ctxt at sco st p sargs =
             (T_UInt256, idxda) ->
               case typeOf at arrv of
                 (arr_ty@(T_Array elem_ty sz), arrda) ->
-                  retArrDV arr_ty $ DLE_ArraySet at (ctxt_stack ctxt) arrda sz idxda valda
+                  doArrayBoundsCheck ctxt at sco st sz idxv $
+                    retArrDV arr_ty $ DLE_ArraySet at arrda idxda valda
                   where
                     valda = checkType at elem_ty valv
                 _ -> illegal_args
@@ -1764,7 +1776,8 @@ evalExpr ctxt at sco st e = do
             let ansv = SLV_DLVar dv
             return $ SLRes (alifts <> ilifts <> lifts') idx_st (lvl, ansv)
       let retArrayRef t sz arr_dla idx_dla =
-            retRef t $ DLE_ArrayRef at' (ctxt_stack ctxt) arr_dla sz idx_dla
+            doArrayBoundsCheck ctxt at' sco st sz idxv $
+              retRef t $ DLE_ArrayRef at' arr_dla idx_dla
       let retTupleRef t arr_dla idx =
             retRef t $ DLE_TupleRef at' arr_dla idx
       let retVal idxi arrvs =
@@ -1829,7 +1842,7 @@ evalExprs ctxt at sco st rands =
 
 evalDeclLHSArray
   :: SrcLoc -> SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> [JSArrayElement] -> ([String], SLSVal -> WriterT DLStmts (ST s) SLEnv)
-evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks', makeEnv)
+evalDeclLHSArray vat' _at at' ctxt lhs_env xs = (ks', makeEnv)
   where
     ks' = ks <> maybe [] (\a -> [a]) kSpreadMay
     (ks, kSpreadMay) = parseIdentsAndSpread $ jsa_flatten xs
@@ -1848,25 +1861,8 @@ evalDeclLHSArray vat' at at' ctxt lhs_env xs = (ks', makeEnv)
           (xNs, smN) = parseIdentsAndSpread eNs
           x0 = jse_expect_id at' e0
     makeEnv (lvl, v) = do
-      vs <-
-        case v of
-          SLV_Tuple _ x -> pure x
-          SLV_DLVar dv@(DLVar _ _ (T_Tuple ts) _) -> do
-            zipWithM mk_ref ts [0 ..]
-            where
-              mk_ref t i = do
-                let e = (DLE_TupleRef vat' (DLA_Var dv) i)
-                dvi <- ctxt_lift_expr_w ctxt at (DLVar vat' (ctxt_local_name ctxt "tuple idx") t) e
-                pure $ SLV_DLVar dvi
-          SLV_DLVar dv@(DLVar _ _ (T_Array t sz) _) -> do
-            mapM mk_ref [0 .. (sz - 1)]
-            where
-              mk_ref i = do
-                let e = (DLE_ArrayRef vat' (ctxt_stack ctxt) (DLA_Var dv) sz (DLA_Con (DLC_Int i)))
-                dvi <- ctxt_lift_expr_w ctxt at (DLVar vat' (ctxt_local_name ctxt "array idx") t) e
-                pure $ SLV_DLVar dvi
-          _ ->
-            expect_throw at' (Err_Decl_NotRefable v)
+      (vs_lifts, vs) <- lift $ explodeTupleLike ctxt vat' "lhs array" v
+      tell vs_lifts
       let ks_len = length ks
       case splitAtExactMay ks_len vs of
         Nothing ->

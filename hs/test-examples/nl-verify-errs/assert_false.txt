@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   at ./assert_false.rsh:5:11:application
 
   Theorem formalization:
@@ -14,7 +14,7 @@ Verification failed:
 Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   at ./assert_false.rsh:5:11:application
 
   (details omitted on repeat)

@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
-  of theorem TRequire
+  of theorem TClaim CT_Require
   at ./require_false.rsh:6:12:application
 
   Theorem formalization:

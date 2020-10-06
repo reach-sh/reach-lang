@@ -148,8 +148,8 @@ kgq_e ctxt mv = \case
   DLE_Arg _ a -> kgq_a_onlym ctxt mv a
   DLE_Impossible {} -> mempty
   DLE_PrimOp _ _ as -> kgq_a_onlym ctxt mv (DLA_Tuple as)
-  DLE_ArrayRef _ _ a _ e -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e])
-  DLE_ArraySet _ _ a _ e n -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e, n])
+  DLE_ArrayRef _ a e -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e])
+  DLE_ArraySet _ a e n -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e, n])
   DLE_ArrayConcat _ x_da y_da ->
     kgq_a_onlym ctxt mv x_da >> kgq_a_onlym ctxt mv y_da
   DLE_ArrayZip _ x_da y_da ->

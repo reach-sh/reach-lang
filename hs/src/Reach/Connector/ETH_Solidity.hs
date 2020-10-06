@@ -326,9 +326,9 @@ solExpr ctxt sp = \case
   DLE_Impossible at msg -> expect_throw at msg
   DLE_PrimOp _ p args ->
     (solPrimApply p $ map (solArg ctxt) args) <> sp
-  DLE_ArrayRef _ _ ae _ ie ->
+  DLE_ArrayRef _ ae ie ->
     solArrayRef (solArg ctxt ae) (solArg ctxt ie) <> sp
-  DLE_ArraySet _ _ ae _ ie ve ->
+  DLE_ArraySet _ ae ie ve ->
     (solApply (solArraySet (solTypeI ctxt (argTypeOf ae))) $ map (solArg ctxt) [ae, ie, ve]) <> sp
   DLE_ArrayConcat {} ->
     impossible "array concat"

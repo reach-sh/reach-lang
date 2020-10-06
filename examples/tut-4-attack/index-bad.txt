@@ -3,7 +3,7 @@ Verifying knowledge assertions
 Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   msg: "balance assertion"
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
@@ -46,7 +46,7 @@ Verification failed:
       (because: an honest message from "Alice" of interact("Alice")."wager"(UInt256))
     "v35" = (T2_elem1 v33 )
       (from: v35)
-      (bound at: ./tut-4-attack/index-bad.rsh:34:7:const)
+      (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
       (because: evaluating v33[1])
     "v40" = (- v39 v36 )
       (from: v40)
@@ -74,7 +74,7 @@ Verification failed:
       (because: evaluating IF_THEN_ELSE(v31, [DLC_Int 1, DLC_Int 1], [DLC_Int 2, DLC_Int 0]))
     "v34" = (T2_elem0 v33 )
       (from: v34)
-      (bound at: ./tut-4-attack/index-bad.rsh:34:7:const)
+      (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
       (because: evaluating v33[0])
     "v18" = (+ v17 v15 )
       (from: v18)
@@ -135,7 +135,7 @@ Verification failed:
 Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   msg: "balance assertion"
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
@@ -143,7 +143,7 @@ Verification failed:
 Verifying with mode = VM_Dishonest (RolePart "Alice")
 Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   msg: "balance assertion"
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
@@ -151,7 +151,7 @@ Verification failed:
 Verifying with mode = VM_Dishonest (RolePart "Bob")
 Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   msg: "balance assertion"
   at ./tut-4-attack/index-bad.rsh:45:11:application
 

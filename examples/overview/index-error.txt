@@ -3,7 +3,7 @@ Verifying knowledge assertions
 Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   msg: "balance assertion"
   at ./overview/index-error.rsh:29:11:application
 
@@ -79,7 +79,7 @@ Verification failed:
 Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   msg: "balance assertion"
   at ./overview/index-error.rsh:29:11:application
 
@@ -87,7 +87,7 @@ Verification failed:
 Verifying with mode = VM_Dishonest (RolePart "Alice")
 Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   msg: "balance assertion"
   at ./overview/index-error.rsh:29:11:application
 
@@ -95,7 +95,7 @@ Verification failed:
 Verifying with mode = VM_Dishonest (RolePart "Bob")
 Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
-  of theorem TAssert
+  of theorem TClaim CT_Assert
   msg: "balance assertion"
   at ./overview/index-error.rsh:29:11:application
 
