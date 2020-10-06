@@ -63,8 +63,8 @@ instance CollectsTypes DLExpr where
   cts (DLE_ObjectRef _ a _) = cts a
   cts (DLE_Interact _ _ _ _ t as) = cts t <> cts as
   cts (DLE_Digest _ as) = cts as
-  cts (DLE_Claim _ _ _ a) = cts a
-  cts (DLE_Transfer _ _ x y) = cts x <> cts y
+  cts (DLE_Claim _ _ _ a _) = cts a
+  cts (DLE_Transfer _ x y) = cts x <> cts y
   cts (DLE_Wait _ a) = cts a
   cts (DLE_PartSet _ _ a) = cts a
 
@@ -101,7 +101,7 @@ instance CollectsTypes LLConsensus where
 
 instance CollectsTypes LLStep where
   cts (LLS_Com k) = cts k
-  cts (LLS_Stop _ _) = mempty
+  cts (LLS_Stop _) = mempty
   cts (LLS_Only _ _ l s) = cts l <> cts s
   cts (LLS_ToConsensus _ _ fs as msg amt amtv mtime c) =
     cts fs <> cts as <> cts msg <> cts amt <> cts amtv <> cts mtime <> cts c

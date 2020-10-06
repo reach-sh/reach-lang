@@ -1,5 +1,7 @@
 module Reach.Connector.ALGO (connect_algo) where
 
+-- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ALGO.hs.dead
+
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -277,7 +279,7 @@ ce = \case
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
     where go a = (argTypeOf a, ca a)
-  DLE_Transfer _ _ who amt -> do
+  DLE_Transfer _ who amt -> do
     txni <- talloc
     code "gtxn" [ texty txni, "TypeEnum" ]
     code "int" [ "pay" ]
@@ -292,7 +294,7 @@ ce = \case
     code "byte" [ tContractAddr ]
     cfrombs T_Address
     eq_or_fail
-  DLE_Claim _ _ t a ->
+  DLE_Claim _ _ t a _XXX_mmsg ->
     case t of
       CT_Assert -> impossible "assert"
       CT_Assume -> check

@@ -88,9 +88,9 @@ epp_m done _back skip look c =
     LL_Return at -> done at
     LL_Let at mdv de k ->
       case de of
-        DLE_Claim _ _ CT_Assert _ -> skip k
-        DLE_Claim _ _ CT_Possible _ -> skip k
-        DLE_Claim _ _ (CT_Unknowable {}) _ -> skip k
+        DLE_Claim _ _ CT_Assert _ _ -> skip k
+        DLE_Claim _ _ CT_Possible _ _ -> skip k
+        DLE_Claim _ _ (CT_Unknowable {}) _ _ -> skip k
         _ ->
           look
             k
@@ -359,7 +359,7 @@ epp_s st s =
             (LL_Let _ _ (DLE_Wait _ amt) _) ->
               st {pst_interval = interval_add_from (pst_interval st) amt}
             _ -> st
-    LLS_Stop at _ -> do
+    LLS_Stop at -> do
       let p_prts_s = pall st (ProRes_ mempty (ET_Stop at))
       return $ ProResS p_prts_s $ ProRes_ mempty False
     LLS_Only at who body_l k_s -> do

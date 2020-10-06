@@ -54,12 +54,6 @@ uint256_le lhs rhs = smtPrimOp (impossible "raw") PLE [lhs, rhs]
 uint256_inv :: SMTTypeInv
 uint256_inv v = uint256_le uint256_zero v
 
-uint256_sub :: SExpr -> SExpr -> SExpr
-uint256_sub lhs rhs = smtPrimOp (impossible "raw") SUB [lhs, rhs]
-
-uint256_add :: SExpr -> SExpr -> SExpr
-uint256_add lhs rhs = smtPrimOp (impossible "raw") ADD [lhs, rhs]
-
 smtApply :: String -> [SExpr] -> SExpr
 smtApply f args = List (Atom f : args)
 
@@ -511,7 +505,7 @@ smt_e ctxt at_dv mdv de =
       pathAddBound ctxt at mdv bo se
       where
         se = smtApply "digest" [smtDigestCombine ctxt at args]
-    DLE_Claim at f ct ca -> this_m
+    DLE_Claim at f ct ca _XXX_mmsg -> this_m
       where
         this_m =
           case ct of
@@ -710,7 +704,7 @@ smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
   case s of
     LLS_Com m -> smt_m smt_s ctxt m
-    LLS_Stop _at _XXX_f -> mempty
+    LLS_Stop _at -> mempty
     LLS_Only _at who loc k ->
       loc_m <> smt_s ctxt k
       where

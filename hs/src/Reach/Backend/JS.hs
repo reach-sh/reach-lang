@@ -170,7 +170,7 @@ jsExpr ctxt = \case
   DLE_Interact at fs _ m t as ->
     jsProtect (jsAssertInfo ctxt at fs) t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
   DLE_Digest _ as -> jsDigest as
-  DLE_Claim at fs ct a ->
+  DLE_Claim at fs ct a _XXX_mmsg ->
     check
     where
       check = case ct of
@@ -181,7 +181,7 @@ jsExpr ctxt = \case
         CT_Unknowable {} -> impossible "unknowable"
       require =
         jsApply "stdlib.assert" $ [jsArg a, jsAssertInfo ctxt at fs]
-  DLE_Transfer _ _ who amt ->
+  DLE_Transfer _ who amt ->
     case ctxt_simulate ctxt of
       False -> emptyDoc
       True ->

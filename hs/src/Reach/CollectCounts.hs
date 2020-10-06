@@ -73,8 +73,8 @@ instance Countable DLExpr where
       DLE_ObjectRef _ aa _ -> counts aa
       DLE_Interact _ _ _ _ _ as -> counts as
       DLE_Digest _ as -> counts as
-      DLE_Claim _ _ _ a -> counts a
-      DLE_Transfer _ _ x y -> counts [x, y]
+      DLE_Claim _ _ _ a _ -> counts a
+      DLE_Transfer _ x y -> counts [x, y]
       DLE_Wait _ a -> counts a
       DLE_PartSet _ _ a -> counts a
 

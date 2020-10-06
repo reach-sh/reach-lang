@@ -171,8 +171,8 @@ ul_e = \case
   DLE_ObjectRef at o k -> (pure $ DLE_ObjectRef at) <*> ul_a o <*> pure k
   DLE_Interact at fs p m t as -> (pure $ DLE_Interact at fs p m t) <*> ul_as as
   DLE_Digest at as -> (pure $ DLE_Digest at) <*> ul_as as
-  DLE_Claim at fs t a -> (pure $ DLE_Claim at fs t) <*> ul_a a
-  DLE_Transfer at fs t a -> (pure $ DLE_Transfer at fs) <*> ul_a t <*> ul_a a
+  DLE_Claim at fs t a m -> (pure $ DLE_Claim at fs t) <*> ul_a a <*> (pure $ m)
+  DLE_Transfer at t a -> (pure $ DLE_Transfer at) <*> ul_a t <*> ul_a a
   DLE_Wait at a -> (pure $ DLE_Wait at) <*> ul_a a
   DLE_PartSet at who a -> (pure $ DLE_PartSet at who) <*> ul_a a
 
@@ -294,8 +294,8 @@ ul_mtime = \case
 ul_s :: LLStep -> App s LLStep
 ul_s = \case
   LLS_Com m -> ul_m LLS_Com ul_s m
-  LLS_Stop at fs ->
-    (pure $ LLS_Stop at fs)
+  LLS_Stop at ->
+    (pure $ LLS_Stop at)
   LLS_Only at p l s ->
     (pure $ LLS_Only at p) <*> ul_l l <*> ul_s s
   LLS_ToConsensus at from fs from_as from_msg from_amt from_amtv mtime cons ->

@@ -922,7 +922,8 @@ evalForm ctxt at sco st f args =
           let whats_v = map snd whats_sv
           let whats_da = map snd $ map (typeOf at) whats_v
           let ct = CT_Unknowable notter
-          let lifts' = return $ DLS_Let at Nothing (DLE_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da))
+          let msgXXX = Nothing
+          let lifts' = return $ DLS_Let at Nothing (DLE_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da) msgXXX)
           let lifts = lifts_n <> lifts_kn <> lifts_whats <> lifts'
           return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
         cm ->
@@ -1346,7 +1347,8 @@ evalPrim ctxt at sco st p sargs =
         darg = case map snd sargs of
           [arg] -> checkType at T_Bool arg
           _ -> illegal_args
-        lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg
+        msgXXX = Nothing
+        lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg msgXXX
     SLPrim_transfer ->
       case ensure_publics at sargs of
         [amt_sv] ->
@@ -1363,7 +1365,7 @@ evalPrim ctxt at sco st p sargs =
           tbsuff <- doAssertBalance ctxt at sco st amt_sv PLE
           --- XXX We can now remove the stack from DLE_Transfer
           SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
-          let lifts = tbsuff <> (return $ DLS_Let at Nothing $ DLE_Transfer at (ctxt_stack ctxt) who_dla amt_dla) <> balup
+          let lifts = tbsuff <> (return $ DLS_Let at Nothing $ DLE_Transfer at who_dla amt_dla) <> balup
           return $ SLRes lifts st' $ public $ SLV_Null at "transfer.to"
           where
             who_dla =
@@ -1383,7 +1385,7 @@ evalPrim ctxt at sco st p sargs =
             [] -> do
               let zero = SLV_Int srcloc_builtin 0
               tbzero <- doAssertBalance ctxt at sco st zero PEQ
-              let lifts = tbzero <> (return $ DLS_Stop at (ctxt_stack ctxt))
+              let lifts = tbzero <> (return $ DLS_Stop at)
               return $ SLRes lifts st $ public $ SLV_Prim $ SLPrim_exitted
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "exit"
@@ -2185,7 +2187,7 @@ evalStmt ctxt at sco st ss =
           --- linearizer will completely drop the continuation of
           --- DLS_Continue and DLS_Stop, so if this assert is not
           --- removed, then ti will error.
-          keepLifts (return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) CT_Assert (DLA_Con $ DLC_Bool False)) $
+          keepLifts (return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) CT_Assert (DLA_Con $ DLC_Bool False) (Just "unreachable")) $
             ret []
         RS_MayBeEmpty -> ret []
       where

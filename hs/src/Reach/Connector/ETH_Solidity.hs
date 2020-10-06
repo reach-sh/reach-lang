@@ -1,5 +1,7 @@
 module Reach.Connector.ETH_Solidity (connect_eth) where
 
+-- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ETH_EVM.hs.dead
+
 import Control.Monad
 import Control.Monad.ST
 import Data.Aeson
@@ -339,9 +341,9 @@ solExpr ctxt sp = \case
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args ->
     (solHash $ map (solArg ctxt) args) <> sp
-  DLE_Transfer _ _ who amt ->
+  DLE_Transfer _ who amt ->
     solTransfer ctxt who amt <> sp
-  DLE_Claim at _ ct a -> check <> sp
+  DLE_Claim at _ ct a _XXX_msg -> check <> sp
     where
       check = case ct of
         CT_Assert -> impossible "assert"

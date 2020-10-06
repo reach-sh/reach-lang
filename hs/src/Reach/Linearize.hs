@@ -117,7 +117,7 @@ lin_con back at_top fve rets (s Seq.:<| ks) =
 
 lin_step :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLStep
 lin_step at _ _ Seq.Empty =
-  LLS_Stop at []
+  LLS_Stop at
 lin_step _ fve rets (s Seq.:<| ks) =
   case s of
     DLS_If {}
@@ -126,8 +126,8 @@ lin_step _ fve rets (s Seq.:<| ks) =
     DLS_Switch {}
       | not (isLocal s) ->
         impossible $ "step cannot unlocal switch, must occur in consensus"
-    DLS_Stop at fs ->
-      LLS_Stop at fs
+    DLS_Stop at ->
+      LLS_Stop at
     DLS_Only at who ss ->
       LLS_Only at who ls $ lin_step at fve rets ks
       where

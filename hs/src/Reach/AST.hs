@@ -460,9 +460,8 @@ data DLExpr
   | DLE_ObjectRef SrcLoc DLArg String
   | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String SLType [DLArg]
   | DLE_Digest SrcLoc [DLArg]
-  | --- XXX add message
-    DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg
-  | DLE_Transfer SrcLoc [SLCtxtFrame] DLArg DLArg
+  | DLE_Claim SrcLoc [SLCtxtFrame] ClaimType DLArg (Maybe B.ByteString)
+  | DLE_Transfer SrcLoc DLArg DLArg
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
   deriving (Eq, Generic, NFData, Show)
@@ -528,7 +527,7 @@ data DLStmt
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
   | DLS_Return SrcLoc Int SLVal
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
-  | DLS_Stop SrcLoc [SLCtxtFrame]
+  | DLS_Stop SrcLoc
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_ToConsensus
       { dls_tc_at :: SrcLoc
@@ -642,7 +641,7 @@ data LLConsensus
 
 data LLStep
   = LLS_Com (LLCommon LLStep)
-  | LLS_Stop SrcLoc [SLCtxtFrame]
+  | LLS_Stop SrcLoc
   | LLS_Only SrcLoc SLPart LLLocal LLStep
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc

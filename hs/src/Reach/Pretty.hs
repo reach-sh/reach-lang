@@ -93,8 +93,8 @@ instance Pretty DLExpr where
       DLE_ObjectRef _ a f -> pretty a <> "." <> pretty f
       DLE_Interact _ _ who m _ as -> "interact(" <> render_sp who <> ")." <> viaShow m <> parens (render_das as)
       DLE_Digest _ as -> "digest" <> parens (render_das as)
-      DLE_Claim _ _ ct a -> prettyClaim ct a
-      DLE_Transfer _ _ who da ->
+      DLE_Claim _ _ ct a m -> prettyClaim ct a m
+      DLE_Transfer _ who da ->
         prettyTransfer who da
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
@@ -135,8 +135,8 @@ prettyContinue :: Pretty b => b -> Doc a
 prettyContinue cont_da =
   pretty cont_da <> hardline <> "continue" <> semi
 
-prettyClaim :: Show a => Pretty b => a -> b -> Doc c
-prettyClaim ct a = "claim" <> parens (viaShow ct) <> parens (pretty a) <> semi
+prettyClaim :: Show a => Pretty b => Show c => a -> b -> c -> Doc d
+prettyClaim ct a m = "claim" <> parens (viaShow ct) <> parens (pretty a <> comma <+> viaShow m) <> semi
 
 prettyTransfer :: DLArg -> DLArg -> Doc a
 prettyTransfer who da =
@@ -186,7 +186,7 @@ instance Pretty DLStmt where
             case ret of
               Left _ -> emptyDoc
               Right dv -> "let" <+> pretty dv
-      DLS_Stop _ _ ->
+      DLS_Stop _ ->
         prettyStop
       DLS_Only _ who onlys ->
         "only" <> parens (render_sp who) <+> ns onlys <> semi
@@ -278,7 +278,7 @@ instance Pretty LLStep where
   pretty s =
     case s of
       LLS_Com x -> pretty x
-      LLS_Stop _at _ -> prettyStop
+      LLS_Stop _at -> prettyStop
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
       LLS_ToConsensus _at who fs as vs amt amtv mtime cons ->

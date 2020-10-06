@@ -157,7 +157,7 @@ kgq_e ctxt mv = \case
   DLE_Digest _ _ ->
     --- This line right here is where all the magic happens
     mempty
-  DLE_Claim at f ct what -> this
+  DLE_Claim at f ct what _XXX_mmsg -> this
     where
       this =
         case (ct, what) of
@@ -171,7 +171,7 @@ kgq_e ctxt mv = \case
               query_each = query ctxt at f who . all_points
           (CT_Unknowable {}, _) ->
             impossible "not tuple unknowable"
-  DLE_Transfer _ _ _ amt ->
+  DLE_Transfer _ _ amt ->
     kgq_a_all ctxt amt
   DLE_Wait _ amt ->
     kgq_a_all ctxt amt
