@@ -294,7 +294,8 @@ ce = \case
     code "byte" [ tContractAddr ]
     cfrombs T_Address
     eq_or_fail
-  DLE_Claim _ _ t a _XXX_mmsg ->
+  DLE_Claim _ _fs t a _mmsg ->
+    --- FIXME add fs and mmsg as comments
     case t of
       CT_Assert -> impossible "assert"
       CT_Assume -> check

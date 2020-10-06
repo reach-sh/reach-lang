@@ -4,6 +4,7 @@ Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
   of theorem TAssert
+  msg: "balance assertion"
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   Theorem formalization:
@@ -135,6 +136,7 @@ Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TAssert
+  msg: "balance assertion"
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   (details omitted on repeat)
@@ -142,6 +144,7 @@ Verifying with mode = VM_Dishonest (RolePart "Alice")
 Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
   of theorem TAssert
+  msg: "balance assertion"
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   (details omitted on repeat)
@@ -149,6 +152,7 @@ Verifying with mode = VM_Dishonest (RolePart "Bob")
 Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
   of theorem TAssert
+  msg: "balance assertion"
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   (details omitted on repeat)

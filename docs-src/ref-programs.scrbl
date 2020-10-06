@@ -304,9 +304,10 @@ However, some additional expressions are allowed.
 
 @(mint-define! '("unknowable"))
 @reach{
- unknowable( Notter, Knower(expr_0, ..., expr_N) ) }
+ unknowable( Notter, Knower(expr_0, ..., expr_N), [msg] ) }
 
 @index{unknowable} A @tech{knowledge assertion} that the @tech{participant} @reachin{Notter} @emph{does not} know the results of the evaluations of expressions @reachin{expr_0} through @reachin{expr_N}, but that the @tech{participant} @reachin{Knower} @emph{does} know those values.
+It accepts an optional bytes argument, which is included in any reported violation.
 
 @subsubsection{@tt{closeTo}}
 
@@ -348,10 +349,11 @@ An @tech{interaction expression} may only occur in a @tech{local step}.
 
 @(mint-define! '("assume"))
 @reach{
- assume( claim ) }
+ assume( claim, [msg] ) }
 
 @index{assume} An @tech{assumption} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{frontends}.
 This may only appear in a @tech{local step}.
+It accepts an optional bytes argument, which is included in any reported violation.
 
 @subsubsection{@tt{declassify}}
 
@@ -466,10 +468,11 @@ A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)
 
 @(mint-define! '("require"))
 @reach{
- require( claim ) }
+ require( claim, [msg] ) }
 
 @index{require} An @tech{requirement} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{participants}.
 This may only appear in a @tech{consensus step}.
+It accepts an optional bytes argument, which is included in any reported violation.
 
 @subsubsection{@tt{checkCommitment}}
 
@@ -1169,12 +1172,13 @@ and the next N values are distinct @reachin{UInt256}s.
 
 @(mint-define! '("assert"))
 @reach{
- assert( claim ) }
+ assert( claim, [msg] ) }
 
 @index{assert} A @tech{static assertion} which is only @tech{valid} if @reachin{claim} always evaluates to @reachin{true}.
 @margin-note{The Reach compiler will produce a counter-example (i.e. an assignment of the identifiers in the program to falsify the @reachin{claim}) when an @tech{invalid} @reachin{claim} is provided.
 It is possible to write a @reachin{claim} that actually always evaluates to @reachin{true}, but for which our current approach cannot prove always evaluates to @reachin{true}; if this is the case, Reach will fail to compile the program, reporting that its analysis is incomplete.
 Reach will never produce an erroneous counter-example.}
+It accepts an optional bytes argument, which is included in any reported violation.
 
 @margin-note{See @seclink["guide-assert"]{the guide section on verification} to better understand how and what to verify in your program.}
 
@@ -1198,9 +1202,10 @@ This is convenient for writing general claims about expressions, such as
 
 @(mint-define! '("possible"))
 @reach{
- possible( claim ) }
+ possible( claim, [msg] ) }
 
 @index{possible} A @tech{possibility assertion} which is only @tech{valid} if it is possible for @reachin{claim} to evaluate to @reachin{true} with @tech{honest} @tech{frontends} and @tech{participants}.
+It accepts an optional bytes argument, which is included in any reported violation.
 
 @subsubsection{@tt{digest}}
 

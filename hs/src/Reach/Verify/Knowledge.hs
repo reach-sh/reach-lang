@@ -1,6 +1,7 @@
 module Reach.Verify.Knowledge (verify_knowledge) where
 
 import qualified Algorithm.Search as G
+import qualified Data.ByteString.Char8 as B
 import Data.IORef
 import Data.List.Extra
 import qualified Data.Map.Strict as M
@@ -81,8 +82,8 @@ query1 ctxt who what = do
         Nothing -> mempty
   return $ G.dfs look (== (P_Part who)) what
 
-query :: KCtxt -> SrcLoc -> [SLCtxtFrame] -> SLPart -> S.Set Point -> IO ()
-query ctxt at f who whats = do
+query :: KCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> SLPart -> S.Set Point -> IO ()
+query ctxt at f mmsg who whats = do
   let whatsl = S.toList whats
   mpaths <- mapM (query1 ctxt who) whatsl
   let good = inc $ ctxt_res_succ ctxt
@@ -98,6 +99,9 @@ query ctxt at f who whats = do
         putStrLn $ "Verification failed:"
         putStrLn $ "  of theorem " ++ "unknowable(" ++ show who ++ ", " ++ show (hcat $ punctuate " , " $ map pretty whatsl) ++ ")"
         putStrLn $ redactAbsStr cwd $ "  at " ++ show at
+        case mmsg of
+          Nothing -> mempty
+          Just x -> putStrLn $ "  msg: " <> show x
         mapM_ (putStrLn . ("  " ++) . show) f
         putStrLn $ ""
         mapM_ (uncurry disp1) $ zip whatsl mpaths
@@ -157,7 +161,7 @@ kgq_e ctxt mv = \case
   DLE_Digest _ _ ->
     --- This line right here is where all the magic happens
     mempty
-  DLE_Claim at f ct what _XXX_mmsg -> this
+  DLE_Claim at f ct what mmsg -> this
     where
       this =
         case (ct, what) of
@@ -168,7 +172,7 @@ kgq_e ctxt mv = \case
           (CT_Unknowable who, (DLA_Tuple whats)) ->
             mapM_ query_each whats
             where
-              query_each = query ctxt at f who . all_points
+              query_each = query ctxt at f mmsg who . all_points
           (CT_Unknowable {}, _) ->
             impossible "not tuple unknowable"
   DLE_Transfer _ _ amt ->

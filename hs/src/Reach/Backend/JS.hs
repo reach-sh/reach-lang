@@ -91,10 +91,16 @@ jsProtect :: Doc a -> SLType -> Doc a -> Doc a
 jsProtect ai how what =
   jsApply "stdlib.protect" $ [jsContract how, what, ai]
 
-jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Doc a
-jsAssertInfo ctxt at fs =
-  jsObject $ M.fromList [("who" :: String, who_p), ("at", at_p), ("fs", fs_p)]
+jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString ->  Doc a
+jsAssertInfo ctxt at fs mmsg =
+  jsObject $ M.fromList [ ("who" :: String, who_p)
+                        , ("msg", msg_p)
+                        , ("at", at_p)
+                        , ("fs", fs_p)]
   where
+    msg_p = case mmsg of
+              Nothing -> "null"
+              Just b -> jsString $ B.unpack b
     who_p = jsCon $ DLC_Bytes $ ctxt_who ctxt
     at_p = jsString $ unsafeRedactAbsStr $ show at
     fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
@@ -168,9 +174,9 @@ jsExpr ctxt = \case
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f
   DLE_Interact at fs _ m t as ->
-    jsProtect (jsAssertInfo ctxt at fs) t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
+    jsProtect (jsAssertInfo ctxt at fs (Just $ B.pack m)) t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
   DLE_Digest _ as -> jsDigest as
-  DLE_Claim at fs ct a _XXX_mmsg ->
+  DLE_Claim at fs ct a mmsg ->
     check
     where
       check = case ct of
@@ -180,7 +186,7 @@ jsExpr ctxt = \case
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
       require =
-        jsApply "stdlib.assert" $ [jsArg a, jsAssertInfo ctxt at fs]
+        jsApply "stdlib.assert" $ [jsArg a, jsAssertInfo ctxt at fs mmsg]
   DLE_Transfer _ who amt ->
     case ctxt_simulate ctxt of
       False -> emptyDoc

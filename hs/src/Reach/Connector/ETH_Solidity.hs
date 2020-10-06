@@ -343,7 +343,7 @@ solExpr ctxt sp = \case
     (solHash $ map (solArg ctxt) args) <> sp
   DLE_Transfer _ who amt ->
     solTransfer ctxt who amt <> sp
-  DLE_Claim at _ ct a _XXX_msg -> check <> sp
+  DLE_Claim at fs ct a mmsg -> check <> sp
     where
       check = case ct of
         CT_Assert -> impossible "assert"
@@ -351,7 +351,7 @@ solExpr ctxt sp = \case
         CT_Require -> require
         CT_Possible -> impossible "possible"
         CT_Unknowable {} -> impossible "unknowable"
-      require = solRequire (show at) (solArg ctxt a)
+      require = solRequire (show (at, fs, mmsg)) (solArg ctxt a)
   DLE_Wait {} -> emptyDoc
   DLE_PartSet _ _ a -> (solArg ctxt a) <> sp
 

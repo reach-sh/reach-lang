@@ -255,12 +255,16 @@ set_to_seq = Seq.fromList . S.toList
 --- FYI, the last version that had Dan's display code was
 --- https://github.com/reach-sh/reach-lang/blob/ab15ea9bdb0ef1603d97212c51bb7dcbbde879a6/hs/src/Reach/Verify/SMT.hs
 
-display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Bool -> Maybe ResultDesc -> IO ()
-display_fail ctxt tat f tk tse repeated mrd = do
+display_fail :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString-> Bool -> Maybe ResultDesc -> IO ()
+display_fail ctxt tat f tk tse mmsg repeated mrd = do
   cwd <- getCurrentDirectory
   putStrLn $ "Verification failed:"
   putStrLn $ "  in " ++ (show $ ctxt_mode ctxt) ++ " mode"
   putStrLn $ "  of theorem " ++ show tk
+  case mmsg of
+    Nothing -> mempty
+    Just msg -> do
+      putStrLn $ "  msg: " <> show msg
   putStrLn $ redactAbsStr cwd $ "  at " ++ show tat
   mapM_ (putStrLn . ("  " ++) . show) f
   putStrLn $ ""
@@ -343,8 +347,8 @@ smtAssert ctxt se = SMT.assert smt $ smtAddPathConstraints ctxt se
   where
     smt = ctxt_smt ctxt
 
-verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> SMTComp
-verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
+verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SMTComp
+verify1 ctxt at mf tk se mmsg = SMT.inNewScope smt $ do
   smtAssert ctxt $ if isPossible then se else smtNot se
   r <- SMT.check smt
   case isPossible of
@@ -365,7 +369,7 @@ verify1 ctxt at mf tk se = SMT.inNewScope smt $ do
     bad mgetm = do
       mm <- mgetm
       dspd <- readIORef $ ctxt_displayed ctxt
-      display_fail ctxt at mf tk se (elem se dspd) mm
+      display_fail ctxt at mf tk se mmsg (elem se dspd) mm
       modifyIORef (ctxt_displayed ctxt) (S.insert se)
       modifyIORef (ctxt_res_fail ctxt) $ (1 +)
     isPossible =
@@ -463,7 +467,7 @@ smt_e ctxt at_dv mdv de =
         args' = map (smt_a ctxt at) args
         se = smtPrimOp ctxt cp args'
     DLE_ArrayRef at f arr_da sz idx_da -> do
-      verify1 ctxt at f TBounds check_se
+      verify1 ctxt at f TBounds check_se Nothing
       pathAddBound ctxt at_dv mdv bo se
       where
         se = smtApply "select" [arr_da', idx_da']
@@ -471,7 +475,7 @@ smt_e ctxt at_dv mdv de =
         arr_da' = smt_a ctxt at arr_da
         idx_da' = smt_a ctxt at idx_da
     DLE_ArraySet at f arr_da sz idx_da val_da -> do
-      verify1 ctxt at f TBounds check_se
+      verify1 ctxt at f TBounds check_se Nothing
       pathAddBound ctxt at_dv mdv bo se
       where
         se = smtApply "store" [arr_da', idx_da', val_da']
@@ -505,7 +509,7 @@ smt_e ctxt at_dv mdv de =
       pathAddBound ctxt at mdv bo se
       where
         se = smtApply "digest" [smtDigestCombine ctxt at args]
-    DLE_Claim at f ct ca _XXX_mmsg -> this_m
+    DLE_Claim at f ct ca mmsg -> this_m
       where
         this_m =
           case ct of
@@ -520,7 +524,7 @@ smt_e ctxt at_dv mdv de =
         ca' = smt_a ctxt at ca
         possible_m = check_m TPossible
         check_m tk =
-          verify1 ctxt at f tk ca'
+          verify1 ctxt at f tk ca' mmsg
         assert_m =
           smtAssert ctxt ca'
     DLE_Transfer {} ->
@@ -612,7 +616,7 @@ smt_block ctxt bm b = before_m <> after_m
         B_Assume False ->
           smtAssert ctxt (smtNot da')
         B_Prove ->
-          verify1 ctxt at f TInvariant da'
+          verify1 ctxt at f TInvariant da' Nothing
 
 gatherDefinedVars_m :: (LLCommon LLLocal) -> S.Set DLVar
 gatherDefinedVars_m m =

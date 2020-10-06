@@ -107,6 +107,7 @@ data EvalError
   | Err_Switch_DoubleCase SrcLoc SrcLoc (Maybe SLVar)
   | Err_Switch_MissingCases [SLVar]
   | Err_Switch_ExtraCases [SLVar]
+  | Err_Expected_Bytes SLVal
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -342,6 +343,8 @@ instance Show EvalError where
       "switch missing cases: " <> show cs
     Err_Switch_ExtraCases cs ->
       "switch contains extra cases: " <> show cs
+    Err_Expected_Bytes v ->
+      "expected bytes, got something else: " <> displaySlValType v
 
 --- Utilities
 zipEq :: Show e => SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -907,9 +910,20 @@ evalForm ctxt at sco st f args =
     SLForm_unknowable ->
       case st_mode st of
         SLM_Step -> do
-          let (notter_e, snd_part) = two_args
+          let (notter_e, snd_part, mmsg_e) =
+                case args of
+                  [x, y] -> (x, y, Nothing)
+                  [x, y, z] -> (x, y, Just z)
+                  _ -> illegal_args 2
           let (knower_e, whats_e) = jsCallLike at snd_part
-          SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st notter_e
+          SLRes lifts_m st_m mmsg <-
+            case mmsg_e of
+              Just x -> do
+                SLRes lifts_x st_x msgsv <- evalExpr ctxt at sco st x
+                let msgv = ensure_public at msgsv
+                return $ SLRes lifts_x st_x $ Just $ mustBeBytes at msgv
+              Nothing -> return $ SLRes mempty st Nothing
+          SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st_m notter_e
           let participant_who = \case
                 SLV_Participant _ who _ _ _ -> who
                 v -> expect_throw at $ Err_Unknowable_NotParticipant v
@@ -922,9 +936,8 @@ evalForm ctxt at sco st f args =
           let whats_v = map snd whats_sv
           let whats_da = map snd $ map (typeOf at) whats_v
           let ct = CT_Unknowable notter
-          let msgXXX = Nothing
-          let lifts' = return $ DLS_Let at Nothing (DLE_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da) msgXXX)
-          let lifts = lifts_n <> lifts_kn <> lifts_whats <> lifts'
+          let lifts' = return $ DLS_Let at Nothing (DLE_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da) mmsg)
+          let lifts = lifts_m <> lifts_n <> lifts_kn <> lifts_whats <> lifts'
           return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
         cm ->
           expect_throw at $ Err_Eval_IllegalMode cm $ "unknowable"
@@ -1032,7 +1045,7 @@ doAssertBalance ctxt at sco st lhs op = do
   let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
   SLRes res_lifts _ _ <-
     keepLifts (fr_lifts <> cmp_lifts) $
-      evalApplyVals ctxt at sco st ass_rator [ cmp_v ]
+      evalApplyVals ctxt at sco st ass_rator [ cmp_v, public $ SLV_Bytes at "balance assertion" ]
   return res_lifts
 
 doBalanceUpdate :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp s ()
@@ -1043,6 +1056,12 @@ doBalanceUpdate ctxt at sco st op rhs = do
     evalApplyVals ctxt at sco fr_st up_rator [ balance_v ]
   let fs_lifts = doFluidSet at FV_balance balance_v'
   return $ SLRes (fr_lifts <> lifts <> fs_lifts) st' ()
+
+mustBeBytes :: SrcLoc -> SLVal -> B.ByteString
+mustBeBytes at v =
+  case v of
+    SLV_Bytes _ x -> x
+    _ -> expect_throw at $ Err_Expected_Bytes v
 
 evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
 evalPrim ctxt at sco st p sargs =
@@ -1344,11 +1363,13 @@ evalPrim ctxt at sco st p sargs =
       where
         bad cm = expect_throw at $ Err_Eval_IllegalMode cm $ "assert " ++ show ct
         good = return $ SLRes lifts st $ public $ SLV_Null at "claim"
-        darg = case map snd sargs of
-          [arg] -> checkType at T_Bool arg
+        (darg, mmsg) = case map snd sargs of
+          [arg] ->
+            ( checkType at T_Bool arg, Nothing)
+          [arg, marg] ->
+            ( checkType at T_Bool arg, Just $ mustBeBytes at marg )
           _ -> illegal_args
-        msgXXX = Nothing
-        lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg msgXXX
+        lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg mmsg
     SLPrim_transfer ->
       case ensure_publics at sargs of
         [amt_sv] ->
@@ -1363,7 +1384,6 @@ evalPrim ctxt at sco st p sargs =
         SLM_ConsensusStep -> do
           let amt_dla = checkType at T_UInt256 amt_sv
           tbsuff <- doAssertBalance ctxt at sco st amt_sv PLE
-          --- XXX We can now remove the stack from DLE_Transfer
           SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
           let lifts = tbsuff <> (return $ DLS_Let at Nothing $ DLE_Transfer at who_dla amt_dla) <> balup
           return $ SLRes lifts st' $ public $ SLV_Null at "transfer.to"
@@ -2118,7 +2138,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
             SLRes cmp_lifts _ cmp_v <- evalApply ctxt at sco_env' st_pure cmp_rator [ amte ]
             let req_rator = SLV_Prim $ SLPrim_claim CT_Require
             keepLifts cmp_lifts $
-              evalApplyVals ctxt at sco_env' st_pure req_rator [ cmp_v ]
+              evalApplyVals ctxt at sco_env' st_pure req_rator [ cmp_v, public $ SLV_Bytes at $ "pay amount correct" ]
           (tlifts, mt_st_cr, mtime') <-
             case mtime of
               Nothing -> return $ (mempty, Nothing, Nothing)
@@ -2793,9 +2813,6 @@ compileDApp idxr liblifts topv =
               }
       let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
       SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
-      -- XXX This means we can remove fs from LLS_Stop, but it would be nice to
-      -- know which return point was the problem
-      -- XXX instead put an exit in the program text at the end?
       tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
       return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)
       where
