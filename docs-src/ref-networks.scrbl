@@ -47,7 +47,7 @@ The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generate
 execution.
 
 It uses finite on-chain state: two integers and one byte string.
-The DApp consists of one application, one contract-controlled escrow account, and @tt{N} contract-controlled handlers for each of the @tt{N} steps of your Reach program.
+The DApp consists of one application, one contract-controlled escrow account, and many contract-controlled handlers for each of the @tech{publications} of your Reach program.
 During compilation, the connector produces intermediate outputs for each of these contracts.
 These contracts embed references to each through their template arguments, which is done automatically by the Reach standard library implementation.
 
