@@ -1678,12 +1678,6 @@ evalExpr ctxt at sco st e = do
       SLRes clifts st_c csv@(clvl, cv) <- evalExpr ctxt at' sco st ce
       keepLifts clifts $
         case cv of
-          SLV_Bool _ cb ->
-            lvlMeetR clvl $ evalExpr ctxt n_at' sco st_c ne
-            where
-              (n_at', ne) = case cb of
-                True -> (t_at', te)
-                False -> (f_at', fe)
           SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) -> do
             SLRes tlifts st_t tsv@(tlvl, tv) <- evalExpr ctxt t_at' sco st_c te
             SLRes flifts st_f fsv@(flvl, fv) <- evalExpr ctxt f_at' sco st_c fe
@@ -1707,8 +1701,11 @@ evalExpr ctxt at sco st e = do
                 let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
                 let lifts' = return $ DLS_Prompt at' (Right ans_dv) body_lifts
                 return $ SLRes lifts' st_tf $ (lvl, SLV_DLVar ans_dv)
-          _ ->
-            lvlMeetR clvl $ evalExpr ctxt t_at' sco st_c te
+          _ -> do
+            let (n_at', ne) = case cv of
+                  SLV_Bool _ False -> (f_at', fe)
+                  _ -> (t_at', te)
+            lvlMeetR clvl $ evalExpr ctxt n_at' sco st_c ne
     JSArrowExpression aformals a bodys ->
       evalExpr ctxt at sco st e'
       where
@@ -2278,12 +2275,6 @@ evalStmt ctxt at sco st ss =
               _ -> sco {sco_must_ret = RS_MayBeEmpty}
       keepLifts clifts $
         case cv of
-          SLV_Bool _ cb -> do
-            let (n_at', ns) = case cb of
-                  True -> (t_at', ts)
-                  False -> (f_at', fs)
-            nr <- evalStmt ctxt n_at' sco' st_c [ns]
-            retSeqn nr at' ks_ne
           SLV_DLVar cond_dv@(DLVar _ _ T_Bool _) -> do
             SLRes tlifts st_t (SLStmtRes _ trets) <- evalStmt ctxt t_at' sco' st_c [ts]
             SLRes flifts st_f (SLStmtRes _ frets) <- evalStmt ctxt f_at' sco' st_c [fs]
@@ -2294,7 +2285,10 @@ evalStmt ctxt at sco st ss =
             let ir = SLRes lifts' st_tf $ combineStmtRes at' clvl (levelHelp trets) (levelHelp frets)
             retSeqn ir at' ks_ne
           _ -> do
-            nr <- evalStmt ctxt t_at' sco' st_c [ts]
+            let (n_at', ns) = case cv of
+                  SLV_Bool _ False -> (f_at', fs)
+                  _ -> (t_at', ts)
+            nr <- evalStmt ctxt n_at' sco' st_c [ns]
             retSeqn nr at' ks_ne
     (s@(JSLabelled _ a _) : _) ->
       --- FIXME We could allow labels on whiles and have a mapping in
