@@ -156,6 +156,8 @@ jsPrimApply _ctxt = \case
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitJS: ITE called with wrong number of arguments"
   BYTES_EQ -> jsApply "stdlib.bytesEq"
+  DIGEST_EQ -> jsApply "stdlib.digestEq"
+  ADDRESS_EQ -> jsApply "stdlib.addressEq"
 
 jsExpr :: JSCtxt -> DLExpr -> Doc a
 jsExpr ctxt = \case

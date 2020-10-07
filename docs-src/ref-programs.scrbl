@@ -891,13 +891,15 @@ All @tech{binary expression} operators have a corresponidng named function in th
 Note that while @reachin{&&} and @reachin{||} may not evaluate their second argument,
 their corresponding named functions @reachin{and} and @reachin{or}, always do.
 
-@(mint-define! '("boolEq") '("bytesEq") '("typeEq") '("intEq"))
+@(mint-define! '("boolEq") '("bytesEq") '("typeEq") '("intEq") '("digestEq") '("addressEq"))
 @reach{
- polyEq(a, b)  // eq on Bool, Bytes, types, or UInt256
- boolEq(a, b)  // eq on Bool
- bytesEq(a, b) // eq on Bytes
- typeEq(a, b)  // eq on types
- intEq(a, b)   // eq on UInt256
+ polyEq(a, b)    // eq on Bool, Bytes, types, or UInt256
+ boolEq(a, b)    // eq on Bool
+ bytesEq(a, b)   // eq on Bytes
+ typeEq(a, b)    // eq on types
+ intEq(a, b)     // eq on UInt256
+ digestEq(a, b)  // eq on Digest
+ addressEq(a, b) // eq on Addresses
 }
 
 Note that @reachin{==} is a function which operates on multiple types.

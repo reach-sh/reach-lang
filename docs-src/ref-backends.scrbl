@@ -318,7 +318,7 @@ the JavaScript representation of Reach's uint256.
 @deftech{isBigNumber} checks if its input is a BigNumber.
 
 @(hrule)
-@(mint-define! '("toHex") '("isHex") '("hexToString") '("hexToBigNumber") '("bigNumberToHex") '("uint256ToBytes") '("bytesEq"))
+@(mint-define! '("toHex") '("isHex") '("hexToString") '("hexToBigNumber") '("bigNumberToHex") '("uint256ToBytes") '("bytesEq") '("digestEq") '("addressEq"))
 @js{
  toHex(x) => bytes
  isHex(x) => bool
@@ -326,7 +326,9 @@ the JavaScript representation of Reach's uint256.
  hexToBigNumber(bytes) => uint256
  bigNumberToHex(uint256) => bytes
  uint256ToBytes(uint256) => bytes
- bytesEq(bytes, bytes) => bool }
+ bytesEq(bytes, bytes) => bool
+ digestEq(Digest, Digest) => bool
+ addressEq(Address, Address) => bool}
 
 These are additional conversion and comparison utilities.
 

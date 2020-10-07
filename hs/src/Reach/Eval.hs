@@ -473,6 +473,8 @@ base_env =
     , ("each", SLV_Form SLForm_each)
     , ("intEq", SLV_Prim $ SLPrim_op PEQ)
     , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
+    , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
+    , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
     , ("isType", SLV_Prim SLPrim_is_type)
     , ("typeEq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
@@ -977,6 +979,8 @@ evalPrimOp ctxt at _sco st p sargs =
         [SLV_Bytes _ x, SLV_Bytes _ y] ->
           static $ SLV_Bool at $ x == y
         _ -> make_var
+    DIGEST_EQ -> make_var
+    ADDRESS_EQ -> make_var
     -- FIXME fromIntegral may overflow the Int
     LSH -> nn2n (\a b -> shift a (fromIntegral b))
     RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))

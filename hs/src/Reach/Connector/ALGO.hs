@@ -259,6 +259,8 @@ cprim = \case
   BIOR -> call "|"
   BXOR -> call "^"
   BYTES_EQ -> call "=="
+  DIGEST_EQ -> call "=="
+  ADDRESS_EQ -> call "=="
   IF_THEN_ELSE -> const $ xxx "ITE"
   where
     call o = \args -> do

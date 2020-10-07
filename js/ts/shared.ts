@@ -461,6 +461,8 @@ export const bigNumberToHex = (u: num, size: number = 32) => {
 
 export const bytesEq = (x: any, y: any): boolean =>
   hexOf(x) === hexOf(y);
+export const digestEq = bytesEq;
+export const addressEq = bytesEq;
 
 export const randomUInt256 = (): BigNumber =>
   hexToBigNumber(byteArrayToHex(crypto.randomBytes(32)));

@@ -248,6 +248,8 @@ data PrimOp
   | PGT
   | IF_THEN_ELSE
   | BYTES_EQ
+  | DIGEST_EQ
+  | ADDRESS_EQ
   | LSH
   | RSH
   | BAND
@@ -268,6 +270,8 @@ primOpType PGE = [T_UInt256, T_UInt256] --> T_Bool
 primOpType PGT = [T_UInt256, T_UInt256] --> T_Bool
 primOpType IF_THEN_ELSE = T_Forall "b" (T_Forall "a" ([T_Var "b", T_Var "a", T_Var "a"] --> T_Var "a"))
 primOpType BYTES_EQ = ([T_Bytes, T_Bytes] --> T_Bool)
+primOpType DIGEST_EQ = ([T_Digest, T_Digest] --> T_Bool)
+primOpType ADDRESS_EQ = ([T_Address, T_Address] --> T_Bool)
 primOpType LSH = [T_UInt256, T_UInt256] --> T_UInt256
 primOpType RSH = [T_UInt256, T_UInt256] --> T_UInt256
 primOpType BAND = [T_UInt256, T_UInt256] --> T_UInt256

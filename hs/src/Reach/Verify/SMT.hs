@@ -200,6 +200,8 @@ smtPrimOp _ctxt p =
     BXOR -> bvapp "bvxor" cant
     IF_THEN_ELSE -> app "ite"
     BYTES_EQ -> app "="
+    DIGEST_EQ -> app "="
+    ADDRESS_EQ -> app "="
   where
     cant = impossible $ "Int doesn't support " ++ show p
     app n = smtApply n

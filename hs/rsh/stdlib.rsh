@@ -12,6 +12,10 @@ export const polyEq = (x, y) => {
     return boolEq(x, y);
   } else if (typeEq(ty_x, Bytes)) {
     return bytesEq(x, y);
+  } else if (typeEq(ty_x, Digest)) {
+    return digestEq(x, y);
+  } else if (typeEq(ty_x, Address)) {
+    return addressEq(x, y);
   } else if (isType(x)) {
     return typeEq(x, y);
   } else {

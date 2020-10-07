@@ -317,6 +317,8 @@ solPrimApply = \case
         (solEq (solBytesLength x) (solBytesLength y))
         (solEq (solHash [x]) (solHash [y]))
     _ -> impossible $ "emitSol: BYTES_EQ wrong args"
+  DIGEST_EQ -> binOp "=="
+  ADDRESS_EQ -> binOp "=="
   where
     binOp op = \case
       [l, r] -> solBinOp op l r
