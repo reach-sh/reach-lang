@@ -1,11 +1,19 @@
-module Reach.Connector (ConnectorInfo, ConnectorResult, Connector) where
+module Reach.Connector (ConnectorInfoMap, ConnectorInfo (..), ConnectorResult, Connector) where
 
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import Reach.AST
 
-type ConnectorInfo =
-  M.Map String T.Text
+type ConnectorInfoMap
+  = M.Map String ConnectorInfo
+
+data ConnectorInfo
+  = CI_Null
+  | CI_Bool Bool
+  | CI_Int Integer
+  | CI_Text T.Text
+  | CI_Array [ConnectorInfo]
+  | CI_Obj ConnectorInfoMap
 
 type ConnectorResult =
   M.Map String ConnectorInfo

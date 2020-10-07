@@ -65,7 +65,7 @@ export const setDEBUG = (b: boolean) => {
 export const getDEBUG = (): boolean => { return DEBUG; };
 export const debug = (msg: any) => {
   if (getDEBUG()) {
-    console.log(`DEBUG: ${msg}`);
+    console.log(`[${(new Date()).toISOString()}] DEBUG: ${msg}`);
   }
 };
 

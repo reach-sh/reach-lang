@@ -740,7 +740,7 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
       mapM_ (_solDefineType tcr timr tmr) $ S.toList ts
       liftM2 (,) (readSTRef timr) (readSTRef tmr)
 
-solPLProg :: PLProg -> (ConnectorInfo, Doc a)
+solPLProg :: PLProg -> (ConnectorInfoMap, Doc a)
 solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
   (cinfo, vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp])
   where
@@ -766,7 +766,7 @@ solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
             SolTailRes _ consbody = solCTail ctxt (CT_From at (Just []))
         DM_firstMsg ->
           emptyDoc
-    cinfo = M.fromList [("deployMode", T.pack $ show plo_deployMode)]
+    cinfo = M.fromList [("deployMode", CI_Text $ T.pack $ show plo_deployMode)]
     state_defn = "uint256 current_state;"
     preamble =
       vsep
@@ -798,7 +798,7 @@ instance FromJSON CompiledSolRec where
       Nothing ->
         fail "Expected contracts object to have a key with suffix ':ReachContract'"
 
-extract :: ConnectorInfo -> Value -> Either String ConnectorResult
+extract :: ConnectorInfoMap -> Value -> Either String ConnectorResult
 extract cinfo v = case fromJSON v of
   Error e -> Left e
   Success CompiledSolRec {..} ->
@@ -808,11 +808,11 @@ extract cinfo v = case fromJSON v of
         Right $
           M.fromList
             [ ( "ETH"
-              , M.union
+              , CI_Obj $ M.union
                   (M.fromList
-                     [ ("ABI", csrAbi_pretty)
+                     [ ("ABI", CI_Text csrAbi_pretty)
                      , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
-                       ("Bytecode", "0x" <> csrCode)
+                       ("Bytecode", CI_Text $ "0x" <> csrCode)
                      ])
                   cinfo
               )
@@ -821,7 +821,7 @@ extract cinfo v = case fromJSON v of
           csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
           cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
 
-compile_sol :: ConnectorInfo -> FilePath -> IO ConnectorResult
+compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorResult
 compile_sol cinfo solf = do
   (ec, stdout, stderr) <-
     readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin,opcodes", solf] []

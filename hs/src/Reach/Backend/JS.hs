@@ -409,8 +409,17 @@ jsPart p (EPProg _ _ et) =
         }
     bodyp' = jsETail ctxt et
 
-jsCnp :: String -> M.Map String T.Text -> Doc a
-jsCnp name cnp = "const" <+> "_" <> pretty name <+> "=" <+> jsObject (M.map jsBacktickText cnp) <> semi
+jsConnInfo :: ConnectorInfo -> Doc a
+jsConnInfo = \case
+  CI_Null -> jsCon DLC_Null
+  CI_Bool b -> jsCon $ DLC_Bool b
+  CI_Int i -> pretty i
+  CI_Text t -> jsBacktickText t
+  CI_Array a -> jsArray $ map jsConnInfo a
+  CI_Obj m -> jsObject $ M.map jsConnInfo m
+
+jsCnp :: String -> ConnectorInfo -> Doc a
+jsCnp name cnp = "const" <+> "_" <> pretty name <+> "=" <+> (jsConnInfo cnp) <> semi
 
 jsConnsExp :: [String] -> Doc a
 jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> semi

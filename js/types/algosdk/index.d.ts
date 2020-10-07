@@ -63,7 +63,6 @@ declare module 'algosdk' {
     hash: string
   }
 
-  // TODO: BigNumber not any, without breaking everything
   declare function makePaymentTxnWithSuggestedParams(
       from: Address, to: Address, amount: number, closeRemainderTo: undefined,
       note: Uint8Array, params: TxnParams

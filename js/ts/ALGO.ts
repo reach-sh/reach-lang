@@ -10,10 +10,8 @@ import {
   isBigNumber, bigNumberify,
   bigNumberToHex, hexToBigNumber,
   T_UInt256, T_Bool, setDigestWidth,
-  getDEBUG /*, setDEBUG */ } from './shared';
+  getDEBUG } from './shared';
 export * from './shared';
-
-// setDEBUG(true);
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
@@ -76,16 +74,13 @@ type Account = {
   networkAccount: NetworkAccount,
 };
 
-type BoolString = 'True' | 'False';
 type Backend = {_Connectors: {ALGO: {
   appApproval0: string,
   appApproval: string,
   appClear: string,
   ctc: string,
-  steps: string,
-  // m1 -- mN
-  [key: string]: string,
-  unsupported: BoolString,
+  steps: Array<string|null>,
+  unsupported: boolean,
 }}};
 
 type Digest = BigNumber;
@@ -104,7 +99,7 @@ type CompiledBackend = {
   appApproval: CompileResultBytes,
   appClear: CompileResultBytes,
   ctc: CompileResultBytes,
-  steps: { [key: string]: CompileResultBytes },
+  steps: Array<CompileResultBytes|null>,
 };
 
 type Recv = {
@@ -289,7 +284,7 @@ const replaceAddr = (label: string, addr: Address, x:string): string =>
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported } = algob;
-  if ( unsupported == `True` ) {
+  if ( unsupported ) {
     throw Error(`This Reach application is not supported on Algorand.`);
   }
 }
@@ -299,15 +294,6 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
   const algob = bin._Connectors.ALGO;
 
   const { appApproval, appClear, ctc, steps } = algob;
-  const stepsN = parseInt(steps);
-  const stepCode: { [key: string]: string } = {};
-  for ( let i = 1; i <= stepsN; i++ ) {
-    const key = `m${i}`
-    stepCode[key] = algob[key];
-    if ( !stepCode[key] ) {
-      throw Error(`Expected ${key} in ${JSON.stringify(algob)}`);
-    }
-  }
 
   const subst_appid = (x: string) =>
     replaceUint8Array(
@@ -320,16 +306,17 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
   const subst_ctc = (x: string) =>
     replaceAddr('ContractAddr', ctc_bin.hash, x);
 
-  const stepCode_bin: { [key: string]: CompileResultBytes } = {};
   let appApproval_subst = appApproval;
-  for ( const mN in stepCode  ) {
-    const mc = stepCode[mN];
-    const mc_subst = subst_ctc(subst_appid(mc));
-    const cr = await compileTEAL(mN, mc_subst);
-    stepCode_bin[mN] = cr;
-    appApproval_subst =
-      replaceAddr(mN, cr.hash, appApproval_subst);
-  }
+  const stepCode_bin: Array<CompileResultBytes|null> =
+    await Promise.all(steps.map(async (mc, mi) => {
+      if ( !mc ) { return null; }
+      const mN = `m${mi}`;
+      const mc_subst = subst_ctc(subst_appid(mc));
+      const cr = await compileTEAL(mN, mc_subst);
+      appApproval_subst =
+        replaceAddr(mN, cr.hash, appApproval_subst);
+      return cr;
+  }));
 
   const appApproval_bin =
     await compileTEAL('appApproval_subst', appApproval_subst);
@@ -459,7 +446,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeout_delay}`;
       debug(`${dhead} --- START`);
-      const handler = bin_comp.steps[funcName];
+
+      const handler = bin_comp.steps[funcNum];
+      if ( ! handler ) {
+        throw Error(`${dhead} Internal error: reference to undefined handler: ${funcName}`); }
 
       // XXX become the monster
       setDigestWidth(8);
@@ -613,7 +603,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
       debug(`${dhead} --- START`);
-      const handler = bin_comp.steps[funcName];
+
+      const handler = bin_comp.steps[funcNum];
+      if ( ! handler ) {
+        throw Error(`${dhead} Internal error: reference to undefined handler: ${funcName}`); }
 
       const timeoutRound =
         timeout_delay ?
@@ -701,8 +694,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     debug(`${shad} deploy`);
     const algob = bin._Connectors.ALGO;
 
-    const { appApproval0, appClear, steps } = algob;
-    const stepsN = parseInt(steps);
+    const { appApproval0, appClear } = algob;
 
     const appApproval0_subst =
       replaceAddr('Deployer', thisAcc.addr, appApproval0);
@@ -743,16 +735,16 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         minBalance,
         undefined, ui8z,
         params);
-    const txnToHandlers = [];
-    for ( let i = 1; i <= stepsN; i++ ) {
-      const key = `m${i}`;
-      txnToHandlers.push(
-        algosdk.makePaymentTxnWithSuggestedParams(
+    const txnToHandlers: Array<Txn> =
+      bin_comp.steps.flatMap((sc: CompileResultBytes|null): Array<Txn> => {
+        if ( ! sc) { return []; }
+        return [algosdk.makePaymentTxnWithSuggestedParams(
           thisAcc.addr,
-          bin_comp.steps[key].hash,
+          sc!.hash,
           minBalance,
           undefined, ui8z,
-          params)); }
+          params)];
+    });
 
     const txns = [
       txnUpdate,

@@ -641,24 +641,24 @@ compile_algo disp pl = do
     writeIORef sFailedR True
   let shared = Shared {..}
   let addProg lab t = do
-        modifyIORef resr (M.insert lab t)
+        modifyIORef resr (M.insert lab $ CI_Text t)
         disp lab t
-  --- FIXME this is really lame
-  countR <- newIORef (0 :: Int)
-  hchecks <- forM (M.toList hm) $ \(hi, hh) -> do
+  hm_res <- forM (M.toAscList hm) $ \(hi, hh) -> do
     mht <- ch shared hi hh
     case mht of
-      Nothing -> return $ return ()
+      Nothing -> return (CI_Null, return ())
       Just ht -> do
-        modifyIORef countR (1 +)
         let lab = "m" <> show hi
-        addProg lab $ render ht
-        return $ do
+        return (CI_Text (render ht),  do
           code "gtxn" [texty txnFromHandler, "Sender"]
           code "byte" [template $ LT.pack lab]
           op "=="
-          op "||"
-  howManySteps <- readIORef countR
+          op "||")
+  let (steps_, hchecks) = unzip hm_res
+  let steps = CI_Null : steps_
+  modifyIORef resr $ M.insert "steps" $ CI_Array steps
+  let howManySteps = length $ filter (\case CI_Text _ -> True
+                                            _ -> False) steps
   let simple m = runApp shared 0 mempty $ m >> std_footer
   app0m <- simple $ do
     comment "Check that we're an App"
@@ -787,9 +787,8 @@ compile_algo disp pl = do
   addProg "ctc" $ render ctcm
   res0 <- readIORef resr
   sFailed <- readIORef sFailedR
-  let res1 = M.insert "unsupported" (T.pack $ show sFailed) res0
-  let res2 = M.insert "steps" (T.pack $ show howManySteps) res1
-  return res2
+  let res1 = M.insert "unsupported" (CI_Bool sFailed) res0
+  return $ CI_Obj res1
 
 connect_algo :: Connector
 connect_algo moutn pl = do
