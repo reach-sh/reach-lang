@@ -268,6 +268,7 @@ Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thro
  T_Bool => ReachType
  T_UInt256 => ReachType
  T_Bytes => ReachType
+ T_Digest => ReachType
  T_Address => ReachType
  T_Array(ReachType, number) => ReachType
  T_Tuple([ReachType ...]) => ReachType
@@ -283,6 +284,7 @@ See the table below for Reach types and their corresponding JavaScript represent
  Bool      => 'boolean'
  UInt256   => 'BigNumber' or 'number'
  Bytes     => 'string'
+ Digest    => 'BigNumber'
  Address   => 'string'
  Array     => array
  Tuple     => array
@@ -329,9 +331,9 @@ the JavaScript representation of Reach's uint256.
 These are additional conversion and comparison utilities.
 
 @(hrule)
-@(mint-define! '("keccak256"))
+@(mint-define! '("digest"))
 @js{
- keccak256(x) => uint256}
+ digest(x) => Digest}
 
 Hashes the value.
 

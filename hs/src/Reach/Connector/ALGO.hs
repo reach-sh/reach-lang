@@ -196,6 +196,7 @@ ctobs = \case
   T_Bool -> op "itob"
   T_Null -> op "itob"
   T_Bytes -> nop
+  T_Digest -> nop
   T_Address -> nop
   T_Fun {} -> impossible "fun"
   T_Array {} -> xxx "array to bs"
@@ -212,6 +213,7 @@ cfrombs = \case
   T_Bool -> op "btoi"
   T_Null -> op "btoi"
   T_Bytes -> nop
+  T_Digest -> nop
   T_Address -> nop
   T_Fun {} -> impossible "fun"
   T_Array {} -> xxx "array from bs"

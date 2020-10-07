@@ -15,7 +15,7 @@ import {
   eq,
   getDEBUG,
   isBigNumber,
-  keccak256,
+  digest,
   lt,
   TyContract,
   IContract,
@@ -879,7 +879,7 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
 
   if (isNone(argsMay)) {
     const st = await provider.getStorageAt(address, 0, creation_block);
-    const expectedSt = keccak256(0, creation_block);
+    const expectedSt = digest(0, creation_block);
     if (st !== expectedSt) {
       console.log('st expected: ' + expectedSt);
       console.log('st actual  : ' + st);

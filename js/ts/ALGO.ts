@@ -9,7 +9,7 @@ import {
   CurrencyAmount, debug,
   isBigNumber, bigNumberify,
   bigNumberToHex, hexToBigNumber,
-  T_UInt256, T_Bool, setDigestWidth,
+  T_UInt256, T_Bool, T_Digest, setDigestWidth,
   getDEBUG } from './shared';
 export * from './shared';
 
@@ -494,7 +494,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const actual_args =
         [ sim_r.prevSt, sim_r.nextSt, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
-        [ T_UInt256, T_UInt256, T_Bool, T_UInt256, T_UInt256, ...tys ];
+        [ T_Digest, T_Digest, T_Bool, T_UInt256, T_UInt256, ...tys ];
       debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
       const munged_args =
         // XXX this needs to be customized for Algorand, so I don't have to safeify. Ideally munge would return Uint8Array for everything.
@@ -779,42 +779,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     debug(`${shad} application created`);
     return await attachP(bin, getInfo());
   };
-
-//   const deploy = async (bin) => {
-
-//     debug(`${shad}: deploy: making account`);
-//     const ctc_acc = algosdk.generateAccount();
-
-//     debug(`${shad}: deploy: filling transaction`);
-//     const appTxn = await fillTxn(default_range_width, {
-//       // FIXME JS SDK doesn't handle this kind of txn
-//       'from': thisAcc.addr,
-//       'type': 'appl',
-//       'ApplicationId': 0,
-//       'OnCompletion': 'noOp',
-//       'ApplicationArgs': [],
-//       'ApprovalProgram': ApprovalProgram,
-//       'ClearStateProgram': ClearStateProgram,
-//       'GlobalStateSchema': { 'NumByteSlice': 2 },
-//       'Accounts': [ctc_acc.addr],
-//       // FIXME: Use note field for link to Reach code
-//     });
-//     debug(`${shad}: deploy: signing transction`);
-//     const signedTxn = algosdk.signTransaction(appTxn, thisAcc.sk);
-//     debug(`${shad}: deploy: txn signed, sending`);
-//     const confirmedTxn = await sendAndConfirm(signedTxn);
-//     debug(`${shad}: deploy: application confirmed`);
-//     const appId = confirmedTxn.TransactionResults.CreatedAppIndex;
-//     const creationRound = confirmedTxn.round;
-
-//     // FIXME relies on https://github.com/algorand/go-algorand/issues/1051 fix
-//     const logic_sig = algosdk.makeLogicSig(Buffer.from(LogicSigProgram, 'base64'), [appId]);
-//     logic_sig.sign(ctc_acc.sk);
-
-//     const ctc = { address: ctc_acc.addr, appId, creationRound, logic_sig };
-
-//     return attach(bin, ctc);
-//   };
 
   /**
    * @description Push await down into the functions of a ContractAttached

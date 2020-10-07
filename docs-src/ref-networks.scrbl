@@ -15,6 +15,8 @@ The @link["https://ethereum.org/"]{Ethereum} Reach @tech{connector} generates a 
 manages one instance of the @|DApp|'s execution. It is guaranteed to
 use exactly one word of on-chain state, while each piece of @tech{consensus state} appears as a transaction argument.
 
+Etheruem uses the Keccak256 algorithm to perform @tech{digest}s.
+
 The connector provides a binding named @reachin{ETH} to
 @tech{backends}.
 
@@ -53,6 +55,8 @@ These contracts embed references to each through their template arguments, which
 
 It relies on a patched version of @tt{algod} that includes @link["https://github.com/algorand/go-algorand/pull/1533"]{our implementation of stateless contract argument inspection}.
 It uses the Algorand @tt{indexer} version 2 to lookup and monitor @tech{publications}; in other words, it does @emph{not} rely on any communication network other than Algorand itself.
+
+Algorand uses the Keccak256 algorithm to perform @tech{digest}s.
 
 The connector provides a binding named @reachin{ALGO} to
 @tech{backends}.

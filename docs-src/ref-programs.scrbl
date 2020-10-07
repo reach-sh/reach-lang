@@ -756,6 +756,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Bool")) @reachin{Bool}, which denotes a boolean.}
   @item{@(mint-define! '("UInt256")) @reachin{UInt256}, which denotes an unsigned integer of 256 bits.}
   @item{@(mint-define! '("Bytes")) @reachin{Bytes}, which denotes a string of bytes.}
+  @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
   @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a function type.}
   @item{@(mint-define! '("Tuple")) @reachin{Tuple(Field_0, ..., FieldN)}, which denotes a tuple.
@@ -1213,7 +1214,9 @@ It accepts an optional bytes argument, which is included in any reported violati
 @reach{
  digest( arg_0, ..., arg_n ) }
 
-The @tech{digest} primitive performs a @link["https://en.wikipedia.org/wiki/Cryptographic_hash_function"]{cryptographic hash} of the binary encoding of the given arguments, using the Keccak256 algorithm.
+The @tech{digest} primitive performs a @link["https://en.wikipedia.org/wiki/Cryptographic_hash_function"]{cryptographic hash} of the binary encoding of the given arguments.
+This returns a @reachin{Digest} value.
+The exact algorithm used depends on the @tech{connector}.
 
 @subsubsection{@tt{balance}}
 

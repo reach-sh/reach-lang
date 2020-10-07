@@ -32,7 +32,9 @@
 ;;          (= (bytesAppend x (bytesAppend y z))
 ;;             (bytesAppend (bytesAppend x y) z))))
 
-(declare-fun digest (Bytes) UInt256)
+(declare-sort Digest 0)
+(declare-fun digest (Bytes) Digest)
+(declare-fun Digest_toBytes (Digest) Bytes)
 
 (declare-sort Null 0)
 (declare-fun null () Null)

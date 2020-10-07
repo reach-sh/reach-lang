@@ -187,6 +187,9 @@ export const T_Bytes: TyContract<string> = {
   defaultValue: '0x0',
 };
 
+export const T_Digest: TyContract<BigNumber> =
+  Object.assign({}, T_UInt256, { name: 'Digest' });
+
 // TODO: use a wrapper type for canonicalized form
 export const T_Address: TyContract<string> = {
   name: 'Address',
@@ -436,7 +439,7 @@ export const isHex = isHexString;
 export const hexToString = toUtf8String;
 
 // XXX the JS backend expects this to be a BigNumber
-export const keccak256 = (...args: Array<any>) => {
+export const digest = (...args: Array<any>) => {
   const kekCat = kek(args);
   const r = ethers.utils.keccak256(kekCat);
   debug(`keccak(${JSON.stringify(args)}) => internal(${JSON.stringify(kekCat)}) => ${JSON.stringify(r)}`);

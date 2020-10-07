@@ -77,6 +77,7 @@ jsContract = \case
   T_Bool -> "stdlib.T_Bool"
   T_UInt256 -> "stdlib.T_UInt256"
   T_Bytes -> "stdlib.T_Bytes"
+  T_Digest -> "stdlib.T_Digest"
   T_Address -> "stdlib.T_Address"
   T_Fun {} -> impossible "fun dl"
   T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLC_Int sz)]
@@ -132,7 +133,7 @@ jsArg = \case
 
 jsDigest :: [DLArg] -> Doc a
 jsDigest as =
-  jsApply "stdlib.keccak256" $ map jsArg as
+  jsApply "stdlib.digest" $ map jsArg as
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply _ctxt = \case

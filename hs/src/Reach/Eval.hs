@@ -129,6 +129,7 @@ displayTy = \case
   T_Bool -> "bool"
   T_UInt256 -> "uint256"
   T_Bytes -> "bytes"
+  T_Digest -> "digest"
   T_Address -> "address"
   T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
   T_Array _ty _sz -> "array" -- <> displayTyList tys
@@ -1359,7 +1360,7 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_committed -> illegal_args
     SLPrim_digest -> do
-      let rng = T_UInt256
+      let rng = T_Digest
       let dargs = map snd $ map ((typeOf at) . snd) sargs
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "digest") rng) (DLE_Digest at dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)

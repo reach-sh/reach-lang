@@ -222,6 +222,7 @@ mustBeMem = \case
   T_Bool -> False
   T_UInt256 -> False
   T_Bytes -> True
+  T_Digest -> False
   T_Address -> False
   T_Fun {} -> impossible "fun"
   T_Array {} -> True
@@ -277,6 +278,7 @@ solArg ctxt da =
       T_Bool -> "false"
       T_Null -> "false"
       T_Bytes -> "\"\"" -- XXX is this valid?
+      T_Digest -> "0"
       T_Address -> "0x" <> pretty (replicate 64 '0')
       T_Fun {} -> impossible "defaultVal for Fun"
       T_Array ty n -> solArrayLit $ replicate (fromInteger n) $ defaultVal ty
@@ -661,6 +663,7 @@ _solDefineType1 getTypeName i name = \case
   T_Bool -> base
   T_UInt256 -> base
   T_Bytes -> base
+  T_Digest -> base
   T_Address -> base
   T_Fun {} -> impossible "fun in ct"
   T_Forall {} -> impossible "forall in pl"
@@ -729,6 +732,7 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
         , (T_Bool, "bool")
         , (T_UInt256, "uint256")
         , (T_Bytes, "bytes")
+        , (T_Digest, "uint256")
         , (T_Address, "address payable")
         ]
     base_tm = M.map (\t -> Just (t, emptyDoc)) base_typem

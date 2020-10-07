@@ -105,6 +105,7 @@ data SLType
   | T_Bool
   | T_UInt256
   | T_Bytes
+  | T_Digest
   | T_Address
   | T_Fun [SLType] SLType
   | T_Array SLType Integer
@@ -130,6 +131,7 @@ funFold z k fun = go
       T_Bool -> z
       T_UInt256 -> z
       T_Bytes -> z
+      T_Digest -> z
       T_Address -> z
       T_Fun inTys outTy -> fun inTys outTy
       T_Array ty _ -> go ty
@@ -171,6 +173,7 @@ instance Show SLType where
   show T_Bool = "Bool"
   show T_UInt256 = "UInt256"
   show T_Bytes = "Bytes"
+  show T_Digest = "Digest"
   show T_Address = "Address"
   show (T_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
   show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"

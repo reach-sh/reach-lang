@@ -29,6 +29,7 @@ instance CollectsTypes SLType where
         T_Bool -> mempty
         T_UInt256 -> mempty
         T_Bytes -> mempty
+        T_Digest -> mempty
         T_Address -> mempty
         T_Fun dom rng -> cts dom <> cts rng
         T_Array e _ -> cts e
