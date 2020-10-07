@@ -209,6 +209,7 @@ data SLVal
   | SLV_Data SrcLoc (M.Map SLVar SLType) SLVar SLVal
   | SLV_DLVar DLVar
   | SLV_Type SLType
+  | SLV_Connector String
   | --- FIXME I think we can delete some of these fields, like the SLVal and the M DLVar
     SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
@@ -598,7 +599,9 @@ data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
   deriving (Eq, Generic, NFData, Show)
 
-data DLOpts = DLOpts {dlo_deployMode :: DeployMode}
+data DLOpts = DLOpts 
+  { dlo_deployMode :: DeployMode
+  , dlo_connectors :: [String] }
   deriving (Eq, Generic, NFData, Show)
 
 data DLProg

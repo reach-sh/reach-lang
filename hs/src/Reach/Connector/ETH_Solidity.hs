@@ -802,7 +802,7 @@ instance FromJSON CompiledSolRec where
       Nothing ->
         fail "Expected contracts object to have a key with suffix ':ReachContract'"
 
-extract :: ConnectorInfoMap -> Value -> Either String ConnectorResult
+extract :: ConnectorInfoMap -> Value -> Either String ConnectorInfo
 extract cinfo v = case fromJSON v of
   Error e -> Left e
   Success CompiledSolRec {..} ->
@@ -810,22 +810,19 @@ extract cinfo v = case fromJSON v of
       Left e -> Left e
       Right (csrAbi_parsed :: Value) ->
         Right $
-          M.fromList
-            [ ( "ETH"
-              , CI_Obj $ M.union
-                  (M.fromList
-                     [ ("ABI", CI_Text csrAbi_pretty)
-                     , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
-                       ("Bytecode", CI_Text $ "0x" <> csrCode)
-                     ])
-                  cinfo
-              )
-            ]
+          CI_Obj $
+            M.union
+              (M.fromList
+                 [ ("ABI", CI_Text csrAbi_pretty)
+                 , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
+                   ("Bytecode", CI_Text $ "0x" <> csrCode)
+                 ])
+              cinfo
         where
           csrAbi_pretty = T.pack $ LB.unpack $ encodePretty' cfg csrAbi_parsed
           cfg = defConfig {confIndent = Spaces 2, confCompare = compare}
 
-compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorResult
+compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do
   (ec, stdout, stderr) <-
     readProcessWithExitCode "solc" ["--optimize", "--combined-json", "abi,bin,opcodes", solf] []
@@ -851,14 +848,17 @@ compile_sol cinfo solf = do
               ++ "\n"
 
 connect_eth :: Connector
-connect_eth outnMay pl = case outnMay of
-  Just outn -> go (outn "sol")
-  Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
-    go (dir </> "compiled.sol")
+connect_eth = Connector {..}
   where
-    go :: FilePath -> IO ConnectorResult
-    go solf = do
-      let (cinfo, sol) = solPLProg pl
-      unless dontWriteSol $ do
-        writeFile solf (show sol)
-      compile_sol cinfo solf
+    conName = "ETH"
+    conGen outnMay pl = case outnMay of
+      Just outn -> go (outn "sol")
+      Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->
+        go (dir </> "compiled.sol")
+      where
+        go :: FilePath -> IO ConnectorInfo
+        go solf = do
+          let (cinfo, sol) = solPLProg pl
+          unless dontWriteSol $ do
+            writeFile solf (show sol)
+          compile_sol cinfo solf

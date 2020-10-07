@@ -160,6 +160,7 @@ slToDL _at v =
       DLA_Data t vn <$> slToDL at' sv
     SLV_DLVar dv -> return $ DLA_Var dv
     SLV_Type _ -> Nothing
+    SLV_Connector _ -> Nothing
     SLV_Participant _ _ _ _ mdv ->
       case mdv of
         Nothing -> Nothing

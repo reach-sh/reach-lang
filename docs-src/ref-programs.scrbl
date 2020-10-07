@@ -171,6 +171,14 @@ It supports the following options:
  See @seclink["guide-deploymode"]{the guide on deployment modes} for a discussion of why to choose a particular mode.}
  )
 
+(list
+ @(begin @(mint-define! '("connectors")) @reachin{connectors})
+ @~
+ @para{@(mint-define! '("ETH") '("ALGO")) @reachin{[ETH, ALGO]} (default)}
+ @~
+ @para{A tuple of the connectors that the application should be compiled for.
+ By default, all available connectors are chosen.})
+
 )]
 
 The @reachin{participantDefinitions} argument is an tuple of tuples.

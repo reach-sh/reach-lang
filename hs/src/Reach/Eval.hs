@@ -18,6 +18,7 @@ import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST
+import Reach.Connector
 import Reach.JSUtil
 import Reach.Parser
 import Reach.STCounter
@@ -1053,10 +1054,10 @@ doAssertBalance ctxt at sco st lhs op = do
 doArrayBoundsCheck :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> Integer -> SLVal -> SLComp s a -> SLComp s a
 doArrayBoundsCheck ctxt at sco st sz idxv m = do
   SLRes cmp_lifts _ (SLAppRes _ cmp_v) <-
-    evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_op PLT) [ public idxv, public $ SLV_Int at sz ]
+    evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_op PLT) [public idxv, public $ SLV_Int at sz]
   SLRes check_lifts _ _ <-
     evalApplyVals ctxt at sco st (SLV_Prim $ SLPrim_claim CT_Assert) $
-      [ cmp_v, public $ SLV_Bytes at "array bounds check" ]
+      [cmp_v, public $ SLV_Bytes at "array bounds check"]
   let lifts = cmp_lifts <> check_lifts
   keepLifts lifts $ m
 
@@ -2701,8 +2702,8 @@ evalTopBody ctxt at st libm env exenv body =
 
 type SLMod = (ReachSource, [JSModuleItem])
 
-evalLib :: STCounter s -> SLMod -> (DLStmts, SLLibs) -> ST s (DLStmts, SLLibs)
-evalLib idxr (src, body) (liblifts, libm) = do
+evalLib :: STCounter s -> Connectors -> SLMod -> (DLStmts, SLLibs) -> ST s (DLStmts, SLLibs)
+evalLib idxr cns (src, body) (liblifts, libm) = do
   let at = srcloc_src src
   let st =
         SLState
@@ -2713,16 +2714,20 @@ evalLib idxr (src, body) (liblifts, libm) = do
           }
   let ctxt_top =
         (SLCtxt
-           { ctxt_dlo = app_default_opts
+           { ctxt_dlo = (app_default_opts $ M.keys cns)
            , ctxt_id = idxr
            , ctxt_stack = []
            , ctxt_local_mname = Nothing
            , ctxt_base_penvs = mempty
            })
+  let base_env' =
+        M.union base_env $
+          M.mapWithKey
+            (\k _ -> SLSSVal srcloc_builtin Public $ SLV_Connector k) cns
   let stdlib_env =
         case src of
-          ReachStdLib -> base_env
-          ReachSourceFile _ -> M.union (libm M.! ReachStdLib) base_env
+          ReachStdLib -> base_env'
+          ReachSourceFile _ -> M.union (libm M.! ReachStdLib) base_env'
   let (prev_at, body') =
         case body of
           ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a hs) sp)) : j)
@@ -2733,8 +2738,8 @@ evalLib idxr (src, body) (liblifts, libm) = do
     evalTopBody ctxt_top prev_at st libm stdlib_env mt_env body'
   return $ (liblifts <> more_lifts, M.insert src exenv libm)
 
-evalLibs :: STCounter s -> [SLMod] -> ST s (DLStmts, SLLibs)
-evalLibs idxr mods = foldrM (evalLib idxr) (mempty, mempty) mods
+evalLibs :: STCounter s -> Connectors -> [SLMod] -> ST s (DLStmts, SLLibs)
+evalLibs idxr cns mods = foldrM (evalLib idxr cns) (mempty, mempty) mods
 
 makeInteract :: SrcLoc -> SLPart -> SLEnv -> SLVal
 makeInteract at who spec = SLV_Object at lab spec'
@@ -2747,13 +2752,25 @@ makeInteract at who spec = SLV_Object at lab spec'
     -- TODO: add idAt info to the err below?
     wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract $ sss_sls v
 
-app_default_opts :: DLOpts
-app_default_opts =
-  DLOpts {dlo_deployMode = DM_constructor}
+app_default_opts :: [String] -> DLOpts
+app_default_opts cns =
+  DLOpts { dlo_deployMode = DM_constructor
+         , dlo_connectors = cns }
 
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
-app_options = M.fromList [("deployMode", opt_deployMode)]
+app_options = M.fromList [("deployMode", opt_deployMode)
+                         ,("connectors", opt_connectors)]
   where
+    opt_connectors opts v =
+      case v of
+        SLV_Tuple _ vs ->
+          case traverse f vs of
+            Left x -> Left x
+            Right y -> Right $ opts { dlo_connectors = y }
+          where
+            f (SLV_Connector cn) = Right $ cn
+            f _ = Left $ "expected connector"
+        _ -> Left $ "expected tuple"
     opt_deployMode opts v =
       case v of
         SLV_Bytes _ "firstMsg" -> up DM_firstMsg
@@ -2765,11 +2782,11 @@ app_options = M.fromList [("deployMode", opt_deployMode)]
       where
         up m = Right $ opts {dlo_deployMode = m}
 
-compileDApp :: STCounter s -> DLStmts -> SLVal -> ST s DLProg
-compileDApp idxr liblifts topv =
+compileDApp :: STCounter s -> DLStmts -> Connectors -> SLVal -> ST s DLProg
+compileDApp idxr liblifts cns topv =
   case topv of
     SLV_Prim (SLPrim_App_Delay at opts partvs (JSBlock _ top_ss _) top_env top_env_wps) -> do
-      let dlo = M.foldrWithKey use_opt app_default_opts (M.map sss_val opts)
+      let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) (M.map sss_val opts)
             where
               use_opt k v acc =
                 case M.lookup k app_options of
@@ -2824,10 +2841,10 @@ compileDApp idxr liblifts topv =
     _ ->
       expect_throw srcloc_top (Err_Top_NotApp topv)
 
-compileBundleST :: JSBundle -> SLVar -> ST s DLProg
-compileBundleST (JSBundle mods) top = do
+compileBundleST :: Connectors -> JSBundle -> SLVar -> ST s DLProg
+compileBundleST cns (JSBundle mods) top = do
   idxr <- newSTCounter 0
-  (liblifts, libm) <- evalLibs idxr mods
+  (liblifts, libm) <- evalLibs idxr cns mods
   let exe_ex = libm M.! exe
   let topv = case M.lookup top exe_ex of
         Just (SLSSVal _ Public x) -> x
@@ -2835,12 +2852,12 @@ compileBundleST (JSBundle mods) top = do
           impossible "private before dapp"
         Nothing ->
           expect_throw srcloc_top (Err_Eval_UnboundId top $ M.keys exe_ex)
-  compileDApp idxr liblifts topv
+  compileDApp idxr liblifts cns topv
   where
     exe = case mods of
       [] -> impossible $ "compileBundle: no files"
       ((x, _) : _) -> x
 
-compileBundle :: JSBundle -> SLVar -> DLProg
-compileBundle jsb top =
-  runST $ compileBundleST jsb top
+compileBundle :: Connectors -> JSBundle -> SLVar -> DLProg
+compileBundle cns jsb top =
+  runST $ compileBundleST cns jsb top

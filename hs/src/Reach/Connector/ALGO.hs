@@ -651,16 +651,24 @@ compile_algo disp pl = do
       Nothing -> return (CI_Null, return ())
       Just ht -> do
         let lab = "m" <> show hi
-        return (CI_Text (render ht),  do
-          code "gtxn" [texty txnFromHandler, "Sender"]
-          code "byte" [template $ LT.pack lab]
-          op "=="
-          op "||")
+        return
+          ( CI_Text (render ht)
+          , do
+              code "gtxn" [texty txnFromHandler, "Sender"]
+              code "byte" [template $ LT.pack lab]
+              op "=="
+              op "||"
+          )
   let (steps_, hchecks) = unzip hm_res
   let steps = CI_Null : steps_
   modifyIORef resr $ M.insert "steps" $ CI_Array steps
-  let howManySteps = length $ filter (\case CI_Text _ -> True
-                                            _ -> False) steps
+  let howManySteps =
+        length $
+          filter
+            (\case
+               CI_Text _ -> True
+               _ -> False)
+            steps
   let simple m = runApp shared 0 mempty $ m >> std_footer
   app0m <- simple $ do
     comment "Check that we're an App"
@@ -793,11 +801,14 @@ compile_algo disp pl = do
   return $ CI_Obj res1
 
 connect_algo :: Connector
-connect_algo moutn pl = do
-  let disp which c =
-        case moutn of
-          Nothing -> return ()
-          Just outn ->
-            TIO.writeFile (outn $ T.pack $ which <> ".teal") c
-  res <- compile_algo disp pl
-  return $ M.fromList [("ALGO", res)]
+connect_algo = Connector {..}
+  where
+    conName = "ALGO"
+    conGen moutn pl = do
+      let disp which c =
+            case moutn of
+              Nothing -> return ()
+              Just outn ->
+                TIO.writeFile (outn $ T.pack $ which <> ".teal") c
+      res <- compile_algo disp pl
+      return $ res

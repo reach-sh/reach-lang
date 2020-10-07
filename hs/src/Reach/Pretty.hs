@@ -47,6 +47,7 @@ instance Pretty SLVal where
     SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
     SLV_DLVar v -> pretty v
     SLV_Type t -> "<type: " <> pretty t <> ">"
+    SLV_Connector cn -> "<connector: " <> pretty cn <> ">"
     SLV_Participant _ who _ _ _ ->
       "<participant: " <> pretty who <> ">"
     SLV_Prim {} -> "<primitive>"
