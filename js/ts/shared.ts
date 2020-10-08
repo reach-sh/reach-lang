@@ -1,5 +1,5 @@
-import * as nodeAssert from 'assert';
-import * as crypto from 'crypto';
+import nodeAssert from 'assert';
+import crypto from 'crypto';
 import ethers from 'ethers';
 
 type BigNumber = ethers.BigNumber;
