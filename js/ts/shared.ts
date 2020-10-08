@@ -140,8 +140,8 @@ export const T_Bool: TyContract<boolean> = {
   defaultValue: false,
 };
 
-export const T_UInt256: TyContract<BigNumber> = {
-  name: 'UInt256',
+export const T_UInt: TyContract<BigNumber> = {
+  name: 'UInt',
   canonicalize: (v: any): BigNumber => {
     if (isBigNumber(v)) {
       return v;
@@ -188,7 +188,7 @@ export const T_Bytes: TyContract<string> = {
 };
 
 export const T_Digest: TyContract<BigNumber> =
-  Object.assign({}, T_UInt256, { name: 'Digest' });
+  Object.assign({}, T_UInt, { name: 'Digest' });
 
 // TODO: use a wrapper type for canonicalized form
 export const T_Address: TyContract<string> = {
@@ -447,7 +447,7 @@ export const digest = (...args: Array<any>) => {
 };
 
 export const hexToBigNumber = (h: string): BigNumber => bigNumberify(hexTo0x(h));
-export const uint256ToBytes = (i: BigNumber): string => bigNumberToHex(i);
+export const uintToBytes = (i: BigNumber): string => bigNumberToHex(i);
 
 export const bigNumberToHex = (u: num, size: number = 32) => {
   const width = 8 * size;
@@ -464,11 +464,11 @@ export const bytesEq = (x: any, y: any): boolean =>
 export const digestEq = bytesEq;
 export const addressEq = bytesEq;
 
-export const randomUInt256 = (): BigNumber =>
+export const randomUInt = (): BigNumber =>
   hexToBigNumber(byteArrayToHex(crypto.randomBytes(32)));
 
 export const hasRandom = {
-  random: randomUInt256,
+  random: randomUInt,
 };
 
 export const eq = (a: num, b: num): boolean => bigNumberify(a).eq(bigNumberify(b));

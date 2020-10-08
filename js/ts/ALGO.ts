@@ -9,7 +9,7 @@ import {
   CurrencyAmount, debug,
   isBigNumber, bigNumberify,
   bigNumberToHex, hexToBigNumber,
-  T_UInt256, T_Bool, T_Digest, setDigestWidth,
+  T_UInt, T_Bool, T_Digest, setDigestWidth,
   getDEBUG } from './shared';
 export * from './shared';
 
@@ -299,7 +299,7 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
     replaceUint8Array(
       'ApplicationID',
       // @ts-ignore XXX
-      safeify(T_UInt256, bigNumberify(ApplicationID)),
+      safeify(T_UInt, bigNumberify(ApplicationID)),
       x);
 
   const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
@@ -364,14 +364,14 @@ const safeify = (ty: any, x: any): LogicArg => {
     const r = ethers.utils.arrayify(h);
     return r; }
   if ( typeof x === 'boolean' ) {
-    return safeify(T_UInt256, bigNumberify(x ? 1 : 0)); }
+    return safeify(T_UInt, bigNumberify(x ? 1 : 0)); }
   if ( typeof x === 'string' ) {
     return ethers.utils.arrayify(x); }
   throw Error(`can't safeify ${JSON.stringify(x)}`);
 };
 
 const desafeify = (ty: any, v: Buffer): any => {
-  if ( ty.name === 'UInt256' ) {
+  if ( ty.name === 'UInt' ) {
     return hexToBigNumber('0x' + v.toString('hex'));
   }
   if ( ty.name == 'Bytes' ) {
@@ -494,7 +494,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const actual_args =
         [ sim_r.prevSt, sim_r.nextSt, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
-        [ T_Digest, T_Digest, T_Bool, T_UInt256, T_UInt256, ...tys ];
+        [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ];
       debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
       const munged_args =
         // XXX this needs to be customized for Algorand, so I don't have to safeify. Ideally munge would return Uint8Array for everything.
@@ -651,7 +651,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         debug(`${dhead} --- args_un = ${JSON.stringify(args_un)}`);
 
         const totalFromFee =
-          desafeify(T_UInt256, Buffer.from(ctc_args[3], 'base64'));
+          desafeify(T_UInt, Buffer.from(ctc_args[3], 'base64'));
         debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
 
         const fromAddr =

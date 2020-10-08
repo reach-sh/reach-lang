@@ -169,14 +169,14 @@ runTests(async () => {
         T_Bool,
         T_Bytes,
         T_Address,
-        T_UInt256,
+        T_UInt,
         T_Object,
         T_Array,
         T_Tuple,
         T_Data,
       } = stdlib;
 
-      const T_MaybeInt = T_Data({ 'Some': T_UInt256, 'None': T_Null });
+      const T_MaybeInt = T_Data({ 'Some': T_UInt, 'None': T_Null });
       it('converts nully things to Null', () => {
         expect(protect(T_Null, null)).toBe(null);
         expect(protect(T_Null, undefined)).toBe(null);
@@ -185,9 +185,9 @@ runTests(async () => {
         expect(protect(T_Bytes, hello)).toBe(helloHex);
         expect(protect(T_Bytes, helloHex)).toBe(helloHex);
       });
-      it('converts numbery things to UInt256', () => {
-        expect(protect(T_UInt256, n)).toBe(bn);
-        expect(protect(T_UInt256, bn)).toBe(bn);
+      it('converts numbery things to UInt', () => {
+        expect(protect(T_UInt, n)).toBe(bn);
+        expect(protect(T_UInt, bn)).toBe(bn);
       });
       it('handles Bool', () => {
         expect(protect(T_Bool, true)).toBe(true);
@@ -196,7 +196,7 @@ runTests(async () => {
         expect(protect(T_Address, addr)).toBe(addr);
       });
       it('recurses into Tuples', () => {
-        expect(protect(T_Tuple([T_UInt256]), [n])).toBe([bn]);
+        expect(protect(T_Tuple([T_UInt]), [n])).toBe([bn]);
       });
       it('recurses into Objects', () => {
         expect(protect(T_Object({ 'x': T_Bytes }), { 'x': hello })).toBe({ 'x': helloHex });
