@@ -3,6 +3,7 @@ import ethers, { BigNumber } from 'ethers';
 import http from 'http';
 import url from 'url';
 import waitPort from 'wait-port';
+import {window, process} from './shim';
 
 import { ConnectorMode, getConnectorMode } from './ConnectorMode';
 import {
@@ -111,46 +112,6 @@ const isIsolatedNetwork: boolean =
   connectorMode.startsWith('ETH-test-dockerized') ||
   connectorMode.startsWith('ETH-test-embedded');
 
-// Some simple shims for defining stuff across node & browser
-
-type Process = {
-  env: Env,
-  stdout: Stdout,
-}
-type Env = {
-  REACH_CONNECTOR_MODE?: string,
-  ETH_NODE_URI?: string,
-  ETH_NODE_NETWORK?: string,
-}
-type Stdout = {
-  write: (data: any) => void,
-}
-const processShim: Process = (() => {
-  try {
-    return process;
-  } catch (e) {
-    // ReferenceError
-    return {
-      env: {},
-      stdout: {
-        write: () => {},
-      },
-    }
-  }
-})();
-
-type Window = {ethereum?: ethers.providers.ExternalProvider};
-
-const windowShim: Window = (() => {
-  try {
-    // @ts-ignore
-    return window;
-  } catch (e) {
-    // ReferenceError
-    return {}
-  }
-})();
-
 type NetworkDesc =
   {type: 'uri', uri: string, network: string} |
   {type: 'embedded-ganache'} |
@@ -161,8 +122,8 @@ const networkDesc: NetworkDesc = connectorMode == 'ETH-test-embedded-ganache' ? 
   type: 'embedded-ganache',
 } : connectorMode == 'ETH-test-dockerized-geth' ? {
   type: 'uri',
-  uri: processShim.env.ETH_NODE_URI || 'http://localhost:8545',
-  network: processShim.env.ETH_NODE_NETWORK || 'unspecified',
+  uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
+  network: process.env.ETH_NODE_NETWORK || 'unspecified',
 } : connectorMode == 'ETH-test-browser-window' ? {
   type: 'window',
 } : {
@@ -246,7 +207,7 @@ const doHealthcheck = async (): Promise<void> => {
       res.on('data', (d) => {
         debug('rpc health check succeeded');
         if (getDEBUG()) {
-          processShim.stdout.write(d);
+          process.stdout.write(d);
         }
         resolve({ res, d });
       });
@@ -281,8 +242,8 @@ const getProvider = memoizeThunk(async (): Promise<Provider> => {
     // @ts-ignore
     return new ethers.providers.Web3Provider(ganachep);
   } else if (networkDesc.type == 'window') {
-    if (windowShim.ethereum) {
-      const provider = new ethers.providers.Web3Provider(windowShim.ethereum);
+    if (window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
       // The proper way to ask MetaMask to enable itself is eth_requestAccounts
       // https://eips.ethereum.org/EIPS/eip-1102
       await provider.send('eth_requestAccounts', []);

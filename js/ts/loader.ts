@@ -3,6 +3,8 @@ import * as stdlib_ALGO from './ALGO';
 import * as stdlib_FAKE from './FAKE';
 import {getConnectorMode, canonicalizeConnectorMode, getConnector} from './ConnectorMode';
 
+export {getConnectorMode, getConnector};
+
 // XXX make an interface for Stdlib, return Promise<Stdlib>
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.

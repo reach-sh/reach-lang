@@ -1,3 +1,4 @@
+import {process} from './shim';
 export type Connector = 'ETH' | 'ALGO' | 'FAKE';
 
 export type ConnectorMode =
