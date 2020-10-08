@@ -106,10 +106,10 @@ solBinOp :: String -> Doc a -> Doc a -> Doc a
 solBinOp o l r = l <+> pretty o <+> r
 
 solEq :: Doc a -> Doc a -> Doc a
-solEq = solBinOp "=="
+solEq x y = solPrimApply PEQ [x, y]
 
 solAnd :: Doc a -> Doc a -> Doc a
-solAnd = solBinOp "&&"
+solAnd x y = solBinOp "&&" x y
 
 solBytesLength :: Doc a -> Doc a
 solBytesLength x = "bytes(" <> x <> ").length"
@@ -420,7 +420,7 @@ solCom iter ctxt = \case
       copy src (off :: Integer) =
         "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
           <> solBraces
-            (solArrayRef (solVar ctxt dv) (solBinOp "+" "i" (solNum off)) <+> "="
+            (solArrayRef (solVar ctxt dv) (solPrimApply ADD ["i", (solNum off)]) <+> "="
                <+> solArrayRef (solArg ctxt src) "i" <> semi)
         where
           sz = arraySize src
@@ -645,7 +645,7 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
         check sign mv =
           case mv of
             [] -> "true"
-            mvs -> solBinOp (if sign then ">=" else "<") solBlockNumber (foldl' (solBinOp "+") solLastBlock (map (solArg ctxt) mvs))
+            mvs -> solPrimApply (if sign then PGE else PLT) [ solBlockNumber, (foldl' (\x y -> solPrimApply ADD [x, y]) solLastBlock (map (solArg ctxt) mvs)) ]
 solHandler ctxt_top which (C_Loop _at svs msg ct) =
   vsep [argDefn, frameDefn, funDefn]
   where
