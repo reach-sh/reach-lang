@@ -6,6 +6,7 @@ where
 
 import Control.Exception
 import qualified Data.ByteString.Lazy as BL
+import Reach.Compiler (connectors)
 import Reach.Eval
 import Reach.Linearize
 import Reach.Parser
@@ -19,7 +20,7 @@ import Test.Tasty
 partialCompile :: FilePath -> IO (BL.ByteString, Either SomeException ExitCode)
 partialCompile fp = do
   djp <- gatherDeps_top fp
-  let dl = compileBundle djp "main"
+  let dl = compileBundle connectors djp "main"
       ll = linearize dl
   (s, eec) <- capture $ try $ verify Nothing ll
   return (BL.fromStrict $ bpack s, eec)

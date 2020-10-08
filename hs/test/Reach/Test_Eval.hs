@@ -8,6 +8,7 @@ where
 
 import Control.DeepSeq
 import Data.Proxy
+import Reach.Compiler (connectors)
 import Reach.Eval
 import Reach.Parser
 import Reach.Test.Util
@@ -18,7 +19,7 @@ import Test.Tasty
 partialCompile :: FilePath -> IO ()
 partialCompile fp = do
   bundle <- gatherDeps_top fp
-  let prog = compileBundle bundle "main"
+  let prog = compileBundle connectors bundle "main"
   return $! rnf prog
 
 evalGoldenTest :: FilePath -> IO TestTree

@@ -1,4 +1,4 @@
-module Reach.Compiler (CompilerOpts (..), compile) where
+module Reach.Compiler (CompilerOpts (..), compile, connectors) where
 
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
