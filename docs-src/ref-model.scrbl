@@ -111,6 +111,7 @@ During compilation, the Reach compiler automatically verifies that the @tech{tok
 Similarly, all @tech{knowledge assertions} are verified using a conservative approximation of @tech{participant} knowledge.
 This conservative approximation assumes that all inputs to a computation are revealed by the result of the computation, except for @tech{digests} and @tech{interact}ion.
 This approximation means that Reach cannot, for example, reason about the details of manually expressed encryption formulas and will assume they are insecure.
+Finally, a subtle point about the knowledge checker is relevant: technically participants with different identities in a Reach program may actually be instantiated by the same principals, i.e. if Alice choses to play a game of a Chess against herself, where she controls both Black and White; as this is always possible, the knowledge checker does not consider it a violation of a claim that White knows something Black does not.
 
 If these @tech{assert}ions cannot be statically verified, then the compilation process aborts.
 After this verification, such @tech{static assertions} and @tech{possibility assertions} are removed from the program and do not occur at runtime.
