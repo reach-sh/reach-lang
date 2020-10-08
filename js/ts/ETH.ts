@@ -1,8 +1,8 @@
 import Timeout from 'await-timeout';
 import ethers, { BigNumber } from 'ethers';
-import * as http from 'http';
-import * as url from 'url';
-import * as waitPort from 'wait-port';
+import http from 'http';
+import url from 'url';
+import waitPort from 'wait-port';
 
 import { ConnectorMode, getConnectorMode } from './loader';
 import {
@@ -106,23 +106,65 @@ const connectorMode: ConnectorMode = getConnectorMode();
 
 // Certain functions either behave differently,
 // or are only available on an "isolated" network.
+// Note: ETH-test-browser-window is NOT considered isolated.
 const isIsolatedNetwork: boolean =
   connectorMode.startsWith('ETH-test-dockerized') ||
   connectorMode.startsWith('ETH-test-embedded');
 
-// Common interface exports
+// Some simple shims for defining stuff across node & browser
+
+type Process = {
+  env: Env,
+  stdout: Stdout,
+}
+type Env = {
+  REACH_CONNECTOR_MODE?: string,
+  ETH_NODE_URI?: string,
+  ETH_NODE_NETWORK?: string,
+}
+type Stdout = {
+  write: (data: any) => void,
+}
+const processShim: Process = (() => {
+  try {
+    return process;
+  } catch (e) {
+    // ReferenceError
+    return {
+      env: {},
+      stdout: {
+        write: () => {},
+      },
+    }
+  }
+})();
+
+type Window = {ethereum?: ethers.providers.ExternalProvider};
+
+const windowShim: Window = (() => {
+  try {
+    // @ts-ignore
+    return window;
+  } catch (e) {
+    // ReferenceError
+    return {}
+  }
+})();
 
 type NetworkDesc =
   {type: 'uri', uri: string, network: string} |
   {type: 'embedded-ganache'} |
+  {type: 'window'} |
   {type: 'skip'}
 
 const networkDesc: NetworkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
   type: 'embedded-ganache',
 } : connectorMode == 'ETH-test-dockerized-geth' ? {
   type: 'uri',
-  uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
-  network: process.env.ETH_NODE_NETWORK || 'unspecified',
+  uri: processShim.env.ETH_NODE_URI || 'http://localhost:8545',
+  network: processShim.env.ETH_NODE_NETWORK || 'unspecified',
+} : connectorMode == 'ETH-test-browser-window' ? {
+  type: 'window',
 } : {
   type: 'skip',
 };
@@ -132,22 +174,51 @@ const protocolPort = {
   'http:': 80,
 };
 
-const portP: Promise<void> = (async () => {
+/**
+ * @description Only perform side effects from thunk on the first call.
+ */
+function memoizeThunk<T>(thunk: () => T): () => T {
+  let called = false;
+  let res: T | null  = null;
+  return () => {
+    if (called === false) {
+      res = thunk();
+      called = true;
+    }
+    return res as T;
+  }
+}
+
+const getPortConnection = memoizeThunk(async () => {
+  debug('getPortConnection');
   if (networkDesc.type != 'uri') { return; }
   const { hostname, port, protocol } = url.parse(networkDesc.uri);
   if (!(protocol === 'http:' || protocol === 'https:')) {
     throw Error(`Unsupported protocol ${protocol}`);
   }
-  await waitPort.default({
+  type WPArgs = {
+    host: string | undefined,
+    port: number,
+    output: 'silent',
+    timeout: number,
+  }
+  const args: WPArgs = {
     host: hostname || undefined,
     port: (port && parseInt(port, 10)) || protocolPort[protocol],
     output: 'silent',
     timeout: 1000 * 60 * 1,
-  });
-})();
+  }
+  debug('waitPort');
+  if (getDEBUG()) {
+    console.log(args)
+  }
+  await waitPort(args);
+  debug('waitPort complete');
+});
 
 // XXX: doesn't even retry, just returns the first attempt
 const doHealthcheck = async (): Promise<void> => {
+  debug('doHealthcheck');
   if (networkDesc.type != 'uri') { return; }
   const uriObj = url.parse(networkDesc.uri);
 
@@ -175,7 +246,7 @@ const doHealthcheck = async (): Promise<void> => {
       res.on('data', (d) => {
         debug('rpc health check succeeded');
         if (getDEBUG()) {
-          process.stdout.write(d);
+          processShim.stdout.write(d);
         }
         resolve({ res, d });
       });
@@ -192,41 +263,38 @@ const doHealthcheck = async (): Promise<void> => {
   });
 };
 
-const devnetP: Promise<void> = (async () => {
-  await portP;
-  debug('Got portP, waiting for health');
+const getDevnet = memoizeThunk(async (): Promise<void> => {
+  await getPortConnection();
   return await doHealthcheck();
-})();
+})
 
-// async () => provider
-const getProvider: () => Promise<Provider> = (() => {
-  const etherspP: Promise<Provider | null> = (async () => {
-    if (networkDesc.type == 'uri') {
-      await devnetP;
-      const provider = new ethers.providers.JsonRpcProvider(networkDesc.uri);
-      provider.pollingInterval = 500; // ms
+const getProvider = memoizeThunk(async (): Promise<Provider> => {
+  if (networkDesc.type == 'uri') {
+    await getDevnet();
+    const provider = new ethers.providers.JsonRpcProvider(networkDesc.uri);
+    provider.pollingInterval = 500; // ms
+    return provider;
+  } else if (networkDesc.type == 'embedded-ganache') {
+    const { default: ganache } = await import('ganache-core');
+    const default_balance_ether = 999999999;
+    const ganachep = ganache.provider({ default_balance_ether });
+    // @ts-ignore
+    return new ethers.providers.Web3Provider(ganachep);
+  } else if (networkDesc.type == 'window') {
+    if (windowShim.ethereum) {
+      const provider = new ethers.providers.Web3Provider(windowShim.ethereum);
+      // The proper way to ask MetaMask to enable itself is eth_requestAccounts
+      // https://eips.ethereum.org/EIPS/eip-1102
+      await provider.send('eth_requestAccounts', []);
       return provider;
-    } else if (networkDesc.type == 'embedded-ganache') {
-      const { default: ganache } = await import('ganache-core');
-      const default_balance_ether = 999999999;
-      const ganachep = ganache.provider({ default_balance_ether });
-      // @ts-ignore
-      return new ethers.providers.Web3Provider(ganachep);
     } else {
-      // This lib was imported, but not for its net connection.
-      return null;
+      throw Error(`window.ethereum is not defined`);
     }
-  })();
-
-  return async (): Promise<Provider> => {
-    const provider = await etherspP;
-    if (provider === null) {
-      throw Error(`Using stdlib/ETH is incompatible with REACH_CONNECTOR_MODE=${connectorMode}`);
-    } else {
-      return provider;
-    }
-  };
-})();
+  } else {
+    // This lib was imported, but not for its net connection.
+    throw Error(`Using stdlib/ETH is incompatible with REACH_CONNECTOR_MODE=${connectorMode}`);
+  }
+});
 
 
 // XXX expose setProvider
@@ -662,24 +730,13 @@ export const newAccountFromMnemonic = async (phrase: string): Promise<Account> =
   return acc;
 };
 
-const getSigner: () => Promise<ethers.Signer> = (() => {
-  const signerP = (async () => {
-    if (isIsolatedNetwork) {
-      const provider = await getProvider();
-      // TODO: teach ts what the specialized type is here
-      // @ts-ignore
-      return provider.getSigner();
-    } else {
-      // Signer may not be accessed on non-isolated networks
-      return null;
-    }
-  })();
-
-  return async () => {
-    requireIsolatedNetwork('getSigner');
-    return await signerP;
-  };
-})();
+const getSigner = memoizeThunk(async (): Promise<ethers.Signer> => {
+  requireIsolatedNetwork('getSigner');
+  const provider = await getProvider();
+  // TODO: teach ts what the specialized type is here
+  // @ts-ignore
+  return provider.getSigner();
+});
 
 export const newTestAccount = async (startingBalance: BigNumber): Promise<Account> => {
   debug(`newTestAccount(${startingBalance})`);

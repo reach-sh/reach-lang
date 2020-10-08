@@ -3,6 +3,7 @@ import { Connector } from "./shared";
 export type ConnectorMode =
   'ETH-test-dockerized-geth' |
   'ETH-test-embedded-ganache' |
+  'ETH-test-browser-window' |
   'FAKE-test-embedded-mock' |
   'ALGO-test-dockerized-algod';
 
@@ -11,6 +12,7 @@ export type ConnectorMode =
 const knownConnectorModes: Array<ConnectorMode> = [
   'ETH-test-dockerized-geth',
   'ETH-test-embedded-ganache',
+  'ETH-test-browser-window',
   'FAKE-test-embedded-mock',
   'ALGO-test-dockerized-algod',
 ];
