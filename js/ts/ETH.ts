@@ -1,5 +1,5 @@
 import Timeout from 'await-timeout';
-import ethers, { BigNumber } from 'ethers';
+import ethers, { BigNumber, Signer } from 'ethers';
 import http from 'http';
 import url from 'url';
 import waitPort from 'wait-port';
@@ -50,10 +50,11 @@ type Backend = {_Connectors: {ETH: {
 type Address = string;
 
 type NetworkAccount = {
-  address?: Address, // required for receivers
+  address?: Address, // required for receivers & deployers
+  getAddress?: () => Promise<Address>, // or this for receivers & deployers
   sendTransaction?: (...xs: any) => any, // required for senders
   getBalance?: (...xs: any) => any, // TODO: better type
-} | Wallet; // required to deploy/attach
+} | Wallet | Signer; // required to deploy/attach
 
 type ContractInfo = {
   address: Address,
@@ -265,19 +266,38 @@ const ethersBlockOnceP = async (): Promise<number> => {
   return new Promise((resolve) => provider.once('block', (n) => resolve(n)));
 };
 
+/** @description convenience function for drilling down to the actual address */
+const getAddr = async (acc: AccountTransferable): Promise<Address> => {
+  if (!acc.networkAccount) throw Error(`Expected acc.networkAccount`);
+  // TODO better type design here
+  // @ts-ignore
+  if (acc.networkAccount.address) {
+    // @ts-ignore
+    return acc.networkAccount.address;
+  }
+  if (acc.networkAccount.getAddress) {
+    return await acc.networkAccount.getAddress();
+  }
+  throw Error(`Expected acc.networkAccount.address or acc.networkAccount.getAddress`);
+}
+
 export const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
   if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
 
   if (networkAccount.getBalance) {
     return bigNumberify(await networkAccount.getBalance());
-  } else if (networkAccount.address) {
+  }
+
+  const addr = await getAddr(acc);
+  if (addr) {
     const provider = await getProvider();
-    return bigNumberify(await provider.getBalance(networkAccount.address));
-  } else throw Error(`acc.networkAccount.address missing. Got: ${networkAccount}`);
+    return bigNumberify(await provider.getBalance(addr));
+  }
+  throw Error(`address missing. Got: ${networkAccount}`);
 };
 
-// Arg order follows "src before dst" convention
+/** @description Arg order follows "src before dst" convention */
 export const transfer = async (
   from: AccountTransferable,
   to: AccountTransferable,
@@ -286,12 +306,10 @@ export const transfer = async (
   if (!isBigNumber(value)) throw Error(`Expected a BigNumber: ${value}`);
 
   const sender = from.networkAccount;
-  if (!sender || !sender.sendTransaction) throw Error(`Expected from.networkAccount.sendTransaction: ${from}`);
-
-  const receiver = to.networkAccount && to.networkAccount.address;
-  if (!receiver) throw Error(`Expected to.networkAccount.address: ${to}`);
-
+  const receiver = getAddr(to);
   const txn = { to: receiver, value };
+
+  if (!sender || !sender.sendTransaction) throw Error(`Expected from.networkAccount.sendTransaction: ${from}`);
   debug(`sender.sendTransaction(${JSON.stringify(txn)})`);
   return await sender.sendTransaction(txn);
 };
@@ -314,9 +332,9 @@ const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
-  // XXX networkAccount MUST be a wallet to deploy/attach
+  // XXX networkAccount MUST be a Wallet or Signer to deploy/attach
   const provider = await getProvider();
-  const { address } = networkAccount;
+  const address = await getAddr({networkAccount});
   if (!address) { throw Error(`Expected networkAccount.address: ${networkAccount}`); }
   const shad = address.substring(2, 6);
 
