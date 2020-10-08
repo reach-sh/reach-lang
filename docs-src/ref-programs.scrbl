@@ -172,12 +172,24 @@ It supports the following options:
  )
 
 (list
+ @(begin @(mint-define! '("verifyOverflow")) @reachin{verifyOverflow})
+ @~
+ @para{@reachin{true} or @reachin{false} (default)}
+ @~
+ @para{Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond the bit-width of the underlying @tech{consensus network}.
+ This defaults to @reachin{false}, because it is onerous to verify, increasing verification times by an order of magnitude.
+ We recommend turning it on before final deployment, but leaving it off during development.
+ When it is @reachin{false}, @tech{connectors} will ensure that overflows do not actually occur on the network.}
+ )
+
+(list
  @(begin @(mint-define! '("connectors")) @reachin{connectors})
  @~
  @para{@(mint-define! '("ETH") '("ALGO")) @reachin{[ETH, ALGO]} (default)}
  @~
- @para{A tuple of the connectors that the application should be compiled for.
- By default, all available connectors are chosen.})
+ @para{A tuple of the @tech{connectors} that the application should be compiled for.
+ By default, all available @tech{connectors} are chosen.}
+ )
 
 )]
 
@@ -681,7 +693,7 @@ A @tech{conditional statement} may only include a @tech{consensus transfer} in @
 
 @(mint-define! '("switch") '("case") '("default"))
 @reach{
- const mi = Maybe(UInt256).Some(42);
+ const mi = Maybe(UInt).Some(42);
  switch ( mi ) {
   case None: return 8;
   case Some: return mi + 10; }
@@ -694,7 +706,7 @@ written @reachin{switch (VAR) { CASE ... }},
 where @reachin{VAR} is a variable bound to a @tech{data instance}
 and @reachin{CASE} is either @reachin{case VARIANT: STMT ...}, where @reachin{VARIANT} is a variant, or @reachin{default: STMT ...}, @reachin{STMT} is a sequence of statements,
 selects the appropriate sequence of statements based on which variant @reachin{VAR} holds.
-Within the body of a @reachin{switch} case, @reachin{VAR} has the type of variant; i.e. in a @reachin{Some} case of a @reachin{Maybe(UInt256)} @reachin{switch}, the variable is bound to an integer.
+Within the body of a @reachin{switch} case, @reachin{VAR} has the type of variant; i.e. in a @reachin{Some} case of a @reachin{Maybe(UInt)} @reachin{switch}, the variable is bound to an integer.
 
 All cases have empty @tech{tails}, i.e. the @tech{tail} of the @tech{switch statement} is not propagated. 
 
@@ -762,7 +774,8 @@ Reach's @deftech{type}s are represented with programs by the following identifie
 @itemlist[
   @item{@(mint-define! '("Null")) @reachin{Null}.}
   @item{@(mint-define! '("Bool")) @reachin{Bool}, which denotes a boolean.}
-  @item{@(mint-define! '("UInt256")) @reachin{UInt256}, which denotes an unsigned integer of 256 bits.}
+  @item{@(mint-define! '("UInt")) @reachin{UInt}, which denotes an unsigned integer.
+  Its @deftech{bit width} is the minimum bit width of all enabled @tech{connector}, i.e. those specified by the @reachin{connectors} deployment option.}
   @item{@(mint-define! '("Bytes")) @reachin{Bytes}, which denotes a string of bytes.}
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
@@ -806,9 +819,14 @@ Any expression satisfying @reachin{isType} is compiled away and does not exist a
 A @deftech{literal value},
 written @reachin{VALUE},
 is an @tech{expression} that evaluates to the given @tech{value}.
+
 The @deftech{null literal} may be written as @reachin{null}.
+
 @deftech{Numeric literal}s may be written in decimal, hexadecimal, or octal.
+Numeric literals must obey the @tech{bit width} of @reachin{UInt} if they are used as @reachin{UInt} values at runtime, but if they only appear at compile-time, then they may be any number.
+
 @deftech{Boolean literal}s may be written as @reachin{true} or @reachin{false}.
+
 @deftech{String literal}s (aka byte strings)
 may be written between double or single quotes
 (with no distinction between the different styles)
@@ -887,24 +905,28 @@ It is @tech{invalid} to use binary operations on the wrong types of @tech{values
  polyNeq(a, b) // !=, !==
 }
 
-All @tech{binary expression} operators have a corresponidng named function in the standard library.
-Note that while @reachin{&&} and @reachin{||} may not evaluate their second argument,
+All @tech{binary expression} operators have a corresponding named function in the standard library.
+While @reachin{&&} and @reachin{||} may not evaluate their second argument,
 their corresponding named functions @reachin{and} and @reachin{or}, always do.
 
 @(mint-define! '("boolEq") '("bytesEq") '("typeEq") '("intEq") '("digestEq") '("addressEq"))
 @reach{
- polyEq(a, b)    // eq on Bool, Bytes, types, or UInt256
+ polyEq(a, b)    // eq on Bool, Bytes, types, or UInt
  boolEq(a, b)    // eq on Bool
  bytesEq(a, b)   // eq on Bytes
  typeEq(a, b)    // eq on types
- intEq(a, b)     // eq on UInt256
+ intEq(a, b)     // eq on UInt
  digestEq(a, b)  // eq on Digest
  addressEq(a, b) // eq on Addresses
 }
 
-Note that @reachin{==} is a function which operates on multiple types.
+@reachin{==} is a function which operates on multiple types.
 Both arguments must be of the same type.
 Specialized functions exist for equality checking on each supported type.
+
+@(hrule)
+
+If @reachin{verifyOverflow} is @reachin{true}, then operations automatically make a @tech{static assertion} that their arguments would not overflow the @tech{bit width} of the enable @tech{consensus networks}.
 
 @subsubsection{Parenthesized expression}
 
@@ -1105,9 +1127,9 @@ except that field @reachin{fld} is replaced with @reachin{val}.
                      Umami: Null});
  const burger = Taste.Umami();
  
- const Shape = Data({ Circle: Object({r: UInt256}),
-                      Square: Object({s: UInt256}),
-                      Rect: Object({w: UInt256, h: UInt256}) });
+ const Shape = Data({ Circle: Object({r: UInt}),
+                      Square: Object({s: UInt}),
+                      Rect: Object({w: UInt, h: UInt}) });
  const nice = Shape.Circle({r: 5}); }
 
 A @deftech{data instance} is written @reachin{DATA.VARIANT(VALUE)}, where @reachin{DATA} is @reachin{Data} type, @reachin{VARIANT} is the name of one of @reachin{DATA}'s variants, and @reachin{VALUE} is a value matching the type of the variant.
@@ -1119,7 +1141,7 @@ As a special case, when the type of a variant is @reachin{Null}, the @reachin{VA
 
 @(mint-define! '("Maybe") '("Some") '("None") '("fromMaybe"))
 @reach{
- const MayInt = Maybe(UInt256);
+ const MayInt = Maybe(UInt);
  const bidA = MayInt.Some(42);
  const bidB = MayInt.None(null);
 
@@ -1175,9 +1197,9 @@ An @deftech{enumeration} (or @deftech{enum}, for short),
 can be created by calling the @reachin{makeEnum} function, as in @reachin{makeEnum(N)},
 where @reachin{N} is the number of distinct values in the enum.
 This produces a tuple of @reachin{N+1} values,
-where the first value is a @reachin{Fun([UInt256], Bool)}
+where the first value is a @reachin{Fun([UInt], Bool)}
 which tells you if its argument is one of the enum's values,
-and the next N values are distinct @reachin{UInt256}s.
+and the next N values are distinct @reachin{UInt}s.
 
 @subsubsection{@tt{assert}}
 
@@ -1207,7 +1229,7 @@ The two argument version is an abbreviation of calling the second argument with 
 This is convenient for writing general claims about expressions, such as
 
 @reach{
- forall(UInt256, (x) => assert(x == x)); }
+ forall(UInt, (x) => assert(x == x)); }
 
 @subsubsection{@tt{possible}}
 
@@ -1258,4 +1280,4 @@ The @deftech{balance} primitive returns the balance of the @tech{contract} @tech
 @reach{
  hasRandom }
 
-@index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments are returns an unsigined integer of 256 bits.
+@index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments are returns an unsigined integer of @tech{bit width} bits.

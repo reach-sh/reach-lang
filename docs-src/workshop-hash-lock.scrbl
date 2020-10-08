@@ -79,25 +79,24 @@ You should write your answers in your Reach file (@tt{index.rsh}) as the @tech{p
 
 Let's compare notes again.
 @itemlist[
- @item{We're going to represent the amount Alice transfers as an unsigned integer (@reachin{UInt256}) named @reachin{amt}.}
- @item{We will represent the password as another unsigned integer (@reachin{UInt256}) named @reachin{pass}.}
+ @item{We're going to represent the amount Alice transfers as an unsigned integer (@reachin{UInt}) named @reachin{amt}.}
+ @item{We will represent the password as another unsigned integer (@reachin{UInt}) named @reachin{pass}.}
  @item{These two values are the only fields of Alice's interface, but Bob will have a function named @reachin{getPass} that will return the password that he knows.}
 ]
 
 We wrote this in our program as:
 
 @reach{
-  [['Alice', { amt : UInt256,
-               pass: UInt256 }],
-   ['Bob', { getPass: Fun([], UInt256) }] ],
+  [['Alice', { amt : UInt,
+               pass: UInt }],
+   ['Bob', { getPass: Fun([], UInt) }] ],
 }
 
 It would be very surprising if you choose the exact same names as us in your code, but did you choose the same types?
 We expect that many of you might have chosen to represent the password by a string of bytes using the Reach type, @reachin{Bytes}.
 There's nothing necessarily wrong with this option, but we do not choose it because it is unnecessarily "wide".
 For example, the empty string @reachin{''} is an example of a @reachin{Bytes} value, as is the text of this entire document and the combined works of Jane Austen.
-The @reachin{Bytes} type contains many options, but we are likely to be satisfied with a mere 256-bits, or 32 characters, as represented by the @reachin{UInt256} type.
-Have you ever had a password that was 32 characters long?
+The @reachin{Bytes} type contains many options, but we are likely to be satisfied with an unsigned integer, because it has a minimum of 64 bits on typical consensus networks.
 
 At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholder like @jsin{42} or something for the actual value.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.

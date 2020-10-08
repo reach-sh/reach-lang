@@ -15,7 +15,7 @@ The programmer should insert this check @emph{before} they fix the problem in th
 This will ensure that all future versions of the program will also be protected from these problems.
 
 These high- and low-level perspectives on assertions apply to individual code fragments, like the body of an @reachin{only} statement, as well as entire functions.
-For example, if a programmer expects a unary function over integers, @reachin{f}, to always return a number between @reachin{0} and @reachin{50}, then they should write @reachin{assert(f(forall(UInt256)) <= 50);} in their program.
+For example, if a programmer expects a unary function over integers, @reachin{f}, to always return a number between @reachin{0} and @reachin{50}, then they should write @reachin{assert(f(forall(UInt)) <= 50);} in their program.
 Similarly, the unit tests for a function that a developer would normally write in a test suite, should instead be written as a series of assertions in the module that defines a function.
 
 If you'd like to continue learning about verification, we recommend reading about @link["https://duckduckgo.com/?q=property-based+testing"]{"property-based testing"}.

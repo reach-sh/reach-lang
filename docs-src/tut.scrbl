@@ -158,7 +158,7 @@ In this section, we'll have Alice and Bob actually execute the game of @|RPS|.
 
 We have to decide how to represent the hands of the game.
 A simple way is to represent them as the numbers @reachin{0}, @reachin{1}, and @reachin{2}, standing for @litchar{Rock}, @litchar{Paper}, and @litchar{Scissors}.
-However, Reach only supports unsigned integers of 256 bits, so it is better to represent them as the equivalence class of integers modulo three, so we won't distinguish between @reachin{0} and @reachin{3} as @litchar{Rock}.
+However, Reach does not support unsigned integers of exactly two bits, so it is better to represent them as the equivalence class of integers modulo three, so we won't distinguish between @reachin{0} and @reachin{3} as @litchar{Rock}.
 
 We'll use a similar strategy for representing the three outcomes of the game: @litchar{B wins}, @litchar{Draw}, and @litchar{A wins}.
 
@@ -735,7 +735,7 @@ And we can specify that whenever the same value is provided for both hands, no m
          'only 17 18 "// ..."]
 
 These examples both use @reachin{forall}, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
-You might think that these theorems will take a very long time to prove, because they have to loop over all @(number->nice-string (expt 2 (* 256 3))) possibilities for the bits of @reachin{handA} (twice!) and @reachin{handB}.
+You might think that these theorems will take a very long time to prove, because they have to loop over all @(number->nice-string (expt 2 (* 256 3))) possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handA} (twice!) and @reachin{handB}.
 In fact, on the author's MacBook Pro from early 2015, it takes less than half a second.
 That's because Reach uses an advanced @seclink["guide-reach"]{symbolic execution engine} to reason about this theorem abstractly without considering individual values.
 

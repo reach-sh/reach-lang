@@ -74,7 +74,7 @@ Here's what we wrote in our program:
          #:link #t
          'only 5 7 "  // ..."]
 
-We chose to represent the amount as a @reachin{UInt256} field, which should be unsurprising.
+We chose to represent the amount as a @reachin{UInt} field, which should be unsurprising.
 We then have two functions that take no arguments and return an @reachin{Address} which respectively return the Relay identity and the Bob identity.
 The idea here is that Alice will create the Relay account in the midst of the program and Bob will provide his own identity when he's acting as Relay.
 

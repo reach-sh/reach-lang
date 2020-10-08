@@ -62,7 +62,7 @@ Here's what we wrote in our program:
          #:link #t
          'only 1 21 "      // ..."]
 
-We've represented most values as @reachin{UInt256} fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is @reachin{funded}, one for when the particular participant is @reachin{ready} to extract the funds, and finally one for when they have successfuly @reachin{recvd} (received) them.
+We've represented most values as @reachin{UInt} fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is @reachin{funded}, one for when the particular participant is @reachin{ready} to extract the funds, and finally one for when they have successfuly @reachin{recvd} (received) them.
 
 @(drstep-cc TAG)
 

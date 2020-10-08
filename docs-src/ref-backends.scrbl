@@ -262,11 +262,11 @@ As with @jsin{waitUntilTime}, the @jsin{onProgress} callback is optional.
 Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thrown if this is not the case.
 
 @(hrule)
-@(mint-define! '("T_Null") '("T_Bool") '("T_UInt256") '("T_Bytes") '("T_Address") '("T_Array") '("T_Tuple") '("T_Object"))
+@(mint-define! '("T_Null") '("T_Bool") '("T_UInt") '("T_Bytes") '("T_Address") '("T_Array") '("T_Tuple") '("T_Object"))
 @js{
  T_Null => ReachType
  T_Bool => ReachType
- T_UInt256 => ReachType
+ T_UInt => ReachType
  T_Bytes => ReachType
  T_Digest => ReachType
  T_Address => ReachType
@@ -282,7 +282,7 @@ See the table below for Reach types and their corresponding JavaScript represent
  // Reach  => JavaScript
  Null      => null
  Bool      => 'boolean'
- UInt256   => 'BigNumber' or 'number'
+ UInt      => 'BigNumber' or 'number'
  Bytes     => 'string'
  Digest    => 'BigNumber'
  Address   => 'string'
@@ -291,7 +291,7 @@ See the table below for Reach types and their corresponding JavaScript represent
  Object    => object
  Data      => ['variant', value] }
 
-For example, the Reach type @reachin{MInt = Data({None: Null, Some: UInt256})} inhabitant @reachin{MInt.Some(42)} is represented as @reachin{['Some', 42]} in JavaScript.
+For example, the Reach type @reachin{MInt = Data({None: Null, Some: UInt})} inhabitant @reachin{MInt.Some(42)} is represented as @reachin{['Some', 42]} in JavaScript.
 
 @(hrule)
 @(mint-define! '("assert"))
@@ -310,22 +310,22 @@ Returns a new array identical to @jsin{arr}, except that index @jsin{idx} is @js
 @(hrule)
 @(mint-define! '("bigNumberify") '("isBigNumber"))
 @js{
- bigNumberify(x) => uint256
+ bigNumberify(x) => UInt
  isBigNumber(x) => bool}
 
 @deftech{bigNumberify} converts a JavaScript number to a BigNumber,
-the JavaScript representation of Reach's uint256.
+the JavaScript representation of Reach's @reachin{UInt}.
 @deftech{isBigNumber} checks if its input is a BigNumber.
 
 @(hrule)
-@(mint-define! '("toHex") '("isHex") '("hexToString") '("hexToBigNumber") '("bigNumberToHex") '("uint256ToBytes") '("bytesEq") '("digestEq") '("addressEq"))
+@(mint-define! '("toHex") '("isHex") '("hexToString") '("hexToBigNumber") '("bigNumberToHex") '("uintToBytes") '("bytesEq") '("digestEq") '("addressEq"))
 @js{
  toHex(x) => bytes
  isHex(x) => bool
  hexToString(bytes) => string
- hexToBigNumber(bytes) => uint256
- bigNumberToHex(uint256) => bytes
- uint256ToBytes(uint256) => bytes
+ hexToBigNumber(bytes) => UInt
+ bigNumberToHex(UInt) => bytes
+ uintToBytes(UInt) => bytes
  bytesEq(bytes, bytes) => bool
  digestEq(Digest, Digest) => bool
  addressEq(Address, Address) => bool}
@@ -340,11 +340,12 @@ These are additional conversion and comparison utilities.
 Hashes the value.
 
 @(hrule)
-@(mint-define! '("randomUInt256"))
+@(mint-define! '("randomUInt"))
 @js{
- randomUInt256() => uint256}
+ randomUInt() => UInt}
 
-Creates 256 random bits as a uint256.
+Generates random bits as a @reachin{UInt}.
+The number of bits generated depends on the particular @tech{consensus network}.
 
 @(hrule)
 @js{
@@ -355,24 +356,24 @@ A value suitable for use as a @tech{participant interact interface} requiring a 
 @(hrule)
 @(mint-define! '("add") '("sub") '("mod") '("mul") '("div"))
 @js{
- add(uint256, uint256) => uint256
- sub(uint256, uint256) => uint256
- mod(uint256, uint256) => uint256
- mul(uint256, uint256) => uint256
- div(uint256, uint256) => uint256 }
+ add(UInt, UInt) => UInt
+ sub(UInt, UInt) => UInt
+ mod(UInt, UInt) => UInt
+ mul(UInt, UInt) => UInt
+ div(UInt, UInt) => UInt }
 
-Integer arithmetic on uint256.
+Integer arithmetic on @reachin{UInt}.
 
 @(hrule)
 @(mint-define! '("eq") '("ge") '("gt") '("le") '("lt"))
 @js{
- eq(uint256, uint256) => bool
- ge(uint256, uint256) => bool
- gt(uint256, uint256) => bool
- le(uint256, uint256) => bool
- lt(uint256, uint256) => bool}
+ eq(UInt, UInt) => bool
+ ge(UInt, UInt) => bool
+ gt(UInt, UInt) => bool
+ le(UInt, UInt) => bool
+ lt(UInt, UInt) => bool}
 
-Integer comparisons on uint256.
+Integer comparisons on @reachin{UInt}.
 
 @(hrule)
 
