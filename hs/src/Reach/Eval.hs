@@ -457,6 +457,7 @@ base_env =
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
     , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance)
+    , ("Digest", SLV_Type T_Digest)
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
     , ("UInt256", SLV_Type T_UInt256)
