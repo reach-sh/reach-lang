@@ -806,6 +806,8 @@ connect_algo :: Connector
 connect_algo = Connector {..}
   where
     conName = "ALGO"
+    conLims = SLLimits {..}
+    lim_maxUInt = 2^(64::Integer) - 1
     conGen moutn pl = do
       let disp which c =
             case moutn of

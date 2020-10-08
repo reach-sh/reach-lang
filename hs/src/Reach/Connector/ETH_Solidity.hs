@@ -853,6 +853,8 @@ connect_eth :: Connector
 connect_eth = Connector {..}
   where
     conName = "ETH"
+    conLims = SLLimits {..}
+    lim_maxUInt = 2^(256::Integer) - 1
     conGen outnMay pl = case outnMay of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->

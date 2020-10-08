@@ -8,7 +8,7 @@ Verification failed:
   at ./overview/index-error.rsh:29:11:application
 
   Theorem formalization:
-  v28
+  v36
 
   This could be violated if...
     "interact_Alice_request" = 1
@@ -16,56 +16,56 @@ Verification failed:
       (because: interaction)
 
   In context...
-    "v28" = (= 0 v27 )
-      (from: v28)
+    "v36" = (= 0 v35 )
+      (from: v36)
       (bound at: ./overview/index-error.rsh:29:11:application)
-      (because: evaluating PEQ(DLC_Int 0, v27))
-    "v27" = v24
-      (from: v27)
+      (because: evaluating PEQ(DLC_Int 0, v35))
+    "v35" = v32
+      (from: v35)
       (bound at: ./overview/index-error.rsh:29:11:application)
-      (because: evaluating v24)
-    "v24" = (- v23 v20 )
-      (from: v24)
+      (because: evaluating v32)
+    "v32" = (- v30 v27 )
+      (from: v32)
       (bound at: ./overview/index-error.rsh:24:29:application)
-      (because: evaluating SUB(v23, v20))
-    "v20" = (- v1 1 )
-      (from: v20)
+      (because: evaluating SUB(v30, v27))
+    "v27" = (- v1 1 )
+      (from: v27)
       (bound at: ./overview/index-error.rsh:application)
       (because: evaluating SUB(v1, DLC_Int 1))
-    "v23" = v19
-      (from: v23)
+    "v30" = v25
+      (from: v30)
       (bound at: ./overview/index-error.rsh:24:29:application)
-      (because: evaluating v19)
+      (because: evaluating v25)
     "v1" = interact_Alice_request
       (from: v1)
       (bound at: ./overview/index-error.rsh:13:8:dot)
       (because: an honest message from "Alice" of interact("Alice")."request"(UInt256))
-    "v19" = (+ v18 v16 )
-      (from: v19)
+    "v25" = (+ v22 v20 )
+      (from: v25)
       (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
-      (because: evaluating ADD(v18, v16))
-    "v16" = 0
-      (from: v16)
+      (because: evaluating ADD(v22, v20))
+    "v20" = 0
+      (from: v20)
       (bound at: ./overview/index-error.rsh:23:8:dot)
       (because: an honest payment from "Alice" of DLC_Int 0)
-    "v18" = v13
-      (from: v18)
+    "v22" = v17
+      (from: v22)
       (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
-      (because: evaluating v13)
-    "v13" = (+ v12 v10 )
-      (from: v13)
+      (because: evaluating v17)
+    "v17" = (+ v14 v12 )
+      (from: v17)
       (bound at: ./overview/index-error.rsh:18:21:after expr stmt semicolon)
-      (because: evaluating ADD(v12, v10))
-    "v10" = v1
-      (from: v10)
+      (because: evaluating ADD(v14, v12))
+    "v12" = v1
+      (from: v12)
       (bound at: ./overview/index-error.rsh:18:8:dot)
       (because: an honest payment from "Bob" of v1)
-    "v12" = v6
-      (from: v12)
+    "v14" = v8
+      (from: v14)
       (bound at: ./overview/index-error.rsh:18:21:after expr stmt semicolon)
-      (because: evaluating v6)
-    "v6" = (+ v5 v3 )
-      (from: v6)
+      (because: evaluating v8)
+    "v8" = (+ v5 v3 )
+      (from: v8)
       (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
       (because: evaluating ADD(v5, v3))
     "v3" = 0

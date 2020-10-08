@@ -139,25 +139,29 @@ argTypeOf = \case
   DLA_Data t _ _ -> T_Data t
   DLA_Interact _ _ t -> t
 
-slToDL :: HasCallStack => SrcLoc -> SLVal -> Maybe DLArg
-slToDL _at v =
+--- FIXME change this to give a reason?
+slToDL :: HasCallStack => SLLimits -> SrcLoc -> SLVal -> Maybe DLArg
+slToDL lims _at v =
   case v of
     SLV_Null _ _ -> return $ DLA_Con $ DLC_Null
     SLV_Bool _ b -> return $ DLA_Con $ DLC_Bool b
-    SLV_Int _ i -> return $ DLA_Con $ DLC_Int i
+    SLV_Int _ i ->
+      case 0 <= i && i <= lim_maxUInt lims of
+        False -> Nothing
+        True -> return $ DLA_Con $ DLC_Int i
     SLV_Bytes _ bs -> return $ DLA_Con $ DLC_Bytes bs
     SLV_Array at' t vs -> do
-      ds <- mapM (slToDL at') vs
+      ds <- mapM (slToDL lims at') vs
       return $ DLA_Array t ds
     SLV_Tuple at' vs -> do
-      ds <- mapM (slToDL at') vs
+      ds <- mapM (slToDL lims at') vs
       return $ DLA_Tuple $ ds
     SLV_Object at' _ fenv -> do
-      denv <- mapM ((slToDL at') . sss_val) fenv
+      denv <- mapM ((slToDL lims at') . sss_val) fenv
       return $ DLA_Obj denv
     SLV_Clo _ _ _ _ _ -> Nothing
     SLV_Data at' t vn sv ->
-      DLA_Data t vn <$> slToDL at' sv
+      DLA_Data t vn <$> slToDL lims at' sv
     SLV_DLVar dv -> return $ DLA_Var dv
     SLV_Type _ -> Nothing
     SLV_Connector _ -> Nothing
@@ -174,57 +178,57 @@ slToDL _at v =
     SLV_Prim _ -> Nothing
     SLV_Form _ -> Nothing
 
-typeOfM :: HasCallStack => SrcLoc -> SLVal -> Maybe (SLType, DLArg)
-typeOfM at v = do
-  da <- slToDL at v
+typeOfM :: HasCallStack => SLLimits -> SrcLoc -> SLVal -> Maybe (SLType, DLArg)
+typeOfM lims at v = do
+  da <- slToDL lims at v
   return $ (argTypeOf da, da)
 
-typeOf :: HasCallStack => SrcLoc -> SLVal -> (SLType, DLArg)
-typeOf at v =
-  case typeOfM at v of
+typeOf :: HasCallStack => SLLimits -> SrcLoc -> SLVal -> (SLType, DLArg)
+typeOf lims at v =
+  case typeOfM lims at v of
     Just x -> x
     Nothing -> expect_throw at $ Err_Type_None v
 
-typeCheck :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArg
-typeCheck at env ty val = typeCheck_help at env ty val val_ty res
+typeCheck :: SLLimits -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArg
+typeCheck lims at env ty val = typeCheck_help at env ty val val_ty res
   where
-    (val_ty, res) = typeOf at val
+    (val_ty, res) = typeOf lims at val
 
-typeChecks :: SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArg]
-typeChecks at env ts vs =
+typeChecks :: SLLimits -> SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArg]
+typeChecks lims at env ts vs =
   case (ts, vs) of
     ([], []) ->
       return []
     ((t : ts'), (v : vs')) -> do
-      d <- typeCheck at env t v
-      ds' <- typeChecks at env ts' vs'
+      d <- typeCheck lims at env t v
+      ds' <- typeChecks lims at env ts' vs'
       return $ d : ds'
     ((_ : _), _) ->
       expect_throw at $ Err_Type_TooFewArguments ts
     (_, (_ : _)) ->
       expect_throw at $ Err_Type_TooManyArguments vs
 
-checkAndConvert_i :: SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArg])
-checkAndConvert_i at env t args =
+checkAndConvert_i :: SLLimits -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArg])
+checkAndConvert_i lims at env t args =
   case t of
     T_Fun dom rng -> do
-      dargs <- typeChecks at env dom args
+      dargs <- typeChecks lims at env dom args
       return (rng, dargs)
     T_Forall var ft -> do
       var_ref <- newSTRef Nothing
       let env' = M.insert var var_ref env
-      (vrng, dargs) <- checkAndConvert_i at env' ft args
+      (vrng, dargs) <- checkAndConvert_i lims at env' ft args
       rng <- typeSubst at env' vrng
       return (rng, dargs)
     _ -> expect_throw at $ Err_Type_NotApplicable t
 
-checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArg])
-checkAndConvert at t args = runST $ checkAndConvert_i at mempty t args
+checkAndConvert :: SLLimits -> SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArg])
+checkAndConvert lims at t args = runST $ checkAndConvert_i lims at mempty t args
 
-checkType :: SrcLoc -> SLType -> SLVal -> DLArg
-checkType at et v =
+checkType :: SLLimits -> SrcLoc -> SLType -> SLVal -> DLArg
+checkType lims at et v =
   case et == t of
     True -> da
     False -> expect_throw at $ Err_Type_Mismatch et t v
   where
-    (t, da) = typeOf at v
+    (t, da) = typeOf lims at v

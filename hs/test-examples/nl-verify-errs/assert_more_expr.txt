@@ -7,7 +7,7 @@ Verification failed:
   at ./assert_more_expr.rsh:12:7:after expr stmt semicolon call to "function" (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
   Theorem formalization:
-  v6
+  v9
 
   This could be violated if...
     "v1" = 0
@@ -20,16 +20,16 @@ Verification failed:
       (because: evaluating interact("A")."getX"())
 
   In context...
-    "v6" = (= v4 v3 )
-      (from: v6)
+    "v9" = (= v7 v3 )
+      (from: v9)
       (bound at: reach standard library:22:17:application)
-      (because: evaluating PEQ(v4, v3))
+      (because: evaluating PEQ(v7, v3))
     "v3" = (* v1 2 )
       (from: v3)
       (bound at: ./assert_more_expr.rsh:application)
       (because: evaluating MUL(v1, DLC_Int 2))
-    "v4" = (+ v1 v2 )
-      (from: v4)
+    "v7" = (+ v1 v2 )
+      (from: v7)
       (bound at: ./assert_more_expr.rsh:application)
       (because: evaluating ADD(v1, v2))
 Verifying with mode = VM_Dishonest RoleContract

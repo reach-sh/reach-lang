@@ -10,8 +10,8 @@ type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
 
 type LLRets = M.Map Int DLVar
 
-lin_com :: String -> (SrcLoc -> FluidEnv -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> FluidEnv -> LLRets -> DLStmt -> DLStmts -> a
-lin_com who back mkk fve rets s ks =
+lin_com :: SLLimits -> String -> (SrcLoc -> FluidEnv -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> FluidEnv -> LLRets -> DLStmt -> DLStmts -> a
+lin_com lims who back mkk fve rets s ks =
   case s of
     DLS_FluidSet at fv da -> back at fve' rets ks
       where
@@ -27,29 +27,29 @@ lin_com who back mkk fve rets s ks =
     DLS_ArrayMap at ans x a f r ->
       mkk $ LL_ArrayMap at ans x a f' r $ back at fve rets ks
       where
-        f' = lin_local at fve f
+        f' = lin_local lims at fve f
     DLS_ArrayReduce at ans x z b a f r ->
       mkk $ LL_ArrayReduce at ans x z b a f' r $ back at fve rets ks
       where
-        f' = lin_local at fve f
+        f' = lin_local lims at fve f
     DLS_If at ca _ ts fs
       | isLocal s ->
         mkk $ LL_LocalIf at ca t' f' $ back at fve rets ks
       where
-        t' = lin_local_rets at fve rets ts
-        f' = lin_local_rets at fve rets fs
+        t' = lin_local_rets lims at fve rets ts
+        f' = lin_local_rets lims at fve rets fs
     DLS_Switch at dv _ cm
       | isLocal s ->
         mkk $ LL_LocalSwitch at dv cm' $ back at fve rets ks
       where
         cm' = M.map cm1 cm
-        cm1 (dv', l) = (dv', lin_local_rets at fve rets l)
+        cm1 (dv', l) = (dv', lin_local_rets lims at fve rets l)
     DLS_Return at ret sv ->
       case M.lookup ret rets of
         Nothing -> back at fve rets ks
         Just dv -> mkk $ LL_Set at dv da $ back at fve rets ks
           where
-            (_, da) = typeOf at sv
+            (_, da) = typeOf lims at sv
     DLS_Prompt at (Left _) ss -> back at fve rets (ss <> ks)
     DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
       mkk $ LL_Var at dv $ back at fve rets' (ss <> ks)
@@ -72,41 +72,42 @@ lin_com who back mkk fve rets s ks =
     DLS_Continue {} ->
       impossible $ who ++ " cannot while"
 
-lin_local_rets :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLLocal
-lin_local_rets at _ _ Seq.Empty =
+lin_local_rets :: SLLimits -> SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLLocal
+lin_local_rets _ at _ _ Seq.Empty =
   LLL_Com $ LL_Return at
-lin_local_rets _ fve rets (s Seq.:<| ks) =
-  lin_com "local" lin_local_rets LLL_Com fve rets s ks
+lin_local_rets lims _ fve rets (s Seq.:<| ks) =
+  lin_com lims "local" (lin_local_rets lims) LLL_Com fve rets s ks
 
-lin_local :: SrcLoc -> FluidEnv -> DLStmts -> LLLocal
-lin_local at fve ks = lin_local_rets at fve mempty ks
+lin_local :: SLLimits -> SrcLoc -> FluidEnv -> DLStmts -> LLLocal
+lin_local lims at fve ks = lin_local_rets lims at fve mempty ks
 
-lin_con :: (FluidEnv -> DLStmts -> LLStep) -> SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLConsensus
-lin_con _ at _ _ Seq.Empty =
+lin_con :: SLLimits -> (FluidEnv -> DLStmts -> LLStep) -> SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLConsensus
+lin_con _ _ at _ _ Seq.Empty =
   LLC_Com $ LL_Return at
-lin_con back at_top fve rets (s Seq.:<| ks) =
+lin_con lims back at_top fve rets (s Seq.:<| ks) =
   case s of
     DLS_If at ca _ ts fs
       | not (isLocal s) ->
         LLC_If at ca t' f'
       where
-        t' = lin_con back at fve rets (ts <> ks)
-        f' = lin_con back at fve rets (fs <> ks)
+        t' = lin_con lims back at fve rets (ts <> ks)
+        f' = lin_con lims back at fve rets (fs <> ks)
     DLS_Switch at dv _ cm
       | not (isLocal s) ->
         LLC_Switch at dv cm'
       where
         cm' = M.map cm1 cm
-        cm1 (dv', c) = (dv', lin_con back at fve rets (c <> ks))
+        cm1 (dv', c) = (dv', lin_con lims back at fve rets (c <> ks))
     DLS_FromConsensus at cons ->
       LLC_FromConsensus at at_top $ back fve (cons <> ks)
     DLS_While at asn inv_b cond_b body ->
-      LLC_While at asn (block inv_b) (block cond_b) body' $ lin_con back at fve rets ks
+      LLC_While at asn (block inv_b) (block cond_b) body' $
+        lin_con lims back at fve rets ks
       where
-        body' = lin_con back at fve rets body
+        body' = lin_con lims back at fve rets body
         --- Note: The invariant and condition can't return
         block (DLBlock ba fs ss a) =
-          LLBlock ba fs (lin_local ba fve ss) a
+          LLBlock ba fs (lin_local lims ba fve ss) a
     DLS_Continue at update ->
       case ks of
         Seq.Empty ->
@@ -114,12 +115,12 @@ lin_con back at_top fve rets (s Seq.:<| ks) =
         _ ->
           impossible $ "consensus cannot continue w/ non-empty k"
     _ ->
-      lin_com "consensus" (lin_con back) LLC_Com fve rets s ks
+      lin_com lims "consensus" (lin_con lims back) LLC_Com fve rets s ks
 
-lin_step :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLStep
-lin_step at _ _ Seq.Empty =
+lin_step :: SLLimits -> SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLStep
+lin_step _ at _ _ Seq.Empty =
   LLS_Stop at
-lin_step _ fve rets (s Seq.:<| ks) =
+lin_step lims _ fve rets (s Seq.:<| ks) =
   case s of
     DLS_If {}
       | not (isLocal s) ->
@@ -130,23 +131,23 @@ lin_step _ fve rets (s Seq.:<| ks) =
     DLS_Stop at ->
       LLS_Stop at
     DLS_Only at who ss ->
-      LLS_Only at who ls $ lin_step at fve rets ks
+      LLS_Only at who ls $ lin_step lims at fve rets ks
       where
-        ls = lin_local at fve ss
+        ls = lin_local lims at fve ss
     DLS_ToConsensus at who fs as ms amt amtv mtime cons ->
       LLS_ToConsensus at who fs as ms amt amtv mtime' cons'
       where
-        cons' = lin_con back at fve mempty (cons <> ks)
-        back fve' = lin_step at fve' rets
+        cons' = lin_con lims back at fve mempty (cons <> ks)
+        back fve' = lin_step lims at fve' rets
         mtime' = do
           (delay_da, time_ss) <- mtime
-          return $ (delay_da, lin_step at fve rets (time_ss <> ks))
+          return $ (delay_da, lin_step lims at fve rets (time_ss <> ks))
     _ ->
-      lin_com "step" lin_step LLS_Com fve rets s ks
+      lin_com lims "step" (lin_step lims) LLS_Com fve rets s ks
 
 linearize :: DLProg -> LLProg
 linearize (DLProg at (DLOpts {..}) sps ss) =
-  LLProg at opts' sps $ lin_step at mempty mempty ss
+  LLProg at opts' sps $ lin_step dlo_lims at mempty mempty ss
   where
     opts' = LLOpts {..}
     llo_deployMode = dlo_deployMode

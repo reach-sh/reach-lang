@@ -1,0 +1,47 @@
+Verifying knowledge assertions
+Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TClaim CT_Assert
+  msg: "add overflow"
+  at ./overflow.rsh:application
+
+  Theorem formalization:
+  v11
+
+  This could be violated if...
+    "v1" = 18446744073709551615
+      (from: v1)
+      (bound at: ./overflow.rsh:9:40:application)
+      (because: evaluating interact("A")."get"())
+
+  In context...
+    "v11" = (<= v2 v10 )
+      (from: v11)
+      (bound at: ./overflow.rsh:application)
+      (because: evaluating PLE(v2, v10))
+    "v10" = (- 18446744073709551615 1 )
+      (from: v10)
+      (bound at: ./overflow.rsh:application)
+      (because: evaluating SUB(DLC_Int 18446744073709551615, DLC_Int 1))
+    "v2" = v1
+      (from: v2)
+      (bound at: ./overflow.rsh:11:6:dot)
+      (because: an honest message from "A" of v1)
+Verifying with mode = VM_Dishonest RoleContract
+Verification failed:
+  in VM_Dishonest RoleContract mode
+  of theorem TClaim CT_Assert
+  msg: "add overflow"
+  at ./overflow.rsh:application
+
+  (details omitted on repeat)
+Verifying with mode = VM_Dishonest (RolePart "A")
+Verification failed:
+  in VM_Dishonest (RolePart "A") mode
+  of theorem TClaim CT_Assert
+  msg: "add overflow"
+  at ./overflow.rsh:application
+
+  (details omitted on repeat)
+Checked 10 theorems; 3 failures. :'(

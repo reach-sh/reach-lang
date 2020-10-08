@@ -2,6 +2,8 @@
 
 module Reach.AST where
 
+import Algebra.Lattice
+import Algebra.Lattice.Ordered
 import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import Data.List
@@ -366,6 +368,21 @@ instance Show SLCtxtFrame where
     where
       name = maybe "[unknown function]" show mname
 
+data SLLimits = SLLimits
+  { lim_maxUInt :: Integer }
+  deriving (Eq, Generic, NFData, Show)
+
+omui :: SLLimits -> Ordered Integer
+omui (SLLimits {..}) = Ordered lim_maxUInt
+
+instance Lattice SLLimits where
+  x \/ y = SLLimits (getOrdered $ omui x \/ omui y)
+  x /\ y = SLLimits (getOrdered $ omui x /\ omui y)
+
+instance BoundedMeetSemiLattice SLLimits where
+  top = SLLimits {..}
+    where lim_maxUInt = 2^(256 ::Integer) - 1
+
 --- Dynamic Language
 
 data DeployMode
@@ -603,8 +620,10 @@ data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLStmts DLArg
   deriving (Eq, Generic, NFData, Show)
 
-data DLOpts = DLOpts 
+data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
+  , dlo_verifyOverflow :: Bool
+  , dlo_lims :: SLLimits
   , dlo_connectors :: [String] }
   deriving (Eq, Generic, NFData, Show)
 
