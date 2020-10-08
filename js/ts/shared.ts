@@ -494,4 +494,4 @@ export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
   x.map((e, i): [X, Y] => [e, y[i]]);
 
 export type CurrencyAmount = string | number | BigNumber
-export type Connector = 'ETH' | 'ALGO' | 'FAKE';
+export type {Connector} from './ConnectorMode';

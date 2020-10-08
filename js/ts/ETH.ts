@@ -4,7 +4,7 @@ import http from 'http';
 import url from 'url';
 import waitPort from 'wait-port';
 
-import { ConnectorMode, getConnectorMode } from './loader';
+import { ConnectorMode, getConnectorMode } from './ConnectorMode';
 import {
   add,
   assert,
@@ -266,7 +266,7 @@ const doHealthcheck = async (): Promise<void> => {
 const getDevnet = memoizeThunk(async (): Promise<void> => {
   await getPortConnection();
   return await doHealthcheck();
-})
+});
 
 const getProvider = memoizeThunk(async (): Promise<Provider> => {
   if (networkDesc.type == 'uri') {
@@ -834,17 +834,17 @@ const requireIsolatedNetwork = (label: string): void => {
   }
 };
 
-const dummyAccountP: Promise<Account> = (async () => {
+const getDummyAccount = memoizeThunk(async (): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
   const acc = await connectAccount(networkAccount);
   return acc;
-})();
+});
 
 const stepTime = async () => {
   requireIsolatedNetwork('stepTime');
   const signer = await getSigner();
-  const acc = await dummyAccountP;
+  const acc = await getDummyAccount();
   return await transfer({networkAccount: signer}, acc, parseCurrency(0));
 };
 
