@@ -1,13 +1,13 @@
 'reach 0.1';
 
-const MUInt256 = Maybe(UInt256);
+const MUInt = Maybe(UInt);
 
 export const main = Reach.App(
   {},
   [['A', { }]],
   (A) => {
     A.only(() => {
-      const mi = MUInt256.None();
+      const mi = MUInt.None();
       const i = (() => {
         switch (mi) {
         case None: return 42;

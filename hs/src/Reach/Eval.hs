@@ -129,7 +129,7 @@ displayTy :: SLType -> String
 displayTy = \case
   T_Null -> "null"
   T_Bool -> "bool"
-  T_UInt256 -> "uint256"
+  T_UInt -> "uint256"
   T_Bytes -> "bytes"
   T_Digest -> "digest"
   T_Address -> "address"
@@ -461,7 +461,7 @@ base_env =
     , ("Digest", SLV_Type T_Digest)
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
-    , ("UInt256", SLV_Type T_UInt256)
+    , ("UInt", SLV_Type T_UInt)
     , ("Bytes", SLV_Type T_Bytes)
     , ("Address", SLV_Type T_Address)
     , ("forall", SLV_Prim SLPrim_forall)
@@ -1022,7 +1022,7 @@ evalPrimOp ctxt at _sco st p sargs =
           ADD -> do
             let (a, b) = case dargs of [ a_, b_ ] -> (a_, b_)
                                        _ -> impossible "add args"
-            (ra, rl) <- doOp T_UInt256 SUB [ lim_maxUInt_a, b ]
+            (ra, rl) <- doOp T_UInt SUB [ lim_maxUInt_a, b ]
             (ca, cl) <- doCmp PLE [ a, ra ]
             return $ rl <> cl <> doClaim ca "add overflow"
           SUB -> do
@@ -1176,7 +1176,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_Array_iota ->
       case map snd sargs of
         [SLV_Int _ sz] ->
-          retV $ (lvl, SLV_Array at T_UInt256 $ map (SLV_Int at) [0 .. (sz -1)])
+          retV $ (lvl, SLV_Array at T_UInt $ map (SLV_Int at) [0 .. (sz -1)])
         _ -> illegal_args
     SLPrim_array ->
       case map snd sargs of
@@ -1315,7 +1315,7 @@ evalPrim ctxt at sco st p sargs =
       case map snd sargs of
         [arrv, idxv, valv] ->
           case typeOf lims at idxv of
-            (T_UInt256, idxda@(DLA_Con (DLC_Int idxi))) ->
+            (T_UInt, idxda@(DLA_Con (DLC_Int idxi))) ->
               case arrv of
                 SLV_Array _ elem_ty arrvs ->
                   case idxi' < length arrvs of
@@ -1339,7 +1339,7 @@ evalPrim ctxt at sco st p sargs =
                 _ -> illegal_args
               where
                 idxi' = fromIntegral idxi
-            (T_UInt256, idxda) ->
+            (T_UInt, idxda) ->
               case typeOf lims at arrv of
                 (arr_ty@(T_Array elem_ty sz), arrda) ->
                   doArrayBoundsCheck ctxt at sco st sz idxv $
@@ -1440,7 +1440,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_transfer_amt_to amt_sv ->
       case st_mode st of
         SLM_ConsensusStep -> do
-          let amt_dla = checkType lims at T_UInt256 amt_sv
+          let amt_dla = checkType lims at T_UInt amt_sv
           tbsuff <- doAssertBalance ctxt at sco st amt_sv PLE
           SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
           let lifts = tbsuff <> (return $ DLS_Let at Nothing $ DLE_Transfer at who_dla amt_dla) <> balup
@@ -1487,7 +1487,7 @@ evalPrim ctxt at sco st p sargs =
         SLM_Step ->
           case sargs of
             [amt_sv] -> do
-              let amt_da = checkType lims at T_UInt256 $ ensure_public at amt_sv
+              let amt_da = checkType lims at T_UInt $ ensure_public at amt_sv
               return $ SLRes (return $ DLS_Let at Nothing (DLE_Wait at amt_da)) st $ public $ SLV_Null at "wait"
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "wait"
@@ -1854,7 +1854,7 @@ evalExpr ctxt at sco st e = do
                     idx_dla = DLA_Con (DLC_Int idxi)
             _ ->
               expect_throw at' $ Err_Eval_RefNotRefable arrv
-        SLV_DLVar idxdv@(DLVar _ _ T_UInt256 _) ->
+        SLV_DLVar idxdv@(DLVar _ _ T_UInt _) ->
           case arr_ty of
             T_Array elem_ty sz ->
               retArrayRef elem_ty sz arr_dla idx_dla
@@ -2173,9 +2173,9 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                         , sco_env = penv'
                         }
                 SLRes amt_lifts_ _ amt_sv <- evalExpr ctxt at sco_penv' st_pure amte_
-                return $ (amte_, amt_lifts_, checkType lims at T_UInt256 $ ensure_public at amt_sv)
+                return $ (amte_, amt_lifts_, checkType lims at T_UInt $ ensure_public at amt_sv)
           let amt_compute_lifts = return $ DLS_Only at who amt_lifts
-          amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt256
+          amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt
           SLRes amt_check_lifts _ _ <- do
             --- XXX Merge with doAssertBalance somehow
             let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar amt_dv)] []
@@ -2188,7 +2188,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               Nothing -> return $ (mempty, Nothing, Nothing)
               Just (dt_at, de, (JSBlock _ dt_ss _)) -> do
                 SLRes de_lifts _ de_sv <- evalExpr ctxt at sco st_pure de
-                let de_da = checkType lims dt_at T_UInt256 $ ensure_public dt_at de_sv
+                let de_da = checkType lims dt_at T_UInt $ ensure_public dt_at de_sv
                 SLRes dta_lifts dt_st dt_cr <- evalStmt ctxt dt_at sco st dt_ss
                 return $ (de_lifts, Just (dt_st, dt_cr), Just (de_da, dta_lifts))
           let st_cstep =
@@ -2384,7 +2384,7 @@ evalStmt ctxt at sco st ss =
               SLRes fr_lifts _ balance_v <-
                 doFluidRef ctxt cont_at st_decl FV_balance
               let balance_da =
-                    checkType lims cont_at T_UInt256 $
+                    checkType lims cont_at T_UInt $
                       ensure_public cont_at balance_v
               let unknown_balance_dv = whilem M.! internalVar_balance
               let cont_dam' =

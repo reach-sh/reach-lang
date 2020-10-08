@@ -2,7 +2,7 @@
 
 export const main = Reach.App(
   {},
-  [['A', {getX: Fun([], UInt256)}]],
+  [['A', {getX: Fun([], UInt)}]],
   (A) => {
     A.only(() => {
       const _x1 = interact.getX();

@@ -4,7 +4,7 @@ export const _version = '0.1.2';
 export async function Alice(stdlib, ctc, interact) {
   
   
-  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.wager, null)], stdlib.protect(stdlib.T_UInt256, interact.wager, null), [stdlib.T_UInt256], false, ((txn1) => {
+  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt], [stdlib.protect(stdlib.T_UInt, interact.wager, null)], stdlib.protect(stdlib.T_UInt, interact.wager, null), [stdlib.T_UInt], false, ((txn1) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(0));
     const [v27] = txn1.data;
@@ -36,7 +36,7 @@ export async function Alice(stdlib, ctc, interact) {
   const txn2 = await ctc.recv('Alice', 2, 0, [], stdlib.bigNumberify(10));
   if (txn2.didTimeout) {
     
-    const txn3 = await ctc.sendrecv('Alice', 10, 0, [stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v32, v28, v27], stdlib.bigNumberify(0), [], false, ((txn3) => {
+    const txn3 = await ctc.sendrecv('Alice', 10, 0, [stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt], [v32, v28, v27], stdlib.bigNumberify(0), [], false, ((txn3) => {
       const sim_r = { txns: [] };
       sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(1), v32, v28, v27);
       const [] = txn3.data;
@@ -95,12 +95,12 @@ export async function Alice(stdlib, ctc, interact) {
       const v70 = stdlib.eq(v59, stdlib.bigNumberify(1));
       
       return v70; })()) {
-      const v72 = stdlib.protect(stdlib.T_UInt256, await interact.getHand(), {
+      const v72 = stdlib.protect(stdlib.T_UInt, await interact.getHand(), {
         at: './index.rsh:59:42:application',
         fs: ['at ./index.rsh:61:51:after expr stmt semicolon call to "function" (defined at: ./index.rsh:58:19:function exp)'],
         msg: 'getHand',
         who: 'Alice' });
-      const v74 = stdlib.protect(stdlib.T_UInt256, await interact.random(), {
+      const v74 = stdlib.protect(stdlib.T_UInt, await interact.random(), {
         at: 'reach standard library:70:31:application',
         fs: ['at ./index.rsh:60:52:application call to "makeCommitment (as function)" (defined at: reach standard library:69:8:function exp)', 'at ./index.rsh:61:51:after expr stmt semicolon call to "function" (defined at: ./index.rsh:58:19:function exp)'],
         msg: 'random',
@@ -108,7 +108,7 @@ export async function Alice(stdlib, ctc, interact) {
       const v75 = stdlib.digest(v74, v72);
       
       
-      const txn3 = await ctc.sendrecv('Alice', 4, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Digest], [v28, v27, v35, v58, v75], stdlib.bigNumberify(0), [stdlib.T_Digest], stdlib.bigNumberify(10), ((txn3) => {
+      const txn3 = await ctc.sendrecv('Alice', 4, 1, [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Digest], [v28, v27, v35, v58, v75], stdlib.bigNumberify(0), [stdlib.T_Digest], stdlib.bigNumberify(10), ((txn3) => {
         const sim_r = { txns: [] };
         sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(3), v28, v27, v35, v58);
         const [v76] = txn3.data;
@@ -157,10 +157,10 @@ export async function Alice(stdlib, ctc, interact) {
           who: 'Alice' });
         const v96 = v58;
         const v97 = stdlib.add(v96, v77);
-        const txn4 = await ctc.recv('Alice', 5, 1, [stdlib.T_UInt256], stdlib.bigNumberify(10));
+        const txn4 = await ctc.recv('Alice', 5, 1, [stdlib.T_UInt], stdlib.bigNumberify(10));
         if (txn4.didTimeout) {
           
-          const txn5 = await ctc.sendrecv('Alice', 8, 0, [stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_Digest], [v97, v28, v27, v35, v76], stdlib.bigNumberify(0), [], false, ((txn5) => {
+          const txn5 = await ctc.sendrecv('Alice', 8, 0, [stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest], [v97, v28, v27, v35, v76], stdlib.bigNumberify(0), [], false, ((txn5) => {
             const sim_r = { txns: [] };
             sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(4), v97, v28, v27, v35, v76);
             const [] = txn5.data;
@@ -213,7 +213,7 @@ export async function Alice(stdlib, ctc, interact) {
           const v121 = stdlib.add(v120, v101);
           
           
-          const txn5 = await ctc.sendrecv('Alice', 6, 2, [stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt256, stdlib.T_UInt256, stdlib.T_UInt256], [v121, v28, v27, v35, v76, v100, v74, v72], stdlib.bigNumberify(0), [stdlib.T_UInt256, stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn5) => {
+          const txn5 = await ctc.sendrecv('Alice', 6, 2, [stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt, stdlib.T_UInt, stdlib.T_UInt], [v121, v28, v27, v35, v76, v100, v74, v72], stdlib.bigNumberify(0), [stdlib.T_UInt, stdlib.T_UInt], stdlib.bigNumberify(10), ((txn5) => {
             const sim_r = { txns: [] };
             sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(5), v121, v28, v27, v35, v76, v100);
             const [v123, v124] = txn5.data;
@@ -298,7 +298,7 @@ export async function Alice(stdlib, ctc, interact) {
     
     return; } }
 export async function Bob(stdlib, ctc, interact) {
-  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt256], false);
+  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt], false);
   const [v27] = txn1.data;
   const v29 = txn1.value;
   const v28 = txn1.from;
@@ -317,7 +317,7 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   
   
-  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v32, v28, v27], v27, [], stdlib.bigNumberify(10), ((txn2) => {
+  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt], [v32, v28, v27], v27, [], stdlib.bigNumberify(10), ((txn2) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(1), v32, v28, v27);
     const [] = txn2.data;
@@ -378,7 +378,7 @@ export async function Bob(stdlib, ctc, interact) {
       const txn3 = await ctc.recv('Bob', 4, 1, [stdlib.T_Digest], stdlib.bigNumberify(10));
       if (txn3.didTimeout) {
         
-        const txn4 = await ctc.sendrecv('Bob', 9, 0, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256], [v28, v27, v35, v58], stdlib.bigNumberify(0), [], false, ((txn4) => {
+        const txn4 = await ctc.sendrecv('Bob', 9, 0, [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt], [v28, v27, v35, v58], stdlib.bigNumberify(0), [], false, ((txn4) => {
           const sim_r = { txns: [] };
           sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(3), v28, v27, v35, v58);
           const [] = txn4.data;
@@ -429,14 +429,14 @@ export async function Bob(stdlib, ctc, interact) {
           who: 'Bob' });
         const v96 = v58;
         const v97 = stdlib.add(v96, v77);
-        const v99 = stdlib.protect(stdlib.T_UInt256, await interact.getHand(), {
+        const v99 = stdlib.protect(stdlib.T_UInt, await interact.getHand(), {
           at: './index.rsh:68:52:application',
           fs: ['at ./index.rsh:68:59:after expr stmt semicolon call to "function" (defined at: ./index.rsh:67:19:function exp)'],
           msg: 'getHand',
           who: 'Bob' });
         
         
-        const txn4 = await ctc.sendrecv('Bob', 5, 1, [stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt256], [v97, v28, v27, v35, v76, v99], stdlib.bigNumberify(0), [stdlib.T_UInt256], stdlib.bigNumberify(10), ((txn4) => {
+        const txn4 = await ctc.sendrecv('Bob', 5, 1, [stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt], [v97, v28, v27, v35, v76, v99], stdlib.bigNumberify(0), [stdlib.T_UInt], stdlib.bigNumberify(10), ((txn4) => {
           const sim_r = { txns: [] };
           sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(4), v97, v28, v27, v35, v76);
           const [v100] = txn4.data;
@@ -485,10 +485,10 @@ export async function Bob(stdlib, ctc, interact) {
             who: 'Bob' });
           const v120 = v97;
           const v121 = stdlib.add(v120, v101);
-          const txn5 = await ctc.recv('Bob', 6, 2, [stdlib.T_UInt256, stdlib.T_UInt256], stdlib.bigNumberify(10));
+          const txn5 = await ctc.recv('Bob', 6, 2, [stdlib.T_UInt, stdlib.T_UInt], stdlib.bigNumberify(10));
           if (txn5.didTimeout) {
             
-            const txn6 = await ctc.sendrecv('Bob', 7, 0, [stdlib.T_UInt256, stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt256], [v121, v28, v27, v35, v76, v100], stdlib.bigNumberify(0), [], false, ((txn6) => {
+            const txn6 = await ctc.sendrecv('Bob', 7, 0, [stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt, stdlib.T_Address, stdlib.T_Digest, stdlib.T_UInt], [v121, v28, v27, v35, v76, v100], stdlib.bigNumberify(0), [], false, ((txn6) => {
               const sim_r = { txns: [] };
               sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(5), v121, v28, v27, v35, v76, v100);
               const [] = txn6.data;

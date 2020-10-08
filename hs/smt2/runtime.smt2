@@ -6,7 +6,7 @@
 
 (set-logic ALL)
 
-(define-sort UInt256 () Int)
+(define-sort UInt () Int)
 
 (declare-sort Bytes 0)
 (declare-fun bytes0 () Bytes)
@@ -47,11 +47,11 @@
 ;;          (=> (not (= x y))
 ;;              (not (= (Bool_toBytes x) (Bool_toBytes y))))))
 
-(declare-fun UInt256_toBytes (UInt256) Bytes)
+(declare-fun UInt_toBytes (UInt) Bytes)
 ;; (assert
-;;  (forall ((x UInt256) (y UInt256))
+;;  (forall ((x UInt) (y UInt))
 ;;          (=> (not (= x y))
-;;              (not (= (UInt256_toBytes x) (UInt256_toBytes y))))))
+;;              (not (= (UInt_toBytes x) (UInt_toBytes y))))))
 
 (declare-sort Address 0)
 

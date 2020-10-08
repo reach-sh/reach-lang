@@ -15,7 +15,7 @@ import * as backend from './build/index.main.mjs';
   const ctcAlice = accAlice.deploy(backend);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
-  const thePass = stdlib.randomUInt256();
+  const thePass = stdlib.randomUInt();
 
   await Promise.all([
     backend.Alice(stdlib, ctcAlice, {

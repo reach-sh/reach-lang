@@ -1,11 +1,11 @@
 'reach 0.1';
 
-const MUInt256 = Maybe(UInt256);
+const MUInt = Maybe(UInt);
 
 export const main = Reach.App(
   {},
-  [['A', { get1: Fun([], MUInt256),
-           put1: Fun([MUInt256], Null) }]],
+  [['A', { get1: Fun([], MUInt),
+           put1: Fun([MUInt], Null) }]],
   (A) => {
     A.only(() => {
       const mi = declassify(interact.get1());

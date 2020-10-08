@@ -1,6 +1,6 @@
 'reach 0.1';
 
-const Alphabet = Array(UInt256, 26);
+const Alphabet = Array(UInt, 26);
 
 const AInter = {
   getAlphabet: Fun([], Alphabet),

@@ -1,11 +1,11 @@
 'reach 0.1';
 
 const ParamsType = Object({
-  collateral: UInt256,
-  pre: UInt256,
-  post: UInt256,
-  maturation: UInt256,
-  maxLenderDelay: UInt256,
+  collateral: UInt,
+  pre: UInt,
+  post: UInt,
+  maturation: UInt,
+  maxLenderDelay: UInt,
 });
 
 const hasSendOutcome = {

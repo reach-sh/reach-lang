@@ -3,9 +3,9 @@
 export const main =
   Reach.App(
     {},
-    [['Alice', { request: UInt256,
+    [['Alice', { request: UInt,
                  info: Bytes }],
-     [  'Bob', { want: Fun([UInt256], Null),
+     [  'Bob', { want: Fun([UInt], Null),
                  got: Fun([Bytes], Null) }]],
     (A, B) => {
       A.only(() => {

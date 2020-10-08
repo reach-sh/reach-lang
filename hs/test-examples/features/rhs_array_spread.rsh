@@ -2,8 +2,8 @@
 
 export const main = Reach.App(
   {},
-  [['A', { get: Fun([],Tuple(UInt256, Bool, UInt256)),
-           put: Fun([UInt256, Bool, UInt256], Null) }]],
+  [['A', { get: Fun([],Tuple(UInt, Bool, UInt)),
+           put: Fun([UInt, Bool, UInt], Null) }]],
   (A) => {
     A.only(() => {
       interact.put(...interact.get());

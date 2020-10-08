@@ -5,4 +5,4 @@
 </stderr>
 <exception>
 ExitFailure 1
-error: ./default.rsh:application: TypeError: Mismatch. Expected UInt256 but got Object({"None": Null, "Some": UInt256})
+error: ./default.rsh:application: TypeError: Mismatch. Expected UInt but got Object({"None": Null, "Some": UInt})

@@ -1,1 +1,1 @@
-error: ./Err_App_Interact_NotFirstOrder.rsh:4:14:obj: Invalid interact specification. Expected first-order type, got: Fun([], Fun([], UInt256))
+error: ./Err_App_Interact_NotFirstOrder.rsh:4:14:obj: Invalid interact specification. Expected first-order type, got: Fun([], Fun([], UInt))

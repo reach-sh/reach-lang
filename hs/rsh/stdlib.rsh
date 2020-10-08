@@ -64,7 +64,7 @@ export function ensure(f, x) {
   return x; }
 
 export const hasRandom = {
-  random: Fun([], UInt256) };
+  random: Fun([], UInt) };
 
 export function makeCommitment (interact, x) {
   const salt = interact.random();

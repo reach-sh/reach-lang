@@ -22,17 +22,17 @@ export const main = Reach.App(
       assert(typeOf(_y) == YTy);
       assert(typeOf(_c) == Bool);
 
-      // UInt256 != Bytes
+      // UInt != Bytes
       assert(XTy != YTy);
 
-      // Type(UInt256) != Type(Bytes)
+      // Type(UInt) != Type(Bytes)
       assert(typeOf(XTy) != typeOf(YTy));
 
-      assert(XTy == UInt256);
+      assert(XTy == UInt);
 
       const XTyTy = typeOf(XTy);
-      assert(XTyTy == typeOf(UInt256));
-      assert(XTyTy != UInt256);
+      assert(XTyTy == typeOf(UInt));
+      assert(XTyTy != UInt);
     });
   }
 );

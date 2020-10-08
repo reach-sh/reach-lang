@@ -66,12 +66,12 @@ const Player =
         endsWith: Fun([Bytes], Null) };
 const Alice =
       { ...Player,
-        getParams: Fun([], Tuple(UInt256, UInt256)),
+        getParams: Fun([], Tuple(UInt, UInt)),
         commits: Fun([], Null),
         reveals: Fun([Bytes], Null) };
 const Bob =
       { ...Player,
-        acceptParams: Fun([UInt256, UInt256], Null),
+        acceptParams: Fun([UInt, UInt], Null),
         shows: Fun([], Null) };
 
 const con_once =

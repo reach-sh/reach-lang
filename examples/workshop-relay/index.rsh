@@ -2,7 +2,7 @@
 
 export const main = Reach.App(
   { deployMode: 'firstMsg' },
-  [['Alice', { amt : UInt256,
+  [['Alice', { amt : UInt,
                getRelay: Fun([], Address) }],
    ['Relay', { getBob: Fun([], Address) }] ],
   (Alice, Relay) => {

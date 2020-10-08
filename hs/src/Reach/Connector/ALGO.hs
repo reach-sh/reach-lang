@@ -192,7 +192,7 @@ how_many_txns = do
 
 ctobs :: SLType -> App ()
 ctobs = \case
-  T_UInt256 -> op "itob"
+  T_UInt -> op "itob"
   T_Bool -> op "itob"
   T_Null -> op "itob"
   T_Bytes -> nop
@@ -209,7 +209,7 @@ ctobs = \case
 
 cfrombs :: SLType -> App ()
 cfrombs = \case
-  T_UInt256 -> op "btoi"
+  T_UInt -> op "btoi"
   T_Bool -> op "btoi"
   T_Null -> op "btoi"
   T_Bytes -> nop
@@ -496,10 +496,10 @@ lookup_sender :: App ()
 lookup_sender = code "gtxn" [texty txnToContract, "Sender"]
 
 lookup_last :: App ()
-lookup_last = code "arg" [texty argLast] >> cfrombs T_UInt256
+lookup_last = code "arg" [texty argLast] >> cfrombs T_UInt
 
 lookup_fee_amount :: App ()
-lookup_fee_amount = code "arg" [texty argFeeAmount] >> cfrombs T_UInt256
+lookup_fee_amount = code "arg" [texty argFeeAmount] >> cfrombs T_UInt
 
 std_footer :: App ()
 std_footer = do
@@ -549,7 +549,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
     code "gtxn" [texty txnAppl, "ApplicationID"]
     --- XXX Make this int
     code "byte" [tApplicationID]
-    cfrombs T_UInt256
+    cfrombs T_UInt
     eq_or_fail
 
     comment "Check txnToHandler"
@@ -730,7 +730,7 @@ compile_algo disp pl = do
     eq_or_fail
     app_global_get keyLast
     code "gtxna" [texty txnFromHandler, "Args", texty argLast]
-    cfrombs T_UInt256
+    cfrombs T_UInt
     eq_or_fail
     comment "Don't check anyone else, because Handler does"
     comment "Update state"
@@ -777,7 +777,7 @@ compile_algo disp pl = do
     eq_or_fail
     code "gtxn" [texty txnAppl, "ApplicationID"]
     code "byte" [tApplicationID]
-    cfrombs T_UInt256
+    cfrombs T_UInt
     eq_or_fail
     comment "Don't check anything else, because app does"
     comment "Check us"

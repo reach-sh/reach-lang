@@ -80,14 +80,14 @@ const DELAY = 10; // in blocks
 
 const Player =
       { ...hasRandom,
-        getMove: Fun([State], UInt256),
+        getMove: Fun([State], UInt),
         endsWith: Fun([State], Null) };
 const Alice =
       { ...Player,
-        getWager: Fun([], UInt256) };
+        getWager: Fun([], UInt) };
 const Bob =
       { ...Player,
-        acceptWager: Fun([UInt256], Null) };
+        acceptWager: Fun([UInt], Null) };
 
 export const main =
   Reach.App(

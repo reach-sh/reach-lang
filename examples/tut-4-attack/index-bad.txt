@@ -43,7 +43,7 @@ Verification failed:
     "v2" = interact_Alice_wager
       (from: v2)
       (bound at: ./tut-4-attack/index-bad.rsh:21:8:dot)
-      (because: an honest message from "Alice" of interact("Alice")."wager"(UInt256))
+      (because: an honest message from "Alice" of interact("Alice")."wager"(UInt))
     "v46" = (T2_elem1 v44 )
       (from: v46)
       (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
@@ -115,7 +115,7 @@ Verification failed:
     "v5" = interact_Alice_wager
       (from: v5)
       (bound at: ./tut-4-attack/index-bad.rsh:21:8:dot)
-      (because: an honest payment from "Alice" of interact("Alice")."wager"(UInt256))
+      (because: an honest payment from "Alice" of interact("Alice")."wager"(UInt))
     "v7" = 0
       (from: v7)
       (bound at: ./tut-4-attack/index-bad.rsh:22:20:after expr stmt semicolon)

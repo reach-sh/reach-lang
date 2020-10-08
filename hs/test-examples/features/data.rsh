@@ -1,25 +1,25 @@
 'reach 0.1';
 
-const MUInt256 = Maybe(UInt256);
+const MUInt = Maybe(UInt);
 const Point = Data(
-  {D2: Object({x: UInt256, y: UInt256}),
-   D3: Object({x: UInt256, y: UInt256, z: UInt256})});
+  {D2: Object({x: UInt, y: UInt}),
+   D3: Object({x: UInt, y: UInt, z: UInt})});
 
 export const main = Reach.App(
   {},
-  [['A', { get1: Fun([], MUInt256),
-           put1: Fun([MUInt256], Null),
+  [['A', { get1: Fun([], MUInt),
+           put1: Fun([MUInt], Null),
            get2: Fun([], Point),
            put2: Fun([Point], Null) }]],
   (A) => {
     A.only(() => {
       const mi = declassify(interact.get1());
-      const i = MUInt256.Some(42);
+      const i = MUInt.Some(42);
       const iv = fromMaybe(i, (() => assert(false)), ((x) => x));
       const i2 = (() => { switch ( mi ) {
         case None: return iv;
         case Some: return iv + mi; } })();
-      const mi2 = MUInt256.Some(i2);
+      const mi2 = MUInt.Some(i2);
       interact.put1(mi2);
       const p = declassify(interact.get2());
       const p3 = (() => { switch ( p ) {
@@ -30,7 +30,7 @@ export const main = Reach.App(
       interact.put2(Point.D3(p3p)); } );
     A.publish(mi, p);
 
-    const ci = MUInt256.Some(42);
+    const ci = MUInt.Some(42);
     const civ = fromMaybe(ci, (() => assert(false)), ((x) => x));
     const ci2 = (() => { switch ( mi ) {
       case None: return civ;

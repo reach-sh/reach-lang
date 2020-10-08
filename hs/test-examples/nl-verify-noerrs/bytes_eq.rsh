@@ -3,7 +3,7 @@
 export const main =
   Reach.App(
     {},
-    [['A', {get: Fun([],Tuple(UInt256, Bool, UInt256))}]],
+    [['A', {get: Fun([],Tuple(UInt, Bool, UInt))}]],
     (A) => {
       assert('x' != 'y');
       A.only(() => {

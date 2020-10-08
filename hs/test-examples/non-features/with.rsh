@@ -2,8 +2,8 @@
 
 export const main = Reach.App(
   {},
-  [['A', { get: Fun([], Object({x: UInt256, y: UInt256})),
-           put: Fun([ UInt256, UInt256 ], Null) }]],
+  [['A', { get: Fun([], Object({x: UInt, y: UInt})),
+           put: Fun([ UInt, UInt ], Null) }]],
   (A) => {
     A.only(() => {
       const o = declassify(interact.get());

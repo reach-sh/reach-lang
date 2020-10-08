@@ -7,7 +7,7 @@ import Test.Hspec
 spec_isFirstOrder :: Spec
 spec_isFirstOrder = describe "isFirstOrder" $ do
   it "returns True when obvs" $ do
-    isFirstOrder T_UInt256 `shouldBe` True
+    isFirstOrder T_UInt `shouldBe` True
     isFirstOrder ([] --> T_Null) `shouldBe` True
     isFirstOrder (T_Array T_Bool 3) `shouldBe` True
     isFirstOrder (T_Tuple [T_Address]) `shouldBe` True

@@ -39,7 +39,7 @@ Verification failed:
     "v1" = interact_Alice_request
       (from: v1)
       (bound at: ./overview/index-error.rsh:13:8:dot)
-      (because: an honest message from "Alice" of interact("Alice")."request"(UInt256))
+      (because: an honest message from "Alice" of interact("Alice")."request"(UInt))
     "v25" = (+ v22 v20 )
       (from: v25)
       (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)

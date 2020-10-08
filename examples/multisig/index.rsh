@@ -22,9 +22,9 @@ const DELAY = 10; // in blocks
 export const main =
   Reach.App(
     {},
-    [['Child', { request: Fun([UInt256], UInt256) } ],
-     ['Parent', { allowance: Fun([], UInt256),
-                  approve: Fun([UInt256, UInt256], Bool) } ]],
+    [['Child', { request: Fun([UInt], UInt) } ],
+     ['Parent', { allowance: Fun([], UInt),
+                  approve: Fun([UInt, UInt], Bool) } ]],
     (Child, Parent) => {
       Child.publish();
       commit();

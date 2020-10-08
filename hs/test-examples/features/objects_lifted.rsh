@@ -2,8 +2,8 @@
 
 export const main = Reach.App(
   {},
-  [['A', {getX: Fun([], UInt256),
-          getObj: Fun([], Object({'x': UInt256}))}]],
+  [['A', {getX: Fun([], UInt),
+          getObj: Fun([], Object({'x': UInt}))}]],
   (A) => {
     const key = 'x';
     A.only(() => {

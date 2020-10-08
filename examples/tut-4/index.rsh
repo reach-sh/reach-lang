@@ -10,23 +10,23 @@ assert(winner(ROCK, PAPER) == B_WINS);
 assert(winner(PAPER, ROCK) == A_WINS);
 assert(winner(ROCK, ROCK) == DRAW);
 
-forall(UInt256, handA =>
-  forall(UInt256, handB =>
+forall(UInt, handA =>
+  forall(UInt, handB =>
     assert(isOutcome(winner(handA, handB)))));
 
-forall(UInt256, (hand) =>
+forall(UInt, (hand) =>
   assert(winner(hand, hand) == DRAW));
 
 const Player =
       { ...hasRandom, // <--- new!
-        getHand: Fun([], UInt256),
-        seeOutcome: Fun([UInt256], Null) };
+        getHand: Fun([], UInt),
+        seeOutcome: Fun([UInt], Null) };
 const Alice =
       { ...Player,
-        wager: UInt256 };
+        wager: UInt };
 const Bob =
       { ...Player,
-        acceptWager: Fun([UInt256], Null) };
+        acceptWager: Fun([UInt], Null) };
 
 export const main =
   Reach.App(

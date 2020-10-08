@@ -763,7 +763,7 @@ _smtDefineTypes smt ts = do
       (M.fromList
          [ (T_Null, ("Null", none))
          , (T_Bool, ("Bool", none))
-         , (T_UInt256, ("UInt256", uint256_inv))
+         , (T_UInt, ("UInt", uint256_inv))
          , (T_Bytes, ("Bytes", none))
          , (T_Digest, ("Digest", none))
          , (T_Address, ("Address", none))
@@ -774,7 +774,7 @@ _smtDefineTypes smt ts = do
         case t of
           T_Null -> base
           T_Bool -> base
-          T_UInt256 -> base
+          T_UInt -> base
           T_Bytes -> base
           T_Digest -> base
           T_Address -> base

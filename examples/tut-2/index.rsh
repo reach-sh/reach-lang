@@ -1,8 +1,8 @@
 'reach 0.1';
 
 const Player =
-      { getHand: Fun([], UInt256),
-        seeOutcome: Fun([UInt256], Null) };
+      { getHand: Fun([], UInt),
+        seeOutcome: Fun([UInt], Null) };
 
 export const main =
   Reach.App(

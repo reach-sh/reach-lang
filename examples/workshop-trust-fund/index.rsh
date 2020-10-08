@@ -3,7 +3,7 @@
 const common = {
   funded: Fun([], Null),
   ready : Fun([], Null),
-  recvd : Fun([UInt256], Null) };
+  recvd : Fun([UInt], Null) };
 
 export const main =
   Reach.App(
@@ -12,10 +12,10 @@ export const main =
       ...common,
       getParams: Fun([], Object({
         receiverAddr: Address,
-        payment:      UInt256,
-        maturity:     UInt256,
-        refund:       UInt256,
-        dormant:      UInt256 })) }],
+        payment:      UInt,
+        maturity:     UInt,
+        refund:       UInt,
+        dormant:      UInt })) }],
       [ 'Receiver', common],
       ['Bystander', common] ],
     (Funder, Receiver, Bystander) => {

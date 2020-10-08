@@ -5,10 +5,10 @@ const Actor =
         leave: Fun([], Bool) };
 const Landlord =
       { ...Actor,
-        terms: UInt256 };
+        terms: UInt };
 const Tenant =
       { ...Actor,
-        acceptTerms: Fun([UInt256], Null) };
+        acceptTerms: Fun([UInt], Null) };
 
 const DEADLINE = 10;
 export const l_first = Reach.App(

@@ -5,14 +5,14 @@ const DELAY = 10; // in blocks
 
 const Player =
       { ...hasRandom,
-        getMove: Fun([UInt256, UInt256], Tuple(Bool, UInt256)),
+        getMove: Fun([UInt, UInt], Tuple(Bool, UInt)),
         showOutcome: Fun([Bytes], Null) };
 const Alice =
       { ...Player,
-        getParams: Fun([], Tuple(UInt256, UInt256)) };
+        getParams: Fun([], Tuple(UInt, UInt)) };
 const Bob =
       { ...Player,
-        acceptParams: Fun([UInt256, UInt256], Null) };
+        acceptParams: Fun([UInt, UInt], Null) };
 
 export const main =
   Reach.App(

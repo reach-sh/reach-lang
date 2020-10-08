@@ -126,7 +126,7 @@ conTypeOf :: DLConstant -> SLType
 conTypeOf = \case
   DLC_Null -> T_Null
   DLC_Bool _ -> T_Bool
-  DLC_Int _ -> T_UInt256
+  DLC_Int _ -> T_UInt
   DLC_Bytes _ -> T_Bytes
 
 argTypeOf :: DLArg -> SLType

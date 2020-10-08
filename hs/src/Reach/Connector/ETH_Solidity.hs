@@ -220,7 +220,7 @@ mustBeMem :: SLType -> Bool
 mustBeMem = \case
   T_Null -> False
   T_Bool -> False
-  T_UInt256 -> False
+  T_UInt -> False
   T_Bytes -> True
   T_Digest -> False
   T_Address -> False
@@ -274,7 +274,7 @@ solArg ctxt da =
     t = solType ctxt (argTypeOf da)
     con = solApply t
     defaultVal = \case
-      T_UInt256 -> "0"
+      T_UInt -> "0"
       T_Bool -> "false"
       T_Null -> "false"
       T_Bytes -> "\"\"" -- XXX is this valid?
@@ -600,7 +600,7 @@ solArgDefn ctxt which am vs = (argDefn, argDefs)
     argDefn = solStruct (solMsg_arg which) ntys
     ntys = mgiven ++ v_ntys
     mgiven = case am of
-      AM_Call -> [(solLastBlockDef, (solType ctxt T_UInt256))]
+      AM_Call -> [(solLastBlockDef, (solType ctxt T_UInt))]
       _ -> []
     v_ntys = map go vs
     go dv@(DLVar _ _ t _) = ((solRawVar dv), (solType ctxt t))
@@ -664,7 +664,7 @@ _solDefineType1 :: (SLType -> ST s (Doc a)) -> Int -> Doc a -> SLType -> ST s ((
 _solDefineType1 getTypeName i name = \case
   T_Null -> base
   T_Bool -> base
-  T_UInt256 -> base
+  T_UInt -> base
   T_Bytes -> base
   T_Digest -> base
   T_Address -> base
@@ -733,7 +733,7 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
       M.fromList
         [ (T_Null, "bool")
         , (T_Bool, "bool")
-        , (T_UInt256, "uint256")
+        , (T_UInt, "uint256")
         , (T_Bytes, "bytes")
         , (T_Digest, "uint256")
         , (T_Address, "address payable")

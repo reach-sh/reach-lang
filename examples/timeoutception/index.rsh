@@ -1,7 +1,7 @@
 'reach 0.1';
 
 const Player = {
-  ask: Fun([], UInt256),
+  ask: Fun([], UInt),
 };
 
 const DELAY = 10;

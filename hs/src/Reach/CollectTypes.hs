@@ -27,7 +27,7 @@ instance CollectsTypes SLType where
       <> case t of
         T_Null -> mempty
         T_Bool -> mempty
-        T_UInt256 -> mempty
+        T_UInt -> mempty
         T_Bytes -> mempty
         T_Digest -> mempty
         T_Address -> mempty

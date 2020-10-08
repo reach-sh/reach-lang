@@ -1,1 +1,1 @@
-CE_ArrayUnitNotBT.rsh:6:26: array element is not base type: LT_FixedArray BT_UInt256 3
+CE_ArrayUnitNotBT.rsh:6:26: array element is not base type: LT_FixedArray BT_UInt 3

@@ -18,7 +18,7 @@ import Reach.Connector.ETH_Solidity
 import Reach.Util
 
 goBType :: BaseType -> String
-goBType BT_UInt256 = "uint256"
+goBType BT_UInt = "uint256"
 goBType BT_Bool = "bool"
 goBType BT_Bytes = "bytes"
 goBType BT_Address = "address"

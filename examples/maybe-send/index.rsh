@@ -3,18 +3,18 @@
 export const main = Reach.App(
   {},
   [['Alice', {
-    getX: Fun([], UInt256),
-    getMx: Fun([], Maybe(UInt256)),
+    getX: Fun([], UInt),
+    getMx: Fun([], Maybe(UInt)),
   }], ['Bob', {
-    showMx: Fun([Maybe(UInt256)], Null),
-    showMy: Fun([Maybe(UInt256)], Null),
+    showMx: Fun([Maybe(UInt)], Null),
+    showMy: Fun([Maybe(UInt)], Null),
   }]],
   (Alice, Bob) => {
     Alice.only(() => {
       const x = declassify(interact.getX());
     });
     Alice.publish(x);
-    const [i, mx0] = [0, Maybe(UInt256).None()];
+    const [i, mx0] = [0, Maybe(UInt).None()];
     commit();
 
     Bob.only(() => {
@@ -25,8 +25,8 @@ export const main = Reach.App(
       const mx = declassify(interact.getMx());
       const my = (() => {
         switch (mx) {
-        case Some: return Maybe(UInt256).Some(mx + 1);
-        case None: return Maybe(UInt256).None();
+        case Some: return Maybe(UInt).Some(mx + 1);
+        case None: return Maybe(UInt).None();
         }
       })();
     });

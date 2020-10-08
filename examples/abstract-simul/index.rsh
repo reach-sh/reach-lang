@@ -7,10 +7,10 @@ const Player = (Move, Outcome) =>
          informTimeout: Fun([], Null) });
 const Alice = (Move, Outcome) =>
       ({ ...Player(Move, Outcome),
-         terms: UInt256 });
+         terms: UInt });
 const Bob = (Move, Outcome) =>
       ({ ...Player(Move, Outcome),
-         acceptTerms: Fun([UInt256], Null) });
+         acceptTerms: Fun([UInt], Null) });
 
 const simultaneous_loop =
       (A, B, DEADLINE, isOutcome, outcome0, stop, combine, divide) => {
@@ -74,7 +74,7 @@ const winner = (handA, handB) =>
 export const rps =
   Reach.App(
     {},
-    [['Alice', Alice(UInt256, UInt256)], ['Bob', Bob(UInt256, UInt256)]],
+    [['Alice', Alice(UInt, UInt)], ['Bob', Bob(UInt, UInt)]],
     (A, B) =>
     simultaneous_loop(
       A, B,
@@ -88,7 +88,7 @@ const [ isRentalOutcome, NONE, ONLY_L, ONLY_T, BOTH ] = makeEnum(4);
 export const rental =
   Reach.App(
     {},
-    [['Landlord', Alice(Bool, UInt256)], ['Tenant', Bob(Bool, UInt256)]],
+    [['Landlord', Alice(Bool, UInt)], ['Tenant', Bob(Bool, UInt)]],
     (A, B) =>
     simultaneous_loop(
       A, B,

@@ -19,7 +19,7 @@ const demo = async (x) => {
     const [label, val] = mx;
     switch (label) {
     case 'Some':
-      console.log(`Maybe(UInt256).Some(${val})`);
+      console.log(`Maybe(UInt).Some(${val})`);
       if (stdlib.isBigNumber(val)) {
         console.log(`  where ${val} is a BigNumber`);
       } else {
@@ -27,7 +27,7 @@ const demo = async (x) => {
       }
       break;
     case 'None':
-      console.log(`Maybe(UInt256).None()`);
+      console.log(`Maybe(UInt).None()`);
       break;
     default:
       console.log(`Unexected: ${mx}`);

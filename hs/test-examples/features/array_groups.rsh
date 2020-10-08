@@ -2,9 +2,9 @@
 
 export const main = Reach.App(
   {},
-  [['A', { get: Fun([], Array(Object({x: UInt256, y: UInt256}), 32)),
-           put: Fun([ Array(UInt256, 12),
-                      UInt256, UInt256 ], Null) }]],
+  [['A', { get: Fun([], Array(Object({x: UInt, y: UInt}), 32)),
+           put: Fun([ Array(UInt, 12),
+                      UInt, UInt ], Null) }]],
   (A) => {
     const a0 =
           Array.iota(5)

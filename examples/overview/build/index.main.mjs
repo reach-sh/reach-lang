@@ -4,7 +4,7 @@ export const _version = '0.1.2';
 export async function Alice(stdlib, ctc, interact) {
   
   
-  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt256], [stdlib.protect(stdlib.T_UInt256, interact.request, null)], stdlib.bigNumberify(0), [stdlib.T_UInt256], false, ((txn1) => {
+  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt], [stdlib.protect(stdlib.T_UInt, interact.request, null)], stdlib.bigNumberify(0), [stdlib.T_UInt], false, ((txn1) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(0));
     const [v1] = txn1.data;
@@ -41,7 +41,7 @@ export async function Alice(stdlib, ctc, interact) {
     who: 'Alice' });
   
   
-  const txn3 = await ctc.sendrecv('Alice', 3, 1, [stdlib.T_Address, stdlib.T_UInt256, stdlib.T_Bytes], [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], stdlib.bigNumberify(0), [stdlib.T_Bytes], false, ((txn3) => {
+  const txn3 = await ctc.sendrecv('Alice', 3, 1, [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Bytes], [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], stdlib.bigNumberify(0), [stdlib.T_Bytes], false, ((txn3) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(2), v2, v1);
     const [v19] = txn3.data;
@@ -70,7 +70,7 @@ export async function Alice(stdlib, ctc, interact) {
   ;
   return; }
 export async function Bob(stdlib, ctc, interact) {
-  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt256], false);
+  const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt], false);
   const [v1] = txn1.data;
   const v3 = txn1.value;
   const v2 = txn1.from;
@@ -87,7 +87,7 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   
   
-  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt256], [v2, v1], v1, [], false, ((txn2) => {
+  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt], [v2, v1], v1, [], false, ((txn2) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(stdlib.bigNumberify(1), v2, v1);
     const [] = txn2.data;

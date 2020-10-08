@@ -75,7 +75,7 @@ jsContract :: SLType -> Doc a
 jsContract = \case
   T_Null -> "stdlib.T_Null"
   T_Bool -> "stdlib.T_Bool"
-  T_UInt256 -> "stdlib.T_UInt256"
+  T_UInt -> "stdlib.T_UInt"
   T_Bytes -> "stdlib.T_Bytes"
   T_Digest -> "stdlib.T_Digest"
   T_Address -> "stdlib.T_Address"

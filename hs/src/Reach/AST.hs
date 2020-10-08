@@ -105,7 +105,7 @@ type SLVar = String
 data SLType
   = T_Null
   | T_Bool
-  | T_UInt256
+  | T_UInt
   | T_Bytes
   | T_Digest
   | T_Address
@@ -131,7 +131,7 @@ funFold z k fun = go
     go = \case
       T_Null -> z
       T_Bool -> z
-      T_UInt256 -> z
+      T_UInt -> z
       T_Bytes -> z
       T_Digest -> z
       T_Address -> z
@@ -173,7 +173,7 @@ showTyMap = intercalate ", " . map showPair . M.toList
 instance Show SLType where
   show T_Null = "Null"
   show T_Bool = "Bool"
-  show T_UInt256 = "UInt256"
+  show T_UInt = "UInt"
   show T_Bytes = "Bytes"
   show T_Digest = "Digest"
   show T_Address = "Address"
@@ -260,32 +260,32 @@ data PrimOp
   deriving (Eq, Generic, NFData, Ord, Show)
 
 primOpType :: PrimOp -> SLType
-primOpType ADD = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType SUB = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType MUL = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType DIV = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType MOD = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType PLT = [T_UInt256, T_UInt256] --> T_Bool
-primOpType PLE = [T_UInt256, T_UInt256] --> T_Bool
-primOpType PEQ = [T_UInt256, T_UInt256] --> T_Bool
-primOpType PGE = [T_UInt256, T_UInt256] --> T_Bool
-primOpType PGT = [T_UInt256, T_UInt256] --> T_Bool
+primOpType ADD = [T_UInt, T_UInt] --> T_UInt
+primOpType SUB = [T_UInt, T_UInt] --> T_UInt
+primOpType MUL = [T_UInt, T_UInt] --> T_UInt
+primOpType DIV = [T_UInt, T_UInt] --> T_UInt
+primOpType MOD = [T_UInt, T_UInt] --> T_UInt
+primOpType PLT = [T_UInt, T_UInt] --> T_Bool
+primOpType PLE = [T_UInt, T_UInt] --> T_Bool
+primOpType PEQ = [T_UInt, T_UInt] --> T_Bool
+primOpType PGE = [T_UInt, T_UInt] --> T_Bool
+primOpType PGT = [T_UInt, T_UInt] --> T_Bool
 primOpType IF_THEN_ELSE = T_Forall "b" (T_Forall "a" ([T_Var "b", T_Var "a", T_Var "a"] --> T_Var "a"))
 primOpType BYTES_EQ = ([T_Bytes, T_Bytes] --> T_Bool)
 primOpType DIGEST_EQ = ([T_Digest, T_Digest] --> T_Bool)
 primOpType ADDRESS_EQ = ([T_Address, T_Address] --> T_Bool)
-primOpType LSH = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType RSH = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType BAND = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType BIOR = [T_UInt256, T_UInt256] --> T_UInt256
-primOpType BXOR = [T_UInt256, T_UInt256] --> T_UInt256
+primOpType LSH = [T_UInt, T_UInt] --> T_UInt
+primOpType RSH = [T_UInt, T_UInt] --> T_UInt
+primOpType BAND = [T_UInt, T_UInt] --> T_UInt
+primOpType BIOR = [T_UInt, T_UInt] --> T_UInt
+primOpType BXOR = [T_UInt, T_UInt] --> T_UInt
 
 data FluidVar
   = FV_balance
   deriving (Eq, Generic, NFData, Ord, Show)
 
 fluidVarType :: FluidVar -> SLType
-fluidVarType FV_balance = T_UInt256
+fluidVarType FV_balance = T_UInt
 
 data SLPrimitive
   = SLPrim_makeEnum
