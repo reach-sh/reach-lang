@@ -293,9 +293,10 @@ solArg ctxt da =
 
 solPrimApply :: PrimOp -> [Doc a] -> Doc a
 solPrimApply = \case
-  ADD -> binOp "+"
-  SUB -> binOp "-"
-  MUL -> binOp "*"
+  --- XXX turn off safeAdd if verifyOverflow
+  ADD -> solApply "safeAdd"
+  SUB -> solApply "safeSub"
+  MUL -> solApply "safeMul"
   DIV -> binOp "/"
   MOD -> binOp "%"
   PLT -> binOp "<"
