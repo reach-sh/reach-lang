@@ -128,9 +128,23 @@ You may omit the @jsin{connectorMode} argument, in which case
 The @jsin{stdlib} modules export the following functions that might be used in this @tech{frontend}:
 
 @(hrule)
+@(mint-define! '("getDefaultAccount"))
+@js{
+ getDefaultAccount() => Promise<acc> }
+
+Returns a Promise for a Reach @tech{account} abstraction for a "default" @tech{account} on the @tech{consensus network}.
+The meaning of "default account" varies between contexts.
+When running in the browser,
+the default account will be connected to a wallet such as MetaMask or AlgoSigner.
+When running in node.js while connected to one of reach's standard devnets,
+the default account will be connected to a faucet on the devnet.
+This promise will be rejected with an exception
+if no sensible default account can be accessed for the current context.
+
+@(hrule)
 @(mint-define! '("newAccountFromMnemonic"))
 @js{
- newAccountFromMnemonic() => Promise<acc> }
+ newAccountFromMnemonic(string) => Promise<acc> }
 
 Returns a Promise for a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given mnemonic phrase.
 The details of the mnemonic phrase encoding are specified uniquely to the @tech{consensus network}.
