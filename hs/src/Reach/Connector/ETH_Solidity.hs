@@ -105,8 +105,8 @@ solRequire umsg a = solApply "require" $ [a] <> mmsg
 solBinOp :: String -> Doc a -> Doc a -> Doc a
 solBinOp o l r = l <+> pretty o <+> r
 
-solEq :: Doc a -> Doc a -> Doc a
-solEq x y = solPrimApply PEQ [x, y]
+solEq :: SolCtxt a -> Doc a -> Doc a -> Doc a
+solEq ctxt x y = solPrimApply ctxt PEQ [x, y]
 
 solAnd :: Doc a -> Doc a -> Doc a
 solAnd x y = solBinOp "&&" x y
@@ -182,7 +182,7 @@ data SolCtxt a = SolCtxt
   , ctxt_emit :: Doc a
   , ctxt_typei :: M.Map SLType Int
   , ctxt_typem :: M.Map SLType (Doc a)
-  , ctxt_deployMode :: DeployMode
+  , ctxt_plo :: PLOpts
   }
 
 instance Semigroup (SolCtxt a) where
@@ -291,12 +291,11 @@ solArg ctxt da =
       T_Var {} -> impossible "defaultVal for Var"
       T_Type {} -> impossible "defaultVal for Type"
 
-solPrimApply :: PrimOp -> [Doc a] -> Doc a
-solPrimApply = \case
-  --- XXX turn off safe* if verifyOverflow
-  ADD -> solApply "safeAdd"
-  SUB -> solApply "safeSub"
-  MUL -> solApply "safeMul"
+solPrimApply :: SolCtxt a -> PrimOp -> [Doc a] -> Doc a
+solPrimApply ctxt = \case
+  ADD -> safeOp "+" "safeAdd"
+  SUB -> safeOp "-" "safeSub"
+  MUL -> safeOp "*" "safeMul"
   DIV -> binOp "/"
   MOD -> binOp "%"
   PLT -> binOp "<"
@@ -315,12 +314,17 @@ solPrimApply = \case
   BYTES_EQ -> \case
     [x, y] ->
       solAnd
-        (solEq (solBytesLength x) (solBytesLength y))
-        (solEq (solHash [x]) (solHash [y]))
+        (solEq ctxt (solBytesLength x) (solBytesLength y))
+        (solEq ctxt (solHash [x]) (solHash [y]))
     _ -> impossible $ "emitSol: BYTES_EQ wrong args"
   DIGEST_EQ -> binOp "=="
   ADDRESS_EQ -> binOp "=="
   where
+    PLOpts {..} = ctxt_plo ctxt
+    safeOp op fun =
+      case plo_verifyOverflow of
+        True -> binOp op
+        False -> solApply fun
     binOp op = \case
       [l, r] -> solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
@@ -330,7 +334,7 @@ solExpr ctxt sp = \case
   DLE_Arg _ a -> solArg ctxt a <> sp
   DLE_Impossible at msg -> expect_throw at msg
   DLE_PrimOp _ p args ->
-    (solPrimApply p $ map (solArg ctxt) args) <> sp
+    (solPrimApply ctxt p $ map (solArg ctxt) args) <> sp
   DLE_ArrayRef _ ae ie ->
     solArrayRef (solArg ctxt ae) (solArg ctxt ie) <> sp
   DLE_ArraySet _ ae ie ve ->
@@ -405,7 +409,7 @@ solSwitch iter ctxt _at ov csm = SolTailRes ctxt $ solIfs $ map cm1 $ M.toAscLis
     t = solType ctxt $ argTypeOf (DLA_Var ov)
     cm1 (vn, (mov', body)) = (c, set_and_body')
       where
-        c = solEq ((solVar ctxt ov) <> ".which") (solVariant t vn)
+        c = solEq ctxt ((solVar ctxt ov) <> ".which") (solVariant t vn)
         set_and_body' = vsep [set', body']
         set' = case mov' of
           Just ov' -> solSet (solMemVar ov') ((solVar ctxt ov) <> "._" <> pretty vn)
@@ -421,7 +425,7 @@ solCom iter ctxt = \case
       copy src (off :: Integer) =
         "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
           <> solBraces
-            (solArrayRef (solVar ctxt dv) (solPrimApply ADD ["i", (solNum off)]) <+> "="
+            (solArrayRef (solVar ctxt dv) (solPrimApply ctxt ADD ["i", (solNum off)]) <+> "="
                <+> solArrayRef (solArg ctxt src) "i" <> semi)
         where
           sz = arraySize src
@@ -618,13 +622,13 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
     (argDefn, argDefs) = solArgDefn ctxt which am vs
     ret = "payable"
     (hashCheck, am, sfl) =
-      case (which, ctxt_deployMode ctxt_top) of
+      case (which, plo_deployMode $ ctxt_plo ctxt_top) of
         (1, DM_firstMsg) ->
           (emptyDoc, AM_Memory, SFL_Constructor)
         _ ->
           (hcp, AM_Call, SFL_Function True (solMsg_fun which))
           where
-            hcp = (solRequire (checkMsg "state") $ solEq ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
+            hcp = (solRequire (checkMsg "state") $ solEq ctxt ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
     funDefn = solFunctionLike sfl argDefs ret body
     body =
       vsep
@@ -637,7 +641,7 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
     (fromm, fromCheck) =
       case fs of
         FS_Join from -> ((M.singleton from "msg.sender"), emptyDoc)
-        FS_Again from -> (mempty, (solRequire (checkMsg "sender") $ solEq ("msg.sender") (solVar ctxt from)) <> semi)
+        FS_Again from -> (mempty, (solRequire (checkMsg "sender") $ solEq ctxt ("msg.sender") (solVar ctxt from)) <> semi)
     timeoutCheck = solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
       where
         CBetween from to = interval
@@ -646,7 +650,7 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
         check sign mv =
           case mv of
             [] -> "true"
-            mvs -> solPrimApply (if sign then PGE else PLT) [ solBlockNumber, (foldl' (\x y -> solPrimApply ADD [x, y]) solLastBlock (map (solArg ctxt) mvs)) ]
+            mvs -> solPrimApply ctxt (if sign then PGE else PLT) [ solBlockNumber, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) solLastBlock (map (solArg ctxt) mvs)) ]
 solHandler ctxt_top which (C_Loop _at svs msg ct) =
   vsep [argDefn, frameDefn, funDefn]
   where
@@ -748,7 +752,7 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
       liftM2 (,) (readSTRef timr) (readSTRef tmr)
 
 solPLProg :: PLProg -> (ConnectorInfoMap, Doc a)
-solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
+solPLProg (PLProg _ plo@(PLOpts {..}) _ (CPProg at hs)) =
   (cinfo, vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp])
   where
     ctcp =
@@ -762,7 +766,7 @@ solPLProg (PLProg _ (PLOpts {..}) _ (CPProg at hs)) =
         , ctxt_handler_num = 0
         , ctxt_emit = emptyDoc
         , ctxt_varm = mempty
-        , ctxt_deployMode = plo_deployMode
+        , ctxt_plo = plo
         }
     ctcbody = vsep_with_blank $ [state_defn, consp, typesp, solHandlers ctxt hs]
     consp =

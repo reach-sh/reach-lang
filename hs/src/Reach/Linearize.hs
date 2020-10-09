@@ -151,3 +151,4 @@ linearize (DLProg at (DLOpts {..}) sps ss) =
   where
     opts' = LLOpts {..}
     llo_deployMode = dlo_deployMode
+    llo_verifyOverflow = dlo_verifyOverflow

@@ -685,7 +685,9 @@ data LLStep
       }
   deriving (Eq, Show)
 
-data LLOpts = LLOpts {llo_deployMode :: DeployMode}
+data LLOpts = LLOpts 
+  { llo_deployMode :: DeployMode
+  , llo_verifyOverflow :: Bool }
   deriving (Generic, Eq, Show)
 
 data LLProg
@@ -818,7 +820,9 @@ newtype EPPs = EPPs (M.Map SLPart EPProg)
   deriving (Eq, Show)
   deriving newtype (Monoid, Semigroup)
 
-data PLOpts = PLOpts {plo_deployMode :: DeployMode}
+data PLOpts = PLOpts
+  { plo_deployMode :: DeployMode
+  , plo_verifyOverflow :: Bool }
   deriving (Generic, Eq, Show)
 
 data PLProg

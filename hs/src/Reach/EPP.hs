@@ -461,4 +461,5 @@ epp (LLProg at (LLOpts {..}) ps s) = runST $ do
             impossible $ "part not in projection"
   let pps = EPPs $ M.mapWithKey mk_pp p_to_ie
   let plo_deployMode = llo_deployMode
+  let plo_verifyOverflow = llo_verifyOverflow
   return $ PLProg at (PLOpts {..}) pps cp
