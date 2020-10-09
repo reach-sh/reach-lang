@@ -69,8 +69,17 @@ export const debug = (msg: any) => {
   }
 };
 
-export const assert = (d: any, ai: any = null) =>
-  nodeAssert.strict(d, format_ai(ai));
+export const assert = (d: any, ai: any = null) => {
+  const msg = format_ai(ai);
+  // @ts-ignore
+  if (nodeAssert.strict.assert) {
+    // Note: this branch is for browser compatibility,
+    // @ts-ignore
+    return nodeAssert.strict.assert(d, msg);
+  } else {
+    return nodeAssert.strict(d, msg);
+  }
+}
 
 const {
   hexlify,
