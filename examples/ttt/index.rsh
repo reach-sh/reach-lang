@@ -114,7 +114,7 @@ export const main =
       A.publish(coinFlipA);
 
       require(commitA == digest(coinFlipA));
-      const XisFirst = (( coinFlipA + coinFlipB ) % 2) == 0;
+      const XisFirst = (((coinFlipA % 2) + (coinFlipB % 2)) % 2) == 0;
 
       var state = ttt_initial(XisFirst);
       invariant(balance() == (2 * wagerAmount));
