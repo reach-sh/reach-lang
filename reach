@@ -109,7 +109,7 @@ REACH_FULL_VERSION=0.1.2
 # When we stop making breaking changes on patch/rc versions
 # then this probably won't be necessary
 RV_TAG='rc'
-RV_TAGMIN=0
+RV_TAGMIN=4
 RV_TAGMAX=9999
 
 if [ "x${REACH_VERSION}" = "x" ] ; then
