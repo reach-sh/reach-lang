@@ -14,10 +14,11 @@
   },
   "dependencies": {
     "algosdk": "algorand/js-algorand-sdk#07ed42f",
-    "hi-base32": "^0.5.0",
+    "assert": "^2.0.0",
     "await-timeout": "^0.6.0",
     "ethers": "^5.0.13",
     "ganache-core": "^2.11.2",
+    "hi-base32": "^0.5.0",
     "wait-port": "^0.2.9"
   },
   "repository": {
