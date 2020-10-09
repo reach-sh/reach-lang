@@ -824,6 +824,11 @@ evalAsEnv at obj =
     SLV_Prim SLPrim_Object ->
       M.fromList
         [("set", retStdLib "Object_set")]
+    SLV_Type T_UInt ->
+      M.fromList
+        [("max", (\ctxt _sco st -> do
+          let SLLimits {..} = dlo_lims $ ctxt_dlo ctxt
+          return $ SLRes mempty st $ public $ SLV_Int srcloc_builtin $ fromIntegral lim_maxUInt))]
     SLV_Type (T_Data varm) ->
       M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t) varm
     v ->

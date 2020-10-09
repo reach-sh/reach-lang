@@ -7,10 +7,10 @@ export const main = Reach.App(
   (A) => {
     A.only(() => {
       const x = declassify(interact.get());
-      assume(x < 1024);
+      assume(x < UInt.max);
     });
     A.publish(x);
-    require(x < 1024);
+    require(x < UInt.max);
     const y = x + 1;
     commit();
 

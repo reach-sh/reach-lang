@@ -779,7 +779,8 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Null")) @reachin{Null}.}
   @item{@(mint-define! '("Bool")) @reachin{Bool}, which denotes a boolean.}
   @item{@(mint-define! '("UInt")) @reachin{UInt}, which denotes an unsigned integer.
-  Its @deftech{bit width} is the minimum bit width of all enabled @tech{connector}, i.e. those specified by the @reachin{connectors} deployment option.}
+  Its @deftech{bit width} is the minimum bit width of all enabled @tech{connector}, i.e. those specified by the @reachin{connectors} deployment option.
+  @reachin{UInt.max} is the largest value that may be assigned to a @reachin{UInt}.}
   @item{@(mint-define! '("Bytes")) @reachin{Bytes}, which denotes a string of bytes.}
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
