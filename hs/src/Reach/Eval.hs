@@ -796,6 +796,7 @@ evalAsEnv at obj =
         [ ("set", delayCall SLPrim_array_set)
         , ("length", doCall SLPrim_array_length)
         , ("concat", delayCall SLPrim_array_concat)
+        , ("forEach", doStdlib "Array_forEach1")
         , ("map", delayCall SLPrim_array_map)
         , ("reduce", delayCall SLPrim_array_reduce)
         , ("zip", delayCall SLPrim_array_zip)
@@ -805,6 +806,7 @@ evalAsEnv at obj =
         [ ("set", delayCall SLPrim_array_set)
         , ("length", doCall SLPrim_array_length)
         , ("concat", delayCall SLPrim_array_concat)
+        , ("forEach", doStdlib "Array_forEach1")
         , ("map", delayCall SLPrim_array_map)
         , ("reduce", delayCall SLPrim_array_reduce)
         , ("zip", delayCall SLPrim_array_zip)
@@ -812,6 +814,7 @@ evalAsEnv at obj =
     SLV_Prim SLPrim_Array ->
       M.fromList
         [ ("empty", retStdLib "Array_empty")
+        , ("forEach", retStdLib "Array_forEach")
         , ("replicate", retStdLib "Array_replicate")
         , ("length", retV $ public $ SLV_Prim $ SLPrim_array_length)
         , ("set", retV $ public $ SLV_Prim $ SLPrim_array_set)
@@ -834,19 +837,28 @@ evalAsEnv at obj =
     v ->
       expect_throw at (Err_Eval_NotObject v)
   where
-    delayCall p = retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
-    doCall p ctxt sco st = do
-      SLRes lifts st' (SLAppRes _ v) <- evalApplyVals ctxt at sco st (SLV_Prim p) [(public obj)]
+    delayCall p =
+      retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
+    doStdlib n ctxt sco st =
+      doApply (lookStdlib n sco) ctxt sco st
+    lookStdlib n sco = sss_val $ env_lookup at n $ sco_env sco
+    doCall p = doApply $ SLV_Prim p
+    doApply f ctxt sco st = do
+      SLRes lifts st' (SLAppRes _ v) <- evalApplyVals ctxt at sco st f [(public obj)]
       return $ SLRes lifts st' v
     retDLVar tm obj_dla slvl =
       M.mapWithKey retk tm
       where
         retk field t ctxt _sco st = do
-          (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "object ref") t) (DLE_ObjectRef at obj_dla field)
+          let mkv = DLVar at (ctxt_local_name ctxt "object ref") t
+          let e = DLE_ObjectRef at obj_dla field
+          (dv, lifts') <- ctxt_lift_expr ctxt at mkv e
           let ansv = SLV_DLVar dv
           return $ SLRes lifts' st (slvl, ansv)
-    retV sv _ctxt _sco st = return $ SLRes mempty st sv
-    retStdLib n ctxt sco st = retV (sss_sls $ env_lookup at n $ sco_env sco) ctxt sco st
+    retV sv _ctxt _sco st =
+      return $ SLRes mempty st sv
+    retStdLib n ctxt sco st =
+      retV (public $ lookStdlib n sco) ctxt sco st
 
 evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
 evalDot ctxt at sco st obj field = do

@@ -1001,7 +1001,7 @@ except that index @reachin{idx} is replaced with @reachin{val}.
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
 
-@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.empty}, @tt{Array.zip} & @tt{.zip}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, and @tt{Array.replicate} }
+@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.empty}, @tt{Array.zip} & @tt{.zip}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, @tt{Array.forEach} & @tt{.forEach}, and @tt{Array.replicate} }
 
 @(mint-define! '("iota"))
 @reach{
@@ -1068,6 +1068,16 @@ This may be abbreviated as @reachin{arr.reduce(z, f)}.
 
 This function is generalized to an arbitrary number of arrays of the same size, which are provided before the @reachin{z} argument.
 For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y))} returns @reachin{((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3)}.
+
+@(mint-define! '("Array_forEach") '("Array_forEach1") '("forEach"))
+@reach{
+ arr.forEach(f)
+ Array.forEach(arr, f)
+ Array_forEach(arr, f)
+ Array_forEach1(arr)(f) }
+
+@index{Array.forEach} @reachin{Array.forEach(arr, f)} iterates the function @reachin{f} over the elements of the array @reachin{arr}, discarding the result.
+This may be abbreviated as @reachin{arr.forEach(f)}.
 
 @subsubsection[#:tag "ref-programs-objects"]{Objects}
 

@@ -91,3 +91,7 @@ export const Array_empty =
   Array.iota(0);
 export const Array_replicate =
   (sz, v) => Array.iota(sz).map(x => v);
+export const Array_forEach =
+  (arr, f) => arr.reduce(null, (acc, xe) => f(xe));
+export const Array_forEach1 =
+  (arr) => (f) => Array_forEach(arr, f);
