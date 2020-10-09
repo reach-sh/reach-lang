@@ -47,7 +47,7 @@ export const main =
           closeTo(B, sendOutcome('A never revealed coinflip'));
         });
       require(commitA == digest(coinFlipA));
-      const AisFirst = (( coinFlipA + coinFlipB ) % 2) == 0;
+      const AisFirst = (((coinFlipA % 2) + (coinFlipB % 2)) % 2) == 0;
 
       var [ AsTurn, heap1, heap2 ] = [ AisFirst, initialHeap, initialHeap ];
       invariant(balance() == (2 * wagerAmount));
