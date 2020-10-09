@@ -171,6 +171,8 @@ It supports the following options:
  See @seclink["guide-deploymode"]{the guide on deployment modes} for a discussion of why to choose a particular mode.}
  )
 
+(list @~ @~ @~ @~ @~)
+
 (list
  @(begin @(mint-define! '("verifyOverflow")) @reachin{verifyOverflow})
  @~
@@ -181,6 +183,8 @@ It supports the following options:
  We recommend turning it on before final deployment, but leaving it off during development.
  When it is @reachin{false}, @tech{connectors} will ensure that overflows do not actually occur on the network.}
  )
+
+(list @~ @~ @~ @~ @~)
 
 (list
  @(begin @(mint-define! '("connectors")) @reachin{connectors})
