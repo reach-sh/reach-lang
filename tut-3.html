@@ -56,14 +56,14 @@ This is an example of using a concrete value, rather than a function, in a <a hr
 The actual business logic of making the wager and transferring the funds will happen in the Reach code.</p><p>Let&rsquo;s look at that now.</p><p>First, we need to update the <a href="ref-programs-module.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interface</span></a>.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-3/index.rsh"><span class="stt">tut-3/index.rsh</span></a><button class="btn" data-clipboard-text="'reach 0.1';
 
 const Player =
-      { getHand: Fun([], UInt256),
-        seeOutcome: Fun([UInt256], Null) };
+      { getHand: Fun([], UInt),
+        seeOutcome: Fun([UInt], Null) };
 const Alice =
       { ...Player,
-        wager: UInt256 };
+        wager: UInt };
 const Bob =
       { ...Player,
-        acceptWager: Fun([UInt256], Null) };
+        acceptWager: Fun([UInt], Null) };
 
 export const main =
   Reach.App(
@@ -74,14 +74,14 @@ export const main =
       exit(); });"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="mi">1</span>    <span class="s1">&#39;reach 0.1&#39;</span><span class="p">;</span>
  <span class="mi">2</span>    
  <span class="mi">3</span>    <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">Player</span></font> <font class="badlink"><span class="o">=</span></font>
- <span class="mi">4</span>          <span class="p">{</span> <font class="badlink"><span class="nx">getHand</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Fun%29%29%29" class="nb" data-pltdoc="x">Fun</a><span class="p">([],</span> <a href="ref-programs-compute.html#%28reach._%28%28.U.Int256%29%29%29" class="nb" data-pltdoc="x">UInt256</a><span class="p">),</span>
- <span class="mi">5</span>            <font class="badlink"><span class="nx">seeOutcome</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Fun%29%29%29" class="nb" data-pltdoc="x">Fun</a><span class="p">([</span><a href="ref-programs-compute.html#%28reach._%28%28.U.Int256%29%29%29" class="nb" data-pltdoc="x">UInt256</a><span class="p">],</span> <a href="ref-programs-compute.html#%28reach._%28%28.Null%29%29%29" class="nb" data-pltdoc="x">Null</a><span class="p">)</span> <span class="p">};</span>
+ <span class="mi">4</span>          <span class="p">{</span> <font class="badlink"><span class="nx">getHand</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Fun%29%29%29" class="nb" data-pltdoc="x">Fun</a><span class="p">([],</span> <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">),</span>
+ <span class="mi">5</span>            <font class="badlink"><span class="nx">seeOutcome</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Fun%29%29%29" class="nb" data-pltdoc="x">Fun</a><span class="p">([</span><a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">],</span> <a href="ref-programs-compute.html#%28reach._%28%28.Null%29%29%29" class="nb" data-pltdoc="x">Null</a><span class="p">)</span> <span class="p">};</span>
  <span class="mi">6</span>    <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">Alice</span></font> <font class="badlink"><span class="o">=</span></font>
  <span class="mi">7</span>          <span class="p">{</span> <span class="p">...</span><font class="badlink"><span class="nx">Player</span></font><span class="p">,</span>
- <span class="mi">8</span>            <font class="badlink"><span class="nx">wager</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.U.Int256%29%29%29" class="nb" data-pltdoc="x">UInt256</a> <span class="p">};</span>
+ <span class="mi">8</span>            <font class="badlink"><span class="nx">wager</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a> <span class="p">};</span>
  <span class="mi">9</span>    <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">Bob</span></font> <font class="badlink"><span class="o">=</span></font>
 <span class="mi">10</span>          <span class="p">{</span> <span class="p">...</span><font class="badlink"><span class="nx">Player</span></font><span class="p">,</span>
-<span class="mi">11</span>            <font class="badlink"><span class="nx">acceptWager</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Fun%29%29%29" class="nb" data-pltdoc="x">Fun</a><span class="p">([</span><a href="ref-programs-compute.html#%28reach._%28%28.U.Int256%29%29%29" class="nb" data-pltdoc="x">UInt256</a><span class="p">],</span> <a href="ref-programs-compute.html#%28reach._%28%28.Null%29%29%29" class="nb" data-pltdoc="x">Null</a><span class="p">)</span> <span class="p">};</span>
+<span class="mi">11</span>            <font class="badlink"><span class="nx">acceptWager</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-programs-compute.html#%28reach._%28%28.Fun%29%29%29" class="nb" data-pltdoc="x">Fun</a><span class="p">([</span><a href="ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29" class="nb" data-pltdoc="x">UInt</a><span class="p">],</span> <a href="ref-programs-compute.html#%28reach._%28%28.Null%29%29%29" class="nb" data-pltdoc="x">Null</a><span class="p">)</span> <span class="p">};</span>
 <span class="mi">12</span>    
 <span class="mi">13</span>    <a href="ref-programs-module.html#%28reach._%28%28export%29%29%29" class="kd" data-pltdoc="x">export</a> <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">main</span></font> <font class="badlink"><span class="o">=</span></font>
 <span class="mi">14</span>      <a href="ref-programs-module.html#%28reach._%28%28.Reach%29%29%29" class="nb" data-pltdoc="x">Reach</a><span class="p">.</span><a href="ref-programs-module.html#%28reach._%28%28.App%29%29%29" class="nb" data-pltdoc="x">App</a><span class="p">(</span>
