@@ -74,8 +74,6 @@ const toAcct = (address: Address): AccountTransferrable => ({
   networkAccount: {address}
 });
 
-const REACHY_RICH: AccountTransferrable = toAcct('reachy_rich');
-
 export const balanceOf = async (acc: Account) => {
   return BALANCES[acc.networkAccount.address];
 };
@@ -254,7 +252,16 @@ const makeAccount = (): NetworkAccount => {
   return { address };
 };
 
+const REACHY_RICH_P: Promise<Account> = (async () => {
+  return await connectAccount({address: 'reachy_rich'});
+})();
+
+export async function getDefaultAccount(): Promise<Account> {
+  return REACHY_RICH_P;
+}
+
 export const newTestAccount = async (startingBalance: BigNumber) => {
+  const REACHY_RICH = await REACHY_RICH_P;
   const networkAccount = makeAccount();
   debug(`new account: ${networkAccount.address}`);
   BALANCES[REACHY_RICH.networkAccount.address] = startingBalance;

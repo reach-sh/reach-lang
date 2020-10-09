@@ -709,32 +709,47 @@ export const newAccountFromMnemonic = async (phrase: string): Promise<Account> =
   return acc;
 };
 
-const getSigner = memoizeThunk(async (): Promise<ethers.Signer> => {
-  requireIsolatedNetwork('getSigner');
-  const provider = await getProvider();
-  // TODO: teach ts what the specialized type is here
-  // @ts-ignore
-  return provider.getSigner();
+export const getDefaultAccount = memoizeThunk(async (): Promise<Account> => {
+  debug(`getDefaultAccount`);
+  if (isIsolatedNetwork || networkDesc.type == 'window') {
+    const provider = await getProvider();
+    // TODO: teach ts what the specialized type of provider is in this branch
+    // @ts-ignore
+    const signer: Signer = provider.getSigner();
+    return await connectAccount(signer);
+  }
+  throw Error(`Default account not available for REACH_CONNECTOR_MODE=${connectorMode}`);
+});
+
+// TODO: export? Should users be able to access this directly?
+// TODO: define a faucet on Ropsten & other testnets?
+const getFaucet = memoizeThunk(async (): Promise<Account> => {
+  requireIsolatedNetwork('getFacuet');
+  // On isolated networks, the default account is assumed to be the faucet.
+  // Furthermore, it is assumed that the faucet Signer is "unlocked",
+  // so no further secrets need be provided in order to access its funds.
+  // This is true of reach-provided devnets & embedded ganache.
+  // TODO: allow the user to set the faucet via mnemnonic.
+  return await getDefaultAccount();
 });
 
 export const newTestAccount = async (startingBalance: BigNumber): Promise<Account> => {
   debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork('newTestAccount');
   const provider = await getProvider();
-  const signer = await getSigner();
+  const faucet = await getFaucet();
 
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
   const to = networkAccount.address;
+  const acc = await connectAccount(networkAccount);
 
   try {
-    debug(`awaiting transfer: ${to}`);
-    await transfer({networkAccount: signer}, {networkAccount}, startingBalance);
-    debug(`got transfer. awaiting connectAccount: ${to}`);
-    const acc = await connectAccount(networkAccount);
-    debug(`got connectAccount: ${to}`);
+    debug(`newTestAccount awaiting transfer: ${to}`);
+    await transfer(faucet, acc, startingBalance);
+    debug(`newTestAccount got transfer: ${to}`);
     return acc;
   } catch (e) {
-    console.log(`Trouble with account ${to}`);
+    console.log(`newTestAccount: Trouble with account ${to}`);
     throw e;
   }
 };
@@ -822,9 +837,9 @@ const getDummyAccount = memoizeThunk(async (): Promise<Account> => {
 
 const stepTime = async () => {
   requireIsolatedNetwork('stepTime');
-  const signer = await getSigner();
+  const faucet = await getFaucet();
   const acc = await getDummyAccount();
-  return await transfer({networkAccount: signer}, acc, parseCurrency(0));
+  return await transfer(faucet, acc, parseCurrency(0));
 };
 
 // Check the contract info and the associated deployed bytecode;
