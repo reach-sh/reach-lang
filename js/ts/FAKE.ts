@@ -1,5 +1,5 @@
 import Timeout from 'await-timeout';
-import {BigNumber} from 'ethers';
+import ethers from 'ethers';
 
 import * as stdlib from './shared';
 import { CurrencyAmount, TyContract } from './shared';
@@ -8,6 +8,11 @@ export * from './shared';
 export const debug = (msg: any): void => {
   stdlib.debug(`${BLOCKS.length}: ${msg}}`);
 };
+
+type BigNumber = ethers.BigNumber;
+const BigNumber = ethers.BigNumber;
+export const UInt_max: BigNumber =
+  BigNumber.from(2).pow(256).sub(1);
 
 type Address = string;
 type NetworkAccount = {address: Address};

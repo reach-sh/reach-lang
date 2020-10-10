@@ -6,7 +6,9 @@ where
 
 import Control.Exception
 import qualified Data.ByteString.Lazy as BL
-import Reach.Compiler (connectors)
+import qualified Data.Map.Strict as M
+import Reach.AST
+import Reach.Compiler (all_connectors)
 import Reach.Eval
 import Reach.Linearize
 import Reach.Parser
@@ -20,9 +22,15 @@ import Test.Tasty
 partialCompile :: FilePath -> IO (BL.ByteString, Either SomeException ExitCode)
 partialCompile fp = do
   djp <- gatherDeps_top fp
-  let dl = compileBundle connectors djp "main"
-      ll = linearize dl
-  (s, eec) <- capture $ try $ verify Nothing ll
+  let dl = compileBundle all_connectors djp "main"
+  let ll = linearize dl
+  let DLProg _ (DLOpts {..}) _ _ = dl
+  let connectors = map (all_connectors M.!) dlo_connectors
+  let vconnectors =
+        case dlo_verifyPerConnector of
+          False -> Nothing
+          True -> Just connectors
+  (s, eec) <- capture $ try $ verify Nothing vconnectors ll
   return (BL.fromStrict $ bpack s, eec)
 
 partialCompileExpectSuccess :: FilePath -> IO BL.ByteString

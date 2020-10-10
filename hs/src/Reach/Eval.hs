@@ -1,6 +1,5 @@
 module Reach.Eval (EvalError, compileBundle) where
 
-import Algebra.Lattice (top)
 import Control.Arrow (second)
 import Control.Monad
 import Control.Monad.ST
@@ -121,7 +120,7 @@ displaySlValType = \case
   SLV_Object _ (Just lab) _ ->
     lab
   sv ->
-    case typeOfM top (SrcLoc Nothing Nothing Nothing) sv of
+    case typeOfM (SrcLoc Nothing Nothing Nothing) sv of
       Just (t, _) -> displayTy t
       Nothing -> "<" <> conNameOf sv <> ">"
 
@@ -507,10 +506,10 @@ jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
         _ -> impossible "not arrow"
 
 -- General compiler utilities
-checkResType :: SLLimits -> SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
-checkResType lims at et m = do
+checkResType :: SrcLoc -> SLType -> SLComp a SLSVal -> SLComp a DLArg
+checkResType at et m = do
   SLRes lifts st (_lvl, v) <- m
-  return $ SLRes lifts st $ checkType lims at et v
+  return $ SLRes lifts st $ checkType at et v
 
 -- Compiler
 --- A context has global stuff (the variable counter) and abstracts
@@ -829,9 +828,7 @@ evalAsEnv at obj =
         [("set", retStdLib "Object_set")]
     SLV_Type T_UInt ->
       M.fromList
-        [("max", (\ctxt _sco st -> do
-          let SLLimits {..} = dlo_lims $ ctxt_dlo ctxt
-          return $ SLRes mempty st $ public $ SLV_Int srcloc_builtin $ fromIntegral lim_maxUInt))]
+        [("max", retV $ public $ SLV_DLC DLC_UInt_max)]
     SLV_Type (T_Data varm) ->
       M.mapWithKey (\k t -> retV $ public $ SLV_Prim $ SLPrim_Data_variant varm k t) varm
     v ->
@@ -957,7 +954,7 @@ evalForm ctxt at sco st f args =
           let st_whats = st {st_mode = SLM_LocalStep}
           SLRes lifts_whats _ whats_sv <- evalExprs ctxt at sco_knower st_whats whats_e
           let whats_v = map snd whats_sv
-          let whats_da = map snd $ map (typeOf lims at) whats_v
+          let whats_da = map snd $ map (typeOf at) whats_v
           let ct = CT_Unknowable notter
           let lifts' = return $ DLS_Let at Nothing (DLE_Claim at (ctxt_stack ctxt) ct (DLA_Tuple whats_da) mmsg)
           let lifts = lifts_m <> lifts_n <> lifts_kn <> lifts_whats <> lifts'
@@ -965,7 +962,6 @@ evalForm ctxt at sco st f args =
         cm ->
           expect_throw at $ Err_Eval_IllegalMode cm $ "unknowable"
   where
-    lims = dlo_lims $ ctxt_dlo ctxt
     illegal_args n = expect_throw at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
     retV v = return $ SLRes mempty st v
@@ -1021,8 +1017,7 @@ evalPrimOp ctxt at _sco st p sargs =
         _ -> make_var
     static v = return $ SLRes mempty st (lvl, v)
     make_var = do
-      let lims@SLLimits {..} = dlo_lims $ ctxt_dlo ctxt
-      let (rng, dargs) = checkAndConvert lims at (primOpType p) args
+      let (rng, dargs) = checkAndConvert at (primOpType p) args
       let doClaim ca msg =
             return $
               DLS_Let at Nothing $
@@ -1033,7 +1028,7 @@ evalPrimOp ctxt at _sco st p sargs =
             (cv, cl) <- ctxt_lift_expr ctxt at (mkvar t) $ DLE_PrimOp at cp cargs
             return $ ( DLA_Var cv, cl )
       let doCmp = doOp T_Bool
-      let lim_maxUInt_a = DLA_Literal $ DLL_Int $ lim_maxUInt
+      let lim_maxUInt_a = DLA_Constant DLC_UInt_max
       before <-
         case p of
           ADD -> do
@@ -1071,7 +1066,7 @@ explodeTupleLike ctxt at lab tuplv =
     SLV_DLVar tupdv@(DLVar _ _ (T_Tuple tuptys) _) ->
       mconcatMap (uncurry (flip (mkdv tupdv DLE_TupleRef))) $ zip [0 ..] tuptys
     SLV_DLVar tupdv@(DLVar _ _ (T_Array t sz) _) -> do
-      let mkde _ da i = DLE_ArrayRef at da (DLA_Literal $ DLL_Int i)
+      let mkde _ da i = DLE_ArrayRef at da (DLA_Literal $ DLL_Int at i)
       mconcatMap (mkdv tupdv mkde t) [0 .. sz -1]
     _ ->
       expect_throw at $ Err_Eval_NotSpreadable tuplv
@@ -1093,10 +1088,10 @@ doFluidRef ctxt at st fv =
       let lifts = return $ DLS_FluidRef at dv fv
       return $ SLRes lifts st $ public $ SLV_DLVar dv
 
-doFluidSet :: SLLimits -> SrcLoc -> FluidVar -> SLSVal -> DLStmts
-doFluidSet lims at fv ssv = return $ DLS_FluidSet at fv da
+doFluidSet :: SrcLoc -> FluidVar -> SLSVal -> DLStmts
+doFluidSet at fv ssv = return $ DLS_FluidSet at fv da
   where
-    da = checkType lims at (fluidVarType fv) sv
+    da = checkType at (fluidVarType fv) sv
     sv = ensure_public at ssv
 
 doAssertBalance :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> PrimOp -> ST s DLStmts
@@ -1122,12 +1117,11 @@ doArrayBoundsCheck ctxt at sco st sz idxv m = do
 
 doBalanceUpdate :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> SLVal -> SLComp s ()
 doBalanceUpdate ctxt at sco st op rhs = do
-  let lims = dlo_lims $ ctxt_dlo ctxt
   let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
   SLRes fr_lifts fr_st balance_v <- doFluidRef ctxt at st FV_balance
   SLRes lifts st' (SLAppRes _ balance_v') <-
     evalApplyVals ctxt at sco fr_st up_rator [balance_v]
-  let fs_lifts = doFluidSet lims at FV_balance balance_v'
+  let fs_lifts = doFluidSet at FV_balance balance_v'
   return $ SLRes (fr_lifts <> lifts <> fs_lifts) st' ()
 
 mustBeBytes :: SrcLoc -> SLVal -> B.ByteString
@@ -1167,7 +1161,7 @@ evalPrim ctxt at sco st p sargs =
           retV $ (lvl, SLV_Type (T_Type ty))
         [val] -> retV $ (lvl, SLV_Type ty)
           where
-            (ty, _) = typeOf lims at val
+            (ty, _) = typeOf at val
         _ -> illegal_args
     SLPrim_Array ->
       case map snd sargs of
@@ -1203,7 +1197,7 @@ evalPrim ctxt at sco st p sargs =
               retV $ (lvl, SLV_Array at elem_ty elem_vs_checked)
               where
                 elem_vs_checked = map check1 elem_vs
-                check1 sv = checkType lims at elem_ty sv `seq` sv
+                check1 sv = checkType at elem_ty sv `seq` sv
             --- FIXME we could support turning a DL Tuple into an array.
             _ -> illegal_args
         _ -> illegal_args
@@ -1212,7 +1206,7 @@ evalPrim ctxt at sco st p sargs =
         [SLV_Array x_at x_ty x_vs, SLV_Array y_at y_ty y_vs] ->
           retV $ (lvl, SLV_Array at (typeMeet at (x_at, x_ty) (y_at, y_ty)) $ x_vs ++ y_vs)
         [x, y] ->
-          case (typeOf lims at x, typeOf lims at y) of
+          case (typeOf at x, typeOf at y) of
             ((T_Array x_ty x_sz, xa), (T_Array y_ty y_sz, ya)) -> do
               let t = (T_Array (typeMeet at (at, x_ty) (at, y_ty)) (x_sz + y_sz))
               let mkdv = (DLVar at (ctxt_local_name ctxt "array_concat") t)
@@ -1223,9 +1217,9 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_array_zip -> do
       let (x, y) = two_args
-      let (xt, x_da) = typeOf lims at x
+      let (xt, x_da) = typeOf at x
       let (x_ty, x_sz) = mustBeArray xt
-      let (yt, y_da) = typeOf lims at y
+      let (yt, y_da) = typeOf at y
       let (y_ty, y_sz) = mustBeArray yt
       let ty' = T_Tuple [x_ty, y_ty]
       unless (x_sz == y_sz) $ do
@@ -1248,12 +1242,12 @@ evalPrim ctxt at sco st p sargs =
         [] -> illegal_args
         [_] -> illegal_args
         [x, f] -> do
-          let (xt, x_da) = typeOf lims at x
+          let (xt, x_da) = typeOf at x
           let (x_ty, x_sz) = mustBeArray xt
           let f' a = evalApplyVals ctxt at sco st f [(lvl, a)]
           (a_dv, a_dsv) <- make_dlvar at "map in" x_ty
           SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' a_dsv
-          let (f_ty, f_da) = typeOf lims at f_v
+          let (f_ty, f_da) = typeOf at f_v
           let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
           case shouldUnroll of
             True -> do
@@ -1289,14 +1283,14 @@ evalPrim ctxt at sco st p sargs =
         [_] -> illegal_args
         [_, _] -> illegal_args
         [x, z, f] -> do
-          let (xt, x_da) = typeOf lims at x
+          let (xt, x_da) = typeOf at x
           let (x_ty, _) = mustBeArray xt
           let f' b a = evalApplyVals ctxt at sco st f [(lvl, b), (lvl, a)]
-          let (z_ty, z_da) = typeOf lims at z
+          let (z_ty, z_da) = typeOf at z
           (b_dv, b_dsv) <- make_dlvar at "reduce acc" z_ty
           (a_dv, a_dsv) <- make_dlvar at "reduce in" x_ty
           SLRes f_lifts f_st (SLAppRes _ (f_lvl, f_v)) <- f' b_dsv a_dsv
-          let (f_ty, f_da) = typeOf lims at f_v
+          let (f_ty, f_da) = typeOf at f_v
           let shouldUnroll = not (isPure f_lifts && isLocal f_lifts) || isLiteralArray x
           case shouldUnroll of
             True -> do
@@ -1309,7 +1303,7 @@ evalPrim ctxt at sco st p sargs =
                     --- version.
                     return $
                       stMerge at f_st xv_st
-                        `seq` checkType lims at f_ty xv_v'
+                        `seq` checkType at f_ty xv_v'
                         `seq` ((prev_lifts <> xv_lifts), xv_v')
               (lifts'', z') <- foldM evalem (mempty, z) x_vs
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
@@ -1331,8 +1325,8 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] ->
-          case typeOf lims at idxv of
-            (T_UInt, idxda@(DLA_Literal (DLL_Int idxi))) ->
+          case typeOf at idxv of
+            (T_UInt, idxda@(DLA_Literal (DLL_Int _ idxi))) ->
               case arrv of
                 SLV_Array _ elem_ty arrvs ->
                   case idxi' < length arrvs of
@@ -1340,7 +1334,7 @@ evalPrim ctxt at sco st p sargs =
                       retV $ (lvl, arrv')
                       where
                         arrv' = SLV_Array at elem_ty arrvs'
-                        valv_checked = checkType lims at elem_ty valv `seq` valv
+                        valv_checked = checkType at elem_ty valv `seq` valv
                         arrvs' = take (idxi' - 1) arrvs ++ [valv_checked] ++ drop (idxi' + 1) arrvs
                     False ->
                       expect_throw at $ Err_Eval_RefOutOfBounds (length arrvs) idxi
@@ -1350,19 +1344,19 @@ evalPrim ctxt at sco st p sargs =
                       doArrayBoundsCheck ctxt at sco st sz idxv $
                         retArrDV arr_ty $ DLE_ArraySet at (DLA_Var arrdv) idxda valda
                       where
-                        valda = checkType lims at elem_ty valv
+                        valda = checkType at elem_ty valv
                     False ->
                       expect_throw at $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
                 _ -> illegal_args
               where
                 idxi' = fromIntegral idxi
             (T_UInt, idxda) ->
-              case typeOf lims at arrv of
+              case typeOf at arrv of
                 (arr_ty@(T_Array elem_ty sz), arrda) ->
                   doArrayBoundsCheck ctxt at sco st sz idxv $
                     retArrDV arr_ty $ DLE_ArraySet at arrda idxda valda
                   where
-                    valda = checkType lims at elem_ty valv
+                    valda = checkType at elem_ty valv
                 _ -> illegal_args
             _ -> illegal_args
         _ -> illegal_args
@@ -1403,7 +1397,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_interact _iat who m t ->
       case st_mode st of
         SLM_LocalStep -> do
-          let (rng, dargs) = checkAndConvert lims at t $ map snd sargs
+          let (rng, dargs) = checkAndConvert at t $ map snd sargs
           (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at (ctxt_stack ctxt) who m rng dargs)
           return $ SLRes lifts st $ secret $ SLV_DLVar dv
         cm ->
@@ -1422,7 +1416,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_committed -> illegal_args
     SLPrim_digest -> do
       let rng = T_Digest
-      let dargs = map snd $ map ((typeOf lims at) . snd) sargs
+      let dargs = map snd $ map ((typeOf at) . snd) sargs
       (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "digest") rng) (DLE_Digest at dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
     SLPrim_claim ct ->
@@ -1440,9 +1434,9 @@ evalPrim ctxt at sco st p sargs =
         good = return $ SLRes lifts st $ public $ SLV_Null at "claim"
         (darg, mmsg) = case map snd sargs of
           [arg] ->
-            (checkType lims at T_Bool arg, Nothing)
+            (checkType at T_Bool arg, Nothing)
           [arg, marg] ->
-            (checkType lims at T_Bool arg, Just $ mustBeBytes at marg)
+            (checkType at T_Bool arg, Just $ mustBeBytes at marg)
           _ -> illegal_args
         lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg mmsg
     SLPrim_transfer ->
@@ -1457,7 +1451,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_transfer_amt_to amt_sv ->
       case st_mode st of
         SLM_ConsensusStep -> do
-          let amt_dla = checkType lims at T_UInt amt_sv
+          let amt_dla = checkType at T_UInt amt_sv
           tbsuff <- doAssertBalance ctxt at sco st amt_sv PLE
           SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
           let lifts = tbsuff <> (return $ DLS_Let at Nothing $ DLE_Transfer at who_dla amt_dla) <> balup
@@ -1471,7 +1465,7 @@ evalPrim ctxt at sco st p sargs =
                     Nothing -> expect_throw at $ Err_Transfer_NotBound who
                 [one] -> convert one
                 _ -> illegal_args
-            convert = checkType lims at T_Address
+            convert = checkType at T_Address
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "transfer.to"
     SLPrim_exit ->
       case st_mode st of
@@ -1504,14 +1498,14 @@ evalPrim ctxt at sco st p sargs =
         SLM_Step ->
           case sargs of
             [amt_sv] -> do
-              let amt_da = checkType lims at T_UInt $ ensure_public at amt_sv
+              let amt_da = checkType at T_UInt $ ensure_public at amt_sv
               return $ SLRes (return $ DLS_Let at Nothing (DLE_Wait at amt_da)) st $ public $ SLV_Null at "wait"
             _ -> illegal_args
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "wait"
     SLPrim_part_set ->
       case map snd sargs of
         [(SLV_Participant _ who _ _ _), addr] -> do
-          let addr_da = checkType lims at T_Address addr
+          let addr_da = checkType at T_Address addr
           retV $ (lvl, (SLV_Prim $ SLPrim_part_setted at who addr_da))
         _ -> illegal_args
     SLPrim_part_setted {} ->
@@ -1527,10 +1521,9 @@ evalPrim ctxt at sco st p sargs =
             case (vt, args) of
               (T_Null, []) -> SLV_Null at "variant"
               _ -> one_arg
-      let vv_da = checkType lims at vt vv
+      let vv_da = checkType at vt vv
       retV $ (lvl, SLV_Data at t vn $ vv_da `seq` vv)
   where
-    lims = dlo_lims $ ctxt_dlo ctxt
     lvl = mconcatMap fst sargs
     args = map snd sargs
     illegal_args = expect_throw at (Err_Prim_InvalidArgs p args)
@@ -1601,15 +1594,13 @@ evalApplyVals ctxt at sco st rator randvs =
         [(_, x)] -> no_prompt $ x
         _ -> do
           --- FIXME if all the values are actually the same, then we can treat this as a noprompt
-          let r_ty = typeMeets body_at $ map (\(r_at, (_r_lvl, r_sv)) -> (r_at, (fst (typeOf lims r_at r_sv)))) rs
+          let r_ty = typeMeets body_at $ map (\(r_at, (_r_lvl, r_sv)) -> (r_at, (fst (typeOf r_at r_sv)))) rs
           let lvl = mconcat $ map fst $ map snd rs
           let dv = DLVar body_at (ctxt_local_name ctxt "clo app") r_ty ret
           let lifts' = return $ DLS_Prompt body_at (Right dv) body_lifts
           return $ SLRes lifts' body_st $ SLAppRes clo_env'' (lvl, (SLV_DLVar dv))
     v ->
       expect_throw at (Err_Eval_NotApplicableVals v)
-  where
-    lims = dlo_lims $ ctxt_dlo ctxt
 
 evalApply :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> [JSExpression] -> SLComp s SLSVal
 evalApply ctxt at sco st rator rands =
@@ -1758,7 +1749,7 @@ evalExpr ctxt at sco st e = do
                 ret <- ctxt_alloc ctxt
                 let add_ret e_at' elifts ev = (e_ty, (elifts <> (return $ DLS_Return e_at' ret ev)))
                       where
-                        (e_ty, _) = typeOf lims e_at' ev
+                        (e_ty, _) = typeOf e_at' ev
                 let (t_ty, tlifts') = add_ret t_at' tlifts tv
                 let (f_ty, flifts') = add_ret f_at' flifts fv
                 let ty = typeMeet at' (t_at', t_ty) (f_at', f_ty)
@@ -1811,7 +1802,6 @@ evalExpr ctxt at sco st e = do
     JSYieldExpression _ _ -> illegal
     JSYieldFromExpression _ _ _ -> illegal
   where
-    lims = dlo_lims $ ctxt_dlo ctxt
     illegal = expect_throw at (Err_Eval_IllegalJS e)
     retV v = return $ SLRes mempty st $ v
     doCallV st_rator ratorv a rands =
@@ -1868,7 +1858,7 @@ evalExpr ctxt at sco st e = do
                 True -> retArrayRef t sz arr_dla idx_dla
                   where
                     arr_dla = DLA_Var adv
-                    idx_dla = DLA_Literal (DLL_Int idxi)
+                    idx_dla = DLA_Literal (DLL_Int at idxi)
             _ ->
               expect_throw at' $ Err_Eval_RefNotRefable arrv
         SLV_DLVar idxdv@(DLVar _ _ T_UInt _) ->
@@ -1880,7 +1870,7 @@ evalExpr ctxt at sco st e = do
             _ ->
               expect_throw at' $ Err_Eval_IndirectRefNotArray arrv
           where
-            (arr_ty, arr_dla) = typeOf lims at' arrv
+            (arr_ty, arr_dla) = typeOf at' arrv
         _ ->
           expect_throw at' $ Err_Eval_RefNotInt idxv
 
@@ -2057,7 +2047,6 @@ enforcePrivateUnderscore at = mapM_ enf . M.toList
 
 doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> (SLPart, SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLScope, SLState)
 doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
-  let lims = dlo_lims $ ctxt_dlo ctxt
   let SLCloEnv only_env only_penvs only_cenv = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
   let sco_only_pre =
@@ -2074,7 +2063,7 @@ doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
     (_, only_clo@(SLV_Clo _ _ [] _ _)) -> do
       SLRes alifts _ (SLAppRes penv' (_, only_v)) <-
         evalApplyVals ctxt at (impossible "part_only expects clo") st_localstep only_clo []
-      case fst $ typeOf lims only_at only_v of
+      case fst $ typeOf only_at only_v of
         T_Null -> do
           --- TODO: check less things
           enforcePrivateUnderscore only_at penv'
@@ -2137,7 +2126,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                               (SLSSVal _ Secret x) ->
                                 -- TODO: use binding loc in error
                                 expect_throw at $ Err_ExpectedPublic x
-                      let (t, da) = typeOf lims to_at val
+                      let (t, da) = typeOf to_at val
                       let m = case da of
                             DLA_Var (DLVar _ v _ _) -> v
                             _ -> "msg"
@@ -2180,7 +2169,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               Nothing ->
                 return $ (amt_e_, mempty, amt_check_da)
                 where
-                  amt_check_da = DLA_Literal $ DLL_Int 0
+                  amt_check_da = DLA_Literal $ DLL_Int at 0
                   amt_e_ = JSDecimal JSNoAnnot "0"
               Just amte_ -> do
                 let penv' = penvs' M.! who
@@ -2190,7 +2179,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                         , sco_env = penv'
                         }
                 SLRes amt_lifts_ _ amt_sv <- evalExpr ctxt at sco_penv' st_pure amte_
-                return $ (amte_, amt_lifts_, checkType lims at T_UInt $ ensure_public at amt_sv)
+                return $ (amte_, amt_lifts_, checkType at T_UInt $ ensure_public at amt_sv)
           let amt_compute_lifts = return $ DLS_Only at who amt_lifts
           amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt
           SLRes amt_check_lifts _ _ <- do
@@ -2205,7 +2194,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               Nothing -> return $ (mempty, Nothing, Nothing)
               Just (dt_at, de, (JSBlock _ dt_ss _)) -> do
                 SLRes de_lifts _ de_sv <- evalExpr ctxt at sco st_pure de
-                let de_da = checkType lims dt_at T_UInt $ ensure_public dt_at de_sv
+                let de_da = checkType dt_at T_UInt $ ensure_public dt_at de_sv
                 SLRes dta_lifts dt_st dt_cr <- evalStmt ctxt dt_at sco st dt_ss
                 return $ (de_lifts, Just (dt_st, dt_cr), Just (de_da, dta_lifts))
           let st_cstep =
@@ -2246,11 +2235,10 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           return $ SLRes lifts' k_st cr
         _ -> illegal_mode
     _ ->
-      case typeOf lims at ev of
+      case typeOf at ev of
         (T_Null, _) -> evalStmt ctxt at sco st ks
         (ty, _) -> expect_throw at (Err_Block_NotNull ty ev)
   where
-    lims = dlo_lims $ ctxt_dlo ctxt
     illegal_mode = expect_throw at $ Err_Eval_IllegalMode (st_mode st) "trampoline"
     env = sco_env sco
 
@@ -2396,12 +2384,12 @@ evalStmt ctxt at sco st ss =
                               expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
                             Just x -> x
                           val = ensure_public var_at $ sss_sls sv
-                          da = checkType lims at et val
+                          da = checkType at et val
                           DLVar _ _ et _ = dv
               SLRes fr_lifts _ balance_v <-
                 doFluidRef ctxt cont_at st_decl FV_balance
               let balance_da =
-                    checkType lims cont_at T_UInt $
+                    checkType cont_at T_UInt $
                       ensure_public cont_at balance_v
               let unknown_balance_dv = whilem M.! internalVar_balance
               let cont_dam' =
@@ -2447,7 +2435,7 @@ evalStmt ctxt at sco st ss =
       let de_v = jse_expect_id at' de
       let env = sco_env sco
       let (de_lvl, de_val) = sss_sls $ env_lookup at' de_v env
-      let (de_ty, _) = typeOf lims at de_val
+      let (de_ty, _) = typeOf at de_val
       let varm = case de_ty of
             T_Data m -> m
             _ -> expect_throw at $ Err_Switch_NotData de_val
@@ -2553,26 +2541,26 @@ evalStmt ctxt at sco st ss =
                       env_insert var_at internalVar_balance balance_v vars_env_
                 let while_help v sv = do
                       let (SLSSVal _ _ val) = sv
-                      let (t, da) = typeOf lims var_at val
+                      let (t, da) = typeOf var_at val
                       dv <- ctxt_mkvar ctxt $ DLVar var_at v t
                       return $ (dv, da)
                 while_helpm <- M.traverseWithKey while_help vars_env
                 let unknown_var_env = M.map (sls_sss var_at . public . SLV_DLVar . fst) while_helpm
                 let unknown_bal_v = sss_sls $ unknown_var_env M.! internalVar_balance
-                let bal_lifts = doFluidSet lims at FV_balance unknown_bal_v
+                let bal_lifts = doFluidSet at FV_balance unknown_bal_v
                 let st_var' = stEnsureMode at SLM_ConsensusStep st_var
                 let st_pure = st_var' {st_mode = SLM_ConsensusPure}
                 let sco_env' = sco_update ctxt at sco st_var' unknown_var_env
                 SLRes inv_lifts_ _ inv_da <-
                   case jscl_flatten invariant_args of
                     [invariant_e] ->
-                      checkResType lims inv_at T_Bool $ evalExpr ctxt inv_at sco_env' st_pure invariant_e
+                      checkResType inv_at T_Bool $ evalExpr ctxt inv_at sco_env' st_pure invariant_e
                     ial -> expect_throw inv_at $ Err_While_IllegalInvariant ial
                 let inv_lifts = bal_lifts <> inv_lifts_
                 let fs = ctxt_stack ctxt
                 let inv_b = DLBlock inv_at fs inv_lifts inv_da
                 SLRes cond_lifts _ cond_da <-
-                  checkResType lims cond_at T_Bool $ evalExpr ctxt cond_at sco_env' st_pure while_cond
+                  checkResType cond_at T_Bool $ evalExpr ctxt cond_at sco_env' st_pure while_cond
                 let cond_b = DLBlock cond_at fs cond_lifts cond_da
                 let while_sco =
                       sco_env'
@@ -2625,7 +2613,6 @@ evalStmt ctxt at sco st ss =
           SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <- evalStmt ctxt at_after sco body_st ks
           return $ SLRes (o_lifts <> env_lifts <> body_lifts <> k_lifts) k_st $ SLStmtRes k_env' (body_rets <> k_rets)
   where
-    lims = dlo_lims $ ctxt_dlo ctxt
     illegal a s lab =
       expect_throw (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
     retSeqn sr at' ks = do
@@ -2782,7 +2769,7 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
   let dlo = app_default_opts $ M.keys cns
   let ctxt_top =
         (SLCtxt
-           { ctxt_dlo = dlo_lims_meet cns dlo
+           { ctxt_dlo = dlo
            , ctxt_id = idxr
            , ctxt_stack = []
            , ctxt_local_mname = Nothing
@@ -2824,14 +2811,19 @@ app_default_opts :: [String] -> DLOpts
 app_default_opts cns =
   DLOpts { dlo_deployMode = DM_constructor
          , dlo_verifyOverflow = False
-         , dlo_lims = top
+         , dlo_verifyPerConnector = False
          , dlo_connectors = cns }
 
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
 app_options = M.fromList [("deployMode", opt_deployMode)
                          ,("verifyOverflow", opt_verifyOverflow)
+                         ,("verifyPerConnector",opt_verifyPerConnector)
                          ,("connectors", opt_connectors)]
   where
+    opt_verifyPerConnector opts v =
+      case v of
+        SLV_Bool _ b -> Right $ opts { dlo_verifyPerConnector = b }
+        _ -> Left $ "expected boolean"
     opt_verifyOverflow opts v =
       case v of
         SLV_Bool _ b -> Right $ opts { dlo_verifyOverflow = b }
@@ -2881,7 +2873,7 @@ compileDApp idxr liblifts cns topv =
               }
       let ctxt =
             SLCtxt
-              { ctxt_dlo = dlo_lims_meet cns dlo
+              { ctxt_dlo = dlo
               , ctxt_id = idxr
               , ctxt_stack = []
               , ctxt_local_mname = Nothing
@@ -2896,8 +2888,7 @@ compileDApp idxr liblifts cns topv =
               , sco_penvs = penvs
               , sco_cenv = mempty
               }
-      let lims = dlo_lims $ ctxt_dlo ctxt
-      let bal_lifts = doFluidSet lims at' FV_balance $ public $ SLV_Int at' 0
+      let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
       SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
       tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
       return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)

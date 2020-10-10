@@ -1,6 +1,7 @@
 <stdout>
 Verifying knowledge assertions
-Verifying with mode = VM_Honest
+Verifying for generic connector
+  Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Assert
@@ -23,7 +24,7 @@ Verification failed:
     "v66" = (= 0 v65 )
       (from: v66)
       (bound at: ./tut-4-attack/index-bad.rsh:45:11:application)
-      (because: evaluating PEQ(DLC_Int 0, v65))
+      (because: evaluating PEQ(DLL_Int <builtin> 0, v65))
     "v65" = v60
       (from: v65)
       (bound at: ./tut-4-attack/index-bad.rsh:45:11:application)
@@ -55,7 +56,7 @@ Verification failed:
     "v44" = (ite v40 (T2_cons 0 1 ) v43 )
       (from: v44)
       (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
-      (because: evaluating IF_THEN_ELSE(v40, [DLC_Int 0, DLC_Int 1], v43))
+      (because: evaluating IF_THEN_ELSE(v40, [DLL_Int ./tut-4-attack/index-bad.rsh:36:29:decimal 0, DLL_Int ./tut-4-attack/index-bad.rsh:36:32:decimal 1], v43))
     "v47" = (* v45 v2 )
       (from: v47)
       (bound at: ./tut-4-attack/index-bad.rsh:application)
@@ -67,11 +68,11 @@ Verification failed:
     "v40" = (= v30 0 )
       (from: v40)
       (bound at: reach standard library:22:17:application)
-      (because: evaluating PEQ(v30, DLC_Int 0))
+      (because: evaluating PEQ(v30, DLL_Int ./tut-4-attack/index-bad.rsh:36:24:decimal 0))
     "v43" = (ite v42 (T2_cons 1 1 ) (T2_cons 2 0 ) )
       (from: v43)
       (bound at: ./tut-4-attack/index-bad.rsh:36:35:?: > false)
-      (because: evaluating IF_THEN_ELSE(v42, [DLC_Int 1, DLC_Int 1], [DLC_Int 2, DLC_Int 0]))
+      (because: evaluating IF_THEN_ELSE(v42, [DLL_Int ./tut-4-attack/index-bad.rsh:37:29:decimal 1, DLL_Int ./tut-4-attack/index-bad.rsh:37:32:decimal 1], [DLL_Int ./tut-4-attack/index-bad.rsh:38:14:decimal 2, DLL_Int ./tut-4-attack/index-bad.rsh:38:17:decimal 0]))
     "v45" = (T2_elem0 v44 )
       (from: v45)
       (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
@@ -83,11 +84,11 @@ Verification failed:
     "v30" = (mod v29 3 )
       (from: v30)
       (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating MOD(v29, DLC_Int 3))
+      (because: evaluating MOD(v29, DLL_Int ./tut-4-attack/index-bad.rsh:31:47:decimal 3))
     "v42" = (= v30 1 )
       (from: v42)
       (bound at: reach standard library:22:17:application)
-      (because: evaluating PEQ(v30, DLC_Int 1))
+      (because: evaluating PEQ(v30, DLL_Int ./tut-4-attack/index-bad.rsh:37:24:decimal 1))
     "v19" = v2
       (from: v19)
       (bound at: ./tut-4-attack/index-bad.rsh:28:8:dot)
@@ -107,7 +108,7 @@ Verification failed:
     "v26" = (- 4 v17 )
       (from: v26)
       (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating SUB(DLC_Int 4, v17))
+      (because: evaluating SUB(DLL_Int ./tut-4-attack/index-bad.rsh:31:33:decimal 4, v17))
     "v3" = v1
       (from: v3)
       (bound at: ./tut-4-attack/index-bad.rsh:21:8:dot)
@@ -119,7 +120,7 @@ Verification failed:
     "v7" = 0
       (from: v7)
       (bound at: ./tut-4-attack/index-bad.rsh:22:20:after expr stmt semicolon)
-      (because: evaluating DLC_Int 0)
+      (because: evaluating DLL_Int ./tut-4-attack/index-bad.rsh:compileDApp 0)
     "v17" = v16
       (from: v17)
       (bound at: ./tut-4-attack/index-bad.rsh:28:8:dot)
@@ -127,12 +128,12 @@ Verification failed:
     "v16" = (mod v15 3 )
       (from: v16)
       (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating MOD(v15, DLC_Int 3))
+      (because: evaluating MOD(v15, DLL_Int ./tut-4-attack/index-bad.rsh:27:37:decimal 3))
     "v15" = (+ v3 1 )
       (from: v15)
       (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating ADD(v3, DLC_Int 1))
-Verifying with mode = VM_Dishonest RoleContract
+      (because: evaluating ADD(v3, DLL_Int ./tut-4-attack/index-bad.rsh:27:32:decimal 1))
+  Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TClaim CT_Assert
@@ -140,7 +141,7 @@ Verification failed:
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   (details omitted on repeat)
-Verifying with mode = VM_Dishonest (RolePart "Alice")
+  Verifying with mode = VM_Dishonest (RolePart "Alice")
 Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
   of theorem TClaim CT_Assert
@@ -148,7 +149,7 @@ Verification failed:
   at ./tut-4-attack/index-bad.rsh:45:11:application
 
   (details omitted on repeat)
-Verifying with mode = VM_Dishonest (RolePart "Bob")
+  Verifying with mode = VM_Dishonest (RolePart "Bob")
 Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
   of theorem TClaim CT_Assert

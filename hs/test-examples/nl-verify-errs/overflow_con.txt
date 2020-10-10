@@ -5,39 +5,39 @@ Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Assert
   msg: "add overflow"
-  at ./overflow.rsh:application
+  at ./overflow_con.rsh:application
 
   Theorem formalization:
-  v11
+  v13
 
   This could be violated if...
     "dlc_UInt_max" = 1
-      (bound at: ./overflow.rsh:3:30:application)
+      (bound at: ./overflow_con.rsh:3:30:application)
       (because: builtin)
     "v1" = 1
       (from: v1)
-      (bound at: ./overflow.rsh:9:40:application)
+      (bound at: ./overflow_con.rsh:9:40:application)
       (because: evaluating interact("A")."get"())
 
   In context...
-    "v11" = (<= v2 v10 )
-      (from: v11)
-      (bound at: ./overflow.rsh:application)
-      (because: evaluating PLE(v2, v10))
-    "v10" = (- dlc_UInt_max 1 )
-      (from: v10)
-      (bound at: ./overflow.rsh:application)
-      (because: evaluating SUB(DLC_UInt_max, DLL_Int ./overflow.rsh:12:19:decimal 1))
-    "v2" = v1
-      (from: v2)
-      (bound at: ./overflow.rsh:11:6:dot)
+    "v13" = (<= v3 v12 )
+      (from: v13)
+      (bound at: ./overflow_con.rsh:application)
+      (because: evaluating PLE(v3, v12))
+    "v12" = (- dlc_UInt_max 1 )
+      (from: v12)
+      (bound at: ./overflow_con.rsh:application)
+      (because: evaluating SUB(DLC_UInt_max, DLL_Int ./overflow_con.rsh:14:19:decimal 1))
+    "v3" = v1
+      (from: v3)
+      (bound at: ./overflow_con.rsh:12:6:dot)
       (because: an honest message from "A" of v1)
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TClaim CT_Assert
   msg: "add overflow"
-  at ./overflow.rsh:application
+  at ./overflow_con.rsh:application
 
   (details omitted on repeat)
   Verifying with mode = VM_Dishonest (RolePart "A")
@@ -45,7 +45,7 @@ Verification failed:
   in VM_Dishonest (RolePart "A") mode
   of theorem TClaim CT_Assert
   msg: "add overflow"
-  at ./overflow.rsh:application
+  at ./overflow_con.rsh:application
 
   (details omitted on repeat)
-Checked 10 theorems; 3 failures. :'(
+Checked 11 theorems; 3 failures. :'(

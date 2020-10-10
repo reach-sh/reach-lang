@@ -2,7 +2,7 @@
 // XXX: can stop doing this workaround once @types/algosdk is shippable
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
-import ethers, { BigNumber } from 'ethers';
+import ethers from 'ethers';
 import Timeout from 'await-timeout';
 
 import {
@@ -12,6 +12,11 @@ import {
   T_UInt, T_Bool, T_Digest, setDigestWidth,
   getDEBUG } from './shared';
 export * from './shared';
+
+type BigNumber = ethers.BigNumber;
+const BigNumber = ethers.BigNumber;
+export const UInt_max: BigNumber =
+  BigNumber.from(2).pow(64).sub(1);
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:

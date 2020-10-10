@@ -1,5 +1,5 @@
 import Timeout from 'await-timeout';
-import ethers, { BigNumber, Signer } from 'ethers';
+import ethers, { Signer } from 'ethers';
 import http from 'http';
 import url from 'url';
 import waitPort from 'wait-port';
@@ -24,6 +24,11 @@ import {
   IAccount,
 } from './shared';
 export * from './shared';
+
+type BigNumber = ethers.BigNumber;
+const BigNumber = ethers.BigNumber;
+export const UInt_max: BigNumber =
+  BigNumber.from(2).pow(256).sub(1);
 
 type Provider = ethers.providers.Provider;
 type TransactionReceipt = ethers.providers.TransactionReceipt;

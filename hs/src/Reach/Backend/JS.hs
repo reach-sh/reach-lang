@@ -14,6 +14,9 @@ import Reach.Version
 
 --- Pretty helpers
 
+sb :: SrcLoc
+sb = srcloc_builtin
+
 vsep_with_blank :: [Doc a] -> Doc a
 vsep_with_blank l = vsep $ punctuate emptyDoc l
 
@@ -80,7 +83,7 @@ jsContract = \case
   T_Digest -> "stdlib.T_Digest"
   T_Address -> "stdlib.T_Address"
   T_Fun {} -> impossible "fun dl"
-  T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLL_Int sz)]
+  T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLL_Int sb sz)]
   T_Tuple as -> jsApply ("stdlib.T_Tuple") $ [jsArray $ map jsContract as]
   T_Object m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
   T_Data m -> jsApply ("stdlib.T_Data") [jsObject $ M.map jsContract m]
@@ -92,13 +95,16 @@ jsProtect :: Doc a -> SLType -> Doc a -> Doc a
 jsProtect ai how what =
   jsApply "stdlib.protect" $ [jsContract how, what, ai]
 
+jsAt :: SrcLoc -> Doc a
+jsAt at = jsString $ unsafeRedactAbsStr $ show at
+
 jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> Doc a
 jsAssertInfo ctxt at fs mmsg =
   jsObject $
     M.fromList
       [ ("who" :: String, who_p)
       , ("msg", msg_p)
-      , ("at", at_p)
+      , ("at", jsAt at)
       , ("fs", fs_p)
       ]
   where
@@ -106,7 +112,6 @@ jsAssertInfo ctxt at fs mmsg =
       Nothing -> "null"
       Just b -> jsString $ bunpack b
     who_p = jsCon $ DLL_Bytes $ ctxt_who ctxt
-    at_p = jsString $ unsafeRedactAbsStr $ show at
     fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
 
 jsVar :: DLVar -> Doc a
@@ -117,12 +122,17 @@ jsCon = \case
   DLL_Null -> "null"
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
-  DLL_Int i -> jsApply "stdlib.bigNumberify" [pretty i]
+  DLL_Int at i ->
+    jsApply "stdlib.checkedBigNumberify" [ jsAt at, jsArg (DLA_Constant $ DLC_UInt_max), pretty i ]
   DLL_Bytes b -> jsString $ bunpack b
 
 jsArg :: DLArg -> Doc a
 jsArg = \case
   DLA_Var v -> jsVar v
+  DLA_Constant c ->
+    case c of
+      DLC_UInt_max ->
+        "stdlib.UInt_max"
   DLA_Literal c -> jsCon c
   DLA_Array _ as -> jsArg $ DLA_Tuple as
   DLA_Tuple as -> jsArray $ map jsArg as
@@ -175,8 +185,8 @@ jsExpr ctxt = \case
     jsArg x <> "." <> jsApply "concat" [jsArg y]
   DLE_ArrayZip _ x y ->
     jsApply "stdlib.Array_zip" $ map jsArg [x, y]
-  DLE_TupleRef _ aa i ->
-    jsArg aa <> brackets (jsCon $ DLL_Int i)
+  DLE_TupleRef at aa i ->
+    jsArg aa <> brackets (jsCon $ DLL_Int at i)
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f
   DLE_Interact at fs _ m t as ->
@@ -295,7 +305,7 @@ jsETail ctxt = \case
       True -> emptyDoc
   ET_If _ c t f -> jsIf (jsArg c) (jsETail ctxt t) (jsETail ctxt f)
   ET_Switch at ov csm -> jsEmitSwitch jsETail ctxt at ov csm
-  ET_FromConsensus _ which msvs k ->
+  ET_FromConsensus at which msvs k ->
     case ctxt_simulate ctxt of
       False -> kp
       True ->
@@ -312,10 +322,10 @@ jsETail ctxt = \case
             , jsCon $ DLL_Bool True
             )
           Just svs ->
-            ( jsDigest (DLA_Literal (DLL_Int $ fromIntegral which) : (map DLA_Var svs))
+            ( jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map DLA_Var svs))
             , jsCon $ DLL_Bool False
             )
-  ET_ToConsensus _ fs_ok prev which from_me msg amtv mto k_ok -> tp
+  ET_ToConsensus at fs_ok prev which from_me msg amtv mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
       (delayp, k_p) =
@@ -360,7 +370,7 @@ jsETail ctxt = \case
               sim_body =
                 vsep
                   [ "const sim_r = { txns: [] };"
-                  , "sim_r.prevSt =" <+> jsDigest (DLA_Literal (DLL_Int $ fromIntegral prev) : svs_as) <> semi
+                  , "sim_r.prevSt =" <+> jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : svs_as) <> semi
                   , k_defp
                   , sim_body_core
                   , "return sim_r;"

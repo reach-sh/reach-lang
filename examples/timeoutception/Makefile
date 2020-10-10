@@ -3,7 +3,7 @@ check: expected actual
 	diff -u $^
 
 actual: build/index.main.pl
-	grep -B 2 between $^ > $@
+	grep -B 2 between $^ | sed 's# /U[^ ]*mal##g' > $@
 
 build/index.main.pl: index.rsh
 	../../reach compile $^

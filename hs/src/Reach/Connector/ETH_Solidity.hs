@@ -46,6 +46,9 @@ vsep_with_blank l = vsep $ intersperse emptyDoc l
 
 --- Solidity helpers
 
+sb :: SrcLoc
+sb = srcloc_builtin
+
 solString :: String -> Doc a
 solString s = squotes $ pretty s
 
@@ -89,7 +92,7 @@ solStdLib = pretty $ B.unpack stdlib_sol
 solApply :: Doc a -> [Doc a] -> Doc a
 solApply f args = f <> parens (hcat $ intersperse (comma <> space) args)
 
---- XXX these add size to the contract without much payoff. A better
+--- FIXME these add size to the contract without much payoff. A better
 --- thing would be to encode a number and then emit a dictionary of
 --- what the error codes mean that would be used by our connector
 --- stdlib.
@@ -252,19 +255,20 @@ solArgType ctxt am t = solType ctxt t <> loc_spec
 solArgDecl :: SolCtxt a -> ArgMode -> DLVar -> Doc a
 solArgDecl ctxt am dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt am t)
 
-solCon :: DLLiteral -> Doc a
-solCon = \case
+solLit :: DLLiteral -> Doc a
+solLit = \case
   DLL_Null -> "true"
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
-  DLL_Int i -> solNum i
+  DLL_Int at i -> solNum $ checkIntLiteralC at connect_eth i
   DLL_Bytes s -> dquotes $ pretty $ B.unpack s
 
 solArg :: SolCtxt a -> DLArg -> Doc a
 solArg ctxt da =
   case da of
     DLA_Var v -> solVar ctxt v
-    DLA_Literal c -> solCon c
+    DLA_Constant c -> solLit $ conCons connect_eth c
+    DLA_Literal c -> solLit c
     DLA_Array _ as -> brackets $ hsep $ punctuate comma $ map (solArg ctxt) as
     DLA_Tuple as -> con $ map (solArg ctxt) as
     DLA_Obj m -> con $ map ((solArg ctxt) . snd) $ M.toAscList m
@@ -858,8 +862,7 @@ connect_eth :: Connector
 connect_eth = Connector {..}
   where
     conName = "ETH"
-    conLims = SLLimits {..}
-    lim_maxUInt = 2^(256::Integer) - 1
+    conCons DLC_UInt_max = DLL_Int sb $ 2^(256::Integer) - 1
     conGen outnMay pl = case outnMay of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->

@@ -1,7 +1,8 @@
 <stdout>
 Verifying knowledge assertions
-Verifying with mode = VM_Honest
-Verifying with mode = VM_Dishonest RoleContract
+Verifying for generic connector
+  Verifying with mode = VM_Honest
+  Verifying with mode = VM_Dishonest RoleContract
 Checked 26 theorems; No failures!
 
 </stdout>

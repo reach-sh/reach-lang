@@ -81,6 +81,14 @@ const {
 export const { isBigNumber } = BigNumber;
 export const bigNumberify = (x: any): BigNumber => BigNumber.from(x);
 
+export const checkedBigNumberify = ( at:string, m:BigNumber, x:any ): BigNumber => {
+  const xb = bigNumberify(x);
+  if (xb.gte(0) && xb.lte(m)) {
+    return xb;
+  }
+  throw Error(`bigNumberify: ${x} out of range [0, ${m}] at ${at}`);
+};
+
 // Hex helpers
 // const un0x           = h => h.replace(/^0x/, ''); // unused
 const hexTo0x = (h: string): string => '0x' + h.replace(/^0x/, '');

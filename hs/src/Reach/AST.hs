@@ -2,8 +2,6 @@
 
 module Reach.AST where
 
-import Algebra.Lattice
-import Algebra.Lattice.Ordered
 import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import Data.List
@@ -209,6 +207,7 @@ data SLVal
   | SLV_Object SrcLoc (Maybe String) SLEnv
   | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLCloEnv
   | SLV_Data SrcLoc (M.Map SLVar SLType) SLVar SLVal
+  | SLV_DLC DLConstant
   | SLV_DLVar DLVar
   | SLV_Type SLType
   | SLV_Connector String
@@ -385,10 +384,14 @@ newtype SLParts
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, NFData, Semigroup)
 
+data DLConstant
+  = DLC_UInt_max
+  deriving (Eq, Generic, NFData, Show, Ord)
+
 data DLLiteral
   = DLL_Null
   | DLL_Bool Bool
-  | DLL_Int Integer
+  | DLL_Int SrcLoc Integer
   | DLL_Bytes B.ByteString
   deriving (Eq, Generic, NFData, Show, Ord)
 
@@ -397,6 +400,7 @@ data DLVar = DLVar SrcLoc String SLType Int
 
 data DLArg
   = DLA_Var DLVar
+  | DLA_Constant DLConstant
   | DLA_Literal DLLiteral
   | DLA_Array SLType [DLArg]
   | DLA_Tuple [DLArg]
@@ -608,7 +612,7 @@ data DLBlock
 data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
   , dlo_verifyOverflow :: Bool
-  , dlo_lims :: SLLimits
+  , dlo_verifyPerConnector :: Bool
   , dlo_connectors :: [String] }
   deriving (Eq, Generic, NFData, Show)
 

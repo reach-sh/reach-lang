@@ -1,6 +1,7 @@
 <stdout>
 Verifying knowledge assertions
-Verifying with mode = VM_Honest
+Verifying for generic connector
+  Verifying with mode = VM_Honest
 Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Assert
@@ -19,7 +20,7 @@ Verification failed:
     "v36" = (= 0 v35 )
       (from: v36)
       (bound at: ./overview/index-error.rsh:29:11:application)
-      (because: evaluating PEQ(DLC_Int 0, v35))
+      (because: evaluating PEQ(DLL_Int <builtin> 0, v35))
     "v35" = v32
       (from: v35)
       (bound at: ./overview/index-error.rsh:29:11:application)
@@ -31,7 +32,7 @@ Verification failed:
     "v27" = (- v1 1 )
       (from: v27)
       (bound at: ./overview/index-error.rsh:application)
-      (because: evaluating SUB(v1, DLC_Int 1))
+      (because: evaluating SUB(v1, DLL_Int ./overview/index-error.rsh:24:24:decimal 1))
     "v30" = v25
       (from: v30)
       (bound at: ./overview/index-error.rsh:24:29:application)
@@ -47,7 +48,7 @@ Verification failed:
     "v20" = 0
       (from: v20)
       (bound at: ./overview/index-error.rsh:23:8:dot)
-      (because: an honest payment from "Alice" of DLC_Int 0)
+      (because: an honest payment from "Alice" of DLL_Int ./overview/index-error.rsh:23:22:after expr stmt semicolon 0)
     "v22" = v17
       (from: v22)
       (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
@@ -71,12 +72,12 @@ Verification failed:
     "v3" = 0
       (from: v3)
       (bound at: ./overview/index-error.rsh:13:8:dot)
-      (because: an honest payment from "Alice" of DLC_Int 0)
+      (because: an honest payment from "Alice" of DLL_Int ./overview/index-error.rsh:13:25:after expr stmt semicolon 0)
     "v5" = 0
       (from: v5)
       (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
-      (because: evaluating DLC_Int 0)
-Verifying with mode = VM_Dishonest RoleContract
+      (because: evaluating DLL_Int ./overview/index-error.rsh:compileDApp 0)
+  Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TClaim CT_Assert
@@ -84,7 +85,7 @@ Verification failed:
   at ./overview/index-error.rsh:29:11:application
 
   (details omitted on repeat)
-Verifying with mode = VM_Dishonest (RolePart "Alice")
+  Verifying with mode = VM_Dishonest (RolePart "Alice")
 Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
   of theorem TClaim CT_Assert
@@ -92,7 +93,7 @@ Verification failed:
   at ./overview/index-error.rsh:29:11:application
 
   (details omitted on repeat)
-Verifying with mode = VM_Dishonest (RolePart "Bob")
+  Verifying with mode = VM_Dishonest (RolePart "Bob")
 Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
   of theorem TClaim CT_Assert

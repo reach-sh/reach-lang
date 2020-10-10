@@ -1,4 +1,4 @@
-module Reach.Compiler (CompilerOpts (..), compile, connectors) where
+module Reach.Compiler (CompilerOpts (..), compile, all_connectors) where
 
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
@@ -23,8 +23,8 @@ data CompilerOpts = CompilerOpts
   , intermediateFiles :: Bool
   }
 
-connectors :: Connectors
-connectors =
+all_connectors :: Connectors
+all_connectors =
   M.fromList $
     map (\x -> (conName x, x))
     [ connect_eth
@@ -41,17 +41,21 @@ compile copts = do
         let interOut = case outnMay of
               Just f -> writeFile . f
               Nothing -> \_ _ -> return ()
-        let dl = compileBundle connectors djp which
+        let dl = compileBundle all_connectors djp which
         let DLProg _ (DLOpts {..}) _ _ = dl
+        let connectors = map (all_connectors M.!) dlo_connectors
         interOut "dl" $ show $ pretty dl
         let ll = linearize dl
         interOut "ll" $ show $ pretty ll
-        verify outnMay ll >>= maybeDie
+        let vconnectors =
+              case dlo_verifyPerConnector of
+                False -> Nothing
+                True -> Just connectors
+        verify outnMay vconnectors ll >>= maybeDie
         let pl = epp ll
         interOut "pl" $ show $ pretty pl
-        let runConnector cn = (,) cn <$> conGen c outnMay pl
-              where c = connectors M.! cn
-        crs <- M.fromList <$> mapM runConnector dlo_connectors
+        let runConnector c = (,) (conName c) <$> conGen c outnMay pl
+        crs <- M.fromList <$> mapM runConnector connectors
         backend_js outn crs pl
         return ()
   mapM_ compile1 $ tops copts

@@ -13,6 +13,7 @@ import qualified Data.Set as S
 import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.CollectTypes
+import Reach.Connector
 import Reach.EmbeddedFiles
 import Reach.IORefRef
 import Reach.Pretty ()
@@ -86,6 +87,7 @@ data BindingOrigin
   | O_DishonestPay SLPart
   | O_HonestMsg SLPart DLArg
   | O_HonestPay SLPart DLArg
+  | O_BuiltIn
   | O_Var
   | O_Interact
   | O_Expr DLExpr
@@ -101,6 +103,7 @@ instance Show BindingOrigin where
       O_DishonestPay who -> "a dishonest payment from " ++ sp who
       O_HonestMsg who what -> "an honest message from " ++ sp who ++ " of " ++ sp what
       O_HonestPay who amt -> "an honest payment from " ++ sp who ++ " of " ++ sp amt
+      O_BuiltIn -> "builtin"
       O_Var -> "function return"
       O_Interact -> "interaction"
       O_Expr e -> "evaluating " ++ sp e
@@ -118,6 +121,7 @@ type SMTTypeMap =
 
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
+  , ctxt_smt_con :: SMTCtxt -> SrcLoc -> DLConstant -> SExpr
   , ctxt_typem :: SMTTypeMap
   , ctxt_res_succ :: IORef Int
   , ctxt_res_fail :: IORef Int
@@ -152,6 +156,10 @@ shouldSimulate ctxt p =
 
 smtInteract :: SMTCtxt -> SLPart -> String -> String
 smtInteract _ctxt who m = "interact_" ++ (B.unpack who) ++ "_" ++ m
+
+smtConstant :: DLConstant -> String
+smtConstant = \case
+  DLC_UInt_max -> "dlc_UInt_max"
 
 smtVar :: SMTCtxt -> DLVar -> String
 smtVar ctxt dv@(DLVar _ _ _ i) = "v" ++ show i ++ mp
@@ -405,15 +413,15 @@ pathAddBound ctxt at_dv (Just dv) bo se = do
   let v = smtVar ctxt dv
   pathAddBound_v ctxt (Just dv) at_dv v t bo se
 
-smt_c :: SMTCtxt -> SrcLoc -> DLLiteral -> SExpr
-smt_c _ctxt _at_de dc =
+smt_lt :: SMTCtxt -> SrcLoc -> DLLiteral -> SExpr
+smt_lt _ctxt _at_de dc =
   case dc of
     DLL_Null -> Atom "null"
     DLL_Bool b ->
       case b of
         True -> Atom "true"
         False -> Atom "false"
-    DLL_Int i ->
+    DLL_Int _ i ->
       case use_bitvectors of
         True ->
           List
@@ -443,7 +451,8 @@ smt_a :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
 smt_a ctxt at_de da =
   case da of
     DLA_Var dv -> smt_v ctxt at_de dv
-    DLA_Literal c -> smt_c ctxt at_de c
+    DLA_Constant c -> ctxt_smt_con ctxt ctxt at_de c
+    DLA_Literal c -> smt_lt ctxt at_de c
     DLA_Array _ as -> cons as
     DLA_Tuple as -> cons as
     DLA_Obj m -> cons $ M.elems m
@@ -790,7 +799,7 @@ _smtDefineTypes smt ts = do
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
-            let idxses = map (smt_c (error "no context") (error "no at") . DLL_Int) idxs
+            let idxses = map (smt_lt (error "no context") (error "no at") . DLL_Int srcloc_builtin) idxs
             let cons_vars = map (("e" ++) . show) idxs
             let cons_params = map (\x -> (x, Atom tn)) cons_vars
             let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]
@@ -862,16 +871,24 @@ _smtDefineTypes smt ts = do
   mapM_ type_name ts
   readIORef tmr
 
-_verify_smt :: VerifySt -> Solver -> LLProg -> IO ()
-_verify_smt vst smt lp = do
-  SMT.loadString smt smtStdLib
+_verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
+_verify_smt mc vst smt lp = do
+  let mcs = case mc of
+              Nothing -> "generic connector"
+              Just c -> conName c <> " connector"
+  putStrLn $ "Verifying for " <> mcs
   dspdr <- newIORef mempty
   bindingsrr <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
+  let smt_con ctxt at_de cn =
+        case mc of
+          Just c -> smt_lt ctxt at_de $ conCons c cn
+          Nothing -> Atom $ smtConstant cn
   let LLProg at (LLOpts {..}) (SLParts pies_m) s = lp
   let ctxt =
         SMTCtxt
           { ctxt_smt = smt
+          , ctxt_smt_con = smt_con
           , ctxt_typem = typem
           , ctxt_res_succ = vst_res_succ vst
           , ctxt_res_fail = vst_res_fail vst
@@ -883,6 +900,12 @@ _verify_smt vst smt lp = do
           , ctxt_primed_vars = mempty
           , ctxt_displayed = dspdr
           }
+  case mc of
+    Just _ -> mempty
+    Nothing ->
+      pathAddUnbound_v ctxt Nothing at (smtConstant DLC_UInt_max) T_UInt O_BuiltIn
+  -- FIXME it might make sense to assert that UInt_max is no less than
+  -- something reasonable, like 64-bit?
   let defineIE who (v, it) =
         case it of
           T_Fun {} -> mempty
@@ -891,7 +914,7 @@ _verify_smt vst smt lp = do
   let definePIE (who, InteractEnv iem) = mapM_ (defineIE who) $ M.toList iem
   mapM_ definePIE $ M.toList pies_m
   let smt_s_top mode = do
-        putStrLn $ "Verifying with mode = " ++ show mode
+        putStrLn $ "  Verifying with mode = " ++ show mode
         let ctxt' = ctxt {ctxt_modem = Just mode}
         ctxtNewScope ctxt' $ smt_s ctxt' s
   let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
@@ -942,22 +965,26 @@ newFileLogger p = do
         hClose logh_xio
   return (close, Logger {..})
 
-verify_smt :: Maybe FilePath -> VerifySt -> LLProg -> String -> [String] -> IO ExitCode
-verify_smt logpMay vst lp prog args = do
-  (close, logplMay) <- mkLogger
-  smt <- SMT.newSolver prog args logplMay
-  unlessM (SMT.produceUnsatCores smt) $ impossible "Prover doesn't support possible?"
+verify_smt :: Maybe FilePath -> Maybe [Connector] -> VerifySt -> LLProg -> String -> [String] -> IO ExitCode
+verify_smt logpMay mvcs vst lp prog args = do
   let ulp = unrollLoops lp
   case logpMay of
     Nothing -> return ()
     Just x -> writeFile (x <> ".ulp") (show $ pretty ulp)
-  _verify_smt vst smt $ ulp
+  let mkLogger = case logpMay of
+        Just logp -> do
+         (close, logpl) <- newFileLogger logp
+         return (close, Just logpl)
+        Nothing -> return (return (), Nothing)
+  (close, logplMay) <- mkLogger
+  smt <- SMT.newSolver prog args logplMay
+  unlessM (SMT.produceUnsatCores smt) $
+    impossible "Prover doesn't support possible?"
+  SMT.loadString smt smtStdLib
+  let go mc = SMT.inNewScope smt $ _verify_smt mc vst smt ulp
+  case mvcs of
+    Nothing -> go Nothing
+    Just cs -> mapM_ (go . Just) cs
   zec <- SMT.stop smt
   close
   return $ zec
-  where
-    mkLogger = case logpMay of
-      Just logp -> do
-        (close, logpl) <- newFileLogger logp
-        return (close, Just logpl)
-      Nothing -> return (return (), Nothing)

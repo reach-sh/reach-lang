@@ -17,6 +17,9 @@ import Reach.Connector
 import Reach.Type
 import Reach.Util
 
+sb :: SrcLoc
+sb = srcloc_builtin
+
 encodeBase64 :: B.ByteString -> LT.Text
 encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
 
@@ -110,12 +113,12 @@ nop = return ()
 
 app_global_get :: B.ByteString -> App ()
 app_global_get k = do
-  cc $ DLL_Bytes $ k
+  cl $ DLL_Bytes $ k
   op "app_global_get"
 
 app_global_put :: B.ByteString -> App () -> App ()
 app_global_put k mkv = do
-  cc $ DLL_Bytes $ k
+  cl $ DLL_Bytes $ k
   mkv
   op "app_global_put"
 
@@ -224,17 +227,18 @@ cfrombs = \case
   T_Var {} -> impossible "var"
   T_Type {} -> impossible "type"
 
-cc :: DLLiteral -> App ()
-cc = \case
-  DLL_Null -> cc $ DLL_Int 0
-  DLL_Bool b -> cc $ DLL_Int $ if b then 1 else 0
-  DLL_Int i -> code "int" [texty i]
+cl :: DLLiteral -> App ()
+cl = \case
+  DLL_Null -> cl $ DLL_Int sb 0
+  DLL_Bool b -> cl $ DLL_Int sb $ if b then 1 else 0
+  DLL_Int at i -> code "int" [texty $ checkIntLiteralC at connect_algo i]
   DLL_Bytes bs -> code "byte" ["base64(" <> encodeBase64 bs <> ")"]
 
 ca :: DLArg -> App ()
 ca = \case
   DLA_Var v -> lookup_let v
-  DLA_Literal c -> cc c
+  DLA_Constant c -> cl $ conCons connect_algo c
+  DLA_Literal c -> cl c
   DLA_Array {} -> xxx "array"
   DLA_Tuple {} -> xxx "tuple"
   DLA_Obj {} -> xxx "obj"
@@ -269,7 +273,7 @@ cprim = \case
 
 csum_ :: [App ()] -> App ()
 csum_ = \case
-  [] -> cc $ DLL_Int 0
+  [] -> cl $ DLL_Int sb 0
   [m] -> m
   m : ms -> csum_ ms >> m >> op "+"
 
@@ -406,14 +410,14 @@ cstate hm svs = do
       HM_Check prev ->
         return prev
   let go a = (argTypeOf a, ca a)
-  let whicha w = DLA_Literal $ DLL_Int $ fromIntegral w
+  let whicha w = DLA_Literal $ DLL_Int sb $ fromIntegral w
   cdigest $ map go $ whicha which : map DLA_Var svs
 
 halt_should_be :: Bool -> App ()
 halt_should_be b = do
   code "arg" [texty argHalts]
   cfrombs T_Bool
-  cc $ DLL_Bool b
+  cl $ DLL_Bool b
   eq_or_fail
   code "b" ["done"]
 
@@ -504,10 +508,10 @@ lookup_fee_amount = code "arg" [texty argFeeAmount] >> cfrombs T_UInt
 std_footer :: App ()
 std_footer = do
   label "revert"
-  cc $ DLL_Int 0
+  cl $ DLL_Int sb 0
   op "return"
   label "done"
-  cc $ DLL_Int 1
+  cl $ DLL_Int sb 1
   op "return"
 
 runApp :: Shared -> Int -> Lets -> App () -> IO TEALs
@@ -573,19 +577,19 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
 
     comment "Check txnFromHandler (us)"
     code "txn" ["GroupIndex"]
-    cc $ DLL_Int $ fromIntegral $ txnFromHandler
+    cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
     eq_or_fail
     code "txn" ["TypeEnum"]
     code "int" ["pay"]
     eq_or_fail
     code "txn" ["Amount"]
-    cc $ DLL_Int $ 0
+    cl $ DLL_Int sb $ 0
     eq_or_fail
     code "txn" ["Receiver"]
     code "gtxn" [texty txnToHandler, "Sender"]
     eq_or_fail
     code "txn" ["NumArgs"]
-    cc $ DLL_Int $ fromIntegral $ argCount
+    cl $ DLL_Int sb $ fromIntegral $ argCount
     eq_or_fail
     case fs of
       FS_Join {} -> return ()
@@ -605,7 +609,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
     txns <- how_many_txns
     comment "Check GroupSize"
     code "global" ["GroupSize"]
-    cc $ DLL_Int $ fromIntegral $ 1 + txns
+    cl $ DLL_Int sb $ fromIntegral $ 1 + txns
     eq_or_fail
 
     lookup_fee_amount
@@ -684,7 +688,7 @@ compile_algo disp pl = do
     code "txn" ["ApplicationID"]
     code "bz" ["init"]
     code "global" ["GroupSize"]
-    cc $ DLL_Int $ fromIntegral $ 2 + howManySteps
+    cl $ DLL_Int sb $ fromIntegral $ 2 + howManySteps
     eq_or_fail
     --- XXX can we constrain the other txns to transfer the correct amount?
     code "txn" ["OnCompletion"]
@@ -695,11 +699,11 @@ compile_algo disp pl = do
     app_global_put keyLast $ do
       code "global" ["Round"]
     app_global_put keyHalts $ do
-      cc $ DLL_Bool $ False
+      cl $ DLL_Bool $ False
     code "b" ["done"]
     label "init"
     code "global" ["GroupSize"]
-    cc $ DLL_Int $ 1
+    cl $ DLL_Int sb $ 1
     eq_or_fail
     code "txn" ["OnCompletion"]
     code "int" ["NoOp"]
@@ -713,15 +717,15 @@ compile_algo disp pl = do
     check_rekeyto
     comment "Check that everyone's here"
     code "global" ["GroupSize"]
-    cc $ DLL_Int $ fromIntegral $ txnFromContract0
+    cl $ DLL_Int sb $ fromIntegral $ txnFromContract0
     op ">="
     or_fail
     comment "Check txnAppl (us)"
     code "txn" ["GroupIndex"]
-    cc $ DLL_Int $ fromIntegral $ txnAppl
+    cl $ DLL_Int sb $ fromIntegral $ txnAppl
     eq_or_fail
     comment "Check txnFromHandler"
-    cc $ DLL_Bool $ False
+    cl $ DLL_Bool $ False
     forM_ hchecks id
     or_fail
     app_global_get keyState
@@ -757,18 +761,18 @@ compile_algo disp pl = do
   clearm <- simple $ do
     comment "We're alone"
     code "global" ["GroupSize"]
-    cc $ DLL_Int $ 1
+    cl $ DLL_Int sb $ 1
     eq_or_fail
     comment "We're halted"
     app_global_get keyHalts
-    cc $ DLL_Bool $ True
+    cl $ DLL_Bool $ True
     eq_or_fail
     code "b" ["done"]
   -- XXX ctc needs to allow deployer to get back minimum balance
   ctcm <- simple $ do
     comment "Check size"
     code "global" ["GroupSize"]
-    cc $ DLL_Int $ fromIntegral $ txnFromContract0
+    cl $ DLL_Int sb $ fromIntegral $ txnFromContract0
     op ">="
     or_fail
     comment "Check txnAppl"
@@ -789,7 +793,7 @@ compile_algo disp pl = do
     code "global" ["ZeroAddress"]
     eq_or_fail
     code "txn" ["GroupIndex"]
-    cc $ DLL_Int $ fromIntegral $ txnFromContract0
+    cl $ DLL_Int sb $ fromIntegral $ txnFromContract0
     op ">="
     or_fail
     code "b" ["done"]
@@ -806,8 +810,7 @@ connect_algo :: Connector
 connect_algo = Connector {..}
   where
     conName = "ALGO"
-    conLims = SLLimits {..}
-    lim_maxUInt = 2^(64::Integer) - 1
+    conCons DLC_UInt_max = DLL_Int sb $ 2^(64::Integer) - 1
     conGen moutn pl = do
       let disp which c =
             case moutn of

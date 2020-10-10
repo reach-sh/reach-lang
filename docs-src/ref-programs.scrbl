@@ -178,10 +178,20 @@ It supports the following options:
  @~
  @para{@reachin{true} or @reachin{false} (default)}
  @~
- @para{Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond the bit-width of the underlying @tech{consensus network}.
- This defaults to @reachin{false}, because it is onerous to verify, increasing verification times by an order of magnitude.
+ @para{Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond @reachin{UInt.max}.
+ This defaults to @reachin{false}, because it is onerous to verify.
  We recommend turning it on before final deployment, but leaving it off during development.
  When it is @reachin{false}, @tech{connectors} will ensure that overflows do not actually occur on the network.}
+ )
+
+(list
+ @(begin @(mint-define! '("verifyPerConnector")) @reachin{verifyPerConnector})
+ @~
+ @para{@reachin{true} or @reachin{false} (default)}
+ @~
+ @para{Determines whether verification is done per connector, or once for a generic connector.
+ When this is @reachin{true}, then connector-specific constants, like @reachin{UInt.max}, will be instatiated to literal numbers.
+ This concretization of these constants can induce performance degradation in the verifier.}
  )
 
 (list @~ @~ @~ @~ @~)
@@ -779,7 +789,6 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Null")) @reachin{Null}.}
   @item{@(mint-define! '("Bool")) @reachin{Bool}, which denotes a boolean.}
   @item{@(mint-define! '("UInt")) @reachin{UInt}, which denotes an unsigned integer.
-  Its @deftech{bit width} is the minimum bit width of all enabled @tech{connector}, i.e. those specified by the @reachin{connectors} deployment option.
   @reachin{UInt.max} is the largest value that may be assigned to a @reachin{UInt}.}
   @item{@(mint-define! '("Bytes")) @reachin{Bytes}, which denotes a string of bytes.}
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}

@@ -45,6 +45,7 @@ instance Pretty SLVal where
     SLV_Object _ _ m -> render_obj m
     SLV_Clo {} -> "<closure>"
     SLV_Data _ _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
+    SLV_DLC c -> "<constant: " <> viaShow c <> ">"
     SLV_DLVar v -> pretty v
     SLV_Type t -> "<type: " <> pretty t <> ">"
     SLV_Connector cn -> "<connector: " <> pretty cn <> ">"
@@ -69,6 +70,7 @@ render_obj env =
 instance Pretty DLArg where
   pretty = \case
     DLA_Var v -> pretty v
+    DLA_Constant c -> viaShow c
     DLA_Literal c -> viaShow c
     DLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLA_Tuple as))
     DLA_Tuple as -> brackets $ render_das as
