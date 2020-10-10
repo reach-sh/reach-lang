@@ -122,17 +122,17 @@ typeCheck_help at env ty val val_ty res =
         False ->
           expect_throw at $ Err_Type_Mismatch ty val_ty val
 
-conTypeOf :: DLConstant -> SLType
+conTypeOf :: DLLiteral -> SLType
 conTypeOf = \case
-  DLC_Null -> T_Null
-  DLC_Bool _ -> T_Bool
-  DLC_Int _ -> T_UInt
-  DLC_Bytes _ -> T_Bytes
+  DLL_Null -> T_Null
+  DLL_Bool _ -> T_Bool
+  DLL_Int _ -> T_UInt
+  DLL_Bytes _ -> T_Bytes
 
 argTypeOf :: DLArg -> SLType
 argTypeOf = \case
   DLA_Var (DLVar _ _ t _) -> t
-  DLA_Con c -> conTypeOf c
+  DLA_Literal c -> conTypeOf c
   DLA_Array t as -> T_Array t $ fromIntegral (length as)
   DLA_Tuple as -> T_Tuple $ map argTypeOf as
   DLA_Obj senv -> T_Object $ M.map argTypeOf senv
@@ -143,13 +143,13 @@ argTypeOf = \case
 slToDL :: HasCallStack => SLLimits -> SrcLoc -> SLVal -> Maybe DLArg
 slToDL lims _at v =
   case v of
-    SLV_Null _ _ -> return $ DLA_Con $ DLC_Null
-    SLV_Bool _ b -> return $ DLA_Con $ DLC_Bool b
+    SLV_Null _ _ -> return $ DLA_Literal $ DLL_Null
+    SLV_Bool _ b -> return $ DLA_Literal $ DLL_Bool b
     SLV_Int _ i ->
       case 0 <= i && i <= lim_maxUInt lims of
         False -> Nothing
-        True -> return $ DLA_Con $ DLC_Int i
-    SLV_Bytes _ bs -> return $ DLA_Con $ DLC_Bytes bs
+        True -> return $ DLA_Literal $ DLL_Int i
+    SLV_Bytes _ bs -> return $ DLA_Literal $ DLL_Bytes bs
     SLV_Array at' t vs -> do
       ds <- mapM (slToDL lims at') vs
       return $ DLA_Array t ds

@@ -117,7 +117,7 @@ knows ctxt from tos = do
 all_points :: DLArg -> S.Set Point
 all_points = \case
   DLA_Var v -> S.singleton $ P_Var v
-  DLA_Con _ -> S.singleton $ P_Con
+  DLA_Literal _ -> S.singleton $ P_Con
   DLA_Array _ as -> more as
   DLA_Tuple as -> more as
   DLA_Obj m -> more $ M.elems m

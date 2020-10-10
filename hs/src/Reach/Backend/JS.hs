@@ -80,7 +80,7 @@ jsContract = \case
   T_Digest -> "stdlib.T_Digest"
   T_Address -> "stdlib.T_Address"
   T_Fun {} -> impossible "fun dl"
-  T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLC_Int sz)]
+  T_Array t sz -> jsApply ("stdlib.T_Array") $ [jsContract t, jsCon (DLL_Int sz)]
   T_Tuple as -> jsApply ("stdlib.T_Tuple") $ [jsArray $ map jsContract as]
   T_Object m -> jsApply ("stdlib.T_Object") [jsObject $ M.map jsContract m]
   T_Data m -> jsApply ("stdlib.T_Data") [jsObject $ M.map jsContract m]
@@ -105,25 +105,25 @@ jsAssertInfo ctxt at fs mmsg =
     msg_p = case mmsg of
       Nothing -> "null"
       Just b -> jsString $ bunpack b
-    who_p = jsCon $ DLC_Bytes $ ctxt_who ctxt
+    who_p = jsCon $ DLL_Bytes $ ctxt_who ctxt
     at_p = jsString $ unsafeRedactAbsStr $ show at
     fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
 
 jsVar :: DLVar -> Doc a
 jsVar (DLVar _ _ _ n) = "v" <> pretty n
 
-jsCon :: DLConstant -> Doc a
+jsCon :: DLLiteral -> Doc a
 jsCon = \case
-  DLC_Null -> "null"
-  DLC_Bool True -> "true"
-  DLC_Bool False -> "false"
-  DLC_Int i -> jsApply "stdlib.bigNumberify" [pretty i]
-  DLC_Bytes b -> jsString $ bunpack b
+  DLL_Null -> "null"
+  DLL_Bool True -> "true"
+  DLL_Bool False -> "false"
+  DLL_Int i -> jsApply "stdlib.bigNumberify" [pretty i]
+  DLL_Bytes b -> jsString $ bunpack b
 
 jsArg :: DLArg -> Doc a
 jsArg = \case
   DLA_Var v -> jsVar v
-  DLA_Con c -> jsCon c
+  DLA_Literal c -> jsCon c
   DLA_Array _ as -> jsArg $ DLA_Tuple as
   DLA_Tuple as -> jsArray $ map jsArg as
   DLA_Obj m -> jsObject $ M.map jsArg m
@@ -176,7 +176,7 @@ jsExpr ctxt = \case
   DLE_ArrayZip _ x y ->
     jsApply "stdlib.Array_zip" $ map jsArg [x, y]
   DLE_TupleRef _ aa i ->
-    jsArg aa <> brackets (jsCon $ DLC_Int i)
+    jsArg aa <> brackets (jsCon $ DLL_Int i)
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f
   DLE_Interact at fs _ m t as ->
@@ -309,11 +309,11 @@ jsETail ctxt = \case
         case msvs of
           Nothing ->
             ( jsDigest [] --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
-            , jsCon $ DLC_Bool True
+            , jsCon $ DLL_Bool True
             )
           Just svs ->
-            ( jsDigest (DLA_Con (DLC_Int $ fromIntegral which) : (map DLA_Var svs))
-            , jsCon $ DLC_Bool False
+            ( jsDigest (DLA_Literal (DLL_Int $ fromIntegral which) : (map DLA_Var svs))
+            , jsCon $ DLL_Bool False
             )
   ET_ToConsensus _ fs_ok prev which from_me msg amtv mto k_ok -> tp
     where
@@ -337,7 +337,7 @@ jsETail ctxt = \case
           <> jsFromSpec ctxt' fs_ok
       k_okp = k_defp <> jsETail ctxt' k_ok
       ctxt' = ctxt {ctxt_txn = (ctxt_txn ctxt) + 1}
-      whop = jsCon $ DLC_Bytes $ ctxt_who ctxt
+      whop = jsCon $ DLL_Bytes $ ctxt_who ctxt
       defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> callp <> semi
       callp =
         case from_me of
@@ -360,7 +360,7 @@ jsETail ctxt = \case
               sim_body =
                 vsep
                   [ "const sim_r = { txns: [] };"
-                  , "sim_r.prevSt =" <+> jsDigest (DLA_Con (DLC_Int $ fromIntegral prev) : svs_as) <> semi
+                  , "sim_r.prevSt =" <+> jsDigest (DLA_Literal (DLL_Int $ fromIntegral prev) : svs_as) <> semi
                   , k_defp
                   , sim_body_core
                   , "return sim_r;"
@@ -414,8 +414,8 @@ jsPart p (EPProg _ _ et) =
 
 jsConnInfo :: ConnectorInfo -> Doc a
 jsConnInfo = \case
-  CI_Null -> jsCon DLC_Null
-  CI_Bool b -> jsCon $ DLC_Bool b
+  CI_Null -> jsCon DLL_Null
+  CI_Bool b -> jsCon $ DLL_Bool b
   CI_Int i -> pretty i
   CI_Text t -> jsBacktickText t
   CI_Array a -> jsArray $ map jsConnInfo a

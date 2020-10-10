@@ -23,7 +23,7 @@ Verification failed:
     "v10" = (- 18446744073709551615 1 )
       (from: v10)
       (bound at: ./overflow.rsh:application)
-      (because: evaluating SUB(DLC_Int 18446744073709551615, DLC_Int 1))
+      (because: evaluating SUB(DLL_Int 18446744073709551615, DLL_Int 1))
     "v2" = v1
       (from: v2)
       (bound at: ./overflow.rsh:11:6:dot)

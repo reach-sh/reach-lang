@@ -69,7 +69,7 @@ render_obj env =
 instance Pretty DLArg where
   pretty = \case
     DLA_Var v -> pretty v
-    DLA_Con c -> viaShow c
+    DLA_Literal c -> viaShow c
     DLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLA_Tuple as))
     DLA_Tuple as -> brackets $ render_das as
     DLA_Obj env -> render_obj env

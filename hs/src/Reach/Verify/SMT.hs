@@ -405,15 +405,15 @@ pathAddBound ctxt at_dv (Just dv) bo se = do
   let v = smtVar ctxt dv
   pathAddBound_v ctxt (Just dv) at_dv v t bo se
 
-smt_c :: SMTCtxt -> SrcLoc -> DLConstant -> SExpr
+smt_c :: SMTCtxt -> SrcLoc -> DLLiteral -> SExpr
 smt_c _ctxt _at_de dc =
   case dc of
-    DLC_Null -> Atom "null"
-    DLC_Bool b ->
+    DLL_Null -> Atom "null"
+    DLL_Bool b ->
       case b of
         True -> Atom "true"
         False -> Atom "false"
-    DLC_Int i ->
+    DLL_Int i ->
       case use_bitvectors of
         True ->
           List
@@ -421,7 +421,7 @@ smt_c _ctxt _at_de dc =
             , Atom (show i)
             ]
         False -> Atom $ show i
-    DLC_Bytes bs ->
+    DLL_Bytes bs ->
       smtApply "bytes" [Atom (show $ crc32 bs)]
 
 smt_v :: SMTCtxt -> SrcLoc -> DLVar -> SExpr
@@ -443,7 +443,7 @@ smt_a :: SMTCtxt -> SrcLoc -> DLArg -> SExpr
 smt_a ctxt at_de da =
   case da of
     DLA_Var dv -> smt_v ctxt at_de dv
-    DLA_Con c -> smt_c ctxt at_de c
+    DLA_Literal c -> smt_c ctxt at_de c
     DLA_Array _ as -> cons as
     DLA_Tuple as -> cons as
     DLA_Obj m -> cons $ M.elems m
@@ -670,7 +670,7 @@ smt_n ctxt n =
           --- FIXME Can we use path constraints to avoid this forking?
           smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
           where
-            v' = smt_a ctxt at (DLA_Con (DLC_Bool v))
+            v' = smt_a ctxt at (DLA_Literal (DLL_Bool v))
     LLC_Switch at ov csm ->
       smtSwitch SM_Consensus ctxt at ov csm smt_n
     LLC_FromConsensus _ _ s -> smt_s ctxt s
@@ -790,7 +790,7 @@ _smtDefineTypes smt ts = do
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
-            let idxses = map (smt_c (error "no context") (error "no at") . DLC_Int) idxs
+            let idxses = map (smt_c (error "no context") (error "no at") . DLL_Int) idxs
             let cons_vars = map (("e" ++) . show) idxs
             let cons_params = map (\x -> (x, Atom tn)) cons_vars
             let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]

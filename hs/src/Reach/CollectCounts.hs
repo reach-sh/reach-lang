@@ -52,7 +52,7 @@ instance Countable DLVar where
 instance Countable DLArg where
   counts = \case
     DLA_Var v -> counts v
-    DLA_Con {} -> mempty
+    DLA_Literal {} -> mempty
     DLA_Array _ as -> counts as
     DLA_Tuple as -> counts as
     DLA_Obj as -> counts as

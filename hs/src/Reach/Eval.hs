@@ -1033,7 +1033,7 @@ evalPrimOp ctxt at _sco st p sargs =
             (cv, cl) <- ctxt_lift_expr ctxt at (mkvar t) $ DLE_PrimOp at cp cargs
             return $ ( DLA_Var cv, cl )
       let doCmp = doOp T_Bool
-      let lim_maxUInt_a = DLA_Con $ DLC_Int $ lim_maxUInt
+      let lim_maxUInt_a = DLA_Literal $ DLL_Int $ lim_maxUInt
       before <-
         case p of
           ADD -> do
@@ -1071,7 +1071,7 @@ explodeTupleLike ctxt at lab tuplv =
     SLV_DLVar tupdv@(DLVar _ _ (T_Tuple tuptys) _) ->
       mconcatMap (uncurry (flip (mkdv tupdv DLE_TupleRef))) $ zip [0 ..] tuptys
     SLV_DLVar tupdv@(DLVar _ _ (T_Array t sz) _) -> do
-      let mkde _ da i = DLE_ArrayRef at da (DLA_Con $ DLC_Int i)
+      let mkde _ da i = DLE_ArrayRef at da (DLA_Literal $ DLL_Int i)
       mconcatMap (mkdv tupdv mkde t) [0 .. sz -1]
     _ ->
       expect_throw at $ Err_Eval_NotSpreadable tuplv
@@ -1332,7 +1332,7 @@ evalPrim ctxt at sco st p sargs =
       case map snd sargs of
         [arrv, idxv, valv] ->
           case typeOf lims at idxv of
-            (T_UInt, idxda@(DLA_Con (DLC_Int idxi))) ->
+            (T_UInt, idxda@(DLA_Literal (DLL_Int idxi))) ->
               case arrv of
                 SLV_Array _ elem_ty arrvs ->
                   case idxi' < length arrvs of
@@ -1868,7 +1868,7 @@ evalExpr ctxt at sco st e = do
                 True -> retArrayRef t sz arr_dla idx_dla
                   where
                     arr_dla = DLA_Var adv
-                    idx_dla = DLA_Con (DLC_Int idxi)
+                    idx_dla = DLA_Literal (DLL_Int idxi)
             _ ->
               expect_throw at' $ Err_Eval_RefNotRefable arrv
         SLV_DLVar idxdv@(DLVar _ _ T_UInt _) ->
@@ -2180,7 +2180,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               Nothing ->
                 return $ (amt_e_, mempty, amt_check_da)
                 where
-                  amt_check_da = DLA_Con $ DLC_Int 0
+                  amt_check_da = DLA_Literal $ DLL_Int 0
                   amt_e_ = JSDecimal JSNoAnnot "0"
               Just amte_ -> do
                 let penv' = penvs' M.! who
@@ -2269,7 +2269,7 @@ evalStmt ctxt at sco st ss =
           --- linearizer will completely drop the continuation of
           --- DLS_Continue and DLS_Stop, so if this assert is not
           --- removed, then ti will error.
-          keepLifts (return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) CT_Assert (DLA_Con $ DLC_Bool False) (Just "unreachable")) $
+          keepLifts (return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) CT_Assert (DLA_Literal $ DLL_Bool False) (Just "unreachable")) $
             ret []
         RS_MayBeEmpty -> ret []
       where

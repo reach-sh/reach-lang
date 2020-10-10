@@ -368,21 +368,6 @@ instance Show SLCtxtFrame where
     where
       name = maybe "[unknown function]" show mname
 
-data SLLimits = SLLimits
-  { lim_maxUInt :: Integer }
-  deriving (Eq, Generic, NFData, Show)
-
-omui :: SLLimits -> Ordered Integer
-omui (SLLimits {..}) = Ordered lim_maxUInt
-
-instance Lattice SLLimits where
-  x \/ y = SLLimits (getOrdered $ omui x \/ omui y)
-  x /\ y = SLLimits (getOrdered $ omui x /\ omui y)
-
-instance BoundedMeetSemiLattice SLLimits where
-  top = SLLimits {..}
-    where lim_maxUInt = 2^(256 ::Integer) - 1
-
 --- Dynamic Language
 
 data DeployMode
@@ -400,11 +385,11 @@ newtype SLParts
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, NFData, Semigroup)
 
-data DLConstant
-  = DLC_Null
-  | DLC_Bool Bool
-  | DLC_Int Integer
-  | DLC_Bytes B.ByteString
+data DLLiteral
+  = DLL_Null
+  | DLL_Bool Bool
+  | DLL_Int Integer
+  | DLL_Bytes B.ByteString
   deriving (Eq, Generic, NFData, Show, Ord)
 
 data DLVar = DLVar SrcLoc String SLType Int
@@ -412,7 +397,7 @@ data DLVar = DLVar SrcLoc String SLType Int
 
 data DLArg
   = DLA_Var DLVar
-  | DLA_Con DLConstant
+  | DLA_Literal DLLiteral
   | DLA_Array SLType [DLArg]
   | DLA_Tuple [DLArg]
   | DLA_Obj (M.Map String DLArg)

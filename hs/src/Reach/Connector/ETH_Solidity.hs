@@ -252,19 +252,19 @@ solArgType ctxt am t = solType ctxt t <> loc_spec
 solArgDecl :: SolCtxt a -> ArgMode -> DLVar -> Doc a
 solArgDecl ctxt am dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt am t)
 
-solCon :: DLConstant -> Doc a
+solCon :: DLLiteral -> Doc a
 solCon = \case
-  DLC_Null -> "true"
-  DLC_Bool True -> "true"
-  DLC_Bool False -> "false"
-  DLC_Int i -> solNum i
-  DLC_Bytes s -> dquotes $ pretty $ B.unpack s
+  DLL_Null -> "true"
+  DLL_Bool True -> "true"
+  DLL_Bool False -> "false"
+  DLL_Int i -> solNum i
+  DLL_Bytes s -> dquotes $ pretty $ B.unpack s
 
 solArg :: SolCtxt a -> DLArg -> Doc a
 solArg ctxt da =
   case da of
     DLA_Var v -> solVar ctxt v
-    DLA_Con c -> solCon c
+    DLA_Literal c -> solCon c
     DLA_Array _ as -> brackets $ hsep $ punctuate comma $ map (solArg ctxt) as
     DLA_Tuple as -> con $ map (solArg ctxt) as
     DLA_Obj m -> con $ map ((solArg ctxt) . snd) $ M.toAscList m

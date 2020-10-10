@@ -119,7 +119,7 @@ ul_va v = do
 ul_a :: DLArg -> App s DLArg
 ul_a = \case
   DLA_Var v -> ul_va v
-  DLA_Con c -> (pure $ DLA_Con c)
+  DLA_Literal c -> (pure $ DLA_Literal c)
   DLA_Array t as -> (pure $ DLA_Array t) <*> ul_as as
   DLA_Tuple as -> (pure $ DLA_Tuple) <*> ul_as as
   DLA_Obj m -> (pure $ DLA_Obj) <*> mapM ul_a m
@@ -142,7 +142,7 @@ ul_explode at a =
         mk1 i = do
           idx <- allocIdx
           let v = DLVar at "ul" t idx
-          liftLet at v $ DLE_ArrayRef at a (DLA_Con (DLC_Int $ fromIntegral i))
+          liftLet at v $ DLE_ArrayRef at a (DLA_Literal (DLL_Int $ fromIntegral i))
           return $ DLA_Var v
 
 ul_e :: DLExpr -> App s DLExpr
