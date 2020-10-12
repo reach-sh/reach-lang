@@ -265,6 +265,10 @@ export async function getDefaultAccount(): Promise<Account> {
   return REACHY_RICH_P;
 }
 
+export async function getFaucet(): Promise<Account> {
+  return REACHY_RICH_P;
+}
+
 export const newTestAccount = async (startingBalance: BigNumber) => {
   const REACHY_RICH = await REACHY_RICH_P;
   const networkAccount = makeAccount();
@@ -333,3 +337,5 @@ export function formatCurrency(amt: BigNumber, decimals: number = 0): string {
   void(decimals); // There are no fractional quantities in FAKE
   return amt.toString();
 }
+
+export const setFaucet = false; // XXX

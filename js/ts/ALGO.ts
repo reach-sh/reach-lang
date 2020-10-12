@@ -874,11 +874,16 @@ export function formatCurrency(amt: BigNumber, decimals: number = 6): string {
   return Number(algosStr.slice(0, algosStr.length - 1)).toString();
 }
 
-// TODO: get from AlgoSigner if in browser
-export async function getDefaultAccount(): Promise<Account> {
+export async function getFaucet(): Promise<Account> {
   return await connectAccount(FAUCET);
 }
 
+// TODO: get from AlgoSigner if in browser
+export async function getDefaultAccount(): Promise<Account> {
+  return await getFaucet();
+}
+
+export const setFaucet = false; // XXX
 export const newAccountFromMnemonic = false; // XXX
 export const getNetworkTime = getLastRound;
 export const waitUntilTime = false; // XXX
