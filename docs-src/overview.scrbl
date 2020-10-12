@@ -8,6 +8,8 @@ This is an informal overview of Reach and the structure of a Reach program.
 The goal of this document is to give enough technical specifics to help you understand what Reach does, but it isn't intended as either a @seclink["tut"]{tutorial} or a @seclink["ref"]{reference}.
 When you're ready to really begin a project, you can start with one of those, or @seclink["workshop"]{the workshop}.
 
+@margin-note{A recording of a live workshop that goes over this material is @link["https://www.youtube.com/watch?v=1jmi8XdOvD4"]{available on YouTube}.}
+
 @section[#:tag "over-model"]{Decentralized applications}
 
 @DApps are made of multiple agents interacting with each other through some backend @tech{consensus network}, like Ethereum or Algorand.
