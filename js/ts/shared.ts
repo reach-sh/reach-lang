@@ -1,4 +1,3 @@
-import nodeAssert from 'assert';
 import crypto from 'crypto';
 import ethers from 'ethers';
 
@@ -69,8 +68,11 @@ export const debug = (msg: any) => {
   }
 };
 
-export const assert = (d: any, ai: any = null) =>
-  nodeAssert.strict(d, format_ai(ai));
+export const assert = (d: any, ai: any = null) => {
+  if (!d) {
+    throw Error(format_ai(ai));
+  }
+}
 
 const {
   hexlify,
