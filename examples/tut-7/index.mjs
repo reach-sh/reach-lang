@@ -1,8 +1,10 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 
 (async () => {
+  const stdlib = await loadStdlib();
+
   const isAlice = await ask(
     `Are you Alice?`,
     yesno
