@@ -11,6 +11,8 @@ import Reach.AST
 import Reach.STCounter
 import Reach.Type
 import Reach.Util
+import Reach.Pretty()
+import Data.Text.Prettyprint.Doc
 
 type App s = ReaderT (Env s) (ST s)
 
@@ -89,12 +91,12 @@ ul_vs_rn :: [DLVar] -> App s [DLVar]
 ul_vs_rn = mapM ul_v_rn
 
 lookupRenaming :: DLVar -> App s Renaming
-lookupRenaming (DLVar _ _ _ idx) = do
+lookupRenaming dv@(DLVar _ _ _ idx) = do
   Env {..} <- ask
   r <- lift $ readSTRef eRenaming
   case M.lookup idx r of
     Just x -> return x
-    Nothing -> impossible "unbound var"
+    Nothing -> impossible $ "unbound var: " <> (show $ pretty dv)
 
 ul_v :: DLVar -> App s DLVar
 ul_v v = do

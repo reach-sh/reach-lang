@@ -1822,12 +1822,13 @@ evalExpr ctxt at sco st e = do
     doRef arr a idxe = do
       let at' = srcloc_jsa "array ref" a at
       SLRes alifts arr_st (arr_lvl, arrv) <- evalExpr ctxt at' sco st arr
-      SLRes ilifts idx_st (idx_lvl, idxv) <- evalExpr ctxt at' sco arr_st idxe
+      SLRes ilifts idx_st (idx_lvl, idxv) <-
+        keepLifts alifts $ evalExpr ctxt at' sco arr_st idxe
       let lvl = arr_lvl <> idx_lvl
       let retRef t de = do
             (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' (ctxt_local_name ctxt "ref") t) de
             let ansv = SLV_DLVar dv
-            return $ SLRes (alifts <> ilifts <> lifts') idx_st (lvl, ansv)
+            return $ SLRes lifts' idx_st (lvl, ansv)
       let retArrayRef t sz arr_dla idx_dla =
             doArrayBoundsCheck ctxt at' sco st sz idxv $
               retRef t $ DLE_ArrayRef at' arr_dla idx_dla
@@ -1838,41 +1839,42 @@ evalExpr ctxt at sco st e = do
               Nothing ->
                 expect_throw at' $ Err_Eval_RefOutOfBounds (length arrvs) idxi
               Just ansv ->
-                return $ SLRes (alifts <> ilifts) idx_st (lvl, ansv)
-      case idxv of
-        SLV_Int _ idxi ->
-          case arrv of
-            SLV_Array _ _ arrvs -> retVal idxi arrvs
-            SLV_Tuple _ tupvs -> retVal idxi tupvs
-            SLV_DLVar adv@(DLVar _ _ (T_Tuple ts) _) ->
-              case fromIntegerMay idxi >>= atMay ts of
-                Nothing ->
-                  expect_throw at' $ Err_Eval_RefOutOfBounds (length ts) idxi
-                Just t -> retTupleRef t arr_dla idxi
-                  where
-                    arr_dla = DLA_Var adv
-            SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) ->
-              case idxi < sz of
-                False ->
-                  expect_throw at' $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
-                True -> retArrayRef t sz arr_dla idx_dla
-                  where
-                    arr_dla = DLA_Var adv
-                    idx_dla = DLA_Literal (DLL_Int at idxi)
-            _ ->
-              expect_throw at' $ Err_Eval_RefNotRefable arrv
-        SLV_DLVar idxdv@(DLVar _ _ T_UInt _) ->
-          case arr_ty of
-            T_Array elem_ty sz ->
-              retArrayRef elem_ty sz arr_dla idx_dla
-              where
-                idx_dla = DLA_Var idxdv
-            _ ->
-              expect_throw at' $ Err_Eval_IndirectRefNotArray arrv
-          where
-            (arr_ty, arr_dla) = typeOf at' arrv
-        _ ->
-          expect_throw at' $ Err_Eval_RefNotInt idxv
+                return $ SLRes mempty idx_st (lvl, ansv)
+      keepLifts ilifts $
+        case idxv of
+          SLV_Int _ idxi ->
+            case arrv of
+              SLV_Array _ _ arrvs -> retVal idxi arrvs
+              SLV_Tuple _ tupvs -> retVal idxi tupvs
+              SLV_DLVar adv@(DLVar _ _ (T_Tuple ts) _) ->
+                case fromIntegerMay idxi >>= atMay ts of
+                  Nothing ->
+                    expect_throw at' $ Err_Eval_RefOutOfBounds (length ts) idxi
+                  Just t -> retTupleRef t arr_dla idxi
+                    where
+                      arr_dla = DLA_Var adv
+              SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) ->
+                case idxi < sz of
+                  False ->
+                    expect_throw at' $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
+                  True -> retArrayRef t sz arr_dla idx_dla
+                    where
+                      arr_dla = DLA_Var adv
+                      idx_dla = DLA_Literal (DLL_Int at idxi)
+              _ ->
+                expect_throw at' $ Err_Eval_RefNotRefable arrv
+          SLV_DLVar idxdv@(DLVar _ _ T_UInt _) ->
+            case arr_ty of
+              T_Array elem_ty sz ->
+                retArrayRef elem_ty sz arr_dla idx_dla
+                where
+                  idx_dla = DLA_Var idxdv
+              _ ->
+                expect_throw at' $ Err_Eval_IndirectRefNotArray arrv
+            where
+              (arr_ty, arr_dla) = typeOf at' arrv
+          _ ->
+            expect_throw at' $ Err_Eval_RefNotInt idxv
 
 evalExprs :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSExpression] -> SLComp s [SLSVal]
 evalExprs ctxt at sco st rands =
