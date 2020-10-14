@@ -407,6 +407,9 @@ const doQuery = async (dhead:string, query: any): Promise<any> => {
   return txn;
 };
 
+const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
+  cnt == 0 ? [] : args.slice(-1 * cnt);
+
 export const connectAccount = async (networkAccount: NetworkAccount) => {
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
@@ -460,7 +463,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       setDigestWidth(8);
       const fake_res = {
         didTimeout: false,
-        data: args, // XXX should be slice(-1 * evt_cnt)
+        data: argsSlice(args, evt_cnt),
         value: value,
         from: pk,
       };
@@ -549,7 +552,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             undefined, ui8z,
             params);
         const txns = [
-          txnAppl, 
+          txnAppl,
           txnToHandler,
           txnFromHandler,
           txnToContract,
@@ -567,7 +570,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const txnToContract_s = sign_me(txnToContract);
         const txnFromContracts_s =
           txnFromContracts.map(
-            (txn: Txn) => 
+            (txn: Txn) =>
             algosdk.signLogicSigTransactionObject(txn, ctc_prog).blob);
 
         const txns_s = [
@@ -644,7 +647,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           txn.signature.logicsig.args;
         debug(`${dhead} --- ctc_args = ${JSON.stringify(ctc_args)}`);
 
-        const args = evt_cnt == 0 ? [] : ctc_args.slice(-1 * evt_cnt);
+        const args = argsSlice(ctc_args, evt_cnt);
         debug(`${dhead} --- args = ${JSON.stringify(args)}`);
 
         const args_bufs: Array<Buffer> =

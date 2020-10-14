@@ -7,18 +7,61 @@ import Data.ByteString.Base64 (encodeBase64')
 import qualified Data.ByteString.Char8 as B
 import qualified Data.DList as DL
 import Data.IORef
+import Data.List
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
 import Data.Word
+import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Connector
 import Reach.Type
 import Reach.Util
 
+-- General tools that could be elsewhere
+
 sb :: SrcLoc
 sb = srcloc_builtin
+
+typeArrayType :: HasCallStack => DLArg -> SLType
+typeArrayType a =
+  case argTypeOf a of
+    T_Array t _ -> t
+    _ -> impossible $ "should be array"
+
+typeTupleTypes :: HasCallStack => DLArg -> [SLType]
+typeTupleTypes a =
+  case argTypeOf a of
+    T_Tuple ts -> ts
+    _ -> impossible $ "should be tuple"
+
+typeObjectTypes :: HasCallStack => DLArg -> [(SLVar, SLType)]
+typeObjectTypes a =
+  case argTypeOf a of
+    T_Object m -> M.toAscList m
+    _ -> impossible $ "should be obj"
+
+-- Algo specific stuff
+
+typeSizeOf :: SLType -> Integer
+typeSizeOf = \case
+  T_Null -> word
+  T_Bool -> word
+  T_UInt -> word
+  T_Bytes -> word --- XXX This is wrong
+  T_Digest -> 32
+  T_Address -> 32
+  T_Fun {} -> impossible $ "T_Fun"
+  T_Array t sz -> sz * typeSizeOf t
+  T_Tuple ts -> sum $ map typeSizeOf ts
+  T_Object m -> sum $ map typeSizeOf $ M.elems m
+  T_Data {} -> word --- XXX This is wrong
+  T_Forall {} -> impossible $ "T_Forall"
+  T_Var {} -> impossible $ "T_Var"
+  T_Type {} -> impossible $ "T_Type"
+  where word = 8
 
 encodeBase64 :: B.ByteString -> LT.Text
 encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
@@ -202,10 +245,10 @@ ctobs = \case
   T_Digest -> nop
   T_Address -> nop
   T_Fun {} -> impossible "fun"
-  T_Array {} -> xxx "array to bs"
-  T_Tuple {} -> xxx "tuple to bs"
-  T_Object {} -> xxx "object to bs"
-  T_Data {} -> xxx "data to bs"
+  T_Array {} -> nop
+  T_Tuple {} -> nop
+  T_Object {} -> nop
+  T_Data {} -> nop
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
   T_Type {} -> impossible "type"
@@ -219,19 +262,22 @@ cfrombs = \case
   T_Digest -> nop
   T_Address -> nop
   T_Fun {} -> impossible "fun"
-  T_Array {} -> xxx "array from bs"
-  T_Tuple {} -> xxx "tuple from bs"
-  T_Object {} -> xxx "object from bs"
-  T_Data {} -> xxx "data from bs"
+  T_Array {} -> nop
+  T_Tuple {} -> nop
+  T_Object {} -> nop
+  T_Data {} -> nop
   T_Forall {} -> impossible "forall"
   T_Var {} -> impossible "var"
   T_Type {} -> impossible "type"
+
+tint :: SrcLoc -> Integer -> LT.Text
+tint at i = texty $ checkIntLiteralC at connect_algo i
 
 cl :: DLLiteral -> App ()
 cl = \case
   DLL_Null -> cl $ DLL_Int sb 0
   DLL_Bool b -> cl $ DLL_Int sb $ if b then 1 else 0
-  DLL_Int at i -> code "int" [texty $ checkIntLiteralC at connect_algo i]
+  DLL_Int at i -> code "int" [tint at i]
   DLL_Bytes bs -> code "byte" ["base64(" <> encodeBase64 bs <> ")"]
 
 ca :: DLArg -> App ()
@@ -239,8 +285,8 @@ ca = \case
   DLA_Var v -> lookup_let v
   DLA_Constant c -> cl $ conCons connect_algo c
   DLA_Literal c -> cl c
-  DLA_Array {} -> xxx "array"
-  DLA_Tuple {} -> xxx "tuple"
+  DLA_Array t as -> cconcatbs $ map (\a -> (t, ca a)) as
+  DLA_Tuple as -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
   DLA_Obj {} -> xxx "obj"
   DLA_Data {} -> xxx "data"
   DLA_Interact {} -> impossible "consensus interact"
@@ -265,7 +311,18 @@ cprim = \case
   BYTES_EQ -> call "=="
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
-  IF_THEN_ELSE -> const $ xxx "ITE"
+  IF_THEN_ELSE -> \case
+    [ be, te, fe ] -> do
+      labf <- freshLabel
+      labj <- freshLabel
+      ca be
+      code "bz" [ labf ]
+      ca te
+      code "b" [ labj ]
+      label labf
+      ca fe
+      label labj
+    _ -> impossible "ite args"
   where
     call o = \args -> do
       forM_ args ca
@@ -280,27 +337,77 @@ csum_ = \case
 csum :: [DLArg] -> App ()
 csum = csum_ . map ca
 
-cdigest :: [(SLType, App ())] -> App ()
-cdigest l = do
+cconcatbs :: [(SLType, App ())] -> App ()
+cconcatbs l = do
+  -- XXX We need to predict the length and ensure <4096 bytes
   mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
-  op "keccak256"
   where
-    --- FIXME need to change digest to return bytes
     go may_concat (t, m) = m >> ctobs t >> may_concat
     no_concat = nop
     yes_concat = op "concat"
+
+cdigest :: [(SLType, App ())] -> App ()
+cdigest l = cconcatbs l >> op "keccak256"
+
+csubstring :: SrcLoc -> Integer -> Integer -> App ()
+csubstring at b c =
+  case b < 256 && c < 256 of
+    True -> do
+      code "substring" [ tint at b, tint at c ]
+    False -> do
+      cl $ DLL_Int sb b
+      cl $ DLL_Int sb c
+      op "substring3"
+
+computeSubstring :: [SLType] -> Integer -> (SLType, Integer, Integer)
+computeSubstring ts idx = (t, start, end)
+  where szs = map typeSizeOf ts
+        starts = scanl (+) 0 szs
+        ends = zipWith (+) szs starts
+        idx' = fromIntegral idx
+        t = ts !! idx'
+        start = starts !! idx'
+        end = ends !! idx'
 
 ce :: DLExpr -> App ()
 ce = \case
   DLE_Arg _ a -> ca a
   DLE_Impossible at msg -> expect_throw at msg
   DLE_PrimOp _ p args -> cprim p args
-  DLE_ArrayRef {} -> xxx "array ref"
+  DLE_ArrayRef at aa ia -> do
+    ca aa
+    let t = typeArrayType ia
+    let tsz = typeSizeOf t
+    case ia of
+      DLA_Literal (DLL_Int _ ii) -> do
+        let start = ii * tsz
+        let end = start + tsz
+        csubstring at start end
+      _ -> do
+        cl $ DLL_Int sb tsz
+        ca ia
+        op "*"
+        op "dup"
+        cl $ DLL_Int sb tsz
+        op "+"
+        op "substring3"
+    cfrombs t
   DLE_ArraySet {} -> xxx "array set"
   DLE_ArrayConcat {} -> xxx "array concat"
   DLE_ArrayZip {} -> xxx "array zip"
-  DLE_TupleRef {} -> xxx "tuple ref"
-  DLE_ObjectRef {} -> xxx "obj ref"
+  DLE_TupleRef at ta idx -> do
+    ca ta
+    let ts = typeTupleTypes ta
+    let (t, start, end) = computeSubstring ts idx
+    csubstring at start end
+    cfrombs t
+  DLE_ObjectRef at oa f -> do
+    ca oa
+    let fts = typeObjectTypes oa
+    let fidx = fromIntegral $ fromJust $ findIndex ((== f) . fst) fts
+    let (t, start, end) = computeSubstring (map snd fts) fidx
+    csubstring at start end
+    cfrombs t
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
     where
@@ -452,8 +559,8 @@ keyLast = "l"
 
 -- Txns:
 -- 0   : Application call
--- 1   : Zero from handler account
--- 2   : Transfer fee to the handler account
+-- 1   : Transfer fee to the handler account
+-- 2   : Zero from handler account
 -- 3   : Transfer to contract account
 -- 4.. : Transfers from contract to user
 txnAppl :: Word8
@@ -546,6 +653,7 @@ ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
   let eLets =
         M.insert amtv lookup_txn_value eLets1
   runApp eShared eWhich eLets $ do
+    comment ("Handler " <> texty eWhich)
     comment "Check txnAppl"
     code "gtxn" [texty txnAppl, "TypeEnum"]
     code "int" ["appl"]
