@@ -379,7 +379,7 @@ const desafeify = (ty: any, v: Buffer): any => {
   if ( ty.name === 'UInt' ) {
     return hexToBigNumber('0x' + v.toString('hex'));
   }
-  if ( ty.name == 'Bytes' ) {
+  if ( ty.name === 'Bytes' || ty.name === 'Digest' || ty.name === 'Address' ) {
     return '0x' + v.toString('hex');
   }
   throw Error(`can't desafeify ${JSON.stringify(ty)} and ${JSON.stringify(v)}`);
@@ -411,6 +411,9 @@ const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
   cnt == 0 ? [] : args.slice(-1 * cnt);
 
 export const connectAccount = async (networkAccount: NetworkAccount) => {
+  // XXX become the monster
+  setDigestWidth(8);
+
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
   const pk = algosdk.decodeAddress(thisAcc.addr).publicKey;
@@ -459,8 +462,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       if ( ! handler ) {
         throw Error(`${dhead} Internal error: reference to undefined handler: ${funcName}`); }
 
-      // XXX become the monster
-      setDigestWidth(8);
       const fake_res = {
         didTimeout: false,
         data: argsSlice(args, evt_cnt),
