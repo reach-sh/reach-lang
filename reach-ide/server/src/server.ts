@@ -182,9 +182,22 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	try {
 		if (fs.existsSync(path)) {
 			connection.console.log("Reach shell script exists");
+		} else {
+			connection.console.log("Reach shell script not found, downloading now...");
+			await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
+				if (error) {
+					connection.console.log(`Reach download error: ${error.message}`);
+					return;
+				}
+				if (stderr) {
+					connection.console.log(`Reach download stderr: ${stderr}`);
+					return;
+				}
+				connection.console.log(`Reach download stdout: ${stdout}`);
+			});
 		}
 	} catch(err) {
-		connection.console.log("Reach shell script not found, downloading now...");
+		connection.console.log("Failed to check if Reach shell scripts exists, downloading anyways...");
 		await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
 			if (error) {
 				connection.console.log(`Reach download error: ${error.message}`);
