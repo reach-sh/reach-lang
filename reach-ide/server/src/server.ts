@@ -403,19 +403,18 @@ async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocum
 
 		let diagnostic = diagnostics[i];
 		if (String(diagnostic.code).startsWith(DIAGNOSTIC_TYPE_COMPILE_ERROR)) {
-			let title : string = "Suggested fix";
+			let labelPrefix : string = "Replace with ";
 			let range : Range = diagnostic.range;
 			let possibleReplacements : string = String(diagnostic.code).substring(DIAGNOSTIC_TYPE_COMPILE_ERROR.length);
+			if (possibleReplacements.length != 0) {
+				// Convert list of suggestions to an array
+				// Example input: "declassify","array","assert","assume","closeTo"
+				var suggestionsArray = possibleReplacements.split(","); // split by commas
+				for (var j=0; j<suggestionsArray.length; j++) {
+					suggestionsArray[j] = suggestionsArray[j].substring(1, suggestionsArray[j].length - 1); // remove surrounding quotes
 
-			// TODO add a quickfix for each possible replacement
-
-			// Convert list of suggestions to an array
-			// Example input: "declassify","array","assert","assume","closeTo"
-			var suggestionsArray = possibleReplacements.split(","); // split by commas
-			for (var j=0; j<suggestionsArray.length; j++) {
-				suggestionsArray[j] = suggestionsArray[j].substring(1, suggestionsArray[j].length - 1); // remove surrounding quotes
-
-				codeActions.push(getQuickFix(diagnostic, title + ": " + suggestionsArray[j], range, suggestionsArray[j], textDocument));
+					codeActions.push(getQuickFix(diagnostic, labelPrefix + suggestionsArray[j], range, suggestionsArray[j], textDocument));
+				}
 			}
 		}
 	}
