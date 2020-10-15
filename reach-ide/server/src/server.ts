@@ -317,7 +317,8 @@ CallStack (from HasCallStack):
 		// Get the problematic string (before the list of suggestions)
 		var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
 		let messageWithoutSuggestionsTokens : string[] = messageWithoutSuggestions.split(" ");
-		var problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 1];
+		connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
+		var problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
 		problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
 		connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
 
