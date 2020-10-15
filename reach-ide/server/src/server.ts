@@ -294,7 +294,7 @@ CallStack (from HasCallStack):
 	// ERROR MESSAGE m:
     //error: ./index.rsh:13:23:id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
 
-		// get line based on string 
+		// Get actual message portion after the line and position numbers
 		var tokens = m[0].split(':');
 		connection.console.log(`TOKENS: `+tokens);
 		var linePos = parseInt(tokens[2]);
@@ -307,6 +307,7 @@ CallStack (from HasCallStack):
 			}
 		}
 
+		// Get list of suggestions from compiler
 		const SUGGESTIONS_PREFIX = "Did you mean: [";
 		const SUGGESTIONS_SUFFIX = "]";
 		var indexOfSuggestions = actualMessage.indexOf(SUGGESTIONS_PREFIX);
@@ -357,7 +358,14 @@ async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocum
 
 			// TODO add a quickfix for each possible replacement
 
-			codeActions.push(getQuickFix(diagnostic, title, range, possibleReplacements, textDocument));
+			// Convert list of suggestions to an array
+			// Example input: "declassify","array","assert","assume","closeTo"
+			var suggestionsArray = possibleReplacements.split(","); // split by commas
+			for (var j=0; j<suggestionsArray.length; j++) {
+				suggestionsArray[j] = suggestionsArray[j].substring(1, suggestionsArray[j].length - 1); // remove surrounding quotes
+
+				codeActions.push(getQuickFix(diagnostic, title + ": " + suggestionsArray[j], range, suggestionsArray[j], textDocument));
+			}
 		}
 	}
 
