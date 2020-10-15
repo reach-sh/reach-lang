@@ -272,9 +272,12 @@ jsCom iter ctxt = \case
 jsPLTail :: JSCtxt -> PLTail -> Doc a
 jsPLTail ctxt (PLTail m) = jsCom jsPLTail ctxt m
 
-jsBlock :: JSCtxt -> PLBlock -> Doc a
-jsBlock ctxt (PLBlock _ t a) =
+jsNewScope :: Doc a -> Doc a
+jsNewScope body =
   parens (parens emptyDoc <+> "=>" <+> jsBraces body) <> parens emptyDoc
+
+jsBlock :: JSCtxt -> PLBlock -> Doc a
+jsBlock ctxt (PLBlock _ t a) = jsNewScope body
   where
     body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
 
@@ -419,9 +422,10 @@ jsETail ctxt = \case
           Just (wcond, wbody, wk) ->
             "// continue - Simulate one iteration of a while"
             <> hardline
-            <> jsAsn ctxt AM_SimContinue asn
-            <> hardline
-            <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk)
+            <> (jsNewScope $
+                jsAsn ctxt AM_SimContinue asn
+                <> hardline
+                <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk)) <> semi
 
 jsPart :: SLPart -> EPProg -> Doc a
 jsPart p (EPProg _ _ et) =
