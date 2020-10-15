@@ -314,10 +314,17 @@ CallStack (from HasCallStack):
 		var suggestions = actualMessage.substring(indexOfSuggestions + SUGGESTIONS_PREFIX.length, actualMessage.lastIndexOf(SUGGESTIONS_SUFFIX));
 		connection.console.log(`SUGGESTIONS: ${suggestions}`);
 
+		// Get the problematic string (before the list of suggestions)
+		var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
+		let messageWithoutSuggestionsTokens : string[] = messageWithoutSuggestions.split(" ");
+		var problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 1];
+		problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
+		connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
+
 		let location: ErrorLocation = {
 			range: {
-				start: { line: linePos - 1, character: charPos - 1 }, //textDocument.positionAt(m.index), // Reach compiler numbers starts at 1
-				end: { line: linePos, character: 0} //textDocument.positionAt(m.index + m[0].length)
+				start: { line: linePos - 1, character: charPos - 1 }, // Reach compiler numbers starts at 1
+				end: { line: linePos - 1, character: charPos - 1 + problematicString.length}
 			},
 			errorMessage: actualMessage,
 			suggestions: suggestions
