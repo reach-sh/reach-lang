@@ -1,0 +1,26 @@
+{
+	"name": "defi-lsp-server",
+	"description": "Ethereum DeFi Language Server",
+	"version": "0.0.1",
+	"author": "Eric Lau",
+	"license": "EPL-2.0",
+	"engines": {
+		"node": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ericglau/defi-ls"
+	},
+	"dependencies": {
+		"vscode-languageserver": "^6.1.1",
+		"vscode-languageserver-textdocument": "^1.0.1",
+		"web3": "^1.2.7",
+		"ethereumjs-wallet": "^0.6.3",
+		"ethereumjs-util": "^7.0.0",
+		"ethereum-ens": "^0.8.0",
+		"index-of-regex": "^1.0.0",
+		"request-promise": "4.2.5",
+		"big-number": "2.0.0"
+	},
+	"scripts": {}
+}
