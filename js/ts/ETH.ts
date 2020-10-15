@@ -23,7 +23,9 @@ import {
   IRecv,
   IAccount,
   OnProgress,
+  WPArgs,
 } from './shared';
+import { memoizeThunk, replaceableThunk } from './shared_impl';
 export * from './shared';
 
 type BigNumber = ethers.BigNumber;
@@ -142,47 +144,12 @@ const protocolPort = {
   'http:': 80,
 };
 
-/**
- * @description Create a getter/setter, where the getter defaults to memoizing a thunk
- */
-function replaceableThunk<T>(thunk: () => T): [() => T, (val: T) => void] {
-  let called = false;
-  let res: T | null  = null;
-  function get(): T {
-    if (!called) {
-      called = true;
-      res = thunk();
-    }
-    return res as T;
-  }
-  function set(val: T): void {
-    if (called) {
-      throw Error(`Cannot re-set value once already set`);
-    }
-    res = val;
-    called = true;
-  }
-  return [get, set];
-}
-
-/**
- * @description Only perform side effects from thunk on the first call.
- */
-function memoizeThunk<T>(thunk: () => T): () => T {
-  return replaceableThunk(thunk)[0];
-}
 const getPortConnection = memoizeThunk(async () => {
   debug('getPortConnection');
   if (networkDesc.type != 'uri') { return; }
   const { hostname, port, protocol } = url.parse(networkDesc.uri);
   if (!(protocol === 'http:' || protocol === 'https:')) {
     throw Error(`Unsupported protocol ${protocol}`);
-  }
-  type WPArgs = {
-    host: string | undefined,
-    port: number,
-    output: 'silent',
-    timeout: number,
   }
   const args: WPArgs = {
     host: hostname || undefined,

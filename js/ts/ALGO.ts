@@ -3,16 +3,18 @@
 import algosdk from 'algosdk';
 import base32 from 'hi-base32';
 import ethers from 'ethers';
+import url from 'url';
 import Timeout from 'await-timeout';
 
 import {
-  CurrencyAmount, debug,
+  CurrencyAmount, OnProgress, WPArgs,
+  debug, getDEBUG,
   isBigNumber, bigNumberify,
   bigNumberToHex, hexToBigNumber,
   T_UInt, T_Bool, T_Digest, setDigestWidth,
-  getDEBUG,
-  OnProgress,
 } from './shared';
+import waitPort from 'wait-port';
+import { replaceableThunk } from './shared_impl';
 export * from './shared';
 
 type BigNumber = ethers.BigNumber;
@@ -153,12 +155,20 @@ type ContractInfo = {
 const token = process.env.ALGO_TOKEN || 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const server = process.env.ALGO_SERVER || 'http://localhost';
 const port = process.env.ALGO_PORT || 4180;
-const algodClient = new algosdk.Algodv2(token, server, port);
+const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
+  await wait1port(server, port);
+  return new algosdk.Algodv2(token, server, port);
+});
+export {setAlgodClient};
 
 const itoken = process.env.ALGO_INDEXER_TOKEN || 'reach-devnet';
 const iserver = process.env.ALGO_INDEXER_SERVER || 'http://localhost';
 const iport = process.env.ALGO_INDEXER_PORT || 8980;
-const indexer = new algosdk.Indexer(itoken, iserver, iport);
+const [getIndexer, setIndexer] = replaceableThunk(async () => {
+  await wait1port(iserver, iport);
+  return new algosdk.Indexer(itoken, iserver, iport);
+});
+export {setIndexer};
 
 // eslint-disable-next-line max-len
 const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'pulp abstract olive name enjoy trick float comfort verb danger eternal laptop acquire fetch message marble jump level spirit during benefit sure dry absent history'));
@@ -167,10 +177,28 @@ const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE |
 
 // Helpers
 
+async function wait1port(theServer: string, thePort: string | number) {
+  thePort = typeof thePort === 'string' ? parseInt(thePort, 10) : thePort;
+  const {hostname} = url.parse(theServer);
+  const args: WPArgs = {
+    host: hostname || undefined,
+    port: thePort,
+    output: 'silent',
+    timeout: 1000 * 60 * 1,
+  }
+  debug('wait1port');
+  if (getDEBUG()) {
+    console.log(args)
+  }
+  debug('waitPort complete');
+  return await waitPort(args);
+}
+
 const getLastRound = async (): Promise<Round> =>
-  (await algodClient.status().do())['last-round'];
+  (await (await getAlgodClient()).status().do())['last-round'];
 
 const waitForConfirmation = async (txId: TxId, untilRound: number): Promise<TxnInfo> => {
+  const algodClient = await getAlgodClient();
   let lastRound: null | number = null;
   do {
     const lastRoundAfterCall: ApiCall<StatusInfo> = lastRound ?
@@ -193,7 +221,7 @@ const sendAndConfirm = async (
 ): Promise<TxnInfo> => {
   const txID = txn.txID().toString();
   const untilRound = txn.lastRound;
-  const req = algodClient.sendRawTransaction(stx_or_stxs);
+  const req = (await getAlgodClient()).sendRawTransaction(stx_or_stxs);
   // @ts-ignore XXX
   debug(`sendAndConfirm: ${base64ify(req.txnBytesToPost)}`);
   try {
@@ -209,7 +237,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   debug(`compile ${label}`)
   let s, r;
   try {
-    r = await algodClient.compile(code).do();
+    r = await (await getAlgodClient()).compile(code).do();
     s = 200;
   } catch (e) {
     s = typeof e === 'object' ? e.statusCode : 'not object';
@@ -230,7 +258,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
 const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
   while (true) {
-    const params = await algodClient.getTransactionParams().do();
+    const params = await (await getAlgodClient()).getTransactionParams().do();
     debug(`fillTxn: got params: ${JSON.stringify(params)}`);
     if (params.firstRound !== 0) {
       return params;
@@ -416,6 +444,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   // XXX become the monster
   setDigestWidth(8);
 
+  const indexer = await getIndexer();
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
   const pk = algosdk.decodeAddress(thisAcc.addr).publicKey;
@@ -605,7 +634,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
     const recv = async (
       label: string,
-      funcNum: number, 
+      funcNum: number,
       evt_cnt: number,
       tys: Array<any>,
       timeout_delay: undefined | BigNumber
@@ -817,7 +846,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 const getBalanceAt = async (addr: Address, round: Round): Promise<number> => {
   void(round);
   // FIXME: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
-  return (await algodClient.accountInformation(addr).do()).amount;
+  return (await (await getAlgodClient()).accountInformation(addr).do()).amount;
 };
 
 export const balanceOf = async (acc: Account): Promise<BigNumber> => {
@@ -896,7 +925,7 @@ export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgre
   let currentTime = await getNetworkTime();
   while (currentTime.lt(targetTime)) {
     debug(`waitUntilTime: iteration: ${currentTime} -> ${targetTime}`);
-    const status = await algodClient.statusAfterBlock(currentTime.toNumber()).do();
+    const status = await (await getAlgodClient()).statusAfterBlock(currentTime.toNumber()).do();
     currentTime = bigNumberify(status['last-round']);
     onProg({currentTime, targetTime});
   }

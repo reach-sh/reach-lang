@@ -7,6 +7,12 @@ type num = BigNumber | number
 const BigNumber = ethers.BigNumber;
 
 export type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => any;
+export type WPArgs = {
+  host: string | undefined,
+  port: number,
+  output: 'silent',
+  timeout: number,
+}
 
 export type IRecvNoTimeout<RawAddress> =  {
   didTimeout: false,
