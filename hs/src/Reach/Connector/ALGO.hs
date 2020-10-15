@@ -137,6 +137,18 @@ output t = do
   Env {..} <- ask
   liftIO $ modifyIORef eOutputR (flip DL.snoc t)
 
+outputs :: TEALs -> App ()
+outputs ts = do
+  Env {..} <- ask
+  liftIO $ modifyIORef eOutputR (<> ts)
+
+freeze :: App a -> App (App a)
+freeze m = do
+  eOutputR' <- liftIO $ newIORef mempty
+  ans <- local (\e -> e { eOutputR = eOutputR' }) m
+  ts <- liftIO $ readIORef eOutputR'
+  return $ outputs ts >> return ans
+
 code :: LT.Text -> [LT.Text] -> App ()
 code f args = output $ code_ f args
 
@@ -185,7 +197,7 @@ bad lab = do
 xxx :: LT.Text -> App ()
 xxx lab = do
   let lab' = "XXX " <> lab
-  when True $
+  when False $
     liftIO $ LTIO.putStrLn lab'
   bad lab'
 
@@ -478,8 +490,16 @@ cm ck = \case
     ca da
     code "store" [texty loc]
     ck k
-  PL_LocalIf _ _a _tp _fp k -> do
-    xxx "local if"
+  PL_LocalIf _ a tp fp k -> do
+    ca a
+    false_lab <- freshLabel
+    join_lab <- freshLabel
+    code "bz" [false_lab]
+    cp tp
+    code "b" [join_lab]
+    label false_lab
+    cp fp
+    label join_lab
     ck k
   PL_LocalSwitch _ _dv _csm k -> do
     xxx "local switch"
@@ -503,9 +523,7 @@ ct = \case
   CT_Jump _ which _ (DLAssignment asnm) -> do
     Env {..} <- ask
     let Shared {..} = eShared
-    -- XXX By saving these for later, we are letting a future environment
-    -- influence these args, perhaps eval them "now"?
-    let asnm' = M.map ca asnm
+    asnm' <- mapM (freeze . ca) asnm
     let eLets' = M.union asnm' eLets
     case M.lookup which sHandlers of
       Just (C_Loop _ _ _ t) ->

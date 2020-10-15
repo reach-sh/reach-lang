@@ -128,9 +128,9 @@ stripCallStack bs = LB.fromStrict bsStrict'
 stdoutStripAbs :: String -> (FilePath -> IO LB.ByteString) -> FilePath -> IO TestTree
 stdoutStripAbs ext k fp = do
   let goldenFile = replaceExtension fp ext
-      fpBase = takeBaseName fp
+  --    fpBase = takeBaseName fp
   cwd <- getCurrentDirectory
-  return $ goldenVsString fpBase goldenFile (stripCallStack <$> stripAllAbs fp cwd <$> k fp)
+  return $ goldenVsString fp goldenFile (stripCallStack <$> stripAllAbs fp cwd <$> k fp)
 
 -- XXX This is a hack to make tests portable.
 -- Ideally the compiler errors would print relative paths?

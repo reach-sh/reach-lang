@@ -143,7 +143,7 @@ prettyClaim ct a m = "claim" <> parens (viaShow ct) <> parens (pretty a <> comma
 
 prettyTransfer :: DLArg -> DLArg -> Doc a
 prettyTransfer who da =
-  "transfer." <> parens (pretty da) <> ".to" <> parens (pretty who) <> semi
+  "transfer." <> parens (pretty da) <> ".to" <> parens (pretty who)
 
 prettyStop :: Doc a
 prettyStop = "exit" <> parens (emptyDoc) <> semi
