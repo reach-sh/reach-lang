@@ -56,6 +56,8 @@ const NAME: string = 'Reach IDE';
 
 const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'CompileError';
 
+const REACH_TEMP_INDEX_FILE = ".index.rsh.temp";
+
 const { exec } = require("child_process");
 
 connection.onInitialize((params: InitializeParams) => {
@@ -77,7 +79,7 @@ connection.onInitialize((params: InitializeParams) => {
 
 	const result: InitializeResult = {
 		capabilities: {
-			textDocumentSync: TextDocumentSyncKind.Incremental,
+			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server supports code completion
 			/*completionProvider: {
 				resolveProvider: true
@@ -171,6 +173,10 @@ documents.onDidChangeContent(change => {
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
+	let textDocumentFromURI = documents.get(textDocument.uri)
+	let textDocumentContents = textDocumentFromURI?.getText()
+	connection.console.log("TEXT DOCUMENT [" + textDocumentContents + "]");
+
 	// In this simple example we get the settings for every validate run.
 	let settings = await getDocumentSettings(textDocument.uri);
 
@@ -215,7 +221,15 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	connection.console.log(`BEFORE`);
 
-	await exec("./reach compile", (error: { message: any; }, stdout: any, stderr: any) => {
+	fs.writeFile(REACH_TEMP_INDEX_FILE, textDocumentContents, function(err: any) {
+		if(err) {
+			connection.console.log(`Failed to write temp Reach index.rsh file: ${err}`);
+			return;
+		}
+		connection.console.log(`Temp Reach file ${REACH_TEMP_INDEX_FILE} saved!`);
+	});
+
+	await exec("./reach compile " + REACH_TEMP_INDEX_FILE, (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`FOUND Reach compile error: ${error.message}`);
 			let errorLocations : ErrorLocation[] = findErrorLocations(error.message);
@@ -293,7 +307,7 @@ function findErrorLocations(compileErrors: string) : ErrorLocation[] {
 
 	WARNING: Found orphan containers (tut_ethereum-devnet_1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up.
 Creating tut_reach_run ... done
-reachc: error: ./index.rsh:13:23:id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
+reachc: error: ./.index.rsh.reach-ide.temp:18:23:id ref: Invalid unbound identifier: declaaaaaaaaassify. Did you mean: ["declassify","addressEq","array","assert","assume"]
 CallStack (from HasCallStack):
   error, called at src/Reach/AST.hs:58:3 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.AST
   expect_throw, called at src/Reach/Eval.hs:441:7 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.Eval
@@ -303,7 +317,7 @@ CallStack (from HasCallStack):
 
 
 	//let text = textDocument.getText();
-	let pattern = /error: .\/index.rsh.*/g;  // 0x then 40 hex chars then non hex char
+	let pattern = /error: .\/.index.rsh.temp.*/g  // look for string with the name of the temp index.rsh file
 	let m: RegExpExecArray | null;
 
 	let problems = 0;
