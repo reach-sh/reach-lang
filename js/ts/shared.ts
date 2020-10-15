@@ -6,6 +6,8 @@ type num = BigNumber | number
 
 const BigNumber = ethers.BigNumber;
 
+export type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => any;
+
 export type IRecvNoTimeout<RawAddress> =  {
   didTimeout: false,
   data: Array<any>,

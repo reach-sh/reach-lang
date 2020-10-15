@@ -10,7 +10,9 @@ import {
   isBigNumber, bigNumberify,
   bigNumberToHex, hexToBigNumber,
   T_UInt, T_Bool, T_Digest, setDigestWidth,
-  getDEBUG } from './shared';
+  getDEBUG,
+  OnProgress,
+} from './shared';
 export * from './shared';
 
 type BigNumber = ethers.BigNumber;
@@ -439,14 +441,13 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
-      void(delta);
-      throw Error(`XXX Not implemented: wait`);
+      return await waitUntilTime(bigNumberify(lastRound).add(delta));
     };
 
     const sendrecv = async (
       label: string,
       funcNum: number,
-      evt_cnt: number, 
+      evt_cnt: number,
       tys: Array<any>,
       args: Array<any>,
       value: BigNumber,
@@ -889,7 +890,22 @@ export async function getDefaultAccount(): Promise<Account> {
 
 export const setFaucet = false; // XXX
 export const newAccountFromMnemonic = false; // XXX
-export const getNetworkTime = getLastRound;
-export const waitUntilTime = false; // XXX
-export const wait = false; // XXX
+export const getNetworkTime = async () => bigNumberify(await getLastRound());
+export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+  const onProg = onProgress || (() => {});
+  let currentTime = await getNetworkTime();
+  while (currentTime.lt(targetTime)) {
+    debug(`waitUntilTime: iteration: ${currentTime} -> ${targetTime}`);
+    const status = await algodClient.statusAfterBlock(currentTime.toNumber()).do();
+    currentTime = bigNumberify(status['last-round']);
+    onProg({currentTime, targetTime});
+  }
+  debug(`waitUntilTime: ended: ${currentTime} -> ${targetTime}`);
+  return currentTime;
+};
+export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+  const now = await getNetworkTime();
+  debug(`wait: delta=${delta} now=${now}, until=${now.add(delta)}`);
+  return await waitUntilTime(now.add(delta), onProgress);
+};
 export const verifyContract = false; // XXX

@@ -2,7 +2,7 @@ import Timeout from 'await-timeout';
 import ethers from 'ethers';
 
 import * as stdlib from './shared';
-import { CurrencyAmount, TyContract } from './shared';
+import { CurrencyAmount, OnProgress, TyContract } from './shared';
 export * from './shared';
 
 export const debug = (msg: any): void => {
@@ -281,8 +281,6 @@ export const newTestAccount = async (startingBalance: BigNumber) => {
 export function getNetworkTime() {
   return stdlib.bigNumberify(BLOCKS.length);
 }
-
-type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => void
 
 export function wait(delta: BigNumber | number, onProgress?: OnProgress): BigNumber {
   return waitUntilTime(stdlib.add(getNetworkTime(), delta), onProgress);

@@ -22,6 +22,7 @@ import {
   IContract,
   IRecv,
   IAccount,
+  OnProgress,
 } from './shared';
 export * from './shared';
 
@@ -795,8 +796,6 @@ const getNetworkTimeNumber = async (): Promise<number> => {
 export const getNetworkTime = async (): Promise<BigNumber> => {
   return bigNumberify(await getNetworkTimeNumber());
 };
-
-type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => any;
 
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
