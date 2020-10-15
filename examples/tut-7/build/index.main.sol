@@ -68,7 +68,6 @@ contract ReachContract is Stdlib {
   
   function l3(a3 memory _a)  internal {
     
-    
     if ((_a.v72 == uint256(1))) {
       
       current_state = uint256(keccak256(abi.encode(uint256(3), uint256(block.number), _a.v34, _a.v33, _a.v43, _a.v71))); }

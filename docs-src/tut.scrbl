@@ -1526,6 +1526,12 @@ Of course, when you run the exact amounts and addresses may be different.
 
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-7/index.rsh"], @reachexlink["tut-7/index.mjs"], @reachexlink["tut-7/package.json"], @reachexlink["tut-7/Dockerfile"], @reachexlink["tut-7/docker-compose.yml"], and @reachexlink["tut-7/Makefile"] to make sure you copied everything down correctly!}
 
+@(hrule)
+
+If we were to edit @reachexlink["tut-7/docker-compose.yml"], and change the @litchar{*default-app} on line 70 to @litchar{*reach-app-tut-ALGO-test-dockerize-algod}, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
+
+@(hrule)
+
 Now our implementation of @|RPS| is finished!
 We are protected against attacks, timeouts, and draws, and we can run interactively on non-test networks.
 
@@ -1574,8 +1580,8 @@ Next, the JavaScript frontend:
 
 We wrote @exloc["tut-7/index.rsh"] lines of Reach and @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] lines together.
 
-Behind the scenes, Reach generated @exloc["tut-7/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-7/build/index.main.sol"]), as well as @exloc["tut-7/build/index.main.mjs" -503] lines of JavaScript (which you can look at here: @reachexlink["tut-7/build/index.main.mjs"]).
-If we weren't using Reach, then we'd have to write these @exloc["tut-7/build/index.main.sol" "tut-7/build/index.main.mjs" -503] lines ourselves and ensure that they are consistent and updated at every change to the application.
+Behind the scenes, Reach generated @exloc["tut-7/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-7/build/index.main.sol"]), 1643 lines of TEAL (which you can look at here: @reachexlink["tut-7/build/index.main.mjs#L579"]), as well as @exloc["tut-7/build/index.main.mjs" -2130] lines of JavaScript (which you can look at here: @reachexlink["tut-7/build/index.main.mjs"]).
+If we weren't using Reach, then we'd have to write these @exloc["tut-7/build/index.main.sol" "tut-7/build/index.main.mjs" -2130] lines ourselves and ensure that they are consistent and updated at every change to the application.
 
 Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own application!
 
