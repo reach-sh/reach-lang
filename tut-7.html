@@ -8,23 +8,63 @@ However, we&rsquo;ll customize the other two files.</p><p>First, let&rsquo;s loo
 x-app-base: &amp;app-base
   image: reachsh/reach-app-tut-7:latest
 services:
-  devnet:
-    image: reachsh/ethereum-devnet:latest
+  ethereum-devnet:
+    image: reachsh/ethereum-devnet:0.1
+  algorand-devnet:
+    image: reachsh/algorand-devnet:0.1
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+    ports:
+      - 9392
+  algorand-postgres-db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
   reach-app-tut-7-ETH-test-dockerized-geth: &amp;default-app
     &lt;&lt;: *app-base
     depends_on:
-      - devnet
+      - ethereum-devnet
     environment:
+      - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
-      - ETH_NODE_URI=http://devnet:8545
+      - ETH_NODE_URI=http://ethereum-devnet:8545
   reach-app-tut-7-ETH-test-embedded-ganache:
     &lt;&lt;: *app-base
     environment:
+      - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
   reach-app-tut-7-FAKE-test-embedded-mock:
     &lt;&lt;: *app-base
     environment:
+      - REACH_DEBUG
       - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
+  reach-app-tut-7-ALGO-test-dockerized-algod-local:
+    &lt;&lt;: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - ALGO_SERVER=http://host.docker.internal
+      - ALGO_PORT=4180
+      - ALGO_INDEXER_SERVER=http://host.docker.internal
+      - ALGO_INDEXER_PORT=8980
+  reach-app-tut-7-ALGO-test-dockerized-algod:
+    &lt;&lt;: *app-base
+    depends_on:
+      - algorand-devnet
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - ALGO_SERVER=http://algorand-devnet
+      - ALGO_PORT=4180
+      - ALGO_INDEXER_SERVER=http://algorand-devnet
+      - ALGO_INDEXER_PORT=8980
   reach-app-tut-7-: *default-app
   reach-app-tut-7: *default-app
   # After this is new!
@@ -35,42 +75,82 @@ services:
   player: &amp;player
     &lt;&lt;: *default-app
     stdin_open: true
-  alice: *player 
-  bob: *player "><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="nt">1    version</span><span class="p">:</span> <span class="s">&#39;3.4&#39;</span>
+  alice: *player
+  bob: *player"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span> <span class="nt">1    version</span><span class="p">:</span> <span class="s">&#39;3.4&#39;</span>
  <span class="nt">2    x-app-base</span><span class="p">:</span> <span class="nl">&amp;app-base</span>
  <span class="nt">3      image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/reach-app-tut-7:latest</span>
  <span class="nt">4    services</span><span class="p">:</span>
- <span class="nt">5      devnet</span><span class="p">:</span>
- <span class="nt">6        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/ethereum-devnet:latest</span>
- <span class="nt">7      reach-app-tut-7-ETH-test-dockerized-geth</span><span class="p">:</span> <span class="nl">&amp;default-app</span>
- <span class="nt">8        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+ <span class="nt">5      ethereum-devnet</span><span class="p">:</span>
+ <span class="nt">6        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/ethereum-devnet:0.1</span>
+ <span class="nt">7      algorand-devnet</span><span class="p">:</span>
+ <span class="nt">8        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">reachsh/algorand-devnet:0.1</span>
  <span class="nt">9        depends_on</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">10          - devnet</span>
+<span class="l l-Scalar l-Scalar-Plain">10          - algorand-postgres-db</span>
 <span class="l l-Scalar l-Scalar-Plain">11        environment</span><span class="p p-Indicator">:</span>
-<span class="l l-Scalar l-Scalar-Plain">12          - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth</span>
-<span class="l l-Scalar l-Scalar-Plain">13          - ETH_NODE_URI=http://devnet:8545</span>
-<span class="nt">14      reach-app-tut-7-ETH-test-embedded-ganache</span><span class="p">:</span>
-<span class="nt">15        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">16        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">17          - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache</span>
-<span class="nt">18      reach-app-tut-7-FAKE-test-embedded-mock</span><span class="p">:</span>
-<span class="nt">19        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="l l-Scalar l-Scalar-Plain">12          - POSTGRES_HOST=algorand-postgres-db</span>
+<span class="l l-Scalar l-Scalar-Plain">13          - POSTGRES_USER=algogrand</span>
+<span class="l l-Scalar l-Scalar-Plain">14          - POSTGRES_PASSWORD=indexer</span>
+<span class="l l-Scalar l-Scalar-Plain">15          - POSTGRES_DB=pgdb</span>
+<span class="nt">16        ports</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">17          - 9392</span>
+<span class="nt">18      algorand-postgres-db</span><span class="p">:</span>
+<span class="nt">19        image</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">postgres:11</span>
 <span class="nt">20        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">21          - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock</span>
-<span class="nt">22      reach-app-tut-7-</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="nt">23      reach-app-tut-7</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="l l-Scalar l-Scalar-Plain">24</span>      <span class="c1"># After this is new!</span>
-<span class="nt">25      live</span><span class="p">:</span>
-<span class="nt">26        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">27        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">28          - ETH_NODE_URI</span>
-<span class="nt">29      player</span><span class="p">:</span> <span class="nl">&amp;player</span>
-<span class="nt">30        &lt;&lt;</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="nt">31        stdin_open</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">32      alice</span><span class="p">:</span> <span class="nv">*player</span> 
-<span class="nt">33      bob</span><span class="p">:</span> <span class="nv">*player</span> 
+<span class="l l-Scalar l-Scalar-Plain">21          - POSTGRES_USER=algogrand</span>
+<span class="l l-Scalar l-Scalar-Plain">22          - POSTGRES_PASSWORD=indexer</span>
+<span class="l l-Scalar l-Scalar-Plain">23          - POSTGRES_DB=pgdb</span>
+<span class="nt">24      reach-app-tut-7-ETH-test-dockerized-geth</span><span class="p">:</span> <span class="nl">&amp;default-app</span>
+<span class="nt">25        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">26        depends_on</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">27          - ethereum-devnet</span>
+<span class="nt">28        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">29          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">30          - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth</span>
+<span class="l l-Scalar l-Scalar-Plain">31          - ETH_NODE_URI=http://ethereum-devnet:8545</span>
+<span class="nt">32      reach-app-tut-7-ETH-test-embedded-ganache</span><span class="p">:</span>
+<span class="nt">33        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">34        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">35          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">36          - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache</span>
+<span class="nt">37      reach-app-tut-7-FAKE-test-embedded-mock</span><span class="p">:</span>
+<span class="nt">38        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">39        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">40          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">41          - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock</span>
+<span class="nt">42      reach-app-tut-7-ALGO-test-dockerized-algod-local</span><span class="p">:</span>
+<span class="nt">43        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">44        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">45          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">46          - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod</span>
+<span class="l l-Scalar l-Scalar-Plain">47          - ALGO_SERVER=http://host.docker.internal</span>
+<span class="l l-Scalar l-Scalar-Plain">48          - ALGO_PORT=4180</span>
+<span class="l l-Scalar l-Scalar-Plain">49          - ALGO_INDEXER_SERVER=http://host.docker.internal</span>
+<span class="l l-Scalar l-Scalar-Plain">50          - ALGO_INDEXER_PORT=8980</span>
+<span class="nt">51      reach-app-tut-7-ALGO-test-dockerized-algod</span><span class="p">:</span>
+<span class="nt">52        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">53        depends_on</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">54          - algorand-devnet</span>
+<span class="nt">55        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">56          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">57          - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod</span>
+<span class="l l-Scalar l-Scalar-Plain">58          - ALGO_SERVER=http://algorand-devnet</span>
+<span class="l l-Scalar l-Scalar-Plain">59          - ALGO_PORT=4180</span>
+<span class="l l-Scalar l-Scalar-Plain">60          - ALGO_INDEXER_SERVER=http://algorand-devnet</span>
+<span class="l l-Scalar l-Scalar-Plain">61          - ALGO_INDEXER_PORT=8980</span>
+<span class="nt">62      reach-app-tut-7-</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="nt">63      reach-app-tut-7</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="l l-Scalar l-Scalar-Plain">64</span>      <span class="c1"># After this is new!</span>
+<span class="nt">65      live</span><span class="p">:</span>
+<span class="nt">66        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">67        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">68          - ETH_NODE_URI</span>
+<span class="nt">69      player</span><span class="p">:</span> <span class="nl">&amp;player</span>
+<span class="nt">70        &lt;&lt;</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="nt">71        stdin_open</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">72      alice</span><span class="p">:</span> <span class="nv">*player</span>
+<span class="nt">73      bob</span><span class="p">:</span> <span class="nv">*player</span>
 </pre></div></div></p><ul><li><p>Lines 2 and 3 define a service for starting our application.
-Your line 3 will say <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut</span><span class="hspace"></span></span>, rather than <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut-7</span><span class="hspace"></span></span>, if you&rsquo;ve stayed in the same directory througout the tutorial.</p></li><li><p>Lines 5 and 6 define the Reach private developer test network service.</p></li><li><p>Lines 7 through 23 define services that allow the application to be run with different networks.</p></li><li><p>We&rsquo;ll add lines 25 through 28 as a service for connecting to a "live" Ethereum network, specified by the environment variable <span class="stt">ETH_NODE_URI</span>.</p></li><li><p>We&rsquo;ll also add lines 29 through 33 to define a <span class="RktInBG"><span class="hspace"></span><span class="RktIn">player</span><span class="hspace"></span></span> service that is our application with an open standard input, as well as two instances named <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> and <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span>.</p></li></ul><p>With these in place, we can run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">docker-compose run WHICH</span></p><p>where <span class="stt">WHICH</span> is <span class="RktInBG"><span class="hspace"></span><span class="RktIn">live</span><span class="hspace"></span></span> for a live instance, or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span> for a test instance.
+Your line 3 will say <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut</span><span class="hspace"></span></span>, rather than <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut-7</span><span class="hspace"></span></span>, if you&rsquo;ve stayed in the same directory througout the tutorial.</p></li><li><p>Lines 5 and 6 define the Reach private developer test network service for Ethereum.</p></li><li><p>Lines 7 through 23 define the Reach private developer test network service for Algorand.</p></li><li><p>Lines 24 through 61 define services that allow the application to be run with different networks.</p></li><li><p>We&rsquo;ll add lines 65 through 68 as a service for connecting to a "live" Ethereum network, specified by the environment variable <span class="stt">ETH_NODE_URI</span>.</p></li><li><p>We&rsquo;ll also add lines 69 through 73 to define a <span class="RktInBG"><span class="hspace"></span><span class="RktIn">player</span><span class="hspace"></span></span> service that is our application with an open standard input, as well as two instances named <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> and <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span>.</p></li></ul><p>With these in place, we can run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">docker-compose run WHICH</span></p><p>where <span class="stt">WHICH</span> is <span class="RktInBG"><span class="hspace"></span><span class="RktIn">live</span><span class="hspace"></span></span> for a live instance, or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span> for a test instance.
 If we use the live version, then we have to define the environment variable <span class="stt">ETH_NODE_URI</span> as the URI of our Ethereum node.</p><p>We&rsquo;ll modify the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/Makefile"><span class="stt">tut-7/Makefile</span></a> to have commands to run each of these variants:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/Makefile#L25-L35"><span class="stt">tut-7/Makefile</span></a><button class="btn" data-clipboard-text=".PHONY: run-live
 run-live:
 	docker-compose run --rm live
