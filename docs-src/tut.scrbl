@@ -1331,13 +1331,15 @@ First, let's look at the @reachexlink["tut-7/docker-compose.yml"] file:
 @item{Lines 2 and 3 define a service for starting our application.
 Your line 3 will say @litchar{tut}, rather than @litchar{tut-7}, if you've stayed in the same directory througout the tutorial.}
 
-@item{Lines 5 and 6 define the Reach private developer test network service.}
+@item{Lines 5 and 6 define the Reach private developer test network service for Ethereum.}
 
-@item{Lines 7 through 23 define services that allow the application to be run with different networks.}
+@item{Lines 7 through 23 define the Reach private developer test network service for Algorand.}
 
-@item{We'll add lines 25 through 28 as a service for connecting to a "live" Ethereum network, specified by the environment variable @envvar{ETH_NODE_URI}.}
+@item{Lines 24 through 61 define services that allow the application to be run with different networks.}
 
-@item{We'll also add lines 29 through 33 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
+@item{We'll add lines 65 through 68 as a service for connecting to a "live" Ethereum network, specified by the environment variable @envvar{ETH_NODE_URI}.}
+
+@item{We'll also add lines 69 through 73 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
 
 With these in place, we can run

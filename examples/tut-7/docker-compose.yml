@@ -2,23 +2,63 @@ version: '3.4'
 x-app-base: &app-base
   image: reachsh/reach-app-tut-7:latest
 services:
-  devnet:
-    image: reachsh/ethereum-devnet:latest
+  ethereum-devnet:
+    image: reachsh/ethereum-devnet:0.1
+  algorand-devnet:
+    image: reachsh/algorand-devnet:0.1
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+    ports:
+      - 9392
+  algorand-postgres-db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
   reach-app-tut-7-ETH-test-dockerized-geth: &default-app
     <<: *app-base
     depends_on:
-      - devnet
+      - ethereum-devnet
     environment:
+      - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth
-      - ETH_NODE_URI=http://devnet:8545
+      - ETH_NODE_URI=http://ethereum-devnet:8545
   reach-app-tut-7-ETH-test-embedded-ganache:
     <<: *app-base
     environment:
+      - REACH_DEBUG
       - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache
   reach-app-tut-7-FAKE-test-embedded-mock:
     <<: *app-base
     environment:
+      - REACH_DEBUG
       - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock
+  reach-app-tut-7-ALGO-test-dockerized-algod-local:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - ALGO_SERVER=http://host.docker.internal
+      - ALGO_PORT=4180
+      - ALGO_INDEXER_SERVER=http://host.docker.internal
+      - ALGO_INDEXER_PORT=8980
+  reach-app-tut-7-ALGO-test-dockerized-algod:
+    <<: *app-base
+    depends_on:
+      - algorand-devnet
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod
+      - ALGO_SERVER=http://algorand-devnet
+      - ALGO_PORT=4180
+      - ALGO_INDEXER_SERVER=http://algorand-devnet
+      - ALGO_INDEXER_PORT=8980
   reach-app-tut-7-: *default-app
   reach-app-tut-7: *default-app
   # After this is new!
@@ -29,5 +69,5 @@ services:
   player: &player
     <<: *default-app
     stdin_open: true
-  alice: *player 
-  bob: *player 
+  alice: *player
+  bob: *player
