@@ -12,16 +12,10 @@ type = "Exclude"
 id = "STAN-0213"
 scope = "all"
 
-# Infinite: base/length
+# Infinite: base/length, base/reverse, base/sum
 [[check]]
 type = "Exclude"
-id = "STAN-0103"
-scope = "all"
-
-# Infinite: base/reverse
-[[check]]
-type = "Exclude"
-id = "STAN-0101"
+category = "Infinite"
 scope = "all"
 
 # Stan thinks $(embedFile) is bad because it splices in unsafePerformIO
