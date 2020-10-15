@@ -13,12 +13,15 @@ import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy.IO as LTIO
+import Data.Text.Prettyprint.Doc
 import Data.Word
 import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Connector
 import Reach.Type
 import Reach.Util
+import Reach.Pretty()
 import Safe (atMay)
 
 -- General tools that could be elsewhere
@@ -180,7 +183,11 @@ bad lab = do
   output $ comment_ $ lab
 
 xxx :: LT.Text -> App ()
-xxx lab = bad $ "XXX " <> lab
+xxx lab = do
+  let lab' = "XXX " <> lab
+  when True $
+    liftIO $ LTIO.putStrLn lab'
+  bad lab'
 
 freshLabel :: App LT.Text
 freshLabel = do
@@ -200,7 +207,8 @@ lookup_let dv = do
   Env {..} <- ask
   case M.lookup dv eLets of
     Just m -> m
-    Nothing -> impossible $ "lookup_let"
+    Nothing ->
+      impossible $ show eWhich <> " lookup_let " <> show (pretty dv) <> " not in " <> (intercalate ", " $ map (show . pretty) $ M.keys eLets)
 
 store_var :: DLVar -> ScratchSlot -> App a -> App a
 store_var dv ss m = do
@@ -445,7 +453,8 @@ ce = \case
 
 cm :: (a -> App ()) -> PLCommon a -> App ()
 cm ck = \case
-  PL_Return {} -> xxx "return"
+  PL_Return {} ->
+    return ()
   PL_Let _ PL_Once dv de k ->
     store_let dv (ce de) $ ck k
   PL_Let _ PL_Many dv de k ->
@@ -454,8 +463,10 @@ cm ck = \case
       ce de
       code "store" [loct]
       store_let dv (code "load" [loct]) $ ck k
-  PL_ArrayMap {} -> xxx "map"
-  PL_ArrayReduce {} -> xxx "reduce"
+  PL_ArrayMap {} ->
+    xxx "map"
+  PL_ArrayReduce {} ->
+    xxx "reduce"
   PL_Eff _ de k -> ce de >> ck k
   PL_Var _ dv k ->
     salloc $ \loc -> do
@@ -489,7 +500,20 @@ ct = \case
     label false_lab
     ct ft
   CT_Switch {} -> xxx "switch"
-  CT_Jump {} -> xxx "jump"
+  CT_Jump _ which _ (DLAssignment asnm) -> do
+    Env {..} <- ask
+    let Shared {..} = eShared
+    -- XXX By saving these for later, we are letting a future environment
+    -- influence these args, perhaps eval them "now"?
+    let asnm' = M.map ca asnm
+    let eLets' = M.union asnm' eLets
+    case M.lookup which sHandlers of
+      Just (C_Loop _ _ _ t) ->
+        local (\e -> e { eWhich = which
+                       , eLets = eLets' }) $
+          ct t
+      _ ->
+        impossible "bad jump"
   CT_From _ msvs -> do
     check_nextSt
     halt_should_be isHalt

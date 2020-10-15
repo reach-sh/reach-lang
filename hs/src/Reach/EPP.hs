@@ -207,6 +207,30 @@ extend_locals_look common p_prts_s = M.map add p_prts_s
         skip' = ProRes_
         back' p_cs' p_ct' = ProRes_ p_cs' $ ET_Com $ p_ct'
 
+plReplace :: (PLCommon a -> a) -> a -> PLCommon PLTail -> a
+plReplace mkk nk = \case
+  PL_Return {} -> nk
+  PL_Let a b c d k ->
+    mkk $ PL_Let a b c d $ iter k
+  PL_ArrayMap a b c d e f k ->
+    mkk $ PL_ArrayMap a b c d e f $ iter k
+  PL_ArrayReduce a b c d e f g h k ->
+    mkk $ PL_ArrayReduce a b c d e f g h $ iter k
+  PL_Eff a b k ->
+    mkk $ PL_Eff a b $ iter k
+  PL_Var a b k ->
+    mkk $ PL_Var a b $ iter k
+  PL_Set a b c k ->
+    mkk $ PL_Set a b c $ iter k
+  PL_LocalIf a b c d k ->
+    mkk $ PL_LocalIf a b c d $ iter k
+  PL_LocalSwitch a b c k ->
+    mkk $ PL_LocalSwitch a b c $ iter k
+  where iter = pltReplace mkk nk
+
+pltReplace :: (PLCommon a -> a) -> a -> PLTail -> a
+pltReplace mkk nk (PLTail m) = plReplace mkk nk m
+
 epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
@@ -303,7 +327,7 @@ epp_n st n =
         return $ (loop_svs_, (p_prts_body_, ct_body_, pt_cond_))
 
       let loop_if = CT_If cond_at cond_da ct_body ct_k
-      let loop_top = CT_Seqn cond_at pt_cond loop_if
+      let loop_top = pltReplace CT_Com loop_if pt_cond
       let this_h = C_Loop at loop_svs loop_vars loop_top
       addHandler st loop_num this_h
       let ct' = CT_Jump at loop_num loop_svs asn
@@ -363,11 +387,12 @@ epp_s st s =
     LLS_Stop at -> do
       let p_prts_s = pall st (ProRes_ mempty (ET_Stop at))
       return $ ProResS p_prts_s $ ProRes_ mempty False
-    LLS_Only at who body_l k_s -> do
+    LLS_Only _at who body_l k_s -> do
       ProResS p_prts_k prchs_k <- epp_s st k_s
       let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
       let ProResL (ProRes_ who_body_cs who_body_lt) = epp_l body_l who_k_cs
-      let who_prt_only = ProRes_ who_body_cs $ ET_Seqn at who_body_lt who_k_et
+      let who_prt_only =
+            ProRes_ who_body_cs $ pltReplace ET_Com who_k_et who_body_lt
       let p_prts = M.insert who who_prt_only p_prts_k
       return $ ProResS p_prts prchs_k
     LLS_ToConsensus at from fs from_as msg amt_da amt_dv mtime cons -> do

@@ -61,6 +61,7 @@ data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
   , ctxt_txn :: Int
   , ctxt_simulate :: Bool
+  , ctxt_while :: Maybe (PLBlock, ETail, ETail)
   }
 
 jsTxn :: JSCtxt -> Doc a
@@ -277,14 +278,22 @@ jsBlock ctxt (PLBlock _ t a) =
   where
     body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
 
-jsAsn :: JSCtxt -> Bool -> DLAssignment -> Doc a
-jsAsn _ctxt isDefn asn = vsep $ map (uncurry mk1) $ M.toList asnm
+data AsnMode
+  = AM_While
+  | AM_SimWhile
+  | AM_Continue
+  | AM_SimContinue
+
+jsAsn :: JSCtxt -> AsnMode -> DLAssignment -> Doc a
+jsAsn _ctxt mode asn = vsep $ map (uncurry mk1) $ M.toList asnm
   where
     DLAssignment asnm = asn
     mk1 v a = mdecl <> jsVar v <+> "=" <+> jsArg a <> semi
-    mdecl = case isDefn of
-      True -> "let "
-      False -> emptyDoc
+    mdecl = case mode of
+      AM_While -> "let "
+      AM_SimWhile -> "const "
+      AM_Continue -> emptyDoc
+      AM_SimContinue -> "const "
 
 jsFromSpec :: JSCtxt -> FromSpec -> Doc a
 jsFromSpec ctxt = \case
@@ -390,25 +399,34 @@ jsETail ctxt = \case
   ET_While _ asn cond body k ->
     case ctxt_simulate ctxt of
       False ->
-        jsAsn ctxt True asn
+        jsAsn ctxt AM_While asn
           <> hardline
-          <> jsWhile (jsBlock ctxt cond) (jsETail ctxt body)
+          <> jsWhile (jsBlock ctxt cond) (jsETail ctxt' body)
           <> hardline
           <> jsETail ctxt k
-      -- XXX record while details
       True ->
-        -- XXX simulate while by emitting an if
-        emptyDoc
+        "// while - Simulate one iteration of a while"
+          <> hardline
+          <> jsAsn ctxt AM_SimWhile asn
+          <> hardline
+          <> jsIf (jsBlock ctxt cond) (jsETail ctxt' body) (jsETail ctxt k)
+      where ctxt' = ctxt { ctxt_while = Just (cond, body, k) }
   ET_Continue _ asn ->
     case ctxt_simulate ctxt of
       False ->
-        jsAsn ctxt False asn
+        jsAsn ctxt AM_Continue asn
           <> hardline
           <> "continue"
           <> semi
       True ->
-        -- XXX simulate continue by looking at while details
-        emptyDoc
+        case ctxt_while ctxt of
+          Nothing -> impossible "continue not in while"
+          Just (wcond, wbody, wk) ->
+            "// continue - Simulate one iteration of a while"
+            <> hardline
+            <> jsAsn ctxt AM_SimContinue asn
+            <> hardline
+            <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk)
 
 jsPart :: SLPart -> EPProg -> Doc a
 jsPart p (EPProg _ _ et) =
@@ -419,6 +437,7 @@ jsPart p (EPProg _ _ et) =
         { ctxt_who = p
         , ctxt_txn = 0
         , ctxt_simulate = False
+        , ctxt_while = Nothing
         }
     bodyp' = jsETail ctxt et
 
