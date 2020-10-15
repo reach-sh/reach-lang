@@ -376,7 +376,7 @@ ce = \case
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> do
     ca aa
-    let t = typeArrayType ia
+    let t = typeArrayType aa
     let tsz = typeSizeOf t
     case ia of
       DLA_Literal (DLL_Int _ ii) -> do
