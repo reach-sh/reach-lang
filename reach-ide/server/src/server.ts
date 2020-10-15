@@ -240,7 +240,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				if (problems < settings.maxNumberOfProblems) {
 					problems++;
 					
-					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR + element.suggestions);
+					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR + (element.suggestions != undefined ? element.suggestions : "") );
 					
 				}
 			}
@@ -294,7 +294,7 @@ connection.onDidChangeWatchedFiles(_change => {
 export interface ErrorLocation {
     range: Range;
 	errorMessage: string; // e.g. id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
-	suggestions: string; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
+	suggestions: string | undefined; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
 }
 
 function findErrorLocations(compileErrors: string) : ErrorLocation[] {
@@ -344,21 +344,31 @@ CallStack (from HasCallStack):
 		const SUGGESTIONS_PREFIX = "Did you mean: [";
 		const SUGGESTIONS_SUFFIX = "]";
 		var indexOfSuggestions = actualMessage.indexOf(SUGGESTIONS_PREFIX);
-		var suggestions = actualMessage.substring(indexOfSuggestions + SUGGESTIONS_PREFIX.length, actualMessage.lastIndexOf(SUGGESTIONS_SUFFIX));
+		var suggestions;
+		if (indexOfSuggestions != -1) {
+			suggestions = actualMessage.substring(indexOfSuggestions + SUGGESTIONS_PREFIX.length, actualMessage.lastIndexOf(SUGGESTIONS_SUFFIX));
+		}
 		connection.console.log(`SUGGESTIONS: ${suggestions}`);
 
+		var end: Position;
 		// Get the problematic string (before the list of suggestions)
-		var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
-		let messageWithoutSuggestionsTokens : string[] = messageWithoutSuggestions.split(" ");
-		connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
-		var problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
-		problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
-		connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
+		if (suggestions !== undefined) {
+			var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
+			let messageWithoutSuggestionsTokens : string[] = messageWithoutSuggestions.split(" ");
+			connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
+			var problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
+			problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
+			connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
+
+			end = { line: linePos - 1, character: charPos - 1 + problematicString.length};
+		} else {
+			end = { line: linePos, character: 0 } // until end of line, or equivalently the next line
+		}
 
 		let location: ErrorLocation = {
 			range: {
 				start: { line: linePos - 1, character: charPos - 1 }, // Reach compiler numbers starts at 1
-				end: { line: linePos - 1, character: charPos - 1 + problematicString.length}
+				end: end
 			},
 			errorMessage: actualMessage,
 			suggestions: suggestions
