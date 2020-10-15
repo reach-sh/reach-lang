@@ -19,6 +19,7 @@ import Reach.AST
 import Reach.Connector
 import Reach.Type
 import Reach.Util
+import Safe (atMay)
 
 -- General tools that could be elsewhere
 
@@ -365,9 +366,11 @@ computeSubstring ts idx = (t, start, end)
         starts = scanl (+) 0 szs
         ends = zipWith (+) szs starts
         idx' = fromIntegral idx
-        t = ts !! idx'
-        start = starts !! idx'
-        end = ends !! idx'
+        tse = zip3 ts starts ends
+        (t, start, end) =
+          case atMay tse idx' of
+            Nothing -> impossible "bad idx"
+            Just x -> x
 
 ce :: DLExpr -> App ()
 ce = \case
@@ -404,7 +407,7 @@ ce = \case
   DLE_ObjectRef at oa f -> do
     ca oa
     let fts = typeObjectTypes oa
-    let fidx = fromIntegral $ fromJust $ findIndex ((== f) . fst) fts
+    let fidx = fromIntegral $ fromMaybe (impossible "bad field") $ findIndex ((== f) . fst) fts
     let (t, start, end) = computeSubstring (map snd fts) fidx
     csubstring at start end
     cfrombs t
