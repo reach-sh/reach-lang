@@ -54,7 +54,7 @@ let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 const NAME: string = 'Reach IDE';
 
-const DIAGNOSTIC_TYPE_NOT_VALID_ADDRESS: string = 'NotValidAddress';
+const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'CompileError';
 
 const {indexOfRegex, lastIndexOfRegex} = require('index-of-regex')
 
@@ -79,7 +79,7 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Incremental,
 			// Tell the client that the server supports code completion
-			completionProvider: {
+			/*completionProvider: {
 				resolveProvider: true
 			},
 			codeLensProvider : {
@@ -90,7 +90,7 @@ connection.onInitialize((params: InitializeParams) => {
 			},
 			hoverProvider : {
 				workDoneProgress: false
-			}
+			}*/
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -206,7 +206,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				if (problems < settings.maxNumberOfProblems) {
 					problems++;
 					
-					addDiagnostic(element, `${element.errorMessage} is the error message`, 'The Reach compilation failed.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_NOT_VALID_ADDRESS);
+					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR);
 					
 				}
 			}
@@ -297,14 +297,20 @@ CallStack (from HasCallStack):
 		connection.console.log(`TOKENS: `+tokens);
 		var linePos = parseInt(tokens[2]);
 		var charPos = parseInt(tokens[3]);
-
+		var actualMessage = "";
+		for (var i=4; i<tokens.length; i++) {
+			actualMessage += tokens[i];
+			if (i < (tokens.length - 1)) {
+				actualMessage += ":"; // add back the colons in between
+			}
+		}
 
 		let location: ErrorLocation = {
 			range: {
 				start: { line: linePos - 1, character: charPos - 1 }, //textDocument.positionAt(m.index), // Reach compiler numbers starts at 1
 				end: { line: linePos, character: 0} //textDocument.positionAt(m.index + m[0].length)
 			},
-			errorMessage: m[0]
+			errorMessage: actualMessage
 		};
 		locations.push(location);
 	}
