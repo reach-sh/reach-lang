@@ -317,7 +317,7 @@ CallStack (from HasCallStack):
 
 
 	//let text = textDocument.getText();
-	let pattern = /error: .\/.index.rsh.temp.*/g  // look for string with the name of the temp index.rsh file
+	let pattern = /error: .*/g  // look for error string
 	let m: RegExpExecArray | null;
 
 	let problems = 0;
@@ -327,47 +327,63 @@ CallStack (from HasCallStack):
 	// ERROR MESSAGE m:
     //error: ./index.rsh:13:23:id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
 
+	var start: Position;
+	var end: Position;
+
 		// Get actual message portion after the line and position numbers
 		var tokens = m[0].split(':');
 		connection.console.log(`TOKENS: `+tokens);
 		var linePos = parseInt(tokens[2]);
 		var charPos = parseInt(tokens[3]);
 		var actualMessage = "";
-		for (var i=4; i<tokens.length; i++) {
-			actualMessage += tokens[i];
-			if (i < (tokens.length - 1)) {
-				actualMessage += ":"; // add back the colons in between
+		if (isNaN(linePos) || isNaN(charPos)) { // no line/pos found - treat as generic error
+			for (var i=1; i<tokens.length; i++) { // start after "error"
+				actualMessage += tokens[i];
+				if (i < (tokens.length - 1)) {
+					actualMessage += ":"; // add back the colons in between
+				}
 			}
-		}
 
-		// Get list of suggestions from compiler
-		const SUGGESTIONS_PREFIX = "Did you mean: [";
-		const SUGGESTIONS_SUFFIX = "]";
-		var indexOfSuggestions = actualMessage.indexOf(SUGGESTIONS_PREFIX);
-		var suggestions;
-		if (indexOfSuggestions != -1) {
-			suggestions = actualMessage.substring(indexOfSuggestions + SUGGESTIONS_PREFIX.length, actualMessage.lastIndexOf(SUGGESTIONS_SUFFIX));
-		}
-		connection.console.log(`SUGGESTIONS: ${suggestions}`);
-
-		var end: Position;
-		// Get the problematic string (before the list of suggestions)
-		if (suggestions !== undefined) {
-			var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
-			let messageWithoutSuggestionsTokens : string[] = messageWithoutSuggestions.split(" ");
-			connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
-			var problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
-			problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
-			connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
-
-			end = { line: linePos - 1, character: charPos - 1 + problematicString.length};
+			start = { line: 0, character: 0 }; // put generic error at the top
+			end = { line: 1, character: 0 };
 		} else {
-			end = { line: linePos, character: 0 } // until end of line, or equivalently the next line
+			for (var i=4; i<tokens.length; i++) { // start after line/pos
+				actualMessage += tokens[i];
+				if (i < (tokens.length - 1)) {
+					actualMessage += ":"; // add back the colons in between
+				}
+			}
+
+			start = { line: linePos - 1, character: charPos - 1 } // Reach compiler numbers starts at 1
+
+			// Get list of suggestions from compiler
+			const SUGGESTIONS_PREFIX = "Did you mean: [";
+			const SUGGESTIONS_SUFFIX = "]";
+			var indexOfSuggestions = actualMessage.indexOf(SUGGESTIONS_PREFIX);
+			var suggestions;
+			if (indexOfSuggestions != -1) {
+				suggestions = actualMessage.substring(indexOfSuggestions + SUGGESTIONS_PREFIX.length, actualMessage.lastIndexOf(SUGGESTIONS_SUFFIX));
+			}
+			connection.console.log(`SUGGESTIONS: ${suggestions}`);
+
+			// Get the problematic string (before the list of suggestions)
+			if (suggestions !== undefined) {
+				var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
+				let messageWithoutSuggestionsTokens : string[] = messageWithoutSuggestions.split(" ");
+				connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
+				var problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
+				problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
+				connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
+
+				end = { line: linePos - 1, character: charPos - 1 + problematicString.length};
+			} else {
+				end = { line: linePos, character: 0 } // until end of line, or equivalently the next line
+			}
 		}
 
 		let location: ErrorLocation = {
 			range: {
-				start: { line: linePos - 1, character: charPos - 1 }, // Reach compiler numbers starts at 1
+				start: start,
 				end: end
 			},
 			errorMessage: actualMessage,
