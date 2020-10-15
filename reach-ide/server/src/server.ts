@@ -85,12 +85,13 @@ connection.onInitialize((params: InitializeParams) => {
 			codeLensProvider : {
 				resolveProvider: true
 			},
-			codeActionProvider : {
-				codeActionKinds : [ CodeActionKind.QuickFix ]
-			},
+,
 			hoverProvider : {
 				workDoneProgress: false
 			}*/
+			codeActionProvider : {
+				codeActionKinds : [ CodeActionKind.QuickFix ]
+			}
 		}
 	};
 	if (hasWorkspaceFolderCapability) {
@@ -206,7 +207,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				if (problems < settings.maxNumberOfProblems) {
 					problems++;
 					
-					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR);
+					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR + element.suggestions);
 					
 				}
 			}
@@ -259,7 +260,8 @@ connection.onDidChangeWatchedFiles(_change => {
 
 export interface ErrorLocation {
     range: Range;
-    errorMessage: string;
+	errorMessage: string; // e.g. id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
+	suggestions: string; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
 }
 
 function findErrorLocations(compileErrors: string) : ErrorLocation[] {
@@ -305,28 +307,80 @@ CallStack (from HasCallStack):
 			}
 		}
 
+		const SUGGESTIONS_PREFIX = "Did you mean: [";
+		const SUGGESTIONS_SUFFIX = "]";
+		var indexOfSuggestions = actualMessage.indexOf(SUGGESTIONS_PREFIX);
+		var suggestions = actualMessage.substring(indexOfSuggestions + SUGGESTIONS_PREFIX.length, actualMessage.lastIndexOf(SUGGESTIONS_SUFFIX));
+		connection.console.log(`SUGGESTIONS: ${suggestions}`);
+
 		let location: ErrorLocation = {
 			range: {
 				start: { line: linePos - 1, character: charPos - 1 }, //textDocument.positionAt(m.index), // Reach compiler numbers starts at 1
 				end: { line: linePos, character: 0} //textDocument.positionAt(m.index + m[0].length)
 			},
-			errorMessage: actualMessage
+			errorMessage: actualMessage,
+			suggestions: suggestions
 		};
 		locations.push(location);
 	}
 	return locations;
 }
 
-function getWord(text: string, index: number) {
-	var beginSubstring = text.substring(0, index);
+connection.onCodeAction(
+	async (_params: CodeActionParams): Promise<CodeAction[]> => {
+		let codeActions : CodeAction[] = [];
 
-	var endSubstring = text.substring(index, text.length);
-	var boundaryRegex = /[^0-9a-zA-Z.]{1}/g; // boundaries are: not alphanumeric or dot
-    var first = lastIndexOfRegex(beginSubstring, boundaryRegex) + 1;
-	var last = index + indexOfRegex(endSubstring, boundaryRegex);
+		let textDocument = documents.get(_params.textDocument.uri)
+		if (textDocument === undefined) {
+			return codeActions;
+		}
+		let context : CodeActionContext = _params.context;
+		let diagnostics : Diagnostic[] = context.diagnostics;
 
-	return text.substring(first !== -1 ? first : 0, last !== -1 ? last : text.length - 1);
+		codeActions = await getCodeActions(diagnostics, textDocument, _params);
+
+		return codeActions;
+	}
+)
+
+async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocument, params: CodeActionParams) : Promise<CodeAction[]> {
+	let codeActions : CodeAction[] = [];
+
+	// Get quick fixes for each diagnostic
+	for (let i = 0; i < diagnostics.length; i++) {
+
+		let diagnostic = diagnostics[i];
+		if (String(diagnostic.code).startsWith(DIAGNOSTIC_TYPE_COMPILE_ERROR)) {
+			let title : string = "Suggested fix";
+			let range : Range = diagnostic.range;
+			let possibleReplacements : string = String(diagnostic.code).substring(DIAGNOSTIC_TYPE_COMPILE_ERROR.length);
+
+			// TODO add a quickfix for each possible replacement
+
+			codeActions.push(getQuickFix(diagnostic, title, range, possibleReplacements, textDocument));
+		}
+	}
+
+	return codeActions;
 }
+
+function getQuickFix(diagnostic:Diagnostic, title:string, range:Range, replacement:string, textDocument:TextDocument) : CodeAction {
+	let textEdit : TextEdit = { 
+		range: range,
+		newText: replacement
+	};
+	let workspaceEdit : WorkspaceEdit = {
+		changes: { [textDocument.uri]:[textEdit] }
+	}
+	let codeAction : CodeAction = { 
+		title: title, 
+		kind: CodeActionKind.QuickFix,
+		edit: workspaceEdit,
+		diagnostics: [diagnostic]
+	}
+	return codeAction;
+}
+
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
