@@ -19,8 +19,12 @@ down:
 run: check
 
 .PHONY: check
-check:
-	./check.sh
+check: docker-compose.algo.yml
+	./check.sh docker-compose.yml
+	./check.sh docker-compose.algo.yml
+
+docker-compose.algo.yml: docker-compose.yml
+	sed -e '24s/ &default-app//' -e '51s/:/: \&default-app/' $^ > $@
 
 .PHONY: run-live
 run-live:

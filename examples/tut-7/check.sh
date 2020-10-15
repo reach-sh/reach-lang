@@ -2,7 +2,7 @@
 
 make build || exit 1
 
-docker-compose up -d alice bob || exit 1
+docker-compose -f "$1" up -d alice bob || exit 1
 
 rm -f Alice.in Alice.out Bob.in Bob.out
 mkfifo Alice.in Alice.out Bob.in Bob.out || exit 1

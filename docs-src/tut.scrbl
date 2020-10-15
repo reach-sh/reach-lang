@@ -1528,7 +1528,7 @@ Of course, when you run the exact amounts and addresses may be different.
 
 @(hrule)
 
-If we were to edit @reachexlink["tut-7/docker-compose.yml"], and change the @litchar{*default-app} on line 70 to @litchar{*reach-app-tut-ALGO-test-dockerize-algod}, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
+If we were to edit @reachexlink["tut-7/docker-compose.yml"], and move the @litchar{&default-app} on line 24 to line 51, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
 
 @(hrule)
 
