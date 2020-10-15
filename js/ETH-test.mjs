@@ -214,7 +214,7 @@ runTests(async () => {
       const stdlibExports = Object.keys(stdlib).sort();
 
       const ETH_extra_exports = ['setProvider'];
-      const ALGO_extra_exports = [];
+      const ALGO_extra_exports = ['setAlgodClient', 'setIndexer'];
       const FAKE_extra_exports = [];
 
       for (const [otherName, otherStdlib, otherExtraExports] of [
