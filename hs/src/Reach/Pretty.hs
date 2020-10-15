@@ -337,7 +337,6 @@ instance Pretty ETail where
   pretty e =
     case e of
       ET_Com c -> pretty c
-      ET_Seqn _ x y -> pretty x <> hardline <> pretty y
       ET_Stop _ -> emptyDoc
       ET_If _ ca t f -> prettyIfp ca t f
       ET_Switch _ ov csm -> prettySwitch ov csm
@@ -424,7 +423,6 @@ instance Pretty CInterval where
 
 instance Pretty CTail where
   pretty (CT_Com e) = pretty e
-  pretty (CT_Seqn _ x y) = pretty x <> hardline <> pretty y
   pretty (CT_If _ ca tt ft) = prettyIfp ca tt ft
   pretty (CT_Switch _ ov csm) = prettySwitch ov csm
   pretty (CT_From _ mvars) =

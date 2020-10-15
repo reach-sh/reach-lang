@@ -303,11 +303,6 @@ jsFromSpec ctxt = \case
 jsETail :: JSCtxt -> ETail -> Doc a
 jsETail ctxt = \case
   ET_Com m -> jsCom jsETail ctxt m
-  ET_Seqn _ f s ->
-    vsep
-      [ jsPLTail ctxt f
-      , jsETail ctxt s
-      ]
   ET_Stop _ ->
     case ctxt_simulate ctxt of
       False -> "return" <> semi

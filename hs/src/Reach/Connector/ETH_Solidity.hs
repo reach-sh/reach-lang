@@ -502,9 +502,6 @@ solPLTail ctxt (PLTail m) = solCom solPLTail ctxt m
 solCTail :: SolCtxt a -> CTail -> SolTailRes a
 solCTail ctxt = \case
   CT_Com m -> solCom solCTail ctxt m
-  CT_Seqn _ p k -> ptr <> solCTail ctxt' k
-    where
-      ptr@(SolTailRes ctxt' _) = solPLTail ctxt p
   CT_If _ ca t f -> SolTailRes ctxt' $ solIf (solArg ctxt ca) t' f'
     where
       SolTailRes ctxt'_t t' = solCTail ctxt t
@@ -573,7 +570,6 @@ manyVars_p (PLTail m) = manyVars_m manyVars_p m
 manyVars_c :: CTail -> S.Set DLVar
 manyVars_c = \case
   CT_Com m -> manyVars_m manyVars_c m
-  CT_Seqn _ p c -> manyVars_p p <> manyVars_c c
   CT_If _ _ t f -> manyVars_c t <> manyVars_c f
   CT_Switch _ _ csm -> mconcatMap cm1 $ M.elems csm
     where

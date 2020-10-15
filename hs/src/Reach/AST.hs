@@ -714,8 +714,6 @@ data PLBlock
 
 data ETail
   = ET_Com (PLCommon ETail)
-  | -- XXX delete
-    ET_Seqn SrcLoc PLTail ETail
   | ET_Stop SrcLoc
   | ET_If SrcLoc DLArg ETail ETail
   | ET_Switch SrcLoc DLVar (SwitchCases ETail)
@@ -750,8 +748,6 @@ data EPProg
 
 data CTail
   = CT_Com (PLCommon CTail)
-  | -- XXX delete
-    CT_Seqn SrcLoc PLTail CTail
   | CT_If SrcLoc DLArg CTail CTail
   | CT_Switch SrcLoc DLVar (SwitchCases CTail)
   | CT_From SrcLoc (Maybe [DLVar])

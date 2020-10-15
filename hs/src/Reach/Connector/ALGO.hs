@@ -511,7 +511,6 @@ cp (PLTail m) = cm cp m
 ct :: CTail -> App ()
 ct = \case
   CT_Com m -> cm ct m
-  CT_Seqn _ p t -> cp p >> ct t
   CT_If _ a tt ft -> do
     ca a
     false_lab <- freshLabel

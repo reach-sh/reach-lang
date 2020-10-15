@@ -126,7 +126,6 @@ instance CollectsTypes PLTail where
 
 instance CollectsTypes CTail where
   cts (CT_Com m) = cts m
-  cts (CT_Seqn _ b a) = cts b <> cts a
   cts (CT_If _ ca t f) = cts ca <> cts t <> cts f
   cts (CT_Switch _ v csm) = cts v <> cts csm
   cts (CT_From _ msvs) = cts msvs
