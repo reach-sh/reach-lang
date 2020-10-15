@@ -51,7 +51,7 @@ RUN apt-get install -y --no-install-recommends \
   && add-apt-repository -y ppa:plt/racket \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
-  racket=7.7+ppa1-1~bionic1 \
+  racket=7.8+ppa1-1~bionic1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 COPY server.rkt /
