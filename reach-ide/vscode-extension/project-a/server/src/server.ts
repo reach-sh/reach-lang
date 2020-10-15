@@ -56,7 +56,7 @@ const NAME: string = 'Reach IDE';
 
 const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'CompileError';
 
-const {indexOfRegex, lastIndexOfRegex} = require('index-of-regex')
+const { exec } = require("child_process");
 
 connection.onInitialize((params: InitializeParams) => {
 	let capabilities = params.capabilities;
@@ -176,22 +176,28 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	let diagnostics: Diagnostic[] = [];
 
+	// Download the Reach shell script if it does not exist
+	const fs = require('fs')
+	const path = './reach'
+	try {
+		if (fs.existsSync(path)) {
+			connection.console.log("Reach shell script exists");
+		}
+	} catch(err) {
+		connection.console.log("Reach shell script not found, downloading now...");
+		await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
+			if (error) {
+				connection.console.log(`Reach download error: ${error.message}`);
+				return;
+			}
+			if (stderr) {
+				connection.console.log(`Reach download stderr: ${stderr}`);
+				return;
+			}
+			connection.console.log(`Reach download stdout: ${stdout}`);
+		});
+	}
 	
-
-	const { exec } = require("child_process");
-
-	await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
-		if (error) {
-			connection.console.log(`Reach download error: ${error.message}`);
-			return;
-		}
-		if (stderr) {
-			connection.console.log(`Reach download stderr: ${stderr}`);
-			return;
-		}
-		connection.console.log(`Reach download stdout: ${stdout}`);
-	});
-
 	// TODO compile temp file instead of this current file
 
 	connection.console.log(`BEFORE`);
