@@ -404,6 +404,9 @@ const safeify = (ty: any, x: any): LogicArg => {
 };
 
 const desafeify = (ty: any, v: Buffer): any => {
+  if ( ty.name === 'Bool' ) {
+    return desafeify(T_UInt, v).eq(1);
+  }
   if ( ty.name === 'UInt' ) {
     return hexToBigNumber('0x' + v.toString('hex'));
   }

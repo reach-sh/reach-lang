@@ -28,10 +28,10 @@ jsString s = squotes $ pretty s
 jsArray :: [Doc a] -> Doc a
 jsArray elems = brackets $ hcat $ punctuate (comma <> space) elems
 
-jsApply :: String -> [Doc a] -> Doc a
-jsApply f args = pretty f <> parens (hcat $ punctuate (comma <> space) args)
+jsApply :: Doc a -> [Doc a] -> Doc a
+jsApply f args = f <> parens (hcat $ punctuate (comma <> space) args)
 
-jsFunction :: String -> [Doc a] -> Doc a -> Doc a
+jsFunction :: Doc a -> [Doc a] -> Doc a -> Doc a
 jsFunction name args body =
   "async function" <+> jsApply name args <+> jsBraces body
 
@@ -118,6 +118,9 @@ jsAssertInfo ctxt at fs mmsg =
 jsVar :: DLVar -> Doc a
 jsVar (DLVar _ _ _ n) = "v" <> pretty n
 
+jsContinueVar :: DLVar -> Doc a
+jsContinueVar dv = "c" <> jsVar dv
+
 jsCon :: DLLiteral -> Doc a
 jsCon = \case
   DLL_Null -> "null"
@@ -191,7 +194,7 @@ jsExpr ctxt = \case
   DLE_ObjectRef _ oa f ->
     jsArg oa <> "." <> pretty f
   DLE_Interact at fs _ m t as ->
-    jsProtect (jsAssertInfo ctxt at fs (Just $ bpack m)) t $ "await" <+> (jsApply ("interact." <> m) $ map jsArg as)
+    jsProtect (jsAssertInfo ctxt at fs (Just $ bpack m)) t $ "await" <+> (jsApply ("interact." <> pretty m) $ map jsArg as)
   DLE_Digest _ as -> jsDigest as
   DLE_Claim at fs ct a mmsg ->
     check
@@ -274,7 +277,7 @@ jsPLTail ctxt (PLTail m) = jsCom jsPLTail ctxt m
 
 jsNewScope :: Doc a -> Doc a
 jsNewScope body =
-  parens (parens emptyDoc <+> "=>" <+> jsBraces body) <> parens emptyDoc
+  jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
 jsBlock :: JSCtxt -> PLBlock -> Doc a
 jsBlock ctxt (PLBlock _ t a) = jsNewScope body
@@ -283,20 +286,27 @@ jsBlock ctxt (PLBlock _ t a) = jsNewScope body
 
 data AsnMode
   = AM_While
-  | AM_SimWhile
-  | AM_Continue
-  | AM_SimContinue
+  | AM_WhileSim
+  | AM_ContinueOuter
+  | AM_ContinueInner
+  | AM_ContinueInnerSim
 
 jsAsn :: JSCtxt -> AsnMode -> DLAssignment -> Doc a
-jsAsn _ctxt mode asn = vsep $ map (uncurry mk1) $ M.toList asnm
+jsAsn _ctxt mode asn =
+  case mode of
+    AM_While -> def "let " v a
+    AM_WhileSim -> def "const " v a
+    AM_ContinueOuter -> def "const " cv a
+    AM_ContinueInner -> def emptyDoc v cv
+    AM_ContinueInnerSim -> def "const " v cv
   where
+    def decl lhs rhs =
+      vsep $ map (mk1 decl lhs rhs) $ M.toList asnm
     DLAssignment asnm = asn
-    mk1 v a = mdecl <> jsVar v <+> "=" <+> jsArg a <> semi
-    mdecl = case mode of
-      AM_While -> "let "
-      AM_SimWhile -> "const "
-      AM_Continue -> emptyDoc
-      AM_SimContinue -> "const "
+    mk1 decl lhs rhs row = decl <> lhs row <+> "=" <+> rhs row <> semi
+    v (v_, _) = jsVar v_
+    cv (v_, _) = jsContinueVar v_
+    a (_, a_) = jsArg a_
 
 jsFromSpec :: JSCtxt -> FromSpec -> Doc a
 jsFromSpec ctxt = \case
@@ -403,16 +413,15 @@ jsETail ctxt = \case
           <> hardline
           <> jsETail ctxt k
       True ->
-        "// while - Simulate one iteration of a while"
-          <> hardline
-          <> jsAsn ctxt AM_SimWhile asn
+        jsAsn ctxt AM_WhileSim asn
           <> hardline
           <> jsIf (jsBlock ctxt cond) (jsETail ctxt' body) (jsETail ctxt k)
       where ctxt' = ctxt { ctxt_while = Just (cond, body, k) }
   ET_Continue _ asn ->
+    jsAsn ctxt AM_ContinueOuter asn <> hardline <>
     case ctxt_simulate ctxt of
       False ->
-        jsAsn ctxt AM_Continue asn
+        jsAsn ctxt AM_ContinueInner asn
           <> hardline
           <> "continue"
           <> semi
@@ -420,16 +429,14 @@ jsETail ctxt = \case
         case ctxt_while ctxt of
           Nothing -> impossible "continue not in while"
           Just (wcond, wbody, wk) ->
-            "// continue - Simulate one iteration of a while"
-            <> hardline
-            <> (jsNewScope $
-                jsAsn ctxt AM_SimContinue asn
-                <> hardline
-                <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk)) <> semi
+            (jsNewScope $
+              jsAsn ctxt AM_ContinueInnerSim asn
+              <> hardline
+              <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk)) <> semi
 
 jsPart :: SLPart -> EPProg -> Doc a
 jsPart p (EPProg _ _ et) =
-  "export" <+> jsFunction (bunpack p) (["stdlib", "ctc", "interact"]) bodyp'
+  "export" <+> jsFunction (pretty $ bunpack p) (["stdlib", "ctc", "interact"]) bodyp'
   where
     ctxt =
       JSCtxt

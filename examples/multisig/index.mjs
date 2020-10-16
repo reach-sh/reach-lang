@@ -1,12 +1,13 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
-import * as MULTISIG from './build/index.main.mjs';
+import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
+import * as backend from './build/index.main.mjs';
 
 (async () => {
+  const stdlib = await stdlib_loader.loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
   const smallest = stdlib.parseCurrency(1);
 
   const parent = await stdlib.newTestAccount(startingBalance);
-  const parentCtc = parent.deploy(MULTISIG);
+  const parentCtc = parent.deploy(backend);
   console.log(`Parent deploys the contract.`);
   const parentInteract = {
     allowance: () => {
@@ -20,10 +21,10 @@ import * as MULTISIG from './build/index.main.mjs';
       return ans;
     },
   };
-  const parentP = MULTISIG.Parent(stdlib, parentCtc, parentInteract);
+  const parentP = backend.Parent(stdlib, parentCtc, parentInteract);
 
   const child = await stdlib.newTestAccount(startingBalance);
-  const childCtc = child.attach(MULTISIG, parentCtc.getInfo());
+  const childCtc = child.attach(backend, parentCtc.getInfo());
   const UNITS = 8;
   const childInteract = {
     request: (balance) => {
@@ -38,7 +39,7 @@ import * as MULTISIG from './build/index.main.mjs';
       return amt;
     },
   };
-  const childP = MULTISIG.Child(stdlib, childCtc, childInteract);
+  const childP = backend.Child(stdlib, childCtc, childInteract);
 
   await parentP;
   await childP;
