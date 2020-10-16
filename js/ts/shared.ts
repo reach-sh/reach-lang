@@ -448,6 +448,8 @@ const kek = (arg: any): string | Uint8Array => {
     } else {
       return toUtf8Bytes(arg);
     }
+  } else if (typeof(arg) === 'boolean') {
+    return kek(arg ? 1 : 0);
   } else if (typeof(arg) === 'number') {
     return '0x' + bigNumberToHex(arg, digestWidth);
   } else if (isBigNumber(arg)) {
