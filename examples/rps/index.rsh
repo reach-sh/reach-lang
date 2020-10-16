@@ -57,7 +57,7 @@ function fair_game(handA, handB, outcome) {
   fair_for_player(handB, (outcome == B_WINS)); }
 
 // Protocol
-const DELAY = 10; // in blocks
+const DELAY = 20; // in blocks
 
 const Player =
       { ...hasRandom,

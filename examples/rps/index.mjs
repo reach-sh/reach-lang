@@ -51,7 +51,7 @@ import * as RPS from './build/index.main.mjs';
 
   console.log(`\nRunning game that times out\n`);
   const delayHand = async () => {
-    for ( let i = 0; i < 10; i++ ) {
+    for ( let i = 0; i < 20; i++ ) {
       console.log(`\tAlice takes her sweet time...`);
       await stdlib.wait(1);
     }
