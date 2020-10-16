@@ -118,6 +118,7 @@ export const transfer = async (
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+  stdlib.setAddressUnwrapper((x: any): string => x.address ? x.address : x);
   const { address } = networkAccount;
 
   const attach = (

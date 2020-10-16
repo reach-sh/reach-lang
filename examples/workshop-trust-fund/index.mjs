@@ -40,7 +40,7 @@ const runDemo = async (delayReceiver, delayFunder) => {
     backend.Funder(stdlib, ctcFunder, {
       ...common('Funder', fDelay),
       getParams: () => ({
-        receiverAddr: receiver.networkAccount.address,
+        receiverAddr: receiver.networkAccount,
         payment: stdlib.parseCurrency(10),
         maturity: MATURITY,
         refund: REFUND,
