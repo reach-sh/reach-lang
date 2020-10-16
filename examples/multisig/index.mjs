@@ -11,12 +11,12 @@ import * as backend from './build/index.main.mjs';
   console.log(`Parent deploys the contract.`);
   const parentInteract = {
     allowance: () => {
-      const amt = stdlib.parseCurrency(50);
+      const amt = stdlib.parseCurrency(64);
       console.log(`Parent deposits ${stdlib.formatCurrency(amt)}`);
       return amt;
     },
     approve: (howMuch, balance) => {
-      const ans = stdlib.le(balance, smallest) || stdlib.lt(howMuch, stdlib.div(balance, 2));
+      const ans = stdlib.le(balance, smallest) || stdlib.le(howMuch, stdlib.div(balance, 2));
       console.log(`Parent answers ${ans} to request for ${stdlib.formatCurrency(howMuch, 4)}`);
       return ans;
     },
@@ -25,16 +25,16 @@ import * as backend from './build/index.main.mjs';
 
   const child = await stdlib.newTestAccount(startingBalance);
   const childCtc = child.attach(backend, parentCtc.getInfo());
-  const UNITS = 8;
   const childInteract = {
     request: (balance) => {
-      const amt = stdlib.le(balance, smallest) ? balance : stdlib.mul(
-        stdlib.bigNumberify(Math.floor(Math.random() * UNITS)),
-        stdlib.div(balance, stdlib.bigNumberify(UNITS))
-      );
+      const mid =
+        stdlib.div(balance, stdlib.bigNumberify(2));
+      const amt =
+        stdlib.le(balance, smallest) ? balance :
+        Math.random() <= 0.5 ? mid : mid.add(1);
       console.log(
-        `Child asks for ${stdlib.formatCurrency(amt, 4)}` +
-          ` out of ${stdlib.formatCurrency(balance, 4)}`
+        `Child asks for ${stdlib.formatCurrency(amt, 4)} ` +
+        `out of ${stdlib.formatCurrency(balance, 4)}`
       );
       return amt;
     },
