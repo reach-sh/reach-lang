@@ -1,7 +1,8 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
+  const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
@@ -24,10 +25,10 @@ import * as backend from './build/index.main.mjs';
       amt: stdlib.parseCurrency(25),
       getRelay: async () => {
         console.log(`Alice creates a Relay account.`);
-        const accRelay = await stdlib.newTestAccount(stdlib.parseCurrency(0));
+        const accRelay = await stdlib.newTestAccount(stdlib.minimumBalance);
         console.log(`Alice shares it with Bob outside of the network.`);
         accRelayProvide(accRelay);
-        return accRelay.networkAccount.address;
+        return accRelay.networkAccount;
       },
     }),
     (async () => {
@@ -41,7 +42,7 @@ import * as backend from './build/index.main.mjs';
       return backend.Relay(stdlib, ctcRelay, {
         getBob: async () => {
           console.log(`Bob, acting as the Relay, gives his information.`);
-          return accBob.networkAccount.address;
+          return accBob.networkAccount;
         },
       });
     })(),

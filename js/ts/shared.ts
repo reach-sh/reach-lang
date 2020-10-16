@@ -208,10 +208,17 @@ export const T_Bytes: TyContract<string> = {
 export const T_Digest: TyContract<BigNumber> =
   Object.assign({}, T_UInt, { name: 'Digest' });
 
+let addressUnwrapper = (x: any): string => x;
+export const setAddressUnwrapper =
+  (f: (x:any) => string) => { addressUnwrapper = f; };
 // TODO: use a wrapper type for canonicalized form
 export const T_Address: TyContract<string> = {
   name: 'Address',
   canonicalize: (x: any): string => {
+    debug(`T_Address.canonicalize(${JSON.stringify(x)}) before unwrap`);
+    const mx = addressUnwrapper(x);
+    if ( mx ) { x = mx; }
+    debug(`T_Address.canonicalize(${JSON.stringify(x)}) after unwrap`);
     if (typeof x !== 'string') {
       throw Error(`Address must be a string, but got: ${JSON.stringify(x)}`);
     }
@@ -228,6 +235,8 @@ export const T_Address: TyContract<string> = {
   unmunge: (v: string): string => v,
   defaultValue: '0x' + Array(64).fill('0').join(''),
 };
+export const addressEq = (x:any, y:any): boolean =>
+  bytesEq(T_Address.canonicalize(x), T_Address.canonicalize(y));
 
 export const T_Array = <T>(ctc: TyContract <T> , sz: number): TyContract<Array<T>> => {
   // TODO: check ctc, sz for sanity
@@ -422,7 +431,7 @@ export function protect <T>(ctc: TyContract<T>, v: any, ai: any = null) {
   try {
     return ctc.canonicalize(v);
   } catch (e) {
-    console.log(`Protect failed: expected ${ctc.name} but got ${JSON.stringify(v)}${format_ai(ai)}`);
+    console.log(`Protect failed: expected ${ctc.name} but got ${JSON.stringify(v)} ${format_ai(ai)}`);
     throw e;
   }
 }
@@ -445,10 +454,12 @@ const kek = (arg: any): string | Uint8Array => {
     return '0x' + bigNumberToHex(arg, digestWidth);
   } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array') {
     return arg;
+  } else if (arg && arg.constructor && arg.constructor.name == 'Buffer') {
+    return '0x' + arg.toString('hex');
   } else if (Array.isArray(arg)) {
     return ethers.utils.concat(arg.map((x) => ethers.utils.arrayify(kek(x))));
   } else {
-    throw Error(`Can't kek this: ${arg}`);
+    throw Error(`Can't kek this: ${JSON.stringify(arg)}`);
   }
 };
 
@@ -460,9 +471,9 @@ export const hexToString = toUtf8String;
 export const digest = (...args: Array<any>) => {
   debug(`digest(${JSON.stringify(args)}) =>`);
   const kekCat = kek(args);
-  debug(`digest(${JSON.stringify(args)}) => ${JSON.stringify(kekCat)}`);
+  debug(`digest(${JSON.stringify(args)}) => internal(${hexlify(kekCat)})`);
   const r = ethers.utils.keccak256(kekCat);
-  debug(`keccak(${JSON.stringify(args)}) => internal(${JSON.stringify(kekCat)}) => ${JSON.stringify(r)}`);
+  debug(`keccak(${JSON.stringify(args)}) => internal(${hexlify(kekCat)} => ${JSON.stringify(r)}`);
   return r;
 };
 
@@ -482,7 +493,6 @@ export const bigNumberToHex = (u: num, size: number = 32) => {
 export const bytesEq = (x: any, y: any): boolean =>
   hexOf(x) === hexOf(y);
 export const digestEq = bytesEq;
-export const addressEq = bytesEq;
 
 export const randomUInt = (): BigNumber =>
   hexToBigNumber(byteArrayToHex(crypto.randomBytes(digestWidth)));

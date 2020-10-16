@@ -18,6 +18,7 @@ import {
   isBigNumber,
   digest,
   lt,
+  setAddressUnwrapper,
   TyContract,
   IContract,
   IRecv,
@@ -322,6 +323,8 @@ const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+  setAddressUnwrapper((x: any): string => x.address ? x.address : x);
+
   // XXX networkAccount MUST be a Wallet or Signer to deploy/attach
   const provider = await getProvider();
   const address = await getAddr({networkAccount});
@@ -959,6 +962,8 @@ export const atomicUnit = 'WEI';
 export function parseCurrency(amt: CurrencyAmount): BigNumber {
   return bigNumberify(ethers.utils.parseUnits(amt.toString(), 'ether'));
 }
+export const minimumBalance: BigNumber =
+  parseCurrency(0);
 
 const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
   argsMay: init ? Some(init.args) : None,

@@ -318,6 +318,8 @@ export const atomicUnit = 'FAKE';
 export function parseCurrency(amt: CurrencyAmount): BigNumber {
   return stdlib.bigNumberify(amt.toString());
 }
+export const minimumBalance: BigNumber =
+  parseCurrency(0);
 
 /**
  * @description  Format currency by network

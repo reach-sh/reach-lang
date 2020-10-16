@@ -299,7 +299,7 @@ See the table below for Reach types and their corresponding JavaScript represent
  UInt      => 'BigNumber' or 'number'
  Bytes     => 'string'
  Digest    => 'BigNumber'
- Address   => 'string'
+ Address   => NetworkAccount
  Array     => array
  Tuple     => array
  Object    => object
@@ -393,10 +393,11 @@ Integer comparisons on @reachin{UInt}.
 
 The following exports are for dealing with network tokens.
 
-@(mint-define! '("standardUnit") '("atomicUnit") '("parseCurrency") '("formatCurrency"))
+@(mint-define! '("standardUnit") '("atomicUnit") '("minimumBalance") '("parseCurrency") '("formatCurrency"))
 @js{
  standardUnit // string
  atomicUnit // string
+ minimumBalance // atomicUnitAmount
  parseCurrency(standardUnitAmount) => atomicUnitAmount
  formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
 }
@@ -407,6 +408,8 @@ For example, the @tech{standard unit} of Ethereum is ETH.
 An @deftech{atomic unit} is the smallest unit of measure for the @tech{standard unit}.
 For example, the atomic unit of Ethereum is WEI.
 An @tech{atomic unit} is @deftech{atomic}, which means it cannot be divided into smaller units.
+
+Some @tech{consensus networks}, typicaly those with proof-of-stake, have minimum balances on their accounts, so this is exposed as @jsin{minimumBalance}.
 
 Because there are 1,000,000,000,000,000,000 WEI in 1 ETH,
 BigNumber is used to represet values in WEI.
