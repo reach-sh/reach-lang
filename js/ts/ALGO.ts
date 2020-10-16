@@ -367,7 +367,6 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
 
 const ui8z = new Uint8Array();
 
-// XXX I'm using this to inspect the msgpack struct, but maybe just do a round-trip through encode/decode and see what I get?
 const base64ify = (x: any): String => Buffer.from(x).toString('base64');
 
 const format_failed_request = (e: any) => {
@@ -466,7 +465,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     debug(`${shad}: attach ${ApplicationID} created at ${lastRound}`);
 
     const bin_comp = await compileFor(bin, ApplicationID);
-    // XXX check that the application bytecode is what we expect
+    // XXX call verify
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
@@ -546,7 +545,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         }
       });
 
-      debug(`${dhead} --- PREPARE`); // XXX display safe_args usefully
+      debug(`${dhead} --- PREPARE: ${JSON.stringify(safe_args)}`);
       const handler_with_args =
         algosdk.makeLogicSig(handler.result, safe_args);
       debug(`${dhead} --- PREPARED`); // XXX display handler_with_args usefully, like with base64ify toBytes
@@ -618,7 +617,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           res = await sendAndConfirm( txns_s, txnAppl );
         } catch (e) {
           if ( e.type == "sendRawTransaction" ) {
-            // XXX when this fails, it is dropping the lsig txn
             throw Error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);
           } else {
             throw Error(`${dhead} --- FAIL:\n${JSON.stringify(e)}`);
@@ -668,7 +666,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
         const txn = await doQuery(dhead, query);
         if ( ! txn ) {
-          // XXX perhaps wait until a new round has happened
+          // XXX perhaps wait until a new round has happened using wait
           await Timeout.set(2000);
           continue;
         }
@@ -845,7 +843,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
 const getBalanceAt = async (addr: Address, round: Round): Promise<number> => {
   void(round);
-  // FIXME: Don't ignore round, but this requires 'the next indexer version' (Max on 2020/05/05)
+  // XXX use indexer LookupAccountById(addr).round(round)
   return (await (await getAlgodClient()).accountInformation(addr).do()).amount;
 };
 

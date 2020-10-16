@@ -60,6 +60,8 @@ It uses the Algorand @tt{indexer} version 2 to lookup and monitor @tech{publicat
 Algorand uses the Keccak256 algorithm to perform @tech{digest}s.
 Its @tech{bit width} is 64-bits.
 
+This connector does not support different @reachin{deployMode}s and treats them all as @reachin{constructor}.
+
 The connector provides a binding named @reachin{ALGO} to
 @tech{backends}.
 

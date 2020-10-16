@@ -797,8 +797,6 @@ compile_algo disp pl = do
   resr <- newIORef mempty
   let sHandlers = hm
   sFailedR <- newIORef False
-  when (plo_deployMode == DM_firstMsg) $ do
-    writeIORef sFailedR True
   let shared = Shared {..}
   let addProg lab t = do
         modifyIORef resr (M.insert lab $ CI_Text t)
@@ -846,6 +844,7 @@ compile_algo disp pl = do
     code "txn" ["OnCompletion"]
     code "int" ["UpdateApplication"]
     eq_or_fail
+    --- XXX if firstMsg mode, then paste a version of handler 1 right here
     app_global_put keyState $ do
       cstate HM_Set []
     app_global_put keyLast $ do
@@ -956,6 +955,7 @@ compile_algo disp pl = do
   res0 <- readIORef resr
   sFailed <- readIORef sFailedR
   let res1 = M.insert "unsupported" (CI_Bool sFailed) res0
+  -- let res2 = M.insert "deployMode" (CI_Text $ T.pack $ show plo_deployMode) res1
   return $ CI_Obj res1
 
 connect_algo :: Connector
