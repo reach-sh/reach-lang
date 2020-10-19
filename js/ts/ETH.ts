@@ -726,8 +726,8 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
     // TODO: allow the user to set the faucet via mnemnonic.
     return await getDefaultAccount();
   } else if (networkDesc.type === 'window') {
-    // @ts-ignore
-    if (window.ethereum.chainId === '0xNaN') {
+    // @ts-ignore // 0x539 = 1337
+    if (window.ethereum.chainId === '0xNaN' || window.ethereum.chainId == '0x539') {
       // XXX this is a hacky way of checking if we're on a devnet
       // XXX only localhost:8545 is supported
       const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
