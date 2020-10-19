@@ -132,7 +132,12 @@ function appendRshFileAssociation(){
 		} catch {
 			parseJson = {}
 		}
-		parseJson["files.associations"] = { "*.rsh" : "javascript" };
+		var fileAssoc = parseJson["files.associations"]
+		if (fileAssoc == undefined) {
+			parseJson["files.associations"] = { "*.rsh" : "javascript" }
+		} else {
+			parseJson["files.associations"]["*.rsh"] = "javascript";
+		}
 		fs.writeFile('.vscode/settings.json',JSON.stringify(parseJson),function(err: any){
 		  if(err) throw err;
 		})
