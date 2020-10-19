@@ -107,20 +107,38 @@ connection.onInitialize((params: InitializeParams) => {
 	}
 
 	// Inject association for file type
-	exec("mkdir -p .vscode && touch .vscode/settings.json && echo '{\"files.associations\":{\"*.rsh\":\"javascript\"}}' > .vscode/settings.json", (error: { message: any; }, stdout: any, stderr: any) => {
+	exec("mkdir -p .vscode", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
-			connection.console.log(`TOUCH VSCODE error: ${error.message}`);
+			connection.console.log(`MKDIR VSCODE error: ${error.message}`);
 			return;
 		}
 		if (stderr) {
-			connection.console.log(`TOUCH VSCODE  stderr: ${stderr}`);
+			connection.console.log(`MKDIR VSCODE  stderr: ${stderr}`);
 			return;
 		}
-		connection.console.log(`TOUCH VSCODE stdout: ${stdout}`);
+		connection.console.log(`MKDIR VSCODE stdout: ${stdout}`);
+		appendRshFileAssociation();
 	});
 
 	return result;
 });
+
+function appendRshFileAssociation(){
+
+	fs.readFile('.vscode/settings.json',function(err: any,content: string){
+		var parseJson;
+		try {
+			parseJson = JSON.parse(content);
+		} catch {
+			parseJson = {}
+		}
+		parseJson["files.associations"] = { "*.rsh" : "javascript" };
+		fs.writeFile('.vscode/settings.json',JSON.stringify(parseJson),function(err: any){
+		  if(err) throw err;
+		})
+	})
+
+  }
 
 connection.onInitialized(() => {
 	if (hasConfigurationCapability) {
