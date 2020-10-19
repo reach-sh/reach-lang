@@ -359,8 +359,8 @@ CallStack (from HasCallStack):
 				}
 			}
 
-			start = { line: 0, character: 0 }; // put generic error at the top
-			end = { line: 1, character: 0 };
+			start = { line: 0, character: 0 }; // generic error highlights everything
+			end = { line: 9999, character: 9999 };
 		} else {
 			for (var i=4; i<tokens.length; i++) { // start after line/pos
 				actualMessage += tokens[i];
