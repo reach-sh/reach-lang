@@ -41,11 +41,16 @@ export function activate(context: ExtensionContext) {
 
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
-		// Register the server for js/ts documents
-		documentSelector: [{ scheme: 'file', language: 'javascript' }, { scheme: 'file', language: 'typescript' }],
+		// Register the server for Reach .rsh documents
+		documentSelector: [
+			{
+			  pattern: '**/*.rsh',
+			  scheme: 'file'
+			}
+		],
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
-			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+			fileEvents: workspace.createFileSystemWatcher('**/*.rsh')
 		}
 	};
 
