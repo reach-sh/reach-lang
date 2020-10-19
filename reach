@@ -636,7 +636,13 @@ do_unscaffold () {
 
 do_down () {
   # TODO: not duplicate so much from do_run
+  MAKEFILE=Makefile
+  DOCKERFILE=Dockerfile
+  PACKAGE_JSON=package.json
+  DOCKER_COMPOSE_YML=docker-compose.yml
+
   # Note: Makefile excluded from this check
+  NONE_EXIST=true
   if [ -f "$DOCKERFILE" ] || [ -f "$PACKAGE_JSON" ] || [ -f "$DOCKER_COMPOSE_YML" ] ; then
     NONE_EXIST=false
   fi
@@ -658,6 +664,7 @@ do_down () {
     fi
   }
 
+  # if do_scaffold ran, it changed $MAKEFILE
   reach_make_f () {
       reach_make -f "$MAKEFILE" "$@"
   }
