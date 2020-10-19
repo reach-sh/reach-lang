@@ -38,6 +38,12 @@ export function activate(context: ExtensionContext) {
 			options: debugOptions
 		}
 	};
+	
+	/* this doesn't work
+	// settings.json configuration
+	const config = workspace.getConfiguration('settings');
+	config.update("files.associations", { "*.rsh" : "javascript" }, false);
+	*/
 
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {

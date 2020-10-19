@@ -60,6 +60,8 @@ const REACH_TEMP_INDEX_FILE = ".index.rsh.temp";
 
 const { exec } = require("child_process");
 
+const fs = require('fs')
+
 connection.onInitialize((params: InitializeParams) => {
 	let capabilities = params.capabilities;
 
@@ -103,6 +105,20 @@ connection.onInitialize((params: InitializeParams) => {
 			}
 		};
 	}
+
+	// Inject association for file type
+	exec("mkdir -p .vscode && touch .vscode/settings.json && echo '{\"files.associations\":{\"*.rsh\":\"javascript\"}}' > .vscode/settings.json", (error: { message: any; }, stdout: any, stderr: any) => {
+		if (error) {
+			connection.console.log(`TOUCH VSCODE error: ${error.message}`);
+			return;
+		}
+		if (stderr) {
+			connection.console.log(`TOUCH VSCODE  stderr: ${stderr}`);
+			return;
+		}
+		connection.console.log(`TOUCH VSCODE stdout: ${stdout}`);
+	});
+
 	return result;
 });
 
@@ -183,7 +199,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let diagnostics: Diagnostic[] = [];
 
 	// Download the Reach shell script if it does not exist
-	const fs = require('fs')
 	const path = './reach'
 	try {
 		if (fs.existsSync(path)) {
