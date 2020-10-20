@@ -113,9 +113,17 @@ function registerCommands(context: ExtensionContext) {
 
 		//window.showInformationMessage("dirname:"+workspace.rootPath);
 
-		fs.readFile(workspace.rootPath + '/build/index.main.mjs',async function(err: any,content: string){
-			await env.clipboard.writeText("ABC"); 
-			window.showInformationMessage(await env.clipboard.readText())
+		fs.readFile(workspace.rootPath + '/build/index.main.mjs',async function(err: any, text: string){
+			
+			var pattern = /ABI: `[\s\S]*\]`/g;
+			var m;
+			while ((m = pattern.exec(text))) {
+				m[0] = m[0].substring(6, m[0].length - 1)
+				await env.clipboard.writeText(m[0]); 
+				window.showInformationMessage(await env.clipboard.readText())
+			}
+
+
 			//env.clipboard.writeText(content).then(function(resp){ window.showInformationMessage("Copied to clipboard!"); })
 			
 		})
