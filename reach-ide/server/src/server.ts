@@ -613,7 +613,8 @@ function isReachKeyword(word: string) : boolean {
 	'if', 'switch', 'array', 'Tuple.length', 'Array.length', 'length',
 	'Tuple.set', 'Array.set', 'set',
 	'Array.iota', 'Array.concat', 'concat', 'Array.empty', 'Array.zip', 'zip', 'Array.map', 'map', 'Array.reduce', 'reduce', 'Array.forEach', 'forEach', 'Array.replicate',
-	'Object.set', 'Data', 'Maybe', 'makeEnum', 'assert', 'forall', 'possible', 'digest', 'balance', 'implies', 'ensure', 'hasRandom' ];
+	'Object.set', 'Data', 'Maybe', 'makeEnum', 'assert', 'forall', 'possible', 'digest', 'balance', 'implies', 'ensure', 'hasRandom',
+	'Null', 'Bool', 'UInt', 'Bytes', 'Digest', 'Address', 'Fun', 'Tuple', 'Object', 'Array', 'Data' ];
 	for (var i=0; i < reachKeywords.length; i++) {
 		if (word == reachKeywords[i]) {
 			return true;
@@ -707,17 +708,18 @@ function getReachKeywordMarkdown(word: string) : string {
 		buf = "##### ensure\r\n\r\nensure( pred, x )\r\n\r\nMakes a\u00A0[static assertion](https:\/\/docs.reach.sh\/ref-model.html#%28tech._static._assertion%29)\u00A0that\u00A0`pred(x)`\u00A0is\u00A0`[true](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28true%29%29%29)`\u00A0and returns\u00A0`x`.";
 	} else if (word == 'hasRandom') {
 		buf = "##### hasRandom\r\n\r\nhasRandom\r\n\r\nA\u00A0[participant interact interface](https:\/\/docs.reach.sh\/ref-programs-module.html#%28tech._participant._interact._interface%29)\u00A0which specifies\u00A0random\u00A0as a function that takes no arguments are returns an unsigined integer of\u00A0bit width\u00A0bits.";
-	} else if (word == '') {
-		buf = "";
-	} else if (word == '') {
-		buf = "";
-	} else if (word == '') {
-		buf = "";
-	} else if (word == '') {
-		buf = "";
-	} else if (word == '') {
-		buf = "";
+	} else if (word == 'Null' || word == 'Bool' || word == 'UInt' || word == 'Bytes' || word == 'Digest' || word == 'Address' || word == 'Fun' || word == 'Tuple' || word == 'Object' || word == 'Array' || word == 'Data') {
+		buf = "##### Types\r\n\r\nReach\'s\u00A0types are represented with programs by the following identifiers and constructors:\r\n\r\n-   `Null`.\r\n\r\n-   `Bool`, which denotes a boolean.\r\n\r\n-   `UInt`, which denotes an unsigned integer.\u00A0`[UInt](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29).max`\u00A0is the largest value that may be assigned to a\u00A0`[UInt](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29)`.\r\n\r\n-   `Bytes`, which denotes a string of bytes.\r\n\r\n-   `Digest`, which denotes a\u00A0[digest](https:\/\/docs.reach.sh\/ref-model.html#%28tech._digest%29).\r\n\r\n-   `Address`, which denotes an\u00A0[account](https:\/\/docs.reach.sh\/ref-model.html#%28tech._account%29)\u00A0[address](https:\/\/docs.reach.sh\/ref-model.html#%28tech._addres%29).\r\n\r\n-   `Fun([Domain_0, ..., Domain_N], Range)`, which denotes a function type.\r\n\r\n-   `Tuple(Field_0, ..., FieldN)`, which denotes a tuple. (Refer to\u00A0[Tuples](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28part._ref-programs-tuples%29)\u00A0for constructing tuples.)\r\n\r\n-   `Object({key_0: Type_0, ..., key_N: Type_N})`, which denotes an object. (Refer to\u00A0[Objects](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28part._ref-programs-objects%29)\u00A0for constructing objects.)\r\n\r\n-   `Array(ElemenType, size)`, which denotes a statically-sized array. (Refer to\u00A0[array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28part._ref-programs-arrays%29)\u00A0for constructing arrays.)\r\n\r\n-   `Data({variant_0: Type_0, ..., variant_N: Type_N})`, which denotes a\u00A0[tagged union](https:\/\/en.wikipedia.org\/wiki\/Tagged_union)\u00A0(or\u00A0sum type). (Refer to\u00A0[Data](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28part._ref-programs-data%29)\u00A0for constructing\u00A0[data instances](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28tech._data._instance%29).)\r\n\r\n`[Object](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Object%29%29%29)`\u00A0and\u00A0`[Data](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Data%29%29%29)`\u00A0are commonly used to implemented\u00A0[algebraic data types](https:\/\/en.wikipedia.org\/wiki\/Algebraic_data_type)\u00A0in Reach.\r\n\r\ntypeOf(x)  \/\/ type\r\nisType(t) \/\/ Bool\r\n\r\nThe\u00A0`[typeOf](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28type.Of%29%29%29)`\u00A0primitive function is the same as\u00A0`[typeof](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28typeof%29%29%29)`: it returns the type of its argument. The\u00A0`[isType](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28is.Type%29%29%29)`\u00A0function returns\u00A0`[true](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28true%29%29%29)`\u00A0if its argument is a type. Any expression satisfying\u00A0`[isType](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28is.Type%29%29%29)`\u00A0is compiled away and does not exist at runtime.";
 	}
+	/* else if (word == '') {
+		buf = "";
+	} else if (word == '') {
+		buf = "";
+	} else if (word == '') {
+		buf = "";
+	} else if (word == '') {
+		buf = "";
+	}*/
 	return buf;
 }
 
