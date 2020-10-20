@@ -513,7 +513,7 @@ connection.onCompletion(
 				"    [['Alice', {}], ['Bob', {}]],\n" +
 				"    (A, B) => {\n" +
 				"	   exit(); });";
-			insertSnippet(_textDocumentPosition, snippet, completionItems, undefined, "Reach scaffolding", 0);
+			insertSnippet(_textDocumentPosition, snippet, completionItems, undefined, "Reach template", 0);
 		}
 		
 		return completionItems;
@@ -557,6 +557,7 @@ function insertSnippet(_textDocumentPosition: TextDocumentPositionParams, snippe
 // the completion list.
 connection.onCompletionResolve(
 	async (item: CompletionItem): Promise<CompletionItem> => {
+		item.documentation = item.textEdit?.newText;
 		return item;
 	}
 );
