@@ -67,11 +67,22 @@ render_obj env =
   where
     render_p (k, oa) = pretty k <+> "=" <+> pretty oa
 
+instance Pretty DLConstant where
+  pretty = \case
+    DLC_UInt_max -> "UInt.max"
+
+instance Pretty DLLiteral where
+  pretty = \case
+    DLL_Null -> "null"
+    DLL_Bool b -> if b then "#t" else "#f"
+    DLL_Int _ i -> viaShow i
+    DLL_Bytes bs -> dquotes (viaShow bs)
+
 instance Pretty DLArg where
   pretty = \case
     DLA_Var v -> pretty v
-    DLA_Constant c -> viaShow c
-    DLA_Literal c -> viaShow c
+    DLA_Constant c -> pretty c
+    DLA_Literal c -> pretty c
     DLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLA_Tuple as))
     DLA_Tuple as -> brackets $ render_das as
     DLA_Obj env -> render_obj env

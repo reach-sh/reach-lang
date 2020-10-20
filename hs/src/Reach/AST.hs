@@ -493,7 +493,13 @@ instance IsPure DLExpr where
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
     DLE_Digest {} -> True
-    DLE_Claim {} -> False
+    DLE_Claim _ _ ct _ _ ->
+      case ct of
+        CT_Assert -> True
+        CT_Possible -> True
+        CT_Assume -> False
+        CT_Require -> False
+        CT_Unknowable {} -> True
     DLE_Transfer {} -> False
     DLE_Wait {} -> False
     DLE_PartSet {} -> False

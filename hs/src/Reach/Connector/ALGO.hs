@@ -29,10 +29,10 @@ import Safe (atMay)
 sb :: SrcLoc
 sb = srcloc_builtin
 
-typeArrayType :: HasCallStack => DLArg -> SLType
-typeArrayType a =
+typeArray :: HasCallStack => DLArg -> (SLType, Integer)
+typeArray a =
   case argTypeOf a of
-    T_Array t _ -> t
+    T_Array t sz -> (t, sz)
     _ -> impossible $ "should be array"
 
 typeTupleTypes :: HasCallStack => DLArg -> [SLType]
@@ -96,8 +96,9 @@ type TEALs = DL.DList TEAL
 optimize :: [LT.Text] -> [LT.Text]
 optimize = \case
   [] -> []
-  --- FIXME generalize
+  -- FIXME generalize
   "b alone" : "alone:" : l -> "alone:" : l
+  -- XXX store X, load X -> dup, store X
   "btoi" : "itob" : l -> optimize l
   "itob" : "btoi" : l -> optimize l
   x : l -> x : optimize l
@@ -136,18 +137,6 @@ output :: TEAL -> App ()
 output t = do
   Env {..} <- ask
   liftIO $ modifyIORef eOutputR (flip DL.snoc t)
-
-outputs :: TEALs -> App ()
-outputs ts = do
-  Env {..} <- ask
-  liftIO $ modifyIORef eOutputR (<> ts)
-
-freeze :: App a -> App (App a)
-freeze m = do
-  eOutputR' <- liftIO $ newIORef mempty
-  ans <- local (\e -> e { eOutputR = eOutputR' }) m
-  ts <- liftIO $ readIORef eOutputR'
-  return $ outputs ts >> return ans
 
 code :: LT.Text -> [LT.Text] -> App ()
 code f args = output $ code_ f args
@@ -308,7 +297,7 @@ ca = \case
   DLA_Literal c -> cl c
   DLA_Array t as -> cconcatbs $ map (\a -> (t, ca a)) as
   DLA_Tuple as -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
-  DLA_Obj {} -> xxx "obj"
+  DLA_Obj m -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
   DLA_Data {} -> xxx "data"
   DLA_Interact {} -> impossible "consensus interact"
 
@@ -333,6 +322,19 @@ cprim = \case
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   IF_THEN_ELSE -> \case
+    [ be, DLA_Literal (DLL_Bool True), fe ] -> do
+      ca be
+      ca fe
+      op "||"
+    [ be, DLA_Literal (DLL_Bool False), fe ] -> do
+      ca be
+      ca fe
+      op "&&"
+    [ be, te, DLA_Literal (DLL_Bool False) ] -> do
+      ca be
+      op "!"
+      ca te
+      op "||"
     [ be, te, fe ] -> do
       labf <- freshLabel
       labj <- freshLabel
@@ -398,9 +400,9 @@ ce = \case
   DLE_Impossible at msg -> expect_throw at msg
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> do
-    ca aa
-    let t = typeArrayType aa
+    let (t, _) = typeArray aa
     let tsz = typeSizeOf t
+    ca aa
     case ia of
       DLA_Literal (DLL_Int _ ii) -> do
         let start = ii * tsz
@@ -415,20 +417,63 @@ ce = \case
         op "+"
         op "substring3"
     cfrombs t
-  DLE_ArraySet {} -> xxx "array set"
+  DLE_ArraySet at aa ia va -> do
+    let (t, alen) = typeArray aa
+    let tsz = typeSizeOf t
+    let (before, after) =
+          case ia of
+            DLA_Literal (DLL_Int _ ii) -> (b, a)
+              where start = ii * tsz
+                    end = start + tsz
+                    b = csubstring at 0 start
+                    a = csubstring at end (alen * tsz)
+            _ -> (b, a)
+              where
+                b = do
+                  cl $ DLL_Int sb 0
+                  cl $ DLL_Int sb tsz
+                  ca ia
+                  op "*"
+                  op "substring3"
+                a = do
+                  cl $ DLL_Int sb tsz
+                  op "dup"
+                  ca ia
+                  op "*"
+                  op "+"
+                  cl $ DLL_Int sb (alen * tsz)
+                  op "substring3"
+    ca aa
+    op "dup"
+    -- [ aa, aa, ... ]
+    before
+    -- [ before, aa, ... ]
+    ca va
+    ctobs t
+    -- [ va, before, aa, ... ]
+    op "concat"
+    -- [ before', aa, ... ]
+    swap
+    -- [ aa, before', ... ]
+    after
+    -- [ after, before', ... ]
+    swap
+    -- [ before', after, ... ]
+    op "concat"
+    -- [ aa', ... ]
   DLE_ArrayConcat {} -> xxx "array concat"
   DLE_ArrayZip {} -> xxx "array zip"
   DLE_TupleRef at ta idx -> do
-    ca ta
     let ts = typeTupleTypes ta
     let (t, start, end) = computeSubstring ts idx
+    ca ta
     csubstring at start end
     cfrombs t
   DLE_ObjectRef at oa f -> do
-    ca oa
     let fts = typeObjectTypes oa
     let fidx = fromIntegral $ fromMaybe (impossible "bad field") $ findIndex ((== f) . fst) fts
     let (t, start, end) = computeSubstring (map snd fts) fidx
+    ca oa
     csubstring at start end
     cfrombs t
   DLE_Interact {} -> impossible "consensus interact"
@@ -519,16 +564,15 @@ ct = \case
     label false_lab
     ct ft
   CT_Switch {} -> xxx "switch"
-  CT_Jump _ which _ (DLAssignment asnm) -> do
+  CT_Jump at which _ (DLAssignment asnm) -> do
     Env {..} <- ask
     let Shared {..} = eShared
-    asnm' <- mapM (freeze . ca) asnm
-    let eLets' = M.union asnm' eLets
+    let wrap1 t (v, a) = CT_Com $ PL_Let at PL_Many v (DLE_Arg at a) t
+    let wrap t = foldl' wrap1 t (M.toList asnm)
     case M.lookup which sHandlers of
       Just (C_Loop _ _ _ t) ->
-        local (\e -> e { eWhich = which
-                       , eLets = eLets' }) $
-          ct t
+        local (\e -> e { eWhich = which }) $
+          ct $ wrap t
       _ ->
         impossible "bad jump"
   CT_From _ msvs -> do
@@ -665,11 +709,20 @@ std_footer = do
   cl $ DLL_Int sb 1
   op "return"
 
+swap :: App ()
+swap = do
+  let z = [ texty (0 :: Int) ]
+  let o = [ texty (1 :: Int) ]
+  code "store" z
+  code "store" o
+  code "load" z
+  code "load" o
+
 runApp :: Shared -> Int -> Lets -> App () -> IO TEALs
 runApp eShared eWhich eLets m = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
-  let eHP = 0
+  let eHP = 2 --- We reserve two slots for "swap"
   let eSP = 255
   eTxnsR <- newIORef $ txnFromContract0 - 1
   let eVars = mempty
@@ -807,8 +860,10 @@ compile_algo disp pl = do
       Nothing -> return (CI_Null, return ())
       Just ht -> do
         let lab = "m" <> show hi
+        let t = render ht
+        disp lab t
         return
-          ( CI_Text (render ht)
+          ( CI_Text t
           , do
               code "gtxn" [texty txnFromHandler, "Sender"]
               code "byte" [template $ LT.pack lab]
