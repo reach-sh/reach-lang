@@ -23,6 +23,7 @@ import Reach.Type
 import Reach.Util
 import Reach.Pretty()
 import Safe (atMay)
+import Text.Read
 
 -- General tools that could be elsewhere
 
@@ -80,27 +81,45 @@ type ScratchSlot = Word8
 
 type TxnIdx = Word8 --- FIXME actually only 16 IIRC
 
-type TEAL = LT.Text
+type TEAL = [LT.Text]
 
 code_ :: LT.Text -> [LT.Text] -> TEAL
-code_ fun args = LT.unwords $ fun : args
+code_ fun args = fun : args
 
 label_ :: LT.Text -> TEAL
-label_ lab = lab <> ":"
+label_ lab = [lab <> ":"]
 
 comment_ :: LT.Text -> TEAL
-comment_ t = "// " <> t
+comment_ t = ["//", t]
 
 type TEALs = DL.DList TEAL
 
-optimize :: [LT.Text] -> [LT.Text]
+optimize :: [TEAL] -> [TEAL]
 optimize = \case
   [] -> []
   -- FIXME generalize
-  "b alone" : "alone:" : l -> "alone:" : l
+  ["b", "alone"] : ["alone:"] : l -> ["alone:"] : l
   -- XXX store X, load X -> dup, store X
-  "btoi" : "itob" : l -> optimize l
-  "itob" : "btoi" : l -> optimize l
+  ["btoi"] : ["itob"] : l -> optimize l
+  ["itob"] : ["btoi"] : l -> optimize l
+  a@["substring",s0, _] : b@["substring",s1,e1] : l ->
+    case mse of
+      Just (s2, e2) ->
+        optimize $ ["substring",s2,e2] : l
+      Nothing ->
+        a : (optimize $ b : l)
+    where
+      parse :: LT.Text -> Maybe Integer
+      parse = readMaybe . LT.unpack
+      mse = do
+        s0n <- parse s0
+        s1n <- parse s1
+        e1n <- parse e1
+        let s2n = s0n + s1n
+        let e2n = s2n + e1n
+        case s2n < 256 && e2n < 256 of
+          True -> return $ ( texty s2n, texty e2n )
+          False -> mempty
   x : l -> x : optimize l
 
 render :: TEALs -> T.Text
@@ -108,7 +127,7 @@ render ts = tt
   where
     tt = LT.toStrict lt
     lt = LT.unlines lts
-    lts = "#pragma version 2" : (optimize $ DL.toList ts)
+    lts = "#pragma version 2" : (map LT.unwords $ optimize $ DL.toList ts)
 
 data Shared = Shared
   { sHandlers :: M.Map Int CHandler
