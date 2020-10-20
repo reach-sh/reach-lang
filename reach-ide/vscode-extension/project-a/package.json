@@ -21,7 +21,7 @@
 	},
 	"activationEvents": [
 		"workspaceContains:**/*.rsh",
-		"onCommand:etherscan.show.url"
+		"onCommand:extension.helloWorld"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
@@ -47,7 +47,13 @@
 					"description": "Traces the communication between VS Code and the Reach IDE language server."
 				}
 			}
-		}
+		},
+		"commands": [
+			{
+				"command": "extension.helloWorld",
+				"title": "Hello World"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
