@@ -586,6 +586,7 @@ ct = \case
   CT_Jump at which _ (DLAssignment asnm) -> do
     Env {..} <- ask
     let Shared {..} = eShared
+    --- XXX store counts in loop handler arguments to optimize this
     let wrap1 t (v, a) = CT_Com $ PL_Let at PL_Many v (DLE_Arg at a) t
     let wrap t = foldl' wrap1 t (M.toList asnm)
     case M.lookup which sHandlers of

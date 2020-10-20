@@ -150,7 +150,7 @@ prettyContinue cont_da =
   pretty cont_da <> hardline <> "continue" <> semi
 
 prettyClaim :: Show a => Pretty b => Show c => a -> b -> c -> Doc d
-prettyClaim ct a m = "claim" <> parens (viaShow ct) <> parens (pretty a <> comma <+> viaShow m) <> semi
+prettyClaim ct a m = "claim" <> parens (viaShow ct) <> parens (pretty a <> comma <+> viaShow m)
 
 prettyTransfer :: DLArg -> DLArg -> Doc a
 prettyTransfer who da =
@@ -254,7 +254,9 @@ instance Pretty DLProg where
 instance Pretty a => Pretty (LLCommon a) where
   pretty = \case
     LL_Return _at -> mempty
-    LL_Let _at dv de k ->
+    LL_Let _at Nothing de k ->
+      pretty de <> semi <> hardline <> pretty k
+    LL_Let _at (Just dv) de k ->
       "const" <+> pretty dv <+> "=" <+> pretty de <> semi
         <> hardline
         <> pretty k

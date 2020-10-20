@@ -359,7 +359,7 @@ m_fromList_public at kvs =
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
-  deriving (Eq, Generic, NFData)
+  deriving (Eq, Ord, Generic, NFData)
 
 instance Show SLCtxtFrame where
   show (SLC_CloApp call_at clo_at mname) =
@@ -407,7 +407,7 @@ data DLArg
   | DLA_Obj (M.Map String DLArg)
   | DLA_Data (M.Map SLVar SLType) String DLArg
   | DLA_Interact SLPart String SLType
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Ord, Generic, NFData, Show)
 
 data ClaimType
   = --- Verified on all paths
@@ -424,7 +424,7 @@ data ClaimType
     CT_Possible
   | --- Check if one part can't know what another party does know
     CT_Unknowable SLPart
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Ord, Generic, NFData, Show)
 
 class IsPure a where
   isPure :: a -> Bool
@@ -478,7 +478,7 @@ data DLExpr
   | DLE_Transfer SrcLoc DLArg DLArg
   | DLE_Wait SrcLoc DLArg
   | DLE_PartSet SrcLoc SLPart DLArg
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Ord, Generic, NFData, Show)
 
 instance IsPure DLExpr where
   isPure = \case
@@ -630,8 +630,10 @@ data DLProg
 data LLCommon a
   = LL_Return SrcLoc
   | LL_Let SrcLoc (Maybe DLVar) DLExpr a
-  | LL_ArrayMap SrcLoc DLVar DLArg DLVar LLLocal DLArg a
-  | LL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar LLLocal DLArg a
+  | -- XXX use block
+    LL_ArrayMap SrcLoc DLVar DLArg DLVar LLLocal DLArg a
+  | -- XXX use block
+    LL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar LLLocal DLArg a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_LocalIf SrcLoc DLArg LLLocal LLLocal a
@@ -680,7 +682,7 @@ data LLStep
       }
   deriving (Eq, Show)
 
-data LLOpts = LLOpts 
+data LLOpts = LLOpts
   { llo_deployMode :: DeployMode
   , llo_verifyOverflow :: Bool }
   deriving (Generic, Eq, Show)

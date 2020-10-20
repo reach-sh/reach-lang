@@ -11,6 +11,7 @@ import Reach.Connector.ETH_Solidity
 import Reach.EPP
 import Reach.Eval
 import Reach.Linearize
+import Reach.Optimize
 import Reach.Parser
 import Reach.Pretty ()
 import Reach.Util
@@ -47,12 +48,14 @@ compile copts = do
         interOut "dl" $ show $ pretty dl
         let ll = linearize dl
         interOut "ll" $ show $ pretty ll
+        ol <- optimize ll
+        interOut "ol" $ show $ pretty ol
         let vconnectors =
               case dlo_verifyPerConnector of
                 False -> Nothing
                 True -> Just connectors
-        verify outnMay vconnectors ll >>= maybeDie
-        let pl = epp ll
+        verify outnMay vconnectors ol >>= maybeDie
+        let pl = epp ol
         interOut "pl" $ show $ pretty pl
         let runConnector c = (,) (conName c) <$> conGen c outnMay pl
         crs <- M.fromList <$> mapM runConnector connectors

@@ -56,7 +56,7 @@ const ttt_done = (st) =>
        || complete_p(marks_all(st)));
 
 const legalMove = (m) => (0 <= m && m < CELLS);
-const validMove = (st, m) => (! marks_all(st)[m]);
+const validMove = (st, m) => (! cell_both(st, m));
 
 function getValidMove(interact, st) {
   const _m = interact.getMove(st);
@@ -76,7 +76,7 @@ const ttt_winner_is_x = ( st ) => winning_p(st.xs);
 const ttt_winner_is_o = ( st ) => winning_p(st.os);
 
 // Protocol
-const DELAY = 10; // in blocks
+const DELAY = 20; // in blocks
 
 const Player =
       { ...hasRandom,
