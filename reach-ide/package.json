@@ -23,7 +23,9 @@
 		"workspaceContains:**/*.rsh",
 		"onCommand:reach.compile",
 		"onCommand:reach.run",
-		"onCommand:reach.update"
+		"onCommand:reach.update",
+		"onCommand:reach.get.eth.abi",
+		"onCommand:reach.get.eth.bytecode"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
@@ -57,6 +59,12 @@
 				},
 				{
 					"command": "reach.run"
+				},
+				{
+					"command": "reach.get.eth.abi"
+				},
+				{
+					"command": "reach.get.eth.bytecode"
 				}
 			],
 			"touchBar": [
@@ -65,6 +73,12 @@
 				},
 				{
 					"command": "reach.run"
+				},
+				{
+					"command": "reach.get.eth.abi"
+				},
+				{
+					"command": "reach.get.eth.bytecode"
 				}
 			],
 			"editor/context": [ 
@@ -73,6 +87,12 @@
 				},
 				{
 					"command": "reach.run"
+				},
+				{
+					"command": "reach.get.eth.abi"
+				},
+				{
+					"command": "reach.get.eth.bytecode"
 				}
 			]
 		},
@@ -91,6 +111,16 @@
 				"command": "reach.update",
 				"category": "Reach IDE",
 				"title": "Update Reach"
+			},
+			{
+				"command": "reach.get.eth.abi",
+				"category": "Reach IDE",
+				"title": "Get Ethereum Contract ABI"
+			},
+			{
+				"command": "reach.get.eth.bytecode",
+				"category": "Reach IDE",
+				"title": "Get Ethereum Bytecode"
 			}
 		]
 	},
