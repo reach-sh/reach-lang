@@ -103,49 +103,28 @@ function registerCommands(context: ExtensionContext) {
 	context.subscriptions.push(disposable3);
 
 	const disposable4 = commands.registerCommand('reach.get.eth.abi', async () => {
-		/*fs.readFile("build/index.main.mjs", (data, err) => {
-			const clipboardy = require('clipboardy');
-
-			// Copy
-			clipboardy.writeSync(data);
-			//console.log(data); // logs file content in buffer
-		});*/
-
-		//window.showInformationMessage("dirname:"+workspace.rootPath);
-
 		fs.readFile(workspace.rootPath + '/build/index.main.mjs',async function(err: any, text: string){
-			
 			var pattern = /ABI: `[\s\S]*\]`/g;
 			var m;
 			while ((m = pattern.exec(text))) {
 				m[0] = m[0].substring(6, m[0].length - 1)
 				await env.clipboard.writeText(m[0]); 
-				window.showInformationMessage(await env.clipboard.readText())
+				window.showInformationMessage("Copied Ethereum contract ABI to clipboard!")
 			}
-
-
-			//env.clipboard.writeText(content).then(function(resp){ window.showInformationMessage("Copied to clipboard!"); })
-			
 		})
-
-		/*workspace.findFiles('/build/index.main.mjs').then(function (name: string) {
-			connection.console.log("Found ENS name for " + address + " is: " + name);
-			// then forward ENS lookup to validate
-			let addr = await ENSLookup(name);
-			if (web3.utils.toChecksumAddress(address) == web3.utils.toChecksumAddress(addr)) {
-				ensReverseCache.set(address, name);
-				result = name;
-			}
-		}).catch(e => connection.console.log("Could not reverse lookup ENS name for " + address + " due to error: " + e));;
-*/
-
-
 	});
 	context.subscriptions.push(disposable4);
 
 	const disposable5 = commands.registerCommand('reach.get.eth.bytecode', () => {
-		//terminal.show();
-		//terminal.sendText("./reach update");
+		fs.readFile(workspace.rootPath + '/build/index.main.mjs',async function(err: any, text: string){
+			var pattern = /Bytecode: `[\s\S]*`,/g;
+			var m;
+			while ((m = pattern.exec(text))) {
+				m[0] = m[0].substring(11, m[0].length - 2)
+				await env.clipboard.writeText(m[0]); 
+				window.showInformationMessage("Copied Ethereum contract bytecode to clipboard!")
+			}
+		})
 	});
 	context.subscriptions.push(disposable5);
 }

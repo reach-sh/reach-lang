@@ -108,19 +108,14 @@
 				"title": "Run Reach program"
 			},
 			{
-				"command": "reach.update",
-				"category": "Reach IDE",
-				"title": "Update Reach"
-			},
-			{
 				"command": "reach.get.eth.abi",
 				"category": "Reach IDE",
-				"title": "Get Ethereum Contract ABI"
+				"title": "Get compiled Ethereum contract ABI"
 			},
 			{
 				"command": "reach.get.eth.bytecode",
 				"category": "Reach IDE",
-				"title": "Get Ethereum Bytecode"
+				"title": "Get compiled Ethereum contract bytecode"
 			}
 		]
 	},
