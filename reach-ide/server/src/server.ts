@@ -408,14 +408,25 @@ CallStack (from HasCallStack):
 
 			// Get the problematic string (before the list of suggestions)
 			if (suggestions !== undefined) {
+				var problematicString;
 				var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
 				let messageWithoutSuggestionsTokens : string[] = messageWithoutSuggestions.split(" ");
 				connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
-				var problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
-				problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
-				connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
+	
+				if (tokens[4] == "dot") {
+					// e.g.: error, ./.index.rsh.temp,8,8,dot, AApp is not a field of Reach. Did you mean, ["App"]
+					problematicString = messageWithoutSuggestionsTokens[1];
+					connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
 
-				end = { line: linePos - 1, character: charPos - 1 + problematicString.length};
+					start = { line: linePos - 1, character: charPos } // Reach compiler numbers starts at 1, but skip the dot in highlighting
+					end = { line: linePos - 1, character: charPos + problematicString.length};
+				} else {
+					problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
+					problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
+					connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
+
+					end = { line: linePos - 1, character: charPos - 1 + problematicString.length};
+				}
 			} else {
 				end = { line: linePos, character: 0 } // until end of line, or equivalently the next line
 			}
