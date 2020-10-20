@@ -9,6 +9,7 @@
 
 import * as path from 'path';
 import { workspace, ExtensionContext, commands, window } from 'vscode';
+import { exec } from 'child_process';
 
 import {
 	LanguageClient,
@@ -18,6 +19,8 @@ import {
 } from 'vscode-languageclient';
 
 let client: LanguageClient;
+
+var terminal;
 
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
@@ -45,7 +48,7 @@ export function activate(context: ExtensionContext) {
 	config.update("files.associations", { "*.rsh" : "javascript" }, false);
 	*/
 
-
+	terminal = window.createTerminal({ name: "Reach IDE" });
 	registerCommands(context);
 
 
@@ -79,21 +82,23 @@ export function activate(context: ExtensionContext) {
 }
 
 function registerCommands(context: ExtensionContext) {
-	const disposable = commands.registerCommand('extension.reach.compile', () => {
-		// The code you place here will be executed every time your command is executed
-
-		// Compile Reach program
-		window.showInformationMessage('Reach compilation successful!');
+	const disposable = commands.registerCommand('reach.compile', () => {
+		terminal.show();
+		terminal.sendText("./reach compile");
 	});
 	context.subscriptions.push(disposable);
 
-	const disposable2 = commands.registerCommand('extension.reach.run', () => {
-		// The code you place here will be executed every time your command is executed
-
-		// Compile Reach program
-		window.showInformationMessage('Reach run successful!');
+	const disposable2 = commands.registerCommand('reach.run', () => {
+		terminal.show();
+		terminal.sendText("./reach run");
 	});
 	context.subscriptions.push(disposable2);
+
+	const disposable3 = commands.registerCommand('reach.update', () => {
+		terminal.show();
+		terminal.sendText("./reach update");
+	});
+	context.subscriptions.push(disposable3);
 }
 
 export function deactivate(): Thenable<void> | undefined {
