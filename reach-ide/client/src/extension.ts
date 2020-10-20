@@ -8,7 +8,7 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext, commands, Uri } from 'vscode';
+import { workspace, ExtensionContext, commands, window } from 'vscode';
 
 import {
 	LanguageClient,
@@ -45,6 +45,15 @@ export function activate(context: ExtensionContext) {
 	config.update("files.associations", { "*.rsh" : "javascript" }, false);
 	*/
 
+	const disposable = commands.registerCommand('extension.helloWorld', () => {
+		// The code you place here will be executed every time your command is executed
+
+		// Display a message box to the user
+		window.showInformationMessage('Hello World!');
+	});
+
+	context.subscriptions.push(disposable);
+
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
 		// Register the server for Reach .rsh documents
@@ -68,8 +77,10 @@ export function activate(context: ExtensionContext) {
 		clientOptions
 	);
 
+	
 	// Start the client. This will also launch the server
 	client.start();
+
 }
 
 export function deactivate(): Thenable<void> | undefined {
