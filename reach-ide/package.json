@@ -57,9 +57,22 @@
 				},
 				{
 					"command": "reach.run"
+				}
+			],
+			"touchBar": [
+				{
+					"command": "reach.compile"
 				},
 				{
-					"command": "reach.update"
+					"command": "reach.run"
+				}
+			],
+			"editor/context": [ 
+				{
+					"command": "reach.compile"
+				},
+				{
+					"command": "reach.run"
 				}
 			]
 		},
