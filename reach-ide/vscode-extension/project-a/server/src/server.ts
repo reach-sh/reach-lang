@@ -83,10 +83,10 @@ connection.onInitialize((params: InitializeParams) => {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server supports code completion
-			/*completionProvider: {
+			completionProvider: {
 				resolveProvider: true
 			},
-			codeLensProvider : {
+/*			codeLensProvider : {
 				resolveProvider: true
 			},
 ,
@@ -493,6 +493,73 @@ function getQuickFix(diagnostic:Diagnostic, title:string, range:Range, replaceme
 	return codeAction;
 }
 
+
+// This handler provides the initial list of the completion items.
+connection.onCompletion(
+	async (_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]> => {
+		// The passed parameter contains the position of the text document in
+		// which code complete got requested.
+
+		let completionItems : CompletionItem[] = [];
+
+		// Snippets
+		{
+			let snippet : string = 
+				"'reach 0.1';\n" +
+				"\n" + 
+				"export const main =\n" +
+				"  Reach.App(\n" +
+				"    {},\n" +
+				"    [['Alice', {}], ['Bob', {}]],\n" +
+				"    (A, B) => {\n" +
+				"	   exit(); });";
+			insertSnippet(_textDocumentPosition, snippet, completionItems, undefined, "Reach scaffolding", 0);
+		}
+		
+		return completionItems;
+	}
+);
+
+function insertSnippet(_textDocumentPosition: TextDocumentPositionParams, snippetText: string, completionItems: CompletionItem[], imports: string | undefined, label: string, sortOrder: number) {
+	let textEdit: TextEdit = {
+		range: {
+			start: _textDocumentPosition.position,
+			end: _textDocumentPosition.position
+		},
+		newText: snippetText
+	};
+	let completionItem: CompletionItem = {
+		label: label,
+		kind: CompletionItemKind.Snippet,
+		data: undefined,
+		textEdit: textEdit,
+		sortText: String(sortOrder)
+	};
+	// check if imports should be added
+	let textDocument = documents.get(_textDocumentPosition.textDocument.uri)
+	let textDocumentContents = textDocument?.getText()
+	if (imports !== undefined && (textDocumentContents === undefined || !String(textDocumentContents).includes(imports))) {
+		let additionalTextEdit = {
+			range: {
+				start: { line: 0, character: 0 },
+				end: { line: 0, character: 0 }
+			},
+			newText: imports
+		};
+		completionItem.additionalTextEdits = [additionalTextEdit]
+	}
+
+	completionItems.push(completionItem);
+}
+
+
+// This handler resolves additional information for the item selected in
+// the completion list.
+connection.onCompletionResolve(
+	async (item: CompletionItem): Promise<CompletionItem> => {
+		return item;
+	}
+);
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
