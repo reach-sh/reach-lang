@@ -21,8 +21,9 @@
 	},
 	"activationEvents": [
 		"workspaceContains:**/*.rsh",
-		"onCommand:extension.reach.compile",
-		"onCommand:extension.reach.run"
+		"onCommand:reach.compile",
+		"onCommand:reach.run",
+		"onCommand:reach.update"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
@@ -51,12 +52,16 @@
 		},
 		"commands": [
 			{
-				"command": "extension.reach.compile",
-				"title": "Compile Reach program"
+				"command": "reach.compile",
+				"title": "Reach - Compile program"
 			},
 			{
-				"command": "extension.reach.run",
-				"title": "Run Reach program"
+				"command": "reach.run",
+				"title": "Reach - Run program"
+			},
+			{
+				"command": "reach.update",
+				"title": "Reach - Update Reach"
 			}
 		]
 	},
