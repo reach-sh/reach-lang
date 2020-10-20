@@ -99,9 +99,10 @@ optimize = \case
   [] -> []
   -- FIXME generalize
   ["b", "alone"] : ["alone:"] : l -> ["alone:"] : l
-  -- XXX store X, load X -> dup, store X
   ["btoi"] : ["itob"] : l -> optimize l
   ["itob"] : ["btoi"] : l -> optimize l
+  a@["store", x] : ["load", y] : l | x == y ->
+    ["dup"] : optimize (a : l)
   a@["substring",s0, _] : b@["substring",s1,e1] : l ->
     case mse of
       Just (s2, e2) ->
@@ -146,6 +147,7 @@ data Env = Env
   , eSP :: ScratchSlot
   , eVars :: M.Map DLVar ScratchSlot
   , eLets :: Lets
+  , eLetSmalls :: M.Map DLVar Bool
   }
 
 -- I'd rather not embed in IO, but when I used ST in UnrollLoops, it was
@@ -216,11 +218,17 @@ freshLabel = do
   liftIO $ modifyIORef eLabelR (1 +)
   return $ "l" <> LT.pack (show i)
 
-store_let :: DLVar -> App () -> App a -> App a
-store_let dv cgen m = do
+store_let :: DLVar -> Bool -> App () -> App a -> App a
+store_let dv small cgen m = do
   Env {..} <- ask
-  local (\e -> e {eLets = M.insert dv cgen eLets}) $
+  local (\e -> e { eLets = M.insert dv cgen eLets
+                 , eLetSmalls = M.insert dv small eLetSmalls }) $
     m
+
+letSmall :: DLVar -> App Bool
+letSmall dv = do
+  Env { .. } <- ask
+  return $ fromMaybe False (M.lookup dv eLetSmalls)
 
 lookup_let :: DLVar -> App ()
 lookup_let dv = do
@@ -318,6 +326,17 @@ ca = \case
   DLA_Tuple as -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
   DLA_Obj m -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
   DLA_Data {} -> xxx "data"
+  DLA_Interact {} -> impossible "consensus interact"
+
+argSmall :: DLArg -> App Bool
+argSmall = \case
+  DLA_Var v -> letSmall v
+  DLA_Constant {} -> return True
+  DLA_Literal {} -> return True
+  DLA_Array {} -> return False
+  DLA_Tuple {} -> return False
+  DLA_Obj {} -> return False
+  DLA_Data {} -> return False
   DLA_Interact {} -> impossible "consensus interact"
 
 cprim :: PrimOp -> [DLArg] -> App ()
@@ -467,24 +486,32 @@ ce = \case
                   op "+"
                   cl $ DLL_Int sb (alen * tsz)
                   op "substring3"
-    ca aa
-    op "dup"
-    -- [ aa, aa, ... ]
-    before
-    -- [ before, aa, ... ]
-    ca va
-    ctobs t
-    -- [ va, before, aa, ... ]
-    op "concat"
-    -- [ before', aa, ... ]
-    swap
-    -- [ aa, before', ... ]
-    after
-    -- [ after, before', ... ]
-    swap
-    -- [ before', after, ... ]
-    op "concat"
-    -- [ aa', ... ]
+    small_aa <- argSmall aa
+    case small_aa of
+      False -> do
+        ca aa
+        op "dup"
+        -- [ aa, aa, ... ]
+        before
+        -- [ before, aa, ... ]
+        ca va
+        ctobs t
+        -- [ va, before, aa, ... ]
+        op "concat"
+        -- [ before', aa, ... ]
+        swap
+        -- [ aa, before', ... ]
+        after
+        -- [ after, before', ... ]
+        op "concat"
+        -- [ aa', ... ]
+      True -> do
+        ca aa >> before
+        ca va
+        ctobs t
+        op "concat"
+        ca aa >> after
+        op "concat"
   DLE_ArrayConcat {} -> xxx "array concat"
   DLE_ArrayZip {} -> xxx "array zip"
   DLE_TupleRef at ta idx -> do
@@ -537,13 +564,13 @@ cm ck = \case
   PL_Return {} ->
     return ()
   PL_Let _ PL_Once dv de k ->
-    store_let dv (ce de) $ ck k
+    store_let dv False (ce de) $ ck k
   PL_Let _ PL_Many dv de k ->
     salloc $ \loc -> do
       let loct = texty loc
       ce de
       code "store" [loct]
-      store_let dv (code "load" [loct]) $ ck k
+      store_let dv True (code "load" [loct]) $ ck k
   PL_ArrayMap {} ->
     xxx "map"
   PL_ArrayReduce {} ->
@@ -552,7 +579,7 @@ cm ck = \case
   PL_Var _ dv k ->
     salloc $ \loc -> do
       store_var dv loc $
-        store_let dv (code "load" [texty loc]) $
+        store_let dv True (code "load" [texty loc]) $
           ck k
   PL_Set _ dv da k -> do
     loc <- lookup_var dv
@@ -751,6 +778,8 @@ runApp eShared eWhich eLets m = do
   let eSP = 255
   eTxnsR <- newIORef $ txnFromContract0 - 1
   let eVars = mempty
+  -- Everything initial is small
+  let eLetSmalls = M.map (\_ -> True) eLets
   flip runReaderT (Env {..}) m
   readIORef eOutputR
 
