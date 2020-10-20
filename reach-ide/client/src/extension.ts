@@ -45,14 +45,9 @@ export function activate(context: ExtensionContext) {
 	config.update("files.associations", { "*.rsh" : "javascript" }, false);
 	*/
 
-	const disposable = commands.registerCommand('extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
 
-		// Display a message box to the user
-		window.showInformationMessage('Hello World!');
-	});
+	registerCommands(context);
 
-	context.subscriptions.push(disposable);
 
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
@@ -81,6 +76,24 @@ export function activate(context: ExtensionContext) {
 	// Start the client. This will also launch the server
 	client.start();
 
+}
+
+function registerCommands(context: ExtensionContext) {
+	const disposable = commands.registerCommand('extension.reach.compile', () => {
+		// The code you place here will be executed every time your command is executed
+
+		// Compile Reach program
+		window.showInformationMessage('Reach compilation successful!');
+	});
+	context.subscriptions.push(disposable);
+
+	const disposable2 = commands.registerCommand('extension.reach.run', () => {
+		// The code you place here will be executed every time your command is executed
+
+		// Compile Reach program
+		window.showInformationMessage('Reach run successful!');
+	});
+	context.subscriptions.push(disposable2);
 }
 
 export function deactivate(): Thenable<void> | undefined {
