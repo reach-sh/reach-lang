@@ -1,6 +1,8 @@
-module Reach.CollectCounts (Count (..), Counts (..), counts, get_count, count_rms, counts_nzs) where
+module Reach.CollectCounts (
+  Count (..), Counts (..), counts, get_count, count_rms, count_rmm, counts_nzs) where
 
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Reach.AST
 
 newtype Count = Count (Maybe PLLetCat)
@@ -23,6 +25,9 @@ get_count v (Counts m) = Count $ M.lookup v m
 
 count_rms :: [DLVar] -> Counts -> Counts
 count_rms vs (Counts cs) = Counts $ foldr M.delete cs vs
+
+count_rmm :: Maybe DLVar -> Counts -> Counts
+count_rmm = count_rms . maybeToList
 
 counts_nzs :: Counts -> [DLVar]
 counts_nzs (Counts cs) = M.keys cs

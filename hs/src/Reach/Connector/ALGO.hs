@@ -341,6 +341,11 @@ cprim = \case
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   IF_THEN_ELSE -> \case
+    [ be, DLA_Literal (DLL_Bool True), DLA_Literal (DLL_Bool False) ] -> do
+      ca be
+    [ be, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True) ] -> do
+      ca be
+      op "!"
     [ be, DLA_Literal (DLL_Bool True), fe ] -> do
       ca be
       ca fe

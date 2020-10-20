@@ -2,6 +2,7 @@ module Reach.EPP (epp) where
 
 import Control.Monad
 import Control.Monad.ST
+import Control.Monad.ST.Unsafe
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -9,6 +10,7 @@ import Data.STRef
 import Generics.Deriving (Generic)
 import Reach.AST
 import Reach.CollectCounts
+import Reach.Optimize
 import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Util
@@ -328,7 +330,8 @@ epp_n st n =
 
       let loop_if = CT_If cond_at cond_da ct_body ct_k
       let loop_top = pltReplace CT_Com loop_if pt_cond
-      let this_h = C_Loop at loop_svs loop_vars loop_top
+      loop_top' <- unsafeIOToST $ pltoptimize loop_top
+      let this_h = C_Loop at loop_svs loop_vars loop_top'
       addHandler st loop_num this_h
       let ct' = CT_Jump at loop_num loop_svs asn
       let cons_cs' = counts loop_svs <> counts asn
