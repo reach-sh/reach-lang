@@ -50,18 +50,34 @@
 				}
 			}
 		},
+		"menus": {
+			"explorer/context": [ 
+				{
+					"command": "reach.compile"
+				},
+				{
+					"command": "reach.run"
+				},
+				{
+					"command": "reach.update"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "reach.compile",
-				"title": "Reach - Compile program"
+				"category": "Reach IDE",
+				"title": "Compile Reach program"
 			},
 			{
 				"command": "reach.run",
-				"title": "Reach - Run program"
+				"category": "Reach IDE",
+				"title": "Run Reach program"
 			},
 			{
 				"command": "reach.update",
-				"title": "Reach - Update Reach"
+				"category": "Reach IDE",
+				"title": "Update Reach"
 			}
 		]
 	},
