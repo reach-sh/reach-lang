@@ -876,7 +876,7 @@ EOF
 
 do_react () {
   USE_EXISTING_DEVNET=false
-  if [ "x$1" = "--use-existing-devnet" ]; then
+  if [ "x$1" = "x--use-existing-devnet" ]; then
     shift
     USE_EXISTING_DEVNET=true
   fi
