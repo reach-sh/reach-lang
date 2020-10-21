@@ -1,10 +1,10 @@
 {
 	"name": "reach-ide",
-	"displayName": "Reach IDE (Experimental)",
+	"displayName": "Reach IDE",
 	"description": "IDE for the Reach DApp programming language",
 	"author": "Eric Lau",
 	"license": "EPL-2.0",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"preview": true,
 	"icon": "images/logo.png",
 	"repository": {
