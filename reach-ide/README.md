@@ -17,3 +17,4 @@ This project implements a Reach language server and VS Code extension to help wi
     - Copy Ethereum contract ABI to clipboard
     - Copy Ethereum contract bytecode to clipboard
     - Run Reach program
+    - Update Reach compiler
