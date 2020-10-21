@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.3
+
+Add command to update Reach compiler.
+
 ## 0.0.2
 
 Update title.
