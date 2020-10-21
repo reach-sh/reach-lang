@@ -1,18 +1,50 @@
-include ../VERSION
-IMAGE="reachsh/stdlib"
-RUNNER_IMAGE="reachsh/runner"
-NODE_VERSION="12.18.3"
-ESLINT_VERSION="7.7.0"
+ROOT=..
+include $(ROOT)/js/JS_IMAGES
 
-package.json: package.mo.json ../VERSION 
+package.json: package.mo.json ../VERSION
 	VERSION=$(VERSION) ESLINT_VERSION=$(ESLINT_VERSION) mo $< > $@
 
-runner_package.json: runner_package.mo.json ../VERSION 
+runner_package.json: runner_package.mo.json ../VERSION
 	VERSION=$(VERSION) ESLINT_VERSION=$(ESLINT_VERSION) mo $< > $@
 
 .PHONY: clean
 clean:
 	rm -f package.json
+
+# TODO: build2 -> build, when ready
+.PHONY: build2
+build2: build2-js_deps build2-stdlib2 build2-react_runner build2-runner
+
+.PHONY: build2-js_deps
+build2-js_deps:
+	(cd js_deps && $(MAKE) build)
+
+.PHONY: build2-stdlib2
+build2-stdlib2:
+	docker build --tag=$(STDLIB2_IMAGE) \
+	  --file Dockerfile.stdlib2 \
+	  --build-arg NODE_VERSION=$(NODE_VERSION) \
+	  --build-arg REACH_VERSION=$(VERSION) \
+	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
+		.
+	TAG_ONLY=1 ../scripts/docker-push.sh $(STDLIB2_IMAGE)
+
+.PHONY: build2-react_runner
+build2-react_runner:
+	(cd react_runner && $(MAKE) build)
+
+.PHONY: build2-runner
+build2-runner:
+	echo TODO build2-runner
+
+# TODO: push more things
+# TODO: push2 -> push, when ready
+.PHONY: push2
+push2: push2-react_runner
+
+.PHONY: push2-react-runner
+push2-react-runner:
+	(cd react_runner && $(MAKE) push)
 
 .PHONY: build
 build: build-stdlib build-runner

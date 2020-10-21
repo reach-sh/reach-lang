@@ -1,0 +1,36 @@
+{
+  "name": "reach-react-app",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "algosdk": "algorand/js-algorand-sdk#07ed42f",
+    "await-timeout": "^0.6.0",
+    "ethers": "^5.0.13",
+    "hi-base32": "^0.5.0",
+    "wait-port": "^0.2.9",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-scripts": "3.4.3"
+  },
+  "optionalDependencies": {
+    "ganache-core": "^2.11.2"
+  },
+  "scripts": {
+    "start": "react-scripts start"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

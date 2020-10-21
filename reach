@@ -832,6 +832,12 @@ do_run () {
   cleanup
 }
 
+do_react () {
+  # TODO: support args comparable to reach run
+  do_compile
+  docker run --volume "$(pwd):/app/src" -it -p 3000:3000 "reachsh/react_runner:$REACH_VERSION"
+}
+
 # TODO: allow linting outside of PWD
 # TODO: try to not mount all of PWD?
 do_lint () {
@@ -886,6 +892,9 @@ case ${SUBCOMMAND} in
         ;;
     run)
         do_run "$@"
+        ;;
+    react)
+        do_react "$@"
         ;;
     init)
         do_init "$@"

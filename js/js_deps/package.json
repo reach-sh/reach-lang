@@ -1,0 +1,26 @@
+{
+  "name": "@reach-sh/js_deps",
+  "version": "0.0.0",
+  "description": "js deps",
+  "type": "module",
+  "devDependencies": {
+    "@types/await-timeout": "^0.3.1",
+    "@types/node": "^14.11.1",
+    "babel-eslint": "^10.0.3",
+    "eslint": "7.7.0",
+    "js-beautify": "^1.13.0",
+    "typescript": "^4.0.2"
+  },
+  "dependencies": {
+    "algosdk": "algorand/js-algorand-sdk#07ed42f",
+    "await-timeout": "^0.6.0",
+    "ethers": "^5.0.13",
+    "hi-base32": "^0.5.0",
+    "wait-port": "^0.2.9"
+  },
+  "optionalDependencies": {
+    "ganache-core": "^2.11.2"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0"
+}
