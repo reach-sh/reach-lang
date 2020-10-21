@@ -20,21 +20,21 @@ Verification failed:
     "v36" = (= 0 v35 )
       (from: v36)
       (bound at: ./overview/index-error.rsh:29:11:application)
-      (because: evaluating PEQ(DLL_Int <builtin> 0, v35))
+      (because: evaluating PEQ(0, v35))
     "v35" = v32
       (from: v35)
       (bound at: ./overview/index-error.rsh:29:11:application)
       (because: evaluating v32)
-    "v32" = (- v30 v27 )
+    "v32" = (- v28 v27 )
       (from: v32)
       (bound at: ./overview/index-error.rsh:24:29:application)
-      (because: evaluating SUB(v30, v27))
+      (because: evaluating SUB(v28, v27))
     "v27" = (- v1 1 )
       (from: v27)
       (bound at: ./overview/index-error.rsh:application)
-      (because: evaluating SUB(v1, DLL_Int ./overview/index-error.rsh:24:24:decimal 1))
-    "v30" = v25
-      (from: v30)
+      (because: evaluating SUB(v1, 1))
+    "v28" = v25
+      (from: v28)
       (bound at: ./overview/index-error.rsh:24:29:application)
       (because: evaluating v25)
     "v1" = interact_Alice_request
@@ -48,7 +48,7 @@ Verification failed:
     "v20" = 0
       (from: v20)
       (bound at: ./overview/index-error.rsh:23:8:dot)
-      (because: an honest payment from "Alice" of DLL_Int ./overview/index-error.rsh:23:22:after expr stmt semicolon 0)
+      (because: an honest payment from "Alice" of 0)
     "v22" = v17
       (from: v22)
       (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
@@ -72,11 +72,11 @@ Verification failed:
     "v3" = 0
       (from: v3)
       (bound at: ./overview/index-error.rsh:13:8:dot)
-      (because: an honest payment from "Alice" of DLL_Int ./overview/index-error.rsh:13:25:after expr stmt semicolon 0)
+      (because: an honest payment from "Alice" of 0)
     "v5" = 0
       (from: v5)
       (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
-      (because: evaluating DLL_Int ./overview/index-error.rsh:compileDApp 0)
+      (because: evaluating 0)
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode

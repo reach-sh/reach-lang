@@ -27,7 +27,7 @@ Verification failed:
     "v10" = (- dlc_UInt_max 1 )
       (from: v10)
       (bound at: ./overflow.rsh:application)
-      (because: evaluating SUB(DLC_UInt_max, DLL_Int ./overflow.rsh:12:19:decimal 1))
+      (because: evaluating SUB(UInt.max, 1))
     "v2" = v1
       (from: v2)
       (bound at: ./overflow.rsh:11:6:dot)

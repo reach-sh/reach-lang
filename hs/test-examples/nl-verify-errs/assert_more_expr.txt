@@ -28,7 +28,7 @@ Verification failed:
     "v3" = (* v1 2 )
       (from: v3)
       (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating MUL(v1, DLL_Int ./assert_more_expr.rsh:10:25:decimal 2))
+      (because: evaluating MUL(v1, 2))
     "v7" = (+ v1 v2 )
       (from: v7)
       (bound at: ./assert_more_expr.rsh:application)
