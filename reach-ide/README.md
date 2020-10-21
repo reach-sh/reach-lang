@@ -11,6 +11,6 @@ IDE for the Reach DApp programming language.
 - Snippet insertion for Reach template
 - Right-click menu commands:
     - Compile Reach program
-    - Copy compiled Ethereum contract ABI to clipboard
-    - Copy compiled Ethereum contract bytecode to clipboard
+    - Copy Ethereum contract ABI to clipboard
+    - Copy Ethereum contract bytecode to clipboard
     - Run Reach program
