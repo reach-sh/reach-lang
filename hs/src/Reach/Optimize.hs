@@ -380,10 +380,10 @@ ucs_t cs_kp = \case
           cs' = counts vs <> counts asn <> cs_kp
 
 -- _U_pdate _C_ount_s_
-ucs :: CTail -> CTail
-ucs t = snd $ ucs_t mempty t
+ucs :: CTail -> (Counts, CTail)
+ucs t = ucs_t mempty t
 
-pltoptimize :: CTail -> IO CTail
+pltoptimize :: CTail -> IO (Counts, CTail)
 pltoptimize t = do
   env0 <- mkEnv0 []
   ucs <$> (flip runReaderT env0 $

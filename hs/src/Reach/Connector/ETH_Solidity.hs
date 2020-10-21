@@ -654,9 +654,10 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
           case mv of
             [] -> "true"
             mvs -> solPrimApply ctxt (if sign then PGE else PLT) [ solBlockNumber, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) solLastBlock (map (solArg ctxt) mvs)) ]
-solHandler ctxt_top which (C_Loop _at svs msg ct) =
+solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
   vsep [argDefn, frameDefn, funDefn]
   where
+    msg = map snd lcmsg
     vs = svs ++ msg
     (ctxt_fin, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs Nothing ct
     (argDefn, argDefs) = solArgDefn ctxt_fin which AM_Memory vs

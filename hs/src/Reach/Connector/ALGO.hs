@@ -159,6 +159,18 @@ output t = do
   Env {..} <- ask
   liftIO $ modifyIORef eOutputR (flip DL.snoc t)
 
+outputs :: TEALs -> App ()
+outputs ts = do
+  Env {..} <- ask
+  liftIO $ modifyIORef eOutputR (<> ts)
+
+freeze :: App a -> App (App a)
+freeze m = do
+  eOutputR' <- liftIO $ newIORef mempty
+  ans <- local (\e -> e { eOutputR = eOutputR' }) m
+  ts <- liftIO $ readIORef eOutputR'
+  return $ outputs ts >> return ans
+
 code :: LT.Text -> [LT.Text] -> App ()
 code f args = output $ code_ f args
 
@@ -618,13 +630,33 @@ ct = \case
   CT_Jump at which _ (DLAssignment asnm) -> do
     Env {..} <- ask
     let Shared {..} = eShared
-    --- XXX store counts in loop handler arguments to optimize this
-    let wrap1 t (v, a) = CT_Com $ PL_Let at PL_Many v (DLE_Arg at a) t
-    let wrap t = foldl' wrap1 t (M.toList asnm)
     case M.lookup which sHandlers of
-      Just (C_Loop _ _ _ t) ->
-        local (\e -> e { eWhich = which }) $
-          ct $ wrap t
+      Just (C_Loop _ _ lcvars t) -> do
+        let llc v =
+              case find ((== v) . snd) lcvars of
+                Nothing -> impossible $ "no loop var"
+                Just (lc, _) -> lc
+        --let llc _ = PL_Many
+        let wrap1 (store_lets, t_) (v, a) =
+              case llc v of
+                PL_Many -> do
+                  return $ (store_lets, t_')
+                  where
+                    t_' =
+                      CT_Com $ PL_Let at PL_Many v (DLE_Arg at a) t_
+                PL_Once -> do
+                  sm <- argSmall a
+                  cad <- freeze $ ca a
+                  let store_lets' m =
+                        store_let v sm cad $ store_lets m
+                  return $ (store_lets', t_)
+        let wrap :: CTail -> App ((App a -> App a), CTail)
+            wrap t_0 =
+              foldM wrap1 (id, t_0) (M.toList asnm)
+        (store_lets, t') <- wrap t
+        store_lets $
+          local (\e -> e { eWhich = which }) $
+            ct t'
       _ ->
         impossible "bad jump"
   CT_From _ msvs -> do

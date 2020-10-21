@@ -330,8 +330,15 @@ epp_n st n =
 
       let loop_if = CT_If cond_at cond_da ct_body ct_k
       let loop_top = pltReplace CT_Com loop_if pt_cond
-      loop_top' <- unsafeIOToST $ pltoptimize loop_top
-      let this_h = C_Loop at loop_svs loop_vars loop_top'
+      (loop_top'_cs, loop_top') <- unsafeIOToST $ pltoptimize loop_top
+      let loop_addlc v = (lc, v)
+            where
+              lc =
+                case get_count v loop_top'_cs of
+                  Count Nothing -> PL_Once
+                  Count (Just x) -> x
+      let loop_lcvars = map loop_addlc loop_vars
+      let this_h = C_Loop at loop_svs loop_lcvars loop_top'
       addHandler st loop_num this_h
       let ct' = CT_Jump at loop_num loop_svs asn
       let cons_cs' = counts loop_svs <> counts asn

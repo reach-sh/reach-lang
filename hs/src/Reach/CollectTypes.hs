@@ -137,6 +137,9 @@ instance CollectsTypes CTail where
 instance CollectsTypes CInterval where
   cts (CBetween from to) = cts from <> cts to
 
+instance CollectsTypes PLLetCat where
+  cts _ = mempty
+
 instance CollectsTypes CHandler where
   cts (C_Handler _ int fs _ svs msg amtv body) = cts int <> cts fs <> cts svs <> cts msg <> cts amtv <> cts body
   cts (C_Loop _ svs vars body) = cts svs <> cts vars <> cts body

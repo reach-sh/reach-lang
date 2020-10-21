@@ -796,7 +796,7 @@ data CHandler
   | C_Loop
       { cl_at :: SrcLoc
       , cl_svs :: [DLVar]
-      , cl_vars :: [DLVar]
+      , cl_vars :: [(PLLetCat, DLVar)]
       , cl_body :: CTail
       }
   deriving (Eq, Show)
