@@ -11,6 +11,7 @@ import Data.IORef
 -- import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.CollectCounts
+import Reach.Sanitize
 -- import Reach.Type
 import Reach.Util
 import Reach.Pretty()
@@ -144,47 +145,6 @@ opt_e = \case
   DLE_Wait at a -> (pure $ DLE_Wait at) <*> opt_a a
   DLE_PartSet at who a -> (pure $ DLE_PartSet at who) <*> opt_a a
 
-sani_l :: DLLiteral -> DLLiteral
-sani_l l =
-  case l of
-    DLL_Null -> l
-    DLL_Bool {} -> l
-    DLL_Int _ i -> DLL_Int sb i
-    DLL_Bytes {} -> l
-
-sani_a :: DLArg -> DLArg
-sani_a a =
-  case a of
-    DLA_Var {} -> a
-    DLA_Constant {} -> a
-    DLA_Literal l -> DLA_Literal $ sani_l l
-    DLA_Array t as -> DLA_Array t (sani_as as)
-    DLA_Tuple as -> DLA_Tuple (sani_as as)
-    DLA_Obj m -> DLA_Obj (M.map sani_a m)
-    DLA_Data t v va -> DLA_Data t v (sani_a va)
-    DLA_Interact {} -> a
-
-sani_as :: [DLArg] -> [DLArg]
-sani_as = map sani_a
-
-sani_e :: DLExpr -> DLExpr
-sani_e = \case
-  DLE_Arg _ a -> DLE_Arg sb $ sani_a a
-  DLE_Impossible _ m -> DLE_Impossible sb m
-  DLE_PrimOp _ f as -> DLE_PrimOp sb f (sani_as as)
-  DLE_ArrayRef _ a i -> DLE_ArrayRef sb (sani_a a) (sani_a i)
-  DLE_ArraySet _ a i v -> DLE_ArraySet sb (sani_a a) (sani_a i) (sani_a v)
-  DLE_ArrayConcat _ x y -> DLE_ArrayConcat sb (sani_a x) (sani_a y)
-  DLE_ArrayZip _ x y -> DLE_ArrayZip sb (sani_a x) (sani_a y)
-  DLE_TupleRef _ a i -> DLE_TupleRef sb (sani_a a) i
-  DLE_ObjectRef _ a f -> DLE_ObjectRef sb (sani_a a) f
-  DLE_Interact _ fs p m t as -> DLE_Interact sb fs p m t (sani_as as)
-  DLE_Digest _ as -> DLE_Digest sb (sani_as as)
-  DLE_Claim _ fs ct a mm -> DLE_Claim sb fs ct (sani_a a) mm
-  DLE_Transfer _ x y -> DLE_Transfer sb (sani_a x) (sani_a y)
-  DLE_Wait _ x -> DLE_Wait sb (sani_a x)
-  DLE_PartSet _ p x -> DLE_PartSet sb p (sani_a x)
-
 opt_asn :: DLAssignment -> App DLAssignment
 opt_asn (DLAssignment m) =
   DLAssignment <$> mapM opt_a m
@@ -194,7 +154,7 @@ opt_m mkk opt_k = \case
   LL_Return at -> pure $ mkk $ LL_Return at
   LL_Let at (Just dv) e k | isPure e -> do
     e' <- opt_e e
-    let e'' = sani_e e'
+    let e'' = sani e'
     common <- repeated e''
     case common of
       Just rt -> do
@@ -288,7 +248,7 @@ plopt_m mkk opt_k = \case
     mkk <$> (PL_Eff at <$> opt_e e <*> opt_k k)
   PL_Let at _ dv e k | isPure e -> do
     e' <- opt_e e
-    let e'' = sani_e e'
+    let e'' = sani e'
     common <- repeated e''
     case common of
       Just rt -> do
@@ -321,7 +281,11 @@ plopt_ct = \case
   CT_Com m ->
     plopt_m CT_Com plopt_ct m
   CT_If at c t f ->
-    CT_If at <$> opt_a c <*> (newScope $ plopt_ct t) <*> (newScope $ plopt_ct f)
+    case sani t == sani f of
+      True ->
+        plopt_ct t
+      False ->
+        CT_If at <$> opt_a c <*> (newScope $ plopt_ct t) <*> (newScope $ plopt_ct f)
   CT_Switch at ov csm ->
     CT_Switch at ov <$> mapM cm1 csm
     where cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ plopt_ct t)
