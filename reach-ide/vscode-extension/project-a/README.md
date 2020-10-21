@@ -5,7 +5,8 @@ IDE for the Reach DApp programming language.
 ## Features
 
 - Auto setup of Reach compiler
-- Live syntax highlighting for Reach compile errors without needing to save the file
+- Javascript syntax support
+- Live diagnostic highlighting for Reach compile errors without needing to save the file
 - Quick fixes with suggestions provided by Reach compiler
 - Hover documentation for all Reach statements
 - Snippet insertion for Reach template
