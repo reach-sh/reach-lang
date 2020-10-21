@@ -110,12 +110,12 @@
 			{
 				"command": "reach.get.eth.abi",
 				"category": "Reach IDE",
-				"title": "Get compiled Ethereum contract ABI"
+				"title": "Copy Ethereum contract ABI to clipboard"
 			},
 			{
 				"command": "reach.get.eth.bytecode",
 				"category": "Reach IDE",
-				"title": "Get compiled Ethereum contract bytecode"
+				"title": "Copy Ethereum contract bytecode to clipboard"
 			}
 		]
 	},
