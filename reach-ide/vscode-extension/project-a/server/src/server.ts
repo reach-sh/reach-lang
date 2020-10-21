@@ -56,15 +56,28 @@ const NAME: string = 'Reach IDE';
 
 const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'CompileError';
 
-const REACH_TEMP_INDEX_FILE = ".index.rsh.temp";
+let reachTempIndexFile : string;
+const REACH_TEMP_FILE_NAME = "index.rsh";
 
 const { exec } = require("child_process");
 
 const {indexOfRegex, lastIndexOfRegex} = require('index-of-regex')
 
 const fs = require('fs')
+const os = require('os')
+const path = require('path')
+
+let tempFolder : string;
 
 connection.onInitialize((params: InitializeParams) => {
+
+	fs.mkdtemp(path.join(os.tmpdir(), 'reach-ide-'), (err: string, folder: string) => {
+		if (err) throw connection.console.error(err);
+		tempFolder = folder;
+		reachTempIndexFile = path.join(tempFolder, REACH_TEMP_FILE_NAME);
+		connection.console.log("TEMP FOLDER " + tempFolder);
+	});
+
 	let capabilities = params.capabilities;
 
 	// Does the client support the `workspace/configuration` request?
@@ -224,9 +237,9 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let diagnostics: Diagnostic[] = [];
 
 	// Download the Reach shell script if it does not exist
-	const path = './reach'
+	const reachSh = './reach'
 	try {
-		if (fs.existsSync(path)) {
+		if (fs.existsSync(reachSh)) {
 			connection.console.log("Reach shell script exists");
 		} else {
 			connection.console.log("Reach shell script not found, downloading now...");
@@ -261,15 +274,20 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	connection.console.log(`BEFORE`);
 
-	fs.writeFile(REACH_TEMP_INDEX_FILE, textDocumentContents, function(err: any) {
+	fs.writeFile(reachTempIndexFile, textDocumentContents, function(err: any) {
 		if(err) {
 			connection.console.log(`Failed to write temp Reach index.rsh file: ${err}`);
 			return;
 		}
-		connection.console.log(`Temp Reach file ${REACH_TEMP_INDEX_FILE} saved!`);
+		connection.console.log(`Temp Reach file ${reachTempIndexFile} saved!`);
 	});
 
-	await exec("./reach compile " + REACH_TEMP_INDEX_FILE, (error: { message: any; }, stdout: any, stderr: any) => {
+	fs.copyFile('reach', path.join(tempFolder, 'reach'), (err: any) => {
+		if (err) throw connection.console.log(`Error copying reach to temp dir. ${err}`);
+		console.log('reach copied to ' + tempFolder);
+	});
+
+	await exec(path.join(tempFolder, 'reach') + " compile " + REACH_TEMP_FILE_NAME, (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`FOUND Reach compile error: ${error.message}`);
 			let errorLocations : ErrorLocation[] = findErrorLocations(error.message);
@@ -347,7 +365,7 @@ function findErrorLocations(compileErrors: string) : ErrorLocation[] {
 
 	WARNING: Found orphan containers (tut_ethereum-devnet_1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up.
 Creating tut_reach_run ... done
-reachc: error: ./.index.rsh.reach-ide.temp:18:23:id ref: Invalid unbound identifier: declaaaaaaaaassify. Did you mean: ["declassify","addressEq","array","assert","assume"]
+reachc: error: ./.index.rsh.temp:18:23:id ref: Invalid unbound identifier: declaaaaaaaaassify. Did you mean: ["declassify","addressEq","array","assert","assume"]
 CallStack (from HasCallStack):
   error, called at src/Reach/AST.hs:58:3 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.AST
   expect_throw, called at src/Reach/Eval.hs:441:7 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.Eval
