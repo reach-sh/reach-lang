@@ -1,6 +1,6 @@
 {
 	"name": "reach-ide",
-	"displayName": "Reach IDE",
+	"displayName": "Reach IDE (Experimental)",
 	"description": "IDE for the Reach DApp programming language",
 	"author": "Eric Lau",
 	"license": "EPL-2.0",
@@ -14,7 +14,7 @@
 	"publisher": "ericglau",
 	"categories": [],
 	"keywords": [
-		"multi-root ready"
+		"ethereum", "reach"
 	],
 	"engines": {
 		"vscode": "^1.43.0"
