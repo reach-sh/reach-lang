@@ -2,6 +2,8 @@
 
 IDE for the Reach DApp programming language.
 
+This project implements a Reach language server and a VS Code extension with language client.
+
 ## Features
 
 - Auto setup of Reach compiler
