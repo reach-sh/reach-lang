@@ -227,10 +227,11 @@ export async function Alice(stdlib, ctc, interact) {
             const v184 = stdlib.add(v148, v181);
             const v185 = stdlib.mod(v184, stdlib.checkedBigNumberify('./index.rsh:7:32:decimal', stdlib.UInt_max, 3));
             const v186 = v174;
-            // continue - Simulate one iteration of a while
+            const cv71 = v186;
+            const cv72 = v185;
             (() => {
-              const v71 = v186;
-              const v72 = v185;
+              const v71 = cv71;
+              const v72 = cv72;
               if ((() => {
                 const v84 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1));
                 
@@ -238,9 +239,9 @@ export async function Alice(stdlib, ctc, interact) {
                 sim_r.nextSt = stdlib.digest(stdlib.checkedBigNumberify('./index.rsh:56:17:after expr stmt semicolon', stdlib.UInt_max, 3), v34, v33, v43, v71);
                 sim_r.isHalt = false; }
               else {
+                const v188 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
                 const v192 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:83:16:decimal', stdlib.UInt_max, 2), v33);
-                const v195 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
-                const v196 = v195 ? v34 : v43;
+                const v196 = v188 ? v34 : v43;
                 sim_r.txns.push({
                   amt: v192,
                   to: v196 });
@@ -289,12 +290,14 @@ export async function Alice(stdlib, ctc, interact) {
             const v184 = stdlib.add(v148, v181);
             const v185 = stdlib.mod(v184, stdlib.checkedBigNumberify('./index.rsh:7:32:decimal', stdlib.UInt_max, 3));
             const v186 = v174;
-            v71 = v186;
-            v72 = v185;
+            const cv71 = v186;
+            const cv72 = v185;
+            v71 = cv71;
+            v72 = cv72;
             continue; } } } }
+    const v188 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
     const v192 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:83:16:decimal', stdlib.UInt_max, 2), v33);
-    const v195 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
-    const v196 = v195 ? v34 : v43;
+    const v196 = v188 ? v34 : v43;
     ;
     stdlib.protect(stdlib.T_Null, await interact.seeOutcome(v72), {
       at: './index.rsh:87:28:application',
@@ -336,7 +339,6 @@ export async function Bob(stdlib, ctc, interact) {
     const v66 = v40;
     const v69 = stdlib.add(v66, v44);
     const v70 = v69;
-    // while - Simulate one iteration of a while
     const v71 = v70;
     const v72 = stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 1);
     if ((() => {
@@ -346,9 +348,9 @@ export async function Bob(stdlib, ctc, interact) {
       sim_r.nextSt = stdlib.digest(stdlib.checkedBigNumberify('./index.rsh:56:17:after expr stmt semicolon', stdlib.UInt_max, 3), v34, v33, v43, v71);
       sim_r.isHalt = false; }
     else {
+      const v188 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
       const v192 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:83:16:decimal', stdlib.UInt_max, 2), v33);
-      const v195 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
-      const v196 = v195 ? v34 : v43;
+      const v196 = v188 ? v34 : v43;
       sim_r.txns.push({
         amt: v192,
         to: v196 });
@@ -562,12 +564,14 @@ export async function Bob(stdlib, ctc, interact) {
             const v184 = stdlib.add(v148, v181);
             const v185 = stdlib.mod(v184, stdlib.checkedBigNumberify('./index.rsh:7:32:decimal', stdlib.UInt_max, 3));
             const v186 = v174;
-            v71 = v186;
-            v72 = v185;
+            const cv71 = v186;
+            const cv72 = v185;
+            v71 = cv71;
+            v72 = cv72;
             continue; } } } }
+    const v188 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
     const v192 = stdlib.mul(stdlib.checkedBigNumberify('./index.rsh:83:16:decimal', stdlib.UInt_max, 2), v33);
-    const v195 = stdlib.eq(v72, stdlib.checkedBigNumberify('./index.rsh:makeEnum', stdlib.UInt_max, 2));
-    const v196 = v195 ? v34 : v43;
+    const v196 = v188 ? v34 : v43;
     ;
     stdlib.protect(stdlib.T_Null, await interact.seeOutcome(v72), {
       at: './index.rsh:87:28:application',
@@ -985,6 +989,16 @@ const _ALGO = {
   ==
   bz revert
   int 1
+  store 255
+  arg 5
+  btoi
+  gtxn 3 Amount
+  arg 3
+  btoi
+  -
+  +
+  store 254
+  load 255
   int 1
   ==
   bz l0
@@ -996,13 +1010,7 @@ const _ALGO = {
   concat
   gtxn 3 Sender
   concat
-  arg 5
-  btoi
-  gtxn 3 Amount
-  arg 3
-  btoi
-  -
-  +
+  load 254
   itob
   concat
   keccak256
@@ -1021,7 +1029,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 4 Receiver
-  int 1
+  load 255
   int 2
   ==
   bz l1
@@ -1496,6 +1504,16 @@ const _ALGO = {
   +
   int 3
   %
+  store 255
+  arg 5
+  btoi
+  gtxn 3 Amount
+  arg 3
+  btoi
+  -
+  +
+  store 254
+  load 255
   int 1
   ==
   bz l0
@@ -1507,13 +1525,7 @@ const _ALGO = {
   concat
   arg 8
   concat
-  arg 5
-  btoi
-  gtxn 3 Amount
-  arg 3
-  btoi
-  -
-  +
+  load 254
   itob
   concat
   keccak256
@@ -1532,15 +1544,7 @@ const _ALGO = {
   ==
   bz revert
   gtxn 4 Receiver
-  arg 12
-  btoi
-  int 4
-  arg 10
-  btoi
-  -
-  +
-  int 3
-  %
+  load 255
   int 2
   ==
   bz l1

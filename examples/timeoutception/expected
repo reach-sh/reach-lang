@@ -4,7 +4,7 @@
 --
   2 = {
     again(v0),
-    (between [] [DLL_Int 10]),
+    (between [] [10]),
 --
   3 = {
     again(v0),
@@ -12,7 +12,7 @@
 --
   4 = {
     again(v0),
-    (between [DLL_Int 10] [DLL_Int 10, DLL_Int 10]),
+    (between [10] [10, 10]),
 --
   5 = {
     again(v0),
@@ -20,7 +20,7 @@
 --
   6 = {
     again(v0),
-    (between [DLL_Int 10, DLL_Int 10] [DLL_Int 10, DLL_Int 10, DLL_Int 10]),
+    (between [10, 10] [10, 10, 10]),
 --
   7 = {
     again(v0),
@@ -28,4 +28,4 @@
 --
   8 = {
     again(v0),
-    (between [DLL_Int 10, DLL_Int 10, DLL_Int 10] []),
+    (between [10, 10, 10] []),

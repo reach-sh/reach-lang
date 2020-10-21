@@ -252,7 +252,7 @@ opt_fs = \case
 opt_mtime :: Maybe (DLArg, LLStep) -> App (Maybe (DLArg, LLStep))
 opt_mtime = \case
   Nothing -> pure $ Nothing
-  Just (a, s) -> Just <$> (pure (,) <*> opt_a a <*> opt_s s)
+  Just (a, s) -> Just <$> (pure (,) <*> opt_a a <*> (newScope $ opt_s s))
 
 opt_s :: LLStep -> App LLStep
 opt_s = \case
