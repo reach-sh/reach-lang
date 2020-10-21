@@ -832,10 +832,70 @@ do_run () {
   cleanup
 }
 
+react_compose () {
+  if $USE_EXISTING_DEVNET ; then
+    echo 'using existing devnet'
+    GANACHE_PORTION=''
+  else
+    GANACHE_PORTION='
+    # Does not technically depend on ganache.
+    # This is just to get it to run both.
+    depends_on:
+      - ganache
+  ganache:
+    image: trufflesuite/ganache-cli:v6.12.0
+    command:
+      - "--accounts=1"
+      - "--defaultBalanceEther=1000000"
+    ports:
+      - "8545:8545"
+'
+  fi
+  # cat<<EOF | docker-compose -f - "$@"
+  cat<<EOF > docker-compose.yml.react
+version: '3.4'
+services:
+  dev-server:
+    image: reachsh/react_runner:$REACH_VERSION
+    volumes:
+      - .:/app/src
+    ports:
+      - "3000:3000"
+    stdin_open: true
+    tty: true
+$GANACHE_PORTION
+EOF
+#   cat<<EOF > run.sh.react
+# docker-compose -f docker-compose.yml.react $@
+# EOF
+
+  # /bin/sh run.sh.react || :
+  docker-compose -f docker-compose.yml.react "$@" || :
+  rm docker-compose.yml.react # run.sh.react
+}
+
 do_react () {
-  # TODO: support args comparable to reach run
-  do_compile
-  docker run --volume "$(pwd):/app/src" -it -p 3000:3000 "reachsh/react_runner:$REACH_VERSION"
+  USE_EXISTING_DEVNET=false
+  if [ "x$1" = "--use-existing-devnet" ]; then
+    shift
+    USE_EXISTING_DEVNET=true
+  fi
+  if command -v lsof >/dev/null && lsof -i tcp:8545 | grep LISTEN >/dev/null ; then
+    USE_EXISTING_DEVNET=true
+  fi
+
+  # All args are just forwarded to do_compile
+  # TODO: support args comparable to do_run?
+  do_compile "$@"
+
+  react_compose run --service-ports --rm dev-server
+  exit 0
+}
+
+do_react_down () {
+  USE_EXISTING_DEVNET=false
+  react_compose down
+  exit 0
 }
 
 # TODO: allow linting outside of PWD
@@ -895,6 +955,9 @@ case ${SUBCOMMAND} in
         ;;
     react)
         do_react "$@"
+        ;;
+    react-down)
+        do_react_down "$@"
         ;;
     init)
         do_init "$@"
