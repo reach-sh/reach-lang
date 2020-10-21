@@ -24,14 +24,14 @@ lin_com who back mkk fve rets s ks =
             Nothing -> impossible $ "fluid ref unbound: " <> show fv
             Just x -> x
     DLS_Let at mdv de -> mkk $ LL_Let at mdv de $ back at fve rets ks
-    DLS_ArrayMap at ans x a f r ->
-      mkk $ LL_ArrayMap at ans x a f' r $ back at fve rets ks
+    DLS_ArrayMap at ans x a f ->
+      mkk $ LL_ArrayMap at ans x a f' $ back at fve rets ks
       where
-        f' = lin_local at fve f
-    DLS_ArrayReduce at ans x z b a f r ->
-      mkk $ LL_ArrayReduce at ans x z b a f' r $ back at fve rets ks
+        f' = lin_block at fve f
+    DLS_ArrayReduce at ans x z b a f ->
+      mkk $ LL_ArrayReduce at ans x z b a f' $ back at fve rets ks
       where
-        f' = lin_local at fve f
+        f' = lin_block at fve f
     DLS_If at ca _ ts fs
       | isLocal s ->
         mkk $ LL_LocalIf at ca t' f' $ back at fve rets ks
@@ -80,6 +80,10 @@ lin_local_rets _ fve rets (s Seq.:<| ks) =
 
 lin_local :: SrcLoc -> FluidEnv -> DLStmts -> LLLocal
 lin_local at fve ks = lin_local_rets at fve mempty ks
+
+lin_block :: SrcLoc -> FluidEnv -> DLBlock -> LLBlock
+lin_block _at fve (DLBlock at fs l a) =
+  LLBlock at fs (lin_local at fve l) a
 
 lin_con :: (FluidEnv -> DLStmts -> LLStep) -> SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLConsensus
 lin_con _ at _ _ Seq.Empty =

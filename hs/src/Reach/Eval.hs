@@ -1264,7 +1264,8 @@ evalPrim ctxt at sco st p sargs =
             False -> do
               let t = T_Array f_ty x_sz
               (ans_dv, ans_dsv) <- make_dlvar at "array_map" t
-              let lifts' = return $ DLS_ArrayMap at ans_dv x_da a_dv f_lifts f_da
+              let f_bl = DLBlock at [] f_lifts f_da
+              let lifts' = return $ DLS_ArrayMap at ans_dv x_da a_dv f_bl
               return $ SLRes lifts' st (lvl, ans_dsv)
         x : y : args' -> do
           let (f, more) = case reverse args' of
@@ -1309,7 +1310,8 @@ evalPrim ctxt at sco st p sargs =
               return $ SLRes (lifts' <> lifts'') f_st (f_lvl, z')
             False -> do
               (ans_dv, ans_dsv) <- make_dlvar at "array_reduce" f_ty
-              let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_lifts f_da
+              let f_bl = DLBlock at [] f_lifts f_da
+              let lifts' = return $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_bl
               return $ SLRes lifts' st (lvl, ans_dsv)
         x : y : args' -> do
           let (f, z, more) = case reverse args' of

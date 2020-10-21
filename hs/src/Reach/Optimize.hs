@@ -174,18 +174,16 @@ opt_m mkk opt_k = \case
   LL_LocalSwitch at ov csm k ->
     mkk <$> (LL_LocalSwitch at ov <$> mapM cm1 csm <*> opt_k k)
     where cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt_l l)
-  LL_ArrayMap at ans x0 a f r k -> do
-    LLBlock _ _ f' r' <- opt_bl $ LLBlock at [] f r
-    mkk <$> (LL_ArrayMap at ans <$> opt_a x0 <*> (pure a) <*> (pure f') <*> (pure r') <*> opt_k k)
-  LL_ArrayReduce at ans x0 z b a f r k -> do
-    LLBlock _ _ f' r' <- opt_bl $ LLBlock at [] f r
-    mkk <$> (LL_ArrayReduce at ans <$> opt_a x0 <*> opt_a z <*> (pure b) <*> (pure a) <*> (pure f') <*> (pure r') <*> opt_k k)
+  LL_ArrayMap at ans x0 a f k -> do
+    mkk <$> (LL_ArrayMap at ans <$> opt_a x0 <*> (pure a) <*> opt_bl f <*> opt_k k)
+  LL_ArrayReduce at ans x0 z b a f k -> do
+    mkk <$> (LL_ArrayReduce at ans <$> opt_a x0 <*> opt_a z <*> (pure b) <*> (pure a) <*> opt_bl f <*> opt_k k)
 
 opt_l :: LLLocal -> App LLLocal
 opt_l = \case
   LLL_Com m -> opt_m LLL_Com opt_l m
 
-opt_bl :: LLBlock LLLocal -> App (LLBlock LLLocal)
+opt_bl :: LLBlock -> App LLBlock
 opt_bl (LLBlock at fs b a) =
   newScope $ LLBlock at fs <$> opt_l b <*> opt_a a
 
@@ -269,12 +267,10 @@ plopt_m mkk opt_k = \case
   PL_LocalSwitch at ov csm k ->
     mkk <$> (PL_LocalSwitch at ov <$> mapM cm1 csm <*> opt_k k)
     where cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ plopt_l l)
-  PL_ArrayMap at ans x0 a f r k -> do
-    PLBlock _ f' r' <- plopt_bl $ PLBlock at f r
-    mkk <$> (PL_ArrayMap at ans <$> opt_a x0 <*> (pure a) <*> (pure f') <*> (pure r') <*> opt_k k)
-  PL_ArrayReduce at ans x0 z b a f r k -> do
-    PLBlock _ f' r' <- plopt_bl $ PLBlock at f r
-    mkk <$> (PL_ArrayReduce at ans <$> opt_a x0 <*> opt_a z <*> (pure b) <*> (pure a) <*> (pure f') <*> (pure r') <*> opt_k k)
+  PL_ArrayMap at ans x0 a f k -> do
+    mkk <$> (PL_ArrayMap at ans <$> opt_a x0 <*> (pure a) <*> plopt_bl f <*> opt_k k)
+  PL_ArrayReduce at ans x0 z b a f k -> do
+    mkk <$> (PL_ArrayReduce at ans <$> opt_a x0 <*> opt_a z <*> (pure b) <*> (pure a) <*> plopt_bl f <*> opt_k k)
 
 plopt_ct :: CTail -> App CTail
 plopt_ct = \case
@@ -336,23 +332,28 @@ ucs_m mkk ucs_k cs_kp = \case
                   (cs_t, t') = ucs_pt t cs_k
                   csm_' = M.insert var (mov, t') csm_
           (cs_k, k') = ucs_k k cs_kp
-  PL_ArrayMap at ans x a f r k -> (cs', mkk $ ct')
-    where ct' = PL_ArrayMap at ans x a f' r k'
+  PL_ArrayMap at ans x a f k -> (cs', mkk $ ct')
+    where ct' = PL_ArrayMap at ans x a f' k'
           cs' = counts x <> cs_body
           cs_body = count_rms [a] cs_f
-          (cs_f, f') = ucs_pt f cs_k
-          cs_k = counts r <> count_rms [ans] cs_k_
+          (cs_f, f') = ucs_bl f cs_k
+          cs_k = count_rms [ans] cs_k_
           (cs_k_, k') = ucs_k k cs_kp
-  PL_ArrayReduce at ans x z b a f r k -> (cs', mkk $ ct')
-    where ct' = PL_ArrayReduce at ans x z b a f' r k'
+  PL_ArrayReduce at ans x z b a f k -> (cs', mkk $ ct')
+    where ct' = PL_ArrayReduce at ans x z b a f' k'
           cs' = counts x <> counts z <> cs_body
           cs_body = count_rms [b, a] cs_f
-          (cs_f, f') = ucs_pt f cs_k
-          cs_k = counts r <> count_rms [ans] cs_k_
+          (cs_f, f') = ucs_bl f cs_k
+          cs_k = count_rms [ans] cs_k_
           (cs_k_, k') = ucs_k k cs_kp
 
 ucs_pt :: PLTail -> Counts -> (Counts, PLTail)
 ucs_pt (PLTail m) cs_k = ucs_m PLTail ucs_pt cs_k m
+
+ucs_bl :: PLBlock -> Counts -> (Counts, PLBlock)
+ucs_bl (PLBlock at t a) cs_k = (cs_t, PLBlock at t' a)
+  where cs_k' = counts a <> cs_k
+        (cs_t, t') = ucs_pt t cs_k'
 
 ucs_t :: Counts -> CTail -> (Counts, CTail)
 ucs_t cs_kp = \case

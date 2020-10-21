@@ -159,15 +159,15 @@ prettyTransfer who da =
 prettyStop :: Doc a
 prettyStop = "exit" <> parens (emptyDoc) <> semi
 
-prettyMap :: Pretty a => DLVar -> DLArg -> DLVar -> a -> DLArg -> Doc ann
-prettyMap ans x a f r =
+prettyMap :: Pretty a => DLVar -> DLArg -> DLVar -> a -> Doc ann
+prettyMap ans x a f =
   "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <+> "in" <+> pretty x)
-    <+> braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
+    <+> braces (nest 2 $ hardline <> pretty f)
 
-prettyReduce :: Pretty a => DLVar -> DLArg -> DLArg -> DLVar -> DLVar -> a -> DLArg -> Doc ann
-prettyReduce ans x z b a f r =
+prettyReduce :: Pretty a => DLVar -> DLArg -> DLArg -> DLVar -> DLVar -> a -> Doc ann
+prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
-    <+> braces (nest 2 $ hardline <> pretty f <> hardline <> "yield" <+> pretty r <> semi)
+    <+> braces (nest 2 $ hardline <> pretty f)
 
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
@@ -185,8 +185,8 @@ instance Pretty DLStmt where
             "const" <+> pretty v <+> "=" <+> pretty e <> semi
           Nothing ->
             pretty e <> semi
-      DLS_ArrayMap _ ans x a f r -> prettyMap ans x a f r
-      DLS_ArrayReduce _ ans x z b a f r -> prettyReduce ans x z b a f r
+      DLS_ArrayMap _ ans x a f -> prettyMap ans x a f
+      DLS_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
       DLS_If _ ca _ ts fs ->
         prettyIf ca (render_dls ts) (render_dls fs)
       DLS_Switch _ ov _ csm ->
@@ -260,8 +260,10 @@ instance Pretty a => Pretty (LLCommon a) where
       "const" <+> pretty dv <+> "=" <+> pretty de <> semi
         <> hardline
         <> pretty k
-    LL_ArrayMap _ ans x a f r k -> prettyMap ans x a f r <> hardline <> pretty k
-    LL_ArrayReduce _ ans x z b a f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
+    LL_ArrayMap _ ans x a f k ->
+      prettyMap ans x a f <> hardline <> pretty k
+    LL_ArrayReduce _ ans x z b a f k ->
+      prettyReduce ans x z b a f <> hardline <> pretty k
     LL_Var _at dv k ->
       "let" <+> pretty dv <> semi <> hardline <> pretty k
     LL_Set _at dv da k ->
@@ -286,7 +288,7 @@ instance Pretty LLConsensus where
     LLC_Continue _at asn ->
       prettyContinue asn
 
-instance Pretty a => Pretty (LLBlock a) where
+instance Pretty LLBlock where
   pretty (LLBlock _ _ ts ta) =
     (pretty ts) <> hardline <> "return" <+> pretty ta <> semi
 
@@ -330,8 +332,10 @@ instance Pretty a => Pretty (PLCommon a) where
       "const" <+> pretty lc <> pretty dv <+> "=" <+> pretty de <> semi
         <> hardline
         <> pretty k
-    PL_ArrayMap _ ans x a f r k -> prettyMap ans x a f r <> hardline <> pretty k
-    PL_ArrayReduce _ ans x z b a f r k -> prettyReduce ans x z b a f r <> hardline <> pretty k
+    PL_ArrayMap _ ans x a f k ->
+      prettyMap ans x a f <> hardline <> pretty k
+    PL_ArrayReduce _ ans x z b a f k ->
+      prettyReduce ans x z b a f <> hardline <> pretty k
     PL_Eff _ de k ->
       "eff" <+> pretty de <> semi <> hardline <> pretty k
     PL_Var _at dv k ->

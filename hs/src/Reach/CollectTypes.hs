@@ -79,8 +79,8 @@ instance CollectsTypes FromSpec where
 instance CollectsTypes a => CollectsTypes (LLCommon a) where
   cts (LL_Return _) = mempty
   cts (LL_Let _ v e k) = cts v <> cts e <> cts k
-  cts (LL_ArrayMap _ ans x a f r k) = cts ans <> cts x <> cts a <> cts f <> cts r <> cts k
-  cts (LL_ArrayReduce _ ans x z b a f r k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts r <> cts k
+  cts (LL_ArrayMap _ ans x a f k) = cts ans <> cts x <> cts a <> cts f <> cts k
+  cts (LL_ArrayReduce _ ans x z b a f k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts k
   cts (LL_Var _ v k) = cts v <> cts k
   cts (LL_Set _ v a k) = cts v <> cts a <> cts k
   cts (LL_LocalIf _ a t f k) = cts a <> cts t <> cts f <> cts k
@@ -89,7 +89,7 @@ instance CollectsTypes a => CollectsTypes (LLCommon a) where
 instance CollectsTypes LLLocal where
   cts (LLL_Com a) = cts a
 
-instance CollectsTypes a => CollectsTypes (LLBlock a) where
+instance CollectsTypes LLBlock where
   cts (LLBlock _ _ k a) = cts k <> cts a
 
 instance CollectsTypes LLConsensus where
@@ -113,8 +113,8 @@ instance CollectsTypes LLProg where
 instance CollectsTypes a => CollectsTypes (PLCommon a) where
   cts (PL_Return _) = mempty
   cts (PL_Let _ _ dv de k) = cts dv <> cts de <> cts k
-  cts (PL_ArrayMap _ ans x a f r k) = cts ans <> cts x <> cts a <> cts f <> cts r <> cts k
-  cts (PL_ArrayReduce _ ans x z b a f r k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts r <> cts k
+  cts (PL_ArrayMap _ ans x a f k) = cts ans <> cts x <> cts a <> cts f <> cts k
+  cts (PL_ArrayReduce _ ans x z b a f k) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f <> cts k
   cts (PL_Eff _ de k) = cts de <> cts k
   cts (PL_Var _ dv k) = cts dv <> cts k
   cts (PL_Set _ dv da k) = cts dv <> cts da <> cts k
@@ -123,6 +123,9 @@ instance CollectsTypes a => CollectsTypes (PLCommon a) where
 
 instance CollectsTypes PLTail where
   cts (PLTail m) = cts m
+
+instance CollectsTypes PLBlock where
+  cts (PLBlock _ t a) = cts t <> cts a
 
 instance CollectsTypes CTail where
   cts (CT_Com m) = cts m

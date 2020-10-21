@@ -128,7 +128,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_modem :: Maybe VerifyMode
   , ctxt_path_constraint :: [SExpr]
   , ctxt_bindingsrr :: (IORefRef (M.Map String (Maybe DLVar, SrcLoc, BindingOrigin, Maybe SExpr)))
-  , ctxt_while_invariant :: Maybe (LLBlock LLLocal)
+  , ctxt_while_invariant :: Maybe LLBlock
   , ctxt_loop_var_subst :: M.Map DLVar DLArg
   , ctxt_primed_vars :: S.Set DLVar
   , ctxt_displayed :: IORef (S.Set SExpr)
@@ -607,7 +607,7 @@ data BlockMode
   = B_Assume Bool
   | B_Prove
 
-smt_block :: SMTCtxt -> BlockMode -> LLBlock LLLocal -> SMTComp
+smt_block :: SMTCtxt -> BlockMode -> LLBlock -> SMTComp
 smt_block ctxt bm b = before_m <> after_m
   where
     LLBlock at f l da = b
@@ -641,7 +641,7 @@ gatherDefinedVars_m m =
 gatherDefinedVars_l :: LLLocal -> S.Set DLVar
 gatherDefinedVars_l (LLL_Com m) = gatherDefinedVars_m m
 
-gatherDefinedVars :: LLBlock LLLocal -> S.Set DLVar
+gatherDefinedVars :: LLBlock -> S.Set DLVar
 gatherDefinedVars (LLBlock _ _ l _) = gatherDefinedVars_l l
 
 smt_asn :: SMTCtxt -> Bool -> DLAssignment -> SMTComp

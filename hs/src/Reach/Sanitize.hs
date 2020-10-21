@@ -56,10 +56,10 @@ instance {-# OVERLAPPING #-} Sanitize a => Sanitize (PLCommon a) where
   sani = \case
     PL_Return _ -> PL_Return sb
     PL_Let _ lc x e k -> PL_Let sb lc x (sani e) (sani k)
-    PL_ArrayMap _ a b c d e f ->
-      PL_ArrayMap sb a (sani b) c (sani d) (sani e) (sani f)
-    PL_ArrayReduce _ a b c d e f g h ->
-      PL_ArrayReduce sb a (sani b) (sani c) d e (sani f) (sani g) (sani h)
+    PL_ArrayMap _ a b c d e ->
+      PL_ArrayMap sb a (sani b) c (sani d) (sani e)
+    PL_ArrayReduce _ a b c d e f g ->
+      PL_ArrayReduce sb a (sani b) (sani c) d e (sani f) (sani g)
     PL_Eff _ e k -> PL_Eff sb (sani e) (sani k)
     PL_Var _ v k -> PL_Var sb v (sani k)
     PL_Set _ v a k -> PL_Set sb v (sani a) (sani k)

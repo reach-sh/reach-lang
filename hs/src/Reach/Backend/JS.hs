@@ -263,11 +263,11 @@ jsCom iter ctxt = \case
       [ jsEmitSwitch jsPLTail ctxt at ov csm
       , iter ctxt k
       ]
-  PL_ArrayMap _ ans x a f r k ->
+  PL_ArrayMap _ ans x a (PLBlock _ f r) k ->
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "map" [(jsApply "" [jsArg $ DLA_Var a] <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r)))]
       <> hardline
       <> iter ctxt k
-  PL_ArrayReduce _ ans x z b a f r k ->
+  PL_ArrayReduce _ ans x z b a (PLBlock _ f r) k ->
     "const" <+> jsVar ans <+> "=" <+> jsArg x <> "." <> jsApply "reduce" [(jsApply "" (map (jsArg . DLA_Var) [b, a]) <+> "=>" <+> jsBraces (jsPLTail ctxt f <> hardline <> jsReturn (jsArg r))), jsArg z]
       <> hardline
       <> iter ctxt k

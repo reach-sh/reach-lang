@@ -541,8 +541,8 @@ type SwitchCases a =
 
 data DLStmt
   = DLS_Let SrcLoc (Maybe DLVar) DLExpr
-  | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLStmts DLArg
-  | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLStmts DLArg
+  | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLBlock
+  | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
   | DLS_Return SrcLoc Int SLVal
@@ -630,10 +630,8 @@ data DLProg
 data LLCommon a
   = LL_Return SrcLoc
   | LL_Let SrcLoc (Maybe DLVar) DLExpr a
-  | -- XXX use block
-    LL_ArrayMap SrcLoc DLVar DLArg DLVar LLLocal DLArg a
-  | -- XXX use block
-    LL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar LLLocal DLArg a
+  | LL_ArrayMap SrcLoc DLVar DLArg DLVar LLBlock a
+  | LL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar LLBlock a
   | LL_Var SrcLoc DLVar a
   | LL_Set SrcLoc DLVar DLArg a
   | LL_LocalIf SrcLoc DLArg LLLocal LLLocal a
@@ -644,8 +642,8 @@ data LLLocal
   = LLL_Com (LLCommon LLLocal)
   deriving (Eq, Show)
 
-data LLBlock a
-  = LLBlock SrcLoc [SLCtxtFrame] a DLArg
+data LLBlock
+  = LLBlock SrcLoc [SLCtxtFrame] LLLocal DLArg
   deriving (Eq, Show)
 
 data LLConsensus
@@ -657,8 +655,8 @@ data LLConsensus
     LLC_While
       { llc_w_at :: SrcLoc
       , llc_w_asn :: DLAssignment
-      , llc_w_inv :: LLBlock LLLocal
-      , llc_w_cond :: LLBlock LLLocal
+      , llc_w_inv :: LLBlock
+      , llc_w_cond :: LLBlock
       , llc_w_body :: LLConsensus
       , llc_w_k :: LLConsensus
       }
@@ -703,8 +701,8 @@ instance Semigroup PLLetCat where
 data PLCommon a
   = PL_Return SrcLoc
   | PL_Let SrcLoc PLLetCat DLVar DLExpr a
-  | PL_ArrayMap SrcLoc DLVar DLArg DLVar PLTail DLArg a
-  | PL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar PLTail DLArg a
+  | PL_ArrayMap SrcLoc DLVar DLArg DLVar PLBlock a
+  | PL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar PLBlock a
   | PL_Eff SrcLoc DLExpr a
   | PL_Var SrcLoc DLVar a
   | PL_Set SrcLoc DLVar DLArg a

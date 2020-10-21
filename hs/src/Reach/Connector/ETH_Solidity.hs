@@ -463,7 +463,7 @@ solCom iter ctxt = \case
       SolTailRes _ t' = solPLTail ctxt t
       SolTailRes _ f' = solPLTail ctxt f
   PL_LocalSwitch at ov csm k -> solSwitch solPLTail ctxt at ov csm <> iter ctxt k
-  PL_ArrayMap _ ans x a f r k ->
+  PL_ArrayMap _ ans x a (PLBlock _ f r) k ->
     SolTailRes ctxt map_p <> iter ctxt k
     where
       sz = arraySize x
@@ -478,7 +478,7 @@ solCom iter ctxt = \case
                    ])
           ]
       SolTailRes fctxt f' = solPLTail ctxt f
-  PL_ArrayReduce _ ans x z b a f r k ->
+  PL_ArrayReduce _ ans x z b a (PLBlock _ f r) k ->
     SolTailRes ctxt reduce_p <> iter ctxt k
     where
       sz = arraySize x
@@ -557,15 +557,18 @@ manyVars_m iter = \case
   PL_LocalSwitch _ _ csm k -> (mconcatMap cm1 $ M.elems csm) <> iter k
     where
       cm1 (mov', c) = S.union (S.fromList $ maybeToList mov') $ manyVars_p c
-  PL_ArrayMap _ ans _ a f _ k ->
-    s_inserts [ans, a] (manyVars_p f <> iter k)
-  PL_ArrayReduce _ ans _ _ b a f _ k ->
-    s_inserts [ans, b, a] (manyVars_p f <> iter k)
+  PL_ArrayMap _ ans _ a f k ->
+    s_inserts [ans, a] (manyVars_bl f <> iter k)
+  PL_ArrayReduce _ ans _ _ b a f k ->
+    s_inserts [ans, b, a] (manyVars_bl f <> iter k)
   where
     s_inserts l = S.union (S.fromList l)
 
 manyVars_p :: PLTail -> S.Set DLVar
 manyVars_p (PLTail m) = manyVars_m manyVars_p m
+
+manyVars_bl :: PLBlock -> S.Set DLVar
+manyVars_bl (PLBlock _ t _) = manyVars_p t
 
 manyVars_c :: CTail -> S.Set DLVar
 manyVars_c = \case

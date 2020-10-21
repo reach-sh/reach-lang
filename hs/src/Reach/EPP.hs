@@ -110,7 +110,7 @@ epp_m done _back skip look c =
                          Count Nothing -> maybe_skip [dv]
                          Count (Just lc) ->
                            back' (cs' [dv]) (PL_Let at lc dv de k'))
-    LL_ArrayMap at ans x a f r k ->
+    LL_ArrayMap at ans x a (LLBlock fat _ f r) k ->
       look
         k
         (\back' skip' k_cs k' ->
@@ -118,7 +118,7 @@ epp_m done _back skip look c =
              Count Nothing -> skip' k_cs k'
              Count (Just _) ->
                --- Note: Maybe use LetCat for fusing?
-               back' cs' (PL_ArrayMap at ans x a f' r k')
+               back' cs' (PL_ArrayMap at ans x a (PLBlock fat f' r) k')
                where
                  cs' = (counts x <> f_cs' <> k_cs')
                  k_cs' = count_rms [ans] k_cs
@@ -126,7 +126,7 @@ epp_m done _back skip look c =
                  --- FIXME: We force the variables in r to appear twice so they won't get the PL_Once tag; it would be better to get the threading of the information correct in Sol
                  fk_cs' = k_cs' <> (counts r <> counts r)
                  ProResL (ProRes_ f_cs f') = epp_l f fk_cs')
-    LL_ArrayReduce at ans x z b a f r k ->
+    LL_ArrayReduce at ans x z b a (LLBlock fat _ f r) k ->
       look
         k
         (\back' skip' k_cs k' ->
@@ -134,7 +134,7 @@ epp_m done _back skip look c =
              Count Nothing -> skip' k_cs k'
              Count (Just _) ->
                --- Note: Maybe use LetCat for fusing?
-               back' cs' (PL_ArrayReduce at ans x z b a f' r k')
+               back' cs' (PL_ArrayReduce at ans x z b a (PLBlock fat f' r) k')
                where
                  cs' = (counts x <> counts z <> f_cs' <> k_cs')
                  k_cs' = count_rms [ans] k_cs
@@ -214,10 +214,10 @@ plReplace mkk nk = \case
   PL_Return {} -> nk
   PL_Let a b c d k ->
     mkk $ PL_Let a b c d $ iter k
-  PL_ArrayMap a b c d e f k ->
-    mkk $ PL_ArrayMap a b c d e f $ iter k
-  PL_ArrayReduce a b c d e f g h k ->
-    mkk $ PL_ArrayReduce a b c d e f g h $ iter k
+  PL_ArrayMap a b c d e k ->
+    mkk $ PL_ArrayMap a b c d e $ iter k
+  PL_ArrayReduce a b c d e f g k ->
+    mkk $ PL_ArrayReduce a b c d e f g $ iter k
   PL_Eff a b k ->
     mkk $ PL_Eff a b $ iter k
   PL_Var a b k ->

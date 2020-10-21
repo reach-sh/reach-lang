@@ -196,8 +196,8 @@ llReplace :: (LLCommon a -> a) -> LLCommon a -> LLCommon LLLocal -> LLCommon a
 llReplace mkk nk = \case
   LL_Return {} -> nk
   LL_Let at mdv e k -> LL_Let at mdv e $ iter k
-  LL_ArrayMap at ans x a f r k -> LL_ArrayMap at ans x a f r $ iter k
-  LL_ArrayReduce at ans x z b a f r k -> LL_ArrayReduce at ans x z b a f r $ iter k
+  LL_ArrayMap at ans x a f k -> LL_ArrayMap at ans x a f $ iter k
+  LL_ArrayReduce at ans x z b a f k -> LL_ArrayReduce at ans x z b a f $ iter k
   LL_Var at x k -> LL_Var at x $ iter k
   LL_Set at x v k -> LL_Set at x v $ iter k
   LL_LocalIf at c t f k -> LL_LocalIf at c t f $ iter k
@@ -228,7 +228,7 @@ ul_m mkk ul_k = \case
     mkk <$> (LL_LocalSwitch at <$> ul_v ov <*> mapM cm1 csm <*> ul_k k)
     where
       cm1 (mov', l) = (,) <$> (ul_mv_rn mov') <*> ul_l l
-  LL_ArrayMap at ans x0 a f r k -> do
+  LL_ArrayMap at ans x0 a (LLBlock _ _ f r) k -> do
     recordUnroll
     x <- ul_a x0
     (xlifts, (_, x')) <- collectLifts $ ul_explode at x
@@ -241,7 +241,7 @@ ul_m mkk ul_k = \case
     k' <- ul_k k
     let m' = llSeqn mkk fs (LL_Let at (Just ans') (DLE_Arg at $ DLA_Array r_ty r') k')
     return $ addLifts mkk m' (xlifts <> lifts)
-  LL_ArrayReduce at ans x0 z b a f r k -> do
+  LL_ArrayReduce at ans x0 z b a (LLBlock _ _ f r) k -> do
     recordUnroll
     x <- ul_a x0
     (xlifts, (_, x')) <- collectLifts $ ul_explode at x
@@ -264,7 +264,7 @@ ul_l :: LLLocal -> App s LLLocal
 ul_l = \case
   LLL_Com m -> ul_m LLL_Com ul_l m
 
-ul_bl :: LLBlock LLLocal -> App s (LLBlock LLLocal)
+ul_bl :: LLBlock -> App s LLBlock
 ul_bl (LLBlock at fs b a) =
   (pure $ LLBlock at fs) <*> ul_l b <*> ul_a a
 
