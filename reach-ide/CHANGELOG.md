@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.5
+
+Update categories.
+
 ## 0.0.4
 
 Update readme.
