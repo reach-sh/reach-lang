@@ -238,7 +238,6 @@ function setup(A, B) {
   commit();
 
   B.only(() => {
-    interact.partnerIs(A);
     interact.acceptParams(wagerAmount, escrowAmount); });
   B.pay(wagerAmount)
     .timeout(DELAY, () => closeTo(A, abs_sendOutcome(A, B, B_QUITS)));
@@ -246,6 +245,8 @@ function setup(A, B) {
 
   A.only(() => {
     interact.partnerIs(B); });
+  B.only(() => {
+    interact.partnerIs(A); });
 
   return [wagerAmount, escrowAmount, A, B]; }
 
@@ -345,4 +346,5 @@ const abs_nodraw =
 // Interface
 
 export const once = abs_once;
-export const main = abs_nodraw;
+export const nodraw = abs_nodraw;
+export const main = once; // TODO: nodraw
