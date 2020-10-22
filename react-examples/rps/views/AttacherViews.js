@@ -18,8 +18,7 @@ exports.Wrapper = class extends React.Component {
 exports.Attach = class extends React.Component {
   render() {
     const {parent} = this.props;
-    this.state = this.state || {};
-    const {ctcInfoStr} = this.state;
+    const {ctcInfoStr} = this.state || {};
     return (
       <div>
         Please paste the contract info to attach to:
@@ -52,6 +51,7 @@ exports.Attaching = class extends React.Component {
 exports.AcceptTerms = class extends React.Component {
   render() {
     const {wager, escrow, standardUnit, parent} = this.props;
+    const {disabled} = this.state || {};
     return (
       <div>
         The terms of the game are:
@@ -59,7 +59,11 @@ exports.AcceptTerms = class extends React.Component {
         <br /> Escrow: {escrow} {standardUnit}
         <br />
         <button
-          onClick={() => parent.termsAccepted()}
+          disabled={disabled}
+          onClick={() => {
+            this.setState({disabled: true});
+            parent.termsAccepted();
+          }}
         >Accept terms and pay wager</button>
       </div>
     );

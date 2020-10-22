@@ -20,8 +20,7 @@ exports.Wrapper = class extends React.Component {
 exports.SetWager = class extends React.Component {
   render() {
     const {parent, defaultWager, standardUnit} = this.props;
-    this.state = this.state || {};
-    const wager = this.state.wager || defaultWager;
+    const wager = (this.state || {}).wager || defaultWager;
     return (
       <div>
         <input
@@ -41,8 +40,7 @@ exports.SetWager = class extends React.Component {
 exports.SetEscrow = class extends React.Component {
   render() {
     const {parent, defaultEscrow, standardUnit} = this.props;
-    this.state = this.state || {};
-    const escrow = this.state.escrow || defaultEscrow;
+    const escrow = (this.state || {}).escrow || defaultEscrow;
     return (
       <div>
         <input
