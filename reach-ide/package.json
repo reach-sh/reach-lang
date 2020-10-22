@@ -4,7 +4,7 @@
 	"description": "IDE for the Reach DApp programming language",
 	"author": "Eric Lau",
 	"license": "EPL-2.0",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"preview": true,
 	"icon": "images/logo.png",
 	"repository": {
@@ -12,9 +12,13 @@
 		"url": "https://github.com/ericglau/reach-ide"
 	},
 	"publisher": "ericglau",
-	"categories": [],
+	"categories": [
+		"Programming Languages",
+		"Snippets",
+		"Other"
+	],
 	"keywords": [
-		"ethereum", "reach"
+		"reach", "ethereum", "blockchain"
 	],
 	"engines": {
 		"vscode": "^1.43.0"
