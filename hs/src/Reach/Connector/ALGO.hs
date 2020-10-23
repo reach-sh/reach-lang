@@ -500,76 +500,95 @@ ce = \case
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> do
     let (t, _) = typeArray aa
-    -- FIXME if t = T_Bool, then use bitmask
     let tsz = typeSizeOf t
     ca aa
-    case ia of
-      DLA_Literal (DLL_Int _ ii) -> do
-        let start = ii * tsz
-        let end = start + tsz
-        csubstring at start end
+    case t of
+      T_Bool -> do
+        case ia of
+          DLA_Literal (DLL_Int _ ii) | ii < 256 -> do
+            code "byteget" [ texty ii ]
+          _ -> do
+            ca ia
+            op "byteget2"
       _ -> do
-        cl $ DLL_Int sb tsz
-        ca ia
-        op "*"
-        op "dup"
-        cl $ DLL_Int sb tsz
-        op "+"
-        op "substring3"
-    cfrombs t
+        case ia of
+          DLA_Literal (DLL_Int _ ii) -> do
+            let start = ii * tsz
+            let end = start + tsz
+            csubstring at start end
+          _ -> do
+            cl $ DLL_Int sb tsz
+            ca ia
+            op "*"
+            op "dup"
+            cl $ DLL_Int sb tsz
+            op "+"
+            op "substring3"
+        cfrombs t
   DLE_ArraySet at aa ia va -> do
     let (t, alen) = typeArray aa
-    -- FIXME if t = T_Bool, then use bitmask
-    let tsz = typeSizeOf t
-    let (before, after) =
-          case ia of
-            DLA_Literal (DLL_Int _ ii) -> (b, a)
-              where start = ii * tsz
-                    end = start + tsz
-                    b = csubstring at 0 start
-                    a = csubstring at end (alen * tsz)
-            _ -> (b, a)
-              where
-                b = do
-                  cl $ DLL_Int sb 0
-                  cl $ DLL_Int sb tsz
-                  ca ia
-                  op "*"
-                  op "substring3"
-                a = do
-                  cl $ DLL_Int sb tsz
-                  op "dup"
-                  ca ia
-                  op "*"
-                  op "+"
-                  cl $ DLL_Int sb (alen * tsz)
-                  op "substring3"
-    small_aa <- argSmall aa
-    case small_aa of
-      False -> do
+    case t of
+      T_Bool -> do
         ca aa
-        op "dup"
-        -- [ aa, aa, ... ]
-        before
-        -- [ before, aa, ... ]
-        ca va
-        ctobs t
-        -- [ va, before, aa, ... ]
-        op "concat"
-        -- [ before', aa, ... ]
-        op "swap"
-        -- [ aa, before', ... ]
-        after
-        -- [ after, before', ... ]
-        op "concat"
-        -- [ aa', ... ]
-      True -> do
-        ca aa >> before
-        ca va
-        ctobs t
-        op "concat"
-        ca aa >> after
-        op "concat"
+        case ia of
+          DLA_Literal (DLL_Int _ ii) | ii < 256 -> do
+            ca va
+            code "byteset" [ texty ii ]
+          _ -> do
+            ca ia
+            ca va
+            op "byteset2"
+      _ -> do
+        let tsz = typeSizeOf t
+        let (before, after) =
+              case ia of
+                DLA_Literal (DLL_Int _ ii) -> (b, a)
+                  where start = ii * tsz
+                        end = start + tsz
+                        b = csubstring at 0 start
+                        a = csubstring at end (alen * tsz)
+                _ -> (b, a)
+                  where
+                    b = do
+                      cl $ DLL_Int sb 0
+                      cl $ DLL_Int sb tsz
+                      ca ia
+                      op "*"
+                      op "substring3"
+                    a = do
+                      cl $ DLL_Int sb tsz
+                      op "dup"
+                      ca ia
+                      op "*"
+                      op "+"
+                      cl $ DLL_Int sb (alen * tsz)
+                      op "substring3"
+        small_aa <- argSmall aa
+        case small_aa of
+          False -> do
+            ca aa
+            op "dup"
+            -- [ aa, aa, ... ]
+            before
+            -- [ before, aa, ... ]
+            ca va
+            ctobs t
+            -- [ va, before, aa, ... ]
+            op "concat"
+            -- [ before', aa, ... ]
+            op "swap"
+            -- [ aa, before', ... ]
+            after
+            -- [ after, before', ... ]
+            op "concat"
+            -- [ aa', ... ]
+          True -> do
+            ca aa >> before
+            ca va
+            ctobs t
+            op "concat"
+            ca aa >> after
+            op "concat"
   DLE_ArrayConcat {} -> xxx "array concat"
   DLE_ArrayZip {} -> xxx "array zip"
   DLE_TupleRef at ta idx -> do
