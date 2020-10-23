@@ -101,6 +101,7 @@ type Backend = {_Connectors: {ALGO: {
   appClear: string,
   ctc: string,
   steps: Array<string|null>,
+  stepargs: Array<number>,
   unsupported: boolean,
 }}};
 
@@ -435,7 +436,7 @@ const [getIndexer, setIndexer] = replaceableThunk(async () => {
 export {setIndexer};
 
 // eslint-disable-next-line max-len
-const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'pulp abstract olive name enjoy trick float comfort verb danger eternal laptop acquire fetch message marble jump level spirit during benefit sure dry absent history'));
+const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'close year slice mind voice cousin brass goat anxiety drink tourist child stock amused rescue pitch exhibit guide occur wide barrel process type able please'));
 // if using the default:
 // assert(FAUCET.addr === 'EYTSJVJIMJDUSRRNTMVLORTLTOVDWZ6SWOSY77JHPDWSD7K3P53IB3GUPQ');
 
@@ -584,7 +585,7 @@ function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
   const { unsupported } = algob;
   if ( unsupported ) {
-    throw Error(`This Reach application is not supported on Algorand.`);
+    throw Error(`This Reach application is not supported by Algorand.`);
   }
 }
 
@@ -592,7 +593,7 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
   must_be_supported(bin);
   const algob = bin._Connectors.ALGO;
 
-  const { appApproval, appClear, ctc, steps } = algob;
+  const { appApproval, appClear, ctc, steps, stepargs } = algob;
 
   const subst_appid = (x: string) =>
     replaceUint8Array(
@@ -612,6 +613,11 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
       const mN = `m${mi}`;
       const mc_subst = subst_ctc(subst_appid(mc));
       const cr = await compileTEAL(mN, mc_subst);
+      const plen = cr.result.length;
+      const alen = stepargs[mi];
+      const tlen = plen + alen;
+      if ( tlen > 1000 ) {
+        throw Error(`This Reach application is not supported by Algorand (program(${plen}) + args(${alen}) = total(${tlen}) > 1000)`); }
       appApproval_subst =
         replaceAddr(mN, cr.hash, appApproval_subst);
       return cr;

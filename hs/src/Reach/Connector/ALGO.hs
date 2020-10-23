@@ -52,8 +52,8 @@ typeObjectTypes a =
 
 typeSizeOf :: SLType -> Integer
 typeSizeOf = \case
-  T_Null -> 0
-  T_Bool -> 1
+  T_Null -> 1 --- FIXME make 0
+  T_Bool -> 8 --- FIXME make 1
   T_UInt -> word
   T_Bytes -> word --- XXX This is wrong
   T_Digest -> 32
@@ -761,6 +761,9 @@ txnFromContract0 = txnToContract + 1
 -- 3   : Fee amount
 -- 4   : Last round
 -- 5.. : Handler arguments
+stdArgTypes :: [SLType]
+stdArgTypes = [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt ]
+
 argPrevSt :: Word8
 argPrevSt = 0
 
@@ -810,7 +813,7 @@ runApp eShared eWhich eLets m = do
 ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
 ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $
-  fmap ((,) (typeSizeOf $ T_Tuple $ map varType $ svs ++ msg)) $ do
+  fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
   let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
   let args = svs <> msg
   let argFirstUser' = fromIntegral argFirstUser
