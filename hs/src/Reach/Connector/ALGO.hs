@@ -181,7 +181,7 @@ comment :: LT.Text -> App ()
 comment = output . comment_
 
 or_fail :: App ()
-or_fail = code "bz" ["revert"]
+or_fail = op "assert"
 
 eq_or_fail :: App ()
 eq_or_fail = op "==" >> or_fail
@@ -363,8 +363,8 @@ cprim = \case
   PEQ -> call "=="
   PGT -> call ">"
   PGE -> call ">="
-  LSH -> const $ xxx "LSH"
-  RSH -> const $ xxx "RSH"
+  LSH -> call "<<"
+  RSH -> call ">>"
   BAND -> call "&"
   BIOR -> call "|"
   BXOR -> call "^"
@@ -391,15 +391,10 @@ cprim = \case
       ca te
       op "||"
     [ be, te, fe ] -> do
-      labf <- freshLabel
-      labj <- freshLabel
       ca be
-      code "bz" [ labf ]
       ca te
-      code "b" [ labj ]
-      label labf
       ca fe
-      label labj
+      op "ite"
     _ -> impossible "ite args"
   where
     call o = \args -> do
@@ -511,7 +506,7 @@ ce = \case
         -- [ va, before, aa, ... ]
         op "concat"
         -- [ before', aa, ... ]
-        swap
+        op "swap"
         -- [ aa, before', ... ]
         after
         -- [ after, before', ... ]
@@ -786,27 +781,15 @@ lookup_fee_amount = code "arg" [texty argFeeAmount] >> cfrombs T_UInt
 
 std_footer :: App ()
 std_footer = do
-  label "revert"
-  cl $ DLL_Int sb 0
-  op "return"
   label "done"
   cl $ DLL_Int sb 1
   op "return"
-
-swap :: App ()
-swap = do
-  let z = [ texty (0 :: Int) ]
-  let o = [ texty (1 :: Int) ]
-  code "store" z
-  code "store" o
-  code "load" z
-  code "load" o
 
 runApp :: Shared -> Int -> Lets -> App () -> IO TEALs
 runApp eShared eWhich eLets m = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
-  let eHP = 2 --- We reserve two slots for "swap"
+  let eHP = 0
   let eSP = 255
   eTxnsR <- newIORef $ txnFromContract0 - 1
   let eVars = mempty
