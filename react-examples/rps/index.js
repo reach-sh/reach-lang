@@ -117,7 +117,6 @@ class Deployer extends Player {
     this.setState({view: 'Deploy', escrow, total, wagerAtomic, escrowAtomic});
   }
   async deploy() {
-    const {wagerAtomic, escrowAtomic} = this.state;
     const ctc = this.props.acc.deploy(backend);
     this.setState({view: 'Deploying', ctc});
     backend.A(reach, ctc, this); // Note: no await
