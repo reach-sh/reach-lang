@@ -81,10 +81,9 @@ class Player extends React.Component {
   random() { return reach.hasRandom.random(); }
   async getHand() { // getHand: Fun([], Bytes)
     console.log('XXX: getHand');
-    let resolveHandP = null;
-    const handP = new Promise(f => { resolveHandP = f; });
-    this.setState({view: 'GetHand', playable: true, resolveHandP});
-    const hand = await handP;
+    const hand = await new Promise(resolveHandP => {
+      this.setState({view: 'GetHand', playable: true, resolveHandP});
+    });
     this.setState({view: 'WaitingForResults', hand});
     return hand;
   }
@@ -163,10 +162,9 @@ class Attacher extends Player {
     const escrow = reach.formatCurrency(escrowAtomic, 4);
     console.log({wager, escrow});
 
-    let resolveAcceptedP = null;
-    const acceptedP = new Promise(f => { resolveAcceptedP = f });
-    this.setState({view: 'AcceptTerms', wager, escrow, resolveAcceptedP});
-    await acceptedP;
+    return await new Promise(resolveAcceptedP => {
+      this.setState({view: 'AcceptTerms', wager, escrow, resolveAcceptedP});
+    });
   }
   // shows: Fun([], Null)
   shows() { console.log('XXX shows'); }
