@@ -12,11 +12,13 @@ done
 
 echo Starting debugger
 racket server.rkt &
+PID_DBG=$!
 
 export TEAL_DEBUGGER_URL=http://localhost:9392
 
 echo Starting algod
 algod -d "${ALGORAND_DATA}" &
+PID_ALGO=$!
 
 echo Checking for algod.net
 while ! [ -f "${ALGORAND_DATA}/algod.net" ] ; do
@@ -36,3 +38,6 @@ algorand-indexer daemon \
 # LOG="${ALGORAND_DATA}/node.log"
 # while ! [ -f "${LOG}" ] ; do sleep 1 ; done
 # tail -f "${LOG}" | grep compile
+
+kill "$PID_DBG" "$PID_ALGO"
+kill -9 "$PID_DBG" "$PID_ALGO"
