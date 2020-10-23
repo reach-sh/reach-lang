@@ -491,7 +491,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     })();
 
     const updateLast = (o: {blockNumber?: number}): void => {
-      if (!o.blockNumber) { throw Error(`Expected blockNumber, ${o}`); }
+      if (!o.blockNumber) {
+        console.log(o);
+        throw Error(`Expected blockNumber in ${Object.keys(o)}`);
+      }
       setLastBlock(o.blockNumber);
     };
 
@@ -655,7 +658,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // The .gas field doesn't exist on this anymore, apparently?
           // debug(`${ok_evt} gas was ${ok_t.gas} ${ok_t.gasPrice}`);
 
-          updateLast(ok_t);
+          if (ok_t.blockNumber) {
+            assert(ok_t.blockNumber == ok_r.blockNumber,
+              'recept & transaction block numbers should match');
+            if (ok_e.blockNumber) {
+              assert(ok_t.blockNumber == ok_e.blockNumber,
+                'event & transaction block numbers should match');
+            }
+          } else {
+            // XXX For some reason ok_t sometimes doesn't have blockNumber
+            console.log(`WARNING: no blockNumber on transaction.`);
+            console.log(ok_t);
+          }
+          updateLast(ok_r);
           const ok_vals = await getEventData(ok_evt, ok_e);
           if (ok_vals.length !== out_tys.length) {
             throw Error(`Expected ${out_tys.length} values from event data, but got ${ok_vals.length}.`);
