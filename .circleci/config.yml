@@ -3,10 +3,19 @@ orbs:
   slack: circleci/slack@3.4.2
   shellcheck: circleci/shellcheck@2.0.0
   jq: circleci/jq@2.2.0
+
+x-docker-creds: &docker-creds
+  auth:
+    username: $DOCKER_LOGIN
+    password: $DOCKER_PASSWORD
+x-docker-image: &docker-image
+  <<: *docker-creds
+  image: reachsh/reach-circle:0.1.2
+
 jobs:
   build-and-test:
     docker:
-      - image: reachsh/reach-circle:0.1.2
+      - <<: *docker-image
     steps:
       - checkout
       - run:
@@ -79,7 +88,7 @@ jobs:
   docs-render:
     # TODO: simpler docker image for docs
     docker:
-      - image: reachsh/reach-circle:0.1.2
+      - <<: *docker-image
     steps:
       - checkout
       - run:
@@ -104,7 +113,8 @@ jobs:
 
   docs-deploy:
     docker:
-      - image: circleci/node:9.9.0
+      - <<: *docker-creds
+        image: circleci/node:9.9.0
     steps:
       - checkout
       - attach_workspace:
@@ -115,11 +125,15 @@ jobs:
           # https://github.com/tschaub/gh-pages/issues/354#issuecomment-647801438
           command: |
             # sudo npm install -g --silent gh-pages@3.0.0
-            git config user.email "ci-build@reach.sh"
-            git config user.name "ci-build"
+            # git config user.email "ci-build@reach.sh"
+            # git config user.name "ci-build"
+            git config user.email "devbot@reach.sh"
+            git config user.name "reachdevbot"
       - add_ssh_keys:
           fingerprints:
-            - "b5:65:6d:49:4f:fb:c1:77:2c:13:45:b1:d9:f9:71:c6"
+            # github:reachdevbot key - CircleCI: reach-sh/reach-lang
+            - "83:23:9c:21:6a:74:61:48:20:da:a3:45:79:89:3e:86"
+            # - "b5:65:6d:49:4f:fb:c1:77:2c:13:45:b1:d9:f9:71:c6"
       - run:
           name: Deploy docs to gh-pages branch
           command: |
@@ -137,7 +151,8 @@ jobs:
 
   shellcheck:
     docker:
-      - image: 'cimg/base:stable'
+      - <<: *docker-creds
+        image: 'cimg/base:stable'
     steps:
       - checkout
       - shellcheck/install
@@ -149,7 +164,8 @@ jobs:
 
   reach-lint:
     docker:
-      - image: 'circleci/node:12.18.3'
+      - <<: *docker-creds
+        image: 'circleci/node:12.18.3'
     steps:
       - checkout
       - run:
@@ -169,7 +185,8 @@ jobs:
 
   docker-lint:
     docker:
-      - image: 'hadolint/hadolint:v1.18.0-6-ga0d655d-alpine'
+      - <<: *docker-creds
+        image: 'hadolint/hadolint:v1.18.0-6-ga0d655d-alpine'
     steps:
       - checkout
       - run:
@@ -183,7 +200,7 @@ jobs:
 
   experimental-algorand-devnet:
     docker:
-      - image: reachsh/reach-circle:v0.1.2
+      - <<: *docker-image
     steps:
       - checkout
       - setup_remote_docker
@@ -202,25 +219,38 @@ jobs:
       - slack/status:
           fail_only: true
 
+
+x-default-job-setup: &default-job-setup
+  context:
+    - reachdevbot-on-dockerhub
+
 workflows:
   build-and-test:
     jobs:
-      - build-and-test
+      - build-and-test:
+          <<: *default-job-setup
 
   docs:
     jobs:
-      - docs-render
+      - docs-render:
+          <<: *default-job-setup
       - docs-deploy:
+          <<: *default-job-setup
           requires:
             - docs-render
           filters:
             branches:
               only: master
+
   lint:
     jobs:
-      - shellcheck
-      - reach-lint
-      - docker-lint
+      - shellcheck:
+          <<: *default-job-setup
+      - reach-lint:
+          <<: *default-job-setup
+      - docker-lint:
+          <<: *default-job-setup
+
   # TODO: re-enable / integrate with build-and-test
   # experimental-devnets:
   #   jobs:
