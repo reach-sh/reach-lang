@@ -398,6 +398,9 @@ data DLLiteral
 data DLVar = DLVar SrcLoc String SLType Int
   deriving (Eq, Generic, NFData, Show, Ord)
 
+varType :: DLVar -> SLType
+varType (DLVar _ _ t _) = t
+
 data DLArg
   = DLA_Var DLVar
   | DLA_Constant DLConstant

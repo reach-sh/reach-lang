@@ -52,14 +52,16 @@ typeObjectTypes a =
 
 typeSizeOf :: SLType -> Integer
 typeSizeOf = \case
-  T_Null -> word
-  T_Bool -> word
+  T_Null -> 0
+  T_Bool -> 1
   T_UInt -> word
   T_Bytes -> word --- XXX This is wrong
   T_Digest -> 32
   T_Address -> 32
   T_Fun {} -> impossible $ "T_Fun"
-  T_Array t sz -> sz * typeSizeOf t
+  T_Array t sz ->
+    -- FIXME if t = T_Bool, then use a bitmask
+    sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data {} -> word --- XXX This is wrong
@@ -412,12 +414,17 @@ csum = csum_ . map ca
 
 cconcatbs :: [(SLType, App ())] -> App ()
 cconcatbs l = do
-  -- XXX We need to predict the length and ensure <4096 bytes
+  check_concat_len
   mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
   where
     go may_concat (t, m) = m >> ctobs t >> may_concat
     no_concat = nop
     yes_concat = op "concat"
+    totlen = typeSizeOf $ T_Tuple $ map fst l
+    check_concat_len =
+      case totlen <= 4096 of
+        True -> nop
+        False -> bad $ "concat too big: 4096 < " <> texty totlen
 
 cdigest :: [(SLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "keccak256"
@@ -451,6 +458,7 @@ ce = \case
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> do
     let (t, _) = typeArray aa
+    -- FIXME if t = T_Bool, then use bitmask
     let tsz = typeSizeOf t
     ca aa
     case ia of
@@ -469,6 +477,7 @@ ce = \case
     cfrombs t
   DLE_ArraySet at aa ia va -> do
     let (t, alen) = typeArray aa
+    -- FIXME if t = T_Bool, then use bitmask
     let tsz = typeSizeOf t
     let (before, after) =
           case ia of
@@ -798,9 +807,10 @@ runApp eShared eWhich eLets m = do
   flip runReaderT (Env {..}) m
   readIORef eOutputR
 
-ch :: Shared -> Int -> CHandler -> IO (Maybe TEALs)
+ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $ do
+ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $
+  fmap ((,) (typeSizeOf $ T_Tuple $ map varType $ svs ++ msg)) $ do
   let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
   let args = svs <> msg
   let argFirstUser' = fromIntegral argFirstUser
@@ -926,22 +936,25 @@ compile_algo disp pl = do
   hm_res <- forM (M.toAscList hm) $ \(hi, hh) -> do
     mht <- ch shared hi hh
     case mht of
-      Nothing -> return (CI_Null, return ())
-      Just ht -> do
+      Nothing -> return (CI_Null, CI_Int 0, return ())
+      Just (az, ht) -> do
         let lab = "m" <> show hi
         let t = render ht
         disp lab t
         return
           ( CI_Text t
+          , CI_Int az
           , do
               code "gtxn" [texty txnFromHandler, "Sender"]
               code "byte" [template $ LT.pack lab]
               op "=="
               op "||"
           )
-  let (steps_, hchecks) = unzip hm_res
+  let (steps_, stepargs_, hchecks) = unzip3 hm_res
   let steps = CI_Null : steps_
+  let stepargs = CI_Int 0 : stepargs_
   modifyIORef resr $ M.insert "steps" $ CI_Array steps
+  modifyIORef resr $ M.insert "stepargs" $ CI_Array stepargs
   let howManySteps =
         length $
           filter
@@ -1005,7 +1018,7 @@ compile_algo disp pl = do
     or_fail
     app_global_get keyState
     code "gtxna" [texty txnFromHandler, "Args", texty argPrevSt]
-    cfrombs T_Bytes
+    cfrombs T_Digest
     eq_or_fail
     app_global_get keyLast
     code "gtxna" [texty txnFromHandler, "Args", texty argLast]
@@ -1015,7 +1028,7 @@ compile_algo disp pl = do
     comment "Update state"
     app_global_put keyState $ do
       code "gtxna" [texty txnFromHandler, "Args", texty argNextSt]
-      cfrombs T_Bytes
+      cfrombs T_Digest
     app_global_put keyLast $ do
       code "global" ["Round"]
     --- XXX we don't actually need halts
