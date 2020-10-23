@@ -17,13 +17,13 @@
       }
     },
     {
-      "addr": "EYTSJVJIMJDUSRRNTMVLORTLTOVDWZ6SWOSY77JHPDWSD7K3P53IB3GUPQ",
+      "addr": "UONLY5GDZHTEJLV66JTN63EYTMDZPDN3P4RAKADNVHGTYMUCXNXWSHINZA",
       "comment": "FAUCET",
       "state": {
         "algo": 10000000000000000,
         "onl": 1,
-        "sel": "68CACQ9iPkv22e9LyUkY4CtH8+rsi/eaXzOhrfhEhL0=",
-        "vote": "ShndLG90vK6AZ5Se9YvDk9nuOMBfwFFgZOnyQB4Boqw=",
+        "sel": "8709NcVHXFjkSmIFnf7CloKQT81Ay81AOoTZI6Qeels=",
+        "vote": "sqhms20lc5GcCGCSxC4Y7hi9atBadvaFsXSiFGxXYuc=",
         "voteKD": 10000,
         "voteLst": 3000000
       }
