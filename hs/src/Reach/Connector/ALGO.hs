@@ -4,6 +4,8 @@ module Reach.Connector.ALGO (connect_algo) where
 
 import Control.Monad.Reader
 import Data.ByteString.Base64 (encodeBase64')
+import Data.ByteString.Builder
+import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Char8 as B
 import qualified Data.DList as DL
 import Data.IORef
@@ -50,18 +52,27 @@ typeObjectTypes a =
 
 -- Algo specific stuff
 
+udiv :: Integer -> Integer -> Integer
+udiv x y = z
+  where (q,d) = quotRem x y
+        z = if d == 0 then q else q+1
+
 typeSizeOf :: SLType -> Integer
 typeSizeOf = \case
   T_Null -> 1 --- FIXME make 0
-  T_Bool -> 8 --- FIXME make 1
+  T_Bool -> 1
   T_UInt -> word
   T_Bytes -> word --- XXX This is wrong
   T_Digest -> 32
   T_Address -> 32
   T_Fun {} -> impossible $ "T_Fun"
   T_Array t sz ->
-    -- FIXME if t = T_Bool, then use a bitmask
-    sz * typeSizeOf t
+    case t of
+      T_Bool ->
+        -- sz `udiv` 8
+        sz * typeSizeOf t
+      _ ->
+        sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data {} -> word --- XXX This is wrong
@@ -99,8 +110,7 @@ type TEALs = DL.DList TEAL
 optimize :: [TEAL] -> [TEAL]
 optimize = \case
   [] -> []
-  -- FIXME generalize
-  ["b", "alone"] : ["alone:"] : l -> ["alone:"] : l
+  ["b", x] : b@[y] : l | y == (x <> ":") -> b : optimize l
   ["btoi"] : ["itob"] : l -> optimize l
   ["itob"] : ["btoi"] : l -> optimize l
   a@["store", x] : ["load", y] : l | x == y ->
@@ -112,8 +122,6 @@ optimize = \case
       Nothing ->
         a : (optimize $ b : l)
     where
-      parse :: LT.Text -> Maybe Integer
-      parse = readMaybe . LT.unpack
       mse = do
         s0n <- parse s0
         s1n <- parse s1
@@ -123,7 +131,21 @@ optimize = \case
         case s2n < 256 && e2n < 256 of
           True -> return $ ( texty s2n, texty e2n )
           False -> mempty
+  --a@["int", x] : b@["itob"] : l ->
+  --  case itob x of
+  --    Nothing ->
+  --      a : (optimize $ b : l)
+  --    Just xbs ->
+  --      optimize $ ["byte", xbs ] : l
   x : l -> x : optimize l
+  where
+    parse :: LT.Text -> Maybe Integer
+    parse = readMaybe . LT.unpack
+    _itob :: LT.Text -> Maybe LT.Text
+    _itob x_lt = do
+      x <- parse x_lt
+      let x_bs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
+      return $ base64d x_bs
 
 render :: TEALs -> T.Text
 render ts = tt
@@ -279,7 +301,8 @@ talloc = do
   Env {..} <- ask
   liftIO $ modifyIORef eTxnsR (1 +)
   txni <- liftIO $ readIORef eTxnsR
-  --- FIXME check if > bound
+  when (txni > 15) $ do
+    bad "too many txns"
   return txni
 
 how_many_txns :: App TxnIdx
@@ -324,19 +347,38 @@ cfrombs = \case
 tint :: SrcLoc -> Integer -> LT.Text
 tint at i = texty $ checkIntLiteralC at connect_algo i
 
+base64d :: B.ByteString -> LT.Text
+base64d bs = "base64(" <> encodeBase64 bs <> ")"
+
 cl :: DLLiteral -> App ()
 cl = \case
   DLL_Null -> cl $ DLL_Int sb 0
   DLL_Bool b -> cl $ DLL_Int sb $ if b then 1 else 0
   DLL_Int at i -> code "int" [tint at i]
-  DLL_Bytes bs -> code "byte" ["base64(" <> encodeBase64 bs <> ")"]
+  DLL_Bytes bs -> code "byte" [base64d bs]
+
+ca_boolb :: DLArg -> Maybe B.ByteString
+ca_boolb = \case
+  DLA_Literal (DLL_Bool b) ->
+    Just $ B.singleton $ toEnum $ if b then 1 else 0
+  _ -> Nothing
+
+cas_boolbs :: [DLArg] -> Maybe B.ByteString
+cas_boolbs = mconcat . map ca_boolb
 
 ca :: DLArg -> App ()
 ca = \case
   DLA_Var v -> lookup_let v
   DLA_Constant c -> cl $ conCons connect_algo c
   DLA_Literal c -> cl c
-  DLA_Array t as -> cconcatbs $ map (\a -> (t, ca a)) as
+  DLA_Array t as ->
+    case t of
+      T_Bool ->
+        case cas_boolbs as of
+          Nothing -> normal
+          Just x -> cl $ DLL_Bytes x
+      _ -> normal
+    where normal = cconcatbs $ map (\a -> (t, ca a)) as
   DLA_Tuple as -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
   DLA_Obj m -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
   DLA_Data {} -> xxx "data"

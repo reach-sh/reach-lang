@@ -421,7 +421,9 @@ instance Pretty CHandler where
       , pretty int
       , "last = " <> pretty last_i
       , pretty svs
+      , pretty (map varType svs)
       , pretty msg
+      , pretty (map varType msg)
       , pretty amtv
       , render_nest $ pretty body
       ]
