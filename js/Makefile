@@ -42,8 +42,8 @@ build2-runner:
 .PHONY: push2
 push2: push2-react_runner
 
-.PHONY: push2-react-runner
-push2-react-runner:
+.PHONY: push2-react_runner
+push2-react_runner:
 	(cd react_runner && $(MAKE) push)
 
 .PHONY: build
