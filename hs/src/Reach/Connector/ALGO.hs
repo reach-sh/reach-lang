@@ -67,12 +67,8 @@ typeSizeOf = \case
   T_Address -> 32
   T_Fun {} -> impossible $ "T_Fun"
   T_Array t sz ->
-    case t of
-      T_Bool ->
-        -- sz `udiv` 8
-        sz * typeSizeOf t
-      _ ->
-        sz * typeSizeOf t
+    -- FIXME maybe use (sz `udiv` 8) when T == bool for bitmask
+    sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data {} -> word --- XXX This is wrong
