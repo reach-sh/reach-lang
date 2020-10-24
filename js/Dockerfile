@@ -17,6 +17,8 @@ RUN npm run tsc
 RUN ./sbin/fix.sh
 RUN rm ./sbin/fix.sh
 
+COPY ./langspec.json /stdlib/node_modules/algosdk/src/logic
+
 ENV REACH_RUNNER_MOUNT_DIR /app
 ENTRYPOINT ["npm", "run", "--"]
 CMD ["runner", "FAKE", "index.mjs"]

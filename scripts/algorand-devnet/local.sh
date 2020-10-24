@@ -17,7 +17,7 @@ export POSTGRES_DB=pgdb
 
 (docker container stop algopgdb || exit 0)
 docker run -d --name algopgdb --rm -e POSTGRES_USER -e POSTGRES_PASSWORD -e POSTGRES_DB -p 5432:5432 postgres:11
-sleep 1
+sleep 5
 
 export TEAL_DEBUGGER_URL=http://localhost:9392
 
