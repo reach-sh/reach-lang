@@ -22,6 +22,7 @@ import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Connector
 import Reach.Type
+import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Pretty()
 import Safe (atMay)
@@ -59,19 +60,17 @@ udiv x y = z
 
 typeSizeOf :: SLType -> Integer
 typeSizeOf = \case
-  T_Null -> 1 --- FIXME make 0
+  T_Null -> 0
   T_Bool -> 1
   T_UInt -> word
   T_Bytes -> word --- XXX This is wrong
   T_Digest -> 32
   T_Address -> 32
   T_Fun {} -> impossible $ "T_Fun"
-  T_Array t sz ->
-    -- FIXME maybe use (sz `udiv` 8) when T == bool for bitmask
-    sz * typeSizeOf t
+  T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
-  T_Data {} -> word --- XXX This is wrong
+  T_Data m -> 1 + (maximum $ map typeSizeOf $ M.elems m)
   T_Forall {} -> impossible $ "T_Forall"
   T_Var {} -> impossible $ "T_Var"
   T_Type {} -> impossible $ "T_Type"
@@ -88,7 +87,7 @@ template x = "\"{{" <> x <> "}}\""
 
 type ScratchSlot = Word8
 
-type TxnIdx = Word8 --- FIXME actually only 16 IIRC
+type TxnIdx = Word8
 
 type TEAL = [LT.Text]
 
@@ -375,9 +374,26 @@ ca = \case
           Just x -> cl $ DLL_Bytes x
       _ -> normal
     where normal = cconcatbs $ map (\a -> (t, ca a)) as
-  DLA_Tuple as -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
-  DLA_Obj m -> cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
-  DLA_Data {} -> xxx "data"
+  DLA_Tuple as ->
+    cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
+  DLA_Obj m ->
+    cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
+  DLA_Data tm vt va -> do
+    let mvti = find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0..]
+    let vti =
+          case mvti of
+            Just (_, x) -> x
+            Nothing -> impossible $ "dla_data"
+    cl $ DLL_Int sb vti
+    ca va
+    let vlen = 1 + typeSizeOf (argTypeOf va)
+    op "concat"
+    let dlen = typeSizeOf $ T_Data tm
+    let zlen = fromIntegral $ dlen - vlen
+    let zbs = B.replicate zlen (toEnum 0)
+    cl $ DLL_Bytes zbs
+    op "concat"
+    check_concat_len dlen
   DLA_Interact {} -> impossible "consensus interact"
 
 argSmall :: DLArg -> App Bool
@@ -627,8 +643,10 @@ ce = \case
     code "byte" [tContractAddr]
     cfrombs T_Address
     eq_or_fail
-  DLE_Claim _ _fs t a _mmsg ->
-    --- FIXME add fs and mmsg as comments
+  DLE_Claim at fs t a mmsg -> do
+    comment $ texty mmsg
+    comment $ texty $ unsafeRedactAbsStr $ show at
+    comment $ texty $ unsafeRedactAbsStr $ show fs
     case t of
       CT_Assert -> impossible "assert"
       CT_Assume -> check
@@ -795,8 +813,6 @@ keyState = "s"
 
 keyLast :: B.ByteString
 keyLast = "l"
-
--- FIXME Dan says to use some cool deriving Enum stuff for Txn and Arg
 
 -- Txns:
 -- 0   : Application call
