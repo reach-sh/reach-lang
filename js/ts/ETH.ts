@@ -10,22 +10,25 @@ import {
   add,
   assert,
   bigNumberify,
-  CurrencyAmount,
   debug,
-  ge,
-  eq,
-  getDEBUG,
-  isBigNumber,
   digest,
+  eq,
+  ge,
+  getDEBUG,
+  hexToString,
+  isBigNumber,
   lt,
   setAddressUnwrapper,
-  TyContract,
+  toHex,
+  CurrencyAmount,
+  IAccount,
   IContract,
   IRecv,
-  IAccount,
   OnProgress,
+  TyContract,
   WPArgs,
 } from './shared';
+import * as CBR from './CBR';
 import { memoizeThunk, replaceableThunk } from './shared_impl';
 export * from './shared';
 
@@ -112,6 +115,209 @@ function isSome<T>(m: Maybe<T>): m is Some<T> {
 const Some = <T>(m: T): Some<T> => [m];
 const None: None = [];
 void(isSome);
+
+// BV = backend value
+// NV = net value
+type ETH_Ty<BV extends CBR.CBR_Val, NV> =  {
+  name: string,
+  ty: CBR.ReachTy,
+  defaultValue: BV,
+  // TODO: rename.
+  // * canonicalize -> user2cbr
+  // * munge/unmunge -> cbr2net/net2cbr
+  canonicalize: (uv: unknown) => BV,
+  munge: (bv: BV) => NV,
+  unmunge: (nv: NV) => BV,
+}
+
+export const T_Null: ETH_Ty<CBR.CBR_Null, null> = {
+  ...CBR.BT_Null,
+  munge: (bv: CBR.CBR_Null): null => bv.val,
+  unmunge: (nv: null): CBR.CBR_Null => (void(nv), V_Null),
+};
+export const V_Null: CBR.CBR_Null =
+  T_Null.canonicalize(null);
+
+export const T_Bool: ETH_Ty<CBR.CBR_Bool, boolean> = {
+  ...CBR.BT_Bool,
+  munge: (bv: CBR.CBR_Bool): boolean => bv.val,
+  unmunge: (nv: boolean): CBR.CBR_Bool => V_Bool(nv),
+}
+export const V_Bool = (b: boolean): CBR.CBR_Bool => {
+  return T_Bool.canonicalize(b);
+}
+
+export const T_UInt: ETH_Ty<CBR.CBR_UInt, BigNumber> = {
+  ...CBR.BT_UInt,
+  munge: (bv: CBR.CBR_UInt): BigNumber => bv.val,
+  unmunge: (nv: BigNumber): CBR.CBR_UInt => V_UInt(nv),
+}
+export const V_UInt = (n: BigNumber): CBR.CBR_UInt => {
+  return T_UInt.canonicalize(n);
+}
+
+export const T_Bytes: ETH_Ty<CBR.CBR_Bytes, string> = {
+  ...CBR.BT_Bytes,
+  munge: (bv: CBR.CBR_Bytes): string => toHex(bv.val),
+  unmunge: (nv: string) => V_Bytes(hexToString(nv)),
+}
+export const V_Bytes = (s: string): CBR.CBR_Bytes => {
+  return T_Bytes.canonicalize(s);
+}
+
+export const T_Digest: ETH_Ty<CBR.CBR_Digest, BigNumber> = {
+  ...CBR.BT_Digest,
+  munge: (bv: CBR.CBR_Digest): BigNumber => BigNumber.from(bv.val),
+  unmunge: (nv: BigNumber): CBR.CBR_Digest => V_Digest(nv.toHexString()),
+}
+export const V_Digest = (s: string): CBR.CBR_Digest => {
+  return T_Digest.canonicalize(s);
+}
+
+function addressUnwrapper(x: any): string {
+  // TODO: set it up so that .address is always there
+  if (typeof x === 'string') {
+    return x;
+  } else if (x.networkAccount && x.networkAccount.address) {
+    return (x.networkAccount.address);
+  } else if (x.address) {
+    return x.address;
+  } else {
+    throw Error(`Failed to unwrap address ${x}`);
+  }
+}
+
+export const T_Address: ETH_Ty<CBR.CBR_Address, string> = {
+  ...CBR.BT_Address(addressUnwrapper),
+  munge: (bv: CBR.CBR_Address): string => bv.val,
+  unmunge: (nv: string): CBR.CBR_Address => V_Address(nv),
+}
+export const V_Address = (s: string): CBR.CBR_Address => {
+  // Uses ETH-specific canonicalize!
+  return T_Address.canonicalize(s);
+}
+
+export const T_Array = <T>(
+  ctc: ETH_Ty<CBR.CBR_Val, T>,
+  size: number,
+): ETH_Ty<CBR.CBR_Array, Array<T>> => ({
+  ...CBR.BT_Array(ctc, size),
+  munge: (bv: CBR.CBR_Array): Array<T> => {
+    return bv.val.map((arg: CBR.CBR_Val) => ctc.munge(arg));
+  },
+  unmunge: (nv: Array<T>): CBR.CBR_Array => {
+    return V_Array(ctc, size)(nv.map((arg: T) => ctc.unmunge(arg)));
+  },
+});
+export const V_Array = <T>(
+  ctc: ETH_Ty<CBR.CBR_Val, T>,
+  size: number,
+) => (val: Array<unknown>): CBR.CBR_Array => {
+  return T_Array(ctc, size).canonicalize(val);
+}
+
+export const T_Tuple = <T>(
+  ctcs: Array<ETH_Ty<CBR.CBR_Val, T>>,
+): ETH_Ty<CBR.CBR_Tuple, Array<T>> => ({
+  ...CBR.BT_Tuple(ctcs),
+  munge: (bv: CBR.CBR_Tuple): Array<T> => {
+    return bv.val.map((arg, i) => ctcs[i].munge(arg));
+  },
+  unmunge: (args: Array<T>): CBR.CBR_Tuple => {
+    return V_Tuple(ctcs)(args.map((arg: any, i: number) => ctcs[i].unmunge(arg)));
+  },
+});
+export const V_Tuple = <T>(
+  ctcs: Array<ETH_Ty<CBR.CBR_Val, T>>,
+) => (val: Array<unknown>) => {
+  return T_Tuple(ctcs).canonicalize(val);
+}
+
+export const T_Object = <T>(
+  co: {[key: string]: ETH_Ty<CBR.CBR_Val, T>}
+): ETH_Ty<CBR.CBR_Object, {[key: string]: T}> => ({
+  ...CBR.BT_Object(co),
+  munge: (bv: CBR.CBR_Object): {[key: string]: T} => {
+    const obj: {
+      [key: string]: any
+    } = {};
+    for (const prop in co) {
+      obj[prop] = co[prop].munge(bv.val[prop]);
+    }
+    return obj;
+  },
+  unmunge: (bv: {[key: string]: T}): CBR.CBR_Object => {
+    const obj: {
+      [key: string]: CBR.CBR_Val
+    } = {};
+    for (const prop in co) {
+      obj[prop] = co[prop].unmunge(bv[prop]);
+    }
+    return V_Object(co)(obj);
+  },
+});
+export const V_Object = <T>(
+  co: {[key: string]: ETH_Ty<CBR.CBR_Val, T>}
+) => (val: {[key: string]: unknown}): CBR.CBR_Object => {
+  return T_Object(co).canonicalize(val);
+}
+
+export const T_Data = <T>(
+  co: {[key: string]: ETH_Ty<CBR.CBR_Val, T>}
+): ETH_Ty<CBR.CBR_Data, Array<T>> => {
+  // TODO: not duplicate between this and CBR.ts
+  const ascLabels = Object.keys(co).sort();
+  const labelMap: {
+    [key: string]: number
+  } = {};
+  for (const i in ascLabels) {
+    labelMap[ascLabels[i]] = parseInt(i);
+  }
+  return {
+    ...CBR.BT_Data(co),
+    // Data representation in js is a 2-tuple:
+    // [label, val]
+    // where label : string
+    // and val : co[label]
+    //
+    // Data representation in solidity is an N+1-tuple: (actually a struct)
+    // [labelInt, v0, ..., vN]
+    // where labelInt : number, 0 <= labelInt < N
+    // vN : co[ascLabels[i]]
+    //
+    munge: (bv: CBR.CBR_Data): Array<T> => {
+      // Typescript is stupid about destructuring tuple tupes =(
+      const [label, v] = bv.val;
+      // const label = bv.val[0];
+      // const v = bv.val[1];
+      const i = labelMap[label];
+      const vals = ascLabels.map((label) => {
+        const vco = co[label];
+        return vco.munge(vco.defaultValue);
+      });
+      vals[i] = co[label].munge(v);
+      const ret = [i] as unknown as Array<T>;
+      return ret.concat(vals);
+    },
+    // Note: when it comes back from solidity, vs behaves like an N+1-tuple,
+    // but also has secret extra keys you can access,
+    // based on the struct field names.
+    // e.g. Maybe has keys vs["which"], vs["_None"], and vs["_Some"],
+    // corresponding to    vs[0],       vs[1],       and vs[2] respectively.
+    // We don't currently use these, but we could.
+    unmunge: (vs: Array<T>): CBR.CBR_Data => {
+      const i = vs[0] as unknown as number;
+      const label = ascLabels[i];
+      const val = vs[i + 1];
+      return V_Data(co)([label, co[label].unmunge(val)]);
+    },
+  }
+};
+export const V_Data = <T>(
+  co: {[key: string]: ETH_Ty<CBR.CBR_Val, T>}
+) => (val: [string, unknown]): CBR.CBR_Data => {
+  return T_Data(co).canonicalize(val);
+}
 
 const connectorMode: ConnectorMode = getConnectorMode();
 
@@ -323,6 +529,11 @@ const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+  // @ts-ignore // TODO
+  if (networkAccount.getAddress && !networkAccount.address) {
+    // @ts-ignore
+    networkAccount.address = await getAddr({networkAccount});
+  }
   setAddressUnwrapper((x: any): string => x.address ? x.address : x);
 
   // XXX networkAccount MUST be a Wallet or Signer to deploy/attach
