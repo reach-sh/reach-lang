@@ -452,17 +452,19 @@ csum = csum_ . map ca
 
 cconcatbs :: [(SLType, App ())] -> App ()
 cconcatbs l = do
-  check_concat_len
+  check_concat_len totlen
   mapM_ (uncurry go) $ zip (no_concat : repeat yes_concat) l
   where
     go may_concat (t, m) = m >> ctobs t >> may_concat
     no_concat = nop
     yes_concat = op "concat"
     totlen = typeSizeOf $ T_Tuple $ map fst l
-    check_concat_len =
-      case totlen <= 4096 of
-        True -> nop
-        False -> bad $ "concat too big: 4096 < " <> texty totlen
+
+check_concat_len :: Integer -> App ()
+check_concat_len totlen =
+  case totlen <= 4096 of
+    True -> nop
+    False -> bad $ "concat too big: 4096 < " <> texty totlen
 
 cdigest :: [(SLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "keccak256"
@@ -585,7 +587,13 @@ ce = \case
             op "concat"
             ca aa >> after
             op "concat"
-  DLE_ArrayConcat {} -> xxx "array concat"
+  DLE_ArrayConcat _ x y -> do
+    let (xt, xlen) = typeArray x
+    let (_, ylen) = typeArray y
+    ca x
+    ca y
+    check_concat_len $ (xlen + ylen) * typeSizeOf xt
+    op "concat"
   DLE_ArrayZip {} -> xxx "array zip"
   DLE_TupleRef at ta idx -> do
     let ts = typeTupleTypes ta
