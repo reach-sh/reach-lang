@@ -157,6 +157,12 @@ runTests(async () => {
     });
 
     describe('protect', () => {
+      const hello = 'hello';
+      const helloHex = stdlib.toHex('hello');
+      const addr = '0xdeadbeef';
+      const n = 10;
+      const bn = bigNumberify(n);
+
       const {
         protect,
         T_Null,
@@ -170,53 +176,37 @@ runTests(async () => {
         T_Data,
       } = stdlib;
 
-      const bnil = {ty: ['Null'], val: null};
-      const hello = 'hello';
-      const bhello = {ty: ['Bytes'], val: 'hello'};
-      const addr = '0xdeadbeef';
-      const baddr = {ty: ['Address'], val: addr};
-      const n = 10;
-      const bn = bigNumberify(n);
-      const bbn = {ty: ['UInt'], val: bn};
-      const btrue = {ty: ['Bool'], val: true};
-      const btup = {ty: ['Tuple', [['UInt']]], val: [bbn]};
-      const bobj = {ty: ['Object', {x: ['Bytes']}], val: {'x': bhello }};
-      const barr = {ty: ['Array', ['Null'], 1], val: [bnil]};
-      const bdata = {ty: ['Data', {Some: ['UInt'], None: ['Null']}], val: ['Some', bbn]};
-      const bdata_none = {ty: ['Data', {Some: ['UInt'], None: ['Null']}], val: ['None', bnil]};
-
       const T_MaybeInt = T_Data({ 'Some': T_UInt, 'None': T_Null });
       it('converts nully things to Null', () => {
-        expect(protect(T_Null, null)).toBe(bnil);
-        expect(protect(T_Null, undefined)).toBe(bnil);
+        expect(protect(T_Null, null)).toBe(null);
+        expect(protect(T_Null, undefined)).toBe(null);
       });
       it('converts bytesy things to Bytes', () => {
-        expect(protect(T_Bytes, hello)).toBe(bhello);
-        // Note: doesn't yet handle when things are already converted
-        // expect(protect(T_Bytes, bhello)).toBe(bhello);
+        expect(protect(T_Bytes, hello)).toBe(hello);
+        expect(protect(T_Bytes, helloHex)).toBe(helloHex);
       });
       it('converts numbery things to UInt', () => {
-        expect(protect(T_UInt, n)).toBe(bbn);
-        expect(protect(T_UInt, bn)).toBe(bbn);
+        expect(protect(T_UInt, n)).toBe(bn);
+        expect(protect(T_UInt, bn)).toBe(bn);
       });
       it('handles Bool', () => {
-        expect(protect(T_Bool, true)).toBe(btrue);
+        expect(protect(T_Bool, true)).toBe(true);
       });
       it('handles Address', () => {
-        expect(protect(T_Address, addr)).toBe(baddr);
+        expect(protect(T_Address, addr)).toBe(addr);
       });
       it('recurses into Tuples', () => {
-        expect(protect(T_Tuple([T_UInt]), [n])).toBe(btup);
+        expect(protect(T_Tuple([T_UInt]), [n])).toBe([bn]);
       });
       it('recurses into Objects', () => {
-        expect(protect(T_Object({ 'x': T_Bytes }), { 'x': hello })).toBe(bobj);
+        expect(protect(T_Object({ 'x': T_Bytes }), { 'x': hello })).toBe({ 'x': hello });
       });
       it('recurses into Arrays', () => {
-        expect(protect(T_Array(T_Null, 1), [undefined])).toBe(barr);
+        expect(protect(T_Array(T_Null, 1), [undefined])).toBe([null]);
       });
       it('recurses into Data', () => {
-        expect(protect(T_MaybeInt, ['Some', n])).toBe(bdata);
-        expect(protect(T_MaybeInt, ['None', undefined])).toBe(bdata_none);
+        expect(protect(T_MaybeInt, ['Some', n])).toBe(['Some', bn]);
+        expect(protect(T_MaybeInt, ['None', undefined])).toBe(['None', null]);
       });
     });
 
@@ -224,7 +214,7 @@ runTests(async () => {
       const stdlibExports = Object.keys(stdlib).sort();
 
       const ETH_extra_exports = [
-        // TODO: export V_* from all, or delete
+        // TODO: delete V_* or standardize
         'V_Address',
         'V_Array',
         'V_Bool',
@@ -235,7 +225,6 @@ runTests(async () => {
         'V_Object',
         'V_Tuple',
         'V_UInt',
-
         'setProvider',
       ];
       const ALGO_extra_exports = ['setAlgodClient', 'setIndexer'];
