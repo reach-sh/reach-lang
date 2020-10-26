@@ -29,6 +29,19 @@ import {
   WPArgs,
 } from './shared';
 import * as CBR from './CBR';
+import {
+  CBR_Null,
+  CBR_Bool,
+  CBR_UInt,
+  CBR_Bytes,
+  CBR_Address,
+  CBR_Digest,
+  CBR_Object,
+  CBR_Data,
+  CBR_Array,
+  CBR_Tuple,
+  CBR_Val,
+} from './CBR';
 import { memoizeThunk, replaceableThunk } from './shared_impl';
 export * from './shared';
 
@@ -118,7 +131,7 @@ void(isSome);
 
 // BV = backend value
 // NV = net value
-type ETH_Ty<BV extends CBR.CBR_Val, NV> =  {
+type ETH_Ty<BV extends CBR_Val, NV> =  {
   name: string,
   // ty: CBR.ReachTy,
   defaultValue: BV,
@@ -130,47 +143,53 @@ type ETH_Ty<BV extends CBR.CBR_Val, NV> =  {
   unmunge: (nv: NV) => BV,
 }
 
-export const T_Null: ETH_Ty<CBR.CBR_Null, null> = {
+export const V_Null: CBR_Null = null;
+export const T_Null: ETH_Ty<CBR_Null, false> = {
   ...CBR.BT_Null,
-  munge: (bv: CBR.CBR_Null): null => bv,
-  unmunge: (nv: null): CBR.CBR_Null => (void(nv), V_Null),
+  defaultValue: V_Null,
+  // null is represented in solidity as false
+  munge: (bv: CBR_Null): false => (void(bv), false),
+  unmunge: (nv: false): CBR_Null => (void(nv), V_Null),
 };
-export const V_Null: CBR.CBR_Null =
-  T_Null.canonicalize(null);
 
-export const T_Bool: ETH_Ty<CBR.CBR_Bool, boolean> = {
+export const T_Bool: ETH_Ty<CBR_Bool, boolean> = {
   ...CBR.BT_Bool,
-  munge: (bv: CBR.CBR_Bool): boolean => bv,
-  unmunge: (nv: boolean): CBR.CBR_Bool => V_Bool(nv),
+  defaultValue: false,
+  munge: (bv: CBR_Bool): boolean => bv,
+  unmunge: (nv: boolean): CBR_Bool => V_Bool(nv),
 }
-export const V_Bool = (b: boolean): CBR.CBR_Bool => {
+export const V_Bool = (b: boolean): CBR_Bool => {
   return T_Bool.canonicalize(b);
 }
 
-export const T_UInt: ETH_Ty<CBR.CBR_UInt, BigNumber> = {
+export const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   ...CBR.BT_UInt,
-  munge: (bv: CBR.CBR_UInt): BigNumber => bv,
-  unmunge: (nv: BigNumber): CBR.CBR_UInt => V_UInt(nv),
+  defaultValue: ethers.BigNumber.from(0),
+  munge: (bv: CBR_UInt): BigNumber => bv,
+  unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
 }
-export const V_UInt = (n: BigNumber): CBR.CBR_UInt => {
+export const V_UInt = (n: BigNumber): CBR_UInt => {
   return T_UInt.canonicalize(n);
 }
 
-export const T_Bytes: ETH_Ty<CBR.CBR_Bytes, string> = {
+export const T_Bytes: ETH_Ty<CBR_Bytes, string> = {
   ...CBR.BT_Bytes,
-  munge: (bv: CBR.CBR_Bytes): string => toHex(bv),
+  defaultValue: '',
+  munge: (bv: CBR_Bytes): string => toHex(bv),
   unmunge: (nv: string) => V_Bytes(hexToString(nv)),
 }
-export const V_Bytes = (s: string): CBR.CBR_Bytes => {
+export const V_Bytes = (s: string): CBR_Bytes => {
   return T_Bytes.canonicalize(s);
 }
 
-export const T_Digest: ETH_Ty<CBR.CBR_Digest, BigNumber> = {
+export const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   ...CBR.BT_Digest,
-  munge: (bv: CBR.CBR_Digest): BigNumber => BigNumber.from(bv),
-  unmunge: (nv: BigNumber): CBR.CBR_Digest => V_Digest(nv.toHexString()),
+  defaultValue: ethers.utils.keccak256([]),
+  munge: (bv: CBR_Digest): BigNumber => BigNumber.from(bv),
+  // XXX likely not the correct unmunge type?
+  unmunge: (nv: BigNumber): CBR_Digest => V_Digest(nv.toHexString()),
 }
-export const V_Digest = (s: string): CBR.CBR_Digest => {
+export const V_Digest = (s: string): CBR_Digest => {
   return T_Digest.canonicalize(s);
 }
 
@@ -187,61 +206,72 @@ function addressUnwrapper(x: any): string {
   }
 }
 
-export const T_Address: ETH_Ty<CBR.CBR_Address, string> = {
+export const T_Address: ETH_Ty<CBR_Address, string> = {
   ...CBR.BT_Address,
-  canonicalize: (uv: unknown): CBR.CBR_Address => {
+  canonicalize: (uv: unknown): CBR_Address => {
     const val = addressUnwrapper(uv);
     return CBR.BT_Address.canonicalize(val || uv);
   },
-  munge: (bv: CBR.CBR_Address): string => bv,
-  unmunge: (nv: string): CBR.CBR_Address => V_Address(nv),
+  defaultValue: '0x' + Array(64).fill('0').join(''),
+  munge: (bv: CBR_Address): string => bv,
+  unmunge: (nv: string): CBR_Address => V_Address(nv),
 }
-export const V_Address = (s: string): CBR.CBR_Address => {
+export const V_Address = (s: string): CBR_Address => {
   // Uses ETH-specific canonicalize!
   return T_Address.canonicalize(s);
 }
 
 export const T_Array = <T>(
-  ctc: ETH_Ty<CBR.CBR_Val, T>,
+  ctc: ETH_Ty<CBR_Val, T>,
   size: number,
-): ETH_Ty<CBR.CBR_Array, Array<T>> => ({
+): ETH_Ty<CBR_Array, Array<T>> => ({
   ...CBR.BT_Array(ctc, size),
-  munge: (bv: CBR.CBR_Array): Array<T> => {
-    return bv.map((arg: CBR.CBR_Val) => ctc.munge(arg));
+  defaultValue: Array(size).fill(ctc.defaultValue),
+  munge: (bv: CBR_Array): Array<T> => {
+    return bv.map((arg: CBR_Val) => ctc.munge(arg));
   },
-  unmunge: (nv: Array<T>): CBR.CBR_Array => {
+  unmunge: (nv: Array<T>): CBR_Array => {
     return V_Array(ctc, size)(nv.map((arg: T) => ctc.unmunge(arg)));
   },
 });
 export const V_Array = <T>(
-  ctc: ETH_Ty<CBR.CBR_Val, T>,
+  ctc: ETH_Ty<CBR_Val, T>,
   size: number,
-) => (val: Array<unknown>): CBR.CBR_Array => {
+) => (val: Array<unknown>): CBR_Array => {
   return T_Array(ctc, size).canonicalize(val);
 }
 
 export const T_Tuple = <T>(
-  ctcs: Array<ETH_Ty<CBR.CBR_Val, T>>,
-): ETH_Ty<CBR.CBR_Tuple, Array<T>> => ({
+  ctcs: Array<ETH_Ty<CBR_Val, T>>,
+): ETH_Ty<CBR_Tuple, Array<T>> => ({
   ...CBR.BT_Tuple(ctcs),
-  munge: (bv: CBR.CBR_Tuple): Array<T> => {
+  defaultValue: ctcs.map(ctc => ctc.defaultValue),
+  munge: (bv: CBR_Tuple): Array<T> => {
     return bv.map((arg, i) => ctcs[i].munge(arg));
   },
-  unmunge: (args: Array<T>): CBR.CBR_Tuple => {
+  unmunge: (args: Array<T>): CBR_Tuple => {
     return V_Tuple(ctcs)(args.map((arg: any, i: number) => ctcs[i].unmunge(arg)));
   },
 });
 export const V_Tuple = <T>(
-  ctcs: Array<ETH_Ty<CBR.CBR_Val, T>>,
+  ctcs: Array<ETH_Ty<CBR_Val, T>>,
 ) => (val: Array<unknown>) => {
   return T_Tuple(ctcs).canonicalize(val);
 }
 
 export const T_Object = <T>(
-  co: {[key: string]: ETH_Ty<CBR.CBR_Val, T>}
-): ETH_Ty<CBR.CBR_Object, {[key: string]: T}> => ({
+  co: {[key: string]: ETH_Ty<CBR_Val, T>}
+): ETH_Ty<CBR_Object, {[key: string]: T}> => ({
   ...CBR.BT_Object(co),
-  munge: (bv: CBR.CBR_Object): {[key: string]: T} => {
+  defaultValue: (() => {
+    const obj: {[key: string]: CBR_Val} = {};
+    for (const prop in co) {
+      obj[prop] = co[prop].defaultValue;
+    }
+    return obj;
+  })(),
+
+  munge: (bv: CBR_Object): {[key: string]: T} => {
     const obj: {
       [key: string]: any
     } = {};
@@ -250,9 +280,9 @@ export const T_Object = <T>(
     }
     return obj;
   },
-  unmunge: (bv: {[key: string]: T}): CBR.CBR_Object => {
+  unmunge: (bv: {[key: string]: T}): CBR_Object => {
     const obj: {
-      [key: string]: CBR.CBR_Val
+      [key: string]: CBR_Val
     } = {};
     for (const prop in co) {
       obj[prop] = co[prop].unmunge(bv[prop]);
@@ -261,15 +291,20 @@ export const T_Object = <T>(
   },
 });
 export const V_Object = <T>(
-  co: {[key: string]: ETH_Ty<CBR.CBR_Val, T>}
-) => (val: {[key: string]: unknown}): CBR.CBR_Object => {
+  co: {[key: string]: ETH_Ty<CBR_Val, T>}
+) => (val: {[key: string]: unknown}): CBR_Object => {
   return T_Object(co).canonicalize(val);
 }
 
-export const T_Data = <T>(
-  co: {[key: string]: ETH_Ty<CBR.CBR_Val, T>}
-): ETH_Ty<CBR.CBR_Data, Array<T>> => {
-  // TODO: not duplicate between this and CBR.ts
+/**
+ * @description ascLabels[i] = label; labelMap[label] = i;
+ */
+const labelMaps = <T>(co: {
+  [key: string]: ETH_Ty<CBR_Val, T>
+}): {
+  ascLabels: Array<string>,
+  labelMap: {[key: string]: number}
+} => {
   const ascLabels = Object.keys(co).sort();
   const labelMap: {
     [key: string]: number
@@ -277,8 +312,22 @@ export const T_Data = <T>(
   for (const i in ascLabels) {
     labelMap[ascLabels[i]] = parseInt(i);
   }
+  return {ascLabels, labelMap};
+}
+
+export const T_Data = <T>(
+  co: {[key: string]: ETH_Ty<CBR_Val, T>}
+): ETH_Ty<CBR_Data, Array<T>> => {
+  // TODO: not duplicate between this and CBR.ts
+  const {ascLabels, labelMap} = labelMaps(co);
   return {
     ...CBR.BT_Data(co),
+    defaultValue: ((): CBR_Data => {
+      const label = ascLabels[0];
+      return [label, co[label].defaultValue];
+      // return {ty, val: [label, co[label].defaultValue]};
+    })(),
+
     // Data representation in js is a 2-tuple:
     // [label, val]
     // where label : string
@@ -289,7 +338,7 @@ export const T_Data = <T>(
     // where labelInt : number, 0 <= labelInt < N
     // vN : co[ascLabels[i]]
     //
-    munge: ([label, v]: CBR.CBR_Data): Array<T> => {
+    munge: ([label, v]: CBR_Data): Array<T> => {
       const i = labelMap[label];
       const vals = ascLabels.map((label) => {
         const vco = co[label];
@@ -305,7 +354,7 @@ export const T_Data = <T>(
     // e.g. Maybe has keys vs["which"], vs["_None"], and vs["_Some"],
     // corresponding to    vs[0],       vs[1],       and vs[2] respectively.
     // We don't currently use these, but we could.
-    unmunge: (vs: Array<T>): CBR.CBR_Data => {
+    unmunge: (vs: Array<T>): CBR_Data => {
       const i = vs[0] as unknown as number;
       const label = ascLabels[i];
       const val = vs[i + 1];
@@ -314,8 +363,8 @@ export const T_Data = <T>(
   }
 };
 export const V_Data = <T>(
-  co: {[key: string]: ETH_Ty<CBR.CBR_Val, T>}
-) => (val: [string, unknown]): CBR.CBR_Data => {
+  co: {[key: string]: ETH_Ty<CBR_Val, T>}
+) => (val: [string, unknown]): CBR_Data => {
   return T_Data(co).canonicalize(val);
 }
 
