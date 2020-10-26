@@ -120,7 +120,7 @@ void(isSome);
 // NV = net value
 type ETH_Ty<BV extends CBR.CBR_Val, NV> =  {
   name: string,
-  ty: CBR.ReachTy,
+  // ty: CBR.ReachTy,
   defaultValue: BV,
   // TODO: rename.
   // * canonicalize -> user2cbr
@@ -132,7 +132,7 @@ type ETH_Ty<BV extends CBR.CBR_Val, NV> =  {
 
 export const T_Null: ETH_Ty<CBR.CBR_Null, null> = {
   ...CBR.BT_Null,
-  munge: (bv: CBR.CBR_Null): null => bv.val,
+  munge: (bv: CBR.CBR_Null): null => bv,
   unmunge: (nv: null): CBR.CBR_Null => (void(nv), V_Null),
 };
 export const V_Null: CBR.CBR_Null =
@@ -140,7 +140,7 @@ export const V_Null: CBR.CBR_Null =
 
 export const T_Bool: ETH_Ty<CBR.CBR_Bool, boolean> = {
   ...CBR.BT_Bool,
-  munge: (bv: CBR.CBR_Bool): boolean => bv.val,
+  munge: (bv: CBR.CBR_Bool): boolean => bv,
   unmunge: (nv: boolean): CBR.CBR_Bool => V_Bool(nv),
 }
 export const V_Bool = (b: boolean): CBR.CBR_Bool => {
@@ -149,7 +149,7 @@ export const V_Bool = (b: boolean): CBR.CBR_Bool => {
 
 export const T_UInt: ETH_Ty<CBR.CBR_UInt, BigNumber> = {
   ...CBR.BT_UInt,
-  munge: (bv: CBR.CBR_UInt): BigNumber => bv.val,
+  munge: (bv: CBR.CBR_UInt): BigNumber => bv,
   unmunge: (nv: BigNumber): CBR.CBR_UInt => V_UInt(nv),
 }
 export const V_UInt = (n: BigNumber): CBR.CBR_UInt => {
@@ -158,7 +158,7 @@ export const V_UInt = (n: BigNumber): CBR.CBR_UInt => {
 
 export const T_Bytes: ETH_Ty<CBR.CBR_Bytes, string> = {
   ...CBR.BT_Bytes,
-  munge: (bv: CBR.CBR_Bytes): string => toHex(bv.val),
+  munge: (bv: CBR.CBR_Bytes): string => toHex(bv),
   unmunge: (nv: string) => V_Bytes(hexToString(nv)),
 }
 export const V_Bytes = (s: string): CBR.CBR_Bytes => {
@@ -167,7 +167,7 @@ export const V_Bytes = (s: string): CBR.CBR_Bytes => {
 
 export const T_Digest: ETH_Ty<CBR.CBR_Digest, BigNumber> = {
   ...CBR.BT_Digest,
-  munge: (bv: CBR.CBR_Digest): BigNumber => BigNumber.from(bv.val),
+  munge: (bv: CBR.CBR_Digest): BigNumber => BigNumber.from(bv),
   unmunge: (nv: BigNumber): CBR.CBR_Digest => V_Digest(nv.toHexString()),
 }
 export const V_Digest = (s: string): CBR.CBR_Digest => {
@@ -188,8 +188,12 @@ function addressUnwrapper(x: any): string {
 }
 
 export const T_Address: ETH_Ty<CBR.CBR_Address, string> = {
-  ...CBR.BT_Address(addressUnwrapper),
-  munge: (bv: CBR.CBR_Address): string => bv.val,
+  ...CBR.BT_Address,
+  canonicalize: (uv: unknown): CBR.CBR_Address => {
+    const val = addressUnwrapper(uv);
+    return CBR.BT_Address.canonicalize(val || uv);
+  },
+  munge: (bv: CBR.CBR_Address): string => bv,
   unmunge: (nv: string): CBR.CBR_Address => V_Address(nv),
 }
 export const V_Address = (s: string): CBR.CBR_Address => {
@@ -203,7 +207,7 @@ export const T_Array = <T>(
 ): ETH_Ty<CBR.CBR_Array, Array<T>> => ({
   ...CBR.BT_Array(ctc, size),
   munge: (bv: CBR.CBR_Array): Array<T> => {
-    return bv.val.map((arg: CBR.CBR_Val) => ctc.munge(arg));
+    return bv.map((arg: CBR.CBR_Val) => ctc.munge(arg));
   },
   unmunge: (nv: Array<T>): CBR.CBR_Array => {
     return V_Array(ctc, size)(nv.map((arg: T) => ctc.unmunge(arg)));
@@ -221,7 +225,7 @@ export const T_Tuple = <T>(
 ): ETH_Ty<CBR.CBR_Tuple, Array<T>> => ({
   ...CBR.BT_Tuple(ctcs),
   munge: (bv: CBR.CBR_Tuple): Array<T> => {
-    return bv.val.map((arg, i) => ctcs[i].munge(arg));
+    return bv.map((arg, i) => ctcs[i].munge(arg));
   },
   unmunge: (args: Array<T>): CBR.CBR_Tuple => {
     return V_Tuple(ctcs)(args.map((arg: any, i: number) => ctcs[i].unmunge(arg)));
@@ -242,7 +246,7 @@ export const T_Object = <T>(
       [key: string]: any
     } = {};
     for (const prop in co) {
-      obj[prop] = co[prop].munge(bv.val[prop]);
+      obj[prop] = co[prop].munge(bv[prop]);
     }
     return obj;
   },
@@ -285,18 +289,14 @@ export const T_Data = <T>(
     // where labelInt : number, 0 <= labelInt < N
     // vN : co[ascLabels[i]]
     //
-    munge: (bv: CBR.CBR_Data): Array<T> => {
-      // Typescript is stupid about destructuring tuple tupes =(
-      const [label, v] = bv.val;
-      // const label = bv.val[0];
-      // const v = bv.val[1];
+    munge: ([label, v]: CBR.CBR_Data): Array<T> => {
       const i = labelMap[label];
       const vals = ascLabels.map((label) => {
         const vco = co[label];
         return vco.munge(vco.defaultValue);
       });
       vals[i] = co[label].munge(v);
-      const ret = [i] as unknown as Array<T>;
+      const ret = [i as unknown as T];
       return ret.concat(vals);
     },
     // Note: when it comes back from solidity, vs behaves like an N+1-tuple,
