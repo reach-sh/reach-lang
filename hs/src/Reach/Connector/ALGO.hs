@@ -525,7 +525,7 @@ cfor maxi body = do
     cl $ DLL_Int sb 1
     op "+"
     code "store" [ texty idxl ]
-    xxx "backwards jump"
+    bad "backwards jump"
     code "b" [ top_lab ]
   label end_lab
 
@@ -707,54 +707,81 @@ ce = \case
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
 
-cm :: (a -> App ()) -> PLCommon a -> App ()
-cm ck = \case
+cm :: (App () -> a -> App ()) -> App () -> PLCommon a -> App ()
+cm ck km = \case
   PL_Return {} ->
-    return ()
+    km
   PL_Let _ PL_Once dv de k ->
-    store_let dv False (ce de) $ ck k
+    store_let dv False (ce de) $ ck km k
   PL_Let _ PL_Many dv de k ->
     salloc $ \loc -> do
       let loct = texty loc
       ce de
       code "store" [loct]
-      store_let dv True (code "load" [loct]) $ ck k
-  PL_ArrayMap {} ->
-    xxx "map"
-  PL_ArrayReduce {} ->
-    xxx "reduce"
-  PL_Eff _ de k -> ce de >> ck k
+      store_let dv True (code "load" [loct]) $ ck km k
+  PL_ArrayMap at ansv aa lv (PLBlock _ body ra) k -> do
+    let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
+    let (_, xlen) = typeArray aa
+    check_concat_len anssz
+    salloc $ \ ansl -> do
+      cl $ DLL_Bytes ""
+      code "store" [ texty ansl ]
+      cfor xlen $ \ load_idx -> do
+        code "load" [ texty ansl ]
+        doArrayRef at aa True $ Right load_idx
+        salloc $ \ lvl -> do
+          code "store" [ texty lvl ]
+          store_let lv True (code "load" [ texty lvl ]) $ do
+            cp (ca ra) body
+        op "concat"
+        code "store" [ texty ansl ]
+      store_let ansv True (code "load" [ texty ansl ]) $ ck km k
+  PL_ArrayReduce at ansv aa za av lv (PLBlock _ body ra) k -> do
+    let (_, xlen) = typeArray aa
+    salloc $ \ ansl -> do
+      ca za
+      code "store" [ texty ansl ]
+      store_let av True (code "load" [ texty ansl ]) $ do
+        cfor xlen $ \ load_idx -> do
+          doArrayRef at aa True $ Right load_idx
+          salloc $ \ lvl -> do
+            code "store" [ texty lvl ]
+            store_let lv True (code "load" [ texty lvl ]) $ do
+              cp (ca ra) body
+          code "store" [ texty ansl ]
+        store_let ansv True (code "load" [ texty ansl ]) $ ck km k
+  PL_Eff _ de k -> ce de >> ck km k
   PL_Var _ dv k ->
     salloc $ \loc -> do
       store_var dv loc $
         store_let dv True (code "load" [texty loc]) $
-          ck k
+          ck km k
   PL_Set _ dv da k -> do
     loc <- lookup_var dv
     ca da
     code "store" [texty loc]
-    ck k
+    ck km k
   PL_LocalIf _ a tp fp k -> do
     ca a
     false_lab <- freshLabel
     join_lab <- freshLabel
     code "bz" [false_lab]
-    cp tp
+    cp (return ()) tp
     code "b" [join_lab]
     label false_lab
-    cp fp
+    cp (return ()) fp
     label join_lab
-    ck k
+    ck km k
   PL_LocalSwitch _ _dv _csm k -> do
     xxx "local switch"
-    ck k
+    ck km k
 
-cp :: PLTail -> App ()
-cp (PLTail m) = cm cp m
+cp :: App () -> PLTail -> App ()
+cp km (PLTail m) = cm cp km m
 
 ct :: CTail -> App ()
 ct = \case
-  CT_Com m -> cm ct m
+  CT_Com m -> cm (\_ -> ct) (return ()) m
   CT_If _ a tt ft -> do
     ca a
     false_lab <- freshLabel
