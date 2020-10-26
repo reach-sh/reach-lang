@@ -707,6 +707,31 @@ ce = \case
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
 
+doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
+doSwitch ck at dv csm = do
+  end_lab <- freshLabel
+  let cm1 ((_vn, (mov, k)), vi) = do
+        next_lab <- freshLabel
+        ca $ DLA_Var dv
+        code "byteget" [ "0" ]
+        cl $ DLL_Int sb vi
+        op "="
+        code "bz" [ next_lab ]
+        case mov of
+          Nothing -> ck k
+          Just vv -> do
+            salloc $ \loc -> do
+              ca $ DLA_Var dv
+              let vt = argTypeOf $ DLA_Var vv
+              csubstring at 1 (1 + typeSizeOf vt)
+              cfrombs vt
+              code "store" [ texty loc ]
+              store_let vv True (code "load" [ texty loc ]) $
+                ck k
+        label next_lab
+  mapM_ cm1 $ zip (M.toAscList csm) [0..]
+  label end_lab
+
 cm :: (App () -> a -> App ()) -> App () -> PLCommon a -> App ()
 cm ck km = \case
   PL_Return {} ->
@@ -772,8 +797,8 @@ cm ck km = \case
     cp (return ()) fp
     label join_lab
     ck km k
-  PL_LocalSwitch _ _dv _csm k -> do
-    xxx "local switch"
+  PL_LocalSwitch at dv csm k -> do
+    doSwitch (cp (return ())) at dv csm
     ck km k
 
 cp :: App () -> PLTail -> App ()
@@ -789,7 +814,7 @@ ct = \case
     ct tt
     label false_lab
     ct ft
-  CT_Switch {} -> xxx "switch"
+  CT_Switch at dv csm -> doSwitch ct at dv csm
   CT_Jump at which _ (DLAssignment asnm) -> do
     Env {..} <- ask
     let Shared {..} = eShared
