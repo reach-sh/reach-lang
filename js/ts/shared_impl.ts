@@ -29,3 +29,22 @@ export function replaceableThunk<T>(thunk: () => T): [() => T, (val: T) => void]
 export function memoizeThunk<T>(thunk: () => T): () => T {
   return replaceableThunk(thunk)[0];
 }
+
+/**
+ * @description ascLabels[i] = label; labelMap[label] = i;
+ */
+export const labelMaps = <T>(co: {
+  [key: string]: unknown
+}): {
+  ascLabels: Array<string>,
+  labelMap: {[key: string]: number}
+} => {
+  const ascLabels = Object.keys(co).sort();
+  const labelMap: {
+    [key: string]: number
+  } = {};
+  for (const i in ascLabels) {
+    labelMap[ascLabels[i]] = parseInt(i);
+  }
+  return {ascLabels, labelMap};
+}

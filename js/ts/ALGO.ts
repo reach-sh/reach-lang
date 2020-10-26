@@ -11,11 +11,25 @@ import {
   debug, getDEBUG, toHex,
   isBigNumber, bigNumberify,
   bigNumberToHex, hexToBigNumber,
-  T_UInt, T_Bool, T_Digest, T_Address,
+  // T_UInt, T_Bool, T_Digest, T_Address,
   setDigestWidth, setAddressUnwrapper,
 } from './shared';
+import * as CBR from './CBR';
+import {
+  CBR_Null,
+  CBR_Bool,
+  CBR_UInt,
+  CBR_Bytes,
+  CBR_Address,
+  CBR_Digest,
+  CBR_Object,
+  CBR_Data,
+  CBR_Array,
+  CBR_Tuple,
+  CBR_Val,
+} from './CBR';
 import waitPort from 'wait-port';
-import { replaceableThunk } from './shared_impl';
+import { labelMaps, replaceableThunk } from './shared_impl';
 export * from './shared';
 
 type BigNumber = ethers.BigNumber;
@@ -149,6 +163,243 @@ type ContractInfo = {
 //   sendrecv: function
 //   recv: function
 // }
+
+type NV = Uint8Array;
+type ALGO_Ty<BV extends CBR_Val> = {
+  name: string,
+  canonicalize: (uv: unknown) => BV,
+  netSize: number // in bytes
+         | 'all', // XXX
+  toNet(bv: BV): NV,
+  fromNet(nv: NV): BV,
+}
+
+export const V_Null: CBR_Null = null;
+export const T_Null: ALGO_Ty<CBR_Null> = {
+  ...CBR.BT_Null,
+  netSize: 0,
+  toNet: (bv: CBR_Null): NV => (void(bv), new Uint8Array([])),
+  fromNet: (nv: NV): CBR_Null => (void(nv), null),
+}
+
+export const T_Bool: ALGO_Ty<CBR_Bool> = {
+  ...CBR.BT_Bool,
+  netSize: 1,
+  toNet: (bv: CBR_Bool): NV => (new Uint8Array(
+    [bv ? 1 : 0]
+  )),
+  fromNet: (nv: NV): CBR_Bool => {
+    return (nv[0] === 1);
+  },
+}
+export const V_Bool = (val: boolean): CBR_Bool => T_Bool.canonicalize(val);
+
+export const T_UInt: ALGO_Ty<CBR_UInt> = {
+  ...CBR.BT_UInt,
+  netSize: 8, // UInt64
+  toNet: (bv: CBR_UInt): NV => (
+    ethers.utils.zeroPad(ethers.utils.arrayify(bv), 8)
+  ),
+  fromNet: (nv: NV): CBR_UInt => (
+    ethers.BigNumber.from(nv)
+  ),
+}
+export const V_UInt = (n: BigNumber): CBR_UInt => {
+  return T_UInt.canonicalize(n);
+}
+
+const stringyNet = {
+  toNet: (bv: CBR_Bytes): NV => (
+    ethers.utils.toUtf8Bytes(bv)
+  ),
+  fromNet: (nv: NV): CBR_Bytes => (
+    ethers.utils.toUtf8String(nv)
+  ),
+}
+
+export const T_Bytes: ALGO_Ty<CBR_Bytes> = {
+  ...CBR.BT_Bytes,
+  ...stringyNet,
+  netSize: 'all', // XXX
+}
+export const V_Bytes = (s: string): CBR_Bytes => {
+  return T_Bytes.canonicalize(s);
+}
+
+export const T_Digest: ALGO_Ty<CBR_Digest> = {
+  ...CBR.BT_Digest,
+  ...stringyNet,
+  netSize: 32,
+}
+/** @description You probably don't want to manually create this */
+export const V_Digest = (s: string): CBR_Digest => {
+  return T_Digest.canonicalize(s);
+}
+
+function addressUnwrapper(x: any): string {
+  return (x && x.addr)
+    ? '0x' + Buffer.from(algosdk.decodeAddress(x.addr).publicKey).toString('hex')
+    : x;
+}
+export const T_Address: ALGO_Ty<CBR_Address> = {
+  ...CBR.BT_Address,
+  ...stringyNet, // XXX not stringyNet, decode instead
+  netSize: 32,
+  canonicalize: (uv: unknown): CBR_Address => {
+    const val = addressUnwrapper(uv);
+    return CBR.BT_Address.canonicalize(val || uv)
+  }
+}
+export const V_Address = (s: string): CBR_Address => {
+  return T_Address.canonicalize(s);
+}
+
+export const T_Array = (
+  co: ALGO_Ty<CBR_Val>,
+  size: number,
+): ALGO_Ty<CBR_Array> => ({
+  ...CBR.BT_Array(co, size),
+  netSize: (co.netSize === 'all') ? 'all' : size * co.netSize,
+  toNet: (bv: CBR_Array): NV => {
+    return ethers.utils.concat(bv.map((v) => co.toNet(v)));
+  },
+  fromNet: (nv: NV): CBR_Array => {
+    if (co.netSize === 'all') {
+      // XXX there can only be one
+      return [co.fromNet(nv)];
+    } else {
+      const chunks = new Array(size).fill(null);
+      let rest = nv;
+      for (const i in chunks) {
+        chunks[i] = co.fromNet(rest.slice(0, co.netSize));
+        rest = rest.slice(co.netSize);
+      }
+      // TODO: assert size of nv/rest is correct?
+      return chunks;
+    }
+  },
+});
+export const V_Array = (
+  co: ALGO_Ty<CBR_Val>,
+  size: number,
+) => (val: Array<unknown>): CBR_Array => {
+  return T_Array(co, size).canonicalize(val);
+}
+
+export const T_Tuple = (
+  cos: Array<ALGO_Ty<CBR_Val>>,
+): ALGO_Ty<CBR_Tuple> => ({
+  ...CBR.BT_Tuple(cos),
+  netSize: (
+    (cos.some((co) => co.netSize === 'all'))
+    ? 'all'
+    // @ts-ignore // ts should know this from the condition
+    : cos.reduce((acc, co) => acc + co.netSize, 0)
+  ),
+  toNet: (bv: CBR_Tuple): NV => {
+    const val = cos.map((co, i) => co.toNet(bv[i]));
+    return ethers.utils.concat(val);
+  },
+  // TODO: share more code w/ T_Array.fromNet
+  fromNet: (nv: NV): CBR_Tuple => {
+    const chunks: Array<CBR_Val> = new Array(cos.length).fill(null);
+    let rest = nv;
+    for (const i in cos) {
+      const co = cos[i];
+      if (co.netSize === 'all') {
+        // XXX consumes it all
+        chunks[i] = co.fromNet(rest);
+        rest = rest.slice(rest.length);
+      } else {
+        chunks[i] = co.fromNet(rest.slice(0, co.netSize));
+        rest = rest.slice(co.netSize);
+      }
+    }
+    return chunks;
+  },
+});
+
+export const T_Object = (
+  coMap: {[key: string]: ALGO_Ty<CBR_Val>}
+): ALGO_Ty<CBR_Object> => {
+  const cos = Object.values(coMap);
+  const netSize = cos.some((co) => co.netSize === 'all')
+      ? 'all'
+      // @ts-ignore // ts should know this from the condition
+      : cos.reduce((acc, co) => acc + co.netSize, 0);
+  const {ascLabels} = labelMaps(coMap);
+  return {
+    ...CBR.BT_Object(coMap),
+    netSize,
+    toNet: (bv: CBR_Object): NV => {
+      const chunks = ascLabels.map((label) =>
+        coMap[label].toNet(bv[label])
+      );
+      return ethers.utils.concat(chunks);
+    },
+    // TODO: share more code w/ T_Array.fromNet and T_Tuple.fromNet
+    fromNet: (nv: NV): CBR_Object => {
+      const obj: {[key: string]: CBR_Val} = {};
+      let rest = nv;
+      for (const iStr in ascLabels) {
+        const i = parseInt(iStr);
+        const label = ascLabels[i];
+        const co = coMap[label];
+        if (co.netSize === 'all') {
+          // XXX consumes it all
+          obj[label] = co.fromNet(rest);
+          rest = rest.slice(rest.length);
+        } else {
+          obj[label] = co.fromNet(rest.slice(0, co.netSize));
+          rest = rest.slice(co.netSize);
+        }
+      }
+      return obj;
+    },
+  }
+};
+
+// 1 byte for the label
+// the rest right-padded with zeroes
+// up to the size of the largest variant
+export const T_Data = (
+  coMap: {[key: string]: ALGO_Ty<CBR_Val>}
+): ALGO_Ty<CBR_Data> => {
+  const cos = Object.values(coMap);
+  const valSize = cos.some((co) => co.netSize === 'all')
+      ? 'all'
+      // @ts-ignore // ts should know this from the cond above
+      : Math.max(cos.map((co) => co.netSize))
+  const netSize = valSize === 'all'
+      ? 'all' : valSize + 1;
+  const {ascLabels, labelMap} = labelMaps(coMap);
+  return {
+    ...CBR.BT_Data(coMap),
+    netSize,
+    toNet: ([label, val]: CBR_Data): NV => {
+      const i = labelMap[label];
+      const lab_nv = new Uint8Array([i]);
+      const val_co = coMap[label];
+      const val_nv = val_co.toNet(val);
+      if (valSize === 'all') {
+        return ethers.utils.concat([lab_nv, val_nv]);
+      } else {
+        const padding = new Uint8Array(valSize - val_nv.length);
+        return ethers.utils.concat([lab_nv, val_nv, padding]);
+      }
+    },
+    fromNet: (nv: NV): CBR_Data => {
+      const i = nv[0];
+      const label = ascLabels[i];
+      const val_co = coMap[label];
+      const rest = nv.slice(1);
+      const sliceTo = val_co.netSize === 'all'
+          ? rest.length : val_co.netSize;
+      const val = val_co.fromNet(rest.slice(0, sliceTo));
+      return [label, val];
+    },
+  }
+}
 
 // Common interface exports
 

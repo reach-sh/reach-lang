@@ -42,7 +42,10 @@ import {
   CBR_Tuple,
   CBR_Val,
 } from './CBR';
-import { memoizeThunk, replaceableThunk } from './shared_impl';
+import {
+  labelMaps,
+  memoizeThunk, replaceableThunk
+} from './shared_impl';
 export * from './shared';
 
 type BigNumber = ethers.BigNumber;
@@ -294,25 +297,6 @@ export const V_Object = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
 ) => (val: {[key: string]: unknown}): CBR_Object => {
   return T_Object(co).canonicalize(val);
-}
-
-/**
- * @description ascLabels[i] = label; labelMap[label] = i;
- */
-const labelMaps = <T>(co: {
-  [key: string]: ETH_Ty<CBR_Val, T>
-}): {
-  ascLabels: Array<string>,
-  labelMap: {[key: string]: number}
-} => {
-  const ascLabels = Object.keys(co).sort();
-  const labelMap: {
-    [key: string]: number
-  } = {};
-  for (const i in ascLabels) {
-    labelMap[ascLabels[i]] = parseInt(i);
-  }
-  return {ascLabels, labelMap};
 }
 
 export const T_Data = <T>(
