@@ -308,8 +308,8 @@ how_many_txns = do
 ctobs :: SLType -> App ()
 ctobs = \case
   T_UInt -> op "itob"
-  T_Bool -> op "itob"
-  T_Null -> op "itob"
+  T_Bool -> op "itob" >> code "substring" [ "0", "1" ]
+  T_Null -> nop
   T_Bytes -> nop
   T_Digest -> nop
   T_Address -> nop
@@ -326,7 +326,7 @@ cfrombs :: SLType -> App ()
 cfrombs = \case
   T_UInt -> op "btoi"
   T_Bool -> op "btoi"
-  T_Null -> op "btoi"
+  T_Null -> nop
   T_Bytes -> nop
   T_Digest -> nop
   T_Address -> nop
@@ -347,7 +347,7 @@ base64d bs = "base64(" <> encodeBase64 bs <> ")"
 
 cl :: DLLiteral -> App ()
 cl = \case
-  DLL_Null -> cl $ DLL_Int sb 0
+  DLL_Null -> cl $ DLL_Bytes ""
   DLL_Bool b -> cl $ DLL_Int sb $ if b then 1 else 0
   DLL_Int at i -> code "int" [tint at i]
   DLL_Bytes bs -> code "byte" [base64d bs]
@@ -507,38 +507,72 @@ computeSubstring ts idx = (t, start, end)
             Nothing -> impossible "bad idx"
             Just x -> x
 
+cfor :: Integer -> (App () -> App ()) -> App ()
+cfor maxi body = do
+  top_lab <- freshLabel
+  end_lab <- freshLabel
+  salloc $ \idxl -> do
+    let load_idx = code "load" [ texty idxl ]
+    cl $ DLL_Int sb 0
+    code "store" [ texty idxl ]
+    label top_lab
+    load_idx
+    cl $ DLL_Int sb maxi
+    op "<"
+    code "bz" [ end_lab ]
+    body load_idx
+    load_idx
+    cl $ DLL_Int sb 1
+    op "+"
+    code "store" [ texty idxl ]
+    xxx "backwards jump"
+    code "b" [ top_lab ]
+  label end_lab
+
+doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
+doArrayRef at aa frombs ie = do
+  let (t, _) = typeArray aa
+  let tsz = typeSizeOf t
+  ca aa
+  let ie' =
+        case ie of
+          Left ia -> ca ia
+          Right x -> x
+  case t of
+    T_Bool -> do
+      case ie of
+        Left (DLA_Literal (DLL_Int _ ii)) | ii < 256 -> do
+          code "byteget" [ texty ii ]
+        _ -> do
+          ie'
+          op "byteget2"
+      case frombs of
+        True -> nop
+        False -> ctobs T_Bool
+    _ -> do
+      case ie of
+        Left (DLA_Literal (DLL_Int _ ii)) -> do
+          let start = ii * tsz
+          let end = start + tsz
+          csubstring at start end
+        _ -> do
+          cl $ DLL_Int sb tsz
+          ie'
+          op "*"
+          op "dup"
+          cl $ DLL_Int sb tsz
+          op "+"
+          op "substring3"
+      case frombs of
+        True -> cfrombs t
+        False -> nop
+
 ce :: DLExpr -> App ()
 ce = \case
   DLE_Arg _ a -> ca a
   DLE_Impossible at msg -> expect_throw at msg
   DLE_PrimOp _ p args -> cprim p args
-  DLE_ArrayRef at aa ia -> do
-    let (t, _) = typeArray aa
-    let tsz = typeSizeOf t
-    ca aa
-    case t of
-      T_Bool -> do
-        case ia of
-          DLA_Literal (DLL_Int _ ii) | ii < 256 -> do
-            code "byteget" [ texty ii ]
-          _ -> do
-            ca ia
-            op "byteget2"
-      _ -> do
-        case ia of
-          DLA_Literal (DLL_Int _ ii) -> do
-            let start = ii * tsz
-            let end = start + tsz
-            csubstring at start end
-          _ -> do
-            cl $ DLL_Int sb tsz
-            ca ia
-            op "*"
-            op "dup"
-            cl $ DLL_Int sb tsz
-            op "+"
-            op "substring3"
-        cfrombs t
+  DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
   DLE_ArraySet at aa ia va -> do
     let (t, alen) = typeArray aa
     case t of
@@ -610,7 +644,22 @@ ce = \case
     ca y
     check_concat_len $ (xlen + ylen) * typeSizeOf xt
     op "concat"
-  DLE_ArrayZip {} -> xxx "array zip"
+  DLE_ArrayZip at x y -> do
+    let xsz = typeSizeOf $ argTypeOf x
+    let ysz = typeSizeOf $ argTypeOf y
+    let (_, xlen) = typeArray x
+    check_concat_len $ xsz + ysz
+    salloc $ \ ansl -> do
+      cl $ DLL_Bytes ""
+      code "store" [ texty ansl ]
+      cfor xlen $ \ load_idx -> do
+        code "load" [ texty ansl ]
+        doArrayRef at x False $ Right load_idx
+        doArrayRef at y False $ Right load_idx
+        op "concat"
+        op "concat"
+        code "store" [ texty ansl ]
+      code "load" [ texty ansl ]
   DLE_TupleRef at ta idx -> do
     let ts = typeTupleTypes ta
     let (t, start, end) = computeSubstring ts idx
