@@ -115,7 +115,7 @@ class Bob extends React.Component {
     this.setState({mode: 'ApproveRequest'});
     const interact = {
       want: (request) => this.setState({mode: 'DisplayInfo', requestStandard: reach.formatCurrency(request, 4)}),
-      got: (infoBytes) => this.setState({info: reach.hexToString(infoBytes)}),
+      got: (info) => this.setState({info}),
     };
     await backend.Bob(reach, ctc, interact);
   }

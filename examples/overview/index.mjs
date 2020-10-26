@@ -17,7 +17,7 @@ import * as backend from './build/index.main.mjs';
     }),
     backend.Bob(stdlib, ctcBob, {
       want: (amt) => console.log(`Alice asked Bob for ${stdlib.formatCurrency(amt)}`),
-      got: (secret) => console.log(`Alice's secret is: ${stdlib.hexToString(secret)}`),
+      got: (secret) => console.log(`Alice's secret is: ${secret}`),
     }),
   ]);
 })();
