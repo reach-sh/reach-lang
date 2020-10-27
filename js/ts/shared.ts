@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import ethers from 'ethers';
-import { labelMaps } from './shared_impl';
 
 export interface AnyBackendTy {
   name: string,
@@ -110,15 +109,6 @@ const hexTo0x = (h: string): string => '0x' + h.replace(/^0x/, '');
 const byteToHex = (b: number): string => (b & 0xFF).toString(16).padStart(2, '0');
 const byteArrayToHex = (b: any): string => Array.from(b, byteToHex).join('');
 
-// const hexOf = x =>
-//       typeof x === 'string' && x.slice(0, 2) === '0x'
-//       ? un0x(toHex(x))
-//       : un0x(toHex(`0x${x}`));
-const hexOf = (x: any): string => toHex(x);
-// TODO: why was this stripping off the 0x?
-// Why was it slapping 0x on non-hex strings?
-
-
 // Contracts
 
 // .canonicalize turns stuff into the "canonical backend representation"
@@ -134,54 +124,15 @@ export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
   }
 }
 
-// Massage the arg into a form keccak256 will handle correctly
-let digestWidth = 32;
-export const setDigestWidth = (sz: number): void => {
-  digestWidth = sz;
-};
-const kek = (arg: any): string | Uint8Array => {
-  if (typeof(arg) === 'string') {
-    if (isHex(arg)) {
-      return arg;
-    } else {
-      return toUtf8Bytes(arg);
-    }
-  } else if (typeof(arg) === 'boolean') {
-    return kek(arg ? 1 : 0);
-  } else if (typeof(arg) === 'number') {
-    return '0x' + bigNumberToHex(arg, digestWidth);
-  } else if (isBigNumber(arg)) {
-    return '0x' + bigNumberToHex(arg, digestWidth);
-  } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array') {
-    return arg;
-  } else if (arg && arg.constructor && arg.constructor.name == 'Buffer') {
-    return '0x' + arg.toString('hex');
-  } else if (Array.isArray(arg)) {
-    return ethers.utils.concat(arg.map((x) => ethers.utils.arrayify(kek(x))));
-  } else if (Object.keys(arg).length > 0) {
-    if (Object.keys(arg).length > 1) {
-      // XXX
-      console.log(
-        `WARNING: digest known not to match solidity keccak256`
-       + ` on objects with more than 1 field.`
-       + ` This can cause: "The message you are trying to send appears to be invalid"`
-      );
-    }
-    const {ascLabels} = labelMaps(arg);
-    return kek(ascLabels.map((label => arg[label])));
-  } else {
-    throw Error(`Can't kek this: ${JSON.stringify(arg)}`);
-  }
-};
-
-export const toHex = (x: any) => hexlify(kek(x));
 export const isHex = isHexString;
 export const hexToString = toUtf8String;
+export const stringToHex = (x:string): string =>
+  hexlify(toUtf8Bytes(x));
 
-// XXX the JS backend expects this to be a BigNumber
-export const digest = (...args: Array<any>) => {
+export const makeDigest = (prep: any) => (t:any, v:any) => {
+  const args = [t, v];
   debug(`digest(${JSON.stringify(args)}) =>`);
-  const kekCat = kek(args);
+  const kekCat = prep(t, v);
   debug(`digest(${JSON.stringify(args)}) => internal(${hexlify(kekCat)})`);
   const r = ethers.utils.keccak256(kekCat);
   debug(`keccak(${JSON.stringify(args)}) => internal(${hexlify(kekCat)} => ${JSON.stringify(r)}`);
@@ -201,15 +152,22 @@ export const bigNumberToHex = (u: num, size: number = 32) => {
   return hexlify(nFix).slice(2);
 };
 
-export const bytesEq = (x: any, y: any): boolean =>
-  hexOf(x) === hexOf(y);
+const forceHex = (x: string): string =>
+  isHex(x) ? x : stringToHex(x);
+export const bytesEq = (x: any, y: any): boolean => {
+  debug(`bytesEq '${x}' '${y}'`);
+  return forceHex(x) === forceHex(y); };
 export const digestEq = bytesEq;
 
-export const randomUInt = (): BigNumber =>
-  hexToBigNumber(byteArrayToHex(crypto.randomBytes(digestWidth)));
+export const makeRandom = (width:number) => {
+  const randomUInt = (): BigNumber =>
+    hexToBigNumber(byteArrayToHex(crypto.randomBytes(width)));
 
-export const hasRandom = {
-  random: randomUInt,
+  const hasRandom = {
+    random: randomUInt,
+  };
+
+  return { randomUInt, hasRandom };
 };
 
 export const eq = (a: num, b: num): boolean => bigNumberify(a).eq(bigNumberify(b));
@@ -224,6 +182,9 @@ export const le = (a: num, b: num): boolean => bigNumberify(a).lte(bigNumberify(
 export const lt = (a: num, b: num): boolean => bigNumberify(a).lt(bigNumberify(b));
 
 // Array helpers
+
+export const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
+  cnt == 0 ? [] : args.slice(-1 * cnt);
 
 export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   const arrp = arr.slice();

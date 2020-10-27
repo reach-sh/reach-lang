@@ -8,10 +8,10 @@ import Timeout from 'await-timeout';
 
 import {
   CurrencyAmount, OnProgress, WPArgs,
-  debug, getDEBUG, toHex,
+  debug, getDEBUG,
   isBigNumber, bigNumberify,
-  setDigestWidth,
-  mkAddressEq,
+  mkAddressEq, makeDigest, argsSlice,
+  makeRandom,
 } from './shared';
 import * as CBR from './CBR';
 import {
@@ -35,6 +35,7 @@ type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
 export const UInt_max: BigNumber =
   BigNumber.from(2).pow(64).sub(1);
+export const { randomUInt, hasRandom } = makeRandom(8);
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
@@ -174,7 +175,8 @@ type ALGO_Ty<BV extends CBR_Val> = {
 }
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 
-// const V_Null: CBR_Null = null;
+export const digest = makeDigest((t:ALGO_Ty<any>, v:any) => t.toNet(v));
+
 export const T_Null: ALGO_Ty<CBR_Null> = {
   ...CBR.BT_Null,
   netSize: 0,
@@ -184,15 +186,10 @@ export const T_Null: ALGO_Ty<CBR_Null> = {
 
 export const T_Bool: ALGO_Ty<CBR_Bool> = {
   ...CBR.BT_Bool,
-  netSize: 8, // represented w/ UInt64
-  toNet: (bv: CBR_Bool): NV => {
-    return T_UInt.toNet(BigNumber.from(bv ? 1 : 0));
-  },
-  fromNet: (nv: NV): CBR_Bool => {
-    return T_UInt.fromNet(nv).eq(1);
-  },
+  netSize: 1,
+  toNet: (bv: CBR_Bool): NV => new Uint8Array([bv ? 1 : 0]),
+  fromNet: (nv: NV): CBR_Bool => nv[0] == 1,
 }
-// const V_Bool = (val: boolean): CBR_Bool => T_Bool.canonicalize(val);
 
 export const T_UInt: ALGO_Ty<CBR_UInt> = {
   ...CBR.BT_UInt,
@@ -206,9 +203,6 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
     return ethers.BigNumber.from(nv);
   },
 }
-// const V_UInt = (n: BigNumber): CBR_UInt => {
-//   return T_UInt.canonicalize(n);
-// }
 
 /** @description For arbitrary utf8 strings */
 const stringyNet = {
@@ -235,19 +229,12 @@ export const T_Bytes: ALGO_Ty<CBR_Bytes> = {
   ...stringyNet,
   netSize: 'all', // XXX
 }
-// const V_Bytes = (s: string): CBR_Bytes => {
-//   return T_Bytes.canonicalize(s);
-// }
 
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
   ...bytestringyNet,
   netSize: 32,
 }
-// /** @description You probably don't want to manually create this */
-// const V_Digest = (s: string): CBR_Digest => {
-//   return T_Digest.canonicalize(s);
-// }
 
 function addressUnwrapper(x: any): string {
   return (x && x.addr)
@@ -263,9 +250,6 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
     return CBR.BT_Address.canonicalize(val || uv)
   }
 }
-// const V_Address = (s: string): CBR_Address => {
-//   return T_Address.canonicalize(s);
-// }
 
 export const T_Array = (
   co: ALGO_Ty<CBR_Val>,
@@ -292,12 +276,6 @@ export const T_Array = (
     }
   },
 });
-// const V_Array = (
-//   co: ALGO_Ty<CBR_Val>,
-//   size: number,
-// ) => (val: Array<unknown>): CBR_Array => {
-//   return T_Array(co, size).canonicalize(val);
-// }
 
 export const T_Tuple = (
   cos: Array<ALGO_Ty<CBR_Val>>,
@@ -547,10 +525,6 @@ const sign_and_send_sync = async (
   }
 };
 
-// const fillTxn = async (round_width, txn) => {
-//   return fillTxnWithParams(false, round_width, await getTxnParams(), txn);
-// };
-
 export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<TxnInfo> => {
   const valuen = value.toNumber();
   const sender = from.networkAccount;
@@ -672,13 +646,7 @@ const doQuery = async (dhead:string, query: any): Promise<any> => {
   return txn;
 };
 
-const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
-  cnt == 0 ? [] : args.slice(-1 * cnt);
-
 export const connectAccount = async (networkAccount: NetworkAccount) => {
-  // XXX become the monster
-  setDigestWidth(8);
-
   const indexer = await getIndexer();
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
@@ -783,8 +751,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
         }
       });
+      const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
+      debug(`${dhead} --- PREPARE: ${JSON.stringify(safe_args.map(ui8h))}`);
 
-      debug(`${dhead} --- PREPARE: ${JSON.stringify(safe_args.map(toHex))}`);
       const handler_with_args =
         algosdk.makeLogicSig(handler.result, safe_args);
       debug(`${dhead} --- PREPARED`); // XXX display handler_with_args usefully, like with base64ify toBytes
@@ -1161,6 +1130,7 @@ export async function getDefaultAccount(): Promise<Account> {
 
 export const setFaucet = false; // XXX
 export const newAccountFromMnemonic = false; // XXX
+
 export const getNetworkTime = async () => bigNumberify(await getLastRound());
 export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const onProg = onProgress || (() => {});
@@ -1179,5 +1149,6 @@ export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<B
   debug(`wait: delta=${delta} now=${now}, until=${now.add(delta)}`);
   return await waitUntilTime(now.add(delta), onProgress);
 };
+
 export const verifyContract = false; // XXX
 export const addressEq = mkAddressEq(T_Address);

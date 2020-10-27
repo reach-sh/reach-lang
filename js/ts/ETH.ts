@@ -11,14 +11,16 @@ import {
   assert,
   bigNumberify,
   debug,
-  digest,
+  makeDigest,
   eq,
   ge,
   getDEBUG,
+  stringToHex,
   hexToString,
   isBigNumber,
+  isHex,
+  bigNumberToHex,
   lt,
-  toHex,
   CurrencyAmount,
   IAccount,
   IContract,
@@ -26,6 +28,7 @@ import {
   OnProgress,
   WPArgs,
   mkAddressEq,
+  makeRandom,
 } from './shared';
 import * as CBR from './CBR';
 import {
@@ -51,6 +54,7 @@ type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
 export const UInt_max: BigNumber =
   BigNumber.from(2).pow(256).sub(1);
+export const { randomUInt, hasRandom } = makeRandom(32);
 
 type Provider = ethers.providers.Provider;
 type TransactionReceipt = ethers.providers.TransactionReceipt;
@@ -146,6 +150,44 @@ type ETH_Ty<BV extends CBR_Val, NV> =  {
 }
 type AnyETH_Ty = ETH_Ty<CBR_Val, any>;
 
+const kek = (arg: any): string | Uint8Array => {
+  if (typeof(arg) === 'string') {
+    if (isHex(arg)) {
+      return arg;
+    } else {
+      return ethers.utils.toUtf8Bytes(arg);
+    }
+  } else if (typeof(arg) === 'boolean') {
+    return kek(arg ? 1 : 0);
+  } else if (typeof(arg) === 'number') {
+    return '0x' + bigNumberToHex(arg);
+  } else if (isBigNumber(arg)) {
+    return '0x' + bigNumberToHex(arg);
+  } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array') {
+    return arg;
+  } else if (arg && arg.constructor && arg.constructor.name == 'Buffer') {
+    return '0x' + arg.toString('hex');
+  } else if (Array.isArray(arg)) {
+    return ethers.utils.concat(arg.map((x) => ethers.utils.arrayify(kek(x))));
+  } else if (Object.keys(arg).length > 0) {
+    if (Object.keys(arg).length > 1) {
+      // XXX
+      console.log(
+        `WARNING: digest known not to match solidity keccak256`
+       + ` on objects with more than 1 field.`
+       + ` This can cause: "The message you are trying to send appears to be invalid"`
+      );
+    }
+    const {ascLabels} = labelMaps(arg);
+    return kek(ascLabels.map((label => arg[label])));
+  } else {
+    throw Error(`Can't kek this: ${JSON.stringify(arg)}`);
+  }
+};
+
+export const digest =
+  makeDigest((t:any, v:any) => kek(t.munge(v)));
+
 const V_Null: CBR_Null = null;
 export const T_Null: ETH_Ty<CBR_Null, false> = {
   ...CBR.BT_Null,
@@ -178,7 +220,7 @@ const V_UInt = (n: BigNumber): CBR_UInt => {
 export const T_Bytes: ETH_Ty<CBR_Bytes, string> = {
   ...CBR.BT_Bytes,
   defaultValue: '',
-  munge: (bv: CBR_Bytes): string => toHex(bv),
+  munge: (bv: CBR_Bytes): string => stringToHex(bv),
   unmunge: (nv: string) => V_Bytes(hexToString(nv)),
 }
 const V_Bytes = (s: string): CBR_Bytes => {
@@ -244,6 +286,7 @@ const V_Array = <T>(
   return T_Array(ctc, size).canonicalize(val);
 }
 
+// XXX fix me Dan, I'm type checking wrong!
 export const T_Tuple = <T>(
   ctcs: Array<ETH_Ty<CBR_Val, T>>,
 ): ETH_Ty<CBR_Tuple, Array<T>> => ({
@@ -1190,7 +1233,11 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
 
   if (isNone(argsMay)) {
     const st = await provider.getStorageAt(address, 0, creation_block);
-    const expectedSt = digest(0, creation_block);
+    const expectedSt =
+      // @ts-ignore XXX
+      digest(T_Tuple([T_UInt, T_UInt]),
+            [T_UInt.canonicalize(0),
+             T_UInt.canonicalize(creation_block)]);
     if (st !== expectedSt) {
       console.log('st expected: ' + expectedSt);
       console.log('st actual  : ' + st);

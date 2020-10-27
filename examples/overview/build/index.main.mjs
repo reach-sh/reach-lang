@@ -1,10 +1,11 @@
 // Automatically generated with Reach 0.1.2
+/* eslint-disable no-unused-vars, no-empty-pattern, no-useless-escape */
 export const _version = '0.1.2';
 
 export async function Alice(stdlib, ctc, interact) {
   const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt], [stdlib.protect(stdlib.T_UInt, interact.request, null)], stdlib.checkedBigNumberify('./index.rsh:13:25:after expr stmt semicolon', stdlib.UInt_max, 0), [stdlib.T_UInt], false, ((txn1) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.digest(stdlib.checkedBigNumberify('./index.rsh:13:8:dot', stdlib.UInt_max, 0));
+    sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:13:8:dot', stdlib.UInt_max, 0)]);
     const [v1] = txn1.data;
     const v3 = txn1.value;
     const v2 = txn1.from;
@@ -15,7 +16,7 @@ export async function Alice(stdlib, ctc, interact) {
       fs: [],
       msg: 'pay amount correct',
       who: 'Alice' });
-    sim_r.nextSt = stdlib.digest(stdlib.checkedBigNumberify('./index.rsh:14:15:after expr stmt semicolon', stdlib.UInt_max, 1), v2, v1);
+    sim_r.nextSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:14:15:after expr stmt semicolon', stdlib.UInt_max, 1), v2, v1]);
     sim_r.isHalt = false;
     return sim_r; }));
   const [v1] = txn1.data;
@@ -39,7 +40,7 @@ export async function Alice(stdlib, ctc, interact) {
     who: 'Alice' });
   const txn3 = await ctc.sendrecv('Alice', 3, 1, [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Bytes], [v2, v1, stdlib.protect(stdlib.T_Bytes, interact.info, null)], stdlib.checkedBigNumberify('./index.rsh:23:22:after expr stmt semicolon', stdlib.UInt_max, 0), [stdlib.T_Bytes], false, ((txn3) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.digest(stdlib.checkedBigNumberify('./index.rsh:23:8:dot', stdlib.UInt_max, 2), v2, v1);
+    sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:23:8:dot', stdlib.UInt_max, 2), v2, v1]);
     const [v19] = txn3.data;
     const v20 = txn3.value;
     
@@ -52,7 +53,7 @@ export async function Alice(stdlib, ctc, interact) {
     sim_r.txns.push({
       amt: v1,
       to: v2 });
-    sim_r.nextSt = stdlib.digest();
+    sim_r.nextSt = stdlib.digest(stdlib.T_Tuple([]), []);
     sim_r.isHalt = true;
     return sim_r; }));
   const [v19] = txn3.data;
@@ -83,7 +84,7 @@ export async function Bob(stdlib, ctc, interact) {
     who: 'Bob' });
   const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt], [v2, v1], v1, [], false, ((txn2) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.digest(stdlib.checkedBigNumberify('./index.rsh:18:8:dot', stdlib.UInt_max, 1), v2, v1);
+    sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:18:8:dot', stdlib.UInt_max, 1), v2, v1]);
     const [] = txn2.data;
     const v12 = txn2.value;
     const v11 = txn2.from;
@@ -94,7 +95,7 @@ export async function Bob(stdlib, ctc, interact) {
       fs: [],
       msg: 'pay amount correct',
       who: 'Bob' });
-    sim_r.nextSt = stdlib.digest(stdlib.checkedBigNumberify('./index.rsh:19:15:after expr stmt semicolon', stdlib.UInt_max, 2), v2, v1);
+    sim_r.nextSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:19:15:after expr stmt semicolon', stdlib.UInt_max, 2), v2, v1]);
     sim_r.isHalt = false;
     return sim_r; }));
   const [] = txn2.data;
@@ -129,21 +130,21 @@ const _ALGO = {
   txn TypeEnum
   int appl
   ==
-  bz revert
+  assert
   txn RekeyTo
   global ZeroAddress
   ==
-  bz revert
+  assert
   // Check that everyone's here
   global GroupSize
   int 4
   >=
-  bz revert
+  assert
   // Check txnAppl (us)
   txn GroupIndex
   int 0
   ==
-  bz revert
+  assert
   // Check txnFromHandler
   int 0
   gtxn 2 Sender
@@ -158,18 +159,18 @@ const _ALGO = {
   byte "{{m3}}"
   ==
   ||
-  bz revert
+  assert
   byte base64(cw==)
   app_global_get
   gtxna 2 Args 0
   ==
-  bz revert
+  assert
   byte base64(bA==)
   app_global_get
   gtxna 2 Args 4
   btoi
   ==
-  bz revert
+  assert
   // Don't check anyone else, because Handler does
   // Update state
   byte base64(cw==)
@@ -188,17 +189,13 @@ const _ALGO = {
   txn OnCompletion
   int NoOp
   ==
-  bz revert
+  assert
   b done
   halted:
   txn OnCompletion
   int DeleteApplication
   ==
-  bz revert
-  b done
-  revert:
-  int 0
-  return
+  assert
   done:
   int 1
   return
@@ -208,25 +205,25 @@ const _ALGO = {
   txn TypeEnum
   int appl
   ==
-  bz revert
+  assert
   txn RekeyTo
   global ZeroAddress
   ==
-  bz revert
+  assert
   txn Sender
   byte "{{Deployer}}"
   ==
-  bz revert
+  assert
   txn ApplicationID
   bz init
   global GroupSize
   int 5
   ==
-  bz revert
+  assert
   txn OnCompletion
   int UpdateApplication
   ==
-  bz revert
+  assert
   byte base64(cw==)
   int 0
   itob
@@ -243,15 +240,11 @@ const _ALGO = {
   global GroupSize
   int 1
   ==
-  bz revert
+  assert
   txn OnCompletion
   int NoOp
   ==
-  bz revert
-  b done
-  revert:
-  int 0
-  return
+  assert
   done:
   int 1
   return
@@ -261,17 +254,13 @@ const _ALGO = {
   global GroupSize
   int 1
   ==
-  bz revert
+  assert
   // We're halted
   byte base64(aA==)
   app_global_get
   int 1
   ==
-  bz revert
-  b done
-  revert:
-  int 0
-  return
+  assert
   done:
   int 1
   return
@@ -281,112 +270,112 @@ const _ALGO = {
   global GroupSize
   int 4
   >=
-  bz revert
+  assert
   // Check txnAppl
   gtxn 0 TypeEnum
   int appl
   ==
-  bz revert
+  assert
   gtxn 0 ApplicationID
   byte "{{ApplicationID}}"
   btoi
   ==
-  bz revert
+  assert
   // Don't check anything else, because app does
   // Check us
   txn TypeEnum
   int pay
   ==
-  bz revert
+  assert
   txn RekeyTo
   global ZeroAddress
   ==
-  bz revert
+  assert
   txn CloseRemainderTo
   global ZeroAddress
   ==
-  bz revert
+  assert
   txn GroupIndex
   int 4
   >=
-  bz revert
-  b done
-  revert:
-  int 0
-  return
+  assert
   done:
   int 1
   return
   `,
+  stepargs: [0, 89, 121, 129],
   steps: [null, `#pragma version 2
   // Handler 1
   // Check txnAppl
   gtxn 0 TypeEnum
   int appl
   ==
-  bz revert
+  assert
   gtxn 0 ApplicationID
   byte "{{ApplicationID}}"
   btoi
   ==
-  bz revert
+  assert
   // Check txnToHandler
   gtxn 1 TypeEnum
   int pay
   ==
-  bz revert
+  assert
   gtxn 1 Receiver
   txn Sender
   ==
-  bz revert
+  assert
   gtxn 1 Amount
   gtxn 2 Fee
   ==
-  bz revert
+  assert
   // Check txnToContract
   gtxn 3 TypeEnum
   int pay
   ==
-  bz revert
+  assert
   gtxn 3 Receiver
   byte "{{ContractAddr}}"
   ==
-  bz revert
+  assert
   // Check txnFromHandler (us)
   txn GroupIndex
   int 2
   ==
-  bz revert
+  assert
   txn TypeEnum
   int pay
   ==
-  bz revert
+  assert
   txn Amount
   int 0
   ==
-  bz revert
+  assert
   txn Receiver
   gtxn 1 Sender
   ==
-  bz revert
+  assert
   txn NumArgs
   int 6
   ==
-  bz revert
+  assert
   int 0
   itob
   keccak256
   arg 0
   ==
-  bz revert
+  assert
   // Run body
+  // Just "pay amount correct"
+  // "./index.rsh:13:25:after expr stmt semicolon"
+  // "[]"
   gtxn 3 Amount
   arg 3
   btoi
   -
   int 0
   ==
-  bz revert
+  assert
   int 1
   itob
   gtxn 3 Sender
@@ -396,27 +385,24 @@ const _ALGO = {
   keccak256
   arg 1
   ==
-  bz revert
+  assert
   arg 2
   btoi
   int 0
   ==
-  bz revert
+  assert
   b done
   // Check GroupSize
   global GroupSize
   int 4
   ==
-  bz revert
+  assert
   arg 3
   btoi
   int 0
   ==
-  bz revert
+  assert
   // Check time limits
-  revert:
-  int 0
-  return
   done:
   int 1
   return
@@ -426,55 +412,55 @@ const _ALGO = {
   gtxn 0 TypeEnum
   int appl
   ==
-  bz revert
+  assert
   gtxn 0 ApplicationID
   byte "{{ApplicationID}}"
   btoi
   ==
-  bz revert
+  assert
   // Check txnToHandler
   gtxn 1 TypeEnum
   int pay
   ==
-  bz revert
+  assert
   gtxn 1 Receiver
   txn Sender
   ==
-  bz revert
+  assert
   gtxn 1 Amount
   gtxn 2 Fee
   ==
-  bz revert
+  assert
   // Check txnToContract
   gtxn 3 TypeEnum
   int pay
   ==
-  bz revert
+  assert
   gtxn 3 Receiver
   byte "{{ContractAddr}}"
   ==
-  bz revert
+  assert
   // Check txnFromHandler (us)
   txn GroupIndex
   int 2
   ==
-  bz revert
+  assert
   txn TypeEnum
   int pay
   ==
-  bz revert
+  assert
   txn Amount
   int 0
   ==
-  bz revert
+  assert
   txn Receiver
   gtxn 1 Sender
   ==
-  bz revert
+  assert
   txn NumArgs
   int 7
   ==
-  bz revert
+  assert
   int 1
   itob
   arg 5
@@ -484,8 +470,11 @@ const _ALGO = {
   keccak256
   arg 0
   ==
-  bz revert
+  assert
   // Run body
+  // Just "pay amount correct"
+  // "./index.rsh:18:21:after expr stmt semicolon"
+  // "[]"
   gtxn 3 Amount
   arg 3
   btoi
@@ -493,7 +482,7 @@ const _ALGO = {
   arg 6
   btoi
   ==
-  bz revert
+  assert
   int 2
   itob
   arg 5
@@ -503,27 +492,24 @@ const _ALGO = {
   keccak256
   arg 1
   ==
-  bz revert
+  assert
   arg 2
   btoi
   int 0
   ==
-  bz revert
+  assert
   b done
   // Check GroupSize
   global GroupSize
   int 4
   ==
-  bz revert
+  assert
   arg 3
   btoi
   int 0
   ==
-  bz revert
+  assert
   // Check time limits
-  revert:
-  int 0
-  return
   done:
   int 1
   return
@@ -533,59 +519,59 @@ const _ALGO = {
   gtxn 0 TypeEnum
   int appl
   ==
-  bz revert
+  assert
   gtxn 0 ApplicationID
   byte "{{ApplicationID}}"
   btoi
   ==
-  bz revert
+  assert
   // Check txnToHandler
   gtxn 1 TypeEnum
   int pay
   ==
-  bz revert
+  assert
   gtxn 1 Receiver
   txn Sender
   ==
-  bz revert
+  assert
   gtxn 1 Amount
   gtxn 2 Fee
   ==
-  bz revert
+  assert
   // Check txnToContract
   gtxn 3 TypeEnum
   int pay
   ==
-  bz revert
+  assert
   gtxn 3 Receiver
   byte "{{ContractAddr}}"
   ==
-  bz revert
+  assert
   // Check txnFromHandler (us)
   txn GroupIndex
   int 2
   ==
-  bz revert
+  assert
   txn TypeEnum
   int pay
   ==
-  bz revert
+  assert
   txn Amount
   int 0
   ==
-  bz revert
+  assert
   txn Receiver
   gtxn 1 Sender
   ==
-  bz revert
+  assert
   txn NumArgs
   int 8
   ==
-  bz revert
+  assert
   gtxn 3 Sender
   arg 5
   ==
-  bz revert
+  assert
   int 2
   itob
   arg 5
@@ -595,52 +581,52 @@ const _ALGO = {
   keccak256
   arg 0
   ==
-  bz revert
+  assert
   // Run body
+  // Just "pay amount correct"
+  // "./index.rsh:23:22:after expr stmt semicolon"
+  // "[]"
   gtxn 3 Amount
   arg 3
   btoi
   -
   int 0
   ==
-  bz revert
+  assert
   gtxn 4 TypeEnum
   int pay
   ==
-  bz revert
+  assert
   gtxn 4 Receiver
   arg 5
   ==
-  bz revert
+  assert
   gtxn 4 Amount
   arg 6
   btoi
   ==
-  bz revert
+  assert
   gtxn 4 Sender
   byte "{{ContractAddr}}"
   ==
-  bz revert
+  assert
   arg 2
   btoi
   int 1
   ==
-  bz revert
+  assert
   b done
   // Check GroupSize
   global GroupSize
   int 5
   ==
-  bz revert
+  assert
   arg 3
   btoi
   gtxn 4 Fee
   ==
-  bz revert
+  assert
   // Check time limits
-  revert:
-  int 0
-  return
   done:
   int 1
   return

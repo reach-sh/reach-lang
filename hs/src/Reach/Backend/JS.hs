@@ -147,7 +147,8 @@ jsArg = \case
 
 jsDigest :: [DLArg] -> Doc a
 jsDigest as =
-  jsApply "stdlib.digest" $ map jsArg as
+  jsApply "stdlib.digest" [ jsContract (T_Tuple $ map argTypeOf as)
+                          , jsArg (DLA_Tuple as)]
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply _ctxt = \case

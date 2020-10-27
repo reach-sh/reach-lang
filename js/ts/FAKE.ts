@@ -3,8 +3,8 @@ import ethers from 'ethers';
 
 import * as stdlib from './shared';
 import { CurrencyAmount, OnProgress } from './shared';
-import * as CBR from './CBR';
 export * from './shared';
+export { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } from './ETH';
 
 export const debug = (msg: any): void => {
   stdlib.debug(`${BLOCKS.length}: ${msg}}`);
@@ -14,10 +14,13 @@ type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
 export const UInt_max: BigNumber =
   BigNumber.from(2).pow(256).sub(1);
+export const { randomUInt, hasRandom } = stdlib.makeRandom(32);
 
 type Address = string;
 type NetworkAccount = {address: Address};
 type Backend = null;
+
+type FAKE_Ty = any;
 
 // XXX Add optional "deploy after first message" info
 type ContractInfo = {
@@ -167,7 +170,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         actual: tys.length,
         message: 'tys does not have expected length',
       });
-      const data = args.slice(args.length - evt_cnt);
+      const data = stdlib.argsSlice(args, evt_cnt);
       const last_block = await getLastBlock();
       const ctcInfo = await infoP;
       if (!timeout_delay || stdlib.lt(BLOCKS.length, stdlib.add(last_block, timeout_delay))) {
@@ -251,7 +254,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 const makeAccount = (): NetworkAccount => {
-  const address = stdlib.toHex(stdlib.randomUInt());
+  const address = stdlib.bigNumberToHex(randomUInt());
   BALANCES[address] = stdlib.bigNumberify(0);
   return { address };
 };
@@ -338,44 +341,3 @@ export function formatCurrency(amt: BigNumber, decimals: number = 0): string {
 }
 
 export const setFaucet = false; // XXX
-
-type FAKE_Ty = CBR.BackendTy<CBR.CBR_Val>;
-
-export const T_Null: FAKE_Ty = CBR.BT_Null;
-export const T_Bool: FAKE_Ty = CBR.BT_Bool;
-export const T_UInt: FAKE_Ty = CBR.BT_UInt;
-export const T_Bytes: FAKE_Ty = CBR.BT_Bytes;
-export const T_Address: FAKE_Ty = {
-  ...CBR.BT_Address,
-  // FAKE is more lenient about what addresses look like
-  canonicalize: (uv: unknown) => {
-    if (typeof uv === 'string') {
-      return uv;
-    } else if (typeof uv === 'object' && uv !== null) {
-      const obj = uv as {address?: unknown};
-      if (typeof obj.address === 'string') {
-        return obj.address;
-      } else {
-        throw Error(`address must be a string, but got ${JSON.stringify(obj.address)}`)
-      }
-    }
-    if (typeof uv !== 'string') {
-      throw Error(`address must be a string, but got ${JSON.stringify(uv)}`);
-    } else {
-      return uv;
-    }
-  },
-}
-// TODO: make FAKE use string digests like everyone else
-export const T_Digest: FAKE_Ty = {
-  name: 'Digest',
-  canonicalize: (arr: any): Digest => {
-    // assumed to be an array
-    return arr;
-  },
-}
-export const T_Object = (obj: any): FAKE_Ty => CBR.BT_Object(obj);
-export const T_Data = (obj: any): FAKE_Ty => CBR.BT_Data(obj);
-export const T_Array = (co: FAKE_Ty, size: number): FAKE_Ty => CBR.BT_Array(co, size);
-export const T_Tuple = (cos: Array<FAKE_Ty>): FAKE_Ty => CBR.BT_Tuple(cos);
-export const addressEq = stdlib.mkAddressEq(T_Address);
