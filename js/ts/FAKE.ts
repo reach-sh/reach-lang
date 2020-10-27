@@ -349,8 +349,18 @@ export const T_Address: FAKE_Ty = {
   ...CBR.BT_Address,
   // FAKE is more lenient about what addresses look like
   canonicalize: (uv: unknown) => {
+    if (typeof uv === 'string') {
+      return uv;
+    } else if (typeof uv === 'object' && uv !== null) {
+      const obj = uv as {address?: unknown};
+      if (typeof obj.address === 'string') {
+        return obj.address;
+      } else {
+        throw Error(`address must be a string, but got ${JSON.stringify(obj.address)}`)
+      }
+    }
     if (typeof uv !== 'string') {
-      throw Error(`address must be a string, but got ${uv}`);
+      throw Error(`address must be a string, but got ${JSON.stringify(uv)}`);
     } else {
       return uv;
     }
