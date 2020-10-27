@@ -14,8 +14,8 @@ import {
 const {
   debug, getDEBUG, toHex,
   isBigNumber, bigNumberify,
-  bigNumberToHex, hexToBigNumber,
-  setDigestWidth, setAddressUnwrapper,
+  bigNumberToHex,
+  setDigestWidth,
 } = shared;
 import * as CBR from './CBR';
 import {
@@ -203,9 +203,11 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
   toNet: (bv: CBR_UInt): NV => (
     ethers.utils.zeroPad(ethers.utils.arrayify(bv), 8)
   ),
-  fromNet: (nv: NV): CBR_UInt => (
-    ethers.BigNumber.from(nv)
-  ),
+  fromNet: (nv: NV): CBR_UInt => {
+    // debug(`fromNet: UInt`);
+    // if (getDEBUG()) console.log(nv);
+    return ethers.BigNumber.from(nv);
+  },
 }
 // const V_UInt = (n: BigNumber): CBR_UInt => {
 //   return T_UInt.canonicalize(n);
@@ -412,19 +414,6 @@ export const T_Data = (
       const val = val_co.fromNet(rest.slice(0, sliceTo));
       return [label, val];
     },
-  }
-}
-
-// XXX DELETEME
-function oldify(ty: ALGO_Ty<CBR_Val>): any {
-  switch (ty.name.slice(0, 4)) {
-    case 'Null': return shared.T_Null;
-    case 'Bool': return shared.T_Bool;
-    case 'UInt': return shared.T_UInt;
-    case 'Byte': return shared.T_Bytes;
-    case 'Addr': return shared.T_Address;
-    case 'Dige': return shared.T_Digest;
-    default: throw Error(`oldify XXX ${ty.name}`);
   }
 }
 
@@ -659,11 +648,6 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
-// const presafeify = (ty: any, x: any): any => {
-//   void(ty);
-//   return x;
-// }
-
 const safeify = (ty: any, x: any): LogicArg => {
   if ( ty.name === 'Address' ) {
     return Buffer.from(x.slice(2), 'hex'); }
@@ -680,19 +664,6 @@ const safeify = (ty: any, x: any): LogicArg => {
     return ethers.utils.arrayify(x); }
   throw Error(`can't safeify ${JSON.stringify(x)}`);
 };
-
-const desafeify = (ty: any, v: Buffer): any => {
-  if ( ty.name === 'Bool' ) {
-    return desafeify(shared.T_UInt, v).eq(1);
-  }
-  if ( ty.name === 'UInt' ) {
-    return hexToBigNumber('0x' + v.toString('hex'));
-  }
-  if ( ty.name === 'Bytes' || ty.name === 'Digest' || ty.name === 'Address' ) {
-    return '0x' + v.toString('hex');
-  }
-  throw Error(`can't desafeify ${JSON.stringify(ty)} and ${JSON.stringify(v)}`);
-}
 
 const doQuery = async (dhead:string, query: any): Promise<any> => {
   //debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
@@ -722,13 +693,12 @@ const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
 export const connectAccount = async (networkAccount: NetworkAccount) => {
   // XXX become the monster
   setDigestWidth(8);
-  setAddressUnwrapper((x: any): string => x.addr ? '0x' + Buffer.from(algosdk.decodeAddress(x.addr).publicKey).toString('hex') : x);
 
   const indexer = await getIndexer();
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
   const pk = algosdk.decodeAddress(thisAcc.addr).publicKey;
-  const pks = shared.T_Address.canonicalize(thisAcc);
+  const pks = T_Address.canonicalize(thisAcc);
   debug(`${shad}: connectAccount`);
 
   const iam = (some_addr: string): string => {
@@ -820,20 +790,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ]; //.map(oldify);
       debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
 
-      // const canon_args =
-      //   actual_args.map((m, i) => actual_tys[i].canonicalize(m));
-      // debug(`${dhead} --- CANON: ${JSON.stringify(canon_args)}`);
-
-      // const presafe_args =
-      //   canon_args.map((c, i) => presafeify(actual_tys[i], c));
-      // debug(`${dhead} --- PRESAFE: ${JSON.stringify(presafe_args)}`);
-
-      // const munged_args =
-      //   // XXX this needs to be customized for Algorand, so I don't have to safeify. Ideally munge would return Uint8Array for everything.
-      //   presafe_args.map((p, i) => actual_tys[i].munge(p));
-      // debug(`${dhead} --- MUNGE: ${JSON.stringify(munged_args)}`);
-
-      // const safe_args: Array<LogicArg> = munged_args.map((m, i) => safeify(actual_tys[i], m));
       const safe_args: Array<NV> = actual_args.map((m, i) => actual_tys[i].toNet(m));
       safe_args.forEach((x) => {
         if (! ( typeof x === 'string' || x instanceof Uint8Array ) ) {
@@ -930,7 +886,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       label: string,
       funcNum: number,
       evt_cnt: number,
-      tys: Array<any>,
+      tys: Array<ALGO_Ty<CBR_Val>>,
       timeout_delay: undefined | BigNumber
     ): Promise<Recv> => {
       const funcName = `m${funcNum}`;
@@ -975,23 +931,29 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const args = argsSlice(ctc_args, evt_cnt);
         debug(`${dhead} --- args = ${JSON.stringify(args)}`);
 
-        const args_bufs: Array<Buffer> =
-          args.map((x: string): Buffer => Buffer.from(x, 'base64'));
-        debug(`${dhead} --- args_bufs = ${JSON.stringify(args_bufs)}`);
+        // const args_bufs: Array<Buffer> =
+        //   args.map((x: string): Buffer => Buffer.from(x, 'base64'));
+        // debug(`${dhead} --- args_bufs = ${JSON.stringify(args_bufs)}`);
 
-        tys = tys.map(oldify);
+        /** @description base64->hex->arrayify */
+        const reNetify = (x: string): NV => {
+          const s: string = Buffer.from(x, 'base64').toString('hex');
+          // debug(`${dhead} --- deNetify ${s}`);
+          return ethers.utils.arrayify('0x' + s);
+        }
+
         const args_un =
-          args_bufs.map((v: Buffer, i: number) => desafeify(tys[i], v));
+            args.map((x, i) => tys[i].fromNet(reNetify(x)));
         debug(`${dhead} --- args_un = ${JSON.stringify(args_un)}`);
 
         const totalFromFee =
-          desafeify(shared.T_UInt, Buffer.from(ctc_args[3], 'base64'));
+          T_UInt.fromNet(reNetify(ctc_args[3]));
         debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
 
         const fromAddr =
           txn['payment-transaction'].receiver;
         const from =
-          shared.T_Address.canonicalize({addr: fromAddr});
+          T_Address.canonicalize({addr: fromAddr});
         debug(`${dhead} --- from = ${JSON.stringify(from)} = ${fromAddr}`);
 
         const oldLastRound = lastRound;
