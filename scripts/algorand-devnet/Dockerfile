@@ -34,7 +34,7 @@ RUN git clone https://github.com/jeapostrophe/go-algorand
 WORKDIR $SRC_PARENT/go-algorand
 # RUN git checkout 595aa4722824be2bbad92ec367267584a87f29fe && ./scripts/configure_dev.sh && make install
 RUN ./scripts/configure_dev.sh
-RUN git fetch && git reset --hard 51f571a65aab914d81d97a70bbc0dc0bc05dd585
+RUN git fetch && git reset --hard 3bfd1918a5085b882d8af91b5bd8ca348b774d87
 RUN make install
 
 # indexer
