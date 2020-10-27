@@ -159,6 +159,14 @@ const kek = (arg: any): string | Uint8Array => {
   } else if (Array.isArray(arg)) {
     return ethers.utils.concat(arg.map((x) => ethers.utils.arrayify(kek(x))));
   } else if (Object.keys(arg).length > 0) {
+    if (Object.keys(arg).length > 1) {
+      // XXX
+      console.log(
+        `WARNING: digest known not to match solidity keccak256`
+       + ` on objects with more than 1 field.`
+       + ` This can cause: "The message you are trying to send appears to be invalid"`
+      );
+    }
     const {ascLabels} = labelMaps(arg);
     return kek(ascLabels.map((label => arg[label])));
   } else {
