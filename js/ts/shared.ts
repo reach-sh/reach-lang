@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import ethers from 'ethers';
+import { labelMaps } from './shared_impl';
 
 export interface AnyBackendTy {
   name: string,
@@ -157,6 +158,9 @@ const kek = (arg: any): string | Uint8Array => {
     return '0x' + arg.toString('hex');
   } else if (Array.isArray(arg)) {
     return ethers.utils.concat(arg.map((x) => ethers.utils.arrayify(kek(x))));
+  } else if (Object.keys(arg).length > 0) {
+    const {ascLabels} = labelMaps(arg);
+    return kek(ascLabels.map((label => arg[label])));
   } else {
     throw Error(`Can't kek this: ${JSON.stringify(arg)}`);
   }
