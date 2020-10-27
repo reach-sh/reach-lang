@@ -659,10 +659,10 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
-const presafeify = (ty: any, x: any): any => {
-  void(ty);
-  return x;
-}
+// const presafeify = (ty: any, x: any): any => {
+//   void(ty);
+//   return x;
+// }
 
 const safeify = (ty: any, x: any): LogicArg => {
   if ( ty.name === 'Address' ) {
@@ -759,7 +759,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       label: string,
       funcNum: number,
       evt_cnt: number,
-      tys: Array<any>,
+      tys: Array<ALGO_Ty<CBR_Val>>,
       args: Array<any>,
       value: BigNumber,
       out_tys: Array<any>,
@@ -817,24 +817,25 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const actual_args =
         [ sim_r.prevSt, sim_r.nextSt, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
-        [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ].map(oldify);
+        [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ]; //.map(oldify);
       debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
 
-      const canon_args =
-        actual_args.map((m, i) => actual_tys[i].canonicalize(m));
-      debug(`${dhead} --- CANON: ${JSON.stringify(canon_args)}`);
+      // const canon_args =
+      //   actual_args.map((m, i) => actual_tys[i].canonicalize(m));
+      // debug(`${dhead} --- CANON: ${JSON.stringify(canon_args)}`);
 
-      const presafe_args =
-        canon_args.map((c, i) => presafeify(actual_tys[i], c));
-      debug(`${dhead} --- PRESAFE: ${JSON.stringify(presafe_args)}`);
+      // const presafe_args =
+      //   canon_args.map((c, i) => presafeify(actual_tys[i], c));
+      // debug(`${dhead} --- PRESAFE: ${JSON.stringify(presafe_args)}`);
 
-      const munged_args =
-        // XXX this needs to be customized for Algorand, so I don't have to safeify. Ideally munge would return Uint8Array for everything.
-        presafe_args.map((p, i) => actual_tys[i].munge(p));
-      debug(`${dhead} --- MUNGE: ${JSON.stringify(munged_args)}`);
+      // const munged_args =
+      //   // XXX this needs to be customized for Algorand, so I don't have to safeify. Ideally munge would return Uint8Array for everything.
+      //   presafe_args.map((p, i) => actual_tys[i].munge(p));
+      // debug(`${dhead} --- MUNGE: ${JSON.stringify(munged_args)}`);
 
-      const safe_args: Array<LogicArg> = munged_args.map((m, i) => safeify(actual_tys[i], m));
-      safe_args.forEach((x) => { 
+      // const safe_args: Array<LogicArg> = munged_args.map((m, i) => safeify(actual_tys[i], m));
+      const safe_args: Array<NV> = actual_args.map((m, i) => actual_tys[i].toNet(m));
+      safe_args.forEach((x) => {
         if (! ( typeof x === 'string' || x instanceof Uint8Array ) ) {
           throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
         }
