@@ -146,7 +146,7 @@ type ETH_Ty<BV extends CBR_Val, NV> =  {
   unmunge: (nv: NV) => BV,
 }
 
-export const V_Null: CBR_Null = null;
+const V_Null: CBR_Null = null;
 export const T_Null: ETH_Ty<CBR_Null, false> = {
   ...CBR.BT_Null,
   defaultValue: V_Null,
@@ -161,7 +161,7 @@ export const T_Bool: ETH_Ty<CBR_Bool, boolean> = {
   munge: (bv: CBR_Bool): boolean => bv,
   unmunge: (nv: boolean): CBR_Bool => V_Bool(nv),
 }
-export const V_Bool = (b: boolean): CBR_Bool => {
+const V_Bool = (b: boolean): CBR_Bool => {
   return T_Bool.canonicalize(b);
 }
 
@@ -171,7 +171,7 @@ export const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   munge: (bv: CBR_UInt): BigNumber => bv,
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
 }
-export const V_UInt = (n: BigNumber): CBR_UInt => {
+const V_UInt = (n: BigNumber): CBR_UInt => {
   return T_UInt.canonicalize(n);
 }
 
@@ -181,7 +181,7 @@ export const T_Bytes: ETH_Ty<CBR_Bytes, string> = {
   munge: (bv: CBR_Bytes): string => toHex(bv),
   unmunge: (nv: string) => V_Bytes(hexToString(nv)),
 }
-export const V_Bytes = (s: string): CBR_Bytes => {
+const V_Bytes = (s: string): CBR_Bytes => {
   return T_Bytes.canonicalize(s);
 }
 
@@ -192,7 +192,7 @@ export const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   // XXX likely not the correct unmunge type?
   unmunge: (nv: BigNumber): CBR_Digest => V_Digest(nv.toHexString()),
 }
-export const V_Digest = (s: string): CBR_Digest => {
+const V_Digest = (s: string): CBR_Digest => {
   return T_Digest.canonicalize(s);
 }
 
@@ -219,7 +219,7 @@ export const T_Address: ETH_Ty<CBR_Address, string> = {
   munge: (bv: CBR_Address): string => bv,
   unmunge: (nv: string): CBR_Address => V_Address(nv),
 }
-export const V_Address = (s: string): CBR_Address => {
+const V_Address = (s: string): CBR_Address => {
   // Uses ETH-specific canonicalize!
   return T_Address.canonicalize(s);
 }
@@ -237,7 +237,7 @@ export const T_Array = <T>(
     return V_Array(ctc, size)(nv.map((arg: T) => ctc.unmunge(arg)));
   },
 });
-export const V_Array = <T>(
+const V_Array = <T>(
   ctc: ETH_Ty<CBR_Val, T>,
   size: number,
 ) => (val: Array<unknown>): CBR_Array => {
@@ -256,7 +256,7 @@ export const T_Tuple = <T>(
     return V_Tuple(ctcs)(args.map((arg: any, i: number) => ctcs[i].unmunge(arg)));
   },
 });
-export const V_Tuple = <T>(
+const V_Tuple = <T>(
   ctcs: Array<ETH_Ty<CBR_Val, T>>,
 ) => (val: Array<unknown>) => {
   return T_Tuple(ctcs).canonicalize(val);
@@ -293,7 +293,7 @@ export const T_Object = <T>(
     return V_Object(co)(obj);
   },
 });
-export const V_Object = <T>(
+const V_Object = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
 ) => (val: {[key: string]: unknown}): CBR_Object => {
   return T_Object(co).canonicalize(val);
@@ -346,7 +346,7 @@ export const T_Data = <T>(
     },
   }
 };
-export const V_Data = <T>(
+const V_Data = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
 ) => (val: [string, unknown]): CBR_Data => {
   return T_Data(co).canonicalize(val);

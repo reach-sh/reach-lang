@@ -215,16 +215,16 @@ runTests(async () => {
 
       const ETH_extra_exports = [
         // TODO: delete V_* or standardize
-        'V_Address',
-        'V_Array',
-        'V_Bool',
-        'V_Bytes',
-        'V_Data',
-        'V_Digest',
-        'V_Null',
-        'V_Object',
-        'V_Tuple',
-        'V_UInt',
+        // 'V_Address',
+        // 'V_Array',
+        // 'V_Bool',
+        // 'V_Bytes',
+        // 'V_Data',
+        // 'V_Digest',
+        // 'V_Null',
+        // 'V_Object',
+        // 'V_Tuple',
+        // 'V_UInt',
         'setProvider',
       ];
       const ALGO_extra_exports = ['setAlgodClient', 'setIndexer'];

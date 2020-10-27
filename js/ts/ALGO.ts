@@ -6,14 +6,17 @@ import ethers from 'ethers';
 import url from 'url';
 import Timeout from 'await-timeout';
 
+import * as shared from './shared';
 import {
-  CurrencyAmount, OnProgress, WPArgs,
+  CurrencyAmount, OnProgress, WPArgs
+  // T_UInt, T_Bool, T_Digest, T_Address,
+} from './shared';
+const {
   debug, getDEBUG, toHex,
   isBigNumber, bigNumberify,
   bigNumberToHex, hexToBigNumber,
-  // T_UInt, T_Bool, T_Digest, T_Address,
   setDigestWidth, setAddressUnwrapper,
-} from './shared';
+} = shared;
 import * as CBR from './CBR';
 import {
   CBR_Null,
@@ -174,7 +177,7 @@ type ALGO_Ty<BV extends CBR_Val> = {
   fromNet(nv: NV): BV,
 }
 
-export const V_Null: CBR_Null = null;
+// const V_Null: CBR_Null = null;
 export const T_Null: ALGO_Ty<CBR_Null> = {
   ...CBR.BT_Null,
   netSize: 0,
@@ -192,7 +195,7 @@ export const T_Bool: ALGO_Ty<CBR_Bool> = {
     return (nv[0] === 1);
   },
 }
-export const V_Bool = (val: boolean): CBR_Bool => T_Bool.canonicalize(val);
+// const V_Bool = (val: boolean): CBR_Bool => T_Bool.canonicalize(val);
 
 export const T_UInt: ALGO_Ty<CBR_UInt> = {
   ...CBR.BT_UInt,
@@ -204,10 +207,11 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
     ethers.BigNumber.from(nv)
   ),
 }
-export const V_UInt = (n: BigNumber): CBR_UInt => {
-  return T_UInt.canonicalize(n);
-}
+// const V_UInt = (n: BigNumber): CBR_UInt => {
+//   return T_UInt.canonicalize(n);
+// }
 
+/** @description For arbitrary utf8 strings */
 const stringyNet = {
   toNet: (bv: CBR_Bytes): NV => (
     ethers.utils.toUtf8Bytes(bv)
@@ -217,24 +221,34 @@ const stringyNet = {
   ),
 }
 
+/** @description For hex strings representing bytes */
+const bytestringyNet = {
+  toNet: (bv: string): NV => (
+    ethers.utils.arrayify(bv)
+  ),
+  fromNet: (nv: NV): string => (
+    ethers.utils.hexlify(nv)
+  )
+}
+
 export const T_Bytes: ALGO_Ty<CBR_Bytes> = {
   ...CBR.BT_Bytes,
   ...stringyNet,
   netSize: 'all', // XXX
 }
-export const V_Bytes = (s: string): CBR_Bytes => {
-  return T_Bytes.canonicalize(s);
-}
+// const V_Bytes = (s: string): CBR_Bytes => {
+//   return T_Bytes.canonicalize(s);
+// }
 
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
-  ...stringyNet,
+  ...bytestringyNet,
   netSize: 32,
 }
-/** @description You probably don't want to manually create this */
-export const V_Digest = (s: string): CBR_Digest => {
-  return T_Digest.canonicalize(s);
-}
+// /** @description You probably don't want to manually create this */
+// const V_Digest = (s: string): CBR_Digest => {
+//   return T_Digest.canonicalize(s);
+// }
 
 function addressUnwrapper(x: any): string {
   return (x && x.addr)
@@ -243,16 +257,16 @@ function addressUnwrapper(x: any): string {
 }
 export const T_Address: ALGO_Ty<CBR_Address> = {
   ...CBR.BT_Address,
-  ...stringyNet, // XXX not stringyNet, decode instead
+  ...bytestringyNet,
   netSize: 32,
   canonicalize: (uv: unknown): CBR_Address => {
     const val = addressUnwrapper(uv);
     return CBR.BT_Address.canonicalize(val || uv)
   }
 }
-export const V_Address = (s: string): CBR_Address => {
-  return T_Address.canonicalize(s);
-}
+// const V_Address = (s: string): CBR_Address => {
+//   return T_Address.canonicalize(s);
+// }
 
 export const T_Array = (
   co: ALGO_Ty<CBR_Val>,
@@ -279,12 +293,12 @@ export const T_Array = (
     }
   },
 });
-export const V_Array = (
-  co: ALGO_Ty<CBR_Val>,
-  size: number,
-) => (val: Array<unknown>): CBR_Array => {
-  return T_Array(co, size).canonicalize(val);
-}
+// const V_Array = (
+//   co: ALGO_Ty<CBR_Val>,
+//   size: number,
+// ) => (val: Array<unknown>): CBR_Array => {
+//   return T_Array(co, size).canonicalize(val);
+// }
 
 export const T_Tuple = (
   cos: Array<ALGO_Ty<CBR_Val>>,
@@ -398,6 +412,19 @@ export const T_Data = (
       const val = val_co.fromNet(rest.slice(0, sliceTo));
       return [label, val];
     },
+  }
+}
+
+// XXX DELETEME
+function oldify(ty: ALGO_Ty<CBR_Val>): any {
+  switch (ty.name.slice(0, 4)) {
+    case 'Null': return shared.T_Null;
+    case 'Bool': return shared.T_Bool;
+    case 'UInt': return shared.T_UInt;
+    case 'Byte': return shared.T_Bytes;
+    case 'Addr': return shared.T_Address;
+    case 'Dige': return shared.T_Digest;
+    default: throw Error(`oldify XXX ${ty.name}`);
   }
 }
 
@@ -586,7 +613,7 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
     replaceUint8Array(
       'ApplicationID',
       // @ts-ignore XXX
-      safeify(T_UInt, bigNumberify(ApplicationID)),
+      safeify(shared.T_UInt, bigNumberify(ApplicationID)),
       x);
 
   const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
@@ -648,7 +675,7 @@ const safeify = (ty: any, x: any): LogicArg => {
     const r = ethers.utils.arrayify(h);
     return r; }
   if ( typeof x === 'boolean' ) {
-    return safeify(T_UInt, bigNumberify(x ? 1 : 0)); }
+    return safeify(shared.T_UInt, bigNumberify(x ? 1 : 0)); }
   if ( typeof x === 'string' ) {
     return ethers.utils.arrayify(x); }
   throw Error(`can't safeify ${JSON.stringify(x)}`);
@@ -656,7 +683,7 @@ const safeify = (ty: any, x: any): LogicArg => {
 
 const desafeify = (ty: any, v: Buffer): any => {
   if ( ty.name === 'Bool' ) {
-    return desafeify(T_UInt, v).eq(1);
+    return desafeify(shared.T_UInt, v).eq(1);
   }
   if ( ty.name === 'UInt' ) {
     return hexToBigNumber('0x' + v.toString('hex'));
@@ -701,7 +728,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
   const pk = algosdk.decodeAddress(thisAcc.addr).publicKey;
-  const pks = T_Address.canonicalize(thisAcc);
+  const pks = shared.T_Address.canonicalize(thisAcc);
   debug(`${shad}: connectAccount`);
 
   const iam = (some_addr: string): string => {
@@ -790,7 +817,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const actual_args =
         [ sim_r.prevSt, sim_r.nextSt, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
-        [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ];
+        [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ].map(oldify);
       debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
 
       const canon_args =
@@ -951,18 +978,19 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           args.map((x: string): Buffer => Buffer.from(x, 'base64'));
         debug(`${dhead} --- args_bufs = ${JSON.stringify(args_bufs)}`);
 
+        tys = tys.map(oldify);
         const args_un =
           args_bufs.map((v: Buffer, i: number) => desafeify(tys[i], v));
         debug(`${dhead} --- args_un = ${JSON.stringify(args_un)}`);
 
         const totalFromFee =
-          desafeify(T_UInt, Buffer.from(ctc_args[3], 'base64'));
+          desafeify(shared.T_UInt, Buffer.from(ctc_args[3], 'base64'));
         debug(`${dhead} --- totalFromFee = ${JSON.stringify(totalFromFee)}`);
 
         const fromAddr =
           txn['payment-transaction'].receiver;
         const from =
-          T_Address.canonicalize({addr: fromAddr});
+          shared.T_Address.canonicalize({addr: fromAddr});
         debug(`${dhead} --- from = ${JSON.stringify(from)} = ${fromAddr}`);
 
         const oldLastRound = lastRound;

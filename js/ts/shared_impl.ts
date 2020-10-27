@@ -33,7 +33,7 @@ export function memoizeThunk<T>(thunk: () => T): () => T {
 /**
  * @description ascLabels[i] = label; labelMap[label] = i;
  */
-export const labelMaps = <T>(co: {
+export const labelMaps = (co: {
   [key: string]: unknown
 }): {
   ascLabels: Array<string>,
