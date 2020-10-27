@@ -49,3 +49,10 @@ file = "src/Reach/Report/UnsafeGlobals.hs"
 type = "Exclude"
 id = "STAN-0210"
 file = "src/Reach/Connector/ALGO.hs"
+
+# TODO use safer things
+# Partial: base/toEnum, base/maximum
+[[check]]
+type = "Exclude"
+category = "Partial"
+file = "src/Reach/Connector/ALGO.hs"
