@@ -6,17 +6,12 @@ import ethers from 'ethers';
 import url from 'url';
 import Timeout from 'await-timeout';
 
-import * as shared from './shared';
 import {
-  CurrencyAmount, OnProgress, WPArgs
-  // T_UInt, T_Bool, T_Digest, T_Address,
-} from './shared';
-const {
+  CurrencyAmount, OnProgress, WPArgs,
   debug, getDEBUG, toHex,
   isBigNumber, bigNumberify,
-  bigNumberToHex,
   setDigestWidth,
-} = shared;
+} from './shared';
 import * as CBR from './CBR';
 import {
   CBR_Null,
@@ -88,8 +83,6 @@ type TxId = string;
 type ApiCall<T> = {
   do: () => Promise<T>,
 };
-type LogicArg = Uint8Array | string;
-
 type CompileResultBytes = {
   src: String,
   result: Uint8Array,
@@ -167,6 +160,7 @@ type ContractInfo = {
 //   recv: function
 // }
 
+// NV = Net Value
 type NV = Uint8Array;
 type ALGO_Ty<BV extends CBR_Val> = {
   name: string,
@@ -602,7 +596,7 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
     replaceUint8Array(
       'ApplicationID',
       // @ts-ignore XXX
-      safeify(shared.T_UInt, bigNumberify(ApplicationID)),
+      T_UInt.toNet(bigNumberify(ApplicationID)),
       x);
 
   const ctc_bin = await compileTEAL('ctc_subst', subst_appid(ctc));
@@ -646,23 +640,6 @@ const format_failed_request = (e: any) => {
      `no req, but ${JSON.stringify(Object.keys(ep))}`;
   const msg = e.text ? JSON.parse(e.text) : e;
   return `\n${db64}\n${JSON.stringify(msg)}`;
-};
-
-const safeify = (ty: any, x: any): LogicArg => {
-  if ( ty.name === 'Address' ) {
-    return Buffer.from(x.slice(2), 'hex'); }
-  if ( isBigNumber(x) ) {
-    // XXX Does it matter that this is not msgpacked as an int?
-    const size = x.lt(bigNumberify(2).pow(64)) ? 8 : 32;
-    const h = '0x' + bigNumberToHex(x, size);
-    debug(`${x} =${size}> ${h}`);
-    const r = ethers.utils.arrayify(h);
-    return r; }
-  if ( typeof x === 'boolean' ) {
-    return safeify(shared.T_UInt, bigNumberify(x ? 1 : 0)); }
-  if ( typeof x === 'string' ) {
-    return ethers.utils.arrayify(x); }
-  throw Error(`can't safeify ${JSON.stringify(x)}`);
 };
 
 const doQuery = async (dhead:string, query: any): Promise<any> => {
@@ -792,7 +769,9 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
       const safe_args: Array<NV> = actual_args.map((m, i) => actual_tys[i].toNet(m));
       safe_args.forEach((x) => {
-        if (! ( typeof x === 'string' || x instanceof Uint8Array ) ) {
+        if (! ( x instanceof Uint8Array ) ) {
+          // The types say this is impossible now,
+          // but we'll leave it in for a while just in case...
           throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
         }
       });
@@ -930,10 +909,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
         const args = argsSlice(ctc_args, evt_cnt);
         debug(`${dhead} --- args = ${JSON.stringify(args)}`);
-
-        // const args_bufs: Array<Buffer> =
-        //   args.map((x: string): Buffer => Buffer.from(x, 'base64'));
-        // debug(`${dhead} --- args_bufs = ${JSON.stringify(args_bufs)}`);
 
         /** @description base64->hex->arrayify */
         const reNetify = (x: string): NV => {
