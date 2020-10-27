@@ -11,6 +11,7 @@ import {
   debug, getDEBUG, toHex,
   isBigNumber, bigNumberify,
   setDigestWidth,
+  mkAddressEq,
 } from './shared';
 import * as CBR from './CBR';
 import {
@@ -170,6 +171,7 @@ type ALGO_Ty<BV extends CBR_Val> = {
   toNet(bv: BV): NV,
   fromNet(nv: NV): BV,
 }
+type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 
 // const V_Null: CBR_Null = null;
 export const T_Null: ALGO_Ty<CBR_Null> = {
@@ -706,10 +708,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       label: string,
       funcNum: number,
       evt_cnt: number,
-      tys: Array<ALGO_Ty<CBR_Val>>,
+      tys: Array<AnyALGO_Ty>,
       args: Array<any>,
       value: BigNumber,
-      out_tys: Array<any>,
+      out_tys: Array<AnyALGO_Ty>,
       timeout_delay: undefined | BigNumber,
       sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
@@ -865,7 +867,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       label: string,
       funcNum: number,
       evt_cnt: number,
-      tys: Array<ALGO_Ty<CBR_Val>>,
+      tys: Array<AnyALGO_Ty>,
       timeout_delay: undefined | BigNumber
     ): Promise<Recv> => {
       const funcName = `m${funcNum}`;
@@ -1172,3 +1174,4 @@ export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<B
   return await waitUntilTime(now.add(delta), onProgress);
 };
 export const verifyContract = false; // XXX
+export const addressEq = mkAddressEq(T_Address);

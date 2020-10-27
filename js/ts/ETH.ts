@@ -18,15 +18,14 @@ import {
   hexToString,
   isBigNumber,
   lt,
-  setAddressUnwrapper,
   toHex,
   CurrencyAmount,
   IAccount,
   IContract,
   IRecv,
   OnProgress,
-  TyContract,
   WPArgs,
+  mkAddressEq,
 } from './shared';
 import * as CBR from './CBR';
 import {
@@ -94,7 +93,7 @@ type ContractInfo = {
 
 type Digest = string // XXX
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Digest, Address>;
+type Contract = IContract<ContractInfo, Digest, Address, AnyETH_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
 
 // For when you init the contract with the 1st message
@@ -145,6 +144,7 @@ type ETH_Ty<BV extends CBR_Val, NV> =  {
   munge: (bv: BV) => NV,
   unmunge: (nv: NV) => BV,
 }
+type AnyETH_Ty = ETH_Ty<CBR_Val, any>;
 
 const V_Null: CBR_Null = null;
 export const T_Null: ETH_Ty<CBR_Null, false> = {
@@ -567,7 +567,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     // @ts-ignore
     networkAccount.address = await getAddr({networkAccount});
   }
-  setAddressUnwrapper((x: any): string => x.address ? x.address : x);
 
   // XXX networkAccount MUST be a Wallet or Signer to deploy/attach
   const provider = await getProvider();
@@ -635,8 +634,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           throw Error(`Cannot wait yet; contract is not actually deployed`);
         },
         sendrecv: async (
-          label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
-          args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+          label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
+          args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
           timeout_delay: BigNumber | false, sim_p: any,
         ): Promise<Recv> => {
           debug(`${shad}: ${label} sendrecv m${funcNum} (deferred deploy)`);
@@ -786,8 +785,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const getInfo = async () => await infoP;
 
     const sendrecv_impl = async (
-      label: string, funcNum: number, tys: Array<TyContract<any>>,
-      args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+      label: string, funcNum: number, tys: Array<AnyETH_Ty>,
+      args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       const funcName = `m${funcNum}`;
@@ -856,8 +855,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (
-      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
-      args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+      label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
+      args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
       timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
       void(evt_cnt);
@@ -867,7 +866,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv_impl = async (
-      label: string, okNum: number, out_tys: Array<TyContract<any>>,
+      label: string, okNum: number, out_tys: Array<AnyETH_Ty>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       const lastBlock = await getLastBlock();
@@ -931,7 +930,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (
-      label: string, okNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
+      label: string, okNum: number, ok_cnt: number, out_tys: Array<AnyETH_Ty>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
@@ -1255,3 +1254,4 @@ export function formatCurrency(amt: BigNumber, decimals: number = 18): string {
     return amtStr;
   }
 }
+export const addressEq = mkAddressEq(T_Address);

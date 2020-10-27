@@ -2,7 +2,8 @@ import Timeout from 'await-timeout';
 import ethers from 'ethers';
 
 import * as stdlib from './shared';
-import { CurrencyAmount, OnProgress, TyContract } from './shared';
+import { CurrencyAmount, OnProgress } from './shared';
+import * as CBR from './CBR';
 export * from './shared';
 
 export const debug = (msg: any): void => {
@@ -27,7 +28,7 @@ type ContractInfo = {
 type Digest = Array<any>;
 type Recv = stdlib.IRecv<Address>
 type RecvNoTimeout = stdlib.IRecvNoTimeout<Address>
-type Contract = stdlib.IContract<ContractInfo, Digest, Address>;
+type Contract = stdlib.IContract<ContractInfo, Digest, Address, FAKE_Ty>;
 type Account = stdlib.IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
 type AccountTransferrable = stdlib.IAccountTransferable<NetworkAccount>
 type SimRes = stdlib.ISimRes<Digest, Address>;
@@ -118,7 +119,6 @@ export const transfer = async (
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
-  stdlib.setAddressUnwrapper((x: any): string => x.address ? x.address : x);
   const { address } = networkAccount;
 
   const attach = (
@@ -156,8 +156,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (
-      label: string, funcNum: number, evt_cnt: number, tys: Array<TyContract<any>>,
-      args: Array<any>, value: BigNumber, out_tys: Array<TyContract<any>>,
+      label: string, funcNum: number, evt_cnt: number, tys: Array<FAKE_Ty>,
+      args: Array<any>, value: BigNumber, out_tys: Array<FAKE_Ty>,
       timeout_delay: BigNumber | false, sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
       void(tys);
@@ -167,9 +167,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         actual: tys.length,
         message: 'tys does not have expected length',
       });
-      const data = args.slice(args.length - evt_cnt).map((v, i) => {
-        return out_tys[i].munge(v);
-      });
+      const data = args.slice(args.length - evt_cnt);
       const last_block = await getLastBlock();
       const ctcInfo = await infoP;
       if (!timeout_delay || stdlib.lt(BLOCKS.length, stdlib.add(last_block, timeout_delay))) {
@@ -205,7 +203,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const recv = async (
-      label: string, funcNum: number, ok_cnt: number, out_tys: Array<TyContract<any>>,
+      label: string, funcNum: number, ok_cnt: number, out_tys: Array<FAKE_Ty>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
@@ -340,3 +338,34 @@ export function formatCurrency(amt: BigNumber, decimals: number = 0): string {
 }
 
 export const setFaucet = false; // XXX
+
+type FAKE_Ty = CBR.BackendTy<CBR.CBR_Val>;
+
+export const T_Null: FAKE_Ty = CBR.BT_Null;
+export const T_Bool: FAKE_Ty = CBR.BT_Bool;
+export const T_UInt: FAKE_Ty = CBR.BT_UInt;
+export const T_Bytes: FAKE_Ty = CBR.BT_Bytes;
+export const T_Address: FAKE_Ty = {
+  ...CBR.BT_Address,
+  // FAKE is more lenient about what addresses look like
+  canonicalize: (uv: unknown) => {
+    if (typeof uv !== 'string') {
+      throw Error(`address must be a string, but got ${uv}`);
+    } else {
+      return uv;
+    }
+  },
+}
+// TODO: make FAKE use string digests like everyone else
+export const T_Digest: FAKE_Ty = {
+  name: 'Digest',
+  canonicalize: (arr: any): Digest => {
+    // assumed to be an array
+    return arr;
+  },
+}
+export const T_Object = (obj: any): FAKE_Ty => CBR.BT_Object(obj);
+export const T_Data = (obj: any): FAKE_Ty => CBR.BT_Data(obj);
+export const T_Array = (co: FAKE_Ty, size: number): FAKE_Ty => CBR.BT_Array(co, size);
+export const T_Tuple = (cos: Array<FAKE_Ty>): FAKE_Ty => CBR.BT_Tuple(cos);
+export const addressEq = stdlib.mkAddressEq(T_Address);
