@@ -183,12 +183,12 @@ export const T_Null: ALGO_Ty<CBR_Null> = {
 
 export const T_Bool: ALGO_Ty<CBR_Bool> = {
   ...CBR.BT_Bool,
-  netSize: 1,
-  toNet: (bv: CBR_Bool): NV => (new Uint8Array(
-    [bv ? 1 : 0]
-  )),
+  netSize: 8, // represented w/ UInt64
+  toNet: (bv: CBR_Bool): NV => {
+    return T_UInt.toNet(BigNumber.from(bv ? 1 : 0));
+  },
   fromNet: (nv: NV): CBR_Bool => {
-    return (nv[0] === 1);
+    return T_UInt.fromNet(nv).eq(1);
   },
 }
 // const V_Bool = (val: boolean): CBR_Bool => T_Bool.canonicalize(val);
