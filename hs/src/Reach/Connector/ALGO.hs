@@ -106,6 +106,7 @@ optimize :: [TEAL] -> [TEAL]
 optimize = \case
   [] -> []
   ["b", x] : b@[y] : l | y == (x <> ":") -> b : optimize l
+  ["btoi"] : ["itob", "// bool"] : ["substring","7","8"] : l -> optimize l
   ["btoi"] : ["itob"] : l -> optimize l
   ["itob"] : ["btoi"] : l -> optimize l
   a@["store", x] : ["load", y] : l | x == y ->
@@ -308,7 +309,7 @@ how_many_txns = do
 ctobs :: SLType -> App ()
 ctobs = \case
   T_UInt -> op "itob"
-  T_Bool -> op "itob" >> code "substring" [ "0", "1" ]
+  T_Bool -> code "itob" ["// bool"] >> code "substring" [ "7", "8" ]
   T_Null -> nop
   T_Bytes -> nop
   T_Digest -> nop
