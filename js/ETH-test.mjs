@@ -33,15 +33,12 @@ runTests(async () => {
       });
     });
 
-    describe('exposes a `toHex` function that', () => {
+    describe('exposes a `stringToHex` function that', () => {
       const hand = 'ROCK';
-      const handHex = stdlib.toHex(hand);
+      const handHex = stdlib.stringToHex(hand);
 
       it('works correctly with `bytes_eq`', () => {
         expect(stdlib.bytesEq(handHex, hand)).toBe(true);
-      });
-      it('is idempotent', () => {
-        expect(stdlib.toHex(handHex)).toBe(handHex);
       });
     });
 
@@ -158,7 +155,7 @@ runTests(async () => {
 
     describe('protect', () => {
       const hello = 'hello';
-      const helloHex = stdlib.toHex('hello');
+      const helloHex = stdlib.stringToHex('hello');
       const addr = '0xdeadbeef';
       const n = 10;
       const bn = bigNumberify(n);
