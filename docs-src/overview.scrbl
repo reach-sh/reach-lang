@@ -290,6 +290,71 @@ In fact, Reach works for multiple networks, so if we instead run
 Then Reach will instead start up a private Algorand devnet image and use the Algorand @tech{connector}.
 The developer does not need to change anything about their program, because Reach is entirely agnostic to the @tech{consensus network} choice during deployment.
 
+@section[#:tag "over-react"]{Web app}
+
+@margin-note{You can @link["https://www.youtube.com/watch?v=jHEKIMNvs-o"]{watch a 7-minute video} on YouTube
+which demonstrates this section's code in action
+and provides a brief explanation of how it works.}
+
+The previous execution uses node.js
+to perform a test run at the command line.
+To really deploy your DApp,
+you will probably want to have a web app UI.
+
+By using the same @reachexlink["index.rsh" #:dir "react-examples/overview"] file,
+and a React @reachexlink["index.js" #:dir "react-examples/overview"]
+(with some simple React @reachexlink["views" #:dir "react-examples/overview"]
+ and @reachexlink["index.css" "css" #:dir "react-examples/overview"] to go with it),
+we can easily deploy our Reach program to the web.
+Take a look at some snippets index.js and compare with index.mjs above:
+
+@reachex[#:mode js
+         #:show-lines? #t "overview/index.js"
+         #:dir "react-examples"
+         'only 7 8 "// ..."]
+
+Here we import the backend as @jsin{backend} and the stdlib as @jsin{reach}.
+
+@reachex[#:mode js
+         #:show-lines? #t "overview/index.js"
+         #:dir "react-examples"
+         'only 27 28 "  // ..."]
+
+Here, we hook into the App component's lifecycle event @jsin{componentDidMount}
+in order to fetch the user's account.
+@jsin{getDefaultAccount} works with browser extensions like MetaMask to get the user's
+currently-selected account. Reach is able to deploy contracts and send transactions
+to the consensus network by prompting the user through the extension's API,
+without you having to program this in manually.
+
+@reachex[#:mode js
+         #:show-lines? #t "overview/index.js"
+         #:dir "react-examples"
+         'only 72 75 "  // ..."]
+
+Here, on line 72 we call the @jsin{acc.deploy} function,
+and on line 74, we call the @jsin{ctc.getInfo} function,
+just as we did for the node.js program.
+
+@reachex[#:mode js
+         #:show-lines? #t "overview/index.js"
+         #:dir "react-examples"
+         'only 79 85 "  // ..."]
+
+Here, on line 83 we run the Reach program as Alice.
+
+@reachex[#:mode js
+         #:show-lines? #t "overview/index.js"
+         #:dir "react-examples"
+         'only 112 121 "  // ..."]
+
+And here, on line 120, we run the Reach program as Bob.
+We specify Alice's and Bob's respective @tech{participant interact interface}s
+just as we would in node.js. In the React program,
+we have the ability to leverage Bob's interact functions as callbacks
+that can update the React state
+in order to display to, or harvest information from, the user.
+
 @section[#:tag "over-next"]{Next steps}
 
 In this overview, we've briefly described the structure and fundamental concepts of a Reach application.

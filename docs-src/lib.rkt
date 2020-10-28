@@ -129,6 +129,7 @@ You should start off by initializing your Reach program:
   (apply commandline @bold{@exec{$}} " " args))
 
 (define-runtime-path x "../examples/")
+(define-runtime-path rx "../react-examples/")
 
 (define (exloc . ps)
   (number->string
@@ -138,9 +139,10 @@ You should start off by initializing your Reach program:
        [_
         (length (file->lines (build-path x p)))]))))
 
-(define (reachexlink p [label #f] #:loc [loc #f])
+(define (reachexlink p [label #f] #:loc [loc #f] #:dir [dir "examples"])
   (define url
-    (format "https://github.com/reach-sh/reach-lang/blob/master/examples/~a~a"
+    (format "https://github.com/reach-sh/reach-lang/blob/master/~a/~a~a"
+            dir
             p
             (match loc
               [#f ""]
@@ -153,10 +155,16 @@ You should start off by initializing your Reach program:
 (define (reachex
          #:mode [mode reach]
          #:link [link? #f]
+         #:dir [dir "examples"]
          #:show-lines? [show-lines? #f]
          path . which)
 
-  (define ((do-link lab) link-loc content)    
+  (define x-dir
+    (match dir
+      ["examples" x]
+      ["react-examples" rx]
+      (error 'runtime-path "~a is not a declared runtime path" dir)))
+  (define ((do-link lab) link-loc content)
     (define copy
       (cond
         [copyt
@@ -169,7 +177,7 @@ You should start off by initializing your Reach program:
     (list
      (tabular
       #:style 'boxed
-      (list (list (para (reachexlink path (exec lab) #:loc link-loc) copy))))
+      (list (list (para (reachexlink path (exec lab) #:loc link-loc #:dir dir) copy))))
      content))
   (define maybe-link
     (match link?
@@ -177,7 +185,7 @@ You should start off by initializing your Reach program:
       [#t (do-link path)]
       [lab (do-link lab)]))
 
-  (define input (file->lines (build-path x path)))
+  (define input (file->lines (build-path x-dir path)))
   (define-values (num-pad add-num)
     (cond [(not show-lines?)
            (values "" (λ (i e) e))]
