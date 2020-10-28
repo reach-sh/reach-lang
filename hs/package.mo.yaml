@@ -43,6 +43,7 @@ dependencies:
 - prettyprinter
 - process
 - safe
+- scientific
 - search-algorithms
 - shell-monad
 - silently
@@ -63,6 +64,7 @@ dependencies:
 - text
 - time
 - unordered-containers
+- vector
 
 default-extensions:
 - BangPatterns

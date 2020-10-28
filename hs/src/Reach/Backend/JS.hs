@@ -1,5 +1,9 @@
 module Reach.Backend.JS (backend_js) where
 
+import qualified Data.Scientific as Sci
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Foldable as Foldable
+import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
@@ -450,12 +454,15 @@ jsPart p (EPProg _ _ et) =
 
 jsConnInfo :: ConnectorInfo -> Doc a
 jsConnInfo = \case
-  CI_Null -> jsCon DLL_Null
-  CI_Bool b -> jsCon $ DLL_Bool b
-  CI_Int i -> pretty i
-  CI_Text t -> jsBacktickText t
-  CI_Array a -> jsArray $ map jsConnInfo a
-  CI_Obj m -> jsObject $ M.map jsConnInfo m
+  Aeson.Null -> jsCon DLL_Null
+  Aeson.Bool b -> jsCon $ DLL_Bool b
+  -- Note: only integers are supported.
+  -- TODO: throw error if non-integer detected,
+  -- or alernatively, support non-integers
+  Aeson.Number i -> pretty $ Sci.formatScientific Sci.Fixed (Just 0) i
+  Aeson.String t -> jsBacktickText t
+  Aeson.Array a -> jsArray $ map jsConnInfo $ Foldable.toList a
+  Aeson.Object m -> jsObject $ M.map jsConnInfo $ M.fromList $ HM.toList $ m
 
 jsCnp :: String -> ConnectorInfo -> Doc a
 jsCnp name cnp = "const" <+> "_" <> pretty name <+> "=" <+> (jsConnInfo cnp) <> semi

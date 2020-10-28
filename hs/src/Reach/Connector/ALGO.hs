@@ -2,6 +2,9 @@ module Reach.Connector.ALGO (connect_algo) where
 
 -- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ALGO.hs.dead
 
+import qualified Data.HashMap.Strict as HM
+import qualified Data.Vector as Vector
+import qualified Data.Aeson as Aeson
 import Control.Monad.Reader
 import Data.ByteString.Base64 (encodeBase64')
 import Data.ByteString.Builder
@@ -29,6 +32,9 @@ import Safe (atMay)
 import Text.Read
 
 -- General tools that could be elsewhere
+
+aarray :: [Aeson.Value] -> Aeson.Value
+aarray = Aeson.Array . Vector.fromList
 
 sb :: SrcLoc
 sb = srcloc_builtin
@@ -1128,19 +1134,19 @@ compile_algo disp pl = do
   sFailedR <- newIORef False
   let shared = Shared {..}
   let addProg lab t = do
-        modifyIORef resr (M.insert lab $ CI_Text t)
+        modifyIORef resr (M.insert (T.pack lab) $ Aeson.String t)
         disp lab t
   hm_res <- forM (M.toAscList hm) $ \(hi, hh) -> do
     mht <- ch shared hi hh
     case mht of
-      Nothing -> return (CI_Null, CI_Int 0, return ())
+      Nothing -> return (Aeson.Null, Aeson.Number 0, return ())
       Just (az, ht) -> do
         let lab = "m" <> show hi
         let t = render ht
         disp lab t
         return
-          ( CI_Text t
-          , CI_Int az
+          ( Aeson.String t
+          , Aeson.Number $ fromInteger az
           , do
               code "gtxn" [texty txnFromHandler, "Sender"]
               code "byte" [template $ LT.pack lab]
@@ -1148,15 +1154,15 @@ compile_algo disp pl = do
               op "||"
           )
   let (steps_, stepargs_, hchecks) = unzip3 hm_res
-  let steps = CI_Null : steps_
-  let stepargs = CI_Int 0 : stepargs_
-  modifyIORef resr $ M.insert "steps" $ CI_Array steps
-  modifyIORef resr $ M.insert "stepargs" $ CI_Array stepargs
+  let steps = Aeson.Null : steps_
+  let stepargs = Aeson.Number 0 : stepargs_
+  modifyIORef resr $ M.insert "steps" $ aarray steps
+  modifyIORef resr $ M.insert "stepargs" $ aarray stepargs
   let howManySteps =
         length $
           filter
             (\case
-               CI_Text _ -> True
+               Aeson.String _ -> True
                _ -> False)
             steps
   let simple m = runApp shared 0 mempty $ m >> std_footer
@@ -1288,9 +1294,9 @@ compile_algo disp pl = do
   addProg "ctc" $ render ctcm
   res0 <- readIORef resr
   sFailed <- readIORef sFailedR
-  let res1 = M.insert "unsupported" (CI_Bool sFailed) res0
+  let res1 = M.insert "unsupported" (Aeson.Bool sFailed) res0
   -- let res2 = M.insert "deployMode" (CI_Text $ T.pack $ show plo_deployMode) res1
-  return $ CI_Obj res1
+  return $ Aeson.Object $ HM.fromList $ M.toList res1
 
 connect_algo :: Connector
 connect_algo = Connector {..}

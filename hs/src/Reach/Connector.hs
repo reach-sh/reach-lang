@@ -1,6 +1,6 @@
 module Reach.Connector
   ( ConnectorInfoMap
-  , ConnectorInfo (..)
+  , ConnectorInfo
   , ConnectorResult
   , Connector (..)
   , Connectors
@@ -8,25 +8,26 @@ module Reach.Connector
   )
 where
 
-import Control.DeepSeq (NFData)
+import Data.Aeson (Object, Value)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
-import GHC.Generics
 import Reach.AST
 import Reach.Type
 import Reach.Util
 
-type ConnectorInfoMap =
-  M.Map String ConnectorInfo
+type ConnectorInfoMap = Object
+-- type ConnectorInfoMap =
+--   M.Map String ConnectorInfo
 
-data ConnectorInfo
-  = CI_Null
-  | CI_Bool Bool
-  | CI_Int Integer
-  | CI_Text T.Text
-  | CI_Array [ConnectorInfo]
-  | CI_Obj ConnectorInfoMap
-  deriving (Generic, NFData)
+type ConnectorInfo = Value
+-- data ConnectorInfo
+--   = CI_Null
+--   | CI_Bool Bool
+--   | CI_Int Integer
+--   | CI_Text T.Text
+--   | CI_Array [ConnectorInfo]
+--   | CI_Obj ConnectorInfoMap
+--   deriving (Generic, NFData)
 
 data Connector = Connector
   { conName :: String

@@ -4,7 +4,7 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 
 import Control.Monad
 import Control.Monad.ST
-import Data.Aeson
+import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
@@ -781,7 +781,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) _ (CPProg at hs)) =
             SolTailRes _ consbody = solCTail ctxt (CT_From at (Just []))
         DM_firstMsg ->
           emptyDoc
-    cinfo = M.fromList [("deployMode", CI_Text $ T.pack $ show plo_deployMode)]
+    cinfo = HM.fromList [("deployMode", Aeson.String $ T.pack $ show plo_deployMode)]
     state_defn = "uint256 current_state;"
     preamble =
       vsep
@@ -821,12 +821,12 @@ extract cinfo v = case fromJSON v of
       Left e -> Left e
       Right (csrAbi_parsed :: Value) ->
         Right $
-          CI_Obj $
-            M.union
-              (M.fromList
-                 [ ("ABI", CI_Text csrAbi_pretty)
+          Aeson.Object $
+            HM.union
+              (HM.fromList
+                 [ ("ABI", Aeson.String csrAbi_pretty)
                  , --- , ("Opcodes", T.unlines $ "" : (T.words $ csrOpcodes))
-                   ("Bytecode", CI_Text $ "0x" <> csrCode)
+                   ("Bytecode", Aeson.String $ "0x" <> csrCode)
                  ])
               cinfo
         where
