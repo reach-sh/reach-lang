@@ -469,10 +469,10 @@ jsConnInfo = \case
   Aeson.Array a -> jsArray $ map jsConnInfo $ Foldable.toList a
   Aeson.Object m -> jsObject $ M.map jsConnInfo $ M.fromList $ HM.toList $ m
 
-jsCnp :: String -> ConnectorInfo -> Doc a
+jsCnp :: T.Text -> ConnectorInfo -> Doc a
 jsCnp name cnp = "const" <+> "_" <> pretty name <+> "=" <+> (jsConnInfo cnp) <> semi
 
-jsConnsExp :: [String] -> Doc a
+jsConnsExp :: [T.Text] -> Doc a
 jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> semi
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
@@ -488,8 +488,8 @@ jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
         , "export const _version =" <+> jsString versionStr <> semi
         ]
     partsp = map (uncurry jsPart) $ M.toList pm
-    cnpsp = map (uncurry jsCnp) $ M.toList cr
-    connsExp = jsConnsExp (M.keys cr)
+    cnpsp = map (uncurry jsCnp) $ HM.toList cr
+    connsExp = jsConnsExp (HM.keys cr)
 
 backend_js :: Backend
 backend_js outn crs pl = do

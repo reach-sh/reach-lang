@@ -10,6 +10,7 @@ import qualified Data.Map as M
 import Data.Maybe (maybeToList)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
+import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.CollectTypes
@@ -876,7 +877,7 @@ _verify_smt mc vst smt lp = do
   let mcs = case mc of
         Nothing -> "generic connector"
         Just c -> conName c <> " connector"
-  putStrLn $ "Verifying for " <> mcs
+  putStrLn $ "Verifying for " <> T.unpack mcs
   dspdr <- newIORef mempty
   bindingsrr <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)

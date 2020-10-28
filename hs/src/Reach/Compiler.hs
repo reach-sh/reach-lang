@@ -1,5 +1,6 @@
 module Reach.Compiler (CompilerOpts (..), compile, all_connectors) where
 
+import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
@@ -60,7 +61,7 @@ compile copts = do
         let pl = epp ol
         interOut "pl" $ show $ pretty pl
         let runConnector c = (,) (conName c) <$> conGen c outnMay pl
-        crs <- M.fromList <$> mapM runConnector connectors
+        crs <- HM.fromList <$> mapM runConnector connectors
         backend_js outn crs pl
         return ()
   mapM_ compile1 $ tops copts

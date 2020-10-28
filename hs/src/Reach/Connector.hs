@@ -17,22 +17,12 @@ import Reach.Util
 
 type ConnectorInfoMap = Object
 
--- type ConnectorInfoMap =
---   M.Map String ConnectorInfo
+type ConnectorResult = Object
 
 type ConnectorInfo = Value
 
--- data ConnectorInfo
---   = CI_Null
---   | CI_Bool Bool
---   | CI_Int Integer
---   | CI_Text T.Text
---   | CI_Array [ConnectorInfo]
---   | CI_Obj ConnectorInfoMap
---   deriving (Generic, NFData)
-
 data Connector = Connector
-  { conName :: String
+  { conName :: T.Text
   , conCons :: DLConstant -> DLLiteral
   , conGen :: Maybe (T.Text -> String) -> PLProg -> IO ConnectorInfo
   }
@@ -45,7 +35,4 @@ checkIntLiteralC at c x = checkIntLiteral at 0 x rmax
       _ -> impossible "uint_max not int"
 
 type Connectors =
-  M.Map String Connector
-
-type ConnectorResult =
-  M.Map String ConnectorInfo
+  M.Map T.Text Connector

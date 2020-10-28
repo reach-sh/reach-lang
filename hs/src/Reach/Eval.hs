@@ -13,6 +13,7 @@ import qualified Data.Map.Strict as M
 import Data.Ord (comparing)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
+import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
 import Language.JavaScript.Parser
@@ -2782,9 +2783,10 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
            })
   let base_env' =
         M.union base_env $
-          M.mapWithKey
-            (\k _ -> SLSSVal srcloc_builtin Public $ SLV_Connector k)
-            cns
+          M.mapKeys T.unpack $
+            M.mapWithKey
+              (\k _ -> SLSSVal srcloc_builtin Public $ SLV_Connector k)
+              cns
   let stdlib_env =
         case src of
           ReachStdLib -> base_env'
@@ -2813,7 +2815,7 @@ makeInteract at who spec = SLV_Object at lab spec'
     -- TODO: add idAt info to the err below?
     wrap_ty _ v = expect_throw at $ Err_App_InvalidInteract $ sss_sls v
 
-app_default_opts :: [String] -> DLOpts
+app_default_opts :: [T.Text] -> DLOpts
 app_default_opts cns =
   DLOpts
     { dlo_deployMode = DM_constructor

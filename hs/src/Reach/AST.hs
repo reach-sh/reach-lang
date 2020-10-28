@@ -210,7 +210,7 @@ data SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar
   | SLV_Type SLType
-  | SLV_Connector String
+  | SLV_Connector T.Text
   | --- FIXME I think we can delete some of these fields, like the SLVal and the M DLVar
     SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
@@ -622,7 +622,7 @@ data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
   , dlo_verifyOverflow :: Bool
   , dlo_verifyPerConnector :: Bool
-  , dlo_connectors :: [String]
+  , dlo_connectors :: [T.Text]
   }
   deriving (Eq, Generic, NFData, Show)
 
