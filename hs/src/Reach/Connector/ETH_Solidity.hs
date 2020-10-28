@@ -653,7 +653,7 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
         check sign mv =
           case mv of
             [] -> "true"
-            mvs -> solPrimApply ctxt (if sign then PGE else PLT) [ solBlockNumber, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) solLastBlock (map (solArg ctxt) mvs)) ]
+            mvs -> solPrimApply ctxt (if sign then PGE else PLT) [solBlockNumber, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) solLastBlock (map (solArg ctxt) mvs))]
 solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
   vsep [argDefn, frameDefn, funDefn]
   where
@@ -862,7 +862,7 @@ connect_eth :: Connector
 connect_eth = Connector {..}
   where
     conName = "ETH"
-    conCons DLC_UInt_max = DLL_Int sb $ 2^(256::Integer) - 1
+    conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
     conGen outnMay pl = case outnMay of
       Just outn -> go (outn "sol")
       Nothing -> withSystemTempDirectory "reachc-sol" $ \dir ->

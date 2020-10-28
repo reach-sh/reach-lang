@@ -2,19 +2,21 @@ module Reach.Optimize (optimize, pltoptimize) where
 
 import Control.Monad.Reader
 -- import Data.Foldable
+
+import Data.IORef
+import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
-import Data.List (foldl')
-import Data.IORef
 -- import qualified Data.Sequence as Seq
 -- import Data.Text.Prettyprint.Doc
 -- import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.CollectCounts
-import Reach.Sanitize
 -- import Reach.Type
+
+import Reach.Pretty ()
+import Reach.Sanitize
 import Reach.Util
-import Reach.Pretty()
 
 sb :: SrcLoc
 sb = srcloc_builtin
@@ -29,13 +31,17 @@ data Focus
 
 data CommonEnv = CommonEnv
   { ceReplaced :: M.Map DLVar DLVar
-  , cePrev :: M.Map DLExpr DLVar }
+  , cePrev :: M.Map DLExpr DLVar
+  }
 
 instance Semigroup CommonEnv where
-  x <> y = CommonEnv
-    { ceReplaced = g ceReplaced
-    , cePrev = g cePrev }
-    where g f = f x <> f y
+  x <> y =
+    CommonEnv
+      { ceReplaced = g ceReplaced
+      , cePrev = g cePrev
+      }
+    where
+      g f = f x <> f y
 
 instance Monoid CommonEnv where
   mempty = CommonEnv mempty mempty
@@ -43,28 +49,31 @@ instance Monoid CommonEnv where
 data Env = Env
   { eFocus :: Focus
   , eParts :: [SLPart]
-  , eEnvsR :: IORef (M.Map Focus CommonEnv) }
+  , eEnvsR :: IORef (M.Map Focus CommonEnv)
+  }
 
 focus :: Focus -> App a -> App a
-focus f = local (\e -> e { eFocus = f })
+focus f = local (\e -> e {eFocus = f})
 
 focusa :: App a -> App a
 focusa = focus F_All
+
 focusp :: SLPart -> App a -> App a
 focusp = focus . F_One
+
 focusc :: App a -> App a
 focusc = focus F_Consensus
 
 newScope :: App x -> App x
 newScope m = do
-  Env { .. } <- ask
+  Env {..} <- ask
   eEnvs <- liftIO $ readIORef eEnvsR
   eEnvsR' <- liftIO $ newIORef eEnvs
-  local (\e -> e { eEnvsR = eEnvsR' }) m
+  local (\e -> e {eEnvsR = eEnvsR'}) m
 
 lookupCommon :: Ord a => (CommonEnv -> M.Map a b) -> a -> App (Maybe b)
 lookupCommon dict obj = do
-  Env { .. } <- ask
+  Env {..} <- ask
   eEnvs <- liftIO $ readIORef eEnvsR
   return $ do
     cenv <- M.lookup eFocus eEnvs
@@ -78,21 +87,21 @@ repeated = lookupCommon cePrev
 
 remember :: DLVar -> DLExpr -> App ()
 remember v e =
-  updateLookup (\cenv -> cenv { cePrev = M.insert e v (cePrev cenv) })
+  updateLookup (\cenv -> cenv {cePrev = M.insert e v (cePrev cenv)})
 
 rewrite :: DLVar -> DLVar -> App ()
 rewrite v r = do
-  updateLookup (\cenv -> cenv { ceReplaced = M.insert v r (ceReplaced cenv) })
+  updateLookup (\cenv -> cenv {ceReplaced = M.insert v r (ceReplaced cenv)})
 
 updateLookup :: (CommonEnv -> CommonEnv) -> App ()
 updateLookup up = do
-  Env { .. } <- ask
+  Env {..} <- ask
   let writeHuh f =
         case eFocus of
           F_All -> True
           F_Consensus -> True
           F_One _ -> f == eFocus
-  let update1 (f, cenv) = (f, (if writeHuh f then up else id ) cenv)
+  let update1 (f, cenv) = (f, (if writeHuh f then up else id) cenv)
   let update = M.fromList . (map update1) . M.toList
   liftIO $ modifyIORef eEnvsR update
 
@@ -173,7 +182,8 @@ opt_m mkk opt_k = \case
     mkk <$> (LL_LocalIf at <$> opt_a c <*> (newScope $ opt_l t) <*> (newScope $ opt_l f) <*> opt_k k)
   LL_LocalSwitch at ov csm k ->
     mkk <$> (LL_LocalSwitch at ov <$> mapM cm1 csm <*> opt_k k)
-    where cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt_l l)
+    where
+      cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt_l l)
   LL_ArrayMap at ans x0 a f k -> do
     mkk <$> (LL_ArrayMap at ans <$> opt_a x0 <*> (pure a) <*> opt_bl f <*> opt_k k)
   LL_ArrayReduce at ans x0 z b a f k -> do
@@ -194,7 +204,8 @@ opt_n = \case
     LLC_If at <$> opt_a c <*> (newScope $ opt_n t) <*> (newScope $ opt_n f)
   LLC_Switch at ov csm ->
     LLC_Switch at ov <$> mapM cm1 csm
-    where cm1 (mov', n) = (,) <$> pure mov' <*> (newScope $ opt_n n)
+    where
+      cm1 (mov', n) = (,) <$> pure mov' <*> (newScope $ opt_n n)
   LLC_While at asn inv cond body k ->
     LLC_While at <$> opt_asn asn <*> opt_bl inv <*> opt_bl cond <*> (newScope $ opt_n body) <*> opt_n k
   LLC_Continue at asn ->
@@ -266,7 +277,8 @@ plopt_m mkk opt_k = \case
     mkk <$> (PL_LocalIf at <$> opt_a c <*> (newScope $ plopt_l t) <*> (newScope $ plopt_l f) <*> opt_k k)
   PL_LocalSwitch at ov csm k ->
     mkk <$> (PL_LocalSwitch at ov <$> mapM cm1 csm <*> opt_k k)
-    where cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ plopt_l l)
+    where
+      cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ plopt_l l)
   PL_ArrayMap at ans x0 a f k -> do
     mkk <$> (PL_ArrayMap at ans <$> opt_a x0 <*> (pure a) <*> plopt_bl f <*> opt_k k)
   PL_ArrayReduce at ans x0 z b a f k -> do
@@ -284,7 +296,8 @@ plopt_ct = \case
         CT_If at <$> opt_a c <*> (newScope $ plopt_ct t) <*> (newScope $ plopt_ct f)
   CT_Switch at ov csm ->
     CT_Switch at ov <$> mapM cm1 csm
-    where cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ plopt_ct t)
+    where
+      cm1 (mov', t) = (,) <$> pure mov' <*> (newScope $ plopt_ct t)
   CT_From at mvs ->
     pure $ CT_From at mvs
   CT_Jump at which vs asn ->
@@ -293,91 +306,107 @@ plopt_ct = \case
 ucs_m :: (PLCommon a -> a) -> (a -> Counts -> (Counts, a)) -> Counts -> PLCommon a -> (Counts, a)
 ucs_m mkk ucs_k cs_kp = \case
   PL_Return at -> (cs', mkk $ ct')
-    where ct' = PL_Return at
-          cs' = cs_kp
+    where
+      ct' = PL_Return at
+      cs' = cs_kp
   PL_Let at _ v e k -> (cs', mkk $ ct')
-    where ct' = PL_Let at lc' v e k'
-          lc' =
-            case get_count v cs_k of
-              Count Nothing -> impossible "no use"
-              Count (Just x) -> x
-          cs' = count_rms [v] cs'_
-          cs'_ = counts e <> cs_k
-          (cs_k, k') = ucs_k k cs_kp
+    where
+      ct' = PL_Let at lc' v e k'
+      lc' =
+        case get_count v cs_k of
+          Count Nothing -> impossible "no use"
+          Count (Just x) -> x
+      cs' = count_rms [v] cs'_
+      cs'_ = counts e <> cs_k
+      (cs_k, k') = ucs_k k cs_kp
   PL_Eff at e k -> (cs', mkk $ ct')
-    where ct' = PL_Eff at e k'
-          cs' = counts e <> cs_k
-          (cs_k, k') = ucs_k k cs_kp
+    where
+      ct' = PL_Eff at e k'
+      cs' = counts e <> cs_k
+      (cs_k, k') = ucs_k k cs_kp
   PL_Var at v k -> (cs', mkk $ ct')
-    where ct' = PL_Var at v k'
-          cs' = count_rms [v] cs_k
-          (cs_k, k') = ucs_k k cs_kp
+    where
+      ct' = PL_Var at v k'
+      cs' = count_rms [v] cs_k
+      (cs_k, k') = ucs_k k cs_kp
   PL_Set at v a k -> (cs', mkk $ ct')
-    where ct' = PL_Set at v a k'
-          cs' = count_rms [v] cs'_
-          cs'_ = counts a <> cs_k
-          (cs_k, k') = ucs_k k cs_kp
+    where
+      ct' = PL_Set at v a k'
+      cs' = count_rms [v] cs'_
+      cs'_ = counts a <> cs_k
+      (cs_k, k') = ucs_k k cs_kp
   PL_LocalIf at c t f k -> (cs', mkk $ ct')
-    where ct' = PL_LocalIf at c t' f' k'
-          cs' = counts c <> cs_t <> cs_f <> cs_k
-          (cs_t, t') = ucs_pt t cs_k
-          (cs_f, f') = ucs_pt f cs_k
-          (cs_k, k') = ucs_k k cs_kp
+    where
+      ct' = PL_LocalIf at c t' f' k'
+      cs' = counts c <> cs_t <> cs_f <> cs_k
+      (cs_t, t') = ucs_pt t cs_k
+      (cs_f, f') = ucs_pt f cs_k
+      (cs_k, k') = ucs_k k cs_kp
   PL_LocalSwitch at v csm k -> (cs', mkk $ ct')
-    where ct' = PL_LocalSwitch at v csm' k'
-          cs' = counts v <> cs_csm
-          (cs_csm, csm') = foldl' cm1 (mempty, mempty) $ M.toList csm
-          cm1 (cs_csm_, csm_) (var, (mov, t)) = (cs_csm_', csm_')
-            where cs_csm_' = cs_csm_ <> count_rmm mov cs_t
-                  (cs_t, t') = ucs_pt t cs_k
-                  csm_' = M.insert var (mov, t') csm_
-          (cs_k, k') = ucs_k k cs_kp
+    where
+      ct' = PL_LocalSwitch at v csm' k'
+      cs' = counts v <> cs_csm
+      (cs_csm, csm') = foldl' cm1 (mempty, mempty) $ M.toList csm
+      cm1 (cs_csm_, csm_) (var, (mov, t)) = (cs_csm_', csm_')
+        where
+          cs_csm_' = cs_csm_ <> count_rmm mov cs_t
+          (cs_t, t') = ucs_pt t cs_k
+          csm_' = M.insert var (mov, t') csm_
+      (cs_k, k') = ucs_k k cs_kp
   PL_ArrayMap at ans x a f k -> (cs', mkk $ ct')
-    where ct' = PL_ArrayMap at ans x a f' k'
-          cs' = counts x <> cs_body
-          cs_body = count_rms [a] cs_f
-          (cs_f, f') = ucs_bl f cs_k
-          cs_k = count_rms [ans] cs_k_
-          (cs_k_, k') = ucs_k k cs_kp
+    where
+      ct' = PL_ArrayMap at ans x a f' k'
+      cs' = counts x <> cs_body
+      cs_body = count_rms [a] cs_f
+      (cs_f, f') = ucs_bl f cs_k
+      cs_k = count_rms [ans] cs_k_
+      (cs_k_, k') = ucs_k k cs_kp
   PL_ArrayReduce at ans x z b a f k -> (cs', mkk $ ct')
-    where ct' = PL_ArrayReduce at ans x z b a f' k'
-          cs' = counts x <> counts z <> cs_body
-          cs_body = count_rms [b, a] cs_f
-          (cs_f, f') = ucs_bl f cs_k
-          cs_k = count_rms [ans] cs_k_
-          (cs_k_, k') = ucs_k k cs_kp
+    where
+      ct' = PL_ArrayReduce at ans x z b a f' k'
+      cs' = counts x <> counts z <> cs_body
+      cs_body = count_rms [b, a] cs_f
+      (cs_f, f') = ucs_bl f cs_k
+      cs_k = count_rms [ans] cs_k_
+      (cs_k_, k') = ucs_k k cs_kp
 
 ucs_pt :: PLTail -> Counts -> (Counts, PLTail)
 ucs_pt (PLTail m) cs_k = ucs_m PLTail ucs_pt cs_k m
 
 ucs_bl :: PLBlock -> Counts -> (Counts, PLBlock)
 ucs_bl (PLBlock at t a) cs_k = (cs_t, PLBlock at t' a)
-  where cs_k' = counts a <> cs_k
-        (cs_t, t') = ucs_pt t cs_k'
+  where
+    cs_k' = counts a <> cs_k
+    (cs_t, t') = ucs_pt t cs_k'
 
 ucs_t :: Counts -> CTail -> (Counts, CTail)
 ucs_t cs_kp = \case
   CT_Com m ->
     ucs_m CT_Com (flip ucs_t) cs_kp m
   CT_If at c t f -> (cs', ct')
-    where ct' = CT_If at c t' f'
-          (cs_t, t') = ucs_t cs_kp t
-          (cs_f, f') = ucs_t cs_kp f
-          cs' = counts c <> cs_t <> cs_f
+    where
+      ct' = CT_If at c t' f'
+      (cs_t, t') = ucs_t cs_kp t
+      (cs_f, f') = ucs_t cs_kp f
+      cs' = counts c <> cs_t <> cs_f
   CT_Switch at ov csm -> (cs', ct')
-    where ct' = CT_Switch at ov csm'
-          cs' = counts ov <> cs_csm
-          (cs_csm, csm') = foldl' cm1 (mempty, mempty) $ M.toList csm
-          cm1 (cs_csm_, csm_) (var, (mov, t)) = (cs_csm_', csm_')
-            where cs_csm_' = cs_csm_ <> count_rmm mov cs_t
-                  (cs_t, t') = ucs_t cs_kp t
-                  csm_' = M.insert var (mov, t') csm_
+    where
+      ct' = CT_Switch at ov csm'
+      cs' = counts ov <> cs_csm
+      (cs_csm, csm') = foldl' cm1 (mempty, mempty) $ M.toList csm
+      cm1 (cs_csm_, csm_) (var, (mov, t)) = (cs_csm_', csm_')
+        where
+          cs_csm_' = cs_csm_ <> count_rmm mov cs_t
+          (cs_t, t') = ucs_t cs_kp t
+          csm_' = M.insert var (mov, t') csm_
   CT_From at mvs -> (cs', ct')
-    where ct' = CT_From at mvs
-          cs' = counts mvs <> cs_kp
+    where
+      ct' = CT_From at mvs
+      cs' = counts mvs <> cs_kp
   CT_Jump at which vs asn -> (cs', ct')
-    where ct' = CT_Jump at which vs asn
-          cs' = counts vs <> counts asn <> cs_kp
+    where
+      ct' = CT_Jump at which vs asn
+      cs' = counts vs <> counts asn <> cs_kp
 
 -- _U_pdate _C_ount_s_
 ucs :: CTail -> (Counts, CTail)
@@ -386,5 +415,6 @@ ucs t = ucs_t mempty t
 pltoptimize :: CTail -> IO (Counts, CTail)
 pltoptimize t = do
   env0 <- mkEnv0 []
-  ucs <$> (flip runReaderT env0 $
-    plopt_ct t)
+  ucs
+    <$> (flip runReaderT env0 $
+           plopt_ct t)

@@ -6,13 +6,13 @@ import Data.Foldable
 import qualified Data.Map.Strict as M
 import Data.STRef
 import qualified Data.Sequence as Seq
+import Data.Text.Prettyprint.Doc
 import GHC.Stack (HasCallStack)
 import Reach.AST
+import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Type
 import Reach.Util
-import Reach.Pretty()
-import Data.Text.Prettyprint.Doc
 
 type App s = ReaderT (Env s) (ST s)
 

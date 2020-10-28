@@ -16,10 +16,12 @@ import Reach.Type
 import Reach.Util
 
 type ConnectorInfoMap = Object
+
 -- type ConnectorInfoMap =
 --   M.Map String ConnectorInfo
 
 type ConnectorInfo = Value
+
 -- data ConnectorInfo
 --   = CI_Null
 --   | CI_Bool Bool
@@ -39,8 +41,8 @@ checkIntLiteralC :: SrcLoc -> Connector -> Integer -> Integer
 checkIntLiteralC at c x = checkIntLiteral at 0 x rmax
   where
     rmax = case conCons c DLC_UInt_max of
-             DLL_Int _ uim -> uim
-             _ -> impossible "uint_max not int"
+      DLL_Int _ uim -> uim
+      _ -> impossible "uint_max not int"
 
 type Connectors =
   M.Map String Connector

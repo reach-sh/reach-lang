@@ -10,8 +10,8 @@ import Control.DeepSeq
 import qualified Data.Map.Strict as M
 import Data.Proxy
 import Reach.AST
-import Reach.Connector
 import Reach.Compiler (all_connectors)
+import Reach.Connector
 import Reach.EPP
 import Reach.Eval
 import Reach.Linearize

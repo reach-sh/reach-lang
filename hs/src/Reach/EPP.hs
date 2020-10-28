@@ -228,7 +228,8 @@ plReplace mkk nk = \case
     mkk $ PL_LocalIf a b c d $ iter k
   PL_LocalSwitch a b c k ->
     mkk $ PL_LocalSwitch a b c $ iter k
-  where iter = pltReplace mkk nk
+  where
+    iter = pltReplace mkk nk
 
 pltReplace :: (PLCommon a -> a) -> a -> PLTail -> a
 pltReplace mkk nk (PLTail m) = plReplace mkk nk m

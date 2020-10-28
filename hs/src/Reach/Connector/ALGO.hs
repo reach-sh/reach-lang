@@ -2,15 +2,14 @@ module Reach.Connector.ALGO (connect_algo) where
 
 -- https://github.com/reach-sh/reach-lang/blob/8d912e0/hs/src/Reach/Connector/ALGO.hs.dead
 
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Vector as Vector
-import qualified Data.Aeson as Aeson
 import Control.Monad.Reader
+import qualified Data.Aeson as Aeson
 import Data.ByteString.Base64 (encodeBase64')
 import Data.ByteString.Builder
-import qualified Data.ByteString.Lazy as LB
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
+import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List
 import qualified Data.Map.Strict as M
@@ -20,14 +19,15 @@ import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
 import Data.Text.Prettyprint.Doc
+import qualified Data.Vector as Vector
 import Data.Word
 import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Connector
+import Reach.Pretty ()
 import Reach.Type
 import Reach.UnsafeUtil
 import Reach.Util
-import Reach.Pretty()
 import Safe (atMay)
 import Text.Read
 
@@ -61,8 +61,9 @@ typeObjectTypes a =
 
 udiv :: Integer -> Integer -> Integer
 udiv x y = z
-  where (q,d) = quotRem x y
-        z = if d == 0 then q else q+1
+  where
+    (q, d) = quotRem x y
+    z = if d == 0 then q else q + 1
 
 typeSizeOf :: SLType -> Integer
 typeSizeOf = \case
@@ -80,7 +81,8 @@ typeSizeOf = \case
   T_Forall {} -> impossible $ "T_Forall"
   T_Var {} -> impossible $ "T_Var"
   T_Type {} -> impossible $ "T_Type"
-  where word = 8
+  where
+    word = 8
 
 encodeBase64 :: B.ByteString -> LT.Text
 encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
@@ -112,15 +114,16 @@ optimize :: [TEAL] -> [TEAL]
 optimize = \case
   [] -> []
   ["b", x] : b@[y] : l | y == (x <> ":") -> b : optimize l
-  ["btoi"] : ["itob", "// bool"] : ["substring","7","8"] : l -> optimize l
+  ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> optimize l
   ["btoi"] : ["itob"] : l -> optimize l
   ["itob"] : ["btoi"] : l -> optimize l
-  a@["store", x] : ["load", y] : l | x == y ->
-    ["dup"] : optimize (a : l)
-  a@["substring",s0, _] : b@["substring",s1,e1] : l ->
+  a@["store", x] : ["load", y] : l
+    | x == y ->
+      ["dup"] : optimize (a : l)
+  a@["substring", s0, _] : b@["substring", s1, e1] : l ->
     case mse of
       Just (s2, e2) ->
-        optimize $ ["substring",s2,e2] : l
+        optimize $ ["substring", s2, e2] : l
       Nothing ->
         a : (optimize $ b : l)
     where
@@ -131,7 +134,7 @@ optimize = \case
         let s2n = s0n + s1n
         let e2n = s2n + e1n
         case s2n < 256 && e2n < 256 of
-          True -> return $ ( texty s2n, texty e2n )
+          True -> return $ (texty s2n, texty e2n)
           False -> mempty
   --a@["int", x] : b@["itob"] : l ->
   --  case itob x of
@@ -193,7 +196,7 @@ outputs ts = do
 freeze :: App a -> App (App a)
 freeze m = do
   eOutputR' <- liftIO $ newIORef mempty
-  ans <- local (\e -> e { eOutputR = eOutputR' }) m
+  ans <- local (\e -> e {eOutputR = eOutputR'}) m
   ts <- liftIO $ readIORef eOutputR'
   return $ outputs ts >> return ans
 
@@ -259,13 +262,17 @@ freshLabel = do
 store_let :: DLVar -> Bool -> App () -> App a -> App a
 store_let dv small cgen m = do
   Env {..} <- ask
-  local (\e -> e { eLets = M.insert dv cgen eLets
-                 , eLetSmalls = M.insert dv small eLetSmalls }) $
-    m
+  local
+    (\e ->
+       e
+         { eLets = M.insert dv cgen eLets
+         , eLetSmalls = M.insert dv small eLetSmalls
+         })
+    $ m
 
 letSmall :: DLVar -> App Bool
 letSmall dv = do
-  Env { .. } <- ask
+  Env {..} <- ask
   return $ fromMaybe False (M.lookup dv eLetSmalls)
 
 lookup_let :: DLVar -> App ()
@@ -315,7 +322,7 @@ how_many_txns = do
 ctobs :: SLType -> App ()
 ctobs = \case
   T_UInt -> op "itob"
-  T_Bool -> code "itob" ["// bool"] >> code "substring" [ "7", "8" ]
+  T_Bool -> code "itob" ["// bool"] >> code "substring" ["7", "8"]
   T_Null -> nop
   T_Bytes -> nop
   T_Digest -> nop
@@ -380,13 +387,14 @@ ca = \case
           Nothing -> normal
           Just x -> cl $ DLL_Bytes x
       _ -> normal
-    where normal = cconcatbs $ map (\a -> (t, ca a)) as
+    where
+      normal = cconcatbs $ map (\a -> (t, ca a)) as
   DLA_Tuple as ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
   DLA_Obj m ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
   DLA_Data tm vt va -> do
-    let mvti = find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0..]
+    let mvti = find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0 ..]
     let vti =
           case mvti of
             Just (_, x) -> x
@@ -435,16 +443,16 @@ cprim = \case
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   IF_THEN_ELSE -> \case
-    [ be, DLA_Literal (DLL_Bool True), DLA_Literal (DLL_Bool False) ] -> do
+    [be, DLA_Literal (DLL_Bool True), DLA_Literal (DLL_Bool False)] -> do
       ca be
-    [ be, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True) ] -> do
+    [be, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] -> do
       ca be
       op "!"
-    [ be, DLA_Literal (DLL_Bool True), fe ] -> do
+    [be, DLA_Literal (DLL_Bool True), fe] -> do
       ca be
       ca fe
       op "||"
-    [ be, DLA_Literal (DLL_Bool False), fe ] -> do
+    [be, DLA_Literal (DLL_Bool False), fe] -> do
       -- be \ fe |  T  | F
       --    T    |  F  | F
       --    F    |  T  | F
@@ -452,11 +460,11 @@ cprim = \case
       op "!"
       ca fe
       op "&&"
-    [ be, te, DLA_Literal (DLL_Bool False) ] -> do
+    [be, te, DLA_Literal (DLL_Bool False)] -> do
       ca be
       ca te
       op "&&"
-    [ be, te, DLA_Literal (DLL_Bool True) ] -> do
+    [be, te, DLA_Literal (DLL_Bool True)] -> do
       -- be \ te |  T  | F
       --    T    |  T  | F
       --    F    |  T  | T
@@ -464,7 +472,7 @@ cprim = \case
       op "!"
       ca te
       op "||"
-    [ be, te, fe ] -> do
+    [be, te, fe] -> do
       ca be
       ca te
       ca fe
@@ -507,7 +515,7 @@ csubstring :: SrcLoc -> Integer -> Integer -> App ()
 csubstring at b c =
   case b < 256 && c < 256 of
     True -> do
-      code "substring" [ tint at b, tint at c ]
+      code "substring" [tint at b, tint at c]
     False -> do
       cl $ DLL_Int sb b
       cl $ DLL_Int sb c
@@ -515,36 +523,37 @@ csubstring at b c =
 
 computeSubstring :: [SLType] -> Integer -> (SLType, Integer, Integer)
 computeSubstring ts idx = (t, start, end)
-  where szs = map typeSizeOf ts
-        starts = scanl (+) 0 szs
-        ends = zipWith (+) szs starts
-        idx' = fromIntegral idx
-        tse = zip3 ts starts ends
-        (t, start, end) =
-          case atMay tse idx' of
-            Nothing -> impossible "bad idx"
-            Just x -> x
+  where
+    szs = map typeSizeOf ts
+    starts = scanl (+) 0 szs
+    ends = zipWith (+) szs starts
+    idx' = fromIntegral idx
+    tse = zip3 ts starts ends
+    (t, start, end) =
+      case atMay tse idx' of
+        Nothing -> impossible "bad idx"
+        Just x -> x
 
 cfor :: Integer -> (App () -> App ()) -> App ()
 cfor maxi body = do
   top_lab <- freshLabel
   end_lab <- freshLabel
   salloc $ \idxl -> do
-    let load_idx = code "load" [ texty idxl ]
+    let load_idx = code "load" [texty idxl]
     cl $ DLL_Int sb 0
-    code "store" [ texty idxl ]
+    code "store" [texty idxl]
     label top_lab
     load_idx
     cl $ DLL_Int sb maxi
     op "<"
-    code "bz" [ end_lab ]
+    code "bz" [end_lab]
     body load_idx
     load_idx
     cl $ DLL_Int sb 1
     op "+"
-    code "store" [ texty idxl ]
+    code "store" [texty idxl]
     bad "backwards jump"
-    code "b" [ top_lab ]
+    code "b" [top_lab]
   label end_lab
 
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
@@ -560,7 +569,7 @@ doArrayRef at aa frombs ie = do
     T_Bool -> do
       case ie of
         Left (DLA_Literal (DLL_Int _ ii)) | ii < 256 -> do
-          code "byteget" [ texty ii ]
+          code "byteget" [texty ii]
         _ -> do
           ie'
           op "byteget2"
@@ -599,7 +608,7 @@ ce = \case
         case ia of
           DLA_Literal (DLL_Int _ ii) | ii < 256 -> do
             ca va
-            code "byteset" [ texty ii ]
+            code "byteset" [texty ii]
           _ -> do
             ca ia
             ca va
@@ -609,10 +618,11 @@ ce = \case
         let (before, after) =
               case ia of
                 DLA_Literal (DLL_Int _ ii) -> (b, a)
-                  where start = ii * tsz
-                        end = start + tsz
-                        b = csubstring at 0 start
-                        a = csubstring at end (alen * tsz)
+                  where
+                    start = ii * tsz
+                    end = start + tsz
+                    b = csubstring at 0 start
+                    a = csubstring at end (alen * tsz)
                 _ -> (b, a)
                   where
                     b = do
@@ -647,7 +657,7 @@ ce = \case
             after
             -- [ after, before', ... ]
             op "concat"
-            -- [ aa', ... ]
+          -- [ aa', ... ]
           True -> do
             ca aa >> before
             ca va
@@ -667,17 +677,17 @@ ce = \case
     let ysz = typeSizeOf $ argTypeOf y
     let (_, xlen) = typeArray x
     check_concat_len $ xsz + ysz
-    salloc $ \ ansl -> do
+    salloc $ \ansl -> do
       cl $ DLL_Bytes ""
-      code "store" [ texty ansl ]
-      cfor xlen $ \ load_idx -> do
-        code "load" [ texty ansl ]
+      code "store" [texty ansl]
+      cfor xlen $ \load_idx -> do
+        code "load" [texty ansl]
         doArrayRef at x False $ Right load_idx
         doArrayRef at y False $ Right load_idx
         op "concat"
         op "concat"
-        code "store" [ texty ansl ]
-      code "load" [ texty ansl ]
+        code "store" [texty ansl]
+      code "load" [texty ansl]
   DLE_TupleRef at ta idx -> do
     let ts = typeTupleTypes ta
     let (t, start, end) = computeSubstring ts idx
@@ -731,10 +741,10 @@ doSwitch ck at dv csm = do
   let cm1 ((_vn, (mov, k)), vi) = do
         next_lab <- freshLabel
         ca $ DLA_Var dv
-        code "byteget" [ "0" ]
+        code "byteget" ["0"]
         cl $ DLL_Int sb vi
         op "="
-        code "bz" [ next_lab ]
+        code "bz" [next_lab]
         case mov of
           Nothing -> ck k
           Just vv -> do
@@ -743,11 +753,11 @@ doSwitch ck at dv csm = do
               let vt = argTypeOf $ DLA_Var vv
               csubstring at 1 (1 + typeSizeOf vt)
               cfrombs vt
-              code "store" [ texty loc ]
-              store_let vv True (code "load" [ texty loc ]) $
+              code "store" [texty loc]
+              store_let vv True (code "load" [texty loc]) $
                 ck k
         label next_lab
-  mapM_ cm1 $ zip (M.toAscList csm) [0..]
+  mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
   label end_lab
 
 cm :: (App () -> a -> App ()) -> App () -> PLCommon a -> App ()
@@ -766,33 +776,33 @@ cm ck km = \case
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = typeArray aa
     check_concat_len anssz
-    salloc $ \ ansl -> do
+    salloc $ \ansl -> do
       cl $ DLL_Bytes ""
-      code "store" [ texty ansl ]
-      cfor xlen $ \ load_idx -> do
-        code "load" [ texty ansl ]
+      code "store" [texty ansl]
+      cfor xlen $ \load_idx -> do
+        code "load" [texty ansl]
         doArrayRef at aa True $ Right load_idx
-        salloc $ \ lvl -> do
-          code "store" [ texty lvl ]
-          store_let lv True (code "load" [ texty lvl ]) $ do
+        salloc $ \lvl -> do
+          code "store" [texty lvl]
+          store_let lv True (code "load" [texty lvl]) $ do
             cp (ca ra) body
         op "concat"
-        code "store" [ texty ansl ]
-      store_let ansv True (code "load" [ texty ansl ]) $ ck km k
+        code "store" [texty ansl]
+      store_let ansv True (code "load" [texty ansl]) $ ck km k
   PL_ArrayReduce at ansv aa za av lv (PLBlock _ body ra) k -> do
     let (_, xlen) = typeArray aa
-    salloc $ \ ansl -> do
+    salloc $ \ansl -> do
       ca za
-      code "store" [ texty ansl ]
-      store_let av True (code "load" [ texty ansl ]) $ do
-        cfor xlen $ \ load_idx -> do
+      code "store" [texty ansl]
+      store_let av True (code "load" [texty ansl]) $ do
+        cfor xlen $ \load_idx -> do
           doArrayRef at aa True $ Right load_idx
-          salloc $ \ lvl -> do
-            code "store" [ texty lvl ]
-            store_let lv True (code "load" [ texty lvl ]) $ do
+          salloc $ \lvl -> do
+            code "store" [texty lvl]
+            store_let lv True (code "load" [texty lvl]) $ do
               cp (ca ra) body
-          code "store" [ texty ansl ]
-        store_let ansv True (code "load" [ texty ansl ]) $ ck km k
+          code "store" [texty ansl]
+        store_let ansv True (code "load" [texty ansl]) $ ck km k
   PL_Eff _ de k -> ce de >> ck km k
   PL_Var _ dv k ->
     salloc $ \loc -> do
@@ -861,7 +871,7 @@ ct = \case
               foldM wrap1 (id, t_0) (M.toList asnm)
         (store_lets, t') <- wrap t
         store_lets $
-          local (\e -> e { eWhich = which }) $
+          local (\e -> e {eWhich = which}) $
             ct t'
       _ ->
         impossible "bad jump"
@@ -962,7 +972,7 @@ txnFromContract0 = txnToContract + 1
 -- 4   : Last round
 -- 5.. : Handler arguments
 stdArgTypes :: [SLType]
-stdArgTypes = [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt ]
+stdArgTypes = [T_Digest, T_Digest, T_Bool, T_UInt, T_UInt]
 
 argPrevSt :: Word8
 argPrevSt = 0
@@ -1014,114 +1024,114 @@ ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
 ch eShared eWhich (C_Handler _ int fs prev svs msg amtv body) = fmap Just $
   fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
-  let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
-  let args = svs <> msg
-  let argFirstUser' = fromIntegral argFirstUser
-  let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser' ..]
-  let argCount = argFirstUser' + length args
-  let eLets1 =
-        case fs of
-          FS_Join dv ->
-            M.insert dv lookup_sender eLets0
-          FS_Again {} ->
-            eLets0
-  let lookup_txn_value = do
-        code "gtxn" [texty txnToContract, "Amount"]
-        lookup_fee_amount
-        op "-"
-  let eLets =
-        M.insert amtv lookup_txn_value eLets1
-  runApp eShared eWhich eLets $ do
-    comment ("Handler " <> texty eWhich)
-    comment "Check txnAppl"
-    code "gtxn" [texty txnAppl, "TypeEnum"]
-    code "int" ["appl"]
-    eq_or_fail
-    code "gtxn" [texty txnAppl, "ApplicationID"]
-    --- XXX Make this int
-    code "byte" [tApplicationID]
-    cfrombs T_UInt
-    eq_or_fail
+    let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
+    let args = svs <> msg
+    let argFirstUser' = fromIntegral argFirstUser
+    let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser' ..]
+    let argCount = argFirstUser' + length args
+    let eLets1 =
+          case fs of
+            FS_Join dv ->
+              M.insert dv lookup_sender eLets0
+            FS_Again {} ->
+              eLets0
+    let lookup_txn_value = do
+          code "gtxn" [texty txnToContract, "Amount"]
+          lookup_fee_amount
+          op "-"
+    let eLets =
+          M.insert amtv lookup_txn_value eLets1
+    runApp eShared eWhich eLets $ do
+      comment ("Handler " <> texty eWhich)
+      comment "Check txnAppl"
+      code "gtxn" [texty txnAppl, "TypeEnum"]
+      code "int" ["appl"]
+      eq_or_fail
+      code "gtxn" [texty txnAppl, "ApplicationID"]
+      --- XXX Make this int
+      code "byte" [tApplicationID]
+      cfrombs T_UInt
+      eq_or_fail
 
-    comment "Check txnToHandler"
-    code "gtxn" [texty txnToHandler, "TypeEnum"]
-    code "int" ["pay"]
-    eq_or_fail
-    code "gtxn" [texty txnToHandler, "Receiver"]
-    code "txn" ["Sender"]
-    eq_or_fail
-    code "gtxn" [texty txnToHandler, "Amount"]
-    code "gtxn" [texty txnFromHandler, "Fee"]
-    eq_or_fail
+      comment "Check txnToHandler"
+      code "gtxn" [texty txnToHandler, "TypeEnum"]
+      code "int" ["pay"]
+      eq_or_fail
+      code "gtxn" [texty txnToHandler, "Receiver"]
+      code "txn" ["Sender"]
+      eq_or_fail
+      code "gtxn" [texty txnToHandler, "Amount"]
+      code "gtxn" [texty txnFromHandler, "Fee"]
+      eq_or_fail
 
-    comment "Check txnToContract"
-    code "gtxn" [texty txnToContract, "TypeEnum"]
-    code "int" ["pay"]
-    eq_or_fail
-    code "gtxn" [texty txnToContract, "Receiver"]
-    code "byte" [tContractAddr]
-    eq_or_fail
+      comment "Check txnToContract"
+      code "gtxn" [texty txnToContract, "TypeEnum"]
+      code "int" ["pay"]
+      eq_or_fail
+      code "gtxn" [texty txnToContract, "Receiver"]
+      code "byte" [tContractAddr]
+      eq_or_fail
 
-    comment "Check txnFromHandler (us)"
-    code "txn" ["GroupIndex"]
-    cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
-    eq_or_fail
-    code "txn" ["TypeEnum"]
-    code "int" ["pay"]
-    eq_or_fail
-    code "txn" ["Amount"]
-    cl $ DLL_Int sb $ 0
-    eq_or_fail
-    code "txn" ["Receiver"]
-    code "gtxn" [texty txnToHandler, "Sender"]
-    eq_or_fail
-    code "txn" ["NumArgs"]
-    cl $ DLL_Int sb $ fromIntegral $ argCount
-    eq_or_fail
-    case fs of
-      FS_Join {} -> return ()
-      FS_Again dv -> do
-        lookup_sender
-        ca $ DLA_Var dv
-        eq_or_fail
-    cstate (HM_Check prev) svs
-    code "arg" [texty argPrevSt]
-    eq_or_fail
+      comment "Check txnFromHandler (us)"
+      code "txn" ["GroupIndex"]
+      cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
+      eq_or_fail
+      code "txn" ["TypeEnum"]
+      code "int" ["pay"]
+      eq_or_fail
+      code "txn" ["Amount"]
+      cl $ DLL_Int sb $ 0
+      eq_or_fail
+      code "txn" ["Receiver"]
+      code "gtxn" [texty txnToHandler, "Sender"]
+      eq_or_fail
+      code "txn" ["NumArgs"]
+      cl $ DLL_Int sb $ fromIntegral $ argCount
+      eq_or_fail
+      case fs of
+        FS_Join {} -> return ()
+        FS_Again dv -> do
+          lookup_sender
+          ca $ DLA_Var dv
+          eq_or_fail
+      cstate (HM_Check prev) svs
+      code "arg" [texty argPrevSt]
+      eq_or_fail
 
-    --- XXX close remainder to is deployer if halts, zero otherwise
+      --- XXX close remainder to is deployer if halts, zero otherwise
 
-    comment "Run body"
-    ct body
+      comment "Run body"
+      ct body
 
-    txns <- how_many_txns
-    comment "Check GroupSize"
-    code "global" ["GroupSize"]
-    cl $ DLL_Int sb $ fromIntegral $ 1 + txns
-    eq_or_fail
+      txns <- how_many_txns
+      comment "Check GroupSize"
+      code "global" ["GroupSize"]
+      cl $ DLL_Int sb $ fromIntegral $ 1 + txns
+      eq_or_fail
 
-    lookup_fee_amount
-    csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnFromContract0 .. txns]
-    eq_or_fail
+      lookup_fee_amount
+      csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnFromContract0 .. txns]
+      eq_or_fail
 
-    comment "Check time limits"
-    let check_time f = \case
-          [] -> nop
-          as -> do
-            lookup_last
-            csum as
-            op "+"
-            let go i = do
-                  op "dup"
-                  code "gtxn" [texty i, f]
-                  eq_or_fail
-            forM_ [0 .. txns] go
-            op "pop"
-    (do
-       let CBetween from to = int
-       check_time "FirstValid" from
-       check_time "LastValid" to)
+      comment "Check time limits"
+      let check_time f = \case
+            [] -> nop
+            as -> do
+              lookup_last
+              csum as
+              op "+"
+              let go i = do
+                    op "dup"
+                    code "gtxn" [texty i, f]
+                    eq_or_fail
+              forM_ [0 .. txns] go
+              op "pop"
+      (do
+         let CBetween from to = int
+         check_time "FirstValid" from
+         check_time "LastValid" to)
 
-    std_footer
+      std_footer
 
 type Disp = String -> T.Text -> IO ()
 
@@ -1302,7 +1312,7 @@ connect_algo :: Connector
 connect_algo = Connector {..}
   where
     conName = "ALGO"
-    conCons DLC_UInt_max = DLL_Int sb $ 2^(64::Integer) - 1
+    conCons DLC_UInt_max = DLL_Int sb $ 2 ^ (64 :: Integer) - 1
     conGen moutn pl = do
       let disp which c =
             case moutn of

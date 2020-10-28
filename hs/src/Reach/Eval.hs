@@ -1026,19 +1026,20 @@ evalPrimOp ctxt at _sco st p sargs =
             DLVar at (ctxt_local_name ctxt "overflow") t
       let doOp t cp cargs = do
             (cv, cl) <- ctxt_lift_expr ctxt at (mkvar t) $ DLE_PrimOp at cp cargs
-            return $ ( DLA_Var cv, cl )
+            return $ (DLA_Var cv, cl)
       let doCmp = doOp T_Bool
       let lim_maxUInt_a = DLA_Constant DLC_UInt_max
       before <-
         case p of
           ADD -> do
-            let (a, b) = case dargs of [ a_, b_ ] -> (a_, b_)
-                                       _ -> impossible "add args"
-            (ra, rl) <- doOp T_UInt SUB [ lim_maxUInt_a, b ]
-            (ca, cl) <- doCmp PLE [ a, ra ]
+            let (a, b) = case dargs of
+                  [a_, b_] -> (a_, b_)
+                  _ -> impossible "add args"
+            (ra, rl) <- doOp T_UInt SUB [lim_maxUInt_a, b]
+            (ca, cl) <- doCmp PLE [a, ra]
             return $ rl <> cl <> doClaim ca "add overflow"
           SUB -> do
-            ( ca, cl ) <- doCmp PGE dargs
+            (ca, cl) <- doCmp PGE dargs
             return $ cl <> doClaim ca "sub wraparound"
           _ -> return $ mempty
       let mkdv = DLVar at (ctxt_local_name ctxt "prim") rng
@@ -1047,7 +1048,7 @@ evalPrimOp ctxt at _sco st p sargs =
       after <-
         case p of
           MUL -> do
-            ( ca, cl ) <- doCmp PLE [ da, lim_maxUInt_a ]
+            (ca, cl) <- doCmp PLE [da, lim_maxUInt_a]
             return $ cl <> doClaim ca "mul overflow"
           _ -> return $ mempty
       let lifts' =
@@ -2782,7 +2783,8 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
   let base_env' =
         M.union base_env $
           M.mapWithKey
-            (\k _ -> SLSSVal srcloc_builtin Public $ SLV_Connector k) cns
+            (\k _ -> SLSSVal srcloc_builtin Public $ SLV_Connector k)
+            cns
   let stdlib_env =
         case src of
           ReachStdLib -> base_env'
@@ -2813,31 +2815,36 @@ makeInteract at who spec = SLV_Object at lab spec'
 
 app_default_opts :: [String] -> DLOpts
 app_default_opts cns =
-  DLOpts { dlo_deployMode = DM_constructor
-         , dlo_verifyOverflow = False
-         , dlo_verifyPerConnector = False
-         , dlo_connectors = cns }
+  DLOpts
+    { dlo_deployMode = DM_constructor
+    , dlo_verifyOverflow = False
+    , dlo_verifyPerConnector = False
+    , dlo_connectors = cns
+    }
 
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
-app_options = M.fromList [("deployMode", opt_deployMode)
-                         ,("verifyOverflow", opt_verifyOverflow)
-                         ,("verifyPerConnector",opt_verifyPerConnector)
-                         ,("connectors", opt_connectors)]
+app_options =
+  M.fromList
+    [ ("deployMode", opt_deployMode)
+    , ("verifyOverflow", opt_verifyOverflow)
+    , ("verifyPerConnector", opt_verifyPerConnector)
+    , ("connectors", opt_connectors)
+    ]
   where
     opt_verifyPerConnector opts v =
       case v of
-        SLV_Bool _ b -> Right $ opts { dlo_verifyPerConnector = b }
+        SLV_Bool _ b -> Right $ opts {dlo_verifyPerConnector = b}
         _ -> Left $ "expected boolean"
     opt_verifyOverflow opts v =
       case v of
-        SLV_Bool _ b -> Right $ opts { dlo_verifyOverflow = b }
+        SLV_Bool _ b -> Right $ opts {dlo_verifyOverflow = b}
         _ -> Left $ "expected boolean"
     opt_connectors opts v =
       case v of
         SLV_Tuple _ vs ->
           case traverse f vs of
             Left x -> Left x
-            Right y -> Right $ opts { dlo_connectors = y }
+            Right y -> Right $ opts {dlo_connectors = y}
           where
             f (SLV_Connector cn) = Right $ cn
             f _ = Left $ "expected connector"

@@ -1,5 +1,13 @@
-module Reach.CollectCounts (
-  Count (..), Counts (..), counts, get_count, count_rms, count_rmm, counts_nzs) where
+module Reach.CollectCounts
+  ( Count (..)
+  , Counts (..)
+  , counts
+  , get_count
+  , count_rms
+  , count_rmm
+  , counts_nzs
+  )
+where
 
 import qualified Data.Map.Strict as M
 import Data.Maybe

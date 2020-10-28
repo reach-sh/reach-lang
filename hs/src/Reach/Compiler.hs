@@ -1,8 +1,8 @@
 module Reach.Compiler (CompilerOpts (..), compile, all_connectors) where
 
+import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
-import qualified Data.Map.Strict as M
 import Reach.AST
 import Reach.Backend.JS
 import Reach.Connector
@@ -27,9 +27,11 @@ data CompilerOpts = CompilerOpts
 all_connectors :: Connectors
 all_connectors =
   M.fromList $
-    map (\x -> (conName x, x))
-    [ connect_eth
-    , connect_algo ]
+    map
+      (\x -> (conName x, x))
+      [ connect_eth
+      , connect_algo
+      ]
 
 compile :: CompilerOpts -> IO ()
 compile copts = do

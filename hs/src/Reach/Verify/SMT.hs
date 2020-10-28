@@ -874,8 +874,8 @@ _smtDefineTypes smt ts = do
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc vst smt lp = do
   let mcs = case mc of
-              Nothing -> "generic connector"
-              Just c -> conName c <> " connector"
+        Nothing -> "generic connector"
+        Just c -> conName c <> " connector"
   putStrLn $ "Verifying for " <> mcs
   dspdr <- newIORef mempty
   bindingsrr <- newIORefRef mempty
@@ -973,8 +973,8 @@ verify_smt logpMay mvcs vst lp prog args = do
     Just x -> writeFile (x <> ".ulp") (show $ pretty ulp)
   let mkLogger = case logpMay of
         Just logp -> do
-         (close, logpl) <- newFileLogger logp
-         return (close, Just logpl)
+          (close, logpl) <- newFileLogger logp
+          return (close, Just logpl)
         Nothing -> return (return (), Nothing)
   (close, logplMay) <- mkLogger
   smt <- SMT.newSolver prog args logplMay

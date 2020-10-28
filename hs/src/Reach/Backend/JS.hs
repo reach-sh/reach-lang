@@ -1,11 +1,11 @@
 module Reach.Backend.JS (backend_js) where
 
-import qualified Data.Scientific as Sci
-import qualified Data.HashMap.Strict as HM
-import qualified Data.Foldable as Foldable
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as B
+import qualified Data.Foldable as Foldable
+import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
+import qualified Data.Scientific as Sci
 import qualified Data.Text as T
 import Data.Text.Prettyprint.Doc
 import Reach.AST
@@ -131,7 +131,7 @@ jsCon = \case
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
   DLL_Int at i ->
-    jsApply "stdlib.checkedBigNumberify" [ jsAt at, jsArg (DLA_Constant $ DLC_UInt_max), pretty i ]
+    jsApply "stdlib.checkedBigNumberify" [jsAt at, jsArg (DLA_Constant $ DLC_UInt_max), pretty i]
   DLL_Bytes b -> jsString $ bunpack b
 
 jsArg :: DLArg -> Doc a
@@ -151,8 +151,11 @@ jsArg = \case
 
 jsDigest :: [DLArg] -> Doc a
 jsDigest as =
-  jsApply "stdlib.digest" [ jsContract (T_Tuple $ map argTypeOf as)
-                          , jsArg (DLA_Tuple as)]
+  jsApply
+    "stdlib.digest"
+    [ jsContract (T_Tuple $ map argTypeOf as)
+    , jsArg (DLA_Tuple as)
+    ]
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
 jsPrimApply _ctxt = \case
@@ -421,23 +424,25 @@ jsETail ctxt = \case
         jsAsn ctxt AM_WhileSim asn
           <> hardline
           <> jsIf (jsBlock ctxt cond) (jsETail ctxt' body) (jsETail ctxt k)
-      where ctxt' = ctxt { ctxt_while = Just (cond, body, k) }
+    where
+      ctxt' = ctxt {ctxt_while = Just (cond, body, k)}
   ET_Continue _ asn ->
-    jsAsn ctxt AM_ContinueOuter asn <> hardline <>
-    case ctxt_simulate ctxt of
-      False ->
-        jsAsn ctxt AM_ContinueInner asn
-          <> hardline
-          <> "continue"
-          <> semi
-      True ->
-        case ctxt_while ctxt of
-          Nothing -> impossible "continue not in while"
-          Just (wcond, wbody, wk) ->
-            (jsNewScope $
-              jsAsn ctxt AM_ContinueInnerSim asn
-              <> hardline
-              <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk)) <> semi
+    jsAsn ctxt AM_ContinueOuter asn <> hardline
+      <> case ctxt_simulate ctxt of
+        False ->
+          jsAsn ctxt AM_ContinueInner asn
+            <> hardline
+            <> "continue"
+            <> semi
+        True ->
+          case ctxt_while ctxt of
+            Nothing -> impossible "continue not in while"
+            Just (wcond, wbody, wk) ->
+              (jsNewScope $
+                 jsAsn ctxt AM_ContinueInnerSim asn
+                   <> hardline
+                   <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk))
+                <> semi
 
 jsPart :: SLPart -> EPProg -> Doc a
 jsPart p (EPProg _ _ et) =

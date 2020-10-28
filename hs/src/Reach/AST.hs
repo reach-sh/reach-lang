@@ -622,7 +622,8 @@ data DLOpts = DLOpts
   { dlo_deployMode :: DeployMode
   , dlo_verifyOverflow :: Bool
   , dlo_verifyPerConnector :: Bool
-  , dlo_connectors :: [String] }
+  , dlo_connectors :: [String]
+  }
   deriving (Eq, Generic, NFData, Show)
 
 data DLProg
@@ -685,7 +686,8 @@ data LLStep
 
 data LLOpts = LLOpts
   { llo_deployMode :: DeployMode
-  , llo_verifyOverflow :: Bool }
+  , llo_verifyOverflow :: Bool
+  }
   deriving (Generic, Eq, Show)
 
 data LLProg
@@ -818,7 +820,8 @@ newtype EPPs = EPPs (M.Map SLPart EPProg)
 
 data PLOpts = PLOpts
   { plo_deployMode :: DeployMode
-  , plo_verifyOverflow :: Bool }
+  , plo_verifyOverflow :: Bool
+  }
   deriving (Generic, Eq, Show)
 
 data PLProg
