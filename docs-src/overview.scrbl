@@ -355,6 +355,16 @@ we have the ability to leverage Bob's interact functions as callbacks
 that can update the React state
 in order to display to, or harvest information from, the user.
 
+You can install the @litchar{@"@"reachsh/stdlib} JavaScript library
+into your React project,
+or for convenience, instead of setting up a React project,
+you can simply use the command
+
+@cmd{reach react}
+
+Which runs your app with the React development server in a docker container
+which has Reach and React JavaScript dependencies pre-installed.
+
 @section[#:tag "over-next"]{Next steps}
 
 In this overview, we've briefly described the structure and fundamental concepts of a Reach application.
