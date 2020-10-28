@@ -472,7 +472,7 @@ jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
     preamble =
       vsep
         [ pretty $ "// Automatically generated with Reach " ++ versionStr
-        , "/* eslint-disable no-unused-vars, no-empty-pattern, no-useless-escape */"
+        , "/* eslint-disable no-unused-vars, no-empty-pattern, no-useless-escape, no-loop-func */"
         , "export const _version =" <+> jsString versionStr <> semi
         ]
     partsp = map (uncurry jsPart) $ M.toList pm
