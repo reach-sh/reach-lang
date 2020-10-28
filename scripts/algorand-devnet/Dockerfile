@@ -36,7 +36,7 @@ WORKDIR $SRC_PARENT/go-algorand
 RUN ./scripts/configure_dev.sh
 RUN git fetch && git reset --hard 3bfd1918a5085b882d8af91b5bd8ca348b774d87
 RUN make install
-RUN git fetch && git reset --hard 343663cf
+RUN git fetch && git reset --hard b61cf649
 RUN make install
 
 # indexer

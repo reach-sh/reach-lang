@@ -439,10 +439,21 @@ cprim = \case
       ca fe
       op "||"
     [ be, DLA_Literal (DLL_Bool False), fe ] -> do
+      -- be \ fe |  T  | F
+      --    T    |  F  | F
+      --    F    |  T  | F
       ca be
+      op "!"
       ca fe
       op "&&"
     [ be, te, DLA_Literal (DLL_Bool False) ] -> do
+      ca be
+      ca te
+      op "&&"
+    [ be, te, DLA_Literal (DLL_Bool True) ] -> do
+      -- be \ te |  T  | F
+      --    T    |  T  | F
+      --    F    |  T  | T
       ca be
       op "!"
       ca te
