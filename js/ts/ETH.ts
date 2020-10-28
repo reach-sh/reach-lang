@@ -240,8 +240,14 @@ const V_Digest = (s: string): CBR_Digest => {
 
 function addressUnwrapper(x: any): string {
   // TODO: set it up so that .address is always there
+  // Just putting it here to appease BT_Address.canonicalize
   if (typeof x === 'string') {
-    return x;
+    // XXX is this actually needed?
+    if (x.slice(0, 2) !== '0x') {
+      return '0x' + x;
+    } else {
+      return x;
+    }
   } else if (x.networkAccount && x.networkAccount.address) {
     return (x.networkAccount.address);
   } else if (x.address) {
