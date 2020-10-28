@@ -1,11 +1,13 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
 import * as backend from './build/index.main.mjs';
-
-const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
-const getBalance = async (who) => dispAmt(await stdlib.balanceOf(who));
 
 console.log(`getting started...`);
 (async() => {
+  const stdlib = await stdlib_loader.loadStdlib();
+
+  const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
+  const getBalance = async (who) => dispAmt(await stdlib.balanceOf(who));
+
   const acc = await stdlib.newTestAccount(stdlib.parseCurrency(100));
   const beforeBal = await getBalance(acc);
   const beforeTime = await stdlib.getNetworkTime();

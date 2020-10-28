@@ -1,3 +1,5 @@
+REACH = ../../reach
+
 .PHONY: check
 check: expected actual
 	diff -u $^
@@ -6,14 +8,15 @@ actual: build/index.main.pl
 	grep -B 2 between $^ > $@
 
 build/index.main.pl: index.rsh
-	../../reach compile $^
+	$(REACH) compile $^
 
 .PHONY: build
 build: check
 
 .PHONY: run
 run:
-	../../reach run
+	REACH_CONNECTOR_MODE=ETH $(REACH) run
+	REACH_CONNECTOR_MODE=ALGO $(REACH) run
 
 .PHONY: down
 down:
