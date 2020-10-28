@@ -254,7 +254,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 const makeAccount = (): NetworkAccount => {
-  const address = stdlib.bigNumberToHex(randomUInt());
+  const address = '0x' + stdlib.bigNumberToHex(randomUInt());
   BALANCES[address] = stdlib.bigNumberify(0);
   return { address };
 };
