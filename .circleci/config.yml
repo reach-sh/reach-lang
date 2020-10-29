@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
-  slack: circleci/slack@3.4.2
-  shellcheck: circleci/shellcheck@2.0.0
+  slack: circleci/slack@4.1.1
+  shellcheck: circleci/shellcheck@2.2.0
   jq: circleci/jq@2.2.0
 
 x-docker-creds: &docker-creds
@@ -82,8 +82,8 @@ jobs:
       - run:
           name: Is dockerhub up to date?
           command: scripts/docker-check.sh || echo 'XXX allowed to fail'
-      - slack/status:
-          fail_only: true
+      - slack/notify:
+          event: fail
 
   docs-render:
     # TODO: simpler docker image for docs
@@ -108,8 +108,8 @@ jobs:
           root: /tmp/docs_workspace
           paths:
             - docs
-      - slack/status:
-          fail_only: true
+      - slack/notify:
+          event: fail
 
   docs-deploy:
     docker:
@@ -146,8 +146,8 @@ jobs:
             # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
             git diff-index --quiet HEAD || git commit -m "[ci skip] docs for $CIRCLE_SHA1"
             git push origin gh-pages
-      - slack/status:
-          fail_only: true
+      - slack/notify:
+          event: fail
 
   shellcheck:
     docker:
@@ -159,8 +159,8 @@ jobs:
       - run:
           name: Run shellcheck
           command: make sh-lint
-      - slack/status:
-          fail_only: true
+      - slack/notify:
+          event: fail
 
   reach-lint:
     docker:
@@ -180,8 +180,8 @@ jobs:
       - run:
           name: Run reach linter
           command: make reach-lint
-      - slack/status:
-          fail_only: true
+      - slack/notify:
+          event: fail
 
   docker-lint:
     docker:
@@ -195,8 +195,8 @@ jobs:
       - run:
           name: run hadolint
           command: make docker-lint
-      - slack/status:
-          fail_only: true
+      - slack/notify:
+          event: fail
 
   experimental-algorand-devnet:
     docker:
@@ -216,8 +216,8 @@ jobs:
             make status
             cd -
           # TODO: a better test, proper wait
-      - slack/status:
-          fail_only: true
+      - slack/notify:
+          event: fail
 
 
 x-default-job-setup: &default-job-setup
