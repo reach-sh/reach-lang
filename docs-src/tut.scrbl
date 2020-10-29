@@ -1381,7 +1381,7 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 7 11 "  // ..."]
+         'only 7 12 "  // ..."]
 
 @itemlist[
 
@@ -1394,7 +1394,7 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 13 28 "  // ..."]
+         'only 13 29 "  // ..."]
 
 @itemlist[
 
@@ -1409,7 +1409,7 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 30 45 "  // ..."]
+         'only 30 46 "  // ..."]
 
 @itemlist[
 
@@ -1424,42 +1424,42 @@ We'll see how these three functions are used below.}
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 47 53 "  // ..."]
+         'only 47 54 "  // ..."]
 
 Next we define a few helper functions and start the participant interaction interface.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 55 58 "  // ..."]
+         'only 55 59 "  // ..."]
 
 First we define a timeout handler.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 60 78 "  // ..."]
+         'only 60 79 "  // ..."]
 
 Next, we request the wager amount or define the @jsin{acceptWager} method, depending on if we are Alice or not.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 80 96 "  // ..."]
+         'only 80 97 "  // ..."]
 
 Next, we define the shared @jsin{getHand} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 98 101 "  // ..."]
+         'only 98 102 "  // ..."]
 
 Finally, the @jsin{seeOutcome} method.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t
-         'only 103 109 "  // ..."]
+         'only 103 111 "  // ..."]
 
 Lastly, we choose the appropriate backend function and await its completion.
 
