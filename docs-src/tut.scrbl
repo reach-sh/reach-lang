@@ -1530,6 +1530,10 @@ Of course, when you run the exact amounts and addresses may be different.
 
 If we were to edit @reachexlink["tut-7/docker-compose.yml"], and move the @litchar{&default-app} on line 24 to line 51, then instead of running on Ethereum, we'd be able to test and run our application on Algorand.
 
+@margin-note{We may need to also change line 32 of @reachexlink["tut-7/index.rsh"] that defines @reachin{DEADLINE} to be @reachin{10} to a higher number, like @reachin{30}.
+This is because Algorand does not support an input-enabled developer network that only runs rounds when transactions are present, so it is possible that timeouts will occur unexpectedly.
+We've commonly observed this on machines under heavy CPU load.}
+
 @(hrule)
 
 Now our implementation of @|RPS| is finished!
