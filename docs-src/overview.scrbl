@@ -269,7 +269,7 @@ And then Reach
 
 @item{compiles @reachexlink["overview/index.rsh" "overview/index.rsh"];}
 
-@item{creates a temporary Node package;}
+@item{creates a temporary Node.js package;}
 
 @item{builds a Docker image based on Reach's standard image for the package; and,}
 
@@ -296,64 +296,64 @@ The developer does not need to change anything about their program, because Reac
 which demonstrates this section's code in action
 and provides a brief explanation of how it works.}
 
-The previous execution uses node.js
-to perform a test run at the command line.
-To really deploy your DApp,
-you will probably want to have a web app UI.
+The previous execution uses Node.js to perform a test run at the command line.
+However, most Reach developers deploy their DApps via a Web application, as we describe below.
 
-By using the same @reachexlink["index.rsh" #:dir "react-examples/overview"] file,
-and a React @reachexlink["index.js" #:dir "react-examples/overview"]
-(with some simple React @reachexlink["views" #:dir "react-examples/overview"]
- and @reachexlink["index.css" "css" #:dir "react-examples/overview"] to go with it),
-we can easily deploy our Reach program to the web.
-Take a look at some snippets index.js and compare with index.mjs above:
+A Web deployment uses the exact same @reachexlink["index.rsh" #:dir "react-examples/overview"] file, but connected to a React-based @reachexlink["index.js" #:dir "react-examples/overview"] file.
+(It also uses some simple React @reachexlink["views" #:dir "react-examples/overview"]
+ and @reachexlink["index.css" @tt{css} #:dir "react-examples/overview"] to go with it.)
+Let's take a look at some snippets from the React @reachexlink["index.js" #:dir "react-examples/overview"] and compare with the Node.js @reachexlink["index.mjs" #:dir "examples-overview"] from before:
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.js"
          #:dir "react-examples"
          'only 7 8 "// ..."]
 
-Here we import the backend as @jsin{backend} and the stdlib as @jsin{reach}.
+At the top of the file, we import the Reach-generated backend as @jsin{backend} and the standard library as @jsin{reach}.
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.js"
          #:dir "react-examples"
          'only 27 28 "  // ..."]
 
-Here, we hook into the App component's lifecycle event @jsin{componentDidMount}
+We hook into the App @link["https://reactjs.org/docs/react-component.html"]{component}'s @link["https://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/"]{lifecycle event} @jsin{componentDidMount}
 in order to fetch the user's account.
-@jsin{getDefaultAccount} works with browser extensions like MetaMask to get the user's
-currently-selected account. Reach is able to deploy contracts and send transactions
-to the consensus network by prompting the user through the extension's API,
-without you having to program this in manually.
+@jsin{getDefaultAccount} automatically interacts with browser extensions, like MetaMask, to get the user's
+currently-selected account.
+Reach is able to deploy contracts and send transactions to the consensus network by prompting the user through the extension's API,
+without the Reach programming having to do this in manually.
+This is just like how in the Node.js deployment, the Reach programmer does need to decode the details of the underlying consensus network's interaction API.
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.js"
          #:dir "react-examples"
-         'only 72 75 "  // ..."]
+         'only 71 76 "  // ..."]
 
-Here, on line 72 we call the @jsin{acc.deploy} function,
-and on line 74, we call the @jsin{ctc.getInfo} function,
-just as we did for the node.js program.
+Our React component has a method called @jsin{deploy} that actually deploys the contract on the network, using the same calls as in the test deployment:
+on line 72 we call the @jsin{acc.deploy} function,
+and on line 74, we call the @jsin{ctc.getInfo} function;
+exactly as we did for the Node.js program.
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.js"
          #:dir "react-examples"
          'only 79 85 "  // ..."]
 
-Here, on line 83 we run the Reach program as Alice.
+Similarly, we implement a @jsin{runBackend} method that executes the Reach program as Alice using information gathered from the React UI.
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.js"
          #:dir "react-examples"
          'only 112 121 "  // ..."]
 
-And here, on line 120, we run the Reach program as Bob.
+We implement a similar method in the @jsin{Bob} component that runs the backend as Bob,
+
 We specify Alice's and Bob's respective @tech{participant interact interface}s
-just as we would in node.js. In the React program,
-we have the ability to leverage Bob's interact functions as callbacks
+just as we would in Node.js.
+In the React program,
+we have the ability to leverage Bob's @reachin{interact} functions as callbacks
 that can update the React state
-in order to display to, or harvest information from, the user.
+in order to display to, or harvest information from, the React user interface.
 
 You can install the @litchar{@"@"reachsh/stdlib} JavaScript library
 into your React project,
@@ -362,13 +362,12 @@ you can simply use the command
 
 @cmd{reach react}
 
-Which runs your app with the React development server in a docker container
-which has Reach and React JavaScript dependencies pre-installed.
+This command runs your DApp with the React development server in a Docker container which has Reach and React JavaScript dependencies pre-installed, so it starts up much faster than building them yourself.
 
 @section[#:tag "over-next"]{Next steps}
 
 In this overview, we've briefly described the structure and fundamental concepts of a Reach application.
-We've shown how to construct a simple program, compile it, connect an interface, and run it.
+We've shown how to construct a simple program, compile it, connect an interface, test at the command-line, and deploy it using a React Web application.
 Since this is only a brief overview of what Reach can do, we left a lot out.
 But even so, it is should be clear why Reach is easiest and safest programming language for decentralized application development.
 
