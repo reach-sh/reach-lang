@@ -839,7 +839,7 @@ is an @tech{expression} that evaluates to the given @tech{value}.
 The @deftech{null literal} may be written as @reachin{null}.
 
 @deftech{Numeric literal}s may be written in decimal, hexadecimal, or octal.
-Numeric literals must obey the @tech{bit width} of @reachin{UInt} if they are used as @reachin{UInt} values at runtime, but if they only appear at compile-time, then they may be any number.
+Numeric literals must obey the @deftech{bit width} of @reachin{UInt} if they are used as @reachin{UInt} values at runtime, but if they only appear at compile-time, then they may be any number.
 
 @deftech{Boolean literal}s may be written as @reachin{true} or @reachin{false}.
 
