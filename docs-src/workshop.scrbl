@@ -126,7 +126,7 @@ This could be used to make a periodic payment to a utility company, for example.
 In @seclink["tut"]{the tutorial}, we built a version of @|RPS| where two parties can wager over the results of the game.
 This application has an interesting communication pattern with information hiding through cryptographic commitments, but the application logic is simple and uninteresting.
 In this workshop, we implement a version of @link["https://en.wikipedia.org/wiki/Nim"]{Nim}, where the communication structure is simpler, since it is a @link["https://en.wikipedia.org/wiki/Combinatorial_game_theory"]{combinatorial game}, but has a more interesting application logic.
-Thus, this workshop demonstrates using more interesting data-structures in Reach programs.
+Thus, this workshop demonstrates using more interesting data-structures in Reach programs, as well as using compile-time abstractions to simplify DApp structure.
 
 @(WIP/XXX "nim")
 
@@ -136,6 +136,10 @@ Thus, this workshop demonstrates using more interesting data-structures in Reach
 
 Like @secref["workshop-nim"], this workshop develops an implementation of the @link["https://en.wikipedia.org/wiki/Combinatorial_game_theory"]{combinatorial game}, @link["https://en.wikipedia.org/wiki/Tic-tac-toe"]{Tic-tac-toe}.
 This workshop demonstrates the use of arrays and more advanced Reach data-structures.
+We'll discuss two variations of this same application:
+one where the consensus network verifies the moves of each player;
+and, another where the consensus network allows illegal moves to be disputed by the other player.
+These variations demonstrate two DApp patterns that occur commonly in existing DApp designs, each with different usage constraints and performance trade-offs.
 
 @(WIP/XXX "ttt")
 
