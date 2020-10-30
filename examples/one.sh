@@ -6,10 +6,10 @@ e="$2"
 
 has_target() {
   set +e
-  make -q "$MODE" 2> /dev/null
+  grep -E "^$MODE:" Makefile 2> /dev/null
   RESULT_T=$?
   set -e
-  [ $RESULT_T -eq 0 ] || [ $RESULT_T -eq 1 ]
+  [ $RESULT_T -eq 0 ]
 }
 
 echo "$e"
