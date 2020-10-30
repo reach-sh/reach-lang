@@ -23,7 +23,7 @@ import Test.Tasty.Hspec
 
 testCompileOut :: FilePath -> IO (Either LB.ByteString LB.ByteString)
 testCompileOut fp = do
-  (ec, outs, errs) <- readProcessWithExitCode "reachc" [fp] ""
+  (ec, outs, errs) <- readProcessWithExitCode "reachc" ["--disable-reporting", fp] ""
   let out = LC.pack outs
   let err = LC.pack errs
   let fmt = out <> err
