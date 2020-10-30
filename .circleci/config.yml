@@ -190,7 +190,7 @@ jobs:
       - checkout
       - run:
           name: install make, bash, curl, and jq
-          command: apk add make bash curl
+          command: apk add make bash curl jq
       - run:
           name: run hadolint
           command: make docker-lint
