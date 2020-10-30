@@ -1,1 +1,0 @@
-test.rsh/PE_VarDecl.rsh:3:24: expected a valid variable declaration

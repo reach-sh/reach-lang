@@ -1,1 +1,0 @@
-PE_DoubleMain.rsh:6:1: main must occur only once (given: JSAnnot)

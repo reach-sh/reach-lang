@@ -1,1 +1,0 @@
-CE_ExpectArray.rsh:6:17: expected an array: [LT_BT BT_UInt]

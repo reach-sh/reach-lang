@@ -1,1 +1,0 @@
-CE_WhileNoContinue.rsh:7:12: while does not terminate in continue: CE_WhileNoContinue.rsh:4:3

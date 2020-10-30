@@ -1,1 +1,0 @@
-CE_VariableNotParticipant.rsh:5:3: variable used as participant, but not bound to participant: "A"

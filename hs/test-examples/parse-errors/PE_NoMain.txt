@@ -1,1 +1,0 @@
-PE_NoMain.rsh: expected a main function (given: [])
