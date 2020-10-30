@@ -64,4 +64,14 @@ exports.WaitingForResults = class extends React.Component {
   }
 }
 
+exports.Timeout = class extends React.Component {
+  render() {
+    return (
+      <div>
+        There's been a timeout. (Someone took too long.)
+      </div>
+    );
+  }
+}
+
 export default exports;
