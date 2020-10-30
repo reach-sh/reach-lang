@@ -189,8 +189,8 @@ jobs:
     steps:
       - checkout
       - run:
-          name: install make and bash
-          command: apk add make bash
+          name: install make, bash, curl, and jq
+          command: apk add make bash curl
       - run:
           name: run hadolint
           command: make docker-lint
