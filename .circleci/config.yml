@@ -11,6 +11,10 @@ x-docker-creds: &docker-creds
 x-docker-image: &docker-image
   <<: *docker-creds
   image: reachsh/reach-circle:0.1.2
+x-slack-fail: &slack-notify-on-fail
+  slack/notify:
+    event: fail
+    template: basic_fail_1
 
 jobs:
   build-and-test:
@@ -82,8 +86,7 @@ jobs:
       - run:
           name: Is dockerhub up to date?
           command: scripts/docker-check.sh || echo 'XXX allowed to fail'
-      - slack/notify:
-          event: fail
+      - <<: *slack-notify-on-fail
 
   docs-render:
     # TODO: simpler docker image for docs
@@ -108,8 +111,7 @@ jobs:
           root: /tmp/docs_workspace
           paths:
             - docs
-      - slack/notify:
-          event: fail
+      - <<: *slack-notify-on-fail
 
   docs-deploy:
     docker:
@@ -146,8 +148,7 @@ jobs:
             # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
             git diff-index --quiet HEAD || git commit -m "[ci skip] docs for $CIRCLE_SHA1"
             git push origin gh-pages
-      - slack/notify:
-          event: fail
+      - <<: *slack-notify-on-fail
 
   shellcheck:
     docker:
@@ -159,8 +160,7 @@ jobs:
       - run:
           name: Run shellcheck
           command: make sh-lint
-      - slack/notify:
-          event: fail
+      - <<: *slack-notify-on-fail
 
   reach-lint:
     docker:
@@ -180,8 +180,7 @@ jobs:
       - run:
           name: Run reach linter
           command: make reach-lint
-      - slack/notify:
-          event: fail
+      - <<: *slack-notify-on-fail
 
   docker-lint:
     docker:
@@ -195,8 +194,7 @@ jobs:
       - run:
           name: run hadolint
           command: make docker-lint
-      - slack/notify:
-          event: fail
+      - <<: *slack-notify-on-fail
 
   experimental-algorand-devnet:
     docker:
@@ -216,8 +214,7 @@ jobs:
             make status
             cd -
           # TODO: a better test, proper wait
-      - slack/notify:
-          event: fail
+      - <<: *slack-notify-on-fail
 
 
 x-default-job-setup: &default-job-setup
