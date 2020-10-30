@@ -30,48 +30,27 @@ class App extends React.Component {
     }
   }
   async fundAccount(fundAmount) {
-    const {acc, faucet} = this.state;
-    const fundAmountAtomic = reach.parseCurrency(fundAmount);
-    await reach.transfer(faucet, acc, fundAmountAtomic);
+    await reach.transfer(this.state.faucet, this.state.acc, reach.parseCurrency(fundAmount));
     this.setState({view: 'DeployerOrAttacher'});
   }
-  async skipFundAccount() {
-    this.setState({view: 'DeployerOrAttacher'});
-  }
-  selectAttacher() {
-    this.setState({view: 'Wrapper', ContentView: Attacher});
-  }
-  selectDeployer() {
-    this.setState({view: 'Wrapper', ContentView: Deployer});
-  }
-  render() {
-    return renderView(this, AppViews);
-  }
+  async skipFundAccount() { this.setState({view: 'DeployerOrAttacher'}); }
+  selectAttacher() { this.setState({view: 'Wrapper', ContentView: Attacher}); }
+  selectDeployer() { this.setState({view: 'Wrapper', ContentView: Deployer}); }
+  render() { return renderView(this, AppViews); }
 }
 
 class Player extends React.Component {
-  playHand(hand) {
-    this.state.resolveHandP(hand);
-  }
+  playHand(hand) { this.state.resolveHandP(hand); }
   random() { return reach.hasRandom.random(); }
   async getHand() { // Fun([], UInt)
-    console.log('XXX: getHand');
     const hand = await new Promise(resolveHandP => {
       this.setState({view: 'GetHand', playable: true, resolveHandP});
     });
     this.setState({view: 'WaitingForResults', hand});
     return handToInt[hand];
   }
-  seeOutcome(outcomeInt) { // Fun([UInt], Null)
-    console.log('XXX: seeOutcome');
-    const outcome = intToOutcome[outcomeInt];
-    console.log(outcome); // XXX
-    this.setState({view: 'Done', outcome});
-  }
-  informTimeout() { // Fun([], Null)
-    console.log('XXX: informTimeout');
-    this.setState({view: 'Timeout'});
-  }
+  seeOutcome(i) { this.setState({view: 'Done', outcome: intToOutcome[i]}); }
+  informTimeout() { this.setState({view: 'Timeout'}); }
 }
 
 class Deployer extends Player {
@@ -79,9 +58,7 @@ class Deployer extends Player {
     super(props);
     this.state = {view: 'SetWager'};
   }
-  setWager(wager) {
-    this.setState({view: 'Deploy', wager});
-  }
+  setWager(wager) { this.setState({view: 'Deploy', wager}); }
   async deploy() {
     const ctc = this.props.acc.deploy(backend);
     this.setState({view: 'Deploying', ctc});
@@ -90,9 +67,7 @@ class Deployer extends Player {
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({view: 'WaitingForAttacher', ctcInfoStr});
   }
-  render() {
-    return renderView(this, DeployerViews);
-  }
+  render() { return renderView(this, DeployerViews); }
 }
 
 class Attacher extends Player {
@@ -101,9 +76,7 @@ class Attacher extends Player {
     this.state = {view: 'Attach'};
   }
   attach(ctcInfoStr) {
-    const ctcInfo = JSON.parse(ctcInfoStr);
-    const {acc} = this.props;
-    const ctc = acc.attach(backend, ctcInfo);
+    const ctc = this.props.acc.attach(backend, JSON.parse(ctcInfoStr));
     this.setState({view: 'Attaching'});
     backend.Bob(reach, ctc, this);
   }
@@ -112,19 +85,13 @@ class Attacher extends Player {
     this.setState({view: 'WaitingForTurn'});
   }
   async acceptWager(wagerAtomic) { // Fun([UInt], Null)
-    console.log('XXX acceptWager');
     const wager = reach.formatCurrency(wagerAtomic, 4);
-    console.log({wager});
-
     return await new Promise(resolveAcceptedP => {
       this.setState({view: 'AcceptTerms', wager, resolveAcceptedP});
     });
   }
-  // shows: Fun([], Null)
-  shows() { console.log('XXX shows'); }
-  render() {
-    return renderView(this, AttacherViews);
-  }
+  shows() {} // Fun([], Null)
+  render() { return renderView(this, AttacherViews); }
 }
 
 renderDOM(<App />);
