@@ -223,6 +223,7 @@ jobs:
 x-default-job-setup: &default-job-setup
   context:
     - reachdevbot-on-dockerhub
+    - circleci-on-slack
 
 workflows:
   build-and-test:
