@@ -1,1 +1,1 @@
-error: <top level>: Invalid unbound identifier: main. Did you mean: ["blah"]
+reachc: error: <top level>: Invalid unbound identifier: main. Did you mean: ["blah"]

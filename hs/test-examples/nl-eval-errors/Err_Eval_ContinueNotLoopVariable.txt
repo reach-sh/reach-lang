@@ -1,1 +1,1 @@
-error: ./Err_Eval_ContinueNotLoopVariable.rsh:9:16:continue: Invalid loop variable update. Expected loop variable, got: y
+reachc: error: ./Err_Eval_ContinueNotLoopVariable.rsh:9:16:continue: Invalid loop variable update. Expected loop variable, got: y

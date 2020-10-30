@@ -1,1 +1,1 @@
-error: ./Err_Block_IllegalJS.rsh:5:3:throw: Invalid statement
+reachc: error: ./Err_Block_IllegalJS.rsh:5:3:throw: Invalid statement

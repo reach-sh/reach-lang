@@ -1,1 +1,1 @@
-error: ./Err_Decl_WrongArrayLength.rsh:3:7:array: Invalid array binding. nIdents:1 does not match nVals:0
+reachc: error: ./Err_Decl_WrongArrayLength.rsh:3:7:array: Invalid array binding. nIdents:1 does not match nVals:0

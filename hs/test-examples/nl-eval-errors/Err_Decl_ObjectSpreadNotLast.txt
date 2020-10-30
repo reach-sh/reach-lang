@@ -1,1 +1,1 @@
-error: ./Err_Decl_ObjectSpreadNotLast.rsh:3:9:object spread: Object spread on left-hand side of binding must occur in last position
+reachc: error: ./Err_Decl_ObjectSpreadNotLast.rsh:3:9:object spread: Object spread on left-hand side of binding must occur in last position

@@ -1,1 +1,1 @@
-error: ./Err_Dot_InvalidField.rsh:6:29:dot: x is not a field of obj
+reachc: error: ./Err_Dot_InvalidField.rsh:6:29:dot: x is not a field of obj

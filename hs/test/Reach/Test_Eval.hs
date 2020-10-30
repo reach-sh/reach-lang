@@ -6,42 +6,16 @@ module Reach.Test_Eval
   )
 where
 
-import Control.DeepSeq
-import qualified Data.Map.Strict as M
 import Data.Proxy
-import Reach.AST
-import Reach.Compiler (all_connectors)
-import Reach.Connector
-import Reach.EPP
-import Reach.Eval
-import Reach.Linearize
-import Reach.Parser
 import Reach.Test.Util
-import Reach.Type
 import Test.Hspec
 import Test.Tasty
-
-partialCompile :: FilePath -> IO ()
-partialCompile fp = do
-  -- XXX Why can't we just call the compiler? Maybe we'd also solve the
-  -- stderr/out problems by using /bin/sh versus this
-  bundle <- gatherDeps_top fp
-  let dl = compileBundle all_connectors bundle "main"
-  let !_ = rnf dl
-  let DLProg _ (DLOpts {..}) _ _ = dl
-  let connectors = map (all_connectors M.!) dlo_connectors
-  let ll = linearize dl
-  let pl = epp ll
-  let runConnector c = (,) (conName c) <$> conGen c Nothing pl
-  crs <- M.fromList <$> mapM runConnector connectors
-  let res = crs
-  return $! rnf res
-
-evalGoldenTest :: FilePath -> IO TestTree
-evalGoldenTest = return . errExampleStripAbs ".txt" partialCompile
+import Reach.Parser
+import Reach.Eval
+import Reach.Type
 
 test_compileBundle_errs :: IO TestTree
-test_compileBundle_errs = goldenTests evalGoldenTest ".rsh" "nl-eval-errors"
+test_compileBundle_errs = goldenTests compileTestFail ".rsh" "nl-eval-errors"
 
 spec_examples_cover_EvalError :: Spec
 spec_examples_cover_EvalError =

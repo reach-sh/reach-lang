@@ -1,8 +1,1 @@
-<stdout>
-
-</stdout>
-<stderr>
-</stderr>
-<exception>
-ExitFailure 1
-Unexpected token, IdentifierToken at ./js_parse_err.rsh:7:8 "B"
+reachc: Unexpected token, IdentifierToken at ./js_parse_err.rsh:7:8 "B"

@@ -1,1 +1,1 @@
-error: ./Err_Block_Assign.rsh:assign: Invalid assignment
+reachc: error: ./Err_Block_Assign.rsh:assign: Invalid assignment

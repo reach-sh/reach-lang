@@ -1,4 +1,3 @@
-<stdout>
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying with mode = VM_Honest
@@ -6,7 +5,3 @@ Verifying for generic connector
   Verifying with mode = VM_Dishonest (RolePart "Alice")
   Verifying with mode = VM_Dishonest (RolePart "Bob")
 Checked 38 theorems; No failures!
-
-</stdout>
-<stderr>
-</stderr>

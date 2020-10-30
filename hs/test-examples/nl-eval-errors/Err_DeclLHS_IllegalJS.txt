@@ -1,1 +1,1 @@
-error: ./Err_DeclLHS_IllegalJS.rsh:3:1:const: Invalid binding. Expressions cannot appear on the LHS.
+reachc: error: ./Err_DeclLHS_IllegalJS.rsh:3:1:const: Invalid binding. Expressions cannot appear on the LHS.

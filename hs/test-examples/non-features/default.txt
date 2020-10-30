@@ -1,8 +1,1 @@
-<stdout>
-
-</stdout>
-<stderr>
-</stderr>
-<exception>
-ExitFailure 1
-error: ./default.rsh:application: TypeError: Mismatch. Expected UInt but got Object({"None": Null, "Some": UInt})
+reachc: error: ./default.rsh:application: TypeError: Mismatch. Expected UInt but got Object({"None": Null, "Some": UInt})

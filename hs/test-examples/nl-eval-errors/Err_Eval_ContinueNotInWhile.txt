@@ -1,1 +1,1 @@
-error: ./Err_Eval_ContinueNotInWhile.rsh:9:5:continue: Invalid continue. Expected to be inside of a while.
+reachc: error: ./Err_Eval_ContinueNotInWhile.rsh:9:5:continue: Invalid continue. Expected to be inside of a while.

@@ -1,1 +1,1 @@
-error: ./export_rebind.rsh:10:1:export: Invalid name shadowing. Identifier 'x' is already bound at ./export_rebind.rsh:7:7:id. It cannot be bound again at ./export_rebind.rsh:7:7:id
+reachc: error: ./export_rebind.rsh:10:1:export: Invalid name shadowing. Identifier 'x' is already bound at ./export_rebind.rsh:7:7:id. It cannot be bound again at ./export_rebind.rsh:7:7:id

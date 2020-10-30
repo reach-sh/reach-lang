@@ -1,1 +1,1 @@
-error: ./Err_Parse_ImportAbsolute.rsh:3:8:import bare: Invalid import: absolute path imports are not supported: /tmp/blah.rsh
+reachc: error: ./Err_Parse_ImportAbsolute.rsh:3:8:import bare: Invalid import: absolute path imports are not supported: /tmp/blah.rsh

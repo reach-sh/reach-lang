@@ -1,1 +1,1 @@
-error: ./Err_Decl_ArraySpreadNotLast.rsh:3:9:array spread: Array spread on left-hand side of binding must occur in last position
+reachc: error: ./Err_Decl_ArraySpreadNotLast.rsh:3:9:array spread: Array spread on left-hand side of binding must occur in last position

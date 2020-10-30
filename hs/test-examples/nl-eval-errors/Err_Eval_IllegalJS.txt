@@ -1,1 +1,1 @@
-error: ./Err_Eval_IllegalJS.rsh:compileDApp: Invalid Reach expression syntax: JSYieldExpression
+reachc: error: ./Err_Eval_IllegalJS.rsh:compileDApp: Invalid Reach expression syntax: JSYieldExpression

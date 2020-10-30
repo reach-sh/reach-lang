@@ -1,8 +1,1 @@
-<stdout>
-
-</stdout>
-<stderr>
-</stderr>
-<exception>
-ExitFailure 1
-error: ./with.rsh:10:7:with: Invalid statement
+reachc: error: ./with.rsh:10:7:with: Invalid statement

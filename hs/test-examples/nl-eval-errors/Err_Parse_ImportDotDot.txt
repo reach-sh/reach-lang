@@ -1,1 +1,1 @@
-error: ./Err_Parse_ImportDotDot.rsh:3:8:import bare: Invalid import: dotdot path imports are not supported: ../blah.rsh
+reachc: error: ./Err_Parse_ImportDotDot.rsh:3:8:import bare: Invalid import: dotdot path imports are not supported: ../blah.rsh

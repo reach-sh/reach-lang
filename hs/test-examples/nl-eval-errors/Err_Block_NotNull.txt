@@ -1,1 +1,1 @@
-error: ./Err_Block_NotNull.rsh:5:11:application: Invalid block result type. Expected Null, got UInt
+reachc: error: ./Err_Block_NotNull.rsh:5:11:application: Invalid block result type. Expected Null, got UInt

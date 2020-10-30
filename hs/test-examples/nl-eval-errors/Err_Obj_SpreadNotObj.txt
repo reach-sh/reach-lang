@@ -1,1 +1,1 @@
-error: ./Err_Obj_SpreadNotObj.rsh:3:11:obj: Invalid object spread. Expected object, got: uint256
+reachc: error: ./Err_Obj_SpreadNotObj.rsh:3:11:obj: Invalid object spread. Expected object, got: uint256

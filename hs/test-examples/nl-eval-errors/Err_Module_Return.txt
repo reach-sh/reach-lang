@@ -1,1 +1,1 @@
-error: ./Err_Module_Return.rsh:1:12:after header semicolon: Invalid return statement. Cannot return at top level of module.
+reachc: error: ./Err_Module_Return.rsh:1:12:after header semicolon: Invalid return statement. Cannot return at top level of module.

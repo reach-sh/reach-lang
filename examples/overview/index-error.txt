@@ -1,4 +1,3 @@
-<stdout>
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying with mode = VM_Honest
@@ -102,10 +101,3 @@ Verification failed:
 
   (details omitted on repeat)
 Checked 11 theorems; 4 failures. :'(
-
-</stdout>
-<stderr>
-</stderr>
-<exception>
-ExitFailure 1
-</exception>

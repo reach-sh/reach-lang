@@ -1,33 +1,63 @@
 module Reach.Test.Util
-  ( errExample
-  , errExampleStripAbs
-  , goldenTests
+  ( goldenTests
   , mkSpecExamplesCoverCtors
-  , stderroutExample
-  , stdoutStripAbs
-  , tryHard
+  , compileTestSuccess
+  , compileTestFail
+  , compileTestAny
   )
 where
 
-import Control.DeepSeq
-import Control.Exception
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LB
+import qualified Data.ByteString.Lazy.Char8 as LC
 import Data.List ((\\))
 import Generics.Deriving
 import Reach.Util
 import System.Directory
+import System.Exit
 import System.FilePath
+import System.Process
 import Test.Tasty
 import Test.Tasty.Golden
 import Test.Tasty.Hspec
 
-tryHard :: NFData a => Exception e => IO a -> IO (Either e a)
-tryHard m = do
-  one <- try m
-  case one of
-    Left _ -> return one
-    Right p -> try $ evaluate $ force p
+testCompileOut :: FilePath -> IO (Either LB.ByteString LB.ByteString)
+testCompileOut fp = do
+  (ec, outs, errs) <- readProcessWithExitCode "reachc" [fp] ""
+  let out = LC.pack outs
+  let err = LC.pack errs
+  let fmt = out <> err
+  case ec of
+    ExitSuccess -> return $ Right fmt
+    ExitFailure _ -> return $ Left fmt
+
+testCompileExpectFail :: FilePath -> IO LB.ByteString
+testCompileExpectFail fp =
+  testCompileOut fp >>= \case
+    (Left s) -> return s
+    (Right s) ->
+      fail . bunpack . LB.toStrict $
+        "Expected failure, but did not fail.\n" <> s
+
+testCompileExpectSuccess :: FilePath -> IO LB.ByteString
+testCompileExpectSuccess fp =
+  testCompileOut fp >>= \case
+    (Left s) ->
+      fail . bunpack . LB.toStrict $
+        "Expected success, but failed.\n" <> s
+    (Right s) -> return s
+
+testCompileExpectAny :: FilePath -> IO LB.ByteString
+testCompileExpectAny fp = either id id <$> testCompileOut fp
+
+compileTestFail :: FilePath -> IO TestTree
+compileTestFail = stdoutStripAbs ".txt" testCompileExpectFail
+
+compileTestSuccess :: FilePath -> IO TestTree
+compileTestSuccess = stdoutStripAbs ".txt" testCompileExpectSuccess
+
+compileTestAny :: FilePath -> IO TestTree
+compileTestAny = stdoutStripAbs ".txt" testCompileExpectAny
 
 -- It is dumb that both testSpec and it require descriptive strings
 testNotEmpty :: String -> [a] -> IO TestTree
@@ -74,17 +104,6 @@ goldenTests mkTest ext subdir = do
   let groupLabel = subdir
   return $ testGroup groupLabel gTests
 
-errExampleBs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
-errExampleBs k fp =
-  withCurrentDirectory dir (tryHard (k fpRel)) >>= \case
-    Right r ->
-      fail $ "expected a failure, but got: " ++ show r
-    Left (ErrorCall e) ->
-      return $ LB.fromStrict $ bpack e
-  where
-    dir = takeDirectory fp
-    fpRel = takeFileName fp
-
 -- | Replace all instances of findThis in inThis with replaceWithThis
 replaceBs :: BS.ByteString -> BS.ByteString -> BS.ByteString -> BS.ByteString
 replaceBs findThis replaceWithThis = go
@@ -110,12 +129,6 @@ stripAllAbs fp cwd = stripAbs fp''' . stripAbs fp'' . stripAbs fp' . stripAbs fp
     fp'' = lbunpack $ stripAbs (cwd </> "hs") $ lbpack fp
     fp''' = lbunpack $ "./test-examples/../../examples/"
 
-errExampleBsStripAbs :: (Show a, NFData a) => (FilePath -> IO a) -> FilePath -> IO LB.ByteString
-errExampleBsStripAbs k fp = do
-  bs <- errExampleBs k fp
-  cwd <- getCurrentDirectory
-  return $ stripAllAbs fp cwd bs
-
 -- | Drops "CallStack (from HasCallStack):" and everything after
 stripCallStack :: LB.ByteString -> LB.ByteString
 stripCallStack bs = LB.fromStrict bsStrict'
@@ -131,30 +144,3 @@ stdoutStripAbs ext k fp = do
   --    fpBase = takeBaseName fp
   cwd <- getCurrentDirectory
   return $ goldenVsString fp goldenFile (stripCallStack <$> stripAllAbs fp cwd <$> k fp)
-
--- XXX This is a hack to make tests portable.
--- Ideally the compiler errors would print relative paths?
-errExampleStripAbs :: (Show a, NFData a) => String -> (FilePath -> IO a) -> FilePath -> TestTree
-errExampleStripAbs ext k fp = do
-  let goldenFile = replaceExtension fp ext
-      fpBase = takeBaseName fp
-  goldenVsString fpBase goldenFile (errExampleBsStripAbs k fp)
-
-errExample :: (Show a, NFData a) => String -> (FilePath -> IO a) -> FilePath -> TestTree
-errExample ext k fp = do
-  let goldenFile = replaceExtension fp ext
-      fpBase = takeBaseName fp
-  goldenVsString fpBase goldenFile (errExampleBs k fp)
-
-stderroutExampleBs :: (FilePath -> IO (LB.ByteString, LB.ByteString)) -> FilePath -> IO LB.ByteString
-stderroutExampleBs k fp = do
-  (out, err) <- k fp
-  let tag t x = "<" <> t <> ">\n" <> x <> "\n</" <> t <> ">\n"
-  let res = (tag "out" out) <> (tag "err" err)
-  return res
-
-stderroutExample :: String -> (FilePath -> IO (LB.ByteString, LB.ByteString)) -> FilePath -> TestTree
-stderroutExample ext k fp = do
-  let goldenFile = replaceExtension fp ext
-      fpBase = takeBaseName fp
-  goldenVsString fpBase goldenFile (stderroutExampleBs k fp)

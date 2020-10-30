@@ -1,1 +1,1 @@
-error: ./Err_Eval_PartSet_Bound.rsh:17:22:application: B is bound and cannot be rebound
+reachc: error: ./Err_Eval_PartSet_Bound.rsh:17:22:application: B is bound and cannot be rebound

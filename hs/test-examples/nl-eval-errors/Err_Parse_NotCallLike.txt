@@ -1,1 +1,1 @@
-error: ./Err_Parse_NotCallLike.rsh:6:15:application: Expected a call-like expression, got something else.
+reachc: error: ./Err_Parse_NotCallLike.rsh:6:15:application: Expected a call-like expression, got something else.

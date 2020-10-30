@@ -1,1 +1,1 @@
-error: ./Err_Shadowed.rsh:4:1:const: Invalid name shadowing. Identifier 'x' is already bound at ./Err_Shadowed.rsh:3:7:id. It cannot be bound again at ./Err_Shadowed.rsh:4:7:id
+reachc: error: ./Err_Shadowed.rsh:4:1:const: Invalid name shadowing. Identifier 'x' is already bound at ./Err_Shadowed.rsh:3:7:id. It cannot be bound again at ./Err_Shadowed.rsh:4:7:id

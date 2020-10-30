@@ -1,10 +1,5 @@
-<stdout>
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying with mode = VM_Honest
   Verifying with mode = VM_Dishonest RoleContract
 Checked 2 theorems; No failures!
-
-</stdout>
-<stderr>
-</stderr>
