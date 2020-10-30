@@ -1,1 +1,8 @@
-error: ./Err_Expected_Bytes.rsh:8:13:application: expected bytes, got something else: uint256
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying with mode = VM_Honest
+  Verifying with mode = VM_Dishonest RoleContract
+Verification failed:
+  in VM_Dishonest RoleContract mode
+  of theorem TClaim CT_Assert
+reachc: error: ./Err_Expected_Bytes.rsh:10:13:application: expected bytes, got something else: uint256

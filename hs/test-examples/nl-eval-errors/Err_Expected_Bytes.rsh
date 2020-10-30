@@ -5,8 +5,9 @@ export const main =
     {},
     [['A',{}]],
     (A) => {
-      A.pay(0);
-      assert(true, 4);
+      A.only(() => { const x = 1; });
+      A.publish(x);
+      assert(x == 1, 4);
       commit();
       exit();
     } );

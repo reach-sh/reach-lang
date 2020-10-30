@@ -50,7 +50,7 @@ hs-build: stack
 
 .PHONY: hs-test
 hs-test: stack
-	stack test --fast
+	stack test --fast --test-arguments '+RTS -N -RTS'
 
 .PHONY: hs-test-xml
 hs-test-xml: stack
@@ -64,7 +64,7 @@ hs-test-html: stack
 
 .PHONY: hs-test-accept
 hs-test-accept: stack
-	stack test --fast --test-arguments '--accept'
+	stack test --fast --test-arguments '+RTS -N -RTS --accept'
 
 .PHONY: hs-deps
 hs-deps: stack
