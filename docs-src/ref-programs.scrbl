@@ -792,7 +792,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   @item{@(mint-define! '("Bool")) @reachin{Bool}, which denotes a boolean.}
   @item{@(mint-define! '("UInt")) @reachin{UInt}, which denotes an unsigned integer.
   @reachin{UInt.max} is the largest value that may be assigned to a @reachin{UInt}.}
-  @item{@(mint-define! '("Bytes")) @reachin{Bytes}, which denotes a string of bytes.}
+  @item{@(mint-define! '("Bytes")) @reachin{Bytes(length)}, which denotes a string of bytes of length at most @reachin{length}.}
   @item{@(mint-define! '("Digest")) @reachin{Digest}, which denotes a @tech{digest}.}
   @item{@(mint-define! '("Address")) @reachin{Address}, which denotes an @tech{account} @tech{address}.}
   @item{@(mint-define! '("Fun")) @reachin{Fun([Domain_0, ..., Domain_N], Range)}, which denotes a function type.}
@@ -925,11 +925,10 @@ All @tech{binary expression} operators have a corresponding named function in th
 While @reachin{&&} and @reachin{||} may not evaluate their second argument,
 their corresponding named functions @reachin{and} and @reachin{or}, always do.
 
-@(mint-define! '("boolEq") '("bytesEq") '("typeEq") '("intEq") '("digestEq") '("addressEq"))
+@(mint-define! '("boolEq") '("typeEq") '("intEq") '("digestEq") '("addressEq"))
 @reach{
- polyEq(a, b)    // eq on Bool, Bytes, types, or UInt
+ polyEq(a, b)    // eq on Bool, types, or UInt
  boolEq(a, b)    // eq on Bool
- bytesEq(a, b)   // eq on Bytes
  typeEq(a, b)    // eq on types
  intEq(a, b)     // eq on UInt
  digestEq(a, b)  // eq on Digest

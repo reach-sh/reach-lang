@@ -1,6 +1,6 @@
 'reach 0.1';
 
-const Obj = Object({x: UInt, y: Bytes});
+const Obj = Object({x: UInt, y: Bool});
 
 export const main = Reach.App(
   {}, [

@@ -76,18 +76,25 @@ export const BV_UInt = (val: BigNumber): CBR_UInt => {
   return BT_UInt.canonicalize(val);
 };
 
-export const BT_Bytes: BackendTy<CBR_Bytes> = {
-  name: 'Bytes',
+export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
+  name: `Bytes(${len})`,
   canonicalize: (val: unknown): CBR_Bytes => {
     if (typeof(val) !== 'string') {
       throw Error(`Bytes expected string, but got ${JSON.stringify(val)}`);
     }
-    return val;
+    const checkLen = (label:string, alen:number, fill:string): string => {
+      if ( val.length > alen ) {
+        throw Error(`Bytes(${len}) must be a ${label}string less than or equal to ${alen}, but given ${label}string of length ${val.length}`);
+      }
+      return val.padEnd(alen, fill);
+    };
+    if ( val.slice(0,2) === '0x' ) {
+      return checkLen('hex ', len*2+2, '0');
+    } else {
+      return checkLen('', len, '\0');
+    }
   },
-};
-export const BV_Bytes = (val: string): CBR_Bytes => {
-  return BT_Bytes.canonicalize(val);
-};
+});
 
 // TODO: check digest length, or something similar?
 // That's probably best left to connector-specific code.

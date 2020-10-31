@@ -7,7 +7,7 @@ const howMany = 2;
 const Player =
       { ...hasRandom,
         getMove: Fun([Array(UInt, 2)], Tuple(UInt, UInt)),
-        showOutcome: Fun([Bytes], Null) };
+        showOutcome: Fun([Bytes(64)], Null) };
 const Alice =
       { ...Player,
         getParams: Fun([], Tuple(UInt, UInt)) };

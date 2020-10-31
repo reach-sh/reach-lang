@@ -8,10 +8,9 @@ export const boolEq = (x, y) => (x ? y : !y);
 export const polyEq = (x, y) => {
   const ty_x = typeOf(x);
   // TODO: add structural equality for arrays and objects
+  // TODO: add bytes eq
   if (typeEq(ty_x, Bool)) {
     return boolEq(x, y);
-  } else if (typeEq(ty_x, Bytes)) {
-    return bytesEq(x, y);
   } else if (typeEq(ty_x, Digest)) {
     return digestEq(x, y);
   } else if (typeEq(ty_x, Address)) {

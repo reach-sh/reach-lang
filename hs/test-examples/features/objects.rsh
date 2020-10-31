@@ -29,12 +29,12 @@ export const main = Reach.App(
     // object splice, keys can be added
     const obj4 = {...obj3, y: 'yval'};
     assert(obj4.x == 1);
-    assert(obj4.y === 'yval');
+    // TODO assert(obj4.y === 'yval');
 
     // object destructuring
     const {x, ...obj4a} = obj4;
     assert(x == 1);
-    assert(obj4a.y == 'yval');
+    // TODO assert(obj4a.y == 'yval');
 
     const obj4b = Object.set(obj4, field, 2);
     assert(obj4b.x == 2);
@@ -49,7 +49,7 @@ export const main = Reach.App(
 
     // object splice binding
     const {y, ...obj7} = obj4;
-    assert(y == 'yval');
+    // TODO assert(y == 'yval');
     assert(obj7.x == 1);
 
     // TODO: structural object equality comparison

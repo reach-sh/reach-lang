@@ -15,7 +15,7 @@ import {
   eq,
   ge,
   getDEBUG,
-  stringToHex,
+  //stringToHex,
   hexToString,
   isBigNumber,
   isHex,
@@ -212,20 +212,20 @@ export const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   defaultValue: ethers.BigNumber.from(0),
   munge: (bv: CBR_UInt): BigNumber => bv,
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
-}
+};
 const V_UInt = (n: BigNumber): CBR_UInt => {
   return T_UInt.canonicalize(n);
-}
+};
 
-export const T_Bytes: ETH_Ty<CBR_Bytes, string> = {
-  ...CBR.BT_Bytes,
-  defaultValue: '',
-  munge: (bv: CBR_Bytes): string => stringToHex(bv),
-  unmunge: (nv: string) => V_Bytes(hexToString(nv)),
-}
-const V_Bytes = (s: string): CBR_Bytes => {
-  return T_Bytes.canonicalize(s);
-}
+export const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
+  const me = {
+    ...CBR.BT_Bytes(len),
+    defaultValue: ''.padEnd(len, '\0'),
+    munge: (bv: CBR_Bytes): Array<number> => Array.from(ethers.utils.toUtf8Bytes(bv)),
+    unmunge: (nv: Array<number>) => me.canonicalize(hexToString(ethers.utils.hexlify(nv))),
+  };
+  return me;
+};
 
 export const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   ...CBR.BT_Digest,
@@ -233,10 +233,10 @@ export const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   munge: (bv: CBR_Digest): BigNumber => BigNumber.from(bv),
   // XXX likely not the correct unmunge type?
   unmunge: (nv: BigNumber): CBR_Digest => V_Digest(nv.toHexString()),
-}
+};
 const V_Digest = (s: string): CBR_Digest => {
   return T_Digest.canonicalize(s);
-}
+};
 
 function addressUnwrapper(x: any): string {
   // TODO: set it up so that .address is always there
@@ -856,7 +856,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const r_fn = await callC(funcName, lastBlock,  munged, value);
           r_maybe = await r_fn.wait();
         } catch (e) {
-          debug(e);
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- ERROR (${e})`);
+
           // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
           await Timeout.set(1);
           const current_block = await getNetworkTimeNumber();

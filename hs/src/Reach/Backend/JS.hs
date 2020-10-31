@@ -84,7 +84,7 @@ jsContract = \case
   T_Null -> "stdlib.T_Null"
   T_Bool -> "stdlib.T_Bool"
   T_UInt -> "stdlib.T_UInt"
-  T_Bytes -> "stdlib.T_Bytes"
+  T_Bytes sz -> jsApply "stdlib.T_Bytes" [ jsCon $ DLL_Int sb sz ]
   T_Digest -> "stdlib.T_Digest"
   T_Address -> "stdlib.T_Address"
   T_Fun {} -> impossible "fun dl"
@@ -177,7 +177,7 @@ jsPrimApply _ctxt = \case
   IF_THEN_ELSE -> \args -> case args of
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitJS: ITE called with wrong number of arguments"
-  BYTES_EQ -> jsApply "stdlib.bytesEq"
+--  BYTES_EQ -> jsApply "stdlib.bytesEq"
   DIGEST_EQ -> jsApply "stdlib.digestEq"
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
 

@@ -4,7 +4,7 @@
 const XTy = typeof 0;
 
 // typeOf as a function
-const YTy = typeOf('hello');
+const YTy = typeOf(true);
 
 export const main = Reach.App(
   {},
@@ -18,7 +18,7 @@ export const main = Reach.App(
       assert(typeOf(_b) == Bool);
 
       const _y = interact.getY();
-      const _c = _y == 'okay';
+      const _c = _y == false;
       assert(typeOf(_y) == YTy);
       assert(typeOf(_c) == Bool);
 

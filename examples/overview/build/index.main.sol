@@ -56,12 +56,12 @@ contract ReachContract is Stdlib {
     emit e2();
     current_state = uint256(keccak256(abi.encode(uint256(2), uint256(block.number), _a.v2, _a.v1))); }
   
-  event e3(bytes v19);
+  event e3(uint8[128] v19);
   struct a3 {
     uint256 _last;
     address payable v2;
     uint256 v1;
-    bytes v19; }
+    uint8[128] v19; }
   
   function m3(a3 calldata _a) external payable {
     require(current_state == uint256(keccak256(abi.encode(uint256(2), _a._last, _a.v2, _a.v1))));

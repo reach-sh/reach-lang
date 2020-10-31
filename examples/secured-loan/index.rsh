@@ -9,7 +9,7 @@ const ParamsType = Object({
 });
 
 const hasSendOutcome = {
-  sendOutcome: Fun([Bytes], Null),
+  sendOutcome: Fun([Bytes(128)], Null),
 };
 
 export const main = Reach.App(

@@ -130,7 +130,7 @@ displayTy = \case
   T_Null -> "null"
   T_Bool -> "bool"
   T_UInt -> "uint256"
-  T_Bytes -> "bytes"
+  T_Bytes sz -> "bytes[" <> show sz <> "]"
   T_Digest -> "digest"
   T_Address -> "address"
   T_Fun _tys _ty -> "function" -- "Fun(" <> displayTyList tys <> ", " <> displayTy ty
@@ -277,9 +277,10 @@ instance Show EvalError where
     Err_Obj_IllegalComputedField slval ->
       "Invalid computed field name. " <> reason
       where
-        reason = case displaySlValType slval of
+        ty = displaySlValType slval
+        reason = case take 5 ty of
           "bytes" -> "It must be computable at compile time."
-          ty -> "Fields must be bytes, but got: " <> ty
+          _ -> "Fields must be bytes, but got: " <> ty
     Err_Obj_IllegalFieldValues exprs ->
       -- FIXME Is this syntactically possible?
       "Invalid field values. Expected 1 value, got: " <> show (length exprs)
@@ -462,7 +463,7 @@ base_env =
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
     , ("UInt", SLV_Type T_UInt)
-    , ("Bytes", SLV_Type T_Bytes)
+    , ("Bytes", SLV_Prim SLPrim_Bytes)
     , ("Address", SLV_Type T_Address)
     , ("forall", SLV_Prim SLPrim_forall)
     , ("Data", SLV_Prim SLPrim_Data)
@@ -474,7 +475,7 @@ base_env =
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
     , ("intEq", SLV_Prim $ SLPrim_op PEQ)
-    , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
+--    , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
     , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
     , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
     , ("isType", SLV_Prim SLPrim_is_type)
@@ -988,12 +989,8 @@ evalPrimOp ctxt at _sco st p sargs =
     PGT -> nn2b (>)
     IF_THEN_ELSE ->
       case args of
-        [SLV_Bool _ b, t, f] -> static $ if b then t else f
-        _ -> make_var
-    BYTES_EQ ->
-      case args of
-        [SLV_Bytes _ x, SLV_Bytes _ y] ->
-          static $ SLV_Bool at $ x == y
+        [SLV_Bool _ b, t, f] ->
+          static $ if b then t else f
         _ -> make_var
     DIGEST_EQ -> make_var
     ADDRESS_EQ -> make_var
@@ -1164,6 +1161,10 @@ evalPrim ctxt at sco st p sargs =
         [val] -> retV $ (lvl, SLV_Type ty)
           where
             (ty, _) = typeOf at val
+        _ -> illegal_args
+    SLPrim_Bytes ->
+      case map snd sargs of
+        [(SLV_Int _ sz)] -> retV $ (lvl, SLV_Type $ T_Bytes sz)
         _ -> illegal_args
     SLPrim_Array ->
       case map snd sargs of

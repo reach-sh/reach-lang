@@ -6,7 +6,7 @@ const DELAY = 10; // in blocks
 const Player =
       { ...hasRandom,
         getMove: Fun([UInt, UInt], Tuple(Bool, UInt)),
-        showOutcome: Fun([Bytes], Null) };
+        showOutcome: Fun([Bytes(64)], Null) };
 const Alice =
       { ...Player,
         getParams: Fun([], Tuple(UInt, UInt)) };

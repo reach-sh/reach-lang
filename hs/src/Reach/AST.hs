@@ -104,7 +104,7 @@ data SLType
   = T_Null
   | T_Bool
   | T_UInt
-  | T_Bytes
+  | T_Bytes Integer
   | T_Digest
   | T_Address
   | T_Fun [SLType] SLType
@@ -130,7 +130,7 @@ funFold z k fun = go
       T_Null -> z
       T_Bool -> z
       T_UInt -> z
-      T_Bytes -> z
+      T_Bytes _ -> z
       T_Digest -> z
       T_Address -> z
       T_Fun inTys outTy -> fun inTys outTy
@@ -172,7 +172,7 @@ instance Show SLType where
   show T_Null = "Null"
   show T_Bool = "Bool"
   show T_UInt = "UInt"
-  show T_Bytes = "Bytes"
+  show (T_Bytes sz) = "Bytes(" <> show sz <> ")"
   show T_Digest = "Digest"
   show T_Address = "Address"
   show (T_Fun tys ty) = "Fun([" <> showTys tys <> "], " <> show ty <> ")"
@@ -248,7 +248,6 @@ data PrimOp
   | PGE
   | PGT
   | IF_THEN_ELSE
-  | BYTES_EQ
   | DIGEST_EQ
   | ADDRESS_EQ
   | LSH
@@ -270,7 +269,6 @@ primOpType PEQ = [T_UInt, T_UInt] --> T_Bool
 primOpType PGE = [T_UInt, T_UInt] --> T_Bool
 primOpType PGT = [T_UInt, T_UInt] --> T_Bool
 primOpType IF_THEN_ELSE = T_Forall "b" (T_Forall "a" ([T_Var "b", T_Var "a", T_Var "a"] --> T_Var "a"))
-primOpType BYTES_EQ = ([T_Bytes, T_Bytes] --> T_Bool)
 primOpType DIGEST_EQ = ([T_Digest, T_Digest] --> T_Bool)
 primOpType ADDRESS_EQ = ([T_Address, T_Address] --> T_Bool)
 primOpType LSH = [T_UInt, T_UInt] --> T_UInt
@@ -298,6 +296,7 @@ data SLPrimitive
   | SLPrim_type_eq
   | SLPrim_typeOf
   | SLPrim_Fun
+  | SLPrim_Bytes
   | SLPrim_Data
   | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
   | SLPrim_Array

@@ -168,8 +168,7 @@ type NV = Uint8Array;
 type ALGO_Ty<BV extends CBR_Val> = {
   name: string,
   canonicalize: (uv: unknown) => BV,
-  netSize: number // in bytes
-         | 'all', // XXX
+  netSize: number
   toNet(bv: BV): NV,
   fromNet(nv: NV): BV,
 }
@@ -222,19 +221,19 @@ const bytestringyNet = {
   fromNet: (nv: NV): string => (
     ethers.utils.hexlify(nv)
   )
-}
+};
 
-export const T_Bytes: ALGO_Ty<CBR_Bytes> = {
-  ...CBR.BT_Bytes,
+export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
+  ...CBR.BT_Bytes(len),
   ...stringyNet,
-  netSize: 'all', // XXX
-}
+  netSize: len,
+});
 
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
   ...bytestringyNet,
   netSize: 32,
-}
+};
 
 function addressUnwrapper(x: any): string {
   return (x && x.addr)
@@ -256,24 +255,19 @@ export const T_Array = (
   size: number,
 ): ALGO_Ty<CBR_Array> => ({
   ...CBR.BT_Array(co, size),
-  netSize: (co.netSize === 'all') ? 'all' : size * co.netSize,
+  netSize: size * co.netSize,
   toNet: (bv: CBR_Array): NV => {
     return ethers.utils.concat(bv.map((v) => co.toNet(v)));
   },
   fromNet: (nv: NV): CBR_Array => {
-    if (co.netSize === 'all') {
-      // XXX there can only be one
-      return [co.fromNet(nv)];
-    } else {
-      const chunks = new Array(size).fill(null);
-      let rest = nv;
-      for (const i in chunks) {
-        chunks[i] = co.fromNet(rest.slice(0, co.netSize));
-        rest = rest.slice(co.netSize);
-      }
-      // TODO: assert size of nv/rest is correct?
-      return chunks;
+    const chunks = new Array(size).fill(null);
+    let rest = nv;
+    for (const i in chunks) {
+      chunks[i] = co.fromNet(rest.slice(0, co.netSize));
+      rest = rest.slice(co.netSize);
     }
+    // TODO: assert size of nv/rest is correct?
+    return chunks;
   },
 });
 
@@ -282,10 +276,8 @@ export const T_Tuple = (
 ): ALGO_Ty<CBR_Tuple> => ({
   ...CBR.BT_Tuple(cos),
   netSize: (
-    (cos.some((co) => co.netSize === 'all'))
-    ? 'all'
     // @ts-ignore // ts should know this from the condition
-    : cos.reduce((acc, co) => acc + co.netSize, 0)
+    cos.reduce((acc, co) => acc + co.netSize, 0)
   ),
   toNet: (bv: CBR_Tuple): NV => {
     const val = cos.map((co, i) => co.toNet(bv[i]));
@@ -297,14 +289,8 @@ export const T_Tuple = (
     let rest = nv;
     for (const i in cos) {
       const co = cos[i];
-      if (co.netSize === 'all') {
-        // XXX consumes it all
-        chunks[i] = co.fromNet(rest);
-        rest = rest.slice(rest.length);
-      } else {
-        chunks[i] = co.fromNet(rest.slice(0, co.netSize));
-        rest = rest.slice(co.netSize);
-      }
+      chunks[i] = co.fromNet(rest.slice(0, co.netSize));
+      rest = rest.slice(co.netSize);
     }
     return chunks;
   },
@@ -314,10 +300,9 @@ export const T_Object = (
   coMap: {[key: string]: ALGO_Ty<CBR_Val>}
 ): ALGO_Ty<CBR_Object> => {
   const cos = Object.values(coMap);
-  const netSize = cos.some((co) => co.netSize === 'all')
-      ? 'all'
-      // @ts-ignore // ts should know this from the condition
-      : cos.reduce((acc, co) => acc + co.netSize, 0);
+  const netSize =
+    // @ts-ignore // ts should know this from the condition
+    cos.reduce((acc, co) => acc + co.netSize, 0);
   const {ascLabels} = labelMaps(coMap);
   return {
     ...CBR.BT_Object(coMap),
@@ -336,14 +321,8 @@ export const T_Object = (
         const i = parseInt(iStr);
         const label = ascLabels[i];
         const co = coMap[label];
-        if (co.netSize === 'all') {
-          // XXX consumes it all
-          obj[label] = co.fromNet(rest);
-          rest = rest.slice(rest.length);
-        } else {
-          obj[label] = co.fromNet(rest.slice(0, co.netSize));
-          rest = rest.slice(co.netSize);
-        }
+        obj[label] = co.fromNet(rest.slice(0, co.netSize));
+        rest = rest.slice(co.netSize);
       }
       return obj;
     },
@@ -357,12 +336,10 @@ export const T_Data = (
   coMap: {[key: string]: ALGO_Ty<CBR_Val>}
 ): ALGO_Ty<CBR_Data> => {
   const cos = Object.values(coMap);
-  const valSize = cos.some((co) => co.netSize === 'all')
-      ? 'all'
-      // @ts-ignore // ts should know this from the cond above
-      : Math.max(cos.map((co) => co.netSize))
-  const netSize = valSize === 'all'
-      ? 'all' : valSize + 1;
+  const valSize =
+    // @ts-ignore // ts should know this from the cond above
+    Math.max(cos.map((co) => co.netSize))
+  const netSize = valSize + 1;
   const {ascLabels, labelMap} = labelMaps(coMap);
   return {
     ...CBR.BT_Data(coMap),
@@ -372,20 +349,15 @@ export const T_Data = (
       const lab_nv = new Uint8Array([i]);
       const val_co = coMap[label];
       const val_nv = val_co.toNet(val);
-      if (valSize === 'all') {
-        return ethers.utils.concat([lab_nv, val_nv]);
-      } else {
-        const padding = new Uint8Array(valSize - val_nv.length);
-        return ethers.utils.concat([lab_nv, val_nv, padding]);
-      }
+      const padding = new Uint8Array(valSize - val_nv.length);
+      return ethers.utils.concat([lab_nv, val_nv, padding]);
     },
     fromNet: (nv: NV): CBR_Data => {
       const i = nv[0];
       const label = ascLabels[i];
       const val_co = coMap[label];
       const rest = nv.slice(1);
-      const sliceTo = val_co.netSize === 'all'
-          ? rest.length : val_co.netSize;
+      const sliceTo = val_co.netSize;
       const val = val_co.fromNet(rest.slice(0, sliceTo));
       return [label, val];
     },

@@ -12,6 +12,7 @@ module Reach.Type
 where
 
 import Control.Monad.ST
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Data.STRef
 import Data.Text.Prettyprint.Doc
@@ -22,8 +23,7 @@ import Reach.Pretty ()
 import Reach.Util
 
 data TypeError
-  = Err_Type_Mismatch SLType SLType SLVal
-  | Err_Type_None SLVal
+  = Err_Type_None SLVal
   | Err_Type_NotApplicable SLType
   | Err_TypeMeets_None
   | Err_TypeMeets_Mismatch SrcLoc (SrcLoc, SLType) (SrcLoc, SLType)
@@ -33,9 +33,6 @@ data TypeError
   deriving (Eq, Generic)
 
 instance Show TypeError where
-  show (Err_Type_Mismatch expected actual _val) =
-    ("TypeError: Mismatch. Expected " <> show expected)
-      <> (" but got " <> show actual)
   show (Err_Type_None val) =
     "TypeError: Value cannot exist at runtime: " <> show (pretty val)
   show (Err_Type_NotApplicable ty) =
@@ -59,11 +56,14 @@ checkIntLiteral at rmin x rmax =
     False -> expect_throw at $ Err_Type_IntLiteralRange rmin x rmax
 
 typeMeet :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet _ (_, T_Bytes xz) (_, T_Bytes yz) =
+  T_Bytes (max xz yz)
 typeMeet top_at x@(_, xt) y@(_, yt) =
   --- FIXME Find meet of objects
-  if xt == yt
-    then xt
-    else expect_throw top_at $ Err_TypeMeets_Mismatch top_at x y
+  case xt == yt of
+    True -> xt
+    False ->
+      expect_throw top_at $ Err_TypeMeets_Mismatch top_at x y
 
 typeMeets :: SrcLoc -> [(SrcLoc, SLType)] -> SLType
 typeMeets top_at l =
@@ -127,10 +127,7 @@ typeCheck_help at env ty val val_ty res =
             Just var_ty ->
               typeCheck_help at env var_ty val val_ty res
     (_, _) ->
-      case val_ty == ty of
-        True -> return res
-        False ->
-          expect_throw at $ Err_Type_Mismatch ty val_ty val
+      typeMeet at (at, val_ty) (at, ty) `seq` return res
 
 conTypeOf :: DLConstant -> SLType
 conTypeOf = \case
@@ -141,7 +138,7 @@ litTypeOf = \case
   DLL_Null -> T_Null
   DLL_Bool _ -> T_Bool
   DLL_Int {} -> T_UInt
-  DLL_Bytes _ -> T_Bytes
+  DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
 argTypeOf :: DLArg -> SLType
 argTypeOf = \case
@@ -239,8 +236,6 @@ checkAndConvert at t args = runST $ checkAndConvert_i at mempty t args
 
 checkType :: SrcLoc -> SLType -> SLVal -> DLArg
 checkType at et v =
-  case et == t of
-    True -> da
-    False -> expect_throw at $ Err_Type_Mismatch et t v
+  typeMeet at (at, et) (at, t) `seq` da
   where
     (t, da) = typeOf at v

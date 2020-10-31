@@ -179,8 +179,8 @@ runTests(async () => {
         expect(protect(T_Null, undefined)).toBe(null);
       });
       it('converts bytesy things to Bytes', () => {
-        expect(protect(T_Bytes, hello)).toBe(hello);
-        expect(protect(T_Bytes, helloHex)).toBe(helloHex);
+        expect(protect(T_Bytes(5), hello)).toBe(hello);
+        expect(protect(T_Bytes(5), helloHex)).toBe(helloHex);
       });
       it('converts numbery things to UInt', () => {
         expect(protect(T_UInt, n)).toBe(bn);
@@ -196,7 +196,7 @@ runTests(async () => {
         expect(protect(T_Tuple([T_UInt]), [n])).toBe([bn]);
       });
       it('recurses into Objects', () => {
-        expect(protect(T_Object({ 'x': T_Bytes }), { 'x': hello })).toBe({ 'x': hello });
+        expect(protect(T_Object({ 'x': T_Bytes(5) }), { 'x': hello })).toBe({ 'x': hello });
       });
       it('recurses into Arrays', () => {
         expect(protect(T_Array(T_Null, 1), [undefined])).toBe([null]);
@@ -211,17 +211,6 @@ runTests(async () => {
       const stdlibExports = Object.keys(stdlib).sort();
 
       const ETH_extra_exports = [
-        // TODO: delete V_* or standardize
-        // 'V_Address',
-        // 'V_Array',
-        // 'V_Bool',
-        // 'V_Bytes',
-        // 'V_Data',
-        // 'V_Digest',
-        // 'V_Null',
-        // 'V_Object',
-        // 'V_Tuple',
-        // 'V_UInt',
         'setProvider',
       ];
       const ALGO_extra_exports = ['setAlgodClient', 'setIndexer'];

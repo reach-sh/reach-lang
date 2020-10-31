@@ -11,7 +11,7 @@ spec_isFirstOrder = describe "isFirstOrder" $ do
     isFirstOrder ([] --> T_Null) `shouldBe` True
     isFirstOrder (T_Array T_Bool 3) `shouldBe` True
     isFirstOrder (T_Tuple [T_Address]) `shouldBe` True
-    isFirstOrder (T_Object (M.fromList [("x", T_Bytes)]))
+    isFirstOrder (T_Object (M.fromList [("x", T_Bytes 16)]))
       `shouldBe` True
     isFirstOrder (T_Forall "a" $ T_Var "a")
       `shouldBe` True

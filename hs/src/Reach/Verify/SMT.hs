@@ -208,7 +208,6 @@ smtPrimOp _ctxt p =
     BIOR -> bvapp "bvor" cant
     BXOR -> bvapp "bvxor" cant
     IF_THEN_ELSE -> app "ite"
-    BYTES_EQ -> app "="
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
   where
@@ -774,7 +773,6 @@ _smtDefineTypes smt ts = do
          [ (T_Null, ("Null", none))
          , (T_Bool, ("Bool", none))
          , (T_UInt, ("UInt", uint256_inv))
-         , (T_Bytes, ("Bytes", none))
          , (T_Digest, ("Digest", none))
          , (T_Address, ("Address", none))
          ])
@@ -785,7 +783,7 @@ _smtDefineTypes smt ts = do
           T_Null -> base
           T_Bool -> base
           T_UInt -> base
-          T_Bytes -> base
+          T_Bytes {} -> base
           T_Digest -> base
           T_Address -> base
           T_Fun {} -> return none
@@ -859,16 +857,22 @@ _smtDefineTypes smt ts = do
         tm <- readIORef tmr
         case M.lookup t tm of
           Just x -> return x
-          Nothing -> do
-            tn <- readIORef tnr
-            modifyIORef tnr $ (1 +)
-            let n = "T" ++ show tn
-            let bad _ = impossible "recursive type"
-            modifyIORef tmr $ M.insert t (n, bad)
-            inv <- bind_type t n
-            let b = (n, inv)
-            modifyIORef tmr $ M.insert t b
-            return b
+          Nothing ->
+            case t of
+              T_Bytes {} -> do
+                let b = ("Bytes", none)
+                modifyIORef tmr $ M.insert t b
+                return b
+              _ -> do
+                tn <- readIORef tnr
+                modifyIORef tnr $ (1 +)
+                let n = "T" ++ show tn
+                let bad _ = impossible "recursive type"
+                modifyIORef tmr $ M.insert t (n, bad)
+                inv <- bind_type t n
+                let b = (n, inv)
+                modifyIORef tmr $ M.insert t b
+                return b
   mapM_ type_name ts
   readIORef tmr
 

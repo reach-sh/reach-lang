@@ -224,7 +224,7 @@ mustBeMem = \case
   T_Null -> False
   T_Bool -> False
   T_UInt -> False
-  T_Bytes -> True
+  T_Bytes _ -> True
   T_Digest -> False
   T_Address -> False
   T_Fun {} -> impossible "fun"
@@ -278,10 +278,11 @@ solArg ctxt da =
     t = solType ctxt (argTypeOf da)
     con = solApply t
     defaultVal = \case
-      T_UInt -> "0"
-      T_Bool -> "false"
-      T_Null -> "false"
-      T_Bytes -> "\"\"" -- XXX is this valid?
+      T_UInt -> solLit $ DLL_Int sb 0
+      T_Bool -> solLit $ DLL_Bool False
+      T_Null -> solLit $ DLL_Null
+      T_Bytes sz ->
+        solLit $ DLL_Bytes $ B.replicate (fromIntegral sz) (toEnum 0)
       T_Digest -> "0"
       T_Address -> "0x" <> pretty (replicate 64 '0')
       T_Fun {} -> impossible "defaultVal for Fun"
@@ -315,12 +316,12 @@ solPrimApply ctxt = \case
   IF_THEN_ELSE -> \case
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitSol: ITE wrong args"
-  BYTES_EQ -> \case
-    [x, y] ->
-      solAnd
-        (solEq ctxt (solBytesLength x) (solBytesLength y))
-        (solEq ctxt (solHash [x]) (solHash [y]))
-    _ -> impossible $ "emitSol: BYTES_EQ wrong args"
+--  BYTES_EQ -> \case
+--    [x, y] ->
+--      solAnd
+--        (solEq ctxt (solBytesLength x) (solBytesLength y))
+--        (solEq ctxt (solHash [x]) (solHash [y]))
+--    _ -> impossible $ "emitSol: BYTES_EQ wrong args"
   DIGEST_EQ -> binOp "=="
   ADDRESS_EQ -> binOp "=="
   where
@@ -673,7 +674,7 @@ _solDefineType1 getTypeName i name = \case
   T_Null -> base
   T_Bool -> base
   T_UInt -> base
-  T_Bytes -> base
+  T_Bytes _ -> base
   T_Digest -> base
   T_Address -> base
   T_Fun {} -> impossible "fun in ct"
@@ -725,14 +726,20 @@ _solDefineType tcr timr tmr t = do
   case M.lookup t tm of
     Just (Just x) -> return $ fst x
     Just Nothing -> impossible $ "recursive type: " ++ show t
-    Nothing -> do
-      tn <- incSTCounter tcr
-      modifySTRef timr $ M.insert t tn
-      modifySTRef tmr $ M.insert t $ Nothing
-      let n = pretty $ "T" ++ show tn
-      (tr, def) <- _solDefineType1 (_solDefineType tcr timr tmr) tn n t
-      modifySTRef tmr $ M.insert t $ Just (tr, def)
-      return $ tr
+    Nothing ->
+      case t of
+        T_Bytes sz -> do
+          let tr = "uint8[" <> pretty sz <> "]"
+          modifySTRef tmr $ M.insert t $ Just (tr, emptyDoc)
+          return $ tr
+        _ -> do
+          tn <- incSTCounter tcr
+          modifySTRef timr $ M.insert t tn
+          modifySTRef tmr $ M.insert t $ Nothing
+          let n = pretty $ "T" ++ show tn
+          (tr, def) <- _solDefineType1 (_solDefineType tcr timr tmr) tn n t
+          modifySTRef tmr $ M.insert t $ Just (tr, def)
+          return $ tr
 
 solDefineTypes :: S.Set SLType -> (M.Map SLType Int, M.Map SLType (Doc a), Doc a)
 solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
@@ -742,7 +749,6 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
         [ (T_Null, "bool")
         , (T_Bool, "bool")
         , (T_UInt, "uint256")
-        , (T_Bytes, "bytes")
         , (T_Digest, "uint256")
         , (T_Address, "address payable")
         ]

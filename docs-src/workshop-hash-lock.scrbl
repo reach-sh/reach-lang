@@ -94,9 +94,7 @@ We wrote this in our program as:
 
 It would be very surprising if you choose the exact same names as us in your code, but did you choose the same types?
 We expect that many of you might have chosen to represent the password by a string of bytes using the Reach type, @reachin{Bytes}.
-There's nothing necessarily wrong with this option, but we do not choose it because it is unnecessarily "wide".
-For example, the empty string @reachin{''} is an example of a @reachin{Bytes} value, as is the text of this entire document and the combined works of Jane Austen.
-The @reachin{Bytes} type contains many options, but we are likely to be satisfied with an unsigned integer, because it has a minimum of 64 bits on typical consensus networks.
+There's nothing necessarily wrong with this option, but we did not choose it because it is hard to decide exactly how long to make it, but we are satisfied with an unsigned integer, because it has a minimum of 64 bits on typical consensus networks.
 
 At this point, you can modify your JavaScript file (@tt{index.mjs}) to contain defintions of these values, although you may want to use a placeholder like @jsin{42} or something for the actual value.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the @tech{participant interact interface}.

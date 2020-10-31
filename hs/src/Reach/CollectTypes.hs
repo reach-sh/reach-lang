@@ -28,7 +28,7 @@ instance CollectsTypes SLType where
         T_Null -> mempty
         T_Bool -> mempty
         T_UInt -> mempty
-        T_Bytes -> mempty
+        T_Bytes _ -> mempty
         T_Digest -> mempty
         T_Address -> mempty
         T_Fun dom rng -> cts dom <> cts rng

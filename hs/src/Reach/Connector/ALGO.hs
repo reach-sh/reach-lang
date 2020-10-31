@@ -70,7 +70,7 @@ typeSizeOf = \case
   T_Null -> 0
   T_Bool -> 1
   T_UInt -> word
-  T_Bytes -> word --- XXX This is wrong
+  T_Bytes sz -> sz
   T_Digest -> 32
   T_Address -> 32
   T_Fun {} -> impossible $ "T_Fun"
@@ -324,7 +324,7 @@ ctobs = \case
   T_UInt -> op "itob"
   T_Bool -> code "itob" ["// bool"] >> code "substring" ["7", "8"]
   T_Null -> nop
-  T_Bytes -> nop
+  T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
   T_Fun {} -> impossible "fun"
@@ -341,7 +341,7 @@ cfrombs = \case
   T_UInt -> op "btoi"
   T_Bool -> op "btoi"
   T_Null -> nop
-  T_Bytes -> nop
+  T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
   T_Fun {} -> impossible "fun"
@@ -439,7 +439,6 @@ cprim = \case
   BAND -> call "&"
   BIOR -> call "|"
   BXOR -> call "^"
-  BYTES_EQ -> call "=="
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   IF_THEN_ELSE -> \case

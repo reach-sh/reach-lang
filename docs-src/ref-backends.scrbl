@@ -51,7 +51,7 @@ For example, if the Reach program,
 
 @reach{
  Reach.App({},
-  [["A", { get: Bytes, give: Fun([Bytes], Bool) }]],
+  [["A", { get: Bytes(32), give: Fun([Bytes(32)], Bool) }]],
   (A) => {
    A.only(() => {
     const x = interact.give(interact.get); });
@@ -281,7 +281,7 @@ Asserts that value @jsin{x} has Reach @tech{type} @jsin{t}. An exception is thro
  T_Null => ReachType
  T_Bool => ReachType
  T_UInt => ReachType
- T_Bytes => ReachType
+ T_Bytes(number) => ReachType
  T_Digest => ReachType
  T_Address => ReachType
  T_Array(ReachType, number) => ReachType
