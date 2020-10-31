@@ -27,6 +27,13 @@ services:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
       - POSTGRES_DB=pgdb
+  reach-app-tut-7-ETH-live:
+    &lt;&lt;: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-live
+      - ETH_NODE_URI
+      - ETH_NODE_NETWORK
   reach-app-tut-7-ETH-test-dockerized-geth: &amp;default-app
     &lt;&lt;: *app-base
     depends_on:
@@ -68,10 +75,6 @@ services:
   reach-app-tut-7-: *default-app
   reach-app-tut-7: *default-app
   # After this is new!
-  live:
-    &lt;&lt;: *app-base
-    environment:
-      - ETH_NODE_URI
   player: &amp;player
     &lt;&lt;: *default-app
     stdin_open: true
@@ -99,81 +102,83 @@ services:
 <span class="l l-Scalar l-Scalar-Plain">21          - POSTGRES_USER=algogrand</span>
 <span class="l l-Scalar l-Scalar-Plain">22          - POSTGRES_PASSWORD=indexer</span>
 <span class="l l-Scalar l-Scalar-Plain">23          - POSTGRES_DB=pgdb</span>
-<span class="nt">24      reach-app-tut-7-ETH-test-dockerized-geth</span><span class="p">:</span> <span class="nl">&amp;default-app</span>
+<span class="nt">24      reach-app-tut-7-ETH-live</span><span class="p">:</span>
 <span class="nt">25        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">26        depends_on</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">27          - ethereum-devnet</span>
-<span class="nt">28        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">29          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">30          - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth</span>
-<span class="l l-Scalar l-Scalar-Plain">31          - ETH_NODE_URI=http://ethereum-devnet:8545</span>
-<span class="nt">32      reach-app-tut-7-ETH-test-embedded-ganache</span><span class="p">:</span>
-<span class="nt">33        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">34        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">35          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">36          - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache</span>
-<span class="nt">37      reach-app-tut-7-FAKE-test-embedded-mock</span><span class="p">:</span>
-<span class="nt">38        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">39        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">40          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">41          - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock</span>
-<span class="nt">42      reach-app-tut-7-ALGO-test-dockerized-algod-local</span><span class="p">:</span>
-<span class="nt">43        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">44        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">45          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">46          - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod</span>
-<span class="l l-Scalar l-Scalar-Plain">47          - ALGO_SERVER=http://host.docker.internal</span>
-<span class="l l-Scalar l-Scalar-Plain">48          - ALGO_PORT=4180</span>
-<span class="l l-Scalar l-Scalar-Plain">49          - ALGO_INDEXER_SERVER=http://host.docker.internal</span>
-<span class="l l-Scalar l-Scalar-Plain">50          - ALGO_INDEXER_PORT=8980</span>
-<span class="nt">51      reach-app-tut-7-ALGO-test-dockerized-algod</span><span class="p">:</span>
-<span class="nt">52        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">53        depends_on</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">54          - algorand-devnet</span>
-<span class="nt">55        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">56          - REACH_DEBUG</span>
-<span class="l l-Scalar l-Scalar-Plain">57          - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod</span>
-<span class="l l-Scalar l-Scalar-Plain">58          - ALGO_SERVER=http://algorand-devnet</span>
-<span class="l l-Scalar l-Scalar-Plain">59          - ALGO_PORT=4180</span>
-<span class="l l-Scalar l-Scalar-Plain">60          - ALGO_INDEXER_SERVER=http://algorand-devnet</span>
-<span class="l l-Scalar l-Scalar-Plain">61          - ALGO_INDEXER_PORT=8980</span>
-<span class="nt">62      reach-app-tut-7-</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="nt">63      reach-app-tut-7</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="l l-Scalar l-Scalar-Plain">64</span>      <span class="c1"># After this is new!</span>
-<span class="nt">65      live</span><span class="p">:</span>
-<span class="nt">66        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
-<span class="nt">67        environment</span><span class="p">:</span>
-<span class="l l-Scalar l-Scalar-Plain">68          - ETH_NODE_URI</span>
-<span class="nt">69      player</span><span class="p">:</span> <span class="nl">&amp;player</span>
-<span class="nt">70        &lt;&lt;</span><span class="p">:</span> <span class="nv">*default-app</span>
-<span class="nt">71        stdin_open</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
-<span class="nt">72      alice</span><span class="p">:</span> <span class="nv">*player</span>
-<span class="nt">73      bob</span><span class="p">:</span> <span class="nv">*player</span>
+<span class="nt">26        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">27          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">28          - REACH_CONNECTOR_MODE=ETH-live</span>
+<span class="l l-Scalar l-Scalar-Plain">29          - ETH_NODE_URI</span>
+<span class="l l-Scalar l-Scalar-Plain">30          - ETH_NODE_NETWORK</span>
+<span class="nt">31      reach-app-tut-7-ETH-test-dockerized-geth</span><span class="p">:</span> <span class="nl">&amp;default-app</span>
+<span class="nt">32        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">33        depends_on</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">34          - ethereum-devnet</span>
+<span class="nt">35        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">36          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">37          - REACH_CONNECTOR_MODE=ETH-test-dockerized-geth</span>
+<span class="l l-Scalar l-Scalar-Plain">38          - ETH_NODE_URI=http://ethereum-devnet:8545</span>
+<span class="nt">39      reach-app-tut-7-ETH-test-embedded-ganache</span><span class="p">:</span>
+<span class="nt">40        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">41        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">42          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">43          - REACH_CONNECTOR_MODE=ETH-test-embedded-ganache</span>
+<span class="nt">44      reach-app-tut-7-FAKE-test-embedded-mock</span><span class="p">:</span>
+<span class="nt">45        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">46        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">47          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">48          - REACH_CONNECTOR_MODE=FAKE-test-embedded-mock</span>
+<span class="nt">49      reach-app-tut-7-ALGO-test-dockerized-algod-local</span><span class="p">:</span>
+<span class="nt">50        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">51        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">52          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">53          - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod</span>
+<span class="l l-Scalar l-Scalar-Plain">54          - ALGO_SERVER=http://host.docker.internal</span>
+<span class="l l-Scalar l-Scalar-Plain">55          - ALGO_PORT=4180</span>
+<span class="l l-Scalar l-Scalar-Plain">56          - ALGO_INDEXER_SERVER=http://host.docker.internal</span>
+<span class="l l-Scalar l-Scalar-Plain">57          - ALGO_INDEXER_PORT=8980</span>
+<span class="nt">58      reach-app-tut-7-ALGO-test-dockerized-algod</span><span class="p">:</span>
+<span class="nt">59        &lt;&lt;</span><span class="p">:</span> <span class="nv">*app-base</span>
+<span class="nt">60        depends_on</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">61          - algorand-devnet</span>
+<span class="nt">62        environment</span><span class="p">:</span>
+<span class="l l-Scalar l-Scalar-Plain">63          - REACH_DEBUG</span>
+<span class="l l-Scalar l-Scalar-Plain">64          - REACH_CONNECTOR_MODE=ALGO-test-dockerized-algod</span>
+<span class="l l-Scalar l-Scalar-Plain">65          - ALGO_SERVER=http://algorand-devnet</span>
+<span class="l l-Scalar l-Scalar-Plain">66          - ALGO_PORT=4180</span>
+<span class="l l-Scalar l-Scalar-Plain">67          - ALGO_INDEXER_SERVER=http://algorand-devnet</span>
+<span class="l l-Scalar l-Scalar-Plain">68          - ALGO_INDEXER_PORT=8980</span>
+<span class="nt">69      reach-app-tut-7-</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="nt">70      reach-app-tut-7</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="l l-Scalar l-Scalar-Plain">71</span>      <span class="c1"># After this is new!</span>
+<span class="nt">72      player</span><span class="p">:</span> <span class="nl">&amp;player</span>
+<span class="nt">73        &lt;&lt;</span><span class="p">:</span> <span class="nv">*default-app</span>
+<span class="nt">74        stdin_open</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">75      alice</span><span class="p">:</span> <span class="nv">*player</span>
+<span class="nt">76      bob</span><span class="p">:</span> <span class="nv">*player</span>
 </pre></div></div></p><ul><li><p>Lines 2 and 3 define a service for starting our application.
-Your line 3 will say <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut</span><span class="hspace"></span></span>, rather than <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut-7</span><span class="hspace"></span></span>, if you&rsquo;ve stayed in the same directory througout the tutorial.</p></li><li><p>Lines 5 and 6 define the Reach private developer test network service for Ethereum.</p></li><li><p>Lines 7 through 23 define the Reach private developer test network service for Algorand.</p></li><li><p>Lines 24 through 61 define services that allow the application to be run with different networks.</p></li><li><p>We&rsquo;ll add lines 65 through 68 as a service for connecting to a "live" Ethereum network, specified by the environment variable <span class="stt">ETH_NODE_URI</span>.</p></li><li><p>We&rsquo;ll also add lines 69 through 73 to define a <span class="RktInBG"><span class="hspace"></span><span class="RktIn">player</span><span class="hspace"></span></span> service that is our application with an open standard input, as well as two instances named <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> and <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span>.</p></li></ul><p>With these in place, we can run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">docker-compose run WHICH</span></p><p>where <span class="stt">WHICH</span> is <span class="RktInBG"><span class="hspace"></span><span class="RktIn">live</span><span class="hspace"></span></span> for a live instance, or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span> for a test instance.
-If we use the live version, then we have to define the environment variable <span class="stt">ETH_NODE_URI</span> as the URI of our Ethereum node.</p><p>We&rsquo;ll modify the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/Makefile"><span class="stt">tut-7/Makefile</span></a> to have commands to run each of these variants:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/Makefile#L25-L35"><span class="stt">tut-7/Makefile</span></a><button class="btn" data-clipboard-text="
-docker-compose.algo.yml: docker-compose.yml
-	sed -e '24s/ &amp;default-app//' -e '51s/:/: \&amp;default-app/' $^ &gt; $@
-
-.PHONY: run-live
+Your line 3 will say <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut</span><span class="hspace"></span></span>, rather than <span class="RktInBG"><span class="hspace"></span><span class="RktIn">tut-7</span><span class="hspace"></span></span>, if you&rsquo;ve stayed in the same directory througout the tutorial.</p></li><li><p>Lines 5 and 6 define the Reach private developer test network service for Ethereum.</p></li><li><p>Lines 7 through 23 define the Reach private developer test network service for Algorand.</p></li><li><p>Lines 24 through 72 define services that allow the application to be run with different networks; including line 24, which defines <span class="RktInBG"><span class="hspace"></span><span class="RktIn">reach-app-tut-7-ETH-live</span><span class="hspace"></span></span> for connecting to a live network.</p></li><li><p>We&rsquo;ll also add lines 72 through 76 to define a <span class="RktInBG"><span class="hspace"></span><span class="RktIn">player</span><span class="hspace"></span></span> service that is our application with an open standard input, as well as two instances named <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> and <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span>.</p></li></ul><p>With these in place, we can run</p><p><span class="hspace">&nbsp;&nbsp;</span><span style="font-weight: bold"><span class="stt">$</span></span><span class="stt"> </span><span class="stt">docker-compose run WHICH</span></p><p>where <span class="stt">WHICH</span> is <span class="RktInBG"><span class="hspace"></span><span class="RktIn">reach-app-tut-7-ETH-live</span><span class="hspace"></span></span> for a live instance, or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">alice</span><span class="hspace"></span></span> or <span class="RktInBG"><span class="hspace"></span><span class="RktIn">bob</span><span class="hspace"></span></span> for a test instance.
+If we use the live version, then we have to define the environment variable <span class="stt">ETH_NODE_URI</span> as the URI of our Ethereum node.</p><p>We&rsquo;ll modify the <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/Makefile"><span class="stt">tut-7/Makefile</span></a> to have commands to run each of these variants:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/Makefile#L29-L39"><span class="stt">tut-7/Makefile</span></a><button class="btn" data-clipboard-text=".PHONY: run-live
 run-live:
-	docker-compose run --rm live
+	docker-compose run --rm reach-app-tut-7-ETH-live
 
 .PHONY: run-alice
 run-alice:
-	docker-compose run --rm alice"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="err">..</span>    
-<span class="err">25</span>    
-<span class="nf">26    docker-compose.algo.yml</span><font class="badlink"><span class="o">:</span></font> <span class="n">docker</span>-<span class="n">compose</span>.<span class="n">yml</span>
-<span class="nf">27    	sed -e &#39;24s/ &amp;default-app//&#39; -e &#39;51s/</span><font class="badlink"><span class="o">:</span></font>/: \&amp;<span class="n">default</span>-<span class="n">app</span>/&#39; $^ &gt; $@
-<span class="err">28</span>    
+	docker-compose run --rm alice
+
+.PHONY: run-bob
+run-bob:
+	docker-compose run --rm bob"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="err">..</span>    
 <span class="nf">29    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">live</span>
 <span class="nf">30    run-live</span><font class="badlink"><span class="o">:</span></font>
-<span class="err">31</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">live</span>
+<span class="err">31</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">reach-app-tut-7-ETH-live</span>
 <span class="err">32</span>    
 <span class="nf">33    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">alice</span>
 <span class="nf">34    run-alice</span><font class="badlink"><span class="o">:</span></font>
 <span class="err">35</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">alice</span>
-<span class="err">..</span>    
+<span class="err">36</span>    
+<span class="nf">37    .PHONY</span><font class="badlink"><span class="o">:</span></font> <span class="n">run</span>-<span class="n">bob</span>
+<span class="nf">38    run-bob</span><font class="badlink"><span class="o">:</span></font>
+<span class="err">39</span>    	<span class="err">docker-compose</span> <span class="err">run</span> <span class="err">--rm</span> <span class="err">bob</span>
 </pre></div></div></p><p>However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
 Let&rsquo;s modify the JavaScript <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontend</span></a> and make them interactive.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We&rsquo;ll start from scratch and show every line of the program again.
 You&rsquo;ll see a lot of similarity between this and the last version, but for completeness, we&rsquo;ll show every line.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L1-L6"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
@@ -215,11 +220,11 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
   if (createAcc) {
     acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
   } else {
-    const phrase = await ask(
-      `What is your account mnemonic?`,
+    const secret = await ask(
+      `What is your account secret?`,
       (x =&gt; x)
     );
-    acc = await stdlib.newAccountFromMnemonic(phrase);
+    acc = await stdlib.newAccountFromSecret(secret);
   }"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
 <span class="mf">13</span>    
 <span class="mf">14</span>    <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Starting Rock, Paper, Scissors! as </span><span class="si">${</span><font class="badlink"><span class="nx">who</span></font><span class="si">}</span><span class="sb">`</span><span class="p">);</span>
@@ -232,14 +237,14 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
 <span class="mf">21</span>    <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">createAcc</span></font><span class="p">)</span> <span class="p">{</span>
 <span class="mf">22</span>      <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28new.Test.Account%29%29%29" class="nx" data-pltdoc="x">newTestAccount</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28parse.Currency%29%29%29" class="nx" data-pltdoc="x">parseCurrency</a><span class="p">(</span><span class="mf">1000</span><span class="p">));</span>
 <span class="mf">23</span>    <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
-<span class="mf">24</span>      <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">phrase</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
-<span class="mf">25</span>        <span class="sb">`What is your account mnemonic?`</span><span class="p">,</span>
+<span class="mf">24</span>      <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">secret</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
+<span class="mf">25</span>        <span class="sb">`What is your account secret?`</span><span class="p">,</span>
 <span class="mf">26</span>        <span class="p">(</span><font class="badlink"><span class="nx">x</span></font> <span class="p">=&gt;</span> <font class="badlink"><span class="nx">x</span></font><span class="p">)</span>
 <span class="mf">27</span>      <span class="p">);</span>
-<span class="mf">28</span>      <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28new.Account.From.Mnemonic%29%29%29" class="nx" data-pltdoc="x">newAccountFromMnemonic</a><span class="p">(</span><font class="badlink"><span class="nx">phrase</span></font><span class="p">);</span>
+<span class="mf">28</span>      <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28new.Account.From.Secret%29%29%29" class="nx" data-pltdoc="x">newAccountFromSecret</a><span class="p">(</span><font class="badlink"><span class="nx">secret</span></font><span class="p">);</span>
 <span class="mf">29</span>    <span class="p">}</span>
 <span class="p">..</span>    <span class="c1">// ...</span>
-</pre></div></div></p><ul><li><p>Lines 16 through 19 present the user with the choice of creating a test account if they can or inputing a mnemonic to load an existing account.</p></li><li><p>Line 21 creates the test account as before.</p></li><li><p>Line 27 loads the existing account.</p></li></ul><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L30-L46"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="
+</pre></div></div></p><ul><li><p>Lines 16 through 19 present the user with the choice of creating a test account if they can or inputing a secret to load an existing account.</p></li><li><p>Line 21 creates the test account as before.</p></li><li><p>Line 27 loads the existing account.</p></li></ul><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L30-L46"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="
   let ctc = null;
   const deployCtc = await ask(
     `Do you want to deploy the contract? (y/n)`,

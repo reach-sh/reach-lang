@@ -198,11 +198,11 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
   if (createAcc) {
     acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
   } else {
-    const phrase = await ask(
-      `What is your account mnemonic?`,
+    const secret = await ask(
+      `What is your account secret?`,
       (x =&gt; x)
     );
-    acc = await stdlib.newAccountFromMnemonic(phrase);
+    acc = await stdlib.newAccountFromSecret(secret);
   }
 
   let ctc = null;
@@ -308,11 +308,11 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 <span class="mf">21</span>      <font class="badlink"><span class="k">if</span></font> <span class="p">(</span><font class="badlink"><span class="nx">createAcc</span></font><span class="p">)</span> <span class="p">{</span>
 <span class="mf">22</span>        <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28new.Test.Account%29%29%29" class="nx" data-pltdoc="x">newTestAccount</a><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28parse.Currency%29%29%29" class="nx" data-pltdoc="x">parseCurrency</a><span class="p">(</span><span class="mf">1000</span><span class="p">));</span>
 <span class="mf">23</span>      <span class="p">}</span> <font class="badlink"><span class="k">else</span></font> <span class="p">{</span>
-<span class="mf">24</span>        <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">phrase</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
-<span class="mf">25</span>          <span class="sb">`What is your account mnemonic?`</span><span class="p">,</span>
+<span class="mf">24</span>        <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">secret</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28ask%29%29%29" class="nx" data-pltdoc="x">ask</a><span class="p">(</span>
+<span class="mf">25</span>          <span class="sb">`What is your account secret?`</span><span class="p">,</span>
 <span class="mf">26</span>          <span class="p">(</span><font class="badlink"><span class="nx">x</span></font> <span class="p">=&gt;</span> <font class="badlink"><span class="nx">x</span></font><span class="p">)</span>
 <span class="mf">27</span>        <span class="p">);</span>
-<span class="mf">28</span>        <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28new.Account.From.Mnemonic%29%29%29" class="nx" data-pltdoc="x">newAccountFromMnemonic</a><span class="p">(</span><font class="badlink"><span class="nx">phrase</span></font><span class="p">);</span>
+<span class="mf">28</span>        <font class="badlink"><span class="nx">acc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">await</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28new.Account.From.Secret%29%29%29" class="nx" data-pltdoc="x">newAccountFromSecret</a><span class="p">(</span><font class="badlink"><span class="nx">secret</span></font><span class="p">);</span>
 <span class="mf">29</span>      <span class="p">}</span>
 <span class="mf">30</span>    
 <span class="mf">31</span>      <font class="badlink"><span class="kd">let</span></font> <font class="badlink"><span class="nx">ctc</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="kc">null</span></font><span class="p">;</span>
