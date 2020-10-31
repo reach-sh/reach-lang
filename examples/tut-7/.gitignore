@@ -2,4 +2,4 @@ build/
 node_modules/
 /Alice.*
 /Bob.*
-/docker-compose.algo.yml
+/docker-compose.*.yml

@@ -24,11 +24,11 @@ check: docker-compose.algo.yml
 	./check.sh docker-compose.algo.yml
 
 docker-compose.algo.yml: docker-compose.yml
-	sed -e '24s/ &default-app//' -e '51s/:/: \&default-app/' $^ > $@
+	sed -e '31s/ &default-app//' -e '58s/:/: \&default-app/' $^ > $@
 
 .PHONY: run-live
 run-live:
-	docker-compose run --rm live
+	docker-compose run --rm reach-app-tut-7-ETH-live
 
 .PHONY: run-alice
 run-alice:

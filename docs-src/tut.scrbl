@@ -1335,18 +1335,16 @@ Your line 3 will say @litchar{tut}, rather than @litchar{tut-7}, if you've staye
 
 @item{Lines 7 through 23 define the Reach private developer test network service for Algorand.}
 
-@item{Lines 24 through 61 define services that allow the application to be run with different networks.}
+@item{Lines 24 through 72 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tut-7-ETH-live} for connecting to a live network.}
 
-@item{We'll add lines 65 through 68 as a service for connecting to a "live" Ethereum network, specified by the environment variable @envvar{ETH_NODE_URI}.}
-
-@item{We'll also add lines 69 through 73 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
+@item{We'll also add lines 72 through 76 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
 
 With these in place, we can run
 
 @cmd{docker-compose run WHICH}
 
-where @exec{WHICH} is @litchar{live} for a live instance, or @litchar{alice} or @litchar{bob} for a test instance.
+where @exec{WHICH} is @litchar{reach-app-tut-7-ETH-live} for a live instance, or @litchar{alice} or @litchar{bob} for a test instance.
 If we use the live version, then we have to define the environment variable @envvar{ETH_NODE_URI} as the URI of our Ethereum node.
 
 We'll modify the @reachexlink["tut-7/Makefile"] to have commands to run each of these variants:
@@ -1354,7 +1352,7 @@ We'll modify the @reachexlink["tut-7/Makefile"] to have commands to run each of 
 @reachex[#:mode makefile
          #:show-lines? #t "tut-7/Makefile"
          #:link #t
-         'only 25 35 ""]
+         'only 29 39 ""]
 
 However, if we try to run either of these, it will do the same thing it always has: create test accounts for each user and simulate a random game.
 Let's modify the JavaScript @tech{frontend} and make them interactive.
@@ -1398,7 +1396,7 @@ We'll see how these three functions are used below.}
 
 @itemlist[
 
-@item{Lines 16 through 19 present the user with the choice of creating a test account if they can or inputing a mnemonic to load an existing account.}
+@item{Lines 16 through 19 present the user with the choice of creating a test account if they can or inputing a secret to load an existing account.}
 
 @item{Line 21 creates the test account as before.}
 

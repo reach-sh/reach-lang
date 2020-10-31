@@ -109,6 +109,7 @@ It then
     The options are:
 
     @itemlist[
+      @item{@litchar{ETH-live}, which uses a live Ethereum network node, specified by the environment variable @envvar{ETH_NODE_URI}.}
       @item{@litchar{ETH-test-dockerized-geth}, which uses a Dockerized private Ethereum network.}
       @item{@litchar{ETH-test-embedded-ganache}, which uses @link["https://www.trufflesuite.com/ganache"]{Ganache} instead of a private network.}
       @item{@litchar{ALGO-test-dockerized-algod}, which uses a Dockerized private Algorand network.}

@@ -505,6 +505,13 @@ services:
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
       - POSTGRES_DB=pgdb
+  ${SERVICE}-ETH-live:
+    <<: *app-base
+    environment:
+      - REACH_DEBUG
+      - REACH_CONNECTOR_MODE=ETH-live
+      - ETH_NODE_URI
+      - ETH_NODE_NETWORK
   ${SERVICE}-ETH-test-dockerized-geth: &default-app
     <<: *app-base
     depends_on:

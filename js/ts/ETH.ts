@@ -416,9 +416,11 @@ type NetworkDesc =
   {type: 'window'} |
   {type: 'skip'}
 
-const networkDesc: NetworkDesc = connectorMode == 'ETH-test-embedded-ganache' ? {
+const networkDesc: NetworkDesc =
+  connectorMode == 'ETH-test-embedded-ganache' ? {
   type: 'embedded-ganache',
-} : connectorMode == 'ETH-test-dockerized-geth' ? {
+} : (connectorMode == 'ETH-test-dockerized-geth' ||
+     connectorMode == 'ETH-live') ? {
   type: 'uri',
   uri: process.env.ETH_NODE_URI || 'http://localhost:8545',
   network: process.env.ETH_NODE_NETWORK || 'unspecified',
@@ -1001,6 +1003,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   };
 
   return { deploy, attach, networkAccount };
+};
+
+export const newAccountFromSecret = async (secret: string): Promise<Account> => {
+  const provider = await getProvider();
+  const networkAccount = (new ethers.Wallet(secret)).connect(provider);
+  const acc = await connectAccount(networkAccount);
+  return acc;
 };
 
 export const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {

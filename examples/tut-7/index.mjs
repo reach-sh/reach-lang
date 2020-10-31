@@ -21,11 +21,11 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
   if (createAcc) {
     acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
   } else {
-    const phrase = await ask(
-      `What is your account mnemonic?`,
+    const secret = await ask(
+      `What is your account secret?`,
       (x => x)
     );
-    acc = await stdlib.newAccountFromMnemonic(phrase);
+    acc = await stdlib.newAccountFromSecret(secret);
   }
 
   let ctc = null;

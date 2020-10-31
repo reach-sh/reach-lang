@@ -1101,6 +1101,7 @@ export async function getDefaultAccount(): Promise<Account> {
 }
 
 export const setFaucet = false; // XXX
+export const newAccountFromSecret = false; // XXX
 export const newAccountFromMnemonic = false; // XXX
 
 export const getNetworkTime = async () => bigNumberify(await getLastRound());

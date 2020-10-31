@@ -142,6 +142,14 @@ This promise will be rejected with an exception
 if no sensible default account can be accessed for the current context.
 
 @(hrule)
+@(mint-define! '("newAccountFromSecret"))
+@js{
+ newAccountFromSecret(string) => Promise<acc> }
+
+Returns a Promise for a Reach @tech{account} abstraction for an @tech{account} on the @tech{consensus network} specified by the given secret.
+The details of the secret encoding are specified uniquely to the @tech{consensus network}.
+
+@(hrule)
 @(mint-define! '("newAccountFromMnemonic"))
 @js{
  newAccountFromMnemonic(string) => Promise<acc> }

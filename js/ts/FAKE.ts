@@ -303,6 +303,7 @@ export function waitUntilTime(targetTime: BigNumber | number, onProgress?: OnPro
   return currentTime;
 }
 
+export const newAccountFromSecret = false; // XXX
 export const newAccountFromMnemonic = false; // XXX
 export const verifyContract = false; // XXX
 

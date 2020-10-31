@@ -2,6 +2,7 @@ import {process} from './shim';
 export type Connector = 'ETH' | 'ALGO' | 'FAKE';
 
 export type ConnectorMode =
+  'ETH-live' |
   'ETH-test-dockerized-geth' |
   'ETH-test-embedded-ganache' |
   'ETH-test-browser-window' |
@@ -11,6 +12,7 @@ export type ConnectorMode =
 // Order is significant, earlier = default for shared prefix
 // e.g. ETH defaults to ETH-test-dockerized-geth
 const knownConnectorModes: Array<ConnectorMode> = [
+  'ETH-live',
   'ETH-test-dockerized-geth',
   'ETH-test-embedded-ganache',
   'ETH-test-browser-window',
