@@ -282,7 +282,7 @@ solArg ctxt da =
       T_Bool -> solLit $ DLL_Bool False
       T_Null -> solLit $ DLL_Null
       T_Bytes sz ->
-        solLit $ DLL_Bytes $ B.replicate (fromIntegral sz) (toEnum 0)
+        solLit $ DLL_Bytes $ B.replicate (fromIntegral sz) '\NUL'
       T_Digest -> "0"
       T_Address -> "0x" <> pretty (replicate 64 '0')
       T_Fun {} -> impossible "defaultVal for Fun"
