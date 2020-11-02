@@ -110,6 +110,7 @@ data EvalError
   | Err_Switch_MissingCases [SLVar]
   | Err_Switch_ExtraCases [SLVar]
   | Err_Expected_Bytes SLVal
+  | Err_RecursionDepthLimit
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -349,6 +350,8 @@ instance Show EvalError where
       "switch contains extra cases: " <> show cs
     Err_Expected_Bytes v ->
       "expected bytes, got something else: " <> displaySlValType v
+    Err_RecursionDepthLimit ->
+      "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
 
 --- Utilities
 zipEq :: Show e => SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -620,7 +623,18 @@ data SLScope = SLScope
     sco_penvs :: SLPartEnvs
   , --- Same with the consensus environment
     sco_cenv :: SLEnv
+  , sco_depth :: Int
   }
+
+recursionDepthLimit :: Int
+recursionDepthLimit = 2 ^ (16 :: Int)
+
+sco_depth_update :: SrcLoc -> SLScope -> Int
+sco_depth_update at (SLScope {..}) =
+  case x > 0 of
+    True -> x
+    False -> expect_throw at Err_RecursionDepthLimit
+  where x = sco_depth - 1
 
 sco_to_cloenv :: SLScope -> SLCloEnv
 sco_to_cloenv SLScope {..} =
@@ -1575,6 +1589,7 @@ evalApplyVals ctxt at sco st rator randvs =
                , sco_while_vars = Nothing
                , sco_penvs = clo_penvs
                , sco_cenv = clo_cenv
+               , sco_depth = sco_depth_update at sco
                })
       let clo_sco' = sco_update ctxt clo_at clo_sco st arg_env
       SLRes body_lifts body_st (SLStmtRes clo_env'' rs) <-
@@ -2069,7 +2084,7 @@ doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
   case only_arg of
     (_, only_clo@(SLV_Clo _ _ [] _ _)) -> do
       SLRes alifts _ (SLAppRes penv' (_, only_v)) <-
-        evalApplyVals ctxt at (impossible "part_only expects clo") st_localstep only_clo []
+        evalApplyVals ctxt at sco_only st_localstep only_clo []
       case fst $ typeOf only_at only_v of
         T_Null -> do
           --- TODO: check less things
@@ -2744,6 +2759,7 @@ evalTopBody ctxt at st libm env exenv body =
                    , sco_env = env
                    , sco_penvs = mempty
                    , sco_cenv = mempty
+                   , sco_depth = recursionDepthLimit
                    })
           smr <- evalStmt ctxt at' sco st [sm]
           case smr of
@@ -2901,6 +2917,7 @@ compileDApp idxr liblifts cns topv =
               , sco_while_vars = Nothing
               , sco_penvs = penvs
               , sco_cenv = mempty
+              , sco_depth = recursionDepthLimit
               }
       let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
       SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
