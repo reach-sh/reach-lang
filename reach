@@ -413,7 +413,7 @@ do_scaffold () {
     shift
   fi
 
-  PROJ="$(echo "$(basename "$(pwd)")" | tr '[:upper:]' '[:lower:]')"
+  PROJ="$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]')"
   DOCKERFILE="Dockerfile"
   PACKAGE_JSON="package.json"
   DOCKER_COMPOSE_YML="docker-compose.yml"
