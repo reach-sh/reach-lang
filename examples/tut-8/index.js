@@ -40,7 +40,6 @@ class App extends React.Component {
 }
 
 class Player extends React.Component {
-  playHand(hand) { this.state.resolveHandP(hand); }
   random() { return reach.hasRandom.random(); }
   async getHand() { // Fun([], UInt)
     const hand = await new Promise(resolveHandP => {
@@ -51,6 +50,7 @@ class Player extends React.Component {
   }
   seeOutcome(i) { this.setState({view: 'Done', outcome: intToOutcome[i]}); }
   informTimeout() { this.setState({view: 'Timeout'}); }
+  playHand(hand) { this.state.resolveHandP(hand); }
 }
 
 class Deployer extends Player {
@@ -80,17 +80,16 @@ class Attacher extends Player {
     this.setState({view: 'Attaching'});
     backend.Bob(reach, ctc, this);
   }
-  termsAccepted() {
-    this.state.resolveAcceptedP();
-    this.setState({view: 'WaitingForTurn'});
-  }
   async acceptWager(wagerAtomic) { // Fun([UInt], Null)
     const wager = reach.formatCurrency(wagerAtomic, 4);
     return await new Promise(resolveAcceptedP => {
       this.setState({view: 'AcceptTerms', wager, resolveAcceptedP});
     });
   }
-  shows() {} // Fun([], Null)
+  termsAccepted() {
+    this.state.resolveAcceptedP();
+    this.setState({view: 'WaitingForTurn'});
+  }
   render() { return renderView(this, AttacherViews); }
 }
 

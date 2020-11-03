@@ -32,7 +32,7 @@ const Bob =
 const DEADLINE = 10;
 export const main =
   Reach.App(
-    {deployMode: 'firstMsg'},
+    {},
     [['Alice', Alice], ['Bob', Bob]],
     (A, B) => {
       const informTimeout = () => {

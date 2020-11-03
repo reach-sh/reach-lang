@@ -1284,7 +1284,7 @@ As usual, your results may differ, but you should be able to see single round vi
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-6/index.rsh"] and @reachexlink["tut-6/index.mjs"] to make sure you copied everything down correctly!}
 
 Now our implementation of @|RPS| will always result in a pay-out, which is much more fun for everyone.
-In @seclink["tut-7"]{the final step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
+In @seclink["tut-7"]{the next step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
 
 @section[#:tag "tut-7"]{Interaction and Independence}
 @(mint-scope "tut-7")
@@ -1537,10 +1537,249 @@ We've commonly observed this on machines under heavy CPU load.}
 Now our implementation of @|RPS| is finished!
 We are protected against attacks, timeouts, and draws, and we can run interactively on non-test networks.
 
-In @seclink["tut-8"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
+In this step, we made a command line interface for our Reach program.
+In @seclink["tut-8"]{the next step}, we'll replace this with a web interface for the same Reach program.
 
-@section[#:tag "tut-8"]{Onward and Further}
+@section[#:tag "tut-8"]{Interaction via web app}
 @(mint-scope "tut-8")
+
+In the last section, we made our @|RPS| run as a command line application, without any changes to the Reach program.
+In this section, we again won't be making any changes to the Reach program.
+Instead, we'll replace the command line interface with a web interface.
+
+We will use React.js for this tutorial, but the same principles apply to any web frontend.
+
+@(hrule)
+
+This code is supplemented with @reachexlink["tut-8/index.css" "index.css"]
+and some @reachexlink["tut-8/views" "views"].
+These details are not specific to Reach, and are fairly trivial,
+so we will not explain the specifics of those files.
+
+We will focus on @reachexlink["tut-8/index.js"],
+and note that @reachexlink["tut-8/index.rsh"] is the same as previous sections.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 1 8 "// ..."]
+
+On lines 1 thru 6, we import our view code and CSS.
+On line 7 we import the compiled @reachin{backend}.
+On line 8 we import the @reachin{stdlib} as @reachin{reach}.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 10 13 "// ..."]
+
+On these lines we define a few helful constants and defaults for later,
+some corresponding to the enums we defined in Reach.
+
+@(hrule) @;; Explain App
+
+@;; TODO: picture of ConnectAccount
+
+To start, we define App as a React component,
+and tell it what to do once it mounts.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 15 31 "// ..."]
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 39 40 "// ..."]
+
+@itemlist[
+ @item{On line 18, we initialize the component state to display the ConnectAccount view.}
+ @item{On lines 20 thru 31, we hook into React's @jsin{componentDidMount} lifecycle event.}
+ @item{On line 21, we use @jsin{getDefaultAccount}, which accesses the default browser account.
+  For example, on ETH, it can discover the currently-selected MetaMask account.}
+ @item{On line 26, we use @jsin{getFaucet} to try and access the Reach devnet faucet.}
+ @item{On line 27, if @jsin{getFaucet} was successful, we set the comoponent state to display the FundAccount view.}
+ @item{On line 29, if @jsin{getFaucet} was unsuccessful, we set the component state to skip to the DeployerOrAttacher view.}
+ @item{On line 39, we render the appropriate view from @reachexlink{tut-8/views/AppViews.js}.}
+]
+
+Next, we define callbacks on App for what to do when the user clicks certain buttons.
+
+@;; TODO: picture of FundAccount
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 32 36 " . // ..."]
+
+@itemlist[
+  @item{On lines 32 thru 35, we define what happens when the user clicks the Fund Account button.}
+  @item{On line 33, we transfer funds from the faucet to the user's account.}
+  @item{On line 34, we set the component state to display the DeployerOrAttacher view.}
+  @item{On line 36, we define what to do when the user clicks the Skip button,
+   which is to set the component state to display the DeployerOrAttacher view.}
+]
+
+@;; TODO: picture of DeployerOrAttacher
+
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 37 38 "// ..."]
+
+On lines 37 and 38, we set a sub-component
+based on whether the user clicks Deployer or Attacher.
+
+@(hrule) @;; Explain Player
+
+Next, we will define Player as a React component,
+which will be extended by the specialized components for Alice and Bob.
+
+@;; TODO: picture of GetHand
+
+Recall that we wrote:
+
+@reachex[#:show-lines? #t "tut-8/index.rsh"
+         #:link #t
+         'only 20 24 "// ..."]
+
+We will provide these callbacks via the React component directly.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 42 54 "// ..."]
+
+@itemlist[
+ @item{On line 43, we provide the @jsin{random} callback}
+ @item{On lines 44 thru 50, we provide the @jsin{getHand} callback.}
+ @item{On lines 45 thru 47, we set the component state to display the GetHand view,
+  and wait for a Promise which can be resolved via user interaction.}
+ @item{By line 48, the Promise is resolved, so we set the component state to display the WaitingForResults view.}
+ @item{On lines 51 and 52, we provide the @jsin{seeOutcome} and @jsin{informTimeout} callbacks,
+  which set the component state to display the Done and Timeout views, respectively.}
+ @item{On line 53, we define what happens when the user clicks Rock, Paper, or Scissors:
+  The promise from line 45 is resolved.}
+]
+
+@;; TODO: pictures of WaitingForResults, Done, and Timeout
+
+@(hrule) @;; explain Deployer
+
+@;; TODO: rename Deployer->Alice, Attacher->Bob
+Next, we will define Deployer as a React component for Alice,
+which extends Player.
+
+@;; TODO: picture of SetWager
+@;; TODO: picture of Deploy
+
+Recall that we wrote:
+
+@reachex[#:show-lines? #t "tut-8/index.rsh"
+         #:link #t
+         'only 25 27 "// ..."]
+
+We will provide the @jsin{wager} value,
+and define some button handlers in order to trigger the deployment of the contract.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 56 71 "// ..."]
+
+@;; TODO: switch to "On line x we <verb>" instead of "line x <verbs>"
+@itemlist[
+ @item{line 59 sets the component state to display the SetWager view.}
+ @item{line 61 defines what to do when the user clicks the Set Wager button,
+  which is to set the component state to display the Deploy view.}
+ @item{lines 62 thru 69 define what to do when the user clicks the Deploy button.}
+ @item{line 63 calls @jsin{acc.deploy}, which triggers a deploy of the contract.}
+ @item{line 64 sets the component state to display the Deploying view.}
+ @item{line 65 sets the @jsin{wager} property.}
+ @item{line 66 starts running the Reach program as Alice, using @jsin{this} React component
+  as the @tech{participant interact interface} object.}
+ @item{lines 67 and 68 set the component state to display the WaitingForAttacher view,
+  which displays the deployed contract info as JSON.}
+ @item{On line 70, we render the appropriate view from @reachexlink{tut-8/views/DeployerViews.js}.}
+]
+
+@;; TODO: picture of Deploying
+@;; TODO: picture of WaitingForAttacher
+
+@(hrule) @;; Explain Attacher
+
+Recall that we wrote:
+
+@reachex[#:show-lines? #t "tut-8/index.rsh"
+         #:link #t
+         'only 28 30 "// ..."]
+
+We will provide the acceptWager callback,
+and define some button handlers in order to attach to the deployed contract.
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 73 94 "// ..."]
+
+@itemlist[
+ @item{On line 76 we initialize the component state to display the Attach view.}
+ @item{On lines 78 thru 82 we define what happens when the user clicks the Attach button.}
+ @item{On line 79 we call @jsin{acc.attach}}
+ @item{On line 80 we set the component state to display the Attaching view.}
+ @item{On line 81 we start running the Reach program as Bob, using @jsin{this} React component
+  as the @tech{participant interact interface} object.}
+ @item{On lines 83 thru 88 we define the @jsin{acceptWager} callback.}
+ @item{On lines 85 thru 87, we set the component state to display the AcceptTerms view,
+  and wait for a Promise which can be resolved via user interaction.}
+ @item{On lines 89 thru 92, we define what happens when the user clicks the Accept Terms and Pay Wager button:
+  the promise from line 90 is resolved, and we set the component state to display the WaitingForTurn view.}
+ @item{On line 93, we render the approprite view from @reachexlink{tut-8/views/AttacherViews.js}}
+]
+
+@(hrule) @;; explain renderDOM
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t
+         'only 96 96 "// ..."]
+
+Finally, we call a small helper function from @reachexlink{tut-8/views/render.js}
+to render our App component.
+
+@(hrule) @;; explain reach react and reach react-down
+
+As a convenience for running the React development server,
+you can call:
+
+@cmd{./reach react}
+
+@(hrule) @;; explain npm install
+
+If you'd like to instead use Reach in your own JavaScript project,
+you can call:
+
+@cmd{npm install @"@"reachsh/stdlib}
+
+@margin-note{The reach stdlib is undergoing continual improvement and is updated often.
+If you are experiencing issues with the node package, try updating!}
+
+As usual, you can compile your Reach program @litchar{index.rsh} to the @jsin{backend} build artifact @litchar{build/index.main.mjs} with:
+
+@cmd{reach compile}
+
+@(hrule) @;; conclusion
+
+Now our implementation of @|RPS| is live in the browser!
+We can leverage callbacks in the @tech{participant interact interface} to display to and gather information from the user,
+through any web UI framework of our choice.
+
+In @seclink["tut-9"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
+
+@section[#:tag "tut-9"]{Onward and Further}
+@(mint-scope "tut-9")
 
 Let's review what we've done through this tutorial:
 
@@ -1561,6 +1800,8 @@ Let's review what we've done through this tutorial:
 @item{In @seclink["tut-6"]{part six}, we saw how Reach can express arbitrary length interactions and how flexible the Reach @tech{frontends} are to variations in the @tech{backend}.}
 
 @item{In @seclink["tut-7"]{part seven}, we saw how to decouple your Reach program from the Reach standard testing environment and launch an interactive version on a real network.}
+
+@item{In @seclink["tut-8"]{part eight}, we saw how to run your Reach program as a web app.}
 
 ]
 
