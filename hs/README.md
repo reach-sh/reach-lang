@@ -1,5 +1,5 @@
 All "local hs build" make targets are prefixed with "hs-".
-These require that `stack` is installed on your local machine.
+These require that `stack` and `mo` is installed on your local machine.
 
 # Build source
 
