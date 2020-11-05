@@ -1681,8 +1681,6 @@ Our Web frontend needs to implement the @tech{participant interact interface} fo
 We will provide the @jsin{wager} value,
 and define some button handlers in order to trigger the deployment of the contract.
 
-@;; XXX jay boundary
-
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
          #:link #t
@@ -1764,18 +1762,18 @@ you can call:
 
 @cmd{npm install @"@"reachsh/stdlib}
 
-@margin-note{The reach stdlib is undergoing continual improvement and is updated often.
-If you are experiencing issues with the node package, try updating!}
+@margin-note{The Reach standard library is undergoing continual improvement and is updated often.
+If you are experiencing issues with the Node.js package, try updating!}
 
 As usual, you can compile your Reach program @litchar{index.rsh} to the @jsin{backend} build artifact @litchar{build/index.main.mjs} with:
 
-@cmd{reach compile}
+@cmd{./reach compile}
 
 @(hrule) @;; conclusion
 
 Now our implementation of @|RPS| is live in the browser!
 We can leverage callbacks in the @tech{participant interact interface} to display to and gather information from the user,
-through any web UI framework of our choice.
+through any Web UI framework of our choice.
 
 In @seclink["tut-9"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
 
@@ -1802,7 +1800,7 @@ Let's review what we've done through this tutorial:
 
 @item{In @seclink["tut-7"]{part seven}, we saw how to decouple your Reach program from the Reach standard testing environment and launch an interactive version on a real network.}
 
-@item{In @seclink["tut-8"]{part eight}, we saw how to run your Reach program as a web app.}
+@item{In @seclink["tut-8"]{part eight}, we saw how to deploy your Reach program as a fully decentralized Web application.}
 
 ]
 
@@ -1816,7 +1814,7 @@ First, let's look at the Reach program:
 @reachex[#:show-lines? #t "tut-7/index.rsh"
          #:link #t]
 
-Next, the JavaScript frontend:
+Next, the JavaScript command-line frontend:
 
 @reachex[#:mode js
          #:show-lines? #t "tut-7/index.mjs"
@@ -1824,8 +1822,8 @@ Next, the JavaScript frontend:
 
 We wrote @exloc["tut-7/index.rsh"] lines of Reach and @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] lines together.
 
-Behind the scenes, Reach generated @exloc["tut-7/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-7/build/index.main.sol"]), 1643 lines of TEAL (which you can look at here: @reachexlink["tut-7/build/index.main.mjs#L579"]), as well as @exloc["tut-7/build/index.main.mjs" -2130] lines of JavaScript (which you can look at here: @reachexlink["tut-7/build/index.main.mjs"]).
-If we weren't using Reach, then we'd have to write these @exloc["tut-7/build/index.main.sol" "tut-7/build/index.main.mjs" -2130] lines ourselves and ensure that they are consistent and updated at every change to the application.
+Behind the scenes, Reach generated @exloc["tut-7/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-7/build/index.main.sol"]), 1621 lines of TEAL (which you can look at here: @reachexlink["tut-7/build/index.main.mjs#L584"]), as well as @exloc["tut-7/build/index.main.mjs" -2108] lines of JavaScript (which you can look at here: @reachexlink["tut-7/build/index.main.mjs"]).
+If we weren't using Reach, then we'd have to write these @exloc["tut-7/build/index.main.sol" "tut-7/build/index.main.mjs" -482] lines ourselves and ensure that they are consistent and updated at every change to the application.
 
 Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own application!
 
