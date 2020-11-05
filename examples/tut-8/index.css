@@ -47,7 +47,7 @@ textarea {
   font-size: calc(10px + 1vmin);
   text-align: left;
   width: 90vw;
-  height: 22em;
+  height: 7em;
   padding: 2vw;
   overflow-x: scroll;
   white-space: pre;
