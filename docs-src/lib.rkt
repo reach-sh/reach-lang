@@ -136,6 +136,13 @@ You should start off by initializing your Reach program:
   (image (build-path images path)
          #:scale 0.4))
 
+(define (exviewfig-name dir view)
+  (format "fig:~a/views/~a" dir view))
+
+(define (exviewfig dir view)
+  @figure[(exviewfig-name dir view) (format "The ~a view" view)]{
+    @eximage[(build-path dir (format "~a.png" view))]})
+
 (define (exloc . ps)
   (number->string
    (for/sum ([p (in-list ps)])

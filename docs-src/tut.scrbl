@@ -1604,9 +1604,7 @@ and tell it what to do once it mounts, which is the React term for starting.
 
 Next, we define callbacks on @jsin{App} for what to do when the user clicks certain buttons.
 
-@margin-note{The @jsin{FundAccount} view.
-
-  @eximage{tut-8/FundAccount.png}}
+@exviewfig["tut-8" "FundAccount"]
 
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
@@ -1621,9 +1619,7 @@ Next, we define callbacks on @jsin{App} for what to do when the user clicks cert
    which is to set the component state to display the @jsin{DeployerOrAttacher} view.}
 ]
 
-@margin-note{The @jsin{DeployerOrAttacher} view.
-
-  @eximage{tut-8/DeployerOrAttacher.png}}
+@exviewfig["tut-8" "DeployerOrAttacher"]
 
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
@@ -1638,9 +1634,7 @@ based on whether the user clicks @litchar{Deployer} or @litchar{Attacher}.
 Next, we will define @jsin{Player} as a React component,
 which will be extended by the specialized components for Alice and Bob.
 
-@margin-note{The @jsin{GetHand} view.
-
-  @eximage{tut-8/GetHand.png}}
+@exviewfig["tut-8" "GetHand"]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for players, which we defined as:
 
@@ -1668,25 +1662,15 @@ We will provide these callbacks via the React component directly.
   The @jsin{Promise} from line 45 is resolved.}
 ]
 
-@margin-note{The @jsin{WaitingForResults}, @jsin{Done}, and @jsin{Timeout} views.
-
-  @eximage{tut-8/WaitingForResults.png}
-
-  @eximage{tut-8/Done.png}
-
-  @eximage{tut-8/Timeout.png}}
-
 @(hrule) @;; explain Deployer
 
 @;; TODO: rename Deployer->Alice, Attacher->Bob
 Next, we will define @jsin{Deployer} as a React component for Alice,
 which extends @jsin{Player}.
 
-@margin-note{The @jsin{SetWager} and @jsin{Deploy} views.
+@exviewfig["tut-8" "SetWager"]
 
-  @eximage{tut-8/SetWager.png}
-
-  @eximage{tut-8/Deploy.png}}
+@exviewfig["tut-8" "Deploy"]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Alice, which we defined as:
 
@@ -1719,15 +1703,11 @@ and define some button handlers in order to trigger the deployment of the contra
  @item{On line 70, we render the appropriate view from @reachexlink{tut-8/views/DeployerViews.js}.}
 ]
 
-@margin-note{The @jsin{WaitingForAttacher} view.
-
-  @eximage{tut-8/WaitingForAttacher.png}}
+@exviewfig["tut-8" "WaitingForAttacher"]
 
 @(hrule) @;; Explain Attacher
 
-@margin-note{The @jsin{Attach} view.
-
-  @eximage{tut-8/Attach.png}}
+@exviewfig["tut-8" "Attach"]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Bob, which we defined as:
 
@@ -1758,9 +1738,7 @@ and define some button handlers in order to attach to the deployed contract.
  @item{On line 93, we render the approprite view from @reachexlink{tut-8/views/AttacherViews.js}}
 ]
 
-@margin-note{The @jsin{AcceptTerms} view.
-
-  @eximage{tut-8/AcceptTerms.png}}
+@exviewfig["tut-8" "AcceptTerms"]
 
 @(hrule) @;; explain renderDOM
 
