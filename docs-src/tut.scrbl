@@ -1578,8 +1578,6 @@ some corresponding to the enumerations we defined in Reach.
 
 @(hrule) @;; Explain App
 
-@;; TODO: picture of ConnectAccount
-
 We start defining @jsin{App} as a React component,
 and tell it what to do once it mounts, which is the React term for starting.
 
@@ -1606,7 +1604,9 @@ and tell it what to do once it mounts, which is the React term for starting.
 
 Next, we define callbacks on @jsin{App} for what to do when the user clicks certain buttons.
 
-@;; TODO: picture of FundAccount
+@margin-note{The @jsin{FundAccount} view.
+
+  @eximage{tut-8/FundAccount.png}}
 
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
@@ -1617,11 +1617,13 @@ Next, we define callbacks on @jsin{App} for what to do when the user clicks cert
   @item{On lines 32 thru 35, we define what happens when the user clicks the @litchar{Fund Account} button.}
   @item{On line 33, we transfer funds from the faucet to the user's account.}
   @item{On line 34, we set the component state to display the @jsin{DeployerOrAttacher} view.}
-  @item{On line 36, we define what to do when the user clicks the Skip button,
+  @item{On line 36, we define what to do when the user clicks the @litchar{Skip} button,
    which is to set the component state to display the @jsin{DeployerOrAttacher} view.}
 ]
 
-@;; TODO: picture of DeployerOrAttacher
+@margin-note{The @jsin{DeployerOrAttacher} view.
+
+  @eximage{tut-8/DeployerOrAttacher.png}}
 
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
@@ -1636,7 +1638,9 @@ based on whether the user clicks @litchar{Deployer} or @litchar{Attacher}.
 Next, we will define @jsin{Player} as a React component,
 which will be extended by the specialized components for Alice and Bob.
 
-@;; TODO: picture of GetHand
+@margin-note{The @jsin{GetHand} view.
+
+  @eximage{tut-8/GetHand.png}}
 
 Our Web frontend needs to implement the @tech{participant interact interface} for players, which we defined as:
 
@@ -1656,14 +1660,21 @@ We will provide these callbacks via the React component directly.
  @item{On lines 44 thru 50, we provide the @jsin{getHand} callback.}
  @item{On lines 45 thru 47, we set the component state to display the @jsin{GetHand} view,
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
- @item{By line 48, the @jsin{Promise} is resolved, so we set the component state to display the @jsin{WaitingForResults} view.}
+ @item{On line 48, which occurs after the @jsin{Promise} is resolved,
+  we set the component state to display the @jsin{WaitingForResults} view.}
  @item{On lines 51 and 52, we provide the @jsin{seeOutcome} and @jsin{informTimeout} callbacks,
-  which set the component state to display the @jsin{Done} and @jsin{Timeout views}, respectively.}
+  which set the component state to display the @jsin{Done} and @jsin{Timeout} views, respectively.}
  @item{On line 53, we define what happens when the user clicks @litchar{Rock}, @litchar{Paper}, or @litchar{Scissors}:
-  The promise from line 45 is resolved.}
+  The @jsin{Promise} from line 45 is resolved.}
 ]
 
-@;; TODO: pictures of WaitingForResults, Done, and Timeout
+@margin-note{The @jsin{WaitingForResults}, @jsin{Done}, and @jsin{Timeout} views.
+
+  @eximage{tut-8/WaitingForResults.png}
+
+  @eximage{tut-8/Done.png}
+
+  @eximage{tut-8/Timeout.png}}
 
 @(hrule) @;; explain Deployer
 
@@ -1671,8 +1682,11 @@ We will provide these callbacks via the React component directly.
 Next, we will define @jsin{Deployer} as a React component for Alice,
 which extends @jsin{Player}.
 
-@;; TODO: picture of SetWager
-@;; TODO: picture of Deploy
+@margin-note{The @jsin{SetWager} and @jsin{Deploy} views.
+
+  @eximage{tut-8/SetWager.png}
+
+  @eximage{tut-8/Deploy.png}}
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Alice, which we defined as:
 
@@ -1690,34 +1704,38 @@ and define some button handlers in order to trigger the deployment of the contra
          #:link #t
          'only 56 71 "// ..."]
 
-@;; TODO: switch to "On line x we <verb>" instead of "line x <verbs>"
 @itemlist[
- @item{line 59 sets the component state to display the SetWager view.}
- @item{line 61 defines what to do when the user clicks the Set Wager button,
-  which is to set the component state to display the Deploy view.}
- @item{lines 62 thru 69 define what to do when the user clicks the Deploy button.}
- @item{line 63 calls @jsin{acc.deploy}, which triggers a deploy of the contract.}
- @item{line 64 sets the component state to display the Deploying view.}
- @item{line 65 sets the @jsin{wager} property.}
- @item{line 66 starts running the Reach program as Alice, using @jsin{this} React component
+ @item{On line 59, we set the component state to display the @jsin{SetWager} view.}
+ @item{On line 61, we define what to do when the user clicks the @litchar{Set Wager} button,
+  which is to set the component state to display the @jsin{Deploy} view.}
+ @item{On lines 62 thru 69, we define what to do when the user clicks the @litchar{Deploy} button.}
+ @item{On line 63, we call @jsin{acc.deploy}, which triggers a deploy of the contract.}
+ @item{On line 64, we set the component state to display the @jsin{Deploying} view.}
+ @item{On line 65, we set the @jsin{wager} property.}
+ @item{On line 66, we start running the Reach program as Alice, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
- @item{lines 67 and 68 set the component state to display the WaitingForAttacher view,
+ @item{On lines 67 and 68, we set the component state to display the @jsin{WaitingForAttacher} view,
   which displays the deployed contract info as JSON.}
  @item{On line 70, we render the appropriate view from @reachexlink{tut-8/views/DeployerViews.js}.}
 ]
 
-@;; TODO: picture of Deploying
-@;; TODO: picture of WaitingForAttacher
+@margin-note{The @jsin{WaitingForAttacher} view.
+
+  @eximage{tut-8/WaitingForAttacher.png}}
 
 @(hrule) @;; Explain Attacher
 
-Recall that we wrote:
+@margin-note{The @jsin{Attach} view.
+
+  @eximage{tut-8/Attach.png}}
+
+Our Web frontend needs to implement the @tech{participant interact interface} for Bob, which we defined as:
 
 @reachex[#:show-lines? #t "tut-8/index.rsh"
          #:link #t
          'only 28 30 "// ..."]
 
-We will provide the acceptWager callback,
+We will provide the @jsin{acceptWager} callback,
 and define some button handlers in order to attach to the deployed contract.
 
 @reachex[#:mode js
@@ -1726,19 +1744,23 @@ and define some button handlers in order to attach to the deployed contract.
          'only 73 94 "// ..."]
 
 @itemlist[
- @item{On line 76 we initialize the component state to display the Attach view.}
- @item{On lines 78 thru 82 we define what happens when the user clicks the Attach button.}
- @item{On line 79 we call @jsin{acc.attach}}
- @item{On line 80 we set the component state to display the Attaching view.}
- @item{On line 81 we start running the Reach program as Bob, using @jsin{this} React component
+ @item{On line 76, we initialize the component state to display the @jsin{Attach} view.}
+ @item{On lines 78 thru 82, we define what happens when the user clicks the @litchar{Attach} button.}
+ @item{On line 79, we call @jsin{acc.attach}}
+ @item{On line 80, we set the component state to display the @jsin{Attaching} view.}
+ @item{On line 81, we start running the Reach program as Bob, using @jsin{this} React component
   as the @tech{participant interact interface} object.}
- @item{On lines 83 thru 88 we define the @jsin{acceptWager} callback.}
- @item{On lines 85 thru 87, we set the component state to display the AcceptTerms view,
-  and wait for a Promise which can be resolved via user interaction.}
- @item{On lines 89 thru 92, we define what happens when the user clicks the Accept Terms and Pay Wager button:
-  the promise from line 90 is resolved, and we set the component state to display the WaitingForTurn view.}
+ @item{On lines 83 thru 88, we define the @jsin{acceptWager} callback.}
+ @item{On lines 85 thru 87, we set the component state to display the @jsin{AcceptTerms} view,
+  and wait for a @jsin{Promise} which can be resolved via user interaction.}
+ @item{On lines 89 thru 92, we define what happens when the user clicks the @litchar{Accept Terms and Pay Wager} button:
+  the @jsin{Promise} from line 90 is resolved, and we set the component state to display the @jsin{WaitingForTurn} view.}
  @item{On line 93, we render the approprite view from @reachexlink{tut-8/views/AttacherViews.js}}
 ]
+
+@margin-note{The @jsin{AcceptTerms} view.
+
+  @eximage{tut-8/AcceptTerms.png}}
 
 @(hrule) @;; explain renderDOM
 

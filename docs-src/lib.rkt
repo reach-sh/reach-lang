@@ -130,6 +130,11 @@ You should start off by initializing your Reach program:
 
 (define-runtime-path x "../examples/")
 (define-runtime-path rx "../react-examples/")
+(define-runtime-path images "./images/")
+
+(define (eximage path)
+  (image (build-path images path)
+         #:scale 0.4))
 
 (define (exloc . ps)
   (number->string
