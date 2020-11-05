@@ -10,11 +10,14 @@ while ! <"/dev/tcp/$POSTGRES_HOST/$POSTGRES_PORT"; do
   sleep 1
 done
 
-echo Starting debugger
-racket server.rkt &
-PID_DBG=$!
-
-export TEAL_DEBUGGER_URL=http://localhost:9392
+if [ "x$REACH_DEBUG" = "x" ] ; then
+  echo Not starting debugger. To start, use REACH_DEBUG=1.
+else
+  echo Starting debugger
+  racket server.rkt &
+  PID_DBG=$!
+  export TEAL_DEBUGGER_URL=http://localhost:9392
+fi
 
 echo Starting algod
 algod -d "${ALGORAND_DATA}" &

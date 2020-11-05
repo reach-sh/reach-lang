@@ -24,7 +24,7 @@ check: docker-compose.algo.yml
 	./check.sh docker-compose.algo.yml
 
 docker-compose.algo.yml: docker-compose.yml
-	sed -e '31s/ &default-app//' -e '58s/:/: \&default-app/' $^ > $@
+	sed -e '32s/ &default-app//' -e '59s/:/: \&default-app/' $^ > $@
 
 .PHONY: run-live
 run-live:

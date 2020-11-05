@@ -1333,11 +1333,11 @@ Your line 3 will say @litchar{tut}, rather than @litchar{tut-7}, if you've staye
 
 @item{Lines 5 and 6 define the Reach private developer test network service for Ethereum.}
 
-@item{Lines 7 through 23 define the Reach private developer test network service for Algorand.}
+@item{Lines 7 through 24 define the Reach private developer test network service for Algorand.}
 
-@item{Lines 24 through 72 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tut-7-ETH-live} for connecting to a live network.}
+@item{Lines 25 through 73 define services that allow the application to be run with different networks; including line 24, which defines @litchar{reach-app-tut-7-ETH-live} for connecting to a live network.}
 
-@item{We'll also add lines 72 through 76 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
+@item{We'll also add lines 73 through 77 to define a @litchar{player} service that is our application with an open standard input, as well as two instances named @litchar{alice} and @litchar{bob}.}
 ]
 
 With these in place, we can run

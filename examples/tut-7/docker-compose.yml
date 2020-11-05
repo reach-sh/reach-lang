@@ -9,6 +9,7 @@ services:
     depends_on:
       - algorand-postgres-db
     environment:
+      - REACH_DEBUG
       - POSTGRES_HOST=algorand-postgres-db
       - POSTGRES_USER=algogrand
       - POSTGRES_PASSWORD=indexer
