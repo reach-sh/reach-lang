@@ -933,6 +933,16 @@ do_lint () {
 
 }
 
+do_hash () {
+  echo "$1:" "$(docker run --entrypoint /bin/sh "reachsh/$1:$REACH_VERSION" -c 'echo $REACH_GIT_HASH')"
+}
+
+do_hashes () {
+  for IMG in ethereum-devnet algorand-devnet stdlib runner react_runner ; do
+    do_hash "$IMG"
+  done
+}
+
 do_usage () {
   echo "Usage: reach COMMAND"
   echo " where COMMAND is one of"
@@ -1003,6 +1013,10 @@ case ${SUBCOMMAND} in
         ;;
     numeric-version|--numeric-version)
         echo "${REACH_VERSION}"
+        exit 0
+        ;;
+    hashes)
+        do_hashes
         exit 0
         ;;
     help|--help)
