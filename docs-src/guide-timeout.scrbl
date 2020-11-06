@@ -14,7 +14,7 @@ In contrast, decentralized applications must be careful designed with an eye tow
 
 There are two general strategies for dealing with non-participation: punishment and disincentivizing.
 
-@bold{Punishment.} The punishment strategy entails allowing the remaining participants of the application to take all of the assets that would have gone to the non-participator and spliting them.
+@bold{Punishment.} The punishment strategy entails allowing the remaining participants of the application to take all of the assets that would have gone to the non-participator and splitting them.
 This is the strategy @seclink["tut-5"]{used in the tutorial}, where Alice's wager is lost if she fails to send her next publication.
 
 Punishment is a dangerous strategy, because it is difficult to know a priori what the threshold of non-participation is.

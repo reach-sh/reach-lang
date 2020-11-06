@@ -141,7 +141,7 @@ For this @exloc["overview/index.rsh"] line application, the Reach compiler gener
 Separately, it generated @exloc["overview/build/index.main.sol"] lines of Solidity code to implement the contract.
 If a programmer wasn't using Reach, they would have to write these @exloc["overview/build/index.main.mjs" "overview/build/index.main.sol" -152] lines in these three modules separately and keep them synchronized at every step of the development process.
 
-Morever, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target other @tech{consensus networks}, like Algorand.
+Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different @tech{connector} to target other @tech{consensus networks}, like Algorand.
 Nor is Reach tied to JavaScript, it can be configured to target other @tech{backend} languages, like Go.
 
 @section[#:tag "over-verify"]{Verify}
