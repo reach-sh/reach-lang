@@ -134,7 +134,7 @@ You should start off by initializing your Reach program:
 
 (define (eximage path)
   (image (build-path images path)
-         #:scale 0.4))
+         #:scale 0.6))
 
 (define (exviewfig-name dir view)
   (format "fig:~a/views/~a" dir view))
