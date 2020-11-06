@@ -302,7 +302,7 @@ However, most Reach developers deploy their DApps via a Web application, as we d
 A Web deployment uses the exact same @reachexlink["index.rsh" #:dir "react-examples/overview"] file, but connected to a React-based @reachexlink["index.js" #:dir "react-examples/overview"] file.
 (It also uses some simple React @reachexlink["views" #:dir "react-examples/overview"]
  and @reachexlink["index.css" @tt{css} #:dir "react-examples/overview"] to go with it.)
-Let's take a look at some snippets from the React @reachexlink["index.js" #:dir "react-examples/overview"] and compare with the Node.js @reachexlink["index.mjs" #:dir "examples-overview"] from before:
+Let's take a look at some snippets from the React @reachexlink["index.js" #:dir "react-examples/overview"] and compare with the Node.js @reachexlink["index.mjs" #:dir "examples/overview"] from before:
 
 @reachex[#:mode js
          #:show-lines? #t "overview/index.js"
