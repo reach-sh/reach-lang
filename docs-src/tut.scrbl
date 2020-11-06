@@ -1578,11 +1578,11 @@ some corresponding to the enumerations we defined in Reach.
 
 @(hrule) @;; Explain App
 
-@exviewfigs["tut-8" "AppViews"
-  '["ConnectAccount" 19 28]]
-
 We start defining @jsin{App} as a React component,
 and tell it what to do once it mounts, which is the React term for starting.
+
+@exviewfigs["tut-8" "AppViews"
+  '["ConnectAccount" 19 28]]
 
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
@@ -1658,15 +1658,20 @@ We will provide these callbacks via the React component directly.
 @itemlist[
  @item{On line 43, we provide the @jsin{random} callback}
  @item{On lines 44 thru 50, we provide the @jsin{getHand} callback.}
- @item{On lines 45 thru 47, we set the component state to display the @jsin{GetHand} view,
+ @item{On lines 45 thru 47, we set the component state to display @exviewref["tut-8" "GetHand"],
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On line 48, which occurs after the @jsin{Promise} is resolved,
-  we set the component state to display the @jsin{WaitingForResults} view.}
+  we set the component state to display @exviewref["tut-8" "WaitingForResults"].}
  @item{On lines 51 and 52, we provide the @jsin{seeOutcome} and @jsin{informTimeout} callbacks,
-  which set the component state to display the @jsin{Done} and @jsin{Timeout} views, respectively.}
+  which set the component state to display @exviewref["tut-8" "Done"] and @exviewref["tut-8" "Timeout"], respectively.}
  @item{On line 53, we define what happens when the user clicks @litchar{Rock}, @litchar{Paper}, or @litchar{Scissors}:
   The @jsin{Promise} from line 45 is resolved.}
 ]
+
+@exviewfigs["tut-8" "PlayerViews"
+  '["WaitingForResults" 34 42]
+  '["Done" 44 54]
+  '["Timeout" 56 64]]
 
 @(hrule) @;; explain Deployer
 
@@ -1674,7 +1679,7 @@ We will provide these callbacks via the React component directly.
 Next, we will define @jsin{Deployer} as a React component for Alice,
 which extends @jsin{Player}.
 
-@exviewfigs["tut-8" "AttacherViews"
+@exviewfigs["tut-8" "DeployerViews"
   '["SetWager" 20 38]
   '["Deploy" 40 53]]
 
@@ -1693,27 +1698,29 @@ and define some button handlers in order to trigger the deployment of the contra
          'only 56 71 "// ..."]
 
 @itemlist[
- @item{On line 59, we set the component state to display the @jsin{SetWager} view.}
+ @item{On line 59, we set the component state to display @exviewref["tut-8" "SetWager"].}
  @item{On line 61, we define what to do when the user clicks the @litchar{Set Wager} button,
-  which is to set the component state to display the @jsin{Deploy} view.}
+  which is to set the component state to display @exviewref["tut-8" "Deploy"].}
  @item{On lines 62 thru 69, we define what to do when the user clicks the @litchar{Deploy} button.}
  @item{On line 63, we call @jsin{acc.deploy}, which triggers a deploy of the contract.}
- @item{On line 64, we set the component state to display the @jsin{Deploying} view.}
+ @item{On line 64, we set the component state to display @exviewref["tut-8" "Deploying"].}
  @item{On line 65, we set the @jsin{wager} property.}
  @item{On line 66, we start running the Reach program as Alice, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
- @item{On lines 67 and 68, we set the component state to display the @jsin{WaitingForAttacher} view,
+ @item{On lines 67 and 68, we set the component state to display @exviewref["tut-8" "WaitingForAttacher"],
   which displays the deployed contract info as JSON.}
  @item{On line 70, we render the appropriate view from @reachexlink{tut-8/views/DeployerViews.js}.}
 ]
 
 @exviewfigs["tut-8" "DeployerViews"
+  '["Deploying" 55 61]
   '["WaitingForAttacher" 63 90]]
 
 @(hrule) @;; Explain Attacher
 
 @exviewfigs["tut-8" "AttacherViews"
-  '["Attach" 18 39]]
+  '["Attach" 18 39]
+  '["Attaching" 41 49]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Bob, which we defined as:
 
@@ -1730,22 +1737,23 @@ and define some button handlers in order to attach to the deployed contract.
          'only 73 94 "// ..."]
 
 @itemlist[
- @item{On line 76, we initialize the component state to display the @jsin{Attach} view.}
+ @item{On line 76, we initialize the component state to display @exviewref["tut-8" "Attach"].}
  @item{On lines 78 thru 82, we define what happens when the user clicks the @litchar{Attach} button.}
  @item{On line 79, we call @jsin{acc.attach}}
- @item{On line 80, we set the component state to display the @jsin{Attaching} view.}
- @item{On line 81, we start running the Reach program as Bob, using @jsin{this} React component
+ @item{On line 80, we set the component state to display @exviewref["tut-8" "Attaching"].}
+ @item{On line 81, we start running the Reach program as Bob, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
  @item{On lines 83 thru 88, we define the @jsin{acceptWager} callback.}
- @item{On lines 85 thru 87, we set the component state to display the @jsin{AcceptTerms} view,
+ @item{On lines 85 thru 87, we set the component state to display @exviewref["tut-8" "AcceptTerms"],
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On lines 89 thru 92, we define what happens when the user clicks the @litchar{Accept Terms and Pay Wager} button:
-  the @jsin{Promise} from line 90 is resolved, and we set the component state to display the @jsin{WaitingForTurn} view.}
+  the @jsin{Promise} from line 90 is resolved, and we set the component state to display @exviewref["tut-8" "WaitingForTurn"].}
  @item{On line 93, we render the approprite view from @reachexlink{tut-8/views/AttacherViews.js}}
 ]
 
 @exviewfigs["tut-8" "AttacherViews"
-  '["AcceptTerms" 51 70]]
+  '["AcceptTerms" 51 70]
+  '["WaitingForTurn" 72 81]]
 
 @(hrule) @;; explain renderDOM
 
