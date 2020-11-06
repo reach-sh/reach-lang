@@ -5,29 +5,6 @@ const exports = {};
 // Player views must be extended.
 // It does not have its own Wrapper view.
 
-exports.Done = class extends React.Component {
-  render() {
-    const {outcome} = this.props;
-    return (
-      <div>
-        Thank you for playing. The outcome of this game was:
-        <br />{outcome || 'Unknown'}
-      </div>
-    );
-  }
-}
-
-exports.WaitingForTurn = class extends React.Component {
-  render() {
-    return (
-      <div>
-        Waiting for the other player...
-        <br />Think about which move you want to play.
-      </div>
-    );
-  }
-}
-
 exports.GetHand = class extends React.Component {
   render() {
     const {parent, playable, hand} = this.props;
@@ -59,6 +36,18 @@ exports.WaitingForResults = class extends React.Component {
     return (
       <div>
         Waiting for results...
+      </div>
+    );
+  }
+}
+
+exports.Done = class extends React.Component {
+  render() {
+    const {outcome} = this.props;
+    return (
+      <div>
+        Thank you for playing. The outcome of this game was:
+        <br />{outcome || 'Unknown'}
       </div>
     );
   }

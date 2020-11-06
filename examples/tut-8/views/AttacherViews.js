@@ -69,4 +69,15 @@ exports.AcceptTerms = class extends React.Component {
   }
 }
 
+exports.WaitingForTurn = class extends React.Component {
+  render() {
+    return (
+      <div>
+        Waiting for the other player...
+        <br />Think about which move you want to play.
+      </div>
+    );
+  }
+}
+
 export default exports;
