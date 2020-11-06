@@ -19,7 +19,7 @@ We are building a Go backend as a prototype of how to build a backend for a stat
 
 @(hrule)
 @bold{Computation.} Reach's computational language is based on JavaScript and contains many of JavaScript's most desirable features, like @tech{arrow expressions} and free-form objects.
-We are working on making the transition for JavaScript developers as seemless as possible by integrating more compatibility through features like binding patterns in function arguments, more specific @reachin{import} and @reachin{export} specifiers, syntactic sugar for @reachin{while} patterns, like @jsin{for} in JavaScript, and recursive functions (when they are in a tail-recursive set.)
+We are working on making the transition for JavaScript developers as seamless as possible by integrating more compatibility through features like binding patterns in function arguments, more specific @reachin{import} and @reachin{export} specifiers, syntactic sugar for @reachin{while} patterns, like @jsin{for} in JavaScript, and recursive functions (when they are in a tail-recursive set.)
 We also plan to add features from typed languages, like abstract data types and pattern matching.
 Similarly, we have plans to extend Reach's type system to be able to track more specific features of values, such as @link["https://en.wikipedia.org/wiki/Refinement_type"]{refinement types}, @link["https://en.wikipedia.org/wiki/Substructural_type_system"]{substructural types} to allow mutation, and arbitrary range integer types.
 Finally, we have plans to allow more exotic features, like non-communicating loops with guaranteed termination, statically computable exceptions, and pay-as-you-go closures, including non-tail-recursion through closure conversion of non-contifiable continuations.
@@ -28,7 +28,7 @@ Finally, we have plans to allow more exotic features, like non-communicating loo
 @bold{Verification.} Reach's verifier is robust in the face of many complex and interesting theorems about decentralized application behavior.
 However, it does not soundly represent integer widths and not sensitive to numeric operation overflow, which causes traps on platforms like Algorand.
 This is short-term work that is required before Reach should be consider safe for production.
-In the longer term, we intend to introduce verification promises that constrain the eventual use of values, refine the knowledge checker to reduce false positives, verify core compiler algorithms, and introduce a model-checking-based assertion mechanism for specifying game theoretic properties of an application, such as that all state changes are Pareto improvements. 
+In the longer term, we intend to introduce verification promises that constrain the eventual use of values, refine the knowledge checker to reduce false positives, verify core compiler algorithms, and introduce a model-checking-based assertion mechanism for specifying game theoretic properties of an application, such as that all state changes are Pareto improvements.
 
 @(hrule)
 @bold{Infrastructure.} We intend to build a package system for Reach to allow for sharing composable decentralized applications.

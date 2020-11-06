@@ -3,7 +3,7 @@
 
 @title[#:version reach-vers #:tag "guide-abstract"]{Building decentralized abstractions}
 
-Many decentralized applications have the same struture, similar to how there are many games that can be categorized as @link["https://en.wikipedia.org/wiki/Combinatorial_game_theory"]{combinatorial games} or @link["https://en.wikipedia.org/wiki/Simultaneous_game"]{simultaneous games}.
+Many decentralized applications have the same structure, similar to how there are many games that can be categorized as @link["https://en.wikipedia.org/wiki/Combinatorial_game_theory"]{combinatorial games} or @link["https://en.wikipedia.org/wiki/Simultaneous_game"]{simultaneous games}.
 
 These applications can either be programmed individually, or you can build an abstraction that captures the common structure of a game.
 Reach supports typical programming language abstractions, like first-class functions (via @tech{arrow expressions}) and objects, that can be used to build these abstractions.

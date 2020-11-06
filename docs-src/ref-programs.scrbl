@@ -192,7 +192,7 @@ It supports the following options:
  @para{@reachin{true} or @reachin{false} (default)}
  @~
  @para{Determines whether verification is done per connector, or once for a generic connector.
- When this is @reachin{true}, then connector-specific constants, like @reachin{UInt.max}, will be instatiated to literal numbers.
+ When this is @reachin{true}, then connector-specific constants, like @reachin{UInt.max}, will be instantiated to literal numbers.
  This concretization of these constants can induce performance degradation in the verifier.}
  )
 
@@ -287,7 +287,7 @@ A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pa
 The @tech{continuation} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
 The @tech{continuation} of a timeout block is the same as the continuation as the continuation as the function the timeout occurs within.
 
-@margin-note{See @seclink["guide-timeout"]{the guide section on non-participation} to undertand when to use timeouts and how to use them most effectively.}
+@margin-note{See @seclink["guide-timeout"]{the guide section on non-participation} to understand when to use timeouts and how to use them most effectively.}
 
 The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}.
 The @reachin{timeout} component may always be omitted.
@@ -724,7 +724,7 @@ and @reachin{CASE} is either @reachin{case VARIANT: STMT ...}, where @reachin{VA
 selects the appropriate sequence of statements based on which variant @reachin{VAR} holds.
 Within the body of a @reachin{switch} case, @reachin{VAR} has the type of variant; i.e. in a @reachin{Some} case of a @reachin{Maybe(UInt)} @reachin{switch}, the variable is bound to an integer.
 
-All cases have empty @tech{tails}, i.e. the @tech{tail} of the @tech{switch statement} is not propagated. 
+All cases have empty @tech{tails}, i.e. the @tech{tail} of the @tech{switch statement} is not propagated.
 
 A @tech{switch statement} may only include a @tech{consensus transfer} in its cases if it is within a @tech{consensus step}, because its statements are in the same context as the conditional statement itself.
 
@@ -800,7 +800,7 @@ Reach's @deftech{type}s are represented with programs by the following identifie
   (Refer to @secref["ref-programs-tuples"] for constructing tuples.)}
   @item{@(mint-define! '("Object")) @reachin{Object({key_0: Type_0, ..., key_N: Type_N})}, which denotes an object.
   (Refer to @secref["ref-programs-objects"] for constructing objects.)}
-  @item{@(mint-define! '("Array")) @reachin{Array(ElemenType, size)}, which denotes a statically-sized array.
+  @item{@(mint-define! '("Array")) @reachin{Array(ElementType, size)}, which denotes a statically-sized array.
   (Refer to @secref["ref-programs-arrays"] for constructing arrays.)}
   @item{@(mint-define! '("Data")) @reachin{Data({variant_0: Type_0, ..., variant_N: Type_N})}, which denotes a @link["https://en.wikipedia.org/wiki/Tagged_union"]{tagged union} (or @emph{sum type}).
   (Refer to @secref["ref-programs-data"] for constructing @tech{data instances}.)}
@@ -967,7 +967,7 @@ A @deftech{tuple} literal, written @reachin{[ EXPR_0, ..., EXPR_n ]}, is an @tec
 @reach{
   const x = array([1, 2, 3]); }
 
-Converts a @tech{tuple} of homogenueous values into an @deftech{array}.
+Converts a @tech{tuple} of homogeneous values into an @deftech{array}.
 
 @subsubsection{Element reference}
 
@@ -1052,7 +1052,7 @@ It may also be written @reachin{Array_empty}.
  Array.zip(x, y)
  x.zip(y) }
 
-@index{Array.zip} @reachin{Array.zip(x, y)} returns a new array the same size as @reachin{x} and @reachin{y} (which must be thes same size) whose elements are tuples of the elements of @reachin{x} and @reachin{y}.
+@index{Array.zip} @reachin{Array.zip(x, y)} returns a new array the same size as @reachin{x} and @reachin{y} (which must be the same size) whose elements are tuples of the elements of @reachin{x} and @reachin{y}.
 This may be abbreviated as @reachin{x.zip(y)}.
 
 @(mint-define! '("map"))
@@ -1152,7 +1152,7 @@ except that field @reachin{fld} is replaced with @reachin{val}.
                      Sweet: Null,
                      Umami: Null});
  const burger = Taste.Umami();
- 
+
  const Shape = Data({ Circle: Object({r: UInt}),
                       Square: Object({s: UInt}),
                       Rect: Object({w: UInt, h: UInt}) });
@@ -1306,4 +1306,4 @@ The @deftech{balance} primitive returns the balance of the @tech{contract} @tech
 @reach{
  hasRandom }
 
-@index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments are returns an unsigined integer of @tech{bit width} bits.
+@index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments and returns an unsigned integer of @tech{bit width} bits.

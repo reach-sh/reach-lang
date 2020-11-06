@@ -3,7 +3,7 @@
 
 @title[#:version reach-vers #:tag "guide-determ"]{Determinism, simultaneity, and choice in decentralized applications}
 
-The structure of a Reach computation is determinisic, because each participant must agree on which participant is responsible for sending the next publication at every step of the computation.
+The structure of a Reach computation is deterministic, because each participant must agree on which participant is responsible for sending the next publication at every step of the computation.
 If this were not the case, then different participants may attempt to pursue different paths through a computation and thereby reach different values at the end.
 It may be possible to relax this constraint @seclink["guide-limits"]{in future versions of Reach}, but for the present it is a requirement that all applications be deterministic in this sense.
 

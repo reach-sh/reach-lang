@@ -417,7 +417,7 @@ An @deftech{atomic unit} is the smallest unit of measure for the @tech{standard 
 For example, the atomic unit of Ethereum is WEI.
 An @tech{atomic unit} is @deftech{atomic}, which means it cannot be divided into smaller units.
 
-Some @tech{consensus networks}, typicaly those with proof-of-stake, have minimum balances on their accounts, so this is exposed as @jsin{minimumBalance}.
+Some @tech{consensus networks}, typically those with proof-of-stake, have minimum balances on their accounts, so this is exposed as @jsin{minimumBalance}.
 
 Because there are 1,000,000,000,000,000,000 WEI in 1 ETH,
 BigNumber is used to represet values in WEI.
@@ -442,7 +442,7 @@ It provides the following exports:
  yesno(string) => boolean
  done() => null
 }
- 
+
 @jsin{ask} is an asynchronous function that asks a question on the console and returns a Promise for the first result that its second argument does not error on.
 
 @jsin{yesno} is an argument appropriate to give as the second argument to @jsin{ask} that parses "Yes"/"No" answers.
