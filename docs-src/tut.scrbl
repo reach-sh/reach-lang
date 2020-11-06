@@ -1578,6 +1578,9 @@ some corresponding to the enumerations we defined in Reach.
 
 @(hrule) @;; Explain App
 
+@exviewfigs["tut-8" "AppViews"
+  '["ConnectAccount" 19 28]]
+
 We start defining @jsin{App} as a React component,
 and tell it what to do once it mounts, which is the React term for starting.
 
@@ -1592,19 +1595,20 @@ and tell it what to do once it mounts, which is the React term for starting.
          'only 39 40 "// ..."]
 
 @itemlist[
- @item{On line 18, we initialize the component state to display the @jsin{ConnectAccount} view.}
+ @item{On line 18, we initialize the component state to display @exviewref["tut-8" "ConnectAccount"].}
  @item{On lines 20 thru 31, we hook into React's @jsin{componentDidMount} lifecycle event, which is called when the component starts.}
  @item{On line 21, we use @jsin{getDefaultAccount}, which accesses the default browser account.
   For example, when used with Ethereum, it can discover the currently-selected MetaMask account.}
  @item{On line 26, we use @jsin{getFaucet} to try and access the Reach developer testing network faucet.}
- @item{On line 27, if @jsin{getFaucet} was successful, we set the component state to display the @jsin{FundAccount} view.}
- @item{On line 29, if @jsin{getFaucet} was unsuccessful, we set the component state to skip to the @jsin{DeployerOrAttacher} view.}
+ @item{On line 27, if @jsin{getFaucet} was successful, we set the component state to display @exviewref["tut-8" "FundAccount"].}
+ @item{On line 29, if @jsin{getFaucet} was unsuccessful, we set the component state to skip to @exviewref["tut-8" "DeployerOrAttacher"].}
  @item{On line 39, we render the appropriate view from @reachexlink{tut-8/views/AppViews.js}.}
 ]
 
-Next, we define callbacks on @jsin{App} for what to do when the user clicks certain buttons.
+@exviewfigs["tut-8" "AppViews"
+  '["FundAccount" 30 56]]
 
-@exviewfig["tut-8" "FundAccount"]
+Next, we define callbacks on @jsin{App} for what to do when the user clicks certain buttons.
 
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
@@ -1614,12 +1618,13 @@ Next, we define callbacks on @jsin{App} for what to do when the user clicks cert
 @itemlist[
   @item{On lines 32 thru 35, we define what happens when the user clicks the @litchar{Fund Account} button.}
   @item{On line 33, we transfer funds from the faucet to the user's account.}
-  @item{On line 34, we set the component state to display the @jsin{DeployerOrAttacher} view.}
+  @item{On line 34, we set the component state to display @exviewref["tut-8" "DeployerOrAttacher"].}
   @item{On line 36, we define what to do when the user clicks the @litchar{Skip} button,
-   which is to set the component state to display the @jsin{DeployerOrAttacher} view.}
+   which is to set the component state to display @exviewref["tut-8" "DeployerOrAttacher"].}
 ]
 
-@exviewfig["tut-8" "DeployerOrAttacher"]
+@exviewfigs["tut-8" "AppViews"
+  '["DeployerOrAttacher" 58 80]]
 
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
@@ -1634,7 +1639,8 @@ based on whether the user clicks @litchar{Deployer} or @litchar{Attacher}.
 Next, we will define @jsin{Player} as a React component,
 which will be extended by the specialized components for Alice and Bob.
 
-@exviewfig["tut-8" "GetHand"]
+@exviewfigs["tut-8" "PlayerViews"
+  '["GetHand" 8 32]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for players, which we defined as:
 
@@ -1668,9 +1674,9 @@ We will provide these callbacks via the React component directly.
 Next, we will define @jsin{Deployer} as a React component for Alice,
 which extends @jsin{Player}.
 
-@exviewfig["tut-8" "SetWager"]
-
-@exviewfig["tut-8" "Deploy"]
+@exviewfigs["tut-8" "AttacherViews"
+  '["SetWager" 20 38]
+  '["Deploy" 40 53]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Alice, which we defined as:
 
@@ -1701,11 +1707,13 @@ and define some button handlers in order to trigger the deployment of the contra
  @item{On line 70, we render the appropriate view from @reachexlink{tut-8/views/DeployerViews.js}.}
 ]
 
-@exviewfig["tut-8" "WaitingForAttacher"]
+@exviewfigs["tut-8" "DeployerViews"
+  '["WaitingForAttacher" 63 90]]
 
 @(hrule) @;; Explain Attacher
 
-@exviewfig["tut-8" "Attach"]
+@exviewfigs["tut-8" "AttacherViews"
+  '["Attach" 18 39]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Bob, which we defined as:
 
@@ -1736,7 +1744,8 @@ and define some button handlers in order to attach to the deployed contract.
  @item{On line 93, we render the approprite view from @reachexlink{tut-8/views/AttacherViews.js}}
 ]
 
-@exviewfig["tut-8" "AcceptTerms"]
+@exviewfigs["tut-8" "AttacherViews"
+  '["AcceptTerms" 51 70]]
 
 @(hrule) @;; explain renderDOM
 
