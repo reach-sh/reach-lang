@@ -438,7 +438,7 @@ If he doesn't like the terms, his @tech{frontend} can just not respond to this m
 
 ]
 
-The @|DApp| is now running in a @tech{consensus step} and 
+The @|DApp| is now running in a @tech{consensus step} and
 the contract itself now holds twice the wager amount.
 Before, it would compute the outcome and then commit the state; but now, it needs to look at the outcome and use it to balance the account.
 
@@ -1183,7 +1183,7 @@ Here's what the structure looks like:
 
 @item{Line 53 defines the loop variable, @reachin{outcome}.}
 
-@item{Line 54 states the invariant that body of the loop does not change the balance in the @tech{contract} account and that  @reachin{outcome} is a valid outcome.}
+@item{Line 54 states the invariant that the body of the loop does not change the balance in the @tech{contract} account and that  @reachin{outcome} is a valid outcome.}
 
 @item{Line 55 begins the loop with the condition that it continues as long as the outcome is a draw.}
 
