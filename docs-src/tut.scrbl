@@ -1562,7 +1562,7 @@ because @reachexlink["tut-8/index.rsh"] is the same as previous sections.
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
          #:link #t
-         'only 1 8 "// ..."]
+         'only 1 9 "// ..."]
 
 On lines 1 thru 6, we import our view code and CSS.
 On line 7, we import the compiled @reachin{backend}.
@@ -1571,7 +1571,7 @@ On line 8, we import the @reachin{stdlib} as @reachin{reach}.
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
          #:link #t
-         'only 10 13 "// ..."]
+         'only 10 14 "// ..."]
 
 On these lines we define a few helpful constants and defaults for later,
 some corresponding to the enumerations we defined in Reach.
@@ -1592,7 +1592,7 @@ and tell it what to do once it mounts, which is the React term for starting.
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
          #:link #t
-         'only 39 40 "// ..."]
+         'only 39 41 "// ..."]
 
 @itemlist[
  @item{On line 18, we initialize the component state to display @exviewref["tut-8" "ConnectAccount"].}
@@ -1653,7 +1653,7 @@ We will provide these callbacks via the React component directly.
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
          #:link #t
-         'only 42 54 "// ..."]
+         'only 42 55 "// ..."]
 
 @itemlist[
  @item{On line 43, we provide the @jsin{random} callback}
@@ -1695,7 +1695,7 @@ and define some button handlers in order to trigger the deployment of the contra
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
          #:link #t
-         'only 56 71 "// ..."]
+         'only 56 72 "// ..."]
 
 @itemlist[
  @item{On line 59, we set the component state to display @exviewref["tut-8" "SetWager"].}
@@ -1734,7 +1734,7 @@ and define some button handlers in order to attach to the deployed contract.
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
          #:link #t
-         'only 73 94 "// ..."]
+         'only 73 95 "// ..."]
 
 @itemlist[
  @item{On line 76, we initialize the component state to display @exviewref["tut-8" "Attach"].}
@@ -1837,12 +1837,20 @@ Next, the JavaScript command-line frontend:
          #:show-lines? #t "tut-7/index.mjs"
          #:link #t]
 
-We wrote @exloc["tut-7/index.rsh"] lines of Reach and @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] lines together.
+And finally, the Web frontend:
+
+@reachex[#:mode js
+         #:show-lines? #t "tut-8/index.js"
+         #:link #t]
+
+We wrote @exloc["tut-7/index.rsh"] lines of Reach and two different frontends. 
+Our command-line version is @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] lines together.
+While our Web version is @exloc["tut-8/index.js"] lines of JavaScript, or @exloc["tut-8/index.rsh" "tut-8/index.js"] lines together.
 
 Behind the scenes, Reach generated @exloc["tut-7/build/index.main.sol"] lines of Solidity (which you can look at here: @reachexlink["tut-7/build/index.main.sol"]), 1621 lines of TEAL (which you can look at here: @reachexlink["tut-7/build/index.main.mjs#L584"]), as well as @exloc["tut-7/build/index.main.mjs" -2108] lines of JavaScript (which you can look at here: @reachexlink["tut-7/build/index.main.mjs"]).
 If we weren't using Reach, then we'd have to write these @exloc["tut-7/build/index.main.sol" "tut-7/build/index.main.mjs" -482] lines ourselves and ensure that they are consistent and updated at every change to the application.
 
-Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own application!
+Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own applications!
 
 @itemlist[
 
