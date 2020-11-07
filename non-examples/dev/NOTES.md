@@ -2,10 +2,10 @@
 
 - [x] `race.rsh` --- `race`, no timeout, no variables
 - [x] `fork.rsh` --- `fork`, no timeout
-- [ ] --- `fork`, timeout
-- [ ] --- `race`, timeout
+- [x] `chicken-fork.rsh` --- `fork`, timeout
+- [x] `chicken-race.rsh` --- `race`, timeout
 - [ ] --- `race`, variables
-- [ ] --- `parallel_reduce`, no class
+- [x] `chicken-parallel.rsh` --- `parallel_reduce`, no class
 - [ ] --- `parallel_reduce`, class
 - [ ] --- `parallel_reduce`, `for ... in` syntax
 - [ ] --- containers, `Map`
@@ -13,6 +13,14 @@
 - [ ] --- containers, `Stack`
 - [ ] --- containers, assignment syntax
 - [x] `raffle.rsh` --- `parallel_reduce`, class, containers, `Map`, `fork`
+
+Explanation of programs
+- `{race, fork}.rsh` --- Alice and Bob compete to be the first to send the
+  third message to win the prize.
+- `chicken-*.rsh` --- Alice and Bob try to out do each other and be the last
+  one to pay the gas price before the deadline.
+- `raffle.rsh` --- A raffle with two rounds: one to buy a spot and provide
+  randomness and a second to reveal the randomness.
 
 # race --- 1-continuation asymmetric non-determinism
 

@@ -1,6 +1,7 @@
 'reach 0.1';
 
 const Common = {
+  ...hasRandom,
   showWinner: Fun([UInt], Null)
 };
 
@@ -19,8 +20,10 @@ export const main =
       Sponsor.only(() => {
         const { ticketPrice, deadline } =
           declassify(interact.getParams());
+        const _sponsort = interact.random();
+        const sponsortc = declassify(digest(_sponsort));
       });
-      Sponsor.publish(ticketPrice, deadline);
+      Sponsor.publish(ticketPrice, deadline, sponsortc);
       commit();
 
       const [ randomsM, howMany ] =
@@ -73,8 +76,27 @@ export const main =
               } ]
           ]);
 
+      // Here's an attack:
+      // 1. Know that you are the last one to return
+      // 2. Compute who the winner is if you submit your ticket
+      // 3. Blackmail them to pay you to submit your ticket
+      //
+      // Here's another attack:
+      // 1. Know you are the current winner
+      // 2. Buy all the blocks until the deadline, so other people can't submit
+      // their ticket.
+      //
+      // The sponsor's randomness attempts to compensate for these attacks by
+      // making it so that they have to contribute this. The best case scenario
+      // for the sponsor to control the outcome is to know what their ticket is
+      // and ALSO submit a bunch of other tickets, which would be too costly.
+      Sponsor.only(() => {
+        const sponsort = declassify(_sponsort); });
+      Sponsor.publish(sponsort);
+      require(sponsortc == digest(sponsort));
+
       const howManyNotReturned = howMany - howManyReturned;
-      const winner = hwinner % howManyReturned;
+      const winner = (hwinner + (sponsort % howManyReturned)) % howManyReturned;
       each([Sponsor, Player], () => {
         interact.showWinner(winner);
       });
@@ -94,8 +116,7 @@ export const main =
               assume(isWinner(Player)); });
             Player.publish();
             require(isWinner(Player));
-            transfer(howManyReturned * ticketPrice).to(Winner);
-            transfer(howManyNotReturned * ticketPrice).to(Sponsor);
+            transfer(howMany * ticketPrice).to(Winner);
             commit();
           } ]
       ]);
