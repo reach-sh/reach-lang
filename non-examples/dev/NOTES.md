@@ -1,3 +1,18 @@
+# example list
+
+- [x] `race.rsh` --- `race`, no timeout, no variables
+- [x] `fork.rsh` --- `fork`, no timeout
+- [ ] --- `fork`, timeout
+- [ ] --- `race`, timeout
+- [ ] --- `race`, variables
+- [ ] --- `parallel_reduce`, no class
+- [ ] --- `parallel_reduce`, class
+- [ ] --- `parallel_reduce`, `for ... in` syntax
+- [ ] --- containers, `Map`
+- [ ] --- containers, `Set`
+- [ ] --- containers, `Stack`
+- [ ] --- containers, assignment syntax
+- [x] `raffle.rsh` --- `parallel_reduce`, class, containers, `Map`, `fork`
 
 # race --- 1-continuation asymmetric non-determinism
 
@@ -42,12 +57,12 @@ Each participant may not be bound before running the race.
 
 Potentially this could just be a certain pattern of `race`.
 
-# join/parallel_reduce --- 1-continuation symmetric non-determinism
+# parallel_reduce --- 1-continuation symmetric non-determinism
 
 ```
 // step
 const x =
-  join(
+  parallel_reduce(
     deadline,
     initial,
     invariant(....),

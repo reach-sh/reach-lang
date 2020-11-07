@@ -1,7 +1,5 @@
 'reach 0.1';
 
-const MUInt = Maybe(UInt);
-
 const Common = {
   showWinner: Fun([UInt], Null)
 };
@@ -17,7 +15,7 @@ export const main =
       { ...Common,
         confirmTicket: Fun([UInt], Null) } ],
     ],
-    (Sponsor, Player, Winner) => {
+    (Sponsor, Player) => {
       Sponsor.only(() => {
         const { ticketPrice, deadline } =
           declassify(interact.getParams());

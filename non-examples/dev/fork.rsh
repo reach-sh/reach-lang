@@ -38,20 +38,18 @@ export const main =
       // start until she has enough time to know that Bob has accepted.
       wait(deadline);
 
-      const outcome =
-        race([
-          [ Alice,
-            () => {
-              Alice.publish();
-              return ALICE_WINS; } ],
-          [ Bob,
-            () => {
-              Bob.publish();
-              return BOB_WINS; } ]
-        ]);
-      invariant(balance() = 2 * wager);
-      const winner = outcome == ALICE_WINS ? Alice : Bob;
-      transfer(balance()).to(winner);
-      commit();
-      showOutcome(outcome);
+      fork([
+        [ Alice,
+          () => {
+            Alice.publish();
+            transfer(2 * wager).to(Alice);
+            commit();
+            showOutcome(ALICE_WINS); } ],
+        [ Bob,
+          () => {
+            Bob.publish();
+            transfer(2 * wager).to(Bob);
+            commit();
+            showOutcome(BOB_WINS); } ]
+      ]);
     });
