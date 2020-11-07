@@ -23,7 +23,7 @@ exports.Attach = class extends React.Component {
       <div>
         Please paste the contract info to attach to:
         <br />
-        <textarea
+        <textarea spellcheck="false"
           className='ContractInfo'
           onChange={(e) => this.setState({ctcInfoStr: e.currentTarget.value})}
           placeholder='{}'
