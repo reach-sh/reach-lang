@@ -3,7 +3,8 @@
 const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
 
 const Common = {
-  showOutcome: Fun([UInt], Null)
+  showOutcome: Fun([UInt], Null),
+  keepGoing: Fun([], Bool)
 };
 
 export const main =
@@ -40,10 +41,16 @@ export const main =
           race([
             [ Alice,
               () => {
+                Alice.only(() => {
+                  if ( ! interact.keepGoing() ) {
+                    fail(); } });
                 Alice.publish();
                 return [ true, 1 + as, bs ]; } ],
             [ Bob,
               () => {
+                Bob.only(() => {
+                  if ( ! interact.keepGoing() ) {
+                    fail(); } });
                 Bob.publish();
                 return [ true, as, 1 + bs ]; } ]
           ])

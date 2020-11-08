@@ -43,6 +43,8 @@ Furthermore, the publication can use `failed` to run code on a failure.
 
 The `fail` function is implicitly called if any `assume` fails.
 
+Change `fail` to `cancel`?
+
 Each participant must be bound before running the race.
 
 The bindings local to a participant are lifted to a `Maybe` of the value, where
