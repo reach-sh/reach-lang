@@ -407,6 +407,7 @@ The @deftech{declassify} primitive performs a @tech{declassification} of the giv
 
 @index{makeCommitment} Returns two values, @reachin{[ commitment, salt ]}, where @reachin{salt} is the result of calling @reachin{interact.random()}, and
 @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
+This is used in a @tech{local step} before @reachin{checkCommitment} is used in a @tech{consensus step}.
 
 @section[#:tag "ref-programs-consensus"]{Consensus Steps}
 
@@ -517,6 +518,7 @@ It accepts an optional bytes argument, which is included in any reported violati
  checkCommitment( commitment, salt, x ) }
 
 @index{checkCommitment} Makes a @tech{requirement} that @reachin{commitment} is the @tech{digest} of @reachin{salt} and @reachin{x}.
+This is used in a @tech{consensus step} after @reachin{makeCommitment} was used in a @tech{local step}.
 
 @section[#:tag "ref-programs-compute"]{Computations}
 
