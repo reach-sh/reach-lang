@@ -129,7 +129,6 @@ You should start off by initializing your Reach program:
   (apply commandline @bold{@exec{$}} " " args))
 
 (define-runtime-path x "../examples/")
-(define-runtime-path rx "../react-examples/")
 (define-runtime-path images "./images/")
 
 (define (eximage path)
@@ -201,7 +200,6 @@ You should start off by initializing your Reach program:
   (define x-dir
     (match dir
       ["examples" x]
-      ["react-examples" rx]
       (error 'runtime-path "~a is not a declared runtime path" dir)))
   (define ((do-link lab) link-loc content)
     (define copy

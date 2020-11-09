@@ -299,21 +299,19 @@ and provides a brief explanation of how it works.}
 The previous execution uses Node.js to perform a test run at the command line.
 However, most Reach developers deploy their DApps via a Web application, as we describe below.
 
-A Web deployment uses the exact same @reachexlink["index.rsh" #:dir "react-examples/overview"] file, but connected to a React-based @reachexlink["index.js" #:dir "react-examples/overview"] file.
-(It also uses some simple React @reachexlink["views" #:dir "react-examples/overview"]
- and @reachexlink["index.css" @tt{css} #:dir "react-examples/overview"] to go with it.)
-Let's take a look at some snippets from the React @reachexlink["index.js" #:dir "react-examples/overview"] and compare with the Node.js @reachexlink["index.mjs" #:dir "examples/overview"] from before:
+A Web deployment uses the exact same @reachexlink["index.rsh" #:dir "examples/overview-react"] file, but connected to a React-based @reachexlink["index.js" #:dir "examples/overview-react"] file.
+(It also uses some simple React @reachexlink["views" #:dir "examples/overview-react"]
+ and @reachexlink["index.css" @tt{css} #:dir "examples/overview-react"] to go with it.)
+Let's take a look at some snippets from the React @reachexlink["index.js" #:dir "examples/overview-react"] and compare with the Node.js @reachexlink["index.mjs" #:dir "examples/overview"] from before:
 
 @reachex[#:mode js
-         #:show-lines? #t "overview/index.js"
-         #:dir "react-examples"
+         #:show-lines? #t "overview-react/index.js"
          'only 7 8 "// ..."]
 
 At the top of the file, we import the Reach-generated backend as @jsin{backend} and the standard library as @jsin{reach}.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview/index.js"
-         #:dir "react-examples"
+         #:show-lines? #t "overview-react/index.js"
          'only 27 28 "  // ..."]
 
 We hook into the App @link["https://reactjs.org/docs/react-component.html"]{component}'s @link["https://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/"]{lifecycle event} @jsin{componentDidMount}
@@ -325,8 +323,7 @@ without the Reach programming having to do this in manually.
 This is just like how in the Node.js deployment, the Reach programmer does need to decode the details of the underlying consensus network's interaction API.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview/index.js"
-         #:dir "react-examples"
+         #:show-lines? #t "overview-react/index.js"
          'only 71 76 "  // ..."]
 
 Our React component has a method called @jsin{deploy} that actually deploys the contract on the network, using the same calls as in the test deployment:
@@ -335,15 +332,13 @@ and on line 74, we call the @jsin{ctc.getInfo} function;
 exactly as we did for the Node.js program.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview/index.js"
-         #:dir "react-examples"
+         #:show-lines? #t "overview-react/index.js"
          'only 79 85 "  // ..."]
 
 Similarly, we implement a @jsin{runBackend} method that executes the Reach program as Alice using information gathered from the React UI.
 
 @reachex[#:mode js
-         #:show-lines? #t "overview/index.js"
-         #:dir "react-examples"
+         #:show-lines? #t "overview-react/index.js"
          'only 112 121 "  // ..."]
 
 We implement a similar method in the @jsin{Bob} component that runs the backend as Bob,
