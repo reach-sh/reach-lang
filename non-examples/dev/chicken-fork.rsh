@@ -58,7 +58,6 @@ export const main =
               continue; } ]
         ])
         .timeout(deadline, () => {
-          Alice.publish();
           [ keepGoing, as, bs ] = [ false, as, bs ];
           continue; });
       }
