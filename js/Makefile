@@ -1,10 +1,20 @@
 ROOT=..
 include $(ROOT)/js/JS_IMAGES
 
-package.json: package.mo.json ../VERSION
+.PHONY: install-mo
+install-mo:
+	curl -sSL https://git.io/get-mo -o mo
+	chmod +x mo
+	sudo mv mo /usr/local/bin
+
+.PHONY: mo
+mo:
+	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
+
+package.json: package.mo.json ../VERSION mo
 	VERSION=$(VERSION) ESLINT_VERSION=$(ESLINT_VERSION) mo $< > $@
 
-runner_package.json: runner_package.mo.json ../VERSION
+runner_package.json: runner_package.mo.json ../VERSION mo
 	VERSION=$(VERSION) ESLINT_VERSION=$(ESLINT_VERSION) mo $< > $@
 
 .PHONY: clean
@@ -90,5 +100,3 @@ test: run
 format: package.json
 	npm run beautify
 	npm run format
-
-

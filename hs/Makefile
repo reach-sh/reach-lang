@@ -1,7 +1,17 @@
 IMAGE="reachsh/reach"
 CIRCLE_IMAGE="reachsh/reach-circle"
 
-package.yaml: package.mo.yaml ../VERSION
+.PHONY: install-mo
+install-mo:
+	curl -sSL https://git.io/get-mo -o mo
+	chmod +x mo
+	sudo mv mo /usr/local/bin
+
+.PHONY: mo
+mo:
+	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
+
+package.yaml: package.mo.yaml ../VERSION mo
 	(. ../VERSION && export VERSION && mo $< > $@)
 
 .PHONY: stack
