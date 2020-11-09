@@ -19,6 +19,9 @@ export const main =
         confirmWager: Fun([UInt], Null) } ],
     ],
     (Alice, Bob) => {
+      const showOutcome = (which) => {
+        each([Alice, Bob], () => { interact.showOutcome(which); });
+
       Alice.only(() => {
         const { wager, deadline } =
           declassify(interact.getParams());
@@ -39,9 +42,10 @@ export const main =
 
         const [ keepGoing_, as_, bs_ ] =
           parallel_reduce(
-            deadline,
             [ false, as, bs ],
             invariant(balance() == 2 * wager),
+            until(false),
+            timeout(deadline),
             [
               [ Alice,
                 () => {
@@ -59,8 +63,6 @@ export const main =
                   return [ true, as_, 1 + bs_ ]; } ]
             ]);
 
-        // This example is ugly because the syntax of continue and
-        // parallel_reduce are not composable
         [ keepGoing, as, bs ] = [ keepGoing_, as_, bs_ ];
         continue;
       }

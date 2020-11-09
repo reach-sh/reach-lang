@@ -28,8 +28,9 @@ export const main =
       commit();
 
       var [ forA, forB ] = [ 0, 0 ];
-      deadline(deadline);
-      invariant(balance() == (forA + forB) * ticketPrice),
+      invariant(balance() == (forA + forB) * ticketPrice);
+      until(false);
+      timeout(deadline);
       for ( const aVoter in Voter ) {
         Voter.only(() => {
           const vote =

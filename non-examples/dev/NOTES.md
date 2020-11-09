@@ -76,27 +76,35 @@ Potentially this could just be a certain pattern of `race`.
 // step
 const x =
   parallel_reduce(
-    deadline,
     initial,
     invariant(....),
+    until(....),
+    timeout(....),
     [[Part or Class, Thunk],
       ...]);
-// step
+// consensus-step
+commit();
 ```
 
-The thunks and invariant have `x` in scope.
+The thunks, until, and invariant have `x` in scope.
 
 The inner thunks are like the other race versions, returning a new value for
 `x`.
 
 Participants that are not classes must be bound before the race.
 
+Every participant that occurs in the `parallel_reduce` races to be the one to
+run the code after the `parallel_reduce`, which they do after the `timeout` is
+reached. However, if any thunk ends with the `until` condition true, then that
+participant executes the tail and the block is over.
+
 I'm considering allowing an abbrevation of the form:
 
 ```
 var x = initial;
-deadline(....);
 invariant(....);
+until(....);
+timeout(....);
 for ( const id in Class ) {
   // Thunk body referencing id rather than Class
 }

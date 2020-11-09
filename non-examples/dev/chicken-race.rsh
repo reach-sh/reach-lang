@@ -19,6 +19,9 @@ export const main =
         confirmWager: Fun([UInt], Null) } ],
     ],
     (Alice, Bob) => {
+      const showOutcome = (which) => {
+        each([Alice, Bob], () => { interact.showOutcome(which); });
+
       Alice.only(() => {
         const { wager, deadline } =
           declassify(interact.getParams());
@@ -55,6 +58,7 @@ export const main =
                 return [ true, as, 1 + bs ]; } ]
           ])
           .timeout(deadline, () => {
+            Alice.publish();
             return [ false, as, bs ]; });
         invariant(balance() == 2 * wager);
 

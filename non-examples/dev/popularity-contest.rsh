@@ -29,9 +29,10 @@ export const main =
 
       const [ forA, forB ] =
         parallel_reduce(
-          deadline,
           [ 0, 0 ],
           invariant(balance() == (forA + forB) * ticketPrice),
+          until(false),
+          timeout(deadline),
           [
             [ Voter,
               () => {

@@ -28,9 +28,10 @@ export const main =
 
       const [ randomsM, howMany ] =
         parallel_reduce(
-          deadline,
           [ new Map(Digest), 0 ],
           invariant(balance() == howMany * ticketPrice),
+          until(false),
+          timeout(deadline),
           [
             [ Player,
               () => {
@@ -46,6 +47,7 @@ export const main =
                          howMany + 1 ];
               } ]
           ]);
+      commit();
 
       const randomMatches = (who, r) => {
         const rc = randomsM[who];
@@ -57,9 +59,10 @@ export const main =
 
       const [ ticketsM, hwinner, howManyReturned ] =
         parallel_reduce(
-          deadline,
           [ new Map(UInt), 0, 0 ],
           invariant(balance() == howMany * ticketPrice),
+          until(howManyReturned == howMany),
+          timeout(deadline),
           [
             [ Player,
               (_ticket, ticketCommit) => {
@@ -75,6 +78,7 @@ export const main =
                          howManyReturned + 1 ];
               } ]
           ]);
+      commit();
 
       // Here's an attack:
       // 1. Know that you are the last one to return
