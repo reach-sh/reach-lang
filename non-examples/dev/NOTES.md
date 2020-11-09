@@ -6,7 +6,7 @@
 - [x] `chicken-race.rsh` --- `race`, timeout
 - [ ] --- `race`, variables
 - [x] `chicken-parallel.rsh` --- `parallel_reduce`, no class
-- [ ] --- `parallel_reduce`, class
+- [x] `popularity-contest.rsh` --- `parallel_reduce`, class
 - [ ] --- `parallel_reduce`, `for ... in` syntax
 - [ ] --- containers, `Map`
 - [ ] --- containers, `Set`

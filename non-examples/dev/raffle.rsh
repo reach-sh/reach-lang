@@ -21,7 +21,7 @@ export const main =
         const { ticketPrice, deadline } =
           declassify(interact.getParams());
         const _sponsort = interact.random();
-        const sponsortc = declassify(digest(_sponsort));
+        const sponsortc = declassify(commit(_sponsort));
       });
       Sponsor.publish(ticketPrice, deadline, sponsortc);
       commit();
