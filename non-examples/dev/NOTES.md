@@ -24,6 +24,7 @@ Explanation of programs
 - `popularity-contest*.rsh` --- A pollster proposes two candidates, who
   receives votes; the winner receives all the proceeds and the loser gets
   none.
+- `race-vars.rsh` --- A dumb program that doesn't do anything useful
 
 # race --- 1-continuation asymmetric non-determinism
 
