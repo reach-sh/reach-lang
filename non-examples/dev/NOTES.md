@@ -4,7 +4,7 @@
 - [x] `fork.rsh` --- `fork`, no timeout
 - [x] `chicken-fork.rsh` --- `fork`, timeout
 - [x] `chicken-race.rsh` --- `race`, timeout
-- [ ] --- `race`, variables
+- [x] `race-vars.rsh` --- `race`, variables
 - [x] `chicken-parallel.rsh` --- `parallel_reduce`, no class
 - [x] `popularity-contest.rsh` --- `parallel_reduce`, class
 - [x] `popularity-contest-forin.rsh` --- `parallel_reduce`, `for ... in` syntax

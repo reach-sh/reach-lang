@@ -68,6 +68,7 @@ export const main =
               (_ticket, ticketCommit) => {
                 Player.only(() => {
                   const ticket = declassify(_ticket);
+                  assume(fromMaybe(ticketsM[Player], () => true, (_) => false);
                   assume(randomMatches(Player, ticket));
                 });
                 Player.publish(ticket);
