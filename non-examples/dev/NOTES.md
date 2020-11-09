@@ -32,7 +32,7 @@ Explanation of programs
 const x =
   race([[Part, Thunk],
         ...])
-  .timeout();
+  .timeout(deadline, default);
 // consensus-step
 invariant(....);
 ....;
@@ -55,6 +55,21 @@ the value is `Some` if it ran and `None` if it didn't run. The `Thunk` is not
 really a thunk though, because you can write variables in it and if they are
 `None` then the branch won't run.
 
+This is equivalent to:
+
+```
+// step
+const mx =
+  parallel_reduce(
+    None(),
+    invariant(fromMaybe(mx, const(true), (x) => ....)),
+    until(isSome(mx)),
+    timeout(deadline),
+    [ [ Part, () => { const y = Thunk(); return Some(y); } ], ... ]);
+const x = fromMaybe(mx, const(default), id);
+....;
+```
+
 # fork --- n-continuation asymmetric non-determinism
 
 ```
@@ -69,6 +84,13 @@ The inner thunks are like the other race version.
 Each participant may not be bound before running the race.
 
 Potentially this could just be a certain pattern of `race`.
+
+This is equivalent to:
+- a `race` where the state is an address for the participant that
+  won, plus a `data` for each possibility that records the type of the publish
+  of the thunk
+- a tail that inspects that `data` and invokes the appropriate thunk, after
+  doing a `Participant.set` on the winner
 
 # parallel_reduce --- 1-continuation symmetric non-determinism
 
@@ -110,7 +132,7 @@ for ( const id in Class ) {
 }
 ```
 
-for when there's just one element in the `join`.
+for when there's just one element in the `parallel_reduce`.
 
 # containers
 

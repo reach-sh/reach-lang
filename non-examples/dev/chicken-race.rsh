@@ -58,7 +58,6 @@ export const main =
                 return [ true, as, 1 + bs ]; } ]
           ])
           .timeout(deadline, () => {
-            Alice.publish();
             return [ false, as, bs ]; });
         invariant(balance() == 2 * wager);
 
