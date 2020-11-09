@@ -21,6 +21,9 @@ Explanation of programs
   one to pay the gas price before the deadline.
 - `raffle.rsh` --- A raffle with two rounds: one to buy a spot and provide
   randomness and a second to reveal the randomness.
+- `popularity-contest*.rsh` --- A pollster proposes two candidates, who
+  receives votes; the winner receives all the proceeds and the loser gets
+  none.
 
 # race --- 1-continuation asymmetric non-determinism
 
