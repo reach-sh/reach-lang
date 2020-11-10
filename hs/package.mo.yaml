@@ -39,6 +39,7 @@ dependencies:
 - mtl
 - optparse-applicative
 - parsec-numbers
+- pretty-show
 - pretty-simple
 - prettyprinter
 - process
