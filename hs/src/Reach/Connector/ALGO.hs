@@ -24,7 +24,7 @@ import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Connector
 import Reach.Pretty ()
-import Reach.Texty
+import Reach.Texty (pretty)
 import Reach.Type
 import Reach.UnsafeUtil
 import Reach.Util

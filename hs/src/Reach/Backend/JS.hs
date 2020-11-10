@@ -7,6 +7,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 import qualified Data.Scientific as Sci
 import qualified Data.Text as T
+import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST
 import Reach.Backend
 import Reach.Connector
@@ -494,4 +495,4 @@ jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
 backend_js :: Backend
 backend_js outn crs pl = do
   let jsf = outn "mjs"
-  writeFile jsf $ show $ jsPLProg crs pl
+  LTIO.writeFile jsf $ render $ jsPLProg crs pl

@@ -1,5 +1,6 @@
 module Reach.Texty (
   Doc(..),
+  render,
   Pretty,
   pretty,
   (<+>),

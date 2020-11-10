@@ -16,6 +16,7 @@ import Data.Maybe
 import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
+import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST
 import Reach.CollectTypes
 import Reach.Connector
@@ -878,5 +879,5 @@ connect_eth = Connector {..}
         go solf = do
           let (cinfo, sol) = solPLProg pl
           unless dontWriteSol $ do
-            writeFile solf (show sol)
+            LTIO.writeFile solf $ render sol
           compile_sol cinfo solf

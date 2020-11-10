@@ -3,6 +3,7 @@ module Reach.Compiler (CompilerOpts (..), compile, all_connectors) where
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
+import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST
 import Reach.Backend.JS
 import Reach.Connector
@@ -43,23 +44,23 @@ compile copts = do
               True -> Just outn
               False -> Nothing
         let interOut = case outnMay of
-              Just f -> writeFile . f
+              Just f -> LTIO.writeFile . f
               Nothing -> \_ _ -> return ()
         let dl = compileBundle all_connectors djp which
         let DLProg _ (DLOpts {..}) _ _ = dl
         let connectors = map (all_connectors M.!) dlo_connectors
-        interOut "dl" $ show $ pretty dl
+        interOut "dl" $ render $ pretty dl
         let ll = linearize dl
-        interOut "ll" $ show $ pretty ll
+        interOut "ll" $ render $ pretty ll
         ol <- optimize ll
-        interOut "ol" $ show $ pretty ol
+        interOut "ol" $ render $ pretty ol
         let vconnectors =
               case dlo_verifyPerConnector of
                 False -> Nothing
                 True -> Just connectors
         verify outnMay vconnectors ol >>= maybeDie
         let pl = epp ol
-        interOut "pl" $ show $ pretty pl
+        interOut "pl" $ render $ pretty pl
         let runConnector c = (,) (conName c) <$> conGen c outnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors
         backend_js outn crs pl
