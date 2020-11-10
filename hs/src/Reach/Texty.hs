@@ -14,13 +14,15 @@ module Reach.Texty (
   punctuate,
   enclose,
   surround,
+  squotes,
   dquotes,
   parens,
   braces,
   brackets,
   hardline, --- XXX remove
   semi,
-  comma
+  comma,
+  space
 ) where
 
 import Control.Monad.Identity
@@ -28,7 +30,6 @@ import Control.Monad.Reader
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import Data.String
-import Data.List (intersperse)
 
 data Doc
   = DText LT.Text
@@ -133,14 +134,20 @@ concatWith f xs =
 viaShow :: Show a => a -> Doc
 viaShow = DText . LT.pack . show
 
-punctuate :: a -> [a] -> [a]
-punctuate = intersperse
+punctuate :: Doc -> [Doc] -> [Doc]
+punctuate p = go
+  where
+    go []     = []
+    go [d]    = [d]
+    go (d:ds) = (d <> p) : go ds
 
 enclose :: Doc -> Doc -> Doc -> Doc
 enclose b a c = b <> c <> a
 surround :: Doc -> Doc -> Doc -> Doc
 surround x l r = enclose l r x
 
+squotes :: Doc -> Doc
+squotes = enclose "'" "'"
 dquotes :: Doc -> Doc
 dquotes = enclose "\"" "\""
 parens :: Doc -> Doc
@@ -155,6 +162,7 @@ hardline = DNewline
 
 semi :: Doc
 semi = ";"
-
 comma :: Doc
 comma = ","
+space :: Doc
+space = " "

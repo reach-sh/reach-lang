@@ -8,13 +8,10 @@ import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
 -- import qualified Data.Sequence as Seq
--- import Data.Text.Prettyprint.Doc
 -- import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.CollectCounts
 -- import Reach.Type
-
-import Reach.Pretty ()
 import Reach.Sanitize
 import Reach.Util
 

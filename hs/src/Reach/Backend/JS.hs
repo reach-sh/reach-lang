@@ -7,10 +7,10 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 import qualified Data.Scientific as Sci
 import qualified Data.Text as T
-import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.Backend
 import Reach.Connector
+import Reach.Texty
 import Reach.Type
 import Reach.UnsafeUtil
 import Reach.Util
@@ -21,42 +21,42 @@ import Reach.Version
 sb :: SrcLoc
 sb = srcloc_builtin
 
-vsep_with_blank :: [Doc a] -> Doc a
+vsep_with_blank :: [Doc] -> Doc
 vsep_with_blank l = vsep $ punctuate emptyDoc l
 
 --- JS Helpers
 
-jsString :: String -> Doc a
+jsString :: String -> Doc
 jsString s = squotes $ pretty s
 
-jsArray :: [Doc a] -> Doc a
+jsArray :: [Doc] -> Doc
 jsArray elems = brackets $ hcat $ punctuate (comma <> space) elems
 
-jsApply :: Doc a -> [Doc a] -> Doc a
+jsApply :: Doc -> [Doc] -> Doc
 jsApply f args = f <> parens (hcat $ punctuate (comma <> space) args)
 
-jsFunction :: Doc a -> [Doc a] -> Doc a -> Doc a
+jsFunction :: Doc -> [Doc] -> Doc -> Doc
 jsFunction name args body =
   "async function" <+> jsApply name args <+> jsBraces body
 
-jsWhile :: Doc a -> Doc a -> Doc a
+jsWhile :: Doc -> Doc -> Doc
 jsWhile cond body = "while" <+> parens cond <+> jsBraces body
 
-jsReturn :: Doc a -> Doc a
+jsReturn :: Doc -> Doc
 jsReturn a = "return" <+> a <> semi
 
-jsIf :: Doc a -> Doc a -> Doc a -> Doc a
+jsIf :: Doc -> Doc -> Doc -> Doc
 jsIf cap ttp ftp = "if" <+> parens cap <+> jsBraces ttp <> hardline <> "else" <+> jsBraces ftp
 
-jsBraces :: Doc a -> Doc a
+jsBraces :: Doc -> Doc
 jsBraces body = braces (nest 2 $ hardline <> body <> space)
 
-jsObject :: Pretty k => M.Map k (Doc a) -> Doc a
+jsObject :: Pretty k => M.Map k (Doc) -> Doc
 jsObject m = jsBraces $ vsep $ punctuate comma $ map jsObjField $ M.toList m
   where
     jsObjField (k, v) = pretty k <> ":" <+> v
 
-jsBacktickText :: T.Text -> Doc a
+jsBacktickText :: T.Text -> Doc
 jsBacktickText x = "`" <> pretty x <> "`"
 
 --- Compiler
@@ -68,10 +68,10 @@ data JSCtxt = JSCtxt
   , ctxt_while :: Maybe (PLBlock, ETail, ETail)
   }
 
-jsTxn :: JSCtxt -> Doc a
+jsTxn :: JSCtxt -> Doc
 jsTxn ctxt = "txn" <> pretty (ctxt_txn ctxt)
 
-jsTimeoutFlag :: JSCtxt -> Doc a
+jsTimeoutFlag :: JSCtxt -> Doc
 jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout"
 
 --- FIXME use Haskell state to keep track of which contracts have been
@@ -79,7 +79,7 @@ jsTimeoutFlag ctxt = jsTxn ctxt <> ".didTimeout"
 --- don't create them ovre and over... or do something like the sol
 --- and smt backends and collect the set of types and define them all
 --- up front.
-jsContract :: SLType -> Doc a
+jsContract :: SLType -> Doc
 jsContract = \case
   T_Null -> "stdlib.T_Null"
   T_Bool -> "stdlib.T_Bool"
@@ -96,14 +96,14 @@ jsContract = \case
   T_Var {} -> impossible "var dl"
   T_Type {} -> impossible "type dl"
 
-jsProtect :: Doc a -> SLType -> Doc a -> Doc a
+jsProtect :: Doc -> SLType -> Doc -> Doc
 jsProtect ai how what =
   jsApply "stdlib.protect" $ [jsContract how, what, ai]
 
-jsAt :: SrcLoc -> Doc a
+jsAt :: SrcLoc -> Doc
 jsAt at = jsString $ unsafeRedactAbsStr $ show at
 
-jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> Doc a
+jsAssertInfo :: JSCtxt -> SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> Doc
 jsAssertInfo ctxt at fs mmsg =
   jsObject $
     M.fromList
@@ -119,13 +119,13 @@ jsAssertInfo ctxt at fs mmsg =
     who_p = jsCon $ DLL_Bytes $ ctxt_who ctxt
     fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
 
-jsVar :: DLVar -> Doc a
+jsVar :: DLVar -> Doc
 jsVar (DLVar _ _ _ n) = "v" <> pretty n
 
-jsContinueVar :: DLVar -> Doc a
+jsContinueVar :: DLVar -> Doc
 jsContinueVar dv = "c" <> jsVar dv
 
-jsCon :: DLLiteral -> Doc a
+jsCon :: DLLiteral -> Doc
 jsCon = \case
   DLL_Null -> "null"
   DLL_Bool True -> "true"
@@ -134,7 +134,7 @@ jsCon = \case
     jsApply "stdlib.checkedBigNumberify" [jsAt at, jsArg (DLA_Constant $ DLC_UInt_max), pretty i]
   DLL_Bytes b -> jsString $ bunpack b
 
-jsArg :: DLArg -> Doc a
+jsArg :: DLArg -> Doc
 jsArg = \case
   DLA_Var v -> jsVar v
   DLA_Constant c ->
@@ -149,7 +149,7 @@ jsArg = \case
   DLA_Interact _ m t ->
     jsProtect "null" t $ "interact." <> pretty m
 
-jsDigest :: [DLArg] -> Doc a
+jsDigest :: [DLArg] -> Doc
 jsDigest as =
   jsApply
     "stdlib.digest"
@@ -157,7 +157,7 @@ jsDigest as =
     , jsArg (DLA_Tuple as)
     ]
 
-jsPrimApply :: JSCtxt -> PrimOp -> [Doc a] -> Doc a
+jsPrimApply :: JSCtxt -> PrimOp -> [Doc] -> Doc
 jsPrimApply _ctxt = \case
   ADD -> jsApply "stdlib.add"
   SUB -> jsApply "stdlib.sub"
@@ -181,7 +181,7 @@ jsPrimApply _ctxt = \case
   DIGEST_EQ -> jsApply "stdlib.digestEq"
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
 
-jsExpr :: JSCtxt -> DLExpr -> Doc a
+jsExpr :: JSCtxt -> DLExpr -> Doc
 jsExpr ctxt = \case
   DLE_Arg _ a ->
     jsArg a
@@ -236,7 +236,7 @@ jsExpr ctxt = \case
       False ->
         jsArg what
 
-jsEmitSwitch :: (JSCtxt -> k -> Doc a) -> JSCtxt -> SrcLoc -> DLVar -> SwitchCases k -> Doc a
+jsEmitSwitch :: (JSCtxt -> k -> Doc) -> JSCtxt -> SrcLoc -> DLVar -> SwitchCases k -> Doc
 jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> jsBraces (vsep $ map cm1 $ M.toAscList csm)
   where
     cm1 (vn, (mov', body)) = "case" <+> jsString vn <> ":" <+> jsBraces set_and_body'
@@ -246,7 +246,7 @@ jsEmitSwitch iter ctxt _at ov csm = "switch" <+> parens (jsVar ov <> "[0]") <+> 
           Just ov' -> "const" <+> jsVar ov' <+> "=" <+> jsVar ov <> "[1]" <> semi
           Nothing -> emptyDoc
 
-jsCom :: (JSCtxt -> k -> Doc a) -> JSCtxt -> PLCommon k -> Doc a
+jsCom :: (JSCtxt -> k -> Doc) -> JSCtxt -> PLCommon k -> Doc
 jsCom iter ctxt = \case
   PL_Return {} -> emptyDoc
   PL_Let _ _ dv de k ->
@@ -280,14 +280,14 @@ jsCom iter ctxt = \case
       <> hardline
       <> iter ctxt k
 
-jsPLTail :: JSCtxt -> PLTail -> Doc a
+jsPLTail :: JSCtxt -> PLTail -> Doc
 jsPLTail ctxt (PLTail m) = jsCom jsPLTail ctxt m
 
-jsNewScope :: Doc a -> Doc a
+jsNewScope :: Doc -> Doc
 jsNewScope body =
   jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
-jsBlock :: JSCtxt -> PLBlock -> Doc a
+jsBlock :: JSCtxt -> PLBlock -> Doc
 jsBlock ctxt (PLBlock _ t a) = jsNewScope body
   where
     body = jsPLTail ctxt t <> hardline <> jsReturn (jsArg a)
@@ -299,7 +299,7 @@ data AsnMode
   | AM_ContinueInner
   | AM_ContinueInnerSim
 
-jsAsn :: JSCtxt -> AsnMode -> DLAssignment -> Doc a
+jsAsn :: JSCtxt -> AsnMode -> DLAssignment -> Doc
 jsAsn _ctxt mode asn =
   case mode of
     AM_While -> def "let " v a
@@ -316,12 +316,12 @@ jsAsn _ctxt mode asn =
     cv (v_, _) = jsContinueVar v_
     a (_, a_) = jsArg a_
 
-jsFromSpec :: JSCtxt -> FromSpec -> Doc a
+jsFromSpec :: JSCtxt -> FromSpec -> Doc
 jsFromSpec ctxt = \case
   FS_Join v -> "const" <+> jsVar v <+> "=" <+> jsTxn ctxt <> ".from" <> semi <> hardline
   FS_Again _ -> emptyDoc
 
-jsETail :: JSCtxt -> ETail -> Doc a
+jsETail :: JSCtxt -> ETail -> Doc
 jsETail ctxt = \case
   ET_Com m -> jsCom jsETail ctxt m
   ET_Stop _ ->
@@ -444,7 +444,7 @@ jsETail ctxt = \case
                    <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk))
                 <> semi
 
-jsPart :: SLPart -> EPProg -> Doc a
+jsPart :: SLPart -> EPProg -> Doc
 jsPart p (EPProg _ _ et) =
   "export" <+> jsFunction (pretty $ bunpack p) (["stdlib", "ctc", "interact"]) bodyp'
   where
@@ -457,7 +457,7 @@ jsPart p (EPProg _ _ et) =
         }
     bodyp' = jsETail ctxt et
 
-jsConnInfo :: ConnectorInfo -> Doc a
+jsConnInfo :: ConnectorInfo -> Doc
 jsConnInfo = \case
   Aeson.Null -> jsCon DLL_Null
   Aeson.Bool b -> jsCon $ DLL_Bool b
@@ -469,15 +469,15 @@ jsConnInfo = \case
   Aeson.Array a -> jsArray $ map jsConnInfo $ Foldable.toList a
   Aeson.Object m -> jsObject $ M.map jsConnInfo $ M.fromList $ HM.toList $ m
 
-jsCnp :: T.Text -> ConnectorInfo -> Doc a
+jsCnp :: T.Text -> ConnectorInfo -> Doc
 jsCnp name cnp = "const" <+> "_" <> pretty name <+> "=" <+> (jsConnInfo cnp) <> semi
 
-jsConnsExp :: [T.Text] -> Doc a
+jsConnsExp :: [T.Text] -> Doc
 jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> semi
   where
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
-jsPLProg :: ConnectorResult -> PLProg -> Doc a
+jsPLProg :: ConnectorResult -> PLProg -> Doc
 jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
   where
     modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]

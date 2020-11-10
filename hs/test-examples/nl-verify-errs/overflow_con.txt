@@ -23,11 +23,11 @@ Verification failed:
     "v13" = (<= v3 v12 )
       (from: v13)
       (bound at: ./overflow_con.rsh:application)
-      (because: evaluating PLE(v3 , v12 ))
+      (because: evaluating PLE(v3, v12 ))
     "v12" = (- dlc_UInt_max 1 )
       (from: v12)
       (bound at: ./overflow_con.rsh:application)
-      (because: evaluating SUB(UInt.max , 1 ))
+      (because: evaluating SUB(UInt.max, 1 ))
     "v3" = v1
       (from: v3)
       (bound at: ./overflow_con.rsh:12:6:dot)

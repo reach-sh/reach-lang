@@ -24,15 +24,15 @@ Verification failed:
     "v9" = (= v7 v3 )
       (from: v9)
       (bound at: reach standard library:21:17:application)
-      (because: evaluating PEQ(v7 , v3 ))
+      (because: evaluating PEQ(v7, v3 ))
     "v3" = (* v1 2 )
       (from: v3)
       (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating MUL(v1 , 2 ))
+      (because: evaluating MUL(v1, 2 ))
     "v7" = (+ v1 v2 )
       (from: v7)
       (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating ADD(v1 , v2 ))
+      (because: evaluating ADD(v1, v2 ))
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:
