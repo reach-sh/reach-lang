@@ -15,11 +15,8 @@ import {
   eq,
   ge,
   getDEBUG,
-  //stringToHex,
   hexToString,
   isBigNumber,
-  isHex,
-  bigNumberToHex,
   lt,
   CurrencyAmount,
   IAccount,
@@ -147,46 +144,14 @@ type ETH_Ty<BV extends CBR_Val, NV> =  {
   canonicalize: (uv: unknown) => BV,
   munge: (bv: BV) => NV,
   unmunge: (nv: NV) => BV,
+  /** @description describes the shape of the munged value */
+  paramType: string,
 }
 type AnyETH_Ty = ETH_Ty<CBR_Val, any>;
 
-const kek = (arg: any): string | Uint8Array => {
-  if (typeof(arg) === 'string') {
-    if (isHex(arg)) {
-      return arg;
-    } else {
-      return ethers.utils.toUtf8Bytes(arg);
-    }
-  } else if (typeof(arg) === 'boolean') {
-    return kek(arg ? 1 : 0);
-  } else if (typeof(arg) === 'number') {
-    return '0x' + bigNumberToHex(arg);
-  } else if (isBigNumber(arg)) {
-    return '0x' + bigNumberToHex(arg);
-  } else if (arg && arg.constructor && arg.constructor.name == 'Uint8Array') {
-    return arg;
-  } else if (arg && arg.constructor && arg.constructor.name == 'Buffer') {
-    return '0x' + arg.toString('hex');
-  } else if (Array.isArray(arg)) {
-    return ethers.utils.concat(arg.map((x) => ethers.utils.arrayify(kek(x))));
-  } else if (Object.keys(arg).length > 0) {
-    if (Object.keys(arg).length > 1) {
-      // XXX
-      console.log(
-        `WARNING: digest known not to match solidity keccak256`
-       + ` on objects with more than 1 field.`
-       + ` This can cause: "The message you are trying to send appears to be invalid"`
-      );
-    }
-    const {ascLabels} = labelMaps(arg);
-    return kek(ascLabels.map((label => arg[label])));
-  } else {
-    throw Error(`Can't kek this: ${JSON.stringify(arg)}`);
-  }
-};
-
-export const digest =
-  makeDigest((t:any, v:any) => kek(t.munge(v)));
+export const digest = makeDigest((t:AnyETH_Ty, v:any) => {
+  return ethers.utils.defaultAbiCoder.encode([t.paramType], [t.munge(v)])
+});
 
 const V_Null: CBR_Null = null;
 export const T_Null: ETH_Ty<CBR_Null, false> = {
@@ -195,6 +160,7 @@ export const T_Null: ETH_Ty<CBR_Null, false> = {
   // null is represented in solidity as false
   munge: (bv: CBR_Null): false => (void(bv), false),
   unmunge: (nv: false): CBR_Null => (void(nv), V_Null),
+  paramType: 'bool',
 };
 
 export const T_Bool: ETH_Ty<CBR_Bool, boolean> = {
@@ -202,6 +168,7 @@ export const T_Bool: ETH_Ty<CBR_Bool, boolean> = {
   defaultValue: false,
   munge: (bv: CBR_Bool): boolean => bv,
   unmunge: (nv: boolean): CBR_Bool => V_Bool(nv),
+  paramType: 'bool',
 }
 const V_Bool = (b: boolean): CBR_Bool => {
   return T_Bool.canonicalize(b);
@@ -212,6 +179,7 @@ export const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   defaultValue: ethers.BigNumber.from(0),
   munge: (bv: CBR_UInt): BigNumber => bv,
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
+  paramType: 'uint256',
 };
 const V_UInt = (n: BigNumber): CBR_UInt => {
   return T_UInt.canonicalize(n);
@@ -223,6 +191,7 @@ export const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
     defaultValue: ''.padEnd(len, '\0'),
     munge: (bv: CBR_Bytes): Array<number> => Array.from(ethers.utils.toUtf8Bytes(bv)),
     unmunge: (nv: Array<number>) => me.canonicalize(hexToString(ethers.utils.hexlify(nv))),
+    paramType: `uint8[${len}]`,
   };
   return me;
 };
@@ -233,6 +202,7 @@ export const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   munge: (bv: CBR_Digest): BigNumber => BigNumber.from(bv),
   // XXX likely not the correct unmunge type?
   unmunge: (nv: BigNumber): CBR_Digest => V_Digest(nv.toHexString()),
+  paramType: 'uint256',
 };
 const V_Digest = (s: string): CBR_Digest => {
   return T_Digest.canonicalize(s);
@@ -266,6 +236,7 @@ export const T_Address: ETH_Ty<CBR_Address, string> = {
   defaultValue: '0x' + Array(64).fill('0').join(''),
   munge: (bv: CBR_Address): string => bv,
   unmunge: (nv: string): CBR_Address => V_Address(nv),
+  paramType: 'address',
 }
 const V_Address = (s: string): CBR_Address => {
   // Uses ETH-specific canonicalize!
@@ -284,6 +255,7 @@ export const T_Array = <T>(
   unmunge: (nv: Array<T>): CBR_Array => {
     return V_Array(ctc, size)(nv.map((arg: T) => ctc.unmunge(arg)));
   },
+  paramType: `${ctc.paramType}[${size}]`,
 });
 const V_Array = <T>(
   ctc: ETH_Ty<CBR_Val, T>,
@@ -304,6 +276,7 @@ export const T_Tuple = <T>(
   unmunge: (args: Array<T>): CBR_Tuple => {
     return V_Tuple(ctcs)(args.map((arg: any, i: number) => ctcs[i].unmunge(arg)));
   },
+  paramType: `tuple(${ctcs.map((ctc) => ctc.paramType).join(',')})`
 });
 const V_Tuple = <T>(
   ctcs: Array<ETH_Ty<CBR_Val, T>>,
@@ -322,7 +295,6 @@ export const T_Object = <T>(
     }
     return obj;
   })(),
-
   munge: (bv: CBR_Object): {[key: string]: T} => {
     const obj: {
       [key: string]: any
@@ -341,6 +313,11 @@ export const T_Object = <T>(
     }
     return V_Object(co)(obj);
   },
+  paramType: (() => {
+    const {ascLabels} = labelMaps(co);
+    const tupFields = ascLabels.map((label) => `${co[label].paramType} ${label}`).join(',')
+    return `tuple(${tupFields})`;
+  })(),
 });
 const V_Object = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
@@ -393,6 +370,14 @@ export const T_Data = <T>(
       const val = vs[i + 1];
       return V_Data(co)([label, co[label].unmunge(val)]);
     },
+
+    paramType: (() => {
+      const {ascLabels} = labelMaps(co);
+      // See comment on unmunge about field names that we could use but currently don't
+      const optionTys = ascLabels.map((label) => `${co[label].paramType} _${label}`)
+      const tupFields = [`T_UInt.paramType which`].concat(optionTys).join(',');
+      return `tuple(${tupFields})`;
+    })(),
   }
 };
 const V_Data = <T>(

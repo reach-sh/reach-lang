@@ -16,7 +16,7 @@ import * as backend from './build/index.main.mjs';
       ...stdlib.hasRandom,
       getObj: () => {
         console.log('Alice getObj');
-        return {y: 'hello', x: 3}
+        return {y: true, x: 3}
       },
     }),
     backend.Bob(stdlib, ctcBob, {
