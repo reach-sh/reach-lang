@@ -1,5 +1,5 @@
 module Reach.Parser
-  ( ParserError (..)
+ ( ParserError (..)
   , JSBundle (..)
   , parseJSFormals
   , jsArrowFormalsToFunFormals
@@ -24,16 +24,18 @@ import GHC.IO.Encoding
 import GHC.Stack (HasCallStack)
 import Generics.Deriving (Generic, conNameOf)
 import Language.JavaScript.Parser
-import Language.JavaScript.Parser.AST
+import Language.JavaScript.Parser.AST hiding (showStripped)
 import Language.JavaScript.Parser.Lexer
 import Reach.AST
 import Reach.EmbeddedFiles
 import Reach.JSUtil
+import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
 import System.Directory
 import System.FilePath
 import Text.Read (readMaybe)
+import Text.Show.Pretty (ppShow)
 
 data ParserError
   = Err_Parse_CyclicImport ReachSource
@@ -139,6 +141,12 @@ instance NFData JSBundle where
     where
       go [] = ()
       go ((rs, jmi) : rest) = rnf rs `seq` jmi `seq` go rest
+
+instance Pretty JSBundle where
+  pretty (JSBundle ds) = vsep $ map go ds
+    where go (rs, jms) =
+            vsep $ (pretty $ "// " <> show rs)
+                 : map (pretty . ppShow) jms
 
 gatherDeps_fc :: SrcLoc -> IORef JSBundleMap -> JSFromClause -> IO JSFromClause
 gatherDeps_fc at fmr (JSFromClause ab aa s) = do
