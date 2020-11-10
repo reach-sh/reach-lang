@@ -118,7 +118,9 @@ Participants that are not classes must be bound before the race.
 
 Every participant that occurs in the `parallel_reduce` races to be the one to
 run the code after the `parallel_reduce`, which they do after the `timeout` is
-reached. However, if any thunk ends with the `until` condition true, then that
+reached. (Dan points out that this means that Alice may make a transaction that
+benefits Bob; and if everyone races to provide it, then the user may have to
+approve transactions that fail repeatedly, which is a bad UX.) However, if any thunk ends with the `until` condition true, then that
 participant executes the tail and the block is over.
 
 I'm considering allowing an abbrevation of the form:
