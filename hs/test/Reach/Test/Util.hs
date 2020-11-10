@@ -23,7 +23,11 @@ import Test.Tasty.Hspec
 
 testCompileOut :: FilePath -> IO (Either LB.ByteString LB.ByteString)
 testCompileOut fp = do
-  (ec, outs, errs) <- readProcessWithExitCode "reachc" ["--disable-reporting", fp] ""
+  cfp <- canonicalizePath fp
+  (ec, outs, errs) <-
+    withCurrentDirectory (takeDirectory cfp) $ do
+      rfp <- makeRelativeToCurrentDirectory cfp
+      readProcessWithExitCode "reachc" ["--disable-reporting", rfp] ""
   let out = LC.pack outs
   let err = LC.pack errs
   let fmt = out <> err
