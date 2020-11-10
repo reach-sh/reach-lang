@@ -8,10 +8,9 @@
 - [x] `chicken-parallel.rsh` --- `parallel_reduce`, no class
 - [x] `popularity-contest.rsh` --- `parallel_reduce`, class
 - [x] `popularity-contest-forin.rsh` --- `parallel_reduce`, `for ... in` syntax
-- [ ] --- containers, `Map`
-- [ ] --- containers, `Set`
+- [x] `container-map.rsh` --- containers, `Map`
+- [x] `container-set.rsh` --- containers, `Set`
 - [ ] --- containers, `Stack`
-- [ ] --- containers, assignment syntax
 - [x] `raffle.rsh` --- `parallel_reduce`, class, containers, `Map`, `fork`
 
 Explanation of programs
