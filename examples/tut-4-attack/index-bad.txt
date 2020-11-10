@@ -5,139 +5,139 @@ Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Assert
   msg: "balance assertion"
-  at ./tut-4-attack/index-bad.rsh:45:11:application
+  at ./index-bad.rsh:45:11:application
 
   Theorem formalization:
   v66
 
   This could be violated if...
     "interact_Alice_wager" = 1
-      (bound at: ./tut-4-attack/index-bad.rsh:14:12:application)
+      (bound at: ./index-bad.rsh:14:12:application)
       (because: interaction)
     "v1" = 0
       (from: v1)
-      (bound at: ./tut-4-attack/index-bad.rsh:20:50:application)
+      (bound at: ./index-bad.rsh:20:50:application)
       (because: evaluating interact("Alice")."getHand"())
 
   In context...
     "v66" = (= 0 v65 )
       (from: v66)
-      (bound at: ./tut-4-attack/index-bad.rsh:45:11:application)
-      (because: evaluating PEQ(0, v65))
+      (bound at: ./index-bad.rsh:45:11:application)
+      (because: evaluating PEQ(0 , v65 ))
     "v65" = v60
       (from: v65)
-      (bound at: ./tut-4-attack/index-bad.rsh:45:11:application)
+      (bound at: ./index-bad.rsh:45:11:application)
       (because: evaluating v60)
     "v60" = (- v56 v54 )
       (from: v60)
-      (bound at: ./tut-4-attack/index-bad.rsh:40:32:application)
-      (because: evaluating SUB(v56, v54))
+      (bound at: ./index-bad.rsh:40:32:application)
+      (because: evaluating SUB(v56 , v54 ))
     "v54" = (* v46 v2 )
       (from: v54)
-      (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating MUL(v46, v2))
+      (bound at: ./index-bad.rsh:application)
+      (because: evaluating MUL(v46 , v2 ))
     "v56" = v53
       (from: v56)
-      (bound at: ./tut-4-attack/index-bad.rsh:40:32:application)
+      (bound at: ./index-bad.rsh:40:32:application)
       (because: evaluating v53)
     "v2" = interact_Alice_wager
       (from: v2)
-      (bound at: ./tut-4-attack/index-bad.rsh:21:8:dot)
+      (bound at: ./index-bad.rsh:21:8:dot)
       (because: an honest message from "Alice" of interact("Alice")."wager"(UInt))
     "v46" = (T2_elem1 v44 )
       (from: v46)
-      (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
+      (bound at: ./index-bad.rsh:34:26:var initializer)
       (because: evaluating v44[1])
     "v53" = (- v49 v47 )
       (from: v53)
-      (bound at: ./tut-4-attack/index-bad.rsh:39:32:application)
-      (because: evaluating SUB(v49, v47))
+      (bound at: ./index-bad.rsh:39:32:application)
+      (because: evaluating SUB(v49 , v47 ))
     "v44" = (ite v38 (T2_cons 0 1 ) v43 )
       (from: v44)
-      (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
-      (because: evaluating IF_THEN_ELSE(v38, [0, 1], v43))
+      (bound at: ./index-bad.rsh:34:26:var initializer)
+      (because: evaluating IF_THEN_ELSE(v38 , [0 , 1 ] , v43 ))
     "v47" = (* v45 v2 )
       (from: v47)
-      (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating MUL(v45, v2))
+      (bound at: ./index-bad.rsh:application)
+      (because: evaluating MUL(v45 , v2 ))
     "v49" = v24
       (from: v49)
-      (bound at: ./tut-4-attack/index-bad.rsh:39:32:application)
+      (bound at: ./index-bad.rsh:39:32:application)
       (because: evaluating v24)
     "v38" = (= v30 0 )
       (from: v38)
       (bound at: reach standard library:21:17:application)
-      (because: evaluating PEQ(v30, 0))
+      (because: evaluating PEQ(v30 , 0 ))
     "v43" = (ite v42 (T2_cons 1 1 ) (T2_cons 2 0 ) )
       (from: v43)
-      (bound at: ./tut-4-attack/index-bad.rsh:36:35:?: > false)
-      (because: evaluating IF_THEN_ELSE(v42, [1, 1], [2, 0]))
+      (bound at: ./index-bad.rsh:36:35:?: > false)
+      (because: evaluating IF_THEN_ELSE(v42 , [1 , 1 ] , [2 , 0 ] ))
     "v45" = (T2_elem0 v44 )
       (from: v45)
-      (bound at: ./tut-4-attack/index-bad.rsh:34:26:var initializer)
+      (bound at: ./index-bad.rsh:34:26:var initializer)
       (because: evaluating v44[0])
     "v24" = (+ v21 v19 )
       (from: v24)
-      (bound at: ./tut-4-attack/index-bad.rsh:29:20:after expr stmt semicolon)
-      (because: evaluating ADD(v21, v19))
+      (bound at: ./index-bad.rsh:29:20:after expr stmt semicolon)
+      (because: evaluating ADD(v21 , v19 ))
     "v30" = (mod v29 3 )
       (from: v30)
-      (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating MOD(v29, 3))
+      (bound at: ./index-bad.rsh:application)
+      (because: evaluating MOD(v29 , 3 ))
     "v42" = (= v30 1 )
       (from: v42)
       (bound at: reach standard library:21:17:application)
-      (because: evaluating PEQ(v30, 1))
+      (because: evaluating PEQ(v30 , 1 ))
     "v19" = v2
       (from: v19)
-      (bound at: ./tut-4-attack/index-bad.rsh:28:8:dot)
+      (bound at: ./index-bad.rsh:28:8:dot)
       (because: an honest payment from "Bob" of v2)
     "v21" = v10
       (from: v21)
-      (bound at: ./tut-4-attack/index-bad.rsh:29:20:after expr stmt semicolon)
+      (bound at: ./index-bad.rsh:29:20:after expr stmt semicolon)
       (because: evaluating v10)
     "v29" = (+ v3 v26 )
       (from: v29)
-      (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating ADD(v3, v26))
+      (bound at: ./index-bad.rsh:application)
+      (because: evaluating ADD(v3 , v26 ))
     "v10" = (+ v7 v5 )
       (from: v10)
-      (bound at: ./tut-4-attack/index-bad.rsh:22:20:after expr stmt semicolon)
-      (because: evaluating ADD(v7, v5))
+      (bound at: ./index-bad.rsh:22:20:after expr stmt semicolon)
+      (because: evaluating ADD(v7 , v5 ))
     "v26" = (- 4 v17 )
       (from: v26)
-      (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating SUB(4, v17))
+      (bound at: ./index-bad.rsh:application)
+      (because: evaluating SUB(4 , v17 ))
     "v3" = v1
       (from: v3)
-      (bound at: ./tut-4-attack/index-bad.rsh:21:8:dot)
+      (bound at: ./index-bad.rsh:21:8:dot)
       (because: an honest message from "Alice" of v1)
     "v5" = interact_Alice_wager
       (from: v5)
-      (bound at: ./tut-4-attack/index-bad.rsh:21:8:dot)
+      (bound at: ./index-bad.rsh:21:8:dot)
       (because: an honest payment from "Alice" of interact("Alice")."wager"(UInt))
     "v7" = 0
       (from: v7)
-      (bound at: ./tut-4-attack/index-bad.rsh:22:20:after expr stmt semicolon)
+      (bound at: ./index-bad.rsh:22:20:after expr stmt semicolon)
       (because: evaluating 0)
     "v17" = v16
       (from: v17)
-      (bound at: ./tut-4-attack/index-bad.rsh:28:8:dot)
+      (bound at: ./index-bad.rsh:28:8:dot)
       (because: an honest message from "Bob" of v16)
     "v16" = (mod v15 3 )
       (from: v16)
-      (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating MOD(v15, 3))
+      (bound at: ./index-bad.rsh:application)
+      (because: evaluating MOD(v15 , 3 ))
     "v15" = (+ v3 1 )
       (from: v15)
-      (bound at: ./tut-4-attack/index-bad.rsh:application)
-      (because: evaluating ADD(v3, 1))
+      (bound at: ./index-bad.rsh:application)
+      (because: evaluating ADD(v3 , 1 ))
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TClaim CT_Assert
   msg: "balance assertion"
-  at ./tut-4-attack/index-bad.rsh:45:11:application
+  at ./index-bad.rsh:45:11:application
 
   (details omitted on repeat)
   Verifying with mode = VM_Dishonest (RolePart "Alice")
@@ -145,7 +145,7 @@ Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
   of theorem TClaim CT_Assert
   msg: "balance assertion"
-  at ./tut-4-attack/index-bad.rsh:45:11:application
+  at ./index-bad.rsh:45:11:application
 
   (details omitted on repeat)
   Verifying with mode = VM_Dishonest (RolePart "Bob")
@@ -153,7 +153,7 @@ Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
   of theorem TClaim CT_Assert
   msg: "balance assertion"
-  at ./tut-4-attack/index-bad.rsh:45:11:application
+  at ./index-bad.rsh:45:11:application
 
   (details omitted on repeat)
 Checked 19 theorems; 4 failures. :'(

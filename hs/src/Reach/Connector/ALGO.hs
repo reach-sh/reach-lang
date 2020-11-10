@@ -18,13 +18,13 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
-import Data.Text.Prettyprint.Doc
 import qualified Data.Vector as Vector
 import Data.Word
 import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Connector
 import Reach.Pretty ()
+import Reach.Texty
 import Reach.Type
 import Reach.UnsafeUtil
 import Reach.Util

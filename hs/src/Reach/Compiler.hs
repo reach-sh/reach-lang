@@ -3,7 +3,6 @@ module Reach.Compiler (CompilerOpts (..), compile, all_connectors) where
 import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
-import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.Backend.JS
 import Reach.Connector
@@ -15,6 +14,7 @@ import Reach.Linearize
 import Reach.Optimize
 import Reach.Parser
 import Reach.Pretty ()
+import Reach.Texty
 import Reach.Util
 import Reach.Verify
 

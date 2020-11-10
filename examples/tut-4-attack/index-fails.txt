@@ -1,7 +1,7 @@
 Verifying knowledge assertions
 Verification failed:
   of theorem unknowable("Bob", v1)
-  at ./tut-4-attack/index-fails.rsh:25:17:application
+  at ./index-fails.rsh:25:17:application
 
   v1 -> v3 -> "Bob"
 Verifying for generic connector

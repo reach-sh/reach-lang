@@ -11,13 +11,13 @@ import Data.Maybe (maybeToList)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
-import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.CollectTypes
 import Reach.Connector
 import Reach.EmbeddedFiles
 import Reach.IORefRef
 import Reach.Pretty ()
+import Reach.Texty
 import Reach.Type
 import Reach.UnrollLoops
 import Reach.Util

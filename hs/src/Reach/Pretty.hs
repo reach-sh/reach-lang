@@ -4,16 +4,16 @@ module Reach.Pretty () where
 
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
-import Data.Text.Prettyprint.Doc
 import Reach.AST
+import Reach.Texty
 
-pform :: Doc ann -> Doc ann -> Doc ann
+pform :: Doc -> Doc -> Doc
 pform f xs = group $ parens $ f <+> xs
 
-pform_ :: Doc ann -> Doc ann
+pform_ :: Doc -> Doc
 pform_ f = pform f mempty
 
-pbrackets :: [Doc ann] -> Doc ann
+pbrackets :: [Doc] -> Doc
 pbrackets xs = group $ render_nest $ vsep $ punctuate comma xs
 
 instance Pretty SLPart where
@@ -61,7 +61,7 @@ instance Pretty DLVar where
   --- pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
   pretty (DLVar _ _ _ i) = "v" <> viaShow i
 
-render_obj :: Pretty k => Pretty v => M.Map k v -> Doc a
+render_obj :: Pretty k => Pretty v => M.Map k v -> Doc
 render_obj env =
   braces $ nest 2 $ hardline <> (concatWith (surround (comma <> hardline)) $ map render_p $ M.toList env)
   where
@@ -90,7 +90,7 @@ instance Pretty DLArg where
     DLA_Interact who m t ->
       "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
 
-render_das :: [DLArg] -> Doc a
+render_das :: [DLArg] -> Doc
 render_das as = hsep $ punctuate comma $ map pretty as
 
 instance Pretty DLExpr where
@@ -113,28 +113,28 @@ instance Pretty DLExpr where
       DLE_Wait _ a -> "wait" <> parens (pretty a)
       DLE_PartSet _ who a -> render_sp who <> ".set" <> parens (pretty a)
 
-render_sp :: SLPart -> Doc a
+render_sp :: SLPart -> Doc
 render_sp p = viaShow p
 
-render_nest :: Doc a -> Doc a
+render_nest :: Doc -> Doc
 render_nest inner = nest 2 $ braces (hardline <> inner <> " ")
 
-prettyIf :: Pretty c => c -> Doc a -> Doc a -> Doc a
+prettyIf :: Pretty c => c -> Doc -> Doc -> Doc
 prettyIf ca t f =
   "if" <+> pretty ca <+> "then"
     <+> render_nest t <> hardline <> "else"
     <+> render_nest f <> semi
 
-prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc a
+prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc
 prettyIfp ca t f = prettyIf ca (pretty t) (pretty f)
 
-prettySwitch :: (Pretty a, Pretty b, Pretty c) => a -> M.Map b (Maybe a, c) -> Doc ann
+prettySwitch :: (Pretty a, Pretty b, Pretty c) => a -> M.Map b (Maybe a, c) -> Doc
 prettySwitch ov csm =
   "switch" <+> parens (pretty ov) <+> render_nest (concatWith (surround hardline) $ map render_p $ M.toList csm)
   where
     render_p (k, (mnv, ss)) = "case" <+> pretty k <+> "as" <+> pretty mnv <> ":" <+> render_nest (pretty ss)
 
-prettyWhile :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc ann -> Doc ann
+prettyWhile :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc -> Doc
 prettyWhile asn inv cond bodyp =
   "loopvar" <+> pretty asn <> semi <> hardline
     <> "invariant"
@@ -145,26 +145,26 @@ prettyWhile asn inv cond bodyp =
     <> hardline
     <> (render_nest bodyp)
 
-prettyContinue :: Pretty b => b -> Doc a
+prettyContinue :: Pretty b => b -> Doc
 prettyContinue cont_da =
   pretty cont_da <> hardline <> "continue" <> semi
 
-prettyClaim :: Show a => Pretty b => Show c => a -> b -> c -> Doc d
+prettyClaim :: Show a => Pretty b => Show c => a -> b -> c -> Doc
 prettyClaim ct a m = "claim" <> parens (viaShow ct) <> parens (pretty a <> comma <+> viaShow m)
 
-prettyTransfer :: DLArg -> DLArg -> Doc a
+prettyTransfer :: DLArg -> DLArg -> Doc
 prettyTransfer who da =
   "transfer." <> parens (pretty da) <> ".to" <> parens (pretty who)
 
-prettyStop :: Doc a
+prettyStop :: Doc
 prettyStop = "exit" <> parens (emptyDoc) <> semi
 
-prettyMap :: Pretty a => DLVar -> DLArg -> DLVar -> a -> Doc ann
+prettyMap :: Pretty a => DLVar -> DLArg -> DLVar -> a -> Doc
 prettyMap ans x a f =
   "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
-prettyReduce :: Pretty a => DLVar -> DLArg -> DLArg -> DLVar -> DLVar -> a -> Doc ann
+prettyReduce :: Pretty a => DLVar -> DLArg -> DLArg -> DLVar -> DLVar -> a -> Doc
 prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
@@ -226,7 +226,7 @@ instance Pretty DLStmt where
       ns x = render_nest $ render_dls x
       cm l = parens (hsep $ punctuate comma $ l)
 
-render_dls :: DLStmts -> Doc a
+render_dls :: DLStmts -> Doc
 render_dls ss = concatWith (surround hardline) $ fmap pretty ss
 
 instance Pretty (Seq.Seq DLStmt) where

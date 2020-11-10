@@ -6,10 +6,10 @@ import Data.Foldable
 import qualified Data.Map.Strict as M
 import Data.STRef
 import qualified Data.Sequence as Seq
-import Data.Text.Prettyprint.Doc
 import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Pretty ()
+import Reach.Texty
 import Reach.STCounter
 import Reach.Type
 import Reach.Util

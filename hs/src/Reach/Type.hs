@@ -15,11 +15,11 @@ import Control.Monad.ST
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Data.STRef
-import Data.Text.Prettyprint.Doc
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
 import Reach.AST
 import Reach.Pretty ()
+import Reach.Texty
 import Reach.Util
 
 data TypeError

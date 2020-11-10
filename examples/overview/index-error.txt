@@ -5,83 +5,83 @@ Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Assert
   msg: "balance assertion"
-  at ./overview/index-error.rsh:29:11:application
+  at ./index-error.rsh:29:11:application
 
   Theorem formalization:
   v36
 
   This could be violated if...
     "interact_Alice_request" = 1
-      (bound at: ./overview/index-error.rsh:4:12:application)
+      (bound at: ./index-error.rsh:4:12:application)
       (because: interaction)
 
   In context...
     "v36" = (= 0 v35 )
       (from: v36)
-      (bound at: ./overview/index-error.rsh:29:11:application)
-      (because: evaluating PEQ(0, v35))
+      (bound at: ./index-error.rsh:29:11:application)
+      (because: evaluating PEQ(0 , v35 ))
     "v35" = v32
       (from: v35)
-      (bound at: ./overview/index-error.rsh:29:11:application)
+      (bound at: ./index-error.rsh:29:11:application)
       (because: evaluating v32)
     "v32" = (- v28 v27 )
       (from: v32)
-      (bound at: ./overview/index-error.rsh:24:29:application)
-      (because: evaluating SUB(v28, v27))
+      (bound at: ./index-error.rsh:24:29:application)
+      (because: evaluating SUB(v28 , v27 ))
     "v27" = (- v1 1 )
       (from: v27)
-      (bound at: ./overview/index-error.rsh:application)
-      (because: evaluating SUB(v1, 1))
+      (bound at: ./index-error.rsh:application)
+      (because: evaluating SUB(v1 , 1 ))
     "v28" = v25
       (from: v28)
-      (bound at: ./overview/index-error.rsh:24:29:application)
+      (bound at: ./index-error.rsh:24:29:application)
       (because: evaluating v25)
     "v1" = interact_Alice_request
       (from: v1)
-      (bound at: ./overview/index-error.rsh:13:8:dot)
+      (bound at: ./index-error.rsh:13:8:dot)
       (because: an honest message from "Alice" of interact("Alice")."request"(UInt))
     "v25" = (+ v22 v20 )
       (from: v25)
-      (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
-      (because: evaluating ADD(v22, v20))
+      (bound at: ./index-error.rsh:23:22:after expr stmt semicolon)
+      (because: evaluating ADD(v22 , v20 ))
     "v20" = 0
       (from: v20)
-      (bound at: ./overview/index-error.rsh:23:8:dot)
+      (bound at: ./index-error.rsh:23:8:dot)
       (because: an honest payment from "Alice" of 0)
     "v22" = v17
       (from: v22)
-      (bound at: ./overview/index-error.rsh:23:22:after expr stmt semicolon)
+      (bound at: ./index-error.rsh:23:22:after expr stmt semicolon)
       (because: evaluating v17)
     "v17" = (+ v14 v12 )
       (from: v17)
-      (bound at: ./overview/index-error.rsh:18:21:after expr stmt semicolon)
-      (because: evaluating ADD(v14, v12))
+      (bound at: ./index-error.rsh:18:21:after expr stmt semicolon)
+      (because: evaluating ADD(v14 , v12 ))
     "v12" = v1
       (from: v12)
-      (bound at: ./overview/index-error.rsh:18:8:dot)
+      (bound at: ./index-error.rsh:18:8:dot)
       (because: an honest payment from "Bob" of v1)
     "v14" = v8
       (from: v14)
-      (bound at: ./overview/index-error.rsh:18:21:after expr stmt semicolon)
+      (bound at: ./index-error.rsh:18:21:after expr stmt semicolon)
       (because: evaluating v8)
     "v8" = (+ v5 v3 )
       (from: v8)
-      (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
-      (because: evaluating ADD(v5, v3))
+      (bound at: ./index-error.rsh:13:25:after expr stmt semicolon)
+      (because: evaluating ADD(v5 , v3 ))
     "v3" = 0
       (from: v3)
-      (bound at: ./overview/index-error.rsh:13:8:dot)
+      (bound at: ./index-error.rsh:13:8:dot)
       (because: an honest payment from "Alice" of 0)
     "v5" = 0
       (from: v5)
-      (bound at: ./overview/index-error.rsh:13:25:after expr stmt semicolon)
+      (bound at: ./index-error.rsh:13:25:after expr stmt semicolon)
       (because: evaluating 0)
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode
   of theorem TClaim CT_Assert
   msg: "balance assertion"
-  at ./overview/index-error.rsh:29:11:application
+  at ./index-error.rsh:29:11:application
 
   (details omitted on repeat)
   Verifying with mode = VM_Dishonest (RolePart "Alice")
@@ -89,7 +89,7 @@ Verification failed:
   in VM_Dishonest (RolePart "Alice") mode
   of theorem TClaim CT_Assert
   msg: "balance assertion"
-  at ./overview/index-error.rsh:29:11:application
+  at ./index-error.rsh:29:11:application
 
   (details omitted on repeat)
   Verifying with mode = VM_Dishonest (RolePart "Bob")
@@ -97,7 +97,7 @@ Verification failed:
   in VM_Dishonest (RolePart "Bob") mode
   of theorem TClaim CT_Assert
   msg: "balance assertion"
-  at ./overview/index-error.rsh:29:11:application
+  at ./index-error.rsh:29:11:application
 
   (details omitted on repeat)
 Checked 11 theorems; 4 failures. :'(

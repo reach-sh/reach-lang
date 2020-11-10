@@ -7,10 +7,10 @@ import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Monoid
 import qualified Data.Set as S
-import Data.Text.Prettyprint.Doc
 import Reach.AST
 import Reach.IORefRef
 import Reach.Pretty ()
+import Reach.Texty
 import Reach.Util
 import Reach.Verify.Shared
 import System.Directory
