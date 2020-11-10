@@ -375,7 +375,7 @@ export const T_Data = <T>(
       const {ascLabels} = labelMaps(co);
       // See comment on unmunge about field names that we could use but currently don't
       const optionTys = ascLabels.map((label) => `${co[label].paramType} _${label}`)
-      const tupFields = [`T_UInt.paramType which`].concat(optionTys).join(',');
+      const tupFields = [`${T_UInt.paramType} which`].concat(optionTys).join(',');
       return `tuple(${tupFields})`;
     })(),
   }
