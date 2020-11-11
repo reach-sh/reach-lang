@@ -285,7 +285,7 @@ solArg ctxt da =
       T_Bytes sz ->
         solLit $ DLL_Bytes $ B.replicate (fromIntegral sz) '\NUL'
       T_Digest -> "0"
-      T_Address -> "0x" <> pretty (replicate 64 '0')
+      T_Address -> "0x" <> pretty (replicate 40 '0')
       T_Fun {} -> impossible "defaultVal for Fun"
       T_Array ty n -> solArrayLit $ replicate (fromInteger n) $ defaultVal ty
       T_Tuple tys -> solArrayLit $ map defaultVal tys
@@ -783,8 +783,9 @@ solPLProg (PLProg _ plo@(PLOpts {..}) _ (CPProg at hs)) =
     consp =
       case plo_deployMode of
         DM_constructor ->
-          solFunctionLike SFL_Constructor [] "payable" consbody
+          vsep ["event e0();", solFunctionLike SFL_Constructor [] "payable" consbody']
           where
+            consbody' = vsep ["emit e0();", consbody]
             SolTailRes _ consbody = solCTail ctxt (CT_From at (Just []))
         DM_firstMsg ->
           emptyDoc

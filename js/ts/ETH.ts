@@ -1165,14 +1165,37 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
   const { argsMay, value } = initOrDefaultArgs(init);
   const factory = new ethers.ContractFactory(ABI, Bytecode);
 
-  // TODO: is there a way to get the creation_block & bytecode with a single api call?
-  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getCode
   const provider = await getProvider();
-  const nocode = await provider.getCode(address, creation_block - 1);
-  if (nocode !== '0x') {
-    throw Error(`Contract was deployed earlier than ${creation_block} (as was claimed)`);
+  const now = await getNetworkTimeNumber();
+
+  const deployEvent = isNone(argsMay) ? 'e0' : 'e1';
+  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getLogs
+  // "Keep in mind that many backends will discard old events"
+  // TODO: find another way to validate creation block if much time has passed?
+  const logs = await provider.getLogs({
+    fromBlock: creation_block,
+    toBlock: now,
+    address: address,
+    topics: [factory.interface.getEventTopic(deployEvent)],
+  });
+  if (logs.length < 1) {
+    throw Error(`Contract was claimed to be deployed at ${creation_block},`
+     + ` but the current block is ${now} and it hasn't been deployed yet.`
+    );
   }
-  const actual = await provider.getCode(address, creation_block);
+
+  const log = logs[0];
+  if (log.blockNumber !== creation_block) {
+    throw Error(
+      `Contract was deployed at blockNumber ${log.blockNumber},`
+      + ` but was claimed to be deployed at ${creation_block}.`
+    );
+  }
+
+  // https://docs.ethers.io/v5/api/providers/provider/#Provider-getCode
+  // We can safely getCode at the current block;
+  // Reach programs don't change their ETH code over time.
+  const actual = await provider.getCode(address);
 
   // XXX should this also pass {value}, like factory.deploy() does?
   const deployData = factory.getDeployTransaction(...argsMay).data;
