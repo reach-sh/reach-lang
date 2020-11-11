@@ -2293,14 +2293,15 @@ evalStmt ctxt at sco st ss =
     (s@(JSBreak a _ _) : _) -> illegal a s "break"
     (s@(JSLet a _ _) : _) -> illegal a s "let"
     (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
-    ((JSConstant a decls sp) : ks) -> do
-      SLRes lifts st_const addl_env <- evalDecls ctxt at_in st sco decls
+    ((JSConstant a (JSLOne de) sp) : ks) -> do
+      SLRes lifts st_const addl_env <- evalDecl ctxt at_in st mempty sco de
       let sco' = sco_update ctxt at_in sco st addl_env
       keepLifts lifts $ evalStmt ctxt at_after sco' st_const ks
       where
         at_after = srcloc_after_semi lab a sp at
         at_in = srcloc_jsa lab a at
         lab = "const"
+    (s@(JSConstant a _ _) : _) -> illegal a s "const, not exactly 1"
     (cont@(JSContinue a _ sp) : cont_ks) ->
       evalStmt ctxt at sco st (assign : cont : cont_ks)
       where

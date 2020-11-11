@@ -234,9 +234,6 @@ data SLForm
   | SLForm_Part_Only SLPart
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
   | SLForm_unknowable
-  | SLForm_fork
-  | SLForm_race
-  | SLForm_parallel_reduce
   deriving (Eq, Generic, NFData, Show)
 
 data PrimOp
