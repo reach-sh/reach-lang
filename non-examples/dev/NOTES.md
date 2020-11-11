@@ -108,6 +108,20 @@ const x =
 commit();
 ```
 
+```
+// step
+const x =
+  parallel_reduce(initial)
+    .invariant(....)
+    .until(....)
+    .timeout(....)
+    .cases([
+      [Part or Class, Thunk],
+      ...
+    ]);
+// consensus-step
+```
+
 The thunks, until, and invariant have `x` in scope.
 
 The inner thunks are like the other race versions, returning a new value for

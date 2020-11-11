@@ -20,7 +20,7 @@ export const main =
     ],
     (Alice, Bob) => {
       const showOutcome = (which) => {
-        each([Alice, Bob], () => { interact.showOutcome(which); });
+        each([Alice, Bob], () => { interact.showOutcome(which); }); };
 
       Alice.only(() => {
         const { wager, deadline } =
@@ -33,7 +33,7 @@ export const main =
       Bob.only(() => {
         interact.confirmWager(wager); });
       Bob.pay(wager)
-        .timeout(deadline, () => closeTo(Alice, showOutcome(TIMEOUT)));
+        .timeout(deadline, () => closeTo(Alice, () => showOutcome(TIMEOUT)));
 
       var [ keepGoing, as, bs ] = [ true, 0, 0 ];
       invariant(balance() == 2 * wager);
