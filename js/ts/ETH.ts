@@ -150,6 +150,14 @@ type ETH_Ty<BV extends CBR_Val, NV> =  {
 type AnyETH_Ty = ETH_Ty<CBR_Val, any>;
 
 export const digest = makeDigest((t:AnyETH_Ty, v:any) => {
+  // Note: abiCoder.encode doesn't correctly handle an empty tuple type
+  if (t.paramType === 'tuple()') {
+    if (Array.isArray(v) && v.length === 0) {
+      return v;
+    } else {
+      throw Error(`impossible: digest tuple() with non-empty array: ${JSON.stringify(v)}`);
+    }
+  }
   return ethers.utils.defaultAbiCoder.encode([t.paramType], [t.munge(v)])
 });
 
@@ -233,7 +241,7 @@ export const T_Address: ETH_Ty<CBR_Address, string> = {
     const val = addressUnwrapper(uv);
     return CBR.BT_Address.canonicalize(val || uv);
   },
-  defaultValue: '0x' + Array(64).fill('0').join(''),
+  defaultValue: '0x' + Array(40).fill('0').join(''),
   munge: (bv: CBR_Address): string => bv,
   unmunge: (nv: string): CBR_Address => V_Address(nv),
   paramType: 'address',

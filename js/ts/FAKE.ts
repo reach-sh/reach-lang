@@ -5,6 +5,7 @@ import * as stdlib from './shared';
 import { CurrencyAmount, OnProgress } from './shared';
 export * from './shared';
 export { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } from './ETH';
+import { T_Address } from './ETH';
 
 export const debug = (msg: any): void => {
   stdlib.debug(`${BLOCKS.length}: ${msg}}`);
@@ -254,13 +255,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 const makeAccount = (): NetworkAccount => {
-  const address = '0x' + stdlib.bigNumberToHex(randomUInt());
+  const address = ethers.Wallet.createRandom().address;
   BALANCES[address] = stdlib.bigNumberify(0);
   return { address };
 };
 
 const REACHY_RICH_P: Promise<Account> = (async () => {
-  return await connectAccount({address: 'reachy_rich'});
+  return await connectAccount({address: T_Address.defaultValue});
 })();
 
 export async function getDefaultAccount(): Promise<Account> {
