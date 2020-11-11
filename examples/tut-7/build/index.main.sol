@@ -17,10 +17,14 @@ contract Stdlib {
 contract ReachContract is Stdlib {
   uint256 current_state;
   
+  event e0();
   constructor() payable {
+    emit e0();
     
     current_state = uint256(keccak256(abi.encode(uint256(0), uint256(block.number))));
+    
      }
+  
   
   
   
