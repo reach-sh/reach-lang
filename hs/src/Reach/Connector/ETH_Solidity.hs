@@ -783,9 +783,9 @@ solPLProg (PLProg _ plo@(PLOpts {..}) _ (CPProg at hs)) =
     consp =
       case plo_deployMode of
         DM_constructor ->
-          vsep ["event e0();", solFunctionLike SFL_Constructor [] "payable" consbody']
+          vsep [solEvent ctxt 0 [], solFunctionLike SFL_Constructor [] "payable" consbody']
           where
-            consbody' = vsep ["emit e0();", consbody]
+            consbody' = vsep [solEventEmit ctxt 0 [], consbody]
             SolTailRes _ consbody = solCTail ctxt (CT_From at (Just []))
         DM_firstMsg ->
           emptyDoc
