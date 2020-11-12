@@ -38,16 +38,19 @@ all_connectors =
 compile :: CompilerOpts -> IO ()
 compile copts = do
   let outn = output copts
-  let outnMay = case intermediateFiles copts of
-        True -> Just outn
+  let outnMay outn_ = case intermediateFiles copts of
+        True -> Just outn_
         False -> Nothing
-  let interOut = case outnMay of
+  let interOut outn_ = case outnMay outn_ of
         Just f -> LTIO.writeFile . f
         Nothing -> \_ _ -> return ()
   djp <- gatherDeps_top $ source copts
-  interOut "bundle.js" $ render $ pretty djp
+  interOut outn "bundle.js" $ render $ pretty djp
   let compile1 which = do
-        let winterOut = interOut . ((T.pack which <> ".") <>)
+        let addWhich = ((T.pack which <> ".") <>)
+        let woutn = outn . addWhich
+        let woutnMay = outnMay woutn
+        let winterOut = interOut woutn
         let dl = compileBundle all_connectors djp which
         let DLProg _ (DLOpts {..}) _ _ = dl
         let connectors = map (all_connectors M.!) dlo_connectors
@@ -60,12 +63,12 @@ compile copts = do
               case dlo_verifyPerConnector of
                 False -> Nothing
                 True -> Just connectors
-        verify outnMay vconnectors ol >>= maybeDie
+        verify woutnMay vconnectors ol >>= maybeDie
         let pl = epp ol
         winterOut "pl" $ render $ pretty pl
-        let runConnector c = (,) (conName c) <$> conGen c outnMay pl
+        let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors
-        backend_js outn crs pl
+        backend_js woutn crs pl
         return ()
   mapM_ compile1 $ tops copts
   return ()
