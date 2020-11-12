@@ -791,6 +791,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         if (_ethersC) { return _ethersC; }
         const info = await infoP;
         await verifyContract(info, bin);
+        debug(`${shad}: contract verified`);
         if (!ethers.Signer.isSigner(networkAccount)) {
           throw Error(`networkAccount must be a Signer (read: Wallet). ${networkAccount}`);
         }
@@ -1164,11 +1165,24 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
   const { address, creation_block, init, creator } = ctcInfo;
   const { argsMay, value } = initOrDefaultArgs(init);
   const factory = new ethers.ContractFactory(ABI, Bytecode);
+  debug(`verifyContract: ${address}`)
+  debug(JSON.stringify(ctcInfo));
 
   const provider = await getProvider();
   const now = await getNetworkTimeNumber();
 
+  const {chainId} = await provider.getNetwork();
+  // TODO: allow user to specify lenient verification? (for chains we don't know about)
+  const lenient = [
+    152709604825713, // https://kovan2.arbitrum.io/rpc
+    // XXX ^ this will probably change over time
+  ].includes(chainId);
+  if (lenient) {
+    debug(`verifyContract: using lenient contract verification for chainId=${chainId}`);
+  }
+
   const deployEvent = isNone(argsMay) ? 'e0' : 'e1';
+  debug(`verifyContract: checking logs for ${deployEvent}...`);
   // https://docs.ethers.io/v5/api/providers/provider/#Provider-getLogs
   // "Keep in mind that many backends will discard old events"
   // TODO: find another way to validate creation block if much time has passed?
@@ -1192,6 +1206,7 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
     );
   }
 
+  debug(`verifyContract: checking code...`)
   // https://docs.ethers.io/v5/api/providers/provider/#Provider-getCode
   // We can safely getCode at the current block;
   // Reach programs don't change their ETH code over time.
@@ -1254,6 +1269,11 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
     }
   }
 
+  // It's tedious to write the next sections w/ lenience, so just skip them.
+  // Checking balance & storage at certain old block #s is not supported by some backends.
+  if (lenient) return true;
+
+  debug(`verifyContract: checking balance...`);
   const bal = await provider.getBalance(address, creation_block);
   // bal is allowed to exceed expectations, for example,
   // if someone spuriously transferred extra money to the contract
@@ -1263,6 +1283,7 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
     throw Error(`Contract initial balance does not match expected initial balance`);
   }
 
+  debug(`verifyContract: checking contract storage...`);
   if (isNone(argsMay)) {
     const st = await provider.getStorageAt(address, 0, creation_block);
     const expectedSt =
