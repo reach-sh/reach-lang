@@ -237,9 +237,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let diagnostics: Diagnostic[] = [];
 
 	// Download the Reach shell script if it does not exist
-	const reachSh = './reach'
 	try {
-		if (fs.existsSync(reachSh)) {
+		if (fs.existsSync('./reach')) {
 			connection.console.log("Reach shell script exists");
 		} else {
 			connection.console.log("Reach shell script not found, downloading now...");
@@ -282,12 +281,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		connection.console.log(`Temp Reach file ${reachTempIndexFile} saved!`);
 	});
 
-	fs.copyFile('reach', path.join(tempFolder, 'reach'), (err: any) => {
-		if (err) throw connection.console.log(`Error copying reach to temp dir. ${err}`);
-		console.log('reach copied to ' + tempFolder);
-	});
-
-	await exec("cd " + tempFolder + " && " + reachSh + " compile " + REACH_TEMP_FILE_NAME, (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && " + path.join(process.cwd(), "reach") + " compile " + REACH_TEMP_FILE_NAME, (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`FOUND Reach compile error: ${error.message}`);
 			let errorLocations : ErrorLocation[] = findErrorLocations(error.message);
