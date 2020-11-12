@@ -263,6 +263,7 @@ do_compile () {
         export REACHC_ID=${ID}
         REACHC_HASH="$("${HS}/../scripts/git-hash.sh")"
         export REACHC_HASH
+        (cd "$HS" && make stack)
         if [ "x${REACHC_RELEASE}" = "xY" ] ; then
           reachc_release "$@"
         elif [ "x${REACHC_PROFILE}" = "xY" ] ; then
