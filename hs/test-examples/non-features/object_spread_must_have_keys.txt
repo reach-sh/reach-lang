@@ -1,1 +1,1 @@
-reachc: error: ./object_spread_must_have_keys.rsh:3:7:object: Invalid unbound identifier: x. Did you mean: ["y"]
+reachc: error: ./object_spread_must_have_keys.rsh:3:7:object: x is not a field of object. Did you mean: ["y"]

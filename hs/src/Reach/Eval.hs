@@ -27,7 +27,7 @@ import Reach.Type
 import Reach.Util
 import Reach.Version
 import Safe (atMay)
-import Safe.Exact (splitAtExactMay)
+--import Safe.Exact (splitAtExactMay)
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
@@ -55,6 +55,7 @@ data EvalError
   | Err_Decl_ObjectSpreadNotLast
   | Err_Decl_ArraySpreadNotLast
   | Err_Decl_NotObject SLVal
+  | Err_Decls_IllegalJS (JSCommaList JSExpression)
   | Err_Decl_IllegalJS JSExpression
   | Err_Decl_NotRefable SLVal
   | Err_Decl_WrongArrayLength Int Int
@@ -218,6 +219,8 @@ instance Show EvalError where
       (bunpack who) <> " is bound and cannot be rebound"
     Err_Eval_IllegalWait dm ->
       "Cannot wait or timeout until after first message in deployMode " <> show dm
+    Err_Decls_IllegalJS _ ->
+      "Invalid Reach declaration; expected exactly on declaration"
     Err_Decl_IllegalJS e ->
       "Invalid Reach declaration: " <> conNameOf e
     Err_Decl_ObjectSpreadNotLast ->
@@ -768,7 +771,20 @@ infectWithId v (lvl, sv) = (lvl, sv')
           SLV_Participant at who io (Just v) mdv
         _ -> sv
 
-evalAsEnv :: SrcLoc -> SLVal -> M.Map SLVar (SLCtxt s -> SLScope -> SLState -> SLComp s SLSVal)
+type SLObjEnvRHS s = SLCtxt s -> SLScope -> SLState -> SLComp s SLSVal
+type SLObjEnv s = M.Map SLVar (SLObjEnvRHS s)
+
+evalObjEnv :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLObjEnv s -> SLComp s SLEnv
+evalObjEnv ctxt at sco st0 m =
+  foldM go (SLRes mempty st0 mempty) $ M.toList m
+  where
+    go :: SLRes SLEnv -> (SLVar, SLObjEnvRHS s) -> SLComp s SLEnv
+    go (SLRes lifts st env) (f, getv) = do
+      SLRes lifts' st' v <- getv ctxt sco st
+      let env' = M.insert f (sls_sss at v) env
+      return $ SLRes (lifts <> lifts') st' env'
+
+evalAsEnv :: SrcLoc -> SLVal -> SLObjEnv s
 evalAsEnv at obj =
   case obj of
     SLV_Object _ _ env ->
@@ -873,12 +889,16 @@ evalAsEnv at obj =
     retStdLib n ctxt sco st =
       retV (public $ lookStdlib n sco) ctxt sco st
 
-evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
-evalDot ctxt at sco st obj field = do
-  let env = evalAsEnv at obj
+evalDot_ :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> SLObjEnv s -> String -> SLComp s SLSVal
+evalDot_ ctxt at sco st obj env field = do
   case M.lookup field env of
     Just gv -> gv ctxt sco st
     Nothing -> expect_throw at $ Err_Dot_InvalidField obj (M.keys env) field
+
+evalDot :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> String -> SLComp s SLSVal
+evalDot ctxt at sco st obj field = do
+  let env = evalAsEnv at obj
+  evalDot_ ctxt at sco st obj env field
 
 evalForm :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLForm -> [JSExpression] -> SLComp s SLSVal
 evalForm ctxt at sco st f args =
@@ -1915,145 +1935,76 @@ evalExprs ctxt at sco st rands =
       SLRes liftsN stN svalN <- evalExprs ctxt at sco st0 randN
       return $ SLRes (lifts0 <> liftsN) stN (svals0 <> svalN)
 
-evalDeclLHSArray
-  :: SrcLoc -> SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> [JSArrayElement] -> ([String], SLSVal -> WriterT DLStmts (ST s) SLEnv)
-evalDeclLHSArray vat' _at at' ctxt lhs_env xs = (ks', makeEnv)
-  where
-    ks' = ks <> maybe [] (\a -> [a]) kSpreadMay
-    (ks, kSpreadMay) = parseIdentsAndSpread $ jsa_flatten xs
-    parseIdentsAndSpread = \case
-      [] -> ([], Nothing)
-      [(JSSpreadExpression a e0)] ->
-        ([], (Just $ jse_expect_id at'' e0))
-        where
-          at'' = srcloc_jsa "array spread" a at'
-      [(JSSpreadExpression a _), _] ->
-        expect_throw at'' $ Err_Decl_ArraySpreadNotLast
-        where
-          at'' = srcloc_jsa "array spread" a at'
-      (e0 : eNs) -> ((x0 : xNs), smN)
-        where
-          (xNs, smN) = parseIdentsAndSpread eNs
-          x0 = jse_expect_id at' e0
-    makeEnv (lvl, v) = do
-      (vs_lifts, vs) <- lift $ explodeTupleLike ctxt vat' "lhs array" v
-      tell vs_lifts
-      let ks_len = length ks
-      case splitAtExactMay ks_len vs of
-        Nothing ->
-          expect_throw at' $ Err_Decl_WrongArrayLength ks_len (length vs)
-        Just (before, after) -> do
-          let add_spread =
-                case kSpreadMay of
-                  Nothing -> id
-                  Just sn ->
-                    env_insert at' sn $ SLSSVal at' lvl $ SLV_Tuple at' after -- TODO: double check this srcloc
-          let kvs = zip ks $ map (\x -> SLSSVal at' lvl x) before
-          -- TODO: have ks remember their own srcloc
-          return $ foldl' (env_insertp at') (add_spread lhs_env) kvs
+evalDeclLHSArray :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> [SLVal] -> [JSExpression] -> SLComp s SLEnv
+evalDeclLHSArray ctxt at sco st rhs_lvl lhs_env vs es =
+  case (vs, es) of
+    ([], []) ->
+      return $ SLRes mempty st lhs_env
+    (_, (JSSpreadExpression a e):es') -> do
+      let at_ = srcloc_jsa "array spread" a at
+      let v = SLV_Tuple at_ vs
+      case es' of
+        [] -> evalDeclLHS ctxt at_ sco st rhs_lvl lhs_env v e
+        _ -> expect_throw at_ $ Err_Decl_ArraySpreadNotLast
+    (v:vs', e:es') -> do
+      SLRes lifts' st' lhs_env' <-
+        evalDeclLHS ctxt at sco st rhs_lvl lhs_env v e
+      keepLifts lifts' $
+        evalDeclLHSArray ctxt at sco st' rhs_lvl lhs_env' vs' es'
+    (_, _) ->
+      expect_throw at $ Err_Decl_WrongArrayLength (length es) (length vs)
 
--- | const {x, y, ...obj} = ...;
---
--- Returns a tuple of:
--- * boundIdents (e.g. ["x", "y", "obj"])
--- * mkEnv, a function which
---   * accepts an SLSVal (the RHS of the decl)
---   * checks that RHS is an object that has the specified keys
---   * returns the DLStmts and SLEnv produced by this assignment
-evalDeclLHSObject :: SrcLoc -> SrcLoc -> SLCtxt s -> SLEnv -> JSObjectPropertyList -> ([String], SLSVal -> WriterT DLStmts (ST s) SLEnv)
-evalDeclLHSObject at at' ctxt lhs_env props = (ks', makeEnv)
-  where
-    ks' = ks <> maybe [] (\a -> [a]) kSpreadMay
-    (ks, kSpreadMay) = parseIdentsAndSpread $ jso_flatten props
-    ksSet = S.fromList ks
-    parseIdentsAndSpread = \case
-      [] -> ([], Nothing)
-      [(JSObjectSpread a e0)] ->
-        ([], (Just $ jse_expect_id at'' e0))
-        where
-          at'' = srcloc_jsa "object spread" a at'
-      [(JSObjectSpread a _), _] ->
-        expect_throw at'' $ Err_Decl_ObjectSpreadNotLast
-        where
-          at'' = srcloc_jsa "object spread" a at'
-      (e0 : eNs) -> ((x0 : xNs), smN)
-        where
-          (xNs, smN) = parseIdentsAndSpread eNs
-          x0 = jso_expect_id at' e0
-    makeEnv (lvl, val) = case val of
-      SLV_DLVar dv@(DLVar _ _ (T_Object tenv) _) -> do
-        let mk_ref_ k = do
-              let e = (DLE_ObjectRef at' (DLA_Var dv) k)
-              let t = case M.lookup k tenv of
-                    Nothing -> expect_throw at' $ Err_Dot_InvalidField val (M.keys tenv) k
-                    Just x -> x
-              ctxt_lift_expr_w ctxt at (DLVar at' (ctxt_local_name ctxt "object ref") t) e
-        let mk_ref k = do
-              dvi <- mk_ref_ k
-              pure (k, SLV_DLVar dvi)
-        ks_dvs <- mapM mk_ref ks
-        spread_dvs <-
-          case kSpreadMay of
-            Nothing -> pure mempty
-            Just spreadName -> do
-              let mkDlArg k _t = do
-                    dvi <- mk_ref_ k
-                    pure $ DLA_Var dvi
-              let tenvWithoutKs = M.withoutKeys tenv ksSet
-              objDlEnv <- M.traverseWithKey mkDlArg tenvWithoutKs
-              let de = DLE_Arg at' $ DLA_Obj objDlEnv
-              let spreadTy = T_Object $ tenvWithoutKs
-              let mdv = DLVar at' (ctxt_local_name ctxt "obj") spreadTy
-              dlv <- ctxt_lift_expr_w ctxt at mdv de
-              pure [(spreadName, SLV_DLVar dlv)]
-        let lhs_env'' = foldl' (\lhs_env' (k, v) -> env_insert at' k (SLSSVal at lvl v) lhs_env') lhs_env $ ks_dvs <> spread_dvs
-        -- TODO: ^ double check this srcloc
-        return lhs_env''
-      SLV_Object _ _ env -> pure lhs_env''
-        where
-          lhs_env'' = case kSpreadMay of
-            Just spreadName -> env_insert at spreadName (SLSSVal at' lvl spreadObj) envWithKs
-            -- TODO: ^ double check this srcloc
-            Nothing -> envWithKs
-          envWithKs = foldl' (\lhs_env' k -> env_insert at' k (env_lookup at' k env) lhs_env') lhs_env ks
-          envWithoutKs = M.withoutKeys env ksSet
-          spreadObj = SLV_Object at' Nothing envWithoutKs
-      _ -> expect_throw at' (Err_Decl_NotObject val)
+evalDeclLHSObject :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> SLVal -> SLObjEnv s -> [JSObjectProperty] -> SLComp s SLEnv
+evalDeclLHSObject ctxt at sco st rhs_lvl lhs_env orig_v vm = \case
+  [] ->
+    return $ SLRes mempty st lhs_env
+  (JSObjectSpread a e):os' -> do
+    let at_ = srcloc_jsa "object spread" a at
+    case os' of
+      [] -> do
+        SLRes lifts' st' vom <- evalObjEnv ctxt at sco st vm
+        let vo = SLV_Object at_ Nothing vom
+        keepLifts lifts' $
+          evalDeclLHS ctxt at_ sco st' rhs_lvl lhs_env vo e
+      _ -> expect_throw at_ $ Err_Decl_ObjectSpreadNotLast
+  (JSPropertyIdentRef a x):os' -> do
+    let e = JSIdentifier a x
+    SLRes lifts_v st_v (v_lvl, v) <- evalDot_ ctxt at sco st orig_v vm x
+    let lvl' = rhs_lvl <> v_lvl
+    SLRes lifts' st' lhs_env' <-
+      keepLifts lifts_v $ evalDeclLHS ctxt at sco st_v lvl' lhs_env v e
+    let vm' = M.delete x vm
+    keepLifts lifts' $
+      evalDeclLHSObject ctxt at sco st' rhs_lvl lhs_env' orig_v vm' os'
+  o:_ ->
+    expect_throw at $ Err_Parse_ExpectIdentifierProp o
 
-evalDecl :: SLCtxt s -> SrcLoc -> SLState -> SLEnv -> SLScope -> JSExpression -> SLComp s SLEnv
-evalDecl ctxt at st lhs_env rhs_sco decl =
-  case decl of
-    JSVarInitExpression lhs (JSVarInit va rhs) -> do
-      let vat' = srcloc_jsa "var initializer" va at
-      let (lhs_ns, make_env) =
-            case lhs of
-              (JSIdentifier a x) -> ([x], _make_env)
-                where
-                  idAt = srcloc_jsa "id" a at
-                  _make_env v = return (env_insert idAt x (sls_sss idAt v) lhs_env)
-              (JSArrayLiteral a xs _) ->
-                evalDeclLHSArray vat' at at' ctxt lhs_env xs
-                where
-                  at' = srcloc_jsa "array" a at
-              (JSObjectLiteral a props _) ->
-                evalDeclLHSObject vat' at' ctxt lhs_env props
-                where
-                  at' = srcloc_jsa "object" a at
-              _ ->
-                expect_throw at (Err_DeclLHS_IllegalJS lhs)
-      let ctxt' = ctxt_local_name_set ctxt lhs_ns
-      SLRes rhs_lifts rhs_st v <- evalExpr ctxt' vat' rhs_sco st rhs
-      (lhs_env', lhs_lifts) <- runWriterT $ make_env v
-      return $ SLRes (rhs_lifts <> lhs_lifts) rhs_st lhs_env'
-    _ ->
-      expect_throw at (Err_Decl_IllegalJS decl)
+evalDeclLHS :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> SLVal -> JSExpression -> SLComp s SLEnv
+evalDeclLHS ctxt at sco st rhs_lvl lhs_env v = \case
+  JSIdentifier a x -> do
+    let at_ = srcloc_jsa "id" a at
+    return $ SLRes mempty st (env_insert at_ x (SLSSVal at_ rhs_lvl v) lhs_env)
+  JSArrayLiteral a xs _ -> do
+    let at_ = srcloc_jsa "array" a at
+    (vs_lifts, vs) <- explodeTupleLike ctxt at_ "lhs array" v
+    keepLifts vs_lifts $
+      evalDeclLHSArray ctxt at_ sco st rhs_lvl lhs_env vs (jsa_flatten xs)
+  JSObjectLiteral a props _ -> do
+    let at_ = srcloc_jsa "object" a at
+    let vm = evalAsEnv at_ v
+    evalDeclLHSObject ctxt at_ sco st rhs_lvl lhs_env v vm (jso_flatten props)
+  e ->
+    expect_throw at $ Err_DeclLHS_IllegalJS e
 
-evalDecls :: SLCtxt s -> SrcLoc -> SLState -> SLScope -> (JSCommaList JSExpression) -> SLComp s SLEnv
-evalDecls ctxt at st rhs_sco decls =
-  foldlM f (SLRes mempty st mempty) $ jscl_flatten decls
-  where
-    f (SLRes lifts lhs_st lhs_env) decl =
-      keepLifts lifts $ evalDecl ctxt at lhs_st lhs_env rhs_sco decl
+evalDecl :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> SLComp s SLEnv
+evalDecl ctxt at sco st lhs rhs = do
+  SLRes rhs_lifts rhs_st (rhs_lvl, rhs_v) <- evalExpr ctxt at sco st rhs
+  keepLifts rhs_lifts $ evalDeclLHS ctxt at sco rhs_st rhs_lvl mempty rhs_v lhs
+
+destructDecls :: SrcLoc -> (JSCommaList JSExpression) -> (JSExpression, JSExpression)
+destructDecls at = \case
+  (JSLOne (JSVarInitExpression lhs (JSVarInit _ rhs))) -> (lhs, rhs)
+  es -> expect_throw at $ Err_Decls_IllegalJS es
 
 -- | Make sure all bindings in this SLEnv respect the rule that
 -- private vars must be named with a leading underscore.
@@ -2293,15 +2244,15 @@ evalStmt ctxt at sco st ss =
     (s@(JSBreak a _ _) : _) -> illegal a s "break"
     (s@(JSLet a _ _) : _) -> illegal a s "let"
     (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
-    ((JSConstant a (JSLOne de) sp) : ks) -> do
-      SLRes lifts st_const addl_env <- evalDecl ctxt at_in st mempty sco de
+    ((JSConstant a decls sp) : ks) -> do
+      let (lhs, rhs) = destructDecls at_in decls
+      SLRes lifts st_const addl_env <- evalDecl ctxt at_in sco st lhs rhs
       let sco' = sco_update ctxt at_in sco st addl_env
       keepLifts lifts $ evalStmt ctxt at_after sco' st_const ks
       where
         at_after = srcloc_after_semi lab a sp at
         at_in = srcloc_jsa lab a at
         lab = "const"
-    (s@(JSConstant a _ _) : _) -> illegal a s "const, not exactly 1"
     (cont@(JSContinue a _ sp) : cont_ks) ->
       evalStmt ctxt at sco st (assign : cont : cont_ks)
       where
@@ -2388,10 +2339,9 @@ evalStmt ctxt at sco st ss =
           case st_mode st of
             SLM_ConsensusStep -> do
               let cont_at = srcloc_jsa lab cont_a at
-              let decl = JSVarInitExpression lhs (JSVarInit var_a rhs)
               let env = sco_env sco
               SLRes decl_lifts st_decl decl_env <-
-                evalDecl ctxt var_at st mempty sco decl
+                evalDecl ctxt var_at sco st lhs rhs
               let st_decl' = stEnsureMode at SLM_ConsensusStep st_decl
               let whilem =
                     case sco_while_vars sco of
@@ -2554,8 +2504,9 @@ evalStmt ctxt at sco st ss =
           ) ->
             case st_mode st of
               SLM_ConsensusStep -> do
+                let (while_lhs, while_rhs) = destructDecls var_at while_decls
                 SLRes init_lifts st_var vars_env_ <-
-                  evalDecls ctxt var_at st sco while_decls
+                  evalDecl ctxt var_at sco st while_lhs while_rhs
                 SLRes fr_lifts _ balance_sv <-
                   doFluidRef ctxt var_at st_var FV_balance
                 let balance_v = sls_sss var_at balance_sv
