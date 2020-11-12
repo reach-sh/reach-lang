@@ -114,7 +114,7 @@ data EvalError
 
 displaySlValType :: SLVal -> String
 displaySlValType = \case
-  SLV_Participant _ who _ _ _ ->
+  SLV_Participant _ who _ _ ->
     "<participant " <> (bunpack who) <> ">"
   SLV_Object _ (Just lab) _ ->
     lab
@@ -738,8 +738,8 @@ infectWithId v (lvl, sv) = (lvl, sv')
   where
     sv' =
       case sv of
-        SLV_Participant at who io _ mdv ->
-          SLV_Participant at who io (Just v) mdv
+        SLV_Participant at who _ mdv ->
+          SLV_Participant at who (Just v) mdv
         _ -> sv
 
 type SLObjEnvRHS s = SLCtxt s -> SLScope -> SLState -> SLComp s SLSVal
@@ -764,7 +764,7 @@ evalAsEnv at obj =
       retDLVar tm (DLA_Var obj_dv) Public
     SLV_Prim (SLPrim_interact _ who m it@(T_Object tm)) ->
       retDLVar tm (DLA_Interact who m it) Secret
-    SLV_Participant _ who _ vas _ ->
+    SLV_Participant _ who vas _ ->
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who))
         , ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing))
@@ -880,25 +880,7 @@ evalForm ctxt at sco st f args =
           sargs <- cannotLift "App args" <$> evalExprs ctxt at sco st [opte, partse]
           case map snd sargs of
             [(SLV_Object _ _ opts), (SLV_Tuple _ parts)] ->
-              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts part_vs (jsStmtToBlock top_s) env env'
-              where
-                --- FIXME I think it would be better for env' to be created in compileDApp rather than here
-                env = sco_env sco
-                env' =
-                  foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) env $
-                    map (second (sls_sss at)) $ -- TODO: double check this srcloc
-                      zipEq at (Err_Apply_ArgCount at) top_args part_vs
-                top_args =
-                  --- XXX merge with evalApplyVals
-                  map (jse_expect_id at) $ parseJSArrowFormals at top_formals
-                part_vs = map make_part parts
-                make_part v =
-                  case v of
-                    SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat _ io] ->
-                      case "_" `B.isPrefixOf` bs of
-                        True -> expect_throw bs_at (Err_App_PartUnderscore bs)
-                        False -> public $ SLV_Participant p_at bs (makeInteract iat bs io) Nothing Nothing
-                    _ -> expect_throw at (Err_App_InvalidPartSpec v)
+              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts parts (parseJSArrowFormals at top_formals) top_s (sco_env sco)
             _ -> expect_throw at (Err_App_InvalidArgs args)
         _ -> expect_throw at (Err_App_InvalidArgs args)
     SLForm_Part_Only who ->
@@ -929,7 +911,7 @@ evalForm ctxt at sco st f args =
           let parts =
                 map
                   (\case
-                     SLV_Participant _ who _ _ _ -> who
+                     SLV_Participant _ who _ _ -> who
                      v -> expect_throw at $ Err_Each_NotParticipant v)
                   part_vs
           return $ SLRes part_lifts part_st $ public $ SLV_Form $ SLForm_EachAns parts at (sco_to_cloenv sco) thunke
@@ -954,7 +936,7 @@ evalForm ctxt at sco st f args =
               Nothing -> return $ SLRes mempty st Nothing
           SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st_m notter_e
           let participant_who = \case
-                SLV_Participant _ who _ _ _ -> who
+                SLV_Participant _ who _ _ -> who
                 v -> expect_throw at $ Err_Unknowable_NotParticipant v
           let notter = participant_who v_n
           SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
@@ -1470,7 +1452,7 @@ evalPrim ctxt at sco st p sargs =
           where
             who_dla =
               case map snd sargs of
-                [SLV_Participant _ who _ _ Nothing] ->
+                [SLV_Participant _ who _ Nothing] ->
                   case M.lookup who $ st_pdvs st of
                     Just dv -> convert $ SLV_DLVar dv
                     Nothing -> expect_throw at $ Err_Transfer_NotBound who
@@ -1515,7 +1497,7 @@ evalPrim ctxt at sco st p sargs =
         cm -> expect_throw at $ Err_Eval_IllegalMode cm "wait"
     SLPrim_part_set ->
       case map snd sargs of
-        [(SLV_Participant _ who _ _ _), addr] -> do
+        [(SLV_Participant _ who _ _), addr] -> do
           let addr_da = checkType at T_Address addr
           retV $ (lvl, (SLV_Prim $ SLPrim_part_setted at who addr_da))
         _ -> illegal_args
@@ -2110,8 +2092,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                   Nothing -> \x -> x
                   Just whov ->
                     case env_lookup to_at whov env of
-                      (SLSSVal idAt lvl_ (SLV_Participant at_ who_ io_ as_ _)) ->
-                        M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ io_ as_ (Just $ (pdvs' M.! who))))
+                      (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
+                        M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just $ (pdvs' M.! who))))
                       _ ->
                         impossible $ "participant is not participant"
           --- NOTE we don't use sco_update, because we have to treat the publish specially
@@ -2821,7 +2803,25 @@ app_options =
 compileDApp :: STCounter s -> DLStmts -> Connectors -> SLVal -> ST s DLProg
 compileDApp idxr liblifts cns topv =
   case topv of
-    SLV_Prim (SLPrim_App_Delay at opts partvs (JSBlock _ top_ss _) top_env top_env_wps) -> do
+    SLV_Prim (SLPrim_App_Delay at opts parts top_formals top_s top_env) -> do
+      let make_partio v =
+            case v of
+              SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat _ io] ->
+                case "_" `B.isPrefixOf` bs of
+                  True -> expect_throw bs_at (Err_App_PartUnderscore bs)
+                  False -> (p_at, bs, iat, (makeInteract iat bs io))
+              _ -> expect_throw at (Err_App_InvalidPartSpec v)
+      let part_ios = map make_partio parts
+      let make_part (p_at, pn, _, _) =
+            public $ SLV_Participant p_at pn Nothing Nothing
+      let partvs = map make_part part_ios
+      --- XXX use evalApplyVals
+      let top_args = map (jse_expect_id at) top_formals
+      let top_env_wps =
+            foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) top_env $
+              map (second (sls_sss at)) $
+                zipEq at (Err_Apply_ArgCount at) top_args partvs
+      let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
       let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) (M.map sss_val opts)
             where
               use_opt k v acc =
@@ -2840,6 +2840,10 @@ compileDApp idxr liblifts cns topv =
               , st_pdvs = mempty
               , st_after_first = False
               }
+      let at' = srcloc_at "compileDApp" Nothing at
+      let make_penv (p_at, pn, iat, io) =
+            (pn, env_insert p_at "interact" (sls_sss iat $ secret io) top_env)
+      let penvs = M.fromList $ map make_penv part_ios
       let ctxt =
             SLCtxt
               { ctxt_dlo = dlo
@@ -2860,20 +2864,15 @@ compileDApp idxr liblifts cns topv =
       let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
       SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
       tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
-      return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)
-      where
-        at' = srcloc_at "compileDApp" Nothing at
-        sps = SLParts $ M.fromList $ map make_sps_entry partvs
-        make_sps_entry (Public, (SLV_Participant _ pn (SLV_Object _ _ io) _ _)) =
-          (pn, InteractEnv $ M.map getType io)
-          where
+      let make_sps_entry (_p_at, pn, _iat, io) =
+            (pn, InteractEnv $ M.map getType iom)
+            where
+            iom = case io of SLV_Object _ _ m -> m
+                             _ -> impossible $ "make_sps_entry io"
             getType (SLSSVal _ _ (SLV_Prim (SLPrim_interact _ _ _ t))) = t
             getType x = impossible $ "make_sps_entry getType " ++ show x
-        make_sps_entry x = impossible $ "make_sps_entry " ++ show x
-        penvs = M.fromList $ map make_penv partvs
-        make_penv (Public, (SLV_Participant _ pn io _ _)) =
-          (pn, env_insert at' "interact" (sls_sss at' $ secret io) top_env) -- TODO: double check this srcloc
-        make_penv _ = impossible "SLPrim_App_Delay make_penv"
+      let sps = SLParts $ M.fromList $ map make_sps_entry part_ios
+      return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)
     _ ->
       expect_throw srcloc_top (Err_Top_NotApp topv)
 

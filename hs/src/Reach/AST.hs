@@ -211,8 +211,8 @@ data SLVal
   | SLV_DLVar DLVar
   | SLV_Type SLType
   | SLV_Connector T.Text
-  | --- FIXME I think we can delete some of these fields, like the SLVal and the M DLVar
-    SLV_Participant SrcLoc SLPart SLVal (Maybe SLVar) (Maybe DLVar)
+  | --- FIXME I think we can delete some of these fields, like the M DLVar
+    SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   deriving (Eq, Generic, NFData, Show)
@@ -312,7 +312,7 @@ data SLPrimitive
   | SLPrim_tuple_length
   | SLPrim_tuple_set
   | SLPrim_Object
-  | SLPrim_App_Delay SrcLoc SLEnv [SLSVal] JSBlock SLEnv SLEnv
+  | SLPrim_App_Delay SrcLoc SLEnv [SLVal] [JSExpression] JSStatement SLEnv
   | SLPrim_op PrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal

@@ -174,7 +174,7 @@ slToDL _at v =
     SLV_DLVar dv -> return $ DLA_Var dv
     SLV_Type _ -> Nothing
     SLV_Connector _ -> Nothing
-    SLV_Participant _ _ _ _ mdv ->
+    SLV_Participant _ _ _ mdv ->
       case mdv of
         Nothing -> Nothing
         Just dv -> return $ DLA_Var dv
