@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.7
+
+Use temp directory for auto compiles.
+
 ## 0.0.6
 
 Add screenshot.
