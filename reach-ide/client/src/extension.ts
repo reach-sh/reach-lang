@@ -96,9 +96,9 @@ function registerCommands(context: ExtensionContext) {
 	});
 	context.subscriptions.push(disposable2);
 
-	const disposable3 = commands.registerCommand('reach.update', () => {
+	const disposable3 = commands.registerCommand('reach.upgrade', () => {
 		terminal.show();
-		terminal.sendText("./reach update");
+		terminal.sendText("./reach upgrade");
 	});
 	context.subscriptions.push(disposable3);
 
@@ -127,6 +127,12 @@ function registerCommands(context: ExtensionContext) {
 		})
 	});
 	context.subscriptions.push(disposable5);
+
+	const disposable6 = commands.registerCommand('reach.update', () => {
+		terminal.show();
+		terminal.sendText("./reach update");
+	});
+	context.subscriptions.push(disposable6);
 }
 
 export function deactivate(): Thenable<void> | undefined {
