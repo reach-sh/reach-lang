@@ -21,19 +21,14 @@ import {
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	InitializeResult,
-	CodeLens,
-	CodeLensParams,
 	CodeAction,
 	CodeActionKind,
 	CodeActionParams,
 	CodeActionContext,
-	Command,
 	WorkspaceEdit,
 	HoverParams,
 	Hover,
-	MarkedString,
-	MarkupContent,
-	MarkupKind, Position
+	Position
 } from 'vscode-languageserver';
 
 import {
@@ -56,18 +51,18 @@ const NAME: string = 'Reach IDE';
 
 const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'CompileError';
 
-let reachTempIndexFile : string;
+let reachTempIndexFile: string;
 const REACH_TEMP_FILE_NAME = "index.rsh";
 
 const { exec } = require("child_process");
 
-const {indexOfRegex, lastIndexOfRegex} = require('index-of-regex')
+const { indexOfRegex, lastIndexOfRegex } = require('index-of-regex')
 
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
 
-let tempFolder : string;
+let tempFolder: string;
 
 connection.onInitialize((params: InitializeParams) => {
 
@@ -104,15 +99,15 @@ connection.onInitialize((params: InitializeParams) => {
 			completionProvider: {
 				resolveProvider: true
 			},
-/*			codeLensProvider : {
-				resolveProvider: true
-			},
-,*/
-			hoverProvider : {
+			/*			codeLensProvider : {
+							resolveProvider: true
+						},
+			,*/
+			hoverProvider: {
 				workDoneProgress: false
 			},
-			codeActionProvider : {
-				codeActionKinds : [ CodeActionKind.QuickFix ]
+			codeActionProvider: {
+				codeActionKinds: [CodeActionKind.QuickFix]
 			}
 		}
 	};
@@ -141,9 +136,9 @@ connection.onInitialize((params: InitializeParams) => {
 	return result;
 });
 
-function appendRshFileAssociation(){
+function appendRshFileAssociation() {
 
-	fs.readFile('.vscode/settings.json',function(err: any,content: string){
+	fs.readFile('.vscode/settings.json', function (err: any, content: string) {
 		var parseJson;
 		try {
 			parseJson = JSON.parse(content);
@@ -152,16 +147,16 @@ function appendRshFileAssociation(){
 		}
 		var fileAssoc = parseJson["files.associations"]
 		if (fileAssoc == undefined) {
-			parseJson["files.associations"] = { "*.rsh" : "javascript" }
+			parseJson["files.associations"] = { "*.rsh": "javascript" }
 		} else {
 			parseJson["files.associations"]["*.rsh"] = "javascript";
 		}
-		fs.writeFile('.vscode/settings.json',JSON.stringify(parseJson),function(err: any){
-		  if(err) throw err;
+		fs.writeFile('.vscode/settings.json', JSON.stringify(parseJson), function (err: any) {
+			if (err) throw err;
 		})
 	})
 
-  }
+}
 
 connection.onInitialized(() => {
 	if (hasConfigurationCapability) {
@@ -257,7 +252,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				connection.console.log(`Reach download stdout: ${stdout}`);
 			});
 		}
-	} catch(err) {
+	} catch (err) {
 		connection.console.log("Failed to check if Reach shell scripts exists, downloading anyways...");
 		await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
 			if (error) {
@@ -271,13 +266,13 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 			connection.console.log(`Reach download stdout: ${stdout}`);
 		});
 	}
-	
+
 	// Compile temp file instead of this current file
 
 	connection.console.log(`BEFORE`);
 
-	fs.writeFile(reachTempIndexFile, textDocumentContents, function(err: any) {
-		if(err) {
+	fs.writeFile(reachTempIndexFile, textDocumentContents, function (err: any) {
+		if (err) {
 			connection.console.log(`Failed to write temp Reach index.rsh file: ${err}`);
 			return;
 		}
@@ -287,16 +282,16 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	await exec("cd " + tempFolder + " && " + path.join(process.cwd(), "reach") + " compile " + REACH_TEMP_FILE_NAME, (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`FOUND Reach compile error: ${error.message}`);
-			let errorLocations : ErrorLocation[] = findErrorLocations(error.message);
+			let errorLocations: ErrorLocation[] = findErrorLocations(error.message);
 			let problems = 0;
 			for (var i = 0; i < errorLocations.length; i++) {
-				let element : ErrorLocation = errorLocations[i];
+				let element: ErrorLocation = errorLocations[i];
 				connection.console.log(`FOR EACH LOCATION, ERROR MSG IS ` + element.errorMessage);
 				if (problems < settings.maxNumberOfProblems) {
 					problems++;
-					
-					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR + (element.suggestions != undefined ? element.suggestions : "") );
-					
+
+					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR + (element.suggestions != undefined ? element.suggestions : ""));
+
 				}
 			}
 
@@ -311,8 +306,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	connection.console.log(`AFTER`);
 
-		// Send the computed diagnostics to VSCode (before the above promise finishes, just to clear stuff).
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	// Send the computed diagnostics to VSCode (before the above promise finishes, just to clear stuff).
+	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
 	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined) {
 		let diagnostic: Diagnostic = {
@@ -347,17 +342,17 @@ connection.onDidChangeWatchedFiles(_change => {
 });
 
 export interface ErrorLocation {
-    range: Range;
+	range: Range;
 	errorMessage: string; // e.g. id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
 	suggestions: string | undefined; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
 }
 
-function findErrorLocations(compileErrors: string) : ErrorLocation[] {
+function findErrorLocations(compileErrors: string): ErrorLocation[] {
 	connection.console.log(`FIND ERROR LOCATIONS`);
 	// GET ERROR MESSAGES BY RUNNING COMPILE
 
 
-// change the below to run reach compile and get the output e.g. parse from
+	// change the below to run reach compile and get the output e.g. parse from
 	/*
 
 	WARNING: Found orphan containers (tut_ethereum-devnet_1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up.
@@ -379,20 +374,20 @@ CallStack (from HasCallStack):
 	let locations: ErrorLocation[] = [];
 	while ((m = pattern.exec(compileErrors)) && problems < 100 /*settings.maxNumberOfProblems*/) {
 		connection.console.log(`FOUND PATTERN: ${m}`);
-	// ERROR MESSAGE m:
-    //error: ./index.rsh:13:23:id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
+		// ERROR MESSAGE m:
+		//error: ./index.rsh:13:23:id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
 
-	var start: Position;
-	var end: Position;
+		var start: Position;
+		var end: Position;
 
 		// Get actual message portion after the line and position numbers
 		var tokens = m[0].split(':');
-		connection.console.log(`TOKENS: `+tokens);
+		connection.console.log(`TOKENS: ` + tokens);
 		var linePos = parseInt(tokens[2]);
 		var charPos = parseInt(tokens[3]);
 		var actualMessage = "";
 		if (isNaN(linePos) || isNaN(charPos)) { // no line/pos found - treat as generic error
-			for (var i=1; i<tokens.length; i++) { // start after "error"
+			for (var i = 1; i < tokens.length; i++) { // start after "error"
 				actualMessage += tokens[i];
 				if (i < (tokens.length - 1)) {
 					actualMessage += ":"; // add back the colons in between
@@ -402,7 +397,7 @@ CallStack (from HasCallStack):
 			start = { line: 0, character: 0 }; // generic error highlights everything
 			end = { line: 9999, character: 9999 };
 		} else {
-			for (var i=4; i<tokens.length; i++) { // start after line/pos
+			for (var i = 4; i < tokens.length; i++) { // start after line/pos
 				actualMessage += tokens[i];
 				if (i < (tokens.length - 1)) {
 					actualMessage += ":"; // add back the colons in between
@@ -425,22 +420,22 @@ CallStack (from HasCallStack):
 			if (suggestions !== undefined) {
 				var problematicString;
 				var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
-				let messageWithoutSuggestionsTokens : string[] = messageWithoutSuggestions.split(" ");
+				let messageWithoutSuggestionsTokens: string[] = messageWithoutSuggestions.split(" ");
 				connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
-	
+
 				if (tokens[4] == "dot") {
 					// e.g.: error, ./.index.rsh.temp,8,8,dot, AApp is not a field of Reach. Did you mean, ["App"]
 					problematicString = messageWithoutSuggestionsTokens[1];
 					connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
 
 					start = { line: linePos - 1, character: charPos } // Reach compiler numbers starts at 1, but skip the dot in highlighting
-					end = { line: linePos - 1, character: charPos + problematicString.length};
+					end = { line: linePos - 1, character: charPos + problematicString.length };
 				} else {
 					problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
 					problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
 					connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
 
-					end = { line: linePos - 1, character: charPos - 1 + problematicString.length};
+					end = { line: linePos - 1, character: charPos - 1 + problematicString.length };
 				}
 			} else {
 				end = { line: linePos, character: 0 } // until end of line, or equivalently the next line
@@ -462,14 +457,14 @@ CallStack (from HasCallStack):
 
 connection.onCodeAction(
 	async (_params: CodeActionParams): Promise<CodeAction[]> => {
-		let codeActions : CodeAction[] = [];
+		let codeActions: CodeAction[] = [];
 
 		let textDocument = documents.get(_params.textDocument.uri)
 		if (textDocument === undefined) {
 			return codeActions;
 		}
-		let context : CodeActionContext = _params.context;
-		let diagnostics : Diagnostic[] = context.diagnostics;
+		let context: CodeActionContext = _params.context;
+		let diagnostics: Diagnostic[] = context.diagnostics;
 
 		codeActions = await getCodeActions(diagnostics, textDocument, _params);
 
@@ -477,22 +472,22 @@ connection.onCodeAction(
 	}
 )
 
-async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocument, params: CodeActionParams) : Promise<CodeAction[]> {
-	let codeActions : CodeAction[] = [];
+async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocument, params: CodeActionParams): Promise<CodeAction[]> {
+	let codeActions: CodeAction[] = [];
 
 	// Get quick fixes for each diagnostic
 	for (let i = 0; i < diagnostics.length; i++) {
 
 		let diagnostic = diagnostics[i];
 		if (String(diagnostic.code).startsWith(DIAGNOSTIC_TYPE_COMPILE_ERROR)) {
-			let labelPrefix : string = "Replace with ";
-			let range : Range = diagnostic.range;
-			let possibleReplacements : string = String(diagnostic.code).substring(DIAGNOSTIC_TYPE_COMPILE_ERROR.length);
+			let labelPrefix: string = "Replace with ";
+			let range: Range = diagnostic.range;
+			let possibleReplacements: string = String(diagnostic.code).substring(DIAGNOSTIC_TYPE_COMPILE_ERROR.length);
 			if (possibleReplacements.length != 0) {
 				// Convert list of suggestions to an array
 				// Example input: "declassify","array","assert","assume","closeTo"
 				var suggestionsArray = possibleReplacements.split(","); // split by commas
-				for (var j=0; j<suggestionsArray.length; j++) {
+				for (var j = 0; j < suggestionsArray.length; j++) {
 					suggestionsArray[j] = suggestionsArray[j].substring(1, suggestionsArray[j].length - 1); // remove surrounding quotes
 
 					codeActions.push(getQuickFix(diagnostic, labelPrefix + suggestionsArray[j], range, suggestionsArray[j], textDocument));
@@ -504,16 +499,16 @@ async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocum
 	return codeActions;
 }
 
-function getQuickFix(diagnostic:Diagnostic, title:string, range:Range, replacement:string, textDocument:TextDocument) : CodeAction {
-	let textEdit : TextEdit = { 
+function getQuickFix(diagnostic: Diagnostic, title: string, range: Range, replacement: string, textDocument: TextDocument): CodeAction {
+	let textEdit: TextEdit = {
 		range: range,
 		newText: replacement
 	};
-	let workspaceEdit : WorkspaceEdit = {
-		changes: { [textDocument.uri]:[textEdit] }
+	let workspaceEdit: WorkspaceEdit = {
+		changes: { [textDocument.uri]: [textEdit] }
 	}
-	let codeAction : CodeAction = { 
-		title: title, 
+	let codeAction: CodeAction = {
+		title: title,
 		kind: CodeActionKind.QuickFix,
 		edit: workspaceEdit,
 		diagnostics: [diagnostic]
@@ -528,13 +523,13 @@ connection.onCompletion(
 		// The passed parameter contains the position of the text document in
 		// which code complete got requested.
 
-		let completionItems : CompletionItem[] = [];
+		let completionItems: CompletionItem[] = [];
 
 		// Snippets
 		{
-			let snippet : string = 
+			let snippet: string =
 				"'reach 0.1';\n" +
-				"\n" + 
+				"\n" +
 				"export const main =\n" +
 				"  Reach.App(\n" +
 				"    {},\n" +
@@ -543,7 +538,7 @@ connection.onCompletion(
 				"	   exit(); });";
 			insertSnippet(_textDocumentPosition, snippet, completionItems, undefined, "Reach template", 0);
 		}
-		
+
 		return completionItems;
 	}
 );
@@ -580,7 +575,6 @@ function insertSnippet(_textDocumentPosition: TextDocumentPositionParams, snippe
 	completionItems.push(completionItem);
 }
 
-
 // This handler resolves additional information for the item selected in
 // the completion list.
 connection.onCompletionResolve(
@@ -590,14 +584,12 @@ connection.onCompletionResolve(
 	}
 );
 
-
-
 connection.onHover(
 
 	async (_params: HoverParams): Promise<Hover> => {
 		let textDocument = documents.get(_params.textDocument.uri)
 		let position = _params.position
-		let hover : Hover = {
+		let hover: Hover = {
 			contents: ""
 		}
 		if (textDocument !== undefined) {
@@ -628,20 +620,20 @@ connection.onHover(
 		}
 		return hover;
 	}
-	
+
 );
 
-function isReachKeyword(word: string) : boolean {
-	var reachKeywords = [ 'export', 'import', 'Reach.App', 'only', 'each', 'publish', 
-	'pay', 'timeout', 'wait', 'exit', 'unknowable', 'closeTo', 'interact', 'assume', 
-	'declassify', 'makeCommitment', 'commit', 'Participant.set', 'set', 'while', 
-	'continue', 'transfer', 'require', 'checkCommitment', 'const', 'function', 'return',
-	'if', 'switch', 'array', 'Tuple.length', 'Array.length', 'length',
-	'Tuple.set', 'Array.set', 'set',
-	'Array.iota', 'Array.concat', 'concat', 'Array.empty', 'Array.zip', 'zip', 'Array.map', 'map', 'Array.reduce', 'reduce', 'Array.forEach', 'forEach', 'Array.replicate',
-	'Object.set', 'Data', 'Maybe', 'makeEnum', 'assert', 'forall', 'possible', 'digest', 'balance', 'implies', 'ensure', 'hasRandom',
-	'Null', 'Bool', 'UInt', 'Bytes', 'Digest', 'Address', 'Fun', 'Tuple', 'Object', 'Array' ];
-	for (var i=0; i < reachKeywords.length; i++) {
+function isReachKeyword(word: string): boolean {
+	var reachKeywords = ['export', 'import', 'Reach.App', 'only', 'each', 'publish',
+		'pay', 'timeout', 'wait', 'exit', 'unknowable', 'closeTo', 'interact', 'assume',
+		'declassify', 'makeCommitment', 'commit', 'Participant.set', 'set', 'while',
+		'continue', 'transfer', 'require', 'checkCommitment', 'const', 'function', 'return',
+		'if', 'switch', 'array', 'Tuple.length', 'Array.length', 'length',
+		'Tuple.set', 'Array.set', 'set',
+		'Array.iota', 'Array.concat', 'concat', 'Array.empty', 'Array.zip', 'zip', 'Array.map', 'map', 'Array.reduce', 'reduce', 'Array.forEach', 'forEach', 'Array.replicate',
+		'Object.set', 'Data', 'Maybe', 'makeEnum', 'assert', 'forall', 'possible', 'digest', 'balance', 'implies', 'ensure', 'hasRandom',
+		'Null', 'Bool', 'UInt', 'Bytes', 'Digest', 'Address', 'Fun', 'Tuple', 'Object', 'Array'];
+	for (var i = 0; i < reachKeywords.length; i++) {
 		if (word == reachKeywords[i]) {
 			return true;
 		}
@@ -649,11 +641,11 @@ function isReachKeyword(word: string) : boolean {
 	return false;
 }
 
-function getReachKeywordMarkdown(word: string) : string {
+function getReachKeywordMarkdown(word: string): string {
 	// source: https://docs.reach.sh/ref-programs-module.html#%28tech._source._file%29
 	// then input to: https://euangoddard.github.io/clipboard2markdown/
 	// then input to: https://www.freeformatter.com/javascript-escape.html
-	var buf : string = "";
+	var buf: string = "";
 	if (word == 'export') {
 		buf = "#### export\r\n\r\nModule-level\u00A0[identifier definitions](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28tech._identifier._definition%29)\u00A0may be\u00A0exported by writing\u00A0`export`\u00A0in front of them. For example,\r\n\r\n[export](https:\/\/docs.reach.sh\/ref-programs-module.html#%28reach._%28%28export%29%29%29) [const](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28const%29%29%29) x = 1;\r\n[export](https:\/\/docs.reach.sh\/ref-programs-module.html#%28reach._%28%28export%29%29%29) [const](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28const%29%29%29) [a, b, ...more] = [ 0, 1, 2, 3, 4 ];\r\n[export](https:\/\/docs.reach.sh\/ref-programs-module.html#%28reach._%28%28export%29%29%29) [function](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28function%29%29%29) add1(x) { [return](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28return%29%29%29) x [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 1; };\r\n\r\nare valid\u00A0[exports](https:\/\/docs.reach.sh\/ref-programs-module.html#%28tech._export%29).\r\n\r\nModule-level identifiers may also be\u00A0[export](https:\/\/docs.reach.sh\/ref-programs-module.html#%28tech._export%29)ed after the fact, and may be renamed during export. For example:\r\n\r\n[const](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28const%29%29%29) w = 2;\r\n[const](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28const%29%29%29) z = 0;\r\n[export](https:\/\/docs.reach.sh\/ref-programs-module.html#%28reach._%28%28export%29%29%29) {w, z as zero};\r\n\r\nIdentifiers from other modules may be re-exported (and renamed), even if they are not imported in the current module. For example:\r\n\r\n[export](https:\/\/docs.reach.sh\/ref-programs-module.html#%28reach._%28%28export%29%29%29) {u, x as other_x} [from](https:\/\/docs.reach.sh\/ref-programs-module.html#%28reach._%28%28from%29%29%29) \'.\/other-module.rsh\';\r\n\r\nAn\u00A0[export](https:\/\/docs.reach.sh\/ref-programs-module.html#%28tech._export%29)ed identifier in a given\u00A0[module](https:\/\/docs.reach.sh\/ref-programs-module.html#%28tech._module%29)\u00A0may be\u00A0[import](https:\/\/docs.reach.sh\/ref-programs-module.html#%28tech._import%29)ed by other\u00A0[modules](https:\/\/docs.reach.sh\/ref-programs-module.html#%28tech._module%29).";
 	} else if (word == 'import') {
@@ -708,7 +700,7 @@ function getReachKeywordMarkdown(word: string) : string {
 		buf = "##### Array & tuple length:\u00A0Tuple.length,\u00A0Array.length, and\u00A0.length\r\n\r\n[Tuple](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Tuple%29%29%29).length(tup);\r\ntup.[length](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28length%29%29%29);\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[length](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28length%29%29%29)(arr);\r\narr.[length](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28length%29%29%29);\r\n\r\n`[Tuple](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Tuple%29%29%29).[length](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28length%29%29%29)`\u00A0Returns the length of the given tuple.\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[length](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28length%29%29%29)`\u00A0Returns the length of the given array.\r\n\r\nBoth may be abbreviated as\u00A0`expr.[length](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28length%29%29%29)`\u00A0where\u00A0`expr`\u00A0evaluates to a tuple or an array.";
 	} else if (word == 'Tuple.set' || word == 'Array.set' || word == 'set') {
 		buf = "##### Array & tuple update:\u00A0Tuple.set,\u00A0Array.set, and\u00A0.set\r\n\r\n[Tuple](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Tuple%29%29%29).set(tup, idx, val);\r\ntup.[set](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28set%29%29%29)(idx, val);\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[set](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28set%29%29%29)(arr, idx, val);\r\narr.[set](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28set%29%29%29)(idx, val);\r\n\r\n`[Tuple](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Tuple%29%29%29).[set](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28set%29%29%29)`\u00A0Returns a new tuple identical to\u00A0`tup`, except that index\u00A0`idx`\u00A0is replaced with\u00A0`val`.\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[set](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28set%29%29%29)`\u00A0Returns a new array identical to\u00A0`arr`, except that index\u00A0`idx`\u00A0is replaced with\u00A0`val`.\r\n\r\nBoth may be abbreviated as\u00A0`expr.[set](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28set%29%29%29)(idx, val)`\u00A0where\u00A0`expr`\u00A0evaluates to a tuple or an array.";
-	} else if (word == 'Array.iota' || word == 'Array.concat' || word == 'concat' || word == 'Array.empty' || word == 'Array.zip' || word == 'zip' || word == 'Array.map' || word == 'map' || word == 'Array.reduce' || word == 'reduce' || word == 'Array.forEach' || word == 'forEach' || word == 'Array.replicate' ) {
+	} else if (word == 'Array.iota' || word == 'Array.concat' || word == 'concat' || word == 'Array.empty' || word == 'Array.zip' || word == 'zip' || word == 'Array.map' || word == 'map' || word == 'Array.reduce' || word == 'reduce' || word == 'Array.forEach' || word == 'forEach' || word == 'Array.replicate') {
 		buf = "##### Array group operations:\u00A0Array.iota,\u00A0Array.concat\u00A0&\u00A0.concat,\u00A0Array.empty,\u00A0Array.zip\u00A0&\u00A0.zip,\u00A0Array.map\u00A0&\u00A0.map,\u00A0Array.reduce\u00A0&\u00A0.reduce,\u00A0Array.forEach\u00A0&\u00A0.forEach, and\u00A0Array.replicate\r\n\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).iota(5)\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[iota](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28iota%29%29%29)(len)`\u00A0returns an array of length\u00A0`len`, where each element is the same as its index. For example,\u00A0`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[iota](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28iota%29%29%29)(4)`\u00A0returns\u00A0`[0, 1, 2, 3]`. The given\u00A0`len`\u00A0must evaluate to an integer at compile-time.\r\n\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).replicate(5, \"five\")\r\nArray_replicate(5, \"five\")\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).replicate(len, val)`\u00A0returns an array of length\u00A0`len`, where each element is\u00A0`val`. For example,\u00A0`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).replicate(4, \"four\")`\u00A0returns\u00A0`[\"four\", \"four\", \"four\", \"four\"]`. The given\u00A0`len`\u00A0must evaluate to an integer at compile-time.\r\n\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).concat(x, y)\r\nx.[concat](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28concat%29%29%29)(y)\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[concat](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28concat%29%29%29)(x, y)`\u00A0concatenates the two arrays\u00A0`x`\u00A0and\u00A0`y`. This may be abbreviated as\u00A0`x.[concat](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28concat%29%29%29)(y)`.\r\n\r\nArray_empty\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).empty\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).empty`\u00A0is an array with no elements. It is the identity element of\u00A0`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[concat](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28concat%29%29%29)`. It may also be written\u00A0`Array_empty`.\r\n\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).zip(x, y)\r\nx.[zip](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28zip%29%29%29)(y)\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[zip](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28zip%29%29%29)(x, y)`\u00A0returns a new array the same size as\u00A0`x`\u00A0and\u00A0`y`\u00A0(which must be thes same size) whose elements are tuples of the elements of\u00A0`x`\u00A0and\u00A0`y`. This may be abbreviated as\u00A0`x.[zip](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28zip%29%29%29)(y)`.\r\n\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).map(arr, f)\r\narr.[map](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28map%29%29%29)(f)\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[map](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28map%29%29%29)(arr, f)`\u00A0returns a new array,\u00A0`arr_mapped`, the same size as\u00A0`arr`, where\u00A0`arr_mapped[i] = f(arr[i])`\u00A0for all\u00A0`i`. For example,\u00A0`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[iota](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28iota%29%29%29)(4).[map](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28map%29%29%29)(x [=>](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29) x[+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29)1)`\u00A0returns\u00A0`[1, 2, 3, 4]`. This may be abbreviated as\u00A0`arr.[map](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28map%29%29%29)(f)`.\r\n\r\nThis function is generalized to an arbitrary number of arrays of the same size, which are provided before the\u00A0`f`\u00A0argument. For example,\u00A0`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[iota](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28iota%29%29%29)(4).[map](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28map%29%29%29)([Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[iota](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28iota%29%29%29)(4), [add](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28add%29%29%29))`\u00A0returns\u00A0`[0, 2, 4, 6]`.\r\n\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).reduce(arr, z, f)\r\narr.[reduce](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28reduce%29%29%29)(z, f)\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[reduce](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28reduce%29%29%29)(arr, z, f)`\u00A0returns the\u00A0[left fold](https:\/\/en.wikipedia.org\/wiki\/Fold_(higher-order_function))\u00A0of the function\u00A0`f`\u00A0over the given array with the initial value\u00A0`z`. For example,\u00A0`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[iota](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28iota%29%29%29)(4).[reduce](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28reduce%29%29%29)(0, [add](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28add%29%29%29))`\u00A0returns\u00A0`((0 [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 1) [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 2) [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 3 = 6`. This may be abbreviated as\u00A0`arr.[reduce](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28reduce%29%29%29)(z, f)`.\r\n\r\nThis function is generalized to an arbitrary number of arrays of the same size, which are provided before the\u00A0`z`\u00A0argument. For example,\u00A0`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[iota](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28iota%29%29%29)(4).[reduce](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28reduce%29%29%29)([Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[iota](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28iota%29%29%29)(4), 0, (x, y, z) [=>](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29) (z [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) x [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) y))`\u00A0returns\u00A0`((((0 [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 0 [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 0) [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 1 [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 1) [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 2 [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 2) [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 3 [+](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28%2B%29%29%29) 3)`.\r\n\r\narr.forEach(f)\r\n[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[forEach](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28for.Each%29%29%29)(arr, f)\r\nArray_forEach(arr, f)\r\nArray_forEach1(arr)(f)\r\n\r\n`[Array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Array%29%29%29).[forEach](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28for.Each%29%29%29)(arr, f)`\u00A0iterates the function\u00A0`f`\u00A0over the elements of the array\u00A0`arr`, discarding the result. This may be abbreviated as\u00A0`arr.[forEach](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28for.Each%29%29%29)(f)`.";
 	} else if (word == 'Object.set') {
 		buf = "##### Object.set\r\n\r\n[Object](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Object%29%29%29).[set](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28set%29%29%29)(obj, fld, val);\r\nObject_set(obj, fld, val);\r\n{ ...obj, [fld]: val };\r\n\r\nReturns a new object identical to\u00A0`obj`, except that field\u00A0`fld`\u00A0is replaced with\u00A0`val`.";
@@ -738,15 +730,6 @@ function getReachKeywordMarkdown(word: string) : string {
 		buf = "##### Types\r\n\r\nReach\'s\u00A0types are represented with programs by the following identifiers and constructors:\r\n\r\n-   `Null`.\r\n\r\n-   `Bool`, which denotes a boolean.\r\n\r\n-   `UInt`, which denotes an unsigned integer.\u00A0`[UInt](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29).max`\u00A0is the largest value that may be assigned to a\u00A0`[UInt](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.U.Int%29%29%29)`.\r\n\r\n-   `Bytes`, which denotes a string of bytes.\r\n\r\n-   `Digest`, which denotes a\u00A0[digest](https:\/\/docs.reach.sh\/ref-model.html#%28tech._digest%29).\r\n\r\n-   `Address`, which denotes an\u00A0[account](https:\/\/docs.reach.sh\/ref-model.html#%28tech._account%29)\u00A0[address](https:\/\/docs.reach.sh\/ref-model.html#%28tech._addres%29).\r\n\r\n-   `Fun([Domain_0, ..., Domain_N], Range)`, which denotes a function type.\r\n\r\n-   `Tuple(Field_0, ..., FieldN)`, which denotes a tuple. (Refer to\u00A0[Tuples](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28part._ref-programs-tuples%29)\u00A0for constructing tuples.)\r\n\r\n-   `Object({key_0: Type_0, ..., key_N: Type_N})`, which denotes an object. (Refer to\u00A0[Objects](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28part._ref-programs-objects%29)\u00A0for constructing objects.)\r\n\r\n-   `Array(ElemenType, size)`, which denotes a statically-sized array. (Refer to\u00A0[array](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28part._ref-programs-arrays%29)\u00A0for constructing arrays.)\r\n\r\n-   `Data({variant_0: Type_0, ..., variant_N: Type_N})`, which denotes a\u00A0[tagged union](https:\/\/en.wikipedia.org\/wiki\/Tagged_union)\u00A0(or\u00A0sum type). (Refer to\u00A0[Data](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28part._ref-programs-data%29)\u00A0for constructing\u00A0[data instances](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28tech._data._instance%29).)\r\n\r\n`[Object](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Object%29%29%29)`\u00A0and\u00A0`[Data](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28.Data%29%29%29)`\u00A0are commonly used to implemented\u00A0[algebraic data types](https:\/\/en.wikipedia.org\/wiki\/Algebraic_data_type)\u00A0in Reach.\r\n\r\ntypeOf(x)  \/\/ type\r\nisType(t) \/\/ Bool\r\n\r\nThe\u00A0`[typeOf](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28type.Of%29%29%29)`\u00A0primitive function is the same as\u00A0`[typeof](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28typeof%29%29%29)`: it returns the type of its argument. The\u00A0`[isType](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28is.Type%29%29%29)`\u00A0function returns\u00A0`[true](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28true%29%29%29)`\u00A0if its argument is a type. Any expression satisfying\u00A0`[isType](https:\/\/docs.reach.sh\/ref-programs-compute.html#%28reach._%28%28is.Type%29%29%29)`\u00A0is compiled away and does not exist at runtime.";
 	}
 	buf = buf.replace(/`/g, ''); // Get rid of all code formatting which messes up hyperlinks
-	/* else if (word == '') {
-		buf = "";
-	} else if (word == '') {
-		buf = "";
-	} else if (word == '') {
-		buf = "";
-	} else if (word == '') {
-		buf = "";
-	}*/
 	return buf;
 }
 
@@ -760,7 +743,7 @@ function getWord(text: string, index: number, includeDot: boolean) {
 	} else {
 		boundaryRegex = /[^0-9a-zA-Z]{1}/g; // boundaries are: not alphanumeric or dot
 	}
-    var first = lastIndexOfRegex(beginSubstring, boundaryRegex) + 1;
+	var first = lastIndexOfRegex(beginSubstring, boundaryRegex) + 1;
 	var last = index + indexOfRegex(endSubstring, boundaryRegex);
 
 	return text.substring(first !== -1 ? first : 0, last !== -1 ? last : text.length - 1);
