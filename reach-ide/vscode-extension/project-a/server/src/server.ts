@@ -270,7 +270,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		});
 	}
 	
-	// TODO compile temp file instead of this current file
+	// Compile temp file instead of this current file
 
 	connection.console.log(`BEFORE`);
 
@@ -287,7 +287,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		console.log('reach copied to ' + tempFolder);
 	});
 
-	await exec(path.join(tempFolder, 'reach') + " compile " + REACH_TEMP_FILE_NAME, (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && " + reachSh + " compile " + REACH_TEMP_FILE_NAME, (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`FOUND Reach compile error: ${error.message}`);
 			let errorLocations : ErrorLocation[] = findErrorLocations(error.message);
