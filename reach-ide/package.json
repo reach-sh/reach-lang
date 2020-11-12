@@ -4,7 +4,7 @@
 	"description": "IDE for the Reach DApp programming language",
 	"author": "Eric Lau",
 	"license": "EPL-2.0",
-	"version": "0.0.1",
+	"version": "0.0.6",
 	"preview": true,
 	"icon": "images/logo.png",
 	"repository": {
@@ -12,9 +12,13 @@
 		"url": "https://github.com/ericglau/reach-ide"
 	},
 	"publisher": "ericglau",
-	"categories": [],
+	"categories": [
+		"Programming Languages",
+		"Snippets",
+		"Other"
+	],
 	"keywords": [
-		"multi-root ready"
+		"reach", "ethereum", "blockchain"
 	],
 	"engines": {
 		"vscode": "^1.43.0"
@@ -65,6 +69,9 @@
 				},
 				{
 					"command": "reach.get.eth.bytecode"
+				},
+				{
+					"command": "reach.update"
 				}
 			],
 			"touchBar": [
@@ -79,6 +86,9 @@
 				},
 				{
 					"command": "reach.get.eth.bytecode"
+				},
+				{
+					"command": "reach.update"
 				}
 			],
 			"editor/context": [ 
@@ -93,6 +103,9 @@
 				},
 				{
 					"command": "reach.get.eth.bytecode"
+				},
+				{
+					"command": "reach.update"
 				}
 			]
 		},
@@ -116,6 +129,11 @@
 				"command": "reach.get.eth.bytecode",
 				"category": "Reach IDE",
 				"title": "Copy Ethereum contract bytecode to clipboard"
+			},
+			{
+				"command": "reach.update",
+				"category": "Reach IDE",
+				"title": "Update Reach compiler"
 			}
 		]
 	},
