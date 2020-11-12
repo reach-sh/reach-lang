@@ -73,7 +73,7 @@ connection.onInitialize((params: InitializeParams) => {
 		}
 		tempFolder = folder;
 		reachTempIndexFile = path.join(tempFolder, REACH_TEMP_FILE_NAME);
-		connection.console.log("TEMP FOLDER " + tempFolder);
+		connection.console.log("Temp folder: " + tempFolder);
 	});
 
 	let capabilities = params.capabilities;
@@ -122,14 +122,13 @@ connection.onInitialize((params: InitializeParams) => {
 	// Inject association for file type
 	exec("mkdir -p .vscode", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
-			connection.console.log(`MKDIR VSCODE error: ${error.message}`);
+			connection.console.error(`Could not create .vscode directory: ${error.message}`);
 			return;
 		}
 		if (stderr) {
-			connection.console.log(`MKDIR VSCODE  stderr: ${stderr}`);
+			connection.console.error(`Could not create .vscode directory: ${stderr}`);
 			return;
 		}
-		connection.console.log(`MKDIR VSCODE stdout: ${stdout}`);
 		appendRshFileAssociation();
 	});
 
@@ -227,7 +226,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	let textDocumentFromURI = documents.get(textDocument.uri)
 	let textDocumentContents = textDocumentFromURI?.getText()
-	connection.console.log("TEXT DOCUMENT [" + textDocumentContents + "]");
 
 	// In this simple example we get the settings for every validate run.
 	let settings = await getDocumentSettings(textDocument.uri);
@@ -242,11 +240,11 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 			connection.console.log("Reach shell script not found, downloading now...");
 			await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
 				if (error) {
-					connection.console.log(`Reach download error: ${error.message}`);
+					connection.console.error(`Reach download error: ${error.message}`);
 					return;
 				}
 				if (stderr) {
-					connection.console.log(`Reach download stderr: ${stderr}`);
+					connection.console.error(`Reach download stderr: ${stderr}`);
 					return;
 				}
 				connection.console.log(`Reach download stdout: ${stdout}`);
@@ -256,11 +254,11 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		connection.console.log("Failed to check if Reach shell scripts exists, downloading anyways...");
 		await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
 			if (error) {
-				connection.console.log(`Reach download error: ${error.message}`);
+				connection.console.error(`Reach download error: ${error.message}`);
 				return;
 			}
 			if (stderr) {
-				connection.console.log(`Reach download stderr: ${stderr}`);
+				connection.console.error(`Reach download stderr: ${stderr}`);
 				return;
 			}
 			connection.console.log(`Reach download stdout: ${stdout}`);
@@ -269,42 +267,39 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	// Compile temp file instead of this current file
 
-	connection.console.log(`BEFORE`);
-
 	fs.writeFile(reachTempIndexFile, textDocumentContents, function (err: any) {
 		if (err) {
-			connection.console.log(`Failed to write temp Reach index.rsh file: ${err}`);
+			connection.console.error(`Failed to write temp source file: ${err}`);
 			return;
 		}
-		connection.console.log(`Temp Reach file ${reachTempIndexFile} saved!`);
+		connection.console.log(`Temp source file ${reachTempIndexFile} saved!`);
 	});
 
 	await exec("cd " + tempFolder + " && " + path.join(process.cwd(), "reach") + " compile " + REACH_TEMP_FILE_NAME, (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
-			connection.console.log(`FOUND Reach compile error: ${error.message}`);
+			connection.console.log(`Found compile error: ${error.message}`);
 			let errorLocations: ErrorLocation[] = findErrorLocations(error.message);
 			let problems = 0;
 			for (var i = 0; i < errorLocations.length; i++) {
 				let element: ErrorLocation = errorLocations[i];
-				connection.console.log(`FOR EACH LOCATION, ERROR MSG IS ` + element.errorMessage);
+				connection.console.log(`Displaying error message: ` + element.errorMessage);
 				if (problems < settings.maxNumberOfProblems) {
 					problems++;
 
 					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR + (element.suggestions != undefined ? element.suggestions : ""));
-
 				}
 			}
 
 			return;
 		}
+		/** This doesn't seem to show anything useful at the moment
 		if (stderr) {
-			connection.console.log(`Reach compile stderr: ${stderr}`);
+			connection.console.error(`Reach compiler: ${stderr}`);
 			return;
 		}
-		connection.console.log(`Reach compile stdout: ${stdout}`);
+		*/
+		connection.console.log(`Reach compiler output: ${stdout}`);
 	});
-
-	connection.console.log(`AFTER`);
 
 	// Send the computed diagnostics to VSCode (before the above promise finishes, just to clear stuff).
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
@@ -317,7 +312,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 			source: NAME,
 			code: code
 		};
-		connection.console.log(`ADDING DIAGNOSTIC ` + diagnostic.range.start.line + " " + diagnostic.range.start.character + " " + diagnostic.range.end.line + " " + diagnostic.range.end.character + ", " + diagnostic.message);
 		if (hasDiagnosticRelatedInformationCapability) {
 			diagnostic.relatedInformation = [
 				{
@@ -348,32 +342,26 @@ export interface ErrorLocation {
 }
 
 function findErrorLocations(compileErrors: string): ErrorLocation[] {
-	connection.console.log(`FIND ERROR LOCATIONS`);
-	// GET ERROR MESSAGES BY RUNNING COMPILE
 
-
-	// change the below to run reach compile and get the output e.g. parse from
+	// Example output to parse
 	/*
-
 	WARNING: Found orphan containers (tut_ethereum-devnet_1) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up.
 Creating tut_reach_run ... done
-reachc: error: ./.index.rsh.temp:18:23:id ref: Invalid unbound identifier: declaaaaaaaaassify. Did you mean: ["declassify","addressEq","array","assert","assume"]
+reachc: error: ./.index.rsh:18:23:id ref: Invalid unbound identifier: declaaaaaaaaassify. Did you mean: ["declassify","addressEq","array","assert","assume"]
 CallStack (from HasCallStack):
   error, called at src/Reach/AST.hs:58:3 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.AST
   expect_throw, called at src/Reach/Eval.hs:441:7 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.Eval
   env_lookup, called at src/Reach/Eval.hs:1638:41 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.Eval
-
 	*/
 
-
-	//let text = textDocument.getText();
 	let pattern = /error: .*/g  // look for error string
 	let m: RegExpExecArray | null;
 
 	let problems = 0;
 	let locations: ErrorLocation[] = [];
 	while ((m = pattern.exec(compileErrors)) && problems < 100 /*settings.maxNumberOfProblems*/) {
-		connection.console.log(`FOUND PATTERN: ${m}`);
+		connection.console.log(`Found pattern: ${m}`);
+
 		// ERROR MESSAGE m:
 		//error: ./index.rsh:13:23:id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
 
@@ -382,7 +370,7 @@ CallStack (from HasCallStack):
 
 		// Get actual message portion after the line and position numbers
 		var tokens = m[0].split(':');
-		connection.console.log(`TOKENS: ` + tokens);
+		//connection.console.log(`Tokens: ` + tokens);
 		var linePos = parseInt(tokens[2]);
 		var charPos = parseInt(tokens[3]);
 		var actualMessage = "";
@@ -414,26 +402,26 @@ CallStack (from HasCallStack):
 			if (indexOfSuggestions != -1) {
 				suggestions = actualMessage.substring(indexOfSuggestions + SUGGESTIONS_PREFIX.length, actualMessage.lastIndexOf(SUGGESTIONS_SUFFIX));
 			}
-			connection.console.log(`SUGGESTIONS: ${suggestions}`);
+			connection.console.log(`Parsed suggestions: ${suggestions}`);
 
 			// Get the problematic string (before the list of suggestions)
 			if (suggestions !== undefined) {
 				var problematicString;
 				var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
 				let messageWithoutSuggestionsTokens: string[] = messageWithoutSuggestions.split(" ");
-				connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
+				//connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
 
 				if (tokens[4] == "dot") {
 					// e.g.: error, ./.index.rsh.temp,8,8,dot, AApp is not a field of Reach. Did you mean, ["App"]
 					problematicString = messageWithoutSuggestionsTokens[1];
-					connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
+					connection.console.log(`Problem found in string: ${problematicString}`);
 
 					start = { line: linePos - 1, character: charPos } // Reach compiler numbers starts at 1, but skip the dot in highlighting
 					end = { line: linePos - 1, character: charPos + problematicString.length };
 				} else {
 					problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
 					problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
-					connection.console.log(`PROBLEMATIC STRING: ${problematicString}`);
+					connection.console.log(`Problem found in string: ${problematicString}`);
 
 					end = { line: linePos - 1, character: charPos - 1 + problematicString.length };
 				}
