@@ -1,1 +1,1 @@
-reachc: error: ./Err_Decls_IllegalJS.rsh:3:1:const: Invalid Reach declaration; expected exactly on declaration
+reachc: error: ./Err_Decls_IllegalJS.rsh:3:1:const: Invalid Reach declaration; expected exactly one declaration

@@ -216,7 +216,7 @@ instance Show EvalError where
     Err_Eval_IllegalWait dm ->
       "Cannot wait or timeout until after first message in deployMode " <> show dm
     Err_Decls_IllegalJS _ ->
-      "Invalid Reach declaration; expected exactly on declaration"
+      "Invalid Reach declaration; expected exactly one declaration"
     Err_Decl_IllegalJS e ->
       "Invalid Reach declaration: " <> conNameOf e
     Err_Decl_ObjectSpreadNotLast ->
