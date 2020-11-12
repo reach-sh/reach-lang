@@ -3,7 +3,7 @@
 ## 0.0.7
 
 Use temporary directory for automatic compiles.  
-Added separate Reach upgrade and update commands.
+Added separate Reach upgrade and update commands.  
 Cleaned up logging.
 
 ## 0.0.6
