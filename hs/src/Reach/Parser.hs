@@ -65,7 +65,7 @@ instance Show ParserError where
   show (Err_Parse_NotCallLike _e) =
     "Expected a call-like expression, got something else."
   show (Err_Parse_ExpectIdentifierProp _e) =
-    "Expected identifier in object properties list, got expression."
+    "Expected identifier or one name and value in object properties list, got something else."
   show (Err_Parse_IllegalBinOp op) =
     "Illegal binary operation: " <> show op
   show (Err_Parse_IllegalLiteral lit) =

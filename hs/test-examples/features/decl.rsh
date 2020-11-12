@@ -20,6 +20,9 @@ export const main =
       { const [ x, { y } ] = [ 1, { y: 2 } ];
         assert(x + y == 3); }
 
+      { const { x: [ a, b ] } = { x: [ 1, 2 ] };
+        assert(a == 1 && b == 2); }
+
       ((x, y) => { assert(x + y == 3); })(1, 2);
       ((x, y) => { assert(x + y == 3); })(...[1, 2]);
       (([x, y]) => { assert(x + y == 3); })([1, 2]);

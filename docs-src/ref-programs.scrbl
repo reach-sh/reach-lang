@@ -576,8 +576,12 @@ Each of these introduces one or more @deftech{bound identifier}s.
 @(mint-define! '("const"))
 @reach{
   const DELAY = 10;
-  const [ Good, Bad ] = [ 42, 43 ]; }
-
+  const [ Good, Bad ] = [ 42, 43 ];
+  const { x, y } = { x: 1, y: 2 };
+  const [ x, [ y ] ] = [ 1, [ 2 ] ];
+  const [ x, { y } ] = [ 1, { y: 2 } ];
+  const { x: [ a, b ] } = { x: [ 1, 2 ] };
+  }
 @margin-note{@tech{Valid} @deftech{identifiers} follow the same rules as JavaScript identifiers:
 they may consist of Unicode alphanumeric characters,
 or @reachin{_} or @reachin{$},
@@ -603,8 +607,18 @@ A @deftech{value definition} is written @reachin{const LHS = RHS;}.
  @nonterm{LHS-obj-seq}
  @BNF-seq[]
  @BNF-seq[@litchar["..."] @nonterm{LHS}]
+ @BNF-seq[@nonterm{LHS-obj-elem}]
+ @BNF-seq[@nonterm{LHS-obj-elem} @litchar[","] @nonterm{LHS-obj-seq}])
+(list
+ @nonterm{LHS-obj-elem}
  @BNF-seq[@nonterm{id}]
- @BNF-seq[@nonterm{id} @litchar[","] @nonterm{LHS-obj-seq}])
+ @BNF-seq[@nonterm{propertyName} @litchar[":"] @nonterm{LHS}])
+(list
+ @nonterm{propertyName}
+ @nonterm{id}
+ @nonterm{string}
+ @nonterm{number}
+ @BNF-seq[@litchar["["] @nonterm{expr} @litchar["]"]])
 ]
 
 @reachin{RHS} must be compatible with the given @reachin{LHS}.
@@ -620,7 +634,7 @@ Those @tech{values} are available as their corresponding @tech{bound identifier}
   function randomBool() {
     return (interact.random() % 2) == 0; }; }
 
-A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which abstracts its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the identifiers @reachin{ARG_0} through @reachin{ARG_n}.
+A @deftech{function definition}, written @reachin{function FUN(ARG_0, ..., ARG_n) BLOCK;}, defines @reachin{FUN} as a function which abstracts its @deftech{function body}, the @tech{block} @reachin{BLOCK}, over the left-hand sides @reachin{LHS_0} through @reachin{LHS_n}.
 
 @(hrule)
 
@@ -1211,9 +1225,16 @@ while the regular conditional expression only evaluates one branch.
  (() => 4)
  ((x) => x + 1)
  ((x) => { const y = x + 1;
-           return y + 1; }) }
+           return y + 1; })
+ ((x, y) => { assert(x + y == 3); })(1, 2);
+ ((x, y) => { assert(x + y == 3); })(...[1, 2]);
+ (([x, y]) => { assert(x + y == 3); })([1, 2]);
+ (({x, y}) => { assert(x + y == 3); })({x: 1, y: 2});
+ (([x, [y]]) => { assert(x + y == 3); })([1,[2]]);
+ (([x, {y}]) => { assert(x + y == 3); })([1,{ y: 2 }]);
+}
 
-An @deftech{arrow expression}, written @reachin{(ID_0, ..., ID_n) => EXPR}, where @reachin{ID_0} through @reachin{ID_n} are identifiers and @reachin{EXPR} is an @tech{expression}, evaluates to an function which is an abstraction of @reachin{EXPR} over @reachin{n} values.
+An @deftech{arrow expression}, written @reachin{(LHS_0, ..., LHS_n) => EXPR}, where @reachin{LHS_0} through @reachin{LHS_n} are left-hand sides and @reachin{EXPR} is an @tech{expression}, evaluates to an function which is an abstraction of @reachin{EXPR} over @reachin{n} values compatible with the respective left-hand side.
 
 @subsubsection{@tt{makeEnum}}
 

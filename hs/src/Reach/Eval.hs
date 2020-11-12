@@ -1939,17 +1939,26 @@ evalDeclLHSObject ctxt at sco st rhs_lvl lhs_env orig_v vm = \case
         keepLifts lifts' $
           evalDeclLHS ctxt at_ sco st' rhs_lvl lhs_env vo e
       _ -> expect_throw at_ $ Err_Decl_ObjectSpreadNotLast
-  (JSPropertyIdentRef a x):os' -> do
-    let e = JSIdentifier a x
-    SLRes lifts_v st_v (v_lvl, v) <- evalDot_ ctxt at sco st orig_v vm x
-    let lvl' = rhs_lvl <> v_lvl
-    SLRes lifts' st' lhs_env' <-
-      keepLifts lifts_v $ evalDeclLHS ctxt at sco st_v lvl' lhs_env v e
-    let vm' = M.delete x vm
-    keepLifts lifts' $
-      evalDeclLHSObject ctxt at sco st' rhs_lvl lhs_env' orig_v vm' os'
-  o:_ ->
-    expect_throw at $ Err_Parse_ExpectIdentifierProp o
+  o:os' -> do
+    let go st0 x e = do
+          SLRes lifts_v st_v (v_lvl, v) <-
+            evalDot_ ctxt at sco st0 orig_v vm x
+          let lvl' = rhs_lvl <> v_lvl
+          SLRes lifts' st' lhs_env' <-
+            keepLifts lifts_v $
+              evalDeclLHS ctxt at sco st_v lvl' lhs_env v e
+          let vm' = M.delete x vm
+          keepLifts lifts' $
+            evalDeclLHSObject ctxt at sco st' rhs_lvl lhs_env' orig_v vm' os'
+    case o of
+      JSPropertyIdentRef a x -> do
+        let e = JSIdentifier a x
+        go st x e
+      JSPropertyNameandValue pn _ [e] -> do
+        SLRes lifts_x st_x (_, x) <- evalPropertyName ctxt at sco st pn
+        keepLifts lifts_x $ go st_x x e
+      _ ->
+        expect_throw at $ Err_Parse_ExpectIdentifierProp o
 
 evalDeclLHS :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SecurityLevel -> SLEnv -> SLVal -> JSExpression -> SLComp s SLEnv
 evalDeclLHS ctxt at sco st rhs_lvl lhs_env v = \case

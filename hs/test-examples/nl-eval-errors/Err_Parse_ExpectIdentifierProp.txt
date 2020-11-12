@@ -1,1 +1,1 @@
-reachc: error: ./Err_Parse_ExpectIdentifierProp.rsh:5:11:object: Expected identifier in object properties list, got expression.
+reachc: error: ./Err_Parse_ExpectIdentifierProp.rsh:5:11:object: Invalid binding. Expressions cannot appear on the LHS.
