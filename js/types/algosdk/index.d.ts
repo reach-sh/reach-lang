@@ -55,6 +55,7 @@ declare module 'algosdk' {
   declare function encodeAddress(publicKey: RawAddress): Address
   declare function decodeAddress(addr: Address): DecodedAddress
   declare function mnemonicToSecretKey(mn: string): Wallet
+  declare function secretKeyToMnemonic(sk: Uint8Array): string
   declare function encodeObj(obj: any): Uint8Array
   declare function generateAccount(): Wallet
 

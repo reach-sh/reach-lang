@@ -276,7 +276,6 @@ export const T_Tuple = (
 ): ALGO_Ty<CBR_Tuple> => ({
   ...CBR.BT_Tuple(cos),
   netSize: (
-    // @ts-ignore // ts should know this from the condition
     cos.reduce((acc, co) => acc + co.netSize, 0)
   ),
   toNet: (bv: CBR_Tuple): NV => {
@@ -301,7 +300,6 @@ export const T_Object = (
 ): ALGO_Ty<CBR_Object> => {
   const cos = Object.values(coMap);
   const netSize =
-    // @ts-ignore // ts should know this from the condition
     cos.reduce((acc, co) => acc + co.netSize, 0);
   const {ascLabels} = labelMaps(coMap);
   return {
@@ -337,8 +335,7 @@ export const T_Data = (
 ): ALGO_Ty<CBR_Data> => {
   const cos = Object.values(coMap);
   const valSize =
-    // @ts-ignore // ts should know this from the cond above
-    Math.max(cos.map((co) => co.netSize))
+    Math.max(...cos.map((co) => co.netSize))
   const netSize = valSize + 1;
   const {ascLabels, labelMap} = labelMaps(coMap);
   return {
@@ -387,6 +384,12 @@ export {setIndexer};
 
 // eslint-disable-next-line max-len
 const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'close year slice mind voice cousin brass goat anxiety drink tourist child stock amused rescue pitch exhibit guide occur wide barrel process type able please'));
+const [getFaucet, setFaucet] = replaceableThunk(async () => {
+  return await connectAccount(FAUCET);
+});
+
+export {getFaucet, setFaucet};
+
 // if using the default:
 // assert(FAUCET.addr === 'EYTSJVJIMJDUSRRNTMVLORTLTOVDWZ6SWOSY77JHPDWSD7K3P53IB3GUPQ');
 
@@ -544,7 +547,6 @@ async function compileFor(bin: Backend, ApplicationID: number): Promise<Compiled
   const subst_appid = (x: string) =>
     replaceUint8Array(
       'ApplicationID',
-      // @ts-ignore XXX
       T_UInt.toNet(bigNumberify(ApplicationID)),
       x);
 
@@ -596,7 +598,7 @@ const format_failed_request = (e: any) => {
   return `\n${db64}\n${JSON.stringify(msg)}`;
 };
 
-const doQuery = async (dhead:string, query: any): Promise<any> => {
+const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
   //debug(`${dhead} --- QUERY = ${JSON.stringify(query)}`);
   let res;
   try {
@@ -612,7 +614,6 @@ const doQuery = async (dhead:string, query: any): Promise<any> => {
   }
 
   debug(`${dhead} --- RESULT = ${JSON.stringify(res)}`);
-  // @ts-ignore XXX
   const txn = res.transactions[0];
 
   return txn;
@@ -643,7 +644,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     debug(`${shad}: attach ${ApplicationID} created at ${lastRound}`);
 
     const bin_comp = await compileFor(bin, ApplicationID);
-    // XXX call verify
+    await verifyContract(ctcInfo, bin);
     const ctc_prog = algosdk.makeLogicSig(bin_comp.ctc.result, []);
 
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
@@ -712,7 +713,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         const actual_args =
         [ sim_r.prevSt, sim_r.nextSt, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
-        [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ]; //.map(oldify);
+        [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ];
       debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
 
       const safe_args: Array<NV> = actual_args.map((m, i) => actual_tys[i].toNet(m));
@@ -741,7 +742,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
             thisAcc.addr, params, ApplicationID);
         const txnFromHandler =
           algosdk.makePaymentTxnWithSuggestedParams(
-            handler.hash, 
+            handler.hash,
             thisAcc.addr,
             0, undefined, ui8z,
             params);
@@ -852,7 +853,6 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         }
 
         const ctc_args: Array<string> =
-          // @ts-ignore XXX
           txn.signature.logicsig.args;
         debug(`${dhead} --- ctc_args = ${JSON.stringify(ctc_args)}`);
 
@@ -1022,16 +1022,12 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   return { deploy, attach, networkAccount };
 };
 
-const getBalanceAt = async (addr: Address, round: Round): Promise<number> => {
-  void(round);
-  // XXX use indexer LookupAccountById(addr).round(round)
-  return (await (await getAlgodClient()).accountInformation(addr).do()).amount;
-};
-
 export const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
   if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
-  return bigNumberify(await getBalanceAt(networkAccount.addr, await getLastRound()));
+  const client = await getAlgodClient();
+  const {amount} = await client.accountInformation(networkAccount.addr).do();
+  return bigNumberify(amount);
 };
 
 const showBalance = async (note: string, networkAccount: NetworkAccount) => {
@@ -1091,18 +1087,26 @@ export function formatCurrency(amt: BigNumber, decimals: number = 6): string {
   return Number(algosStr.slice(0, algosStr.length - 1)).toString();
 }
 
-export async function getFaucet(): Promise<Account> {
-  return await connectAccount(FAUCET);
-}
-
 // TODO: get from AlgoSigner if in browser
 export async function getDefaultAccount(): Promise<Account> {
   return await getFaucet();
 }
 
-export const setFaucet = false; // XXX
-export const newAccountFromSecret = false; // XXX
-export const newAccountFromMnemonic = false; // XXX
+/**
+ * @param mnemonic 25 words, space-separated
+ */
+export const newAccountFromMnemonic = async (mnemonic: string): Promise<Account> => {
+  return await connectAccount(algosdk.mnemonicToSecretKey(mnemonic));
+};
+
+/**
+ * @param secret a Uint8Array, or its hex string representation
+ */
+export const newAccountFromSecret = async (secret: string | Uint8Array): Promise<Account> => {
+  const sk = ethers.utils.arrayify(secret);
+  const mnemonic = algosdk.secretKeyToMnemonic(sk);
+  return await newAccountFromMnemonic(mnemonic);
+};
 
 export const getNetworkTime = async () => bigNumberify(await getLastRound());
 export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
@@ -1123,5 +1127,24 @@ export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<B
   return await waitUntilTime(now.add(delta), onProgress);
 };
 
-export const verifyContract = false; // XXX
+// XXX: implement this
+export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
+  void(ctcInfo);
+  void(backend);
+
+  // XXX verify contract was deployed at creationRound
+  // XXX verify something about ApplicationId
+
+  // XXX (above) attach creator info to ContractInfo
+  // XXX verify creator was the one that deployed the contract
+
+  // XXX verify deployed contract code matches backend
+
+  // (after deployMode:firstMsg is implemented)
+  // XXX (above) attach initial args to ContractInfo
+  // XXX verify contract storage matches expectations based on initial args
+  // (don't bother checking ctc balance at creationRound, the ctc enforces this)
+
+  return true;
+}
 export const addressEq = mkAddressEq(T_Address);
