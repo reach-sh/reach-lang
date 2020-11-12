@@ -72,7 +72,10 @@ let tempFolder : string;
 connection.onInitialize((params: InitializeParams) => {
 
 	fs.mkdtemp(path.join(os.tmpdir(), 'reach-ide-'), (err: string, folder: string) => {
-		if (err) throw connection.console.error(err);
+		if (err) {
+			connection.console.error(err);
+			throw err;
+		}
 		tempFolder = folder;
 		reachTempIndexFile = path.join(tempFolder, REACH_TEMP_FILE_NAME);
 		connection.console.log("TEMP FOLDER " + tempFolder);
