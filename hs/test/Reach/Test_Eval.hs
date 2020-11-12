@@ -7,12 +7,12 @@ module Reach.Test_Eval
 where
 
 import Data.Proxy
+import Reach.Eval
+import Reach.Parser
 import Reach.Test.Util
+import Reach.Type
 import Test.Hspec
 import Test.Tasty
-import Reach.Parser
-import Reach.Eval
-import Reach.Type
 
 test_compileBundle_errs :: IO TestTree
 test_compileBundle_errs = goldenTests compileTestFail ".rsh" "nl-eval-errors"

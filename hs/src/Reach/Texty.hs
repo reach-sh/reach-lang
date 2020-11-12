@@ -1,36 +1,37 @@
-module Reach.Texty (
-  Doc(..),
-  render,
-  Pretty,
-  pretty,
-  (<+>),
-  group, --- XXX remove
-  emptyDoc,
-  viaShow,
-  vsep,
-  hcat,
-  hsep,
-  nest, --- XXX remove int arg
-  concatWith, --- XXX remove
-  punctuate,
-  enclose,
-  surround,
-  squotes,
-  dquotes,
-  parens,
-  braces,
-  brackets,
-  hardline, --- XXX remove
-  semi,
-  comma,
-  space
-) where
+module Reach.Texty
+  ( Doc (..)
+  , render
+  , Pretty
+  , pretty
+  , (<+>)
+  , group --- XXX remove
+  , emptyDoc
+  , viaShow
+  , vsep
+  , hcat
+  , hsep
+  , nest --- XXX remove int arg
+  , concatWith --- XXX remove
+  , punctuate
+  , enclose
+  , surround
+  , squotes
+  , dquotes
+  , parens
+  , braces
+  , brackets
+  , hardline --- XXX remove
+  , semi
+  , comma
+  , space
+  )
+where
 
 import Control.Monad.Identity
 import Control.Monad.Reader
+import Data.String
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
-import Data.String
 
 data Doc
   = DText LT.Text
@@ -44,13 +45,15 @@ instance Show Doc where
   show = LT.unpack . render
 
 type Env = Integer
+
 type App = ReaderT Env Identity
+
 render_ :: Doc -> App LT.Text
 render_ = \case
   DText x -> return x
   DCat x y -> (<>) <$> render_ x <*> render_ y
   DHSep [] -> return ""
-  DHSep (x:xs) -> do
+  DHSep (x : xs) -> do
     x_ <- render_ x
     xs_ <- render_ (DHSep xs)
     return $ x_ <> " " <> xs_
@@ -59,7 +62,7 @@ render_ = \case
     n <- ask
     return $ "\n" <> (LT.replicate (fromIntegral n) " ")
   DVSep [] -> return ""
-  DVSep (x:xs) -> do
+  DVSep (x : xs) -> do
     x_ <- render_ x
     n_ <- render_ DNewline
     xs_ <- render_ (DVSep xs)
@@ -73,25 +76,35 @@ class Pretty a where
 
 instance {-# OVERLAPPING #-} Pretty String where
   pretty = DText . LT.pack
+
 instance Pretty a => Pretty (Maybe a) where
   pretty Nothing = "Nothing"
   pretty (Just x) = "Just" <> pretty x
+
 instance Pretty a => Pretty [a] where
   pretty = concatWith (<>) . map pretty
+
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x, y) = pretty x <> "," <> pretty y
+
 instance Pretty Bool where
   pretty = viaShow
+
 instance Pretty Char where
   pretty = viaShow
+
 instance Pretty () where
   pretty = viaShow
+
 instance Pretty Integer where
   pretty = viaShow
+
 instance Pretty Int where
   pretty = viaShow
+
 instance Pretty T.Text where
   pretty = DText . LT.fromStrict
+
 instance Pretty LT.Text where
   pretty = DText
 
@@ -105,6 +118,7 @@ instance IsString Doc where
   fromString = DText . LT.pack
 
 infixr 6 <+>
+
 (<+>) :: Doc -> Doc -> Doc
 x <+> y = x <> " " <> y
 
@@ -138,23 +152,28 @@ viaShow = DText . LT.pack . show
 punctuate :: Doc -> [Doc] -> [Doc]
 punctuate p = go
   where
-    go []     = []
-    go [d]    = [d]
-    go (d:ds) = (d <> p) : go ds
+    go [] = []
+    go [d] = [d]
+    go (d : ds) = (d <> p) : go ds
 
 enclose :: Doc -> Doc -> Doc -> Doc
 enclose b a c = b <> c <> a
+
 surround :: Doc -> Doc -> Doc -> Doc
 surround x l r = enclose l r x
 
 squotes :: Doc -> Doc
 squotes = enclose "'" "'"
+
 dquotes :: Doc -> Doc
 dquotes = enclose "\"" "\""
+
 parens :: Doc -> Doc
 parens = enclose "(" ")"
+
 braces :: Doc -> Doc
 braces = enclose "{" "}"
+
 brackets :: Doc -> Doc
 brackets = enclose "[" "]"
 
@@ -163,7 +182,9 @@ hardline = DNewline
 
 semi :: Doc
 semi = ";"
+
 comma :: Doc
 comma = ","
+
 space :: Doc
 space = " "

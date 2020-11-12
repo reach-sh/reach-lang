@@ -477,8 +477,8 @@ base_env =
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
     , ("intEq", SLV_Prim $ SLPrim_op PEQ)
---    , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
-    , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
+    , --    , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
+      ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
     , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
     , ("isType", SLV_Prim SLPrim_is_type)
     , ("typeEq", SLV_Prim SLPrim_type_eq)
@@ -613,7 +613,8 @@ sco_depth_update at (SLScope {..}) =
   case x > 0 of
     True -> x
     False -> expect_throw at Err_RecursionDepthLimit
-  where x = sco_depth - 1
+  where
+    x = sco_depth - 1
 
 sco_to_cloenv :: SLScope -> SLCloEnv
 sco_to_cloenv SLScope {..} =
@@ -743,6 +744,7 @@ infectWithId v (lvl, sv) = (lvl, sv')
         _ -> sv
 
 type SLObjEnvRHS s = SLCtxt s -> SLScope -> SLState -> SLComp s SLSVal
+
 type SLObjEnv s = M.Map SLVar (SLObjEnvRHS s)
 
 evalObjEnv :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLObjEnv s -> SLComp s SLEnv
@@ -1894,13 +1896,13 @@ evalDeclLHSArray ctxt at sco st rhs_lvl lhs_env vs es =
   case (vs, es) of
     ([], []) ->
       return $ SLRes mempty st lhs_env
-    (_, (JSSpreadExpression a e):es') -> do
+    (_, (JSSpreadExpression a e) : es') -> do
       let at_ = srcloc_jsa "array spread" a at
       let v = SLV_Tuple at_ vs
       case es' of
         [] -> evalDeclLHS ctxt at_ sco st rhs_lvl lhs_env v e
         _ -> expect_throw at_ $ Err_Decl_ArraySpreadNotLast
-    (v:vs', e:es') -> do
+    (v : vs', e : es') -> do
       SLRes lifts' st' lhs_env' <-
         evalDeclLHS ctxt at sco st rhs_lvl lhs_env v e
       keepLifts lifts' $
@@ -1912,7 +1914,7 @@ evalDeclLHSObject :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SecurityLevel -
 evalDeclLHSObject ctxt at sco st rhs_lvl lhs_env orig_v vm = \case
   [] ->
     return $ SLRes mempty st lhs_env
-  (JSObjectSpread a e):os' -> do
+  (JSObjectSpread a e) : os' -> do
     let at_ = srcloc_jsa "object spread" a at
     case os' of
       [] -> do
@@ -1921,7 +1923,7 @@ evalDeclLHSObject ctxt at sco st rhs_lvl lhs_env orig_v vm = \case
         keepLifts lifts' $
           evalDeclLHS ctxt at_ sco st' rhs_lvl lhs_env vo e
       _ -> expect_throw at_ $ Err_Decl_ObjectSpreadNotLast
-  o:os' -> do
+  o : os' -> do
     let go st0 x e = do
           SLRes lifts_v st_v (v_lvl, v) <-
             evalDot_ ctxt at sco st0 orig_v vm x
@@ -1962,7 +1964,7 @@ evalDeclLHS ctxt at sco st rhs_lvl lhs_env v = \case
 evalDeclLHSs :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> [(JSExpression, SLSVal)] -> SLComp s SLEnv
 evalDeclLHSs ctxt at sco st lhs_env = \case
   [] -> return $ SLRes mempty st lhs_env
-  (e, (rhs_lvl, v)):more -> do
+  (e, (rhs_lvl, v)) : more -> do
     SLRes lifts st' lhs_env' <- evalDeclLHS ctxt at sco st rhs_lvl lhs_env v e
     keepLifts lifts $ evalDeclLHSs ctxt at sco st' lhs_env' more
 
@@ -2801,80 +2803,77 @@ app_options =
         up m = Right $ opts {dlo_deployMode = m}
 
 compileDApp :: STCounter s -> DLStmts -> Connectors -> SLVal -> ST s DLProg
-compileDApp idxr liblifts cns topv =
-  case topv of
-    SLV_Prim (SLPrim_App_Delay at opts parts top_formals top_s top_env) -> do
-      let make_partio v =
-            case v of
-              SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat _ io] ->
-                case "_" `B.isPrefixOf` bs of
-                  True -> expect_throw bs_at (Err_App_PartUnderscore bs)
-                  False -> (p_at, bs, iat, (makeInteract iat bs io))
-              _ -> expect_throw at (Err_App_InvalidPartSpec v)
-      let part_ios = map make_partio parts
-      let make_part (p_at, pn, _, _) =
-            public $ SLV_Participant p_at pn Nothing Nothing
-      let partvs = map make_part part_ios
-      --- XXX use evalApplyVals
-      let top_args = map (jse_expect_id at) top_formals
-      let top_env_wps =
-            foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) top_env $
-              map (second (sls_sss at)) $
-                zipEq at (Err_Apply_ArgCount at) top_args partvs
-      let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
-      let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) (M.map sss_val opts)
-            where
-              use_opt k v acc =
-                case M.lookup k app_options of
-                  Nothing ->
-                    expect_throw at $ Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
-                  Just opt ->
-                    case opt acc v of
-                      Right x -> x
-                      Left x ->
-                        expect_throw at $ Err_App_InvalidOptionValue k x
-      let st_step =
-            SLState
-              { st_mode = SLM_Step
-              , st_live = True
-              , st_pdvs = mempty
-              , st_after_first = False
-              }
-      let at' = srcloc_at "compileDApp" Nothing at
-      let make_penv (p_at, pn, iat, io) =
-            (pn, env_insert p_at "interact" (sls_sss iat $ secret io) top_env)
-      let penvs = M.fromList $ map make_penv part_ios
-      let ctxt =
-            SLCtxt
-              { ctxt_dlo = dlo
-              , ctxt_id = idxr
-              , ctxt_stack = []
-              , ctxt_base_penvs = penvs
-              }
-      let sco =
-            SLScope
-              { sco_ret = Nothing
-              , sco_must_ret = RS_CannotReturn
-              , sco_env = top_env_wps
-              , sco_while_vars = Nothing
-              , sco_penvs = penvs
-              , sco_cenv = mempty
-              , sco_depth = recursionDepthLimit
-              }
-      let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
-      SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
-      tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
-      let make_sps_entry (_p_at, pn, _iat, io) =
-            (pn, InteractEnv $ M.map getType iom)
-            where
-            iom = case io of SLV_Object _ _ m -> m
-                             _ -> impossible $ "make_sps_entry io"
-            getType (SLSSVal _ _ (SLV_Prim (SLPrim_interact _ _ _ t))) = t
-            getType x = impossible $ "make_sps_entry getType " ++ show x
-      let sps = SLParts $ M.fromList $ map make_sps_entry part_ios
-      return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)
-    _ ->
-      expect_throw srcloc_top (Err_Top_NotApp topv)
+compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_formals top_s top_env)) = do
+  let make_partio v =
+        case v of
+          SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat _ io] ->
+            case "_" `B.isPrefixOf` bs of
+              True -> expect_throw bs_at (Err_App_PartUnderscore bs)
+              False -> (p_at, bs, iat, (makeInteract iat bs io))
+          _ -> expect_throw at (Err_App_InvalidPartSpec v)
+  let part_ios = map make_partio parts
+  let make_part (p_at, pn, _, _) =
+        public $ SLV_Participant p_at pn Nothing Nothing
+  let partvs = map make_part part_ios
+  let top_args = map (jse_expect_id at) top_formals
+  let top_env_wps =
+        foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) top_env $
+          map (second (sls_sss at)) $
+            zipEq at (Err_Apply_ArgCount at) top_args partvs
+  let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
+  let use_opt k v acc =
+        case M.lookup k app_options of
+          Nothing ->
+            expect_throw at $ Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
+          Just opt ->
+            case opt acc v of
+              Right x -> x
+              Left x ->
+                expect_throw at $ Err_App_InvalidOptionValue k x
+  let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) (M.map sss_val opts)
+  let st_step =
+        SLState
+          { st_mode = SLM_Step
+          , st_live = True
+          , st_pdvs = mempty
+          , st_after_first = False
+          }
+  let at' = srcloc_at "compileDApp" Nothing at
+  let make_penv (p_at, pn, iat, io) =
+        (pn, env_insert p_at "interact" (sls_sss iat $ secret io) top_env)
+  let penvs = M.fromList $ map make_penv part_ios
+  let ctxt =
+        SLCtxt
+          { ctxt_dlo = dlo
+          , ctxt_id = idxr
+          , ctxt_stack = []
+          , ctxt_base_penvs = penvs
+          }
+  let sco =
+        SLScope
+          { sco_ret = Nothing
+          , sco_must_ret = RS_CannotReturn
+          , sco_env = top_env_wps
+          , sco_while_vars = Nothing
+          , sco_penvs = penvs
+          , sco_cenv = mempty
+          , sco_depth = recursionDepthLimit
+          }
+  let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
+  SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
+  tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
+  let make_sps_entry (_p_at, pn, _iat, io) =
+        (pn, InteractEnv $ M.map getType iom)
+        where
+          iom = case io of
+            SLV_Object _ _ m -> m
+            _ -> impossible $ "make_sps_entry io"
+          getType (SLSSVal _ _ (SLV_Prim (SLPrim_interact _ _ _ t))) = t
+          getType x = impossible $ "make_sps_entry getType " ++ show x
+  let sps = SLParts $ M.fromList $ map make_sps_entry part_ios
+  return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)
+compileDApp _ _ _ topv =
+  expect_throw srcloc_top (Err_Top_NotApp topv)
 
 compileBundleST :: Connectors -> JSBundle -> SLVar -> ST s DLProg
 compileBundleST cns (JSBundle mods) main = do

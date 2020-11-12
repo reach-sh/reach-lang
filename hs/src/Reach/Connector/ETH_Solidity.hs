@@ -317,12 +317,12 @@ solPrimApply ctxt = \case
   IF_THEN_ELSE -> \case
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitSol: ITE wrong args"
---  BYTES_EQ -> \case
---    [x, y] ->
---      solAnd
---        (solEq ctxt (solBytesLength x) (solBytesLength y))
---        (solEq ctxt (solHash [x]) (solHash [y]))
---    _ -> impossible $ "emitSol: BYTES_EQ wrong args"
+  --  BYTES_EQ -> \case
+  --    [x, y] ->
+  --      solAnd
+  --        (solEq ctxt (solBytesLength x) (solBytesLength y))
+  --        (solEq ctxt (solHash [x]) (solHash [y]))
+  --    _ -> impossible $ "emitSol: BYTES_EQ wrong args"
   DIGEST_EQ -> binOp "=="
   ADDRESS_EQ -> binOp "=="
   where

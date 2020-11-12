@@ -9,8 +9,8 @@ import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.Pretty ()
-import Reach.Texty
 import Reach.STCounter
+import Reach.Texty
 import Reach.Type
 import Reach.Util
 

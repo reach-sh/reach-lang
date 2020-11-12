@@ -1,5 +1,5 @@
 module Reach.Parser
- ( ParserError (..)
+  ( ParserError (..)
   , JSBundle (..)
   , parseJSFormals
   , jsArrowFormalsToFunFormals
@@ -143,9 +143,11 @@ instance NFData JSBundle where
 
 instance Pretty JSBundle where
   pretty (JSBundle ds) = vsep $ map go ds
-    where go (rs, jms) =
-            vsep $ (pretty $ "// " <> show rs)
-                 : map (pretty . ppShow) jms
+    where
+      go (rs, jms) =
+        vsep $
+          (pretty $ "// " <> show rs) :
+          map (pretty . ppShow) jms
 
 gatherDeps_fc :: SrcLoc -> IORef JSBundleMap -> JSFromClause -> IO JSFromClause
 gatherDeps_fc at fmr (JSFromClause ab aa s) = do
