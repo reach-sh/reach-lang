@@ -3,7 +3,6 @@ module Reach.Eval (EvalError, compileBundle) where
 import Control.Arrow (second)
 import Control.Monad
 import Control.Monad.ST
-import Control.Monad.Writer
 import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
@@ -27,11 +26,8 @@ import Reach.Type
 import Reach.Util
 import Reach.Version
 import Safe (atMay)
---import Safe.Exact (splitAtExactMay)
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
-
----import Debug.Trace
 
 --- Errors
 
@@ -527,7 +523,6 @@ data SLCtxt s = SLCtxt
   { ctxt_dlo :: DLOpts
   , ctxt_id :: STCounter s
   , ctxt_stack :: [SLCtxtFrame]
-  , ctxt_local_mname :: Maybe [SLVar]
   , ctxt_base_penvs :: SLPartEnvs
   }
 
@@ -547,25 +542,6 @@ ctxt_lift_expr ctxt at mkvar e = do
   dv <- ctxt_mkvar ctxt mkvar
   let s = DLS_Let at (Just dv) e
   return (dv, return s)
-
-ctxt_lift_expr_w :: SLCtxt s -> SrcLoc -> (Int -> DLVar) -> DLExpr -> WriterT DLStmts (ST s) DLVar
-ctxt_lift_expr_w ctxt at mk_var e = WriterT $ ctxt_lift_expr ctxt at mk_var e
-
--- Unused
--- ctxt_lift_arg :: SLCtxt s -> SrcLoc -> SrcLoc -> String -> DLArg -> ST s (DLVar, DLStmts)
--- ctxt_lift_arg ctxt at at' name a =
---   ctxt_lift_expr ctxt at (DLVar at' (ctxt_local_name ctxt name) t) (DLE_Arg at' a)
---   where
---     t = argTypeOf a
-
-ctxt_local_name :: SLCtxt s -> SLVar -> SLVar
-ctxt_local_name ctxt def =
-  case ctxt_local_mname ctxt of
-    Nothing -> def
-    Just [x] -> x ++ as
-    Just xs -> "one of " ++ show xs ++ as
-  where
-    as = " (as " ++ def ++ ")"
 
 data SLMode
   = --- The top-level of a module, before the App starts
@@ -687,11 +663,6 @@ stMerge at x y =
 stEnsureMode :: SrcLoc -> SLMode -> SLState -> SLState
 stEnsureMode at slm st =
   stMerge at st $ st {st_mode = slm}
-
-ctxt_local_name_set :: SLCtxt s -> [SLVar] -> SLCtxt s
-ctxt_local_name_set ctxt lhs_ns =
-  --- FIXME come up with a "reset" mechanism for this and embed in expr some places
-  ctxt {ctxt_local_mname = Just lhs_ns}
 
 data SLRes a = SLRes DLStmts SLState a
 
@@ -879,7 +850,7 @@ evalAsEnv at obj =
       M.mapWithKey retk tm
       where
         retk field t ctxt _sco st = do
-          let mkv = DLVar at (ctxt_local_name ctxt "object ref") t
+          let mkv = DLVar at "object ref" t
           let e = DLE_ObjectRef at obj_dla field
           (dv, lifts') <- ctxt_lift_expr ctxt at mkv e
           let ansv = SLV_DLVar dv
@@ -1054,8 +1025,7 @@ evalPrimOp ctxt at _sco st p sargs =
             return $
               DLS_Let at Nothing $
                 DLE_Claim at (ctxt_stack ctxt) CT_Assert ca $ Just msg
-      let mkvar t =
-            DLVar at (ctxt_local_name ctxt "overflow") t
+      let mkvar t = DLVar at "overflow" t
       let doOp t cp cargs = do
             (cv, cl) <- ctxt_lift_expr ctxt at (mkvar t) $ DLE_PrimOp at cp cargs
             return $ (DLA_Var cv, cl)
@@ -1074,7 +1044,7 @@ evalPrimOp ctxt at _sco st p sargs =
             (ca, cl) <- doCmp PGE dargs
             return $ cl <> doClaim ca "sub wraparound"
           _ -> return $ mempty
-      let mkdv = DLVar at (ctxt_local_name ctxt "prim") rng
+      let mkdv = DLVar at "prim" rng
       (dv, lifts) <- ctxt_lift_expr ctxt at mkdv (DLE_PrimOp at p dargs)
       let da = DLA_Var dv
       after <-
@@ -1106,7 +1076,7 @@ explodeTupleLike ctxt at lab tuplv =
   where
     mkdv tupdv mkde t i = do
       let de = mkde at (DLA_Var tupdv) i
-      let mdv = DLVar at (ctxt_local_name ctxt lab) t
+      let mdv = DLVar at lab t
       (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
       return $ (lifts, [SLV_DLVar dv])
 
@@ -1117,7 +1087,7 @@ doFluidRef ctxt at st fv =
       expect_throw at $ Err_Eval_IllegalMode (st_mode st) "fluid ref"
     _ -> do
       let fvt = fluidVarType fv
-      dv <- ctxt_mkvar ctxt (DLVar at (ctxt_local_name ctxt "fluid") fvt)
+      dv <- ctxt_mkvar ctxt (DLVar at "fluid" fvt)
       let lifts = return $ DLS_FluidRef at dv fv
       return $ SLRes lifts st $ public $ SLV_DLVar dv
 
@@ -1246,7 +1216,7 @@ evalPrim ctxt at sco st p sargs =
           case (typeOf at x, typeOf at y) of
             ((T_Array x_ty x_sz, xa), (T_Array y_ty y_sz, ya)) -> do
               let t = (T_Array (typeMeet at (at, x_ty) (at, y_ty)) (x_sz + y_sz))
-              let mkdv = (DLVar at (ctxt_local_name ctxt "array_concat") t)
+              let mkdv = (DLVar at "array_concat" t)
               let de = DLE_ArrayConcat at xa ya
               (dv, lifts') <- ctxt_lift_expr ctxt at mkdv de
               return $ SLRes lifts' st (lvl, SLV_DLVar dv)
@@ -1270,7 +1240,7 @@ evalPrim ctxt at sco st p sargs =
           return $ SLRes (xlifts' <> ylifts') st (lvl, SLV_Array at ty' vs')
         False -> do
           let t = T_Array ty' sz'
-          let mkdv = (DLVar at (ctxt_local_name ctxt "array_zip") t)
+          let mkdv = (DLVar at "array_zip" t)
           let de = DLE_ArrayZip at x_da y_da
           (dv, lifts') <- ctxt_lift_expr ctxt at mkdv de
           return $ SLRes lifts' st (lvl, SLV_DLVar dv)
@@ -1401,7 +1371,7 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
       where
         retArrDV t de = do
-          (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "array_set") t) de
+          (dv, lifts') <- ctxt_lift_expr ctxt at (DLVar at "array_set" t) de
           return $ SLRes lifts' st (lvl, SLV_DLVar dv)
     SLPrim_Tuple ->
       retV $ (lvl, SLV_Type $ T_Tuple $ map expect_ty $ map snd sargs)
@@ -1428,7 +1398,7 @@ evalPrim ctxt at sco st p sargs =
         [iv@(SLV_Int _ i)] ->
           retV $ (lvl, SLV_Tuple at' (enum_pred : map (SLV_Int at') [0 .. (i -1)]))
           where
-            enum_pred = jsClo at' (ctxt_local_name ctxt "makeEnum") "(x) => ((0 <= x) && (x < M))" (M.fromList [("M", iv)])
+            enum_pred = jsClo at' "makeEnum" "(x) => ((0 <= x) && (x < M))" (M.fromList [("M", iv)])
             at' = (srcloc_at "makeEnum" Nothing at)
         _ -> illegal_args
     SLPrim_App_Delay {} ->
@@ -1437,7 +1407,7 @@ evalPrim ctxt at sco st p sargs =
       case st_mode st of
         SLM_LocalStep -> do
           let (rng, dargs) = checkAndConvert at t $ map snd sargs
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "interact") rng) (DLE_Interact at (ctxt_stack ctxt) who m rng dargs)
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "interact" rng) (DLE_Interact at (ctxt_stack ctxt) who m rng dargs)
           return $ SLRes lifts st $ secret $ SLV_DLVar dv
         cm ->
           expect_throw at (Err_Eval_IllegalMode cm "interact")
@@ -1456,7 +1426,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_digest -> do
       let rng = T_Digest
       let dargs = map snd $ map ((typeOf at) . snd) sargs
-      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "digest") rng) (DLE_Digest at dargs)
+      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "digest" rng) (DLE_Digest at dargs)
       return $ SLRes lifts st $ (lvl, SLV_DLVar dv)
     SLPrim_claim ct ->
       case (st_mode st, ct) of
@@ -1522,7 +1492,7 @@ evalPrim ctxt at sco st p sargs =
       case sargs of
         [(olvl, one)] -> do
           let t = expect_ty one
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at (ctxt_local_name ctxt "forall") t) (DLE_Impossible at $ "cannot inspect value from forall")
+          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "forall" t) (DLE_Impossible at $ "cannot inspect value from forall")
           return $ SLRes lifts st $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           SLRes elifts st_e one' <- evalPrim ctxt at sco st SLPrim_forall [one]
@@ -1636,7 +1606,7 @@ evalApplyVals ctxt at sco st rator randvs =
           --- FIXME if all the values are actually the same, then we can treat this as a noprompt
           let r_ty = typeMeets body_at $ map (\(r_at, (_r_lvl, r_sv)) -> (r_at, (fst (typeOf r_at r_sv)))) rs
           let lvl = mconcat $ map fst $ map snd rs
-          let dv = DLVar body_at (ctxt_local_name ctxt "clo app") r_ty ret
+          let dv = DLVar body_at "clo app" r_ty ret
           let lifts' = return $ DLS_Prompt body_at (Right dv) body_lifts
           return $ SLRes lifts' body_st $ SLAppRes clo_env'' (lvl, (SLV_DLVar dv))
     v ->
@@ -1707,7 +1677,7 @@ evalPropertyPair ctxt at sco st fenv p =
           SLV_DLVar dlv@(DLVar _at _s (T_Object tenv) _i) -> do
             let mkOneEnv k t = do
                   let de = DLE_ObjectRef at (DLA_Var dlv) k
-                  let mdv = DLVar at (ctxt_local_name ctxt "obj_ref") t
+                  let mdv = DLVar at "obj_ref" t
                   (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
                   return $ (lifts, M.singleton k $ SLSSVal at slvl $ SLV_DLVar dv) -- TODO: double check this srcloc
 
@@ -1793,7 +1763,7 @@ evalExpr ctxt at sco st e = do
                 let (t_ty, tlifts') = add_ret t_at' tlifts tv
                 let (f_ty, flifts') = add_ret f_at' flifts fv
                 let ty = typeMeet at' (t_at', t_ty) (f_at', f_ty)
-                let ans_dv = DLVar at' (ctxt_local_name ctxt "clo app") ty ret
+                let ans_dv = DLVar at' "clo app" ty ret
                 let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
                 let lifts' = return $ DLS_Prompt at' (Right ans_dv) body_lifts
                 return $ SLRes lifts' st_tf $ (lvl, SLV_DLVar ans_dv)
@@ -1815,7 +1785,7 @@ evalExpr ctxt at sco st e = do
         at' = srcloc_jsa "function exp" a at
         fname =
           case name of
-            JSIdentNone -> Just $ ctxt_local_name ctxt "function"
+            JSIdentNone -> Just $ "function"
             JSIdentName na _ -> expect_throw (srcloc_jsa "function name" na at') Err_Fun_NamesIllegal
         formals = parseJSFormals at' jsformals
     JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
@@ -1829,9 +1799,7 @@ evalExpr ctxt at sco st e = do
         foldlM f (SLRes mempty st (mempty, mempty)) $ jsctl_flatten plist
       return $ SLRes olifts st_fin $ (lvl, SLV_Object at' lab fenv)
       where
-        lab = case ctxt_local_mname ctxt of
-          Just [x] -> Just x
-          _ -> Nothing
+        lab = Nothing
         at' = srcloc_jsa "obj" a at
         f (SLRes lifts st_f (lvl, oenv)) pp =
           keepLifts lifts $ lvlMeetR lvl $ evalPropertyPair ctxt at' sco st_f oenv pp
@@ -1866,7 +1834,7 @@ evalExpr ctxt at sco st e = do
         keepLifts alifts $ evalExpr ctxt at' sco arr_st idxe
       let lvl = arr_lvl <> idx_lvl
       let retRef t de = do
-            (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' (ctxt_local_name ctxt "ref") t) de
+            (dv, lifts') <- ctxt_lift_expr ctxt at' (DLVar at' "ref" t) de
             let ansv = SLV_DLVar dv
             return $ SLRes lifts' idx_st (lvl, ansv)
       let retArrayRef t sz arr_dla idx_dla =
@@ -2747,7 +2715,6 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
            { ctxt_dlo = dlo
            , ctxt_id = idxr
            , ctxt_stack = []
-           , ctxt_local_mname = Nothing
            , ctxt_base_penvs = mempty
            })
   let base_env' =
@@ -2858,7 +2825,6 @@ compileDApp idxr liblifts cns topv =
               { ctxt_dlo = dlo
               , ctxt_id = idxr
               , ctxt_stack = []
-              , ctxt_local_mname = Nothing
               , ctxt_base_penvs = penvs
               }
       let sco =
