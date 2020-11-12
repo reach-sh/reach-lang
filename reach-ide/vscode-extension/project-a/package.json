@@ -27,7 +27,7 @@
 		"workspaceContains:**/*.rsh",
 		"onCommand:reach.compile",
 		"onCommand:reach.run",
-		"onCommand:reach.update",
+		"onCommand:reach.upgrade",
 		"onCommand:reach.get.eth.abi",
 		"onCommand:reach.get.eth.bytecode"
 	],
@@ -71,6 +71,9 @@
 					"command": "reach.get.eth.bytecode"
 				},
 				{
+					"command": "reach.upgrade"
+				},
+				{
 					"command": "reach.update"
 				}
 			],
@@ -88,6 +91,9 @@
 					"command": "reach.get.eth.bytecode"
 				},
 				{
+					"command": "reach.upgrade"
+				},
+				{
 					"command": "reach.update"
 				}
 			],
@@ -103,6 +109,9 @@
 				},
 				{
 					"command": "reach.get.eth.bytecode"
+				},
+				{
+					"command": "reach.upgrade"
 				},
 				{
 					"command": "reach.update"
@@ -131,9 +140,14 @@
 				"title": "Copy Ethereum contract bytecode to clipboard"
 			},
 			{
+				"command": "reach.upgrade",
+				"category": "Reach IDE",
+				"title": "Upgrade Reach"
+			},
+			{
 				"command": "reach.update",
 				"category": "Reach IDE",
-				"title": "Update Reach compiler"
+				"title": "Update Reach Docker images"
 			}
 		]
 	},
