@@ -205,7 +205,7 @@ data SLVal
   | SLV_Array SrcLoc SLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
   | SLV_Object SrcLoc (Maybe String) SLEnv
-  | SLV_Clo SrcLoc (Maybe SLVar) [SLVar] JSBlock SLCloEnv
+  | SLV_Clo SrcLoc (Maybe SLVar) [JSExpression] JSBlock SLCloEnv
   | SLV_Data SrcLoc (M.Map SLVar SLType) SLVar SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar

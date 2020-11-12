@@ -97,9 +97,8 @@ jso_expect_id at = \case
   JSPropertyIdentRef _ x -> x
   j -> expect_throw at $ Err_Parse_ExpectIdentifierProp j
 
---- FIXME Support more binding forms
-parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [SLVar]
-parseJSFormals at jsformals = map (jse_expect_id at) $ jscl_flatten jsformals
+parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [JSExpression]
+parseJSFormals _at jsformals = jscl_flatten jsformals
 
 jsArrowFormalsToFunFormals :: SrcLoc -> JSArrowParameterList -> JSCommaList JSExpression
 jsArrowFormalsToFunFormals at = \case
@@ -109,7 +108,7 @@ jsArrowFormalsToFunFormals at = \case
     expect_throw at Err_Parser_Arrow_NoFormals
   JSParenthesizedArrowParameterList _ l _ -> l
 
-parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [SLVar]
+parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [JSExpression]
 parseJSArrowFormals at aformals =
   parseJSFormals at $ jsArrowFormalsToFunFormals at aformals
 

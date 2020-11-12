@@ -888,7 +888,9 @@ evalForm ctxt at sco st f args =
                   foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) env $
                     map (second (sls_sss at)) $ -- TODO: double check this srcloc
                       zipEq at (Err_Apply_ArgCount at) top_args part_vs
-                top_args = parseJSArrowFormals at top_formals
+                top_args =
+                  --- XXX merge with evalApplyVals
+                  map (jse_expect_id at) $ parseJSArrowFormals at top_formals
                 part_vs = map make_part parts
                 make_part v =
                   case v of
@@ -1565,11 +1567,12 @@ evalApplyVals ctxt at sco st rator randvs =
     SLV_Prim p -> do
       SLRes lifts st' val <- evalPrim ctxt at sco st p randvs
       return $ SLRes lifts st' $ SLAppRes (sco_env sco) val
-    -- TODO: have formals remember their srclocs
     SLV_Clo clo_at mname formals (JSBlock body_a body _) (SLCloEnv clo_env clo_penvs clo_cenv) -> do
       ret <- ctxt_alloc ctxt
       let body_at = srcloc_jsa "block" body_a clo_at
-      let arg_env = M.fromList $ map (second (sls_sss at)) $ zipEq at (Err_Apply_ArgCount clo_at) formals randvs
+      SLRes lifts_arge st_arge arg_env <-
+        evalDeclLHSs ctxt clo_at sco st mempty $
+          zipEq at (Err_Apply_ArgCount clo_at) formals randvs
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
       let clo_sco =
             (SLScope
@@ -1583,7 +1586,8 @@ evalApplyVals ctxt at sco st rator randvs =
                })
       let clo_sco' = sco_update ctxt clo_at clo_sco st arg_env
       SLRes body_lifts body_st (SLStmtRes clo_env'' rs) <-
-        evalStmt ctxt' body_at clo_sco' st body
+        keepLifts lifts_arge $
+          evalStmt ctxt' body_at clo_sco' st_arge body
       let no_prompt (lvl, v) = do
             let lifts' =
                   case body_lifts of
@@ -1963,6 +1967,13 @@ evalDeclLHS ctxt at sco st rhs_lvl lhs_env v = \case
     evalDeclLHSObject ctxt at_ sco st rhs_lvl lhs_env v vm (jso_flatten props)
   e ->
     expect_throw at $ Err_DeclLHS_IllegalJS e
+
+evalDeclLHSs :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> [(JSExpression, SLSVal)] -> SLComp s SLEnv
+evalDeclLHSs ctxt at sco st lhs_env = \case
+  [] -> return $ SLRes mempty st lhs_env
+  (e, (rhs_lvl, v)):more -> do
+    SLRes lifts st' lhs_env' <- evalDeclLHS ctxt at sco st rhs_lvl lhs_env v e
+    keepLifts lifts $ evalDeclLHSs ctxt at sco st' lhs_env' more
 
 evalDecl :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> SLComp s SLEnv
 evalDecl ctxt at sco st lhs rhs = do
