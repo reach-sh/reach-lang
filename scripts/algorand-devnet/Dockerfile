@@ -65,6 +65,10 @@ COPY algorand_network/ $ALGORAND_NETWORK/
 COPY algorand_data/* $ALGORAND_DATA/
 COPY start.sh /
 
+# pre-run some stuff so that it starts up faster
+COPY prime-algod.sh /
+RUN /prime-algod.sh
+
 EXPOSE 9392
 EXPOSE 4180
 EXPOSE 8980
