@@ -138,6 +138,7 @@ type ContractAttached = {
   recv: (...argz: any) => Promise<Recv>,
   wait: (...argz: any) => any,
   iam: (some_addr: any) => any,
+  selfAddress: () => CBR_Address, // Not RawAddress!
 };
 
 // TODO
@@ -623,13 +624,15 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const indexer = await getIndexer();
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
-  const pk = algosdk.decodeAddress(thisAcc.addr).publicKey;
   const pks = T_Address.canonicalize(thisAcc);
   debug(`${shad}: connectAccount`);
 
+  const selfAddress = (): CBR_Address => {
+    return pks;
+  };
+
   const iam = (some_addr: string): string => {
-    const pks = '0x' + Buffer.from(pk).toString('hex');
-    if (some_addr == pks) {
+    if (some_addr === pks) {
       return some_addr;
     } else {
       throw Error(`I should be ${some_addr}, but am ${pks}`);
@@ -906,7 +909,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       }
     };
 
-    return { getInfo, sendrecv, recv, iam, wait };
+    return { getInfo, sendrecv, recv, iam, selfAddress, wait };
   };
 
   const deployP = async (bin: Backend): Promise<ContractAttached> => {
@@ -1009,6 +1012,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       recv: async (...args: any) => (await implP).recv(...args),
       wait: async(...args: any) => (await implP).wait(...args),
       iam, // doesn't need to await the implP
+      selfAddress, // doesn't need to await the implP
     }
   };
 
