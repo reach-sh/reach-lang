@@ -11,6 +11,7 @@ c: common
 c: contract
 cb: contract balance
 cbi: contract balance index
+cbr: common backend representation
 ce: CompileErr
 clo: closure
 cnp: ConsensusNetworkProgram
