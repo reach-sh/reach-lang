@@ -8,19 +8,19 @@ Verification failed:
   at ./assert_gt.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./assert_gt.rsh:5:15:function exp)
 
   Theorem formalization:
-  v2
+  v3
 
   This could be violated if...
-    "v1" = 0
-      (from: v1)
+    "v2" = 0
+      (from: v2)
       (bound at: ./assert_gt.rsh:6:31:application)
       (because: evaluating interact("A")."getX"())
 
   In context...
-    "v2" = (> v1 0 )
-      (from: v2)
+    "v3" = (> v2 0 )
+      (from: v3)
       (bound at: ./assert_gt.rsh:application)
-      (because: evaluating PGT(v1, 0 ))
+      (because: evaluating PGT(v2, 0 ))
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:

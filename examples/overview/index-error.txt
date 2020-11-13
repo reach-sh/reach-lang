@@ -8,7 +8,7 @@ Verification failed:
   at ./index-error.rsh:29:11:application
 
   Theorem formalization:
-  v36
+  v40
 
   This could be violated if...
     "interact_Alice_request" = 1
@@ -16,64 +16,64 @@ Verification failed:
       (because: interaction)
 
   In context...
-    "v36" = (= 0 v35 )
-      (from: v36)
+    "v40" = (= 0 v39 )
+      (from: v40)
       (bound at: ./index-error.rsh:29:11:application)
-      (because: evaluating PEQ(0, v35 ))
-    "v35" = v32
+      (because: evaluating PEQ(0, v39 ))
+    "v39" = v35
+      (from: v39)
+      (bound at: ./index-error.rsh:29:11:application)
+      (because: evaluating v35)
+    "v35" = (- v31 v30 )
       (from: v35)
-      (bound at: ./index-error.rsh:29:11:application)
-      (because: evaluating v32)
-    "v32" = (- v28 v27 )
-      (from: v32)
       (bound at: ./index-error.rsh:24:29:application)
-      (because: evaluating SUB(v28, v27 ))
-    "v27" = (- v1 1 )
-      (from: v27)
+      (because: evaluating SUB(v31, v30 ))
+    "v30" = (- v2 1 )
+      (from: v30)
       (bound at: ./index-error.rsh:application)
-      (because: evaluating SUB(v1, 1 ))
-    "v28" = v25
-      (from: v28)
+      (because: evaluating SUB(v2, 1 ))
+    "v31" = v28
+      (from: v31)
       (bound at: ./index-error.rsh:24:29:application)
-      (because: evaluating v25)
-    "v1" = interact_Alice_request
-      (from: v1)
+      (because: evaluating v28)
+    "v2" = interact_Alice_request
+      (from: v2)
       (bound at: ./index-error.rsh:13:8:dot)
       (because: an honest message from "Alice" of interact("Alice")."request"(UInt))
-    "v25" = (+ v22 v20 )
-      (from: v25)
+    "v28" = (+ v25 v23 )
+      (from: v28)
       (bound at: ./index-error.rsh:23:22:after expr stmt semicolon)
-      (because: evaluating ADD(v22, v20 ))
-    "v20" = 0
-      (from: v20)
+      (because: evaluating ADD(v25, v23 ))
+    "v23" = 0
+      (from: v23)
       (bound at: ./index-error.rsh:23:8:dot)
       (because: an honest payment from "Alice" of 0)
-    "v22" = v17
-      (from: v22)
+    "v25" = v19
+      (from: v25)
       (bound at: ./index-error.rsh:23:22:after expr stmt semicolon)
-      (because: evaluating v17)
-    "v17" = (+ v14 v12 )
-      (from: v17)
+      (because: evaluating v19)
+    "v19" = (+ v16 v14 )
+      (from: v19)
       (bound at: ./index-error.rsh:18:21:after expr stmt semicolon)
-      (because: evaluating ADD(v14, v12 ))
-    "v12" = v1
-      (from: v12)
-      (bound at: ./index-error.rsh:18:8:dot)
-      (because: an honest payment from "Bob" of v1)
-    "v14" = v8
+      (because: evaluating ADD(v16, v14 ))
+    "v14" = v2
       (from: v14)
+      (bound at: ./index-error.rsh:18:8:dot)
+      (because: an honest payment from "Bob" of v2)
+    "v16" = v9
+      (from: v16)
       (bound at: ./index-error.rsh:18:21:after expr stmt semicolon)
-      (because: evaluating v8)
-    "v8" = (+ v5 v3 )
-      (from: v8)
+      (because: evaluating v9)
+    "v9" = (+ v6 v4 )
+      (from: v9)
       (bound at: ./index-error.rsh:13:25:after expr stmt semicolon)
-      (because: evaluating ADD(v5, v3 ))
-    "v3" = 0
-      (from: v3)
+      (because: evaluating ADD(v6, v4 ))
+    "v4" = 0
+      (from: v4)
       (bound at: ./index-error.rsh:13:8:dot)
       (because: an honest payment from "Alice" of 0)
-    "v5" = 0
-      (from: v5)
+    "v6" = 0
+      (from: v6)
       (bound at: ./index-error.rsh:13:25:after expr stmt semicolon)
       (because: evaluating 0)
   Verifying with mode = VM_Dishonest RoleContract
