@@ -240,7 +240,10 @@ However, some additional statements are allowed.
  Alice.only(() => {
    const pretzel = interact.random(); }); }
 
-A @tech{local step} statement is written @reachin{PART.only(() => BLOCK)}, where @reachin{PART} is a @tech{participant} identifier and @reachin{BLOCK} is a @tech{block}. Any bindings defined within the @tech{block} of a @tech{local step} are available in the @tech{statement}'s @tech{tail} as new @tech{local state}. For example,
+A @tech{local step} statement is written @reachin{PART.only(() => BLOCK)}, where @reachin{PART} is a @tech{participant} identifier and @reachin{BLOCK} is a @tech{block}.
+Within @reachin{BLOCK}, @reachin{PART} is bound to the @tech{address} of the participant.
+Any bindings defined within the @tech{block} of a @tech{local step} are available in the @tech{statement}'s @tech{tail} as new @tech{local state}.
+For example,
 
 @reach{
  Alice.only(() => {

@@ -51,7 +51,7 @@ uint256_zero = case use_bitvectors of
   False -> Atom "0"
 
 uint256_le :: SExpr -> SExpr -> SExpr
-uint256_le lhs rhs = smtPrimOp (impossible "raw") PLE [lhs, rhs]
+uint256_le lhs rhs = smtPrimOp (impossible "raw") PLE [] [lhs, rhs]
 
 uint256_inv :: SMTTypeInv
 uint256_inv v = uint256_le uint256_zero v
@@ -156,7 +156,10 @@ shouldSimulate ctxt p =
         RolePart me -> me == p
 
 smtInteract :: SMTCtxt -> SLPart -> String -> String
-smtInteract _ctxt who m = "interact_" ++ (B.unpack who) ++ "_" ++ m
+smtInteract _ctxt who m = "interact_" ++ (bunpack who) ++ "_" ++ m
+
+smtAddress :: SLPart -> String
+smtAddress who = "address_" <> bunpack who
 
 smtConstant :: DLConstant -> String
 smtConstant = \case
@@ -189,8 +192,8 @@ smtDeclare_v ctxt v t = do
   void $ SMT.declare smt v $ Atom s
   smtTypeInv ctxt t $ Atom v
 
-smtPrimOp :: SMTCtxt -> PrimOp -> [SExpr] -> SExpr
-smtPrimOp _ctxt p =
+smtPrimOp :: SMTCtxt -> PrimOp -> [DLArg] -> [SExpr] -> SExpr
+smtPrimOp _ctxt p dargs =
   case p of
     ADD -> bvapp "bvadd" "+"
     SUB -> bvapp "bvsub" "-"
@@ -210,6 +213,10 @@ smtPrimOp _ctxt p =
     IF_THEN_ELSE -> app "ite"
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
+    SELF_ADDRESS ->
+      case dargs of
+        [ DLA_Literal (DLL_Bytes pn) ] -> const $ Atom $ smtAddress pn
+        se -> impossible $ "self address " <> show se
   where
     cant = impossible $ "Int doesn't support " ++ show p
     app n = smtApply n
@@ -474,7 +481,7 @@ smt_e ctxt at_dv mdv de =
       pathAddBound ctxt at_dv mdv bo se
       where
         args' = map (smt_a ctxt at) args
-        se = smtPrimOp ctxt cp args'
+        se = smtPrimOp ctxt cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
       pathAddBound ctxt at_dv mdv bo se
       where
@@ -701,12 +708,14 @@ smt_n ctxt n =
     LLC_Continue _at asn ->
       smt_asn ctxt True asn
 
-smt_fs :: SMTCtxt -> SrcLoc -> FromSpec -> SMTComp
-smt_fs ctxt at fs =
+smt_fs :: SMTCtxt -> SrcLoc -> SLPart -> FromSpec -> SMTComp
+smt_fs ctxt at from fs =
   case fs of
     FS_Again _ -> mempty
-    FS_Join dv ->
+    FS_Join dv -> do
       pathAddUnbound ctxt at (Just dv) O_Join
+      when (shouldSimulate ctxt from) $ do
+        smtAssert ctxt $ smtEq (Atom $ smtVar ctxt dv) (Atom $ smtAddress from)
 
 smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
@@ -729,7 +738,7 @@ smt_s ctxt s =
             Just (_, time_s) ->
               smt_s ctxt time_s
         notimeout = fs_m <> from_m <> smt_n ctxt next_n
-        fs_m = smt_fs ctxt at fs
+        fs_m = smt_fs ctxt at from fs
         from_m = do
           case shouldSimulate ctxt from of
             False -> do
@@ -916,7 +925,9 @@ _verify_smt mc vst smt lp = do
           T_Fun {} -> mempty
           _ ->
             pathAddUnbound_v ctxt Nothing at (smtInteract ctxt who v) it O_Interact
-  let definePIE (who, InteractEnv iem) = mapM_ (defineIE who) $ M.toList iem
+  let definePIE (who, InteractEnv iem) = do
+       pathAddUnbound_v ctxt Nothing at (smtAddress who) T_Address O_BuiltIn
+       mapM_ (defineIE who) $ M.toList iem
   mapM_ definePIE $ M.toList pies_m
   let smt_s_top mode = do
         putStrLn $ "  Verifying with mode = " ++ show mode

@@ -424,6 +424,7 @@ argSmall = \case
 
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
+  SELF_ADDRESS -> impossible "self address"
   ADD -> call "+"
   SUB -> call "-"
   MUL -> call "*"

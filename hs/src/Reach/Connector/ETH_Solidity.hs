@@ -299,6 +299,7 @@ solArg ctxt da =
 
 solPrimApply :: SolCtxt -> PrimOp -> [Doc] -> Doc
 solPrimApply ctxt = \case
+  SELF_ADDRESS -> impossible "self address"
   ADD -> safeOp "+" "safeAdd"
   SUB -> safeOp "-" "safeSub"
   MUL -> safeOp "*" "safeMul"

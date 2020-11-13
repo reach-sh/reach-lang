@@ -160,6 +160,7 @@ jsDigest as =
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc] -> Doc
 jsPrimApply _ctxt = \case
+  SELF_ADDRESS -> jsApply "ctc.selfAddress"
   ADD -> jsApply "stdlib.add"
   SUB -> jsApply "stdlib.sub"
   MUL -> jsApply "stdlib.mul"

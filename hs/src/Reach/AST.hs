@@ -13,6 +13,7 @@ import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.UnsafeUtil
+import Reach.Util
 
 --- Source Information
 data ReachSource
@@ -230,8 +231,8 @@ data ToConsensusMode
 data SLForm
   = SLForm_App
   | SLForm_each
-  | SLForm_EachAns [SLPart] SrcLoc SLCloEnv JSExpression
-  | SLForm_Part_Only SLPart
+  | SLForm_EachAns [(SLPart, Maybe SLVar)] SrcLoc SLCloEnv JSExpression
+  | SLForm_Part_Only SLPart (Maybe SLVar)
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
   | SLForm_unknowable
   deriving (Eq, Generic, NFData, Show)
@@ -250,6 +251,7 @@ data PrimOp
   | IF_THEN_ELSE
   | DIGEST_EQ
   | ADDRESS_EQ
+  | SELF_ADDRESS
   | LSH
   | RSH
   | BAND
@@ -258,6 +260,7 @@ data PrimOp
   deriving (Eq, Generic, NFData, Ord, Show)
 
 primOpType :: PrimOp -> SLType
+primOpType SELF_ADDRESS = impossible "self address"
 primOpType ADD = [T_UInt, T_UInt] --> T_UInt
 primOpType SUB = [T_UInt, T_UInt] --> T_UInt
 primOpType MUL = [T_UInt, T_UInt] --> T_UInt

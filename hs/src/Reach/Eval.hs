@@ -29,6 +29,8 @@ import Safe (atMay)
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
+-- import Debug.Trace
+
 --- Errors
 
 data EvalError
@@ -768,7 +770,7 @@ evalAsEnv at obj =
       retDLVar tm (DLA_Interact who m it) Secret
     SLV_Participant _ who vas _ ->
       M.fromList
-        [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who))
+        [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
         , ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing))
         , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing))
         , ("set", delayCall SLPrim_part_set)
@@ -885,8 +887,8 @@ evalForm ctxt at sco st f args =
               retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts parts (parseJSArrowFormals at top_formals) top_s (sco_env sco)
             _ -> expect_throw at (Err_App_InvalidArgs args)
         _ -> expect_throw at (Err_App_InvalidArgs args)
-    SLForm_Part_Only who ->
-      return $ SLRes mempty st $ public $ SLV_Form $ SLForm_EachAns [who] at (sco_to_cloenv sco) one_arg
+    SLForm_Part_Only who mv ->
+      return $ SLRes mempty st $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at (sco_to_cloenv sco) one_arg
     SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mtime ->
       case mmode of
         Just TCM_Publish ->
@@ -913,7 +915,7 @@ evalForm ctxt at sco st f args =
           let parts =
                 map
                   (\case
-                     SLV_Participant _ who _ _ -> who
+                     SLV_Participant _ who mv _ -> (who, mv)
                      v -> expect_throw at $ Err_Each_NotParticipant v)
                   part_vs
           return $ SLRes part_lifts part_st $ public $ SLV_Form $ SLForm_EachAns parts at (sco_to_cloenv sco) thunke
@@ -991,6 +993,7 @@ evalPrimOp ctxt at _sco st p sargs =
     BAND -> nn2n (.&.)
     BIOR -> nn2n (.|.)
     BXOR -> nn2n (xor)
+    SELF_ADDRESS -> impossible "self address"
   where
     args = map snd sargs
     lvl = mconcat $ map fst sargs
@@ -1990,8 +1993,8 @@ enforcePrivateUnderscore at = mapM_ enf . M.toList
           expect_throw at (Err_Eval_NotSecretIdent k)
       _ -> return ()
 
-doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> (SLPart, SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLScope, SLState)
-doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
+doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLScope, SLState)
+doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = do
   let SLCloEnv only_env only_penvs only_cenv = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
   let sco_only_pre =
@@ -2000,7 +2003,24 @@ doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
           , sco_penvs = only_penvs
           , sco_cenv = only_cenv
           }
-  let penv = sco_lookup_penv ctxt sco_only_pre who
+  let penv_ = sco_lookup_penv ctxt sco_only_pre who
+  (penv_lifts, penv) <-
+    case vas of
+      Nothing -> do
+        return (mempty, penv_)
+      Just v -> do
+        (me_dv, me_let_lift) <- doGetSelfAddress ctxt at who
+        case M.lookup v penv_ of
+          Just (SLSSVal pv_at pv_lvl (SLV_Participant at_ who_ mv_ Nothing)) -> do
+            let pv' = SLV_Participant at_ who_ mv_ (Just me_dv)
+            let penv_' = M.insert v (SLSSVal pv_at pv_lvl pv') penv_
+            return (me_let_lift, penv_')
+          Just (SLSSVal _ _ (SLV_Participant _ _ _ (Just _))) ->
+            return (mempty, penv_)
+          _ -> do
+            let pv' = SLV_DLVar me_dv
+            let penv_' = M.insert v (SLSSVal only_at Public pv') penv_
+            return (me_let_lift, penv_')
   let sco_only = sco_only_pre {sco_env = penv}
   SLRes only_lifts _ only_arg <-
     evalExpr ctxt only_at sco_only st_localstep only_synarg
@@ -2014,13 +2034,21 @@ doOnly ctxt at (lifts, sco, st) (who, only_at, only_cloenv, only_synarg) = do
           enforcePrivateUnderscore only_at penv'
           let penvs = sco_penvs sco
           let penvs' = M.insert who penv' penvs
-          let lifts' = return $ DLS_Only only_at who (only_lifts <> alifts)
+          let lifts' = return $ DLS_Only only_at who (penv_lifts <> only_lifts <> alifts)
           let st' = st {st_mode = SLM_Step}
           let sco' = sco {sco_penvs = penvs'}
           return ((lifts <> lifts'), sco', st')
         ty ->
           expect_throw only_at (Err_Block_NotNull ty only_v)
     _ -> expect_throw at $ Err_Only_NotOneClosure $ snd only_arg
+
+doGetSelfAddress :: SLCtxt s -> SrcLoc -> SLPart -> ST s (DLVar, DLStmts)
+doGetSelfAddress ctxt at who = do
+  let whos = bunpack who
+  (dv, lifts) <-
+    ctxt_lift_expr ctxt at (DLVar at whos T_Address)
+      (DLE_PrimOp at SELF_ADDRESS [DLA_Literal $ DLL_Bytes who])
+  return (dv, lifts)
 
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
 evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
@@ -2816,20 +2844,20 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
         public $ SLV_Participant p_at pn Nothing Nothing
   let partvs = map make_part part_ios
   let top_args = map (jse_expect_id at) top_formals
-  let top_env_wps =
-        foldl' (\env_ (part_var, part_val) -> env_insert at part_var part_val env_) top_env $
-          map (second (sls_sss at)) $
-            zipEq at (Err_Apply_ArgCount at) top_args partvs
+  let top_vargs = zipEq at (Err_Apply_ArgCount at) top_args partvs
+  let top_viargs = map (\(i, pv) -> (i, infectWithId i pv)) top_vargs
+  let top_rvargs = map (second $ (sls_sss at)) top_viargs
+  let top_env_wps = foldl' (env_insertp at) top_env top_rvargs
   let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
   let use_opt k v acc =
         case M.lookup k app_options of
           Nothing ->
-            expect_throw at $ Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
+            expect_throw at $
+              Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
           Just opt ->
             case opt acc v of
               Right x -> x
-              Left x ->
-                expect_throw at $ Err_App_InvalidOptionValue k x
+              Left x -> expect_throw at $ Err_App_InvalidOptionValue k x
   let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) (M.map sss_val opts)
   let st_step =
         SLState
@@ -2839,16 +2867,17 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , st_after_first = False
           }
   let at' = srcloc_at "compileDApp" Nothing at
-  let make_penv (p_at, pn, iat, io) =
-        (pn, env_insert p_at "interact" (sls_sss iat $ secret io) top_env)
-  let penvs = M.fromList $ map make_penv part_ios
-  let ctxt =
+  let ctxt_ =
         SLCtxt
           { ctxt_dlo = dlo
           , ctxt_id = idxr
           , ctxt_stack = []
-          , ctxt_base_penvs = penvs
+          , ctxt_base_penvs = mempty
           }
+  let make_penvp (p_at, pn, iat, io) = (pn, env0)
+        where env0 = env_insert p_at "interact" (sls_sss iat $ secret io) top_env
+  let penvs = M.fromList $ map make_penvp part_ios
+  let ctxt = ctxt_ { ctxt_base_penvs = penvs }
   let sco =
         SLScope
           { sco_ret = Nothing
