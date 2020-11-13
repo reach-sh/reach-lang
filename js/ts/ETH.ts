@@ -626,6 +626,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     }
   };
 
+  const selfAddress = (): Address => {
+    return address;
+  }
+
   const deploy = (bin: Backend): Contract => {
     if (!ethers.Signer.isSigner(networkAccount)) {
       throw Error(`Signer required to deploy, ${networkAccount}`);
@@ -718,8 +722,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // Danger: deadlock possible
           return await infoP;
         },
-        // iam doesn't make sense to check before ctc deploy, but it is harmless.
+        // iam/selfAddress don't make sense to check before ctc deploy, but are harmless.
         iam,
+        selfAddress,
       };
       // Return a wrapper around the impl. This obj and its fields do not mutate,
       // but the fields are closures around a mutating ref to impl.
@@ -729,6 +734,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         wait: (...args) => impl.wait(...args),
         getInfo: (...args) => impl.getInfo(...args),
         iam: (...args) => impl.iam(...args),
+        selfAddress: (...args) => impl.selfAddress(...args),
       }
     }
 
@@ -993,7 +999,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     }
 
     // Note: wait is the local one not the global one of the same name.
-    return { getInfo, sendrecv, recv, wait, iam, };
+    return { getInfo, sendrecv, recv, wait, iam, selfAddress, };
   };
 
   return { deploy, attach, networkAccount };

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import ethers from 'ethers';
+import { CBR_Address } from './CBR';
 
 export interface AnyBackendTy {
   name: string,
@@ -42,6 +43,7 @@ export type IContract<ContractInfo, Digest, RawAddress, ConnectorTy extends AnyB
   ) => Promise<IRecv<RawAddress>>,
   wait: (delta: BigNumber) => Promise<BigNumber>,
   iam: (some_addr: RawAddress) => RawAddress,
+  selfAddress: () => CBR_Address, // Not RawAddress!
 };
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {

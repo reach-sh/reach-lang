@@ -154,6 +154,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
     };
 
+    const selfAddress = (): Address => {
+      return address;
+    }
+
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
       // Don't wait from current time, wait from last_block
       return waitUntilTime(stdlib.add(await getLastBlock(), delta));
@@ -237,7 +241,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const getInfo = async () => await infoP;
 
-    return { getInfo, sendrecv, recv, iam, wait };
+    return { getInfo, sendrecv, recv, iam, selfAddress, wait };
   };
 
   const deploy = (bin: Backend): Contract => {
