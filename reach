@@ -583,7 +583,7 @@ run-target: build
 
 .PHONY: down
 down:
-	docker-compose -f "${DOCKER_COMPOSE_YML}" down
+	docker-compose -f "${DOCKER_COMPOSE_YML}" down --remove-orphans
 EOF
 
   GITIGNORE=".gitignore"
