@@ -391,9 +391,6 @@ const [getFaucet, setFaucet] = replaceableThunk(async () => {
 
 export {getFaucet, setFaucet};
 
-// if using the default:
-// assert(FAUCET.addr === 'EYTSJVJIMJDUSRRNTMVLORTLTOVDWZ6SWOSY77JHPDWSD7K3P53IB3GUPQ');
-
 // Helpers
 
 async function wait1port(theServer: string, thePort: string | number) {
