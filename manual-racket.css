@@ -88,6 +88,7 @@ span.RktValDef, span.RktStxDef, span.RktSymDef
 
 .RktOpt {
   color: black;
+  font-style: italic;
 }
 
 .RktKw {

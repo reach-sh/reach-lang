@@ -395,6 +395,14 @@ a:hover {
     margin: 0em 0em 0em -13em;
 }
 
+@media all and (max-width:1340px) {
+    /* avoid disappearing left note if display area is narrow */
+    .refparaleft, .refelemleft {
+        margin: 0em 0em 0em 0em;
+        right: 0em;
+     }
+}
+
 .refcolumnleft {
     background-color: hsl(60, 29%, 94%);
     display: block;
