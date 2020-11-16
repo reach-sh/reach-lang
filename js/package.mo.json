@@ -15,7 +15,7 @@
   "dependencies": {
     "algosdk": "algorand/js-algorand-sdk#07ed42f",
     "await-timeout": "^0.6.0",
-    "ethers": "^5.0.13",
+    "ethers": "^5.0.19",
     "hi-base32": "^0.5.0",
     "wait-port": "^0.2.9"
   },
