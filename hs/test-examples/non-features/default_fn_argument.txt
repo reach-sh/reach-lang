@@ -1,0 +1,1 @@
+reachc: error: ./default_fn_argument.rsh:13:25:application: Invalid function appication. Expected 2 args, got 1 for function defined at ./default_fn_argument.rsh:4:1:function exp

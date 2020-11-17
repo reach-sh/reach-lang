@@ -1,0 +1,1 @@
+reachc: error: ./template_literals.rsh:9:9:const: Invalid Reach expression syntax: JSTemplateLiteral
