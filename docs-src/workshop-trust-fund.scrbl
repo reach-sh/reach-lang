@@ -34,7 +34,7 @@ With this in mind, let's answer the questions:
 Let's see how your answers compare to our answers:
 
 @itemlist[
- @item{This applicaiton involves three participants: the Funder, the Receiver, and a Bystander.}
+ @item{This application involves three participants: the Funder, the Receiver, and a Bystander.}
  @item{The Funder knows the identity of the Receiver, the amount, as well as the maturity of the fund, and the delays beforewhich it will be declared dormant or forsook.}
  @item{The Receiver and the Bystander don't learn or provide anything, aside from the existence of the fund and its maturity.}
  @item{The funds start with the Funder and then move to either the Receiver, the Funder, or the Bystander, depending on when they are claimed.}

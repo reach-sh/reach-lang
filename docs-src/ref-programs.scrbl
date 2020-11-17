@@ -284,11 +284,11 @@ It is an abbreviation of many @tech{local step} statements that could have been 
 @reach{
  Alice.publish(wagerAmount)
       .pay(wagerAmount)
-      .timeout(DELAY, closeTo(Bob, false)); }
+      .timeout(DELAY, () => closeTo(Bob, false)); }
 
 A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
 The @tech{continuation} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
-The @tech{continuation} of a timeout block is the same as the continuation as the continuation as the function the timeout occurs within.
+The @tech{continuation} of a timeout block is the same as the continuation of the function the timeout occurs within.
 
 @margin-note{See @seclink["guide-timeout"]{the guide section on non-participation} to understand when to use timeouts and how to use them most effectively.}
 
@@ -313,7 +313,7 @@ For example, the following are all @tech{valid}:
         commit();
         exit(); }); }
 
-If the named participant has not yet @tech{join}ed the application, then this statement has the effect of them @tech{join}ing, after which @reachin{PART} may be used as a @tech{address}.
+If the named participant has not yet @tech{join}ed the application, then this statement has the effect of them @tech{join}ing, after which @reachin{PART} may be used as an @tech{address}.
 
 @subsubsection{@tt{wait}}
 
@@ -354,7 +354,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 @reach{
  closeTo( Who, after ) }
 
-@index{closeTo} Returns has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
+@index{closeTo} Has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
 
 @section[#:tag "ref-programs-local"]{Local Steps}
 
@@ -510,7 +510,7 @@ A @deftech{transfer expression}, written @reachin{transfer(AMOUNT_EXPR).to(PART)
 @reach{
  require( claim, [msg] ) }
 
-@index{require} An @tech{requirement} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{participants}.
+@index{require} A @tech{requirement} where @reachin{claim} evaluates to @reachin{true} with @tech{honest} @tech{participants}.
 This may only appear in a @tech{consensus step}.
 It accepts an optional bytes argument, which is included in any reported violation.
 

@@ -16,7 +16,7 @@ export const main =
         maturity:     UInt,
         refund:       UInt,
         dormant:      UInt })) }],
-      [ 'Receiver', common],
+      ['Receiver', common],
       ['Bystander', common] ],
     (Funder, Receiver, Bystander) => {
       Funder.only(() => {

@@ -18,7 +18,7 @@ For this workshop, we'll provide some constraints on your solution and problem a
 The overall purpose of this application is so that:
 @itemlist[
  @item{Alice can decide an amount of funds to provide.}
- @item{Alice later decide who will have access to this by sharing a secret with them.
+ @item{Alice later decides who will have access to this by sharing a secret with them.
   We call this person, Bob.}
  @item{Bob can transfer the funds to wherever he'd like.}
 ]

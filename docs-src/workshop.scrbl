@@ -148,7 +148,7 @@ These variations demonstrate two DApp patterns that occur commonly in existing D
 @(workshop-deps "workshop-trust-fund")
 
 In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Secured_loan"]{secured loan}, wherein a Borrower posts collateral and terms to the public, and an arbitrary Lender gives a loan, then after some maturity, the Borrower either repays the loan, plus interest, or sacrifices the collateral.
-It is easy to model this scenario using only @tech{network tokens}, but it would be useless, because the premise ofa loan is that the participants believe the Borrower can make better use of the funds than the Lender.
+It is easy to model this scenario using only @tech{network tokens}, but it would be useless, because the premise of a loan is that the participants believe the Borrower can make better use of the funds than the Lender.
 However, many @tech{consensus network} also support custom fungible assets that are like tokens.
 If this is the case, then a secured loan will typically have different assets as the loan amount and the collateral amount.
 Thus, the interest rate for the loan is essentially the Lender's prediction of the movement of the exchange rate between the two currencies over the lifetime of the loan.
