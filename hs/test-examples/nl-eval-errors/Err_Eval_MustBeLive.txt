@@ -1,0 +1,1 @@
+reachc: error: ./Err_Eval_MustBeLive.rsh:11:7:const: must be live at parallel reduce

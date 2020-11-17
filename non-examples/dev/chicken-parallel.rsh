@@ -44,23 +44,20 @@ export const main =
           parallel_reduce([ false, as, bs ])
             .invariant(balance() == 2 * wager)
             .timeout(deadline)
-            .case(
-            [
-              [ Alice,
-                () => {
-                  Alice.only(() => {
-                    if ( ! interact.keepGoing() ) {
-                      fail(); } });
-                  Alice.publish();
-                  return [ true, 1 + as_, bs_ ]; } ],
-              [ Bob,
-                () => {
-                  Bob.only(() => {
-                    if ( ! interact.keepGoing() ) {
-                      fail(); } });
-                  Bob.publish();
-                  return [ true, as_, 1 + bs_ ]; } ],
-            ]);
+            .case(Alice,
+              () => {
+                Alice.only(() => {
+                  if ( ! interact.keepGoing() ) {
+                    fail(); } });
+                Alice.publish();
+                return [ true, 1 + as_, bs_ ]; })
+            .case(Bob,
+              () => {
+                Bob.only(() => {
+                  if ( ! interact.keepGoing() ) {
+                    fail(); } });
+                Bob.publish();
+                return [ true, as_, 1 + bs_ ]; });
 
         [ keepGoing, as, bs ] = [ keepGoing_, as_, bs_ ];
         continue;

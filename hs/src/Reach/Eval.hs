@@ -110,6 +110,9 @@ data EvalError
   | Err_Switch_ExtraCases [SLVar]
   | Err_Expected_Bytes SLVal
   | Err_RecursionDepthLimit
+  | Err_ParallelReduce_Incomplete ParallelReduceMode
+  | Err_ParallelReduce_NoInvariant
+  | Err_Eval_MustBeLive String
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -353,6 +356,12 @@ instance Show EvalError where
       "expected bytes, got something else: " <> displaySlValType v
     Err_RecursionDepthLimit ->
       "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
+    Err_ParallelReduce_Incomplete m ->
+      "parallel reduce call incomplete; ending in the midst of " <> show m
+    Err_ParallelReduce_NoInvariant ->
+      "parallel reduce missing invariant"
+    Err_Eval_MustBeLive m ->
+      "must be live at " <> m
 
 --- Utilities
 zipEq :: Show e => SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -410,9 +419,13 @@ env_insert_ :: HasCallStack => EnvInsertMode -> SrcLoc -> SLVar -> SLSSVal -> SL
 env_insert_ _ _ "_" _ env = env
 env_insert_ insMode at k v env = case insMode of
   DisallowShadowing ->
-    case M.lookup k env of
-      Nothing -> go
-      Just v0 -> expect_throw at (Err_Shadowed k v0 v)
+    --- XXX This is a hack
+    case k == internalVar_balance of
+      True -> go
+      False ->
+        case M.lookup k env of
+          Nothing -> go
+          Just v0 -> expect_throw at (Err_Shadowed k v0 v)
   AllowShadowing -> go
   where
     go = case v of
@@ -486,6 +499,7 @@ base_env =
     , ("typeEq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ("wait", SLV_Prim SLPrim_wait)
+    , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
     , ( "Participant"
       , (SLV_Object srcloc_builtin (Just $ "Participant") $
            m_fromList_public_builtin
@@ -568,6 +582,22 @@ data SLState = SLState
     st_pdvs :: SLPartDVars
   }
   deriving (Eq, Show)
+
+ensure_mode :: SrcLoc -> SLState -> SLMode -> String -> ST s ()
+ensure_mode at st em msg = do
+  let am = st_mode st
+  case am == em of
+    True -> return ()
+    False ->
+      --- XXX use this function every where and shown em
+      expect_throw at $ Err_Eval_IllegalMode am msg
+
+ensure_live :: SrcLoc -> SLState -> String -> ST s ()
+ensure_live at st msg = do
+  case st_live st of
+    True -> return ()
+    False ->
+      expect_throw at $ Err_Eval_MustBeLive msg
 
 allowed_to_wait :: SLCtxt s -> SrcLoc -> SLState -> x -> x
 allowed_to_wait ctxt at st =
@@ -663,7 +693,7 @@ stMerge at x y =
     True -> y
     False -> expect_throw at $ Err_Eval_IncompatibleStates x y
 
-stEnsureMode :: SrcLoc -> SLMode -> SLState -> SLState
+stEnsureMode :: HasCallStack => SrcLoc -> SLMode -> SLState -> SLState
 stEnsureMode at slm st =
   stMerge at st $ st {st_mode = slm}
 
@@ -776,11 +806,30 @@ evalAsEnv at obj =
         , ("set", delayCall SLPrim_part_set)
         ]
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
-      M.fromList
-        [ ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Publish) mpub mpay mtime))
-        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Pay) mpub mpay mtime))
-        , ("timeout", retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just TCM_Timeout) mpub mpay mtime))
-        ]
+      M.fromList $
+        gom "publish" TCM_Publish mpub <>
+        gom "pay" TCM_Pay mpay <>
+        gom "timeout" TCM_Timeout mtime
+      where
+        gom key mode me =
+          case me of
+            Nothing -> go key mode
+            Just _ -> []
+        go key mode =
+          [ (key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mtime))] 
+    SLV_Form (SLForm_parallel_reduce_partial inite Nothing minve mtimeout muntile casees) ->
+      M.fromList $
+        gom "invariant" PRM_Invariant minve <>
+        gom "timeout" PRM_Timeout mtimeout <>
+        gom "until" PRM_Until muntile <>
+        go "case" PRM_Case
+      where
+        gom key mode me =
+          case me of
+            Nothing -> go key mode
+            Just _ -> []
+        go key mode =
+          [ (key, retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial inite (Just mode) minve mtimeout muntile casees) ]
     --- FIXME rewrite the rest to look at the type and go from there
     SLV_Tuple _ _ ->
       M.fromList
@@ -956,6 +1005,26 @@ evalForm ctxt at sco st f args =
           return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
         cm ->
           expect_throw at $ Err_Eval_IllegalMode cm $ "unknowable"
+    SLForm_parallel_reduce ->
+      retV $ public $ SLV_Form $
+        SLForm_parallel_reduce_partial one_arg Nothing Nothing Nothing Nothing []
+    SLForm_parallel_reduce_partial inite mmode minve mtimeoute muntile casees ->
+      case mmode of
+        Nothing ->
+          expect_throw at $ Err_Eval_NotApplicable $ SLV_Form f
+        Just PRM_Invariant ->
+          retV $ public $ SLV_Form $
+            SLForm_parallel_reduce_partial inite Nothing (Just one_arg) mtimeoute muntile casees
+        Just PRM_Timeout ->
+          retV $ public $ SLV_Form $
+            SLForm_parallel_reduce_partial inite Nothing minve (Just one_arg) muntile casees
+        Just PRM_Until ->
+          retV $ public $ SLV_Form $
+            SLForm_parallel_reduce_partial inite Nothing minve mtimeoute (Just one_arg) casees
+        Just PRM_Case ->
+          retV $ public $ SLV_Form $
+            SLForm_parallel_reduce_partial inite Nothing minve mtimeoute muntile $
+              casees ++ [two_args]
   where
     illegal_args n = expect_throw at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -2215,6 +2284,70 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
     illegal_mode = expect_throw at $ Err_Eval_IllegalMode (st_mode st) "trampoline"
     env = sco_env sco
 
+doWhileLikeInitEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> ST s (DLStmts, DLStmts, M.Map SLVar DLVar, DLAssignment, SLState, SLScope)
+doWhileLikeInitEval ctxt at sco st lhs rhs = do
+  SLRes init_lifts st_init vars_env_ <- evalDecl ctxt at sco st lhs rhs
+  SLRes fr_lifts _ balance_sv <- doFluidRef ctxt at st_init FV_balance
+  let balance_v = sls_sss at balance_sv
+  --- XXX This could be broken with multiple loops
+  let vars_env = env_insert at internalVar_balance balance_v vars_env_
+  let help v (SLSSVal _ _ val) = do
+        let (t, da) = typeOf at val
+        dv <- ctxt_mkvar ctxt $ DLVar at v t
+        return $ (dv, da)
+  helpm <- M.traverseWithKey help vars_env
+  let unknown_var_env = M.map (sls_sss at . public . SLV_DLVar . fst) helpm
+  let unknown_bal_v = sss_sls $ unknown_var_env M.! internalVar_balance
+  let bal_lifts = doFluidSet at FV_balance unknown_bal_v
+  let st_init' = stEnsureMode at (st_mode st) st_init
+  let sco_env' = sco_update ctxt at sco st_init' unknown_var_env
+  let init_dam = M.fromList $ M.elems helpm
+  let init_vars = M.map fst helpm
+  let init_dl = DLAssignment init_dam
+  let pre_lifts = init_lifts <> fr_lifts
+  let post_lifts = bal_lifts
+  return $ (pre_lifts, post_lifts, init_vars, init_dl, st_init', sco_env')
+
+evalPureExprToBlock :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> SLType -> ST s DLBlock
+evalPureExprToBlock ctxt at sco st klifts e rest = do
+  let pure_st = st {st_mode = SLM_ConsensusPure}
+  let fs = ctxt_stack ctxt
+  SLRes e_lifts _ e_da <-
+    keepLifts klifts $
+      checkResType at rest $ evalExpr ctxt at sco pure_st e
+  return $ DLBlock at fs e_lifts e_da
+
+doParallelReduce :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> (JSExpression, Maybe ParallelReduceMode, Maybe JSExpression, Maybe JSExpression, Maybe JSExpression, [ (JSExpression, JSExpression) ]) -> SrcLoc -> [JSStatement] -> SLComp s SLStmtRes
+doParallelReduce _ at _ _ _ (_, Just m, _, _, _, _) _ _ =
+  expect_throw at $ Err_ParallelReduce_Incomplete m
+doParallelReduce _ at _ _ _ (_, Nothing, Nothing, _, _, _) _ _ =
+  expect_throw at $ Err_ParallelReduce_NoInvariant
+doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv, slfpr_mtimeout, slfpr_muntil, slfpr_cases) at_after ks = do
+  ensure_mode at st SLM_Step "parallel reduce"
+  allowed_to_wait ctxt at st (return ())
+  ensure_live at st "parallel reduce"
+  (init_pre_lifts, init_post_lifts, _XXX_init_vars, init_dl, init_st, after_sco) <-
+    doWhileLikeInitEval ctxt at before_sco st lhs slfpr_init
+  let mevalPureExprToBlock sco klifts me rest =
+        case me of
+          Nothing -> return $ Nothing
+          Just e ->
+            Just <$> evalPureExprToBlock ctxt at sco init_st klifts e rest
+  inv_b <- evalPureExprToBlock ctxt at after_sco init_st init_post_lifts slfpr_inv T_Bool
+  muntil_b <- mevalPureExprToBlock after_sco init_post_lifts slfpr_muntil T_Bool
+  mtimeout_b <- mevalPureExprToBlock before_sco mempty slfpr_mtimeout T_UInt
+  let (timeout_lifts, timeout_mda) =
+        case mtimeout_b of
+          Nothing -> return (mempty, Nothing)
+          Just (DLBlock _ _ l d) -> return (l, Just d)
+  -- XXX if there's no until OR timeout... maybe error?
+  let after_st = st { st_mode = SLM_ConsensusStep }
+  let dcases = "XXX pr cases " <> show slfpr_cases
+  let the_pr = impossible $ "XXX " <> show ("DLS_ParallelReduce"::String, at, init_dl, inv_b, muntil_b, timeout_mda, dcases)
+  let final_lifts =
+        init_pre_lifts <> timeout_lifts <> (return $ the_pr) <> init_post_lifts
+  keepLifts final_lifts $ evalStmt ctxt at_after after_sco after_st ks
+
 evalStmt :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> SLComp s SLStmtRes
 evalStmt ctxt at sco st ss =
   case ss of
@@ -2245,14 +2378,20 @@ evalStmt ctxt at sco st ss =
     (s@(JSLet a _ _) : _) -> illegal a s "let"
     (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
     ((JSConstant a decls sp) : ks) -> do
+      let lab = "const"
+      let at_after = srcloc_after_semi lab a sp at
+      let at_in = srcloc_jsa lab a at
       let (lhs, rhs) = destructDecls at_in decls
-      SLRes lifts st_const addl_env <- evalDecl ctxt at_in sco st lhs rhs
-      let sco' = sco_update ctxt at_in sco st addl_env
-      keepLifts lifts $ evalStmt ctxt at_after sco' st_const ks
-      where
-        at_after = srcloc_after_semi lab a sp at
-        at_in = srcloc_jsa lab a at
-        lab = "const"
+      SLRes rhs_lifts rhs_st (rhs_lvl, rhs_v) <- evalExpr ctxt at sco st rhs
+      keepLifts rhs_lifts $
+        case rhs_v of
+          SLV_Form (SLForm_parallel_reduce_partial {..}) ->
+            doParallelReduce ctxt at_in sco rhs_st lhs (slfpr_init, slfpr_mode, slfpr_minv, slfpr_mtimeout, slfpr_muntil, slfpr_cases) at_after ks
+          _ -> do
+            SLRes lifts st_const addl_env <-
+              evalDeclLHS ctxt at sco rhs_st rhs_lvl mempty rhs_v lhs
+            let sco' = sco_update ctxt at_in sco st addl_env
+            keepLifts lifts $ evalStmt ctxt at_after sco' st_const ks
     (cont@(JSContinue a _ sp) : cont_ks) ->
       evalStmt ctxt at sco st (assign : cont : cont_ks)
       where
@@ -2496,74 +2635,38 @@ evalStmt ctxt at sco st ss =
       retSeqn fr at'_after ks_ne
     (s@(JSThrow a _ _) : _) -> illegal a s "throw"
     (s@(JSTry a _ _ _) : _) -> illegal a s "try"
-    ((JSVariable var_a while_decls _vsp) : var_ks) ->
+    ((JSVariable var_a while_decls _vsp) : var_ks) -> do
+      let var_at = (srcloc_jsa "var" var_a at)
       case var_ks of
-        ( (JSMethodCall (JSIdentifier inv_a "invariant") _ invariant_args _ _isp)
-            : (JSWhile while_a cond_a while_cond _ while_body)
-            : ks
-          ) ->
-            case st_mode st of
-              SLM_ConsensusStep -> do
-                let (while_lhs, while_rhs) = destructDecls var_at while_decls
-                SLRes init_lifts st_var vars_env_ <-
-                  evalDecl ctxt var_at sco st while_lhs while_rhs
-                SLRes fr_lifts _ balance_sv <-
-                  doFluidRef ctxt var_at st_var FV_balance
-                let balance_v = sls_sss var_at balance_sv
-                let vars_env =
-                      --- XXX This could be broken with multiple loops
-                      env_insert var_at internalVar_balance balance_v vars_env_
-                let while_help v sv = do
-                      let (SLSSVal _ _ val) = sv
-                      let (t, da) = typeOf var_at val
-                      dv <- ctxt_mkvar ctxt $ DLVar var_at v t
-                      return $ (dv, da)
-                while_helpm <- M.traverseWithKey while_help vars_env
-                let unknown_var_env = M.map (sls_sss var_at . public . SLV_DLVar . fst) while_helpm
-                let unknown_bal_v = sss_sls $ unknown_var_env M.! internalVar_balance
-                let bal_lifts = doFluidSet at FV_balance unknown_bal_v
-                let st_var' = stEnsureMode at SLM_ConsensusStep st_var
-                let st_pure = st_var' {st_mode = SLM_ConsensusPure}
-                let sco_env' = sco_update ctxt at sco st_var' unknown_var_env
-                SLRes inv_lifts_ _ inv_da <-
-                  case jscl_flatten invariant_args of
-                    [invariant_e] ->
-                      checkResType inv_at T_Bool $ evalExpr ctxt inv_at sco_env' st_pure invariant_e
-                    ial -> expect_throw inv_at $ Err_While_IllegalInvariant ial
-                let inv_lifts = bal_lifts <> inv_lifts_
-                let fs = ctxt_stack ctxt
-                let inv_b = DLBlock inv_at fs inv_lifts inv_da
-                SLRes cond_lifts _ cond_da <-
-                  checkResType cond_at T_Bool $ evalExpr ctxt cond_at sco_env' st_pure while_cond
-                let cond_b = DLBlock cond_at fs cond_lifts cond_da
-                let while_sco =
-                      sco_env'
-                        { sco_while_vars = Just $ M.map fst while_helpm
-                        , sco_must_ret = RS_NeedExplicit
-                        }
-                SLRes body_lifts_ body_st (SLStmtRes _ body_rets) <-
-                  evalStmt ctxt while_at while_sco st_var' [while_body]
-                let body_lifts = bal_lifts <> body_lifts_
-                let while_dam = M.fromList $ M.elems while_helpm
-                let the_while =
-                      DLS_While var_at (DLAssignment while_dam) inv_b cond_b body_lifts
-                let st_post = stMerge at body_st st_var'
-                SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <-
-                  evalStmt ctxt while_at sco_env' st_post ks
-                let lifts' =
-                      init_lifts <> fr_lifts <> (return $ the_while)
-                        <> bal_lifts
-                        <> k_lifts
-                let rets' = body_rets <> k_rets
-                return $ SLRes lifts' k_st $ SLStmtRes k_env' rets'
-              cm -> expect_throw var_at $ Err_Eval_IllegalMode cm "while"
-            where
-              inv_at = (srcloc_jsa "invariant" inv_a at)
-              cond_at = (srcloc_jsa "cond" cond_a at)
-              while_at = (srcloc_jsa "while" while_a at)
+        ((JSMethodCall (JSIdentifier inv_a "invariant") _ (JSLOne invariant_e) _ _isp) :
+         (JSWhile while_a cond_a while_cond _ while_body) :
+         ks) -> do
+            ensure_mode var_at st SLM_ConsensusStep "while"
+            let inv_at = (srcloc_jsa "invariant" inv_a at)
+            let cond_at = (srcloc_jsa "cond" cond_a at)
+            let while_at = (srcloc_jsa "while" while_a at)
+            let (while_lhs, while_rhs) = destructDecls var_at while_decls
+            (init_pre_lifts, init_post_lifts, init_vars, init_dl, st_var', sco_env') <-
+              doWhileLikeInitEval ctxt var_at sco st while_lhs while_rhs
+            inv_b <- evalPureExprToBlock ctxt inv_at sco_env' st_var' init_post_lifts invariant_e T_Bool
+            cond_b <- evalPureExprToBlock ctxt cond_at sco_env' st_var' init_post_lifts while_cond T_Bool
+            let while_sco =
+                  sco_env'
+                    { sco_while_vars = Just init_vars
+                    , sco_must_ret = RS_NeedExplicit
+                    }
+            SLRes body_lifts body_st (SLStmtRes _ body_rets) <-
+              keepLifts init_post_lifts $
+                evalStmt ctxt while_at while_sco st_var' [while_body]
+            let the_while = DLS_While var_at init_dl inv_b cond_b body_lifts
+            let st_post = stMerge at body_st st_var'
+            SLRes k_lifts k_st (SLStmtRes k_env' k_rets) <-
+              keepLifts init_post_lifts $
+                evalStmt ctxt while_at sco_env' st_post ks
+            let lifts' = init_pre_lifts <> (return $ the_while) <> k_lifts
+            let rets' = body_rets <> k_rets
+            return $ SLRes lifts' k_st $ SLStmtRes k_env' rets'
         _ -> expect_throw var_at $ Err_Block_Variable
-      where
-        var_at = (srcloc_jsa "var" var_a at)
     ((JSWhile a _ _ _ _) : _) ->
       expect_throw (srcloc_jsa "while" a at) (Err_Block_While)
     (s@(JSWith a _ oe _ body sp) : ks) ->

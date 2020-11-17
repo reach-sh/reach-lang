@@ -212,8 +212,7 @@ data SLVal
   | SLV_DLVar DLVar
   | SLV_Type SLType
   | SLV_Connector T.Text
-  | --- FIXME I think we can delete some of these fields, like the M DLVar
-    SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
+  | SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   deriving (Eq, Generic, NFData, Show)
@@ -228,6 +227,13 @@ data ToConsensusMode
   | TCM_Timeout
   deriving (Eq, Generic, NFData, Show)
 
+data ParallelReduceMode
+  = PRM_Invariant
+  | PRM_Timeout
+  | PRM_Until
+  | PRM_Case
+  deriving (Eq, Generic, NFData, Show)
+
 data SLForm
   = SLForm_App
   | SLForm_each
@@ -235,6 +241,14 @@ data SLForm
   | SLForm_Part_Only SLPart (Maybe SLVar)
   | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
   | SLForm_unknowable
+  | SLForm_parallel_reduce
+  | SLForm_parallel_reduce_partial
+      { slfpr_init :: JSExpression
+      , slfpr_mode :: Maybe ParallelReduceMode
+      , slfpr_minv :: Maybe JSExpression
+      , slfpr_mtimeout :: Maybe JSExpression
+      , slfpr_muntil :: Maybe JSExpression
+      , slfpr_cases :: [ (JSExpression, JSExpression) ] }
   deriving (Eq, Generic, NFData, Show)
 
 data PrimOp
