@@ -9,5 +9,6 @@ export const main =
     {},
     [['A', {}]],
     (A) => {
-      sum(1, 2, 3, 4, 5);
+      const x = sum(1, 2, 3, 4, 5);
+      assert(x == 15);
     });

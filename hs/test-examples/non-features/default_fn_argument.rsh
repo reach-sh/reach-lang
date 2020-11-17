@@ -11,4 +11,5 @@ export const main =
     [['A', {}]],
     (A) => {
       const x = multiply(5);
+      assert(x==5);
     });

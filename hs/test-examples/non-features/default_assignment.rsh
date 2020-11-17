@@ -6,5 +6,5 @@ export const main =
     [['A', {}]],
     (A) => {
       const {a: { b = 5 }} = { a: {} };
-      // b will equal 5 if not present in a's object.
+      assert(b == 5);
     });
