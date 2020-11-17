@@ -2382,14 +2382,14 @@ evalStmt ctxt at sco st ss =
       let at_after = srcloc_after_semi lab a sp at
       let at_in = srcloc_jsa lab a at
       let (lhs, rhs) = destructDecls at_in decls
-      SLRes rhs_lifts rhs_st (rhs_lvl, rhs_v) <- evalExpr ctxt at sco st rhs
+      SLRes rhs_lifts rhs_st (rhs_lvl, rhs_v) <- evalExpr ctxt at_in sco st rhs
       keepLifts rhs_lifts $
         case rhs_v of
           SLV_Form (SLForm_parallel_reduce_partial {..}) ->
             doParallelReduce ctxt at_in sco rhs_st lhs (slfpr_init, slfpr_mode, slfpr_minv, slfpr_mtimeout, slfpr_muntil, slfpr_cases) at_after ks
           _ -> do
             SLRes lifts st_const addl_env <-
-              evalDeclLHS ctxt at sco rhs_st rhs_lvl mempty rhs_v lhs
+              evalDeclLHS ctxt at_in sco rhs_st rhs_lvl mempty rhs_v lhs
             let sco' = sco_update ctxt at_in sco st addl_env
             keepLifts lifts $ evalStmt ctxt at_after sco' st_const ks
     (cont@(JSContinue a _ sp) : cont_ks) ->
