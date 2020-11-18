@@ -215,7 +215,7 @@ smtPrimOp _ctxt p dargs =
     ADDRESS_EQ -> app "="
     SELF_ADDRESS ->
       case dargs of
-        [ DLA_Literal (DLL_Bytes pn) ] -> const $ Atom $ smtAddress pn
+        [DLA_Literal (DLL_Bytes pn)] -> const $ Atom $ smtAddress pn
         se -> impossible $ "self address " <> show se
   where
     cant = impossible $ "Int doesn't support " ++ show p
@@ -926,8 +926,8 @@ _verify_smt mc vst smt lp = do
           _ ->
             pathAddUnbound_v ctxt Nothing at (smtInteract ctxt who v) it O_Interact
   let definePIE (who, InteractEnv iem) = do
-       pathAddUnbound_v ctxt Nothing at (smtAddress who) T_Address O_BuiltIn
-       mapM_ (defineIE who) $ M.toList iem
+        pathAddUnbound_v ctxt Nothing at (smtAddress who) T_Address O_BuiltIn
+        mapM_ (defineIE who) $ M.toList iem
   mapM_ definePIE $ M.toList pies_m
   let smt_s_top mode = do
         putStrLn $ "  Verifying with mode = " ++ show mode

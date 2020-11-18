@@ -215,6 +215,7 @@ data SLVal
   | SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
+  | SLV_Kwd SLKwd
   deriving (Eq, Generic, NFData, Show)
 
 isLiteralArray :: SLVal -> Bool
@@ -250,6 +251,91 @@ data SLForm
       , slfpr_muntil :: Maybe JSExpression
       , slfpr_cases :: [ (JSExpression, JSExpression) ] }
   deriving (Eq, Generic, NFData, Show)
+
+data SLKwd
+  = SLK_As
+  | SLK_Async
+  | SLK_Await
+  | SLK_Break
+  | SLK_Case
+  | SLK_Catch
+  | SLK_Class
+  | SLK_Const
+  | SLK_Continue
+  | SLK_Debugger
+  | SLK_Default
+  | SLK_Delete
+  | SLK_Do
+  | SLK_Else
+  | SLK_Enum
+  | SLK_Export
+  | SLK_Extends
+  | SLK_For
+  | SLK_From
+  | SLK_Function
+  | SLK_If
+  | SLK_In
+  | SLK_Import
+  | SLK_InstanceOf
+  | SLK_Let
+  | SLK_New
+  | SLK_Of
+  | SLK_Return
+  | SLK_Static
+  | SLK_Switch
+  | SLK_This
+  | SLK_Throw
+  | SLK_Try
+  | SLK_Typeof
+  | SLK_Var
+  | SLK_While
+  | SLK_With
+  | SLK_Yield
+  deriving (Enum, Eq, Generic, NFData)
+
+instance Show SLKwd where
+  show = \case
+    SLK_As -> "as"
+    SLK_Async -> "async"
+    SLK_Await -> "await"
+    SLK_Break -> "break"
+    SLK_Case -> "case"
+    SLK_Catch -> "catch"
+    SLK_Class -> "class"
+    SLK_Const -> "const"
+    SLK_Continue -> "continue"
+    SLK_Debugger -> "debugger"
+    SLK_Default -> "default"
+    SLK_Delete -> "delete"
+    SLK_Do -> "do"
+    SLK_Else -> "else"
+    SLK_Enum -> "enum"
+    SLK_Export -> "export"
+    SLK_Extends -> "extends"
+    SLK_For -> "for"
+    SLK_From -> "from"
+    SLK_Function -> "function"
+    SLK_If -> "if"
+    SLK_In -> "in"
+    SLK_Import -> "import"
+    SLK_InstanceOf -> "instanceof"
+    SLK_Let -> "let"
+    SLK_New -> "new"
+    SLK_Of -> "of"
+    SLK_Return -> "return"
+    SLK_Static -> "static"
+    SLK_Switch -> "switch"
+    SLK_This -> "this"
+    SLK_Throw -> "throw"
+    SLK_Try -> "try"
+    SLK_Typeof -> "typeof"
+    SLK_Var -> "var"
+    SLK_While -> "while"
+    SLK_With -> "with"
+    SLK_Yield -> "yield"
+
+allKeywords :: [SLKwd]
+allKeywords = enumFrom $ toEnum 0
 
 data PrimOp
   = ADD

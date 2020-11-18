@@ -53,6 +53,10 @@ instance Pretty SLVal where
       "<participant: " <> pretty who <> ">"
     SLV_Prim {} -> "<primitive>"
     SLV_Form {} -> "<form>"
+    SLV_Kwd k -> pretty k
+
+instance Pretty SLKwd where
+  pretty = viaShow
 
 instance Pretty FluidVar where
   pretty FV_balance = "balance"

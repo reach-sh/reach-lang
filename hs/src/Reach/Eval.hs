@@ -464,7 +464,7 @@ m_fromList_public_builtin = m_fromList_public srcloc_builtin
 
 base_env :: SLEnv
 base_env =
-  m_fromList_public_builtin
+  m_fromList_public_builtin $
     [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
     , ("declassify", SLV_Prim SLPrim_declassify)
     , ("commit", SLV_Prim SLPrim_commit)
@@ -511,6 +511,8 @@ base_env =
              [("App", SLV_Form SLForm_App)])
       )
     ]
+    -- Add language keywords to env to prevent variables from using names.
+    ++ map (\ t -> (show t, SLV_Kwd t)) allKeywords
 
 jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
 jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
@@ -816,7 +818,7 @@ evalAsEnv at obj =
             Nothing -> go key mode
             Just _ -> []
         go key mode =
-          [ (key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mtime))] 
+          [ (key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mtime))]
     SLV_Form (SLForm_parallel_reduce_partial inite Nothing minve mtimeout muntile casees) ->
       M.fromList $
         gom "invariant" PRM_Invariant minve <>
@@ -1686,10 +1688,24 @@ evalApply ctxt at sco st rator rands =
         evalApplyVals ctxt at sco st_rands rator randsvs
       return $ SLRes (rlifts <> alifts) st_res r
 
+getKwdOrPrim :: Ord k => k -> M.Map k SLSSVal -> Maybe SLSSVal
+getKwdOrPrim ident env =
+  case M.lookup ident env of
+    Just s@(SLSSVal _ _ (SLV_Kwd _))  -> Just s
+    Just s@(SLSSVal _ _ (SLV_Prim _)) -> Just s
+    _ -> Nothing
+
 evalPropertyName :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSPropertyName -> SLComp s (SecurityLevel, String)
 evalPropertyName ctxt at sco st pn =
   case pn of
-    JSPropertyIdent _ s -> k_res $ public $ s
+    JSPropertyIdent an s ->
+      -- Do not allow keywords or primitives to be used as property names
+      case getKwdOrPrim s base_env of
+        Just s' -> expect_throw at_n $ Err_Shadowed s s' dummy_at
+        _       -> k_res $ public s
+      where
+        at_n = srcloc_jsa "field" an at
+        dummy_at = SLSSVal at Public $ SLV_Null at ""
     JSPropertyString _ s -> k_res $ public $ trimQuotes s
     JSPropertyNumber an _ ->
       expect_throw at_n (Err_Obj_IllegalNumberField pn)
