@@ -1,1 +1,1 @@
-reachc: Unexpected token, IfToken at ./else.rsh:8:13
+reachc: Unexpected token, IfToken at ./if.rsh:8:13

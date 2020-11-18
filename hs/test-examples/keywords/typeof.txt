@@ -1,1 +1,1 @@
-reachc: Unexpected token, TypeOfToken at ./typeof.rsh:8:13
+reachc: Unexpected token, TypeofToken at ./typeof.rsh:8:13

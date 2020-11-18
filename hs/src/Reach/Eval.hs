@@ -457,7 +457,11 @@ env_lookup at x env =
   case M.lookup x env of
     Just v -> v
     Nothing ->
-      expect_throw at (Err_Eval_UnboundId x $ M.keys env)
+      expect_throw at (Err_Eval_UnboundId x $ M.keys $ M.filter (not . isKwd) env)
+
+isKwd :: SLSSVal -> Bool
+isKwd (SLSSVal _ _ (SLV_Kwd _)) = True
+isKwd _ = False
 
 m_fromList_public_builtin :: [(SLVar, SLVal)] -> SLEnv
 m_fromList_public_builtin = m_fromList_public srcloc_builtin
