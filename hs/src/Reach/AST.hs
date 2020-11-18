@@ -291,7 +291,7 @@ data SLKwd
   | SLK_While
   | SLK_With
   | SLK_Yield
-  deriving (Enum, Eq, Generic, NFData)
+  deriving (Bounded, Enum, Eq, Generic, NFData)
 
 instance Show SLKwd where
   show = \case
@@ -335,7 +335,7 @@ instance Show SLKwd where
     SLK_Yield -> "yield"
 
 allKeywords :: [SLKwd]
-allKeywords = enumFrom $ toEnum 0
+allKeywords = enumFrom minBound
 
 data PrimOp
   = ADD
