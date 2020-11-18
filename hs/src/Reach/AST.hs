@@ -14,6 +14,7 @@ import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.UnsafeUtil
 import Reach.Util
+import Generics.Deriving (conNameOf)
 
 --- Source Information
 data ReachSource
@@ -253,86 +254,48 @@ data SLForm
   deriving (Eq, Generic, NFData, Show)
 
 data SLKwd
-  = SLK_As
-  | SLK_Async
-  | SLK_Await
-  | SLK_Break
-  | SLK_Case
-  | SLK_Catch
-  | SLK_Class
-  | SLK_Const
-  | SLK_Continue
-  | SLK_Debugger
-  | SLK_Default
-  | SLK_Delete
-  | SLK_Do
-  | SLK_Else
-  | SLK_Enum
-  | SLK_Export
-  | SLK_Extends
-  | SLK_For
-  | SLK_From
-  | SLK_Function
-  | SLK_If
-  | SLK_In
-  | SLK_Import
-  | SLK_InstanceOf
-  | SLK_Let
-  | SLK_New
-  | SLK_Of
-  | SLK_Return
-  | SLK_Static
-  | SLK_Switch
-  | SLK_This
-  | SLK_Throw
-  | SLK_Try
-  | SLK_Typeof
-  | SLK_Var
-  | SLK_While
-  | SLK_With
-  | SLK_Yield
+  = SLK_as
+  | SLK_async
+  | SLK_await
+  | SLK_break
+  | SLK_case
+  | SLK_catch
+  | SLK_class
+  | SLK_const
+  | SLK_continue
+  | SLK_debugger
+  | SLK_default
+  | SLK_delete
+  | SLK_do
+  | SLK_else
+  | SLK_enum
+  | SLK_export
+  | SLK_extends
+  | SLK_for
+  | SLK_from
+  | SLK_function
+  | SLK_if
+  | SLK_in
+  | SLK_import
+  | SLK_instanceOf
+  | SLK_let
+  | SLK_new
+  | SLK_of
+  | SLK_return
+  | SLK_static
+  | SLK_switch
+  | SLK_this
+  | SLK_throw
+  | SLK_try
+  | SLK_typeof
+  | SLK_var
+  | SLK_while
+  | SLK_with
+  | SLK_yield
   deriving (Bounded, Enum, Eq, Generic, NFData)
 
 instance Show SLKwd where
-  show = \case
-    SLK_As -> "as"
-    SLK_Async -> "async"
-    SLK_Await -> "await"
-    SLK_Break -> "break"
-    SLK_Case -> "case"
-    SLK_Catch -> "catch"
-    SLK_Class -> "class"
-    SLK_Const -> "const"
-    SLK_Continue -> "continue"
-    SLK_Debugger -> "debugger"
-    SLK_Default -> "default"
-    SLK_Delete -> "delete"
-    SLK_Do -> "do"
-    SLK_Else -> "else"
-    SLK_Enum -> "enum"
-    SLK_Export -> "export"
-    SLK_Extends -> "extends"
-    SLK_For -> "for"
-    SLK_From -> "from"
-    SLK_Function -> "function"
-    SLK_If -> "if"
-    SLK_In -> "in"
-    SLK_Import -> "import"
-    SLK_InstanceOf -> "instanceof"
-    SLK_Let -> "let"
-    SLK_New -> "new"
-    SLK_Of -> "of"
-    SLK_Return -> "return"
-    SLK_Static -> "static"
-    SLK_Switch -> "switch"
-    SLK_This -> "this"
-    SLK_Throw -> "throw"
-    SLK_Try -> "try"
-    SLK_Typeof -> "typeof"
-    SLK_Var -> "var"
-    SLK_While -> "while"
-    SLK_With -> "with"
-    SLK_Yield -> "yield"
+  show k = drop 4 $ conNameOf k
 
 allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound

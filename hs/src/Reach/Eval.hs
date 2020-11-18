@@ -516,7 +516,7 @@ base_env =
       )
     ]
     -- Add language keywords to env to prevent variables from using names.
-    ++ map (\ t -> (show t, SLV_Kwd t)) allKeywords
+    <> map (\ t -> (show t, SLV_Kwd t)) allKeywords
 
 jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
 jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
