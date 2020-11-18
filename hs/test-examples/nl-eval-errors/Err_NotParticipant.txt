@@ -1,1 +1,1 @@
-reachc: error: ./Err_Unknowable_NotParticipant.rsh:9:15:application: unknowable not given a participant as an argument, instead got bool
+reachc: error: ./Err_NotParticipant.rsh:9:15:application: expected a participant as an argument, instead got bool
