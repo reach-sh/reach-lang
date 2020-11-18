@@ -16,6 +16,9 @@ pform_ f = pform f mempty
 pbrackets :: [Doc] -> Doc
 pbrackets xs = group $ render_nest $ vsep $ punctuate comma xs
 
+instance Pretty SrcLoc where
+  pretty = viaShow
+
 instance Pretty SLPart where
   pretty = viaShow
 

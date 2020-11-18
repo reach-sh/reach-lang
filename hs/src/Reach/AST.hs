@@ -75,6 +75,9 @@ get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile "src" -- FIXME
 srcloc_at :: String -> (Maybe TokenPosn) -> SrcLoc -> SrcLoc
 srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
 
+class SrcLocOf a where
+  srclocOf :: a -> SrcLoc
+
 --- Security Levels
 data SecurityLevel
   = Secret
@@ -248,7 +251,7 @@ data SLForm
       , slfpr_minv :: Maybe JSExpression
       , slfpr_mtimeout :: Maybe JSExpression
       , slfpr_muntil :: Maybe JSExpression
-      , slfpr_cases :: [ (JSExpression, JSExpression) ] }
+      , slfpr_cases :: [ (SrcLoc, (JSExpression, JSExpression)) ] }
   deriving (Eq, Generic, NFData, Show)
 
 data PrimOp
@@ -591,6 +594,24 @@ data DLStmt
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
   deriving (Eq, Generic, NFData, Show)
+
+instance SrcLocOf DLStmt where
+  srclocOf = \case
+    DLS_Let a _ _ -> a
+    DLS_ArrayMap a _ _ _ _ -> a
+    DLS_ArrayReduce a _ _ _ _ _ _ -> a
+    DLS_If a _ _ _ _ -> a
+    DLS_Switch a _ _ _ -> a
+    DLS_Return a _ _ -> a
+    DLS_Prompt a _ _ -> a
+    DLS_Stop a -> a
+    DLS_Only a _ _ -> a
+    DLS_ToConsensus {..} -> dls_tc_at
+    DLS_FromConsensus a _ -> a
+    DLS_While {..} -> dls_w_at
+    DLS_Continue a _ -> a
+    DLS_FluidSet a _ _ -> a
+    DLS_FluidRef a _ _ -> a
 
 instance IsPure DLStmt where
   isPure = \case
