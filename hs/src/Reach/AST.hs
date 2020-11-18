@@ -14,6 +14,7 @@ import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.UnsafeUtil
 import Reach.Util
+import Generics.Deriving (conNameOf)
 
 --- Source Information
 data ReachSource
@@ -218,6 +219,7 @@ data SLVal
   | SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
+  | SLV_Kwd SLKwd
   deriving (Eq, Generic, NFData, Show)
 
 isLiteralArray :: SLVal -> Bool
@@ -253,6 +255,53 @@ data SLForm
       , slfpr_muntil :: Maybe JSExpression
       , slfpr_cases :: [ (SrcLoc, (JSExpression, JSExpression)) ] }
   deriving (Eq, Generic, NFData, Show)
+
+data SLKwd
+  = SLK_as
+  | SLK_async
+  | SLK_await
+  | SLK_break
+  | SLK_case
+  | SLK_catch
+  | SLK_class
+  | SLK_const
+  | SLK_continue
+  | SLK_debugger
+  | SLK_default
+  | SLK_delete
+  | SLK_do
+  | SLK_else
+  | SLK_enum
+  | SLK_export
+  | SLK_extends
+  | SLK_for
+  | SLK_from
+  | SLK_function
+  | SLK_if
+  | SLK_in
+  | SLK_import
+  | SLK_instanceOf
+  | SLK_let
+  | SLK_new
+  | SLK_of
+  | SLK_return
+  | SLK_static
+  | SLK_switch
+  | SLK_this
+  | SLK_throw
+  | SLK_try
+  | SLK_typeof
+  | SLK_var
+  | SLK_while
+  | SLK_with
+  | SLK_yield
+  deriving (Bounded, Enum, Eq, Generic, NFData)
+
+instance Show SLKwd where
+  show k = drop 4 $ conNameOf k
+
+allKeywords :: [SLKwd]
+allKeywords = enumFrom minBound
 
 data PrimOp
   = ADD

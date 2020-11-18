@@ -186,6 +186,7 @@ slToDL _at v =
         _ -> return $ DLA_Interact who m t
     SLV_Prim _ -> Nothing
     SLV_Form _ -> Nothing
+    SLV_Kwd _ -> Nothing
 
 typeOfM :: HasCallStack => SrcLoc -> SLVal -> Maybe (SLType, DLArg)
 typeOfM at v = do

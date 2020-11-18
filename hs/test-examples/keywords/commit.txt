@@ -1,0 +1,1 @@
+reachc: error: ./commit.rsh:8:7:const: Invalid name shadowing. Identifier 'commit' is already bound at <builtin>. It cannot be bound again at ./commit.rsh:8:13:id
