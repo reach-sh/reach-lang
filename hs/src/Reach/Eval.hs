@@ -74,7 +74,7 @@ data EvalError
   | Err_Eval_RefNotInt SLVal
   | Err_Eval_IndirectRefNotArray SLVal
   | Err_Eval_RefOutOfBounds Int Integer
-  | Err_Eval_UnboundId SLVar [SLVar]
+  | Err_Eval_UnboundId LookupCtx SLVar [SLVar]
   | Err_ExpectedPrivate SLVal
   | Err_ExpectedPublic SLVal
   | Err_Form_InvalidArgs SLForm Int [JSExpression]
@@ -285,8 +285,10 @@ instance Show EvalError where
       "Invalid array index. Expected uint256, got: " <> displaySlValType slval
     Err_Eval_RefOutOfBounds maxi ix ->
       "Invalid array index. Expected (0 <= ix < " <> show maxi <> "), got " <> show ix
-    Err_Eval_UnboundId slvar slvars ->
-      "Invalid unbound identifier: " <> slvar <> didYouMean slvar slvars 5
+    Err_Eval_UnboundId (LC_RefFrom ctx) slvar slvars ->
+      "Invalid unbound identifier in " <> ctx <> ": " <> slvar <> didYouMean slvar slvars 5
+    Err_Eval_UnboundId LC_CompilerRequired slvar _ ->
+      "Expected the following identifier to be declared: " <> show slvar
     Err_ExpectedPrivate slval ->
       "Invalid declassify. Expected to declassify something private, "
         <> ("but this " <> displaySlValType slval <> " is public.")
@@ -473,14 +475,20 @@ env_merge_ imode at left righte = foldl' (env_insertp_ imode at) left $ M.toList
 env_merge :: HasCallStack => SrcLoc -> SLEnv -> SLEnv -> SLEnv
 env_merge = env_merge_ DisallowShadowing
 
+data LookupCtx
+  -- Signifies the user referencing a variable from a (ctx :: String).
+  = LC_RefFrom String
+  -- Signifies the compiler expecting a certain id to exist.
+  | LC_CompilerRequired
+  deriving (Eq, Show)
+
 -- | The "_" ident may never be looked up.
-env_lookup :: HasCallStack => SrcLoc -> SLVar -> SLEnv -> SLSSVal
-env_lookup at "_" _ = expect_throw at (Err_Eval_LookupUnderscore)
-env_lookup at x env =
+env_lookup :: HasCallStack => SrcLoc -> LookupCtx -> SLVar -> SLEnv -> SLSSVal
+env_lookup at _ "_" _ = expect_throw at Err_Eval_LookupUnderscore
+env_lookup at ctx x env =
   case M.lookup x env of
     Just v -> v
-    Nothing ->
-      expect_throw at (Err_Eval_UnboundId x $ M.keys $ M.filter (not . isKwd) env)
+    Nothing -> expect_throw at $ Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . isKwd) env
 
 isKwd :: SLSSVal -> Bool
 isKwd (SLSSVal _ _ (SLV_Kwd _)) = True
@@ -762,18 +770,18 @@ binaryToPrim at env o =
   case o of
     JSBinOpAnd _ -> impossible "and"
     JSBinOpDivide a -> prim a (DIV)
-    JSBinOpEq a -> fun a "polyEq"
+    JSBinOpEq a -> fun a "polyEq" "=="
     JSBinOpGe a -> prim a (PGE)
     JSBinOpGt a -> prim a (PGT)
     JSBinOpLe a -> prim a (PLE)
     JSBinOpLt a -> prim a (PLT)
     JSBinOpMinus a -> prim a (SUB)
     JSBinOpMod a -> prim a (MOD)
-    JSBinOpNeq a -> fun a "polyNeq"
+    JSBinOpNeq a -> fun a "polyNeq" "!="
     JSBinOpOr _ -> impossible "or"
     JSBinOpPlus a -> prim a (ADD)
-    JSBinOpStrictEq a -> fun a "polyEq"
-    JSBinOpStrictNeq a -> fun a "polyNeq"
+    JSBinOpStrictEq a -> fun a "polyEq" "==="
+    JSBinOpStrictNeq a -> fun a "polyNeq" "!=="
     JSBinOpTimes a -> prim a (MUL)
     JSBinOpLsh a -> prim a (LSH)
     JSBinOpRsh a -> prim a (RSH)
@@ -782,18 +790,18 @@ binaryToPrim at env o =
     JSBinOpBitXor a -> prim a (BXOR)
     j -> expect_throw at $ Err_Parse_IllegalBinOp j
   where
-    fun a s = sss_val $ env_lookup (srcloc_jsa "binop" a at) s env
+    fun a s ctx = sss_val $ env_lookup (srcloc_jsa "binop" a at) (LC_RefFrom ctx) s env
     prim _a p = SLV_Prim $ SLPrim_op p
 
 unaryToPrim :: SrcLoc -> SLEnv -> JSUnaryOp -> SLVal
 unaryToPrim at env o =
   case o of
-    JSUnaryOpMinus a -> fun a "minus"
-    JSUnaryOpNot a -> fun a "not"
-    JSUnaryOpTypeof a -> fun a "typeOf"
+    JSUnaryOpMinus a -> fun a "minus" "-"
+    JSUnaryOpNot a -> fun a "not" "!"
+    JSUnaryOpTypeof a -> fun a "typeOf" "typeOf"
     j -> expect_throw at $ Err_Parse_IllegalUnaOp j
   where
-    fun a s = sss_val $ env_lookup (srcloc_jsa "unop" a at) s env
+    fun a s ctx = sss_val $ env_lookup (srcloc_jsa "unop" a at) (LC_RefFrom ctx) s env
 
 infectWithId :: SLVar -> SLSVal -> SLSVal
 infectWithId v (lvl, sv) = (lvl, sv')
@@ -923,7 +931,7 @@ evalAsEnv at obj =
       retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
     doStdlib n ctxt sco st =
       doApply (lookStdlib n sco) ctxt sco st
-    lookStdlib n sco = sss_val $ env_lookup at n $ sco_env sco
+    lookStdlib n sco = sss_val $ env_lookup at (LC_RefFrom "stdlib") n $ sco_env sco
     doCall p = doApply $ SLV_Prim p
     doApply f ctxt sco st = do
       SLRes lifts st' (SLAppRes _ v) <- evalApplyVals ctxt at sco st f [(public obj)]
@@ -1797,7 +1805,7 @@ evalExpr ctxt at sco st e = do
   let env = sco_env sco
   case e of
     JSIdentifier a x ->
-      retV $ infectWithId x $ sss_sls $ env_lookup (srcloc_jsa "id ref" a at) x env
+      retV $ infectWithId x $ sss_sls $ env_lookup (srcloc_jsa "id ref" a at) (LC_RefFrom "expression") x env
     JSDecimal a ns -> retV $ public $ SLV_Int (srcloc_jsa "decimal" a at) $ numberValue 10 ns
     JSLiteral a l ->
       case l of
@@ -2206,7 +2214,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               Just msg -> do
                 let mk var = do
                       let val =
-                            case env_lookup to_at var penv of
+                            case env_lookup to_at (LC_RefFrom "publish") var penv of
                               (SLSSVal _ Public x) -> x
                               (SLSSVal _ Secret x) ->
                                 -- TODO: use binding loc in error
@@ -2233,7 +2241,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                 case vas of
                   Nothing -> \x -> x
                   Just whov ->
-                    case env_lookup to_at whov env of
+                    case env_lookup to_at (LC_RefFrom "publish") whov env of
                       (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
                         M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just $ (pdvs' M.! who))))
                       _ ->
@@ -2472,7 +2480,7 @@ doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv,
   let parse_dcase (who_at, (whoe, whate)) = do
         -- XXX allow whoe to be an array/tuple
         let who = jse_expect_id who_at whoe
-        let whosv = env_lookup who_at who (sco_env before_sco)
+        let whosv = env_lookup who_at (LC_RefFrom "parallel_reduce case") who (sco_env before_sco)
         let whov = ensure_public who_at $ sss_sls whosv
         let whop =
               -- FIXME make this a function and use regularly
@@ -2677,7 +2685,7 @@ evalStmt ctxt at sco st ss =
       let at' = srcloc_jsa "switch" a at
       let de_v = jse_expect_id at' de
       let env = sco_env sco
-      let (de_lvl, de_val) = sss_sls $ env_lookup at' de_v env
+      let (de_lvl, de_val) = sss_sls $ env_lookup at' (LC_RefFrom "switch statement") de_v env
       let (de_ty, _) = typeOf at de_val
       let varm = case de_ty of
             T_Data m -> m
@@ -2868,12 +2876,12 @@ evalFromClause :: SLLibs -> JSFromClause -> SLEnv
 evalFromClause libm (JSFromClause _ _ libn) =
   lookupDep (ReachSourceFile libn) libm
 
-evalImExportSpecifiers :: SrcLoc -> SLEnv -> (a -> (JSIdent, JSIdent)) -> (JSCommaList a) -> SLEnv
-evalImExportSpecifiers at env go cl =
+evalImExportSpecifiers :: SrcLoc -> LookupCtx -> SLEnv -> (a -> (JSIdent, JSIdent)) -> (JSCommaList a) -> SLEnv
+evalImExportSpecifiers at ctx env go cl =
   foldl' (env_insertp at) mempty $ map (uncurry p) $ map go $ jscl_flatten cl
   where
     p f t = p' (parseIdent at f) (parseIdent at t)
-    p' (_, f) (_, t) = (t, env_lookup at f env)
+    p' (_, f) (_, t) = (t, env_lookup at ctx f env)
 
 evalImportClause :: SrcLoc -> SLEnv -> JSImportClause -> SLEnv
 evalImportClause at env im =
@@ -2883,7 +2891,7 @@ evalImportClause at env im =
       where
         (at', ns) = parseIdent at ji
     JSImportClauseNamed (JSImportsNamed _ iscl _) ->
-      evalImExportSpecifiers at env go iscl
+      evalImExportSpecifiers at (LC_RefFrom "module import") env go iscl
       where
         go = \case
           JSImportSpecifier x -> (x, x)
@@ -2896,7 +2904,7 @@ evalImportClause at env im =
 
 evalExportClause :: SrcLoc -> SLEnv -> JSExportClause -> SLEnv
 evalExportClause at env (JSExportClause _ escl _) =
-  evalImExportSpecifiers at env go escl
+  evalImExportSpecifiers at (LC_RefFrom "module export") env go escl
   where
     go = \case
       JSExportSpecifier x -> (x, x)
@@ -3144,12 +3152,9 @@ compileBundleST cns (JSBundle mods) main = do
   idxr <- newSTCounter 0
   (liblifts, libm) <- evalLibs idxr cns mods
   let exe_ex = libm M.! exe
-  let topv = case M.lookup main exe_ex of
-        Just (SLSSVal _ Public x) -> x
-        Just _ ->
-          impossible "private before dapp"
-        Nothing ->
-          expect_throw srcloc_top (Err_Eval_UnboundId main $ M.keys exe_ex)
+  let topv = case env_lookup srcloc_top LC_CompilerRequired main exe_ex of
+        SLSSVal _ Public x -> x
+        _ -> impossible "private before dapp"
   compileDApp idxr liblifts cns topv
   where
     exe = case mods of

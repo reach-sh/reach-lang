@@ -1,1 +1,1 @@
-reachc: error: <top level>: Invalid unbound identifier: main. Did you mean: ["rps","rental"]
+reachc: error: <top level>: Expected the following identifier to be declared: "main"
