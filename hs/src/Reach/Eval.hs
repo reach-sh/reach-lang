@@ -2615,7 +2615,7 @@ evalStmt ctxt at sco st ss =
           let cont_at = srcloc_jsa lab cont_a at
           SLRes rhs_lifts rhs_st rhs_sv <-
             evalExpr ctxt var_at sco st rhs
-          let whilem =
+          let !whilem =
                 case sco_while_vars sco of
                   Nothing ->
                     expect_throw cont_at $ Err_Eval_ContinueNotInWhile
@@ -3103,6 +3103,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           }
   let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
   SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
+  ensure_mode at st_final SLM_Step "program termination"
   tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
   let make_sps_entry (_p_at, pn, _iat, io) =
         (pn, InteractEnv $ M.map getType iom)

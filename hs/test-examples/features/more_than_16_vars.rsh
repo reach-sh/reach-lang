@@ -29,5 +29,6 @@ export const main = Reach.App(
       u, v, w, x, y,
       z
     );
+    commit();
   }
 );

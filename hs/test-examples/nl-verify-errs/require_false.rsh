@@ -4,5 +4,6 @@ export const main = Reach.App(
   {}, [['A', {}]], (A) => {
     A.publish();
     require(false);
+    commit();
   }
 );

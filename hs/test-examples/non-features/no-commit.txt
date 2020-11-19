@@ -1,0 +1,1 @@
+reachc: error: ./no-commit.rsh:2:30:application: Invalid operation. `program termination` cannot be used in context: SLM_ConsensusStep

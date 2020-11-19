@@ -45,5 +45,7 @@ export const main = Reach.App(
     // TODO: structural object equality comparison
     // "Err_Type_Mismatch" (int vs obj)
     // assert(obj0 == obj1);
+
+    commit();
   }
 );

@@ -33,5 +33,6 @@ export const main = Reach.App(
     require(x == 1);
     require(x2 == 2);
     require(x11 == 11);
+    commit();
   }
 );

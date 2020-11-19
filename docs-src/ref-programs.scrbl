@@ -220,6 +220,7 @@ The @reachin{program} argument must be a syntactic @tech{arrow expression}.
 The arguments to this arrow must match the number and order of @reachin{participantDefinitions}.
 The function body is the program to be @tech{compile}d.
 It specifies a @tech{step}, which means its content is specified by @Secref["ref-programs-step"].
+When it returns, it must be in a @tech{step}, as well; which means that its content cannot end within a @tech{consensus step}.
 
 If the result of @reachin{Reach.App} is eventually bound to an identifier that is @tech{export}ed, then it may be a target given to the compiler, as discussed in @seclink["ref-usage-compile"]{the section on usage}.
 
