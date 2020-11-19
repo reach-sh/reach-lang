@@ -1,1 +1,1 @@
-reachc: error: ./rest_parameter.rsh:12:20:application: Invalid function appication. Expected 1 args, got 5 for function defined at ./rest_parameter.rsh:3:1:function exp
+reachc: error: ./rest_parameter.rsh:12:20:application: Invalid function application. Expected 1 args, got 5 for function defined at ./rest_parameter.rsh:3:1:function exp
