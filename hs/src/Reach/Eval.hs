@@ -157,23 +157,45 @@ didYouMean invalidStr validOptions maxClosest = case validOptions of
     closest = take maxClosest $ sortBy (comparing distance) validOptions
     distance = restrictedDamerauLevenshteinDistance defaultEditCosts invalidStr
 
-showVS :: Show a => a -> a -> String
-showVS fx fy = show fx <> " vs " <> show fy
-
-showDiff :: Eq b => a -> a -> (a -> b) -> String -> (b -> b -> String) -> String
-showDiff x y f lab s =
+showDiff :: Eq b => a -> a -> (a -> b) -> (b -> b -> String) -> String
+showDiff x y f s =
   let fx = f x
       fy = f y
    in case fx == fy of
         True -> ""
-        False -> "\n  " <> lab <> ": " <> s fx fy
+        False -> "\n  * " <> s fx fy
+
+getCorrectGrammer :: Foldable t => t a -> p -> p -> p
+getCorrectGrammer xs sing plur = case length xs of
+  1 -> sing
+  _ -> plur
 
 showStateDiff :: SLState -> SLState -> String
 showStateDiff x y =
-  showDiff x y st_mode "Mode" showVS
-    <> showDiff x y st_live "Live" showVS
-    <> showDiff x y st_after_first "After First Message" showVS
-    <> showDiff x y st_pdvs "Participant Definitions" showVS
+  "\nIssues:"
+  <> showDiff x y st_mode (\ xMode yMode ->
+    unwords ["Expected to be in ", show yMode, ", but in ", show xMode <> "."])
+  <> showDiff x y st_live (\ xLive yLive ->
+      case (xLive, yLive) of
+        (False, True) -> "Expected there to be live state."
+        (True, False) -> "Expected there to be no live state."
+        _             -> fail "Compiler error"
+    )
+  <> showDiff x y st_after_first (\ xAfter yAfter ->
+      case (xAfter, yAfter) of
+        (False, True) -> "Expected a publication to have been made by this point."
+        (True, False) -> "Expected no publication to have been made by this point."
+        _             -> fail "Compiler error"
+    )
+  <> showDiff x y st_pdvs (\ xParts yParts ->
+      let showParts = intercalate ", " . map (show . fst) . M.toList in
+      let actual = case length xParts of
+                    0 -> "there are none."
+                    _ -> unwords ["only", showParts xParts, getCorrectGrammer xParts "is." "are."]
+      in
+      unwords ["Expected", showParts yParts, "to be",
+        getCorrectGrammer yParts "a participant" "participants", "but", actual]
+    )
 
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
@@ -181,7 +203,7 @@ instance Show EvalError where
     Err_Zip_ArraysNotEqualLength x y ->
       "Zip requires arrays of equal length, but got " <> show x <> " and " <> show y
     Err_Apply_ArgCount cloAt nFormals nArgs ->
-      "Invalid function appication. Expected " <> show nFormals <> " args, got " <> show nArgs <> " for function defined at " <> show cloAt
+      "Invalid function application. Expected " <> show nFormals <> " args, got " <> show nArgs <> " for function defined at " <> show cloAt
     Err_Block_Assign _jsop _stmts ->
       "Invalid assignment" -- FIXME explain why
     Err_Block_IllegalJS _stmt ->
@@ -816,7 +838,7 @@ evalAsEnv at obj =
             Nothing -> go key mode
             Just _ -> []
         go key mode =
-          [ (key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mtime))] 
+          [ (key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mtime))]
     SLV_Form (SLForm_parallel_reduce_partial inite Nothing minve mtimeout muntile casees) ->
       M.fromList $
         gom "invariant" PRM_Invariant minve <>

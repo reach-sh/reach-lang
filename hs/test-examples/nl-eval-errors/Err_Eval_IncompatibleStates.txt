@@ -1,3 +1,4 @@
-reachc: error: ./Err_Eval_IncompatibleStates.rsh:6:28:after expr stmt semicolon: incompatible states:
-  After First Message: False vs True
-  Participant Definitions: fromList [] vs fromList [("A",DLVar ./Err_Eval_IncompatibleStates.rsh:5:6:dot "A" Address 0)]
+reachc: error: ./test-examples/nl-eval-errors/Err_Eval_IncompatibleStates.rsh:6:28:after expr stmt semicolon: incompatible states:
+Issues:
+  * Expected a publication to have been made by this point.
+  * Expected "A" to be a participant but there are none.
