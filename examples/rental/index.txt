@@ -1,1 +1,1 @@
-reachc: error: <top level>: Invalid unbound identifier: main. Did you mean: ["fair","l_first","t_first"]
+reachc: error: <top level>: Expected the following identifier to be declared: "main"

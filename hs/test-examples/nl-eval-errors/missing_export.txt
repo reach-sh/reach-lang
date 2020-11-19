@@ -1,1 +1,1 @@
-reachc: error: ./missing_export.rsh:3:1:import: Invalid unbound identifier: blag. Did you mean: ["blah"]
+reachc: error: ./missing_export.rsh:3:1:import: Invalid unbound identifier in module import: blag. Did you mean: ["blah"]
