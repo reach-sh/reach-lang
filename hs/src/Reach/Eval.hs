@@ -29,6 +29,8 @@ import Safe (atMay)
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
+import Reach.Pretty()
+-- import Reach.Texty
 -- import Debug.Trace
 
 --- Errors
@@ -95,14 +97,13 @@ data EvalError
   | Err_While_IllegalInvariant [JSExpression]
   | Err_Only_NotOneClosure SLVal
   | Err_Each_NotTuple SLVal
-  | Err_Each_NotParticipant SLVal
+  | Err_NotParticipant SLVal
   | Err_Transfer_NotBound SLPart
   | Err_Eval_IncompatibleStates SLState SLState
   | Err_Eval_NotSecretIdent SLVar
   | Err_Eval_NotPublicIdent SLVar
   | Err_Eval_LookupUnderscore
   | Err_Eval_NotSpreadable SLVal
-  | Err_Unknowable_NotParticipant SLVal
   | Err_Zip_ArraysNotEqualLength Integer Integer
   | Err_Switch_NotData SLVal
   | Err_Switch_DoubleCase SrcLoc SrcLoc (Maybe SLVar)
@@ -112,6 +113,7 @@ data EvalError
   | Err_RecursionDepthLimit
   | Err_ParallelReduce_Incomplete ParallelReduceMode
   | Err_ParallelReduce_NoInvariant
+  | Err_ParallelReduce_InvalidBody String
   | Err_Eval_MustBeLive String
   deriving (Eq, Generic)
 
@@ -350,10 +352,8 @@ instance Show EvalError where
       "PART.only not given a single closure, with no arguments, as an argument, instead got " <> (displaySlValType slval)
     Err_Each_NotTuple slval ->
       "each not given a tuple as an argument, instead got " <> displaySlValType slval
-    Err_Each_NotParticipant slval ->
-      "each not given a participant as an argument, instead got " <> displaySlValType slval
-    Err_Unknowable_NotParticipant slval ->
-      "unknowable not given a participant as an argument, instead got " <> displaySlValType slval
+    Err_NotParticipant slval ->
+      "expected a participant as an argument, instead got " <> displaySlValType slval
     Err_Transfer_NotBound who ->
       "cannot transfer to unbound participant, " <> bunpack who
     Err_Eval_IncompatibleStates x y ->
@@ -379,9 +379,11 @@ instance Show EvalError where
     Err_RecursionDepthLimit ->
       "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
     Err_ParallelReduce_Incomplete m ->
-      "parallel reduce call incomplete; ending in the midst of " <> show m
+      "parallel reduce, call incomplete; ending in the midst of " <> show m
     Err_ParallelReduce_NoInvariant ->
-      "parallel reduce missing invariant"
+      "parallel reduce, missing invariant"
+    Err_ParallelReduce_InvalidBody m ->
+      "parallel reduce, invalid body: " <> m
     Err_Eval_MustBeLive m ->
       "must be live at " <> m
 
@@ -479,14 +481,18 @@ env_lookup at x env =
   case M.lookup x env of
     Just v -> v
     Nothing ->
-      expect_throw at (Err_Eval_UnboundId x $ M.keys env)
+      expect_throw at (Err_Eval_UnboundId x $ M.keys $ M.filter (not . isKwd) env)
+
+isKwd :: SLSSVal -> Bool
+isKwd (SLSSVal _ _ (SLV_Kwd _)) = True
+isKwd _ = False
 
 m_fromList_public_builtin :: [(SLVar, SLVal)] -> SLEnv
 m_fromList_public_builtin = m_fromList_public srcloc_builtin
 
 base_env :: SLEnv
 base_env =
-  m_fromList_public_builtin
+  m_fromList_public_builtin $
     [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
     , ("declassify", SLV_Prim SLPrim_declassify)
     , ("commit", SLV_Prim SLPrim_commit)
@@ -533,6 +539,8 @@ base_env =
              [("App", SLV_Form SLForm_App)])
       )
     ]
+    -- Add language keywords to env to prevent variables from using names.
+    <> map (\ t -> (show t, SLV_Kwd t)) allKeywords
 
 jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
 jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
@@ -987,7 +995,7 @@ evalForm ctxt at sco st f args =
                 map
                   (\case
                      SLV_Participant _ who mv _ -> (who, mv)
-                     v -> expect_throw at $ Err_Each_NotParticipant v)
+                     v -> expect_throw at $ Err_NotParticipant v)
                   part_vs
           return $ SLRes part_lifts part_st $ public $ SLV_Form $ SLForm_EachAns parts at (sco_to_cloenv sco) thunke
         _ ->
@@ -1012,7 +1020,7 @@ evalForm ctxt at sco st f args =
           SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st_m notter_e
           let participant_who = \case
                 SLV_Participant _ who _ _ -> who
-                v -> expect_throw at $ Err_Unknowable_NotParticipant v
+                v -> expect_throw at $ Err_NotParticipant v
           let notter = participant_who v_n
           SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
           let knower = participant_who v_kn
@@ -1046,7 +1054,7 @@ evalForm ctxt at sco st f args =
         Just PRM_Case ->
           retV $ public $ SLV_Form $
             SLForm_parallel_reduce_partial inite Nothing minve mtimeoute muntile $
-              casees ++ [two_args]
+              casees ++ [(at, two_args)]
   where
     illegal_args n = expect_throw at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -1708,10 +1716,24 @@ evalApply ctxt at sco st rator rands =
         evalApplyVals ctxt at sco st_rands rator randsvs
       return $ SLRes (rlifts <> alifts) st_res r
 
+getKwdOrPrim :: Ord k => k -> M.Map k SLSSVal -> Maybe SLSSVal
+getKwdOrPrim ident env =
+  case M.lookup ident env of
+    Just s@(SLSSVal _ _ (SLV_Kwd _))  -> Just s
+    Just s@(SLSSVal _ _ (SLV_Prim _)) -> Just s
+    _ -> Nothing
+
 evalPropertyName :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSPropertyName -> SLComp s (SecurityLevel, String)
 evalPropertyName ctxt at sco st pn =
   case pn of
-    JSPropertyIdent _ s -> k_res $ public $ s
+    JSPropertyIdent an s ->
+      -- Do not allow keywords or primitives to be used as property names
+      case getKwdOrPrim s base_env of
+        Just s' -> expect_throw at_n $ Err_Shadowed s s' dummy_at
+        _       -> k_res $ public s
+      where
+        at_n = srcloc_jsa "field" an at
+        dummy_at = SLSSVal at Public $ SLV_Null at ""
     JSPropertyString _ s -> k_res $ public $ trimQuotes s
     JSPropertyNumber an _ ->
       expect_throw at_n (Err_Obj_IllegalNumberField pn)
@@ -2330,6 +2352,37 @@ doWhileLikeInitEval ctxt at sco st lhs rhs = do
   let post_lifts = bal_lifts
   return $ (pre_lifts, post_lifts, init_vars, init_dl, st_init', sco_env')
 
+doWhileLikeContinueEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> M.Map SLVar DLVar -> SLSVal -> SLComp s ()
+doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
+  SLRes decl_lifts st_decl decl_env <-
+    evalDeclLHS ctxt at sco st rhs_lvl mempty rhs_v lhs
+  let st_decl' = stEnsureMode at SLM_ConsensusStep st_decl
+  let cont_dam =
+        M.fromList $ map f $ M.toList decl_env
+        where
+          f (v, sv) = (dv, da)
+            where
+              dv = case M.lookup v whilem of
+                Nothing ->
+                  expect_throw at $ Err_Eval_ContinueNotLoopVariable v
+                Just x -> x
+              val = ensure_public at $ sss_sls sv
+              da = checkType at et val
+              DLVar _ _ et _ = dv
+  SLRes fr_lifts _ balance_v <-
+    doFluidRef ctxt at st_decl FV_balance
+  let balance_da =
+        checkType at T_UInt $
+          ensure_public at balance_v
+  let unknown_balance_dv = whilem M.! internalVar_balance
+  let cont_dam' =
+        M.insert unknown_balance_dv balance_da cont_dam
+  let cont_das = DLAssignment cont_dam'
+  let lifts' =
+        decl_lifts <> fr_lifts
+          <> (return $ DLS_Continue at cont_das)
+  return $ SLRes lifts' st_decl' ()
+
 evalPureExprToBlock :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> SLType -> ST s DLBlock
 evalPureExprToBlock ctxt at sco st klifts e rest = do
   let pure_st = st {st_mode = SLM_ConsensusPure}
@@ -2339,7 +2392,58 @@ evalPureExprToBlock ctxt at sco st klifts e rest = do
       checkResType at rest $ evalExpr ctxt at sco pure_st e
   return $ DLBlock at fs e_lifts e_da
 
-doParallelReduce :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> (JSExpression, Maybe ParallelReduceMode, Maybe JSExpression, Maybe JSExpression, Maybe JSExpression, [ (JSExpression, JSExpression) ]) -> SrcLoc -> [JSStatement] -> SLComp s SLStmtRes
+checkParallelReduceBody :: SrcLoc -> SLPart -> DLStmts -> ST s ()
+checkParallelReduceBody at who stmts = checkPrompt stmts
+  where
+    checkPrompt = \case
+      ((DLS_Prompt _ _ body) Seq.:<| Seq.Empty) ->
+        checkOuter body
+      _ -> bad at $ "not surrounded by prompt"
+    checkOuter = \case
+      Seq.Empty -> bad at $ "empty body"
+      ((DLS_Only at' op _) Seq.:<| more) ->
+        case who == op of
+          True -> checkOuter more
+          False -> bad at' $ "only not " <> show who
+      ((DLS_ToConsensus at' op _ _ _ _ _ Nothing cons) Seq.:<| Seq.Empty) ->
+        case who == op of
+          True -> checkInner cons
+          False -> bad at' $ "publish not " <> show who
+      (s Seq.:<| _) ->
+        bad (srclocOf s) $ "body not only or publish, given " <> conNameOf s
+    checkInner Seq.Empty = bad at $ "empty consensus step"
+    checkInner (s Seq.:<| more) =
+      case (s, more) of
+        (DLS_Let {}, _) -> cmore
+        (DLS_ArrayMap {}, _) -> cmore
+        (DLS_ArrayReduce {}, _) -> cmore
+        (DLS_If _ _ _ l r, Seq.Empty) ->
+          checkInner l >> checkInner r
+        (DLS_If at' _ _ _ _, _) ->
+          bad at' $ "consensus if not in tail position"
+        (DLS_Switch _ _ _ csm, Seq.Empty) ->
+          checkInnerCSM csm
+        (DLS_Switch at' _ _ _, _) ->
+          bad at' $ "consensus switch not in tail position"
+        (DLS_Return {}, Seq.Empty) -> return ()
+        (DLS_Return at' _ _, _) ->
+          bad at' $ "consensus ret not in tail position"
+        (DLS_Prompt {}, _) -> cmore
+        (DLS_Stop at', _) -> bad at' $ "stop in consensus"
+        (DLS_Only {}, _) -> impossible "only in consensus"
+        (DLS_ToConsensus {}, _) -> impossible "publish in consensus"
+        (DLS_FromConsensus at' _, _) -> bad at' $ "commit in consensus step"
+        (DLS_While at' _ _ _ _, _) -> bad at' $ "while in consensus step"
+        (DLS_Continue at' _, _) -> bad at' $ "continue in consensus step"
+        (DLS_FluidSet {}, _) -> cmore
+        (DLS_FluidRef {}, _) -> cmore
+      where
+        cmore = checkInner more
+    checkInnerCSM =
+      mapM_ checkInner . map snd . M.elems
+    bad at' m = expect_throw at' $ Err_ParallelReduce_InvalidBody m
+
+doParallelReduce :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> (JSExpression, Maybe ParallelReduceMode, Maybe JSExpression, Maybe JSExpression, Maybe JSExpression, [ (SrcLoc, (JSExpression, JSExpression)) ]) -> SrcLoc -> [JSStatement] -> SLComp s SLStmtRes
 doParallelReduce _ at _ _ _ (_, Just m, _, _, _, _) _ _ =
   expect_throw at $ Err_ParallelReduce_Incomplete m
 doParallelReduce _ at _ _ _ (_, Nothing, Nothing, _, _, _) _ _ =
@@ -2348,7 +2452,7 @@ doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv,
   ensure_mode at st SLM_Step "parallel reduce"
   allowed_to_wait ctxt at st (return ())
   ensure_live at st "parallel reduce"
-  (init_pre_lifts, init_post_lifts, _XXX_init_vars, init_dl, init_st, after_sco) <-
+  (init_pre_lifts, init_post_lifts, init_vars, init_dl, init_st, after_sco) <-
     doWhileLikeInitEval ctxt at before_sco st lhs slfpr_init
   let mevalPureExprToBlock sco klifts me rest =
         case me of
@@ -2357,14 +2461,44 @@ doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv,
             Just <$> evalPureExprToBlock ctxt at sco init_st klifts e rest
   inv_b <- evalPureExprToBlock ctxt at after_sco init_st init_post_lifts slfpr_inv T_Bool
   muntil_b <- mevalPureExprToBlock after_sco init_post_lifts slfpr_muntil T_Bool
+  -- XXX timeout should include who should do it
   mtimeout_b <- mevalPureExprToBlock before_sco mempty slfpr_mtimeout T_UInt
   let (timeout_lifts, timeout_mda) =
         case mtimeout_b of
           Nothing -> return (mempty, Nothing)
           Just (DLBlock _ _ l d) -> return (l, Just d)
-  -- XXX if there's no until OR timeout... maybe error?
-  let after_st = st { st_mode = SLM_ConsensusStep }
-  let dcases = "XXX pr cases " <> show slfpr_cases
+  -- XXX if there's no until OR timeout... then we can't end this, so the tail
+  -- must be empty and funds might be locked
+  let after_st = init_st { st_mode = SLM_ConsensusStep }
+  let parse_dcase (who_at, (whoe, whate)) = do
+        -- XXX allow whoe to be an array/tuple
+        let who = jse_expect_id who_at whoe
+        let whosv = env_lookup who_at who (sco_env before_sco)
+        let whov = ensure_public who_at $ sss_sls whosv
+        let whop =
+              -- FIXME make this a function and use regularly
+              case whov of
+                SLV_Participant _ x _ _ -> x
+                _ -> expect_throw who_at $ Err_NotParticipant whov
+        let body_e =
+              case whate of
+                -- XXX allow identifiers listed in aformals to be
+                -- implicitly tested for nothing-ness
+                JSArrowExpression _XXX_aformals a s ->
+                  JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a s
+                _ -> expect_throw who_at $ Err_Eval_IllegalJS whate
+        SLRes _ _ body_clos <- evalExpr ctxt who_at after_sco init_st body_e
+        let body_clo = ensure_public who_at body_clos
+        SLRes body_lifts body_st (SLAppRes _ body_res) <-
+          evalApplyVals ctxt who_at after_sco init_st body_clo []
+        -- traceM $ "dcase " <> show whop
+        -- traceM $ show $ pretty body_lifts
+        checkParallelReduceBody who_at whop body_lifts
+        SLRes cont_lifts _ () <-
+          doWhileLikeContinueEval ctxt at after_sco body_st lhs init_vars body_res
+        let lifts' = body_lifts <> cont_lifts
+        return (whop, lifts')
+  dcases <- mapM parse_dcase slfpr_cases
   let the_pr = impossible $ "XXX " <> show ("DLS_ParallelReduce"::String, at, init_dl, inv_b, muntil_b, timeout_mda, dcases)
   let final_lifts =
         init_pre_lifts <> timeout_lifts <> (return $ the_pr) <> init_post_lifts
@@ -2496,48 +2630,24 @@ evalStmt ctxt at sco st ss =
       keepLifts elifts $ evalStmtTrampoline ctxt sp at_after sco st_e sev ks
     ((JSAssignStatement lhs op rhs _asp) : ks) ->
       case (op, ks) of
-        ((JSAssign var_a), ((JSContinue cont_a _bl cont_sp) : cont_ks)) ->
-          case st_mode st of
-            SLM_ConsensusStep -> do
-              let cont_at = srcloc_jsa lab cont_a at
-              let env = sco_env sco
-              SLRes decl_lifts st_decl decl_env <-
-                evalDecl ctxt var_at sco st lhs rhs
-              let st_decl' = stEnsureMode at SLM_ConsensusStep st_decl
-              let whilem =
-                    case sco_while_vars sco of
-                      Nothing -> expect_throw cont_at $ Err_Eval_ContinueNotInWhile
-                      Just x -> x
-              let cont_dam =
-                    M.fromList $ map f $ M.toList decl_env
-                    where
-                      f (v, sv) = (dv, da)
-                        where
-                          dv = case M.lookup v whilem of
-                            Nothing ->
-                              expect_throw var_at $ Err_Eval_ContinueNotLoopVariable v
-                            Just x -> x
-                          val = ensure_public var_at $ sss_sls sv
-                          da = checkType at et val
-                          DLVar _ _ et _ = dv
-              SLRes fr_lifts _ balance_v <-
-                doFluidRef ctxt cont_at st_decl FV_balance
-              let balance_da =
-                    checkType cont_at T_UInt $
-                      ensure_public cont_at balance_v
-              let unknown_balance_dv = whilem M.! internalVar_balance
-              let cont_dam' =
-                    M.insert unknown_balance_dv balance_da cont_dam
-              let cont_das = DLAssignment cont_dam'
-              let lifts' =
-                    decl_lifts <> fr_lifts
-                      <> (return $ DLS_Continue cont_at cont_das)
-              expect_empty_tail lab cont_a cont_sp cont_at cont_ks $
-                return $ SLRes lifts' st_decl' $ SLStmtRes env []
-            cm -> expect_throw var_at $ Err_Eval_IllegalMode cm "continue"
-          where
-            lab = "continue"
-            var_at = srcloc_jsa lab var_a at
+        ((JSAssign var_a), ((JSContinue cont_a _bl cont_sp) : cont_ks)) -> do
+          let lab = "continue"
+          ensure_mode at st SLM_ConsensusStep lab
+          let var_at = srcloc_jsa lab var_a at
+          let cont_at = srcloc_jsa lab cont_a at
+          SLRes rhs_lifts rhs_st rhs_sv <-
+            evalExpr ctxt var_at sco st rhs
+          let whilem =
+                case sco_while_vars sco of
+                  Nothing ->
+                    expect_throw cont_at $ Err_Eval_ContinueNotInWhile
+                  Just x -> x
+          SLRes cont_lifts st_decl' () <-
+            doWhileLikeContinueEval ctxt cont_at sco rhs_st lhs whilem rhs_sv
+          let lifts' = rhs_lifts <> cont_lifts
+          let env = sco_env sco
+          expect_empty_tail lab cont_a cont_sp cont_at cont_ks $
+            return $ SLRes lifts' st_decl' $ SLStmtRes env []
         (jsop, stmts) ->
           expect_throw (srcloc_jsa "assign" JSNoAnnot at) (Err_Block_Assign jsop stmts)
     ((JSMethodCall e a args ra sp) : ks) ->

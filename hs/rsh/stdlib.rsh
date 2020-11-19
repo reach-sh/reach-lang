@@ -80,6 +80,8 @@ export function closeTo(Who, after) {
   after();
   exit(); }
 
+export const fail = () => assume(false);
+
 // Standard library functions that should be hidden in some way, like
 // SLV_HaskellFunction FIXME
 

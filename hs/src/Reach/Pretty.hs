@@ -16,6 +16,9 @@ pform_ f = pform f mempty
 pbrackets :: [Doc] -> Doc
 pbrackets xs = group $ render_nest $ vsep $ punctuate comma xs
 
+instance Pretty SrcLoc where
+  pretty = viaShow
+
 instance Pretty SLPart where
   pretty = viaShow
 
@@ -53,6 +56,10 @@ instance Pretty SLVal where
       "<participant: " <> pretty who <> ">"
     SLV_Prim {} -> "<primitive>"
     SLV_Form {} -> "<form>"
+    SLV_Kwd k -> pretty k
+
+instance Pretty SLKwd where
+  pretty = viaShow
 
 instance Pretty FluidVar where
   pretty FV_balance = "balance"
