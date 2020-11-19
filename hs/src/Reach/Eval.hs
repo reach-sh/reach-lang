@@ -159,23 +159,44 @@ didYouMean invalidStr validOptions maxClosest = case validOptions of
     closest = take maxClosest $ sortBy (comparing distance) validOptions
     distance = restrictedDamerauLevenshteinDistance defaultEditCosts invalidStr
 
-showVS :: Show a => a -> a -> String
-showVS fx fy = show fx <> " vs " <> show fy
-
-showDiff :: Eq b => a -> a -> (a -> b) -> String -> (b -> b -> String) -> String
-showDiff x y f lab s =
+showDiff :: Eq b => a -> a -> (a -> b) -> (b -> b -> String) -> String
+showDiff x y f s =
   let fx = f x
       fy = f y
    in case fx == fy of
         True -> ""
-        False -> "\n  " <> lab <> ": " <> s fx fy
+        False -> "\n  * " <> s fx fy
+
+getCorrectGrammer :: Foldable t => t a -> p -> p -> p
+getCorrectGrammer xs sing plur = case length xs of
+  1 -> sing
+  _ -> plur
 
 showStateDiff :: SLState -> SLState -> String
 showStateDiff x y =
-  showDiff x y st_mode "Mode" showVS
-    <> showDiff x y st_live "Live" showVS
-    <> showDiff x y st_after_first "After First Message" showVS
-    <> showDiff x y st_pdvs "Participant Definitions" showVS
+  "\nThe expected state of the program varies between branches, because:"
+  <> showDiff x y st_mode (\ xMode yMode ->
+    unwords ["Expected to be in ", show yMode, ", but in ", show xMode <> "."])
+  <> showDiff x y st_live (\ xLive yLive ->
+      case (xLive, yLive) of
+        (False, True) -> "Expected there to be live state."
+        (True, False) -> "Expected there to be no live state."
+        _             -> impossible "expected st_live to differ."
+    )
+  <> showDiff x y st_after_first (\ xAfter yAfter ->
+      case (xAfter, yAfter) of
+        (False, True) -> "Expected a publication to have been made by this point."
+        (True, False) -> "Expected no publication to have been made by this point."
+        _             -> impossible "expected st_after_first to differ."
+    )
+  <> showDiff x y st_pdvs (\ xParts yParts ->
+      let showParts = intercalate ", " . map (show . fst) . M.toList in
+      let actual = case length xParts of
+                    0 -> getCorrectGrammer yParts "it hasn't." "they haven't."
+                    _ -> unwords ["only", showParts xParts, getCorrectGrammer xParts "has." "have."]
+      in
+      unwords ["Expected", showParts yParts, "to have published a message or been set, but", actual]
+    )
 
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
@@ -183,7 +204,7 @@ instance Show EvalError where
     Err_Zip_ArraysNotEqualLength x y ->
       "Zip requires arrays of equal length, but got " <> show x <> " and " <> show y
     Err_Apply_ArgCount cloAt nFormals nArgs ->
-      "Invalid function appication. Expected " <> show nFormals <> " args, got " <> show nArgs <> " for function defined at " <> show cloAt
+      "Invalid function application. Expected " <> show nFormals <> " args, got " <> show nArgs <> " for function defined at " <> show cloAt
     Err_Block_Assign _jsop _stmts ->
       "Invalid assignment" -- FIXME explain why
     Err_Block_IllegalJS _stmt ->
