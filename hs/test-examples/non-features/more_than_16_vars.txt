@@ -1,0 +1,18 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying with mode = VM_Honest
+  Verifying with mode = VM_Dishonest RoleContract
+  Verifying with mode = VM_Dishonest (RolePart "A")
+Checked 12 theorems; No failures!
+solc failed:
+STDOUT:
+
+STDERR:
+Compiler error: Stack too deep, try removing local variables.
+  --> /private/tmp/reachc-sol-1776a82f171c54a6/compiled.sol:78:133:
+   |
+78 |  ... 9, _a.v40, _a.v41, _a.v42, _a.v43, _a.v44, _a.v45, _a.v46, _a.v47, _a.v4 ...
+   |                                         ^^
+
+
+
