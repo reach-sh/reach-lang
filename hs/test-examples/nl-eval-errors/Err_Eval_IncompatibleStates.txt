@@ -1,4 +1,4 @@
 reachc: error: ./Err_Eval_IncompatibleStates.rsh:6:28:after expr stmt semicolon: incompatible states:
-Issues:
+The expected state of the program varies between branches, because:
   * Expected a publication to have been made by this point.
-  * Expected "A" to be a participant but there are none.
+  * Expected "A" to have published a message or been set, but it hasn't.

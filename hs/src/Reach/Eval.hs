@@ -174,29 +174,28 @@ getCorrectGrammer xs sing plur = case length xs of
 
 showStateDiff :: SLState -> SLState -> String
 showStateDiff x y =
-  "\nIssues:"
+  "\nThe expected state of the program varies between branches, because:"
   <> showDiff x y st_mode (\ xMode yMode ->
     unwords ["Expected to be in ", show yMode, ", but in ", show xMode <> "."])
   <> showDiff x y st_live (\ xLive yLive ->
       case (xLive, yLive) of
         (False, True) -> "Expected there to be live state."
         (True, False) -> "Expected there to be no live state."
-        _             -> fail "Compiler error"
+        _             -> impossible "expected st_live to differ."
     )
   <> showDiff x y st_after_first (\ xAfter yAfter ->
       case (xAfter, yAfter) of
         (False, True) -> "Expected a publication to have been made by this point."
         (True, False) -> "Expected no publication to have been made by this point."
-        _             -> fail "Compiler error"
+        _             -> impossible "expected st_after_first to differ."
     )
   <> showDiff x y st_pdvs (\ xParts yParts ->
       let showParts = intercalate ", " . map (show . fst) . M.toList in
       let actual = case length xParts of
-                    0 -> "there are none."
-                    _ -> unwords ["only", showParts xParts, getCorrectGrammer xParts "is." "are."]
+                    0 -> getCorrectGrammer yParts "it hasn't." "they haven't."
+                    _ -> unwords ["only", showParts xParts, getCorrectGrammer xParts "has." "have."]
       in
-      unwords ["Expected", showParts yParts, "to be",
-        getCorrectGrammer yParts "a participant" "participants", "but", actual]
+      unwords ["Expected", showParts yParts, "to have published a message or been set, but", actual]
     )
 
 -- TODO more hints on why invalid syntax is invalid
