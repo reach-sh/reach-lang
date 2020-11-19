@@ -30,8 +30,8 @@ import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
 import Reach.Pretty()
-import Reach.Texty
-import Debug.Trace
+-- import Reach.Texty
+-- import Debug.Trace
 
 --- Errors
 
@@ -2469,8 +2469,8 @@ doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv,
         let body_clo = ensure_public who_at body_clos
         SLRes body_lifts body_st (SLAppRes _ body_res) <-
           evalApplyVals ctxt who_at after_sco init_st body_clo []
-        traceM $ "dcase " <> show whop
-        traceM $ show $ pretty body_lifts
+        -- traceM $ "dcase " <> show whop
+        -- traceM $ show $ pretty body_lifts
         checkParallelReduceBody who_at whop body_lifts
         SLRes cont_lifts _ () <-
           doWhileLikeContinueEval ctxt at after_sco body_st lhs init_vars body_res
