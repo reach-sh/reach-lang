@@ -985,9 +985,9 @@ A @deftech{tuple} literal, written @reachin{[ EXPR_0, ..., EXPR_n ]}, is an @tec
 
 @(mint-define! '("array"))
 @reach{
-  const x = array([1, 2, 3]); }
+  const x = array(UInt, [1, 2, 3]); }
 
-Converts a @tech{tuple} of homogeneous values into an @deftech{array}.
+Converts a @tech{tuple} of homogeneous values of the specific type into an @deftech{array}.
 
 @subsubsection{Element reference}
 
