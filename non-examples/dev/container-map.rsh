@@ -9,7 +9,7 @@ const Common = {
 export const main =
   Reach.App(
     { 'deployMode': 'firstMsg' },
-    [['Alice,
+    [['Alice',
       { ...Common } ],
      ['Bob',
       { ...Common } ],
