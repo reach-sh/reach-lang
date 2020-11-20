@@ -27,6 +27,9 @@ The rest of this section is structured according to the contexts of the differen
 
 ]
 
+@figure["Reach Program structure" @elem{The steps of a Reach program}
+  ]{@image["images/reference/StepDiagram.png" #:style "fig"]}
+
 @section[#:tag "ref-programs-valid"]{Validity}
 
 Reach imposes further restrictions on syntactically well-formed programs.
