@@ -53,7 +53,7 @@ checkIntLiteral :: SrcLoc -> Integer -> Integer -> Integer -> Integer
 checkIntLiteral at rmin x rmax =
   case rmin <= x && x <= rmax of
     True -> x
-    False -> expect_throw at $ Err_Type_IntLiteralRange rmin x rmax
+    False -> expect_throw Nothing at $ Err_Type_IntLiteralRange rmin x rmax
 
 typeMeet :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
 typeMeet _ (_, T_Bytes xz) (_, T_Bytes yz) =
@@ -63,13 +63,13 @@ typeMeet top_at x@(_, xt) y@(_, yt) =
   case xt == yt of
     True -> xt
     False ->
-      expect_throw top_at $ Err_TypeMeets_Mismatch top_at x y
+      expect_throw Nothing top_at $ Err_TypeMeets_Mismatch top_at x y
 
 typeMeets :: SrcLoc -> [(SrcLoc, SLType)] -> SLType
 typeMeets top_at l =
   case l of
     [] ->
-      expect_throw top_at $ Err_TypeMeets_None
+      expect_throw Nothing top_at $ Err_TypeMeets_None
     [(_, xt)] -> xt
     [x, y] -> typeMeet top_at x y
     x : more -> typeMeet top_at x $ (top_at, typeMeets top_at more)
@@ -197,7 +197,7 @@ typeOf :: HasCallStack => SrcLoc -> SLVal -> (SLType, DLArg)
 typeOf at v =
   case typeOfM at v of
     Just x -> x
-    Nothing -> expect_throw at $ Err_Type_None v
+    Nothing -> expect_throw Nothing at $ Err_Type_None v
 
 typeCheck :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArg
 typeCheck at env ty val = typeCheck_help at env ty val val_ty res
@@ -214,9 +214,9 @@ typeChecks at env ts vs =
       ds' <- typeChecks at env ts' vs'
       return $ d : ds'
     ((_ : _), _) ->
-      expect_throw at $ Err_Type_TooFewArguments ts
+      expect_throw Nothing at $ Err_Type_TooFewArguments ts
     (_, (_ : _)) ->
-      expect_throw at $ Err_Type_TooManyArguments vs
+      expect_throw Nothing at $ Err_Type_TooManyArguments vs
 
 checkAndConvert_i :: SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArg])
 checkAndConvert_i at env t args =
@@ -230,7 +230,7 @@ checkAndConvert_i at env t args =
       (vrng, dargs) <- checkAndConvert_i at env' ft args
       rng <- typeSubst at env' vrng
       return (rng, dargs)
-    _ -> expect_throw at $ Err_Type_NotApplicable t
+    _ -> expect_throw Nothing at $ Err_Type_NotApplicable t
 
 checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArg])
 checkAndConvert at t args = runST $ checkAndConvert_i at mempty t args

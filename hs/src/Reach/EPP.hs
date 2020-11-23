@@ -355,7 +355,7 @@ epp_n st n =
       let this_loop = fromMaybe (impossible "no loop") $ pst_loop_num st
       let loop_svs = fromMaybe (impossible "no loop") $ pst_loop_svs st
       when (this_loop == pst_prev_handler st) $
-        expect_throw at Err_ContinueDomination
+        expect_throw Nothing at Err_ContinueDomination
       let asn_cs = counts asn
       let cons_cs' = asn_cs <> counts loop_svs
       let ct' = CT_Jump at this_loop loop_svs asn
