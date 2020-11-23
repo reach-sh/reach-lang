@@ -1,0 +1,1 @@
+reachc: error: reach standard library:80:8:application: Invalid use of statement: each/only (./Err_Invalid_Statement.rsh:10:13:application). Did you mean to wrap it in a thunk?

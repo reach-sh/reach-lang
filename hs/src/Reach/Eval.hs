@@ -115,6 +115,7 @@ data EvalError
   | Err_ParallelReduce_NoInvariant
   | Err_ParallelReduce_InvalidBody String
   | Err_Eval_MustBeLive String
+  | Err_Invalid_Statement SrcLoc String
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -387,6 +388,8 @@ instance Show EvalError where
       "parallel reduce, invalid body: " <> m
     Err_Eval_MustBeLive m ->
       "must be live at " <> m
+    Err_Invalid_Statement at stmt ->
+      "Invalid use of statement: " <> stmt <> " (" <> show at <> "). Did you mean to wrap it in a thunk?"
 
 --- Utilities
 zipEq :: Show e => SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -1007,7 +1010,8 @@ evalForm ctxt at sco st f args =
           return $ SLRes part_lifts part_st $ public $ SLV_Form $ SLForm_EachAns parts at (sco_to_cloenv sco) thunke
         _ ->
           expect_throw at $ Err_Each_NotTuple parts_v
-    SLForm_EachAns {} -> impossible "SLForm_Part_OnlyAns"
+    -- This case occurs when the "result" of `each` is used as an expression.
+    SLForm_EachAns _ e_at _ _ -> expect_throw at $ Err_Invalid_Statement e_at "each/only"
     SLForm_unknowable ->
       case st_mode st of
         SLM_Step -> do
