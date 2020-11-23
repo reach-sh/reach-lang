@@ -146,6 +146,11 @@ solMsg_evt i = "e" <> pretty i
 solMsg_arg :: Pretty i => i -> Doc
 solMsg_arg i = "a" <> pretty i
 
+solMsg_arg_postsvs :: Pretty i => i -> Doc
+solMsg_arg_postsvs i = solMsg_arg i <> "svs"
+solMsg_arg_msg :: Pretty i => i -> Doc
+solMsg_arg_msg i = solMsg_arg i <> "msg"
+
 solMsg_fun :: Pretty i => i -> Doc
 solMsg_fun i = "m" <> pretty i
 
@@ -199,8 +204,11 @@ solRawVar (DLVar _ _ _ n) = pretty $ "v" ++ show n
 solMemVar :: DLVar -> Doc
 solMemVar dv = "_f." <> solRawVar dv
 
-solArgVar :: DLVar -> Doc
-solArgVar dv = "_a." <> solRawVar dv
+solArgSVSVar :: DLVar -> Doc
+solArgSVSVar dv = "_a.svs." <> solRawVar dv
+
+solArgMsgVar :: DLVar -> Doc
+solArgMsgVar dv = "_a.msg." <> solRawVar dv
 
 solVar :: SolCtxt -> DLVar -> Doc
 solVar ctxt v =
@@ -253,8 +261,13 @@ solArgType ctxt am t = solType ctxt t <> loc_spec
   where
     loc_spec = if mustBeMem t then solArgLoc am else ""
 
+solVarDecl :: SolCtxt -> DLVar -> (Doc, Doc)
+solVarDecl ctxt dv@(DLVar _ _ t _) =
+  ((solRawVar dv), (solType ctxt t))
+
 solArgDecl :: SolCtxt -> ArgMode -> DLVar -> Doc
-solArgDecl ctxt am dv@(DLVar _ _ t _) = solDecl (solRawVar dv) (solArgType ctxt am t)
+solArgDecl ctxt am dv@(DLVar _ _ t _) =
+  solDecl (solRawVar dv) (solArgType ctxt am t)
 
 solLit :: DLLiteral -> Doc
 solLit = \case
@@ -375,26 +388,34 @@ solTransfer :: SolCtxt -> DLArg -> DLArg -> Doc
 solTransfer ctxt who amt =
   (solArg ctxt who) <> "." <> solApply "transfer" [solArg ctxt amt]
 
-solEvent :: SolCtxt -> Int -> [DLVar] -> Doc
-solEvent ctxt which args =
-  "event" <+> solApply (solMsg_evt which) (map (solArgDecl ctxt AM_Event) args) <> semi
+solEvent :: SolCtxt -> Int -> Bool -> Doc
+solEvent _ctxt which hasArgument =
+  "event" <+> solApply (solMsg_evt which) args <> semi
+  where args = case hasArgument of
+                 True -> [ (solMsg_arg which) <+> "_a" ]
+                 False -> []
 
-solEventEmit :: SolCtxt -> Int -> [DLVar] -> Doc
-solEventEmit ctxt which msg =
-  "emit" <+> solApply (solMsg_evt which) (map (solVar ctxt) msg) <> semi
+solEventEmit :: SolCtxt -> Int -> Bool -> Doc
+solEventEmit _ctxt which hasArgument =
+  "emit" <+> solApply (solMsg_evt which) args <> semi
+  where args = case hasArgument of
+                 True -> [ "_a" ]
+                 False -> []
 
-data HashMode
-  = HM_Set
-  | HM_Check Int
-  deriving (Eq, Show)
-
-solHashState :: SolCtxt -> HashMode -> [DLVar] -> Doc
-solHashState ctxt hm svs = solHash $ (solNum which_num) : which_last : (map (solVar ctxt) svs)
+solHashStateSet :: SolCtxt -> [DLVar] -> ([Doc], Doc)
+solHashStateSet ctxt svs = (setl, sete)
   where
-    (which_last, which_num) =
-      case hm of
-        HM_Set -> (solBlockNumber, ctxt_handler_num ctxt)
-        HM_Check prev -> (solLastBlock, prev)
+    sete = solHash [ (solNum which), "nsvs" ]
+    which = ctxt_handler_num ctxt
+    setl =
+      [ solDecl "nsvs" ((solMsg_arg_postsvs which) <> " memory") <> semi
+      , solSet "nsvs._last" solBlockNumber ] <>
+      map go svs
+    go v = solSet ("nsvs." <> solRawVar v) (solVar ctxt v)
+
+solHashStateCheck :: SolCtxt -> Int -> Doc
+solHashStateCheck _ctxt prev =
+  solHash [ (solNum prev), "_a.svs" ]
 
 solAsn :: SolCtxt -> DLAssignment -> [Doc]
 solAsn ctxt (DLAssignment m) = map ((solArg ctxt) . snd) $ M.toAscList m
@@ -519,10 +540,12 @@ solCTail ctxt = \case
         ]
   CT_From _ (Just svs) ->
     SolTailRes ctxt $
-      vsep
-        [ ctxt_emit ctxt
-        , solSet ("current_state") (solHashState ctxt HM_Set svs)
-        ]
+      vsep $
+        [ ctxt_emit ctxt ] <>
+        setl <>
+        [ solSet ("current_state") sete ]
+    where
+      (setl, sete) = solHashStateSet ctxt svs
   CT_From _ Nothing ->
     SolTailRes ctxt $
       vsep
@@ -583,49 +606,58 @@ manyVars_c = \case
   CT_Jump {} -> mempty
   CT_From {} -> mempty
 
-solCTail_top :: SolCtxt -> Int -> [DLVar] -> Maybe [DLVar] -> CTail -> (SolCtxt, Doc, Doc, Doc)
-solCTail_top ctxt which vs mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
+solCTail_top :: SolCtxt -> Int -> [DLVar] -> [DLVar] -> Maybe [DLVar] -> CTail -> (SolCtxt, Doc, Doc, Doc)
+solCTail_top ctxt which svs msg mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
   where
-    argsm = M.fromList $ map (\v -> (v, solArgVar v)) vs
+    svsm = M.fromList $ map (\v -> (v, solArgSVSVar v)) svs
+    msgm = M.fromList $ map (\v -> (v, solArgMsgVar v)) msg
     mvars = manyVars_c ct
     mvarsm = M.fromList $ map (\v -> (v, solMemVar v)) $ S.toList mvars
     (frameDefn, frameDecl) = solFrame ctxt' which mvars
     SolTailRes ctxt'' ct' = solCTail ctxt' ct
     emitp = case mmsg of
-      Just msg ->
-        solEventEmit ctxt'_pre which msg
+      Just _ ->
+        solEventEmit ctxt'_pre which True
       Nothing ->
         emptyDoc
     ctxt' = ctxt'_pre {ctxt_emit = emitp}
     ctxt'_pre =
       ctxt
         { ctxt_handler_num = which
-        , ctxt_varm = mvarsm <> argsm <> (ctxt_varm ctxt)
+        , ctxt_varm = mvarsm <> svsm <> msgm <> (ctxt_varm ctxt)
         }
 
-solArgDefn :: SolCtxt -> Int -> ArgMode -> [DLVar] -> (Doc, [Doc])
-solArgDefn ctxt which am vs = (argDefn, argDefs)
+solStructSVS :: SolCtxt -> Int -> ArgMode -> [DLVar] -> Doc
+solStructSVS ctxt which am svs =
+  solStruct (solMsg_arg_postsvs which) svs_tys
   where
-    argDefs = [solDecl "_a" ((solMsg_arg which) <> solArgLoc am)]
-    argDefn = solStruct (solMsg_arg which) ntys
-    ntys = mgiven ++ v_ntys
-    mgiven = case am of
+    svs_tys = given_tys <> map (solVarDecl ctxt) svs
+    given_tys = case am of
       AM_Call -> [(solLastBlockDef, (solType ctxt T_UInt))]
       _ -> []
-    v_ntys = map go vs
-    go dv@(DLVar _ _ t _) = ((solRawVar dv), (solType ctxt t))
+
+solArgDefn :: SolCtxt -> Int -> Int -> ArgMode -> [DLVar] -> [DLVar] -> ([Doc], [Doc])
+solArgDefn ctxt which prev am svs msg = (argDefns, argDefs)
+  where
+    argDefs = [solDecl "_a" ((solMsg_arg which) <> solArgLoc am)]
+    argDefns = [ solStructSVS ctxt prev am svs
+               , solStruct (solMsg_arg_msg which) msg_tys
+               , solStruct (solMsg_arg which) arg_tys ]
+    msg_tys = map (solVarDecl ctxt) msg
+    arg_tys = [ ("svs", (solMsg_arg_postsvs prev))
+              , ("msg", (solMsg_arg_msg which)) ]
 
 solHandler :: SolCtxt -> Int -> CHandler -> Doc
 solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
-  vsep [evtDefn, argDefn, frameDefn, funDefn]
+  vsep $ argDefns <> [evtDefn, frameDefn, funDefn]
   where
     amtmm = M.singleton amtv "msg.value"
     checkMsg s = s <> " check at " <> show at
-    vs = svs ++ msg
     ctxt_from = ctxt_top {ctxt_varm = amtmm <> fromm <> (ctxt_varm ctxt_top)}
-    (ctxt, frameDefn, frameDecl, ctp) = solCTail_top ctxt_from which vs (Just msg) ct
-    evtDefn = solEvent ctxt which msg
-    (argDefn, argDefs) = solArgDefn ctxt which am vs
+    (ctxt, frameDefn, frameDecl, ctp) =
+      solCTail_top ctxt_from which svs msg (Just msg) ct
+    evtDefn = solEvent ctxt which True
+    (argDefns, argDefs) = solArgDefn ctxt which prev am svs msg
     ret = "payable"
     (hashCheck, am, sfl) =
       case (which, plo_deployMode $ ctxt_plo ctxt_top) of
@@ -634,7 +666,7 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
         _ ->
           (hcp, AM_Call, SFL_Function True (solMsg_fun which))
           where
-            hcp = (solRequire (checkMsg "state") $ solEq ctxt ("current_state") (solHashState ctxt (HM_Check prev) svs)) <> semi
+            hcp = (solRequire (checkMsg "state") $ solEq ctxt ("current_state") (solHashStateCheck ctxt prev)) <> semi
     funDefn = solFunctionLike sfl argDefs ret body
     body =
       vsep
@@ -658,12 +690,12 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
             [] -> "true"
             mvs -> solPrimApply ctxt (if sign then PGE else PLT) [solBlockNumber, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) solLastBlock (map (solArg ctxt) mvs))]
 solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
-  vsep [argDefn, frameDefn, funDefn]
+  vsep $ argDefns <> [frameDefn, funDefn]
   where
     msg = map snd lcmsg
-    vs = svs ++ msg
-    (ctxt_fin, frameDefn, frameDecl, ctp) = solCTail_top ctxt_top which vs Nothing ct
-    (argDefn, argDefs) = solArgDefn ctxt_fin which AM_Memory vs
+    (ctxt_fin, frameDefn, frameDecl, ctp) =
+      solCTail_top ctxt_top which svs msg Nothing ct
+    (argDefns, argDefs) = solArgDefn ctxt_fin which which AM_Memory svs msg
     ret = "internal"
     funDefn = solFunction (solLoop_fun which) argDefs ret body
     body = vsep [frameDecl, ctp]
@@ -784,9 +816,10 @@ solPLProg (PLProg _ plo@(PLOpts {..}) _ (CPProg at hs)) =
     consp =
       case plo_deployMode of
         DM_constructor ->
-          vsep [solEvent ctxt 0 [], solFunctionLike SFL_Constructor [] "payable" consbody']
+          vsep [ solEvent ctxt 0 False
+               , solFunctionLike SFL_Constructor [] "payable" consbody']
           where
-            consbody' = vsep [solEventEmit ctxt 0 [], consbody]
+            consbody' = vsep [ solEventEmit ctxt 0 False, consbody ]
             SolTailRes _ consbody = solCTail ctxt (CT_From at (Just []))
         DM_firstMsg ->
           emptyDoc
