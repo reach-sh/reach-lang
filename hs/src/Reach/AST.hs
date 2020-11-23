@@ -55,10 +55,21 @@ instance Show SrcLoc where
         Nothing -> []
         Just (TokenPn _ l c) -> [show l, show c]
 
-expect_throw :: Show a => HasCallStack => SrcLoc -> a -> b
-expect_throw src ce =
+expect_throw :: Show a => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
+expect_throw mCtx src ce =
   error . T.unpack . unsafeRedactAbs . T.pack $
-    "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
+    "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce) <>
+    case mCtx of
+      Nothing -> ""
+      Just [] -> ""
+      Just ctx -> "\nstack trace:\n" <> unlines (top_of_stack ctx)
+
+top_of_stack :: Show a => [a] -> [String]
+top_of_stack stack
+  | length stackMsgs > 10 = take 10 stackMsgs ++ ["  ..."]
+  | otherwise = stackMsgs
+  where
+    stackMsgs = map (("  " <>) . show) stack
 
 srcloc_builtin :: SrcLoc
 srcloc_builtin = SrcLoc (Just "<builtin>") Nothing Nothing
@@ -434,6 +445,9 @@ instance Show SLCtxtFrame where
     "at " ++ show call_at ++ " call to " ++ name ++ " (defined at: " ++ show clo_at ++ ")"
     where
       name = maybe "[unknown function]" show mname
+
+callAt :: SLCtxtFrame -> SrcLoc
+callAt (SLC_CloApp at _ _) = at
 
 --- Dynamic Language
 

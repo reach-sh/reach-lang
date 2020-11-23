@@ -339,7 +339,7 @@ solPrimApply ctxt = \case
 solExpr :: SolCtxt -> Doc -> DLExpr -> Doc
 solExpr ctxt sp = \case
   DLE_Arg _ a -> solArg ctxt a <> sp
-  DLE_Impossible at msg -> expect_throw at msg
+  DLE_Impossible at msg -> expect_throw Nothing at msg
   DLE_PrimOp _ p args ->
     (solPrimApply ctxt p $ map (solArg ctxt) args) <> sp
   DLE_ArrayRef _ ae ie ->
