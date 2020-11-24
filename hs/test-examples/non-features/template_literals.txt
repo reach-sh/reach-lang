@@ -1,1 +1,3 @@
 reachc: error: ./template_literals.rsh:9:9:const: Invalid Reach expression syntax: JSTemplateLiteral
+Trace:
+  at "function" (./template_literals.rsh:10:9:after expr stmt semicolon)

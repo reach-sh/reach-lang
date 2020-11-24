@@ -1,1 +1,3 @@
 reachc: error: ./Err_Obj_IllegalComputedField__interact.rsh:9:20:computed field name: Invalid computed field name. It must be computable at compile time.
+Trace:
+  at "function" (./Err_Obj_IllegalComputedField__interact.rsh:10:7:after expr stmt semicolon)
