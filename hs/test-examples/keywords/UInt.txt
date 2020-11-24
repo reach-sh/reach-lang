@@ -1,1 +1,3 @@
 reachc: error: ./UInt.rsh:9:9:const: Invalid name shadowing. Identifier 'UInt' is already bound at <builtin>. It cannot be bound again at ./UInt.rsh:9:15:id
+Trace:
+  at "function" (./UInt.rsh:10:9:after expr stmt semicolon)

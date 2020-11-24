@@ -1,1 +1,3 @@
 reachc: error: ./interact.rsh:9:9:const: Invalid name shadowing. Identifier 'interact' is already bound at ./interact.rsh:6:12:obj. It cannot be bound again at ./interact.rsh:9:15:id
+Trace:
+  at "function" (./interact.rsh:10:9:after expr stmt semicolon)

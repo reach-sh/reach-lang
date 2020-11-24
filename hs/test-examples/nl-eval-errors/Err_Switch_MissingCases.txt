@@ -1,1 +1,4 @@
 reachc: error: ./Err_Switch_MissingCases.rsh:12:9:switch: switch missing cases: ["None"]
+Trace:
+  at "function" (./Err_Switch_MissingCases.rsh:13:35:application)
+  at "function" (./Err_Switch_MissingCases.rsh:14:7:after expr stmt semicolon)

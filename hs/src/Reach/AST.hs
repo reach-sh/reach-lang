@@ -59,17 +59,21 @@ expect_throw :: Show a => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -
 expect_throw mCtx src ce =
   error . T.unpack . unsafeRedactAbs . T.pack $
     "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce) <>
-    case mCtx of
-      Nothing -> ""
-      Just [] -> ""
-      Just ctx -> "\nstack trace:\n" <> unlines (top_of_stack ctx)
+    case concat mCtx of
+      [] -> ""
+      ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
 
-top_of_stack :: Show a => [a] -> [String]
-top_of_stack stack
-  | length stackMsgs > 10 = take 10 stackMsgs ++ ["  ..."]
+topOfStackTrace :: [SLCtxtFrame] -> [String]
+topOfStackTrace stack
+  | length stackMsgs > 10 = take 10 stackMsgs <> ["  ..."]
   | otherwise = stackMsgs
   where
-    stackMsgs = map (("  " <>) . show) stack
+    stackMsgs = map getStackTraceMessage stack
+
+-- Mimic Node's stack trace message
+getStackTraceMessage :: SLCtxtFrame -> String
+getStackTraceMessage (SLC_CloApp call_at _ name) =
+  "  at " <> maybe "[unknown function]" show name <> " (" <> show call_at <> ")"
 
 srcloc_builtin :: SrcLoc
 srcloc_builtin = SrcLoc (Just "<builtin>") Nothing Nothing

@@ -392,24 +392,24 @@ instance Show EvalError where
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
 
 --- Utilities
-zipEq :: Show e => SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
-zipEq at ce x y =
+zipEq :: Show e => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
+zipEq ctxt at ce x y =
   if lx == ly
     then zip x y
-    else expect_throw Nothing at (ce lx ly)
+    else expect_throw (ctxt_stack <$> ctxt) at (ce lx ly)
   where
     lx = length x
     ly = length y
 
-ensure_public :: SrcLoc -> SLSVal -> SLVal
-ensure_public at (lvl, v) =
+ensure_public :: SLCtxt s -> SrcLoc -> SLSVal -> SLVal
+ensure_public ctxt at (lvl, v) =
   case lvl of
     Public -> v
     Secret ->
-      expect_throw Nothing at $ Err_ExpectedPublic v
+      expect_throw_ctx ctxt at $ Err_ExpectedPublic v
 
-ensure_publics :: SrcLoc -> [SLSVal] -> [SLVal]
-ensure_publics at svs = map (ensure_public at) svs
+ensure_publics :: SLCtxt s -> SrcLoc -> [SLSVal] -> [SLVal]
+ensure_publics ctxt at svs = map (ensure_public ctxt at) svs
 
 lvlMeetR :: SecurityLevel -> SLComp s (SecurityLevel, a) -> SLComp s (SecurityLevel, a)
 lvlMeetR lvl m = do
@@ -1029,7 +1029,7 @@ evalForm ctxt at sco st f args =
             case mmsg_e of
               Just x -> do
                 SLRes lifts_x st_x msgsv <- evalExpr ctxt at sco st x
-                let msgv = ensure_public at msgsv
+                let msgv = ensure_public ctxt at msgsv
                 return $ SLRes lifts_x st_x $ Just $ mustBeBytes ctxt at msgv
               Nothing -> return $ SLRes mempty st Nothing
           SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st_m notter_e
@@ -1194,11 +1194,11 @@ doFluidRef ctxt at st fv =
       let lifts = return $ DLS_FluidRef at dv fv
       return $ SLRes lifts st $ public $ SLV_DLVar dv
 
-doFluidSet :: SrcLoc -> FluidVar -> SLSVal -> DLStmts
-doFluidSet at fv ssv = return $ DLS_FluidSet at fv da
+doFluidSet :: SLCtxt s -> SrcLoc -> FluidVar -> SLSVal -> DLStmts
+doFluidSet ctxt at fv ssv = return $ DLS_FluidSet at fv da
   where
     da = checkType at (fluidVarType fv) sv
-    sv = ensure_public at ssv
+    sv = ensure_public ctxt at ssv
 
 doAssertBalance :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLVal -> PrimOp -> ST s DLStmts
 doAssertBalance ctxt at sco st lhs op = do
@@ -1227,7 +1227,7 @@ doBalanceUpdate ctxt at sco st op rhs = do
   SLRes fr_lifts fr_st balance_v <- doFluidRef ctxt at st FV_balance
   SLRes lifts st' (SLAppRes _ balance_v') <-
     evalApplyVals ctxt at sco fr_st up_rator [balance_v]
-  let fs_lifts = doFluidSet at FV_balance balance_v'
+  let fs_lifts = doFluidSet ctxt at FV_balance balance_v'
   return $ SLRes (fr_lifts <> lifts <> fs_lifts) st' ()
 
 mustBeBytes :: SLCtxt s -> SrcLoc -> SLVal -> B.ByteString
@@ -1552,7 +1552,7 @@ evalPrim ctxt at sco st p sargs =
           _ -> illegal_args
         lifts = return $ DLS_Let at Nothing $ DLE_Claim at (ctxt_stack ctxt) ct darg mmsg
     SLPrim_transfer ->
-      case ensure_publics at sargs of
+      case ensure_publics ctxt at sargs of
         [amt_sv] ->
           return . SLRes mempty st . public $
             SLV_Object at (Just "transfer") $
@@ -1610,7 +1610,7 @@ evalPrim ctxt at sco st p sargs =
         SLM_Step ->
           case sargs of
             [amt_sv] -> do
-              let amt_da = checkType at T_UInt $ ensure_public at amt_sv
+              let amt_da = checkType at T_UInt $ ensure_public ctxt at amt_sv
               return $ SLRes (return $ DLS_Let at Nothing (DLE_Wait at amt_da)) st $ public $ SLV_Null at "wait"
             _ -> illegal_args
         cm -> expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm "wait"
@@ -1673,7 +1673,7 @@ evalApplyVals ctxt at sco st rator randvs =
       let body_at = srcloc_jsa "block" body_a clo_at
       SLRes lifts_arge st_arge arg_env <-
         evalDeclLHSs ctxt clo_at sco st mempty $
-          zipEq at (Err_Apply_ArgCount clo_at) formals randvs
+          zipEq (Just ctxt) at (Err_Apply_ArgCount clo_at) formals randvs
       let ctxt' = ctxt_stack_push ctxt (SLC_CloApp at clo_at mname)
       let clo_sco =
             (SLScope
@@ -2282,7 +2282,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                         , sco_env = penv'
                         }
                 SLRes amt_lifts_ _ amt_sv <- evalExpr ctxt at sco_penv' st_pure amte_
-                return $ (amte_, amt_lifts_, checkType at T_UInt $ ensure_public at amt_sv)
+                return $ (amte_, amt_lifts_, checkType at T_UInt $ ensure_public ctxt at amt_sv)
           let amt_compute_lifts = return $ DLS_Only at who amt_lifts
           amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt
           SLRes amt_check_lifts _ _ <- do
@@ -2297,7 +2297,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               Nothing -> return $ (mempty, Nothing, Nothing)
               Just (dt_at, de, (JSBlock _ dt_ss _)) -> do
                 SLRes de_lifts _ de_sv <- evalExpr ctxt at sco st_pure de
-                let de_da = checkType dt_at T_UInt $ ensure_public dt_at de_sv
+                let de_da = checkType dt_at T_UInt $ ensure_public ctxt dt_at de_sv
                 SLRes dta_lifts dt_st dt_cr <- evalStmt ctxt dt_at sco st dt_ss
                 return $ (de_lifts, Just (dt_st, dt_cr), Just (de_da, dta_lifts))
           let st_cstep =
@@ -2359,7 +2359,7 @@ doWhileLikeInitEval ctxt at sco st lhs rhs = do
   helpm <- M.traverseWithKey help vars_env
   let unknown_var_env = M.map (sls_sss at . public . SLV_DLVar . fst) helpm
   let unknown_bal_v = sss_sls $ unknown_var_env M.! internalVar_balance
-  let bal_lifts = doFluidSet at FV_balance unknown_bal_v
+  let bal_lifts = doFluidSet ctxt at FV_balance unknown_bal_v
   let st_init' = stEnsureMode ctxt at (st_mode st) st_init
   let sco_env' = sco_update ctxt at sco st_init' unknown_var_env
   let init_dam = M.fromList $ M.elems helpm
@@ -2383,14 +2383,14 @@ doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
                 Nothing ->
                   expect_throw_ctx ctxt at $ Err_Eval_ContinueNotLoopVariable v
                 Just x -> x
-              val = ensure_public at $ sss_sls sv
+              val = ensure_public ctxt at $ sss_sls sv
               da = checkType at et val
               DLVar _ _ et _ = dv
   SLRes fr_lifts _ balance_v <-
     doFluidRef ctxt at st_decl FV_balance
   let balance_da =
         checkType at T_UInt $
-          ensure_public at balance_v
+          ensure_public ctxt at balance_v
   let unknown_balance_dv = whilem M.! internalVar_balance
   let cont_dam' =
         M.insert unknown_balance_dv balance_da cont_dam
@@ -2491,7 +2491,7 @@ doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv,
         -- XXX allow whoe to be an array/tuple
         let who = jse_expect_id who_at whoe
         let whosv = env_lookup (Just ctxt) who_at (LC_RefFrom "parallel_reduce case") who (sco_env before_sco)
-        let whov = ensure_public who_at $ sss_sls whosv
+        let whov = ensure_public ctxt who_at $ sss_sls whosv
         let whop =
               -- FIXME make this a function and use regularly
               case whov of
@@ -2505,7 +2505,7 @@ doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv,
                   JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a s
                 _ -> expect_throw_ctx ctxt who_at $ Err_Eval_IllegalJS whate
         SLRes _ _ body_clos <- evalExpr ctxt who_at after_sco init_st body_e
-        let body_clo = ensure_public who_at body_clos
+        let body_clo = ensure_public ctxt who_at body_clos
         SLRes body_lifts body_st (SLAppRes _ body_res) <-
           evalApplyVals ctxt who_at after_sco init_st body_clo []
         -- traceM $ "dcase " <> show whop
@@ -3096,7 +3096,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
         public $ SLV_Participant p_at pn Nothing Nothing
   let partvs = map make_part part_ios
   let top_args = map (jse_expect_id at) top_formals
-  let top_vargs = zipEq at (Err_Apply_ArgCount at) top_args partvs
+  let top_vargs = zipEq Nothing at (Err_Apply_ArgCount at) top_args partvs
   let top_viargs = map (\(i, pv) -> (i, infectWithId i pv)) top_vargs
   let top_rvargs = map (second $ (sls_sss at)) top_viargs
   let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
@@ -3140,7 +3140,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , sco_cenv = mempty
           , sco_depth = recursionDepthLimit
           }
-  let bal_lifts = doFluidSet at' FV_balance $ public $ SLV_Int at' 0
+  let bal_lifts = doFluidSet ctxt at' FV_balance $ public $ SLV_Int at' 0
   SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
   ensure_mode ctxt at st_final SLM_Step "program termination"
   tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ

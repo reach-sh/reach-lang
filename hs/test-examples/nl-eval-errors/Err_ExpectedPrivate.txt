@@ -1,1 +1,3 @@
 reachc: error: ./Err_ExpectedPrivate.rsh:8:27:application: Invalid declassify. Expected to declassify something private, but this uint256 is public.
+Trace:
+  at "function" (./Err_ExpectedPrivate.rsh:9:7:after expr stmt semicolon)

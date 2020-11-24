@@ -1,1 +1,3 @@
 reachc: error: ./Err_Block_IllegalJS.rsh:5:3:throw: Invalid statement
+Trace:
+  at "function" (./Err_Block_IllegalJS.rsh:9:27:application)
