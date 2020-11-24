@@ -795,7 +795,7 @@ binaryToPrim ctxt at env o =
     JSBinOpBitAnd a -> prim a (BAND)
     JSBinOpBitOr a -> prim a (BIOR)
     JSBinOpBitXor a -> prim a (BXOR)
-    j -> expect_throw Nothing at $ Err_Parse_IllegalBinOp j
+    j -> expect_thrown at $ Err_Parse_IllegalBinOp j
   where
     fun a s ctx = sss_val $ env_lookup (Just ctxt) (srcloc_jsa "binop" a at) (LC_RefFrom ctx) s env
     prim _a p = SLV_Prim $ SLPrim_op p
@@ -806,7 +806,7 @@ unaryToPrim ctxt at env o =
     JSUnaryOpMinus a -> fun a "minus" "-"
     JSUnaryOpNot a -> fun a "not" "!"
     JSUnaryOpTypeof a -> fun a "typeOf" "typeOf"
-    j -> expect_throw Nothing at $ Err_Parse_IllegalUnaOp j
+    j -> expect_thrown at $ Err_Parse_IllegalUnaOp j
   where
     fun a s ctx = sss_val $ env_lookup (Just ctxt) (srcloc_jsa "unop" a at) (LC_RefFrom ctx) s env
 
@@ -3016,7 +3016,7 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
           ((JSModuleStatementListItem (JSExpressionStatement (JSStringLiteral a hs) sp)) : j)
             | (trimQuotes hs) == versionHeader ->
               ((srcloc_after_semi "header" a sp at), j)
-          _ -> expect_throw Nothing at (Err_NoHeader body)
+          _ -> expect_thrown at (Err_NoHeader body)
   SLRes more_lifts _ exenv <-
     evalTopBody ctxt_top prev_at st libm stdlib_env mt_env body'
   return $ (liblifts <> more_lifts, M.insert src exenv libm)
@@ -3031,9 +3031,9 @@ makeInteract at who spec = SLV_Object at lab spec'
     spec' = M.mapWithKey wrap_ty spec
     wrap_ty k (SLSSVal idAt Public (SLV_Type t)) = case isFirstOrder t of
       True -> sls_sss idAt $ secret $ SLV_Prim $ SLPrim_interact at who k t
-      False -> expect_throw Nothing at $ Err_App_Interact_NotFirstOrder t
+      False -> expect_thrown at $ Err_App_Interact_NotFirstOrder t
     -- TODO: add idAt info to the err below?
-    wrap_ty _ v = expect_throw Nothing at $ Err_App_InvalidInteract $ sss_sls v
+    wrap_ty _ v = expect_thrown at $ Err_App_InvalidInteract $ sss_sls v
 
 app_default_opts :: [T.Text] -> DLOpts
 app_default_opts cns =
@@ -3088,9 +3088,9 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
         case v of
           SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat _ io] ->
             case "_" `B.isPrefixOf` bs of
-              True -> expect_throw Nothing bs_at (Err_App_PartUnderscore bs)
+              True -> expect_thrown bs_at (Err_App_PartUnderscore bs)
               False -> (p_at, bs, iat, (makeInteract iat bs io))
-          _ -> expect_throw Nothing at (Err_App_InvalidPartSpec v)
+          _ -> expect_thrown at (Err_App_InvalidPartSpec v)
   let part_ios = map make_partio parts
   let make_part (p_at, pn, _, _) =
         public $ SLV_Participant p_at pn Nothing Nothing
@@ -3103,12 +3103,12 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let use_opt k v acc =
         case M.lookup k app_options of
           Nothing ->
-            expect_throw Nothing at $
+            expect_thrown at $
               Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
           Just opt ->
             case opt acc v of
               Right x -> x
-              Left x -> expect_throw Nothing at $ Err_App_InvalidOptionValue k x
+              Left x -> expect_thrown at $ Err_App_InvalidOptionValue k x
   let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) (M.map sss_val opts)
   let st_step =
         SLState
@@ -3155,7 +3155,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let sps = SLParts $ M.fromList $ map make_sps_entry part_ios
   return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)
 compileDApp _ _ _ topv =
-  expect_throw Nothing srcloc_top (Err_Top_NotApp topv)
+  expect_thrown srcloc_top (Err_Top_NotApp topv)
 
 compileBundleST :: Connectors -> JSBundle -> SLVar -> ST s DLProg
 compileBundleST cns (JSBundle mods) main = do
