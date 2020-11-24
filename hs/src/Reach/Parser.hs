@@ -85,17 +85,17 @@ parseIdent at = \case
   JSIdentName a ident ->
     (srcloc_jsa ident a at, ident)
   JSIdentNone ->
-    expect_throw Nothing at $ Err_Parse_JSIdentNone
+    expect_thrown at $ Err_Parse_JSIdentNone
 
 jse_expect_id :: HasCallStack => SrcLoc -> JSExpression -> String
 jse_expect_id at = \case
   (JSIdentifier _ x) -> x
-  j -> expect_throw Nothing at (Err_Parse_ExpectIdentifier j)
+  j -> expect_thrown at (Err_Parse_ExpectIdentifier j)
 
 jso_expect_id :: HasCallStack => SrcLoc -> JSObjectProperty -> String
 jso_expect_id at = \case
   JSPropertyIdentRef _ x -> x
-  j -> expect_throw Nothing at $ Err_Parse_ExpectIdentifierProp j
+  j -> expect_thrown at $ Err_Parse_ExpectIdentifierProp j
 
 parseJSFormals :: SrcLoc -> JSCommaList JSExpression -> [JSExpression]
 parseJSFormals _at jsformals = jscl_flatten jsformals
@@ -105,7 +105,7 @@ jsArrowFormalsToFunFormals at = \case
   JSUnparenthesizedArrowParameter (JSIdentName a x) ->
     JSLOne (JSIdentifier a x)
   JSUnparenthesizedArrowParameter JSIdentNone ->
-    expect_throw Nothing at Err_Parser_Arrow_NoFormals
+    expect_thrown at Err_Parser_Arrow_NoFormals
   JSParenthesizedArrowParameterList _ l _ -> l
 
 parseJSArrowFormals :: SrcLoc -> JSArrowParameterList -> [JSExpression]
@@ -119,7 +119,7 @@ jsCallLike at = \case
   JSMemberExpression rator _ rands _ ->
     (rator, jscl_flatten rands)
   e ->
-    expect_throw Nothing at $ Err_Parse_NotCallLike e
+    expect_thrown at $ Err_Parse_NotCallLike e
 
 readJsExpr :: HasCallStack => String -> JSExpression
 readJsExpr s =
@@ -186,7 +186,7 @@ gatherDeps_ast at fmr = \case
   JSAstModule mis _ ->
     mapM (gatherDeps_mi at fmr) mis
   j ->
-    expect_throw Nothing at (Err_Parse_NotModule j)
+    expect_thrown at (Err_Parse_NotModule j)
 
 updatePartialAvoidCycles :: Ord a => SrcLoc -> IORef (BundleMap a b) -> Maybe a -> [a] -> (() -> IO a) -> (a -> c) -> (a -> ParserError) -> (a -> IO b) -> IO c
 updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = do
@@ -206,7 +206,7 @@ updatePartialAvoidCycles at fmr mfrom def_a get_key ret_key err_key proc_key = d
       writeIORef fmr (dm'', fm'')
       return res
     Just Nothing ->
-      expect_throw Nothing at $ err_key key
+      expect_thrown at $ err_key key
     Just (Just _) ->
       return res
 
@@ -247,9 +247,9 @@ gatherDeps_file gctxt at fmr src_rel =
       reRel <- makeRelativeToCurrentDirectory src_abs
       when (gctxt == GatherNotTop) $ do
         when (isAbsolute src_rel) $ do
-          expect_throw Nothing at (Err_Parse_ImportAbsolute src_rel)
+          expect_thrown at (Err_Parse_ImportAbsolute src_rel)
         when ("../" `isPrefixOf` reRel) $ do
-          expect_throw Nothing at (Err_Parse_ImportDotDot src_rel)
+          expect_thrown at (Err_Parse_ImportDotDot src_rel)
       return $ ReachSourceFile src_abs
     ret_key (ReachSourceFile x) = x
     ret_key (ReachStdLib) = no_stdlib

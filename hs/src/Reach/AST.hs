@@ -63,6 +63,9 @@ expect_throw mCtx src ce =
       [] -> ""
       ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
 
+expect_thrown :: Show a => HasCallStack => SrcLoc -> a -> b
+expect_thrown = expect_throw Nothing
+
 topOfStackTrace :: [SLCtxtFrame] -> [String]
 topOfStackTrace stack
   | length stackMsgs > 10 = take 10 stackMsgs <> ["  ..."]

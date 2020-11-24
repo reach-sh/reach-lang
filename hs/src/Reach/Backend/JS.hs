@@ -188,7 +188,7 @@ jsExpr ctxt = \case
   DLE_Arg _ a ->
     jsArg a
   DLE_Impossible at msg ->
-    expect_throw Nothing at msg
+    expect_thrown at msg
   DLE_PrimOp _ p as ->
     jsPrimApply ctxt p $ map jsArg as
   DLE_ArrayRef _ aa ia ->
