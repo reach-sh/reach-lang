@@ -18,7 +18,9 @@
 		"Other"
 	],
 	"keywords": [
-		"reach", "ethereum", "blockchain"
+		"reach",
+		"ethereum",
+		"blockchain"
 	],
 	"engines": {
 		"vscode": "^1.43.0"
@@ -57,7 +59,7 @@
 			}
 		},
 		"menus": {
-			"explorer/context": [ 
+			"explorer/context": [
 				{
 					"command": "reach.compile"
 				},
@@ -75,6 +77,13 @@
 				},
 				{
 					"command": "reach.update"
+				}
+			],
+			"editor/title": [
+				{
+					"when": "resourceExtname == .rsh",
+					"command": "reach.run",
+					"group": "navigation"
 				}
 			],
 			"touchBar": [
@@ -97,7 +106,7 @@
 					"command": "reach.update"
 				}
 			],
-			"editor/context": [ 
+			"editor/context": [
 				{
 					"command": "reach.compile"
 				},
@@ -127,7 +136,8 @@
 			{
 				"command": "reach.run",
 				"category": "Reach IDE",
-				"title": "Run Reach program"
+				"title": "Run Reach program",
+				"icon": "./images/reach-logo.png"
 			},
 			{
 				"command": "reach.get.eth.abi",
@@ -160,10 +170,10 @@
 	},
 	"devDependencies": {
 		"@types/mocha": "^5.2.7",
-		"mocha": "^6.2.2",
 		"@types/node": "^12.12.0",
-		"eslint": "^6.4.0",
 		"@typescript-eslint/parser": "^2.3.0",
+		"eslint": "^6.4.0",
+		"mocha": "^6.2.2",
 		"typescript": "^3.8.3"
 	}
 }
