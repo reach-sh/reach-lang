@@ -3,7 +3,6 @@ module Reach.Linearize (linearize) where
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import Reach.AST
-import Reach.Type
 import Reach.Util
 
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
@@ -44,12 +43,14 @@ lin_com who back mkk fve rets s ks =
       where
         cm' = M.map cm1 cm
         cm1 (dv', l) = (dv', lin_local_rets at fve rets l)
-    DLS_Return at ret sv ->
+    DLS_Return at ret eda ->
       case M.lookup ret rets of
         Nothing -> back at fve rets ks
         Just dv -> mkk $ LL_Set at dv da $ back at fve rets ks
           where
-            (_, da) = typeOf at sv
+            da = case eda of
+                   Left _ -> impossible $ "sv not replaced"
+                   Right x -> x
     DLS_Prompt at (Left _) ss -> back at fve rets (ss <> ks)
     DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
       mkk $ LL_Var at dv $ back at fve rets' (ss <> ks)

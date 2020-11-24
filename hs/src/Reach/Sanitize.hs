@@ -25,15 +25,19 @@ instance Sanitize DLArg where
       DLA_Var {} -> a
       DLA_Constant {} -> a
       DLA_Literal l -> DLA_Literal $ sani l
-      DLA_Array t as -> DLA_Array t (sani as)
-      DLA_Tuple as -> DLA_Tuple (sani as)
-      DLA_Obj m -> DLA_Obj (sani m)
-      DLA_Data t v va -> DLA_Data t v (sani va)
       DLA_Interact {} -> a
+
+instance Sanitize DLLargeArg where
+  sani = \case
+    DLLA_Array t as -> DLLA_Array t (sani as)
+    DLLA_Tuple as -> DLLA_Tuple (sani as)
+    DLLA_Obj m -> DLLA_Obj (sani m)
+    DLLA_Data t v va -> DLLA_Data t v (sani va)
 
 instance Sanitize DLExpr where
   sani = \case
     DLE_Arg _ a -> DLE_Arg sb $ sani a
+    DLE_LArg _ a -> DLE_LArg sb $ sani a
     DLE_Impossible _ m -> DLE_Impossible sb m
     DLE_PrimOp _ f as -> DLE_PrimOp sb f (sani as)
     DLE_ArrayRef _ a i -> DLE_ArrayRef sb (sani a) (sani i)

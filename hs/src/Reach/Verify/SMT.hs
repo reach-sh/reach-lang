@@ -460,21 +460,28 @@ smt_a ctxt at_de da =
     DLA_Var dv -> smt_v ctxt at_de dv
     DLA_Constant c -> ctxt_smt_con ctxt ctxt at_de c
     DLA_Literal c -> smt_lt ctxt at_de c
-    DLA_Array _ as -> cons as
-    DLA_Tuple as -> cons as
-    DLA_Obj m -> cons $ M.elems m
-    DLA_Data _ vn vv -> smtApply (s ++ "_" ++ vn) [smt_a ctxt at_de vv]
     DLA_Interact who i _ -> Atom $ smtInteract ctxt who i
+
+smt_la :: SMTCtxt -> SrcLoc -> DLLargeArg -> SExpr
+smt_la ctxt at_de dla =
+  case dla of
+    DLLA_Array _ as -> cons as
+    DLLA_Tuple as -> cons as
+    DLLA_Obj m -> cons $ M.elems m
+    DLLA_Data _ vn vv -> smtApply (s ++ "_" ++ vn) [smt_a ctxt at_de vv]
   where
+    t = largeArgTypeOf dla
     s = smtTypeSort ctxt t
-    t = argTypeOf da
-    cons as = smtApply (s ++ "_cons") (map (smt_a ctxt at_de) as)
+    cons as =
+      smtApply (s ++ "_cons") (map (smt_a ctxt at_de) as)
 
 smt_e :: SMTCtxt -> SrcLoc -> Maybe DLVar -> DLExpr -> SMTComp
 smt_e ctxt at_dv mdv de =
   case de of
     DLE_Arg at da ->
       pathAddBound ctxt at_dv mdv bo $ smt_a ctxt at da
+    DLE_LArg at dla ->
+      pathAddBound ctxt at_dv mdv bo $ smt_la ctxt at dla
     DLE_Impossible _ _ ->
       pathAddUnbound ctxt at_dv mdv bo
     DLE_PrimOp at cp args ->
@@ -574,7 +581,7 @@ smtSwitch sm ctxt at ov csm iter =
           case mov' of
             Just ov' -> smtEq ovp ov'p
               where
-                ov'p = smt_a ctxt at (DLA_Data ovtm vn (DLA_Var ov'))
+                ov'p = smt_la ctxt at (DLLA_Data ovtm vn (DLA_Var ov'))
             Nothing -> Atom "true"
         udef_m = pathAddUnbound ctxt at mov' (O_SwitchCase vn)
 

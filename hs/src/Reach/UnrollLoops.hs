@@ -62,6 +62,19 @@ liftLet at v e = do
     Nothing ->
       impossible "no lifts"
 
+liftExpr :: HasCallStack => SrcLoc -> SLType -> DLExpr -> App s DLArg
+liftExpr at t e = do
+  idx <- allocIdx
+  let v = DLVar at "ul" t idx
+  liftLet at v e
+  return $ DLA_Var v
+
+liftArray :: HasCallStack => SrcLoc -> SLType -> [DLArg] -> App s DLExpr
+liftArray at ty as = do
+  let a_ty = T_Array ty $ fromIntegral $ length as
+  na <- liftExpr at a_ty $ DLE_LArg at $ DLLA_Array ty as
+  return $ DLE_Arg at na
+
 addLifts :: (LLCommon a -> a) -> LLCommon a -> Lifts -> a
 addLifts mkk k = \case
   Seq.Empty -> mkk k
@@ -123,10 +136,6 @@ ul_a = \case
   DLA_Var v -> ul_va v
   DLA_Constant c -> pure $ DLA_Constant c
   DLA_Literal c -> (pure $ DLA_Literal c)
-  DLA_Array t as -> (pure $ DLA_Array t) <*> ul_as as
-  DLA_Tuple as -> (pure $ DLA_Tuple) <*> ul_as as
-  DLA_Obj m -> (pure $ DLA_Obj) <*> mapM ul_a m
-  DLA_Data t vn vv -> DLA_Data t vn <$> ul_a vv
   DLA_Interact p m t -> (pure $ DLA_Interact p m t)
 
 ul_as :: [DLArg] -> App s [DLArg]
@@ -135,22 +144,27 @@ ul_as = mapM ul_a
 ul_explode :: SrcLoc -> DLArg -> App s (SLType, [DLArg])
 ul_explode at a =
   case a of
-    DLA_Array t as -> pure (t, as)
     DLA_Var (DLVar _ _ (T_Array t sz) _) -> do_explode t sz
     DLA_Interact _ _ (T_Array t sz) -> do_explode t sz
     _ -> impossible "explode not array"
   where
     do_explode t sz = pure (,) <*> pure t <*> mapM mk1 [0 .. (sz -1)]
       where
-        mk1 i = do
-          idx <- allocIdx
-          let v = DLVar at "ul" t idx
-          liftLet at v $ DLE_ArrayRef at a (DLA_Literal (DLL_Int at $ fromIntegral i))
-          return $ DLA_Var v
+        mk1 i =
+          liftExpr at t $
+            DLE_ArrayRef at a (DLA_Literal (DLL_Int at $ fromIntegral i))
+
+ul_la :: DLLargeArg -> App s DLLargeArg
+ul_la = \case
+  DLLA_Array t as -> (pure $ DLLA_Array t) <*> ul_as as
+  DLLA_Tuple as -> (pure $ DLLA_Tuple) <*> ul_as as
+  DLLA_Obj m -> (pure $ DLLA_Obj) <*> mapM ul_a m
+  DLLA_Data t vn vv -> DLLA_Data t vn <$> ul_a vv
 
 ul_e :: DLExpr -> App s DLExpr
 ul_e = \case
   DLE_Arg at a -> (pure $ DLE_Arg at) <*> ul_a a
+  DLE_LArg at la -> (pure $ DLE_LArg at) <*> ul_la la
   DLE_Impossible at lab -> pure $ DLE_Impossible at lab
   DLE_PrimOp at p as -> (pure $ DLE_PrimOp at p) <*> ul_as as
   DLE_ArrayRef at a i -> (pure $ DLE_ArrayRef at) <*> ul_a a <*> ul_a i
@@ -161,7 +175,7 @@ ul_e = \case
     y <- ul_a y0
     (x_ty, x') <- ul_explode at x
     (_, y') <- ul_explode at y
-    return $ DLE_Arg at $ DLA_Array x_ty $ x' ++ y'
+    liftArray at x_ty $ x' <> y'
   DLE_ArrayZip at x0 y0 -> do
     recordUnroll
     x <- ul_a x0
@@ -169,7 +183,9 @@ ul_e = \case
     (x_ty, x') <- ul_explode at x
     (y_ty, y') <- ul_explode at y
     let ty = T_Tuple [x_ty, y_ty]
-    return $ DLE_Arg at $ DLA_Array ty $ zipWith (\xe ye -> DLA_Tuple [xe, ye]) x' y'
+    let go xa ya = liftExpr at ty $ DLE_LArg at $ DLLA_Tuple [xa, ya]
+    as <- zipWithM go x' y'
+    liftArray at ty as
   DLE_TupleRef at t i -> (pure $ DLE_TupleRef at) <*> ul_a t <*> pure i
   DLE_ObjectRef at o k -> (pure $ DLE_ObjectRef at) <*> ul_a o <*> pure k
   DLE_Interact at fs p m t as -> (pure $ DLE_Interact at fs p m t) <*> ul_as as
@@ -239,7 +255,7 @@ ul_m mkk ul_k = \case
     (lifts, (fs, r')) <- collectLifts $ liftM unzip $ mapM f' x'
     ans' <- ul_v_rn ans
     k' <- ul_k k
-    let m' = llSeqn mkk fs (LL_Let at (Just ans') (DLE_Arg at $ DLA_Array r_ty r') k')
+    let m' = llSeqn mkk fs (LL_Let at (Just ans') (DLE_LArg at $ DLLA_Array r_ty r') k')
     return $ addLifts mkk m' (xlifts <> lifts)
   LL_ArrayReduce at ans x0 z b a (LLBlock _ _ f r) k -> do
     recordUnroll

@@ -119,13 +119,7 @@ all_points = \case
   DLA_Var v -> S.singleton $ P_Var v
   DLA_Constant _ -> S.singleton $ P_Con
   DLA_Literal _ -> S.singleton $ P_Con
-  DLA_Array _ as -> more as
-  DLA_Tuple as -> more as
-  DLA_Obj m -> more $ M.elems m
-  DLA_Data _ _ a -> all_points a
   DLA_Interact who what _ -> S.singleton $ P_Interact who what
-  where
-    more = mconcatMap all_points
 
 kgq_a_all :: KCtxt -> DLArg -> IO ()
 kgq_a_all ctxt a =
@@ -144,13 +138,24 @@ kgq_a_onlym ctxt mv a =
     Nothing -> mempty
     Just v -> kgq_a_only ctxt v a
 
+kgq_la :: KCtxt -> Maybe DLVar -> DLLargeArg -> IO ()
+kgq_la ctxt mv = \case
+  DLLA_Array _ as -> moreas as
+  DLLA_Tuple as -> moreas as
+  DLLA_Obj m -> moreas $ M.elems m
+  DLLA_Data _ _ a -> onea a
+  where
+    moreas = mconcatMap onea
+    onea = kgq_a_onlym ctxt mv
+
 kgq_e :: KCtxt -> Maybe DLVar -> DLExpr -> IO ()
 kgq_e ctxt mv = \case
   DLE_Arg _ a -> kgq_a_onlym ctxt mv a
+  DLE_LArg _ la -> kgq_la ctxt mv la
   DLE_Impossible {} -> mempty
-  DLE_PrimOp _ _ as -> kgq_a_onlym ctxt mv (DLA_Tuple as)
-  DLE_ArrayRef _ a e -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e])
-  DLE_ArraySet _ a e n -> kgq_a_onlym ctxt mv (DLA_Tuple [a, e, n])
+  DLE_PrimOp _ _ as -> kgq_la ctxt mv (DLLA_Tuple as)
+  DLE_ArrayRef _ a e -> kgq_la ctxt mv (DLLA_Tuple [a, e])
+  DLE_ArraySet _ a e n -> kgq_la ctxt mv (DLLA_Tuple [a, e, n])
   DLE_ArrayConcat _ x_da y_da ->
     kgq_a_onlym ctxt mv x_da >> kgq_a_onlym ctxt mv y_da
   DLE_ArrayZip _ x_da y_da ->
@@ -158,24 +163,20 @@ kgq_e ctxt mv = \case
   DLE_TupleRef _ a _ -> kgq_a_onlym ctxt mv a
   DLE_ObjectRef _ a _ -> kgq_a_onlym ctxt mv a
   DLE_Interact _ _ who what t as ->
-    kgq_a_onlym ctxt mv (DLA_Tuple $ (DLA_Interact who what t) : as)
+    kgq_la ctxt mv (DLLA_Tuple $ (DLA_Interact who what t) : as)
   DLE_Digest _ _ ->
     --- This line right here is where all the magic happens
     mempty
   DLE_Claim at f ct what mmsg -> this
     where
       this =
-        case (ct, what) of
-          (CT_Assert, _) -> mempty
-          (CT_Assume, _) -> mempty
-          (CT_Require, _) -> mempty
-          (CT_Possible, _) -> mempty
-          (CT_Unknowable who, (DLA_Tuple whats)) ->
-            mapM_ query_each whats
-            where
-              query_each = query ctxt at f mmsg who . all_points
-          (CT_Unknowable {}, _) ->
-            impossible "not tuple unknowable"
+        case ct of
+          CT_Assert -> mempty
+          CT_Assume -> mempty
+          CT_Require -> mempty
+          CT_Possible -> mempty
+          CT_Unknowable who ->
+            query ctxt at f mmsg who $ all_points what
   DLE_Transfer _ _ amt ->
     kgq_a_all ctxt amt
   DLE_Wait _ amt ->
@@ -274,7 +275,7 @@ kgq_s ctxt = \case
     kgq_fs ctxt fs >> msg_to_as
       >> kgq_a_only ctxt from_amtv from_amt
       >> kgq_a_all ctxt (DLA_Var from_amtv)
-      >> kgq_a_all ctxt (DLA_Tuple $ map DLA_Var from_msg)
+      >> mapM_ (kgq_a_all ctxt) (map DLA_Var from_msg)
       >> ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       >> ctxtNewScope ctxt (kgq_n ctxt next_n)
     where

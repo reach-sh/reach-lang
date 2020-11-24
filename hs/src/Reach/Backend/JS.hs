@@ -143,19 +143,26 @@ jsArg = \case
       DLC_UInt_max ->
         "stdlib.UInt_max"
   DLA_Literal c -> jsCon c
-  DLA_Array _ as -> jsArg $ DLA_Tuple as
-  DLA_Tuple as -> jsArray $ map jsArg as
-  DLA_Obj m -> jsObject $ M.map jsArg m
-  DLA_Data _ vn vv -> jsArray [jsString vn, jsArg vv]
   DLA_Interact _ m t ->
     jsProtect "null" t $ "interact." <> pretty m
+
+jsLargeArg :: DLLargeArg -> Doc
+jsLargeArg = \case
+  DLLA_Array _ as ->
+    jsLargeArg $ DLLA_Tuple as
+  DLLA_Tuple as ->
+    jsArray $ map jsArg as
+  DLLA_Obj m ->
+    jsObject $ M.map jsArg m
+  DLLA_Data _ vn vv ->
+    jsArray [jsString vn, jsArg vv]
 
 jsDigest :: [DLArg] -> Doc
 jsDigest as =
   jsApply
     "stdlib.digest"
     [ jsContract (T_Tuple $ map argTypeOf as)
-    , jsArg (DLA_Tuple as)
+    , jsLargeArg (DLLA_Tuple as)
     ]
 
 jsPrimApply :: JSCtxt -> PrimOp -> [Doc] -> Doc
@@ -187,6 +194,8 @@ jsExpr :: JSCtxt -> DLExpr -> Doc
 jsExpr ctxt = \case
   DLE_Arg _ a ->
     jsArg a
+  DLE_LArg _ la ->
+    jsLargeArg la
   DLE_Impossible at msg ->
     expect_thrown at msg
   DLE_PrimOp _ p as ->

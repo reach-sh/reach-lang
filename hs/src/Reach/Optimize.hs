@@ -124,18 +124,22 @@ opt_a = \case
   DLA_Var v -> DLA_Var <$> opt_v v
   DLA_Constant c -> pure $ DLA_Constant c
   DLA_Literal c -> (pure $ DLA_Literal c)
-  DLA_Array t as -> (pure $ DLA_Array t) <*> opt_as as
-  DLA_Tuple as -> (pure $ DLA_Tuple) <*> opt_as as
-  DLA_Obj m -> (pure $ DLA_Obj) <*> mapM opt_a m
-  DLA_Data t vn vv -> DLA_Data t vn <$> opt_a vv
   DLA_Interact p m t -> (pure $ DLA_Interact p m t)
 
 opt_as :: [DLArg] -> App [DLArg]
 opt_as = mapM opt_a
 
+opt_la :: DLLargeArg -> App DLLargeArg
+opt_la = \case
+  DLLA_Array t as -> (pure $ DLLA_Array t) <*> opt_as as
+  DLLA_Tuple as -> (pure $ DLLA_Tuple) <*> opt_as as
+  DLLA_Obj m -> (pure $ DLLA_Obj) <*> mapM opt_a m
+  DLLA_Data t vn vv -> DLLA_Data t vn <$> opt_a vv
+
 opt_e :: DLExpr -> App DLExpr
 opt_e = \case
   DLE_Arg at a -> (pure $ DLE_Arg at) <*> opt_a a
+  DLE_LArg at a -> (pure $ DLE_LArg at) <*> opt_la a
   DLE_Impossible at lab -> pure $ DLE_Impossible at lab
   DLE_PrimOp at p as -> (pure $ DLE_PrimOp at p) <*> opt_as as
   DLE_ArrayRef at a i -> (pure $ DLE_ArrayRef at) <*> opt_a a <*> opt_a i

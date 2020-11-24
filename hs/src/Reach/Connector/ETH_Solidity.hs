@@ -283,32 +283,7 @@ solArg ctxt da =
     DLA_Var v -> solVar ctxt v
     DLA_Constant c -> solLit $ conCons connect_eth c
     DLA_Literal c -> solLit c
-    DLA_Array _ as -> brackets $ hsep $ punctuate comma $ map (solArg ctxt) as
-    DLA_Tuple as -> con $ map (solArg ctxt) as
-    DLA_Obj m -> con $ map ((solArg ctxt) . snd) $ M.toAscList m
-    DLA_Data tm vn vv -> con $ (solVariant t vn) : (map (\(vn', ty) -> if vn == vn' then solArg ctxt vv else defaultVal ty) $ M.toAscList tm)
     DLA_Interact {} -> impossible "consensus interact"
-  where
-    t = solType ctxt (argTypeOf da)
-    con = solApply t
-    defaultVal = \case
-      T_UInt -> solLit $ DLL_Int sb 0
-      T_Bool -> solLit $ DLL_Bool False
-      T_Null -> solLit $ DLL_Null
-      T_Bytes sz ->
-        solLit $ DLL_Bytes $ B.replicate (fromIntegral sz) '\NUL'
-      T_Digest -> "0"
-      T_Address -> "0x" <> pretty (replicate 40 '0')
-      T_Fun {} -> impossible "defaultVal for Fun"
-      T_Array ty n -> solArrayLit $ replicate (fromInteger n) $ defaultVal ty
-      T_Tuple tys -> solArrayLit $ map defaultVal tys
-      T_Object _tyMap {- (M.Map SLVar SLType) -} ->
-        error $ "XXX defaultVal not yet implemented for Object"
-      T_Data _variantMap {- (M.Map SLVar SLType) -} ->
-        error $ "XXX defaultVal not yet implemented for Data"
-      T_Forall {} -> impossible "defaultVal for Forall"
-      T_Var {} -> impossible "defaultVal for Var"
-      T_Type {} -> impossible "defaultVal for Type"
 
 solPrimApply :: SolCtxt -> PrimOp -> [Doc] -> Doc
 solPrimApply ctxt = \case
@@ -349,9 +324,29 @@ solPrimApply ctxt = \case
       [l, r] -> solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
 
+solLargeArg :: SolCtxt -> DLVar -> DLLargeArg -> Doc
+solLargeArg ctxt dv la =
+  case la of
+    DLLA_Array _ as -> c $ zipWith go ([0..]::[Int]) as
+      where go i a = one ("[" <> pretty i <> "]") (solArg ctxt a)
+    DLLA_Tuple as -> c $ zipWith go ([0..]::[Int]) as
+      where go i a = one (".elem" <> pretty i) (solArg ctxt a)
+    DLLA_Obj m -> c $ map go $ M.toAscList m
+      where go (k, a) = one ("." <> pretty k) (solArg ctxt a)
+    DLLA_Data _ vn vv ->
+      c [ one ".which" (solVariant t vn)
+        , one ("._" <> pretty vn) (solArg ctxt vv) ]
+  where
+    t = solType ctxt $ largeArgTypeOf la
+    one :: Doc -> Doc -> Doc
+    one f v = solVar ctxt dv <> f <+> "=" <+> v <> semi
+    c = vsep
+
 solExpr :: SolCtxt -> Doc -> DLExpr -> Doc
 solExpr ctxt sp = \case
   DLE_Arg _ a -> solArg ctxt a <> sp
+  DLE_LArg {} ->
+    impossible "large arg"
   DLE_Impossible at msg -> expect_thrown at msg
   DLE_PrimOp _ p args ->
     (solPrimApply ctxt p $ map (solArg ctxt) args) <> sp
@@ -447,6 +442,9 @@ solSwitch iter ctxt _at ov csm = SolTailRes ctxt $ solIfs $ map cm1 $ M.toAscLis
 solCom :: (SolCtxt -> k -> SolTailRes a) -> SolCtxt -> PLCommon k -> SolTailRes a
 solCom iter ctxt = \case
   PL_Return _ -> SolTailRes ctxt emptyDoc
+  PL_Let _ _ dv (DLE_LArg _ la) k -> SolTailRes ctxt la_p <> iter ctxt k
+    where
+      la_p = solLargeArg ctxt dv la
   PL_Let _ _ dv (DLE_ArrayConcat _ x y) k -> SolTailRes ctxt concat_p <> iter ctxt k
     where
       concat_p = vsep [copy x 0, copy y (arraySize x)]
@@ -570,6 +568,7 @@ manyVars_m iter = \case
   PL_Let _ lc dv de k -> mdv <> iter k
     where
       lc' = case de of
+        DLE_LArg {} -> PL_Many
         DLE_ArrayConcat {} -> PL_Many
         DLE_ArrayZip {} -> PL_Many
         _ -> lc

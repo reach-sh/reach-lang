@@ -380,35 +380,6 @@ ca = \case
   DLA_Var v -> lookup_let v
   DLA_Constant c -> cl $ conCons connect_algo c
   DLA_Literal c -> cl c
-  DLA_Array t as ->
-    case t of
-      T_Bool ->
-        case cas_boolbs as of
-          Nothing -> normal
-          Just x -> cl $ DLL_Bytes x
-      _ -> normal
-    where
-      normal = cconcatbs $ map (\a -> (t, ca a)) as
-  DLA_Tuple as ->
-    cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
-  DLA_Obj m ->
-    cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
-  DLA_Data tm vt va -> do
-    let mvti = find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0 ..]
-    let vti =
-          case mvti of
-            Just (_, x) -> x
-            Nothing -> impossible $ "dla_data"
-    cl $ DLL_Int sb vti
-    ca va
-    let vlen = 1 + typeSizeOf (argTypeOf va)
-    op "concat"
-    let dlen = typeSizeOf $ T_Data tm
-    let zlen = fromIntegral $ dlen - vlen
-    let zbs = B.replicate zlen (toEnum 0)
-    cl $ DLL_Bytes zbs
-    op "concat"
-    check_concat_len dlen
   DLA_Interact {} -> impossible "consensus interact"
 
 argSmall :: DLArg -> App Bool
@@ -416,10 +387,6 @@ argSmall = \case
   DLA_Var v -> letSmall v
   DLA_Constant {} -> return True
   DLA_Literal {} -> return True
-  DLA_Array {} -> return False
-  DLA_Tuple {} -> return False
-  DLA_Obj {} -> return False
-  DLA_Data {} -> return False
   DLA_Interact {} -> impossible "consensus interact"
 
 cprim :: PrimOp -> [DLArg] -> App ()
@@ -594,9 +561,42 @@ doArrayRef at aa frombs ie = do
         True -> cfrombs t
         False -> nop
 
+cla :: DLLargeArg -> App ()
+cla = \case
+  DLLA_Array t as ->
+    case t of
+      T_Bool ->
+        case cas_boolbs as of
+          Nothing -> normal
+          Just x -> cl $ DLL_Bytes x
+      _ -> normal
+    where
+      normal = cconcatbs $ map (\a -> (t, ca a)) as
+  DLLA_Tuple as ->
+    cconcatbs $ map (\a -> (argTypeOf a, ca a)) as
+  DLLA_Obj m ->
+    cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd $ M.toAscList m
+  DLLA_Data tm vt va -> do
+    let mvti = find ((== vt) . fst . fst) $ zip (M.toAscList tm) [0 ..]
+    let vti =
+          case mvti of
+            Just (_, x) -> x
+            Nothing -> impossible $ "dla_data"
+    cl $ DLL_Int sb vti
+    ca va
+    let vlen = 1 + typeSizeOf (argTypeOf va)
+    op "concat"
+    let dlen = typeSizeOf $ T_Data tm
+    let zlen = fromIntegral $ dlen - vlen
+    let zbs = B.replicate zlen (toEnum 0)
+    cl $ DLL_Bytes zbs
+    op "concat"
+    check_concat_len dlen
+
 ce :: DLExpr -> App ()
 ce = \case
   DLE_Arg _ a -> ca a
+  DLE_LArg _ a -> cla a
   DLE_Impossible at msg -> expect_thrown at msg
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)

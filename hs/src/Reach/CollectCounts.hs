@@ -67,16 +67,20 @@ instance Countable DLArg where
     DLA_Var v -> counts v
     DLA_Constant {} -> mempty
     DLA_Literal {} -> mempty
-    DLA_Array _ as -> counts as
-    DLA_Tuple as -> counts as
-    DLA_Obj as -> counts as
-    DLA_Data _ _ v -> counts v
     DLA_Interact {} -> mempty
+
+instance Countable DLLargeArg where
+  counts = \case
+    DLLA_Array _ as -> counts as
+    DLLA_Tuple as -> counts as
+    DLLA_Obj as -> counts as
+    DLLA_Data _ _ v -> counts v
 
 instance Countable DLExpr where
   counts e =
     case e of
       DLE_Arg _ a -> counts a
+      DLE_LArg _ a -> counts a
       DLE_Impossible _ _ -> mempty
       DLE_PrimOp _ _ as -> counts as
       DLE_ArrayRef _ aa ea -> counts [aa, ea]

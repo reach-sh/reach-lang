@@ -494,10 +494,6 @@ data DLArg
   = DLA_Var DLVar
   | DLA_Constant DLConstant
   | DLA_Literal DLLiteral
-  | DLA_Array SLType [DLArg]
-  | DLA_Tuple [DLArg]
-  | DLA_Obj (M.Map String DLArg)
-  | DLA_Data (M.Map SLVar SLType) String DLArg
   | DLA_Interact SLPart String SLType
   deriving (Eq, Ord, Generic, NFData, Show)
 
@@ -554,8 +550,16 @@ mkAnnot a = StmtAnnot {..}
     sa_pure = isPure a
     sa_local = isLocal a
 
+data DLLargeArg
+  = DLLA_Array SLType [DLArg]
+  | DLLA_Tuple [DLArg]
+  | DLLA_Obj (M.Map String DLArg)
+  | DLLA_Data (M.Map SLVar SLType) String DLArg
+  deriving (Eq, Ord, Generic, NFData, Show)
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
+  | DLE_LArg SrcLoc DLLargeArg
   | DLE_Impossible SrcLoc String
   | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
@@ -575,6 +579,7 @@ data DLExpr
 instance IsPure DLExpr where
   isPure = \case
     DLE_Arg {} -> True
+    DLE_LArg {} -> True
     DLE_Impossible {} -> True
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
@@ -599,6 +604,7 @@ instance IsPure DLExpr where
 instance IsLocal DLExpr where
   isLocal = \case
     DLE_Arg {} -> True
+    DLE_LArg {} -> True
     DLE_Impossible {} -> True
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
@@ -637,7 +643,7 @@ data DLStmt
   | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
-  | DLS_Return SrcLoc Int SLVal
+  | DLS_Return SrcLoc Int (Either SLVal DLArg)
   | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
   | DLS_Stop SrcLoc
   | DLS_Only SrcLoc SLPart DLStmts

@@ -16,6 +16,11 @@ pform_ f = pform f mempty
 pbrackets :: [Doc] -> Doc
 pbrackets xs = group $ render_nest $ vsep $ punctuate comma xs
 
+instance (Pretty a, Pretty b) => Pretty (Either a b) where
+  pretty = \case
+    Left x -> pretty x
+    Right x -> pretty x
+
 instance Pretty SrcLoc where
   pretty = viaShow
 
@@ -90,20 +95,24 @@ instance Pretty DLArg where
     DLA_Var v -> pretty v
     DLA_Constant c -> pretty c
     DLA_Literal c -> pretty c
-    DLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLA_Tuple as))
-    DLA_Tuple as -> brackets $ render_das as
-    DLA_Obj env -> render_obj env
-    DLA_Data _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
     DLA_Interact who m t ->
       "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
 
 render_das :: [DLArg] -> Doc
 render_das as = hsep $ punctuate comma $ map pretty as
 
+instance Pretty DLLargeArg where
+  pretty = \case
+    DLLA_Array t as -> "array" <> parens (pretty t <> comma <+> pretty (DLLA_Tuple as))
+    DLLA_Tuple as -> brackets $ render_das as
+    DLLA_Obj env -> render_obj env
+    DLLA_Data _ vn vv -> "<" <> pretty vn <> " " <> pretty vv <> ">"
+
 instance Pretty DLExpr where
   pretty e =
     case e of
       DLE_Arg _ a -> pretty a
+      DLE_LArg _ a -> pretty a
       DLE_Impossible _ msg -> "impossible" <> parens (pretty msg)
       DLE_PrimOp _ o as -> viaShow o <> parens (render_das as)
       DLE_ArrayRef _ a o -> pretty a <> brackets (pretty o)
