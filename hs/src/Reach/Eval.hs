@@ -647,6 +647,12 @@ compileTypeOf ctxt at v = do
   (lifts, da) <- compileArgExpr ctxt at dae
   return (lifts, t, da)
 
+compileTypeOfs :: SLCtxt s -> SrcLoc -> [SLVal] -> ST s (DLStmts, [SLType], [DLArg])
+compileTypeOfs ctxt at vs = do
+  let (ts, daes) = unzip $ map (typeOf at) vs
+  (lifts, das) <- compileArgExprs ctxt at daes
+  return (lifts, ts, das)
+
 compileCheckType :: SLCtxt s -> SrcLoc -> SLType -> SLVal -> ST s (DLStmts, DLArg)
 compileCheckType ctxt at et v = do
   let ae = checkType at et v
@@ -1098,10 +1104,13 @@ evalForm ctxt at sco st f args =
           let knower = participant_who v_kn
           let sco_knower = sco {sco_env = sco_lookup_penv ctxt sco knower}
           let st_whats = st {st_mode = SLM_LocalStep}
-          SLRes lifts_whats _ whats_sv <- evalExprs ctxt at sco_knower st_whats whats_e
-          let whats_v = SLV_Tuple at $ map snd whats_sv
-          (whats_lifts, _, whats_da) <- compileTypeOf ctxt at whats_v
-          let ct = CT_Unknowable notter
+          SLRes lifts_whats _ whats_sv <-
+            evalExprs ctxt at sco_knower st_whats whats_e
+          let whats_vs = map snd whats_sv
+          (whats_lifts, _, whats_das) <-
+            compileTypeOfs ctxt at whats_vs
+          let whats_da = DLA_Literal $ DLL_Bool False
+          let ct = CT_Unknowable notter whats_das
           let lifts' =
                 return $
                   DLS_Let at Nothing $

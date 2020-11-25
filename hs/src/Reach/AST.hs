@@ -511,7 +511,7 @@ data ClaimType
     --- this true.
     CT_Possible
   | --- Check if one part can't know what another party does know
-    CT_Unknowable SLPart
+    CT_Unknowable SLPart [DLArg]
   deriving (Eq, Ord, Generic, NFData, Show)
 
 class IsPure a where
