@@ -400,9 +400,6 @@ solHashStateCheck :: SolCtxt -> Int -> Doc
 solHashStateCheck _ctxt prev =
   solHash [ (solNum prev), "_a.svs" ]
 
-solAsn :: SolCtxt -> DLAssignment -> [Doc]
-solAsn ctxt (DLAssignment m) = map ((solArg ctxt) . snd) $ M.toAscList m
-
 data SolTailRes a = SolTailRes (SolCtxt) (Doc)
 
 instance Semigroup (SolTailRes a) where
@@ -518,12 +515,16 @@ solCTail ctxt = \case
       SolTailRes ctxt'_f f' = solCTail ctxt f
       ctxt' = ctxt'_t <> ctxt'_f
   CT_Switch at ov csm -> solSwitch solCTail ctxt at ov csm
-  CT_Jump _ which svs asn ->
-    SolTailRes ctxt $
-      vsep
-        [ ctxt_emit ctxt
-        , solApply (solLoop_fun which) [solApply (solMsg_arg which) ((map (solVar ctxt) svs) ++ (solAsn ctxt asn))] <> semi
-        ]
+  CT_Jump _ which svs (DLAssignment asnm) ->
+    SolTailRes ctxt $ vsep $
+      [ ctxt_emit ctxt
+      , solDecl "la" ((solMsg_arg which) <> " memory") <> semi ] <>
+      map go_svs svs <>
+      map go_asn (M.toAscList asnm) <>
+      [ solApply (solLoop_fun which) [ "la" ] <> semi ]
+    where
+      go_svs v = solSet ("la.svs." <> solRawVar v) (solVar ctxt v)
+      go_asn (v, a) = solSet ("la.msg." <> solRawVar v) (solArg ctxt a)
   CT_From _ (Just svs) ->
     SolTailRes ctxt $
       vsep $
@@ -614,14 +615,12 @@ solCTail_top ctxt which svs msg mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
         , ctxt_varm = mvarsm <> svsm <> msgm <> (ctxt_varm ctxt)
         }
 
-solStructSVS :: SolCtxt -> Int -> ArgMode -> [DLVar] -> Doc
-solStructSVS ctxt which am svs =
+solStructSVS :: SolCtxt -> Int -> [DLVar] -> Doc
+solStructSVS ctxt which svs =
   solStruct (solMsg_arg_postsvs which) svs_tys
   where
     svs_tys = given_tys <> map (solVarDecl ctxt) svs
-    given_tys = case am of
-      AM_Call -> [(solLastBlockDef, (solType ctxt T_UInt))]
-      _ -> []
+    given_tys = [(solLastBlockDef, (solType ctxt T_UInt))]
 
 solArgDefn :: SolCtxt -> Int -> Int -> ArgMode -> [DLVar] -> ([Doc], [Doc])
 solArgDefn ctxt which prev am msg = (argDefns, argDefs)
@@ -653,13 +652,12 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
     evtDefn = solEvent ctxt which True
     (argDefns, argDefs) = solArgDefn ctxt which prev am msg
     ret = "payable"
-    am = solHandlerAM ctxt_top which
-    (hashCheck, sfl) =
+    (hashCheck, am, sfl) =
       case (which, plo_deployMode $ ctxt_plo ctxt_top) of
         (1, DM_firstMsg) ->
-          (emptyDoc, SFL_Constructor)
+          (emptyDoc, AM_Memory, SFL_Constructor)
         _ ->
-          (hcp, SFL_Function True (solMsg_fun which))
+          (hcp, AM_Call, SFL_Function True (solMsg_fun which))
           where
             hcp = (solRequire (checkMsg "state") $ solEq ctxt ("current_state") (solHashStateCheck ctxt prev)) <> semi
     funDefn = solFunctionLike sfl argDefs ret body
@@ -698,32 +696,22 @@ solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
 solHandlers :: SolCtxt -> CHandlers -> Doc
 solHandlers ctxt (CHandlers hs) = vsep_with_blank $ map (uncurry (solHandler ctxt)) $ M.toList hs
 
-solHandlerAM :: SolCtxt -> Int -> ArgMode
-solHandlerAM ctxt which =
-  case (which, plo_deployMode $ ctxt_plo ctxt) of
-    (1, DM_firstMsg) -> AM_Memory
-    _ -> AM_Call
-
 solHandlerStructSVS :: SolCtxt -> (S.Set Int, [Doc]) -> (Int, CHandler) -> (S.Set Int, [Doc])
-solHandlerStructSVS ctxt (defd, res) (which_, h) =
-  case S.member which defd of
+solHandlerStructSVS _ acc (_which, C_Loop {}) = acc
+solHandlerStructSVS ctxt (defd, res) (_which, C_Handler _ _ _ prev svs _ _ _) =
+  case S.member prev defd of
     True -> (defd, res)
     False -> (defd', res')
   where
-    res' = solStructSVS ctxt which am svs : res
-    defd' = S.insert which defd
-    (which, am, svs) =
-      case h of
-        C_Handler _ _ _ prev svs_ _ _ _ ->
-          (prev, solHandlerAM ctxt which, svs_)
-        C_Loop _ svs_ _ _ -> (which_, AM_Memory, svs_)
+    res' = solStructSVS ctxt prev svs : res
+    defd' = S.insert prev defd
 
 solHandlersStructSVS :: SolCtxt -> CHandlers -> Doc
 solHandlersStructSVS ctxt (CHandlers hs) = vsep_with_blank $ snd $
   foldl (solHandlerStructSVS ctxt) (defd, res) $ M.toList hs
   where
     defd = S.singleton 0
-    res = [ solStructSVS ctxt 0 AM_Call [] ]
+    res = [ solStructSVS ctxt 0 [] ]
 
 _solDefineType1 :: (SLType -> ST s (Doc)) -> Int -> Doc -> SLType -> ST s ((Doc), (Doc))
 _solDefineType1 getTypeName i name = \case
