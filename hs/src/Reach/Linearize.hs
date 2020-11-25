@@ -7,7 +7,7 @@ import Reach.Util
 
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
 
-type LLRets = M.Map Int DLVar
+type LLRets = M.Map Int (DLVar, M.Map Int (DLStmts, DLArg))
 
 lin_com :: String -> (SrcLoc -> FluidEnv -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> FluidEnv -> LLRets -> DLStmt -> DLStmts -> a
 lin_com who back mkk fve rets s ks =
@@ -46,16 +46,24 @@ lin_com who back mkk fve rets s ks =
     DLS_Return at ret eda ->
       case M.lookup ret rets of
         Nothing -> back at fve rets ks
-        Just dv -> mkk $ LL_Set at dv da $ back at fve rets ks
-          where
-            da = case eda of
-                   Left _ -> impossible $ "sv not replaced"
-                   Right x -> x
+        Just (dv, retsm) ->
+          case eda of
+            Left reti ->
+              case M.lookup reti retsm of
+                Nothing -> impossible $ "missing return da"
+                Just (das, da) ->
+                  case das <> (return $ DLS_Return at ret (Right da)) <> ks of
+                    s' Seq.:<| ks' ->
+                      lin_com who back mkk fve rets s' ks'
+                    _ ->
+                      impossible $ "no cons"
+            Right da ->
+              mkk $ LL_Set at dv da $ back at fve rets ks
     DLS_Prompt at (Left _) ss -> back at fve rets (ss <> ks)
-    DLS_Prompt at (Right dv@(DLVar _ _ _ ret)) ss ->
+    DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss ->
       mkk $ LL_Var at dv $ back at fve rets' (ss <> ks)
       where
-        rets' = M.insert ret dv rets
+        rets' = M.insert ret (dv, retms) rets
     DLS_If {} ->
       impossible $ who ++ " cannot non-local if"
     DLS_Switch {} ->

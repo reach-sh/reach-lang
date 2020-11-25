@@ -643,8 +643,8 @@ data DLStmt
   | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
-  | DLS_Return SrcLoc Int (Either SLVal DLArg)
-  | DLS_Prompt SrcLoc (Either Int DLVar) DLStmts
+  | DLS_Return SrcLoc Int (Either Int DLArg)
+  | DLS_Prompt SrcLoc (Either Int (DLVar, M.Map Int (DLStmts, DLArg))) DLStmts
   | DLS_Stop SrcLoc
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_ToConsensus

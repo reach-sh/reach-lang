@@ -215,7 +215,7 @@ instance Pretty DLStmt where
           pret =
             case ret of
               Left _ -> emptyDoc
-              Right dv -> "let" <+> pretty dv
+              Right (dv, _) -> "let" <+> pretty dv
       DLS_Stop _ ->
         prettyStop
       DLS_Only _ who onlys ->

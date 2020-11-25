@@ -819,7 +819,7 @@ data SLExits
   | MayExit
   deriving (Eq, Show)
 
-type SLStmtRets = [(SrcLoc, SLSVal)]
+type SLStmtRets = [(SrcLoc, Maybe Int, SLSVal)]
 
 data SLStmtRes = SLStmtRes SLEnv SLStmtRets
 
@@ -1792,14 +1792,31 @@ evalApplyVals ctxt at sco st rator randvs =
             return $ SLRes lifts' body_st $ SLAppRes clo_env'' $ (lvl, v)
       case rs of
         [] -> no_prompt $ public $ SLV_Null body_at "clo app"
-        [(_, x)] -> no_prompt $ x
-        _ -> do
-          --- FIXME if all the values are actually the same, then we can treat this as a noprompt
-          let r_ty = typeMeets body_at $ map (\(r_at, (_r_lvl, r_sv)) -> (r_at, (fst (typeOf r_at r_sv)))) rs
-          let lvl = mconcat $ map fst $ map snd rs
-          let dv = DLVar body_at "clo app" r_ty ret
-          let lifts' = return $ DLS_Prompt body_at (Right dv) body_lifts
-          return $ SLRes lifts' body_st $ SLAppRes clo_env'' (lvl, (SLV_DLVar dv))
+        [(_, _, x)] -> no_prompt $ x
+        (_, _, (xlvl, xv)) : more -> do
+          let msvs = map (\(_a, _b, c)->c) more
+          let mlvls = map fst msvs
+          let mvs = map snd msvs
+          let lvl = mconcat $ xlvl : mlvls
+          -- Note: This test might be too expensive, so XXX try it
+          let all_same = False && all (== xv) mvs
+          case all_same of
+            True -> no_prompt $ (lvl, xv)
+            False -> do
+              let go (r_at, rmi, (_, rv)) = do
+                    (rlifts, rty, rda) <- compileTypeOf ctxt r_at rv
+                    let retsm =
+                          case rmi of
+                            Nothing -> mempty
+                            Just ri -> M.singleton ri (rlifts, rda)
+                    return $ (retsm, (r_at, rty))
+              (retsms, tys) <- unzip <$> mapM go rs
+              let retsm = mconcat retsms
+              let r_ty = typeMeets body_at tys
+              let dv = DLVar body_at "clo app" r_ty ret
+              let lifts' =
+                    return $ DLS_Prompt body_at (Right (dv, retsm)) body_lifts
+              return $ SLRes lifts' body_st $ SLAppRes clo_env'' (lvl, (SLV_DLVar dv))
     v ->
       expect_throw_ctx ctxt at (Err_Eval_NotApplicableVals v)
 
@@ -1964,16 +1981,18 @@ evalExpr ctxt at sco st e = do
                     evalPrim ctxt at sco st_tf (SLPrim_op $ IF_THEN_ELSE) [csv, tsv, fsv]
               False -> do
                 ret <- ctxt_alloc ctxt
-                let add_ret e_at' elifts ev =
-                      (e_ty, (elifts <> (return $ DLS_Return e_at' ret $ Left ev)))
-                      where
-                        (e_ty, _) = typeOf e_at' ev
-                let (t_ty, tlifts') = add_ret t_at' tlifts tv
-                let (f_ty, flifts') = add_ret f_at' flifts fv
+                let add_ret e_at' elifts ev = do
+                      (dlifts, e_ty, da) <- compileTypeOf ctxt e_at' ev
+                      let elifts' =
+                            elifts <> dlifts <>
+                              (return $ DLS_Return e_at' ret $ Right da)
+                      return $ (e_ty, elifts')
+                (t_ty, tlifts') <- add_ret t_at' tlifts tv
+                (f_ty, flifts') <- add_ret f_at' flifts fv
                 let ty = typeMeet at' (t_at', t_ty) (f_at', f_ty)
                 let ans_dv = DLVar at' "clo app" ty ret
                 let body_lifts = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts' flifts'
-                let lifts' = return $ DLS_Prompt at' (Right ans_dv) body_lifts
+                let lifts' = return $ DLS_Prompt at' (Right (ans_dv, mempty)) body_lifts
                 return $ SLRes lifts' st_tf $ (lvl, SLV_DLVar ans_dv)
           _ -> do
             let (n_at', ne) = case cv of
@@ -2617,7 +2636,7 @@ evalStmt ctxt at sco st ss =
     [] ->
       case sco_must_ret sco of
         RS_CannotReturn -> ret []
-        RS_ImplicitNull -> ret [(at, public $ SLV_Null at "implicit null")]
+        RS_ImplicitNull -> ret [(at, Nothing, public $ SLV_Null at "implicit null")]
         RS_NeedExplicit ->
           --- In the presence of `exit()`, it is okay to have a while
           --- that ends in an empty tail, if the empty tail is
@@ -2713,7 +2732,7 @@ evalStmt ctxt at sco st ss =
             let st_tf = stMerge ctxt at' st_t st_f
             let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
             let lifts' = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts flifts
-            let levelHelp = SLStmtRes (sco_env sco) . map (\(r_at, (r_lvl, r_v)) -> (r_at, (clvl <> r_lvl, r_v)))
+            let levelHelp = SLStmtRes (sco_env sco) . map (\(r_at, rmi, (r_lvl, r_v)) -> (r_at, rmi, (clvl <> r_lvl, r_v)))
             let ir = SLRes lifts' st_tf $ combineStmtRes at' clvl (levelHelp trets) (levelHelp frets)
             retSeqn ir at' ks_ne
           _ -> do
@@ -2777,10 +2796,10 @@ evalStmt ctxt at sco st ss =
                   expect_throw_ctx ctxt at $ Err_CannotReturn
                 _ -> x
             Nothing -> expect_throw_ctx ctxt at' $ Err_Eval_NoReturn
-      let (_, ev) = sev
-      let lifts' = return $ DLS_Return at' ret (Left ev)
+      evi <- ctxt_alloc ctxt
+      let lifts' = return $ DLS_Return at' ret (Left evi)
       expect_empty_tail ctxt lab a sp at ks $
-        return $ SLRes (elifts <> lifts') st_rt (SLStmtRes env [(at', sev)])
+        return $ SLRes (elifts <> lifts') st_rt (SLStmtRes env [(at', Just evi, sev)])
     (JSSwitch a _ de _ _ cases _ sp : ks) -> do
       let at' = srcloc_jsa "switch" a at
       let de_v = jse_expect_id at' de
@@ -2951,8 +2970,8 @@ combineStmtRets :: SrcLoc -> SecurityLevel -> SLStmtRets -> SLStmtRets -> SLStmt
 combineStmtRets at' lvl lrets rrets =
   case (lrets, rrets) of
     ([], []) -> []
-    ([], _) -> [(at', (lvl, SLV_Null at' "empty left"))] ++ rrets
-    (_, []) -> lrets ++ [(at', (lvl, SLV_Null at' "empty right"))]
+    ([], _) -> [(at', Nothing, (lvl, SLV_Null at' "empty left"))] ++ rrets
+    (_, []) -> lrets ++ [(at', Nothing, (lvl, SLV_Null at' "empty right"))]
     (_, _) -> lrets ++ rrets
 
 expect_empty_tail :: SLCtxt s -> String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
