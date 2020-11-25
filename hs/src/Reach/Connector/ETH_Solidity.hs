@@ -639,12 +639,20 @@ solArgDefn :: SolCtxt -> Int -> Int -> ArgMode -> [DLVar] -> [DLVar] -> ([Doc], 
 solArgDefn ctxt which prev am svs msg = (argDefns, argDefs)
   where
     argDefs = [solDecl "_a" ((solMsg_arg which) <> solArgLoc am)]
-    argDefns = [ solStructSVS ctxt prev am svs
-               , solStruct (solMsg_arg_msg which) msg_tys
-               , solStruct (solMsg_arg which) arg_tys ]
+    argDefns =
+      [ solStructSVS ctxt prev am svs ] <>
+      (case someArgs of
+         True ->
+           [ solStruct (solMsg_arg_msg which) msg_tys ]
+         False ->
+           []) <>
+      [ solStruct (solMsg_arg which) arg_tys ]
     msg_tys = map (solVarDecl ctxt) msg
-    arg_tys = [ ("svs", (solMsg_arg_postsvs prev))
-              , ("msg", (solMsg_arg_msg which)) ]
+    arg_tys = [ ("svs", (solMsg_arg_postsvs prev)) ]
+              <> case someArgs of
+                   True -> [ ("msg", (solMsg_arg_msg which)) ]
+                   False -> []
+    someArgs = not $ null msg_tys
 
 solHandler :: SolCtxt -> Int -> CHandler -> Doc
 solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
