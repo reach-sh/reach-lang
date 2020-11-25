@@ -2399,7 +2399,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                 SLRes amt_lifts_ _ amt_sv <- evalExpr ctxt at sco_penv' st_pure amte_
                 (amt_lifts_', amt_da) <- compileCheckType ctxt at T_UInt $ ensure_public ctxt at amt_sv
                 return $ (amte_, amt_lifts_ <> amt_lifts_', amt_da)
-          let amt_compute_lifts = return $ DLS_Only at who amt_lifts
+          let msg_compute_lifts = return $ DLS_Only at who (msg_lifts <> amt_lifts)
           amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt
           SLRes amt_check_lifts _ _ <- do
             --- XXX Merge with doAssertBalance somehow
@@ -2430,7 +2430,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                   }
           SLRes balup st_cstep' () <- doBalanceUpdate ctxt at sco' st_cstep ADD (SLV_DLVar amt_dv)
           SLRes conlifts k_st k_cr <- evalStmt ctxt at sco' st_cstep' ks
-          let lifts' = msg_lifts <> tlifts <> amt_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da amt_dv mtime' (amt_check_lifts <> balup <> conlifts))
+          let lifts' = tlifts <> msg_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da amt_dv mtime' (amt_check_lifts <> balup <> conlifts))
           --- FIXME This might be general logic that applies to any
           --- place where we merge, like IFs and SEQNs, so if one side
           --- of an if dies, then the other side doesn't need to merge
