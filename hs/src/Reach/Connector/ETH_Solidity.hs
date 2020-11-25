@@ -720,7 +720,10 @@ solHandlerStructSVS ctxt (defd, res) (which_, h) =
 
 solHandlersStructSVS :: SolCtxt -> CHandlers -> Doc
 solHandlersStructSVS ctxt (CHandlers hs) = vsep_with_blank $ snd $
-  foldl (solHandlerStructSVS ctxt) (mempty, mempty) $ M.toList hs
+  foldl (solHandlerStructSVS ctxt) (defd, res) $ M.toList hs
+  where
+    defd = S.singleton 0
+    res = [ solStructSVS ctxt 0 AM_Call [] ]
 
 _solDefineType1 :: (SLType -> ST s (Doc)) -> Int -> Doc -> SLType -> ST s ((Doc), (Doc))
 _solDefineType1 getTypeName i name = \case
