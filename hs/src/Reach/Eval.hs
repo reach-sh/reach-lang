@@ -1616,7 +1616,7 @@ evalPrim ctxt at sco st p sargs =
             [arg] ->
               (barg arg, Nothing)
             [arg, marg] ->
-              (barg arg, Just $ mustBeBytes at marg)
+              (barg arg, Just $ mustBeBytes ctxt at marg)
             _ -> illegal_args
       (darg_lifts, darg) <- dargm
       let lifts =
@@ -2322,7 +2322,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                 tvls <- mapM mk msg
                 let tv_lifts = mconcat $ map fst tvls
                 let tvs = map snd tvls
-                let msg_env_ = foldl' (env_insertp at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ map snd tvs
+                let msg_env_ = foldl' (env_insertp ctxt at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ map snd tvs
                 return $ (tv_lifts, msg_env_, tvs)
           -- TODO: ^ double check this srcloc
           --- We go back to the original env from before the to-consensus step
