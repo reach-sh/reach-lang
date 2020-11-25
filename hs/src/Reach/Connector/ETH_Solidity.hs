@@ -112,11 +112,11 @@ solBinOp o l r = l <+> pretty o <+> r
 solEq :: SolCtxt -> Doc -> Doc -> Doc
 solEq ctxt x y = solPrimApply ctxt PEQ [x, y]
 
-solAnd :: Doc -> Doc -> Doc
-solAnd x y = solBinOp "&&" x y
+-- solAnd :: Doc -> Doc -> Doc
+-- solAnd x y = solBinOp "&&" x y
 
-solBytesLength :: Doc -> Doc
-solBytesLength x = "bytes(" <> x <> ").length"
+-- solBytesLength :: Doc -> Doc
+-- solBytesLength x = "bytes(" <> x <> ").length"
 
 solSet :: Doc -> Doc -> Doc
 solSet x y = solBinOp "=" x y <> semi
@@ -161,7 +161,7 @@ solLastBlockDef :: Doc
 solLastBlockDef = "_last"
 
 solLastBlock :: Doc
-solLastBlock = "_a." <> solLastBlockDef
+solLastBlock = "_a.svs." <> solLastBlockDef
 
 solBlockNumber :: Doc
 solBlockNumber = "uint256(block.number)"
@@ -174,9 +174,6 @@ solArraySet i = "array_set" <> pretty i
 
 solArrayRef :: Doc -> Doc -> Doc
 solArrayRef arr idx = arr <> brackets idx
-
-solArrayLit :: [Doc] -> Doc
-solArrayLit xs = brackets $ hcat $ intersperse (comma <> space) xs
 
 solVariant :: Doc -> SLVar -> Doc
 solVariant t vn = "_enum_" <> t <> "." <> pretty vn
@@ -256,18 +253,9 @@ solArgLoc = \case
   AM_Memory -> " memory"
   AM_Event -> ""
 
-solArgType :: SolCtxt -> ArgMode -> SLType -> Doc
-solArgType ctxt am t = solType ctxt t <> loc_spec
-  where
-    loc_spec = if mustBeMem t then solArgLoc am else ""
-
 solVarDecl :: SolCtxt -> DLVar -> (Doc, Doc)
 solVarDecl ctxt dv@(DLVar _ _ t _) =
   ((solRawVar dv), (solType ctxt t))
-
-solArgDecl :: SolCtxt -> ArgMode -> DLVar -> Doc
-solArgDecl ctxt am dv@(DLVar _ _ t _) =
-  solDecl (solRawVar dv) (solArgType ctxt am t)
 
 solLit :: DLLiteral -> Doc
 solLit = \case
@@ -635,12 +623,11 @@ solStructSVS ctxt which am svs =
       AM_Call -> [(solLastBlockDef, (solType ctxt T_UInt))]
       _ -> []
 
-solArgDefn :: SolCtxt -> Int -> Int -> ArgMode -> [DLVar] -> [DLVar] -> ([Doc], [Doc])
-solArgDefn ctxt which prev am svs msg = (argDefns, argDefs)
+solArgDefn :: SolCtxt -> Int -> Int -> ArgMode -> [DLVar] -> ([Doc], [Doc])
+solArgDefn ctxt which prev am msg = (argDefns, argDefs)
   where
     argDefs = [solDecl "_a" ((solMsg_arg which) <> solArgLoc am)]
     argDefns =
-      [ solStructSVS ctxt prev am svs ] <>
       (case someArgs of
          True ->
            [ solStruct (solMsg_arg_msg which) msg_tys ]
@@ -664,14 +651,15 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
     (ctxt, frameDefn, frameDecl, ctp) =
       solCTail_top ctxt_from which svs msg (Just msg) ct
     evtDefn = solEvent ctxt which True
-    (argDefns, argDefs) = solArgDefn ctxt which prev am svs msg
+    (argDefns, argDefs) = solArgDefn ctxt which prev am msg
     ret = "payable"
-    (hashCheck, am, sfl) =
+    am = solHandlerAM ctxt_top which
+    (hashCheck, sfl) =
       case (which, plo_deployMode $ ctxt_plo ctxt_top) of
         (1, DM_firstMsg) ->
-          (emptyDoc, AM_Memory, SFL_Constructor)
+          (emptyDoc, SFL_Constructor)
         _ ->
-          (hcp, AM_Call, SFL_Function True (solMsg_fun which))
+          (hcp, SFL_Function True (solMsg_fun which))
           where
             hcp = (solRequire (checkMsg "state") $ solEq ctxt ("current_state") (solHashStateCheck ctxt prev)) <> semi
     funDefn = solFunctionLike sfl argDefs ret body
@@ -702,13 +690,37 @@ solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
     msg = map snd lcmsg
     (ctxt_fin, frameDefn, frameDecl, ctp) =
       solCTail_top ctxt_top which svs msg Nothing ct
-    (argDefns, argDefs) = solArgDefn ctxt_fin which which AM_Memory svs msg
+    (argDefns, argDefs) = solArgDefn ctxt_fin which which AM_Memory msg
     ret = "internal"
     funDefn = solFunction (solLoop_fun which) argDefs ret body
     body = vsep [frameDecl, ctp]
 
 solHandlers :: SolCtxt -> CHandlers -> Doc
 solHandlers ctxt (CHandlers hs) = vsep_with_blank $ map (uncurry (solHandler ctxt)) $ M.toList hs
+
+solHandlerAM :: SolCtxt -> Int -> ArgMode
+solHandlerAM ctxt which =
+  case (which, plo_deployMode $ ctxt_plo ctxt) of
+    (1, DM_firstMsg) -> AM_Memory
+    _ -> AM_Call
+
+solHandlerStructSVS :: SolCtxt -> (S.Set Int, [Doc]) -> (Int, CHandler) -> (S.Set Int, [Doc])
+solHandlerStructSVS ctxt (defd, res) (which_, h) =
+  case S.member which defd of
+    True -> (defd, res)
+    False -> (defd', res')
+  where
+    res' = solStructSVS ctxt which am svs : res
+    defd' = S.insert which defd
+    (which, am, svs) =
+      case h of
+        C_Handler _ _ _ prev svs_ _ _ _ ->
+          (prev, solHandlerAM ctxt which, svs_)
+        C_Loop _ svs_ _ _ -> (which_, AM_Memory, svs_)
+
+solHandlersStructSVS :: SolCtxt -> CHandlers -> Doc
+solHandlersStructSVS ctxt (CHandlers hs) = vsep_with_blank $ snd $
+  foldl (solHandlerStructSVS ctxt) (mempty, mempty) $ M.toList hs
 
 _solDefineType1 :: (SLType -> ST s (Doc)) -> Int -> Doc -> SLType -> ST s ((Doc), (Doc))
 _solDefineType1 getTypeName i name = \case
@@ -819,7 +831,12 @@ solPLProg (PLProg _ plo@(PLOpts {..}) _ (CPProg at hs)) =
         , ctxt_varm = mempty
         , ctxt_plo = plo
         }
-    ctcbody = vsep_with_blank $ [state_defn, consp, typesp, solHandlers ctxt hs]
+    ctcbody = vsep_with_blank $
+      [ state_defn
+      , consp
+      , typesp
+      , solHandlersStructSVS ctxt hs
+      , solHandlers ctxt hs ]
     consp =
       case plo_deployMode of
         DM_constructor ->

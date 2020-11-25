@@ -36,9 +36,23 @@ contract ReachContract is Stdlib {
   
   
   
+  struct a2svs {
+    uint256 _last;
+    address payable v3;
+    uint256 v2;
+     }
+  
+  struct a1svs {
+    uint256 _last;
+    address payable v3;
+    uint256 v2;
+     }
+  
   struct a0svs {
     uint256 _last;
      }
+  
+  
   struct a1msg {
     uint256 v2;
      }
@@ -64,11 +78,6 @@ contract ReachContract is Stdlib {
      }
   
   
-  struct a1svs {
-    uint256 _last;
-    address payable v3;
-    uint256 v2;
-     }
   struct a2 {
     a1svs svs;
      }
@@ -90,11 +99,6 @@ contract ReachContract is Stdlib {
      }
   
   
-  struct a2svs {
-    uint256 _last;
-    address payable v3;
-    uint256 v2;
-     }
   struct a3msg {
     uint8[128] v22;
      }
