@@ -146,8 +146,10 @@ solMsg_evt i = "e" <> pretty i
 solMsg_arg :: Pretty i => i -> Doc
 solMsg_arg i = "a" <> pretty i
 
+solMsg_arg_svs :: Pretty i => i -> Doc
+solMsg_arg_svs i = solMsg_arg i <> "svs"
 solMsg_arg_postsvs :: Pretty i => i -> Doc
-solMsg_arg_postsvs i = solMsg_arg i <> "svs"
+solMsg_arg_postsvs i = solMsg_arg i <> "postsvs"
 solMsg_arg_msg :: Pretty i => i -> Doc
 solMsg_arg_msg i = solMsg_arg i <> "msg"
 
@@ -615,16 +617,33 @@ solCTail_top ctxt which svs msg mmsg ct = (ctxt'', frameDefn, frameDecl, ct')
         , ctxt_varm = mvarsm <> svsm <> msgm <> (ctxt_varm ctxt)
         }
 
-solStructSVS :: SolCtxt -> Int -> [DLVar] -> Doc
-solStructSVS ctxt which svs =
-  solStruct (solMsg_arg_postsvs which) svs_tys
+solStructSVS :: SolCtxt -> Int -> [DLVar] -> Bool -> Doc
+solStructSVS ctxt which svs add =
+  solStruct (solMsg_arg_ which) svs_tys
   where
+    solMsg_arg_ = if add then solMsg_arg_postsvs else solMsg_arg_svs
     svs_tys = given_tys <> map (solVarDecl ctxt) svs
-    given_tys = [(solLastBlockDef, (solType ctxt T_UInt))]
+    given_tys =
+      case add of
+        True -> [(solLastBlockDef, (solType ctxt T_UInt))]
+        False -> []
 
-solArgDefn :: SolCtxt -> Int -> Int -> ArgMode -> [DLVar] -> ([Doc], [Doc])
-solArgDefn ctxt which prev am msg = (argDefns, argDefs)
+data ArgDefnKind
+  = ADK_Handler Int ArgMode
+  | ADK_Loop [DLVar]
+
+solArgDefn :: SolCtxt -> Int -> ArgDefnKind -> [DLVar] -> ([Doc], [Doc])
+solArgDefn ctxt which adk msg = (argDefns, argDefs)
   where
+    am =
+      case adk of
+        ADK_Handler _ x -> x
+        ADK_Loop {} -> AM_Memory
+    (which_svs_defn, which_svs_struct) =
+      case adk of
+        ADK_Handler prev _ -> ([], solMsg_arg_postsvs prev)
+        ADK_Loop svs ->
+          ([solStructSVS ctxt which svs False], solMsg_arg_svs which)
     argDefs = [solDecl "_a" ((solMsg_arg which) <> solArgLoc am)]
     argDefns =
       (case someArgs of
@@ -632,9 +651,10 @@ solArgDefn ctxt which prev am msg = (argDefns, argDefs)
            [ solStruct (solMsg_arg_msg which) msg_tys ]
          False ->
            []) <>
+      which_svs_defn <>
       [ solStruct (solMsg_arg which) arg_tys ]
     msg_tys = map (solVarDecl ctxt) msg
-    arg_tys = [ ("svs", (solMsg_arg_postsvs prev)) ]
+    arg_tys = [ ("svs", which_svs_struct) ]
               <> case someArgs of
                    True -> [ ("msg", (solMsg_arg_msg which)) ]
                    False -> []
@@ -650,7 +670,7 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
     (ctxt, frameDefn, frameDecl, ctp) =
       solCTail_top ctxt_from which svs msg (Just msg) ct
     evtDefn = solEvent ctxt which True
-    (argDefns, argDefs) = solArgDefn ctxt which prev am msg
+    (argDefns, argDefs) = solArgDefn ctxt which (ADK_Handler prev am) msg
     ret = "payable"
     (hashCheck, am, sfl) =
       case (which, plo_deployMode $ ctxt_plo ctxt_top) of
@@ -688,7 +708,7 @@ solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
     msg = map snd lcmsg
     (ctxt_fin, frameDefn, frameDecl, ctp) =
       solCTail_top ctxt_top which svs msg Nothing ct
-    (argDefns, argDefs) = solArgDefn ctxt_fin which which AM_Memory msg
+    (argDefns, argDefs) = solArgDefn ctxt_fin which (ADK_Loop svs) msg
     ret = "internal"
     funDefn = solFunction (solLoop_fun which) argDefs ret body
     body = vsep [frameDecl, ctp]
@@ -703,7 +723,7 @@ solHandlerStructSVS ctxt (defd, res) (_which, C_Handler _ _ _ prev svs _ _ _) =
     True -> (defd, res)
     False -> (defd', res')
   where
-    res' = solStructSVS ctxt prev svs : res
+    res' = solStructSVS ctxt prev svs True : res
     defd' = S.insert prev defd
 
 solHandlersStructSVS :: SolCtxt -> CHandlers -> Doc
@@ -711,7 +731,7 @@ solHandlersStructSVS ctxt (CHandlers hs) = vsep_with_blank $ snd $
   foldl (solHandlerStructSVS ctxt) (defd, res) $ M.toList hs
   where
     defd = S.singleton 0
-    res = [ solStructSVS ctxt 0 [] ]
+    res = [ solStructSVS ctxt 0 [] True ]
 
 _solDefineType1 :: (SLType -> ST s (Doc)) -> Int -> Doc -> SLType -> ST s ((Doc), (Doc))
 _solDefineType1 getTypeName i name = \case
