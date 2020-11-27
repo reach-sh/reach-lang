@@ -728,7 +728,7 @@ solHandlerStructSVS ctxt (defd, res) (_which, C_Handler _ _ _ prev svs _ _ _) =
 
 solHandlersStructSVS :: SolCtxt -> CHandlers -> Doc
 solHandlersStructSVS ctxt (CHandlers hs) = vsep_with_blank $ snd $
-  foldl (solHandlerStructSVS ctxt) (defd, res) $ M.toList hs
+  foldl' (solHandlerStructSVS ctxt) (defd, res) $ M.toList hs
   where
     defd = S.singleton 0
     res = [ solStructSVS ctxt 0 [] True ]
