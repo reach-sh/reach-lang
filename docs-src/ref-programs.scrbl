@@ -918,7 +918,7 @@ It is @tech{invalid} to use unary operations on the wrong types of @tech{values}
 @margin-note{Bitwise operations are not supported by all @tech{consensus networks} and greatly decrease the efficiency of verification.}
 
 A @deftech{binary expression}, written @reachin{EXPR_lhs BINOP EXPR_rhs}, where @reachin{EXPR_lhs} and @reachin{EXPR_rhs} are @tech{expressions} and @reachin{BINOP} is one of the @deftech{binary operator}s: @litchar{&& || + - * / % | & ^ << >> == != === !== > >= <= <}.
-The operators @reachin{==} and @reachin{!=} operate on numbers, while the operators @reachin{===} and @reachin{!==} operate on byte strings.
+The operators @reachin{==} (and @reachin{===}) and @reachin{!=} (and @reachin{!==}) operate on all atomic values.
 Numeric operations, like @reachin{+} and @reachin{>}, only operate on numbers.
 Since all numbers in Reach are integers, operations like @reachin{/} truncate their result.
 Boolean operations, like @reachin{&&}, only operate on booleans.
