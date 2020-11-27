@@ -240,6 +240,21 @@ data SLVal
   | SLV_Kwd SLKwd
   deriving (Eq, Generic, NFData, Show)
 
+slval_srcloc :: SLVal -> Maybe SrcLoc
+slval_srcloc = \case
+  SLV_Null a _ -> Just a
+  SLV_Bool a _ -> Just a
+  SLV_Int a _ -> Just a
+  SLV_Bytes a _ -> Just a
+  SLV_Array a _ _ -> Just a
+  SLV_Tuple a _ -> Just a
+  SLV_Object a _ _ -> Just a
+  SLV_Clo a _ _ _ _ -> Just a
+  SLV_Data a _ _ _ -> Just a
+  SLV_DLVar (DLVar a _ _ _) -> Just a
+  SLV_Participant a _ _ _ -> Just a
+  _ -> Nothing
+
 isLiteralArray :: SLVal -> Bool
 isLiteralArray (SLV_Array {}) = True
 isLiteralArray _ = False
@@ -386,6 +401,7 @@ data SLPrimitive
   | SLPrim_Bytes
   | SLPrim_Data
   | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
+  | SLPrim_data_match SrcLoc (M.Map SLVar SLType)
   | SLPrim_Array
   | SLPrim_Array_iota
   | SLPrim_array

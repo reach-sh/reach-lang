@@ -1,0 +1,1 @@
+reachc: error: ./Err_Decl_NotType.rsh:3:7:object: Invalid field access. Expected object, got: uint256
