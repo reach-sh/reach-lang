@@ -8,8 +8,8 @@ export const main =
           ENull: Null,
           EInt: UInt,
           EObj: Object({ i: UInt }) })),
-        put: Fun([UInt], Null)
-      }
+        put: Fun([UInt], Null),
+      },
     ]],
     (Alice) => {
       Alice.only(() => {
@@ -25,6 +25,6 @@ export const main =
 
       Alice.only(() => {
         interact.put(i);
-      })
+      });
       exit();
     });
