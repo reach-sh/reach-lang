@@ -703,7 +703,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
 
           // shim impl is replaced with real impl
-          impl = performDeploy({args, value});
+          impl = performDeploy({args: [[0], args], value});
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
