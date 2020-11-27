@@ -401,7 +401,7 @@ data SLPrimitive
   | SLPrim_Bytes
   | SLPrim_Data
   | SLPrim_Data_variant (M.Map SLVar SLType) SLVar SLType
-  | SLPrim_data_match SrcLoc (M.Map SLVar SLType)
+  | SLPrim_data_match (M.Map SLVar SLType)
   | SLPrim_Array
   | SLPrim_Array_iota
   | SLPrim_array

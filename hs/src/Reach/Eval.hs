@@ -980,14 +980,14 @@ evalAsEnv ctx at obj =
         , ("reduce", delayCall SLPrim_array_reduce)
         , ("zip", delayCall SLPrim_array_zip)
         ]
-    SLV_Data at' tyCons _ _ ->
+    SLV_Data _ tyCons _ _ ->
       M.fromList
         [
-          ("match", delayCall $ SLPrim_data_match at' tyCons)
+          ("match", delayCall $ SLPrim_data_match tyCons)
         ]
-    SLV_DLVar (DLVar at' _ (T_Data tyCons) _) ->
+    SLV_DLVar (DLVar _ _ (T_Data tyCons) _) ->
       M.fromList
-        [ ("match", delayCall $ SLPrim_data_match at' tyCons)
+        [ ("match", delayCall $ SLPrim_data_match tyCons)
         ]
     SLV_Prim SLPrim_Array ->
       M.fromList
@@ -1746,7 +1746,7 @@ evalPrim ctxt at sco st p sargs =
               _ -> one_arg
       let vv_da = checkType at vt vv
       retV $ (lvl, SLV_Data at t vn $ vv_da `seq` vv)
-    SLPrim_data_match _ m -> do
+    SLPrim_data_match m -> do
       -- Expect two arguments to function
       let (obj, cases) = two_args
       -- Get the key/value pairs for the case object
@@ -1778,7 +1778,8 @@ evalPrim ctxt at sco st p sargs =
               let params = mkArrowParameterList [data_param, case_param]
               JSArrowExpression params ann body
       -- Need to store variable with type of match object in clo_env
-      let metaObj = SLSSVal { sss_at = at
+      let metaObj = SLSSVal {
+          sss_at = at
         , sss_level = Public
         , sss_val = SLV_Type (T_Data m)
         }
@@ -2870,12 +2871,13 @@ evalStmt ctxt at sco st ss =
       let at' = srcloc_jsa "switch" a at
       let de_v = jse_expect_id at' de
       let env = sco_env sco
-      let (de_lvl, de_val) = sss_sls $ env_lookup (Just ctxt) at' (LC_RefFrom "switch statement") de_v env
+      let lctx = LC_RefFrom "switch statement"
+      let (de_lvl, de_val) = sss_sls $ env_lookup (Just ctxt) at' lctx de_v env
       let de_ty = case M.member "$switchExpTy" env  of
                     True ->
-                      case sss_val $ env_lookup (Just ctxt) at' (LC_RefFrom "switch statement") "$switchExpTy" env of
+                      case sss_val $ env_lookup (Just ctxt) at' lctx "$switchExpTy" env of
                         SLV_Type ty -> ty
-                        _ -> impossible $ "switch expression generating without adding type to env"
+                        _ -> impossible $ "match expression generated without adding type to env"
                     False -> fst $ typeOf at de_val
       let varm = case de_ty of
             T_Data m -> m
