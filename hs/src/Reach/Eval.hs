@@ -495,12 +495,6 @@ env_lookup ctxt at ctx x env =
     Nothing -> expect_throw (Just $ maybe [] ctxt_stack ctxt) at $
                 Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . isKwd) env
 
-addToCloEnv :: SLCtxt s -> SrcLoc -> SLVal -> SLVar -> SLSSVal -> SLVal
-addToCloEnv ctxt at (SLV_Clo clo_at mname formals bl (SLCloEnv clo_env clo_penvs clo_cenv)) k v =
-  SLV_Clo clo_at mname formals bl $
-    SLCloEnv (env_insert ctxt at k v clo_env) clo_penvs clo_cenv
-addToCloEnv _ _ _ _ _ = impossible "addToCloEnv: Given non-closure"
-
 isKwd :: SLSSVal -> Bool
 isKwd (SLSSVal _ _ (SLV_Kwd _)) = True
 isKwd _ = False
@@ -980,14 +974,14 @@ evalAsEnv ctx at obj =
         , ("reduce", delayCall SLPrim_array_reduce)
         , ("zip", delayCall SLPrim_array_zip)
         ]
-    SLV_Data _ tyCons _ _ ->
+    SLV_Data {} ->
       M.fromList
         [
-          ("match", delayCall $ SLPrim_data_match tyCons)
+          ("match", delayCall SLPrim_data_match)
         ]
-    SLV_DLVar (DLVar _ _ (T_Data tyCons) _) ->
+    SLV_DLVar (DLVar _ _ (T_Data _) _) ->
       M.fromList
-        [ ("match", delayCall $ SLPrim_data_match tyCons)
+        [ ("match", delayCall SLPrim_data_match)
         ]
     SLV_Prim SLPrim_Array ->
       M.fromList
@@ -1746,7 +1740,7 @@ evalPrim ctxt at sco st p sargs =
               _ -> one_arg
       let vv_da = checkType at vt vv
       retV $ (lvl, SLV_Data at t vn $ vv_da `seq` vv)
-    SLPrim_data_match m -> do
+    SLPrim_data_match -> do
       -- Expect two arguments to function
       let (obj, cases) = two_args
       -- Get the key/value pairs for the case object
@@ -1770,23 +1764,16 @@ evalPrim ctxt at sco st p sargs =
                     let fn = JSMemberDot case_param ann $ JSIdentifier ann tycon in
                     let js_args = case tycon_args of
                                     [] -> JSLNil
-                                    _ -> JSLOne data_param in
+                                    _  -> JSLOne data_param in
                     let ret = JSCallExpression fn ann js_args ann in
                     let case_body = [JSReturn ann (Just ret) semi] in
                     JSCase ann case_id ann case_body) $ M.toList args_x_case
               let body = JSSwitch ann ann data_param ann ann switch_parts ann semi
               let params = mkArrowParameterList [data_param, case_param]
               JSArrowExpression params ann body
-      -- Need to store variable with type of match object in clo_env
-      let metaObj = SLSSVal {
-          sss_at = at
-        , sss_level = Public
-        , sss_val = SLV_Type (T_Data m)
-        }
-      let fn' = addToCloEnv ctxt at fn "$switchExpTy" metaObj
       -- Apply the object and cases to the newly created function
       SLRes a_lifts a_st (SLAppRes _ ans) <-
-        evalApplyVals ctxt at sco st fn' [public obj, public cases]
+        evalApplyVals ctxt at sco st fn [public obj, public cases]
       return $ SLRes a_lifts a_st ans
   where
     lvl = mconcatMap fst sargs
@@ -2871,14 +2858,8 @@ evalStmt ctxt at sco st ss =
       let at' = srcloc_jsa "switch" a at
       let de_v = jse_expect_id at' de
       let env = sco_env sco
-      let lctx = LC_RefFrom "switch statement"
-      let (de_lvl, de_val) = sss_sls $ env_lookup (Just ctxt) at' lctx de_v env
-      let de_ty = case M.member "$switchExpTy" env  of
-                    True ->
-                      case sss_val $ env_lookup (Just ctxt) at' lctx "$switchExpTy" env of
-                        SLV_Type ty -> ty
-                        _ -> impossible $ "match expression generated without adding type to env"
-                    False -> fst $ typeOf at de_val
+      let (de_lvl, de_val) = sss_sls $ env_lookup (Just ctxt) at' (LC_RefFrom "switch statement") de_v env
+      let (de_ty, _) = typeOf at de_val
       let varm = case de_ty of
             T_Data m -> m
             _ -> expect_throw_ctx ctxt at $ Err_Switch_NotData de_val
