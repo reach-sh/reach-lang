@@ -1,0 +1,1 @@
+reachc: error: ./match_no_closure.rsh:18:15:decimal: Invalid binding. Expected closure, got: uint256

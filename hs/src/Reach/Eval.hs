@@ -30,6 +30,7 @@ import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
 import Reach.Pretty()
+import Data.Maybe (fromMaybe)
 -- import Reach.Texty
 -- import Debug.Trace
 
@@ -54,7 +55,7 @@ data EvalError
   | Err_DeclLHS_IllegalJS JSExpression
   | Err_Decl_ObjectSpreadNotLast
   | Err_Decl_ArraySpreadNotLast
-  | Err_Decl_NotObject SLVal
+  | Err_Decl_NotType String SLVal
   | Err_Decls_IllegalJS (JSCommaList JSExpression)
   | Err_Decl_IllegalJS JSExpression
   | Err_Decl_NotRefable SLVal
@@ -252,8 +253,8 @@ instance Show EvalError where
       "Object spread on left-hand side of binding must occur in last position"
     Err_Decl_ArraySpreadNotLast ->
       "Array spread on left-hand side of binding must occur in last position"
-    Err_Decl_NotObject slval ->
-      "Invalid binding. Expected object, got: " <> displaySlValType slval
+    Err_Decl_NotType ty slval ->
+      "Invalid binding. Expected " <> ty <> ", got: " <> displaySlValType slval
     Err_Decl_NotRefable slval ->
       "Invalid binding. Expected array or tuple, got: " <> displaySlValType slval
     Err_Decl_WrongArrayLength nIdents nVals ->
@@ -493,6 +494,12 @@ env_lookup ctxt at ctx x env =
     Just v -> v
     Nothing -> expect_throw (Just $ maybe [] ctxt_stack ctxt) at $
                 Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . isKwd) env
+
+addToCloEnv :: SLCtxt s -> SrcLoc -> SLVal -> SLVar -> SLSSVal -> SLVal
+addToCloEnv ctxt at (SLV_Clo clo_at mname formals bl (SLCloEnv clo_env clo_penvs clo_cenv)) k v =
+  SLV_Clo clo_at mname formals bl $
+    SLCloEnv (env_insert ctxt at k v clo_env) clo_penvs clo_cenv
+addToCloEnv _ _ _ _ _ = impossible "addToCloEnv: Given non-closure"
 
 isKwd :: SLSSVal -> Bool
 isKwd (SLSSVal _ _ (SLV_Kwd _)) = True
@@ -972,6 +979,15 @@ evalAsEnv ctx at obj =
         , ("map", delayCall SLPrim_array_map)
         , ("reduce", delayCall SLPrim_array_reduce)
         , ("zip", delayCall SLPrim_array_zip)
+        ]
+    SLV_Data at' tyCons _ _ ->
+      M.fromList
+        [
+          ("match", delayCall $ SLPrim_data_match at' tyCons)
+        ]
+    SLV_DLVar (DLVar at' _ (T_Data tyCons) _) ->
+      M.fromList
+        [ ("match", delayCall $ SLPrim_data_match at' tyCons)
         ]
     SLV_Prim SLPrim_Array ->
       M.fromList
@@ -1730,6 +1746,47 @@ evalPrim ctxt at sco st p sargs =
               _ -> one_arg
       let vv_da = checkType at vt vv
       retV $ (lvl, SLV_Data at t vn $ vv_da `seq` vv)
+    SLPrim_data_match _ m -> do
+      -- Expect two arguments to function
+      let (obj, cases) = two_args
+      -- Get the key/value pairs for the case object
+      let objEnv = case cases of
+                    SLV_Object _ _ env -> env
+                    ow -> expect_throw_ctx ctxt (fromMaybe at $ slval_srcloc ow) $ Err_Decl_NotType "object" ow
+      -- Keep a map of type constructor - args, for each case
+      let args_x_case = M.map (\ v ->
+            case sss_val v of
+              SLV_Clo _ _ case_args _ _ -> case_args
+              ow -> expect_throw_ctx ctxt (fromMaybe at $ slval_srcloc ow) $ Err_Decl_NotType "closure" ow
+            ) objEnv
+      -- Generate the function to call
+      SLRes _ _ (_, fn) <- evalExpr ctxt at sco st $ do
+              let ann = JSNoAnnot
+              let semi = JSSemiAuto
+              let data_param = JSIdentifier ann "data_id"
+              let case_param = JSIdentifier ann "cases_id"
+              let switch_parts = map (\ (tycon, tycon_args) ->
+                    let case_id = JSIdentifier ann tycon in
+                    let fn = JSMemberDot case_param ann $ JSIdentifier ann tycon in
+                    let js_args = case tycon_args of
+                                    [] -> JSLNil
+                                    _ -> JSLOne data_param in
+                    let ret = JSCallExpression fn ann js_args ann in
+                    let case_body = [JSReturn ann (Just ret) semi] in
+                    JSCase ann case_id ann case_body) $ M.toList args_x_case
+              let body = JSSwitch ann ann data_param ann ann switch_parts ann semi
+              let params = mkArrowParameterList [data_param, case_param]
+              JSArrowExpression params ann body
+      -- Need to store variable with type of match object in clo_env
+      let metaObj = SLSSVal { sss_at = at
+        , sss_level = Public
+        , sss_val = SLV_Type (T_Data m)
+        }
+      let fn' = addToCloEnv ctxt at fn "$switchExpTy" metaObj
+      -- Apply the object and cases to the newly created function
+      SLRes a_lifts a_st (SLAppRes _ ans) <-
+        evalApplyVals ctxt at sco st fn' [public obj, public cases]
+      return $ SLRes a_lifts a_st ans
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -2814,7 +2871,12 @@ evalStmt ctxt at sco st ss =
       let de_v = jse_expect_id at' de
       let env = sco_env sco
       let (de_lvl, de_val) = sss_sls $ env_lookup (Just ctxt) at' (LC_RefFrom "switch statement") de_v env
-      let (de_ty, _) = typeOf at de_val
+      let de_ty = case M.member "$switchExpTy" env  of
+                    True ->
+                      case sss_val $ env_lookup (Just ctxt) at' (LC_RefFrom "switch statement") "$switchExpTy" env of
+                        SLV_Type ty -> ty
+                        _ -> impossible $ "switch expression generating without adding type to env"
+                    False -> fst $ typeOf at de_val
       let varm = case de_ty of
             T_Data m -> m
             _ -> expect_throw_ctx ctxt at $ Err_Switch_NotData de_val

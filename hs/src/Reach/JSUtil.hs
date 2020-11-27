@@ -13,6 +13,8 @@ module Reach.JSUtil
   , srcloc_lab_only
   , srcloc_jsa_only
   , srcloc_src_only
+  , mkCommaList
+  , mkArrowParameterList
   )
 where
 
@@ -95,3 +97,10 @@ srcloc_jsa_only a = SrcLoc Nothing (tp a) Nothing
 
 srcloc_src_only :: ReachSource -> SrcLoc
 srcloc_src_only src = SrcLoc Nothing Nothing (Just src)
+
+mkCommaList :: [JSExpression] -> JSCommaList JSExpression
+mkCommaList (h:t) = JSLCons (mkCommaList t) JSNoAnnot h
+mkCommaList [] = JSLNil
+
+mkArrowParameterList :: [JSExpression] -> JSArrowParameterList
+mkArrowParameterList args = JSParenthesizedArrowParameterList JSNoAnnot (mkCommaList $ reverse args) JSNoAnnot
