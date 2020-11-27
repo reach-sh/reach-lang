@@ -99,8 +99,10 @@ srcloc_src_only :: ReachSource -> SrcLoc
 srcloc_src_only src = SrcLoc Nothing Nothing (Just src)
 
 mkCommaList :: [JSExpression] -> JSCommaList JSExpression
-mkCommaList (h:t) = JSLCons (mkCommaList t) JSNoAnnot h
-mkCommaList [] = JSLNil
+mkCommaList = aux . reverse
+  where
+    aux (h:t) = JSLCons (mkCommaList t) JSNoAnnot h
+    aux [] = JSLNil
 
 mkArrowParameterList :: [JSExpression] -> JSArrowParameterList
-mkArrowParameterList args = JSParenthesizedArrowParameterList JSNoAnnot (mkCommaList $ reverse args) JSNoAnnot
+mkArrowParameterList args = JSParenthesizedArrowParameterList JSNoAnnot (mkCommaList args) JSNoAnnot
