@@ -26,6 +26,7 @@ import {
   WPArgs,
   mkAddressEq,
   makeRandom,
+  argsSplit,
 } from './shared';
 import * as CBR from './CBR';
 import {
@@ -807,9 +808,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     })();
 
     const callC = async (
-      funcName: string, lastBlock: number, args: Array<Array<any>>, value: BigNumber,
+      funcName: string, arg: any, value: BigNumber,
     ): Promise<{wait: () => Promise<TransactionReceipt>}> => {
-      return (await getC())[funcName]([lastBlock, ...args], { value });
+      return (await getC())[funcName](arg, { value });
     };
 
     const getEventData = async (
@@ -836,7 +837,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const getInfo = async () => await infoP;
 
     const sendrecv_impl = async (
-      label: string, funcNum: number, tys: Array<AnyETH_Ty>,
+      label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
@@ -845,6 +846,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         throw Error(`tys.length (${tys.length}) !== args.length (${args.length})`);
       }
       const munged = args.map((m, i) => tys[i].munge(tys[i].canonicalize(m)));
+      const [ munged_svs, munged_msg ] = argsSplit(munged, evt_cnt);
 
       debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- START --- ${JSON.stringify(munged)}`);
       const lastBlock = await getLastBlock();
@@ -855,7 +857,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
-          const r_fn = await callC(funcName, lastBlock,  munged, value);
+          const arg = [ [lastBlock, ...munged_svs], munged_msg ];
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SEND ARG --- ${JSON.stringify(arg)}`);
+          const r_fn = await callC(funcName, arg, value);
           r_maybe = await r_fn.wait();
         } catch (e) {
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- ERROR (${e})`);
@@ -911,9 +915,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
       timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
-      void(evt_cnt);
       void(sim_p);
-      return await sendrecv_impl(label, funcNum, tys, args, value, out_tys, timeout_delay);
+      return await sendrecv_impl(label, funcNum, evt_cnt, tys, args, value, out_tys, timeout_delay);
     }
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
@@ -966,7 +969,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             console.log(ok_t);
           }
           updateLast(ok_r);
-          const ok_vals = await getEventData(ok_evt, ok_e);
+          const ok_ed = await getEventData(ok_evt, ok_e);
+          debug(`${shad}: ${label} recv ${ok_evt} --- DATA -- ${JSON.stringify(ok_ed)}`);
+          const ok_vals = ok_ed[0][1] || [];
+          debug(`${shad}: ${label} recv ${ok_evt} --- MSG -- ${JSON.stringify(ok_vals)}`);
           if (ok_vals.length !== out_tys.length) {
             throw Error(`Expected ${out_tys.length} values from event data, but got ${ok_vals.length}.`);
           }

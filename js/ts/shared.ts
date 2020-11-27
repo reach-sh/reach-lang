@@ -187,6 +187,8 @@ export const lt = (a: num, b: num): boolean => bigNumberify(a).lt(bigNumberify(b
 
 export const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
   cnt == 0 ? [] : args.slice(-1 * cnt);
+export const argsSplit = <T>(args: Array<T>, cnt: number): [ Array<T>, Array<T> ] =>
+  cnt == 0 ? [args, []] : [ args.slice(0, args.length - cnt), args.slice(-1 * cnt) ];
 
 export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   const arrp = arr.slice();
