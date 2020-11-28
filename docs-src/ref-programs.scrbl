@@ -1212,6 +1212,7 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
 
 @subsubsection{@tt{match}}
 
+@(mint-define! '("match"))
 @reach{
  const Value = Data({
     EBool: Bool,
@@ -1231,17 +1232,17 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
   assert(isTruthy(v2));
 }
 
-A match expression, written @tt{VAR.match({ CASE ... })}, where @tt{VAR} is a variable
+A @deftech{match expression}, written @tt{VAR.match({ CASE ... })}, where @tt{VAR} is a variable
 bound to a @tech{data instance} and @tt{CASE} is @tt{VARIANT: FUNCTION}, where @tt{VARIANT} is a
 variant or @reachin{default}, and @tt{FUNCTION} is a function that takes the same parameters as the
 variant constructor, or no parameters if the variant has a type of @reachin{Null}.
 
-@tt{match} is similar to a @@tech{switch statement}, but since it is an expression, it
+@tt{match} is similar to a @tech{switch statement}, but since it is an expression, it
 can be conveniently used in places like the right hand side of an assignment statement.
 
 Similar to a @tech{switch statement}, the cases are expected to be exhaustive and nonredundant,
-all cases have empty @@tech{tails}, and it may only include a @@tech{consensus transfer} in
-its cases if it is within a @@tech{consensus step}.
+all cases have empty @@tech{tails}, and it may only include a @tech{consensus transfer} in
+its cases if it is within a @tech{consensus step}.
 
 @subsubsection{Conditional expression}
 
