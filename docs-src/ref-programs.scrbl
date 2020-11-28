@@ -1210,6 +1210,39 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
 
 @reachin{Maybe} instances can be conveniently consumed by @reachin{fromMaybe(mValue, onNone, onSome)}, where @reachin{onNone} is a function of no arguments which is called when @reachin{mValue} is @reachin{None}, @reachin{onSome} is a function of on argument which is called with the value when @reachin{mValue} is @reachin{Some}, and @reachin{mValue} is a @tech{data instance} of @reachin{Maybe}.
 
+@subsubsection{@tt{match}}
+
+@reach{
+ const Value = Data({
+    EBool: Bool,
+    EInt: UInt,
+    ENull: Null,
+  });
+  const v1 = Value.EBool(true);
+  const v2 = Value.EInt(200);
+  const isTruthy = (v) =>
+    v.match({
+      EBool: (b) => { return b },
+      EInt : (i) => { return i != 0 },
+      ENull: ()  => { return false }
+    });
+
+  assert(isTruthy(v1));
+  assert(isTruthy(v2));
+}
+
+A match expression, written @tt{VAR.match({ CASE ... })}, where @tt{VAR} is a variable
+bound to a @tech{data instance} and @tt{CASE} is @tt{VARIANT: FUNCTION}, where @tt{VARIANT} is a
+variant, and @tt{FUNCTION} is a function that takes the same parameters as the
+variant constructor, or no parameters if the variant has a type of @tt{Null}.
+
+@tt{match} is similar to a @@tech{switch statement}, but since it is an expression, it
+can be conveniently used in places like the right hand side of an assignment statement.
+
+Similar to a @tech{switch statement}, the cases are expected to be exhaustive and nonredundant,
+all cases have empty @@tech{tails}, and it may only include a @@tech{consensus transfer} in
+its cases if it is within a @@tech{consensus step}.
+
 @subsubsection{Conditional expression}
 
 @(mint-define! '("?"))
