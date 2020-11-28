@@ -8,8 +8,8 @@ export const main =
       const mx = Maybe(UInt).None();
       const isNone = (m) =>
         m.match({
-          Some: (_) => { return false },
-          default: () => true
+          Some: (_) => { return false; },
+          default: () => true,
         });
       assert(isNone(mx));
     });
