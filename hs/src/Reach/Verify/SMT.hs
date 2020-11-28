@@ -754,8 +754,33 @@ smt_s ctxt s =
             True -> do
               pathAddBound ctxt at (Just amtv) (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
               zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at (Just msg_dv) (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
-    LLS_ParallelReduce _XXX_at _XXX_iasn _XXX_inv _XXX_muntil _XXX_mtimeout _XXX_cases _XXX_k ->
-      error $ "XXX smt parallel reduce"
+    LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->
+      mapM_ (ctxtNewScope ctxt) $ [before_m] ++ cases_m ++ [after_m]
+      where
+        ctxt_inv = ctxt { ctxt_while_invariant = Just inv }
+        before_m = smt_asn ctxt_inv False iasn
+        -- Note: If there is no timeout, then after the parallel reduce, then
+        -- we can assume that the `until` is true, and during we can assume it
+        -- is false.
+        muntil_m sign =
+          case muntil of
+            Nothing -> mempty
+            Just x -> smt_block ctxt (B_Assume sign) x
+        until_if_no_timeout_m sign =
+          case mtimeout of
+            Nothing -> muntil_m sign
+            Just _ -> mempty
+        after_m =
+          smt_asn_def ctxt at iasn
+            <> smt_block ctxt (B_Assume True) inv
+            <> until_if_no_timeout_m True
+            <> smt_n ctxt k
+        cases_m = map go $ map snd cases
+        go c =
+          smt_asn_def ctxt at iasn
+            <> smt_block ctxt (B_Assume True) inv
+            <> until_if_no_timeout_m False
+            <> smt_s ctxt c
 
 _smt_declare_toBytes :: Solver -> String -> IO ()
 _smt_declare_toBytes smt n = do
