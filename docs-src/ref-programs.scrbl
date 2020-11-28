@@ -1232,12 +1232,12 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
   assert(isTruthy(v2));
 }
 
-A @deftech{match expression}, written @tt{VAR.match({ CASE ... })}, where @tt{VAR} is a variable
+A @deftech{match expression}, written @reachin{VAR.match({ CASE ... })}, where @tt{VAR} is a variable
 bound to a @tech{data instance} and @tt{CASE} is @tt{VARIANT: FUNCTION}, where @tt{VARIANT} is a
 variant or @reachin{default}, and @tt{FUNCTION} is a function that takes the same parameters as the
 variant constructor, or no parameters if the variant has a type of @reachin{Null}.
 
-@tt{match} is similar to a @tech{switch statement}, but since it is an expression, it
+@reachin{match} is similar to a @tech{switch statement}, but since it is an expression, it
 can be conveniently used in places like the right hand side of an assignment statement.
 
 Similar to a @tech{switch statement}, the cases are expected to be exhaustive and nonredundant,
