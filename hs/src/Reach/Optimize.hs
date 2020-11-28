@@ -1,22 +1,14 @@
 module Reach.Optimize (optimize, pltoptimize) where
 
 import Control.Monad.Reader
--- import Data.Foldable
-
 import Data.IORef
 import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
--- import qualified Data.Sequence as Seq
--- import GHC.Stack (HasCallStack)
 import Reach.AST
 import Reach.CollectCounts
--- import Reach.Type
 import Reach.Sanitize
 import Reach.Util
-
-sb :: SrcLoc
-sb = srcloc_builtin
 
 type App = ReaderT Env IO
 
@@ -232,6 +224,10 @@ opt_s = \case
     LLS_Only at p <$> (focusp p $ opt_l l) <*> opt_s s
   LLS_ToConsensus at from fs from_as from_msg from_amt from_amtv mtime cons ->
     LLS_ToConsensus at from <$> opt_fs fs <*> (focusp from $ opt_as from_as) <*> (pure from_msg) <*> (focusp from $ opt_a from_amt) <*> (pure from_amtv) <*> opt_mtime mtime <*> (focusc $ opt_n cons)
+  LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->
+    LLS_ParallelReduce at <$> opt_asn iasn <*> opt_bl inv <*> traverse opt_bl muntil <*> traverse opt_a mtimeout <*> mapM go cases <*> (focusc $ opt_n k)
+    where
+      go (p, ps) = (,) p <$> opt_s ps
 
 optimize :: LLProg -> IO LLProg
 optimize (LLProg at opts ps s) = do

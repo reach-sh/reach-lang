@@ -684,7 +684,7 @@ data DLStmt
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
-  | DLS_ParallelReduce 
+  | DLS_ParallelReduce
       { dls_pr_at :: SrcLoc
       , dls_pr_init :: DLAssignment
       , dls_pr_inv :: DLBlock
@@ -820,6 +820,15 @@ data LLStep
       , lls_tc_from_amtv :: DLVar
       , lls_tc_mtime :: (Maybe (DLArg, LLStep))
       , lls_tc_cons :: LLConsensus
+      }
+  | LLS_ParallelReduce
+      { lls_pr_at :: SrcLoc
+      , lls_pr_iasn :: DLAssignment
+      , lls_pr_inv :: LLBlock
+      , lls_pr_muntil :: Maybe LLBlock
+      , lls_pr_mtimeout :: Maybe DLArg
+      , lls_pr_cases :: [(SLPart, LLStep)]
+      , lls_pr_con :: LLConsensus
       }
   deriving (Eq, Show)
 

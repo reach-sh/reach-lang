@@ -469,6 +469,8 @@ epp_s st s =
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
       return $ ProResS p_prts (ProRes_ time_cons_cs True)
+    LLS_ParallelReduce _XXX_at _XXX_iasn _XXX_inv _XXX_muntil _XXX_mtimeout _XXX_cases _XXX_k ->
+      error $ "XXX epp parallel reduce"
 
 epp :: LLProg -> PLProg
 epp (LLProg at (LLOpts {..}) ps s) = runST $ do

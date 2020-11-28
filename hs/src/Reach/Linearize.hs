@@ -120,8 +120,7 @@ lin_con back at_top fve rets (s Seq.:<| ks) =
       where
         body' = lin_con back at fve rets body
         --- Note: The invariant and condition can't return
-        block (DLBlock ba fs ss a) =
-          LLBlock ba fs (lin_local ba fve ss) a
+        block = lin_block at fve
     DLS_Continue at update ->
       case ks of
         Seq.Empty ->
@@ -156,8 +155,16 @@ lin_step _ fve rets (s Seq.:<| ks) =
         mtime' = do
           (delay_da, time_ss) <- mtime
           return $ (delay_da, lin_step at fve rets (time_ss <> ks))
-    DLS_ParallelReduce {} ->
-      impossible $ "XXX parallelReduce not implemented yet"
+    DLS_ParallelReduce at iasn inv muntil mtimeout cases ->
+      LLS_ParallelReduce at iasn inv' muntil' mtimeout cases' $
+        lin_con back at fve mempty ks
+      where
+        back fve' = lin_step at fve' rets
+        block = lin_block at fve
+        inv' = block inv
+        muntil' = fmap block muntil
+        cases' = map go cases
+        go (p, pss) = (p, lin_step at fve mempty pss)
     _ ->
       lin_com "step" lin_step LLS_Com fve rets s ks
 

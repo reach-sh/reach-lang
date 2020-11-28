@@ -185,6 +185,16 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
+prettyParallelReduce :: Pretty a => DLAssignment -> a -> Maybe a -> Maybe DLArg -> [(SLPart, b)] -> (b -> Doc) -> Doc
+prettyParallelReduce iasn inv muntil mtimeout cases fcase =
+  "parallelReduce" <+> parens (pretty iasn) <> hardline <>
+    ".invariant" <> parens (pretty inv) <> hardline <>
+    ".until" <> parens (pretty muntil) <> hardline <>
+    ".timeout" <> parens (pretty mtimeout) <> hardline <>
+    concatWith (surround hardline) (map go cases) <> semi
+  where
+    go (p, ss) = ".case" <> parens (pretty p <> ", " <> fcase ss)
+
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
@@ -239,13 +249,7 @@ instance Pretty DLStmt where
       DLS_FluidRef _ dv fv ->
         pretty dv <+> "<-" <+> "fluid" <+> pretty fv
       DLS_ParallelReduce _ iasn inv muntil mtimeout cases ->
-        "parallelReduce" <+> parens (pretty iasn) <> hardline <>
-          ".invariant" <> parens (pretty inv) <> hardline <>
-          ".until" <> parens (pretty muntil) <> hardline <>
-          ".timeout" <> parens (pretty mtimeout) <> hardline <>
-          concatWith (surround hardline) (map go cases) <> semi
-        where
-          go (p, ss) = ".case" <> parens (pretty p <> ", " <> render_dls ss)
+        prettyParallelReduce iasn inv muntil mtimeout cases render_dls
     where
       ns x = render_nest $ render_dls x
       cm l = parens (hsep $ punctuate comma $ l)
@@ -331,6 +335,8 @@ instance Pretty LLStep where
             case mtime of
               Nothing -> mempty
               Just (td, tl) -> nest 2 (hardline <> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tl)]))
+      LLS_ParallelReduce _ iasn inv muntil mtimeout cases k ->
+        prettyParallelReduce iasn inv muntil mtimeout cases pretty <> hardline <> pretty k
     where
       cm l = parens (hsep $ punctuate comma $ l)
       ns = render_nest

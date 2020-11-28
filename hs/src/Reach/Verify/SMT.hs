@@ -754,6 +754,8 @@ smt_s ctxt s =
             True -> do
               pathAddBound ctxt at (Just amtv) (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
               zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at (Just msg_dv) (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
+    LLS_ParallelReduce _XXX_at _XXX_iasn _XXX_inv _XXX_muntil _XXX_mtimeout _XXX_cases _XXX_k ->
+      error $ "XXX smt parallel reduce"
 
 _smt_declare_toBytes :: Solver -> String -> IO ()
 _smt_declare_toBytes smt n = do

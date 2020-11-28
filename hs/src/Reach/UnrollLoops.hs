@@ -319,6 +319,10 @@ ul_s = \case
     (pure $ LLS_Only at p) <*> ul_l l <*> ul_s s
   LLS_ToConsensus at from fs from_as from_msg from_amt from_amtv mtime cons ->
     (pure $ LLS_ToConsensus at from) <*> ul_fs fs <*> ul_as from_as <*> ul_vs_rn from_msg <*> ul_a from_amt <*> ul_v_rn from_amtv <*> ul_mtime mtime <*> ul_n cons
+  LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->
+    LLS_ParallelReduce at <$> ul_asn True iasn <*> ul_bl inv <*> traverse ul_bl muntil <*> traverse ul_a mtimeout <*> mapM go cases <*> ul_n k
+    where
+      go (p, ps) = (,) p <$> ul_s ps
 
 ul_p :: LLProg -> App s LLProg
 ul_p (LLProg at opts ps s) = do

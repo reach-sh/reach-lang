@@ -129,9 +129,6 @@ kgq_a_only :: KCtxt -> DLVar -> DLArg -> IO ()
 kgq_a_only ctxt v a =
   knows ctxt (P_Var v) (all_points a)
 
-kgq_v_only :: KCtxt -> DLVar -> DLVar -> IO ()
-kgq_v_only ctxt v v' = kgq_a_only ctxt v (DLA_Var v')
-
 kgq_a_onlym :: KCtxt -> Maybe DLVar -> DLArg -> IO ()
 kgq_a_onlym ctxt mv a =
   case mv of
@@ -283,6 +280,11 @@ kgq_s ctxt = \case
       >> ctxtNewScope ctxt (kgq_n ctxt next_n)
     where
       msg_to_as = mapM_ (uncurry (kgq_a_only ctxt)) $ zip from_msg from_as
+  LLS_ParallelReduce _at iasn _inv _muntil _mtimeout cases k ->
+    kgq_asn_def ctxt iasn
+      >> kgq_asn ctxt iasn
+      >> mapM_ (ctxtNewScope ctxt . kgq_s ctxt) (map snd cases)
+      >> ctxtNewScope ctxt (kgq_n ctxt k)
 
 kgq_pie1 :: KCtxt -> SLPart -> SLVar -> IO ()
 kgq_pie1 ctxt who what = knows ctxt (P_Part who) $ S.singleton $ P_Interact who what
