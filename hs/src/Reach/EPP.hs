@@ -14,6 +14,7 @@ import Reach.Optimize
 import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Util
+-- import Debug.Trace
 
 data EPPError
   = Err_ContinueDomination
@@ -234,6 +235,14 @@ plReplace mkk nk = \case
 pltReplace :: (PLCommon a -> a) -> a -> PLTail -> a
 pltReplace mkk nk (PLTail m) = plReplace mkk nk m
 
+var_addlc :: Counts -> DLVar -> (PLLetCat, DLVar)
+var_addlc cs v = (lc, v)
+  where
+    lc =
+        case get_count v cs of
+          Count Nothing -> PL_Once
+          Count (Just x) -> x
+
 epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
@@ -332,13 +341,7 @@ epp_n st n =
       let loop_if = CT_If cond_at cond_da ct_body ct_k
       let loop_top = pltReplace CT_Com loop_if pt_cond
       (loop_top'_cs, loop_top') <- unsafeIOToST $ pltoptimize loop_top
-      let loop_addlc v = (lc, v)
-            where
-              lc =
-                case get_count v loop_top'_cs of
-                  Count Nothing -> PL_Once
-                  Count (Just x) -> x
-      let loop_lcvars = map loop_addlc loop_vars
+      let loop_lcvars = map (var_addlc loop_top'_cs) loop_vars
       let this_h = C_Loop at loop_svs loop_lcvars loop_top'
       addHandler st loop_num this_h
       let ct' = CT_Jump at loop_num loop_svs asn
@@ -469,8 +472,67 @@ epp_s st s =
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
       return $ ProResS p_prts (ProRes_ time_cons_cs True)
-    LLS_ParallelReduce _XXX_at _XXX_iasn _XXX_inv _XXX_muntil _XXX_mtimeout _XXX_cases _XXX_k ->
-      error $ "XXX epp parallel reduce"
+    LLS_ParallelReduce at iasn _inv muntil mtimeout cases k -> do
+      -- XXX How do the initial values get assigned? Should this have been a
+      -- consensus step, so we could jump to the checked loop with the initial
+      -- values?
+      --
+      -- The continuation is a loop that will be called in a number of
+      -- different contexts.
+      k_num <- newHandler st
+      let st_cons = st { pst_prev_handler = k_num }
+      ProResC _XXX_kprts (ProRes_ k_cs k_top) <- epp_n st_cons k
+      let k_svs = counts_nzs k_cs
+      let pr_vars = assignment_vars iasn
+      let k_lcvars = map (var_addlc k_cs) pr_vars
+      let k_h = C_Loop at k_svs k_lcvars k_top
+      addHandler st k_num k_h
+      let checkUntil = error $ "XXX checkUntil"
+      (checked_k_num, checked_k_svs) <-
+        case muntil of
+          Nothing -> return (k_num, k_svs)
+          Just (LLBlock until_at _ _XXX_until_l _XXX_until_da) -> do
+            ck_num <- newHandler st
+            let ck_asn = error $ "XXX ck_asn"
+            let ck_top' = CT_Jump until_at k_num k_svs ck_asn
+            let ck_top = checkUntil True ck_top'
+            let ck_svs = error $ "XXX ck_svs"
+            let ck_h = C_Loop until_at ck_svs k_lcvars ck_top
+            addHandler st ck_num ck_h
+            return $ (ck_num, ck_svs)
+      -- The timeout is a new handler that might be called
+      let prev = pst_prev_handler st
+      _XXX_time_info <-
+        case mtimeout of
+          Nothing -> return $ Nothing
+          Just time_da -> do
+            -- XXX How do we generate time_fs and time_dv?
+            let time_asn = error $ "XXX time_asn"
+            let time_fs = error $ "XXX time_fs"
+            let time_dv = error $ "XXX time_dv"
+            time_num <- newHandler st
+            let time_top' = CT_Jump at k_num k_svs time_asn
+            let time_top = checkUntil False time_top'
+            let prev_int = pst_interval st
+            let time_int = interval_add_from prev_int time_da
+            let ok_int = interval_add_to prev_int time_da
+            let time_svs = error $ "XXX time_svs"
+            let time_h = C_Handler at time_int time_fs prev time_svs [] time_dv time_top
+            addHandler st time_num time_h
+            return $ Just (time_num, ok_int)
+      -- Each case is a handler that verifies the until and timeout, runs the
+      -- body, then may call the continuation loop
+      let st_case =
+            st
+              { pst_prev_handler = checked_k_num
+              , pst_loop_svs = Just checked_k_svs
+              , pst_loop_num = Just checked_k_num }
+      let add_case (ProResS _XXX_prts (ProRes_ _XXX_con_cs _XXX_con_more)) (_, ps) = do
+            epp_s st_case ps
+      let prts0 = error $ "XXX prts0"
+      let con_cs0 = error $ "XXX con_cs0"
+      let con_more0 = error $ "XXX con_more0"
+      foldM add_case (ProResS prts0 (ProRes_ con_cs0 con_more0)) cases
 
 epp :: LLProg -> PLProg
 epp (LLProg at (LLOpts {..}) ps s) = runST $ do
