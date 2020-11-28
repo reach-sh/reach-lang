@@ -30,7 +30,6 @@ import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
 import Reach.Pretty()
-import Data.Maybe (fromMaybe)
 -- import Reach.Texty
 -- import Debug.Trace
 
@@ -1746,12 +1745,12 @@ evalPrim ctxt at sco st p sargs =
       -- Get the key/value pairs for the case object
       let objEnv = case cases of
                     SLV_Object _ _ env -> env
-                    ow -> expect_throw_ctx ctxt (fromMaybe at $ slval_srcloc ow) $ Err_Decl_NotType "object" ow
+                    ow -> expect_throw_ctx ctxt (getSrcLocOrDefault at ow) $ Err_Decl_NotType "object" ow
       -- Keep a map of type constructor - args, for each case
       let args_x_case = M.map (\ v ->
             case sss_val v of
               SLV_Clo _ _ case_args _ _ -> case_args
-              ow -> expect_throw_ctx ctxt (fromMaybe at $ slval_srcloc ow) $ Err_Decl_NotType "closure" ow
+              ow -> expect_throw_ctx ctxt (getSrcLocOrDefault at ow) $ Err_Decl_NotType "closure" ow
             ) objEnv
       -- Generate the function to call
       SLRes _ _ (_, fn) <- evalExpr ctxt at sco st $ do
@@ -1781,6 +1780,9 @@ evalPrim ctxt at sco st p sargs =
     illegal_args = expect_throw_ctx ctxt at (Err_Prim_InvalidArgs p args)
     retV v = return $ SLRes mempty st v
     rator = SLV_Prim p
+    getSrcLocOrDefault def sv =
+      let loc = srclocOf sv in
+      if loc == srcloc_builtin then def else loc
     expect_ty v =
       case v of
         SLV_Type t -> t
