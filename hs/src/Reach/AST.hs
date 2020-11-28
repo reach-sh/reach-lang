@@ -290,8 +290,7 @@ data SLForm
   deriving (Eq, Generic, NFData, Show)
 
 data SLKwd
-  = SLK_as
-  | SLK_async
+  = SLK_async
   | SLK_await
   | SLK_break
   | SLK_case
@@ -685,6 +684,14 @@ data DLStmt
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
+  | DLS_ParallelReduce 
+      { dls_pr_at :: SrcLoc
+      , dls_pr_init :: DLAssignment
+      , dls_pr_inv :: DLBlock
+      , dls_pr_muntil :: Maybe DLBlock
+      , dls_pr_mtimeout :: Maybe DLArg
+      , dls_pr_cases :: [(SLPart, DLStmts)]
+      }
   deriving (Eq, Generic, NFData, Show)
 
 instance SrcLocOf DLStmt where
@@ -704,6 +711,7 @@ instance SrcLocOf DLStmt where
     DLS_Continue a _ -> a
     DLS_FluidSet a _ _ -> a
     DLS_FluidRef a _ _ -> a
+    DLS_ParallelReduce a _ _ _ _ _ -> a
 
 instance IsPure DLStmt where
   isPure = \case
@@ -722,6 +730,7 @@ instance IsPure DLStmt where
     DLS_Continue {} -> False
     DLS_FluidSet {} -> False
     DLS_FluidRef {} -> True
+    DLS_ParallelReduce {} -> False
 
 instance IsLocal DLStmt where
   isLocal = \case
@@ -740,6 +749,7 @@ instance IsLocal DLStmt where
     DLS_Continue {} -> False
     DLS_FluidSet {} -> True
     DLS_FluidRef {} -> True
+    DLS_ParallelReduce {} -> False
 
 type DLStmts = Seq.Seq DLStmt
 

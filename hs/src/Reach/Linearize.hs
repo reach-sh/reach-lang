@@ -80,6 +80,8 @@ lin_com who back mkk fve rets s ks =
       impossible $ who ++ " cannot while"
     DLS_Continue {} ->
       impossible $ who ++ " cannot while"
+    DLS_ParallelReduce {} ->
+      impossible $ who ++ " cannot parallelReduce"
 
 lin_local_rets :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLLocal
 lin_local_rets at _ _ Seq.Empty =
@@ -154,6 +156,8 @@ lin_step _ fve rets (s Seq.:<| ks) =
         mtime' = do
           (delay_da, time_ss) <- mtime
           return $ (delay_da, lin_step at fve rets (time_ss <> ks))
+    DLS_ParallelReduce {} ->
+      impossible $ "XXX parallelReduce not implemented yet"
     _ ->
       lin_com "step" lin_step LLS_Com fve rets s ks
 

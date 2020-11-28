@@ -238,6 +238,14 @@ instance Pretty DLStmt where
         "fluid" <+> pretty fv <+> ":=" <+> pretty da
       DLS_FluidRef _ dv fv ->
         pretty dv <+> "<-" <+> "fluid" <+> pretty fv
+      DLS_ParallelReduce _ iasn inv muntil mtimeout cases ->
+        "parallelReduce" <+> parens (pretty iasn) <> hardline <>
+          ".invariant" <> parens (pretty inv) <> hardline <>
+          ".until" <> parens (pretty muntil) <> hardline <>
+          ".timeout" <> parens (pretty mtimeout) <> hardline <>
+          concatWith (surround hardline) (map go cases) <> semi
+        where
+          go (p, ss) = ".case" <> parens (pretty p <> ", " <> render_dls ss)
     where
       ns x = render_nest $ render_dls x
       cm l = parens (hsep $ punctuate comma $ l)

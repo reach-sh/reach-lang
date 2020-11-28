@@ -2625,6 +2625,7 @@ checkParallelReduceBody ctxt at who stmts = checkPrompt stmts
         (DLS_Continue at' _, _) -> bad at' $ "continue in consensus step"
         (DLS_FluidSet {}, _) -> cmore
         (DLS_FluidRef {}, _) -> cmore
+        (DLS_ParallelReduce at' _ _ _ _ _, _) -> bad at' $ "parallel reduce in consensus step"
       where
         cmore = checkInner more
     checkInnerCSM =
@@ -2653,8 +2654,8 @@ doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv,
   mtimeout_b <- mevalPureExprToBlock before_sco mempty slfpr_mtimeout T_UInt
   let (timeout_lifts, timeout_mda) =
         case mtimeout_b of
-          Nothing -> return (mempty, Nothing)
-          Just (DLBlock _ _ l d) -> return (l, Just d)
+          Nothing -> (mempty, Nothing)
+          Just (DLBlock _ _ l d) -> (l, Just d)
   -- XXX if there's no until OR timeout... then we can't end this, so the tail
   -- must be empty and funds might be locked
   let after_st = init_st { st_mode = SLM_ConsensusStep }
@@ -2687,7 +2688,7 @@ doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv,
         let lifts' = body_lifts <> cont_lifts
         return (whop, lifts')
   dcases <- mapM parse_dcase slfpr_cases
-  let the_pr = impossible $ "XXX " <> show ("DLS_ParallelReduce"::String, at, init_dl, inv_b, muntil_b, timeout_mda, dcases)
+  let the_pr = DLS_ParallelReduce at init_dl inv_b muntil_b timeout_mda dcases
   let final_lifts =
         init_pre_lifts <> timeout_lifts <> (return $ the_pr) <> init_post_lifts
   keepLifts final_lifts $ evalStmt ctxt at_after after_sco after_st ks
