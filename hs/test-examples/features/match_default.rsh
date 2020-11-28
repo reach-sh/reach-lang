@@ -9,7 +9,6 @@ export const main =
       const isNone = (m) =>
         m.match({
           Some: (_) => { return false; },
-          default: () => true,
-        });
+          default: () => true });
       assert(isNone(mx));
     });
