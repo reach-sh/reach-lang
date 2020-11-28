@@ -1233,8 +1233,8 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
 
 A match expression, written @tt{VAR.match({ CASE ... })}, where @tt{VAR} is a variable
 bound to a @tech{data instance} and @tt{CASE} is @tt{VARIANT: FUNCTION}, where @tt{VARIANT} is a
-variant, and @tt{FUNCTION} is a function that takes the same parameters as the
-variant constructor, or no parameters if the variant has a type of @tt{Null}.
+variant or @reachin{default}, and @tt{FUNCTION} is a function that takes the same parameters as the
+variant constructor, or no parameters if the variant has a type of @reachin{Null}.
 
 @tt{match} is similar to a @@tech{switch statement}, but since it is an expression, it
 can be conveniently used in places like the right hand side of an assignment statement.

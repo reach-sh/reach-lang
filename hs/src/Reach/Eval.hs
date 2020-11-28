@@ -1766,7 +1766,10 @@ evalPrim ctxt at sco st p sargs =
                                     _  -> JSLOne data_param in
                     let ret = JSCallExpression fn ann js_args ann in
                     let case_body = [JSReturn ann (Just ret) semi] in
-                    JSCase ann case_id ann case_body) $ M.toList args_x_case
+                    case tycon == "default" of
+                      True  -> JSDefault ann ann case_body
+                      False -> JSCase ann case_id ann case_body)
+                    $ M.toList args_x_case
               let body = JSSwitch ann ann data_param ann ann switch_parts ann semi
               let params = mkArrowParameterList [data_param, case_param]
               JSArrowExpression params ann body
@@ -1895,6 +1898,9 @@ evalApply ctxt at sco st rator rands =
 getKwdOrPrim :: Ord k => k -> M.Map k SLSSVal -> Maybe SLSSVal
 getKwdOrPrim ident env =
   case M.lookup ident env of
+    -- XXX Hack: Allow `default` to be used as object property name for `match`
+    -- expr. Keywords are allowed as property names in JS anyway, *shrug*
+    Just (SLSSVal _ _ (SLV_Kwd SLK_default)) -> Nothing
     Just s@(SLSSVal _ _ (SLV_Kwd _))  -> Just s
     Just s@(SLSSVal _ _ (SLV_Prim _)) -> Just s
     _ -> Nothing
