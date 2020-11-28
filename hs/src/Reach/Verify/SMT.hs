@@ -759,9 +759,6 @@ smt_s ctxt s =
       where
         ctxt_inv = ctxt { ctxt_while_invariant = Just inv }
         before_m = smt_asn ctxt_inv False iasn
-        -- Note: If there is no timeout, then after the parallel reduce, then
-        -- we can assume that the `until` is true, and during we can assume it
-        -- is false.
         muntil_m sign =
           case muntil of
             Nothing -> mempty
@@ -773,13 +770,16 @@ smt_s ctxt s =
         after_m =
           smt_asn_def ctxt at iasn
             <> smt_block ctxt (B_Assume True) inv
+            -- Note: If there is no timeout, then after the parallel reduce,
+            -- then we can assume that the `until` is true
             <> until_if_no_timeout_m True
             <> smt_n ctxt k
         cases_m = map go $ map snd cases
         go c =
           smt_asn_def ctxt at iasn
             <> smt_block ctxt (B_Assume True) inv
-            <> until_if_no_timeout_m False
+            -- Note: But, we can always assume that the `until` is false.
+            <> muntil_m False
             <> smt_s ctxt c
 
 _smt_declare_toBytes :: Solver -> String -> IO ()
