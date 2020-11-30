@@ -3,7 +3,7 @@
 const Common = {
   get: Fun([], Object({
     x: UInt,
-    y: Object({ z: UInt })
+    y: Object({ z: UInt }),
   })),
 };
 
