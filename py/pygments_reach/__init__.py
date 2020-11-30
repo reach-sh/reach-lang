@@ -75,7 +75,7 @@ class ReachLexer(RegexLexer):
              r'(<<|>>>?|==?|!=?|[-<>+*%&|^/])=?', Operator, 'slashstartsregex'),
             (r'[{(\[;,]', Punctuation, 'slashstartsregex'),
             (r'[})\].]', Punctuation),
-            (r'(for|in|while|do|break|return|continue|switch|case|default|if|else|'
+            (r'(for|in|while|do|break|return|continue|match|switch|case|default|if|else|'
              r'throw|try|catch|finally|new|delete|typeof|instanceof|void|yield|'
              # Reach ones
              r'interact|commit|exit|only|each|timeout|publish|pay|declassify|transfer|'
