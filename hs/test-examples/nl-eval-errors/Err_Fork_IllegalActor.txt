@@ -1,0 +1,1 @@
+reachc: error: ./Err_Fork_IllegalActor.rsh:11:26:after expr stmt semicolon: fork body must start with "Bob" action, but instead had "Alice"
