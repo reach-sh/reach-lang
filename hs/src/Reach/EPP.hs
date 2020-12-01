@@ -6,6 +6,7 @@ import Control.Monad.ST.Unsafe
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
 import Data.STRef
 import Generics.Deriving (Generic)
 import Reach.AST
@@ -26,6 +27,13 @@ instance Show EPPError where
 
 data ProRes_ a = ProRes_ Counts a
   deriving (Eq, Show)
+
+instance Semigroup a => Semigroup (ProRes_ a) where
+  (ProRes_ x_cs x) <> (ProRes_ y_cs y) =
+    ProRes_ (x_cs <> y_cs) (x <> y)
+
+instance Monoid a => Monoid (ProRes_ a) where
+  mempty = ProRes_ mempty mempty
 
 data ProResL = ProResL (ProRes_ PLTail)
   deriving (Eq, Show)
@@ -48,6 +56,19 @@ data ProSt s = ProSt
   , pst_forced_svs :: Counts
   }
   deriving (Eq)
+
+updateHandlerSVS :: ProSt s -> Int -> [DLVar] -> ST s ()
+updateHandlerSVS st target new_svs = modifySTRef (pst_handlers st) update
+  where update (CHandlers hs) = CHandlers $ fmap update1 hs
+        update1 = \case
+          C_Handler at int fs prev old_svs msg amtv body ->
+            C_Handler at int fs prev svs msg amtv body
+            where
+              svs =
+                case target == prev of
+                  True -> new_svs
+                  False -> old_svs
+          h -> h
 
 newHandler :: ProSt s -> ST s Int
 newHandler st =
@@ -307,6 +328,7 @@ epp_n st n =
             case more_chb of
               True -> Just svs
               False -> Nothing
+      updateHandlerSVS st which svs
       let mkp (ProRes_ cs_p et_p) =
             ProRes_ cs_p (ET_FromConsensus at1 which from_info et_p)
       let p_prts_s' = M.map mkp p_prts_s
@@ -533,8 +555,19 @@ epp_s st s =
       let con_cs0 = error $ "XXX con_cs0"
       let con_more0 = error $ "XXX con_more0"
       foldM add_case (ProResS prts0 (ProRes_ con_cs0 con_more0)) cases
-    LLS_Fork _XXX_at _XXX_cases -> do
-      error $ "XXX epp fork"
+    LLS_Fork at cases -> do
+      let go (p, ck) = do
+            r <- epp_s st ck
+            return $ (p, r)
+      rcases <- mapM go cases
+      let mkp p = ProRes_ cs_p et_p
+            where
+              rcases_p = map (\(cp, ProResS prts _) -> (cp, prts M.! p)) rcases
+              cs_p = mconcat $ map (\(_, ProRes_ cs _) -> cs) rcases_p
+              et_p = ET_Fork at $ map (\(cp, ProRes_ _ cet) -> (cp, cet)) rcases_p
+      let ts = pmap st mkp
+      let ProRes_ cs' more' = mconcat $ map (\(_, ProResS _ (ProRes_ cs y)) -> (ProRes_ cs (Any y))) rcases
+      return $ ProResS ts (ProRes_ cs' (getAny more'))
 
 epp :: LLProg -> PLProg
 epp (LLProg at (LLOpts {..}) ps s) = runST $ do

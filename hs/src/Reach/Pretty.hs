@@ -424,6 +424,7 @@ instance Pretty ETail where
       ET_While _ asn cond body k ->
         prettyWhile asn () cond (pretty body) <> hardline <> pretty k
       ET_Continue _ asn -> prettyContinue asn
+      ET_Fork _ cases -> prettyFork cases pretty
     where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)

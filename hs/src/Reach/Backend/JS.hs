@@ -454,6 +454,8 @@ jsETail ctxt = \case
                    <> hardline
                    <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk))
                 <> semi
+  ET_Fork _ _XXX_cases ->
+    error $ "XXX JS fork"
 
 jsPart :: SLPart -> EPProg -> Doc
 jsPart p (EPProg _ _ et) =

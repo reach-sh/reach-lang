@@ -916,6 +916,7 @@ data ETail
       , et_w_k :: ETail
       }
   | ET_Continue SrcLoc DLAssignment
+  | ET_Fork SrcLoc [(SLPart, ETail)]
   deriving (Eq, Show)
 
 data EPProg
