@@ -289,12 +289,10 @@ export async function getFaucet(): Promise<Account> {
 }
 
 export const newTestAccount = async (startingBalance: BigNumber) => {
-  const REACHY_RICH = await REACHY_RICH_P;
-  const networkAccount = makeAccount();
-  debug(`new account: ${networkAccount.address}`);
-  BALANCES[REACHY_RICH.networkAccount.address] = startingBalance;
-  transfer(REACHY_RICH, {networkAccount}, startingBalance);
-  return await connectAccount(networkAccount);
+  const account = await createAccount();
+  debug(`new account: ${account.networkAccount.address}`);
+  await fundFromFaucet(account, startingBalance);
+  return account;
 };
 
 export const createAccount = async () => {

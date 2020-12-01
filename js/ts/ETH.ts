@@ -1067,19 +1067,20 @@ export const createAccount = async () => {
   return await connectAccount(networkAccount);
 }
 
+export const fundFromFaucet = async (account: AccountTransferable, value: BigNumber) => {
+  const faucet = await getFaucet();
+  await transfer(faucet, account, value);
+};
+
 export const newTestAccount = async (startingBalance: BigNumber): Promise<Account> => {
   debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork('newTestAccount');
-  const provider = await getProvider();
-  const faucet = await getFaucet();
-
-  const networkAccount = ethers.Wallet.createRandom().connect(provider);
-  const to = networkAccount.address;
-  const acc = await connectAccount(networkAccount);
+  const acc = await createAccount();
+  const to = getAddr(acc);
 
   try {
     debug(`newTestAccount awaiting transfer: ${to}`);
-    await transfer(faucet, acc, startingBalance);
+    await fundFromFaucet(acc, startingBalance);
     debug(`newTestAccount got transfer: ${to}`);
     return acc;
   } catch (e) {

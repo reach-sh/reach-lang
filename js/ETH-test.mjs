@@ -229,7 +229,7 @@ runTests(async () => {
         'setProvider',
       ];
       const ALGO_extra_exports = ['setAlgodClient', 'setIndexer'];
-      const FAKE_extra_exports = ['fundFromFaucet'];
+      const FAKE_extra_exports = [];
 
       for (const [otherName, otherStdlib, otherExtraExports] of [
           ['ALGO', ALGO_stdlib, ALGO_extra_exports],

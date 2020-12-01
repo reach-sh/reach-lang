@@ -237,8 +237,12 @@ export const T_Digest: ALGO_Ty<CBR_Digest> = {
 };
 
 function addressUnwrapper(x: any): string {
-  return (x && x.addr)
-    ? '0x' + Buffer.from(algosdk.decodeAddress(x.addr).publicKey).toString('hex')
+  const addr =
+    x && x.networkAccount && x.networkAccount.addr
+    || x && x.addr;
+
+  return (addr != undefined)
+    ? '0x' + Buffer.from(algosdk.decodeAddress(addr).publicKey).toString('hex')
     : x;
 }
 export const T_Address: ALGO_Ty<CBR_Address> = {
@@ -1042,12 +1046,17 @@ export const createAccount = async () => {
   return await connectAccount(networkAccount);
 }
 
+export const fundFromFaucet = async (account: Account, value: BigNumber) => {
+  const faucet = await getFaucet();
+  await transfer(faucet, account, value);
+}
+
 export const newTestAccount = async (startingBalance: BigNumber) => {
-  const networkAccount = algosdk.generateAccount();
-  if (getDEBUG()) { await showBalance('before', networkAccount); }
-  await transfer({networkAccount: FAUCET}, {networkAccount}, startingBalance);
-  if (getDEBUG()) { await showBalance('after', networkAccount); }
-  return await connectAccount(networkAccount);
+  const account = await createAccount();
+  if (getDEBUG()) { await showBalance('before', account.networkAccount); }
+  await fundFromFaucet(account, startingBalance);
+  if (getDEBUG()) { await showBalance('after', account.networkAccount); }
+  return account;
 };
 
 /** @description the display name of the standard unit of currency for the network */

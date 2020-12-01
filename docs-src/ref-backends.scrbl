@@ -172,6 +172,13 @@ Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account
 Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network}. The account will have an empty balance of @tech{network tokens}.
 
 @(hrule)
+@(mint-define! '("fundFromFaucet"))
+@js{
+  fundFromFaucet(account, balance) => Promise<void>}
+
+Adds the given balance of @tech{network tokens} to a Reach @tech{account} abstraction. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
+
+@(hrule)
 @(mint-define! '("connectAccount"))
 @js{
  connectAccount(networkAccount) => Promise<acc> }
