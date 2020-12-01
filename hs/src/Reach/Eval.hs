@@ -116,6 +116,8 @@ data EvalError
   | Err_ParallelReduce_InvalidBody String
   | Err_Eval_MustBeLive String
   | Err_Invalid_Statement String
+  | Err_Fork_NoCases
+  | Err_Fork_IllegalActor SLPart SLPart
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -197,6 +199,13 @@ showStateDiff x y =
                     _ -> unwords ["only", showParts xParts, getCorrectGrammer xParts "has." "have."]
       in
       unwords ["Expected", showParts yParts, "to have published a message or been set, but", actual]
+    )
+  <> showDiff x y st_fork_body (\ xFB yFB ->
+      case (xFB, yFB) of
+        (Nothing, Nothing) -> impossible "nothing"
+        (Nothing, Just _) -> "Expected there to be a fork case body."
+        (Just _, Nothing) -> "Expected there to be no fork case body."
+        (Just xWho, Just yWho) -> "Expected " <> show yWho <> " fork case body, but found " <> show xWho
     )
 
 -- TODO more hints on why invalid syntax is invalid
@@ -390,6 +399,10 @@ instance Show EvalError where
       "must be live at " <> m
     Err_Invalid_Statement stmt ->
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
+    Err_Fork_NoCases ->
+      "fork had no cases"
+    Err_Fork_IllegalActor ewho awho ->
+      "fork body must start with " <> show awho <> " action, but instead had " <> show ewho
 
 --- Utilities
 zipEq :: Show e => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -538,6 +551,7 @@ base_env =
     , ("typeEq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ("wait", SLV_Prim SLPrim_wait)
+    , ("fork", SLV_Form SLForm_fork)
     , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
     , ( "Participant"
       , (SLV_Object srcloc_builtin (Just $ "Participant") $
@@ -580,7 +594,7 @@ data SLCtxt s = SLCtxt
 instance Show (SLCtxt s) where
   show _ = "<context>"
 
-expect_throw_ctx :: Show a => SLCtxt s -> SrcLoc -> a -> b
+expect_throw_ctx :: HasCallStack => Show a => SLCtxt s -> SrcLoc -> a -> b
 expect_throw_ctx ctxt = expect_throw (Just $ ctxt_stack ctxt)
 
 ctxt_alloc :: SLCtxt s -> ST s Int
@@ -687,6 +701,7 @@ data SLState = SLState
   , st_after_first :: Bool
   , --- A function call may cause a participant to join
     st_pdvs :: SLPartDVars
+  , st_fork_body :: Maybe SLPart
   }
   deriving (Eq, Show)
 
@@ -698,6 +713,16 @@ ensure_mode ctxt at st em msg = do
     False ->
       --- XXX use this function every where and shown em
       expect_throw_ctx ctxt at $ Err_Eval_IllegalMode am msg
+
+ensure_part_can_act :: SLCtxt s -> SrcLoc -> SLState -> SLPart -> ST s ()
+ensure_part_can_act ctxt at st who = do
+  case st_fork_body st of
+    Nothing -> return ()
+    Just fb_who ->
+      case who == fb_who of
+        True -> return ()
+        False ->
+          expect_throw_ctx ctxt at $ Err_Fork_IllegalActor fb_who who
 
 ensure_live :: SLCtxt s -> SrcLoc -> SLState -> String -> ST s ()
 ensure_live ctxt at st msg = do
@@ -799,6 +824,12 @@ stMerge ctxt at x y =
   case x == y of
     True -> y
     False -> expect_throw_ctx ctxt at $ Err_Eval_IncompatibleStates x y
+
+stMerges :: SLCtxt s -> SrcLoc -> [SLState] -> SLState
+stMerges ctxt at = \case
+  [] -> impossible $ "stMerges called with empty"
+  [x] -> x
+  x : ys -> stMerge ctxt at x $ stMerges ctxt at ys
 
 stEnsureMode :: SLCtxt s -> SrcLoc -> SLMode -> SLState -> SLState
 stEnsureMode ctxt at slm st =
@@ -924,6 +955,8 @@ evalAsEnv ctx at obj =
             Just _ -> []
         go key mode =
           [ (key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mtime))]
+    SLV_Form (SLForm_fork_partial False caseses) ->
+      M.fromList $ [ ("case", retV $ public $ SLV_Form $ SLForm_fork_partial True caseses) ]
     SLV_Form (SLForm_parallel_reduce_partial inite Nothing minve mtimeout muntile casees) ->
       M.fromList $
         gom "invariant" PRM_Invariant minve <>
@@ -1130,6 +1163,14 @@ evalForm ctxt at sco st f args =
           return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
         cm ->
           expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm $ "unknowable"
+    SLForm_fork -> do
+      zero_args
+      retV $ public $ SLV_Form $
+        SLForm_fork_partial False []
+    SLForm_fork_partial False _ ->
+      expect_throw_ctx ctxt at $ Err_Eval_NotApplicable $ SLV_Form f
+    SLForm_fork_partial True caseses ->
+      retV $ public $ SLV_Form $ SLForm_fork_partial False $ caseses <> [ (at, two_args) ]
     SLForm_parallel_reduce ->
       retV $ public $ SLV_Form $
         SLForm_parallel_reduce_partial one_arg Nothing Nothing Nothing Nothing []
@@ -1154,6 +1195,9 @@ evalForm ctxt at sco st f args =
     illegal_args n = expect_throw_ctx ctxt at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
     retV v = return $ SLRes mempty st v
+    zero_args = case args of
+      [] -> return ()
+      _ -> illegal_args 0
     one_arg = case args of
       [x] -> x
       _ -> illegal_args 1
@@ -2293,6 +2337,7 @@ enforcePrivateUnderscore ctxt at = mapM_ enf . M.toList
 
 doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLScope, SLState)
 doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = do
+  ensure_part_can_act ctxt at st who
   let SLCloEnv only_env only_penvs only_cenv = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
   let sco_only_pre =
@@ -2348,6 +2393,44 @@ doGetSelfAddress ctxt at who = do
       (DLE_PrimOp at SELF_ADDRESS [DLA_Literal $ DLL_Bytes who])
   return (dv, lifts)
 
+doFork :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLForm_ForkCases -> [JSStatement] -> SLComp s SLStmtRes
+doFork ctxt at _ _ [] _ =
+  expect_throw_ctx ctxt at $ Err_Fork_NoCases
+doFork ctxt at sco st_init caseses ks = do
+  ensure_mode ctxt at st_init SLM_Step "fork"
+  let ks_ne = dropEmptyJSStmts ks
+  let sco' =
+        case ks_ne of
+          [] -> sco
+          _ -> sco {sco_must_ret = RS_MayBeEmpty}
+  let go (who_at, (whoe, whate)) = do
+        -- XXX allow whoe to be an array/tuple and bind to `this`
+        let who = jse_expect_id who_at whoe
+        let whosv = env_lookup (Just ctxt) who_at (LC_RefFrom "fork case") who (sco_env sco)
+        let whov = ensure_public ctxt who_at $ sss_sls whosv
+        let whop =
+              -- FIXME make this a function and use regularly
+              case whov of
+                SLV_Participant _ x _ _ -> x
+                _ -> expect_throw_ctx ctxt who_at $ Err_NotParticipant whov
+        let (JSBlock _ who_ss _) =
+              case whate of
+                -- XXX allow identifiers listed in aformals to be
+                -- implicitly tested for nothing-ness
+                JSArrowExpression _XXX_aformals _ s -> jsStmtToBlock s
+                _ -> expect_throw_ctx ctxt who_at $ Err_Eval_IllegalJS whate
+        let st_case = st_init { st_fork_body = Just whop }
+        SLRes body_lifts body_st (SLStmtRes _ body_rets) <-
+          evalStmt ctxt who_at sco' st_case who_ss
+        return $ ((body_st, body_rets), (whop, body_lifts))
+  (st_and_rets, dcases) <- unzip <$> mapM go caseses
+  let (st_cases, rets_cases) = unzip st_and_rets
+  let fork_st = stMerges ctxt at st_cases
+  let fork_rets = combineStmtRetsl at Public rets_cases
+  let fork_dl = error $ "xxxDLS_Fork" <> show at <> show dcases
+  let fr = SLRes (return $ fork_dl) fork_st (SLStmtRes (sco_env sco) fork_rets)
+  retSeqn_ ctxt sco' fr at ks_ne
+
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
 evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
   case ev of
@@ -2383,6 +2466,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mmsg mamt mtime) ->
       case (st_mode st, st_live st) of
         (SLM_Step, True) -> do
+          ensure_part_can_act ctxt at st who
           let st_pure = st {st_mode = SLM_ConsensusPure}
           let pdvs = st_pdvs st
           let penv = sco_lookup_penv ctxt sco who
@@ -2474,6 +2558,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
                   { st_mode = SLM_ConsensusStep
                   , st_pdvs = pdvs'
                   , st_after_first = True
+                  , st_fork_body = Nothing
                   }
           let sco' =
                 sco
@@ -2506,6 +2591,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           let lifts' = (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' k_st cr
         _ -> illegal_mode
+    SLV_Form (SLForm_fork_partial False caseses) ->
+      doFork ctxt at sco st caseses ks
     _ ->
       case typeOf at ev of
         (T_Null, _) -> evalStmt ctxt at sco st ks
@@ -2835,6 +2922,9 @@ evalStmt ctxt at sco st ss =
             doWhileLikeContinueEval ctxt cont_at sco rhs_st lhs whilem rhs_sv
           let lifts' = rhs_lifts <> cont_lifts
           let env = sco_env sco
+          -- XXX We could/should look at sco_must_ret and see if it is
+          -- RS_MayBeEmpty which means that the outside scope has an empty
+          -- tail?
           expect_empty_tail ctxt lab cont_a cont_sp cont_at cont_ks $
             return $ SLRes lifts' st_decl' $ SLStmtRes env []
         (jsop, stmts) ->
@@ -3013,29 +3103,36 @@ evalStmt ctxt at sco st ss =
   where
     illegal a s lab =
       expect_throw_ctx ctxt (srcloc_jsa lab a at) (Err_Block_IllegalJS s)
-    retSeqn sr at' ks = do
-      case dropEmptyJSStmts ks of
-        [] -> return $ sr
-        ks' -> do
-          let SLRes lifts0 st0 (SLStmtRes _ rets0) = sr
-          let sco' =
-                case rets0 of
-                  [] -> sco
-                  (_ : _) -> sco {sco_must_ret = RS_ImplicitNull}
-          SLRes lifts1 st1 (SLStmtRes env1 rets1) <- evalStmt ctxt at' sco' st0 ks'
-          return $ SLRes (lifts0 <> lifts1) st1 (SLStmtRes env1 (rets0 <> rets1))
+    retSeqn = retSeqn_ ctxt sco
+
+retSeqn_ :: SLCtxt s -> SLScope -> SLRes SLStmtRes -> SrcLoc -> [JSStatement] -> SLComp s SLStmtRes
+retSeqn_ ctxt sco sr at' ks = do
+  case dropEmptyJSStmts ks of
+    [] -> return $ sr
+    ks' -> do
+      let SLRes lifts0 st0 (SLStmtRes _ rets0) = sr
+      let sco' =
+            case rets0 of
+              [] -> sco
+              (_ : _) -> sco {sco_must_ret = RS_ImplicitNull}
+      SLRes lifts1 st1 (SLStmtRes env1 rets1) <-
+        evalStmt ctxt at' sco' st0 ks'
+      return $ SLRes (lifts0 <> lifts1) st1 (SLStmtRes env1 (rets0 <> rets1))
 
 combineStmtRes :: SrcLoc -> SecurityLevel -> SLStmtRes -> SLStmtRes -> SLStmtRes
 combineStmtRes at' lvl (SLStmtRes _ lrets) (SLStmtRes env rrets) =
   SLStmtRes env $ combineStmtRets at' lvl lrets rrets
 
+combineStmtRetsl :: SrcLoc -> SecurityLevel -> [SLStmtRets] -> SLStmtRets
+combineStmtRetsl at lvl = foldl' (combineStmtRets at lvl) mempty
+
 combineStmtRets :: SrcLoc -> SecurityLevel -> SLStmtRets -> SLStmtRets -> SLStmtRets
 combineStmtRets at' lvl lrets rrets =
   case (lrets, rrets) of
     ([], []) -> []
-    ([], _) -> [(at', Nothing, (lvl, SLV_Null at' "empty left"))] ++ rrets
-    (_, []) -> lrets ++ [(at', Nothing, (lvl, SLV_Null at' "empty right"))]
-    (_, _) -> lrets ++ rrets
+    ([], _) -> [(at', Nothing, (lvl, SLV_Null at' "empty left"))] <> rrets
+    (_, []) -> lrets <> [(at', Nothing, (lvl, SLV_Null at' "empty right"))]
+    (_, _) -> lrets <> rrets
 
 expect_empty_tail :: SLCtxt s -> String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail ctxt lab a sp at ks res =
@@ -3164,6 +3261,7 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
           , st_live = False
           , st_pdvs = mempty
           , st_after_first = False
+          , st_fork_body = Nothing
           }
   let dlo = app_default_opts $ M.keys cns
   let ctxt_top =
@@ -3288,6 +3386,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , st_live = True
           , st_pdvs = mempty
           , st_after_first = False
+          , st_fork_body = Nothing
           }
   let at' = srcloc_at "compileDApp" Nothing at
   let ctxt_ =

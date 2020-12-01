@@ -3,7 +3,7 @@
 const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
 
 const Common = {
-  showOutcome: Fun([UInt], Null)
+  showOutcome: Fun([UInt], Null),
 };
 
 export const main =
@@ -18,6 +18,10 @@ export const main =
         confirmWager: Fun([UInt], Null) } ],
     ],
     (Alice, Bob) => {
+      const showOutcome = (which) => () => {
+        each([Alice, Bob], () =>
+          interact.showOutcome(which)); };
+
       Alice.only(() => {
         const { wager, deadline } =
           declassify(interact.getParams());
@@ -38,18 +42,16 @@ export const main =
       // start until she has enough time to know that Bob has accepted.
       wait(deadline);
 
-      fork([
-        [ Alice,
-          () => {
-            Alice.publish();
-            transfer(2 * wager).to(Alice);
-            commit();
-            showOutcome(ALICE_WINS); } ],
-        [ Bob,
-          () => {
-            Bob.publish();
-            transfer(2 * wager).to(Bob);
-            commit();
-            showOutcome(BOB_WINS); } ]
-      ]);
+      fork()
+      .case(Alice, () => {
+        Alice.publish();
+        transfer(2 * wager).to(Alice);
+        commit();
+        showOutcome(ALICE_WINS)(); })
+      .case(Bob, () => {
+        Bob.publish();
+        transfer(2 * wager).to(Bob);
+        commit();
+        showOutcome(BOB_WINS)(); } );
+
     });

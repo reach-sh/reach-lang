@@ -272,6 +272,8 @@ data ParallelReduceMode
   | PRM_Case
   deriving (Eq, Generic, NFData, Show)
 
+type SLForm_ForkCases = [ (SrcLoc, (JSExpression, JSExpression)) ]
+
 data SLForm
   = SLForm_App
   | SLForm_each
@@ -287,6 +289,10 @@ data SLForm
       , slfpr_mtimeout :: Maybe JSExpression
       , slfpr_muntil :: Maybe JSExpression
       , slfpr_cases :: [ (SrcLoc, (JSExpression, JSExpression)) ] }
+  | SLForm_fork
+  | SLForm_fork_partial
+      { slf_is_case :: Bool
+      , slf_cases :: SLForm_ForkCases }
   deriving (Eq, Generic, NFData, Show)
 
 data SLKwd
