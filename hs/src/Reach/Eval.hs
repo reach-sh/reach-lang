@@ -2427,7 +2427,7 @@ doFork ctxt at sco st_init caseses ks = do
   let (st_cases, rets_cases) = unzip st_and_rets
   let fork_st = stMerges ctxt at st_cases
   let fork_rets = combineStmtRetsl at Public rets_cases
-  let fork_dl = error $ "xxxDLS_Fork" <> show at <> show dcases
+  let fork_dl = DLS_Fork at dcases
   let fr = SLRes (return $ fork_dl) fork_st (SLStmtRes (sco_env sco) fork_rets)
   retSeqn_ ctxt sco' fr at ks_ne
 
@@ -2713,6 +2713,7 @@ checkParallelReduceBody ctxt at who stmts = checkPrompt stmts
         (DLS_FluidSet {}, _) -> cmore
         (DLS_FluidRef {}, _) -> cmore
         (DLS_ParallelReduce at' _ _ _ _ _, _) -> bad at' $ "parallel reduce in consensus step"
+        (DLS_Fork at' _, _) -> bad at' $ "fork in consensus step"
       where
         cmore = checkInner more
     checkInnerCSM =

@@ -82,6 +82,8 @@ lin_com who back mkk fve rets s ks =
       impossible $ who ++ " cannot while"
     DLS_ParallelReduce {} ->
       impossible $ who ++ " cannot parallelReduce"
+    DLS_Fork {} ->
+      impossible $ who ++ " cannot fork"
 
 lin_local_rets :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLLocal
 lin_local_rets at _ _ Seq.Empty =
@@ -165,6 +167,10 @@ lin_step _ fve rets (s Seq.:<| ks) =
         muntil' = fmap block muntil
         cases' = map go cases
         go (p, pss) = (p, lin_step at fve mempty pss)
+    DLS_Fork at cases ->
+      LLS_Fork at $ map go cases
+      where
+        go (p, pss) = (p, lin_step at fve rets $ pss <> ks)
     _ ->
       lin_com "step" lin_step LLS_Com fve rets s ks
 

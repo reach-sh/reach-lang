@@ -323,6 +323,10 @@ ul_s = \case
     LLS_ParallelReduce at <$> ul_asn True iasn <*> ul_bl inv <*> traverse ul_bl muntil <*> traverse ul_a mtimeout <*> mapM go cases <*> ul_n k
     where
       go (p, ps) = (,) p <$> ul_s ps
+  LLS_Fork at cases ->
+    LLS_Fork at <$> mapM go cases
+    where
+      go (p, ps) = (,) p <$> ul_s ps
 
 ul_p :: LLProg -> App s LLProg
 ul_p (LLProg at opts ps s) = do

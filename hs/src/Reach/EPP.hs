@@ -533,6 +533,8 @@ epp_s st s =
       let con_cs0 = error $ "XXX con_cs0"
       let con_more0 = error $ "XXX con_more0"
       foldM add_case (ProResS prts0 (ProRes_ con_cs0 con_more0)) cases
+    LLS_Fork _XXX_at _XXX_cases -> do
+      error $ "XXX epp fork"
 
 epp :: LLProg -> PLProg
 epp (LLProg at (LLOpts {..}) ps s) = runST $ do

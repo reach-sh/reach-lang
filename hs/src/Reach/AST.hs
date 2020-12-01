@@ -698,6 +698,10 @@ data DLStmt
       , dls_pr_mtimeout :: Maybe DLArg
       , dls_pr_cases :: [(SLPart, DLStmts)]
       }
+  | DLS_Fork
+      { dls_f_at :: SrcLoc
+      , dls_f_cases :: [(SLPart, DLStmts)]
+      }
   deriving (Eq, Generic, NFData, Show)
 
 instance SrcLocOf DLStmt where
@@ -718,6 +722,7 @@ instance SrcLocOf DLStmt where
     DLS_FluidSet a _ _ -> a
     DLS_FluidRef a _ _ -> a
     DLS_ParallelReduce a _ _ _ _ _ -> a
+    DLS_Fork a _ -> a
 
 instance IsPure DLStmt where
   isPure = \case
@@ -737,6 +742,7 @@ instance IsPure DLStmt where
     DLS_FluidSet {} -> False
     DLS_FluidRef {} -> True
     DLS_ParallelReduce {} -> False
+    DLS_Fork {} -> False
 
 instance IsLocal DLStmt where
   isLocal = \case
@@ -756,6 +762,7 @@ instance IsLocal DLStmt where
     DLS_FluidSet {} -> True
     DLS_FluidRef {} -> True
     DLS_ParallelReduce {} -> False
+    DLS_Fork {} -> False
 
 type DLStmts = Seq.Seq DLStmt
 
@@ -835,6 +842,10 @@ data LLStep
       , lls_pr_mtimeout :: Maybe DLArg
       , lls_pr_cases :: [(SLPart, LLStep)]
       , lls_pr_con :: LLConsensus
+      }
+  | LLS_Fork
+      { lls_f_at :: SrcLoc
+      , lls_f_cases :: [(SLPart, LLStep)]
       }
   deriving (Eq, Show)
 

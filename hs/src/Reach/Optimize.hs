@@ -228,6 +228,10 @@ opt_s = \case
     LLS_ParallelReduce at <$> opt_asn iasn <*> opt_bl inv <*> traverse opt_bl muntil <*> traverse opt_a mtimeout <*> mapM go cases <*> (focusc $ opt_n k)
     where
       go (p, ps) = (,) p <$> opt_s ps
+  LLS_Fork at cases ->
+    LLS_Fork at <$> mapM (newScope . go) cases
+    where
+      go (p, ps) = (,) p <$> opt_s ps
 
 optimize :: LLProg -> IO LLProg
 optimize (LLProg at opts ps s) = do

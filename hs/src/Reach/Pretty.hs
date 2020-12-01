@@ -195,6 +195,13 @@ prettyParallelReduce iasn inv muntil mtimeout cases fcase =
   where
     go (p, ss) = ".case" <> parens (pretty p <> ", " <> fcase ss)
 
+prettyFork :: [(SLPart, b)] -> (b -> Doc) -> Doc
+prettyFork cases fcase =
+  "fork" <+> parens mempty <> hardline <>
+    concatWith (surround hardline) (map go cases) <> semi
+  where
+    go (p, ss) = ".case" <> parens (pretty p <> ", " <> fcase ss)
+
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
 
@@ -250,6 +257,8 @@ instance Pretty DLStmt where
         pretty dv <+> "<-" <+> "fluid" <+> pretty fv
       DLS_ParallelReduce _ iasn inv muntil mtimeout cases ->
         prettyParallelReduce iasn inv muntil mtimeout cases render_dls
+      DLS_Fork _ cases ->
+        prettyFork cases render_dls
     where
       ns x = render_nest $ render_dls x
       cm l = parens (hsep $ punctuate comma $ l)
@@ -337,6 +346,8 @@ instance Pretty LLStep where
               Just (td, tl) -> nest 2 (hardline <> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tl)]))
       LLS_ParallelReduce _ iasn inv muntil mtimeout cases k ->
         prettyParallelReduce iasn inv muntil mtimeout cases pretty <> hardline <> pretty k
+      LLS_Fork _ cases ->
+        prettyFork cases pretty
     where
       cm l = parens (hsep $ punctuate comma $ l)
       ns = render_nest

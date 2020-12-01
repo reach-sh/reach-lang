@@ -285,6 +285,8 @@ kgq_s ctxt = \case
       >> kgq_asn ctxt iasn
       >> mapM_ (ctxtNewScope ctxt . kgq_s ctxt) (map snd cases)
       >> ctxtNewScope ctxt (kgq_n ctxt k)
+  LLS_Fork _at cases ->
+    mapM_ (ctxtNewScope ctxt . kgq_s ctxt) (map snd cases)
 
 kgq_pie1 :: KCtxt -> SLPart -> SLVar -> IO ()
 kgq_pie1 ctxt who what = knows ctxt (P_Part who) $ S.singleton $ P_Interact who what

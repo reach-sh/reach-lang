@@ -109,6 +109,7 @@ instance CollectsTypes LLStep where
     cts fs <> cts as <> cts msg <> cts amt <> cts amtv <> cts mtime <> cts c
   cts (LLS_ParallelReduce _ iasn inv muntil mtimeout cases k) =
     cts iasn <> cts inv <> cts muntil <> cts mtimeout <> cts (map snd cases) <> cts k
+  cts (LLS_Fork _ cases) = cts (map snd cases)
 
 instance CollectsTypes LLProg where
   cts (LLProg _ _ ps s) = cts ps <> cts s
