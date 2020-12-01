@@ -285,6 +285,21 @@ export const newTestAccount = async (startingBalance: BigNumber) => {
   return await connectAccount(networkAccount);
 };
 
+// For FAKE, the faucet may need to add funds on demand,
+// if the user creates an account without a starting balance.
+export const fundFaucet = async (balance: BigNumber) => {
+  const REACHY_RICH = await REACHY_RICH_P;
+  const currentBalance = BALANCES[REACHY_RICH.networkAccount.address] || stdlib.bigNumberify(0);
+  BALANCES[REACHY_RICH.networkAccount.address] = currentBalance.add(balance);
+}
+
+export const createAccount = async () => {
+  // Create account without any starting balance
+  const networkAccount = makeAccount();
+  debug(`createAccount: ${networkAccount.address}`);
+  return await connectAccount(networkAccount);
+}
+
 export function getNetworkTime() {
   return stdlib.bigNumberify(BLOCKS.length);
 }

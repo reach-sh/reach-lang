@@ -1037,6 +1037,11 @@ const showBalance = async (note: string, networkAccount: NetworkAccount) => {
   console.log('%s: balance: %s algos', note, showBal);
 };
 
+export const createAccount = async () => {
+  const networkAccount = algosdk.generateAccount();
+  return await connectAccount(networkAccount);
+}
+
 export const newTestAccount = async (startingBalance: BigNumber) => {
   const networkAccount = algosdk.generateAccount();
   if (getDEBUG()) { await showBalance('before', networkAccount); }
