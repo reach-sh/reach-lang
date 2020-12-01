@@ -2419,6 +2419,8 @@ doFork ctxt at sco st_init caseses ks = do
                 -- implicitly tested for nothing-ness
                 JSArrowExpression _XXX_aformals _ s -> jsStmtToBlock s
                 _ -> expect_throw_ctx ctxt who_at $ Err_Eval_IllegalJS whate
+        -- XXX make this allow ".nack" on to consensus and "cancel" in local
+        -- step
         let st_case = st_init { st_fork_body = Just whop }
         SLRes body_lifts body_st (SLStmtRes _ body_rets) <-
           evalStmt ctxt who_at sco' st_case who_ss

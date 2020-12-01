@@ -454,8 +454,12 @@ jsETail ctxt = \case
                    <> hardline
                    <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk))
                 <> semi
-  ET_Fork _ _XXX_cases ->
-    error $ "XXX JS fork"
+  ET_Fork _ cases ->
+    -- XXX This can't work for cases where we're inside a `while`
+    jsApply "stdlib.fork" [ jsArray $ map go cases ]
+    where
+      go (p, t) = jsArray [ jsCon (DLL_Bytes p), got (jsETail ctxt t) ]
+      got body = jsApply (parens ("async" <+> parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
 jsPart :: SLPart -> EPProg -> Doc
 jsPart p (EPProg _ _ et) =
