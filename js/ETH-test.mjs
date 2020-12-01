@@ -33,6 +33,21 @@ runTests(async () => {
       });
     });
 
+    describe('T_Address.canonicalize can handle multiple inputs', async () => {
+      const acc = await stdlib.createAccount();
+      const addr = acc.networkAccount.address;
+      const { canonicalize } = stdlib.T_Address;
+      it('T_Address.canonicalize(accRelay) returns address', () => {
+        expect(canonicalize(acc)).toBe(addr);
+      });
+      it('T_Address.canonicalize(accRelay.networkAccount) returns address', () => {
+        expect(canonicalize(acc.networkAccount)).toBe(addr);
+      });
+      it('T_Address.canonicalize(accRelay.networkAccount.address) returns address', () => {
+        expect(canonicalize(acc.networkAccount.address)).toBe(addr);
+      });
+    });
+
     describe('exposes a `stringToHex` function that', () => {
       const hand = 'ROCK';
       const handHex = stdlib.stringToHex(hand);
@@ -214,7 +229,7 @@ runTests(async () => {
         'setProvider',
       ];
       const ALGO_extra_exports = ['setAlgodClient', 'setIndexer'];
-      const FAKE_extra_exports = [];
+      const FAKE_extra_exports = ['fundFromFaucet'];
 
       for (const [otherName, otherStdlib, otherExtraExports] of [
           ['ALGO', ALGO_stdlib, ALGO_extra_exports],

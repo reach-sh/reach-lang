@@ -5,7 +5,7 @@ import * as stdlib from './shared';
 import { CurrencyAmount, OnProgress } from './shared';
 export * from './shared';
 export { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } from './ETH';
-import { T_Address, addressEq } from './ETH';
+import { T_Address } from './ETH';
 
 export const debug = (msg: any): void => {
   stdlib.debug(`${BLOCKS.length}: ${msg}}`);
@@ -106,17 +106,16 @@ const transfer_ = (
   BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
 }
 
-// For FAKE, the faucet may need to add funds on demand,
-// if the user created an account without a starting balance.
-const fundFaucetIfNeeded = async (address: Address, value: BigNumber) => {
+export const fundFromFaucet = async (toa: AccountTransferrable, value: BigNumber) => {
   const faucet = await getFaucet();
   const faucetAddress = faucet.networkAccount.address;
-  if (addressEq(address, faucetAddress)) {
-    const faucetFunds = BALANCES[faucetAddress] || stdlib.bigNumberify(0);
-    if (stdlib.le(faucetFunds, value)) {
-      BALANCES[faucetAddress] = faucetFunds.add(value);
-    }
+  const faucetFunds = BALANCES[faucetAddress] || stdlib.bigNumberify(0);
+  // For FAKE, the faucet may need to add funds on demand,
+  // if the user created an account without a starting balance.
+  if (stdlib.le(faucetFunds, value)) {
+    BALANCES[faucetAddress] = faucetFunds.add(value);
   }
+  transfer(faucet, toa, value);
 }
 
 /**
@@ -129,7 +128,6 @@ export const transfer = async (
 ): Promise<void> => {
   const toa = to.networkAccount.address;
   const froma = from.networkAccount.address;
-  await fundFaucetIfNeeded(froma, value);
   transfer_(froma, toa, value);
   const block: TransferBlock = { type: 'transfer', to: toa, from: froma, value };
   debug(`transfer: ${JSON.stringify(block)}`);
@@ -211,7 +209,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           transfer_(ctcInfo.address, txn.to, txn.amt, true);
         }
         const transferBlock = BLOCKS[BLOCKS.length - 1];
-        if (transferBlock.type !== 'transfer') { throw Error('impossible: intervening block'); }
+        if (transferBlock.type !== 'transfer') { throw Error(`impossible: intervening block ${JSON.stringify(BLOCKS)}`); }
         const event: Event = { ...stubbedRecv, funcNum, txns };
         const block: EventBlock = { ...transferBlock, type: 'event', event };
         debug(`sendrecv: transforming transfer block into event block: ${JSON.stringify(block)}`)
