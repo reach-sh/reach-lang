@@ -5,7 +5,7 @@ import * as stdlib from './shared';
 import { CurrencyAmount, OnProgress } from './shared';
 export * from './shared';
 export { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } from './ETH';
-import { T_Address } from './ETH';
+import { T_Address, addressEq } from './ETH';
 
 export const debug = (msg: any): void => {
   stdlib.debug(`${BLOCKS.length}: ${msg}}`);
@@ -106,6 +106,19 @@ const transfer_ = (
   BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
 }
 
+// For FAKE, the faucet may need to add funds on demand,
+// if the user created an account without a starting balance.
+const fundFaucetIfNeeded = async (address: Address, value: BigNumber) => {
+  const faucet = await getFaucet();
+  const faucetAddress = faucet.networkAccount.address;
+  if (addressEq(address, faucetAddress)) {
+    const faucetFunds = BALANCES[faucetAddress] || stdlib.bigNumberify(0);
+    if (stdlib.le(faucetFunds, value)) {
+      BALANCES[faucetAddress] = faucetFunds.add(value);
+    }
+  }
+}
+
 /**
  * @description performs a transfer & creates a transfer block
  */
@@ -116,6 +129,7 @@ export const transfer = async (
 ): Promise<void> => {
   const toa = to.networkAccount.address;
   const froma = from.networkAccount.address;
+  await fundFaucetIfNeeded(froma, value);
   transfer_(froma, toa, value);
   const block: TransferBlock = { type: 'transfer', to: toa, from: froma, value };
   debug(`transfer: ${JSON.stringify(block)}`);
@@ -284,14 +298,6 @@ export const newTestAccount = async (startingBalance: BigNumber) => {
   transfer(REACHY_RICH, {networkAccount}, startingBalance);
   return await connectAccount(networkAccount);
 };
-
-// For FAKE, the faucet may need to add funds on demand,
-// if the user creates an account without a starting balance.
-export const fundFaucet = async (balance: BigNumber) => {
-  const REACHY_RICH = await REACHY_RICH_P;
-  const currentBalance = BALANCES[REACHY_RICH.networkAccount.address] || stdlib.bigNumberify(0);
-  BALANCES[REACHY_RICH.networkAccount.address] = currentBalance.add(balance);
-}
 
 export const createAccount = async () => {
   // Create account without any starting balance

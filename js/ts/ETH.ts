@@ -1062,7 +1062,6 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
 
 export const createAccount = async () => {
   debug(`createAccount with 0 balance.`);
-  requireIsolatedNetwork('createAccount');
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
   return await connectAccount(networkAccount);

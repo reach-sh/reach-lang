@@ -165,6 +165,13 @@ The details of the mnemonic phrase encoding are specified uniquely to the @tech{
 Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network} with a given balance of @tech{network tokens}. This can only be used in private testing scenarios, as it uses a private faucet to issue @tech{network tokens}.
 
 @(hrule)
+@(mint-define! '("createAccount"))
+@js{
+  createAccount() => Promise<acc> }
+
+Returns a Promise for a Reach @tech{account} abstraction for a new @tech{account} on the @tech{consensus network}. The account will have an empty balance of @tech{network tokens}.
+
+@(hrule)
 @(mint-define! '("connectAccount"))
 @js{
  connectAccount(networkAccount) => Promise<acc> }
