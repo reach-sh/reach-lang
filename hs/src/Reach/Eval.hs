@@ -551,6 +551,7 @@ base_env =
     , ("typeEq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ("wait", SLV_Prim SLPrim_wait)
+    , ("race", SLV_Prim SLPrim_race)
     , ("fork", SLV_Form SLForm_fork)
     , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
     , ( "Participant"
@@ -649,6 +650,11 @@ compileArgExprMap ctxt at m = do
   return (ss, m'')
 
 -- General compiler utilities
+slvParticipant_part :: SLCtxt s -> SrcLoc -> SLVal -> SLPart
+slvParticipant_part ctxt at = \case
+  SLV_Participant _ x _ _ -> x
+  x -> expect_throw_ctx ctxt at $ Err_NotParticipant x
+
 compileCheckAndConvert :: SLCtxt s -> SrcLoc -> SLType -> [SLVal] -> ST s (DLStmts, SLType, [DLArg])
 compileCheckAndConvert ctxt at t argvs = do
   let (res, arges) = checkAndConvert at t argvs
@@ -1366,6 +1372,11 @@ mustBeBytes ctxt at v =
 evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] -> SLComp s SLSVal
 evalPrim ctxt at sco st p sargs =
   case p of
+    SLPrim_race ->
+      case map snd sargs of
+        [(SLV_Tuple _ pargs)] ->
+          retV $ (lvl, SLV_RaceParticipant at $ map (slvParticipant_part ctxt at) pargs)
+        _ -> illegal_args
     SLPrim_fluid_read fv ->
       doFluidRef ctxt at st fv
     SLPrim_op op ->
@@ -2408,11 +2419,7 @@ doFork ctxt at sco st_init caseses ks = do
         let who = jse_expect_id who_at whoe
         let whosv = env_lookup (Just ctxt) who_at (LC_RefFrom "fork case") who (sco_env sco)
         let whov = ensure_public ctxt who_at $ sss_sls whosv
-        let whop =
-              -- FIXME make this a function and use regularly
-              case whov of
-                SLV_Participant _ x _ _ -> x
-                _ -> expect_throw_ctx ctxt who_at $ Err_NotParticipant whov
+        let whop = slvParticipant_part ctxt who_at whov
         let (JSBlock _ who_ss _) =
               case whate of
                 -- XXX allow identifiers listed in aformals to be

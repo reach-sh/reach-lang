@@ -18,6 +18,10 @@ export const main =
         confirmWager: Fun([UInt], Null) } ],
     ],
     (Alice, Bob) => {
+      const showOutcome = (which) => () => {
+        each([Alice, Bob], () =>
+          interact.showOutcome(which)); };
+
       Alice.only(() => {
         const { wager, deadline } =
           declassify(interact.getParams());
@@ -38,18 +42,12 @@ export const main =
       // start until she has enough time to know that Bob has accepted.
       wait(deadline);
 
-      const outcome =
-        race([
-          [ Alice,
-            () => {
-              Alice.publish();
-              return ALICE_WINS; } ],
-          [ Bob,
-            () => {
-              Bob.publish();
-              return BOB_WINS; } ]
-        ]);
-      invariant(balance() = 2 * wager);
+      Alice.only(() => {
+        const outcome = ALICE_WINS; });
+      Bob.only(() => {
+        const outcome = BOB_WINS; });
+
+      race([Alice, Bob]).publish(outcome);
       const winner = outcome == ALICE_WINS ? Alice : Bob;
       transfer(balance()).to(winner);
       commit();

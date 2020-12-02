@@ -59,6 +59,8 @@ instance Pretty SLVal where
     SLV_Connector cn -> "<connector: " <> pretty cn <> ">"
     SLV_Participant _ who _ _ ->
       "<participant: " <> pretty who <> ">"
+    SLV_RaceParticipant _ whos ->
+      "<race: " <> pretty whos <> ">"
     SLV_Prim {} -> "<primitive>"
     SLV_Form {} -> "<form>"
     SLV_Kwd k -> pretty k

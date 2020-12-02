@@ -199,6 +199,7 @@ slToDL _at v =
       case mdv of
         Nothing -> Nothing
         Just dv -> return $ DLAE_Arg $ DLA_Var dv
+    SLV_RaceParticipant {} -> Nothing
     SLV_Prim (SLPrim_interact _ who m t) ->
       case t of
         T_Var {} -> Nothing

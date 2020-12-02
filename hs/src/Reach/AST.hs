@@ -235,6 +235,7 @@ data SLVal
   | SLV_Type SLType
   | SLV_Connector T.Text
   | SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
+  | SLV_RaceParticipant SrcLoc [SLPart]
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   | SLV_Kwd SLKwd
@@ -432,6 +433,7 @@ data SLPrimitive
   | SLPrim_part_setted SrcLoc SLPart DLArg
   | SLPrim_wait
   | SLPrim_fluid_read FluidVar
+  | SLPrim_race
   deriving (Eq, Generic, NFData, Show)
 
 type SLSVal = (SecurityLevel, SLVal)
