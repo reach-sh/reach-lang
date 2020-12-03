@@ -6,18 +6,14 @@
 # https://docs.docker.com/registry/spec/api/
 
 HERE="$(dirname "$(realpath "${0}")")";
-UP_TO="$1"
 
 # shellcheck source=../VERSION
 . "${HERE}/../VERSION"
 
 echo '{'
 
-if [ "x$UP_TO" = "x" ] ; then
-  DATE="$(TZ=Z date +%FT%TZ)"
-else
-  DATE="$UP_TO"
-fi
+DATE="$(TZ=Z date +%FT%TZ)"
+
 echo '  "report_date":'
 echo "\"$DATE\""
 
@@ -40,19 +36,32 @@ echo '}'
 
 # TODO: is paging an issue when the table gets larger?
 echo ', "CompileLog":'
+
+formatMonth () {
+  if [ "$1" -lt 10 ]; then
+    echo 0"$1"
+  else
+    echo "$1"
+  fi
+}
+
+uniqueUserBuilder=""
+declare -a years=(2020)
+for year in "${years[@]}"; do
+  for ((i=9; i<=12; i++)); do
+    formatI=$(formatMonth "$i")
+    uniqueUserBuilder+="\"$year-$i\": (.Items | map(select(.startTime.S | startswith(\"$year-$formatI\") ))), ";
+  done
+done
+# Remove last ', ' from string
+uniqueUsers="${uniqueUserBuilder%)*})"
+
 CompileLog=$(
-aws dynamodb scan \
+  aws dynamodb scan \
     --table-name CompileLog \
-    --consistent-read \
     --select SPECIFIC_ATTRIBUTES \
     --projection-expression userId,startTime
 )
-
-if [ "x$UP_TO" = "x" ] ; then
-  echo "$CompileLog" | jq '{row_count: .Count, unique_users: (.Items | map(.userId.S) | unique | length)}'
-else
-  UP_TO_T="${UP_TO}T23:59:59.999999999Z"
-  echo "$CompileLog" | jq '{row_count: .Count, unique_users: (.Items | map(select(.startTime.S <= "'"$UP_TO_T"'")) | map(.userId.S) | unique | length)}'
-fi
+echo "$CompileLog" | jq '{ row_count: .Count, unique_users: { '"$uniqueUsers"' }}'
 
 echo '}'

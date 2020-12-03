@@ -1,0 +1,15 @@
+set datafile separator ","
+set key autotitle columnhead
+set title "Unique Reach Users Per Month"
+set key off
+set style data histogram
+set style histogram rowstacked
+set style fill solid border -1
+set boxwidth 1.0
+set autoscale
+set ylabel "Unique Users"
+set xlabel "Month"
+set terminal png
+set output filename
+set linetype 1 lc rgb "orange"
+plot datafile using 2:xticlabels(1) with histogram
