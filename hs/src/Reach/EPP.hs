@@ -6,7 +6,6 @@ import Control.Monad.ST.Unsafe
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.Monoid
 import Data.STRef
 import Generics.Deriving (Generic)
 import Reach.AST
@@ -431,7 +430,7 @@ epp_s st s =
             ProRes_ who_body_cs $ pltReplace ET_Com who_k_et who_body_lt
       let p_prts = M.insert who who_prt_only p_prts_k
       return $ ProResS p_prts prchs_k
-    LLS_ToConsensus at from fs from_as msg amt_da amt_dv mtime cons -> do
+    LLS_ToConsensus at send (fromv, msg, amt_dv, cons) mtime -> do
       let prev_int = pst_interval st
       which <- newHandler st
       let (int_ok, delay_cs, continue_time) =
@@ -466,83 +465,16 @@ epp_s st s =
               , pst_interval = int_ok
               }
       ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
-      let (fs_uses, fs_defns) =
-            case fs of
-              FS_Join dv -> (mempty, [dv])
-              FS_Again dv -> (counts dv, mempty)
-      let msg_and_defns = (msg <> [amt_dv] <> fs_defns)
-      let int_ok_cs = counts int_ok
-      let ok_cons_cs = int_ok_cs <> delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
-      (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
-      let svs = counts_nzs time_cons_cs
-      let from_me = Just (from_as, amt_da, svs)
-      let prev = pst_prev_handler st
-      let this_h = C_Handler at int_ok fs prev svs msg amt_dv ct_cons
-      let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
-            ProRes_ cs_' $ ET_ToConsensus at fs prev which mfrom msg amt_dv mtime' et_
-            where
-              cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms msg_and_defns cs_
-      let mk_sender_et = mk_et from_me
-      let mk_receiver_et = mk_et Nothing
-      let mk_p_prt p prt = mker prt mtime'
-            where
-              mtime' = mtime'_ps M.! p
-              mker =
-                case p == from of
-                  True -> mk_sender_et
-                  False -> mk_receiver_et
-      let p_prts = M.mapWithKey mk_p_prt p_prts_cons
-      addHandler st which this_h
-      return $ ProResS p_prts (ProRes_ time_cons_cs True)
-    LLS_ToConsensus2 at send (fromv, msg, amt_dv, cons) mtime -> do
-      let prev_int = pst_interval st
-      which <- newHandler st
-      let (int_ok, delay_cs, continue_time) =
-            case mtime of
-              Nothing ->
-                (int_ok_, mempty, continue_time_)
-                where
-                  int_ok_ = interval_no_to prev_int
-                  continue_time_ ok_cons_cs =
-                    return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
-              Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)
-                where
-                  delayas = interval_from int_to
-                  delay_cs_ = counts delayas
-                  int_to = interval_add_from prev_int delaya
-                  int_ok_ = interval_add_to prev_int delaya
-                  continue_time_ ok_cons_cs = do
-                    let st_to =
-                          st
-                            { pst_interval = int_to
-                            , pst_forced_svs = ok_cons_cs
-                            }
-                    ProResS delay_prts (ProRes_ tcons_cs _) <-
-                      epp_s st_to delays
-                    let cs' = delay_cs_ <> tcons_cs
-                    let update (ProRes_ tk_cs tk_et) =
-                          ProRes_ (tk_cs <> delay_cs_) (Just (delayas, tk_et))
-                    return $ (cs', M.map update delay_prts)
-      let st_cons =
-            st
-              { pst_prev_handler = which
-              , pst_interval = int_ok
-              }
-      ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
-      let fs = FS_Join fromv -- XXX
-      let (fs_uses, fs_defns) =
-            case fs of
-              FS_Join dv -> (mempty, [dv])
-              FS_Again dv -> (counts dv, mempty)
+      let (fs_uses, fs_defns) = (mempty, [fromv])
       let msg_and_defns = (msg <> [amt_dv] <> fs_defns)
       let int_ok_cs = counts int_ok
       let ok_cons_cs = int_ok_cs <> delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
       (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let svs = counts_nzs time_cons_cs
       let prev = pst_prev_handler st
-      let this_h = C_Handler at int_ok fs prev svs msg amt_dv ct_cons
+      let this_h = C_Handler at int_ok fromv prev svs msg amt_dv ct_cons
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
-            ProRes_ cs_' $ ET_ToConsensus at fs prev which mfrom msg amt_dv mtime' et_
+            ProRes_ cs_' $ ET_ToConsensus at fromv prev which mfrom msg amt_dv mtime' et_
             where
               cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms msg_and_defns cs_
       let mk_p_prt p prt = mker prt mtime'
@@ -556,80 +488,6 @@ epp_s st s =
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
       return $ ProResS p_prts (ProRes_ time_cons_cs True)
-    LLS_ParallelReduce at iasn _inv muntil mtimeout cases k -> do
-      -- XXX How do the initial values get assigned? Should this have been a
-      -- consensus step, so we could jump to the checked loop with the initial
-      -- values?
-      --
-      -- The continuation is a loop that will be called in a number of
-      -- different contexts.
-      k_num <- newHandler st
-      let st_cons = st { pst_prev_handler = k_num }
-      ProResC _XXX_kprts (ProRes_ k_cs k_top) <- epp_n st_cons k
-      let k_svs = counts_nzs k_cs
-      let pr_vars = assignment_vars iasn
-      let k_lcvars = map (var_addlc k_cs) pr_vars
-      let k_h = C_Loop at k_svs k_lcvars k_top
-      addHandler st k_num k_h
-      let checkUntil = error $ "XXX checkUntil"
-      (checked_k_num, checked_k_svs) <-
-        case muntil of
-          Nothing -> return (k_num, k_svs)
-          Just (LLBlock until_at _ _XXX_until_l _XXX_until_da) -> do
-            ck_num <- newHandler st
-            let ck_asn = error $ "XXX ck_asn"
-            let ck_top' = CT_Jump until_at k_num k_svs ck_asn
-            let ck_top = checkUntil True ck_top'
-            let ck_svs = error $ "XXX ck_svs"
-            let ck_h = C_Loop until_at ck_svs k_lcvars ck_top
-            addHandler st ck_num ck_h
-            return $ (ck_num, ck_svs)
-      -- The timeout is a new handler that might be called
-      let prev = pst_prev_handler st
-      _XXX_time_info <-
-        case mtimeout of
-          Nothing -> return $ Nothing
-          Just time_da -> do
-            -- XXX How do we generate time_fs and time_dv?
-            let time_asn = error $ "XXX time_asn"
-            let time_fs = error $ "XXX time_fs"
-            let time_dv = error $ "XXX time_dv"
-            time_num <- newHandler st
-            let time_top' = CT_Jump at k_num k_svs time_asn
-            let time_top = checkUntil False time_top'
-            let prev_int = pst_interval st
-            let time_int = interval_add_from prev_int time_da
-            let ok_int = interval_add_to prev_int time_da
-            let time_svs = error $ "XXX time_svs"
-            let time_h = C_Handler at time_int time_fs prev time_svs [] time_dv time_top
-            addHandler st time_num time_h
-            return $ Just (time_num, ok_int)
-      -- Each case is a handler that verifies the until and timeout, runs the
-      -- body, then may call the continuation loop
-      let st_case =
-            st
-              { pst_prev_handler = checked_k_num
-              , pst_loop_svs = Just checked_k_svs
-              , pst_loop_num = Just checked_k_num }
-      let add_case (ProResS _XXX_prts (ProRes_ _XXX_con_cs _XXX_con_more)) (_, ps) = do
-            epp_s st_case ps
-      let prts0 = error $ "XXX prts0"
-      let con_cs0 = error $ "XXX con_cs0"
-      let con_more0 = error $ "XXX con_more0"
-      foldM add_case (ProResS prts0 (ProRes_ con_cs0 con_more0)) cases
-    LLS_Fork at cases -> do
-      let go (p, ck) = do
-            r <- epp_s st ck
-            return $ (p, r)
-      rcases <- mapM go cases
-      let mkp p = ProRes_ cs_p et_p
-            where
-              rcases_p = map (\(cp, ProResS prts _) -> (cp, prts M.! p)) rcases
-              cs_p = mconcat $ map (\(_, ProRes_ cs _) -> cs) rcases_p
-              et_p = ET_Fork at $ map (\(cp, ProRes_ _ cet) -> (cp, cet)) rcases_p
-      let ts = pmap st mkp
-      let ProRes_ cs' more' = mconcat $ map (\(_, ProResS _ (ProRes_ cs y)) -> (ProRes_ cs (Any y))) rcases
-      return $ ProResS ts (ProRes_ cs' (getAny more'))
 
 epp :: LLProg -> PLProg
 epp (LLProg at (LLOpts {..}) ps s) = runST $ do

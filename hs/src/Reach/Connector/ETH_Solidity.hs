@@ -661,7 +661,7 @@ solArgDefn ctxt which adk msg = (argDefns, argDefs)
     someArgs = not $ null msg_tys
 
 solHandler :: SolCtxt -> Int -> CHandler -> Doc
-solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
+solHandler ctxt_top which (C_Handler at interval from prev svs msg amtv ct) =
   vsep $ argDefns <> [evtDefn, frameDefn, funDefn]
   where
     amtmm = M.singleton amtv "msg.value"
@@ -689,15 +689,12 @@ solHandler ctxt_top which (C_Handler at interval fs prev svs msg amtv ct) =
         , timeoutCheck
         , ctp
         ]
-    (fromm, fromCheck) =
-      case fs of
-        FS_Join from -> ((M.singleton from "msg.sender"), emptyDoc)
-        FS_Again from -> (mempty, (solRequire (checkMsg "sender") $ solEq ctxt ("msg.sender") (solVar ctxt from)) <> semi)
+    (fromm, fromCheck) = ((M.singleton from "msg.sender"), emptyDoc)
     timeoutCheck = solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
       where
-        CBetween from to = interval
-        int_fromp = check True from
-        int_top = check False to
+        CBetween ifrom ito = interval
+        int_fromp = check True ifrom
+        int_top = check False ito
         check sign mv =
           case mv of
             [] -> "true"

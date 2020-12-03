@@ -74,18 +74,12 @@ lin_com who back mkk fve rets s ks =
       impossible $ who ++ " cannot only"
     DLS_ToConsensus {} ->
       impossible $ who ++ " cannot consensus"
-    DLS_ToConsensus2 {} ->
-      impossible $ who ++ " cannot consensus"
     DLS_FromConsensus {} ->
       impossible $ who ++ " cannot fromconsensus"
     DLS_While {} ->
       impossible $ who ++ " cannot while"
     DLS_Continue {} ->
       impossible $ who ++ " cannot while"
-    DLS_ParallelReduce {} ->
-      impossible $ who ++ " cannot parallelReduce"
-    DLS_Fork {} ->
-      impossible $ who ++ " cannot fork"
 
 lin_local_rets :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLLocal
 lin_local_rets at _ _ Seq.Empty =
@@ -151,16 +145,8 @@ lin_step _ fve rets (s Seq.:<| ks) =
       LLS_Only at who ls $ lin_step at fve rets ks
       where
         ls = lin_local at fve ss
-    DLS_ToConsensus at who fs as ms amt amtv mtime cons ->
-      LLS_ToConsensus at who fs as ms amt amtv mtime' cons'
-      where
-        cons' = lin_con back at fve mempty (cons <> ks)
-        back fve' = lin_step at fve' rets
-        mtime' = do
-          (delay_da, time_ss) <- mtime
-          return $ (delay_da, lin_step at fve rets (time_ss <> ks))
-    DLS_ToConsensus2 at send recv mtime ->
-      LLS_ToConsensus2 at send recv' mtime'
+    DLS_ToConsensus at send recv mtime ->
+      LLS_ToConsensus at send recv' mtime'
       where
         back fve' = lin_step at fve' rets
         (winner_dv, msg, amtv, cons) = recv
@@ -169,20 +155,6 @@ lin_step _ fve rets (s Seq.:<| ks) =
         mtime' = do
           (delay_da, time_ss) <- mtime
           return $ (delay_da, lin_step at fve rets (time_ss <> ks))
-    DLS_ParallelReduce at iasn inv muntil mtimeout cases ->
-      LLS_ParallelReduce at iasn inv' muntil' mtimeout cases' $
-        lin_con back at fve mempty ks
-      where
-        back fve' = lin_step at fve' rets
-        block = lin_block at fve
-        inv' = block inv
-        muntil' = fmap block muntil
-        cases' = map go cases
-        go (p, pss) = (p, lin_step at fve mempty pss)
-    DLS_Fork at cases ->
-      LLS_Fork at $ map go cases
-      where
-        go (p, pss) = (p, lin_step at fve rets $ pss <> ks)
     _ ->
       lin_com "step" lin_step LLS_Com fve rets s ks
 

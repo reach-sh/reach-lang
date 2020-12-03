@@ -726,15 +726,6 @@ smt_n ctxt n =
     LLC_Continue _at asn ->
       smt_asn ctxt True asn
 
-smt_fs :: SMTCtxt -> SrcLoc -> SLPart -> FromSpec -> SMTComp
-smt_fs ctxt at from fs =
-  case fs of
-    FS_Again _ -> mempty
-    FS_Join dv -> do
-      pathAddUnbound ctxt at (Just dv) O_Join
-      when (shouldSimulate ctxt from) $ do
-        smtAssert ctxt $ smtEq (Atom $ smtVar ctxt dv) (Atom $ smtAddress from)
-
 smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =
   case s of
@@ -747,25 +738,7 @@ smt_s ctxt s =
           case shouldSimulate ctxt who of
             True -> smt_l ctxt loc
             False -> mempty
-    LLS_ToConsensus at from fs from_as from_msg from_amt amtv mtime next_n ->
-      mapM_ (ctxtNewScope ctxt) [timeout, notimeout]
-      where
-        timeout =
-          case mtime of
-            Nothing -> mempty
-            Just (_, time_s) ->
-              smt_s ctxt time_s
-        notimeout = fs_m <> from_m <> smt_n ctxt next_n
-        fs_m = smt_fs ctxt at from fs
-        from_m = do
-          case shouldSimulate ctxt from of
-            False -> do
-              pathAddUnbound ctxt at (Just amtv) (O_DishonestPay from)
-              mapM_ (\msg_dv -> pathAddUnbound ctxt at (Just msg_dv) (O_DishonestMsg from)) from_msg
-            True -> do
-              pathAddBound ctxt at (Just amtv) (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
-              zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at (Just msg_dv) (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
-    LLS_ToConsensus2 at send recv mtime ->
+    LLS_ToConsensus at send recv mtime ->
       mapM_ (ctxtNewScope ctxt) $ timeout : map go (M.toList send)
       where
         (whov, msgvs, amtv, next_n) = recv
@@ -780,35 +753,6 @@ smt_s ctxt s =
               case shouldSimulate ctxt from of
                 False -> pathAddUnbound ctxt at (Just v) bo_no
                 True -> pathAddBound ctxt at (Just v) bo_yes se
-    LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->
-      mapM_ (ctxtNewScope ctxt) $ [before_m] ++ cases_m ++ [after_m]
-      where
-        ctxt_inv = ctxt { ctxt_while_invariant = Just inv }
-        before_m = smt_asn ctxt_inv False iasn
-        muntil_m sign =
-          case muntil of
-            Nothing -> mempty
-            Just x -> smt_block ctxt (B_Assume sign) x
-        until_if_no_timeout_m sign =
-          case mtimeout of
-            Nothing -> muntil_m sign
-            Just _ -> mempty
-        after_m =
-          smt_asn_def ctxt at iasn
-            <> smt_block ctxt (B_Assume True) inv
-            -- Note: If there is no timeout, then after the parallel reduce,
-            -- then we can assume that the `until` is true
-            <> until_if_no_timeout_m True
-            <> smt_n ctxt k
-        cases_m = map go $ map snd cases
-        go c =
-          smt_asn_def ctxt at iasn
-            <> smt_block ctxt (B_Assume True) inv
-            -- Note: But, we can always assume that the `until` is false.
-            <> muntil_m False
-            <> smt_s ctxt c
-    LLS_Fork _at cases ->
-      mapM_ ((ctxtNewScope ctxt) . smt_s ctxt . snd) cases
 
 _smt_declare_toBytes :: Solver -> String -> IO ()
 _smt_declare_toBytes smt n = do

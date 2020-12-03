@@ -327,10 +327,9 @@ jsAsn _ctxt mode asn =
     cv (v_, _) = jsContinueVar v_
     a (_, a_) = jsArg a_
 
-jsFromSpec :: JSCtxt -> FromSpec -> Doc
-jsFromSpec ctxt = \case
-  FS_Join v -> "const" <+> jsVar v <+> "=" <+> jsTxn ctxt <> ".from" <> semi <> hardline
-  FS_Again _ -> emptyDoc
+jsFromSpec :: JSCtxt -> DLVar -> Doc
+jsFromSpec ctxt v =
+  "const" <+> jsVar v <+> "=" <+> jsTxn ctxt <> ".from" <> semi <> hardline
 
 jsETail :: JSCtxt -> ETail -> Doc
 jsETail ctxt = \case
@@ -454,12 +453,6 @@ jsETail ctxt = \case
                    <> hardline
                    <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk))
                 <> semi
-  ET_Fork _ cases ->
-    -- XXX This can't work for cases where we're inside a `while`
-    jsApply "stdlib.fork" [ jsArray $ map go cases ]
-    where
-      go (p, t) = jsArray [ jsCon (DLL_Bytes p), got (jsETail ctxt t) ]
-      got body = jsApply (parens ("async" <+> parens emptyDoc <+> "=>" <+> jsBraces body)) []
 
 jsPart :: SLPart -> EPProg -> Doc
 jsPart p (EPProg _ _ et) =

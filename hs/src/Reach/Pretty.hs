@@ -187,25 +187,8 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
-prettyParallelReduce :: Pretty a => DLAssignment -> a -> Maybe a -> Maybe DLArg -> [(SLPart, b)] -> (b -> Doc) -> Doc
-prettyParallelReduce iasn inv muntil mtimeout cases fcase =
-  "parallelReduce" <+> parens (pretty iasn) <> hardline <>
-    ".invariant" <> parens (pretty inv) <> hardline <>
-    ".until" <> parens (pretty muntil) <> hardline <>
-    ".timeout" <> parens (pretty mtimeout) <> hardline <>
-    concatWith (surround hardline) (map go cases) <> semi
-  where
-    go (p, ss) = ".case" <> parens (pretty p <> ", " <> fcase ss)
-
-prettyFork :: [(SLPart, b)] -> (b -> Doc) -> Doc
-prettyFork cases fcase =
-  "fork" <+> parens mempty <> hardline <>
-    concatWith (surround hardline) (map go cases) <> semi
-  where
-    go (p, ss) = ".case" <> parens (pretty p <> ", " <> fcase ss)
-
-prettyToConsensus2 :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart ([DLArg], DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
-prettyToConsensus2 fa fb send (win, msg, amtv, body) mtime =
+prettyToConsensus :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart ([DLArg], DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
+prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
   "publish" <> parens emptyDoc <> nest 2 (hardline <> mtime' <>
     concatWith (surround hardline) (map go $ M.toList send) <> hardline <>
     ".recv" <> parens (hsep $ punctuate comma $ [ pretty win, pretty msg, pretty amtv, render_nest (fa body)]) <> semi)
@@ -220,10 +203,6 @@ prettyToConsensus2 fa fb send (win, msg, amtv, body) mtime =
 
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
-
-instance Pretty FromSpec where
-  pretty (FS_Join dv) = "join(" <> pretty dv <> ")"
-  pretty (FS_Again dv) = "again(" <> pretty dv <> ")"
 
 instance Pretty DLStmt where
   pretty d =
@@ -253,16 +232,8 @@ instance Pretty DLStmt where
         prettyStop
       DLS_Only _ who onlys ->
         "only" <> parens (render_sp who) <+> ns onlys <> semi
-      DLS_ToConsensus _ who fs as vs amt amtv mtime cons ->
-        "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> parens (pretty amtv <+> "=" <+> amtp) <> timep <> ns cons
-        where
-          amtp = ".pay" <> parens (pretty amt)
-          timep =
-            case mtime of
-              Nothing -> ""
-              Just (td, tp) -> nest 2 (hardline <> ".timeout" <> (cm [pretty td, (render_nest $ render_dls tp)]))
-      DLS_ToConsensus2 {..} ->
-        prettyToConsensus2 render_dls render_dls dls_tc2_send dls_tc2_recv dls_tc2_mtime
+      DLS_ToConsensus {..} ->
+        prettyToConsensus render_dls render_dls dls_tc_send dls_tc_recv dls_tc_mtime
       DLS_FromConsensus _ more ->
         "commit()" <> semi <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -273,13 +244,8 @@ instance Pretty DLStmt where
         "fluid" <+> pretty fv <+> ":=" <+> pretty da
       DLS_FluidRef _ dv fv ->
         pretty dv <+> "<-" <+> "fluid" <+> pretty fv
-      DLS_ParallelReduce _ iasn inv muntil mtimeout cases ->
-        prettyParallelReduce iasn inv muntil mtimeout cases render_dls
-      DLS_Fork _ cases ->
-        prettyFork cases render_dls
     where
       ns x = render_nest $ render_dls x
-      cm l = parens (hsep $ punctuate comma $ l)
 
 render_dls :: DLStmts -> Doc
 render_dls ss = concatWith (surround hardline) $ fmap pretty ss
@@ -354,22 +320,9 @@ instance Pretty LLStep where
       LLS_Stop _at -> prettyStop
       LLS_Only _at who onlys k ->
         "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
-      LLS_ToConsensus _at who fs as vs amt amtv mtime cons ->
-        "publish" <> (cm $ [render_sp who, pretty fs]) <> parens (render_das as) <> (cm $ map pretty vs) <> parens (pretty amtv <+> "=" <+> amtp) <> timep <> ns (pretty cons)
-        where
-          amtp = ".pay" <> parens (pretty amt)
-          timep =
-            case mtime of
-              Nothing -> mempty
-              Just (td, tl) -> nest 2 (hardline <> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tl)]))
-      LLS_ToConsensus2 {..} ->
-        prettyToConsensus2 pretty pretty lls_tc2_send lls_tc2_recv lls_tc2_mtime
-      LLS_ParallelReduce _ iasn inv muntil mtimeout cases k ->
-        prettyParallelReduce iasn inv muntil mtimeout cases pretty <> hardline <> pretty k
-      LLS_Fork _ cases ->
-        prettyFork cases pretty
+      LLS_ToConsensus {..} ->
+        prettyToConsensus pretty pretty lls_tc_send lls_tc_recv lls_tc_mtime
     where
-      cm l = parens (hsep $ punctuate comma $ l)
       ns = render_nest
 
 instance Pretty LLProg where
@@ -444,7 +397,6 @@ instance Pretty ETail where
       ET_While _ asn cond body k ->
         prettyWhile asn () cond (pretty body) <> hardline <> pretty k
       ET_Continue _ asn -> prettyContinue asn
-      ET_Fork _ cases -> prettyFork cases pretty
     where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)

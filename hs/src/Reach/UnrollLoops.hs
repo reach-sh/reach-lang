@@ -300,11 +300,6 @@ ul_n = \case
   LLC_Continue at asn ->
     (pure $ LLC_Continue at) <*> ul_asn False asn
 
-ul_fs :: FromSpec -> App s FromSpec
-ul_fs = \case
-  FS_Join v -> (pure $ FS_Join) <*> ul_v_rn v
-  FS_Again v -> (pure $ FS_Again) <*> ul_v v
-
 ul_mtime :: Maybe (DLArg, LLStep) -> App s (Maybe (DLArg, LLStep))
 ul_mtime = \case
   Nothing -> (pure $ Nothing)
@@ -321,24 +316,14 @@ ul_s = \case
     (pure $ LLS_Stop at)
   LLS_Only at p l s ->
     (pure $ LLS_Only at p) <*> ul_l l <*> ul_s s
-  LLS_ToConsensus at from fs from_as from_msg from_amt from_amtv mtime cons ->
-    (pure $ LLS_ToConsensus at from) <*> ul_fs fs <*> ul_as from_as <*> ul_vs_rn from_msg <*> ul_a from_amt <*> ul_v_rn from_amtv <*> ul_mtime mtime <*> ul_n cons
-  LLS_ToConsensus2 at send recv mtime ->
-    LLS_ToConsensus2 at <$> send' <*> recv' <*> mtime'
+  LLS_ToConsensus at send recv mtime ->
+    LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
     where
       send' = M.fromList <$> mapM ul_send (M.toList send)
       (winner_dv, msg, amtv, cons) = recv
       cons' = ul_n cons
       recv' = (\a b c d -> (a, b, c, d)) <$> ul_v_rn winner_dv <*> ul_vs_rn msg <*> ul_v_rn amtv <*> cons'
       mtime' = ul_mtime mtime
-  LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->
-    LLS_ParallelReduce at <$> ul_asn True iasn <*> ul_bl inv <*> traverse ul_bl muntil <*> traverse ul_a mtimeout <*> mapM go cases <*> ul_n k
-    where
-      go (p, ps) = (,) p <$> ul_s ps
-  LLS_Fork at cases ->
-    LLS_Fork at <$> mapM go cases
-    where
-      go (p, ps) = (,) p <$> ul_s ps
 
 ul_p :: LLProg -> App s LLProg
 ul_p (LLProg at opts ps s) = do

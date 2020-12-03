@@ -261,26 +261,12 @@ kgq_n ctxt = \case
   LLC_Continue _ asn ->
     kgq_asn ctxt asn
 
-kgq_fs :: KCtxt -> FromSpec -> IO ()
-kgq_fs ctxt = \case
-  FS_Join v -> kgq_a_all ctxt (DLA_Var v)
-  FS_Again {} -> mempty
-
 kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
   LLS_Com m -> kgq_m kgq_s ctxt m
   LLS_Stop {} -> mempty
   LLS_Only _at who loc k -> kgq_l (ctxt_restrict ctxt who) loc >> kgq_s ctxt k
-  LLS_ToConsensus _at _from fs from_as from_msg from_amt from_amtv mtime next_n ->
-    kgq_fs ctxt fs >> msg_to_as
-      >> kgq_a_only ctxt from_amtv from_amt
-      >> kgq_a_all ctxt (DLA_Var from_amtv)
-      >> mapM_ (kgq_a_all ctxt) (map DLA_Var from_msg)
-      >> ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
-      >> ctxtNewScope ctxt (kgq_n ctxt next_n)
-    where
-      msg_to_as = mapM_ (uncurry (kgq_a_only ctxt)) $ zip from_msg from_as
-  LLS_ToConsensus2 _ send recv mtime ->
+  LLS_ToConsensus _ send recv mtime ->
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       >> mapM_ (ctxtNewScope ctxt . go) (M.toList send)
     where
@@ -294,13 +280,6 @@ kgq_s ctxt = \case
         mapM_ (uncurry (kgq_a_only ctxt)) (zip msgvs msgas)
           >> kgq_a_only ctxt amtv amta
           >> common
-  LLS_ParallelReduce _at iasn _inv _muntil _mtimeout cases k ->
-    kgq_asn_def ctxt iasn
-      >> kgq_asn ctxt iasn
-      >> mapM_ (ctxtNewScope ctxt . kgq_s ctxt) (map snd cases)
-      >> ctxtNewScope ctxt (kgq_n ctxt k)
-  LLS_Fork _at cases ->
-    mapM_ (ctxtNewScope ctxt . kgq_s ctxt) (map snd cases)
 
 kgq_pie1 :: KCtxt -> SLPart -> SLVar -> IO ()
 kgq_pie1 ctxt who what = knows ctxt (P_Part who) $ S.singleton $ P_Interact who what

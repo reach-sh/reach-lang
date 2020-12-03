@@ -112,13 +112,8 @@ data EvalError
   | Err_Switch_ExtraCases [SLVar]
   | Err_Expected_Bytes SLVal
   | Err_RecursionDepthLimit
-  | Err_ParallelReduce_Incomplete ParallelReduceMode
-  | Err_ParallelReduce_NoInvariant
-  | Err_ParallelReduce_InvalidBody String
   | Err_Eval_MustBeLive String
   | Err_Invalid_Statement String
-  | Err_Fork_NoCases
-  | Err_Fork_IllegalActor SLPart SLPart
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -200,13 +195,6 @@ showStateDiff x y =
                     _ -> unwords ["only", showParts xParts, getCorrectGrammer xParts "has." "have."]
       in
       unwords ["Expected", showParts yParts, "to have published a message or been set, but", actual]
-    )
-  <> showDiff x y st_fork_body (\ xFB yFB ->
-      case (xFB, yFB) of
-        (Nothing, Nothing) -> impossible "nothing"
-        (Nothing, Just _) -> "Expected there to be a fork case body."
-        (Just _, Nothing) -> "Expected there to be no fork case body."
-        (Just xWho, Just yWho) -> "Expected " <> show yWho <> " fork case body, but found " <> show xWho
     )
 
 -- TODO more hints on why invalid syntax is invalid
@@ -390,20 +378,10 @@ instance Show EvalError where
       "expected bytes, got something else: " <> displaySlValType v
     Err_RecursionDepthLimit ->
       "recursion depth limit exceeded, more than " <> show recursionDepthLimit <> " calls; who would need more than that many?"
-    Err_ParallelReduce_Incomplete m ->
-      "parallel reduce, call incomplete; ending in the midst of " <> show m
-    Err_ParallelReduce_NoInvariant ->
-      "parallel reduce, missing invariant"
-    Err_ParallelReduce_InvalidBody m ->
-      "parallel reduce, invalid body: " <> m
     Err_Eval_MustBeLive m ->
       "must be live at " <> m
     Err_Invalid_Statement stmt ->
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
-    Err_Fork_NoCases ->
-      "fork had no cases"
-    Err_Fork_IllegalActor ewho awho ->
-      "fork body must start with " <> show awho <> " action, but instead had " <> show ewho
 
 --- Utilities
 zipEq :: Show e => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -561,8 +539,6 @@ base_env =
     , ("typeOf", SLV_Prim SLPrim_typeOf)
     , ("wait", SLV_Prim SLPrim_wait)
     , ("race", SLV_Prim SLPrim_race)
-    , ("fork", SLV_Form SLForm_fork)
-    , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
     , ( "Participant"
       , (SLV_Object srcloc_builtin (Just $ "Participant") $
            m_fromList_public_builtin
@@ -727,7 +703,6 @@ data SLState = SLState
   , st_after_first :: Bool
   , --- A function call may cause a participant to join
     st_pdvs :: SLPartDVars
-  , st_fork_body :: Maybe SLPart
   }
   deriving (Eq, Show)
 
@@ -739,16 +714,6 @@ ensure_mode ctxt at st em msg = do
     False ->
       --- XXX use this function every where and shown em
       expect_throw_ctx ctxt at $ Err_Eval_IllegalMode am msg
-
-ensure_part_can_act :: SLCtxt s -> SrcLoc -> SLState -> SLPart -> ST s ()
-ensure_part_can_act ctxt at st who = do
-  case st_fork_body st of
-    Nothing -> return ()
-    Just fb_who ->
-      case who == fb_who of
-        True -> return ()
-        False ->
-          expect_throw_ctx ctxt at $ Err_Fork_IllegalActor fb_who who
 
 ensure_live :: SLCtxt s -> SrcLoc -> SLState -> String -> ST s ()
 ensure_live ctxt at st msg = do
@@ -1007,21 +972,6 @@ evalAsEnv ctx at obj =
             Just _ -> []
         go key mode =
           [ (key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mtime))]
-    SLV_Form (SLForm_fork_partial False caseses) ->
-      M.fromList $ [ ("case", retV $ public $ SLV_Form $ SLForm_fork_partial True caseses) ]
-    SLV_Form (SLForm_parallel_reduce_partial inite Nothing minve mtimeout muntile casees) ->
-      M.fromList $
-        gom "invariant" PRM_Invariant minve <>
-        gom "timeout" PRM_Timeout mtimeout <>
-        gom "until" PRM_Until muntile <>
-        go "case" PRM_Case
-      where
-        gom key mode me =
-          case me of
-            Nothing -> go key mode
-            Just _ -> []
-        go key mode =
-          [ (key, retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial inite (Just mode) minve mtimeout muntile casees) ]
     --- FIXME rewrite the rest to look at the type and go from there
     SLV_Tuple _ _ ->
       M.fromList
@@ -1215,41 +1165,10 @@ evalForm ctxt at sco st f args =
           return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
         cm ->
           expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm $ "unknowable"
-    SLForm_fork -> do
-      zero_args
-      retV $ public $ SLV_Form $
-        SLForm_fork_partial False []
-    SLForm_fork_partial False _ ->
-      expect_throw_ctx ctxt at $ Err_Eval_NotApplicable $ SLV_Form f
-    SLForm_fork_partial True caseses ->
-      retV $ public $ SLV_Form $ SLForm_fork_partial False $ caseses <> [ (at, two_args) ]
-    SLForm_parallel_reduce ->
-      retV $ public $ SLV_Form $
-        SLForm_parallel_reduce_partial one_arg Nothing Nothing Nothing Nothing []
-    SLForm_parallel_reduce_partial inite mmode minve mtimeoute muntile casees ->
-      case mmode of
-        Nothing ->
-          expect_throw_ctx ctxt at $ Err_Eval_NotApplicable $ SLV_Form f
-        Just PRM_Invariant ->
-          retV $ public $ SLV_Form $
-            SLForm_parallel_reduce_partial inite Nothing (Just one_arg) mtimeoute muntile casees
-        Just PRM_Timeout ->
-          retV $ public $ SLV_Form $
-            SLForm_parallel_reduce_partial inite Nothing minve (Just one_arg) muntile casees
-        Just PRM_Until ->
-          retV $ public $ SLV_Form $
-            SLForm_parallel_reduce_partial inite Nothing minve mtimeoute (Just one_arg) casees
-        Just PRM_Case ->
-          retV $ public $ SLV_Form $
-            SLForm_parallel_reduce_partial inite Nothing minve mtimeoute muntile $
-              casees ++ [(at, two_args)]
   where
     illegal_args n = expect_throw_ctx ctxt at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
     retV v = return $ SLRes mempty st v
-    zero_args = case args of
-      [] -> return ()
-      _ -> illegal_args 0
     one_arg = case args of
       [x] -> x
       _ -> illegal_args 1
@@ -2394,7 +2313,6 @@ enforcePrivateUnderscore ctxt at = mapM_ enf . M.toList
 
 doOnly :: SLCtxt s -> SrcLoc -> (DLStmts, SLScope, SLState) -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> ST s (DLStmts, SLScope, SLState)
 doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = do
-  ensure_part_can_act ctxt at st who
   let SLCloEnv only_env only_penvs only_cenv = only_cloenv
   let st_localstep = st {st_mode = SLM_LocalStep}
   let sco_only_pre =
@@ -2450,42 +2368,6 @@ doGetSelfAddress ctxt at who = do
       (DLE_PrimOp at SELF_ADDRESS [DLA_Literal $ DLL_Bytes who])
   return (dv, lifts)
 
-doFork :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLForm_ForkCases -> [JSStatement] -> SLComp s SLStmtRes
-doFork ctxt at _ _ [] _ =
-  expect_throw_ctx ctxt at $ Err_Fork_NoCases
-doFork ctxt at sco st_init caseses ks = do
-  ensure_mode ctxt at st_init SLM_Step "fork"
-  let ks_ne = dropEmptyJSStmts ks
-  let sco' =
-        case ks_ne of
-          [] -> sco
-          _ -> sco {sco_must_ret = RS_MayBeEmpty}
-  let go (who_at, (whoe, whate)) = do
-        -- XXX allow whoe to be an array/tuple and bind to `this`
-        let who = jse_expect_id who_at whoe
-        let whosv = env_lookup (Just ctxt) who_at (LC_RefFrom "fork case") who (sco_env sco)
-        let whov = ensure_public ctxt who_at $ sss_sls whosv
-        let whop = slvParticipant_part ctxt who_at whov
-        let (JSBlock _ who_ss _) =
-              case whate of
-                -- XXX allow identifiers listed in aformals to be
-                -- implicitly tested for nothing-ness
-                JSArrowExpression _XXX_aformals _ s -> jsStmtToBlock s
-                _ -> expect_throw_ctx ctxt who_at $ Err_Eval_IllegalJS whate
-        -- XXX make this allow ".nack" on to consensus and "cancel" in local
-        -- step
-        let st_case = st_init { st_fork_body = Just whop }
-        SLRes body_lifts body_st (SLStmtRes _ body_rets) <-
-          evalStmt ctxt who_at sco' st_case who_ss
-        return $ ((body_st, body_rets), (whop, body_lifts))
-  (st_and_rets, dcases) <- unzip <$> mapM go caseses
-  let (st_cases, rets_cases) = unzip st_and_rets
-  let fork_st = stMerges ctxt at st_cases
-  let fork_rets = combineStmtRetsl at Public rets_cases
-  let fork_dl = DLS_Fork at dcases
-  let fr = SLRes (return $ fork_dl) fork_st (SLStmtRes (sco_env sco) fork_rets)
-  retSeqn_ ctxt sco' fr at ks_ne
-
 doToConsensus :: forall s . SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
 doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
   ensure_mode ctxt at st SLM_Step "to consensus"
@@ -2507,7 +2389,6 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
         let msg_lifts = mconcat $ map fst msg_proc
         let msg_das = map snd msg_proc
         let sco_penv = sco { sco_env = penv }
-        ensure_part_can_act ctxt at st who
         SLRes amt_lifts _ amt_sv <-
           evalExpr ctxt at sco_penv st_pure amt_e
         (amt_clifts, amt_da) <-
@@ -2568,7 +2449,6 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
           { st_mode = SLM_ConsensusStep
           , st_pdvs = pdvs_recv
           , st_after_first = True
-          , st_fork_body = Nothing
           }
   msg_dvs <- mapM (\t -> ctxt_mkvar ctxt (DLVar at "msg" t)) msg_ts
   let msg_env = foldl' (env_insertp ctxt at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ msg_dvs
@@ -2608,7 +2488,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
     keepLifts balup $ evalStmt ctxt at sco_recv st_recv' ks
   let tc_recv = (winner_dv, msg_dvs, amt_dv, conlifts)
   -- Prepare final result
-  let the_tc = DLS_ToConsensus2 at tc_send tc_recv tc_mtime
+  let the_tc = DLS_ToConsensus at tc_send tc_recv tc_mtime
   let lifts' = send_lifts <> (return $ the_tc)
   return $ mtime_merge $ SLRes lifts' k_st k_cr
 
@@ -2656,8 +2536,6 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           let lifts' = (return $ DLS_FromConsensus at steplifts)
           return $ SLRes lifts' k_st cr
         _ -> illegal_mode
-    SLV_Form (SLForm_fork_partial False caseses) ->
-      doFork ctxt at sco st caseses ks
     _ ->
       case typeOf_ctxt ctxt at ev of
         (T_Null, _) -> evalStmt ctxt at sco st ks
@@ -2732,121 +2610,6 @@ evalPureExprToBlock ctxt at sco st klifts e rest = do
       checkResType ctxt at rest $ evalExpr ctxt at sco pure_st e
   return $ DLBlock at fs e_lifts e_da
 
-checkParallelReduceBody :: SLCtxt s -> SrcLoc -> SLPart -> DLStmts -> ST s ()
-checkParallelReduceBody ctxt at who stmts = checkPrompt stmts
-  where
-    checkPrompt = \case
-      ((DLS_Prompt _ _ body) Seq.:<| Seq.Empty) ->
-        checkOuter body
-      _ -> bad at $ "not surrounded by prompt"
-    checkOuter = \case
-      Seq.Empty -> bad at $ "empty body"
-      ((DLS_Only at' op _) Seq.:<| more) ->
-        case who == op of
-          True -> checkOuter more
-          False -> bad at' $ "only not " <> show who
-      ((DLS_ToConsensus at' op _ _ _ _ _ Nothing cons) Seq.:<| Seq.Empty) ->
-        case who == op of
-          True -> checkInner cons
-          False -> bad at' $ "publish not " <> show who
-      (s Seq.:<| _) ->
-        bad (srclocOf s) $ "body not only or publish, given " <> conNameOf s
-    checkInner Seq.Empty = bad at $ "empty consensus step"
-    checkInner (s Seq.:<| more) =
-      case (s, more) of
-        (DLS_Let {}, _) -> cmore
-        (DLS_ArrayMap {}, _) -> cmore
-        (DLS_ArrayReduce {}, _) -> cmore
-        (DLS_If _ _ _ l r, Seq.Empty) ->
-          checkInner l >> checkInner r
-        (DLS_If at' _ _ _ _, _) ->
-          bad at' $ "consensus if not in tail position"
-        (DLS_Switch _ _ _ csm, Seq.Empty) ->
-          checkInnerCSM csm
-        (DLS_Switch at' _ _ _, _) ->
-          bad at' $ "consensus switch not in tail position"
-        (DLS_Return {}, Seq.Empty) -> return ()
-        (DLS_Return at' _ _, _) ->
-          bad at' $ "consensus ret not in tail position"
-        (DLS_Prompt {}, _) -> cmore
-        (DLS_Stop at', _) -> bad at' $ "stop in consensus"
-        (DLS_Only {}, _) -> impossible "only in consensus"
-        (DLS_ToConsensus {}, _) -> impossible "publish in consensus"
-        (DLS_ToConsensus2 {}, _) -> impossible "publish in consensus"
-        (DLS_FromConsensus at' _, _) -> bad at' $ "commit in consensus step"
-        (DLS_While at' _ _ _ _, _) -> bad at' $ "while in consensus step"
-        (DLS_Continue at' _, _) -> bad at' $ "continue in consensus step"
-        (DLS_FluidSet {}, _) -> cmore
-        (DLS_FluidRef {}, _) -> cmore
-        (DLS_ParallelReduce at' _ _ _ _ _, _) -> bad at' $ "parallel reduce in consensus step"
-        (DLS_Fork at' _, _) -> bad at' $ "fork in consensus step"
-      where
-        cmore = checkInner more
-    checkInnerCSM =
-      mapM_ checkInner . map snd . M.elems
-    bad at' m = expect_throw_ctx ctxt at' $ Err_ParallelReduce_InvalidBody m
-
-doParallelReduce :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> (JSExpression, Maybe ParallelReduceMode, Maybe JSExpression, Maybe JSExpression, Maybe JSExpression, [ (SrcLoc, (JSExpression, JSExpression)) ]) -> SrcLoc -> [JSStatement] -> SLComp s SLStmtRes
-doParallelReduce ctxt at _ _ _ (_, Just m, _, _, _, _) _ _ =
-  expect_throw_ctx ctxt at $ Err_ParallelReduce_Incomplete m
-doParallelReduce ctxt at _ _ _ (_, Nothing, Nothing, _, _, _) _ _ =
-  expect_throw_ctx ctxt at $ Err_ParallelReduce_NoInvariant
-doParallelReduce ctxt at before_sco st lhs (slfpr_init, Nothing, Just slfpr_inv, slfpr_mtimeout, slfpr_muntil, slfpr_cases) at_after ks = do
-  ensure_mode ctxt at st SLM_Step "parallel reduce"
-  allowed_to_wait ctxt at st (return ())
-  ensure_live ctxt at st "parallel reduce"
-  (init_pre_lifts, init_post_lifts, init_vars, init_dl, init_st, after_sco) <-
-    doWhileLikeInitEval ctxt at before_sco st lhs slfpr_init
-  let mevalPureExprToBlock sco klifts me rest =
-        case me of
-          Nothing -> return $ Nothing
-          Just e ->
-            Just <$> evalPureExprToBlock ctxt at sco init_st klifts e rest
-  inv_b <- evalPureExprToBlock ctxt at after_sco init_st init_post_lifts slfpr_inv T_Bool
-  muntil_b <- mevalPureExprToBlock after_sco init_post_lifts slfpr_muntil T_Bool
-  -- XXX timeout should include who should do it
-  mtimeout_b <- mevalPureExprToBlock before_sco mempty slfpr_mtimeout T_UInt
-  let (timeout_lifts, timeout_mda) =
-        case mtimeout_b of
-          Nothing -> (mempty, Nothing)
-          Just (DLBlock _ _ l d) -> (l, Just d)
-  -- XXX if there's no until OR timeout... then we can't end this, so the tail
-  -- must be empty and funds might be locked
-  let after_st = init_st { st_mode = SLM_ConsensusStep }
-  let parse_dcase (who_at, (whoe, whate)) = do
-        -- XXX allow whoe to be an array/tuple
-        let who = jse_expect_id who_at whoe
-        let whosv = env_lookup (Just ctxt) who_at (LC_RefFrom "parallel_reduce case") who (sco_env before_sco)
-        let whov = ensure_public ctxt who_at $ sss_sls whosv
-        let whop =
-              -- FIXME make this a function and use regularly
-              case whov of
-                SLV_Participant _ x _ _ -> x
-                _ -> expect_throw_ctx ctxt who_at $ Err_NotParticipant whov
-        let body_e =
-              case whate of
-                -- XXX allow identifiers listed in aformals to be
-                -- implicitly tested for nothing-ness
-                JSArrowExpression _XXX_aformals a s ->
-                  JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a s
-                _ -> expect_throw_ctx ctxt who_at $ Err_Eval_IllegalJS whate
-        SLRes _ _ body_clos <- evalExpr ctxt who_at after_sco init_st body_e
-        let body_clo = ensure_public ctxt who_at body_clos
-        SLRes body_lifts body_st (SLAppRes _ body_res) <-
-          evalApplyVals ctxt who_at after_sco init_st body_clo []
-        -- traceM $ "dcase " <> show whop
-        -- traceM $ show $ pretty body_lifts
-        checkParallelReduceBody ctxt who_at whop body_lifts
-        SLRes cont_lifts _ () <-
-          doWhileLikeContinueEval ctxt at after_sco body_st lhs init_vars body_res
-        let lifts' = body_lifts <> cont_lifts
-        return (whop, lifts')
-  dcases <- mapM parse_dcase slfpr_cases
-  let the_pr = DLS_ParallelReduce at init_dl inv_b muntil_b timeout_mda dcases
-  let final_lifts =
-        init_pre_lifts <> timeout_lifts <> (return $ the_pr) <> init_post_lifts
-  keepLifts final_lifts $ evalStmt ctxt at_after after_sco after_st ks
-
 evalStmt :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> SLComp s SLStmtRes
 evalStmt ctxt at sco st ss =
   case ss of
@@ -2884,8 +2647,6 @@ evalStmt ctxt at sco st ss =
       SLRes rhs_lifts rhs_st (rhs_lvl, rhs_v) <- evalExpr ctxt at_in sco st rhs
       keepLifts rhs_lifts $
         case rhs_v of
-          SLV_Form (SLForm_parallel_reduce_partial {..}) ->
-            doParallelReduce ctxt at_in sco rhs_st lhs (slfpr_init, slfpr_mode, slfpr_minv, slfpr_mtimeout, slfpr_muntil, slfpr_cases) at_after ks
           _ -> do
             SLRes lifts st_const addl_env <-
               evalDeclLHS ctxt at_in sco rhs_st rhs_lvl mempty rhs_v lhs
@@ -3328,7 +3089,6 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
           , st_live = False
           , st_pdvs = mempty
           , st_after_first = False
-          , st_fork_body = Nothing
           }
   let dlo = app_default_opts $ M.keys cns
   let ctxt_top =
@@ -3453,7 +3213,6 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , st_live = True
           , st_pdvs = mempty
           , st_after_first = False
-          , st_fork_body = Nothing
           }
   let at' = srcloc_at "compileDApp" Nothing at
   let ctxt_ =

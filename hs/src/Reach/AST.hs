@@ -267,15 +267,6 @@ data ToConsensusMode
   | TCM_Timeout
   deriving (Eq, Generic, NFData, Show)
 
-data ParallelReduceMode
-  = PRM_Invariant
-  | PRM_Timeout
-  | PRM_Until
-  | PRM_Case
-  deriving (Eq, Generic, NFData, Show)
-
-type SLForm_ForkCases = [ (SrcLoc, (JSExpression, JSExpression)) ]
-
 data SLForm
   = SLForm_App
   | SLForm_each
@@ -291,18 +282,6 @@ data SLForm
       , slptc_timeout :: Maybe (SrcLoc, JSExpression, JSBlock)
       }
   | SLForm_unknowable
-  | SLForm_parallel_reduce
-  | SLForm_parallel_reduce_partial
-      { slfpr_init :: JSExpression
-      , slfpr_mode :: Maybe ParallelReduceMode
-      , slfpr_minv :: Maybe JSExpression
-      , slfpr_mtimeout :: Maybe JSExpression
-      , slfpr_muntil :: Maybe JSExpression
-      , slfpr_cases :: [ (SrcLoc, (JSExpression, JSExpression)) ] }
-  | SLForm_fork
-  | SLForm_fork_partial
-      { slf_is_case :: Bool
-      , slf_cases :: SLForm_ForkCases }
   deriving (Eq, Generic, NFData, Show)
 
 data SLKwd
@@ -660,11 +639,6 @@ newtype DLAssignment
 assignment_vars :: DLAssignment -> [DLVar]
 assignment_vars (DLAssignment m) = M.keys m
 
-data FromSpec
-  = FS_Join DLVar
-  | FS_Again DLVar
-  deriving (Eq, Generic, NFData, Show)
-
 type SwitchCases a =
   --- FIXME at the SrcLoc of the case
   M.Map SLVar (Maybe DLVar, a)
@@ -681,20 +655,9 @@ data DLStmt
   | DLS_Only SrcLoc SLPart DLStmts
   | DLS_ToConsensus
       { dls_tc_at :: SrcLoc
-      , dls_tc_from :: SLPart
-      , dls_tc_fs :: FromSpec
-      , dls_tc_from_as :: [DLArg]
-      , dls_tc_from_msg :: [DLVar]
-      , dls_tc_from_amt :: DLArg
-      , dls_tc_from_amtv :: DLVar
-      , dls_tc_mtime :: (Maybe (DLArg, DLStmts))
-      , dls_tc_cons :: DLStmts
-      }
-  | DLS_ToConsensus2
-      { dls_tc2_at :: SrcLoc
-      , dls_tc2_send :: M.Map SLPart ([DLArg], DLArg)
-      , dls_tc2_recv :: (DLVar, [DLVar], DLVar, DLStmts)
-      , dls_tc2_mtime :: Maybe (DLArg, DLStmts)
+      , dls_tc_send :: M.Map SLPart ([DLArg], DLArg)
+      , dls_tc_recv :: (DLVar, [DLVar], DLVar, DLStmts)
+      , dls_tc_mtime :: Maybe (DLArg, DLStmts)
       }
   | DLS_FromConsensus SrcLoc DLStmts
   | DLS_While
@@ -707,18 +670,6 @@ data DLStmt
   | DLS_Continue SrcLoc DLAssignment
   | DLS_FluidSet SrcLoc FluidVar DLArg
   | DLS_FluidRef SrcLoc DLVar FluidVar
-  | DLS_ParallelReduce
-      { dls_pr_at :: SrcLoc
-      , dls_pr_init :: DLAssignment
-      , dls_pr_inv :: DLBlock
-      , dls_pr_muntil :: Maybe DLBlock
-      , dls_pr_mtimeout :: Maybe DLArg
-      , dls_pr_cases :: [(SLPart, DLStmts)]
-      }
-  | DLS_Fork
-      { dls_f_at :: SrcLoc
-      , dls_f_cases :: [(SLPart, DLStmts)]
-      }
   deriving (Eq, Generic, NFData, Show)
 
 instance SrcLocOf DLStmt where
@@ -733,14 +684,11 @@ instance SrcLocOf DLStmt where
     DLS_Stop a -> a
     DLS_Only a _ _ -> a
     DLS_ToConsensus {..} -> dls_tc_at
-    DLS_ToConsensus2 {..} -> dls_tc2_at
     DLS_FromConsensus a _ -> a
     DLS_While {..} -> dls_w_at
     DLS_Continue a _ -> a
     DLS_FluidSet a _ _ -> a
     DLS_FluidRef a _ _ -> a
-    DLS_ParallelReduce a _ _ _ _ _ -> a
-    DLS_Fork a _ -> a
 
 instance IsPure DLStmt where
   isPure = \case
@@ -754,14 +702,11 @@ instance IsPure DLStmt where
     DLS_Stop {} -> False
     DLS_Only _ _ ss -> isPure ss
     DLS_ToConsensus {} -> False
-    DLS_ToConsensus2 {} -> False
     DLS_FromConsensus _ ss -> isPure ss
     DLS_While {} -> False
     DLS_Continue {} -> False
     DLS_FluidSet {} -> False
     DLS_FluidRef {} -> True
-    DLS_ParallelReduce {} -> False
-    DLS_Fork {} -> False
 
 instance IsLocal DLStmt where
   isLocal = \case
@@ -775,14 +720,11 @@ instance IsLocal DLStmt where
     DLS_Stop {} -> False
     DLS_Only _ _ ss -> isLocal ss
     DLS_ToConsensus {} -> False
-    DLS_ToConsensus2 {} -> False
     DLS_FromConsensus _ ss -> isLocal ss
     DLS_While {} -> False
     DLS_Continue {} -> False
     DLS_FluidSet {} -> True
     DLS_FluidRef {} -> True
-    DLS_ParallelReduce {} -> False
-    DLS_Fork {} -> False
 
 type DLStmts = Seq.Seq DLStmt
 
@@ -845,33 +787,9 @@ data LLStep
   | LLS_Only SrcLoc SLPart LLLocal LLStep
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc
-      , lls_tc_from :: SLPart
-      , lls_tc_fs :: FromSpec
-      , lls_tc_from_as :: [DLArg]
-      , lls_tc_from_msg :: [DLVar]
-      , lls_tc_from_amt :: DLArg
-      , lls_tc_from_amtv :: DLVar
-      , lls_tc_mtime :: (Maybe (DLArg, LLStep))
-      , lls_tc_cons :: LLConsensus
-      }
-  | LLS_ToConsensus2
-      { lls_tc2_at :: SrcLoc
-      , lls_tc2_send :: M.Map SLPart ([DLArg], DLArg)
-      , lls_tc2_recv :: (DLVar, [DLVar], DLVar, LLConsensus)
-      , lls_tc2_mtime :: Maybe (DLArg, LLStep)
-      }
-  | LLS_ParallelReduce
-      { lls_pr_at :: SrcLoc
-      , lls_pr_iasn :: DLAssignment
-      , lls_pr_inv :: LLBlock
-      , lls_pr_muntil :: Maybe LLBlock
-      , lls_pr_mtimeout :: Maybe DLArg
-      , lls_pr_cases :: [(SLPart, LLStep)]
-      , lls_pr_con :: LLConsensus
-      }
-  | LLS_Fork
-      { lls_f_at :: SrcLoc
-      , lls_f_cases :: [(SLPart, LLStep)]
+      , lls_tc_send :: M.Map SLPart ([DLArg], DLArg)
+      , lls_tc_recv :: (DLVar, [DLVar], DLVar, LLConsensus)
+      , lls_tc_mtime :: Maybe (DLArg, LLStep)
       }
   deriving (Eq, Show)
 
@@ -922,7 +840,7 @@ data ETail
   | ET_FromConsensus SrcLoc Int (Maybe [DLVar]) ETail
   | ET_ToConsensus
       { et_tc_at :: SrcLoc
-      , et_tc_fs :: FromSpec
+      , et_tc_from :: DLVar
       , et_tc_prev :: Int
       , et_tc_which :: Int
       , et_tc_from_me
@@ -942,7 +860,6 @@ data ETail
       , et_w_k :: ETail
       }
   | ET_Continue SrcLoc DLAssignment
-  | ET_Fork SrcLoc [(SLPart, ETail)]
   deriving (Eq, Show)
 
 data EPProg
@@ -983,7 +900,7 @@ data CHandler
   = C_Handler
       { ch_at :: SrcLoc
       , ch_int :: CInterval
-      , ch_fs :: FromSpec
+      , ch_from :: DLVar
       , ch_last :: Int
       , ch_svs :: [DLVar]
       , ch_msg :: [DLVar]
