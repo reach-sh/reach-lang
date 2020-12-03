@@ -233,7 +233,7 @@ opt_s = \case
     where
       send' = M.fromList <$> mapM opt_send (M.toList send)
       (winner_dv, msg, amtv, cons) = recv
-      cons' = focusc $ opt_n cons
+      cons' = newScope $ focusc $ opt_n cons
       recv' = (\x -> (winner_dv, msg, amtv, x)) <$> cons'
       mtime' = opt_mtime mtime
   LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->

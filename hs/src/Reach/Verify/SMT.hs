@@ -84,8 +84,11 @@ data VerifyMode
   deriving (Eq, Show)
 
 data BindingOrigin
-  = O_DishonestMsg SLPart
+  -- XXX simplify into honest/dishonst
+  = O_DishonestJoin SLPart
+  | O_DishonestMsg SLPart
   | O_DishonestPay SLPart
+  | O_HonestJoin SLPart
   | O_HonestMsg SLPart DLArg
   | O_HonestPay SLPart DLArg
   | O_BuiltIn
@@ -100,8 +103,10 @@ data BindingOrigin
 instance Show BindingOrigin where
   show bo =
     case bo of
+      O_DishonestJoin who -> "a dishonest join from " ++ sp who
       O_DishonestMsg who -> "a dishonest message from " ++ sp who
       O_DishonestPay who -> "a dishonest payment from " ++ sp who
+      O_HonestJoin who -> "an honest join from " ++ sp who
       O_HonestMsg who what -> "an honest message from " ++ sp who ++ " of " ++ sp what
       O_HonestPay who amt -> "an honest payment from " ++ sp who ++ " of " ++ sp amt
       O_BuiltIn -> "builtin"
@@ -754,6 +759,21 @@ smt_s ctxt s =
             True -> do
               pathAddBound ctxt at (Just amtv) (O_HonestPay from from_amt) (smt_a ctxt at from_amt)
               zipWithM_ (\msg_dv msg_da -> pathAddBound ctxt at (Just msg_dv) (O_HonestMsg from msg_da) (smt_a ctxt at msg_da)) from_msg from_as
+    LLS_ToConsensus2 at send recv mtime ->
+      mapM_ (ctxtNewScope ctxt) $ timeout : map go (M.toList send)
+      where
+        (whov, msgvs, amtv, next_n) = recv
+        timeout = maybe mempty ((smt_s ctxt) . snd) mtime
+        after = smt_n ctxt next_n
+        go (from, (msgas, amta)) = bind_from <> bind_msg <> bind_amt <> after
+          where
+            bind_from = maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) (Atom $ smtAddress from)
+            bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (smt_a ctxt at amta)
+            bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (smt_a ctxt at da)) msgvs msgas
+            maybe_pathAdd v bo_no bo_yes se =
+              case shouldSimulate ctxt from of
+                False -> pathAddUnbound ctxt at (Just v) bo_no
+                True -> pathAddBound ctxt at (Just v) bo_yes se
     LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->
       mapM_ (ctxtNewScope ctxt) $ [before_m] ++ cases_m ++ [after_m]
       where
@@ -781,8 +801,6 @@ smt_s ctxt s =
             -- Note: But, we can always assume that the `until` is false.
             <> muntil_m False
             <> smt_s ctxt c
-    LLS_ToConsensus2 {} ->
-      error $ "XXX smt tc2"
     LLS_Fork _at cases ->
       mapM_ ((ctxtNewScope ctxt) . smt_s ctxt . snd) cases
 
