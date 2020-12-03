@@ -204,11 +204,11 @@ prettyFork cases fcase =
   where
     go (p, ss) = ".case" <> parens (pretty p <> ", " <> fcase ss)
 
-prettyToConsensus2 :: (a -> Doc) -> M.Map SLPart ([DLArg], DLArg) -> (FromSpec, [DLVar], DLVar, a) -> (Maybe (DLArg, a)) -> Doc
-prettyToConsensus2 f send (fs, msg, amtv, body) mtime =
+prettyToConsensus2 :: (a -> Doc) -> M.Map SLPart ([DLArg], DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, a)) -> Doc
+prettyToConsensus2 f send (win, msg, amtv, body) mtime =
   "publish" <> parens emptyDoc <> nest 2 (hardline <> mtime' <>
     concatWith (surround hardline) (map go $ M.toList send) <> hardline <>
-    ".recv" <> parens (hsep $ punctuate comma $ [ pretty fs, pretty msg, pretty amtv, render_nest (f body)]) <> semi)
+    ".recv" <> parens (hsep $ punctuate comma $ [ pretty win, pretty msg, pretty amtv, render_nest (f body)]) <> semi)
   where
     go (p, (args, amta)) =
       ".case" <> parens (hsep $ punctuate comma $ [ pretty p, pretty args, pretty amta ])

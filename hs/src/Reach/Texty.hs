@@ -80,7 +80,7 @@ instance {-# OVERLAPPING #-} Pretty String where
 
 instance Pretty a => Pretty (Maybe a) where
   pretty Nothing = "Nothing"
-  pretty (Just x) = "Just" <> pretty x
+  pretty (Just x) = "Just" <+> pretty x
 
 instance Pretty a => Pretty [a] where
   pretty l = "[" <> (concatWith (\x y -> x <> ", " <> y) $ map pretty l) <> "]"

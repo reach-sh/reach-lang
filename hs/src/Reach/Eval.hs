@@ -451,6 +451,8 @@ internalVar_balance = internalVar "balance"
 data EnvInsertMode
   = AllowShadowing
   | DisallowShadowing
+  | AllowShadowingSome (S.Set SLVar)
+  | AllowShadowingRace (S.Set SLPart) (S.Set SLVar)
 
 -- | The "_" never actually gets bound;
 -- it is therefore only ident that may be "shadowed".
@@ -460,16 +462,22 @@ data EnvInsertMode
 env_insert_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
 env_insert_ _ _ _ "_" _ env = env
 env_insert_ insMode ctxt at k v env = case insMode of
-  DisallowShadowing ->
-    --- XXX This is a hack
-    case k == internalVar_balance of
-      True -> go
-      False ->
-        case M.lookup k env of
-          Nothing -> go
-          Just v0 -> expect_throw_ctx ctxt at (Err_Shadowed k v0 v)
+  DisallowShadowing -> check
   AllowShadowing -> go
+  AllowShadowingSome ok ->
+    case S.member k ok of
+      True -> go
+      False -> check
+  AllowShadowingRace {} -> impossible "env_insert_ race"
   where
+    check =
+      --- XXX This is a hack
+      case k == internalVar_balance of
+        True -> go
+        False ->
+          case M.lookup k env of
+            Nothing -> go
+            Just v0 -> expect_throw_ctx ctxt at (Err_Shadowed k v0 v)
     go = case v of
       -- Note: secret ident enforcement is limited to doOnly
       (SLSSVal _ Public _)
@@ -806,7 +814,7 @@ penvs_update ctxt sco f =
 sco_update_and_mod :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> (SLEnv -> SLEnv) -> SLScope
 sco_update_and_mod imode ctxt at sco st addl_env env_mod =
   sco
-    { sco_env = do_merge $ sco_env sco
+    { sco_env = do_merge imode'_top $ sco_env sco
     , sco_penvs = sco_penvs'
     , sco_cenv = sco_cenv'
     }
@@ -816,12 +824,27 @@ sco_update_and_mod imode ctxt at sco st addl_env env_mod =
         SLM_Step -> updated_penvs
         SLM_ConsensusStep -> updated_penvs
         _ -> sco_penvs sco
-    updated_penvs = penvs_update ctxt sco (const do_merge)
+    updated_penvs = penvs_update ctxt sco p_do_merge
+    p_do_merge p = do_merge imode'
+      where
+        imode' =
+          case imode of
+            AllowShadowingRace racers ok ->
+              case S.member p racers of
+                True ->
+                  AllowShadowingSome ok
+                False ->
+                  DisallowShadowing
+            _ -> imode
     sco_cenv' =
       case st_mode st of
-        SLM_ConsensusStep -> do_merge $ sco_cenv sco
+        SLM_ConsensusStep -> do_merge imode'_top $ sco_cenv sco
         _ -> sco_cenv sco
-    do_merge = env_mod . flip (env_merge_ imode ctxt at) addl_env
+    imode'_top =
+      case imode of
+        AllowShadowingRace {} -> DisallowShadowing
+        _ -> imode
+    do_merge imode' = env_mod . flip (env_merge_ imode' ctxt at) addl_env
 
 sco_update_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update_ imode ctxt at sco st addl_env =
@@ -2457,9 +2480,11 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
   ensure_mode ctxt at st SLM_Step "to consensus"
   ensure_live ctxt at st "to consensus"
   let st_pure = st {st_mode = SLM_ConsensusPure}
+  let pdvs = st_pdvs st
   --- We go back to the original env from before the to-consensus step
   -- Handle sending
   let tc_send1 who = do
+        let repeat_dv = M.lookup who pdvs
         let penv = sco_lookup_penv ctxt sco who
         let msg_proc1 var = do
               let val =
@@ -2478,9 +2503,10 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
           compileCheckType ctxt at T_UInt $ ensure_public ctxt at amt_sv
         let send_lifts =
               return $ DLS_Only at who (msg_lifts <> amt_lifts <> amt_clifts)
-        return (send_lifts, (msg_das, amt_da))
-  tc_send_int <- (sequence $ M.fromSet tc_send1 whos) :: ST s (M.Map SLPart (DLStmts, ([DLArg], DLArg)))
-  let send_lifts = mconcat $ M.elems $ M.map fst tc_send_int
+        return ((send_lifts, repeat_dv), (msg_das, amt_da))
+  tc_send_int <- sequence $ M.fromSet tc_send1 whos
+  let send_lifts = mconcat $ M.elems $ M.map (fst . fst) tc_send_int
+  let repeat_dvs = catMaybes $ M.elems $ M.map (snd . fst) tc_send_int
   let tc_send = M.map snd tc_send_int
   let msg_ts = map (typeMeets at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map fst tc_send
   -- Handle timeout
@@ -2507,39 +2533,25 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
                           (combineStmtRes time_at Public time_cr cr_)
         return $ (mtime_merge, Just (delay_da, time_lifts))
   -- Handle receiving / consensus
+  winner_dv <- ctxt_mkvar ctxt $ DLVar at "race winner" T_Address
   let sco_con = sco
-  let pdvs = st_pdvs st
-  (recv_imode, recv_env_mod, pdvs_recv, fs) <-
+  let recv_imode = AllowShadowingRace whos (S.fromList msg)
+  (recv_env_mod, pdvs_recv) <-
     case S.toList whos of
-      [ who ] ->
-        -- XXX These are both AllowShadowing because I changed it to use
-        -- sco_update and the original publisher gets updated too
-        case M.lookup who pdvs of
-          Just pdv ->
-            return $ (AllowShadowing {- DisallowShadowing -}, id, pdvs, FS_Again pdv)
-          Nothing -> do
-            whodv <- ctxt_mkvar ctxt $ DLVar at (bunpack who) T_Address
-            let pdvs' = M.insert who whodv pdvs
-            let add_who_env env =
-                  case vas of
-                    Nothing -> env
-                    Just whov ->
-                      case env_lookup (Just ctxt) at (LC_RefFrom "publish who binding") whov (sco_env sco) of
-                        (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
-                          M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just whodv))) env
-                        _ ->
-                          impossible $ "participant is not participant"
-            return $ (AllowShadowing {- DisallowShadowing -}, add_who_env, pdvs', FS_Join whodv)
+      [ who ] | M.lookup who pdvs == Nothing -> do
+        let pdvs' = M.insert who winner_dv pdvs
+        let add_who_env env =
+              case vas of
+                Nothing -> env
+                Just whov ->
+                  case env_lookup (Just ctxt) at (LC_RefFrom "publish who binding") whov (sco_env sco) of
+                    (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
+                      M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just winner_dv))) env
+                    _ ->
+                      impossible $ "participant is not participant"
+        return $ (add_who_env, pdvs')
       _ -> do
-        whodv <- ctxt_mkvar ctxt $ DLVar at "race winner" T_Address
-        -- Note: This DV isn't actually exposed in any way, but could be.
-        --
-        -- XXX This is wrong... we need to return a list of these based on
-        -- whether a particular participant is known
-        --
-        -- XXX This AllowShadowing is too broad... we should only allow
-        -- shadowing in the participants that take part in the race
-        return $ (AllowShadowing, id, pdvs, FS_Join whodv)
+        return $ (id, pdvs)
   let st_recv =
         st
           { st_mode = SLM_ConsensusStep
@@ -2560,12 +2572,30 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
     keepLifts cmp_lifts $
       evalApplyVals ctxt at sco_recv st_pure req_rator $
         [cmp_v, public $ SLV_Bytes at $ "pay amount correct"]
+  let check_repeat (whoc_lifts, whoc_v) repeat_dv = do
+        SLRes repeat_cmp_lifts _ repeat_cmp_v <-
+          evalPrimOp ctxt at sco_recv st_pure ADDRESS_EQ $
+            map (public . SLV_DLVar) [ repeat_dv, winner_dv ]
+        SLRes whoc_lifts' _ whoc_v' <-
+          keepLifts repeat_cmp_lifts $
+            evalPrimOp ctxt at sco_recv st_pure IF_THEN_ELSE $
+              [ whoc_v, (public $ SLV_Bool at True), repeat_cmp_v ]
+        return $ (whoc_lifts <> whoc_lifts', whoc_v')
+  (whoc_lifts, whoc_v) <-
+    case repeat_dvs of
+      [] -> return $ (mempty, public $ SLV_Bool at True)
+      _ ->
+        foldM check_repeat (mempty, public $ SLV_Bool at False) repeat_dvs
+  SLRes whoc_req_lifts _ _ <-
+    keepLifts whoc_lifts $
+      evalApplyVals ctxt at sco_recv st_pure req_rator $
+        [whoc_v, public $ SLV_Bytes at $ "sender correct"]
   SLRes balup st_recv' () <-
-    keepLifts amt_check_lifts $
+    keepLifts (whoc_req_lifts <> amt_check_lifts) $
       doBalanceUpdate ctxt at sco_recv st_recv ADD (SLV_DLVar amt_dv)
   SLRes conlifts k_st k_cr <-
     keepLifts balup $ evalStmt ctxt at sco_recv st_recv' ks
-  let tc_recv = (fs, msg_dvs, amt_dv, conlifts)
+  let tc_recv = (winner_dv, msg_dvs, amt_dv, conlifts)
   -- Prepare final result
   let the_tc = DLS_ToConsensus2 at tc_send tc_recv tc_mtime
   let lifts' = send_lifts <> (return $ the_tc)

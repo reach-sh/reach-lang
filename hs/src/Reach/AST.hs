@@ -693,7 +693,7 @@ data DLStmt
   | DLS_ToConsensus2
       { dls_tc2_at :: SrcLoc
       , dls_tc2_send :: M.Map SLPart ([DLArg], DLArg)
-      , dls_tc2_recv :: (FromSpec, [DLVar], DLVar, DLStmts)
+      , dls_tc2_recv :: (DLVar, [DLVar], DLVar, DLStmts)
       , dls_tc2_mtime :: Maybe (DLArg, DLStmts)
       }
   | DLS_FromConsensus SrcLoc DLStmts
