@@ -2,3 +2,5 @@ report.csv
 user-report.csv
 users-histogram.png
 report.json
+raw_location.csv
+location.csv

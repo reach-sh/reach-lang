@@ -60,7 +60,7 @@ CompileLog=$(
   aws dynamodb scan \
     --table-name CompileLog \
     --select SPECIFIC_ATTRIBUTES \
-    --projection-expression userId,startTime
+    --projection-expression userId,startTime,ip
 )
 echo "$CompileLog" | jq '{ row_count: .Count, unique_users: { '"$uniqueUsers"' }}'
 
