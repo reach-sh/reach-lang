@@ -20,16 +20,16 @@ Verification failed:
       (because: evaluating interact("A")."get"())
 
   In context...
-    "v12" = (<= v3 v11 )
+    "v12" = (<= v4 v11 )
       (from: v12)
       (bound at: ./overflow.rsh:application)
-      (because: evaluating PLE(v3, v11 ))
+      (because: evaluating PLE(v4, v11 ))
     "v11" = (- dlc_UInt_max 1 )
       (from: v11)
       (bound at: ./overflow.rsh:application)
       (because: evaluating SUB(UInt.max, 1 ))
-    "v3" = v2
-      (from: v3)
+    "v4" = v2
+      (from: v4)
       (bound at: ./overflow.rsh:11:6:dot)
       (because: an honest message from "A" of v2)
   Verifying with mode = VM_Dishonest RoleContract
@@ -48,4 +48,4 @@ Verification failed:
   at ./overflow.rsh:application
 
   (details omitted on repeat)
-Checked 10 theorems; 3 failures. :'(
+Checked 11 theorems; 3 failures. :'(

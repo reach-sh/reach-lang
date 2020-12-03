@@ -4,4 +4,4 @@ Verifying for generic connector
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "Alice")
   Verifying with mode = VM_Dishonest (RolePart "Bob")
-Checked 84 theorems; No failures!
+Checked 93 theorems; No failures!

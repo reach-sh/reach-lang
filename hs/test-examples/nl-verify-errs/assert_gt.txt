@@ -5,7 +5,7 @@ Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Assert
   at ./assert_gt.rsh:8:13:application
-  at ./assert_gt.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./assert_gt.rsh:5:15:function exp)
+  at ./assert_gt.rsh:9:7:after expr stmt semicolon call to [unknown function] (defined at: ./assert_gt.rsh:5:15:function exp)
 
   Theorem formalization:
   v3
@@ -27,7 +27,7 @@ Verification failed:
   in VM_Dishonest (RolePart "A") mode
   of theorem TClaim CT_Assert
   at ./assert_gt.rsh:8:13:application
-  at ./assert_gt.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./assert_gt.rsh:5:15:function exp)
+  at ./assert_gt.rsh:9:7:after expr stmt semicolon call to [unknown function] (defined at: ./assert_gt.rsh:5:15:function exp)
 
   (details omitted on repeat)
 Checked 5 theorems; 2 failures. :'(

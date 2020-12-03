@@ -5,7 +5,7 @@ Verification failed:
   in VM_Honest mode
   of theorem TClaim CT_Possible
   at ./impossible.rsh:8:15:application
-  at ./impossible.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./impossible.rsh:5:15:function exp)
+  at ./impossible.rsh:9:7:after expr stmt semicolon call to [unknown function] (defined at: ./impossible.rsh:5:15:function exp)
 
   Theorem formalization:
   v3
@@ -23,7 +23,7 @@ Verification failed:
   in VM_Dishonest (RolePart "A") mode
   of theorem TClaim CT_Possible
   at ./impossible.rsh:8:15:application
-  at ./impossible.rsh:9:7:after expr stmt semicolon call to "function" (defined at: ./impossible.rsh:5:15:function exp)
+  at ./impossible.rsh:9:7:after expr stmt semicolon call to [unknown function] (defined at: ./impossible.rsh:5:15:function exp)
 
   (details omitted on repeat)
 Checked 5 theorems; 2 failures. :'(
