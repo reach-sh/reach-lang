@@ -8,8 +8,7 @@ export const main =
       const f = () => { exit(); };
 
       f();
-      const x =
-        parallel_reduce(0)
-          .invariant(true);
+      Alice.publish();
+      commit();
 
     });

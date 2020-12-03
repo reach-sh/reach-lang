@@ -1,1 +1,0 @@
-reachc: error: ./Err_ParallelReduce_Incomplete.rsh:8:7:const: parallel reduce, call incomplete; ending in the midst of PRM_Invariant

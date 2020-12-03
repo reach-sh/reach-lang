@@ -1,1 +1,0 @@
-reachc: error: ./Err_ParallelReduce_InvalidBody.rsh:11:16:application: parallel reduce, invalid body: not surrounded by prompt

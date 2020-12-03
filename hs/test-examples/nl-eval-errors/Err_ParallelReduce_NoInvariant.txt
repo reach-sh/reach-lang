@@ -1,1 +1,0 @@
-reachc: error: ./Err_ParallelReduce_NoInvariant.rsh:8:7:const: parallel reduce, missing invariant
