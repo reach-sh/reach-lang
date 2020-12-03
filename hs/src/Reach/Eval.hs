@@ -2175,7 +2175,7 @@ evalExpr ctxt at sco st e = do
         at' = srcloc_jsa "function exp" a at
         fname =
           case name of
-            JSIdentNone -> Just $ "function"
+            JSIdentNone -> Nothing
             JSIdentName na _ -> expect_throw_ctx ctxt (srcloc_jsa "function name" na at') Err_Fun_NamesIllegal
         formals = parseJSFormals at' jsformals
     JSGeneratorExpression _ _ _ _ _ _ _ -> illegal
@@ -2545,7 +2545,6 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
         return $ (mtime_merge, Just (delay_da, time_lifts))
   -- Handle receiving / consensus
   winner_dv <- ctxt_mkvar ctxt $ DLVar at "race winner" T_Address
-  let sco_con = sco
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
   (recv_env_mod, pdvs_recv) <-
     case S.toList whos of
@@ -2573,7 +2572,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
   msg_dvs <- mapM (\t -> ctxt_mkvar ctxt (DLVar at "msg" t)) msg_ts
   let msg_env = foldl' (env_insertp ctxt at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ msg_dvs
   let recv_env = msg_env
-  let sco_recv = sco_update_and_mod recv_imode ctxt at sco_con st_recv recv_env recv_env_mod
+  let sco_recv = sco_update_and_mod recv_imode ctxt at sco st_recv recv_env recv_env_mod
   amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt
   let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar amt_dv)] []
   SLRes cmp_lifts _ cmp_v <-

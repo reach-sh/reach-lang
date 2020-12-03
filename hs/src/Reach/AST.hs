@@ -76,8 +76,8 @@ topOfStackTrace stack
 
 -- Mimic Node's stack trace message
 getStackTraceMessage :: SLCtxtFrame -> String
-getStackTraceMessage (SLC_CloApp call_at _ name) =
-  "  at " <> maybe "[unknown function]" show name <> " (" <> show call_at <> ")"
+getStackTraceMessage (SLC_CloApp call_at clo_at name) =
+  "  in " <> maybe "[unknown function]" show name <> " from (" <> show clo_at <> ")" <> " at (" <> show call_at <> ")"
 
 srcloc_builtin :: SrcLoc
 srcloc_builtin = SrcLoc (Just "<builtin>") Nothing Nothing
