@@ -52,30 +52,32 @@ instance Show TypeError where
   show (Err_Type_IntLiteralRange rmin x rmax) =
     "TypeError: int literal out of range: " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
+type MCFS = Maybe [SLCtxtFrame]
+
 checkIntLiteral :: SrcLoc -> Integer -> Integer -> Integer -> Integer
 checkIntLiteral at rmin x rmax =
   case rmin <= x && x <= rmax of
     True -> x
     False -> expect_thrown at $ Err_Type_IntLiteralRange rmin x rmax
 
-typeMeet :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
-typeMeet _ (_, T_Bytes xz) (_, T_Bytes yz) =
+typeMeet :: MCFS -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet _ _ (_, T_Bytes xz) (_, T_Bytes yz) =
   T_Bytes (max xz yz)
-typeMeet top_at x@(_, xt) y@(_, yt) =
+typeMeet mcfs top_at x@(_, xt) y@(_, yt) =
   --- FIXME Find meet of objects
   case xt == yt of
     True -> xt
     False ->
-      expect_thrown top_at $ Err_TypeMeets_Mismatch top_at x y
+      expect_throw mcfs top_at $ Err_TypeMeets_Mismatch top_at x y
 
-typeMeets :: SrcLoc -> [(SrcLoc, SLType)] -> SLType
-typeMeets top_at l =
+typeMeets :: MCFS -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
+typeMeets mcfs top_at l =
   case l of
     [] ->
-      expect_thrown top_at $ Err_TypeMeets_None
+      expect_throw mcfs top_at $ Err_TypeMeets_None
     [(_, xt)] -> xt
-    [x, y] -> typeMeet top_at x y
-    x : more -> typeMeet top_at x $ (top_at, typeMeets top_at more)
+    [x, y] -> typeMeet mcfs top_at x y
+    x : more -> typeMeet mcfs top_at x $ (top_at, typeMeets mcfs top_at more)
 
 type TypeEnv s = M.Map SLVar (STRef s (Maybe SLType))
 
@@ -112,8 +114,8 @@ typeSubst at env ty =
   where
     iter = typeSubst at env
 
-typeCheck_help :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> SLType -> a -> ST s a
-typeCheck_help at env ty val val_ty res =
+typeCheck_help :: MCFS -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> SLType -> a -> ST s a
+typeCheck_help mcfs at env ty val val_ty res =
   case (val_ty, ty) of
     (T_Var _, _) ->
       impossible $ "typeCheck: value has type var: " ++ show val
@@ -128,9 +130,9 @@ typeCheck_help at env ty val val_ty res =
               writeSTRef var_ref (Just val_ty)
               return res
             Just var_ty ->
-              typeCheck_help at env var_ty val val_ty res
+              typeCheck_help mcfs at env var_ty val val_ty res
     (_, _) ->
-      typeMeet at (at, val_ty) (at, ty) `seq` return res
+      typeMeet mcfs at (at, val_ty) (at, ty) `seq` return res
 
 conTypeOf :: DLConstant -> SLType
 conTypeOf = \case
@@ -215,50 +217,50 @@ typeOfM at v = do
   dae <- slToDL at v
   return $ (argExprTypeOf dae, dae)
 
-typeOf :: HasCallStack => SrcLoc -> SLVal -> (SLType, DLArgExpr)
-typeOf at v =
+typeOf :: HasCallStack => MCFS -> SrcLoc -> SLVal -> (SLType, DLArgExpr)
+typeOf mcfs at v =
   case typeOfM at v of
     Just x -> x
-    Nothing -> expect_thrown at $ Err_Type_None v
+    Nothing -> expect_throw mcfs at $ Err_Type_None v
 
-typeCheck :: SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
-typeCheck at env ty val = typeCheck_help at env ty val val_ty res
+typeCheck :: MCFS -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
+typeCheck mcfs at env ty val = typeCheck_help mcfs at env ty val val_ty res
   where
-    (val_ty, res) = typeOf at val
+    (val_ty, res) = typeOf mcfs at val
 
-typeChecks :: SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArgExpr]
-typeChecks at env ts vs =
+typeChecks :: MCFS -> SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArgExpr]
+typeChecks mcfs at env ts vs =
   case (ts, vs) of
     ([], []) ->
       return []
     ((t : ts'), (v : vs')) -> do
-      d <- typeCheck at env t v
-      ds' <- typeChecks at env ts' vs'
+      d <- typeCheck mcfs at env t v
+      ds' <- typeChecks mcfs at env ts' vs'
       return $ d : ds'
     ((_ : _), _) ->
-      expect_thrown at $ Err_Type_TooFewArguments ts
+      expect_throw mcfs at $ Err_Type_TooFewArguments ts
     (_, (_ : _)) ->
-      expect_thrown at $ Err_Type_TooManyArguments vs
+      expect_throw mcfs at $ Err_Type_TooManyArguments vs
 
-checkAndConvert_i :: SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArgExpr])
-checkAndConvert_i at env t args =
+checkAndConvert_i :: MCFS -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArgExpr])
+checkAndConvert_i mcfs at env t args =
   case t of
     T_Fun dom rng -> do
-      dargs <- typeChecks at env dom args
+      dargs <- typeChecks mcfs at env dom args
       return (rng, dargs)
     T_Forall var ft -> do
       var_ref <- newSTRef Nothing
       let env' = M.insert var var_ref env
-      (vrng, dargs) <- checkAndConvert_i at env' ft args
+      (vrng, dargs) <- checkAndConvert_i mcfs at env' ft args
       rng <- typeSubst at env' vrng
       return (rng, dargs)
-    _ -> expect_thrown at $ Err_Type_NotApplicable t
+    _ -> expect_throw mcfs at $ Err_Type_NotApplicable t
 
-checkAndConvert :: SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArgExpr])
-checkAndConvert at t args = runST $ checkAndConvert_i at mempty t args
+checkAndConvert :: MCFS -> SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArgExpr])
+checkAndConvert mcfs at t args = runST $ checkAndConvert_i mcfs at mempty t args
 
-checkType :: SrcLoc -> SLType -> SLVal -> DLArgExpr
-checkType at et v =
-  typeMeet at (at, et) (at, t) `seq` da
+checkType :: MCFS -> SrcLoc -> SLType -> SLVal -> DLArgExpr
+checkType mcfs at et v =
+  typeMeet mcfs at (at, et) (at, t) `seq` da
   where
-    (t, da) = typeOf at v
+    (t, da) = typeOf mcfs at v

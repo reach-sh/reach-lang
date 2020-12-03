@@ -4,31 +4,43 @@ export const _version = '0.1.2';
 
 
 export async function Alice(stdlib, ctc, interact) {
-  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt], [stdlib.protect(stdlib.T_UInt, interact.request, null)], stdlib.checkedBigNumberify('./index.rsh:13:25:after expr stmt semicolon', stdlib.UInt_max, 0), [stdlib.T_UInt], false, ((txn1) => {
+  const txn1 = await ctc.sendrecv('Alice', 1, 1, [stdlib.T_UInt], [stdlib.protect(stdlib.T_UInt, interact.request, null)], stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), [stdlib.T_UInt], false, ((txn1) => {
     const sim_r = { txns: [] };
     sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:13:8:dot', stdlib.UInt_max, 0)]);
-    const [v2] = txn1.data;
+    const [v3] = txn1.data;
     const v4 = txn1.value;
-    const v3 = txn1.from;
+    const v2 = txn1.from;
     
+    stdlib.assert(true, {
+      at: './index.rsh:13:8:dot',
+      fs: [],
+      msg: 'sender correct',
+      who: 'Alice'
+       });
     const v5 = stdlib.eq(v4, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
     stdlib.assert(v5, {
-      at: './index.rsh:13:25:after expr stmt semicolon',
+      at: './index.rsh:13:8:dot',
       fs: [],
       msg: 'pay amount correct',
       who: 'Alice'
        });
-    sim_r.nextSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:14:15:after expr stmt semicolon', stdlib.UInt_max, 1), v3, v2]);
+    sim_r.nextSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt, stdlib.T_Address]), [stdlib.checkedBigNumberify('./index.rsh:14:15:after expr stmt semicolon', stdlib.UInt_max, 1), v3, v2]);
     sim_r.isHalt = false;
     
     return sim_r;
      }));
-  const [v2] = txn1.data;
+  const [v3] = txn1.data;
   const v4 = txn1.value;
-  const v3 = txn1.from;
+  const v2 = txn1.from;
+  stdlib.assert(true, {
+    at: './index.rsh:13:8:dot',
+    fs: [],
+    msg: 'sender correct',
+    who: 'Alice'
+     });
   const v5 = stdlib.eq(v4, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
   stdlib.assert(v5, {
-    at: './index.rsh:13:25:after expr stmt semicolon',
+    at: './index.rsh:13:8:dot',
     fs: [],
     msg: 'pay amount correct',
     who: 'Alice'
@@ -37,40 +49,62 @@ export async function Alice(stdlib, ctc, interact) {
   const [] = txn2.data;
   const v14 = txn2.value;
   const v13 = txn2.from;
-  const v15 = stdlib.eq(v14, v2);
+  stdlib.assert(true, {
+    at: './index.rsh:18:8:dot',
+    fs: [],
+    msg: 'sender correct',
+    who: 'Alice'
+     });
+  const v15 = stdlib.eq(v14, v3);
   stdlib.assert(v15, {
-    at: './index.rsh:18:21:after expr stmt semicolon',
+    at: './index.rsh:18:8:dot',
     fs: [],
     msg: 'pay amount correct',
     who: 'Alice'
      });
-  const txn3 = await ctc.sendrecv('Alice', 3, 1, [stdlib.T_Address, stdlib.T_UInt, stdlib.T_Bytes(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, 128))], [v3, v2, stdlib.protect(stdlib.T_Bytes(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, 128)), interact.info, null)], stdlib.checkedBigNumberify('./index.rsh:23:22:after expr stmt semicolon', stdlib.UInt_max, 0), [stdlib.T_Bytes(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, 128))], false, ((txn3) => {
+  const txn3 = await ctc.sendrecv('Alice', 3, 1, [stdlib.T_UInt, stdlib.T_Address, stdlib.T_Bytes(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, 128))], [v3, v2, stdlib.protect(stdlib.T_Bytes(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, 128)), interact.info, null)], stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), [stdlib.T_Bytes(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, 128))], false, ((txn3) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:23:8:dot', stdlib.UInt_max, 2), v3, v2]);
-    const [v22] = txn3.data;
-    const v23 = txn3.value;
+    sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt, stdlib.T_Address]), [stdlib.checkedBigNumberify('./index.rsh:23:8:dot', stdlib.UInt_max, 2), v3, v2]);
+    const [v23] = txn3.data;
+    const v24 = txn3.value;
+    const v22 = txn3.from;
     
-    const v24 = stdlib.eq(v23, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
-    stdlib.assert(v24, {
-      at: './index.rsh:23:22:after expr stmt semicolon',
+    const v26 = stdlib.addressEq(v2, v22);
+    stdlib.assert(v26, {
+      at: './index.rsh:23:8:dot',
+      fs: [],
+      msg: 'sender correct',
+      who: 'Alice'
+       });
+    const v25 = stdlib.eq(v24, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
+    stdlib.assert(v25, {
+      at: './index.rsh:23:8:dot',
       fs: [],
       msg: 'pay amount correct',
       who: 'Alice'
        });
     sim_r.txns.push({
-      amt: v2,
-      to: v3
+      amt: v3,
+      to: v2
        });
     sim_r.nextSt = stdlib.digest(stdlib.T_Tuple([]), []);
     sim_r.isHalt = true;
     
     return sim_r;
      }));
-  const [v22] = txn3.data;
-  const v23 = txn3.value;
-  const v24 = stdlib.eq(v23, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
-  stdlib.assert(v24, {
-    at: './index.rsh:23:22:after expr stmt semicolon',
+  const [v23] = txn3.data;
+  const v24 = txn3.value;
+  const v22 = txn3.from;
+  const v26 = stdlib.addressEq(v2, v22);
+  stdlib.assert(v26, {
+    at: './index.rsh:23:8:dot',
+    fs: [],
+    msg: 'sender correct',
+    who: 'Alice'
+     });
+  const v25 = stdlib.eq(v24, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
+  stdlib.assert(v25, {
+    at: './index.rsh:23:8:dot',
     fs: [],
     msg: 'pay amount correct',
     who: 'Alice'
@@ -82,37 +116,49 @@ export async function Alice(stdlib, ctc, interact) {
    }
 export async function Bob(stdlib, ctc, interact) {
   const txn1 = await ctc.recv('Bob', 1, 1, [stdlib.T_UInt], false);
-  const [v2] = txn1.data;
+  const [v3] = txn1.data;
   const v4 = txn1.value;
-  const v3 = txn1.from;
+  const v2 = txn1.from;
+  stdlib.assert(true, {
+    at: './index.rsh:13:8:dot',
+    fs: [],
+    msg: 'sender correct',
+    who: 'Bob'
+     });
   const v5 = stdlib.eq(v4, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
   stdlib.assert(v5, {
-    at: './index.rsh:13:25:after expr stmt semicolon',
+    at: './index.rsh:13:8:dot',
     fs: [],
     msg: 'pay amount correct',
     who: 'Bob'
      });
-  stdlib.protect(stdlib.T_Null, await interact.want(v2), {
+  stdlib.protect(stdlib.T_Null, await interact.want(v3), {
     at: './index.rsh:17:22:application',
     fs: ['at ./index.rsh:17:35:after expr stmt semicolon call to "function" (defined at: ./index.rsh:16:17:function exp)'],
     msg: 'want',
     who: 'Bob'
      });
-  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_Address, stdlib.T_UInt], [v3, v2], v2, [], false, ((txn2) => {
+  const txn2 = await ctc.sendrecv('Bob', 2, 0, [stdlib.T_UInt, stdlib.T_Address], [v3, v2], v3, [], false, ((txn2) => {
     const sim_r = { txns: [] };
-    sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:18:8:dot', stdlib.UInt_max, 1), v3, v2]);
+    sim_r.prevSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt, stdlib.T_Address]), [stdlib.checkedBigNumberify('./index.rsh:18:8:dot', stdlib.UInt_max, 1), v3, v2]);
     const [] = txn2.data;
     const v14 = txn2.value;
     const v13 = txn2.from;
     
-    const v15 = stdlib.eq(v14, v2);
+    stdlib.assert(true, {
+      at: './index.rsh:18:8:dot',
+      fs: [],
+      msg: 'sender correct',
+      who: 'Bob'
+       });
+    const v15 = stdlib.eq(v14, v3);
     stdlib.assert(v15, {
-      at: './index.rsh:18:21:after expr stmt semicolon',
+      at: './index.rsh:18:8:dot',
       fs: [],
       msg: 'pay amount correct',
       who: 'Bob'
        });
-    sim_r.nextSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_Address, stdlib.T_UInt]), [stdlib.checkedBigNumberify('./index.rsh:19:15:after expr stmt semicolon', stdlib.UInt_max, 2), v3, v2]);
+    sim_r.nextSt = stdlib.digest(stdlib.T_Tuple([stdlib.T_UInt, stdlib.T_UInt, stdlib.T_Address]), [stdlib.checkedBigNumberify('./index.rsh:19:15:after expr stmt semicolon', stdlib.UInt_max, 2), v3, v2]);
     sim_r.isHalt = false;
     
     return sim_r;
@@ -120,25 +166,39 @@ export async function Bob(stdlib, ctc, interact) {
   const [] = txn2.data;
   const v14 = txn2.value;
   const v13 = txn2.from;
-  const v15 = stdlib.eq(v14, v2);
+  stdlib.assert(true, {
+    at: './index.rsh:18:8:dot',
+    fs: [],
+    msg: 'sender correct',
+    who: 'Bob'
+     });
+  const v15 = stdlib.eq(v14, v3);
   stdlib.assert(v15, {
-    at: './index.rsh:18:21:after expr stmt semicolon',
+    at: './index.rsh:18:8:dot',
     fs: [],
     msg: 'pay amount correct',
     who: 'Bob'
      });
   const txn3 = await ctc.recv('Bob', 3, 1, [stdlib.T_Bytes(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, 128))], false);
-  const [v22] = txn3.data;
-  const v23 = txn3.value;
-  const v24 = stdlib.eq(v23, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
-  stdlib.assert(v24, {
-    at: './index.rsh:23:22:after expr stmt semicolon',
+  const [v23] = txn3.data;
+  const v24 = txn3.value;
+  const v22 = txn3.from;
+  const v26 = stdlib.addressEq(v2, v22);
+  stdlib.assert(v26, {
+    at: './index.rsh:23:8:dot',
+    fs: [],
+    msg: 'sender correct',
+    who: 'Bob'
+     });
+  const v25 = stdlib.eq(v24, stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0));
+  stdlib.assert(v25, {
+    at: './index.rsh:23:8:dot',
     fs: [],
     msg: 'pay amount correct',
     who: 'Bob'
      });
   ;
-  stdlib.protect(stdlib.T_Null, await interact.got(v22), {
+  stdlib.protect(stdlib.T_Null, await interact.got(v23), {
     at: './index.rsh:28:21:application',
     fs: ['at ./index.rsh:28:31:after expr stmt semicolon call to "function" (defined at: ./index.rsh:27:17:function exp)'],
     msg: 'got',
@@ -391,8 +451,13 @@ arg 0
 ==
 assert
 // Run body
+// Just "sender correct"
+// "./index.rsh:13:8:dot"
+// "[]"
+int 1
+assert
 // Just "pay amount correct"
-// "./index.rsh:13:25:after expr stmt semicolon"
+// "./index.rsh:13:8:dot"
 // "[]"
 gtxn 3 Amount
 arg 3
@@ -403,9 +468,9 @@ int 0
 assert
 int 1
 itob
-gtxn 3 Sender
-concat
 arg 5
+concat
+gtxn 3 Sender
 concat
 keccak256
 arg 1
@@ -497,14 +562,19 @@ arg 0
 ==
 assert
 // Run body
+// Just "sender correct"
+// "./index.rsh:18:8:dot"
+// "[]"
+int 1
+assert
 // Just "pay amount correct"
-// "./index.rsh:18:21:after expr stmt semicolon"
+// "./index.rsh:18:8:dot"
 // "[]"
 gtxn 3 Amount
 arg 3
 btoi
 -
-arg 6
+arg 5
 btoi
 ==
 assert
@@ -593,10 +663,6 @@ txn NumArgs
 int 8
 ==
 assert
-gtxn 3 Sender
-arg 5
-==
-assert
 int 2
 itob
 arg 5
@@ -608,8 +674,15 @@ arg 0
 ==
 assert
 // Run body
+// Just "sender correct"
+// "./index.rsh:23:8:dot"
+// "[]"
+arg 6
+gtxn 3 Sender
+==
+assert
 // Just "pay amount correct"
-// "./index.rsh:23:22:after expr stmt semicolon"
+// "./index.rsh:23:8:dot"
 // "[]"
 gtxn 3 Amount
 arg 3
@@ -623,11 +696,11 @@ int pay
 ==
 assert
 gtxn 4 Receiver
-arg 5
+arg 6
 ==
 assert
 gtxn 4 Amount
-arg 6
+arg 5
 btoi
 ==
 assert
@@ -692,7 +765,7 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v2",
+                "name": "v3",
                 "type": "uint256"
               }
             ],
@@ -723,14 +796,14 @@ const _ETH = {
                 "type": "uint256"
               },
               {
-                "internalType": "address payable",
+                "internalType": "uint256",
                 "name": "v3",
-                "type": "address"
+                "type": "uint256"
               },
               {
-                "internalType": "uint256",
+                "internalType": "address payable",
                 "name": "v2",
-                "type": "uint256"
+                "type": "address"
               }
             ],
             "internalType": "struct ReachContract.a1postsvs",
@@ -760,14 +833,14 @@ const _ETH = {
                 "type": "uint256"
               },
               {
-                "internalType": "address payable",
+                "internalType": "uint256",
                 "name": "v3",
-                "type": "address"
+                "type": "uint256"
               },
               {
-                "internalType": "uint256",
+                "internalType": "address payable",
                 "name": "v2",
-                "type": "uint256"
+                "type": "address"
               }
             ],
             "internalType": "struct ReachContract.a2postsvs",
@@ -778,7 +851,7 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint8[128]",
-                "name": "v22",
+                "name": "v23",
                 "type": "uint8[128]"
               }
             ],
@@ -816,7 +889,7 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint256",
-                "name": "v2",
+                "name": "v3",
                 "type": "uint256"
               }
             ],
@@ -847,14 +920,14 @@ const _ETH = {
                 "type": "uint256"
               },
               {
-                "internalType": "address payable",
+                "internalType": "uint256",
                 "name": "v3",
-                "type": "address"
+                "type": "uint256"
               },
               {
-                "internalType": "uint256",
+                "internalType": "address payable",
                 "name": "v2",
-                "type": "uint256"
+                "type": "address"
               }
             ],
             "internalType": "struct ReachContract.a1postsvs",
@@ -884,14 +957,14 @@ const _ETH = {
                 "type": "uint256"
               },
               {
-                "internalType": "address payable",
+                "internalType": "uint256",
                 "name": "v3",
-                "type": "address"
+                "type": "uint256"
               },
               {
-                "internalType": "uint256",
+                "internalType": "address payable",
                 "name": "v2",
-                "type": "uint256"
+                "type": "address"
               }
             ],
             "internalType": "struct ReachContract.a2postsvs",
@@ -902,7 +975,7 @@ const _ETH = {
             "components": [
               {
                 "internalType": "uint8[128]",
-                "name": "v22",
+                "name": "v23",
                 "type": "uint8[128]"
               }
             ],
@@ -922,7 +995,7 @@ const _ETH = {
     "type": "function"
   }
 ]`,
-  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a161003461006c565b43815260405161004b90600090839060200161007f565b60408051601f1981840301815291905280516020909101206000555061008e565b6040518060200160405280600081525090565b91825251602082015260400190565b6104dd8061009d6000396000f3fe6080604052600436106100335760003560e01c80621deb86146100385780639532ef011461004d578063becab94114610060575b600080fd5b61004b610046366004610393565b610073565b005b61004b61005b36600461036b565b61016f565b61004b61006e366004610382565b61023c565b60405161008790600290839060200161047f565b6040516020818303038152906040528051906020012060001c600054146100ad57600080fd5b6100bd604082016020830161034a565b6001600160a01b0316336001600160a01b0316146100da57600080fd5b34156100e557600080fd5b6100f5604082016020830161034a565b604080516001600160a01b0392909216919083013580156108fc02916000818181858888f19350505050158015610130573d6000803e3d6000fd5b507ff0576dc799b60fe09428f90051394a37f1e32628d37b68e2a161b81436b4575781604051610160919061041b565b60405180910390a16000805533ff5b604051610183906000908390602001610470565b6040516020818303038152906040528051906020012060001c600054146101a957600080fd5b34156101b457600080fd5b7ff2c62eba998811305a23599b2e6d212befbd7ded3a73f4c08bfb9aefe08dc166816040516101e391906103f0565b60405180910390a16101f3610304565b43815233602080830191909152828101356040808401919091525161021d91600191849101610493565b60408051601f1981840301815291905280516020909101206000555050565b60405161025090600190839060200161047f565b6040516020818303038152906040528051906020012060001c6000541461027657600080fd5b3460408201351461028657600080fd5b7fd48df6dba41e682c72cf1d60ee8d30789a04d67f8ac1a7db2be6d9e70dbb345d816040516102b59190610407565b60405180910390a16102c5610304565b4381526102d8604083016020840161034a565b6001600160a01b0316602080830191909152604080840135818401525161021d91600291849101610493565b60405180606001604052806000815260200160006001600160a01b03168152602001600081525090565b80356001600160a01b038116811461034557600080fd5b919050565b60006020828403121561035b578081fd5b6103648261032e565b9392505050565b60006040828403121561037c578081fd5b50919050565b60006060828403121561037c578081fd5b6000611060828403121561037c578081fd5b803582526001600160a01b036103bd6020830161032e565b166020830152604090810135910152565b805182526020808201516001600160a01b031690830152604090810151910152565b813581526020918201359181019190915260400190565b6060810161041582846103a5565b92915050565b611060810161042a82846103a5565b60608201606084016000805b608081101561046657823560ff8116808214610450578384fd5b8552506020938401939290920191600101610436565b5050505092915050565b91825235602082015260400190565b8281526080810161036460208301846103a5565b8281526080810161036460208301846103ce56fea2646970667358221220b2686207e9bec35eb0d5ae0aba1df5dab23cfd6c1df8e7e600c4c7f256ae0d6d64736f6c63430007040033`,
+  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a161003461006c565b43815260405161004b90600090839060200161007f565b60408051601f1981840301815291905280516020909101206000555061008e565b6040518060200160405280600081525090565b91825251602082015260400190565b6104d78061009d6000396000f3fe6080604052600436106100345760003560e01c806318ebfc731461003957806319e123561461004e5780639532ef0114610061575b600080fd5b61004c61004736600461038a565b610074565b005b61004c61005c366004610379565b610167565b61004c61006f366004610362565b610250565b604051610088906002908390602001610479565b6040516020818303038152906040528051906020012060001c600054146100ae57600080fd5b336100bf6060830160408401610341565b6001600160a01b0316146100d257600080fd5b34156100dd57600080fd5b6100ed6060820160408301610341565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610128573d6000803e3d6000fd5b507f0b2104bf18a660f777a99e7b1e6b3bdb20d1ff947840ca0430adc9044bd339b8816040516101589190610415565b60405180910390a16000805533ff5b60405161017b906001908390602001610479565b6040516020818303038152906040528051906020012060001c600054146101a157600080fd5b346020820135146101b157600080fd5b7f1c771c6bb0c334e475100c2f63c3efcafa0587cbc11a2259c6484422d8a840ea816040516101e09190610401565b60405180910390a16101f06102fb565b4381526020808301359082015261020d6060830160408401610341565b6001600160a01b03166040808301919091525161023190600290839060200161048d565b60408051601f1981840301815291905280516020909101206000555050565b60405161026490600090839060200161046a565b6040516020818303038152906040528051906020012060001c6000541461028a57600080fd5b341561029557600080fd5b7ff2c62eba998811305a23599b2e6d212befbd7ded3a73f4c08bfb9aefe08dc166816040516102c491906103ea565b60405180910390a16102d46102fb565b4381526020808301358183015233604080840191909152516102319160019184910161048d565b6040518060600160405280600081526020016000815260200160006001600160a01b031681525090565b80356001600160a01b038116811461033c57600080fd5b919050565b600060208284031215610352578081fd5b61035b82610325565b9392505050565b600060408284031215610373578081fd5b50919050565b600060608284031215610373578081fd5b60006110608284031215610373578081fd5b80358252602080820135908301526001600160a01b036103be60408301610325565b1660408301525050565b80518252602080820151908301526040908101516001600160a01b0316910152565b813581526020918201359181019190915260400190565b6060810161040f828461039c565b92915050565b6110608101610424828461039c565b60608201606084016000805b608081101561046057823560ff811680821461044a578384fd5b8552506020938401939290920191600101610430565b5050505092915050565b91825235602082015260400190565b8281526080810161035b602083018461039c565b8281526080810161035b60208301846103c856fea2646970667358221220d0f96ac06ec790992efccde63d3701e65cd13df97191842336cb7d3496919afd64736f6c63430007040033`,
   deployMode: `DM_constructor`
    };
 
