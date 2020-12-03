@@ -32,7 +32,7 @@ import Text.ParserCombinators.Parsec.Number (numberValue)
 
 import Reach.Pretty()
 -- import Reach.Texty
--- import Debug.Trace
+--import Debug.Trace
 
 --- Errors
 
@@ -2548,15 +2548,16 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
   (recv_env_mod, pdvs_recv) <-
     case S.toList whos of
-      [ who ] | M.lookup who pdvs == Nothing -> do
-        let pdvs' = M.insert who winner_dv pdvs
+      [ who ] -> do
+        let who_dv = fromMaybe winner_dv (M.lookup who pdvs)
+        let pdvs' = M.insert who who_dv pdvs
         let add_who_env env =
               case vas of
                 Nothing -> env
                 Just whov ->
                   case env_lookup (Just ctxt) at (LC_RefFrom "publish who binding") whov (sco_env sco) of
                     (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
-                      M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just winner_dv))) env
+                      M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
                     _ ->
                       impossible $ "participant is not participant"
         return $ (add_who_env, pdvs')
