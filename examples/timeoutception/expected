@@ -1,31 +1,8 @@
-  1 = {
-    join(v0),
     (between [] []),
---
-  2 = {
-    again(v0),
     (between [] [10 ]),
---
-  3 = {
-    again(v0),
     (between [] []),
---
-  4 = {
-    again(v0),
     (between [10 ] [10, 10 ]),
---
-  5 = {
-    again(v0),
     (between [] []),
---
-  6 = {
-    again(v0),
     (between [10, 10 ] [10, 10, 10 ]),
---
-  7 = {
-    again(v0),
     (between [] []),
---
-  8 = {
-    again(v0),
     (between [10, 10, 10 ] []),

@@ -5,7 +5,7 @@ check: expected actual
 	diff -u $^
 
 actual: build/index.main.pl
-	grep -B 2 between $^ > $@
+	grep between $^ > $@
 
 build/index.main.pl: index.rsh
 	$(REACH) compile $^
