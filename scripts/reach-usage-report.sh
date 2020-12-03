@@ -6,7 +6,6 @@
 # https://docs.docker.com/registry/spec/api/
 
 HERE="$(dirname "$(realpath "${0}")")";
-UP_TO="$1"
 
 # shellcheck source=../VERSION
 . "${HERE}/../VERSION"
@@ -39,7 +38,7 @@ echo '}'
 echo ', "CompileLog":'
 
 formatMonth () {
-  if [ $1 -lt 10 ]; then
+  if [ "$1" -lt 10 ]; then
     echo 0"$1"
   else
     echo "$1"
@@ -47,9 +46,10 @@ formatMonth () {
 }
 
 uniqueUserBuilder=""
-for year in 2020; do
+declare -a years=(2020)
+for year in "${years[@]}"; do
   for ((i=9; i<=12; i++)); do
-    formatI=$(formatMonth $i)
+    formatI=$(formatMonth "$i")
     uniqueUserBuilder+="\"$year-$i\": (.Items | map(select(.startTime.S | startswith(\"$year-$formatI\") ))), ";
   done
 done
@@ -62,6 +62,6 @@ CompileLog=$(
     --select SPECIFIC_ATTRIBUTES \
     --projection-expression userId,startTime
 )
-echo $CompileLog | jq '{ row_count: .Count, unique_users: { '"$uniqueUsers"' }}'
+echo "$CompileLog" | jq '{ row_count: .Count, unique_users: { '"$uniqueUsers"' }}'
 
 echo '}'
