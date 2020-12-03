@@ -5,6 +5,7 @@ module Reach.AST where
 import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import Data.List
+import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import qualified Data.Text as T
@@ -235,7 +236,7 @@ data SLVal
   | SLV_Type SLType
   | SLV_Connector T.Text
   | SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
-  | SLV_RaceParticipant SrcLoc [SLPart]
+  | SLV_RaceParticipant SrcLoc (S.Set SLPart)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
   | SLV_Kwd SLKwd
@@ -280,7 +281,15 @@ data SLForm
   | SLForm_each
   | SLForm_EachAns [(SLPart, Maybe SLVar)] SrcLoc SLCloEnv JSExpression
   | SLForm_Part_Only SLPart (Maybe SLVar)
-  | SLForm_Part_ToConsensus SrcLoc SLPart (Maybe SLVar) (Maybe ToConsensusMode) (Maybe [SLVar]) (Maybe JSExpression) (Maybe (SrcLoc, JSExpression, JSBlock))
+  | SLForm_Part_ToConsensus
+      { slptc_at :: SrcLoc
+      , slptc_whos :: S.Set SLPart
+      , slptc_mv :: Maybe SLVar
+      , slptc_mode :: Maybe ToConsensusMode
+      , slptc_msg :: Maybe [SLVar]
+      , slptc_amte :: Maybe JSExpression
+      , slptc_timeout :: Maybe (SrcLoc, JSExpression, JSBlock)
+      }
   | SLForm_unknowable
   | SLForm_parallel_reduce
   | SLForm_parallel_reduce_partial
@@ -681,6 +690,12 @@ data DLStmt
       , dls_tc_mtime :: (Maybe (DLArg, DLStmts))
       , dls_tc_cons :: DLStmts
       }
+  | DLS_ToConsensus2
+      { dls_tc2_at :: SrcLoc
+      , dls_tc2_send :: M.Map SLPart ([DLArg], DLArg)
+      , dls_tc2_recv :: (FromSpec, [DLVar], DLVar, DLStmts)
+      , dls_tc2_mtime :: Maybe (DLArg, DLStmts)
+      }
   | DLS_FromConsensus SrcLoc DLStmts
   | DLS_While
       { dls_w_at :: SrcLoc
@@ -718,6 +733,7 @@ instance SrcLocOf DLStmt where
     DLS_Stop a -> a
     DLS_Only a _ _ -> a
     DLS_ToConsensus {..} -> dls_tc_at
+    DLS_ToConsensus2 {..} -> dls_tc2_at
     DLS_FromConsensus a _ -> a
     DLS_While {..} -> dls_w_at
     DLS_Continue a _ -> a
@@ -738,6 +754,7 @@ instance IsPure DLStmt where
     DLS_Stop {} -> False
     DLS_Only _ _ ss -> isPure ss
     DLS_ToConsensus {} -> False
+    DLS_ToConsensus2 {} -> False
     DLS_FromConsensus _ ss -> isPure ss
     DLS_While {} -> False
     DLS_Continue {} -> False
@@ -758,6 +775,7 @@ instance IsLocal DLStmt where
     DLS_Stop {} -> False
     DLS_Only _ _ ss -> isLocal ss
     DLS_ToConsensus {} -> False
+    DLS_ToConsensus2 {} -> False
     DLS_FromConsensus _ ss -> isLocal ss
     DLS_While {} -> False
     DLS_Continue {} -> False

@@ -51,5 +51,5 @@ export const main =
       const winner = outcome == ALICE_WINS ? Alice : Bob;
       transfer(balance()).to(winner);
       commit();
-      showOutcome(outcome);
+      showOutcome(outcome)();
     });

@@ -74,6 +74,8 @@ lin_com who back mkk fve rets s ks =
       impossible $ who ++ " cannot only"
     DLS_ToConsensus {} ->
       impossible $ who ++ " cannot consensus"
+    DLS_ToConsensus2 {} ->
+      impossible $ who ++ " cannot consensus"
     DLS_FromConsensus {} ->
       impossible $ who ++ " cannot fromconsensus"
     DLS_While {} ->
@@ -157,6 +159,8 @@ lin_step _ fve rets (s Seq.:<| ks) =
         mtime' = do
           (delay_da, time_ss) <- mtime
           return $ (delay_da, lin_step at fve rets (time_ss <> ks))
+    DLS_ToConsensus2 {} ->
+      error $ "XXX linearize to consensus 2"
     DLS_ParallelReduce at iasn inv muntil mtimeout cases ->
       LLS_ParallelReduce at iasn inv' muntil' mtimeout cases' $
         lin_con back at fve mempty ks

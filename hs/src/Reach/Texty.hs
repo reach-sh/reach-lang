@@ -30,6 +30,7 @@ where
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Data.String
+import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 
@@ -82,10 +83,13 @@ instance Pretty a => Pretty (Maybe a) where
   pretty (Just x) = "Just" <> pretty x
 
 instance Pretty a => Pretty [a] where
-  pretty = concatWith (<>) . map pretty
+  pretty l = "[" <> (concatWith (\x y -> x <> ", " <> y) $ map pretty l) <> "]"
+
+instance Pretty a => Pretty (S.Set a) where
+  pretty = pretty . S.toList
 
 instance (Pretty a, Pretty b) => Pretty (a, b) where
-  pretty (x, y) = pretty x <> "," <> pretty y
+  pretty (x, y) = "(" <> pretty x <> ", " <> pretty y <> ")"
 
 instance Pretty Bool where
   pretty = viaShow

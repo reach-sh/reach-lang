@@ -6,9 +6,10 @@ import Control.Monad.ST
 import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
-import Data.List (intercalate, sortBy)
+import Data.List (intercalate, sortBy, transpose)
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Data.Ord (comparing)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
@@ -802,8 +803,8 @@ penvs_update ctxt sco f =
     map (\p -> (p, f p $ sco_lookup_penv ctxt sco p)) $
       M.keys $ ctxt_base_penvs ctxt
 
-sco_update_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
-sco_update_ imode ctxt at sco st addl_env =
+sco_update_and_mod :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> (SLEnv -> SLEnv) -> SLScope
+sco_update_and_mod imode ctxt at sco st addl_env env_mod =
   sco
     { sco_env = do_merge $ sco_env sco
     , sco_penvs = sco_penvs'
@@ -820,18 +821,22 @@ sco_update_ imode ctxt at sco st addl_env =
       case st_mode st of
         SLM_ConsensusStep -> do_merge $ sco_cenv sco
         _ -> sco_cenv sco
-    do_merge = flip (env_merge_ imode ctxt at) addl_env
+    do_merge = env_mod . flip (env_merge_ imode ctxt at) addl_env
+
+sco_update_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
+sco_update_ imode ctxt at sco st addl_env =
+  sco_update_and_mod imode ctxt at sco st addl_env id
 
 sco_update :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update = sco_update_ DisallowShadowing
 
-stMerge :: SLCtxt s -> SrcLoc -> SLState -> SLState -> SLState
+stMerge :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> SLState -> SLState
 stMerge ctxt at x y =
   case x == y of
     True -> y
     False -> expect_throw_ctx ctxt at $ Err_Eval_IncompatibleStates x y
 
-stMerges :: SLCtxt s -> SrcLoc -> [SLState] -> SLState
+stMerges :: HasCallStack => SLCtxt s -> SrcLoc -> [SLState] -> SLState
 stMerges ctxt at = \case
   [] -> impossible $ "stMerges called with empty"
   [x] -> x
@@ -945,9 +950,16 @@ evalAsEnv ctx at obj =
     SLV_Participant _ who vas _ ->
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
-        , ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Publish) Nothing Nothing Nothing))
-        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at who vas (Just TCM_Pay) Nothing Nothing Nothing))
+        , ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Publish) Nothing Nothing Nothing))
+        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Pay) Nothing Nothing Nothing))
         , ("set", delayCall SLPrim_part_set)
+        ]
+      where
+        whos = S.singleton who
+    SLV_RaceParticipant _ whos ->
+      M.fromList
+        [ ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Publish) Nothing Nothing Nothing))
+        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Pay) Nothing Nothing Nothing))
         ]
     SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
       M.fromList $
@@ -1375,7 +1387,7 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_race ->
       case map snd sargs of
         [(SLV_Tuple _ pargs)] ->
-          retV $ (lvl, SLV_RaceParticipant at $ map (slvParticipant_part ctxt at) pargs)
+          retV $ (lvl, SLV_RaceParticipant at $ S.fromList $ map (slvParticipant_part ctxt at) pargs)
         _ -> illegal_args
     SLPrim_fluid_read fv ->
       doFluidRef ctxt at st fv
@@ -2440,6 +2452,125 @@ doFork ctxt at sco st_init caseses ks = do
   let fr = SLRes (return $ fork_dl) fork_st (SLStmtRes (sco_env sco) fork_rets)
   retSeqn_ ctxt sco' fr at ks_ne
 
+doToConsensus :: forall s . SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
+doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
+  ensure_mode ctxt at st SLM_Step "to consensus"
+  ensure_live ctxt at st "to consensus"
+  let st_pure = st {st_mode = SLM_ConsensusPure}
+  --- We go back to the original env from before the to-consensus step
+  -- Handle sending
+  let tc_send1 who = do
+        let penv = sco_lookup_penv ctxt sco who
+        let msg_proc1 var = do
+              let val =
+                    ensure_public ctxt at $ sss_sls $
+                      env_lookup (Just ctxt) at (LC_RefFrom "publish msg") var penv
+              (da_lifts, _, da) <- compileTypeOf ctxt at val
+              return (da_lifts, da)
+        msg_proc <- mapM msg_proc1 msg
+        let msg_lifts = mconcat $ map fst msg_proc
+        let msg_das = map snd msg_proc
+        let sco_penv = sco { sco_env = penv }
+        ensure_part_can_act ctxt at st who
+        SLRes amt_lifts _ amt_sv <-
+          evalExpr ctxt at sco_penv st_pure amt_e
+        (amt_clifts, amt_da) <-
+          compileCheckType ctxt at T_UInt $ ensure_public ctxt at amt_sv
+        let send_lifts =
+              return $ DLS_Only at who (msg_lifts <> amt_lifts <> amt_clifts)
+        return (send_lifts, (msg_das, amt_da))
+  tc_send_int <- (sequence $ M.fromSet tc_send1 whos) :: ST s (M.Map SLPart (DLStmts, ([DLArg], DLArg)))
+  let send_lifts = mconcat $ M.elems $ M.map fst tc_send_int
+  let tc_send = M.map snd tc_send_int
+  let msg_ts = map (typeMeets at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map fst tc_send
+  -- Handle timeout
+  (mtime_merge, tc_mtime) <-
+    case mtime of
+      Nothing ->
+        return $ (id, Nothing)
+      Just (time_at, delay_e, (JSBlock _ time_ss _)) -> do
+        SLRes delay_lifts _ delay_sv <-
+          evalExpr ctxt time_at sco st_pure delay_e
+        (delay_lifts', delay_da) <-
+          compileCheckType ctxt time_at T_UInt $
+            ensure_public ctxt time_at delay_sv
+        let mtime_lifts = delay_lifts <> delay_lifts'
+        SLRes time_lifts time_st time_cr <-
+          evalStmt ctxt time_at sco st time_ss
+        let mtime_merge =
+              case st_live time_st of
+                False -> id
+                True ->
+                  \ (SLRes lifts_ st_ cr_) ->
+                    SLRes (mtime_lifts <> lifts_)
+                          (stMerge ctxt time_at time_st st_)
+                          (combineStmtRes time_at Public time_cr cr_)
+        return $ (mtime_merge, Just (delay_da, time_lifts))
+  -- Handle receiving / consensus
+  let sco_con = sco
+  let pdvs = st_pdvs st
+  (recv_imode, recv_env_mod, pdvs_recv, fs) <-
+    case S.toList whos of
+      [ who ] ->
+        -- XXX These are both AllowShadowing because I changed it to use
+        -- sco_update and the original publisher gets updated too
+        case M.lookup who pdvs of
+          Just pdv ->
+            return $ (AllowShadowing {- DisallowShadowing -}, id, pdvs, FS_Again pdv)
+          Nothing -> do
+            whodv <- ctxt_mkvar ctxt $ DLVar at (bunpack who) T_Address
+            let pdvs' = M.insert who whodv pdvs
+            let add_who_env env =
+                  case vas of
+                    Nothing -> env
+                    Just whov ->
+                      case env_lookup (Just ctxt) at (LC_RefFrom "publish who binding") whov (sco_env sco) of
+                        (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
+                          M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just whodv))) env
+                        _ ->
+                          impossible $ "participant is not participant"
+            return $ (AllowShadowing {- DisallowShadowing -}, add_who_env, pdvs', FS_Join whodv)
+      _ -> do
+        whodv <- ctxt_mkvar ctxt $ DLVar at "race winner" T_Address
+        -- Note: This DV isn't actually exposed in any way, but could be.
+        --
+        -- XXX This is wrong... we need to return a list of these based on
+        -- whether a particular participant is known
+        --
+        -- XXX This AllowShadowing is too broad... we should only allow
+        -- shadowing in the participants that take part in the race
+        return $ (AllowShadowing, id, pdvs, FS_Join whodv)
+  let st_recv =
+        st
+          { st_mode = SLM_ConsensusStep
+          , st_pdvs = pdvs_recv
+          , st_after_first = True
+          , st_fork_body = Nothing
+          }
+  msg_dvs <- mapM (\t -> ctxt_mkvar ctxt (DLVar at "msg" t)) msg_ts
+  let msg_env = foldl' (env_insertp ctxt at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ msg_dvs
+  let recv_env = msg_env
+  let sco_recv = sco_update_and_mod recv_imode ctxt at sco_con st_recv recv_env recv_env_mod
+  amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt
+  let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar amt_dv)] []
+  SLRes cmp_lifts _ cmp_v <-
+    evalApply ctxt at sco_recv st_pure cmp_rator [amt_e]
+  let req_rator = SLV_Prim $ SLPrim_claim CT_Require
+  SLRes amt_check_lifts _ _ <-
+    keepLifts cmp_lifts $
+      evalApplyVals ctxt at sco_recv st_pure req_rator $
+        [cmp_v, public $ SLV_Bytes at $ "pay amount correct"]
+  SLRes balup st_recv' () <-
+    keepLifts amt_check_lifts $
+      doBalanceUpdate ctxt at sco_recv st_recv ADD (SLV_DLVar amt_dv)
+  SLRes conlifts k_st k_cr <-
+    keepLifts balup $ evalStmt ctxt at sco_recv st_recv' ks
+  let tc_recv = (fs, msg_dvs, amt_dv, conlifts)
+  -- Prepare final result
+  let the_tc = DLS_ToConsensus2 at tc_send tc_recv tc_mtime
+  let lifts' = send_lifts <> (return $ the_tc)
+  return $ mtime_merge $ SLRes lifts' k_st k_cr
+
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
 evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
   case ev of
@@ -2472,126 +2603,10 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
           keepLifts lifts' $ evalStmt ctxt at sco' st' ks
         _ -> illegal_mode
-    SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mmsg mamt mtime) ->
-      case (st_mode st, st_live st) of
-        (SLM_Step, True) -> do
-          ensure_part_can_act ctxt at st who
-          let st_pure = st {st_mode = SLM_ConsensusPure}
-          let pdvs = st_pdvs st
-          let penv = sco_lookup_penv ctxt sco who
-          (msg_lifts, msg_env, tmsg_) <-
-            case mmsg of
-              Nothing -> return (mempty, mempty, [])
-              Just msg -> do
-                let mk var = do
-                      let val =
-                            case env_lookup (Just ctxt) to_at (LC_RefFrom "publish") var penv of
-                              (SLSSVal _ Public x) -> x
-                              (SLSSVal _ Secret x) ->
-                                -- TODO: use binding loc in error
-                                expect_throw_ctx ctxt at $ Err_ExpectedPublic x
-                      (da_lifts, t, da) <- compileTypeOf ctxt to_at val
-                      dv <- ctxt_mkvar ctxt $ DLVar to_at "msg" t
-                      return $ (da_lifts, (da, dv))
-                tvls <- mapM mk msg
-                let tv_lifts = mconcat $ map fst tvls
-                let tvs = map snd tvls
-                let msg_env_ = foldl' (env_insertp ctxt at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ map snd tvs
-                return $ (tv_lifts, msg_env_, tvs)
-          -- TODO: ^ double check this srcloc
-          --- We go back to the original env from before the to-consensus step
-          (pdvs', fs) <-
-            case M.lookup who pdvs of
-              Just pdv ->
-                return $ (pdvs, FS_Again pdv)
-              Nothing -> do
-                let whos = bunpack who
-                whodv <- ctxt_mkvar ctxt $ DLVar to_at whos T_Address
-                return $ ((M.insert who whodv pdvs), FS_Join whodv)
-          let add_who_env :: SLEnv -> SLEnv =
-                case vas of
-                  Nothing -> \x -> x
-                  Just whov ->
-                    case env_lookup (Just ctxt) to_at (LC_RefFrom "publish") whov env of
-                      (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ _)) ->
-                        M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just $ (pdvs' M.! who))))
-                      _ ->
-                        impossible $ "participant is not participant"
-          --- NOTE we don't use sco_update, because we have to treat the publish specially
-          let env' = add_who_env $ env_merge ctxt to_at env msg_env
-          let sco_env' = sco {sco_env = env'}
-          let penvs' =
-                penvs_update
-                  ctxt
-                  sco
-                  (\p old ->
-                     case p == who of
-                       True -> add_who_env old
-                       False -> add_who_env $ env_merge ctxt to_at old msg_env)
-          (amte, amt_lifts, amt_da) <-
-            case mamt of
-              Nothing ->
-                return $ (amt_e_, mempty, amt_check_da)
-                where
-                  amt_check_da = DLA_Literal $ DLL_Int at 0
-                  amt_e_ = JSDecimal JSNoAnnot "0"
-              Just amte_ -> do
-                let penv' = penvs' M.! who
-                let sco_penv' =
-                      sco
-                        { sco_penvs = penvs'
-                        , sco_env = penv'
-                        }
-                SLRes amt_lifts_ _ amt_sv <- evalExpr ctxt at sco_penv' st_pure amte_
-                (amt_lifts_', amt_da) <- compileCheckType ctxt at T_UInt $ ensure_public ctxt at amt_sv
-                return $ (amte_, amt_lifts_ <> amt_lifts_', amt_da)
-          let msg_compute_lifts = return $ DLS_Only at who (msg_lifts <> amt_lifts)
-          amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt
-          SLRes amt_check_lifts _ _ <- do
-            --- XXX Merge with doAssertBalance somehow
-            let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op PEQ) [(Public, SLV_DLVar amt_dv)] []
-            SLRes cmp_lifts _ cmp_v <- evalApply ctxt at sco_env' st_pure cmp_rator [amte]
-            let req_rator = SLV_Prim $ SLPrim_claim CT_Require
-            keepLifts cmp_lifts $
-              evalApplyVals ctxt at sco_env' st_pure req_rator [cmp_v, public $ SLV_Bytes at $ "pay amount correct"]
-          (tlifts, mt_st_cr, mtime') <-
-            case mtime of
-              Nothing -> return $ (mempty, Nothing, Nothing)
-              Just (dt_at, de, (JSBlock _ dt_ss _)) -> do
-                SLRes de_lifts _ de_sv <- evalExpr ctxt at sco st_pure de
-                (de_lifts', de_da) <- compileCheckType ctxt dt_at T_UInt $ ensure_public ctxt dt_at de_sv
-                SLRes dta_lifts dt_st dt_cr <- evalStmt ctxt dt_at sco st dt_ss
-                return $ (de_lifts <> de_lifts', Just (dt_st, dt_cr), Just (de_da, dta_lifts))
-          let st_cstep =
-                st
-                  { st_mode = SLM_ConsensusStep
-                  , st_pdvs = pdvs'
-                  , st_after_first = True
-                  , st_fork_body = Nothing
-                  }
-          let sco' =
-                sco
-                  { sco_env = env'
-                  , sco_cenv = env'
-                  , sco_penvs = penvs'
-                  }
-          SLRes balup st_cstep' () <- doBalanceUpdate ctxt at sco' st_cstep ADD (SLV_DLVar amt_dv)
-          SLRes conlifts k_st k_cr <- evalStmt ctxt at sco' st_cstep' ks
-          let lifts' = tlifts <> msg_compute_lifts <> (return $ DLS_ToConsensus to_at who fs (map fst tmsg_) (map snd tmsg_) amt_da amt_dv mtime' (amt_check_lifts <> balup <> conlifts))
-          --- FIXME This might be general logic that applies to any
-          --- place where we merge, like IFs and SEQNs, so if one side
-          --- of an if dies, then the other side doesn't need to merge
-          --- the results.
-          case mt_st_cr of
-            Nothing ->
-              return $ SLRes lifts' k_st k_cr
-            Just (t_st, t_cr) ->
-              case st_live t_st of
-                False ->
-                  return $ SLRes lifts' k_st k_cr
-                True ->
-                  return $ SLRes lifts' (stMerge ctxt at t_st k_st) $ combineStmtRes at Public t_cr k_cr
-        _ -> illegal_mode
+    SLV_Form (SLForm_Part_ToConsensus to_at whos vas Nothing mmsg mamt mtime) -> do
+      let msg = fromMaybe [] mmsg
+      let amt = fromMaybe (JSDecimal JSNoAnnot "0") mamt
+      doToConsensus ctxt to_at sco st ks whos vas msg amt mtime
     SLV_Prim SLPrim_committed ->
       case st_mode st of
         SLM_ConsensusStep -> do
@@ -2716,6 +2731,7 @@ checkParallelReduceBody ctxt at who stmts = checkPrompt stmts
         (DLS_Stop at', _) -> bad at' $ "stop in consensus"
         (DLS_Only {}, _) -> impossible "only in consensus"
         (DLS_ToConsensus {}, _) -> impossible "publish in consensus"
+        (DLS_ToConsensus2 {}, _) -> impossible "publish in consensus"
         (DLS_FromConsensus at' _, _) -> bad at' $ "commit in consensus step"
         (DLS_While at' _ _ _ _, _) -> bad at' $ "while in consensus step"
         (DLS_Continue at' _, _) -> bad at' $ "continue in consensus step"
