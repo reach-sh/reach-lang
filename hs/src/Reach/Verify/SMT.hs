@@ -554,8 +554,14 @@ smt_e ctxt at_dv mdv de =
       mempty
     DLE_Wait {} ->
       mempty
-    DLE_PartSet {} ->
-      mempty
+    DLE_PartSet at who a ->
+      pathAddBound ctxt at mdv bo (smt_a ctxt at a)
+      <>
+      case (mdv, shouldSimulate ctxt who) of
+        (Just psv, True) ->
+          smtAssert ctxt (smtEq (Atom $ smtVar ctxt psv) (Atom $ smtAddress who))
+        _ ->
+          mempty
   where
     bo = O_Expr de
 
