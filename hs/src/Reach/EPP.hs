@@ -494,8 +494,68 @@ epp_s st s =
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
       return $ ProResS p_prts (ProRes_ time_cons_cs True)
-    LLS_ToConsensus2 {} ->
-      error $ "XXX epp tc2"
+    LLS_ToConsensus2 at send (fromv, msg, amt_dv, cons) mtime -> do
+      let prev_int = pst_interval st
+      which <- newHandler st
+      let (int_ok, delay_cs, continue_time) =
+            case mtime of
+              Nothing ->
+                (int_ok_, mempty, continue_time_)
+                where
+                  int_ok_ = interval_no_to prev_int
+                  continue_time_ ok_cons_cs =
+                    return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
+              Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)
+                where
+                  delayas = interval_from int_to
+                  delay_cs_ = counts delayas
+                  int_to = interval_add_from prev_int delaya
+                  int_ok_ = interval_add_to prev_int delaya
+                  continue_time_ ok_cons_cs = do
+                    let st_to =
+                          st
+                            { pst_interval = int_to
+                            , pst_forced_svs = ok_cons_cs
+                            }
+                    ProResS delay_prts (ProRes_ tcons_cs _) <-
+                      epp_s st_to delays
+                    let cs' = delay_cs_ <> tcons_cs
+                    let update (ProRes_ tk_cs tk_et) =
+                          ProRes_ (tk_cs <> delay_cs_) (Just (delayas, tk_et))
+                    return $ (cs', M.map update delay_prts)
+      let st_cons =
+            st
+              { pst_prev_handler = which
+              , pst_interval = int_ok
+              }
+      ProResC p_prts_cons (ProRes_ cons_vs ct_cons) <- epp_n st_cons cons
+      let fs = FS_Join fromv -- XXX
+      let (fs_uses, fs_defns) =
+            case fs of
+              FS_Join dv -> (mempty, [dv])
+              FS_Again dv -> (counts dv, mempty)
+      let msg_and_defns = (msg <> [amt_dv] <> fs_defns)
+      let int_ok_cs = counts int_ok
+      let ok_cons_cs = int_ok_cs <> delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
+      (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
+      let svs = counts_nzs time_cons_cs
+      let prev = pst_prev_handler st
+      let this_h = C_Handler at int_ok fs prev svs msg amt_dv ct_cons
+      let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
+            ProRes_ cs_' $ ET_ToConsensus at fs prev which mfrom msg amt_dv mtime' et_
+            where
+              cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms msg_and_defns cs_
+      let mk_p_prt p prt = mker prt mtime'
+            where
+              mtime' = mtime'_ps M.! p
+              mker =
+                case M.lookup p send of
+                  Nothing -> mk_et Nothing
+                  Just (from_as, amt_da) ->
+                    mk_et $ Just (from_as, amt_da, svs)
+      let p_prts = M.mapWithKey mk_p_prt p_prts_cons
+      addHandler st which this_h
+      return $ ProResS p_prts (ProRes_ time_cons_cs True)
     LLS_ParallelReduce at iasn _inv muntil mtimeout cases k -> do
       -- XXX How do the initial values get assigned? Should this have been a
       -- consensus step, so we could jump to the checked loop with the initial
