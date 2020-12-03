@@ -204,11 +204,11 @@ prettyFork cases fcase =
   where
     go (p, ss) = ".case" <> parens (pretty p <> ", " <> fcase ss)
 
-prettyToConsensus2 :: (a -> Doc) -> M.Map SLPart ([DLArg], DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, a)) -> Doc
-prettyToConsensus2 f send (win, msg, amtv, body) mtime =
+prettyToConsensus2 :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart ([DLArg], DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
+prettyToConsensus2 fa fb send (win, msg, amtv, body) mtime =
   "publish" <> parens emptyDoc <> nest 2 (hardline <> mtime' <>
     concatWith (surround hardline) (map go $ M.toList send) <> hardline <>
-    ".recv" <> parens (hsep $ punctuate comma $ [ pretty win, pretty msg, pretty amtv, render_nest (f body)]) <> semi)
+    ".recv" <> parens (hsep $ punctuate comma $ [ pretty win, pretty msg, pretty amtv, render_nest (fa body)]) <> semi)
   where
     go (p, (args, amta)) =
       ".case" <> parens (hsep $ punctuate comma $ [ pretty p, pretty args, pretty amta ])
@@ -216,7 +216,7 @@ prettyToConsensus2 f send (win, msg, amtv, body) mtime =
       case mtime of
         Nothing -> emptyDoc
         Just (delaya, tbody) ->
-          ".timeout" <> parens (hsep $ punctuate comma $ [ pretty delaya, render_nest (f tbody)]) <> hardline
+          ".timeout" <> parens (hsep $ punctuate comma $ [ pretty delaya, render_nest (fb tbody)]) <> hardline
 
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
@@ -262,7 +262,7 @@ instance Pretty DLStmt where
               Nothing -> ""
               Just (td, tp) -> nest 2 (hardline <> ".timeout" <> (cm [pretty td, (render_nest $ render_dls tp)]))
       DLS_ToConsensus2 {..} ->
-        prettyToConsensus2 render_dls dls_tc2_send dls_tc2_recv dls_tc2_mtime
+        prettyToConsensus2 render_dls render_dls dls_tc2_send dls_tc2_recv dls_tc2_mtime
       DLS_FromConsensus _ more ->
         "commit()" <> semi <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -362,6 +362,8 @@ instance Pretty LLStep where
             case mtime of
               Nothing -> mempty
               Just (td, tl) -> nest 2 (hardline <> ".timeout" <> parens (cm [pretty td, (render_nest $ pretty tl)]))
+      LLS_ToConsensus2 {..} ->
+        prettyToConsensus2 pretty pretty lls_tc2_send lls_tc2_recv lls_tc2_mtime
       LLS_ParallelReduce _ iasn inv muntil mtimeout cases k ->
         prettyParallelReduce iasn inv muntil mtimeout cases pretty <> hardline <> pretty k
       LLS_Fork _ cases ->

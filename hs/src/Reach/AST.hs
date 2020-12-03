@@ -854,6 +854,12 @@ data LLStep
       , lls_tc_mtime :: (Maybe (DLArg, LLStep))
       , lls_tc_cons :: LLConsensus
       }
+  | LLS_ToConsensus2
+      { lls_tc2_at :: SrcLoc
+      , lls_tc2_send :: M.Map SLPart ([DLArg], DLArg)
+      , lls_tc2_recv :: (DLVar, [DLVar], DLVar, LLConsensus)
+      , lls_tc2_mtime :: Maybe (DLArg, LLStep)
+      }
   | LLS_ParallelReduce
       { lls_pr_at :: SrcLoc
       , lls_pr_iasn :: DLAssignment

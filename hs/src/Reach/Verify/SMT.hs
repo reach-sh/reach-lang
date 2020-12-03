@@ -781,6 +781,8 @@ smt_s ctxt s =
             -- Note: But, we can always assume that the `until` is false.
             <> muntil_m False
             <> smt_s ctxt c
+    LLS_ToConsensus2 {} ->
+      error $ "XXX smt tc2"
     LLS_Fork _at cases ->
       mapM_ ((ctxtNewScope ctxt) . smt_s ctxt . snd) cases
 

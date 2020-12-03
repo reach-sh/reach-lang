@@ -216,6 +216,10 @@ opt_mtime = \case
   Nothing -> pure $ Nothing
   Just (a, s) -> Just <$> (pure (,) <*> opt_a a <*> (newScope $ opt_s s))
 
+opt_send :: (SLPart, ([DLArg], DLArg)) -> App (SLPart, ([DLArg], DLArg))
+opt_send (p, (args, amta)) = focusp p $
+  (,) p <$> ((,) <$> opt_as args <*> opt_a amta)
+
 opt_s :: LLStep -> App LLStep
 opt_s = \case
   LLS_Com m -> opt_m LLS_Com opt_s m
@@ -224,6 +228,14 @@ opt_s = \case
     LLS_Only at p <$> (focusp p $ opt_l l) <*> opt_s s
   LLS_ToConsensus at from fs from_as from_msg from_amt from_amtv mtime cons ->
     LLS_ToConsensus at from <$> opt_fs fs <*> (focusp from $ opt_as from_as) <*> (pure from_msg) <*> (focusp from $ opt_a from_amt) <*> (pure from_amtv) <*> opt_mtime mtime <*> (focusc $ opt_n cons)
+  LLS_ToConsensus2 at send recv mtime ->
+    LLS_ToConsensus2 at <$> send' <*> recv' <*> mtime'
+    where
+      send' = M.fromList <$> mapM opt_send (M.toList send)
+      (winner_dv, msg, amtv, cons) = recv
+      cons' = focusc $ opt_n cons
+      recv' = (\x -> (winner_dv, msg, amtv, x)) <$> cons'
+      mtime' = opt_mtime mtime
   LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->
     LLS_ParallelReduce at <$> opt_asn iasn <*> opt_bl inv <*> traverse opt_bl muntil <*> traverse opt_a mtimeout <*> mapM go cases <*> (focusc $ opt_n k)
     where

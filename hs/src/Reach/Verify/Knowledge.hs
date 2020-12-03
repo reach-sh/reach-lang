@@ -280,6 +280,19 @@ kgq_s ctxt = \case
       >> ctxtNewScope ctxt (kgq_n ctxt next_n)
     where
       msg_to_as = mapM_ (uncurry (kgq_a_only ctxt)) $ zip from_msg from_as
+  LLS_ToConsensus2 _ send (whov, msgvs, amtv, next_n) mtime ->
+    ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
+      >> mapM_ (ctxtNewScope ctxt . go) (M.toList send)
+    where
+      common =
+        kgq_a_all ctxt (DLA_Var whov)
+          >> kgq_a_all ctxt (DLA_Var amtv)
+          >> mapM (kgq_a_all ctxt) (map DLA_Var msgvs)
+          >> kgq_n ctxt next_n
+      go (_, (msgas, amta)) =
+        mapM_ (uncurry (kgq_a_only ctxt)) (zip msgvs msgas)
+          >> kgq_a_only ctxt amtv amta
+          >> common
   LLS_ParallelReduce _at iasn _inv _muntil _mtimeout cases k ->
     kgq_asn_def ctxt iasn
       >> kgq_asn ctxt iasn

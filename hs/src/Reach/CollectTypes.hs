@@ -21,6 +21,9 @@ instance CollectsTypes a => CollectsTypes (Maybe a) where
 instance (CollectsTypes a, CollectsTypes b) => CollectsTypes (a, b) where
   cts (x, y) = cts x <> cts y
 
+instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d) => CollectsTypes (a, b, c, d) where
+  cts (x, y, z, a) = cts x <> cts y <> cts z <> cts a
+
 instance CollectsTypes SLType where
   cts t =
     S.singleton t
@@ -107,6 +110,7 @@ instance CollectsTypes LLStep where
   cts (LLS_Only _ _ l s) = cts l <> cts s
   cts (LLS_ToConsensus _ _ fs as msg amt amtv mtime c) =
     cts fs <> cts as <> cts msg <> cts amt <> cts amtv <> cts mtime <> cts c
+  cts (LLS_ToConsensus2 _ send recv mtime) = cts send <> cts recv <> cts mtime
   cts (LLS_ParallelReduce _ iasn inv muntil mtimeout cases k) =
     cts iasn <> cts inv <> cts muntil <> cts mtimeout <> cts (map snd cases) <> cts k
   cts (LLS_Fork _ cases) = cts (map snd cases)

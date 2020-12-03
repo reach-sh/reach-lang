@@ -310,6 +310,10 @@ ul_mtime = \case
   Nothing -> (pure $ Nothing)
   Just (a, s) -> (pure $ Just) <*> (pure (,) <*> ul_a a <*> ul_s s)
 
+ul_send :: (SLPart, ([DLArg], DLArg)) -> App s (SLPart, ([DLArg], DLArg))
+ul_send (p, (args, amta)) =
+  (,) p <$> ((,) <$> ul_as args <*> ul_a amta)
+
 ul_s :: LLStep -> App s LLStep
 ul_s = \case
   LLS_Com m -> ul_m LLS_Com ul_s m
@@ -319,6 +323,14 @@ ul_s = \case
     (pure $ LLS_Only at p) <*> ul_l l <*> ul_s s
   LLS_ToConsensus at from fs from_as from_msg from_amt from_amtv mtime cons ->
     (pure $ LLS_ToConsensus at from) <*> ul_fs fs <*> ul_as from_as <*> ul_vs_rn from_msg <*> ul_a from_amt <*> ul_v_rn from_amtv <*> ul_mtime mtime <*> ul_n cons
+  LLS_ToConsensus2 at send recv mtime ->
+    LLS_ToConsensus2 at <$> send' <*> recv' <*> mtime'
+    where
+      send' = M.fromList <$> mapM ul_send (M.toList send)
+      (winner_dv, msg, amtv, cons) = recv
+      cons' = ul_n cons
+      recv' = (\a b c d -> (a, b, c, d)) <$> ul_v_rn winner_dv <*> ul_vs_rn msg <*> ul_v_rn amtv <*> cons'
+      mtime' = ul_mtime mtime
   LLS_ParallelReduce at iasn inv muntil mtimeout cases k ->
     LLS_ParallelReduce at <$> ul_asn True iasn <*> ul_bl inv <*> traverse ul_bl muntil <*> traverse ul_a mtimeout <*> mapM go cases <*> ul_n k
     where

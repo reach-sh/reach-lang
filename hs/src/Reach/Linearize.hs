@@ -159,8 +159,16 @@ lin_step _ fve rets (s Seq.:<| ks) =
         mtime' = do
           (delay_da, time_ss) <- mtime
           return $ (delay_da, lin_step at fve rets (time_ss <> ks))
-    DLS_ToConsensus2 {} ->
-      error $ "XXX linearize to consensus 2"
+    DLS_ToConsensus2 at send recv mtime ->
+      LLS_ToConsensus2 at send recv' mtime'
+      where
+        back fve' = lin_step at fve' rets
+        (winner_dv, msg, amtv, cons) = recv
+        cons' = lin_con back at fve mempty (cons <> ks)
+        recv' = (winner_dv, msg, amtv, cons')
+        mtime' = do
+          (delay_da, time_ss) <- mtime
+          return $ (delay_da, lin_step at fve rets (time_ss <> ks))
     DLS_ParallelReduce at iasn inv muntil mtimeout cases ->
       LLS_ParallelReduce at iasn inv' muntil' mtimeout cases' $
         lin_con back at fve mempty ks

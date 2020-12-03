@@ -494,6 +494,8 @@ epp_s st s =
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
       return $ ProResS p_prts (ProRes_ time_cons_cs True)
+    LLS_ToConsensus2 {} ->
+      error $ "XXX epp tc2"
     LLS_ParallelReduce at iasn _inv muntil mtimeout cases k -> do
       -- XXX How do the initial values get assigned? Should this have been a
       -- consensus step, so we could jump to the checked loop with the initial
