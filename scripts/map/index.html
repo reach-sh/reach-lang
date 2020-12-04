@@ -124,7 +124,7 @@
 
 
     function animateBullet(circle) {
-      var animation = circle.animate([{ property: "scale", from: 1, to: 5 }, { property: "opacity", from: 1, to: 0 }], 1000, am4core.ease.circleOut);
+      var animation = circle.animate([{ property: "scale", from: 1, to: 4 }, { property: "opacity", from: 1, to: 0 }], 2000, am4core.ease.circleOut);
       animation.events.on("animationended", function (event) {
         animateBullet(event.target.object);
       })
@@ -158,12 +158,11 @@
 
   .file-label {
     cursor: pointer;
-    display: block;
+    /* display: block; */
     background: #2B9E8E;
     color: white;
     width: fit-content;
     padding: .5vh .5vw;
-    margin-bottom: 1vh;
   }
 
   input[type="file"] {
@@ -179,6 +178,18 @@
   .content {
     padding: 0 1vw;
   }
+
+  .param-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 1vh;
+  }
+
+  #date-select {
+    padding: .5vh .5vw;
+    min-width: 100px;
+    width: fit-content;
+  }
 </style>
 
 <!-- HTML -->
@@ -188,48 +199,78 @@
 <div class="content">
   <p>Choose the <span class="code">location.csv</span> file generated from <span
       class="code">./reach-usage-report-csv.sh</span></p>
-  <label for="inputfile" class="file-label">
-    Upload CSV
-    <input type="file" name="inputfile" id="inputfile">
-  </label>
+  <div class="param-container">
+    <label for="inputfile" class="file-label">
+      Upload CSV
+      <input type="file" name="inputfile" id="inputfile">
+    </label>
+    <div>
+      <label name="select-box">Select Date Range</label>
+      <select name="select-box" id="date-select" onchange="selectDateRange()">
+        <option value="All" selected>All Data</option>
+      </select>
+    </div>
+  </div>
 </div>
 
 <div id="chartdiv"></div>
 
 <script>
 
-  function reloadData() {
-    const fr = new FileReader();
-    fr.onload = function () {
-      const js = csvJSON(fr.result)
-      const newData = js.map(j => ({
-        'longitude': parseFloat(j.longitude),
-        'latitude': parseFloat(j.latitude),
-        'title': `${j.region}, ${j.country}`,
-        'color': colorSet.next()
-      }));
-      imageSeries.data = newData;
+
+let csvData;
+
+function selectDateRange() {
+  const el = document.getElementById("date-select");
+  const selected = el.value;
+  changeData(selected == 'All' ? csvData : csvData.filter(d => d.month == selected));
+}
+
+function updateSelectOptions() {
+  const el = document.getElementById("date-select");
+  const months = [...new Set(csvData.map(d => d['month']).filter(d => d != ""))];
+  months.forEach(month => {
+    el.options[el.options.length] = new Option(month, month);
+  });
+}
+
+function changeData(src) {
+  plotData = src.map(j => ({
+      'longitude': parseFloat(j.longitude),
+      'latitude': parseFloat(j.latitude),
+      'title': `${j.region}, ${j.country}`,
+      'color': colorSet.next()
+    }));
+  imageSeries.data = plotData;
+}
+
+function loadData() {
+  const fr = new FileReader();
+  fr.onload = function () {
+    csvData = csvJSON(fr.result)
+    changeData(csvData);
+    updateSelectOptions();
+  }
+  fr.readAsText(this.files[0]);
+}
+
+document.getElementById('inputfile').addEventListener('change', loadData)
+
+function csvJSON(csv) {
+  const lines = csv.split("\n");
+  const result = [];
+  const headers = lines[0].split(",");
+
+  for (let i = 1; i < lines.length; i++) {
+    const obj = {};
+    const currentline = lines[i].split(",");
+    for (let j = 0; j < headers.length; j++) {
+      obj[headers[j]] = currentline[j];
     }
-    fr.readAsText(this.files[0]);
+    result.push(obj);
   }
 
-  document.getElementById('inputfile').addEventListener('change', reloadData)
-
-  function csvJSON(csv) {
-    const lines = csv.split("\n");
-    const result = [];
-    const headers = lines[0].split(",");
-
-    for (let i = 1; i < lines.length; i++) {
-      const obj = {};
-      const currentline = lines[i].split(",");
-      for (let j = 0; j < headers.length; j++) {
-        obj[headers[j]] = currentline[j];
-      }
-      result.push(obj);
-    }
-
-    return result;
-  }
+  return result;
+}
 
 </script>
