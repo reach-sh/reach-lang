@@ -1,0 +1,1 @@
+reachc: error: ./race-other-shadow.rsh:17:23:dot: Invalid name shadowing. Identifier 'x' is already bound at ./race-other-shadow.rsh:16:15:id. It cannot be bound again at ./race-other-shadow.rsh:17:23:dot
