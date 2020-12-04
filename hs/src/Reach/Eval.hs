@@ -1338,10 +1338,7 @@ evalPrim :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLPrimitive -> [SLSVal] 
 evalPrim ctxt at sco st p sargs =
   case p of
     SLPrim_race ->
-      case map snd sargs of
-        [(SLV_Tuple _ pargs)] ->
-          retV $ (lvl, SLV_RaceParticipant at $ S.fromList $ map (slvParticipant_part ctxt at) pargs)
-        _ -> illegal_args
+      retV $ (lvl, SLV_RaceParticipant at $ S.fromList $ map (slvParticipant_part ctxt at) $ map snd sargs)
     SLPrim_fluid_read fv ->
       doFluidRef ctxt at st fv
     SLPrim_op op ->

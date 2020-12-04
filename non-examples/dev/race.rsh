@@ -3,7 +3,7 @@
 const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
 
 const Common = {
-  showOutcome: Fun([UInt], Null)
+  showOutcome: Fun([UInt], Null),
 };
 
 export const main =
@@ -47,7 +47,7 @@ export const main =
       Bob.only(() => {
         const outcome = BOB_WINS; });
 
-      race([Alice, Bob]).publish(outcome);
+      race(Alice, Bob).publish(outcome);
       const winner = outcome == ALICE_WINS ? Alice : Bob;
       transfer(balance()).to(winner);
       commit();
