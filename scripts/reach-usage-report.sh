@@ -48,7 +48,7 @@ formatMonth () {
 uniqueUserBuilder=""
 declare -a years=(2020)
 for year in "${years[@]}"; do
-  for ((i=9; i<=12; i++)); do
+  for ((i=1; i<=12; i++)); do
     formatI=$(formatMonth "$i")
     uniqueUserBuilder+="\"$year-$i\": (.Items | map(select(.startTime.S | startswith(\"$year-$formatI\") ))), ";
   done
