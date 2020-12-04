@@ -861,7 +861,25 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SEND ARG --- ${JSON.stringify(arg)}`);
           const r_fn = await callC(funcName, arg, value);
           r_maybe = await r_fn.wait();
+
+          assert(r_maybe !== null);
+          const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
+
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- OKAY`);
+
+          // XXX It might be a little dangerous to rely on the polling to just work
+
+          // It may be the case that the next line could speed things up?
+          // last_block = ok_r.blockNumber;
+          // XXX ^ but do not globally mutate lastBlock.
+          // wait relies on lastBlock to refer to the last ctc event
+          void(ok_r);
+
         } catch (e) {
+
+          if ( true ) {
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL (${e})`);
+          } else {
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- ERROR (${e})`);
 
           // XXX What should we do...? If we fail, but there's no timeout delay... then we should just die
@@ -884,20 +902,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY FAIL --- ${lastBlock} ${current_block} ${block_repeat_count} ${block_send_attempt}`);
           continue;
+          }
         }
-
-        assert(r_maybe !== null);
-        const ok_r = await fetchAndRejectInvalidReceiptFor(r_maybe.transactionHash);
-
-        debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- OKAY`);
-
-        // XXX It might be a little dangerous to rely on the polling to just work
-
-        // It may be the case that the next line could speed things up?
-        // last_block = ok_r.blockNumber;
-        // XXX ^ but do not globally mutate lastBlock.
-        // wait relies on lastBlock to refer to the last ctc event
-        void(ok_r);
 
         return await recv_impl(label, funcNum, out_tys, timeout_delay);
       }
