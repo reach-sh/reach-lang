@@ -38,3 +38,12 @@ echo "Wrote location report to $LOCATION_FILE"
 
 gnuplot -e "filename='$HISTOGRAM_FILE'" -e "datafile='$USERS_FILE'" "gnuplot.txt"
 echo "Generated $HISTOGRAM_FILE"
+
+# Print quick update on command line
+echo "Quick Report"
+echo -n "  Downloads: "
+echo "$UsageReport" | jq -r '.repository_stats.pull_count'
+echo -n "  Row count: "
+echo "$UsageReport" | jq -r '.CompileLog.row_count'
+echo -n "  Total Unique Users: "
+echo "$UsageReport" | jq -r '.CompileLog.unique_users | flatten | map(.userId.S) | unique | length'
