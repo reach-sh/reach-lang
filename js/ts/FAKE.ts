@@ -5,7 +5,7 @@ import * as stdlib from './shared';
 import { CurrencyAmount, OnProgress } from './shared';
 export * from './shared';
 export { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } from './ETH';
-import { T_Address } from './ETH';
+import { T_Address, T_UInt, T_Tuple, digest } from './ETH';
 
 export const debug = (msg: any): void => {
   stdlib.debug(`${BLOCKS.length}: ${msg}}`);
@@ -29,7 +29,7 @@ type ContractInfo = {
   creation_block: number,
 }
 
-type Digest = Array<any>;
+type Digest = string;
 type Recv = stdlib.IRecv<Address>
 type RecvNoTimeout = stdlib.IRecvNoTimeout<Address>
 type Contract = stdlib.IContract<ContractInfo, Digest, Address, FAKE_Ty>;
@@ -87,6 +87,17 @@ const toAcct = (address: Address): AccountTransferrable => ({
 export const balanceOf = async (acc: Account) => {
   return BALANCES[acc.networkAccount.address];
 };
+
+// @ts-ignore XXX
+let CURRENT_STATE: Digest = digest(T_Tuple([T_UInt]), [stdlib.bigNumberify(0)]);
+const checkStateTransition = async (prevSt: Digest, nextSt: Digest): Promise<boolean> => {
+  debug(`cst ${JSON.stringify(prevSt)} on ${JSON.stringify(CURRENT_STATE)} to ${JSON.stringify(nextSt)}`);
+  await Timeout.set(Math.random() < 0.5 ? 20 : 0);
+  if ( ! stdlib.bytesEq(CURRENT_STATE, prevSt) ) {
+    return false;
+  }
+  CURRENT_STATE = nextSt;
+  return true; };
 
 /**
  * @description performs a transfer; no block created
@@ -193,27 +204,29 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       if (!timeout_delay || stdlib.lt(BLOCKS.length, stdlib.add(last_block, timeout_delay))) {
         debug(`${label} send ${funcNum} --- post`);
 
-        transfer({networkAccount}, toAcct(ctcInfo.address), value);
         const stubbedRecv: RecvNoTimeout = {
           didTimeout: false,
           data,
           value,
           from: address,
         }
-        const {txns} = sim_p(stubbedRecv);
-
-        // Instead of processing these atomically & rolling back on failure
-        // it is just assumed that using FAKE means it is all in one JS thread.
-        // (A failed transfer will crash the whole thing.)
-        for (const txn of txns) {
-          transfer_(ctcInfo.address, txn.to, txn.amt, true);
+        const {prevSt, nextSt, txns} = sim_p(stubbedRecv);
+        if ( await checkStateTransition(prevSt, nextSt) ) {
+          transfer({networkAccount}, toAcct(ctcInfo.address), value);
+          // Instead of processing these atomically & rolling back on failure
+          // it is just assumed that using FAKE means it is all in one JS
+          // thread.  (A failed transfer will crash the whole thing.)
+          for (const txn of txns) {
+            transfer_(ctcInfo.address, txn.to, txn.amt, true);
+          }
+          const theBlockNum = BLOCKS.length - 1;
+          const transferBlock = BLOCKS[theBlockNum];
+          if (transferBlock.type !== 'transfer') { throw Error(`impossible: intervening block ${JSON.stringify(BLOCKS)}`); }
+          const event: Event = { ...stubbedRecv, funcNum, txns };
+          const block: EventBlock = { ...transferBlock, type: 'event', event };
+          debug(`sendrecv: ${theBlockNum} transforming transfer block into event block: ${JSON.stringify(block)}`)
+          BLOCKS[theBlockNum] = block;
         }
-        const transferBlock = BLOCKS[BLOCKS.length - 1];
-        if (transferBlock.type !== 'transfer') { throw Error(`impossible: intervening block ${JSON.stringify(BLOCKS)}`); }
-        const event: Event = { ...stubbedRecv, funcNum, txns };
-        const block: EventBlock = { ...transferBlock, type: 'event', event };
-        debug(`sendrecv: transforming transfer block into event block: ${JSON.stringify(block)}`)
-        BLOCKS[BLOCKS.length - 1] = block;
 
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       } else {
