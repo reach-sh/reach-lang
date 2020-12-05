@@ -1,7 +1,8 @@
 module Reach.Test_AST (spec_isFirstOrder) where
 
 import qualified Data.Map as M
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.SL
 import Test.Hspec
 
 spec_isFirstOrder :: Spec
