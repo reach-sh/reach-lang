@@ -88,15 +88,15 @@ export const balanceOf = async (acc: Account) => {
   return BALANCES[acc.networkAccount.address];
 };
 
-// @ts-ignore XXX
-let CURRENT_STATE: Digest = digest(T_Tuple([T_UInt]), [stdlib.bigNumberify(0)]);
-const checkStateTransition = async (prevSt: Digest, nextSt: Digest): Promise<boolean> => {
-  debug(`cst ${JSON.stringify(prevSt)} on ${JSON.stringify(CURRENT_STATE)} to ${JSON.stringify(nextSt)}`);
+const STATES: {[key: string]: Digest} = {};
+const checkStateTransition = async (which: string, prevSt: Digest, nextSt: Digest): Promise<boolean> => {
+  const cur = STATES[which];
+  debug(`cst ${JSON.stringify(prevSt)} on ${JSON.stringify(cur)} to ${JSON.stringify(nextSt)}`);
   await Timeout.set(Math.random() < 0.5 ? 20 : 0);
-  if ( ! stdlib.bytesEq(CURRENT_STATE, prevSt) ) {
+  if ( ! stdlib.bytesEq(cur, prevSt) ) {
     return false;
   }
-  CURRENT_STATE = nextSt;
+  STATES[which] = nextSt;
   return true; };
 
 /**
@@ -211,7 +211,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           from: address,
         }
         const {prevSt, nextSt, txns} = sim_p(stubbedRecv);
-        if ( await checkStateTransition(prevSt, nextSt) ) {
+        if ( await checkStateTransition(ctcInfo.address, prevSt, nextSt) ) {
           transfer({networkAccount}, toAcct(ctcInfo.address), value);
           // Instead of processing these atomically & rolling back on failure
           // it is just assumed that using FAKE means it is all in one JS
@@ -272,6 +272,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const deploy = (bin: Backend): Contract => {
     const contract = makeAccount();
     debug(`new contract: ${contract.address}`);
+    STATES[contract.address] =
+      // @ts-ignore XXX
+      digest(T_Tuple([T_UInt]), [stdlib.bigNumberify(0)]);
     BLOCKS.push({type: 'contract', address: contract.address});
     return attach(bin, {
       ...contract,
