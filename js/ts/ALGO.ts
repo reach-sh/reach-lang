@@ -800,16 +800,20 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         let res;
         try {
           res = await sendAndConfirm( txns_s, txnAppl );
+
+          // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
+          debug(`${dhead} --- SUCCESS: ${JSON.stringify(res)}`);
         } catch (e) {
+          const handle_error =
+            // XXX See comment on line 882-ish of ETH.ts
+            true ? debug : ((x:string) => { throw Error(x); });
+
           if ( e.type == "sendRawTransaction" ) {
-            throw Error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);
+            handle_error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);
           } else {
-            throw Error(`${dhead} --- FAIL:\n${JSON.stringify(e)}`);
+            handle_error(`${dhead} --- FAIL:\n${JSON.stringify(e)}`);
           }
         }
-
-        // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
-        debug(`${dhead} --- SUCCESS: ${JSON.stringify(res)}`);
 
         return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       }

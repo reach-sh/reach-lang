@@ -877,8 +877,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         } catch (e) {
 
+          // XXX We could add a parameter to sendrecv that says if we're the
+          // only one
           if ( true ) {
-          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- FAIL (${e})`);
+          debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SKIPPING (${e})`);
           } else {
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- ERROR (${e})`);
 
