@@ -5,11 +5,11 @@ module Reach.Pretty () where
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import Reach.AST.Base
-import Reach.AST.SL
-import Reach.AST.DLBase
 import Reach.AST.DL
+import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
+import Reach.AST.SL
 import Reach.Texty
 
 pform :: Doc -> Doc -> Doc
@@ -194,17 +194,23 @@ prettyReduce ans x z b a f =
 
 prettyToConsensus :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart ([DLArg], DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
 prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
-  "publish" <> parens emptyDoc <> nest 2 (hardline <> mtime' <>
-    concatWith (surround hardline) (map go $ M.toList send) <> hardline <>
-    ".recv" <> parens (hsep $ punctuate comma $ [ pretty win, pretty msg, pretty amtv, render_nest (fa body)]) <> semi)
+  "publish" <> parens emptyDoc
+    <> nest
+      2
+      (hardline <> mtime'
+         <> concatWith (surround hardline) (map go $ M.toList send)
+         <> hardline
+         <> ".recv"
+         <> parens (hsep $ punctuate comma $ [pretty win, pretty msg, pretty amtv, render_nest (fa body)])
+         <> semi)
   where
     go (p, (args, amta)) =
-      ".case" <> parens (hsep $ punctuate comma $ [ pretty p, pretty args, pretty amta ])
+      ".case" <> parens (hsep $ punctuate comma $ [pretty p, pretty args, pretty amta])
     mtime' =
       case mtime of
         Nothing -> emptyDoc
         Just (delaya, tbody) ->
-          ".timeout" <> parens (hsep $ punctuate comma $ [ pretty delaya, render_nest (fb tbody)]) <> hardline
+          ".timeout" <> parens (hsep $ punctuate comma $ [pretty delaya, render_nest (fb tbody)]) <> hardline
 
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m

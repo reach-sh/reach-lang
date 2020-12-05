@@ -101,7 +101,7 @@ srcloc_src_only src = SrcLoc Nothing Nothing (Just src)
 mkCommaList :: [JSExpression] -> JSCommaList JSExpression
 mkCommaList = aux . reverse
   where
-    aux (h:t) = JSLCons (mkCommaList t) JSNoAnnot h
+    aux (h : t) = JSLCons (mkCommaList t) JSNoAnnot h
     aux [] = JSLNil
 
 mkArrowParameterList :: [JSExpression] -> JSArrowParameterList

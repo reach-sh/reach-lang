@@ -4,16 +4,16 @@ module Reach.AST.SL where
 
 import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
-import qualified Data.Set as S
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import qualified Data.Text as T
 import GHC.Generics
-import Language.JavaScript.Parser
-import Reach.JSOrphans ()
-import Reach.Util
 import Generics.Deriving (conNameOf)
+import Language.JavaScript.Parser
 import Reach.AST.Base
 import Reach.AST.DLBase
+import Reach.JSOrphans ()
+import Reach.Util
 
 infixr 9 -->
 
@@ -229,4 +229,3 @@ m_fromList_public at kvs =
   M.fromList $ map go kvs
   where
     go (k, v) = (k, SLSSVal at Public v)
-

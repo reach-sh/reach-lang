@@ -86,8 +86,8 @@ data VerifyMode
   deriving (Eq, Show)
 
 data BindingOrigin
-  -- XXX simplify into honest/dishonst
-  = O_DishonestJoin SLPart
+  = -- XXX simplify into honest/dishonst
+    O_DishonestJoin SLPart
   | O_DishonestMsg SLPart
   | O_DishonestPay SLPart
   | O_HonestJoin SLPart
@@ -558,12 +558,11 @@ smt_e ctxt at_dv mdv de =
       mempty
     DLE_PartSet at who a ->
       pathAddBound ctxt at mdv bo (smt_a ctxt at a)
-      <>
-      case (mdv, shouldSimulate ctxt who) of
-        (Just psv, True) ->
-          smtAssert ctxt (smtEq (Atom $ smtVar ctxt psv) (Atom $ smtAddress who))
-        _ ->
-          mempty
+        <> case (mdv, shouldSimulate ctxt who) of
+          (Just psv, True) ->
+            smtAssert ctxt (smtEq (Atom $ smtVar ctxt psv) (Atom $ smtAddress who))
+          _ ->
+            mempty
   where
     bo = O_Expr de
 

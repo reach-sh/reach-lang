@@ -17,6 +17,7 @@ import Reach.Optimize
 import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Util
+
 -- import Debug.Trace
 
 data EPPError
@@ -61,16 +62,17 @@ data ProSt s = ProSt
 
 updateHandlerSVS :: ProSt s -> Int -> [DLVar] -> ST s ()
 updateHandlerSVS st target new_svs = modifySTRef (pst_handlers st) update
-  where update (CHandlers hs) = CHandlers $ fmap update1 hs
-        update1 = \case
-          C_Handler at int fs prev old_svs msg amtv body ->
-            C_Handler at int fs prev svs msg amtv body
-            where
-              svs =
-                case target == prev of
-                  True -> new_svs
-                  False -> old_svs
-          h -> h
+  where
+    update (CHandlers hs) = CHandlers $ fmap update1 hs
+    update1 = \case
+      C_Handler at int fs prev old_svs msg amtv body ->
+        C_Handler at int fs prev svs msg amtv body
+        where
+          svs =
+            case target == prev of
+              True -> new_svs
+              False -> old_svs
+      h -> h
 
 newHandler :: ProSt s -> ST s Int
 newHandler st =
@@ -262,9 +264,9 @@ var_addlc :: Counts -> DLVar -> (PLLetCat, DLVar)
 var_addlc cs v = (lc, v)
   where
     lc =
-        case get_count v cs of
-          Count Nothing -> PL_Once
-          Count (Just x) -> x
+      case get_count v cs of
+        Count Nothing -> PL_Once
+        Count (Just x) -> x
 
 epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =

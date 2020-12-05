@@ -55,10 +55,10 @@ instance Show SrcLoc where
 expect_throw :: Show a => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   error . T.unpack . unsafeRedactAbs . T.pack $
-    "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce) <>
-    case concat mCtx of
-      [] -> ""
-      ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
+    "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
+      <> case concat mCtx of
+        [] -> ""
+        ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
 
 expect_thrown :: Show a => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing
@@ -247,4 +247,3 @@ instance Show SLCtxtFrame where
 
 instance SrcLocOf SLCtxtFrame where
   srclocOf (SLC_CloApp at _ _) = at
-

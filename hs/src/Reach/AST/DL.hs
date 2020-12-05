@@ -110,4 +110,3 @@ data DLOpts = DLOpts
 data DLProg
   = DLProg SrcLoc DLOpts SLParts DLStmts
   deriving (Generic, NFData)
-

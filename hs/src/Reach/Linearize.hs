@@ -3,8 +3,8 @@ module Reach.Linearize (linearize) where
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import Reach.AST.Base
-import Reach.AST.DLBase
 import Reach.AST.DL
+import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Util
 

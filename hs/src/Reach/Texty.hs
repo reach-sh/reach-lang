@@ -29,8 +29,8 @@ where
 
 import Control.Monad.Identity
 import Control.Monad.Reader
-import Data.String
 import qualified Data.Set as S
+import Data.String
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 

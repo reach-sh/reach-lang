@@ -2,7 +2,7 @@ module Reach.Type
   ( TypeError
   , typeMeet
   , typeMeets
-  , DLArgExpr(..)
+  , DLArgExpr (..)
   , checkAndConvert
   , argExprTypeOf
   , argTypeOf
@@ -21,8 +21,8 @@ import Data.STRef
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
 import Reach.AST.Base
-import Reach.AST.SL
 import Reach.AST.DLBase
+import Reach.AST.SL
 import Reach.Pretty ()
 import Reach.Texty
 import Reach.Util

@@ -182,4 +182,3 @@ assignment_vars (DLAssignment m) = M.keys m
 type SwitchCases a =
   --- FIXME at the SrcLoc of the case
   M.Map SLVar (Maybe DLVar, a)
-
