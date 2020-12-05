@@ -26,7 +26,7 @@ import Generics.Deriving (Generic, conNameOf)
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST hiding (showStripped)
 import Language.JavaScript.Parser.Lexer
-import Reach.AST
+import Reach.AST.Base
 import Reach.EmbeddedFiles
 import Reach.JSUtil
 import Reach.Texty

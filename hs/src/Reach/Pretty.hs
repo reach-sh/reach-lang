@@ -4,7 +4,12 @@ module Reach.Pretty () where
 
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.SL
+import Reach.AST.DLBase
+import Reach.AST.DL
+import Reach.AST.LL
+import Reach.AST.PL
 import Reach.Texty
 
 pform :: Doc -> Doc -> Doc

@@ -11,7 +11,9 @@ import Data.Maybe (maybeToList)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.LL
 import Reach.CollectTypes
 import Reach.Connector
 import Reach.EmbeddedFiles

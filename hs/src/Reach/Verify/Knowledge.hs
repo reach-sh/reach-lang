@@ -7,7 +7,9 @@ import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Monoid
 import qualified Data.Set as S
-import Reach.AST
+import Reach.AST.DLBase
+import Reach.AST.LL
+import Reach.AST.Base
 import Reach.IORefRef
 import Reach.Pretty ()
 import Reach.Texty

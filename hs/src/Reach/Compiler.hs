@@ -4,7 +4,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
-import Reach.AST
+import Reach.AST.DL
 import Reach.Backend.JS
 import Reach.Connector
 import Reach.Connector.ALGO

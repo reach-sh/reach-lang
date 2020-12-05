@@ -17,7 +17,9 @@ import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.PL
 import Reach.CollectTypes
 import Reach.Connector
 import Reach.EmbeddedFiles

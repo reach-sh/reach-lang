@@ -20,7 +20,7 @@ where
 
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
-import Reach.AST
+import Reach.AST.Base
 
 jso_flatten :: JSObjectPropertyList -> [JSObjectProperty]
 jso_flatten = \case

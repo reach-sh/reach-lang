@@ -1,6 +1,8 @@
 module Reach.Sanitize (sani) where
 
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.PL
 
 class Sanitize a where
   sani :: a -> a

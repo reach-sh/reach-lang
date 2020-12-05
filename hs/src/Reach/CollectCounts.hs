@@ -11,7 +11,8 @@ where
 
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Reach.AST
+import Reach.AST.DLBase
+import Reach.AST.PL
 
 newtype Count = Count (Maybe PLLetCat)
   deriving (Show, Eq)

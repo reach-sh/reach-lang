@@ -11,7 +11,9 @@ where
 import Data.Aeson (Object, Value)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.PL
 import Reach.Type
 import Reach.Util
 

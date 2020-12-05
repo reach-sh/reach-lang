@@ -5,7 +5,10 @@ import Data.IORef
 import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.LL
+import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Sanitize
 import Reach.Util

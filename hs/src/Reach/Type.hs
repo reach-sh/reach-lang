@@ -20,7 +20,9 @@ import qualified Data.Map.Strict as M
 import Data.STRef
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.SL
+import Reach.AST.DLBase
 import Reach.Pretty ()
 import Reach.Texty
 import Reach.Util

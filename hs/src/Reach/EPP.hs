@@ -8,7 +8,10 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.STRef
 import Generics.Deriving (Generic)
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.LL
+import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Optimize
 import Reach.Pretty ()

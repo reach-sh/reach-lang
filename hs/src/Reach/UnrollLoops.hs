@@ -7,7 +7,9 @@ import qualified Data.Map.Strict as M
 import Data.STRef
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.LL
 import Reach.Pretty ()
 import Reach.STCounter
 import Reach.Texty

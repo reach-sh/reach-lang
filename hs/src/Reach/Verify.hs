@@ -3,7 +3,7 @@ module Reach.Verify (verify) where
 import Control.Monad
 import Data.IORef
 import qualified Data.Text as T
-import Reach.AST
+import Reach.AST.LL
 import Reach.Connector
 import Reach.Verify.Knowledge
 import Reach.Verify.SMT

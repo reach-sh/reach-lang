@@ -21,7 +21,9 @@ import qualified Data.Text.Lazy.IO as LTIO
 import qualified Data.Vector as Vector
 import Data.Word
 import GHC.Stack (HasCallStack)
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.PL
 import Reach.Connector
 import Reach.Pretty ()
 import Reach.Texty (pretty)

@@ -8,7 +8,9 @@ import qualified Data.Map.Strict as M
 import qualified Data.Scientific as Sci
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.PL
 import Reach.Backend
 import Reach.Connector
 import Reach.Texty

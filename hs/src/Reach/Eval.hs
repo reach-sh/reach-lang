@@ -18,7 +18,10 @@ import GHC.Stack (HasCallStack)
 import Generics.Deriving
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
-import Reach.AST
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AST.SL
+import Reach.AST.DL
 import Reach.Connector
 import Reach.JSUtil
 import Reach.Parser
@@ -1904,7 +1907,7 @@ evalApply ctxt at sco st rator rands =
     SLV_Form f -> evalForm ctxt at sco st f rands
     v -> expect_throw_ctx ctxt (case ctxt_stack ctxt of
                          []  -> at
-                         h:_ -> callAt h) (Err_Eval_NotApplicable v)
+                         h:_ -> srclocOf h) (Err_Eval_NotApplicable v)
   where
     vals = do
       SLRes rlifts st_rands randsvs <- evalExprs ctxt at sco st rands
