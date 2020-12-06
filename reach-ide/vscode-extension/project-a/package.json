@@ -29,6 +29,7 @@
 		"workspaceContains:**/*.rsh",
 		"onCommand:reach.compile",
 		"onCommand:reach.run",
+		"onCommand:reach.docs",
 		"onCommand:reach.upgrade",
 		"onCommand:reach.get.eth.abi",
 		"onCommand:reach.get.eth.bytecode"
@@ -67,6 +68,9 @@
 					"command": "reach.run"
 				},
 				{
+					"command": "reach.docs"
+				},
+				{
 					"command": "reach.get.eth.abi"
 				},
 				{
@@ -82,7 +86,7 @@
 			"editor/title": [
 				{
 					"when": "resourceExtname == .rsh",
-					"command": "reach.run",
+					"command": "reach.docs",
 					"group": "navigation"
 				}
 			],
@@ -92,6 +96,9 @@
 				},
 				{
 					"command": "reach.run"
+				},
+				{
+					"command": "reach.docs"
 				},
 				{
 					"command": "reach.get.eth.abi"
@@ -112,6 +119,9 @@
 				},
 				{
 					"command": "reach.run"
+				},
+				{
+					"command": "reach.docs"
 				},
 				{
 					"command": "reach.get.eth.abi"
@@ -136,7 +146,12 @@
 			{
 				"command": "reach.run",
 				"category": "Reach IDE",
-				"title": "Run Reach program",
+				"title": "Run Reach program"
+			},
+			{
+				"command": "reach.docs",
+				"category": "Reach IDE",
+				"title": "Open Reach Documentation",
 				"icon": "./images/reach-logo.png"
 			},
 			{
