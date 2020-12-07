@@ -7,7 +7,7 @@ function createButtons(buttons) {
 	buttons.forEach(button => {
 		const buttonBarItem = vscode.window.createStatusBarItem(1, 0);
 		buttonBarItem.text = button[0];
-		buttonBarItem.command = buttons[1];
+		buttonBarItem.command = button[1];
 		buttonBarItem.show();
 		shownButtons.push(buttonBarItem);
 	});

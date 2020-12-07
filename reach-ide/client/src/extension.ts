@@ -143,10 +143,6 @@ function registerCommands(context: ExtensionContext) {
 	});
 	context.subscriptions.push(disposable7);
 
-	// Associate .rsh files to Javascript to get syntax highlighting for free.
-	const config = workspace.getConfiguration('file.associations', workspace.workspaceFolders[0].uri);
-	config.update('file.associations', { ...config, '*.rsh': 'javascript' }, true);
-
 }
 
 export function deactivate(): Thenable<void> | undefined {
