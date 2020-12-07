@@ -52,7 +52,7 @@ export const main =
           .timeout(deadline, () => {
             race(Alice, Bob).publish();
             keepGoing = false;
-            continue; });
+            continue; /* eslint-disable-line /* });
         const [ da, db ] = isAlice ? [ 1, 0 ] : [ 0, 1 ];
         // each([Alice, Bob], () => {
         //  interact.roundWinnerWas(isAlice); });
