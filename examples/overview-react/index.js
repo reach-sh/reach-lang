@@ -80,7 +80,7 @@ class Alice extends React.Component {
     const {ctc, requestStandard, info} = this.state;
     this.setState({mode: 'BackendRunning'});
     const request = reach.parseCurrency(requestStandard);
-    await backend.Alice(reach, ctc, {request, info});
+    await backend.Alice(ctc, {request, info});
     this.setState({mode: 'BackendRan'});
   }
   render() {
@@ -117,7 +117,7 @@ class Bob extends React.Component {
       want: (request) => this.setState({mode: 'DisplayInfo', requestStandard: reach.formatCurrency(request, 4)}),
       got: (info) => this.setState({info}),
     };
-    await backend.Bob(reach, ctc, interact);
+    await backend.Bob(ctc, interact);
   }
   render() {
     let bob = null;

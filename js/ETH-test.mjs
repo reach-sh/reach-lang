@@ -9,9 +9,7 @@ runTests(async () => {
 
     describe('exposes a `bigNumberToHex` function that', () => {
       it('correctly translates positive `BigNumber`s to hex', () => {
-        console.log(stdlib);
         const { bigNumberToHex } = stdlib;
-        console.log(bigNumberToHex);
 
         expect(bigNumberToHex(0)).toBe('0000000000000000000000000000000000000000000000000000000000000000');
         expect(bigNumberToHex(1)).toBe('0000000000000000000000000000000000000000000000000000000000000001');

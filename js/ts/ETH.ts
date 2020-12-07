@@ -46,7 +46,6 @@ import {
   labelMaps,
   memoizeThunk, replaceableThunk
 } from './shared_impl';
-export * from './shared';
 
 type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;

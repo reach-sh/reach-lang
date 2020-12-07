@@ -11,11 +11,11 @@ import * as backend from './build/index.main.mjs';
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       request: stdlib.parseCurrency(5),
       info: 'If you wear these, you can see beyond evil illusions.'
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       want: (amt) => console.log(`Alice asked Bob for ${stdlib.formatCurrency(amt)}`),
       got: (secret) => console.log(`Alice's secret is: ${secret}`),
     }),

@@ -63,7 +63,7 @@ class Deployer extends Player {
     const ctc = this.props.acc.deploy(backend);
     this.setState({view: 'Deploying', ctc});
     this.wager = reach.parseCurrency(this.state.wager); // UInt
-    backend.Alice(reach, ctc, this);
+    backend.Alice(ctc, this);
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({view: 'WaitingForAttacher', ctcInfoStr});
   }
@@ -78,7 +78,7 @@ class Attacher extends Player {
   attach(ctcInfoStr) {
     const ctc = this.props.acc.attach(backend, JSON.parse(ctcInfoStr));
     this.setState({view: 'Attaching'});
-    backend.Bob(reach, ctc, this);
+    backend.Bob(ctc, this);
   }
   async acceptWager(wagerAtomic) { // Fun([UInt], Null)
     const wager = reach.formatCurrency(wagerAtomic, 4);

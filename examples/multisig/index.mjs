@@ -21,7 +21,7 @@ import * as backend from './build/index.main.mjs';
       return ans;
     },
   };
-  const parentP = backend.Parent(stdlib, parentCtc, parentInteract);
+  const parentP = backend.Parent(parentCtc, parentInteract);
 
   const child = await stdlib.newTestAccount(startingBalance);
   const childCtc = child.attach(backend, parentCtc.getInfo());
@@ -39,7 +39,7 @@ import * as backend from './build/index.main.mjs';
       return amt;
     },
   };
-  const childP = backend.Child(stdlib, childCtc, childInteract);
+  const childP = backend.Child(childCtc, childInteract);
 
   await parentP;
   await childP;

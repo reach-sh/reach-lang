@@ -102,7 +102,7 @@ import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
   };
 
   const part = isAlice ? backend.Alice : backend.Bob;
-  await part(stdlib, ctc, interact);
+  await part(ctc, interact);
 
   const after = await getBalance();
   console.log(`Your balance is now ${after}`);

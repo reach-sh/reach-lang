@@ -37,7 +37,7 @@ const runDemo = async (delayReceiver, delayFunder) => {
   const ctcBystander = bystander.attach(backend, ctcFunder.getInfo());
 
   await Promise.all([
-    backend.Funder(stdlib, ctcFunder, {
+    backend.Funder(ctcFunder, {
       ...common('Funder', fDelay),
       getParams: () => ({
         receiverAddr: receiver.networkAccount,
@@ -47,8 +47,8 @@ const runDemo = async (delayReceiver, delayFunder) => {
         dormant: DORMANT,
       }),
     }),
-    backend.Receiver(stdlib, ctcReceiver, common('Receiver', rDelay)),
-    backend.Bystander(stdlib, ctcBystander, common('Bystander')),
+    backend.Receiver(ctcReceiver, common('Receiver', rDelay)),
+    backend.Bystander(ctcBystander, common('Bystander')),
   ]);
   for (const [who, acc] of [['Funder', funder], ['Receiver', receiver], ['Bystander', bystander]]) {
     console.log(`${who} has a balance of ${await getBalance(acc)}`);

@@ -33,11 +33,11 @@ import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
 
   // await Promise.all([
   //   backend.Alice(
-  //     stdlib, ctcAlice,
+  //     ctcAlice,
   //     { ...stdlib.hasRandom }
   //   ),
   //   backend.Bob(
-  //     stdlib, ctcBob,
+  //     ctcBob,
   //     { ...stdlib.hasRandom }
   //   ),
   // ]);

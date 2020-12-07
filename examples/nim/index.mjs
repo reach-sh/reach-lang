@@ -38,8 +38,8 @@ import * as NIM from './build/index.main.mjs';
   });
 
   await Promise.all([
-    NIM.A(stdlib, ctcAlice, interactWith('Alice')),
-    NIM.B(stdlib, ctcBob, interactWith('Bob')),
+    NIM.A(ctcAlice, interactWith('Alice')),
+    NIM.B(ctcBob, interactWith('Bob')),
   ]);
 
   console.log(`Done!`);

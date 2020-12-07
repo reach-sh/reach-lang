@@ -3,10 +3,12 @@ import ethers from 'ethers';
 
 import * as sharedStdlib from './shared';
 import { CurrencyAmount, OnProgress } from './shared';
-export * from './shared';
 import ethStdlib from './ETH';
 
 const { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } = ethStdlib;
+
+let stdlib: any = {
+  get stdlib(): any { return this; }};
 
 const debug = (msg: any): void => {
   sharedStdlib.debug(`${BLOCKS.length}: ${msg}}`);
@@ -30,7 +32,7 @@ type ContractInfo = {
   creation_block: number,
 }
 
-type Digest = Array<any>;
+type Digest = string;
 type Recv = sharedStdlib.IRecv<Address>
 type RecvNoTimeout = sharedStdlib.IRecvNoTimeout<Address>
 type Contract = sharedStdlib.IContract<ContractInfo, Digest, Address, FAKE_Ty>;
@@ -94,7 +96,7 @@ const checkStateTransition = async (which: string, prevSt: Digest, nextSt: Diges
   const cur = STATES[which];
   debug(`cst ${JSON.stringify(prevSt)} on ${JSON.stringify(cur)} to ${JSON.stringify(nextSt)}`);
   await Timeout.set(Math.random() < 0.5 ? 20 : 0);
-  if ( ! stdlib.bytesEq(cur, prevSt) ) {
+  if ( ! sharedStdlib.bytesEq(cur, prevSt) ) {
     return false;
   }
   STATES[which] = nextSt;
@@ -149,7 +151,7 @@ const transfer = async (
 const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const { address } = networkAccount;
 
-  const stdlibT = {};
+  const stdlibT = stdlib;
 
   const attach = (
     bin: Backend,
@@ -277,7 +279,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     debug(`new contract: ${contract.address}`);
     STATES[contract.address] =
       // @ts-ignore XXX
-      digest(T_Tuple([T_UInt]), [stdlib.bigNumberify(0)]);
+      digest(T_Tuple([T_UInt]), [sharedStdlib.bigNumberify(0)]);
     BLOCKS.push({type: 'contract', address: contract.address});
     return attach(bin, {
       ...contract,
@@ -384,13 +386,9 @@ function formatCurrency(amt: BigNumber, decimals: number = 0): string {
 
 const setFaucet = false; // XXX
 
-
-// eslint-disable-next-line
-import * as shared from './shared';
-
-const stdlib: any = {
-  get stdlib(): any { return this; },
-  ...shared,
+stdlib = {
+  ...stdlib,
+  ...sharedStdlib,
   T_Null,
   T_Bool,
   T_UInt,

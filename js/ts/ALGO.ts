@@ -29,7 +29,6 @@ import {
 } from './CBR';
 import waitPort from 'wait-port';
 import { labelMaps, replaceableThunk } from './shared_impl';
-export * from './shared';
 
 const handleCircular = (k: any, v: any) => ( k == 'stdlib') ? v.id : v;
 

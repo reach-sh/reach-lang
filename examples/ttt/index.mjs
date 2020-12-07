@@ -58,8 +58,8 @@ function render(st) {
   });
 
   await Promise.all([
-    TTT.A(stdlib, ctcAlice, interactWith('Alice')),
-    TTT.B(stdlib, ctcBob, interactWith('Bob')),
+    TTT.A(ctcAlice, interactWith('Alice')),
+    TTT.B(ctcBob, interactWith('Bob')),
   ]);
 
   console.log(`Done!`);
