@@ -745,7 +745,10 @@ smt_s ctxt s =
         (whov, msgvs, amtv, next_n) = recv
         timeout = maybe mempty ((smt_s ctxt) . snd) mtime
         after = smt_n ctxt next_n
-        go (from, (msgas, amta)) = bind_from <> bind_msg <> bind_amt <> after
+        go (from, (msgas, amta, _whena)) =
+          -- XXX Potentially we need to look at whena to determine if we even
+          -- do these bindings in honest mode
+          bind_from <> bind_msg <> bind_amt <> after
           where
             bind_from = maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) (Atom $ smtAddress from)
             bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (smt_a ctxt at amta)

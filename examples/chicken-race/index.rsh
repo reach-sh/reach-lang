@@ -4,7 +4,7 @@ const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
 
 const Common = {
   showOutcome: Fun([UInt], Null),
-  keepGoing: Fun([], Bool)
+  keepGoing: Fun([], Bool),
 };
 
 export const main =
@@ -19,8 +19,9 @@ export const main =
         confirmWager: Fun([UInt], Null) } ],
     ],
     (Alice, Bob) => {
-      const showOutcome = (which) => {
-        each([Alice, Bob], () => { interact.showOutcome(which); });
+      const showOutcome = (which) => () => {
+        each([Alice, Bob], () =>
+          interact.showOutcome(which)); };
 
       Alice.only(() => {
         const { wager, deadline } =
@@ -40,28 +41,22 @@ export const main =
       while ( keepGoing ) {
         commit();
 
-        const next =
-          race([
-            [ Alice,
-              () => {
-                Alice.only(() => {
-                  if ( ! interact.keepGoing() ) {
-                    fail(); } });
-                Alice.publish();
-                return [ true, 1 + as, bs ]; } ],
-            [ Bob,
-              () => {
-                Bob.only(() => {
-                  if ( ! interact.keepGoing() ) {
-                    fail(); } });
-                Bob.publish();
-                return [ true, as, 1 + bs ]; } ]
-          ])
-          .timeout(deadline, () => {
-            return [ false, as, bs ]; });
-        invariant(balance() == 2 * wager);
+        each([Alice, Bob], () => {
+          const go = declassify(interact.keepGoing()); });
+        Alice.only(() => {
+          const isAlice = true; });
+        Bob.only(() => {
+          const isAlice = false; });
 
-        [ keepGoing, as, bs ] = next;
+        race(Alice, Bob).publish(isAlice).when(go)
+          .timeout(deadline, () => {
+            race(Alice, Bob).publish();
+            keepGoing = false;
+            continue; });
+        const [ da, db ] = isAlice ? [ 1, 0 ] : [ 0, 1 ];
+        // each([Alice, Bob], () => {
+        //  interact.roundWinnerWas(isAlice); });
+        [ keepGoing, as, bs ] = [ true, as + da, bs + db ];
         continue;
       }
 
@@ -69,5 +64,5 @@ export const main =
       const winner = outcome == ALICE_WINS ? Alice : Bob;
       transfer(balance()).to(winner);
       commit();
-      showOutcome(outcome);
+      showOutcome(outcome)();
     });

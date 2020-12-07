@@ -69,6 +69,7 @@ isLiteralArray _ = False
 data ToConsensusMode
   = TCM_Publish
   | TCM_Pay
+  | TCM_When
   | TCM_Timeout
   deriving (Eq, Generic, NFData, Show)
 
@@ -84,6 +85,7 @@ data SLForm
       , slptc_mode :: Maybe ToConsensusMode
       , slptc_msg :: Maybe [SLVar]
       , slptc_amte :: Maybe JSExpression
+      , slptc_whene :: Maybe JSExpression
       , slptc_timeout :: Maybe (SrcLoc, JSExpression, JSBlock)
       }
   | SLForm_unknowable

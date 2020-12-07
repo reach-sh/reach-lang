@@ -488,8 +488,8 @@ epp_s st s =
               mker =
                 case M.lookup p send of
                   Nothing -> mk_et Nothing
-                  Just (from_as, amt_da) ->
-                    mk_et $ Just (from_as, amt_da, svs)
+                  Just (from_as, amt_da, when_da) ->
+                    mk_et $ Just (from_as, amt_da, when_da, svs)
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
       return $ ProResS p_prts (ProRes_ time_cons_cs True)

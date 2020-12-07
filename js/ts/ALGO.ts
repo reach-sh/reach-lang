@@ -663,9 +663,16 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       args: Array<any>,
       value: BigNumber,
       out_tys: Array<AnyALGO_Ty>,
+      onlyIf: boolean,
       timeout_delay: undefined | BigNumber,
       sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
+      const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
+        await recv(label, funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
+      if ( ! onlyIf ) {
+        return await doRecv(true);
+      }
+
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeout_delay}`;
       debug(`${dhead} --- START`);
@@ -685,7 +692,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       const isHalt = sim_r.isHalt;
       const sim_txns = sim_r.txns;
 
-      while ( true ){
+      while ( true ) {
         const params = await getTxnParams();
         if ( timeout_delay ) {
           const tdn = timeout_delay.toNumber();
@@ -815,7 +822,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           }
         }
 
-        return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
+        return await doRecv(false);
       }
     };
 
@@ -824,8 +831,12 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       funcNum: number,
       evt_cnt: number,
       tys: Array<AnyALGO_Ty>,
+      waitIfNotPresent: boolean,
       timeout_delay: undefined | BigNumber
     ): Promise<Recv> => {
+      // Ignoring this, because no ALGO dev node
+      void(waitIfNotPresent);
+
       const funcName = `m${funcNum}`;
       const dhead = `${shad}: ${label} recv ${funcName} ${timeout_delay}`;
       debug(`${dhead} --- START`);
@@ -848,7 +859,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         let query = indexer.searchForTransactions()
           .address(handler.hash)
           .addressRole("sender")
-          .minRound(lastRound);
+          // Look at the next one after the last message
+          .minRound(lastRound + 1);
         if ( timeoutRound ) {
           query = query.maxRound(timeoutRound);
         }

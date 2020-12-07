@@ -59,6 +59,7 @@ type EventBlock = {
   from: Address,
   value: BigNumber,
   event: Event,
+  time: number,
 };
 
 type WaitBlock = {
@@ -90,9 +91,9 @@ export const balanceOf = async (acc: Account) => {
 
 const STATES: {[key: string]: Digest} = {};
 const checkStateTransition = async (which: string, prevSt: Digest, nextSt: Digest): Promise<boolean> => {
-  const cur = STATES[which];
-  debug(`cst ${JSON.stringify(prevSt)} on ${JSON.stringify(cur)} to ${JSON.stringify(nextSt)}`);
   await Timeout.set(Math.random() < 0.5 ? 20 : 0);
+  const cur = STATES[which];
+  debug(`cst prevSt(${JSON.stringify(prevSt)}) on cur(${JSON.stringify(cur)}) to ${JSON.stringify(nextSt)}`);
   if ( ! stdlib.bytesEq(cur, prevSt) ) {
     return false;
   }
@@ -189,8 +190,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv = async (
       label: string, funcNum: number, evt_cnt: number, tys: Array<FAKE_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<FAKE_Ty>,
+      onlyIf: boolean,
       timeout_delay: BigNumber | false, sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
+      const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
+        await recv(label, funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
+      if ( ! onlyIf ) {
+        return await doRecv(true);
+      }
       void(tys);
 
       stdlib.assert(args.length === tys.length, {
@@ -212,6 +219,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
         const {prevSt, nextSt, txns} = sim_p(stubbedRecv);
         if ( await checkStateTransition(ctcInfo.address, prevSt, nextSt) ) {
+          debug(`${label} send ${funcNum} --- post succeeded`);
           transfer({networkAccount}, toAcct(ctcInfo.address), value);
           // Instead of processing these atomically & rolling back on failure
           // it is just assumed that using FAKE means it is all in one JS
@@ -221,40 +229,66 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
           const theBlockNum = BLOCKS.length - 1;
           const transferBlock = BLOCKS[theBlockNum];
-          if (transferBlock.type !== 'transfer') { throw Error(`impossible: intervening block ${JSON.stringify(BLOCKS)}`); }
+          if (transferBlock.type !== 'transfer') {
+            throw Error(`impossible: intervening block ${JSON.stringify(BLOCKS)}`); }
           const event: Event = { ...stubbedRecv, funcNum, txns };
-          const block: EventBlock = { ...transferBlock, type: 'event', event };
+          const block: EventBlock = { ...transferBlock, type: 'event', event, time: theBlockNum };
           debug(`sendrecv: ${theBlockNum} transforming transfer block into event block: ${JSON.stringify(block)}`)
           BLOCKS[theBlockNum] = block;
+          return await doRecv(false);
+        } else {
+          debug(`${label} send ${funcNum} --- post failed`);
+          return await doRecv(true);
         }
-
-        return await recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
       } else {
         debug(`${label} send ${funcNum} --- timeout`);
         return { didTimeout: true };
       }
     };
 
+    const findBlock = (
+      from: number, to: number, funcNum: number
+    ): (EventBlock|false) => {
+      for ( let i = from; i <= to; i++ ) {
+        const b = BLOCKS[i];
+        if (!b || b.type !== 'event' || !b.event || !stdlib.eq(b.event.funcNum, funcNum)) {
+          continue;
+        } else {
+          return b;
+        }
+      }
+      return false;
+    };
+
     const recv = async (
       label: string, funcNum: number, ok_cnt: number, out_tys: Array<FAKE_Ty>,
-      timeout_delay: BigNumber | false,
+      waitIfNotPresent: boolean, timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
       void(out_tys);
 
       const last_block = await getLastBlock();
-      let check_block = last_block;
+      // look after the last block
+      let check_block = last_block + 1;
       while (!timeout_delay || stdlib.lt(check_block, stdlib.add(last_block, timeout_delay))) {
-        debug(`${label} recv ${funcNum} --- check ${check_block}`);
-        const b = BLOCKS[check_block];
-        if (!b || b.type !== 'event' || !b.event || !stdlib.eq(b.event.funcNum, funcNum)) {
-          debug(`${label} recv ${funcNum} --- wait`);
-          check_block = Math.min(check_block + 1, BLOCKS.length);
+        debug(`${label} recv ${funcNum} --- check ${last_block} ${check_block}`);
+        const b = findBlock(last_block + 1, check_block, funcNum);
+        if (!b) {
+          debug(`${label} recv ${funcNum} --- wait (${waitIfNotPresent})`);
           await Timeout.set(1);
+          if ( waitIfNotPresent ) {
+            check_block++;
+            if ( check_block == BLOCKS.length - 1 ) {
+              await waitUntilTime(check_block);
+            }
+          } else {
+            check_block = Math.min(check_block + 1, BLOCKS.length - 1);
+          }
           continue;
         } else {
+          const found_block = b.time;
           debug(`${label} recv ${funcNum} --- recv`);
-          setLastBlock(check_block);
+          setLastBlock(found_block);
           const evt = b.event;
           return { didTimeout: false, data: evt.data, value: evt.value, from: evt.from };
         }
@@ -328,11 +362,13 @@ export function wait(delta: BigNumber | number, onProgress?: OnProgress): BigNum
 
 export function waitUntilTime(targetTime: BigNumber | number, onProgress?: OnProgress): BigNumber {
   targetTime = stdlib.bigNumberify(targetTime);
+  debug(`waitUntilTime: ${targetTime}`);
   const onProg = onProgress || (() => {});
   // FAKE is basically synchronous,
   // so it doesn't make sense to actually "wait" idly.
   let currentTime;
   while (stdlib.lt((currentTime = getNetworkTime()), targetTime)) {
+    debug(`waitUntilTime: waited`);
     onProg({ currentTime, targetTime });
     BLOCKS.push({ type: 'wait', currentTime, targetTime });
   }

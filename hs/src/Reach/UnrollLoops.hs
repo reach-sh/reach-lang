@@ -307,9 +307,9 @@ ul_mtime = \case
   Nothing -> (pure $ Nothing)
   Just (a, s) -> (pure $ Just) <*> (pure (,) <*> ul_a a <*> ul_s s)
 
-ul_send :: (SLPart, ([DLArg], DLArg)) -> App s (SLPart, ([DLArg], DLArg))
-ul_send (p, (args, amta)) =
-  (,) p <$> ((,) <$> ul_as args <*> ul_a amta)
+ul_send :: (SLPart, ([DLArg], DLArg, DLArg)) -> App s (SLPart, ([DLArg], DLArg, DLArg))
+ul_send (p, (args, amta, whena)) =
+  (,) p <$> ((\x y z -> (x,y,z)) <$> ul_as args <*> ul_a amta <*> ul_a whena)
 
 ul_s :: LLStep -> App s LLStep
 ul_s = \case

@@ -385,23 +385,25 @@ jsETail ctxt = \case
       k_okp = k_defp <> jsETail ctxt' k_ok
       ctxt' = ctxt {ctxt_txn = (ctxt_txn ctxt) + 1}
       whop = jsCon $ DLL_Bytes $ ctxt_who ctxt
-      defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> callp <> semi
+      defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> parens callp <> semi
       callp =
         case from_me of
-          Just (args, amt, svs) ->
-            jsApply
-              "ctc.sendrecv"
-              [ whop
-              , pretty which
-              , pretty (length msg)
-              , jsArray $ map (jsContract . argTypeOf) $ svs_as ++ args
-              , vs
-              , amtp
-              , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
-              , delayp
-              , parens $ "(" <> jsTxn ctxt' <> ") => " <> jsBraces sim_body
-              ]
+          Just (args, amt, whena, svs) -> sendp
             where
+              sendp =
+                jsApply
+                  "ctc.sendrecv"
+                  [ whop
+                  , pretty which
+                  , pretty (length msg)
+                  , jsArray $ map (jsContract . argTypeOf) $ svs_as ++ args
+                  , vs
+                  , amtp
+                  , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
+                  , jsArg whena
+                  , delayp
+                  , parens $ "(" <> jsTxn ctxt' <> ") => " <> jsBraces sim_body
+                  ]
               svs_as = map DLA_Var svs
               amtp = jsArg amt
               sim_body =
@@ -415,15 +417,17 @@ jsETail ctxt = \case
               sim_body_core = jsETail ctxt'_sim k_ok
               ctxt'_sim = ctxt' {ctxt_simulate = True}
               vs = jsArray $ (map jsVar svs) ++ (map jsArg args)
-          Nothing ->
-            jsApply
-              "ctc.recv"
-              [ whop
-              , pretty which
-              , pretty (length msg)
-              , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
-              , delayp
-              ]
+          Nothing -> recvp
+      recvp =
+        jsApply
+          "ctc.recv"
+          [ whop
+          , pretty which
+          , pretty (length msg)
+          , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
+          , "false"
+          , delayp
+          ]
   ET_While _ asn cond body k ->
     case ctxt_simulate ctxt of
       False ->

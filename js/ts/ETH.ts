@@ -536,11 +536,6 @@ const [getProvider, setProvider] = replaceableThunk(async (): Promise<Provider> 
 
 export {setProvider};
 
-const ethersBlockOnceP = async (): Promise<number> => {
-  const provider = await getProvider();
-  return new Promise((resolve) => provider.once('block', (n) => resolve(n)));
-};
-
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
   if (!acc.networkAccount) throw Error(`Expected acc.networkAccount`);
@@ -685,6 +680,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         sendrecv: async (
           label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
           args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
+          onlyIf: boolean,
           timeout_delay: BigNumber | false, sim_p: any,
         ): Promise<Recv> => {
           debug(`${shad}: ${label} sendrecv m${funcNum} (deferred deploy)`);
@@ -696,6 +692,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
           // The following must be true for the first sendrecv.
           try {
+            assert(onlyIf, true);
             assert(eq(funcNum, 1));
             assert(!timeout_delay);
           } catch (e) {
@@ -717,7 +714,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           //   balance: value,
           //   from: address,
           // };
-          return await impl.recv(label, funcNum, evt_cnt, out_tys, timeout_delay);
+          return await impl.recv(label, funcNum, evt_cnt, out_tys, false,timeout_delay);
         },
         getInfo: async () => {
           // Danger: deadlock possible
@@ -839,8 +836,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv_impl = async (
       label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
+      onlyIf: boolean,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
+      const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
+        await recv_impl(label, funcNum, out_tys, waitIfNotPresent, timeout_delay);
+      if ( ! onlyIf ) {
+        return await doRecv(true);
+      }
+
       const funcName = `m${funcNum}`;
       if (tys.length !== args.length) {
         throw Error(`tys.length (${tys.length}) !== args.length (${args.length})`);
@@ -907,7 +911,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
         }
 
-        return await recv_impl(label, funcNum, out_tys, timeout_delay);
+        return await doRecv(false);
       }
 
       // XXX If we were trying to join, but we got sniped, then we'll
@@ -921,22 +925,25 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv = async (
       label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
+      onlyIf: boolean,
       timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
       void(sim_p);
-      return await sendrecv_impl(label, funcNum, evt_cnt, tys, args, value, out_tys, timeout_delay);
+      return await sendrecv_impl(label, funcNum, evt_cnt, tys, args, value, out_tys, onlyIf, timeout_delay);
     }
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
     const recv_impl = async (
       label: string, okNum: number, out_tys: Array<AnyETH_Ty>,
+      waitIfNotPresent: boolean,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       const lastBlock = await getLastBlock();
       const ok_evt = `e${okNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
 
-      let block_poll_start: number = lastBlock;
+      // look after the last block
+      let block_poll_start: number = lastBlock + 1;
       let block_poll_end = block_poll_start;
       while (!timeout_delay || lt(block_poll_start, add(lastBlock, timeout_delay))) {
         // console.log(
@@ -950,8 +957,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           block_poll_start = block_poll_end;
 
           await Timeout.set(1);
-          void(ethersBlockOnceP); // This might be a better option too, because we won't need to delay
           block_poll_end = await getNetworkTimeNumber();
+          if ( waitIfNotPresent && block_poll_start == block_poll_end ) {
+            await waitUntilTime(bigNumberify(block_poll_end + 1));
+          }
 
           continue;
         } else {
@@ -997,10 +1006,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const recv = async (
       label: string, okNum: number, ok_cnt: number, out_tys: Array<AnyETH_Ty>,
-      timeout_delay: BigNumber | false,
+      waitIfNotPresent: boolean, timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       void(ok_cnt);
-      return await recv_impl(label, okNum, out_tys, timeout_delay);
+      return await recv_impl(label, okNum, out_tys, waitIfNotPresent, timeout_delay);
     };
 
     const wait = async (delta: BigNumber) => {

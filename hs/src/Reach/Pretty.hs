@@ -192,7 +192,7 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
-prettyToConsensus :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart ([DLArg], DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
+prettyToConsensus :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart ([DLArg], DLArg, DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
 prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
   "publish" <> parens emptyDoc
     <> nest
@@ -204,8 +204,8 @@ prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
          <> parens (hsep $ punctuate comma $ [pretty win, pretty msg, pretty amtv, render_nest (fa body)])
          <> semi)
   where
-    go (p, (args, amta)) =
-      ".case" <> parens (hsep $ punctuate comma $ [pretty p, pretty args, pretty amta])
+    go (p, (args, amta, whena)) =
+      ".case" <> parens (hsep $ punctuate comma $ [pretty p, pretty args, pretty amta, pretty whena])
     mtime' =
       case mtime of
         Nothing -> emptyDoc
@@ -400,7 +400,7 @@ instance Pretty ETail where
           msendp =
             case msend of
               Nothing -> mempty
-              Just (as, amt, saved) -> ".publish" <> cm [parens (render_das as), pretty amt, cm (map pretty saved)]
+              Just (as, amt, whena, saved) -> ".publish" <> cm [parens (render_das as), pretty amt, pretty whena, cm (map pretty saved)]
           timep =
             case mtime of
               Nothing -> mempty

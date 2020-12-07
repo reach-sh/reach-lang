@@ -24,6 +24,9 @@ instance CollectsTypes a => CollectsTypes (Maybe a) where
 instance (CollectsTypes a, CollectsTypes b) => CollectsTypes (a, b) where
   cts (x, y) = cts x <> cts y
 
+instance (CollectsTypes a, CollectsTypes b, CollectsTypes c) => CollectsTypes (a, b, c) where
+  cts (x, y, z) = cts x <> cts y <> cts z
+
 instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d) => CollectsTypes (a, b, c, d) where
   cts (x, y, z, a) = cts x <> cts y <> cts z <> cts a
 

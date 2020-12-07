@@ -14,6 +14,7 @@ import Data.Ord (comparing)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
+import Data.Tuple.Extra (fst3)
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
 import Language.JavaScript.Parser
@@ -117,6 +118,7 @@ data EvalError
   | Err_RecursionDepthLimit
   | Err_Eval_MustBeLive String
   | Err_Invalid_Statement String
+  | Err_ToConsensus_WhenNoTimeout SLPart DLArg
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -397,6 +399,8 @@ instance Show EvalError where
       "must be live at " <> m
     Err_Invalid_Statement stmt ->
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
+    Err_ToConsensus_WhenNoTimeout _who _when ->
+      "Cannot optionally transition to consensus without timeout."
 
 --- Utilities
 zipEq :: Show e => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -969,21 +973,22 @@ evalAsEnv ctx at obj =
     SLV_Participant _ who vas _ ->
       M.fromList
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
-        , ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Publish) Nothing Nothing Nothing))
-        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Pay) Nothing Nothing Nothing))
+        , ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Publish) Nothing Nothing Nothing Nothing))
+        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos vas (Just TCM_Pay) Nothing Nothing Nothing Nothing))
         , ("set", delayCall SLPrim_part_set)
         ]
       where
         whos = S.singleton who
     SLV_RaceParticipant _ whos ->
       M.fromList
-        [ ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Publish) Nothing Nothing Nothing))
-        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Pay) Nothing Nothing Nothing))
+        [ ("publish", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Publish) Nothing Nothing Nothing Nothing))
+        , ("pay", retV $ public $ SLV_Form (SLForm_Part_ToConsensus at whos Nothing (Just TCM_Pay) Nothing Nothing Nothing Nothing))
         ]
-    SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mtime) ->
+    SLV_Form (SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen mtime) ->
       M.fromList $
         gom "publish" TCM_Publish mpub
           <> gom "pay" TCM_Pay mpay
+          <> gom "when" TCM_When mwhen
           <> gom "timeout" TCM_Timeout mtime
       where
         gom key mode me =
@@ -991,7 +996,7 @@ evalAsEnv ctx at obj =
             Nothing -> go key mode
             Just _ -> []
         go key mode =
-          [(key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mtime))]
+          [(key, retV $ public $ SLV_Form (SLForm_Part_ToConsensus to_at who vas (Just mode) mpub mpay mwhen mtime))]
     --- FIXME rewrite the rest to look at the type and go from there
     SLV_Tuple _ _ ->
       M.fromList
@@ -1108,21 +1113,23 @@ evalForm ctxt at sco st f args =
         _ -> expect_throw_ctx ctxt at (Err_App_InvalidArgs args)
     SLForm_Part_Only who mv ->
       return $ SLRes mempty st $ public $ SLV_Form $ SLForm_EachAns [(who, mv)] at (sco_to_cloenv sco) one_arg
-    SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mtime ->
+    SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
       case mmode of
         Just TCM_Publish ->
           case mpub of
-            Nothing -> retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing (Just msg) mpay mtime
+            Nothing -> retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing (Just msg) mpay mwhen mtime
               where
                 msg = map (jse_expect_id at) args
             Just _ ->
               expect_throw_ctx ctxt at $ Err_ToConsensus_Double TCM_Publish
         Just TCM_Pay ->
-          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub (Just one_arg) mtime
+          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub (Just one_arg) mwhen mtime
+        Just TCM_When ->
+          retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just one_arg) mtime
         Just TCM_Timeout ->
           case allowed_to_wait ctxt at st $ args of
             [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] ->
-              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay (Just (at, de, (jsStmtToBlock dt_s)))
+              retV $ public $ SLV_Form $ SLForm_Part_ToConsensus to_at who vas Nothing mpub mpay mwhen (Just (at, de, (jsStmtToBlock dt_s)))
             _ -> expect_throw_ctx ctxt at $ Err_ToConsensus_TimeoutArgs args
         Nothing ->
           expect_throw_ctx ctxt at $ Err_Eval_NotApplicable rator
@@ -2398,8 +2405,8 @@ doGetSelfAddress ctxt at who = do
       (DLE_PrimOp at SELF_ADDRESS [DLA_Literal $ DLL_Bytes who])
   return (dv, lifts)
 
-doToConsensus :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
-doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
+doToConsensus :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression-> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
+doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   ensure_mode ctxt at st SLM_Step "to consensus"
   ensure_live ctxt at st "to consensus"
   let st_pure = st {st_mode = SLM_ConsensusPure}
@@ -2424,18 +2431,25 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e mtime = do
           evalExpr ctxt at sco_penv st_pure amt_e
         (amt_clifts, amt_da) <-
           compileCheckType ctxt at T_UInt $ ensure_public ctxt at amt_sv
+        SLRes when_lifts _ when_sv <-
+          evalExpr ctxt at sco_penv st_pure when_e
+        (when_clifts, when_da) <-
+          compileCheckType ctxt at T_Bool $ ensure_public ctxt at when_sv
         let send_lifts =
-              return $ DLS_Only at who (msg_lifts <> amt_lifts <> amt_clifts)
-        return ((send_lifts, repeat_dv), (msg_das, amt_da))
+              return $ DLS_Only at who (msg_lifts <> amt_lifts <> amt_clifts <> when_lifts <> when_clifts)
+        return ((send_lifts, repeat_dv), (msg_das, amt_da, when_da))
   tc_send_int <- sequence $ M.fromSet tc_send1 whos
   let send_lifts = mconcat $ M.elems $ M.map (fst . fst) tc_send_int
   let repeat_dvs = catMaybes $ M.elems $ M.map (snd . fst) tc_send_int
   let tc_send = M.map snd tc_send_int
-  let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map fst tc_send
+  let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map fst3 tc_send
   -- Handle timeout
   (mtime_merge, tc_mtime) <-
     case mtime of
-      Nothing ->
+      Nothing -> do
+        forM_ (M.toList tc_send) (\case
+          (_, (_, _, DLA_Literal (DLL_Bool True))) -> return ()
+          (who, (_, _, x)) -> expect_throw_ctx ctxt at $ Err_ToConsensus_WhenNoTimeout who x)
         return $ (id, Nothing)
       Just (time_at, delay_e, (JSBlock _ time_ss _)) -> do
         SLRes delay_lifts _ delay_sv <-
@@ -2556,10 +2570,11 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
               map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
           keepLifts lifts' $ evalStmt ctxt at sco' st' ks
         _ -> illegal_mode
-    SLV_Form (SLForm_Part_ToConsensus to_at whos vas Nothing mmsg mamt mtime) -> do
+    SLV_Form (SLForm_Part_ToConsensus to_at whos vas Nothing mmsg mamt mwhen mtime) -> do
       let msg = fromMaybe [] mmsg
       let amt = fromMaybe (JSDecimal JSNoAnnot "0") mamt
-      doToConsensus ctxt to_at sco st ks whos vas msg amt mtime
+      let whene = fromMaybe (JSLiteral JSNoAnnot "true") mwhen
+      doToConsensus ctxt to_at sco st ks whos vas msg amt whene mtime
     SLV_Prim SLPrim_committed ->
       case st_mode st of
         SLM_ConsensusStep -> do
@@ -2606,14 +2621,18 @@ doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
   SLRes decl_lifts st_decl decl_env <-
     evalDeclLHS ctxt at sco st rhs_lvl mempty rhs_v lhs
   let st_decl' = stEnsureMode ctxt at SLM_ConsensusStep st_decl
+  forM_ (M.keys decl_env) (\v ->
+    case M.lookup v whilem of
+      Nothing ->
+        expect_throw_ctx ctxt at $ Err_Eval_ContinueNotLoopVariable v
+      Just _ -> return ())
   let cont_daem =
-        M.fromList $ map f $ M.toList decl_env
+        M.fromList $ map f $ M.toList whilem
         where
-          f (v, sv) = (dv, dae)
+          f (v, dv) = (dv, dae)
             where
-              dv = case M.lookup v whilem of
-                Nothing ->
-                  expect_throw_ctx ctxt at $ Err_Eval_ContinueNotLoopVariable v
+              sv = case M.lookup v decl_env of
+                Nothing -> SLSSVal at Public $ SLV_DLVar dv
                 Just x -> x
               val = ensure_public ctxt at $ sss_sls sv
               dae = checkType_ctxt ctxt at et val

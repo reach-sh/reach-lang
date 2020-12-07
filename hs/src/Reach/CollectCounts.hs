@@ -50,6 +50,9 @@ instance (Countable x, Countable y) => Countable (x, y) where
 instance (Countable x, Countable y, Countable z) => Countable (x, y, z) where
   counts (a, b, c) = counts a <> counts b <> counts c
 
+instance (Countable x, Countable y, Countable z, Countable a) => Countable (x, y, z, a) where
+  counts (a, b, c, d) = counts a <> counts b <> counts c <> counts d
+
 instance Countable v => Countable (Maybe v) where
   counts Nothing = mempty
   counts (Just x) = counts x

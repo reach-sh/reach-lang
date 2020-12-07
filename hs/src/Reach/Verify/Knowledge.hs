@@ -278,9 +278,13 @@ kgq_s ctxt = \case
           >> kgq_a_all ctxt (DLA_Var amtv)
           >> mapM (kgq_a_all ctxt) (map DLA_Var msgvs)
           >> kgq_n ctxt next_n
-      go (_, (msgas, amta)) =
+      go (_, (msgas, amta, whena)) =
         mapM_ (uncurry (kgq_a_only ctxt)) (zip msgvs msgas)
           >> kgq_a_only ctxt amtv amta
+          -- This is a bit suspicious: we can't necessarily know what the value
+          -- of this is just because of things being published, because they
+          -- might be dishonest
+          >> kgq_a_all ctxt whena
           >> common
 
 kgq_pie1 :: KCtxt -> SLPart -> SLVar -> IO ()

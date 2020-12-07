@@ -35,10 +35,12 @@ export type IContract<ContractInfo, Digest, RawAddress, ConnectorTy extends AnyB
   sendrecv: (
     label: string, funcNum: number, evt_cnt: number, tys: Array<ConnectorTy>,
     args: Array<any>, value: BigNumber, out_tys: Array<ConnectorTy>,
+    onlyIf: boolean,
     timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => ISimRes<Digest, RawAddress>,
   ) => Promise<IRecv<RawAddress>>,
   recv: (
     label: string, okNum: number, ok_cnt: number, out_tys: Array<ConnectorTy>,
+    waitIfNotPresent: boolean,
     timeout_delay: BigNumber | false,
   ) => Promise<IRecv<RawAddress>>,
   wait: (delta: BigNumber) => Promise<BigNumber>,
