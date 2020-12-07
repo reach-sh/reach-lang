@@ -31,11 +31,13 @@ import waitPort from 'wait-port';
 import { labelMaps, replaceableThunk } from './shared_impl';
 export * from './shared';
 
+const handleCircular = (k: any, v: any) => ( k == 'stdlib') ? v.id : v;
+
 type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
-export const UInt_max: BigNumber =
+const UInt_max: BigNumber =
   BigNumber.from(2).pow(64).sub(1);
-export const { randomUInt, hasRandom } = makeRandom(8);
+const { randomUInt, hasRandom } = makeRandom(8);
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
@@ -139,6 +141,7 @@ type ContractAttached = {
   wait: (...argz: any) => any,
   iam: (some_addr: any) => any,
   selfAddress: () => CBR_Address, // Not RawAddress!
+  stdlibT: any,
 };
 
 // TODO
@@ -175,23 +178,23 @@ type ALGO_Ty<BV extends CBR_Val> = {
 }
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 
-export const digest = makeDigest((t:ALGO_Ty<any>, v:any) => t.toNet(v));
+const digest = makeDigest((t:ALGO_Ty<any>, v:any) => t.toNet(v));
 
-export const T_Null: ALGO_Ty<CBR_Null> = {
+const T_Null: ALGO_Ty<CBR_Null> = {
   ...CBR.BT_Null,
   netSize: 0,
   toNet: (bv: CBR_Null): NV => (void(bv), new Uint8Array([])),
   fromNet: (nv: NV): CBR_Null => (void(nv), null),
 }
 
-export const T_Bool: ALGO_Ty<CBR_Bool> = {
+const T_Bool: ALGO_Ty<CBR_Bool> = {
   ...CBR.BT_Bool,
   netSize: 1,
   toNet: (bv: CBR_Bool): NV => new Uint8Array([bv ? 1 : 0]),
   fromNet: (nv: NV): CBR_Bool => nv[0] == 1,
 }
 
-export const T_UInt: ALGO_Ty<CBR_UInt> = {
+const T_UInt: ALGO_Ty<CBR_UInt> = {
   ...CBR.BT_UInt,
   netSize: 8, // UInt64
   toNet: (bv: CBR_UInt): NV => (
@@ -224,13 +227,13 @@ const bytestringyNet = {
   )
 };
 
-export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
+const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
   ...CBR.BT_Bytes(len),
   ...stringyNet,
   netSize: len,
 });
 
-export const T_Digest: ALGO_Ty<CBR_Digest> = {
+const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
   ...bytestringyNet,
   netSize: 32,
@@ -245,7 +248,7 @@ function addressUnwrapper(x: any): string {
     ? '0x' + Buffer.from(algosdk.decodeAddress(addr).publicKey).toString('hex')
     : x;
 }
-export const T_Address: ALGO_Ty<CBR_Address> = {
+const T_Address: ALGO_Ty<CBR_Address> = {
   ...CBR.BT_Address,
   ...bytestringyNet,
   netSize: 32,
@@ -255,7 +258,7 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
   }
 }
 
-export const T_Array = (
+const T_Array = (
   co: ALGO_Ty<CBR_Val>,
   size: number,
 ): ALGO_Ty<CBR_Array> => ({
@@ -276,7 +279,7 @@ export const T_Array = (
   },
 });
 
-export const T_Tuple = (
+const T_Tuple = (
   cos: Array<ALGO_Ty<CBR_Val>>,
 ): ALGO_Ty<CBR_Tuple> => ({
   ...CBR.BT_Tuple(cos),
@@ -300,7 +303,7 @@ export const T_Tuple = (
   },
 });
 
-export const T_Object = (
+const T_Object = (
   coMap: {[key: string]: ALGO_Ty<CBR_Val>}
 ): ALGO_Ty<CBR_Object> => {
   const cos = Object.values(coMap);
@@ -335,7 +338,7 @@ export const T_Object = (
 // 1 byte for the label
 // the rest right-padded with zeroes
 // up to the size of the largest variant
-export const T_Data = (
+const T_Data = (
   coMap: {[key: string]: ALGO_Ty<CBR_Val>}
 ): ALGO_Ty<CBR_Data> => {
   const cos = Object.values(coMap);
@@ -376,7 +379,6 @@ const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
   await wait1port(server, port);
   return new algosdk.Algodv2(token, server, port);
 });
-export {setAlgodClient};
 
 const itoken = process.env.ALGO_INDEXER_TOKEN || 'reach-devnet';
 const iserver = process.env.ALGO_INDEXER_SERVER || 'http://localhost';
@@ -385,15 +387,13 @@ const [getIndexer, setIndexer] = replaceableThunk(async () => {
   await wait1port(iserver, iport);
   return new algosdk.Indexer(itoken, iserver, iport);
 });
-export {setIndexer};
+// export {setIndexer};
 
 // eslint-disable-next-line max-len
 const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'close year slice mind voice cousin brass goat anxiety drink tourist child stock amused rescue pitch exhibit guide occur wide barrel process type able please'));
 const [getFaucet, setFaucet] = replaceableThunk(async () => {
   return await connectAccount(FAUCET);
 });
-
-export {getFaucet, setFaucet};
 
 // Helpers
 
@@ -479,7 +479,7 @@ const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
   while (true) {
     const params = await (await getAlgodClient()).getTransactionParams().do();
-    debug(`fillTxn: got params: ${JSON.stringify(params)}`);
+    debug(`fillTxn: got params: ${JSON.stringify(params, handleCircular)}`);
     if (params.firstRound !== 0) {
       return params;
     }
@@ -502,14 +502,15 @@ const sign_and_send_sync = async (
   }
 };
 
-export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<TxnInfo> => {
+const transfer = async (from: Account, to: Account, value: BigNumber): Promise<TxnInfo> => {
   const valuen = value.toNumber();
   const sender = from.networkAccount;
   const receiver = to.networkAccount.addr;
 
   const note = algosdk.encodeObj('@reach-sh/ALGO.mjs transfer');
   return await sign_and_send_sync(
-    `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuen}`,
+    `transfer ${JSON.stringify(from, handleCircular)} ` +
+    `${JSON.stringify(to, handleCircular)} ${valuen}`,
     sender.sk,
     algosdk.makePaymentTxnWithSuggestedParams(
       sender.addr, receiver, valuen, undefined, note, await getTxnParams(),
@@ -621,7 +622,8 @@ const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
   return txn;
 };
 
-export const connectAccount = async (networkAccount: NetworkAccount) => {
+const connectAccount = async (networkAccount: NetworkAccount) => {
+  const stdlibT: any = stdlib;
   const indexer = await getIndexer();
   const thisAcc = networkAccount;
   const shad = thisAcc.addr.substring(2, 6);
@@ -914,7 +916,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       }
     };
 
-    return { getInfo, sendrecv, recv, iam, selfAddress, wait };
+    return { getInfo, sendrecv, recv, iam, selfAddress, wait, stdlibT };
   };
 
   const deployP = async (bin: Backend): Promise<ContractAttached> => {
@@ -1018,6 +1020,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       wait: async(...args: any) => (await implP).wait(...args),
       iam, // doesn't need to await the implP
       selfAddress, // doesn't need to await the implP
+      stdlibT,
     }
   };
 
@@ -1028,10 +1031,10 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const deploy = (bin: Backend): ContractAttached => {
     return deferP(deployP(bin));
   };
-  return { deploy, attach, networkAccount };
+  return { deploy, attach, networkAccount, stdlibT };
 };
 
-export const balanceOf = async (acc: Account): Promise<BigNumber> => {
+const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
   if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
   const client = await getAlgodClient();
@@ -1045,17 +1048,17 @@ const showBalance = async (note: string, networkAccount: NetworkAccount) => {
   console.log('%s: balance: %s algos', note, showBal);
 };
 
-export const createAccount = async () => {
+const createAccount = async () => {
   const networkAccount = algosdk.generateAccount();
   return await connectAccount(networkAccount);
 }
 
-export const fundFromFaucet = async (account: Account, value: BigNumber) => {
+const fundFromFaucet = async (account: Account, value: BigNumber) => {
   const faucet = await getFaucet();
   await transfer(faucet, account, value);
 }
 
-export const newTestAccount = async (startingBalance: BigNumber) => {
+const newTestAccount = async (startingBalance: BigNumber) => {
   const account = await createAccount();
   if (getDEBUG()) { await showBalance('before', account.networkAccount); }
   await fundFromFaucet(account, startingBalance);
@@ -1064,9 +1067,9 @@ export const newTestAccount = async (startingBalance: BigNumber) => {
 };
 
 /** @description the display name of the standard unit of currency for the network */
-export const standardUnit = 'ALGO';
+const standardUnit = 'ALGO';
 /** @description the display name of the atomic (smallest) unit of currency for the network */
-export const atomicUnit = 'μALGO';
+const atomicUnit = 'μALGO';
 
 /**
  * @description  Parse currency by network
@@ -1074,7 +1077,7 @@ export const atomicUnit = 'μALGO';
  * @returns  the amount in the {@link atomicUnit} of the network.
  * @example  parseCurrency(100).toString() // => '100000000'
  */
-export function parseCurrency(amt: CurrencyAmount): BigNumber {
+function parseCurrency(amt: CurrencyAmount): BigNumber {
   const numericAmt =
     isBigNumber(amt) ? amt.toNumber()
     : typeof amt === 'string' ? parseFloat(amt)
@@ -1083,7 +1086,7 @@ export function parseCurrency(amt: CurrencyAmount): BigNumber {
 }
 // XXX get from SDK
 const raw_minimumBalance = 100000;
-export const minimumBalance: BigNumber =
+const minimumBalance: BigNumber =
   bigNumberify(raw_minimumBalance);
 
 /**
@@ -1095,7 +1098,7 @@ export const minimumBalance: BigNumber =
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  */
-export function formatCurrency(amt: BigNumber, decimals: number = 6): string {
+function formatCurrency(amt: BigNumber, decimals: number = 6): string {
   // Recall that 1 algo = 10^6 microalgos
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
@@ -1107,28 +1110,28 @@ export function formatCurrency(amt: BigNumber, decimals: number = 6): string {
 }
 
 // TODO: get from AlgoSigner if in browser
-export async function getDefaultAccount(): Promise<Account> {
+async function getDefaultAccount(): Promise<Account> {
   return await getFaucet();
 }
 
 /**
  * @param mnemonic 25 words, space-separated
  */
-export const newAccountFromMnemonic = async (mnemonic: string): Promise<Account> => {
+const newAccountFromMnemonic = async (mnemonic: string): Promise<Account> => {
   return await connectAccount(algosdk.mnemonicToSecretKey(mnemonic));
 };
 
 /**
  * @param secret a Uint8Array, or its hex string representation
  */
-export const newAccountFromSecret = async (secret: string | Uint8Array): Promise<Account> => {
+const newAccountFromSecret = async (secret: string | Uint8Array): Promise<Account> => {
   const sk = ethers.utils.arrayify(secret);
   const mnemonic = algosdk.secretKeyToMnemonic(sk);
   return await newAccountFromMnemonic(mnemonic);
 };
 
-export const getNetworkTime = async () => bigNumberify(await getLastRound());
-export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+const getNetworkTime = async () => bigNumberify(await getLastRound());
+const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const onProg = onProgress || (() => {});
   let currentTime = await getNetworkTime();
   while (currentTime.lt(targetTime)) {
@@ -1140,14 +1143,14 @@ export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgre
   debug(`waitUntilTime: ended: ${currentTime} -> ${targetTime}`);
   return currentTime;
 };
-export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
   debug(`wait: delta=${delta} now=${now}, until=${now.add(delta)}`);
   return await waitUntilTime(now.add(delta), onProgress);
 };
 
 // XXX: implement this
-export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
+const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
   void(ctcInfo);
   void(backend);
 
@@ -1166,4 +1169,51 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
 
   return true;
 }
-export const addressEq = mkAddressEq(T_Address);
+const addressEq = mkAddressEq(T_Address);
+
+// eslint-disable-next-line
+import * as shared from './shared';
+
+const stdlib = {
+  get stdlib(): any { return this; },
+  ...shared,
+  UInt_max,
+  randomUInt,
+  hasRandom,
+  digest,
+  T_Null,
+  T_Bool,
+  T_UInt,
+  T_Bytes,
+  T_Digest,
+  T_Address,
+  T_Array,
+  T_Tuple,
+  T_Object,
+  T_Data,
+  balanceOf,
+  transfer,
+  connectAccount,
+  newAccountFromSecret,
+  newAccountFromMnemonic,
+  getDefaultAccount,
+  getFaucet,
+  setFaucet,
+  createAccount,
+  fundFromFaucet,
+  newTestAccount,
+  getNetworkTime,
+  wait,
+  waitUntilTime,
+  verifyContract,
+  standardUnit,
+  atomicUnit,
+  parseCurrency,
+  minimumBalance,
+  formatCurrency,
+  addressEq,
+  setAlgodClient,
+  setIndexer,
+}
+
+export default stdlib;

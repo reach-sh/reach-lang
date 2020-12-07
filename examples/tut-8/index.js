@@ -5,7 +5,7 @@ import AttacherViews from './views/AttacherViews';
 import {renderDOM, renderView} from './views/render';
 import './index.css';
 import * as backend from './build/index.main.mjs';
-import * as reach from '@reach-sh/stdlib/ETH';
+import reach from '@reach-sh/stdlib/ETH';
 
 const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
 const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];

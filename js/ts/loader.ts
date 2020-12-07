@@ -1,6 +1,6 @@
-import * as stdlib_ETH from './ETH';
-import * as stdlib_ALGO from './ALGO';
-import * as stdlib_FAKE from './FAKE';
+import stdlib_ETH from './ETH';
+import stdlib_ALGO from './ALGO';
+import stdlib_FAKE from './FAKE';
 import {getConnectorMode, canonicalizeConnectorMode, getConnector} from './ConnectorMode';
 
 export {getConnectorMode, getConnector};

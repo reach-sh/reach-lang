@@ -1,21 +1,22 @@
 import Timeout from 'await-timeout';
 import ethers from 'ethers';
 
-import * as stdlib from './shared';
+import * as sharedStdlib from './shared';
 import { CurrencyAmount, OnProgress } from './shared';
 export * from './shared';
-export { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } from './ETH';
-import { T_Address, T_UInt, T_Tuple, digest } from './ETH';
+import ethStdlib from './ETH';
 
-export const debug = (msg: any): void => {
-  stdlib.debug(`${BLOCKS.length}: ${msg}}`);
+const { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } = ethStdlib;
+
+const debug = (msg: any): void => {
+  sharedStdlib.debug(`${BLOCKS.length}: ${msg}}`);
 };
 
 type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
-export const UInt_max: BigNumber =
+const UInt_max: BigNumber =
   BigNumber.from(2).pow(256).sub(1);
-export const { randomUInt, hasRandom } = stdlib.makeRandom(32);
+const { randomUInt, hasRandom } = sharedStdlib.makeRandom(32);
 
 type Address = string;
 type NetworkAccount = {address: Address};
@@ -29,14 +30,14 @@ type ContractInfo = {
   creation_block: number,
 }
 
-type Digest = string;
-type Recv = stdlib.IRecv<Address>
-type RecvNoTimeout = stdlib.IRecvNoTimeout<Address>
-type Contract = stdlib.IContract<ContractInfo, Digest, Address, FAKE_Ty>;
-type Account = stdlib.IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
-type AccountTransferrable = stdlib.IAccountTransferable<NetworkAccount>
-type SimRes = stdlib.ISimRes<Digest, Address>;
-type SimTxn = stdlib.ISimTxn<Address>;
+type Digest = Array<any>;
+type Recv = sharedStdlib.IRecv<Address>
+type RecvNoTimeout = sharedStdlib.IRecvNoTimeout<Address>
+type Contract = sharedStdlib.IContract<ContractInfo, Digest, Address, FAKE_Ty>;
+type Account = sharedStdlib.IAccount<NetworkAccount, Backend, Contract, ContractInfo>;
+type AccountTransferrable = sharedStdlib.IAccountTransferable<NetworkAccount>
+type SimRes = sharedStdlib.ISimRes<Digest, Address>;
+type SimTxn = sharedStdlib.ISimTxn<Address>;
 
 type Event = {
   funcNum: number,
@@ -84,7 +85,7 @@ const toAcct = (address: Address): AccountTransferrable => ({
   networkAccount: {address}
 });
 
-export const balanceOf = async (acc: Account) => {
+const balanceOf = async (acc: Account) => {
   return BALANCES[acc.networkAccount.address];
 };
 
@@ -111,19 +112,19 @@ const transfer_ = (
   if (is_ctc) {
     debug('transfer_: contract is paying out to someone');
   }
-  stdlib.assert(stdlib.le(value, BALANCES[froma]));
+  sharedStdlib.assert(sharedStdlib.le(value, BALANCES[froma]));
   debug(`transfer_ ${froma} -> ${toa} of ${value}`);
-  BALANCES[toa] = stdlib.add(BALANCES[toa], value);
-  BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
+  BALANCES[toa] = sharedStdlib.add(BALANCES[toa], value);
+  BALANCES[froma] = sharedStdlib.sub(BALANCES[froma], value);
 }
 
-export const fundFromFaucet = async (toa: AccountTransferrable, value: BigNumber) => {
+const fundFromFaucet = async (toa: AccountTransferrable, value: BigNumber) => {
   const faucet = await getFaucet();
   const faucetAddress = faucet.networkAccount.address;
-  const faucetFunds = BALANCES[faucetAddress] || stdlib.bigNumberify(0);
+  const faucetFunds = BALANCES[faucetAddress] || sharedStdlib.bigNumberify(0);
   // For FAKE, the faucet may need to add funds on demand,
   // if the user created an account without a starting balance.
-  if (stdlib.le(faucetFunds, value)) {
+  if (sharedStdlib.le(faucetFunds, value)) {
     BALANCES[faucetAddress] = faucetFunds.add(value);
   }
   transfer(faucet, toa, value);
@@ -132,7 +133,7 @@ export const fundFromFaucet = async (toa: AccountTransferrable, value: BigNumber
 /**
  * @description performs a transfer & creates a transfer block
  */
-export const transfer = async (
+const transfer = async (
   from: AccountTransferrable,
   to: AccountTransferrable,
   value: BigNumber
@@ -145,8 +146,10 @@ export const transfer = async (
   BLOCKS.push(block);
 };
 
-export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const { address } = networkAccount;
+
+  const stdlibT = {};
 
   const attach = (
     bin: Backend,
@@ -183,7 +186,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const wait = async (delta: BigNumber): Promise<BigNumber> => {
       // Don't wait from current time, wait from last_block
-      return waitUntilTime(stdlib.add(await getLastBlock(), delta));
+      return waitUntilTime(sharedStdlib.add(await getLastBlock(), delta));
     };
 
     const sendrecv = async (
@@ -193,15 +196,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     ): Promise<Recv> => {
       void(tys);
 
-      stdlib.assert(args.length === tys.length, {
+      sharedStdlib.assert(args.length === tys.length, {
         expected: args.length,
         actual: tys.length,
         message: 'tys does not have expected length',
       });
-      const data = stdlib.argsSlice(args, evt_cnt);
+      const data = sharedStdlib.argsSlice(args, evt_cnt);
       const last_block = await getLastBlock();
       const ctcInfo = await infoP;
-      if (!timeout_delay || stdlib.lt(BLOCKS.length, stdlib.add(last_block, timeout_delay))) {
+      if (!timeout_delay || sharedStdlib.lt(BLOCKS.length, sharedStdlib.add(last_block, timeout_delay))) {
         debug(`${label} send ${funcNum} --- post`);
 
         const stubbedRecv: RecvNoTimeout = {
@@ -244,10 +247,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       const last_block = await getLastBlock();
       let check_block = last_block;
-      while (!timeout_delay || stdlib.lt(check_block, stdlib.add(last_block, timeout_delay))) {
+      while (!timeout_delay || sharedStdlib.lt(check_block, sharedStdlib.add(last_block, timeout_delay))) {
         debug(`${label} recv ${funcNum} --- check ${check_block}`);
         const b = BLOCKS[check_block];
-        if (!b || b.type !== 'event' || !b.event || !stdlib.eq(b.event.funcNum, funcNum)) {
+        if (!b || b.type !== 'event' || !b.event || !sharedStdlib.eq(b.event.funcNum, funcNum)) {
           debug(`${label} recv ${funcNum} --- wait`);
           check_block = Math.min(check_block + 1, BLOCKS.length);
           await Timeout.set(1);
@@ -266,7 +269,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const getInfo = async () => await infoP;
 
-    return { getInfo, sendrecv, recv, iam, selfAddress, wait };
+    return { getInfo, sendrecv, recv, iam, selfAddress, wait, stdlibT };
   };
 
   const deploy = (bin: Backend): Contract => {
@@ -283,12 +286,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     });
   };
 
-  return { deploy, attach, networkAccount };
+  return { deploy, attach, networkAccount, stdlibT };
 };
 
 const makeAccount = (): NetworkAccount => {
   const address = ethers.Wallet.createRandom().address;
-  BALANCES[address] = stdlib.bigNumberify(0);
+  BALANCES[address] = sharedStdlib.bigNumberify(0);
   return { address };
 };
 
@@ -296,43 +299,43 @@ const REACHY_RICH_P: Promise<Account> = (async () => {
   return await connectAccount({address: T_Address.defaultValue});
 })();
 
-export async function getDefaultAccount(): Promise<Account> {
+async function getDefaultAccount(): Promise<Account> {
   return REACHY_RICH_P;
 }
 
-export async function getFaucet(): Promise<Account> {
+async function getFaucet(): Promise<Account> {
   return REACHY_RICH_P;
 }
 
-export const newTestAccount = async (startingBalance: BigNumber) => {
+const newTestAccount = async (startingBalance: BigNumber) => {
   const account = await createAccount();
   debug(`new account: ${account.networkAccount.address}`);
   await fundFromFaucet(account, startingBalance);
   return account;
 };
 
-export const createAccount = async () => {
+const createAccount = async () => {
   // Create account without any starting balance
   const networkAccount = makeAccount();
   debug(`createAccount: ${networkAccount.address}`);
   return await connectAccount(networkAccount);
 }
 
-export function getNetworkTime() {
-  return stdlib.bigNumberify(BLOCKS.length);
+function getNetworkTime() {
+  return sharedStdlib.bigNumberify(BLOCKS.length);
 }
 
-export function wait(delta: BigNumber | number, onProgress?: OnProgress): BigNumber {
-  return waitUntilTime(stdlib.add(getNetworkTime(), delta), onProgress);
+function wait(delta: BigNumber | number, onProgress?: OnProgress): BigNumber {
+  return waitUntilTime(sharedStdlib.add(getNetworkTime(), delta), onProgress);
 }
 
-export function waitUntilTime(targetTime: BigNumber | number, onProgress?: OnProgress): BigNumber {
-  targetTime = stdlib.bigNumberify(targetTime);
+function waitUntilTime(targetTime: BigNumber | number, onProgress?: OnProgress): BigNumber {
+  targetTime = sharedStdlib.bigNumberify(targetTime);
   const onProg = onProgress || (() => {});
   // FAKE is basically synchronous,
   // so it doesn't make sense to actually "wait" idly.
   let currentTime;
-  while (stdlib.lt((currentTime = getNetworkTime()), targetTime)) {
+  while (sharedStdlib.lt((currentTime = getNetworkTime()), targetTime)) {
     onProg({ currentTime, targetTime });
     BLOCKS.push({ type: 'wait', currentTime, targetTime });
   }
@@ -341,14 +344,14 @@ export function waitUntilTime(targetTime: BigNumber | number, onProgress?: OnPro
   return currentTime;
 }
 
-export const newAccountFromSecret = false; // XXX
-export const newAccountFromMnemonic = false; // XXX
-export const verifyContract = false; // XXX
+const newAccountFromSecret = false; // XXX
+const newAccountFromMnemonic = false; // XXX
+const verifyContract = false; // XXX
 
 /** @description the display name of the standard unit of currency for the network */
-export const standardUnit = 'FAKE';
+const standardUnit = 'FAKE';
 /** @description the display name of the atomic (smallest) unit of currency for the network */
-export const atomicUnit = 'FAKE';
+const atomicUnit = 'FAKE';
 
 /**
  * @description  Parse currency by network
@@ -356,10 +359,10 @@ export const atomicUnit = 'FAKE';
  * @returns  the amount in the {@link atomicUnit} of the network.
  * @example  parseCurrency(100).toString() // => '100'
  */
-export function parseCurrency(amt: CurrencyAmount): BigNumber {
-  return stdlib.bigNumberify(amt.toString());
+function parseCurrency(amt: CurrencyAmount): BigNumber {
+  return sharedStdlib.bigNumberify(amt.toString());
 }
-export const minimumBalance: BigNumber =
+const minimumBalance: BigNumber =
   parseCurrency(0);
 
 /**
@@ -371,7 +374,7 @@ export const minimumBalance: BigNumber =
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100')); // => '100'
  */
-export function formatCurrency(amt: BigNumber, decimals: number = 0): string {
+function formatCurrency(amt: BigNumber, decimals: number = 0): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
@@ -379,4 +382,50 @@ export function formatCurrency(amt: BigNumber, decimals: number = 0): string {
   return amt.toString();
 }
 
-export const setFaucet = false; // XXX
+const setFaucet = false; // XXX
+
+
+// eslint-disable-next-line
+import * as shared from './shared';
+
+const stdlib: any = {
+  get stdlib(): any { return this; },
+  ...shared,
+  T_Null,
+  T_Bool,
+  T_UInt,
+  T_Bytes,
+  T_Address,
+  T_Digest,
+  T_Object,
+  T_Data,
+  T_Array,
+  T_Tuple,
+  addressEq,
+  digest,
+  UInt_max,
+  randomUInt,
+  hasRandom,
+  balanceOf,
+  transfer,
+  connectAccount,
+  newAccountFromSecret,
+  newAccountFromMnemonic,
+  getDefaultAccount,
+  getFaucet,
+  setFaucet,
+  createAccount,
+  fundFromFaucet,
+  newTestAccount,
+  getNetworkTime,
+  wait,
+  waitUntilTime,
+  verifyContract,
+  standardUnit,
+  atomicUnit,
+  parseCurrency,
+  minimumBalance,
+  formatCurrency,
+}
+
+export default stdlib;

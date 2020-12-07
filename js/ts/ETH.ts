@@ -50,9 +50,9 @@ export * from './shared';
 
 type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
-export const UInt_max: BigNumber =
+const UInt_max: BigNumber =
   BigNumber.from(2).pow(256).sub(1);
-export const { randomUInt, hasRandom } = makeRandom(32);
+const { randomUInt, hasRandom } = makeRandom(32);
 
 type Provider = ethers.providers.Provider;
 type TransactionReceipt = ethers.providers.TransactionReceipt;
@@ -150,7 +150,7 @@ type ETH_Ty<BV extends CBR_Val, NV> =  {
 }
 type AnyETH_Ty = ETH_Ty<CBR_Val, any>;
 
-export const digest = makeDigest((t:AnyETH_Ty, v:any) => {
+const digest = makeDigest((t:AnyETH_Ty, v:any) => {
   // Note: abiCoder.encode doesn't correctly handle an empty tuple type
   if (t.paramType === 'tuple()') {
     if (Array.isArray(v) && v.length === 0) {
@@ -163,7 +163,7 @@ export const digest = makeDigest((t:AnyETH_Ty, v:any) => {
 });
 
 const V_Null: CBR_Null = null;
-export const T_Null: ETH_Ty<CBR_Null, false> = {
+const T_Null: ETH_Ty<CBR_Null, false> = {
   ...CBR.BT_Null,
   defaultValue: V_Null,
   // null is represented in solidity as false
@@ -172,7 +172,7 @@ export const T_Null: ETH_Ty<CBR_Null, false> = {
   paramType: 'bool',
 };
 
-export const T_Bool: ETH_Ty<CBR_Bool, boolean> = {
+const T_Bool: ETH_Ty<CBR_Bool, boolean> = {
   ...CBR.BT_Bool,
   defaultValue: false,
   munge: (bv: CBR_Bool): boolean => bv,
@@ -183,7 +183,7 @@ const V_Bool = (b: boolean): CBR_Bool => {
   return T_Bool.canonicalize(b);
 }
 
-export const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
+const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   ...CBR.BT_UInt,
   defaultValue: ethers.BigNumber.from(0),
   munge: (bv: CBR_UInt): BigNumber => bv,
@@ -194,7 +194,7 @@ const V_UInt = (n: BigNumber): CBR_UInt => {
   return T_UInt.canonicalize(n);
 };
 
-export const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
+const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
   const me = {
     ...CBR.BT_Bytes(len),
     defaultValue: ''.padEnd(len, '\0'),
@@ -205,7 +205,7 @@ export const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
   return me;
 };
 
-export const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
+const T_Digest: ETH_Ty<CBR_Digest, BigNumber> = {
   ...CBR.BT_Digest,
   defaultValue: ethers.utils.keccak256([]),
   munge: (bv: CBR_Digest): BigNumber => BigNumber.from(bv),
@@ -236,7 +236,7 @@ function addressUnwrapper(x: any): string {
   }
 }
 
-export const T_Address: ETH_Ty<CBR_Address, string> = {
+const T_Address: ETH_Ty<CBR_Address, string> = {
   ...CBR.BT_Address,
   canonicalize: (uv: unknown): CBR_Address => {
     const val = addressUnwrapper(uv);
@@ -252,7 +252,7 @@ const V_Address = (s: string): CBR_Address => {
   return T_Address.canonicalize(s);
 }
 
-export const T_Array = <T>(
+const T_Array = <T>(
   ctc: ETH_Ty<CBR_Val, T>,
   size: number,
 ): ETH_Ty<CBR_Array, Array<T>> => ({
@@ -274,7 +274,7 @@ const V_Array = <T>(
 }
 
 // XXX fix me Dan, I'm type checking wrong!
-export const T_Tuple = <T>(
+const T_Tuple = <T>(
   ctcs: Array<ETH_Ty<CBR_Val, T>>,
 ): ETH_Ty<CBR_Tuple, Array<T>> => ({
   ...CBR.BT_Tuple(ctcs),
@@ -293,7 +293,7 @@ const V_Tuple = <T>(
   return T_Tuple(ctcs).canonicalize(val);
 }
 
-export const T_Object = <T>(
+const T_Object = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
 ): ETH_Ty<CBR_Object, {[key: string]: T}> => ({
   ...CBR.BT_Object(co),
@@ -334,7 +334,7 @@ const V_Object = <T>(
   return T_Object(co).canonicalize(val);
 }
 
-export const T_Data = <T>(
+const T_Data = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
 ): ETH_Ty<CBR_Data, Array<T>> => {
   // TODO: not duplicate between this and CBR.ts
@@ -534,8 +534,6 @@ const [getProvider, setProvider] = replaceableThunk(async (): Promise<Provider> 
   }
 });
 
-export {setProvider};
-
 const ethersBlockOnceP = async (): Promise<number> => {
   const provider = await getProvider();
   return new Promise((resolve) => provider.once('block', (n) => resolve(n)));
@@ -556,7 +554,7 @@ const getAddr = async (acc: AccountTransferable): Promise<Address> => {
   throw Error(`Expected acc.networkAccount.address or acc.networkAccount.getAddress`);
 }
 
-export const balanceOf = async (acc: Account): Promise<BigNumber> => {
+const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
   if (!networkAccount) throw Error(`acc.networkAccount missing. Got: ${acc}`);
 
@@ -573,7 +571,7 @@ export const balanceOf = async (acc: Account): Promise<BigNumber> => {
 };
 
 /** @description Arg order follows "src before dst" convention */
-export const transfer = async (
+const transfer = async (
   from: AccountTransferable,
   to: AccountTransferable,
   value: BigNumber
@@ -606,12 +604,14 @@ const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
   return await rejectInvalidReceiptFor(txHash, r);
 };
 
-export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
+const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   // @ts-ignore // TODO
   if (networkAccount.getAddress && !networkAccount.address) {
     // @ts-ignore
     networkAccount.address = await getAddr({networkAccount});
   }
+
+  const stdlibT = stdlib;
 
   // XXX networkAccount MUST be a Wallet or Signer to deploy/attach
   const provider = await getProvider();
@@ -726,6 +726,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // iam/selfAddress don't make sense to check before ctc deploy, but are harmless.
         iam,
         selfAddress,
+        stdlibT,
       };
       // Return a wrapper around the impl. This obj and its fields do not mutate,
       // but the fields are closures around a mutating ref to impl.
@@ -736,6 +737,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         getInfo: (...args) => impl.getInfo(...args),
         iam: (...args) => impl.iam(...args),
         selfAddress: (...args) => impl.selfAddress(...args),
+        stdlibT,
       }
     }
 
@@ -1013,27 +1015,27 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     }
 
     // Note: wait is the local one not the global one of the same name.
-    return { getInfo, sendrecv, recv, wait, iam, selfAddress, };
+    return { getInfo, sendrecv, recv, wait, iam, selfAddress, stdlibT, };
   };
 
-  return { deploy, attach, networkAccount };
+  return { deploy, attach, networkAccount, stdlibT };
 };
 
-export const newAccountFromSecret = async (secret: string): Promise<Account> => {
+const newAccountFromSecret = async (secret: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = (new ethers.Wallet(secret)).connect(provider);
   const acc = await connectAccount(networkAccount);
   return acc;
 };
 
-export const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
+const newAccountFromMnemonic = async (phrase: string): Promise<Account> => {
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.fromMnemonic(phrase).connect(provider);
   const acc = await connectAccount(networkAccount);
   return acc;
 };
 
-export const getDefaultAccount = memoizeThunk(async (): Promise<Account> => {
+const getDefaultAccount = memoizeThunk(async (): Promise<Account> => {
   debug(`getDefaultAccount`);
   if (isIsolatedNetwork || networkDesc.type == 'window') {
     const provider = await getProvider();
@@ -1047,7 +1049,7 @@ export const getDefaultAccount = memoizeThunk(async (): Promise<Account> => {
 
 // TODO: Should users be able to access this directly?
 // TODO: define a faucet on Ropsten & other testnets?
-export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
+const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   // XXX this may break if users call setProvider?
   if (isIsolatedNetwork) {
     // On isolated networks, the default account is assumed to be the faucet.
@@ -1068,19 +1070,19 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
   throw Error(`getFaucet not supported in this context.`)
 });
 
-export const createAccount = async () => {
+const createAccount = async () => {
   debug(`createAccount with 0 balance.`);
   const provider = await getProvider();
   const networkAccount = ethers.Wallet.createRandom().connect(provider);
   return await connectAccount(networkAccount);
 }
 
-export const fundFromFaucet = async (account: AccountTransferable, value: BigNumber) => {
+const fundFromFaucet = async (account: AccountTransferable, value: BigNumber) => {
   const faucet = await getFaucet();
   await transfer(faucet, account, value);
 };
 
-export const newTestAccount = async (startingBalance: BigNumber): Promise<Account> => {
+const newTestAccount = async (startingBalance: BigNumber): Promise<Account> => {
   debug(`newTestAccount(${startingBalance})`);
   requireIsolatedNetwork('newTestAccount');
   const acc = await createAccount();
@@ -1102,20 +1104,20 @@ const getNetworkTimeNumber = async (): Promise<number> => {
   return await provider.getBlockNumber();
 };
 
-export const getNetworkTime = async (): Promise<BigNumber> => {
+const getNetworkTime = async (): Promise<BigNumber> => {
   return bigNumberify(await getNetworkTimeNumber());
 };
 
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
-export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
   return await waitUntilTime(add(now, delta), onProgress);
 };
 
 // onProgress callback is optional, it will be given an obj
 // {currentTime, targetTime}
-export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   targetTime = bigNumberify(targetTime);
   if (isIsolatedNetwork) {
     return await fastForwardTo(targetTime, onProgress);
@@ -1188,7 +1190,7 @@ const stepTime = async () => {
 // * it matches the bytecode you are expecting.
 // * it was deployed at exactly creation_block.
 // Throws an Error if any verifications fail
-export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
+const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<true> => {
   const { ABI, Bytecode } = backend._Connectors.ETH;
   const { address, creation_block, init, creator } = ctcInfo;
   const { argsMay, value } = initOrDefaultArgs(init);
@@ -1335,9 +1337,9 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
 };
 
 /** @description the display name of the standard unit of currency for the network */
-export const standardUnit = 'ETH';
+const standardUnit = 'ETH';
 /** @description the display name of the atomic (smallest) unit of currency for the network */
-export const atomicUnit = 'WEI';
+const atomicUnit = 'WEI';
 
 /**
  * @description  Parse currency by network
@@ -1345,10 +1347,10 @@ export const atomicUnit = 'WEI';
  * @returns  the amount in the {@link atomicUnit} of the network.
  * @example  parseCurrency(100).toString() // => '100000000000000000000'
  */
-export function parseCurrency(amt: CurrencyAmount): BigNumber {
+function parseCurrency(amt: CurrencyAmount): BigNumber {
   return bigNumberify(ethers.utils.parseUnits(amt.toString(), 'ether'));
 }
-export const minimumBalance: BigNumber =
+const minimumBalance: BigNumber =
   parseCurrency(0);
 
 const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
@@ -1365,7 +1367,7 @@ const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000000000000000')); // => '100'
  */
-export function formatCurrency(amt: BigNumber, decimals: number = 18): string {
+function formatCurrency(amt: BigNumber, decimals: number = 18): string {
   // Recall that 1 WEI = 10e18 ETH
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
@@ -1382,4 +1384,50 @@ export function formatCurrency(amt: BigNumber, decimals: number = 18): string {
     return amtStr;
   }
 }
-export const addressEq = mkAddressEq(T_Address);
+const addressEq = mkAddressEq(T_Address);
+
+// eslint-disable-next-line
+import * as shared from './shared';
+
+const stdlib = {
+  get stdlib(): any { return this; },
+  ...shared,
+  UInt_max,
+  randomUInt,
+  hasRandom,
+  digest,
+  T_Null,
+  T_Bool,
+  T_UInt,
+  T_Bytes,
+  T_Digest,
+  T_Address,
+  T_Array,
+  T_Tuple,
+  T_Object,
+  T_Data,
+  setProvider,
+  balanceOf,
+  transfer,
+  connectAccount,
+  newAccountFromSecret,
+  newAccountFromMnemonic,
+  getDefaultAccount,
+  getFaucet,
+  setFaucet,
+  createAccount,
+  fundFromFaucet,
+  newTestAccount,
+  getNetworkTime,
+  wait,
+  waitUntilTime,
+  verifyContract,
+  standardUnit,
+  atomicUnit,
+  parseCurrency,
+  minimumBalance,
+  formatCurrency,
+  addressEq
+}
+
+export default stdlib;

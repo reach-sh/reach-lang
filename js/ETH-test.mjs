@@ -1,7 +1,7 @@
 import { runTests, describe, it, expect } from './tester.mjs';
-import * as stdlib from './ETH.mjs';
-import * as ALGO_stdlib from './ALGO.mjs';
-import * as FAKE_stdlib from './FAKE.mjs';
+import stdlib from './ETH.mjs';
+import ALGO_stdlib from './ALGO.mjs';
+import FAKE_stdlib from './FAKE.mjs';
 
 runTests(async () => {
   await describe('The `web3` stdlib', async () => {
@@ -9,7 +9,9 @@ runTests(async () => {
 
     describe('exposes a `bigNumberToHex` function that', () => {
       it('correctly translates positive `BigNumber`s to hex', () => {
+        console.log(stdlib);
         const { bigNumberToHex } = stdlib;
+        console.log(bigNumberToHex);
 
         expect(bigNumberToHex(0)).toBe('0000000000000000000000000000000000000000000000000000000000000000');
         expect(bigNumberToHex(1)).toBe('0000000000000000000000000000000000000000000000000000000000000001');

@@ -1,4 +1,4 @@
-import * as stdlib from '@reach-sh/stdlib/ETH.mjs';
+import stdlib from '@reach-sh/stdlib/ETH.mjs';
 import * as backend from './build/index.main.mjs';
 
 console.log(process.argv);
@@ -15,11 +15,11 @@ stdlib.assert(process.argv[3] === 'Mr. Postman');
 
   await Promise.all([
     backend.Alice(
-      stdlib, ctcAlice,
+      ctcAlice,
       { ...stdlib.hasRandom }
     ),
     backend.Bob(
-      stdlib, ctcBob,
+      ctcBob,
       { ...stdlib.hasRandom }
     ),
   ]);

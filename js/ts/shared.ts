@@ -2,6 +2,12 @@ import crypto from 'crypto';
 import ethers from 'ethers';
 import { CBR_Address } from './CBR';
 
+export enum StdlibT {
+  FAKE,
+  ETH,
+  ALGO,
+}
+
 export interface AnyBackendTy {
   name: string,
   canonicalize: (x: any) => any,
@@ -44,12 +50,14 @@ export type IContract<ContractInfo, Digest, RawAddress, ConnectorTy extends AnyB
   wait: (delta: BigNumber) => Promise<BigNumber>,
   iam: (some_addr: RawAddress) => RawAddress,
   selfAddress: () => CBR_Address, // Not RawAddress!
+  stdlibT: any,
 };
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
   networkAccount: NetworkAccount,
   deploy: (bin: Backend) => Contract,
   attach: (bin: Backend, ctc: ContractInfo | Promise<ContractInfo>) => Contract,
+  stdlibT: any;
 }
 
 export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any> | {
