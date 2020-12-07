@@ -1,15 +1,16 @@
 /* --------------------------------------------------------------------------------------------
- * Copyright for portions from https://github.com/microsoft/vscode-extension-samples/tree/master/lsp-sample 
+ * Copyright for portions from https://github.com/microsoft/vscode-extension-samples/tree/master/lsp-sample
  * are held by (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
- * 
- * Copyright (c) 2020 Eric Lau. All rights reserved. 
+ *
+ * Copyright (c) 2020 Eric Lau. All rights reserved.
  * Licensed under the Eclipse Public License v2.0
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext, commands, window, env } from 'vscode';
+import { workspace, ExtensionContext, commands, window, env, ViewColumn, Uri } from 'vscode';
 import { exec } from 'child_process';
+import { initButtons } from './buttons';
 
 import {
 	LanguageClient,
@@ -43,7 +44,7 @@ export function activate(context: ExtensionContext) {
 			options: debugOptions
 		}
 	};
-	
+
 	/* this doesn't work
 	// settings.json configuration
 	const config = workspace.getConfiguration('settings');
@@ -77,9 +78,11 @@ export function activate(context: ExtensionContext) {
 		clientOptions
 	);
 
-	
+
 	// Start the client. This will also launch the server
 	client.start();
+
+	initButtons(context);
 
 }
 
@@ -108,7 +111,7 @@ function registerCommands(context: ExtensionContext) {
 			var m;
 			while ((m = pattern.exec(text))) {
 				m[0] = m[0].substring(6, m[0].length - 1)
-				await env.clipboard.writeText(m[0]); 
+				await env.clipboard.writeText(m[0]);
 				window.showInformationMessage("Copied Ethereum contract ABI to clipboard!")
 			}
 		})
@@ -121,7 +124,7 @@ function registerCommands(context: ExtensionContext) {
 			var m;
 			while ((m = pattern.exec(text))) {
 				m[0] = m[0].substring(11, m[0].length - 2)
-				await env.clipboard.writeText(m[0]); 
+				await env.clipboard.writeText(m[0]);
 				window.showInformationMessage("Copied Ethereum contract bytecode to clipboard!")
 			}
 		})
@@ -133,6 +136,13 @@ function registerCommands(context: ExtensionContext) {
 		terminal.sendText("./reach update");
 	});
 	context.subscriptions.push(disposable6);
+
+	// Launch docs website
+	const disposable7 = commands.registerCommand('reach.docs', () => {
+		env.openExternal(Uri.parse('https://docs.reach.sh/doc-index.html'));
+	});
+	context.subscriptions.push(disposable7);
+
 }
 
 export function deactivate(): Thenable<void> | undefined {

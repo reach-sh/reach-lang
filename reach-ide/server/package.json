@@ -12,15 +12,15 @@
 		"url": "https://github.com/ericglau/defi-ls"
 	},
 	"dependencies": {
-		"vscode-languageserver": "^6.1.1",
-		"vscode-languageserver-textdocument": "^1.0.1",
-		"web3": "^1.2.7",
-		"ethereumjs-wallet": "^0.6.3",
-		"ethereumjs-util": "^7.0.0",
+		"big-number": "2.0.0",
 		"ethereum-ens": "^0.8.0",
+		"ethereumjs-util": "^7.0.0",
+		"ethereumjs-wallet": "^0.6.3",
 		"index-of-regex": "^1.0.0",
 		"request-promise": "4.2.5",
-		"big-number": "2.0.0"
+		"vscode-languageserver": "^6.1.1",
+		"vscode-languageserver-textdocument": "^1.0.1",
+		"web3": "^1.2.7"
 	},
 	"scripts": {}
 }
