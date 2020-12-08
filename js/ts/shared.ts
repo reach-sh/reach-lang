@@ -2,16 +2,21 @@ import crypto from 'crypto';
 import ethers from 'ethers';
 import { CBR_Address } from './CBR';
 
+// ****************************************************************************
+// Type Definitions
+// ****************************************************************************
+
 export interface AnyBackendTy {
   name: string,
   canonicalize: (x: any) => any,
 }
+
 type BigNumber = ethers.BigNumber;
+
 type num = BigNumber | number
 
-const BigNumber = ethers.BigNumber;
-
 export type OnProgress = (obj: {currentTime: BigNumber, targetTime: BigNumber}) => any;
+
 export type WPArgs = {
   host: string | undefined,
   port: number,
@@ -66,12 +71,48 @@ export type ISimRes<Digest, RawAddress> = {
   nextSt: Digest,
   isHalt : boolean,
 };
+
 export type ISimTxn<RawAddress> = {
   to: RawAddress,
   amt: BigNumber,
 };
 
+export type CurrencyAmount = string | number | BigNumber
+
+export type {Connector} from './ConnectorMode';
+
+// ****************************************************************************
+// Helpers
+// ****************************************************************************
+
 let DEBUG: boolean = process.env.REACH_DEBUG ? true : false;
+
+const {
+  hexlify,
+  toUtf8Bytes,
+  toUtf8String,
+  isHexString,
+} = ethers.utils;
+
+const BigNumber = ethers.BigNumber;
+
+// Hex helpers
+// const un0x           = h => h.replace(/^0x/, ''); // unused
+const hexTo0x = (h: string): string => '0x' + h.replace(/^0x/, '');
+
+const byteToHex = (b: number): string => (b & 0xFF).toString(16).padStart(2, '0');
+
+const byteArrayToHex = (b: any): string => Array.from(b, byteToHex).join('');
+
+const format_ai = (ai: any) => JSON.stringify(ai);
+
+const forceHex = (x: string): string =>
+  isHex(x) ? x : stringToHex(x);
+
+// ****************************************************************************
+// Utility exports
+// ****************************************************************************
+
 export const setDEBUG = (b: boolean) => {
   if (b === false || b === true) {
     DEBUG = b;
@@ -79,7 +120,9 @@ export const setDEBUG = (b: boolean) => {
     throw Error(`Expected bool, got ${JSON.stringify(b)}`);
   }
 };
+
 export const getDEBUG = (): boolean => { return DEBUG; };
+
 export const debug = (msg: any) => {
   if (getDEBUG()) {
     console.log(`[${(new Date()).toISOString()}] DEBUG: ${msg}`);
@@ -92,13 +135,8 @@ export const assert = (d: any, ai: any = null) => {
   }
 }
 
-const {
-  hexlify,
-  toUtf8Bytes,
-  toUtf8String,
-  isHexString,
-} = ethers.utils;
 export const { isBigNumber } = BigNumber;
+
 export const bigNumberify = (x: any): BigNumber => BigNumber.from(x);
 
 export const checkedBigNumberify = ( at:string, m:BigNumber, x:any ): BigNumber => {
@@ -109,18 +147,9 @@ export const checkedBigNumberify = ( at:string, m:BigNumber, x:any ): BigNumber 
   throw Error(`bigNumberify: ${x} out of range [0, ${m}] at ${at}`);
 };
 
-// Hex helpers
-// const un0x           = h => h.replace(/^0x/, ''); // unused
-const hexTo0x = (h: string): string => '0x' + h.replace(/^0x/, '');
-const byteToHex = (b: number): string => (b & 0xFF).toString(16).padStart(2, '0');
-const byteArrayToHex = (b: any): string => Array.from(b, byteToHex).join('');
-
 // Contracts
 
 // .canonicalize turns stuff into the "canonical backend representation"
-
-const format_ai = (ai: any) => JSON.stringify(ai);
-
 export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
   try {
     return ctc.canonicalize(v);
@@ -131,7 +160,9 @@ export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
 }
 
 export const isHex = isHexString;
+
 export const hexToString = toUtf8String;
+
 export const stringToHex = (x:string): string =>
   hexlify(toUtf8Bytes(x));
 
@@ -146,6 +177,7 @@ export const makeDigest = (prep: any) => (t:any, v:any) => {
 };
 
 export const hexToBigNumber = (h: string): BigNumber => bigNumberify(hexTo0x(h));
+
 export const uintToBytes = (i: BigNumber): string => bigNumberToHex(i);
 
 export const bigNumberToHex = (u: num, size: number = 32) => {
@@ -158,11 +190,10 @@ export const bigNumberToHex = (u: num, size: number = 32) => {
   return hexlify(nFix).slice(2);
 };
 
-const forceHex = (x: string): string =>
-  isHex(x) ? x : stringToHex(x);
 export const bytesEq = (x: any, y: any): boolean => {
   debug(`bytesEq '${x}' '${y}'`);
   return forceHex(x) === forceHex(y); };
+
 export const digestEq = bytesEq;
 
 export const makeRandom = (width:number) => {
@@ -191,6 +222,7 @@ export const lt = (a: num, b: num): boolean => bigNumberify(a).lt(bigNumberify(b
 
 export const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
   cnt == 0 ? [] : args.slice(-1 * cnt);
+
 export const argsSplit = <T>(args: Array<T>, cnt: number): [ Array<T>, Array<T> ] =>
   cnt == 0 ? [args, []] : [ args.slice(0, args.length - cnt), args.slice(-1 * cnt) ];
 
@@ -203,8 +235,6 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
 export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
   x.map((e, i): [X, Y] => [e, y[i]]);
 
-export type CurrencyAmount = string | number | BigNumber
-export type {Connector} from './ConnectorMode';
 
 // XXX this doesn't really belong here, but hard to relocate due to dep on bytesEq
 export const mkAddressEq = (T_Address: {canonicalize: (addr:any) => any}

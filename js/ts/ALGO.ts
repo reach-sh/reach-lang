@@ -26,16 +26,13 @@ import { stdlib as compiledStdlib, ALGO_Ty, NV, typeDefs } from './ALGO_compiled
 export * from './shared';
 
 
+// ****************************************************************************
+// Type Definitions
+// ****************************************************************************
+
 type BigNumber = ethers.BigNumber;
 
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
-
-export const { addressEq, digest } = compiledStdlib;
-
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest } = typeDefs;
-
-export const { randomUInt, hasRandom } = makeRandom(8);
-
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
@@ -164,37 +161,17 @@ type ContractInfo = {
 //   recv: function
 // }
 
+// ****************************************************************************
+// Helpers
+// ****************************************************************************
 
-// Common interface exports
-
-// TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
 const token = process.env.ALGO_TOKEN || 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const server = process.env.ALGO_SERVER || 'http://localhost';
 const port = process.env.ALGO_PORT || 4180;
-const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
-  await wait1port(server, port);
-  return new algosdk.Algodv2(token, server, port);
-});
-export {setAlgodClient};
 
 const itoken = process.env.ALGO_INDEXER_TOKEN || 'reach-devnet';
 const iserver = process.env.ALGO_INDEXER_SERVER || 'http://localhost';
 const iport = process.env.ALGO_INDEXER_PORT || 8980;
-const [getIndexer, setIndexer] = replaceableThunk(async () => {
-  await wait1port(iserver, iport);
-  return new algosdk.Indexer(itoken, iserver, iport);
-});
-export {setIndexer};
-
-// eslint-disable-next-line max-len
-const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'close year slice mind voice cousin brass goat anxiety drink tourist child stock amused rescue pitch exhibit guide occur wide barrel process type able please'));
-const [getFaucet, setFaucet] = replaceableThunk(async () => {
-  return await connectAccount(FAUCET);
-});
-
-export {getFaucet, setFaucet};
-
-// Helpers
 
 async function wait1port(theServer: string, thePort: string | number) {
   thePort = typeof thePort === 'string' ? parseInt(thePort, 10) : thePort;
@@ -251,7 +228,8 @@ const sendAndConfirm = async (
   return await waitForConfirmation(txID, untilRound);
 };
 
-// // Backend
+
+// Backend
 const compileTEAL = async (label: string, code: string): Promise<CompileResultBytes> => {
   debug(`compile ${label}`)
   let s, r;
@@ -301,19 +279,6 @@ const sign_and_send_sync = async (
   }
 };
 
-export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<TxnInfo> => {
-  const valuen = value.toNumber();
-  const sender = from.networkAccount;
-  const receiver = to.networkAccount.addr;
-
-  const note = algosdk.encodeObj('@reach-sh/ALGO.mjs transfer');
-  return await sign_and_send_sync(
-    `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuen}`,
-    sender.sk,
-    algosdk.makePaymentTxnWithSuggestedParams(
-      sender.addr, receiver, valuen, undefined, note, await getTxnParams(),
-    ));
-};
 
 // XXX I'd use x.replaceAll if I could (not supported in this node version), but it would be better to extend ConnectorInfo so these are functions
 const replaceAll = (orig: string, what: string, whatp: string): string => {
@@ -419,6 +384,64 @@ const doQuery = async (dhead:string, query: ApiCall<any>): Promise<any> => {
 
   return txn;
 };
+
+const showBalance = async (note: string, networkAccount: NetworkAccount) => {
+  const bal = await balanceOf({ networkAccount });
+  const showBal = formatCurrency(bal, 2);
+  console.log('%s: balance: %s algos', note, showBal);
+};
+
+// ****************************************************************************
+// Common Interface Exports
+// ****************************************************************************
+
+export const { addressEq, digest } = compiledStdlib;
+
+export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest } = typeDefs;
+
+export const { randomUInt, hasRandom } = makeRandom(8);
+
+
+// TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
+const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
+  await wait1port(server, port);
+  return new algosdk.Algodv2(token, server, port);
+});
+
+export {setAlgodClient};
+
+
+const [getIndexer, setIndexer] = replaceableThunk(async () => {
+  await wait1port(iserver, iport);
+  return new algosdk.Indexer(itoken, iserver, iport);
+});
+
+export {setIndexer};
+
+
+// eslint-disable-next-line max-len
+const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'close year slice mind voice cousin brass goat anxiety drink tourist child stock amused rescue pitch exhibit guide occur wide barrel process type able please'));
+const [getFaucet, setFaucet] = replaceableThunk(async () => {
+  return await connectAccount(FAUCET);
+});
+
+export {getFaucet, setFaucet};
+
+
+export const transfer = async (from: Account, to: Account, value: BigNumber): Promise<TxnInfo> => {
+  const valuen = value.toNumber();
+  const sender = from.networkAccount;
+  const receiver = to.networkAccount.addr;
+
+  const note = algosdk.encodeObj('@reach-sh/ALGO.mjs transfer');
+  return await sign_and_send_sync(
+    `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuen}`,
+    sender.sk,
+    algosdk.makePaymentTxnWithSuggestedParams(
+      sender.addr, receiver, valuen, undefined, note, await getTxnParams(),
+    ));
+};
+
 
 export const connectAccount = async (networkAccount: NetworkAccount) => {
   const indexer = await getIndexer();
@@ -851,11 +874,6 @@ export const balanceOf = async (acc: Account): Promise<BigNumber> => {
   return bigNumberify(amount);
 };
 
-const showBalance = async (note: string, networkAccount: NetworkAccount) => {
-  const bal = await balanceOf({ networkAccount });
-  const showBal = formatCurrency(bal, 2);
-  console.log('%s: balance: %s algos', note, showBal);
-};
 
 export const createAccount = async () => {
   const networkAccount = algosdk.generateAccount();
@@ -877,6 +895,7 @@ export const newTestAccount = async (startingBalance: BigNumber) => {
 
 /** @description the display name of the standard unit of currency for the network */
 export const standardUnit = 'ALGO';
+
 /** @description the display name of the atomic (smallest) unit of currency for the network */
 export const atomicUnit = 'μALGO';
 
@@ -893,6 +912,7 @@ export function parseCurrency(amt: CurrencyAmount): BigNumber {
     : amt;
   return bigNumberify(algosdk.algosToMicroalgos(numericAmt));
 }
+
 // XXX get from SDK
 const raw_minimumBalance = 100000;
 export const minimumBalance: BigNumber =
@@ -940,6 +960,7 @@ export const newAccountFromSecret = async (secret: string | Uint8Array): Promise
 };
 
 export const getNetworkTime = async () => bigNumberify(await getLastRound());
+
 export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const onProg = onProgress || (() => {});
   let currentTime = await getNetworkTime();
@@ -952,6 +973,7 @@ export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgre
   debug(`waitUntilTime: ended: ${currentTime} -> ${targetTime}`);
   return currentTime;
 };
+
 export const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const now = await getNetworkTime();
   debug(`wait: delta=${delta} now=${now}, until=${now.add(delta)}`);
