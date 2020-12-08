@@ -486,6 +486,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       value: BigNumber,
       out_tys: Array<AnyALGO_Ty>,
       onlyIf: boolean,
+      soloSend: boolean,
       timeout_delay: undefined | BigNumber,
       sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
@@ -634,8 +635,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           debug(`${dhead} --- SUCCESS: ${JSON.stringify(res)}`);
         } catch (e) {
           const handle_error =
-            // XXX See comment on line 882-ish of ETH.ts
-            true ? debug : ((x:string) => { throw Error(x); });
+            (!soloSend) ? debug : ((x:string) => { throw Error(x); });
 
           if ( e.type == "sendRawTransaction" ) {
             handle_error(`${dhead} --- FAIL:\n${format_failed_request(e.e)}`);

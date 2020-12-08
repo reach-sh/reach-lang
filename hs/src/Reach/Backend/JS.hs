@@ -388,7 +388,7 @@ jsETail ctxt = \case
       defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> parens callp <> semi
       callp =
         case from_me of
-          Just (args, amt, whena, svs) -> sendp
+          Just (args, amt, whena, svs, soloSend) -> sendp
             where
               sendp =
                 jsApply
@@ -401,6 +401,7 @@ jsETail ctxt = \case
                   , amtp
                   , jsArray $ map (jsContract . argTypeOf) $ map DLA_Var msg
                   , jsArg whena
+                  , jsCon (DLL_Bool soloSend)
                   , delayp
                   , parens $ "(" <> jsTxn ctxt' <> ") => " <> jsBraces sim_body
                   ]

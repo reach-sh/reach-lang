@@ -47,8 +47,8 @@ data ETail
       , et_tc_prev :: Int
       , et_tc_which :: Int
       , et_tc_from_me
-        :: ( ---     args     amt   when , saved_vs
-             Maybe ([DLArg], DLArg, DLArg, [DLVar])
+        :: ( ---     args     amt   when   saved_vs just-me
+             Maybe ([DLArg], DLArg, DLArg, [DLVar], Bool)
              )
       , et_tc_from_msg :: [DLVar]
       , et_tc_from_amtv :: DLVar

@@ -400,7 +400,7 @@ instance Pretty ETail where
           msendp =
             case msend of
               Nothing -> mempty
-              Just (as, amt, whena, saved) -> ".publish" <> cm [parens (render_das as), pretty amt, pretty whena, cm (map pretty saved)]
+              Just (as, amt, whena, saved, soloSend) -> ".publish" <> cm [parens (render_das as), pretty amt, pretty whena, cm (map pretty saved), pretty soloSend]
           timep =
             case mtime of
               Nothing -> mempty

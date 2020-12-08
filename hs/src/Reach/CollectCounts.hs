@@ -44,6 +44,9 @@ counts_nzs (Counts cs) = M.keys cs
 class Countable a where
   counts :: a -> Counts
 
+instance Countable Bool where
+  counts = const mempty
+
 instance (Countable x, Countable y) => Countable (x, y) where
   counts (a, b) = counts a <> counts b
 
@@ -52,6 +55,9 @@ instance (Countable x, Countable y, Countable z) => Countable (x, y, z) where
 
 instance (Countable x, Countable y, Countable z, Countable a) => Countable (x, y, z, a) where
   counts (a, b, c, d) = counts a <> counts b <> counts c <> counts d
+
+instance (Countable x, Countable y, Countable z, Countable a, Countable b) => Countable (x, y, z, a, b) where
+  counts (a, b, c, d, e) = counts a <> counts b <> counts c <> counts d <> counts e
 
 instance Countable v => Countable (Maybe v) where
   counts Nothing = mempty

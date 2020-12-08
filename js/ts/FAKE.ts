@@ -215,7 +215,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv = async (
       label: string, funcNum: number, evt_cnt: number, tys: Array<FAKE_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<FAKE_Ty>,
-      onlyIf: boolean,
+      onlyIf: boolean, soloSend:boolean,
       timeout_delay: BigNumber | false, sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
@@ -263,7 +263,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return await doRecv(false);
         } else {
           debug(`${label} send ${funcNum} --- post failed`);
-          return await doRecv(true);
+          if ( soloSend ) {
+            throw Error(`post failed`);
+          } else {
+            return await doRecv(true);
+          }
         }
       } else {
         debug(`${label} send ${funcNum} --- timeout`);

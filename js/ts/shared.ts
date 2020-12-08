@@ -40,7 +40,7 @@ export type IContract<ContractInfo, Digest, RawAddress, ConnectorTy extends AnyB
   sendrecv: (
     label: string, funcNum: number, evt_cnt: number, tys: Array<ConnectorTy>,
     args: Array<any>, value: BigNumber, out_tys: Array<ConnectorTy>,
-    onlyIf: boolean,
+    onlyIf: boolean, soloSend: boolean,
     timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => ISimRes<Digest, RawAddress>,
   ) => Promise<IRecv<RawAddress>>,
   recv: (

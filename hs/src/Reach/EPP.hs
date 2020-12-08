@@ -478,6 +478,7 @@ epp_s st s =
       let svs = counts_nzs time_cons_cs
       let prev = pst_prev_handler st
       let this_h = C_Handler at int_ok fromv prev svs msg amt_dv ct_cons
+      let soloSend = (M.size send) == 1
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
             ProRes_ cs_' $ ET_ToConsensus at fromv prev which mfrom msg amt_dv mtime' et_
             where
@@ -489,7 +490,7 @@ epp_s st s =
                 case M.lookup p send of
                   Nothing -> mk_et Nothing
                   Just (from_as, amt_da, when_da) ->
-                    mk_et $ Just (from_as, amt_da, when_da, svs)
+                    mk_et $ Just (from_as, amt_da, when_da, svs, soloSend)
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h
       return $ ProResS p_prts (ProRes_ time_cons_cs True)

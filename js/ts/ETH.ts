@@ -488,7 +488,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         sendrecv: async (
           label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
           args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
-          onlyIf: boolean,
+          onlyIf: boolean, soloSend: boolean,
           timeout_delay: BigNumber | false, sim_p: any,
         ): Promise<Recv> => {
           debug(`${shad}: ${label} sendrecv m${funcNum} (deferred deploy)`);
@@ -501,6 +501,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // The following must be true for the first sendrecv.
           try {
             assert(onlyIf, true);
+            assert(soloSend, true);
             assert(eq(funcNum, 1));
             assert(!timeout_delay);
           } catch (e) {
@@ -646,7 +647,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv_impl = async (
       label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
-      onlyIf: boolean,
+      onlyIf: boolean, soloSend: boolean,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
@@ -691,9 +692,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         } catch (e) {
 
-          // XXX We could add a parameter to sendrecv that says if we're the
-          // only one
-          if ( true ) {
+          if ( ! soloSend ) {
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SKIPPING (${e})`);
           } else {
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- ERROR (${e})`);
@@ -735,11 +734,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const sendrecv = async (
       label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
-      onlyIf: boolean,
+      onlyIf: boolean, soloSend: boolean,
       timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
       void(sim_p);
-      return await sendrecv_impl(label, funcNum, evt_cnt, tys, args, value, out_tys, onlyIf, timeout_delay);
+      return await sendrecv_impl(label, funcNum, evt_cnt, tys, args, value, out_tys, onlyIf, soloSend, timeout_delay);
     }
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
