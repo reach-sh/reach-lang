@@ -2547,54 +2547,46 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
 evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
   case ev of
-    SLV_Prim (SLPrim_part_setted at' who addr_da) ->
-      case st_mode st of
-        SLM_ConsensusStep -> do
-          let pdvs = st_pdvs st
-          case M.lookup who pdvs of
-            Just _ ->
-              expect_throw_ctx ctxt at' $ Err_Eval_PartSet_Bound who
-            Nothing -> do
-              let who_s = bunpack who
-              (whodv, lifts) <- ctxt_lift_expr ctxt at (DLVar at' who_s T_Address) (DLE_PartSet at' who addr_da)
-              let pdvs' = M.insert who whodv pdvs
-              let st' = st {st_pdvs = pdvs'}
-              keepLifts lifts $ evalStmt ctxt at sco st' ks
-        _ -> illegal_mode
-    SLV_Prim SLPrim_exitted ->
-      case (st_mode st, st_live st) of
-        (SLM_Step, True) -> do
-          let st' = st {st_live = False}
-          expect_empty_tail ctxt "exit" JSNoAnnot sp at ks $
-            return $ SLRes mempty st' $ SLStmtRes env []
-        _ -> illegal_mode
-    SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) ->
-      case st_mode st of
-        SLM_Step -> do
-          (lifts', sco', st') <-
-            foldM (doOnly ctxt at) (mempty, sco, st) $
-              map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
-          keepLifts lifts' $ evalStmt ctxt at sco' st' ks
-        _ -> illegal_mode
+    SLV_Prim (SLPrim_part_setted at' who addr_da) -> do
+      ensure_mode ctxt at st SLM_ConsensusStep "participant set"
+      let pdvs = st_pdvs st
+      case M.lookup who pdvs of
+        Just _ ->
+          expect_throw_ctx ctxt at' $ Err_Eval_PartSet_Bound who
+        Nothing -> do
+          let who_s = bunpack who
+          (whodv, lifts) <- ctxt_lift_expr ctxt at (DLVar at' who_s T_Address) (DLE_PartSet at' who addr_da)
+          let pdvs' = M.insert who whodv pdvs
+          let st' = st {st_pdvs = pdvs'}
+          keepLifts lifts $ evalStmt ctxt at sco st' ks
+    SLV_Prim SLPrim_exitted -> do
+      ensure_mode ctxt at st SLM_Step "exit"
+      ensure_live ctxt at st "exit"
+      let st' = st {st_live = False}
+      expect_empty_tail ctxt "exit" JSNoAnnot sp at ks $
+        return $ SLRes mempty st' $ SLStmtRes env []
+    SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) -> do
+      ensure_mode ctxt at st SLM_Step "local action (only or each)"
+      (lifts', sco', st') <-
+        foldM (doOnly ctxt at) (mempty, sco, st) $
+          map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
+      keepLifts lifts' $ evalStmt ctxt at sco' st' ks
     SLV_Form (SLForm_Part_ToConsensus to_at whos vas Nothing mmsg mamt mwhen mtime) -> do
       let msg = fromMaybe [] mmsg
       let amt = fromMaybe (JSDecimal JSNoAnnot "0") mamt
       let whene = fromMaybe (JSLiteral JSNoAnnot "true") mwhen
       doToConsensus ctxt to_at sco st ks whos vas msg amt whene mtime
-    SLV_Prim SLPrim_committed ->
-      case st_mode st of
-        SLM_ConsensusStep -> do
-          let st_step = st {st_mode = SLM_Step}
-          SLRes steplifts k_st cr <- evalStmt ctxt at sco st_step ks
-          let lifts' = (return $ DLS_FromConsensus at steplifts)
-          return $ SLRes lifts' k_st cr
-        _ -> illegal_mode
+    SLV_Prim SLPrim_committed -> do
+      ensure_mode ctxt at st SLM_ConsensusStep "commit"
+      let st_step = st {st_mode = SLM_Step}
+      SLRes steplifts k_st cr <- evalStmt ctxt at sco st_step ks
+      let lifts' = (return $ DLS_FromConsensus at steplifts)
+      return $ SLRes lifts' k_st cr
     _ ->
       case typeOf_ctxt ctxt at ev of
         (T_Null, _) -> evalStmt ctxt at sco st ks
         (ty, _) -> expect_throw_ctx ctxt at (Err_Block_NotNull ty ev)
   where
-    illegal_mode = expect_throw_ctx ctxt at $ Err_Eval_IllegalMode (st_mode st) "trampoline"
     env = sco_env sco
 
 doWhileLikeInitEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> ST s (DLStmts, DLStmts, M.Map SLVar DLVar, DLAssignment, SLState, SLScope)
