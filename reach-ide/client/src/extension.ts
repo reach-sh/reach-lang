@@ -8,7 +8,7 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext, commands, window, env, ViewColumn, Uri } from 'vscode';
+import { workspace, ExtensionContext, commands, window, env, ViewColumn, Uri, WorkspaceFolder } from 'vscode';
 import { exec } from 'child_process';
 import { initButtons } from './buttons';
 
@@ -24,6 +24,9 @@ let client: LanguageClient;
 var terminal;
 
 const fs = require('fs')
+const url = require('url')
+
+var rootFolder: string;
 
 export function activate(context: ExtensionContext) {
 	// The server is implemented in node
@@ -44,12 +47,6 @@ export function activate(context: ExtensionContext) {
 			options: debugOptions
 		}
 	};
-
-	/* this doesn't work
-	// settings.json configuration
-	const config = workspace.getConfiguration('settings');
-	config.update("files.associations", { "*.rsh" : "javascript" }, false);
-	*/
 
 	terminal = window.createTerminal({ name: "Reach IDE" });
 	registerCommands(context);
@@ -78,12 +75,16 @@ export function activate(context: ExtensionContext) {
 		clientOptions
 	);
 
-
 	// Start the client. This will also launch the server
 	client.start();
 
 	initButtons(context);
 
+	// Inject association for .rsh file type
+	if (workspace.workspaceFolders !== undefined) {
+		rootFolder = url.fileURLToPath( workspace.workspaceFolders[0].uri.toString() );
+	};
+	associateRshFiles();
 }
 
 function registerCommands(context: ExtensionContext) {
@@ -143,6 +144,45 @@ function registerCommands(context: ExtensionContext) {
 	});
 	context.subscriptions.push(disposable7);
 
+}
+
+function associateRshFiles() {
+	exec(`mkdir -p ${rootFolder}${path.sep}.vscode`, (error: { message: any; }, stdout: any, stderr: any) => {
+		if (error) {
+			console.error(`Could not create .vscode directory: ${error.message}`);
+			return;
+		}
+		if (stderr) {
+			console.error(`Could not create .vscode directory: ${stderr}`);
+			return;
+		}
+		injectRshFileAssocation();
+	});
+}
+
+function injectRshFileAssocation() {
+	var settingsFile:string = `${rootFolder}${path.sep}.vscode/settings.json`;
+
+	fs.readFile(settingsFile, function (err: any, content: string) {
+		var parseJson;
+		try {
+			parseJson = JSON.parse(content);
+		} catch {
+			parseJson = {}
+		}
+		var fileAssoc = parseJson["files.associations"]
+		if (fileAssoc == undefined) {
+			parseJson["files.associations"] = { "*.rsh": "javascript" }
+		} else {
+			parseJson["files.associations"]["*.rsh"] = "javascript";
+		}
+		fs.writeFile(settingsFile, JSON.stringify(parseJson), function (err: any) {
+			if (err) {
+				console.error(`Could not create .vscode/settings.json: ${err}`);
+				return;
+			}
+		})
+	})
 }
 
 export function deactivate(): Thenable<void> | undefined {

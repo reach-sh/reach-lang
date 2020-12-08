@@ -126,43 +126,8 @@ connection.onInitialize((params: InitializeParams) => {
 		};
 	}
 
-	// Inject association for file type
-	exec("mkdir -p .vscode", (error: { message: any; }, stdout: any, stderr: any) => {
-		if (error) {
-			connection.console.error(`Could not create .vscode directory: ${error.message}`);
-			return;
-		}
-		if (stderr) {
-			connection.console.error(`Could not create .vscode directory: ${stderr}`);
-			return;
-		}
-		appendRshFileAssociation();
-	});
-
 	return result;
 });
-
-function appendRshFileAssociation() {
-
-	fs.readFile('.vscode/settings.json', function (err: any, content: string) {
-		var parseJson;
-		try {
-			parseJson = JSON.parse(content);
-		} catch {
-			parseJson = {}
-		}
-		var fileAssoc = parseJson["files.associations"]
-		if (fileAssoc == undefined) {
-			parseJson["files.associations"] = { "*.rsh": "javascript" }
-		} else {
-			parseJson["files.associations"]["*.rsh"] = "javascript";
-		}
-		fs.writeFile('.vscode/settings.json', JSON.stringify(parseJson), function (err: any) {
-			if (err) throw err;
-		})
-	})
-
-}
 
 connection.onInitialized(() => {
 	if (hasConfigurationCapability) {
