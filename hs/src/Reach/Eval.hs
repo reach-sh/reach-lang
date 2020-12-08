@@ -1150,50 +1150,47 @@ evalForm ctxt at sco st f args =
           expect_throw_ctx ctxt at $ Err_Each_NotTuple parts_v
     -- This case occurs when the "result" of `each` is used as an expression.
     SLForm_EachAns _ e_at _ _ -> expect_throw_ctx ctxt e_at $ Err_Invalid_Statement "each/only"
-    SLForm_unknowable ->
-      case st_mode st of
-        SLM_Step -> do
-          let (notter_e, snd_part, mmsg_e) =
-                case args of
-                  [x, y] -> (x, y, Nothing)
-                  [x, y, z] -> (x, y, Just z)
-                  _ -> illegal_args 2
-          let (knower_e, whats_e) = jsCallLike at snd_part
-          SLRes lifts_m st_m mmsg <-
-            case mmsg_e of
-              Just x -> do
-                SLRes lifts_x st_x msgsv <- evalExpr ctxt at sco st x
-                let msgv = ensure_public ctxt at msgsv
-                return $ SLRes lifts_x st_x $ Just $ mustBeBytes ctxt at msgv
-              Nothing -> return $ SLRes mempty st Nothing
-          SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st_m notter_e
-          let participant_who = \case
-                SLV_Participant _ who _ _ -> who
-                v -> expect_throw_ctx ctxt at $ Err_NotParticipant v
-          let notter = participant_who v_n
-          SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
-          let knower = participant_who v_kn
-          let sco_knower = sco {sco_env = sco_lookup_penv ctxt sco knower}
-          let st_whats = st {st_mode = SLM_LocalStep}
-          SLRes lifts_whats _ whats_sv <-
-            evalExprs ctxt at sco_knower st_whats whats_e
-          let whats_vs = map snd whats_sv
-          (whats_lifts, _, whats_das) <-
-            compileTypeOfs ctxt at whats_vs
-          let whats_da = DLA_Literal $ DLL_Bool False
-          let ct = CT_Unknowable notter whats_das
-          let lifts' =
-                return $
-                  DLS_Let at Nothing $
-                    DLE_Claim at (ctxt_stack ctxt) ct whats_da mmsg
-          let lifts =
-                lifts_m <> lifts_n <> lifts_kn
-                  <> lifts_whats
-                  <> whats_lifts
-                  <> lifts'
-          return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
-        cm ->
-          expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm $ "unknowable"
+    SLForm_unknowable -> do
+      ensure_mode ctxt at st SLM_Step "unknowable"
+      let (notter_e, snd_part, mmsg_e) =
+            case args of
+              [x, y] -> (x, y, Nothing)
+              [x, y, z] -> (x, y, Just z)
+              _ -> illegal_args 2
+      let (knower_e, whats_e) = jsCallLike at snd_part
+      SLRes lifts_m st_m mmsg <-
+        case mmsg_e of
+          Just x -> do
+            SLRes lifts_x st_x msgsv <- evalExpr ctxt at sco st x
+            let msgv = ensure_public ctxt at msgsv
+            return $ SLRes lifts_x st_x $ Just $ mustBeBytes ctxt at msgv
+          Nothing -> return $ SLRes mempty st Nothing
+      SLRes lifts_n st_n (_, v_n) <- evalExpr ctxt at sco st_m notter_e
+      let participant_who = \case
+            SLV_Participant _ who _ _ -> who
+            v -> expect_throw_ctx ctxt at $ Err_NotParticipant v
+      let notter = participant_who v_n
+      SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
+      let knower = participant_who v_kn
+      let sco_knower = sco {sco_env = sco_lookup_penv ctxt sco knower}
+      let st_whats = st {st_mode = SLM_LocalStep}
+      SLRes lifts_whats _ whats_sv <-
+        evalExprs ctxt at sco_knower st_whats whats_e
+      let whats_vs = map snd whats_sv
+      (whats_lifts, _, whats_das) <-
+        compileTypeOfs ctxt at whats_vs
+      let whats_da = DLA_Literal $ DLL_Bool False
+      let ct = CT_Unknowable notter whats_das
+      let lifts' =
+            return $
+              DLS_Let at Nothing $
+                DLE_Claim at (ctxt_stack ctxt) ct whats_da mmsg
+      let lifts =
+            lifts_m <> lifts_n <> lifts_kn
+              <> lifts_whats
+              <> whats_lifts
+              <> lifts'
+      return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
   where
     illegal_args n = expect_throw_ctx ctxt at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -1728,16 +1725,14 @@ evalPrim ctxt at sco st p sargs =
           return $ SLRes lifts st' $ public $ SLV_Null at "transfer.to"
         cm -> expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm "transfer.to"
     SLPrim_exit ->
-      case st_mode st of
-        SLM_Step ->
-          case sargs of
-            [] -> do
-              let zero = SLV_Int srcloc_builtin 0
-              tbzero <- doAssertBalance ctxt at sco st zero PEQ
-              let lifts = tbzero <> (return $ DLS_Stop at)
-              return $ SLRes lifts st $ public $ SLV_Prim $ SLPrim_exitted
-            _ -> illegal_args
-        cm -> expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm "exit"
+      case sargs of
+        [] -> do
+          ensure_mode ctxt at st SLM_Step "exit"
+          let zero = SLV_Int srcloc_builtin 0
+          tbzero <- doAssertBalance ctxt at sco st zero PEQ
+          let lifts = tbzero <> (return $ DLS_Stop at)
+          return $ SLRes lifts st $ public $ SLV_Prim $ SLPrim_exitted
+        _ -> illegal_args
     SLPrim_exitted -> illegal_args
     SLPrim_forall {} ->
       case sargs of
