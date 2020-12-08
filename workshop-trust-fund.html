@@ -268,7 +268,7 @@ const runDemo = async (delayReceiver, delayFunder) =&gt; {
   const ctcBystander = bystander.attach(backend, ctcFunder.getInfo());
 
   await Promise.all([
-    backend.Funder(stdlib, ctcFunder, {
+    backend.Funder(ctcFunder, {
       ...common('Funder', fDelay),
       getParams: () =&gt; ({
         receiverAddr: receiver.networkAccount,
@@ -278,8 +278,8 @@ const runDemo = async (delayReceiver, delayFunder) =&gt; {
         dormant: DORMANT,
       }),
     }),
-    backend.Receiver(stdlib, ctcReceiver, common('Receiver', rDelay)),
-    backend.Bystander(stdlib, ctcBystander, common('Bystander')),
+    backend.Receiver(ctcReceiver, common('Receiver', rDelay)),
+    backend.Bystander(ctcBystander, common('Bystander')),
   ]);
   for (const [who, acc] of [['Funder', funder], ['Receiver', receiver], ['Bystander', bystander]]) {
     console.log(`${who} has a balance of ${await getBalance(acc)}`);
@@ -330,7 +330,7 @@ const runDemo = async (delayReceiver, delayFunder) =&gt; {
  <span class="mi">37</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">ctcBystander</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">bystander</span></font><span class="p">.</span><font class="badlink"><span class="nx">attach</span></font><span class="p">(</span><font class="badlink"><span class="nx">backend</span></font><span class="p">,</span> <font class="badlink"><span class="nx">ctcFunder</span></font><span class="p">.</span><font class="badlink"><span class="nx">getInfo</span></font><span class="p">());</span>
  <span class="mi">38</span>    
  <span class="mi">39</span>      <font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nb">Promise</span></font><span class="p">.</span><font class="badlink"><span class="nx">all</span></font><span class="p">([</span>
- <span class="mi">40</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Funder</span></font><span class="p">(</span><font class="badlink"><span class="nx">stdlib</span></font><span class="p">,</span> <font class="badlink"><span class="nx">ctcFunder</span></font><span class="p">,</span> <span class="p">{</span>
+ <span class="mi">40</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Funder</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctcFunder</span></font><span class="p">,</span> <span class="p">{</span>
  <span class="mi">41</span>          <span class="p">...</span><font class="badlink"><span class="nx">common</span></font><span class="p">(</span><span class="s1">&#39;Funder&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">fDelay</span></font><span class="p">),</span>
  <span class="mi">42</span>          <font class="badlink"><span class="nx">getParams</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">({</span>
  <span class="mi">43</span>            <font class="badlink"><span class="nx">receiverAddr</span></font><font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">receiver</span></font><span class="p">.</span><font class="badlink"><span class="nx">networkAccount</span></font><span class="p">,</span>
@@ -340,8 +340,8 @@ const runDemo = async (delayReceiver, delayFunder) =&gt; {
  <span class="mi">47</span>            <font class="badlink"><span class="nx">dormant</span></font><font class="badlink"><span class="o">:</span></font> <font class="badlink"><span class="nx">DORMANT</span></font><span class="p">,</span>
  <span class="mi">48</span>          <span class="p">}),</span>
  <span class="mi">49</span>        <span class="p">}),</span>
- <span class="mi">50</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Receiver</span></font><span class="p">(</span><font class="badlink"><span class="nx">stdlib</span></font><span class="p">,</span> <font class="badlink"><span class="nx">ctcReceiver</span></font><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">(</span><span class="s1">&#39;Receiver&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">rDelay</span></font><span class="p">)),</span>
- <span class="mi">51</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Bystander</span></font><span class="p">(</span><font class="badlink"><span class="nx">stdlib</span></font><span class="p">,</span> <font class="badlink"><span class="nx">ctcBystander</span></font><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">(</span><span class="s1">&#39;Bystander&#39;</span><span class="p">)),</span>
+ <span class="mi">50</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Receiver</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctcReceiver</span></font><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">(</span><span class="s1">&#39;Receiver&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">rDelay</span></font><span class="p">)),</span>
+ <span class="mi">51</span>        <font class="badlink"><span class="nx">backend</span></font><span class="p">.</span><font class="badlink"><span class="nx">Bystander</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctcBystander</span></font><span class="p">,</span> <font class="badlink"><span class="nx">common</span></font><span class="p">(</span><span class="s1">&#39;Bystander&#39;</span><span class="p">)),</span>
  <span class="mi">52</span>      <span class="p">]);</span>
  <span class="mi">53</span>      <font class="badlink"><span class="k">for</span></font> <span class="p">(</span><a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <span class="p">[</span><font class="badlink"><span class="nx">who</span></font><span class="p">,</span> <font class="badlink"><span class="nx">acc</span></font><span class="p">]</span> <font class="badlink"><span class="k">of</span></font> <span class="p">[[</span><span class="s1">&#39;Funder&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">funder</span></font><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;Receiver&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">receiver</span></font><span class="p">],</span> <span class="p">[</span><span class="s1">&#39;Bystander&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">bystander</span></font><span class="p">]])</span> <span class="p">{</span>
  <span class="mi">54</span>        <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`</span><span class="si">${</span><font class="badlink"><span class="nx">who</span></font><span class="si">}</span><span class="sb"> has a balance of </span><span class="si">${</span><font class="badlink"><span class="nx">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">(</span><font class="badlink"><span class="nx">acc</span></font><span class="p">)</span><span class="si">}</span><span class="sb">`</span><span class="p">);</span>

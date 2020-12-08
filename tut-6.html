@@ -45,11 +45,11 @@ Let&rsquo;s do that to get it out of the way and not distract from the main task
 We also change the threshold so that timeouts only happen 1% of the time.
 This isn&rsquo;t a very interesting behavior, so we&rsquo;ll make it much less frequent.</p></li></ul><p>We also adjust Bob&rsquo;s <code class="highlight"><font class="badlink"><span class="nx">acceptWager</span></font></code> function to remove the timeout code, since we&rsquo;re testing that differently now.
 It&rsquo;s just a matter of reverting to the simpler version from before.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.mjs#L41-L52"><span class="stt">tut-6/index.mjs</span></a><button class="btn" data-clipboard-text="  await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...Player('Alice'),
       wager: stdlib.parseCurrency(5),
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       ...Player('Bob'),
       acceptWager: (amt) =&gt; {
         console.log(`Bob accepts the wager of ${fmt(amt)}.`);
@@ -57,11 +57,11 @@ It&rsquo;s just a matter of reverting to the simpler version from before.</p><p>
     }),
   ]);"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
 <span class="mf">41</span>    <font class="badlink"><span class="k">await</span></font> <font class="badlink"><span class="nb">Promise</span></font><span class="p">.</span><font class="badlink"><span class="nx">all</span></font><span class="p">([</span>
-<span class="mf">42</span>      <a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">.</span><font class="badlink"><span class="nx">Alice</span></font><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">,</span> <font class="badlink"><span class="nx">ctcAlice</span></font><span class="p">,</span> <span class="p">{</span>
+<span class="mf">42</span>      <a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">.</span><font class="badlink"><span class="nx">Alice</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctcAlice</span></font><span class="p">,</span> <span class="p">{</span>
 <span class="mf">43</span>        <span class="p">...</span><font class="badlink"><span class="nx">Player</span></font><span class="p">(</span><span class="s1">&#39;Alice&#39;</span><span class="p">),</span>
 <span class="mf">44</span>        <font class="badlink"><span class="nx">wager</span></font><font class="badlink"><span class="o">:</span></font> <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">.</span><a href="ref-backend-js.html#%28javascript._%28%28parse.Currency%29%29%29" class="nx" data-pltdoc="x">parseCurrency</a><span class="p">(</span><span class="mf">5</span><span class="p">),</span>
 <span class="mf">45</span>      <span class="p">}),</span>
-<span class="mf">46</span>      <a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">.</span><font class="badlink"><span class="nx">Bob</span></font><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">,</span> <font class="badlink"><span class="nx">ctcBob</span></font><span class="p">,</span> <span class="p">{</span>
+<span class="mf">46</span>      <a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">.</span><font class="badlink"><span class="nx">Bob</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctcBob</span></font><span class="p">,</span> <span class="p">{</span>
 <span class="mf">47</span>        <span class="p">...</span><font class="badlink"><span class="nx">Player</span></font><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">),</span>
 <span class="mf">48</span>        <font class="badlink"><span class="nx">acceptWager</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">(</span><font class="badlink"><span class="nx">amt</span></font><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
 <span class="mf">49</span>          <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Bob accepts the wager of </span><span class="si">${</span><font class="badlink"><span class="nx">fmt</span></font><span class="p">(</span><font class="badlink"><span class="nx">amt</span></font><span class="p">)</span><span class="si">}</span><span class="sb">.`</span><span class="p">);</span>

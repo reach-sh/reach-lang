@@ -400,7 +400,7 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div></div></p><p>Finally, the <code class="highlight"><font class="badlink"><span class="nx">seeOutcome</span></font></code> method.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L103-L111"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="
   const part = isAlice ? backend.Alice : backend.Bob;
-  await part(stdlib, ctc, interact);
+  await part(ctc, interact);
 
   const after = await getBalance();
   console.log(`Your balance is now ${after}`);
@@ -409,7 +409,7 @@ We&rsquo;ll see how these three functions are used below.</p></li></ul><p><div c
 })();"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
 <span class="mf">103</span>    
 <span class="mf">104</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">part</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">isAlice</span></font> <font class="badlink"><span class="o">?</span></font> <a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">.</span><font class="badlink"><span class="nx">Alice</span></font> <font class="badlink"><span class="o">:</span></font> <a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">.</span><font class="badlink"><span class="nx">Bob</span></font><span class="p">;</span>
-<span class="mf">105</span>    <font class="badlink"><span class="k">await</span></font> <font class="badlink"><span class="nx">part</span></font><span class="p">(</span><a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">,</span> <font class="badlink"><span class="nx">ctc</span></font><span class="p">,</span> <font class="badlink"><span class="nx">interact</span></font><span class="p">);</span>
+<span class="mf">105</span>    <font class="badlink"><span class="k">await</span></font> <font class="badlink"><span class="nx">part</span></font><span class="p">(</span><font class="badlink"><span class="nx">ctc</span></font><span class="p">,</span> <font class="badlink"><span class="nx">interact</span></font><span class="p">);</span>
 <span class="mf">106</span>    
 <span class="mf">107</span>    <font class="badlink"><span class="kr">const</span></font> <font class="badlink"><span class="nx">after</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="k">await</span></font> <font class="badlink"><span class="nx">getBalance</span></font><span class="p">();</span>
 <span class="mf">108</span>    <font class="badlink"><span class="nx">console</span></font><span class="p">.</span><font class="badlink"><span class="nx">log</span></font><span class="p">(</span><span class="sb">`Your balance is now </span><span class="si">${</span><font class="badlink"><span class="nx">after</span></font><span class="si">}</span><span class="sb">`</span><span class="p">);</span>

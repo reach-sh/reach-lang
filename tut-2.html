@@ -43,11 +43,11 @@ Because of this line, <code class="highlight"><a href="ref-programs-local.html#%
 
   await Promise.all([
     backend.Alice(
-      stdlib, ctcAlice,
+      ctcAlice,
       Player('Alice'),
     ),
     backend.Bob(
-      stdlib, ctcBob,
+      ctcBob,
       Player('Bob'),
     ),
   ]);"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
@@ -66,11 +66,11 @@ Because of this line, <code class="highlight"><a href="ref-programs-local.html#%
 <span class="mf">26</span>    
 <span class="mf">27</span>    <font class="badlink"><span class="k">await</span></font> <font class="badlink"><span class="nb">Promise</span></font><span class="p">.</span><font class="badlink"><span class="nx">all</span></font><span class="p">([</span>
 <span class="mf">28</span>      <a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">.</span><font class="badlink"><span class="nx">Alice</span></font><span class="p">(</span>
-<span class="mf">29</span>        <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">,</span> <font class="badlink"><span class="nx">ctcAlice</span></font><span class="p">,</span>
+<span class="mf">29</span>        <font class="badlink"><span class="nx">ctcAlice</span></font><span class="p">,</span>
 <span class="mf">30</span>        <font class="badlink"><span class="nx">Player</span></font><span class="p">(</span><span class="s1">&#39;Alice&#39;</span><span class="p">),</span>
 <span class="mf">31</span>      <span class="p">),</span>
 <span class="mf">32</span>      <a href="ref-backend-js.html#%28javascript._%28%28backend%29%29%29" class="nx" data-pltdoc="x">backend</a><span class="p">.</span><font class="badlink"><span class="nx">Bob</span></font><span class="p">(</span>
-<span class="mf">33</span>        <a href="ref-backend-js.html#%28javascript._%28%28stdlib%29%29%29" class="nx" data-pltdoc="x">stdlib</a><span class="p">,</span> <font class="badlink"><span class="nx">ctcBob</span></font><span class="p">,</span>
+<span class="mf">33</span>        <font class="badlink"><span class="nx">ctcBob</span></font><span class="p">,</span>
 <span class="mf">34</span>        <font class="badlink"><span class="nx">Player</span></font><span class="p">(</span><span class="s1">&#39;Bob&#39;</span><span class="p">),</span>
 <span class="mf">35</span>      <span class="p">),</span>
 <span class="mf">36</span>    <span class="p">]);</span>
