@@ -230,11 +230,6 @@ const getDevnet = memoizeThunk(async (): Promise<void> => {
   return await doHealthcheck();
 });
 
-const ethersBlockOnceP = async (): Promise<number> => {
-  const provider = await getProvider();
-  return new Promise((resolve) => provider.once('block', (n) => resolve(n)));
-};
-
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
   if (!acc.networkAccount) throw Error(`Expected acc.networkAccount`);
