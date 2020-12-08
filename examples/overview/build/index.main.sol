@@ -38,14 +38,14 @@ contract ReachContract is Stdlib {
   
   struct a2postsvs {
     uint256 _last;
-    address payable v3;
-    uint256 v2;
+    uint256 v3;
+    address payable v2;
      }
   
   struct a1postsvs {
     uint256 _last;
-    address payable v3;
-    uint256 v2;
+    uint256 v3;
+    address payable v2;
      }
   
   struct a0postsvs {
@@ -54,7 +54,7 @@ contract ReachContract is Stdlib {
   
   
   struct a1msg {
-    uint256 v2;
+    uint256 v3;
      }
   struct a1 {
     a0postsvs svs;
@@ -67,12 +67,13 @@ contract ReachContract is Stdlib {
     
     
     require(true && true);
+    require(true);
     require((msg.value == uint256(0)));
     emit e1(_a);
     a1postsvs memory nsvs;
     nsvs._last = uint256(block.number);
-    nsvs.v3 = msg.sender;
-    nsvs.v2 = _a.msg.v2;
+    nsvs.v3 = _a.msg.v3;
+    nsvs.v2 = msg.sender;
     current_state = uint256(keccak256(abi.encode(uint256(1), nsvs)));
     
      }
@@ -88,7 +89,8 @@ contract ReachContract is Stdlib {
     
     
     require(true && true);
-    require((msg.value == _a.svs.v2));
+    require(true);
+    require((msg.value == _a.svs.v3));
     emit e2(_a);
     a2postsvs memory nsvs;
     nsvs._last = uint256(block.number);
@@ -100,7 +102,7 @@ contract ReachContract is Stdlib {
   
   
   struct a3msg {
-    uint8[128] v22;
+    uint8[128] v23;
      }
   struct a3 {
     a2postsvs svs;
@@ -111,10 +113,11 @@ contract ReachContract is Stdlib {
   function m3(a3 calldata _a) external payable {
     require(current_state == uint256(keccak256(abi.encode(uint256(2), _a.svs))));
     
-    require(msg.sender == _a.svs.v3);
+    
     require(true && true);
+    require((_a.svs.v2 == msg.sender));
     require((msg.value == uint256(0)));
-    _a.svs.v3.transfer(_a.svs.v2);
+    _a.svs.v2.transfer(_a.svs.v3);
     emit e3(_a);
     current_state = 0x0;
     selfdestruct(msg.sender);

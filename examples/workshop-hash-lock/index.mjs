@@ -19,11 +19,11 @@ import * as backend from './build/index.main.mjs';
   const thePass = stdlib.randomUInt();
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       amt: stdlib.parseCurrency(25),
       pass: thePass,
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       getPass: () => {
         console.log(`Bob asked to give the preimage.`);
         console.log(`Returning: ${thePass}`);

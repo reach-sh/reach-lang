@@ -8,7 +8,7 @@ import * as backend from './build/index.main.mjs';
   const ctcAlice = alice.deploy(backend);
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...stdlib.hasRandom,
       myAddr: (addr) => console.log(`I am: ${addr}`),
     }),

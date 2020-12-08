@@ -37,7 +37,7 @@ const demo = async (x) => {
 
   console.log(`Both will play their parts.`);
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...stdlib.hasRandom,
       getX: () => {
         return x || 0;
@@ -51,7 +51,7 @@ const demo = async (x) => {
         }
       },
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       ...stdlib.hasRandom,
       showMx: showThing('showMx'),
       showMy: showThing('showMy'),

@@ -29,8 +29,8 @@ const main = async () => {
   });
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, interactWith('Alice')),
-    backend.Bob(stdlib, ctcBob, interactWith('Bob')),
+    backend.Alice(ctcAlice, interactWith('Alice')),
+    backend.Bob(ctcBob, interactWith('Bob')),
   ]);
 };
 

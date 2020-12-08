@@ -33,11 +33,11 @@ import * as backend from './build/index.main.mjs';
   });
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...Player('Alice'),
       wager: stdlib.parseCurrency(5),
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       ...Player('Bob'),
       acceptWager: async (amt) => { // <-- async now
         if ( Math.random() <= 0.5 ) {

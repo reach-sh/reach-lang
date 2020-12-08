@@ -24,7 +24,7 @@ console.log(`getting started...`);
   const interact = {ask};
 
   const ctc = acc.deploy(backend);
-  await backend.A(stdlib, ctc, interact);
+  await backend.A(ctc, interact);
 
   const afterBal = await getBalance(acc);
   const afterTime = await stdlib.getNetworkTime();

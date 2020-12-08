@@ -1,22 +1,26 @@
+// ****************************************************************************
+// standard library for Javascript users
+// ****************************************************************************
+
 import Timeout from 'await-timeout';
 import ethers from 'ethers';
-
 import * as stdlib from './shared';
 import { CurrencyAmount, OnProgress } from './shared';
 export * from './shared';
-export { T_Null, T_Bool, T_UInt, T_Bytes, T_Address, T_Digest, T_Object, T_Data, T_Array, T_Tuple, addressEq, digest } from './ETH';
-import { T_Address, T_UInt, T_Tuple, digest } from './ETH';
+import { stdlib as compiledStdlib, typeDefs } from './FAKE_compiled';
+
+
+export const { addressEq, digest } = compiledStdlib;
 
 export const debug = (msg: any): void => {
   stdlib.debug(`${BLOCKS.length}: ${msg}}`);
 };
 
-type BigNumber = ethers.BigNumber;
-const BigNumber = ethers.BigNumber;
-export const UInt_max: BigNumber =
-  BigNumber.from(2).pow(256).sub(1);
+export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest } = typeDefs;
+
 export const { randomUInt, hasRandom } = stdlib.makeRandom(32);
 
+type BigNumber = ethers.BigNumber;
 type Address = string;
 type NetworkAccount = {address: Address};
 type Backend = null;
@@ -300,7 +304,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const getInfo = async () => await infoP;
 
-    return { getInfo, sendrecv, recv, iam, selfAddress, wait };
+    return { getInfo, sendrecv, recv, iam, selfAddress, wait, stdlib: compiledStdlib };
   };
 
   const deploy = (bin: Backend): Contract => {
@@ -317,7 +321,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     });
   };
 
-  return { deploy, attach, networkAccount };
+  return { deploy, attach, networkAccount, stdlib: compiledStdlib };
 };
 
 const makeAccount = (): NetworkAccount => {

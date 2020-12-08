@@ -29,11 +29,11 @@ const main = async () => {
   });
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...interactWith('Alice'),
       getX: () => 4,
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       ...interactWith('Bob'),
       getX: () => 5
     }),

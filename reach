@@ -360,10 +360,10 @@ import * as backend from './build/${APP}.main.mjs';
   const ctcBob = bob.attach(backend, ctcAlice.getInfo());
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...stdlib.hasRandom
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       ...stdlib.hasRandom
     }),
   ]);
@@ -697,7 +697,7 @@ do_run () {
   # * if all exist: just use the existing things
   # * if some exist: error
   # make build run
-  # unscaffold if UNSCAFFOLD 
+  # unscaffold if UNSCAFFOLD
 
   ANY_CUSTOMIZATION=false
   if ! [ "x$REACH_CONNECTOR_MODE" = "x" ] ; then
