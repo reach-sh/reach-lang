@@ -6,7 +6,7 @@ import Control.Monad.ST
 import Data.Bits
 import qualified Data.ByteString as B
 import Data.Foldable
-import Data.List (intercalate, sortBy, transpose)
+import Data.List (intercalate, sortBy, transpose, (\\))
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -70,7 +70,7 @@ data EvalError
   | Err_Eval_IllegalWait DeployMode
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_PartSet_Bound SLPart
-  | Err_Eval_IllegalMode SLMode String
+  | Err_Eval_IllegalMode SLMode String [SLMode]
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_NoReturn
   | Err_Eval_NotApplicable SLVal
@@ -280,8 +280,8 @@ instance Show EvalError where
       "Invalid continue. Expected to be inside of a while."
     Err_Eval_ContinueNotLoopVariable var ->
       "Invalid loop variable update. Expected loop variable, got: " <> var
-    Err_Eval_IllegalMode mode s ->
-      "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode
+    Err_Eval_IllegalMode mode s ok_modes ->
+      "Invalid operation. `" <> s <> "` cannot be used in context: " <> show mode <> ", must be in " <> show ok_modes
     Err_Eval_IllegalJS e ->
       "Invalid Reach expression syntax: " <> conNameOf e
     Err_Eval_NoReturn ->
@@ -717,7 +717,15 @@ data SLMode
   | --- A "toconsensus" moves from "step" to "consensus step" then to "step" again
     SLM_ConsensusStep
   | SLM_ConsensusPure
-  deriving (Eq, Generic, Show)
+  deriving (Eq, Generic)
+
+instance Show SLMode where
+  show = \case
+    SLM_Module -> "module"
+    SLM_Step -> "step"
+    SLM_LocalStep -> "local step"
+    SLM_ConsensusStep -> "consensus step"
+    SLM_ConsensusPure -> "consensus pure"
 
 --- A state represents the state of the protocol, so it is returned
 --- out of a function call.
@@ -731,14 +739,20 @@ data SLState = SLState
   }
   deriving (Eq, Show)
 
-ensure_mode :: SLCtxt s -> SrcLoc -> SLState -> SLMode -> String -> ST s ()
-ensure_mode ctxt at st em msg = do
+all_slm_modes :: [SLMode]
+all_slm_modes = [ SLM_Module, SLM_Step, SLM_LocalStep, SLM_ConsensusStep, SLM_ConsensusPure ]
+
+ensure_modes :: SLCtxt s -> SrcLoc -> SLState -> [SLMode] -> String -> ST s ()
+ensure_modes ctxt at st ems msg = do
   let am = st_mode st
-  case am == em of
+  case elem am ems of
     True -> return ()
     False ->
       --- XXX use this function every where and shown em
-      expect_throw_ctx ctxt at $ Err_Eval_IllegalMode am msg
+      expect_throw_ctx ctxt at $ Err_Eval_IllegalMode am msg ems
+
+ensure_mode :: SLCtxt s -> SrcLoc -> SLState -> SLMode -> String -> ST s ()
+ensure_mode ctxt at st em msg = ensure_modes ctxt at st [em] msg
 
 ensure_live :: SLCtxt s -> SrcLoc -> SLState -> String -> ST s ()
 ensure_live ctxt at st msg = do
@@ -1307,15 +1321,12 @@ explodeTupleLike ctxt at lab tuplv =
       return $ (lifts, [SLV_DLVar dv])
 
 doFluidRef :: SLCtxt s -> SrcLoc -> SLState -> FluidVar -> SLComp s SLSVal
-doFluidRef ctxt at st fv =
-  case st_mode st of
-    SLM_Module ->
-      expect_throw_ctx ctxt at $ Err_Eval_IllegalMode (st_mode st) "fluid ref"
-    _ -> do
-      let fvt = fluidVarType fv
-      dv <- ctxt_mkvar ctxt (DLVar at "fluid" fvt)
-      let lifts = return $ DLS_FluidRef at dv fv
-      return $ SLRes lifts st $ public $ SLV_DLVar dv
+doFluidRef ctxt at st fv = do
+  ensure_modes ctxt at st (all_slm_modes \\ [SLM_Module]) "fluid ref"
+  let fvt = fluidVarType fv
+  dv <- ctxt_mkvar ctxt (DLVar at "fluid" fvt)
+  let lifts = return $ DLS_FluidRef at dv fv
+  return $ SLRes lifts st $ public $ SLV_DLVar dv
 
 doFluidSet :: SLCtxt s -> SrcLoc -> FluidVar -> SLSVal -> ST s DLStmts
 doFluidSet ctxt at fv ssv = do
@@ -1645,14 +1656,11 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_App_Delay {} ->
       expect_throw_ctx ctxt at (Err_Eval_NotApplicable rator)
-    SLPrim_interact _iat who m t ->
-      case st_mode st of
-        SLM_LocalStep -> do
-          (lifts', rng, dargs) <- compileCheckAndConvert ctxt at t $ map snd sargs
-          (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "interact" rng) (DLE_Interact at (ctxt_stack ctxt) who m rng dargs)
-          return $ SLRes (lifts' <> lifts) st $ secret $ SLV_DLVar dv
-        cm ->
-          expect_throw_ctx ctxt at (Err_Eval_IllegalMode cm "interact")
+    SLPrim_interact _iat who m t -> do
+      ensure_mode ctxt at st SLM_LocalStep "interact"
+      (lifts', rng, dargs) <- compileCheckAndConvert ctxt at t $ map snd sargs
+      (dv, lifts) <- ctxt_lift_expr ctxt at (DLVar at "interact" rng) (DLE_Interact at (ctxt_stack ctxt) who m rng dargs)
+      return $ SLRes (lifts' <> lifts) st $ secret $ SLV_DLVar dv
     SLPrim_declassify ->
       case map snd sargs of
         [val] ->
@@ -1685,18 +1693,14 @@ evalPrim ctxt at sco st p sargs =
               <> (return $
                     DLS_Let at Nothing $
                       DLE_Claim at (ctxt_stack ctxt) ct darg mmsg)
-      let bad cm =
-            expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm $ "assert " ++ show ct
       let good = return $ SLRes lifts st $ public $ SLV_Null at "claim"
-      case (st_mode st, ct) of
-        (SLM_LocalStep, CT_Assume) -> good
-        (cm, CT_Assume) -> bad cm
-        (SLM_ConsensusStep, CT_Require) -> good
-        (SLM_ConsensusPure, CT_Require) -> good
-        (cm, CT_Require) -> bad cm
-        (_, CT_Unknowable {}) -> impossible "unknowable"
-        (_, CT_Assert) -> good
-        (_, CT_Possible) -> good
+      let some_good ems = ensure_modes ctxt at st ems ("assert " <> show ct) >> good
+      case ct of
+        CT_Assume -> some_good [SLM_LocalStep]
+        CT_Require -> some_good [SLM_ConsensusStep, SLM_ConsensusPure]
+        CT_Assert -> good
+        CT_Possible -> good
+        CT_Unknowable {} -> impossible "unknowable"
     SLPrim_transfer ->
       case ensure_publics ctxt at sargs of
         [amt_sv] ->
@@ -1706,24 +1710,22 @@ evalPrim ctxt at sco st p sargs =
           where
             transferToPrim = SLV_Prim (SLPrim_transfer_amt_to amt_sv)
         _ -> illegal_args
-    SLPrim_transfer_amt_to amt_sv ->
-      case st_mode st of
-        SLM_ConsensusStep -> do
-          (amt_lifts, amt_dla) <- compileCheckType ctxt at T_UInt amt_sv
-          tbsuff <- doAssertBalance ctxt at sco st amt_sv PLE
-          SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
-          let convert = compileCheckType ctxt at T_Address
-          (who_lifts, who_dla) <-
-            case map snd sargs of
-              [SLV_Participant _ who _ Nothing] ->
-                case M.lookup who $ st_pdvs st of
-                  Just dv -> convert $ SLV_DLVar dv
-                  Nothing -> expect_throw_ctx ctxt at $ Err_Transfer_NotBound who
-              [one] -> convert one
-              _ -> illegal_args
-          let lifts = amt_lifts <> tbsuff <> who_lifts <> (return $ DLS_Let at Nothing $ DLE_Transfer at who_dla amt_dla) <> balup
-          return $ SLRes lifts st' $ public $ SLV_Null at "transfer.to"
-        cm -> expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm "transfer.to"
+    SLPrim_transfer_amt_to amt_sv -> do
+      ensure_mode ctxt at st SLM_ConsensusStep "transfer"
+      (amt_lifts, amt_dla) <- compileCheckType ctxt at T_UInt amt_sv
+      tbsuff <- doAssertBalance ctxt at sco st amt_sv PLE
+      SLRes balup st' () <- doBalanceUpdate ctxt at sco st SUB amt_sv
+      let convert = compileCheckType ctxt at T_Address
+      (who_lifts, who_dla) <-
+        case map snd sargs of
+          [SLV_Participant _ who _ Nothing] ->
+            case M.lookup who $ st_pdvs st of
+              Just dv -> convert $ SLV_DLVar dv
+              Nothing -> expect_throw_ctx ctxt at $ Err_Transfer_NotBound who
+          [one] -> convert one
+          _ -> illegal_args
+      let lifts = amt_lifts <> tbsuff <> who_lifts <> (return $ DLS_Let at Nothing $ DLE_Transfer at who_dla amt_dla) <> balup
+      return $ SLRes lifts st' $ public $ SLV_Null at "transfer.to"
     SLPrim_exit ->
       case sargs of
         [] -> do
@@ -1748,17 +1750,15 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_PrimDelay _at dp bargs aargs ->
       evalPrim ctxt at sco st dp $ bargs <> sargs <> aargs
-    SLPrim_wait ->
-      case allowed_to_wait ctxt at st $ st_mode st of
-        SLM_Step ->
-          case sargs of
-            [amt_sv] -> do
-              (lifts, amt_da) <-
-                compileCheckType ctxt at T_UInt $ ensure_public ctxt at amt_sv
-              keepLifts lifts $
-                return $ SLRes (return $ DLS_Let at Nothing (DLE_Wait at amt_da)) st $ public $ SLV_Null at "wait"
-            _ -> illegal_args
-        cm -> expect_throw_ctx ctxt at $ Err_Eval_IllegalMode cm "wait"
+    SLPrim_wait -> do
+      ensure_mode ctxt at st (allowed_to_wait ctxt at st SLM_Step) "wait"
+      case sargs of
+        [amt_sv] -> do
+          (lifts, amt_da) <-
+            compileCheckType ctxt at T_UInt $ ensure_public ctxt at amt_sv
+          keepLifts lifts $
+            return $ SLRes (return $ DLS_Let at Nothing (DLE_Wait at amt_da)) st $ public $ SLV_Null at "wait"
+        _ -> illegal_args
     SLPrim_part_set ->
       case map snd sargs of
         [(SLV_Participant _ who _ _), addr] -> do
@@ -2383,9 +2383,8 @@ doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) 
           let penvs = sco_penvs sco
           let penvs' = M.insert who penv' penvs
           let lifts' = return $ DLS_Only only_at who (penv_lifts <> only_lifts <> alifts)
-          let st' = st {st_mode = SLM_Step}
           let sco' = sco {sco_penvs = penvs'}
-          return ((lifts <> lifts'), sco', st')
+          return ((lifts <> lifts'), sco', st)
         ty ->
           expect_throw_ctx ctxt only_at (Err_Block_NotNull ty only_v)
     _ -> expect_throw_ctx ctxt at $ Err_Only_NotOneClosure $ snd only_arg
@@ -2561,7 +2560,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
       expect_empty_tail ctxt "exit" JSNoAnnot sp at ks $
         return $ SLRes mempty st' $ SLStmtRes env []
     SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) -> do
-      ensure_mode ctxt at st SLM_Step "local action (only or each)"
+      ensure_modes ctxt at st [SLM_Step {-, SLM_ConsensusStep -}] "local action (only or each)"
       (lifts', sco', st') <-
         foldM (doOnly ctxt at) (mempty, sco, st) $
           map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
