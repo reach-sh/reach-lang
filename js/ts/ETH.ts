@@ -35,13 +35,10 @@ export * from './shared';
 import { AnyETH_Ty, stdlib as compiledStdlib, typeDefs } from './ETH_compiled';
 
 
-export const { addressEq, digest } = compiledStdlib;
-
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest } = typeDefs;
-
+// ****************************************************************************
+// Type Definitions
+// ****************************************************************************
 type BigNumber = ethers.BigNumber;
-
-export const { randomUInt, hasRandom } = makeRandom(32);
 
 type Provider = ethers.providers.Provider;
 type TransactionReceipt = ethers.providers.TransactionReceipt;
@@ -102,6 +99,10 @@ type ContractInitInfo2 = {
 type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
 }
+
+// ****************************************************************************
+// Helpers
+// ****************************************************************************
 
 // Given a func that takes an optional arg, and a Maybe arg:
 // f: (arg?: X) => Y
@@ -229,6 +230,43 @@ const getDevnet = memoizeThunk(async (): Promise<void> => {
   return await doHealthcheck();
 });
 
+const ethersBlockOnceP = async (): Promise<number> => {
+  const provider = await getProvider();
+  return new Promise((resolve) => provider.once('block', (n) => resolve(n)));
+};
+
+/** @description convenience function for drilling down to the actual address */
+const getAddr = async (acc: AccountTransferable): Promise<Address> => {
+  if (!acc.networkAccount) throw Error(`Expected acc.networkAccount`);
+  // TODO better type design here
+  // @ts-ignore
+  if (acc.networkAccount.address) {
+    // @ts-ignore
+    return acc.networkAccount.address;
+  }
+  if (acc.networkAccount.getAddress) {
+    return await acc.networkAccount.getAddress();
+  }
+  throw Error(`Expected acc.networkAccount.address or acc.networkAccount.getAddress`);
+}
+
+// Helpers for sendrecv and recv
+
+type Hash = string;
+
+const rejectInvalidReceiptFor = async (txHash: Hash, r?: TransactionReceipt): Promise<TransactionReceipt> =>
+  new Promise((resolve, reject) =>
+    !r ? reject(`No receipt for txHash: ${txHash}`) :
+    r.transactionHash !== txHash ? reject(`Bad txHash; ${txHash} !== ${r.transactionHash}`) :
+    !r.status ? reject(`Transaction: ${txHash} was reverted by EVM\n${r}`) :
+    resolve(r));
+
+const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
+  const provider = await getProvider();
+  const r = await provider.getTransactionReceipt(txHash);
+  return await rejectInvalidReceiptFor(txHash, r);
+};
+
 const [getProvider, setProvider] = replaceableThunk(async (): Promise<Provider> => {
   if (networkDesc.type == 'uri') {
     await getDevnet();
@@ -261,22 +299,86 @@ const [getProvider, setProvider] = replaceableThunk(async (): Promise<Provider> 
   }
 });
 
-export {setProvider};
+const getNetworkTimeNumber = async (): Promise<number> => {
+  const provider = await getProvider();
+  return await provider.getBlockNumber();
+};
 
-/** @description convenience function for drilling down to the actual address */
-const getAddr = async (acc: AccountTransferable): Promise<Address> => {
-  if (!acc.networkAccount) throw Error(`Expected acc.networkAccount`);
-  // TODO better type design here
-  // @ts-ignore
-  if (acc.networkAccount.address) {
-    // @ts-ignore
-    return acc.networkAccount.address;
+const fastForwardTo = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+  // console.log(`>>> FFWD TO: ${targetTime}`);
+  const onProg: OnProgress = onProgress || (() => {});
+  requireIsolatedNetwork('fastForwardTo');
+  let currentTime;
+  while (lt(currentTime = await getNetworkTime(), targetTime)) {
+    onProg({ currentTime, targetTime });
+    await stepTime();
   }
-  if (acc.networkAccount.getAddress) {
-    return await acc.networkAccount.getAddress();
+  // Also report progress at completion time
+  onProg({ currentTime, targetTime });
+  // console.log(`<<< FFWD TO: ${targetTime} complete. It's ${currentTime}`);
+  return currentTime;
+};
+
+const requireIsolatedNetwork = (label: string): void => {
+  if (!isIsolatedNetwork) {
+    throw Error(`Invalid operation ${label} in REACH_CONNECTOR_MODE=${connectorMode}`);
   }
-  throw Error(`Expected acc.networkAccount.address or acc.networkAccount.getAddress`);
-}
+};
+
+const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
+  argsMay: init ? Some(init.args) : None,
+  value: init ? init.value : bigNumberify(0),
+});
+
+// onProgress callback is optional, it will be given an obj
+// {currentTime, targetTime}
+const actuallyWaitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
+  const onProg: OnProgress = onProgress || (() => {});
+  const provider = await getProvider();
+  return await new Promise((resolve) => {
+    const onBlock = async (currentTimeNum: number | BigNumber) => {
+      const currentTime = bigNumberify(currentTimeNum)
+      // Does not block on the progress fn if it is async
+      onProg({ currentTime, targetTime });
+      if (ge(currentTime, targetTime)) {
+        provider.off('block', onBlock);
+        resolve(currentTime);
+      }
+    };
+    provider.on('block', onBlock);
+
+    // Also "re-emit" the current block
+    // Note: this sometimes causes the starting block
+    // to be processed twice, which should be harmless.
+    getNetworkTime().then(onBlock);
+  });
+};
+
+const getDummyAccount = memoizeThunk(async (): Promise<Account> => {
+  const provider = await getProvider();
+  const networkAccount = ethers.Wallet.createRandom().connect(provider);
+  const acc = await connectAccount(networkAccount);
+  return acc;
+});
+
+const stepTime = async () => {
+  requireIsolatedNetwork('stepTime');
+  const faucet = await getFaucet();
+  const acc = await getDummyAccount();
+  return await transfer(faucet, acc, parseCurrency(0));
+};
+
+// ****************************************************************************
+// Common Interface Exports
+// ****************************************************************************
+
+export const { addressEq, digest } = compiledStdlib;
+
+export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest } = typeDefs;
+
+export const { randomUInt, hasRandom } = makeRandom(32);
+
+export {setProvider};
 
 export const balanceOf = async (acc: Account): Promise<BigNumber> => {
   const { networkAccount } = acc;
@@ -311,22 +413,6 @@ export const transfer = async (
   return await sender.sendTransaction(txn);
 };
 
-// Helpers for sendrecv and recv
-
-type Hash = string;
-
-const rejectInvalidReceiptFor = async (txHash: Hash, r?: TransactionReceipt): Promise<TransactionReceipt> =>
-  new Promise((resolve, reject) =>
-    !r ? reject(`No receipt for txHash: ${txHash}`) :
-    r.transactionHash !== txHash ? reject(`Bad txHash; ${txHash} !== ${r.transactionHash}`) :
-    !r.status ? reject(`Transaction: ${txHash} was reverted by EVM\n${r}`) :
-    resolve(r));
-
-const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
-  const provider = await getProvider();
-  const r = await provider.getTransactionReceipt(txHash);
-  return await rejectInvalidReceiptFor(txHash, r);
-};
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   // @ts-ignore // TODO
@@ -835,11 +921,6 @@ export const newTestAccount = async (startingBalance: BigNumber): Promise<Accoun
   }
 };
 
-const getNetworkTimeNumber = async (): Promise<number> => {
-  const provider = await getProvider();
-  return await provider.getBlockNumber();
-};
-
 export const getNetworkTime = async (): Promise<BigNumber> => {
   return bigNumberify(await getNetworkTimeNumber());
 };
@@ -860,65 +941,6 @@ export const waitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgre
   } else {
     return await actuallyWaitUntilTime(targetTime, onProgress);
   }
-};
-
-// onProgress callback is optional, it will be given an obj
-// {currentTime, targetTime}
-const actuallyWaitUntilTime = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
-  const onProg: OnProgress = onProgress || (() => {});
-  const provider = await getProvider();
-  return await new Promise((resolve) => {
-    const onBlock = async (currentTimeNum: number | BigNumber) => {
-      const currentTime = bigNumberify(currentTimeNum)
-      // Does not block on the progress fn if it is async
-      onProg({ currentTime, targetTime });
-      if (ge(currentTime, targetTime)) {
-        provider.off('block', onBlock);
-        resolve(currentTime);
-      }
-    };
-    provider.on('block', onBlock);
-
-    // Also "re-emit" the current block
-    // Note: this sometimes causes the starting block
-    // to be processed twice, which should be harmless.
-    getNetworkTime().then(onBlock);
-  });
-};
-
-const fastForwardTo = async (targetTime: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
-  // console.log(`>>> FFWD TO: ${targetTime}`);
-  const onProg: OnProgress = onProgress || (() => {});
-  requireIsolatedNetwork('fastForwardTo');
-  let currentTime;
-  while (lt(currentTime = await getNetworkTime(), targetTime)) {
-    onProg({ currentTime, targetTime });
-    await stepTime();
-  }
-  // Also report progress at completion time
-  onProg({ currentTime, targetTime });
-  // console.log(`<<< FFWD TO: ${targetTime} complete. It's ${currentTime}`);
-  return currentTime;
-};
-
-const requireIsolatedNetwork = (label: string): void => {
-  if (!isIsolatedNetwork) {
-    throw Error(`Invalid operation ${label} in REACH_CONNECTOR_MODE=${connectorMode}`);
-  }
-};
-
-const getDummyAccount = memoizeThunk(async (): Promise<Account> => {
-  const provider = await getProvider();
-  const networkAccount = ethers.Wallet.createRandom().connect(provider);
-  const acc = await connectAccount(networkAccount);
-  return acc;
-});
-
-const stepTime = async () => {
-  requireIsolatedNetwork('stepTime');
-  const faucet = await getFaucet();
-  const acc = await getDummyAccount();
-  return await transfer(faucet, acc, parseCurrency(0));
 };
 
 // Check the contract info and the associated deployed bytecode;
@@ -1074,6 +1096,7 @@ export const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): P
 
 /** @description the display name of the standard unit of currency for the network */
 export const standardUnit = 'ETH';
+
 /** @description the display name of the atomic (smallest) unit of currency for the network */
 export const atomicUnit = 'WEI';
 
@@ -1086,13 +1109,10 @@ export const atomicUnit = 'WEI';
 export function parseCurrency(amt: CurrencyAmount): BigNumber {
   return bigNumberify(ethers.utils.parseUnits(amt.toString(), 'ether'));
 }
+
 export const minimumBalance: BigNumber =
   parseCurrency(0);
 
-const initOrDefaultArgs = (init?: ContractInitInfo): ContractInitInfo2 => ({
-  argsMay: init ? Some(init.args) : None,
-  value: init ? init.value : bigNumberify(0),
-});
 
 /**
  * @description  Format currency by network

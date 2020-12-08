@@ -10,15 +10,9 @@ export * from './shared';
 import { stdlib as compiledStdlib, typeDefs } from './FAKE_compiled';
 
 
-export const { addressEq, digest } = compiledStdlib;
-
-export const debug = (msg: any): void => {
-  stdlib.debug(`${BLOCKS.length}: ${msg}}`);
-};
-
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest } = typeDefs;
-
-export const { randomUInt, hasRandom } = stdlib.makeRandom(32);
+// ****************************************************************************
+// Type Definitions
+// ****************************************************************************
 
 type BigNumber = ethers.BigNumber;
 type Address = string;
@@ -79,9 +73,15 @@ type ContractBlock = {
 
 type Block = TransferBlock | EventBlock | ContractBlock | WaitBlock;
 
+
+// ****************************************************************************
+// Helpers
+// ****************************************************************************
+
 // This can be exposed to the user for checking the trace of blocks
 // for testing.
 const BLOCKS: Array<Block> = [];
+
 // key: Address, but ts doesn't like aliases here
 const BALANCES: {[key: string]: BigNumber} = {};
 
@@ -89,11 +89,8 @@ const toAcct = (address: Address): AccountTransferrable => ({
   networkAccount: {address}
 });
 
-export const balanceOf = async (acc: Account) => {
-  return BALANCES[acc.networkAccount.address];
-};
-
 const STATES: {[key: string]: Digest} = {};
+
 const checkStateTransition = async (which: string, prevSt: Digest, nextSt: Digest): Promise<boolean> => {
   await Timeout.set(Math.random() < 0.5 ? 20 : 0);
   const cur = STATES[which];
@@ -121,6 +118,30 @@ const transfer_ = (
   BALANCES[toa] = stdlib.add(BALANCES[toa], value);
   BALANCES[froma] = stdlib.sub(BALANCES[froma], value);
 }
+
+const makeAccount = (): NetworkAccount => {
+  const address = ethers.Wallet.createRandom().address;
+  BALANCES[address] = stdlib.bigNumberify(0);
+  return { address };
+};
+
+// ****************************************************************************
+// Common Interface Exports
+// ****************************************************************************
+
+export const { addressEq, digest } = compiledStdlib;
+
+export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest } = typeDefs;
+
+export const debug = (msg: any): void => {
+  stdlib.debug(`${BLOCKS.length}: ${msg}}`);
+};
+
+export const { randomUInt, hasRandom } = stdlib.makeRandom(32);
+
+export const balanceOf = async (acc: Account) => {
+  return BALANCES[acc.networkAccount.address];
+};
 
 export const fundFromFaucet = async (toa: AccountTransferrable, value: BigNumber) => {
   const faucet = await getFaucet();
@@ -324,12 +345,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   return { deploy, attach, networkAccount, stdlib: compiledStdlib };
 };
 
-const makeAccount = (): NetworkAccount => {
-  const address = ethers.Wallet.createRandom().address;
-  BALANCES[address] = stdlib.bigNumberify(0);
-  return { address };
-};
-
 const REACHY_RICH_P: Promise<Account> = (async () => {
   return await connectAccount({address: T_Address.defaultValue});
 })();
@@ -387,6 +402,7 @@ export const verifyContract = false; // XXX
 
 /** @description the display name of the standard unit of currency for the network */
 export const standardUnit = 'FAKE';
+
 /** @description the display name of the atomic (smallest) unit of currency for the network */
 export const atomicUnit = 'FAKE';
 
@@ -399,6 +415,7 @@ export const atomicUnit = 'FAKE';
 export function parseCurrency(amt: CurrencyAmount): BigNumber {
   return stdlib.bigNumberify(amt.toString());
 }
+
 export const minimumBalance: BigNumber =
   parseCurrency(0);
 
