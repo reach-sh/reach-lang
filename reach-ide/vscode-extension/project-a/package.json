@@ -4,7 +4,7 @@
 	"description": "IDE for the Reach DApp programming language",
 	"author": "Eric Lau",
 	"license": "EPL-2.0",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"preview": true,
 	"icon": "images/logo.png",
 	"repository": {
