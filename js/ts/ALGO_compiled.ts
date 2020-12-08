@@ -248,16 +248,7 @@ export const typeDefs = {
 
 export const stdlib = {
   ...shared,
-  T_Null,
-  T_Bool,
-  T_UInt,
-  T_Bytes,
-  T_Address,
-  T_Digest,
-  T_Object,
-  T_Data,
-  T_Array,
-  T_Tuple,
+  ...typeDefs,
   addressEq,
   digest,
   UInt_max,
