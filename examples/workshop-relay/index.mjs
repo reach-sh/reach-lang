@@ -21,7 +21,7 @@ import * as backend from './build/index.main.mjs';
   });
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       amt: stdlib.parseCurrency(25),
       getRelay: async () => {
         console.log(`Alice creates a Relay account.`);
@@ -39,7 +39,7 @@ import * as backend from './build/index.main.mjs';
       console.log(`Bob attaches to the contract as the Relay.`);
       const ctcRelay = accRelay.attach(backend, ctcAlice.getInfo());
       console.log(`Bob joins the application as the Relay.`);
-      return backend.Relay(stdlib, ctcRelay, {
+      return backend.Relay(ctcRelay, {
         getBob: async () => {
           console.log(`Bob, acting as the Relay, gives his information.`);
           return accBob.networkAccount;

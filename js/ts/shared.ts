@@ -46,12 +46,14 @@ export type IContract<ContractInfo, Digest, RawAddress, ConnectorTy extends AnyB
   wait: (delta: BigNumber) => Promise<BigNumber>,
   iam: (some_addr: RawAddress) => RawAddress,
   selfAddress: () => CBR_Address, // Not RawAddress!
+  stdlib: Object,
 };
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo> = {
   networkAccount: NetworkAccount,
   deploy: (bin: Backend) => Contract,
   attach: (bin: Backend, ctc: ContractInfo | Promise<ContractInfo>) => Contract,
+  stdlib: Object,
 }
 
 export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any, any, any> | {

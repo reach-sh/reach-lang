@@ -15,11 +15,11 @@ stdlib.assert(process.argv[3] === 'Mr. Postman');
 
   await Promise.all([
     backend.Alice(
-      stdlib, ctcAlice,
+      ctcAlice,
       { ...stdlib.hasRandom }
     ),
     backend.Bob(
-      stdlib, ctcBob,
+      ctcBob,
       { ...stdlib.hasRandom }
     ),
   ]);

@@ -12,14 +12,14 @@ import * as backend from './build/index.main.mjs';
   const ctcBob = bob.attach(backend, ctcAlice.getInfo());
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...stdlib.hasRandom,
       getObj: () => {
         console.log('Alice getObj');
         return {y: true, x: 3}
       },
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       ...stdlib.hasRandom,
       showObj: (obj, objHash, salt) => {
         console.log('Bob showObj');

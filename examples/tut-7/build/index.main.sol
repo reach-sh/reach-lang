@@ -21,7 +21,9 @@ contract ReachContract is Stdlib {
   constructor() payable {
     emit e0();
     
-    current_state = uint256(keccak256(abi.encode(uint256(0), uint256(block.number))));
+    a0postsvs memory nsvs;
+    nsvs._last = uint256(block.number);
+    current_state = uint256(keccak256(abi.encode(uint256(0), nsvs)));
     
      }
   
@@ -33,63 +35,127 @@ contract ReachContract is Stdlib {
   
   
   
-  event e1(uint256 v34);
-  struct a1 {
+  struct a5postsvs {
     uint256 _last;
-    uint256 v34;
+    uint256 v48;
+    address payable v47;
+    address payable v82;
+    uint256 v139;
+    uint256 v175;
+    uint256 v182;
      }
+  
+  struct a4postsvs {
+    uint256 _last;
+    uint256 v48;
+    address payable v47;
+    address payable v82;
+    uint256 v139;
+    uint256 v146;
+     }
+  
+  struct a3postsvs {
+    uint256 _last;
+    uint256 v48;
+    address payable v47;
+    address payable v82;
+    uint256 v90;
+     }
+  
+  struct a1postsvs {
+    uint256 _last;
+    uint256 v48;
+    uint256 v54;
+    address payable v47;
+     }
+  
+  struct a0postsvs {
+    uint256 _last;
+     }
+  
+  
+  struct a1msg {
+    uint256 v48;
+     }
+  struct a1 {
+    a0postsvs svs;
+    a1msg msg;
+     }
+  event e1(a1 _a);
   struct _F1 {
-    uint256 v41;
+    uint256 v54;
      }
   function m1(a1 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(0), _a._last))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(0), _a.svs))));
     _F1 memory _f;
     
     require(true && true);
-    require((msg.value == _a.v34));
-    _f.v41 = safeAdd((uint256(0)), msg.value);
-    emit e1(_a.v34);
-    current_state = uint256(keccak256(abi.encode(uint256(1), uint256(block.number), _f.v41, msg.sender, _a.v34)));
+    require(true);
+    require((msg.value == _a.msg.v48));
+    _f.v54 = safeAdd((uint256(0)), msg.value);
+    emit e1(_a);
+    a1postsvs memory nsvs;
+    nsvs._last = uint256(block.number);
+    nsvs.v48 = _a.msg.v48;
+    nsvs.v54 = _f.v54;
+    nsvs.v47 = msg.sender;
+    current_state = uint256(keccak256(abi.encode(uint256(1), nsvs)));
     
      }
   
   
-  event e2();
   struct a2 {
-    uint256 _last;
-    uint256 v41;
-    address payable v35;
-    uint256 v34;
+    a1postsvs svs;
      }
+  event e2(a2 _a);
   
   function m2(a2 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(1), _a._last, _a.v41, _a.v35, _a.v34))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))));
     
     
-    require(true && uint256(block.number) < safeAdd(_a._last, uint256(10)));
-    require((msg.value == _a.v34));
-    emit e2();
-    l3(a3(_a.v35, _a.v34, msg.sender, ((safeAdd((_a.v41), msg.value))), uint256(1)));
+    require(true && uint256(block.number) < safeAdd(_a.svs._last, uint256(10)));
+    require(true);
+    require((msg.value == _a.svs.v48));
+    emit e2(_a);
+    a3 memory la;
+    la.svs.v48 = _a.svs.v48;
+    la.svs.v47 = _a.svs.v47;
+    la.svs.v82 = msg.sender;
+    la.msg.v90 = ((safeAdd((_a.svs.v54), msg.value)));
+    la.msg.v91 = uint256(1);
+    l3(la);
     
      }
   
   
+  struct a3msg {
+    uint256 v90;
+    uint256 v91;
+     }
+  struct a3svs {
+    uint256 v48;
+    address payable v47;
+    address payable v82;
+     }
   struct a3 {
-    address payable v35;
-    uint256 v34;
-    address payable v45;
-    uint256 v75;
-    uint256 v76;
+    a3svs svs;
+    a3msg msg;
      }
   
   function l3(a3 memory _a)  internal {
     
-    if ((_a.v76 == uint256(1))) {
+    if ((_a.msg.v91 == uint256(1))) {
       
-      current_state = uint256(keccak256(abi.encode(uint256(3), uint256(block.number), _a.v35, _a.v34, _a.v45, _a.v75)));
+      a3postsvs memory nsvs;
+      nsvs._last = uint256(block.number);
+      nsvs.v48 = _a.svs.v48;
+      nsvs.v47 = _a.svs.v47;
+      nsvs.v82 = _a.svs.v82;
+      nsvs.v90 = _a.msg.v90;
+      current_state = uint256(keccak256(abi.encode(uint256(3), nsvs)));
        }
     else {
-      ((_a.v76 == uint256(2)) ? _a.v35 : _a.v45).transfer((safeMul(uint256(2), _a.v34)));
+      ((_a.msg.v91 == uint256(2)) ? _a.svs.v47 : _a.svs.v82).transfer((safeMul(uint256(2), _a.svs.v48)));
       
       current_state = 0x0;
       selfdestruct(msg.sender);
@@ -97,171 +163,175 @@ contract ReachContract is Stdlib {
      }
   
   
-  event e4(uint256 v95);
-  struct a4 {
-    uint256 _last;
-    address payable v35;
-    uint256 v34;
-    address payable v45;
-    uint256 v75;
-    uint256 v95;
+  struct a4msg {
+    uint256 v139;
      }
+  struct a4 {
+    a3postsvs svs;
+    a4msg msg;
+     }
+  event e4(a4 _a);
   struct _F4 {
-    uint256 v123;
+    uint256 v146;
      }
   function m4(a4 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(3), _a._last, _a.v35, _a.v34, _a.v45, _a.v75))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(3), _a.svs))));
     _F4 memory _f;
-    require(msg.sender == _a.v35);
-    require(true && uint256(block.number) < safeAdd(_a._last, uint256(10)));
+    
+    require(true && uint256(block.number) < safeAdd(_a.svs._last, uint256(10)));
+    require((_a.svs.v47 == msg.sender));
     require((msg.value == uint256(0)));
-    _f.v123 = safeAdd((_a.v75), msg.value);
-    emit e4(_a.v95);
-    current_state = uint256(keccak256(abi.encode(uint256(4), uint256(block.number), _f.v123, _a.v35, _a.v34, _a.v45, _a.v95)));
+    _f.v146 = safeAdd((_a.svs.v90), msg.value);
+    emit e4(_a);
+    a4postsvs memory nsvs;
+    nsvs._last = uint256(block.number);
+    nsvs.v48 = _a.svs.v48;
+    nsvs.v47 = _a.svs.v47;
+    nsvs.v82 = _a.svs.v82;
+    nsvs.v139 = _a.msg.v139;
+    nsvs.v146 = _f.v146;
+    current_state = uint256(keccak256(abi.encode(uint256(4), nsvs)));
     
      }
   
   
-  event e5(uint256 v127);
-  struct a5 {
-    uint256 _last;
-    uint256 v123;
-    address payable v35;
-    uint256 v34;
-    address payable v45;
-    uint256 v95;
-    uint256 v127;
+  struct a5msg {
+    uint256 v175;
      }
+  struct a5 {
+    a4postsvs svs;
+    a5msg msg;
+     }
+  event e5(a5 _a);
   struct _F5 {
-    uint256 v155;
+    uint256 v182;
      }
   function m5(a5 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(4), _a._last, _a.v123, _a.v35, _a.v34, _a.v45, _a.v95))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(4), _a.svs))));
     _F5 memory _f;
-    require(msg.sender == _a.v45);
-    require(true && uint256(block.number) < safeAdd(_a._last, uint256(10)));
+    
+    require(true && uint256(block.number) < safeAdd(_a.svs._last, uint256(10)));
+    require((_a.svs.v82 == msg.sender));
     require((msg.value == uint256(0)));
-    _f.v155 = safeAdd((_a.v123), msg.value);
-    emit e5(_a.v127);
-    current_state = uint256(keccak256(abi.encode(uint256(5), uint256(block.number), _f.v155, _a.v35, _a.v34, _a.v45, _a.v95, _a.v127)));
+    _f.v182 = safeAdd((_a.svs.v146), msg.value);
+    emit e5(_a);
+    a5postsvs memory nsvs;
+    nsvs._last = uint256(block.number);
+    nsvs.v48 = _a.svs.v48;
+    nsvs.v47 = _a.svs.v47;
+    nsvs.v82 = _a.svs.v82;
+    nsvs.v139 = _a.svs.v139;
+    nsvs.v175 = _a.msg.v175;
+    nsvs.v182 = _f.v182;
+    current_state = uint256(keccak256(abi.encode(uint256(5), nsvs)));
     
      }
   
   
-  event e6(uint256 v158, uint256 v159);
-  struct a6 {
-    uint256 _last;
-    uint256 v155;
-    address payable v35;
-    uint256 v34;
-    address payable v45;
-    uint256 v95;
-    uint256 v127;
-    uint256 v158;
-    uint256 v159;
+  struct a6msg {
+    uint256 v210;
+    uint256 v211;
      }
+  struct a6 {
+    a5postsvs svs;
+    a6msg msg;
+     }
+  event e6(a6 _a);
   
   function m6(a6 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(5), _a._last, _a.v155, _a.v35, _a.v34, _a.v45, _a.v95, _a.v127))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(5), _a.svs))));
     
-    require(msg.sender == _a.v35);
-    require(true && uint256(block.number) < safeAdd(_a._last, uint256(10)));
+    
+    require(true && uint256(block.number) < safeAdd(_a.svs._last, uint256(10)));
+    require((_a.svs.v47 == msg.sender));
     require((msg.value == uint256(0)));
-    require((_a.v95 == (uint256(keccak256(abi.encode(_a.v158, _a.v159))))));
-    emit e6(_a.v158, _a.v159);
-    l3(a3(_a.v35, _a.v34, _a.v45, ((safeAdd((_a.v155), msg.value))), ((safeAdd(_a.v159, (safeSub(uint256(4), _a.v127)))) % uint256(3))));
+    require((_a.svs.v139 == (uint256(keccak256(abi.encode(_a.msg.v210, _a.msg.v211))))));
+    emit e6(_a);
+    a3 memory la;
+    la.svs.v48 = _a.svs.v48;
+    la.svs.v47 = _a.svs.v47;
+    la.svs.v82 = _a.svs.v82;
+    la.msg.v90 = ((safeAdd((_a.svs.v182), msg.value)));
+    la.msg.v91 = ((safeAdd(_a.msg.v211, (safeSub(uint256(4), _a.svs.v175)))) % uint256(3));
+    l3(la);
     
      }
   
   
-  event e7();
   struct a7 {
-    uint256 _last;
-    uint256 v155;
-    address payable v35;
-    uint256 v34;
-    address payable v45;
-    uint256 v95;
-    uint256 v127;
+    a5postsvs svs;
      }
+  event e7(a7 _a);
   
   function m7(a7 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(5), _a._last, _a.v155, _a.v35, _a.v34, _a.v45, _a.v95, _a.v127))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(5), _a.svs))));
     
-    require(msg.sender == _a.v45);
-    require(uint256(block.number) >= safeAdd(_a._last, uint256(10)) && true);
+    
+    require(uint256(block.number) >= safeAdd(_a.svs._last, uint256(10)) && true);
+    require((_a.svs.v82 == msg.sender));
     require((msg.value == uint256(0)));
-    _a.v45.transfer(((safeAdd((_a.v155), msg.value))));
-    emit e7();
+    _a.svs.v82.transfer(((safeAdd((_a.svs.v182), msg.value))));
+    emit e7(_a);
     current_state = 0x0;
     selfdestruct(msg.sender);
     
      }
   
   
-  event e8();
   struct a8 {
-    uint256 _last;
-    uint256 v123;
-    address payable v35;
-    uint256 v34;
-    address payable v45;
-    uint256 v95;
+    a4postsvs svs;
      }
+  event e8(a8 _a);
   
   function m8(a8 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(4), _a._last, _a.v123, _a.v35, _a.v34, _a.v45, _a.v95))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(4), _a.svs))));
     
-    require(msg.sender == _a.v35);
-    require(uint256(block.number) >= safeAdd(_a._last, uint256(10)) && true);
+    
+    require(uint256(block.number) >= safeAdd(_a.svs._last, uint256(10)) && true);
+    require((_a.svs.v47 == msg.sender));
     require((msg.value == uint256(0)));
-    _a.v35.transfer(((safeAdd((_a.v123), msg.value))));
-    emit e8();
+    _a.svs.v47.transfer(((safeAdd((_a.svs.v146), msg.value))));
+    emit e8(_a);
     current_state = 0x0;
     selfdestruct(msg.sender);
     
      }
   
   
-  event e9();
   struct a9 {
-    uint256 _last;
-    address payable v35;
-    uint256 v34;
-    address payable v45;
-    uint256 v75;
+    a3postsvs svs;
      }
+  event e9(a9 _a);
   
   function m9(a9 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(3), _a._last, _a.v35, _a.v34, _a.v45, _a.v75))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(3), _a.svs))));
     
-    require(msg.sender == _a.v45);
-    require(uint256(block.number) >= safeAdd(_a._last, uint256(10)) && true);
+    
+    require(uint256(block.number) >= safeAdd(_a.svs._last, uint256(10)) && true);
+    require((_a.svs.v82 == msg.sender));
     require((msg.value == uint256(0)));
-    _a.v45.transfer(((safeAdd((_a.v75), msg.value))));
-    emit e9();
+    _a.svs.v82.transfer(((safeAdd((_a.svs.v90), msg.value))));
+    emit e9(_a);
     current_state = 0x0;
     selfdestruct(msg.sender);
     
      }
   
   
-  event e10();
   struct a10 {
-    uint256 _last;
-    uint256 v41;
-    address payable v35;
-    uint256 v34;
+    a1postsvs svs;
      }
+  event e10(a10 _a);
   
   function m10(a10 calldata _a) external payable {
-    require(current_state == uint256(keccak256(abi.encode(uint256(1), _a._last, _a.v41, _a.v35, _a.v34))));
+    require(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))));
     
-    require(msg.sender == _a.v35);
-    require(uint256(block.number) >= safeAdd(_a._last, uint256(10)) && true);
+    
+    require(uint256(block.number) >= safeAdd(_a.svs._last, uint256(10)) && true);
+    require((_a.svs.v47 == msg.sender));
     require((msg.value == uint256(0)));
-    _a.v35.transfer(((safeAdd((_a.v41), msg.value))));
-    emit e10();
+    _a.svs.v47.transfer(((safeAdd((_a.svs.v54), msg.value))));
+    emit e10(_a);
     current_state = 0x0;
     selfdestruct(msg.sender);
     

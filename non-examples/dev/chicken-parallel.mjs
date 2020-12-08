@@ -48,13 +48,13 @@ const main = async () => {
   });
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...interactWith('Alice'),
       getParams: () => ({
         wager: stdlib.parseCurrency(5),
         deadline: 11 }),
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       ...interactWith('Bob'),
       confirmWager: (amount) => {
         console.log(`Bob accepts the wager of ${fmt(amount)}.`); },

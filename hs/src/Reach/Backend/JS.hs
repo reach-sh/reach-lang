@@ -462,7 +462,7 @@ jsETail ctxt = \case
 
 jsPart :: SLPart -> EPProg -> Doc
 jsPart p (EPProg _ _ et) =
-  "export" <+> jsFunction (pretty $ bunpack p) (["stdlib", "ctc", "interact"]) bodyp'
+  "export" <+> jsFunction (pretty $ bunpack p) ["ctc", "interact"] bodyp'
   where
     ctxt =
       JSCtxt
@@ -471,7 +471,7 @@ jsPart p (EPProg _ _ et) =
         , ctxt_simulate = False
         , ctxt_while = Nothing
         }
-    bodyp' = jsETail ctxt et
+    bodyp' = "const stdlib = ctc.stdlib;\n  " <> jsETail ctxt et
 
 jsConnInfo :: ConnectorInfo -> Doc
 jsConnInfo = \case
