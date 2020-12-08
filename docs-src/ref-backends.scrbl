@@ -354,10 +354,9 @@ the JavaScript representation of Reach's @reachin{UInt}.
 @deftech{isBigNumber} checks if its input is a BigNumber.
 
 @(hrule)
-@(mint-define! '("isHex") '("hexToString") '("hexToBigNumber") '("stringToHex") '("bigNumberToHex") '("uintToBytes") '("bytesEq") '("digestEq") '("addressEq"))
+@(mint-define! '("isHex") '("hexToBigNumber") '("stringToHex") '("bigNumberToHex") '("uintToBytes") '("bytesEq") '("digestEq") '("addressEq"))
 @js{
  isHex(x) => bool
- hexToString(bytes) => string
  hexToBigNumber(bytes) => UInt
  stringToHex(string) => bytes
  bigNumberToHex(UInt) => bytes
