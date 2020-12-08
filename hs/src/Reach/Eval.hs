@@ -10,6 +10,7 @@ import Data.List (intercalate, sortBy, transpose)
 import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
 import Data.Ord (comparing)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
@@ -36,7 +37,7 @@ import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
 -- import Reach.Texty
---import Debug.Trace
+-- import Debug.Trace
 
 --- Errors
 
@@ -118,7 +119,7 @@ data EvalError
   | Err_RecursionDepthLimit
   | Err_Eval_MustBeLive String
   | Err_Invalid_Statement String
-  | Err_ToConsensus_WhenNoTimeout SLPart DLArg
+  | Err_ToConsensus_WhenNoTimeout
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -399,8 +400,8 @@ instance Show EvalError where
       "must be live at " <> m
     Err_Invalid_Statement stmt ->
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
-    Err_ToConsensus_WhenNoTimeout _who _when ->
-      "Cannot optionally transition to consensus without timeout."
+    Err_ToConsensus_WhenNoTimeout ->
+      "Cannot optionally transition to consensus or have an empty race without timeout."
 
 --- Utilities
 zipEq :: Show e => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -2444,12 +2445,17 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   let tc_send = M.map snd tc_send_int
   let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map fst3 tc_send
   -- Handle timeout
+  let not_true_send = \case
+        (_, (_, _, DLA_Literal (DLL_Bool True))) -> False
+        (_, (_, _, _)) -> True
+  let not_all_true_send =
+        getAny $ mconcat $ map (Any . not_true_send) (M.toList tc_send)
+  let mustHaveTimeout = S.null whos || not_all_true_send
   (mtime_merge, tc_mtime) <-
     case mtime of
       Nothing -> do
-        forM_ (M.toList tc_send) (\case
-          (_, (_, _, DLA_Literal (DLL_Bool True))) -> return ()
-          (who, (_, _, x)) -> expect_throw_ctx ctxt at $ Err_ToConsensus_WhenNoTimeout who x)
+        when mustHaveTimeout $
+          expect_throw_ctx ctxt at $ Err_ToConsensus_WhenNoTimeout
         return $ (id, Nothing)
       Just (time_at, delay_e, (JSBlock _ time_ss _)) -> do
         SLRes delay_lifts _ delay_sv <-

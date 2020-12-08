@@ -1,0 +1,1 @@
+reachc: error: ./empty_race.rsh:11:13:dot: Cannot optionally transition to consensus or have an empty race without timeout.
