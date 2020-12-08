@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.0.8
+
+Added buttons to compile and run programs.  
+Fixed an issue where compilation highlights stopped working due to too many Docker networks.
+
 ## 0.0.7
 
 Use temporary directory for automatic compiles.  
