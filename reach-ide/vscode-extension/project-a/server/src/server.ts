@@ -71,9 +71,16 @@ connection.onInitialize((params: InitializeParams) => {
 			connection.console.error(err);
 			throw err;
 		}
-		tempFolder = folder;
-		reachTempIndexFile = path.join(tempFolder, REACH_TEMP_FILE_NAME);
-		connection.console.log("Temp folder: " + tempFolder);
+		// Use a format like 'reach-ide-SUFFIX/reach-ide'
+		tempFolder = path.join(folder, 'reach-ide');
+		fs.mkdir(tempFolder, (err2:string) => {
+			if (err2) {
+				connection.console.error(err2);
+				throw err2;
+			}
+			reachTempIndexFile = path.join(tempFolder, REACH_TEMP_FILE_NAME);
+			connection.console.log("Temp folder: " + tempFolder);
+		});
 	});
 
 	let capabilities = params.capabilities;
