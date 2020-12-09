@@ -128,6 +128,10 @@ lin_con back at_top fve rets (s Seq.:<| ks) =
           LLC_Continue at update
         _ ->
           impossible $ "consensus cannot continue w/ non-empty k"
+    DLS_Only at who ss ->
+      LLC_Only at who ls $ lin_con back at fve rets ks
+      where
+        ls = lin_local at fve ss
     _ ->
       lin_com "consensus" (lin_con back) LLC_Com fve rets s ks
 

@@ -24,14 +24,13 @@ import * as backend from './build/index.main.mjs';
         console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
       },
       keepGoing: () => {
-        if ( count > 0 ) {
-          console.log(`${Who} keeps going`);
-          count--;
-          return true;
-        } else {
-          console.log(`${Who} stops`);
-          return false;
-        }
+        console.log(`${Who} has ${count} more rounds`);
+        return (count > 0);
+      },
+      roundWinnerWas: (isAlice) => {
+        const winner = isAlice ? 'Alice' : 'Bob';
+        console.log(`${Who} sees ${winner} won that round`);
+        count -= ( winner === Who ) ? 1 : 0;
       },
     }
   };

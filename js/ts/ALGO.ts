@@ -682,6 +682,8 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           .address(handler.hash)
           .addressRole("sender")
           // Look at the next one after the last message
+          // XXX when we implement firstMsg, this won't work on the first
+          // message
           .minRound(lastRound + 1);
         if ( timeoutRound ) {
           query = query.maxRound(timeoutRound);

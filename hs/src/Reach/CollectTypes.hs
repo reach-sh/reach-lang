@@ -105,6 +105,7 @@ instance CollectsTypes LLConsensus where
   cts (LLC_FromConsensus _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
+  cts (LLC_Only _ _ l s) = cts l <> cts s
 
 instance CollectsTypes LLStep where
   cts (LLS_Com k) = cts k

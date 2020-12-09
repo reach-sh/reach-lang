@@ -513,16 +513,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           await infoP; // Wait for the deploy to actually happen.
 
           // simulated recv
-          // return {
-          //   didTimeout: false,
-          //   // should be the final "evt_cnt" number of args,
-          //   // not all args
-          //   data: args,
-          //   value,
-          //   // Because this is the 1st sendrecv, balance = value
-          //   balance: value,
-          //   from: address,
-          // };
           return await impl.recv(label, funcNum, evt_cnt, out_tys, false,timeout_delay);
         },
         getInfo: async () => {
@@ -581,6 +571,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const {getLastBlock, setLastBlock} = (() => {
       let lastBlock: number | null = null;
       const setLastBlock = (n: number): void => {
+        debug(`lastBlock from ${lastBlock} to ${n}`);
         lastBlock = n;
       };
       const getLastBlock = async (): Promise<number> => {
@@ -633,6 +624,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const getLogs = async (
       fromBlock: number, toBlock: number, ok_evt: string,
     ): Promise<Array<Log>> => {
+      if ( fromBlock > toBlock ) { return []; }
       const ethersC = await getC();
       return await provider.getLogs({
         fromBlock,
@@ -747,19 +739,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       waitIfNotPresent: boolean,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
+      const isFirstMsgDeploy = (okNum == 1) && (bin._Connectors.ETH.deployMode == 'DM_firstMsg');
       const lastBlock = await getLastBlock();
       const ok_evt = `e${okNum}`;
       debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- START`);
 
       // look after the last block
-      let block_poll_start: number = lastBlock + 1;
+      const block_poll_start_init: number =
+        lastBlock + (isFirstMsgDeploy ? 0 : 1);
+      let block_poll_start: number = block_poll_start_init;
       let block_poll_end = block_poll_start;
       while (!timeout_delay || lt(block_poll_start, add(lastBlock, timeout_delay))) {
-        // console.log(
-        //   `~~~ ${label} is polling [${block_poll_start}, ${block_poll_end}]\n` +
-        //     `  ~ ${label} will stop polling at ${last_block} + ${timeout_delay} = ${last_block + timeout_delay}`,
-        // );
-
+        debug(`${shad}: ${label} recv ${ok_evt} --- GET ${block_poll_start} ${block_poll_end}`);
         const es = await getLogs(block_poll_start, block_poll_end, ok_evt);
         if (es.length == 0) {
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- RETRY`);
@@ -770,6 +761,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           if ( waitIfNotPresent && block_poll_start == block_poll_end ) {
             await waitUntilTime(bigNumberify(block_poll_end + 1));
           }
+          if ( block_poll_start <= lastBlock ) {
+            block_poll_start = block_poll_start_init; }
 
           continue;
         } else {
@@ -794,6 +787,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             console.log(`WARNING: no blockNumber on transaction.`);
             console.log(ok_t);
           }
+
+          debug(`${shad}: ${label} recv ${ok_evt} --- AT ${ok_r.blockNumber}`);
           updateLast(ok_r);
           const ok_ed = await getEventData(ok_evt, ok_e);
           debug(`${shad}: ${label} recv ${ok_evt} --- DATA -- ${JSON.stringify(ok_ed)}`);

@@ -91,13 +91,14 @@ const toAcct = (address: Address): AccountTransferrable => ({
 
 const STATES: {[key: string]: Digest} = {};
 
-const checkStateTransition = async (which: string, prevSt: Digest, nextSt: Digest): Promise<boolean> => {
+const checkStateTransition = async (label:string, which: string, prevSt: Digest, nextSt: Digest): Promise<boolean> => {
   await Timeout.set(Math.random() < 0.5 ? 20 : 0);
   const cur = STATES[which];
-  debug(`cst prevSt(${JSON.stringify(prevSt)}) on cur(${JSON.stringify(cur)}) to ${JSON.stringify(nextSt)}`);
+  debug(`${label} cst prevSt(${JSON.stringify(prevSt)}) on cur(${JSON.stringify(cur)}) to ${JSON.stringify(nextSt)} --- check`);
   if ( ! stdlib.bytesEq(cur, prevSt) ) {
     return false;
   }
+  debug(`${label} cst prevSt(${JSON.stringify(prevSt)}) on cur(${JSON.stringify(STATES[which])}) to ${JSON.stringify(nextSt)} --- assign`);
   STATES[which] = nextSt;
   return true; };
 
@@ -232,8 +233,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       });
       const data = stdlib.argsSlice(args, evt_cnt);
       const last_block = await getLastBlock();
+      const timeout_until_block = timeout_delay && stdlib.add(last_block, timeout_delay);
+      debug(`${label} send ${funcNum} --- timeout is ${timeout_delay}, not sending unless ${BLOCKS.length} less than ${timeout_until_block}`);
+
       const ctcInfo = await infoP;
-      if (!timeout_delay || stdlib.lt(BLOCKS.length, stdlib.add(last_block, timeout_delay))) {
+      if (!timeout_until_block || stdlib.lt(BLOCKS.length, timeout_until_block)) {
         debug(`${label} send ${funcNum} --- post`);
 
         const stubbedRecv: RecvNoTimeout = {
@@ -243,7 +247,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           from: address,
         }
         const {prevSt, nextSt, txns} = sim_p(stubbedRecv);
-        if ( await checkStateTransition(ctcInfo.address, prevSt, nextSt) ) {
+        if ( await checkStateTransition(label, ctcInfo.address, prevSt, nextSt) ) {
           debug(`${label} send ${funcNum} --- post succeeded`);
           transfer({networkAccount}, toAcct(ctcInfo.address), value);
           // Instead of processing these atomically & rolling back on failure
@@ -297,17 +301,20 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       void(out_tys);
 
       const last_block = await getLastBlock();
+      const timeout_until_block = timeout_delay && stdlib.add(last_block, timeout_delay);
+      debug(`${label} recv ${funcNum} --- timeout is ${timeout_delay}, waiting until ${timeout_until_block}`);
+
       // look after the last block
       let check_block = last_block + 1;
-      while (!timeout_delay || stdlib.lt(check_block, stdlib.add(last_block, timeout_delay))) {
+      while (!timeout_until_block || stdlib.lt(BLOCKS.length, timeout_until_block)) {
         debug(`${label} recv ${funcNum} --- check ${last_block} ${check_block}`);
         const b = findBlock(last_block + 1, check_block, funcNum);
         if (!b) {
           debug(`${label} recv ${funcNum} --- wait (${waitIfNotPresent})`);
-          await Timeout.set(1);
+          await Timeout.set(20);
           if ( waitIfNotPresent ) {
             check_block++;
-            if ( check_block == BLOCKS.length - 1 ) {
+            if ( check_block >= BLOCKS.length - 1 ) {
               await waitUntilTime(check_block);
             }
           } else {
@@ -316,7 +323,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           continue;
         } else {
           const found_block = b.time;
-          debug(`${label} recv ${funcNum} --- recv`);
+          debug(`${label} recv ${funcNum} --- AT ${found_block}`);
           setLastBlock(found_block);
           const evt = b.event;
           return { didTimeout: false, data: evt.data, value: evt.value, from: evt.from };

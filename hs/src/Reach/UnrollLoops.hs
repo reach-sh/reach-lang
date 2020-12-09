@@ -301,6 +301,8 @@ ul_n = \case
     (pure $ LLC_While at) <*> ul_asn True asn <*> ul_bl inv <*> ul_bl cond <*> ul_n body <*> ul_n k
   LLC_Continue at asn ->
     (pure $ LLC_Continue at) <*> ul_asn False asn
+  LLC_Only at p l k ->
+    (pure $ LLC_Only at p) <*> ul_l l <*> ul_n k
 
 ul_mtime :: Maybe (DLArg, LLStep) -> App s (Maybe (DLArg, LLStep))
 ul_mtime = \case

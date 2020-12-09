@@ -5,6 +5,7 @@ const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
 const Common = {
   showOutcome: Fun([UInt], Null),
   keepGoing: Fun([], Bool),
+  roundWinnerWas: Fun([Bool], Null),
 };
 
 export const main =
@@ -50,12 +51,13 @@ export const main =
 
         race(Alice, Bob).publish(isAlice).when(go)
           .timeout(deadline, () => {
+            showOutcome(TIMEOUT)();
             race(Alice, Bob).publish();
             keepGoing = false;
             continue; });
         const [ da, db ] = isAlice ? [ 1, 0 ] : [ 0, 1 ];
-        // each([Alice, Bob], () => {
-        //  interact.roundWinnerWas(isAlice); });
+        each([Alice, Bob], () => {
+          interact.roundWinnerWas(isAlice); });
         [ keepGoing, as, bs ] = [ true, as + da, bs + db ];
         continue;
       }

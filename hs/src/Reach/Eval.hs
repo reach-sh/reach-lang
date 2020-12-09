@@ -2560,7 +2560,7 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
       expect_empty_tail ctxt "exit" JSNoAnnot sp at ks $
         return $ SLRes mempty st' $ SLStmtRes env []
     SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) -> do
-      ensure_modes ctxt at st [SLM_Step {-, SLM_ConsensusStep -}] "local action (only or each)"
+      ensure_modes ctxt at st [SLM_Step, SLM_ConsensusStep] "local action (only or each)"
       (lifts', sco', st') <-
         foldM (doOnly ctxt at) (mempty, sco, st) $
           map (\who -> (who, only_at, only_cloenv, only_synarg)) parts

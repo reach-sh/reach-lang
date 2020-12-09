@@ -63,6 +63,7 @@ data ETail
       , et_w_k :: ETail
       }
   | ET_Continue SrcLoc DLAssignment
+  | ET_ConsensusOnly SrcLoc PLTail ETail
   deriving (Eq, Show)
 
 data EPProg

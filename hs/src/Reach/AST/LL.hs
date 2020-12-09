@@ -41,6 +41,7 @@ data LLConsensus
       , llc_w_k :: LLConsensus
       }
   | LLC_Continue SrcLoc DLAssignment
+  | LLC_Only SrcLoc SLPart LLLocal LLConsensus
   deriving (Eq, Show)
 
 data LLStep

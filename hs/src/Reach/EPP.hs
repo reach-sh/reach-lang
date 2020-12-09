@@ -390,6 +390,14 @@ epp_n st n =
       let ct' = CT_Jump at this_loop loop_svs asn
       let p_prts' = pall st (ProRes_ asn_cs (ET_Continue at asn))
       return $ ProResC p_prts' (ProRes_ cons_cs' ct')
+    LLC_Only at who body_l k_n -> do
+      ProResC p_prts_k prchs_k <- epp_n st k_n
+      let ProRes_ who_k_cs who_k_et = p_prts_k M.! who
+      let ProResL (ProRes_ who_body_cs who_body_lt) = epp_l body_l who_k_cs
+      let who_prt_only =
+            ProRes_ who_body_cs $ ET_ConsensusOnly at who_body_lt who_k_et
+      let p_prts = M.insert who who_prt_only p_prts_k
+      return $ ProResC p_prts prchs_k
 
 epp_s :: forall s. ProSt s -> LLStep -> ST s ProResS
 epp_s st s =

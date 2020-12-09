@@ -726,6 +726,13 @@ smt_n ctxt n =
             <> smt_n ctxt k
     LLC_Continue _at asn ->
       smt_asn ctxt True asn
+    LLC_Only _at who loc k ->
+      loc_m <> smt_n ctxt k
+      where
+        loc_m =
+          case shouldSimulate ctxt who of
+            True -> smt_l ctxt loc
+            False -> mempty
 
 smt_s :: SMTCtxt -> LLStep -> SMTComp
 smt_s ctxt s =

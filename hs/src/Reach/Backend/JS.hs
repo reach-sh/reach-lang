@@ -460,6 +460,13 @@ jsETail ctxt = \case
                    <> hardline
                    <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk))
                 <> semi
+  ET_ConsensusOnly _at l k ->
+    case ctxt_simulate ctxt of
+      True -> kp
+      False -> vsep [ lp, kp ]
+    where
+      kp = jsETail ctxt k
+      lp = jsPLTail ctxt l
 
 jsPart :: SLPart -> EPProg -> Doc
 jsPart p (EPProg _ _ et) =

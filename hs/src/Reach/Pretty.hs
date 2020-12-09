@@ -319,22 +319,21 @@ instance Pretty LLConsensus where
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
     LLC_Continue _at asn ->
       prettyContinue asn
+    LLC_Only _at who onlys k ->
+      "only" <> parens (render_sp who) <+> render_nest (pretty onlys) <> semi <> hardline <> pretty k
 
 instance Pretty LLBlock where
   pretty (LLBlock _ _ ts ta) =
     (pretty ts) <> hardline <> "return" <+> pretty ta <> semi
 
 instance Pretty LLStep where
-  pretty s =
-    case s of
-      LLS_Com x -> pretty x
-      LLS_Stop _at -> prettyStop
-      LLS_Only _at who onlys k ->
-        "only" <> parens (render_sp who) <+> ns (pretty onlys) <> semi <> hardline <> pretty k
-      LLS_ToConsensus {..} ->
-        prettyToConsensus pretty pretty lls_tc_send lls_tc_recv lls_tc_mtime
-    where
-      ns = render_nest
+  pretty = \case
+    LLS_Com x -> pretty x
+    LLS_Stop _at -> prettyStop
+    LLS_Only _at who onlys k ->
+      "only" <> parens (render_sp who) <+> render_nest (pretty onlys) <> semi <> hardline <> pretty k
+    LLS_ToConsensus {..} ->
+      prettyToConsensus pretty pretty lls_tc_send lls_tc_recv lls_tc_mtime
 
 instance Pretty LLProg where
   pretty (LLProg _at _ sps db) =
@@ -408,6 +407,8 @@ instance Pretty ETail where
       ET_While _ asn cond body k ->
         prettyWhile asn () cond (pretty body) <> hardline <> pretty k
       ET_Continue _ asn -> prettyContinue asn
+      ET_ConsensusOnly _ lt k ->
+        pretty lt <> hardline <> pretty k
     where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)

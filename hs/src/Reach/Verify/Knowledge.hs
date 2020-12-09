@@ -262,12 +262,17 @@ kgq_n ctxt = \case
       ctxt' = ctxt_add_back ctxt ca
   LLC_Continue _ asn ->
     kgq_asn ctxt asn
+  LLC_Only _at who loc k ->
+    kgq_l (ctxt_restrict ctxt who) loc
+      >> kgq_n ctxt k
 
 kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
   LLS_Com m -> kgq_m kgq_s ctxt m
   LLS_Stop {} -> mempty
-  LLS_Only _at who loc k -> kgq_l (ctxt_restrict ctxt who) loc >> kgq_s ctxt k
+  LLS_Only _at who loc k ->
+    kgq_l (ctxt_restrict ctxt who) loc
+      >> kgq_s ctxt k
   LLS_ToConsensus _ send recv mtime ->
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       >> mapM_ (ctxtNewScope ctxt . go) (M.toList send)

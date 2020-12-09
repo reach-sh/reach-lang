@@ -208,6 +208,8 @@ opt_n = \case
     LLC_Continue at <$> opt_asn asn
   LLC_FromConsensus at1 at2 s ->
     LLC_FromConsensus at1 at2 <$> (focusa $ opt_s s)
+  LLC_Only at p l k ->
+    LLC_Only at p <$> (focusp p $ opt_l l) <*> opt_n k
 
 opt_mtime :: Maybe (DLArg, LLStep) -> App (Maybe (DLArg, LLStep))
 opt_mtime = \case
