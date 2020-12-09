@@ -165,6 +165,25 @@ Typically oracles are used to connect physical data from outside a @tech{consens
 
 @(WIP/XXX)
 
+@section[#:tag "workshop-race"]{Workshop: Race}
+
+@(workshop-deps "tutorial")
+
+In this workshop, we implement the example of the @reachin{race} expression discussed in @seclink["guide-race"]{the guide section on races}.
+This provides an introduction to races, as well as a cautionary tale on their danger.
+
+@(WIP/XXX "race")
+
+@section[#:tag "workshop-chicken-race"]{Workshop: Chicken}
+
+@(workshop-deps "workshop-race")
+
+In this workshop, we implement a game of @link["https://en.wikipedia.org/wiki/Chicken_(game)"]{Chicken}, where each player submits an equal wager, and then competes with the other to submit more transactions to the consensus before a deadline.
+In other words, they must decide between the risk of losing the entire pot and the risk of overspending on transaction costs.
+Like @secref["workshop-race"], this demonstrates the deadweight losses associated with @reachin{race}s, as discussed in @seclink["guide-race"]{the guide section on races}.
+
+@(WIP/XXX "chicken-race")
+
 @section[#:tag "workshop-auction-te"]{Workshop: Timed English Auction}
 
 @(workshop-deps "tut")

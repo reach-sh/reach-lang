@@ -239,7 +239,7 @@ It represents the actions taken by each of the participants in an application.
 Any statements valid for a @seclink["ref-programs-compute-stmts"]{computation} are valid for a step.
 However, some additional statements are allowed.
 
-@subsubsection{@tt{only} and @tt{each}}
+@subsubsection[#:tag "ref-programs-only-step"]{@tt{only} and @tt{each}}
 
 @(mint-define! '("only"))
 @reach{
@@ -277,9 +277,9 @@ is an @tech{invalid} program, because @reachin{Bob} does not know @reachin{x}.
 An @deftech{each} @tech{local step} statement can be written as @reachin{each(PART_TUPLE () => BLOCK)}, where @reachin{PART_TUPLE} is a tuple of @tech{participants} and @reachin{BLOCK} is a @tech{block}.
 It is an abbreviation of many @tech{local step} statements that could have been written with @reachin{only}.
 
-@subsubsection{@tt{publish}, @tt{pay}, and @tt{timeout}}
+@subsubsection{@tt{publish}, @tt{pay}, @tt{when}, and @tt{timeout}}
 
-@(mint-define! '("publish") '("pay") '("timeout"))
+@(mint-define! '("publish") '("pay") '("when") '("timeout"))
 @reach{
  Alice.publish(wagerAmount)
       .pay(wagerAmount)
@@ -292,15 +292,22 @@ It is an abbreviation of many @tech{local step} statements that could have been 
       .pay(wagerAmount)
       .timeout(DELAY, () => closeTo(Bob, false)); }
 
-A @tech{consensus transfer} is written @reachin{PART.publish(ID_0, ..., ID_n).pay(PAY_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where @reachin{PART} is a @tech{participant} identifier, @reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state}, @reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens}, @reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number, @reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
+A @tech{consensus transfer} is written @reachin{PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR)..when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)},
+where @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant} or @tech{race expression},
+@reachin{ID_0} through @reachin{ID_n} are identifiers for @reachin{PART}'s @tech{public} @tech{local state},
+@reachin{PAY_EXPR} is a @tech{public} @tech{expression} evaluating to an amount of @tech{network tokens},
+@reachin{WHEN_EXPR} is a @tech{public} @tech{expression} evaluating to a boolean and determines if the @tech{consensus transfer} takes place,
+@reachin{DELAY_EXPR} is a @tech{public} @tech{expression} that depends on only @tech{consensus state} and evaluates to a @tech{time delta} represented by a natural number,
+@reachin{TIMEOUT_BLOCK} is a @tech{timeout} @tech{block}, which will be executed after @reachin{DELAY_EXPR} units of @tech{time} have passed from the end of the last @tech{consensus step} without @reachin{PART} executing this @tech{consensus transfer}.
 The @tech{continuation} of a @tech{consensus transfer} @tech{statement} is a @tech{consensus step}, which is finalized with a @tech{commit statement}.
 The @tech{continuation} of a timeout block is the same as the continuation of the function the timeout occurs within.
 
 @margin-note{See @seclink["guide-timeout"]{the guide section on non-participation} to understand when to use timeouts and how to use them most effectively.}
 
 The @reachin{publish} component exclusive-or the @reachin{pay} component may be omitted, if either there is no @tech{publication} or no @tech{transfer} of @tech{network tokens} to accompany this @tech{consensus transfer}.
-The @reachin{timeout} component may always be omitted.
-Each component may occur in any order.
+The @reachin{when} component may always be omitted, in which case it is assumed to be @reachin{true}.
+The @reachin{timeout} component may omitted if @reachin{when} is statically @reachin{true}.
+@reachin{publish} or @reachin{pay} must occur first, after which components may occur in any order.
 For example, the following are all @tech{valid}:
 
 @reach{
@@ -317,15 +324,37 @@ For example, the following are all @tech{valid}:
       .timeout(DELAY, () => {
         Bob.publish();
         commit();
-        exit(); }); }
+        exit(); });
+
+ Alice.publish(bid).when(wantsToBid);
+
+}
 
 If the named participant has not yet @tech{join}ed the application, then this statement has the effect of them @tech{join}ing, after which @reachin{PART} may be used as an @tech{address}.
+
+A @tech{consensus transfer} binds the identifiers @reachin{ID_0} through @reachin{ID_n} for all @tech{participants} to the values included in the @tech{consensus transfer}.
+If an existing @tech{participant}, not included in @reachin{PART_EXPR}, has previously bound one of these identifiers, then the program is not @tech{valid}. In other words, the following program is not valid:
+
+@reach{
+ Alice.only(() => {
+  const x = 1; });
+ Bob.only(() => {
+  const x = 2; });
+ Claire.only(() => {
+  const x = 3; });
+ race(Alice, Bob).publish(x);
+ commit();
+}
+
+because @reachin{Claire} is not included in the @reachin{race}.
+However, if we were to rename @reachin{Claire}'s @reachin{x} into @reachin{y}, then it would be valid, because although @reachin{Alice} and @reachin{Bob} both bind @reachin{x}, they participate in the @reachin{race}, so it is allowed.
+In the tail of this program, @reachin{x} is bound to either @reachin{1} or @reachin{2}.
 
 @subsubsection{@tt{wait}}
 
 @(mint-define! '("wait"))
 @reach{
- wait(AMT); }
+ wait(AMOUNT); }
 
 A @deftech{wait statement}, written @reachin{wait(AMOUNT);}, delays the computation until @reachin{AMOUNT} @tech{time delta} units have passed.
 It may only occur in a @tech{step}.
@@ -344,6 +373,16 @@ It may only occur in a @tech{step}.
 
 Any expressions valid for a @seclink["ref-programs-compute-exprs"]{computation} are valid for a step.
 However, some additional expressions are allowed.
+
+@subsubsection{@tt{race}}
+
+@(mint-define! '("race"))
+@reach{
+ race(Alice, Bob).publish(bet); }
+
+A @deftech{race expression}, written @reachin{race(PARTICIPANT_0, ..., PARTICIPANT_n);}, constructs a @tech{participant} that may be used in a @tech{consensus transfer} statement, such as @reachin{publish} or @reachin{pay}, where the various @tech{participants} race to be the first one to perform the @tech{consensus transfer}.
+
+@margin-note{See @seclink["guide-race"]{the guide section on races} to understand the benefits and dangers of using @reachin{race}.}
 
 @subsubsection{@tt{unknowable}}
 
@@ -435,6 +474,10 @@ However, some additional statements are allowed.
  commit(); }
 
 A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @tech{statement}'s @tech{continuation} as the next @tech{step} of the @DApp computation. In other words, it ends the current @tech{consensus step} and allows more @tech{local steps}.
+
+@subsubsection[#:tag "ref-programs-only-consensus"]{@tt{only} and @tt{each}}
+
+@secref["ref-programs-only-step"] are allowed in @tech{consensus steps} and are executed by @tech{backends} once they observe the completion of the @tech{consensus step} (i.e., after the associated @tech{commit statement}.)
 
 @subsubsection{@tt{Participant.set} and @tt{.set}}
 

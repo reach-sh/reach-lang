@@ -3,9 +3,10 @@
 
 @title[#:version reach-vers #:tag "guide-determ"]{Determinism, simultaneity, and choice in decentralized applications}
 
-The structure of a Reach computation is deterministic, because each participant must agree on which participant is responsible for sending the next publication at every step of the computation.
+The structure of a Reach computation is deterministic, because at each point in a computation, all participants agree on which publication is the next one in the computation.
 If this were not the case, then different participants may attempt to pursue different paths through a computation and thereby reach different values at the end.
-It may be possible to relax this constraint @seclink["guide-limits"]{in future versions of Reach}, but for the present it is a requirement that all applications be deterministic in this sense.
+This deterministic structure, however, does not mean that the participant that provides the publication must be fixed, merely that which publication event is next must be fixed; see for example @reachin{race} expressions and the @seclink["guide-race"]{the guide section on races} for an elaboration of this point.)
+Even in the presence of this non-determinism in actors, Reach programs remain deterministic in their structure.
 
 However, many developers think of their application as having a step when two participants act simultaneously.
 For example, in a game of @seclink["tut"]{Rock, Paper, Scissors!} in the real world, both players simultaneously choose their hands.
@@ -18,6 +19,7 @@ However, both of these situations are actually identical, because in the second 
 In the first case, the participants are submitting one of three values (@litchar{Rock}, @litchar{Paper}, or @litchar{Scissors}), while in the second they are submitting one of two (@litchar{Leave} or @litchar{Stay}).
 
 In such situations, in a decentralized application, the program must agree that one participant acts first.
+The important thing to realize is that "simultaneity" is not the same thing as "non-determinism".
 The pertinent design detail is whether one participant has an advantage for going in any particular order.
 If there is no advantage for either place, then the developer can arbitrarily decide to go in one order.
 If there is an advantage, then a commitment strategy similar to the @seclink["tut"]{Rock, Paper, Scissors! tutorial} should be used.
