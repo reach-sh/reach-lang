@@ -3,8 +3,7 @@
 export const main = Reach.App(
   {}, [["A", {}]], (A) => {
     A.publish();
-    A.only(() => { return 0; });
+    A.publish();
     commit();
-    return 0;
   }
 );

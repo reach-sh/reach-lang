@@ -1,1 +1,1 @@
-reachc: error: ./Err_Eval_IllegalMode.rsh:6:32:after expr stmt semicolon: Invalid operation. `local action (only or each)` cannot be used in context: consensus step, must be in [step]
+reachc: error: ./Err_Eval_IllegalMode.rsh:6:6:dot: Invalid operation. `to consensus` cannot be used in context: consensus step, must be in [step]
