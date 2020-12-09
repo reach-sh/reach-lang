@@ -12,7 +12,8 @@ ignored_reach_sources = \
 	--ignore-pattern hs/test-examples/non-features/with.rsh \
 	--ignore-pattern hs/test-examples/nl-eval-errors/ \
 	--ignore-pattern hs/test-examples/parse-errors/ \
-	--ignore-pattern hs/test-examples/compile-errors/
+	--ignore-pattern hs/test-examples/compile-errors/ \
+	--ignore-pattern examples/chicken-race/index.rsh
 
 .PHONY: all
 all: check run-all
