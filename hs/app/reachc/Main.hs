@@ -2,21 +2,13 @@ module Main (main) where
 
 import Control.Exception
 import Control.Monad
-import Options.Applicative
+import Reach.CommandLine
 import Reach.CompilerTool
 import Reach.Report
 import Reach.Version
 import System.Environment
 import System.Exit
 import System.FilePath
-
-data CompilerToolArgs = CompilerToolArgs
-  { cta_intermediateFiles :: Bool
-  , cta_disableReporting :: Bool
-  , cta_outputDir :: Maybe FilePath
-  , cta_source :: FilePath
-  , cta_tops :: [String]
-  }
 
 data CompilerToolEnv = CompilerToolEnv
   { cte_REACHC_ID :: Maybe String
@@ -36,31 +28,6 @@ makeCompilerToolOpts CompilerToolArgs {..} CompilerToolEnv {} =
     }
   where
     defaultOutputDir = takeDirectory cta_source </> "build"
-
-compiler :: Parser CompilerToolArgs
-compiler =
-  CompilerToolArgs
-    <$> switch (long "intermediate-files")
-    <*> switch (long "disable-reporting")
-    <*> optional
-      (strOption
-         (long "output"
-            <> short 'o'
-            <> metavar "DIR"
-            <> help "Directory for output files"
-            <> showDefault))
-    <*> strArgument ((metavar "SOURCE") <> value ("index.rsh"))
-    <*> many (strArgument (metavar "EXPORTS..."))
-
-getCompilerArgs :: String -> IO CompilerToolArgs
-getCompilerArgs versionCliDisp = do
-  let opts =
-        info
-          (compiler <**> helper)
-          (fullDesc
-             <> progDesc "verify and compile an Reach program"
-             <> header versionCliDisp)
-  execParser opts
 
 getCompilerEnv :: IO CompilerToolEnv
 getCompilerEnv = do
