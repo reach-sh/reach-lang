@@ -4,6 +4,7 @@ module Reach.AST.Base where
 
 import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy as LB
 import Data.List
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
@@ -12,6 +13,9 @@ import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.UnsafeUtil
+import Data.Aeson (encode)
+import Data.Aeson.Types (ToJSON)
+import Data.ByteString.Internal (w2c)
 
 --- Source Information
 data ReachSource
@@ -52,10 +56,22 @@ instance Show SrcLoc where
         Nothing -> []
         Just (TokenPn _ l c) -> [show l, show c]
 
+data CompilationError =
+  CompilationError {
+    ce_suggestions :: [String],
+    ce_errorMessage :: String
+  }
+  deriving (Show, Generic, ToJSON)
+
 expect_throw :: Show a => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
-  error . T.unpack . unsafeRedactAbs . T.pack $
-    "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
+  case unsafeIsErrorFormatJson of
+    True -> error $ map w2c $ LB.unpack $ encode $ CompilationError {
+      ce_suggestions = [],
+      ce_errorMessage = show ce }
+    False ->
+      error . T.unpack . unsafeRedactAbs . T.pack $
+      "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
       <> case concat mCtx of
         [] -> ""
         ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
