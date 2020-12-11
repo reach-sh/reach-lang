@@ -79,10 +79,10 @@ srcloc_line_col _ = []
 expect_throw :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
-    True -> error $ map w2c $ LB.unpack $ encode $ CompilationError {
+    True -> error $ "error: " ++ (map w2c $ LB.unpack $ encode $ CompilationError {
       ce_suggestions = errorSuggestions ce,
       ce_errorMessage = errorMessageForJson ce,
-      ce_position = srcloc_line_col src }
+      ce_position = srcloc_line_col src })
     False ->
       error . T.unpack . unsafeRedactAbs . T.pack $
       "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
