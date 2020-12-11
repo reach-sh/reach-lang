@@ -32,8 +32,17 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Safe (atMay)
 import Text.Read
+import Generics.Deriving (Generic)
 
 -- General tools that could be elsewhere
+
+data AlgoError
+  = Err_Impossible String
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance Show AlgoError where
+  show = \case
+    Err_Impossible msg -> msg
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
@@ -599,7 +608,7 @@ ce :: DLExpr -> App ()
 ce = \case
   DLE_Arg _ a -> ca a
   DLE_LArg _ a -> cla a
-  DLE_Impossible at msg -> expect_thrown at msg
+  DLE_Impossible at msg -> expect_thrown at $ Err_Impossible msg
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
   DLE_ArraySet at aa ia va -> do

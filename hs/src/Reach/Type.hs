@@ -35,7 +35,7 @@ data TypeError
   | Err_Type_TooFewArguments [SLType]
   | Err_Type_TooManyArguments [SLVal]
   | Err_Type_IntLiteralRange Integer Integer Integer
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance Show TypeError where
   show (Err_Type_None val) =

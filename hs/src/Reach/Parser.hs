@@ -50,7 +50,7 @@ data ParserError
   | Err_Parse_NotModule JSAST
   | Err_Parse_NotCallLike JSExpression
   | Err_Parse_JSIdentNone
-  deriving (Generic, Eq)
+  deriving (Generic, Eq, ErrorMessageForJson, ErrorSuggestions)
 
 --- FIXME implement a custom show that is useful
 instance Show ParserError where
