@@ -850,6 +850,15 @@ penvs_update ctxt sco f =
     map (\p -> (p, f p $ sco_lookup_penv ctxt sco p)) $
       M.keys $ ctxt_base_penvs ctxt
 
+sco_set :: SLVar -> SLSSVal -> SLScope -> SLScope
+sco_set v sv sco@(SLScope {..}) =
+  sco
+    { sco_env = go sco_env
+    , sco_penvs = M.map go sco_penvs
+    , sco_cenv = go sco_cenv }
+  where
+    go = M.insert v sv
+
 sco_update_and_mod :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> (SLEnv -> SLEnv) -> SLScope
 sco_update_and_mod imode ctxt at sco st addl_env env_mod =
   sco
@@ -2061,6 +2070,7 @@ evalExpr ctxt at sco st e = do
         "null" -> retV $ public $ SLV_Null at' "null"
         "true" -> retV $ public $ SLV_Bool at' True
         "false" -> retV $ public $ SLV_Bool at' False
+        "this" -> evalExpr ctxt at sco st $ JSIdentifier a l
         _ -> expect_throw_ctx ctxt at' (Err_Parse_IllegalLiteral l)
       where
         at' = (srcloc_jsa "literal" a at)
@@ -2376,23 +2386,25 @@ doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) 
           , sco_cenv = only_cenv
           }
   let penv_ = sco_lookup_penv ctxt sco_only_pre who
+  (me_dv, me_let_lift) <- doGetSelfAddress ctxt at who
+  let me_v = SLV_DLVar me_dv
+  let ssv_here = SLSSVal only_at Public
+  let add_this v env = M.insert "this" (ssv_here v) env
   (penv_lifts, penv) <-
     case vas of
       Nothing -> do
-        return (mempty, penv_)
-      Just v -> do
-        (me_dv, me_let_lift) <- doGetSelfAddress ctxt at who
+        return (mempty, add_this me_v penv_)
+      Just v ->
         case M.lookup v penv_ of
           Just (SLSSVal pv_at pv_lvl (SLV_Participant at_ who_ mv_ Nothing)) -> do
             let pv' = SLV_Participant at_ who_ mv_ (Just me_dv)
             let penv_' = M.insert v (SLSSVal pv_at pv_lvl pv') penv_
-            return (me_let_lift, penv_')
-          Just (SLSSVal _ _ (SLV_Participant _ _ _ (Just _))) ->
-            return (mempty, penv_)
+            return (me_let_lift, add_this pv' penv_')
+          Just (SLSSVal _ _ pv@(SLV_Participant _ _ _ (Just _))) -> do
+            return (mempty, add_this pv penv_)
           _ -> do
-            let pv' = SLV_DLVar me_dv
-            let penv_' = M.insert v (SLSSVal only_at Public pv') penv_
-            return (me_let_lift, penv_')
+            let penv_' = M.insert v (ssv_here me_v) penv_
+            return (me_let_lift, add_this me_v penv_')
   let sco_only = sco_only_pre {sco_env = penv}
   SLRes only_lifts _ only_arg <-
     evalExpr ctxt only_at sco_only st_localstep only_synarg
@@ -2497,7 +2509,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   -- Handle receiving / consensus
   winner_dv <- ctxt_mkvar ctxt $ DLVar at "race winner" T_Address
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
-  (recv_env_mod, pdvs_recv) <-
+  (who_env_mod, pdvs_recv) <-
     case S.toList whos of
       [who] -> do
         let who_dv = fromMaybe winner_dv (M.lookup who pdvs)
@@ -2522,6 +2534,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
           }
   msg_dvs <- mapM (\t -> ctxt_mkvar ctxt (DLVar at "msg" t)) msg_ts
   let msg_env = foldl' (env_insertp ctxt at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ msg_dvs
+  let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar winner_dv))
   let recv_env = msg_env
   let sco_recv = sco_update_and_mod recv_imode ctxt at sco st_recv recv_env recv_env_mod
   amt_dv <- ctxt_mkvar ctxt $ DLVar at "amt" T_UInt
@@ -2597,7 +2610,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
     SLV_Prim SLPrim_committed -> do
       ensure_mode ctxt at st SLM_ConsensusStep "commit"
       let st_step = st {st_mode = SLM_Step}
-      SLRes steplifts k_st cr <- evalStmt ctxt at sco st_step ks
+      let sco' = sco_set "this" (SLSSVal at Public $ SLV_Kwd $ SLK_this) sco
+      SLRes steplifts k_st cr <- evalStmt ctxt at sco' st_step ks
       let lifts' = (return $ DLS_FromConsensus at steplifts)
       return $ SLRes lifts' k_st cr
     _ ->
