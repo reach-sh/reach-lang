@@ -18,17 +18,6 @@ import Reach.Type
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
-import Generics.Deriving (Generic)
-
-
-data JsError
-  = Err_Impossible String
-  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
-
-instance Show JsError where
-  show = \case
-    Err_Impossible msg -> msg
-
 
 --- Pretty helpers
 

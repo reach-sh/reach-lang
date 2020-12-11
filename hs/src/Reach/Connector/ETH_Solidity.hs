@@ -33,16 +33,6 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
-import Generics.Deriving (Generic)
-
-
-data EthError
-  = Err_Impossible String
-  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
-
-instance Show EthError where
-  show = \case
-    Err_Impossible msg -> msg
 
 --- Debugging tools
 

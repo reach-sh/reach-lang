@@ -56,6 +56,14 @@ instance Show SrcLoc where
         Nothing -> []
         Just (TokenPn _ l c) -> [show l, show c]
 
+data ImpossibleError
+  = Err_Impossible String
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance Show ImpossibleError where
+  show = \case
+    Err_Impossible msg -> msg
+
 data CompilationError =
   CompilationError {
     ce_suggestions :: [String],
