@@ -156,8 +156,8 @@ displaySecurityLevel :: SecurityLevel -> String
 displaySecurityLevel Secret = "secret"
 displaySecurityLevel Public = "public"
 
-didYouMeanList :: String -> [String] -> Int -> [String]
-didYouMeanList invalidStr validOptions maxClosest =
+getErrorSuggestions :: String -> [String] -> Int -> [String]
+getErrorSuggestions invalidStr validOptions maxClosest =
   take maxClosest $ sortBy (comparing distance) validOptions
   where
     distance = restrictedDamerauLevenshteinDistance defaultEditCosts invalidStr
@@ -168,7 +168,7 @@ didYouMean invalidStr validOptions maxClosest =
   [] -> ""
   _  -> ". Did you mean: " <> show options
   where
-    options = didYouMeanList invalidStr validOptions maxClosest
+    options = getErrorSuggestions invalidStr validOptions maxClosest
 
 showDiff :: Eq b => a -> a -> (a -> b) -> (b -> b -> String) -> String
 showDiff x y f s =
@@ -233,9 +233,9 @@ instance ErrorMessageForJson EvalError where
 
 instance ErrorSuggestions EvalError where
   errorSuggestions = \case
-    Err_App_InvalidOption opt opts -> didYouMeanList opt opts 5
-    Err_Dot_InvalidField _ ks k -> didYouMeanList k ks 5
-    Err_Eval_UnboundId _ slvar slvars -> didYouMeanList slvar slvars 5
+    Err_App_InvalidOption opt opts -> getErrorSuggestions opt opts 5
+    Err_Dot_InvalidField _ ks k -> getErrorSuggestions k ks 5
+    Err_Eval_UnboundId _ slvar slvars -> getErrorSuggestions slvar slvars 5
     _ -> []
 
 -- TODO more hints on why invalid syntax is invalid
