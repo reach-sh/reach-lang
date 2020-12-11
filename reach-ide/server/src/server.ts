@@ -1,10 +1,10 @@
 import { stringify } from 'querystring';
 /* --------------------------------------------------------------------------------------------
- * Copyright for portions from https://github.com/microsoft/vscode-extension-samples/tree/master/lsp-sample 
+ * Copyright for portions from https://github.com/microsoft/vscode-extension-samples/tree/master/lsp-sample
  * are held by (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
- * 
- * Copyright (c) 2020 Eric Lau. All rights reserved. 
+ *
+ * Copyright (c) 2020 Eric Lau. All rights reserved.
  * Licensed under the Eclipse Public License v2.0
  * ------------------------------------------------------------------------------------------ */
 
@@ -28,12 +28,12 @@ import {
 	WorkspaceEdit,
 	HoverParams,
 	Hover,
-	Position
 } from 'vscode-languageserver';
 
 import {
 	TextDocument, Range, TextEdit
 } from 'vscode-languageserver-textdocument';
+import { reachCompletionKind, reachKeywords } from './keywordCompletion';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -49,7 +49,9 @@ let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 const NAME: string = 'Reach IDE';
 
-const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'CompileError';
+const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'Compile Error';
+
+const DID_YOU_MEAN_PREFIX = 'Did you mean: ';
 
 let reachTempIndexFile: string;
 const REACH_TEMP_FILE_NAME = "index.rsh";
@@ -104,7 +106,8 @@ connection.onInitialize((params: InitializeParams) => {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			// Tell the client that the server supports code completion
 			completionProvider: {
-				resolveProvider: true
+				resolveProvider: true,
+				triggerCharacters: ["."]
 			},
 			/*			codeLensProvider : {
 							resolveProvider: true
@@ -247,20 +250,25 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		connection.console.log(`Temp source file ${reachTempIndexFile} saved!`);
 	});
 
-	await exec("cd " + tempFolder + " && " + path.join(process.cwd(), "reach") + " compile " + REACH_TEMP_FILE_NAME, (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && reach " + /*path.join(process.cwd() , "reach") + */ " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
-			let errorLocations: ErrorLocation[] = findErrorLocations(error.message);
+			const errorLocations: ErrorLocation[] = findErrorLocations(error.message);
 			let problems = 0;
-			for (var i = 0; i < errorLocations.length; i++) {
-				let element: ErrorLocation = errorLocations[i];
-				connection.console.log(`Displaying error message: ` + element.errorMessage);
+			errorLocations.forEach(err => {
+				connection.console.log(`Displaying error message: ` + err.errorMessage);
 				if (problems < settings.maxNumberOfProblems) {
 					problems++;
-
-					addDiagnostic(element, `${element.errorMessage}`, 'Reach compilation encountered an error.', DiagnosticSeverity.Error, DIAGNOSTIC_TYPE_COMPILE_ERROR + (element.suggestions != undefined ? element.suggestions : ""));
+					addDiagnostic(
+						err,
+						`${err.errorMessage}`,
+						'Reach compilation encountered an error.',
+						DiagnosticSeverity.Error,
+						DIAGNOSTIC_TYPE_COMPILE_ERROR,
+						err.suggestions
+					);
 				}
-			}
+			});
 
 			return;
 		}
@@ -276,7 +284,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// Send the computed diagnostics to VSCode (before the above promise finishes, just to clear stuff).
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
-	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined) {
+	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: [string]) {
 		let diagnostic: Diagnostic = {
 			severity: severity,
 			range: element.range,
@@ -291,8 +299,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 						uri: textDocument.uri,
 						range: Object.assign({}, diagnostic.range)
 					},
-					message: details
-				}
+					message: suggestions.length ? DID_YOU_MEAN_PREFIX + suggestions : details
+				},
 			];
 		}
 		diagnostics.push(diagnostic);
@@ -309,8 +317,8 @@ connection.onDidChangeWatchedFiles(_change => {
 
 export interface ErrorLocation {
 	range: Range;
-	errorMessage: string; // e.g. id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
-	suggestions: string | undefined; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
+	errorMessage: string; // e.g. id ref: Invalid unbound identifier: declassify.
+	suggestions: [string]; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
 }
 
 function findErrorLocations(compileErrors: string): ErrorLocation[] {
@@ -334,82 +342,24 @@ CallStack (from HasCallStack):
 	while ((m = pattern.exec(compileErrors)) && problems < 100 /*settings.maxNumberOfProblems*/) {
 		connection.console.log(`Found pattern: ${m}`);
 
-		// ERROR MESSAGE m:
-		//error: ./index.rsh:13:23:id ref: Invalid unbound identifier: declassiafy. Did you mean: ["declassify","array","assert","assume","closeTo"]
+		// ERROR MESSAGE m: error: <json>
+		const errorJson = JSON.parse(m[0].substring(7));
 
-		var start: Position;
-		var end: Position;
-
-		// Get actual message portion after the line and position numbers
-		var tokens = m[0].split(':');
 		//connection.console.log(`Tokens: ` + tokens);
-		var linePos = parseInt(tokens[2]);
-		var charPos = parseInt(tokens[3]);
-		var actualMessage = "";
-		if (isNaN(linePos) || isNaN(charPos)) { // no line/pos found - treat as generic error
-			for (var i = 1; i < tokens.length; i++) { // start after "error"
-				actualMessage += tokens[i];
-				if (i < (tokens.length - 1)) {
-					actualMessage += ":"; // add back the colons in between
-				}
-			}
+		const linePos = errorJson.ce_position[0] - 1;
+		const charPos = errorJson.ce_position[1] - 1;
+		const suggestions = errorJson.ce_suggestions;
+		const actualMessage = errorJson.ce_errorMessage;
 
-			start = { line: 0, character: 0 }; // generic error highlights everything
-			end = { line: 9999, character: 9999 };
-		} else {
-			for (var i = 4; i < tokens.length; i++) { // start after line/pos
-				actualMessage += tokens[i];
-				if (i < (tokens.length - 1)) {
-					actualMessage += ":"; // add back the colons in between
-				}
-			}
-
-			start = { line: linePos - 1, character: charPos - 1 } // Reach compiler numbers starts at 1
-
-			// Get list of suggestions from compiler
-			const SUGGESTIONS_PREFIX = "Did you mean: [";
-			const SUGGESTIONS_SUFFIX = "]";
-			var indexOfSuggestions = actualMessage.indexOf(SUGGESTIONS_PREFIX);
-			var suggestions;
-			if (indexOfSuggestions != -1) {
-				suggestions = actualMessage.substring(indexOfSuggestions + SUGGESTIONS_PREFIX.length, actualMessage.lastIndexOf(SUGGESTIONS_SUFFIX));
-			}
-			connection.console.log(`Parsed suggestions: ${suggestions}`);
-
-			// Get the problematic string (before the list of suggestions)
-			if (suggestions !== undefined) {
-				var problematicString;
-				var messageWithoutSuggestions = actualMessage.substring(0, indexOfSuggestions);
-				let messageWithoutSuggestionsTokens: string[] = messageWithoutSuggestions.split(" ");
-				//connection.console.log(`messageWithoutSuggestionsTokens: ${messageWithoutSuggestionsTokens}`);
-
-				if (tokens[4] == "dot") {
-					// e.g.: error, ./.index.rsh.temp,8,8,dot, AApp is not a field of Reach. Did you mean, ["App"]
-					problematicString = messageWithoutSuggestionsTokens[1];
-					connection.console.log(`Problem found in string: ${problematicString}`);
-
-					start = { line: linePos - 1, character: charPos } // Reach compiler numbers starts at 1, but skip the dot in highlighting
-					end = { line: linePos - 1, character: charPos + problematicString.length };
-				} else {
-					problematicString = messageWithoutSuggestionsTokens[messageWithoutSuggestionsTokens.length - 2]; // last space is a token too
-					problematicString = problematicString.substring(0, problematicString.length - 1); // remove trailing period at end of sentence 
-					connection.console.log(`Problem found in string: ${problematicString}`);
-
-					end = { line: linePos - 1, character: charPos - 1 + problematicString.length };
-				}
-			} else {
-				end = { line: linePos, character: 0 } // until end of line, or equivalently the next line
-			}
-		}
+		const start = { line: linePos, character:charPos };
 
 		let location: ErrorLocation = {
-			range: {
-				start: start,
-				end: end
-			},
+			// Reachc does not output position range, so this hack will just squiggle the word token.
+			range: { start: start, end: start },
 			errorMessage: actualMessage,
 			suggestions: suggestions
 		};
+
 		locations.push(location);
 	}
 	return locations;
@@ -434,27 +384,20 @@ connection.onCodeAction(
 
 async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocument, params: CodeActionParams): Promise<CodeAction[]> {
 	let codeActions: CodeAction[] = [];
+	const labelPrefix = 'Replace with ';
 
 	// Get quick fixes for each diagnostic
-	for (let i = 0; i < diagnostics.length; i++) {
-
-		let diagnostic = diagnostics[i];
-		if (String(diagnostic.code).startsWith(DIAGNOSTIC_TYPE_COMPILE_ERROR)) {
-			let labelPrefix: string = "Replace with ";
-			let range: Range = diagnostic.range;
-			let possibleReplacements: string = String(diagnostic.code).substring(DIAGNOSTIC_TYPE_COMPILE_ERROR.length);
-			if (possibleReplacements.length != 0) {
-				// Convert list of suggestions to an array
-				// Example input: "declassify","array","assert","assume","closeTo"
-				var suggestionsArray = possibleReplacements.split(","); // split by commas
-				for (var j = 0; j < suggestionsArray.length; j++) {
-					suggestionsArray[j] = suggestionsArray[j].substring(1, suggestionsArray[j].length - 1); // remove surrounding quotes
-
-					codeActions.push(getQuickFix(diagnostic, labelPrefix + suggestionsArray[j], range, suggestionsArray[j], textDocument));
-				}
-			}
+	diagnostics.forEach(diagnostic => {
+		const { range, relatedInformation } = diagnostic;
+		const message = (relatedInformation || [])[0]?.message || "";
+		// Diagnostics are either suggestions or generic 'Reach compilation error encountered' messages
+		if (message.startsWith(DID_YOU_MEAN_PREFIX)) {
+			const suggestions = message.substring(DID_YOU_MEAN_PREFIX.length).split(',');
+			suggestions.forEach(suggestion => {
+				codeActions.push(getQuickFix(diagnostic, labelPrefix + suggestion, range, suggestion, textDocument));
+			});
 		}
-	}
+	});
 
 	return codeActions;
 }
@@ -479,27 +422,19 @@ function getQuickFix(diagnostic: Diagnostic, title: string, range: Range, replac
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
-	async (_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]> => {
+	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
 		// The passed parameter contains the position of the text document in
 		// which code complete got requested.
-
-		let completionItems: CompletionItem[] = [];
-
-		// Snippets
-		{
-			let snippet: string =
-				"'reach 0.1';\n" +
-				"\n" +
-				"export const main =\n" +
-				"  Reach.App(\n" +
-				"    {},\n" +
-				"    [['Alice', {}], ['Bob', {}]],\n" +
-				"    (A, B) => {\n" +
-				"	   exit(); });";
-			insertSnippet(_textDocumentPosition, snippet, completionItems, undefined, "Reach template", 0);
-		}
-
-		return completionItems;
+		return reachKeywords.map(kwd => ({
+			label: kwd,
+			kind: reachCompletionKind[kwd] || CompletionItemKind.Text,
+			data: undefined,
+			detail: kwd,
+			documentation: {
+				kind: 'markdown',
+				value:	getReachKeywordMarkdown(kwd)
+			},
+		}));
 	}
 );
 
@@ -538,8 +473,7 @@ function insertSnippet(_textDocumentPosition: TextDocumentPositionParams, snippe
 // This handler resolves additional information for the item selected in
 // the completion list.
 connection.onCompletionResolve(
-	async (item: CompletionItem): Promise<CompletionItem> => {
-		item.documentation = item.textEdit?.newText;
+	(item: CompletionItem): CompletionItem => {
 		return item;
 	}
 );
@@ -584,21 +518,7 @@ connection.onHover(
 );
 
 function isReachKeyword(word: string): boolean {
-	var reachKeywords = ['export', 'import', 'Reach.App', 'only', 'each', 'publish',
-		'pay', 'timeout', 'wait', 'exit', 'unknowable', 'closeTo', 'interact', 'assume',
-		'declassify', 'makeCommitment', 'commit', 'Participant.set', 'set', 'while',
-		'continue', 'transfer', 'require', 'checkCommitment', 'const', 'function', 'return',
-		'if', 'switch', 'array', 'Tuple.length', 'Array.length', 'length',
-		'Tuple.set', 'Array.set', 'set',
-		'Array.iota', 'Array.concat', 'concat', 'Array.empty', 'Array.zip', 'zip', 'Array.map', 'map', 'Array.reduce', 'reduce', 'Array.forEach', 'forEach', 'Array.replicate',
-		'Object.set', 'Data', 'Maybe', 'makeEnum', 'assert', 'forall', 'possible', 'digest', 'balance', 'implies', 'ensure', 'hasRandom',
-		'Null', 'Bool', 'UInt', 'Bytes', 'Digest', 'Address', 'Fun', 'Tuple', 'Object', 'Array'];
-	for (var i = 0; i < reachKeywords.length; i++) {
-		if (word == reachKeywords[i]) {
-			return true;
-		}
-	}
-	return false;
+	return reachCompletionKind[word] != undefined;
 }
 
 function getReachKeywordMarkdown(word: string): string {
