@@ -250,7 +250,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		connection.console.log(`Temp source file ${reachTempIndexFile} saved!`);
 	});
 
-	await exec("cd " + tempFolder + " && reach " + /*path.join(process.cwd() , "reach") + */ " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && reach " + path.join(process.cwd() , "reach") + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
 			const errorLocations: ErrorLocation[] = findErrorLocations(error.message);
