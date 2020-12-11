@@ -32,17 +32,8 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Safe (atMay)
 import Text.Read
-import Generics.Deriving (Generic)
 
 -- General tools that could be elsewhere
-
-data AlgoError
-  = Err_Impossible String
-  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
-
-instance Show AlgoError where
-  show = \case
-    Err_Impossible msg -> msg
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
