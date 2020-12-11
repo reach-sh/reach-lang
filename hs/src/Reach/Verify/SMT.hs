@@ -586,7 +586,7 @@ smtSwitch sm ctxt at ov csm iter =
         SM_Local ->
           udef_m <> iter ctxt' l
         SM_Consensus ->
-          udef_m <> smtAssert ctxt eqc <> iter ctxt l
+          ctxtNewScope ctxt $ udef_m <> smtAssert ctxt eqc <> iter ctxt l
       where
         ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
         eqc =
