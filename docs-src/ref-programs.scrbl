@@ -415,6 +415,11 @@ Any statements valid for a @seclink["ref-programs-compute-stmts"]{computation} a
 Any expressions valid for a @seclink["ref-programs-compute-exprs"]{computation} are valid for a local step.
 However, some additional expressions are allowed.
 
+@subsubsection[#:tag "ref-programs-local-this"]{@tt{this}}
+
+Inside of a @tech{local step}, @reachin{this} refers to the participant performing the step.
+This is useful when the @tech{local step} was initiated by an @reachin{each} expression.
+
 @subsubsection{@tt{interact}}
 
 @(mint-define! '("interact"))
@@ -544,6 +549,11 @@ This restriction may be lifted in future versions of Reach, which will perform t
 
 Any expressions valid for a @seclink["ref-programs-compute-exprs"]{computation} are valid for a consensus step.
 However, some additional expressions are allowed.
+
+@subsubsection[#:tag "ref-programs-consensus-this"]{@tt{this}}
+
+Inside of a @tech{consensus step}, @reachin{this} refers to the address of the participant that performed the @tech{consensus transfer}.
+This is useful when the @tech{consensus transfer} was initiated by a @reachin{race} expression.
 
 @subsubsection{@tt{transfer}}
 
@@ -837,6 +847,9 @@ The remainder of this section enumerates each kind of @tech{expression}.
  Z }
 
 An identifier, written @reachin{ID}, is an @tech{expression} that evaluates to the value of the @tech{bound identifier}.
+
+@(mint-define! '("this"))
+The identifier @reachin{this} has a special meaning inside of a @tech{local step} (i.e. the body of an @reachin{only} or @reachin{each} expression), as well as in a @tech{consensus step} (i.e. the tail of @reachin{publish} or @reachin{pay} statement and before a @reachin{commit} statement). For details, see @secref["ref-programs-local-this"] and @secref["ref-programs-consensus-this"].
 
 @subsubsection{Function application}
 
