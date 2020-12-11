@@ -59,16 +59,30 @@ instance Show SrcLoc where
 data CompilationError =
   CompilationError {
     ce_suggestions :: [String],
-    ce_errorMessage :: String
+    ce_errorMessage :: String,
+    ce_position :: [Int]
   }
   deriving (Show, Generic, ToJSON)
 
-expect_throw :: Show a => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
+class ErrorMessageForJson a where
+  errorMessageForJson :: Show a => a -> String
+  errorMessageForJson = show
+
+class ErrorSuggestions a where
+  errorSuggestions :: a -> [String]
+  errorSuggestions _ = []
+
+srcloc_line_col :: SrcLoc -> [Int]
+srcloc_line_col (SrcLoc _ (Just (TokenPn _ l c)) _) = [l, c]
+srcloc_line_col _ = []
+
+expect_throw :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
     True -> error $ map w2c $ LB.unpack $ encode $ CompilationError {
-      ce_suggestions = [],
-      ce_errorMessage = show ce }
+      ce_suggestions = errorSuggestions ce,
+      ce_errorMessage = errorMessageForJson ce,
+      ce_position = srcloc_line_col src }
     False ->
       error . T.unpack . unsafeRedactAbs . T.pack $
       "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
@@ -76,7 +90,7 @@ expect_throw mCtx src ce =
         [] -> ""
         ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
 
-expect_thrown :: Show a => HasCallStack => SrcLoc -> a -> b
+expect_thrown :: (Show a, ErrorMessageForJson a, ErrorSuggestions a)  => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing
 
 topOfStackTrace :: [SLCtxtFrame] -> [String]

@@ -18,6 +18,17 @@ import Reach.Type
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
+import Generics.Deriving (Generic)
+
+
+data JsError
+  = Err_Impossible String
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance Show JsError where
+  show = \case
+    Err_Impossible msg -> msg
+
 
 --- Pretty helpers
 
@@ -199,7 +210,7 @@ jsExpr ctxt = \case
   DLE_LArg _ la ->
     jsLargeArg la
   DLE_Impossible at msg ->
-    expect_thrown at msg
+    expect_thrown at $ Err_Impossible msg
   DLE_PrimOp _ p as ->
     jsPrimApply ctxt p $ map jsArg as
   DLE_ArrayRef _ aa ia ->

@@ -33,6 +33,16 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process
+import Generics.Deriving (Generic)
+
+
+data EthError
+  = Err_Impossible String
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
+
+instance Show EthError where
+  show = \case
+    Err_Impossible msg -> msg
 
 --- Debugging tools
 
@@ -346,7 +356,7 @@ solExpr ctxt sp = \case
   DLE_Arg _ a -> solArg ctxt a <> sp
   DLE_LArg {} ->
     impossible "large arg"
-  DLE_Impossible at msg -> expect_thrown at msg
+  DLE_Impossible at msg -> expect_thrown at $ Err_Impossible msg
   DLE_PrimOp _ p args ->
     (solPrimApply ctxt p $ map (solArg ctxt) args) <> sp
   DLE_ArrayRef _ ae ie ->

@@ -156,13 +156,19 @@ displaySecurityLevel :: SecurityLevel -> String
 displaySecurityLevel Secret = "secret"
 displaySecurityLevel Public = "public"
 
-didYouMean :: String -> [String] -> Int -> String
-didYouMean invalidStr validOptions maxClosest = case validOptions of
-  [] -> ""
-  _ -> ". Did you mean: " <> show closest
+didYouMeanList :: String -> [String] -> Int -> [String]
+didYouMeanList invalidStr validOptions maxClosest =
+  take maxClosest $ sortBy (comparing distance) validOptions
   where
-    closest = take maxClosest $ sortBy (comparing distance) validOptions
     distance = restrictedDamerauLevenshteinDistance defaultEditCosts invalidStr
+
+didYouMean :: [Char] -> [String] -> Int -> String
+didYouMean invalidStr validOptions maxClosest =
+  case validOptions of
+  [] -> ""
+  _  -> ". Did you mean: " <> show options
+  where
+    options = didYouMeanList invalidStr validOptions maxClosest
 
 showDiff :: Eq b => a -> a -> (a -> b) -> (b -> b -> String) -> String
 showDiff x y f s =
@@ -214,6 +220,23 @@ showStateDiff x y =
                    0 -> getCorrectGrammer yParts "it hasn't." "they haven't."
                    _ -> unwords ["only", showParts xParts, getCorrectGrammer xParts "has." "have."]
               in unwords ["Expected", showParts yParts, "to have published a message or been set, but", actual])
+
+instance ErrorMessageForJson EvalError where
+  errorMessageForJson = \case
+    Err_App_InvalidOption opt _ -> opt <>
+      " is not a valid app option"
+    Err_Dot_InvalidField slval _ k -> k <>
+      " is not a field of " <> displaySlValType slval
+    Err_Eval_UnboundId (LC_RefFrom ctx) slvar _ ->
+      "Invalid unbound identifier in " <> ctx <> ": " <> slvar
+    ow -> show ow
+
+instance ErrorSuggestions EvalError where
+  errorSuggestions = \case
+    Err_App_InvalidOption opt opts -> didYouMeanList opt opts 5
+    Err_Dot_InvalidField _ ks k -> didYouMeanList k ks 5
+    Err_Eval_UnboundId _ slvar slvars -> didYouMeanList slvar slvars 5
+    _ -> []
 
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
@@ -404,7 +427,7 @@ instance Show EvalError where
       "Cannot optionally transition to consensus or have an empty race without timeout."
 
 --- Utilities
-zipEq :: Show e => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
+zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
 zipEq ctxt at ce x y =
   if lx == ly
     then zip x y
@@ -601,7 +624,8 @@ data SLCtxt s = SLCtxt
 instance Show (SLCtxt s) where
   show _ = "<context>"
 
-expect_throw_ctx :: HasCallStack => Show a => SLCtxt s -> SrcLoc -> a -> b
+-- expect_throw_ctx :: HasCallStack => Show a => SLCtxt s -> SrcLoc -> a -> b
+expect_throw_ctx :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => SLCtxt s -> SrcLoc -> a -> b
 expect_throw_ctx ctxt = expect_throw (Just $ ctxt_stack ctxt)
 
 typeOf_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> SLVal -> (SLType, DLArgExpr)
@@ -868,7 +892,7 @@ sco_update_ imode ctxt at sco st addl_env =
 sco_update :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update = sco_update_ DisallowShadowing
 
-stMerge :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> SLState -> SLState
+stMerge :: SLCtxt s -> SrcLoc -> SLState -> SLState -> SLState
 stMerge ctxt at x y =
   case x == y of
     True -> y

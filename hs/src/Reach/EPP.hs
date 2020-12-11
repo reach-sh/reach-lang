@@ -22,7 +22,7 @@ import Reach.Util
 
 data EPPError
   = Err_ContinueDomination
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance Show EPPError where
   show Err_ContinueDomination =
