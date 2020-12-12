@@ -1227,6 +1227,25 @@ accesses the FIELD @deftech{field} of object OBJ.
 @index{Object.set} Returns a new object identical to @reachin{obj},
 except that field @reachin{fld} is replaced with @reachin{val}.
 
+@subsubsection{@tt{Object.setIfUnset}}
+
+@(mint-define! '("Object_setIfUnset"))
+@reach{
+ Object.setIfUnset(obj, fld, val);
+ Object_setIfUnset(obj, fld, val);
+}
+
+@index{Object.setIfUnset} Returns a new object identical to @reachin{obj},
+except that field @reachin{fld} is @reachin{val} if @reachin{fld} is not already present in @reachin{obj}.
+
+@subsubsection{@tt{Object.has}}
+
+@reach{
+ Object.has(obj, fld);
+}
+
+@index{Object.has} Returns a boolean indicating whether the object has the field @reachin{fld}. This is statically known.
+
 @subsubsection[#:tag "ref-programs-data"]{Data}
 
 @reach{

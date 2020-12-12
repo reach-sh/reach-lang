@@ -1104,7 +1104,9 @@ evalAsEnv ctx at obj =
         ]
     SLV_Prim SLPrim_Object ->
       M.fromList
-        [("set", retStdLib "Object_set")]
+        [("set", retStdLib "Object_set")
+        ,("setIfUnset", retStdLib "Object_setIfUnset")
+        ,("has", retV $ public $ SLV_Prim $ SLPrim_Object_has)]
     SLV_Type T_UInt ->
       M.fromList
         [("max", retV $ public $ SLV_DLC DLC_UInt_max)]
@@ -1678,6 +1680,11 @@ evalPrim ctxt at sco st p sargs =
       case map snd sargs of
         [(SLV_Object _ _ objm)] ->
           retV $ (lvl, SLV_Type $ T_Object $ M.map (expect_ty . sss_val) objm)
+        _ -> illegal_args
+    SLPrim_Object_has ->
+      case map snd sargs of
+        [ obj, (SLV_Bytes _ bs) ] ->
+          retV $ (lvl, SLV_Bool at $ M.member (bunpack bs) (evalAsEnv ctxt at obj))
         _ -> illegal_args
     SLPrim_makeEnum ->
       case map snd sargs of

@@ -187,6 +187,7 @@ data SLPrimitive
   | SLPrim_tuple_length
   | SLPrim_tuple_set
   | SLPrim_Object
+  | SLPrim_Object_has
   | SLPrim_App_Delay SrcLoc SLEnv [SLVal] [JSExpression] JSStatement SLEnv
   | SLPrim_op PrimOp
   | SLPrim_transfer
