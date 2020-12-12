@@ -4,6 +4,7 @@ module Reach.Pretty () where
 
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
+import Generics.Deriving (conNameOf)
 import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
@@ -66,8 +67,8 @@ instance Pretty SLVal where
       "<participant: " <> pretty who <> ">"
     SLV_RaceParticipant _ whos ->
       "<race: " <> pretty whos <> ">"
-    SLV_Prim {} -> "<primitive>"
-    SLV_Form {} -> "<form>"
+    SLV_Prim p -> "<primitive: " <> pretty (conNameOf p) <> ">"
+    SLV_Form f -> "<form: " <> pretty (conNameOf f) <> ">"
     SLV_Kwd k -> pretty k
 
 instance Pretty SLKwd where

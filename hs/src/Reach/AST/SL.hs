@@ -73,6 +73,11 @@ data ToConsensusMode
   | TCM_Timeout
   deriving (Eq, Generic, NFData, Show)
 
+data ForkMode
+  = FM_Case
+  | FM_Timeout
+  deriving (Eq, Generic, NFData, Show)
+
 data SLForm
   = SLForm_App
   | SLForm_each
@@ -89,6 +94,12 @@ data SLForm
       , slptc_timeout :: Maybe (SrcLoc, JSExpression, JSBlock)
       }
   | SLForm_unknowable
+  | SLForm_fork
+  | SLForm_fork_partial
+      { slf_at :: SrcLoc
+      , slf_mode :: Maybe ForkMode
+      , slf_cases :: [ (SrcLoc, (JSExpression, JSExpression, JSExpression)) ]
+      , slf_mtime :: Maybe (SrcLoc, JSExpression, JSBlock) }
   deriving (Eq, Generic, NFData, Show)
 
 data SLKwd
