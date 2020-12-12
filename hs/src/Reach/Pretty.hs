@@ -152,7 +152,7 @@ prettyIf ca t f =
 prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc
 prettyIfp ca t f = prettyIf ca (pretty t) (pretty f)
 
-prettySwitch :: (Pretty a, Pretty b, Pretty c) => a -> M.Map b (Maybe a, c) -> Doc
+prettySwitch :: (Pretty a, Pretty b, Pretty c, Pretty d) => a -> M.Map b (c, d) -> Doc
 prettySwitch ov csm =
   "switch" <+> parens (pretty ov) <+> render_nest (concatWith (surround hardline) $ map render_p $ M.toList csm)
   where
