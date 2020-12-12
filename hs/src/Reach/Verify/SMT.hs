@@ -67,6 +67,12 @@ smtAndAll = \case
   [x] -> x
   xs -> smtApply "and" xs
 
+smtOrAll :: [SExpr] -> SExpr
+smtOrAll = \case
+  [] -> Atom "false"
+  [x] -> x
+  xs -> smtApply "or" xs
+
 smtEq :: SExpr -> SExpr -> SExpr
 smtEq x y = smtApply "=" [x, y]
 
@@ -140,6 +146,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_loop_var_subst :: M.Map DLVar DLArg
   , ctxt_primed_vars :: S.Set DLVar
   , ctxt_displayed :: IORef (S.Set SExpr)
+  , ctxt_vars_defdrr :: IORefRef (S.Set String)
   }
 
 ctxt_mode :: SMTCtxt -> VerifyMode
@@ -151,7 +158,8 @@ ctxt_mode ctxt =
 ctxtNewScope :: SMTCtxt -> SMTComp -> SMTComp
 ctxtNewScope ctxt m = do
   paramIORefRef (ctxt_bindingsrr ctxt) $
-    SMT.inNewScope (ctxt_smt ctxt) $ m
+    paramIORefRef (ctxt_vars_defdrr ctxt) $
+      SMT.inNewScope (ctxt_smt ctxt) $ m
 
 shouldSimulate :: SMTCtxt -> SLPart -> Bool
 shouldSimulate ctxt p =
@@ -198,6 +206,16 @@ smtDeclare_v ctxt v t = do
   let s = smtTypeSort ctxt t
   void $ SMT.declare smt v $ Atom s
   smtTypeInv ctxt t $ Atom v
+
+smtDeclare_v_memo :: SMTCtxt -> String -> SLType -> IO ()
+smtDeclare_v_memo ctxt v t = do
+  let vds = ctxt_vars_defdrr ctxt
+  vars_defd <- readIORefRef vds
+  case S.member v vars_defd of
+    True -> return ()
+    False -> do
+      modifyIORefRef vds $ S.insert v
+      smtDeclare_v ctxt v t
 
 smtPrimOp :: SMTCtxt -> PrimOp -> [DLArg] -> [SExpr] -> SExpr
 smtPrimOp _ctxt p dargs =
@@ -571,9 +589,16 @@ data SwitchMode
   | SM_Consensus
 
 smtSwitch :: SwitchMode -> SMTCtxt -> SrcLoc -> DLVar -> SwitchCases a -> (SMTCtxt -> a -> SMTComp) -> SMTComp
-smtSwitch sm ctxt at ov csm iter =
-  mconcatMap cm1 (M.toList csm)
+smtSwitch sm ctxt at ov csm iter = branches_m <> after_m
   where
+    casesl = map cm1 $ M.toList csm
+    branches_m = mconcat (map fst casesl)
+    after_m =
+      case sm of
+        SM_Local ->
+          smtAssert ctxt (smtOrAll $ map snd casesl)
+        SM_Consensus ->
+          mempty
     ova = DLA_Var ov
     ovp = smt_a ctxt at ova
     ovt = argTypeOf ova
@@ -581,21 +606,32 @@ smtSwitch sm ctxt at ov csm iter =
       T_Data m -> m
       _ -> impossible "switch"
     pc = ctxt_path_constraint ctxt
-    cm1 (vn, (mov', l)) =
-      case sm of
-        SM_Local ->
-          udef_m <> iter ctxt' l
-        SM_Consensus ->
-          ctxtNewScope ctxt $ udef_m <> smtAssert ctxt eqc <> iter ctxt l
+    cm1 (vn, (mov', l)) = ( branch_m, eqc )
       where
+        branch_m =
+          case sm of
+            SM_Local ->
+              udef_m <> iter ctxt' l
+            SM_Consensus ->
+              ctxtNewScope ctxt $ udef_m <> smtAssert ctxt eqc <> iter ctxt l
         ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
-        eqc =
+        eqc = smtEq ovp ov'p
+        vt = ovtm M.! vn
+        vnv = smtVar ctxt ov <> "_vn_" <> vn
+        (ov'p_m, ov'p) =
           case mov' of
-            Just ov' -> smtEq ovp ov'p
+            Just ov' ->
+              ( mempty
+              , smt_la ctxt at (DLLA_Data ovtm vn (DLA_Var ov')))
+            -- XXX It would be nice to ensure that this is always a Just and
+            -- then make it so that EPP can remove them if they aren't actually
+            -- used
+            Nothing ->
+              ( smtDeclare_v_memo ctxt vnv vt
+              , smtApply (s <> "_" <> vn) [ Atom vnv ] )
               where
-                ov'p = smt_la ctxt at (DLLA_Data ovtm vn (DLA_Var ov'))
-            Nothing -> Atom "true"
-        udef_m = pathAddUnbound ctxt at mov' (O_SwitchCase vn)
+                s = smtTypeSort ctxt ovt
+        udef_m = ov'p_m <> pathAddUnbound ctxt at mov' (O_SwitchCase vn)
 
 smt_m :: (SMTCtxt -> a -> SMTComp) -> SMTCtxt -> LLCommon a -> SMTComp
 smt_m iter ctxt m =
@@ -910,6 +946,7 @@ _verify_smt mc vst smt lp = do
   putStrLn $ "Verifying for " <> T.unpack mcs
   dspdr <- newIORef mempty
   bindingsrr <- newIORefRef mempty
+  vars_defdrr <- newIORefRef mempty
   typem <- _smtDefineTypes smt (cts lp)
   let smt_con ctxt at_de cn =
         case mc of
@@ -930,6 +967,7 @@ _verify_smt mc vst smt lp = do
           , ctxt_loop_var_subst = mempty
           , ctxt_primed_vars = mempty
           , ctxt_displayed = dspdr
+          , ctxt_vars_defdrr = vars_defdrr
           }
   case mc of
     Just _ -> mempty
