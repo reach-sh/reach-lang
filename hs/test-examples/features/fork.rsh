@@ -44,11 +44,10 @@ export const main =
 
         fork()
         .case(Alice, (() => ({
-          msg: true,
           when: declassify(interact.keepGoing()) })),
           (isAlice) => {
             each([Alice, Bob], () => {
-              interact.roundWinnerWas(isAlice); });
+              interact.roundWinnerWas(true); });
             [ keepGoing, as, bs ] = [ true, as + 1, bs ];
             continue; })
         .case(Bob, (() => ({

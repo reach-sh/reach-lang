@@ -269,7 +269,7 @@ instance Show EvalError where
                 JSParenthesizedArrowParameterList _ JSLNil _ ->
                   impossible $ "nothing wrong with timeout args!"
                 _ -> ": the second argument should have no arguments"
-            _ -> ": the second argument should be an arrow, but got " <> show jes
+            _ -> ": the second argument should be an arrow, but got something else"
         _ -> ": expected two arguments where the second is a syntactic thunk; got " <> (show $ length jes) <> " args"
     Err_App_Interact_NotFirstOrder ty ->
       "Invalid interact specification. Expected first-order type, got: "

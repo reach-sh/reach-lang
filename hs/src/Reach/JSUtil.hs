@@ -33,8 +33,14 @@ jscl_flatten (JSLOne a) = [a]
 jscl_flatten (JSLNil) = []
 
 toJSCL :: [a] -> JSCommaList a
-toJSCL l = helper (reverse l) JSLNil
+toJSCL l = helper l' JSLNil
   where
+    -- XXX This makes no sense to me
+    sanity = False
+    l' =
+      case sanity of
+        True -> reverse l
+        False -> l
     helper [] acc = acc
     helper (x : ys) acc =
       helper ys (JSLCons acc JSNoAnnot x)
