@@ -364,7 +364,6 @@ CallStack (from HasCallStack):
 		}
 
 		let location: ErrorLocation = {
-			// Reachc does not output position range, so this hack will just squiggle the word token.
 			range: { start: start, end: end },
 			errorMessage: actualMessage,
 			suggestions: suggestions
