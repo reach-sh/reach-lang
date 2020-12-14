@@ -231,6 +231,7 @@ runTests(async () => {
       const ALGO_extra_exports = [
         'newAccountFromAlgoSigner',
         'setAlgodClient',
+        'setBrowser',
         'setIndexer',
         'setWaitPort',
       ];
