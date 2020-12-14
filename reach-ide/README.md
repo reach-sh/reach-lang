@@ -2,7 +2,7 @@
 
 IDE support for the Reach DApp programming language.
 
-This project implements a Reach language server and VS Code extension to help with writing Reach programs that can be deployed onto Ethereum.
+This project implements a Reach language server and VS Code extension to help with writing Reach programs that can be deployed onto Ethereum and Algorand.
 
 ![](images/screenshot.png)
 
@@ -17,7 +17,5 @@ This project implements a Reach language server and VS Code extension to help wi
 
 Right-click menu commands to interact with Reach and Ethereum:
 - Compile Reach program
-- Copy Ethereum contract ABI to clipboard
-- Copy Ethereum contract bytecode to clipboard
 - Run Reach program
 - Update Reach compiler

@@ -106,32 +106,6 @@ function registerCommands(context: ExtensionContext) {
 	});
 	context.subscriptions.push(disposable3);
 
-	const disposable4 = commands.registerCommand('reach.get.eth.abi', async () => {
-		fs.readFile(workspace.rootPath + '/build/index.main.mjs',async function(err: any, text: string){
-			var pattern = /ABI: `[\s\S]*\]`/g;
-			var m;
-			while ((m = pattern.exec(text))) {
-				m[0] = m[0].substring(6, m[0].length - 1)
-				await env.clipboard.writeText(m[0]);
-				window.showInformationMessage("Copied Ethereum contract ABI to clipboard!")
-			}
-		})
-	});
-	context.subscriptions.push(disposable4);
-
-	const disposable5 = commands.registerCommand('reach.get.eth.bytecode', () => {
-		fs.readFile(workspace.rootPath + '/build/index.main.mjs',async function(err: any, text: string){
-			var pattern = /Bytecode: `[\s\S]*`,/g;
-			var m;
-			while ((m = pattern.exec(text))) {
-				m[0] = m[0].substring(11, m[0].length - 2)
-				await env.clipboard.writeText(m[0]);
-				window.showInformationMessage("Copied Ethereum contract bytecode to clipboard!")
-			}
-		})
-	});
-	context.subscriptions.push(disposable5);
-
 	const disposable6 = commands.registerCommand('reach.update', () => {
 		terminal.show();
 		terminal.sendText("./reach update");
