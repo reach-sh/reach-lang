@@ -3283,16 +3283,16 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let top_viargs = map (\(i, pv) -> (i, infectWithId i pv)) top_vargs
   let top_rvargs = map (second $ (sls_sss at)) top_viargs
   let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
-  let use_opt k v acc =
+  let use_opt k SLSSVal { sss_val=v, sss_at = opt_at} acc =
         case M.lookup k app_options of
           Nothing ->
-            expect_thrown at $
+            expect_thrown opt_at $
               Err_App_InvalidOption k (S.toList $ M.keysSet app_options)
           Just opt ->
             case opt acc v of
               Right x -> x
-              Left x -> expect_thrown at $ Err_App_InvalidOptionValue k x
-  let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) (M.map sss_val opts)
+              Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
+  let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) opts
   let st_step =
         SLState
           { st_mode = SLM_Step
