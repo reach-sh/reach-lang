@@ -250,7 +250,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		connection.console.log(`Temp source file ${reachTempIndexFile} saved!`);
 	});
 
-	await exec("cd " + tempFolder + " && reach " + path.join(process.cwd() , "reach") + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && " + path.join(process.cwd(), "reach") + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
 			const errorLocations: ErrorLocation[] = findErrorLocations(error.message);
@@ -329,9 +329,9 @@ function findErrorLocations(compileErrors: string): ErrorLocation[] {
 Creating tut_reach_run ... done
 reachc: error: ./.index.rsh:18:23:id ref: Invalid unbound identifier: declaaaaaaaaassify. Did you mean: ["declassify","addressEq","array","assert","assume"]
 CallStack (from HasCallStack):
-  error, called at src/Reach/AST.hs:58:3 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.AST
-  expect_throw, called at src/Reach/Eval.hs:441:7 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.Eval
-  env_lookup, called at src/Reach/Eval.hs:1638:41 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.Eval
+	error, called at src/Reach/AST.hs:58:3 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.AST
+	expect_throw, called at src/Reach/Eval.hs:441:7 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.Eval
+	env_lookup, called at src/Reach/Eval.hs:1638:41 in reach-0.1.2-KZ4oXxVSV3mFfbu8tz29Bg:Reach.Eval
 	*/
 
 	let pattern = /error: .*/g  // look for error string
@@ -350,12 +350,22 @@ CallStack (from HasCallStack):
 		const charPos = errorJson.ce_position[1] - 1;
 		const suggestions = errorJson.ce_suggestions;
 		const actualMessage = errorJson.ce_errorMessage;
+		const offendingToken = errorJson.ce_offendingToken;
 
-		const start = { line: linePos, character:charPos };
+		const start ={ line: linePos, character: charPos };
+		const end = offendingToken ?
+				{ line: linePos, character: charPos + offendingToken.length }
+			:	{ line: linePos + 1, character: 0 };
+
+		// App options currently have error position at the `:` of a json field: `<k> : <v>`.
+		if (actualMessage.includes('not a valid app option')) {
+			start.character -= offendingToken.length;
+			end.character   -= offendingToken.length;
+		}
 
 		let location: ErrorLocation = {
 			// Reachc does not output position range, so this hack will just squiggle the word token.
-			range: { start: start, end: start },
+			range: { start: start, end: end },
 			errorMessage: actualMessage,
 			suggestions: suggestions
 		};
@@ -432,7 +442,7 @@ connection.onCompletion(
 			detail: kwd,
 			documentation: {
 				kind: 'markdown',
-				value:	getReachKeywordMarkdown(kwd)
+				value: getReachKeywordMarkdown(kwd)
 			},
 		}));
 	}
