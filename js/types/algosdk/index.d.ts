@@ -19,6 +19,7 @@ declare module 'algosdk' {
     txID: () => TxIdWrapper,
     lastRound: number,
     fee: number,
+    group?: number,
     signTxn: (sk: SecretKey) => SignedTxn,
   }
   declare type TxnParams = {
@@ -114,7 +115,7 @@ declare module 'algosdk' {
 
   declare class Algodv2 {
     constructor(
-      token?: string,
+      token?: string | {'X-Algo-API-Token': string},
       baseServer?: string,
       port?: string | number,
       headers?: {}, // TODO

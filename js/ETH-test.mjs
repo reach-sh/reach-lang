@@ -228,7 +228,12 @@ runTests(async () => {
       const ETH_extra_exports = [
         'setProvider',
       ];
-      const ALGO_extra_exports = ['setAlgodClient', 'setIndexer'];
+      const ALGO_extra_exports = [
+        'newAccountFromAlgoSigner',
+        'setAlgodClient',
+        'setIndexer',
+        'setWaitPort',
+      ];
       const FAKE_extra_exports = [];
 
       for (const [otherName, otherStdlib, otherExtraExports] of [

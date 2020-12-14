@@ -9,6 +9,8 @@ import base32 from 'hi-base32';
 import ethers from 'ethers';
 import url from 'url';
 import Timeout from 'await-timeout';
+import buffer from 'buffer';
+const {Buffer} = buffer;
 
 import {
   CurrencyAmount, OnProgress, WPArgs,
@@ -44,16 +46,24 @@ type Round = number
 type Address = string
 // type RawAddress = Uint8Array;
 type SecretKey = Uint8Array // length 64
-  // TODO: find the proper algo terminology for Wallet
+type AlgoSigner = {
+  sign: (txn: TXN) => Promise<{blob: string /* base64 */, txID: string}>,
+  accounts: (args: {ledger: string}) => Promise<Array<{address: string}>>,
+}
+// TODO: find the proper algo terminology for Wallet
+// XXX this doesn't quite match whatever algosdk thinks a Wallet is,
+// because this also includes AlgoSigner
 type Wallet = {
     addr: Address,
-    sk: SecretKey, // TODO: describe length? (64)
+    sk?: SecretKey, // TODO: describe length? (64)
+    AlgoSigner?: AlgoSigner,
   }
 type SignedTxn = Uint8Array;
 type Txn = {
     txID: () => TxIdWrapper,
     lastRound: number,
     fee: number,
+    group?: any,
     signTxn: (sk: SecretKey) => SignedTxn,
   }
 type TxnParams = {
@@ -165,15 +175,28 @@ type ContractInfo = {
 // Helpers
 // ****************************************************************************
 
-const token = process.env.ALGO_TOKEN || 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
-const server = process.env.ALGO_SERVER || 'http://localhost';
-const port = process.env.ALGO_PORT || 4180;
+function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
+  return Buffer.from(a).toString(enc);
+}
 
-const itoken = process.env.ALGO_INDEXER_TOKEN || 'reach-devnet';
-const iserver = process.env.ALGO_INDEXER_SERVER || 'http://localhost';
-const iport = process.env.ALGO_INDEXER_PORT || 8980;
+const [getWaitPort, setWaitPort] = replaceableThunk(() => true);
+export { setWaitPort };
+
+const [getBrowser, setBrowserRaw] = replaceableThunk(() => false);
+const setBrowser = (b: boolean) => {
+  if (b) {
+    // When in browser, we cannot waitPort
+    setWaitPort(false);
+  }
+  setBrowserRaw(b);
+}
+export { setBrowser };
+
+const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
+const rawDefaultItoken = 'reach-devnet';
 
 async function wait1port(theServer: string, thePort: string | number) {
+  if (!getWaitPort()) return;
   thePort = typeof thePort === 'string' ? parseInt(thePort, 10) : thePort;
   const {hostname} = url.parse(theServer);
   const args: WPArgs = {
@@ -212,12 +235,31 @@ const waitForConfirmation = async (txId: TxId, untilRound: number): Promise<TxnI
   throw { type: 'waitForConfirmation', txId, untilRound, lastRound };
 };
 
+type STX = {
+  lastRound: number,
+  txID: string,
+  tx: SignedTxn, // Uint8Array
+}
+
 const sendAndConfirm = async (
-  stx_or_stxs: SignedTxn | Array<SignedTxn>, txn: Txn
+  stx_or_stxs: STX | Array<STX>
 ): Promise<TxnInfo> => {
-  const txID = txn.txID().toString();
-  const untilRound = txn.lastRound;
-  const req = (await getAlgodClient()).sendRawTransaction(stx_or_stxs);
+  // @ts-ignore
+  let {lastRound, txID, tx} = stx_or_stxs;
+  let sendme = tx;
+  if (Array.isArray(stx_or_stxs)) {
+    if (stx_or_stxs.length === 0) {
+      debug(`Sending nothing... why...?`);
+      // @ts-ignore
+      return null;
+    }
+    debug(`Sending multiple...`);
+    lastRound = stx_or_stxs[0].lastRound;
+    txID = stx_or_stxs[0].txID;
+    sendme = stx_or_stxs.map((stx) => stx.tx);
+  }
+  const untilRound = lastRound;
+  const req = (await getAlgodClient()).sendRawTransaction(sendme);
   // @ts-ignore XXX
   debug(`sendAndConfirm: ${base64ify(req.txnBytesToPost)}`);
   try {
@@ -266,15 +308,141 @@ const getTxnParams = async (): Promise<TxnParams> => {
   }
 };
 
+// XXX
+type TXN = any;
+
+function regroup(thisAcc: NetworkAccount, txns: Array<Txn>): Array<TXN> {
+  // Sorry this is so dumb.
+  // Basically, if these go thru AlgoSigner,
+  // it will mangle them,
+  //  so we need to recalculate the group hash.
+  if (thisAcc.AlgoSigner) {
+    const roundtrip_txns = txns
+      .map(x => clean_for_AlgoSigner(x))
+      .map(x => unclean_for_AlgoSigner(x));
+
+    // console.log(`deployP: group`);
+    // console.log(Buffer.from(txns[0].group, 'base64').toString('base64'));
+
+    algosdk.assignGroupID(roundtrip_txns);
+    // console.log(`deploy: roundtrip group`);
+    // console.log(Buffer.from(roundtrip_txns[0].group, 'base64').toString('base64'));
+
+    const group = roundtrip_txns[0].group;
+    for (const txn of txns) {
+      txn.group = group;
+    }
+    return roundtrip_txns;
+  } else {
+    return txns;
+  }
+}
+
+// A copy/paste of some logic from AlgoSigner
+// packages/extension/src/background/messaging/task.ts
+function unclean_for_AlgoSigner(txnOrig: any) {
+  const txn = {...txnOrig};
+  Object.keys({...txnOrig}).forEach(key => {
+    if(txn[key] === undefined || txn[key] === null){
+        delete txn[key];
+    }
+  });
+
+  // Modify base64 encoded fields
+  if ('note' in txn && txn.note !== undefined) {
+      txn.note = new Uint8Array(Buffer.from(txn.note));
+  }
+  // Application transactions only
+  if(txn && txn.type === 'appl'){
+    if('appApprovalProgram' in txn){
+      txn.appApprovalProgram = Uint8Array.from(Buffer.from(txn.appApprovalProgram,'base64'));
+    }
+    if('appClearProgram' in txn){
+      txn.appClearProgram = Uint8Array.from(Buffer.from(txn.appClearProgram,'base64'));
+    }
+    if('appArgs' in txn){
+      var tempArgs: Array<Uint8Array> = [];
+      txn.appArgs.forEach((element: string) => {
+          tempArgs.push(Uint8Array.from(Buffer.from(element,'base64')));
+      });
+      txn.appArgs = tempArgs;
+    }
+  }
+  return txn;
+}
+
+const clean_for_AlgoSigner = (txnOrig: any) => {
+  // Make a copy with just the properties, because reasons
+  const txn = {...txnOrig};
+
+  // Weirdly, AlgoSigner *requires* the note to be a string
+  if (txn.note) {
+    txn.note = uint8ArrayToStr(txn.note, 'utf8');
+  }
+  // Also weirdly:
+  // "Creation of PaymentTx has extra or invalid fields: name,tag,appArgs."
+  delete txn.name;
+  delete txn.tag;
+  // "Creation of ApplTx has extra or invalid fields: name,tag."
+  if (txn.type !== 'appl') {
+    delete txn.appArgs;
+  } else {
+    if (txn.appArgs) {
+      if (txn.appArgs.length === 0) {
+        txn.appArgs = [];
+      } else {
+        // This seems wrong, but it works...
+        // XXX The morally correct thing to do would be to msgpack unparse
+        txn.appArgs = [uint8ArrayToStr(txn.appArgs, 'base64')];
+      }
+    }
+  }
+
+  // Validation failed for transaction because of invalid properties [from,to]
+  if (txn.from && txn.from.publicKey) {
+    txn.from = algosdk.encodeAddress(txn.from.publicKey);
+  }
+  if (txn.to && txn.to.publicKey) {
+    txn.to = algosdk.encodeAddress(txn.to.publicKey);
+  }
+  // Uncaught (in promise) First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.
+  // No idea what it's talking about, but probably GenesisHash?
+  if (txn.genesisHash) {
+    if (typeof txn.genesisHash !== 'string') {
+      txn.genesisHash = uint8ArrayToStr(txn.genesisHash, 'base64');
+    }
+  }
+  console.log({genesisHash: txn.genesisHash});
+  // uncaught (in promise) lease must be a Uint8Array.
+  delete txn.lease; // it is... but how about we just delete it instead
+
+  // Some more uint8Array BS
+  if (txn.appApprovalProgram) {
+    txn.appApprovalProgram = uint8ArrayToStr(txn.appApprovalProgram, 'base64');
+  }
+  if (txn.appClearProgram) {
+    txn.appClearProgram = uint8ArrayToStr(txn.appClearProgram, 'base64');
+  }
+  if (txn.group) {
+    txn.group = uint8ArrayToStr(txn.group, 'base64');
+  }
+
+  // AlgoSigner does weird things with fees if you don't specify flatFee
+  txn.flatFee = true;
+
+  return txn;
+}
+
 const sign_and_send_sync = async (
   label: string,
-  sk: SecretKey,
+  networkAccount: NetworkAccount,
   txn: Txn,
 ): Promise<TxnInfo> => {
-  const txn_s = txn.signTxn(sk);
+  const txn_s = await signTxn(networkAccount, txn);
   try {
-    return await sendAndConfirm(txn_s, txn);
+    return await sendAndConfirm(txn_s);
   } catch (e) {
+    console.log(e);
     throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${JSON.stringify(e)}`);
   }
 };
@@ -401,27 +569,53 @@ export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Byt
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 
-
 // TODO: read token from scripts/algorand-devnet/algorand_data/algod.token
 const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
-  await wait1port(server, port);
+  debug(`Setting algod client to default`);
+  const browser = getBrowser();
+  const token = browser
+    ? {'X-Algo-API-Token': rawDefaultToken}
+    : process.env.ALGO_TOKEN || rawDefaultToken;
+  const server = browser
+    ? '/algod'
+    : process.env.ALGO_SERVER || 'http://localhost';
+  const port = browser
+    ? ''
+    : process.env.ALGO_PORT || '4180';
+
+  if (!browser) await wait1port(server, port);
   return new algosdk.Algodv2(token, server, port);
 });
 
 export {setAlgodClient};
 
-
 const [getIndexer, setIndexer] = replaceableThunk(async () => {
+  debug(`setting indexer to default`);
+  const browser = getBrowser();
+  const itoken = browser
+    ? rawDefaultItoken
+    : process.env.ALGO_INDEXER_TOKEN || rawDefaultItoken;
+  const iserver = browser
+    ? '/indexer'
+    : process.env.ALGO_INDEXER_SERVER || 'http://localhost';
+  const iport = browser
+    ? ''
+    : process.env.ALGO_INDEXER_PORT || 8980;
+
   await wait1port(iserver, iport);
   return new algosdk.Indexer(itoken, iserver, iport);
 });
 
 export {setIndexer};
 
-
 // eslint-disable-next-line max-len
-const FAUCET = algosdk.mnemonicToSecretKey((process.env.ALGO_FAUCET_PASSPHRASE || 'close year slice mind voice cousin brass goat anxiety drink tourist child stock amused rescue pitch exhibit guide occur wide barrel process type able please'));
+const rawFaucetDefaultMnemonic = 'close year slice mind voice cousin brass goat anxiety drink tourist child stock amused rescue pitch exhibit guide occur wide barrel process type able please';
 const [getFaucet, setFaucet] = replaceableThunk(async () => {
+  const browser = getBrowser();
+  const FAUCET = algosdk.mnemonicToSecretKey(browser
+    ? rawFaucetDefaultMnemonic
+    : process.env.ALGO_FAUCET_PASSPHRASE || rawFaucetDefaultMnemonic
+  );
   return await connectAccount(FAUCET);
 });
 
@@ -436,12 +630,63 @@ export const transfer = async (from: Account, to: Account, value: BigNumber): Pr
   const note = algosdk.encodeObj('@reach-sh/ALGO.mjs transfer');
   return await sign_and_send_sync(
     `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuen}`,
-    sender.sk,
+    sender,
     algosdk.makePaymentTxnWithSuggestedParams(
       sender.addr, receiver, valuen, undefined, note, await getTxnParams(),
     ));
 };
 
+async function signTxn(networkAccount: NetworkAccount, txnOrig: Txn | any): Promise<STX> {
+  const {sk, AlgoSigner} = networkAccount;
+  if (sk) {
+    const tx = txnOrig.signTxn(sk);
+    const ret = {
+      tx,
+      txID: txnOrig.txID().toString(),
+      lastRound: txnOrig.lastRound,
+    }
+    return ret;
+  } else if (AlgoSigner) {
+    // TODO: clean up txn before signing
+    const txn = clean_for_AlgoSigner(txnOrig);
+
+    // XXX the following comment is dead code that was previously used for debugging purposes.
+    // It is left here for now because it might be useful later.
+    // But this should eventually be deleted
+
+    // if (sk) {
+    //   const re_tx = txnOrig.signTxn ? txnOrig : new algosdk__src__transaction.Transaction(txnOrig);
+    //   re_tx.group = txnOrig.group;
+
+    //   const sk_tx = re_tx.signTxn(sk);
+    //   const sk_ret = {
+    //     tx: sk_tx,
+    //     txID: re_tx.txID().toString(),
+    //     lastRound: txnOrig.lastRound,
+    //   }
+    //   console.log('signed sk_ret');
+    //   console.log({txID: sk_ret.txID});
+    //   console.log(msgpack.decode(sk_ret.tx));
+    // }
+
+    debug('AlgoSigner.sign ...');
+    const stx_obj = await AlgoSigner.sign(txn);
+    debug('...signed');
+    debug({stx_obj});
+    const ret = {
+      tx: Buffer.from(stx_obj.blob, 'base64'),
+      txID: stx_obj.txID,
+      lastRound: txnOrig.lastRound,
+    };
+
+    // debug('signed AlgoSigner')
+    // debug({txID: ret.txID});
+    // debug(msgpack.decode(ret.tx));
+    return ret;
+  } else {
+    throw Error(`networkAccount has neither sk nor AlgoSigner: ${JSON.stringify(networkAccount)}`);
+  }
+}
 
 export const connectAccount = async (networkAccount: NetworkAccount) => {
   const indexer = await getIndexer();
@@ -603,20 +848,25 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
           txnToContract,
           ...txnFromContracts ];
         algosdk.assignGroupID(txns);
+        regroup(thisAcc, txns);
 
-        const sign_me = (x: Txn) => x.signTxn(thisAcc.sk);
+        const signLSTO = (txn: Txn, ls: any): STX => {
+          const tx_obj = algosdk.signLogicSigTransactionObject(txn, ls);
+          return {
+            tx: tx_obj.blob,
+            txID: tx_obj.txID,
+            lastRound: txn.lastRound,
+          }
+        }
+        const sign_me = async (x: Txn): Promise<STX> => await signTxn(thisAcc, x);
 
-        const txnAppl_s = sign_me(txnAppl);
-        const txnFromHandler_s =
-          algosdk.signLogicSigTransactionObject(
-            txnFromHandler, handler_with_args).blob;
-        debug(`txnFromHandler_s: ${base64ify(txnFromHandler_s)}`);
-        const txnToHandler_s = sign_me(txnToHandler);
-        const txnToContract_s = sign_me(txnToContract);
+        const txnAppl_s = await sign_me(txnAppl);
+        const txnFromHandler_s = signLSTO(txnFromHandler, handler_with_args);
+        // debug(`txnFromHandler_s: ${base64ify(txnFromHandler_s)}`);
+        const txnToHandler_s = await sign_me(txnToHandler);
+        const txnToContract_s = await sign_me(txnToContract);
         const txnFromContracts_s =
-          txnFromContracts.map(
-            (txn: Txn) =>
-            algosdk.signLogicSigTransactionObject(txn, ctc_prog).blob);
+          txnFromContracts.map((txn: Txn) => signLSTO(txn, ctc_prog));
 
         const txns_s = [
           txnAppl_s,
@@ -629,7 +879,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         debug(`${dhead} --- SEND: ${txns_s.length}`);
         let res;
         try {
-          res = await sendAndConfirm( txns_s, txnAppl );
+          res = await sendAndConfirm( txns_s );
 
           // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
           debug(`${dhead} --- SUCCESS: ${JSON.stringify(res)}`);
@@ -770,7 +1020,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
     const createRes =
       await sign_and_send_sync(
         'ApplicationCreate',
-        thisAcc.sk,
+        thisAcc,
         algosdk.makeApplicationCreateTxn(
           thisAcc.addr, await getTxnParams(),
           algosdk.OnApplicationComplete.NoOpOC,
@@ -814,13 +1064,20 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       ...txnToHandlers
     ];
     algosdk.assignGroupID(txns);
+    regroup(thisAcc, txns);
 
     const txnUpdate_s =
-      txnUpdate.signTxn(thisAcc.sk);
+      await signTxn(thisAcc, txnUpdate);
     const txnToContract_s =
-      txnToContract.signTxn(thisAcc.sk);
-    const txnToHandlers_s =
-      txnToHandlers.map((tx: Txn): SignedTxn => tx.signTxn(thisAcc.sk));
+      await signTxn(thisAcc, txnToContract);
+
+    // This is written a dumb way to make sure signatures happen one at a time.
+    // AlgoSigner errors if multiple sigs are trying to happen at the same time.
+    const txnToHandlers_s: Array<STX> = [];
+    for (const tx of txnToHandlers) {
+      txnToHandlers_s.push(await signTxn(thisAcc, tx));
+    }
+
     const txns_s = [
       txnUpdate_s,
       txnToContract_s,
@@ -829,7 +1086,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
 
     let updateRes;
     try {
-        updateRes = await sendAndConfirm( txns_s, txnUpdate );
+        updateRes = await sendAndConfirm( txns_s );
     } catch (e) {
       throw Error(`deploy: ${JSON.stringify(e)}`);
     }
@@ -940,9 +1197,10 @@ export function formatCurrency(amt: BigNumber, decimals: number = 6): string {
   return Number(algosStr.slice(0, algosStr.length - 1)).toString();
 }
 
-// TODO: get from AlgoSigner if in browser
+// XXX The getDefaultAccount pattern doesn't really work w/ AlgoSigner
+// AlgoSigner does not expose a "currently-selected account"
 export async function getDefaultAccount(): Promise<Account> {
-  return await getFaucet();
+  throw Error(`Please use newAccountFromAlgoSigner instead`);
 }
 
 /**
@@ -960,6 +1218,21 @@ export const newAccountFromSecret = async (secret: string | Uint8Array): Promise
   const mnemonic = algosdk.secretKeyToMnemonic(sk);
   return await newAccountFromMnemonic(mnemonic);
 };
+
+export const newAccountFromAlgoSigner = async (addr: string, AlgoSigner: AlgoSigner, ledger: string) => {
+  if (!AlgoSigner) {
+    throw Error(`AlgoSigner is falsy`);
+  }
+  const accts = await AlgoSigner.accounts({ledger});
+  if (!Array.isArray(accts)) {
+    throw Error(`AlgoSigner.accounts('${ledger}') is not an array: ${accts}`);
+  }
+  if (!accts.map(x => x.address).includes(addr)) {
+    throw Error(`Address ${addr} not found in AlgoSigner accounts`);
+  }
+  let networkAccount = {addr, AlgoSigner};
+  return await connectAccount(networkAccount);
+}
 
 export const getNetworkTime = async () => bigNumberify(await getLastRound());
 
