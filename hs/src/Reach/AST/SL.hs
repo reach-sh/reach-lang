@@ -98,7 +98,7 @@ data SLForm
   | SLForm_fork_partial
       { slf_at :: SrcLoc
       , slf_mode :: Maybe ForkMode
-      , slf_cases :: [ (SrcLoc, (JSExpression, JSExpression, JSExpression)) ]
+      , slf_cases :: [ (SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression)) ]
       , slf_mtime :: Maybe (SrcLoc, JSExpression, JSBlock) }
   deriving (Eq, Generic, NFData, Show)
 

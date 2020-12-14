@@ -1,29 +1,18 @@
 'reach 0.1';
 
-const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
-
 const Common = {
-  showOutcome: Fun([UInt], Null),
+  showOpponent: Fun([Address], Null),
   keepGoing: Fun([], Bool),
-  roundWinnerWas: Fun([Bool], Null),
+  getParams: Fun([], Object({ wager: UInt, deadline: UInt })),
 };
 
 export const main =
   Reach.App(
     { 'deployMode': 'firstMsg' },
-    [['Alice',
-      { ...Common,
-        getParams: Fun([], Object({ wager: UInt,
-                                    deadline: UInt })) }],
-     ['Bob',
-      { ...Common,
-        confirmWager: Fun([UInt], Null) } ],
+    [['Alice', Common ],
+     ['Bob', Common ],
     ],
     (Alice, Bob) => {
-      const showOutcome = (which) => () => {
-        each([Alice, Bob], () =>
-          interact.showOutcome(which)); };
-
       Alice.only(() => {
         const { wager, deadline } =
           declassify(interact.getParams());
@@ -32,41 +21,35 @@ export const main =
         .pay(wager);
       commit();
 
-      Bob.only(() => {
-        interact.confirmWager(wager); });
-      Bob.pay(wager)
-        .timeout(deadline, () => closeTo(Alice, showOutcome(TIMEOUT)));
+      Bob.only(() => interact.showOpponent(Alice));
 
-      var [ keepGoing, as, bs ] = [ true, 0, 0 ];
-      invariant(balance() == 2 * wager);
-      while ( keepGoing ) {
-        commit();
+      fork()
+      .case(Alice, (() => ({
+        msg: 19,
+        when: declassify(interact.keepGoing()) })),
+        ((v) => v),
+        (v) => {
+          require(v == 19);
+          transfer(wager + 19).to(this);
+          commit();
+          exit();
+        })
+      .case(Bob, (() => ({
+        when: declassify(interact.keepGoing()) })),
+        (() => wager),
+        () => {
+          commit();
 
-        fork()
-        .case(Alice, (() => ({
-          when: declassify(interact.keepGoing()) })),
-          (isAlice) => {
-            each([Alice, Bob], () => {
-              interact.roundWinnerWas(true); });
-            [ keepGoing, as, bs ] = [ true, as + 1, bs ];
-            continue; })
-        .case(Bob, (() => ({
-          when: declassify(interact.keepGoing()) })),
-          (isAlice) => {
-            each([Alice, Bob], () => {
-              interact.roundWinnerWas(false); });
-            [ keepGoing, as, bs ] = [ true, as, bs + 1 ];
-            continue; })
-        .timeout(deadline, () => {
-          showOutcome(TIMEOUT)();
+          Alice.only(() => interact.showOpponent(Bob));
+
           race(Alice, Bob).publish();
-          keepGoing = false;
-          continue; });
-      }
-
-      const outcome = bs > as ? BOB_WINS : ALICE_WINS;
-      const winner = outcome == ALICE_WINS ? Alice : Bob;
-      transfer(balance()).to(winner);
-      commit();
-      showOutcome(outcome)();
+          transfer(2 * wager).to(this);
+          commit();
+          exit();
+        })
+      .timeout(deadline, () => {
+        race(Alice, Bob).publish();
+        transfer(wager).to(this);
+        commit();
+        exit(); });
     });

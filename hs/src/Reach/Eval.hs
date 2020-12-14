@@ -36,8 +36,10 @@ import Safe (atMay)
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
+-- import qualified Data.Text.Lazy as LT
 -- import Reach.Texty
--- import Debug.Trace
+import Text.Show.Pretty (ppShow)
+import Debug.Trace
 
 --- Errors
 
@@ -1191,7 +1193,17 @@ evalForm ctxt at sco st f args =
     SLForm_fork_partial fat mmode cases mtime ->
       case mmode of
         Just FM_Case ->
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [ (at, three_args) ]) mtime
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [ (at, case_args) ]) mtime
+          where
+            case_args =
+              case args of
+                [w, x, y, z] -> (w, x, y, z)
+                [w, x,    z] -> (w, x, default_pay, z)
+                _ -> illegal_args 4
+            default_pay =
+              JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement (JSDecimal a "0") sp)
+            sp = JSSemi a
+            a = srcloc2annot at
         Just FM_Timeout ->
           retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases parsedTimeout
         Nothing ->
@@ -1283,7 +1295,7 @@ evalForm ctxt at sco st f args =
     two_args = case args of
       [x, y] -> (x, y)
       _ -> illegal_args 2
-    three_args = case args of
+    _three_args = case args of
       [x, y, z] -> (x, y, z)
       _ -> illegal_args 3
     parsedTimeout =
@@ -2500,7 +2512,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   ensure_live ctxt at st "to consensus"
   let st_pure = st {st_mode = SLM_ConsensusPure}
   let pdvs = st_pdvs st
-  --- We go back to the original env from before the to-consensus step
+  -- We go back to the original env from before the to-consensus step
   -- Handle sending
   let tc_send1 who = do
         let repeat_dv = M.lookup who pdvs
@@ -2672,7 +2684,7 @@ typeToExpr = \case
     rm m = JSObjectLiteral a (JSCTLNone $ toJSCL $ map rm1 $ M.toList m) a
     rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [ r t ]
 
-doFork :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> [ (SrcLoc, (JSExpression, JSExpression, JSExpression)) ] -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
+doFork :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> [ (SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression)) ] -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
 doFork ctxt at sco st ks cases mtime = do
   fidx <- ctxt_alloc ctxt
   let fid x = ".fork" <> (show fidx) <> "." <> x
@@ -2684,7 +2696,7 @@ doFork ctxt at sco st ks cases mtime = do
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
   let thunkify e = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement e sp)
-  let go (c_at, (who_e, before_e, after_e)) = do
+  let go (c_at, (who_e, before_e, pay_e, after_e)) = do
         let cfc_part = who_e
         let who = jse_expect_id c_at who_e
         let who_s = bpack who
@@ -2712,11 +2724,7 @@ doFork ctxt at sco st ks cases mtime = do
                 True -> this_eq_who
                 False -> JSLiteral a "true"
         let cfc_req_prop = mkobjp $ thunkify req_e
-        let pay_e =
-              case resHas "pay" of
-                True -> error $ "XXX pay"
-                False -> JSDecimal a "0"
-        let cfc_pay_prop = mkobjp $ thunkify pay_e
+        let cfc_pay_prop = mkobjp $ pay_e
         let cfc_data_def = mkobjp $ typeToExpr msg_ty
         let when_de =
               case resHas "when" of
@@ -2773,7 +2781,10 @@ doFork ctxt at sco st ks cases mtime = do
   let switch_ss = [ JSSwitch a a msg_e a a cases_switch_cases a sp ]
   let before_tc_ss = data_ss <> cases_onlys
   let after_tc_ss = req_ss <> switch_ss
-  evalStmt ctxt at sco st $ before_tc_ss <> tc_ss <> after_tc_ss <> ks
+  let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
+  traceM $ "fork expanded to:"
+  forM_ exp_ss (traceM . ppShow)
+  evalStmt ctxt at sco st $ exp_ss <> ks
 
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
 evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
@@ -3509,7 +3520,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let top_env_wps = foldl' (env_insertp ctxt_ at) top_env top_rvargs
   let make_penvp (p_at, pn, iat, io) = (pn, env0)
         where
-          env0 = env_insert ctxt_ p_at "interact" (sls_sss iat $ secret io) top_env
+          env0 = env_insert ctxt_ p_at "interact" (sls_sss iat $ secret io) top_env_wps
   let penvs = M.fromList $ map make_penvp part_ios
   let ctxt = ctxt_ {ctxt_base_penvs = penvs}
   let sco =
