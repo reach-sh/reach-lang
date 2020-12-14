@@ -1,0 +1,2 @@
+fork expanded to:
+reachc: error: ./Err_Fork_ResultNotObject.rsh:8:11:application: fork local result must be object with fields `msg` ior `when`, but got UInt

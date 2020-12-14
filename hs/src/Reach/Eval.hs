@@ -122,6 +122,8 @@ data EvalError
   | Err_Eval_MustBeLive String
   | Err_Invalid_Statement String
   | Err_ToConsensus_WhenNoTimeout
+  | Err_Fork_ResultNotObject SLType
+  | Err_Fork_ConsensusBadArrow JSExpression
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -438,6 +440,10 @@ instance Show EvalError where
       "Invalid use of statement: " <> stmt <> ". Did you mean to wrap it in a thunk?"
     Err_ToConsensus_WhenNoTimeout ->
       "Cannot optionally transition to consensus or have an empty race without timeout."
+    Err_Fork_ResultNotObject t ->
+      "fork local result must be object with fields `msg` ior `when`, but got " <> show t
+    Err_Fork_ConsensusBadArrow _ ->
+      "fork consensus block should be arrow with zero or one parameters, but got something else"
 
 --- Utilities
 zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -2715,7 +2721,8 @@ doFork ctxt at sco st ks cases mtime = do
         let res_ty_m =
               case res_ty of
                 T_Object m -> m
-                _ -> error $ "XXX error expected object"
+                _ ->
+                  expect_throw_ctx ctxt at $ Err_Fork_ResultNotObject res_ty
         let resHas = flip M.member res_ty_m
         let msg_ty = fromMaybe T_Null $ M.lookup "msg" res_ty_m
         let this_eq_who = JSExpressionBinary (jid "this") (JSBinOpEq a) who_e
@@ -2735,10 +2742,12 @@ doFork ctxt at sco st ks cases mtime = do
                 True -> JSMemberDot res_e a (jid "msg")
                 False -> JSLiteral a "null"
         let msg_vde = JSCallExpression (JSMemberDot fd_e a var_e) a (JSLOne msg_de) a
+        let defcon l r =
+              JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
         let only_body =
-              [ JSConstant a (JSLOne $ JSVarInitExpression res_e $ JSVarInit a before_call_e) sp
-              , JSConstant a (JSLOne $ JSVarInitExpression msg_e $ JSVarInit a msg_vde) sp
-              , JSConstant a (JSLOne $ JSVarInitExpression when_e $ JSVarInit a when_de) sp
+              [ defcon res_e before_call_e
+              , defcon msg_e msg_vde
+              , defcon when_e when_de
               ]
         let who_is_this =
               case isBound of
@@ -2747,8 +2756,10 @@ doFork ctxt at sco st ks cases mtime = do
         let after_ss =
               case after_e of
                 JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> [ s ]
-                JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> [ JSConstant a (JSLOne $ JSVarInitExpression ae $ JSVarInit a msg_e) sp, s ]
-                _ -> error "XXX error expected arrow"
+                JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> [ defcon ae msg_e, s ]
+                _ ->
+                  expect_throw_ctx ctxt at $
+                    Err_Fork_ConsensusBadArrow after_e
         let cfc_switch_case = JSCase a var_e a $ [ who_is_this ] <> after_ss
         let cfc_only = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSStatementBlock a only_body a sp))) a sp
         return $ CompiledForkCase {..}
