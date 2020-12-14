@@ -1,1 +1,1 @@
-reachc: error: ./Err_Eval_NotObject.rsh:6:15:dot: Invalid field access. Expected object, got: uint256
+reachc: error: ./Err_Eval_NotObject.rsh:6:16:dot: Invalid field access. Expected object, got: uint256

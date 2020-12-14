@@ -233,10 +233,10 @@ instance ErrorMessageForJson EvalError where
 
 instance ErrorSuggestions EvalError where
   errorSuggestions = \case
-    Err_App_InvalidOption opt opts -> getErrorSuggestions opt opts 5
-    Err_Dot_InvalidField _ ks k -> getErrorSuggestions k ks 5
-    Err_Eval_UnboundId _ slvar slvars -> getErrorSuggestions slvar slvars 5
-    _ -> []
+    Err_App_InvalidOption opt opts -> (Just opt, getErrorSuggestions opt opts 5)
+    Err_Dot_InvalidField _ ks k -> (Just k, getErrorSuggestions k ks 5)
+    Err_Eval_UnboundId _ slvar slvars -> (Just slvar, getErrorSuggestions slvar slvars 5)
+    _ -> (Nothing, [])
 
 -- TODO more hints on why invalid syntax is invalid
 instance Show EvalError where
@@ -2198,7 +2198,11 @@ evalExpr ctxt at sco st e = do
       let at' = srcloc_jsa "dot" a at
       SLRes olifts obj_st (obj_lvl, objv) <- evalExpr ctxt at' sco st obj
       let fields = (jse_expect_id at') field
-      SLRes reflifts ref_st refsv <- evalDot ctxt at' sco obj_st objv fields
+      let fieldAt =
+            case field of
+              JSIdentifier iat _ -> srcloc_jsa "dot" iat at
+              _ -> at'
+      SLRes reflifts ref_st refsv <- evalDot ctxt fieldAt sco obj_st objv fields
       return $ SLRes (olifts <> reflifts) ref_st $ lvlMeet obj_lvl $ refsv
     doRef arr a idxe = do
       let at' = srcloc_jsa "array ref" a at

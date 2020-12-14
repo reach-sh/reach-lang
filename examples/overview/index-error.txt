@@ -38,43 +38,43 @@ Verification failed:
       (because: evaluating v30)
     "v3" = interact_Alice_request
       (from: v3)
-      (bound at: ./index-error.rsh:13:8:dot)
+      (bound at: ./index-error.rsh:13:9:dot)
       (because: an honest message from "Alice" of interact("Alice")."request"(UInt))
     "v30" = (+ v27 v24 )
       (from: v30)
-      (bound at: ./index-error.rsh:23:8:dot)
+      (bound at: ./index-error.rsh:23:9:dot)
       (because: evaluating ADD(v27, v24 ))
     "v24" = 0
       (from: v24)
-      (bound at: ./index-error.rsh:23:8:dot)
+      (bound at: ./index-error.rsh:23:9:dot)
       (because: an honest payment from "Alice" of 0)
     "v27" = v19
       (from: v27)
-      (bound at: ./index-error.rsh:23:8:dot)
+      (bound at: ./index-error.rsh:23:9:dot)
       (because: evaluating v19)
     "v19" = (+ v16 v14 )
       (from: v19)
-      (bound at: ./index-error.rsh:18:8:dot)
+      (bound at: ./index-error.rsh:18:9:dot)
       (because: evaluating ADD(v16, v14 ))
     "v14" = v3
       (from: v14)
-      (bound at: ./index-error.rsh:18:8:dot)
+      (bound at: ./index-error.rsh:18:9:dot)
       (because: an honest payment from "Bob" of v3)
     "v16" = v9
       (from: v16)
-      (bound at: ./index-error.rsh:18:8:dot)
+      (bound at: ./index-error.rsh:18:9:dot)
       (because: evaluating v9)
     "v9" = (+ v6 v4 )
       (from: v9)
-      (bound at: ./index-error.rsh:13:8:dot)
+      (bound at: ./index-error.rsh:13:9:dot)
       (because: evaluating ADD(v6, v4 ))
     "v4" = 0
       (from: v4)
-      (bound at: ./index-error.rsh:13:8:dot)
+      (bound at: ./index-error.rsh:13:9:dot)
       (because: an honest payment from "Alice" of 0)
     "v6" = 0
       (from: v6)
-      (bound at: ./index-error.rsh:13:8:dot)
+      (bound at: ./index-error.rsh:13:9:dot)
       (because: evaluating 0)
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:

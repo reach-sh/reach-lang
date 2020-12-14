@@ -30,7 +30,7 @@ Verification failed:
       (because: evaluating SUB(UInt.max, 1 ))
     "v5" = v2
       (from: v5)
-      (bound at: ./overflow_con.rsh:12:6:dot)
+      (bound at: ./overflow_con.rsh:12:7:dot)
       (because: an honest message from "A" of v2)
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:

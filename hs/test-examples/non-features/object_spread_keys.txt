@@ -1,1 +1,1 @@
-reachc: error: ./object_spread_keys.rsh:12:19:dot: x is not a field of object. Did you mean: ["y"]
+reachc: error: ./object_spread_keys.rsh:12:20:dot: x is not a field of object. Did you mean: ["y"]

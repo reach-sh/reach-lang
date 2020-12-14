@@ -1,1 +1,1 @@
-reachc: error: ./Err_ToConsensus_WhenNoTimeout.rsh:13:12:dot: Cannot optionally transition to consensus or have an empty race without timeout.
+reachc: error: ./Err_ToConsensus_WhenNoTimeout.rsh:13:13:dot: Cannot optionally transition to consensus or have an empty race without timeout.

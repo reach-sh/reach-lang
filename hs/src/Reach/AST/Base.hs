@@ -68,7 +68,8 @@ data CompilationError =
   CompilationError {
     ce_suggestions :: [String],
     ce_errorMessage :: String,
-    ce_position :: [Int]
+    ce_position :: [Int],
+    ce_offendingToken :: Maybe String
   }
   deriving (Show, Generic, ToJSON)
 
@@ -77,8 +78,8 @@ class ErrorMessageForJson a where
   errorMessageForJson = show
 
 class ErrorSuggestions a where
-  errorSuggestions :: a -> [String]
-  errorSuggestions _ = []
+  errorSuggestions :: a -> (Maybe String, [String])
+  errorSuggestions _ = (Nothing, [])
 
 srcloc_line_col :: SrcLoc -> [Int]
 srcloc_line_col (SrcLoc _ (Just (TokenPn _ l c)) _) = [l, c]
@@ -88,7 +89,8 @@ expect_throw :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallSt
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
     True -> error $ "error: " ++ (map w2c $ LB.unpack $ encode $ CompilationError {
-      ce_suggestions = errorSuggestions ce,
+      ce_suggestions = snd $ errorSuggestions ce,
+      ce_offendingToken = fst $ errorSuggestions ce,
       ce_errorMessage = errorMessageForJson ce,
       ce_position = srcloc_line_col src })
     False ->
