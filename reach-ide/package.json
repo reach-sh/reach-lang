@@ -20,6 +20,7 @@
 	"keywords": [
 		"reach",
 		"ethereum",
+		"algorand",
 		"blockchain"
 	],
 	"engines": {
@@ -30,9 +31,7 @@
 		"onCommand:reach.compile",
 		"onCommand:reach.run",
 		"onCommand:reach.docs",
-		"onCommand:reach.upgrade",
-		"onCommand:reach.get.eth.abi",
-		"onCommand:reach.get.eth.bytecode"
+		"onCommand:reach.upgrade"
 	],
 	"main": "./client/out/extension",
 	"contributes": {
@@ -77,12 +76,6 @@
 					"command": "reach.docs"
 				},
 				{
-					"command": "reach.get.eth.abi"
-				},
-				{
-					"command": "reach.get.eth.bytecode"
-				},
-				{
 					"command": "reach.upgrade"
 				},
 				{
@@ -107,12 +100,6 @@
 					"command": "reach.docs"
 				},
 				{
-					"command": "reach.get.eth.abi"
-				},
-				{
-					"command": "reach.get.eth.bytecode"
-				},
-				{
 					"command": "reach.upgrade"
 				},
 				{
@@ -128,12 +115,6 @@
 				},
 				{
 					"command": "reach.docs"
-				},
-				{
-					"command": "reach.get.eth.abi"
-				},
-				{
-					"command": "reach.get.eth.bytecode"
 				},
 				{
 					"command": "reach.upgrade"
@@ -159,16 +140,6 @@
 				"category": "Reach IDE",
 				"title": "Open Reach Documentation",
 				"icon": "./images/reach-logo.png"
-			},
-			{
-				"command": "reach.get.eth.abi",
-				"category": "Reach IDE",
-				"title": "Copy Ethereum contract ABI to clipboard"
-			},
-			{
-				"command": "reach.get.eth.bytecode",
-				"category": "Reach IDE",
-				"title": "Copy Ethereum contract bytecode to clipboard"
 			},
 			{
 				"command": "reach.upgrade",
