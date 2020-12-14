@@ -1,6 +1,6 @@
 {
-	"name": "defi-lsp-server",
-	"description": "Ethereum DeFi Language Server",
+	"name": "reach-lsp-server",
+	"description": "Reach Language Server",
 	"version": "0.0.1",
 	"author": "Eric Lau",
 	"license": "EPL-2.0",
@@ -9,18 +9,12 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/ericglau/defi-ls"
+		"url": "https://github.com/ericglau/reach-ide"
 	},
 	"dependencies": {
-		"big-number": "2.0.0",
-		"ethereum-ens": "^0.8.0",
-		"ethereumjs-util": "^7.0.0",
-		"ethereumjs-wallet": "^0.6.3",
 		"index-of-regex": "^1.0.0",
-		"request-promise": "4.2.5",
 		"vscode-languageserver": "^6.1.1",
-		"vscode-languageserver-textdocument": "^1.0.1",
-		"web3": "^1.2.7"
+		"vscode-languageserver-textdocument": "^1.0.1"
 	},
 	"scripts": {}
 }
