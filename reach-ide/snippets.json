@@ -1,0 +1,18 @@
+{
+	"Reach starter": {
+		"prefix": "reach",
+		"body": [
+			"'reach 0.1';",
+			"",
+			"export const main =",
+			"	Reach.App(",
+			"		{},",
+			"		[['A', {}]],",
+			"		(A) => {",
+			"",
+			"		});",
+			""
+		],
+		"description": "Simple Reach program"
+	}
+}

@@ -36,6 +36,12 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
+		"snippets": [
+			{
+				"language": "javascript",
+				"path": "./snippets.json"
+			}
+		],
 		"configuration": {
 			"type": "object",
 			"title": "Reach IDE",
