@@ -38,8 +38,8 @@ import Text.ParserCombinators.Parsec.Number (numberValue)
 
 -- import qualified Data.Text.Lazy as LT
 -- import Reach.Texty
-import Text.Show.Pretty (ppShow)
-import Debug.Trace
+-- import Text.Show.Pretty (ppShow)
+-- import Debug.Trace
 
 --- Errors
 
@@ -2793,8 +2793,8 @@ doFork ctxt at sco st ks cases mtime = do
   let before_tc_ss = data_ss <> cases_onlys
   let after_tc_ss = req_ss <> switch_ss
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
-  traceM $ "fork expanded to:"
-  forM_ exp_ss (traceM . ppShow)
+  -- traceM $ "fork expanded to:"
+  -- forM_ exp_ss (traceM . ppShow)
   evalStmt ctxt at sco st $ exp_ss <> ks
 
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
@@ -2804,8 +2804,12 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
       ensure_mode ctxt at st SLM_ConsensusStep "participant set"
       let pdvs = st_pdvs st
       case M.lookup who pdvs of
-        Just _ ->
-          expect_throw_ctx ctxt at' $ Err_Eval_PartSet_Bound who
+        Just olddv ->
+          case DLA_Var olddv == addr_da of
+            True ->
+              evalStmt ctxt at sco st ks
+            False ->
+              expect_throw_ctx ctxt at' $ Err_Eval_PartSet_Bound who
         Nothing -> do
           let who_s = bunpack who
           (whodv, lifts) <- ctxt_lift_expr ctxt at (DLVar at' who_s T_Address) (DLE_PartSet at' who addr_da)
@@ -3531,7 +3535,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let top_env_wps = foldl' (env_insertp ctxt_ at) top_env top_rvargs
   let make_penvp (p_at, pn, iat, io) = (pn, env0)
         where
-          env0 = env_insert ctxt_ p_at "interact" (sls_sss iat $ secret io) top_env_wps
+          env0 = env_insert ctxt_ p_at "interact" (sls_sss iat $ secret io) top_env -- XXX _wps
   let penvs = M.fromList $ map make_penvp part_ios
   let ctxt = ctxt_ {ctxt_base_penvs = penvs}
   let sco =
