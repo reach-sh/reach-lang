@@ -14,6 +14,7 @@ module Reach.Type
   )
 where
 
+import Control.Applicative
 import Control.Monad.ST
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
@@ -55,6 +56,8 @@ instance Show TypeError where
     "TypeError: int literal out of range: " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
 type MCFS = Maybe [SLCtxtFrame]
+type PDVS = M.Map SLPart DLVar
+type TINT = (MCFS, PDVS)
 
 checkIntLiteral :: SrcLoc -> Integer -> Integer -> Integer -> Integer
 checkIntLiteral at rmin x rmax =
@@ -176,33 +179,33 @@ argExprTypeOf = \case
   DLAE_Obj senv -> T_Object $ M.map argExprTypeOf senv
   DLAE_Data t _ _ -> T_Data t
 
-slToDL :: HasCallStack => SrcLoc -> SLVal -> Maybe DLArgExpr
-slToDL _at v =
+slToDL :: HasCallStack => PDVS -> SrcLoc -> SLVal -> Maybe DLArgExpr
+slToDL pdvs _at v =
   case v of
     SLV_Null _ _ -> return $ DLAE_Arg $ DLA_Literal $ DLL_Null
     SLV_Bool _ b -> return $ DLAE_Arg $ DLA_Literal $ DLL_Bool b
     SLV_Int at i -> return $ DLAE_Arg $ DLA_Literal $ DLL_Int at i
     SLV_Bytes _ bs -> return $ DLAE_Arg $ DLA_Literal $ DLL_Bytes bs
     SLV_Array at' t vs -> do
-      ds <- mapM (slToDL at') vs
+      ds <- mapM (slToDL pdvs at') vs
       return $ DLAE_Array t ds
     SLV_Tuple at' vs -> do
-      ds <- mapM (slToDL at') vs
+      ds <- mapM (slToDL pdvs at') vs
       return $ DLAE_Tuple $ ds
     SLV_Object at' _ fenv -> do
-      denv <- mapM ((slToDL at') . sss_val) fenv
+      denv <- mapM ((slToDL pdvs at') . sss_val) fenv
       return $ DLAE_Obj denv
     SLV_Clo _ _ _ _ _ -> Nothing
     SLV_Data at' t vn sv ->
-      DLAE_Data t vn <$> slToDL at' sv
+      DLAE_Data t vn <$> slToDL pdvs at' sv
     SLV_DLC c -> return $ DLAE_Arg $ DLA_Constant c
     SLV_DLVar dv -> return $ DLAE_Arg $ DLA_Var dv
     SLV_Type _ -> Nothing
     SLV_Connector _ -> Nothing
-    SLV_Participant _ _ _ mdv ->
-      case mdv of
-        Nothing -> Nothing
+    SLV_Participant _ who _ mdv ->
+      case (M.lookup who pdvs) <|> mdv of
         Just dv -> return $ DLAE_Arg $ DLA_Var dv
+        Nothing -> Nothing
     SLV_RaceParticipant {} -> Nothing
     SLV_Prim (SLPrim_interact _ who m t) ->
       case t of
@@ -214,55 +217,55 @@ slToDL _at v =
     SLV_Form _ -> Nothing
     SLV_Kwd _ -> Nothing
 
-typeOfM :: HasCallStack => SrcLoc -> SLVal -> Maybe (SLType, DLArgExpr)
-typeOfM at v = do
-  dae <- slToDL at v
+typeOfM :: HasCallStack => PDVS -> SrcLoc -> SLVal -> Maybe (SLType, DLArgExpr)
+typeOfM pdvs at v = do
+  dae <- slToDL pdvs at v
   return $ (argExprTypeOf dae, dae)
 
-typeOf :: HasCallStack => MCFS -> SrcLoc -> SLVal -> (SLType, DLArgExpr)
-typeOf mcfs at v =
-  case typeOfM at v of
+typeOf :: HasCallStack => TINT -> SrcLoc -> SLVal -> (SLType, DLArgExpr)
+typeOf (mcfs, pdvs) at v =
+  case typeOfM pdvs at v of
     Just x -> x
     Nothing -> expect_throw mcfs at $ Err_Type_None v
 
-typeCheck :: MCFS -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
-typeCheck mcfs at env ty val = typeCheck_help mcfs at env ty val val_ty res
+typeCheck :: TINT -> SrcLoc -> TypeEnv s -> SLType -> SLVal -> ST s DLArgExpr
+typeCheck tint@(mcfs, _) at env ty val = typeCheck_help mcfs at env ty val val_ty res
   where
-    (val_ty, res) = typeOf mcfs at val
+    (val_ty, res) = typeOf tint at val
 
-typeChecks :: MCFS -> SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArgExpr]
-typeChecks mcfs at env ts vs =
+typeChecks :: TINT -> SrcLoc -> TypeEnv s -> [SLType] -> [SLVal] -> ST s [DLArgExpr]
+typeChecks tint@(mcfs, _) at env ts vs =
   case (ts, vs) of
     ([], []) ->
       return []
     ((t : ts'), (v : vs')) -> do
-      d <- typeCheck mcfs at env t v
-      ds' <- typeChecks mcfs at env ts' vs'
+      d <- typeCheck tint at env t v
+      ds' <- typeChecks tint at env ts' vs'
       return $ d : ds'
     ((_ : _), _) ->
       expect_throw mcfs at $ Err_Type_TooFewArguments ts
     (_, (_ : _)) ->
       expect_throw mcfs at $ Err_Type_TooManyArguments vs
 
-checkAndConvert_i :: MCFS -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArgExpr])
-checkAndConvert_i mcfs at env t args =
+checkAndConvert_i :: TINT -> SrcLoc -> TypeEnv s -> SLType -> [SLVal] -> ST s (SLType, [DLArgExpr])
+checkAndConvert_i tint@(mcfs, _) at env t args =
   case t of
     T_Fun dom rng -> do
-      dargs <- typeChecks mcfs at env dom args
+      dargs <- typeChecks tint at env dom args
       return (rng, dargs)
     T_Forall var ft -> do
       var_ref <- newSTRef Nothing
       let env' = M.insert var var_ref env
-      (vrng, dargs) <- checkAndConvert_i mcfs at env' ft args
+      (vrng, dargs) <- checkAndConvert_i tint at env' ft args
       rng <- typeSubst at env' vrng
       return (rng, dargs)
     _ -> expect_throw mcfs at $ Err_Type_NotApplicable t
 
-checkAndConvert :: MCFS -> SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArgExpr])
-checkAndConvert mcfs at t args = runST $ checkAndConvert_i mcfs at mempty t args
+checkAndConvert :: TINT -> SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArgExpr])
+checkAndConvert tint at t args = runST $ checkAndConvert_i tint at mempty t args
 
-checkType :: MCFS -> SrcLoc -> SLType -> SLVal -> DLArgExpr
-checkType mcfs at et v =
+checkType :: TINT -> SrcLoc -> SLType -> SLVal -> DLArgExpr
+checkType tint@(mcfs, _) at et v =
   typeMeet mcfs at (at, et) (at, t) `seq` da
   where
-    (t, da) = typeOf mcfs at v
+    (t, da) = typeOf tint at v
