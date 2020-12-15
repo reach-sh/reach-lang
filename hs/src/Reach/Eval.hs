@@ -38,8 +38,8 @@ import Text.ParserCombinators.Parsec.Number (numberValue)
 
 -- import qualified Data.Text.Lazy as LT
 -- import Reach.Texty
--- import Text.Show.Pretty (ppShow)
--- import Debug.Trace
+import Text.Show.Pretty (ppShow)
+import Debug.Trace
 
 --- Errors
 
@@ -925,12 +925,18 @@ sco_update_ imode ctxt at sco st addl_env =
 sco_update :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update = sco_update_ DisallowShadowing
 
-stMerge :: SLCtxt s -> SrcLoc -> SLState -> SLState -> SLState
+stMerge :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> SLState -> SLState
 stMerge ctxt at x y =
+  -- This is a little bit suspicious. What's going on?
+  -- Basically, the point of merge is so that afterwards, when we look at the
+  -- state, we are making consistent assumptions about what is true. However,
+  -- if either side is an exit, then that branch of code can't return past this
+  -- point, so the only one who made it thus far would be the one that lived,
+  -- so we can just go on with their assumptions
   case (st_live x, st_live y) of
-    (True, False) -> x
-    (False, True) -> y
-    (_, _) ->
+    (_, False) -> x
+    (False, _) -> y
+    (True, True) ->
       case x == y of
         True -> y
         False -> expect_throw_ctx ctxt at $ Err_Eval_IncompatibleStates x y
@@ -2517,6 +2523,15 @@ doGetSelfAddress ctxt at who = do
       (DLE_PrimOp at SELF_ADDRESS [DLA_Literal $ DLL_Bytes who])
   return (dv, lifts)
 
+all_just :: [ Maybe a ] -> Maybe [ a ]
+all_just = \case
+  [] -> Just []
+  Nothing : _ -> Nothing
+  Just x : xs ->
+    case all_just xs of
+      Just xs' -> Just $ x : xs'
+      Nothing -> Nothing
+
 doToConsensus :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression-> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
 doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   ensure_mode ctxt at st SLM_Step "to consensus"
@@ -2552,7 +2567,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
         return ((send_lifts, repeat_dv), (msg_das, amt_da, when_da))
   tc_send_int <- sequence $ M.fromSet tc_send1 whos
   let send_lifts = mconcat $ M.elems $ M.map (fst . fst) tc_send_int
-  let repeat_dvs = catMaybes $ M.elems $ M.map (snd . fst) tc_send_int
+  let mrepeat_dvs = all_just $ M.elems $ M.map (snd . fst) tc_send_int
   let tc_send = M.map snd tc_send_int
   let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map fst3 tc_send
   -- Handle timeout
@@ -2634,10 +2649,11 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
               [whoc_v, (public $ SLV_Bool at True), repeat_cmp_v]
         return $ (whoc_lifts <> whoc_lifts', whoc_v')
   (whoc_lifts, whoc_v) <-
-    case repeat_dvs of
-      [] -> return $ (mempty, public $ SLV_Bool at True)
-      _ ->
+    case mrepeat_dvs of
+      Just repeat_dvs@(_ : _) ->
         foldM check_repeat (mempty, public $ SLV_Bool at False) repeat_dvs
+      _ ->
+        return $ (mempty, public $ SLV_Bool at True)
   SLRes whoc_req_lifts _ _ <-
     keepLifts whoc_lifts $
       evalApplyVals ctxt at sco_recv st_pure req_rator $
@@ -2795,8 +2811,8 @@ doFork ctxt at sco st ks cases mtime = do
   let before_tc_ss = data_ss <> cases_onlys
   let after_tc_ss = req_ss <> switch_ss
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
-  -- traceM $ "fork expanded to:"
-  -- forM_ exp_ss (traceM . ppShow)
+  traceM $ "fork expanded to:"
+  forM_ exp_ss (traceM . ppShow)
   evalStmt ctxt at sco st $ exp_ss <> ks
 
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
