@@ -389,7 +389,7 @@ fork()
 
 A @deftech{fork statement} is written @reachin{fork().case(PART_EXPR, PUBLISH_EXPR, PAY_EXPR, CONSENSUS_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where:
 @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};
-@reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any time, and a @litchair{when} field, which must be a boolean;
+@reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any time, and a @litchar{when} field, which must be a boolean;
 @reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns an integer;
 @reachin{CONSENSUS_EXPR} is a syntactic @tech{arrow expression} parameterized over the @litchar{msg} value which is evaluated in a @tech{consensus step}; and,
 the @reachin{timeout} parameter are as in an @tech{consensus transfer}.
