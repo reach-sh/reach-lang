@@ -665,10 +665,10 @@ typeOf_ctxt ctxt st = typeOf (tint ctxt st)
 checkType_ctxt :: SLCtxt s -> SLState -> SrcLoc -> SLType -> SLVal -> DLArgExpr
 checkType_ctxt ctxt st = checkType (tint ctxt st)
 
-typeMeet_ctxt :: SLCtxt s -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
 typeMeet_ctxt ctxt = typeMeet (mcfs ctxt)
 
-typeMeets_ctxt :: SLCtxt s -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
+typeMeets_ctxt :: HasCallStack => SLCtxt s -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
 typeMeets_ctxt ctxt = typeMeets (mcfs ctxt)
 
 checkAndConvert_ctxt :: SLCtxt s -> SLState -> SrcLoc -> SLType -> [SLVal] -> (SLType, [DLArgExpr])
@@ -2608,7 +2608,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
               SLRes
                 (mtime_lifts <> lifts_)
                 (stMerge ctxt time_at time_st st_)
-                (combineStmtRes time_at Public time_cr cr_)
+                (combineStmtRes time_at Public time_st time_cr st_ cr_)
         return $ (mtime_merge, Just (delay_da, time_lifts))
   -- Handle receiving / consensus
   winner_dv <- ctxt_mkvar ctxt $ DLVar at "race winner" T_Address
@@ -3049,7 +3049,7 @@ evalStmt ctxt at sco st ss =
             let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
             let lifts' = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts flifts
             let levelHelp = SLStmtRes (sco_env sco) . map (\(r_at, rmi, (r_lvl, r_v)) -> (r_at, rmi, (clvl <> r_lvl, r_v)))
-            let ir = SLRes lifts' st_tf $ combineStmtRes at' clvl (levelHelp trets) (levelHelp frets)
+            let ir = SLRes lifts' st_tf $ combineStmtRes at' clvl st_t (levelHelp trets) st_f (levelHelp frets)
             retSeqn ir at' ks_ne
           _ -> do
             let (n_at', ns) = case cv of
@@ -3183,13 +3183,15 @@ evalStmt ctxt at sco st ss =
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do
                   (mdv', at_c, casem') <- casem
                   SLRes case_lifts case_st (SLStmtRes _ case_rets) <- casem'
-                  let st'' = case mst' of
-                        Nothing -> case_st
-                        Just st' -> stMerge ctxt at_c st' case_st
                   let sa'' = sa' <> mkAnnot case_lifts
-                  let rets'' = case mrets' of
-                        Nothing -> case_rets
-                        Just rets' -> combineStmtRets at_c de_lvl rets' case_rets
+                  let (st'', rets'') =
+                        case (mst', mrets') of
+                          (Nothing, Nothing) ->
+                            (case_st, case_rets)
+                          (Just st', Just rets') ->
+                            ( stMerge ctxt at_c st' case_st
+                            , combineStmtRets at_c de_lvl st' rets' case_st case_rets )
+                          _ -> impossible "select_all"
                   let casemm'' = M.insert vn (mdv', case_lifts) casemm'
                   return $ (Just st'', sa'', Just rets'', casemm'')
             (mst', sa', mrets', casemm') <- foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
@@ -3286,20 +3288,22 @@ retSeqn_ ctxt sco sr at' ks = do
         evalStmt ctxt at' sco' st0 ks'
       return $ SLRes (lifts0 <> lifts1) st1 (SLStmtRes env1 (rets0 <> rets1))
 
-combineStmtRes :: SrcLoc -> SecurityLevel -> SLStmtRes -> SLStmtRes -> SLStmtRes
-combineStmtRes at' lvl (SLStmtRes _ lrets) (SLStmtRes env rrets) =
-  SLStmtRes env $ combineStmtRets at' lvl lrets rrets
+combineStmtRes :: SrcLoc -> SecurityLevel -> SLState -> SLStmtRes -> SLState -> SLStmtRes -> SLStmtRes
+combineStmtRes at' lvl lst (SLStmtRes _ lrets) rst (SLStmtRes env rrets) =
+  SLStmtRes env $ combineStmtRets at' lvl lst lrets rst rrets
 
-combineStmtRetsl :: SrcLoc -> SecurityLevel -> [SLStmtRets] -> SLStmtRets
-combineStmtRetsl at lvl = foldl' (combineStmtRets at lvl) mempty
-
-combineStmtRets :: SrcLoc -> SecurityLevel -> SLStmtRets -> SLStmtRets -> SLStmtRets
-combineStmtRets at' lvl lrets rrets =
+combineStmtRets :: SrcLoc -> SecurityLevel -> SLState -> SLStmtRets -> SLState -> SLStmtRets -> SLStmtRets
+combineStmtRets at' lvl lst lrets rst rrets =
   case (lrets, rrets) of
     ([], []) -> []
-    ([], _) -> [(at', Nothing, (lvl, SLV_Null at' "empty left"))] <> rrets
-    (_, []) -> lrets <> [(at', Nothing, (lvl, SLV_Null at' "empty right"))]
+    ([], _) -> mnull "left" lst <> rrets
+    (_, []) -> lrets <> mnull "right" rst
     (_, _) -> lrets <> rrets
+  where
+    mnull lab st =
+      case st_live st of
+        True -> [(at', Nothing, (lvl, SLV_Null at' $ "empty " <> lab))]
+        False -> []
 
 expect_empty_tail :: SLCtxt s -> String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
 expect_empty_tail ctxt lab a sp at ks res =

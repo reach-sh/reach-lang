@@ -65,7 +65,7 @@ checkIntLiteral at rmin x rmax =
     True -> x
     False -> expect_thrown at $ Err_Type_IntLiteralRange rmin x rmax
 
-typeMeet :: MCFS -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
+typeMeet :: HasCallStack => MCFS -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
 typeMeet _ _ (_, T_Bytes xz) (_, T_Bytes yz) =
   T_Bytes (max xz yz)
 typeMeet mcfs top_at x@(_, xt) y@(_, yt) =
@@ -75,7 +75,7 @@ typeMeet mcfs top_at x@(_, xt) y@(_, yt) =
     False ->
       expect_throw mcfs top_at $ Err_TypeMeets_Mismatch top_at x y
 
-typeMeets :: MCFS -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
+typeMeets :: HasCallStack => MCFS -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
 typeMeets mcfs top_at l =
   case l of
     [] ->
