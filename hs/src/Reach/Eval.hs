@@ -14,6 +14,7 @@ import Data.Monoid
 import Data.Ord (comparing)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
+import Data.STRef
 import qualified Data.Text as T
 import Data.Tuple.Extra (fst3)
 import GHC.Stack (HasCallStack)
@@ -124,6 +125,7 @@ data EvalError
   | Err_ToConsensus_WhenNoTimeout
   | Err_Fork_ResultNotObject SLType
   | Err_Fork_ConsensusBadArrow JSExpression
+  | Err_Fork_CaseAppearsTwice SLPart SrcLoc SrcLoc
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -444,6 +446,8 @@ instance Show EvalError where
       "fork local result must be object with fields `msg` ior `when`, but got " <> show t
     Err_Fork_ConsensusBadArrow _ ->
       "fork consensus block should be arrow with zero or one parameters, but got something else"
+    Err_Fork_CaseAppearsTwice who at0 _at1 ->
+      "fork cases must be unique: " <> show who <> " was defined previously at " <> show at0
 
 --- Utilities
 zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -2724,10 +2728,17 @@ doFork ctxt at sco st ks cases mtime = do
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
   let thunkify e = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement e sp)
+  seenr <- newSTRef (mempty :: M.Map SLPart SrcLoc)
   let go (c_at, (who_e, before_e, pay_e, after_e)) = do
         let cfc_part = who_e
         let who = jse_expect_id c_at who_e
         let who_s = bpack who
+        seen <- readSTRef seenr
+        case M.lookup who_s seen of
+          Just prev_at ->
+            expect_throw_ctx ctxt c_at $ Err_Fork_CaseAppearsTwice who_s prev_at c_at
+          Nothing -> do
+            modifySTRef seenr (M.insert who_s c_at)
         let var_i = who
         let var_e = jid var_i
         let mkobjp x = JSPropertyNameandValue (JSPropertyIdent a var_i) a [x]
