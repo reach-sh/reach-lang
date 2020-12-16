@@ -38,8 +38,8 @@ import Text.ParserCombinators.Parsec.Number (numberValue)
 
 -- import qualified Data.Text.Lazy as LT
 -- import Reach.Texty
-import Text.Show.Pretty (ppShow)
-import Debug.Trace
+-- import Text.Show.Pretty (ppShow)
+-- import Debug.Trace
 
 --- Errors
 
@@ -951,12 +951,6 @@ stMerge ctxt at x y =
       case x == y of
         True -> y
         False -> expect_throw_ctx ctxt at $ Err_Eval_IncompatibleStates x y
-
-stMerges :: HasCallStack => SLCtxt s -> SrcLoc -> [SLState] -> SLState
-stMerges ctxt at = \case
-  [] -> impossible $ "stMerges called with empty"
-  [x] -> x
-  x : ys -> stMerge ctxt at x $ stMerges ctxt at ys
 
 stEnsureMode :: SLCtxt s -> SrcLoc -> SLMode -> SLState -> SLState
 stEnsureMode ctxt at slm st =
@@ -2822,8 +2816,8 @@ doFork ctxt at sco st ks cases mtime = do
   let before_tc_ss = data_ss <> cases_onlys
   let after_tc_ss = req_ss <> switch_ss
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
-  traceM $ "fork expanded to:"
-  forM_ exp_ss (traceM . ppShow)
+  -- traceM $ "fork expanded to:"
+  -- forM_ exp_ss (traceM . ppShow)
   evalStmt ctxt at sco st $ exp_ss <> ks
 
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
