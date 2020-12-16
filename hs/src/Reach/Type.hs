@@ -1,5 +1,5 @@
 module Reach.Type
-  ( TypeError
+  ( TypeError (..)
   , typeMeet
   , typeMeets
   , DLArgExpr (..)

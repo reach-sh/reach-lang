@@ -609,6 +609,7 @@ base_env =
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
     , ("intEq", SLV_Prim $ SLPrim_op PEQ)
+    , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
     , --    , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
       ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
     , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
@@ -1383,7 +1384,7 @@ evalPrimOp ctxt at _sco st p sargs =
     MOD -> nn2n (mod)
     PLT -> nn2b (<)
     PLE -> nn2b (<=)
-    PEQ -> nn2b (==)
+    PEQ -> polyEq args -- ctxt at st sargs
     PGE -> nn2b (>=)
     PGT -> nn2b (>)
     IF_THEN_ELSE ->
@@ -1401,6 +1402,105 @@ evalPrimOp ctxt at _sco st p sargs =
     BXOR -> nn2n (xor)
     SELF_ADDRESS -> impossible "self address"
   where
+    polyEq args' =
+      case args' of
+        -- Both args static
+        [SLV_Int _ l, SLV_Int _ r]      -> retBool $ l == r
+        [SLV_Bool _ l, SLV_Bool _ r]    -> retBool $ l == r
+        [SLV_Bytes _ l, SLV_Bytes _ r]  -> retBool $ l == r
+        [SLV_Null {}, SLV_Null {}]      -> retBool True
+        [SLV_Array lAt lTy ls, SLV_Array rAt rTy rs]
+          | lTy /= rTy || lLen /= rLen ->
+            expect_throw_ctx ctxt at $ Err_TypeMeets_Mismatch at
+              (lAt, T_Array lTy $ toInteger lLen) (rAt, T_Array rTy $ toInteger rLen)
+          | otherwise -> staticCmpElems ls rs
+          where
+            lLen = length ls
+            rLen = length rs
+        [SLV_Tuple lAt ls, SLV_Tuple rAt rs]
+          | lTy /= rTy ->
+            expect_throw_ctx ctxt at $
+              Err_TypeMeets_Mismatch at (lAt, lTy) (rAt, rTy)
+          | otherwise -> staticCmpElems ls rs
+          where
+            lTy = T_Tuple $ map getType ls
+            rTy = T_Tuple $ map getType rs
+        [l@(SLV_Object lAt _ lEnv), r@(SLV_Object rAt _ rEnv)]
+          | S.difference (getObjFieldTypes lEnv) (getObjFieldTypes rEnv) /= S.empty ->
+            expect_throw_ctx ctxt at $
+              Err_TypeMeets_Mismatch at (lAt, getType l) (rAt, getType r)
+          | otherwise -> do
+            let elems = map sss_val . M.elems
+            staticCmpElems (elems lEnv) $ elems rEnv
+          where
+            getObjFieldTypes xs = S.fromAscList $ map getFieldType $ M.toAscList xs
+            getFieldType (k, v) = (k, getType $ sss_val v)
+        [SLV_Data lAt lCons lCon lVal, SLV_Data rAt rCons rCon rVal]
+          | S.difference (S.fromAscList $ M.toAscList lCons)
+            (S.fromAscList $ M.toAscList rCons) /= S.empty ->
+              expect_throw_ctx ctxt at $
+                Err_TypeMeets_Mismatch at (lAt, T_Data lCons) (rAt, T_Data rCons)
+          | lCon /= rCon -> retBool False
+          | otherwise    -> polyEq [lVal, rVal]
+        -- If atleast one arg is dynamic
+        [l, r] ->
+          case (getType l, getType r) of
+            (T_UInt, T_UInt)        -> make_var
+            (T_Null, T_Null)        -> retBool True
+            (T_Digest, T_Digest)    -> make_var
+            (T_Address, T_Address)  -> make_var
+            (T_Bool, T_Bool) -> do
+              let fn = sss_val $ env_lookup (Just ctxt) at (LC_RefFrom "polyEq") "boolEq" (sco_env _sco)
+              SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn $ map public args
+              return $ SLRes cmp_lifts st val
+            (T_Bytes l_len, T_Bytes r_len)
+              | r_len /= l_len -> retBool False
+              | otherwise -> hashAndCmp l r
+            (lTy@(T_Array l_ty l_len), rTy@(T_Array r_ty r_len))
+              | l_ty /= r_ty || l_len /= r_len ->
+                expect_throw_ctx ctxt at $
+                  Err_TypeMeets_Mismatch at (srclocOf l, lTy) (srclocOf r, rTy)
+              | otherwise -> hashAndCmp l r
+            (T_Data lEnv, T_Data rEnv)
+              | lEnv /= rEnv ->
+                expect_throw_ctx ctxt at $
+                  Err_TypeMeets_Mismatch at (srclocOf l, T_Data lEnv) (srclocOf r, T_Data rEnv)
+              | otherwise -> hashAndCmp l r
+            (T_Tuple ls, T_Tuple rs)
+              | ls /= rs  ->
+                expect_throw_ctx ctxt at $
+                  Err_TypeMeets_Mismatch at (srclocOf l, T_Tuple ls) (srclocOf r, T_Tuple rs)
+              | otherwise -> hashAndCmp l r
+            (T_Object lEnv, T_Object rEnv)
+              | lEnv /= rEnv ->
+                expect_throw_ctx ctxt at $
+                  Err_TypeMeets_Mismatch at (srclocOf l, T_Object lEnv) (srclocOf r, T_Object rEnv)
+              | otherwise -> hashAndCmp l r
+            (lTy, rTy) -> expect_throw_ctx ctxt at $
+              Err_TypeMeets_Mismatch at (srclocOf l, lTy) (srclocOf r, rTy)
+        _ -> impossible "polyEq called with more than 2 args"
+    hashAndCmp l r = do
+      (lLifts, dl) <- getHash l
+      (rLifts, dr) <- getHash r
+      digestEq (lLifts <> rLifts) [dl, dr]
+    staticCmpElems ls rs = do
+      equals <- liftM and <$> sequence $ zipWith (\ a b -> do
+                  polyEq [a, b] >>=
+                    \case
+                      SLRes _ _ (_, SLV_Bool _ x) -> return x
+                      _ -> return False
+                  ) ls rs
+      retBool equals
+    digestEq lifts dargs = do
+      let fn = sss_val $ env_lookup (Just ctxt) at (LC_RefFrom "polyEq") "digestEq" (sco_env _sco)
+      SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn dargs
+      return $ SLRes (lifts <> cmp_lifts) st val
+    getHash x = do
+      let fn = sss_val $ env_lookup (Just ctxt) at (LC_RefFrom "polyEq") "digest" (sco_env _sco)
+      SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn [public x]
+      return (cmp_lifts, val)
+    retBool v = return $ SLRes mempty st (lvl, SLV_Bool at v)
+    getType = fst . typeOf_ctxt ctxt st at
     args = map snd sargs
     lvl = mconcat $ map fst sargs
     nn2b op =
