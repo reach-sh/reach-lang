@@ -35,8 +35,6 @@ exports.FundAccount = class extends React.Component {
       <div>
         <h2>Fund account</h2>
         <br />
-        Address: {addr}
-        <br />
         Balance: {bal} {standardUnit}
         <hr />
         Would you like to fund your account with additional {standardUnit}?

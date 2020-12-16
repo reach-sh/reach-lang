@@ -1609,7 +1609,7 @@ and tell it what to do once it mounts, which is the React term for starting.
 ]
 
 @exviewfigs["tut-8" "AppViews"
-  '["FundAccount" 30 56]]
+  '["FundAccount" 30 54]]
 
 Next, we define callbacks on @jsin{App} for what to do when the user clicks certain buttons.
 
@@ -1627,7 +1627,7 @@ Next, we define callbacks on @jsin{App} for what to do when the user clicks cert
 ]
 
 @exviewfigs["tut-8" "AppViews"
-  '["DeployerOrAttacher" 58 80]]
+  '["DeployerOrAttacher" 56 78]]
 
 @reachex[#:mode js
          #:show-lines? #t "tut-8/index.js"
