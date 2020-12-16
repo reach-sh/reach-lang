@@ -4,6 +4,7 @@
 
 import * as shared from './shared';
 import algosdk from 'algosdk';
+import buffer from 'buffer';
 import ethers from 'ethers';
 import {
   CBR_Null,
@@ -21,10 +22,10 @@ import {
 import * as CBR from './CBR';
 import { labelMaps } from './shared_impl';
 
-
 type BigNumber = ethers.BigNumber;
 
 const BigNumber = ethers.BigNumber;
+const Buffer = buffer.Buffer;
 
 export const UInt_max: BigNumber =
   BigNumber.from(2).pow(64).sub(1);
