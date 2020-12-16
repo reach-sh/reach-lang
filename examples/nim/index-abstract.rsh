@@ -61,7 +61,8 @@ export const main =
             assume(choice < howMany);
             assume(amount <= heaps[choice]); });
           now.publish(choice, amount)
-            .timeout(DELAY, () => closeTo(next, sendOutcome('timed out move')));
+            .timeout(DELAY, () =>
+              closeTo(next, sendOutcome('timed out move')));
 
           require(choice < howMany);
           require(amount <= heaps[choice]);
