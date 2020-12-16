@@ -26,11 +26,11 @@ import * as backend from './build/index.main.mjs';
   });
 
   await Promise.all([
-    backend.Alice(stdlib, ctcAlice, {
+    backend.Alice(ctcAlice, {
       ...Player('Alice'),
       wager: stdlib.parseCurrency(1),
     }),
-    backend.Bob(stdlib, ctcBob, {
+    backend.Bob(ctcBob, {
       ...Player('Bob'),
       acceptWager: (wager) => {
         console.log(`Bob accepts the wager: ${fmt(wager)}`); },
