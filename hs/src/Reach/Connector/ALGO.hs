@@ -745,7 +745,7 @@ doSwitch ck at dv csm = do
         ca $ DLA_Var dv
         code "byteget" ["0"]
         cl $ DLL_Int sb vi
-        op "="
+        op "=="
         code "bz" [next_lab]
         case mov of
           Nothing -> ck k
