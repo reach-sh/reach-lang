@@ -352,6 +352,122 @@ because @reachin{Claire} is not included in the @reachin{race}.
 However, if we were to rename @reachin{Claire}'s @reachin{x} into @reachin{y}, then it would be valid, because although @reachin{Alice} and @reachin{Bob} both bind @reachin{x}, they participate in the @reachin{race}, so it is allowed.
 In the tail of this program, @reachin{x} is bound to either @reachin{1} or @reachin{2}.
 
+@subsubsection{@tt{fork}}
+
+@(mint-define! '("fork"))
+@reach{
+fork()
+.case(Alice, (() => ({
+  msg: 19,
+  when: declassify(interact.keepGoing()) })),
+  ((v) => v),
+  (v) => {
+    require(v == 19);
+    transfer(wager + 19).to(this);
+    commit();
+    exit();
+  })
+.case(Bob, (() => ({
+  when: declassify(interact.keepGoing()) })),
+  (() => wager),
+  () => {
+    commit();
+
+    Alice.only(() => interact.showOpponent(Bob));
+
+    race(Alice, Bob).publish();
+    transfer(2 * wager).to(this);
+    commit();
+    exit();
+  })
+.timeout(deadline, () => {
+  race(Alice, Bob).publish();
+  transfer(wager).to(this);
+  commit();
+  exit(); });
+}
+
+A @deftech{fork statement} is written @reachin{fork().case(PART_EXPR, PUBLISH_EXPR, PAY_EXPR, CONSENSUS_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where:
+@reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};
+@reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any time, and a @litchair{when} field, which must be a boolean;
+@reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns an integer;
+@reachin{CONSENSUS_EXPR} is a syntactic @tech{arrow expression} parameterized over the @litchar{msg} value which is evaluated in a @tech{consensus step}; and,
+the @reachin{timeout} parameter are as in an @tech{consensus transfer}.
+
+If the @litchar{msg} field is absent from the object returned from @reachin{PUBLISH_EXPR}, then it is treated as if it were @reachin{null}.
+
+If the @litchar{when} field is absent from the object returned from @reachin{PUBLISH_EXPR}, then it is treated as if it were @reachin{true}.
+
+If the @reachin{PAY_EXPR} is absent, then it is treated as if it were @reachin{() => 0}.
+
+The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}.
+
+If the @tech{participant} specified by @reachin{PART_EXPR} is not already set (in the sense of @reachin{Participant.set}), then if it wins the @reachin{race}, it is set to the @reachin{this}.
+
+@(hrule)
+
+A @tech{fork statement} is an abbreviation of a common @reachin{race} and @reachin{switch} pattern you could write yourself.
+
+The idea is that each of the @tech{participants} in the @reachin{case} components do an independent @tech{local step} evaluation of a value they would like to @reachin{publish} and then all @reachin{race} to @reachin{publish} it.
+The one that "wins" the @reachin{race} then determines not only the value (& @reachin{pay} amount), but also what @tech{consensus step} code runs to consume the value.
+
+The sample @reachin{fork} statement linked to the @reachin{fork} keyword is roughly equivalent to:
+@reach{
+ // We first define a Data instance so that each participant can publish a
+ // different kind of value
+ const ForkData = Data({Alice: UInt, Bob: Null});
+ // Then we bind these values for each participant
+ Alice.only(() => {
+  const fork_msg = ForkData.Alice(19);
+  const fork_when = declassify(interact.keepGoing()); });
+ Bob.only(() => {
+  const fork_msg = ForkData.Bob(null);
+  const fork_when = declassify(interact.keepGoing()); });
+ // They race
+ race(Alice, Bob)
+  .publish(fork_msg)
+  .when(fork_when)
+  // The pay ammount depends on who is publishing
+  .pay(fork_msg.match( {
+    Alice: (v => v),
+    Bob: (() => wager) } ))
+  // The timeout is always the same
+  .timeout(deadline, () => {
+    race(Alice, Bob).publish();
+    transfer(wager).to(this);
+    commit();
+    exit(); });
+
+  // We ensure that the correct participant published the correct kind of value
+  require(fork_msg.match( {
+    // Alice had previously published
+    Alice: (v => this == Alice),
+    // But Bob had not.
+    Bob: (() => true) } ));
+
+  // Then we select the appropriate body to run
+  switch (fork_msg) {
+    case Alice: {
+      assert (this == Alice);
+      require(v == 19);
+      transfer(wager + 19).to(this);
+      commit();
+      exit(); }
+    case Bob: {
+      Bob.set(this);
+      commit();
+
+      Alice.only(() => interact.showOpponent(Bob));
+
+      race(Alice, Bob).publish();
+      transfer(2 * wager).to(this);
+      commit();
+      exit(); }
+  }
+}
+
+This pattern is tedious to write and error-prone, so the @reachin{fork} statement abbreviates it for Reach programmers.
+
 @subsubsection{@tt{wait}}
 
 @(mint-define! '("wait"))

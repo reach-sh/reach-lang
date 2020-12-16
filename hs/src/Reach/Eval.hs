@@ -2771,7 +2771,6 @@ doFork ctxt at sco st ks cases mtime = do
               , defcon msg_e msg_vde
               , defcon when_e when_de
               ]
-        -- XXX move binding
         let who_is_this =
               case isBound of
                 True -> JSMethodCall (jid "assert") a (JSLOne $ this_eq_who) a sp
