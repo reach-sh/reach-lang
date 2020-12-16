@@ -499,7 +499,7 @@ data EnvInsertMode
 -- Secret idents must start with _.
 -- Public idents must not start with _.
 -- Special idents "interact" and "__decode_testing__" skip these rules.
-env_insert_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
+env_insert_ :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
 env_insert_ _ _ _ "_" _ env = env
 env_insert_ insMode ctxt at k v env = case insMode of
   DisallowShadowing -> check
@@ -510,6 +510,7 @@ env_insert_ insMode ctxt at k v env = case insMode of
       False -> check
   AllowShadowingRace {} -> impossible "env_insert_ race"
   where
+    check :: SLEnv
     check =
       --- XXX This is a hack
       case k == internalVar_balance of
@@ -517,27 +518,33 @@ env_insert_ insMode ctxt at k v env = case insMode of
         False ->
           case M.lookup k env of
             Nothing -> go
-            Just v0 -> expect_throw_ctx ctxt at (Err_Shadowed k v0 v)
+            Just v0 ->
+              -- trace ("tried insert into " <> show (M.keys env)) $
+              expect_throw_ctx ctxt at (Err_Shadowed k v0 v)
+    go :: SLEnv
     go = case v of
       -- Note: secret ident enforcement is limited to doOnly
       (SLSSVal _ Public _)
         | not (isSpecialIdent k) && isSecretIdent k ->
           expect_throw_ctx ctxt at (Err_Eval_NotPublicIdent k)
-      _ -> M.insert k v env
+      _ ->
+        -- trace ("insert " <> show k <> " into " <> show (M.keys env)) $
+        -- trace ("of " <> (take 128 $ show $ sss_val v)) $
+        M.insert k v env
 
-env_insert :: SLCtxt s -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
+env_insert :: HasCallStack => SLCtxt s -> SrcLoc -> SLVar -> SLSSVal -> SLEnv -> SLEnv
 env_insert = env_insert_ DisallowShadowing
 
-env_insertp_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
+env_insertp_ :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
 env_insertp_ imode ctxt at = flip (uncurry (env_insert_ imode ctxt at))
 
-env_insertp :: SLCtxt s -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
+env_insertp :: HasCallStack => SLCtxt s -> SrcLoc -> SLEnv -> (SLVar, SLSSVal) -> SLEnv
 env_insertp = env_insertp_ DisallowShadowing
 
-env_merge_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
+env_merge_ :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
 env_merge_ imode ctxt at left righte = foldl' (env_insertp_ imode ctxt at) left $ M.toList righte
 
-env_merge :: SLCtxt s -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
+env_merge :: HasCallStack => SLCtxt s -> SrcLoc -> SLEnv -> SLEnv -> SLEnv
 env_merge = env_merge_ DisallowShadowing
 
 data LookupCtx
@@ -846,6 +853,7 @@ data SLScope = SLScope
     sco_cenv :: SLEnv
   , sco_depth :: Int
   }
+  deriving (Show)
 
 recursionDepthLimit :: Int
 recursionDepthLimit = 2 ^ (16 :: Int)
@@ -862,16 +870,19 @@ sco_to_cloenv :: SLScope -> SLCloEnv
 sco_to_cloenv SLScope {..} =
   SLCloEnv sco_env sco_penvs sco_cenv
 
-sco_lookup_penv :: SLCtxt s -> SLScope -> SLPart -> SLEnv
-sco_lookup_penv ctxt sco who =
+sco_lookup_penv :: SLCtxt s -> SrcLoc -> SLScope -> SLPart -> SLEnv
+sco_lookup_penv ctxt at sco who =
+  -- Code from a module context would not have access to the standard library
+  -- unless we insert it in here, because it was evaluated in a context that
+  -- didn't know about any participants yet.
   case M.lookup who $ sco_penvs sco of
-    Nothing -> (ctxt_base_penvs ctxt) M.! who
+    Nothing -> env_merge ctxt at (sco_env sco) ((ctxt_base_penvs ctxt) M.! who)
     Just x -> x
 
-penvs_update :: SLCtxt s -> SLScope -> (SLPart -> SLEnv -> SLEnv) -> SLPartEnvs
-penvs_update ctxt sco f =
+penvs_update :: SLCtxt s -> SrcLoc -> SLScope -> (SLPart -> SLEnv -> SLEnv) -> SLPartEnvs
+penvs_update ctxt at sco f =
   M.fromList $
-    map (\p -> (p, f p $ sco_lookup_penv ctxt sco p)) $
+    map (\p -> (p, f p $ sco_lookup_penv ctxt at sco p)) $
       M.keys $ ctxt_base_penvs ctxt
 
 sco_set :: SLVar -> SLSSVal -> SLScope -> SLScope
@@ -883,7 +894,7 @@ sco_set v sv sco@(SLScope {..}) =
   where
     go = M.insert v sv
 
-sco_update_and_mod :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> (SLEnv -> SLEnv) -> SLScope
+sco_update_and_mod :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> (SLEnv -> SLEnv) -> SLScope
 sco_update_and_mod imode ctxt at sco st addl_env env_mod =
   sco
     { sco_env = do_merge imode'_top $ sco_env sco
@@ -896,7 +907,7 @@ sco_update_and_mod imode ctxt at sco st addl_env env_mod =
         SLM_Step -> updated_penvs
         SLM_ConsensusStep -> updated_penvs
         _ -> sco_penvs sco
-    updated_penvs = penvs_update ctxt sco p_do_merge
+    updated_penvs = penvs_update ctxt at sco p_do_merge
     p_do_merge p = do_merge imode'
       where
         imode' =
@@ -918,11 +929,11 @@ sco_update_and_mod imode ctxt at sco st addl_env env_mod =
         _ -> imode
     do_merge imode' = env_mod . flip (env_merge_ imode' ctxt at) addl_env
 
-sco_update_ :: EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
+sco_update_ :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update_ imode ctxt at sco st addl_env =
   sco_update_and_mod imode ctxt at sco st addl_env id
 
-sco_update :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
+sco_update :: HasCallStack => SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> SLScope
 sco_update = sco_update_ DisallowShadowing
 
 stMerge :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> SLState -> SLState
@@ -1284,7 +1295,7 @@ evalForm ctxt at sco st f args =
       let notter = participant_who v_n
       SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
       let knower = participant_who v_kn
-      let sco_knower = sco {sco_env = sco_lookup_penv ctxt sco knower}
+      let sco_knower = sco {sco_env = sco_lookup_penv ctxt at sco knower}
       let st_whats = st {st_mode = SLM_LocalStep}
       SLRes lifts_whats _ whats_sv <-
         evalExprs ctxt at sco_knower st_whats whats_e
@@ -2466,7 +2477,7 @@ doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = d
           , sco_penvs = only_penvs
           , sco_cenv = only_cenv
           }
-  let penv_ = sco_lookup_penv ctxt sco_only_pre who
+  let penv_ = sco_lookup_penv ctxt at sco_only_pre who
   (me_dv, me_let_lift) <- doGetSelfAddress ctxt at who
   let me_v = SLV_DLVar me_dv
   let ssv_here = SLSSVal only_at Public
@@ -2542,7 +2553,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   -- Handle sending
   let tc_send1 who = do
         let repeat_dv = M.lookup who pdvs
-        let penv = sco_lookup_penv ctxt sco who
+        let penv = sco_lookup_penv ctxt at sco who
         let msg_proc1 var = do
               let val =
                     ensure_public ctxt at $
@@ -3551,11 +3562,15 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , ctxt_base_penvs = mempty
           }
   let top_env_wps = foldl' (env_insertp ctxt_ at) top_env top_rvargs
-  let make_penvp (p_at, pn, iat, io) = (pn, env0)
+  let make_penvp (p_at, pn, iat, io) = (pn, (env0, base_penv))
         where
-          env0 = env_insert ctxt_ p_at "interact" (sls_sss iat $ secret io) top_env_wps
-  let penvs = M.fromList $ map make_penvp part_ios
-  let ctxt = ctxt_ {ctxt_base_penvs = penvs}
+          add_io = env_insert ctxt_ p_at "interact" (sls_sss iat $ secret io)
+          env0 = add_io top_env_wps
+          base_penv = add_io mempty
+  let partial_penvs = M.fromList $ map make_penvp part_ios
+  let penvs = M.map fst partial_penvs
+  let base_penvs = M.map snd partial_penvs
+  let ctxt = ctxt_ {ctxt_base_penvs = base_penvs}
   let sco =
         SLScope
           { sco_ret = Nothing
