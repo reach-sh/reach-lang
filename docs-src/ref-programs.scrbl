@@ -9,6 +9,8 @@ their syntactic forms,
 the standard library,
 and the standards of @tech{valid} programs.
 
+@margin-note{Get language support for Reach in your editor by visiting @seclink["guide-editor-support"].}
+
 The rest of this section is structured according to the contexts of the different parts of a Reach program, as follows:
 
 @itemlist[

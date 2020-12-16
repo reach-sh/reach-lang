@@ -22,3 +22,4 @@ The following guides are available:
 @include-section["guide-abstract.scrbl"]
 @include-section["guide-limits.scrbl"]
 @include-section["guide-reach.scrbl"]
+@include-section["guide-editor-support.scrbl"]

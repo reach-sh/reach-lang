@@ -53,6 +53,8 @@ You'll know that everything is in order if you can run
 
 @(hrule)
 
+@margin-note{Get language support for Reach in your editor by visiting @seclink["guide-editor-support"].}
+
 Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-1"]{write your first Reach application}!
 
 @section[#:tag "tut-1"]{Scaffolding and Setup}
@@ -82,7 +84,8 @@ You can always click on these links to see the entire file in our @hyperlink["ht
 You can click on it and the content of the code box will be copied onto your clipboard.}
 
 @margin-note{Did your text editor recognize @exec{index.rsh} as a Reach program and give you proper syntax hightlighting?
-If not, then you can manually configure it to treat Reach (@exec{.rsh}) files as JavaScript and things will be mostly correct.}
+If not, check if there's a plugin available for your editor by visiting @seclink["guide-editor-support"] or manually
+configure it to treat Reach (@exec{.rsh}) files as JavaScript and things will be mostly correct.}
 
 This is just a shell of a program that doesn't do much, but it has a few important components.
 
@@ -1843,7 +1846,7 @@ And finally, the Web frontend:
          #:show-lines? #t "tut-8/index.js"
          #:link #t]
 
-We wrote @exloc["tut-7/index.rsh"] lines of Reach and two different frontends. 
+We wrote @exloc["tut-7/index.rsh"] lines of Reach and two different frontends.
 Our command-line version is @exloc["tut-7/index.mjs"] lines of JavaScript, or @exloc["tut-7/index.rsh" "tut-7/index.mjs"] lines together.
 While our Web version is @exloc["tut-8/index.js"] lines of JavaScript, or @exloc["tut-8/index.rsh" "tut-8/index.js"] lines together.
 

@@ -38,6 +38,7 @@ The Reach compiler automatically derives a @tech{contract} for the @tech{consens
 Let's look at a simple Reach program where two principals, Alice and Bob, interact. In this @|DApp|, Alice has some information that Bob might want and she has an amount of network tokens in mind that she'd like to trade for it.
 
 @margin-note{You can look at the entire example program by visiting @reachexlink["overview/index.rsh"].}
+@margin-note{Get language support for Reach in your editor by visiting @seclink["guide-editor-support"].}
 
 The main part of the program looks like this:
 
