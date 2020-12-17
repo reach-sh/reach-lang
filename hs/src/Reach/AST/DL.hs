@@ -85,7 +85,7 @@ instance IsLocal DLStmt where
     DLS_Return {} -> True
     DLS_Prompt _ _ ss -> isLocal ss
     DLS_Stop {} -> False
-    DLS_Only _ _ ss -> isLocal ss
+    DLS_Only {} -> False
     DLS_ToConsensus {} -> False
     DLS_FromConsensus _ ss -> isLocal ss
     DLS_While {} -> False

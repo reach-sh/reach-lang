@@ -30,6 +30,7 @@ import Reach.JSUtil
 import Reach.Parser
 import Reach.Pretty ()
 import Reach.STCounter
+import Reach.Texty (pretty)
 import Reach.Type
 import Reach.Util
 import Reach.Version
@@ -37,8 +38,6 @@ import Safe (atMay)
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 
--- import qualified Data.Text.Lazy as LT
--- import Reach.Texty
 -- import Text.Show.Pretty (ppShow)
 -- import Debug.Trace
 
@@ -112,7 +111,7 @@ data EvalError
   | Err_Eval_NotSecretIdent SLVar
   | Err_Eval_NotPublicIdent SLVar
   | Err_Eval_LookupUnderscore
-  | Err_Eval_NotSpreadable SLVal
+  | Err_Eval_NotSpreadable String SLVal
   | Err_Zip_ArraysNotEqualLength Integer Integer
   | Err_Switch_NotData SLVal
   | Err_Switch_DoubleCase SrcLoc SrcLoc (Maybe SLVar)
@@ -126,6 +125,7 @@ data EvalError
   | Err_Fork_ResultNotObject SLType
   | Err_Fork_ConsensusBadArrow JSExpression
   | Err_Fork_CaseAppearsTwice SLPart SrcLoc SrcLoc
+  | Err_ParallelReduceIncomplete String
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -376,9 +376,9 @@ instance Show EvalError where
     Err_Obj_IllegalNumberField _JSPropertyName ->
       "Invalid field name. Fields must be bytes, but got: uint256"
     Err_Obj_SpreadNotObj slval ->
-      "Invalid object spread. Expected object, got: " <> displaySlValType slval
-    Err_Eval_NotSpreadable slval ->
-      "Value not spreadable. Expected tuple or array, got: " <> displaySlValType slval
+      "Invalid object spread. Expected object, got: " <> (show $ pretty slval)
+    Err_Eval_NotSpreadable lab slval ->
+      "Value not spreadable in " <> lab <> " context. Expected tuple or array, got: " <> (show $ pretty slval)
     Err_Prim_InvalidArgs prim slvals ->
       "Invalid args for " <> displayPrim prim <> ". got: "
         <> "["
@@ -448,6 +448,8 @@ instance Show EvalError where
       "fork consensus block should be arrow with zero or one parameters, but got something else"
     Err_Fork_CaseAppearsTwice who at0 _at1 ->
       "fork cases must be unique: " <> show who <> " was defined previously at " <> show at0
+    Err_ParallelReduceIncomplete lab ->
+      "parallel reduce incomplete: " <> lab
 
 --- Utilities
 zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -614,6 +616,7 @@ base_env =
     , ("wait", SLV_Prim SLPrim_wait)
     , ("race", SLV_Prim SLPrim_race)
     , ("fork", SLV_Form SLForm_fork)
+    , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
     , ( "Participant"
       , (SLV_Object srcloc_builtin (Just $ "Participant") $
            m_fromList_public_builtin
@@ -1099,6 +1102,19 @@ evalAsEnv ctx at obj =
             Just _ -> []
         go key mode =
           [(key, retV $ public $ SLV_Form (SLForm_fork_partial fat (Just mode) cases mtime))]
+    SLV_Form (SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases pr_mtime) ->
+      M.fromList $
+        gom "invariant" PRM_Invariant pr_minv
+          <> gom "while" PRM_While pr_mwhile
+          <> go "case" PRM_Case
+          <> gom "timeout" PRM_Timeout pr_mtime
+      where
+        gom key mode me =
+          case me of
+            Nothing -> go key mode
+            Just _ -> []
+        go key mode =
+          [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime))]
     --- FIXME rewrite the rest to look at the type and go from there
     SLV_Tuple _ _ ->
       M.fromList
@@ -1238,6 +1254,23 @@ evalForm ctxt at sco st f args =
           retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases parsedTimeout
         Nothing ->
           expect_throw_ctx ctxt at $ Err_Eval_NotApplicable rator
+    SLForm_parallel_reduce -> do
+      retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial at Nothing one_arg Nothing Nothing [] Nothing
+    SLForm_parallel_reduce_partial pr_at pr_mode pr_init pr_minv pr_mwhile pr_cases pr_mtime ->
+      case pr_mode of
+        Just PRM_Invariant ->
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init (Just one_arg) pr_mwhile pr_cases pr_mtime
+        Just PRM_While ->
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv (Just one_arg) pr_cases pr_mtime
+        Just PRM_Case ->
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile (pr_cases <> [aa]) pr_mtime
+        Just PRM_Timeout ->
+          retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial pr_at Nothing pr_init pr_minv pr_mwhile pr_cases jaa
+        Nothing ->
+          expect_throw_ctx ctxt at $ Err_Eval_NotApplicable rator
+      where
+        aa = (at, args)
+        jaa = Just aa
     SLForm_Part_ToConsensus to_at who vas mmode mpub mpay mwhen mtime ->
       case mmode of
         Just TCM_Publish ->
@@ -1430,7 +1463,7 @@ explodeTupleLike ctxt at lab tuplv =
       let mkde _ da i = DLE_ArrayRef at da (DLA_Literal $ DLL_Int at i)
       mconcatMap (mkdv tupdv mkde t) [0 .. sz -1]
     _ ->
-      expect_throw_ctx ctxt at $ Err_Eval_NotSpreadable tuplv
+      expect_throw_ctx ctxt at $ Err_Eval_NotSpreadable lab tuplv
   where
     mkdv tupdv mkde t i = do
       let de = mkde at (DLA_Var tupdv) i
@@ -2718,8 +2751,8 @@ typeToExpr = \case
 
 doFork :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> [ (SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression)) ] -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
 doFork ctxt at sco st ks cases mtime = do
-  fidx <- ctxt_alloc ctxt
-  let fid x = ".fork" <> (show fidx) <> "." <> x
+  idx <- ctxt_alloc ctxt
+  let fid x = ".fork" <> (show idx) <> "." <> x
   let a = srcloc2annot at
   let jid = JSIdentifier a
   let sp = JSSemi a
@@ -2826,9 +2859,56 @@ doFork ctxt at sco st ks cases mtime = do
   let before_tc_ss = data_ss <> cases_onlys
   let after_tc_ss = req_ss <> switch_ss
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
-  -- traceM $ "fork expanded to:"
-  -- forM_ exp_ss (traceM . ppShow)
   evalStmt ctxt at sco st $ exp_ss <> ks
+
+doParallelReduce :: SLCtxt s -> SrcLoc -> JSExpression -> SrcLoc -> Maybe ParallelReduceMode -> JSExpression -> Maybe JSExpression -> Maybe JSExpression -> [(SrcLoc, [JSExpression])] -> Maybe (SrcLoc, [JSExpression]) -> ST s [JSStatement]
+doParallelReduce ctxt _at lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr_mtime = do
+  idx <- ctxt_alloc ctxt
+  let prid x = ".pr" <> (show idx) <> "." <> x
+  case pr_mode of
+    Just x ->
+      expect_throw_ctx ctxt pr_at $
+        Err_ParallelReduceIncomplete $ "unapplied component: " <> show x
+    Nothing -> return ()
+  let ao = srcloc2annot
+  let a = ao pr_at
+  let jid = JSIdentifier a
+  let sp = JSSemi a
+  let want lab = \case
+        Just x -> x
+        Nothing ->
+          expect_throw_ctx ctxt pr_at $
+            Err_ParallelReduceIncomplete $ "missing " <> lab
+  let inv_e = want "invariant" pr_minv
+  let while_e = want  "while" pr_mwhile
+  let var_decls = JSLOne (JSVarInitExpression lhs (JSVarInit a init_e))
+  let var_s = JSVariable a var_decls sp
+  let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
+  let fork_e0 = JSCallExpression (jid "fork") a JSLNil a
+  let fork_e1 =
+        case pr_mtime of
+          Nothing -> fork_e0
+          Just (t_at, t_es) ->
+            JSCallExpression (JSMemberDot fork_e0 ta (jid "timeout")) ta (toJSCL t_es) ta
+            where
+              ta = ao t_at
+  let forkcase fork_eN (case_at, case_es) = JSCallExpression (JSMemberDot fork_eN ca (jid "case")) ca (toJSCL case_es) ca
+        where
+          ca = ao case_at
+  let fork_e = foldl' forkcase fork_e1 pr_cases
+  let fork_arr_e = JSFunctionExpression a JSIdentNone a JSLNil a (JSBlock a [ JSExpressionStatement fork_e sp ] a)
+  let call_e = JSCallExpression fork_arr_e a JSLNil a
+  let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
+  let def_e = jid $ prid "res"
+  let def_s = JSConstant a (JSLOne $ JSVarInitExpression def_e $ JSVarInit a call_e) sp
+  let asn_s = JSAssignStatement lhs (JSAssign a) def_e sp
+  let continue_s = JSContinue a JSIdentNone sp
+  let while_body = [ commit_s, def_s, asn_s, continue_s ]
+  let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
+  let pr_ss = [ var_s, inv_s, while_s ]
+  -- traceM $ "pr expands to:"
+  -- forM_ pr_ss (traceM . ppShow)
+  return $ pr_ss
 
 evalStmtTrampoline :: SLCtxt s -> JSSemi -> SrcLoc -> SLScope -> SLState -> SLSVal -> [JSStatement] -> SLComp s SLStmtRes
 evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
@@ -2986,9 +3066,13 @@ evalStmt ctxt at sco st ss =
       let at_after = srcloc_after_semi lab a sp at
       let at_in = srcloc_jsa lab a at
       let (lhs, rhs) = destructDecls ctxt at_in decls
-      SLRes rhs_lifts rhs_st (rhs_lvl, rhs_v) <- evalExpr ctxt at_in sco st rhs
+      SLRes rhs_lifts rhs_st (rhs_lvl, rhs_v) <-
+        evalExpr ctxt at_in sco st rhs
       keepLifts rhs_lifts $
         case rhs_v of
+          SLV_Form (SLForm_parallel_reduce_partial {..}) -> do
+            pr_ss <- doParallelReduce ctxt at lhs slpr_at slpr_mode slpr_init slpr_minv slpr_mwhile slpr_cases slpr_mtime
+            evalStmt ctxt at sco rhs_st (pr_ss <> ks)
           _ -> do
             SLRes lifts st_const addl_env <-
               evalDeclLHS ctxt at_in sco rhs_st rhs_lvl mempty rhs_v lhs

@@ -238,8 +238,9 @@ instance Pretty DLStmt where
         where
           pret =
             case ret of
-              Left _ -> emptyDoc
-              Right (dv, _) -> "let" <+> pretty dv
+              Left dv -> "const" <+> pretty dv
+              Right (dv, retm) ->
+                "let" <+> pretty dv <+> "with" <+> render_obj retm
       DLS_Stop _ ->
         prettyStop
       DLS_Only _ who onlys ->

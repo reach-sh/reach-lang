@@ -2,6 +2,7 @@ module Reach.Linearize (linearize) where
 
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
+import Generics.Deriving
 import Reach.AST.Base
 import Reach.AST.DL
 import Reach.AST.DLBase
@@ -10,7 +11,7 @@ import Reach.Util
 
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
 
-type LLRets = M.Map Int (DLVar, M.Map Int (DLStmts, DLArg))
+type LLRets = M.Map Int (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
 
 lin_com :: String -> (SrcLoc -> FluidEnv -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> FluidEnv -> LLRets -> DLStmt -> DLStmts -> a
 lin_com who back mkk fve rets s ks =
@@ -48,8 +49,11 @@ lin_com who back mkk fve rets s ks =
         cm1 (dv', l) = (dv', lin_local_rets at fve rets l)
     DLS_Return at ret eda ->
       case M.lookup ret rets of
-        Nothing -> back at fve rets ks
-        Just (dv, retsm) ->
+        Nothing ->
+          impossible $ "unknown ret " <> show ret
+        Just Nothing ->
+          back at fve rets ks
+        Just (Just (dv, retsm)) ->
           case eda of
             Left reti ->
               case M.lookup reti retsm of
@@ -62,27 +66,23 @@ lin_com who back mkk fve rets s ks =
                       impossible $ "no cons"
             Right da ->
               mkk $ LL_Set at dv da $ back at fve rets ks
-    DLS_Prompt at (Left _) ss -> back at fve rets (ss <> ks)
+    DLS_Prompt at (Left ret) ss -> back at fve rets' (ss <> ks)
+      where
+        rets' = M.insert ret Nothing rets
     DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss ->
       mkk $ LL_Var at dv $ back at fve rets' (ss <> ks)
       where
-        rets' = M.insert ret (dv, retms) rets
-    DLS_If {} ->
-      impossible $ who ++ " cannot non-local if"
-    DLS_Switch {} ->
-      impossible $ who ++ " cannot non-local switch"
-    DLS_Stop {} ->
-      impossible $ who ++ " cannot stop"
-    DLS_Only {} ->
-      impossible $ who ++ " cannot only"
-    DLS_ToConsensus {} ->
-      impossible $ who ++ " cannot consensus"
-    DLS_FromConsensus {} ->
-      impossible $ who ++ " cannot fromconsensus"
-    DLS_While {} ->
-      impossible $ who ++ " cannot while"
-    DLS_Continue {} ->
-      impossible $ who ++ " cannot while"
+        rets' = M.insert ret (Just (dv, retms)) rets
+    DLS_If {} -> bad
+    DLS_Switch {} -> bad
+    DLS_Stop {} -> bad
+    DLS_Only {} -> bad
+    DLS_ToConsensus {} -> bad
+    DLS_FromConsensus {} -> bad
+    DLS_While {} -> bad
+    DLS_Continue {} -> bad
+  where
+    bad = impossible $ who <> " cannot " <> conNameOf s <> " at " <> show (srclocOf s)
 
 lin_local_rets :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLLocal
 lin_local_rets at _ _ Seq.Empty =
@@ -157,7 +157,7 @@ lin_step _ fve rets (s Seq.:<| ks) =
       where
         back fve' = lin_step at fve' rets
         (winner_dv, msg, amtv, cons) = recv
-        cons' = lin_con back at fve mempty (cons <> ks)
+        cons' = lin_con back at fve rets (cons <> ks)
         recv' = (winner_dv, msg, amtv, cons')
         mtime' = do
           (delay_da, time_ss) <- mtime

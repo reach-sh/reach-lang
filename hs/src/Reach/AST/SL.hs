@@ -85,6 +85,13 @@ data ForkMode
   | FM_Timeout
   deriving (Eq, Generic, NFData, Show)
 
+data ParallelReduceMode
+  = PRM_Invariant
+  | PRM_While
+  | PRM_Case
+  | PRM_Timeout
+  deriving (Eq, Generic, NFData, Show)
+
 data SLForm
   = SLForm_App
   | SLForm_each
@@ -107,6 +114,15 @@ data SLForm
       , slf_mode :: Maybe ForkMode
       , slf_cases :: [ (SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression)) ]
       , slf_mtime :: Maybe (SrcLoc, JSExpression, JSBlock) }
+  | SLForm_parallel_reduce
+  | SLForm_parallel_reduce_partial
+      { slpr_at :: SrcLoc
+      , slpr_mode :: Maybe ParallelReduceMode
+      , slpr_init :: JSExpression
+      , slpr_minv :: Maybe JSExpression
+      , slpr_mwhile :: Maybe JSExpression
+      , slpr_cases :: [ (SrcLoc, [JSExpression]) ]
+      , slpr_mtime :: Maybe (SrcLoc, [JSExpression]) }
   deriving (Eq, Generic, NFData, Show)
 
 data SLKwd
