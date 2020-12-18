@@ -10,8 +10,10 @@ export const main = Reach.App(
     A.publish(x);
 
     var [i, mx0] = [0, Maybe(UInt).None()];
-    invariant(true);
+    invariant(balance() == 0);
     while (i < x) {
+      commit();
+      A.publish();
       const nextI = i + 1;
       [i, mx0] = [nextI, Maybe(UInt).Some(nextI)];
       continue;
