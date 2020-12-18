@@ -387,7 +387,19 @@ fork()
   exit(); });
 }
 
-A @deftech{fork statement} is written @reachin{fork().case(PART_EXPR, PUBLISH_EXPR, PAY_EXPR, CONSENSUS_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)}, where:
+A @deftech{fork statement} is written:
+
+@reach{
+fork()
+.case(PART_EXPR,
+  PUBLISH_EXPR,
+  PAY_EXPR,
+  CONSENSUS_EXPR)
+.timeout(DELAY_EXPR, () =>
+  TIMEOUT_BLOCK);
+}
+
+where:
 @reachin{PART_EXPR} is an expression that evaluates to a @tech{participant};
 @reachin{PUBLISH_EXPR} is a syntactic @tech{arrow expression} that is evaluated in a @tech{local step} for the specified @tech{participant} and must evaluate to an object that may contain a @litchar{msg} field, which may be of any time, and a @litchar{when} field, which must be a boolean;
 @reachin{PAY_EXPR} is an expression that evaluates to a function parameterized over the @litchar{msg} value and returns an integer;
@@ -633,7 +645,11 @@ A @deftech{while statement} may occur within a @tech{consensus step} and is writ
  invariant(INVARIANT_EXPR);
  while( COND_EXPR ) BLOCK }
 
-where @reachin{LHS} is a valid left-hand side of an @tech{identifier definition} where the @tech{expression} @reachin{INIT_EXPR} is the right-hand side, and @reachin{INVARIANT_EXPR} is an @tech{expression}, called the @deftech{loop invariant}, that must be true before and after every execution of the @tech{block} @reachin{BLOCK}, and if @reachin{COND_EXPR} is true, then the @tech{block} executes, and if not, then the loop terminates and control transfers to the @tech{continuation} of the @tech{while statement}. The identifiers bound by @reachin{LHS} are bound within @reachin{INVARIANT_EXPR}, @reachin{COND_EXPR}, @reachin{BLOCK}, and the @tech{tail} of the @tech{while statement}.
+where @reachin{LHS} is a valid left-hand side of an @tech{identifier definition} where the @tech{expression} @reachin{INIT_EXPR} is the right-hand side, and
+@reachin{INVARIANT_EXPR} is an @tech{expression}, called the @deftech{loop invariant}, that must be true before and after every execution of the @tech{block} @reachin{BLOCK}, and
+if @reachin{COND_EXPR} is true, then the @tech{block} executes,
+and if not, then the loop terminates and control transfers to the @tech{continuation} of the @tech{while statement}.
+The identifiers bound by @reachin{LHS} are bound within @reachin{INVARIANT_EXPR}, @reachin{COND_EXPR}, @reachin{BLOCK}, and the @tech{tail} of the @tech{while statement}.
 
 @margin-note{Read about finding @seclink["guide-loop-invs"]{loop invariants} in the Reach guide.}
 
@@ -662,6 +678,76 @@ A @tech{continue statement} may be written without the preceding identifier upda
 
 A @tech{continue statement} must be dominated by a @tech{consensus transfer}, which means that the body of a @tech{while statement} must always @reachin{commit();} before calling @reachin{continue;}.
 This restriction may be lifted in future versions of Reach, which will perform termination checking.
+
+@subsubsection{@tt{parallel_reduce}}
+
+@(mint-define! '("parallel_reduce"))
+@reach{
+const [ keepGoing, as, bs ] =
+  parallel_reduce([ true, 0, 0 ])
+  .invariant(balance() == 2 * wager)
+  .while(keepGoing)
+  .case(Alice, (() => ({
+    when: declassify(interact.keepGoing()) })),
+    () => {
+      each([Alice, Bob], () => {
+        interact.roundWinnerWas(true); });
+      return [ true, 1 + as, bs ]; })
+  .case(Bob, (() => ({
+    when: declassify(interact.keepGoing()) })),
+    () => {
+      each([Alice, Bob], () => {
+        interact.roundWinnerWas(false); });
+      return [ true, as, 1 + bs ]; })
+  .timeout(deadline, () => {
+    showOutcome(TIMEOUT)();
+    race(Alice, Bob).publish();
+    return [ false, as, bs ]; });
+}
+
+A @deftech{parallel reduce statement} is written:
+
+@reach{
+const LHS =
+  parallel_reduce(INIT_EXPR)
+  .invariant(INVARIANT_EXPR)
+  .while(COND_EXPR)
+  .case(PART_EXPR,
+    PUBLISH_EXPR,
+    PAY_EXPR,
+    CONSENSUS_EXPR)
+  .timeout(DELAY_EXPR, () =>
+    TIMEOUT_BLOCK);
+}
+
+The @reachin{LHS} and @reachin{INIT_EXPR} are like the initialization component of a @reachin{while} loop; and,
+the @reachin{.invariant} and @reachin{.while} components are like the invariant and condition of a @reachin{while} loop;
+while the @reachin{.case} and @reachin{.timeout} components are like the corresponding components of a @reachin{fork} statement.
+
+The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
+
+@(hrule)
+
+A @tech{parallel reduce statement} is essentially an abbreviation of pattern of a @reachin{while} loop combined with a @reachin{fork} statement that you could write yourself.
+This is an extremely common pattern in decentralized applications.
+
+The idea is that there are some values (the @reachin{LHS}) which after intialization will be repeatedly updated uniquely by each of the racing @tech{participants} until the condition does not hold.
+
+@reach{
+var LHS = INIT_EXPR;
+invariant(INVARIANT_EXPR)
+while(COND_EXPR) {
+  fork()
+  .case(PART_EXPR,
+    PUBLISH_EXPR,
+    PAY_EXPR,
+    () => {
+      LHS = CONSENSUS_EXPR;
+      continue; })
+  .timeout(DELAY_EXPR, () =>
+    TIMEOUT_BLOCK);
+}
+}
 
 @subsection[#:tag "ref-programs-consensus-exprs"]{Expressions}
 
