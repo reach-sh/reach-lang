@@ -272,14 +272,12 @@ do_compile () {
           reachc_dev "$@"
         fi
     else
-        cat<<EOF | docker-compose -f - run --rm -e "REACHC_ID=${ID}" reach "$@"
-version: '3'
-services:
-  reach:
-    image: reachsh/reach:${REACH_VERSION}
-    volumes:
-      - $PWD:/app
-EOF
+        docker run \
+          --rm \
+          --volume "$PWD:/app" \
+          -e "REACHC_ID=${ID}" \
+          reachsh/reach:${REACH_VERSION} \
+          "$@"
     fi
 }
 
