@@ -53,7 +53,8 @@ uint256_zero = case use_bitvectors of
   False -> Atom "0"
 
 uint256_le :: SExpr -> SExpr -> SExpr
-uint256_le lhs rhs = smtPrimOp (impossible "raw") PLE [] [lhs, rhs]
+uint256_le lhs rhs = smtApply ple [lhs, rhs]
+  where ple = if use_bitvectors then "bvule" else "<="
 
 uint256_inv :: SMTTypeInv
 uint256_inv v = uint256_le uint256_zero v
@@ -217,8 +218,8 @@ smtDeclare_v_memo ctxt v t = do
       modifyIORefRef vds $ S.insert v
       smtDeclare_v ctxt v t
 
-smtPrimOp :: SMTCtxt -> PrimOp -> [DLArg] -> [SExpr] -> SExpr
-smtPrimOp _ctxt p dargs =
+smtPrimOp :: SMTCtxt -> PrimOp -> [DLArg] -> [SExpr] -> IO SExpr
+smtPrimOp ctxt p dargs =
   case p of
     ADD -> bvapp "bvadd" "+"
     SUB -> bvapp "bvsub" "-"
@@ -240,11 +241,20 @@ smtPrimOp _ctxt p dargs =
     ADDRESS_EQ -> app "="
     SELF_ADDRESS ->
       case dargs of
-        [DLA_Literal (DLL_Bytes pn)] -> const $ Atom $ smtAddress pn
+        [ DLA_Literal (DLL_Bytes pn),
+          DLA_Literal (DLL_Bool isClass),
+          DLA_Literal (DLL_Int _ addrNum) ] -> \_ ->
+          case isClass of
+            False ->
+              return $ Atom $ smtAddress pn
+            True -> do
+              let addrVar = "classAddr" <> show addrNum
+              smtDeclare_v ctxt addrVar T_Address
+              return $ Atom addrVar
         se -> impossible $ "self address " <> show se
   where
     cant = impossible $ "Int doesn't support " ++ show p
-    app n = smtApply n
+    app n = return . smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
 
 smtTypeByteConverter :: SMTCtxt -> SLType -> String
@@ -509,11 +519,11 @@ smt_e ctxt at_dv mdv de =
       pathAddBound ctxt at_dv mdv bo $ smt_la ctxt at dla
     DLE_Impossible _ _ ->
       pathAddUnbound ctxt at_dv mdv bo
-    DLE_PrimOp at cp args ->
+    DLE_PrimOp at cp args -> do
+      se <- smtPrimOp ctxt cp args args'
       pathAddBound ctxt at_dv mdv bo se
       where
         args' = map (smt_a ctxt at) args
-        se = smtPrimOp ctxt cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
       pathAddBound ctxt at_dv mdv bo se
       where
@@ -788,12 +798,15 @@ smt_s ctxt s =
         (whov, msgvs, amtv, next_n) = recv
         timeout = maybe mempty ((smt_s ctxt) . snd) mtime
         after = smt_n ctxt next_n
-        go (from, (msgas, amta, _whena)) =
+        go (from, (isClass, msgas, amta, _whena)) =
           -- XXX Potentially we need to look at whena to determine if we even
           -- do these bindings in honest mode
           bind_from <> bind_msg <> bind_amt <> after
           where
-            bind_from = maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) (Atom $ smtAddress from)
+            bind_from =
+              case isClass of
+                True -> mempty
+                False -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) (Atom $ smtAddress from)
             bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (smt_a ctxt at amta)
             bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (smt_a ctxt at da)) msgvs msgas
             maybe_pathAdd v bo_no bo_yes se =

@@ -1,0 +1,1 @@
+reachc: error: ./Err_Eval_PartSet_Class.rsh:14:12:application: C is a class and cannot be bound

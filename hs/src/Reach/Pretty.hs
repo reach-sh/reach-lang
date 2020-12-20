@@ -75,7 +75,9 @@ instance Pretty SLKwd where
   pretty = viaShow
 
 instance Pretty FluidVar where
-  pretty FV_balance = "balance"
+  pretty = \case
+    FV_balance -> "balance"
+    FV_lastConsensusTime -> "lastConsensusTime"
 
 instance Pretty DLVar where
   --- pretty (DLVar _ s t i) = viaShow s <> ":" <> viaShow t <> ":" <> viaShow i
@@ -193,7 +195,7 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
-prettyToConsensus :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart ([DLArg], DLArg, DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
+prettyToConsensus :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart (Bool, [DLArg], DLArg, DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
 prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
   "publish" <> parens emptyDoc
     <> nest
@@ -205,8 +207,8 @@ prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
          <> parens (hsep $ punctuate comma $ [pretty win, pretty msg, pretty amtv, render_nest (fa body)])
          <> semi)
   where
-    go (p, (args, amta, whena)) =
-      ".case" <> parens (hsep $ punctuate comma $ [pretty p, pretty args, pretty amta, pretty whena])
+    go (p, (isClass, args, amta, whena)) =
+      ".case" <> parens (hsep $ punctuate comma $ [pretty p, pretty isClass, pretty args, pretty amta, pretty whena])
     mtime' =
       case mtime of
         Nothing -> emptyDoc

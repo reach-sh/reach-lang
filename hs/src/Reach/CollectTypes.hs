@@ -11,6 +11,9 @@ import Reach.Type
 class CollectsTypes a where
   cts :: a -> S.Set SLType
 
+instance CollectsTypes Bool where
+  cts _ = mempty
+
 instance CollectsTypes a => CollectsTypes [a] where
   cts l = foldMap cts l
 
@@ -29,6 +32,9 @@ instance (CollectsTypes a, CollectsTypes b, CollectsTypes c) => CollectsTypes (a
 
 instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d) => CollectsTypes (a, b, c, d) where
   cts (x, y, z, a) = cts x <> cts y <> cts z <> cts a
+
+instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d, CollectsTypes e) => CollectsTypes (a, b, c, d, e) where
+  cts (x, y, z, a, b) = cts x <> cts y <> cts z <> cts a <> cts b
 
 instance CollectsTypes SLType where
   cts t =

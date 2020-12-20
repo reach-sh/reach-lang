@@ -216,10 +216,10 @@ opt_mtime = \case
   Nothing -> pure $ Nothing
   Just (a, s) -> Just <$> (pure (,) <*> opt_a a <*> (newScope $ opt_s s))
 
-opt_send :: (SLPart, ([DLArg], DLArg, DLArg)) -> App (SLPart, ([DLArg], DLArg, DLArg))
-opt_send (p, (args, amta, whena)) =
+opt_send :: (SLPart, (Bool, [DLArg], DLArg, DLArg)) -> App (SLPart, (Bool, [DLArg], DLArg, DLArg))
+opt_send (p, (isClass, args, amta, whena)) =
   focusp p $
-    (,) p <$> ((\x y z -> (x,y,z)) <$> opt_as args <*> opt_a amta <*> opt_a whena)
+    (,) p <$> ((\x y z -> (isClass, x,y,z)) <$> opt_as args <*> opt_a amta <*> opt_a whena)
 
 opt_s :: LLStep -> App LLStep
 opt_s = \case

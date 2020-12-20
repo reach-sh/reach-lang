@@ -270,10 +270,13 @@ data PrimOp
 
 data FluidVar
   = FV_balance
+  | FV_lastConsensusTime
   deriving (Eq, Generic, NFData, Ord, Show)
 
 fluidVarType :: FluidVar -> SLType
-fluidVarType FV_balance = T_UInt
+fluidVarType = \case
+  FV_balance -> T_UInt
+  FV_lastConsensusTime -> T_UInt
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

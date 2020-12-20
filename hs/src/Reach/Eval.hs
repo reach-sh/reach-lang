@@ -16,7 +16,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import Data.STRef
 import qualified Data.Text as T
-import Data.Tuple.Extra (fst3)
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
 import Language.JavaScript.Parser
@@ -71,6 +70,7 @@ data EvalError
   | Err_Eval_ContinueNotInWhile
   | Err_Eval_IllegalWait DeployMode
   | Err_Eval_ContinueNotLoopVariable SLVar
+  | Err_Eval_PartSet_Class SLPart
   | Err_Eval_PartSet_Bound SLPart
   | Err_Eval_IllegalMode SLMode String [SLMode]
   | Err_Eval_IllegalJS JSExpression
@@ -296,6 +296,8 @@ instance Show EvalError where
         <> bunpack bs
     Err_DeclLHS_IllegalJS _e ->
       "Invalid binding. Expressions cannot appear on the LHS."
+    Err_Eval_PartSet_Class who ->
+      (bunpack who) <> " is a class and cannot be bound"
     Err_Eval_PartSet_Bound who ->
       (bunpack who) <> " is bound and cannot be rebound"
     Err_Eval_IllegalWait dm ->
@@ -480,7 +482,6 @@ lvlMeetR lvl m = do
 -- enforced naming convention.
 isSpecialIdent :: SLVar -> Bool
 isSpecialIdent "interact" = True
-isSpecialIdent "__decode_testing__" = True
 isSpecialIdent _ = False
 
 -- | Secret idents start with _, but are not _.
@@ -591,6 +592,7 @@ base_env =
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
     , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance)
+    -- , ("lastConsensusTime", SLV_Prim $ SLPrim_lastConsensusTime)
     , ("Digest", SLV_Type T_Digest)
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
@@ -653,6 +655,7 @@ data SLCtxt s = SLCtxt
   , ctxt_id :: STCounter s
   , ctxt_stack :: [SLCtxtFrame]
   , ctxt_base_penvs :: SLPartEnvs
+  , ctxt_classes :: S.Set SLPart
   }
 
 instance Show (SLCtxt s) where
@@ -662,6 +665,9 @@ mcfs :: SLCtxt s -> Maybe [SLCtxtFrame]
 mcfs = Just . ctxt_stack
 tint :: SLCtxt s -> SLState -> (Maybe [SLCtxtFrame], M.Map SLPart DLVar)
 tint ctxt st = (mcfs ctxt, st_pdvs st)
+
+is_class :: SLCtxt s -> SLPart -> Bool
+is_class ctxt who = S.member who $ ctxt_classes ctxt
 
 expect_throw_ctx :: HasCallStack => (Show a, ErrorMessageForJson a, ErrorSuggestions a) => SLCtxt s -> SrcLoc -> a -> b
 expect_throw_ctx ctxt = expect_throw (mcfs ctxt)
@@ -2513,18 +2519,27 @@ doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = d
   let me_v = SLV_DLVar me_dv
   let ssv_here = SLSSVal only_at Public
   let add_this v env = M.insert "this" (ssv_here v) env
+  let isClass = is_class ctxt who
   (penv_lifts, penv) <-
     case vas of
       Nothing -> do
         return (mempty, add_this me_v penv_)
       Just v ->
         case M.lookup v penv_ of
-          Just (SLSSVal pv_at pv_lvl (SLV_Participant at_ who_ mv_ Nothing)) -> do
-            let pv' = SLV_Participant at_ who_ mv_ (Just me_dv)
-            let penv_' = M.insert v (SLSSVal pv_at pv_lvl pv') penv_
-            return (me_let_lift, add_this pv' penv_')
-          Just (SLSSVal _ _ pv@(SLV_Participant _ _ _ (Just _))) -> do
-            return (mempty, add_this pv penv_)
+          Just (SLSSVal pv_at pv_lvl pv@(SLV_Participant at_ who_ mv_ mdv)) ->
+            case mdv of
+              Just _ | not isClass ->
+                return (mempty, add_this pv penv_)
+              _ -> do
+                -- If this is a class, then we will always overwrite the DV,
+                -- because each instance of an Only could be a different one.
+                -- This might be a little weird, because for any given
+                -- participant, their self address is actually always the same,
+                -- but the whole point is to ensure that we can't require(P ==
+                -- P) where P is a class.
+                let pv' = SLV_Participant at_ who_ mv_ (Just me_dv)
+                let penv_' = M.insert v (SLSSVal pv_at pv_lvl pv') penv_
+                return (me_let_lift, add_this pv' penv_')
           _ -> do
             let penv_' = M.insert v (ssv_here me_v) penv_
             return (me_let_lift, add_this me_v penv_')
@@ -2557,12 +2572,20 @@ doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) 
 doGetSelfAddress :: SLCtxt s -> SrcLoc -> SLPart -> ST s (DLVar, DLStmts)
 doGetSelfAddress ctxt at who = do
   let whos = bunpack who
+  let isClass = is_class ctxt who
+  addrNum <-
+    case isClass of
+      False -> return $ 0
+      True -> ctxt_alloc ctxt
   (dv, lifts) <-
     ctxt_lift_expr
       ctxt
       at
       (DLVar at whos T_Address)
-      (DLE_PrimOp at SELF_ADDRESS [DLA_Literal $ DLL_Bytes who])
+      (DLE_PrimOp at SELF_ADDRESS
+        [ DLA_Literal (DLL_Bytes who)
+        , DLA_Literal (DLL_Bool isClass)
+        , DLA_Literal (DLL_Int at $ fromIntegral addrNum) ])
   return (dv, lifts)
 
 all_just :: [ Maybe a ] -> Maybe [ a ]
@@ -2583,6 +2606,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   -- We go back to the original env from before the to-consensus step
   -- Handle sending
   let tc_send1 who = do
+        let isClass = is_class ctxt who
         let repeat_dv = M.lookup who pdvs
         let penv = sco_lookup_penv ctxt at sco who
         let msg_proc1 var = do
@@ -2606,16 +2630,16 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
           compileCheckType ctxt st at T_Bool $ ensure_public ctxt at when_sv
         let send_lifts =
               return $ DLS_Only at who (msg_lifts <> amt_lifts <> amt_clifts <> when_lifts <> when_clifts)
-        return ((send_lifts, repeat_dv), (msg_das, amt_da, when_da))
+        return ((send_lifts, repeat_dv), (isClass, msg_das, amt_da, when_da))
   tc_send_int <- sequence $ M.fromSet tc_send1 whos
   let send_lifts = mconcat $ M.elems $ M.map (fst . fst) tc_send_int
   let mrepeat_dvs = all_just $ M.elems $ M.map (snd . fst) tc_send_int
   let tc_send = M.map snd tc_send_int
-  let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map fst3 tc_send
+  let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map (\(_,a,_,_)->a) tc_send
   -- Handle timeout
   let not_true_send = \case
-        (_, (_, _, DLA_Literal (DLL_Bool True))) -> False
-        (_, (_, _, _)) -> True
+        (_, (_, _, _, DLA_Literal (DLL_Bool True))) -> False
+        (_, (_, _, _, _)) -> True
   let not_all_true_send =
         getAny $ mconcat $ map (Any . not_true_send) (M.toList tc_send)
   let mustHaveTimeout = S.null whos || not_all_true_send
@@ -2646,7 +2670,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
   (who_env_mod, pdvs_recv) <-
     case S.toList whos of
-      [who] -> do
+      [who] | (not $ is_class ctxt who) -> do
         let who_dv = fromMaybe winner_dv (M.lookup who pdvs)
         let pdvs' = M.insert who who_dv pdvs
         let add_who_env env =
@@ -2815,18 +2839,22 @@ doFork ctxt at sco st ks cases mtime = do
               , defcon msg_e msg_vde
               , defcon when_e when_de
               ]
-        let who_is_this =
-              case isBound of
-                True -> JSMethodCall (jid "assert") a (JSLOne $ this_eq_who) a sp
-                False -> JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp
-        let after_ss =
-              case after_e of
-                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> [ s ]
-                JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> [ defcon ae msg_e, s ]
-                _ ->
-                  expect_throw_ctx ctxt at $
-                    Err_Fork_ConsensusBadArrow after_e
-        let cfc_switch_case = JSCase a var_e a $ [ who_is_this ] <> after_ss
+        let who_is_this_ss =
+              case (isBound, is_class ctxt who_s) of
+                (True, _) ->
+                  [JSMethodCall (jid "assert") a (JSLOne $ this_eq_who) a sp]
+                (False, False) ->
+                  [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
+                (False, True) -> []
+        let getAfter = \case
+              JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> [ s ]
+              JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> [ defcon ae msg_e, s ]
+              JSExpressionParen _ e _ -> getAfter e
+              _ ->
+                expect_throw_ctx ctxt at $
+                  Err_Fork_ConsensusBadArrow after_e
+        let after_ss = getAfter after_e
+        let cfc_switch_case = JSCase a var_e a $ who_is_this_ss <> after_ss
         let cfc_only = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSStatementBlock a only_body a sp))) a sp
         return $ CompiledForkCase {..}
   casel <- mapM go cases
@@ -2916,6 +2944,9 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
     SLV_Prim (SLPrim_part_setted at' who addr_da) -> do
       ensure_mode ctxt at st SLM_ConsensusStep "participant set"
       let pdvs = st_pdvs st
+      when (is_class ctxt who) $
+        expect_throw_ctx ctxt at' $
+          Err_Eval_PartSet_Class who
       case M.lookup who pdvs of
         Just olddv ->
           case DLA_Var olddv == addr_da of
@@ -3528,6 +3559,7 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
            , ctxt_id = idxr
            , ctxt_stack = []
            , ctxt_base_penvs = mempty
+           , ctxt_classes = mempty
            })
   let base_env' =
         M.union base_env $
@@ -3612,15 +3644,19 @@ app_options =
 
 compileDApp :: STCounter s -> DLStmts -> Connectors -> SLVal -> ST s DLProg
 compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_formals top_s top_env)) = do
-  let make_partio v =
+  let make_partio p_at isClass bs_at bs io_at io =
+        case "_" `B.isPrefixOf` bs of
+          True -> expect_thrown bs_at (Err_App_PartUnderscore bs)
+          False -> (p_at, isClass, bs, io_at, (makeInteract io_at bs io))
+  let check_partio v =
         case v of
-          SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object iat _ io] ->
-            case "_" `B.isPrefixOf` bs of
-              True -> expect_thrown bs_at (Err_App_PartUnderscore bs)
-              False -> (p_at, bs, iat, (makeInteract iat bs io))
+          SLV_Tuple p_at [SLV_Bytes bs_at bs, SLV_Object io_at _ io] ->
+            make_partio p_at False bs_at bs io_at io
+          SLV_Tuple p_at [SLV_Bytes _ "class", SLV_Bytes bs_at bs, SLV_Object io_at _ io] ->
+            make_partio p_at True bs_at bs io_at io
           _ -> expect_thrown at (Err_App_InvalidPartSpec v)
-  let part_ios = map make_partio parts
-  let make_part (p_at, pn, _, _) =
+  let part_ios = map check_partio parts
+  let make_part (p_at, _, pn, _, _) =
         public $ SLV_Participant p_at pn Nothing Nothing
   let partvs = map make_part part_ios
   let top_args = map (jse_expect_id at) top_formals
@@ -3646,15 +3682,17 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , st_after_first = False
           }
   let at' = srcloc_at "compileDApp" Nothing at
+  let classes = S.fromList $ [ pn | (_, True, pn, _, _) <- part_ios ]
   let ctxt_ =
         SLCtxt
           { ctxt_dlo = dlo
           , ctxt_id = idxr
           , ctxt_stack = []
           , ctxt_base_penvs = mempty
+          , ctxt_classes = classes
           }
   let top_env_wps = foldl' (env_insertp ctxt_ at) top_env top_rvargs
-  let make_penvp (p_at, pn, iat, io) = (pn, (env0, base_penv))
+  let make_penvp (p_at, _, pn, iat, io) = (pn, (env0, base_penv))
         where
           add_io = env_insert ctxt_ p_at "interact" (sls_sss iat $ secret io)
           env0 = add_io top_env_wps
@@ -3677,7 +3715,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
   ensure_mode ctxt at st_final SLM_Step "program termination"
   tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
-  let make_sps_entry (_p_at, pn, _iat, io) =
+  let make_sps_entry (_p_at, _, pn, _iat, io) =
         (pn, InteractEnv $ M.map getType iom)
         where
           iom = case io of

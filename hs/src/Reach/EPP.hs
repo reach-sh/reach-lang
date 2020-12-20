@@ -7,6 +7,7 @@ import Data.List.Extra (mconcatMap)
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
 import Data.STRef
 import Generics.Deriving (Generic)
 import Reach.AST.Base
@@ -504,7 +505,11 @@ epp_s st s =
       let svs = counts_nzs time_cons_cs
       let prev = pst_prev_handler st
       let this_h = C_Handler at int_ok fromv prev svs msg amt_dv ct_cons
-      let soloSend = (M.size send) == 1
+      let soloSend0 = (M.size send) == 1
+      let soloSend1 = not $ getAll $ mconcatMap (\(isClass, _, _, _)->All isClass) $ M.elems send
+      -- It is only a solo send if we are the only sender AND we are not a
+      -- class
+      let soloSend = soloSend0 && soloSend1
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
             ProRes_ cs_' $ ET_ToConsensus at fromv prev which mfrom msg amt_dv mtime' et_
             where
@@ -515,7 +520,7 @@ epp_s st s =
               mker =
                 case M.lookup p send of
                   Nothing -> mk_et Nothing
-                  Just (from_as, amt_da, when_da) ->
+                  Just (_isClass, from_as, amt_da, when_da) ->
                     mk_et $ Just (from_as, amt_da, when_da, svs, soloSend)
       let p_prts = M.mapWithKey mk_p_prt p_prts_cons
       addHandler st which this_h

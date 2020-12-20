@@ -1,0 +1,37 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying with mode = VM_Honest
+Verification failed:
+  in VM_Honest mode
+  of theorem TClaim CT_Require
+  at ./class_addr.rsh:16:14:application
+
+  Theorem formalization:
+  v23
+
+  This could be violated if...
+
+  In context...
+    "v23" = (= v4 v15 )
+      (from: v23)
+      (bound at: reach standard library:17:21:application)
+      (because: evaluating ADDRESS_EQ(v4, v15 ))
+    "v15" = v12
+      (from: v15)
+      (bound at: ./class_addr.rsh:15:9:dot)
+      (because: an honest message from "C" of v12)
+    "v4" = v1
+      (from: v4)
+      (bound at: ./class_addr.rsh:10:9:dot)
+      (because: an honest message from "C" of v1)
+    "v12" = classAddr11
+      (from: v12)
+      (bound at: ./class_addr.rsh:14:31:after expr stmt semicolon)
+      (because: evaluating SELF_ADDRESS(""C"", #t, 11 ))
+    "v1" = classAddr0
+      (from: v1)
+      (bound at: ./class_addr.rsh:9:31:after expr stmt semicolon)
+      (because: evaluating SELF_ADDRESS(""C"", #t, 0 ))
+  Verifying with mode = VM_Dishonest RoleContract
+  Verifying with mode = VM_Dishonest (RolePart "C")
+Checked 8 theorems; 1 failures. :'(
