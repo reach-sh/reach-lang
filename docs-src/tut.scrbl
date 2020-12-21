@@ -1554,6 +1554,13 @@ We will use @link["https://reactjs.org/"]{React.js} for this tutorial, but the s
 
 @(hrule)
 
+The code in this section does not use the scaffolding from the previous section.
+Reach comes with a convenience command for deleting scaffolded files:
+
+@cmd{reach unscaffold}
+
+@(hrule)
+
 This code is supplemented with @reachexlink["tut-8/index.css" "index.css"]
 and some @reachexlink["tut-8/views" "views"].
 These details are not specific to Reach, and are fairly trivial,
