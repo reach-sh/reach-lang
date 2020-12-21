@@ -842,23 +842,24 @@ do_run () {
 react_compose () {
   if $USE_EXISTING_DEVNET ; then
     echo 'using existing devnet'
-    GANACHE_PORTION=''
+    DEPENDS_ON=''
   else
-    GANACHE_PORTION='
+    if $IS_ALGO ; then
+      DEPENDS_ON='
+    # Does not technically depend on algorand-devnet.
+    # This is just to get it to run both.
+    depends_on:
+      - algorand-devnet
+'
+    else
+      DEPENDS_ON='
     # Does not technically depend on ganache.
     # This is just to get it to run both.
     depends_on:
       - ganache
-  ganache:
-    image: trufflesuite/ganache-cli:v6.12.0
-    command:
-      - "--accounts=1"
-      - "--defaultBalanceEther=1000000"
-    ports:
-      - "8545:8545"
 '
+    fi
   fi
-  # cat<<EOF | docker-compose -f - "$@"
   cat<<EOF > docker-compose.yml.react
 version: '3.4'
 services:
@@ -870,11 +871,34 @@ services:
       - "3000:3000"
     stdin_open: true
     tty: true
-$GANACHE_PORTION
+$DEPENDS_ON
+  ganache:
+    image: trufflesuite/ganache-cli:v6.12.0
+    command:
+      - '--accounts=1'
+      - '--defaultBalanceEther=1000000'
+    ports:
+      - '8545:8545'
+  algorand-devnet:
+    image: reachsh/algorand-devnet:latest
+    depends_on:
+      - algorand-postgres-db
+    environment:
+      - POSTGRES_HOST=algorand-postgres-db
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
+    ports:
+      - '4180:4180'
+      - '8980:8980'
+      - '9392:9392'
+  algorand-postgres-db:
+    image: postgres:11
+    environment:
+      - POSTGRES_USER=algogrand
+      - POSTGRES_PASSWORD=indexer
+      - POSTGRES_DB=pgdb
 EOF
-#   cat<<EOF > run.sh.react
-# docker-compose -f docker-compose.yml.react $@
-# EOF
 
   # /bin/sh run.sh.react || :
   docker-compose -f docker-compose.yml.react "$@" || :
@@ -890,6 +914,12 @@ do_react () {
   if command -v lsof >/dev/null && lsof -i tcp:8545 | grep LISTEN >/dev/null ; then
     USE_EXISTING_DEVNET=true
   fi
+
+  # TODO: rework REACH_CONNECTOR_MODE to work better w/ browser
+  IS_ALGO=false
+  case "$REACH_CONNECTOR_MODE" in ALGO*)
+    IS_ALGO=true ;;
+  esac
 
   # All args are just forwarded to do_compile
   # TODO: support args comparable to do_run?
