@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
+    "@craco/craco": "^5.8.0",
     "algosdk": "algorand/js-algorand-sdk#07ed42f",
     "await-timeout": "^0.6.0",
     "ethers": "^5.0.13",
@@ -16,7 +17,7 @@
     "ganache-core": "^2.11.2"
   },
   "scripts": {
-    "start": "react-scripts start"
+    "start": "craco start"
   },
   "eslintConfig": {
     "extends": "react-app"

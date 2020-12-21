@@ -17,6 +17,8 @@ COPY --from=js_deps /js_deps/node_modules/ /app/node_modules/
 COPY package.json package-lock.json \
      /app/
 RUN npm install
+COPY craco.config.js \
+     /app/
 
 # hadolint ignore=DL3006
 FROM $STDLIB_IMAGE as stdlib
