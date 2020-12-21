@@ -17,8 +17,6 @@ COPY --from=js_deps /js_deps/node_modules/ /app/node_modules/
 COPY package.json package-lock.json \
      /app/
 RUN npm install
-COPY craco.config.js \
-     /app/
 
 # hadolint ignore=DL3006
 FROM $STDLIB_IMAGE as stdlib
@@ -30,6 +28,9 @@ COPY --from=stdlib /stdlib/*.mjs /stdlib/package.json \
      /app/node_modules/@reach-sh/stdlib/
 
 COPY public/ /app/public/
+COPY craco.config.js /app/
+# TODO: not copy langspec.json from parent js folder
+COPY langspec.json /app/node_modules/algosdk/src/logic/
 
 ENTRYPOINT ["npm", "run", "--"]
 CMD ["start"]
