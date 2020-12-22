@@ -217,11 +217,16 @@ It supports the following options:
 )]
 
 The @reachin{participantDefinitions} argument is an tuple of tuples.
-Each tuple is a pair of
-@reachin{participantName}
-and @reachin{participantInteractInterface}.
-@reachin{participantName} is a string which indicates the name of the participant function in the generated @tech{backend} code. Each @reachin{participantName} must be unique.
-@reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the participant.
+Each tuple is either
+(1) a pair of a @reachin{participantName} and a @reachin{participantInteractInterface}; or,
+(2) a triple of @reachin{'class'}, a @reachin{participantName}
+and a @reachin{participantInteractInterface}.
+
+If the tuple is preceded by @reach{'class'}, then this is a @tech{participant class}.
+
+@reachin{participantName} is a string which indicates the name of the @tech{participant} function in the generated @tech{backend} code. Each @reachin{participantName} must be unique.
+
+@reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the @tech{participant}.
 
 The @reachin{program} argument must be a syntactic @tech{arrow expression}.
 The arguments to this arrow must match the number and order of @reachin{participantDefinitions}.
@@ -332,7 +337,7 @@ For example, the following are all @tech{valid}:
 
 }
 
-If the named participant has not yet @tech{join}ed the application, then this statement has the effect of them @tech{join}ing, after which @reachin{PART} may be used as an @tech{address}.
+If a @tech{consensus transfer} specifies a single @tech{participant}, which has not yet been @tech{fixed} in the application and is not a @tech{participant class}, then this statement does so; therefore, after it the @reachin{PART} may be used as an @tech{address}.
 
 A @tech{consensus transfer} binds the identifiers @reachin{ID_0} through @reachin{ID_n} for all @tech{participants} to the values included in the @tech{consensus transfer}.
 If an existing @tech{participant}, not included in @reachin{PART_EXPR}, has previously bound one of these identifiers, then the program is not @tech{valid}. In other words, the following program is not valid:
@@ -414,7 +419,7 @@ If the @reachin{PAY_EXPR} is absent, then it is treated as if it were @reachin{(
 
 The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}.
 
-If the @tech{participant} specified by @reachin{PART_EXPR} is not already set (in the sense of @reachin{Participant.set}), then if it wins the @reachin{race}, it is set to the @reachin{this}.
+If the @tech{participant} specified by @reachin{PART_EXPR} is not already @tech{fixed} (in the sense of @reachin{Participant.set}), then if it wins the @reachin{race}, it is @tech{fixed}, provided it is not a @tech{participant class}.
 
 @(hrule)
 
@@ -621,7 +626,8 @@ A @deftech{commit statement}, written @reachin{commit();}, @tech{commits} to @te
  Participant.set(PART, ADDR);
  PART.set(ADDR); }
 
-@index{Participant.set} Assigns the given @tech{participant} to the given address.
+@index{Participant.set} After execution, the given @tech{participant} is @tech{fixed} to the given address.
+It is @tech{invalid} to attempt to @reachin{.set} a @tech{participant class}.
 If a @tech{backend} is running for this @tech{participant} and its address does not match the given address, then it will abort.
 This may only occur within a @tech{consensus step}.
 

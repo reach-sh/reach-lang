@@ -153,7 +153,6 @@ However, many @tech{consensus network} also support custom fungible assets that 
 If this is the case, then a secured loan will typically have different assets as the loan amount and the collateral amount.
 Thus, the interest rate for the loan is essentially the Lender's prediction of the movement of the exchange rate between the two currencies over the lifetime of the loan.
 
-
 @(WIP/XXX "secured-loan")
 
 @section[#:tag "workshop-oracle"]{Workshop: Oracle}
@@ -167,7 +166,7 @@ Typically oracles are used to connect physical data from outside a @tech{consens
 
 @section[#:tag "workshop-race"]{Workshop: Race}
 
-@(workshop-deps "tutorial")
+@(workshop-deps "tut")
 
 In this workshop, we implement the example of the @reachin{race} expression discussed in @seclink["guide-race"]{the guide section on races}.
 This provides an introduction to races, as well as a cautionary tale on their danger.
@@ -183,6 +182,16 @@ In other words, they must decide between the risk of losing the entire pot and t
 Like @secref["workshop-race"], this demonstrates the deadweight losses associated with @reachin{race}s, as discussed in @seclink["guide-race"]{the guide section on races}.
 
 @(WIP/XXX "chicken-race")
+
+@section[#:tag "workshop-popularity-contest"]{Workshop: Popularity Contest}
+
+@(workshop-deps "workshop-chicken-race")
+
+In this workshop, we implement a @link["https://en.wikipedia.org/wiki/Plurality_voting"]{two-party winner-takes-all vote}, where a pollster proposes two candidates---Alice and Bob---along with a voting price and a deadline, then a @tech{participant class} of voters each pay and cast their ballot.
+Once the deadline passes, the winning candidates takes the entire pot.
+This workshop introduces effective use of @tech{participant class}es and @reachin{parallel_reduce}.
+
+@(WIP/XXX "popularity-contest")
 
 @section[#:tag "workshop-auction-te"]{Workshop: Timed English Auction}
 

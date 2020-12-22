@@ -43,16 +43,24 @@ In particular, it does not only refer to so-called "layer-1" protocols, nor does
 }
 
 A @deftech{participant} is a logical actor which takes part in a @|DApp|.
-A @tech{participant} is said to @deftech{join} an application when it first makes a @tech{publication}.
 It is associated with an @tech{account} on the @tech{consensus network}.
 @margin-note{The same @tech{account} may be used by multiple @tech{participants} in a @|DApp|.}
 A @tech{participant} has persistently stored @tech{values}, called its @deftech{local state}. It has a @tech{frontend} which it @tech{interacts} with. A @deftech{frontend} is an abstract actor which supports a set of functions which consume and produce @tech{values}; when a @tech{participant} invokes one of these functions it is referred to as @deftech{interact}ion.
+
+A @deftech{participant class} is a category of @tech{participant} that may occur many times in a single application.
+Members of a @tech{participant class} are referred to as @deftech{participant instances} when their status as a member of a class are important, but just "@tech{participants}" otherwise.
+@tech{Participant instances} are independent @tech{participants} like any other; for example, with their own @tech{local state}, @tech{frontend}, and so on.
+The main distinction is that when a member of a @tech{participant class} @tech{join}s an application, it is not @tech{fixed} like other @tech{participants}, because a @tech{participant instance} does not exclusively represent the @tech{participant class}.
 
 Since @DApps have an associated @tech{contract}, they have an associated @tech{account}. @margin-note{The @tech{contract} account must be distinct from all @tech{participant} @tech{accounts}.} This @tech{account} is assumed to be empty when the computation starts.@margin-note{On some @tech{consensus networks}, it is possible for @tech{transfers} to a @tech{contract} @tech{account} to occur outside of the purview of Reach. If this occurs, then those @tech{network tokens} are remitted to the @tech{originator} of the final @tech{consensus transfer}.} Any @tech{network token}s transferred into the @tech{account} must be removed by the @|DApp|'s completion. This is called the @deftech{token linearity property}.
 
 A @|DApp| computation can be seen as a graph of @tech{steps} with a unique first @tech{step}. A @deftech{step} is a set of @tech{local steps} by @tech{participants} followed by a single @tech{consensus step} introduced via a single @tech{consensus transfer}.
 
 A @deftech{local step} is executed by a single @tech{participant} and is a sequence of @tech{local computations}. A @deftech{local computation} may bind a piece of @tech{local state}, @tech{assert} a property of the @tech{local state}, or @tech{interact} with the @tech{frontend}. A @deftech{consensus transfer} is executed by a single @tech{participant} (called the @deftech{originator}) which makes a @tech{publication} of a set of @tech{public} @tech{values} from its @tech{local state} and @tech{transfers} zero or more @tech{network tokens} to the @tech{contract} @tech{account}. A @tech{consensus transfer} specifies an alternative @tech{step}, called a @deftech{timeout}, that is executed if the @tech{originator} fails to make the transfer before a given @tech{time delta} has elapsed. All @tech{local state} is initially @deftech{private}, until it is explicitly made @deftech{public} via a @deftech{declassification}, which is a kind of @tech{local computation}.
+
+A @tech{participant} is said to @deftech{join} an application when it first makes a @tech{publication}.
+For non-@tech{participant instances}, this also makes the @tech{participant} @deftech{fixed}, whereby the @tech{consensus state} includes an assignment from the @tech{participant} to the particular @tech{account} (i.e. @tech{address}) which it is @tech{fixed} to.
+All subsequent @tech{publications} by a @tech{fixed} @tech{participant} must be from the @tech{fixed} @tech{account}.
 
 A @deftech{consensus step} is a graph of @tech{consensus computations} with a unique first computation.
 A @deftech{consensus computation} either binds @tech{consensus state}, @tech{asserts} a property of the @tech{consensus state}, performs a @tech{transfer}, selects between different next @tech{consensus computations}, or @deftech{commits} to the next @tech{step}.
