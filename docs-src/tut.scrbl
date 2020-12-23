@@ -548,7 +548,7 @@ Alice went from 10 to 14.9999.
 Bob went from 10 to 4.9999.
 }
 
-The problem is that these version of the game only executed an @tech{honest} version of Bob, that is, one that followed the Reach program exactly, including in his private @tech{local steps}.
+The problem is that this version of the game only executed an @tech{honest} version of Bob, that is, one that followed the Reach program exactly, including in his private @tech{local steps}.
 It is possible for a deviant and dis@tech{honest} version of a Bob @tech{backend} to execute different code and always win by computing the appropriate guess based on what value Alice provided for @reachin{handA}.
 
 If we change Bob's code to the following:
@@ -710,7 +710,7 @@ First, we'll define the rules of @|RPS| a little bit more abstractly, so we can 
 
 ]
 
-When we first wrote @|RPS|, we asked you to trust that this formula for computing the winner is correct, but is good to actually check.
+When we first wrote @|RPS|, we asked you to trust that this formula for computing the winner is correct, but it is good to actually check.
 One way to check would be to implement a JavaScript @tech{frontend} that didn't interact with a real user, nor would it randomly generate values, but instead, it would return specific testing scenario values and check that the output is as expected.
 That's a typical way to debug and is possible with Reach.
 However, Reach allows us to write such test cases directly into the Reach program as verification assertions.
@@ -880,7 +880,7 @@ In this section, we'll focus on a more subtle issue that is important and unique
 
 Non-participation refers to the act of one party ceasing to continue playing their role in an application.
 
-In traditional client-server programs, like a Web server, this would be the case of a client stopping sending requests to the server, or the server stopping sending responses to the client.
+In traditional client-server programs, like a Web server, this would be the case of a client not sending any more requests to the server, or the server stopping sending responses to the client.
 In these sorts of traditional programs, non-participation is an exceptional circumstances that normally leads to an error message for clients and, at most, a log entry for servers.
 Sometimes traditional programs will need to recycle resources, like network ports, on non-participation, but they would have also needed to do that if the transaction ended by normal means.
 In other words, for traditional client-server programs, it is not necessary for designers to meticulously consider the consequences of non-participation.
