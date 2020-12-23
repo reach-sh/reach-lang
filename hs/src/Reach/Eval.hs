@@ -1384,7 +1384,7 @@ evalPrimOp ctxt at _sco st p sargs =
     MOD -> nn2n (mod)
     PLT -> nn2b (<)
     PLE -> nn2b (<=)
-    PEQ -> polyEq args -- ctxt at st sargs
+    PEQ -> polyEq args
     PGE -> nn2b (>=)
     PGT -> nn2b (>)
     IF_THEN_ELSE ->
