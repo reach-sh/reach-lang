@@ -1408,6 +1408,7 @@ evalPrimOp ctxt at _sco st p sargs =
         [SLV_Int _ l, SLV_Int _ r]      -> retBool $ l == r
         [SLV_Bool _ l, SLV_Bool _ r]    -> retBool $ l == r
         [SLV_Bytes _ l, SLV_Bytes _ r]  -> retBool $ l == r
+        [SLV_Type l, SLV_Type r]        -> retBool $ l == r
         [SLV_Null {}, SLV_Null {}]      -> retBool True
         [SLV_Array lAt lTy ls, SLV_Array rAt rTy rs]
           | lTy /= rTy || lLen /= rLen ->
@@ -1451,7 +1452,7 @@ evalPrimOp ctxt at _sco st p sargs =
             (T_Address, T_Address)  -> make_var
             (T_Bool, T_Bool) -> do
               let fn = sss_val $ env_lookup (Just ctxt) at (LC_RefFrom "polyEq") "boolEq" (sco_env _sco)
-              SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn $ map public args
+              SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn $ map (\ a -> (lvl, a)) args
               return $ SLRes cmp_lifts st val
             (T_Bytes l_len, T_Bytes r_len)
               | r_len /= l_len -> retBool False
@@ -1497,7 +1498,7 @@ evalPrimOp ctxt at _sco st p sargs =
       return $ SLRes (lifts <> cmp_lifts) st val
     getHash x = do
       let fn = sss_val $ env_lookup (Just ctxt) at (LC_RefFrom "polyEq") "digest" (sco_env _sco)
-      SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn [public x]
+      SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn [(lvl, x)]
       return (cmp_lifts, val)
     retBool v = return $ SLRes mempty st (lvl, SLV_Bool at v)
     getType = fst . typeOf_ctxt ctxt st at
