@@ -15,7 +15,7 @@ In both of these cases, it is not clear how to understand this interaction as be
 
 At first glance, these situations appear different.
 In the first, the participants are doing "the same thing" simultaneously, because both will submit a hand eventually; while in the second, they are doing "something different", because only one of them will actually end the agreement early.
-However, both of these situations are actually identical, because in the second case they are both simultaneously deciding whether they to end early.
+However, both of these situations are actually identical, because in the second case they are both simultaneously deciding whether they will end early.
 In the first case, the participants are submitting one of three values (@litchar{Rock}, @litchar{Paper}, or @litchar{Scissors}), while in the second they are submitting one of two (@litchar{Leave} or @litchar{Stay}).
 
 In such situations, in a decentralized application, the program must agree that one participant acts first.

@@ -4,7 +4,7 @@
 @title[#:version reach-vers #:tag "guide-race"]{Racing non-determinism in decentralized applications}
 
 As discussed @seclink["guide-determ"]{earlier in the guide}, Reach computations have a deterministic structure, but non-deterministic values.
-This means that a program will always executes steps A, B, and then C, but the values manipulated by those steps may be different on every execution.
+This means that a program will always execute steps A, B, and then C, but the values manipulated by those steps may be different on every execution.
 
 The most common form of value non-determinism is through the @reachin{interact} expression and @tech{frontend}-provided values.
 A Reach program merely specifies that a @tech{frontend} must provide an unsigned integer that it will name @reachin{bid}, but not what value is actually provided.
