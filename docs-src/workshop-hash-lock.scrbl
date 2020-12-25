@@ -69,7 +69,7 @@ In other words:
 ]
 
 You should look back at your problem analysis to do this step.
-Whenever a participant starts of knowing something, then it is a field in the @reachin{interact} object.
+Whenever a participant starts off knowing something, then it is a field in the @reachin{interact} object.
 If they learn something, then it will be an argument to a function.
 If they provide something later, then it will be the result of a function.
 
@@ -141,7 +141,7 @@ For example, we could use the pattern:
 }
 
 However, this is definitely wrong, because Alice doesn't want to share her password with the world across the network, she only wants to share it with Bob, potentially at some later moment.
-So, she should publish the password, but instead, publish a @tech{digest} of the password, that can be checked against the actual password later.
+So, she should not publish the password, but instead, publish a @tech{digest} of the password, that can be checked against the actual password later.
 In other words, we should use a pattern like:
 @reach{
  // Alice publishes a digest of the password and pays the amount
