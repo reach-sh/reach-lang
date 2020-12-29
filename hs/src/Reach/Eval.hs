@@ -1407,10 +1407,11 @@ evalPrimOp ctxt at _sco st p sargs =
       xs <- zipWithM (\ l r -> do
         SLRes lifts _ (_, v) <- f [l, r]
         return (lifts, v)) ls rs
-      foldrM (\ (ll, lv) (rl, rv) -> do
-        (l, v) <- lv /\ rv
-        return (ll <> rl <> l, v))
-        (head xs) (tail xs)
+      case xs of
+        h:t -> foldrM (\ (ll, lv) (rl, rv) -> do
+          (l, v) <- lv /\ rv
+          return (ll <> rl <> l, v)) h t
+        _ -> return (mempty, SLV_Bool srcloc_builtin True)
     -- Logical and for SL bool values
     (/\) (SLV_Bool bAt l) (SLV_Bool _ r)  = return (mempty, SLV_Bool bAt $ l && r)
     (/\) l@SLV_DLVar {} r@SLV_DLVar {} = do
