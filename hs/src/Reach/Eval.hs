@@ -1374,17 +1374,6 @@ evalForm ctxt at sco st f args =
             Just (at, de, (jsStmtToBlock dt_s))
           _ -> expect_throw_ctx ctxt at $ Err_ToConsensus_TimeoutArgs args
 
-(/\) :: SLVal -> SLVal -> SLVal
--- Logical and for SL bool values
-(/\) (SLV_Bool at l) (SLV_Bool _ r) = SLV_Bool at $ l && r
-(/\) (SLV_Bool at False) _ = SLV_Bool at False
-(/\) (SLV_Bool _ True) r@SLV_DLVar {} = r
-(/\) (SLV_Bool _ True) r@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) = r
--- Flip args & process
-(/\) l@(SLV_DLVar _) r@SLV_Bool {} = r /\ l
-(/\) l@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) r@SLV_Bool {} = r /\ l
--- Values not supported
-(/\) l r = impossible $ "/\\ expecting SLV_Bool or SLV_DLVar: " <> show l <> ", " <> show r
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> [SLSVal] -> SLComp s SLSVal
 evalPrimOp ctxt at _sco st p sargs =
@@ -1418,7 +1407,24 @@ evalPrimOp ctxt at _sco st p sargs =
       xs <- zipWithM (\ l r -> do
         SLRes lifts _ (_, v) <- f [l, r]
         return (lifts, v)) ls rs
-      return $ foldr1 (\ (ll, lv) (rl, rv) -> (ll <> rl, lv /\ rv)) xs
+      foldrM (\ (ll, lv) (rl, rv) -> do
+        (l, v) <- lv /\ rv
+        return (ll <> rl <> l, v))
+        (head xs) (tail xs)
+    -- Logical and for SL bool values
+    (/\) (SLV_Bool bAt l) (SLV_Bool _ r)  = return (mempty, SLV_Bool bAt $ l && r)
+    (/\) l@SLV_DLVar {} r@SLV_DLVar {} = do
+      SLRes lifts _ (_, v) <- evalPrimOp ctxt at _sco st IF_THEN_ELSE
+        [(lvl, l), (lvl, r), public $ SLV_Bool srcloc_builtin False]
+      return (lifts, v)
+    (/\) (SLV_Bool bAt False) _           = return (mempty, SLV_Bool bAt False)
+    (/\) (SLV_Bool _ True) r@SLV_DLVar {} = return (mempty, r)
+    (/\) (SLV_Bool _ True) r@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) = return $ (mempty, r)
+    -- Flip args & process
+    (/\) l@(SLV_DLVar _) r@SLV_Bool {} = r /\ l
+    (/\) l@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) r@SLV_Bool {} = r /\ l
+    -- Values not supported
+    (/\) l r = impossible $ "/\\ expecting SLV_Bool or SLV_DLVar: " <> show l <> ", " <> show r
     polyEq args' =
       case args' of
         -- Both args static
@@ -1430,7 +1436,8 @@ evalPrimOp ctxt at _sco st p sargs =
         [SLV_Array _ _ ls, SLV_Array _ _ rs] -> do
           let lengthEquals = SLV_Bool at $ length ls == length rs
           (lifts, elemEquals) <- andMap polyEq ls rs
-          return $ SLRes lifts st (lvl, lengthEquals /\ elemEquals)
+          (andLifts, andVal) <- lengthEquals /\ elemEquals
+          return $ SLRes (lifts <> andLifts) st (lvl, andVal)
         [SLV_Tuple _ ls, SLV_Tuple _ rs] -> do
           (lifts, elemEquals) <- andMap polyEq ls rs
           return $ SLRes lifts st (lvl, elemEquals)
@@ -1450,10 +1457,10 @@ evalPrimOp ctxt at _sco st p sargs =
             (T_UInt, T_UInt)        -> make_var args'
             (T_Digest, T_Digest)    -> make_var args'
             (T_Address, T_Address)  -> make_var args'
-            (T_Bool, T_Bool) -> do
-              let fn = sss_val $ env_lookup (Just ctxt) at (LC_RefFrom "polyEq") "boolEq" (sco_env _sco)
-              SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn $ map (\ a -> (lvl, a)) args'
-              return $ SLRes cmp_lifts st val
+            (T_Bool, T_Bool)        -> do
+              SLRes lifts _ notR <- evalPrimOp ctxt at _sco st IF_THEN_ELSE
+                [(lvl, r), public $ SLV_Bool srcloc_builtin False, public $ SLV_Bool srcloc_builtin True]
+              keepLifts lifts $ evalPrimOp ctxt at _sco st IF_THEN_ELSE [(lvl, l), (lvl, r), notR]
             (lTy, rTy) ->
               case typeEqual at (srclocOf l, lTy) (srclocOf r, rTy) of
                 Left _ -> retBool False
