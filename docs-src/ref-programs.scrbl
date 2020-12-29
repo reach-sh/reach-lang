@@ -1218,7 +1218,7 @@ their corresponding named functions @reachin{and} and @reachin{or}, always do.
 
 @(mint-define! '("boolEq") '("typeEq") '("intEq") '("digestEq") '("addressEq"))
 @reach{
- polyEq(a, b)    // eq on Bool, types, or UInt
+ polyEq(a, b)    // eq on all types
  boolEq(a, b)    // eq on Bool
  typeEq(a, b)    // eq on types
  intEq(a, b)     // eq on UInt
@@ -1226,7 +1226,7 @@ their corresponding named functions @reachin{and} and @reachin{or}, always do.
  addressEq(a, b) // eq on Addresses
 }
 
-@reachin{==} is a function which operates on multiple types.
+@reachin{==} is a function which operates on all types.
 Both arguments must be of the same type.
 Specialized functions exist for equality checking on each supported type.
 

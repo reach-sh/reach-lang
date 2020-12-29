@@ -609,6 +609,7 @@ base_env =
     , ("exit", SLV_Prim SLPrim_exit)
     , ("each", SLV_Form SLForm_each)
     , ("intEq", SLV_Prim $ SLPrim_op PEQ)
+    , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
     , --    , ("bytesEq", SLV_Prim $ SLPrim_op BYTES_EQ)
       ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
     , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
@@ -1373,6 +1374,7 @@ evalForm ctxt at sco st f args =
             Just (at, de, (jsStmtToBlock dt_s))
           _ -> expect_throw_ctx ctxt at $ Err_ToConsensus_TimeoutArgs args
 
+
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> [SLSVal] -> SLComp s SLSVal
 evalPrimOp ctxt at _sco st p sargs =
   case p of
@@ -1383,16 +1385,16 @@ evalPrimOp ctxt at _sco st p sargs =
     MOD -> nn2n (mod)
     PLT -> nn2b (<)
     PLE -> nn2b (<=)
-    PEQ -> nn2b (==)
+    PEQ -> polyEq args
     PGE -> nn2b (>=)
     PGT -> nn2b (>)
     IF_THEN_ELSE ->
       case args of
         [SLV_Bool _ b, t, f] ->
           static $ if b then t else f
-        _ -> make_var
-    DIGEST_EQ -> make_var
-    ADDRESS_EQ -> make_var
+        _ -> make_var args
+    DIGEST_EQ -> make_var args
+    ADDRESS_EQ -> make_var args
     -- FIXME fromIntegral may overflow the Int
     LSH -> nn2n (\a b -> shift a (fromIntegral b))
     RSH -> nn2n (\a b -> shift a (fromIntegral $ b * (-1)))
@@ -1401,22 +1403,100 @@ evalPrimOp ctxt at _sco st p sargs =
     BXOR -> nn2n (xor)
     SELF_ADDRESS -> impossible "self address"
   where
+    andMap f ls rs = do
+      xs <- zipWithM (\ l r -> do
+        SLRes lifts _ (_, v) <- f [l, r]
+        return (lifts, v)) ls rs
+      case xs of
+        h:t -> foldrM (\ (ll, lv) (rl, rv) -> do
+          (l, v) <- lv /\ rv
+          return (ll <> rl <> l, v)) h t
+        _ -> return (mempty, SLV_Bool srcloc_builtin True)
+    -- Logical and for SL bool values
+    (/\) (SLV_Bool bAt l) (SLV_Bool _ r)  = return (mempty, SLV_Bool bAt $ l && r)
+    (/\) l@SLV_DLVar {} r@SLV_DLVar {} = do
+      SLRes lifts _ (_, v) <- evalPrimOp ctxt at _sco st IF_THEN_ELSE
+        [(lvl, l), (lvl, r), public $ SLV_Bool srcloc_builtin False]
+      return (lifts, v)
+    (/\) (SLV_Bool bAt False) _           = return (mempty, SLV_Bool bAt False)
+    (/\) (SLV_Bool _ True) r@SLV_DLVar {} = return (mempty, r)
+    (/\) (SLV_Bool _ True) r@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) = return $ (mempty, r)
+    -- Flip args & process
+    (/\) l@(SLV_DLVar _) r@SLV_Bool {} = r /\ l
+    (/\) l@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) r@SLV_Bool {} = r /\ l
+    -- Values not supported
+    (/\) l r = impossible $ "/\\ expecting SLV_Bool or SLV_DLVar: " <> show l <> ", " <> show r
+    polyEq args' =
+      case args' of
+        -- Both args static
+        [SLV_Int _ l, SLV_Int _ r]      -> retBool $ l == r
+        [SLV_Bool _ l, SLV_Bool _ r]    -> retBool $ l == r
+        [SLV_Bytes _ l, SLV_Bytes _ r]  -> retBool $ l == r
+        [SLV_Type l, SLV_Type r]        -> retBool $ l == r
+        [SLV_Null {}, SLV_Null {}]      -> retBool True
+        [SLV_Array _ _ ls, SLV_Array _ _ rs] -> do
+          let lengthEquals = SLV_Bool at $ length ls == length rs
+          (lifts, elemEquals) <- andMap polyEq ls rs
+          (andLifts, andVal) <- lengthEquals /\ elemEquals
+          return $ SLRes (lifts <> andLifts) st (lvl, andVal)
+        [SLV_Tuple _ ls, SLV_Tuple _ rs] -> do
+          (lifts, elemEquals) <- andMap polyEq ls rs
+          return $ SLRes lifts st (lvl, elemEquals)
+        [SLV_Object _ _ lEnv, SLV_Object _ _ rEnv] -> do
+          let elems = map sss_val . M.elems
+          (lifts, elemEquals) <- andMap polyEq (elems lEnv) (elems rEnv)
+          return $ SLRes lifts st (lvl, elemEquals)
+        [SLV_Data _ lCons lCon lVal, SLV_Data _ rCons rCon rVal]
+          | lCons == rCons && lCon == rCon -> do
+            SLRes lifts _ (_, elemEquals) <- polyEq [lVal, rVal]
+            return $ SLRes lifts st (lvl, elemEquals)
+          | otherwise -> retBool False
+        -- If atleast one arg is dynamic
+        [l, r] ->
+          case (getType l, getType r) of
+            (T_Null, T_Null)        -> retBool True
+            (T_UInt, T_UInt)        -> make_var args'
+            (T_Digest, T_Digest)    -> make_var args'
+            (T_Address, T_Address)  -> make_var args'
+            (T_Bool, T_Bool)        -> do
+              SLRes lifts _ notR <- evalPrimOp ctxt at _sco st IF_THEN_ELSE
+                [(lvl, r), public $ SLV_Bool srcloc_builtin False, public $ SLV_Bool srcloc_builtin True]
+              keepLifts lifts $ evalPrimOp ctxt at _sco st IF_THEN_ELSE [(lvl, l), (lvl, r), notR]
+            (lTy, rTy) ->
+              case typeEqual at (srclocOf l, lTy) (srclocOf r, rTy) of
+                Left _ -> retBool False
+                Right _ -> hashAndCmp l r
+        _ -> impossible "polyEq called with more than 2 args"
+    hashAndCmp l r = do
+      (lLifts, dl) <- getHash l
+      (rLifts, dr) <- getHash r
+      digestEq (lLifts <> rLifts) [dl, dr]
+    digestEq lifts dargs = do
+      let fn = sss_val $ env_lookup (Just ctxt) at (LC_RefFrom "polyEq") "digestEq" (sco_env _sco)
+      SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn dargs
+      return $ SLRes (lifts <> cmp_lifts) st val
+    getHash x = do
+      let fn = sss_val $ env_lookup (Just ctxt) at (LC_RefFrom "polyEq") "digest" (sco_env _sco)
+      SLRes cmp_lifts _ (SLAppRes _ val) <- evalApplyVals ctxt at _sco st fn [(lvl, x)]
+      return (cmp_lifts, val)
+    retBool v = return $ SLRes mempty st (lvl, SLV_Bool at v)
+    getType = fst . typeOf_ctxt ctxt st at
     args = map snd sargs
     lvl = mconcat $ map fst sargs
     nn2b op =
       case args of
         [SLV_Int _ lhs, SLV_Int _ rhs] ->
           static $ SLV_Bool at $ op lhs rhs
-        _ -> make_var
+        _ -> make_var args
     nn2n op =
       case args of
         [SLV_Int _ lhs, SLV_Int _ rhs] ->
           static $ SLV_Int at $ op lhs rhs
-        _ -> make_var
+        _ -> make_var args
     static v = return $ SLRes mempty st (lvl, v)
-    make_var = do
+    make_var args' = do
       (arg_lifts, rng, dargs) <-
-        compileCheckAndConvert ctxt st at (primOpType p) args
+        compileCheckAndConvert ctxt st at (primOpType p) args'
       let doClaim ca msg =
             return $
               DLS_Let at Nothing $

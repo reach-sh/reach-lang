@@ -4,24 +4,6 @@ export function not (x) {
   return (x ? false : true); }
 export const boolEq = (x, y) => (x ? y : !y);
 
-// Polymorphic eq made from builtins
-export const polyEq = (x, y) => {
-  const ty_x = typeOf(x);
-  // TODO: add structural equality for arrays and objects
-  // TODO: add bytes eq
-  if (typeEq(ty_x, Bool)) {
-    return boolEq(x, y);
-  } else if (typeEq(ty_x, Digest)) {
-    return digestEq(x, y);
-  } else if (typeEq(ty_x, Address)) {
-    return addressEq(x, y);
-  } else if (isType(x)) {
-    return typeEq(x, y);
-  } else {
-    return intEq(x, y);
-  }
-};
-
 // Operator abbreviation expansions
 export function minus (x) {
   return 0 - x; }

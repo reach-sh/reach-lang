@@ -1,5 +1,6 @@
 module Reach.Type
-  ( TypeError
+  ( TypeError (..)
+  , typeEqual
   , typeMeet
   , typeMeets
   , DLArgExpr (..)
@@ -65,15 +66,20 @@ checkIntLiteral at rmin x rmax =
     True -> x
     False -> expect_thrown at $ Err_Type_IntLiteralRange rmin x rmax
 
+typeEqual :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> Either TypeError SLType
+typeEqual top_at x@(_, xt) y@(_, yt) =
+  case xt == yt of
+    True  -> Right xt
+    False -> Left $ Err_TypeMeets_Mismatch top_at x y
+
 typeMeet :: HasCallStack => MCFS -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType
 typeMeet _ _ (_, T_Bytes xz) (_, T_Bytes yz) =
   T_Bytes (max xz yz)
-typeMeet mcfs top_at x@(_, xt) y@(_, yt) =
+typeMeet mcfs top_at x@(_, xt) y =
   --- FIXME Find meet of objects
-  case xt == yt of
-    True -> xt
-    False ->
-      expect_throw mcfs top_at $ Err_TypeMeets_Mismatch top_at x y
+  case typeEqual top_at x y of
+    Right _ -> xt
+    Left err -> expect_throw mcfs top_at err
 
 typeMeets :: HasCallStack => MCFS -> SrcLoc -> [(SrcLoc, SLType)] -> SLType
 typeMeets mcfs top_at l =

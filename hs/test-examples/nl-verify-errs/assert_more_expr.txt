@@ -8,7 +8,7 @@ Verification failed:
   at ./assert_more_expr.rsh:12:7:after expr stmt semicolon call to [unknown function] (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
   Theorem formalization:
-  v10
+  v9
 
   This could be violated if...
     "v2" = 0
@@ -21,9 +21,9 @@ Verification failed:
       (because: evaluating interact("A")."getX"())
 
   In context...
-    "v10" = (= v8 v4 )
-      (from: v10)
-      (bound at: reach standard library:21:17:application)
+    "v9" = (= v8 v4 )
+      (from: v9)
+      (bound at: ./assert_more_expr.rsh:application)
       (because: evaluating PEQ(v8, v4 ))
     "v4" = (* v2 2 )
       (from: v4)

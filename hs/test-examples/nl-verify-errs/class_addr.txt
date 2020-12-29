@@ -7,15 +7,15 @@ Verification failed:
   at ./class_addr.rsh:16:14:application
 
   Theorem formalization:
-  v23
+  v22
 
   This could be violated if...
 
   In context...
-    "v23" = (= v4 v15 )
-      (from: v23)
-      (bound at: reach standard library:17:21:application)
-      (because: evaluating ADDRESS_EQ(v4, v15 ))
+    "v22" = (= v4 v15 )
+      (from: v22)
+      (bound at: ./class_addr.rsh:application)
+      (because: evaluating PEQ(v4, v15 ))
     "v15" = v12
       (from: v15)
       (bound at: ./class_addr.rsh:15:9:dot)
