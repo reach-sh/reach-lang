@@ -1,5 +1,11 @@
 # Change Log
 
+## 0.0.9
+
+Use Reach JSON error format for diagnostic highlighting and quick fixes.  
+Removed direct Ethereum interaction, updated keywords, removed unused dependencies.  
+Reimplemented snippets.
+
 ## 0.0.8
 
 Added buttons to compile and run programs.  
