@@ -1302,7 +1302,7 @@ except that index @reachin{idx} is replaced with @reachin{val}.
 
 Both may be abbreviated as @reachin{expr.set(idx, val)} where @reachin{expr} evaluates to a tuple or an array.
 
-@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.empty}, @tt{Array.zip} & @tt{.zip}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, @tt{Array.forEach} & @tt{.forEach}, and @tt{Array.replicate} }
+@subsubsection{Array group operations: @tt{Array.iota}, @tt{Array.concat} & @tt{.concat}, @tt{Array.empty}, @tt{Array.zip} & @tt{.zip}, @tt{Array.map} & @tt{.map}, @tt{Array.reduce} & @tt{.reduce}, @tt{Array.forEach} & @tt{.forEach}, @tt{Array.replicate}, @tt{Array.all} & @tt{.all}, @tt{Array.any} & @tt{.any}, @tt{Array.or} & @tt{.or}, @tt{Array.and} & @tt{.and}, @tt{Array.includes} & @tt{.includes}, @tt{Array.indexOf} & @tt{.indexOf}, @tt{Array.findIndex} & @tt{.findIndex}, @tt{Array.count} & @tt{.count}, @tt{Array.min} & @tt{.min}, @tt{Array.max} & @tt{.max}, and @tt{Array.sum} & @tt{.sum} }
 
 @(mint-define! '("iota"))
 @reach{
@@ -1379,6 +1379,91 @@ For example, @reachin{Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x
 
 @index{Array.forEach} @reachin{Array.forEach(arr, f)} iterates the function @reachin{f} over the elements of the array @reachin{arr}, discarding the result.
 This may be abbreviated as @reachin{arr.forEach(f)}.
+
+@(mint-define! '("all"))
+@reach{
+  Array.all(arr, f)
+  arr.all(f) }
+
+@index{Array.all} @reachin{Array.all(arr, f)} determines whether the predicate, @tt{f}, is satisfied
+by every element of the array, @tt{arr}.
+
+@(mint-define! '("any"))
+@reach{
+  Array.any(arr, f)
+  arr.any(f) }
+
+@index{Array.any} @reachin{Array.any(arr, f)} determines whether the predicate, @tt{f}, is satisfied
+by at least one element of the array, @tt{arr}.
+
+@(mint-define! '("or"))
+@reach{
+  Array.or(arr)
+  arr.or() }
+
+@index{Array.or} @reachin{Array.or(arr)} returns the disjunction of an array of @reachin{Bool}s.
+
+@(mint-define! '("and"))
+@reach{
+  Array.and(arr)
+  arr.and() }
+
+@index{Array.and} @reachin{Array.and(arr)} returns the conjunction of an array of @reachin{Bool}s.
+
+@(mint-define! '("includes"))
+@reach{
+  Array.includes(arr, x)
+  arr.includes(x) }
+
+@index{Array.includes} @reachin{Array.includes(arr, x)} determines whether the array includes
+the element, @tt{x}.
+
+@(mint-define! '("indexOf"))
+@reach{
+  Array.indexOf(arr, x)
+  arr.indexOf(x) }
+
+@index{Array.indexOf} @reachin{Array.indexOf(arr, x)} returns the index of the first element
+in the given array that is equal to @tt{x}. The return value is of type @reachin{Maybe(UInt)}. If
+the value is not present in the array, @reachin{None} is returned.
+
+@(mint-define! '("findIndex"))
+@reach{
+  Array.findIndex(arr, f)
+  arr.findIndex(f) }
+
+@index{Array.findIndex} @reachin{Array.findIndex(arr, f)} returns the index of the first element
+in the given array that satisfies the predicate @tt{f}. The return value is of type @reachin{Maybe(UInt)}. If
+no value satisfies the prediate in the array, @reachin{None} is returned.
+
+@(mint-define! '("count"))
+@reach{
+  Array.count(arr, f)
+  arr.count(f) }
+
+@index{Array.count} @reachin{Array.count(arr, f)} returns the number of elements that
+satisfy the predicate, @tt{f}, in @tt{arr}.
+
+@(mint-define! '("min"))
+@reach{
+  Array.min(arr)
+  arr.min() }
+
+@index{Array.min} @reachin{Array.min(arr)} returns the lowest number in an array of @tt{UInt}s.
+
+@(mint-define! '("max"))
+@reach{
+  Array.max(arr)
+  arr.max() }
+
+@index{Array.max} @reachin{Array.max(arr)} returns the largest number in an array of @tt{UInt}s.
+
+@(mint-define! '("sum"))
+@reach{
+  Array.sum(arr)
+  arr.sum() }
+
+@index{Array.sum} @reachin{Array.sum(arr)} returns the sum of an array of @tt{UInt}s.
 
 @subsubsection[#:tag "ref-programs-objects"]{Objects}
 
@@ -1658,3 +1743,10 @@ The @deftech{balance} primitive returns the balance of the @tech{contract} @tech
  hasRandom }
 
 @index{hasRandom} A @tech{participant interact interface} which specifies @litchar{random} as a function that takes no arguments and returns an unsigned integer of @tech{bit width} bits.
+
+@(mint-define! '("compose"))
+@reach{
+ compose(f, g) }
+
+@index{compose} Creates a new function that applies it's argument to @tt{g}, then pipes the result to the function @tt{f}.
+The argument type of @tt{f} must be the return type of @tt{g}.

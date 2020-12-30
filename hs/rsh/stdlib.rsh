@@ -64,6 +64,32 @@ export function closeTo(Who, after) {
 
 export const fail = () => assume(false);
 
+export const Either = (A, B) => Data({
+  Left: A,
+  Right: B });
+
+export const either = (e, l, r) =>
+  e.match({
+    Left: lv => { return l(lv); },
+    Right: rv => { return r(rv); }
+  });
+
+export const isLeft = e => e.match({
+  Left: (_) => { return true; },
+  Right: (_) => { return false; } });
+
+export const isRight = e => e.match({
+  Left: (_) => { return false; },
+  Right: (_) => { return true; } });
+
+export const fromLeft = (e, d) => e.match({
+  Left: (v) => { return v; },
+  Right: (_) => { return d; } });
+
+export const fromRight = (e, d) => e.match({
+  Left: (_) => { return d; },
+  Right: (v) => { return v; } });
+
 // Standard library functions that should be hidden in some way, like
 // SLV_HaskellFunction FIXME
 
@@ -79,3 +105,76 @@ export const Array_forEach =
   (arr, f) => arr.reduce(null, (acc, xe) => f(xe));
 export const Array_forEach1 =
   (arr) => (f) => Array_forEach(arr, f);
+
+export const Array_min =
+  (arr) => arr.reduce(UInt.max, (acc, x) => (x < acc) ? x : acc);
+export const Array_min1 = (arr) => () => Array_min(arr);
+
+export const Array_max =
+  (arr) => arr.reduce(0, (acc, x) => (x > acc) ? x : acc);
+export const Array_max1 = (arr) => () => Array_max(arr);
+
+export const Array_any =
+  (arr, f) => arr.reduce(false, (acc, x) =>
+    acc ? acc : f(x));
+export const Array_any1 = (arr) => (f) => Array_any(arr, f);
+
+export const Array_all =
+  (arr, f) => arr.reduce(true, (acc, x) =>
+    acc ? f(x) : false);
+export const Array_all1 = (arr) => (f) => Array_all(arr, f);
+
+export const Array_or =
+  (arr) => Array_any(arr, x => x);
+export const Array_or1 = (arr) => () => Array_or(arr);
+
+export const Array_and =
+  (arr) => Array_all(arr, x => x);
+export const Array_and1 = (arr) => () => Array_and(arr);
+
+export const Array_sum =
+  (arr) => arr.reduce(0, (acc, x) => acc + x);
+export const Array_sum1 = (arr) => () => Array_sum(arr);
+
+export const Array_includes =
+  (arr, x) => arr.reduce(false, (acc, e) =>
+    acc ? acc : (x == e) ? true : false);
+export const Array_includes1 =
+  (arr) => (x) => Array_includes(arr, x);
+
+export const Array_indexOfAux =
+  (arr, f) => {
+    const init = [Maybe(UInt).None(), 0];
+    const [res, _] =
+      arr.reduce(init, (acc, e) => {
+        const [foundIdx, idx] = acc;
+        return foundIdx.match({
+          Some: (_) => { return acc; },
+          None: () => {
+            return f(e)
+              ? [Maybe(UInt).Some(idx), idx]
+              : [foundIdx, idx + 1]; }
+        });
+      });
+    return res;
+  };
+export const Array_indexOf =
+  (arr, x) => Array_indexOfAux(arr, (el) => { return el == x; });
+export const Array_indexOf1 =
+  (arr) => (x) => Array_indexOf(arr, x);
+
+export const Array_findIndex =
+  (arr, f) => Array_indexOfAux(arr, f);
+export const Array_findIndex1 =
+  (arr) => (f) => Array_findIndex(arr, f);
+
+export const Array_count =
+  (arr, f) => arr.reduce(0, (acc, x) =>
+    f(x) ? acc + 1 : acc);
+export const Array_count1 =
+  (arr) => (f) => Array_count(arr, f);
+
+export const compose =
+  (f, g) => (v) => f(g(v));
+
+

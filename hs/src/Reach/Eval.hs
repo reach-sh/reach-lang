@@ -1124,40 +1124,22 @@ evalAsEnv ctx at obj =
           [(key, retV $ public $ SLV_Form (SLForm_parallel_reduce_partial pr_at (Just mode) pr_init pr_minv pr_mwhile pr_cases pr_mtime))]
     --- FIXME rewrite the rest to look at the type and go from there
     SLV_Tuple _ _ ->
-      M.fromList
-        [ ("set", delayCall SLPrim_tuple_set)
-        , ("length", doCall SLPrim_tuple_length)
-        ]
+      tupleValueEnv
     SLV_DLVar (DLVar _ _ (T_Tuple _) _) ->
-      M.fromList
-        [ ("set", delayCall SLPrim_tuple_set)
-        , ("length", doCall SLPrim_tuple_length)
-        ]
+      tupleValueEnv
+    SLV_Prim (SLPrim_interact _ _ _ (T_Tuple _)) ->
+      tupleValueEnv
     SLV_Prim SLPrim_Tuple ->
       M.fromList
         [ ("set", retV $ public $ SLV_Prim $ SLPrim_tuple_set)
         , ("length", retV $ public $ SLV_Prim $ SLPrim_tuple_length)
         ]
-    SLV_Array _ _ _ ->
-      M.fromList
-        [ ("set", delayCall SLPrim_array_set)
-        , ("length", doCall SLPrim_array_length)
-        , ("concat", delayCall SLPrim_array_concat)
-        , ("forEach", doStdlib "Array_forEach1")
-        , ("map", delayCall SLPrim_array_map)
-        , ("reduce", delayCall SLPrim_array_reduce)
-        , ("zip", delayCall SLPrim_array_zip)
-        ]
+    SLV_Array {} ->
+      arrayValueEnv
     SLV_DLVar (DLVar _ _ (T_Array _ _) _) ->
-      M.fromList
-        [ ("set", delayCall SLPrim_array_set)
-        , ("length", doCall SLPrim_array_length)
-        , ("concat", delayCall SLPrim_array_concat)
-        , ("forEach", doStdlib "Array_forEach1")
-        , ("map", delayCall SLPrim_array_map)
-        , ("reduce", delayCall SLPrim_array_reduce)
-        , ("zip", delayCall SLPrim_array_zip)
-        ]
+      arrayValueEnv
+    SLV_Prim (SLPrim_interact _ _ _ (T_Array _ _)) ->
+      arrayValueEnv
     SLV_Data {} ->
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
@@ -1166,10 +1148,25 @@ evalAsEnv ctx at obj =
       M.fromList
         [ ("match", delayCall SLPrim_data_match)
         ]
+    SLV_Prim (SLPrim_interact _ _ _ (T_Data _)) ->
+      M.fromList
+        [ ("match", delayCall SLPrim_data_match)
+        ]
     SLV_Prim SLPrim_Array ->
       M.fromList
         [ ("empty", retStdLib "Array_empty")
         , ("forEach", retStdLib "Array_forEach")
+        , ("min", retStdLib "Array_min")
+        , ("max", retStdLib "Array_max")
+        , ("all", retStdLib "Array_all")
+        , ("any", retStdLib "Array_any")
+        , ("or", retStdLib "Array_or")
+        , ("and", retStdLib "Array_and")
+        , ("sum", retStdLib "Array_sum")
+        , ("includes", retStdLib "Array_includes")
+        , ("indexOf", retStdLib "Array_indexOf")
+        , ("findIndex", retStdLib "Array_findIndex")
+        , ("count", retStdLib "Array_count")
         , ("replicate", retStdLib "Array_replicate")
         , ("length", retV $ public $ SLV_Prim $ SLPrim_array_length)
         , ("set", retV $ public $ SLV_Prim $ SLPrim_array_set)
@@ -1192,6 +1189,30 @@ evalAsEnv ctx at obj =
     v ->
       expect_throw_ctx ctx at (Err_Eval_NotObject v)
   where
+    tupleValueEnv = M.fromList
+        [ ("set", delayCall SLPrim_tuple_set)
+        , ("length", doCall SLPrim_tuple_length)
+        ]
+    arrayValueEnv = M.fromList
+      [ ("set", delayCall SLPrim_array_set)
+      , ("length", doCall SLPrim_array_length)
+      , ("concat", delayCall SLPrim_array_concat)
+      , ("forEach", doStdlib "Array_forEach1")
+      , ("min", doStdlib "Array_min1")
+      , ("max", doStdlib "Array_max1")
+      , ("all", doStdlib "Array_all1")
+      , ("any", doStdlib "Array_any1")
+      , ("or", doStdlib "Array_or1")
+      , ("and", doStdlib "Array_and1")
+      , ("sum", doStdlib "Array_sum1")
+      , ("indexOf", doStdlib "Array_indexOf1")
+      , ("findIndex", doStdlib "Array_findIndex1")
+      , ("includes", doStdlib "Array_includes1")
+      , ("count", doStdlib "Array_count1")
+      , ("map", delayCall SLPrim_array_map)
+      , ("reduce", delayCall SLPrim_array_reduce)
+      , ("zip", delayCall SLPrim_array_zip)
+      ]
     delayCall p =
       retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
     doStdlib n ctxt sco st =
@@ -3377,7 +3398,12 @@ evalStmt ctxt at sco st ss =
                 False ->
                   return (Nothing, Nothing)
             return $ (mdv', at_c, select at_c body mvv)
-      let select_all dv = do
+      let select_all sv = do
+            (dv, dv_lifts) <- case sv of
+              SLV_DLVar dv -> return (dv, mempty)
+              SLV_Prim (SLPrim_interact iAt p v t) ->
+                ctxt_lift_expr ctxt at (DLVar iAt v t) (DLE_Arg iAt $ DLA_Interact p v t)
+              _ -> impossible "select_all: not dlvar or interact field"
             let casemm = M.mapWithKey select_one casesm
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do
                   (mdv', at_c, casem') <- casem
@@ -3396,7 +3422,7 @@ evalStmt ctxt at sco st ss =
             (mst', sa', mrets', casemm') <- foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
             let rets' = maybe mempty id mrets'
             let lifts' = return $ DLS_Switch at dv sa' casemm'
-            return $ SLRes lifts' (maybe st id mst') $ SLStmtRes mempty rets'
+            return $ SLRes (dv_lifts <> lifts') (maybe st id mst') $ SLStmtRes mempty rets'
       fr <-
         case de_val of
           SLV_Data _ _ vn vv ->
@@ -3407,7 +3433,8 @@ evalStmt ctxt at sco st ss =
                 case shouldBind of
                   False -> Nothing
                   True -> Just vv
-          SLV_DLVar dv -> select_all dv
+          SLV_DLVar {} -> select_all de_val
+          SLV_Prim (SLPrim_interact {}) -> select_all de_val
           _ -> impossible "switch mvar"
       let at'_after = srcloc_after_semi "switch" a sp at
       retSeqn fr at'_after ks_ne
