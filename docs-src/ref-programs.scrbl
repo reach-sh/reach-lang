@@ -1434,15 +1434,15 @@ the value is not present in the array, @reachin{None} is returned.
 
 @index{Array.findIndex} @reachin{Array.findIndex(arr, f)} returns the index of the first element
 in the given array that satisfies the predicate @tt{f}. The return value is of type @reachin{Maybe(UInt)}. If
-no value satisfies the prediate in the array, @reachin{None} is returned.
+no value in the array satisfies the predicate, @reachin{None} is returned.
 
 @(mint-define! '("count"))
 @reach{
   Array.count(arr, f)
   arr.count(f) }
 
-@index{Array.count} @reachin{Array.count(arr, f)} returns the number of elements that
-satisfy the predicate, @tt{f}, in @tt{arr}.
+@index{Array.count} @reachin{Array.count(arr, f)} returns the number of elements in @tt{arr} that
+satisfy the predicate, @tt{f}.
 
 @(mint-define! '("min"))
 @reach{
@@ -1579,6 +1579,45 @@ As a special case, when the type of a variant is @reachin{Null}, the @reachin{VA
 This means it is a function that returns a @reachin{Data} type specialized to a particular type in the @reachin{Some} variant.
 
 @reachin{Maybe} instances can be conveniently consumed by @reachin{fromMaybe(mValue, onNone, onSome)}, where @reachin{onNone} is a function of no arguments which is called when @reachin{mValue} is @reachin{None}, @reachin{onSome} is a function of on argument which is called with the value when @reachin{mValue} is @reachin{Some}, and @reachin{mValue} is a @tech{data instance} of @reachin{Maybe}.
+
+@subsubsection{@tt{Either}}
+
+@reachin{Either} is defined by
+@reach{
+  export const Either = (A, B) => Data({Left: A, Right: B}); }
+
+@reachin{Either} can be used to represent values with two possible types.
+
+Similar to @tt{Maybe}, @tt{Either} may be used to represent values that are correct or erroneous.
+A successful result is stored, by convention, in @tt{Right}. Unlike @tt{None}, @tt{Left} may
+carry additional information about the error.
+
+@(mint-define! '("either"))
+@reach{
+  either(e, onLeft, onRight) }
+
+@index{either} @reachin{either(e, onLeft, onRight)} For an @tt{Either} value, @tt{e}, @tt{either}
+will either apply the function @tt{onLeft} or @tt{onRight} to the appropriate variant value.
+
+@(mint-define! '("isLeft") '("isRight") '("fromLeft") '("fromRight"))
+@reach{
+  const e = Either(UInt, Bool);
+  const l = e.Left(1);
+  const r = e.Right(true);
+  isLeft(l);  // true
+  isRight(l); // false
+  const x = fromLeft(l, 0);      // x = 1
+  const y = fromRight(l, false); // y = false }
+
+@index{isLeft} @reachin{isLeft} is a convenience method that determines whether the variant is @tt{Left}.
+
+@index{isRight} @reachin{isRight} is a convenience method that determines whether the variant is @tt{Right}.
+
+@index{fromLeft} @reachin{fromLeft(e, default)} is a convenience method that returns the value in @tt{Left},
+or @tt{default} if the variant is @tt{Right}.
+
+@index{fromRight} @reachin{fromRight(e, default)} is a convenience method that returns the value in @tt{Right},
+or @tt{default} if the variant is @tt{Left}.
 
 @subsubsection{@tt{match}}
 
