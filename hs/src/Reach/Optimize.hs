@@ -177,7 +177,7 @@ opt_m mkk opt_k = \case
   LL_LocalIf at c t f k ->
     mkk <$> (LL_LocalIf at <$> opt_a c <*> (newScope $ opt_l t) <*> (newScope $ opt_l f) <*> opt_k k)
   LL_LocalSwitch at ov csm k ->
-    mkk <$> (LL_LocalSwitch at ov <$> mapM cm1 csm <*> opt_k k)
+    mkk <$> (LL_LocalSwitch at <$> opt_v ov <*> mapM cm1 csm <*> opt_k k)
     where
       cm1 (mov', l) = (,) <$> pure mov' <*> (newScope $ opt_l l)
   LL_ArrayMap at ans x0 a f k -> do
@@ -199,7 +199,7 @@ opt_n = \case
   LLC_If at c t f ->
     LLC_If at <$> opt_a c <*> (newScope $ opt_n t) <*> (newScope $ opt_n f)
   LLC_Switch at ov csm ->
-    LLC_Switch at ov <$> mapM cm1 csm
+    LLC_Switch at <$> opt_v ov <*> mapM cm1 csm
     where
       cm1 (mov', n) = (,) <$> pure mov' <*> (newScope $ opt_n n)
   LLC_While at asn inv cond body k ->
