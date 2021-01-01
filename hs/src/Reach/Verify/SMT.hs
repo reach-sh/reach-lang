@@ -805,7 +805,7 @@ smt_s ctxt s =
           where
             bind_from =
               case isClass of
-                True -> mempty
+                True -> pathAddUnbound ctxt at (Just whov) (O_DishonestJoin from) -- XXX make ClassJoin
                 False -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) (Atom $ smtAddress from)
             bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (smt_a ctxt at amta)
             bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (smt_a ctxt at da)) msgvs msgas
