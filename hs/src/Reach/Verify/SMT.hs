@@ -2,6 +2,7 @@ module Reach.Verify.SMT (verify_smt) where
 
 import Control.Monad
 import Control.Monad.Extra
+import qualified Control.Exception as Exn
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.IORef
@@ -198,7 +199,7 @@ smtTypeSort ctxt t =
 smtTypeInv :: SMTCtxt -> SLType -> SExpr -> IO ()
 smtTypeInv ctxt t se =
   case M.lookup t (ctxt_typem ctxt) of
-    Just (_, i) -> smtAssert ctxt $ i se
+    Just (_, i) -> smtAssertCtxt ctxt $ i se
     Nothing -> impossible $ "smtTypeInv " <> show t
 
 smtDeclare_v :: SMTCtxt -> String -> SLType -> IO ()
@@ -391,15 +392,26 @@ smtAddPathConstraints ctxt se = se'
         pcs ->
           smtApply "=>" [(smtAndAll pcs), se]
 
-smtAssert :: SMTCtxt -> SExpr -> SMTComp
-smtAssert ctxt se = SMT.assert smt $ smtAddPathConstraints ctxt se
+smtAssertCtxt :: SMTCtxt -> SExpr -> SMTComp
+smtAssertCtxt ctxt se =
+  smtAssert smt $ smtAddPathConstraints ctxt se
   where
     smt = ctxt_smt ctxt
 
+-- Intercept failures to prevent showing "user error",
+-- which is confusing to a Reach developer. The library
+-- `fail`s if there's a problem with the compiler,
+-- not a Reach program.
+smtAssert :: Solver -> SExpr -> SMTComp
+smtAssert smt se =
+  Exn.catch (do SMT.assert smt se)
+    $ \ (e :: Exn.SomeException) ->
+      impossible $ init $ drop 12 $ show e
+
 verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SMTComp
 verify1 ctxt at mf tk se mmsg = SMT.inNewScope smt $ do
-  forM_ (ctxt_path_constraint ctxt) $ SMT.assert smt
-  SMT.assert smt $ if isPossible then se else smtNot se
+  forM_ (ctxt_path_constraint ctxt) $ smtAssert smt
+  smtAssert smt  $ if isPossible then se else smtNot se
   r <- SMT.check smt
   case isPossible of
     True ->
@@ -436,9 +448,9 @@ pathAddBound_v :: SMTCtxt -> Maybe DLVar -> SrcLoc -> String -> SLType -> Bindin
 pathAddBound_v ctxt mdv at_dv v t bo se = do
   smtDeclare_v ctxt v t
   let smt = ctxt_smt ctxt
-  --- Note: We don't use smtAssert because variables are global, so
+  --- Note: We don't use smtAssertCtxt because variables are global, so
   --- this variable isn't affected by the path.
-  SMT.assert smt (smtEq (Atom $ v) se)
+  smtAssert smt (smtEq (Atom $ v) se)
   modifyIORefRef (ctxt_bindingsrr ctxt) $ M.insert v (mdv, at_dv, bo, Just se)
 
 pathAddUnbound :: SMTCtxt -> SrcLoc -> Maybe DLVar -> BindingOrigin -> SMTComp
@@ -579,7 +591,7 @@ smt_e ctxt at_dv mdv de =
         check_m =
           verify1 ctxt at f (TClaim ct) ca' mmsg
         assert_m =
-          smtAssert ctxt ca'
+          smtAssertCtxt ctxt ca'
     DLE_Transfer {} ->
       mempty
     DLE_Wait {} ->
@@ -588,7 +600,7 @@ smt_e ctxt at_dv mdv de =
       pathAddBound ctxt at mdv bo (smt_a ctxt at a)
         <> case (mdv, shouldSimulate ctxt who) of
           (Just psv, True) ->
-            smtAssert ctxt (smtEq (Atom $ smtVar ctxt psv) (Atom $ smtAddress who))
+            smtAssertCtxt ctxt (smtEq (Atom $ smtVar ctxt psv) (Atom $ smtAddress who))
           _ ->
             mempty
   where
@@ -606,7 +618,7 @@ smtSwitch sm ctxt at ov csm iter = branches_m <> after_m
     after_m =
       case sm of
         SM_Local ->
-          smtAssert ctxt (smtOrAll $ map snd casesl)
+          smtAssertCtxt ctxt (smtOrAll $ map snd casesl)
         SM_Consensus ->
           mempty
     ova = DLA_Var ov
@@ -623,7 +635,7 @@ smtSwitch sm ctxt at ov csm iter = branches_m <> after_m
             SM_Local ->
               udef_m <> iter ctxt' l
             SM_Consensus ->
-              ctxtNewScope ctxt $ udef_m <> smtAssert ctxt eqc <> iter ctxt l
+              ctxtNewScope ctxt $ udef_m <> smtAssertCtxt ctxt eqc <> iter ctxt l
         ctxt' = ctxt {ctxt_path_constraint = eqc : pc}
         eqc = smtEq ovp ov'p
         vt = ovtm M.! vn
@@ -661,7 +673,7 @@ smt_m iter ctxt m =
     LL_Set at dv va k -> set_m <> iter ctxt k
       where
         set_m =
-          smtAssert ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
+          smtAssertCtxt ctxt (smtEq (smt_a ctxt at (DLA_Var dv)) (smt_a ctxt at va))
     LL_LocalIf at ca t f k ->
       smt_l ctxt_t t <> smt_l ctxt_f f <> iter ctxt k
       where
@@ -688,9 +700,9 @@ smt_block ctxt bm b = before_m <> after_m
     after_m =
       case bm of
         B_Assume True ->
-          smtAssert ctxt da'
+          smtAssertCtxt ctxt da'
         B_Assume False ->
-          smtAssert ctxt (smtNot da')
+          smtAssertCtxt ctxt (smtNot da')
         B_Prove ->
           verify1 ctxt at f TInvariant da' Nothing
 
@@ -749,7 +761,7 @@ smt_n ctxt n =
         ca' = smt_a ctxt at ca
         go (v, k) =
           --- FIXME Can we use path constraints to avoid this forking?
-          smtAssert ctxt (smtEq ca' v') <> smt_n ctxt k
+          smtAssertCtxt ctxt (smtEq ca' v') <> smt_n ctxt k
           where
             v' = smt_a ctxt at (DLA_Literal (DLL_Bool v))
     LLC_Switch at ov csm ->
