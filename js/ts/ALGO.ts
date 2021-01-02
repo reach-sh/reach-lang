@@ -115,8 +115,10 @@ type Backend = {_Connectors: {ALGO: {
 type Digest = BigNumber;
 type SimRes = {
   prevSt: Digest,
+  prevSt_noPrevTime: Digest,
   txns: Array<SimTxn>,
   nextSt: Digest,
+  nextSt_noTime: Digest,
   isHalt : boolean,
 };
 type SimTxn = {
@@ -134,12 +136,14 @@ type CompiledBackend = {
 type Recv = {
   didTimeout: false,
   data: Array<ContractOut>,
+  time: BigNumber,
   value: BigNumber,
   from: string,
 } | { didTimeout: true };
 
 type ContractAttached = {
   getInfo: () => Promise<ContractInfo>,
+  creationTime: () => Promise<BigNumber>,
   sendrecv: (...argz: any) => Promise<Recv>,
   recv: (...argz: any) => Promise<Recv>,
   wait: (...argz: any) => any,
@@ -726,6 +730,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       label: string,
       funcNum: number,
       evt_cnt: number,
+      hasLastTime: (BigNumber | false),
       tys: Array<AnyALGO_Ty>,
       args: Array<any>,
       value: BigNumber,
@@ -735,6 +740,11 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       timeout_delay: undefined | BigNumber,
       sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
+      if ( hasLastTime !== false ) {
+        const ltidx = hasLastTime.toNumber();
+        tys.splice(ltidx, 1);
+        args.splice(ltidx, 1);
+      }
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
         await recv(label, funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
       if ( ! onlyIf ) {
@@ -752,6 +762,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
       const fake_res = {
         didTimeout: false,
         data: argsSlice(args, evt_cnt),
+        time: bigNumberify(0), // This should not be read.
         value: value,
         from: pks,
       };
@@ -790,7 +801,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         debug(`${dhead} --- isHalt = ${JSON.stringify(isHalt)}`);
 
         const actual_args =
-        [ sim_r.prevSt, sim_r.nextSt, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
+        [ sim_r.prevSt_noPrevTime, sim_r.nextSt_noTime, isHalt, bigNumberify(totalFromFee), lastRound, ...args ];
       const actual_tys =
         [ T_Digest, T_Digest, T_Bool, T_UInt, T_UInt, ...tys ];
       debug(`${dhead} --- ARGS = ${JSON.stringify(actual_args)}`);
@@ -995,12 +1006,15 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
         return {
           didTimeout: false,
           data: args_un,
+          time: bigNumberify(lastRound),
           value, from,
         };
       }
     };
 
-    return { getInfo, sendrecv, recv, iam, selfAddress, wait, stdlib: compiledStdlib };
+    const creationTime = async () => bigNumberify((await getInfo()).creationRound);
+
+    return { getInfo, creationTime, sendrecv, recv, iam, selfAddress, wait, stdlib: compiledStdlib };
   };
 
   const deployP = async (bin: Backend): Promise<ContractAttached> => {
@@ -1106,6 +1120,7 @@ export const connectAccount = async (networkAccount: NetworkAccount) => {
   const deferP = (implP: Promise<ContractAttached>): ContractAttached => {
     return {
       getInfo: async () => (await implP).getInfo(),
+      creationTime: async () => (await implP).creationTime(),
       sendrecv: async (...args: any) => (await implP).sendrecv(...args),
       recv: async (...args: any) => (await implP).recv(...args),
       wait: async(...args: any) => (await implP).wait(...args),

@@ -251,7 +251,8 @@ kgq_n ctxt = \case
         ctxtNewScope ctxt' $
           kgq_a_onlym ctxt' mov' oa
             >> kgq_n ctxt' n
-  LLC_FromConsensus _ _ k -> kgq_s ctxt k
+  LLC_FromConsensus _ _ k ->
+    kgq_s ctxt k
   LLC_While _ asn _ (LLBlock _ _ cond_l ca) body k ->
     kgq_asn_def ctxt asn
       >> kgq_asn ctxt asn
@@ -277,10 +278,11 @@ kgq_s ctxt = \case
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
       >> mapM_ (ctxtNewScope ctxt . go) (M.toList send)
     where
-      (whov, msgvs, amtv, next_n) = recv
+      (_last_timev, whov, msgvs, amtv, timev, next_n) = recv
       common =
         kgq_a_all ctxt (DLA_Var whov)
           >> kgq_a_all ctxt (DLA_Var amtv)
+          >> kgq_a_all ctxt (DLA_Var timev)
           >> mapM (kgq_a_all ctxt) (map DLA_Var msgvs)
           >> kgq_n ctxt next_n
       go (_, (_, msgas, amta, whena)) =
@@ -301,7 +303,7 @@ kgq_pie ctxt who (InteractEnv m) =
     >> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
-kgq_lp mh vst (LLProg _ (LLOpts {..}) (SLParts psm) s) = do
+kgq_lp mh vst (LLProg _ (LLOpts {..}) (SLParts psm) _dli s) = do
   putStrLn $ "Verifying knowledge assertions"
   let ps = M.keys psm
   llr <- newIORefRef 0

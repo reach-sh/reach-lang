@@ -45,6 +45,7 @@ data ETail
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
       , et_tc_prev :: Int
+      , et_tc_last_timev :: DLVar
       , et_tc_which :: Int
       , et_tc_from_me
         :: ( ---     args     amt   when   saved_vs just-me
@@ -52,6 +53,7 @@ data ETail
              )
       , et_tc_from_msg :: [DLVar]
       , et_tc_from_amtv :: DLVar
+      , et_tc_from_timev :: DLVar
       , et_tc_from_mtime :: (Maybe ([DLArg], ETail))
       , et_tc_cons :: ETail
       }
@@ -78,37 +80,21 @@ data CTail
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   deriving (Eq, Show)
 
-data CInterval
-  = CBetween [DLArg] [DLArg]
+data CInterval a
+  = CBetween [a] [a]
   deriving (Show, Eq)
-
-default_interval :: CInterval
-default_interval = CBetween [] []
-
-interval_from :: CInterval -> [DLArg]
-interval_from (CBetween froml _) = froml
-
-interval_add_from :: CInterval -> DLArg -> CInterval
-interval_add_from (CBetween froml tol) x =
-  CBetween (x : froml) (x : tol)
-
-interval_add_to :: CInterval -> DLArg -> CInterval
-interval_add_to (CBetween froml tol) x =
-  CBetween froml (x : tol)
-
-interval_no_to :: CInterval -> CInterval
-interval_no_to (CBetween froml _) =
-  CBetween froml []
 
 data CHandler
   = C_Handler
       { ch_at :: SrcLoc
-      , ch_int :: CInterval
+      , ch_int :: CInterval DLArg
+      , ch_last_timev :: DLVar
       , ch_from :: DLVar
       , ch_last :: Int
       , ch_svs :: [DLVar]
       , ch_msg :: [DLVar]
       , ch_amtv :: DLVar
+      , ch_timev :: DLVar
       , ch_body :: CTail
       }
   | C_Loop
@@ -138,5 +124,5 @@ data PLOpts = PLOpts
   deriving (Generic, Eq, Show)
 
 data PLProg
-  = PLProg SrcLoc PLOpts EPPs CPProg
+  = PLProg SrcLoc PLOpts DLInit EPPs CPProg
   deriving (Eq, Show)

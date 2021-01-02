@@ -17,6 +17,7 @@ import Reach.Type
 import Reach.Util
 
 type App s = ReaderT (Env s) (ST s)
+type AppT s a = a -> App s a
 
 type Lifts = Seq.Seq (SrcLoc, DLVar, DLExpr)
 
@@ -90,7 +91,7 @@ freshRenaming m = do
   newRenaming <- lift $ newSTRef oldRenaming
   local (\e -> e {eRenaming = newRenaming}) m
 
-ul_v_rn :: DLVar -> App s DLVar
+ul_v_rn :: AppT s DLVar
 ul_v_rn (DLVar at lab t idx) = do
   idx' <- allocIdx
   Env {..} <- ask
@@ -98,11 +99,11 @@ ul_v_rn (DLVar at lab t idx) = do
   lift $ modifySTRef eRenaming (M.insert idx (Left v'))
   return v'
 
-ul_mv_rn :: Maybe DLVar -> App s (Maybe DLVar)
+ul_mv_rn :: AppT s (Maybe DLVar)
 ul_mv_rn Nothing = return Nothing
 ul_mv_rn (Just v) = Just <$> ul_v_rn v
 
-ul_vs_rn :: [DLVar] -> App s [DLVar]
+ul_vs_rn :: AppT s [DLVar]
 ul_vs_rn = mapM ul_v_rn
 
 lookupRenaming :: DLVar -> App s Renaming
@@ -113,7 +114,7 @@ lookupRenaming dv@(DLVar _ _ _ idx) = do
     Just x -> return x
     Nothing -> impossible $ "unbound var: " <> (show $ pretty dv)
 
-ul_v :: DLVar -> App s DLVar
+ul_v :: AppT s DLVar
 ul_v v = do
   r <- lookupRenaming v
   case r of
@@ -133,14 +134,14 @@ ul_va v = do
     Left v' -> return $ DLA_Var v'
     Right a -> return a
 
-ul_a :: DLArg -> App s DLArg
+ul_a :: AppT s DLArg
 ul_a = \case
   DLA_Var v -> ul_va v
   DLA_Constant c -> pure $ DLA_Constant c
   DLA_Literal c -> (pure $ DLA_Literal c)
   DLA_Interact p m t -> (pure $ DLA_Interact p m t)
 
-ul_as :: [DLArg] -> App s [DLArg]
+ul_as :: AppT s [DLArg]
 ul_as = mapM ul_a
 
 ul_explode :: SrcLoc -> DLArg -> App s (SLType, [DLArg])
@@ -156,14 +157,14 @@ ul_explode at a =
           liftExpr at t $
             DLE_ArrayRef at a (DLA_Literal (DLL_Int at $ fromIntegral i))
 
-ul_la :: DLLargeArg -> App s DLLargeArg
+ul_la :: AppT s DLLargeArg
 ul_la = \case
   DLLA_Array t as -> (pure $ DLLA_Array t) <*> ul_as as
   DLLA_Tuple as -> (pure $ DLLA_Tuple) <*> ul_as as
   DLLA_Obj m -> (pure $ DLLA_Obj) <*> mapM ul_a m
   DLLA_Data t vn vv -> DLLA_Data t vn <$> ul_a vv
 
-ul_e :: DLExpr -> App s DLExpr
+ul_e :: AppT s DLExpr
 ul_e = \case
   DLE_Arg at a -> (pure $ DLE_Arg at) <*> ul_a a
   DLE_LArg at la -> (pure $ DLE_LArg at) <*> ul_la la
@@ -205,7 +206,7 @@ ul_asn1 def (v, a) = (pure (,)) <*> ul_v_def v <*> ul_a a
 ul_asn :: Bool -> DLAssignment -> App s DLAssignment
 ul_asn def (DLAssignment m) = (pure $ DLAssignment) <*> ((pure M.fromList) <*> mapM (ul_asn1 def) (M.toList m))
 
-ul_mdv_rn :: Maybe DLVar -> App s (Maybe DLVar)
+ul_mdv_rn :: AppT s (Maybe DLVar)
 ul_mdv_rn = \case
   Nothing -> pure Nothing
   Just v -> pure Just <*> ul_v_rn v
@@ -229,7 +230,7 @@ llReplace' mkk nk (LLL_Com m) = llReplace mkk nk m
 llSeqn :: (LLCommon a -> a) -> [LLLocal] -> LLCommon a -> LLCommon a
 llSeqn mkk fs k = foldr' (flip $ llReplace' mkk) k fs
 
-ul_m :: (LLCommon a -> a) -> (a -> App s a) -> LLCommon a -> App s a
+ul_m :: (LLCommon a -> a) -> AppT s a -> LLCommon a -> App s a
 ul_m mkk ul_k = \case
   LL_Return at -> (pure $ mkk $ LL_Return at)
   LL_Let at mdv e k -> do
@@ -278,15 +279,15 @@ ul_m mkk ul_k = \case
     let m' = llSeqn mkk (toList fs) (LL_Let at (Just ans') (DLE_Arg at r') k')
     return $ addLifts mkk m' xlifts
 
-ul_l :: LLLocal -> App s LLLocal
+ul_l :: AppT s LLLocal
 ul_l = \case
   LLL_Com m -> ul_m LLL_Com ul_l m
 
-ul_bl :: LLBlock -> App s LLBlock
+ul_bl :: AppT s LLBlock
 ul_bl (LLBlock at fs b a) =
   (pure $ LLBlock at fs) <*> ul_l b <*> ul_a a
 
-ul_n :: LLConsensus -> App s LLConsensus
+ul_n :: AppT s LLConsensus
 ul_n = \case
   LLC_Com m -> ul_m LLC_Com ul_n m
   LLC_If at c t f ->
@@ -304,16 +305,16 @@ ul_n = \case
   LLC_Only at p l k ->
     (pure $ LLC_Only at p) <*> ul_l l <*> ul_n k
 
-ul_mtime :: Maybe (DLArg, LLStep) -> App s (Maybe (DLArg, LLStep))
+ul_mtime :: AppT s (Maybe (DLArg, LLStep))
 ul_mtime = \case
   Nothing -> (pure $ Nothing)
-  Just (a, s) -> (pure $ Just) <*> (pure (,) <*> ul_a a <*> ul_s s)
+  Just (b, s) -> (pure $ Just) <*> (pure (,) <*> ul_a b <*> ul_s s)
 
-ul_send :: (SLPart, (Bool, [DLArg], DLArg, DLArg)) -> App s (SLPart, (Bool, [DLArg], DLArg, DLArg))
+ul_send :: AppT s (SLPart, (Bool, [DLArg], DLArg, DLArg))
 ul_send (p, (isClass, args, amta, whena)) =
   (,) p <$> ((\x y z -> (isClass, x,y,z)) <$> ul_as args <*> ul_a amta <*> ul_a whena)
 
-ul_s :: LLStep -> App s LLStep
+ul_s :: AppT s LLStep
 ul_s = \case
   LLS_Com m -> ul_m LLS_Com ul_s m
   LLS_Stop at ->
@@ -324,14 +325,18 @@ ul_s = \case
     LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
     where
       send' = M.fromList <$> mapM ul_send (M.toList send)
-      (winner_dv, msg, amtv, cons) = recv
+      (last_timev, winner_dv, msg, amtv, timev, cons) = recv
       cons' = ul_n cons
-      recv' = (\a b c d -> (a, b, c, d)) <$> ul_v_rn winner_dv <*> ul_vs_rn msg <*> ul_v_rn amtv <*> cons'
+      recv' = (\a b c d e f -> (a, b, c, d, e, f)) <$> ul_v last_timev <*> ul_v_rn winner_dv <*> ul_vs_rn msg <*> ul_v_rn amtv <*> ul_v_rn timev <*> cons'
       mtime' = ul_mtime mtime
 
-ul_p :: LLProg -> App s LLProg
-ul_p (LLProg at opts ps s) = do
-  LLProg at opts ps <$> ul_s s
+ul_dli :: AppT s DLInit
+ul_dli (DLInit ctimem) = do
+  DLInit <$> ul_mdv_rn ctimem
+
+ul_p :: AppT s LLProg
+ul_p (LLProg at opts ps dli s) = do
+  LLProg at opts ps <$> ul_dli dli <*> ul_s s
 
 unrollLoops :: LLProg -> LLProg
 unrollLoops lp = runST $ do

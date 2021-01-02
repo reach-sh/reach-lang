@@ -1,5 +1,8 @@
 module Reach.Linearize (linearize) where
 
+import Control.Monad.Reader
+import Data.IORef
+import Data.List (foldl')
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import Generics.Deriving
@@ -10,49 +13,123 @@ import Reach.AST.LL
 import Reach.Util
 
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
+type FVMap = M.Map FluidVar DLVar
+type LLRetRHS = (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
+type LLRets = M.Map Int LLRetRHS
 
-type LLRets = M.Map Int (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
+type App = ReaderT Env IO
+type AppT a = a -> App a
 
-lin_com :: String -> (SrcLoc -> FluidEnv -> LLRets -> DLStmts -> a) -> (LLCommon a -> a) -> FluidEnv -> LLRets -> DLStmt -> DLStmts -> a
-lin_com who back mkk fve rets s ks =
+data Env = Env
+  { eCounterR :: IORef Int
+  , eFVMm :: Maybe FVMap
+  , eFVE :: FluidEnv
+  , eRets :: LLRets
+  }
+
+allocVar :: (Int -> a) -> App a
+allocVar mk = do
+  Env {..} <- ask
+  idx <- liftIO $ readIORef eCounterR
+  liftIO $ modifyIORef eCounterR (1 +)
+  return $ mk idx
+
+fluidRef :: FluidVar -> App (SrcLoc, DLArg)
+fluidRef fv = do
+  Env {..} <- ask
+  case M.lookup fv eFVE of
+    Nothing -> impossible $ "fluid ref unbound: " <> show fv
+    Just x -> return x
+
+fluidSet :: FluidVar -> (SrcLoc, DLArg) -> App a -> App a
+fluidSet fv fvv = local (\e@Env{..} -> e { eFVE = M.insert fv fvv eFVE })
+
+lookupRet :: Int -> App (Maybe LLRetRHS)
+lookupRet r = do
+  Env {..} <- ask
+  return $ M.lookup r eRets
+
+captureRets :: App LLRets
+captureRets = do
+  Env {..} <- ask
+  return eRets
+
+restoreRets :: LLRets -> App a -> App a
+restoreRets rets' = local (\e -> e { eRets = rets' })
+
+setRetsToEmpty :: App a -> App a
+setRetsToEmpty = restoreRets mempty
+
+withReturn :: Int -> LLRetRHS -> App a -> App a
+withReturn rv rvv = local (\e@Env{..} -> e { eRets = M.insert rv rvv eRets })
+
+withWhileFVMap :: FVMap -> App a -> App a
+withWhileFVMap fvm' = local (\e -> e { eFVMm = Just fvm' })
+
+readWhileFVMap :: App FVMap
+readWhileFVMap = do
+  Env {..} <- ask
+  case eFVMm of
+    Nothing -> impossible "attempt to read fvm with no fvm"
+    Just x -> return x
+
+unpackFVMap :: SrcLoc -> DLStmts -> App DLStmts
+unpackFVMap at ss = do
+  fvm <- readWhileFVMap
+  let go ss' (fv, dv) = (return $ DLS_FluidSet at fv (DLA_Var dv)) <> ss'
+  let ss' = foldl' go ss (M.toList fvm)
+  return $ ss'
+
+block_unpackFVMap :: SrcLoc -> DLBlock -> App DLBlock
+block_unpackFVMap uat (DLBlock at fs ss a) =
+  (\x -> DLBlock at fs x a) <$> unpackFVMap uat ss
+
+expandFromFVMap :: DLAssignment -> App DLAssignment
+expandFromFVMap (DLAssignment updatem) = do
+  fvm <- readWhileFVMap
+  let go (fv, dv) = do
+        (_, da) <- fluidRef fv
+        return $ (dv, da)
+  fvm'l <- mapM go $ M.toList fvm
+  let updatem' = M.union (M.fromList $ fvm'l) updatem
+  return $ DLAssignment updatem'
+
+lin_com :: String -> (SrcLoc -> DLStmts -> App a) -> (LLCommon a -> a) -> DLStmt -> DLStmts -> App a
+lin_com who back mkk s ks =
   case s of
-    DLS_FluidSet at fv da -> back at fve' rets ks
-      where
-        fve' = M.insert fv (at, da) fve
-    DLS_FluidRef at dv fv ->
-      mkk $ LL_Let at (Just dv) (DLE_Arg at' da) $ back at fve rets ks
-      where
-        (at', da) =
-          case M.lookup fv fve of
-            Nothing -> impossible $ "fluid ref unbound: " <> show fv
-            Just x -> x
-    DLS_Let at mdv de -> mkk $ LL_Let at mdv de $ back at fve rets ks
+    DLS_FluidSet at fv da ->
+      fluidSet fv (at, da) $ back at ks
+    DLS_FluidRef at dv fv -> do
+      (at', da) <- fluidRef fv
+      mkk <$> (LL_Let at (Just dv) (DLE_Arg at' da) <$> back at ks)
+    DLS_Let at mdv de -> mkk <$> (LL_Let at mdv de <$> back at ks)
     DLS_ArrayMap at ans x a f ->
-      mkk $ LL_ArrayMap at ans x a f' $ back at fve rets ks
+      mkk <$> (LL_ArrayMap at ans x a <$> f' <*> back at ks)
       where
-        f' = lin_block at fve f
+        f' = lin_block at f
     DLS_ArrayReduce at ans x z b a f ->
-      mkk $ LL_ArrayReduce at ans x z b a f' $ back at fve rets ks
+      mkk <$> (LL_ArrayReduce at ans x z b a <$> f' <*> back at ks)
       where
-        f' = lin_block at fve f
+        f' = lin_block at f
     DLS_If at ca _ ts fs
       | isLocal s ->
-        mkk $ LL_LocalIf at ca t' f' $ back at fve rets ks
+        mkk <$> (LL_LocalIf at ca <$> t' <*> f' <*> back at ks)
       where
-        t' = lin_local_rets at fve rets ts
-        f' = lin_local_rets at fve rets fs
+        t' = lin_local_rets at ts
+        f' = lin_local_rets at fs
     DLS_Switch at dv _ cm
       | isLocal s ->
-        mkk $ LL_LocalSwitch at dv cm' $ back at fve rets ks
+        mkk <$> (LL_LocalSwitch at dv <$> cm' <*> back at ks)
       where
-        cm' = M.map cm1 cm
-        cm1 (dv', l) = (dv', lin_local_rets at fve rets l)
-    DLS_Return at ret eda ->
-      case M.lookup ret rets of
+        cm' = mapM cm1 cm
+        cm1 (dv', l) = (\x -> (dv', x)) <$> lin_local_rets at l
+    DLS_Return at ret eda -> do
+      rv <- lookupRet ret
+      case rv of
         Nothing ->
           impossible $ "unknown ret " <> show ret
         Just Nothing ->
-          back at fve rets ks
+          back at ks
         Just (Just (dv, retsm)) ->
           case eda of
             Left reti ->
@@ -61,18 +138,17 @@ lin_com who back mkk fve rets s ks =
                 Just (das, da) ->
                   case das <> (return $ DLS_Return at ret (Right da)) <> ks of
                     s' Seq.:<| ks' ->
-                      lin_com who back mkk fve rets s' ks'
+                      lin_com who back mkk s' ks'
                     _ ->
                       impossible $ "no cons"
             Right da ->
-              mkk $ LL_Set at dv da $ back at fve rets ks
-    DLS_Prompt at (Left ret) ss -> back at fve rets' (ss <> ks)
-      where
-        rets' = M.insert ret Nothing rets
-    DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss ->
-      mkk $ LL_Var at dv $ back at fve rets' (ss <> ks)
-      where
-        rets' = M.insert ret (Just (dv, retms)) rets
+              (mkk . LL_Set at dv da) <$> back at ks
+    DLS_Prompt at (Left ret) ss ->
+      withReturn ret Nothing $
+        back at (ss <> ks)
+    DLS_Prompt at (Right (dv@(DLVar _ _ _ ret), retms)) ss -> do
+      withReturn ret (Just (dv, retms)) $
+        (mkk . LL_Var at dv) <$> back at (ss <> ks)
     DLS_If {} -> bad
     DLS_Switch {} -> bad
     DLS_Stop {} -> bad
@@ -84,61 +160,65 @@ lin_com who back mkk fve rets s ks =
   where
     bad = impossible $ who <> " cannot " <> conNameOf s <> " at " <> show (srclocOf s)
 
-lin_local_rets :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLLocal
-lin_local_rets at _ _ Seq.Empty =
-  LLL_Com $ LL_Return at
-lin_local_rets _ fve rets (s Seq.:<| ks) =
-  lin_com "local" lin_local_rets LLL_Com fve rets s ks
+lin_local_rets :: SrcLoc -> DLStmts -> App LLLocal
+lin_local_rets at Seq.Empty =
+  return $ LLL_Com $ LL_Return at
+lin_local_rets _ (s Seq.:<| ks) =
+  lin_com "local" lin_local_rets LLL_Com s ks
 
-lin_local :: SrcLoc -> FluidEnv -> DLStmts -> LLLocal
-lin_local at fve ks = lin_local_rets at fve mempty ks
+lin_local :: SrcLoc -> DLStmts -> App LLLocal
+lin_local at ks = setRetsToEmpty $ lin_local_rets at ks
 
-lin_block :: SrcLoc -> FluidEnv -> DLBlock -> LLBlock
-lin_block _at fve (DLBlock at fs l a) =
-  LLBlock at fs (lin_local at fve l) a
+lin_block :: SrcLoc -> DLBlock -> App LLBlock
+lin_block _at (DLBlock at fs l a) =
+  LLBlock at fs <$> lin_local at l <*> pure a
 
-lin_con :: (FluidEnv -> DLStmts -> LLStep) -> SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLConsensus
-lin_con _ at _ _ Seq.Empty =
-  LLC_Com $ LL_Return at
-lin_con back at_top fve rets (s Seq.:<| ks) =
+lin_con :: (DLStmts -> App LLStep) -> SrcLoc -> DLStmts -> App LLConsensus
+lin_con _ at Seq.Empty =
+  return $ LLC_Com $ LL_Return at
+lin_con back at_top (s Seq.:<| ks) =
   case s of
     DLS_If at ca _ ts fs
       | not (isLocal s) ->
-        LLC_If at ca t' f'
+        LLC_If at ca <$> t' <*> f'
       where
-        t' = lin_con back at fve rets (ts <> ks)
-        f' = lin_con back at fve rets (fs <> ks)
+        t' = lin_con back at (ts <> ks)
+        f' = lin_con back at (fs <> ks)
     DLS_Switch at dv _ cm
       | not (isLocal s) ->
-        LLC_Switch at dv cm'
+        LLC_Switch at dv <$> cm'
       where
-        cm' = M.map cm1 cm
-        cm1 (dv', c) = (dv', lin_con back at fve rets (c <> ks))
+        cm' = mapM cm1 cm
+        cm1 (dv', c) = (\x -> (dv', x)) <$> lin_con back at (c <> ks)
     DLS_FromConsensus at cons ->
-      LLC_FromConsensus at at_top $ back fve (cons <> ks)
-    DLS_While at asn inv_b cond_b body ->
-      LLC_While at asn (block inv_b) (block cond_b) body' $ lin_con back at fve rets ks
-      where
-        body' = lin_con back at fve rets body
-        --- Note: The invariant and condition can't return
-        block = lin_block at fve
+      LLC_FromConsensus at at_top <$> back (cons <> ks)
+    DLS_While at asn inv_b cond_b body -> do
+      let go fv = do
+            dv <- allocVar $ DLVar at (show fv) (fluidVarType fv)
+            return $ (fv, dv)
+      fvm <- M.fromList <$> mapM go allFluidVars
+      let body_fvs' = lin_con back at =<< unpackFVMap at body
+      --- Note: The invariant and condition can't return
+      let block b = lin_block at =<< block_unpackFVMap at b
+      withWhileFVMap fvm $
+        LLC_While at <$> expandFromFVMap asn <*> block inv_b <*> block cond_b <*> body_fvs' <*> (lin_con back at =<< unpackFVMap at ks)
     DLS_Continue at update ->
       case ks of
         Seq.Empty ->
-          LLC_Continue at update
+          LLC_Continue at <$> expandFromFVMap update
         _ ->
           impossible $ "consensus cannot continue w/ non-empty k"
     DLS_Only at who ss ->
-      LLC_Only at who ls $ lin_con back at fve rets ks
+      LLC_Only at who <$> ls <*> lin_con back at ks
       where
-        ls = lin_local at fve ss
+        ls = lin_local at ss
     _ ->
-      lin_com "consensus" (lin_con back) LLC_Com fve rets s ks
+      lin_com "consensus" (lin_con back) LLC_Com s ks
 
-lin_step :: SrcLoc -> FluidEnv -> LLRets -> DLStmts -> LLStep
-lin_step at _ _ Seq.Empty =
-  LLS_Stop at
-lin_step _ fve rets (s Seq.:<| ks) =
+lin_step :: SrcLoc -> DLStmts -> App LLStep
+lin_step at Seq.Empty =
+  return $ LLS_Stop at
+lin_step _ (s Seq.:<| ks) =
   case s of
     DLS_If {}
       | not (isLocal s) ->
@@ -147,28 +227,37 @@ lin_step _ fve rets (s Seq.:<| ks) =
       | not (isLocal s) ->
         impossible $ "step cannot unlocal switch, must occur in consensus"
     DLS_Stop at ->
-      LLS_Stop at
+      return $ LLS_Stop at
     DLS_Only at who ss ->
-      LLS_Only at who ls $ lin_step at fve rets ks
+      LLS_Only at who <$> ls <*> lin_step at ks
       where
-        ls = lin_local at fve ss
-    DLS_ToConsensus at send recv mtime ->
-      LLS_ToConsensus at send recv' mtime'
-      where
-        back fve' = lin_step at fve' rets
-        (winner_dv, msg, amtv, cons) = recv
-        cons' = lin_con back at fve rets (cons <> ks)
-        recv' = (winner_dv, msg, amtv, cons')
-        mtime' = do
-          (delay_da, time_ss) <- mtime
-          return $ (delay_da, lin_step at fve rets (time_ss <> ks))
+        ls = lin_local at ss
+    DLS_ToConsensus at send recv mtime -> do
+      rets <- captureRets
+      let back = restoreRets rets . lin_step at
+      let (last_timev, winner_dv, msg, amtv, timev, cons) = recv
+      let cons' = lin_con back at (cons <> ks)
+      let recv' =
+            (\x -> (last_timev, winner_dv, msg, amtv, timev, x)) <$> cons'
+      let mtime' =
+            case mtime of
+              Just (delay_da, time_ss) ->
+                (\x y -> Just (x, y)) <$> pure delay_da <*> lin_step at (time_ss <> ks)
+              Nothing ->
+                return $ Nothing
+      LLS_ToConsensus at send <$> recv' <*> mtime'
     _ ->
-      lin_com "step" lin_step LLS_Com fve rets s ks
+      lin_com "step" lin_step LLS_Com s ks
 
-linearize :: DLProg -> LLProg
-linearize (DLProg at (DLOpts {..}) sps ss) =
-  LLProg at opts' sps $ lin_step at mempty mempty ss
-  where
-    opts' = LLOpts {..}
-    llo_deployMode = dlo_deployMode
-    llo_verifyOverflow = dlo_verifyOverflow
+linearize :: DLProg -> IO LLProg
+linearize (DLProg at (DLOpts {..}) sps dli ss) = do
+  let llo_deployMode = dlo_deployMode
+  let llo_verifyOverflow = dlo_verifyOverflow
+  let opts' = LLOpts {..}
+  eCounterR <- newIORef dlo_counter
+  let eFVMm = mempty
+  let eFVE = mempty
+  let eRets = mempty
+  let env0 = Env {..}
+  flip runReaderT env0 $
+    LLProg at opts' sps dli <$> lin_step at ss

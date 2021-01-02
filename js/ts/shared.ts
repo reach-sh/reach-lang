@@ -29,6 +29,7 @@ export type IRecvNoTimeout<RawAddress> =  {
   data: Array<any>,
   value: BigNumber,
   from: RawAddress,
+  time: BigNumber,
 };
 
 export type IRecv<RawAddress> = IRecvNoTimeout<RawAddress> | {
@@ -37,8 +38,10 @@ export type IRecv<RawAddress> = IRecvNoTimeout<RawAddress> | {
 
 export type IContract<ContractInfo, Digest, RawAddress, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
+  creationTime: () => Promise<BigNumber>,
   sendrecv: (
-    label: string, funcNum: number, evt_cnt: number, tys: Array<ConnectorTy>,
+    label: string, funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
+    tys: Array<ConnectorTy>,
     args: Array<any>, value: BigNumber, out_tys: Array<ConnectorTy>,
     onlyIf: boolean, soloSend: boolean,
     timeout_delay: BigNumber | false, sim_p: (fake: IRecv<RawAddress>) => ISimRes<Digest, RawAddress>,

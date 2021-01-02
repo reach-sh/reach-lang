@@ -96,7 +96,7 @@ class ReachLexer(RegexLexer):
              r'Error|eval|isFinite|isNaN|isSafeInteger|parseFloat|parseInt|'
              # The reach ones
              r'UInt|Reach|App|Fun|Null|Bool|Bytes|Address|Tuple|Participant|Data|Digest|deployMode|verifyOverflow|verifyPerConnector|connectors|ETH|ALGO|'
-             r'balance|digest|implies|ensure|hasRandom|makeCommitment|checkCommitment|closeTo|'
+             r'balance|digest|implies|ensure|hasRandom|makeCommitment|checkCommitment|closeTo|lastConsensusTime|'
              r'and|or|add|sub|mul|div|mod|lt|le|gt|ge|lsh|rsh|band|bior|bxor|eq|neq|'
              r'polyEq|polyNeq|typeEq|intEq|ite|typeOf|isType|'
              r'array|makeEnum|'

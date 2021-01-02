@@ -1,10 +1,11 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-const N = 10;
-
 (async () => {
   const stdlib = await loadStdlib();
+  const [ N, timeoutFactor ] =
+    stdlib.standardUnit === 'ALGO' ? [ 5, 20 ] : [ 20, 6 ];
+
   const startingBalance = stdlib.parseCurrency(10);
   const accPollster = await stdlib.newTestAccount(startingBalance);
   const accVoter_arr = await Promise.all( Array.from({length: N}, () => stdlib.newTestAccount(startingBalance)) );
@@ -21,8 +22,12 @@ const N = 10;
 
   const OUTCOME = ['Alice wins', 'Bob wins', 'Timeout'];
   const Common = (Who) => ({
-      showOutcome: (outcome) => {
-        console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+      showOutcome: (outcome, forA, forB) => {
+        if ( outcome == 2 ) {
+          console.log(`${Who} saw the timeout`); }
+        else {
+          console.log(`${Who} saw a ${forA}-${forB} outcome: ${OUTCOME[outcome]}`);
+        }
   } });
 
   await Promise.all([
@@ -30,7 +35,7 @@ const N = 10;
       ...Common('Pollster'),
       getParams: () => ({
         ticketPrice: stdlib.parseCurrency(5),
-        deadline: 10,
+        deadline: N*timeoutFactor,
         aliceAddr: accAlice,
         bobAddr: accBob,
       }),
@@ -46,7 +51,7 @@ const N = 10;
         getVote: (() => vote),
         voterWas: ((voterAddr) => {
           if ( stdlib.addressEq(voterAddr, accVoter) ) {
-            console.log(`${Who} voted: ${vote}`);
+            console.log(`${Who} voted: ${vote ? 'Alice' : 'Bob'}`);
             voted = true;
           } } ),
         shouldVote: (() => ! voted) }); } )

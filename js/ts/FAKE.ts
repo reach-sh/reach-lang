@@ -5,10 +5,10 @@
 import Timeout from 'await-timeout';
 import ethers from 'ethers';
 import * as stdlib from './shared';
+const { bigNumberify } = stdlib;
 import { CurrencyAmount, OnProgress } from './shared';
 export * from './shared';
 import { stdlib as compiledStdlib, typeDefs } from './FAKE_compiled';
-
 
 // ****************************************************************************
 // Type Definitions
@@ -214,11 +214,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (
-      label: string, funcNum: number, evt_cnt: number, tys: Array<FAKE_Ty>,
+      label: string, funcNum: number, evt_cnt: number,
+      hasLastTime: (BigNumber | false),
+      tys: Array<FAKE_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<FAKE_Ty>,
       onlyIf: boolean, soloSend:boolean,
       timeout_delay: BigNumber | false, sim_p: (fake: Recv) => SimRes,
     ): Promise<Recv> => {
+      void(hasLastTime);
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
         await recv(label, funcNum, evt_cnt, out_tys, waitIfNotPresent, timeout_delay);
       if ( ! onlyIf ) {
@@ -242,6 +245,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         const stubbedRecv: RecvNoTimeout = {
           didTimeout: false,
+          time: bigNumberify(0), // This should never be read
           data,
           value,
           from: address,
@@ -326,7 +330,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(`${label} recv ${funcNum} --- AT ${found_block}`);
           setLastBlock(found_block);
           const evt = b.event;
-          return { didTimeout: false, data: evt.data, value: evt.value, from: evt.from };
+          return { didTimeout: false,
+                   time: bigNumberify(found_block),
+                   data: evt.data,
+                   value: evt.value,
+                   from: evt.from };
         }
       }
 
@@ -335,20 +343,24 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const getInfo = async () => await infoP;
+    const creationTime = async () => bigNumberify((await getInfo()).creation_block);
 
-    return { getInfo, sendrecv, recv, iam, selfAddress, wait, stdlib: compiledStdlib };
+    return { getInfo, creationTime, sendrecv, recv, iam, selfAddress, wait, stdlib: compiledStdlib };
   };
 
   const deploy = (bin: Backend): Contract => {
     const contract = makeAccount();
     debug(`new contract: ${contract.address}`);
+    const this_block = BLOCKS.length;
     STATES[contract.address] =
       // @ts-ignore XXX
-      digest(T_Tuple([T_UInt]), [stdlib.bigNumberify(0)]);
+      digest(T_Tuple([T_UInt, T_UInt]),
+             [ stdlib.bigNumberify(0),
+               stdlib.bigNumberify(this_block) ]);
     BLOCKS.push({type: 'contract', address: contract.address});
     return attach(bin, {
       ...contract,
-      creation_block: BLOCKS.length - 1,
+      creation_block: this_block,
       // events: {},
     });
   };

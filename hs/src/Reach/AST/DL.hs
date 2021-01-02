@@ -23,7 +23,7 @@ data DLStmt
   | DLS_ToConsensus
       { dls_tc_at :: SrcLoc
       , dls_tc_send :: M.Map SLPart (Bool, [DLArg], DLArg, DLArg)
-      , dls_tc_recv :: (DLVar, [DLVar], DLVar, DLStmts)
+      , dls_tc_recv :: (DLVar, DLVar, [DLVar], DLVar, DLVar, DLStmts)
       , dls_tc_mtime :: Maybe (DLArg, DLStmts)
       }
   | DLS_FromConsensus SrcLoc DLStmts
@@ -104,9 +104,10 @@ data DLOpts = DLOpts
   , dlo_verifyOverflow :: Bool
   , dlo_verifyPerConnector :: Bool
   , dlo_connectors :: [T.Text]
+  , dlo_counter :: Int
   }
   deriving (Eq, Generic, NFData, Show)
 
 data DLProg
-  = DLProg SrcLoc DLOpts SLParts DLStmts
+  = DLProg SrcLoc DLOpts SLParts DLInit DLStmts
   deriving (Generic, NFData)

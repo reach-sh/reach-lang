@@ -15,6 +15,8 @@ import Reach.Util
 
 type App = ReaderT Env IO
 
+type AppT a = a -> App a
+
 data Focus
   = F_All
   | F_One SLPart
@@ -75,7 +77,9 @@ rewritten :: DLVar -> App (Maybe DLVar)
 rewritten = lookupCommon ceReplaced
 
 repeated :: DLExpr -> App (Maybe DLVar)
-repeated = lookupCommon cePrev
+repeated = \case
+  DLE_Arg _ (DLA_Var dv') -> return $ Just dv'
+  e -> lookupCommon cePrev e
 
 remember :: DLVar -> DLExpr -> App ()
 remember v e =
@@ -106,32 +110,37 @@ mkEnv0 eParts = do
   eEnvsR <- liftIO $ newIORef eEnvs
   return $ Env {..}
 
-opt_v :: DLVar -> App DLVar
+opt_v :: AppT DLVar
 opt_v v = do
   r <- rewritten v
   return $ fromMaybe v r
 
-opt_vs :: [DLVar] -> App [DLVar]
+opt_mv :: AppT (Maybe DLVar)
+opt_mv = \case
+  Nothing -> return Nothing
+  Just x -> Just <$> opt_v x
+
+opt_vs :: AppT [DLVar]
 opt_vs = mapM opt_v
 
-opt_a :: DLArg -> App DLArg
+opt_a :: AppT DLArg
 opt_a = \case
   DLA_Var v -> DLA_Var <$> opt_v v
   DLA_Constant c -> pure $ DLA_Constant c
   DLA_Literal c -> (pure $ DLA_Literal c)
   DLA_Interact p m t -> (pure $ DLA_Interact p m t)
 
-opt_as :: [DLArg] -> App [DLArg]
+opt_as :: AppT [DLArg]
 opt_as = mapM opt_a
 
-opt_la :: DLLargeArg -> App DLLargeArg
+opt_la :: AppT DLLargeArg
 opt_la = \case
   DLLA_Array t as -> (pure $ DLLA_Array t) <*> opt_as as
   DLLA_Tuple as -> (pure $ DLLA_Tuple) <*> opt_as as
   DLLA_Obj m -> (pure $ DLLA_Obj) <*> mapM opt_a m
   DLLA_Data t vn vv -> DLLA_Data t vn <$> opt_a vv
 
-opt_e :: DLExpr -> App DLExpr
+opt_e :: AppT DLExpr
 opt_e = \case
   DLE_Arg at a -> (pure $ DLE_Arg at) <*> opt_a a
   DLE_LArg at a -> (pure $ DLE_LArg at) <*> opt_la a
@@ -150,11 +159,11 @@ opt_e = \case
   DLE_Wait at a -> (pure $ DLE_Wait at) <*> opt_a a
   DLE_PartSet at who a -> (pure $ DLE_PartSet at who) <*> opt_a a
 
-opt_asn :: DLAssignment -> App DLAssignment
+opt_asn :: AppT DLAssignment
 opt_asn (DLAssignment m) =
   DLAssignment <$> mapM opt_a m
 
-opt_m :: (LLCommon a -> a) -> (a -> App a) -> LLCommon a -> App a
+opt_m :: (LLCommon a -> a) -> AppT a -> LLCommon a -> App a
 opt_m mkk opt_k = \case
   LL_Return at -> pure $ mkk $ LL_Return at
   LL_Let at (Just dv) e k | isPure e -> do
@@ -185,15 +194,15 @@ opt_m mkk opt_k = \case
   LL_ArrayReduce at ans x0 z b a f k -> do
     mkk <$> (LL_ArrayReduce at ans <$> opt_a x0 <*> opt_a z <*> (pure b) <*> (pure a) <*> opt_bl f <*> opt_k k)
 
-opt_l :: LLLocal -> App LLLocal
+opt_l :: AppT LLLocal
 opt_l = \case
   LLL_Com m -> opt_m LLL_Com opt_l m
 
-opt_bl :: LLBlock -> App LLBlock
+opt_bl :: AppT LLBlock
 opt_bl (LLBlock at fs b a) =
   newScope $ LLBlock at fs <$> opt_l b <*> opt_a a
 
-opt_n :: LLConsensus -> App LLConsensus
+opt_n :: AppT LLConsensus
 opt_n = \case
   LLC_Com m -> opt_m LLC_Com opt_n m
   LLC_If at c t f ->
@@ -211,12 +220,12 @@ opt_n = \case
   LLC_Only at p l k ->
     LLC_Only at p <$> (focusp p $ opt_l l) <*> opt_n k
 
-opt_mtime :: Maybe (DLArg, LLStep) -> App (Maybe (DLArg, LLStep))
+opt_mtime :: AppT (Maybe (DLArg, LLStep))
 opt_mtime = \case
   Nothing -> pure $ Nothing
-  Just (a, s) -> Just <$> (pure (,) <*> opt_a a <*> (newScope $ opt_s s))
+  Just (d, s) -> Just <$> (pure (,) <*> opt_a d <*> (newScope $ opt_s s))
 
-opt_send :: (SLPart, (Bool, [DLArg], DLArg, DLArg)) -> App (SLPart, (Bool, [DLArg], DLArg, DLArg))
+opt_send :: AppT (SLPart, (Bool, [DLArg], DLArg, DLArg))
 opt_send (p, (isClass, args, amta, whena)) =
   focusp p $
     (,) p <$> ((\x y z -> (isClass, x,y,z)) <$> opt_as args <*> opt_a amta <*> opt_a whena)
@@ -231,30 +240,34 @@ opt_s = \case
     LLS_ToConsensus at <$> send' <*> recv' <*> mtime'
     where
       send' = M.fromList <$> mapM opt_send (M.toList send)
-      (winner_dv, msg, amtv, cons) = recv
+      (last_timev, winner_dv, msg, amtv, timev, cons) = recv
       cons' = newScope $ focusc $ opt_n cons
-      recv' = (\x -> (winner_dv, msg, amtv, x)) <$> cons'
+      recv' = (\x y -> (x, winner_dv, msg, amtv, timev, y)) <$> opt_v last_timev <*> cons'
       mtime' = opt_mtime mtime
 
+opt_dli :: AppT DLInit
+opt_dli (DLInit ctimem) =
+  DLInit <$> (opt_mv ctimem)
+
 optimize :: LLProg -> IO LLProg
-optimize (LLProg at opts ps s) = do
+optimize (LLProg at opts ps dli s) = do
   let SLParts m = ps
   let psl = M.keys m
   env0 <- mkEnv0 psl
   flip runReaderT env0 $
-    LLProg at opts ps <$> opt_s s
+    LLProg at opts ps <$> opt_dli dli <*> opt_s s
 
 -- This is a bit of a hack...
 
-plopt_l :: PLTail -> App PLTail
+plopt_l :: AppT PLTail
 plopt_l = \case
   PLTail m -> plopt_m PLTail plopt_l m
 
-plopt_bl :: PLBlock -> App PLBlock
+plopt_bl :: AppT PLBlock
 plopt_bl (PLBlock at b a) =
   newScope $ PLBlock at <$> plopt_l b <*> opt_a a
 
-plopt_m :: (PLCommon a -> a) -> (a -> App a) -> PLCommon a -> App a
+plopt_m :: (PLCommon a -> a) -> AppT a -> PLCommon a -> App a
 plopt_m mkk opt_k = \case
   PL_Return at -> pure $ mkk $ PL_Return at
   PL_Eff at e k ->
@@ -288,7 +301,7 @@ plopt_m mkk opt_k = \case
   PL_ArrayReduce at ans x0 z b a f k -> do
     mkk <$> (PL_ArrayReduce at ans <$> opt_a x0 <*> opt_a z <*> (pure b) <*> (pure a) <*> plopt_bl f <*> opt_k k)
 
-plopt_ct :: CTail -> App CTail
+plopt_ct :: AppT CTail
 plopt_ct = \case
   CT_Com m ->
     plopt_m CT_Com plopt_ct m

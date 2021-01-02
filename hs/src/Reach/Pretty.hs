@@ -77,6 +77,7 @@ instance Pretty SLKwd where
 instance Pretty FluidVar where
   pretty = \case
     FV_balance -> "balance"
+    FV_thisConsensusTime -> "thisConsensusTime"
     FV_lastConsensusTime -> "lastConsensusTime"
 
 instance Pretty DLVar where
@@ -108,7 +109,7 @@ instance Pretty DLArg where
     DLA_Interact who m t ->
       "interact(" <> render_sp who <> ")." <> viaShow m <> parens (pretty t)
 
-render_das :: [DLArg] -> Doc
+render_das :: Pretty a => [a] -> Doc
 render_das as = hsep $ punctuate comma $ map pretty as
 
 instance Pretty DLLargeArg where
@@ -195,8 +196,8 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
-prettyToConsensus :: (a -> Doc) -> (b -> Doc) -> M.Map SLPart (Bool, [DLArg], DLArg, DLArg) -> (DLVar, [DLVar], DLVar, a) -> (Maybe (DLArg, b)) -> Doc
-prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
+prettyToConsensus :: Pretty c => (a -> Doc) -> (b -> Doc) -> M.Map SLPart (Bool, [DLArg], DLArg, DLArg) -> (DLVar, DLVar, [DLVar], DLVar, DLVar, a) -> (Maybe (c, b)) -> Doc
+prettyToConsensus fa fb send (ltv, win, msg, amtv,tv,  body) mtime =
   "publish" <> parens emptyDoc
     <> nest
       2
@@ -204,7 +205,7 @@ prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
          <> concatWith (surround hardline) (map go $ M.toList send)
          <> hardline
          <> ".recv"
-         <> parens (hsep $ punctuate comma $ [pretty win, pretty msg, pretty amtv, render_nest (fa body)])
+         <> parens (hsep $ punctuate comma $ [pretty ltv, pretty win, pretty msg, pretty amtv, pretty tv, render_nest (fa body)])
          <> semi)
   where
     go (p, (isClass, args, amta, whena)) =
@@ -214,6 +215,9 @@ prettyToConsensus fa fb send (win, msg, amtv, body) mtime =
         Nothing -> emptyDoc
         Just (delaya, tbody) ->
           ".timeout" <> parens (hsep $ punctuate comma $ [pretty delaya, render_nest (fb tbody)]) <> hardline
+
+prettyCommit :: Doc
+prettyCommit = "commit();"
 
 instance Pretty DLAssignment where
   pretty (DLAssignment m) = render_obj m
@@ -250,7 +254,7 @@ instance Pretty DLStmt where
       DLS_ToConsensus {..} ->
         prettyToConsensus render_dls render_dls dls_tc_send dls_tc_recv dls_tc_mtime
       DLS_FromConsensus _ more ->
-        "commit()" <> semi <> hardline <> render_dls more
+        prettyCommit <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
         prettyWhile asn inv cond $ render_dls body
       DLS_Continue _ cont_da ->
@@ -278,12 +282,22 @@ instance Pretty InteractEnv where
 instance Pretty SLParts where
   pretty (SLParts m) = "parts" <+> render_obj m <> semi
 
+instance Pretty DLInit where
+  pretty (DLInit ctimem) =
+    "// initialization" <> hardline
+      <> ctimem'
+    where
+      ctimem' = case ctimem of
+                  Nothing -> "// no ctime" <> hardline
+                  Just x -> "const" <+> pretty x <+> "=" <+> "creationTime();" <> hardline
+
 instance Pretty DLProg where
-  pretty (DLProg _at _ sps ds) =
+  pretty (DLProg _at _ sps dli ds) =
     "#lang dl" <> hardline
       <> pretty sps
       <> hardline
       <> hardline
+      <> pretty dli
       <> render_dls ds
 
 --- Linear language
@@ -318,7 +332,7 @@ instance Pretty LLConsensus where
     LLC_If _at ca t f -> prettyIfp ca t f
     LLC_Switch _at ov csm -> prettySwitch ov csm
     LLC_FromConsensus _at _ret_at k ->
-      "commit()" <> semi <> hardline <> pretty k
+      prettyCommit <> hardline <> pretty k
     LLC_While _at asn inv cond body k ->
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k
     LLC_Continue _at asn ->
@@ -340,11 +354,12 @@ instance Pretty LLStep where
       prettyToConsensus pretty pretty lls_tc_send lls_tc_recv lls_tc_mtime
 
 instance Pretty LLProg where
-  pretty (LLProg _at _ sps db) =
+  pretty (LLProg _at _ sps dli db) =
     "#lang ll" <> hardline
       <> pretty sps
       <> hardline
       <> hardline
+      <> pretty dli
       <> pretty db
 
 --- Projected Language
@@ -394,8 +409,8 @@ instance Pretty ETail where
             Nothing -> emptyDoc
             Just svs -> cm $ map pretty svs
           whichp = viaShow which
-      ET_ToConsensus _ fs prev which msend msg amtv mtime k ->
-        "sendrecv" <+> fsp <+> prevp <+> whichp <+> parens msendp <> (cm $ map pretty msg) <+> pretty amtv <> timep <> ns (pretty k)
+      ET_ToConsensus _ fs prev last_timev which msend msg amtv timev mtime k ->
+        "sendrecv" <+> fsp <+> prevp <+> pretty last_timev <+> whichp <+> parens msendp <> (cm $ map pretty msg) <+> pretty amtv <+> pretty timev <> timep <> ns (pretty k)
         where
           fsp = pretty fs
           prevp = viaShow prev
@@ -430,10 +445,10 @@ instance Pretty EPPs where
   pretty (EPPs m) = render_obj m
 
 instance Pretty PLProg where
-  pretty (PLProg _ _ ps cp) =
+  pretty (PLProg _ _ dli ps cp) =
     "#lang pl" <> hardline
-      <> pretty ps
-      <> hardline
+      <> pretty dli <> hardline
+      <> pretty ps <> hardline
       <> hardline
       <> pretty cp
 
@@ -445,16 +460,18 @@ instance Pretty CHandlers where
     render_obj m
 
 instance Pretty CHandler where
-  pretty (C_Handler _ int fs last_i svs msg amtv body) =
+  pretty (C_Handler _ int last_timev fs last_i svs msg amtv timev body) =
     pbrackets
       [ pretty fs
       , pretty int
+      , "last_timev = " <> pretty last_timev
       , "last = " <> pretty last_i
       , pretty svs
       , pretty (map varType svs)
       , pretty msg
       , pretty (map varType msg)
       , pretty amtv
+      , "timev = " <> pretty timev
       , render_nest $ pretty body
       ]
   pretty (C_Loop _ svs vars body) =
@@ -465,7 +482,7 @@ instance Pretty CHandler where
       , render_nest $ pretty body
       ]
 
-instance Pretty CInterval where
+instance Pretty a => Pretty (CInterval a) where
   pretty (CBetween from to) = pform "between" $ go from <+> go to
     where
       go = brackets . render_das

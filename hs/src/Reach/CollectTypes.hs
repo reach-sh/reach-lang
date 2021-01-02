@@ -36,6 +36,9 @@ instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d) =>
 instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d, CollectsTypes e) => CollectsTypes (a, b, c, d, e) where
   cts (x, y, z, a, b) = cts x <> cts y <> cts z <> cts a <> cts b
 
+instance (CollectsTypes a, CollectsTypes b, CollectsTypes c, CollectsTypes d, CollectsTypes e, CollectsTypes f) => CollectsTypes (a, b, c, d, e, f) where
+  cts (x, y, z, a, b, c) = cts x <> cts y <> cts z <> cts a <> cts b <> cts c
+
 instance CollectsTypes SLType where
   cts t =
     S.singleton t
@@ -88,6 +91,9 @@ instance CollectsTypes DLExpr where
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
 
+instance CollectsTypes DLInit where
+  cts (DLInit ctimem) = cts ctimem
+
 instance CollectsTypes a => CollectsTypes (LLCommon a) where
   cts (LL_Return _) = mempty
   cts (LL_Let _ v e k) = cts v <> cts e <> cts k
@@ -120,7 +126,7 @@ instance CollectsTypes LLStep where
   cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps s) = cts ps <> cts s
+  cts (LLProg _ _ ps dli s) = cts ps <> cts dli <> cts s
 
 instance CollectsTypes a => CollectsTypes (PLCommon a) where
   cts (PL_Return _) = mempty
@@ -146,14 +152,14 @@ instance CollectsTypes CTail where
   cts (CT_From _ msvs) = cts msvs
   cts (CT_Jump _ _ svs asn) = cts svs <> cts asn
 
-instance CollectsTypes CInterval where
+instance CollectsTypes a => CollectsTypes (CInterval a) where
   cts (CBetween from to) = cts from <> cts to
 
 instance CollectsTypes PLLetCat where
   cts _ = mempty
 
 instance CollectsTypes CHandler where
-  cts (C_Handler _ int fs _ svs msg amtv body) = cts int <> cts fs <> cts svs <> cts msg <> cts amtv <> cts body
+  cts (C_Handler _ int last_timev fs _ svs msg amtv timev body) = cts int <> cts last_timev <> cts fs <> cts svs <> cts msg <> cts amtv <> cts timev <> cts body
   cts (C_Loop _ svs vars body) = cts svs <> cts vars <> cts body
 
 instance CollectsTypes CHandlers where

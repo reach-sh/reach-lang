@@ -109,5 +109,5 @@ instance Countable DLExpr where
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
 
-instance Countable CInterval where
+instance Countable a => Countable (CInterval a) where
   counts (CBetween from to) = counts from <> counts to

@@ -4,7 +4,9 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as Foldable
 import qualified Data.HashMap.Strict as HM
+import Data.List (elemIndex, foldl')
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import qualified Data.Scientific as Sci
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
@@ -68,7 +70,8 @@ data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
   , ctxt_txn :: Int
   , ctxt_simulate :: Bool
-  , ctxt_while :: Maybe (PLBlock, ETail, ETail)
+  , ctxt_while :: Maybe (Maybe DLVar, PLBlock, ETail, ETail)
+  , ctxt_timev :: Maybe DLVar
   }
 
 jsTxn :: JSCtxt -> Doc
@@ -348,21 +351,25 @@ jsETail ctxt = \case
       True ->
         vsep
           [ "sim_r.nextSt =" <+> nextSt' <> semi
+          , "sim_r.nextSt_noTime =" <+> nextSt_noTime' <> semi
           , "sim_r.isHalt =" <+> isHalt' <> semi
           ]
     where
       kp = jsETail ctxt k
-      (nextSt', isHalt') =
+      (nextSt', nextSt_noTime', isHalt') =
         case msvs of
           Nothing ->
             ( jsDigest [] --- XXX This is only used by Algorand and it should really be zero bytes, but the fakery with numbers and byte lengths is getting me
+            , jsDigest []
             , jsCon $ DLL_Bool True
             )
           Just svs ->
-            ( jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map DLA_Var svs))
+            ( mkStDigest svs
+            , mkStDigest (dvdelete (fromMaybe (impossible "no timev") (ctxt_timev ctxt)) svs)
             , jsCon $ DLL_Bool False
             )
-  ET_ToConsensus at fs_ok prev which from_me msg amtv mto k_ok -> tp
+      mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map DLA_Var svs_))
+  ET_ToConsensus at fs_ok prev last_timev which from_me msg amtv timev mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
       (delayp, k_p) =
@@ -375,15 +382,16 @@ jsETail ctxt = \case
               jsSum (x : xs) = jsApply "stdlib.add" [jsArg x, jsSum xs]
               k_top = jsETail ctxt' k_to
       msg_vs = map jsVar msg
-      k_defp =
-        "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi <> hardline
-          <> "const" <+> jsVar amtv <+> "=" <+> (jsTxn ctxt')
-          <> ".value"
-          <> semi
-          <> hardline
+      msg_vs_defp = "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi <> hardline
+      amt_defp = "const" <+> jsVar amtv <+> "=" <+> (jsTxn ctxt') <> ".value" <> semi <> hardline
+      time_defp = "const" <+> jsVar timev <+> "=" <+> (jsTxn ctxt') <> ".time" <> semi <> hardline
+      k_defp = msg_vs_defp
+          <> amt_defp
+          <> time_defp
           <> jsFromSpec ctxt' fs_ok
       k_okp = k_defp <> jsETail ctxt' k_ok
-      ctxt' = ctxt {ctxt_txn = (ctxt_txn ctxt) + 1}
+      ctxt' = ctxt { ctxt_txn = (ctxt_txn ctxt) + 1
+                   , ctxt_timev = Just timev }
       whop = jsCon $ DLL_Bytes $ ctxt_who ctxt
       defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> parens callp <> semi
       callp =
@@ -396,6 +404,7 @@ jsETail ctxt = \case
                   [ whop
                   , pretty which
                   , pretty (length msg)
+                  , jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (elemIndex last_timev svs))
                   , jsArray $ map (jsContract . argTypeOf) $ svs_as ++ args
                   , vs
                   , amtp
@@ -410,13 +419,16 @@ jsETail ctxt = \case
               sim_body =
                 vsep
                   [ "const sim_r = { txns: [] };"
-                  , "sim_r.prevSt =" <+> jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : svs_as) <> semi
+                  , "sim_r.prevSt =" <+> mkStDigest svs <> semi
+                  , "sim_r.prevSt_noPrevTime =" <+> mkStDigest svs_noPrevTime <> semi
                   , k_defp
                   , sim_body_core
                   , "return sim_r;"
                   ]
+              svs_noPrevTime = dvdelete last_timev svs
+              mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
               sim_body_core = jsETail ctxt'_sim k_ok
-              ctxt'_sim = ctxt' {ctxt_simulate = True}
+              ctxt'_sim = ctxt' { ctxt_simulate = True }
               vs = jsArray $ (map jsVar svs) ++ (map jsArg args)
           Nothing -> recvp
       recvp =
@@ -436,13 +448,28 @@ jsETail ctxt = \case
           <> hardline
           <> jsWhile (jsBlock ctxt cond) (jsETail ctxt' body)
           <> hardline
-          <> jsETail ctxt k
+          <> jsETail ctxt_tv' k
       True ->
         jsAsn ctxt AM_WhileSim asn
           <> hardline
-          <> jsIf (jsBlock ctxt cond) (jsETail ctxt' body) (jsETail ctxt k)
+          <> jsIf (jsBlock ctxt cond) (jsETail ctxt' body) (jsETail ctxt_tv' k)
     where
-      ctxt' = ctxt {ctxt_while = Just (cond, body, k)}
+      mtimev' =
+        case ctxt_timev ctxt of
+          Nothing -> Just Nothing
+          Just timev -> foldl' go Nothing (M.toList asnm)
+            where
+              go mtv (v, a) =
+                case a == DLA_Var timev of
+                  True -> Just $ Just v
+                  False -> mtv
+              DLAssignment asnm = asn
+      timev' =
+        case mtimev' of
+          Nothing -> impossible "no timev in while"
+          Just x -> x
+      ctxt_tv' = ctxt { ctxt_timev = timev' }
+      ctxt' = ctxt_tv' { ctxt_while = Just (timev', cond, body, k) }
   ET_Continue _ asn ->
     jsAsn ctxt AM_ContinueOuter asn <> hardline
       <> case ctxt_simulate ctxt of
@@ -454,12 +481,14 @@ jsETail ctxt = \case
         True ->
           case ctxt_while ctxt of
             Nothing -> impossible "continue not in while"
-            Just (wcond, wbody, wk) ->
+            Just (wtimev', wcond, wbody, wk) ->
               (jsNewScope $
                  jsAsn ctxt AM_ContinueInnerSim asn
                    <> hardline
-                   <> jsIf (jsBlock ctxt wcond) (jsETail ctxt wbody) (jsETail ctxt wk))
+                   <> jsIf (jsBlock ctxt wcond) (jsETail ctxt' wbody) (jsETail ctxt' wk))
                 <> semi
+              where
+                ctxt' = ctxt { ctxt_timev = wtimev' }
   ET_ConsensusOnly _at l k ->
     case ctxt_simulate ctxt of
       True -> kp
@@ -468,8 +497,8 @@ jsETail ctxt = \case
       kp = jsETail ctxt k
       lp = jsPLTail ctxt l
 
-jsPart :: SLPart -> EPProg -> Doc
-jsPart p (EPProg _ _ et) =
+jsPart :: DLInit -> SLPart -> EPProg -> Doc
+jsPart dli p (EPProg _ _ et) =
   "export" <+> jsFunction (pretty $ bunpack p) ["ctc", "interact"] bodyp'
   where
     ctxt =
@@ -478,8 +507,17 @@ jsPart p (EPProg _ _ et) =
         , ctxt_txn = 0
         , ctxt_simulate = False
         , ctxt_while = Nothing
+        , ctxt_timev = Nothing
         }
-    bodyp' = "const stdlib = ctc.stdlib;\n  " <> jsETail ctxt et
+    DLInit ctimem = dli
+    ctimem' =
+      case ctimem of
+        Nothing -> mempty
+        Just v -> "const" <+> jsVar v <+> "=" <+> "await ctc.creationTime();"
+    bodyp' = vsep
+      [ "const stdlib = ctc.stdlib;"
+      , ctimem'
+      , jsETail ctxt et ]
 
 jsConnInfo :: ConnectorInfo -> Doc
 jsConnInfo = \case
@@ -502,7 +540,7 @@ jsConnsExp names = "export const _Connectors" <+> "=" <+> jsObject connMap <> se
     connMap = M.fromList [(name, "_" <> pretty name) | name <- names]
 
 jsPLProg :: ConnectorResult -> PLProg -> Doc
-jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
+jsPLProg cr (PLProg _ (PLOpts {..}) dli (EPPs pm) _) = modp
   where
     modp = vsep_with_blank $ preamble : emptyDoc : partsp ++ emptyDoc : cnpsp ++ [emptyDoc, connsExp, emptyDoc]
     preamble =
@@ -511,7 +549,7 @@ jsPLProg cr (PLProg _ (PLOpts {..}) (EPPs pm) _) = modp
         , "/* eslint-disable no-unused-vars, no-empty-pattern, no-useless-escape, no-loop-func */"
         , "export const _version =" <+> jsString versionStr <> semi
         ]
-    partsp = map (uncurry jsPart) $ M.toList pm
+    partsp = map (uncurry (jsPart dli)) $ M.toList pm
     cnpsp = map (uncurry jsCnp) $ HM.toList cr
     connsExp = jsConnsExp (HM.keys cr)
 

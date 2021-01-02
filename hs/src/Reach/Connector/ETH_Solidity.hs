@@ -5,6 +5,7 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 import Control.Monad
 import Control.Monad.ST
 import Data.Aeson as Aeson
+import Data.Aeson.Text
 import Data.Aeson.Encode.Pretty
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
@@ -16,6 +17,7 @@ import Data.Maybe
 import Data.STRef
 import qualified Data.Set as S
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
 import Reach.AST.Base
 import Reach.AST.DLBase
@@ -87,7 +89,7 @@ solContract :: String -> Doc -> Doc
 solContract s body = "contract" <+> pretty s <+> solBraces body
 
 solVersion :: Doc
-solVersion = "pragma solidity ^0.7.1;"
+solVersion = "pragma solidity ^0.8.0;"
 
 solStdLib :: Doc
 solStdLib = pretty $ B.unpack stdlib_sol
@@ -162,12 +164,6 @@ solMsg_fun i = "m" <> pretty i
 
 solLoop_fun :: Pretty i => i -> Doc
 solLoop_fun i = "l" <> pretty i
-
-solLastBlockDef :: Doc
-solLastBlockDef = "_last"
-
-solLastBlock :: Doc
-solLastBlock = "_a.svs." <> solLastBlockDef
 
 solBlockNumber :: Doc
 solBlockNumber = "uint256(block.number)"
@@ -403,11 +399,7 @@ solHashStateSet ctxt svs = (setl, sete)
   where
     sete = solHash [(solNum which), "nsvs"]
     which = ctxt_handler_num ctxt
-    setl =
-      [ solDecl "nsvs" ((solMsg_arg_postsvs which) <> " memory") <> semi
-      , solSet "nsvs._last" solBlockNumber
-      ]
-        <> map go svs
+    setl = [ solDecl "nsvs" ((solMsg_arg_postsvs which) <> " memory") <> semi ] <> map go svs
     go v = solSet ("nsvs." <> solRawVar v) (solVar ctxt v)
 
 solHashStateCheck :: SolCtxt -> Int -> Doc
@@ -554,7 +546,7 @@ solCTail ctxt = \case
       vsep
         [ ctxt_emit ctxt
         , solSet ("current_state") ("0x0")
-        , solApply "selfdestruct" ["msg.sender"] <> semi
+        , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
         ]
 
 solFrame :: SolCtxt -> Int -> S.Set DLVar -> (Doc, Doc)
@@ -636,11 +628,7 @@ solStructSVS ctxt which svs add =
   solStruct (solMsg_arg_ which) svs_tys
   where
     solMsg_arg_ = if add then solMsg_arg_postsvs else solMsg_arg_svs
-    svs_tys = given_tys <> map (solVarDecl ctxt) svs
-    given_tys =
-      case add of
-        True -> [(solLastBlockDef, (solType ctxt T_UInt))]
-        False -> []
+    svs_tys = map (solVarDecl ctxt) svs
 
 data ArgDefnKind
   = ADK_Handler Int ArgMode
@@ -676,12 +664,12 @@ solArgDefn ctxt which adk msg = (argDefns, argDefs)
     someArgs = not $ null msg_tys
 
 solHandler :: SolCtxt -> Int -> CHandler -> Doc
-solHandler ctxt_top which (C_Handler at interval from prev svs msg amtv ct) =
+solHandler ctxt_top which (C_Handler at interval last_timev from prev svs msg amtv timev ct) =
   vsep $ argDefns <> [evtDefn, frameDefn, funDefn]
   where
-    amtmm = M.singleton amtv "msg.value"
+    given_mm = M.fromList [ (amtv, "msg.value"), (timev, solBlockNumber) ]
     checkMsg s = s <> " check at " <> show at
-    ctxt_from = ctxt_top {ctxt_varm = amtmm <> fromm <> (ctxt_varm ctxt_top)}
+    ctxt_from = ctxt_top { ctxt_varm = given_mm <> fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) =
       solCTail_top ctxt_from which svs msg (Just msg) ct
     evtDefn = solEvent ctxt which True
@@ -704,7 +692,7 @@ solHandler ctxt_top which (C_Handler at interval from prev svs msg amtv ct) =
         , timeoutCheck
         , ctp
         ]
-    (fromm, fromCheck) = ((M.singleton from "msg.sender"), emptyDoc)
+    (fromm, fromCheck) = ((M.singleton from "payable(msg.sender)"), emptyDoc)
     timeoutCheck = solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
       where
         CBetween ifrom ito = interval
@@ -713,7 +701,7 @@ solHandler ctxt_top which (C_Handler at interval from prev svs msg amtv ct) =
         check sign mv =
           case mv of
             [] -> "true"
-            mvs -> solPrimApply ctxt (if sign then PGE else PLT) [solBlockNumber, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) solLastBlock (map (solArg ctxt) mvs))]
+            mvs -> solPrimApply ctxt (if sign then PGE else PLT) [solVar ctxt timev, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) (solVar ctxt last_timev) (map (solArg ctxt) mvs))]
 solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
   vsep $ argDefns <> [frameDefn, funDefn]
   where
@@ -730,7 +718,7 @@ solHandlers ctxt (CHandlers hs) = vsep_with_blank $ map (uncurry (solHandler ctx
 
 solHandlerStructSVS :: SolCtxt -> (S.Set Int, [Doc]) -> (Int, CHandler) -> (S.Set Int, [Doc])
 solHandlerStructSVS _ acc (_which, C_Loop {}) = acc
-solHandlerStructSVS ctxt (defd, res) (_which, C_Handler _ _ _ prev svs _ _ _) =
+solHandlerStructSVS ctxt (defd, res) (_which, C_Handler _ _ _ _ prev svs _ _ _ _) =
   case S.member prev defd of
     True -> (defd, res)
     False -> (defd', res')
@@ -738,14 +726,14 @@ solHandlerStructSVS ctxt (defd, res) (_which, C_Handler _ _ _ prev svs _ _ _) =
     res' = solStructSVS ctxt prev svs True : res
     defd' = S.insert prev defd
 
-solHandlersStructSVS :: SolCtxt -> CHandlers -> Doc
-solHandlersStructSVS ctxt (CHandlers hs) =
+solHandlersStructSVS :: SolCtxt -> [DLVar] -> CHandlers -> Doc
+solHandlersStructSVS ctxt csvs (CHandlers hs) =
   vsep_with_blank $
     snd $
-      foldl' (solHandlerStructSVS ctxt) (defd, res) $ M.toList hs
+      foldl' (solHandlerStructSVS ctxt) (defd, res0) $ M.toList hs
   where
     defd = S.singleton 0
-    res = [solStructSVS ctxt 0 [] True]
+    res0 = [solStructSVS ctxt 0 csvs True]
 
 _solDefineType1 :: (SLType -> ST s (Doc)) -> Int -> Doc -> SLType -> ST s ((Doc), (Doc))
 _solDefineType1 getTypeName i name = \case
@@ -840,7 +828,7 @@ solDefineTypes ts = (tim, M.map fst tm, vsep $ map snd $ M.elems tm)
       liftM2 (,) (readSTRef timr) (readSTRef tmr)
 
 solPLProg :: PLProg -> (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo@(PLOpts {..}) _ (CPProg at hs)) =
+solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) =
   (cinfo, vsep_with_blank $ [preamble, solVersion, solStdLib, ctcp])
   where
     ctcp =
@@ -861,27 +849,43 @@ solPLProg (PLProg _ plo@(PLOpts {..}) _ (CPProg at hs)) =
         [ state_defn
         , consp
         , typesp
-        , solHandlersStructSVS ctxt hs
+        , solHandlersStructSVS ctxt csvs hs
         , solHandlers ctxt hs
         ]
-    consp =
+    (csvs, consp) =
       case plo_deployMode of
         DM_constructor ->
-          vsep
+          ( csvs_
+          , vsep
             [ solEvent ctxt 0 False
+            , cfDefn
             , solFunctionLike SFL_Constructor [] "payable" consbody'
-            ]
+            ] )
           where
-            consbody' = vsep [solEventEmit ctxt 0 False, consbody]
-            SolTailRes _ consbody = solCTail ctxt (CT_From at (Just []))
+            DLInit ctimem = dli
+            dli' = vsep $ ctimem'
+            (ctimem', csvs_, cctxt) =
+              case ctimem of
+                Nothing -> (mempty, mempty, ctxt)
+                Just v ->
+                  ( [ solSet (solMemVar v) solBlockNumber ]
+                  , [ v ]
+                  , ctxt { ctxt_varm = M.insert v (solMemVar v) (ctxt_varm ctxt) } )
+            (cfDefn, cfDecl) = solFrame cctxt 0 (S.fromList csvs_)
+            consbody' =
+              vsep [ solEventEmit ctxt 0 False
+                   , cfDecl
+                   , dli'
+                   , consbody ]
+            SolTailRes _ consbody = solCTail cctxt (CT_From at (Just csvs_))
         DM_firstMsg ->
-          emptyDoc
+          (mempty, emptyDoc)
     cinfo = HM.fromList [("deployMode", Aeson.String $ T.pack $ show plo_deployMode)]
     state_defn = "uint256 current_state;"
     preamble =
       vsep
         [ "// Automatically generated with Reach" <+> (pretty versionStr)
-        , "pragma experimental ABIEncoderV2" <> semi
+        , "pragma abicoder v2" <> semi
         ]
 
 data CompiledSolRec = CompiledSolRec
@@ -896,7 +900,10 @@ instance FromJSON CompiledSolRec where
     case find (":ReachContract" `T.isSuffixOf`) (HM.keys ctcs) of
       Just ctcKey -> do
         ctc <- ctcs .: ctcKey
-        abit <- ctc .: "abi"
+        -- FIXME change ETH.ts so we don't serialize this, since we probably
+        -- just un-serialize it on that end
+        (abio :: Value) <- ctc .: "abi"
+        let abit = LT.toStrict $ encodeToLazyText abio
         codebodyt <- ctc .: "bin"
         opcodest <- ctc .: "opcodes"
         return

@@ -1,4 +1,4 @@
-module Reach.STCounter (STCounter, newSTCounter, incSTCounter) where
+module Reach.STCounter (STCounter, newSTCounter, incSTCounter, readSTCounter) where
 
 import Control.Monad.ST
 import Data.STRef
@@ -16,3 +16,6 @@ incSTCounter (STCounter r) = do
   i <- readSTRef r
   writeSTRef r $ i + 1
   return i
+
+readSTCounter :: STCounter s -> ST s Int
+readSTCounter (STCounter r) = readSTRef r

@@ -1759,6 +1759,19 @@ The exact algorithm used depends on the @tech{connector}.
 
 The @deftech{balance} primitive returns the balance of the @tech{contract} @tech{account} for the @|DApp|.
 
+@subsubsection{@tt{lastConsensusTime}}
+
+@(mint-define! '("lastConsensusTime"))
+@reach{
+ lastConsensusTime() }
+
+The @deftech{lastConsensusTime} primitive returns the @tech{time} of the last @tech{publication} of the @|DApp|.
+This may not be available if there was no such previous publication, such as at the beginning of an application where @reachin{deployMode} is @reachin{'firstMsg'}.
+
+@margin-note{Why is there no @tt{thisConsensusTime}?
+Some networks do not support observing the time of a consensus operation until after it has finalized.
+This aides scalability, because it increases the number of times when an operation could be finalized.}
+
 @subsubsection{@tt{implies}}
 
 @(mint-define! '("implies"))

@@ -52,10 +52,10 @@ compile copts = do
         let woutnMay = outnMay woutn
         let winterOut = interOut woutn
         let dl = compileBundle all_connectors djp which
-        let DLProg _ (DLOpts {..}) _ _ = dl
+        let DLProg _ (DLOpts {..}) _ _ _ = dl
         let connectors = map (all_connectors M.!) dlo_connectors
         winterOut "dl" $ render $ pretty dl
-        let ll = linearize dl
+        ll <- linearize dl
         winterOut "ll" $ render $ pretty ll
         ol <- optimize ll
         winterOut "ol" $ render $ pretty ol

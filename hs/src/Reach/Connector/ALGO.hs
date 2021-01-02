@@ -179,6 +179,7 @@ data Env = Env
   , eVars :: M.Map DLVar ScratchSlot
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
+  , emTimev :: Maybe DLVar
   }
 
 -- I'd rather not embed in IO, but when I used ST in UnrollLoops, it was
@@ -245,7 +246,7 @@ bad lab = do
   Env {..} <- ask
   let Shared {..} = eShared
   liftIO $ writeIORef sFailedR True
-  output $ comment_ $ lab
+  output $ comment_ $ "BAD " <> lab
 
 xxx :: LT.Text -> App ()
 xxx lab = do
@@ -850,12 +851,13 @@ ct = \case
     let Shared {..} = eShared
     case M.lookup which sHandlers of
       Just (C_Loop _ _ lcvars t) -> do
+        let timev = fromMaybe (impossible "no timev") emTimev
         let llc v =
               case find ((== v) . snd) lcvars of
                 Nothing -> impossible $ "no loop var"
                 Just (lc, _) -> lc
         --let llc _ = PL_Many
-        let wrap1 (store_lets, t_) (v, a) =
+        let wrap1_ (store_lets, t_) (v, a) =
               case llc v of
                 PL_Many -> do
                   return $ (store_lets, t_')
@@ -865,12 +867,17 @@ ct = \case
                 PL_Once -> do
                   sm <- argSmall a
                   cad <- freeze $ ca a
-                  let store_lets' m =
-                        store_let v sm cad $ store_lets m
-                  return $ (store_lets', t_)
+                  let store_lets' = store_let v sm cad
+                  return $ (store_lets' . store_lets, t_)
+        let wrap1 (store_lets, t_) (v, a) =
+              case a == DLA_Var timev of
+                True -> do
+                  let store_lets' = local (\e -> e { emTimev = Just v })
+                  return $ (store_lets' . store_lets, t_)
+                False -> do
+                  wrap1_ (store_lets, t_) (v, a)
         let wrap :: CTail -> App ((App a -> App a), CTail)
-            wrap t_0 =
-              foldM wrap1 (id, t_0) (M.toList asnm)
+            wrap t_0 = foldM wrap1 (id, t_0) (M.toList asnm)
         (store_lets, t') <- wrap t
         store_lets $
           local (\e -> e {eWhich = which}) $
@@ -888,7 +895,9 @@ ct = \case
           Just svs -> (False, ck)
             where
               ck = do
-                cstate HM_Set svs
+                Env {..} <- ask
+                let timev = fromMaybe (impossible "no timev") emTimev
+                cstate HM_Set (dvdelete timev svs)
                 code "arg" [texty argNextSt]
                 eq_or_fail
 
@@ -899,6 +908,7 @@ data HashMode
 
 cstate :: HashMode -> [DLVar] -> App ()
 cstate hm svs = do
+  comment ("compute state in " <> texty hm)
   which <-
     case hm of
       HM_Set -> do
@@ -1009,8 +1019,8 @@ std_footer = do
   cl $ DLL_Int sb 1
   op "return"
 
-runApp :: Shared -> Int -> Lets -> App () -> IO TEALs
-runApp eShared eWhich eLets m = do
+runApp :: Shared -> Int -> Lets -> Maybe DLVar -> App () -> IO TEALs
+runApp eShared eWhich eLets emTimev m = do
   eLabelR <- newIORef 0
   eOutputR <- newIORef mempty
   let eHP = 0
@@ -1024,7 +1034,7 @@ runApp eShared eWhich eLets m = do
 
 ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int from prev svs msg amtv body) = fmap Just $
+ch eShared eWhich (C_Handler _ int last_timev from prev svs_ msg amtv timev body) = let svs = dvdelete last_timev svs_ in fmap Just $
   fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
     let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
     let args = svs <> msg
@@ -1036,9 +1046,11 @@ ch eShared eWhich (C_Handler _ int from prev svs msg amtv body) = fmap Just $
           code "gtxn" [texty txnToContract, "Amount"]
           lookup_fee_amount
           op "-"
-    let eLets =
-          M.insert amtv lookup_txn_value eLets1
-    runApp eShared eWhich eLets $ do
+    let eLets2 = M.insert amtv lookup_txn_value eLets1
+    let eLets3 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets2
+    let eLets4 = M.insert last_timev lookup_last eLets3
+    let eLets = eLets4
+    runApp eShared eWhich eLets (Just timev) $ do
       comment ("Handler " <> texty eWhich)
       comment "Check txnAppl"
       code "gtxn" [texty txnAppl, "TypeEnum"]
@@ -1085,7 +1097,7 @@ ch eShared eWhich (C_Handler _ int from prev svs msg amtv body) = fmap Just $
       code "txn" ["NumArgs"]
       cl $ DLL_Int sb $ fromIntegral $ argCount
       eq_or_fail
-      cstate (HM_Check prev) svs
+      cstate (HM_Check prev) (dvdelete last_timev svs)
       code "arg" [texty argPrevSt]
       eq_or_fail
 
@@ -1105,10 +1117,14 @@ ch eShared eWhich (C_Handler _ int from prev svs msg amtv body) = fmap Just $
       eq_or_fail
 
       comment "Check time limits"
+      -- We don't need to look at timev because the range of valid rounds
+      -- that a txn is valid within is built-in to Algorand, so rather than
+      -- checking that ( last_timev + from <= timev <= last_timev + to ), we
+      -- just check that FirstValid = last_time + from, etc.
       let check_time f = \case
             [] -> nop
             as -> do
-              lookup_last
+              ca $ DLA_Var last_timev
               csum as
               op "+"
               let go i = do
@@ -1128,7 +1144,10 @@ type Disp = String -> T.Text -> IO ()
 
 compile_algo :: Disp -> PLProg -> IO ConnectorInfo
 compile_algo disp pl = do
-  let PLProg _at (PLOpts {..}) _ cpp = pl
+  let PLProg _at (PLOpts {..}) _dli _ cpp = pl
+  -- We ignore dli, because it can only contain a binding for the creation
+  -- time, which is the previous time of the first message, and these
+  -- last_timevs are never included in svs on Algorand.
   let CPProg _at (CHandlers hm) = cpp
   resr <- newIORef mempty
   let sHandlers = hm
@@ -1166,7 +1185,7 @@ compile_algo disp pl = do
                Aeson.String _ -> True
                _ -> False)
             steps
-  let simple m = runApp shared 0 mempty $ m >> std_footer
+  let simple m = runApp shared 0 mempty Nothing $ m >> std_footer
   app0m <- simple $ do
     comment "Check that we're an App"
     code "txn" ["TypeEnum"]

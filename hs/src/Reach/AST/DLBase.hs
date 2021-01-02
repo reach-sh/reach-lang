@@ -24,6 +24,10 @@ newtype SLParts
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, NFData, Semigroup)
 
+data DLInit = DLInit
+  { dli_ctimem :: Maybe DLVar }
+  deriving (Eq, Generic, NFData, Show, Ord)
+
 data DLConstant
   = DLC_UInt_max
   deriving (Eq, Generic, NFData, Show, Ord)
@@ -36,7 +40,13 @@ data DLLiteral
   deriving (Eq, Generic, NFData, Show, Ord)
 
 data DLVar = DLVar SrcLoc String SLType Int
-  deriving (Eq, Generic, NFData, Show, Ord)
+  deriving (Generic, NFData, Show, Ord)
+
+instance Eq DLVar where
+  (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
+
+dvdelete :: DLVar -> [DLVar] -> [DLVar]
+dvdelete x l = filter (x /=) l
 
 varType :: DLVar -> SLType
 varType (DLVar _ _ t _) = t

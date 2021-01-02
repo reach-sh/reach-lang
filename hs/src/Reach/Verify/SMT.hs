@@ -57,6 +57,10 @@ uint256_le :: SExpr -> SExpr -> SExpr
 uint256_le lhs rhs = smtApply ple [lhs, rhs]
   where ple = if use_bitvectors then "bvule" else "<="
 
+uint256_lt :: SExpr -> SExpr -> SExpr
+uint256_lt lhs rhs = smtApply plt [lhs, rhs]
+  where plt = if use_bitvectors then "bvult" else "<"
+
 uint256_inv :: SMTTypeInv
 uint256_inv v = uint256_le uint256_zero v
 
@@ -101,11 +105,11 @@ data BindingOrigin
   | O_HonestJoin SLPart
   | O_HonestMsg SLPart DLArg
   | O_HonestPay SLPart DLArg
+  | O_ToConsensus
   | O_BuiltIn
   | O_Var
   | O_Interact
   | O_Expr DLExpr
-  | O_Join
   | O_Assignment
   | O_SwitchCase SLVar
   deriving (Eq)
@@ -119,11 +123,11 @@ instance Show BindingOrigin where
       O_HonestJoin who -> "an honest join from " ++ sp who
       O_HonestMsg who what -> "an honest message from " ++ sp who ++ " of " ++ sp what
       O_HonestPay who amt -> "an honest payment from " ++ sp who ++ " of " ++ sp amt
+      O_ToConsensus -> "a consensus transfer"
       O_BuiltIn -> "builtin"
       O_Var -> "function return"
       O_Interact -> "interaction"
       O_Expr e -> "evaluating " ++ sp e
-      O_Join -> "participant join"
       O_Assignment -> "loop variable"
       O_SwitchCase vn -> "switch case " <> vn
     where
@@ -408,11 +412,25 @@ smtAssert smt se =
     $ \ (e :: Exn.SomeException) ->
       impossible $ safeInit $ drop 12 $ show e
 
+checkUsing :: SMT.Solver -> IO SMT.Result
+checkUsing smt = do
+  let our_tactic = List [ Atom "then", Atom "simplify", Atom "qflia" ]
+  res <- SMT.command smt (List [ Atom "check-sat-using", our_tactic ])
+  case res of
+    Atom "unsat"   -> return Unsat
+    Atom "unknown" -> return Unknown
+    Atom "sat"     -> return Sat
+    _ -> impossible $ unlines
+          [ "Unexpected result from the SMT solver:"
+          , "  Expected: unsat, unknown, or sat"
+          , "  Result: " ++ SMT.showsSExpr res ""
+          ]
+
 verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SMTComp
 verify1 ctxt at mf tk se mmsg = SMT.inNewScope smt $ do
   forM_ (ctxt_path_constraint ctxt) $ smtAssert smt
-  smtAssert smt  $ if isPossible then se else smtNot se
-  r <- SMT.check smt
+  smtAssert smt $ if isPossible then se else smtNot se
+  r <- checkUsing smt
   case isPossible of
     True ->
       case r of
@@ -690,6 +708,7 @@ smt_l ctxt (LLL_Com m) = smt_m smt_l ctxt m
 data BlockMode
   = B_Assume Bool
   | B_Prove
+  | B_None
 
 smt_block :: SMTCtxt -> BlockMode -> LLBlock -> SMTComp
 smt_block ctxt bm b = before_m <> after_m
@@ -705,6 +724,8 @@ smt_block ctxt bm b = before_m <> after_m
           smtAssertCtxt ctxt (smtNot da')
         B_Prove ->
           verify1 ctxt at f TInvariant da' Nothing
+        B_None ->
+          mempty
 
 gatherDefinedVars_m :: (LLCommon LLLocal) -> S.Set DLVar
 gatherDefinedVars_m m =
@@ -807,9 +828,17 @@ smt_s ctxt s =
     LLS_ToConsensus at send recv mtime ->
       mapM_ (ctxtNewScope ctxt) $ timeout : map go (M.toList send)
       where
-        (whov, msgvs, amtv, next_n) = recv
-        timeout = maybe mempty ((smt_s ctxt) . snd) mtime
-        after = smt_n ctxt next_n
+        (last_timev, whov, msgvs, amtv, timev, next_n) = recv
+        timeout = case mtime of
+                    Nothing -> mempty
+                    Just (_delay_a, delay_s) ->
+                      -- smt_block ctxt B_None delayb <>
+                      smt_s ctxt delay_s
+        after = bind_time <> order_time <> smt_n ctxt next_n
+        bind_time = pathAddUnbound ctxt at (Just timev) O_ToConsensus
+        order_time = smtAssert ctxt (uint256_lt last_timev' timev')
+        last_timev' = Atom $ smtVar ctxt last_timev
+        timev' = Atom $ smtVar ctxt timev
         go (from, (isClass, msgas, amta, _whena)) =
           -- XXX Potentially we need to look at whena to determine if we even
           -- do these bindings in honest mode
@@ -977,7 +1006,8 @@ _verify_smt mc vst smt lp = do
         case mc of
           Just c -> smt_lt ctxt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts pies_m) s = lp
+  let LLProg at (LLOpts {..}) (SLParts pies_m) dli s = lp
+  let DLInit ctimem = dli
   let ctxt =
         SMTCtxt
           { ctxt_smt = smt
@@ -994,6 +1024,10 @@ _verify_smt mc vst smt lp = do
           , ctxt_displayed = dspdr
           , ctxt_vars_defdrr = vars_defdrr
           }
+  case ctimem of
+    Nothing -> mempty
+    Just ctimev ->
+      pathAddUnbound ctxt at (Just ctimev) O_BuiltIn
   case mc of
     Just _ -> mempty
     Nothing ->

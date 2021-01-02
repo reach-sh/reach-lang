@@ -126,6 +126,7 @@ data EvalError
   | Err_Fork_ConsensusBadArrow JSExpression
   | Err_Fork_CaseAppearsTwice SLPart SrcLoc SrcLoc
   | Err_ParallelReduceIncomplete String
+  | Err_TimeMustBeSimple JSExpression
   deriving (Eq, Generic)
 
 --- FIXME I think most of these things should be in Pretty
@@ -452,6 +453,8 @@ instance Show EvalError where
       "fork cases must be unique: " <> show who <> " was defined previously at " <> show at0
     Err_ParallelReduceIncomplete lab ->
       "parallel reduce incomplete: " <> lab
+    Err_TimeMustBeSimple _e ->
+      "time computations must be constants or identifiers known by consensus"
 
 --- Utilities
 zipEq :: (Show e, ErrorMessageForJson e, ErrorSuggestions e) => Maybe (SLCtxt s) -> SrcLoc -> (Int -> Int -> e) -> [a] -> [b] -> [(a, b)]
@@ -473,6 +476,11 @@ ensure_public ctxt at (lvl, v) =
 ensure_publics :: SLCtxt s -> SrcLoc -> [SLSVal] -> [SLVal]
 ensure_publics ctxt at svs = map (ensure_public ctxt at) svs
 
+ensure_simple_time :: SLCtxt s -> SrcLoc -> DLStmts -> JSExpression -> ST s ()
+ensure_simple_time ctxt at lifts e =
+  unless (mempty == lifts) $
+    expect_throw_ctx ctxt at $ Err_TimeMustBeSimple e
+
 lvlMeetR :: SecurityLevel -> SLComp s (SecurityLevel, a) -> SLComp s (SecurityLevel, a)
 lvlMeetR lvl m = do
   SLRes lifts st v <- m
@@ -488,12 +496,6 @@ isSpecialIdent _ = False
 isSecretIdent :: SLVar -> Bool
 isSecretIdent ('_' : _ : _) = True
 isSecretIdent _ = False
-
-internalVar :: SLVar -> SLVar
-internalVar v = "." <> v
-
-internalVar_balance :: SLVar
-internalVar_balance = internalVar "balance"
 
 data EnvInsertMode
   = AllowShadowing
@@ -519,15 +521,11 @@ env_insert_ insMode ctxt at k v env = case insMode of
   where
     check :: SLEnv
     check =
-      --- XXX This is a hack
-      case k == internalVar_balance of
-        True -> go
-        False ->
-          case M.lookup k env of
-            Nothing -> go
-            Just v0 ->
-              -- trace ("tried insert into " <> show (M.keys env)) $
-              expect_throw_ctx ctxt at (Err_Shadowed k v0 v)
+      case M.lookup k env of
+        Nothing -> go
+        Just v0 ->
+          -- trace ("tried insert into " <> show (M.keys env)) $
+          expect_throw_ctx ctxt at (Err_Shadowed k v0 v)
     go :: SLEnv
     go = case v of
       -- Note: secret ident enforcement is limited to doOnly
@@ -592,7 +590,7 @@ base_env =
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
     , ("balance", SLV_Prim $ SLPrim_fluid_read $ FV_balance)
-    -- , ("lastConsensusTime", SLV_Prim $ SLPrim_lastConsensusTime)
+    , ("lastConsensusTime", SLV_Prim $ SLPrim_lastConsensusTime)
     , ("Digest", SLV_Type T_Digest)
     , ("Null", SLV_Type T_Null)
     , ("Bool", SLV_Type T_Bool)
@@ -616,7 +614,7 @@ base_env =
     , ("isType", SLV_Prim SLPrim_is_type)
     , ("typeEq", SLV_Prim SLPrim_type_eq)
     , ("typeOf", SLV_Prim SLPrim_typeOf)
-    , ("wait", SLV_Prim SLPrim_wait)
+    , ("wait", SLV_Form SLForm_wait)
     , ("race", SLV_Prim SLPrim_race)
     , ("fork", SLV_Form SLForm_fork)
     , ("parallel_reduce", SLV_Form SLForm_parallel_reduce)
@@ -817,7 +815,7 @@ ensure_modes ctxt at st ems msg = do
   case elem am ems of
     True -> return ()
     False ->
-      --- XXX use this function every where and shown em
+      --- NOTE use this function every where and shown em
       expect_throw_ctx ctxt at $ Err_Eval_IllegalMode am msg ems
 
 ensure_mode :: SLCtxt s -> SrcLoc -> SLState -> SLMode -> String -> ST s ()
@@ -832,16 +830,9 @@ ensure_live ctxt at st msg = do
 
 allowed_to_wait :: SLCtxt s -> SrcLoc -> SLState -> x -> x
 allowed_to_wait ctxt at st =
-  case dm of
-    DM_constructor -> id
-    DM_firstMsg -> after_first
-  where
-    dm = dlo_deployMode $ ctxt_dlo ctxt
-    after_first =
-      case st_after_first st of
-        True -> id
-        False ->
-          expect_throw_ctx ctxt at $ Err_Eval_IllegalWait dm
+  case st_after_first st of
+    True -> id
+    False -> expect_throw_ctx ctxt at $ Err_Eval_IllegalWait $ dlo_deployMode $ ctxt_dlo ctxt
 
 type SLPartDVars = M.Map SLPart DLVar
 
@@ -1373,6 +1364,17 @@ evalForm ctxt at sco st f args =
               <> whats_lifts
               <> lifts'
       return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
+    SLForm_wait -> do
+      ensure_mode ctxt at st (allowed_to_wait ctxt at st SLM_Step) "wait"
+      let amt_e = one_arg
+      let sco' = sco { sco_env = sco_cenv sco }
+      SLRes delay_lifts st' amt_sv <- evalExpr ctxt at sco' st amt_e
+      (delay_lifts', amt_da) <-
+        compileCheckType ctxt st' at T_UInt $ ensure_public ctxt at amt_sv
+      let time_lifts = delay_lifts <> delay_lifts'
+      ensure_simple_time ctxt at time_lifts amt_e
+      let wlifts = return $ DLS_Let at Nothing (DLE_Wait at amt_da)
+      return $ SLRes wlifts st' $ public $ SLV_Null at "wait"
   where
     illegal_args n = expect_throw_ctx ctxt at (Err_Form_InvalidArgs f n args)
     rator = SLV_Form f
@@ -1578,13 +1580,18 @@ explodeTupleLike ctxt at lab tuplv =
       (dv, lifts) <- ctxt_lift_expr ctxt at mdv de
       return $ (lifts, [SLV_DLVar dv])
 
-doFluidRef :: SLCtxt s -> SrcLoc -> SLState -> FluidVar -> SLComp s SLSVal
-doFluidRef ctxt at st fv = do
+doFluidRef_dv :: SLCtxt s -> SrcLoc -> SLState -> FluidVar -> SLComp s DLVar
+doFluidRef_dv ctxt at st fv = do
   ensure_modes ctxt at st (all_slm_modes \\ [SLM_Module]) "fluid ref"
   let fvt = fluidVarType fv
   dv <- ctxt_mkvar ctxt (DLVar at "fluid" fvt)
   let lifts = return $ DLS_FluidRef at dv fv
-  return $ SLRes lifts st $ public $ SLV_DLVar dv
+  return $ SLRes lifts st dv
+
+doFluidRef :: SLCtxt s -> SrcLoc -> SLState -> FluidVar -> SLComp s SLSVal
+doFluidRef ctxt at st fv = do
+  SLRes lifts st' dv <- doFluidRef_dv ctxt at st fv
+  return $ SLRes lifts st' $ public $ SLV_DLVar dv
 
 doFluidSet :: SLCtxt s -> SLState -> SrcLoc -> FluidVar -> SLSVal -> ST s DLStmts
 doFluidSet ctxt st at fv ssv = do
@@ -1636,6 +1643,9 @@ evalPrim ctxt at sco st p sargs =
       retV $ (lvl, SLV_RaceParticipant at $ S.fromList $ map (slvParticipant_part ctxt at) $ map snd sargs)
     SLPrim_fluid_read fv ->
       doFluidRef ctxt at st fv
+    SLPrim_lastConsensusTime -> do
+      allowed_to_wait ctxt at st $ zero_args
+      evalPrim ctxt at sco st (SLPrim_fluid_read $ FV_lastConsensusTime) []
     SLPrim_op op ->
       evalPrimOp ctxt at sco st op sargs
     SLPrim_Fun ->
@@ -2009,15 +2019,6 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_PrimDelay _at dp bargs aargs ->
       evalPrim ctxt at sco st dp $ bargs <> sargs <> aargs
-    SLPrim_wait -> do
-      ensure_mode ctxt at st (allowed_to_wait ctxt at st SLM_Step) "wait"
-      case sargs of
-        [amt_sv] -> do
-          (lifts, amt_da) <-
-            compileCheckType ctxt st at T_UInt $ ensure_public ctxt at amt_sv
-          keepLifts lifts $
-            return $ SLRes (return $ DLS_Let at Nothing (DLE_Wait at amt_da)) st $ public $ SLV_Null at "wait"
-        _ -> illegal_args
     SLPrim_part_set ->
       case map snd sargs of
         [(SLV_Participant _ who _ _), addr] -> do
@@ -2095,6 +2096,9 @@ evalPrim ctxt at sco st p sargs =
       case v of
         SLV_Type t -> t
         _ -> illegal_args
+    zero_args = case args of
+      [] -> return ()
+      _ -> illegal_args
     one_arg = case args of
       [x] -> x
       _ -> illegal_args
@@ -2162,7 +2166,7 @@ evalApplyVals ctxt at sco st rator randvs =
           let mlvls = map fst msvs
           let mvs = map snd msvs
           let lvl = mconcat $ xlvl : mlvls
-          -- Note: This test might be too expensive, so XXX try it
+          -- Note: This test might be too expensive, so try it
           let all_same = False && all (== xv) mvs
           case all_same of
             True -> no_prompt $ (lvl, xv)
@@ -2207,7 +2211,7 @@ evalApply ctxt at sco st rator rands =
 getKwdOrPrim :: Ord k => k -> M.Map k SLSSVal -> Maybe SLSSVal
 getKwdOrPrim ident env =
   case M.lookup ident env of
-    -- XXX Hack: Allow `default` to be used as object property name for `match`
+    -- Hack: Allow `default` to be used as object property name for `match`
     -- expr. Keywords are allowed as property names in JS anyway, *shrug*
     Just (SLSSVal _ _ (SLV_Kwd SLK_default)) -> Nothing
     Just s@(SLSSVal _ _ (SLV_Kwd _)) -> Just s
@@ -2752,17 +2756,22 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
         return $ (id, Nothing)
       Just (time_at, delay_e, (JSBlock _ time_ss _)) -> do
         allowed_to_wait ctxt at st (return ())
+        -- The timeout delay must be based on previously known consensus
+        -- variables
+        let sco_con = sco { sco_env = sco_cenv sco }
         SLRes delay_lifts _ delay_sv <-
-          evalExpr ctxt time_at sco st_pure delay_e
+          evalExpr ctxt time_at sco_con st_pure delay_e
         (delay_lifts', delay_da) <-
           compileCheckType ctxt st time_at T_UInt $
             ensure_public ctxt time_at delay_sv
         let mtime_lifts = delay_lifts <> delay_lifts'
+        ensure_simple_time ctxt time_at mtime_lifts delay_e
         SLRes time_lifts time_st time_cr <-
           evalStmt ctxt time_at sco st time_ss
+        -- let delay_db = DLBlock time_at mempty mtime_lifts delay_da
         let mtime_merge (SLRes lifts_ st_ cr_) =
               SLRes
-                (mtime_lifts <> lifts_)
+                (lifts_)
                 (stMerge ctxt time_at time_st st_)
                 (combineStmtRes time_at Public time_st time_cr st_ cr_)
         return $ (mtime_merge, Just (delay_da, time_lifts))
@@ -2790,7 +2799,6 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
         st
           { st_mode = SLM_ConsensusStep
           , st_pdvs = pdvs_recv
-          , st_after_first = True
           }
   msg_dvs <- mapM (\t -> ctxt_mkvar ctxt (DLVar at "msg" t)) msg_ts
   let msg_env = foldl' (env_insertp ctxt at) mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ msg_dvs
@@ -2828,12 +2836,19 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   SLRes balup st_recv' () <-
     keepLifts (whoc_req_lifts <> amt_check_lifts) $
       doBalanceUpdate ctxt at sco_recv st_recv ADD (SLV_DLVar amt_dv)
+  time_dv <- ctxt_mkvar ctxt (DLVar at "ctime" T_UInt)
+  this_time_lifts <-
+    doFluidSet ctxt st_recv at FV_thisConsensusTime $
+      public $ SLV_DLVar time_dv
+  SLRes last_time_lifts _ last_time_dv <-
+    doFluidRef_dv ctxt at st FV_lastConsensusTime
   SLRes conlifts k_st k_cr <-
-    keepLifts balup $ evalStmt ctxt at sco_recv st_recv' ks
-  let tc_recv = (winner_dv, msg_dvs, amt_dv, conlifts)
+    keepLifts (balup <> this_time_lifts) $
+      evalStmt ctxt at sco_recv st_recv' ks
+  let tc_recv = (last_time_dv, winner_dv, msg_dvs, amt_dv, time_dv, conlifts)
   -- Prepare final result
   let the_tc = DLS_ToConsensus at tc_send tc_recv tc_mtime
-  let lifts' = send_lifts <> (return $ the_tc)
+  let lifts' = send_lifts <> last_time_lifts <> (return $ the_tc)
   return $ mtime_merge $ SLRes lifts' k_st k_cr
 
 srcloc2annot :: SrcLoc -> JSAnnot
@@ -3082,9 +3097,18 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
       doFork ctxt f_at sco st ks cases mtime
     SLV_Prim SLPrim_committed -> do
       ensure_mode ctxt at st SLM_ConsensusStep "commit"
-      let st_step = st {st_mode = SLM_Step}
+      let st_step =
+            st
+              { st_mode = SLM_Step
+              , st_after_first = True }
       let sco' = sco_set "this" (SLSSVal at Public $ SLV_Kwd $ SLK_this) sco
-      SLRes steplifts k_st cr <- evalStmt ctxt at sco' st_step ks
+      SLRes this_time_lifts _ this_time_v <-
+        doFluidRef ctxt at st FV_thisConsensusTime
+      time_lifts <-
+        doFluidSet ctxt st_step at FV_lastConsensusTime this_time_v
+      SLRes steplifts k_st cr <-
+        keepLifts (this_time_lifts <> time_lifts) $
+          evalStmt ctxt at sco' st_step ks
       let lifts' = (return $ DLS_FromConsensus at steplifts)
       return $ SLRes lifts' k_st cr
     _ ->
@@ -3096,27 +3120,21 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
 
 doWhileLikeInitEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> ST s (DLStmts, DLStmts, M.Map SLVar DLVar, DLAssignment, SLState, SLScope)
 doWhileLikeInitEval ctxt at sco st lhs rhs = do
-  SLRes init_lifts st_init vars_env_ <- evalDecl ctxt at sco st lhs rhs
-  SLRes fr_lifts _ balance_sv <- doFluidRef ctxt at st_init FV_balance
-  let balance_v = sls_sss at balance_sv
-  --- XXX This could be broken with multiple loops
-  let vars_env = env_insert ctxt at internalVar_balance balance_v vars_env_
+  SLRes init_lifts st_init vars_env <- evalDecl ctxt at sco st lhs rhs
   let help v (SLSSVal _ _ val) = do
         let (t, da) = typeOf_ctxt ctxt st at val
         dv <- ctxt_mkvar ctxt $ DLVar at v t
         return $ (dv, da)
   helpm <- M.traverseWithKey help vars_env
   let unknown_var_env = M.map (sls_sss at . public . SLV_DLVar . fst) helpm
-  let unknown_bal_v = sss_sls $ unknown_var_env M.! internalVar_balance
-  bal_lifts <- doFluidSet ctxt st_init at FV_balance unknown_bal_v
   let st_init' = stEnsureMode ctxt at (st_mode st) st_init
   let sco_env' = sco_update ctxt at sco st_init' unknown_var_env
   let init_daem = M.fromList $ M.elems helpm
   let init_vars = M.map fst helpm
   (inite_lifts, init_dam) <- compileArgExprMap ctxt at init_daem
   let init_dl = DLAssignment init_dam
-  let pre_lifts = init_lifts <> fr_lifts <> inite_lifts
-  let post_lifts = bal_lifts
+  let pre_lifts = init_lifts <> inite_lifts
+  let post_lifts = mempty
   return $ (pre_lifts, post_lifts, init_vars, init_dl, st_init', sco_env')
 
 doWhileLikeContinueEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> M.Map SLVar DLVar -> SLSVal -> SLComp s ()
@@ -3140,19 +3158,9 @@ doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
               val = ensure_public ctxt at $ sss_sls sv
               dae = checkType_ctxt ctxt st at et val
               DLVar _ _ et _ = dv
-  SLRes fr_lifts _ balance_v <-
-    doFluidRef ctxt at st_decl FV_balance
-  let balance_dae =
-        checkType_ctxt ctxt st at T_UInt $
-          ensure_public ctxt at balance_v
-  let unknown_balance_dv = whilem M.! internalVar_balance
-  let cont_daem' =
-        M.insert unknown_balance_dv balance_dae cont_daem
-  (ae_lifts, cont_dam') <- compileArgExprMap ctxt at cont_daem'
+  (ae_lifts, cont_dam') <- compileArgExprMap ctxt at cont_daem
   let cont_das = DLAssignment cont_dam'
-  let lifts' =
-        decl_lifts <> fr_lifts <> ae_lifts
-          <> (return $ DLS_Continue at cont_das)
+  let lifts' = decl_lifts <> ae_lifts <> (return $ DLS_Continue at cont_das)
   return $ SLRes lifts' st_decl' ()
 
 evalPureExprToBlock :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> DLStmts -> JSExpression -> SLType -> ST s DLBlock
@@ -3308,7 +3316,7 @@ evalStmt ctxt at sco st ss =
             doWhileLikeContinueEval ctxt cont_at sco rhs_st lhs whilem rhs_sv
           let lifts' = rhs_lifts <> cont_lifts
           let env = sco_env sco
-          -- XXX We could/should look at sco_must_ret and see if it is
+          -- NOTE We could/should look at sco_must_ret and see if it is
           -- RS_MayBeEmpty which means that the outside scope has an empty
           -- tail?
           expect_empty_tail ctxt lab cont_a cont_sp cont_at cont_ks $
@@ -3709,6 +3717,7 @@ app_default_opts cns =
     , dlo_verifyOverflow = False
     , dlo_verifyPerConnector = False
     , dlo_connectors = cns
+    , dlo_counter = 0
     }
 
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
@@ -3781,12 +3790,16 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
               Right x -> x
               Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
   let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) opts
+  let st_after_first0 =
+        case dlo_deployMode dlo of
+          DM_constructor -> True
+          DM_firstMsg -> False
   let st_step =
         SLState
           { st_mode = SLM_Step
           , st_live = True
           , st_pdvs = mempty
-          , st_after_first = False
+          , st_after_first = st_after_first0
           }
   let at' = srcloc_at "compileDApp" Nothing at
   let classes = S.fromList $ [ pn | (_, True, pn, _, _) <- part_ios ]
@@ -3815,11 +3828,23 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , sco_env = top_env_wps
           , sco_while_vars = Nothing
           , sco_penvs = penvs
-          , sco_cenv = mempty
+          , -- NOTE: Is this right... does it give the consensus access to anything weird? It should just be compile-time constants
+            sco_cenv = top_env
           , sco_depth = recursionDepthLimit
           }
   bal_lifts <- doFluidSet ctxt st_step at' FV_balance $ public $ SLV_Int at' 0
-  SLRes final st_final _ <- evalStmt ctxt at' sco st_step top_ss
+  (ctimem, ctime_lifts) <- do
+    let no = return (Nothing, mempty)
+    let yes = do
+          time_dv <- ctxt_mkvar ctxt (DLVar at "ctime" T_UInt)
+          ctime_lifts <- doFluidSet ctxt st_step at' FV_lastConsensusTime $ public $ SLV_DLVar time_dv
+          return (Just time_dv, ctime_lifts)
+    case dlo_deployMode dlo of
+      DM_constructor -> yes
+      DM_firstMsg -> no
+  SLRes final st_final _ <-
+    keepLifts (liblifts <> bal_lifts <> ctime_lifts) $
+      evalStmt ctxt at' sco st_step top_ss
   ensure_mode ctxt at st_final SLM_Step "program termination"
   tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
   let make_sps_entry (_p_at, _, pn, _iat, io) =
@@ -3831,7 +3856,10 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           getType (SLSSVal _ _ (SLV_Prim (SLPrim_interact _ _ _ t))) = t
           getType x = impossible $ "make_sps_entry getType " ++ show x
   let sps = SLParts $ M.fromList $ map make_sps_entry part_ios
-  return $ DLProg at dlo sps (liblifts <> bal_lifts <> final <> tbzero)
+  let dli = DLInit ctimem
+  final_idx <- readSTCounter idxr
+  let dlo' = dlo { dlo_counter = final_idx }
+  return $ DLProg at dlo' sps dli (final <> tbzero)
 compileDApp _ _ _ topv =
   expect_thrown srcloc_top (Err_Top_NotApp topv)
 

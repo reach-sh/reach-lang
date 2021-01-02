@@ -4,10 +4,10 @@ import Control.Monad
 import Control.Monad.ST
 import Control.Monad.ST.Unsafe
 import Data.List.Extra (mconcatMap)
-import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
+import qualified Data.Set as S
 import Data.STRef
 import Generics.Deriving (Generic)
 import Reach.AST.Base
@@ -54,7 +54,7 @@ data ProSt s = ProSt
   { pst_prev_handler :: Int
   , pst_handlers :: STRef s CHandlers
   , pst_handlerc :: STCounter s
-  , pst_interval :: CInterval
+  , pst_interval :: CInterval DLArg
   , pst_parts :: [SLPart]
   , pst_loop_fixed_point :: Bool
   , --- FIXME These would be maps when we have labelled loops
@@ -64,13 +64,32 @@ data ProSt s = ProSt
   }
   deriving (Eq)
 
+default_interval :: CInterval a
+default_interval = CBetween [] []
+
+interval_from :: CInterval a -> [a]
+interval_from (CBetween froml _) = froml
+
+interval_add_from :: CInterval a -> a -> CInterval a
+interval_add_from (CBetween froml tol) x =
+  CBetween (x : froml) (x : tol)
+
+interval_add_to :: CInterval a -> a -> CInterval a
+interval_add_to (CBetween froml tol) x =
+  CBetween froml (x : tol)
+
+interval_no_to :: CInterval a -> CInterval a
+interval_no_to (CBetween froml _) =
+  CBetween froml []
+
+
 updateHandlerSVS :: ProSt s -> Int -> [DLVar] -> ST s ()
 updateHandlerSVS st target new_svs = modifySTRef (pst_handlers st) update
   where
     update (CHandlers hs) = CHandlers $ fmap update1 hs
     update1 = \case
-      C_Handler at int fs prev old_svs msg amtv body ->
-        C_Handler at int fs prev svs msg amtv body
+      C_Handler at int ltv fs prev old_svs msg amtv tv body ->
+        C_Handler at int ltv fs prev svs msg amtv tv body
         where
           svs =
             case target == prev of
@@ -460,7 +479,7 @@ epp_s st s =
             ProRes_ who_body_cs $ pltReplace ET_Com who_k_et who_body_lt
       let p_prts = M.insert who who_prt_only p_prts_k
       return $ ProResS p_prts prchs_k
-    LLS_ToConsensus at send (fromv, msg, amt_dv, cons) mtime -> do
+    LLS_ToConsensus at send (last_timev, fromv, msg, amt_dv, timev, cons) mtime -> do
       let prev_int = pst_interval st
       which <- newHandler st
       let (int_ok, delay_cs, continue_time) =
@@ -473,6 +492,7 @@ epp_s st s =
                     return $ (ok_cons_cs, pall st $ ProRes_ mempty Nothing)
               Just (delaya, delays) -> (int_ok_, delay_cs_, continue_time_)
                 where
+                  -- LLBlock _ _ delay_ss delaya = delayb
                   delayas = interval_from int_to
                   delay_cs_ = counts delayas
                   int_to = interval_add_from prev_int delaya
@@ -494,24 +514,25 @@ epp_s st s =
               { pst_prev_handler = which
               , pst_interval = int_ok
               }
-      ProResC p_prts_cons (ProRes_ cons_vs (cons_udvs, ct_cons0)) <- epp_n st_cons cons
+      ProResC p_prts_cons (ProRes_ cons_vs (cons_udvs, ct_cons0)) <-
+        epp_n st_cons cons
       let add_udv_def uk udv = CT_Com $ PL_Var at udv uk
       let ct_cons = S.foldl' add_udv_def ct_cons0 cons_udvs
       let (fs_uses, fs_defns) = (mempty, [fromv])
-      let msg_and_defns = (msg <> [amt_dv] <> fs_defns)
+      let msg_and_defns = (msg <> [amt_dv, timev] <> fs_defns)
       let int_ok_cs = counts int_ok
-      let ok_cons_cs = int_ok_cs <> delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st
+      let ok_cons_cs = int_ok_cs <> delay_cs <> count_rms msg_and_defns (fs_uses <> cons_vs) <> pst_forced_svs st <> (counts [last_timev])
       (time_cons_cs, mtime'_ps) <- continue_time ok_cons_cs
       let svs = counts_nzs time_cons_cs
       let prev = pst_prev_handler st
-      let this_h = C_Handler at int_ok fromv prev svs msg amt_dv ct_cons
+      let this_h = C_Handler at int_ok last_timev fromv prev svs msg amt_dv timev ct_cons
       let soloSend0 = (M.size send) == 1
       let soloSend1 = not $ getAll $ mconcatMap (\(isClass, _, _, _)->All isClass) $ M.elems send
       -- It is only a solo send if we are the only sender AND we are not a
       -- class
       let soloSend = soloSend0 && soloSend1
       let mk_et mfrom (ProRes_ cs_ et_) (ProRes_ mtime'_cs mtime') =
-            ProRes_ cs_' $ ET_ToConsensus at fromv prev which mfrom msg amt_dv mtime' et_
+            ProRes_ cs_' $ ET_ToConsensus at fromv prev last_timev which mfrom msg amt_dv timev mtime' et_
             where
               cs_' = mtime'_cs <> fs_uses <> counts mfrom <> count_rms msg_and_defns cs_
       let mk_p_prt p prt = mker prt mtime'
@@ -527,7 +548,7 @@ epp_s st s =
       return $ ProResS p_prts (ProRes_ time_cons_cs True)
 
 epp :: LLProg -> PLProg
-epp (LLProg at (LLOpts {..}) ps s) = runST $ do
+epp (LLProg at (LLOpts {..}) ps dli s) = runST $ do
   let SLParts p_to_ie = ps
   nhr <- newSTCounter 1
   hsr <- newSTRef $ mempty
@@ -554,4 +575,4 @@ epp (LLProg at (LLOpts {..}) ps s) = runST $ do
   let pps = EPPs $ M.mapWithKey mk_pp p_to_ie
   let plo_deployMode = llo_deployMode
   let plo_verifyOverflow = llo_verifyOverflow
-  return $ PLProg at (PLOpts {..}) pps cp
+  return $ PLProg at (PLOpts {..}) dli pps cp

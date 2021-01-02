@@ -1,0 +1,1 @@
+reachc: error: ./Err_TimeMustBeSimple.rsh:12:15:application: time computations must be constants or identifiers known by consensus

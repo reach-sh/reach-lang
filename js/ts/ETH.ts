@@ -491,7 +491,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           throw Error(`Cannot wait yet; contract is not actually deployed`);
         },
         sendrecv: async (
-          label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
+          label: string, funcNum: number, evt_cnt: number,
+          hasLastTime: (BigNumber | false),
+          tys: Array<AnyETH_Ty>,
           args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
           onlyIf: boolean, soloSend: boolean,
           timeout_delay: BigNumber | false, sim_p: any,
@@ -500,6 +502,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           void(evt_cnt);
           void(sim_p);
           // TODO: munge/unmunge roundtrip?
+          void(hasLastTime);
           void(tys);
           void(out_tys);
 
@@ -524,6 +527,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // Danger: deadlock possible
           return await infoP;
         },
+        creationTime: (async () => bigNumberify((await infoP).creation_block)),
         // iam/selfAddress don't make sense to check before ctc deploy, but are harmless.
         iam,
         selfAddress,
@@ -536,6 +540,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         recv: (...args) => impl.recv(...args),
         wait: (...args) => impl.wait(...args),
         getInfo: (...args) => impl.getInfo(...args),
+        creationTime: (...args) => impl.creationTime(...args),
         iam: (...args) => impl.iam(...args),
         selfAddress: (...args) => impl.selfAddress(...args),
         stdlib: compiledStdlib,
@@ -642,11 +647,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const getInfo = async () => await infoP;
 
     const sendrecv_impl = async (
-      label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
+      label: string, funcNum: number, evt_cnt: number,
+      hasLastTime: (BigNumber | false), tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
       onlyIf: boolean, soloSend: boolean,
       timeout_delay: BigNumber | false,
     ): Promise<Recv> => {
+      void(hasLastTime);
       const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
         await recv_impl(label, funcNum, out_tys, waitIfNotPresent, timeout_delay);
       if ( ! onlyIf ) {
@@ -669,7 +676,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- TRY`);
         try {
-          const arg = [ [lastBlock, ...munged_svs], munged_msg ];
+          const arg = [ munged_svs, munged_msg ];
           debug(`${shad}: ${label} send ${funcName} ${timeout_delay} --- SEND ARG --- ${JSON.stringify(arg)}`);
           const r_fn = await callC(funcName, arg, value);
           r_maybe = await r_fn.wait();
@@ -729,13 +736,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const sendrecv = async (
-      label: string, funcNum: number, evt_cnt: number, tys: Array<AnyETH_Ty>,
+      label: string, funcNum: number, evt_cnt: number, hasLastTime: (BigNumber | false),
+      tys: Array<AnyETH_Ty>,
       args: Array<any>, value: BigNumber, out_tys: Array<AnyETH_Ty>,
       onlyIf: boolean, soloSend: boolean,
       timeout_delay: BigNumber | false, sim_p: any,
     ): Promise<Recv> => {
       void(sim_p);
-      return await sendrecv_impl(label, funcNum, evt_cnt, tys, args, value, out_tys, onlyIf, soloSend, timeout_delay);
+      return await sendrecv_impl(label, funcNum, evt_cnt, hasLastTime, tys, args, value, out_tys, onlyIf, soloSend, timeout_delay);
     }
 
     // https://docs.ethers.io/ethers.js/html/api-contract.html#configuring-events
@@ -805,7 +813,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const data = ok_vals.map((v: any, i: number) => out_tys[i].unmunge(v));
 
           debug(`${shad}: ${label} recv ${ok_evt} ${timeout_delay} --- OKAY --- ${JSON.stringify(ok_vals)}`);
-          return { didTimeout: false, data, value: ok_t.value, from: ok_t.from };
+          return { didTimeout: false,
+                   time: bigNumberify(ok_r.blockNumber),
+                   data,
+                   value: ok_t.value,
+                   from: ok_t.from };
         }
       }
 
@@ -830,8 +842,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return p;
     }
 
+    const creationTime = (async () => bigNumberify((await getInfo()).creation_block));
+
     // Note: wait is the local one not the global one of the same name.
-    return { getInfo, sendrecv, recv, wait, iam, selfAddress, stdlib: compiledStdlib };
+    return { getInfo, creationTime, sendrecv, recv, wait, iam, selfAddress, stdlib: compiledStdlib };
   };
 
   return { deploy, attach, networkAccount, stdlib: compiledStdlib };

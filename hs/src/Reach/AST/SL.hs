@@ -123,6 +123,7 @@ data SLForm
       , slpr_mwhile :: Maybe JSExpression
       , slpr_cases :: [ (SrcLoc, [JSExpression]) ]
       , slpr_mtime :: Maybe (SrcLoc, [JSExpression]) }
+  | SLForm_wait
   deriving (Eq, Generic, NFData, Show)
 
 data SLKwd
@@ -232,9 +233,9 @@ data SLPrimitive
   | SLPrim_PrimDelay SrcLoc SLPrimitive [SLSVal] [SLSVal]
   | SLPrim_part_set
   | SLPrim_part_setted SrcLoc SLPart DLArg
-  | SLPrim_wait
   | SLPrim_fluid_read FluidVar
   | SLPrim_race
+  | SLPrim_lastConsensusTime
   deriving (Eq, Generic, NFData, Show)
 
 type SLSVal = (SecurityLevel, SLVal)
