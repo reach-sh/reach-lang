@@ -1034,7 +1034,7 @@ runApp eShared eWhich eLets emTimev m = do
 
 ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int last_timev from prev svs_ msg amtv timev body) = let svs = dvdelete last_timev svs_ in fmap Just $
+ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev body) = let svs = dvdeletem last_timemv svs_ in fmap Just $
   fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
     let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
     let args = svs <> msg
@@ -1048,7 +1048,9 @@ ch eShared eWhich (C_Handler _ int last_timev from prev svs_ msg amtv timev body
           op "-"
     let eLets2 = M.insert amtv lookup_txn_value eLets1
     let eLets3 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets2
-    let eLets4 = M.insert last_timev lookup_last eLets3
+    let eLets4 = case last_timemv of
+                   Nothing -> eLets3
+                   Just x -> M.insert x lookup_last eLets3
     let eLets = eLets4
     runApp eShared eWhich eLets (Just timev) $ do
       comment ("Handler " <> texty eWhich)
@@ -1097,7 +1099,7 @@ ch eShared eWhich (C_Handler _ int last_timev from prev svs_ msg amtv timev body
       code "txn" ["NumArgs"]
       cl $ DLL_Int sb $ fromIntegral $ argCount
       eq_or_fail
-      cstate (HM_Check prev) (dvdelete last_timev svs)
+      cstate (HM_Check prev) (dvdeletem last_timemv svs)
       code "arg" [texty argPrevSt]
       eq_or_fail
 
@@ -1121,22 +1123,24 @@ ch eShared eWhich (C_Handler _ int last_timev from prev svs_ msg amtv timev body
       -- that a txn is valid within is built-in to Algorand, so rather than
       -- checking that ( last_timev + from <= timev <= last_timev + to ), we
       -- just check that FirstValid = last_time + from, etc.
-      let check_time f = \case
-            [] -> nop
-            as -> do
-              ca $ DLA_Var last_timev
-              csum as
-              op "+"
-              let go i = do
-                    op "dup"
-                    code "gtxn" [texty i, f]
-                    eq_or_fail
-              forM_ [0 .. txns] go
-              op "pop"
-      (do
-         let CBetween ifrom ito = int
-         check_time "FirstValid" ifrom
-         check_time "LastValid" ito)
+      (case last_timemv of
+         Nothing -> return ()
+         Just last_timev -> do
+            let check_time f = \case
+                  [] -> nop
+                  as -> do
+                    ca $ DLA_Var last_timev
+                    csum as
+                    op "+"
+                    let go i = do
+                          op "dup"
+                          code "gtxn" [texty i, f]
+                          eq_or_fail
+                    forM_ [0 .. txns] go
+                    op "pop"
+            let CBetween ifrom ito = int
+            check_time "FirstValid" ifrom
+            check_time "LastValid" ito)
 
       std_footer
 

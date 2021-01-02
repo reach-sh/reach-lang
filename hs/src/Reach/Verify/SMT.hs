@@ -105,6 +105,7 @@ data BindingOrigin
   | O_HonestJoin SLPart
   | O_HonestMsg SLPart DLArg
   | O_HonestPay SLPart DLArg
+  | O_ClassJoin SLPart
   | O_ToConsensus
   | O_BuiltIn
   | O_Var
@@ -123,6 +124,7 @@ instance Show BindingOrigin where
       O_HonestJoin who -> "an honest join from " ++ sp who
       O_HonestMsg who what -> "an honest message from " ++ sp who ++ " of " ++ sp what
       O_HonestPay who amt -> "an honest payment from " ++ sp who ++ " of " ++ sp amt
+      O_ClassJoin who -> "a join by a class member of " <> sp who
       O_ToConsensus -> "a consensus transfer"
       O_BuiltIn -> "builtin"
       O_Var -> "function return"
@@ -828,7 +830,7 @@ smt_s ctxt s =
     LLS_ToConsensus at send recv mtime ->
       mapM_ (ctxtNewScope ctxt) $ timeout : map go (M.toList send)
       where
-        (last_timev, whov, msgvs, amtv, timev, next_n) = recv
+        (last_timemv, whov, msgvs, amtv, timev, next_n) = recv
         timeout = case mtime of
                     Nothing -> mempty
                     Just (_delay_a, delay_s) ->
@@ -836,8 +838,13 @@ smt_s ctxt s =
                       smt_s ctxt delay_s
         after = bind_time <> order_time <> smt_n ctxt next_n
         bind_time = pathAddUnbound ctxt at (Just timev) O_ToConsensus
-        order_time = smtAssert ctxt (uint256_lt last_timev' timev')
-        last_timev' = Atom $ smtVar ctxt last_timev
+        order_time =
+          case last_timemv of
+            Nothing -> mempty
+            Just last_timev ->
+              smtAssertCtxt ctxt (uint256_lt last_timev' timev')
+              where
+                last_timev' = Atom $ smtVar ctxt last_timev
         timev' = Atom $ smtVar ctxt timev
         go (from, (isClass, msgas, amta, _whena)) =
           -- XXX Potentially we need to look at whena to determine if we even
@@ -846,7 +853,7 @@ smt_s ctxt s =
           where
             bind_from =
               case isClass of
-                True -> pathAddUnbound ctxt at (Just whov) (O_DishonestJoin from) -- XXX make ClassJoin
+                True -> pathAddUnbound ctxt at (Just whov) (O_ClassJoin from)
                 False -> maybe_pathAdd whov (O_DishonestJoin from) (O_HonestJoin from) (Atom $ smtAddress from)
             bind_amt = maybe_pathAdd amtv (O_DishonestPay from) (O_HonestPay from amta) (smt_a ctxt at amta)
             bind_msg = zipWithM_ (\dv da -> maybe_pathAdd dv (O_DishonestMsg from) (O_HonestMsg from da) (smt_a ctxt at da)) msgvs msgas

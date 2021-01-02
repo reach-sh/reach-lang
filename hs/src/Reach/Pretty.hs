@@ -196,7 +196,7 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest 2 $ hardline <> pretty f)
 
-prettyToConsensus :: Pretty c => (a -> Doc) -> (b -> Doc) -> M.Map SLPart (Bool, [DLArg], DLArg, DLArg) -> (DLVar, DLVar, [DLVar], DLVar, DLVar, a) -> (Maybe (c, b)) -> Doc
+prettyToConsensus :: Pretty c => (a -> Doc) -> (b -> Doc) -> M.Map SLPart (Bool, [DLArg], DLArg, DLArg) -> (Maybe DLVar, DLVar, [DLVar], DLVar, DLVar, a) -> (Maybe (c, b)) -> Doc
 prettyToConsensus fa fb send (ltv, win, msg, amtv,tv,  body) mtime =
   "publish" <> parens emptyDoc
     <> nest

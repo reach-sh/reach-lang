@@ -122,6 +122,11 @@ ul_v v = do
     Right _ ->
       impossible "var is renamed to arg"
 
+ul_mv :: AppT s (Maybe DLVar)
+ul_mv = \case
+  Nothing -> return Nothing
+  Just v -> Just <$> ul_v v
+
 ul_v_rna :: DLVar -> DLArg -> App s ()
 ul_v_rna (DLVar _ _ _ idx) a = do
   Env {..} <- ask
@@ -327,7 +332,7 @@ ul_s = \case
       send' = M.fromList <$> mapM ul_send (M.toList send)
       (last_timev, winner_dv, msg, amtv, timev, cons) = recv
       cons' = ul_n cons
-      recv' = (\a b c d e f -> (a, b, c, d, e, f)) <$> ul_v last_timev <*> ul_v_rn winner_dv <*> ul_vs_rn msg <*> ul_v_rn amtv <*> ul_v_rn timev <*> cons'
+      recv' = (\a b c d e f -> (a, b, c, d, e, f)) <$> ul_mv last_timev <*> ul_v_rn winner_dv <*> ul_vs_rn msg <*> ul_v_rn amtv <*> ul_v_rn timev <*> cons'
       mtime' = ul_mtime mtime
 
 ul_dli :: AppT s DLInit

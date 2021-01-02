@@ -46,7 +46,12 @@ instance Eq DLVar where
   (DLVar _ _ _ x) == (DLVar _ _ _ y) = x == y
 
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
-dvdelete x l = filter (x /=) l
+dvdelete x = filter (x /=)
+
+dvdeletem :: Maybe DLVar -> [DLVar] -> [DLVar]
+dvdeletem = \case
+  Nothing -> id
+  Just x -> dvdelete x
 
 varType :: DLVar -> SLType
 varType (DLVar _ _ t _) = t

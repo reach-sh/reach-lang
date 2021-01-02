@@ -664,7 +664,7 @@ solArgDefn ctxt which adk msg = (argDefns, argDefs)
     someArgs = not $ null msg_tys
 
 solHandler :: SolCtxt -> Int -> CHandler -> Doc
-solHandler ctxt_top which (C_Handler at interval last_timev from prev svs msg amtv timev ct) =
+solHandler ctxt_top which (C_Handler at interval last_timemv from prev svs msg amtv timev ct) =
   vsep $ argDefns <> [evtDefn, frameDefn, funDefn]
   where
     given_mm = M.fromList [ (amtv, "msg.value"), (timev, solBlockNumber) ]
@@ -693,15 +693,19 @@ solHandler ctxt_top which (C_Handler at interval last_timev from prev svs msg am
         , ctp
         ]
     (fromm, fromCheck) = ((M.singleton from "payable(msg.sender)"), emptyDoc)
-    timeoutCheck = solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
-      where
-        CBetween ifrom ito = interval
-        int_fromp = check True ifrom
-        int_top = check False ito
-        check sign mv =
-          case mv of
-            [] -> "true"
-            mvs -> solPrimApply ctxt (if sign then PGE else PLT) [solVar ctxt timev, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) (solVar ctxt last_timev) (map (solArg ctxt) mvs))]
+    timeoutCheck =
+      case last_timemv of
+        Nothing -> emptyDoc
+        Just last_timev ->
+          solRequire (checkMsg "timeout") (solBinOp "&&" int_fromp int_top) <> semi
+          where
+            CBetween ifrom ito = interval
+            int_fromp = check True ifrom
+            int_top = check False ito
+            check sign mv =
+              case mv of
+                [] -> "true"
+                mvs -> solPrimApply ctxt (if sign then PGE else PLT) [solVar ctxt timev, (foldl' (\x y -> solPrimApply ctxt ADD [x, y]) (solVar ctxt last_timev) (map (solArg ctxt) mvs))]
 solHandler ctxt_top which (C_Loop _at svs lcmsg ct) =
   vsep $ argDefns <> [frameDefn, funDefn]
   where
@@ -879,7 +883,12 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) =
                    , consbody ]
             SolTailRes _ consbody = solCTail cctxt (CT_From at (Just csvs_))
         DM_firstMsg ->
-          (mempty, emptyDoc)
+          -- XXX This is a hack... there are no constructor SVSs when the
+          -- deployment mode is firstMsg, but rather than allow the rest of the
+          -- code to deal with this being missing (because Solidity doesn't
+          -- allow empty structs), we force there to be one that will be
+          -- ignored
+          ( [ (DLVar at "fake" T_UInt 0) ], emptyDoc)
     cinfo = HM.fromList [("deployMode", Aeson.String $ T.pack $ show plo_deployMode)]
     state_defn = "uint256 current_state;"
     preamble =

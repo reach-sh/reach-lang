@@ -23,7 +23,7 @@ data DLStmt
   | DLS_ToConsensus
       { dls_tc_at :: SrcLoc
       , dls_tc_send :: M.Map SLPart (Bool, [DLArg], DLArg, DLArg)
-      , dls_tc_recv :: (DLVar, DLVar, [DLVar], DLVar, DLVar, DLStmts)
+      , dls_tc_recv :: (Maybe DLVar, DLVar, [DLVar], DLVar, DLVar, DLStmts)
       , dls_tc_mtime :: Maybe (DLArg, DLStmts)
       }
   | DLS_FromConsensus SrcLoc DLStmts

@@ -369,7 +369,7 @@ jsETail ctxt = \case
             , jsCon $ DLL_Bool False
             )
       mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral which) : (map DLA_Var svs_))
-  ET_ToConsensus at fs_ok prev last_timev which from_me msg amtv timev mto k_ok -> tp
+  ET_ToConsensus at fs_ok prev last_timemv which from_me msg amtv timev mto k_ok -> tp
     where
       tp = vsep [defp, k_p]
       (delayp, k_p) =
@@ -404,7 +404,7 @@ jsETail ctxt = \case
                   [ whop
                   , pretty which
                   , pretty (length msg)
-                  , jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (elemIndex last_timev svs))
+                  , jsCon (maybe (DLL_Bool False) (DLL_Int at . fromIntegral) (last_timemv >>= flip elemIndex svs))
                   , jsArray $ map (jsContract . argTypeOf) $ svs_as ++ args
                   , vs
                   , amtp
@@ -425,7 +425,7 @@ jsETail ctxt = \case
                   , sim_body_core
                   , "return sim_r;"
                   ]
-              svs_noPrevTime = dvdelete last_timev svs
+              svs_noPrevTime = dvdeletem last_timemv svs
               mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
               sim_body_core = jsETail ctxt'_sim k_ok
               ctxt'_sim = ctxt' { ctxt_simulate = True }

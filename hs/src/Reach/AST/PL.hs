@@ -45,7 +45,7 @@ data ETail
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
       , et_tc_prev :: Int
-      , et_tc_last_timev :: DLVar
+      , et_tc_last_timev :: Maybe DLVar
       , et_tc_which :: Int
       , et_tc_from_me
         :: ( ---     args     amt   when   saved_vs just-me
@@ -88,7 +88,7 @@ data CHandler
   = C_Handler
       { ch_at :: SrcLoc
       , ch_int :: CInterval DLArg
-      , ch_last_timev :: DLVar
+      , ch_last_timev :: Maybe DLVar
       , ch_from :: DLVar
       , ch_last :: Int
       , ch_svs :: [DLVar]

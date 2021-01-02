@@ -242,7 +242,7 @@ opt_s = \case
       send' = M.fromList <$> mapM opt_send (M.toList send)
       (last_timev, winner_dv, msg, amtv, timev, cons) = recv
       cons' = newScope $ focusc $ opt_n cons
-      recv' = (\x y -> (x, winner_dv, msg, amtv, timev, y)) <$> opt_v last_timev <*> cons'
+      recv' = (\x y -> (x, winner_dv, msg, amtv, timev, y)) <$> opt_mv last_timev <*> cons'
       mtime' = opt_mtime mtime
 
 opt_dli :: AppT DLInit

@@ -51,7 +51,7 @@ data LLStep
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc
       , lls_tc_send :: M.Map SLPart (Bool, [DLArg], DLArg, DLArg)
-      , lls_tc_recv :: (DLVar, DLVar, [DLVar], DLVar, DLVar, LLConsensus)
+      , lls_tc_recv :: (Maybe DLVar, DLVar, [DLVar], DLVar, DLVar, LLConsensus)
       , lls_tc_mtime :: Maybe (DLArg, LLStep)
       }
   deriving (Eq, Show)

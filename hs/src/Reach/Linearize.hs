@@ -4,6 +4,7 @@ import Control.Monad.Reader
 import Data.IORef
 import Data.List (foldl')
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import qualified Data.Sequence as Seq
 import Generics.Deriving
 import Reach.AST.Base
@@ -34,10 +35,15 @@ allocVar mk = do
   liftIO $ modifyIORef eCounterR (1 +)
   return $ mk idx
 
+fluidRefm :: FluidVar -> App (Maybe (SrcLoc, DLArg))
+fluidRefm fv = do
+  Env {..} <- ask
+  return $ M.lookup fv eFVE
+
 fluidRef :: FluidVar -> App (SrcLoc, DLArg)
 fluidRef fv = do
-  Env {..} <- ask
-  case M.lookup fv eFVE of
+  r <- fluidRefm fv
+  case r of
     Nothing -> impossible $ "fluid ref unbound: " <> show fv
     Just x -> return x
 
@@ -194,9 +200,13 @@ lin_con back at_top (s Seq.:<| ks) =
       LLC_FromConsensus at at_top <$> back (cons <> ks)
     DLS_While at asn inv_b cond_b body -> do
       let go fv = do
-            dv <- allocVar $ DLVar at (show fv) (fluidVarType fv)
-            return $ (fv, dv)
-      fvm <- M.fromList <$> mapM go allFluidVars
+            r <- fluidRefm fv
+            case r of
+              Nothing -> return $ Nothing
+              Just _ -> do
+                dv <- allocVar $ DLVar at (show fv) (fluidVarType fv)
+                return $ Just (fv, dv)
+      fvm <- M.fromList <$> catMaybes <$> mapM go allFluidVars
       let body_fvs' = lin_con back at =<< unpackFVMap at body
       --- Note: The invariant and condition can't return
       let block b = lin_block at =<< block_unpackFVMap at b
