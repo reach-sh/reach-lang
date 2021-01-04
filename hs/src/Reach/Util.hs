@@ -53,7 +53,7 @@ trimQuotes = reverse . drop 1 . reverse . drop 1
 safeInit :: [a] -> [a]
 safeInit [] = []
 safeInit [_] = []
-safeInit (x:xs) = x : safeInit xs
+safeInit (x : xs) = x : safeInit xs
 
 -- | Safe fromInteger with bounds checking
 fromIntegerMay :: forall a. (Integral a, Bounded a) => Integer -> Maybe a

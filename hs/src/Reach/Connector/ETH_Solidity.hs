@@ -5,8 +5,8 @@ module Reach.Connector.ETH_Solidity (connect_eth) where
 import Control.Monad
 import Control.Monad.ST
 import Data.Aeson as Aeson
-import Data.Aeson.Text
 import Data.Aeson.Encode.Pretty
+import Data.Aeson.Text
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.HashMap.Strict as HM
@@ -399,7 +399,7 @@ solHashStateSet ctxt svs = (setl, sete)
   where
     sete = solHash [(solNum which), "nsvs"]
     which = ctxt_handler_num ctxt
-    setl = [ solDecl "nsvs" ((solMsg_arg_postsvs which) <> " memory") <> semi ] <> map go svs
+    setl = [solDecl "nsvs" ((solMsg_arg_postsvs which) <> " memory") <> semi] <> map go svs
     go v = solSet ("nsvs." <> solRawVar v) (solVar ctxt v)
 
 solHashStateCheck :: SolCtxt -> Int -> Doc
@@ -667,9 +667,9 @@ solHandler :: SolCtxt -> Int -> CHandler -> Doc
 solHandler ctxt_top which (C_Handler at interval last_timemv from prev svs msg amtv timev ct) =
   vsep $ argDefns <> [evtDefn, frameDefn, funDefn]
   where
-    given_mm = M.fromList [ (amtv, "msg.value"), (timev, solBlockNumber) ]
+    given_mm = M.fromList [(amtv, "msg.value"), (timev, solBlockNumber)]
     checkMsg s = s <> " check at " <> show at
-    ctxt_from = ctxt_top { ctxt_varm = given_mm <> fromm <> (ctxt_varm ctxt_top)}
+    ctxt_from = ctxt_top {ctxt_varm = given_mm <> fromm <> (ctxt_varm ctxt_top)}
     (ctxt, frameDefn, frameDecl, ctp) =
       solCTail_top ctxt_from which svs msg (Just msg) ct
     evtDefn = solEvent ctxt which True
@@ -861,10 +861,11 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) =
         DM_constructor ->
           ( csvs_
           , vsep
-            [ solEvent ctxt 0 False
-            , cfDefn
-            , solFunctionLike SFL_Constructor [] "payable" consbody'
-            ] )
+              [ solEvent ctxt 0 False
+              , cfDefn
+              , solFunctionLike SFL_Constructor [] "payable" consbody'
+              ]
+          )
           where
             DLInit ctimem = dli
             dli' = vsep $ ctimem'
@@ -872,15 +873,18 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) =
               case ctimem of
                 Nothing -> (mempty, mempty, ctxt)
                 Just v ->
-                  ( [ solSet (solMemVar v) solBlockNumber ]
-                  , [ v ]
-                  , ctxt { ctxt_varm = M.insert v (solMemVar v) (ctxt_varm ctxt) } )
+                  ( [solSet (solMemVar v) solBlockNumber]
+                  , [v]
+                  , ctxt {ctxt_varm = M.insert v (solMemVar v) (ctxt_varm ctxt)}
+                  )
             (cfDefn, cfDecl) = solFrame cctxt 0 (S.fromList csvs_)
             consbody' =
-              vsep [ solEventEmit ctxt 0 False
-                   , cfDecl
-                   , dli'
-                   , consbody ]
+              vsep
+                [ solEventEmit ctxt 0 False
+                , cfDecl
+                , dli'
+                , consbody
+                ]
             SolTailRes _ consbody = solCTail cctxt (CT_From at (Just csvs_))
         DM_firstMsg ->
           -- XXX This is a hack... there are no constructor SVSs when the
@@ -888,7 +892,7 @@ solPLProg (PLProg _ plo@(PLOpts {..}) dli _ (CPProg at hs)) =
           -- code to deal with this being missing (because Solidity doesn't
           -- allow empty structs), we force there to be one that will be
           -- ignored
-          ( [ (DLVar at "fake" T_UInt 0) ], emptyDoc)
+          ([(DLVar at "fake" T_UInt 0)], emptyDoc)
     cinfo = HM.fromList [("deployMode", Aeson.String $ T.pack $ show plo_deployMode)]
     state_defn = "uint256 current_state;"
     preamble =

@@ -1,8 +1,8 @@
 module Reach.Verify.SMT (verify_smt) where
 
+import qualified Control.Exception as Exn
 import Control.Monad
 import Control.Monad.Extra
-import qualified Control.Exception as Exn
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.IORef
@@ -55,11 +55,13 @@ uint256_zero = case use_bitvectors of
 
 uint256_le :: SExpr -> SExpr -> SExpr
 uint256_le lhs rhs = smtApply ple [lhs, rhs]
-  where ple = if use_bitvectors then "bvule" else "<="
+  where
+    ple = if use_bitvectors then "bvule" else "<="
 
 uint256_lt :: SExpr -> SExpr -> SExpr
 uint256_lt lhs rhs = smtApply plt [lhs, rhs]
-  where plt = if use_bitvectors then "bvult" else "<"
+  where
+    plt = if use_bitvectors then "bvult" else "<"
 
 uint256_inv :: SMTTypeInv
 uint256_inv v = uint256_le uint256_zero v
@@ -248,16 +250,17 @@ smtPrimOp ctxt p dargs =
     ADDRESS_EQ -> app "="
     SELF_ADDRESS ->
       case dargs of
-        [ DLA_Literal (DLL_Bytes pn),
-          DLA_Literal (DLL_Bool isClass),
-          DLA_Literal (DLL_Int _ addrNum) ] -> \_ ->
-          case isClass of
-            False ->
-              return $ Atom $ smtAddress pn
-            True -> do
-              let addrVar = "classAddr" <> show addrNum
-              smtDeclare_v ctxt addrVar T_Address
-              return $ Atom addrVar
+        [ DLA_Literal (DLL_Bytes pn)
+          , DLA_Literal (DLL_Bool isClass)
+          , DLA_Literal (DLL_Int _ addrNum)
+          ] -> \_ ->
+            case isClass of
+              False ->
+                return $ Atom $ smtAddress pn
+              True -> do
+                let addrVar = "classAddr" <> show addrNum
+                smtDeclare_v ctxt addrVar T_Address
+                return $ Atom addrVar
         se -> impossible $ "self address " <> show se
   where
     cant = impossible $ "Int doesn't support " ++ show p
@@ -410,19 +413,21 @@ smtAssertCtxt ctxt se =
 -- not a Reach program.
 smtAssert :: Solver -> SExpr -> SMTComp
 smtAssert smt se =
-  Exn.catch (do SMT.assert smt se)
-    $ \ (e :: Exn.SomeException) ->
+  Exn.catch (do SMT.assert smt se) $
+    \(e :: Exn.SomeException) ->
       impossible $ safeInit $ drop 12 $ show e
 
 checkUsing :: SMT.Solver -> IO SMT.Result
 checkUsing smt = do
-  let our_tactic = List [ Atom "then", Atom "simplify", Atom "qflia" ]
-  res <- SMT.command smt (List [ Atom "check-sat-using", our_tactic ])
+  let our_tactic = List [Atom "then", Atom "simplify", Atom "qflia"]
+  res <- SMT.command smt (List [Atom "check-sat-using", our_tactic])
   case res of
-    Atom "unsat"   -> return Unsat
+    Atom "unsat" -> return Unsat
     Atom "unknown" -> return Unknown
-    Atom "sat"     -> return Sat
-    _ -> impossible $ unlines
+    Atom "sat" -> return Sat
+    _ ->
+      impossible $
+        unlines
           [ "Unexpected result from the SMT solver:"
           , "  Expected: unsat, unknown, or sat"
           , "  Result: " ++ SMT.showsSExpr res ""
@@ -648,7 +653,7 @@ smtSwitch sm ctxt at ov csm iter = branches_m <> after_m
       T_Data m -> m
       _ -> impossible "switch"
     pc = ctxt_path_constraint ctxt
-    cm1 (vn, (mov', l)) = ( branch_m, eqc )
+    cm1 (vn, (mov', l)) = (branch_m, eqc)
       where
         branch_m =
           case sm of
@@ -664,13 +669,15 @@ smtSwitch sm ctxt at ov csm iter = branches_m <> after_m
           case mov' of
             Just ov' ->
               ( mempty
-              , smt_la ctxt at (DLLA_Data ovtm vn (DLA_Var ov')))
+              , smt_la ctxt at (DLLA_Data ovtm vn (DLA_Var ov'))
+              )
             -- XXX It would be nice to ensure that this is always a Just and
             -- then make it so that EPP can remove them if they aren't actually
             -- used
             Nothing ->
               ( smtDeclare_v_memo ctxt vnv vt
-              , smtApply (s <> "_" <> vn) [ Atom vnv ] )
+              , smtApply (s <> "_" <> vn) [Atom vnv]
+              )
               where
                 s = smtTypeSort ctxt ovt
         udef_m = ov'p_m <> pathAddUnbound ctxt at mov' (O_SwitchCase vn)
@@ -832,10 +839,10 @@ smt_s ctxt s =
       where
         (last_timemv, whov, msgvs, amtv, timev, next_n) = recv
         timeout = case mtime of
-                    Nothing -> mempty
-                    Just (_delay_a, delay_s) ->
-                      -- smt_block ctxt B_None delayb <>
-                      smt_s ctxt delay_s
+          Nothing -> mempty
+          Just (_delay_a, delay_s) ->
+            -- smt_block ctxt B_None delayb <>
+            smt_s ctxt delay_s
         after = bind_time <> order_time <> smt_n ctxt next_n
         bind_time = pathAddUnbound ctxt at (Just timev) O_ToConsensus
         order_time =

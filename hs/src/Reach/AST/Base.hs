@@ -3,7 +3,10 @@
 module Reach.AST.Base where
 
 import Control.DeepSeq (NFData)
+import Data.Aeson (encode)
+import Data.Aeson.Types (ToJSON)
 import qualified Data.ByteString.Char8 as B
+import Data.ByteString.Internal (w2c)
 import qualified Data.ByteString.Lazy as LB
 import Data.List
 import qualified Data.Map.Strict as M
@@ -13,9 +16,6 @@ import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.UnsafeUtil
-import Data.Aeson (encode)
-import Data.Aeson.Types (ToJSON)
-import Data.ByteString.Internal (w2c)
 
 --- Source Information
 data ReachSource
@@ -64,12 +64,11 @@ instance Show ImpossibleError where
   show = \case
     Err_Impossible msg -> msg
 
-data CompilationError =
-  CompilationError {
-    ce_suggestions :: [String],
-    ce_errorMessage :: String,
-    ce_position :: [Int],
-    ce_offendingToken :: Maybe String
+data CompilationError = CompilationError
+  { ce_suggestions :: [String]
+  , ce_errorMessage :: String
+  , ce_position :: [Int]
+  , ce_offendingToken :: Maybe String
   }
   deriving (Show, Generic, ToJSON)
 
@@ -88,19 +87,26 @@ srcloc_line_col _ = []
 expect_throw :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
-    True -> error $ "error: " ++ (map w2c $ LB.unpack $ encode $ CompilationError {
-      ce_suggestions = snd $ errorSuggestions ce,
-      ce_offendingToken = fst $ errorSuggestions ce,
-      ce_errorMessage = errorMessageForJson ce,
-      ce_position = srcloc_line_col src })
+    True ->
+      error $
+        "error: "
+          ++ (map w2c $
+                LB.unpack $
+                  encode $
+                    CompilationError
+                      { ce_suggestions = snd $ errorSuggestions ce
+                      , ce_offendingToken = fst $ errorSuggestions ce
+                      , ce_errorMessage = errorMessageForJson ce
+                      , ce_position = srcloc_line_col src
+                      })
     False ->
       error . T.unpack . unsafeRedactAbs . T.pack $
-      "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
-      <> case concat mCtx of
-        [] -> ""
-        ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
+        "error: " ++ (show src) ++ ": " ++ (take 512 $ show ce)
+          <> case concat mCtx of
+            [] -> ""
+            ctx -> "\nTrace:\n" <> intercalate "\n" (topOfStackTrace ctx)
 
-expect_thrown :: (Show a, ErrorMessageForJson a, ErrorSuggestions a)  => HasCallStack => SrcLoc -> a -> b
+expect_thrown :: (Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing
 
 topOfStackTrace :: [SLCtxtFrame] -> [String]

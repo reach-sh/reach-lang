@@ -17,6 +17,7 @@ import Reach.Type
 import Reach.Util
 
 type App s = ReaderT (Env s) (ST s)
+
 type AppT s a = a -> App s a
 
 type Lifts = Seq.Seq (SrcLoc, DLVar, DLExpr)
@@ -317,7 +318,7 @@ ul_mtime = \case
 
 ul_send :: AppT s (SLPart, (Bool, [DLArg], DLArg, DLArg))
 ul_send (p, (isClass, args, amta, whena)) =
-  (,) p <$> ((\x y z -> (isClass, x,y,z)) <$> ul_as args <*> ul_a amta <*> ul_a whena)
+  (,) p <$> ((\x y z -> (isClass, x, y, z)) <$> ul_as args <*> ul_a amta <*> ul_a whena)
 
 ul_s :: AppT s LLStep
 ul_s = \case

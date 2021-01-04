@@ -40,14 +40,14 @@ data SLVal
   | SLV_DLVar DLVar
   | SLV_Type SLType
   | SLV_Connector T.Text
-  -- I really want to remove these two Maybes, but it is hard.
-  -- The DLVar is needed so that inside of an `only`, we can read off the
-  -- address of the participant without setting it in pdvs
-  -- The SLVar is needed to know where to put the above DLVar. This feels
-  -- really sloppy. Maybe a better way would be to look at the context when
-  -- you're inspecting an object and set the pdvs that gets sent to Type.hs
-  -- differently.
-  | SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
+  | -- I really want to remove these two Maybes, but it is hard.
+    -- The DLVar is needed so that inside of an `only`, we can read off the
+    -- address of the participant without setting it in pdvs
+    -- The SLVar is needed to know where to put the above DLVar. This feels
+    -- really sloppy. Maybe a better way would be to look at the context when
+    -- you're inspecting an object and set the pdvs that gets sent to Type.hs
+    -- differently.
+    SLV_Participant SrcLoc SLPart (Maybe SLVar) (Maybe DLVar)
   | SLV_RaceParticipant SrcLoc (S.Set SLPart)
   | SLV_Prim SLPrimitive
   | SLV_Form SLForm
@@ -112,8 +112,9 @@ data SLForm
   | SLForm_fork_partial
       { slf_at :: SrcLoc
       , slf_mode :: Maybe ForkMode
-      , slf_cases :: [ (SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression)) ]
-      , slf_mtime :: Maybe (SrcLoc, JSExpression, JSBlock) }
+      , slf_cases :: [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))]
+      , slf_mtime :: Maybe (SrcLoc, JSExpression, JSBlock)
+      }
   | SLForm_parallel_reduce
   | SLForm_parallel_reduce_partial
       { slpr_at :: SrcLoc
@@ -121,8 +122,9 @@ data SLForm
       , slpr_init :: JSExpression
       , slpr_minv :: Maybe JSExpression
       , slpr_mwhile :: Maybe JSExpression
-      , slpr_cases :: [ (SrcLoc, [JSExpression]) ]
-      , slpr_mtime :: Maybe (SrcLoc, [JSExpression]) }
+      , slpr_cases :: [(SrcLoc, [JSExpression])]
+      , slpr_mtime :: Maybe (SrcLoc, [JSExpression])
+      }
   | SLForm_wait
   deriving (Eq, Generic, NFData, Show)
 

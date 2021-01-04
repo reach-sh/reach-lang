@@ -872,7 +872,7 @@ ct = \case
         let wrap1 (store_lets, t_) (v, a) =
               case a == DLA_Var timev of
                 True -> do
-                  let store_lets' = local (\e -> e { emTimev = Just v })
+                  let store_lets' = local (\e -> e {emTimev = Just v})
                   return $ (store_lets' . store_lets, t_)
                 False -> do
                   wrap1_ (store_lets, t_) (v, a)
@@ -1034,115 +1034,117 @@ runApp eShared eWhich eLets emTimev m = do
 
 ch :: Shared -> Int -> CHandler -> IO (Maybe (Integer, TEALs))
 ch _ _ (C_Loop {}) = return $ Nothing
-ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev body) = let svs = dvdeletem last_timemv svs_ in fmap Just $
-  fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
-    let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
-    let args = svs <> msg
-    let argFirstUser' = fromIntegral argFirstUser
-    let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser' ..]
-    let argCount = argFirstUser' + length args
-    let eLets1 = M.insert from lookup_sender eLets0
-    let lookup_txn_value = do
-          code "gtxn" [texty txnToContract, "Amount"]
-          lookup_fee_amount
-          op "-"
-    let eLets2 = M.insert amtv lookup_txn_value eLets1
-    let eLets3 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets2
-    let eLets4 = case last_timemv of
-                   Nothing -> eLets3
-                   Just x -> M.insert x lookup_last eLets3
-    let eLets = eLets4
-    runApp eShared eWhich eLets (Just timev) $ do
-      comment ("Handler " <> texty eWhich)
-      comment "Check txnAppl"
-      code "gtxn" [texty txnAppl, "TypeEnum"]
-      code "int" ["appl"]
-      eq_or_fail
-      code "gtxn" [texty txnAppl, "ApplicationID"]
-      --- XXX Make this int
-      code "byte" [tApplicationID]
-      cfrombs T_UInt
-      eq_or_fail
+ch eShared eWhich (C_Handler _ int last_timemv from prev svs_ msg amtv timev body) =
+  let svs = dvdeletem last_timemv svs_
+   in fmap Just $
+        fmap ((,) (typeSizeOf $ T_Tuple $ (++) stdArgTypes $ map varType $ svs ++ msg)) $ do
+          let mkarg dv@(DLVar _ _ t _) (i :: Int) = (dv, code "arg" [texty i] >> cfrombs t)
+          let args = svs <> msg
+          let argFirstUser' = fromIntegral argFirstUser
+          let eLets0 = M.fromList $ zipWith mkarg args [argFirstUser' ..]
+          let argCount = argFirstUser' + length args
+          let eLets1 = M.insert from lookup_sender eLets0
+          let lookup_txn_value = do
+                code "gtxn" [texty txnToContract, "Amount"]
+                lookup_fee_amount
+                op "-"
+          let eLets2 = M.insert amtv lookup_txn_value eLets1
+          let eLets3 = M.insert timev (bad $ texty $ "handler " <> show eWhich <> " cannot inspect round: " <> show (pretty timev)) eLets2
+          let eLets4 = case last_timemv of
+                Nothing -> eLets3
+                Just x -> M.insert x lookup_last eLets3
+          let eLets = eLets4
+          runApp eShared eWhich eLets (Just timev) $ do
+            comment ("Handler " <> texty eWhich)
+            comment "Check txnAppl"
+            code "gtxn" [texty txnAppl, "TypeEnum"]
+            code "int" ["appl"]
+            eq_or_fail
+            code "gtxn" [texty txnAppl, "ApplicationID"]
+            --- XXX Make this int
+            code "byte" [tApplicationID]
+            cfrombs T_UInt
+            eq_or_fail
 
-      comment "Check txnToHandler"
-      code "gtxn" [texty txnToHandler, "TypeEnum"]
-      code "int" ["pay"]
-      eq_or_fail
-      code "gtxn" [texty txnToHandler, "Receiver"]
-      code "txn" ["Sender"]
-      eq_or_fail
-      code "gtxn" [texty txnToHandler, "Amount"]
-      code "gtxn" [texty txnFromHandler, "Fee"]
-      eq_or_fail
+            comment "Check txnToHandler"
+            code "gtxn" [texty txnToHandler, "TypeEnum"]
+            code "int" ["pay"]
+            eq_or_fail
+            code "gtxn" [texty txnToHandler, "Receiver"]
+            code "txn" ["Sender"]
+            eq_or_fail
+            code "gtxn" [texty txnToHandler, "Amount"]
+            code "gtxn" [texty txnFromHandler, "Fee"]
+            eq_or_fail
 
-      comment "Check txnToContract"
-      code "gtxn" [texty txnToContract, "TypeEnum"]
-      code "int" ["pay"]
-      eq_or_fail
-      code "gtxn" [texty txnToContract, "Receiver"]
-      code "byte" [tContractAddr]
-      eq_or_fail
+            comment "Check txnToContract"
+            code "gtxn" [texty txnToContract, "TypeEnum"]
+            code "int" ["pay"]
+            eq_or_fail
+            code "gtxn" [texty txnToContract, "Receiver"]
+            code "byte" [tContractAddr]
+            eq_or_fail
 
-      comment "Check txnFromHandler (us)"
-      code "txn" ["GroupIndex"]
-      cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
-      eq_or_fail
-      code "txn" ["TypeEnum"]
-      code "int" ["pay"]
-      eq_or_fail
-      code "txn" ["Amount"]
-      cl $ DLL_Int sb $ 0
-      eq_or_fail
-      code "txn" ["Receiver"]
-      code "gtxn" [texty txnToHandler, "Sender"]
-      eq_or_fail
-      code "txn" ["NumArgs"]
-      cl $ DLL_Int sb $ fromIntegral $ argCount
-      eq_or_fail
-      cstate (HM_Check prev) (dvdeletem last_timemv svs)
-      code "arg" [texty argPrevSt]
-      eq_or_fail
+            comment "Check txnFromHandler (us)"
+            code "txn" ["GroupIndex"]
+            cl $ DLL_Int sb $ fromIntegral $ txnFromHandler
+            eq_or_fail
+            code "txn" ["TypeEnum"]
+            code "int" ["pay"]
+            eq_or_fail
+            code "txn" ["Amount"]
+            cl $ DLL_Int sb $ 0
+            eq_or_fail
+            code "txn" ["Receiver"]
+            code "gtxn" [texty txnToHandler, "Sender"]
+            eq_or_fail
+            code "txn" ["NumArgs"]
+            cl $ DLL_Int sb $ fromIntegral $ argCount
+            eq_or_fail
+            cstate (HM_Check prev) (dvdeletem last_timemv svs)
+            code "arg" [texty argPrevSt]
+            eq_or_fail
 
-      --- XXX close remainder to is deployer if halts, zero otherwise
+            --- XXX close remainder to is deployer if halts, zero otherwise
 
-      comment "Run body"
-      ct body
+            comment "Run body"
+            ct body
 
-      txns <- how_many_txns
-      comment "Check GroupSize"
-      code "global" ["GroupSize"]
-      cl $ DLL_Int sb $ fromIntegral $ 1 + txns
-      eq_or_fail
+            txns <- how_many_txns
+            comment "Check GroupSize"
+            code "global" ["GroupSize"]
+            cl $ DLL_Int sb $ fromIntegral $ 1 + txns
+            eq_or_fail
 
-      lookup_fee_amount
-      csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnFromContract0 .. txns]
-      eq_or_fail
+            lookup_fee_amount
+            csum_ $ map (\i -> code "gtxn" [texty i, "Fee"]) [txnFromContract0 .. txns]
+            eq_or_fail
 
-      comment "Check time limits"
-      -- We don't need to look at timev because the range of valid rounds
-      -- that a txn is valid within is built-in to Algorand, so rather than
-      -- checking that ( last_timev + from <= timev <= last_timev + to ), we
-      -- just check that FirstValid = last_time + from, etc.
-      (case last_timemv of
-         Nothing -> return ()
-         Just last_timev -> do
-            let check_time f = \case
-                  [] -> nop
-                  as -> do
-                    ca $ DLA_Var last_timev
-                    csum as
-                    op "+"
-                    let go i = do
-                          op "dup"
-                          code "gtxn" [texty i, f]
-                          eq_or_fail
-                    forM_ [0 .. txns] go
-                    op "pop"
-            let CBetween ifrom ito = int
-            check_time "FirstValid" ifrom
-            check_time "LastValid" ito)
+            comment "Check time limits"
+            -- We don't need to look at timev because the range of valid rounds
+            -- that a txn is valid within is built-in to Algorand, so rather than
+            -- checking that ( last_timev + from <= timev <= last_timev + to ), we
+            -- just check that FirstValid = last_time + from, etc.
+            (case last_timemv of
+               Nothing -> return ()
+               Just last_timev -> do
+                 let check_time f = \case
+                       [] -> nop
+                       as -> do
+                         ca $ DLA_Var last_timev
+                         csum as
+                         op "+"
+                         let go i = do
+                               op "dup"
+                               code "gtxn" [texty i, f]
+                               eq_or_fail
+                         forM_ [0 .. txns] go
+                         op "pop"
+                 let CBetween ifrom ito = int
+                 check_time "FirstValid" ifrom
+                 check_time "LastValid" ito)
 
-      std_footer
+            std_footer
 
 type Disp = String -> T.Text -> IO ()
 

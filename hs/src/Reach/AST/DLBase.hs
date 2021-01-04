@@ -25,7 +25,7 @@ newtype SLParts
   deriving newtype (Monoid, NFData, Semigroup)
 
 data DLInit = DLInit
-  { dli_ctimem :: Maybe DLVar }
+  {dli_ctimem :: Maybe DLVar}
   deriving (Eq, Generic, NFData, Show, Ord)
 
 data DLConstant

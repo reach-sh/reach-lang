@@ -228,7 +228,7 @@ opt_mtime = \case
 opt_send :: AppT (SLPart, (Bool, [DLArg], DLArg, DLArg))
 opt_send (p, (isClass, args, amta, whena)) =
   focusp p $
-    (,) p <$> ((\x y z -> (isClass, x,y,z)) <$> opt_as args <*> opt_a amta <*> opt_a whena)
+    (,) p <$> ((\x y z -> (isClass, x, y, z)) <$> opt_as args <*> opt_a amta <*> opt_a whena)
 
 opt_s :: LLStep -> App LLStep
 opt_s = \case

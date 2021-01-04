@@ -197,7 +197,7 @@ prettyReduce ans x z b a f =
     <+> braces (nest 2 $ hardline <> pretty f)
 
 prettyToConsensus :: Pretty c => (a -> Doc) -> (b -> Doc) -> M.Map SLPart (Bool, [DLArg], DLArg, DLArg) -> (Maybe DLVar, DLVar, [DLVar], DLVar, DLVar, a) -> (Maybe (c, b)) -> Doc
-prettyToConsensus fa fb send (ltv, win, msg, amtv,tv,  body) mtime =
+prettyToConsensus fa fb send (ltv, win, msg, amtv, tv, body) mtime =
   "publish" <> parens emptyDoc
     <> nest
       2
@@ -288,8 +288,8 @@ instance Pretty DLInit where
       <> ctimem'
     where
       ctimem' = case ctimem of
-                  Nothing -> "// no ctime" <> hardline
-                  Just x -> "const" <+> pretty x <+> "=" <+> "creationTime();" <> hardline
+        Nothing -> "// no ctime" <> hardline
+        Just x -> "const" <+> pretty x <+> "=" <+> "creationTime();" <> hardline
 
 instance Pretty DLProg where
   pretty (DLProg _at _ sps dli ds) =
@@ -447,8 +447,10 @@ instance Pretty EPPs where
 instance Pretty PLProg where
   pretty (PLProg _ _ dli ps cp) =
     "#lang pl" <> hardline
-      <> pretty dli <> hardline
-      <> pretty ps <> hardline
+      <> pretty dli
+      <> hardline
+      <> pretty ps
+      <> hardline
       <> hardline
       <> pretty cp
 

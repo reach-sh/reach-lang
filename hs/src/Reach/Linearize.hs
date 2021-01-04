@@ -14,11 +14,15 @@ import Reach.AST.LL
 import Reach.Util
 
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
+
 type FVMap = M.Map FluidVar DLVar
+
 type LLRetRHS = (Maybe (DLVar, M.Map Int (DLStmts, DLArg)))
+
 type LLRets = M.Map Int LLRetRHS
 
 type App = ReaderT Env IO
+
 type AppT a = a -> App a
 
 data Env = Env
@@ -48,7 +52,7 @@ fluidRef fv = do
     Just x -> return x
 
 fluidSet :: FluidVar -> (SrcLoc, DLArg) -> App a -> App a
-fluidSet fv fvv = local (\e@Env{..} -> e { eFVE = M.insert fv fvv eFVE })
+fluidSet fv fvv = local (\e@Env {..} -> e {eFVE = M.insert fv fvv eFVE})
 
 lookupRet :: Int -> App (Maybe LLRetRHS)
 lookupRet r = do
@@ -61,16 +65,16 @@ captureRets = do
   return eRets
 
 restoreRets :: LLRets -> App a -> App a
-restoreRets rets' = local (\e -> e { eRets = rets' })
+restoreRets rets' = local (\e -> e {eRets = rets'})
 
 setRetsToEmpty :: App a -> App a
 setRetsToEmpty = restoreRets mempty
 
 withReturn :: Int -> LLRetRHS -> App a -> App a
-withReturn rv rvv = local (\e@Env{..} -> e { eRets = M.insert rv rvv eRets })
+withReturn rv rvv = local (\e@Env {..} -> e {eRets = M.insert rv rvv eRets})
 
 withWhileFVMap :: FVMap -> App a -> App a
-withWhileFVMap fvm' = local (\e -> e { eFVMm = Just fvm' })
+withWhileFVMap fvm' = local (\e -> e {eFVMm = Just fvm'})
 
 readWhileFVMap :: App FVMap
 readWhileFVMap = do

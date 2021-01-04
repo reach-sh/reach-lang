@@ -7,8 +7,8 @@ import Data.List.Extra (mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
-import qualified Data.Set as S
 import Data.STRef
+import qualified Data.Set as S
 import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
@@ -81,7 +81,6 @@ interval_add_to (CBetween froml tol) x =
 interval_no_to :: CInterval a -> CInterval a
 interval_no_to (CBetween froml _) =
   CBetween froml []
-
 
 updateHandlerSVS :: ProSt s -> Int -> [DLVar] -> ST s ()
 updateHandlerSVS st target new_svs = modifySTRef (pst_handlers st) update
@@ -527,7 +526,7 @@ epp_s st s =
       let prev = pst_prev_handler st
       let this_h = C_Handler at int_ok last_timev fromv prev svs msg amt_dv timev ct_cons
       let soloSend0 = (M.size send) == 1
-      let soloSend1 = not $ getAll $ mconcatMap (\(isClass, _, _, _)->All isClass) $ M.elems send
+      let soloSend1 = not $ getAll $ mconcatMap (\(isClass, _, _, _) -> All isClass) $ M.elems send
       -- It is only a solo send if we are the only sender AND we are not a
       -- class
       let soloSend = soloSend0 && soloSend1

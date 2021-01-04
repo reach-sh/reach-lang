@@ -57,7 +57,9 @@ instance Show TypeError where
     "TypeError: int literal out of range: " <> show x <> " not in [" <> show rmin <> "," <> show rmax <> "]"
 
 type MCFS = Maybe [SLCtxtFrame]
+
 type PDVS = M.Map SLPart DLVar
+
 type TINT = (MCFS, PDVS)
 
 checkIntLiteral :: SrcLoc -> Integer -> Integer -> Integer -> Integer
@@ -69,7 +71,7 @@ checkIntLiteral at rmin x rmax =
 typeEqual :: SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> Either TypeError SLType
 typeEqual top_at x@(_, xt) y@(_, yt) =
   case xt == yt of
-    True  -> Right xt
+    True -> Right xt
     False -> Left $ Err_TypeMeets_Mismatch top_at x y
 
 typeMeet :: HasCallStack => MCFS -> SrcLoc -> (SrcLoc, SLType) -> (SrcLoc, SLType) -> SLType

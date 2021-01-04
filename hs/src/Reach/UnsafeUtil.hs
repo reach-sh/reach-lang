@@ -7,10 +7,10 @@ module Reach.UnsafeUtil (unsafeRedactAbs, unsafeRedactAbsStr, unsafeIsErrorForma
 
 import Data.Text (Text)
 import qualified Data.Text as T
+import Reach.CommandLine (CompilerToolArgs (cta_errorFormatJson), getCompilerArgs)
 import Reach.Util
 import System.Directory
 import System.IO.Unsafe
-import Reach.CommandLine (getCompilerArgs, CompilerToolArgs(cta_errorFormatJson))
 
 -- | s/${pwd}/./g
 unsafeRedactAbs :: Text -> Text
@@ -27,4 +27,3 @@ unsafeIsErrorFormatJson = unsafePerformIO $ do
   args <- getCompilerArgs ""
   return $ cta_errorFormatJson args
 {-# NOINLINE unsafeIsErrorFormatJson #-}
-

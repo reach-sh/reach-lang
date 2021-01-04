@@ -385,13 +385,17 @@ jsETail ctxt = \case
       msg_vs_defp = "const" <+> jsArray msg_vs <+> "=" <+> (jsTxn ctxt') <> ".data" <> semi <> hardline
       amt_defp = "const" <+> jsVar amtv <+> "=" <+> (jsTxn ctxt') <> ".value" <> semi <> hardline
       time_defp = "const" <+> jsVar timev <+> "=" <+> (jsTxn ctxt') <> ".time" <> semi <> hardline
-      k_defp = msg_vs_defp
+      k_defp =
+        msg_vs_defp
           <> amt_defp
           <> time_defp
           <> jsFromSpec ctxt' fs_ok
       k_okp = k_defp <> jsETail ctxt' k_ok
-      ctxt' = ctxt { ctxt_txn = (ctxt_txn ctxt) + 1
-                   , ctxt_timev = Just timev }
+      ctxt' =
+        ctxt
+          { ctxt_txn = (ctxt_txn ctxt) + 1
+          , ctxt_timev = Just timev
+          }
       whop = jsCon $ DLL_Bytes $ ctxt_who ctxt
       defp = "const" <+> jsTxn ctxt' <+> "=" <+> "await" <+> parens callp <> semi
       callp =
@@ -428,7 +432,7 @@ jsETail ctxt = \case
               svs_noPrevTime = dvdeletem last_timemv svs
               mkStDigest svs_ = jsDigest (DLA_Literal (DLL_Int at $ fromIntegral prev) : (map DLA_Var svs_))
               sim_body_core = jsETail ctxt'_sim k_ok
-              ctxt'_sim = ctxt' { ctxt_simulate = True }
+              ctxt'_sim = ctxt' {ctxt_simulate = True}
               vs = jsArray $ (map jsVar svs) ++ (map jsArg args)
           Nothing -> recvp
       recvp =
@@ -468,8 +472,8 @@ jsETail ctxt = \case
         case mtimev' of
           Nothing -> impossible "no timev in while"
           Just x -> x
-      ctxt_tv' = ctxt { ctxt_timev = timev' }
-      ctxt' = ctxt_tv' { ctxt_while = Just (timev', cond, body, k) }
+      ctxt_tv' = ctxt {ctxt_timev = timev'}
+      ctxt' = ctxt_tv' {ctxt_while = Just (timev', cond, body, k)}
   ET_Continue _ asn ->
     jsAsn ctxt AM_ContinueOuter asn <> hardline
       <> case ctxt_simulate ctxt of
@@ -488,11 +492,11 @@ jsETail ctxt = \case
                    <> jsIf (jsBlock ctxt wcond) (jsETail ctxt' wbody) (jsETail ctxt' wk))
                 <> semi
               where
-                ctxt' = ctxt { ctxt_timev = wtimev' }
+                ctxt' = ctxt {ctxt_timev = wtimev'}
   ET_ConsensusOnly _at l k ->
     case ctxt_simulate ctxt of
       True -> kp
-      False -> vsep [ lp, kp ]
+      False -> vsep [lp, kp]
     where
       kp = jsETail ctxt k
       lp = jsPLTail ctxt l
@@ -514,10 +518,12 @@ jsPart dli p (EPProg _ _ et) =
       case ctimem of
         Nothing -> mempty
         Just v -> "const" <+> jsVar v <+> "=" <+> "await ctc.creationTime();"
-    bodyp' = vsep
-      [ "const stdlib = ctc.stdlib;"
-      , ctimem'
-      , jsETail ctxt et ]
+    bodyp' =
+      vsep
+        [ "const stdlib = ctc.stdlib;"
+        , ctimem'
+        , jsETail ctxt et
+        ]
 
 jsConnInfo :: ConnectorInfo -> Doc
 jsConnInfo = \case

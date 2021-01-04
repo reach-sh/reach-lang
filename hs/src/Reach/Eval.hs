@@ -12,9 +12,9 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import Data.Ord (comparing)
+import Data.STRef
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
-import Data.STRef
 import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import Generics.Deriving
@@ -172,8 +172,8 @@ getErrorSuggestions invalidStr validOptions maxClosest =
 didYouMean :: [Char] -> [String] -> Int -> String
 didYouMean invalidStr validOptions maxClosest =
   case validOptions of
-  [] -> ""
-  _  -> ". Did you mean: " <> show options
+    [] -> ""
+    _ -> ". Did you mean: " <> show options
   where
     options = getErrorSuggestions invalidStr validOptions maxClosest
 
@@ -230,10 +230,13 @@ showStateDiff x y =
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case
-    Err_App_InvalidOption opt _ -> opt <>
-      " is not a valid app option"
-    Err_Dot_InvalidField slval _ k -> k <>
-      " is not a field of " <> displaySlValType slval
+    Err_App_InvalidOption opt _ ->
+      opt
+        <> " is not a valid app option"
+    Err_Dot_InvalidField slval _ k ->
+      k
+        <> " is not a field of "
+        <> displaySlValType slval
     Err_Eval_UnboundId (LC_RefFrom ctx) slvar _ ->
       "Invalid unbound identifier in " <> ctx <> ": " <> slvar
     ow -> show ow
@@ -267,17 +270,16 @@ instance Show EvalError where
       "Invalid `return` syntax"
     Err_ToConsensus_TimeoutArgs jes ->
       "Invalid Participant.timeout args"
-      <>
-      case jes of
-        [ _, y ] ->
-          case y of
-            JSArrowExpression aformals _ _ ->
-              case aformals of
-                JSParenthesizedArrowParameterList _ JSLNil _ ->
-                  impossible $ "nothing wrong with timeout args!"
-                _ -> ": the second argument should have no arguments"
-            _ -> ": the second argument should be an arrow, but got something else"
-        _ -> ": expected two arguments where the second is a syntactic thunk; got " <> (show $ length jes) <> " args"
+        <> case jes of
+          [_, y] ->
+            case y of
+              JSArrowExpression aformals _ _ ->
+                case aformals of
+                  JSParenthesizedArrowParameterList _ JSLNil _ ->
+                    impossible $ "nothing wrong with timeout args!"
+                  _ -> ": the second argument should have no arguments"
+              _ -> ": the second argument should be an arrow, but got something else"
+          _ -> ": expected two arguments where the second is a syntactic thunk; got " <> (show $ length jes) <> " args"
     Err_App_Interact_NotFirstOrder ty ->
       "Invalid interact specification. Expected first-order type, got: "
         <> show ty
@@ -664,6 +666,7 @@ instance Show (SLCtxt s) where
 
 mcfs :: SLCtxt s -> Maybe [SLCtxtFrame]
 mcfs = Just . ctxt_stack
+
 tint :: SLCtxt s -> SLState -> (Maybe [SLCtxtFrame], M.Map SLPart DLVar)
 tint ctxt st = (mcfs ctxt, st_pdvs st)
 
@@ -811,7 +814,7 @@ data SLState = SLState
   deriving (Eq, Show)
 
 all_slm_modes :: [SLMode]
-all_slm_modes = [ SLM_Module, SLM_Step, SLM_LocalStep, SLM_ConsensusStep, SLM_ConsensusPure ]
+all_slm_modes = [SLM_Module, SLM_Step, SLM_LocalStep, SLM_ConsensusStep, SLM_ConsensusPure]
 
 ensure_modes :: SLCtxt s -> SrcLoc -> SLState -> [SLMode] -> String -> ST s ()
 ensure_modes ctxt at st ems msg = do
@@ -892,7 +895,8 @@ sco_set :: SLVar -> SLSSVal -> SLScope -> SLScope
 sco_set v sv sco@(SLScope {..}) =
   sco
     { sco_penvs = M.map go sco_penvs
-    , sco_cenv = go sco_cenv }
+    , sco_cenv = go sco_cenv
+    }
   where
     go = M.insert v sv
 
@@ -934,13 +938,13 @@ sco_update_and_mod imode ctxt at sco st addl_env env_mod =
           True -> p_do_merge_ y
           False -> id
     ps_mod mone x =
-      x { sco_penvs = penvs_update ctxt at sco (p_do_merge mone) }
+      x {sco_penvs = penvs_update ctxt at sco (p_do_merge mone)}
     ps_one_mod =
       case ctxt_only ctxt of
         Just who -> ps_mod (Just who)
         Nothing -> impossible $ "no ctxt_only in local mode"
     ps_all_mod = ps_mod Nothing
-    c_mod x = x { sco_cenv = do_merge imode'_top (sco_cenv x) }
+    c_mod x = x {sco_cenv = do_merge imode'_top (sco_cenv x)}
     imode'_top =
       case imode of
         AllowShadowingRace {} -> DisallowShadowing
@@ -1186,9 +1190,10 @@ evalAsEnv ctx at obj =
         ]
     SLV_Prim SLPrim_Object ->
       M.fromList
-        [("set", retStdLib "Object_set")
-        ,("setIfUnset", retStdLib "Object_setIfUnset")
-        ,("has", retV $ public $ SLV_Prim $ SLPrim_Object_has)]
+        [ ("set", retStdLib "Object_set")
+        , ("setIfUnset", retStdLib "Object_setIfUnset")
+        , ("has", retV $ public $ SLV_Prim $ SLPrim_Object_has)
+        ]
     SLV_Type T_UInt ->
       M.fromList
         [("max", retV $ public $ SLV_DLC DLC_UInt_max)]
@@ -1197,30 +1202,32 @@ evalAsEnv ctx at obj =
     v ->
       expect_throw_ctx ctx at (Err_Eval_NotObject v)
   where
-    tupleValueEnv = M.fromList
+    tupleValueEnv =
+      M.fromList
         [ ("set", delayCall SLPrim_tuple_set)
         , ("length", doCall SLPrim_tuple_length)
         ]
-    arrayValueEnv = M.fromList
-      [ ("set", delayCall SLPrim_array_set)
-      , ("length", doCall SLPrim_array_length)
-      , ("concat", delayCall SLPrim_array_concat)
-      , ("forEach", doStdlib "Array_forEach1")
-      , ("min", doStdlib "Array_min1")
-      , ("max", doStdlib "Array_max1")
-      , ("all", doStdlib "Array_all1")
-      , ("any", doStdlib "Array_any1")
-      , ("or", doStdlib "Array_or1")
-      , ("and", doStdlib "Array_and1")
-      , ("sum", doStdlib "Array_sum1")
-      , ("indexOf", doStdlib "Array_indexOf1")
-      , ("findIndex", doStdlib "Array_findIndex1")
-      , ("includes", doStdlib "Array_includes1")
-      , ("count", doStdlib "Array_count1")
-      , ("map", delayCall SLPrim_array_map)
-      , ("reduce", delayCall SLPrim_array_reduce)
-      , ("zip", delayCall SLPrim_array_zip)
-      ]
+    arrayValueEnv =
+      M.fromList
+        [ ("set", delayCall SLPrim_array_set)
+        , ("length", doCall SLPrim_array_length)
+        , ("concat", delayCall SLPrim_array_concat)
+        , ("forEach", doStdlib "Array_forEach1")
+        , ("min", doStdlib "Array_min1")
+        , ("max", doStdlib "Array_max1")
+        , ("all", doStdlib "Array_all1")
+        , ("any", doStdlib "Array_any1")
+        , ("or", doStdlib "Array_or1")
+        , ("and", doStdlib "Array_and1")
+        , ("sum", doStdlib "Array_sum1")
+        , ("indexOf", doStdlib "Array_indexOf1")
+        , ("findIndex", doStdlib "Array_findIndex1")
+        , ("includes", doStdlib "Array_includes1")
+        , ("count", doStdlib "Array_count1")
+        , ("map", delayCall SLPrim_array_map)
+        , ("reduce", delayCall SLPrim_array_reduce)
+        , ("zip", delayCall SLPrim_array_zip)
+        ]
     delayCall p =
       retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
     doStdlib n ctxt sco st =
@@ -1275,12 +1282,12 @@ evalForm ctxt at sco st f args =
     SLForm_fork_partial fat mmode cases mtime ->
       case mmode of
         Just FM_Case ->
-          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [ (at, case_args) ]) mtime
+          retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing (cases <> [(at, case_args)]) mtime
           where
             case_args =
               case args of
                 [w, x, y, z] -> (w, x, y, z)
-                [w, x,    z] -> (w, x, default_pay, z)
+                [w, x, z] -> (w, x, default_pay, z)
                 _ -> illegal_args 4
             default_pay =
               JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement (JSDecimal a "0") sp)
@@ -1362,7 +1369,7 @@ evalForm ctxt at sco st f args =
       let notter = participant_who v_n
       SLRes lifts_kn st_kn (_, v_kn) <- evalExpr ctxt at sco st_n knower_e
       let knower = participant_who v_kn
-      let ctxt_knower = ctxt { ctxt_only = Just knower }
+      let ctxt_knower = ctxt {ctxt_only = Just knower}
       let st_whats = st {st_mode = SLM_LocalStep}
       SLRes lifts_whats _ whats_sv <-
         evalExprs ctxt_knower at sco st_whats whats_e
@@ -1384,7 +1391,7 @@ evalForm ctxt at sco st f args =
     SLForm_wait -> do
       ensure_mode ctxt at st (allowed_to_wait ctxt at st SLM_Step) "wait"
       let amt_e = one_arg
-      let st_pure = st { st_mode = SLM_ConsensusPure }
+      let st_pure = st {st_mode = SLM_ConsensusPure}
       SLRes delay_lifts _ amt_sv <- evalExpr ctxt at sco st_pure amt_e
       (delay_lifts', amt_da) <-
         compileCheckType ctxt st at T_UInt $ ensure_public ctxt at amt_sv
@@ -1409,11 +1416,10 @@ evalForm ctxt at sco st f args =
       [x, y, z] -> (x, y, z)
       _ -> illegal_args 3
     parsedTimeout =
-        case args of
-          [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] ->
-            Just (at, de, (jsStmtToBlock dt_s))
-          _ -> expect_throw_ctx ctxt at $ Err_ToConsensus_TimeoutArgs args
-
+      case args of
+        [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] ->
+          Just (at, de, (jsStmtToBlock dt_s))
+        _ -> expect_throw_ctx ctxt at $ Err_ToConsensus_TimeoutArgs args
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> [SLSVal] -> SLComp s SLSVal
 evalPrimOp ctxt at _sco st p sargs =
@@ -1444,21 +1450,35 @@ evalPrimOp ctxt at _sco st p sargs =
     SELF_ADDRESS -> impossible "self address"
   where
     andMap f ls rs = do
-      xs <- zipWithM (\ l r -> do
-        SLRes lifts _ (_, v) <- f [l, r]
-        return (lifts, v)) ls rs
+      xs <-
+        zipWithM
+          (\l r -> do
+             SLRes lifts _ (_, v) <- f [l, r]
+             return (lifts, v))
+          ls
+          rs
       case xs of
-        h:t -> foldrM (\ (ll, lv) (rl, rv) -> do
-          (l, v) <- lv /\ rv
-          return (ll <> rl <> l, v)) h t
+        h : t ->
+          foldrM
+            (\(ll, lv) (rl, rv) -> do
+               (l, v) <- lv /\ rv
+               return (ll <> rl <> l, v))
+            h
+            t
         _ -> return (mempty, SLV_Bool srcloc_builtin True)
     -- Logical and for SL bool values
-    (/\) (SLV_Bool bAt l) (SLV_Bool _ r)  = return (mempty, SLV_Bool bAt $ l && r)
+    (/\) (SLV_Bool bAt l) (SLV_Bool _ r) = return (mempty, SLV_Bool bAt $ l && r)
     (/\) l@SLV_DLVar {} r@SLV_DLVar {} = do
-      SLRes lifts _ (_, v) <- evalPrimOp ctxt at _sco st IF_THEN_ELSE
-        [(lvl, l), (lvl, r), public $ SLV_Bool srcloc_builtin False]
+      SLRes lifts _ (_, v) <-
+        evalPrimOp
+          ctxt
+          at
+          _sco
+          st
+          IF_THEN_ELSE
+          [(lvl, l), (lvl, r), public $ SLV_Bool srcloc_builtin False]
       return (lifts, v)
-    (/\) (SLV_Bool bAt False) _           = return (mempty, SLV_Bool bAt False)
+    (/\) (SLV_Bool bAt False) _ = return (mempty, SLV_Bool bAt False)
     (/\) (SLV_Bool _ True) r@SLV_DLVar {} = return (mempty, r)
     (/\) (SLV_Bool _ True) r@(SLV_Prim (SLPrim_interact _ _ _ T_Bool)) = return $ (mempty, r)
     -- Flip args & process
@@ -1469,11 +1489,11 @@ evalPrimOp ctxt at _sco st p sargs =
     polyEq args' =
       case args' of
         -- Both args static
-        [SLV_Int _ l, SLV_Int _ r]      -> retBool $ l == r
-        [SLV_Bool _ l, SLV_Bool _ r]    -> retBool $ l == r
-        [SLV_Bytes _ l, SLV_Bytes _ r]  -> retBool $ l == r
-        [SLV_Type l, SLV_Type r]        -> retBool $ l == r
-        [SLV_Null {}, SLV_Null {}]      -> retBool True
+        [SLV_Int _ l, SLV_Int _ r] -> retBool $ l == r
+        [SLV_Bool _ l, SLV_Bool _ r] -> retBool $ l == r
+        [SLV_Bytes _ l, SLV_Bytes _ r] -> retBool $ l == r
+        [SLV_Type l, SLV_Type r] -> retBool $ l == r
+        [SLV_Null {}, SLV_Null {}] -> retBool True
         [SLV_Array _ _ ls, SLV_Array _ _ rs] -> do
           let lengthEquals = SLV_Bool at $ length ls == length rs
           (lifts, elemEquals) <- andMap polyEq ls rs
@@ -1494,13 +1514,19 @@ evalPrimOp ctxt at _sco st p sargs =
         -- If atleast one arg is dynamic
         [l, r] ->
           case (getType l, getType r) of
-            (T_Null, T_Null)        -> retBool True
-            (T_UInt, T_UInt)        -> make_var args'
-            (T_Digest, T_Digest)    -> make_var args'
-            (T_Address, T_Address)  -> make_var args'
-            (T_Bool, T_Bool)        -> do
-              SLRes lifts _ notR <- evalPrimOp ctxt at _sco st IF_THEN_ELSE
-                [(lvl, r), public $ SLV_Bool srcloc_builtin False, public $ SLV_Bool srcloc_builtin True]
+            (T_Null, T_Null) -> retBool True
+            (T_UInt, T_UInt) -> make_var args'
+            (T_Digest, T_Digest) -> make_var args'
+            (T_Address, T_Address) -> make_var args'
+            (T_Bool, T_Bool) -> do
+              SLRes lifts _ notR <-
+                evalPrimOp
+                  ctxt
+                  at
+                  _sco
+                  st
+                  IF_THEN_ELSE
+                  [(lvl, r), public $ SLV_Bool srcloc_builtin False, public $ SLV_Bool srcloc_builtin True]
               keepLifts lifts $ evalPrimOp ctxt at _sco st IF_THEN_ELSE [(lvl, l), (lvl, r), notR]
             (lTy, rTy) ->
               case typeEqual at (srclocOf l, lTy) (srclocOf r, rTy) of
@@ -1933,7 +1959,7 @@ evalPrim ctxt at sco st p sargs =
         _ -> illegal_args
     SLPrim_Object_has ->
       case map snd sargs of
-        [ obj, (SLV_Bytes _ bs) ] ->
+        [obj, (SLV_Bytes _ bs)] ->
           retV $ (lvl, SLV_Bool at $ M.member (bunpack bs) (evalAsEnv ctxt at obj))
         _ -> illegal_args
     SLPrim_makeEnum ->
@@ -2321,8 +2347,10 @@ evalId_ ctxt at sco st lab x =
     s = ("step environment", sco_cenv sco)
     l =
       case ctxt_only ctxt of
-        Just who -> ((show who <> "'s environment")
-                    , sco_lookup_penv ctxt at sco who)
+        Just who ->
+          ( (show who <> "'s environment")
+          , sco_lookup_penv ctxt at sco who
+          )
         Nothing ->
           impossible $ "no ctxt_only in local mode"
 
@@ -2658,7 +2686,7 @@ doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = d
           { sco_penvs = only_penvs
           , sco_cenv = only_cenv
           }
-  let ctxt_l = ctxt { ctxt_only = Just who }
+  let ctxt_l = ctxt {ctxt_only = Just who}
   let penv__ = sco_lookup_penv ctxt_l at sco_only_pre who
   let penv_ =
         -- Ensure that only has access to "interact" if it didn't before, such
@@ -2680,8 +2708,9 @@ doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = d
         case M.lookup v penv_ of
           Just (SLSSVal pv_at pv_lvl pv@(SLV_Participant at_ who_ mv_ mdv)) ->
             case mdv of
-              Just _ | not isClass ->
-                return (mempty, add_this pv penv_)
+              Just _
+                | not isClass ->
+                  return (mempty, add_this pv penv_)
               _ -> do
                 -- If this is a class, then we will always overwrite the DV,
                 -- because each instance of an Only could be a different one.
@@ -2696,7 +2725,7 @@ doOnlyExpr ctxt at (sco, st) ((who, vas), only_at, only_cloenv, only_synarg) = d
             let penv_' = M.insert v (ssv_here me_v) penv_
             return (me_let_lift, add_this me_v penv_')
   let sco_only =
-        sco_only_pre { sco_penvs = M.insert who penv (sco_penvs sco_only_pre) }
+        sco_only_pre {sco_penvs = M.insert who penv (sco_penvs sco_only_pre)}
   SLRes only_lifts _ only_arg <-
     keepLifts penv_lifts $
       evalExpr ctxt_l only_at sco_only st_localstep only_synarg
@@ -2718,7 +2747,7 @@ doOnly ctxt at (lifts, sco, st) ((who, vas), only_at, only_cloenv, only_synarg) 
   case only_ty of
     T_Null -> do
       let lifts' = return $ DLS_Only only_at who alifts
-      let sco' = sco {sco_penvs = M.insert who penv' $ sco_penvs sco }
+      let sco' = sco {sco_penvs = M.insert who penv' $ sco_penvs sco}
       return ((lifts <> lifts'), sco', st)
     ty ->
       expect_throw_ctx ctxt only_at (Err_Block_NotNull ty only_v)
@@ -2736,13 +2765,16 @@ doGetSelfAddress ctxt at who = do
       ctxt
       at
       (DLVar at whos T_Address)
-      (DLE_PrimOp at SELF_ADDRESS
-        [ DLA_Literal (DLL_Bytes who)
-        , DLA_Literal (DLL_Bool isClass)
-        , DLA_Literal (DLL_Int at $ fromIntegral addrNum) ])
+      (DLE_PrimOp
+         at
+         SELF_ADDRESS
+         [ DLA_Literal (DLL_Bytes who)
+         , DLA_Literal (DLL_Bool isClass)
+         , DLA_Literal (DLL_Int at $ fromIntegral addrNum)
+         ])
   return (dv, lifts)
 
-all_just :: [ Maybe a ] -> Maybe [ a ]
+all_just :: [Maybe a] -> Maybe [a]
 all_just = \case
   [] -> Just []
   Nothing : _ -> Nothing
@@ -2751,7 +2783,7 @@ all_just = \case
       Just xs' -> Just $ x : xs'
       Nothing -> Nothing
 
-doToConsensus :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression-> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
+doToConsensus :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
 doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   ensure_mode ctxt at st SLM_Step "to consensus"
   ensure_live ctxt at st "to consensus"
@@ -2761,7 +2793,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   -- Handle sending
   let tc_send1 who = do
         let st_lpure = st {st_mode = SLM_LocalPure}
-        let ctxt_l = ctxt { ctxt_only = Just who }
+        let ctxt_l = ctxt {ctxt_only = Just who}
         let isClass = is_class ctxt_l who
         let repeat_dv = M.lookup who pdvs
         let msg_proc1 var = do
@@ -2790,7 +2822,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   let send_lifts = mconcat $ M.elems $ M.map (fst . fst) tc_send_int
   let mrepeat_dvs = all_just $ M.elems $ M.map (snd . fst) tc_send_int
   let tc_send = M.map snd tc_send_int
-  let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map (\(_,a,_,_)->a) tc_send
+  let msg_ts = map (typeMeets_ctxt ctxt at . map ((,) at) . map argTypeOf) $ transpose $ M.elems $ M.map (\(_, a, _, _) -> a) tc_send
   -- Handle timeout
   let not_true_send = \case
         (_, (_, _, _, DLA_Literal (DLL_Bool True))) -> False
@@ -2917,21 +2949,22 @@ data CompiledForkCase = CompiledForkCase
   , cfc_pay_prop :: JSObjectProperty
   , cfc_req_prop :: JSObjectProperty
   , cfc_switch_case :: JSSwitchParts
-  , cfc_only :: JSStatement }
+  , cfc_only :: JSStatement
+  }
 
 typeToExpr :: SLType -> JSExpression
 typeToExpr = \case
   T_Null -> var "Null"
   T_Bool -> var "Bool"
   T_UInt -> var "UInt"
-  T_Bytes i -> call "Bytes" [ ie i ]
+  T_Bytes i -> call "Bytes" [ie i]
   T_Digest -> var "Digest"
   T_Address -> var "Address"
   T_Fun {} -> impossible $ "only on rt tys"
-  T_Array t i -> call "Array" [ r t, ie i ]
+  T_Array t i -> call "Array" [r t, ie i]
   T_Tuple ts -> call "Tuple" $ map r ts
-  T_Object m -> call "Object" [ rm m ]
-  T_Data m -> call "Data" [ rm m ]
+  T_Object m -> call "Object" [rm m]
+  T_Data m -> call "Data" [rm m]
   T_Forall {} -> impossible $ "only on rt tys"
   T_Var {} -> impossible $ "only on rt tys"
   T_Type {} -> impossible $ "only on rt tys"
@@ -2942,9 +2975,9 @@ typeToExpr = \case
     a = JSNoAnnot
     ie = JSDecimal a . show
     rm m = JSObjectLiteral a (JSCTLNone $ toJSCL $ map rm1 $ M.toList m) a
-    rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [ r t ]
+    rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [r t]
 
-doFork :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> [ (SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression)) ] -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
+doFork :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> [(SrcLoc, (JSExpression, JSExpression, JSExpression, JSExpression))] -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
 doFork ctxt at sco st ks cases mtime = do
   idx <- ctxt_alloc ctxt
   let fid x = ".fork" <> (show idx) <> "." <> x
@@ -2975,7 +3008,7 @@ doFork ctxt at sco st ks cases mtime = do
         SLRes _ _ (_, res_sv) <- evalExpr ctxt c_at sco st only_before_call_e
         (_, _, res_ty, _) <-
           case res_sv of
-            SLV_Form (SLForm_EachAns [ (who_, vas) ] only_at only_cloenv only_synarg) ->
+            SLV_Form (SLForm_EachAns [(who_, vas)] only_at only_cloenv only_synarg) ->
               doOnlyExpr ctxt c_at (sco, st) ((who_, vas), only_at, only_cloenv, only_synarg)
             _ -> impossible $ "not each"
         let isBound = M.member who_s (st_pdvs st)
@@ -3018,8 +3051,8 @@ doFork ctxt at sco st ks cases mtime = do
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
         let getAfter = \case
-              JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> [ s ]
-              JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> [ defcon ae msg_e, s ]
+              JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> [s]
+              JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> [defcon ae msg_e, s]
               JSExpressionParen _ e _ -> getAfter e
               _ ->
                 expect_throw_ctx ctxt at $
@@ -3038,7 +3071,7 @@ doFork ctxt at sco st ks cases mtime = do
   let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
   let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
   let data_decls = JSLOne $ JSVarInitExpression fd_e $ JSVarInit a fd_def
-  let data_ss = [ JSConstant a data_decls sp ]
+  let data_ss = [JSConstant a data_decls sp]
   let race_e = JSCallExpression (jid "race") a (toJSCL cases_parts) a
   let tc_pub_e = JSCallExpression (JSMemberDot race_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
@@ -3048,13 +3081,13 @@ doFork ctxt at sco st ks cases mtime = do
         case mtime of
           Nothing -> tc_pay_e
           Just (_, td, JSBlock tbb tbs tba) ->
-            JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) tbb (toJSCL [ td, (JSArrowExpression (JSParenthesizedArrowParameterList tbb JSLNil tba) tba (JSStatementBlock tbb tbs tba sp)) ]) tba
+            JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) tbb (toJSCL [td, (JSArrowExpression (JSParenthesizedArrowParameterList tbb JSLNil tba) tba (JSStatementBlock tbb tbs tba sp))]) tba
   let tc_e = tc_time_e
-  let tc_ss = [ JSExpressionStatement tc_e sp ]
+  let tc_ss = [JSExpressionStatement tc_e sp]
   let req_arg = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_req_props) a
   let req_e = JSCallExpression (jid "require") a (JSLOne $ req_arg) a
-  let req_ss = [ JSExpressionStatement req_e sp ]
-  let switch_ss = [ JSSwitch a a msg_e a a cases_switch_cases a sp ]
+  let req_ss = [JSExpressionStatement req_e sp]
+  let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
   let before_tc_ss = data_ss <> cases_onlys
   let after_tc_ss = req_ss <> switch_ss
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
@@ -3079,7 +3112,7 @@ doParallelReduce ctxt _at lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr
           expect_throw_ctx ctxt pr_at $
             Err_ParallelReduceIncomplete $ "missing " <> lab
   let inv_e = want "invariant" pr_minv
-  let while_e = want  "while" pr_mwhile
+  let while_e = want "while" pr_mwhile
   let var_decls = JSLOne (JSVarInitExpression lhs (JSVarInit a init_e))
   let var_s = JSVariable a var_decls sp
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
@@ -3095,16 +3128,16 @@ doParallelReduce ctxt _at lhs pr_at pr_mode init_e pr_minv pr_mwhile pr_cases pr
         where
           ca = ao case_at
   let fork_e = foldl' forkcase fork_e1 pr_cases
-  let fork_arr_e = JSFunctionExpression a JSIdentNone a JSLNil a (JSBlock a [ JSExpressionStatement fork_e sp ] a)
+  let fork_arr_e = JSFunctionExpression a JSIdentNone a JSLNil a (JSBlock a [JSExpressionStatement fork_e sp] a)
   let call_e = JSCallExpression fork_arr_e a JSLNil a
   let commit_s = JSMethodCall (jid "commit") a JSLNil a sp
   let def_e = jid $ prid "res"
   let def_s = JSConstant a (JSLOne $ JSVarInitExpression def_e $ JSVarInit a call_e) sp
   let asn_s = JSAssignStatement lhs (JSAssign a) def_e sp
   let continue_s = JSContinue a JSIdentNone sp
-  let while_body = [ commit_s, def_s, asn_s, continue_s ]
+  let while_body = [commit_s, def_s, asn_s, continue_s]
   let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
-  let pr_ss = [ var_s, inv_s, while_s ]
+  let pr_ss = [var_s, inv_s, while_s]
   -- traceM $ "pr expands to:"
   -- forM_ pr_ss (traceM . ppShow)
   return $ pr_ss
@@ -3155,7 +3188,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
       let st_step =
             st
               { st_mode = SLM_Step
-              , st_after_first = True }
+              , st_after_first = True
+              }
       let sco' = sco_set "this" (SLSSVal at Public $ SLV_Kwd $ SLK_this) sco
       SLRes this_time_lifts _ this_time_v <-
         doFluidRef ctxt at st FV_thisConsensusTime
@@ -3195,11 +3229,13 @@ doWhileLikeContinueEval ctxt at sco st lhs whilem (rhs_lvl, rhs_v) = do
   SLRes decl_lifts st_decl decl_env <-
     evalDeclLHS ctxt at sco st rhs_lvl mempty rhs_v lhs
   let st_decl' = stEnsureMode ctxt at SLM_ConsensusStep st_decl
-  forM_ (M.keys decl_env) (\v ->
-    case M.lookup v whilem of
-      Nothing ->
-        expect_throw_ctx ctxt at $ Err_Eval_ContinueNotLoopVariable v
-      Just _ -> return ())
+  forM_
+    (M.keys decl_env)
+    (\v ->
+       case M.lookup v whilem of
+         Nothing ->
+           expect_throw_ctx ctxt at $ Err_Eval_ContinueNotLoopVariable v
+         Just _ -> return ())
   let cont_daem =
         M.fromList $ map f $ M.toList whilem
         where
@@ -3473,7 +3509,8 @@ evalStmt ctxt at sco st ss =
                             (case_st, case_rets)
                           (Just st', Just rets') ->
                             ( stMerge ctxt at_c st' case_st
-                            , combineStmtRets at_c de_lvl st' rets' case_st case_rets )
+                            , combineStmtRets at_c de_lvl st' rets' case_st case_rets
+                            )
                           _ -> impossible "select_all"
                   let casemm'' = M.insert vn (mdv', case_lifts) casemm'
                   return $ (Just st'', sa'', Just rets'', casemm'')
@@ -3832,7 +3869,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let top_viargs = map (\(i, pv) -> (i, infectWithId_sls i pv)) top_vargs
   let top_rvargs = map (second $ (sls_sss at)) top_viargs
   let (JSBlock _ top_ss _) = (jsStmtToBlock top_s)
-  let use_opt k SLSSVal { sss_val=v, sss_at = opt_at} acc =
+  let use_opt k SLSSVal {sss_val = v, sss_at = opt_at} acc =
         case M.lookup k app_options of
           Nothing ->
             expect_thrown opt_at $
@@ -3854,10 +3891,10 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
           , st_after_first = st_after_first0
           }
   let at' = srcloc_at "compileDApp" Nothing at
-  let classes = S.fromList $ [ pn | (_, True, pn, _, _) <- part_ios ]
+  let classes = S.fromList $ [pn | (_, True, pn, _, _) <- part_ios]
   let ios =
         M.fromList $
-          [ (pn, (sls_sss iat $ secret io)) | (_, _, pn, iat, io) <- part_ios ]
+          [(pn, (sls_sss iat $ secret io)) | (_, _, pn, iat, io) <- part_ios]
   let ctxt =
         SLCtxt
           { ctxt_dlo = dlo
@@ -3909,7 +3946,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let sps = SLParts $ M.fromList $ map make_sps_entry part_ios
   let dli = DLInit ctimem
   final_idx <- readSTCounter idxr
-  let dlo' = dlo { dlo_counter = final_idx }
+  let dlo' = dlo {dlo_counter = final_idx}
   return $ DLProg at dlo' sps dli (final <> tbzero)
 compileDApp _ _ _ topv =
   expect_thrown srcloc_top (Err_Top_NotApp topv)

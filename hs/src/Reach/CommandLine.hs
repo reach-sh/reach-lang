@@ -1,7 +1,6 @@
-module Reach.CommandLine (CompilerToolArgs (..), compiler, getCompilerArgs)  where
+module Reach.CommandLine (CompilerToolArgs (..), compiler, getCompilerArgs) where
 
 import Options.Applicative
-
 
 data CompilerToolArgs = CompilerToolArgs
   { cta_intermediateFiles :: Bool
