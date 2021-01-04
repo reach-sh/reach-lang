@@ -23,7 +23,7 @@ dom --> rng = T_Fun dom rng
 type SLPartEnvs = M.Map SLPart SLEnv
 
 data SLCloEnv
-  = SLCloEnv SLEnv SLPartEnvs SLEnv
+  = SLCloEnv SLPartEnvs SLEnv
   deriving (Eq, Generic, NFData, Show)
 
 data SLVal
