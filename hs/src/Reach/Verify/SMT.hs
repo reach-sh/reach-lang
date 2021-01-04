@@ -406,7 +406,7 @@ smtAssert :: Solver -> SExpr -> SMTComp
 smtAssert smt se =
   Exn.catch (do SMT.assert smt se)
     $ \ (e :: Exn.SomeException) ->
-      impossible $ init $ drop 12 $ show e
+      impossible $ safeInit $ drop 12 $ show e
 
 verify1 :: SMTCtxt -> SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SMTComp
 verify1 ctxt at mf tk se mmsg = SMT.inNewScope smt $ do

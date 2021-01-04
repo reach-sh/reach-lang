@@ -9,6 +9,7 @@ module Reach.Util
   , maybeDie
   , redactAbs
   , redactAbsStr
+  , safeInit
   )
 where
 
@@ -47,6 +48,12 @@ impossible msg = error $ "impossible situation (i.e. compiler error): " ++ msg
 -- Note: drop 1 is safer than init/tail on empty strings
 trimQuotes :: String -> String
 trimQuotes = reverse . drop 1 . reverse . drop 1
+
+-- | It's like init, but doesn't crash on empty list
+safeInit :: [a] -> [a]
+safeInit [] = []
+safeInit [_] = []
+safeInit (x:xs) = x : safeInit xs
 
 -- | Safe fromInteger with bounds checking
 fromIntegerMay :: forall a. (Integral a, Bounded a) => Integer -> Maybe a
