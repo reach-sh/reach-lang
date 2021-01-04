@@ -26,6 +26,7 @@ Here are the current workshops, in the order we recommend doing them:
 @include-section["workshop-hash-lock.scrbl"]
 @include-section["workshop-relay.scrbl"]
 @include-section["workshop-trust-fund.scrbl"]
+@include-section["workshop-fomo.scrbl"]
 
 @(define (WIP/XXX . args)
   @margin-note{This page is a placeholder for a future more detailed workshop.
