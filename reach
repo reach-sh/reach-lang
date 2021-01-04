@@ -223,6 +223,10 @@ ensure_connector_mode () {
   export REACH_CONNECTOR_MODE
 }
 
+do_whoami () {
+  docker info --format '{{.ID}}' 2>/dev/null
+}
+
 do_compile () {
     HS=${HERE}/hs
 
@@ -257,7 +261,7 @@ do_compile () {
               reachc --disable-reporting --intermediate-files "$@"
     }
 
-    ID=$(docker info --format '{{.ID}}' 2>/dev/null)
+    ID=$(do_whoami)
     if [ -z "${REACH_DOCKER}" ] && [ -d "${HS}/.stack-work" ] && (which stack > /dev/null 2>&1) ; then
         export STACK_YAML="${HS}/stack.yaml"
         export REACHC_ID=${ID}
@@ -1039,6 +1043,10 @@ case ${SUBCOMMAND} in
         ;;
     version|--version)
         echo "reach ${REACH_VERSION}"
+        exit 0
+        ;;
+    whoami)
+        do_whoami;
         exit 0
         ;;
     numeric-version|--numeric-version)
