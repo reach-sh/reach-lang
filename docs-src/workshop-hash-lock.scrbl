@@ -23,7 +23,7 @@ In this case, let's ask the questions:
  @item{What funds change ownership during the application and how?}
 ]
 
-You should write your answers in your Reach program (@tt{index.rsh}) using a comment. 
+You should write your answers in your Reach program (@tt{index.rsh}) using a comment.
 @reachin{/* Remember comments are written like this. */}
 
 @(drstep-pr-stop)

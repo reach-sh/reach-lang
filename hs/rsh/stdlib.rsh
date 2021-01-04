@@ -37,6 +37,14 @@ export const fromMaybe = (v, onNull, onSome) => {
   case None: return onNull();
   case Some: return onSome(v); } };
 
+export const isSome = m => m.match({
+  Some: (_) => { return true; },
+  None: (_) => { return false; } });
+
+export const isNone = m => m.match({
+  Some: (_) => { return false; },
+  None: (_) => { return true; } });
+
 export function implies (x, y) {
   return (not(x) || y); }
 
