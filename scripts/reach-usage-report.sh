@@ -46,7 +46,7 @@ formatMonth () {
 }
 
 uniqueUserBuilder=""
-declare -a years=(2020)
+declare -a years=(2020 2021)
 for year in "${years[@]}"; do
   for ((i=1; i<=12; i++)); do
     formatI=$(formatMonth "$i")
