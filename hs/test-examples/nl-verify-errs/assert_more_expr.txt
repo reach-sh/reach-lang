@@ -8,31 +8,31 @@ Verification failed:
   at ./assert_more_expr.rsh:12:7:after expr stmt semicolon call to [unknown function] (defined at: ./assert_more_expr.rsh:7:15:function exp)
 
   Theorem formalization:
-  v9
+  v10
 
   This could be violated if...
-    "v2" = 0
-      (from: v2)
+    "v3" = 0
+      (from: v3)
       (bound at: ./assert_more_expr.rsh:8:32:application)
       (because: evaluating interact("A")."getX"())
-    "v3" = 1
-      (from: v3)
+    "v4" = 1
+      (from: v4)
       (bound at: ./assert_more_expr.rsh:9:32:application)
       (because: evaluating interact("A")."getX"())
 
   In context...
-    "v9" = (= v8 v4 )
+    "v10" = (= v9 v5 )
+      (from: v10)
+      (bound at: ./assert_more_expr.rsh:application)
+      (because: evaluating PEQ(v9, v5 ))
+    "v5" = (* v3 2 )
+      (from: v5)
+      (bound at: ./assert_more_expr.rsh:application)
+      (because: evaluating MUL(v3, 2 ))
+    "v9" = (+ v3 v4 )
       (from: v9)
       (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating PEQ(v8, v4 ))
-    "v4" = (* v2 2 )
-      (from: v4)
-      (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating MUL(v2, 2 ))
-    "v8" = (+ v2 v3 )
-      (from: v8)
-      (bound at: ./assert_more_expr.rsh:application)
-      (because: evaluating ADD(v2, v3 ))
+      (because: evaluating ADD(v3, v4 ))
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "A")
 Verification failed:

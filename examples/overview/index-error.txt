@@ -8,7 +8,7 @@ Verification failed:
   at ./index-error.rsh:29:11:application
 
   Theorem formalization:
-  v42
+  v52
 
   This could be violated if...
     "interact_Alice_request" = 1
@@ -16,64 +16,48 @@ Verification failed:
       (because: interaction)
 
   In context...
-    "v42" = (= 0 v41 )
-      (from: v42)
+    "v52" = (= 0 v46 )
+      (from: v52)
       (bound at: ./index-error.rsh:29:11:application)
-      (because: evaluating PEQ(0, v41 ))
-    "v41" = v37
-      (from: v41)
-      (bound at: ./index-error.rsh:29:11:application)
-      (because: evaluating v37)
-    "v37" = (- v33 v32 )
+      (because: evaluating PEQ(0, v46 ))
+    "v46" = (- v37 v41 )
+      (from: v46)
+      (bound at: ./index-error.rsh:24:29:application)
+      (because: evaluating SUB(v37, v41 ))
+    "v37" = (+ v23 v31 )
       (from: v37)
-      (bound at: ./index-error.rsh:24:29:application)
-      (because: evaluating SUB(v33, v32 ))
-    "v32" = (- v3 1 )
-      (from: v32)
-      (bound at: ./index-error.rsh:application)
-      (because: evaluating SUB(v3, 1 ))
-    "v33" = v30
-      (from: v33)
-      (bound at: ./index-error.rsh:24:29:application)
-      (because: evaluating v30)
-    "v3" = interact_Alice_request
-      (from: v3)
-      (bound at: ./index-error.rsh:13:9:dot)
-      (because: an honest message from "Alice" of interact("Alice")."request"(UInt))
-    "v30" = (+ v27 v24 )
-      (from: v30)
       (bound at: ./index-error.rsh:23:9:dot)
-      (because: evaluating ADD(v27, v24 ))
-    "v24" = 0
-      (from: v24)
+      (because: evaluating ADD(v23, v31 ))
+    "v41" = (- v4 1 )
+      (from: v41)
+      (bound at: ./index-error.rsh:application)
+      (because: evaluating SUB(v4, 1 ))
+    "v23" = (+ v10 v18 )
+      (from: v23)
+      (bound at: ./index-error.rsh:18:9:dot)
+      (because: evaluating ADD(v10, v18 ))
+    "v31" = 0
+      (from: v31)
       (bound at: ./index-error.rsh:23:9:dot)
       (because: an honest payment from "Alice" of 0)
-    "v27" = v19
-      (from: v27)
-      (bound at: ./index-error.rsh:23:9:dot)
-      (because: evaluating v19)
-    "v19" = (+ v16 v14 )
-      (from: v19)
-      (bound at: ./index-error.rsh:18:9:dot)
-      (because: evaluating ADD(v16, v14 ))
-    "v14" = v3
-      (from: v14)
-      (bound at: ./index-error.rsh:18:9:dot)
-      (because: an honest payment from "Bob" of v3)
-    "v16" = v9
-      (from: v16)
-      (bound at: ./index-error.rsh:18:9:dot)
-      (because: evaluating v9)
-    "v9" = (+ v6 v4 )
-      (from: v9)
-      (bound at: ./index-error.rsh:13:9:dot)
-      (because: evaluating ADD(v6, v4 ))
-    "v4" = 0
+    "v4" = interact_Alice_request
       (from: v4)
       (bound at: ./index-error.rsh:13:9:dot)
+      (because: an honest message from "Alice" of interact("Alice")."request"(UInt))
+    "v10" = (+ v7 v5 )
+      (from: v10)
+      (bound at: ./index-error.rsh:13:9:dot)
+      (because: evaluating ADD(v7, v5 ))
+    "v18" = v4
+      (from: v18)
+      (bound at: ./index-error.rsh:18:9:dot)
+      (because: an honest payment from "Bob" of v4)
+    "v5" = 0
+      (from: v5)
+      (bound at: ./index-error.rsh:13:9:dot)
       (because: an honest payment from "Alice" of 0)
-    "v6" = 0
-      (from: v6)
+    "v7" = 0
+      (from: v7)
       (bound at: ./index-error.rsh:13:9:dot)
       (because: evaluating 0)
   Verifying with mode = VM_Dishonest RoleContract

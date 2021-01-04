@@ -7,31 +7,31 @@ Verification failed:
   at ./class_addr.rsh:16:14:application
 
   Theorem formalization:
-  v22
+  v28
 
   This could be violated if...
 
   In context...
-    "v22" = (= v4 v15 )
-      (from: v22)
+    "v28" = (= v5 v19 )
+      (from: v28)
       (bound at: ./class_addr.rsh:application)
-      (because: evaluating PEQ(v4, v15 ))
-    "v15" = v12
-      (from: v15)
+      (because: evaluating PEQ(v5, v19 ))
+    "v19" = v16
+      (from: v19)
       (bound at: ./class_addr.rsh:15:9:dot)
-      (because: an honest message from "C" of v12)
-    "v4" = v1
-      (from: v4)
+      (because: an honest message from "C" of v16)
+    "v5" = v2
+      (from: v5)
       (bound at: ./class_addr.rsh:10:9:dot)
-      (because: an honest message from "C" of v1)
-    "v12" = classAddr11
-      (from: v12)
+      (because: an honest message from "C" of v2)
+    "v16" = classAddr15
+      (from: v16)
       (bound at: ./class_addr.rsh:14:31:after expr stmt semicolon)
-      (because: evaluating SELF_ADDRESS(""C"", #t, 11 ))
-    "v1" = classAddr0
-      (from: v1)
+      (because: evaluating SELF_ADDRESS(""C"", #t, 15 ))
+    "v2" = classAddr1
+      (from: v2)
       (bound at: ./class_addr.rsh:9:31:after expr stmt semicolon)
-      (because: evaluating SELF_ADDRESS(""C"", #t, 0 ))
+      (because: evaluating SELF_ADDRESS(""C"", #t, 1 ))
   Verifying with mode = VM_Dishonest RoleContract
   Verifying with mode = VM_Dishonest (RolePart "C")
 Checked 8 theorems; 1 failures. :'(

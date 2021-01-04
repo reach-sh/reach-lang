@@ -8,30 +8,30 @@ Verification failed:
   at ./overflow.rsh:application
 
   Theorem formalization:
-  v12
+  v15
 
   This could be violated if...
     "dlc_UInt_max" = 1
       (bound at: ./overflow.rsh:3:30:application)
       (because: builtin)
-    "v2" = 1
-      (from: v2)
+    "v3" = 1
+      (from: v3)
       (bound at: ./overflow.rsh:9:40:application)
       (because: evaluating interact("A")."get"())
 
   In context...
-    "v12" = (<= v4 v11 )
-      (from: v12)
+    "v15" = (<= v5 v14 )
+      (from: v15)
       (bound at: ./overflow.rsh:application)
-      (because: evaluating PLE(v4, v11 ))
-    "v11" = (- dlc_UInt_max 1 )
-      (from: v11)
+      (because: evaluating PLE(v5, v14 ))
+    "v14" = (- dlc_UInt_max 1 )
+      (from: v14)
       (bound at: ./overflow.rsh:application)
       (because: evaluating SUB(UInt.max, 1 ))
-    "v4" = v2
-      (from: v4)
+    "v5" = v3
+      (from: v5)
       (bound at: ./overflow.rsh:11:7:dot)
-      (because: an honest message from "A" of v2)
+      (because: an honest message from "A" of v3)
   Verifying with mode = VM_Dishonest RoleContract
 Verification failed:
   in VM_Dishonest RoleContract mode

@@ -1,4 +1,3 @@
 reachc: error: ./Err_Eval_IncompatibleStates.rsh:6:15:application: incompatible states:
 The expected state of the program varies between branches, because:
-  * Expected a publication to have been made by this point.
   * Expected "A" to have published a message or been set, but it hasn't.

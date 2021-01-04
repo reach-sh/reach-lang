@@ -1,9 +1,9 @@
 Verifying knowledge assertions
 Verification failed:
-  of theorem unknowable("Bob", v5)
+  of theorem unknowable("Bob", v6)
   at ./index-fails.rsh:25:17:application
 
-  v5 -> "Bob"
+  v6 -> "Bob"
 Verifying for generic connector
   Verifying with mode = VM_Honest
   Verifying with mode = VM_Dishonest RoleContract
