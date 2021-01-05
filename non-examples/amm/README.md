@@ -1,4 +1,4 @@
-Automatic Market Maker in Reach
+= Automatic Market Maker in Reach
 
 This is sorted under `non-examples`, because it relies on features
 yet-to-be-finalized in Reach.
@@ -60,6 +60,19 @@ the DApp.
 The `market` value would be an array of structures holding balance information
 about each of the market tokens.
 This would not use linear state.
+
+--
+
+This program will rely on a few unreleased features:
+
+- Foreign to Reach interface specifications --- This is so that Providers &
+  Traders may be instantiated by on-chain principals, rather than only by
+  Reach-generated off-chain backends.
+
+- Non-network token consumption --- These are the market tokens.
+
+- Bespoke token production (a.k.a. special case of linear state) --- This is
+  the pool token.
 
 --
 
