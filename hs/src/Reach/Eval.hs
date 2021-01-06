@@ -814,7 +814,7 @@ data SLState = SLState
   deriving (Eq, Show)
 
 all_slm_modes :: [SLMode]
-all_slm_modes = [SLM_Module, SLM_Step, SLM_LocalStep, SLM_ConsensusStep, SLM_ConsensusPure]
+all_slm_modes = [SLM_Module, SLM_Step, SLM_LocalStep, SLM_LocalPure, SLM_ConsensusStep, SLM_ConsensusPure]
 
 ensure_modes :: SLCtxt s -> SrcLoc -> SLState -> [SLMode] -> String -> ST s ()
 ensure_modes ctxt at st ems msg = do
@@ -999,7 +999,7 @@ data SLExits
   | MayExit
   deriving (Eq, Show)
 
-type SLStmtRets = [(SrcLoc, Maybe Int, SLSVal)]
+type SLStmtRets = [(SrcLoc, Maybe Int, SLSVal, Bool)]
 
 data SLStmtRes = SLStmtRes SLScope SLStmtRets
 
@@ -2202,9 +2202,9 @@ evalApplyVals ctxt at sco st rator randvs =
             return $ SLRes lifts' body_st $ SLAppRes clo_sco'' $ (lvl, v)
       case rs of
         [] -> no_prompt $ public $ SLV_Null body_at "clo app"
-        [(_, _, x)] -> no_prompt $ x
-        (_, _, (xlvl, xv)) : more -> do
-          let msvs = map (\(_a, _b, c) -> c) more
+        [(_, _, x, False)] -> no_prompt $ x
+        (_, _, (xlvl, xv), _) : more -> do
+          let msvs = map (\(_a, _b, c, _d) -> c) more
           let mlvls = map fst msvs
           let mvs = map snd msvs
           let lvl = mconcat $ xlvl : mlvls
@@ -2213,7 +2213,7 @@ evalApplyVals ctxt at sco st rator randvs =
           case all_same of
             True -> no_prompt $ (lvl, xv)
             False -> do
-              let go (r_at, rmi, (_, rv)) = do
+              let go (r_at, rmi, (_, rv), _) = do
                     (rlifts, rty, rda) <- compileTypeOf ctxt st r_at rv
                     let retsm =
                           case rmi of
@@ -3267,7 +3267,7 @@ evalStmt ctxt at sco st ss =
     [] ->
       case sco_must_ret sco of
         RS_CannotReturn -> ret []
-        RS_ImplicitNull -> ret [(at, Nothing, public $ SLV_Null at "implicit null")]
+        RS_ImplicitNull -> ret [(at, Nothing, (public $ SLV_Null at "implicit null"), False)]
         RS_NeedExplicit ->
           --- In the presence of `exit()`, it is okay to have a while
           --- that ends in an empty tail, if the empty tail is
@@ -3365,7 +3365,7 @@ evalStmt ctxt at sco st ss =
             let st_tf = stMerge ctxt at' st_t st_f
             let sa = (mkAnnot tlifts) <> (mkAnnot flifts)
             let lifts' = return $ DLS_If at' (DLA_Var cond_dv) sa tlifts flifts
-            let levelHelp = SLStmtRes sco . map (\(r_at, rmi, (r_lvl, r_v)) -> (r_at, rmi, (clvl <> r_lvl, r_v)))
+            let levelHelp = SLStmtRes sco . map (\(r_at, rmi, (r_lvl, r_v), _) -> (r_at, rmi, (clvl <> r_lvl, r_v), True))
             let ir = SLRes lifts' st_tf $ combineStmtRes at' clvl st_t (levelHelp trets) st_f (levelHelp frets)
             retSeqn ir at' ks_ne
           _ -> do
@@ -3433,7 +3433,7 @@ evalStmt ctxt at sco st ss =
       evi <- ctxt_alloc ctxt
       let lifts' = return $ DLS_Return at' ret (Left evi)
       expect_empty_tail ctxt lab a sp at ks $
-        return $ SLRes (elifts <> lifts') st_rt (SLStmtRes sco [(at', Just evi, sev)])
+        return $ SLRes (elifts <> lifts') st_rt (SLStmtRes sco [(at', Just evi, sev, False)])
     (JSSwitch a _ de _ _ cases _ sp : ks) -> do
       let at' = srcloc_jsa "switch" a at
       let de_v = jse_expect_id at' de
@@ -3502,14 +3502,15 @@ evalStmt ctxt at sco st ss =
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do
                   (mdv', at_c, casem') <- casem
                   SLRes case_lifts case_st (SLStmtRes _ case_rets) <- casem'
+                  let case_rets' = map (\(ra, rb, rc, _) -> (ra, rb, rc, True)) case_rets
                   let sa'' = sa' <> mkAnnot case_lifts
                   let (st'', rets'') =
                         case (mst', mrets') of
                           (Nothing, Nothing) ->
-                            (case_st, case_rets)
+                            (case_st, case_rets')
                           (Just st', Just rets') ->
                             ( stMerge ctxt at_c st' case_st
-                            , combineStmtRets at_c de_lvl st' rets' case_st case_rets
+                            , combineStmtRets at_c de_lvl st' rets' case_st case_rets'
                             )
                           _ -> impossible "select_all"
                   let casemm'' = M.insert vn (mdv', case_lifts) casemm'
@@ -3623,7 +3624,7 @@ combineStmtRets at' lvl lst lrets rst rrets =
   where
     mnull lab st =
       case st_live st of
-        True -> [(at', Nothing, (lvl, SLV_Null at' $ "empty " <> lab))]
+        True -> [(at', Nothing, (lvl, SLV_Null at' $ "empty " <> lab), False)]
         False -> []
 
 expect_empty_tail :: SLCtxt s -> String -> JSAnnot -> JSSemi -> SrcLoc -> [JSStatement] -> a -> a
