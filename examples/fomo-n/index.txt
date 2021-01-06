@@ -1,0 +1,19 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying with mode = VM_Honest
+  Verifying with mode = VM_Dishonest RoleContract
+  Verifying with mode = VM_Dishonest (RolePart "Buyer")
+  Verifying with mode = VM_Dishonest (RolePart "Funder")
+Checked 101 theorems; No failures!
+solc failed:
+STDOUT:
+
+STDERR:
+Error: Source file requires different compiler version (current compiler is 0.7.4+commit.3f05b770.Darwin.appleclang) - note that nightly builds are considered to be strictly less than the released version
+ --> /private/var/folders/zk/p8j22qrd4y9376p40pcdklmh0000gn/T/reachc-sol-20b149231970d399/compiled.sol:5:1:
+  |
+5 | pragma solidity ^0.8.0;
+  | ^^^^^^^^^^^^^^^^^^^^^^^
+
+
+

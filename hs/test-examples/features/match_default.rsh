@@ -6,9 +6,9 @@ export const main =
     [['A', {}]],
     (A) => {
       const mx = Maybe(UInt).None();
-      const isNone = (m) =>
+      const isNoneDef = (m) =>
         m.match({
           Some: (_) => { return false; },
           default: () => true });
-      assert(isNone(mx));
+      assert(isNoneDef(mx));
     });
