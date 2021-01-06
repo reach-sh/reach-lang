@@ -17,36 +17,31 @@ const numOfBuyers = 10;
   const ctcFunder = accFunder.deploy(backend);
   const ctcInfo   = ctcFunder.getInfo();
 
-  const Common = (who) => ({
-    showOutcome: (outcome) =>
-      console.log(`${who} saw outcome: ${outcome}.`)
-  });
-
   const funderParams = {
     ticketPrice: stdlib.parseCurrency(5),
-    deadline: 10,
+    deadline: 5,
   };
 
   await Promise.all([
     backend.Funder(ctcFunder, {
-      ...Common('Funder'),
+      showOutcome: (addr) => console.log(`Funder saw ${addr} won.`),
       getParams: () => funderParams,
     }),
   ].concat(
     accBuyerArray.map((accBuyer, i) => {
       const ctcBuyer = accBuyer.attach(backend, ctcInfo);
-      const Who = `Buyer #${i}`;
       return backend.Buyer(ctcBuyer, {
-        ...Common(Who),
+        showOutcome: (outcome) => {
+          console.log(`Buyer ${i} saw they ${stdlib.addressEq(outcome, accBuyer) ? 'won' : 'lost'}.`);
+        },
         shouldBuyTicket : () => Math.random() < 0.5,
         showPurchase: (addr) => {
           if (stdlib.addressEq(addr, accBuyer)) {
-            console.log(`${Who} bought a ticket.`);
+            console.log(`Buyer ${i} bought a ticket.`);
           }
         }
       });
     })
   ));
 
-  console.log('Completed application!');
 })();

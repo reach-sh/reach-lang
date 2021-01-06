@@ -49,10 +49,11 @@ export const main = Reach.App(
             when: declassify(interact.shouldBuyTicket()) })),
           (() => ticketPrice),
           () => {
-            Buyer.only(() => interact.showPurchase(this));
+            const buyer = this;
+            Buyer.only(() => interact.showPurchase(buyer));
             const idx = ticketsSold % NUM_OF_WINNERS;
             const newWinners =
-              Array.set(winners, idx, MaybeAddr.Some(this));
+              Array.set(winners, idx, MaybeAddr.Some(buyer));
             return [ true, newWinners, ticketsSold + 1 ]; })
         .timeout(deadline, () => {
           race(Buyer, Funder).publish();

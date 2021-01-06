@@ -212,7 +212,23 @@ Let's see what it looks like when we run the program:
 
 @verbatim{
 $ ../reach run
-<TBD>
+Buyer 0 bought a ticket.
+Buyer 3 bought a ticket.
+...
+Buyer 5 bought a ticket.
+Buyer 9 bought a ticket.
+Buyer 1 bought a ticket.
+Funder saw 0x94CAC1b24C1f7b0EBAD4A51797dE5d59A39910C4 won.
+Buyer 5 saw they lost.
+Buyer 1 saw they won.
+Buyer 6 saw they lost.
+Buyer 0 saw they lost.
+Buyer 4 saw they lost.
+Buyer 8 saw they lost.
+Buyer 2 saw they lost.
+Buyer 7 saw they lost.
+Buyer 3 saw they lost.
+Buyer 9 saw they lost.
 }
 
 @section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}

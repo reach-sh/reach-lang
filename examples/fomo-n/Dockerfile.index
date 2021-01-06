@@ -1,0 +1,9 @@
+FROM reachsh/runner:0.1
+
+# If your project needs more node dependencies:
+# COPY package.json.index /app/package.json
+# RUN npm install
+
+COPY . /app
+RUN cp /app/package.json.index /app/package.json
+CMD ["index"]
