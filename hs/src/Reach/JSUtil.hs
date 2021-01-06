@@ -6,6 +6,9 @@ module Reach.JSUtil
   , jsa_flatten
   , dropEmptyJSStmts
   , jsArrowStmtToBlock
+  , jsConciseBodyToBlock
+  , jsConciseBodyToStmt
+  , jsConciseBodyToStmts
   , jsStmtToBlock
   , tp
   , srcloc_jsa
@@ -54,6 +57,21 @@ jsa_flatten a = concatMap f a
   where
     f (JSArrayComma _) = []
     f (JSArrayElement e) = [e]
+
+jsConciseBodyToBlock :: JSConciseBody -> JSBlock
+jsConciseBodyToBlock = \case
+  JSConciseFunctionBody b -> b
+  JSConciseExpressionBody e -> JSBlock JSNoAnnot [JSReturn JSNoAnnot (Just e) JSSemiAuto] JSNoAnnot
+
+jsConciseBodyToStmts :: JSConciseBody -> [JSStatement]
+jsConciseBodyToStmts = \case
+  JSConciseFunctionBody (JSBlock _ stmts _) -> stmts
+  JSConciseExpressionBody e -> [JSReturn JSNoAnnot (Just e) JSSemiAuto]
+
+jsConciseBodyToStmt :: JSConciseBody -> JSStatement
+jsConciseBodyToStmt = \case
+  JSConciseFunctionBody (JSBlock l stmts r) -> JSStatementBlock l stmts r JSSemiAuto
+  JSConciseExpressionBody e -> JSStatementBlock JSNoAnnot [JSReturn JSNoAnnot (Just e) JSSemiAuto] JSNoAnnot JSSemiAuto
 
 jsArrowStmtToBlock :: JSStatement -> JSBlock
 jsArrowStmtToBlock = \case
