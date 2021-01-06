@@ -81,7 +81,7 @@ jobs:
       - run:
           name: run examples
           command: (cd examples && make run-all)
-          no_output_timeout: 2m
+          no_output_timeout: 3m
       - jq/install
       - run:
           name: Is dockerhub up to date?
