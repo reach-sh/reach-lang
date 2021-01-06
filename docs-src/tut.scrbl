@@ -155,6 +155,11 @@ Since the application doesn't do anything, you'll just see a lot of diagnostic m
 
 In @seclink["tut-2"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
 
+@(check:multi
+  "When you write a DApp using Reach, do you"
+  "write a smart contract in Solidity, a backend in JavaScript, and a frontend in JavaScript, then use Reach to test and deploy it;"
+  "write a program in Reach that generates a smart contract & a backend and a front-end in JavaScript, then use Reach to test and deploy it?")
+
 @section[#:tag "tut-2"]{Rock, Paper, and Scissors}
 @(mint-scope "tut-2")
 
@@ -312,6 +317,18 @@ That's why every time you run @exec{./reach run}, both Alice and Bob will see th
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["tut-2/index.rsh"] and @reachexlink["tut-2/index.mjs"] to make sure you copied everything down correctly!}
 
 In @seclink["tut-3"]{the next step}, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
+
+@(check:many
+  "Reach programs allows interaction with a user interface through which of the following methods"
+  "by forcing you to write a custom backend for the user interface that connects to the generated smart contract,"
+  "by allowing the frontends to provide values directly to the Reach application,"
+  "by allowing the Reach program to callback to the frontend via the interact object.")
+
+@(check:multi
+  "How do participants in a Reach application share information with each other and find out what what others have shared?"
+  "Reach generates a smart contract, but you need to implement a process to scan the blockchain for events that corresponding to sharing;"
+  "The Reach primitive publish allows a participant to share information with all other participants, which happens automatically without the other parties needing to do anything special;"
+  "The Reach primitive publish allows a participant to share information with all other participants, but they need to explicitly run the receive primitive to receive published information.")
 
 @section[#:tag "tut-3"]{Bets and Wagers}
 @(mint-scope "tut-3")
@@ -527,6 +544,11 @@ Alice is doing okay, if she keeps this up, she'll make a fortune on @|RPS|!
 
 Now that there is a reason to play this game, it turns out that there's a major security vulnerability.
 We'll fix this in @seclink["tut-4"]{the next step}; make sure you don't launch with this version, or Alice is going to go broke!
+
+@(check:multi
+  "How do Reach programs manage token funds?"
+  "They don’t; you need to manage them explicitly in parallel to the Reach program;"
+  @item{The @reachin{pay} primitive can be added to a @reachin{publish} primitive to send funds to the Reach program, which can then use the @reachin{transfer} primitive to send funds back to participants, and other addresses.})
 
 @section[#:tag "tut-4"]{Trust and Commitments}
 @(mint-scope "tut-4")
@@ -872,6 +894,14 @@ Now our implementation of @|RPS| is secure and doesn't contain any exploits for 
 However, it still has a final category of mistake that is common in decentralized applications: @seclink["guide-timeout"]{non-participation}.
 We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch with this version, or Alice may decide to back out of the game when she knows she's going to lose!
 
+@check:tf{Since blockchain programs run on a single, global, publicly-checked and certified consensus network, you don’t need to test them as much as normal software, which run on a wide variety of different platforms and operating systems.}
+
+@check:tf{It is easy to write correct programs that handle financial information, and even if you make a mistake, blockchains support an "Undo" operation that allows you to rollback to earlier versions of the ledger to correct mistakes and recover lost funds.}
+
+@check:tf{Reach provides automatic verifications to ensure that your program does not lose, lock away, or overspend funds and guarantees that your applications are free from entire categories of errors.}
+
+@check:tf{Reach provides tools for you to add custom verifications to your program, like ensuring that information is known only to one party, or that your implementation of a sensitive algorithm is correct.}
+
 @section[#:tag "tut-5"]{Timeouts and Participation}
 @(mint-scope "tut-5")
 
@@ -1059,6 +1089,13 @@ Of course, when you run, you may not get two of the three times ending in a time
 
 Now our implementation of @|RPS| is robust against either participant dropping from the game.
 In @seclink["tut-6"]{the next step}, we'll extend the application to disallow draws and have Alice and Bob play again until there is a winner.
+
+@(check:multi
+  "What happens in a decentralized application when one participant refuses to take the next step of the program? For example, if Alice refuses to share her hand with Bob in a game of ‘Rock, Paper, Scissors’."
+  "This is not possible, because the blockchain guarantees that each party performs a particular set of actions;"
+  "The program hangs forever waiting for Alice to provide the value;"
+  "Alice is punished and the program proceeds as-if Bob were the winner;"
+  "It depends on how the program was written; if the developer used Reach, the default is (2), but the developer could include a timeout block to implement the (3) behavior.")
 
 @section[#:tag "tut-6"]{Play and Play Again}
 @(mint-scope "tut-6")
@@ -1288,6 +1325,17 @@ As usual, your results may differ, but you should be able to see single round vi
 
 Now our implementation of @|RPS| will always result in a pay-out, which is much more fun for everyone.
 In @seclink["tut-7"]{the next step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
+
+@(check:multi
+  "How do you write an application in Reach that runs arbitrarily long, like a game of Rock, Paper, Scissors that is guaranteed to not end in a draw?"
+  "This is not possible, because all Reach programs are finitely long;"
+  "You can use a while loop that runs until the outcome of the game is decided.")
+
+@(check:many
+  "When you check if a program with a while loop is correct, you need to have a property called a loop invariant. Which of the following statements have to be true about the loop invariant?"
+  "The part of the program before the while loop must establish the invariant."
+  "The condition and the body of the loop must establish the invariant."
+  "The negation of the condition and the invariant must establish any properties of the rest of the program.")
 
 @section[#:tag "tut-7"]{Interaction and Independence}
 @(mint-scope "tut-7")
@@ -1542,6 +1590,8 @@ We are protected against attacks, timeouts, and draws, and we can run interactiv
 
 In this step, we made a command-line interface for our Reach program.
 In @seclink["tut-8"]{the next step}, we'll replace this with a Web interface for the same Reach program.
+
+@check:tf{Reach helps you build automated tests for your decentralized application, but it doesn’t support building interactive user-interfaces.}
 
 @section[#:tag "tut-8"]{Web Interaction}
 @(mint-scope "tut-8")
@@ -1803,6 +1853,10 @@ We can leverage callbacks in the @tech{participant interact interface} to displa
 through any Web UI framework of our choice.
 
 In @seclink["tut-9"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
+
+@check:tf{Reach integrates with all Web interface libraries, like React, Vue, and so on, because Reach frontends are just normal JavaScript programs.}
+
+@check:tf{Reach accelerates your development with React by baking-in a React development server and the deployment process to test React programs locally.}
 
 @section[#:tag "tut-9"]{Onward and Further}
 @(mint-scope "tut-9")

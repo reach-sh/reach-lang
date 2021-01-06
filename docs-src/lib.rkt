@@ -65,6 +65,19 @@
 (define (hrule)
   @para{@bold{---}})
 
+(define (check . body)
+  @margin-note{Check your understanding: @(apply list body)})
+(define (check:tf . body)
+  @check{True or false: @(apply list body)})
+(define (check:multi q . opts)
+  (define (ensure-item x)
+    (if (item? x) x
+      @item{@|x|}))
+  (define optsp (map ensure-item opts))
+  @check{@|q| @(apply itemlist #:style 'ordered optsp)})
+(define (check:many q . opts)
+  (apply check:multi q opts))
+
 (define (many-break n)
   (make-list n @(linebreak)))
 (define (stop . args)
