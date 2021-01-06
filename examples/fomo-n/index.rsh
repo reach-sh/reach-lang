@@ -39,8 +39,8 @@ export const main = Reach.App(
     const initialWinners = Array.replicate(NUM_OF_WINNERS, MaybeAddr.None());
 
     // Until deadline, allow buyers to buy ticket
-    const [ keepGoing, winners, ticketsSold, ringCtr ] =
-      parallel_reduce([ true, initialWinners, 0, 0 ])
+    const [ keepGoing, winners, ticketsSold ] =
+      parallel_reduce([ true, initialWinners, 0 ])
         .invariant(balance() == ticketsSold * ticketPrice)
         .while(keepGoing)
         .case(
@@ -51,16 +51,16 @@ export const main = Reach.App(
           () => {
             Buyer.only(() => interact.showPurchase(this));
             const newWinners =
-              Array.set(winners, ringCtr % NUM_OF_WINNERS, MaybeAddr.Some(this));
-            return [ true, newWinners, ticketsSold + 1, ringCtr + 1 ]; })
+              Array.set(winners, ticketsSold % NUM_OF_WINNERS, MaybeAddr.Some(this));
+            return [ true, newWinners, ticketsSold + 1 ]; })
         .timeout(deadline, () => {
           race(Buyer, Funder).publish();
-          return [ false, winners, ticketsSold, ringCtr ]});
+          return [ false, winners, ticketsSold ]});
 
     const howManyBuyers = winners.count(isSome);
 
     if (howManyBuyers == 0) {
-      transfer(balance()).to(Funder); // SMT thinks balance != 0?
+      transfer(balance()).to(Funder);
     } else {
       // If there are 3 winners, ticket price = $4, 10 bids = $40.
       // 40 /= 3. Give 1 to funder, split 39 between 3 winners
