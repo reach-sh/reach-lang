@@ -3,7 +3,7 @@
 const [ isOutcome, ALICE_WINS, BOB_WINS, TIMEOUT ] = makeEnum(3);
 
 const Common = {
-  showOutcome: Fun([UInt, UInt, UInt], Null)
+  showOutcome: Fun([UInt, UInt, UInt], Null),
 };
 
 export const main =

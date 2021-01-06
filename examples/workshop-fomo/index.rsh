@@ -10,7 +10,7 @@ const FunderInterface = {
   getParams: Fun([], Object({
     // relative deadline
     deadline: UInt,
-    ticketPrice: UInt
+    ticketPrice: UInt,
   })),
 };
 
@@ -24,7 +24,7 @@ export const main = Reach.App(
   { },
   [
     ['Funder', FunderInterface],
-    ['class', 'Buyer', BuyerInterface]
+    ['class', 'Buyer', BuyerInterface],
   ],
   (Funder, Buyer) => {
 
@@ -59,7 +59,7 @@ export const main = Reach.App(
         )
         .timeout(deadline, () => {
           race(Buyer, Funder).publish();
-          return [ false, winner, ticketsSold ]});
+          return [ false, winner, ticketsSold ]; });
 
     // Whoever, buys last wins and receives balance
     transfer(balance()).to(winner);

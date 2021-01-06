@@ -26,7 +26,7 @@ const BuyerInterface = {
 export const main = Reach.App(
   { },
   [
-    ['Funder', FunderInterface], ['class', 'Buyer', BuyerInterface]
+    ['Funder', FunderInterface], ['class', 'Buyer', BuyerInterface],
   ],
   (Funder, Buyer) => {
     const showOutcome = (winners) =>
@@ -50,12 +50,13 @@ export const main = Reach.App(
           (() => ticketPrice),
           () => {
             Buyer.only(() => interact.showPurchase(this));
+            const idx = ticketsSold % NUM_OF_WINNERS;
             const newWinners =
-              Array.set(winners, ticketsSold % NUM_OF_WINNERS, MaybeAddr.Some(this));
+              Array.set(winners, idx, MaybeAddr.Some(this));
             return [ true, newWinners, ticketsSold + 1 ]; })
         .timeout(deadline, () => {
           race(Buyer, Funder).publish();
-          return [ false, winners, ticketsSold ]});
+          return [ false, winners, ticketsSold ]; });
 
     const howManyBuyers = winners.count(isSome);
 
