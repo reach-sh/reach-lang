@@ -16,7 +16,7 @@ const FunderInterface = {
 
 const BuyerInterface = {
   ...CommonInterface,
-  shouldBuyTicket: Fun([], Bool),
+  shouldBuyTicket: Fun([UInt], Bool),
   showPurchase: Fun([Address], Null),
 };
 
@@ -48,7 +48,7 @@ export const main = Reach.App(
         .case(
           Buyer,
           (() => ({
-            when: declassify(interact.shouldBuyTicket()),
+            when: declassify(interact.shouldBuyTicket(ticketPrice)),
           })),
           (() => ticketPrice),
           (() => {
