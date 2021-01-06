@@ -3496,13 +3496,15 @@ evalStmt ctxt at sco st ss =
             (dv, dv_lifts) <- case sv of
               SLV_DLVar dv -> return (dv, mempty)
               SLV_Prim (SLPrim_interact iAt p v t) ->
-                ctxt_lift_expr ctxt at (DLVar iAt v t) (DLE_Arg iAt $ DLA_Interact p v t)
+                ctxt_lift_expr ctxt at (DLVar iAt v t) $
+                  (DLE_Arg iAt $ DLA_Interact p v t)
               _ -> impossible "select_all: not dlvar or interact field"
             let casemm = M.mapWithKey select_one casesm
             let cmb (mst', sa', mrets', casemm') (vn, casem) = do
                   (mdv', at_c, casem') <- casem
                   SLRes case_lifts case_st (SLStmtRes _ case_rets) <- casem'
-                  let case_rets' = map (\(ra, rb, rc, _) -> (ra, rb, rc, True)) case_rets
+                  let case_rets' =
+                        map (\(ra, rb, rc, _) -> (ra, rb, rc, True)) case_rets
                   let sa'' = sa' <> mkAnnot case_lifts
                   let (st'', rets'') =
                         case (mst', mrets') of
@@ -3515,10 +3517,12 @@ evalStmt ctxt at sco st ss =
                           _ -> impossible "select_all"
                   let casemm'' = M.insert vn (mdv', case_lifts) casemm'
                   return $ (Just st'', sa'', Just rets'', casemm'')
-            (mst', sa', mrets', casemm') <- foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
+            (mst', sa', mrets', casemm') <-
+              foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
             let rets' = maybe mempty id mrets'
             let lifts' = return $ DLS_Switch at dv sa' casemm'
-            return $ SLRes (dv_lifts <> lifts') (maybe st id mst') $ SLStmtRes sco rets'
+            return $ SLRes (dv_lifts <> lifts') (maybe st id mst') $
+              SLStmtRes sco rets'
       fr <-
         case de_val of
           SLV_Data _ _ vn vv ->
