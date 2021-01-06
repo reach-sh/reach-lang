@@ -278,9 +278,9 @@ solArg ctxt da =
 solPrimApply :: SolCtxt -> PrimOp -> [Doc] -> Doc
 solPrimApply ctxt = \case
   SELF_ADDRESS -> impossible "self address"
-  ADD -> safeOp "+" "safeAdd"
-  SUB -> safeOp "-" "safeSub"
-  MUL -> safeOp "*" "safeMul"
+  ADD -> safeOp "unsafeAdd" "+"
+  SUB -> safeOp "unsafeSub" "-"
+  MUL -> safeOp "unsafeMul" "*"
   DIV -> binOp "/"
   MOD -> binOp "%"
   PLT -> binOp "<"
@@ -296,20 +296,14 @@ solPrimApply ctxt = \case
   IF_THEN_ELSE -> \case
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitSol: ITE wrong args"
-  --  BYTES_EQ -> \case
-  --    [x, y] ->
-  --      solAnd
-  --        (solEq ctxt (solBytesLength x) (solBytesLength y))
-  --        (solEq ctxt (solHash [x]) (solHash [y]))
-  --    _ -> impossible $ "emitSol: BYTES_EQ wrong args"
   DIGEST_EQ -> binOp "=="
   ADDRESS_EQ -> binOp "=="
   where
     PLOpts {..} = ctxt_plo ctxt
-    safeOp op fun =
+    safeOp fun op =
       case plo_verifyOverflow of
-        True -> binOp op
-        False -> solApply fun
+        False -> binOp op
+        True -> solApply fun
     binOp op = \case
       [l, r] -> solBinOp op l r
       _ -> impossible $ "emitSol: bin op args"
