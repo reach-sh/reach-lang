@@ -27,7 +27,7 @@ build: stack
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push
-push: build
+push:
 	../scripts/docker-push.sh $(IMAGE)
 
 .PHONY: build-circle-docker
