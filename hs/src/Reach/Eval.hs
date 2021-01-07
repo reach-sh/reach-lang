@@ -3521,8 +3521,9 @@ evalStmt ctxt at sco st ss =
               foldM cmb (Nothing, mempty, Nothing, mempty) $ M.toList casemm
             let rets' = maybe mempty id mrets'
             let lifts' = return $ DLS_Switch at dv sa' casemm'
-            return $ SLRes (dv_lifts <> lifts') (maybe st id mst') $
-              SLStmtRes sco rets'
+            return $
+              SLRes (dv_lifts <> lifts') (maybe st id mst') $
+                SLStmtRes sco rets'
       fr <-
         case de_val of
           SLV_Data _ _ vn vv ->
@@ -3712,8 +3713,8 @@ evalTopBody ctxt at st libm env exenv body =
             JSExport s _ -> doStmt at' True s
             JSExportFrom ec fc _ -> go ec (evalFromClause libm fc)
             JSExportLocals ec _ -> go ec env
-            JSExportAllFrom{} -> impossible "XXX export *"
-            where
+            JSExportAllFrom {} -> impossible "XXX export *"
+          where
             at' = srcloc_jsa "export" a at
             go ec eenv =
               evalTopBody ctxt at' st libm env (env_merge ctxt at' exenv news) body'
