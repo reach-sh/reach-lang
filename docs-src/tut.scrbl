@@ -1622,6 +1622,23 @@ This code is supplemented with @reachexlink["tut-8/index.css" "index.css"]
 and some @reachexlink["tut-8/views" "views"].
 These details are not specific to Reach, and are fairly trivial,
 so we will not explain the specifics of those files.
+If you run this locally, you'll want to download those files.
+Your directory should look like:
+
+@verbatim{
+.
+├── index.css
+├── index.js
+├── index.rsh
+└── views
+    ├── AppViews.js
+    ├── AttacherViews.js
+    ├── DeployerViews.js
+    ├── PlayerViews.js
+    └── render.js
+}
+
+@(hrule)
 
 We will focus on @reachexlink["tut-8/index.js"],
 because @reachexlink["tut-8/index.rsh"] is the same as previous sections.
