@@ -29,7 +29,7 @@ exports.ConnectAccount = class extends React.Component {
 
 exports.FundAccount = class extends React.Component {
   render() {
-    const {addr, bal, standardUnit, defaultFundAmt, parent} = this.props;
+    const {bal, standardUnit, defaultFundAmt, parent} = this.props;
     const amt = (this.state || {}).amt || defaultFundAmt;
     return (
       <div>
