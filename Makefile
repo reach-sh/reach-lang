@@ -1,20 +1,3 @@
-# XXX: "bad example" files must still pass lint?
-linted_reach_src_dirs = \
-	examples/ \
-	hs/rsh/ \
-	hs/test-examples/
-
-# XXX: no way for linter to allow rebinding _ ?
-# TODO: clear out old subdirs
-ignored_reach_sources = \
-	--ignore-pattern hs/test-examples/non-features/js_parse_err.rsh \
-	--ignore-pattern hs/test-examples/features/underscore.rsh \
-	--ignore-pattern hs/test-examples/non-features/with.rsh \
-	--ignore-pattern hs/test-examples/nl-eval-errors/ \
-	--ignore-pattern hs/test-examples/parse-errors/ \
-	--ignore-pattern hs/test-examples/compile-errors/ \
-	--ignore-pattern examples/chicken-race/index.rsh
-
 .PHONY: all
 all: check run-all
 
@@ -68,20 +51,6 @@ rbe: rebuild-and-run-all-examples
 .PHONY: docs
 docs:
 	cd docs-src && $(MAKE)
-
-.PHONY: reach-lint
-reach-lint:
-	@(set -e; for dir in $(linted_reach_src_dirs); do \
-		echo linting $$dir; \
-		./reach lint --max-warnings 0 $$dir $(ignored_reach_sources); \
-	done)
-
-.PHONY: reach-lint-fix
-reach-lint-fix:
-	@(set -e; for dir in $(linted_reach_src_dirs); do \
-		echo fixing $$dir; \
-		./reach lint --max-warnings 0 --fix $$dir $(ignored_reach_sources); \
-	done)
 
 .PHONY: sh-lint
 sh-lint:

@@ -230,17 +230,6 @@ do_whoami () {
 do_compile () {
     HS=${HERE}/hs
 
-    # try to lint any args that are .rsh files
-    for RSH in "$@"; do
-      case "$RSH" in
-        *.rsh)
-          if [ -f "${RSH}" ]; then
-            (cd "$(dirname "$RSH")" && do_lint "$(basename "${RSH}")") || :
-          fi
-          ;;
-      esac
-    done
-
     # Note: shellcheck says splatting is dangerous,
     # (because what if file names have spaces),
     # but also, sh doesn't have array splicing, so... this.
@@ -939,33 +928,6 @@ do_react_down () {
   exit 0
 }
 
-# TODO: allow linting outside of PWD
-# TODO: try to not mount all of PWD?
-do_lint () {
-  LINT_CONFIG="${HERE}/js/.reach.eslintrc.yaml"
-  if command -v eslint > /dev/null 2>&1 && [ -f "$LINT_CONFIG" ]; then
-    eslint \
-      --config "$LINT_CONFIG" \
-      --ext .rsh \
-      --no-eslintrc \
-      "$@"
-  else
-    DIR="$(pwd)"
-    docker \
-      run \
-      --tty \
-      --mount "type=bind,source=$DIR,target=$DIR" \
-      --workdir "$DIR" \
-      --entrypoint eslint \
-      "reachsh/runner:$REACH_VERSION" \
-      --ext .rsh \
-      --config /app/.reach.eslintrc.yaml \
-      --no-eslintrc \
-      "$@"
-  fi
-
-}
-
 do_hash () {
   echo "$1:" "$(docker run --entrypoint /bin/sh "reachsh/$1:$REACH_VERSION" -c 'echo $REACH_GIT_HASH')"
 }
@@ -1021,9 +983,6 @@ case ${SUBCOMMAND} in
         ;;
     down)
         do_down "$@"
-        ;;
-    lint)
-        do_lint "$@"
         ;;
     upgrade)
         NEW=reach.$$

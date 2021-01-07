@@ -11,8 +11,6 @@ COPY runner_package.json /app/package.json
 # TODO: use a gentler linter for this
 COPY .eslintrc.yaml /app/
 
-COPY .reach.eslintrc.yaml /app/
-
 RUN npm link '@reach-sh/stdlib'
 # Make use of stuff already installed for stdlib
 # RUN npm install

@@ -162,23 +162,6 @@ jobs:
           command: make sh-lint
       - <<: *slack-notify-on-fail
 
-  reach-lint:
-    docker:
-      - <<: *docker-creds
-        image: 'circleci/node:12.18.3'
-    steps:
-      - checkout
-      - run:
-          name: install mo
-          command: (curl -sSL https://git.io/get-mo -o mo && chmod +x mo && sudo mv mo /usr/local/bin)
-      - run:
-          name: package.json
-          command: (cd js && make package.json)
-      - run:
-          name: install eslint
-          command: (cd js && sudo npm install -g eslint && npm install)
-      - <<: *slack-notify-on-fail
-
   docker-lint:
     docker:
       - <<: *docker-creds
@@ -240,8 +223,6 @@ workflows:
   lint:
     jobs:
       - shellcheck:
-          <<: *default-job-setup
-      - reach-lint:
           <<: *default-job-setup
       - docker-lint:
           <<: *default-job-setup
