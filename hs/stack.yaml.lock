@@ -92,14 +92,14 @@ packages:
 - completed:
     name: language-javascript
     version: 0.7.1.0
-    git: https://github.com/danburton/language-javascript.git
+    git: https://github.com/reach-sh/language-javascript.git
     pantry-tree:
-      size: 3180
-      sha256: d8bed9f91ce6f6ff86b0ca6d11599afc3c7bec6c9b729e8843c0088f7b42ad53
-    commit: 9a3b52abc8d4850a2229cc94d0d973f7906c6378
+      size: 3233
+      sha256: 7531d7fe8ff1ead2c36e849670b8cb1fe727f83e3e092228c506e71afa0486ed
+    commit: a9bde32d618f0f6a2098ff256001b48ff5a9a511
   original:
-    git: https://github.com/danburton/language-javascript.git
-    commit: 9a3b52abc8d4850a2229cc94d0d973f7906c6378
+    git: https://github.com/reach-sh/language-javascript.git
+    commit: a9bde32d618f0f6a2098ff256001b48ff5a9a511
 - completed:
     name: ormolu
     version: 0.1.2.0
