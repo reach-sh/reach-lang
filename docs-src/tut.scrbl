@@ -1602,6 +1602,21 @@ Instead, we'll replace the command-line interface with a Web interface.
 
 We will use @link["https://reactjs.org/"]{React.js} for this tutorial, but the same principles apply to any Web framework.
 
+@margin-note{If you've never used React before, here are some basics about how it works:
+@itemlist[
+@item{React programs are JavaScript programs that use a special library that allows you to mix HTML inside of the body of your JavaScript.}
+@item{React has a special compiler that combines a bundle of JavaScript programs, and all their dependencies, into one large file that can be deployed on a static Web server.
+This is called "packing".}
+@item{When you're developing and testing with React, you run a special development Web server that watches updates this packed file every time you modify your source files, so you don't have to constantly run the compiler.}
+@item{Reach automates the process of starting this development server for you when you run @exec{./reach react} and gives you access to it at @tt{http://localhost:3000/}.}
+]}
+
+Similarly, in this tutorial, we assume that we will be deploying (and testing) with Ethereum.
+Reach Web applications rely on the Web browser to provide access to a consensus network account and its associated wallet.
+On Ethereum, the standard wallet is @link["https://metamask.io"]{MetaMask}.
+If you want to test this code, you'll need to install it and set it up.
+Furthermore, MetaMask does not support multiple active accounts, so if you want to test @|RPS| locally, you'll need to have two separate browser instances: one to act as Alice and another to act as Bob.
+
 @(hrule)
 
 The code in this section does not use the scaffolding from the previous section.
