@@ -1609,6 +1609,13 @@ Reach comes with a convenience command for deleting scaffolded files:
 
 @cmd{reach unscaffold}
 
+Similarly, you do not need the previous @tt{index.mjs} file, because we'll be writing it completely from scratch to use React.
+You can run the following command to delete it:
+
+@cmd{rm index.mjs}
+
+Or, you can copy the @tt{index.rsh} file into a new directory and work from there.
+
 @(hrule)
 
 This code is supplemented with @reachexlink["tut-8/index.css" "index.css"]
