@@ -644,7 +644,7 @@ jsClo at name js env_ = SLV_Clo at (Just name) args body cloenv
       case readJsExpr js of
         JSArrowExpression aformals _ bodys -> (a_, b_)
           where
-            b_ = jsConciseBodyToBlock bodys
+            b_ = jsArrowStmtToBlock bodys
             a_ = parseJSArrowFormals at aformals
         _ -> impossible "not arrow"
 
@@ -1271,7 +1271,7 @@ evalForm ctxt at sco st f args =
           sargs <- cannotLift "App args" <$> evalExprs ctxt at sco st [opte, partse]
           case map snd sargs of
             [(SLV_Object _ _ opts), (SLV_Tuple _ parts)] ->
-              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts parts (parseJSArrowFormals at top_formals) (jsConciseBodyToStmt top_s) (sco_cenv sco)
+              retV $ public $ SLV_Prim $ SLPrim_App_Delay at opts parts (parseJSArrowFormals at top_formals) top_s (sco_cenv sco)
             _ -> expect_throw_ctx ctxt at (Err_App_InvalidArgs args)
         _ -> expect_throw_ctx ctxt at (Err_App_InvalidArgs args)
     SLForm_Part_Only who mv ->
@@ -1290,7 +1290,8 @@ evalForm ctxt at sco st f args =
                 [w, x, z] -> (w, x, default_pay, z)
                 _ -> illegal_args 4
             default_pay =
-              JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSConciseExpressionBody (JSDecimal a "0"))
+              JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement (JSDecimal a "0") sp)
+            sp = JSSemi a
             a = srcloc2annot at
         Just FM_Timeout ->
           retV $ public $ SLV_Form $ SLForm_fork_partial fat Nothing cases parsedTimeout
@@ -1417,7 +1418,7 @@ evalForm ctxt at sco st f args =
     parsedTimeout =
       case args of
         [de, JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s] ->
-          Just (at, de, (jsConciseBodyToBlock dt_s))
+          Just (at, de, (jsStmtToBlock dt_s))
         _ -> expect_throw_ctx ctxt at $ Err_ToConsensus_TimeoutArgs args
 
 evalPrimOp :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> PrimOp -> [SLSVal] -> SLComp s SLSVal
@@ -2119,9 +2120,8 @@ evalPrim ctxt at sco st p sargs =
                                          False -> JSCase ann case_id ann case_body)
                 $ M.toList args_x_case
         let body = JSSwitch ann ann data_param ann ann switch_parts ann semi
-        let fnBody = JSConciseFunctionBody $ JSBlock ann [body] ann
         let params = mkArrowParameterList [data_param, case_param]
-        JSArrowExpression params ann fnBody
+        JSArrowExpression params ann body
       -- Apply the object and cases to the newly created function
       SLRes a_lifts a_st (SLAppRes _ ans) <-
         evalApplyVals ctxt at sco st fn [public obj, public cases]
@@ -2447,7 +2447,7 @@ evalExpr ctxt at sco st e = do
       evalExpr ctxt at sco st e'
       where
         e' = JSFunctionExpression a JSIdentNone a fformals a body
-        body = jsConciseBodyToBlock bodys
+        body = jsArrowStmtToBlock bodys
         at' = srcloc_jsa "arrow" a at
         fformals = jsArrowFormalsToFunFormals at' aformals
     JSFunctionExpression a name _ jsformals _ body ->
@@ -2988,7 +2988,7 @@ doFork ctxt at sco st ks cases mtime = do
   let res_e = jid (fid "res")
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
-  let thunkify e = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSConciseExpressionBody e)
+  let thunkify e = JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSExpressionStatement e sp)
   seenr <- newSTRef (mempty :: M.Map SLPart SrcLoc)
   let go (c_at, (who_e, before_e, pay_e, after_e)) = do
         let cfc_part = who_e
@@ -3051,15 +3051,15 @@ doFork ctxt at sco st ks cases mtime = do
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
         let getAfter = \case
-              JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> jsConciseBodyToStmts s
-              JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> defcon ae msg_e : jsConciseBodyToStmts s
+              JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ s -> [s]
+              JSArrowExpression (JSParenthesizedArrowParameterList _ (JSLOne ae) _) _ s -> [defcon ae msg_e, s]
               JSExpressionParen _ e _ -> getAfter e
               _ ->
                 expect_throw_ctx ctxt at $
                   Err_Fork_ConsensusBadArrow after_e
         let after_ss = getAfter after_e
         let cfc_switch_case = JSCase a var_e a $ who_is_this_ss <> after_ss
-        let cfc_only = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSConciseFunctionBody $ JSBlock a only_body a))) a sp
+        let cfc_only = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne (JSArrowExpression (JSParenthesizedArrowParameterList a JSLNil a) a (JSStatementBlock a only_body a sp))) a sp
         return $ CompiledForkCase {..}
   casel <- mapM go cases
   let cases_data_def = map cfc_data_def casel
@@ -3081,7 +3081,7 @@ doFork ctxt at sco st ks cases mtime = do
         case mtime of
           Nothing -> tc_pay_e
           Just (_, td, JSBlock tbb tbs tba) ->
-            JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) tbb (toJSCL [td, (JSArrowExpression (JSParenthesizedArrowParameterList tbb JSLNil tba) tba (JSConciseFunctionBody $ JSBlock tbb tbs tba))]) tba
+            JSCallExpression (JSMemberDot tc_pay_e a (jid "timeout")) tbb (toJSCL [td, (JSArrowExpression (JSParenthesizedArrowParameterList tbb JSLNil tba) tba (JSStatementBlock tbb tbs tba sp))]) tba
   let tc_e = tc_time_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let req_arg = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_req_props) a
@@ -3713,7 +3713,7 @@ evalTopBody ctxt at st libm env exenv body =
             JSExportFrom ec fc _ -> go ec (evalFromClause libm fc)
             JSExportLocals ec _ -> go ec env
             JSExportAllFrom{} -> impossible "XXX export *"
-          where
+            where
             at' = srcloc_jsa "export" a at
             go ec eenv =
               evalTopBody ctxt at' st libm env (env_merge ctxt at' exenv news) body'

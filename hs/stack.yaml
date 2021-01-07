@@ -23,7 +23,7 @@ extra-deps:
   - git: https://github.com/reach-sh/stan.git
     commit: f6b85556b90cb8b639449d205be6367bafc984f2
   - git: https://github.com/reach-sh/language-javascript.git
-    commit: e9bc3455ebd2dbff1f328316dfb3f8024bc1476e
+    commit: a9bde32d618f0f6a2098ff256001b48ff5a9a511
     # ^ from branch "reach-1"
   - git: https://github.com/google/ormolu.git
     commit: f16c62c18db1b328ee481c781171ea61f354ff70
