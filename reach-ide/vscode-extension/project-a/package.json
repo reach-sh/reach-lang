@@ -139,7 +139,10 @@
 				"command": "reach.docs",
 				"category": "Reach IDE",
 				"title": "Open Reach Documentation",
-				"icon": "./images/reach-logo.png"
+				"icon": {
+					"light": "./images/reach-logo-light.png",
+					"dark": "./images/reach-logo-dark.png"
+				}
 			},
 			{
 				"command": "reach.upgrade",
