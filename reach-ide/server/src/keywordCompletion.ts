@@ -1,19 +1,43 @@
 import { CompletionItemKind } from 'vscode-languageserver';
 
-export const reachCompletionKind: { [key : string]: CompletionItemKind } = {
+type CompletionMap = { [key : string]: CompletionItemKind }
+
+const ArrayMethodCompletion: CompletionMap = {
+  'all': CompletionItemKind.Method,
+  'and': CompletionItemKind.Method,
+  'any': CompletionItemKind.Method,
+  'concat': CompletionItemKind.Method,
+  'count': CompletionItemKind.Method,
+  'empty': CompletionItemKind.Method,
+  'findIndex': CompletionItemKind.Method,
+  'forEach': CompletionItemKind.Method,
+	'includes': CompletionItemKind.Method,
+	'indexOf': CompletionItemKind.Method,
+	'iota': CompletionItemKind.Method,
+  'length': CompletionItemKind.Method,
+  'map': CompletionItemKind.Method,
+  'max': CompletionItemKind.Method,
+  'min': CompletionItemKind.Method,
+  'or': CompletionItemKind.Method,
+  'reduce': CompletionItemKind.Method,
+  'replicate': CompletionItemKind.Method,
+  'set': CompletionItemKind.Method,
+  'sum': CompletionItemKind.Method,
+  'zip': CompletionItemKind.Method,
+};
+
+export const addPrefix = (o: CompletionMap, s: string) =>
+  Object.entries(o).reduce((acc, [k, v]) => {
+    acc[s + "." + k] = v;
+    return acc;
+  }, {} as CompletionMap);
+
+export const reachCompletionKind: CompletionMap = {
   'Address': CompletionItemKind.TypeParameter,
 	'array': CompletionItemKind.Function,
   'Array': CompletionItemKind.TypeParameter,
-  'Array.concat': CompletionItemKind.Method,
-  'Array.empty': CompletionItemKind.Method,
-  'Array.forEach': CompletionItemKind.Method,
-	'Array.iota': CompletionItemKind.Method,
-  'Array.length': CompletionItemKind.Method,
-  'Array.map': CompletionItemKind.Method,
-  'Array.reduce': CompletionItemKind.Method,
-  'Array.replicate': CompletionItemKind.Method,
-  'Array.set': CompletionItemKind.Method,
-  'Array.zip': CompletionItemKind.Method,
+  ...ArrayMethodCompletion,
+  ...addPrefix(ArrayMethodCompletion, 'Array'),
   'assert': CompletionItemKind.Function,
 	'assume': CompletionItemKind.Function,
 	'balance': CompletionItemKind.Function,
@@ -21,6 +45,7 @@ export const reachCompletionKind: { [key : string]: CompletionItemKind } = {
   'Bytes': CompletionItemKind.TypeParameter,
   'checkCommitment': CompletionItemKind.Function,
   'closeTo': CompletionItemKind.Function,
+  'compose': CompletionItemKind.Function,
 	'connectors': CompletionItemKind.Field,
   'const': CompletionItemKind.Keyword,
 	'continue': CompletionItemKind.Keyword,
@@ -32,18 +57,27 @@ export const reachCompletionKind: { [key : string]: CompletionItemKind } = {
   'digest': CompletionItemKind.Function,
   'Digest': CompletionItemKind.TypeParameter,
   'each': CompletionItemKind.Method,
+  'Either': CompletionItemKind.TypeParameter,
   'ensure': CompletionItemKind.Function,
   'exit': CompletionItemKind.Function,
-	'export': CompletionItemKind.Keyword,
+  'export': CompletionItemKind.Keyword,
+  'fail': CompletionItemKind.Function,
   'forall': CompletionItemKind.Function,
   'forEach': CompletionItemKind.Function,
+  'fromLeft': CompletionItemKind.Function,
+  'fromRight': CompletionItemKind.Function,
   'Fun': CompletionItemKind.TypeParameter,
+  'fromMaybe': CompletionItemKind.Function,
   'function': CompletionItemKind.Keyword,
   'hasRandom': CompletionItemKind.Function,
 	'if': CompletionItemKind.Keyword,
   'implies': CompletionItemKind.Function,
 	'import': CompletionItemKind.Keyword,
   'interact': CompletionItemKind.Struct,
+  'isLeft': CompletionItemKind.Function,
+  'isNone': CompletionItemKind.Function,
+  'isRight': CompletionItemKind.Function,
+  'isSome': CompletionItemKind.Function,
   'length': CompletionItemKind.Function,
   'makeCommitment': CompletionItemKind.Function,
   'makeEnum': CompletionItemKind.Function,
