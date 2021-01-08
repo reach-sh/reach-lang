@@ -238,6 +238,6 @@ Great job!
 If you found this workshop rewarding, please let us know on @(the-community-link)!
 
 If you'd like to make this application a little more interesting, maybe you'd like
-to extend this program to make the last @tt{N} buyers split the winnings. Check out @reachexlink["fomo-n/index.rsh"] for
+to extend this program to make the last @tt{N} buyers split the winnings. Check out @seclink["workshop-fomo"]{FOMO Generalized} for
 our solution!
 

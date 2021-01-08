@@ -3,10 +3,8 @@
 // FOMO Workshop generalized to last N winners
 const NUM_OF_WINNERS = 3;
 
-const MaybeAddr = Maybe(Address);
-
 const CommonInterface = {
-  showOutcome: Fun([Array(MaybeAddr, NUM_OF_WINNERS)], Null),
+  showOutcome: Fun([Array(Address, NUM_OF_WINNERS)], Null),
 };
 
 const FunderInterface = {
@@ -19,7 +17,7 @@ const FunderInterface = {
 
 const BuyerInterface = {
   ...CommonInterface,
-  shouldBuyTicket: Fun([], Bool),
+  shouldBuyTicket: Fun([UInt], Bool),
   showPurchase: Fun([Address], Null),
 };
 
@@ -36,7 +34,7 @@ export const main = Reach.App(
       const { ticketPrice, deadline } = declassify(interact.getParams()); });
     Funder.publish(ticketPrice, deadline);
 
-    const initialWinners = Array.replicate(NUM_OF_WINNERS, MaybeAddr.None());
+    const initialWinners = Array.replicate(NUM_OF_WINNERS, Funder);
 
     // Until deadline, allow buyers to buy ticket
     const [ keepGoing, winners, ticketsSold ] =
@@ -46,31 +44,24 @@ export const main = Reach.App(
         .case(
           Buyer,
           (() => ({
-            when: declassify(interact.shouldBuyTicket()) })),
+            when: declassify(interact.shouldBuyTicket(ticketPrice)) })),
           (() => ticketPrice),
           () => {
             const buyer = this;
             Buyer.only(() => interact.showPurchase(buyer));
             const idx = ticketsSold % NUM_OF_WINNERS;
             const newWinners =
-              Array.set(winners, idx, MaybeAddr.Some(buyer));
+              Array.set(winners, idx, buyer);
             return [ true, newWinners, ticketsSold + 1 ]; })
         .timeout(deadline, () => {
           race(Buyer, Funder).publish();
           return [ false, winners, ticketsSold ]; });
 
-    const howManyBuyers = winners.count(isSome);
+    transfer(balance() % NUM_OF_WINNERS).to(Funder);
+    const reward = balance() / NUM_OF_WINNERS;
 
-    if (howManyBuyers == 0) {
-      transfer(balance()).to(Funder);
-    } else {
-      // If there are 3 winners, ticket price = $4, 10 bids = $40.
-      // 40 /= 3. Give 1 to funder, split 39 between 3 winners
-      transfer(balance() % howManyBuyers).to(Funder);
-      const reward = balance() / howManyBuyers;
-
-      winners.forEach(winner =>
-        fromMaybe(winner, () => {}, w => transfer(reward).to(w))); }
+    winners.forEach(winner =>
+      transfer(reward).to(winner));
 
     commit();
     showOutcome(winners);

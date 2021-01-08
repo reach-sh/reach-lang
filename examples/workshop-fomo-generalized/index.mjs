@@ -18,15 +18,17 @@ const numOfBuyers = 10;
   const ctcInfo   = ctcFunder.getInfo();
 
   const funderParams = {
-    ticketPrice: stdlib.parseCurrency(5),
-    deadline: 5,
+    ticketPrice: stdlib.parseCurrency(3),
+    deadline: 8,
   };
 
-  console.log('Launching backends');
+  const resultText = (outcome, addr) =>
+    outcome.includes(addr) ? 'won' : 'lost';
+
   await Promise.all([
     backend.Funder(ctcFunder, {
       showOutcome: (outcome) =>
-        console.log(`Funder saw outcome: ${outcome}.`),
+        console.log(`Funder saw they ${resultText(outcome, accFunder.networkAccount.address)}`),
       getParams: () => funderParams,
     }),
   ].concat(
@@ -35,7 +37,7 @@ const numOfBuyers = 10;
       const Who = `Buyer #${i}`;
       return backend.Buyer(ctcBuyer, {
         showOutcome: (outcome) =>
-          console.log(`${Who} saw they ${outcome}`),
+          console.log(`${Who} saw they ${resultText(outcome, accBuyer.networkAccount.address)}`),
         shouldBuyTicket : () => Math.random() < 0.5,
         showPurchase: (addr) => {
           if (stdlib.addressEq(addr, accBuyer)) {
@@ -45,6 +47,4 @@ const numOfBuyers = 10;
       });
     })
   ));
-
-  console.log('Completed application!');
 })();
