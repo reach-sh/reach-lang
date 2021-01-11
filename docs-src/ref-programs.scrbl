@@ -1580,6 +1580,18 @@ This means it is a function that returns a @reachin{Data} type specialized to a 
 
 @reachin{Maybe} instances can be conveniently consumed by @reachin{fromMaybe(mValue, onNone, onSome)}, where @reachin{onNone} is a function of no arguments which is called when @reachin{mValue} is @reachin{None}, @reachin{onSome} is a function of on argument which is called with the value when @reachin{mValue} is @reachin{Some}, and @reachin{mValue} is a @tech{data instance} of @reachin{Maybe}.
 
+@(mint-define! '("isNone") '("isSome"))
+@reach{
+  const m = Maybe(UInt).Some(5);
+  isNone(m); // false
+  isSome(m); // true
+}
+
+@index{isNone} @reachin{isNone} is a convenience method that determines whether the variant is @tt{isNone}.
+
+@index{isSome} @reachin{isSome} is a convenience method that determines whether the variant is @tt{isSome}.
+
+
 @subsubsection{@tt{Either}}
 
 @reachin{Either} is defined by

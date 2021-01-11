@@ -2,21 +2,22 @@
 @(require "lib.rkt")
 
 @(define TAG "workshop-fomo-generalized")
-@title[#:version reach-vers #:tag TAG]{Workshop: FOMO Generalized}
+@title[#:version reach-vers #:tag TAG]{Workshop: Fear of Missing Out Generalized}
 
-In this workshop, we will extend our @seclink["workshop-fomo"]{FOMO application}
+In this workshop, we will extend our @seclink["workshop-fomo"]{Fear of Missing Out application}
 with the ability to split the reward between the @tt{N} most recent Buyers.
 
 In this version, the Funder will have the advantage that, if there are less than
 @tt{N} Buyers, the Funder will earn the rewards for every absent Buyer. For example,
-if the auction is set to have 5 winners, yet only 3 Buyers bid, the funds will be split evenly between @reachin{[Buyer1, Buyer2, Buyer3, Funder, Funder]}.
+if the auction is set to have 5 winners, yet only 3 Buyers bid, the first three Buyers
+will receive 1/5 of the funds each, and the Funder will receive the remaining 2/5 of the funds.
 
 @(workshop-deps "workshop-fomo")
 @(workshop-init TAG)
 
 @(drstep-pr TAG)
 
-Our problem analysis is practically the same as the original FOMO application,
+Our problem analysis is practically the same as the original Fear of Missing Out application,
 except for one difference:
 
 @itemlist[
@@ -28,13 +29,13 @@ except for one difference:
 Let's compare answers for how funds should change ownership in this generalized version:
 
 @itemlist[
-  @item{Buyers continually add funds to the balance during execution until the last N Buyers, and potentially Funder, split the balance.}
+  @item{Buyers continually add funds to the balance during execution until the last @tt{N} Buyers, and potentially the Funder, split the balance.}
 ]
 
 @(drstep-dd TAG)
 
 The data type representation of this program will basically be the same as the
-regular FOMO program. However, instead of tracking the latest Buyer as an
+regular Fear of Missing Out program. However, instead of tracking the latest Buyer as an
 @reachin{Address}, we will track the last @tt{N} Buyers as an @reachin{Array(Address, N)}.
 
 You should take the time now to fill out the interaction interface for the participants.
@@ -42,6 +43,12 @@ You should take the time now to fill out the interaction interface for the parti
 @(drstep-dd-stop)
 
 Our @tech{participant interact interface}, with the addition of some handy logging functions, looks like this so far:
+
+@margin-note{It is worth noting that Reach does not support arbitrarily sized arrays, so we
+could not determine @tt{NUM_OF_WINNERS} at runtime, e.g. from the interaction interface.
+However, we can still write a program that is generic in the size of the array, then
+specialize it when we compile.
+}
 
 @reachex[#:show-lines? #t "workshop-fomo-generalized/index.rsh"
          #:link #t
@@ -55,7 +62,7 @@ When you're writing a Reach program, especially in the early phases, you should 
 
 A fundamental aspect of a decentralized application is the pattern of communication
 and transfer among the participants. We should write down this structure as comments
-in our program to serve as an outline and guide us in implementation. In our original FOMO implementation, we outlined the pattern of communication as follows:
+in our program to serve as an outline and guide us in implementation. In our original Fear of Missing Out implementation, we outlined the pattern of communication as follows:
 
 @reach{
   // 1. The Funder publishes the ticket price and deadline
@@ -104,8 +111,8 @@ The body of your application should look something like this:
         (() => ticketPrice),
         () => {
           const buyer = this;
-          const idx = ticketsSold % NUM_OF_WINNERS;
           // 2b. Keep track of the winners (last N Buyers)
+          const idx = ticketsSold % NUM_OF_WINNERS;
           const newWinners =
             Array.set(winners, idx, buyer);
           return [ true, newWinners, ticketsSold + 1 ]; })
@@ -125,12 +132,18 @@ The body of your application should look something like this:
 }
 
 Extending this program to track an array of @reachin{Address}es, as opposed to a single
-@reachin{Address} is fairly straightforward. The one notable thing about this code that should be highlighted is step @tt{3}. We transfer @reachin{balance() % NUM_OF_WINNERS} to the winner because the total balance may not be evenly
+@reachin{Address} is fairly straightforward. We maintain an array of size @tt{NUM_OF_WINNERS}
+and implement a ring buffer to keep it up to date with the most recent @tt{N} winners, as
+demonstrated in step @tt{2b}.
+
+Another aspect of this code worth highlighting is step @tt{3}.
+We transfer @reachin{balance() % NUM_OF_WINNERS} to the winner because the total balance may not be evenly
 divisible by the number of winners.
 
-For example, if the ticket price is @tt{4 ETH},
-10 bidders, and 3 winners, then the total balance will be @tt{40 ETH}. However, 40 cannot be evenly distributed to 3 participants, so we will transfer @tt{1 ETH} to the Funder,
-and split the remaining @tt{39 ETH} between the 3 bidders.
+For example, if the ticket price is @tt{4 ETH}
+and there are 10 tickets purchased by Buyers, then the total balance will be @tt{40 ETH}. However, if the
+application is set to select 3 winners, then 40 cannot be evenly distributed to 3 participants. So, we
+will transfer @tt{1 ETH} to the Funder, and split the remaining @tt{39 ETH} between the 3 Buyers.
 
 @(drstep-ai TAG)
 
@@ -196,6 +209,15 @@ Buyer #4 saw they lost
 @section[#:tag (format "~a-dns" TAG)]{Discussion and Next Steps}
 
 Great job!
+
+You've now implemented a generalized Fear of Missing Out game. You can try extending
+this application with additional features such as:
+
+@itemlist[
+  @item{Slightly increasing the ticket price with each purchase.}
+  @item{Introducing a small payout system (dividends) to Buyers as the game progresses.
+    e.g. every time the ring buffer is filled.}
+]
 
 If you found this workshop rewarding, please let us know on @(the-community-link)!
 

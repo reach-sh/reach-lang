@@ -2,14 +2,15 @@
 @(require "lib.rkt")
 
 @(define TAG "workshop-fomo")
-@title[#:version reach-vers #:tag TAG]{Workshop: FOMO}
+@title[#:version reach-vers #:tag TAG]{Workshop: Fear of Missing Out}
 
 In this workshop, we'll design an application that allows a Funder
 to create an auction where participants may purchase tickets.
 The Funder sets a ticket price and a relative deadline. When
 a Buyer purchases a ticket, the deadline is reset. Whomever is the
 last person to buy a ticket—when the deadline finally hits—wins
-the entire balance.
+the entire balance. This program is based off of the crypto game,
+@link["https://fomo3d.hostedwiki.co/"]{FOMO3DGame}.
 
 This workshop utilizes @tech{participant class}es to represent Buyers, which allows us to handle multiple participants in a generic way.
 
@@ -62,7 +63,7 @@ in the program:
   @item{What data type will represent the Buyer's decision to purchase a ticket?}
 ]
 
-Now that we decided what data types to use, we need to determine how the programs will obtain this information. We need to outline the @tech{participant interact interface} for each participant.
+Now that we've decided what data types to use, we need to determine how the programs will obtain this information. We need to outline the @tech{participant interact interface} for each participant.
 
 @itemlist[
   @item{What @tech{participant interact interface} will Funder use?}
@@ -82,7 +83,7 @@ You should write your answers in your Reach file (@tt{index.rsh}) as the @tech{p
 Let's compare your answers with ours:
 
 @itemlist[
-  @item{The @tt{deadline} will be represented with an @reachin{UInt}, as it is
+  @item{The @tech{deadline} will be represented with an @reachin{UInt}, as it is
   a relative time delta signifying a change in block numbers.}
   @item{The @tt{ticketPrice} will be represented with an @reachin{UInt}}
   @item{The decision to buy a ticket will be represented by a function @reachin{Fun([UInt], Bool)}}
@@ -238,6 +239,7 @@ Great job!
 If you found this workshop rewarding, please let us know on @(the-community-link)!
 
 If you'd like to make this application a little more interesting, maybe you'd like
-to extend this program to make the last @tt{N} buyers split the winnings. Check out @seclink["workshop-fomo"]{FOMO Generalized} for
+to extend this program to make the last @tt{N} buyers split the winnings. Check out
+@seclink["workshop-fomo-generalized"]{Fear of Missing Out Generalized} for
 our solution!
 
