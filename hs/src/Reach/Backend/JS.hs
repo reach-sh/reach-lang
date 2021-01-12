@@ -244,7 +244,9 @@ jsExpr ctxt = \case
                 ]
           ]
   DLE_Wait _ amt ->
-    "await" <+> jsApply "ctc.wait" [jsArg amt]
+    case ctxt_simulate ctxt of
+      True -> jsApply "void" [jsArg amt]
+      False -> "await" <+> jsApply "ctc.wait" [jsArg amt]
   DLE_PartSet _ who what ->
     case ctxt_who ctxt == who of
       True ->

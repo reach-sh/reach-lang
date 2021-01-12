@@ -790,7 +790,7 @@ data SLMode
   | --- A "toconsensus" moves from "step" to "consensus step" then to "step" again
     SLM_ConsensusStep
   | SLM_ConsensusPure
-  deriving (Eq, Generic)
+  deriving (Bounded, Enum, Eq, Generic)
 
 instance Show SLMode where
   show = \case
@@ -814,7 +814,7 @@ data SLState = SLState
   deriving (Eq, Show)
 
 all_slm_modes :: [SLMode]
-all_slm_modes = [SLM_Module, SLM_Step, SLM_LocalStep, SLM_LocalPure, SLM_ConsensusStep, SLM_ConsensusPure]
+all_slm_modes = enumFrom minBound
 
 ensure_modes :: SLCtxt s -> SrcLoc -> SLState -> [SLMode] -> String -> ST s ()
 ensure_modes ctxt at st ems msg = do
@@ -2041,11 +2041,8 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_exit ->
       case sargs of
         [] -> do
-          ensure_mode ctxt at st SLM_Step "exit"
-          let zero = SLV_Int srcloc_builtin 0
-          tbzero <- doAssertBalance ctxt at sco st zero PEQ
-          let lifts = tbzero <> (return $ DLS_Stop at)
-          return $ SLRes lifts st $ public $ SLV_Prim $ SLPrim_exitted
+          SLRes lifts st' () <- doExit ctxt at sco st
+          return $ SLRes lifts st' $ public $ SLV_Prim $ SLPrim_exitted
         _ -> illegal_args
     SLPrim_exitted -> illegal_args
     SLPrim_forall {} ->
@@ -3165,11 +3162,8 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           let st' = st {st_pdvs = pdvs'}
           keepLifts lifts $ evalStmt ctxt at sco st' ks
     SLV_Prim SLPrim_exitted -> do
-      ensure_mode ctxt at st SLM_Step "exit"
-      ensure_live ctxt at st "exit"
-      let st' = st {st_live = False}
       expect_empty_tail ctxt "exit" JSNoAnnot sp at ks $
-        return $ SLRes mempty st' $ SLStmtRes sco []
+        return $ SLRes mempty st $ SLStmtRes sco []
     SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) -> do
       ensure_modes ctxt at st [SLM_Step, SLM_ConsensusStep] "local action (only or each)"
       (lifts', sco', st') <-
@@ -3204,6 +3198,16 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
       case typeOf_ctxt ctxt st at ev of
         (T_Null, _) -> evalStmt ctxt at sco st ks
         (ty, _) -> expect_throw_ctx ctxt at (Err_Block_NotNull ty ev)
+
+doExit :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLComp s ()
+doExit ctxt at sco st = do
+  ensure_mode ctxt at st SLM_Step "exit"
+  ensure_live ctxt at st "exit"
+  let zero = SLV_Int at 0
+  tbzero <- doAssertBalance ctxt at sco st zero PEQ
+  let lifts = tbzero <> (return $ DLS_Stop at)
+  let st' = st {st_live = False}
+  return $ SLRes lifts st' ()
 
 doWhileLikeInitEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> ST s (DLStmts, DLStmts, M.Map SLVar DLVar, DLAssignment, SLState, SLScope)
 doWhileLikeInitEval ctxt at sco st lhs rhs = do
@@ -3940,8 +3944,15 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   SLRes final st_final _ <-
     keepLifts (liblifts <> bal_lifts <> ctime_lifts) $
       evalStmt ctxt at' sco st_step top_ss
-  ensure_mode ctxt at st_final SLM_Step "program termination"
-  tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
+  final' <-
+    case st_live st_final of
+      True -> do
+        SLRes elifts _ () <-
+          keepLifts final $
+            doExit ctxt at' sco st_final
+        return $ elifts
+      False ->
+        return final
   let make_sps_entry (_p_at, _, pn, _iat, io) =
         (pn, InteractEnv $ M.map getType iom)
         where
@@ -3954,7 +3965,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let dli = DLInit ctimem
   final_idx <- readSTCounter idxr
   let dlo' = dlo {dlo_counter = final_idx}
-  return $ DLProg at dlo' sps dli (final <> tbzero)
+  return $ DLProg at dlo' sps dli final'
 compileDApp _ _ _ topv =
   expect_thrown srcloc_top (Err_Top_NotApp topv)
 
