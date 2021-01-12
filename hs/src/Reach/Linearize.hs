@@ -23,8 +23,6 @@ type LLRets = M.Map Int LLRetRHS
 
 type App = ReaderT Env IO
 
-type AppT a = a -> App a
-
 data Env = Env
   { eCounterR :: IORef Int
   , eFVMm :: Maybe FVMap
@@ -183,25 +181,25 @@ lin_block :: SrcLoc -> DLBlock -> App LLBlock
 lin_block _at (DLBlock at fs l a) =
   LLBlock at fs <$> lin_local at l <*> pure a
 
-lin_con :: (DLStmts -> App LLStep) -> SrcLoc -> DLStmts -> App LLConsensus
-lin_con _ at Seq.Empty =
+lin_con :: SrcLoc -> DLStmts -> App LLConsensus
+lin_con at Seq.Empty =
   return $ LLC_Com $ LL_Return at
-lin_con back at_top (s Seq.:<| ks) =
+lin_con at_top (s Seq.:<| ks) =
   case s of
     DLS_If at ca _ ts fs
       | not (isLocal s) ->
         LLC_If at ca <$> t' <*> f'
       where
-        t' = lin_con back at (ts <> ks)
-        f' = lin_con back at (fs <> ks)
+        t' = lin_con at (ts <> ks)
+        f' = lin_con at (fs <> ks)
     DLS_Switch at dv _ cm
       | not (isLocal s) ->
         LLC_Switch at dv <$> cm'
       where
         cm' = mapM cm1 cm
-        cm1 (dv', c) = (\x -> (dv', x)) <$> lin_con back at (c <> ks)
+        cm1 (dv', c) = (\x -> (dv', x)) <$> lin_con at (c <> ks)
     DLS_FromConsensus at cons ->
-      LLC_FromConsensus at at_top <$> back (cons <> ks)
+      LLC_FromConsensus at at_top <$> lin_step at (cons <> ks)
     DLS_While at asn inv_b cond_b body -> do
       let go fv = do
             r <- fluidRefm fv
@@ -211,11 +209,11 @@ lin_con back at_top (s Seq.:<| ks) =
                 dv <- allocVar $ DLVar at (show fv) (fluidVarType fv)
                 return $ Just (fv, dv)
       fvm <- M.fromList <$> catMaybes <$> mapM go allFluidVars
-      let body_fvs' = lin_con back at =<< unpackFVMap at body
+      let body_fvs' = lin_con at =<< unpackFVMap at body
       --- Note: The invariant and condition can't return
       let block b = lin_block at =<< block_unpackFVMap at b
       withWhileFVMap fvm $
-        LLC_While at <$> expandFromFVMap asn <*> block inv_b <*> block cond_b <*> body_fvs' <*> (lin_con back at =<< unpackFVMap at ks)
+        LLC_While at <$> expandFromFVMap asn <*> block inv_b <*> block cond_b <*> body_fvs' <*> (lin_con at =<< unpackFVMap at ks)
     DLS_Continue at update ->
       case ks of
         Seq.Empty ->
@@ -223,11 +221,11 @@ lin_con back at_top (s Seq.:<| ks) =
         _ ->
           impossible $ "consensus cannot continue w/ non-empty k"
     DLS_Only at who ss ->
-      LLC_Only at who <$> ls <*> lin_con back at ks
+      LLC_Only at who <$> ls <*> lin_con at ks
       where
         ls = lin_local at ss
     _ ->
-      lin_com "consensus" (lin_con back) LLC_Com s ks
+      lin_com "consensus" lin_con LLC_Com s ks
 
 lin_step :: SrcLoc -> DLStmts -> App LLStep
 lin_step at Seq.Empty =
@@ -247,10 +245,10 @@ lin_step _ (s Seq.:<| ks) =
       where
         ls = lin_local at ss
     DLS_ToConsensus at send recv mtime -> do
-      rets <- captureRets
-      let back = restoreRets rets . lin_step at
+      -- rets <- captureRets
+      -- let back = restoreRets rets . lin_step at
       let (last_timev, winner_dv, msg, amtv, timev, cons) = recv
-      let cons' = lin_con back at (cons <> ks)
+      let cons' = lin_con at (cons <> ks)
       let recv' =
             (\x -> (last_timev, winner_dv, msg, amtv, timev, x)) <$> cons'
       let mtime' =

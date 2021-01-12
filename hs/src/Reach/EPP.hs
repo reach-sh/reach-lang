@@ -47,7 +47,9 @@ type SLPartETs = (M.Map SLPart (ProRes_ ETail))
 
 type UndefdVars = S.Set DLVar
 
-data ProResC = ProResC SLPartETs (ProRes_ (UndefdVars, CTail))
+type CRes = (UndefdVars, CTail)
+
+data ProResC = ProResC SLPartETs (ProRes_ CRes)
   deriving (Eq, Show)
 
 data ProSt s = ProSt
@@ -297,6 +299,12 @@ var_addlc cs v = (lc, v)
         Count Nothing -> PL_Once
         Count (Just x) -> x
 
+closeCResToCTail :: SrcLoc -> CRes -> CTail
+closeCResToCTail at (cons_udvs, ct_cons0) = ct_cons
+  where
+    add_udv_def uk udv = CT_Com $ PL_Var at udv uk
+    ct_cons = S.foldl' add_udv_def ct_cons0 cons_udvs
+
 epp_n :: forall s. ProSt s -> LLConsensus -> ST s ProResC
 epp_n st n =
   case n of
@@ -304,7 +312,7 @@ epp_n st n =
       where
         done :: MDone (ST s ProResC)
         done rat =
-          return $ ProResC (pall st (ProRes_ mempty $ ET_Com $ PL_Return rat)) (ProRes_ mempty (mempty, CT_Com $ PL_Return rat))
+          return $ ProResC (pall st' (ProRes_ mempty $ ET_Com $ PL_Return rat)) (ProRes_ mempty (mempty, CT_Com $ PL_Return rat))
         back :: MBack LLConsensus (ST s ProResC)
         back cs' mkpl k = do
           ProResC p_prts_s (ProRes_ cs_k (udvs_k, ct_k)) <- skip k
@@ -312,7 +320,7 @@ epp_n st n =
           let cs_k' = cs' <> cs_k
           let ct_k' = CT_Com $ mkpl ct_k
           return $ ProResC p_prts_s' (ProRes_ cs_k' (udvs_k, ct_k'))
-        skip k = epp_n st k
+        skip k = epp_n st' k
         look :: LLConsensus -> MLookCommon -> (ST s ProResC)
         look k common = do
           ProResC p_prts_s (ProRes_ cs_k (udvs_k, ct_k)) <- skip k
@@ -322,6 +330,11 @@ epp_n st n =
                   back' cs_k' udvs_k' ct_k' = ProRes_ cs_k' (udvs_k', CT_Com $ ct_k')
           let p_prts_s' = extend_locals_look common p_prts_s
           return $ ProResC p_prts_s' cr'
+        st' =
+          case c of
+            (LL_Let _ _ (DLE_Wait _ amt) _) ->
+              st {pst_interval = interval_add_from (pst_interval st) amt}
+            _ -> st
     LLC_If at ca t f -> do
       ProResC p_prts_t (ProRes_ cs_t (udvs_t, ct_t)) <- epp_n st t
       ProResC p_prts_f (ProRes_ cs_f (udvs_f, ct_f)) <- epp_n st f
@@ -513,10 +526,8 @@ epp_s st s =
               { pst_prev_handler = which
               , pst_interval = int_ok
               }
-      ProResC p_prts_cons (ProRes_ cons_vs (cons_udvs, ct_cons0)) <-
-        epp_n st_cons cons
-      let add_udv_def uk udv = CT_Com $ PL_Var at udv uk
-      let ct_cons = S.foldl' add_udv_def ct_cons0 cons_udvs
+      ProResC p_prts_cons (ProRes_ cons_vs cres) <- epp_n st_cons cons
+      let ct_cons = closeCResToCTail at cres
       let (fs_uses, fs_defns) = (mempty, [fromv])
       let msg_and_defns = (msg <> [amt_dv, timev] <> fs_defns)
       let int_ok_cs = counts int_ok
@@ -569,8 +580,7 @@ epp (LLProg at (LLOpts {..}) ps dli s) = runST $ do
   let mk_pp p ie =
         case M.lookup p p_prts of
           Just (ProRes_ _ et) -> EPProg at ie et
-          Nothing ->
-            impossible $ "part not in projection"
+          Nothing -> impossible $ "part not in projection"
   let pps = EPPs $ M.mapWithKey mk_pp p_to_ie
   let plo_deployMode = llo_deployMode
   let plo_verifyOverflow = llo_verifyOverflow

@@ -199,8 +199,6 @@ data SLPrimitive
   = SLPrim_makeEnum
   | SLPrim_declassify
   | SLPrim_digest
-  | SLPrim_commit
-  | SLPrim_committed
   | SLPrim_claim ClaimType
   | SLPrim_interact SrcLoc SLPart String SLType
   | SLPrim_is_type
@@ -238,6 +236,7 @@ data SLPrimitive
   | SLPrim_fluid_read FluidVar
   | SLPrim_race
   | SLPrim_lastConsensusTime
+  | SLPrim_deprecated String
   deriving (Eq, Generic, NFData, Show)
 
 type SLSVal = (SecurityLevel, SLVal)

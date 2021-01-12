@@ -44,6 +44,10 @@ data LLConsensus
   | LLC_Only SrcLoc SLPart LLLocal LLConsensus
   deriving (Eq, Show)
 
+-- LLStep is overly broad, because after the constructor runs, it is guaranteed
+-- that that it will only ever be LLS_Stop or LLS_ToConsensus, but prior to
+-- that it could be anything, so we have to handle that case, which is quite a
+-- pain.
 data LLStep
   = LLS_Com (LLCommon LLStep)
   | LLS_Stop SrcLoc

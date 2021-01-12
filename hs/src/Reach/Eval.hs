@@ -36,9 +36,9 @@ import Reach.Version
 import Safe (atMay)
 import Text.EditDistance (defaultEditCosts, restrictedDamerauLevenshteinDistance)
 import Text.ParserCombinators.Parsec.Number (numberValue)
+import Debug.Trace
 
 -- import Text.Show.Pretty (ppShow)
--- import Debug.Trace
 
 --- Errors
 
@@ -211,12 +211,21 @@ showStateDiff x y =
     <> showDiff
       x
       y
-      st_after_first
+      st_can_tct
       (\xAfter yAfter ->
          case (xAfter, yAfter) of
-           (False, True) -> "Expected a publication to have been made by this point."
-           (True, False) -> "Expected no publication to have been made by this point."
-           _ -> impossible "expected st_after_first to differ.")
+           (False, True) -> "Expected a publication to have been initiated."
+           (True, False) -> "Expected no publication to have been initiated."
+           _ -> impossible "expected st_can_tct to differ.")
+    <> showDiff
+      x
+      y
+      st_can_lct
+      (\xAfter yAfter ->
+         case (xAfter, yAfter) of
+           (False, True) -> "Expected a publication to have completed."
+           (True, False) -> "Expected no publication to have completed."
+           _ -> impossible "expected st_can_lct to differ.")
     <> showDiff
       x
       y
@@ -584,7 +593,7 @@ base_env =
   m_fromList_public_builtin $
     [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
     , ("declassify", SLV_Prim SLPrim_declassify)
-    , ("commit", SLV_Prim SLPrim_commit)
+    , ("commit", SLV_Prim $ SLPrim_deprecated $ "commit() is deprecated: it is no longer necessary and will be removed as a keyword at Reach 0.2")
     , ("digest", SLV_Prim SLPrim_digest)
     , ("transfer", SLV_Prim SLPrim_transfer)
     , ("assert", SLV_Prim $ SLPrim_claim CT_Assert)
@@ -782,20 +791,17 @@ checkResType ctxt at et m = do
 data SLMode
   = --- The top-level of a module, before the App starts
     SLM_Module
-  | --- The app starts in a "step"
-    SLM_Step
   | --- An "only" moves from "step" to "local step" and then to "step" again, where x = live
     SLM_LocalStep
   | SLM_LocalPure
   | --- A "toconsensus" moves from "step" to "consensus step" then to "step" again
     SLM_ConsensusStep
   | SLM_ConsensusPure
-  deriving (Eq, Generic)
+  deriving (Bounded, Enum, Eq, Generic)
 
 instance Show SLMode where
   show = \case
     SLM_Module -> "module"
-    SLM_Step -> "step"
     SLM_LocalStep -> "local step"
     SLM_LocalPure -> "local pure"
     SLM_ConsensusStep -> "consensus step"
@@ -807,16 +813,18 @@ data SLState = SLState
   { --- A function call may modify the mode
     st_mode :: SLMode
   , st_live :: Bool
-  , st_after_first :: Bool
+  , st_can_tct :: Bool
+  , st_can_lct :: Bool
+  , st_need_to_commit :: Bool
   , --- A function call may cause a participant to join
     st_pdvs :: SLPartDVars
   }
   deriving (Eq, Show)
 
 all_slm_modes :: [SLMode]
-all_slm_modes = [SLM_Module, SLM_Step, SLM_LocalStep, SLM_LocalPure, SLM_ConsensusStep, SLM_ConsensusPure]
+all_slm_modes = enumFrom minBound
 
-ensure_modes :: SLCtxt s -> SrcLoc -> SLState -> [SLMode] -> String -> ST s ()
+ensure_modes :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> [SLMode] -> String -> ST s ()
 ensure_modes ctxt at st ems msg = do
   let am = st_mode st
   case elem am ems of
@@ -828,18 +836,27 @@ ensure_modes ctxt at st ems msg = do
 ensure_mode :: SLCtxt s -> SrcLoc -> SLState -> SLMode -> String -> ST s ()
 ensure_mode ctxt at st em msg = ensure_modes ctxt at st [em] msg
 
-ensure_live :: SLCtxt s -> SrcLoc -> SLState -> String -> ST s ()
+ensure_live :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> String -> ST s ()
 ensure_live ctxt at st msg = do
   case st_live st of
     True -> return ()
     False ->
       expect_throw_ctx ctxt at $ Err_Eval_MustBeLive msg
 
-allowed_to_wait :: SLCtxt s -> SrcLoc -> SLState -> x -> x
-allowed_to_wait ctxt at st =
-  case st_after_first st of
-    True -> id
+ensure_can__ct :: HasCallStack => SLCtxt s -> SrcLoc -> Bool -> ST s ()
+ensure_can__ct ctxt at b =
+  case b of
+    True -> return ()
     False -> expect_throw_ctx ctxt at $ Err_Eval_IllegalWait $ dlo_deployMode $ ctxt_dlo ctxt
+
+ensure_can_lct :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> ST s ()
+ensure_can_lct ctxt at st = ensure_can__ct ctxt at (st_can_lct st)
+
+ensure_can_tct :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> ST s ()
+ensure_can_tct ctxt at st = ensure_can__ct ctxt at (st_can_tct st)
+
+allowed_to_wait :: HasCallStack => SLCtxt s -> SrcLoc -> SLState -> ST s ()
+allowed_to_wait = ensure_can_tct
 
 type SLPartDVars = M.Map SLPart DLVar
 
@@ -891,15 +908,6 @@ penvs_update ctxt at sco f =
     map (\p -> (p, f p $ sco_lookup_penv ctxt at sco p)) $
       M.keys $ ctxt_ios ctxt
 
-sco_set :: SLVar -> SLSSVal -> SLScope -> SLScope
-sco_set v sv sco@(SLScope {..}) =
-  sco
-    { sco_penvs = M.map go sco_penvs
-    , sco_cenv = go sco_cenv
-    }
-  where
-    go = M.insert v sv
-
 sco_update_and_mod :: HasCallStack => EnvInsertMode -> SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLEnv -> (SLEnv -> SLEnv) -> SLScope
 sco_update_and_mod imode ctxt at sco st addl_env env_mod =
   ps $ c sco
@@ -907,7 +915,6 @@ sco_update_and_mod imode ctxt at sco st addl_env env_mod =
     c =
       case st_mode st of
         SLM_Module -> c_mod
-        SLM_Step -> c_mod
         SLM_LocalStep -> id
         SLM_LocalPure -> id
         SLM_ConsensusStep -> c_mod
@@ -915,7 +922,6 @@ sco_update_and_mod imode ctxt at sco st addl_env env_mod =
     ps =
       case st_mode st of
         SLM_Module -> id
-        SLM_Step -> ps_all_mod
         SLM_LocalStep -> ps_one_mod
         SLM_LocalPure -> ps_one_mod
         SLM_ConsensusStep -> ps_all_mod
@@ -1348,7 +1354,7 @@ evalForm ctxt at sco st f args =
     -- This case occurs when the "result" of `each` is used as an expression.
     SLForm_EachAns _ e_at _ _ -> expect_throw_ctx ctxt e_at $ Err_Invalid_Statement "each/only"
     SLForm_unknowable -> do
-      ensure_mode ctxt at st SLM_Step "unknowable"
+      ensure_mode ctxt at st SLM_ConsensusStep "unknowable"
       let (notter_e, snd_part, mmsg_e) =
             case args of
               [x, y] -> (x, y, Nothing)
@@ -1389,7 +1395,8 @@ evalForm ctxt at sco st f args =
               <> lifts'
       return $ SLRes lifts st_kn $ public $ SLV_Null at "unknowable"
     SLForm_wait -> do
-      ensure_mode ctxt at st (allowed_to_wait ctxt at st SLM_Step) "wait"
+      allowed_to_wait ctxt at st
+      ensure_mode ctxt at st SLM_ConsensusStep "wait"
       let amt_e = one_arg
       let st_pure = st {st_mode = SLM_ConsensusPure}
       SLRes delay_lifts _ amt_sv <- evalExpr ctxt at sco st_pure amt_e
@@ -1687,8 +1694,19 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_fluid_read fv ->
       doFluidRef ctxt at st fv
     SLPrim_lastConsensusTime -> do
-      allowed_to_wait ctxt at st $ zero_args
-      evalPrim ctxt at sco st (SLPrim_fluid_read $ FV_lastConsensusTime) []
+      zero_args
+      ensure_modes ctxt at st (all_slm_modes \\ [SLM_Module]) "lastConsensusTime"
+      let common ensure_can_ fv = do
+            () <- ensure_can_ ctxt at st
+            evalPrim ctxt at sco st (SLPrim_fluid_read fv) []
+      let tct = common ensure_can_tct FV_thisConsensusTime
+      let lct = common ensure_can_lct FV_lastConsensusTime
+      case st_mode st of
+        SLM_Module -> impossible "module"
+        SLM_LocalStep -> tct
+        SLM_LocalPure -> tct
+        SLM_ConsensusStep -> lct
+        SLM_ConsensusPure -> lct
     SLPrim_op op ->
       evalPrimOp ctxt at sco st op sargs
     SLPrim_Fun ->
@@ -1984,11 +2002,9 @@ evalPrim ctxt at sco st p sargs =
             Secret -> retV $ public $ val
             Public -> expect_throw_ctx ctxt at $ Err_ExpectedPrivate val
         _ -> illegal_args
-    SLPrim_commit ->
-      case sargs of
-        [] -> retV $ public $ SLV_Prim SLPrim_committed
-        _ -> illegal_args
-    SLPrim_committed -> illegal_args
+    SLPrim_deprecated msg -> do
+      traceM msg
+      retV $ public $ SLV_Null at "deprecated"
     SLPrim_digest -> do
       let rng = T_Digest
       let darges = map snd $ map ((typeOf_ctxt ctxt st at) . snd) sargs
@@ -2041,11 +2057,8 @@ evalPrim ctxt at sco st p sargs =
     SLPrim_exit ->
       case sargs of
         [] -> do
-          ensure_mode ctxt at st SLM_Step "exit"
-          let zero = SLV_Int srcloc_builtin 0
-          tbzero <- doAssertBalance ctxt at sco st zero PEQ
-          let lifts = tbzero <> (return $ DLS_Stop at)
-          return $ SLRes lifts st $ public $ SLV_Prim $ SLPrim_exitted
+          SLRes lifts st' () <- doExit ctxt at sco st
+          return $ SLRes lifts st' $ public $ SLV_Prim $ SLPrim_exitted
         _ -> illegal_args
     SLPrim_exitted -> illegal_args
     SLPrim_forall {} ->
@@ -2338,7 +2351,6 @@ evalId_ ctxt at sco st lab x =
     (elab, env) =
       case st_mode st of
         SLM_Module -> s
-        SLM_Step -> s
         SLM_LocalStep -> l
         SLM_LocalPure -> l
         SLM_ConsensusStep -> c
@@ -2784,8 +2796,17 @@ all_just = \case
       Nothing -> Nothing
 
 doToConsensus :: forall s. SLCtxt s -> SrcLoc -> SLScope -> SLState -> [JSStatement] -> S.Set SLPart -> Maybe SLVar -> [SLVar] -> JSExpression -> JSExpression -> Maybe (SrcLoc, JSExpression, JSBlock) -> SLComp s SLStmtRes
-doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
-  ensure_mode ctxt at st SLM_Step "to consensus"
+doToConsensus ctxt at sco st0 ks whos vas msg amt_e when_e mtime = do
+  (last_time_mdv, clifts, st, mkFrom) <-
+    case st_can_tct st0 of
+      True -> do
+        SLRes clifts st mkFrom <- doCommit ctxt at sco st0
+        SLRes last_time_lifts _ last_time_dv <-
+          doFluidRef_dv ctxt at st FV_lastConsensusTime
+        return (Just last_time_dv, clifts <> last_time_lifts, st, mkFrom)
+      False ->
+        return (Nothing, mempty, st0, id)
+  ensure_mode ctxt at st SLM_ConsensusStep "to consensus"
   ensure_live ctxt at st "to consensus"
   let st_pure = st {st_mode = SLM_ConsensusPure}
   let pdvs = st_pdvs st
@@ -2837,7 +2858,7 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
           expect_throw_ctx ctxt at $ Err_ToConsensus_WhenNoTimeout
         return $ (id, Nothing)
       Just (time_at, delay_e, (JSBlock _ time_ss _)) -> do
-        allowed_to_wait ctxt at st (return ())
+        ensure_can_lct ctxt at st
         -- The timeout delay must be based on previously known consensus
         -- variables
         SLRes delay_lifts _ delay_sv <-
@@ -2921,21 +2942,15 @@ doToConsensus ctxt at sco st ks whos vas msg amt_e when_e mtime = do
   this_time_lifts <-
     doFluidSet ctxt st_recv at FV_thisConsensusTime $
       public $ SLV_DLVar time_dv
-  (last_time_mdv, last_time_lifts) <-
-    case st_after_first st of
-      True -> do
-        SLRes last_time_lifts _ last_time_dv <-
-          doFluidRef_dv ctxt at st FV_lastConsensusTime
-        return (Just last_time_dv, last_time_lifts)
-      False ->
-        return (Nothing, mempty)
+  let st_ks = st_recv' { st_can_tct = True
+                       , st_need_to_commit = True }
   SLRes conlifts k_st k_cr <-
     keepLifts (balup <> this_time_lifts) $
-      evalStmt ctxt at sco_recv st_recv' ks
+      evalStmt ctxt at sco_recv st_ks ks
   let tc_recv = (last_time_mdv, winner_dv, msg_dvs, amt_dv, time_dv, conlifts)
   -- Prepare final result
   let the_tc = DLS_ToConsensus at tc_send tc_recv tc_mtime
-  let lifts' = send_lifts <> last_time_lifts <> (return $ the_tc)
+  let lifts' = clifts <> send_lifts <> (mkFrom $ return $ the_tc)
   return $ mtime_merge $ SLRes lifts' k_st k_cr
 
 srcloc2annot :: SrcLoc -> JSAnnot
@@ -3165,13 +3180,10 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
           let st' = st {st_pdvs = pdvs'}
           keepLifts lifts $ evalStmt ctxt at sco st' ks
     SLV_Prim SLPrim_exitted -> do
-      ensure_mode ctxt at st SLM_Step "exit"
-      ensure_live ctxt at st "exit"
-      let st' = st {st_live = False}
       expect_empty_tail ctxt "exit" JSNoAnnot sp at ks $
-        return $ SLRes mempty st' $ SLStmtRes sco []
+        return $ SLRes mempty st $ SLStmtRes sco []
     SLV_Form (SLForm_EachAns parts only_at only_cloenv only_synarg) -> do
-      ensure_modes ctxt at st [SLM_Step, SLM_ConsensusStep] "local action (only or each)"
+      ensure_modes ctxt at st [SLM_ConsensusStep] "local action (only or each)"
       (lifts', sco', st') <-
         foldM (doOnly ctxt at) (mempty, sco, st) $
           map (\who -> (who, only_at, only_cloenv, only_synarg)) parts
@@ -3183,27 +3195,37 @@ evalStmtTrampoline ctxt sp at sco st (_, ev) ks =
       doToConsensus ctxt to_at sco st ks whos vas msg amt whene mtime
     SLV_Form (SLForm_fork_partial f_at Nothing cases mtime) ->
       doFork ctxt f_at sco st ks cases mtime
-    SLV_Prim SLPrim_committed -> do
-      ensure_mode ctxt at st SLM_ConsensusStep "commit"
-      let st_step =
-            st
-              { st_mode = SLM_Step
-              , st_after_first = True
-              }
-      let sco' = sco_set "this" (SLSSVal at Public $ SLV_Kwd $ SLK_this) sco
-      SLRes this_time_lifts _ this_time_v <-
-        doFluidRef ctxt at st FV_thisConsensusTime
-      time_lifts <-
-        doFluidSet ctxt st_step at FV_lastConsensusTime this_time_v
-      SLRes steplifts k_st cr <-
-        keepLifts (this_time_lifts <> time_lifts) $
-          evalStmt ctxt at sco' st_step ks
-      let lifts' = (return $ DLS_FromConsensus at steplifts)
-      return $ SLRes lifts' k_st cr
     _ ->
       case typeOf_ctxt ctxt st at ev of
         (T_Null, _) -> evalStmt ctxt at sco st ks
         (ty, _) -> expect_throw_ctx ctxt at (Err_Block_NotNull ty ev)
+
+doCommit :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLComp s (DLStmts -> DLStmts)
+doCommit ctxt at _sco st = do
+  ensure_mode ctxt at st SLM_ConsensusStep "commit"
+  let f =
+        case st_need_to_commit st of
+          False -> id
+          True -> return . DLS_FromConsensus at
+  SLRes this_time_lifts _ this_time_v <-
+    doFluidRef ctxt at st FV_thisConsensusTime
+  let st_step = st { st_mode = SLM_ConsensusStep
+                   , st_can_lct = True
+                   , st_need_to_commit = False }
+  time_lifts <-
+    doFluidSet ctxt st_step at FV_lastConsensusTime this_time_v
+  return $ SLRes (this_time_lifts <> time_lifts) st_step f
+
+doExit :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> SLComp s ()
+doExit ctxt at sco st0 = do
+  SLRes clifts st mkFrom <- doCommit ctxt at sco st0
+  ensure_mode ctxt at st SLM_ConsensusStep "exit"
+  ensure_live ctxt at st "exit"
+  let zero = SLV_Int at 0
+  tbzero <- doAssertBalance ctxt at sco st zero PEQ
+  let lifts = clifts <> tbzero <> (mkFrom $ return $ DLS_Stop at)
+  let st' = st {st_live = False}
+  return $ SLRes lifts st' ()
 
 doWhileLikeInitEval :: SLCtxt s -> SrcLoc -> SLScope -> SLState -> JSExpression -> JSExpression -> ST s (DLStmts, DLStmts, M.Map SLVar DLVar, DLAssignment, SLState, SLScope)
 doWhileLikeInitEval ctxt at sco st lhs rhs = do
@@ -3549,6 +3571,8 @@ evalStmt ctxt at sco st ss =
             : ks
           ) -> do
             ensure_mode ctxt var_at st SLM_ConsensusStep "while"
+            ensure_can_lct ctxt var_at st
+            ensure_can_tct ctxt var_at st
             let inv_at = (srcloc_jsa "invariant" inv_a at)
             let cond_at = (srcloc_jsa "cond" cond_a at)
             let while_at = (srcloc_jsa "while" while_a at)
@@ -3760,7 +3784,9 @@ evalLib idxr cns (src, body) (liblifts, libm) = do
           { st_mode = SLM_Module
           , st_live = False
           , st_pdvs = mempty
-          , st_after_first = False
+          , st_can_tct = False
+          , st_need_to_commit = False
+          , st_can_lct = False
           }
   let dlo = app_default_opts $ M.keys cns
   let ctxt_top =
@@ -3886,16 +3912,18 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
               Right x -> x
               Left x -> expect_thrown opt_at $ Err_App_InvalidOptionValue k x
   let dlo = M.foldrWithKey use_opt (app_default_opts $ M.keys cns) opts
-  let st_after_first0 =
+  let st_can_tct0 =
         case dlo_deployMode dlo of
           DM_constructor -> True
           DM_firstMsg -> False
   let st_step =
         SLState
-          { st_mode = SLM_Step
+          { st_mode = SLM_ConsensusStep
           , st_live = True
           , st_pdvs = mempty
-          , st_after_first = st_after_first0
+          , st_can_tct = st_can_tct0
+          , st_need_to_commit = False
+          , st_can_lct = False
           }
   let at' = srcloc_at "compileDApp" Nothing at
   let classes = S.fromList $ [pn | (_, True, pn, _, _) <- part_ios]
@@ -3932,16 +3960,23 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
     let no = return (Nothing, mempty)
     let yes = do
           time_dv <- ctxt_mkvar ctxt (DLVar at "ctime" T_UInt)
-          ctime_lifts <- doFluidSet ctxt st_step at' FV_lastConsensusTime $ public $ SLV_DLVar time_dv
-          return (Just time_dv, ctime_lifts)
+          tct_lifts <- doFluidSet ctxt st_step at' FV_thisConsensusTime $ public $ SLV_DLVar time_dv
+          return (Just time_dv, tct_lifts)
     case dlo_deployMode dlo of
       DM_constructor -> yes
       DM_firstMsg -> no
   SLRes final st_final _ <-
     keepLifts (liblifts <> bal_lifts <> ctime_lifts) $
       evalStmt ctxt at' sco st_step top_ss
-  ensure_mode ctxt at st_final SLM_Step "program termination"
-  tbzero <- doAssertBalance ctxt at sco st_final (SLV_Int at' 0) PEQ
+  final' <-
+    case st_live st_final of
+      True -> do
+        SLRes elifts _ () <-
+          keepLifts final $
+            doExit ctxt at' sco st_final
+        return $ elifts
+      False ->
+        return final
   let make_sps_entry (_p_at, _, pn, _iat, io) =
         (pn, InteractEnv $ M.map getType iom)
         where
@@ -3954,7 +3989,7 @@ compileDApp idxr liblifts cns (SLV_Prim (SLPrim_App_Delay at opts parts top_form
   let dli = DLInit ctimem
   final_idx <- readSTCounter idxr
   let dlo' = dlo {dlo_counter = final_idx}
-  return $ DLProg at dlo' sps dli (final <> tbzero)
+  return $ DLProg at dlo' sps dli final'
 compileDApp _ _ _ topv =
   expect_thrown srcloc_top (Err_Top_NotApp topv)
 
