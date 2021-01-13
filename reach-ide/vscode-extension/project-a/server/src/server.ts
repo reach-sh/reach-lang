@@ -4,7 +4,7 @@ import { stringify } from 'querystring';
  * are held by (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  *
- * Copyright (c) 2020 Eric Lau. All rights reserved.
+ * Copyright (c) 2020 Reach Platform, Inc.. All rights reserved.
  * Licensed under the Eclipse Public License v2.0
  * ------------------------------------------------------------------------------------------ */
 
